@@ -282,9 +282,9 @@ pub fn[T] World::register_component_hooks_for_key(
   self : World,
   key : ComponentKey[T],
 ) -> ComponentHooksBuilder[T] {
-  ignore(self.ensure_component_registered(key.id()))
-  if self.component_hooks_registry.get(key.id()) is None {
-    self.component_hooks_registry.set(key.id(), ComponentHooks::new())
+  let local_component_id = self.ensure_component_registered(key.id())
+  if self.component_hooks_registry.get(local_component_id) is None {
+    self.component_hooks_registry.set(local_component_id, ComponentHooks::new())
   }
   ComponentHooksBuilder::{ world: self, key }
 }
@@ -302,19 +302,23 @@ pub fn[T] World::register_component_hooks_with(
   key : ComponentKey[T],
   hooks : ComponentHooks,
 ) -> Unit raise ComponentHooksError {
-  ignore(self.ensure_component_registered(key.id()))
-  if self.component_has_been_used(key.id()) {
-    raise ComponentAlreadyInUse(key.id())
+  let local_component_id = self.ensure_component_registered(key.id())
+  if self.component_has_been_used(local_component_id) {
+    raise ComponentAlreadyInUse(local_component_id)
   }
-  if self.component_hooks_registry.contains(key.id()) {
-    raise DuplicateRegistration(key.id())
+  if self.component_hooks_registry.contains(local_component_id) {
+    raise DuplicateRegistration(local_component_id)
   }
-  self.component_hooks_registry.set(key.id(), hooks)
+  self.component_hooks_registry.set(local_component_id, hooks)
 }
 
 ///|
 fn World::component_hooks(self : World, component_id : Int) -> ComponentHooks? {
-  self.component_hooks_registry.get(component_id)
+  match self.local_component_id(component_id) {
+    Some(local_component_id) =>
+      self.component_hooks_registry.get(local_component_id)
+    None => None
+  }
 }
 
 ///|
@@ -352,14 +356,15 @@ fn component_hooks_register_kind(
   kind : ComponentHookKind,
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> Unit raise ComponentHooksError {
-  if world.component_has_been_used(component_id) {
-    raise ComponentAlreadyInUse(component_id)
+  let local_component_id = world.ensure_component_registered(component_id)
+  if world.component_has_been_used(local_component_id) {
+    raise ComponentAlreadyInUse(local_component_id)
   }
-  let hooks = world
-    .component_hooks(component_id)
+  let hooks = world.component_hooks_registry
+    .get(local_component_id)
     .unwrap_or(ComponentHooks::new())
   if component_hooks_kind_registered(hooks, kind) {
-    raise DuplicateHookRegistration(component_id, kind)
+    raise DuplicateHookRegistration(local_component_id, kind)
   }
   let updated = match kind {
     OnAdd => ComponentHooks::{ ..hooks, on_add: Some(hook) }
@@ -368,7 +373,7 @@ fn component_hooks_register_kind(
     OnRemove => ComponentHooks::{ ..hooks, on_remove: Some(hook) }
     OnDespawn => ComponentHooks::{ ..hooks, on_despawn: Some(hook) }
   }
-  world.component_hooks_registry.set(component_id, updated)
+  world.component_hooks_registry.set(local_component_id, updated)
 }
 
 ///|
@@ -461,9 +466,10 @@ fn World::run_component_hook(
   caller? : String? = None,
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> Unit {
+  let local_component_id = self.ensure_component_registered(component_id)
   hook(
     DeferredWorld::{ world: self },
-    hook_context(entity, component_id, caller~),
+    hook_context(entity, local_component_id, caller~),
   )
 }
 

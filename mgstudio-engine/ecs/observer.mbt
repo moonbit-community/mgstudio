@@ -13,10 +13,19 @@
 // limitations under the License.
 
 ///|
+pub struct Add {}
+
+///|
 pub struct Insert {}
 
 ///|
+pub struct Replace {}
+
+///|
 pub struct Remove {}
+
+///|
+pub struct Despawn {}
 
 ///|
 pub struct On[E] {
@@ -125,7 +134,25 @@ priv struct InsertObserver {
 }
 
 ///|
+priv struct AddObserver {
+  entity : @core.Entity?
+  run : (World) -> Unit
+}
+
+///|
+priv struct ReplaceObserver {
+  entity : @core.Entity?
+  run : (World) -> Unit
+}
+
+///|
 priv struct RemoveObserver {
+  entity : @core.Entity?
+  run : (World) -> Unit
+}
+
+///|
+priv struct DespawnObserver {
   entity : @core.Entity?
   run : (World) -> Unit
 }
@@ -139,8 +166,11 @@ priv struct TriggerObserver {
 ///|
 struct WorldObserverRegistry {
   mut next_observer_id : Int
+  add_observers : @hashmap.HashMap[Int, Array[AddObserver]]
   insert_observers : @hashmap.HashMap[Int, Array[InsertObserver]]
+  replace_observers : @hashmap.HashMap[Int, Array[ReplaceObserver]]
   remove_observers : @hashmap.HashMap[Int, Array[RemoveObserver]]
+  despawn_observers : @hashmap.HashMap[Int, Array[DespawnObserver]]
   trigger_observers : @hashmap.HashMap[Int, Array[TriggerObserver]]
 }
 
@@ -148,8 +178,11 @@ struct WorldObserverRegistry {
 fn world_observer_registry_new() -> WorldObserverRegistry {
   {
     next_observer_id: 1,
+    add_observers: @hashmap.HashMap::new(),
     insert_observers: @hashmap.HashMap::new(),
+    replace_observers: @hashmap.HashMap::new(),
     remove_observers: @hashmap.HashMap::new(),
+    despawn_observers: @hashmap.HashMap::new(),
     trigger_observers: @hashmap.HashMap::new(),
   }
 }
@@ -226,9 +259,13 @@ pub fn[E : ComponentObserverEvent, C : Component] current_component_observer() -
   E,
   C,
 ] {
+  let world = current_observer_world_abort_missing()
   let context = current_component_observer_context_abort_missing()
   let component_key : ComponentKey[C] = Component::component()
-  if context.component_id != component_key.id() {
+  let expected_component_id = world.ensure_component_registered(
+    component_key.id(),
+  )
+  if context.component_id != expected_component_id {
     abort(
       "Current \{E::debug_name()} observer context does not match component `\{component_key.debug_name()}`",
     )
@@ -247,7 +284,22 @@ pub fn[C : Component] current_insert_observer() -> ComponentOn[Insert, C] {
 }
 
 ///|
+pub fn[C : Component] current_add_observer() -> ComponentOn[Add, C] {
+  current_component_observer()
+}
+
+///|
+pub fn[C : Component] current_replace_observer() -> ComponentOn[Replace, C] {
+  current_component_observer()
+}
+
+///|
 pub fn[C : Component] current_remove_observer() -> ComponentOn[Remove, C] {
+  current_component_observer()
+}
+
+///|
+pub fn[C : Component] current_despawn_observer() -> ComponentOn[Despawn, C] {
   current_component_observer()
 }
 
@@ -258,13 +310,53 @@ fn World::register_insert_component_observer(
   entity : @core.Entity?,
   observer : (World) -> Unit,
 ) -> ObserverHandle {
+  let local_component_id = self.ensure_component_registered(component_id)
   let registry_ref = observer_registry_ref(self)
   let observer_id = registry_ref.val.next_observer_id
   registry_ref.val.next_observer_id = observer_id + 1
-  let observers = registry_ref.val.insert_observers.get_or_init(component_id, fn() {
-    []
-  })
+  let observers = registry_ref.val.insert_observers.get_or_init(
+    local_component_id,
+    fn() { [] },
+  )
   observers.push(InsertObserver::{ entity, run: observer })
+  { id: observer_id, world_id: self.world_id() }
+}
+
+///|
+fn World::register_add_component_observer(
+  self : World,
+  component_id : Int,
+  entity : @core.Entity?,
+  observer : (World) -> Unit,
+) -> ObserverHandle {
+  let local_component_id = self.ensure_component_registered(component_id)
+  let registry_ref = observer_registry_ref(self)
+  let observer_id = registry_ref.val.next_observer_id
+  registry_ref.val.next_observer_id = observer_id + 1
+  let observers = registry_ref.val.add_observers.get_or_init(
+    local_component_id,
+    fn() { [] },
+  )
+  observers.push(AddObserver::{ entity, run: observer })
+  { id: observer_id, world_id: self.world_id() }
+}
+
+///|
+fn World::register_replace_component_observer(
+  self : World,
+  component_id : Int,
+  entity : @core.Entity?,
+  observer : (World) -> Unit,
+) -> ObserverHandle {
+  let local_component_id = self.ensure_component_registered(component_id)
+  let registry_ref = observer_registry_ref(self)
+  let observer_id = registry_ref.val.next_observer_id
+  registry_ref.val.next_observer_id = observer_id + 1
+  let observers = registry_ref.val.replace_observers.get_or_init(
+    local_component_id,
+    fn() { [] },
+  )
+  observers.push(ReplaceObserver::{ entity, run: observer })
   { id: observer_id, world_id: self.world_id() }
 }
 
@@ -275,13 +367,34 @@ fn World::register_remove_component_observer(
   entity : @core.Entity?,
   observer : (World) -> Unit,
 ) -> ObserverHandle {
+  let local_component_id = self.ensure_component_registered(component_id)
   let registry_ref = observer_registry_ref(self)
   let observer_id = registry_ref.val.next_observer_id
   registry_ref.val.next_observer_id = observer_id + 1
-  let observers = registry_ref.val.remove_observers.get_or_init(component_id, fn() {
-    []
-  })
+  let observers = registry_ref.val.remove_observers.get_or_init(
+    local_component_id,
+    fn() { [] },
+  )
   observers.push(RemoveObserver::{ entity, run: observer })
+  { id: observer_id, world_id: self.world_id() }
+}
+
+///|
+fn World::register_despawn_component_observer(
+  self : World,
+  component_id : Int,
+  entity : @core.Entity?,
+  observer : (World) -> Unit,
+) -> ObserverHandle {
+  let local_component_id = self.ensure_component_registered(component_id)
+  let registry_ref = observer_registry_ref(self)
+  let observer_id = registry_ref.val.next_observer_id
+  registry_ref.val.next_observer_id = observer_id + 1
+  let observers = registry_ref.val.despawn_observers.get_or_init(
+    local_component_id,
+    fn() { [] },
+  )
+  observers.push(DespawnObserver::{ entity, run: observer })
   { id: observer_id, world_id: self.world_id() }
 }
 
@@ -313,6 +426,36 @@ pub impl ComponentObserverEvent for Insert with register_component_observer(
 }
 
 ///|
+pub impl ComponentObserverEvent for Add with register_component_observer(
+  world,
+  component_id,
+  entity,
+  observer,
+) {
+  world.register_add_component_observer(component_id, entity, observer)
+}
+
+///|
+pub impl ComponentObserverEvent for Add with current_observer_entity() {
+  current_component_observer_context_abort_missing().entity
+}
+
+///|
+pub impl ComponentObserverEvent for Add with current_observer_component_id() {
+  current_component_observer_context_abort_missing().component_id
+}
+
+///|
+pub impl ComponentObserverEvent for Add with marker() {
+  Add::{  }
+}
+
+///|
+pub impl ComponentObserverEvent for Add with debug_name() {
+  "add"
+}
+
+///|
 pub impl ComponentObserverEvent for Insert with current_observer_entity() {
   current_component_observer_context_abort_missing().entity
 }
@@ -330,6 +473,36 @@ pub impl ComponentObserverEvent for Insert with marker() {
 ///|
 pub impl ComponentObserverEvent for Insert with debug_name() {
   "insert"
+}
+
+///|
+pub impl ComponentObserverEvent for Replace with register_component_observer(
+  world,
+  component_id,
+  entity,
+  observer,
+) {
+  world.register_replace_component_observer(component_id, entity, observer)
+}
+
+///|
+pub impl ComponentObserverEvent for Replace with current_observer_entity() {
+  current_component_observer_context_abort_missing().entity
+}
+
+///|
+pub impl ComponentObserverEvent for Replace with current_observer_component_id() {
+  current_component_observer_context_abort_missing().component_id
+}
+
+///|
+pub impl ComponentObserverEvent for Replace with marker() {
+  Replace::{  }
+}
+
+///|
+pub impl ComponentObserverEvent for Replace with debug_name() {
+  "replace"
 }
 
 ///|
@@ -363,6 +536,36 @@ pub impl ComponentObserverEvent for Remove with debug_name() {
 }
 
 ///|
+pub impl ComponentObserverEvent for Despawn with register_component_observer(
+  world,
+  component_id,
+  entity,
+  observer,
+) {
+  world.register_despawn_component_observer(component_id, entity, observer)
+}
+
+///|
+pub impl ComponentObserverEvent for Despawn with current_observer_entity() {
+  current_component_observer_context_abort_missing().entity
+}
+
+///|
+pub impl ComponentObserverEvent for Despawn with current_observer_component_id() {
+  current_component_observer_context_abort_missing().component_id
+}
+
+///|
+pub impl ComponentObserverEvent for Despawn with marker() {
+  Despawn::{  }
+}
+
+///|
+pub impl ComponentObserverEvent for Despawn with debug_name() {
+  "despawn"
+}
+
+///|
 pub fn[E : ComponentObserverEvent, C : Component] World::add_component_observer(
   self : World,
   observer : (ComponentOn[E, C]) -> Unit,
@@ -375,11 +578,41 @@ pub fn[E : ComponentObserverEvent, C : Component] World::add_component_observer(
 }
 
 ///|
+pub fn[C : Component] World::add_add_component_observer(
+  self : World,
+  observer : (ComponentOn[Add, C]) -> Unit,
+) -> ObserverHandle {
+  self.add_component_observer(fn(event : ComponentOn[Add, C]) {
+    observer(event)
+  })
+}
+
+///|
+pub fn[C : Component] World::add_replace_component_observer(
+  self : World,
+  observer : (ComponentOn[Replace, C]) -> Unit,
+) -> ObserverHandle {
+  self.add_component_observer(fn(event : ComponentOn[Replace, C]) {
+    observer(event)
+  })
+}
+
+///|
 pub fn[C : Component] World::add_remove_component_observer(
   self : World,
   observer : (ComponentOn[Remove, C]) -> Unit,
 ) -> ObserverHandle {
   self.add_component_observer(fn(event : ComponentOn[Remove, C]) {
+    observer(event)
+  })
+}
+
+///|
+pub fn[C : Component] World::add_despawn_component_observer(
+  self : World,
+  observer : (ComponentOn[Despawn, C]) -> Unit,
+) -> ObserverHandle {
+  self.add_component_observer(fn(event : ComponentOn[Despawn, C]) {
     observer(event)
   })
 }
@@ -400,6 +633,30 @@ pub fn[E : ComponentObserverEvent, C : Component] World::add_entity_component_ob
 }
 
 ///|
+pub fn[C : Component] World::add_add_entity_component_observer(
+  self : World,
+  entity : @core.Entity,
+  observer : (ComponentOn[Add, C]) -> Unit,
+) -> ObserverHandle {
+  self.add_entity_component_observer(entity, fn(event : ComponentOn[Add, C]) {
+    observer(event)
+  })
+}
+
+///|
+pub fn[C : Component] World::add_replace_entity_component_observer(
+  self : World,
+  entity : @core.Entity,
+  observer : (ComponentOn[Replace, C]) -> Unit,
+) -> ObserverHandle {
+  self.add_entity_component_observer(entity, fn(
+    event : ComponentOn[Replace, C],
+  ) {
+    observer(event)
+  })
+}
+
+///|
 pub fn[C : Component] World::add_remove_entity_component_observer(
   self : World,
   entity : @core.Entity,
@@ -407,6 +664,19 @@ pub fn[C : Component] World::add_remove_entity_component_observer(
 ) -> ObserverHandle {
   self.add_entity_component_observer(entity, fn(
     event : ComponentOn[Remove, C],
+  ) {
+    observer(event)
+  })
+}
+
+///|
+pub fn[C : Component] World::add_despawn_entity_component_observer(
+  self : World,
+  entity : @core.Entity,
+  observer : (ComponentOn[Despawn, C]) -> Unit,
+) -> ObserverHandle {
+  self.add_entity_component_observer(entity, fn(
+    event : ComponentOn[Despawn, C],
   ) {
     observer(event)
   })
@@ -442,7 +712,35 @@ fn World::insert_observers_for_component(
   self : World,
   component_id : Int,
 ) -> Array[InsertObserver]? {
-  self.observer_registry.val.insert_observers.get(component_id)
+  match self.local_component_id(component_id) {
+    Some(local_component_id) =>
+      self.observer_registry.val.insert_observers.get(local_component_id)
+    None => None
+  }
+}
+
+///|
+fn World::add_observers_for_component(
+  self : World,
+  component_id : Int,
+) -> Array[AddObserver]? {
+  match self.local_component_id(component_id) {
+    Some(local_component_id) =>
+      self.observer_registry.val.add_observers.get(local_component_id)
+    None => None
+  }
+}
+
+///|
+fn World::replace_observers_for_component(
+  self : World,
+  component_id : Int,
+) -> Array[ReplaceObserver]? {
+  match self.local_component_id(component_id) {
+    Some(local_component_id) =>
+      self.observer_registry.val.replace_observers.get(local_component_id)
+    None => None
+  }
 }
 
 ///|
@@ -450,7 +748,23 @@ fn World::remove_observers_for_component(
   self : World,
   component_id : Int,
 ) -> Array[RemoveObserver]? {
-  self.observer_registry.val.remove_observers.get(component_id)
+  match self.local_component_id(component_id) {
+    Some(local_component_id) =>
+      self.observer_registry.val.remove_observers.get(local_component_id)
+    None => None
+  }
+}
+
+///|
+fn World::despawn_observers_for_component(
+  self : World,
+  component_id : Int,
+) -> Array[DespawnObserver]? {
+  match self.local_component_id(component_id) {
+    Some(local_component_id) =>
+      self.observer_registry.val.despawn_observers.get(local_component_id)
+    None => None
+  }
 }
 
 ///|
@@ -466,14 +780,17 @@ fn observer_parent_entity(
   world : World,
   entity : @core.Entity,
 ) -> @core.Entity? {
-  for component_id in world.observer_parent_lookup_component_ids {
-    match component_metadata(component_id).relationship_source {
-      Some(source) if source.observer_parent_lookup =>
-        match (source.target_entity)(world, entity) {
-          Some(parent) => return Some(parent)
-          None => ()
-        }
-      _ => ()
+  for local_component_id in world.observer_parent_lookup_component_ids {
+    guard world.component_relationship_sources.get(local_component_id)
+      is Some(source) else {
+      continue
+    }
+    if !source.observer_parent_lookup {
+      continue
+    }
+    match (source.target_entity)(world, entity) {
+      Some(parent) => return Some(parent)
+      None => ()
     }
   }
   None
@@ -533,7 +850,77 @@ fn World::run_insert_observers(
   }
   let previous_context = self.current_component_observer_context
   let previous_world = current_observer_world_ref.val
-  self.current_component_observer_context = Some({ entity, component_id })
+  let local_component_id = self.ensure_component_registered(component_id)
+  self.current_component_observer_context = Some({
+    entity,
+    component_id: local_component_id,
+  })
+  current_observer_world_ref.val = Some(self)
+  let count = pending.length()
+  for i in 0..<count {
+    let observer = pending[count - 1 - i]
+    (observer.run)(self)
+  }
+  current_observer_world_ref.val = previous_world
+  self.current_component_observer_context = previous_context
+}
+
+///|
+fn World::run_add_observers(
+  self : World,
+  entity : @core.Entity,
+  component_id : Int,
+) -> Unit {
+  guard self.add_observers_for_component(component_id) is Some(observers) else {
+    return
+  }
+  let pending : Array[AddObserver] = []
+  for observer in observers {
+    if observer.entity is Some(target_entity) && target_entity != entity {
+      continue
+    }
+    pending.push(observer)
+  }
+  let previous_context = self.current_component_observer_context
+  let previous_world = current_observer_world_ref.val
+  let local_component_id = self.ensure_component_registered(component_id)
+  self.current_component_observer_context = Some({
+    entity,
+    component_id: local_component_id,
+  })
+  current_observer_world_ref.val = Some(self)
+  let count = pending.length()
+  for i in 0..<count {
+    let observer = pending[count - 1 - i]
+    (observer.run)(self)
+  }
+  current_observer_world_ref.val = previous_world
+  self.current_component_observer_context = previous_context
+}
+
+///|
+fn World::run_replace_observers(
+  self : World,
+  entity : @core.Entity,
+  component_id : Int,
+) -> Unit {
+  guard self.replace_observers_for_component(component_id) is Some(observers) else {
+    return
+  }
+  let pending : Array[ReplaceObserver] = []
+  for observer in observers {
+    if observer.entity is Some(target_entity) && target_entity != entity {
+      continue
+    }
+    pending.push(observer)
+  }
+  let previous_context = self.current_component_observer_context
+  let previous_world = current_observer_world_ref.val
+  let local_component_id = self.ensure_component_registered(component_id)
+  self.current_component_observer_context = Some({
+    entity,
+    component_id: local_component_id,
+  })
   current_observer_world_ref.val = Some(self)
   let count = pending.length()
   for i in 0..<count {
@@ -562,7 +949,44 @@ fn World::run_remove_observers(
   }
   let previous_context = self.current_component_observer_context
   let previous_world = current_observer_world_ref.val
-  self.current_component_observer_context = Some({ entity, component_id })
+  let local_component_id = self.ensure_component_registered(component_id)
+  self.current_component_observer_context = Some({
+    entity,
+    component_id: local_component_id,
+  })
+  current_observer_world_ref.val = Some(self)
+  let count = pending.length()
+  for i in 0..<count {
+    let observer = pending[count - 1 - i]
+    (observer.run)(self)
+  }
+  current_observer_world_ref.val = previous_world
+  self.current_component_observer_context = previous_context
+}
+
+///|
+fn World::run_despawn_observers(
+  self : World,
+  entity : @core.Entity,
+  component_id : Int,
+) -> Unit {
+  guard self.despawn_observers_for_component(component_id) is Some(observers) else {
+    return
+  }
+  let pending : Array[DespawnObserver] = []
+  for observer in observers {
+    if observer.entity is Some(target_entity) && target_entity != entity {
+      continue
+    }
+    pending.push(observer)
+  }
+  let previous_context = self.current_component_observer_context
+  let previous_world = current_observer_world_ref.val
+  let local_component_id = self.ensure_component_registered(component_id)
+  self.current_component_observer_context = Some({
+    entity,
+    component_id: local_component_id,
+  })
   current_observer_world_ref.val = Some(self)
   let count = pending.length()
   for i in 0..<count {

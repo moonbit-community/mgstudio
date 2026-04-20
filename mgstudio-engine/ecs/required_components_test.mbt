@@ -177,6 +177,23 @@ test "ecs: get_required_components returns recursive ids" {
 }
 
 ///|
+test "ecs: get_required_by_components returns transitive requirees" {
+  let world = World::new()
+
+  try! world.register_required_components(required_a_key, required_b_key)
+  try! world.register_required_components(required_b_key, required_c_key)
+
+  let required_by_b = world.get_required_by_components(required_b_key).unwrap()
+  debug_inspect(required_by_b.len(), content="1")
+  debug_inspect(required_by_b.contains(required_a_key.id()), content="true")
+
+  let required_by_c = world.get_required_by_components(required_c_key).unwrap()
+  debug_inspect(required_by_c.len(), content="2")
+  debug_inspect(required_by_c.contains(required_a_key.id()), content="true")
+  debug_inspect(required_by_c.contains(required_b_key.id()), content="true")
+}
+
+///|
 test "ecs: try register required components reports duplicate cycle and archetype usage" {
   let duplicate_world = World::new()
   try! duplicate_world.register_required_components(
@@ -193,8 +210,14 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   guard duplicate_pair is Some((a0, b0)) else {
     fail("expected duplicate registration error")
   }
+  let duplicate_world_a = duplicate_world
+    .component_id_by_key(required_a_key)
+    .unwrap_or(-1)
+  let duplicate_world_b = duplicate_world
+    .component_id_by_key(required_b_key)
+    .unwrap_or(-1)
   debug_inspect(
-    a0 == required_a_key.id() && b0 == required_b_key.id(),
+    a0 == duplicate_world_a && b0 == duplicate_world_b,
     content="true",
   )
 
@@ -213,10 +236,13 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   guard cycle_pair is Some((a1, b1)) else {
     fail("expected cyclic requirement error")
   }
-  debug_inspect(
-    a1 == required_b_key.id() && b1 == required_a_key.id(),
-    content="true",
-  )
+  let cycle_world_b = cycle_world
+    .component_id_by_key(required_b_key)
+    .unwrap_or(-1)
+  let cycle_world_a = cycle_world
+    .component_id_by_key(required_a_key)
+    .unwrap_or(-1)
+  debug_inspect(a1 == cycle_world_b && b1 == cycle_world_a, content="true")
 
   let archetype_world = World::new()
   let entity = archetype_world.spawn()
@@ -233,5 +259,8 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   guard archetype_component_id is Some(component_id) else {
     fail("expected archetype exists error")
   }
-  debug_inspect(component_id == required_a_key.id(), content="true")
+  let archetype_world_a = archetype_world
+    .component_id_by_key(required_a_key)
+    .unwrap_or(-1)
+  debug_inspect(component_id == archetype_world_a, content="true")
 }

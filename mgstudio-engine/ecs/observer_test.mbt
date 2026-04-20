@@ -43,6 +43,37 @@ pub impl Component for ObserverParentLink with component() {
 }
 
 ///|
+struct ObserverParentLinkStable {
+  parent : @core.Entity
+} derive(Eq, Debug)
+
+///|
+let observer_parent_link_stable_key : ComponentKey[ObserverParentLinkStable] = register_component(
+  debug_name="tests.ecs.observer.parent_link_stable",
+)
+
+///|
+pub impl Component for ObserverParentLinkStable with component() {
+  observer_parent_link_stable_key
+}
+
+///|
+fn observer_parent_link_stable_target_entity(
+  world : World,
+  entity : @core.Entity,
+) -> @core.Entity? {
+  match
+    (try world.get_by_key(entity, observer_parent_link_stable_key) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(link) => Some(link.parent)
+    None => None
+  }
+}
+
+///|
 fn init {
   ignore(
     component_metadata_builder(observer_parent_link_key).relationship_source(
@@ -249,6 +280,86 @@ test "ecs observer: world add_component_observer fires on remove" {
 }
 
 ///|
+test "ecs observer: add observers only fire on first insertion" {
+  let world = World::new()
+  let entity = world.spawn()
+  let hits : Ref[Int] = Ref::new(0)
+
+  ignore(
+    world.add_add_component_observer(fn(
+      _event : ComponentOn[Add, ObserverMarker],
+    ) {
+      hits.val = hits.val + 1
+    }),
+  )
+
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 1,
+  })
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 2,
+  })
+  debug_inspect(hits.val, content="1")
+}
+
+///|
+test "ecs observer: replace observers fire on replace and remove paths" {
+  let world = World::new()
+  let entity = world.spawn()
+  let hits : Ref[Int] = Ref::new(0)
+
+  ignore(
+    world.add_replace_component_observer(fn(
+      _event : ComponentOn[Replace, ObserverMarker],
+    ) {
+      hits.val = hits.val + 1
+    }),
+  )
+
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 1,
+  })
+  ignore(
+    try! world.update_by_key(entity, observer_marker_key, fn(marker) {
+      ObserverMarker::{ value: marker.value + 1 }
+    }),
+  )
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 3,
+  })
+  ignore(try! world.remove_by_key(entity, observer_marker_key))
+
+  debug_inspect(hits.val, content="3")
+}
+
+///|
+test "ecs observer: despawn observers fire only during despawn" {
+  let world = World::new()
+  let keep_entity = world.spawn()
+  let despawn_entity = world.spawn()
+  let hits : Ref[Int] = Ref::new(0)
+
+  ignore(
+    world.add_despawn_component_observer(fn(
+      _event : ComponentOn[Despawn, ObserverMarker],
+    ) {
+      hits.val = hits.val + 1
+    }),
+  )
+
+  try! world.set_by_key(keep_entity, observer_marker_key, ObserverMarker::{
+    value: 1,
+  })
+  try! world.set_by_key(despawn_entity, observer_marker_key, ObserverMarker::{
+    value: 2,
+  })
+  ignore(try! world.remove_by_key(keep_entity, observer_marker_key))
+  try! world.despawn(despawn_entity)
+
+  debug_inspect(hits.val, content="1")
+}
+
+///|
 test "ecs observer: world add_observer and add_entity_observer handle custom events" {
   let world = World::new()
   let entity0 = world.spawn()
@@ -337,6 +448,66 @@ test "ecs observer: trigger propagation can be halted early" {
   world.trigger(ObserverAttack::{ damage: 4, entity: child })
 
   debug_inspect(order, content="[\"child\"]")
+}
+
+///|
+test "ecs observer: parent lookup accessor is captured per-world registration" {
+  let world0 = World::new()
+  let parent0 = world0.spawn()
+  let child0 = world0.spawn()
+  let world0_hits : Ref[Int] = Ref::new(0)
+
+  ignore(
+    component_metadata_builder(observer_parent_link_stable_key).relationship_source(
+      observer_parent_link_stable_target_entity,
+      observer_parent_lookup=true,
+    ),
+  )
+  try! world0.set_by_key(child0, observer_parent_link_stable_key, ObserverParentLinkStable::{
+    parent: parent0,
+  })
+
+  // Mutate global metadata after world0 registered the component.
+  // world0 must keep using the already-installed world-local accessor.
+  ignore(
+    component_metadata_builder(observer_parent_link_stable_key).relationship_source(
+      fn(_world, _entity) { None },
+      observer_parent_lookup=true,
+    ),
+  )
+
+  let world1 = World::new()
+  let parent1 = world1.spawn()
+  let child1 = world1.spawn()
+  let world1_hits : Ref[Int] = Ref::new(0)
+  try! world1.set_by_key(child1, observer_parent_link_stable_key, ObserverParentLinkStable::{
+    parent: parent1,
+  })
+
+  ignore(
+    world0.add_entity_observer(parent0, fn(_event : On[ObserverAttack]) {
+      world0_hits.val = world0_hits.val + 1
+    }),
+  )
+  ignore(
+    world1.add_entity_observer(parent1, fn(_event : On[ObserverAttack]) {
+      world1_hits.val = world1_hits.val + 1
+    }),
+  )
+
+  world0.trigger(ObserverAttack::{ damage: 10, entity: child0 })
+  world1.trigger(ObserverAttack::{ damage: 10, entity: child1 })
+
+  debug_inspect(world0_hits.val, content="1")
+  debug_inspect(world1_hits.val, content="0")
+
+  // Restore metadata so test ordering cannot leak behavior.
+  ignore(
+    component_metadata_builder(observer_parent_link_stable_key).relationship_source(
+      observer_parent_link_stable_target_entity,
+      observer_parent_lookup=true,
+    ),
+  )
 }
 
 ///|

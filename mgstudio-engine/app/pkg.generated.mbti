@@ -953,8 +953,9 @@ pub(all) enum ScheduleStage {
   Custom(String)
 } derive(Eq, @debug.Debug)
 
-pub struct Single[D, _] {
+pub struct Single[D, F] {
   value : D
+  query : @ecs.Query[D, F]
 }
 pub fn[D, F] Single::get(Self[D, F]) -> D
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[D, F]

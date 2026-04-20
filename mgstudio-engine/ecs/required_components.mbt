@@ -31,6 +31,7 @@ struct RequiredComponentsState {
   direct_order : Array[Int]
   direct : Map[Int, RequiredComponentRegistration]
   mut all : Array[RequiredComponentRegistration]
+  mut required_by : Array[Int]
 }
 
 ///|
@@ -68,23 +69,23 @@ pub fn RequiredComponents::contains(
 
 ///|
 fn required_components_state_new() -> RequiredComponentsState {
-  { direct_order: [], direct: {}, all: [] }
+  { direct_order: [], direct: {}, all: [], required_by: [] }
 }
 
 ///|
 fn World::required_components_state(
   self : World,
-  component_id : Int,
+  component_local_id : Int,
 ) -> Ref[RequiredComponentsState]? {
-  self.required_components.get(component_id)
+  self.required_components.get(component_local_id)
 }
 
 ///|
 fn World::ensure_required_components_state(
   self : World,
-  component_id : Int,
+  component_local_id : Int,
 ) -> Ref[RequiredComponentsState] {
-  self.required_components.get_or_init(component_id, fn() {
+  self.required_components.get_or_init(component_local_id, fn() {
     Ref::new(required_components_state_new())
   })
 }
@@ -138,6 +139,16 @@ fn required_components_index_of(
 }
 
 ///|
+fn required_components_push_unique(
+  entries : Array[Int],
+  component_id : Int,
+) -> Unit {
+  if !entries.contains(component_id) {
+    entries.push(component_id)
+  }
+}
+
+///|
 fn World::rebuild_required_components_for(
   self : World,
   component_id : Int,
@@ -187,6 +198,30 @@ fn World::rebuild_required_components_for(
 }
 
 ///|
+fn World::rebuild_required_by_components(self : World) -> Unit {
+  let local_component_ids : Array[Int] = []
+  for entry in self.required_components.iter() {
+    local_component_ids.push(entry.0)
+  }
+  for local_component_id in local_component_ids {
+    self.ensure_required_components_state(local_component_id).val.required_by = []
+  }
+  for entry in self.required_components.iter() {
+    let requiree_local_id = entry.0
+    let state_ref = entry.1
+    for required in state_ref.val.all {
+      let required_state_ref = self.ensure_required_components_state(
+        required.component_id,
+      )
+      required_components_push_unique(
+        required_state_ref.val.required_by,
+        requiree_local_id,
+      )
+    }
+  }
+}
+
+///|
 fn World::rebuild_all_required_components(self : World) -> Unit {
   let rebuilt : Map[Int, Bool] = {}
   let component_ids : Array[Int] = []
@@ -196,6 +231,7 @@ fn World::rebuild_all_required_components(self : World) -> Unit {
   for component_id in component_ids {
     self.rebuild_required_components_for(component_id, rebuilt)
   }
+  self.rebuild_required_by_components()
 }
 
 ///|
@@ -205,30 +241,33 @@ fn World::register_required_components_by_keys(
   required : Int,
   init_value : () -> ErasedValue,
 ) -> Unit raise RequiredComponentsError {
-  if self.component_has_been_used(requiree) {
-    raise ArchetypeExists(requiree)
+  let requiree_local_id = self.ensure_component_registered(requiree)
+  if self.component_has_been_used(requiree_local_id) {
+    raise ArchetypeExists(requiree_local_id)
   }
 
-  let state_ref = self.ensure_required_components_state(requiree)
-  if state_ref.val.direct.get(required) is Some(_) {
-    raise DuplicateRegistration(requiree, required)
+  let required_local_id = self.ensure_component_registered(required)
+  let state_ref = self.ensure_required_components_state(requiree_local_id)
+  if state_ref.val.direct.get(required_local_id) is Some(_) {
+    raise DuplicateRegistration(requiree_local_id, required_local_id)
   }
 
-  if requiree == required {
-    raise CyclicRequirement(requiree, required)
+  if requiree_local_id == required_local_id {
+    raise CyclicRequirement(requiree_local_id, required_local_id)
   }
 
-  if self.required_components_state(required) is Some(required_state_ref) &&
+  if self.required_components_state(required_local_id)
+    is Some(required_state_ref) &&
     required_components_contains_registration(
       required_state_ref.val.all,
-      requiree,
+      requiree_local_id,
     ) {
-    raise CyclicRequirement(requiree, required)
+    raise CyclicRequirement(requiree_local_id, required_local_id)
   }
 
-  state_ref.val.direct_order.push(required)
-  state_ref.val.direct.set(required, {
-    component_id: required,
+  state_ref.val.direct_order.push(required_local_id)
+  state_ref.val.direct.set(required_local_id, {
+    component_id: required_local_id,
     init: init_value,
     depth: 1,
   })
@@ -300,13 +339,52 @@ pub fn[T] World::get_required_components(
 ///|
 pub fn World::get_required_components_by_id(
   self : World,
-  component_id : Int,
+  component_definition_id : Int,
 ) -> RequiredComponents? {
-  match self.required_components_state(component_id) {
+  guard self.local_component_id(component_definition_id)
+    is Some(component_local_id) else {
+    return None
+  }
+  match self.required_components_state(component_local_id) {
     Some(state_ref) => {
       let component_ids : Array[Int] = []
       for entry in state_ref.val.all {
-        component_ids.push(entry.component_id)
+        if self.definition_component_id(entry.component_id)
+          is Some(definition_id) {
+          component_ids.push(definition_id)
+        }
+      }
+      Some(RequiredComponents::{ component_ids, })
+    }
+    None => None
+  }
+}
+
+///|
+pub fn[T] World::get_required_by_components(
+  self : World,
+  required_key : ComponentKey[T],
+) -> RequiredComponents? {
+  self.get_required_by_components_by_id(required_key.id())
+}
+
+///|
+pub fn World::get_required_by_components_by_id(
+  self : World,
+  component_definition_id : Int,
+) -> RequiredComponents? {
+  guard self.local_component_id(component_definition_id)
+    is Some(component_local_id) else {
+    return None
+  }
+  match self.required_components_state(component_local_id) {
+    Some(state_ref) => {
+      let component_ids : Array[Int] = []
+      for requiree_local_id in state_ref.val.required_by {
+        if self.definition_component_id(requiree_local_id)
+          is Some(definition_id) {
+          component_ids.push(definition_id)
+        }
       }
       Some(RequiredComponents::{ component_ids, })
     }
@@ -324,12 +402,18 @@ fn World::insert_component_with_requirements(
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
+  let structural_changed_ref = Ref::new(false)
   self.insert_component_with_requirements_unchecked(
     entity,
     component_id,
     payload,
+    structural_changed_ref,
     caller~,
   )
+  if structural_changed_ref.val {
+    self.refresh_entity_archetype(entity)
+    self.mark_structure_changed()
+  }
   self.end_deferred_hook_command_scope(outermost)
 }
 
@@ -337,45 +421,58 @@ fn World::insert_component_with_requirements(
 fn World::insert_component_with_requirements_unchecked(
   self : World,
   entity : @core.Entity,
-  component_id : Int,
+  component_definition_id : Int,
   payload : ErasedValue,
+  structural_changed_ref : Ref[Bool],
   caller? : String? = None,
 ) -> Unit {
-  let store_ref = self.ensure_component_store(component_id)
+  let component_local_id = self.ensure_component_registered(
+    component_definition_id,
+  )
+  let store_ref = self.ensure_component_store(component_definition_id)
   let replacing = store_ref.val.get(entity) is Some(_)
   if replacing {
-    self.run_component_replace_hooks(entity, component_id, caller~)
+    self.run_component_replace_hooks(entity, component_definition_id, caller~)
+    self.run_replace_observers(entity, component_definition_id)
   }
   store_ref.val.insert(entity, payload)
-  self.mark_component_used(component_id)
-  self.record_component_changed(entity, component_id)
+  self.mark_component_used(component_local_id)
+  self.record_component_changed(entity, component_definition_id)
 
   if !replacing {
-    self.record_component_added(entity, component_id)
-    self.ensure_added_component_messages(component_id).val.send(
+    self.entity_add_component_local_id(entity, component_local_id)
+    structural_changed_ref.val = true
+    self.record_component_added(entity, component_definition_id)
+    self.ensure_added_component_messages(component_definition_id).val.send(
       component_write_sequence(self),
       entity,
     )
-    self.run_component_add_hooks(entity, component_id, caller~)
+    self.run_component_add_hooks(entity, component_definition_id, caller~)
+    self.run_add_observers(entity, component_definition_id)
   }
-  self.run_component_insert_hooks(entity, component_id, caller~)
-  self.run_insert_observers(entity, component_id)
+  self.run_component_insert_hooks(entity, component_definition_id, caller~)
+  self.run_insert_observers(entity, component_definition_id)
   if replacing {
     return
   }
 
-  guard self.required_components_state(component_id) is Some(state_ref) else {
+  guard self.required_components_state(component_local_id) is Some(state_ref) else {
     return
   }
   for entry in state_ref.val.all {
-    let required_store_ref = self.ensure_component_store(entry.component_id)
+    guard self.definition_component_id(entry.component_id)
+      is Some(required_definition_id) else {
+      continue
+    }
+    let required_store_ref = self.ensure_component_store(required_definition_id)
     if required_store_ref.val.contains(entity) {
       continue
     }
     self.insert_component_with_requirements_unchecked(
       entity,
-      entry.component_id,
+      required_definition_id,
       (entry.init)(),
+      structural_changed_ref,
       caller~,
     )
   }

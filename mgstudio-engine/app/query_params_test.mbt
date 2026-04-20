@@ -91,6 +91,18 @@ pub impl @ecs.QueryData for QueryGenericData with mentions_component(
 }
 
 ///|
+pub impl @ecs.QueryData for QueryGenericData with matches_component_set(
+  set_contains_id,
+) {
+  set_contains_id(query_position_key.id())
+}
+
+///|
+pub impl @ecs.QueryData for QueryGenericData with requires_entity_check() {
+  false
+}
+
+///|
 pub impl @ecs.QueryData for QueryGenericData with iteration_anchor_component() {
   Some(query_position_key.id())
 }
@@ -123,11 +135,32 @@ pub impl @ecs.QueryFilter for QueryMarkerFilter with mentions_component(
 }
 
 ///|
+pub impl @ecs.QueryFilter for QueryMarkerFilter with matches_component_set(
+  self,
+  set_contains_id,
+) {
+  ignore(self)
+  set_contains_id(query_marker_key.id())
+}
+
+///|
+pub impl @ecs.QueryFilter for QueryMarkerFilter with requires_entity_check(self) {
+  ignore(self)
+  false
+}
+
+///|
 pub impl @ecs.QueryFilter for QueryMarkerFilter with iteration_anchor_component(
   self,
 ) {
   ignore(self)
   Some(query_marker_key.id())
+}
+
+///|
+pub impl @ecs.QueryFilter for QueryMarkerFilter with depends_on_sequence(self) {
+  ignore(self)
+  false
 }
 
 ///|
@@ -249,7 +282,7 @@ test "app: optional query system param preserves some and none branches" {
   app = app.run_once()
 
   debug_inspect(counts, content="[2]")
-  debug_inspect(seen, content="[(0, true), (1, false)]")
+  debug_inspect(seen, content="[(1, false), (0, true)]")
   debug_inspect(
     try! app.world().get_by_key(e0, query_velocity_key),
     content="Some({ dx: 3, dy: 6 })",

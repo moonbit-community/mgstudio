@@ -130,6 +130,18 @@ pub impl QueryData for NestedVelocityData with mentions_component(component_id) 
 }
 
 ///|
+pub impl QueryData for NestedVelocityData with matches_component_set(
+  set_contains_id,
+) {
+  set_contains_id(generic_velocity_key.id())
+}
+
+///|
+pub impl QueryData for NestedVelocityData with requires_entity_check() {
+  false
+}
+
+///|
 pub impl QueryData for NestedVelocityData with iteration_anchor_component() {
   Some(generic_velocity_key.id())
 }
@@ -165,6 +177,19 @@ pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with ment
   component_id,
 ) {
   A::mentions_component(component_id) || B::mentions_component(component_id)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with matches_component_set(
+  set_contains_id,
+) {
+  A::matches_component_set(set_contains_id) &&
+  B::matches_component_set(set_contains_id)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with requires_entity_check() {
+  A::requires_entity_check() || B::requires_entity_check()
 }
 
 ///|
@@ -220,6 +245,18 @@ pub impl QueryData for ReadOnlyCustomQuery with mentions_component(component_id)
 }
 
 ///|
+pub impl QueryData for ReadOnlyCustomQuery with matches_component_set(
+  set_contains_id,
+) {
+  set_contains_id(generic_position_key.id())
+}
+
+///|
+pub impl QueryData for ReadOnlyCustomQuery with requires_entity_check() {
+  false
+}
+
+///|
 pub impl QueryData for ReadOnlyCustomQuery with iteration_anchor_component() {
   Some(generic_position_key.id())
 }
@@ -256,9 +293,30 @@ pub impl QueryFilter for GenericTagFilter with mentions_component(
 }
 
 ///|
+pub impl QueryFilter for GenericTagFilter with matches_component_set(
+  self,
+  set_contains_id,
+) {
+  ignore(self)
+  set_contains_id(generic_tag_key.id())
+}
+
+///|
+pub impl QueryFilter for GenericTagFilter with requires_entity_check(self) {
+  ignore(self)
+  false
+}
+
+///|
 pub impl QueryFilter for GenericTagFilter with iteration_anchor_component(self) {
   ignore(self)
   Some(generic_tag_key.id())
+}
+
+///|
+pub impl QueryFilter for GenericTagFilter with depends_on_sequence(self) {
+  ignore(self)
+  false
 }
 
 ///|
@@ -623,6 +681,117 @@ test "ecs query: added filter only matches entities inserted in the current sequ
   ctx2.set(@core.SystemSequence::new(2, 3))
   world.set_sequence_context(ctx2)
   debug_inspect(second_added_query.count(), content="0")
+}
+
+///|
+test "ecs query_state: default query filter cache invalidates on resource updates" {
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(entity, ecs_key_disabled, Disabled::new())
+
+  let state : QueryState[Comp[Position], All] = world.query()
+  debug_inspect(state.count(world), content="0")
+
+  world.insert_resource(
+    ecs_key_default_query_filters,
+    DefaultQueryFilters::empty(),
+  )
+  debug_inspect(state.count(world), content="1")
+
+  world.insert_resource(
+    ecs_key_default_query_filters,
+    DefaultQueryFilters::empty().register_disabling_component(
+      ecs_key_disabled.id(),
+    ),
+  )
+  debug_inspect(state.count(world), content="0")
+}
+
+///|
+test "ecs query: filter sequence dependency flags match filter semantics" {
+  debug_inspect(QueryFilter::depends_on_sequence(All::new()), content="false")
+  debug_inspect(
+    QueryFilter::depends_on_sequence(With::new(position_key)),
+    content="false",
+  )
+  debug_inspect(
+    QueryFilter::depends_on_sequence(Added::new(position_key)),
+    content="true",
+  )
+  debug_inspect(
+    QueryFilter::depends_on_sequence(
+      (With::new(position_key), Changed::new(position_key)),
+    ),
+    content="true",
+  )
+  debug_inspect(
+    QueryFilter::depends_on_sequence(
+      Or::new((With::new(position_key), Without::new(velocity_key))),
+    ),
+    content="false",
+  )
+}
+
+///|
+test "ecs query cache: archetype fast path keeps entity cache lazy" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+
+  let query : Query[Comp[Position], All] = query_filtered_with_cache(
+    world,
+    All::new(),
+    QueryCache::new(),
+  )
+
+  debug_inspect(query.count(), content="2")
+  debug_inspect(
+    query.cache_snapshot().cached_matching_entities_valid,
+    content="false",
+  )
+
+  let seen : Array[Int] = []
+  try! query.view(fn(entity, _position) { seen.push(entity.id) })
+  seen.sort()
+  debug_inspect(seen, content="[0, 1]")
+  debug_inspect(
+    query.cache_snapshot().cached_matching_entities_valid,
+    content="false",
+  )
+
+  debug_inspect(comp_option_value(try! query.single()), content="None")
+  debug_inspect(
+    query.cache_snapshot().cached_matching_entities_valid,
+    content="false",
+  )
+}
+
+///|
+test "ecs query cache: entity-check path materializes entity cache" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+
+  let sequence_context = @core.SystemSequenceContext::new()
+  sequence_context.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(sequence_context)
+
+  let added_query : Query[Comp[Position], Added[Position]] = query_filtered_with_cache(
+    world,
+    Added::new(position_key),
+    QueryCache::new(),
+  )
+
+  debug_inspect(added_query.count(), content="2")
+  debug_inspect(
+    added_query.cache_snapshot().cached_matching_entities_valid,
+    content="true",
+  )
 }
 
 ///|

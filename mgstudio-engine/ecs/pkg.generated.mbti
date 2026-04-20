@@ -13,7 +13,11 @@ pub fn[T] component_key_from_id(Int, debug_name? : String) -> ComponentKey[T]
 
 pub fn[T] component_metadata_builder(ComponentKey[T]) -> ComponentMetadataBuilder[T]
 
+pub fn[C : Component] current_add_observer() -> ComponentOn[Add, C]
+
 pub fn[E : ComponentObserverEvent, C : Component] current_component_observer() -> ComponentOn[E, C]
+
+pub fn[C : Component] current_despawn_observer() -> ComponentOn[Despawn, C]
 
 pub fn[C : Component] current_insert_observer() -> ComponentOn[Insert, C]
 
@@ -24,6 +28,8 @@ pub fn current_observer_world() -> World?
 pub fn current_observer_world_abort_missing() -> World
 
 pub fn[C : Component] current_remove_observer() -> ComponentOn[Remove, C]
+
+pub fn[C : Component] current_replace_observer() -> ComponentOn[Replace, C]
 
 pub let ecs_key_default_query_filters : ResourceKey[DefaultQueryFilters]
 
@@ -44,6 +50,8 @@ pub fn[T] query_data_component_matches(World, @core.Entity, ComponentKey[T]) -> 
 pub fn[T] query_data_component_optional(World, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 
 pub fn[D, F] query_filtered(World, F) -> Query[D, F]
+
+pub fn[D, F] query_filtered_with_cache(World, F, QueryCache) -> Query[D, F]
 
 pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
 
@@ -87,6 +95,10 @@ pub fn SystemParamValidationError::is_skipped(Self) -> Bool
 pub fn SystemParamValidationError::message(Self) -> String
 
 // Types and methods
+pub struct Add {
+}
+pub impl ComponentObserverEvent for Add
+
 pub struct Added[T] {
   key : ComponentKey[T]
 }
@@ -208,6 +220,8 @@ pub fn[T] ComponentMetadataBuilder::relationship_source(Self[T], (World, @core.E
 pub fn[T] ComponentMetadataBuilder::relationship_target(Self[T], linked_spawn? : Bool, linked_entities? : ((T) -> Array[@core.Entity])?) -> Self[T]
 pub fn[T, R : Default] ComponentMetadataBuilder::require_default(Self[T], ComponentKey[R]) -> Self[T]
 pub fn[T, R] ComponentMetadataBuilder::require_with(Self[T], ComponentKey[R], () -> R) -> Self[T]
+pub fn[T] ComponentMetadataBuilder::storage_sparse_set(Self[T]) -> Self[T]
+pub fn[T] ComponentMetadataBuilder::storage_table(Self[T]) -> Self[T]
 
 type ComponentObserverContext
 
@@ -230,6 +244,25 @@ pub(all) struct ComponentRelationshipTargetMetadata {
 }
 
 type ComponentSequenceTable
+
+pub enum ComponentStorageType {
+  Table
+  SparseSet
+} derive(Eq)
+
+pub struct ComponentsQueuedRegistrator {
+  world : World
+}
+pub fn[T : Component] ComponentsQueuedRegistrator::register_component(Self, key? : ComponentKey[T]) -> Int
+pub fn[T] ComponentsQueuedRegistrator::register_component_by_key(Self, ComponentKey[T]) -> Int
+
+pub struct ComponentsRegistrator {
+  world : World
+}
+pub fn ComponentsRegistrator::apply_queued_registrations(Self) -> Unit
+pub fn ComponentsRegistrator::as_queued(Self) -> ComponentsQueuedRegistrator
+pub fn[T : Component] ComponentsRegistrator::register_component(Self, key? : ComponentKey[T]) -> Int
+pub fn[T] ComponentsRegistrator::register_component_by_key(Self, ComponentKey[T]) -> Int
 
 pub struct DefaultQueryFilters {
   disabling_component_ids : Array[Int]
@@ -281,6 +314,10 @@ pub struct DeferredWorldCommands {
   world : World
 }
 pub fn DeferredWorldCommands::entity(Self, @core.Entity) -> DeferredEntityCommands
+
+pub struct Despawn {
+}
+pub impl ComponentObserverEvent for Despawn
 
 pub struct Disabled {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
@@ -482,22 +519,52 @@ pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F]
 pub struct Query[_, F] {
   world : World
   filter : F
+  mut cache : QueryCache?
 }
-pub fn[D : QueryData, F] Query::contiguous_iter(Self[D, F]) -> QueryContiguousIter[D, F]?
+pub fn[D, F] Query::cache_snapshot(Self[D, F]) -> QueryCache
+pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(Self[D, F]) -> QueryContiguousIter[D, F]?
 pub fn[D : QueryData, F : QueryFilter] Query::count(Self[D, F]) -> Int
 pub fn[D : QueryData, F : QueryFilter] Query::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::get(Self[D, F], @core.Entity) -> D? raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::iter_combinations(Self[D, F]) -> QueryCombinations[D, F]
-pub fn[D, F] Query::iter_many(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
-pub fn[D, F] Query::iter_many_unique(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F] raise EcsError
-pub fn[D, F] Query::iter_many_unique_unsafe(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
+pub fn[D : QueryData, F : QueryFilter] Query::iter_many(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
+pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F] raise EcsError
+pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique_unsafe(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
 pub fn[D, F] Query::par_iter(Self[D, F]) -> QueryParallel[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::require_single(Self[D, F]) -> D raise
 pub fn[D : QueryData, F : QueryFilter] Query::single(Self[D, F]) -> D? raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::view(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 
+pub struct QueryCache {
+  mut cached_candidate_archetypes : Array[Int]
+  mut cached_anchor_component_id : Int?
+  mut cached_filter_anchor_component_id : Int?
+  mut cached_candidate_anchor_component_id : Int?
+  mut cached_candidate_archetype_generation : Int
+  mut cached_candidate_generation : Int
+  mut cached_matching_entities : Array[@core.Entity]
+  mut cached_matching_archetypes : Array[Int]
+  mut cached_matching_archetype_generation : Int
+  mut cached_matching_anchor_component_id : Int?
+  mut cached_matching_filter_anchor_component_id : Int?
+  mut cached_matching_candidate_anchor_component_id : Int?
+  mut cached_matching_candidate_generation : Int
+  mut cached_matching_generation : Int
+  mut cached_matching_sequence : Int
+  mut cached_matching_entities_valid : Bool
+  mut cached_default_filter_component_ids : Array[Int]
+  mut cached_default_filter_local_component_ids : Array[Int]
+  mut cached_default_filters_world_id : Int
+  mut cached_dependency_component_ids : Array[Int]
+  mut cached_dependency_world_id : Int
+  mut cached_dependency_component_registration_generation : Int
+} derive(ToJson, @json.FromJson)
+pub fn QueryCache::new() -> Self
+
 pub struct QueryCombinations[D, F] {
   query : Query[D, F]
+  default_filter_component_ids : Array[Int]
+  entities_pre_matched : Bool
   entities : Array[@core.Entity]
   mut left_index : Int
   mut right_index : Int
@@ -506,6 +573,8 @@ pub fn[D : QueryData, F : QueryFilter] QueryCombinations::fetch_next(Self[D, F])
 
 pub struct QueryContiguousIter[D, F] {
   query : Query[D, F]
+  default_filter_component_ids : Array[Int]
+  entities_pre_matched : Bool
   entities : Array[@core.Entity]
   mut index : Int
 }
@@ -521,6 +590,8 @@ pub fn QueryDataAccess::new() -> Self
 
 pub struct QueryMany[D, F] {
   query : Query[D, F]
+  default_filter_component_ids : Array[Int]
+  entities_pre_matched : Bool
   entities : Array[@core.Entity]
   mut index : Int
 }
@@ -535,13 +606,34 @@ pub fn[D : QueryData, F : QueryFilter] QueryParallel::for_each(Self[D, F], (@cor
 
 pub struct QueryState[_, F] {
   filter : F
+  mut cached_candidate_archetypes : Array[Int]
+  mut cached_anchor_component_id : Int?
+  mut cached_filter_anchor_component_id : Int?
+  mut cached_candidate_anchor_component_id : Int?
+  mut cached_candidate_archetype_generation : Int
+  mut cached_candidate_generation : Int
+  mut cached_matching_entities : Array[@core.Entity]
+  mut cached_matching_archetypes : Array[Int]
+  mut cached_matching_archetype_generation : Int
+  mut cached_matching_anchor_component_id : Int?
+  mut cached_matching_filter_anchor_component_id : Int?
+  mut cached_matching_candidate_anchor_component_id : Int?
+  mut cached_matching_candidate_generation : Int
+  mut cached_matching_generation : Int
+  mut cached_matching_sequence : Int
+  mut cached_default_filter_component_ids : Array[Int]
+  mut cached_default_filter_local_component_ids : Array[Int]
+  mut cached_default_filters_world_id : Int
+  mut cached_dependency_component_ids : Array[Int]
+  mut cached_dependency_world_id : Int
+  mut cached_dependency_component_registration_generation : Int
 }
-pub fn[D : QueryData, F] QueryState::contiguous_iter(Self[D, F], World) -> QueryContiguousIter[D, F]?
+pub fn[D : QueryData, F : QueryFilter] QueryState::contiguous_iter(Self[D, F], World) -> QueryContiguousIter[D, F]?
 pub fn[D : QueryData, F : QueryFilter] QueryState::count(Self[D, F], World) -> Int
 pub fn[D : QueryData, F : QueryFilter] QueryState::get(Self[D, F], World, @core.Entity) -> D? raise EcsError
 pub fn[D : QueryData, F : QueryFilter] QueryState::iter(Self[D, F], World) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryState::iter_combinations(Self[D, F], World) -> QueryCombinations[D, F]
-pub fn[D, F] QueryState::iter_many(Self[D, F], World, Array[@core.Entity]) -> QueryMany[D, F]
+pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(Self[D, F], World, Array[@core.Entity]) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryState::require_single(Self[D, F], World) -> D raise
 pub fn[D : QueryData, F : QueryFilter] QueryState::single(Self[D, F], World) -> D? raise EcsError
 
@@ -556,6 +648,10 @@ pub fn[T] RemovedComponents::clear(Self[T]) -> Unit
 pub fn[T] RemovedComponents::is_empty(Self[T]) -> Bool
 pub fn[T] RemovedComponents::len(Self[T]) -> Int
 pub fn[T] RemovedComponents::read(Self[T]) -> Array[@core.Entity]
+
+pub struct Replace {
+}
+pub impl ComponentObserverEvent for Replace
 
 pub struct RequiredComponents {
   component_ids : Array[Int]
@@ -605,9 +701,12 @@ pub impl[T] QueryFilter for Without[T]
 
 pub struct World {
   world_id : Int
-  mut next_local_component_id : Int
-  component_local_ids_by_definition_id : Map[Int, Int]
-  component_definition_ids_by_local_id : Map[Int, Int]
+  mut structural_generation : Int
+  mut entity_lifecycle_generation : Int
+  mut component_registration_generation : Int
+  component_ids : WorldComponentIds
+  components : WorldComponents
+  component_relationship_sources : Map[Int, ComponentRelationshipSourceMetadata]
   observer_parent_lookup_component_ids : Array[Int]
   observer_registry : @ref.Ref[WorldObserverRegistry]
   mut current_component_observer_context : ComponentObserverContext?
@@ -615,7 +714,25 @@ pub struct World {
   entities : @core.Entities
   mut sequence : Int
   mut system_context : @core.SystemSequenceContext
-  component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
+  table_component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
+  sparse_component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
+  component_store_cache_by_definition_id : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
+  mut next_archetype_id : Int
+  archetype_ids_by_signature : Map[String, Int]
+  archetype_component_local_ids : Map[Int, Array[Int]]
+  archetype_component_local_id_presence : Map[Int, Map[Int, Bool]]
+  archetype_component_definition_ids : Map[Int, Array[Int]]
+  archetype_component_definition_id_presence : Map[Int, Map[Int, Bool]]
+  archetype_ids_by_component_local_id : Map[Int, Array[Int]]
+  archetype_non_empty_ids_by_component_local_id : Map[Int, Array[Int]]
+  mut non_empty_archetype_ids_sorted : Array[Int]
+  mut non_empty_archetype_generation : Int
+  component_membership_generations : Map[Int, Int]
+  component_membership_counts : Map[Int, Int]
+  archetype_entities : Map[Int, Array[@core.Entity]]
+  entity_archetype_ids : Array[Int]
+  entity_archetype_rows : Array[Int]
+  entity_component_local_ids : Array[Array[Int]]
   required_components : Map[Int, @ref.Ref[RequiredComponentsState]]
   used_components : Map[Int, Bool]
   added_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
@@ -632,32 +749,50 @@ pub struct World {
   mut deferred_hook_command_depth : Int
   deferred_hook_commands : Array[(World) -> Unit]
 }
+pub fn[C : Component] World::add_add_component_observer(Self, (ComponentOn[Add, C]) -> Unit) -> ObserverHandle
+pub fn[C : Component] World::add_add_entity_component_observer(Self, @core.Entity, (ComponentOn[Add, C]) -> Unit) -> ObserverHandle
 pub fn[E : ComponentObserverEvent, C : Component] World::add_component_observer(Self, (ComponentOn[E, C]) -> Unit) -> ObserverHandle
+pub fn[C : Component] World::add_despawn_component_observer(Self, (ComponentOn[Despawn, C]) -> Unit) -> ObserverHandle
+pub fn[C : Component] World::add_despawn_entity_component_observer(Self, @core.Entity, (ComponentOn[Despawn, C]) -> Unit) -> ObserverHandle
 pub fn[E : ComponentObserverEvent, C : Component] World::add_entity_component_observer(Self, @core.Entity, (ComponentOn[E, C]) -> Unit) -> ObserverHandle
 pub fn[E : TriggerEvent] World::add_entity_observer(Self, @core.Entity, (On[E]) -> Unit) -> ObserverHandle
 pub fn[E : TriggerEvent] World::add_observer(Self, (On[E]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_remove_component_observer(Self, (ComponentOn[Remove, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_remove_entity_component_observer(Self, @core.Entity, (ComponentOn[Remove, C]) -> Unit) -> ObserverHandle
+pub fn[C : Component] World::add_replace_component_observer(Self, (ComponentOn[Replace, C]) -> Unit) -> ObserverHandle
+pub fn[C : Component] World::add_replace_entity_component_observer(Self, @core.Entity, (ComponentOn[Replace, C]) -> Unit) -> ObserverHandle
 pub fn[T] World::added_components(Self, ComponentKey[T], @core.SystemSequence) -> AddedComponents[T]
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn World::advance_sequence(Self) -> Int
+pub fn World::apply_queued_component_registrations(Self) -> Unit
+pub fn World::archetype_component_ids(Self, Int) -> Array[Int]?
+pub fn World::archetype_count(Self) -> Int
+pub fn World::archetype_entities_snapshot(Self, Int) -> Array[@core.Entity]
+pub fn World::archetype_entity_count(Self, Int) -> Int
+pub fn World::archetype_generation(Self) -> Int
 pub fn[T] World::changed_components(Self, ComponentKey[T], @core.SystemSequence) -> ChangedComponents[T]
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
 pub fn[T] World::component_column(Self, ComponentKey[T]) -> ComponentColumn[T]?
 pub fn[T] World::component_count(Self, ComponentKey[T]) -> Int
+pub fn[T : Component] World::component_id(Self, key? : ComponentKey[T]) -> Int?
+pub fn[T] World::component_id_by_key(Self, ComponentKey[T]) -> Int?
+pub fn World::components_registrator(Self) -> ComponentsRegistrator
 pub fn[T : Component] World::contains(Self, @core.Entity, key? : ComponentKey[T]) -> Bool raise EcsError
 pub fn[T] World::contains_by_key(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError
 pub fn[T] World::contains_message(Self, MessageKey[T]) -> Bool
 #callsite(autofill(loc))
 pub fn World::despawn(Self, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn World::entity(Self, @core.Entity) -> EntityRef raise EcsError
+pub fn World::entity_archetype_id(Self, @core.Entity) -> Int?
 pub fn World::entity_count(Self) -> Int
 pub fn World::entity_mut(Self, @core.Entity) -> EntityMut raise EcsError
 pub fn[T] World::for_each_component(Self, ComponentKey[T], (@core.Entity, T) -> Unit) -> Unit
 pub fn[T : Component] World::get(Self, @core.Entity, key? : ComponentKey[T]) -> T? raise EcsError
 pub fn[T] World::get_by_key(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn[T : Component] World::get_mut(Self, @core.Entity, key? : ComponentKey[T]) -> Mut[T]? raise EcsError
+pub fn[T] World::get_required_by_components(Self, ComponentKey[T]) -> RequiredComponents?
+pub fn World::get_required_by_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_required_components(Self, ComponentKey[T]) -> RequiredComponents?
 pub fn World::get_required_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
@@ -676,6 +811,9 @@ pub fn World::new() -> Self
 pub fn[D] World::query(Self) -> QueryState[D, All]
 pub fn[F] World::query_entities_filtered(Self, F) -> Query[@core.Entity, F]
 pub fn[D, F] World::query_filtered(Self, F) -> QueryState[D, F]
+pub fn[T : Component] World::queue_register_component(Self, key? : ComponentKey[T]) -> Int
+pub fn[T] World::queue_register_component_by_key(Self, ComponentKey[T]) -> Int
+pub fn World::queued_component_registration_count(Self) -> Int
 pub fn[T] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
 pub fn World::read_sequence(Self) -> Int
 pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T]
@@ -705,6 +843,7 @@ pub fn[T] World::set_by_key(Self, @core.Entity, ComponentKey[T], T, loc~ : Sourc
 pub fn World::set_sequence_context(Self, @core.SystemSequenceContext) -> Unit
 pub fn World::spawn(Self) -> @core.Entity
 pub fn World::spawn_empty(Self) -> @core.Entity
+pub fn World::structural_generation(Self) -> Int
 #callsite(autofill(loc))
 pub fn[T] World::take(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError
 pub fn[E : TriggerEvent] World::trigger(Self, E, caller? : String?) -> Unit
@@ -718,7 +857,24 @@ pub fn World::update_messages(Self) -> Unit
 pub fn[T] World::update_resource(Self, ResourceKey[T], (T) -> T) -> Bool raise EcsError
 pub fn World::world_id(Self) -> Int
 
+pub(all) struct WorldComponentIds {
+  mut next_local_id : Int
+}
+
+pub(all) struct WorldComponents {
+  local_ids_by_definition_id : Map[Int, Int]
+  definition_ids_by_local_id : Map[Int, Int]
+  storage_types_by_local_id : Map[Int, ComponentStorageType]
+  queued : WorldQueuedRegistrations
+}
+
 type WorldObserverRegistry
+
+pub(all) struct WorldQueuedRegistrations {
+  pending_by_definition_id : Map[Int, Bool]
+  mut queue : Array[Int]
+  mut cursor : Int
+}
 
 // Type aliases
 
@@ -754,6 +910,8 @@ pub(open) trait QueryData {
   matches(World, @core.Entity) -> Bool
   fetch(World, @core.Entity) -> Self raise EcsError
   mentions_component(Int) -> Bool
+  matches_component_set((Int) -> Bool) -> Bool
+  requires_entity_check() -> Bool
   iteration_anchor_component() -> Int?
   contiguous_compatible() -> Bool
 }
@@ -767,7 +925,10 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
 pub(open) trait QueryFilter {
   matches(Self, World, @core.Entity) -> Bool
   mentions_component(Self, Int) -> Bool
+  matches_component_set(Self, (Int) -> Bool) -> Bool
+  requires_entity_check(Self) -> Bool
   iteration_anchor_component(Self) -> Int?
+  depends_on_sequence(Self) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (A, B, C)
@@ -775,6 +936,9 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (A, 
 pub(open) trait QueryFilterDisjunction {
   matches_any(Self, World, @core.Entity) -> Bool
   mentions_component_any(Self, Int) -> Bool
+  matches_component_set_any(Self, (Int) -> Bool) -> Bool
+  requires_entity_check_any(Self) -> Bool
+  depends_on_sequence_any(Self) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (A, B, C)

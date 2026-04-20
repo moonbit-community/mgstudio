@@ -137,6 +137,19 @@ impl @ecs.QueryData for VolumeIntersectionData with mentions_component(
 }
 
 ///|
+impl @ecs.QueryData for VolumeIntersectionData with matches_component_set(
+  set_contains_id,
+) {
+  set_contains_id(current_volume_key.id()) &&
+  set_contains_id(intersects_key.id())
+}
+
+///|
+impl @ecs.QueryData for VolumeIntersectionData with requires_entity_check() {
+  false
+}
+
+///|
 impl @ecs.QueryData for VolumeIntersectionData with iteration_anchor_component() {
   Some(current_volume_key.id())
 }

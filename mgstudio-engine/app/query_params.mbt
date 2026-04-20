@@ -78,16 +78,77 @@ pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C) wi
 }
 
 ///|
-pub impl[D, F : FromWorld] SystemParam for @ecs.Query[D, F] with init_state(
-  world,
-) {
-  system_param_empty_state(world)
+let query_param_next_slot_ref : Ref[Int] = Ref::new(1)
+
+///|
+let query_param_cache_by_slot : @hashmap.HashMap[Int, @ecs.QueryCache] = @hashmap.HashMap::new()
+
+///|
+fn query_param_allocate_slot() -> Int {
+  let slot = query_param_next_slot_ref.val
+  query_param_next_slot_ref.val = slot + 1
+  query_param_cache_by_slot.set(slot, @ecs.QueryCache::new())
+  slot
 }
 
 ///|
-pub impl[D, F : FromWorld] SystemParam for @ecs.Query[D, F] with get(_state) {
+fn query_param_slot_from_state(state : Ref[Json]) -> Int {
+  try @json.from_json(state.val) catch {
+    _ => {
+      let slot = query_param_allocate_slot()
+      state.val = slot.to_json()
+      slot
+    }
+  } noraise {
+    value => value
+  }
+}
+
+///|
+fn query_param_cache_for_slot(slot : Int) -> @ecs.QueryCache {
+  match query_param_cache_by_slot.get(slot) {
+    Some(cache) => cache
+    None => {
+      let cache = @ecs.QueryCache::new()
+      query_param_cache_by_slot.set(slot, cache)
+      cache
+    }
+  }
+}
+
+///|
+fn[D, F : FromWorld] query_param_query_from_state(
+  state : Ref[Json],
+) -> @ecs.Query[D, F] {
   let world = system_param_abort_missing_world()
-  @ecs.query_filtered(world, F::from_world(world))
+  let filter = F::from_world(world)
+  let slot = query_param_slot_from_state(state)
+  @ecs.query_filtered_with_cache(
+    world,
+    filter,
+    query_param_cache_for_slot(slot),
+  )
+}
+
+///|
+fn[D, F] query_param_store_query_state(
+  query : @ecs.Query[D, F],
+  state : Ref[Json],
+) -> Unit {
+  let slot = query_param_slot_from_state(state)
+  query_param_cache_by_slot.set(slot, query.cache_snapshot())
+}
+
+///|
+pub impl[D, F : FromWorld] SystemParam for @ecs.Query[D, F] with init_state(
+  _world,
+) {
+  query_param_allocate_slot().to_json()
+}
+
+///|
+pub impl[D, F : FromWorld] SystemParam for @ecs.Query[D, F] with get(state) {
+  query_param_query_from_state(state)
 }
 
 ///|
@@ -95,12 +156,13 @@ pub impl[D, F : FromWorld] SystemParam for @ecs.Query[D, F] with store(
   self,
   state,
 ) {
-  system_param_store_no_state(self, state)
+  query_param_store_query_state(self, state)
 }
 
 ///|
-pub struct Single[D, _] {
+pub struct Single[D, F] {
   value : D
+  query : @ecs.Query[D, F]
 }
 
 ///|
@@ -123,21 +185,18 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
   D,
   F,
 ] with init_state(world) {
-  system_param_empty_state(world)
+  ignore(world)
+  query_param_allocate_slot().to_json()
 }
 
 ///|
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Single[
   D,
   F,
-] with get(_state) {
-  let world = system_param_abort_missing_world()
-  let query : @ecs.Query[D, F] = @ecs.query_filtered(
-    world,
-    F::from_world(world),
-  )
+] with get(state) {
+  let query : @ecs.Query[D, F] = query_param_query_from_state(state)
   let value = query.require_single()
-  Single::{ value, }
+  Single::{ value, query }
 }
 
 ///|
@@ -145,7 +204,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
   D,
   F,
 ] with store(self, state) {
-  system_param_store_no_state(self, state)
+  query_param_store_query_state(self.query, state)
 }
 
 ///|
@@ -153,19 +212,16 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
   D,
   F,
 ] with init_state(world) {
-  system_param_empty_state(world)
+  ignore(world)
+  query_param_allocate_slot().to_json()
 }
 
 ///|
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for Populated[
   D,
   F,
-] with get(_state) {
-  let world = system_param_abort_missing_world()
-  let query : @ecs.Query[D, F] = @ecs.query_filtered(
-    world,
-    F::from_world(world),
-  )
+] with get(state) {
+  let query : @ecs.Query[D, F] = query_param_query_from_state(state)
   if query.count() == 0 {
     raise @ecs.Skipped("Expected at least one matching entity")
   }
@@ -177,5 +233,5 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
   D,
   F,
 ] with store(self, state) {
-  system_param_store_no_state(self, state)
+  query_param_store_query_state(self.query, state)
 }

@@ -17,6 +17,8 @@ pub(open) trait QueryData {
   matches(World, @core.Entity) -> Bool
   fetch(World, @core.Entity) -> Self raise EcsError
   mentions_component(Int) -> Bool
+  matches_component_set((Int) -> Bool) -> Bool
+  requires_entity_check() -> Bool
   iteration_anchor_component() -> Int?
   contiguous_compatible() -> Bool
 }
@@ -92,8 +94,11 @@ fn[T] query_data_require_component(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> T raise EcsError {
-  match world.get_by_key(entity, key) {
-    Some(value) => value
+  guard world.component_store(key.id()) is Some(store_ref) else {
+    abort("QueryData::fetch expected component store to exist after matches")
+  }
+  match store_ref.val.get(entity) {
+    Some(payload) => world.component_value(key, entity, payload)
     None => abort("QueryData::fetch expected component to exist after matches")
   }
 }
@@ -113,7 +118,11 @@ pub fn[T] query_data_component_optional(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> T? raise EcsError {
-  world.get_by_key(entity, key)
+  guard world.component_store(key.id()) is Some(store_ref) else { return None }
+  match store_ref.val.get(entity) {
+    Some(payload) => Some(world.component_value(key, entity, payload))
+    None => None
+  }
 }
 
 ///|
@@ -122,9 +131,18 @@ fn[T] query_data_require_component_mut(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> Mut[T] raise EcsError {
-  match world_component_mut(world, entity, key) {
-    Some(value) => value
-    None => abort("QueryData::fetch expected component to exist after matches")
+  guard world.component_store(key.id()) is Some(store_ref) else {
+    abort("QueryData::fetch expected component store to exist after matches")
+  }
+  guard store_ref.val.get(entity) is Some(payload) else {
+    abort("QueryData::fetch expected component to exist after matches")
+  }
+  let value_ref = world.component_ref(key, entity, payload)
+  {
+    value_ref: Some(value_ref),
+    world: Some(world),
+    entity: Some(entity),
+    key_id: Some(key.id()),
   }
 }
 
@@ -149,6 +167,16 @@ pub impl QueryData for @core.Entity with fetch(_world, entity) {
 
 ///|
 pub impl QueryData for @core.Entity with mentions_component(_component_id) {
+  false
+}
+
+///|
+pub impl QueryData for @core.Entity with matches_component_set(_set_contains_id) {
+  true
+}
+
+///|
+pub impl QueryData for @core.Entity with requires_entity_check() {
   false
 }
 
@@ -180,6 +208,18 @@ pub impl[T : Component] QueryData for Comp[T] with mentions_component(
 }
 
 ///|
+pub impl[T : Component] QueryData for Comp[T] with matches_component_set(
+  set_contains_id,
+) {
+  set_contains_id(T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for Comp[T] with requires_entity_check() {
+  false
+}
+
+///|
 pub impl[T : Component] QueryData for Comp[T] with iteration_anchor_component() {
   Some(T::component().id())
 }
@@ -204,6 +244,18 @@ pub impl[T : Component] QueryData for Mut[T] with mentions_component(
   component_id,
 ) {
   component_id == T::component().id()
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with matches_component_set(
+  set_contains_id,
+) {
+  set_contains_id(T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with requires_entity_check() {
+  false
 }
 
 ///|
@@ -232,6 +284,16 @@ pub impl QueryData for EntityRef with mentions_component(_component_id) {
 }
 
 ///|
+pub impl QueryData for EntityRef with matches_component_set(_set_contains_id) {
+  true
+}
+
+///|
+pub impl QueryData for EntityRef with requires_entity_check() {
+  false
+}
+
+///|
 pub impl QueryData for EntityRef with iteration_anchor_component() {
   None
 }
@@ -253,6 +315,16 @@ pub impl QueryData for EntityMut with fetch(world, entity) {
 
 ///|
 pub impl QueryData for EntityMut with mentions_component(_component_id) {
+  false
+}
+
+///|
+pub impl QueryData for EntityMut with matches_component_set(_set_contains_id) {
+  true
+}
+
+///|
+pub impl QueryData for EntityMut with requires_entity_check() {
   false
 }
 
@@ -286,6 +358,18 @@ pub impl[T : QueryData] QueryData for T? with mentions_component(_component_id) 
 }
 
 ///|
+pub impl[T : QueryData] QueryData for T? with matches_component_set(
+  _set_contains_id,
+) {
+  true
+}
+
+///|
+pub impl[T : QueryData] QueryData for T? with requires_entity_check() {
+  false
+}
+
+///|
 pub impl[T : QueryData] QueryData for T? with iteration_anchor_component() {
   None
 }
@@ -310,6 +394,18 @@ pub impl[T : Component] QueryData for Has[T] with mentions_component(
   component_id,
 ) {
   component_id == T::component().id()
+}
+
+///|
+pub impl[T : Component] QueryData for Has[T] with matches_component_set(
+  _set_contains_id,
+) {
+  true
+}
+
+///|
+pub impl[T : Component] QueryData for Has[T] with requires_entity_check() {
+  false
 }
 
 ///|
@@ -340,6 +436,18 @@ pub impl[T : Component] QueryData for Optional[T] with mentions_component(
 }
 
 ///|
+pub impl[T : Component] QueryData for Optional[T] with matches_component_set(
+  _set_contains_id,
+) {
+  true
+}
+
+///|
+pub impl[T : Component] QueryData for Optional[T] with requires_entity_check() {
+  false
+}
+
+///|
 pub impl[T : Component] QueryData for Optional[T] with iteration_anchor_component() {
   None
 }
@@ -361,6 +469,16 @@ pub impl QueryData for Unit with fetch(_world, _entity) {
 
 ///|
 pub impl QueryData for Unit with mentions_component(_component_id) {
+  false
+}
+
+///|
+pub impl QueryData for Unit with matches_component_set(_set_contains_id) {
+  true
+}
+
+///|
+pub impl QueryData for Unit with requires_entity_check() {
   false
 }
 
@@ -395,6 +513,19 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with mentions_compon
   component_id,
 ) {
   A::mentions_component(component_id) || B::mentions_component(component_id)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with matches_component_set(
+  set_contains_id,
+) {
+  A::matches_component_set(set_contains_id) &&
+  B::matches_component_set(set_contains_id)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with requires_entity_check() {
+  A::requires_entity_check() || B::requires_entity_check()
 }
 
 ///|
@@ -435,6 +566,22 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
   A::mentions_component(component_id) ||
   B::mentions_component(component_id) ||
   C::mentions_component(component_id)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with matches_component_set(
+  set_contains_id,
+) {
+  A::matches_component_set(set_contains_id) &&
+  B::matches_component_set(set_contains_id) &&
+  C::matches_component_set(set_contains_id)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with requires_entity_check() {
+  A::requires_entity_check() ||
+  B::requires_entity_check() ||
+  C::requires_entity_check()
 }
 
 ///|
@@ -495,6 +642,32 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B::mentions_component(component_id) ||
   C::mentions_component(component_id) ||
   D::mentions_component(component_id)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with matches_component_set(set_contains_id) {
+  A::matches_component_set(set_contains_id) &&
+  B::matches_component_set(set_contains_id) &&
+  C::matches_component_set(set_contains_id) &&
+  D::matches_component_set(set_contains_id)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with requires_entity_check() {
+  A::requires_entity_check() ||
+  B::requires_entity_check() ||
+  C::requires_entity_check() ||
+  D::requires_entity_check()
 }
 
 ///|

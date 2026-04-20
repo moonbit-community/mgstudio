@@ -227,9 +227,12 @@ fn ComponentSequenceTable::remove(
 ///|
 pub struct World {
   world_id : Int
-  mut next_local_component_id : Int
-  component_local_ids_by_definition_id : Map[Int, Int]
-  component_definition_ids_by_local_id : Map[Int, Int]
+  mut structural_generation : Int
+  mut entity_lifecycle_generation : Int
+  mut component_registration_generation : Int
+  component_ids : WorldComponentIds
+  components : WorldComponents
+  component_relationship_sources : Map[Int, ComponentRelationshipSourceMetadata]
   observer_parent_lookup_component_ids : Array[Int]
   observer_registry : Ref[WorldObserverRegistry]
   mut current_component_observer_context : ComponentObserverContext?
@@ -237,7 +240,28 @@ pub struct World {
   entities : @core.Entities
   mut sequence : @core.Sequence
   mut system_context : @core.SystemSequenceContext
-  component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
+  table_component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
+  sparse_component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
+  component_store_cache_by_definition_id : Map[
+    Int,
+    Ref[@core.ComponentStore[ErasedValue]],
+  ]
+  mut next_archetype_id : Int
+  archetype_ids_by_signature : Map[String, Int]
+  archetype_component_local_ids : Map[Int, Array[Int]]
+  archetype_component_local_id_presence : Map[Int, Map[Int, Bool]]
+  archetype_component_definition_ids : Map[Int, Array[Int]]
+  archetype_component_definition_id_presence : Map[Int, Map[Int, Bool]]
+  archetype_ids_by_component_local_id : Map[Int, Array[Int]]
+  archetype_non_empty_ids_by_component_local_id : Map[Int, Array[Int]]
+  mut non_empty_archetype_ids_sorted : Array[Int]
+  mut non_empty_archetype_generation : Int
+  component_membership_generations : Map[Int, Int]
+  component_membership_counts : Map[Int, Int]
+  archetype_entities : Map[Int, Array[@core.Entity]]
+  entity_archetype_ids : Array[Int]
+  entity_archetype_rows : Array[Int]
+  entity_component_local_ids : Array[Array[Int]]
   required_components : Map[Int, Ref[RequiredComponentsState]]
   used_components : Map[Int, Bool]
   added_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
@@ -261,9 +285,12 @@ pub fn World::new() -> World {
   next_world_id_ref.val = world_id + 1
   let world = World::{
     world_id,
-    next_local_component_id: 1,
-    component_local_ids_by_definition_id: {},
-    component_definition_ids_by_local_id: {},
+    structural_generation: 0,
+    entity_lifecycle_generation: 0,
+    component_registration_generation: 0,
+    component_ids: world_component_ids_new(),
+    components: world_components_new(),
+    component_relationship_sources: {},
     observer_parent_lookup_component_ids: [],
     observer_registry: Ref::new(world_observer_registry_new()),
     current_component_observer_context: None,
@@ -271,7 +298,25 @@ pub fn World::new() -> World {
     entities: @core.Entities::new(),
     sequence: 0,
     system_context: @core.SystemSequenceContext::new(),
-    component_columns: {},
+    table_component_columns: {},
+    sparse_component_columns: {},
+    component_store_cache_by_definition_id: {},
+    next_archetype_id: 1,
+    archetype_ids_by_signature: { "": 0 },
+    archetype_component_local_ids: { 0: [] },
+    archetype_component_local_id_presence: { 0: {} },
+    archetype_component_definition_ids: { 0: [] },
+    archetype_component_definition_id_presence: { 0: {} },
+    archetype_ids_by_component_local_id: {},
+    archetype_non_empty_ids_by_component_local_id: {},
+    non_empty_archetype_ids_sorted: [],
+    non_empty_archetype_generation: 0,
+    component_membership_generations: {},
+    component_membership_counts: {},
+    archetype_entities: { 0: [] },
+    entity_archetype_ids: [],
+    entity_archetype_rows: [],
+    entity_component_local_ids: [],
     required_components: {},
     used_components: {},
     added_components: {},
@@ -302,7 +347,11 @@ pub fn World::world_id(self : World) -> Int {
 
 ///|
 pub fn World::spawn(self : World) -> @core.Entity {
-  self.entities.spawn()
+  let entity = self.entities.spawn()
+  self.initialize_entity_archetype_tracking(entity)
+  self.mark_entity_lifecycle_changed()
+  self.mark_structure_changed()
+  entity
 }
 
 ///|
@@ -331,7 +380,16 @@ pub fn World::despawn(
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   let removed_components : Array[(Int, ErasedValue)] = []
-  for entry in self.component_columns.iter() {
+  for entry in self.table_component_columns.iter() {
+    let (local_id, store_ref) = entry
+    guard self.definition_component_id(local_id) is Some(key_id) else {
+      continue
+    }
+    if store_ref.val.get(entity) is Some(payload) {
+      removed_components.push((key_id, payload))
+    }
+  }
+  for entry in self.sparse_component_columns.iter() {
     let (local_id, store_ref) = entry
     guard self.definition_component_id(local_id) is Some(key_id) else {
       continue
@@ -342,14 +400,19 @@ pub fn World::despawn(
   }
   for entry in removed_components {
     self.run_component_despawn_hooks(entity, entry.0, caller~)
+    self.run_despawn_observers(entity, entry.0)
   }
   for entry in removed_components {
     self.run_component_replace_hooks(entity, entry.0, caller~)
+    self.run_replace_observers(entity, entry.0)
     self.run_component_remove_hooks(entity, entry.0, caller~)
   }
   self.entities.despawn(entity) catch {
     err => raise EntityStateError(err)
   }
+  self.clear_entity_archetype_tracking(entity)
+  self.mark_entity_lifecycle_changed()
+  self.mark_structure_changed()
   for entry in removed_components {
     let key_id = entry.0
     if self.component_store(key_id) is Some(store_ref) &&
@@ -420,9 +483,11 @@ pub fn[T] World::update_by_key(
   let new_payload = erased_value(new_value)
   let caller = hook_caller_from_loc(loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
+  self.run_replace_observers(entity, key.id())
   store_ref.val.set(entity, new_payload) |> ignore
   self.record_component_changed(entity, key.id())
   self.run_component_insert_hooks(entity, key.id(), caller~)
+  self.run_insert_observers(entity, key.id())
   self.end_deferred_hook_command_scope(outermost)
   true
 }
@@ -442,9 +507,14 @@ pub fn[T] World::remove_by_key(
     Some(store_ref) =>
       match store_ref.val.get(entity) {
         Some(_) => {
+          let component_local_id = self.ensure_component_registered(key.id())
           self.run_component_replace_hooks(entity, key.id(), caller~)
+          self.run_replace_observers(entity, key.id())
           self.run_component_remove_hooks(entity, key.id(), caller~)
           ignore(store_ref.val.remove(entity))
+          self.entity_remove_component_local_id(entity, component_local_id)
+          self.refresh_entity_archetype(entity)
+          self.mark_structure_changed()
           self.run_remove_observers(entity, key.id())
           self.ensure_removed_component_messages(key.id()).val.send(
             component_write_sequence(self),
@@ -521,14 +591,53 @@ fn World::ensure_entity_alive(
 }
 
 ///|
+pub fn World::structural_generation(self : World) -> Int {
+  self.structural_generation
+}
+
+///|
+fn World::mark_structure_changed(self : World) -> Unit {
+  self.structural_generation = self.structural_generation + 1
+}
+
+///|
+fn World::entity_lifecycle_generation(self : World) -> Int {
+  self.entity_lifecycle_generation
+}
+
+///|
+fn World::mark_entity_lifecycle_changed(self : World) -> Unit {
+  self.entity_lifecycle_generation = self.entity_lifecycle_generation + 1
+}
+
+///|
 fn World::ensure_component_store(
   self : World,
   key_id : Int,
 ) -> Ref[@core.ComponentStore[ErasedValue]] {
+  if self.component_store_cache_by_definition_id.get(key_id) is Some(store_ref) {
+    return store_ref
+  }
   let local_id = self.ensure_component_registered(key_id)
-  self.component_columns.get_or_init(local_id, fn() {
-    Ref::new(@core.ComponentStore::new())
-  })
+  let storage_type = match self.local_component_storage_type(local_id) {
+    Some(storage_type) => storage_type
+    None =>
+      abort(
+        "World component storage type missing for local component id \{local_id.to_string()}",
+      )
+  }
+  let store_ref = match storage_type {
+    Table =>
+      self.table_component_columns.get_or_init(local_id, fn() {
+        Ref::new(@core.ComponentStore::new())
+      })
+    SparseSet =>
+      self.sparse_component_columns.get_or_init(local_id, fn() {
+        Ref::new(@core.ComponentStore::new())
+      })
+  }
+  self.component_store_cache_by_definition_id.set(key_id, store_ref)
+  store_ref
 }
 
 ///|
@@ -536,8 +645,37 @@ fn World::component_store(
   self : World,
   key_id : Int,
 ) -> Ref[@core.ComponentStore[ErasedValue]]? {
+  if self.component_store_cache_by_definition_id.get(key_id) is Some(store_ref) {
+    return Some(store_ref)
+  }
   match self.local_component_id(key_id) {
-    Some(local_id) => self.component_columns.get(local_id)
+    Some(local_id) => {
+      let storage_type = match self.local_component_storage_type(local_id) {
+        Some(storage_type) => storage_type
+        None =>
+          abort(
+            "World component storage type missing for local component id \{local_id.to_string()}",
+          )
+      }
+      match storage_type {
+        Table =>
+          match self.table_component_columns.get(local_id) {
+            Some(store_ref) => {
+              self.component_store_cache_by_definition_id.set(key_id, store_ref)
+              Some(store_ref)
+            }
+            None => None
+          }
+        SparseSet =>
+          match self.sparse_component_columns.get(local_id) {
+            Some(store_ref) => {
+              self.component_store_cache_by_definition_id.set(key_id, store_ref)
+              Some(store_ref)
+            }
+            None => None
+          }
+      }
+    }
     None => None
   }
 }
@@ -547,11 +685,12 @@ fn World::ensure_removed_component_messages(
   self : World,
   key_id : Int,
 ) -> Ref[@core.Messages[@core.Entity]] {
-  match self.removed_components.get(key_id) {
+  let local_id = self.ensure_component_registered(key_id)
+  match self.removed_components.get(local_id) {
     Some(messages_ref) => messages_ref
     None => {
       let messages_ref = Ref::new(@core.Messages::new())
-      self.removed_components.set(key_id, messages_ref)
+      self.removed_components.set(local_id, messages_ref)
       messages_ref
     }
   }
@@ -562,11 +701,12 @@ fn World::ensure_added_component_messages(
   self : World,
   key_id : Int,
 ) -> Ref[@core.Messages[@core.Entity]] {
-  match self.added_components.get(key_id) {
+  let local_id = self.ensure_component_registered(key_id)
+  match self.added_components.get(local_id) {
     Some(messages_ref) => messages_ref
     None => {
       let messages_ref = Ref::new(@core.Messages::new())
-      self.added_components.set(key_id, messages_ref)
+      self.added_components.set(local_id, messages_ref)
       messages_ref
     }
   }
@@ -577,11 +717,12 @@ fn World::ensure_changed_component_messages(
   self : World,
   key_id : Int,
 ) -> Ref[@core.Messages[@core.Entity]] {
-  match self.changed_components.get(key_id) {
+  let local_id = self.ensure_component_registered(key_id)
+  match self.changed_components.get(local_id) {
     Some(messages_ref) => messages_ref
     None => {
       let messages_ref = Ref::new(@core.Messages::new())
-      self.changed_components.set(key_id, messages_ref)
+      self.changed_components.set(local_id, messages_ref)
       messages_ref
     }
   }
@@ -592,11 +733,12 @@ fn World::ensure_added_component_sequence_map(
   self : World,
   key_id : Int,
 ) -> ComponentSequenceTable {
-  match self.added_component_sequences.get(key_id) {
+  let local_id = self.ensure_component_registered(key_id)
+  match self.added_component_sequences.get(local_id) {
     Some(sequence_by_entity) => sequence_by_entity
     None => {
       let sequence_by_entity = ComponentSequenceTable::new()
-      self.added_component_sequences.set(key_id, sequence_by_entity)
+      self.added_component_sequences.set(local_id, sequence_by_entity)
       sequence_by_entity
     }
   }
@@ -607,11 +749,12 @@ fn World::ensure_changed_component_sequence_table(
   self : World,
   key_id : Int,
 ) -> ComponentSequenceTable {
-  match self.changed_component_sequences.get(key_id) {
+  let local_id = self.ensure_component_registered(key_id)
+  match self.changed_component_sequences.get(local_id) {
     Some(sequence_by_entity) => sequence_by_entity
     None => {
       let sequence_by_entity = ComponentSequenceTable::new()
-      self.changed_component_sequences.set(key_id, sequence_by_entity)
+      self.changed_component_sequences.set(local_id, sequence_by_entity)
       sequence_by_entity
     }
   }
@@ -658,10 +801,11 @@ fn World::clear_component_sequence_records(
   entity : @core.Entity,
   key_id : Int,
 ) -> Unit {
-  if self.added_component_sequences.get(key_id) is Some(sequence_by_entity) {
+  guard self.local_component_id(key_id) is Some(local_id) else { return }
+  if self.added_component_sequences.get(local_id) is Some(sequence_by_entity) {
     sequence_by_entity.remove(entity.id)
   }
-  if self.changed_component_sequences.get(key_id) is Some(sequence_by_entity) {
+  if self.changed_component_sequences.get(local_id) is Some(sequence_by_entity) {
     sequence_by_entity.remove(entity.id)
   }
 }
@@ -697,7 +841,10 @@ fn World::added_component_messages(
   self : World,
   key_id : Int,
 ) -> Ref[@core.Messages[@core.Entity]]? {
-  self.added_components.get(key_id)
+  match self.local_component_id(key_id) {
+    Some(local_id) => self.added_components.get(local_id)
+    None => None
+  }
 }
 
 ///|
@@ -706,7 +853,8 @@ fn World::added_component_sequence(
   key_id : Int,
   entity_id : Int,
 ) -> @core.Sequence? {
-  match self.added_component_sequences.get(key_id) {
+  guard self.local_component_id(key_id) is Some(local_id) else { return None }
+  match self.added_component_sequences.get(local_id) {
     Some(sequence_by_entity) => sequence_by_entity.get(entity_id)
     None => None
   }
@@ -717,7 +865,10 @@ fn World::changed_component_messages(
   self : World,
   key_id : Int,
 ) -> Ref[@core.Messages[@core.Entity]]? {
-  self.changed_components.get(key_id)
+  match self.local_component_id(key_id) {
+    Some(local_id) => self.changed_components.get(local_id)
+    None => None
+  }
 }
 
 ///|
@@ -726,7 +877,8 @@ fn World::changed_component_sequence(
   key_id : Int,
   entity_id : Int,
 ) -> @core.Sequence? {
-  match self.changed_component_sequences.get(key_id) {
+  guard self.local_component_id(key_id) is Some(local_id) else { return None }
+  match self.changed_component_sequences.get(local_id) {
     Some(sequence_by_entity) => sequence_by_entity.get(entity_id)
     None => None
   }
@@ -737,7 +889,10 @@ fn World::removed_component_messages(
   self : World,
   key_id : Int,
 ) -> Ref[@core.Messages[@core.Entity]]? {
-  self.removed_components.get(key_id)
+  match self.local_component_id(key_id) {
+    Some(local_id) => self.removed_components.get(local_id)
+    None => None
+  }
 }
 
 ///|

@@ -113,7 +113,11 @@ fn hook_test_record(
     "\{kind}:\{hook_test_value_text(world.world(), context.entity)}",
   )
   hook_entity_ids.push(context.entity.id)
-  if context.component_id != hook_test_component_key.id() {
+  let expected_component_id = world
+    .world()
+    .component_id_by_key(hook_test_component_key)
+    .unwrap_or(-1)
+  if context.component_id != expected_component_id {
     hook_component_id_matches_ref.val = false
   }
   match context.caller {
@@ -306,10 +310,10 @@ test "ecs component hooks: duplicate builder registration fails per hook kind" {
   guard duplicate_result is Err(DuplicateHookRegistration(component_id, OnAdd)) else {
     fail("expected duplicate on_add registration failure")
   }
-  debug_inspect(
-    component_id == duplicate_hook_test_component_key.id(),
-    content="true",
-  )
+  let expected_component_id = world
+    .component_id_by_key(duplicate_hook_test_component_key)
+    .unwrap_or(-1)
+  debug_inspect(component_id == expected_component_id, content="true")
 }
 
 ///|
@@ -332,10 +336,10 @@ test "ecs component hooks: world-scoped registration rejects late hooks and keep
   guard late_result is Err(ComponentAlreadyInUse(component_id)) else {
     fail("expected late hook registration in same world to fail")
   }
-  debug_inspect(
-    component_id == late_registration_hook_test_component_key.id(),
-    content="true",
-  )
+  let world0_component_id = world0
+    .component_id_by_key(late_registration_hook_test_component_key)
+    .unwrap_or(-1)
+  debug_inspect(component_id == world0_component_id, content="true")
 
   let duplicate_result : Result[
     ComponentHooksBuilder[LateRegistrationHookTestComponent],
@@ -346,10 +350,7 @@ test "ecs component hooks: world-scoped registration rejects late hooks and keep
   guard duplicate_result is Err(ComponentAlreadyInUse(component_id)) else {
     fail("expected repeated late hook registration in same world to fail")
   }
-  debug_inspect(
-    component_id == late_registration_hook_test_component_key.id(),
-    content="true",
-  )
+  debug_inspect(component_id == world0_component_id, content="true")
 
   let fresh_result : Result[
     ComponentHooksBuilder[LateRegistrationHookTestComponent],

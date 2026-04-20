@@ -16,13 +16,19 @@
 pub(open) trait QueryFilter {
   matches(self : Self, world : World, entity : @core.Entity) -> Bool
   mentions_component(self : Self, component_id : Int) -> Bool
+  matches_component_set(self : Self, set_contains_id : (Int) -> Bool) -> Bool
+  requires_entity_check(self : Self) -> Bool
   iteration_anchor_component(self : Self) -> Int?
+  depends_on_sequence(self : Self) -> Bool
 }
 
 ///|
 pub(open) trait QueryFilterDisjunction {
   matches_any(self : Self, world : World, entity : @core.Entity) -> Bool
   mentions_component_any(self : Self, component_id : Int) -> Bool
+  matches_component_set_any(self : Self, set_contains_id : (Int) -> Bool) -> Bool
+  requires_entity_check_any(self : Self) -> Bool
+  depends_on_sequence_any(self : Self) -> Bool
 }
 
 ///|
@@ -46,9 +52,27 @@ pub impl QueryFilter for All with mentions_component(self, _component_id) {
 }
 
 ///|
+pub impl QueryFilter for All with matches_component_set(self, _set_contains_id) {
+  ignore(self)
+  true
+}
+
+///|
+pub impl QueryFilter for All with requires_entity_check(self) {
+  ignore(self)
+  false
+}
+
+///|
 pub impl QueryFilter for All with iteration_anchor_component(self) {
   ignore(self)
   None
+}
+
+///|
+pub impl QueryFilter for All with depends_on_sequence(self) {
+  ignore(self)
+  false
 }
 
 ///|
@@ -72,8 +96,28 @@ pub impl[T] QueryFilter for With[T] with mentions_component(self, component_id) 
 }
 
 ///|
+pub impl[T] QueryFilter for With[T] with matches_component_set(
+  self,
+  set_contains_id,
+) {
+  set_contains_id(self.key.id())
+}
+
+///|
+pub impl[T] QueryFilter for With[T] with requires_entity_check(self) {
+  ignore(self)
+  false
+}
+
+///|
 pub impl[T] QueryFilter for With[T] with iteration_anchor_component(self) {
   Some(self.key.id())
+}
+
+///|
+pub impl[T] QueryFilter for With[T] with depends_on_sequence(self) {
+  ignore(self)
+  false
 }
 
 ///|
@@ -100,9 +144,29 @@ pub impl[T] QueryFilter for Without[T] with mentions_component(
 }
 
 ///|
+pub impl[T] QueryFilter for Without[T] with matches_component_set(
+  self,
+  set_contains_id,
+) {
+  !set_contains_id(self.key.id())
+}
+
+///|
+pub impl[T] QueryFilter for Without[T] with requires_entity_check(self) {
+  ignore(self)
+  false
+}
+
+///|
 pub impl[T] QueryFilter for Without[T] with iteration_anchor_component(self) {
   ignore(self)
   None
+}
+
+///|
+pub impl[T] QueryFilter for Without[T] with depends_on_sequence(self) {
+  ignore(self)
+  false
 }
 
 ///|
@@ -127,9 +191,30 @@ pub impl[T] QueryFilter for Allow[T] with mentions_component(self, component_id)
 }
 
 ///|
+pub impl[T] QueryFilter for Allow[T] with matches_component_set(
+  self,
+  _set_contains_id,
+) {
+  ignore(self)
+  true
+}
+
+///|
+pub impl[T] QueryFilter for Allow[T] with requires_entity_check(self) {
+  ignore(self)
+  false
+}
+
+///|
 pub impl[T] QueryFilter for Allow[T] with iteration_anchor_component(self) {
   ignore(self)
   None
+}
+
+///|
+pub impl[T] QueryFilter for Allow[T] with depends_on_sequence(self) {
+  ignore(self)
+  false
 }
 
 ///|
@@ -157,8 +242,28 @@ pub impl[T] QueryFilter for Added[T] with mentions_component(self, component_id)
 }
 
 ///|
+pub impl[T] QueryFilter for Added[T] with matches_component_set(
+  self,
+  set_contains_id,
+) {
+  set_contains_id(self.key.id())
+}
+
+///|
+pub impl[T] QueryFilter for Added[T] with requires_entity_check(self) {
+  ignore(self)
+  true
+}
+
+///|
 pub impl[T] QueryFilter for Added[T] with iteration_anchor_component(self) {
   Some(self.key.id())
+}
+
+///|
+pub impl[T] QueryFilter for Added[T] with depends_on_sequence(self) {
+  ignore(self)
+  true
 }
 
 ///|
@@ -189,8 +294,28 @@ pub impl[T] QueryFilter for Changed[T] with mentions_component(
 }
 
 ///|
+pub impl[T] QueryFilter for Changed[T] with matches_component_set(
+  self,
+  set_contains_id,
+) {
+  set_contains_id(self.key.id())
+}
+
+///|
+pub impl[T] QueryFilter for Changed[T] with requires_entity_check(self) {
+  ignore(self)
+  true
+}
+
+///|
 pub impl[T] QueryFilter for Changed[T] with iteration_anchor_component(self) {
   Some(self.key.id())
+}
+
+///|
+pub impl[T] QueryFilter for Changed[T] with depends_on_sequence(self) {
+  ignore(self)
+  true
 }
 
 ///|
@@ -221,11 +346,36 @@ pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with mentions_compone
 }
 
 ///|
+pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with matches_component_set(
+  self,
+  set_contains_id,
+) {
+  QueryFilterDisjunction::matches_component_set_any(
+    self.filters,
+    set_contains_id,
+  )
+}
+
+///|
+pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with requires_entity_check(
+  self,
+) {
+  QueryFilterDisjunction::requires_entity_check_any(self.filters)
+}
+
+///|
 pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with iteration_anchor_component(
   self,
 ) {
   ignore(self)
   None
+}
+
+///|
+pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with depends_on_sequence(
+  self,
+) {
+  QueryFilterDisjunction::depends_on_sequence_any(self.filters)
 }
 
 ///|
@@ -248,6 +398,23 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with mentions_
 }
 
 ///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with matches_component_set(
+  self,
+  set_contains_id,
+) {
+  QueryFilter::matches_component_set(self.0, set_contains_id) &&
+  QueryFilter::matches_component_set(self.1, set_contains_id)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with requires_entity_check(
+  self,
+) {
+  QueryFilter::requires_entity_check(self.0) ||
+  QueryFilter::requires_entity_check(self.1)
+}
+
+///|
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with iteration_anchor_component(
   self,
 ) {
@@ -255,6 +422,14 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with iteration
     Some(component_id) => Some(component_id)
     None => QueryFilter::iteration_anchor_component(self.1)
   }
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with depends_on_sequence(
+  self,
+) {
+  QueryFilter::depends_on_sequence(self.0) ||
+  QueryFilter::depends_on_sequence(self.1)
 }
 
 ///|
@@ -284,6 +459,28 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
   A,
   B,
   C,
+) with matches_component_set(self, set_contains_id) {
+  QueryFilter::matches_component_set(self.0, set_contains_id) &&
+  QueryFilter::matches_component_set(self.1, set_contains_id) &&
+  QueryFilter::matches_component_set(self.2, set_contains_id)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
+  A,
+  B,
+  C,
+) with requires_entity_check(self) {
+  QueryFilter::requires_entity_check(self.0) ||
+  QueryFilter::requires_entity_check(self.1) ||
+  QueryFilter::requires_entity_check(self.2)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
+  A,
+  B,
+  C,
 ) with iteration_anchor_component(self) {
   match QueryFilter::iteration_anchor_component(self.0) {
     Some(component_id) => Some(component_id)
@@ -293,6 +490,17 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
         None => QueryFilter::iteration_anchor_component(self.2)
       }
   }
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
+  A,
+  B,
+  C,
+) with depends_on_sequence(self) {
+  QueryFilter::depends_on_sequence(self.0) ||
+  QueryFilter::depends_on_sequence(self.1) ||
+  QueryFilter::depends_on_sequence(self.2)
 }
 
 ///|
@@ -315,6 +523,31 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) wit
 }
 
 ///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with matches_component_set_any(
+  self,
+  set_contains_id,
+) {
+  QueryFilter::matches_component_set(self.0, set_contains_id) ||
+  QueryFilter::matches_component_set(self.1, set_contains_id)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with requires_entity_check_any(
+  self,
+) {
+  QueryFilter::requires_entity_check(self.0) ||
+  QueryFilter::requires_entity_check(self.1)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with depends_on_sequence_any(
+  self,
+) {
+  QueryFilter::depends_on_sequence(self.0) ||
+  QueryFilter::depends_on_sequence(self.1)
+}
+
+///|
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (
   A,
   B,
@@ -334,4 +567,37 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjuncti
   QueryFilter::mentions_component(self.0, component_id) ||
   QueryFilter::mentions_component(self.1, component_id) ||
   QueryFilter::mentions_component(self.2, component_id)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+) with matches_component_set_any(self, set_contains_id) {
+  QueryFilter::matches_component_set(self.0, set_contains_id) ||
+  QueryFilter::matches_component_set(self.1, set_contains_id) ||
+  QueryFilter::matches_component_set(self.2, set_contains_id)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+) with requires_entity_check_any(self) {
+  QueryFilter::requires_entity_check(self.0) ||
+  QueryFilter::requires_entity_check(self.1) ||
+  QueryFilter::requires_entity_check(self.2)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+) with depends_on_sequence_any(self) {
+  QueryFilter::depends_on_sequence(self.0) ||
+  QueryFilter::depends_on_sequence(self.1) ||
+  QueryFilter::depends_on_sequence(self.2)
 }

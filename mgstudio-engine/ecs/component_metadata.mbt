@@ -19,6 +19,12 @@ priv struct ComponentRequiredMetadata {
 }
 
 ///|
+pub enum ComponentStorageType {
+  Table
+  SparseSet
+} derive(Eq)
+
+///|
 pub(all) struct ComponentRelationshipSourceMetadata {
   target_entity : (World, @core.Entity) -> @core.Entity?
   observer_parent_lookup : Bool
@@ -33,6 +39,7 @@ pub(all) struct ComponentRelationshipTargetMetadata {
 ///|
 priv struct ComponentMetadata {
   debug_name : String
+  storage_type : ComponentStorageType
   hooks : ComponentHooks
   required_components : Array[ComponentRequiredMetadata]
   relationship_source : ComponentRelationshipSourceMetadata?
@@ -51,6 +58,7 @@ let component_metadata_registry : @hashmap.HashMap[Int, Ref[ComponentMetadata]] 
 fn component_metadata_default(debug_name : String) -> ComponentMetadata {
   {
     debug_name,
+    storage_type: Table,
     hooks: ComponentHooks::new(),
     required_components: [],
     relationship_source: None,
@@ -281,6 +289,36 @@ pub fn[T] ComponentMetadataBuilder::relationship_target(
       linked_spawn,
       linked_entities: linked_entities_accessor,
     }),
+  }
+  self
+}
+
+///|
+pub fn[T] ComponentMetadataBuilder::storage_table(
+  self : ComponentMetadataBuilder[T],
+) -> ComponentMetadataBuilder[T] {
+  let metadata_ref = component_metadata_ref(
+    self.key.id(),
+    debug_name=self.key.debug_name(),
+  )
+  metadata_ref.val = ComponentMetadata::{
+    ..metadata_ref.val,
+    storage_type: Table,
+  }
+  self
+}
+
+///|
+pub fn[T] ComponentMetadataBuilder::storage_sparse_set(
+  self : ComponentMetadataBuilder[T],
+) -> ComponentMetadataBuilder[T] {
+  let metadata_ref = component_metadata_ref(
+    self.key.id(),
+    debug_name=self.key.debug_name(),
+  )
+  metadata_ref.val = ComponentMetadata::{
+    ..metadata_ref.val,
+    storage_type: SparseSet,
   }
   self
 }
