@@ -1083,6 +1083,86 @@ test "ecs query_state cache: archetype matching updates incrementally and keeps 
 }
 
 ///|
+test "ecs query_state cache: archetype generation remains stable across non-empty churn" {
+  let world = World::new()
+  let e0 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+
+  let state : QueryState[Comp[Position], All] = world.query()
+  debug_inspect(state.count(world), content="1")
+  let initial_matching_generation = state.cached_matching_archetype_generation
+  let initial_candidate_generation = state.cached_candidate_archetype_generation
+
+  let e1 = world.spawn()
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e1, velocity_key, Velocity::{ dx: 3, dy: 3 })
+  debug_inspect(state.count(world), content="2")
+  let generation_after_new_archetype = state.cached_matching_archetype_generation
+  debug_inspect(
+    generation_after_new_archetype > initial_matching_generation,
+    content="true",
+  )
+
+  try! world.despawn(e1)
+  debug_inspect(state.count(world), content="1")
+  debug_inspect(
+    state.cached_matching_archetype_generation == generation_after_new_archetype,
+    content="true",
+  )
+  debug_inspect(
+    state.cached_candidate_archetype_generation ==
+    generation_after_new_archetype,
+    content="true",
+  )
+  debug_inspect(
+    state.cached_candidate_archetype_generation > initial_candidate_generation,
+    content="true",
+  )
+}
+
+///|
+test "ecs query_state cache: dense table groups update incrementally on matching archetype additions" {
+  let world = World::new()
+  ensure_sparse_tag_metadata_registered()
+  let e0 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+
+  let state : QueryState[Comp[Position], All] = world.query()
+  debug_inspect(state.count(world), content="1")
+  debug_inspect(state.cached_matching_tables.length(), content="1")
+  debug_inspect(
+    state.cached_matching_table_archetype_groups.length(),
+    content="1",
+  )
+  debug_inspect(
+    state.cached_matching_table_archetype_groups[0].length(),
+    content="1",
+  )
+  let initial_tables_generation = state.cached_matching_tables_generation
+
+  let e1 = world.spawn()
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e1, sparse_tag_key, SparseTag::{  })
+
+  debug_inspect(state.count(world), content="2")
+  debug_inspect(state.cached_matching_archetypes.length(), content="2")
+  debug_inspect(state.cached_matching_tables.length(), content="1")
+  debug_inspect(
+    state.cached_matching_table_archetype_groups.length(),
+    content="1",
+  )
+  debug_inspect(
+    state.cached_matching_table_archetype_groups[0].length(),
+    content="2",
+  )
+  debug_inspect(state.cached_matching_table_bits.length() > 0, content="true")
+  debug_inspect(
+    state.cached_matching_tables_generation > initial_tables_generation,
+    content="true",
+  )
+}
+
+///|
 test "ecs query access validation: detects query data and filter conflicts" {
   let data_access = QueryDataAccess::new()
   data_access.add_write_component(position_key.id())

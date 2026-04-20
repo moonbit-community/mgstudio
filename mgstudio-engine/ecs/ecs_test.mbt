@@ -214,6 +214,34 @@ fn entity_snapshot_contains(
 }
 
 ///|
+fn entity_snapshot_count(
+  entities : Array[@core.Entity],
+  target : @core.Entity,
+) -> Int {
+  let mut count = 0
+  for entity in entities {
+    if entity.id == target.id && entity.generation == target.generation {
+      count = count + 1
+    }
+  }
+  count
+}
+
+///|
+fn entity_snapshot_index(
+  entities : Array[@core.Entity],
+  entity : @core.Entity,
+) -> Int {
+  for index in 0..<entities.length() {
+    let current = entities[index]
+    if current.id == entity.id && current.generation == entity.generation {
+      return index
+    }
+  }
+  -1
+}
+
+///|
 pub impl Component for TypedCounter with component() {
   typed_counter_key
 }
@@ -547,6 +575,163 @@ test "ecs: bundle migration paths follow archetype/table topology" {
       counter_archetype_id, counter_archetype_id,
     ) ==
     "same-archetype",
+    content="true",
+  )
+}
+
+///|
+test "ecs: bundle migration execution keeps path boundaries and row consistency" {
+  ensure_sparse_storage_metadata_registered()
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  try! world.set(e0, TypedCounter::{ value: 10 })
+  try! world.set(e1, TypedCounter::{ value: 20 })
+
+  let counter_archetype_id = world.entity_archetype_id(e0).unwrap_or(-1)
+  debug_inspect(
+    world.entity_archetype_id(e1).unwrap_or(-1) == counter_archetype_id,
+    content="true",
+  )
+  let counter_table_id = world
+    .archetype_table_id(counter_archetype_id)
+    .unwrap_or(-1)
+  let counter_entities_before = world.archetype_entities_snapshot(
+    counter_archetype_id,
+  )
+  let e0_counter_row_before = entity_snapshot_index(counter_entities_before, e0)
+  let e1_counter_row_before = entity_snapshot_index(counter_entities_before, e1)
+  debug_inspect(
+    e0_counter_row_before >= 0 && e1_counter_row_before >= 0,
+    content="true",
+  )
+
+  debug_inspect(
+    world.bundle_migration_path_label_for_archetypes(
+      counter_archetype_id, counter_archetype_id,
+    ) ==
+    "same-archetype",
+    content="true",
+  )
+  debug_inspect(
+    try! world.update_by_key(e0, typed_counter_key, fn(counter) {
+      TypedCounter::{ value: counter.value }
+    }),
+    content="true",
+  )
+  debug_inspect(
+    world.entity_archetype_id(e0).unwrap_or(-1) == counter_archetype_id,
+    content="true",
+  )
+  debug_inspect(
+    world.archetype_entity_count(counter_archetype_id) == 2,
+    content="true",
+  )
+  let counter_entities_after_same = world.archetype_entities_snapshot(
+    counter_archetype_id,
+  )
+  debug_inspect(
+    entity_snapshot_count(counter_entities_after_same, e0) == 1,
+    content="true",
+  )
+  let e0_counter_row_after_same = entity_snapshot_index(
+    counter_entities_after_same, e0,
+  )
+  debug_inspect(
+    e0_counter_row_after_same == e0_counter_row_before,
+    content="true",
+  )
+  debug_inspect(
+    entity_snapshot_index(counter_entities_after_same, e1) ==
+    e1_counter_row_before,
+    content="true",
+  )
+
+  try! world.set_by_key(e0, sparse_storage_counter_key, SparseStorageCounter::{
+    value: 7,
+  })
+  let counter_sparse_archetype_id = world.entity_archetype_id(e0).unwrap_or(-1)
+  debug_inspect(
+    world.bundle_migration_path_label_for_archetypes(
+      counter_archetype_id, counter_sparse_archetype_id,
+    ) ==
+    "new-archetype-same-table",
+    content="true",
+  )
+  debug_inspect(
+    world.archetype_table_id(counter_sparse_archetype_id).unwrap_or(-1) ==
+    counter_table_id,
+    content="true",
+  )
+  let counter_sparse_entities_after_same_table = world.archetype_entities_snapshot(
+    counter_sparse_archetype_id,
+  )
+  let counter_entities_after_same_table = world.archetype_entities_snapshot(
+    counter_archetype_id,
+  )
+  let e0_counter_row_after_same_table = entity_snapshot_index(
+    counter_sparse_entities_after_same_table, e0,
+  )
+  let e1_counter_row_after_same_table = entity_snapshot_index(
+    counter_entities_after_same_table, e1,
+  )
+  debug_inspect(e0_counter_row_after_same_table == 0, content="true")
+  debug_inspect(e1_counter_row_after_same_table == 0, content="true")
+
+  try! world.set(e0, TypedMarker::{ enabled: true })
+  let counter_sparse_marker_archetype_id = world
+    .entity_archetype_id(e0)
+    .unwrap_or(-1)
+  debug_inspect(
+    world.bundle_migration_path_label_for_archetypes(
+      counter_sparse_archetype_id, counter_sparse_marker_archetype_id,
+    ) ==
+    "new-archetype-new-table",
+    content="true",
+  )
+  let marker_table_id = world
+    .archetype_table_id(counter_sparse_marker_archetype_id)
+    .unwrap_or(-1)
+  debug_inspect(
+    marker_table_id >= 0 && marker_table_id != counter_table_id,
+    content="true",
+  )
+  let counter_sparse_entities_after_new_table = world.archetype_entities_snapshot(
+    counter_sparse_archetype_id,
+  )
+  let counter_sparse_marker_entities_after_new_table = world.archetype_entities_snapshot(
+    counter_sparse_marker_archetype_id,
+  )
+  let counter_entities_after_new_table = world.archetype_entities_snapshot(
+    counter_archetype_id,
+  )
+  debug_inspect(
+    entity_snapshot_index(counter_sparse_entities_after_new_table, e0) == -1,
+    content="true",
+  )
+  debug_inspect(
+    entity_snapshot_index(counter_sparse_marker_entities_after_new_table, e0) ==
+    0,
+    content="true",
+  )
+  debug_inspect(
+    entity_snapshot_index(counter_entities_after_new_table, e1) ==
+    e1_counter_row_after_same_table,
+    content="true",
+  )
+  debug_inspect(
+    match (try! world.get_by_key(e0, typed_counter_key)) {
+      Some(counter) => counter.value == 10
+      None => false
+    },
+    content="true",
+  )
+  debug_inspect(
+    match (try! world.get_by_key(e1, typed_counter_key)) {
+      Some(counter) => counter.value == 20
+      None => false
+    },
     content="true",
   )
 }

@@ -568,6 +568,7 @@ pub struct QueryCache {
   mut cached_candidate_generation : Int
   mut cached_matching_entities : Array[@core.Entity]
   mut cached_matching_archetypes : Array[Int]
+  mut cached_matching_archetype_bits : Array[Bool]
   mut cached_matching_archetype_generation : Int
   mut cached_matching_entities_generation : Int
   mut cached_matching_entities_sequence : Int
@@ -580,6 +581,7 @@ pub struct QueryCache {
   mut cached_matching_entities_valid : Bool
   mut cached_matching_tables : Array[Int]
   mut cached_matching_table_archetype_groups : Array[Array[Int]]
+  mut cached_matching_table_bits : Array[Bool]
   mut cached_matching_tables_generation : Int
   mut cached_matching_tables_valid : Bool
   mut cached_is_dense : Bool
@@ -673,6 +675,7 @@ pub struct QueryState[_, F] {
   mut cached_candidate_generation : Int
   mut cached_matching_entities : Array[@core.Entity]
   mut cached_matching_archetypes : Array[Int]
+  mut cached_matching_archetype_bits : Array[Bool]
   mut cached_matching_archetype_generation : Int
   mut cached_matching_entities_generation : Int
   mut cached_matching_entities_sequence : Int
@@ -685,6 +688,7 @@ pub struct QueryState[_, F] {
   mut cached_matching_entities_valid : Bool
   mut cached_matching_tables : Array[Int]
   mut cached_matching_table_archetype_groups : Array[Array[Int]]
+  mut cached_matching_table_bits : Array[Bool]
   mut cached_matching_tables_generation : Int
   mut cached_matching_tables_valid : Bool
   mut cached_is_dense : Bool

@@ -19,7 +19,6 @@ pub let ecs_key_transform : @ecs.ComponentKey[Transform] = @ecs.register_compone
 
 ///|
 pub impl @ecs.Component for Transform with component() {
-  transform_install_component_metadata()
   ecs_key_transform
 }
 

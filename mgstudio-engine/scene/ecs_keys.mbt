@@ -29,13 +29,11 @@ pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady] = @
 
 ///|
 pub impl @ecs.Component for SceneRoot with component() {
-  scene_install_component_metadata()
   ecs_key_scene_root
 }
 
 ///|
 pub impl @ecs.Component for SceneInstance with component() {
-  scene_install_component_metadata()
   ecs_key_scene_instance
 }
 

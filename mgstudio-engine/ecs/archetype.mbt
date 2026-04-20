@@ -641,11 +641,17 @@ fn World::bundle_migrate_same_archetype(
   archetype_id : Int,
 ) -> Unit {
   self.entity_archetype_ids[entity.id] = archetype_id
-  if archetype_id >= 0 {
-    self.archetype_add_entity(archetype_id, entity)
-  } else {
+  if archetype_id < 0 {
     self.entity_archetype_rows[entity.id] = -1
+    return
   }
+  if self.archetype_entities.get(archetype_id) is Some(entities) {
+    if archetype_entity_index_by_id(entities, entity.id) is Some(index) {
+      self.entity_archetype_rows[entity.id] = index
+      return
+    }
+  }
+  self.archetype_add_entity(archetype_id, entity)
 }
 
 ///|
@@ -1080,12 +1086,11 @@ pub fn World::archetype_component_local_index(
 }
 
 ///|
-fn World::non_empty_archetype_ids_for_component_local_id(
+fn World::archetype_ids_for_component_local_id(
   self : World,
   component_local_id : Int,
 ) -> Array[Int] {
-  match
-    self.archetype_non_empty_ids_by_component_local_id.get(component_local_id) {
+  match self.archetype_ids_by_component_local_id.get(component_local_id) {
     Some(archetype_ids) => archetype_ids.copy()
     None => []
   }
@@ -1119,14 +1124,4 @@ pub fn World::archetype_count(self : World) -> Int {
 ///|
 pub fn World::archetype_generation(self : World) -> Int {
   self.next_archetype_id
-}
-
-///|
-fn World::non_empty_archetype_generation(self : World) -> Int {
-  self.non_empty_archetype_generation
-}
-
-///|
-fn World::non_empty_archetype_ids_snapshot(self : World) -> Array[Int] {
-  self.non_empty_archetype_ids_sorted.copy()
 }

@@ -180,7 +180,7 @@ struct WorldObserverRegistry {
   trigger_observers : @hashmap.HashMap[Int, Array[TriggerObserver]]
   mut observer_parent_lookup_accessors : Array[ObserverParentLookupAccessor]
   mut observer_parent_lookup_component_registration_generation : Int
-  mut observer_parent_lookup_non_empty_archetype_generation : Int
+  mut observer_parent_lookup_archetype_generation : Int
   mut observer_parent_lookup_metadata_generation : Int
 }
 
@@ -196,7 +196,7 @@ fn world_observer_registry_new() -> WorldObserverRegistry {
     trigger_observers: @hashmap.HashMap::new(),
     observer_parent_lookup_accessors: [],
     observer_parent_lookup_component_registration_generation: -1,
-    observer_parent_lookup_non_empty_archetype_generation: -1,
+    observer_parent_lookup_archetype_generation: -1,
     observer_parent_lookup_metadata_generation: -1,
   }
 }
@@ -795,12 +795,12 @@ fn World::refresh_observer_parent_lookup_accessors(
 ) -> Array[ObserverParentLookupAccessor] {
   let registry_ref = observer_registry_ref(self)
   let component_registration_generation = self.component_registration_generation()
-  let non_empty_archetype_generation = self.non_empty_archetype_generation()
+  let archetype_generation = self.archetype_generation()
   let metadata_generation = component_relationship_metadata_generation()
   if registry_ref.val.observer_parent_lookup_component_registration_generation ==
     component_registration_generation &&
-    registry_ref.val.observer_parent_lookup_non_empty_archetype_generation ==
-    non_empty_archetype_generation &&
+    registry_ref.val.observer_parent_lookup_archetype_generation ==
+    archetype_generation &&
     registry_ref.val.observer_parent_lookup_metadata_generation ==
     metadata_generation {
     return registry_ref.val.observer_parent_lookup_accessors
@@ -814,9 +814,7 @@ fn World::refresh_observer_parent_lookup_accessors(
     if !source.observer_parent_lookup {
       continue
     }
-    if self
-      .non_empty_archetype_ids_for_component_local_id(local_component_id)
-      .length() ==
+    if self.archetype_ids_for_component_local_id(local_component_id).length() ==
       0 {
       continue
     }
@@ -824,7 +822,7 @@ fn World::refresh_observer_parent_lookup_accessors(
   }
   registry_ref.val.observer_parent_lookup_accessors = accessors
   registry_ref.val.observer_parent_lookup_component_registration_generation = component_registration_generation
-  registry_ref.val.observer_parent_lookup_non_empty_archetype_generation = non_empty_archetype_generation
+  registry_ref.val.observer_parent_lookup_archetype_generation = archetype_generation
   registry_ref.val.observer_parent_lookup_metadata_generation = metadata_generation
   registry_ref.val.observer_parent_lookup_accessors
 }
