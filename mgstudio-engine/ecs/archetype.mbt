@@ -45,6 +45,50 @@ fn archetype_signature_from_local_component_ids(
 }
 
 ///|
+fn archetype_local_components_with_added_component(
+  component_local_ids : Array[Int],
+  component_local_id : Int,
+) -> Array[Int] {
+  if component_local_ids.contains(component_local_id) {
+    return component_local_ids.copy()
+  }
+  let result : Array[Int] = []
+  let mut inserted = false
+  for existing_component_local_id in component_local_ids {
+    if !inserted && component_local_id < existing_component_local_id {
+      result.push(component_local_id)
+      inserted = true
+    }
+    result.push(existing_component_local_id)
+  }
+  if !inserted {
+    result.push(component_local_id)
+  }
+  result
+}
+
+///|
+fn archetype_local_components_with_removed_component(
+  component_local_ids : Array[Int],
+  component_local_id : Int,
+) -> Array[Int] {
+  let result : Array[Int] = []
+  let mut removed = false
+  for existing_component_local_id in component_local_ids {
+    if !removed && existing_component_local_id == component_local_id {
+      removed = true
+      continue
+    }
+    result.push(existing_component_local_id)
+  }
+  if removed {
+    result
+  } else {
+    component_local_ids.copy()
+  }
+}
+
+///|
 fn archetype_entity_index_by_id(
   entities : Array[@core.Entity],
   entity_id : Int,
@@ -342,6 +386,180 @@ fn World::ensure_archetype_for_local_components(
 }
 
 ///|
+fn World::cache_archetype_add_edge(
+  self : World,
+  from_archetype_id : Int,
+  component_local_id : Int,
+  to_archetype_id : Int,
+) -> Unit {
+  let add_edges = self.archetype_add_edges_by_component_local_id.get_or_init(
+    from_archetype_id,
+    fn() { {} },
+  )
+  add_edges.set(component_local_id, to_archetype_id)
+  let remove_edges = self.archetype_remove_edges_by_component_local_id.get_or_init(
+    to_archetype_id,
+    fn() { {} },
+  )
+  remove_edges.set(component_local_id, from_archetype_id)
+}
+
+///|
+fn World::cache_archetype_remove_edge(
+  self : World,
+  from_archetype_id : Int,
+  component_local_id : Int,
+  to_archetype_id : Int,
+) -> Unit {
+  let remove_edges = self.archetype_remove_edges_by_component_local_id.get_or_init(
+    from_archetype_id,
+    fn() { {} },
+  )
+  remove_edges.set(component_local_id, to_archetype_id)
+  let add_edges = self.archetype_add_edges_by_component_local_id.get_or_init(
+    to_archetype_id,
+    fn() { {} },
+  )
+  add_edges.set(component_local_id, from_archetype_id)
+}
+
+///|
+fn World::ensure_archetype_add_edge_target(
+  self : World,
+  from_archetype_id : Int,
+  component_local_id : Int,
+) -> Int {
+  match self.archetype_add_edges_by_component_local_id.get(from_archetype_id) {
+    Some(add_edges) =>
+      match add_edges.get(component_local_id) {
+        Some(target_archetype_id) => target_archetype_id
+        None => {
+          let from_components = self.archetype_component_local_ids
+            .get(from_archetype_id)
+            .unwrap_or([])
+          if from_components.contains(component_local_id) {
+            self.cache_archetype_add_edge(
+              from_archetype_id,
+              component_local_id,
+              from_archetype_id,
+            )
+            from_archetype_id
+          } else {
+            let target_components = archetype_local_components_with_added_component(
+              from_components,
+              component_local_id,
+            )
+            let target_archetype_id = self.ensure_archetype_for_local_components(
+              target_components,
+            )
+            self.cache_archetype_add_edge(
+              from_archetype_id,
+              component_local_id,
+              target_archetype_id,
+            )
+            target_archetype_id
+          }
+        }
+      }
+    None => {
+      let from_components = self.archetype_component_local_ids
+        .get(from_archetype_id)
+        .unwrap_or([])
+      if from_components.contains(component_local_id) {
+        self.cache_archetype_add_edge(
+          from_archetype_id,
+          component_local_id,
+          from_archetype_id,
+        )
+        from_archetype_id
+      } else {
+        let target_components = archetype_local_components_with_added_component(
+          from_components,
+          component_local_id,
+        )
+        let target_archetype_id = self.ensure_archetype_for_local_components(
+          target_components,
+        )
+        self.cache_archetype_add_edge(
+          from_archetype_id,
+          component_local_id,
+          target_archetype_id,
+        )
+        target_archetype_id
+      }
+    }
+  }
+}
+
+///|
+fn World::ensure_archetype_remove_edge_target(
+  self : World,
+  from_archetype_id : Int,
+  component_local_id : Int,
+) -> Int {
+  match self.archetype_remove_edges_by_component_local_id.get(from_archetype_id) {
+    Some(remove_edges) =>
+      match remove_edges.get(component_local_id) {
+        Some(target_archetype_id) => target_archetype_id
+        None => {
+          let from_components = self.archetype_component_local_ids
+            .get(from_archetype_id)
+            .unwrap_or([])
+          if !from_components.contains(component_local_id) {
+            self.cache_archetype_remove_edge(
+              from_archetype_id,
+              component_local_id,
+              from_archetype_id,
+            )
+            from_archetype_id
+          } else {
+            let target_components = archetype_local_components_with_removed_component(
+              from_components,
+              component_local_id,
+            )
+            let target_archetype_id = self.ensure_archetype_for_local_components(
+              target_components,
+            )
+            self.cache_archetype_remove_edge(
+              from_archetype_id,
+              component_local_id,
+              target_archetype_id,
+            )
+            target_archetype_id
+          }
+        }
+      }
+    None => {
+      let from_components = self.archetype_component_local_ids
+        .get(from_archetype_id)
+        .unwrap_or([])
+      if !from_components.contains(component_local_id) {
+        self.cache_archetype_remove_edge(
+          from_archetype_id,
+          component_local_id,
+          from_archetype_id,
+        )
+        from_archetype_id
+      } else {
+        let target_components = archetype_local_components_with_removed_component(
+          from_components,
+          component_local_id,
+        )
+        let target_archetype_id = self.ensure_archetype_for_local_components(
+          target_components,
+        )
+        self.cache_archetype_remove_edge(
+          from_archetype_id,
+          component_local_id,
+          target_archetype_id,
+        )
+        target_archetype_id
+      }
+    }
+  }
+}
+
+///|
 fn World::entity_local_components(
   self : World,
   entity : @core.Entity,
@@ -440,20 +658,150 @@ fn World::refresh_entity_archetype(self : World, entity : @core.Entity) -> Unit 
     return
   }
   self.ensure_entity_archetype_capacity(entity.id)
-  let normalized_components = archetype_sorted_unique_local_component_ids(
-    self.entity_local_components(entity),
-  )
-  self.entity_component_local_ids[entity.id] = normalized_components
-  let next_archetype_id = self.ensure_archetype_for_local_components(
-    normalized_components,
-  )
   let previous_archetype_id = self.entity_archetype_ids[entity.id]
+  let current_component_local_ids = self.entity_local_components(entity)
+  let mut next_archetype_id : Int? = None
+  let mut normalized_components : Array[Int]? = None
+  if previous_archetype_id >= 0 &&
+    self.archetype_component_local_ids.get(previous_archetype_id)
+    is Some(previous_component_local_ids) {
+    let previous_len = previous_component_local_ids.length()
+    let current_len = current_component_local_ids.length()
+    let previous_presence = self.archetype_component_local_id_presence.get(
+      previous_archetype_id,
+    ).unwrap_or({})
+    if current_len == previous_len + 1 {
+      let current_presence : Map[Int, Bool] = {}
+      let mut added_component_local_id : Int? = None
+      let mut valid_single_add = true
+      for component_local_id in current_component_local_ids {
+        current_presence.set(component_local_id, true)
+        if previous_presence.get(component_local_id) is None {
+          match added_component_local_id {
+            Some(_) => {
+              valid_single_add = false
+              break
+            }
+            None => added_component_local_id = Some(component_local_id)
+          }
+        }
+      }
+      if valid_single_add {
+        for component_local_id in previous_component_local_ids {
+          if current_presence.get(component_local_id) is None {
+            valid_single_add = false
+            break
+          }
+        }
+      }
+      if valid_single_add {
+        match added_component_local_id {
+          Some(component_local_id) =>
+            next_archetype_id = Some(
+              self.ensure_archetype_add_edge_target(
+                previous_archetype_id,
+                component_local_id,
+              ),
+            )
+          None => ()
+        }
+      }
+    } else if previous_len == current_len + 1 {
+      let current_presence : Map[Int, Bool] = {}
+      let mut removed_component_local_id : Int? = None
+      let mut valid_single_remove = true
+      for component_local_id in current_component_local_ids {
+        current_presence.set(component_local_id, true)
+        if previous_presence.get(component_local_id) is None {
+          valid_single_remove = false
+          break
+        }
+      }
+      if valid_single_remove {
+        for component_local_id in previous_component_local_ids {
+          if current_presence.get(component_local_id) is None {
+            match removed_component_local_id {
+              Some(_) => {
+                valid_single_remove = false
+                break
+              }
+              None => removed_component_local_id = Some(component_local_id)
+            }
+          }
+        }
+      }
+      if valid_single_remove {
+        match removed_component_local_id {
+          Some(component_local_id) =>
+            next_archetype_id = Some(
+              self.ensure_archetype_remove_edge_target(
+                previous_archetype_id,
+                component_local_id,
+              ),
+            )
+          None => ()
+        }
+      }
+    }
+  }
+  if next_archetype_id is None {
+    let normalized = archetype_sorted_unique_local_component_ids(
+      current_component_local_ids,
+    )
+    normalized_components = Some(normalized)
+    next_archetype_id = Some(
+      self.ensure_archetype_for_local_components(normalized),
+    )
+  }
+  guard next_archetype_id is Some(next_archetype_id) else { return }
+  if self.archetype_component_local_ids.get(next_archetype_id)
+    is Some(next_component_local_ids) {
+    self.entity_component_local_ids[entity.id] = next_component_local_ids.copy()
+  } else if normalized_components is Some(normalized) {
+    self.entity_component_local_ids[entity.id] = normalized
+  }
   if previous_archetype_id == next_archetype_id {
     return
   }
   if previous_archetype_id >= 0 {
     self.archetype_remove_entity_by_id(previous_archetype_id, entity.id)
   }
+  self.entity_archetype_ids[entity.id] = next_archetype_id
+  self.archetype_add_entity(next_archetype_id, entity)
+}
+
+///|
+fn World::refresh_entity_archetype_after_component_remove(
+  self : World,
+  entity : @core.Entity,
+  removed_component_local_id : Int,
+) -> Unit {
+  if !self.is_alive(entity) {
+    return
+  }
+  self.ensure_entity_archetype_capacity(entity.id)
+  let previous_archetype_id = self.entity_archetype_ids[entity.id]
+  if previous_archetype_id < 0 {
+    self.refresh_entity_archetype(entity)
+    return
+  }
+  let next_archetype_id = self.ensure_archetype_remove_edge_target(
+    previous_archetype_id,
+    removed_component_local_id,
+  )
+  if self.archetype_component_local_ids.get(next_archetype_id)
+    is Some(next_component_local_ids) {
+    self.entity_component_local_ids[entity.id] = next_component_local_ids.copy()
+  } else {
+    self.entity_component_local_ids[entity.id] =
+      archetype_sorted_unique_local_component_ids(
+        self.entity_local_components(entity),
+      )
+  }
+  if previous_archetype_id == next_archetype_id {
+    return
+  }
+  self.archetype_remove_entity_by_id(previous_archetype_id, entity.id)
   self.entity_archetype_ids[entity.id] = next_archetype_id
   self.archetype_add_entity(next_archetype_id, entity)
 }

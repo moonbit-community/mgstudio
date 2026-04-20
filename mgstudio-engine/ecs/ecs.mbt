@@ -253,6 +253,8 @@ pub struct World {
   archetype_component_definition_ids : Map[Int, Array[Int]]
   archetype_component_definition_id_presence : Map[Int, Map[Int, Bool]]
   archetype_ids_by_component_local_id : Map[Int, Array[Int]]
+  archetype_add_edges_by_component_local_id : Map[Int, Map[Int, Int]]
+  archetype_remove_edges_by_component_local_id : Map[Int, Map[Int, Int]]
   archetype_non_empty_ids_by_component_local_id : Map[Int, Array[Int]]
   mut non_empty_archetype_ids_sorted : Array[Int]
   mut non_empty_archetype_generation : Int
@@ -308,6 +310,8 @@ pub fn World::new() -> World {
     archetype_component_definition_ids: { 0: [] },
     archetype_component_definition_id_presence: { 0: {} },
     archetype_ids_by_component_local_id: {},
+    archetype_add_edges_by_component_local_id: {},
+    archetype_remove_edges_by_component_local_id: {},
     archetype_non_empty_ids_by_component_local_id: {},
     non_empty_archetype_ids_sorted: [],
     non_empty_archetype_generation: 0,
@@ -505,7 +509,10 @@ pub fn[T] World::remove_by_key(
           self.run_component_remove_hooks(entity, key.id(), caller~)
           ignore(store_ref.val.remove(entity))
           self.entity_remove_component_local_id(entity, component_local_id)
-          self.refresh_entity_archetype(entity)
+          self.refresh_entity_archetype_after_component_remove(
+            entity,
+            component_local_id,
+          )
           self.mark_structure_changed()
           self.run_remove_observers(entity, key.id())
           self.ensure_removed_component_messages(key.id()).val.send(
