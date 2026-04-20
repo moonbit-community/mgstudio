@@ -106,8 +106,12 @@ fn entity_has_component_id(
   component_id : Int,
   entity : @core.Entity,
 ) -> Bool {
-  match world.component_store(component_id) {
-    Some(store_ref) => store_ref.val.contains(entity)
+  if !world.is_alive(entity) {
+    return false
+  }
+  match world.local_component_id(component_id) {
+    Some(local_component_id) =>
+      world.entity_local_components(entity).contains(local_component_id)
     None => false
   }
 }

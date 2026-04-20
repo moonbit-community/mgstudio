@@ -380,20 +380,12 @@ pub fn World::despawn(
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   let removed_components : Array[(Int, ErasedValue)] = []
-  for entry in self.table_component_columns.iter() {
-    let (local_id, store_ref) = entry
+  let component_local_ids = self.entity_local_components(entity).copy()
+  for local_id in component_local_ids {
     guard self.definition_component_id(local_id) is Some(key_id) else {
       continue
     }
-    if store_ref.val.get(entity) is Some(payload) {
-      removed_components.push((key_id, payload))
-    }
-  }
-  for entry in self.sparse_component_columns.iter() {
-    let (local_id, store_ref) = entry
-    guard self.definition_component_id(local_id) is Some(key_id) else {
-      continue
-    }
+    guard self.component_store(key_id) is Some(store_ref) else { continue }
     if store_ref.val.get(entity) is Some(payload) {
       removed_components.push((key_id, payload))
     }

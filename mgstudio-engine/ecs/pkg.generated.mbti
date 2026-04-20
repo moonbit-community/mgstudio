@@ -621,6 +621,7 @@ pub struct QueryState[_, F] {
   mut cached_matching_candidate_generation : Int
   mut cached_matching_generation : Int
   mut cached_matching_sequence : Int
+  mut cached_matching_entities_valid : Bool
   mut cached_default_filter_component_ids : Array[Int]
   mut cached_default_filter_local_component_ids : Array[Int]
   mut cached_default_filters_world_id : Int

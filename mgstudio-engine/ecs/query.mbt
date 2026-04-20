@@ -30,6 +30,7 @@ pub struct QueryState[_, F] {
   mut cached_matching_candidate_generation : Int
   mut cached_matching_generation : Int
   mut cached_matching_sequence : Int
+  mut cached_matching_entities_valid : Bool
   mut cached_default_filter_component_ids : Array[Int]
   mut cached_default_filter_local_component_ids : Array[Int]
   mut cached_default_filters_world_id : Int
@@ -246,6 +247,7 @@ fn[D, F] query_state_new(filter : F) -> QueryState[D, F] {
     cached_matching_candidate_generation: -1,
     cached_matching_generation: -1,
     cached_matching_sequence: -1,
+    cached_matching_entities_valid: false,
     cached_default_filter_component_ids: [],
     cached_default_filter_local_component_ids: [],
     cached_default_filters_world_id: -1,
@@ -960,11 +962,35 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
   self : QueryState[D, F],
   world : World,
 ) -> D? raise EcsError {
-  let entities = self.query_matching_entities(world)
-  if entities.length() != 1 {
-    return None
+  let data_requires_entity_check = D::requires_entity_check()
+  let filter_requires_entity_check = QueryFilter::requires_entity_check(
+    self.filter,
+  )
+  if !data_requires_entity_check && !filter_requires_entity_check {
+    let found : Ref[@core.Entity?] = Ref::new(None)
+    for archetype_id in self.query_matching_archetypes(world) {
+      match world.archetype_entities_view(archetype_id) {
+        Some(entities) =>
+          for entity in entities {
+            if found.val is Some(_) {
+              return None
+            }
+            found.val = Some(entity)
+          }
+        None => ()
+      }
+    }
+    match found.val {
+      Some(entity) => Some(D::fetch(world, entity))
+      None => None
+    }
+  } else {
+    let entities = self.query_matching_entities(world)
+    if entities.length() != 1 {
+      return None
+    }
+    Some(D::fetch(world, entities[0]))
   }
-  Some(D::fetch(world, entities[0]))
 }
 
 ///|
@@ -981,6 +1007,17 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::count(
   self : QueryState[D, F],
   world : World,
 ) -> Int {
+  let data_requires_entity_check = D::requires_entity_check()
+  let filter_requires_entity_check = QueryFilter::requires_entity_check(
+    self.filter,
+  )
+  if !data_requires_entity_check && !filter_requires_entity_check {
+    let count = Ref::new(0)
+    for archetype_id in self.query_matching_archetypes(world) {
+      count.val = count.val + world.archetype_entity_count(archetype_id)
+    }
+    return count.val
+  }
   self.query_matching_entities(world).length()
 }
 
@@ -1053,6 +1090,46 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_entities(
   self : QueryState[D, F],
   world : World,
 ) -> Array[@core.Entity] {
+  let matched_archetypes = self.query_matching_archetypes(world)
+  if self.cached_matching_entities_valid {
+    return self.cached_matching_entities
+  }
+  let data_requires_entity_check = D::requires_entity_check()
+  let filter_requires_entity_check = QueryFilter::requires_entity_check(
+    self.filter,
+  )
+  let matched_entities : Array[@core.Entity] = []
+  if !data_requires_entity_check && !filter_requires_entity_check {
+    query_collect_archetype_entities(
+      world, matched_archetypes, matched_entities,
+    )
+  } else {
+    for archetype_id in matched_archetypes {
+      match world.archetype_entities_view(archetype_id) {
+        Some(entities) =>
+          for entity in entities {
+            if (!data_requires_entity_check || D::matches(world, entity)) &&
+              (
+                !filter_requires_entity_check ||
+                QueryFilter::matches(self.filter, world, entity)
+              ) {
+              matched_entities.push(entity)
+            }
+          }
+        None => ()
+      }
+    }
+  }
+  self.cached_matching_entities = matched_entities
+  self.cached_matching_entities_valid = true
+  self.cached_matching_entities
+}
+
+///|
+fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
+  self : QueryState[D, F],
+  world : World,
+) -> Array[Int] {
   let data_anchor_component_id = D::iteration_anchor_component()
   let filter_anchor_component_id = QueryFilter::iteration_anchor_component(
     self.filter,
@@ -1070,17 +1147,14 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_entities(
   let matching_generation = query_matching_generation(
     world, dependency_component_ids, data_anchor_component_id, filter_anchor_component_id,
   )
-  let data_requires_entity_check = D::requires_entity_check()
-  let filter_requires_entity_check = QueryFilter::requires_entity_check(
-    self.filter,
-  )
   let depends_on_sequence = QueryFilter::depends_on_sequence(self.filter)
   let sequence_marker = if depends_on_sequence {
     query_sequence_marker(world)
   } else {
     -1
   }
-  if self.cached_matching_generation != matching_generation ||
+  let matching_metadata_changed = self.cached_matching_generation !=
+    matching_generation ||
     self.cached_matching_anchor_component_id != data_anchor_component_id ||
     self.cached_matching_filter_anchor_component_id !=
     filter_anchor_component_id ||
@@ -1088,7 +1162,8 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_entities(
     candidate_anchor_component_id ||
     self.cached_matching_candidate_generation != candidate_generation ||
     default_filters_stale ||
-    (depends_on_sequence && self.cached_matching_sequence != sequence_marker) {
+    (depends_on_sequence && self.cached_matching_sequence != sequence_marker)
+  if matching_metadata_changed {
     let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
     let candidate_archetype_generation = query_candidate_archetype_generation(
       world,
@@ -1119,39 +1194,15 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_entities(
       self.cached_matching_archetypes = matched_archetypes
       self.cached_matching_archetype_generation = candidate_archetype_generation
     }
-    let matched_entities : Array[@core.Entity] = []
-    if !data_requires_entity_check && !filter_requires_entity_check {
-      query_collect_archetype_entities(
-        world,
-        self.cached_matching_archetypes,
-        matched_entities,
-      )
-    } else {
-      for archetype_id in self.cached_matching_archetypes {
-        match world.archetype_entities_view(archetype_id) {
-          Some(entities) =>
-            for entity in entities {
-              if (!data_requires_entity_check || D::matches(world, entity)) &&
-                (
-                  !filter_requires_entity_check ||
-                  QueryFilter::matches(self.filter, world, entity)
-                ) {
-                matched_entities.push(entity)
-              }
-            }
-          None => ()
-        }
-      }
-    }
-    self.cached_matching_entities = matched_entities
     self.cached_matching_anchor_component_id = data_anchor_component_id
     self.cached_matching_filter_anchor_component_id = filter_anchor_component_id
     self.cached_matching_candidate_anchor_component_id = candidate_anchor_component_id
     self.cached_matching_candidate_generation = candidate_generation
     self.cached_matching_generation = matching_generation
     self.cached_matching_sequence = sequence_marker
+    self.cached_matching_entities_valid = false
   }
-  self.cached_matching_entities
+  self.cached_matching_archetypes
 }
 
 ///|
