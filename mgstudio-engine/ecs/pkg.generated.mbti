@@ -725,6 +725,8 @@ pub struct World {
   archetype_component_definition_ids : Map[Int, Array[Int]]
   archetype_component_definition_id_presence : Map[Int, Map[Int, Bool]]
   archetype_ids_by_component_local_id : Map[Int, Array[Int]]
+  archetype_add_edges_by_component_local_id : Map[Int, Map[Int, Int]]
+  archetype_remove_edges_by_component_local_id : Map[Int, Map[Int, Int]]
   archetype_non_empty_ids_by_component_local_id : Map[Int, Array[Int]]
   mut non_empty_archetype_ids_sorted : Array[Int]
   mut non_empty_archetype_generation : Int

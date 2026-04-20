@@ -510,8 +510,7 @@ pub fn[T] World::remove_by_key(
           ignore(store_ref.val.remove(entity))
           self.entity_remove_component_local_id(entity, component_local_id)
           self.refresh_entity_archetype_after_component_remove(
-            entity,
-            component_local_id,
+            entity, component_local_id,
           )
           self.mark_structure_changed()
           self.run_remove_observers(entity, key.id())
