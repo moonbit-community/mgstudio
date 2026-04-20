@@ -203,12 +203,12 @@ fn World::rebuild_required_by_components(self : World) -> Unit {
   for entry in self.required_components.iter() {
     local_component_ids.push(entry.0)
   }
+  local_component_ids.sort()
   for local_component_id in local_component_ids {
     self.ensure_required_components_state(local_component_id).val.required_by = []
   }
-  for entry in self.required_components.iter() {
-    let requiree_local_id = entry.0
-    let state_ref = entry.1
+  for requiree_local_id in local_component_ids {
+    let state_ref = self.ensure_required_components_state(requiree_local_id)
     for required in state_ref.val.all {
       let required_state_ref = self.ensure_required_components_state(
         required.component_id,
@@ -219,6 +219,9 @@ fn World::rebuild_required_by_components(self : World) -> Unit {
       )
     }
   }
+  for local_component_id in local_component_ids {
+    self.ensure_required_components_state(local_component_id).val.required_by.sort()
+  }
 }
 
 ///|
@@ -228,6 +231,7 @@ fn World::rebuild_all_required_components(self : World) -> Unit {
   for entry in self.required_components.iter() {
     component_ids.push(entry.0)
   }
+  component_ids.sort()
   for component_id in component_ids {
     self.rebuild_required_components_for(component_id, rebuilt)
   }

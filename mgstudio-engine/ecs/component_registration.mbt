@@ -338,9 +338,29 @@ fn World::install_component_metadata(
     }
     _ => ()
   }
-  if !component_hooks_is_empty(hooks) &&
-    self.component_hooks_registry.get(local_component_id) is None {
-    self.component_hooks_registry.set(local_component_id, hooks)
+  if !component_hooks_is_empty(hooks) {
+    let existing = self.component_hooks_registry
+      .get(local_component_id)
+      .unwrap_or(ComponentHooks::new())
+    let merged_result : Result[ComponentHooks, ComponentHooksError] = try? component_hooks_merge(
+      existing, hooks, local_component_id,
+    )
+    match merged_result {
+      Ok(merged_hooks) =>
+        self.component_hooks_registry.set(local_component_id, merged_hooks)
+      Err(DuplicateHookRegistration(_, kind)) =>
+        abort(
+          "Duplicate static \{component_hook_kind_name(kind)} hook registration for component `\{component_debug_name}`",
+        )
+      Err(DuplicateRegistration(_)) =>
+        abort(
+          "Duplicate static hook registration for component `\{component_debug_name}`",
+        )
+      Err(ComponentAlreadyInUse(_)) =>
+        abort(
+          "Static hook registration ran too late for component `\{component_debug_name}`",
+        )
+    }
   }
   self.components.storage_types_by_local_id.set(
     local_component_id,

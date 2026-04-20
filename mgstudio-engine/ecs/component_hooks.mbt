@@ -306,10 +306,11 @@ pub fn[T] World::register_component_hooks_with(
   if self.component_has_been_used(local_component_id) {
     raise ComponentAlreadyInUse(local_component_id)
   }
-  if self.component_hooks_registry.contains(local_component_id) {
-    raise DuplicateRegistration(local_component_id)
-  }
-  self.component_hooks_registry.set(local_component_id, hooks)
+  let existing = self.component_hooks_registry
+    .get(local_component_id)
+    .unwrap_or(ComponentHooks::new())
+  let merged = component_hooks_merge(existing, hooks, local_component_id)
+  self.component_hooks_registry.set(local_component_id, merged)
 }
 
 ///|
@@ -347,6 +348,63 @@ fn component_hooks_kind_registered(
     OnRemove => hooks.on_remove is Some(_)
     OnDespawn => hooks.on_despawn is Some(_)
   }
+}
+
+///|
+fn component_hook_kind_name(kind : ComponentHookKind) -> String {
+  match kind {
+    OnAdd => "OnAdd"
+    OnInsert => "OnInsert"
+    OnReplace => "OnReplace"
+    OnRemove => "OnRemove"
+    OnDespawn => "OnDespawn"
+  }
+}
+
+///|
+fn component_hooks_merge(
+  existing : ComponentHooks,
+  incoming : ComponentHooks,
+  component_local_id : Int,
+) -> ComponentHooks raise ComponentHooksError {
+  let mut merged = existing
+
+  if incoming.on_add is Some(on_add) {
+    if merged.on_add is Some(_) {
+      raise DuplicateHookRegistration(component_local_id, OnAdd)
+    }
+    merged = ComponentHooks::{ ..merged, on_add: Some(on_add) }
+  }
+
+  if incoming.on_insert is Some(on_insert) {
+    if merged.on_insert is Some(_) {
+      raise DuplicateHookRegistration(component_local_id, OnInsert)
+    }
+    merged = ComponentHooks::{ ..merged, on_insert: Some(on_insert) }
+  }
+
+  if incoming.on_replace is Some(on_replace) {
+    if merged.on_replace is Some(_) {
+      raise DuplicateHookRegistration(component_local_id, OnReplace)
+    }
+    merged = ComponentHooks::{ ..merged, on_replace: Some(on_replace) }
+  }
+
+  if incoming.on_remove is Some(on_remove) {
+    if merged.on_remove is Some(_) {
+      raise DuplicateHookRegistration(component_local_id, OnRemove)
+    }
+    merged = ComponentHooks::{ ..merged, on_remove: Some(on_remove) }
+  }
+
+  if incoming.on_despawn is Some(on_despawn) {
+    if merged.on_despawn is Some(_) {
+      raise DuplicateHookRegistration(component_local_id, OnDespawn)
+    }
+    merged = ComponentHooks::{ ..merged, on_despawn: Some(on_despawn) }
+  }
+
+  merged
 }
 
 ///|

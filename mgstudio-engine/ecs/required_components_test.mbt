@@ -264,3 +264,66 @@ test "ecs: try register required components reports duplicate cycle and archetyp
     .unwrap_or(-1)
   debug_inspect(component_id == archetype_world_a, content="true")
 }
+
+///|
+test "ecs: required_by stays consistent after transitive rebuild and constructor override" {
+  let world = World::new()
+
+  try! world.register_required_components(required_a_key, required_b_key)
+  try! world.register_required_components(required_b_key, required_c_key)
+  try! world.register_required_components_with(required_a_key, required_c_key, fn() {
+    RequiredC::{ value: 99 }
+  })
+  try! world.register_required_components(required_c_key, required_counter_key)
+
+  let required_by_c = world.get_required_by_components(required_c_key).unwrap()
+  debug_inspect(required_by_c.len(), content="2")
+  debug_inspect(required_by_c.contains(required_a_key.id()), content="true")
+  debug_inspect(required_by_c.contains(required_b_key.id()), content="true")
+
+  let required_by_counter = world
+    .get_required_by_components(required_counter_key)
+    .unwrap()
+  debug_inspect(required_by_counter.len(), content="3")
+  debug_inspect(
+    required_by_counter.contains(required_a_key.id()),
+    content="true",
+  )
+  debug_inspect(
+    required_by_counter.contains(required_b_key.id()),
+    content="true",
+  )
+  debug_inspect(
+    required_by_counter.contains(required_c_key.id()),
+    content="true",
+  )
+}
+
+///|
+test "ecs: late required registration is pre-use-only and world-local" {
+  let world0 = World::new()
+  let world1 = World::new()
+
+  let entity = world0.spawn()
+  try! (world0.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)
+
+  let late_result : Result[Unit, RequiredComponentsError] = try? world0.register_required_components(
+    required_a_key, required_b_key,
+  )
+  guard late_result is Err(ArchetypeExists(component_id)) else {
+    fail("expected late required registration in used world to fail")
+  }
+  let world0_component_id = world0
+    .component_id_by_key(required_a_key)
+    .unwrap_or(-1)
+  debug_inspect(component_id == world0_component_id, content="true")
+
+  let fresh_result : Result[Unit, RequiredComponentsError] = try? world1.register_required_components(
+    required_a_key, required_b_key,
+  )
+  guard fresh_result is Ok(_) else {
+    fail("expected required registration in independent world to succeed")
+  }
+  let required = world1.get_required_components(required_a_key).unwrap()
+  debug_inspect(required.contains(required_b_key.id()), content="true")
+}
