@@ -347,7 +347,11 @@ fn render3d_execute_collect_meshes(
   if !mesh_cache_ref.val.initialized {
     mesh_cache_ref.val.by_entity.clear()
     mesh_cache_ref.val.reextract_next_frame.clear()
-    source_world.for_each_component(ecs_key_mesh3d, fn(entity, _mesh3d) {
+    let mesh_query : @ecs.Query[(@core.Entity, @ecs.Comp[Mesh3d]), @ecs.All] = @ecs.query(
+      source_world,
+    )
+    try! mesh_query.view(fn(_query_entity, data) {
+      let (entity, _mesh3d) = data
       let entity_key = render3d_mesh_entity_key(entity)
       let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
         source_world, entity, mesh_runtime_state_ref, morph_indices_ref, skin_uniforms_ref,

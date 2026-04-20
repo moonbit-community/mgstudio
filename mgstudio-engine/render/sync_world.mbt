@@ -207,8 +207,10 @@ fn track_sync_to_render_world_removed(
   event : @ecs.ComponentOn[@ecs.Remove, SyncToRenderWorld],
 ) -> Unit {
   let world = @ecs.current_observer_world_abort_missing()
-  match
-    (world.get_by_key(event.entity, ecs_key_render_entity) catch { _ => None }) {
+  if !world.is_alive(event.entity) {
+    return
+  }
+  match (try! world.get_by_key(event.entity, ecs_key_render_entity)) {
     Some(render_entity) =>
       pending_sync_entity_ref_or_abort(world).val.push(
         EntityRecord::Removed(render_entity),
@@ -233,58 +235,55 @@ fn entity_sync_system(
         if !main_world.is_alive(main_entity) {
           continue
         }
-        if (main_world.get_by_key(main_entity, ecs_key_render_entity) catch {
-            _ => None
-          })
+        if (try! main_world.get_by_key(main_entity, ecs_key_render_entity))
           is Some(_) {
           abort(
             "Attempting to synchronize an entity that has already been synchronized!",
           )
         }
         let render_entity = render_world.spawn()
-        let mut render_world_inserted = true
         render_world.set_by_key(
           render_entity,
           ecs_key_main_entity,
           MainEntity::new(main_entity),
         ) catch {
-          _ => render_world_inserted = false
+          _ =>
+            abort(
+              "sync_world: failed to attach MainEntity on render world entity",
+            )
         }
-        if !render_world_inserted {
-          render_world.despawn(render_entity) catch {
-            _ => ()
-          }
-          abort(
-            "sync_world: failed to attach MainEntity on render world entity",
-          )
-        }
-        let mut main_world_inserted = true
         main_world.set_by_key(
           main_entity,
           ecs_key_render_entity,
           RenderEntity::new(render_entity),
         ) catch {
-          _ => main_world_inserted = false
-        }
-        if !main_world_inserted {
-          render_world.despawn(render_entity) catch {
-            _ => ()
+          _ => {
+            if render_world.is_alive(render_entity) {
+              render_world.despawn(render_entity) catch {
+                _ =>
+                  abort(
+                    "sync_world: rollback failed after RenderEntity attach failure",
+                  )
+              }
+            }
+            abort(
+              "sync_world: failed to attach RenderEntity on main world entity",
+            )
           }
-          abort(
-            "sync_world: failed to attach RenderEntity on main world entity",
-          )
         }
       }
       EntityRecord::Removed(render_entity) =>
         if render_world.is_alive(render_entity.id()) {
           render_world.despawn(render_entity.id()) catch {
-            _ => ()
+            _ =>
+              abort("sync_world: failed to despawn synchronized render entity")
           }
         }
       EntityRecord::ComponentRemoved(main_entity, removal) => {
-        guard (main_world.get_by_key(main_entity, ecs_key_render_entity) catch {
-            _ => None
-          })
+        if !main_world.is_alive(main_entity) {
+          continue
+        }
+        guard (try! main_world.get_by_key(main_entity, ecs_key_render_entity))
           is Some(render_entity) else {
           continue
         }

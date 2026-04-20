@@ -42,7 +42,11 @@ fn render3d_execute_collect_cameras(
     (@core.Entity, Projection, ProjectionRuntime3d),
   ] = []
   let projection_runtime_removals : Array[@core.Entity] = []
-  source_world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
+  let camera_query : @ecs.Query[(@core.Entity, @ecs.Comp[Camera3d]), @ecs.All] = @ecs.query(
+    source_world,
+  )
+  try! camera_query.view(fn(_query_entity, data) {
+    let (entity, _camera3d) = data
     let camera = match
       (try! source_world.get_by_key(entity, @sprite.ecs_key_camera)) {
       Some(v) => v

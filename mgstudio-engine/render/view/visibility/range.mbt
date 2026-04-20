@@ -213,8 +213,7 @@ pub fn RenderVisibilityRanges::buffer(
 
 ///|
 fn ensure_render_visibility_ranges_resource(world : @ecs.World) -> Unit {
-  if (world.get_resource(ecs_key_render_visibility_ranges) catch { _ => None })
-    is None {
+  if (try! world.get_resource(ecs_key_render_visibility_ranges)) is None {
     world.insert_resource(
       ecs_key_render_visibility_ranges,
       RenderVisibilityRanges::default(),
@@ -233,11 +232,14 @@ fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
   let removed_ranges = main_world.removed_components(
     @root_visibility.ecs_key_visibility_range, system_sequence,
   )
-  let ranges_ref = (render_world.get_resource_ref_mut(
-    ecs_key_render_visibility_ranges,
-  ) catch {
-    _ => None
-  }).unwrap()
+  let ranges_ref = match
+    (try! render_world.get_resource_ref_mut(ecs_key_render_visibility_ranges)) {
+    Some(value) => value
+    None =>
+      abort(
+        "render visibility range: missing RenderVisibilityRanges resource in render world",
+      )
+  }
   let ranges = ranges_ref.val
   if changed_ranges.is_empty() && removed_ranges.is_empty() {
     return

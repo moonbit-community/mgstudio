@@ -103,114 +103,57 @@ fn[C : @ecs.Component] extract_components(
   component_key : @ecs.ComponentKey[C],
 ) -> Unit {
   let main_world = render_source_world(render_world)
-  guard main_world.component_column(component_key)
-    is Some(main_component_column) else {
-    return
-  }
-  guard main_world.component_column(ecs_key_render_entity)
-    is Some(render_entity_column) else {
-    return
-  }
-  let visibility_column = if only_visible {
-    main_world.component_column(@visibility.ecs_key_view_visibility)
-  } else {
-    None
-  }
-  let sequence = main_world.get_sequence_context().sequence()
   let render_component_column = render_world.component_column(component_key)
-  let processed : Map[UInt64, Bool] = {}
-  let extract_entity = fn(main_entity : @core.Entity) {
-    let key = (main_entity.id.reinterpret_as_uint().to_uint64() << 32) |
-      (main_entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL)
-    if processed.contains(key) {
-      return
-    }
-    processed.set(key, true)
-    guard render_entity_column.get(main_entity) is Some(render_entity) else {
-      return
-    }
-    if visibility_column is Some(visibility_column) {
-      guard visibility_column.get(main_entity) is Some(view_visibility) else {
-        return
-      }
-      if !view_visibility.is_visible() {
-        return
-      }
-    }
-    guard main_component_column.get_ref(main_entity) is Some(component) else {
-      return
-    }
+  let write_extracted_component = fn(
+    render_entity : @core.Entity,
+    component : C,
+  ) -> Unit {
     let wrote = match render_component_column {
-      Some(column) =>
-        column.set_sequence_only(render_entity.id(), component.val)
+      Some(column) => column.set_sequence_only(render_entity, component)
       None => false
     }
     if !wrote {
-      render_world.set_by_key(render_entity.id(), component_key, component.val) catch {
-        _ => ()
+      render_world.set_by_key(render_entity, component_key, component) catch {
+        _ =>
+          abort(
+            "extract_component: failed to write extracted component to render world",
+          )
       }
     }
   }
 
-  for entity in main_world.added_components(component_key, sequence).read() {
-    extract_entity(entity)
-  }
-  for entity in main_world.changed_components(component_key, sequence).read() {
-    extract_entity(entity)
-  }
-  for
-    entity in main_world
-    .added_components(ecs_key_render_entity, sequence)
-    .read() {
-    extract_entity(entity)
-  }
   if only_visible {
-    for
-      entity in main_world
-      .added_components(@visibility.ecs_key_view_visibility, sequence)
-      .read() {
-      extract_entity(entity)
-    }
-    for
-      entity in main_world
-      .changed_components(@visibility.ecs_key_view_visibility, sequence)
-      .read() {
-      extract_entity(entity)
-    }
-  }
-
-  let render_component_query : @ecs.Query[@ecs.Comp[C], @ecs.All] = @ecs.query(
-    render_world,
-  )
-  if processed.is_empty() && render_component_query.count() == 0 {
-    main_component_column.for_each_ref(fn(main_entity, component) {
-      guard render_entity_column.get(main_entity) is Some(render_entity) else {
+    let query : @ecs.Query[
+      (
+        @ecs.Comp[RenderEntity],
+        @ecs.Comp[@visibility.ViewVisibility],
+        @ecs.Comp[C],
+      ),
+      @ecs.All,
+    ] = @ecs.query(main_world)
+    try! query.view(fn(_entity, data) {
+      let (render_entity_comp, view_visibility_comp, component_comp) = data
+      if !view_visibility_comp.value().is_visible() {
         return
       }
-      if visibility_column is Some(visibility_column) {
-        guard visibility_column.get(main_entity) is Some(view_visibility) else {
-          return
-        }
-        if !view_visibility.is_visible() {
-          return
-        }
-      }
-      let wrote = match render_component_column {
-        Some(column) =>
-          column.set_sequence_only(render_entity.id(), component.val)
-        None => false
-      }
-      if !wrote {
-        render_world.set_by_key(
-          render_entity.id(),
-          component_key,
-          component.val,
-        ) catch {
-          _ => ()
-        }
-      }
+      write_extracted_component(
+        render_entity_comp.value().id(),
+        component_comp.value(),
+      )
     })
+    return
   }
+
+  let query : @ecs.Query[(@ecs.Comp[RenderEntity], @ecs.Comp[C]), @ecs.All] = @ecs.query(
+    main_world,
+  )
+  try! query.view(fn(_entity, data) {
+    let (render_entity_comp, component_comp) = data
+    write_extracted_component(
+      render_entity_comp.value().id(),
+      component_comp.value(),
+    )
+  })
 }
 
 ///|
