@@ -39,19 +39,51 @@ type SceneRootQuery = @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All]
 priv struct SceneInstanceState {
   instance_id : Int
   scene_id : Int
+  root_entity : @core.Entity
   spawned_entities : Array[@core.Entity]
   ready : Bool
 }
 
 ///|
+priv enum SceneRootQueueAction {
+  Spawn
+  Continue
+  Respawn
+}
+
+///|
+priv struct SceneRootQueueEntry {
+  root_entity : @core.Entity
+  root : SceneRoot
+  existing_instance_id : Int?
+  action : SceneRootQueueAction
+}
+
+///|
+priv struct SceneReadyQueueEntry {
+  root_entity : @core.Entity
+  instance_id : Int
+  spawned_entities : Int
+}
+
+///|
 priv struct SceneRuntimeState {
   mut next_instance_id : Int
-  instances : Array[SceneInstanceState]
+  instances_by_id : Map[Int, SceneInstanceState]
+  spawned_instances_by_scene_id : Map[Int, Array[Int]]
+  mut roots_to_spawn : Array[SceneRootQueueEntry]
+  mut instances_ready : Array[SceneReadyQueueEntry]
 }
 
 ///|
 fn SceneRuntimeState::default() -> SceneRuntimeState {
-  SceneRuntimeState::{ next_instance_id: 1, instances: [] }
+  SceneRuntimeState::{
+    next_instance_id: 1,
+    instances_by_id: {},
+    spawned_instances_by_scene_id: {},
+    roots_to_spawn: [],
+    instances_ready: [],
+  }
 }
 
 ///|
@@ -89,32 +121,28 @@ fn scene_runtime_state_or_abort(world : @ecs.World) -> SceneRuntimeState {
 }
 
 ///|
-fn scene_runtime_instance_index(
-  state : SceneRuntimeState,
-  instance_id : Int,
-) -> Int? {
-  for i in 0..<state.instances.length() {
-    if state.instances[i].instance_id == instance_id {
-      return Some(i)
-    }
-  }
-  None
-}
-
-///|
 fn scene_runtime_allocate_instance(
   world : @ecs.World,
+  root_entity : @core.Entity,
   scene : @asset.Handle[Scene],
 ) -> Int {
   let state_ref = scene_runtime_state_mut_or_abort(world)
   let instance_id = state_ref.val.next_instance_id
   state_ref.val.next_instance_id = instance_id + 1
-  state_ref.val.instances.push(SceneInstanceState::{
+  state_ref.val.instances_by_id.set(instance_id, SceneInstanceState::{
     instance_id,
     scene_id: scene.id(),
+    root_entity,
     spawned_entities: [],
     ready: false,
   })
+  let scene_instances = match
+    state_ref.val.spawned_instances_by_scene_id.get(scene.id()) {
+    Some(existing) => existing
+    None => []
+  }
+  scene_instances.push(instance_id)
+  state_ref.val.spawned_instances_by_scene_id.set(scene.id(), scene_instances)
   instance_id
 }
 
@@ -124,10 +152,7 @@ fn scene_runtime_get_instance(
   instance_id : Int,
 ) -> SceneInstanceState? {
   let state = scene_runtime_state_or_abort(world)
-  guard scene_runtime_instance_index(state, instance_id) is Some(index) else {
-    return None
-  }
-  Some(state.instances[index])
+  state.instances_by_id.get(instance_id)
 }
 
 ///|
@@ -160,10 +185,28 @@ fn scene_runtime_remove_instance(
   instance_id : Int,
 ) -> SceneInstanceState? {
   let state_ref = scene_runtime_state_mut_or_abort(world)
-  guard scene_runtime_instance_index(state_ref.val, instance_id) is Some(index) else {
+  guard state_ref.val.instances_by_id.get(instance_id) is Some(instance) else {
     return None
   }
-  Some(state_ref.val.instances.remove(index))
+  state_ref.val.instances_by_id.remove(instance_id)
+  if state_ref.val.spawned_instances_by_scene_id.get(instance.scene_id)
+    is Some(scene_instances) {
+    for index in 0..<scene_instances.length() {
+      if scene_instances[index] == instance_id {
+        scene_instances.remove(index) |> ignore
+        break
+      }
+    }
+    if scene_instances.length() == 0 {
+      state_ref.val.spawned_instances_by_scene_id.remove(instance.scene_id)
+    } else {
+      state_ref.val.spawned_instances_by_scene_id.set(
+        instance.scene_id,
+        scene_instances,
+      )
+    }
+  }
+  Some(instance)
 }
 
 ///|
@@ -173,16 +216,59 @@ fn scene_runtime_mark_ready(
   spawned_entities : Array[@core.Entity],
 ) -> Bool {
   let state_ref = scene_runtime_state_mut_or_abort(world)
-  guard scene_runtime_instance_index(state_ref.val, instance_id) is Some(index) else {
+  guard state_ref.val.instances_by_id.get(instance_id) is Some(instance) else {
     return false
   }
-  let state = state_ref.val.instances[index]
-  state_ref.val.instances[index] = SceneInstanceState::{
-    ..state,
+  state_ref.val.instances_by_id.set(instance_id, SceneInstanceState::{
+    ..instance,
     spawned_entities,
     ready: true,
-  }
+  })
   true
+}
+
+///|
+fn scene_runtime_queue_root_spawn(
+  world : @ecs.World,
+  entry : SceneRootQueueEntry,
+) -> Unit {
+  let state_ref = scene_runtime_state_mut_or_abort(world)
+  state_ref.val.roots_to_spawn.push(entry)
+}
+
+///|
+fn scene_runtime_take_root_spawn_queue(
+  world : @ecs.World,
+) -> Array[SceneRootQueueEntry] {
+  let state_ref = scene_runtime_state_mut_or_abort(world)
+  let queued = state_ref.val.roots_to_spawn
+  state_ref.val.roots_to_spawn = []
+  queued
+}
+
+///|
+fn scene_runtime_queue_instance_ready(
+  world : @ecs.World,
+  root_entity : @core.Entity,
+  instance_id : Int,
+  spawned_entities : Int,
+) -> Unit {
+  let state_ref = scene_runtime_state_mut_or_abort(world)
+  state_ref.val.instances_ready.push(SceneReadyQueueEntry::{
+    root_entity,
+    instance_id,
+    spawned_entities,
+  })
+}
+
+///|
+fn scene_runtime_take_ready_queue(
+  world : @ecs.World,
+) -> Array[SceneReadyQueueEntry] {
+  let state_ref = scene_runtime_state_mut_or_abort(world)
+  let queued = state_ref.val.instances_ready
+  state_ref.val.instances_ready = []
+  queued
 }
 
 ///|
@@ -340,7 +426,11 @@ fn scene_attach_pending_instance(
   root_entity : @core.Entity,
   root : SceneRoot,
 ) -> Int {
-  let instance_id = scene_runtime_allocate_instance(world, root.scene)
+  let instance_id = scene_runtime_allocate_instance(
+    world,
+    root_entity,
+    root.scene,
+  )
   scene_remove_ready_component(world, root_entity)
   try! world.set_by_key(
     root_entity,
@@ -361,14 +451,12 @@ fn scene_spawn_instance_when_ready(
     return
   }
   if instance.ready {
-    if (try! world.get_by_key(root_entity, ecs_key_scene_instance_ready))
-      is None {
-      try! world.set_by_key(
-        root_entity,
-        ecs_key_scene_instance_ready,
-        SceneInstanceReady::new(instance_id, instance.spawned_entities.length()),
-      )
-    }
+    scene_runtime_queue_instance_ready(
+      world,
+      root_entity,
+      instance_id,
+      instance.spawned_entities.length(),
+    )
     return
   }
   guard scene_assets_from_world_or_abort(world).get(root.scene) is Some(scene) else {
@@ -669,11 +757,10 @@ fn scene_spawn_instance_when_ready(
     }
   }
 
+  let spawned_entities_count = spawned_entities.length()
   scene_runtime_mark_ready(world, instance_id, spawned_entities) |> ignore
-  try! world.set_by_key(
-    root_entity,
-    ecs_key_scene_instance_ready,
-    SceneInstanceReady::new(instance_id, spawned_entities.length()),
+  scene_runtime_queue_instance_ready(
+    world, root_entity, instance_id, spawned_entities_count,
   )
   let spawned_scene_index = if scene.nodes3d.length() > 0 {
     match scene.nodes3d[0].gltf_scene_index {
@@ -686,6 +773,20 @@ fn scene_spawn_instance_when_ready(
   @gltf_loader_extensions.gltf_extension_notify_scene_completed(
     gltf_scene_asset_path, spawned_scene_index, root_entity, world,
   )
+}
+
+///|
+fn scene_flush_ready_queue_system(world : @ecs.World) -> Unit {
+  for entry in scene_runtime_take_ready_queue(world) {
+    if !world.is_alive(entry.root_entity) {
+      continue
+    }
+    try! world.set_by_key(
+      entry.root_entity,
+      ecs_key_scene_instance_ready,
+      SceneInstanceReady::new(entry.instance_id, entry.spawned_entities),
+    )
+  }
 }
 
 ///|
@@ -744,7 +845,7 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
+pub fn scene_collect_root_spawn_requests_system(world : @ecs.World) -> Unit {
   let seen : Map[UInt64, Bool] = {}
   let force_respawn_map : Map[UInt64, Bool] = {}
   let roots_to_process : Array[(@core.Entity, SceneRoot)] = []
@@ -821,28 +922,61 @@ pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
     guard world.is_alive(root_entity) else { continue }
     let root = entry.1
     let force_respawn = force_respawn_map.contains(root_entity.to_bits())
-    let instance_id = match scene_instance_component(world, root_entity) {
-      Some(instance) =>
+    let existing_instance_id = match
+      scene_instance_component(world, root_entity) {
+      Some(instance) => Some(instance.instance_id)
+      None => None
+    }
+    let action = match existing_instance_id {
+      Some(instance_id) =>
         if force_respawn {
-          scene_despawn_instance(world, instance.instance_id)
-          scene_attach_pending_instance(world, root_entity, root)
+          Respawn
         } else {
-          match scene_runtime_get_instance(world, instance.instance_id) {
+          match scene_runtime_get_instance(world, instance_id) {
             Some(current) =>
               if current.scene_id == root.scene.id() {
-                instance.instance_id
+                Continue
               } else {
-                scene_despawn_instance(world, instance.instance_id)
-                scene_attach_pending_instance(world, root_entity, root)
+                Respawn
               }
-            None => scene_attach_pending_instance(world, root_entity, root)
+            None => Spawn
           }
         }
-      None => scene_attach_pending_instance(world, root_entity, root)
+      None => Spawn
+    }
+    scene_runtime_queue_root_spawn(world, SceneRootQueueEntry::{
+      root_entity,
+      root,
+      existing_instance_id,
+      action,
+    })
+  }
+}
+
+///|
+pub fn scene_apply_root_spawn_requests_system(world : @ecs.World) -> Unit {
+  for entry in scene_runtime_take_root_spawn_queue(world) {
+    let root_entity = entry.root_entity
+    guard world.is_alive(root_entity) else { continue }
+    let root = entry.root
+    let instance_id = match entry.action {
+      Spawn => scene_attach_pending_instance(world, root_entity, root)
+      Continue =>
+        match entry.existing_instance_id {
+          Some(existing) => existing
+          None => scene_attach_pending_instance(world, root_entity, root)
+        }
+      Respawn => {
+        if entry.existing_instance_id is Some(existing) {
+          scene_despawn_instance(world, existing)
+        }
+        scene_attach_pending_instance(world, root_entity, root)
+      }
     }
     scene_spawn_instance_when_ready(world, root_entity, root, instance_id)
     scene_clear_root_respawn_requested(world, root_entity)
   }
+  scene_flush_ready_queue_system(world)
 }
 
 ///|
@@ -860,12 +994,17 @@ fn scene_runtime_plugin_base(
       @app.system(scene_reload_modified_roots_system).in_set(
         scene_spawner_set_spawn,
       ),
-      @app.system(scene_spawn_roots_system).in_set(scene_spawner_set_spawn),
+      @app.system(scene_collect_root_spawn_requests_system).in_set(
+        scene_spawner_set_spawn,
+      ),
+      @app.system(scene_apply_root_spawn_requests_system).in_set(
+        scene_spawner_set_spawn,
+      ),
     )
     |> @app.chain(),
   )
   .configure_set(@app.PreUpdate, scene_spawner_set_spawn, before=[
-    @transform.transform_set_propagate,
+    @transform.transform_set_mark_dirty_trees, @transform.transform_set_propagate,
   ])
 }
 
