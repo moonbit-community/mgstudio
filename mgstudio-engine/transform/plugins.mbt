@@ -43,7 +43,7 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @app.system(sync_simple_transforms_world).in_set(
         transform_set_sync_simple_transforms,
       ),
-    ),
+    )
     |> @app.chain(),
   )
   .configure_set(@app.PostStartup, transform_set_mark_dirty_trees, before=[
@@ -60,7 +60,7 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @app.system(sync_simple_transforms_world).in_set(
         transform_set_sync_simple_transforms,
       ),
-    ),
+    )
     |> @app.chain(),
   )
   .configure_set(@app.PostUpdate, transform_set_mark_dirty_trees, before=[

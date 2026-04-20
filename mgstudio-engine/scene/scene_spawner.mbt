@@ -765,17 +765,26 @@ pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
     roots_to_process.push((entity, root))
   }
 
-  let changed_query : SceneRootChangedQuery = @ecs.query(world)
+  let changed_query : SceneRootChangedQuery = @ecs.query_filtered(
+    world,
+    @ecs.Changed::new(ecs_key_scene_root),
+  )
   try! changed_query.view(fn(entity, root_ref) {
     push_root_if_needed(world, seen, roots_to_process, entity, root_ref.value())
   })
 
-  let respawn_query : SceneRootRespawnQuery = @ecs.query(world)
+  let respawn_query : SceneRootRespawnQuery = @ecs.query_filtered(
+    world,
+    @ecs.With::new(ecs_key_scene_root_respawn_requested),
+  )
   try! respawn_query.view(fn(entity, root_ref) {
     push_root_if_needed(world, seen, roots_to_process, entity, root_ref.value())
   })
 
-  let pending_query : SceneRootPendingQuery = @ecs.query(world)
+  let pending_query : SceneRootPendingQuery = @ecs.query_filtered(
+    world,
+    @ecs.Without::new(ecs_key_scene_instance_ready),
+  )
   try! pending_query.view(fn(entity, data) {
     let (root_ref, _scene_instance_ref) = data
     push_root_if_needed(world, seen, roots_to_process, entity, root_ref.value())

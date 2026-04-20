@@ -287,8 +287,7 @@ pub fn prepass_update_pipeline_state(world : @ecs.World) -> Unit {
       (
         @ecs.With[DepthPrepass],
         @ecs.With[NormalPrepass],
-        @ecs.With[MotionVectorPrepass],
-        @ecs.With[DeferredPrepass],
+        @ecs.Or[(@ecs.With[MotionVectorPrepass], @ecs.With[DeferredPrepass])],
       ),
     ],
   ] = @ecs.query_filtered(
@@ -297,8 +296,12 @@ pub fn prepass_update_pipeline_state(world : @ecs.World) -> Unit {
       (
         @ecs.With::new(ecs_key_depth_prepass),
         @ecs.With::new(ecs_key_normal_prepass),
-        @ecs.With::new(ecs_key_motion_vector_prepass),
-        @ecs.With::new(ecs_key_deferred_prepass),
+        @ecs.Or::new(
+          (
+            @ecs.With::new(ecs_key_motion_vector_prepass),
+            @ecs.With::new(ecs_key_deferred_prepass),
+          ),
+        ),
       ),
     ),
   )

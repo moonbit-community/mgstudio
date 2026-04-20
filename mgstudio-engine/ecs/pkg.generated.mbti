@@ -545,6 +545,8 @@ pub struct QueryCache {
   mut cached_matching_entities : Array[@core.Entity]
   mut cached_matching_archetypes : Array[Int]
   mut cached_matching_archetype_generation : Int
+  mut cached_matching_entities_generation : Int
+  mut cached_matching_entities_sequence : Int
   mut cached_matching_anchor_component_id : Int?
   mut cached_matching_filter_anchor_component_id : Int?
   mut cached_matching_candidate_anchor_component_id : Int?
@@ -592,6 +594,11 @@ pub struct QueryMany[D, F] {
   query : Query[D, F]
   default_filter_component_ids : Array[Int]
   entities_pre_matched : Bool
+  archetype_driven : Bool
+  archetypes : Array[Int]
+  mut archetype_index : Int
+  mut archetype_entities : Array[@core.Entity]
+  mut archetype_entity_index : Int
   entities : Array[@core.Entity]
   mut index : Int
 }
@@ -615,6 +622,8 @@ pub struct QueryState[_, F] {
   mut cached_matching_entities : Array[@core.Entity]
   mut cached_matching_archetypes : Array[Int]
   mut cached_matching_archetype_generation : Int
+  mut cached_matching_entities_generation : Int
+  mut cached_matching_entities_sequence : Int
   mut cached_matching_anchor_component_id : Int?
   mut cached_matching_filter_anchor_component_id : Int?
   mut cached_matching_candidate_anchor_component_id : Int?
