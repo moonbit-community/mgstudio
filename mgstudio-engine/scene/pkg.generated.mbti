@@ -27,6 +27,8 @@ pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
 
 pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
+pub fn scene_collect_root_spawn_requests_system(@ecs.World) -> Unit
+
 pub fn scene_components_has_scene_instance(@ecs.World, @core.Entity) -> Bool
 
 pub fn scene_components_has_scene_instance_ready(@ecs.World, @core.Entity) -> Bool

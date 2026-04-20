@@ -209,9 +209,7 @@ fn entity_sync_system(
       MainEntity::new(main_entity),
     ) catch {
       _ =>
-        abort(
-          "sync_world: failed to attach MainEntity on render world entity",
-        )
+        abort("sync_world: failed to attach MainEntity on render world entity")
     }
     main_world.set_by_key(
       main_entity,
@@ -244,20 +242,25 @@ fn entity_sync_system(
     let (main_entity, render_entity_comp) = data
     stale_links.push((main_entity, render_entity_comp.value()))
   })
-  for (main_entity, render_entity) in stale_links {
+  for entry in stale_links {
+    let main_entity = entry.0
+    let render_entity = entry.1
     if render_world.is_alive(render_entity.id()) {
       render_world.despawn(render_entity.id()) catch {
         _ => abort("sync_world: failed to despawn synchronized render entity")
       }
     }
-    ignore(main_world.remove_by_key(main_entity, ecs_key_render_entity) catch {
-      _ => false
-    })
+    ignore(
+      main_world.remove_by_key(main_entity, ecs_key_render_entity) catch {
+        _ => false
+      },
+    )
   }
 
-  let render_main_entity_query : @ecs.Query[(@core.Entity, @ecs.Comp[MainEntity]), @ecs.All] = @ecs.query(
-    render_world,
-  )
+  let render_main_entity_query : @ecs.Query[
+    (@core.Entity, @ecs.Comp[MainEntity]),
+    @ecs.All,
+  ] = @ecs.query(render_world)
   let orphan_render_entities : Array[@core.Entity] = []
   try! render_main_entity_query.view(fn(_query_entity, data) {
     let (render_entity, main_entity_comp) = data

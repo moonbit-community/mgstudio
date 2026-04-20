@@ -994,6 +994,7 @@ pub(all) struct ProjectionRuntime3d {
   is_orthographic : Bool
   orthographic_first_slice_depth : Float
 }
+pub impl @ecs.Component for ProjectionRuntime3d
 
 pub struct Render3dDiagnosticsState {
   mut runtime_initialized : Bool

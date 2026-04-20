@@ -138,11 +138,12 @@ fn[C : @ecs.Component] extract_components(
 
   match render_component_column {
     Some(column) =>
-      for (render_entity, component) in extracted_values {
+      for entry in extracted_values {
+        let render_entity = entry.0
+        let component = entry.1
         let wrote = column.set_sequence_only(render_entity, component)
         if !wrote {
-          render_world.set_by_key(render_entity, component_key, component)
-          catch {
+          render_world.set_by_key(render_entity, component_key, component) catch {
             _ =>
               abort(
                 "extract_component: failed to write extracted component to render world",
@@ -151,7 +152,9 @@ fn[C : @ecs.Component] extract_components(
         }
       }
     None =>
-      for (render_entity, component) in extracted_values {
+      for entry in extracted_values {
+        let render_entity = entry.0
+        let component = entry.1
         render_world.set_by_key(render_entity, component_key, component) catch {
           _ =>
             abort(

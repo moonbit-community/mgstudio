@@ -385,8 +385,6 @@ pub fn[C] DynamicUniformIndex::index(Self[C]) -> UInt
 pub fn[C] DynamicUniformIndex::new(UInt) -> Self[C]
 
 pub(all) enum EntityRecord {
-  Added(@core.Entity)
-  Removed(RenderEntity)
   ComponentRemoved(@core.Entity, (@ecs.World, @core.Entity) -> @ecs.World)
 }
 

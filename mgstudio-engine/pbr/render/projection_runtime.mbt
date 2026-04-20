@@ -647,6 +647,11 @@ pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = 
 )
 
 ///|
+pub impl @ecs.Component for ProjectionRuntime3d with component() {
+  ecs_key_projection_runtime3d
+}
+
+///|
 pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
   debug_name="render3d.frustum",
 )

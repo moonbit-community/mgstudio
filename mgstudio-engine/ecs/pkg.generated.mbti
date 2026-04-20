@@ -53,6 +53,10 @@ pub fn[D, F] query_filtered(World, F) -> Query[D, F]
 
 pub fn[D, F] query_filtered_with_cache(World, F, QueryCache) -> Query[D, F]
 
+pub fn query_validate_data_data_compatibility(QueryDataAccess, QueryFilterAccess, QueryDataAccess, QueryFilterAccess) -> Bool
+
+pub fn query_validate_data_filter_access(QueryDataAccess, QueryFilterAccess) -> SystemParamValidationError?
+
 pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
 
 pub fn[T] register_event(debug_name? : String) -> EventKey[T]
@@ -554,6 +558,11 @@ pub struct QueryCache {
   mut cached_matching_generation : Int
   mut cached_matching_sequence : Int
   mut cached_matching_entities_valid : Bool
+  mut cached_matching_tables : Array[Int]
+  mut cached_matching_table_archetype_groups : Array[Array[Int]]
+  mut cached_matching_tables_generation : Int
+  mut cached_matching_tables_valid : Bool
+  mut cached_is_dense : Bool
   mut cached_default_filter_component_ids : Array[Int]
   mut cached_default_filter_local_component_ids : Array[Int]
   mut cached_default_filters_world_id : Int
@@ -585,20 +594,43 @@ pub fn[D : QueryData, F : QueryFilter] QueryContiguousIter::fetch_next(Self[D, F
 pub struct QueryDataAccess {
   read_components : Array[Int]
   write_components : Array[Int]
+  mut has_read_write_conflict : Bool
+  mut has_duplicate_write : Bool
 }
+pub fn QueryDataAccess::accesses_component(Self, Int) -> Bool
 pub fn QueryDataAccess::add_read_component(Self, Int) -> Unit
 pub fn QueryDataAccess::add_write_component(Self, Int) -> Unit
+pub fn QueryDataAccess::has_conflict(Self) -> Bool
 pub fn QueryDataAccess::new() -> Self
+pub fn QueryDataAccess::read_components(Self) -> Array[Int]
+pub fn QueryDataAccess::write_components(Self) -> Array[Int]
+
+pub struct QueryFilterAccess {
+  read_components : Array[Int]
+  with_components : Array[Int]
+  without_components : Array[Int]
+}
+pub fn QueryFilterAccess::add_read_component(Self, Int) -> Unit
+pub fn QueryFilterAccess::add_with_component(Self, Int) -> Unit
+pub fn QueryFilterAccess::add_without_component(Self, Int) -> Unit
+pub fn QueryFilterAccess::new() -> Self
+pub fn QueryFilterAccess::read_components(Self) -> Array[Int]
+pub fn QueryFilterAccess::with_components(Self) -> Array[Int]
+pub fn QueryFilterAccess::without_components(Self) -> Array[Int]
 
 pub struct QueryMany[D, F] {
   query : Query[D, F]
   default_filter_component_ids : Array[Int]
   entities_pre_matched : Bool
   archetype_driven : Bool
+  dense_driven : Bool
   archetypes : Array[Int]
   mut archetype_index : Int
   mut archetype_entities : Array[@core.Entity]
   mut archetype_entity_index : Int
+  dense_table_groups : Array[Array[Int]]
+  mut dense_table_group_index : Int
+  mut dense_table_group_archetype_index : Int
   entities : Array[@core.Entity]
   mut index : Int
 }
@@ -631,6 +663,11 @@ pub struct QueryState[_, F] {
   mut cached_matching_generation : Int
   mut cached_matching_sequence : Int
   mut cached_matching_entities_valid : Bool
+  mut cached_matching_tables : Array[Int]
+  mut cached_matching_table_archetype_groups : Array[Array[Int]]
+  mut cached_matching_tables_generation : Int
+  mut cached_matching_tables_valid : Bool
+  mut cached_is_dense : Bool
   mut cached_default_filter_component_ids : Array[Int]
   mut cached_default_filter_local_component_ids : Array[Int]
   mut cached_default_filters_world_id : Int
@@ -923,7 +960,9 @@ pub(open) trait QueryData {
   fetch(World, @core.Entity) -> Self raise EcsError
   mentions_component(Int) -> Bool
   matches_component_set((Int) -> Bool) -> Bool
+  collect_access(QueryDataAccess) -> Unit = _
   requires_entity_check() -> Bool
+  is_dense(World) -> Bool = _
   iteration_anchor_component() -> Int?
   contiguous_compatible() -> Bool
 }
@@ -938,7 +977,9 @@ pub(open) trait QueryFilter {
   matches(Self, World, @core.Entity) -> Bool
   mentions_component(Self, Int) -> Bool
   matches_component_set(Self, (Int) -> Bool) -> Bool
+  collect_access(Self, QueryFilterAccess) -> Unit = _
   requires_entity_check(Self) -> Bool
+  is_dense(Self, World) -> Bool = _
   iteration_anchor_component(Self) -> Int?
   depends_on_sequence(Self) -> Bool
 }
@@ -949,7 +990,9 @@ pub(open) trait QueryFilterDisjunction {
   matches_any(Self, World, @core.Entity) -> Bool
   mentions_component_any(Self, Int) -> Bool
   matches_component_set_any(Self, (Int) -> Bool) -> Bool
+  collect_access_any(Self, QueryFilterAccess) -> Unit = _
   requires_entity_check_any(Self) -> Bool
+  is_dense_any(Self, World) -> Bool = _
   depends_on_sequence_any(Self) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B)

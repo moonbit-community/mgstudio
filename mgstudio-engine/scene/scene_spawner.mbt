@@ -247,6 +247,12 @@ fn scene_runtime_take_root_spawn_queue(
 }
 
 ///|
+fn scene_runtime_has_pending_root_spawn(world : @ecs.World) -> Bool {
+  let state = scene_runtime_state_or_abort(world)
+  state.roots_to_spawn.length() > 0
+}
+
+///|
 fn scene_runtime_queue_instance_ready(
   world : @ecs.World,
   root_entity : @core.Entity,
@@ -955,6 +961,9 @@ pub fn scene_collect_root_spawn_requests_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
+  if !scene_runtime_has_pending_root_spawn(world) {
+    scene_collect_root_spawn_requests_system(world)
+  }
   for entry in scene_runtime_take_root_spawn_queue(world) {
     let root_entity = entry.root_entity
     guard world.is_alive(root_entity) else { continue }
