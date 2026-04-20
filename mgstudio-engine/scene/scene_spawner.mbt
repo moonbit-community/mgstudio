@@ -21,6 +21,21 @@ pub let scene_spawner_set_spawn : @app.SystemSet = @app.system_set(
 )
 
 ///|
+type SceneRootChangedQuery = @ecs.Query[
+  @ecs.Comp[SceneRoot],
+  @ecs.Changed[SceneRoot],
+]
+
+///|
+type SceneRootPendingQuery = @ecs.Query[
+  (@ecs.Comp[SceneRoot], @ecs.Comp[SceneInstance]),
+  @ecs.Without[SceneInstanceReady],
+]
+
+///|
+type SceneRootQuery = @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All]
+
+///|
 priv struct SceneInstanceState {
   instance_id : Int
   scene_id : Int
@@ -180,11 +195,8 @@ fn scene_instance_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> SceneInstance? {
-  try world.get_by_key(entity, ecs_key_scene_instance) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  guard world.is_alive(entity) else { return None }
+  try! world.get_by_key(entity, ecs_key_scene_instance)
 }
 
 ///|
@@ -192,17 +204,20 @@ fn scene_remove_ready_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
-  ignore(
-    try world.remove_by_key(entity, ecs_key_scene_instance_ready) catch {
-      _ => false
-    } noraise {
-      value => value
-    },
-  )
+  guard world.is_alive(entity) else { return }
+  if (try! world.contains_by_key(entity, ecs_key_scene_instance_ready)) {
+    try! (world.remove_by_key(entity, ecs_key_scene_instance_ready) |> ignore)
+  }
 }
 
 ///|
 priv struct SceneRootRespawnRequested {}
+
+///|
+type SceneRootRespawnQuery = @ecs.Query[
+  @ecs.Comp[SceneRoot],
+  @ecs.With[SceneRootRespawnRequested],
+]
 
 ///|
 let ecs_key_scene_root_respawn_requested : @ecs.ComponentKey[
@@ -226,15 +241,11 @@ fn scene_clear_root_respawn_requested(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
-  ignore(
-    try
-      world.remove_by_key(entity, ecs_key_scene_root_respawn_requested)
-    catch {
-      _ => false
-    } noraise {
-      value => value
-    },
-  )
+  guard world.is_alive(entity) else { return }
+  if (try! world.contains_by_key(entity, ecs_key_scene_root_respawn_requested)) {
+    try! (world.remove_by_key(entity, ecs_key_scene_root_respawn_requested)
+    |> ignore)
+  }
 }
 
 ///|
@@ -259,14 +270,11 @@ fn scene_clear_instance_components(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
+  guard world.is_alive(entity) else { return }
   scene_remove_ready_component(world, entity)
-  ignore(
-    try world.remove_by_key(entity, ecs_key_scene_instance) catch {
-      _ => false
-    } noraise {
-      value => value
-    },
-  )
+  if (try! world.contains_by_key(entity, ecs_key_scene_instance)) {
+    try! (world.remove_by_key(entity, ecs_key_scene_instance) |> ignore)
+  }
 }
 
 ///|
@@ -371,10 +379,7 @@ fn scene_spawn_instance_when_ready(
   }
 
   if scene.gltf_scene_extras is Some(scene_extras) &&
-    (
-      world.entity(root_entity).get() catch {
-        _ => None
-      } : @gltf.GltfSceneExtras?)
+    (try! world.get_by_key(root_entity, @gltf.GltfSceneExtras::component()))
     is None {
     try! world.set_by_key(
       root_entity,
@@ -707,10 +712,12 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
   }
 
   if modified_scene_ids.length() > 0 {
+    let modified_scene_id_set : Map[Int, Bool] = {}
+    for scene_id in modified_scene_ids {
+      modified_scene_id_set.set(scene_id, true)
+    }
     let roots : Array[(@core.Entity, SceneRoot)] = []
-    let scene_root_query : @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All] = @ecs.query(
-      world,
-    )
+    let scene_root_query : SceneRootQuery = @ecs.query(world)
     try! scene_root_query.view(fn(entity, root) {
       roots.push((entity, root.value()))
     })
@@ -718,14 +725,7 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
     for entry in roots {
       let root_entity = entry.0
       let root = entry.1
-      let mut should_reload = false
-      for scene_id in modified_scene_ids {
-        if scene_id == root.scene.id() {
-          should_reload = true
-          break
-        }
-      }
-      if !should_reload {
+      if !modified_scene_id_set.contains(root.scene.id()) {
         continue
       }
       if scene_instance_component(world, root_entity) is Some(instance) {
@@ -747,64 +747,44 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
-  let sequence = world.get_sequence_context().sequence()
   let seen : Map[UInt64, Bool] = {}
-  let roots_to_process : Array[@core.Entity] = []
+  let roots_to_process : Array[(@core.Entity, SceneRoot)] = []
   fn push_root_if_needed(
     world : @ecs.World,
     seen : Map[UInt64, Bool],
-    roots_to_process : Array[@core.Entity],
+    roots_to_process : Array[(@core.Entity, SceneRoot)],
     entity : @core.Entity,
+    root : SceneRoot,
   ) -> Unit {
     guard world.is_alive(entity) else { return }
     let key = entity.to_bits()
     if seen.contains(key) {
       return
     }
-    if (try! world.contains_by_key(entity, ecs_key_scene_root)) {
-      seen.set(key, true)
-      roots_to_process.push(entity)
-    }
-  }
-  for entity in world.added_components(ecs_key_scene_root, sequence).read() {
-    push_root_if_needed(world, seen, roots_to_process, entity)
-  }
-  for entity in world.changed_components(ecs_key_scene_root, sequence).read() {
-    push_root_if_needed(world, seen, roots_to_process, entity)
-  }
-  let scene_instance_query : @ecs.Query[@ecs.Comp[SceneInstance], @ecs.All] = @ecs.query(
-    world,
-  )
-  try! scene_instance_query.view(fn(entity, scene_instance_ref) {
-    guard (try! world.get_by_key(entity, ecs_key_scene_root)) is Some(root) else {
-      return
-    }
-    let needs_retry = match
-      scene_runtime_get_instance(world, scene_instance_ref.value().instance_id) {
-      Some(instance_state) =>
-        !instance_state.ready || instance_state.scene_id != root.scene.id()
-      None => true
-    }
-    if needs_retry {
-      push_root_if_needed(world, seen, roots_to_process, entity)
-    }
-  })
-  if world.component_count(ecs_key_scene_root) >
-    world.component_count(ecs_key_scene_instance) {
-    let scene_root_query : @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All] = @ecs.query(
-      world,
-    )
-    try! scene_root_query.view(fn(entity, _root_ref) {
-      if !(try! world.contains_by_key(entity, ecs_key_scene_instance)) {
-        push_root_if_needed(world, seen, roots_to_process, entity)
-      }
-    })
+    seen.set(key, true)
+    roots_to_process.push((entity, root))
   }
 
-  for root_entity in roots_to_process {
-    guard (try! world.get_by_key(root_entity, ecs_key_scene_root)) is Some(root) else {
-      continue
-    }
+  let changed_query : SceneRootChangedQuery = @ecs.query(world)
+  try! changed_query.view(fn(entity, root_ref) {
+    push_root_if_needed(world, seen, roots_to_process, entity, root_ref.value())
+  })
+
+  let respawn_query : SceneRootRespawnQuery = @ecs.query(world)
+  try! respawn_query.view(fn(entity, root_ref) {
+    push_root_if_needed(world, seen, roots_to_process, entity, root_ref.value())
+  })
+
+  let pending_query : SceneRootPendingQuery = @ecs.query(world)
+  try! pending_query.view(fn(entity, data) {
+    let (root_ref, _scene_instance_ref) = data
+    push_root_if_needed(world, seen, roots_to_process, entity, root_ref.value())
+  })
+
+  for entry in roots_to_process {
+    let root_entity = entry.0
+    guard world.is_alive(root_entity) else { continue }
+    let root = entry.1
     let force_respawn = try! world.contains_by_key(
       root_entity, ecs_key_scene_root_respawn_requested,
     )

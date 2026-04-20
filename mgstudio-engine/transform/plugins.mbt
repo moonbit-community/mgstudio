@@ -37,17 +37,14 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_plugins(validate_parent_plugin)
   .add_systems(
     @app.PostStartup,
-    @app.system(mark_dirty_trees).in_set(transform_set_mark_dirty_trees),
-  )
-  .add_systems(
-    @app.PostStartup,
-    @app.system(propagate_parent_transforms).in_set(transform_set_propagate),
-  )
-  .add_systems(
-    @app.PostStartup,
-    @app.system(sync_simple_transforms_world).in_set(
-      transform_set_sync_simple_transforms,
+    (
+      @app.system(mark_dirty_trees).in_set(transform_set_mark_dirty_trees),
+      @app.system(propagate_parent_transforms).in_set(transform_set_propagate),
+      @app.system(sync_simple_transforms_world).in_set(
+        transform_set_sync_simple_transforms,
+      ),
     ),
+    |> @app.chain(),
   )
   .configure_set(@app.PostStartup, transform_set_mark_dirty_trees, before=[
     transform_set_propagate,
@@ -57,17 +54,14 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   ])
   .add_systems(
     @app.PostUpdate,
-    @app.system(mark_dirty_trees).in_set(transform_set_mark_dirty_trees),
-  )
-  .add_systems(
-    @app.PostUpdate,
-    @app.system(propagate_parent_transforms).in_set(transform_set_propagate),
-  )
-  .add_systems(
-    @app.PostUpdate,
-    @app.system(sync_simple_transforms_world).in_set(
-      transform_set_sync_simple_transforms,
+    (
+      @app.system(mark_dirty_trees).in_set(transform_set_mark_dirty_trees),
+      @app.system(propagate_parent_transforms).in_set(transform_set_propagate),
+      @app.system(sync_simple_transforms_world).in_set(
+        transform_set_sync_simple_transforms,
+      ),
     ),
+    |> @app.chain(),
   )
   .configure_set(@app.PostUpdate, transform_set_mark_dirty_trees, before=[
     transform_set_propagate,
