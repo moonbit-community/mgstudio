@@ -954,7 +954,7 @@ pub fn scene_collect_root_spawn_requests_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn scene_apply_root_spawn_requests_system(world : @ecs.World) -> Unit {
+pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
   for entry in scene_runtime_take_root_spawn_queue(world) {
     let root_entity = entry.root_entity
     guard world.is_alive(root_entity) else { continue }
@@ -997,9 +997,7 @@ fn scene_runtime_plugin_base(
       @app.system(scene_collect_root_spawn_requests_system).in_set(
         scene_spawner_set_spawn,
       ),
-      @app.system(scene_apply_root_spawn_requests_system).in_set(
-        scene_spawner_set_spawn,
-      ),
+      @app.system(scene_spawn_roots_system).in_set(scene_spawner_set_spawn),
     )
     |> @app.chain(),
   )
