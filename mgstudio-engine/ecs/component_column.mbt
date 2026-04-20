@@ -57,7 +57,7 @@ pub fn[T] ComponentColumn::contains(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> Bool {
-  self.store_ref.val.contains(entity)
+  component_store_contains_entity(self.store_ref, entity)
 }
 
 ///|
@@ -65,7 +65,7 @@ pub fn[T] ComponentColumn::get(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> T? {
-  match self.store_ref.val.get(entity) {
+  match component_store_get_entity(self.store_ref, entity) {
     Some(payload) => erased_value_value_fast(payload)
     None => None
   }
@@ -76,7 +76,7 @@ pub fn[T] ComponentColumn::get_ref(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> Ref[T]? {
-  match self.store_ref.val.get(entity) {
+  match component_store_get_entity(self.store_ref, entity) {
     Some(payload) => erased_value_ref_fast(payload)
     None => None
   }
@@ -104,12 +104,14 @@ pub fn[T] ComponentColumn::for_each_ref(
   self : ComponentColumn[T],
   visit : (@core.Entity, Ref[T]) -> Unit,
 ) -> Unit {
-  self.store_ref.val.for_each(fn(entity, payload) {
+  for entry in component_store_snapshot_entries(self.store_ref) {
+    let entity = entry.0
+    let payload = entry.1
     match erased_value_ref_fast(payload) {
       Some(value_ref) => visit(entity, value_ref)
       None => ()
     }
-  })
+  }
 }
 
 ///|

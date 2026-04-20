@@ -23,12 +23,12 @@ pub fn[T] World::replace(
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
   guard self.component_store(key.id()) is Some(store_ref) else { return false }
-  guard store_ref.val.get(entity) is Some(_) else { return false }
+  guard component_store_contains_entity(store_ref, entity) else { return false }
   let payload = erased_value(value)
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
-  ignore(store_ref.val.set(entity, payload))
+  ignore(component_store_set_entity(store_ref, entity, payload))
   self.record_component_changed(entity, key.id())
   self.run_component_insert_hooks(entity, key.id(), caller~)
   self.end_deferred_hook_command_scope(outermost)
@@ -53,7 +53,7 @@ pub fn[T] World::take(
 ///|
 pub fn[T] World::component_count(self : World, key : ComponentKey[T]) -> Int {
   match self.component_store(key.id()) {
-    Some(store_ref) => store_ref.val.len()
+    Some(store_ref) => component_store_len(store_ref)
     None => 0
   }
 }
@@ -65,9 +65,7 @@ pub fn[T] World::for_each_component(
   visit : (@core.Entity, T) -> Unit,
 ) -> Unit {
   guard self.component_store(key.id()) is Some(store_ref) else { return }
-  let entries : Array[(@core.Entity, ErasedValue)] = []
-  store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
-  for entry in entries {
+  for entry in component_store_snapshot_entries(store_ref) {
     try self.component_value(key, entry.0, entry.1) catch {
       _ => ()
     } noraise {
