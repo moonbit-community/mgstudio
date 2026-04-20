@@ -242,22 +242,13 @@ fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
   if changed_ranges.is_empty() && removed_ranges.is_empty() {
     return
   }
-  let query : @ecs.QueryState[
-    @core.Entity,
-    @ecs.With[@root_visibility.VisibilityRange],
-  ] = main_world.query_filtered(
-    @ecs.With::new(@root_visibility.ecs_key_visibility_range),
+  let query : @ecs.Query[@ecs.Comp[@root_visibility.VisibilityRange], @ecs.All] = @ecs.query(
+    main_world,
   )
-  let iter = query.iter(main_world)
   ranges.clear()
-  while (iter.fetch_next() catch { _ => None }) is Some((entity, _)) {
-    if (main_world.get_by_key(entity, @root_visibility.ecs_key_visibility_range) catch {
-        _ => None
-      })
-      is Some(visibility_range) {
-      ranges.insert(entity.id, visibility_range)
-    }
-  }
+  try! query.view(fn(entity, visibility_range) {
+    ranges.insert(entity.id, visibility_range.value())
+  })
 }
 
 ///|

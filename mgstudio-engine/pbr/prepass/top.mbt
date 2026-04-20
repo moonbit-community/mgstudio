@@ -281,10 +281,28 @@ pub fn prepass_has_any_color_attachment(state : PrepassViewState) -> Bool {
 
 ///|
 pub fn prepass_update_pipeline_state(world : @ecs.World) -> Unit {
-  let has_prepass_components = world.component_count(ecs_key_depth_prepass) > 0 ||
-    world.component_count(ecs_key_normal_prepass) > 0 ||
-    world.component_count(ecs_key_motion_vector_prepass) > 0 ||
-    world.component_count(ecs_key_deferred_prepass) > 0
+  let prepass_components_query : @ecs.Query[
+    @core.Entity,
+    @ecs.Or[
+      (
+        @ecs.With[DepthPrepass],
+        @ecs.With[NormalPrepass],
+        @ecs.With[MotionVectorPrepass],
+        @ecs.With[DeferredPrepass],
+      ),
+    ],
+  ] = @ecs.query_filtered(
+    world,
+    @ecs.Or::new(
+      (
+        @ecs.With::new(ecs_key_depth_prepass),
+        @ecs.With::new(ecs_key_normal_prepass),
+        @ecs.With::new(ecs_key_motion_vector_prepass),
+        @ecs.With::new(ecs_key_deferred_prepass),
+      ),
+    ),
+  )
+  let has_prepass_components = prepass_components_query.count() > 0
   let view_state : PrepassViewState? = try! world.get_resource(
     ecs_key_prepass_view_state,
   )

@@ -97,7 +97,7 @@ pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] wit
 }
 
 ///|
-fn[C] extract_components(
+fn[C : @ecs.Component] extract_components(
   render_world : @ecs.World,
   only_visible : Bool,
   component_key : @ecs.ComponentKey[C],
@@ -179,7 +179,10 @@ fn[C] extract_components(
     }
   }
 
-  if processed.is_empty() && render_world.component_count(component_key) == 0 {
+  let render_component_query : @ecs.Query[@ecs.Comp[C], @ecs.All] = @ecs.query(
+    render_world,
+  )
+  if processed.is_empty() && render_component_query.count() == 0 {
     main_component_column.for_each_ref(fn(main_entity, component) {
       guard render_entity_column.get(main_entity) is Some(render_entity) else {
         return

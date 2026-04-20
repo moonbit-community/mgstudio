@@ -1,6 +1,5 @@
 import {
   "Milky2018/mgstudio/app" @app,
-  "Milky2018/mgstudio/core" @core,
   "Milky2018/mgstudio/ecs" @ecs,
   "Milky2018/mgstudio/math" @math,
   "Milky2018/mgstudio/render" @render,

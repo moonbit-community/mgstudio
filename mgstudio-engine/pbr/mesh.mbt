@@ -682,9 +682,6 @@ pub fn render3d_extract_morphs(
 ) -> Unit {
   @pbr_render.morph_indices_swap_and_reset(morph_indices_ref)
   @pbr_render.morph_uniforms_swap_and_reset(morph_uniforms_ref)
-  if source_world.component_count(@mesh.MorphTargetMesh::component()) == 0 {
-    return
-  }
   let mesh_query : @ecs.Query[
     (@core.Entity, @ecs.Comp[Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
     @ecs.All,

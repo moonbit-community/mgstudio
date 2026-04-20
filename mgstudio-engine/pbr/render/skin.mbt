@@ -513,7 +513,12 @@ pub fn render3d_extract_skin_bindings(
 ) -> Unit {
   render3d_phase_begin_skin_frame(skin_uniforms_ref)
   skin_uniforms_ref.val.skin_upload_queue.clear()
-  if source_world.component_count(@mesh.SkinnedMesh::component()) == 0 {
+  let skinned_mesh_key = @mesh.SkinnedMesh::component()
+  let skinned_mesh_presence_query : @ecs.QueryState[
+    @core.Entity,
+    @ecs.With[@mesh.SkinnedMesh],
+  ] = source_world.query_filtered(@ecs.With::new(skinned_mesh_key))
+  if skinned_mesh_presence_query.count(source_world) == 0 {
     skin_uniforms_ref.val.skin_uniform_info.clear()
     skin_uniforms_ref.val.next_skin_binding_index = 0
     skin_uniforms_ref.val.skin_binding_free_ranges.clear()
@@ -533,7 +538,6 @@ pub fn render3d_extract_skin_bindings(
     None => return
   }
   let transform_columns = render3d_transform_columns(source_world)
-  let skinned_mesh_key = @mesh.SkinnedMesh::component()
   let changed_visibility_filter = @ecs.Changed::new(
     @visibility.ecs_key_view_visibility,
   )

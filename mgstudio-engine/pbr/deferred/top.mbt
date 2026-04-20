@@ -111,24 +111,22 @@ pub impl @ecs.Component for PbrDeferredLightingDepthId with component() {
 
 ///|
 fn insert_deferred_lighting_pass_id_component(world : @ecs.World) -> Unit {
-  let query : @ecs.QueryState[
-    @core.Entity,
+  let query : @ecs.Query[
+    @ecs.Has[PbrDeferredLightingDepthId],
     @ecs.With[@core_pipeline.DeferredPrepass],
-  ] = world.query_filtered(
+  ] = @ecs.query_filtered(
+    world,
     @ecs.With::new(@core_pipeline.DeferredPrepass::component()),
   )
-  let iter = query.iter(world)
-  while (iter.fetch_next() catch { _ => None }) is Some((entity, _)) {
-    if !(try! world.contains_by_key(
-        entity, ecs_key_pbr_deferred_lighting_depth_id,
-      )) {
+  try! query.view(fn(entity, has_depth_id) {
+    if !has_depth_id.present() {
       try! world.set_by_key(
         entity,
         ecs_key_pbr_deferred_lighting_depth_id,
         PbrDeferredLightingDepthId::default(),
       )
     }
-  }
+  })
 }
 
 ///|

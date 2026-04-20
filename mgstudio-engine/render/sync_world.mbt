@@ -300,14 +300,11 @@ fn entity_sync_system(
 
 ///|
 pub fn despawn_temporary_render_entities(world : @ecs.World) -> Unit {
-  let query : @ecs.QueryState[@core.Entity, @ecs.With[TemporaryRenderEntity]] = world.query_filtered(
-    @ecs.With::new(TemporaryRenderEntity::component()),
+  let query : @ecs.Query[@ecs.Comp[TemporaryRenderEntity], @ecs.All] = @ecs.query(
+    world,
   )
-  let iter = query.iter(world)
   let entities : Array[@core.Entity] = []
-  while (iter.fetch_next() catch { _ => None }) is Some((entity, _)) {
-    entities.push(entity)
-  }
+  try! query.view(fn(entity, _temporary) { entities.push(entity) })
   entities.sort_by(fn(left : @core.Entity, right : @core.Entity) -> Int {
     if left.id < right.id {
       -1
@@ -323,7 +320,7 @@ pub fn despawn_temporary_render_entities(world : @ecs.World) -> Unit {
     let entity = entities[index]
     if world.is_alive(entity) {
       world.despawn(entity) catch {
-        _ => ()
+        _ => abort("sync_world: failed to despawn temporary render entity")
       }
     }
   }

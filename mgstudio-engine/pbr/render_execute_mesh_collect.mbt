@@ -153,20 +153,6 @@ fn render3d_extract_mesh_for_entity(
   world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
   standard_material_frame_cache : Map[Int, StandardMaterial],
   needs_mesh_previous_transform : Bool,
-  has_render_layers_components : Bool,
-  has_visibility_range_components : Bool,
-  has_lightmap_components : Bool,
-  has_forward_decal_components : Bool,
-  has_forward_decal_material_ext_components : Bool,
-  has_clustered_decal_components : Bool,
-  has_not_shadow_caster_components : Bool,
-  has_no_frustum_culling_components : Bool,
-  has_no_cpu_culling_components : Bool,
-  has_not_shadow_receiver_components : Bool,
-  has_transmitted_shadow_receiver_components : Bool,
-  has_wireframe_components : Bool,
-  has_no_wireframe_components : Bool,
-  has_wireframe_color_components : Bool,
 ) -> (ExtractedMesh3d?, Bool) {
   guard source_world.is_alive(entity) else { return (None, false) }
   let mesh3d = match (try! source_world.get_by_key(entity, ecs_key_mesh3d)) {
@@ -202,14 +188,10 @@ fn render3d_extract_mesh_for_entity(
     base_material,
     material_handle.extended_material,
   )
-  let layers = if has_render_layers_components {
-    match
-      (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
-      Some(v) => v
-      None => @sprite.RenderLayers::default()
-    }
-  } else {
-    @sprite.RenderLayers::default()
+  let layers = match
+    (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
+    Some(v) => v
+    None => @sprite.RenderLayers::default()
   }
   let transform = @pbr_render.render3d_entity_world_transform_from_components(
     source_world, entity, local_transform, world_transform_cache_ref,
@@ -243,11 +225,9 @@ fn render3d_extract_mesh_for_entity(
     Some(v) => v.transform()
     None => transform
   }
-  let visibility_range = if has_visibility_range_components {
-    try! source_world.get_by_key(entity, @visibility.ecs_key_visibility_range)
-  } else {
-    None
-  }
+  let visibility_range = try! source_world.get_by_key(
+    entity, @visibility.ecs_key_visibility_range,
+  )
   let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
     match render3d_mesh_local_aabb_center(mesh3d) {
       Some(local_center) =>
@@ -269,72 +249,46 @@ fn render3d_extract_mesh_for_entity(
     mesh_runtime_state_ref,
     mesh3d.mesh(),
   )
-  let lightmap = if has_lightmap_components {
-    try! source_world.get_by_key(entity, ecs_key_lightmap)
-  } else {
-    None
-  }
-  let is_forward_decal = if has_forward_decal_components {
-    (try! source_world.get_by_key(entity, ecs_key_forward_decal)) is Some(_)
-  } else {
-    false
-  }
-  let forward_decal_material_ext = if has_forward_decal_material_ext_components {
-    try! source_world.get_by_key(entity, ecs_key_forward_decal_material_ext)
-  } else {
-    None
-  }
-  let clustered_decal = if has_clustered_decal_components {
-    try! source_world.get_by_key(entity, ecs_key_clustered_decal)
-  } else {
-    None
-  }
-  let has_not_shadow_caster = if has_not_shadow_caster_components {
-    (try! source_world.get_by_key(entity, ecs_key_not_shadow_caster)) is Some(_)
-  } else {
-    false
-  }
-  let has_no_frustum_culling = if has_no_frustum_culling_components {
-    (try! source_world.get_by_key(
+  let lightmap = try! source_world.get_by_key(entity, ecs_key_lightmap)
+  let is_forward_decal = (try! source_world.get_by_key(
+      entity, ecs_key_forward_decal,
+    ))
+    is Some(_)
+  let forward_decal_material_ext = try! source_world.get_by_key(
+    entity, ecs_key_forward_decal_material_ext,
+  )
+  let clustered_decal = try! source_world.get_by_key(
+    entity, ecs_key_clustered_decal,
+  )
+  let has_not_shadow_caster = (try! source_world.get_by_key(
+      entity, ecs_key_not_shadow_caster,
+    ))
+    is Some(_)
+  let has_no_frustum_culling = (try! source_world.get_by_key(
       entity, @visibility.ecs_key_no_frustum_culling,
     ))
     is Some(_)
-  } else {
-    false
-  }
-  let has_no_cpu_culling = if has_no_cpu_culling_components {
-    (try! source_world.get_by_key(entity, @visibility.ecs_key_no_cpu_culling))
+  let has_no_cpu_culling = (try! source_world.get_by_key(
+      entity, @visibility.ecs_key_no_cpu_culling,
+    ))
     is Some(_)
-  } else {
-    false
-  }
-  let has_not_shadow_receiver = if has_not_shadow_receiver_components {
-    (try! source_world.get_by_key(entity, ecs_key_not_shadow_receiver))
+  let has_not_shadow_receiver = (try! source_world.get_by_key(
+      entity, ecs_key_not_shadow_receiver,
+    ))
     is Some(_)
-  } else {
-    false
-  }
-  let has_transmitted_shadow_receiver = if has_transmitted_shadow_receiver_components {
-    (try! source_world.get_by_key(entity, ecs_key_transmitted_shadow_receiver))
+  let has_transmitted_shadow_receiver = (try! source_world.get_by_key(
+      entity, ecs_key_transmitted_shadow_receiver,
+    ))
     is Some(_)
-  } else {
-    false
-  }
-  let has_wireframe = if has_wireframe_components {
-    (try! source_world.get_by_key(entity, ecs_key_wireframe)) is Some(_)
-  } else {
-    false
-  }
-  let has_no_wireframe = if has_no_wireframe_components {
-    (try! source_world.get_by_key(entity, ecs_key_no_wireframe)) is Some(_)
-  } else {
-    false
-  }
-  let wireframe_color = if has_wireframe_color_components {
-    try! source_world.get_by_key(entity, ecs_key_wireframe_color)
-  } else {
-    None
-  }
+  let has_wireframe = (try! source_world.get_by_key(entity, ecs_key_wireframe))
+    is Some(_)
+  let has_no_wireframe = (try! source_world.get_by_key(
+      entity, ecs_key_no_wireframe,
+    ))
+    is Some(_)
+  let wireframe_color = try! source_world.get_by_key(
+    entity, ecs_key_wireframe_color,
+  )
   (
     Some(ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_world_main(source_world, entity),
@@ -389,58 +343,6 @@ fn render3d_execute_collect_meshes(
   let standard_material_frame_cache : Map[Int, StandardMaterial] = {}
   let mesh_cache_ref = render3d_extracted_mesh_cache_ref_or_abort(world)
   let sequence = source_world.get_sequence_context().sequence()
-  let has_render_layers_components = source_world.component_count(
-      @sprite.ecs_key_render_layers,
-    ) >
-    0
-  let has_visibility_range_components = source_world.component_count(
-      @visibility.ecs_key_visibility_range,
-    ) >
-    0
-  let has_lightmap_components = source_world.component_count(ecs_key_lightmap) >
-    0
-  let has_forward_decal_components = source_world.component_count(
-      ecs_key_forward_decal,
-    ) >
-    0
-  let has_forward_decal_material_ext_components = source_world.component_count(
-      ecs_key_forward_decal_material_ext,
-    ) >
-    0
-  let has_clustered_decal_components = source_world.component_count(
-      ecs_key_clustered_decal,
-    ) >
-    0
-  let has_not_shadow_caster_components = source_world.component_count(
-      ecs_key_not_shadow_caster,
-    ) >
-    0
-  let has_no_frustum_culling_components = source_world.component_count(
-      @visibility.ecs_key_no_frustum_culling,
-    ) >
-    0
-  let has_no_cpu_culling_components = source_world.component_count(
-      @visibility.ecs_key_no_cpu_culling,
-    ) >
-    0
-  let has_not_shadow_receiver_components = source_world.component_count(
-      ecs_key_not_shadow_receiver,
-    ) >
-    0
-  let has_transmitted_shadow_receiver_components = source_world.component_count(
-      ecs_key_transmitted_shadow_receiver,
-    ) >
-    0
-  let has_wireframe_components = source_world.component_count(ecs_key_wireframe) >
-    0
-  let has_no_wireframe_components = source_world.component_count(
-      ecs_key_no_wireframe,
-    ) >
-    0
-  let has_wireframe_color_components = source_world.component_count(
-      ecs_key_wireframe_color,
-    ) >
-    0
 
   if !mesh_cache_ref.val.initialized {
     mesh_cache_ref.val.by_entity.clear()
@@ -450,11 +352,6 @@ fn render3d_execute_collect_meshes(
       let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
         source_world, entity, mesh_runtime_state_ref, morph_indices_ref, skin_uniforms_ref,
         world_transform_cache_ref, standard_material_frame_cache, needs_mesh_previous_transform,
-        has_render_layers_components, has_visibility_range_components, has_lightmap_components,
-        has_forward_decal_components, has_forward_decal_material_ext_components,
-        has_clustered_decal_components, has_not_shadow_caster_components, has_no_frustum_culling_components,
-        has_no_cpu_culling_components, has_not_shadow_receiver_components, has_transmitted_shadow_receiver_components,
-        has_wireframe_components, has_no_wireframe_components, has_wireframe_color_components,
       )
       match next_mesh {
         Some(extracted_mesh) =>
@@ -614,11 +511,6 @@ fn render3d_execute_collect_meshes(
       let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
         source_world, entity, mesh_runtime_state_ref, morph_indices_ref, skin_uniforms_ref,
         world_transform_cache_ref, standard_material_frame_cache, needs_mesh_previous_transform,
-        has_render_layers_components, has_visibility_range_components, has_lightmap_components,
-        has_forward_decal_components, has_forward_decal_material_ext_components,
-        has_clustered_decal_components, has_not_shadow_caster_components, has_no_frustum_culling_components,
-        has_no_cpu_culling_components, has_not_shadow_receiver_components, has_transmitted_shadow_receiver_components,
-        has_wireframe_components, has_no_wireframe_components, has_wireframe_color_components,
       )
       match next_mesh {
         Some(extracted_mesh) =>
