@@ -1072,7 +1072,8 @@ test "ecs parity wave2: duplicate hook kind registration fails in-world" {
     .register_component_hooks_for_key(parity_hook_registration_probe_key)
     .on_insert(fn(_world, _context) { () })
 
-  guard duplicate_result is Err(DuplicateHookRegistration(component_id, OnInsert)) else {
+  guard duplicate_result
+    is Err(DuplicateHookRegistration(component_id, OnInsert)) else {
     fail("expected duplicate hook kind registration to fail")
   }
   let expected_component_id = world
@@ -1085,11 +1086,9 @@ test "ecs parity wave2: duplicate hook kind registration fails in-world" {
 test "ecs parity wave2: late hook registration after archetype use fails" {
   let world = World::new()
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    parity_hook_registration_probe_key,
-    ParityHookRegistrationProbe::{  },
-  )
+  try! world.set_by_key(entity, parity_hook_registration_probe_key, ParityHookRegistrationProbe::{
+
+  })
 
   let late_result : Result[
     ComponentHooksBuilder[ParityHookRegistrationProbe],
@@ -1121,10 +1120,18 @@ test "ecs parity wave2: required_by tracks transitive closure and cycle registra
     fn() { ParityRequiredC::{  } },
   )
 
-  let required_by_c = world.get_required_by_components(parity_required_c_key).unwrap()
+  let required_by_c = world
+    .get_required_by_components(parity_required_c_key)
+    .unwrap()
   debug_inspect(required_by_c.len(), content="2")
-  debug_inspect(required_by_c.contains(parity_required_a_key.id()), content="true")
-  debug_inspect(required_by_c.contains(parity_required_b_key.id()), content="true")
+  debug_inspect(
+    required_by_c.contains(parity_required_a_key.id()),
+    content="true",
+  )
+  debug_inspect(
+    required_by_c.contains(parity_required_b_key.id()),
+    content="true",
+  )
 
   let cycle_result : Result[Unit, RequiredComponentsError] = try? world.register_required_components_with(
     parity_required_c_key,

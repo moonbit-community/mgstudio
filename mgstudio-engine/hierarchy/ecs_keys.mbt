@@ -24,16 +24,24 @@ pub let ecs_key_children : @ecs.ComponentKey[Children] = @ecs.register_component
 
 ///|
 pub impl @ecs.Component for Parent with component() {
+  hierarchy_install_component_metadata()
   ecs_key_parent
 }
 
 ///|
 pub impl @ecs.Component for Children with component() {
+  hierarchy_install_component_metadata()
   ecs_key_children
 }
 
 ///|
-fn init {
+let hierarchy_component_metadata_installed : Ref[Bool] = Ref::new(false)
+
+///|
+pub fn hierarchy_install_component_metadata() -> Unit {
+  if hierarchy_component_metadata_installed.val {
+    return
+  }
   ignore(
     @ecs.component_metadata_builder(ecs_key_parent)
     .on_insert(fn(world, context) {
@@ -76,4 +84,5 @@ fn init {
       linked_entities=Some(fn(children : Children) { children.entities() }),
     ),
   )
+  hierarchy_component_metadata_installed.val = true
 }

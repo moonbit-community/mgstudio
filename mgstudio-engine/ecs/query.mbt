@@ -749,12 +749,10 @@ fn QueryCache::query_candidate_archetypes(
   filter_anchor_component_ids : Array[Int],
 ) -> Array[Int] {
   let data_anchor_component_id = query_min_anchor_component_id(
-    world,
-    data_anchor_component_ids,
+    world, data_anchor_component_ids,
   )
   let filter_anchor_component_id = query_min_anchor_component_id(
-    world,
-    filter_anchor_component_ids,
+    world, filter_anchor_component_ids,
   )
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
@@ -794,14 +792,8 @@ fn[F : QueryFilter] QueryCache::query_matching_entities(
   data_collect_access : (QueryDataAccess) -> Unit,
 ) -> Array[@core.Entity] {
   let matched_archetypes = self.query_matching_archetypes(
-    world,
-    filter,
-    data_anchor_component_ids,
-    filter_anchor_component_ids,
-    data_mentions_component,
-    data_matches_component_set,
-    data_is_dense,
-    data_collect_access,
+    world, filter, data_anchor_component_ids, filter_anchor_component_ids, data_mentions_component,
+    data_matches_component_set, data_is_dense, data_collect_access,
   )
   let filter_requires_entity_check = QueryFilter::requires_entity_check(filter)
   let dependency_component_ids = self.dependency_component_ids(
@@ -872,12 +864,10 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
   data_collect_access : (QueryDataAccess) -> Unit,
 ) -> Array[Int] {
   let data_anchor_component_id = query_min_anchor_component_id(
-    world,
-    data_anchor_component_ids,
+    world, data_anchor_component_ids,
   )
   let filter_anchor_component_id = query_min_anchor_component_id(
-    world,
-    filter_anchor_component_ids,
+    world, filter_anchor_component_ids,
   )
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
@@ -894,9 +884,7 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
     default_filters_stale
   let previous_candidate_archetypes = self.cached_candidate_archetypes
   let candidate_archetypes = self.query_candidate_archetypes(
-    world,
-    data_anchor_component_ids,
-    filter_anchor_component_ids,
+    world, data_anchor_component_ids, filter_anchor_component_ids,
   )
   let candidate_archetype_generation = query_candidate_archetype_generation(
     world,
@@ -1483,12 +1471,10 @@ fn[D, F] QueryState::query_candidate_archetypes(
   filter_anchor_component_ids : Array[Int],
 ) -> Array[Int] {
   let data_anchor_component_id = query_min_anchor_component_id(
-    world,
-    data_anchor_component_ids,
+    world, data_anchor_component_ids,
   )
   let filter_anchor_component_id = query_min_anchor_component_id(
-    world,
-    filter_anchor_component_ids,
+    world, filter_anchor_component_ids,
   )
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
@@ -1586,12 +1572,10 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
     self.filter,
   )
   let data_anchor_component_id = query_min_anchor_component_id(
-    world,
-    data_anchor_component_ids,
+    world, data_anchor_component_ids,
   )
   let filter_anchor_component_id = query_min_anchor_component_id(
-    world,
-    filter_anchor_component_ids,
+    world, filter_anchor_component_ids,
   )
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
@@ -1869,12 +1853,11 @@ fn query_min_anchor_component_id(
   for component_id in anchor_component_ids {
     let count = world.component_membership_count_for_definition(component_id)
     match best_component_id {
-      Some(_) => {
+      Some(_) =>
         if count < best_count {
           best_component_id = Some(component_id)
           best_count = count
         }
-      }
       None => {
         best_component_id = Some(component_id)
         best_count = count

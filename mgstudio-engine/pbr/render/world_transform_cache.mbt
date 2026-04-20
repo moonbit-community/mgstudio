@@ -90,9 +90,24 @@ pub(all) struct Render3dTransformColumns {
 }
 
 ///|
+fn[T] render3d_register_transform_component(
+  world : @ecs.World,
+  component_key : @ecs.ComponentKey[T],
+) -> Unit {
+  ignore(
+    world.components_registrator().register_component_by_key(component_key),
+  )
+}
+
+///|
 pub fn render3d_transform_columns(
   world : @ecs.World,
 ) -> Render3dTransformColumns {
+  render3d_register_transform_component(world, @transform.ecs_key_transform)
+  render3d_register_transform_component(
+    world, @transform.ecs_key_global_transform,
+  )
+  render3d_register_transform_component(world, @hierarchy.ecs_key_parent)
   {
     transform: world.component_column(@transform.ecs_key_transform),
     global: world.component_column(@transform.ecs_key_global_transform),

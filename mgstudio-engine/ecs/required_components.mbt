@@ -166,13 +166,9 @@ fn World::required_components_reaches(
     return false
   }
   for required_id in state_ref.val.direct_order {
-    guard state_ref.val.direct.get(required_id) is Some(_) else {
-      continue
-    }
+    guard state_ref.val.direct.get(required_id) is Some(_) else { continue }
     if self.required_components_reaches(
-        required_id,
-        target_component_id,
-        visited,
+        required_id, target_component_id, visited,
       ) {
       return true
     }
@@ -294,9 +290,7 @@ fn World::register_required_components_by_keys(
 
   let visited : Map[Int, Bool] = {}
   if self.required_components_reaches(
-      required_local_id,
-      requiree_local_id,
-      visited,
+      required_local_id, requiree_local_id, visited,
     ) {
     raise CyclicRequirement(requiree_local_id, required_local_id)
   }

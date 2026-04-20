@@ -29,11 +29,13 @@ pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady] = @
 
 ///|
 pub impl @ecs.Component for SceneRoot with component() {
+  scene_install_component_metadata()
   ecs_key_scene_root
 }
 
 ///|
 pub impl @ecs.Component for SceneInstance with component() {
+  scene_install_component_metadata()
   ecs_key_scene_instance
 }
 
@@ -43,7 +45,13 @@ pub impl @ecs.Component for SceneInstanceReady with component() {
 }
 
 ///|
-fn init {
+let scene_component_metadata_installed : Ref[Bool] = Ref::new(false)
+
+///|
+pub fn scene_install_component_metadata() -> Unit {
+  if scene_component_metadata_installed.val {
+    return
+  }
   ignore(
     @ecs.component_metadata_builder(ecs_key_scene_root)
     .on_insert(scene_root_on_insert)
@@ -61,4 +69,5 @@ fn init {
       scene_instance_on_remove,
     ),
   )
+  scene_component_metadata_installed.val = true
 }

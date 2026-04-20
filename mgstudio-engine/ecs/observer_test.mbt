@@ -550,13 +550,19 @@ test "ecs observer: lifecycle observer ordering is deterministic" {
     }),
   )
 
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{ value: 1 })
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{ value: 2 })
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 1,
+  })
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 2,
+  })
   debug_inspect(
     try! world.remove_by_key(entity, observer_marker_key),
     content="true",
   )
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{ value: 3 })
+  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
+    value: 3,
+  })
   try! world.despawn(entity)
 
   debug_inspect(
@@ -761,9 +767,9 @@ test "ecs observer: parent lookup cache tracks archetype register and unregister
   reset_observer_parent_lookup_probe_counters(world.world_id(), -1)
 
   ignore(
-    world.components_registrator().register_component_by_key(
-      observer_parent_lookup_probe_key,
-    ),
+    world
+    .components_registrator()
+    .register_component_by_key(observer_parent_lookup_probe_key),
   )
   ignore(
     world.add_entity_observer(parent, fn(_event : On[ObserverAttack]) {
@@ -801,14 +807,14 @@ test "ecs observer: parent lookup cache isolates archetype activity per world" {
   )
 
   ignore(
-    world0.components_registrator().register_component_by_key(
-      observer_parent_lookup_probe_key,
-    ),
+    world0
+    .components_registrator()
+    .register_component_by_key(observer_parent_lookup_probe_key),
   )
   ignore(
-    world1.components_registrator().register_component_by_key(
-      observer_parent_lookup_probe_key,
-    ),
+    world1
+    .components_registrator()
+    .register_component_by_key(observer_parent_lookup_probe_key),
   )
 
   let parent0 = world0.spawn()

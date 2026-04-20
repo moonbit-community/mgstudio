@@ -814,7 +814,9 @@ fn World::refresh_observer_parent_lookup_accessors(
     if !source.observer_parent_lookup {
       continue
     }
-    if self.non_empty_archetype_ids_for_component_local_id(local_component_id).length() ==
+    if self
+      .non_empty_archetype_ids_for_component_local_id(local_component_id)
+      .length() ==
       0 {
       continue
     }

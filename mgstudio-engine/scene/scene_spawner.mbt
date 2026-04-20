@@ -1057,7 +1057,10 @@ pub fn scene_plugin_with(
   app : @app.App[@ecs.World],
   plugin : ScenePlugin,
 ) -> @app.App[@ecs.World] {
-  @gltf.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
+  @hierarchy.hierarchy_install_component_metadata()
+  @transform.transform_install_component_metadata()
+  scene_install_component_metadata()
+  scene_install_asset_hooks()
   scene_runtime_plugin_base(
     scene_init_gltf_assets(app)
     .init_resource(fn() {

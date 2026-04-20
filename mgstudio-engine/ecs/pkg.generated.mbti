@@ -993,6 +993,7 @@ pub(open) trait QueryData {
   requires_entity_check() -> Bool
   is_dense(World) -> Bool = _
   iteration_anchor_component() -> Int?
+  iteration_anchor_components() -> Array[Int] = _
   contiguous_compatible() -> Bool
 }
 pub impl QueryData for Unit
@@ -1010,6 +1011,7 @@ pub(open) trait QueryFilter {
   requires_entity_check(Self) -> Bool
   is_dense(Self, World) -> Bool = _
   iteration_anchor_component(Self) -> Int?
+  iteration_anchor_components(Self) -> Array[Int] = _
   depends_on_sequence(Self) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B)
