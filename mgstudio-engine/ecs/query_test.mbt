@@ -795,6 +795,50 @@ test "ecs query cache: entity-check path materializes entity cache" {
 }
 
 ///|
+test "ecs query cache: dense mode tracks matched tables cache" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+
+  let query : Query[Comp[Position], All] = query_filtered_with_cache(
+    world,
+    All::new(),
+    QueryCache::new(),
+  )
+
+  debug_inspect(query.count(), content="2")
+  let cache = query.cache_snapshot()
+  debug_inspect(cache.cached_is_dense, content="true")
+  debug_inspect(cache.cached_matching_tables.length() > 0, content="true")
+  debug_inspect(cache.cached_matching_entities_valid, content="false")
+}
+
+///|
+test "ecs query cache: non-dense mode keeps matched tables cache empty" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+
+  let sequence_context = @core.SystemSequenceContext::new()
+  sequence_context.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(sequence_context)
+
+  let query : Query[Comp[Position], Added[Position]] = query_filtered_with_cache(
+    world,
+    Added::new(position_key),
+    QueryCache::new(),
+  )
+  debug_inspect(query.count(), content="2")
+  let cache = query.cache_snapshot()
+  debug_inspect(cache.cached_is_dense, content="false")
+  debug_inspect(cache.cached_matching_tables.length(), content="0")
+}
+
+///|
 test "ecs query_state cache: archetype matching updates incrementally and keeps iter archetype-driven" {
   let world = World::new()
   let e0 = world.spawn()
@@ -818,7 +862,32 @@ test "ecs query_state cache: archetype matching updates incrementally and keeps 
 
   debug_inspect(state.count(world), content="2")
   debug_inspect(state.cached_matching_archetypes.length(), content="2")
+  debug_inspect(state.cached_is_dense, content="true")
+  debug_inspect(state.cached_matching_tables.length() > 0, content="true")
   debug_inspect(state.cached_matching_entities_valid, content="false")
+}
+
+///|
+test "ecs query access validation: detects query data and filter conflicts" {
+  let data_access = QueryDataAccess::new()
+  data_access.add_write_component(position_key.id())
+  data_access.add_read_component(position_key.id())
+  let empty_filter_access = QueryFilterAccess::new()
+  guard query_validate_data_filter_access(data_access, empty_filter_access)
+    is Some(error0) else {
+    fail("expected read/write conflict")
+  }
+  debug_inspect(error0.is_invalid(), content="true")
+
+  let data_access2 = QueryDataAccess::new()
+  data_access2.add_write_component(position_key.id())
+  let filter_access = QueryFilterAccess::new()
+  filter_access.add_read_component(position_key.id())
+  guard query_validate_data_filter_access(data_access2, filter_access)
+    is Some(error1) else {
+    fail("expected filter read conflict")
+  }
+  debug_inspect(error1.is_invalid(), content="true")
 }
 
 ///|

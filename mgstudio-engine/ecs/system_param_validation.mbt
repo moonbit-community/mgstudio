@@ -44,3 +44,39 @@ pub fn SystemParamValidationError::is_invalid(
 ) -> Bool {
   !self.is_skipped()
 }
+
+///|
+fn query_access_component_overlap(lhs : Array[Int], rhs : Array[Int]) -> Int? {
+  for component_id in lhs {
+    if rhs.contains(component_id) {
+      return Some(component_id)
+    }
+  }
+  None
+}
+
+///|
+pub fn query_validate_data_filter_access(
+  data_access : QueryDataAccess,
+  filter_access : QueryFilterAccess,
+) -> SystemParamValidationError? {
+  if data_access.has_conflict() {
+    return Some(
+      Invalid(
+        "Query data access contains conflicting read/write accesses for the same component",
+      ),
+    )
+  }
+  if query_access_component_overlap(
+      data_access.write_components(),
+      filter_access.read_components(),
+    )
+    is Some(component_id) {
+    return Some(
+      Invalid(
+        "Query filter reads component \{component_id} while query data mutably accesses it",
+      ),
+    )
+  }
+  None
+}

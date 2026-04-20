@@ -18,9 +18,21 @@ pub(open) trait QueryData {
   fetch(World, @core.Entity) -> Self raise EcsError
   mentions_component(Int) -> Bool
   matches_component_set((Int) -> Bool) -> Bool
+  collect_access(QueryDataAccess) -> Unit = _
   requires_entity_check() -> Bool
+  is_dense(World) -> Bool = _
   iteration_anchor_component() -> Int?
   contiguous_compatible() -> Bool
+}
+
+///|
+impl QueryData with collect_access(_access) {
+  ()
+}
+
+///|
+impl QueryData with is_dense(_world) {
+  false
 }
 
 ///|
@@ -32,11 +44,18 @@ pub struct Comp[T] {
 pub struct QueryDataAccess {
   read_components : Array[Int]
   write_components : Array[Int]
+  mut has_read_write_conflict : Bool
+  mut has_duplicate_write : Bool
 }
 
 ///|
 pub fn QueryDataAccess::new() -> QueryDataAccess {
-  { read_components: [], write_components: [] }
+  {
+    read_components: [],
+    write_components: [],
+    has_read_write_conflict: false,
+    has_duplicate_write: false,
+  }
 }
 
 ///|
@@ -64,6 +83,9 @@ pub fn QueryDataAccess::add_read_component(
   self : QueryDataAccess,
   component_id : Int,
 ) -> Unit {
+  if self.write_components.contains(component_id) {
+    self.has_read_write_conflict = true
+  }
   if !self.read_components.contains(component_id) {
     self.read_components.push(component_id)
   }
@@ -74,8 +96,50 @@ pub fn QueryDataAccess::add_write_component(
   self : QueryDataAccess,
   component_id : Int,
 ) -> Unit {
+  if self.write_components.contains(component_id) {
+    self.has_duplicate_write = true
+  }
+  if self.read_components.contains(component_id) {
+    self.has_read_write_conflict = true
+  }
   if !self.write_components.contains(component_id) {
     self.write_components.push(component_id)
+  }
+}
+
+///|
+pub fn QueryDataAccess::read_components(self : QueryDataAccess) -> Array[Int] {
+  self.read_components
+}
+
+///|
+pub fn QueryDataAccess::write_components(self : QueryDataAccess) -> Array[Int] {
+  self.write_components
+}
+
+///|
+pub fn QueryDataAccess::accesses_component(
+  self : QueryDataAccess,
+  component_id : Int,
+) -> Bool {
+  self.read_components.contains(component_id) ||
+  self.write_components.contains(component_id)
+}
+
+///|
+pub fn QueryDataAccess::has_conflict(self : QueryDataAccess) -> Bool {
+  self.has_read_write_conflict || self.has_duplicate_write
+}
+
+///|
+fn query_data_component_is_dense(world : World, component_id : Int) -> Bool {
+  guard world.local_component_id(component_id) is Some(local_component_id) else {
+    return true
+  }
+  match world.local_component_storage_type(local_component_id) {
+    Some(Table) => true
+    Some(SparseSet) => false
+    None => true
   }
 }
 
@@ -176,8 +240,18 @@ pub impl QueryData for @core.Entity with matches_component_set(_set_contains_id)
 }
 
 ///|
+pub impl QueryData for @core.Entity with collect_access(_access) {
+  ()
+}
+
+///|
 pub impl QueryData for @core.Entity with requires_entity_check() {
   false
+}
+
+///|
+pub impl QueryData for @core.Entity with is_dense(_world) {
+  true
 }
 
 ///|
@@ -215,8 +289,18 @@ pub impl[T : Component] QueryData for Comp[T] with matches_component_set(
 }
 
 ///|
+pub impl[T : Component] QueryData for Comp[T] with collect_access(access) {
+  access.add_read_component(T::component().id())
+}
+
+///|
 pub impl[T : Component] QueryData for Comp[T] with requires_entity_check() {
   false
+}
+
+///|
+pub impl[T : Component] QueryData for Comp[T] with is_dense(world) {
+  query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
@@ -254,8 +338,18 @@ pub impl[T : Component] QueryData for Mut[T] with matches_component_set(
 }
 
 ///|
+pub impl[T : Component] QueryData for Mut[T] with collect_access(access) {
+  access.add_write_component(T::component().id())
+}
+
+///|
 pub impl[T : Component] QueryData for Mut[T] with requires_entity_check() {
   false
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with is_dense(world) {
+  query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
@@ -289,8 +383,18 @@ pub impl QueryData for EntityRef with matches_component_set(_set_contains_id) {
 }
 
 ///|
+pub impl QueryData for EntityRef with collect_access(_access) {
+  ()
+}
+
+///|
 pub impl QueryData for EntityRef with requires_entity_check() {
   false
+}
+
+///|
+pub impl QueryData for EntityRef with is_dense(_world) {
+  true
 }
 
 ///|
@@ -324,8 +428,18 @@ pub impl QueryData for EntityMut with matches_component_set(_set_contains_id) {
 }
 
 ///|
+pub impl QueryData for EntityMut with collect_access(_access) {
+  ()
+}
+
+///|
 pub impl QueryData for EntityMut with requires_entity_check() {
   false
+}
+
+///|
+pub impl QueryData for EntityMut with is_dense(_world) {
+  true
 }
 
 ///|
@@ -365,8 +479,18 @@ pub impl[T : QueryData] QueryData for T? with matches_component_set(
 }
 
 ///|
+pub impl[T : QueryData] QueryData for T? with collect_access(access) {
+  T::collect_access(access)
+}
+
+///|
 pub impl[T : QueryData] QueryData for T? with requires_entity_check() {
   false
+}
+
+///|
+pub impl[T : QueryData] QueryData for T? with is_dense(world) {
+  T::is_dense(world)
 }
 
 ///|
@@ -404,8 +528,18 @@ pub impl[T : Component] QueryData for Has[T] with matches_component_set(
 }
 
 ///|
+pub impl[T : Component] QueryData for Has[T] with collect_access(_access) {
+  ()
+}
+
+///|
 pub impl[T : Component] QueryData for Has[T] with requires_entity_check() {
   false
+}
+
+///|
+pub impl[T : Component] QueryData for Has[T] with is_dense(_world) {
+  true
 }
 
 ///|
@@ -443,8 +577,18 @@ pub impl[T : Component] QueryData for Optional[T] with matches_component_set(
 }
 
 ///|
+pub impl[T : Component] QueryData for Optional[T] with collect_access(access) {
+  access.add_read_component(T::component().id())
+}
+
+///|
 pub impl[T : Component] QueryData for Optional[T] with requires_entity_check() {
   false
+}
+
+///|
+pub impl[T : Component] QueryData for Optional[T] with is_dense(_world) {
+  true
 }
 
 ///|
@@ -478,8 +622,18 @@ pub impl QueryData for Unit with matches_component_set(_set_contains_id) {
 }
 
 ///|
+pub impl QueryData for Unit with collect_access(_access) {
+  ()
+}
+
+///|
 pub impl QueryData for Unit with requires_entity_check() {
   false
+}
+
+///|
+pub impl QueryData for Unit with is_dense(_world) {
+  true
 }
 
 ///|
@@ -524,8 +678,21 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with matches_compone
 }
 
 ///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with collect_access(
+  access,
+) {
+  A::collect_access(access)
+  B::collect_access(access)
+}
+
+///|
 pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with requires_entity_check() {
   A::requires_entity_check() || B::requires_entity_check()
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with is_dense(world) {
+  A::is_dense(world) && B::is_dense(world)
 }
 
 ///|
@@ -578,10 +745,26 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with collect_access(
+  access,
+) {
+  A::collect_access(access)
+  B::collect_access(access)
+  C::collect_access(access)
+}
+
+///|
 pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with requires_entity_check() {
   A::requires_entity_check() ||
   B::requires_entity_check() ||
   C::requires_entity_check()
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with is_dense(
+  world,
+) {
+  A::is_dense(world) && B::is_dense(world) && C::is_dense(world)
 }
 
 ///|
@@ -663,11 +846,37 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
+) with collect_access(access) {
+  A::collect_access(access)
+  B::collect_access(access)
+  C::collect_access(access)
+  D::collect_access(access)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
 ) with requires_entity_check() {
   A::requires_entity_check() ||
   B::requires_entity_check() ||
   C::requires_entity_check() ||
   D::requires_entity_check()
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with is_dense(world) {
+  A::is_dense(world) &&
+  B::is_dense(world) &&
+  C::is_dense(world) &&
+  D::is_dense(world)
 }
 
 ///|
