@@ -279,17 +279,20 @@ fn render_visibility_ranges_write(
 
 ///|
 fn write_render_visibility_ranges_system(render_world : @ecs.World) -> Unit {
-  if (render_world.get_resource_ref_mut(ecs_key_render_visibility_ranges) catch {
-      _ => None
-    })
-    is Some(ranges_ref) {
-    render_visibility_ranges_write(
-      ranges_ref.val,
-      @render.host_gpu_read_only_binding_type_uniform(
-        VISIBILITY_RANGES_STORAGE_BUFFER_COUNT,
-      ),
-    )
+  let ranges_ref = match
+    (try! render_world.get_resource_ref_mut(ecs_key_render_visibility_ranges)) {
+    Some(v) => v
+    None =>
+      abort(
+        "render visibility range: missing RenderVisibilityRanges resource in render world",
+      )
   }
+  render_visibility_ranges_write(
+    ranges_ref.val,
+    @render.host_gpu_read_only_binding_type_uniform(
+      VISIBILITY_RANGES_STORAGE_BUFFER_COUNT,
+    ),
+  )
 }
 
 ///|

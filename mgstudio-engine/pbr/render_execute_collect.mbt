@@ -42,22 +42,50 @@ fn render3d_execute_collect_cameras(
     (@core.Entity, Projection, ProjectionRuntime3d),
   ] = []
   let projection_runtime_removals : Array[@core.Entity] = []
-  let camera_query : @ecs.Query[(@core.Entity, @ecs.Comp[Camera3d]), @ecs.All] = @ecs.query(
-    source_world,
-  )
+  let camera_query : @ecs.Query[
+    (
+      @core.Entity,
+      (
+        @ecs.Comp[Camera3d],
+        @ecs.Optional[@sprite.Camera],
+        @ecs.Optional[Projection],
+        @ecs.Optional[SubCameraView3d],
+      ),
+      (
+        @ecs.Optional[DistanceFog],
+        @ecs.Optional[CameraDecalConfig3d],
+        @ecs.Optional[CameraDeferredConfig3d],
+        @ecs.Optional[AutoExposure],
+      ),
+      (
+        @ecs.Optional[@sprite.RenderTarget],
+        @ecs.Optional[@sprite.RenderLayers],
+        @ecs.Optional[ProjectionRuntime3d],
+        @ecs.Optional[@pbr_prepass.PreviousViewData],
+      ),
+    ),
+    @ecs.All,
+  ] = @ecs.query(source_world)
   try! camera_query.view(fn(_query_entity, data) {
-    let (entity, _camera3d) = data
-    let camera = match
-      (try! source_world.get_by_key(entity, @sprite.ecs_key_camera)) {
+    let (
+      entity,
+      (_camera3d, camera_opt, projection_opt, sub_camera_view_opt),
+      (
+        distance_fog_opt,
+        decal_config_opt,
+        deferred_config_opt,
+        auto_exposure_opt,
+      ),
+      (target_opt, layers_opt, projection_runtime_opt, previous_view_data_opt),
+    ) = data
+    let camera = match camera_opt.value() {
       Some(v) => v
       None => @sprite.Camera::default()
     }
     if !camera.is_active {
       return
     }
-    let projection_component = try! source_world.get_by_key(
-      entity, ecs_key_projection,
-    )
+    let projection_component = projection_opt.value()
     let projection = match projection_component {
       Some(v) => v
       None => Projection::default()
@@ -65,21 +93,11 @@ fn render3d_execute_collect_cameras(
     let projection_changed = projection_changed_entities.contains(
       entity_key(entity),
     )
-    let sub_camera_view = try! source_world.get_by_key(
-      entity, ecs_key_sub_camera_view3d,
-    )
-    let distance_fog = try! source_world.get_by_key(
-      entity, ecs_key_distance_fog,
-    )
-    let decal_config = try! source_world.get_by_key(
-      entity, ecs_key_camera_decal_config3d,
-    )
-    let deferred_config = try! source_world.get_by_key(
-      entity, ecs_key_camera_deferred_config3d,
-    )
-    let auto_exposure = try! source_world.get_by_key(
-      entity, ecs_key_auto_exposure,
-    )
+    let sub_camera_view = sub_camera_view_opt.value()
+    let distance_fog = distance_fog_opt.value()
+    let decal_config = decal_config_opt.value()
+    let deferred_config = deferred_config_opt.value()
+    let auto_exposure = auto_exposure_opt.value()
     let volumetric_fog = try! source_world.get_by_key(
       entity, ecs_key_volumetric_fog,
     )
@@ -152,13 +170,11 @@ fn render3d_execute_collect_cameras(
       entity, ecs_key_temporal_anti_aliasing,
     )
     let msaa = try! source_world.get_by_key(entity, ecs_key_msaa)
-    let target = match
-      (try! source_world.get_by_key(entity, @sprite.ecs_key_render_target)) {
+    let target = match target_opt.value() {
       Some(v) => v
       None => @sprite.RenderTarget::Screen
     }
-    let layers = match
-      (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
+    let layers = match layers_opt.value() {
       Some(v) => v
       None => @sprite.RenderLayers::default()
     }
@@ -169,9 +185,7 @@ fn render3d_execute_collect_cameras(
     let transform = @pbr_render.render3d_entity_world_transform_cached(
       source_world, entity, world_transform_cache_ref,
     )
-    let previous_view_data : @pbr_prepass.PreviousViewData? = try! source_world.get_by_key(
-      entity, ecs_key_previous_view_data,
-    )
+    let previous_view_data = previous_view_data_opt.value()
     let previous_transform = match previous_view_data {
       Some(v) => v.transform()
       None => transform
@@ -190,7 +204,7 @@ fn render3d_execute_collect_cameras(
           Some(component_projection) => {
             let (runtime_projection, runtime_update) = render3d_projection_runtime_update(
               component_projection,
-              try! source_world.get_by_key(entity, ecs_key_projection_runtime3d),
+              projection_runtime_opt.value(),
               projection_changed,
               camera_clamped,
               target_info.target_size,

@@ -104,23 +104,7 @@ fn[C : @ecs.Component] extract_components(
 ) -> Unit {
   let main_world = render_source_world(render_world)
   let render_component_column = render_world.component_column(component_key)
-  let write_extracted_component = fn(
-    render_entity : @core.Entity,
-    component : C,
-  ) -> Unit {
-    let wrote = match render_component_column {
-      Some(column) => column.set_sequence_only(render_entity, component)
-      None => false
-    }
-    if !wrote {
-      render_world.set_by_key(render_entity, component_key, component) catch {
-        _ =>
-          abort(
-            "extract_component: failed to write extracted component to render world",
-          )
-      }
-    }
-  }
+  let extracted_values : Array[(@core.Entity, C)] = []
 
   if only_visible {
     let query : @ecs.Query[
@@ -136,24 +120,46 @@ fn[C : @ecs.Component] extract_components(
       if !view_visibility_comp.value().is_visible() {
         return
       }
-      write_extracted_component(
-        render_entity_comp.value().id(),
-        component_comp.value(),
+      extracted_values.push(
+        (render_entity_comp.value().id(), component_comp.value()),
       )
     })
-    return
+  } else {
+    let query : @ecs.Query[(@ecs.Comp[RenderEntity], @ecs.Comp[C]), @ecs.All] = @ecs.query(
+      main_world,
+    )
+    try! query.view(fn(_entity, data) {
+      let (render_entity_comp, component_comp) = data
+      extracted_values.push(
+        (render_entity_comp.value().id(), component_comp.value()),
+      )
+    })
   }
 
-  let query : @ecs.Query[(@ecs.Comp[RenderEntity], @ecs.Comp[C]), @ecs.All] = @ecs.query(
-    main_world,
-  )
-  try! query.view(fn(_entity, data) {
-    let (render_entity_comp, component_comp) = data
-    write_extracted_component(
-      render_entity_comp.value().id(),
-      component_comp.value(),
-    )
-  })
+  match render_component_column {
+    Some(column) =>
+      for (render_entity, component) in extracted_values {
+        let wrote = column.set_sequence_only(render_entity, component)
+        if !wrote {
+          render_world.set_by_key(render_entity, component_key, component)
+          catch {
+            _ =>
+              abort(
+                "extract_component: failed to write extracted component to render world",
+              )
+          }
+        }
+      }
+    None =>
+      for (render_entity, component) in extracted_values {
+        render_world.set_by_key(render_entity, component_key, component) catch {
+          _ =>
+            abort(
+              "extract_component: failed to write extracted component to render world",
+            )
+        }
+      }
+  }
 }
 
 ///|

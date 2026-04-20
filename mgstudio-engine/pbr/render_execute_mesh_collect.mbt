@@ -144,6 +144,15 @@ fn render3d_resolve_standard_material(
 }
 
 ///|
+priv struct Render3dExtractMeshRequiredComponents {
+  mesh3d : Mesh3d
+  material_handle : MeshMaterial3d
+  view_visibility : @visibility.ViewVisibility
+  local_transform : @transform.Transform
+  layers : @sprite.RenderLayers?
+}
+
+///|
 fn render3d_extract_mesh_for_entity(
   source_world : @ecs.World,
   entity : @core.Entity,
@@ -153,29 +162,55 @@ fn render3d_extract_mesh_for_entity(
   world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
   standard_material_frame_cache : Map[Int, StandardMaterial],
   needs_mesh_previous_transform : Bool,
+  required_components : Render3dExtractMeshRequiredComponents?,
 ) -> (ExtractedMesh3d?, Bool) {
   guard source_world.is_alive(entity) else { return (None, false) }
-  let mesh3d = match (try! source_world.get_by_key(entity, ecs_key_mesh3d)) {
-    Some(v) => v
-    None => return (None, false)
-  }
-  let material_handle = match
-    (try! source_world.get_by_key(entity, ecs_key_mesh_material3d)) {
-    Some(v) => v
-    None => return (None, false)
-  }
-  let view_visibility = match
-    (try! source_world.get_by_key(entity, @visibility.ecs_key_view_visibility)) {
-    Some(v) => v
-    None => return (None, false)
+  let (
+    mesh3d,
+    material_handle,
+    view_visibility,
+    local_transform,
+    prefetched_layers,
+  ) = match required_components {
+    Some(components) =>
+      (
+        components.mesh3d,
+        components.material_handle,
+        components.view_visibility,
+        components.local_transform,
+        components.layers,
+      )
+    None => {
+      let mesh3d = match
+        (try! source_world.get_by_key(entity, ecs_key_mesh3d)) {
+        Some(v) => v
+        None => return (None, false)
+      }
+      let material_handle = match
+        (try! source_world.get_by_key(entity, ecs_key_mesh_material3d)) {
+        Some(v) => v
+        None => return (None, false)
+      }
+      let view_visibility = match
+        (try! source_world.get_by_key(
+          entity, @visibility.ecs_key_view_visibility,
+        )) {
+        Some(v) => v
+        None => return (None, false)
+      }
+      let local_transform = match
+        (try! source_world.get_by_key(entity, @transform.ecs_key_transform)) {
+        Some(v) => v
+        None => return (None, false)
+      }
+      let layers = try! source_world.get_by_key(
+        entity, @sprite.ecs_key_render_layers,
+      )
+      (mesh3d, material_handle, view_visibility, local_transform, layers)
+    }
   }
   if !view_visibility.is_visible() {
     return (None, false)
-  }
-  let local_transform = match
-    (try! source_world.get_by_key(entity, @transform.ecs_key_transform)) {
-    Some(v) => v
-    None => return (None, false)
   }
   let base_material = match
     render3d_resolve_standard_material(
@@ -188,8 +223,7 @@ fn render3d_extract_mesh_for_entity(
     base_material,
     material_handle.extended_material,
   )
-  let layers = match
-    (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
+  let layers = match prefetched_layers {
     Some(v) => v
     None => @sprite.RenderLayers::default()
   }
@@ -347,15 +381,39 @@ fn render3d_execute_collect_meshes(
   if !mesh_cache_ref.val.initialized {
     mesh_cache_ref.val.by_entity.clear()
     mesh_cache_ref.val.reextract_next_frame.clear()
-    let mesh_query : @ecs.Query[(@core.Entity, @ecs.Comp[Mesh3d]), @ecs.All] = @ecs.query(
-      source_world,
-    )
+    let mesh_query : @ecs.Query[
+      (
+        @core.Entity,
+        (
+          @ecs.Comp[Mesh3d],
+          @ecs.Comp[MeshMaterial3d],
+          @ecs.Comp[@visibility.ViewVisibility],
+          @ecs.Comp[@transform.Transform],
+        ),
+        @ecs.Optional[@sprite.RenderLayers],
+      ),
+      @ecs.All,
+    ] = @ecs.query(source_world)
     try! mesh_query.view(fn(_query_entity, data) {
-      let (entity, _mesh3d) = data
+      let (entity, (mesh3d, material, view_visibility, transform), render_layers
+      ) = data
       let entity_key = render3d_mesh_entity_key(entity)
       let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
-        source_world, entity, mesh_runtime_state_ref, morph_indices_ref, skin_uniforms_ref,
-        world_transform_cache_ref, standard_material_frame_cache, needs_mesh_previous_transform,
+        source_world,
+        entity,
+        mesh_runtime_state_ref,
+        morph_indices_ref,
+        skin_uniforms_ref,
+        world_transform_cache_ref,
+        standard_material_frame_cache,
+        needs_mesh_previous_transform,
+        Some(Render3dExtractMeshRequiredComponents::{
+          mesh3d: mesh3d.value(),
+          material_handle: material.value(),
+          view_visibility: view_visibility.value(),
+          local_transform: transform.value(),
+          layers: render_layers.value(),
+        }),
       )
       match next_mesh {
         Some(extracted_mesh) =>
@@ -513,8 +571,15 @@ fn render3d_execute_collect_meshes(
       let (_entity_key, entity) = entry
       let entity_key = render3d_mesh_entity_key(entity)
       let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
-        source_world, entity, mesh_runtime_state_ref, morph_indices_ref, skin_uniforms_ref,
-        world_transform_cache_ref, standard_material_frame_cache, needs_mesh_previous_transform,
+        source_world,
+        entity,
+        mesh_runtime_state_ref,
+        morph_indices_ref,
+        skin_uniforms_ref,
+        world_transform_cache_ref,
+        standard_material_frame_cache,
+        needs_mesh_previous_transform,
+        None,
       )
       match next_mesh {
         Some(extracted_mesh) =>

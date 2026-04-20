@@ -64,10 +64,6 @@ test "render sync world: add/remove syncs entities between main world and render
     ecs_key_sync_to_render_world,
     SyncToRenderWorld::default(),
   )
-  let pending = (try! main_world.get_resource_ref_mut(
-    ecs_key_pending_sync_entity,
-  )).unwrap()
-  pending.val.push(EntityRecord::Added(main_entity))
 
   let synced = sync_world(main_world, render_world)
   main_world = synced.0
@@ -88,10 +84,6 @@ test "render sync world: add/remove syncs entities between main world and render
   )).unwrap()
   debug_inspect(main_component.id() == main_entity, content="true")
 
-  let pending_after_add = (try! main_world.get_resource_ref_mut(
-    ecs_key_pending_sync_entity,
-  )).unwrap()
-  pending_after_add.val.push(EntityRecord::Removed(render_component))
   try! main_world.despawn(main_entity)
   let synced_after_remove = sync_world(main_world, render_world)
   main_world = synced_after_remove.0
