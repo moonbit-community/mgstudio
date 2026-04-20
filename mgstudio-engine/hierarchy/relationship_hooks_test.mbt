@@ -23,6 +23,7 @@ fn hierarchy_child_ids(children : Children) -> Array[Int] {
 
 ///|
 fn hierarchy_test_world() -> @ecs.World {
+  hierarchy_install_component_metadata()
   @ecs.World::new()
 }
 

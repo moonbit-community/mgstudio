@@ -58,6 +58,9 @@ let component_metadata_registry : @hashmap.HashMap[Int, Ref[ComponentMetadata]] 
 let component_relationship_metadata_generation_ref : Ref[Int] = Ref::new(0)
 
 ///|
+let component_metadata_bootstrap_ref : Ref[Bool] = Ref::new(false)
+
+///|
 fn component_relationship_metadata_generation() -> Int {
   component_relationship_metadata_generation_ref.val
 }
@@ -66,6 +69,50 @@ fn component_relationship_metadata_generation() -> Int {
 fn bump_component_relationship_metadata_generation() -> Unit {
   component_relationship_metadata_generation_ref.val = component_relationship_metadata_generation_ref.val +
     1
+}
+
+///|
+fn bootstrap_component_metadata() -> Unit {
+  if component_metadata_bootstrap_ref.val {
+    return
+  }
+  ignore(
+    component_metadata_ref(
+      ecs_builtin_component_definition_add,
+      debug_name="ecs::lifecycle::add",
+    ),
+  )
+  ignore(
+    component_metadata_ref(
+      ecs_builtin_component_definition_insert,
+      debug_name="ecs::lifecycle::insert",
+    ),
+  )
+  ignore(
+    component_metadata_ref(
+      ecs_builtin_component_definition_replace,
+      debug_name="ecs::lifecycle::replace",
+    ),
+  )
+  ignore(
+    component_metadata_ref(
+      ecs_builtin_component_definition_remove,
+      debug_name="ecs::lifecycle::remove",
+    ),
+  )
+  ignore(
+    component_metadata_ref(
+      ecs_builtin_component_definition_despawn,
+      debug_name="ecs::lifecycle::despawn",
+    ),
+  )
+  ignore(
+    component_metadata_ref(
+      ecs_builtin_component_definition_is_resource,
+      debug_name="ecs::resource::is_resource",
+    ),
+  )
+  component_metadata_bootstrap_ref.val = true
 }
 
 ///|
@@ -283,12 +330,17 @@ pub fn[T] ComponentMetadataBuilder::relationship_target(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
+  let component_key = self.key
+  let component_debug_name = self.key.debug_name()
   let linked_entities_accessor = match linked_entities {
     Some(entities_from_component) =>
       Some(fn(world : DeferredWorld, entity : @core.Entity) {
-        match (try! world.get_by_key(entity, self.key)) {
+        match (try! world.get_by_key(entity, component_key)) {
           Some(component) => entities_from_component(component)
-          None => []
+          None =>
+            abort(
+              "relationship_target linked_entities accessor missing component `\{component_debug_name}` on entity \{entity.id.to_string()}",
+            )
         }
       })
     None => None

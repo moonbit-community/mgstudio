@@ -23,6 +23,7 @@ pub struct QueryState[_, F] {
   mut cached_candidate_generation : Int
   mut cached_matching_entities : Array[@core.Entity]
   mut cached_matching_archetypes : Array[Int]
+  mut cached_matching_archetype_bits : Array[Bool]
   mut cached_matching_archetype_generation : Int
   mut cached_matching_entities_generation : Int
   mut cached_matching_entities_sequence : Int
@@ -35,6 +36,7 @@ pub struct QueryState[_, F] {
   mut cached_matching_entities_valid : Bool
   mut cached_matching_tables : Array[Int]
   mut cached_matching_table_archetype_groups : Array[Array[Int]]
+  mut cached_matching_table_bits : Array[Bool]
   mut cached_matching_tables_generation : Int
   mut cached_matching_tables_valid : Bool
   mut cached_is_dense : Bool
@@ -56,6 +58,7 @@ pub struct QueryCache {
   mut cached_candidate_generation : Int
   mut cached_matching_entities : Array[@core.Entity]
   mut cached_matching_archetypes : Array[Int]
+  mut cached_matching_archetype_bits : Array[Bool]
   mut cached_matching_archetype_generation : Int
   mut cached_matching_entities_generation : Int
   mut cached_matching_entities_sequence : Int
@@ -68,6 +71,7 @@ pub struct QueryCache {
   mut cached_matching_entities_valid : Bool
   mut cached_matching_tables : Array[Int]
   mut cached_matching_table_archetype_groups : Array[Array[Int]]
+  mut cached_matching_table_bits : Array[Bool]
   mut cached_matching_tables_generation : Int
   mut cached_matching_tables_valid : Bool
   mut cached_is_dense : Bool
@@ -207,6 +211,7 @@ pub fn QueryCache::new() -> QueryCache {
     cached_candidate_generation: -1,
     cached_matching_entities: [],
     cached_matching_archetypes: [],
+    cached_matching_archetype_bits: [],
     cached_matching_archetype_generation: -1,
     cached_matching_entities_generation: -1,
     cached_matching_entities_sequence: -1,
@@ -219,6 +224,7 @@ pub fn QueryCache::new() -> QueryCache {
     cached_matching_entities_valid: false,
     cached_matching_tables: [],
     cached_matching_table_archetype_groups: [],
+    cached_matching_table_bits: [],
     cached_matching_tables_generation: -1,
     cached_matching_tables_valid: false,
     cached_is_dense: false,
@@ -270,6 +276,7 @@ fn[D, F] query_state_new(filter : F) -> QueryState[D, F] {
     cached_candidate_generation: -1,
     cached_matching_entities: [],
     cached_matching_archetypes: [],
+    cached_matching_archetype_bits: [],
     cached_matching_archetype_generation: -1,
     cached_matching_entities_generation: -1,
     cached_matching_entities_sequence: -1,
@@ -282,6 +289,7 @@ fn[D, F] query_state_new(filter : F) -> QueryState[D, F] {
     cached_matching_entities_valid: false,
     cached_matching_tables: [],
     cached_matching_table_archetype_groups: [],
+    cached_matching_table_bits: [],
     cached_matching_tables_generation: -1,
     cached_matching_tables_valid: false,
     cached_is_dense: false,
@@ -613,10 +621,15 @@ fn[D : QueryData, F : QueryFilter] Query::matching_entities(
   self : Query[D, F],
 ) -> Array[@core.Entity] {
   let cache = self.ensure_cache()
+  let data_anchor_component_ids = D::iteration_anchor_components()
+  let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
+    self.filter,
+  )
   cache.query_matching_entities(
     self.world,
     self.filter,
-    D::iteration_anchor_component(),
+    data_anchor_component_ids,
+    filter_anchor_component_ids,
     D::matches,
     D::mentions_component,
     D::matches_component_set,
@@ -631,10 +644,15 @@ fn[D : QueryData, F : QueryFilter] Query::matching_archetypes(
   self : Query[D, F],
 ) -> Array[Int] {
   let cache = self.ensure_cache()
+  let data_anchor_component_ids = D::iteration_anchor_components()
+  let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
+    self.filter,
+  )
   cache.query_matching_archetypes(
     self.world,
     self.filter,
-    D::iteration_anchor_component(),
+    data_anchor_component_ids,
+    filter_anchor_component_ids,
     D::mentions_component,
     D::matches_component_set,
     D::is_dense,
@@ -647,11 +665,16 @@ fn[D : QueryData, F : QueryFilter] Query::matching_dense_table_groups(
   self : Query[D, F],
 ) -> Array[Array[Int]] {
   let cache = self.ensure_cache()
+  let data_anchor_component_ids = D::iteration_anchor_components()
+  let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
+    self.filter,
+  )
   ignore(
     cache.query_matching_archetypes(
       self.world,
       self.filter,
-      D::iteration_anchor_component(),
+      data_anchor_component_ids,
+      filter_anchor_component_ids,
       D::mentions_component,
       D::matches_component_set,
       D::is_dense,
@@ -727,14 +750,17 @@ fn[F : QueryFilter] QueryCache::dependency_component_ids(
 }
 
 ///|
-fn[F : QueryFilter] QueryCache::query_candidate_archetypes(
+fn QueryCache::query_candidate_archetypes(
   self : QueryCache,
   world : World,
-  filter : F,
-  data_anchor_component_id : Int?,
+  data_anchor_component_ids : Array[Int],
+  filter_anchor_component_ids : Array[Int],
 ) -> Array[Int] {
-  let filter_anchor_component_id = QueryFilter::iteration_anchor_component(
-    filter,
+  let data_anchor_component_id = query_min_anchor_component_id(
+    world, data_anchor_component_ids,
+  )
+  let filter_anchor_component_id = query_min_anchor_component_id(
+    world, filter_anchor_component_ids,
   )
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
@@ -764,7 +790,8 @@ fn[F : QueryFilter] QueryCache::query_matching_entities(
   self : QueryCache,
   world : World,
   filter : F,
-  data_anchor_component_id : Int?,
+  data_anchor_component_ids : Array[Int],
+  filter_anchor_component_ids : Array[Int],
   data_matches : (World, @core.Entity) -> Bool,
   data_mentions_component : (Int) -> Bool,
   data_matches_component_set : ((Int) -> Bool) -> Bool,
@@ -773,8 +800,8 @@ fn[F : QueryFilter] QueryCache::query_matching_entities(
   data_collect_access : (QueryDataAccess) -> Unit,
 ) -> Array[@core.Entity] {
   let matched_archetypes = self.query_matching_archetypes(
-    world, filter, data_anchor_component_id, data_mentions_component, data_matches_component_set,
-    data_is_dense, data_collect_access,
+    world, filter, data_anchor_component_ids, filter_anchor_component_ids, data_mentions_component,
+    data_matches_component_set, data_is_dense, data_collect_access,
   )
   let filter_requires_entity_check = QueryFilter::requires_entity_check(filter)
   let dependency_component_ids = self.dependency_component_ids(
@@ -792,6 +819,8 @@ fn[F : QueryFilter] QueryCache::query_matching_entities(
   let entity_cache_reusable = !data_requires_entity_check &&
     self.cached_matching_entities_valid &&
     self.cached_matching_entities_generation == matching_entities_generation &&
+    self.cached_matching_generation == matching_entities_generation &&
+    self.cached_matching_sequence == sequence_marker &&
     (
       !depends_on_sequence ||
       self.cached_matching_entities_sequence == sequence_marker
@@ -825,6 +854,8 @@ fn[F : QueryFilter] QueryCache::query_matching_entities(
   self.cached_matching_entities_valid = true
   self.cached_matching_entities_generation = matching_entities_generation
   self.cached_matching_entities_sequence = sequence_marker
+  self.cached_matching_generation = matching_entities_generation
+  self.cached_matching_sequence = sequence_marker
   self.cached_matching_entities
 }
 
@@ -833,14 +864,18 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
   self : QueryCache,
   world : World,
   filter : F,
-  data_anchor_component_id : Int?,
+  data_anchor_component_ids : Array[Int],
+  filter_anchor_component_ids : Array[Int],
   data_mentions_component : (Int) -> Bool,
   data_matches_component_set : ((Int) -> Bool) -> Bool,
   data_is_dense : (World) -> Bool,
   data_collect_access : (QueryDataAccess) -> Unit,
 ) -> Array[Int] {
-  let filter_anchor_component_id = QueryFilter::iteration_anchor_component(
-    filter,
+  let data_anchor_component_id = query_min_anchor_component_id(
+    world, data_anchor_component_ids,
+  )
+  let filter_anchor_component_id = query_min_anchor_component_id(
+    world, filter_anchor_component_ids,
   )
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
@@ -857,25 +892,24 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
     default_filters_stale
   let previous_candidate_archetypes = self.cached_candidate_archetypes
   let candidate_archetypes = self.query_candidate_archetypes(
-    world, filter, data_anchor_component_id,
+    world, data_anchor_component_ids, filter_anchor_component_ids,
   )
   let candidate_archetype_generation = query_candidate_archetype_generation(
     world,
   )
+  let matched_archetypes_added : Array[Int] = []
+  let matched_archetypes_reset = Ref::new(false)
   if matching_metadata_changed {
     let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
-    let matched_archetypes : Array[Int] = []
-    for archetype_id in candidate_archetypes {
-      if query_archetype_matches_with_default_filter_component_ids(
-          world, archetype_id, filter, default_filter_local_component_ids, data_matches_component_set,
-        ) {
-        matched_archetypes.push(archetype_id)
-      }
-    }
+    let (matched_archetypes, matched_archetype_bits) = query_collect_matching_archetypes(
+      world, candidate_archetypes, filter, default_filter_local_component_ids, data_matches_component_set,
+    )
     self.cached_matching_archetypes = matched_archetypes
+    self.cached_matching_archetype_bits = matched_archetype_bits
     self.cached_matching_archetype_generation = candidate_archetype_generation
     self.cached_matching_entities_valid = false
     self.cached_matching_tables_valid = false
+    matched_archetypes_reset.val = true
   } else if self.cached_matching_archetype_generation !=
     candidate_archetype_generation {
     let added_candidate_archetypes : Array[Int] = []
@@ -884,29 +918,37 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
     )
     if candidate_removed {
       let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
-      let matched_archetypes : Array[Int] = []
-      for archetype_id in candidate_archetypes {
-        if query_archetype_matches_with_default_filter_component_ids(
-            world, archetype_id, filter, default_filter_local_component_ids, data_matches_component_set,
-          ) {
-          matched_archetypes.push(archetype_id)
-        }
-      }
+      let (matched_archetypes, matched_archetype_bits) = query_collect_matching_archetypes(
+        world, candidate_archetypes, filter, default_filter_local_component_ids,
+        data_matches_component_set,
+      )
       self.cached_matching_archetypes = matched_archetypes
+      self.cached_matching_archetype_bits = matched_archetype_bits
       self.cached_matching_entities_valid = false
       self.cached_matching_tables_valid = false
+      matched_archetypes_reset.val = true
     } else {
       let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
       for archetype_id in added_candidate_archetypes {
         if query_archetype_matches_with_default_filter_component_ids(
             world, archetype_id, filter, default_filter_local_component_ids, data_matches_component_set,
+          ) &&
+          !query_bitset_contains(
+            self.cached_matching_archetype_bits,
+            archetype_id,
           ) {
+          ignore(
+            query_bitset_insert(
+              self.cached_matching_archetype_bits,
+              archetype_id,
+            ),
+          )
           self.cached_matching_archetypes.push(archetype_id)
+          matched_archetypes_added.push(archetype_id)
         }
       }
-      if added_candidate_archetypes.length() > 0 {
+      if matched_archetypes_added.length() > 0 {
         self.cached_matching_entities_valid = false
-        self.cached_matching_tables_valid = false
       }
     }
     self.cached_matching_archetype_generation = candidate_archetype_generation
@@ -915,8 +957,6 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
   self.cached_matching_filter_anchor_component_id = filter_anchor_component_id
   self.cached_matching_candidate_anchor_component_id = candidate_anchor_component_id
   self.cached_matching_candidate_generation = candidate_archetype_generation
-  self.cached_matching_generation = candidate_archetype_generation
-  self.cached_matching_sequence = -1
   let is_dense = query_is_dense_mode(
     world,
     filter,
@@ -924,22 +964,38 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
     data_is_dense,
     data_collect_access,
   )
+  let was_dense = self.cached_is_dense
   self.cached_is_dense = is_dense
   if is_dense {
     if !self.cached_matching_tables_valid ||
-      self.cached_matching_tables_generation != candidate_archetype_generation {
-      let (matching_tables, matching_table_archetype_groups) = query_matching_table_cache(
-        world,
-        self.cached_matching_archetypes,
-      )
+      matched_archetypes_reset.val ||
+      !was_dense {
+      let (matching_tables, matching_table_archetype_groups, matching_table_bits
+      ) = query_matching_table_cache(world, self.cached_matching_archetypes)
       self.cached_matching_tables = matching_tables
       self.cached_matching_table_archetype_groups = matching_table_archetype_groups
+      self.cached_matching_table_bits = matching_table_bits
       self.cached_matching_tables_generation = candidate_archetype_generation
       self.cached_matching_tables_valid = true
+    } else if matched_archetypes_added.length() > 0 {
+      for archetype_id in matched_archetypes_added {
+        query_matching_table_cache_add_archetype(
+          world,
+          archetype_id,
+          self.cached_matching_tables,
+          self.cached_matching_table_archetype_groups,
+          self.cached_matching_table_bits,
+        )
+      }
+      self.cached_matching_tables_generation = candidate_archetype_generation
+      self.cached_matching_tables_valid = true
+    } else {
+      self.cached_matching_tables_generation = candidate_archetype_generation
     }
   } else {
     self.cached_matching_tables = []
     self.cached_matching_table_archetype_groups = []
+    self.cached_matching_table_bits = []
     self.cached_matching_tables_generation = candidate_archetype_generation
     self.cached_matching_tables_valid = true
   }
@@ -966,6 +1022,60 @@ fn query_int_array_equals(lhs : Array[Int], rhs : Array[Int]) -> Bool {
     }
   }
   true
+}
+
+///|
+fn query_find_int_index(values : Array[Int], target : Int) -> Int? {
+  for index in 0..<values.length() {
+    if values[index] == target {
+      return Some(index)
+    }
+  }
+  None
+}
+
+///|
+fn query_bitset_contains(bits : Array[Bool], index : Int) -> Bool {
+  if index < 0 || index >= bits.length() {
+    return false
+  }
+  bits[index]
+}
+
+///|
+fn query_bitset_insert(bits : Array[Bool], index : Int) -> Bool {
+  if index < 0 {
+    return false
+  }
+  while bits.length() <= index {
+    bits.push(false)
+  }
+  if bits[index] {
+    return false
+  }
+  bits[index] = true
+  true
+}
+
+///|
+fn[F : QueryFilter] query_collect_matching_archetypes(
+  world : World,
+  candidate_archetypes : Array[Int],
+  filter : F,
+  default_filter_local_component_ids : Array[Int],
+  data_matches_component_set : ((Int) -> Bool) -> Bool,
+) -> (Array[Int], Array[Bool]) {
+  let matched_archetypes : Array[Int] = []
+  let matched_archetype_bits : Array[Bool] = []
+  for archetype_id in candidate_archetypes {
+    if query_archetype_matches_with_default_filter_component_ids(
+        world, archetype_id, filter, default_filter_local_component_ids, data_matches_component_set,
+      ) &&
+      query_bitset_insert(matched_archetype_bits, archetype_id) {
+      matched_archetypes.push(archetype_id)
+    }
+  }
+  (matched_archetypes, matched_archetype_bits)
 }
 
 ///|
@@ -1076,14 +1186,15 @@ fn query_dependency_generation(
   if component_ids.length() == 0 {
     return world.entity_lifecycle_generation()
   }
-  let mut generation = -1
+  let mut generation = world.entity_lifecycle_generation() * 1_000_003 +
+    component_ids.length()
   for component_id in component_ids {
     let component_generation = world.component_membership_generation_for_definition(
       component_id,
     )
-    if component_generation > generation {
-      generation = component_generation
-    }
+    generation = generation * 1_000_003 +
+      component_id * 97 +
+      component_generation
   }
   generation
 }
@@ -1438,13 +1549,17 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::contiguous_iter(
 }
 
 ///|
-fn[D, F : QueryFilter] QueryState::query_candidate_archetypes(
+fn[D, F] QueryState::query_candidate_archetypes(
   self : QueryState[D, F],
   world : World,
-  data_anchor_component_id : Int?,
+  data_anchor_component_ids : Array[Int],
+  filter_anchor_component_ids : Array[Int],
 ) -> Array[Int] {
-  let filter_anchor_component_id = QueryFilter::iteration_anchor_component(
-    self.filter,
+  let data_anchor_component_id = query_min_anchor_component_id(
+    world, data_anchor_component_ids,
+  )
+  let filter_anchor_component_id = query_min_anchor_component_id(
+    world, filter_anchor_component_ids,
   )
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
@@ -1492,6 +1607,8 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_entities(
   let entity_cache_reusable = !data_requires_entity_check &&
     self.cached_matching_entities_valid &&
     self.cached_matching_entities_generation == matching_entities_generation &&
+    self.cached_matching_generation == matching_entities_generation &&
+    self.cached_matching_sequence == sequence_marker &&
     (
       !depends_on_sequence ||
       self.cached_matching_entities_sequence == sequence_marker
@@ -1525,6 +1642,8 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_entities(
   self.cached_matching_entities_valid = true
   self.cached_matching_entities_generation = matching_entities_generation
   self.cached_matching_entities_sequence = sequence_marker
+  self.cached_matching_generation = matching_entities_generation
+  self.cached_matching_sequence = sequence_marker
   self.cached_matching_entities
 }
 
@@ -1533,9 +1652,15 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
   self : QueryState[D, F],
   world : World,
 ) -> Array[Int] {
-  let data_anchor_component_id = D::iteration_anchor_component()
-  let filter_anchor_component_id = QueryFilter::iteration_anchor_component(
+  let data_anchor_component_ids = D::iteration_anchor_components()
+  let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
     self.filter,
+  )
+  let data_anchor_component_id = query_min_anchor_component_id(
+    world, data_anchor_component_ids,
+  )
+  let filter_anchor_component_id = query_min_anchor_component_id(
+    world, filter_anchor_component_ids,
   )
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
@@ -1550,29 +1675,28 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
     default_filters_stale
   let previous_candidate_archetypes = self.cached_candidate_archetypes
   let candidate_archetypes = self.query_candidate_archetypes(
-    world, data_anchor_component_id,
+    world, data_anchor_component_ids, filter_anchor_component_ids,
   )
   let candidate_archetype_generation = query_candidate_archetype_generation(
     world,
   )
+  let matched_archetypes_added : Array[Int] = []
+  let matched_archetypes_reset = Ref::new(false)
   if matching_metadata_changed {
     let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
-    let matched_archetypes : Array[Int] = []
-    for archetype_id in candidate_archetypes {
-      if query_archetype_matches_with_default_filter_component_ids(
-          world,
-          archetype_id,
-          self.filter,
-          default_filter_local_component_ids,
-          D::matches_component_set,
-        ) {
-        matched_archetypes.push(archetype_id)
-      }
-    }
+    let (matched_archetypes, matched_archetype_bits) = query_collect_matching_archetypes(
+      world,
+      candidate_archetypes,
+      self.filter,
+      default_filter_local_component_ids,
+      D::matches_component_set,
+    )
     self.cached_matching_archetypes = matched_archetypes
+    self.cached_matching_archetype_bits = matched_archetype_bits
     self.cached_matching_archetype_generation = candidate_archetype_generation
     self.cached_matching_entities_valid = false
     self.cached_matching_tables_valid = false
+    matched_archetypes_reset.val = true
   } else if self.cached_matching_archetype_generation !=
     candidate_archetype_generation {
     let added_candidate_archetypes : Array[Int] = []
@@ -1581,21 +1705,18 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
     )
     if candidate_removed {
       let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
-      let matched_archetypes : Array[Int] = []
-      for archetype_id in candidate_archetypes {
-        if query_archetype_matches_with_default_filter_component_ids(
-            world,
-            archetype_id,
-            self.filter,
-            default_filter_local_component_ids,
-            D::matches_component_set,
-          ) {
-          matched_archetypes.push(archetype_id)
-        }
-      }
+      let (matched_archetypes, matched_archetype_bits) = query_collect_matching_archetypes(
+        world,
+        candidate_archetypes,
+        self.filter,
+        default_filter_local_component_ids,
+        D::matches_component_set,
+      )
       self.cached_matching_archetypes = matched_archetypes
+      self.cached_matching_archetype_bits = matched_archetype_bits
       self.cached_matching_entities_valid = false
       self.cached_matching_tables_valid = false
+      matched_archetypes_reset.val = true
     } else {
       let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
       for archetype_id in added_candidate_archetypes {
@@ -1605,13 +1726,23 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
             self.filter,
             default_filter_local_component_ids,
             D::matches_component_set,
+          ) &&
+          !query_bitset_contains(
+            self.cached_matching_archetype_bits,
+            archetype_id,
           ) {
+          ignore(
+            query_bitset_insert(
+              self.cached_matching_archetype_bits,
+              archetype_id,
+            ),
+          )
           self.cached_matching_archetypes.push(archetype_id)
+          matched_archetypes_added.push(archetype_id)
         }
       }
-      if added_candidate_archetypes.length() > 0 {
+      if matched_archetypes_added.length() > 0 {
         self.cached_matching_entities_valid = false
-        self.cached_matching_tables_valid = false
       }
     }
     self.cached_matching_archetype_generation = candidate_archetype_generation
@@ -1620,8 +1751,6 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
   self.cached_matching_filter_anchor_component_id = filter_anchor_component_id
   self.cached_matching_candidate_anchor_component_id = candidate_anchor_component_id
   self.cached_matching_candidate_generation = candidate_archetype_generation
-  self.cached_matching_generation = candidate_archetype_generation
-  self.cached_matching_sequence = -1
   let is_dense = query_is_dense_mode(
     world,
     self.filter,
@@ -1629,22 +1758,38 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
     D::is_dense,
     D::collect_access,
   )
+  let was_dense = self.cached_is_dense
   self.cached_is_dense = is_dense
   if is_dense {
     if !self.cached_matching_tables_valid ||
-      self.cached_matching_tables_generation != candidate_archetype_generation {
-      let (matching_tables, matching_table_archetype_groups) = query_matching_table_cache(
-        world,
-        self.cached_matching_archetypes,
-      )
+      matched_archetypes_reset.val ||
+      !was_dense {
+      let (matching_tables, matching_table_archetype_groups, matching_table_bits
+      ) = query_matching_table_cache(world, self.cached_matching_archetypes)
       self.cached_matching_tables = matching_tables
       self.cached_matching_table_archetype_groups = matching_table_archetype_groups
+      self.cached_matching_table_bits = matching_table_bits
       self.cached_matching_tables_generation = candidate_archetype_generation
       self.cached_matching_tables_valid = true
+    } else if matched_archetypes_added.length() > 0 {
+      for archetype_id in matched_archetypes_added {
+        query_matching_table_cache_add_archetype(
+          world,
+          archetype_id,
+          self.cached_matching_tables,
+          self.cached_matching_table_archetype_groups,
+          self.cached_matching_table_bits,
+        )
+      }
+      self.cached_matching_tables_generation = candidate_archetype_generation
+      self.cached_matching_tables_valid = true
+    } else {
+      self.cached_matching_tables_generation = candidate_archetype_generation
     }
   } else {
     self.cached_matching_tables = []
     self.cached_matching_table_archetype_groups = []
+    self.cached_matching_table_bits = []
     self.cached_matching_tables_generation = candidate_archetype_generation
     self.cached_matching_tables_valid = true
   }
@@ -1799,7 +1944,38 @@ pub fn[D : QueryData, F : QueryFilter] QueryContiguousIter::fetch_next(
 
 ///|
 fn query_all_archetype_ids(world : World) -> Array[Int] {
-  world.non_empty_archetype_ids_snapshot()
+  let archetype_ids : Array[Int] = []
+  for archetype_id in 0..<world.archetype_generation() {
+    archetype_ids.push(archetype_id)
+  }
+  archetype_ids
+}
+
+///|
+fn query_min_anchor_component_id(
+  world : World,
+  anchor_component_ids : Array[Int],
+) -> Int? {
+  if anchor_component_ids.length() == 0 {
+    return None
+  }
+  let mut best_component_id : Int? = None
+  let mut best_count = 0
+  for component_id in anchor_component_ids {
+    let count = world.component_membership_count_for_definition(component_id)
+    match best_component_id {
+      Some(_) =>
+        if count < best_count {
+          best_component_id = Some(component_id)
+          best_count = count
+        }
+      None => {
+        best_component_id = Some(component_id)
+        best_count = count
+      }
+    }
+  }
+  best_component_id
 }
 
 ///|
@@ -1845,8 +2021,7 @@ fn query_candidate_anchor_component_id(
 
 ///|
 fn query_candidate_archetype_generation(world : World) -> Int {
-  world.archetype_generation() * 1_000_003 +
-  world.non_empty_archetype_generation()
+  world.archetype_generation()
 }
 
 ///|
@@ -1857,7 +2032,7 @@ fn query_archetypes_for_component_id(
   guard world.local_component_id(component_id) is Some(component_local_id) else {
     return []
   }
-  world.non_empty_archetype_ids_for_component_local_id(component_local_id)
+  world.archetype_ids_for_component_local_id(component_local_id)
 }
 
 ///|
@@ -1969,65 +2144,41 @@ fn query_collect_archetype_entities(
 }
 
 ///|
-fn query_find_string_index(values : Array[String], target : String) -> Int? {
-  for index in 0..<values.length() {
-    if values[index] == target {
-      return Some(index)
-    }
-  }
-  None
-}
-
-///|
-fn query_table_signature_for_archetype(
-  world : World,
-  archetype_id : Int,
-) -> String {
-  guard world.archetype_local_component_presence_view(archetype_id)
-    is Some(local_presence) else {
-    return "table:"
-  }
-  let table_local_component_ids : Array[Int] = []
-  for entry in local_presence.iter() {
-    let local_component_id = entry.0
-    if world.local_component_storage_type(local_component_id) == Some(Table) {
-      table_local_component_ids.push(local_component_id)
-    }
-  }
-  table_local_component_ids.sort()
-  if table_local_component_ids.length() == 0 {
-    return "table:"
-  }
-  let mut signature = "table:"
-  for index in 0..<table_local_component_ids.length() {
-    if index > 0 {
-      signature = signature + ","
-    }
-    signature = signature + table_local_component_ids[index].to_string()
-  }
-  signature
-}
-
-///|
 fn query_matching_table_cache(
   world : World,
   matched_archetypes : Array[Int],
-) -> (Array[Int], Array[Array[Int]]) {
-  let table_signatures : Array[String] = []
-  let table_representative_archetypes : Array[Int] = []
+) -> (Array[Int], Array[Array[Int]], Array[Bool]) {
+  let matching_tables : Array[Int] = []
   let table_archetype_groups : Array[Array[Int]] = []
+  let table_bits : Array[Bool] = []
   for archetype_id in matched_archetypes {
-    let table_signature = query_table_signature_for_archetype(
-      world, archetype_id,
+    query_matching_table_cache_add_archetype(
+      world, archetype_id, matching_tables, table_archetype_groups, table_bits,
     )
-    match query_find_string_index(table_signatures, table_signature) {
-      Some(index) => table_archetype_groups[index].push(archetype_id)
-      None => {
-        table_signatures.push(table_signature)
-        table_representative_archetypes.push(archetype_id)
-        table_archetype_groups.push([archetype_id])
-      }
+  }
+  (matching_tables, table_archetype_groups, table_bits)
+}
+
+///|
+fn query_matching_table_cache_add_archetype(
+  world : World,
+  archetype_id : Int,
+  matching_tables : Array[Int],
+  table_archetype_groups : Array[Array[Int]],
+  table_bits : Array[Bool],
+) -> Unit {
+  guard world.archetype_table_id(archetype_id) is Some(table_id) else { return }
+  if query_bitset_insert(table_bits, table_id) {
+    matching_tables.push(table_id)
+    table_archetype_groups.push([archetype_id])
+    return
+  }
+  match query_find_int_index(matching_tables, table_id) {
+    Some(index) => table_archetype_groups[index].push(archetype_id)
+    None => {
+      matching_tables.push(table_id)
+      table_archetype_groups.push([archetype_id])
+      ignore(query_bitset_insert(table_bits, table_id))
     }
   }
-  (table_representative_archetypes, table_archetype_groups)
 }

@@ -48,6 +48,8 @@ pub fn sync_simple_transforms(@app.ParamSet2[@ecs.Query[(@ecs.Comp[Transform], @
 
 pub fn sync_simple_transforms_world(@ecs.World) -> Unit
 
+pub fn transform_install_component_metadata() -> Unit
+
 pub fn transform_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn transform_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]

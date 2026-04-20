@@ -90,7 +90,30 @@ pub fn[U, T] EventKey::cast(self : EventKey[T]) -> EventKey[U] {
 }
 
 ///|
-let next_component_id_ref : Ref[Int] = Ref::new(1)
+pub let ecs_builtin_component_definition_add : Int = 1
+
+///|
+pub let ecs_builtin_component_definition_insert : Int = 2
+
+///|
+pub let ecs_builtin_component_definition_replace : Int = 3
+
+///|
+pub let ecs_builtin_component_definition_remove : Int = 4
+
+///|
+pub let ecs_builtin_component_definition_despawn : Int = 5
+
+///|
+pub let ecs_builtin_component_definition_is_resource : Int = 6
+
+///|
+pub let ecs_builtin_component_definition_count : Int = 6
+
+///|
+let next_component_id_ref : Ref[Int] = Ref::new(
+  ecs_builtin_component_definition_count + 1,
+)
 
 ///|
 let next_resource_id_ref : Ref[Int] = Ref::new(1)
@@ -247,8 +270,13 @@ pub struct World {
     Ref[@core.ComponentStore[ErasedValue]],
   ]
   mut next_archetype_id : Int
+  mut next_table_id : Int
   archetype_ids_by_signature : Map[String, Int]
+  table_ids_by_signature : Map[String, Int]
+  table_component_local_ids : Map[Int, Array[Int]]
+  archetype_table_ids : Map[Int, Int]
   archetype_component_local_ids : Map[Int, Array[Int]]
+  archetype_component_local_id_indices : Map[Int, Map[Int, Int]]
   archetype_component_local_id_presence : Map[Int, Map[Int, Bool]]
   archetype_component_definition_ids : Map[Int, Array[Int]]
   archetype_component_definition_id_presence : Map[Int, Map[Int, Bool]]
@@ -304,8 +332,13 @@ pub fn World::new() -> World {
     sparse_component_columns: {},
     component_store_cache_by_definition_id: {},
     next_archetype_id: 1,
+    next_table_id: 1,
     archetype_ids_by_signature: { "": 0 },
+    table_ids_by_signature: { "": 0 },
+    table_component_local_ids: { 0: [] },
+    archetype_table_ids: { 0: 0 },
     archetype_component_local_ids: { 0: [] },
+    archetype_component_local_id_indices: { 0: {} },
     archetype_component_local_id_presence: { 0: {} },
     archetype_component_definition_ids: { 0: [] },
     archetype_component_definition_id_presence: { 0: {} },
@@ -337,6 +370,7 @@ pub fn World::new() -> World {
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
   }
+  world.bootstrap_component_registrations()
   world.insert_resource(
     ecs_key_default_query_filters,
     default_query_filters_bootstrap_resource(),
@@ -609,22 +643,26 @@ fn World::mark_entity_lifecycle_changed(self : World) -> Unit {
 }
 
 ///|
-fn World::ensure_component_store(
+fn World::local_component_storage_type_or_abort(
   self : World,
-  key_id : Int,
-) -> Ref[@core.ComponentStore[ErasedValue]] {
-  if self.component_store_cache_by_definition_id.get(key_id) is Some(store_ref) {
-    return store_ref
-  }
-  let local_id = self.ensure_component_registered(key_id)
-  let storage_type = match self.local_component_storage_type(local_id) {
+  local_id : Int,
+) -> ComponentStorageType {
+  match self.local_component_storage_type(local_id) {
     Some(storage_type) => storage_type
     None =>
       abort(
         "World component storage type missing for local component id \{local_id.to_string()}",
       )
   }
-  let store_ref = match storage_type {
+}
+
+///|
+fn World::ensure_component_store_for_local_id(
+  self : World,
+  local_id : Int,
+  storage_type : ComponentStorageType,
+) -> Ref[@core.ComponentStore[ErasedValue]] {
+  match storage_type {
     Table =>
       self.table_component_columns.get_or_init(local_id, fn() {
         Ref::new(@core.ComponentStore::new())
@@ -634,6 +672,33 @@ fn World::ensure_component_store(
         Ref::new(@core.ComponentStore::new())
       })
   }
+}
+
+///|
+fn World::component_store_for_local_id(
+  self : World,
+  local_id : Int,
+  storage_type : ComponentStorageType,
+) -> Ref[@core.ComponentStore[ErasedValue]]? {
+  match storage_type {
+    Table => self.table_component_columns.get(local_id)
+    SparseSet => self.sparse_component_columns.get(local_id)
+  }
+}
+
+///|
+fn World::ensure_component_store(
+  self : World,
+  key_id : Int,
+) -> Ref[@core.ComponentStore[ErasedValue]] {
+  if self.component_store_cache_by_definition_id.get(key_id) is Some(store_ref) {
+    return store_ref
+  }
+  let local_id = self.ensure_component_registered(key_id)
+  let storage_type = self.local_component_storage_type_or_abort(local_id)
+  let store_ref = self.ensure_component_store_for_local_id(
+    local_id, storage_type,
+  )
   self.component_store_cache_by_definition_id.set(key_id, store_ref)
   store_ref
 }
@@ -650,28 +715,15 @@ fn World::component_store(
     Some(local_id) => {
       let storage_type = match self.local_component_storage_type(local_id) {
         Some(storage_type) => storage_type
-        None =>
-          abort(
-            "World component storage type missing for local component id \{local_id.to_string()}",
-          )
+        None if self.is_component_registration_pending(key_id) => return None
+        None => self.local_component_storage_type_or_abort(local_id)
       }
-      match storage_type {
-        Table =>
-          match self.table_component_columns.get(local_id) {
-            Some(store_ref) => {
-              self.component_store_cache_by_definition_id.set(key_id, store_ref)
-              Some(store_ref)
-            }
-            None => None
-          }
-        SparseSet =>
-          match self.sparse_component_columns.get(local_id) {
-            Some(store_ref) => {
-              self.component_store_cache_by_definition_id.set(key_id, store_ref)
-              Some(store_ref)
-            }
-            None => None
-          }
+      match self.component_store_for_local_id(local_id, storage_type) {
+        Some(store_ref) => {
+          self.component_store_cache_by_definition_id.set(key_id, store_ref)
+          Some(store_ref)
+        }
+        None => None
       }
     }
     None => None

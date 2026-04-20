@@ -180,6 +180,7 @@ struct WorldObserverRegistry {
   trigger_observers : @hashmap.HashMap[Int, Array[TriggerObserver]]
   mut observer_parent_lookup_accessors : Array[ObserverParentLookupAccessor]
   mut observer_parent_lookup_component_registration_generation : Int
+  mut observer_parent_lookup_archetype_generation : Int
   mut observer_parent_lookup_metadata_generation : Int
 }
 
@@ -195,6 +196,7 @@ fn world_observer_registry_new() -> WorldObserverRegistry {
     trigger_observers: @hashmap.HashMap::new(),
     observer_parent_lookup_accessors: [],
     observer_parent_lookup_component_registration_generation: -1,
+    observer_parent_lookup_archetype_generation: -1,
     observer_parent_lookup_metadata_generation: -1,
   }
 }
@@ -793,24 +795,34 @@ fn World::refresh_observer_parent_lookup_accessors(
 ) -> Array[ObserverParentLookupAccessor] {
   let registry_ref = observer_registry_ref(self)
   let component_registration_generation = self.component_registration_generation()
+  let archetype_generation = self.archetype_generation()
   let metadata_generation = component_relationship_metadata_generation()
   if registry_ref.val.observer_parent_lookup_component_registration_generation ==
     component_registration_generation &&
+    registry_ref.val.observer_parent_lookup_archetype_generation ==
+    archetype_generation &&
     registry_ref.val.observer_parent_lookup_metadata_generation ==
     metadata_generation {
     return registry_ref.val.observer_parent_lookup_accessors
   }
   let accessors : Array[ObserverParentLookupAccessor] = []
-  for entry in self.component_relationship_sources.iter() {
-    let local_component_id = entry.0
-    let source = entry.1
+  for local_component_id in self.observer_parent_lookup_component_ids {
+    guard self.component_relationship_sources.get(local_component_id)
+      is Some(source) else {
+      continue
+    }
     if !source.observer_parent_lookup {
+      continue
+    }
+    if self.archetype_ids_for_component_local_id(local_component_id).length() ==
+      0 {
       continue
     }
     accessors.push({ local_component_id, target_entity: source.target_entity })
   }
   registry_ref.val.observer_parent_lookup_accessors = accessors
   registry_ref.val.observer_parent_lookup_component_registration_generation = component_registration_generation
+  registry_ref.val.observer_parent_lookup_archetype_generation = archetype_generation
   registry_ref.val.observer_parent_lookup_metadata_generation = metadata_generation
   registry_ref.val.observer_parent_lookup_accessors
 }
@@ -820,9 +832,15 @@ fn observer_parent_entity(
   world : World,
   entity : @core.Entity,
 ) -> @core.Entity? {
+  guard world.entity_archetype_id(entity) is Some(archetype_id) else {
+    return None
+  }
+  guard world.archetype_local_component_presence_view(archetype_id)
+    is Some(local_presence) else {
+    return None
+  }
   for accessor in world.refresh_observer_parent_lookup_accessors() {
-    if world.component_relationship_sources.get(accessor.local_component_id)
-      is None {
+    if !local_presence.contains(accessor.local_component_id) {
       continue
     }
     match (accessor.target_entity)(world, entity) {

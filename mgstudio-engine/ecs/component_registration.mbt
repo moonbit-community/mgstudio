@@ -62,6 +62,44 @@ fn world_components_new() -> WorldComponents {
 }
 
 ///|
+fn World::bootstrap_component_registration_entry(
+  self : World,
+  definition_id : Int,
+  expected_local_id : Int,
+  label : String,
+) -> Unit {
+  let local_id = self.ensure_component_registered(definition_id)
+  if local_id != expected_local_id {
+    abort(
+      "World bootstrap component ordering mismatch for \{label}: expected local id \{expected_local_id.to_string()}, got \{local_id.to_string()}",
+    )
+  }
+}
+
+///|
+fn World::bootstrap_component_registrations(self : World) -> Unit {
+  bootstrap_component_metadata()
+  self.bootstrap_component_registration_entry(
+    ecs_builtin_component_definition_add, 1, "ADD",
+  )
+  self.bootstrap_component_registration_entry(
+    ecs_builtin_component_definition_insert, 2, "INSERT",
+  )
+  self.bootstrap_component_registration_entry(
+    ecs_builtin_component_definition_replace, 3, "REPLACE",
+  )
+  self.bootstrap_component_registration_entry(
+    ecs_builtin_component_definition_remove, 4, "REMOVE",
+  )
+  self.bootstrap_component_registration_entry(
+    ecs_builtin_component_definition_despawn, 5, "DESPAWN",
+  )
+  self.bootstrap_component_registration_entry(
+    ecs_builtin_component_definition_is_resource, 6, "IS_RESOURCE",
+  )
+}
+
+///|
 pub struct ComponentsRegistrator {
   world : World
 }
@@ -273,10 +311,12 @@ pub fn World::queued_component_registration_count(self : World) -> Int {
 ///|
 fn World::install_required_component_metadata(
   self : World,
-  requiree_id : Int,
+  requiree_definition_id : Int,
   required : ComponentRequiredMetadata,
 ) -> Unit {
-  let requiree_local_id = self.ensure_component_registered(requiree_id)
+  let requiree_local_id = self.ensure_component_registered(
+    requiree_definition_id,
+  )
   let required_local_id = self.ensure_component_registered(
     required.required_component_id,
   )
@@ -285,7 +325,7 @@ fn World::install_required_component_metadata(
     return
   }
   let result : Result[Unit, RequiredComponentsError] = try? self.register_required_components_by_keys(
-    requiree_id,
+    requiree_definition_id,
     required.required_component_id,
     required.init_value,
   )
@@ -306,10 +346,13 @@ fn World::install_required_component_metadata(
 ///|
 fn World::install_component_metadata(
   self : World,
-  component_id : Int,
+  definition_id : Int,
   local_component_id : Int,
   metadata : ComponentMetadata,
 ) -> Unit {
+  if self.local_component_storage_type(local_component_id) is Some(_) {
+    return
+  }
   let component_debug_name = metadata.debug_name
   let mut hooks = metadata.hooks
   match metadata.relationship_target {
@@ -339,6 +382,11 @@ fn World::install_component_metadata(
     _ => ()
   }
   if !component_hooks_is_empty(hooks) {
+    if self.component_has_been_used(local_component_id) {
+      abort(
+        "Static hook registration ran too late for component `\{component_debug_name}`",
+      )
+    }
     let existing = self.component_hooks_registry
       .get(local_component_id)
       .unwrap_or(ComponentHooks::new())
@@ -367,13 +415,13 @@ fn World::install_component_metadata(
     metadata.storage_type,
   )
   for required in metadata.required_components {
-    self.install_required_component_metadata(component_id, required)
+    self.install_required_component_metadata(definition_id, required)
   }
   match metadata.relationship_source {
     Some(source) => {
       self.component_relationship_sources.set(local_component_id, source)
       if source.observer_parent_lookup {
-        self.register_observer_parent_lookup_component(component_id)
+        self.register_observer_parent_lookup_component(definition_id)
       }
     }
     _ => ()

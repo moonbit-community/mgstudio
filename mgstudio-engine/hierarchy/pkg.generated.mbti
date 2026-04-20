@@ -12,6 +12,8 @@ pub let ecs_key_children : @ecs.ComponentKey[Children]
 
 pub let ecs_key_parent : @ecs.ComponentKey[Parent]
 
+pub fn hierarchy_install_component_metadata() -> Unit
+
 // Errors
 
 // Types and methods

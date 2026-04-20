@@ -22,6 +22,7 @@ pub(open) trait QueryData {
   requires_entity_check() -> Bool
   is_dense(World) -> Bool = _
   iteration_anchor_component() -> Int?
+  iteration_anchor_components() -> Array[Int] = _
   contiguous_compatible() -> Bool
 }
 
@@ -33,6 +34,11 @@ impl QueryData with collect_access(_access) {
 ///|
 impl QueryData with is_dense(_world) {
   false
+}
+
+///|
+impl QueryData with iteration_anchor_components() {
+  []
 }
 
 ///|
@@ -140,6 +146,18 @@ fn query_data_component_is_dense(world : World, component_id : Int) -> Bool {
     Some(Table) => true
     Some(SparseSet) => false
     None => true
+  }
+}
+
+///|
+fn query_data_append_unique_anchor_components(
+  out : Array[Int],
+  component_ids : Array[Int],
+) -> Unit {
+  for component_id in component_ids {
+    if !out.contains(component_id) {
+      out.push(component_id)
+    }
   }
 }
 
@@ -309,6 +327,11 @@ pub impl[T : Component] QueryData for Comp[T] with iteration_anchor_component() 
 }
 
 ///|
+pub impl[T : Component] QueryData for Comp[T] with iteration_anchor_components() {
+  [T::component().id()]
+}
+
+///|
 pub impl[T : Component] QueryData for Comp[T] with contiguous_compatible() {
   true
 }
@@ -355,6 +378,11 @@ pub impl[T : Component] QueryData for Mut[T] with is_dense(world) {
 ///|
 pub impl[T : Component] QueryData for Mut[T] with iteration_anchor_component() {
   Some(T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with iteration_anchor_components() {
+  [T::component().id()]
 }
 
 ///|
@@ -704,6 +732,20 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with iteration_ancho
 }
 
 ///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with iteration_anchor_components() {
+  let component_ids : Array[Int] = []
+  query_data_append_unique_anchor_components(
+    component_ids,
+    A::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    B::iteration_anchor_components(),
+  )
+  component_ids
+}
+
+///|
 pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with contiguous_compatible() {
   A::contiguous_compatible() && B::contiguous_compatible()
 }
@@ -777,6 +819,24 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
         None => C::iteration_anchor_component()
       }
   }
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with iteration_anchor_components() {
+  let component_ids : Array[Int] = []
+  query_data_append_unique_anchor_components(
+    component_ids,
+    A::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    B::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    C::iteration_anchor_components(),
+  )
+  component_ids
 }
 
 ///|
@@ -898,6 +958,33 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
           }
       }
   }
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with iteration_anchor_components() {
+  let component_ids : Array[Int] = []
+  query_data_append_unique_anchor_components(
+    component_ids,
+    A::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    B::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    C::iteration_anchor_components(),
+  )
+  query_data_append_unique_anchor_components(
+    component_ids,
+    D::iteration_anchor_components(),
+  )
+  component_ids
 }
 
 ///|

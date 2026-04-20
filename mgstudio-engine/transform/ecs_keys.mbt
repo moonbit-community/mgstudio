@@ -43,12 +43,19 @@ pub impl @ecs.Component for TransformTreeChanged with component() {
 }
 
 ///|
-fn init {
+let transform_component_metadata_installed : Ref[Bool] = Ref::new(false)
+
+///|
+pub fn transform_install_component_metadata() -> Unit {
+  if transform_component_metadata_installed.val {
+    return
+  }
   ignore(
     @ecs.component_metadata_builder(ecs_key_transform)
     .require_default(ecs_key_global_transform)
     .require_default(ecs_key_transform_tree_changed),
   )
+  transform_component_metadata_installed.val = true
 }
 
 ///|

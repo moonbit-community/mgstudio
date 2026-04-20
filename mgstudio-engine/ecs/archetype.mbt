@@ -132,6 +132,22 @@ fn archetype_remove_sorted(ids : Array[Int], archetype_id : Int) -> Bool {
 }
 
 ///|
+pub enum ArchetypeBundleMigrationPath {
+  SameArchetype
+  NewArchetypeSameTable
+  NewArchetypeNewTable
+} derive(Eq)
+
+///|
+priv struct ArchetypeBundleMigrationPlan {
+  from_archetype_id : Int
+  to_archetype_id : Int
+  from_table_id : Int
+  to_table_id : Int
+  path : ArchetypeBundleMigrationPath
+}
+
+///|
 fn World::mark_archetype_non_empty(self : World, archetype_id : Int) -> Unit {
   if archetype_insert_sorted_unique(
       self.non_empty_archetype_ids_sorted,
@@ -334,6 +350,44 @@ fn World::archetype_remove_entity_by_id(
 }
 
 ///|
+fn World::table_local_components_for_archetype_components(
+  self : World,
+  archetype_component_local_ids : Array[Int],
+) -> Array[Int] {
+  let table_component_local_ids : Array[Int] = []
+  for component_local_id in archetype_component_local_ids {
+    match self.local_component_storage_type(component_local_id) {
+      Some(Table) => table_component_local_ids.push(component_local_id)
+      _ => ()
+    }
+  }
+  table_component_local_ids
+}
+
+///|
+fn World::ensure_table_for_local_components(
+  self : World,
+  archetype_component_local_ids : Array[Int],
+) -> Int {
+  let table_component_local_ids = self.table_local_components_for_archetype_components(
+    archetype_component_local_ids,
+  )
+  let signature = archetype_signature_from_local_component_ids(
+    table_component_local_ids,
+  )
+  match self.table_ids_by_signature.get(signature) {
+    Some(table_id) => table_id
+    None => {
+      let table_id = self.next_table_id
+      self.next_table_id = table_id + 1
+      self.table_ids_by_signature.set(signature, table_id)
+      self.table_component_local_ids.set(table_id, table_component_local_ids)
+      table_id
+    }
+  }
+}
+
+///|
 fn World::ensure_archetype_for_local_components(
   self : World,
   component_local_ids : Array[Int],
@@ -347,12 +401,17 @@ fn World::ensure_archetype_for_local_components(
     None => {
       let archetype_id = self.next_archetype_id
       self.next_archetype_id = archetype_id + 1
+      let table_id = self.ensure_table_for_local_components(normalized)
       self.archetype_ids_by_signature.set(signature, archetype_id)
+      self.archetype_table_ids.set(archetype_id, table_id)
       self.archetype_component_local_ids.set(archetype_id, normalized)
+      let local_component_indices : Map[Int, Int] = {}
       let local_component_presence : Map[Int, Bool] = {}
       let definition_component_ids : Array[Int] = []
       let definition_component_presence : Map[Int, Bool] = {}
-      for component_local_id in normalized {
+      for index in 0..<normalized.length() {
+        let component_local_id = normalized[index]
+        local_component_indices.set(component_local_id, index)
         local_component_presence.set(component_local_id, true)
         guard self.definition_component_id(component_local_id)
           is Some(definition_component_id) else {
@@ -363,6 +422,9 @@ fn World::ensure_archetype_for_local_components(
       }
       self.archetype_component_local_id_presence.set(
         archetype_id, local_component_presence,
+      )
+      self.archetype_component_local_id_indices.set(
+        archetype_id, local_component_indices,
       )
       self.archetype_component_definition_ids.set(
         archetype_id, definition_component_ids,
@@ -541,6 +603,185 @@ fn World::ensure_archetype_remove_edge_target(
 }
 
 ///|
+fn World::archetype_table_id_or_invalid(
+  self : World,
+  archetype_id : Int,
+) -> Int {
+  self.archetype_table_ids.get(archetype_id).unwrap_or(-1)
+}
+
+///|
+fn World::bundle_migration_plan(
+  self : World,
+  from_archetype_id : Int,
+  to_archetype_id : Int,
+) -> ArchetypeBundleMigrationPlan {
+  let from_table_id = self.archetype_table_id_or_invalid(from_archetype_id)
+  let to_table_id = self.archetype_table_id_or_invalid(to_archetype_id)
+  let path = if from_archetype_id == to_archetype_id {
+    SameArchetype
+  } else if from_table_id >= 0 && from_table_id == to_table_id {
+    NewArchetypeSameTable
+  } else {
+    NewArchetypeNewTable
+  }
+  ArchetypeBundleMigrationPlan::{
+    from_archetype_id,
+    to_archetype_id,
+    from_table_id,
+    to_table_id,
+    path,
+  }
+}
+
+///|
+fn World::bundle_migrate_same_archetype(
+  self : World,
+  entity : @core.Entity,
+  archetype_id : Int,
+) -> Unit {
+  self.entity_archetype_ids[entity.id] = archetype_id
+  if archetype_id < 0 {
+    self.entity_archetype_rows[entity.id] = -1
+    return
+  }
+  if self.archetype_entities.get(archetype_id) is Some(entities) {
+    if archetype_entity_index_by_id(entities, entity.id) is Some(index) {
+      self.entity_archetype_rows[entity.id] = index
+      return
+    }
+  }
+  self.archetype_add_entity(archetype_id, entity)
+}
+
+///|
+fn World::bundle_migrate_new_archetype(
+  self : World,
+  entity : @core.Entity,
+  from_archetype_id : Int,
+  to_archetype_id : Int,
+) -> Unit {
+  if from_archetype_id >= 0 {
+    self.archetype_remove_entity_by_id(from_archetype_id, entity.id)
+  }
+  self.entity_archetype_ids[entity.id] = to_archetype_id
+  if to_archetype_id >= 0 {
+    self.archetype_add_entity(to_archetype_id, entity)
+  } else {
+    self.entity_archetype_rows[entity.id] = -1
+  }
+}
+
+///|
+fn World::bundle_migrate_new_archetype_same_table(
+  self : World,
+  entity : @core.Entity,
+  from_archetype_id : Int,
+  to_archetype_id : Int,
+) -> Unit {
+  // Same-table migrations are currently modeled with the same storage backend
+  // operations as generic archetype moves; table-specialized kernels can plug
+  // in here later without changing the call sites.
+  self.bundle_migrate_new_archetype(entity, from_archetype_id, to_archetype_id)
+}
+
+///|
+fn World::bundle_migrate_new_archetype_new_table(
+  self : World,
+  entity : @core.Entity,
+  from_archetype_id : Int,
+  to_archetype_id : Int,
+) -> Unit {
+  // New-table migrations follow the same deterministic membership updates for
+  // now. Dedicated table copy/move kernels can be introduced here later.
+  self.bundle_migrate_new_archetype(entity, from_archetype_id, to_archetype_id)
+}
+
+///|
+fn World::execute_bundle_migration_plan(
+  self : World,
+  entity : @core.Entity,
+  plan : ArchetypeBundleMigrationPlan,
+) -> ArchetypeBundleMigrationPath {
+  self.ensure_entity_archetype_capacity(entity.id)
+  match plan.path {
+    SameArchetype =>
+      self.bundle_migrate_same_archetype(entity, plan.to_archetype_id)
+    NewArchetypeSameTable =>
+      if plan.from_table_id >= 0 && plan.from_table_id == plan.to_table_id {
+        self.bundle_migrate_new_archetype_same_table(
+          entity,
+          plan.from_archetype_id,
+          plan.to_archetype_id,
+        )
+      } else {
+        self.bundle_migrate_new_archetype_new_table(
+          entity,
+          plan.from_archetype_id,
+          plan.to_archetype_id,
+        )
+      }
+    NewArchetypeNewTable =>
+      if plan.from_table_id >= 0 && plan.from_table_id == plan.to_table_id {
+        self.bundle_migrate_new_archetype_same_table(
+          entity,
+          plan.from_archetype_id,
+          plan.to_archetype_id,
+        )
+      } else {
+        self.bundle_migrate_new_archetype_new_table(
+          entity,
+          plan.from_archetype_id,
+          plan.to_archetype_id,
+        )
+      }
+  }
+  plan.path
+}
+
+///|
+fn World::migrate_entity_bundle(
+  self : World,
+  entity : @core.Entity,
+  from_archetype_id : Int,
+  to_archetype_id : Int,
+) -> ArchetypeBundleMigrationPath {
+  let plan = self.bundle_migration_plan(from_archetype_id, to_archetype_id)
+  self.execute_bundle_migration_plan(entity, plan)
+}
+
+///|
+pub fn World::bundle_migration_path_for_archetypes(
+  self : World,
+  from_archetype_id : Int,
+  to_archetype_id : Int,
+) -> ArchetypeBundleMigrationPath {
+  self.bundle_migration_plan(from_archetype_id, to_archetype_id).path
+}
+
+///|
+fn bundle_migration_path_label(path : ArchetypeBundleMigrationPath) -> String {
+  match path {
+    SameArchetype => "same-archetype"
+    NewArchetypeSameTable => "new-archetype-same-table"
+    NewArchetypeNewTable => "new-archetype-new-table"
+  }
+}
+
+///|
+pub fn World::bundle_migration_path_label_for_archetypes(
+  self : World,
+  from_archetype_id : Int,
+  to_archetype_id : Int,
+) -> String {
+  bundle_migration_path_label(
+    self.bundle_migration_path_for_archetypes(
+      from_archetype_id, to_archetype_id,
+    ),
+  )
+}
+
+///|
 fn World::entity_local_components(
   self : World,
   entity : @core.Entity,
@@ -558,13 +799,8 @@ fn World::initialize_entity_archetype_tracking(
 ) -> Unit {
   self.ensure_entity_archetype_capacity(entity.id)
   let previous_archetype_id = self.entity_archetype_ids[entity.id]
-  if previous_archetype_id >= 0 {
-    self.archetype_remove_entity_by_id(previous_archetype_id, entity.id)
-  }
   self.entity_component_local_ids[entity.id] = []
-  self.entity_archetype_ids[entity.id] = 0
-  self.entity_archetype_rows[entity.id] = -1
-  self.archetype_add_entity(0, entity)
+  ignore(self.migrate_entity_bundle(entity, previous_archetype_id, 0))
 }
 
 ///|
@@ -576,16 +812,12 @@ fn World::clear_entity_archetype_tracking(
     return
   }
   let previous_archetype_id = self.entity_archetype_ids[entity.id]
-  if previous_archetype_id >= 0 {
-    self.archetype_remove_entity_by_id(previous_archetype_id, entity.id)
-  }
   let component_local_ids = self.entity_component_local_ids[entity.id]
   for component_local_id in component_local_ids {
     self.decrement_component_membership_count_local(component_local_id)
     self.bump_component_membership_generation_local(component_local_id)
   }
-  self.entity_archetype_ids[entity.id] = -1
-  self.entity_archetype_rows[entity.id] = -1
+  ignore(self.migrate_entity_bundle(entity, previous_archetype_id, -1))
   self.entity_component_local_ids[entity.id] = []
 }
 
@@ -739,14 +971,9 @@ fn World::refresh_entity_archetype(self : World, entity : @core.Entity) -> Unit 
   } else if normalized_components is Some(normalized) {
     self.entity_component_local_ids[entity.id] = normalized
   }
-  if previous_archetype_id == next_archetype_id {
-    return
-  }
-  if previous_archetype_id >= 0 {
-    self.archetype_remove_entity_by_id(previous_archetype_id, entity.id)
-  }
-  self.entity_archetype_ids[entity.id] = next_archetype_id
-  self.archetype_add_entity(next_archetype_id, entity)
+  ignore(
+    self.migrate_entity_bundle(entity, previous_archetype_id, next_archetype_id),
+  )
 }
 
 ///|
@@ -775,12 +1002,9 @@ fn World::refresh_entity_archetype_after_component_remove(
       self.entity_local_components(entity),
     )
   }
-  if previous_archetype_id == next_archetype_id {
-    return
-  }
-  self.archetype_remove_entity_by_id(previous_archetype_id, entity.id)
-  self.entity_archetype_ids[entity.id] = next_archetype_id
-  self.archetype_add_entity(next_archetype_id, entity)
+  ignore(
+    self.migrate_entity_bundle(entity, previous_archetype_id, next_archetype_id),
+  )
 }
 
 ///|
@@ -845,12 +1069,28 @@ fn World::archetype_component_definition_ids_view(
 }
 
 ///|
-fn World::non_empty_archetype_ids_for_component_local_id(
+pub fn World::archetype_table_id(self : World, archetype_id : Int) -> Int? {
+  self.archetype_table_ids.get(archetype_id)
+}
+
+///|
+pub fn World::archetype_component_local_index(
+  self : World,
+  archetype_id : Int,
+  component_local_id : Int,
+) -> Int? {
+  match self.archetype_component_local_id_indices.get(archetype_id) {
+    Some(indices) => indices.get(component_local_id)
+    None => None
+  }
+}
+
+///|
+fn World::archetype_ids_for_component_local_id(
   self : World,
   component_local_id : Int,
 ) -> Array[Int] {
-  match
-    self.archetype_non_empty_ids_by_component_local_id.get(component_local_id) {
+  match self.archetype_ids_by_component_local_id.get(component_local_id) {
     Some(archetype_ids) => archetype_ids.copy()
     None => []
   }
@@ -884,14 +1124,4 @@ pub fn World::archetype_count(self : World) -> Int {
 ///|
 pub fn World::archetype_generation(self : World) -> Int {
   self.next_archetype_id
-}
-
-///|
-fn World::non_empty_archetype_generation(self : World) -> Int {
-  self.non_empty_archetype_generation
-}
-
-///|
-fn World::non_empty_archetype_ids_snapshot(self : World) -> Array[Int] {
-  self.non_empty_archetype_ids_sorted.copy()
 }

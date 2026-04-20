@@ -97,12 +97,23 @@ pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] wit
 }
 
 ///|
+fn[T] extract_component_register_world_component(
+  world : @ecs.World,
+  component_key : @ecs.ComponentKey[T],
+) -> Unit {
+  ignore(
+    world.components_registrator().register_component_by_key(component_key),
+  )
+}
+
+///|
 fn[C : @ecs.Component] extract_components(
   render_world : @ecs.World,
   only_visible : Bool,
   component_key : @ecs.ComponentKey[C],
 ) -> Unit {
   let main_world = render_source_world(render_world)
+  extract_component_register_world_component(render_world, component_key)
   let render_component_column = render_world.component_column(component_key)
   let extracted_values : Array[(@core.Entity, C)] = []
 

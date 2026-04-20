@@ -444,7 +444,14 @@ pub fn scene_get(handle : @asset.Handle[Scene]) -> Scene? {
 }
 
 ///|
-fn init {
+let scene_asset_hooks_installed : Ref[Bool] = Ref::new(false)
+
+///|
+pub fn scene_install_asset_hooks() -> Unit {
+  if scene_asset_hooks_installed.val {
+    return
+  }
   @gltf.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
   @asset.asset_register_reload_hook(scene_reload_asset_path)
+  scene_asset_hooks_installed.val = true
 }

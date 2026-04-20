@@ -29,6 +29,8 @@ pub let transform_set_sync_simple_transforms : @app.SystemSet = @app.system_set(
 
 ///|
 pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @hierarchy.hierarchy_install_component_metadata()
+  transform_install_component_metadata()
   ensure_transform_runtime_resources(app.world())
   let validate_parent_plugin : @app.ValidateParentHasComponentPlugin[
     GlobalTransform,

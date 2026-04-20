@@ -52,6 +52,8 @@ fn next_system_sequence(world : @ecs.World) -> @core.SystemSequence {
 
 ///|
 fn prepare_transform_world(world : @ecs.World) -> Unit {
+  @hierarchy.hierarchy_install_component_metadata()
+  transform_install_component_metadata()
   if !world.resource(static_transform_optimizations_resource_key()).is_present() {
     world.insert_resource(
       static_transform_optimizations_resource_key(),
