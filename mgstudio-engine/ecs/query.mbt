@@ -24,6 +24,8 @@ pub struct QueryState[_, F] {
   mut cached_matching_entities : Array[@core.Entity]
   mut cached_matching_archetypes : Array[Int]
   mut cached_matching_archetype_generation : Int
+  mut cached_matching_entities_generation : Int
+  mut cached_matching_entities_sequence : Int
   mut cached_matching_anchor_component_id : Int?
   mut cached_matching_filter_anchor_component_id : Int?
   mut cached_matching_candidate_anchor_component_id : Int?
@@ -50,6 +52,8 @@ pub struct QueryCache {
   mut cached_matching_entities : Array[@core.Entity]
   mut cached_matching_archetypes : Array[Int]
   mut cached_matching_archetype_generation : Int
+  mut cached_matching_entities_generation : Int
+  mut cached_matching_entities_sequence : Int
   mut cached_matching_anchor_component_id : Int?
   mut cached_matching_filter_anchor_component_id : Int?
   mut cached_matching_candidate_anchor_component_id : Int?
@@ -77,6 +81,11 @@ pub struct QueryMany[D, F] {
   query : Query[D, F]
   default_filter_component_ids : Array[Int]
   entities_pre_matched : Bool
+  archetype_driven : Bool
+  archetypes : Array[Int]
+  mut archetype_index : Int
+  mut archetype_entities : Array[@core.Entity]
+  mut archetype_entity_index : Int
   entities : Array[@core.Entity]
   mut index : Int
 }
@@ -185,6 +194,8 @@ pub fn QueryCache::new() -> QueryCache {
     cached_matching_entities: [],
     cached_matching_archetypes: [],
     cached_matching_archetype_generation: -1,
+    cached_matching_entities_generation: -1,
+    cached_matching_entities_sequence: -1,
     cached_matching_anchor_component_id: None,
     cached_matching_filter_anchor_component_id: None,
     cached_matching_candidate_anchor_component_id: None,
@@ -241,6 +252,8 @@ fn[D, F] query_state_new(filter : F) -> QueryState[D, F] {
     cached_matching_entities: [],
     cached_matching_archetypes: [],
     cached_matching_archetype_generation: -1,
+    cached_matching_entities_generation: -1,
+    cached_matching_entities_sequence: -1,
     cached_matching_anchor_component_id: None,
     cached_matching_filter_anchor_component_id: None,
     cached_matching_candidate_anchor_component_id: None,
@@ -403,6 +416,11 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
     query: self,
     default_filter_component_ids: self.default_filter_component_ids(),
     entities_pre_matched: false,
+    archetype_driven: false,
+    archetypes: [],
+    archetype_index: 0,
+    archetype_entities: [],
+    archetype_entity_index: 0,
     entities,
     index: 0,
   }
@@ -611,15 +629,11 @@ fn[F : QueryFilter] QueryCache::query_candidate_archetypes(
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
   )
-  let candidate_generation = query_candidate_generation(
-    world, data_anchor_component_id, filter_anchor_component_id,
-  )
   let candidate_archetype_generation = query_candidate_archetype_generation(
     world,
   )
   if self.cached_candidate_archetype_generation !=
     candidate_archetype_generation ||
-    self.cached_candidate_generation != candidate_generation ||
     self.cached_candidate_anchor_component_id != candidate_anchor_component_id ||
     self.cached_anchor_component_id != data_anchor_component_id ||
     self.cached_filter_anchor_component_id != filter_anchor_component_id {
@@ -630,7 +644,7 @@ fn[F : QueryFilter] QueryCache::query_candidate_archetypes(
     self.cached_filter_anchor_component_id = filter_anchor_component_id
     self.cached_candidate_anchor_component_id = candidate_anchor_component_id
     self.cached_candidate_archetype_generation = candidate_archetype_generation
-    self.cached_candidate_generation = candidate_generation
+    self.cached_candidate_generation = candidate_archetype_generation
   }
   self.cached_candidate_archetypes
 }
@@ -649,10 +663,29 @@ fn[F : QueryFilter] QueryCache::query_matching_entities(
   let matched_archetypes = self.query_matching_archetypes(
     world, filter, data_anchor_component_id, data_mentions_component, data_matches_component_set,
   )
-  if self.cached_matching_entities_valid {
+  let filter_requires_entity_check = QueryFilter::requires_entity_check(filter)
+  let dependency_component_ids = self.dependency_component_ids(
+    world, filter, data_mentions_component, true,
+  )
+  let matching_entities_generation = query_dependency_generation(
+    world, dependency_component_ids,
+  )
+  let depends_on_sequence = QueryFilter::depends_on_sequence(filter)
+  let sequence_marker = if depends_on_sequence {
+    query_sequence_marker(world)
+  } else {
+    -1
+  }
+  let entity_cache_reusable = !data_requires_entity_check &&
+    self.cached_matching_entities_valid &&
+    self.cached_matching_entities_generation == matching_entities_generation &&
+    (
+      !depends_on_sequence ||
+      self.cached_matching_entities_sequence == sequence_marker
+    )
+  if entity_cache_reusable {
     return self.cached_matching_entities
   }
-  let filter_requires_entity_check = QueryFilter::requires_entity_check(filter)
   let matched_entities : Array[@core.Entity] = []
   if !data_requires_entity_check && !filter_requires_entity_check {
     query_collect_archetype_entities(
@@ -677,6 +710,8 @@ fn[F : QueryFilter] QueryCache::query_matching_entities(
   }
   self.cached_matching_entities = matched_entities
   self.cached_matching_entities_valid = true
+  self.cached_matching_entities_generation = matching_entities_generation
+  self.cached_matching_entities_sequence = sequence_marker
   self.cached_matching_entities
 }
 
@@ -695,52 +730,46 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
   )
-  let candidate_generation = query_candidate_generation(
-    world, data_anchor_component_id, filter_anchor_component_id,
-  )
   let default_filters_stale = self.refresh_default_filter_component_ids(
     world, filter, data_mentions_component,
   )
-  let dependency_component_ids = self.dependency_component_ids(
-    world, filter, data_mentions_component, default_filters_stale,
-  )
-  let matching_generation = query_matching_generation(
-    world, dependency_component_ids, data_anchor_component_id, filter_anchor_component_id,
-  )
-  let depends_on_sequence = QueryFilter::depends_on_sequence(filter)
-  let sequence_marker = if depends_on_sequence {
-    query_sequence_marker(world)
-  } else {
-    -1
-  }
-  let matching_metadata_changed = self.cached_matching_generation !=
-    matching_generation ||
-    self.cached_matching_anchor_component_id != data_anchor_component_id ||
+  let matching_metadata_changed = self.cached_matching_anchor_component_id !=
+    data_anchor_component_id ||
     self.cached_matching_filter_anchor_component_id !=
     filter_anchor_component_id ||
     self.cached_matching_candidate_anchor_component_id !=
     candidate_anchor_component_id ||
-    self.cached_matching_candidate_generation != candidate_generation ||
-    default_filters_stale ||
-    (depends_on_sequence && self.cached_matching_sequence != sequence_marker)
+    default_filters_stale
+  let previous_candidate_archetypes = self.cached_candidate_archetypes
+  let candidate_archetypes = self.query_candidate_archetypes(
+    world, filter, data_anchor_component_id,
+  )
+  let candidate_archetype_generation = query_candidate_archetype_generation(
+    world,
+  )
   if matching_metadata_changed {
     let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
-    let candidate_archetype_generation = query_candidate_archetype_generation(
-      world,
-    )
-    if self.cached_matching_archetype_generation !=
-      candidate_archetype_generation ||
-      default_filters_stale ||
-      self.cached_matching_anchor_component_id != data_anchor_component_id ||
-      self.cached_matching_filter_anchor_component_id !=
-      filter_anchor_component_id ||
-      self.cached_matching_candidate_anchor_component_id !=
-      candidate_anchor_component_id {
-      let matched_archetypes : Array[Int] = []
-      for
-        archetype_id in self.query_candidate_archetypes(
-          world, filter, data_anchor_component_id,
+    let matched_archetypes : Array[Int] = []
+    for archetype_id in candidate_archetypes {
+      if query_archetype_matches_with_default_filter_component_ids(
+          world, archetype_id, filter, default_filter_local_component_ids, data_matches_component_set,
         ) {
+        matched_archetypes.push(archetype_id)
+      }
+    }
+    self.cached_matching_archetypes = matched_archetypes
+    self.cached_matching_archetype_generation = candidate_archetype_generation
+    self.cached_matching_entities_valid = false
+  } else if self.cached_matching_archetype_generation !=
+    candidate_archetype_generation {
+    let added_candidate_archetypes : Array[Int] = []
+    let candidate_removed = query_archetype_delta(
+      previous_candidate_archetypes, candidate_archetypes, added_candidate_archetypes,
+    )
+    if candidate_removed {
+      let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
+      let matched_archetypes : Array[Int] = []
+      for archetype_id in candidate_archetypes {
         if query_archetype_matches_with_default_filter_component_ids(
             world, archetype_id, filter, default_filter_local_component_ids, data_matches_component_set,
           ) {
@@ -748,16 +777,28 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
         }
       }
       self.cached_matching_archetypes = matched_archetypes
-      self.cached_matching_archetype_generation = candidate_archetype_generation
+      self.cached_matching_entities_valid = false
+    } else {
+      let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
+      for archetype_id in added_candidate_archetypes {
+        if query_archetype_matches_with_default_filter_component_ids(
+            world, archetype_id, filter, default_filter_local_component_ids, data_matches_component_set,
+          ) {
+          self.cached_matching_archetypes.push(archetype_id)
+        }
+      }
+      if added_candidate_archetypes.length() > 0 {
+        self.cached_matching_entities_valid = false
+      }
     }
-    self.cached_matching_anchor_component_id = data_anchor_component_id
-    self.cached_matching_filter_anchor_component_id = filter_anchor_component_id
-    self.cached_matching_candidate_anchor_component_id = candidate_anchor_component_id
-    self.cached_matching_candidate_generation = candidate_generation
-    self.cached_matching_generation = matching_generation
-    self.cached_matching_sequence = sequence_marker
-    self.cached_matching_entities_valid = false
+    self.cached_matching_archetype_generation = candidate_archetype_generation
   }
+  self.cached_matching_anchor_component_id = data_anchor_component_id
+  self.cached_matching_filter_anchor_component_id = filter_anchor_component_id
+  self.cached_matching_candidate_anchor_component_id = candidate_anchor_component_id
+  self.cached_matching_candidate_generation = candidate_archetype_generation
+  self.cached_matching_generation = candidate_archetype_generation
+  self.cached_matching_sequence = -1
   self.cached_matching_archetypes
 }
 
@@ -781,6 +822,40 @@ fn query_int_array_equals(lhs : Array[Int], rhs : Array[Int]) -> Bool {
     }
   }
   true
+}
+
+///|
+fn query_archetype_delta(
+  previous : Array[Int],
+  current : Array[Int],
+  added : Array[Int],
+) -> Bool {
+  let previous_index = Ref::new(0)
+  let current_index = Ref::new(0)
+  let removed = Ref::new(false)
+  while previous_index.val < previous.length() &&
+        current_index.val < current.length() {
+    let previous_id = previous[previous_index.val]
+    let current_id = current[current_index.val]
+    if previous_id == current_id {
+      previous_index.val = previous_index.val + 1
+      current_index.val = current_index.val + 1
+    } else if previous_id < current_id {
+      removed.val = true
+      previous_index.val = previous_index.val + 1
+    } else {
+      added.push(current_id)
+      current_index.val = current_index.val + 1
+    }
+  }
+  if previous_index.val < previous.length() {
+    removed.val = true
+  }
+  while current_index.val < current.length() {
+    added.push(current[current_index.val])
+    current_index.val = current_index.val + 1
+  }
+  removed.val
 }
 
 ///|
@@ -858,6 +933,9 @@ fn query_dependency_generation(
   world : World,
   component_ids : Array[Int],
 ) -> Int {
+  if component_ids.length() == 0 {
+    return world.entity_lifecycle_generation()
+  }
   let mut generation = -1
   for component_id in component_ids {
     let component_generation = world.component_membership_generation_for_definition(
@@ -868,25 +946,6 @@ fn query_dependency_generation(
     }
   }
   generation
-}
-
-///|
-fn query_matching_generation(
-  world : World,
-  dependency_component_ids : Array[Int],
-  data_anchor_component_id : Int?,
-  filter_anchor_component_id : Int?,
-) -> Int {
-  if dependency_component_ids.length() > 0 {
-    return query_dependency_generation(world, dependency_component_ids)
-  }
-  match (data_anchor_component_id, filter_anchor_component_id) {
-    (Some(_), _) | (None, Some(_)) =>
-      query_candidate_generation(
-        world, data_anchor_component_id, filter_anchor_component_id,
-      )
-    (None, None) => world.entity_lifecycle_generation()
-  }
 }
 
 ///|
@@ -915,11 +974,32 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter(
   world : World,
 ) -> QueryMany[D, F] {
   let query : Query[D, F] = query_filtered(world, self.filter)
+  let data_requires_entity_check = D::requires_entity_check()
+  let filter_requires_entity_check = QueryFilter::requires_entity_check(
+    self.filter,
+  )
+  let archetype_driven = !data_requires_entity_check &&
+    !filter_requires_entity_check
+  let archetypes = if archetype_driven {
+    self.query_matching_archetypes(world)
+  } else {
+    []
+  }
+  let entities = if archetype_driven {
+    []
+  } else {
+    self.query_matching_entities(world)
+  }
   {
     query,
     default_filter_component_ids: self.default_filter_component_ids(world),
     entities_pre_matched: true,
-    entities: self.query_matching_entities(world),
+    archetype_driven,
+    archetypes,
+    archetype_index: 0,
+    archetype_entities: [],
+    archetype_entity_index: 0,
+    entities,
     index: 0,
   }
 }
@@ -935,6 +1015,11 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
     query,
     default_filter_component_ids: self.default_filter_component_ids(world),
     entities_pre_matched: false,
+    archetype_driven: false,
+    archetypes: [],
+    archetype_index: 0,
+    archetype_entities: [],
+    archetype_entity_index: 0,
     entities,
     index: 0,
   }
@@ -1061,15 +1146,11 @@ fn[D, F : QueryFilter] QueryState::query_candidate_archetypes(
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
   )
-  let candidate_generation = query_candidate_generation(
-    world, data_anchor_component_id, filter_anchor_component_id,
-  )
   let candidate_archetype_generation = query_candidate_archetype_generation(
     world,
   )
   if self.cached_candidate_archetype_generation !=
     candidate_archetype_generation ||
-    self.cached_candidate_generation != candidate_generation ||
     self.cached_candidate_anchor_component_id != candidate_anchor_component_id ||
     self.cached_anchor_component_id != data_anchor_component_id ||
     self.cached_filter_anchor_component_id != filter_anchor_component_id {
@@ -1080,7 +1161,7 @@ fn[D, F : QueryFilter] QueryState::query_candidate_archetypes(
     self.cached_filter_anchor_component_id = filter_anchor_component_id
     self.cached_candidate_anchor_component_id = candidate_anchor_component_id
     self.cached_candidate_archetype_generation = candidate_archetype_generation
-    self.cached_candidate_generation = candidate_generation
+    self.cached_candidate_generation = candidate_archetype_generation
   }
   self.cached_candidate_archetypes
 }
@@ -1091,13 +1172,30 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_entities(
   world : World,
 ) -> Array[@core.Entity] {
   let matched_archetypes = self.query_matching_archetypes(world)
-  if self.cached_matching_entities_valid {
-    return self.cached_matching_entities
-  }
   let data_requires_entity_check = D::requires_entity_check()
   let filter_requires_entity_check = QueryFilter::requires_entity_check(
     self.filter,
   )
+  let dependency_component_ids = self.dependency_component_ids(world, true)
+  let matching_entities_generation = query_dependency_generation(
+    world, dependency_component_ids,
+  )
+  let depends_on_sequence = QueryFilter::depends_on_sequence(self.filter)
+  let sequence_marker = if depends_on_sequence {
+    query_sequence_marker(world)
+  } else {
+    -1
+  }
+  let entity_cache_reusable = !data_requires_entity_check &&
+    self.cached_matching_entities_valid &&
+    self.cached_matching_entities_generation == matching_entities_generation &&
+    (
+      !depends_on_sequence ||
+      self.cached_matching_entities_sequence == sequence_marker
+    )
+  if entity_cache_reusable {
+    return self.cached_matching_entities
+  }
   let matched_entities : Array[@core.Entity] = []
   if !data_requires_entity_check && !filter_requires_entity_check {
     query_collect_archetype_entities(
@@ -1122,6 +1220,8 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_entities(
   }
   self.cached_matching_entities = matched_entities
   self.cached_matching_entities_valid = true
+  self.cached_matching_entities_generation = matching_entities_generation
+  self.cached_matching_entities_sequence = sequence_marker
   self.cached_matching_entities
 }
 
@@ -1137,50 +1237,48 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
   let candidate_anchor_component_id = query_candidate_anchor_component_id(
     world, data_anchor_component_id, filter_anchor_component_id,
   )
-  let candidate_generation = query_candidate_generation(
-    world, data_anchor_component_id, filter_anchor_component_id,
-  )
   let default_filters_stale = self.refresh_default_filter_component_ids(world)
-  let dependency_component_ids = self.dependency_component_ids(
-    world, default_filters_stale,
-  )
-  let matching_generation = query_matching_generation(
-    world, dependency_component_ids, data_anchor_component_id, filter_anchor_component_id,
-  )
-  let depends_on_sequence = QueryFilter::depends_on_sequence(self.filter)
-  let sequence_marker = if depends_on_sequence {
-    query_sequence_marker(world)
-  } else {
-    -1
-  }
-  let matching_metadata_changed = self.cached_matching_generation !=
-    matching_generation ||
-    self.cached_matching_anchor_component_id != data_anchor_component_id ||
+  let matching_metadata_changed = self.cached_matching_anchor_component_id !=
+    data_anchor_component_id ||
     self.cached_matching_filter_anchor_component_id !=
     filter_anchor_component_id ||
     self.cached_matching_candidate_anchor_component_id !=
     candidate_anchor_component_id ||
-    self.cached_matching_candidate_generation != candidate_generation ||
-    default_filters_stale ||
-    (depends_on_sequence && self.cached_matching_sequence != sequence_marker)
+    default_filters_stale
+  let previous_candidate_archetypes = self.cached_candidate_archetypes
+  let candidate_archetypes = self.query_candidate_archetypes(
+    world, data_anchor_component_id,
+  )
+  let candidate_archetype_generation = query_candidate_archetype_generation(
+    world,
+  )
   if matching_metadata_changed {
     let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
-    let candidate_archetype_generation = query_candidate_archetype_generation(
-      world,
-    )
-    if self.cached_matching_archetype_generation !=
-      candidate_archetype_generation ||
-      default_filters_stale ||
-      self.cached_matching_anchor_component_id != data_anchor_component_id ||
-      self.cached_matching_filter_anchor_component_id !=
-      filter_anchor_component_id ||
-      self.cached_matching_candidate_anchor_component_id !=
-      candidate_anchor_component_id {
-      let matched_archetypes : Array[Int] = []
-      for
-        archetype_id in self.query_candidate_archetypes(
-          world, data_anchor_component_id,
+    let matched_archetypes : Array[Int] = []
+    for archetype_id in candidate_archetypes {
+      if query_archetype_matches_with_default_filter_component_ids(
+          world,
+          archetype_id,
+          self.filter,
+          default_filter_local_component_ids,
+          D::matches_component_set,
         ) {
+        matched_archetypes.push(archetype_id)
+      }
+    }
+    self.cached_matching_archetypes = matched_archetypes
+    self.cached_matching_archetype_generation = candidate_archetype_generation
+    self.cached_matching_entities_valid = false
+  } else if self.cached_matching_archetype_generation !=
+    candidate_archetype_generation {
+    let added_candidate_archetypes : Array[Int] = []
+    let candidate_removed = query_archetype_delta(
+      previous_candidate_archetypes, candidate_archetypes, added_candidate_archetypes,
+    )
+    if candidate_removed {
+      let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
+      let matched_archetypes : Array[Int] = []
+      for archetype_id in candidate_archetypes {
         if query_archetype_matches_with_default_filter_component_ids(
             world,
             archetype_id,
@@ -1192,16 +1290,32 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
         }
       }
       self.cached_matching_archetypes = matched_archetypes
-      self.cached_matching_archetype_generation = candidate_archetype_generation
+      self.cached_matching_entities_valid = false
+    } else {
+      let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
+      for archetype_id in added_candidate_archetypes {
+        if query_archetype_matches_with_default_filter_component_ids(
+            world,
+            archetype_id,
+            self.filter,
+            default_filter_local_component_ids,
+            D::matches_component_set,
+          ) {
+          self.cached_matching_archetypes.push(archetype_id)
+        }
+      }
+      if added_candidate_archetypes.length() > 0 {
+        self.cached_matching_entities_valid = false
+      }
     }
-    self.cached_matching_anchor_component_id = data_anchor_component_id
-    self.cached_matching_filter_anchor_component_id = filter_anchor_component_id
-    self.cached_matching_candidate_anchor_component_id = candidate_anchor_component_id
-    self.cached_matching_candidate_generation = candidate_generation
-    self.cached_matching_generation = matching_generation
-    self.cached_matching_sequence = sequence_marker
-    self.cached_matching_entities_valid = false
+    self.cached_matching_archetype_generation = candidate_archetype_generation
   }
+  self.cached_matching_anchor_component_id = data_anchor_component_id
+  self.cached_matching_filter_anchor_component_id = filter_anchor_component_id
+  self.cached_matching_candidate_anchor_component_id = candidate_anchor_component_id
+  self.cached_matching_candidate_generation = candidate_archetype_generation
+  self.cached_matching_generation = candidate_archetype_generation
+  self.cached_matching_sequence = -1
   self.cached_matching_archetypes
 }
 
@@ -1209,6 +1323,26 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
 pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
   self : QueryMany[D, F],
 ) -> (@core.Entity, D)? raise EcsError {
+  if self.archetype_driven {
+    while true {
+      if self.archetype_entity_index < self.archetype_entities.length() {
+        let entity = self.archetype_entities[self.archetype_entity_index]
+        self.archetype_entity_index = self.archetype_entity_index + 1
+        return Some((entity, D::fetch(self.query.world, entity)))
+      }
+      if self.archetype_index >= self.archetypes.length() {
+        return None
+      }
+      let archetype_id = self.archetypes[self.archetype_index]
+      self.archetype_index = self.archetype_index + 1
+      self.archetype_entities = match
+        self.query.world.archetype_entities_view(archetype_id) {
+        Some(entities) => entities
+        None => []
+      }
+      self.archetype_entity_index = 0
+    }
+  }
   while self.index < self.entities.length() {
     let entity = self.entities[self.index]
     self.index = self.index + 1
@@ -1334,22 +1468,6 @@ fn query_candidate_anchor_component_id(
     (Some(component_id), None) => Some(component_id)
     (None, Some(component_id)) => Some(component_id)
     (None, None) => None
-  }
-}
-
-///|
-fn query_candidate_generation(
-  world : World,
-  anchor_component_id : Int?,
-  filter_anchor_component_id : Int?,
-) -> Int {
-  match
-    query_candidate_anchor_component_id(
-      world, anchor_component_id, filter_anchor_component_id,
-    ) {
-    Some(component_id) =>
-      world.component_membership_generation_for_definition(component_id)
-    None => world.entity_lifecycle_generation()
   }
 }
 

@@ -795,6 +795,33 @@ test "ecs query cache: entity-check path materializes entity cache" {
 }
 
 ///|
+test "ecs query_state cache: archetype matching updates incrementally and keeps iter archetype-driven" {
+  let world = World::new()
+  let e0 = world.spawn()
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+
+  let state : QueryState[Comp[Position], All] = world.query()
+  debug_inspect(state.count(world), content="1")
+  debug_inspect(state.cached_matching_archetypes.length(), content="1")
+  debug_inspect(state.cached_matching_entities_valid, content="false")
+
+  let iter0 = state.iter(world)
+  guard (try! iter0.fetch_next()) is Some((entity0, _)) else {
+    fail("expected one matching entity")
+  }
+  debug_inspect(entity0.id, content="0")
+  debug_inspect(state.cached_matching_entities_valid, content="false")
+
+  let e1 = world.spawn()
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e1, velocity_key, Velocity::{ dx: 3, dy: 3 })
+
+  debug_inspect(state.count(world), content="2")
+  debug_inspect(state.cached_matching_archetypes.length(), content="2")
+  debug_inspect(state.cached_matching_entities_valid, content="false")
+}
+
+///|
 test "ecs query: iter_many_ref preserves filter order without change state" {
   let world = World::new()
   let comp_position = position_key

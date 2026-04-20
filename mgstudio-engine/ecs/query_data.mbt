@@ -353,8 +353,8 @@ pub impl[T : QueryData] QueryData for T? with fetch(world, entity) {
 }
 
 ///|
-pub impl[T : QueryData] QueryData for T? with mentions_component(_component_id) {
-  false
+pub impl[T : QueryData] QueryData for T? with mentions_component(component_id) {
+  T::mentions_component(component_id)
 }
 
 ///|
