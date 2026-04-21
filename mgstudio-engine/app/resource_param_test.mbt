@@ -62,6 +62,50 @@ test "app: Res parameter reads inserted resource value" {
 }
 
 ///|
+test "app: Res and ResMut expose change detection without eager writes" {
+  let observed_added : Array[Bool] = []
+  let observed_changed : Array[Bool] = []
+  let observed_values : Array[Int] = []
+  let observed_callers : Array[Bool] = []
+  let mutate_set = system_set("app.resource_param_test.mutate")
+
+  let app = App::new(@ecs.World::new())
+    .insert_resource(CounterResource::{ value: 1 })
+    .add_system_config(
+      system_config_param2(fn(frame : Local[Int], resource : ResMut[CounterResource]) {
+        let current = frame.get()
+        if current == 1 {
+          let value_ref = resource.get_ref()
+          value_ref.val.value = value_ref.val.value + 5
+        }
+        frame.set(current + 1)
+      }).in_set(mutate_set),
+    )
+    .add_system_config(
+      system_config_param(fn(resource : Res[CounterResource]) {
+        observed_added.push(resource.is_added())
+        observed_changed.push(resource.is_changed())
+        observed_values.push(resource.get().value)
+        observed_callers.push(
+          match resource.changed_by() {
+            Some(caller) => caller.contains("resource_param_test.mbt")
+            None => false
+          },
+        )
+      }).after(mutate_set),
+    )
+
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  debug_inspect(observed_added, content="[true, false, false]")
+  debug_inspect(observed_changed, content="[true, true, false]")
+  debug_inspect(observed_values, content="[1, 6, 6]")
+  debug_inspect(observed_callers, content="[false, true, true]")
+}
+
+///|
 test "app: init_resource inserts only when missing" {
   let app = App::new(@ecs.World::new()).init_resource(fn() {
     CounterResource::{ value: 11 }

@@ -116,3 +116,47 @@ test "ecs resource: get_resource_ref_mut observes live world storage" {
     content="Some({ fps: 90 })",
   )
 }
+
+///|
+test "ecs resource: ResourceMut exposes detect changes metadata" {
+  let world = World::new()
+  let res_config : ResourceKey[RuntimeConfig] = register_resource(
+    debug_name="resource_mut_detect_runtime_config",
+  )
+
+  world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
+  world.advance_sequence() |> ignore
+
+  let first_ctx = @core.SystemSequenceContext::new()
+  first_ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(first_ctx)
+
+  let first_config = (try! world.get_resource_mut(res_config)).unwrap()
+  debug_inspect(first_config.is_added(), content="true")
+  debug_inspect(first_config.is_changed(), content="true")
+  debug_inspect(first_config.added(), content="1")
+  debug_inspect(first_config.last_changed(), content="1")
+  debug_inspect(first_config.changed_by() is None, content="true")
+
+  world.advance_sequence() |> ignore
+  let second_ctx = @core.SystemSequenceContext::new()
+  second_ctx.set(@core.SystemSequence::new(1, 2))
+  world.set_sequence_context(second_ctx)
+
+  let second_config = (try! world.get_resource_mut(res_config)).unwrap()
+  debug_inspect(second_config.is_added(), content="false")
+  debug_inspect(second_config.is_changed(), content="false")
+
+  second_config.bypass_change_detection().val = RuntimeConfig::{ fps: 75 }
+  debug_inspect(second_config.last_changed(), content="1")
+  second_config.set_changed()
+  debug_inspect(second_config.last_changed(), content="2")
+  debug_inspect(
+    second_config.changed_by().unwrap().contains("resource_test.mbt"),
+    content="true",
+  )
+  debug_inspect(
+    try! world.get_resource(res_config),
+    content="Some({ fps: 75 })",
+  )
+}

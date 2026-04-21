@@ -35,3 +35,10 @@ pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with stor
 ) {
   system_param_store_no_state(self, state)
 }
+
+///|
+pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with access(
+  _world,
+) {
+  SystemAccess::new()
+}

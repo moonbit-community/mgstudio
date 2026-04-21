@@ -1230,6 +1230,14 @@ fn[F : QueryFilter] query_data_filter_access(
 }
 
 ///|
+pub fn[F : QueryFilter] query_access_descriptor(
+  filter : F,
+  collect_data_access : (QueryDataAccess) -> Unit,
+) -> (QueryDataAccess, QueryFilterAccess) {
+  query_data_filter_access(filter, collect_data_access)
+}
+
+///|
 fn[F : QueryFilter] query_access_validation(
   filter : F,
   collect_data_access : (QueryDataAccess) -> Unit,

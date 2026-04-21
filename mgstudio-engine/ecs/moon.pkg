@@ -5,3 +5,11 @@ import {
   "moonbitlang/core/ref",
   "tonyfettes/any",
 }
+
+options(
+  "native-stub": [ "raw_table_stub.c" ],
+  targets: {
+    "raw_table_kernel_native.mbt": [ "native", "llvm" ],
+    "raw_table_kernel_portable.mbt": [ "js", "wasm", "wasm-gc" ],
+  },
+)

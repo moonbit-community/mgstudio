@@ -405,6 +405,12 @@ pub(open) trait SystemParam {
   init_state(@ecs.World) -> Json
   get(Ref[Json]) -> Self raise
   store(Self, Ref[Json]) -> Unit
+  access(@ecs.World) -> SystemAccess = _
+}
+
+///|
+impl SystemParam with access(_world) {
+  SystemAccess::new()
 }
 
 ///|
@@ -415,6 +421,8 @@ pub(open) trait Resource {
 ///|
 pub struct Res[T] {
   value : T
+  world : @ecs.World?
+  key_id : Int?
 }
 
 ///|
@@ -423,16 +431,185 @@ pub fn[T] Res::get(self : Res[T]) -> T {
 }
 
 ///|
-pub struct ResMut[T] {
-  value : Ref[T]
+fn[T] res_world_or_abort(item : Res[T]) -> @ecs.World {
+  match item.world {
+    Some(world) => world
+    None => abort("Res expected a fetched system parameter")
+  }
 }
 
 ///|
-pub fn[T] ResMut::get_ref(self : ResMut[T]) -> Ref[T] {
+fn[T] res_key_id_or_abort(item : Res[T]) -> Int {
+  match item.key_id {
+    Some(key_id) => key_id
+    None => abort("Res expected a fetched system parameter")
+  }
+}
+
+///|
+pub fn[T : Resource] Res::is_added(self : Res[T]) -> Bool {
+  let world = res_world_or_abort(self)
+  ignore(res_key_id_or_abort(self))
+  world.is_resource_added(T::resource(), current_system_sequence())
+}
+
+///|
+pub fn[T : Resource] Res::is_changed(self : Res[T]) -> Bool {
+  let world = res_world_or_abort(self)
+  ignore(res_key_id_or_abort(self))
+  world.is_resource_changed(T::resource(), current_system_sequence())
+}
+
+///|
+pub fn[T : Resource] Res::added(self : Res[T]) -> @core.Sequence {
+  let world = res_world_or_abort(self)
+  ignore(res_key_id_or_abort(self))
+  match world.resource_added_tick(T::resource()) {
+    Some(sequence) => sequence
+    None => abort("Res::added expected resource sequence metadata")
+  }
+}
+
+///|
+pub fn[T : Resource] Res::last_changed(self : Res[T]) -> @core.Sequence {
+  let world = res_world_or_abort(self)
+  ignore(res_key_id_or_abort(self))
+  match world.resource_changed_tick(T::resource()) {
+    Some(sequence) => sequence
+    None => abort("Res::last_changed expected resource sequence metadata")
+  }
+}
+
+///|
+pub fn[T : Resource] Res::changed_by(self : Res[T]) -> String? {
+  let world = res_world_or_abort(self)
+  ignore(res_key_id_or_abort(self))
+  world.resource_changed_by(T::resource())
+}
+
+///|
+pub struct ResMut[T] {
+  value : Ref[T]
+  world : @ecs.World?
+  key_id : Int?
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Resource] ResMut::get_ref(
+  self : ResMut[T],
+  loc~ : SourceLoc,
+) -> Ref[T] {
+  self.set_changed(loc~)
   self.value
 }
 
 ///|
+pub fn[T] ResMut::get(self : ResMut[T]) -> T {
+  self.value.val
+}
+
+///|
+fn[T] res_mut_world_or_abort(item : ResMut[T]) -> @ecs.World {
+  match item.world {
+    Some(world) => world
+    None => abort("ResMut expected a fetched system parameter")
+  }
+}
+
+///|
+fn[T] res_mut_key_id_or_abort(item : ResMut[T]) -> Int {
+  match item.key_id {
+    Some(key_id) => key_id
+    None => abort("ResMut expected a fetched system parameter")
+  }
+}
+
+///|
+pub fn[T : Resource] ResMut::is_added(self : ResMut[T]) -> Bool {
+  let world = res_mut_world_or_abort(self)
+  ignore(res_mut_key_id_or_abort(self))
+  world.is_resource_added(T::resource(), current_system_sequence())
+}
+
+///|
+pub fn[T : Resource] ResMut::is_changed(self : ResMut[T]) -> Bool {
+  let world = res_mut_world_or_abort(self)
+  ignore(res_mut_key_id_or_abort(self))
+  world.is_resource_changed(T::resource(), current_system_sequence())
+}
+
+///|
+pub fn[T : Resource] ResMut::added(self : ResMut[T]) -> @core.Sequence {
+  let world = res_mut_world_or_abort(self)
+  ignore(res_mut_key_id_or_abort(self))
+  match world.resource_added_tick(T::resource()) {
+    Some(sequence) => sequence
+    None => abort("ResMut::added expected resource sequence metadata")
+  }
+}
+
+///|
+pub fn[T : Resource] ResMut::last_changed(self : ResMut[T]) -> @core.Sequence {
+  let world = res_mut_world_or_abort(self)
+  ignore(res_mut_key_id_or_abort(self))
+  match world.resource_changed_tick(T::resource()) {
+    Some(sequence) => sequence
+    None => abort("ResMut::last_changed expected resource sequence metadata")
+  }
+}
+
+///|
+pub fn[T : Resource] ResMut::changed_by(self : ResMut[T]) -> String? {
+  let world = res_mut_world_or_abort(self)
+  ignore(res_mut_key_id_or_abort(self))
+  world.resource_changed_by(T::resource())
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Resource] ResMut::set_changed(
+  self : ResMut[T],
+  loc~ : SourceLoc,
+) -> Unit {
+  let world = res_mut_world_or_abort(self)
+  ignore(res_mut_key_id_or_abort(self))
+  world.mark_resource_changed(T::resource(), caller=Some(loc.to_string()))
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Resource] ResMut::set_added(
+  self : ResMut[T],
+  loc~ : SourceLoc,
+) -> Unit {
+  let world = res_mut_world_or_abort(self)
+  ignore(res_mut_key_id_or_abort(self))
+  world.mark_resource_added(T::resource(), caller=Some(loc.to_string()))
+}
+
+///|
+pub fn[T] ResMut::bypass_change_detection(self : ResMut[T]) -> Ref[T] {
+  self.value
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Resource + Eq] ResMut::set_if_neq(
+  self : ResMut[T],
+  value : T,
+  loc~ : SourceLoc,
+) -> Bool {
+  let value_ref = self.bypass_change_detection()
+  if value_ref.val != value {
+    value_ref.val = value
+    self.set_changed(loc~)
+    true
+  } else {
+    false
+  }
+}
+
 fn[T] system_param_raise_invalid_missing_resource() -> T raise @ecs.SystemParamValidationError {
   raise @ecs.Invalid("Missing resource for system parameter")
 }
@@ -452,12 +629,11 @@ fn[T : Resource] world_resource_value_or_raise(
   }
 }
 
-///|
 fn[T : Resource] world_resource_ref_mut_or_raise(
   world : @ecs.World,
 ) -> Ref[T] raise @ecs.SystemParamValidationError {
   match
-    (try world.get_resource_ref_mut(Resource::resource()) catch {
+    (try world.get_resource_ref(Resource::resource()) catch {
       _ => None
     } noraise {
       value => value
@@ -530,11 +706,15 @@ pub fn[T] In::into_inner(self : In[T]) -> T {
 ///|
 pub struct OutputSystemConfig[W, O] {
   system : (W) -> O?
+  access_factory : ((@ecs.World) -> SystemAccess)?
 }
 
 ///|
 pub fn[W, O] system_output(system : (W) -> O) -> OutputSystemConfig[W, O] {
-  OutputSystemConfig::{ system: fn(world : W) { Some(system(world)) } }
+  OutputSystemConfig::{
+    system: fn(world : W) { Some(system(world)) },
+    access_factory: None,
+  }
 }
 
 ///|
@@ -555,6 +735,26 @@ pub fn[W, P : SystemParam, O] system_param_output(
       P::store(param, state)
       Some(output)
     },
+    access_factory: Some(fn(world : @ecs.World) {
+      let access = SystemAccess::new()
+      system_access_merge_validated(
+        access,
+        P::access(world),
+        @hashmap.HashMap::new(),
+      )
+      access
+    }),
+  }
+}
+
+///|
+fn[W, O] OutputSystemConfig::output_system_base_access(
+  self : OutputSystemConfig[W, O],
+  world : @ecs.World,
+) -> SystemAccess {
+  match self.access_factory {
+    Some(access_factory) => access_factory(world)
+    None => SystemAccess::new()
   }
 }
 
@@ -563,10 +763,10 @@ pub fn[W, O] OutputSystemConfig::pipe(
   self : OutputSystemConfig[W, O],
   handler : (In[O]) -> Unit,
 ) -> SystemConfig[W] {
-  system(fn(world : W) {
+  system_config_with_access(fn(world : W) {
     guard (self.system)(world) is Some(output) else { return }
     handler(In::{ value: output })
-  })
+  }, fn(world : @ecs.World) { self.output_system_base_access(world) })
 }
 
 ///|
@@ -576,7 +776,7 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::pipe_param(
 ) -> SystemConfig[W] {
   let state = Ref::new(Json::null())
   let state_initialized = Ref::new(false)
-  system(fn(world : W) {
+  system_config_with_access(fn(world : W) {
     guard (self.system)(world) is Some(output) else { return }
     let current_world = system_param_abort_missing_world()
     if !state_initialized.val {
@@ -587,6 +787,14 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::pipe_param(
     guard param_opt is Some(param) else { return }
     handler(In::{ value: output }, param)
     P::store(param, state)
+  }, fn(world : @ecs.World) {
+    let access = self.output_system_base_access(world)
+    system_access_merge_validated(
+      access,
+      P::access(world),
+      @hashmap.HashMap::new(),
+    )
+    access
   })
 }
 
@@ -595,10 +803,10 @@ pub fn[W, O] OutputSystemConfig::map(
   self : OutputSystemConfig[W, O],
   handler : (O) -> Unit,
 ) -> SystemConfig[W] {
-  system(fn(world : W) {
+  system_config_with_access(fn(world : W) {
     guard (self.system)(world) is Some(output) else { return }
     handler(output)
-  })
+  }, fn(world : @ecs.World) { self.output_system_base_access(world) })
 }
 
 ///|
@@ -608,7 +816,7 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::map_param(
 ) -> SystemConfig[W] {
   let state = Ref::new(Json::null())
   let state_initialized = Ref::new(false)
-  system(fn(world : W) {
+  system_config_with_access(fn(world : W) {
     guard (self.system)(world) is Some(output) else { return }
     let current_world = system_param_abort_missing_world()
     if !state_initialized.val {
@@ -619,6 +827,214 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::map_param(
     guard param_opt is Some(param) else { return }
     handler(output, param)
     P::store(param, state)
+  }, fn(world : @ecs.World) {
+    let access = self.output_system_base_access(world)
+    system_access_merge_validated(
+      access,
+      P::access(world),
+      @hashmap.HashMap::new(),
+    )
+    access
+  })
+}
+
+///|
+fn[W] system_config_with_access(
+  system : SystemFn[W],
+  access_factory : (@ecs.World) -> SystemAccess,
+) -> SystemConfig[W] {
+  SystemConfig::{
+    system,
+    name: None,
+    error_handler: None,
+    run_ifs: [],
+    run_if_states: [],
+    set: None,
+    before: [],
+    after: [],
+    run_if_last_run_sequences: [],
+    last_run_sequence: 0,
+    access_factory: Some(access_factory),
+  }
+}
+
+///|
+pub fn[W, P : SystemParam] system_config_param(
+  system : (P) -> Unit,
+) -> SystemConfig[W] {
+  system_config_with_access(system_param(system), fn(world : @ecs.World) {
+    let access = SystemAccess::new()
+    system_access_merge_validated(
+      access,
+      P::access(world),
+      @hashmap.HashMap::new(),
+    )
+    access
+  })
+}
+
+///|
+pub fn[W, P : SystemParam] fallible_system_config_param(
+  system : (P) -> Unit raise,
+) -> SystemConfig[W] {
+  system_config_with_access(fallible_system_param(system), fn(world : @ecs.World) {
+    let access = SystemAccess::new()
+    system_access_merge_validated(
+      access,
+      P::access(world),
+      @hashmap.HashMap::new(),
+    )
+    access
+  })
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] system_config_param2(
+  system : (P1, P2) -> Unit,
+) -> SystemConfig[W] {
+  system_config_with_access(system_param2(system), fn(world : @ecs.World) {
+    let access = SystemAccess::new()
+    system_access_merge_validated(
+      access,
+      P1::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P2::access(world),
+      @hashmap.HashMap::new(),
+    )
+    access
+  })
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_config_param2(
+  system : (P1, P2) -> Unit raise,
+) -> SystemConfig[W] {
+  system_config_with_access(fallible_system_param2(system), fn(world : @ecs.World) {
+    let access = SystemAccess::new()
+    system_access_merge_validated(
+      access,
+      P1::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P2::access(world),
+      @hashmap.HashMap::new(),
+    )
+    access
+  })
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_config_param3(
+  system : (P1, P2, P3) -> Unit,
+) -> SystemConfig[W] {
+  system_config_with_access(system_param3(system), fn(world : @ecs.World) {
+    let access = SystemAccess::new()
+    system_access_merge_validated(
+      access,
+      P1::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P2::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P3::access(world),
+      @hashmap.HashMap::new(),
+    )
+    access
+  })
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_config_param3(
+  system : (P1, P2, P3) -> Unit raise,
+) -> SystemConfig[W] {
+  system_config_with_access(fallible_system_param3(system), fn(world : @ecs.World) {
+    let access = SystemAccess::new()
+    system_access_merge_validated(
+      access,
+      P1::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P2::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P3::access(world),
+      @hashmap.HashMap::new(),
+    )
+    access
+  })
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_config_param4(
+  system : (P1, P2, P3, P4) -> Unit,
+) -> SystemConfig[W] {
+  system_config_with_access(system_param4(system), fn(world : @ecs.World) {
+    let access = SystemAccess::new()
+    system_access_merge_validated(
+      access,
+      P1::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P2::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P3::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P4::access(world),
+      @hashmap.HashMap::new(),
+    )
+    access
+  })
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] fallible_system_config_param4(
+  system : (P1, P2, P3, P4) -> Unit raise,
+) -> SystemConfig[W] {
+  system_config_with_access(fallible_system_param4(system), fn(world : @ecs.World) {
+    let access = SystemAccess::new()
+    system_access_merge_validated(
+      access,
+      P1::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P2::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P3::access(world),
+      @hashmap.HashMap::new(),
+    )
+    system_access_merge_validated(
+      access,
+      P4::access(world),
+      @hashmap.HashMap::new(),
+    )
+    access
   })
 }
 
@@ -636,6 +1052,7 @@ pub fn[W] fallible_system(system : FallibleSystemFn[W]) -> SystemConfig[W] {
     after: [],
     run_if_last_run_sequences: [],
     last_run_sequence: 0,
+    access_factory: None,
   }
 }
 
@@ -1203,8 +1620,21 @@ let current_app_schedule_ref : Ref[ScheduleRegistry[@ecs.World]?] = Ref::new(
 )
 
 ///|
+let current_allowed_ambiguous_components_ref : Ref[
+  @hashmap.HashMap[Int, Bool]?
+] = Ref::new(None)
+
+///|
 pub fn current_world() -> @ecs.World? {
   current_world_ref.val
+}
+
+///|
+fn current_allowed_ambiguous_components() -> @hashmap.HashMap[Int, Bool] {
+  match current_allowed_ambiguous_components_ref.val {
+    Some(allowed) => allowed
+    None => @hashmap.HashMap::new()
+  }
 }
 
 ///|
@@ -1273,14 +1703,24 @@ pub impl[T : Resource] SystemParam for Res[T] with init_state(world) {
 
 ///|
 pub impl[T : Resource] SystemParam for Res[T] with get(_state) {
+  let world = system_param_abort_missing_world()
   Res::{
-    value: world_resource_value_or_raise(system_param_abort_missing_world()),
+    value: world_resource_value_or_raise(world),
+    world: Some(world),
+    key_id: Some(T::resource().id()),
   }
 }
 
 ///|
 pub impl[T : Resource] SystemParam for Res[T] with store(self, state) {
   system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[T : Resource] SystemParam for Res[T] with access(_world) {
+  let access = SystemAccess::new()
+  access.add_read_resource(T::resource().id())
+  access
 }
 
 ///|
@@ -1291,12 +1731,23 @@ pub impl[T : Resource] SystemParam for ResMut[T] with init_state(world) {
 ///|
 pub impl[T : Resource] SystemParam for ResMut[T] with get(_state) {
   let world = system_param_abort_missing_world()
-  ResMut::{ value: world_resource_ref_mut_or_raise(world) }
+  ResMut::{
+    value: world_resource_ref_mut_or_raise(world),
+    world: Some(world),
+    key_id: Some(T::resource().id()),
+  }
 }
 
 ///|
 pub impl[T : Resource] SystemParam for ResMut[T] with store(self, state) {
   system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[T : Resource] SystemParam for ResMut[T] with access(_world) {
+  let access = SystemAccess::new()
+  access.add_write_resource(T::resource().id())
+  access
 }
 
 ///|
@@ -1311,6 +1762,7 @@ pub struct SystemConfig[W] {
   after : Array[SystemSet]
   run_if_last_run_sequences : Array[@core.Sequence]
   mut last_run_sequence : @core.Sequence
+  mut access_factory : ((@ecs.World) -> SystemAccess)?
 }
 
 ///|
@@ -1326,6 +1778,7 @@ pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
     after: [],
     run_if_last_run_sequences: [],
     last_run_sequence: 0,
+    access_factory: None,
   }
 }
 
@@ -1513,6 +1966,33 @@ fn chain_copy_order_edges(
 }
 
 ///|
+fn chain_copy_access_factories(
+  target : SystemConfig[@ecs.World],
+  sources : Array[SystemConfig[@ecs.World]],
+) -> Unit {
+  let access_factories : Array[(@ecs.World) -> SystemAccess] = []
+  for source in sources {
+    match source.access_factory {
+      Some(access_factory) => access_factories.push(access_factory)
+      None => {
+        target.access_factory = None
+        return
+      }
+    }
+  }
+  if access_factories.length() == 0 {
+    return
+  }
+  target.access_factory = Some(fn(world : @ecs.World) {
+    let access = SystemAccess::new()
+    for access_factory in access_factories {
+      system_access_merge_unchecked(access, access_factory(world))
+    }
+    access
+  })
+}
+
+///|
 pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
   SystemConfig[@ecs.World],
@@ -1526,6 +2006,7 @@ pub impl ChainedSystemConfigs for (
   })
   chain_copy_order_edges(chained, first_ref.val)
   chain_copy_order_edges(chained, second_ref.val)
+  chain_copy_access_factories(chained, [first_ref.val, second_ref.val])
   chained
 }
 
@@ -1547,6 +2028,7 @@ pub impl ChainedSystemConfigs for (
   chain_copy_order_edges(chained, first_ref.val)
   chain_copy_order_edges(chained, second_ref.val)
   chain_copy_order_edges(chained, third_ref.val)
+  chain_copy_access_factories(chained, [first_ref.val, second_ref.val, third_ref.val])
   chained
 }
 
@@ -1572,6 +2054,10 @@ pub impl ChainedSystemConfigs for (
   chain_copy_order_edges(chained, second_ref.val)
   chain_copy_order_edges(chained, third_ref.val)
   chain_copy_order_edges(chained, fourth_ref.val)
+  chain_copy_access_factories(
+    chained,
+    [first_ref.val, second_ref.val, third_ref.val, fourth_ref.val],
+  )
   chained
 }
 
@@ -1601,6 +2087,16 @@ pub impl ChainedSystemConfigs for (
   chain_copy_order_edges(chained, third_ref.val)
   chain_copy_order_edges(chained, fourth_ref.val)
   chain_copy_order_edges(chained, fifth_ref.val)
+  chain_copy_access_factories(
+    chained,
+    [
+      first_ref.val,
+      second_ref.val,
+      third_ref.val,
+      fourth_ref.val,
+      fifth_ref.val,
+    ],
+  )
   chained
 }
 
@@ -1634,6 +2130,17 @@ pub impl ChainedSystemConfigs for (
   chain_copy_order_edges(chained, fourth_ref.val)
   chain_copy_order_edges(chained, fifth_ref.val)
   chain_copy_order_edges(chained, sixth_ref.val)
+  chain_copy_access_factories(
+    chained,
+    [
+      first_ref.val,
+      second_ref.val,
+      third_ref.val,
+      fourth_ref.val,
+      fifth_ref.val,
+      sixth_ref.val,
+    ],
+  )
   chained
 }
 
@@ -2018,7 +2525,7 @@ pub fn[W, P : SystemParam] App::add_pre_startup_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     PreStartup,
-    system(system_param(pre_startup_system)),
+    system_config_param(pre_startup_system),
   )
   self
 }
@@ -2031,7 +2538,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_pre_startup_system_param2
   schedule_push_config(
     self.sub_apps.main.schedule,
     PreStartup,
-    system(system_param2(pre_startup_system)),
+    system_config_param2(pre_startup_system),
   )
   self
 }
@@ -2044,7 +2551,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_pre_sta
   schedule_push_config(
     self.sub_apps.main.schedule,
     PreStartup,
-    system(system_param3(pre_startup_system)),
+    system_config_param3(pre_startup_system),
   )
   self
 }
@@ -2063,7 +2570,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     PreStartup,
-    system(system_param4(pre_startup_system)),
+    system_config_param4(pre_startup_system),
   )
   self
 }
@@ -2094,7 +2601,7 @@ pub fn[W, P : SystemParam] App::add_startup_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     Startup,
-    system(system_param(startup_system)),
+    system_config_param(startup_system),
   )
   self
 }
@@ -2107,7 +2614,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_startup_system_param2(
   schedule_push_config(
     self.sub_apps.main.schedule,
     Startup,
-    system(system_param2(startup_system)),
+    system_config_param2(startup_system),
   )
   self
 }
@@ -2120,7 +2627,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_startup
   schedule_push_config(
     self.sub_apps.main.schedule,
     Startup,
-    system(system_param3(startup_system)),
+    system_config_param3(startup_system),
   )
   self
 }
@@ -2139,7 +2646,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     Startup,
-    system(system_param4(startup_system)),
+    system_config_param4(startup_system),
   )
   self
 }
@@ -2174,7 +2681,7 @@ pub fn[W, P : SystemParam] App::add_post_startup_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     PostStartup,
-    system(system_param(post_startup_system)),
+    system_config_param(post_startup_system),
   )
   self
 }
@@ -2187,7 +2694,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_post_startup_system_param
   schedule_push_config(
     self.sub_apps.main.schedule,
     PostStartup,
-    system(system_param2(post_startup_system)),
+    system_config_param2(post_startup_system),
   )
   self
 }
@@ -2200,7 +2707,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_post_st
   schedule_push_config(
     self.sub_apps.main.schedule,
     PostStartup,
-    system(system_param3(post_startup_system)),
+    system_config_param3(post_startup_system),
   )
   self
 }
@@ -2219,7 +2726,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     PostStartup,
-    system(system_param4(post_startup_system)),
+    system_config_param4(post_startup_system),
   )
   self
 }
@@ -2250,7 +2757,7 @@ pub fn[W, P : SystemParam] App::add_first_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     First,
-    system(system_param(first_system)),
+    system_config_param(first_system),
   )
   self
 }
@@ -2263,7 +2770,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_first_system_param2(
   schedule_push_config(
     self.sub_apps.main.schedule,
     First,
-    system(system_param2(first_system)),
+    system_config_param2(first_system),
   )
   self
 }
@@ -2276,7 +2783,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_first_s
   schedule_push_config(
     self.sub_apps.main.schedule,
     First,
-    system(system_param3(first_system)),
+    system_config_param3(first_system),
   )
   self
 }
@@ -2295,7 +2802,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     First,
-    system(system_param4(first_system)),
+    system_config_param4(first_system),
   )
   self
 }
@@ -2330,7 +2837,7 @@ pub fn[W, P : SystemParam] App::add_pre_update_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     PreUpdate,
-    system(system_param(pre_update_system)),
+    system_config_param(pre_update_system),
   )
   self
 }
@@ -2343,7 +2850,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_pre_update_system_param2(
   schedule_push_config(
     self.sub_apps.main.schedule,
     PreUpdate,
-    system(system_param2(pre_update_system)),
+    system_config_param2(pre_update_system),
   )
   self
 }
@@ -2356,7 +2863,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_pre_upd
   schedule_push_config(
     self.sub_apps.main.schedule,
     PreUpdate,
-    system(system_param3(pre_update_system)),
+    system_config_param3(pre_update_system),
   )
   self
 }
@@ -2375,7 +2882,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     PreUpdate,
-    system(system_param4(pre_update_system)),
+    system_config_param4(pre_update_system),
   )
   self
 }
@@ -2410,7 +2917,7 @@ pub fn[W, P : SystemParam] App::add_run_fixed_main_loop_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     RunFixedMainLoop,
-    system(system_param(run_fixed_main_loop_system)),
+    system_config_param(run_fixed_main_loop_system),
   )
   self
 }
@@ -2423,7 +2930,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_run_fixed_main_loop_syste
   schedule_push_config(
     self.sub_apps.main.schedule,
     RunFixedMainLoop,
-    system(system_param2(run_fixed_main_loop_system)),
+    system_config_param2(run_fixed_main_loop_system),
   )
   self
 }
@@ -2436,7 +2943,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_run_fix
   schedule_push_config(
     self.sub_apps.main.schedule,
     RunFixedMainLoop,
-    system(system_param3(run_fixed_main_loop_system)),
+    system_config_param3(run_fixed_main_loop_system),
   )
   self
 }
@@ -2455,7 +2962,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     RunFixedMainLoop,
-    system(system_param4(run_fixed_main_loop_system)),
+    system_config_param4(run_fixed_main_loop_system),
   )
   self
 }
@@ -2490,7 +2997,7 @@ pub fn[W, P : SystemParam] App::add_fixed_first_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedFirst,
-    system(system_param(fixed_first_system)),
+    system_config_param(fixed_first_system),
   )
   self
 }
@@ -2503,7 +3010,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_first_system_param2
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedFirst,
-    system(system_param2(fixed_first_system)),
+    system_config_param2(fixed_first_system),
   )
   self
 }
@@ -2516,7 +3023,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_f
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedFirst,
-    system(system_param3(fixed_first_system)),
+    system_config_param3(fixed_first_system),
   )
   self
 }
@@ -2535,7 +3042,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedFirst,
-    system(system_param4(fixed_first_system)),
+    system_config_param4(fixed_first_system),
   )
   self
 }
@@ -2570,7 +3077,7 @@ pub fn[W, P : SystemParam] App::add_fixed_pre_update_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedPreUpdate,
-    system(system_param(fixed_pre_update_system)),
+    system_config_param(fixed_pre_update_system),
   )
   self
 }
@@ -2583,7 +3090,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_pre_update_system_p
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedPreUpdate,
-    system(system_param2(fixed_pre_update_system)),
+    system_config_param2(fixed_pre_update_system),
   )
   self
 }
@@ -2596,7 +3103,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_p
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedPreUpdate,
-    system(system_param3(fixed_pre_update_system)),
+    system_config_param3(fixed_pre_update_system),
   )
   self
 }
@@ -2615,7 +3122,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedPreUpdate,
-    system(system_param4(fixed_pre_update_system)),
+    system_config_param4(fixed_pre_update_system),
   )
   self
 }
@@ -2650,7 +3157,7 @@ pub fn[W, P : SystemParam] App::add_fixed_update_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedUpdate,
-    system(system_param(fixed_update_system)),
+    system_config_param(fixed_update_system),
   )
   self
 }
@@ -2663,7 +3170,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_update_system_param
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedUpdate,
-    system(system_param2(fixed_update_system)),
+    system_config_param2(fixed_update_system),
   )
   self
 }
@@ -2676,7 +3183,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_u
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedUpdate,
-    system(system_param3(fixed_update_system)),
+    system_config_param3(fixed_update_system),
   )
   self
 }
@@ -2695,7 +3202,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedUpdate,
-    system(system_param4(fixed_update_system)),
+    system_config_param4(fixed_update_system),
   )
   self
 }
@@ -2730,7 +3237,7 @@ pub fn[W, P : SystemParam] App::add_fixed_post_update_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedPostUpdate,
-    system(system_param(fixed_post_update_system)),
+    system_config_param(fixed_post_update_system),
   )
   self
 }
@@ -2743,7 +3250,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_post_update_system_
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedPostUpdate,
-    system(system_param2(fixed_post_update_system)),
+    system_config_param2(fixed_post_update_system),
   )
   self
 }
@@ -2756,7 +3263,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_p
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedPostUpdate,
-    system(system_param3(fixed_post_update_system)),
+    system_config_param3(fixed_post_update_system),
   )
   self
 }
@@ -2775,7 +3282,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedPostUpdate,
-    system(system_param4(fixed_post_update_system)),
+    system_config_param4(fixed_post_update_system),
   )
   self
 }
@@ -2810,7 +3317,7 @@ pub fn[W, P : SystemParam] App::add_fixed_last_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedLast,
-    system(system_param(fixed_last_system)),
+    system_config_param(fixed_last_system),
   )
   self
 }
@@ -2823,7 +3330,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_last_system_param2(
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedLast,
-    system(system_param2(fixed_last_system)),
+    system_config_param2(fixed_last_system),
   )
   self
 }
@@ -2836,7 +3343,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_l
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedLast,
-    system(system_param3(fixed_last_system)),
+    system_config_param3(fixed_last_system),
   )
   self
 }
@@ -2855,7 +3362,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedLast,
-    system(system_param4(fixed_last_system)),
+    system_config_param4(fixed_last_system),
   )
   self
 }
@@ -2883,7 +3390,7 @@ pub fn[W, P : SystemParam] App::add_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     Update,
-    system(system_param(update_system)),
+    system_config_param(update_system),
   )
   self
 }
@@ -2896,7 +3403,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_system_param2(
   schedule_push_config(
     self.sub_apps.main.schedule,
     Update,
-    system(system_param2(update_system)),
+    system_config_param2(update_system),
   )
   self
 }
@@ -2909,7 +3416,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_
   schedule_push_config(
     self.sub_apps.main.schedule,
     Update,
-    system(system_param3(update_system)),
+    system_config_param3(update_system),
   )
   self
 }
@@ -2928,7 +3435,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     Update,
-    system(system_param4(update_system)),
+    system_config_param4(update_system),
   )
   self
 }
@@ -2963,7 +3470,7 @@ pub fn[W, P : SystemParam] App::add_spawn_scene_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     SpawnScene,
-    system(system_param(spawn_scene_system)),
+    system_config_param(spawn_scene_system),
   )
   self
 }
@@ -2976,7 +3483,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_spawn_scene_system_param2
   schedule_push_config(
     self.sub_apps.main.schedule,
     SpawnScene,
-    system(system_param2(spawn_scene_system)),
+    system_config_param2(spawn_scene_system),
   )
   self
 }
@@ -2989,7 +3496,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_spawn_s
   schedule_push_config(
     self.sub_apps.main.schedule,
     SpawnScene,
-    system(system_param3(spawn_scene_system)),
+    system_config_param3(spawn_scene_system),
   )
   self
 }
@@ -3008,7 +3515,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     SpawnScene,
-    system(system_param4(spawn_scene_system)),
+    system_config_param4(spawn_scene_system),
   )
   self
 }
@@ -3043,7 +3550,7 @@ pub fn[W, P : SystemParam] App::add_post_update_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     PostUpdate,
-    system(system_param(post_update_system)),
+    system_config_param(post_update_system),
   )
   self
 }
@@ -3056,7 +3563,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_post_update_system_param2
   schedule_push_config(
     self.sub_apps.main.schedule,
     PostUpdate,
-    system(system_param2(post_update_system)),
+    system_config_param2(post_update_system),
   )
   self
 }
@@ -3069,7 +3576,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_post_up
   schedule_push_config(
     self.sub_apps.main.schedule,
     PostUpdate,
-    system(system_param3(post_update_system)),
+    system_config_param3(post_update_system),
   )
   self
 }
@@ -3088,7 +3595,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     PostUpdate,
-    system(system_param4(post_update_system)),
+    system_config_param4(post_update_system),
   )
   self
 }
@@ -3119,7 +3626,7 @@ pub fn[W, P : SystemParam] App::add_last_system_param(
   schedule_push_config(
     self.sub_apps.main.schedule,
     Last,
-    system(system_param(last_system)),
+    system_config_param(last_system),
   )
   self
 }
@@ -3132,7 +3639,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_last_system_param2(
   schedule_push_config(
     self.sub_apps.main.schedule,
     Last,
-    system(system_param2(last_system)),
+    system_config_param2(last_system),
   )
   self
 }
@@ -3145,7 +3652,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_last_sy
   schedule_push_config(
     self.sub_apps.main.schedule,
     Last,
-    system(system_param3(last_system)),
+    system_config_param3(last_system),
   )
   self
 }
@@ -3164,7 +3671,7 @@ pub fn[
   schedule_push_config(
     self.sub_apps.main.schedule,
     Last,
-    system(system_param4(last_system)),
+    system_config_param4(last_system),
   )
   self
 }
@@ -3175,10 +3682,12 @@ fn run_systems(
   systems : Array[SystemConfig[@ecs.World]],
   set_edges : Array[(SystemSet, SystemSet)],
   stage : ScheduleStage?,
+  executor_kind : ExecutorKind,
 ) -> Unit {
   let timeline_enabled = timeline_trace_enabled()
   current_system_sequence_ref.val = None
   current_world_ref.val = None
+  let allowed_ambiguous_components = current_allowed_ambiguous_components()
   let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
   let set_order : Array[SystemSet] = []
   fn push_unique(
@@ -3247,6 +3756,10 @@ fn run_systems(
       add_edge(set_index, indeg, adj, other, group)
     }
   }
+  let indeg_for_topo : Array[Int] = []
+  for value in indeg {
+    indeg_for_topo.push(value)
+  }
   fn pop_smallest(ready : Array[Int]) -> Int {
     let mut best_pos = 0
     let mut best_value = ready[0]
@@ -3270,26 +3783,68 @@ fn run_systems(
       ready.push(i)
     }
   }
-  let topo : Array[Int] = []
+  let set_layers : Array[Array[Int]] = []
+  let visited_count = Ref::new(0)
   while ready.length() > 0 {
-    let next = pop_smallest(ready)
-    topo.push(next)
-    for to in adj[next] {
-      indeg[to] = indeg[to] - 1
-      if indeg[to] == 0 {
-        ready.push(to)
+    let layer : Array[Int] = []
+    while ready.length() > 0 {
+      layer.push(pop_smallest(ready))
+    }
+    visited_count.val = visited_count.val + layer.length()
+    set_layers.push(layer)
+    let next_ready : Array[Int] = []
+    for next in layer {
+      for to in adj[next] {
+        indeg[to] = indeg[to] - 1
+        if indeg[to] == 0 {
+          next_ready.push(to)
+        }
       }
+    }
+    for next in next_ready {
+      ready.push(next)
     }
   }
 
   // Cycle fallback: preserve first-seen order.
+  if visited_count.val != set_count {
+    set_layers.clear()
+    for i in 0..<set_count {
+      set_layers.push([i])
+    }
+  }
+  let set_layer_index : Array[Int] = []
+  for _ in 0..<set_count {
+    set_layer_index.push(0)
+  }
+  for layer_i in 0..<set_layers.length() {
+    for set_i in set_layers[layer_i] {
+      set_layer_index[set_i] = layer_i
+    }
+  }
+  let topo_ready : Array[Int] = []
+  for i in 0..<set_count {
+    if indeg_for_topo[i] == 0 {
+      topo_ready.push(i)
+    }
+  }
+  let topo : Array[Int] = []
+  while topo_ready.length() > 0 {
+    let next = pop_smallest(topo_ready)
+    topo.push(next)
+    for to in adj[next] {
+      indeg_for_topo[to] = indeg_for_topo[to] - 1
+      if indeg_for_topo[to] == 0 {
+        topo_ready.push(to)
+      }
+    }
+  }
   if topo.length() != set_count {
     topo.clear()
     for i in 0..<set_count {
       topo.push(i)
     }
   }
-  let execution_order : Array[Int] = []
   let systems_by_set : Array[Array[Int]] = []
   for _ in 0..<set_count {
     systems_by_set.push([])
@@ -3298,9 +3853,65 @@ fn run_systems(
     let set_i = set_index.at(groups[i])
     systems_by_set[set_i].push(i)
   }
+  let execution_order : Array[Int] = []
   for set_i in topo {
     for system_i in systems_by_set[set_i] {
       execution_order.push(system_i)
+    }
+  }
+
+  let system_accesses : Array[SystemAccess] = []
+  for i in 0..<system_count {
+    match systems[i].access_factory {
+      Some(access_factory) => system_accesses.push(access_factory(world))
+      None => system_accesses.push(SystemAccess::exclusive())
+    }
+  }
+
+  let execution_batches : Array[Array[Int]] = []
+  match executor_kind {
+    SingleThreaded => {
+      for system_i in execution_order {
+        execution_batches.push([system_i])
+      }
+    }
+    MultiThreaded => {
+      let current_batch_ref : Ref[Array[Int]] = Ref::new([])
+      let current_batch_layer_ref : Ref[Int?] = Ref::new(None)
+      for system_i in execution_order {
+        let set_i = set_index.at(groups[system_i])
+        let system_layer = set_layer_index[set_i]
+        let access = system_accesses[system_i]
+        let can_join_current_batch = Ref::new(
+          current_batch_ref.val.length() > 0 &&
+          current_batch_layer_ref.val == Some(system_layer),
+        )
+        if can_join_current_batch.val {
+          for existing_i in current_batch_ref.val {
+            if !system_access_compatible(
+                system_accesses[existing_i],
+                access,
+                allowed_ambiguous_components,
+              ) {
+              can_join_current_batch.val = false
+              break
+            }
+          }
+        }
+        if current_batch_ref.val.length() == 0 {
+          current_batch_ref.val = [system_i]
+          current_batch_layer_ref.val = Some(system_layer)
+        } else if can_join_current_batch.val {
+          current_batch_ref.val.push(system_i)
+        } else {
+          execution_batches.push(current_batch_ref.val)
+          current_batch_ref.val = [system_i]
+          current_batch_layer_ref.val = Some(system_layer)
+        }
+      }
+      if current_batch_ref.val.length() > 0 {
+        execution_batches.push(current_batch_ref.val)
+      }
     }
   }
   let stepping_ref = stepping_resource_ref(world)
@@ -3334,137 +3945,169 @@ fn run_systems(
       _ => true
     }
   }
-  for execution_i in 0..<execution_order.length() {
-    let system_i = execution_order[execution_i]
-    let cfg = systems[system_i]
-    if !stepping_should_run_system(
-        stepping_ref, stage, systems, system_i, execution_i,
-      ) {
-      continue
-    }
-    let mut should_skip = false
-    for cond_i in 0..<cfg.run_ifs.length() {
-      let cond = cfg.run_ifs[cond_i]
-      let cond_this_run = world.advance_sequence()
-      let cond_ticks = @core.SystemSequence::new(
-        cfg.run_if_last_run_sequences[cond_i],
-        cond_this_run,
-      )
-      let cond_ctx = world.get_sequence_context()
-      cond_ctx.set(cond_ticks)
-      world.set_sequence_context(cond_ctx)
-      let prev_world = current_world_ref.val
-      current_world_ref.val = Some(world)
-      current_system_sequence_ref.val = Some(cond_ticks)
-      let should_run = cond(world, cfg.run_if_states[cond_i])
-      current_system_sequence_ref.val = None
-      current_world_ref.val = prev_world
-      systems[system_i].run_if_last_run_sequences[cond_i] = cond_this_run
-      if !should_run {
-        should_skip = true
-        break
-      }
-    }
-    if should_skip {
-      continue
-    }
-
-    let trace_name = system_trace_name(cfg, stage, execution_i)
-    let system_trace_start_us = if timeline_enabled &&
-      should_trace_system(cfg, stage, systems.length()) {
-      timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
-    } else {
-      -1L
-    }
-
-    // Align with Bevy: increment global change tick once per executed system
-    // and expose SystemSequence via World-backed context for change detection.
-    let this_run = world.advance_sequence()
-    let sys_ticks = @core.SystemSequence::new(cfg.last_run_sequence, this_run)
-    ignore(sys_ticks)
-    let ctx = world.get_sequence_context()
-    ctx.set(sys_ticks)
-    world.set_sequence_context(ctx)
-    let prev_world = current_world_ref.val
-    current_world_ref.val = Some(world)
-    let prev_ticks = current_system_sequence_ref.val
-    current_system_sequence_ref.val = Some(sys_ticks)
-    let prev_outcome = current_system_execution_outcome()
-    reset_system_execution_outcome()
-    (cfg.system)(world)
-    let outcome = current_system_execution_outcome()
-    current_system_execution_outcome_ref.val = prev_outcome
-    current_system_sequence_ref.val = prev_ticks
-    current_world_ref.val = prev_world
-    match outcome {
-      Success => {
-        if timeline_enabled && system_trace_start_us >= 0L {
-          timeline_trace_end_span(
-            TimelineTraceCategory::System,
-            trace_name,
-            system_trace_start_us,
-          )
-        }
-        systems[system_i].last_run_sequence = this_run
-        stepping_record_system_run(
-          stepping_ref, stage, systems, system_i, execution_i,
-        )
-      }
-      Skipped(_) => continue
-      Invalid(message) => {
-        if timeline_enabled && system_trace_start_us >= 0L {
-          timeline_trace_end_span(
-            TimelineTraceCategory::System,
-            trace_name,
-            system_trace_start_us,
-          )
-        }
-        report_world_error(
-          world,
-          @ecs.Invalid(message),
-          system_context(
-            systems[system_i],
-            ErrorContextKind::Validation,
-            current_schedule_stage(),
-          ),
-        )
+  let execution_i_ref = Ref::new(0)
+  for batch in execution_batches {
+    begin_deferred_command_batch()
+    for system_i in batch {
+      let execution_i = execution_i_ref.val
+      let cfg = systems[system_i]
+      execution_i_ref.val = execution_i + 1
+      if !stepping_should_run_system(
+          stepping_ref,
+          stage,
+          systems,
+          system_i,
+          execution_i,
+        ) {
         continue
       }
-      Error(err) => {
-        if timeline_enabled && system_trace_start_us >= 0L {
-          timeline_trace_end_span(
-            TimelineTraceCategory::System,
-            trace_name,
-            system_trace_start_us,
+      match system_accesses[system_i].validation_error() {
+        Some(message) => {
+          report_world_error(
+            world,
+            @ecs.Invalid(message),
+            system_context(
+              systems[system_i],
+              ErrorContextKind::Validation,
+              current_schedule_stage(),
+            ),
+          )
+          continue
+        }
+        None => ()
+      }
+      let mut should_skip = false
+      for cond_i in 0..<cfg.run_ifs.length() {
+        let cond = cfg.run_ifs[cond_i]
+        let cond_this_run = world.advance_sequence()
+        let cond_ticks = @core.SystemSequence::new(
+          cfg.run_if_last_run_sequences[cond_i],
+          cond_this_run,
+        )
+        let cond_ctx = world.get_sequence_context()
+        cond_ctx.set(cond_ticks)
+        world.set_sequence_context(cond_ctx)
+        let prev_world = current_world_ref.val
+        current_world_ref.val = Some(world)
+        current_system_sequence_ref.val = Some(cond_ticks)
+        let should_run = cond(world, cfg.run_if_states[cond_i])
+        current_system_sequence_ref.val = None
+        current_world_ref.val = prev_world
+        systems[system_i].run_if_last_run_sequences[cond_i] = cond_this_run
+        if !should_run {
+          should_skip = true
+          break
+        }
+      }
+      if should_skip {
+        continue
+      }
+
+      let trace_name = system_trace_name(cfg, stage, execution_i)
+      let system_trace_start_us = if timeline_enabled &&
+        should_trace_system(cfg, stage, systems.length()) {
+        timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
+      } else {
+        -1L
+      }
+
+      // Align with Bevy: increment global change tick once per executed system
+      // and expose SystemSequence via World-backed context for change detection.
+      let this_run = world.advance_sequence()
+      let sys_ticks = @core.SystemSequence::new(cfg.last_run_sequence, this_run)
+      let ctx = world.get_sequence_context()
+      ctx.set(sys_ticks)
+      world.set_sequence_context(ctx)
+      let prev_world = current_world_ref.val
+      current_world_ref.val = Some(world)
+      let prev_ticks = current_system_sequence_ref.val
+      current_system_sequence_ref.val = Some(sys_ticks)
+      let prev_outcome = current_system_execution_outcome()
+      reset_system_execution_outcome()
+      (cfg.system)(world)
+      let outcome = current_system_execution_outcome()
+      current_system_execution_outcome_ref.val = prev_outcome
+      current_system_sequence_ref.val = prev_ticks
+      current_world_ref.val = prev_world
+      match outcome {
+        Success => {
+          if timeline_enabled && system_trace_start_us >= 0L {
+            timeline_trace_end_span(
+              TimelineTraceCategory::System,
+              trace_name,
+              system_trace_start_us,
+            )
+          }
+          systems[system_i].last_run_sequence = this_run
+          stepping_record_system_run(
+            stepping_ref,
+            stage,
+            systems,
+            system_i,
+            execution_i,
           )
         }
-        systems[system_i].last_run_sequence = this_run
-        stepping_record_system_run(
-          stepping_ref, stage, systems, system_i, execution_i,
-        )
-        match systems[system_i].error_handler {
-          Some(handler) =>
-            handler(
-              err,
-              system_context(
-                systems[system_i],
-                ErrorContextKind::System,
-                current_schedule_stage(),
-              ),
+        Skipped(_) => continue
+        Invalid(message) => {
+          if timeline_enabled && system_trace_start_us >= 0L {
+            timeline_trace_end_span(
+              TimelineTraceCategory::System,
+              trace_name,
+              system_trace_start_us,
             )
-          None =>
-            report_world_error(
-              world,
-              err,
-              system_context(
-                systems[system_i],
-                ErrorContextKind::System,
-                current_schedule_stage(),
-              ),
+          }
+          report_world_error(
+            world,
+            @ecs.Invalid(message),
+            system_context(
+              systems[system_i],
+              ErrorContextKind::Validation,
+              current_schedule_stage(),
+            ),
+          )
+          continue
+        }
+        Error(err) => {
+          if timeline_enabled && system_trace_start_us >= 0L {
+            timeline_trace_end_span(
+              TimelineTraceCategory::System,
+              trace_name,
+              system_trace_start_us,
             )
+          }
+          systems[system_i].last_run_sequence = this_run
+          stepping_record_system_run(
+            stepping_ref,
+            stage,
+            systems,
+            system_i,
+            execution_i,
+          )
+          match systems[system_i].error_handler {
+            Some(handler) =>
+              handler(
+                err,
+                system_context(
+                  systems[system_i],
+                  ErrorContextKind::System,
+                  current_schedule_stage(),
+                ),
+              )
+            None =>
+              report_world_error(
+                world,
+                err,
+                system_context(
+                  systems[system_i],
+                  ErrorContextKind::System,
+                  current_schedule_stage(),
+                ),
+              )
+          }
         }
       }
     }
+    end_deferred_command_batch(world)
   }
   stepping_finish_stage(stepping_ref, stage, execution_order.length())
 }
@@ -3485,6 +4128,7 @@ fn run_schedule_stage(
     schedule_systems(schedule, stage),
     schedule_set_edges(schedule, stage),
     Some(stage),
+    schedule_executor_kind(schedule, stage),
   )
   current_schedule_stage_ref.val = None
   timeline_trace_end_span(

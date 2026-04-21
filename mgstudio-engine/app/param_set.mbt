@@ -70,3 +70,13 @@ pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] w
   P1::store(self.param1, self.state1)
   state.val = (self.state0.val, self.state1.val).to_json()
 }
+
+///|
+pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] with access(
+  world,
+) {
+  let access = SystemAccess::new()
+  system_access_merge_unchecked(access, P0::access(world))
+  system_access_merge_unchecked(access, P1::access(world))
+  access
+}

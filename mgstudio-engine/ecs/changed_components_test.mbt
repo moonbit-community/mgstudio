@@ -107,3 +107,24 @@ test "ecs changed components: Mut::get_ref marks changed on mutable borrow" {
     .read()
   debug_inspect(changed.contains(entity), content="true")
 }
+
+///|
+test "ecs changed components: Mut::value is read-only" {
+  let world = World::new()
+  let entity = world.spawn()
+
+  try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
+  world.advance_sequence() |> ignore
+  world.advance_sequence() |> ignore
+  let maybe_mut = try! world.get_mut(entity, key=changed_marker_key)
+  let item = match maybe_mut {
+    Some(item) => item
+    None => abort("expected mutable component")
+  }
+  debug_inspect(item.value(), content="{ value: 1 }")
+
+  let changed = world
+    .changed_components(changed_marker_key, @core.SystemSequence::new(1, 2))
+    .read()
+  debug_inspect(changed.contains(entity), content="false")
+}

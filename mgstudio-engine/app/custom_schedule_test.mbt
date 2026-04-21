@@ -68,3 +68,68 @@ test "app: schedule surface keeps configured executor kind" {
 
   debug_inspect(schedule.get_executor_kind(), content="SingleThreaded")
 }
+
+///|
+struct ScheduleBatchMarker {} derive(Eq, Debug)
+
+///|
+let schedule_batch_marker_key : @ecs.ComponentKey[ScheduleBatchMarker] = @ecs.register_component(
+  debug_name="tests.app.schedule.batch.marker",
+)
+
+///|
+pub impl @ecs.Component for ScheduleBatchMarker with component() {
+  schedule_batch_marker_key
+}
+
+///|
+test "app: multithreaded schedules defer Commands until the compatible batch ends" {
+  let stage = schedule_label("DeferredBatchingUpdate")
+  let observed : Array[Int] = []
+  let mut sub_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(stage))
+    .add_schedule(Schedule::new(stage).set_executor_kind(MultiThreaded))
+    .add_systems(stage, system_config_param(fn(commands : Commands) {
+      ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
+    }))
+    .add_systems(stage, system_config_param(fn(
+      query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+    ) {
+      observed.push(query.count())
+    }))
+
+  sub_app = sub_app.update()
+
+  debug_inspect(observed, content="[0]")
+  let world = sub_app.world()
+  let query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+    world,
+  )
+  debug_inspect(query.count(), content="1")
+}
+
+///|
+test "app: single-threaded schedules apply Commands after each system" {
+  let stage = schedule_label("ImmediateBatchingUpdate")
+  let observed : Array[Int] = []
+  let mut sub_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(stage))
+    .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+    .add_systems(stage, system_config_param(fn(commands : Commands) {
+      ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
+    }))
+    .add_systems(stage, system_config_param(fn(
+      query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+    ) {
+      observed.push(query.count())
+    }))
+
+  sub_app = sub_app.update()
+
+  debug_inspect(observed, content="[1]")
+  let world = sub_app.world()
+  let query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+    world,
+  )
+  debug_inspect(query.count(), content="1")
+}

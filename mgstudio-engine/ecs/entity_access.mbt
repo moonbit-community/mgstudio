@@ -43,6 +43,49 @@ pub(open) trait Bundle {
 }
 
 ///|
+fn[T] mut_value_ref_or_abort(item : Mut[T]) -> Ref[T] {
+  match item.value_ref {
+    Some(value_ref) => value_ref
+    None => abort("Mut expected a fetched query item")
+  }
+}
+
+///|
+fn[T] mut_world_or_abort(item : Mut[T]) -> World {
+  match item.world {
+    Some(world) => world
+    None => abort("Mut expected a fetched query item")
+  }
+}
+
+///|
+fn[T] mut_entity_or_abort(item : Mut[T]) -> @core.Entity {
+  match item.entity {
+    Some(entity) => entity
+    None => abort("Mut expected a fetched query item")
+  }
+}
+
+///|
+fn[T] mut_key_id_or_abort(item : Mut[T]) -> Int {
+  match item.key_id {
+    Some(key_id) => key_id
+    None => abort("Mut expected a fetched query item")
+  }
+}
+
+///|
+fn[T] mut_mark_changed(item : Mut[T], caller? : String? = None) -> Unit {
+  if item.world is Some(world) {
+    if item.entity is Some(entity) {
+      if item.key_id is Some(key_id) {
+        world.record_component_changed_with_caller(entity, key_id, caller)
+      }
+    }
+  }
+}
+
+///|
 pub fn[T] Mut::new(key : ComponentKey[T]) -> Mut[T] {
   ignore(key)
   { value_ref: None, world: None, entity: None, key_id: None }
@@ -55,28 +98,131 @@ pub fn[T : Component] Mut::key(self : Mut[T]) -> ComponentKey[T] {
 }
 
 ///|
-pub fn[T] Mut::get_ref(self : Mut[T]) -> Ref[T] {
-  if self.world is Some(world) {
-    if self.entity is Some(entity) {
-      if self.key_id is Some(key_id) {
-        world.record_component_changed(entity, key_id)
-      }
-    }
-  }
-  match self.value_ref {
-    Some(value_ref) => value_ref
-    None => abort("Mut::get_ref expected a fetched query item")
-  }
+#callsite(autofill(loc))
+pub fn[T] Mut::get_ref(self : Mut[T], loc~ : SourceLoc) -> Ref[T] {
+  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
+  mut_value_ref_or_abort(self)
 }
 
 ///|
 pub fn[T] Mut::value(self : Mut[T]) -> T {
-  self.get_ref().val
+  mut_value_ref_or_abort(self).val
 }
 
 ///|
-pub fn[T] Mut::set(self : Mut[T], value : T) -> Unit {
-  self.get_ref().val = value
+pub fn[T : Component] Mut::is_added(self : Mut[T]) -> Bool {
+  let world = mut_world_or_abort(self)
+  world.is_added_by_key(
+    mut_entity_or_abort(self),
+    T::component(),
+    world.get_sequence_context().sequence(),
+  )
+}
+
+///|
+pub fn[T : Component] Mut::is_changed(self : Mut[T]) -> Bool {
+  let world = mut_world_or_abort(self)
+  world.is_changed_by_key(
+    mut_entity_or_abort(self),
+    T::component(),
+    world.get_sequence_context().sequence(),
+  )
+}
+
+///|
+pub fn[T : Component] Mut::added(self : Mut[T]) -> @core.Sequence {
+  ignore(T::component())
+  let world = mut_world_or_abort(self)
+  match
+    world.added_component_sequence(
+      mut_key_id_or_abort(self),
+      mut_entity_or_abort(self).id,
+    ) {
+    Some(sequence) => sequence
+    None => abort("Mut::added expected component sequence metadata")
+  }
+}
+
+///|
+pub fn[T : Component] Mut::last_changed(self : Mut[T]) -> @core.Sequence {
+  ignore(T::component())
+  let world = mut_world_or_abort(self)
+  match
+    world.changed_component_sequence(
+      mut_key_id_or_abort(self),
+      mut_entity_or_abort(self).id,
+    ) {
+    Some(sequence) => sequence
+    None => abort("Mut::last_changed expected component sequence metadata")
+  }
+}
+
+///|
+pub fn[T : Component] Mut::changed_by(self : Mut[T]) -> String? {
+  ignore(T::component())
+  let world = mut_world_or_abort(self)
+  world.changed_component_caller(
+    mut_key_id_or_abort(self),
+    mut_entity_or_abort(self).id,
+  )
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Component] Mut::set_changed(
+  self : Mut[T],
+  loc~ : SourceLoc,
+) -> Unit {
+  ignore(T::component())
+  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Component] Mut::set_added(
+  self : Mut[T],
+  loc~ : SourceLoc,
+) -> Unit {
+  ignore(T::component())
+  let world = mut_world_or_abort(self)
+  let entity = mut_entity_or_abort(self)
+  let key_id = mut_key_id_or_abort(self)
+  let caller = hook_caller_from_loc(loc)
+  world.record_component_added_with_caller(entity, key_id, caller)
+  world.ensure_added_component_messages(key_id).val.send(
+    component_write_sequence(world),
+    entity,
+  )
+  world.record_component_changed_with_caller(entity, key_id, caller)
+}
+
+///|
+pub fn[T] Mut::bypass_change_detection(self : Mut[T]) -> Ref[T] {
+  mut_value_ref_or_abort(self)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Component + Eq] Mut::set_if_neq(
+  self : Mut[T],
+  value : T,
+  loc~ : SourceLoc,
+) -> Bool {
+  let value_ref = self.bypass_change_detection()
+  if value_ref.val != value {
+    value_ref.val = value
+    self.set_changed(loc~)
+    true
+  } else {
+    false
+  }
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] Mut::set(self : Mut[T], value : T, loc~ : SourceLoc) -> Unit {
+  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
+  mut_value_ref_or_abort(self).val = value
 }
 
 ///|
@@ -86,8 +232,9 @@ fn[T] world_component_mut(
   key : ComponentKey[T],
 ) -> Mut[T]? raise EcsError {
   world.ensure_entity_alive(entity)
-  guard world.component_store(key.id()) is Some(store_ref) else { return None }
-  guard store_ref.val.get(entity) is Some(payload) else { return None }
+  guard world.component_payload(key.id(), entity) is Some(payload) else {
+    return None
+  }
   let value_ref = try! world.component_ref(key, entity, payload)
   Some({
     value_ref: Some(value_ref),
@@ -199,6 +346,12 @@ pub fn[T : Component] EntityMut::get_mut(
 }
 
 ///|
+pub impl Bundle for Unit with insert_into(_self, _world, _entity, loc~) {
+  ignore(loc)
+  ()
+}
+
+///|
 pub impl[A : Component, B : Component] Bundle for (A, B) with insert_into(
   self,
   world,
@@ -251,6 +404,88 @@ pub impl[
   try! world.set_by_key(entity, C::component(), c, loc~)
   try! world.set_by_key(entity, D::component(), d, loc~)
   try! world.set_by_key(entity, E::component(), e, loc~)
+}
+
+///|
+pub impl[
+  A : Component,
+  B : Component,
+  C : Component,
+  D : Component,
+  E : Component,
+  F : Component,
+] Bundle for (A, B, C, D, E, F) with insert_into(self, world, entity, loc~) {
+  let (a, b, c, d, e, f) = self
+  try! world.set_by_key(entity, A::component(), a, loc~)
+  try! world.set_by_key(entity, B::component(), b, loc~)
+  try! world.set_by_key(entity, C::component(), c, loc~)
+  try! world.set_by_key(entity, D::component(), d, loc~)
+  try! world.set_by_key(entity, E::component(), e, loc~)
+  try! world.set_by_key(entity, F::component(), f, loc~)
+}
+
+///|
+pub impl[
+  A : Component,
+  B : Component,
+  C : Component,
+  D : Component,
+  E : Component,
+  F : Component,
+  G : Component,
+] Bundle for (A, B, C, D, E, F, G) with insert_into(
+  self,
+  world,
+  entity,
+  loc~,
+) {
+  let (a, b, c, d, e, f, g) = self
+  try! world.set_by_key(entity, A::component(), a, loc~)
+  try! world.set_by_key(entity, B::component(), b, loc~)
+  try! world.set_by_key(entity, C::component(), c, loc~)
+  try! world.set_by_key(entity, D::component(), d, loc~)
+  try! world.set_by_key(entity, E::component(), e, loc~)
+  try! world.set_by_key(entity, F::component(), f, loc~)
+  try! world.set_by_key(entity, G::component(), g, loc~)
+}
+
+///|
+pub impl[
+  A : Component,
+  B : Component,
+  C : Component,
+  D : Component,
+  E : Component,
+  F : Component,
+  G : Component,
+  H : Component,
+] Bundle for (A, B, C, D, E, F, G, H) with insert_into(
+  self,
+  world,
+  entity,
+  loc~,
+) {
+  let (a, b, c, d, e, f, g, h) = self
+  try! world.set_by_key(entity, A::component(), a, loc~)
+  try! world.set_by_key(entity, B::component(), b, loc~)
+  try! world.set_by_key(entity, C::component(), c, loc~)
+  try! world.set_by_key(entity, D::component(), d, loc~)
+  try! world.set_by_key(entity, E::component(), e, loc~)
+  try! world.set_by_key(entity, F::component(), f, loc~)
+  try! world.set_by_key(entity, G::component(), g, loc~)
+  try! world.set_by_key(entity, H::component(), h, loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[B : Bundle] World::spawn_bundle(
+  self : World,
+  bundle : B,
+  loc~ : SourceLoc,
+) -> @core.Entity raise EcsError {
+  let entity = self.spawn_empty()
+  B::insert_into(bundle, self, entity, loc~)
+  entity
 }
 
 ///|

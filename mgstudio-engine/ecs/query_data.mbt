@@ -44,6 +44,9 @@ impl QueryData with iteration_anchor_components() {
 ///|
 pub struct Comp[T] {
   value : T?
+  world : World?
+  entity : @core.Entity?
+  key_id : Int?
 }
 
 ///|
@@ -67,7 +70,7 @@ pub fn QueryDataAccess::new() -> QueryDataAccess {
 ///|
 pub fn[T] Comp::new(key : ComponentKey[T]) -> Comp[T] {
   ignore(key)
-  { value: None }
+  { value: None, world: None, entity: None, key_id: None }
 }
 
 ///|
@@ -82,6 +85,90 @@ pub fn[T] Comp::value(self : Comp[T]) -> T {
     Some(value) => value
     None => abort("Comp::value expected a fetched query item")
   }
+}
+
+///|
+fn[T] comp_world_or_abort(item : Comp[T]) -> World {
+  match item.world {
+    Some(world) => world
+    None => abort("Comp expected a fetched query item")
+  }
+}
+
+///|
+fn[T] comp_entity_or_abort(item : Comp[T]) -> @core.Entity {
+  match item.entity {
+    Some(entity) => entity
+    None => abort("Comp expected a fetched query item")
+  }
+}
+
+///|
+fn[T] comp_key_id_or_abort(item : Comp[T]) -> Int {
+  match item.key_id {
+    Some(key_id) => key_id
+    None => abort("Comp expected a fetched query item")
+  }
+}
+
+///|
+pub fn[T : Component] Comp::is_added(self : Comp[T]) -> Bool {
+  let world = comp_world_or_abort(self)
+  let entity = comp_entity_or_abort(self)
+  world.is_added_by_key(
+    entity,
+    T::component(),
+    world.get_sequence_context().sequence(),
+  )
+}
+
+///|
+pub fn[T : Component] Comp::is_changed(self : Comp[T]) -> Bool {
+  let world = comp_world_or_abort(self)
+  let entity = comp_entity_or_abort(self)
+  world.is_changed_by_key(
+    entity,
+    T::component(),
+    world.get_sequence_context().sequence(),
+  )
+}
+
+///|
+pub fn[T : Component] Comp::added(self : Comp[T]) -> @core.Sequence {
+  ignore(T::component())
+  let world = comp_world_or_abort(self)
+  match
+    world.added_component_sequence(
+      comp_key_id_or_abort(self),
+      comp_entity_or_abort(self).id,
+    ) {
+    Some(sequence) => sequence
+    None => abort("Comp::added expected component sequence metadata")
+  }
+}
+
+///|
+pub fn[T : Component] Comp::last_changed(self : Comp[T]) -> @core.Sequence {
+  ignore(T::component())
+  let world = comp_world_or_abort(self)
+  match
+    world.changed_component_sequence(
+      comp_key_id_or_abort(self),
+      comp_entity_or_abort(self).id,
+    ) {
+    Some(sequence) => sequence
+    None => abort("Comp::last_changed expected component sequence metadata")
+  }
+}
+
+///|
+pub fn[T : Component] Comp::changed_by(self : Comp[T]) -> String? {
+  ignore(T::component())
+  let world = comp_world_or_abort(self)
+  world.changed_component_caller(
+    comp_key_id_or_abort(self),
+    comp_entity_or_abort(self).id,
+  )
 }
 
 ///|
@@ -176,12 +263,10 @@ fn[T] query_data_require_component(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> T raise EcsError {
-  guard world.component_store(key.id()) is Some(store_ref) else {
-    abort("QueryData::fetch expected component store to exist after matches")
-  }
-  match store_ref.val.get(entity) {
+  match world.component_payload(key.id(), entity) {
     Some(payload) => world.component_value(key, entity, payload)
-    None => abort("QueryData::fetch expected component to exist after matches")
+    None =>
+      abort("QueryData::fetch expected component payload to exist after matches")
   }
 }
 
@@ -200,8 +285,7 @@ pub fn[T] query_data_component_optional(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> T? raise EcsError {
-  guard world.component_store(key.id()) is Some(store_ref) else { return None }
-  match store_ref.val.get(entity) {
+  match world.component_payload(key.id(), entity) {
     Some(payload) => Some(world.component_value(key, entity, payload))
     None => None
   }
@@ -213,11 +297,8 @@ fn[T] query_data_require_component_mut(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> Mut[T] raise EcsError {
-  guard world.component_store(key.id()) is Some(store_ref) else {
-    abort("QueryData::fetch expected component store to exist after matches")
-  }
-  guard store_ref.val.get(entity) is Some(payload) else {
-    abort("QueryData::fetch expected component to exist after matches")
+  guard world.component_payload(key.id(), entity) is Some(payload) else {
+    abort("QueryData::fetch expected component payload to exist after matches")
   }
   let value_ref = world.component_ref(key, entity, payload)
   {
@@ -289,7 +370,12 @@ pub impl[T : Component] QueryData for Comp[T] with matches(world, entity) {
 
 ///|
 pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
-  { value: Some(query_data_require_component(world, entity, T::component())) }
+  {
+    value: Some(query_data_require_component(world, entity, T::component())),
+    world: Some(world),
+    entity: Some(entity),
+    key_id: Some(T::component().id()),
+  }
 }
 
 ///|

@@ -207,6 +207,53 @@ pub struct EntityCommands {
 }
 
 ///|
+let deferred_command_batch_queue_ref : Ref[
+  Array[(@core.Sequence, DeferredCommandEntry)]?
+] = Ref::new(
+  None,
+)
+
+///|
+fn begin_deferred_command_batch() -> Unit {
+  deferred_command_batch_queue_ref.val = Some([])
+}
+
+///|
+fn flush_deferred_command_entries(
+  world : @ecs.World,
+  entries : Array[(@core.Sequence, DeferredCommandEntry)],
+) -> Unit {
+  entries.each(fn(entry) {
+    let (sequence, command) = entry
+    (command.run)(world, sequence) catch {
+      err => {
+        let context = ErrorContext::new(
+          ErrorContextKind::Command,
+          command.source,
+          stage=current_schedule_stage(),
+        )
+        match command.error_handler {
+          Some(handler) => handler(err, context)
+          None => report_world_error(world, err, context)
+        }
+      }
+    }
+  })
+  entries.clear()
+}
+
+///|
+fn end_deferred_command_batch(
+  world : @ecs.World,
+) -> Unit {
+  match deferred_command_batch_queue_ref.val {
+    Some(entries) => flush_deferred_command_entries(world, entries)
+    None => ()
+  }
+  deferred_command_batch_queue_ref.val = None
+}
+
+///|
 pub fn Commands::spawn_empty(self : Commands) -> @core.Entity {
   self.world.spawn_empty()
 }
@@ -232,7 +279,7 @@ pub fn[P1 : SystemParam] Commands::register_system_param(
   self : Commands,
   system_fn : (P1) -> Unit,
 ) -> SystemId {
-  self.register_system(system(system_param(system_fn)))
+  self.register_system(system_config_param(system_fn))
 }
 
 ///|
@@ -240,7 +287,7 @@ pub fn[P1 : SystemParam, P2 : SystemParam] Commands::register_system_param2(
   self : Commands,
   system_fn : (P1, P2) -> Unit,
 ) -> SystemId {
-  self.register_system(system(system_param2(system_fn)))
+  self.register_system(system_config_param2(system_fn))
 }
 
 ///|
@@ -248,7 +295,7 @@ pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] Commands::register_
   self : Commands,
   system_fn : (P1, P2, P3) -> Unit,
 ) -> SystemId {
-  self.register_system(system(system_param3(system_fn)))
+  self.register_system(system_config_param3(system_fn))
 }
 
 ///|
@@ -256,7 +303,7 @@ pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] C
   self : Commands,
   system_fn : (P1, P2, P3, P4) -> Unit,
 ) -> SystemId {
-  self.register_system(system(system_param4(system_fn)))
+  self.register_system(system_config_param4(system_fn))
 }
 
 ///|
@@ -302,6 +349,24 @@ pub fn[T : CommandSpawnComponents] Commands::spawn(
     },
     error_handler: None,
     source: "Commands::spawn",
+  })
+  entity
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[B : @ecs.Bundle] Commands::spawn_bundle(
+  self : Commands,
+  bundle : B,
+  loc~ : SourceLoc,
+) -> @core.Entity {
+  let entity = self.world.spawn_empty()
+  self.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      B::insert_into(bundle, world, entity, loc~)
+    },
+    error_handler: None,
+    source: "Commands::spawn_bundle",
   })
   entity
 }
@@ -436,6 +501,23 @@ pub fn[T : CommandSpawnComponents] EntityCommands::insert(
     },
     error_handler: None,
     source: "EntityCommands::insert",
+  })
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[B : @ecs.Bundle] EntityCommands::insert_bundle(
+  self : EntityCommands,
+  bundle : B,
+  loc~ : SourceLoc,
+) -> Unit {
+  let entity = self.entity
+  self.commands.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      B::insert_into(bundle, world, entity, loc~)
+    },
+    error_handler: None,
+    source: "EntityCommands::insert_bundle",
   })
 }
 
@@ -599,21 +681,11 @@ pub fn[
 
 ///|
 fn Commands::flush(self : Commands) -> Unit {
-  self.queue.each(fn(entry) {
-    (entry.run)(self.world, self.sequence) catch {
-      err => {
-        let context = ErrorContext::new(
-          ErrorContextKind::Command,
-          entry.source,
-          stage=current_schedule_stage(),
-        )
-        match entry.error_handler {
-          Some(handler) => handler(err, context)
-          None => report_world_error(self.world, err, context)
-        }
-      }
-    }
-  })
+  let entries : Array[(@core.Sequence, DeferredCommandEntry)] = []
+  for entry in self.queue {
+    entries.push((self.sequence, entry))
+  }
+  flush_deferred_command_entries(self.world, entries)
   self.queue.clear()
 }
 
@@ -633,8 +705,23 @@ pub impl SystemParam for Commands with get(_state) {
 
 ///|
 pub impl SystemParam for Commands with store(self, state) {
-  self.flush()
+  match deferred_command_batch_queue_ref.val {
+    Some(entries) => {
+      for entry in self.queue {
+        entries.push((self.sequence, entry))
+      }
+      self.queue.clear()
+    }
+    None => self.flush()
+  }
   system_param_store_no_state(self, state)
+}
+
+///|
+pub impl SystemParam for Commands with access(_world) {
+  let access = SystemAccess::new()
+  access.mark_deferred_commands()
+  access
 }
 
 ///|

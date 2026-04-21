@@ -55,6 +55,8 @@ pub fn[T] event_key_from_id(Int, debug_name? : String) -> EventKey[T]
 
 pub fn[D] query(World) -> Query[D, All]
 
+pub fn[F : QueryFilter] query_access_descriptor(F, (QueryDataAccess) -> Unit) -> (QueryDataAccess, QueryFilterAccess)
+
 pub fn[T] query_data_component_fetch(World, @core.Entity, ComponentKey[T]) -> T raise EcsError
 
 pub fn[T] query_data_component_has(World, @core.Entity, ComponentKey[T]) -> Bool
@@ -177,16 +179,25 @@ pub fn[T] ChangedComponents::read(Self[T]) -> Array[@core.Entity]
 
 pub struct Comp[T] {
   value : T?
+  world : World?
+  entity : @core.Entity?
+  key_id : Int?
 }
+pub fn[T : Component] Comp::added(Self[T]) -> Int
+pub fn[T : Component] Comp::changed_by(Self[T]) -> String?
+pub fn[T : Component] Comp::is_added(Self[T]) -> Bool
+pub fn[T : Component] Comp::is_changed(Self[T]) -> Bool
 pub fn[T : Component] Comp::key(Self[T]) -> ComponentKey[T]
+pub fn[T : Component] Comp::last_changed(Self[T]) -> Int
 pub fn[T] Comp::new(ComponentKey[T]) -> Self[T]
 pub fn[T] Comp::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Comp[T]
 
+type ComponentCallerTable
+
 pub struct ComponentColumn[T] {
   world : World
   key : ComponentKey[T]
-  store_ref : @ref.Ref[@core.ComponentStore[ErasedValue]]
   changed_sequence_table : ComponentSequenceTable
 }
 pub fn[T] ComponentColumn::contains(Self[T], @core.Entity) -> Bool
@@ -492,10 +503,24 @@ pub struct Mut[T] {
   entity : @core.Entity?
   key_id : Int?
 }
-pub fn[T] Mut::get_ref(Self[T]) -> @ref.Ref[T]
+pub fn[T : Component] Mut::added(Self[T]) -> Int
+pub fn[T] Mut::bypass_change_detection(Self[T]) -> @ref.Ref[T]
+pub fn[T : Component] Mut::changed_by(Self[T]) -> String?
+#callsite(autofill(loc))
+pub fn[T] Mut::get_ref(Self[T], loc~ : SourceLoc) -> @ref.Ref[T]
+pub fn[T : Component] Mut::is_added(Self[T]) -> Bool
+pub fn[T : Component] Mut::is_changed(Self[T]) -> Bool
 pub fn[T : Component] Mut::key(Self[T]) -> ComponentKey[T]
+pub fn[T : Component] Mut::last_changed(Self[T]) -> Int
 pub fn[T] Mut::new(ComponentKey[T]) -> Self[T]
-pub fn[T] Mut::set(Self[T], T) -> Unit
+#callsite(autofill(loc))
+pub fn[T] Mut::set(Self[T], T, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Component] Mut::set_added(Self[T], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Component] Mut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Component + Eq] Mut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
 pub fn[T] Mut::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Mut[T]
 
@@ -539,6 +564,8 @@ pub struct Or[F] {
 }
 pub fn[F] Or::new(F) -> Self[F]
 pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F]
+
+type PendingComponentPayloadContext
 
 pub struct Query[_, F] {
   world : World
@@ -708,6 +735,8 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(Self[D, F], World, 
 pub fn[D : QueryData, F : QueryFilter] QueryState::require_single(Self[D, F], World) -> D raise
 pub fn[D : QueryData, F : QueryFilter] QueryState::single(Self[D, F], World) -> D? raise EcsError
 
+type RawTable
+
 pub struct Remove {
 }
 pub impl ComponentObserverEvent for Remove
@@ -739,6 +768,7 @@ pub struct ResourceAccess[T] {
   key : ResourceKey[T]
 }
 pub fn[T] ResourceAccess::get(Self[T]) -> T?
+pub fn[T] ResourceAccess::get_mut(Self[T]) -> ResourceMut[T]? raise EcsError
 pub fn[T] ResourceAccess::insert(Self[T], T) -> Unit
 pub fn[T] ResourceAccess::is_present(Self[T]) -> Bool
 pub fn[T] ResourceAccess::remove(Self[T]) -> T?
@@ -753,6 +783,29 @@ pub struct ResourceKey[_] {
 pub fn[U, T] ResourceKey::cast(Self[T]) -> Self[U]
 pub fn[T] ResourceKey::debug_name(Self[T]) -> String
 pub fn[T] ResourceKey::id(Self[T]) -> Int
+
+pub struct ResourceMut[T] {
+  value_ref : @ref.Ref[T]?
+  world : World?
+  key : ResourceKey[T]?
+}
+pub fn[T] ResourceMut::added(Self[T]) -> Int
+pub fn[T] ResourceMut::bypass_change_detection(Self[T]) -> @ref.Ref[T]
+pub fn[T] ResourceMut::changed_by(Self[T]) -> String?
+#callsite(autofill(loc))
+pub fn[T] ResourceMut::get_ref(Self[T], loc~ : SourceLoc) -> @ref.Ref[T]
+pub fn[T] ResourceMut::is_added(Self[T]) -> Bool
+pub fn[T] ResourceMut::is_changed(Self[T]) -> Bool
+pub fn[T] ResourceMut::last_changed(Self[T]) -> Int
+#callsite(autofill(loc))
+pub fn[T] ResourceMut::set(Self[T], T, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T] ResourceMut::set_added(Self[T], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T] ResourceMut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Eq] ResourceMut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+pub fn[T] ResourceMut::value(Self[T]) -> T
 
 type ResourceSlot
 
@@ -785,7 +838,8 @@ pub struct World {
   entities : @core.Entities
   mut sequence : Int
   mut system_context : @core.SystemSequenceContext
-  table_component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
+  mut pending_component_payload_context : PendingComponentPayloadContext?
+  tables : Map[Int, @ref.Ref[RawTable]]
   sparse_component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
   component_store_cache_by_definition_id : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
   mut next_archetype_id : Int
@@ -809,6 +863,7 @@ pub struct World {
   component_membership_counts : Map[Int, Int]
   archetype_entities : Map[Int, Array[@core.Entity]]
   entity_archetype_ids : Array[Int]
+  entity_table_rows : Array[Int]
   entity_archetype_rows : Array[Int]
   entity_component_local_ids : Array[Array[Int]]
   required_components : Map[Int, @ref.Ref[RequiredComponentsState]]
@@ -817,11 +872,13 @@ pub struct World {
   changed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   added_component_sequences : Map[Int, ComponentSequenceTable]
   changed_component_sequences : Map[Int, ComponentSequenceTable]
+  changed_component_callers : Map[Int, ComponentCallerTable]
   removed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   component_hooks_registry : Map[Int, ComponentHooks]
   resources : Map[Int, ResourceSlot]
   resource_added_sequences : Map[Int, Int]
   resource_changed_sequences : Map[Int, Int]
+  resource_changed_callers : Map[Int, String]
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
   mut deferred_hook_command_depth : Int
@@ -878,6 +935,7 @@ pub fn World::get_required_by_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_required_components(Self, ComponentKey[T]) -> RequiredComponents?
 pub fn World::get_required_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
+pub fn[T] World::get_resource_mut(Self, ResourceKey[T]) -> ResourceMut[T]? raise EcsError
 pub fn[T] World::get_resource_ref(Self, ResourceKey[T]) -> @ref.Ref[T]? raise EcsError
 pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T]) -> @ref.Ref[T]? raise EcsError
 pub fn World::get_sequence_context(Self) -> @core.SystemSequenceContext
@@ -886,6 +944,10 @@ pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
 pub fn[T] World::is_added_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemSequence) -> Bool
 pub fn World::is_alive(Self, @core.Entity) -> Bool
 pub fn[T] World::is_changed_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemSequence) -> Bool
+pub fn[T] World::is_resource_added(Self, ResourceKey[T], @core.SystemSequence) -> Bool
+pub fn[T] World::is_resource_changed(Self, ResourceKey[T], @core.SystemSequence) -> Bool
+pub fn[T] World::mark_resource_added(Self, ResourceKey[T], caller? : String?) -> Unit
+pub fn[T] World::mark_resource_changed(Self, ResourceKey[T], caller? : String?) -> Unit
 pub fn[T] World::message_mutator(Self, MessageKey[T], @ref.Ref[Int]) -> MessageMutator[T]
 pub fn[T] World::message_reader(Self, MessageKey[T], @ref.Ref[Int]) -> MessageReader[T]
 pub fn[T] World::message_writer(Self, MessageKey[T]) -> MessageWriter[T]
@@ -914,7 +976,10 @@ pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemSequence)
 pub fn[T] World::replace(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Bool raise EcsError
 pub fn[T] World::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
 pub fn[T] World::resource_added_since(Self, ResourceKey[T], Int) -> Bool
+pub fn[T] World::resource_added_tick(Self, ResourceKey[T]) -> Int?
+pub fn[T] World::resource_changed_by(Self, ResourceKey[T]) -> String?
 pub fn[T] World::resource_changed_since(Self, ResourceKey[T], Int) -> Bool
+pub fn[T] World::resource_changed_tick(Self, ResourceKey[T]) -> Int?
 pub fn[T] World::send_event(Self, EventKey[T], T) -> Unit
 pub fn[T] World::send_message(Self, MessageKey[T], T) -> Int
 pub fn[T] World::send_message_batch(Self, MessageKey[T], Array[T]) -> Unit
@@ -924,6 +989,8 @@ pub fn[T : Component] World::set(Self, @core.Entity, key? : ComponentKey[T], T, 
 pub fn[T] World::set_by_key(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn World::set_sequence_context(Self, @core.SystemSequenceContext) -> Unit
 pub fn World::spawn(Self) -> @core.Entity
+#callsite(autofill(loc))
+pub fn[B : Bundle] World::spawn_bundle(Self, B, loc~ : SourceLoc) -> @core.Entity raise EcsError
 pub fn World::spawn_empty(Self) -> @core.Entity
 pub fn World::structural_generation(Self) -> Int
 #callsite(autofill(loc))
@@ -964,10 +1031,14 @@ pub(all) struct WorldQueuedRegistrations {
 pub(open) trait Bundle {
   insert_into(Self, World, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
 }
+pub impl Bundle for Unit
 pub impl[A : Component, B : Component] Bundle for (A, B)
 pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C)
 pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for (A, B, C, D)
 pub impl[A : Component, B : Component, C : Component, D : Component, E : Component] Bundle for (A, B, C, D, E)
+pub impl[A : Component, B : Component, C : Component, D : Component, E : Component, F : Component] Bundle for (A, B, C, D, E, F)
+pub impl[A : Component, B : Component, C : Component, D : Component, E : Component, F : Component, G : Component] Bundle for (A, B, C, D, E, F, G)
+pub impl[A : Component, B : Component, C : Component, D : Component, E : Component, F : Component, G : Component, H : Component] Bundle for (A, B, C, D, E, F, G, H)
 
 pub(open) trait Component {
   component() -> ComponentKey[Self]

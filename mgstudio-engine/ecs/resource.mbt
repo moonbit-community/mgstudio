@@ -72,6 +72,7 @@ pub fn[T] World::remove_resource(
   self.resources.remove(key.id())
   self.resource_added_sequences.remove(key.id())
   self.resource_changed_sequences.remove(key.id())
+  self.resource_changed_callers.remove(key.id())
   Some(value)
 }
 
@@ -125,6 +126,26 @@ pub fn[T] World::resource_added_since(
 }
 
 ///|
+pub fn[T] World::is_resource_added(
+  self : World,
+  key : ResourceKey[T],
+  system : @core.SystemSequence,
+) -> Bool {
+  match self.resource_added_sequence(key.id()) {
+    Some(sequence) => system.contains(sequence)
+    None => false
+  }
+}
+
+///|
+pub fn[T] World::resource_added_tick(
+  self : World,
+  key : ResourceKey[T],
+) -> @core.Sequence? {
+  self.resource_added_sequence(key.id())
+}
+
+///|
 pub fn[T] World::resource_changed_since(
   self : World,
   key : ResourceKey[T],
@@ -134,4 +155,51 @@ pub fn[T] World::resource_changed_since(
     Some(recorded) => recorded > sequence
     None => false
   }
+}
+
+///|
+pub fn[T] World::is_resource_changed(
+  self : World,
+  key : ResourceKey[T],
+  system : @core.SystemSequence,
+) -> Bool {
+  match self.resource_changed_sequence(key.id()) {
+    Some(sequence) => system.contains(sequence)
+    None => false
+  }
+}
+
+///|
+pub fn[T] World::resource_changed_tick(
+  self : World,
+  key : ResourceKey[T],
+) -> @core.Sequence? {
+  self.resource_changed_sequence(key.id())
+}
+
+///|
+pub fn[T] World::resource_changed_by(
+  self : World,
+  key : ResourceKey[T],
+) -> String? {
+  self.resource_changed_caller(key.id())
+}
+
+///|
+pub fn[T] World::mark_resource_changed(
+  self : World,
+  key : ResourceKey[T],
+  caller? : String? = None,
+) -> Unit {
+  self.record_resource_changed_with_caller(key.id(), caller)
+}
+
+///|
+pub fn[T] World::mark_resource_added(
+  self : World,
+  key : ResourceKey[T],
+  caller? : String? = None,
+) -> Unit {
+  self.record_resource_added_with_caller(key.id(), caller)
+  self.record_resource_changed_with_caller(key.id(), caller)
 }

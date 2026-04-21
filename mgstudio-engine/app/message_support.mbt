@@ -182,6 +182,15 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with store(
 }
 
 ///|
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with access(
+  _world,
+) {
+  let access = SystemAccess::new()
+  access.add_read_resource(T::message().id())
+  access
+}
+
+///|
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with init_state(
   world,
 ) {
@@ -206,6 +215,15 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with store(
 }
 
 ///|
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with access(
+  _world,
+) {
+  let access = SystemAccess::new()
+  access.add_write_resource(T::message().id())
+  access
+}
+
+///|
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with init_state(
   world,
 ) {
@@ -227,4 +245,13 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with store(
   state,
 ) {
   system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with access(
+  _world,
+) {
+  let access = SystemAccess::new()
+  access.add_write_resource(T::message().id())
+  access
 }

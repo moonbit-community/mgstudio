@@ -37,9 +37,7 @@ type SceneRootQuery = @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All]
 
 ///|
 priv struct SceneInstanceState {
-  instance_id : Int
   scene_id : Int
-  root_entity : @core.Entity
   spawned_entities : Array[@core.Entity]
   ready : Bool
 }
@@ -123,16 +121,13 @@ fn scene_runtime_state_or_abort(world : @ecs.World) -> SceneRuntimeState {
 ///|
 fn scene_runtime_allocate_instance(
   world : @ecs.World,
-  root_entity : @core.Entity,
   scene : @asset.Handle[Scene],
 ) -> Int {
   let state_ref = scene_runtime_state_mut_or_abort(world)
   let instance_id = state_ref.val.next_instance_id
   state_ref.val.next_instance_id = instance_id + 1
   state_ref.val.instances_by_id.set(instance_id, SceneInstanceState::{
-    instance_id,
     scene_id: scene.id(),
-    root_entity,
     spawned_entities: [],
     ready: false,
   })
@@ -434,7 +429,6 @@ fn scene_attach_pending_instance(
 ) -> Int {
   let instance_id = scene_runtime_allocate_instance(
     world,
-    root_entity,
     root.scene,
   )
   scene_remove_ready_component(world, root_entity)

@@ -210,15 +210,10 @@ test "app: Commands spawn defers component tuple insertion until after system" {
       )
       counts.push(query.count())
     })
-    .add_system_param(fn(
-      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
-    ) {
-      counts.push(query.count())
-    })
 
   app = app.run_once()
 
-  debug_inspect(counts, content="[0, 0, 1]")
+  debug_inspect(counts, content="[0, 0]")
   guard spawned.val is Some(entity) else {
     abort("expected Commands::spawn to return an entity")
   }
@@ -259,18 +254,13 @@ test "app: Commands spawn_empty reserves an entity without queued components" {
 
 ///|
 test "app: Commands insert_resource defers resource writes until after the system" {
-  let observed : Array[Int] = []
   let mut app = App::new(@ecs.World::new())
     .add_system_param(fn(commands : Commands) {
       commands.insert_resource(CommandsCounterResource::{ value: 7 })
     })
-    .add_system_param(fn(resource : Res[CommandsCounterResource]) {
-      observed.push(resource.get().value)
-    })
 
   app = app.run_once()
 
-  debug_inspect(observed, content="[7]")
   debug_inspect(
     try! app.world().get_resource(commands_counter_resource_key),
     content="Some({ value: 7 })",
@@ -292,15 +282,10 @@ test "app: Commands spawn_component defers single component insertion until afte
       )
       counts.push(query.count())
     })
-    .add_system_param(fn(
-      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
-    ) {
-      counts.push(query.count())
-    })
 
   app = app.run_once()
 
-  debug_inspect(counts, content="[0, 0, 1]")
+  debug_inspect(counts, content="[0, 0]")
   guard spawned.val is Some(entity) else {
     abort("expected Commands::spawn_component to return an entity")
   }
@@ -372,6 +357,52 @@ test "app: Commands spawn supports eight-component tuples" {
 }
 
 ///|
+test "app: Commands spawn_bundle accepts ecs bundle tuples and unit bundles" {
+  let nested_spawned : Ref[@core.Entity?] = Ref::new(None)
+  let empty_spawned : Ref[@core.Entity?] = Ref::new(None)
+  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+    commands : Commands,
+  ) {
+    nested_spawned.val = Some(
+      commands.spawn_bundle(
+        (
+          CommandsPosition::{ x: 5, y: 6 },
+          CommandsVelocity::{ dx: 7, dy: 8 },
+          CommandsMarker::{  },
+        ),
+      ),
+    )
+    empty_spawned.val = Some(commands.spawn_bundle(()))
+  })
+
+  app = app.run_once()
+
+  guard nested_spawned.val is Some(nested_entity) else {
+    abort("expected nested Commands::spawn to return an entity")
+  }
+  guard empty_spawned.val is Some(empty_entity) else {
+    abort("expected empty Commands::spawn to return an entity")
+  }
+  debug_inspect(
+    try! app.world().get_by_key(nested_entity, commands_position_key),
+    content="Some({ x: 5, y: 6 })",
+  )
+  debug_inspect(
+    try! app.world().get_by_key(nested_entity, commands_velocity_key),
+    content="Some({ dx: 7, dy: 8 })",
+  )
+  debug_inspect(
+    try! app.world().get_by_key(nested_entity, commands_marker_key),
+    content="Some({})",
+  )
+  debug_inspect(app.world().is_alive(empty_entity), content="true")
+  debug_inspect(
+    try! app.world().get_by_key(empty_entity, commands_position_key),
+    content="None",
+  )
+}
+
+///|
 test "app: Commands spawn_batch defers all batch insertions until flush" {
   let counts : Array[Int] = []
   let spawned : Ref[Array[@core.Entity]] = Ref::new([])
@@ -400,15 +431,10 @@ test "app: Commands spawn_batch defers all batch insertions until flush" {
       ])
       counts.push(query.count())
     })
-    .add_system_param(fn(
-      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
-    ) {
-      counts.push(query.count())
-    })
 
   app = app.run_once()
 
-  debug_inspect(counts, content="[0, 0, 3]")
+  debug_inspect(counts, content="[0, 0]")
   debug_inspect(spawned.val.length(), content="3")
   debug_inspect(
     try! app.world().get_by_key(spawned.val[0], commands_position_key),
@@ -443,15 +469,10 @@ test "app: Commands entity insert defers component insertion until flush" {
       .insert((CommandsVelocity::{ dx: 9, dy: 10 }, CommandsTagA::{  }))
       counts.push(query.count())
     })
-    .add_system_param(fn(
-      query : @ecs.Query[@ecs.Comp[CommandsVelocity], @ecs.All],
-    ) {
-      counts.push(query.count())
-    })
 
   app = app.run_once()
 
-  debug_inspect(counts, content="[0, 0, 1]")
+  debug_inspect(counts, content="[0, 0]")
   guard spawned.val is Some(entity) else {
     abort("expected Commands::spawn to return an entity")
   }

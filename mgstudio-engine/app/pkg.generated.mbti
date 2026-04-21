@@ -49,6 +49,14 @@ pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit]
 
 pub fn[W] fallible_system((W) -> Unit raise) -> SystemConfig[W]
 
+pub fn[W, P : SystemParam] fallible_system_config_param((P) -> Unit raise) -> SystemConfig[W]
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_config_param2((P1, P2) -> Unit raise) -> SystemConfig[W]
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_config_param3((P1, P2, P3) -> Unit raise) -> SystemConfig[W]
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] fallible_system_config_param4((P1, P2, P3, P4) -> Unit raise) -> SystemConfig[W]
+
 pub fn[W, P : SystemParam] fallible_system_param((P) -> Unit raise) -> (W) -> Unit
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2((P1, P2) -> Unit raise) -> (W) -> Unit
@@ -238,6 +246,20 @@ pub fn[S : States] state_set_dependency_depth(S) -> Int
 pub fn[S : States] state_transition_event_resource_key(S) -> @ecs.ResourceKey[StateTransitionEvent[S]]
 
 pub fn[W] system((W) -> Unit) -> SystemConfig[W]
+
+pub fn system_access_compatible(SystemAccess, SystemAccess, @hashmap.HashMap[Int, Bool]) -> Bool
+
+pub fn system_access_merge_unchecked(SystemAccess, SystemAccess) -> Unit
+
+pub fn system_access_merge_validated(SystemAccess, SystemAccess, @hashmap.HashMap[Int, Bool]) -> Unit
+
+pub fn[W, P : SystemParam] system_config_param((P) -> Unit) -> SystemConfig[W]
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam] system_config_param2((P1, P2) -> Unit) -> SystemConfig[W]
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_config_param3((P1, P2, P3) -> Unit) -> SystemConfig[W]
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_config_param4((P1, P2, P3, P4) -> Unit) -> SystemConfig[W]
 
 pub fn[W, O] system_output((W) -> O) -> OutputSystemConfig[W, O]
 
@@ -540,6 +562,8 @@ pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T, loc~ : SourceLoc) ->
 #callsite(autofill(loc))
 pub fn[T : CommandSpawnComponents] Commands::spawn_batch(Self, Array[T], loc~ : SourceLoc) -> Array[@core.Entity]
 #callsite(autofill(loc))
+pub fn[B : @ecs.Bundle] Commands::spawn_bundle(Self, B, loc~ : SourceLoc) -> @core.Entity
+#callsite(autofill(loc))
 pub fn[T : @ecs.Component] Commands::spawn_component(Self, T, loc~ : SourceLoc) -> @core.Entity
 pub fn Commands::spawn_empty(Self) -> @core.Entity
 pub fn[E : @ecs.TriggerEvent] Commands::trigger(Self, E) -> Unit
@@ -577,6 +601,8 @@ pub struct EntityCommands {
 pub fn EntityCommands::despawn(Self, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[B : @ecs.Bundle] EntityCommands::insert_bundle(Self, B, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T, loc~ : SourceLoc) -> Unit
 pub fn[E : @ecs.TriggerEvent] EntityCommands::observe(Self, (@ecs.On[E]) -> Unit raise) -> Self
@@ -770,6 +796,7 @@ pub fn[S] OptionalStateSource::state(Self[S]) -> S
 
 pub struct OutputSystemConfig[W, O] {
   system : (W) -> O?
+  access_factory : ((@ecs.World) -> SystemAccess)?
 }
 pub fn[W, O] OutputSystemConfig::map(Self[W, O], (O) -> Unit) -> SystemConfig[W]
 pub fn[W, O, P : SystemParam] OutputSystemConfig::map_param(Self[W, O], (O, P) -> Unit) -> SystemConfig[W]
@@ -865,6 +892,8 @@ pub struct PreviousState[S] {
 pub fn[S] PreviousState::get(Self[S]) -> S
 pub impl[S] Resource for PreviousState[S]
 
+type QuerySystemAccess
+
 pub(all) enum RenderErrorPolicy {
   Ignore
   Panic
@@ -883,14 +912,37 @@ pub(all) enum RenderRuntimeError {
 
 pub struct Res[T] {
   value : T
+  world : @ecs.World?
+  key_id : Int?
 }
+pub fn[T : Resource] Res::added(Self[T]) -> Int
+pub fn[T : Resource] Res::changed_by(Self[T]) -> String?
 pub fn[T] Res::get(Self[T]) -> T
+pub fn[T : Resource] Res::is_added(Self[T]) -> Bool
+pub fn[T : Resource] Res::is_changed(Self[T]) -> Bool
+pub fn[T : Resource] Res::last_changed(Self[T]) -> Int
 pub impl[T : Resource] SystemParam for Res[T]
 
 pub struct ResMut[T] {
   value : @ref.Ref[T]
+  world : @ecs.World?
+  key_id : Int?
 }
-pub fn[T] ResMut::get_ref(Self[T]) -> @ref.Ref[T]
+pub fn[T : Resource] ResMut::added(Self[T]) -> Int
+pub fn[T] ResMut::bypass_change_detection(Self[T]) -> @ref.Ref[T]
+pub fn[T : Resource] ResMut::changed_by(Self[T]) -> String?
+pub fn[T] ResMut::get(Self[T]) -> T
+#callsite(autofill(loc))
+pub fn[T : Resource] ResMut::get_ref(Self[T], loc~ : SourceLoc) -> @ref.Ref[T]
+pub fn[T : Resource] ResMut::is_added(Self[T]) -> Bool
+pub fn[T : Resource] ResMut::is_changed(Self[T]) -> Bool
+pub fn[T : Resource] ResMut::last_changed(Self[T]) -> Int
+#callsite(autofill(loc))
+pub fn[T : Resource] ResMut::set_added(Self[T], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Resource] ResMut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Resource + Eq] ResMut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
 pub fn[T : @ecs.Message] ResMut::write(Self[@ecs.Messages[T]], T) -> Int
 pub fn[T : @ecs.Message] ResMut::write_batch(Self[@ecs.Messages[T]], Array[T]) -> Unit
 pub fn[T : @ecs.Message + Default] ResMut::write_default(Self[@ecs.Messages[T]]) -> Int
@@ -1070,6 +1122,24 @@ pub fn SubApps::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn SubApps::update(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn SubApps::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs.World]
 
+pub struct SystemAccess {
+  query_accesses : Array[QuerySystemAccess]
+  read_resource_ids : Array[Int]
+  write_resource_ids : Array[Int]
+  mut is_exclusive : Bool
+  mut uses_deferred_commands : Bool
+  mut validation_error : String?
+}
+pub fn SystemAccess::add_query_access(Self, @ecs.QueryDataAccess, @ecs.QueryFilterAccess) -> Unit
+pub fn SystemAccess::add_read_resource(Self, Int) -> Unit
+pub fn SystemAccess::add_write_resource(Self, Int) -> Unit
+pub fn SystemAccess::exclusive() -> Self
+pub fn SystemAccess::is_exclusive(Self) -> Bool
+pub fn SystemAccess::mark_deferred_commands(Self) -> Unit
+pub fn SystemAccess::new() -> Self
+pub fn SystemAccess::uses_deferred_commands(Self) -> Bool
+pub fn SystemAccess::validation_error(Self) -> String?
+
 pub struct SystemConfig[W] {
   system : (W) -> Unit
   name : String?
@@ -1081,6 +1151,7 @@ pub struct SystemConfig[W] {
   after : Array[String]
   run_if_last_run_sequences : Array[Int]
   mut last_run_sequence : Int
+  mut access_factory : ((@ecs.World) -> SystemAccess)?
 }
 pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::before(Self[W], String) -> Self[W]
@@ -1263,6 +1334,7 @@ pub(open) trait SystemParam {
   init_state(@ecs.World) -> Json
   get(@ref.Ref[Json]) -> Self raise
   store(Self, @ref.Ref[Json]) -> Unit
+  access(@ecs.World) -> SystemAccess = _
 }
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]
 pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T]
@@ -1271,6 +1343,6 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T]
 pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E]
-pub impl[D, F : FromWorld] SystemParam for @ecs.Query[D, F]
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[D, F]
 pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T]
 

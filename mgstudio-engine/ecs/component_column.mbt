@@ -16,7 +16,6 @@
 pub struct ComponentColumn[T] {
   world : World
   key : ComponentKey[T]
-  store_ref : Ref[@core.ComponentStore[ErasedValue]]
   changed_sequence_table : ComponentSequenceTable
 }
 
@@ -38,12 +37,11 @@ pub fn[T] World::component_column(
   self : World,
   key : ComponentKey[T],
 ) -> ComponentColumn[T]? {
-  match self.component_store(key.id()) {
-    Some(store_ref) =>
+  match self.local_component_id(key.id()) {
+    Some(_) =>
       Some({
         world: self,
         key,
-        store_ref,
         changed_sequence_table: self.ensure_changed_component_sequence_table(
           key.id(),
         ),
@@ -57,7 +55,7 @@ pub fn[T] ComponentColumn::contains(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> Bool {
-  component_store_contains_entity(self.store_ref, entity)
+  self.world.component_payload(self.key.id(), entity) is Some(_)
 }
 
 ///|
@@ -65,7 +63,7 @@ pub fn[T] ComponentColumn::get(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> T? {
-  match component_store_get_entity(self.store_ref, entity) {
+  match self.world.component_payload(self.key.id(), entity) {
     Some(payload) => erased_value_value_fast(payload)
     None => None
   }
@@ -76,7 +74,7 @@ pub fn[T] ComponentColumn::get_ref(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> Ref[T]? {
-  match component_store_get_entity(self.store_ref, entity) {
+  match self.world.component_payload(self.key.id(), entity) {
     Some(payload) => erased_value_ref_fast(payload)
     None => None
   }
@@ -104,14 +102,12 @@ pub fn[T] ComponentColumn::for_each_ref(
   self : ComponentColumn[T],
   visit : (@core.Entity, Ref[T]) -> Unit,
 ) -> Unit {
-  for entry in component_store_snapshot_entries(self.store_ref) {
-    let entity = entry.0
-    let payload = entry.1
-    match erased_value_ref_fast(payload) {
+  self.world.for_each_component(self.key, fn(entity, _value) {
+    match self.get_ref(entity) {
       Some(value_ref) => visit(entity, value_ref)
       None => ()
     }
-  }
+  })
 }
 
 ///|
@@ -121,16 +117,15 @@ pub fn[T] ComponentColumn::set(
   value : T,
 ) -> Bool {
   let payload = erased_value(value)
-  match component_store_replace_column_value(self.store_ref, entity, payload) {
-    Some(_) => {
+  if self.world.replace_component_payload(self.key.id(), entity, payload) {
       let sequence = component_write_sequence(self.world)
       self.changed_sequence_table.set(entity.id, sequence)
       self.world.ensure_changed_component_messages(self.key.id()).val.send(
         sequence, entity,
       )
       true
-    }
-    None => false
+  } else {
+    false
   }
 }
 
@@ -141,14 +136,13 @@ pub fn[T] ComponentColumn::set_sequence_only(
   value : T,
 ) -> Bool {
   let payload = erased_value(value)
-  match component_store_replace_column_value(self.store_ref, entity, payload) {
-    Some(_) => {
+  if self.world.replace_component_payload(self.key.id(), entity, payload) {
       self.changed_sequence_table.set(
         entity.id,
         component_write_sequence(self.world),
       )
       true
-    }
-    None => false
+  } else {
+    false
   }
 }

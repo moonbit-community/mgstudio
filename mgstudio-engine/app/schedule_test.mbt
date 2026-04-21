@@ -820,3 +820,23 @@ test "app: SystemParam Query2 injects typed query into update system" {
   try! query.view(fn(_entity, position) { value_ref.val = position.value().x })
   debug_inspect(value_ref.val, content="42")
 }
+
+///|
+test "app: schedule rejects conflicting query params before system execution" {
+  let kinds : Array[ErrorContextKind] = []
+  let ran = Ref::new(false)
+  let app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
+    .add_system_param2(fn(
+      _lhs : @ecs.Query[@ecs.Mut[EcsPosition], @ecs.All],
+      _rhs : @ecs.Query[@ecs.Mut[EcsPosition], @ecs.All],
+    ) {
+      ran.val = true
+    })
+
+  app.run_once() |> ignore
+
+  debug_inspect(ran.val, content="false")
+  debug_inspect(kinds.length(), content="1")
+  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
+}

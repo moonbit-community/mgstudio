@@ -92,3 +92,10 @@ pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T] with 
 ) {
   state.val = self.value_ref.val.to_json()
 }
+
+///|
+pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T] with access(
+  _world,
+) {
+  SystemAccess::new()
+}

@@ -145,6 +145,53 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
 }
 
 ///|
+test "ecs mut query: detect changes helpers support bypass and explicit marking" {
+  let world = World::new()
+  let entity = world.spawn()
+
+  try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
+    x: 2,
+    y: 3,
+  })
+  world.advance_sequence() |> ignore
+  set_test_sequence(world, 0, 1)
+
+  let first_query : Query[Mut[MutQueryPosition], All] = query(world)
+  let first_position = try! first_query.require_single()
+  debug_inspect(first_position.is_added(), content="true")
+  debug_inspect(first_position.is_changed(), content="true")
+  debug_inspect(first_position.added(), content="1")
+  debug_inspect(first_position.last_changed(), content="1")
+  debug_inspect(
+    first_position.changed_by().unwrap().contains("query_mut_test.mbt"),
+    content="true",
+  )
+
+  world.advance_sequence() |> ignore
+  set_test_sequence(world, 1, 2)
+
+  let second_query : Query[Mut[MutQueryPosition], All] = query(world)
+  let second_position = try! second_query.require_single()
+  debug_inspect(second_position.is_added(), content="false")
+  debug_inspect(second_position.is_changed(), content="false")
+
+  let bypass_ref = second_position.bypass_change_detection()
+  bypass_ref.val.x = 9
+  debug_inspect(second_position.last_changed(), content="1")
+
+  second_position.set_changed()
+  debug_inspect(second_position.last_changed(), content="2")
+  debug_inspect(
+    second_position.changed_by().unwrap().contains("query_mut_test.mbt"),
+    content="true",
+  )
+  debug_inspect(
+    try! world.get_by_key(entity, mut_query_position_key),
+    content="Some({ x: 9, y: 3 })",
+  )
+}
+
+///|
 test "ecs mut query: QueryState supports get, require_single, iter_many_unique and mixed data" {
   let world = World::new()
   let e0 = world.spawn()

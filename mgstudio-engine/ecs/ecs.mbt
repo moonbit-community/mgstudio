@@ -196,6 +196,12 @@ struct ResourceSlot {
 }
 
 ///|
+struct PendingComponentPayloadContext {
+  entity_id : Int
+  payloads : Map[Int, ErasedValue]
+}
+
+///|
 struct ComponentSequenceTable {
   by_entity : Array[@core.Sequence]
 }
@@ -248,6 +254,58 @@ fn ComponentSequenceTable::remove(
 }
 
 ///|
+struct ComponentCallerTable {
+  by_entity : Array[String?]
+}
+
+///|
+fn ComponentCallerTable::new() -> ComponentCallerTable {
+  { by_entity: [] }
+}
+
+///|
+fn ComponentCallerTable::set(
+  self : ComponentCallerTable,
+  entity_id : Int,
+  caller : String?,
+) -> Unit {
+  if entity_id < 0 {
+    return
+  }
+  while self.by_entity.length() <= entity_id {
+    self.by_entity.push(None)
+  }
+  self.by_entity[entity_id] = caller
+}
+
+///|
+fn ComponentCallerTable::get(
+  self : ComponentCallerTable,
+  entity_id : Int,
+) -> String? {
+  if entity_id < 0 {
+    return None
+  }
+  match self.by_entity.get(entity_id) {
+    Some(caller) => caller
+    None => None
+  }
+}
+
+///|
+fn ComponentCallerTable::remove(
+  self : ComponentCallerTable,
+  entity_id : Int,
+) -> Unit {
+  if entity_id < 0 {
+    return
+  }
+  if self.by_entity.get(entity_id) is Some(_) {
+    self.by_entity[entity_id] = None
+  }
+}
+
+///|
 pub struct World {
   world_id : Int
   mut structural_generation : Int
@@ -263,7 +321,8 @@ pub struct World {
   entities : @core.Entities
   mut sequence : @core.Sequence
   mut system_context : @core.SystemSequenceContext
-  table_component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
+  mut pending_component_payload_context : PendingComponentPayloadContext?
+  tables : Map[Int, Ref[RawTable]]
   sparse_component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
   component_store_cache_by_definition_id : Map[
     Int,
@@ -290,6 +349,7 @@ pub struct World {
   component_membership_counts : Map[Int, Int]
   archetype_entities : Map[Int, Array[@core.Entity]]
   entity_archetype_ids : Array[Int]
+  entity_table_rows : Array[Int]
   entity_archetype_rows : Array[Int]
   entity_component_local_ids : Array[Array[Int]]
   required_components : Map[Int, Ref[RequiredComponentsState]]
@@ -298,11 +358,13 @@ pub struct World {
   changed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   added_component_sequences : Map[Int, ComponentSequenceTable]
   changed_component_sequences : Map[Int, ComponentSequenceTable]
+  changed_component_callers : Map[Int, ComponentCallerTable]
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   component_hooks_registry : Map[Int, ComponentHooks]
   resources : Map[Int, ResourceSlot]
   resource_added_sequences : Map[Int, @core.Sequence]
   resource_changed_sequences : Map[Int, @core.Sequence]
+  resource_changed_callers : Map[Int, String]
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
   mut deferred_hook_command_depth : Int
@@ -328,7 +390,8 @@ pub fn World::new() -> World {
     entities: @core.Entities::new(),
     sequence: 0,
     system_context: @core.SystemSequenceContext::new(),
-    table_component_columns: {},
+    pending_component_payload_context: None,
+    tables: {},
     sparse_component_columns: {},
     component_store_cache_by_definition_id: {},
     next_archetype_id: 1,
@@ -352,6 +415,7 @@ pub fn World::new() -> World {
     component_membership_counts: {},
     archetype_entities: { 0: [] },
     entity_archetype_ids: [],
+    entity_table_rows: [],
     entity_archetype_rows: [],
     entity_component_local_ids: [],
     required_components: {},
@@ -360,11 +424,13 @@ pub fn World::new() -> World {
     changed_components: {},
     added_component_sequences: {},
     changed_component_sequences: {},
+    changed_component_callers: {},
     removed_components: {},
     component_hooks_registry: {},
     resources: {},
     resource_added_sequences: {},
     resource_changed_sequences: {},
+    resource_changed_callers: {},
     previous_events: {},
     current_events: {},
     deferred_hook_command_depth: 0,
@@ -423,8 +489,7 @@ pub fn World::despawn(
     guard self.definition_component_id(local_id) is Some(key_id) else {
       continue
     }
-    guard self.component_store(key_id) is Some(store_ref) else { continue }
-    if store_ref.val.get(entity) is Some(payload) {
+    if self.component_payload_by_local_id(entity, local_id) is Some(payload) {
       removed_components.push((key_id, payload))
     }
   }
@@ -445,15 +510,16 @@ pub fn World::despawn(
   self.mark_structure_changed()
   for entry in removed_components {
     let key_id = entry.0
-    if self.component_store(key_id) is Some(store_ref) &&
-      store_ref.val.remove(entity) is Some(_) {
-      self.run_remove_observers(entity, key_id)
-      self.ensure_removed_component_messages(key_id).val.send(
-        component_write_sequence(self),
-        entity,
-      )
-      self.clear_component_sequence_records(entity, key_id)
+    if self.local_component_id(key_id) is Some(local_id) &&
+      self.local_component_storage_type(local_id) == Some(SparseSet) {
+      ignore(self.remove_sparse_component_payload_by_local_id(entity, local_id))
     }
+    self.run_remove_observers(entity, key_id)
+    self.ensure_removed_component_messages(key_id).val.send(
+      component_write_sequence(self),
+      entity,
+    )
+    self.clear_component_sequence_records(entity, key_id)
   }
   self.end_deferred_hook_command_scope(outermost)
 }
@@ -482,8 +548,7 @@ pub fn[T] World::get_by_key(
   key : ComponentKey[T],
 ) -> T? raise EcsError {
   self.ensure_entity_alive(entity)
-  guard self.component_store(key.id()) is Some(store_ref) else { return None }
-  match store_ref.val.get(entity) {
+  match self.component_payload(key.id(), entity) {
     Some(payload) => Some(self.component_value(key, entity, payload))
     None => None
   }
@@ -500,11 +565,7 @@ pub fn[T] World::update_by_key(
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
-  guard self.component_store(key.id()) is Some(store_ref) else {
-    self.end_deferred_hook_command_scope(outermost)
-    return false
-  }
-  guard store_ref.val.get(entity) is Some(payload) else {
+  guard self.component_payload(key.id(), entity) is Some(payload) else {
     self.end_deferred_hook_command_scope(outermost)
     return false
   }
@@ -514,8 +575,8 @@ pub fn[T] World::update_by_key(
   let caller = hook_caller_from_loc(loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
   self.run_replace_observers(entity, key.id())
-  store_ref.val.set(entity, new_payload) |> ignore
-  self.record_component_changed(entity, key.id())
+  ignore(self.replace_component_payload(key.id(), entity, new_payload))
+  self.record_component_changed_with_caller(entity, key.id(), caller)
   self.run_component_insert_hooks(entity, key.id(), caller~)
   self.run_insert_observers(entity, key.id())
   self.end_deferred_hook_command_scope(outermost)
@@ -533,39 +594,28 @@ pub fn[T] World::remove_by_key(
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
-  match self.component_store(key.id()) {
-    Some(store_ref) =>
-      match store_ref.val.get(entity) {
-        Some(_) => {
-          let component_local_id = self.ensure_component_registered(key.id())
-          self.run_component_replace_hooks(entity, key.id(), caller~)
-          self.run_replace_observers(entity, key.id())
-          self.run_component_remove_hooks(entity, key.id(), caller~)
-          ignore(store_ref.val.remove(entity))
-          self.entity_remove_component_local_id(entity, component_local_id)
-          self.refresh_entity_archetype_after_component_remove(
-            entity, component_local_id,
-          )
-          self.mark_structure_changed()
-          self.run_remove_observers(entity, key.id())
-          self.ensure_removed_component_messages(key.id()).val.send(
-            component_write_sequence(self),
-            entity,
-          )
-          self.clear_component_sequence_records(entity, key.id())
-          self.end_deferred_hook_command_scope(outermost)
-          true
-        }
-        None => {
-          self.end_deferred_hook_command_scope(outermost)
-          false
-        }
-      }
-    None => {
-      self.end_deferred_hook_command_scope(outermost)
-      false
-    }
+  guard self.component_payload(key.id(), entity) is Some(_) else {
+    self.end_deferred_hook_command_scope(outermost)
+    return false
   }
+  let component_local_id = self.ensure_component_registered(key.id())
+  self.run_component_replace_hooks(entity, key.id(), caller~)
+  self.run_replace_observers(entity, key.id())
+  self.run_component_remove_hooks(entity, key.id(), caller~)
+  if self.local_component_storage_type(component_local_id) == Some(SparseSet) {
+    ignore(self.remove_sparse_component_payload_by_local_id(entity, component_local_id))
+  }
+  self.entity_remove_component_local_id(entity, component_local_id)
+  self.refresh_entity_archetype_after_component_remove(entity, component_local_id)
+  self.mark_structure_changed()
+  self.run_remove_observers(entity, key.id())
+  self.ensure_removed_component_messages(key.id()).val.send(
+    component_write_sequence(self),
+    entity,
+  )
+  self.clear_component_sequence_records(entity, key.id())
+  self.end_deferred_hook_command_scope(outermost)
+  true
 }
 
 ///|
@@ -642,21 +692,6 @@ fn World::mark_entity_lifecycle_changed(self : World) -> Unit {
   self.entity_lifecycle_generation = self.entity_lifecycle_generation + 1
 }
 
-///|
-fn World::local_component_storage_type_or_abort(
-  self : World,
-  local_id : Int,
-) -> ComponentStorageType {
-  match self.local_component_storage_type(local_id) {
-    Some(storage_type) => storage_type
-    None =>
-      abort(
-        "World component storage type missing for local component id \{local_id.to_string()}",
-      )
-  }
-}
-
-///|
 fn World::ensure_component_store_for_local_id(
   self : World,
   local_id : Int,
@@ -664,69 +699,13 @@ fn World::ensure_component_store_for_local_id(
 ) -> Ref[@core.ComponentStore[ErasedValue]] {
   match storage_type {
     Table =>
-      self.table_component_columns.get_or_init(local_id, fn() {
-        Ref::new(@core.ComponentStore::new())
-      })
+      abort(
+        "Table component storage is backed by RawTable; sparse component store lookup is invalid for local component id \{local_id.to_string()}",
+      )
     SparseSet =>
       self.sparse_component_columns.get_or_init(local_id, fn() {
         Ref::new(@core.ComponentStore::new())
       })
-  }
-}
-
-///|
-fn World::component_store_for_local_id(
-  self : World,
-  local_id : Int,
-  storage_type : ComponentStorageType,
-) -> Ref[@core.ComponentStore[ErasedValue]]? {
-  match storage_type {
-    Table => self.table_component_columns.get(local_id)
-    SparseSet => self.sparse_component_columns.get(local_id)
-  }
-}
-
-///|
-fn World::ensure_component_store(
-  self : World,
-  key_id : Int,
-) -> Ref[@core.ComponentStore[ErasedValue]] {
-  if self.component_store_cache_by_definition_id.get(key_id) is Some(store_ref) {
-    return store_ref
-  }
-  let local_id = self.ensure_component_registered(key_id)
-  let storage_type = self.local_component_storage_type_or_abort(local_id)
-  let store_ref = self.ensure_component_store_for_local_id(
-    local_id, storage_type,
-  )
-  self.component_store_cache_by_definition_id.set(key_id, store_ref)
-  store_ref
-}
-
-///|
-fn World::component_store(
-  self : World,
-  key_id : Int,
-) -> Ref[@core.ComponentStore[ErasedValue]]? {
-  if self.component_store_cache_by_definition_id.get(key_id) is Some(store_ref) {
-    return Some(store_ref)
-  }
-  match self.local_component_id(key_id) {
-    Some(local_id) => {
-      let storage_type = match self.local_component_storage_type(local_id) {
-        Some(storage_type) => storage_type
-        None if self.is_component_registration_pending(key_id) => return None
-        None => self.local_component_storage_type_or_abort(local_id)
-      }
-      match self.component_store_for_local_id(local_id, storage_type) {
-        Some(store_ref) => {
-          self.component_store_cache_by_definition_id.set(key_id, store_ref)
-          Some(store_ref)
-        }
-        None => None
-      }
-    }
-    None => None
   }
 }
 
@@ -811,38 +790,57 @@ fn World::ensure_changed_component_sequence_table(
 }
 
 ///|
-fn World::record_component_added(
+fn World::ensure_changed_component_caller_table(
+  self : World,
+  key_id : Int,
+) -> ComponentCallerTable {
+  let local_id = self.ensure_component_registered(key_id)
+  match self.changed_component_callers.get(local_id) {
+    Some(caller_by_entity) => caller_by_entity
+    None => {
+      let caller_by_entity = ComponentCallerTable::new()
+      self.changed_component_callers.set(local_id, caller_by_entity)
+      caller_by_entity
+    }
+  }
+}
+
+fn World::record_component_added_with_caller(
   self : World,
   entity : @core.Entity,
   key_id : Int,
+  caller : String?,
 ) -> Unit {
   self
   .ensure_added_component_sequence_map(key_id)
   .set(entity.id, component_write_sequence(self))
+  self.ensure_changed_component_caller_table(key_id).set(entity.id, caller)
 }
 
 ///|
-fn World::record_component_changed(
+fn World::record_component_changed_with_caller(
   self : World,
   entity : @core.Entity,
   key_id : Int,
+  caller : String?,
 ) -> Unit {
-  self.record_component_changed_sequence_only(entity, key_id)
+  self.record_component_changed_sequence_only_with_caller(entity, key_id, caller)
   self.ensure_changed_component_messages(key_id).val.send(
     component_write_sequence(self),
     entity,
   )
 }
 
-///|
-fn World::record_component_changed_sequence_only(
+fn World::record_component_changed_sequence_only_with_caller(
   self : World,
   entity : @core.Entity,
   key_id : Int,
+  caller : String?,
 ) -> Unit {
   self
   .ensure_changed_component_sequence_table(key_id)
   .set(entity.id, component_write_sequence(self))
+  self.ensure_changed_component_caller_table(key_id).set(entity.id, caller)
 }
 
 ///|
@@ -858,16 +856,47 @@ fn World::clear_component_sequence_records(
   if self.changed_component_sequences.get(local_id) is Some(sequence_by_entity) {
     sequence_by_entity.remove(entity.id)
   }
+  if self.changed_component_callers.get(local_id) is Some(caller_by_entity) {
+    caller_by_entity.remove(entity.id)
+  }
 }
 
 ///|
 fn World::record_resource_added(self : World, key_id : Int) -> Unit {
-  self.resource_added_sequences.set(key_id, resource_write_sequence(self))
+  self.record_resource_added_with_caller(key_id, None)
 }
 
 ///|
 fn World::record_resource_changed(self : World, key_id : Int) -> Unit {
+  self.record_resource_changed_with_caller(key_id, None)
+}
+
+///|
+fn World::record_resource_added_with_caller(
+  self : World,
+  key_id : Int,
+  caller : String?,
+) -> Unit {
+  self.resource_added_sequences.set(key_id, resource_write_sequence(self))
+  if caller is Some(caller) {
+    self.resource_changed_callers.set(key_id, caller)
+  } else {
+    self.resource_changed_callers.remove(key_id)
+  }
+}
+
+///|
+fn World::record_resource_changed_with_caller(
+  self : World,
+  key_id : Int,
+  caller : String?,
+) -> Unit {
   self.resource_changed_sequences.set(key_id, resource_write_sequence(self))
+  if caller is Some(caller) {
+    self.resource_changed_callers.set(key_id, caller)
+  } else {
+    self.resource_changed_callers.remove(key_id)
+  }
 }
 
 ///|
@@ -884,6 +913,24 @@ fn World::resource_changed_sequence(
   key_id : Int,
 ) -> @core.Sequence? {
   self.resource_changed_sequences.get(key_id)
+}
+
+///|
+fn World::changed_component_caller(
+  self : World,
+  key_id : Int,
+  entity_id : Int,
+) -> String? {
+  guard self.local_component_id(key_id) is Some(local_id) else { return None }
+  match self.changed_component_callers.get(local_id) {
+    Some(caller_by_entity) => caller_by_entity.get(entity_id)
+    None => None
+  }
+}
+
+///|
+fn World::resource_changed_caller(self : World, key_id : Int) -> String? {
+  self.resource_changed_callers.get(key_id)
 }
 
 ///|

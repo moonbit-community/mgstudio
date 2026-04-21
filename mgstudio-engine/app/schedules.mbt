@@ -180,6 +180,14 @@ fn[W] schedule_set_executor_kind(
 }
 
 ///|
+fn[W] schedule_executor_kind(
+  schedule_registry : ScheduleRegistry[W],
+  stage : ScheduleStage,
+) -> ExecutorKind {
+  schedule_entry_ref(schedule_registry, stage).val.executor_kind
+}
+
+///|
 pub fn[W] SubApp::add_schedule(
   self : SubApp[W],
   schedule : Schedule,

@@ -294,7 +294,7 @@ test "app: optional query system param preserves some and none branches" {
 }
 
 ///|
-test "app: Allow, Query2Has and Query2Optional system params honor disabling semantics" {
+test "app: Allow, Query2Has and nullable query data honor disabling semantics" {
   let world = @ecs.World::new()
   let enabled = world.spawn()
   let disabled = world.spawn()
@@ -344,7 +344,7 @@ test "app: Allow, Query2Has and Query2Optional system params honor disabling sem
 
   debug_inspect(entity_counts, content="[2]")
   debug_inspect(has_seen, content="[(0, false), (1, true)]")
-  debug_inspect(optional_seen, content="[(0, false)]")
+  debug_inspect(optional_seen, content="[(0, false), (1, true)]")
 }
 
 ///|

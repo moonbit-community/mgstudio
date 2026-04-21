@@ -73,11 +73,15 @@ pub fn[W] SubApp::take_extract(
 ///|
 pub fn SubApp::run_startup(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
   current_app_schedule_ref.val = Some(self.schedule)
+  current_allowed_ambiguous_components_ref.val = Some(
+    self.allowed_ambiguous_components,
+  )
   match self.update_schedule {
     Some(Main) => run_main_schedule_startup(self.world, self.schedule)
     Some(stage) => run_schedule_stage(self.world, self.schedule, stage)
     None => ()
   }
+  current_allowed_ambiguous_components_ref.val = None
   current_app_schedule_ref.val = None
   self
 }
@@ -85,11 +89,15 @@ pub fn SubApp::run_startup(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
 ///|
 pub fn SubApp::update(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
   current_app_schedule_ref.val = Some(self.schedule)
+  current_allowed_ambiguous_components_ref.val = Some(
+    self.allowed_ambiguous_components,
+  )
   stepping_begin_frame(self.world)
   match self.update_schedule {
     Some(stage) => run_schedule_stage(self.world, self.schedule, stage)
     None => ()
   }
+  current_allowed_ambiguous_components_ref.val = None
   current_app_schedule_ref.val = None
   self
 }

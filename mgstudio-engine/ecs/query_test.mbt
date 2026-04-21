@@ -709,6 +709,52 @@ test "ecs query: added filter only matches entities inserted in the current sequ
 }
 
 ///|
+test "ecs query: Comp exposes change detection metadata" {
+  let world = World::new()
+  let entity = world.spawn()
+
+  try! world.set_by_key(entity, position_key, Position::{ x: 1, y: 1 })
+  world.advance_sequence() |> ignore
+
+  let first_ctx = @core.SystemSequenceContext::new()
+  first_ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(first_ctx)
+  let first_query : Query[Comp[Position], All] = query(world)
+  let first_position = try! first_query.require_single()
+  debug_inspect(first_position.is_added(), content="true")
+  debug_inspect(first_position.is_changed(), content="true")
+  debug_inspect(first_position.added(), content="1")
+  debug_inspect(first_position.last_changed(), content="1")
+  debug_inspect(
+    first_position.changed_by().unwrap().contains("query_test.mbt"),
+    content="true",
+  )
+
+  world.advance_sequence() |> ignore
+  debug_inspect(
+    try! world.update_by_key(entity, position_key, fn(position) {
+      Position::{ x: position.x + 5, y: position.y + 6 }
+    }),
+    content="true",
+  )
+
+  let second_ctx = @core.SystemSequenceContext::new()
+  second_ctx.set(@core.SystemSequence::new(1, 2))
+  world.set_sequence_context(second_ctx)
+  let second_query : Query[Comp[Position], All] = query(world)
+  let second_position = try! second_query.require_single()
+  debug_inspect(second_position.is_added(), content="false")
+  debug_inspect(second_position.is_changed(), content="true")
+  debug_inspect(second_position.added(), content="1")
+  debug_inspect(second_position.last_changed(), content="2")
+  debug_inspect(
+    second_position.changed_by().unwrap().contains("query_test.mbt"),
+    content="true",
+  )
+  debug_inspect(second_position.value(), content="{ x: 6, y: 7 }")
+}
+
+///|
 test "ecs query_state: default query filter cache invalidates on resource updates" {
   let world = World::new()
   let entity = world.spawn()

@@ -520,6 +520,65 @@ test "ecs: typed component api uses component ownership" {
 }
 
 ///|
+test "ecs: spawn_bundle supports flat bundles and empty bundles" {
+  ensure_sparse_storage_metadata_registered()
+  let world = World::new()
+
+  let empty = try! world.spawn_bundle(())
+  let nested = try! world.spawn_bundle(
+    (
+      TypedCounter::{ value: 9 },
+      TypedMarker::{ enabled: true },
+      SparseStorageCounter::{ value: 12 },
+    ),
+  )
+
+  debug_inspect(world.is_alive(empty), content="true")
+  debug_inspect(
+    world.entity_archetype_id(empty).unwrap_or(-1) == 0,
+    content="true",
+  )
+  debug_inspect(
+    try! world.get_by_key(empty, typed_counter_key),
+    content="None",
+  )
+  debug_inspect(
+    try! world.get_by_key(nested, typed_counter_key),
+    content="Some({ value: 9 })",
+  )
+  debug_inspect(
+    try! world.get_by_key(nested, typed_marker_key),
+    content="Some({ enabled: true })",
+  )
+  debug_inspect(
+    try! world.get_by_key(nested, sparse_storage_counter_key),
+    content="Some({ value: 12 })",
+  )
+}
+
+///|
+test "ecs: for_each_component tolerates structural changes during iteration" {
+  let world = World::new()
+  let visited : Array[Int] = []
+
+  for i in 0..<32 {
+    let entity = world.spawn()
+    try! world.set_by_key(entity, typed_counter_key, TypedCounter::{ value: i })
+  }
+
+  world.for_each_component(typed_counter_key, fn(entity, _counter) {
+    visited.push(entity.id)
+    try! world.set_by_key(entity, typed_marker_key, TypedMarker::{ enabled: true })
+  })
+
+  visited.sort()
+  debug_inspect(visited.length(), content="32")
+  debug_inspect(visited[0], content="0")
+  debug_inspect(visited[31], content="31")
+  debug_inspect(world.component_count(typed_marker_key), content="32")
+}
+
+///|
 test "ecs: bundle migration paths follow archetype/table topology" {
   ensure_sparse_storage_metadata_registered()
   let world = World::new()
