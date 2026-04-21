@@ -76,8 +76,8 @@ pub fn ensure_skin_uniforms_resource(world : @ecs.World) -> Unit {
 ///|
 pub fn skin_uniforms_ref_or_abort(world : @ecs.World) -> Ref[SkinUniforms] {
   ensure_skin_uniforms_resource(world)
-  match (try! world.get_resource_ref_mut(SkinUniforms::resource())) {
-    Some(state) => state
+  match (try! world.get_resource_mut(SkinUniforms::resource())) {
+    Some(state) => Ref::new(state.peek())
     None => abort("Missing SkinUniforms resource in render world")
   }
 }

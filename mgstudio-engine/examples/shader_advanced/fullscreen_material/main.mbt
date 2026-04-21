@@ -21,11 +21,13 @@ fn setup(
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let cube_mesh = mesh_assets.get_ref().val
+  let cube_mesh = mesh_assets.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(1.5F, 1.5F, 1.5F))
-  let cube_material = material_assets.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
-  )
+  let cube_material = material_assets
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
+    )
 
   ignore(
     commands.spawn(

@@ -30,13 +30,13 @@ pub impl @ecs.Component for AutoFocus with component() {
 
 ///|
 pub fn on_auto_focus_added(world : @ecs.World, entity : @core.Entity) -> Unit {
-  let focus = try world.get_resource_ref_mut(InputFocus::resource()) catch {
+  let focus = try world.get_resource_mut(InputFocus::resource()) catch {
     _ => None
   } noraise {
     value => value
   }
   match focus {
-    Some(input_focus) => input_focus.val.set(entity)
+    Some(input_focus) => input_focus.modify(fn(value) { value.set(entity) })
     None => ()
   }
 }

@@ -72,22 +72,26 @@ pub impl @app.Resource for LdtkIntCellMap with resource() {
 }
 
 ///|
-fn ldtk_ensure_entity_map(world : @ecs.World) -> Ref[LdtkEntityMap] {
+fn ldtk_ensure_entity_map(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[LdtkEntityMap] {
   if (try! world.get_resource(ldtk_entity_map_key)) is None {
     world.insert_resource(ldtk_entity_map_key, LdtkEntityMap::default())
   }
-  match (try! world.get_resource_ref_mut(ldtk_entity_map_key)) {
+  match (try! world.get_resource_mut(ldtk_entity_map_key)) {
     Some(value) => value
     None => abort("Failed to access LdtkEntityMap resource")
   }
 }
 
 ///|
-fn ldtk_ensure_int_cell_map(world : @ecs.World) -> Ref[LdtkIntCellMap] {
+fn ldtk_ensure_int_cell_map(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[LdtkIntCellMap] {
   if (try! world.get_resource(ldtk_int_cell_map_key)) is None {
     world.insert_resource(ldtk_int_cell_map_key, LdtkIntCellMap::default())
   }
-  match (try! world.get_resource_ref_mut(ldtk_int_cell_map_key)) {
+  match (try! world.get_resource_mut(ldtk_int_cell_map_key)) {
     Some(value) => value
     None => abort("Failed to access LdtkIntCellMap resource")
   }
@@ -101,7 +105,9 @@ pub fn register_ldtk_entity_for_layer_optional(
   dispatcher : LdtkEntityDispatcher,
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  ldtk_ensure_entity_map(world).val.entries.set(
+  let entity_map = ldtk_ensure_entity_map(world)
+  entity_map.set_changed()
+  entity_map.peek().entries.set(
     (layer_identifier, entity_identifier),
     dispatcher,
   )
@@ -167,10 +173,9 @@ pub fn register_ldtk_int_cell_for_layer_optional(
   dispatcher : LdtkIntCellDispatcher,
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  ldtk_ensure_int_cell_map(world).val.entries.set(
-    (layer_identifier, value),
-    dispatcher,
-  )
+  let int_cell_map = ldtk_ensure_int_cell_map(world)
+  int_cell_map.set_changed()
+  int_cell_map.peek().entries.set((layer_identifier, value), dispatcher)
   app
 }
 

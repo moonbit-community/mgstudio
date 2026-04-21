@@ -124,8 +124,12 @@ pub impl Material2d for DummyMaterialAsset with bind_group(self) {
 
 ///|
 fn test_rectangle_mesh(width : Float, height : Float) -> Mesh2d {
+  let mesh_assets = mesh_assets_mut_or_abort()
+  mesh_assets.set_changed()
   Mesh2d::new(
-    mesh_assets_mut_or_abort().val.add(
+    mesh_assets
+    .peek()
+    .add(
       Mesh::from_2d_geometry(
         mesh2d_geometry_rectangle(Rectangle::new(width, height)),
       ),
@@ -137,16 +141,16 @@ fn test_rectangle_mesh(width : Float, height : Float) -> Mesh2d {
 fn test_color_material_handle(
   color : Color,
 ) -> @asset.Handle[ColorMaterialAsset] {
-  color_material_assets_mut_or_abort().val.add(
-    ColorMaterialAsset::from_color(color),
-  )
+  let materials = color_material_assets_mut_or_abort()
+  materials.set_changed()
+  materials.peek().add(ColorMaterialAsset::from_color(color))
 }
 
 ///|
 fn test_image_material_handle(id : Int) -> @asset.Handle[ColorMaterialAsset] {
-  color_material_assets_mut_or_abort().val.add(
-    ColorMaterialAsset::from_image(@asset.Handle::new(id)),
-  )
+  let materials = color_material_assets_mut_or_abort()
+  materials.set_changed()
+  materials.peek().add(ColorMaterialAsset::from_image(@asset.Handle::new(id)))
 }
 
 ///|
@@ -533,14 +537,18 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
           materials : @app.ResMut[@asset.Assets[ColorMaterialAsset]],
         ) {
           ignore(commands.spawn_component(Camera2d::default()))
-          let mesh_handle = meshes.get_ref().val.add(
-            Mesh::from_2d_geometry(
-              mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
-            ),
-          )
-          let material_handle = materials.get_ref().val.add(
-            ColorMaterialAsset::from_color(Color::white()),
-          )
+          meshes.set_changed()
+          let mesh_handle = meshes
+            .peek()
+            .add(
+              Mesh::from_2d_geometry(
+                mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
+              ),
+            )
+          materials.set_changed()
+          let material_handle = materials
+            .peek()
+            .add(ColorMaterialAsset::from_color(Color::white()))
           ignore(
             commands.spawn(
               (
@@ -574,12 +582,15 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
     .add_plugins(SpritePlugin::default())
   let world = app.world()
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  let mesh_assets = try! world.get_resource_ref_mut(mesh_assets_key).unwrap()
-  let mesh_handle = mesh_assets.val.add(
-    Mesh::from_2d_geometry(
-      mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
-    ),
-  )
+  let mesh_assets = (try! world.get_resource_mut(mesh_assets_key)).unwrap()
+  mesh_assets.set_changed()
+  let mesh_handle = mesh_assets
+    .peek()
+    .add(
+      Mesh::from_2d_geometry(
+        mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
+      ),
+    )
   let entity = world.spawn()
   try! world.set_by_key(entity, @mesh.ecs_key_mesh2d, Mesh2d::new(mesh_handle))
 
@@ -609,12 +620,15 @@ test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
     .add_plugins(SpritePlugin::default())
   let world = app.world()
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  let mesh_assets = try! world.get_resource_ref_mut(mesh_assets_key).unwrap()
-  let mesh_handle = mesh_assets.val.add(
-    Mesh::from_2d_geometry(
-      mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
-    ),
-  )
+  let mesh_assets = (try! world.get_resource_mut(mesh_assets_key)).unwrap()
+  mesh_assets.set_changed()
+  let mesh_handle = mesh_assets
+    .peek()
+    .add(
+      Mesh::from_2d_geometry(
+        mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
+      ),
+    )
   let entity = world.spawn()
   try! world.set_by_key(entity, @mesh.ecs_key_mesh2d, Mesh2d::new(mesh_handle))
   try! world.set_by_key(
@@ -799,10 +813,11 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     let handle : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(21)
     handle_ref.val = Some(handle)
     let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
-    guard (try! world.get_resource_ref_mut(key)) is Some(assets_ref) else {
+    guard (try! world.get_resource_mut(key)) is Some(assets_ref) else {
       abort("expected DummyMaterialAsset asset store")
     }
-    assets_ref.val.insert(handle, expected) |> ignore
+    assets_ref.set_changed()
+    assets_ref.peek().insert(handle, expected) |> ignore
     let entity = world.spawn()
     entity_ref.val = Some(entity)
     let material_key : @ecs.ComponentKey[MeshMaterial2d[DummyMaterialAsset]] = MeshMaterial2d::component()

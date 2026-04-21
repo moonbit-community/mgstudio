@@ -140,10 +140,10 @@ test "asset system forwards asset events to ECS messages" {
   let key : @ecs.ResourceKey[Assets[Int]] = assets_resource_key()
   world.insert_resource(key, Assets::new())
 
-  match (try! world.get_resource_ref_mut(key)) {
+  match (try! world.get_resource_mut(key)) {
     Some(assets) => {
-      ignore(assets.val.add(42))
-      ignore(assets.val.add(43))
+      ignore(assets.modify(fn(value) { value.add(42) }))
+      ignore(assets.modify(fn(value) { value.add(43) }))
     }
     None => abort("expected Assets<Int> resource")
   }
@@ -442,46 +442,51 @@ test "Assets<Image>::get_mut exposes in-place mutation and emits a modified even
   world.insert_resource(key, Assets::new())
 
   let handle = asset_with_world(world, fn() {
-    match (try! world.get_resource_ref_mut(key)) {
+    match (try! world.get_resource_mut(key)) {
       Some(images) =>
-        images.val.add(
-          Image::new(
-            1,
-            1,
-            Bytes::from_array([
-              (0).to_byte(),
-              (0).to_byte(),
-              (0).to_byte(),
-              (255).to_byte(),
-            ]),
-          ),
-        )
+        images.modify(fn(value) {
+          value.add(
+            Image::new(
+              1,
+              1,
+              Bytes::from_array([
+                (0).to_byte(),
+                (0).to_byte(),
+                (0).to_byte(),
+                (255).to_byte(),
+              ]),
+            ),
+          )
+        })
       None => abort("expected image assets resource")
     }
   })
 
   asset_with_world(world, fn() {
-    match (try! world.get_resource_ref_mut(key)) {
+    match (try! world.get_resource_mut(key)) {
       Some(images) =>
-        match images.val.get_mut(handle) {
-          Some(image) =>
-            image.pixels = Bytes::from_array([
-              (255).to_byte(),
-              (255).to_byte(),
-              (255).to_byte(),
-              (255).to_byte(),
-            ])
-          None => abort("expected image asset")
-        }
+        images.modify(fn(value) {
+          match value.get_mut(handle) {
+            Some(image) =>
+              image.pixels = Bytes::from_array([
+                (255).to_byte(),
+                (255).to_byte(),
+                (255).to_byte(),
+                (255).to_byte(),
+              ])
+            None => abort("expected image asset")
+          }
+        })
       None => abort("expected image assets resource")
     }
   })
 
   let result = asset_with_world(world, fn() {
-    match (try! world.get_resource_ref_mut(key)) {
+    match (try! world.get_resource_mut(key)) {
       Some(images) => {
-        let stored = images.val.get(handle)
-        let events = images.val.drain_events()
+        let (stored, events) = images.modify(fn(value) {
+          (value.get(handle), value.drain_events())
+        })
         (
           stored.map(fn(image) {
             match image.pixels.get(0) {
@@ -533,17 +538,19 @@ test "Assets<Image>::add creates a target texture image asset" {
   world.insert_resource(key, Assets::new())
 
   let result = asset_with_world(world, fn() {
-    match (try! world.get_resource_ref_mut(key)) {
+    match (try! world.get_resource_mut(key)) {
       Some(images) => {
-        let handle = images.val.add(
-          Image::new_target_texture(
-            256,
-            128,
-            TextureFormat::Rgba8Unorm,
-            Some(TextureFormat::Rgba8UnormSrgb),
-          ),
-        )
-        let stored = images.val.get(handle)
+        let (handle, stored) = images.modify(fn(value) {
+          let handle = value.add(
+            Image::new_target_texture(
+              256,
+              128,
+              TextureFormat::Rgba8Unorm,
+              Some(TextureFormat::Rgba8UnormSrgb),
+            ),
+          )
+          (handle, value.get(handle))
+        })
         (
           stored.map(fn(image) { image.is_target_texture() }).unwrap_or(false),
           stored

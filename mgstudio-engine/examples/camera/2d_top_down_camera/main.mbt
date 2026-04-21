@@ -41,11 +41,11 @@ fn setup_scene(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val
+          meshes.peek()
           |> @sprite.add_mesh(@sprite.Rectangle::new(1000.0F, 700.0F)),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val
+          materials.peek()
           |> @sprite.add_material(@sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F)),
         ),
       ),
@@ -56,10 +56,10 @@ fn setup_scene(
       (
         Player::{  },
         @sprite.Mesh2d::new(
-          meshes.get_ref().val |> @sprite.add_mesh(@sprite.Circle::new(25.0F)),
+          meshes.peek() |> @sprite.add_mesh(@sprite.Circle::new(25.0F)),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val
+          materials.peek()
           |> @sprite.add_material(@sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F)),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F),
@@ -119,10 +119,11 @@ fn move_player(
     .normalize_or_zero()
     .mul_scalar(PLAYER_SPEED * delta_seconds)
   let transform = player.get()
-  let transform_ref = transform.get_ref()
-  transform_ref.val.translation = transform_ref.val.translation.add(
-    @math.Vec3::new(move_delta.x, move_delta.y, 0.0F),
-  )
+  transform.modify(fn(value) {
+    value.translation = value.translation.add(
+      @math.Vec3::new(move_delta.x, move_delta.y, 0.0F),
+    )
+  })
 }
 
 ///|
@@ -140,16 +141,17 @@ fn update_camera(
   let target_translation = player.get().value().translation
   let delta_seconds = time.get().delta_seconds()
   let camera_transform = camera.get()
-  let transform_ref = camera_transform.get_ref()
-  transform_ref.val.translation.smooth_nudge(
-    @math.Vec3::new(
-      target_translation.x,
-      target_translation.y,
-      transform_ref.val.translation.z,
-    ),
-    CAMERA_DECAY_RATE,
-    delta_seconds,
-  )
+  camera_transform.modify(fn(value) {
+    value.translation.smooth_nudge(
+      @math.Vec3::new(
+        target_translation.x,
+        target_translation.y,
+        value.translation.z,
+      ),
+      CAMERA_DECAY_RATE,
+      delta_seconds,
+    )
+  })
 }
 
 ///|

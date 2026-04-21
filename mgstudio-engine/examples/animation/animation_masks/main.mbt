@@ -683,10 +683,11 @@ fn setup_animation_graph_once_loaded(world : @ecs.World) -> Unit {
     return
   }
 
-  let player_ref = player_mut.get_ref()
-  for node in setup_ref.val.nodes {
-    player_ref.val.play(node).repeat() |> ignore
-  }
+  player_mut.modify(fn(value) {
+    for node in setup_ref.val.nodes {
+      value.play(node).repeat() |> ignore
+    }
+  })
   ignore(
     try! world
     .entity_mut(player_entity)

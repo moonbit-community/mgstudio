@@ -32,9 +32,11 @@ fn main {
 
 ///|
 fn toggle(store : @app.ResMut[@diagnostic.DiagnosticsStore]) -> Unit {
-  for diagnostic in store.get_ref().val.iter_mut() {
-    let message = "toggling diagnostic \{diagnostic.val.path().as_str()}"
-    @app.log_record(@app.Info, message~)
-    diagnostic.val.set_enabled(!diagnostic.val.is_enabled())
-  }
+  store.modify(fn(value) {
+    for diagnostic in value.iter_mut() {
+      let message = "toggling diagnostic \{diagnostic.val.path().as_str()}"
+      @app.log_record(@app.Info, message~)
+      diagnostic.val.set_enabled(!diagnostic.val.is_enabled())
+    }
+  })
 }

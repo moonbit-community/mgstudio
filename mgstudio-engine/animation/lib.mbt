@@ -69,10 +69,10 @@ fn[T] animation_asset_store_or_abort() -> @asset.Assets[T] {
 }
 
 ///|
-fn[T] animation_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
+fn[T] animation_asset_store_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[T]] {
   let world = animation_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key)) {
+  match (try! world.get_resource_mut(key)) {
     Some(assets) => assets
     None =>
       abort(
@@ -83,7 +83,9 @@ fn[T] animation_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
 
 ///|
 pub fn animation_clip_add(clip : AnimationClip) -> @asset.Handle[AnimationClip] {
-  animation_asset_store_mut_or_abort().val.add(clip)
+  let assets = animation_asset_store_mut_or_abort()
+  assets.set_changed()
+  assets.peek().add(clip)
 }
 
 ///|
@@ -98,7 +100,9 @@ pub fn animation_clip_set(
   handle : @asset.Handle[AnimationClip],
   clip : AnimationClip,
 ) -> Bool {
-  animation_asset_store_mut_or_abort().val.set(handle, clip)
+  let assets = animation_asset_store_mut_or_abort()
+  assets.set_changed()
+  assets.peek().set(handle, clip)
 }
 
 ///|
@@ -1239,16 +1243,15 @@ let ecs_key_animation_runtime_scratch : @ecs.ResourceKey[
 ///|
 fn animation_runtime_scratch_ref_or_init(
   world : @ecs.World,
-) -> Ref[AnimationRuntimeScratch] {
-  match (try! world.get_resource_ref_mut(ecs_key_animation_runtime_scratch)) {
+) -> @ecs.ResourceMut[AnimationRuntimeScratch] {
+  match (try! world.get_resource_mut(ecs_key_animation_runtime_scratch)) {
     Some(state_ref) => state_ref
     None => {
       world.insert_resource(
         ecs_key_animation_runtime_scratch,
         AnimationRuntimeScratch::default(),
       )
-      match
-        (try! world.get_resource_ref_mut(ecs_key_animation_runtime_scratch)) {
+      match (try! world.get_resource_mut(ecs_key_animation_runtime_scratch)) {
         Some(state_ref) => state_ref
         None => abort("Missing AnimationRuntimeScratch resource")
       }
@@ -1361,7 +1364,8 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
 ///|
 pub fn animate_targets(world : @ecs.World) -> Unit {
   let runtime_scratch_ref = animation_runtime_scratch_ref_or_init(world)
-  let runtime_scratch = runtime_scratch_ref.val
+  runtime_scratch_ref.set_changed()
+  let runtime_scratch = runtime_scratch_ref.peek()
   animation_runtime_scratch_clear(runtime_scratch)
   let transform_updates = runtime_scratch.transform_updates
   let weights_updates = runtime_scratch.weights_updates
@@ -1369,9 +1373,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let prepared_player_cache = runtime_scratch.prepared_player_cache
   let prepared_samples_cache = runtime_scratch.prepared_samples_cache
   let target_mask_cache = runtime_scratch.target_mask_cache
-  let threaded_graphs = try! world.get_resource_ref(
-    threaded_animation_graphs_key,
-  )
+  let threaded_graphs = try! world.get_resource(threaded_animation_graphs_key)
   let graph_cache = runtime_scratch.graph_cache
   let clip_cache = runtime_scratch.clip_cache
   let threaded_graph_cache = runtime_scratch.threaded_graph_cache
@@ -1401,7 +1403,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     }
     let threaded_graph = match threaded_graphs {
       Some(threaded_graphs) =>
-        match threaded_graphs.val.graphs.get(graph_handle_id) {
+        match threaded_graphs.graphs.get(graph_handle_id) {
           Some(cached_threaded) => cached_threaded
           None =>
             match threaded_graph_cache.get(graph_handle_id) {
@@ -1446,9 +1448,9 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let evaluation_state = animation_evaluation_state_new()
   if target_id_column is Some(target_id_column) &&
     animated_by_column is Some(animated_by_column) {
-    animated_by_column.for_each_ref(fn(entity, animated_by_ref) {
+    animated_by_column.for_each(fn(entity, animated_by) {
       guard target_id_column.get(entity) is Some(target_id) else { return }
-      let player_entity = animated_by_ref.val.player()
+      let player_entity = animated_by.player()
       let player_id = player_entity.id
       if player_id < 0 {
         return
@@ -1548,9 +1550,7 @@ fn animation_collect_players_with_target_events(
     (AnimationPlayer, AnimationGraph, ThreadedAnimationGraph),
   ] = {}
   let mut has_any_target_events = false
-  let threaded_graphs = try! world.get_resource_ref(
-    threaded_animation_graphs_key,
-  )
+  let threaded_graphs = try! world.get_resource(threaded_animation_graphs_key)
   let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
     world,
   )
@@ -1566,7 +1566,7 @@ fn animation_collect_players_with_target_events(
     let graph_id = graph_handle.graph().id()
     let threaded_graph = match threaded_graphs {
       Some(threaded_graphs) =>
-        match threaded_graphs.val.graphs.get(graph_id) {
+        match threaded_graphs.graphs.get(graph_id) {
           Some(cached_threaded) => cached_threaded
           None => animation_thread_graph_build(graph)
         }

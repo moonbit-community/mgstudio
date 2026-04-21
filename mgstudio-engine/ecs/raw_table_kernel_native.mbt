@@ -72,7 +72,9 @@ fn raw_table_row_kernel_entity_at(
   if row < 0 || row >= raw_table_row_kernel_len(kernel) {
     return None
   }
-  Some(@core.Entity::from_bits(raw_table_row_kernel_get_bits_native(kernel, row)))
+  Some(
+    @core.Entity::from_bits(raw_table_row_kernel_get_bits_native(kernel, row)),
+  )
 }
 
 ///|

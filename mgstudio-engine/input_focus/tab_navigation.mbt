@@ -288,8 +288,8 @@ fn tab_navigation_collect_candidates(world : @ecs.World) -> Array[TabCandidate] 
 ///|
 fn input_focus_visible_resource_ref_mut(
   world : @ecs.World,
-) -> Ref[InputFocusVisible]? {
-  try world.get_resource_ref_mut(InputFocusVisible::resource()) catch {
+) -> @ecs.ResourceMut[InputFocusVisible]? {
+  try world.get_resource_mut(InputFocusVisible::resource()) catch {
     _ => None
   } noraise {
     value => value
@@ -303,10 +303,10 @@ pub fn advance_tab_focus(world : @ecs.World, reverse : Bool) -> Unit {
     return
   }
   guard input_focus_world_resource_ref_mut(world, InputFocus::resource())
-    is Some(focus_ref) else {
+    is Some(focus) else {
     return
   }
-  let current = focus_ref.val.get()
+  let current = focus.peek().get()
   let mut current_index = -1
   for i in 0..<candidates.length() {
     if current == Some(candidates[i].entity) {
@@ -331,9 +331,9 @@ pub fn advance_tab_focus(world : @ecs.World, reverse : Bool) -> Unit {
   } else {
     current_index + 1
   }
-  focus_ref.val.set(candidates[next_index].entity)
-  if input_focus_visible_resource_ref_mut(world) is Some(visible_ref) {
-    visible_ref.val.set_visible(true)
+  focus.modify(fn(value) { value.set(candidates[next_index].entity) })
+  if input_focus_visible_resource_ref_mut(world) is Some(visible) {
+    visible.modify(fn(value) { value.set_visible(true) })
   }
 }
 

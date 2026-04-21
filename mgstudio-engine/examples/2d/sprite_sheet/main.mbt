@@ -75,21 +75,24 @@ fn animate_sprite(
   try! query.for_each(fn(_entity, data) {
     let (indices, timer, sprite) = data
     let indices = indices.value()
-    let timer_ref = timer.get_ref()
-    let sprite_ref = sprite.get_ref()
-    timer_ref.val.timer = timer_ref.val.timer.tick(time.get().delta())
-    guard timer_ref.val.timer.just_finished() else { return }
-    guard sprite_ref.val.texture_atlas is Some(atlas) else { return }
-
-    sprite_ref.val.texture_atlas = Some(
-      atlas.with_index(
-        if atlas.index == indices.last {
-          indices.first
-        } else {
-          atlas.index + 1
-        },
-      ),
-    )
+    let mut next_atlas = None
+    timer.modify(fn(value) {
+      value.timer = value.timer.tick(time.get().delta())
+      guard value.timer.just_finished() else { return }
+      guard sprite.value().texture_atlas is Some(atlas) else { return }
+      next_atlas = Some(
+        atlas.with_index(
+          if atlas.index == indices.last {
+            indices.first
+          } else {
+            atlas.index + 1
+          },
+        ),
+      )
+    })
+    if next_atlas is Some(next_atlas) {
+      sprite.set(sprite.value().with_texture_atlas(Some(next_atlas)))
+    }
   })
 }
 
@@ -102,9 +105,9 @@ fn setup(
   let texture = asset_server
     .get()
     .load("textures/rpg/chars/gabe/gabe-idle-run.png")
-  let texture_atlas_layout = texture_atlas_layouts.get_ref().val.add(
-    @asset.TextureAtlasLayout::from_grid(@math.UVec2::splat(24), 7, 1),
-  )
+  let texture_atlas_layout = texture_atlas_layouts
+    .peek()
+    .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::splat(24), 7, 1))
   let animation_indices = AnimationIndices::{
     first: GABE_FIRST_FRAME,
     last: GABE_LAST_FRAME,

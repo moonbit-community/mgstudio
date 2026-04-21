@@ -98,7 +98,9 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
   let material = @sprite.MeshMaterial2d::new(
-    materials.get_ref().val.add(
+    materials
+    .peek()
+    .add(
       @sprite.ColorMaterialAsset::from_image(
         asset_server.get().load("branding/icon.png"),
       ),
@@ -127,7 +129,9 @@ fn setup(
       commands.spawn(
         (
           @sprite.Mesh2d::new(
-            meshes.get_ref().val.add(
+            meshes
+            .peek()
+            .add(
               @sprite.mesh2d_geometry_circular_sector(
                 sector.with_uv_mask_angle(sector_angle),
               ).to_mesh(),
@@ -150,7 +154,9 @@ fn setup(
       commands.spawn(
         (
           @sprite.Mesh2d::new(
-            meshes.get_ref().val.add(
+            meshes
+            .peek()
+            .add(
               @sprite.mesh2d_geometry_circular_segment(
                 segment.with_uv_mask_angle(-segment_angle),
               ).to_mesh(),

@@ -293,11 +293,13 @@ fn text_color_system(
 ) -> Unit {
   let seconds = time.get().elapsed_secs()
   try! query.view(fn(_entity, text_color) {
-    text_color.get_ref().val = @mgtext.TextColor::new(
-      @sprite.Color::srgb(
-        @math.sin(1.25F * seconds) / 2.0F + 0.5F,
-        @math.sin(0.75F * seconds) / 2.0F + 0.5F,
-        @math.sin(0.50F * seconds) / 2.0F + 0.5F,
+    text_color.set(
+      @mgtext.TextColor::new(
+        @sprite.Color::srgb(
+          @math.sin(1.25F * seconds) / 2.0F + 0.5F,
+          @math.sin(0.75F * seconds) / 2.0F + 0.5F,
+          @math.sin(0.50F * seconds) / 2.0F + 0.5F,
+        ),
       ),
     )
   })
@@ -315,6 +317,6 @@ fn text_update_system(
   }
   guard value is Some(fps) else { return }
   try! query.view(fn(_entity, span) {
-    span.get_ref().val.content = format_fps(fps)
+    span.modify(fn(value) { value.content = format_fps(fps) })
   })
 }

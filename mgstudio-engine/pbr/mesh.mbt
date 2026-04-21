@@ -96,13 +96,14 @@ pub fn standard_material_set(
 pub fn standard_material_assets_mut_or_abort() -> Ref[
   @asset.Assets[StandardMaterial],
 ] {
-  let assets_ref : Ref[@asset.Assets[StandardMaterial]] = @asset.asset_assets_ref_mut_or_abort()
-  assets_ref
+  let assets_ref = @asset.asset_assets_ref_mut_or_abort()
+  Ref::new(assets_ref.peek())
 }
 
 ///|
 pub fn mesh_assets_mut_or_abort() -> Ref[@asset.Assets[@mesh.Mesh]] {
-  @sprite.mesh_assets_mut_or_abort()
+  let assets_ref = @sprite.mesh_assets_mut_or_abort()
+  Ref::new(assets_ref.peek())
 }
 
 ///|
@@ -119,7 +120,10 @@ fn Render3dInternalAssetsState::new() -> Render3dInternalAssetsState {
 fn render3d_internal_assets_ref(
   world : @ecs.World,
 ) -> Ref[Render3dInternalAssetsState]? {
-  try! world.get_resource_ref_mut(ecs_key_internal_assets)
+  match (try! world.get_resource_mut(ecs_key_internal_assets)) {
+    Some(state) => Some(Ref::new(state.peek()))
+    None => None
+  }
 }
 
 ///|

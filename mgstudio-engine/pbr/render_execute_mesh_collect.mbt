@@ -60,9 +60,8 @@ fn render3d_extracted_mesh_cache_ref_or_abort(
   world : @ecs.World,
 ) -> Ref[Render3dExtractedMeshCache] {
   ensure_render3d_extracted_mesh_cache(world)
-  match
-    (try! world.get_resource_ref_mut(Render3dExtractedMeshCache::resource())) {
-    Some(cache_ref) => cache_ref
+  match (try! world.get_resource_mut(Render3dExtractedMeshCache::resource())) {
+    Some(cache_ref) => Ref::new(cache_ref.peek())
     None => abort("Missing Render3dExtractedMeshCache resource in render world")
   }
 }

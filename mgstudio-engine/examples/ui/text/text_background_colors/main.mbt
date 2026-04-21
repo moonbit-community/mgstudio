@@ -88,7 +88,7 @@ fn setup(commands : @app.Commands) -> Unit {
       ) {
         let text_color = query.get(span) catch { _ => None }
         if text_color is Some(text_color) {
-          text_color.get_ref().val = @text.TextColor::white()
+          text_color.set(@text.TextColor::white())
         }
       })
       .observe_pointer2(fn(
@@ -97,7 +97,7 @@ fn setup(commands : @app.Commands) -> Unit {
       ) {
         let text_color = query.get(span) catch { _ => None }
         if text_color is Some(text_color) {
-          text_color.get_ref().val = @text.TextColor::black()
+          text_color.set(@text.TextColor::black())
         }
       }),
     )
@@ -126,9 +126,7 @@ fn cycle_text_background_colors(
       _ => None
     }
     if background_color is Some(background_color) {
-      background_color.get_ref().val = @text.TextBackgroundColor::new(
-        palette_color(i + n),
-      )
+      background_color.set(@text.TextBackgroundColor::new(palette_color(i + n)))
     }
   }
 }

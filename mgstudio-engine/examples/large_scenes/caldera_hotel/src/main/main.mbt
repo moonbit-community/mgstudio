@@ -104,17 +104,14 @@ fn orbit_camera(
   let t = time.get().elapsed_secs()
   try! cameras.for_each(fn(_entity, data) {
     let (orbit, transform) = data
-    let transform_ref = transform.get_ref()
     let angle = t * orbit.value().speed
     let x = @math.cos(angle) * orbit.value().radius
     let z = @math.sin(angle) * orbit.value().radius
-    transform_ref.val = @transform.Transform::from_xyz(
-      x,
-      orbit.value().height,
-      z,
-    ).looking_at(
-      @math.Vec3::new(0.0F, 0.8F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    transform.set(
+      @transform.Transform::from_xyz(x, orbit.value().height, z).looking_at(
+        @math.Vec3::new(0.0F, 0.8F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
     )
   })
 }

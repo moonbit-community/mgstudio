@@ -77,18 +77,19 @@ fn simulate_loading(
   bars : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[LoadingBar]],
   commands : @app.Commands,
 ) -> Unit {
-  if state.get_ref().val.done {
+  if state.peek().done {
     return
   }
-  let next = state.get_ref().val.progress + time.get().delta_secs() * 0.35F
-  state.get_ref().val.progress = if next > 1.0F { 1.0F } else { next }
-  let progress = state.get_ref().val.progress
+  let progress = state.modify(fn(value) {
+    let next = value.progress + time.get().delta_secs() * 0.35F
+    value.progress = if next > 1.0F { 1.0F } else { next }
+    value.progress
+  })
   try! bars.for_each(fn(_entity, bar_transform) {
-    let transform_ref = bar_transform.get_ref()
-    transform_ref.val.scale.x = progress
+    bar_transform.modify(fn(value) { value.scale.x = progress })
   })
   if progress >= 1.0F {
-    state.get_ref().val.done = true
+    state.modify(fn(value) { value.done = true })
     ignore(
       commands.spawn(
         (

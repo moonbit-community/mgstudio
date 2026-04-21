@@ -47,8 +47,8 @@ pub impl @ecs.Component for Armor with component() {
 
 ///|
 struct Attack {
-  mut damage : Int
-  mut entity : @core.Entity
+  damage : Int
+  entity : @core.Entity
 }
 
 ///|
@@ -67,11 +67,8 @@ pub impl @ecs.TriggerEvent for Attack with observer_entity(self) {
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Attack with set_observer_entity(
-  event_ref,
-  entity,
-) {
-  event_ref.val.entity = entity
+pub impl @ecs.TriggerEvent for Attack with set_observer_entity(self, entity) {
+  Attack::{ damage: self.damage, entity }
 }
 
 ///|
@@ -153,18 +150,18 @@ fn attack_armor(
     return
   }
 
-  let schedule_ref = schedule.get_ref()
-  schedule_ref.val.accumulator = schedule_ref.val.accumulator +
-    time.get().delta_seconds()
-  if schedule_ref.val.accumulator < ATTACK_INTERVAL_SECONDS {
-    return
-  }
-  schedule_ref.val.accumulator = 0.0F
-
-  let attack_index = schedule_ref.val.next_attack_index % entities.length()
-  schedule_ref.val.next_attack_index = schedule_ref.val.next_attack_index + 1
-  let damage = 4 + schedule_ref.val.next_attack_index * 3 % 18
-  let entity = entities[attack_index]
+  let attack = schedule.modify(fn(value) {
+    value.accumulator = value.accumulator + time.get().delta_seconds()
+    if value.accumulator < ATTACK_INTERVAL_SECONDS {
+      return None
+    }
+    value.accumulator = 0.0F
+    let attack_index = value.next_attack_index % entities.length()
+    value.next_attack_index = value.next_attack_index + 1
+    let damage = 4 + value.next_attack_index * 3 % 18
+    Some((damage, entities[attack_index]))
+  })
+  guard attack is Some((damage, entity)) else { return }
   commands.trigger(Attack::{ damage, entity })
   @app.log_info("Attack launched for \{damage.to_string()} damage")
 }
@@ -190,7 +187,7 @@ fn block_attack(
   let armor = armor_comp.value()
   let damage = attack.event().damage - armor.value
   if damage > 0 {
-    attack.get_ref().val.damage = damage
+    ignore(attack.modify(fn(value) { Attack::{ ..value, damage, } }))
     @app.log_info(
       "\{damage.to_string()} damage passed through \{name_comp.value().as_str()}",
     )
@@ -213,12 +210,12 @@ fn take_damage(
   guard hit_points.get(entity) is Some((hit_points_mut, name_comp)) else {
     return
   }
-  let hp_ref = hit_points_mut.get_ref()
-  hp_ref.val.value = hp_ref.val.value - attack.event().damage
-  if hp_ref.val.value > 0 {
-    @app.log_info(
-      "\{name_comp.value().as_str()} has \{hp_ref.val.value.to_string()} HP",
-    )
+  let next_hp = hit_points_mut.modify(fn(value) {
+    value.value = value.value - attack.event().damage
+    value.value
+  })
+  if next_hp > 0 {
+    @app.log_info("\{name_comp.value().as_str()} has \{next_hp.to_string()} HP")
     return
   }
 

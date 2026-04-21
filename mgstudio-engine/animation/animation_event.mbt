@@ -64,10 +64,9 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClipEvent::new_typed(
   ) {
     match payload.try_to() {
       Some(event_value) => {
-        let event_ref : Ref[T] = Ref::new(event_value)
-        T::set_observer_entity(event_ref, entity)
+        let event_value = T::set_observer_entity(event_value, entity)
         world.trigger(
-          event_ref.val,
+          event_value,
           caller=Some("mgstudio.animation.trigger_events"),
         )
       }

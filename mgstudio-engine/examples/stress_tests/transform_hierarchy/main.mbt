@@ -80,8 +80,7 @@ fn spawn_tree(
     ),
   )
 
-  let stats_ref = stats.get_ref()
-  stats_ref.val.nodes += 1
+  let added_nodes = Ref::new(1)
   let mut visible_count = 1
   let mut parents = [root]
   for depth in 1..<(TREE_DEPTH + 1) {
@@ -123,7 +122,7 @@ fn spawn_tree(
           )
           visible_count += 1
         }
-        stats_ref.val.nodes += 1
+        added_nodes.val += 1
         if depth < TREE_DEPTH {
           next_level.push(child)
         }
@@ -131,6 +130,7 @@ fn spawn_tree(
     }
     parents = next_level
   }
+  stats.modify(fn(value) { value.nodes += added_nodes.val })
 }
 
 ///|
@@ -165,13 +165,14 @@ fn update_transforms(
   try! nodes.for_each(fn(_entity, data) {
     let (motion, transform) = data
     let motion_value = motion.value()
-    let transform_ref = transform.get_ref()
     let depth_f = float_from_int(motion_value.depth)
     let radius = 8.0F + depth_f * 2.4F
     let angle = motion_value.phase + t * motion_value.speed
-    transform_ref.val.translation.x = @math.cos(angle) * radius
-    transform_ref.val.translation.y = @math.sin(angle) * radius
-    transform_ref.val.rotation = @math.Quat::from_rotation_z(angle * 0.25F)
+    transform.modify(fn(value) {
+      value.translation.x = @math.cos(angle) * radius
+      value.translation.y = @math.sin(angle) * radius
+      value.rotation = @math.Quat::from_rotation_z(angle * 0.25F)
+    })
   })
 }
 
@@ -180,13 +181,18 @@ fn print_stats(
   time : @app.Res[@time.Time[Unit]],
   stats : @app.ResMut[HierarchyStats],
 ) -> Unit {
-  let stats_ref = stats.get_ref()
-  stats_ref.val.print_timer += time.get().delta_secs()
-  if stats_ref.val.print_timer < 1.0F {
-    return
+  let printed_count = stats.modify(fn(value) {
+    value.print_timer += time.get().delta_secs()
+    if value.print_timer < 1.0F {
+      None
+    } else {
+      value.print_timer -= 1.0F
+      Some(value.nodes)
+    }
+  })
+  if printed_count is Some(count) {
+    println("Hierarchy nodes: \{count}")
   }
-  stats_ref.val.print_timer -= 1.0F
-  println("Hierarchy nodes: \{stats_ref.val.nodes}")
 }
 
 ///|

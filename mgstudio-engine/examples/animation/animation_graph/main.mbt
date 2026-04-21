@@ -284,8 +284,8 @@ fn setup_scene(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let server = asset_server.get()
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
 
   commands.spawn(
     (
@@ -400,7 +400,6 @@ fn init_animations(
   let clip_nodes = animation_graph.get().clip_nodes
   try! players.view(fn(_entity, data) {
     let (entity, player_mut) = data
-    let player_ref = player_mut.get_ref()
     commands
     .entity(entity)
     .insert(
@@ -409,9 +408,11 @@ fn init_animations(
         ExampleAnimationWeights::default(),
       ),
     )
-    for node in clip_nodes {
-      player_ref.val.play(node).repeat() |> ignore
-    }
+    player_mut.modify(fn(player) {
+      for node in clip_nodes {
+        ignore(player.play(node).repeat())
+      }
+    })
     initialized.set(true)
   })
 }
@@ -431,7 +432,6 @@ fn handle_weight_drag(
   guard (weights_query.single() catch { _ => None }) is Some(weights_mut) else {
     return
   }
-  let weights_ref = weights_mut.get_ref()
   try! controls.view(fn(_entity, data) {
     let (interaction, relative_cursor_position, clip_node) = data
     if interaction.value() != @ui.Interaction::Pressed {
@@ -441,7 +441,9 @@ fn handle_weight_drag(
       return
     }
     let weight = normalized.x.clamp(min=0.0F, max=1.0F)
-    weights_ref.val.weights[clip_node.value().index] = weight
+    weights_mut.modify(fn(value) {
+      value.weights[clip_node.value().index] = weight
+    })
   })
 }
 
@@ -485,17 +487,18 @@ fn sync_weights(
   let clip_nodes = animation_graph.get().clip_nodes
   try! players.view(fn(_entity, data) {
     let (player_mut, weights_comp) = data
-    let player_ref = player_mut.get_ref()
     let weights = weights_comp.value().weights
-    for index in 0..<clip_nodes.length() {
-      let node = clip_nodes[index]
-      if !player_ref.val.is_playing_animation(node) {
-        player_ref.val.play(node).repeat() |> ignore
+    player_mut.modify(fn(player) {
+      for index in 0..<clip_nodes.length() {
+        let node = clip_nodes[index]
+        if !player.is_playing_animation(node) {
+          ignore(player.play(node).repeat())
+        }
+        if player.animation_mut(node) is Some(animation_entry) {
+          ignore(animation_entry.set_weight(weights[index]))
+        }
       }
-      if player_ref.val.animation_mut(node) is Some(animation_entry) {
-        animation_entry.set_weight(weights[index]) |> ignore
-      }
-    }
+    })
   })
 }
 

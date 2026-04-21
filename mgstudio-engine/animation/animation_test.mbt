@@ -49,7 +49,7 @@ fn approx_eq_animation_slice(
 
 ///|
 struct TestTypedAnimationEvent {
-  mut observer_entity : @core.Entity?
+  observer_entity : @core.Entity?
   value : String
 }
 
@@ -79,10 +79,10 @@ pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with observer_entity(
 
 ///|
 pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with set_observer_entity(
-  event_ref,
+  self,
   entity,
 ) {
-  event_ref.val.observer_entity = Some(entity)
+  TestTypedAnimationEvent::{ observer_entity: Some(entity), value: self.value }
 }
 
 ///|

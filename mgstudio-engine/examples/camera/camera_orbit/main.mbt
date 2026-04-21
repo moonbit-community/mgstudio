@@ -69,12 +69,16 @@ fn setup(
       (
         @ecs.Name::new("Plane"),
         @pbr.Mesh3d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
           ),
         ),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @pbr.StandardMaterial::from_color(
               @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
             ).with_cull_mode(None),
@@ -89,14 +93,18 @@ fn setup(
       (
         @ecs.Name::new("Cube"),
         @pbr.Mesh3d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @pbr.Mesh::from_3d_geometry(
               @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
             ),
           ),
         ),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @pbr.StandardMaterial::from_color(
               @sprite.Color::srgb(0.8F, 0.7F, 0.6F),
             ),
@@ -178,29 +186,28 @@ fn orbit(
   delta_roll = delta_roll * settings.roll_speed * time.get().delta_seconds()
 
   try! camera_query.view(fn(_entity, camera_transform) {
-    let transform_ref = camera_transform.get_ref()
-    let (yaw, pitch, roll) = transform_ref.val.rotation.to_euler(
-      @math.EulerRot::YXZ,
-    )
+    camera_transform.modify(fn(value) {
+      let (yaw, pitch, roll) = value.rotation.to_euler(@math.EulerRot::YXZ)
 
-    let next_pitch = clamp_float(
-      pitch + delta_pitch,
-      settings.pitch_min,
-      settings.pitch_max,
-    )
-    let next_roll = roll + delta_roll
-    let next_yaw = yaw + delta_yaw
-    transform_ref.val.rotation = @math.Quat::from_euler(
-      @math.EulerRot::YXZ,
-      next_yaw,
-      next_pitch,
-      next_roll,
-    )
+      let next_pitch = clamp_float(
+        pitch + delta_pitch,
+        settings.pitch_min,
+        settings.pitch_max,
+      )
+      let next_roll = roll + delta_roll
+      let next_yaw = yaw + delta_yaw
+      value.rotation = @math.Quat::from_euler(
+        @math.EulerRot::YXZ,
+        next_yaw,
+        next_pitch,
+        next_roll,
+      )
 
-    let target = @math.Vec3::zero()
-    transform_ref.val.translation = target.sub(
-      transform_ref.val.forward().mul_scalar(settings.orbit_distance),
-    )
+      let target = @math.Vec3::zero()
+      value.translation = target.sub(
+        value.forward().mul_scalar(settings.orbit_distance),
+      )
+    })
   })
 }
 

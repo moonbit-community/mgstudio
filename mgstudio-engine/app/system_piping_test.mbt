@@ -113,7 +113,7 @@ test "app system piping: map and pipe_param can use additional system params" {
     clone_piped_message_system,
   ).pipe_param(fn(input : In[String], counter : ResMut[SystemPipingCounter]) {
     let output = input.get()
-    counter.get_ref().val.value = counter.get_ref().val.value + output.length()
+    counter.modify(fn(value) { value.value = value.value + output.length() })
     log.push("pipe:\{output}")
   })
   let mut app = App::new(@ecs.World::new())

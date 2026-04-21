@@ -62,8 +62,8 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
   let normal = material_assets |> @pbr.add_material(@sprite.Color::white())
   let hover = material_assets
     |> @pbr.add_material(@sprite.Color::srgb(0.45F, 0.92F, 0.95F))
@@ -146,9 +146,7 @@ fn set_target_material(
   guard target is Some(entity) else { return }
   let target_data = query.get(entity) catch { _ => None }
   guard target_data is Some((mesh_material, pickable)) else { return }
-  mesh_material.get_ref().val = @pbr.MeshMaterial3d::new(
-    material_handle(pickable.value()),
-  )
+  mesh_material.set(@pbr.MeshMaterial3d::new(material_handle(pickable.value())))
 }
 
 ///|
@@ -188,9 +186,7 @@ fn on_pointer_down(
   }
   let target_data = query.get(entity) catch { _ => None }
   if target_data is Some((mesh_material, pickable)) {
-    mesh_material.get_ref().val = @pbr.MeshMaterial3d::new(
-      pickable.value().pressed,
-    )
+    mesh_material.set(@pbr.MeshMaterial3d::new(pickable.value().pressed))
     dragging_entity.val = Some(entity)
     last_drag_position.val = Some(pointer.position())
   } else {
@@ -228,8 +224,10 @@ fn on_pointer_move_drag(
       )
     None => @math.Vec2::new(0.0F, 0.0F)
   }
-  transform.get_ref().val.rotate_y(delta.x * 0.02F)
-  transform.get_ref().val.rotate(@math.Quat::from_rotation_x(delta.y * 0.02F))
+  transform.modify(fn(value) {
+    value.rotate_y(delta.x * 0.02F)
+    value.rotate(@math.Quat::from_rotation_x(delta.y * 0.02F))
+  })
   last_drag_position.val = Some(pointer.position())
 }
 

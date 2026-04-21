@@ -118,9 +118,9 @@ fn print_text_system(
   let delta = time.get().delta()
   try! query.view(fn(_entity, data) {
     let (text, timer) = data
-    let timer_ref = timer.get_ref()
-    timer_ref.val.timer = timer_ref.val.timer.tick(delta)
-    if timer_ref.val.timer.just_finished() {
+    let next_timer = timer.value().timer.tick(delta)
+    timer.modify(fn(value) { value.timer = next_timer })
+    if next_timer.just_finished() {
       @app.log_info(text.value().text)
     }
   })

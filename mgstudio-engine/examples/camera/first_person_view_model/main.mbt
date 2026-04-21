@@ -363,18 +363,20 @@ fn move_player(
     let sensitivity = camera_sensitivity.value()
     let delta_yaw = -delta.x * sensitivity.x
     let delta_pitch = -delta.y * sensitivity.y
-    let transform = player_transform.get_ref()
-    let (yaw, pitch, roll) = transform.val.rotation.to_euler(
+    let current_transform = player_transform.value()
+    let (yaw, pitch, roll) = current_transform.rotation.to_euler(
       @math.EulerRot::YXZ,
     )
     let next_yaw = yaw + delta_yaw
     let next_pitch = clamp_float(pitch + delta_pitch, -pitch_limit, pitch_limit)
-    transform.val.rotation = @math.Quat::from_euler(
-      @math.EulerRot::YXZ,
-      next_yaw,
-      next_pitch,
-      roll,
-    )
+    player_transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_euler(
+        @math.EulerRot::YXZ,
+        next_yaw,
+        next_pitch,
+        roll,
+      )
+    })
   })
 }
 
@@ -400,10 +402,14 @@ fn change_fov(
   let min_fov = degrees_to_radians(20.0F)
   let max_fov = degrees_to_radians(160.0F)
   try! world_model_projection_query.view(fn(_entity, projection) {
-    let projection_ref = projection.get_ref()
-    match projection_ref.val {
+    match projection.value() {
       Perspective(perspective) =>
-        perspective.fov = clamp_float(perspective.fov + delta, min_fov, max_fov)
+        projection.set(
+          Perspective(@camera.PerspectiveProjection::{
+            ..perspective,
+            fov: clamp_float(perspective.fov + delta, min_fov, max_fov),
+          }),
+        )
       Orthographic(_) => ()
       Custom(_) => ()
     }

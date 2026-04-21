@@ -100,7 +100,9 @@ fn setup(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_triangle(
               @sprite.Triangle2d::new(
                 @math.Vec2::new(0.0F, 50.0F),
@@ -111,9 +113,7 @@ fn setup(
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
-            @sprite.ColorMaterialAsset::from_color(black),
-          ),
+          materials.peek().add(@sprite.ColorMaterialAsset::from_color(black)),
         ),
         @transform.Transform::from_xyz(-150.0F, 0.0F, 0.0F),
         @sprite.NoWireframe2d::default(),
@@ -125,16 +125,16 @@ fn setup(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_rectangle(
               @sprite.Rectangle::new(100.0F, 100.0F),
             ).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
-            @sprite.ColorMaterialAsset::from_color(black),
-          ),
+          materials.peek().add(@sprite.ColorMaterialAsset::from_color(black)),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
@@ -145,14 +145,14 @@ fn setup(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_circle(@sprite.Circle::new(50.0F)).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
-            @sprite.ColorMaterialAsset::from_color(black),
-          ),
+          materials.peek().add(@sprite.ColorMaterialAsset::from_color(black)),
         ),
         @transform.Transform::from_xyz(150.0F, 0.0F, 0.0F),
         @sprite.Wireframe2d::default(),
@@ -202,38 +202,38 @@ fn update_colors(
 ) -> Unit {
   try! text.for_each(fn(_entity, data) {
     let (_help_text, help_text) = data
-    help_text.get_ref().val.content = wireframe_overlay_text(
-      config.get_ref().val,
-    )
+    help_text.modify(fn(value) {
+      value.content = wireframe_overlay_text(config.peek())
+    })
   })
 
   if keyboard_input.just_pressed(@window.KeyCode::KeyZ) {
-    let config_ref = config.get_ref()
-    config_ref.val = config_ref.val.with_global(!config_ref.val.global)
+    let current = config.peek()
+    config.set(current.with_global(!current.global))
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::KeyX) {
-    let config_ref = config.get_ref()
+    let current = config.peek()
     let next_color = if color_close(
-        config_ref.val.default_color,
+        current.default_color,
         color_default_white(),
       ) {
       color_red()
     } else {
       color_default_white()
     }
-    config_ref.val = config_ref.val.with_default_color(next_color)
+    config.set(current.with_default_color(next_color))
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::KeyC) {
     try! wireframe_colors.view(fn(_entity, color) {
-      let color_ref = color.get_ref()
-      let next = if color_close(color_ref.val.color, color_green()) {
+      let current = color.value()
+      let next = if color_close(current.color, color_green()) {
         color_red()
       } else {
         color_green()
       }
-      color_ref.val = color_ref.val.with_color(next)
+      color.set(current.with_color(next))
     })
   }
 }

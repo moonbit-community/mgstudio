@@ -34,19 +34,23 @@ fn setup(
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let plane_mesh = mesh_assets.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)),
-  )
-  let cube_mesh = mesh_assets.get_ref().val
+  let plane_mesh = mesh_assets
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)))
+  let cube_mesh = mesh_assets.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(1.8F, 1.8F, 1.8F))
-  let plane_material = material_assets.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.22F, 0.24F)),
-  )
-  let cube_material = material_assets.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.95F, 0.8F, 0.25F))
-    .with_reflectance(0.35F)
-    .with_perceptual_roughness(0.7F),
-  )
+  let plane_material = material_assets
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.22F, 0.24F)),
+    )
+  let cube_material = material_assets
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.95F, 0.8F, 0.25F))
+      .with_reflectance(0.35F)
+      .with_perceptual_roughness(0.7F),
+    )
 
   ignore(
     commands.spawn(
@@ -98,10 +102,14 @@ fn rotate_cube(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! cube_query.view(fn(_entity, transform) {
-    let value = transform.get_ref()
-    value.val.rotation = value.val.rotation
-      .mul(@math.Quat::from_rotation_y(delta * 0.95F))
-      .normalize()
+    let current = transform.value()
+    transform.set(
+      current.with_rotation(
+        current.rotation
+        .mul(@math.Quat::from_rotation_y(delta * 0.95F))
+        .normalize(),
+      ),
+    )
   })
 }
 

@@ -39,7 +39,7 @@ pub impl @ecs.Component for SpriteMeshTag with component() {
 
 ///|
 struct PrintTimer {
-  mut seconds : Float
+  seconds : Float
 }
 
 ///|
@@ -72,14 +72,18 @@ fn setup(
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
   let texture = asset_server.get().load("branding/icon.png")
-  let quad_mesh = meshes.get_ref().val.add(
-    @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(24.0F, 24.0F)).to_mesh(),
-  )
-  let base_material = materials.get_ref().val.add(
-    @sprite.ColorMaterialAsset::from_image(texture).with_alpha_mode(
-      @sprite.AlphaMode2d::Mask(0.5F),
-    ),
-  )
+  let quad_mesh = meshes
+    .peek()
+    .add(
+      @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(24.0F, 24.0F)).to_mesh(),
+    )
+  let base_material = materials
+    .peek()
+    .add(
+      @sprite.ColorMaterialAsset::from_image(texture).with_alpha_mode(
+        @sprite.AlphaMode2d::Mask(0.5F),
+      ),
+    )
 
   for y in -GRID_HALF_Y..<GRID_HALF_Y {
     for x in -GRID_HALF_X..<GRID_HALF_X {
@@ -115,11 +119,12 @@ fn move_camera(
 ) -> Unit {
   let elapsed = time.get().elapsed_secs()
   try! camera.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = @math.Quat::from_rotation_z(elapsed * 0.5F)
-    transform_ref.val.translation = transform_ref.val.translation.add(
-      @math.Vec3::new(CAMERA_RADIUS * time.get().delta_secs(), 0.0F, 0.0F),
-    )
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_z(elapsed * 0.5F)
+      value.translation = value.translation.add(
+        @math.Vec3::new(CAMERA_RADIUS * time.get().delta_secs(), 0.0F, 0.0F),
+      )
+    })
   })
 }
 
@@ -129,12 +134,12 @@ fn print_count(
   timer : @app.ResMut[PrintTimer],
   sprites : @ecs.Query[@ecs.Comp[SpriteMeshTag], @ecs.All],
 ) -> Unit {
-  let timer_ref = timer.get_ref()
-  timer_ref.val.seconds += time.get().delta_secs()
-  if timer_ref.val.seconds < 1.0F {
+  let next_seconds = timer.get().seconds + time.get().delta_secs()
+  if next_seconds < 1.0F {
+    timer.set(PrintTimer::{ seconds: next_seconds })
     return
   }
-  timer_ref.val.seconds -= 1.0F
+  timer.set(PrintTimer::{ seconds: next_seconds - 1.0F })
   println("Sprite meshes: \{sprites.count()}")
 }
 

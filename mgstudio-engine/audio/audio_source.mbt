@@ -107,12 +107,10 @@ pub fn audio_source_add(
   world : @ecs.World,
   source : AudioSource,
 ) -> @asset.Handle[AudioSource] {
-  let assets_ref = audio_resource_ensure_ref_mut(
-    world,
-    AudioSourceAssets::resource(),
-    fn() { AudioSourceAssets::new() },
-  )
-  assets_ref.val.add(source)
+  let assets = audio_resource_ensure_mut(world, AudioSourceAssets::resource(), fn() {
+    AudioSourceAssets::new()
+  })
+  assets.modify(fn(value) { value.add(source) })
 }
 
 ///|
@@ -132,11 +130,10 @@ pub fn audio_source_set(
   handle : @asset.Handle[AudioSource],
   source : AudioSource,
 ) -> Bool {
-  guard audio_resource_ref_mut(world, AudioSourceAssets::resource())
-    is Some(assets_ref) else {
+  guard audio_resource_mut(world, AudioSourceAssets::resource()) is Some(assets) else {
     return false
   }
-  assets_ref.val.set(handle, source)
+  assets.modify(fn(value) { value.set(handle, source) })
 }
 
 ///|
@@ -156,19 +153,20 @@ pub fn audio_source_load(
   path : String,
 ) -> @asset.Handle[AudioSource]? {
   let canonical_path = @asset.asset_canonical_path(path)
-  let assets_ref = audio_resource_ensure_ref_mut(
-    world,
-    AudioSourceAssets::resource(),
-    fn() { AudioSourceAssets::new() },
-  )
-  match assets_ref.val.find_path_handle(canonical_path) {
+  let assets = audio_resource_ensure_mut(world, AudioSourceAssets::resource(), fn() {
+    AudioSourceAssets::new()
+  })
+  match assets.peek().find_path_handle(canonical_path) {
     Some(handle) => Some(handle)
     None => {
       let blob = asset_server.load_bytes(canonical_path)
       match audio_source_from_blob(blob) {
         Some(source) => {
-          let handle = assets_ref.val.add(source)
-          assets_ref.val.register_path(canonical_path, handle)
+          let handle = assets.modify(fn(value) {
+            let handle = value.add(source)
+            value.register_path(canonical_path, handle)
+            handle
+          })
           Some(handle)
         }
         None => None

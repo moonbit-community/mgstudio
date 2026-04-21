@@ -42,8 +42,8 @@ fn change_clear_color_system(
   clear_color : @app.ResMut[@sprite.ClearColor],
 ) -> Unit {
   if input.just_pressed(Space) {
-    clear_color.get_ref().val = @sprite.ClearColor::new(
-      @sprite.Color::new(0.5F, 0.0F, 0.5F, 1.0F),
+    clear_color.set(
+      @sprite.ClearColor::new(@sprite.Color::new(0.5F, 0.0F, 0.5F, 1.0F)),
     )
   }
 }

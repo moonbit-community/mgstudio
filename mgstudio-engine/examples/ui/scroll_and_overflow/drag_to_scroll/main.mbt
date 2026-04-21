@@ -156,22 +156,23 @@ fn start_drag(
     @ecs.All,
   ],
 ) -> Unit {
-  let state = drag_state.get_ref()
-  state.val.active_entity = None
+  drag_state.modify(fn(value) { value.active_entity = None })
   let pointer_position = pointer.position()
   ignore(
     scroll_nodes.view(fn(_entity, data) {
       let ((entity, _marker), (relative_cursor_position, scroll_position)) = data
-      if state.val.active_entity is Some(_) {
+      if drag_state.get().active_entity is Some(_) {
         return
       }
       if !relative_cursor_position.value().cursor_over() {
         return
       }
-      state.val.active_entity = Some(entity)
-      state.val.start_pointer = pointer_position
-      state.val.start_offset_x = scroll_position.value().offset_x
-      state.val.start_offset_y = scroll_position.value().offset_y
+      drag_state.modify(fn(value) {
+        value.active_entity = Some(entity)
+        value.start_pointer = pointer_position
+        value.start_offset_x = scroll_position.value().offset_x
+        value.start_offset_y = scroll_position.value().offset_y
+      })
     }) catch {
       _ => ()
     },
@@ -184,27 +185,25 @@ fn update_drag(
   drag_state : @app.ResMut[ScrollDragState],
   scroll_positions : @ecs.Query[@ecs.Mut[@ui.ScrollPosition], @ecs.All],
 ) -> Unit {
-  let state = drag_state.get_ref()
-  guard state.val.active_entity is Some(entity) else { return }
+  let state = drag_state.get()
+  guard state.active_entity is Some(entity) else { return }
   let scroll_position = scroll_positions.get(entity) catch { _ => None }
   guard scroll_position is Some(scroll_position) else {
-    state.val.active_entity = None
+    drag_state.modify(fn(value) { value.active_entity = None })
     return
   }
 
   let pointer_position = pointer.position()
-  let delta_x = (pointer_position.x - state.val.start_pointer.x) /
-    UI_SCALE_FACTOR
-  let delta_y = (pointer_position.y - state.val.start_pointer.y) /
-    UI_SCALE_FACTOR
-  let next_x = (state.val.start_offset_x - delta_x).max(0.0F)
-  let next_y = (state.val.start_offset_y - delta_y).max(0.0F)
+  let delta_x = (pointer_position.x - state.start_pointer.x) / UI_SCALE_FACTOR
+  let delta_y = (pointer_position.y - state.start_pointer.y) / UI_SCALE_FACTOR
+  let next_x = (state.start_offset_x - delta_x).max(0.0F)
+  let next_y = (state.start_offset_y - delta_y).max(0.0F)
   scroll_position.set(@ui.ScrollPosition::new(next_x, next_y))
 }
 
 ///|
 fn end_drag(drag_state : @app.ResMut[ScrollDragState]) -> Unit {
-  drag_state.get_ref().val.active_entity = None
+  drag_state.modify(fn(value) { value.active_entity = None })
 }
 
 ///|

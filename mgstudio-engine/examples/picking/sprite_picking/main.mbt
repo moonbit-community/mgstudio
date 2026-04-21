@@ -77,8 +77,8 @@ fn apply_target_sprite_color(
   guard target is Some(entity) else { return }
   let sprite_data = query.get(entity) catch { _ => None }
   guard sprite_data is Some((sprite, colors)) else { return }
-  let current = sprite.get_ref().val
-  sprite.get_ref().val = current.with_color(color_selector(colors.value()))
+  let current = sprite.value()
+  sprite.set(current.with_color(color_selector(colors.value())))
 }
 
 ///|

@@ -32,12 +32,16 @@ fn setup(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::default()).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @sprite.ColorMaterialAsset::from_color(
               @sprite.Color::new(0.5019608F, 0.0F, 0.5019608F, 1.0F),
             ),

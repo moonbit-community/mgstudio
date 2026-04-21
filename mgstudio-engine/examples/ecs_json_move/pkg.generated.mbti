@@ -12,8 +12,8 @@ import {
 
 // Types and methods
 pub struct Position {
-  mut x : Float
-  mut y : Float
+  x : Float
+  y : Float
 } derive(Eq, @debug.Debug)
 pub impl @ecs.Component for Position
 

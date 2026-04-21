@@ -75,7 +75,7 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
   )
   @pbr_render.render3d_set_diagnostic_prepared_camera_count(
     world,
-    sorted_cameras_ref.val.entities.length(),
+    sorted_cameras_ref.peek().entities.length(),
   )
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
 }
@@ -354,7 +354,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   )
   let morph_indices_ref = @pbr_render.morph_indices_ref_or_abort(world)
   let skin_uniforms_ref = @pbr_render.skin_uniforms_ref_or_abort(world)
-  if sorted_cameras_ref.val.entities.length() == 0 {
+  if sorted_cameras_ref.peek().entities.length() == 0 {
     render3d_queue_clear_frame(world)
     @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
     return

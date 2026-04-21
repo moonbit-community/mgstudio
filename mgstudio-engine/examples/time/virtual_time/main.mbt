@@ -285,10 +285,9 @@ fn move_real_time_sprites(
 ) -> Unit {
   try! sprite_query.view(fn(_entity, data) {
     let (_real_time, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.x = get_sprite_translation_x(
-      time.get().elapsed_secs(),
-    )
+    transform.modify(fn(value) {
+      value.translation.x = get_sprite_translation_x(time.get().elapsed_secs())
+    })
   })
 }
 
@@ -302,10 +301,9 @@ fn move_virtual_time_sprites(
 ) -> Unit {
   try! sprite_query.view(fn(_entity, data) {
     let (_virtual_time, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.x = get_sprite_translation_x(
-      time.get().elapsed_secs(),
-    )
+    transform.modify(fn(value) {
+      value.translation.x = get_sprite_translation_x(time.get().elapsed_secs())
+    })
   })
 }
 

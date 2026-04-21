@@ -22,20 +22,21 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let mesh = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.3F, 1.3F, 1.3F))
+  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.3F, 1.3F, 1.3F))
   let image = asset_server.get().load_image("branding/icon.png")
   for i in 0..<3 {
     let uv_transform = @transform.Affine2::from_scale_translation(
       @math.Vec2::new(0.33F, 1.0F),
       @math.Vec2::new(Float::from_int(i) * 0.33F, 0.0F),
     )
-    let material = materials.get_ref().val.add(
-      @pbr.StandardMaterial::default()
-      .with_base_color(@sprite.Color::white())
-      .with_base_color_texture(Some(image))
-      .with_uv_transform(uv_transform),
-    )
+    let material = materials
+      .peek()
+      .add(
+        @pbr.StandardMaterial::default()
+        .with_base_color(@sprite.Color::white())
+        .with_base_color_texture(Some(image))
+        .with_uv_transform(uv_transform),
+      )
     commands.spawn(
       (
         @pbr.Mesh3d::new(mesh),
@@ -52,12 +53,14 @@ fn setup(
     |> ignore
   }
 
-  let floor_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)),
-  )
-  let floor_mat = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.17F, 0.2F, 0.22F)),
-  )
+  let floor_mesh = meshes
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)))
+  let floor_mat = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.17F, 0.2F, 0.22F)),
+    )
   commands.spawn(
     (
       @pbr.Mesh3d::new(floor_mesh),

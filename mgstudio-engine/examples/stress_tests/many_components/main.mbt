@@ -175,11 +175,9 @@ fn update_component_group_1(
   let dt = time.get().delta_secs()
   try! query.for_each(fn(_entity, data) {
     let (a, b, c) = data
-    let a_ref = a.get_ref()
-    let b_ref = b.get_ref()
     let c_value = c.value().value
-    a_ref.val.value += dt * (0.2F + c_value)
-    b_ref.val.value -= dt * (0.15F + c_value * 0.5F)
+    a.modify(fn(value) { value.value += dt * (0.2F + c_value) })
+    b.modify(fn(value) { value.value -= dt * (0.15F + c_value * 0.5F) })
   })
 }
 
@@ -194,12 +192,9 @@ fn update_component_group_2(
   let t = time.get().elapsed_secs()
   try! query.for_each(fn(_entity, data) {
     let (d, e, f) = data
-    let d_ref = d.get_ref()
-    let e_ref = e.get_ref()
-    let f_ref = f.get_ref()
-    d_ref.val.value = @math.sin(t + d_ref.val.value)
-    e_ref.val.value = @math.cos(t * 0.5F + e_ref.val.value)
-    f_ref.val.value = @math.sin(t * 0.25F + f_ref.val.value)
+    d.modify(fn(value) { value.value = @math.sin(t + value.value) })
+    e.modify(fn(value) { value.value = @math.cos(t * 0.5F + value.value) })
+    f.modify(fn(value) { value.value = @math.sin(t * 0.25F + value.value) })
   })
 }
 
@@ -219,12 +214,11 @@ fn update_visible_sprites(
   let t = time.get().elapsed_secs()
   try! query.for_each(fn(_entity, data) {
     let (a, b, d, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.x += @math.sin(t + a.value().value) * 0.02F
-    transform_ref.val.translation.y += @math.cos(
-        t + d.value().value + b.value().value,
-      ) *
-      0.02F
+    transform.modify(fn(value) {
+      value.translation.x += @math.sin(t + a.value().value) * 0.02F
+      value.translation.y += @math.cos(t + d.value().value + b.value().value) *
+        0.02F
+    })
   })
 }
 

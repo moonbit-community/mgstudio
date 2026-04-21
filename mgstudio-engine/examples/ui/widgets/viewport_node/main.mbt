@@ -32,14 +32,16 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let target = images.get_ref().val.add(
-    @asset.Image::new_target_texture(
-      512,
-      512,
-      @asset.TextureFormat::Rgba8Unorm,
-      Some(@asset.TextureFormat::Rgba8UnormSrgb),
-    ),
-  )
+  let target = images
+    .peek()
+    .add(
+      @asset.Image::new_target_texture(
+        512,
+        512,
+        @asset.TextureFormat::Rgba8Unorm,
+        Some(@asset.TextureFormat::Rgba8UnormSrgb),
+      ),
+    )
 
   commands.spawn(
     (
@@ -54,11 +56,13 @@ fn setup(
   )
   |> ignore
 
-  let viewport_mesh = meshes.get_ref().val
+  let viewport_mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(1.8F, 1.8F, 1.8F))
-  let viewport_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.87F, 0.93F, 1.0F)),
-  )
+  let viewport_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.87F, 0.93F, 1.0F)),
+    )
   commands.spawn(
     (
       ViewportMesh::{  },
@@ -112,8 +116,10 @@ fn rotate_mesh(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.get_ref().val.rotate_y(delta * 1.1F)
-    transform.get_ref().val.rotate_z(delta * 0.4F)
+    transform.modify(fn(value) {
+      value.rotate_y(delta * 1.1F)
+      value.rotate_z(delta * 0.4F)
+    })
   })
 }
 

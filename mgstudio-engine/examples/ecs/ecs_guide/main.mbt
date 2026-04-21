@@ -135,10 +135,10 @@ fn new_round_system(
   game_rules : @app.Res[GameRules],
   game_state : @app.ResMut[GameState],
 ) -> Unit {
-  let state_ref = game_state.get_ref()
-  state_ref.val.current_round = state_ref.val.current_round + 1
+  game_state.modify(fn(value) { value.current_round = value.current_round + 1 })
+  let state = game_state.peek()
   println(
-    "Begin round \{state_ref.val.current_round.to_string()} of \{game_rules.get().max_rounds.to_string()}",
+    "Begin round \{state.current_round.to_string()} of \{game_rules.get().max_rounds.to_string()}",
   )
 }
 
@@ -159,26 +159,28 @@ fn score_system(
     } else {
       (round + player_name.length() + score.value().value) % 3 == 0
     }
-    let score_ref = score.get_ref()
-    let streak_ref = streak.get_ref()
     if scored_a_point {
-      score_ref.val.value = score_ref.val.value + 1
-      streak_ref.val = match streak_ref.val {
-        Hot(count) => Hot(count + 1)
-        Cold(_) => Hot(1)
-        None => Hot(1)
-      }
+      score.modify(fn(value) { value.value = value.value + 1 })
+      streak.set(
+        match streak.peek() {
+          Hot(count) => Hot(count + 1)
+          Cold(_) => Hot(1)
+          None => Hot(1)
+        },
+      )
       println(
-        "\{player_name} scored a point! Their score is: \{score_ref.val.value.to_string()} (\{streak_text(streak_ref.val)})",
+        "\{player_name} scored a point! Their score is: \{score.value().value.to_string()} (\{streak_text(streak.peek())})",
       )
     } else {
-      streak_ref.val = match streak_ref.val {
-        Hot(_) => Cold(1)
-        None => Cold(1)
-        Cold(count) => Cold(count + 1)
-      }
+      streak.set(
+        match streak.peek() {
+          Hot(_) => Cold(1)
+          None => Cold(1)
+          Cold(count) => Cold(count + 1)
+        },
+      )
       println(
-        "\{player_name} did not score a point! Their score is: \{score_ref.val.value.to_string()} (\{streak_text(streak_ref.val)})",
+        "\{player_name} did not score a point! Their score is: \{score.value().value.to_string()} (\{streak_text(streak.peek())})",
       )
     }
   })
@@ -191,12 +193,13 @@ fn score_check_system(
   query : @ecs.Query[(@ecs.Comp[Player], @ecs.Comp[Score]), @ecs.All],
 ) -> Unit {
   let winning_score = game_rules.get().winning_score
-  let state_ref = game_state.get_ref()
   try! query.view(fn(_entity, item) {
     let (player, score) = item
     if score.value().value >= winning_score &&
-      state_ref.val.winning_player is None {
-      state_ref.val.winning_player = Some(player.value().name)
+      game_state.peek().winning_player is None {
+      game_state.modify(fn(value) {
+        value.winning_player = Some(player.value().name)
+      })
     }
   })
 }
@@ -232,7 +235,7 @@ fn startup_system(
       (Player::{ name: "Bob" }, Score::{ value: 0 }, PlayerStreak::None),
     ]),
   )
-  game_state.get_ref().val.total_players = 2
+  game_state.modify(fn(value) { value.total_players = 2 })
 }
 
 ///|
@@ -241,19 +244,18 @@ fn new_player_system(
   game_rules : @app.Res[GameRules],
   game_state : @app.ResMut[GameState],
 ) -> Unit {
-  let state_ref = game_state.get_ref()
-  if state_ref.val.current_round % 2 == 1 &&
-    state_ref.val.total_players < game_rules.get().max_players {
-    state_ref.val.total_players = state_ref.val.total_players + 1
-    let next_name = player_name(state_ref.val.total_players)
+  let state = game_state.peek()
+  if state.current_round % 2 == 1 &&
+    state.total_players < game_rules.get().max_players {
+    let next_total = state.total_players + 1
+    game_state.modify(fn(value) { value.total_players = next_total })
+    let next_name = player_name(next_total)
     ignore(
       commands.spawn(
         (Player::{ name: next_name }, Score::{ value: 0 }, PlayerStreak::None),
       ),
     )
-    println(
-      "Player \{state_ref.val.total_players.to_string()} joined the game!",
-    )
+    println("Player \{next_total.to_string()} joined the game!")
   }
 }
 
@@ -280,12 +282,11 @@ fn exclusive_player_system(world : @ecs.World) -> Unit {
         ),
       ),
     )
-    let game_state_ref = match
-      (try! world.get_resource_ref_mut(game_state_key)) {
+    let game_state_ref = match (try! world.get_resource_mut(game_state_key)) {
       Some(value) => value
       None => return
     }
-    game_state_ref.val.total_players = next_total
+    game_state_ref.modify(fn(value) { value.total_players = next_total })
     println("Player \{next_total.to_string()} has joined the game!")
   }
 }

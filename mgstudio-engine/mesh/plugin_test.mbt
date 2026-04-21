@@ -15,19 +15,21 @@
 ///|
 fn inverse_bindposes_assets_mut_or_abort(
   world : @ecs.World,
-) -> Ref[@asset.Assets[SkinnedMeshInverseBindposes]] {
+) -> @ecs.ResourceMut[@asset.Assets[SkinnedMeshInverseBindposes]] {
   let key : @ecs.ResourceKey[@asset.Assets[SkinnedMeshInverseBindposes]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key)) {
-    Some(assets_ref) => assets_ref
+  match (try! world.get_resource_mut(key)) {
+    Some(assets) => assets
     None => abort("missing Assets<SkinnedMeshInverseBindposes> resource")
   }
 }
 
 ///|
-fn mesh_assets_mut_or_abort(world : @ecs.World) -> Ref[@asset.Assets[Mesh]] {
+fn mesh_assets_mut_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[@asset.Assets[Mesh]] {
   let key : @ecs.ResourceKey[@asset.Assets[Mesh]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key)) {
-    Some(assets_ref) => assets_ref
+  match (try! world.get_resource_mut(key)) {
+    Some(assets) => assets
     None => abort("missing Assets<Mesh> resource")
   }
 }
@@ -76,8 +78,11 @@ test "mesh plugin: modified SkinnedMeshInverseBindposes marks SkinnedMesh change
     .add_plugins(MeshPlugin::default())
   let world = app.world()
 
-  let inverse_bindposes_handle = inverse_bindposes_assets_mut_or_abort(world).val.add(
-    SkinnedMeshInverseBindposes::new([SkinningMat4::identity()]),
+  let inverse_bindposes_handle = inverse_bindposes_assets_mut_or_abort(world).modify(fn(
+      assets,
+    ) {
+      assets.add(SkinnedMeshInverseBindposes::new([SkinningMat4::identity()]))
+    },
   )
   let entity = world.spawn()
   try! world.set(entity, SkinnedMesh::new(inverse_bindposes_handle, []))
@@ -86,15 +91,17 @@ test "mesh plugin: modified SkinnedMeshInverseBindposes marks SkinnedMesh change
 
   let before = world.read_sequence()
   debug_inspect(
-    inverse_bindposes_assets_mut_or_abort(world).val.set(
-      inverse_bindposes_handle,
-      SkinnedMeshInverseBindposes::new([
-        SkinningMat4::identity(),
-        SkinningMat4::inverse_transform(
-          @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F),
-        ),
-      ]),
-    ),
+    inverse_bindposes_assets_mut_or_abort(world).modify(fn(assets) {
+      assets.set(
+        inverse_bindposes_handle,
+        SkinnedMeshInverseBindposes::new([
+          SkinningMat4::identity(),
+          SkinningMat4::inverse_transform(
+            @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F),
+          ),
+        ]),
+      )
+    }),
     content="true",
   )
   app = app.update()
@@ -117,8 +124,11 @@ test "mesh plugin: non-modified SkinnedMeshInverseBindposes does not mark Skinne
     .add_plugins(MeshPlugin::default())
   let world = app.world()
 
-  let inverse_bindposes_handle = inverse_bindposes_assets_mut_or_abort(world).val.add(
-    SkinnedMeshInverseBindposes::new([SkinningMat4::identity()]),
+  let inverse_bindposes_handle = inverse_bindposes_assets_mut_or_abort(world).modify(fn(
+      assets,
+    ) {
+      assets.add(SkinnedMeshInverseBindposes::new([SkinningMat4::identity()]))
+    },
   )
   let entity = world.spawn()
   try! world.set(entity, SkinnedMesh::new(inverse_bindposes_handle, []))
@@ -144,9 +154,9 @@ test "mesh plugin: modified Mesh marks Mesh2d changed" {
     .add_plugins(@asset.AssetPlugin::default())
     .add_plugins(MeshPlugin::default())
   let world = app.world()
-  let mesh_handle = mesh_assets_mut_or_abort(world).val.add(
-    test_mesh2d_asset(10.0F, 8.0F),
-  )
+  let mesh_handle = mesh_assets_mut_or_abort(world).modify(fn(assets) {
+    assets.add(test_mesh2d_asset(10.0F, 8.0F))
+  })
   let entity = world.spawn()
   try! world.set(entity, Mesh2d::new(mesh_handle))
   world.advance_sequence() |> ignore
@@ -154,10 +164,9 @@ test "mesh plugin: modified Mesh marks Mesh2d changed" {
 
   let before = world.read_sequence()
   debug_inspect(
-    mesh_assets_mut_or_abort(world).val.set(
-      mesh_handle,
-      test_mesh2d_asset(12.0F, 8.0F),
-    ),
+    mesh_assets_mut_or_abort(world).modify(fn(assets) {
+      assets.set(mesh_handle, test_mesh2d_asset(12.0F, 8.0F))
+    }),
     content="true",
   )
   app = app.update()
@@ -179,9 +188,9 @@ test "mesh plugin: non-modified Mesh does not mark Mesh2d changed" {
     .add_plugins(@asset.AssetPlugin::default())
     .add_plugins(MeshPlugin::default())
   let world = app.world()
-  let mesh_handle = mesh_assets_mut_or_abort(world).val.add(
-    test_mesh2d_asset(10.0F, 8.0F),
-  )
+  let mesh_handle = mesh_assets_mut_or_abort(world).modify(fn(assets) {
+    assets.add(test_mesh2d_asset(10.0F, 8.0F))
+  })
   let entity = world.spawn()
   try! world.set(entity, Mesh2d::new(mesh_handle))
   world.advance_sequence() |> ignore

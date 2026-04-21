@@ -244,9 +244,9 @@ fn setup_texture_atlas(
     last: ATLAS_LAST_FRAME,
   }
   let gabe_atlas = @asset.TextureAtlas::new(
-    texture_atlas_layouts.get_ref().val.add(
-      @asset.TextureAtlasLayout::from_grid(@math.UVec2::new(24, 24), 7, 1),
-    ),
+    texture_atlas_layouts
+    .peek()
+    .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::new(24, 24), 7, 1)),
     animation_indices.first,
   )
 
@@ -482,20 +482,22 @@ fn animate_sprite(
   try! query.for_each(fn(_entity, data) {
     let (indices, timer, sprite) = data
     let indices = indices.value()
-    let timer_ref = timer.get_ref()
-    let sprite_ref = sprite.get_ref()
-    timer_ref.val.timer = timer_ref.val.timer.tick(time.get().delta())
-    guard timer_ref.val.timer.just_finished() else { return }
-    guard sprite_ref.val.texture_atlas is Some(atlas) else { return }
-
-    sprite_ref.val.texture_atlas = Some(
-      atlas.with_index(
-        if atlas.index == indices.last {
-          indices.first
-        } else {
-          atlas.index + 1
-        },
-      ),
-    )
+    let next_timer = timer.modify(fn(value) {
+      value.timer = value.timer.tick(time.get().delta())
+      value.timer
+    })
+    guard next_timer.just_finished() else { return }
+    sprite.modify(fn(value) {
+      guard value.texture_atlas is Some(atlas) else { return }
+      value.texture_atlas = Some(
+        atlas.with_index(
+          if atlas.index == indices.last {
+            indices.first
+          } else {
+            atlas.index + 1
+          },
+        ),
+      )
+    })
   })
 }

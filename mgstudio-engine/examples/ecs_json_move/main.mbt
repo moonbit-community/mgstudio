@@ -17,8 +17,8 @@
 
 ///|
 pub struct Position {
-  mut x : Float
-  mut y : Float
+  x : Float
+  y : Float
 } derive(Debug, Eq)
 
 ///|
@@ -69,7 +69,8 @@ fn move_system(
 ) -> Unit {
   try! query.for_each(fn(_entity, data) {
     let (position, velocity) = data
-    position.get_ref().val.x = position.get_ref().val.x + velocity.value().x
-    position.get_ref().val.y = position.get_ref().val.y + velocity.value().y
+    let current = position.peek()
+    let delta = velocity.value()
+    position.set(Position::{ x: current.x + delta.x, y: current.y + delta.y })
   })
 }

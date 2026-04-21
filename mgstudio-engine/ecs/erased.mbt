@@ -19,22 +19,17 @@ struct ErasedValue {
 
 ///|
 fn[T] erased_value(value : T) -> ErasedValue {
-  { value: @any.of(Ref::new(value)) }
-}
-
-///|
-fn[T] ErasedValue::to_ref(self : ErasedValue) -> Ref[T] raise @any.TypeMismatch {
-  self.value.to()
-}
-
-///|
-fn[T] ErasedValue::unsafe_to_ref(self : ErasedValue) -> Ref[T] {
-  self.value.unsafe_coerce()
+  { value: @any.of(value) }
 }
 
 ///|
 fn[T] ErasedValue::to_value(self : ErasedValue) -> T raise @any.TypeMismatch {
-  self.to_ref().val
+  self.value.to()
+}
+
+///|
+fn[T] ErasedValue::unsafe_to_value(self : ErasedValue) -> T {
+  self.value.unsafe_coerce()
 }
 
 ///|

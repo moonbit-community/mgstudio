@@ -154,13 +154,15 @@ fn setup(
   ).spawn(world)
   |> ignore
 
-  let shape_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
+  let shape_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
+      )
+      .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+      .with_cull_mode(None),
     )
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
-    .with_cull_mode(None),
-  )
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
@@ -208,7 +210,9 @@ fn setup(
     ),
   })
   world.insert_resource(PointMaterial::resource(), PointMaterial::{
-    handle: materials.get_ref().val.add(
+    handle: materials
+    .peek()
+    .add(
       @pbr.StandardMaterial::from_color(@sprite.Color::srgb(1.0F, 0.8F, 0.8F)).with_metallic(
         0.8F,
       ),
@@ -375,7 +379,7 @@ fn handle_keypress(
   mode : @app.ResMut[Mode],
 ) -> Unit {
   let world = current_world_or_abort()
-  let mode_ref = mode.get_ref()
+  let current_mode = mode.peek()
 
   if keyboard.just_pressed(KeyR) {
     clear_sample_points(world)
@@ -401,7 +405,7 @@ fn handle_keypress(
 
   if keyboard.just_pressed(KeyS) {
     let sample = sample_once(
-      mode_ref.val,
+      current_mode,
       sampled_shape.shape,
       random_source_ref.val.rng,
     )
@@ -410,7 +414,7 @@ fn handle_keypress(
 
   if keyboard.just_pressed(KeyD) {
     let samples = sample_many(
-      mode_ref.val,
+      current_mode,
       sampled_shape.shape,
       random_source_ref.val.rng,
       100,
@@ -421,10 +425,12 @@ fn handle_keypress(
   }
 
   if keyboard.just_pressed(KeyM) {
-    mode_ref.val = match mode_ref.val {
-      Interior => Boundary
-      Boundary => Interior
-    }
+    mode.set(
+      match current_mode {
+        Interior => Boundary
+        Boundary => Interior
+      },
+    )
   }
 }
 

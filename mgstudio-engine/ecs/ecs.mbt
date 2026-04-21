@@ -603,10 +603,16 @@ pub fn[T] World::remove_by_key(
   self.run_replace_observers(entity, key.id())
   self.run_component_remove_hooks(entity, key.id(), caller~)
   if self.local_component_storage_type(component_local_id) == Some(SparseSet) {
-    ignore(self.remove_sparse_component_payload_by_local_id(entity, component_local_id))
+    ignore(
+      self.remove_sparse_component_payload_by_local_id(
+        entity, component_local_id,
+      ),
+    )
   }
   self.entity_remove_component_local_id(entity, component_local_id)
-  self.refresh_entity_archetype_after_component_remove(entity, component_local_id)
+  self.refresh_entity_archetype_after_component_remove(
+    entity, component_local_id,
+  )
   self.mark_structure_changed()
   self.run_remove_observers(entity, key.id())
   self.ensure_removed_component_messages(key.id()).val.send(
@@ -692,6 +698,7 @@ fn World::mark_entity_lifecycle_changed(self : World) -> Unit {
   self.entity_lifecycle_generation = self.entity_lifecycle_generation + 1
 }
 
+///|
 fn World::ensure_component_store_for_local_id(
   self : World,
   local_id : Int,
@@ -805,6 +812,7 @@ fn World::ensure_changed_component_caller_table(
   }
 }
 
+///|
 fn World::record_component_added_with_caller(
   self : World,
   entity : @core.Entity,
@@ -824,13 +832,16 @@ fn World::record_component_changed_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
-  self.record_component_changed_sequence_only_with_caller(entity, key_id, caller)
+  self.record_component_changed_sequence_only_with_caller(
+    entity, key_id, caller,
+  )
   self.ensure_changed_component_messages(key_id).val.send(
     component_write_sequence(self),
     entity,
   )
 }
 
+///|
 fn World::record_component_changed_sequence_only_with_caller(
   self : World,
   entity : @core.Entity,
@@ -993,13 +1004,13 @@ fn World::removed_component_messages(
 }
 
 ///|
-fn[T] World::component_ref(
+fn[T] World::component_value(
   _self : World,
   key : ComponentKey[T],
   entity : @core.Entity,
   payload : ErasedValue,
-) -> Ref[T] raise EcsError {
-  payload.to_ref() catch {
+) -> T raise EcsError {
+  payload.to_value() catch {
     _ =>
       raise ComponentTypeMismatch(
         key.id(),
@@ -1008,16 +1019,6 @@ fn[T] World::component_ref(
         payload.type_name(),
       )
   }
-}
-
-///|
-fn[T] World::component_value(
-  self : World,
-  key : ComponentKey[T],
-  entity : @core.Entity,
-  payload : ErasedValue,
-) -> T raise EcsError {
-  self.component_ref(key, entity, payload).val
 }
 
 ///|

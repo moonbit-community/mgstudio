@@ -2042,8 +2042,8 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   }
   input_active_touches_ref.val = active_touches
 
-  if (try! world.get_resource_ref_mut(Touches::resource())) is Some(touches_ref) {
-    touches_ref.val = touches
+  if (try! world.get_resource_mut(Touches::resource())) is Some(touches_ref) {
+    touches_ref.set(touches)
   }
 
   let primary_pointer_position = if current_position_opt is Some(mouse_pos) {
@@ -2080,9 +2080,9 @@ pub fn input_accumulate_mouse_motion_system(world : @ecs.World) -> Unit {
   for event in events {
     delta = @math.Vec2::add(delta, event.delta)
   }
-  if (try! world.get_resource_ref_mut(AccumulatedMouseMotion::resource()))
+  if (try! world.get_resource_mut(AccumulatedMouseMotion::resource()))
     is Some(motion_ref) {
-    motion_ref.val = AccumulatedMouseMotion::{ delta, }
+    motion_ref.set(AccumulatedMouseMotion::{ delta, })
   }
 }
 
@@ -2104,9 +2104,9 @@ pub fn input_accumulate_mouse_scroll_system(world : @ecs.World) -> Unit {
     unit = event.unit
     delta = @math.Vec2::add(delta, @math.Vec2::new(event.x, event.y))
   }
-  if (try! world.get_resource_ref_mut(AccumulatedMouseScroll::resource()))
+  if (try! world.get_resource_mut(AccumulatedMouseScroll::resource()))
     is Some(scroll_ref) {
-    scroll_ref.val = AccumulatedMouseScroll::{ unit, delta }
+    scroll_ref.set(AccumulatedMouseScroll::{ unit, delta })
   }
 }
 

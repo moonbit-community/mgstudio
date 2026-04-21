@@ -14,7 +14,7 @@
 
 ///|
 struct ClickCounter {
-  mut value : Int
+  value : Int
 }
 
 ///|
@@ -106,7 +106,7 @@ fn setup(
       _pointer : @app.OnPointer[@app.PointerClick],
       counter : @app.ResMut[ClickCounter],
     ) {
-      counter.get_ref().val.value = counter.get_ref().val.value + 1
+      counter.set(ClickCounter::{ value: counter.get().value + 1 })
     }),
   )
 }

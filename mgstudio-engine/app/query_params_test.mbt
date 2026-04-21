@@ -182,7 +182,7 @@ test "app: Query1 system param exposes plain mutable query" {
   ) {
     counts.push(query.count())
     try! query.view(fn(_entity, position) {
-      position.get_ref().val.x = position.get_ref().val.x + 10
+      position.modify(fn(value) { value.x = value.x + 10 })
     })
   })
 
@@ -230,7 +230,7 @@ test "app: filtered query system param builds filters from component owners" {
     .par_iter()
     .for_each(fn(_entity, data) {
       let (position, velocity) = data
-      velocity.get_ref().val.dx = velocity.get_ref().val.dx + position.value().x
+      velocity.modify(fn(value) { value.dx = value.dx + position.value().x })
     })
   })
 
@@ -275,7 +275,7 @@ test "app: optional query system param preserves some and none branches" {
     try! query.view(fn(entity, data) {
       let (position, velocity, marker) = data
       seen.push((entity.id, marker is Some(_)))
-      velocity.get_ref().val.dy = velocity.get_ref().val.dy + position.value().y
+      velocity.modify(fn(value) { value.dy = value.dy + position.value().y })
     })
   })
 
@@ -388,8 +388,9 @@ test "app: validated single query params expose strict single access" {
         entity_ids.push(single_entity.get().id)
         xs.push(single_position.get().value().x)
         let (position_mut, velocity_ref) = single_pair.get()
-        position_mut.get_ref().val.x = position_mut.get_ref().val.x +
-          velocity_ref.value().dx
+        position_mut.modify(fn(value) {
+          value.x = value.x + velocity_ref.value().dx
+        })
       }),
     ),
   )
@@ -465,8 +466,9 @@ test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
         counts.push(query.count())
         try! query.view(fn(_entity, data) {
           let (position_mut, velocity_mut) = data
-          velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
-            position_mut.get_ref().val.x
+          velocity_mut.modify(fn(value) {
+            value.dx = value.dx + position_mut.peek().x
+          })
         })
       }),
     ),

@@ -24,7 +24,7 @@ pub(all) enum MenuAction {
 
 ///|
 pub struct MenuEvent {
-  mut source : @core.Entity
+  source : @core.Entity
   action : MenuAction
 } derive(ToJson, FromJson)
 
@@ -44,11 +44,8 @@ pub impl @ecs.TriggerEvent for MenuEvent with observer_entity(self) {
 }
 
 ///|
-pub impl @ecs.TriggerEvent for MenuEvent with set_observer_entity(
-  event_ref,
-  entity,
-) {
-  event_ref.val.source = entity
+pub impl @ecs.TriggerEvent for MenuEvent with set_observer_entity(self, entity) {
+  MenuEvent::{ source: entity, action: self.action }
 }
 
 ///|

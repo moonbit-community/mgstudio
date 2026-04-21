@@ -22,24 +22,27 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let mesh = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.4F, 1.4F, 1.4F))
-  let valid_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::default()
-    .with_base_color(@sprite.Color::white())
-    .with_base_color_texture(
-      Some(asset_server.get().load_image("branding/icon.png")),
-    ),
-  )
-  let fallback_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::default()
-    .with_base_color(@sprite.Color::srgb(0.8F, 0.6F, 0.2F))
-    .with_base_color_texture(
-      Some(
-        asset_server.get().load_image("textures/this_file_does_not_exist.png"),
+  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.4F, 1.4F, 1.4F))
+  let valid_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::default()
+      .with_base_color(@sprite.Color::white())
+      .with_base_color_texture(
+        Some(asset_server.get().load_image("branding/icon.png")),
       ),
-    ),
-  )
+    )
+  let fallback_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::default()
+      .with_base_color(@sprite.Color::srgb(0.8F, 0.6F, 0.2F))
+      .with_base_color_texture(
+        Some(
+          asset_server.get().load_image("textures/this_file_does_not_exist.png"),
+        ),
+      ),
+    )
 
   commands.spawn(
     (
@@ -62,12 +65,14 @@ fn setup(
   )
   |> ignore
 
-  let floor_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(7.0F, 7.0F)),
-  )
-  let floor_mat = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.22F, 0.25F)),
-  )
+  let floor_mesh = meshes
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(7.0F, 7.0F)))
+  let floor_mat = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.22F, 0.25F)),
+    )
   commands.spawn(
     (
       @pbr.Mesh3d::new(floor_mesh),

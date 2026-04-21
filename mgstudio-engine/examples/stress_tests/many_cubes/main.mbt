@@ -42,12 +42,18 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let floor_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(70.0F, 0.1F, 70.0F)),
-  )
-  let floor_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.17F, 0.2F, 0.23F)),
-  )
+  let floor_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(
+        @pbr.mesh3d_geometry_cuboid(70.0F, 0.1F, 70.0F),
+      ),
+    )
+  let floor_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.17F, 0.2F, 0.23F)),
+    )
   ignore(
     commands.spawn(
       (
@@ -58,12 +64,16 @@ fn setup(
     ),
   )
 
-  let cube_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
-  )
-  let cube_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.75F, 0.79F, 0.9F)),
-  )
+  let cube_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
+    )
+  let cube_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.75F, 0.79F, 0.9F)),
+    )
   for z in -GRID_HALF..<GRID_HALF {
     for x in -GRID_HALF..<GRID_HALF {
       let px = float_from_int(x) * GRID_SPACING
@@ -124,8 +134,7 @@ fn rotate_cubes(
   let dt = time.get().delta_secs()
   let spin = @math.Quat::from_rotation_y(dt * 0.6F)
   try! cubes.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = spin.mul(transform_ref.val.rotation)
+    transform.modify(fn(value) { value.rotation = spin.mul(value.rotation) })
   })
 }
 
@@ -143,10 +152,11 @@ fn move_camera(
   let z = @math.sin(seconds * 0.22F) * radius
   let y = 10.0F + @math.sin(seconds * 0.7F) * 4.0F
   try! cameras.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val = @transform.Transform::from_xyz(x, y, z).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    transform.set(
+      @transform.Transform::from_xyz(x, y, z).looking_at(
+        @math.Vec3::new(0.0F, 0.0F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
     )
   })
 }

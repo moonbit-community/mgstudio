@@ -81,16 +81,18 @@ fn setup(
   }
   commands.insert_resource(LifeState::{ generation: 0, cells, scratch })
 
-  let cell_mesh = meshes.get_ref().val
+  let cell_mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(0.26F, 0.26F, 0.26F))
   for y in 0..<GRID_H {
     for x in 0..<GRID_W {
       let ix = life_index(x, y)
-      let material = materials.get_ref().val.add(
-        @pbr.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.06F, 0.08F, 0.14F),
-        ),
-      )
+      let material = materials
+        .peek()
+        .add(
+          @pbr.StandardMaterial::from_color(
+            @sprite.Color::srgb(0.06F, 0.08F, 0.14F),
+          ),
+        )
       let px = (Float::from_int(x) - Float::from_int(GRID_W - 1) * 0.5F) * 0.3F
       let py = (Float::from_int(y) - Float::from_int(GRID_H - 1) * 0.5F) * 0.3F
       commands.spawn(
@@ -132,36 +134,37 @@ fn step_life(
   life_state : @app.ResMut[LifeState],
 ) -> Unit {
   let step = (time.get().elapsed_seconds() * 8.0F).to_int()
-  if step == life_state.get_ref().val.generation {
+  if step == life_state.get().generation {
     return
   }
-  let state_ref = life_state.get_ref()
-  for y in 0..<GRID_H {
-    for x in 0..<GRID_W {
-      let mut neighbors = 0
-      for oy in -1..<2 {
-        for ox in -1..<2 {
-          if ox == 0 && oy == 0 {
-            continue
-          }
-          if life_alive(state_ref.val, x + ox, y + oy) {
-            neighbors = neighbors + 1
+  life_state.modify(fn(value) {
+    for y in 0..<GRID_H {
+      for x in 0..<GRID_W {
+        let mut neighbors = 0
+        for oy in -1..<2 {
+          for ox in -1..<2 {
+            if ox == 0 && oy == 0 {
+              continue
+            }
+            if life_alive(value, x + ox, y + oy) {
+              neighbors = neighbors + 1
+            }
           }
         }
-      }
-      let i = life_index(x, y)
-      let alive = state_ref.val.cells[i]
-      state_ref.val.scratch[i] = if alive {
-        neighbors == 2 || neighbors == 3
-      } else {
-        neighbors == 3
+        let i = life_index(x, y)
+        let alive = value.cells[i]
+        value.scratch[i] = if alive {
+          neighbors == 2 || neighbors == 3
+        } else {
+          neighbors == 3
+        }
       }
     }
-  }
-  for i in 0..<state_ref.val.cells.length() {
-    state_ref.val.cells[i] = state_ref.val.scratch[i]
-  }
-  state_ref.val.generation = step
+    for i in 0..<value.cells.length() {
+      value.cells[i] = value.scratch[i]
+    }
+    value.generation = step
+  })
 }
 
 ///|
@@ -177,7 +180,7 @@ fn apply_life_visuals(
     let (cell, mesh_material) = data
     let alive = life_state.get().cells[cell.value().index]
     let handle = mesh_material.value().material
-    guard materials.get_ref().val.get(handle) is Some(material) else { return }
+    guard materials.peek().get(handle) is Some(material) else { return }
     let next = if alive {
       material
       .with_base_color(@sprite.Color::srgb(0.18F, 0.95F, 0.45F))
@@ -187,7 +190,7 @@ fn apply_life_visuals(
       .with_base_color(@sprite.Color::srgb(0.06F, 0.08F, 0.14F))
       .with_emissive(@sprite.Color::black())
     }
-    materials.get_ref().val.set(handle, next) |> ignore
+    materials.peek().set(handle, next) |> ignore
   })
 }
 

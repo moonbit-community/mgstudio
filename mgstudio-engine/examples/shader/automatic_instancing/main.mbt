@@ -40,16 +40,18 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let mesh_handle = meshes.get_ref().val
+  let mesh_handle = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(0.02F, 0.02F, 0.02F))
-  let material_handle = materials.get_ref().val.add(
-    @pbr.StandardMaterial::default()
-    .with_base_color(@sprite.Color::white())
-    .with_base_color_texture(
-      Some(asset_server.get().load_image("branding/icon.png")),
+  let material_handle = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::default()
+      .with_base_color(@sprite.Color::white())
+      .with_base_color_texture(
+        Some(asset_server.get().load_image("branding/icon.png")),
+      )
+      .with_perceptual_roughness(0.9F),
     )
-    .with_perceptual_roughness(0.9F),
-  )
   let half = Float::from_int(GRID_SIZE) * 0.5F
 
   for row in 0..<GRID_SIZE {
@@ -95,7 +97,9 @@ fn update(
   try! query.view(fn(_entity, data) {
     let (transform, tag) = data
     let phase = Float::from_int(tag.value().index) * 0.01F
-    transform.get_ref().val.translation.z = @math.sin(elapsed + phase)
+    transform.modify(fn(value) {
+      value.translation.z = @math.sin(elapsed + phase)
+    })
   })
 }
 

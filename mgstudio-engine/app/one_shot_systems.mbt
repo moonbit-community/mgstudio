@@ -45,10 +45,12 @@ fn ensure_registered_systems(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn registered_systems_ref(world : @ecs.World) -> Ref[RegisteredSystemsResource] {
+fn registered_systems_ref(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[RegisteredSystemsResource] {
   ensure_registered_systems(world)
   match
-    (try world.get_resource_ref(ecs_res_key_registered_systems) catch {
+    (try world.get_resource_mut(ecs_res_key_registered_systems) catch {
       _ => None
     } noraise {
       value => value
@@ -129,19 +131,19 @@ pub fn register_system(
   system : SystemConfig[@ecs.World],
 ) -> SystemId {
   let configs_ref = registered_systems_ref(world)
-  let system_id = SystemId::{ index: configs_ref.val.configs.length() }
-  configs_ref.val.configs.push(Ref::new(system))
+  let system_id = SystemId::{ index: configs_ref.peek().configs.length() }
+  configs_ref.modify(fn(value) { value.configs.push(Ref::new(system)) })
   system_id
 }
 
 ///|
 pub fn run_system(world : @ecs.World, system_id : SystemId) -> Unit raise Error {
   let configs_ref = registered_systems_ref(world)
-  guard system_id.index >= 0 &&
-    system_id.index < configs_ref.val.configs.length() else {
+  let configs = configs_ref.peek().configs
+  guard system_id.index >= 0 && system_id.index < configs.length() else {
     raise UnknownRegisteredSystem(system_id)
   }
-  run_registered_system_config(world, configs_ref.val.configs[system_id.index])
+  run_registered_system_config(world, configs[system_id.index])
 }
 
 ///|

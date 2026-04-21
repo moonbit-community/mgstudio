@@ -138,11 +138,11 @@ fn alter_handle(
 ) -> Unit {
   try! right_bird.view(fn(_entity, data) {
     let (bird, sprite) = data
-    let bird_ref = bird.get_ref()
-    bird_ref.val.set_next_variant()
-    sprite.get_ref().val.image = asset_server
-      .get()
-      .load(bird_ref.val.get_texture_path())
+    let next_path = bird.modify(fn(value) {
+      value.set_next_variant()
+      value.get_texture_path()
+    })
+    sprite.modify(fn(value) { value.image = asset_server.get().load(next_path) })
   })
 }
 
@@ -166,9 +166,7 @@ fn alter_asset(
     return
   }
   let sprite = sprite_comp.value()
-  guard images.get_ref().val.get_mut(sprite.image) is Some(image) else {
-    return
-  }
+  guard images.peek().get_mut(sprite.image) is Some(image) else { return }
   image.pixels = invert_pixels(image.pixels)
 }
 

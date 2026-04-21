@@ -415,29 +415,30 @@ fn handle_app_setting_change(
   app_status : @app.ResMut[AppStatus],
   regenerate_writer : @ecs.MessageWriter[RegenerateImage],
 ) -> Unit {
-  let status_ref = app_status.get_ref()
-  let mut should_regenerate = false
-
-  for event in (try! events.read()) {
-    match event.get() {
-      AppSetting::RegenerateTopMipLevel => should_regenerate = true
-      AppSetting::EnableMipGeneration(enable_mip_generation) =>
-        if status_ref.val.enable_mip_generation != enable_mip_generation {
-          status_ref.val.enable_mip_generation = enable_mip_generation
-          should_regenerate = true
-        }
-      AppSetting::ImageWidth(image_size) =>
-        if status_ref.val.image_width != image_size {
-          status_ref.val.image_width = image_size
-          should_regenerate = true
-        }
-      AppSetting::ImageHeight(image_size) =>
-        if status_ref.val.image_height != image_size {
-          status_ref.val.image_height = image_size
-          should_regenerate = true
-        }
+  let should_regenerate = app_status.modify(fn(value) {
+    let mut should_regenerate = false
+    for event in (try! events.read()) {
+      match event.get() {
+        AppSetting::RegenerateTopMipLevel => should_regenerate = true
+        AppSetting::EnableMipGeneration(enable_mip_generation) =>
+          if value.enable_mip_generation != enable_mip_generation {
+            value.enable_mip_generation = enable_mip_generation
+            should_regenerate = true
+          }
+        AppSetting::ImageWidth(image_size) =>
+          if value.image_width != image_size {
+            value.image_width = image_size
+            should_regenerate = true
+          }
+        AppSetting::ImageHeight(image_size) =>
+          if value.image_height != image_size {
+            value.image_height = image_size
+            should_regenerate = true
+          }
+      }
     }
-  }
+    should_regenerate
+  })
 
   if should_regenerate {
     ignore(regenerate_writer.write(RegenerateImage::{  }))
@@ -474,8 +475,8 @@ fn regenerate_image_when_requested(
     commands.entity(entity).despawn()
   })
 
-  let status_ref = app_status.get_ref()
-  let levels = generate_image_levels(status_ref)
+  let status = app_status.peek()
+  let levels = generate_image_levels(status)
 
   if levels.length() == 0 {
     return
@@ -483,14 +484,14 @@ fn regenerate_image_when_requested(
 
   let (source_texture, mip_views) = regenerate_mipmap_source_image(
     levels,
-    status_ref.val.enable_mip_generation,
+    status.enable_mip_generation,
   )
 
   let window_size = primary_window_size(windows)
-  spawn_animated_mesh(commands, status_ref.val, window_size, source_texture)
+  spawn_animated_mesh(commands, status, window_size, source_texture)
   spawn_mip_level_views(
     commands,
-    status_ref.val,
+    status,
     app_assets.get(),
     window_size,
     mip_views,
@@ -516,11 +517,9 @@ fn animate_image_scale(
   )
 
   try! animated_images.view(fn(_entity, transform) {
-    transform.get_ref().val.scale = @math.Vec3::new(
-      next_scale.x,
-      next_scale.y,
-      1.0F,
-    )
+    transform.modify(fn(value) {
+      value.scale = @math.Vec3::new(next_scale.x, next_scale.y, 1.0F)
+    })
   })
 }
 
@@ -617,15 +616,9 @@ fn mip_level_label(level : Int, size : @math.UVec2) -> String {
 }
 
 ///|
-fn generate_image_levels(
-  app_status_ref : Ref[AppStatus],
-) -> Array[(Int, Int, Bytes)] {
-  let image_size = app_status_ref.val.image_size()
-  let image_data = generate_image_data(
-    app_status_ref,
-    image_size.x,
-    image_size.y,
-  )
+fn generate_image_levels(app_status : AppStatus) -> Array[(Int, Int, Bytes)] {
+  let image_size = app_status.image_size()
+  let image_data = generate_image_data(app_status, image_size.x, image_size.y)
   @asset.asset_generate_mip_chain_rgba8(image_size.x, image_size.y, image_data)
 }
 
@@ -665,12 +658,12 @@ fn regenerate_mipmap_source_image(
 
 ///|
 fn generate_image_data(
-  app_status_ref : Ref[AppStatus],
+  app_status : AppStatus,
   width : Int,
   height : Int,
 ) -> Bytes {
-  let outer_color = random_rgb_color(app_status_ref.val.rng)
-  let inner_color = random_rgb_color(app_status_ref.val.rng)
+  let outer_color = random_rgb_color(app_status.rng)
+  let inner_color = random_rgb_color(app_status.rng)
 
   let center = vec2_scale(
     @math.Vec2::new(int_to_float(width), int_to_float(height)),

@@ -789,9 +789,8 @@ fn[M] prepared_material2d_assets_or_empty(
     @asset.Assets[PreparedMaterial2d[M]],
   ] = @asset.assets_resource_key()
   let empty_prepared_assets : @asset.Assets[PreparedMaterial2d[M]] = @asset.Assets::new()
-  if (try! world.get_resource_ref(prepared_assets_key))
-    is Some(prepared_assets_ref) {
-    prepared_assets_ref.val
+  if (try! world.get_resource(prepared_assets_key)) is Some(prepared_assets) {
+    prepared_assets
   } else {
     empty_prepared_assets
   }
@@ -805,8 +804,8 @@ fn[M] render_material2d_instances_or_empty(
   _probe |> ignore
   let instances_key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
   let empty_instances = RenderMaterial2dInstances::new()
-  if (try! world.get_resource_ref(instances_key)) is Some(instances_ref) {
-    instances_ref.val
+  if (try! world.get_resource(instances_key)) is Some(instances) {
+    instances
   } else {
     empty_instances
   }
@@ -984,9 +983,11 @@ fn[M] register_material2d_runtime_world(
   probe : @asset.Handle[M],
 ) -> Unit {
   ensure_material2d_runtime_registry_resource_in_world(world)
-  if (try! world.get_resource_ref_mut(Material2dRuntimeRegistry::resource()))
-    is Some(registry_ref) {
-    registry_ref.val.register(material2d_runtime_entry(probe))
+  if (try! world.get_resource_mut(Material2dRuntimeRegistry::resource()))
+    is Some(registry) {
+    registry.modify(fn(value) {
+      value.register(material2d_runtime_entry(probe))
+    })
   }
 }
 
@@ -1027,12 +1028,12 @@ fn[M] extract_material2d_mesh_instances_system(
   let source_world = @render.render_source_world(world)
   let material_key : @ecs.ComponentKey[MeshMaterial2d[M]] = MeshMaterial2d::component()
   let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
-  guard (try! world.get_resource_ref_mut(key)) is Some(instances_ref) else {
-    return
-  }
-  instances_ref.val.clear()
-  source_world.for_each_component(material_key, fn(entity, material) {
-    instances_ref.val.set(entity, material.handle)
+  guard (try! world.get_resource_mut(key)) is Some(instances) else { return }
+  instances.modify(fn(value) {
+    value.clear()
+    source_world.for_each_component(material_key, fn(entity, material) {
+      value.set(entity, material.handle)
+    })
   })
 }
 
@@ -1049,36 +1050,36 @@ fn[M : Material2d] prepare_material2d_assets_system(
   let prepared_assets_key : @ecs.ResourceKey[
     @asset.Assets[PreparedMaterial2d[M]],
   ] = @asset.assets_resource_key()
-  guard (try! world.get_resource_ref(instances_key)) is Some(instances_ref) else {
+  guard (try! world.get_resource(instances_key)) is Some(instances) else {
     return
   }
-  guard (try! source_world.get_resource_ref(source_assets_key))
-    is Some(source_assets_ref) else {
+  guard (try! source_world.get_resource(source_assets_key))
+    is Some(source_assets) else {
     return
   }
   guard (try! world.get_resource(pipeline_key)) is Some(pipeline) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(prepared_assets_key))
-    is Some(prepared_assets_ref) else {
+  guard (try! world.get_resource_mut(prepared_assets_key))
+    is Some(prepared_assets) else {
     return
   }
   let prepared_ids : @hashmap.HashMap[Int, Bool] = @hashmap.HashMap::new()
-  for _, material_handle in instances_ref.val.instances {
+  for _, material_handle in instances.instances {
     let material_id = material_handle.id()
     if prepared_ids.contains(material_id) {
       continue
     }
     prepared_ids.set(material_id, true)
-    guard source_assets_ref.val.get(material_handle) is Some(material) else {
-      continue
-    }
+    guard source_assets.get(material_handle) is Some(material) else { continue }
     let prepared_handle = PreparedMaterial2d::prepared_handle(material_handle)
-    prepared_assets_ref.val.insert(
-      prepared_handle,
-      PreparedMaterial2d::from_material(material_handle, material, pipeline),
-    )
-    |> ignore
+    prepared_assets.modify(fn(value) {
+      value.insert(
+        prepared_handle,
+        PreparedMaterial2d::from_material(material_handle, material, pipeline),
+      )
+      |> ignore
+    })
   }
 }
 

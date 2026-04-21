@@ -67,8 +67,8 @@ pub fn AssetServer::load_folder(
 ///|
 fn loaded_folder_assets_mut_or_abort(
   world : @ecs.World,
-) -> Ref[Assets[LoadedFolder]] {
-  match (try! world.get_resource_ref_mut(loaded_folder_assets_resource_key())) {
+) -> @ecs.ResourceMut[Assets[LoadedFolder]] {
+  match (try! world.get_resource_mut(loaded_folder_assets_resource_key())) {
     Some(assets) => assets
     None =>
       abort(
@@ -102,7 +102,10 @@ pub fn asset_get_loaded_folder(handle : Handle[LoadedFolder]) -> LoadedFolder? {
 ///|
 pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]] {
   match asset_current_world() {
-    Some(world) => loaded_folder_assets_mut_or_abort(world).val.drain_events()
+    Some(world) =>
+      loaded_folder_assets_mut_or_abort(world).modify(fn(assets) {
+        assets.drain_events()
+      })
     None =>
       abort(
         "LoadedFolder events require an active app world; query the world-owned Assets<LoadedFolder> resource directly outside scheduled systems",
@@ -112,43 +115,45 @@ pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]] {
 
 ///|
 pub fn asset_update_loaded_folders(world : @ecs.World) -> Unit {
-  let assets_ref = loaded_folder_assets_mut_or_abort(world)
-  // Ensure any leftover internal asset events don't leak between frames.
-  assets_ref.val.drain_events() |> ignore
-  while true {
-    let kind = host_asset_poll_loaded_folder_event_kind()
-    if kind < 0 {
-      break
-    }
-    let host_id = host_asset_poll_loaded_folder_event_id()
-    let handle = Handle::new(host_id)
-    if kind == 3 {
-      let n = host_asset_loaded_folder_handles_len(host_id)
-      let handles : Array[Handle[Image]] = []
-      for j in 0..<n {
-        handles.push(
-          Handle::new(
-            host_asset_loaded_folder_handles_get(folder_id=host_id, index=j),
-          ),
-        )
+  let assets = loaded_folder_assets_mut_or_abort(world)
+  assets.modify(fn(store) {
+    // Ensure any leftover internal asset events don't leak between frames.
+    store.drain_events() |> ignore
+    while true {
+      let kind = host_asset_poll_loaded_folder_event_kind()
+      if kind < 0 {
+        break
       }
-      assets_ref.val.insert(handle, LoadedFolder::{ handles, }) |> ignore
-      assets_ref.val.push_event(LoadedWithDependencies(handle))
-    } else if kind == 0 {
-      assets_ref.val.insert(handle, LoadedFolder::{ handles: [] }) |> ignore
-    } else if kind == 1 {
-      let n = host_asset_loaded_folder_handles_len(host_id)
-      let handles : Array[Handle[Image]] = []
-      for j in 0..<n {
-        handles.push(
-          Handle::new(
-            host_asset_loaded_folder_handles_get(folder_id=host_id, index=j),
-          ),
-        )
+      let host_id = host_asset_poll_loaded_folder_event_id()
+      let handle = Handle::new(host_id)
+      if kind == 3 {
+        let n = host_asset_loaded_folder_handles_len(host_id)
+        let handles : Array[Handle[Image]] = []
+        for j in 0..<n {
+          handles.push(
+            Handle::new(
+              host_asset_loaded_folder_handles_get(folder_id=host_id, index=j),
+            ),
+          )
+        }
+        store.insert(handle, LoadedFolder::{ handles, }) |> ignore
+        store.push_event(LoadedWithDependencies(handle))
+      } else if kind == 0 {
+        store.insert(handle, LoadedFolder::{ handles: [] }) |> ignore
+      } else if kind == 1 {
+        let n = host_asset_loaded_folder_handles_len(host_id)
+        let handles : Array[Handle[Image]] = []
+        for j in 0..<n {
+          handles.push(
+            Handle::new(
+              host_asset_loaded_folder_handles_get(folder_id=host_id, index=j),
+            ),
+          )
+        }
+        store.insert(handle, LoadedFolder::{ handles, }) |> ignore
+      } else if kind == 2 {
+        store.remove(handle) |> ignore
       }
-      assets_ref.val.insert(handle, LoadedFolder::{ handles, }) |> ignore
-    } else if kind == 2 {
-      assets_ref.val.remove(handle) |> ignore
     }
-  }
+  })
 }

@@ -70,13 +70,14 @@ fn init_mesh_render_resources(world : @ecs.World) -> Unit {
   if (try! world.get_resource(auto_exposure_curve_assets_key)) is None {
     world.insert_resource(auto_exposure_curve_assets_key, @asset.Assets::new())
   }
-  if (try! world.get_resource_ref_mut(auto_exposure_curve_assets_key))
+  if (try! world.get_resource_mut(auto_exposure_curve_assets_key))
     is Some(curves_ref) {
+    let curves = curves_ref.peek()
     let default_curve_handle : @asset.Handle[AutoExposureCompensationCurve] = @asset.Handle::new(
       0,
     )
-    if !curves_ref.val.contains(default_curve_handle) {
-      curves_ref.val.insert(
+    if !curves.contains(default_curve_handle) {
+      curves.insert(
         default_curve_handle,
         AutoExposureCompensationCurve::default(),
       )

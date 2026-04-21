@@ -332,18 +332,21 @@ pub fn render3d_upload_decals(
 fn render3d_upload_decals_system(world : @ecs.World) -> Unit {
   let render_decals_ref = render3d_render_clustered_decals_ref_or_init(world)
   let decals_buffer_ref = render3d_decals_buffer_ref_or_init(world)
-  render3d_upload_decals(render_decals_ref.val, decals_buffer_ref.val)
+  decals_buffer_ref.set_changed()
+  render3d_upload_decals(render_decals_ref.peek(), decals_buffer_ref.peek())
 }
 
 ///|
-pub fn render3d_decals_buffer_ref(world : @ecs.World) -> Ref[DecalsBuffer]? {
-  try! world.get_resource_ref_mut(ecs_key_decals_buffer)
+pub fn render3d_decals_buffer_ref(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[DecalsBuffer]? {
+  try! world.get_resource_mut(ecs_key_decals_buffer)
 }
 
 ///|
 pub fn render3d_decals_buffer_ref_or_init(
   world : @ecs.World,
-) -> Ref[DecalsBuffer] {
+) -> @ecs.ResourceMut[DecalsBuffer] {
   if render3d_decals_buffer_ref(world) is None {
     world.insert_resource(ecs_key_decals_buffer, DecalsBuffer::default())
   }
@@ -493,19 +496,14 @@ fn clustered_decal_extract_directional_light_textures(
 pub fn render3d_extract_clustered_decals_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let render_decals_ref = render3d_render_clustered_decals_ref_or_init(world)
-  render_decals_ref.val.clear()
-  clustered_decal_extract_scene_decals(source_world, render_decals_ref.val)
-  clustered_decal_extract_spot_light_textures(
-    source_world,
-    render_decals_ref.val,
-  )
-  clustered_decal_extract_point_light_textures(
-    source_world,
-    render_decals_ref.val,
-  )
+  render_decals_ref.set_changed()
+  let render_decals = render_decals_ref.peek()
+  render_decals.clear()
+  clustered_decal_extract_scene_decals(source_world, render_decals)
+  clustered_decal_extract_spot_light_textures(source_world, render_decals)
+  clustered_decal_extract_point_light_textures(source_world, render_decals)
   clustered_decal_extract_directional_light_textures(
-    source_world,
-    render_decals_ref.val,
+    source_world, render_decals,
   )
 }
 
@@ -519,14 +517,14 @@ fn render3d_extract_clustered_decals_system_in_render_app(
 ///|
 pub fn render3d_render_clustered_decals_ref(
   world : @ecs.World,
-) -> Ref[RenderClusteredDecals]? {
-  try! world.get_resource_ref_mut(ecs_key_render_clustered_decals)
+) -> @ecs.ResourceMut[RenderClusteredDecals]? {
+  try! world.get_resource_mut(ecs_key_render_clustered_decals)
 }
 
 ///|
 pub fn render3d_render_clustered_decals_ref_or_init(
   world : @ecs.World,
-) -> Ref[RenderClusteredDecals] {
+) -> @ecs.ResourceMut[RenderClusteredDecals] {
   if render3d_render_clustered_decals_ref(world) is None {
     world.insert_resource(
       ecs_key_render_clustered_decals,

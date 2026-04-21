@@ -33,8 +33,8 @@ fn read_focus_visible_resource(
 ///|
 fn input_focus_resource_ref_mut(
   world : @ecs.World,
-) -> Ref[@input_focus.InputFocus] {
-  match (try! world.get_resource_ref_mut(@input_focus.InputFocus::resource())) {
+) -> @ecs.ResourceMut[@input_focus.InputFocus] {
+  match (try! world.get_resource_mut(@input_focus.InputFocus::resource())) {
     Some(value) => value
     None => abort("missing mutable InputFocus resource")
   }
@@ -43,9 +43,9 @@ fn input_focus_resource_ref_mut(
 ///|
 fn input_focus_visible_resource_ref_mut(
   world : @ecs.World,
-) -> Ref[@input_focus.InputFocusVisible] {
+) -> @ecs.ResourceMut[@input_focus.InputFocusVisible] {
   match
-    (try! world.get_resource_ref_mut(@input_focus.InputFocusVisible::resource())) {
+    (try! world.get_resource_mut(@input_focus.InputFocusVisible::resource())) {
     Some(value) => value
     None => abort("missing mutable InputFocusVisible resource")
   }
@@ -176,7 +176,7 @@ test "input_focus runtime dispatches and clears stale focus" {
   let focused_key : @ecs.MessageKey[@input_focus.FocusedInput[MockInput]] = @input_focus.focused_input_message_key()
   app.world().init_message(focused_key)
   let focus_ref = input_focus_resource_ref_mut(app.world())
-  focus_ref.val.set(focused)
+  focus_ref.modify(fn(value) { value.set(focused) })
   ignore(app.world().send_message(MockInput::message(), MockInput::{ id: 7 }))
 
   let app = app.update()
@@ -237,9 +237,9 @@ test "input_focus runtime IsFocusedHelper follows hierarchy and visibility" {
     .run_once()
 
   let focus_ref = input_focus_resource_ref_mut(app.world())
-  focus_ref.val.set(child)
+  focus_ref.modify(fn(value) { value.set(child) })
   let visible_ref = input_focus_visible_resource_ref_mut(app.world())
-  visible_ref.val.set_visible(true)
+  visible_ref.modify(fn(value) { value.set_visible(true) })
 
   let app = app.update()
 

@@ -266,7 +266,9 @@ fn[T] query_data_require_component(
   match world.component_payload(key.id(), entity) {
     Some(payload) => world.component_value(key, entity, payload)
     None =>
-      abort("QueryData::fetch expected component payload to exist after matches")
+      abort(
+        "QueryData::fetch expected component payload to exist after matches",
+      )
   }
 }
 
@@ -296,17 +298,11 @@ fn[T] query_data_require_component_mut(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
-) -> Mut[T] raise EcsError {
-  guard world.component_payload(key.id(), entity) is Some(payload) else {
+) -> Mut[T] {
+  guard world.component_payload(key.id(), entity) is Some(_) else {
     abort("QueryData::fetch expected component payload to exist after matches")
   }
-  let value_ref = world.component_ref(key, entity, payload)
-  {
-    value_ref: Some(value_ref),
-    world: Some(world),
-    entity: Some(entity),
-    key_id: Some(key.id()),
-  }
+  { world: Some(world), entity: Some(entity), key: Some(key) }
 }
 
 ///|

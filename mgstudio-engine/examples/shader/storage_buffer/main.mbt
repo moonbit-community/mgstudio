@@ -60,11 +60,13 @@ fn setup(
   }
   commands.insert_resource(StorageValues::{ values, })
 
-  let mesh = meshes.get_ref().val
+  let mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(0.15F, 0.15F, 0.15F))
-  let material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.9F, 0.94F, 1.0F)),
-  )
+  let material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.9F, 0.94F, 1.0F)),
+    )
   for i in 0..<INSTANCE_COUNT {
     let x = Float::from_int(i % 16) - 7.5F
     let y = Float::from_int(i / 16) - 3.5F
@@ -105,10 +107,11 @@ fn update_storage_values(
   storage_values : @app.ResMut[StorageValues],
 ) -> Unit {
   let elapsed = time.get().elapsed_seconds()
-  let values = storage_values.get_ref().val.values
+  let values = storage_values.get().values
   for i in 0..<values.length() {
     values[i] = @math.sin(elapsed * 1.3F + Float::from_int(i) * 0.08F)
   }
+  storage_values.set(StorageValues::{ values, })
 }
 
 ///|
@@ -123,7 +126,7 @@ fn apply_storage_values(
   try! query.view(fn(_entity, data) {
     let (slot, transform) = data
     let value = values[slot.value().index]
-    transform.get_ref().val.translation.z = value * 0.7F
+    transform.modify(fn(item) { item.translation.z = value * 0.7F })
   })
 }
 

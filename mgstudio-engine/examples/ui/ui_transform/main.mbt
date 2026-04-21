@@ -398,28 +398,25 @@ fn button_system(world : @ecs.World) -> Unit {
     let was_pressed = button_state.value().pressed
     if is_pressed && !was_pressed {
       if target_transform is Some(transform) {
-        let transform_ref = transform.get_ref()
         if (try! world.get_by_key(entity, rotate_button_key))
           is Some(rotate_button) {
-          transform_ref.val.rotate_z(rotate_button.step)
+          transform.modify(fn(value) { value.rotate_z(rotate_button.step) })
         }
         if (try! world.get_by_key(entity, scale_button_key))
           is Some(scale_button) {
-          let next_x = clamp_float(
-            transform_ref.val.scale.x + scale_button.delta,
-            SCALE_MIN,
-            SCALE_MAX,
-          )
-          let next_y = clamp_float(
-            transform_ref.val.scale.y + scale_button.delta,
-            SCALE_MIN,
-            SCALE_MAX,
-          )
-          transform_ref.val.scale = @math.Vec3::new(
-            next_x,
-            next_y,
-            transform_ref.val.scale.z,
-          )
+          transform.modify(fn(value) {
+            let next_x = clamp_float(
+              value.scale.x + scale_button.delta,
+              SCALE_MIN,
+              SCALE_MAX,
+            )
+            let next_y = clamp_float(
+              value.scale.y + scale_button.delta,
+              SCALE_MIN,
+              SCALE_MAX,
+            )
+            value.scale = @math.Vec3::new(next_x, next_y, value.scale.z)
+          })
         }
       }
     }
@@ -451,17 +448,18 @@ fn translation_system(
     return
   }
   let target_transform = target.get()
-  let transform_ref = target_transform.get_ref()
-  transform_ref.val.translation.x = clamp_float(
-    transform_ref.val.translation.x + dx,
-    -TRANSLATION_LIMIT,
-    TRANSLATION_LIMIT,
-  )
-  transform_ref.val.translation.y = clamp_float(
-    transform_ref.val.translation.y + dy,
-    -TRANSLATION_LIMIT,
-    TRANSLATION_LIMIT,
-  )
+  target_transform.modify(fn(value) {
+    value.translation.x = clamp_float(
+      value.translation.x + dx,
+      -TRANSLATION_LIMIT,
+      TRANSLATION_LIMIT,
+    )
+    value.translation.y = clamp_float(
+      value.translation.y + dy,
+      -TRANSLATION_LIMIT,
+      TRANSLATION_LIMIT,
+    )
+  })
 }
 
 ///|

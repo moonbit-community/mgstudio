@@ -139,17 +139,18 @@ fn move_player(
     dy -= 1.0F
   }
   try! players.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.x = clampf(
-      transform_ref.val.translation.x + dx * speed * dt,
-      -WORLD_HALF_X,
-      WORLD_HALF_X,
-    )
-    transform_ref.val.translation.y = clampf(
-      transform_ref.val.translation.y + dy * speed * dt,
-      -WORLD_HALF_Y,
-      WORLD_HALF_Y,
-    )
+    transform.modify(fn(value) {
+      value.translation.x = clampf(
+        value.translation.x + dx * speed * dt,
+        -WORLD_HALF_X,
+        WORLD_HALF_X,
+      )
+      value.translation.y = clampf(
+        value.translation.y + dy * speed * dt,
+        -WORLD_HALF_Y,
+        WORLD_HALF_Y,
+      )
+    })
   })
 }
 
@@ -169,9 +170,12 @@ fn collect_cakes(
       player_transform.value().translation.y
     if dx * dx + dy * dy < 34.0F * 34.0F {
       commands.entity(entity).despawn()
-      score.get_ref().val.value += 1
+      let score_value = score.modify(fn(value) {
+        value.value += 1
+        value.value
+      })
       @window.host_debug_string(
-        value="[alien_cake_addict] score: \{score.get_ref().val.value.to_string()}",
+        value="[alien_cake_addict] score: \{score_value.to_string()}",
       )
     } else {
       remaining += 1

@@ -113,16 +113,20 @@ fn fallible_observer(pointer : @app.OnPointer[@app.PointerMove]) -> Unit {
   ] = world.query_filtered(@ecs.All::new())
   let entity_data = query.get(world, entity) catch { _ => None }
   if entity_data is Some((transform_mut, target_mut)) {
-    let transform_ref = transform_mut.get_ref()
-    let target_ref = target_mut.get_ref()
-    if transform_ref.val.translation.x > OBSERVER_BOUND_X {
-      target_ref.val.step = -18.0F
-    } else if transform_ref.val.translation.x < -OBSERVER_BOUND_X ||
-      target_ref.val.step == 0.0F {
-      target_ref.val.step = 18.0F
+    let transform_value = transform_mut.value()
+    let current_step = target_mut.value().step
+    let next_step = if transform_value.translation.x > OBSERVER_BOUND_X {
+      -18.0F
+    } else if transform_value.translation.x < 0.0F - OBSERVER_BOUND_X ||
+      current_step == 0.0F {
+      18.0F
+    } else {
+      current_step
     }
-    transform_ref.val.translation.x = transform_ref.val.translation.x +
-      target_ref.val.step
+    target_mut.modify(fn(value) { value.step = next_step })
+    transform_mut.modify(fn(value) {
+      value.translation.x = value.translation.x + next_step
+    })
   }
 }
 

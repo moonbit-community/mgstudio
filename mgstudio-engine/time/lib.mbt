@@ -159,12 +159,12 @@ fn[T] sync_world_time_resource(
   value : T,
 ) -> Unit {
   match
-    (try world.get_resource_ref_mut(key) catch {
+    (try world.get_resource_mut(key) catch {
       _ => None
     } noraise {
       value => value
     }) {
-    Some(cell) => cell.val = value
+    Some(cell) => cell.set(value)
     None => world.insert_resource(key, value)
   }
 }
@@ -241,24 +241,22 @@ fn time_update(world : @ecs.World) -> Unit {
     TimeUpdateStrategy::default,
   )
   let fixed_time = world_fixed_or_default(world)
-  let real_ref = try! world
-    .get_resource_ref_mut(real_time_resource_key())
-    .unwrap()
+  let real_ref = try! world.get_resource_mut(real_time_resource_key()).unwrap()
   let virtual_ref = try! world
-    .get_resource_ref_mut(virtual_time_resource_key())
+    .get_resource_mut(virtual_time_resource_key())
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(default_time_resource_key())
+    .get_resource_mut(default_time_resource_key())
     .unwrap()
   let next_real = time_update_real_with_strategy(
-    real_ref.val,
+    real_ref.peek(),
     strategy,
     fixed_time,
   )
-  let next_virtual = update_virtual_time(virtual_ref.val, next_real)
-  real_ref.val = next_real
-  virtual_ref.val = next_virtual
-  time_ref.val = next_virtual.as_generic()
+  let next_virtual = update_virtual_time(virtual_ref.peek(), next_real)
+  real_ref.set(next_real)
+  virtual_ref.set(next_virtual)
+  time_ref.set(next_virtual.as_generic())
 }
 
 ///|

@@ -435,19 +435,21 @@ fn update_controls(
   state : @app.ResMut[AnimationState],
   settings : @app.ResMut[OverflowDebugSettings],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  let settings_ref = settings.get_ref()
   if keyboard.just_pressed(@window.KeyCode::Space) {
-    state_ref.val.playing = !state_ref.val.playing
-    if !state_ref.val.playing {
-      state_ref.val.paused_at = state_ref.val.t * LOOP_LENGTH
-    }
+    state.modify(fn(value) {
+      value.playing = !value.playing
+      if !value.playing {
+        value.paused_at = value.t * LOOP_LENGTH
+      }
+    })
   }
   if keyboard.just_pressed(@window.KeyCode::KeyO) {
-    settings_ref.val.overflow_index = settings_ref.val.overflow_index + 1
+    settings.modify(fn(value) {
+      value.overflow_index = value.overflow_index + 1
+    })
   }
   if keyboard.just_pressed(@window.KeyCode::KeyS) {
-    settings_ref.val.size_index = settings_ref.val.size_index + 1
+    settings.modify(fn(value) { value.size_index = value.size_index + 1 })
   }
 }
 
@@ -456,16 +458,16 @@ fn update_animation(
   state : @app.ResMut[AnimationState],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  if state_ref.val.playing {
-    state_ref.val.t = (time.get().elapsed_secs() - state_ref.val.paused_total) %
-      LOOP_LENGTH /
-      LOOP_LENGTH
-  } else {
-    state_ref.val.paused_total = time.get().elapsed_secs() -
-      state_ref.val.paused_at
-    state_ref.val.t = state_ref.val.paused_at / LOOP_LENGTH
-  }
+  state.modify(fn(value) {
+    if value.playing {
+      value.t = (time.get().elapsed_secs() - value.paused_total) %
+        LOOP_LENGTH /
+        LOOP_LENGTH
+    } else {
+      value.paused_total = time.get().elapsed_secs() - value.paused_at
+      value.t = value.paused_at / LOOP_LENGTH
+    }
+  })
 }
 
 ///|

@@ -72,14 +72,16 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_handle = meshes.get_ref().val.add(
-    @mesh.Mesh::from_3d_geometry(build_wave_geometry(0.0F)),
-  )
-  let material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.22F, 0.82F, 0.7F)).with_perceptual_roughness(
-      0.55F,
-    ),
-  )
+  let mesh_handle = meshes
+    .peek()
+    .add(@mesh.Mesh::from_3d_geometry(build_wave_geometry(0.0F)))
+  let material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.22F, 0.82F, 0.7F)).with_perceptual_roughness(
+        0.55F,
+      ),
+    )
   commands.spawn(
     (
       ComputeMeshTarget::{  },
@@ -119,10 +121,9 @@ fn compute_mesh_system(
   let t = time.get().elapsed_seconds()
   try! query.view(fn(_entity, mesh3d) {
     let handle = mesh3d.value().mesh()
-    meshes.get_ref().val.set(
-      handle,
-      @mesh.Mesh::from_3d_geometry(build_wave_geometry(t)),
-    )
+    meshes
+    .peek()
+    .set(handle, @mesh.Mesh::from_3d_geometry(build_wave_geometry(t)))
     |> ignore
   })
 }

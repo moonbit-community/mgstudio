@@ -374,8 +374,10 @@ fn directional_navigation_map_value(
 }
 
 ///|
-fn directional_navigation_focus_ref_mut(world : @ecs.World) -> Ref[InputFocus]? {
-  try world.get_resource_ref_mut(InputFocus::resource()) catch {
+fn directional_navigation_focus_ref_mut(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[InputFocus]? {
+  try world.get_resource_mut(InputFocus::resource()) catch {
     _ => None
   } noraise {
     value => value
@@ -592,7 +594,7 @@ fn directional_navigation_best_candidate(
 
 ///|
 pub fn auto_generate_navigation_edges(
-  nav_map : Ref[DirectionalNavigationMap],
+  nav_map : DirectionalNavigationMap,
   nodes : Array[FocusableArea],
   config : AutoNavigationConfig,
 ) -> Unit {
@@ -608,12 +610,12 @@ pub fn auto_generate_navigation_edges(
   ]
   for origin in nodes {
     for octant in octants {
-      if nav_map.val.get_neighbor(origin.entity, octant) is Some(_) {
+      if nav_map.get_neighbor(origin.entity, octant) is Some(_) {
         continue
       }
       if directional_navigation_best_candidate(origin, octant, nodes, config)
         is Some(best_candidate) {
-        nav_map.val.add_edge(origin.entity, best_candidate, octant)
+        nav_map.add_edge(origin.entity, best_candidate, octant)
       }
     }
   }
@@ -634,19 +636,19 @@ pub fn DirectionalNavigation::navigate(
   self : DirectionalNavigation,
   direction : @math.CompassOctant,
 ) -> @core.Entity raise DirectionalNavigationError {
-  guard directional_navigation_focus_ref_mut(self.world) is Some(focus_ref) else {
+  guard directional_navigation_focus_ref_mut(self.world) is Some(focus) else {
     raise NoFocus
   }
-  guard focus_ref.val.get() is Some(current_focus) else { raise NoFocus }
+  guard focus.peek().get() is Some(current_focus) else { raise NoFocus }
   if !self.world.is_alive(current_focus) {
-    focus_ref.val.clear()
+    focus.modify(fn(value) { value.clear() })
     raise NoFocus
   }
   let map = directional_navigation_map_value(self.world)
   guard map.get_neighbor(current_focus, direction) is Some(new_focus) else {
     raise NoNeighborInDirection(current_focus, direction)
   }
-  focus_ref.val.set(new_focus)
+  focus.modify(fn(value) { value.set(new_focus) })
   new_focus
 }
 

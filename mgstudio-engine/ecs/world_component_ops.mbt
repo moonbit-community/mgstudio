@@ -33,9 +33,7 @@ pub fn[T] World::replace(
   self.run_component_replace_hooks(entity, key.id(), caller~)
   ignore(
     self.replace_component_payload_by_local_id(
-      entity,
-      component_local_id,
-      payload,
+      entity, component_local_id, payload,
     ),
   )
   self.record_component_changed_with_caller(entity, key.id(), caller)
@@ -77,8 +75,8 @@ pub fn[T] World::for_each_component(
     return
   }
   let archetype_ids = self
-  .archetype_ids_for_component_local_id(local_component_id)
-  .copy()
+    .archetype_ids_for_component_local_id(local_component_id)
+    .copy()
   for archetype_id in archetype_ids {
     guard self.archetype_entities_view(archetype_id) is Some(entities) else {
       continue

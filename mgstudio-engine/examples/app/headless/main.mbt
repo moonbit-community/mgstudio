@@ -34,11 +34,11 @@ fn hello_world_system(_world : @ecs.World) -> Unit {
 
 ///|
 fn counter_system(state : @app.ResMut[CounterState]) -> Unit {
-  let state_ref = state.get_ref()
-  if state_ref.val.count % 60 == 0 {
-    println(state_ref.val.count.to_string())
+  let count = state.peek().count
+  if count % 60 == 0 {
+    println(count.to_string())
   }
-  state_ref.val.count = state_ref.val.count + 1
+  state.modify(fn(value) { value.count = value.count + 1 })
 }
 
 ///|

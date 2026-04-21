@@ -84,15 +84,14 @@ test "ecs resource: type mismatch diagnostics fail fast" {
 }
 
 ///|
-test "ecs resource: get_resource_ref observes live world storage" {
+test "ecs resource: get_resource reads world storage" {
   let world = World::new()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
     debug_name="ref_runtime_config",
   )
 
   world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
-  let config_ref = try! world.get_resource_ref(res_config).unwrap()
-  config_ref.val = RuntimeConfig::{ fps: 75 }
+  world.insert_resource(res_config, RuntimeConfig::{ fps: 75 })
 
   debug_inspect(
     try! world.get_resource(res_config),
@@ -101,15 +100,15 @@ test "ecs resource: get_resource_ref observes live world storage" {
 }
 
 ///|
-test "ecs resource: get_resource_ref_mut observes live world storage" {
+test "ecs resource: ResourceMut updates live world storage" {
   let world = World::new()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
     debug_name="ref_mut_runtime_config",
   )
 
   world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
-  let config_ref = try! world.get_resource_ref_mut(res_config).unwrap()
-  config_ref.val = RuntimeConfig::{ fps: 90 }
+  let config = try! world.get_resource_mut(res_config).unwrap()
+  config.set(RuntimeConfig::{ fps: 90 })
 
   debug_inspect(
     try! world.get_resource(res_config),
@@ -147,8 +146,8 @@ test "ecs resource: ResourceMut exposes detect changes metadata" {
   debug_inspect(second_config.is_added(), content="false")
   debug_inspect(second_config.is_changed(), content="false")
 
-  second_config.bypass_change_detection().val = RuntimeConfig::{ fps: 75 }
-  debug_inspect(second_config.last_changed(), content="1")
+  second_config.set(RuntimeConfig::{ fps: 75 })
+  debug_inspect(second_config.last_changed(), content="2")
   second_config.set_changed()
   debug_inspect(second_config.last_changed(), content="2")
   debug_inspect(
@@ -159,4 +158,24 @@ test "ecs resource: ResourceMut exposes detect changes metadata" {
     try! world.get_resource(res_config),
     content="Some({ fps: 75 })",
   )
+}
+
+///|
+test "ecs resource: ResourceMut::peek is read-only" {
+  let world = World::new()
+  let res_config : ResourceKey[RuntimeConfig] = register_resource(
+    debug_name="resource_mut_peek_runtime_config",
+  )
+
+  world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
+  world.advance_sequence() |> ignore
+
+  let read_ctx = @core.SystemSequenceContext::new()
+  read_ctx.set(@core.SystemSequence::new(1, 2))
+  world.set_sequence_context(read_ctx)
+
+  let config = (try! world.get_resource_mut(res_config)).unwrap()
+  debug_inspect(config.peek(), content="{ fps: 60 }")
+  debug_inspect(config.is_changed(), content="false")
+  debug_inspect(config.changed_by() is None, content="true")
 }

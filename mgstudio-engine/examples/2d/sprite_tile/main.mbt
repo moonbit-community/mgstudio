@@ -16,8 +16,8 @@
 struct AnimationState {
   min : Float
   max : Float
-  mut current : Float
-  mut speed : Float
+  current : Float
+  speed : Float
 }
 
 ///|
@@ -70,15 +70,24 @@ fn animate(
   state : @app.ResMut[AnimationState],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  let animation_state = state.get_ref()
-  if animation_state.val.current >= animation_state.val.max ||
-    animation_state.val.current <= animation_state.val.min {
-    animation_state.val.speed = -animation_state.val.speed
+  let mut animation_state = state.get()
+  if animation_state.current >= animation_state.max ||
+    animation_state.current <= animation_state.min {
+    animation_state = AnimationState::{
+      ..animation_state,
+      speed: -animation_state.speed,
+    }
   }
-  animation_state.val.current = animation_state.val.current +
-    animation_state.val.speed * time.get().delta_secs()
-  let current = animation_state.val.current
+  animation_state = AnimationState::{
+    ..animation_state,
+    current: animation_state.current +
+    animation_state.speed * time.get().delta_secs(),
+  }
+  state.set(animation_state)
+  let current = animation_state.current
   try! sprites.for_each(fn(_entity, sprite) {
-    sprite.get_ref().val.custom_size = Some(@math.Vec2::new(current, current))
+    sprite.modify(fn(value) {
+      value.custom_size = Some(@math.Vec2::new(current, current))
+    })
   })
 }

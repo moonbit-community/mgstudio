@@ -25,20 +25,25 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let plane = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(7.0F, 7.0F)),
-  )
-  let cube = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.8F, 1.8F, 1.8F))
+  let plane = meshes
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(7.0F, 7.0F)))
+  let cube = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.8F, 1.8F, 1.8F))
 
-  let plane_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.18F, 0.21F, 0.24F)),
-  )
-  let cube_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::default()
-    .with_base_color(@sprite.Color::white())
-    .with_base_color_texture(Some(asset_server.get().load_image(IMAGE_PATH))),
-  )
+  let plane_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.18F, 0.21F, 0.24F),
+      ),
+    )
+  let cube_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::default()
+      .with_base_color(@sprite.Color::white())
+      .with_base_color_texture(Some(asset_server.get().load_image(IMAGE_PATH))),
+    )
 
   commands.spawn(
     (

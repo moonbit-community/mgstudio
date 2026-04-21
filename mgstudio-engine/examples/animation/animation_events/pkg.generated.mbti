@@ -6,7 +6,6 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/debug",
-  "moonbitlang/core/ref",
 }
 
 // Values

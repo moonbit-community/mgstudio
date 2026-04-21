@@ -96,22 +96,26 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let ground_mesh = meshes.get_ref().val.add(
-    @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::circle(4.0F, 32)),
-  )
-  let cube_mesh = meshes.get_ref().val.add(
-    @mesh.Mesh::from_3d_geometry(
-      @mesh.Mesh3dGeometry::cuboid(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-    ),
-  )
-  let white_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
-  )
-  let cube_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
-    ),
-  )
+  let ground_mesh = meshes
+    .peek()
+    .add(@mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::circle(4.0F, 32)))
+  let cube_mesh = meshes
+    .peek()
+    .add(
+      @mesh.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::cuboid(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      ),
+    )
+  let white_material = materials
+    .peek()
+    .add(@pbr.StandardMaterial::from_color(@sprite.Color::white()))
+  let cube_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
+      ),
+    )
 
   commands.spawn(
     (

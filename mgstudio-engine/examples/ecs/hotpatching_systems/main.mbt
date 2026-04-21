@@ -110,8 +110,8 @@ fn setup(
       clicks : @app.ResMut[ClickCount],
       mode : @app.ResMut[Mode],
     ) {
-      clicks.get_ref().val.value = clicks.get_ref().val.value + 1
-      mode.get_ref().val.value = (mode.get_ref().val.value + 1) % 2
+      clicks.modify(fn(value) { value.value = value.value + 1 })
+      mode.modify(fn(value) { value.value = (value.value + 1) % 2 })
     }),
   )
 }
@@ -122,7 +122,7 @@ fn keyboard_toggle(
   mode : @app.ResMut[Mode],
 ) -> Unit {
   if keyboard.just_pressed(@window.KeyCode::KeyH) {
-    mode.get_ref().val.value = (mode.get_ref().val.value + 1) % 2
+    mode.modify(fn(value) { value.value = (value.value + 1) % 2 })
   }
 }
 

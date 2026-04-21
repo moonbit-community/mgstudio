@@ -4,7 +4,6 @@ package "Milky2018/mgstudio/examples/ui/images/image_node_resizing"
 import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "moonbitlang/core/ref",
 }
 
 // Values

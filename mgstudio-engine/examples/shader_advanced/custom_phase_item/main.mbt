@@ -36,17 +36,18 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Cuboid::new(0.6F, 0.6F, 0.6F))
+  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(0.6F, 0.6F, 0.6F))
   for i in 0..<48 {
     let phase = Float::from_int(i) * 0.21F
     let radius = 2.2F + Float::from_int(i % 4) * 0.35F
     let angle = phase
-    let material = materials.get_ref().val.add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.62F, 0.72F, 0.96F),
-      ),
-    )
+    let material = materials
+      .peek()
+      .add(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::srgb(0.62F, 0.72F, 0.96F),
+        ),
+      )
     commands.spawn(
       (
         CustomPhase::{ phase, },
@@ -95,8 +96,10 @@ fn animate_custom_phase(
     let (phase, transform) = data
     let angle = elapsed * 0.35F + phase.value().phase
     let radius = 2.4F + @math.sin(phase.value().phase * 1.7F) * 0.3F
-    transform.get_ref().val.translation.x = @math.cos(angle) * radius
-    transform.get_ref().val.translation.z = @math.sin(angle) * radius
+    transform.modify(fn(value) {
+      value.translation.x = @math.cos(angle) * radius
+      value.translation.z = @math.sin(angle) * radius
+    })
   })
 }
 

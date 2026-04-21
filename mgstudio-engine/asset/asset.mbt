@@ -246,9 +246,9 @@ pub fn[T : @app.Resource] asset_resource_or_abort() -> T {
 }
 
 ///|
-pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> Ref[T] {
+pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> T {
   let world = asset_world_or_abort()
-  match (try! world.get_resource_ref(T::resource())) {
+  match (try! world.get_resource(T::resource())) {
     Some(value) => value
     None =>
       abort(
@@ -258,9 +258,11 @@ pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> Ref[T] {
 }
 
 ///|
-pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> Ref[T] {
+pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> @ecs.ResourceMut[
+  T,
+] {
   let world = asset_world_or_abort()
-  match (try! world.get_resource_ref_mut(T::resource())) {
+  match (try! world.get_resource_mut(T::resource())) {
     Some(value) => value
     None =>
       abort(
@@ -275,12 +277,12 @@ pub fn[T] asset_assets_or_abort() -> Assets[T] {
 }
 
 ///|
-pub fn[T] asset_assets_ref_or_abort() -> Ref[Assets[T]] {
+pub fn[T] asset_assets_ref_or_abort() -> Assets[T] {
   asset_resource_ref_or_abort()
 }
 
 ///|
-pub fn[T] asset_assets_ref_mut_or_abort() -> Ref[Assets[T]] {
+pub fn[T] asset_assets_ref_mut_or_abort() -> @ecs.ResourceMut[Assets[T]] {
   asset_resource_ref_mut_or_abort()
 }
 
@@ -1446,9 +1448,7 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
     return
   }
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
-  guard (try! world.get_resource_ref_mut(key)) is Some(images_ref) else {
-    return
-  }
+  guard (try! world.get_resource_mut(key)) is Some(images_ref) else { return }
 
   let synced : Array[Int] = []
   asset_with_world(world, fn() {
@@ -1457,7 +1457,11 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
       if host_asset_is_texture_loaded(image_id) {
         let handle : Handle[Image] = Handle::new(image_id)
         image_asset_sync_metadata(handle, image)
-        ignore(assets_store_insert_silent(images_ref.val, handle, image))
+        ignore(
+          images_ref.modify(fn(store) {
+            assets_store_insert_silent(store, handle, image)
+          }),
+        )
         synced.push(image_id)
       }
     }
@@ -1471,11 +1475,11 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
 ///|
 fn asset_sync_dirty_image_assets(world : @ecs.World) -> Unit {
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
-  guard (try! world.get_resource_ref_mut(key)) is Some(images_ref) else {
-    return
-  }
-  for handle in assets_drain_dirty(images_ref.val) {
-    if images_ref.val.get(handle) is Some(image) {
+  guard (try! world.get_resource_mut(key)) is Some(images_ref) else { return }
+  let dirty_handles = images_ref.modify(fn(store) { assets_drain_dirty(store) })
+  let snapshot = images_ref.peek()
+  for handle in dirty_handles {
+    if snapshot.get(handle) is Some(image) {
       image_asset_sync_dirty(handle, image)
     }
   }

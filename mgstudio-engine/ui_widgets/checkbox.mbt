@@ -28,7 +28,7 @@ pub impl @ecs.Component for Checkbox with component() {
 
 ///|
 pub struct SetChecked {
-  mut entity : @core.Entity
+  entity : @core.Entity
   checked : Bool
 } derive(ToJson, FromJson)
 
@@ -48,11 +48,8 @@ pub impl @ecs.TriggerEvent for SetChecked with observer_entity(self) {
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetChecked with set_observer_entity(
-  event_ref,
-  entity,
-) {
-  event_ref.val.entity = entity
+pub impl @ecs.TriggerEvent for SetChecked with set_observer_entity(self, entity) {
+  SetChecked::{ entity, checked: self.checked }
 }
 
 ///|
@@ -67,7 +64,7 @@ pub impl @ecs.TriggerEvent for SetChecked with debug_name() {
 
 ///|
 pub struct ToggleChecked {
-  mut entity : @core.Entity
+  entity : @core.Entity
 } derive(ToJson, FromJson)
 
 ///|
@@ -87,10 +84,10 @@ pub impl @ecs.TriggerEvent for ToggleChecked with observer_entity(self) {
 
 ///|
 pub impl @ecs.TriggerEvent for ToggleChecked with set_observer_entity(
-  event_ref,
+  _self,
   entity,
 ) {
-  event_ref.val.entity = entity
+  ToggleChecked::{ entity, }
 }
 
 ///|

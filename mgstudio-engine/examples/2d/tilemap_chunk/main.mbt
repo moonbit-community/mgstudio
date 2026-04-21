@@ -166,12 +166,16 @@ fn spawn_player(
     ),
   )
   let player_mesh = @sprite.Mesh2d::new(
-    meshes.get_ref().val.add(
+    meshes
+    .peek()
+    .add(
       @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(8.0F, 8.0F)).to_mesh(),
     ),
   )
   let player_material = @sprite.MeshMaterial2d::new(
-    materials.get_ref().val.add(
+    materials
+    .peek()
+    .add(
       @sprite.ColorMaterialAsset::from_color(
         @sprite.Color::new(0.956F, 0.271F, 0.271F, 1.0F),
       ),
@@ -229,8 +233,9 @@ fn move_player(
     ).translation.x
 
   try! players.view(fn(_entity, player) {
-    let player_ref = player.get_ref()
-    player_ref.val.translation.x = origin + (destination - origin) * t
+    player.modify(fn(value) {
+      value.translation.x = origin + (destination - origin) * t
+    })
   })
 }
 
@@ -241,30 +246,34 @@ fn update_tilemap(
   time : @app.Res[@time.Time[Unit]],
   rng : @app.ResMut[SeededRng],
 ) -> Unit {
-  let rng_ref = rng.get_ref()
   try! timers.view(fn(entity, timer) {
-    let timer_ref = timer.get_ref()
-    timer_ref.val.timer = timer_ref.val.timer.tick(time.get().delta())
+    let ready = timer.modify(fn(value) {
+      value.timer = value.timer.tick(time.get().delta())
+      value.timer.just_finished()
+    })
 
-    if !timer_ref.val.timer.just_finished() {
+    if !ready {
       return
     }
 
     ignore(
       if (tile_data_query.get(entity) catch { _ => None }) is Some(tile_data) {
-        let tile_data_ref = tile_data.get_ref()
-        let tile_count = tile_data_ref.val.tile_data.length()
-        if tile_count == 0 {
-          return
-        }
-        for _ in 0..<UPDATE_BATCH_COUNT {
-          let index = rng_ref.val.rng.int(limit=tile_count)
-          tile_data_ref.val.tile_data[index] = Some(
-            @sprite.TileData::from_tileset_index(
-              rng_ref.val.rng.int(limit=TILESET_RANDOM_RANGE),
-            ),
-          )
-        }
+        tile_data.modify(fn(value) {
+          let tile_count = value.tile_data.length()
+          if tile_count == 0 {
+            return
+          }
+          rng.modify(fn(random_source) {
+            for _ in 0..<UPDATE_BATCH_COUNT {
+              let index = random_source.rng.int(limit=tile_count)
+              value.tile_data[index] = Some(
+                @sprite.TileData::from_tileset_index(
+                  random_source.rng.int(limit=TILESET_RANDOM_RANGE),
+                ),
+              )
+            }
+          })
+        })
       },
     )
   })

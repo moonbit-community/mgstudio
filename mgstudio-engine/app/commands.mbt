@@ -208,10 +208,8 @@ pub struct EntityCommands {
 
 ///|
 let deferred_command_batch_queue_ref : Ref[
-  Array[(@core.Sequence, DeferredCommandEntry)]?
-] = Ref::new(
-  None,
-)
+  Array[(@core.Sequence, DeferredCommandEntry)]?,
+] = Ref::new(None)
 
 ///|
 fn begin_deferred_command_batch() -> Unit {
@@ -243,9 +241,7 @@ fn flush_deferred_command_entries(
 }
 
 ///|
-fn end_deferred_command_batch(
-  world : @ecs.World,
-) -> Unit {
+fn end_deferred_command_batch(world : @ecs.World) -> Unit {
   match deferred_command_batch_queue_ref.val {
     Some(entries) => flush_deferred_command_entries(world, entries)
     None => ()

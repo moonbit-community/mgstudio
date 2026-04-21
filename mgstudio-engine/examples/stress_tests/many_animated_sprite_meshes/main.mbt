@@ -32,7 +32,7 @@ const ATLAS_FRAME_SECONDS : Float = 0.1F
 
 ///|
 struct AnimationTimer {
-  mut elapsed : Float
+  elapsed : Float
 }
 
 ///|
@@ -47,7 +47,7 @@ pub impl @ecs.Component for AnimationTimer with component() {
 
 ///|
 struct AtlasFrame {
-  mut index : Int
+  index : Int
 }
 
 ///|
@@ -77,7 +77,7 @@ impl @app.Resource for AnimationMaterials with resource() {
 
 ///|
 struct PrintTimer {
-  mut seconds : Float
+  seconds : Float
 }
 
 ///|
@@ -112,20 +112,24 @@ fn setup(
   let texture = asset_server
     .get()
     .load("textures/rpg/chars/gabe/gabe-idle-run.png")
-  let mesh = meshes.get_ref().val.add(
-    @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(24.0F, 24.0F)).to_mesh(),
-  )
+  let mesh = meshes
+    .peek()
+    .add(
+      @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(24.0F, 24.0F)).to_mesh(),
+    )
 
   let atlas_materials : Array[@asset.Handle[@sprite.ColorMaterialAsset]] = []
   let uv_scale_x = 1.0F / float_from_int(ATLAS_FRAME_COUNT)
   for i in 0..<ATLAS_FRAME_COUNT {
     let uv_offset_x = float_from_int(i) * uv_scale_x
-    let material = materials.get_ref().val.add(
-      @sprite.ColorMaterialAsset::from_image(texture)
-      .with_alpha_mode(@sprite.AlphaMode2d::Mask(0.5F))
-      .with_uv_scale(@math.Vec2::new(uv_scale_x, 1.0F))
-      .with_uv_offset(@math.Vec2::new(uv_offset_x, 0.0F)),
-    )
+    let material = materials
+      .peek()
+      .add(
+        @sprite.ColorMaterialAsset::from_image(texture)
+        .with_alpha_mode(@sprite.AlphaMode2d::Mask(0.5F))
+        .with_uv_scale(@math.Vec2::new(uv_scale_x, 1.0F))
+        .with_uv_offset(@math.Vec2::new(uv_offset_x, 0.0F)),
+      )
     atlas_materials.push(material)
   }
   commands.insert_resource(AnimationMaterials::{ handles: atlas_materials })
@@ -180,18 +184,20 @@ fn animate_meshes(
   let delta_secs = time.get().delta_secs()
   try! meshes.for_each(fn(_entity, data) {
     let (timer, frame, material) = data
-    let timer_ref = timer.get_ref()
-    timer_ref.val.elapsed += delta_secs
-    if timer_ref.val.elapsed < ATLAS_FRAME_SECONDS {
+    let mut next_elapsed = timer.value().elapsed + delta_secs
+    if next_elapsed < ATLAS_FRAME_SECONDS {
+      timer.set(AnimationTimer::{ elapsed: next_elapsed })
       return
     }
-    let frame_ref = frame.get_ref()
-    while timer_ref.val.elapsed >= ATLAS_FRAME_SECONDS {
-      timer_ref.val.elapsed -= ATLAS_FRAME_SECONDS
-      frame_ref.val.index = (frame_ref.val.index + 1) % frame_count
+    let mut next_index = frame.value().index
+    while next_elapsed >= ATLAS_FRAME_SECONDS {
+      next_elapsed -= ATLAS_FRAME_SECONDS
+      next_index = (next_index + 1) % frame_count
     }
+    timer.set(AnimationTimer::{ elapsed: next_elapsed })
+    frame.set(AtlasFrame::{ index: next_index })
     material.set(
-      @sprite.MeshMaterial2d::new(materials.get().handles[frame_ref.val.index]),
+      @sprite.MeshMaterial2d::new(materials.get().handles[next_index]),
     )
   })
 }
@@ -206,11 +212,12 @@ fn move_camera(
 ) -> Unit {
   let elapsed = time.get().elapsed_secs()
   try! camera.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = @math.Quat::from_rotation_z(elapsed * 0.5F)
-    transform_ref.val.translation = transform_ref.val.translation.add(
-      @math.Vec3::new(CAMERA_SPEED * time.get().delta_secs(), 0.0F, 0.0F),
-    )
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_z(elapsed * 0.5F)
+      value.translation = value.translation.add(
+        @math.Vec3::new(CAMERA_SPEED * time.get().delta_secs(), 0.0F, 0.0F),
+      )
+    })
   })
 }
 
@@ -220,12 +227,12 @@ fn print_count(
   timer : @app.ResMut[PrintTimer],
   meshes : @ecs.Query[@ecs.Comp[AtlasFrame], @ecs.All],
 ) -> Unit {
-  let timer_ref = timer.get_ref()
-  timer_ref.val.seconds += time.get().delta_secs()
-  if timer_ref.val.seconds < 1.0F {
+  let next_seconds = timer.get().seconds + time.get().delta_secs()
+  if next_seconds < 1.0F {
+    timer.set(PrintTimer::{ seconds: next_seconds })
     return
   }
-  timer_ref.val.seconds -= 1.0F
+  timer.set(PrintTimer::{ seconds: next_seconds - 1.0F })
   println("Animated sprite meshes: \{meshes.count()}")
 }
 

@@ -145,8 +145,7 @@ fn time_passed(threshold : Float) -> @app.StatefulRunConditionFn[@ecs.World] {
 
 ///|
 fn increment_input_counter(counter : @app.ResMut[InputCounter]) -> Unit {
-  let counter_ref = counter.get_ref()
-  counter_ref.val.value = counter_ref.val.value + 1
+  counter.modify(fn(value) { value.value = value.value + 1 })
 }
 
 ///|

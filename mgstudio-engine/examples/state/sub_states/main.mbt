@@ -216,30 +216,33 @@ fn movement(world : @ecs.World) -> Unit {
   ] = @ecs.query_filtered(world, @ecs.With::new(@sprite.ecs_key_sprite))
   let delta_seconds = time.delta_seconds()
   try! query.view(fn(_entity, transform) {
-    let transform = transform.get_ref()
-    let direction = @math.Vec3::zero()
+    let mut dx = 0.0F
+    let mut dy = 0.0F
     if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-      direction.x = direction.x - 1.0F
+      dx -= 1.0F
     }
     if @input.key_pressed(@window.KeyCode::ArrowRight) {
-      direction.x = direction.x + 1.0F
+      dx += 1.0F
     }
     if @input.key_pressed(@window.KeyCode::ArrowUp) {
-      direction.y = direction.y + 1.0F
+      dy += 1.0F
     }
     if @input.key_pressed(@window.KeyCode::ArrowDown) {
-      direction.y = direction.y - 1.0F
+      dy -= 1.0F
     }
-    if direction.x == 0.0F && direction.y == 0.0F {
+    if dx == 0.0F && dy == 0.0F {
       return
     }
-    transform.val.translation = @math.Vec3::add(
-      transform.val.translation,
-      @math.Vec3::mul_scalar(
-        direction.normalize_or_zero(),
-        100.0F * delta_seconds,
-      ),
-    )
+    let direction = @math.Vec3::new(dx, dy, 0.0F)
+    transform.modify(fn(value) {
+      value.translation = @math.Vec3::add(
+        value.translation,
+        @math.Vec3::mul_scalar(
+          direction.normalize_or_zero(),
+          100.0F * delta_seconds,
+        ),
+      )
+    })
   })
 }
 
@@ -253,8 +256,9 @@ fn change_color(world : @ecs.World) -> Unit {
   let query : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All] = @ecs.query(world)
   let hue = time.elapsed_seconds() * 60.0F
   try! query.view(fn(_entity, sprite) {
-    let sprite = sprite.get_ref()
-    sprite.val.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
+    sprite.modify(fn(value) {
+      value.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
+    })
   })
 }
 

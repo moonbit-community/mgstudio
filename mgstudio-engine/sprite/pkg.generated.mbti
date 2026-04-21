@@ -29,7 +29,7 @@ pub fn[S : IntoSpriteMeshAsset] add_mesh(@asset.Assets[@mesh.Mesh], S) -> @asset
 
 pub let camera_update_systems : String
 
-pub fn color_material_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[ColorMaterialAsset]]
+pub fn color_material_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[ColorMaterialAsset]]
 
 pub fn color_material_assets_or_abort() -> @asset.Assets[ColorMaterialAsset]
 
@@ -149,7 +149,7 @@ pub fn mesh2d_geometry_triangle(@math.Triangle2d) -> @mesh.Mesh2dGeometry
 
 pub fn mesh2d_geometry_triangle_ring(@math.Triangle2dRing) -> @mesh.Mesh2dGeometry
 
-pub fn mesh_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@mesh.Mesh]]
+pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]]
 
 pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh]
 

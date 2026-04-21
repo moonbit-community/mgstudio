@@ -56,12 +56,14 @@ fn setup(
     commands.spawn(
       (
         @pbr.Mesh3d::new(
-          meshes.get_ref().val.add(
-            @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(3.0F)),
-          ),
+          meshes
+          .peek()
+          .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(3.0F))),
         ),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @pbr.StandardMaterial::from_color(
               @sprite.Color::srgb(1.0F, 1.0F, 0.0F),
             ),
@@ -80,16 +82,18 @@ fn setup(
     commands.spawn(
       (
         @pbr.Mesh3d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @pbr.Mesh::from_3d_geometry(
               @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
             ),
           ),
         ),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
-            @pbr.StandardMaterial::from_color(@sprite.Color::white()),
-          ),
+          materials
+          .peek()
+          .add(@pbr.StandardMaterial::from_color(@sprite.Color::white())),
         ),
         cube_spawn,
         CubeState::{
@@ -137,11 +141,12 @@ fn move_cube(
   let delta = time.get().delta_secs()
   try! cubes.view(fn(_entity, data) {
     let (cube, transform) = data
-    let transform_ref = transform.get_ref()
-    let forward = transform_ref.val.forward()
-    transform_ref.val.translation = transform_ref.val.translation.add(
-      forward.mul_scalar(cube.value().move_speed * delta),
-    )
+    transform.modify(fn(value) {
+      let forward = value.forward()
+      value.translation = value.translation.add(
+        forward.mul_scalar(cube.value().move_speed * delta),
+      )
+    })
   })
 }
 
@@ -165,17 +170,12 @@ fn rotate_cube(
   let delta = time.get().delta_secs()
   try! cubes.view(fn(_entity, data) {
     let (cube, transform) = data
-    let transform_ref = transform.get_ref()
-    let look_at_sphere = transform_ref.val.looking_at(
-      center.translation,
-      transform_ref.val.local_y(),
-    )
-    let weight = cube.value().turn_speed * delta
-    let old_rotation = transform_ref.val.rotation
-    transform_ref.val.rotation = old_rotation.lerp(
-      look_at_sphere.rotation,
-      weight,
-    )
+    transform.modify(fn(value) {
+      let look_at_sphere = value.looking_at(center.translation, value.local_y())
+      let weight = cube.value().turn_speed * delta
+      let old_rotation = value.rotation
+      value.rotation = old_rotation.lerp(look_at_sphere.rotation, weight)
+    })
   })
 }
 
@@ -206,7 +206,7 @@ fn scale_down_sphere_proportional_to_cube_travel_distance(
     if new_size < center_state.min_size {
       new_size = center_state.min_size
     }
-    transform.get_ref().val.scale = @math.Vec3::splat(new_size)
+    transform.modify(fn(value) { value.scale = @math.Vec3::splat(new_size) })
   })
 }
 

@@ -201,10 +201,9 @@ pub struct ComponentColumn[T] {
   changed_sequence_table : ComponentSequenceTable
 }
 pub fn[T] ComponentColumn::contains(Self[T], @core.Entity) -> Bool
-pub fn[T] ComponentColumn::for_each_ref(Self[T], (@core.Entity, @ref.Ref[T]) -> Unit) -> Unit
+pub fn[T] ComponentColumn::for_each(Self[T], (@core.Entity, T) -> Unit) -> Unit
 pub fn[T] ComponentColumn::get(Self[T], @core.Entity) -> T?
 pub fn[T] ComponentColumn::get_mut(Self[T], @core.Entity) -> Mut[T]?
-pub fn[T] ComponentColumn::get_ref(Self[T], @core.Entity) -> @ref.Ref[T]?
 pub fn[T] ComponentColumn::set(Self[T], @core.Entity, T) -> Bool
 pub fn[T] ComponentColumn::set_sequence_only(Self[T], @core.Entity, T) -> Bool
 
@@ -423,7 +422,7 @@ pub fn[T] MessageCursor::is_empty(Self[T], Messages[T]) -> Bool
 pub fn[T] MessageCursor::len(Self[T], Messages[T]) -> Int
 pub fn[T] MessageCursor::missed_messages(Self[T], Messages[T]) -> Int
 pub fn[T : Message] MessageCursor::read(Self[T], Messages[T]) -> Array[T] raise EcsError
-pub fn[T : Message] MessageCursor::read_mut(Self[T], Messages[T]) -> Array[@ref.Ref[T]] raise EcsError
+pub fn[T : Message] MessageCursor::read_mut(Self[T], Messages[T]) -> Array[T] raise EcsError
 pub impl[T] Default for MessageCursor[T]
 pub impl[T] ToJson for MessageCursor[T]
 pub impl[T] @json.FromJson for MessageCursor[T]
@@ -444,7 +443,7 @@ pub fn[T] MessageMutator::clear(Self[T]) -> Unit
 pub fn[T] MessageMutator::cursor(Self[T]) -> Int
 pub fn[T] MessageMutator::is_empty(Self[T]) -> Bool
 pub fn[T] MessageMutator::len(Self[T]) -> Int
-pub fn[T] MessageMutator::read(Self[T]) -> Array[@ref.Ref[T]] raise EcsError
+pub fn[T] MessageMutator::read(Self[T]) -> Array[T] raise EcsError
 
 pub struct MessageQueueState {
   mut messages_a_start : Int
@@ -498,21 +497,20 @@ pub fn[T] Messages::write_message_batch(Self[T], MessageKey[T], Array[T]) -> Uni
 pub fn[T : Default] Messages::write_message_default(Self[T], MessageKey[T]) -> Int
 
 pub struct Mut[T] {
-  value_ref : @ref.Ref[T]?
   world : World?
   entity : @core.Entity?
-  key_id : Int?
+  key : ComponentKey[T]?
 }
 pub fn[T : Component] Mut::added(Self[T]) -> Int
-pub fn[T] Mut::bypass_change_detection(Self[T]) -> @ref.Ref[T]
 pub fn[T : Component] Mut::changed_by(Self[T]) -> String?
-#callsite(autofill(loc))
-pub fn[T] Mut::get_ref(Self[T], loc~ : SourceLoc) -> @ref.Ref[T]
 pub fn[T : Component] Mut::is_added(Self[T]) -> Bool
 pub fn[T : Component] Mut::is_changed(Self[T]) -> Bool
 pub fn[T : Component] Mut::key(Self[T]) -> ComponentKey[T]
 pub fn[T : Component] Mut::last_changed(Self[T]) -> Int
+#callsite(autofill(loc))
+pub fn[T, R] Mut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
 pub fn[T] Mut::new(ComponentKey[T]) -> Self[T]
+pub fn[T] Mut::peek(Self[T]) -> T
 #callsite(autofill(loc))
 pub fn[T] Mut::set(Self[T], T, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
@@ -520,7 +518,9 @@ pub fn[T : Component] Mut::set_added(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Component] Mut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
-pub fn[T : Component + Eq] Mut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+pub fn[T : Eq] Mut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+#callsite(autofill(loc))
+pub fn[T] Mut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
 pub fn[T] Mut::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Mut[T]
 
@@ -539,16 +539,17 @@ pub fn ObserverHandle::id(Self) -> Int
 pub fn ObserverHandle::world_id(Self) -> Int
 
 pub struct On[E] {
+  world : World
+  event_key : EventKey[E]
   entity : @core.Entity?
   caller : String?
-  event_ref : @ref.Ref[E]
   propagate_ref : @ref.Ref[Bool]
 }
 pub fn[E] On::caller(Self[E]) -> String?
 pub fn[E] On::entity(Self[E]) -> @core.Entity?
 pub fn[E] On::event(Self[E]) -> E
-pub fn[E] On::get_ref(Self[E]) -> @ref.Ref[E]
 pub fn[E] On::is_propagating(Self[E]) -> Bool
+pub fn[E, R] On::modify(Self[E], (E) -> R) -> R
 pub fn[E] On::propagate(Self[E], Bool) -> Unit
 
 pub struct Optional[T] {
@@ -785,18 +786,17 @@ pub fn[T] ResourceKey::debug_name(Self[T]) -> String
 pub fn[T] ResourceKey::id(Self[T]) -> Int
 
 pub struct ResourceMut[T] {
-  value_ref : @ref.Ref[T]?
   world : World?
   key : ResourceKey[T]?
 }
 pub fn[T] ResourceMut::added(Self[T]) -> Int
-pub fn[T] ResourceMut::bypass_change_detection(Self[T]) -> @ref.Ref[T]
 pub fn[T] ResourceMut::changed_by(Self[T]) -> String?
-#callsite(autofill(loc))
-pub fn[T] ResourceMut::get_ref(Self[T], loc~ : SourceLoc) -> @ref.Ref[T]
 pub fn[T] ResourceMut::is_added(Self[T]) -> Bool
 pub fn[T] ResourceMut::is_changed(Self[T]) -> Bool
 pub fn[T] ResourceMut::last_changed(Self[T]) -> Int
+#callsite(autofill(loc))
+pub fn[T, R] ResourceMut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
+pub fn[T] ResourceMut::peek(Self[T]) -> T
 #callsite(autofill(loc))
 pub fn[T] ResourceMut::set(Self[T], T, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
@@ -805,6 +805,8 @@ pub fn[T] ResourceMut::set_added(Self[T], loc~ : SourceLoc) -> Unit
 pub fn[T] ResourceMut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Eq] ResourceMut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+#callsite(autofill(loc))
+pub fn[T] ResourceMut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
 pub fn[T] ResourceMut::value(Self[T]) -> T
 
 type ResourceSlot
@@ -1110,7 +1112,7 @@ pub(open) trait ResourceData {
 pub(open) trait TriggerEvent {
   observer_event() -> EventKey[Self]
   observer_entity(Self) -> @core.Entity?
-  set_observer_entity(@ref.Ref[Self], @core.Entity) -> Unit
+  set_observer_entity(Self, @core.Entity) -> Self
   auto_propagate(Self) -> Bool
   debug_name() -> String
 }

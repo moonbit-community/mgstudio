@@ -26,7 +26,7 @@ const GOLDEN_ANGLE : Float = 2.399963229728653F
 
 ///|
 struct LightStats {
-  mut print_timer : Float
+  print_timer : Float
 }
 
 ///|
@@ -64,12 +64,18 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let room_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(90.0F, 0.2F, 90.0F)),
-  )
-  let room_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.2F, 0.22F)),
-  )
+  let room_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(
+        @pbr.mesh3d_geometry_cuboid(90.0F, 0.2F, 90.0F),
+      ),
+    )
+  let room_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.2F, 0.22F)),
+    )
   ignore(
     commands.spawn(
       (
@@ -80,12 +86,16 @@ fn setup(
     ),
   )
 
-  let marker_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(8.0F, 8.0F, 8.0F)),
-  )
-  let marker_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(1.0F, 0.08F, 0.58F)),
-  )
+  let marker_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(8.0F, 8.0F, 8.0F)),
+    )
+  let marker_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(1.0F, 0.08F, 0.58F)),
+    )
   ignore(
     commands.spawn(
       (
@@ -159,9 +169,11 @@ fn move_camera(
   let z = @math.sin(t) * CAMERA_RADIUS
   let y = @math.sin(t * 0.8F) * 16.0F
   try! camera.for_each(fn(_entity, transform) {
-    transform.get_ref().val = @transform.Transform::from_xyz(x, y, z).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    transform.set(
+      @transform.Transform::from_xyz(x, y, z).looking_at(
+        @math.Vec3::new(0.0F, 0.0F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
     )
   })
 }
@@ -172,12 +184,12 @@ fn print_light_count(
   stats : @app.ResMut[LightStats],
   lights : @ecs.Query[@ecs.Comp[@pbr.PointLight], @ecs.All],
 ) -> Unit {
-  let stats_ref = stats.get_ref()
-  stats_ref.val.print_timer += time.get().delta_secs()
-  if stats_ref.val.print_timer < 1.0F {
+  let next_timer = stats.get().print_timer + time.get().delta_secs()
+  if next_timer < 1.0F {
+    stats.set(LightStats::{ print_timer: next_timer })
     return
   }
-  stats_ref.val.print_timer -= 1.0F
+  stats.set(LightStats::{ print_timer: next_timer - 1.0F })
   println("Lights: \{lights.count()}")
 }
 

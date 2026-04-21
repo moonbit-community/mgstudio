@@ -309,7 +309,7 @@ fn update_button_label(
 ) -> Unit {
   let entity_mut = try! world.entity_mut(label_entity)
   if (try! entity_mut.get_mut(key=@text.ecs_key_text)) is Some(text) {
-    text.get_ref().val.content = content
+    text.modify(fn(value) { value.content = content })
   }
 }
 

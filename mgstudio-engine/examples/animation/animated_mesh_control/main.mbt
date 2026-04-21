@@ -162,12 +162,12 @@ fn setup_scene_once_loaded(
     is Some(player_mut) else {
     return
   }
-  let player_ref = player_mut.get_ref()
   let transitions = @animation.AnimationTransitions::new()
-  transitions
-  .play(player_ref.val, animations.get().animations[0], 0.0F)
-  .repeat()
-  |> ignore
+  player_mut.modify(fn(player) {
+    ignore(
+      transitions.play(player, animations.get().animations[0], 0.0F).repeat(),
+    )
+  })
   commands
   .entity(scene_ready.entity)
   .insert(
@@ -193,93 +193,114 @@ fn keyboard_control(
 ) -> Unit {
   let player_data = animation_players.require_single() catch { _ => return }
   let (player_mut, transitions_mut) = player_data
-  let player_ref = player_mut.get_ref()
-  let transitions_ref = transitions_mut.get_ref()
-  let playing = player_ref.val.playing_animations()
+  let playing = player_mut.peek().playing_animations()
   if playing.length() == 0 {
     return
   }
   let playing_animation_index = playing[0].0
 
   if keyboard_input.just_pressed(@window.KeyCode::Space) {
-    if player_ref.val.animation_mut(playing_animation_index)
-      is Some(animation_entry) {
-      let active = playing[0].1
-      if active.is_paused() {
-        animation_entry.unpause() |> ignore
-      } else {
-        animation_entry.pause() |> ignore
+    let active = playing[0].1
+    player_mut.modify(fn(player) {
+      if player.animation_mut(playing_animation_index) is Some(animation_entry) {
+        if active.is_paused() {
+          ignore(animation_entry.unpause())
+        } else {
+          ignore(animation_entry.pause())
+        }
       }
-    }
+    })
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::ArrowUp) {
-    if player_ref.val.animation_mut(playing_animation_index)
-      is Some(animation_entry) {
-      animation_entry.set_speed(playing[0].1.speed() * 1.2F) |> ignore
-    }
+    player_mut.modify(fn(player) {
+      if player.animation_mut(playing_animation_index) is Some(animation_entry) {
+        ignore(animation_entry.set_speed(playing[0].1.speed() * 1.2F))
+      }
+    })
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::ArrowDown) {
-    if player_ref.val.animation_mut(playing_animation_index)
-      is Some(animation_entry) {
-      animation_entry.set_speed(playing[0].1.speed() * 0.8F) |> ignore
-    }
+    player_mut.modify(fn(player) {
+      if player.animation_mut(playing_animation_index) is Some(animation_entry) {
+        ignore(animation_entry.set_speed(playing[0].1.speed() * 0.8F))
+      }
+    })
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::ArrowLeft) {
-    if player_ref.val.animation_mut(playing_animation_index)
-      is Some(animation_entry) {
-      animation_entry.seek_to(playing[0].1.seek_time() - 0.1F) |> ignore
-    }
+    player_mut.modify(fn(player) {
+      if player.animation_mut(playing_animation_index) is Some(animation_entry) {
+        ignore(animation_entry.seek_to(playing[0].1.seek_time() - 0.1F))
+      }
+    })
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::ArrowRight) {
-    if player_ref.val.animation_mut(playing_animation_index)
-      is Some(animation_entry) {
-      animation_entry.seek_to(playing[0].1.seek_time() + 0.1F) |> ignore
-    }
+    player_mut.modify(fn(player) {
+      if player.animation_mut(playing_animation_index) is Some(animation_entry) {
+        ignore(animation_entry.seek_to(playing[0].1.seek_time() + 0.1F))
+      }
+    })
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::Enter) {
     let next_index = (current_animation.get() + 1) %
       animations.get().animations.length()
     current_animation.set(next_index)
-    transitions_ref.val
-    .play(player_ref.val, animations.get().animations[next_index], 0.25F)
-    .repeat()
-    |> ignore
+    transitions_mut.modify(fn(transitions) {
+      player_mut.modify(fn(player) {
+        ignore(
+          transitions
+          .play(player, animations.get().animations[next_index], 0.25F)
+          .repeat(),
+        )
+      })
+    })
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::Digit1) {
-    if player_ref.val.animation_mut(playing_animation_index)
-      is Some(animation_entry) {
-      animation_entry.set_repeat(@animation.RepeatAnimation::Count(1)).replay()
-      |> ignore
-    }
+    player_mut.modify(fn(player) {
+      if player.animation_mut(playing_animation_index) is Some(animation_entry) {
+        ignore(
+          animation_entry
+          .set_repeat(@animation.RepeatAnimation::Count(1))
+          .replay(),
+        )
+      }
+    })
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::Digit2) {
-    if player_ref.val.animation_mut(playing_animation_index)
-      is Some(animation_entry) {
-      animation_entry.set_repeat(@animation.RepeatAnimation::Count(2)).replay()
-      |> ignore
-    }
+    player_mut.modify(fn(player) {
+      if player.animation_mut(playing_animation_index) is Some(animation_entry) {
+        ignore(
+          animation_entry
+          .set_repeat(@animation.RepeatAnimation::Count(2))
+          .replay(),
+        )
+      }
+    })
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::Digit3) {
-    if player_ref.val.animation_mut(playing_animation_index)
-      is Some(animation_entry) {
-      animation_entry.set_repeat(@animation.RepeatAnimation::Count(3)).replay()
-      |> ignore
-    }
+    player_mut.modify(fn(player) {
+      if player.animation_mut(playing_animation_index) is Some(animation_entry) {
+        ignore(
+          animation_entry
+          .set_repeat(@animation.RepeatAnimation::Count(3))
+          .replay(),
+        )
+      }
+    })
   }
 
   if keyboard_input.just_pressed(@window.KeyCode::KeyL) {
-    if player_ref.val.animation_mut(playing_animation_index)
-      is Some(animation_entry) {
-      animation_entry.set_repeat(@animation.RepeatAnimation::Forever) |> ignore
-    }
+    player_mut.modify(fn(player) {
+      if player.animation_mut(playing_animation_index) is Some(animation_entry) {
+        ignore(animation_entry.set_repeat(@animation.RepeatAnimation::Forever))
+      }
+    })
   }
 }
 

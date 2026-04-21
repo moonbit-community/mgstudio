@@ -21,9 +21,9 @@ fn setup(
   let server = asset_server.get()
   let font = server.load_font("fonts/FiraSans-Bold.ttf")
   let texture = server.load_image("textures/rpg/chars/gabe/gabe-idle-run.png")
-  let atlas_layout = texture_atlases.get_ref().val.add(
-    @asset.TextureAtlasLayout::from_grid(@math.UVec2::splat(24), 7, 1),
-  )
+  let atlas_layout = texture_atlases
+    .peek()
+    .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::splat(24), 7, 1))
 
   commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
   |> ignore

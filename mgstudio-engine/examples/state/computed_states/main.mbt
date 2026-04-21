@@ -431,31 +431,30 @@ fn movement(world : @ecs.World) -> Unit {
   ] = @ecs.query_filtered(world, @ecs.With::new(@sprite.ecs_key_sprite))
   let delta_seconds = time.delta_seconds()
   let speed = if turbo_active(world) { 300.0F } else { 100.0F }
+  let direction = @math.Vec3::zero()
+  if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+    direction.x = direction.x - 1.0F
+  }
+  if @input.key_pressed(@window.KeyCode::ArrowRight) {
+    direction.x = direction.x + 1.0F
+  }
+  if @input.key_pressed(@window.KeyCode::ArrowUp) {
+    direction.y = direction.y + 1.0F
+  }
+  if @input.key_pressed(@window.KeyCode::ArrowDown) {
+    direction.y = direction.y - 1.0F
+  }
+  if direction.x == 0.0F && direction.y == 0.0F {
+    return
+  }
+  let translation_delta = @math.Vec3::mul_scalar(
+    direction.normalize_or_zero(),
+    speed * delta_seconds,
+  )
   try! query.view(fn(_entity, transform) {
-    let transform = transform.get_ref()
-    let direction = @math.Vec3::zero()
-    if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-      direction.x = direction.x - 1.0F
-    }
-    if @input.key_pressed(@window.KeyCode::ArrowRight) {
-      direction.x = direction.x + 1.0F
-    }
-    if @input.key_pressed(@window.KeyCode::ArrowUp) {
-      direction.y = direction.y + 1.0F
-    }
-    if @input.key_pressed(@window.KeyCode::ArrowDown) {
-      direction.y = direction.y - 1.0F
-    }
-    if direction.x == 0.0F && direction.y == 0.0F {
-      return
-    }
-    transform.val.translation = @math.Vec3::add(
-      transform.val.translation,
-      @math.Vec3::mul_scalar(
-        direction.normalize_or_zero(),
-        speed * delta_seconds,
-      ),
-    )
+    transform.modify(fn(value) {
+      value.translation = @math.Vec3::add(value.translation, translation_delta)
+    })
   })
 }
 
@@ -524,8 +523,9 @@ fn change_color(world : @ecs.World) -> Unit {
   let hue_speed = if turbo_active(world) { 180.0F } else { 60.0F }
   let hue = time.elapsed_seconds() * hue_speed
   try! query.view(fn(_entity, sprite) {
-    let sprite = sprite.get_ref()
-    sprite.val.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
+    sprite.modify(fn(value) {
+      value.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
+    })
   })
 }
 

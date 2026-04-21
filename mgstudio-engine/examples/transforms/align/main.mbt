@@ -84,19 +84,25 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let plane_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
-  )
-  let ship_mesh = meshes.get_ref().val
+  let plane_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
+    )
+  let ship_mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(0.8F, 0.4F, 2.0F))
-  let plane_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.28F, 0.5F, 0.32F)),
-  )
-  let ship_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.86F, 0.86F, 0.92F)).with_reflectance(
-      0.3F,
-    ),
-  )
+  let plane_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.28F, 0.5F, 0.32F)),
+    )
+  let ship_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.86F, 0.86F, 0.92F),
+      ).with_reflectance(0.3F),
+    )
 
   ignore(
     commands.spawn(
@@ -153,24 +159,20 @@ fn handle_keys(
 
   try! ships.view(fn(_entity, pair) {
     let (ship, transform) = pair
-    let ship_ref = ship.get_ref()
-    let transform_ref = transform.get_ref()
+    let next_ship = ship.value()
+    let next_transform = transform.value()
 
     if randomize {
-      ship_ref.val.target_index = ship_ref.val.target_index + 1
-      ship_ref.val.in_motion = false
-      transform_ref.val = apply_alignment(
-        transform_ref.val,
-        ship_ref.val.target_index,
-      )
+      next_ship.target_index = next_ship.target_index + 1
+      next_ship.in_motion = false
+      transform.set(apply_alignment(next_transform, next_ship.target_index))
+      ship.set(next_ship)
     }
     if toggle_motion {
-      ship_ref.val.in_motion = !ship_ref.val.in_motion
-      if ship_ref.val.in_motion {
-        transform_ref.val = apply_alignment(
-          transform_ref.val,
-          ship_ref.val.target_index,
-        )
+      next_ship.in_motion = !next_ship.in_motion
+      ship.set(next_ship)
+      if next_ship.in_motion {
+        transform.set(apply_alignment(next_transform, next_ship.target_index))
       }
     }
   })
@@ -188,7 +190,7 @@ fn spin_ship(
   try! ships.view(fn(_entity, pair) {
     let (ship, transform) = pair
     if ship.value().in_motion {
-      transform.get_ref().val.rotate_y(delta * 0.7F)
+      transform.modify(fn(value) { value.rotate_y(delta * 0.7F) })
     }
   })
 }

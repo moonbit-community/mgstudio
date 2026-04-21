@@ -62,7 +62,7 @@ fn change_component(
 
 ///|
 fn change_resource(resource : @app.ResMut[MyResource]) -> Unit {
-  resource.get_ref().val.value = resource.get_ref().val.value + 1
+  resource.modify(fn(value) { value.value = value.value + 1 })
 }
 
 ///|
@@ -85,9 +85,10 @@ fn detect_changed(
 
 ///|
 fn detect_resource_change(resource : @app.ResMut[MyResource]) -> Unit {
-  if resource.get_ref().val.value != resource.get_ref().val.last_logged {
-    resource.get_ref().val.last_logged = resource.get_ref().val.value
-    println("Resource changed to \{resource.get_ref().val.value.to_string()}")
+  let current = resource.peek()
+  if current.value != current.last_logged {
+    resource.modify(fn(value) { value.last_logged = value.value })
+    println("Resource changed to \{resource.peek().value.to_string()}")
   }
 }
 

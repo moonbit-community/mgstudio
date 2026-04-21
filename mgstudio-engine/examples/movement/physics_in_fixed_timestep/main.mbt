@@ -257,12 +257,16 @@ fn spawn_environment(
   meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let sphere_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)),
-  )
-  let sphere_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.73F, 0.86F, 0.95F)),
-  )
+  let sphere_mesh = meshes
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)))
+  let sphere_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.73F, 0.86F, 0.95F),
+      ),
+    )
 
   for x in 0..<SPHERES_IN_X {
     for y in 0..<SPHERES_IN_Y {
@@ -306,14 +310,14 @@ fn spawn_environment(
 fn clear_fixed_timestep_flag(
   did_run : @app.ResMut[DidFixedTimestepRunThisFrame],
 ) -> Unit {
-  did_run.get_ref().val.value = false
+  did_run.modify(fn(value) { value.value = false })
 }
 
 ///|
 fn set_fixed_time_step_flag(
   did_run : @app.ResMut[DidFixedTimestepRunThisFrame],
 ) -> Unit {
-  did_run.get_ref().val.value = true
+  did_run.modify(fn(value) { value.value = true })
 }
 
 ///|
@@ -331,23 +335,22 @@ fn rotate_camera(
 
   try! cameras.view(fn(_entity, data) {
     let (sensitivity, transform) = data
-    let transform_ref = transform.get_ref()
     let delta_yaw = -delta.x * sensitivity.value().x
     let delta_pitch = -delta.y * sensitivity.value().y
-    let (yaw, pitch, roll) = transform_ref.val.rotation.to_euler(
-      @math.EulerRot::YXZ,
-    )
-    let next_pitch = clamp_float(
-      pitch + delta_pitch,
-      -CAMERA_PITCH_LIMIT,
-      CAMERA_PITCH_LIMIT,
-    )
-    transform_ref.val.rotation = @math.Quat::from_euler(
-      @math.EulerRot::YXZ,
-      yaw + delta_yaw,
-      next_pitch,
-      roll,
-    )
+    transform.modify(fn(value) {
+      let (yaw, pitch, roll) = value.rotation.to_euler(@math.EulerRot::YXZ)
+      let next_pitch = clamp_float(
+        pitch + delta_pitch,
+        -CAMERA_PITCH_LIMIT,
+        CAMERA_PITCH_LIMIT,
+      )
+      value.rotation = @math.Quat::from_euler(
+        @math.EulerRot::YXZ,
+        yaw + delta_yaw,
+        next_pitch,
+        roll,
+      )
+    })
   })
 }
 
@@ -386,14 +389,15 @@ fn accumulate_input(
       next_input.movement.x = next_input.movement.x + 1.0F
     }
 
-    let velocity_ref = velocity.get_ref()
     let velocity_from_input = camera_transform
       .right()
       .mul_scalar(next_input.movement.x)
       .add(camera_transform.forward().mul_scalar(next_input.movement.y))
-    velocity_ref.val.value = vec3_clamp_length_max(velocity_from_input, 1.0F).mul_scalar(
-      PLAYER_SPEED,
-    )
+    velocity.modify(fn(value) {
+      value.value = vec3_clamp_length_max(velocity_from_input, 1.0F).mul_scalar(
+        PLAYER_SPEED,
+      )
+    })
     commands.entity(entity).insert_component(next_input)
   })
 }
@@ -411,8 +415,7 @@ fn clear_input(
   players : @ecs.Query[@ecs.Mut[AccumulatedInput], @ecs.All],
 ) -> Unit {
   try! players.view(fn(_entity, input) {
-    let input_ref = input.get_ref()
-    input_ref.val.movement = @math.Vec2::zero()
+    input.modify(fn(value) { value.movement = @math.Vec2::zero() })
   })
 }
 
@@ -431,15 +434,16 @@ fn advance_physics(
   let delta_seconds = @time.time_fixed_delta_seconds()
   try! players.view(fn(entity, data) {
     let (_previous_translation, velocity, current_translation) = data
-    let previous_value = current_translation.get_ref().val.value
+    let previous_value = current_translation.value().value
     commands
     .entity(entity)
     .insert_component(PreviousPhysicalTranslation::{ value: previous_value })
 
-    let current_ref = current_translation.get_ref()
-    current_ref.val.value = current_ref.val.value.add(
-      velocity.value().value.mul_scalar(delta_seconds),
-    )
+    current_translation.modify(fn(value) {
+      value.value = value.value.add(
+        velocity.value().value.mul_scalar(delta_seconds),
+      )
+    })
   })
 }
 
@@ -457,11 +461,12 @@ fn interpolate_rendered_transform(
   let alpha = @time.time_fixed_overstep_fraction()
   try! players.view(fn(_entity, data) {
     let (previous_translation, current_translation, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation = previous_translation.value().value.interpolate(
-      current_translation.value().value,
-      alpha,
-    )
+    transform.modify(fn(value) {
+      value.translation = previous_translation.value().value.interpolate(
+        current_translation.value().value,
+        alpha,
+      )
+    })
   })
 }
 
@@ -482,8 +487,9 @@ fn translate_camera(
   let player_transform = player_transform_comp.value()
 
   try! cameras.view(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation = player_transform.translation
+    transform.modify(fn(value) {
+      value.translation = player_transform.translation
+    })
   })
 }
 

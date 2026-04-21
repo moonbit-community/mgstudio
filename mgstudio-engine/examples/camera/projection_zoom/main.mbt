@@ -81,12 +81,16 @@ fn setup(
       (
         @ecs.Name::new("Plane"),
         @pbr.Mesh3d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
           ),
         ),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @pbr.StandardMaterial::from_color(
               @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
             ).with_cull_mode(None),
@@ -171,8 +175,7 @@ fn switch_projection(
   }
   let settings = camera_settings.get()
   try! camera_query.view(fn(_entity, camera_projection) {
-    let projection_ref = camera_projection.get_ref()
-    let next_projection = match projection_ref.val {
+    let next_projection = match camera_projection.value() {
       @camera.Projection::Orthographic(_) =>
         Some(
           @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
@@ -193,7 +196,7 @@ fn switch_projection(
       @camera.Projection::Custom(_) => None
     }
     guard next_projection is Some(next_projection) else { return }
-    projection_ref.val = next_projection
+    camera_projection.set(next_projection)
   })
 }
 
@@ -213,27 +216,28 @@ fn zoom(
 
   let settings = camera_settings.get()
   try! camera_query.view(fn(_entity, camera_projection) {
-    let projection_ref = camera_projection.get_ref()
-    match projection_ref.val {
-      @camera.Projection::Orthographic(orthographic) => {
-        let delta_zoom = -scroll_delta * settings.orthographic_zoom_speed
-        let multiplicative_zoom = 1.0F + delta_zoom
-        orthographic.scale = clamp_float(
-          orthographic.scale * multiplicative_zoom,
-          settings.orthographic_zoom_min,
-          settings.orthographic_zoom_max,
-        )
+    camera_projection.modify(fn(projection) {
+      match projection {
+        @camera.Projection::Orthographic(orthographic) => {
+          let delta_zoom = -scroll_delta * settings.orthographic_zoom_speed
+          let multiplicative_zoom = 1.0F + delta_zoom
+          orthographic.scale = clamp_float(
+            orthographic.scale * multiplicative_zoom,
+            settings.orthographic_zoom_min,
+            settings.orthographic_zoom_max,
+          )
+        }
+        @camera.Projection::Perspective(perspective) => {
+          let delta_zoom = -scroll_delta * settings.perspective_zoom_speed
+          perspective.fov = clamp_float(
+            perspective.fov + delta_zoom,
+            settings.perspective_zoom_min,
+            settings.perspective_zoom_max,
+          )
+        }
+        @camera.Projection::Custom(_) => return
       }
-      @camera.Projection::Perspective(perspective) => {
-        let delta_zoom = -scroll_delta * settings.perspective_zoom_speed
-        perspective.fov = clamp_float(
-          perspective.fov + delta_zoom,
-          settings.perspective_zoom_min,
-          settings.perspective_zoom_max,
-        )
-      }
-      @camera.Projection::Custom(_) => return
-    }
+    })
   })
 }
 

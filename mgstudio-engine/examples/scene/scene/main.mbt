@@ -102,10 +102,9 @@ fn rotate_scene_roots(
   let t = time.get().elapsed_secs()
   try! roots.for_each(fn(_entity, data) {
     let (spin, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = @math.Quat::from_rotation_y(
-      t * spin.value().speed,
-    )
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_y(t * spin.value().speed)
+    })
   })
 }
 

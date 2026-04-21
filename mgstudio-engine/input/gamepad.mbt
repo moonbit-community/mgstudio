@@ -1277,7 +1277,7 @@ priv struct RunningRumbleEntry {
 
 ///|
 struct RunningRumbleEffects {
-  mut entries : Array[RunningRumbleEntry]
+  entries : Array[RunningRumbleEntry]
 } derive(Eq, ToJson, FromJson)
 
 ///|
@@ -1918,11 +1918,7 @@ fn gamepad_event_processing_system(
 ) -> Unit {
   try! gamepads.view(fn(_entity, data) {
     let (_settings, gamepad_mut) = data
-    let gamepad_ref = gamepad_mut.get_ref()
-    let gamepad = gamepad_ref.val
-    let digital = gamepad.digital
-    digital.clear()
-    gamepad_ref.val = Gamepad::{ ..gamepad, digital, }
+    gamepad_mut.modify(fn(gamepad) { gamepad.digital.clear() })
   })
 
   for raw_event in (try! raw_events.read()) {
@@ -1934,93 +1930,93 @@ fn gamepad_event_processing_system(
         if (gamepads.get(axis_event.gamepad) catch { _ => None })
           is Some((settings, gamepad_mut)) {
           let settings = settings.value()
-          let old_value = gamepad_mut.get_ref().val.analog.get(
-            GamepadInput::Axis(axis_event.axis),
-          )
-          if settings
-            .get_axis_settings(axis_event.axis)
-            .filter(axis_event.value, old_value)
-            is Some(filtered_value) {
-            gamepad_mut.get_ref().val.analog.set(
+          gamepad_mut.modify(fn(gamepad) {
+            let old_value = gamepad.analog.get(
               GamepadInput::Axis(axis_event.axis),
-              filtered_value.raw,
             )
-            |> ignore
-            let event = GamepadAxisChangedEvent::new(
-              axis_event.gamepad,
-              axis_event.axis,
-              filtered_value.scaled.to_f32(),
-            )
-            outputs.axis_events.write(event) |> ignore
-            outputs.gamepad_events.write(GamepadEvent::Axis(event)) |> ignore
-          }
+            if settings
+              .get_axis_settings(axis_event.axis)
+              .filter(axis_event.value, old_value)
+              is Some(filtered_value) {
+              gamepad.analog.set(
+                GamepadInput::Axis(axis_event.axis),
+                filtered_value.raw,
+              )
+              |> ignore
+              let event = GamepadAxisChangedEvent::new(
+                axis_event.gamepad,
+                axis_event.axis,
+                filtered_value.scaled.to_f32(),
+              )
+              outputs.axis_events.write(event) |> ignore
+              outputs.gamepad_events.write(GamepadEvent::Axis(event)) |> ignore
+            }
+          })
         }
       Button(button_event) =>
         if (gamepads.get(button_event.gamepad) catch { _ => None })
           is Some((settings, gamepad_mut)) {
           let settings = settings.value()
-          let gamepad_ref = gamepad_mut.get_ref()
-          let old_value = gamepad_ref.val.analog.get(
-            GamepadInput::Button(button_event.button),
-          )
-          if settings
-            .get_button_axis_settings(button_event.button)
-            .filter(button_event.value, old_value)
-            is Some(filtered_value) {
-            let button_settings = settings.get_button_settings(
-              button_event.button,
-            )
-            gamepad_ref.val.analog.set(
+          gamepad_mut.modify(fn(gamepad) {
+            let old_value = gamepad.analog.get(
               GamepadInput::Button(button_event.button),
-              filtered_value.raw,
             )
-            |> ignore
-            let was_pressed = gamepad_ref.val.digital.pressed(
-              button_event.button,
-            )
-
-            if button_settings.is_released(filtered_value.raw) {
-              if was_pressed {
-                outputs.button_state_events.write(
-                  GamepadButtonStateChangedEvent::new(
-                    button_event.gamepad,
-                    button_event.button,
-                    ButtonState::Released,
-                  ),
-                )
-                |> ignore
-              }
-              gamepad_ref.val.digital.release(button_event.button)
-            } else if button_settings.is_pressed(filtered_value.raw) {
-              if !was_pressed {
-                outputs.button_state_events.write(
-                  GamepadButtonStateChangedEvent::new(
-                    button_event.gamepad,
-                    button_event.button,
-                    ButtonState::Pressed,
-                  ),
-                )
-                |> ignore
-              }
-              gamepad_ref.val.digital.press(button_event.button)
-            }
-
-            let button_state = if gamepad_ref.val.digital.pressed(
+            if settings
+              .get_button_axis_settings(button_event.button)
+              .filter(button_event.value, old_value)
+              is Some(filtered_value) {
+              let button_settings = settings.get_button_settings(
                 button_event.button,
-              ) {
-              ButtonState::Pressed
-            } else {
-              ButtonState::Released
+              )
+              gamepad.analog.set(
+                GamepadInput::Button(button_event.button),
+                filtered_value.raw,
+              )
+              |> ignore
+              let was_pressed = gamepad.digital.pressed(button_event.button)
+
+              if button_settings.is_released(filtered_value.raw) {
+                if was_pressed {
+                  outputs.button_state_events.write(
+                    GamepadButtonStateChangedEvent::new(
+                      button_event.gamepad,
+                      button_event.button,
+                      ButtonState::Released,
+                    ),
+                  )
+                  |> ignore
+                }
+                gamepad.digital.release(button_event.button)
+              } else if button_settings.is_pressed(filtered_value.raw) {
+                if !was_pressed {
+                  outputs.button_state_events.write(
+                    GamepadButtonStateChangedEvent::new(
+                      button_event.gamepad,
+                      button_event.button,
+                      ButtonState::Pressed,
+                    ),
+                  )
+                  |> ignore
+                }
+                gamepad.digital.press(button_event.button)
+              }
+
+              let button_state = if gamepad.digital.pressed(button_event.button) {
+                ButtonState::Pressed
+              } else {
+                ButtonState::Released
+              }
+              let event = GamepadButtonChangedEvent::new(
+                button_event.gamepad,
+                button_event.button,
+                button_state,
+                filtered_value.scaled.to_f32(),
+              )
+              outputs.button_events.write(event) |> ignore
+              outputs.gamepad_events.write(GamepadEvent::Button(event))
+              |> ignore
             }
-            let event = GamepadButtonChangedEvent::new(
-              button_event.gamepad,
-              button_event.button,
-              button_state,
-              filtered_value.scaled.to_f32(),
-            )
-            outputs.button_events.write(event) |> ignore
-            outputs.gamepad_events.write(GamepadEvent::Button(event)) |> ignore
-          }
+          })
         }
     }
   }
@@ -2033,102 +2029,107 @@ fn gamepad_rumble_system(
   real_time : @app.Res[@time.Time[@time.Real]],
 ) -> Unit {
   let now_ms = current_real_time_millis(real_time)
-  let effects_ref = running_rumbles.get_ref()
+  let requests_list = try! requests.read()
 
-  for i in 0..<effects_ref.val.entries.length() {
-    let entry = effects_ref.val.entries[i]
-    prune_expired_rumbles(entry, now_ms)
-    effects_ref.val.entries[i] = entry
-  }
-
-  for request in (try! requests.read()) {
-    let entity = request.gamepad()
-    let host_id = match mapped_host_gamepad_id(entity) {
-      Some(host_id) => host_id
-      None => continue
+  running_rumbles.modify(fn(effects) {
+    for i in 0..<effects.entries.length() {
+      let entry = effects.entries[i]
+      prune_expired_rumbles(entry, now_ms)
+      effects.entries[i] = entry
     }
-    let index = ensure_running_rumble_entry_index(effects_ref.val, entity)
-    let entry = effects_ref.val.entries[index]
 
-    match request {
-      Add(duration~, intensity~, ..) => {
-        if duration.is_zero() ||
-          !host_input_gamepad_connected(host_id) ||
-          !host_input_gamepad_ff_supported(host_id) {
-          continue
-        }
-        entry.rumbles.push(RunningRumble::{
-          deadline_ms: deadline_after(now_ms, duration),
-          intensity: GamepadRumbleIntensity::{
-            strong_motor: clamp_rumble_motor(intensity.strong_motor),
-            weak_motor: clamp_rumble_motor(intensity.weak_motor),
-          },
-        })
+    for request in requests_list {
+      let entity = request.gamepad()
+      let host_id = match mapped_host_gamepad_id(entity) {
+        Some(host_id) => host_id
+        None => continue
       }
-      Stop(..) => entry.rumbles.clear()
-    }
-    effects_ref.val.entries[index] = entry
-  }
+      let index = ensure_running_rumble_entry_index(effects, entity)
+      let entry = effects.entries[index]
 
-  for i in 0..<effects_ref.val.entries.length() {
-    let entry = effects_ref.val.entries[i]
-    prune_expired_rumbles(entry, now_ms)
-    match desired_rumble(entry) {
-      Some(desired) => {
-        let should_apply = match entry.last_applied {
-          Some(applied) =>
-            applied.strong_motor != desired.strong_motor ||
-            applied.weak_motor != desired.weak_motor ||
-            applied.deadline_ms != desired.deadline_ms
-          None => true
-        }
-        if !should_apply {
-          continue
-        }
-
-        let host_id = match mapped_host_gamepad_id(entry.entity) {
-          Some(host_id) => host_id
-          None => {
-            entry.rumbles.clear()
-            entry.last_applied = None
+      match request {
+        Add(duration~, intensity~, ..) => {
+          if duration.is_zero() ||
+            !host_input_gamepad_connected(host_id) ||
+            !host_input_gamepad_ff_supported(host_id) {
             continue
           }
+          entry.rumbles.push(RunningRumble::{
+            deadline_ms: deadline_after(now_ms, duration),
+            intensity: GamepadRumbleIntensity::{
+              strong_motor: clamp_rumble_motor(intensity.strong_motor),
+              weak_motor: clamp_rumble_motor(intensity.weak_motor),
+            },
+          })
         }
-        let duration_ms = desired.deadline_ms - now_ms
-        match
-          host_input_gamepad_set_rumble(
-            host_id,
-            desired.strong_motor,
-            desired.weak_motor,
-            duration_ms,
-          ) {
-          @gilrs.GamepadRumbleResult::Applied =>
-            entry.last_applied = Some(desired)
-          @gilrs.GamepadRumbleResult::Unsupported
-          | @gilrs.GamepadRumbleResult::NotFound => {
-            entry.rumbles.clear()
+        Stop(..) => entry.rumbles.clear()
+      }
+      effects.entries[index] = entry
+    }
+
+    for i in 0..<effects.entries.length() {
+      let entry = effects.entries[i]
+      prune_expired_rumbles(entry, now_ms)
+      match desired_rumble(entry) {
+        Some(desired) => {
+          let should_apply = match entry.last_applied {
+            Some(applied) =>
+              applied.strong_motor != desired.strong_motor ||
+              applied.weak_motor != desired.weak_motor ||
+              applied.deadline_ms != desired.deadline_ms
+            None => true
+          }
+          if !should_apply {
+            continue
+          }
+
+          let host_id = match mapped_host_gamepad_id(entry.entity) {
+            Some(host_id) => host_id
+            None => {
+              entry.rumbles.clear()
+              entry.last_applied = None
+              continue
+            }
+          }
+          let duration_ms = desired.deadline_ms - now_ms
+          match
+            host_input_gamepad_set_rumble(
+              host_id,
+              desired.strong_motor,
+              desired.weak_motor,
+              duration_ms,
+            ) {
+            @gilrs.GamepadRumbleResult::Applied =>
+              entry.last_applied = Some(desired)
+            @gilrs.GamepadRumbleResult::Unsupported
+            | @gilrs.GamepadRumbleResult::NotFound => {
+              entry.rumbles.clear()
+              entry.last_applied = None
+            }
+          }
+        }
+        None =>
+          if entry.last_applied is Some(_) {
+            if mapped_host_gamepad_id(entry.entity) is Some(host_id) {
+              ignore(host_input_gamepad_set_rumble(host_id, 0.0F, 0.0F, 0L))
+            }
             entry.last_applied = None
           }
-        }
       }
-      None =>
-        if entry.last_applied is Some(_) {
-          if mapped_host_gamepad_id(entry.entity) is Some(host_id) {
-            ignore(host_input_gamepad_set_rumble(host_id, 0.0F, 0.0F, 0L))
-          }
-          entry.last_applied = None
-        }
+      effects.entries[i] = entry
     }
-    effects_ref.val.entries[i] = entry
-  }
 
-  let kept_entries : Array[RunningRumbleEntry] = []
-  for entry in effects_ref.val.entries {
-    if entry.rumbles.length() > 0 || entry.last_applied is Some(_) {
-      kept_entries.push(entry)
+    let kept_entries : Array[RunningRumbleEntry] = []
+    for entry in effects.entries {
+      if entry.rumbles.length() > 0 || entry.last_applied is Some(_) {
+        kept_entries.push(entry)
+      }
     }
-  }
-  effects_ref.val.entries = kept_entries
+    effects.entries.clear()
+    for entry in kept_entries {
+      effects.entries.push(entry)
+    }
+  })
 }
 
 ///|

@@ -96,13 +96,15 @@ fn setup(
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
-  let handle = images.get_ref().val.add(
-    @asset.Image::new(
-      IMAGE_WIDTH,
-      IMAGE_HEIGHT,
-      Bytes::from_array(build_initial_pixels()),
-    ),
-  )
+  let handle = images
+    .peek()
+    .add(
+      @asset.Image::new(
+        IMAGE_WIDTH,
+        IMAGE_HEIGHT,
+        Bytes::from_array(build_initial_pixels()),
+      ),
+    )
 
   ignore(commands.spawn_component(@sprite.Sprite::from_image(handle)))
   commands.insert_resource(MyProcGenImage::{ handle, })
@@ -117,14 +119,11 @@ fn draw(
   draw_color : @app.Local[LinearColor],
   seeded_rng : @app.ResMut[SeededRng],
 ) -> Unit {
-  let images_ref = images.get_ref()
-  guard images_ref.val.get(my_handle.get().handle) is Some(image) else {
-    return
-  }
+  let handle = my_handle.get().handle
+  guard images.peek().get(handle) is Some(image) else { return }
 
-  let seeded_rng_ref = seeded_rng.get_ref()
   if i.get() == 0 {
-    draw_color.get_ref().val = next_random_color(seeded_rng_ref.val.rng)
+    seeded_rng.modify(fn(value) { draw_color.set(next_random_color(value.rng)) })
   }
 
   let center = @math.Vec2::new(
@@ -150,7 +149,7 @@ fn draw(
   let old_alpha = pixels[start + 3]
 
   if color_distance(old_color, draw_color.get()) <= COLOR_DISTANCE_TOLERANCE {
-    draw_color.get_ref().val = next_random_color(seeded_rng_ref.val.rng)
+    seeded_rng.modify(fn(value) { draw_color.set(next_random_color(value.rng)) })
   }
 
   pixels[start] = color_channel_to_byte(draw_color.get().r)
@@ -158,12 +157,14 @@ fn draw(
   pixels[start + 2] = color_channel_to_byte(draw_color.get().b)
   pixels[start + 3] = old_alpha
 
-  ignore(
-    images_ref.val.set(
-      my_handle.get().handle,
-      @asset.Image::new(image.width, image.height, Bytes::from_array(pixels)),
-    ),
-  )
+  images.modify(fn(store) {
+    ignore(
+      store.set(
+        handle,
+        @asset.Image::new(image.width, image.height, Bytes::from_array(pixels)),
+      ),
+    )
+  })
 
   i.set(index + 1)
 }

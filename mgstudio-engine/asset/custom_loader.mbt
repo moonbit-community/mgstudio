@@ -90,19 +90,19 @@ fn typed_asset_loader_path_key(type_name : String, path : AssetPath) -> String {
 }
 
 ///|
-fn[T] asset_assets_ref_mut_or_init() -> Ref[Assets[T]] {
-  asset_assets_ref_mut_or_init_in_world(asset_world_or_abort())
+fn[T] asset_assets_mut_or_init() -> @ecs.ResourceMut[Assets[T]] {
+  asset_assets_mut_or_init_in_world(asset_world_or_abort())
 }
 
 ///|
-fn[T] asset_assets_ref_mut_or_init_in_world(
+fn[T] asset_assets_mut_or_init_in_world(
   world : @ecs.World,
-) -> Ref[Assets[T]] {
+) -> @ecs.ResourceMut[Assets[T]] {
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
   if (try! world.get_resource(key)) is None {
     world.insert_resource(key, Assets::new())
   }
-  match (try! world.get_resource_ref_mut(key)) {
+  match (try! world.get_resource_mut(key)) {
     Some(value) => value
     None =>
       abort("Failed to initialize Assets resource for custom asset loading")
@@ -121,7 +121,9 @@ pub fn[T] LoadContext::add_labeled_asset(
   let labeled_path = self.path.with_label(Some(label))
   let formatted_path = asset_format_path(labeled_path)
   let canonical_path = asset_canonical_path(formatted_path)
-  let handle = asset_assets_ref_mut_or_init_in_world(world).val.add(asset)
+  let handle = asset_assets_mut_or_init_in_world(world).modify(fn(assets) {
+    assets.add(asset)
+  })
   self.asset_server.record_path(canonical_path)
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
@@ -143,7 +145,9 @@ fn[T, P : IntoAssetPath] AssetServer::load_registered_asset(
   if self.typed_asset_paths.val.get(cache_key) is Some(handle_id) {
     return Handle::new(handle_id)
   }
-  let handle = asset_assets_ref_mut_or_init().val.reserve_handle()
+  let handle = asset_assets_mut_or_init().modify(fn(assets) {
+    assets.reserve_handle()
+  })
   self.record_path(asset_canonical_path(formatted_path))
   self.typed_asset_paths.val.set(cache_key, handle.id())
   if asset_should_process_registered_asset(self, type_name, parsed_path) {
@@ -193,7 +197,7 @@ pub fn[T] register_asset_loader(
       if (try! world.get_resource(key)) is None {
         world.insert_resource(key, Assets::new())
       }
-      let assets_ref = match (try! world.get_resource_ref_mut(key)) {
+      let assets = match (try! world.get_resource_mut(key)) {
         Some(value) => value
         None =>
           abort(
@@ -207,7 +211,9 @@ pub fn[T] register_asset_loader(
             "typed asset loader returned a mismatched asset value for \{type_name}",
           )
       }
-      ignore(assets_ref.val.insert(Handle::new(handle_id), value))
+      ignore(
+        assets.modify(fn(store) { store.insert(Handle::new(handle_id), value) }),
+      )
     },
   })
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
@@ -232,8 +238,7 @@ pub fn[T] init_asset_loader(
 ///|
 pub fn[T] AssetServer::add(self : AssetServer, asset : T) -> Handle[T] {
   self |> ignore
-  let assets_ref : Ref[Assets[T]] = asset_assets_ref_mut_or_init()
-  assets_ref.val.add(asset)
+  asset_assets_mut_or_init().modify(fn(assets) { assets.add(asset) })
 }
 
 ///|

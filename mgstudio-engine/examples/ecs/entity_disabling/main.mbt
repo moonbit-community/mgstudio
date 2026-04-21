@@ -67,8 +67,8 @@ fn setup_scene(
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
   let named_shapes : Array[(@ecs.Name, @asset.Handle[@mesh.Mesh])] = [
     (
       @ecs.Name::new("Annulus"),
@@ -155,15 +155,17 @@ fn disable_entities_on_click(
   click_events : @app.ResMut[@app.PickingEvents],
   valid_query : @ecs.Query[@ecs.Comp[DisableOnClick], @ecs.All],
 ) -> Unit {
-  for event in @app.PickingEvents::drain(click_events.get_ref()) {
-    if event.kind != @pointer_events.PointerEventKind::Click {
-      continue
+  click_events.modify(fn(events) {
+    for event in @app.PickingEvents::drain_all(events) {
+      if event.kind != @pointer_events.PointerEventKind::Click {
+        continue
+      }
+      if event.target is Some(target) &&
+        (valid_query.get(target) catch { _ => None }) is Some(_) {
+        commands.entity(target).insert_component(@ecs.Disabled::new())
+      }
     }
-    if event.target is Some(target) &&
-      (valid_query.get(target) catch { _ => None }) is Some(_) {
-      commands.entity(target).insert_component(@ecs.Disabled::new())
-    }
-  }
+  })
 }
 
 ///|
@@ -185,7 +187,7 @@ fn list_all_named_entities(
 
   try! name_text_query.view(fn(_entity, data) {
     let (_marker, text) = data
-    text.get_ref().val = @text.Text::new(text_string.val)
+    text.set(@text.Text::new(text_string.val))
   })
 }
 

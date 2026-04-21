@@ -79,8 +79,8 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
 
   ignore(
     commands.spawn(

@@ -338,8 +338,8 @@ fn stepping_advance_cursor(
 }
 
 ///|
-fn stepping_resource_ref(world : @ecs.World) -> Ref[Stepping]? {
-  try world.get_resource_ref_mut(Stepping::resource()) catch {
+fn stepping_resource_mut(world : @ecs.World) -> @ecs.ResourceMut[Stepping]? {
+  try world.get_resource_mut(Stepping::resource()) catch {
     _ => None
   } noraise {
     value => value
@@ -363,21 +363,21 @@ fn system_config_name(
 
 ///|
 fn stepping_begin_frame(world : @ecs.World) -> Unit {
-  if stepping_resource_ref(world) is Some(stepping_ref) {
-    stepping_next_frame(stepping_ref.val)
+  if stepping_resource_mut(world) is Some(stepping) {
+    stepping.modify(fn(value) { stepping_next_frame(value) })
   }
 }
 
 ///|
 fn stepping_prepare_stage(
-  stepping_ref : Ref[Stepping]?,
+  stepping_ref : @ecs.ResourceMut[Stepping]?,
   stage : ScheduleStage?,
   systems : Array[SystemConfig[@ecs.World]],
   execution_order : Array[Int],
 ) -> Unit {
   guard stage is Some(schedule) else { return }
   guard stepping_ref is Some(resource_ref) else { return }
-  let stepping = resource_ref.val
+  let stepping = resource_ref.peek()
   guard schedule_index(stepping.schedules, schedule) is Some(stage_index) else {
     return
   }
@@ -401,7 +401,7 @@ fn stepping_prepare_stage(
 
 ///|
 fn stepping_should_run_system(
-  stepping_ref : Ref[Stepping]?,
+  stepping_ref : @ecs.ResourceMut[Stepping]?,
   stage : ScheduleStage?,
   systems : Array[SystemConfig[@ecs.World]],
   system_i : Int,
@@ -409,59 +409,60 @@ fn stepping_should_run_system(
 ) -> Bool {
   guard stage is Some(schedule) else { return true }
   guard stepping_ref is Some(resource_ref) else { return true }
-  let stepping = resource_ref.val
-  guard schedule_index(stepping.schedules, schedule) is Some(stage_index) else {
-    return true
-  }
-  let system_name = system_config_name(systems[system_i], system_i)
-  let behavior = stepping_behavior_for(stepping, schedule, system_name)
-  guard stepping.action != RunAll else { return true }
-  match behavior {
-    AlwaysRun => true
-    NeverRun => false
-    Break =>
-      match stepping.action {
-        Waiting => false
-        Step =>
-          stage_index == stepping.cursor_schedule &&
-          execution_index == stepping.cursor_system
-        Continue =>
-          if stage_index < stepping.cursor_schedule {
-            false
-          } else if stage_index == stepping.cursor_schedule &&
-            execution_index < stepping.cursor_system {
-            false
-          } else if stepping.continue_started {
-            stepping.action = Waiting
-            false
-          } else {
-            true
-          }
-        RunAll => true
-      }
-    Continue =>
-      match stepping.action {
-        Waiting => false
-        Step =>
-          stage_index == stepping.cursor_schedule &&
-          execution_index == stepping.cursor_system
-        Continue =>
-          if stage_index < stepping.cursor_schedule {
-            false
-          } else if stage_index == stepping.cursor_schedule &&
-            execution_index < stepping.cursor_system {
-            false
-          } else {
-            true
-          }
-        RunAll => true
-      }
-  }
+  resource_ref.modify(fn(stepping) {
+    guard schedule_index(stepping.schedules, schedule) is Some(stage_index) else {
+      return true
+    }
+    let system_name = system_config_name(systems[system_i], system_i)
+    let behavior = stepping_behavior_for(stepping, schedule, system_name)
+    guard stepping.action != RunAll else { return true }
+    match behavior {
+      AlwaysRun => true
+      NeverRun => false
+      Break =>
+        match stepping.action {
+          Waiting => false
+          Step =>
+            stage_index == stepping.cursor_schedule &&
+            execution_index == stepping.cursor_system
+          Continue =>
+            if stage_index < stepping.cursor_schedule {
+              false
+            } else if stage_index == stepping.cursor_schedule &&
+              execution_index < stepping.cursor_system {
+              false
+            } else if stepping.continue_started {
+              stepping.action = Waiting
+              false
+            } else {
+              true
+            }
+          RunAll => true
+        }
+      Continue =>
+        match stepping.action {
+          Waiting => false
+          Step =>
+            stage_index == stepping.cursor_schedule &&
+            execution_index == stepping.cursor_system
+          Continue =>
+            if stage_index < stepping.cursor_schedule {
+              false
+            } else if stage_index == stepping.cursor_schedule &&
+              execution_index < stepping.cursor_system {
+              false
+            } else {
+              true
+            }
+          RunAll => true
+        }
+    }
+  })
 }
 
 ///|
 fn stepping_record_system_run(
-  stepping_ref : Ref[Stepping]?,
+  stepping_ref : @ecs.ResourceMut[Stepping]?,
   stage : ScheduleStage?,
   systems : Array[SystemConfig[@ecs.World]],
   system_i : Int,
@@ -469,44 +470,58 @@ fn stepping_record_system_run(
 ) -> Unit {
   guard stage is Some(schedule) else { return }
   guard stepping_ref is Some(resource_ref) else { return }
-  let stepping = resource_ref.val
-  guard schedule_index(stepping.schedules, schedule) is Some(stage_index) else {
-    return
-  }
-  guard stepping.action != RunAll else { return }
-  let system_name = system_config_name(systems[system_i], system_i)
-  match stepping_behavior_for(stepping, schedule, system_name) {
-    AlwaysRun | NeverRun => ()
-    Break | Continue =>
-      match stepping.action {
-        Step => {
-          stepping_advance_cursor(stepping, stage_index, execution_index + 1)
-          stepping.action = Waiting
-        }
-        Continue => {
-          stepping.continue_started = true
-          stepping_advance_cursor(stepping, stage_index, execution_index + 1)
-        }
-        Waiting | RunAll => ()
+  ignore(
+    resource_ref.modify(fn(stepping) {
+      guard schedule_index(stepping.schedules, schedule) is Some(stage_index) else {
+        return ()
       }
-  }
+      guard stepping.action != RunAll else { return () }
+      let system_name = system_config_name(systems[system_i], system_i)
+      match stepping_behavior_for(stepping, schedule, system_name) {
+        AlwaysRun | NeverRun => ()
+        Break | Continue =>
+          match stepping.action {
+            Step => {
+              stepping_advance_cursor(
+                stepping,
+                stage_index,
+                execution_index + 1,
+              )
+              stepping.action = Waiting
+            }
+            Continue => {
+              stepping.continue_started = true
+              stepping_advance_cursor(
+                stepping,
+                stage_index,
+                execution_index + 1,
+              )
+            }
+            Waiting | RunAll => ()
+          }
+      }
+    }),
+  )
 }
 
 ///|
 fn stepping_finish_stage(
-  stepping_ref : Ref[Stepping]?,
+  stepping_ref : @ecs.ResourceMut[Stepping]?,
   stage : ScheduleStage?,
   stage_system_count : Int,
 ) -> Unit {
   guard stage is Some(schedule) else { return }
   guard stepping_ref is Some(resource_ref) else { return }
-  let stepping = resource_ref.val
-  guard schedule_index(stepping.schedules, schedule) is Some(stage_index) else {
-    return
-  }
-  if stepping.cursor_schedule == stage_index &&
-    stepping.cursor_system >= stage_system_count {
-    stepping.cursor_schedule = stage_index + 1
-    stepping.cursor_system = 0
-  }
+  ignore(
+    resource_ref.modify(fn(stepping) {
+      guard schedule_index(stepping.schedules, schedule) is Some(stage_index) else {
+        return ()
+      }
+      if stepping.cursor_schedule == stage_index &&
+        stepping.cursor_system >= stage_system_count {
+        stepping.cursor_schedule = stage_index + 1
+        stepping.cursor_system = 0
+      }
+    }),
+  )
 }

@@ -240,7 +240,7 @@ fn create_texture_atlas(
   }
   let (texture_atlas_layout, texture_atlas_sources, texture) = texture_atlas_builder.build()
   (
-    texture_atlases.get_ref().val.add(texture_atlas_layout),
+    texture_atlases.peek().add(texture_atlas_layout),
     texture_atlas_sources,
     texture,
   )

@@ -90,6 +90,14 @@ fn cursor_image_with(
 }
 
 ///|
+fn cursor_icon_update(
+  cursor_icon : @ecs.Mut[@window.CursorIcon],
+  map : (@window.CursorIcon) -> @window.CursorIcon,
+) -> Unit {
+  cursor_icon.set(map(cursor_icon.value()))
+}
+
+///|
 fn setup_cursor_image_state(commands : @app.Commands) -> Unit {
   commands.insert_resource(CursorImageExampleState::{
     cached_texture_atlas: None,
@@ -110,7 +118,7 @@ fn setup_cursor_icon(
     10,
     padding=@math.UVec2::splat(5),
   )
-  let texture_atlas_layout = texture_atlas_layouts.get_ref().val.add(layout)
+  let texture_atlas_layout = texture_atlas_layouts.peek().add(layout)
   let animation_config = animation_config_new(0, 199, 1, 4)
   let atlas = @asset.TextureAtlas::new(
     texture_atlas_layout,
@@ -145,20 +153,19 @@ fn execute_animation(
 ) -> Unit {
   try! query.for_each(fn(_entity, data) {
     let (config, cursor_icon) = data
-    let config_ref = config.get_ref()
-    config_ref.val.frame_timer = config_ref.val.frame_timer.tick(
-      time.get().delta(),
-    )
-    guard config_ref.val.frame_timer.just_finished() else { return }
-    let next_cursor_icon = match cursor_icon.get_ref().val {
+    let current_config = config.peek()
+    let ticked_timer = current_config.frame_timer.tick(time.get().delta())
+    config.modify(fn(value) { value.frame_timer = ticked_timer })
+    guard ticked_timer.just_finished() else { return }
+    let next_cursor_icon = match cursor_icon.value() {
       @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) =>
         match image.texture_atlas {
           Some(atlas) => {
-            let next_index = if atlas.index + config_ref.val.increment >
-              config_ref.val.last_sprite_index {
-              config_ref.val.first_sprite_index
+            let next_index = if atlas.index + current_config.increment >
+              current_config.last_sprite_index {
+              current_config.first_sprite_index
             } else {
-              atlas.index + config_ref.val.increment
+              atlas.index + current_config.increment
             }
             let next_image = cursor_image_with(
               image,
@@ -168,15 +175,17 @@ fn execute_animation(
               @window.CustomCursor::Image(next_image),
             )
           }
-          None => cursor_icon.get_ref().val
+          None => cursor_icon.value()
         }
-      _ => cursor_icon.get_ref().val
+      _ => cursor_icon.value()
     }
-    cursor_icon.get_ref().val = next_cursor_icon
-    config_ref.val.frame_timer = @time.Timer::from_seconds(
-      1.0F / Float::from_int(config_ref.val.fps),
-      @time.TimerMode::Once,
-    )
+    cursor_icon.set(next_cursor_icon)
+    config.modify(fn(value) {
+      value.frame_timer = @time.Timer::from_seconds(
+        1.0F / Float::from_int(current_config.fps),
+        @time.TimerMode::Once,
+      )
+    })
   })
 }
 
@@ -189,20 +198,20 @@ fn toggle_texture_atlas(
   if !keyboard.just_pressed(@window.KeyCode::KeyT) {
     return
   }
-  let state_ref = state.get_ref()
   try! query.for_each(fn(_entity, cursor_icon) {
-    let next_cursor_icon = match cursor_icon.get_ref().val {
+    let current_cursor_icon = cursor_icon.value()
+    let next_cursor_icon = match current_cursor_icon {
       @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) =>
         match image.texture_atlas {
           Some(atlas) => {
-            state_ref.val.cached_texture_atlas = Some(atlas)
+            state.modify(fn(value) { value.cached_texture_atlas = Some(atlas) })
             let next_image = cursor_image_with(image, texture_atlas=None)
             @window.CursorIcon::from_custom(
               @window.CustomCursor::Image(next_image),
             )
           }
           None =>
-            match state_ref.val.cached_texture_atlas {
+            match state.peek().cached_texture_atlas {
               Some(cached) => {
                 let next_image = cursor_image_with(
                   image,
@@ -212,12 +221,12 @@ fn toggle_texture_atlas(
                   @window.CustomCursor::Image(next_image),
                 )
               }
-              None => cursor_icon.get_ref().val
+              None => current_cursor_icon
             }
         }
-      _ => cursor_icon.get_ref().val
+      _ => current_cursor_icon
     }
-    cursor_icon.get_ref().val = next_cursor_icon
+    cursor_icon.set(next_cursor_icon)
   })
 }
 
@@ -230,14 +239,17 @@ fn toggle_flip_x(
     return
   }
   try! query.for_each(fn(_entity, cursor_icon) {
-    let next_cursor_icon = match cursor_icon.get_ref().val {
-      @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) => {
-        let next_image = cursor_image_with(image, flip_x=!image.flip_x)
-        @window.CursorIcon::from_custom(@window.CustomCursor::Image(next_image))
+    cursor_icon_update(cursor_icon, fn(current_cursor_icon) {
+      match current_cursor_icon {
+        @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) => {
+          let next_image = cursor_image_with(image, flip_x=!image.flip_x)
+          @window.CursorIcon::from_custom(
+            @window.CustomCursor::Image(next_image),
+          )
+        }
+        _ => current_cursor_icon
       }
-      _ => cursor_icon.get_ref().val
-    }
-    cursor_icon.get_ref().val = next_cursor_icon
+    })
   })
 }
 
@@ -250,14 +262,17 @@ fn toggle_flip_y(
     return
   }
   try! query.for_each(fn(_entity, cursor_icon) {
-    let next_cursor_icon = match cursor_icon.get_ref().val {
-      @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) => {
-        let next_image = cursor_image_with(image, flip_y=!image.flip_y)
-        @window.CursorIcon::from_custom(@window.CustomCursor::Image(next_image))
+    cursor_icon_update(cursor_icon, fn(current_cursor_icon) {
+      match current_cursor_icon {
+        @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) => {
+          let next_image = cursor_image_with(image, flip_y=!image.flip_y)
+          @window.CursorIcon::from_custom(
+            @window.CustomCursor::Image(next_image),
+          )
+        }
+        _ => current_cursor_icon
       }
-      _ => cursor_icon.get_ref().val
-    }
-    cursor_icon.get_ref().val = next_cursor_icon
+    })
   })
 }
 
@@ -301,18 +316,20 @@ fn cycle_rect(
   if !keyboard.just_pressed(@window.KeyCode::KeyC) {
     return
   }
-  let state_ref = state.get_ref()
-  state_ref.val.rect_index = (state_ref.val.rect_index + 1) % 5
-  let next_rect = rect_from_index(state_ref.val.rect_index)
+  let next_rect = state.modify(fn(value) {
+    value.rect_index = (value.rect_index + 1) % 5
+    rect_from_index(value.rect_index)
+  })
   try! query.for_each(fn(_entity, cursor_icon) {
-    let next_cursor_icon = match cursor_icon.get_ref().val {
+    let current_cursor_icon = cursor_icon.value()
+    let next_cursor_icon = match current_cursor_icon {
       @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) => {
         let next_image = cursor_image_with(image, rect=next_rect)
         @window.CursorIcon::from_custom(@window.CustomCursor::Image(next_image))
       }
-      _ => cursor_icon.get_ref().val
+      _ => current_cursor_icon
     }
-    cursor_icon.get_ref().val = next_cursor_icon
+    cursor_icon.set(next_cursor_icon)
   })
 }
 

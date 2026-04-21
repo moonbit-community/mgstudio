@@ -74,8 +74,9 @@ fn play_animation_when_ready(
     is Some(player_mut) else {
     return
   }
-  let player_ref = player_mut.get_ref()
-  player_ref.val.play(animation_to_play.value().index).repeat() |> ignore
+  player_mut.modify(fn(player) {
+    player.play(animation_to_play.value().index).repeat() |> ignore
+  })
   commands
   .entity(scene_ready.entity)
   .insert_component(

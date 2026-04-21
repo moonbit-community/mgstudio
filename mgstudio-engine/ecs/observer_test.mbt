@@ -222,10 +222,11 @@ pub impl TriggerEvent for ObserverDetonate with observer_entity(self) {
 
 ///|
 pub impl TriggerEvent for ObserverDetonate with set_observer_entity(
-  event_ref,
+  event,
   entity,
 ) {
-  event_ref.val.entity = entity
+  event.entity = entity
+  event
 }
 
 ///|
@@ -260,11 +261,9 @@ pub impl TriggerEvent for ObserverAttack with observer_entity(self) {
 }
 
 ///|
-pub impl TriggerEvent for ObserverAttack with set_observer_entity(
-  event_ref,
-  entity,
-) {
-  event_ref.val.entity = entity
+pub impl TriggerEvent for ObserverAttack with set_observer_entity(event, entity) {
+  event.entity = entity
+  event
 }
 
 ///|
@@ -632,7 +631,7 @@ test "ecs observer: trigger propagation bubbles to parent and carries payload mu
   ignore(
     world.add_entity_observer(child, fn(event : On[ObserverAttack]) {
       order.push("child")
-      event.get_ref().val.damage = event.event().damage - 3
+      event.modify(fn(value) { value.damage = event.event().damage - 3 })
     }),
   )
 

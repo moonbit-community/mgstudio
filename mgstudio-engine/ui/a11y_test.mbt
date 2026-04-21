@@ -179,11 +179,14 @@ test "ui: a11y focus in tree update follows InputFocus resource" {
     ),
   )
 
-  let focus_ref = try! world.get_resource_ref_mut(
+  let focus_ref = try! world.get_resource_mut(
     @input_focus.InputFocus::resource(),
   )
   match focus_ref {
-    Some(value) => value.val.set(back)
+    Some(value) => {
+      value.set_changed()
+      value.peek().set(back)
+    }
     None => abort("missing InputFocus resource")
   }
 

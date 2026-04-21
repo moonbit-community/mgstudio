@@ -267,16 +267,18 @@ fn handle_input(
   guard @app.current_world() is Some(world) else { return }
   let mut changed = false
   if input.just_pressed(KeyA) {
-    action.get_ref().val = cycle_left_click_action(action.get_ref().val)
+    action.set(cycle_left_click_action(action.get()))
     changed = true
   }
   if input.just_pressed(KeyS) {
-    let current = direction.get_ref().val.index
-    direction.get_ref().val.index = if current <= 0 { 7 } else { current - 1 }
+    direction.modify(fn(value) {
+      let current = value.index
+      value.index = if current <= 0 { 7 } else { current - 1 }
+    })
     changed = true
   }
   if input.just_pressed(KeyD) {
-    direction.get_ref().val.index = (direction.get_ref().val.index + 1) % 8
+    direction.modify(fn(value) { value.index = (value.index + 1) % 8 })
     changed = true
   }
   if changed {
@@ -302,15 +304,14 @@ fn move_or_resize_windows(
   .view(fn(_query_entity, entity) {
     ignore(
       if (window_query.get(entity) catch { _ => None }) is Some(window_mut) {
-        let window_ref = window_mut.get_ref()
-        match action.get() {
-          Nothing => ()
-          Move => window_ref.val.start_drag_move()
-          Resize =>
-            window_ref.val.start_drag_resize(
-              direction_by_index(direction.get().index),
-            )
-        }
+        window_mut.modify(fn(value) {
+          match action.get() {
+            Nothing => ()
+            Move => value.start_drag_move()
+            Resize =>
+              value.start_drag_resize(direction_by_index(direction.get().index))
+          }
+        })
       },
     )
   })

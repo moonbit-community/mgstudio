@@ -37,8 +37,7 @@ test "app: insert_resource and ResMut parameter updates value" {
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 1 })
     .add_system_param(fn(resource : ResMut[CounterResource]) {
-      let value_ref = resource.get_ref()
-      value_ref.val.value = value_ref.val.value + 2
+      resource.modify(fn(value) { value.value = value.value + 2 })
     })
   app.run_once() |> ignore
 
@@ -72,11 +71,13 @@ test "app: Res and ResMut expose change detection without eager writes" {
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 1 })
     .add_system_config(
-      system_config_param2(fn(frame : Local[Int], resource : ResMut[CounterResource]) {
+      system_config_param2(fn(
+        frame : Local[Int],
+        resource : ResMut[CounterResource],
+      ) {
         let current = frame.get()
         if current == 1 {
-          let value_ref = resource.get_ref()
-          value_ref.val.value = value_ref.val.value + 5
+          resource.modify(fn(value) { value.value = value.value + 5 })
         }
         frame.set(current + 1)
       }).in_set(mutate_set),
@@ -103,6 +104,41 @@ test "app: Res and ResMut expose change detection without eager writes" {
   debug_inspect(observed_changed, content="[true, true, false]")
   debug_inspect(observed_values, content="[1, 6, 6]")
   debug_inspect(observed_callers, content="[false, true, true]")
+}
+
+///|
+test "app: ResMut::get is read-only until explicit mutation" {
+  let observed_changed : Array[Bool] = []
+  let observed_values : Array[Int] = []
+  let mutate_set = system_set("app.resource_param_test.read_only_then_write")
+
+  let app = App::new(@ecs.World::new())
+    .insert_resource(CounterResource::{ value: 10 })
+    .add_system_config(
+      system_config_param2(fn(
+        frame : Local[Int],
+        resource : ResMut[CounterResource],
+      ) {
+        let current = frame.get()
+        observed_values.push(resource.get().value)
+        if current == 1 {
+          resource.modify(fn(value) { value.value = value.value + 4 })
+        }
+        frame.set(current + 1)
+      }).in_set(mutate_set),
+    )
+    .add_system_config(
+      system_config_param(fn(resource : Res[CounterResource]) {
+        observed_changed.push(resource.is_changed())
+      }).after(mutate_set),
+    )
+
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  debug_inspect(observed_values, content="[10, 10, 14]")
+  debug_inspect(observed_changed, content="[true, true, false]")
 }
 
 ///|
@@ -304,7 +340,7 @@ test "app: ResMut can update NextState resource" {
     .add_plugins(StatesPlugin::default())
     .insert_state(TestState::A)
     .add_system_param(fn(next_state : ResMut[NextState[TestState]]) {
-      next_state.get_ref().val = NextState::Pending(TestState::B)
+      next_state.set(NextState::Pending(TestState::B))
     })
 
   app.run_startup() |> ignore
@@ -387,7 +423,7 @@ test "app: Query and ResMut compose in a single system signature" {
     ) {
       let mut count = 0
       try! query.view(fn(_entity, _position) { count = count + 1 })
-      resource.get_ref().val.value = resource.get_ref().val.value + count
+      resource.modify(fn(value) { value.value = value.value + count })
     })
 
   app.run_once() |> ignore

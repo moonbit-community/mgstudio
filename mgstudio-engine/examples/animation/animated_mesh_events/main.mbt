@@ -23,7 +23,7 @@ const PARTICLE_COUNT : Int = 14
 
 ///|
 struct StepEvent {
-  mut observer_entity : @core.Entity?
+  observer_entity : @core.Entity?
   phase : Float
 }
 
@@ -114,7 +114,7 @@ pub impl @ecs.TriggerEvent for StepEvent with set_observer_entity(
   event_ref,
   entity,
 ) {
-  event_ref.val.observer_entity = Some(entity)
+  StepEvent::{ ..event_ref, observer_entity: Some(entity) }
 }
 
 ///|
@@ -283,28 +283,29 @@ fn setup_scene_once_loaded(
     return
   }
 
-  let setup_ref = animation_setup.get_ref()
-  if !setup_ref.val.events_installed {
-    guard @animation.animation_clip_get(setup_ref.val.clip_handle) is Some(clip) else {
+  let setup_value = animation_setup.peek()
+  if !setup_value.events_installed {
+    guard @animation.animation_clip_get(setup_value.clip_handle) is Some(clip) else {
       return
     }
     ignore(
       @animation.animation_clip_set(
-        setup_ref.val.clip_handle,
-        install_step_events(clip, setup_ref.val.feet_targets),
+        setup_value.clip_handle,
+        install_step_events(clip, setup_value.feet_targets),
       ),
     )
-    setup_ref.val.events_installed = true
+    animation_setup.modify(fn(value) { value.events_installed = true })
   }
 
-  let player_ref = player_mut.get_ref()
   let transitions = @animation.AnimationTransitions::new()
-  transitions.play(player_ref.val, setup_ref.val.index, 0.0F).repeat() |> ignore
+  player_mut.modify(fn(player) {
+    ignore(transitions.play(player, setup_value.index, 0.0F).repeat())
+  })
   commands
   .entity(scene_ready.entity)
   .insert(
     (
-      @animation.AnimationGraphHandle::new(setup_ref.val.graph_handle),
+      @animation.AnimationGraphHandle::new(setup_value.graph_handle),
       transitions,
     ),
   )
@@ -368,26 +369,26 @@ fn simulate_particles(
   let delta = time.get().delta_seconds()
   try! particles.view(fn(_entity, entry) {
     let (entity, transform, particle) = entry
-    let particle_ref = particle.get_ref()
-    particle_ref.val.lifetime_timer = particle_ref.val.lifetime_timer.tick(
-      time.get().delta(),
-    )
-    if particle_ref.val.lifetime_timer.just_finished() {
+    let particle_state = particle.modify(fn(value) {
+      value.lifetime_timer = value.lifetime_timer.tick(time.get().delta())
+      if value.lifetime_timer.just_finished() {
+        None
+      } else {
+        value.velocity = value.velocity.add(
+          @math.Vec3::new(0.0F, -20.0F * delta, 0.0F),
+        )
+        Some((value.velocity, value.size, value.lifetime_timer.fraction()))
+      }
+    })
+    if particle_state is None {
       commands.entity(entity).despawn()
       return
     }
-
-    particle_ref.val.velocity = particle_ref.val.velocity.add(
-      @math.Vec3::new(0.0F, -20.0F * delta, 0.0F),
-    )
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation = transform_ref.val.translation.add(
-      particle_ref.val.velocity.mul_scalar(delta),
-    )
-    transform_ref.val.scale = @math.Vec3::splat(
-      particle_ref.val.size *
-      (1.0F - particle_ref.val.lifetime_timer.fraction()),
-    )
+    guard particle_state is Some((velocity, size, fraction)) else { return }
+    transform.modify(fn(value) {
+      value.translation = value.translation.add(velocity.mul_scalar(delta))
+      value.scale = @math.Vec3::splat(size * (1.0F - fraction))
+    })
   })
 }
 

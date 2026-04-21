@@ -190,7 +190,7 @@ fn spawn_directional_button(
       ],
       status : @app.ResMut[NavigationStatus],
     ) {
-      focus.get_ref().val.set(button)
+      focus.modify(fn(value) { value.set(button) })
       let state : @ecs.Mut[ActivatedButton]? = try buttons.get(button) catch {
         _ => None
       } noraise {
@@ -199,7 +199,7 @@ fn spawn_directional_button(
       if state is Some(state) {
         state.set(ActivatedButton::{ active: !state.value().active })
       }
-      status.get_ref().val.label = "Last Input: Pointer Click"
+      status.modify(fn(value) { value.label = "Last Input: Pointer Click" })
     }),
   )
   button
@@ -295,7 +295,7 @@ fn setup(
     }
   }
   if first_button is Some(button) {
-    focus.get_ref().val.set(button)
+    focus.modify(fn(value) { value.set(button) })
   }
 }
 
@@ -359,11 +359,13 @@ fn navigate_ui(
   } noraise {
     value => Some(value)
   }
-  status.get_ref().val.label = if next_focus is Some(_) {
-    "Last Input: Navigate \{navigation_direction_text(direction)}"
-  } else {
-    "Last Input: Blocked \{navigation_direction_text(direction)}"
-  }
+  status.modify(fn(value) {
+    value.label = if next_focus is Some(_) {
+      "Last Input: Navigate \{navigation_direction_text(direction)}"
+    } else {
+      "Last Input: Blocked \{navigation_direction_text(direction)}"
+    }
+  })
 }
 
 ///|
@@ -405,7 +407,7 @@ fn activate_focused_button(world : @ecs.World) -> Unit {
     @ecs.With::new(NavButton::component()),
   )
   let status_ref = match
-    (try! world.get_resource_ref_mut(NavigationStatus::resource())) {
+    (try! world.get_resource_mut(NavigationStatus::resource())) {
     Some(status_ref) => status_ref
     None => return
   }
@@ -425,7 +427,9 @@ fn activate_focused_button(world : @ecs.World) -> Unit {
       Some(label) => label.value().label
       None => "Unknown"
     }
-    status_ref.val.label = "Last Input: Activate \{button_label}"
+    status_ref.modify(fn(value) {
+      value.label = "Last Input: Activate \{button_label}"
+    })
   }
 }
 

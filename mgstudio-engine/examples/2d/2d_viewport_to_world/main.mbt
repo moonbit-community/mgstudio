@@ -112,14 +112,18 @@ fn setup(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_rectangle(
               @sprite.Rectangle::new(40.0F, 20.0F),
             ).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @sprite.ColorMaterialAsset::from_color(
               @sprite.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F),
             ),
@@ -133,14 +137,18 @@ fn setup(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_rectangle(
               @sprite.Rectangle::new(50000.0F, 50000.0F),
             ).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @sprite.ColorMaterialAsset::from_color(
               @sprite.Color::new(0.01F, 0.01F, 0.01F, 1.0F),
             ),
@@ -245,9 +253,9 @@ fn controls(
   ignore(
     if (transform_query.get(camera_entity) catch { _ => None })
       is Some(camera_transform) {
-      let transform_ref = camera_transform.get_ref()
-      let mut x = transform_ref.val.translation.x
-      let mut y = transform_ref.val.translation.y
+      let current_transform = camera_transform.value()
+      let mut x = current_transform.translation.x
+      let mut y = current_transform.translation.y
       if input.pressed(@window.KeyCode::ArrowUp) {
         y = y + fspeed
       }
@@ -260,13 +268,18 @@ fn controls(
       if input.pressed(@window.KeyCode::ArrowRight) {
         x = x + fspeed
       }
-      if x != transform_ref.val.translation.x ||
-        y != transform_ref.val.translation.y {
-        transform_ref.val = @transform.Transform::from_xy_rotation_scale(
-          @math.Vec2::new(x, y),
-          transform_ref.val.rotation_z(),
-          @math.Vec2::new(transform_ref.val.scale.x, transform_ref.val.scale.y),
-          z=transform_ref.val.translation.z,
+      if x != current_transform.translation.x ||
+        y != current_transform.translation.y {
+        camera_transform.set(
+          @transform.Transform::from_xy_rotation_scale(
+            @math.Vec2::new(x, y),
+            current_transform.rotation_z(),
+            @math.Vec2::new(
+              current_transform.scale.x,
+              current_transform.scale.y,
+            ),
+            z=current_transform.translation.z,
+          ),
         )
       }
     },
@@ -275,8 +288,7 @@ fn controls(
   ignore(
     if (projection_query.get(camera_entity) catch { _ => None })
       is Some(camera_projection) {
-      let projection_ref = camera_projection.get_ref()
-      match projection_ref.val {
+      match camera_projection.value() {
         @sprite.Projection::Orthographic(orthographic) => {
           let mut scale = orthographic.scale
           if input.pressed(@window.KeyCode::Comma) {
@@ -286,8 +298,10 @@ fn controls(
             scale = scale * @math.pow(0.25F, time.get().delta_seconds())
           }
           if scale != orthographic.scale {
-            projection_ref.val = @sprite.Projection::Orthographic(
-              @sprite.OrthographicProjection::new(scale),
+            camera_projection.set(
+              @sprite.Projection::Orthographic(
+                @sprite.OrthographicProjection::new(scale),
+              ),
             )
           }
         }
@@ -304,9 +318,9 @@ fn controls(
   ignore(
     if (camera_query.get(camera_entity) catch { _ => None })
       is Some(camera_component) {
-      let camera_ref = camera_component.get_ref()
       let window_size = @math.IVec2::new(width, height)
-      let current_viewport = match camera_ref.val.viewport {
+      let current_camera = camera_component.value()
+      let current_viewport = match current_camera.viewport {
         Some(viewport) => viewport
         None => viewport_default(width, height)
       }
@@ -359,7 +373,7 @@ fn controls(
         next_viewport.physical_size.x != current_viewport.physical_size.x ||
         next_viewport.physical_size.y != current_viewport.physical_size.y
       if changed {
-        camera_ref.val = camera_ref.val.with_viewport(next_viewport)
+        camera_component.set(current_camera.with_viewport(next_viewport))
       }
     },
   )

@@ -34,9 +34,9 @@ pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlas
 
 pub fn[T] asset_assets_or_abort() -> Assets[T]
 
-pub fn[T] asset_assets_ref_mut_or_abort() -> @ref.Ref[Assets[T]]
+pub fn[T] asset_assets_ref_mut_or_abort() -> @ecs.ResourceMut[Assets[T]]
 
-pub fn[T] asset_assets_ref_or_abort() -> @ref.Ref[Assets[T]]
+pub fn[T] asset_assets_ref_or_abort() -> Assets[T]
 
 pub fn asset_blob_read_bytes(Handle[Blob]) -> Bytes?
 
@@ -110,9 +110,9 @@ pub fn asset_remove_loader_extension(String) -> Unit
 
 pub fn[T : @app.Resource] asset_resource_or_abort() -> T
 
-pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> @ref.Ref[T]
+pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> @ecs.ResourceMut[T]
 
-pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> @ref.Ref[T]
+pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> T
 
 pub fn asset_save_texture_png(Handle[@image.Image], String) -> Unit
 

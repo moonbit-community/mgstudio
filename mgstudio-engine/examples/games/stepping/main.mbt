@@ -62,14 +62,17 @@ fn fixed_step(
   state : @app.ResMut[StepState],
   sprites : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[StepSprite]],
 ) -> Unit {
-  state.get_ref().val.ticks += 1
-  let ticks = state.get_ref().val.ticks
+  let ticks = state.modify(fn(value) {
+    value.ticks += 1
+    value.ticks
+  })
   let phase = Float::from_double(ticks.to_double()) * 0.08F
   try! sprites.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.x = -520.0F +
-      Float::from_double((ticks % 220).to_double()) * 4.8F
-    transform_ref.val.translation.y = @math.sin(phase) * 160.0F
+    transform.modify(fn(value) {
+      value.translation.x = -520.0F +
+        Float::from_double((ticks % 220).to_double()) * 4.8F
+      value.translation.y = @math.sin(phase) * 160.0F
+    })
   })
 }
 
@@ -80,11 +83,13 @@ fn color_feedback(
 ) -> Unit {
   let ticks = state.get().ticks
   try! sprites.for_each(fn(_entity, sprite) {
-    sprite.get_ref().val.color = if ticks % 2 == 0 {
-      @sprite.Color::srgb(0.95F, 0.92F, 0.28F)
-    } else {
-      @sprite.Color::srgb(0.3F, 0.9F, 0.95F)
-    }
+    sprite.modify(fn(value) {
+      value.color = if ticks % 2 == 0 {
+        @sprite.Color::srgb(0.95F, 0.92F, 0.28F)
+      } else {
+        @sprite.Color::srgb(0.3F, 0.9F, 0.95F)
+      }
+    })
   })
 }
 

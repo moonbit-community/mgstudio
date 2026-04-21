@@ -114,7 +114,7 @@ fn setup(
   cursor : @app.ResMut[EnemySpawnCursor],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
-  cursor.get_ref().val.next = 0
+  cursor.modify(fn(value) { value.next = 0 })
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let texture = asset_server.get().load("textures/simplespace/ship_C.png")
@@ -234,8 +234,11 @@ fn user_input(
   cursor : @app.ResMut[EnemySpawnCursor],
 ) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyA) {
-    let next_index = cursor.get_ref().val.next
-    cursor.get_ref().val.next = next_index + 1
+    let next_index = cursor.modify(fn(value) {
+      let next_index = value.next
+      value.next = next_index + 1
+      next_index
+    })
     spawn_enemy(
       commands,
       asset_server.get().load("textures/simplespace/enemy_A.png"),
@@ -262,17 +265,17 @@ fn move_targets(
   .query()
   .view(fn(_entity, data) {
     let (transform_mut, enemy_mut) = data
-    let transform_ref = transform_mut.get_ref()
-    let enemy_ref = enemy_mut.get_ref()
-    enemy_ref.val.rotation = enemy_ref.val.rotation +
-      enemy_ref.val.rotation_speed * delta
-    transform_ref.val.rotation = @math.Quat::from_rotation_z(
-      enemy_ref.val.rotation,
-    )
-    transform_ref.val.translation.x = enemy_ref.val.origin.x +
-      @math.cos(enemy_ref.val.rotation) * enemy_ref.val.radius
-    transform_ref.val.translation.y = enemy_ref.val.origin.y +
-      @math.sin(enemy_ref.val.rotation) * enemy_ref.val.radius
+    let enemy = enemy_mut.modify(fn(value) {
+      value.rotation = value.rotation + value.rotation_speed * delta
+      value
+    })
+    transform_mut.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_z(enemy.rotation)
+      value.translation.x = enemy.origin.x +
+        @math.cos(enemy.rotation) * enemy.radius
+      value.translation.y = enemy.origin.y +
+        @math.sin(enemy.rotation) * enemy.radius
+    })
   })
 }
 
@@ -289,7 +292,7 @@ fn track_targets(
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let (player_transform_mut, player_ref) = player.get()
-  let player_transform_ref = player_transform_mut.get_ref()
+  let current_transform = player_transform_mut.value()
   let player_value = player_ref.value()
 
   let enemy_transform_opt = try Some(enemy_query.require_single()) catch {
@@ -303,13 +306,14 @@ fn track_targets(
     Some(enemy_transform) => {
       let enemy_transform = enemy_transform.value()
       let delta = @math.Vec2::new(
-        enemy_transform.translation.x - player_transform_ref.val.translation.x,
-        enemy_transform.translation.y - player_transform_ref.val.translation.y,
+        enemy_transform.translation.x - current_transform.translation.x,
+        enemy_transform.translation.y - current_transform.translation.y,
       )
       let distance = delta.length()
       let front = delta.normalize_or_zero()
       if front.length() > 0.0F {
-        player_transform_ref.val.rotation = @math.Quat::from_rotation_z(
+        let next_transform = current_transform
+        next_transform.rotation = @math.Quat::from_rotation_z(
           front.to_angle() - @math.pi_half(),
         )
         let max_step = distance - player_value.min_follow_radius
@@ -318,17 +322,18 @@ fn track_targets(
             player_value.speed * time.get().delta_seconds(),
             max_step,
           )
-          player_transform_ref.val.translation.x = player_transform_ref.val.translation.x +
+          next_transform.translation.x = next_transform.translation.x +
             front.x * velocity
-          player_transform_ref.val.translation.y = player_transform_ref.val.translation.y +
+          next_transform.translation.y = next_transform.translation.y +
             front.y * velocity
         }
+        player_transform_mut.set(next_transform)
       }
     }
     None =>
-      player_transform_ref.val.rotate_z(
-        player_value.rotation_speed * time.get().delta_seconds(),
-      )
+      player_transform_mut.modify(fn(value) {
+        value.rotate_z(player_value.rotation_speed * time.get().delta_seconds())
+      })
   }
 }
 

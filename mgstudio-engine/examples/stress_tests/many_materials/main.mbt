@@ -72,14 +72,16 @@ fn setup(
     ),
   )
 
-  let cube_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
-  )
+  let cube_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
+    )
   for x in 0..<grid {
     for z in 0..<grid {
-      let mat_handle = materials.get_ref().val.add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
-      )
+      let mat_handle = materials
+        .peek()
+        .add(@pbr.StandardMaterial::from_color(@sprite.Color::white()))
       let idx = x * grid + z
       ignore(
         commands.spawn(
@@ -112,14 +114,14 @@ fn animate_materials(
   try! slots.for_each(fn(_entity, data) {
     let (slot, mesh_material) = data
     let handle = mesh_material.value().material
-    guard materials.get_ref().val.get(handle) is Some(material) else { return }
+    guard materials.peek().get(handle) is Some(material) else { return }
     let idxf = float_from_int(slot.value().index)
     let color = @sprite.Color::hsl(
       (idxf * 2.345F + elapsed) * 100.0F % 360.0F,
       1.0F,
       0.5F,
     )
-    ignore(materials.get_ref().val.set(handle, material.with_base_color(color)))
+    ignore(materials.peek().set(handle, material.with_base_color(color)))
   })
 }
 

@@ -937,10 +937,10 @@ fn[T] material_asset_store_or_abort() -> @asset.Assets[T] {
 }
 
 ///|
-fn[T] material_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
+fn[T] material_asset_store_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[T]] {
   let world = material_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key)) {
+  match (try! world.get_resource_mut(key)) {
     Some(assets) => assets
     None =>
       abort(
@@ -953,7 +953,9 @@ fn[T] material_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
 pub fn standard_material_add(
   material : StandardMaterial,
 ) -> @asset.Handle[StandardMaterial] {
-  material_asset_store_mut_or_abort().val.add(material)
+  let assets = material_asset_store_mut_or_abort()
+  assets.set_changed()
+  assets.peek().add(material)
 }
 
 ///|
@@ -968,7 +970,9 @@ pub fn standard_material_set(
   handle : @asset.Handle[StandardMaterial],
   material : StandardMaterial,
 ) -> Bool {
-  material_asset_store_mut_or_abort().val.set(handle, material)
+  let assets = material_asset_store_mut_or_abort()
+  assets.set_changed()
+  assets.peek().set(handle, material)
 }
 
 ///|

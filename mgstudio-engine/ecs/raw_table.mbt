@@ -59,18 +59,12 @@ fn RawTable::row_count(self : RawTable) -> Int {
 }
 
 ///|
-fn RawTable::component_index(
-  self : RawTable,
-  component_local_id : Int,
-) -> Int? {
+fn RawTable::component_index(self : RawTable, component_local_id : Int) -> Int? {
   self.component_indices.get(component_local_id)
 }
 
 ///|
-fn RawTable::entity_at_row(
-  self : RawTable,
-  row : TableRow,
-) -> @core.Entity? {
+fn RawTable::entity_at_row(self : RawTable, row : TableRow) -> @core.Entity? {
   raw_table_row_kernel_entity_at(self.rows, row.index())
 }
 
@@ -219,7 +213,10 @@ fn World::push_pending_component_payload_context(
   payloads : Map[Int, ErasedValue],
 ) -> PendingComponentPayloadContext? {
   let previous = self.pending_component_payload_context
-  self.pending_component_payload_context = Some({ entity_id: entity.id, payloads })
+  self.pending_component_payload_context = Some({
+    entity_id: entity.id,
+    payloads,
+  })
   previous
 }
 
@@ -267,7 +264,9 @@ fn World::component_payload_by_local_id(
         None => None
       }
     Some(Table) => {
-      guard self.table_id_for_entity(entity) is Some(table_id) else { return None }
+      guard self.table_id_for_entity(entity) is Some(table_id) else {
+        return None
+      }
       guard self.table_storage(table_id) is Some(table_ref) else { return None }
       guard self.entity_table_row(entity) is Some(row) else { return None }
       table_ref.val.payload_at_row(row, local_component_id)
@@ -314,8 +313,12 @@ fn World::replace_component_payload_by_local_id(
       store_ref.val.set(entity, payload)
     }
     Some(Table) => {
-      guard self.table_id_for_entity(entity) is Some(table_id) else { return false }
-      guard self.table_storage(table_id) is Some(table_ref) else { return false }
+      guard self.table_id_for_entity(entity) is Some(table_id) else {
+        return false
+      }
+      guard self.table_storage(table_id) is Some(table_ref) else {
+        return false
+      }
       guard self.entity_table_row(entity) is Some(row) else { return false }
       table_ref.val.replace_payload_at_row(row, local_component_id, payload)
     }
@@ -333,9 +336,7 @@ fn World::replace_component_payload(
   match self.local_component_id(component_definition_id) {
     Some(local_component_id) =>
       self.replace_component_payload_by_local_id(
-        entity,
-        local_component_id,
-        payload,
+        entity, local_component_id, payload,
       )
     None => false
   }
@@ -347,8 +348,7 @@ fn World::remove_sparse_component_payload_by_local_id(
   entity : @core.Entity,
   local_component_id : Int,
 ) -> ErasedValue? {
-  guard self.local_component_storage_type(local_component_id) == Some(SparseSet)
-  else {
+  guard self.local_component_storage_type(local_component_id) == Some(SparseSet) else {
     return None
   }
   match self.sparse_component_columns.get(local_component_id) {

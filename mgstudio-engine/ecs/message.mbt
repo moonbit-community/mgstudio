@@ -415,12 +415,12 @@ fn[T] decode_message_payload(
 }
 
 ///|
-fn[T] decode_message_ref(
+fn[T] decode_message_mut_payload(
   key : MessageKey[T],
   index : Int,
   payload : ErasedValue,
-) -> Ref[T] raise EcsError {
-  payload.to_ref() catch {
+) -> T raise EcsError {
+  payload.to_value() catch {
     _ =>
       raise MessageTypeMismatch(
         key.id(),
@@ -526,12 +526,12 @@ pub fn[T : Message] MessageCursor::read(
 pub fn[T : Message] MessageCursor::read_mut(
   self : MessageCursor[T],
   messages : Messages[T],
-) -> Array[Ref[T]] raise EcsError {
+) -> Array[T] raise EcsError {
   let key : MessageKey[T] = Message::message()
   let unread_values = messages.unread(self.last_message_count)
-  let unread : Array[Ref[T]] = []
+  let unread : Array[T] = []
   for entry in unread_values {
-    unread.push(decode_message_ref(key, entry.0, entry.1))
+    unread.push(decode_message_mut_payload(key, entry.0, entry.1))
   }
   self.last_message_count = messages.state.message_count
   unread
@@ -646,13 +646,13 @@ pub fn[T] MessageReader::read(
 ///|
 pub fn[T] MessageMutator::read(
   self : MessageMutator[T],
-) -> Array[Ref[T]] raise EcsError {
+) -> Array[T] raise EcsError {
   let queue_access = self.world.resource(self.key.queue_key())
   let queue = queue_access.get().unwrap_or(Messages::new())
   let unread_values = queue.unread(self.cursor_ref.val)
-  let unread : Array[Ref[T]] = []
+  let unread : Array[T] = []
   for entry in unread_values {
-    unread.push(decode_message_ref(self.key, entry.0, entry.1))
+    unread.push(decode_message_mut_payload(self.key, entry.0, entry.1))
   }
   self.cursor_ref.val = queue.state.message_count
   unread

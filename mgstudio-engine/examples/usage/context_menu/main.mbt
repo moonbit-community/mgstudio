@@ -32,10 +32,9 @@ fn close_existing_menu(
   commands : @app.Commands,
   state : @app.ResMut[ContextMenuState],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  if state_ref.val.menu is Some(menu_entity) {
+  if state.get().menu is Some(menu_entity) {
     commands.entity(menu_entity).despawn()
-    state_ref.val.menu = None
+    state.modify(fn(value) { value.menu = None })
   }
 }
 
@@ -103,7 +102,7 @@ fn open_context_menu(
       @ui.BackgroundColor::new(@sprite.Color::srgb(0.09F, 0.09F, 0.09F)),
     ),
   )
-  state.get_ref().val.menu = Some(menu)
+  state.modify(fn(value) { value.menu = Some(menu) })
 
   spawn_menu_item(
     commands,

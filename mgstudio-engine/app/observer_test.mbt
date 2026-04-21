@@ -49,10 +49,10 @@ pub impl @ecs.TriggerEvent for ObserverPulse with observer_entity(_self) {
 
 ///|
 pub impl @ecs.TriggerEvent for ObserverPulse with set_observer_entity(
-  _event_ref,
+  event,
   _entity,
 ) {
-
+  event
 }
 
 ///|

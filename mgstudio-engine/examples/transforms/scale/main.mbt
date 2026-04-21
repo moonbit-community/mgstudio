@@ -50,16 +50,18 @@ fn setup(
     commands.spawn(
       (
         @pbr.Mesh3d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @pbr.Mesh::from_3d_geometry(
               @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
             ),
           ),
         ),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
-            @pbr.StandardMaterial::from_color(@sprite.Color::white()),
-          ),
+          materials
+          .peek()
+          .add(@pbr.StandardMaterial::from_color(@sprite.Color::white())),
         ),
         @transform.Transform::from_rotation(
           @math.Quat::from_rotation_y(@math.pi() / 4.0F),
@@ -104,22 +106,23 @@ fn change_scale_direction(
 ) -> Unit {
   try! cubes.view(fn(entity, data) {
     let (cube, transform) = data
-    let transform_ref = transform.get_ref()
     let next_cube = cube.value()
     let mut scaling_changed = false
 
-    if transform_ref.val.scale.max_element() > cube.value().max_element_size {
-      next_cube.scale_direction = next_cube.scale_direction.mul_scalar(-1.0F)
-      transform_ref.val.scale = transform_ref.val.scale.floor()
-      scaling_changed = true
-    }
+    transform.modify(fn(value) {
+      if value.scale.max_element() > cube.value().max_element_size {
+        next_cube.scale_direction = next_cube.scale_direction.mul_scalar(-1.0F)
+        value.scale = value.scale.floor()
+        scaling_changed = true
+      }
 
-    if transform_ref.val.scale.min_element() < cube.value().min_element_size {
-      next_cube.scale_direction = next_cube.scale_direction.mul_scalar(-1.0F)
-      transform_ref.val.scale = transform_ref.val.scale.ceil()
-      next_cube.scale_direction = next_cube.scale_direction.zxy()
-      scaling_changed = true
-    }
+      if value.scale.min_element() < cube.value().min_element_size {
+        next_cube.scale_direction = next_cube.scale_direction.mul_scalar(-1.0F)
+        value.scale = value.scale.ceil()
+        next_cube.scale_direction = next_cube.scale_direction.zxy()
+        scaling_changed = true
+      }
+    })
 
     if scaling_changed {
       commands.entity(entity).insert_component(next_cube)
@@ -138,10 +141,13 @@ fn scale_cube(
   let delta = time.get().delta_secs()
   try! cubes.view(fn(_entity, data) {
     let (cube, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.scale = transform_ref.val.scale.add(
-      cube.value().scale_direction.mul_scalar(cube.value().scale_speed * delta),
-    )
+    transform.modify(fn(value) {
+      value.scale = value.scale.add(
+        cube.value().scale_direction.mul_scalar(
+          cube.value().scale_speed * delta,
+        ),
+      )
+    })
   })
 }
 

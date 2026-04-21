@@ -71,13 +71,13 @@ fn main {
     "\nActions: add Update to Stepping, enable it, then call app.update()\n Result: Only PreUpdate runs while Update waits for an explicit step or continue",
   )
   let stepping = stepping_ref(app)
-  stepping.val = stepping.val.add_schedule(@app.Update).enable()
+  stepping.set(stepping.peek().add_schedule(@app.Update).enable())
   app = app.update()
 
   println(
     "\nActions: call Stepping.step_frame(); call app.update()\n Result: PreUpdate runs, then one Update system runs",
   )
-  stepping.val = stepping.val.step_frame()
+  stepping.set(stepping.peek().step_frame())
   app = app.update()
 
   println(
@@ -88,52 +88,54 @@ fn main {
   println(
     "\nActions: call Stepping.continue_frame(); call app.update()\n Result: PreUpdate runs, then the remaining Update systems run",
   )
-  stepping.val = stepping.val.continue_frame()
+  stepping.set(stepping.peek().continue_frame())
   app = app.update()
 
   println(
     "\nActions: mark update_system_two as always_run; step three frames\n Result: update_system_two runs every frame while the other Update systems step one by one",
   )
-  stepping.val = stepping.val.always_run(@app.Update, UPDATE_SYSTEM_TWO_NAME)
+  stepping.set(stepping.peek().always_run(@app.Update, UPDATE_SYSTEM_TWO_NAME))
   for _ in 0..<3 {
-    stepping.val = stepping.val.step_frame()
+    stepping.set(stepping.peek().step_frame())
     app = app.update()
   }
 
   println(
     "\nActions: mark update_system_two as never_run; continue one frame\n Result: all other Update systems run, but update_system_two stays skipped while stepping is enabled",
   )
-  stepping.val = stepping.val.never_run(@app.Update, UPDATE_SYSTEM_TWO_NAME)
-  stepping.val = stepping.val.continue_frame()
+  stepping.set(stepping.peek().never_run(@app.Update, UPDATE_SYSTEM_TWO_NAME))
+  stepping.set(stepping.peek().continue_frame())
   app = app.update()
 
   println(
     "\nActions: set a breakpoint on update_system_two; continue, step, continue\n Result: continue stops before update_system_two, the step runs it, and the final continue resumes after it",
   )
-  stepping.val = stepping.val
+  stepping.set(
+    stepping
+    .peek()
     .clear_schedule(@app.Update)
-    .set_breakpoint(@app.Update, UPDATE_SYSTEM_TWO_NAME)
-  stepping.val = stepping.val.continue_frame()
+    .set_breakpoint(@app.Update, UPDATE_SYSTEM_TWO_NAME),
+  )
+  stepping.set(stepping.peek().continue_frame())
   app = app.update()
-  stepping.val = stepping.val.step_frame()
+  stepping.set(stepping.peek().step_frame())
   app = app.update()
-  stepping.val = stepping.val.continue_frame()
+  stepping.set(stepping.peek().continue_frame())
   app = app.update()
 
   println(
     "\nActions: clear the breakpoint, disable stepping, then call app.update()\n Result: all systems run normally again",
   )
-  stepping.val = stepping.val.clear_breakpoint(
-    @app.Update,
-    UPDATE_SYSTEM_TWO_NAME,
+  stepping.set(
+    stepping.peek().clear_breakpoint(@app.Update, UPDATE_SYSTEM_TWO_NAME),
   )
-  stepping.val = stepping.val.disable()
+  stepping.set(stepping.peek().disable())
   app = app.update()
 }
 
 ///|
-fn stepping_ref(app : @app.App[@ecs.World]) -> Ref[@app.Stepping] {
-  match (try! app.world().get_resource_ref_mut(@app.Stepping::resource())) {
+fn stepping_ref(app : @app.App[@ecs.World]) -> @ecs.ResourceMut[@app.Stepping] {
+  match (try! app.world().get_resource_mut(@app.Stepping::resource())) {
     Some(resource_ref) => resource_ref
     None => abort("Stepping resource should exist")
   }

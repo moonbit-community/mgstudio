@@ -28,7 +28,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   let texture_handle = asset_server.get().load("branding/banner.png")
-  let mesh_handle = meshes.get_ref().val.add(create_colored_quad_mesh())
+  let mesh_handle = meshes.peek().add(create_colored_quad_mesh())
 
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
@@ -37,9 +37,9 @@ fn setup(
       (
         @sprite.Mesh2d::new(mesh_handle),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
-            @sprite.ColorMaterialAsset::from_color(@sprite.Color::white()),
-          ),
+          materials
+          .peek()
+          .add(@sprite.ColorMaterialAsset::from_color(@sprite.Color::white())),
         ),
         @transform.Transform::from_translation(
           @math.Vec3::new(-96.0F, 0.0F, 0.0F),
@@ -53,9 +53,9 @@ fn setup(
       (
         @sprite.Mesh2d::new(mesh_handle),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
-            @sprite.ColorMaterialAsset::from_image(texture_handle),
-          ),
+          materials
+          .peek()
+          .add(@sprite.ColorMaterialAsset::from_image(texture_handle)),
         ),
         @transform.Transform::from_translation(
           @math.Vec3::new(96.0F, 0.0F, 0.0F),

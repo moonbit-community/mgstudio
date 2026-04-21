@@ -80,21 +80,19 @@ fn simulate_bodies(
   let dt = time.get().delta_secs()
   try! bodies.for_each(fn(_entity, data) {
     let (body, transform) = data
-    let body_ref = body.get_ref()
-    let transform_ref = transform.get_ref()
-    let mut vx = body_ref.val.velocity.x
-    let mut vy = body_ref.val.velocity.y
-    transform_ref.val.translation.x += vx * dt
-    transform_ref.val.translation.y += vy * dt
-    if transform_ref.val.translation.x > BOUNDS_X ||
-      transform_ref.val.translation.x < -BOUNDS_X {
-      vx = -vx
-    }
-    if transform_ref.val.translation.y > BOUNDS_Y ||
-      transform_ref.val.translation.y < -BOUNDS_Y {
-      vy = -vy
-    }
-    body_ref.val = ToyBody::{ velocity: @math.Vec2::new(vx, vy) }
+    let mut vx = body.value().velocity.x
+    let mut vy = body.value().velocity.y
+    transform.modify(fn(value) {
+      value.translation.x += vx * dt
+      value.translation.y += vy * dt
+      if value.translation.x > BOUNDS_X || value.translation.x < 0.0F - BOUNDS_X {
+        vx = -vx
+      }
+      if value.translation.y > BOUNDS_Y || value.translation.y < 0.0F - BOUNDS_Y {
+        vy = -vy
+      }
+    })
+    body.set(ToyBody::{ velocity: @math.Vec2::new(vx, vy) })
   })
 }
 

@@ -79,7 +79,7 @@ fn update_indicator(
     @sprite.Color::srgb(0.2F + pulse * 0.25F, 0.45F + pulse * 0.35F, 1.0F)
   }
   try! indicators.for_each(fn(_entity, indicator) {
-    indicator.get_ref().val.color = color
+    indicator.modify(fn(value) { value.color = color })
   })
 }
 

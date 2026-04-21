@@ -17,7 +17,7 @@
 
 ///|
 pub struct Activate {
-  mut entity : @core.Entity
+  entity : @core.Entity
 } derive(ToJson, FromJson)
 
 ///|
@@ -36,11 +36,8 @@ pub impl @ecs.TriggerEvent for Activate with observer_entity(self) {
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Activate with set_observer_entity(
-  event_ref,
-  entity,
-) {
-  event_ref.val.entity = entity
+pub impl @ecs.TriggerEvent for Activate with set_observer_entity(_self, entity) {
+  Activate::{ entity, }
 }
 
 ///|
@@ -55,7 +52,7 @@ pub impl @ecs.TriggerEvent for Activate with debug_name() {
 
 ///|
 pub struct ValueChange[T] {
-  mut source : @core.Entity
+  source : @core.Entity
   value : T
 } derive(ToJson, FromJson)
 
@@ -93,10 +90,10 @@ pub impl[T] @ecs.TriggerEvent for ValueChange[T] with observer_entity(self) {
 
 ///|
 pub impl[T] @ecs.TriggerEvent for ValueChange[T] with set_observer_entity(
-  event_ref,
+  self,
   entity,
 ) {
-  event_ref.val.source = entity
+  ValueChange::{ source: entity, value: self.value }
 }
 
 ///|

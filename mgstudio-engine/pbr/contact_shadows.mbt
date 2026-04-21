@@ -278,7 +278,10 @@ pub fn contact_shadows_plugin_install_with(
 pub fn render3d_contact_shadows_buffer_ref(
   world : @ecs.World,
 ) -> Ref[ContactShadowsBuffer]? {
-  try! world.get_resource_ref_mut(ContactShadowsBuffer::resource())
+  match (try! world.get_resource_mut(ContactShadowsBuffer::resource())) {
+    Some(buffer) => Some(Ref::new(buffer.peek()))
+    None => None
+  }
 }
 
 ///|

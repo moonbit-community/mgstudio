@@ -8,7 +8,6 @@ import {
   "Milky2018/mgstudio/ui",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
-  "moonbitlang/core/ref",
 }
 
 // Values
@@ -88,7 +87,7 @@ pub let ui_widgets_set_interaction : String
 
 // Types and methods
 pub struct Activate {
-  mut entity : @core.Entity
+  entity : @core.Entity
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.TriggerEvent for Activate
 
@@ -144,7 +143,7 @@ pub(all) enum MenuAction {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub struct MenuEvent {
-  mut source : @core.Entity
+  source : @core.Entity
   action : MenuAction
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.TriggerEvent for MenuEvent
@@ -237,13 +236,13 @@ pub fn ScrollbarWidgetPlugin::default() -> Self
 pub impl @app.Plugin for ScrollbarWidgetPlugin
 
 pub struct SetChecked {
-  mut entity : @core.Entity
+  entity : @core.Entity
   checked : Bool
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.TriggerEvent for SetChecked
 
 pub struct SetSliderValue {
-  mut entity : @core.Entity
+  entity : @core.Entity
   value : Float
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.TriggerEvent for SetSliderValue
@@ -302,7 +301,7 @@ pub fn SliderWidgetPlugin::default() -> Self
 pub impl @app.Plugin for SliderWidgetPlugin
 
 pub struct ToggleChecked {
-  mut entity : @core.Entity
+  entity : @core.Entity
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.TriggerEvent for ToggleChecked
 
@@ -324,7 +323,7 @@ pub fn UiWidgetsPlugins::default() -> Self
 pub impl @app.Plugin for UiWidgetsPlugins
 
 pub struct ValueChange[T] {
-  mut source : @core.Entity
+  source : @core.Entity
   value : T
 } derive(ToJson, @json.FromJson)
 pub impl[T] @ecs.TriggerEvent for ValueChange[T]

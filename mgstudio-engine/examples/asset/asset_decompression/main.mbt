@@ -90,23 +90,24 @@ fn decompress(
   compressed_assets : @app.ResMut[@asset.Assets[GzAsset]],
   query : @ecs.Query[@ecs.Comp[CompressedImage], @ecs.All],
 ) -> Unit {
-  let asset_store = compressed_assets.get_ref().val
-  try! query.view(fn(entity, compressed_image) {
-    let compressed_image = compressed_image.value()
-    guard asset_store.remove(compressed_image.compressed) is Some(compressed) else {
-      return
-    }
-    let image : @asset.Image = asset_server
-      .get()
-      .load_image_direct(
-        compressed.uncompressed_path,
-        compressed.uncompressed_bytes,
-      )
-    let image_handle = asset_server.get().add(image)
-    commands.entity(entity).remove(compressed_image_key)
-    commands
-    .entity(entity)
-    .insert_component(@sprite.Sprite::from_image(image_handle))
+  compressed_assets.modify(fn(asset_store) {
+    try! query.view(fn(entity, compressed_image) {
+      let compressed_image = compressed_image.value()
+      guard asset_store.remove(compressed_image.compressed) is Some(compressed) else {
+        return
+      }
+      let image : @asset.Image = asset_server
+        .get()
+        .load_image_direct(
+          compressed.uncompressed_path,
+          compressed.uncompressed_bytes,
+        )
+      let image_handle = asset_server.get().add(image)
+      commands.entity(entity).remove(compressed_image_key)
+      commands
+      .entity(entity)
+      .insert_component(@sprite.Sprite::from_image(image_handle))
+    })
   })
 }
 

@@ -14,7 +14,7 @@
 
 ///|
 struct MenuState {
-  mut playing : Bool
+  playing : Bool
 }
 
 ///|
@@ -87,10 +87,10 @@ fn toggle_mode(
   state : @app.ResMut[MenuState],
 ) -> Unit {
   if keyboard.just_pressed(@window.KeyCode::Enter) {
-    state.get_ref().val.playing = true
+    state.set(MenuState::{ playing: true })
   }
   if keyboard.just_pressed(@window.KeyCode::Escape) {
-    state.get_ref().val.playing = false
+    state.set(MenuState::{ playing: false })
   }
 }
 
@@ -103,22 +103,21 @@ fn update_visuals(
 ) -> Unit {
   let playing = state.get().playing
   try! panels.for_each(fn(_entity, panel) {
-    panel.get_ref().val.color = if playing {
-      @sprite.Color::srgb(0.09F, 0.24F, 0.18F)
-    } else {
-      @sprite.Color::srgb(0.14F, 0.16F, 0.24F)
-    }
+    panel.modify(fn(value) {
+      value.color = if playing {
+        @sprite.Color::srgb(0.09F, 0.24F, 0.18F)
+      } else {
+        @sprite.Color::srgb(0.14F, 0.16F, 0.24F)
+      }
+    })
   })
   try! players.for_each(fn(_entity, player_transform) {
-    let transform_ref = player_transform.get_ref()
-    if playing {
-      transform_ref.val.translation.x = @math.sin(
-          time.get().elapsed_secs() * 2.4F,
-        ) *
-        280.0F
+    let next_x = if playing {
+      @math.sin(time.get().elapsed_secs() * 2.4F) * 280.0F
     } else {
-      transform_ref.val.translation.x = 0.0F
+      0.0F
     }
+    player_transform.modify(fn(value) { value.translation.x = next_x })
   })
 }
 

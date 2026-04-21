@@ -164,15 +164,17 @@ fn toggle(
   state : @app.Res[@app.State[GameState]],
   next_state : @app.ResMut[@app.NextState[GameState]],
 ) -> Unit {
-  let timer_ref = timer.get_ref()
-  timer_ref.val.timer = timer_ref.val.timer.tick(time.get().delta())
-  guard timer_ref.val.timer.just_finished() else { return }
+  let ready = timer.modify(fn(value) {
+    value.timer = value.timer.tick(time.get().delta())
+    value.timer.just_finished()
+  })
+  guard ready else { return }
 
   let next = match state.get().get() {
     GameState::A => @app.NextState::Pending(GameState::B)
     GameState::B => @app.NextState::Pending(GameState::A)
   }
-  next_state.get_ref().val = next
+  next_state.set(next)
 }
 
 ///|

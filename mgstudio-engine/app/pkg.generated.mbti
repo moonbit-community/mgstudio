@@ -691,7 +691,7 @@ pub struct Local[T] {
 pub fn[T] Local::get(Self[T]) -> T
 pub fn[T] Local::get_ref(Self[T]) -> @ref.Ref[T]
 pub fn[T : @ecs.Message] Local::read(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[T] raise @ecs.EcsError
-pub fn[T : @ecs.Message] Local::read_mut(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[@ref.Ref[T]] raise @ecs.EcsError
+pub fn[T : @ecs.Message] Local::read_mut(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[T] raise @ecs.EcsError
 pub fn[T] Local::set(Self[T], T) -> Unit
 pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T]
 
@@ -818,6 +818,7 @@ pub struct PickingEvents {
 } derive(ToJson, @json.FromJson)
 pub fn PickingEvents::default() -> Self
 pub fn PickingEvents::drain(@ref.Ref[Self]) -> Array[@pointer_events.PointerEvent]
+pub fn PickingEvents::drain_all(Self) -> Array[@pointer_events.PointerEvent]
 pub fn PickingEvents::push(@ref.Ref[Self], @pointer_events.PointerEvent) -> Unit
 pub impl Resource for PickingEvents
 
@@ -924,25 +925,28 @@ pub fn[T : Resource] Res::last_changed(Self[T]) -> Int
 pub impl[T : Resource] SystemParam for Res[T]
 
 pub struct ResMut[T] {
-  value : @ref.Ref[T]
   world : @ecs.World?
-  key_id : Int?
+  key : @ecs.ResourceKey[T]?
 }
 pub fn[T : Resource] ResMut::added(Self[T]) -> Int
-pub fn[T] ResMut::bypass_change_detection(Self[T]) -> @ref.Ref[T]
 pub fn[T : Resource] ResMut::changed_by(Self[T]) -> String?
-pub fn[T] ResMut::get(Self[T]) -> T
-#callsite(autofill(loc))
-pub fn[T : Resource] ResMut::get_ref(Self[T], loc~ : SourceLoc) -> @ref.Ref[T]
+pub fn[T : Resource] ResMut::get(Self[T]) -> T
 pub fn[T : Resource] ResMut::is_added(Self[T]) -> Bool
 pub fn[T : Resource] ResMut::is_changed(Self[T]) -> Bool
 pub fn[T : Resource] ResMut::last_changed(Self[T]) -> Int
+#callsite(autofill(loc))
+pub fn[T : Resource, R] ResMut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
+pub fn[T : Resource] ResMut::peek(Self[T]) -> T
+#callsite(autofill(loc))
+pub fn[T : Resource] ResMut::set(Self[T], T, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Resource] ResMut::set_added(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Resource] ResMut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Resource + Eq] ResMut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+#callsite(autofill(loc))
+pub fn[T : Resource] ResMut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
 pub fn[T : @ecs.Message] ResMut::write(Self[@ecs.Messages[T]], T) -> Int
 pub fn[T : @ecs.Message] ResMut::write_batch(Self[@ecs.Messages[T]], Array[T]) -> Unit
 pub fn[T : @ecs.Message + Default] ResMut::write_default(Self[@ecs.Messages[T]]) -> Int

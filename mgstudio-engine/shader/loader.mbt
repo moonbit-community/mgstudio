@@ -100,15 +100,13 @@ pub impl @app.Resource for ShaderAssetPaths with resource() {
 }
 
 ///|
-fn shader_assets_ref_mut_or_abort() -> Ref[@asset.Assets[Shader]] {
-  let assets_ref : Ref[@asset.Assets[Shader]] = @asset.asset_assets_ref_mut_or_abort()
-  assets_ref
+fn shader_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[Shader]] {
+  @asset.asset_assets_ref_mut_or_abort()
 }
 
 ///|
-fn shader_asset_paths_ref_mut_or_abort() -> Ref[ShaderAssetPaths] {
-  let registry_ref : Ref[ShaderAssetPaths] = @asset.asset_resource_ref_mut_or_abort()
-  registry_ref
+fn shader_asset_paths_mut_or_abort() -> @ecs.ResourceMut[ShaderAssetPaths] {
+  @asset.asset_resource_ref_mut_or_abort()
 }
 
 ///|
@@ -233,24 +231,24 @@ fn shader_load_registered(
   }
 
   let canonical_path = @asset.asset_canonical_path(path)
-  let registry_ref = shader_asset_paths_ref_mut_or_abort()
-  match registry_ref.val.find(canonical_path) {
+  let registry = shader_asset_paths_mut_or_abort()
+  match registry.peek().find(canonical_path) {
     Some(handle) => handle
     None => {
-      let assets_ref = shader_assets_ref_mut_or_abort()
-      let handle = assets_ref.val.reserve_handle()
-      registry_ref.val.insert(canonical_path, handle)
+      let assets = shader_assets_mut_or_abort()
+      let handle = assets.modify(fn(value) { value.reserve_handle() })
+      registry.modify(fn(value) { value.insert(canonical_path, handle) })
       let shader = ShaderLoader::default().load(
         asset_server,
         canonical_path,
         ShaderSettings::default(),
       ) catch {
         error => {
-          registry_ref.val.remove(canonical_path)
+          registry.modify(fn(value) { value.remove(canonical_path) })
           abort(error.message())
         }
       }
-      ignore(assets_ref.val.set(handle, shader))
+      ignore(assets.modify(fn(value) { value.set(handle, shader) }))
       handle
     }
   }

@@ -160,16 +160,20 @@ fn input_system(
   keyboard : @input.ButtonInput[@window.KeyCode],
   widget_state : @app.ResMut[WidgetState],
 ) -> Unit {
-  if keyboard.just_pressed(@window.KeyCode::Space) {
-    widget_state.get_ref().val.enabled = !widget_state.get_ref().val.enabled
-  }
-  if keyboard.pressed(@window.KeyCode::ArrowLeft) {
-    widget_state.get_ref().val.slider = (widget_state.get_ref().val.slider -
-    0.01F).max(0.0F)
-  }
-  if keyboard.pressed(@window.KeyCode::ArrowRight) {
-    widget_state.get_ref().val.slider = (widget_state.get_ref().val.slider +
-    0.01F).min(1.0F)
+  if keyboard.just_pressed(@window.KeyCode::Space) ||
+    keyboard.pressed(@window.KeyCode::ArrowLeft) ||
+    keyboard.pressed(@window.KeyCode::ArrowRight) {
+    widget_state.modify(fn(value) {
+      if keyboard.just_pressed(@window.KeyCode::Space) {
+        value.enabled = !value.enabled
+      }
+      if keyboard.pressed(@window.KeyCode::ArrowLeft) {
+        value.slider = (value.slider - 0.01F).max(0.0F)
+      }
+      if keyboard.pressed(@window.KeyCode::ArrowRight) {
+        value.slider = (value.slider + 0.01F).min(1.0F)
+      }
+    })
   }
 }
 

@@ -42,24 +42,36 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let floor_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(80.0F, 0.1F, 80.0F)),
-  )
-  let floor_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.16F, 0.19F, 0.23F)),
-  )
+  let floor_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(
+        @pbr.mesh3d_geometry_cuboid(80.0F, 0.1F, 80.0F),
+      ),
+    )
+  let floor_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.16F, 0.19F, 0.23F),
+      ),
+    )
   ignore(
     commands.spawn(
       (@pbr.Mesh3d::new(floor_mesh), @pbr.MeshMaterial3d::new(floor_material)),
     ),
   )
 
-  let cube_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
-  )
-  let cube_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.75F, 0.8F, 0.95F)),
-  )
+  let cube_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
+    )
+  let cube_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.75F, 0.8F, 0.95F)),
+    )
   for z in -GRID_HALF..<GRID_HALF {
     for x in -GRID_HALF..<GRID_HALF {
       ignore(
@@ -109,8 +121,7 @@ fn spin_cubes(
 ) -> Unit {
   let rot = @math.Quat::from_rotation_y(time.get().delta_secs() * 0.7F)
   try! cubes.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = rot.mul(transform_ref.val.rotation)
+    transform.modify(fn(value) { value.rotation = rot.mul(value.rotation) })
   })
 }
 
@@ -121,14 +132,15 @@ fn orbit_camera(
 ) -> Unit {
   let t = time.get().elapsed_secs()
   try! cameras.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val = @transform.Transform::from_xyz(
-      @math.cos(t * 0.25F) * 26.0F,
-      12.0F + @math.sin(t * 0.4F) * 4.0F,
-      @math.sin(t * 0.25F) * 26.0F,
-    ).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    transform.set(
+      @transform.Transform::from_xyz(
+        @math.cos(t * 0.25F) * 26.0F,
+        12.0F + @math.sin(t * 0.4F) * 4.0F,
+        @math.sin(t * 0.25F) * 26.0F,
+      ).looking_at(
+        @math.Vec3::new(0.0F, 0.0F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
     )
   })
 }

@@ -347,11 +347,11 @@ fn animate_curve_linear(
   let x = HORIZONTAL_TRAVEL * (t - 0.5F)
   try! query.view(fn(_entity, data) {
     let (transform, sprite, curve) = data
-    let transform_ref = transform.get_ref()
-    let sprite_ref = sprite.get_ref()
     let points = curve.value().points
-    sprite_ref.val.color = linear_to_color(bezier_linear(points, t))
-    transform_ref.val.translation.x = x
+    sprite.modify(fn(value) {
+      value.color = linear_to_color(bezier_linear(points, t))
+    })
+    transform.modify(fn(value) { value.translation.x = x })
   })
 }
 
@@ -371,12 +371,12 @@ fn animate_curve_xyza(
   let x = HORIZONTAL_TRAVEL * (t - 0.5F)
   try! query.view(fn(_entity, data) {
     let (transform, sprite, curve) = data
-    let transform_ref = transform.get_ref()
-    let sprite_ref = sprite.get_ref()
-    sprite_ref.val.color = linear_to_color(
-      xyza_to_linear(bezier_xyza(curve.value().points, t)),
-    )
-    transform_ref.val.translation.x = x
+    sprite.modify(fn(value) {
+      value.color = linear_to_color(
+        xyza_to_linear(bezier_xyza(curve.value().points, t)),
+      )
+    })
+    transform.modify(fn(value) { value.translation.x = x })
   })
 }
 
@@ -396,12 +396,12 @@ fn animate_curve_oklaba(
   let x = HORIZONTAL_TRAVEL * (t - 0.5F)
   try! query.view(fn(_entity, data) {
     let (transform, sprite, curve) = data
-    let transform_ref = transform.get_ref()
-    let sprite_ref = sprite.get_ref()
-    sprite_ref.val.color = linear_to_color(
-      oklaba_to_linear(bezier_oklaba(curve.value().points, t)),
-    )
-    transform_ref.val.translation.x = x
+    sprite.modify(fn(value) {
+      value.color = linear_to_color(
+        oklaba_to_linear(bezier_oklaba(curve.value().points, t)),
+      )
+    })
+    transform.modify(fn(value) { value.translation.x = x })
   })
 }
 
@@ -421,12 +421,10 @@ fn animate_mixed_hsla(
   let x = HORIZONTAL_TRAVEL * (t - 0.5F)
   try! query.view(fn(_entity, data) {
     let (transform, sprite, mixed) = data
-    let transform_ref = transform.get_ref()
-    let sprite_ref = sprite.get_ref()
-    sprite_ref.val.color = linear_to_color(
-      mix_hsla_points(mixed.value().colors, t),
-    )
-    transform_ref.val.translation.x = x
+    sprite.modify(fn(value) {
+      value.color = linear_to_color(mix_hsla_points(mixed.value().colors, t))
+    })
+    transform.modify(fn(value) { value.translation.x = x })
   })
 }
 
@@ -446,12 +444,10 @@ fn animate_mixed_srgba(
   let x = HORIZONTAL_TRAVEL * (t - 0.5F)
   try! query.view(fn(_entity, data) {
     let (transform, sprite, mixed) = data
-    let transform_ref = transform.get_ref()
-    let sprite_ref = sprite.get_ref()
-    sprite_ref.val.color = linear_to_color(
-      mix_srgba_points(mixed.value().colors, t),
-    )
-    transform_ref.val.translation.x = x
+    sprite.modify(fn(value) {
+      value.color = linear_to_color(mix_srgba_points(mixed.value().colors, t))
+    })
+    transform.modify(fn(value) { value.translation.x = x })
   })
 }
 
@@ -471,12 +467,10 @@ fn animate_mixed_oklcha(
   let x = HORIZONTAL_TRAVEL * (t - 0.5F)
   try! query.view(fn(_entity, data) {
     let (transform, sprite, mixed) = data
-    let transform_ref = transform.get_ref()
-    let sprite_ref = sprite.get_ref()
-    sprite_ref.val.color = linear_to_color(
-      mix_oklcha_points(mixed.value().colors, t),
-    )
-    transform_ref.val.translation.x = x
+    sprite.modify(fn(value) {
+      value.color = linear_to_color(mix_oklcha_points(mixed.value().colors, t))
+    })
+    transform.modify(fn(value) { value.translation.x = x })
   })
 }
 

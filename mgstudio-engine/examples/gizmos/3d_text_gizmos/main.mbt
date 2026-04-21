@@ -29,11 +29,12 @@ fn setup_camera(world : @ecs.World) -> Unit {
 fn configure_gizmos(
   config_store : @app.ResMut[@gizmos.GizmoConfigStore],
 ) -> Unit {
-  let store_ref = config_store.get_ref()
-  let (config, _group) = store_ref.val.config_mut(
-    @gizmos.DefaultGizmoConfigGroup::default(),
-  )
-  config.val = { ..config.val, line: { ..config.val.line, width: 4.0F } }
+  config_store.modify(fn(store) {
+    let (config, _group) = store.config_mut(
+      @gizmos.DefaultGizmoConfigGroup::default(),
+    )
+    config.val = { ..config.val, line: { ..config.val.line, width: 4.0F } }
+  })
 }
 
 ///|

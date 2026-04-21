@@ -61,8 +61,8 @@ fn stepping_test_app(log : Array[String]) -> App[@ecs.World] {
 }
 
 ///|
-fn stepping_ref(app : App[@ecs.World]) -> Ref[Stepping] {
-  match (try! app.world().get_resource_ref_mut(Stepping::resource())) {
+fn stepping_ref(app : App[@ecs.World]) -> @ecs.ResourceMut[Stepping] {
+  match (try! app.world().get_resource_mut(Stepping::resource())) {
     Some(resource_ref) => resource_ref
     None => abort("Stepping resource should exist")
   }
@@ -74,18 +74,18 @@ test "app: stepping waits then steps and continues through a schedule" {
   let mut app = stepping_test_app(log)
   let stepping = stepping_ref(app)
 
-  stepping.val = stepping.val.add_schedule(Update).enable()
+  stepping.set(stepping.peek().add_schedule(Update).enable())
   app = app.update()
   debug_inspect(log.join(","), content="\"pre\"")
 
-  stepping.val = stepping.val.step_frame()
+  stepping.set(stepping.peek().step_frame())
   app = app.update()
   debug_inspect(log.join(","), content="\"pre,pre,one\"")
 
   app = app.update()
   debug_inspect(log.join(","), content="\"pre,pre,one,pre\"")
 
-  stepping.val = stepping.val.continue_frame()
+  stepping.set(stepping.peek().continue_frame())
   app = app.update()
   debug_inspect(log.join(","), content="\"pre,pre,one,pre,pre,two,three,four\"")
 }
@@ -96,20 +96,23 @@ test "app: stepping always_run and never_run affect gated systems only" {
   let mut app = stepping_test_app(log)
   let stepping = stepping_ref(app)
 
-  stepping.val = stepping.val
+  stepping.set(
+    stepping
+    .peek()
     .add_schedule(Update)
     .always_run(Update, UPDATE_SYSTEM_TWO_NAME)
     .never_run(Update, UPDATE_SYSTEM_THREE_NAME)
-    .enable()
+    .enable(),
+  )
 
   app = app.update()
   debug_inspect(log.join(","), content="\"pre,two\"")
 
-  stepping.val = stepping.val.step_frame()
+  stepping.set(stepping.peek().step_frame())
   app = app.update()
   debug_inspect(log.join(","), content="\"pre,two,pre,one,two\"")
 
-  stepping.val = stepping.val.continue_frame()
+  stepping.set(stepping.peek().continue_frame())
   app = app.update()
   debug_inspect(log.join(","), content="\"pre,two,pre,one,two,pre,two,four\"")
 }
@@ -120,25 +123,28 @@ test "app: stepping breakpoint stops continue before the marked system" {
   let mut app = stepping_test_app(log)
   let stepping = stepping_ref(app)
 
-  stepping.val = stepping.val
+  stepping.set(
+    stepping
+    .peek()
     .add_schedule(Update)
     .set_breakpoint(Update, UPDATE_SYSTEM_TWO_NAME)
-    .enable()
+    .enable(),
+  )
 
-  stepping.val = stepping.val.continue_frame()
+  stepping.set(stepping.peek().continue_frame())
   app = app.update()
   debug_inspect(log.join(","), content="\"pre,one\"")
 
-  stepping.val = stepping.val.step_frame()
+  stepping.set(stepping.peek().step_frame())
   app = app.update()
   debug_inspect(log.join(","), content="\"pre,one,pre,two\"")
 
-  stepping.val = stepping.val.continue_frame()
+  stepping.set(stepping.peek().continue_frame())
   app = app.update()
   debug_inspect(log.join(","), content="\"pre,one,pre,two,pre,three,four\"")
 
-  stepping.val = stepping.val.clear_breakpoint(Update, UPDATE_SYSTEM_TWO_NAME)
-  stepping.val = stepping.val.continue_frame()
+  stepping.set(stepping.peek().clear_breakpoint(Update, UPDATE_SYSTEM_TWO_NAME))
+  stepping.set(stepping.peek().continue_frame())
   app = app.update()
   debug_inspect(
     log.join(","),

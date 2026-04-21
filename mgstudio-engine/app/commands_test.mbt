@@ -193,23 +193,22 @@ fn commands_install_hook_test_hooks(world : @ecs.World) -> Unit {
 test "app: Commands spawn defers component tuple insertion until after system" {
   let counts : Array[Int] = []
   let spawned : Ref[@core.Entity?] = Ref::new(None)
-  let mut app = App::new(@ecs.World::new())
-    .add_system_param2(fn(
-      commands : Commands,
-      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
-    ) {
-      counts.push(query.count())
-      spawned.val = Some(
-        commands.spawn(
-          (
-            CommandsPosition::{ x: 3, y: 4 },
-            CommandsVelocity::{ dx: 5, dy: 6 },
-            CommandsMarker::{  },
-          ),
+  let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
+    commands : Commands,
+    query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+  ) {
+    counts.push(query.count())
+    spawned.val = Some(
+      commands.spawn(
+        (
+          CommandsPosition::{ x: 3, y: 4 },
+          CommandsVelocity::{ dx: 5, dy: 6 },
+          CommandsMarker::{  },
         ),
-      )
-      counts.push(query.count())
-    })
+      ),
+    )
+    counts.push(query.count())
+  })
 
   app = app.run_once()
 
@@ -254,10 +253,11 @@ test "app: Commands spawn_empty reserves an entity without queued components" {
 
 ///|
 test "app: Commands insert_resource defers resource writes until after the system" {
-  let mut app = App::new(@ecs.World::new())
-    .add_system_param(fn(commands : Commands) {
-      commands.insert_resource(CommandsCounterResource::{ value: 7 })
-    })
+  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+    commands : Commands,
+  ) {
+    commands.insert_resource(CommandsCounterResource::{ value: 7 })
+  })
 
   app = app.run_once()
 
@@ -271,17 +271,16 @@ test "app: Commands insert_resource defers resource writes until after the syste
 test "app: Commands spawn_component defers single component insertion until after system" {
   let counts : Array[Int] = []
   let spawned : Ref[@core.Entity?] = Ref::new(None)
-  let mut app = App::new(@ecs.World::new())
-    .add_system_param2(fn(
-      commands : Commands,
-      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
-    ) {
-      counts.push(query.count())
-      spawned.val = Some(
-        commands.spawn_component(CommandsPosition::{ x: 8, y: 13 }),
-      )
-      counts.push(query.count())
-    })
+  let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
+    commands : Commands,
+    query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+  ) {
+    counts.push(query.count())
+    spawned.val = Some(
+      commands.spawn_component(CommandsPosition::{ x: 8, y: 13 }),
+    )
+    counts.push(query.count())
+  })
 
   app = app.run_once()
 
@@ -406,31 +405,30 @@ test "app: Commands spawn_bundle accepts ecs bundle tuples and unit bundles" {
 test "app: Commands spawn_batch defers all batch insertions until flush" {
   let counts : Array[Int] = []
   let spawned : Ref[Array[@core.Entity]] = Ref::new([])
-  let mut app = App::new(@ecs.World::new())
-    .add_system_param2(fn(
-      commands : Commands,
-      query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
-    ) {
-      counts.push(query.count())
-      spawned.val = commands.spawn_batch([
-        (
-          CommandsPosition::{ x: 21, y: 22 },
-          CommandsVelocity::{ dx: 23, dy: 24 },
-          CommandsMarker::{  },
-        ),
-        (
-          CommandsPosition::{ x: 31, y: 32 },
-          CommandsVelocity::{ dx: 33, dy: 34 },
-          CommandsMarker::{  },
-        ),
-        (
-          CommandsPosition::{ x: 41, y: 42 },
-          CommandsVelocity::{ dx: 43, dy: 44 },
-          CommandsMarker::{  },
-        ),
-      ])
-      counts.push(query.count())
-    })
+  let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
+    commands : Commands,
+    query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
+  ) {
+    counts.push(query.count())
+    spawned.val = commands.spawn_batch([
+      (
+        CommandsPosition::{ x: 21, y: 22 },
+        CommandsVelocity::{ dx: 23, dy: 24 },
+        CommandsMarker::{  },
+      ),
+      (
+        CommandsPosition::{ x: 31, y: 32 },
+        CommandsVelocity::{ dx: 33, dy: 34 },
+        CommandsMarker::{  },
+      ),
+      (
+        CommandsPosition::{ x: 41, y: 42 },
+        CommandsVelocity::{ dx: 43, dy: 44 },
+        CommandsMarker::{  },
+      ),
+    ])
+    counts.push(query.count())
+  })
 
   app = app.run_once()
 
@@ -454,21 +452,20 @@ test "app: Commands spawn_batch defers all batch insertions until flush" {
 test "app: Commands entity insert defers component insertion until flush" {
   let spawned : Ref[@core.Entity?] = Ref::new(None)
   let counts : Array[Int] = []
-  let mut app = App::new(@ecs.World::new())
-    .add_system_param2(fn(
-      commands : Commands,
-      query : @ecs.Query[@ecs.Comp[CommandsVelocity], @ecs.All],
-    ) {
-      let entity = commands.spawn(
-        (CommandsPosition::{ x: 7, y: 8 }, CommandsMarker::{  }),
-      )
-      spawned.val = Some(entity)
-      counts.push(query.count())
-      commands
-      .entity(entity)
-      .insert((CommandsVelocity::{ dx: 9, dy: 10 }, CommandsTagA::{  }))
-      counts.push(query.count())
-    })
+  let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
+    commands : Commands,
+    query : @ecs.Query[@ecs.Comp[CommandsVelocity], @ecs.All],
+  ) {
+    let entity = commands.spawn(
+      (CommandsPosition::{ x: 7, y: 8 }, CommandsMarker::{  }),
+    )
+    spawned.val = Some(entity)
+    counts.push(query.count())
+    commands
+    .entity(entity)
+    .insert((CommandsVelocity::{ dx: 9, dy: 10 }, CommandsTagA::{  }))
+    counts.push(query.count())
+  })
 
   app = app.run_once()
 

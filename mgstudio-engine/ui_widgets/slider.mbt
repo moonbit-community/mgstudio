@@ -211,7 +211,7 @@ pub impl @ecs.Component for SliderPrecision with component() {
 
 ///|
 pub struct SetSliderValue {
-  mut entity : @core.Entity
+  entity : @core.Entity
   value : Float
 } derive(ToJson, FromJson)
 
@@ -232,10 +232,10 @@ pub impl @ecs.TriggerEvent for SetSliderValue with observer_entity(self) {
 
 ///|
 pub impl @ecs.TriggerEvent for SetSliderValue with set_observer_entity(
-  event_ref,
+  self,
   entity,
 ) {
-  event_ref.val.entity = entity
+  SetSliderValue::{ entity, value: self.value }
 }
 
 ///|

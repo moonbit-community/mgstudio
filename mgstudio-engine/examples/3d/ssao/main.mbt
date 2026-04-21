@@ -222,11 +222,13 @@ fn setup(
   )
   try! world.set_by_key(camera, SsaoCamera::component(), SsaoCamera::{  })
 
-  let base_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
-    .with_perceptual_roughness(1.0F)
-    .with_reflectance(0.0F),
-  )
+  let base_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
+      .with_perceptual_roughness(1.0F)
+      .with_reflectance(0.0F),
+    )
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -276,7 +278,9 @@ fn setup(
       ),
     ),
     @pbr.MeshMaterial3d::new(
-      materials.get_ref().val.add(
+      materials
+      .peek()
+      .add(
         @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.4F, 0.4F, 0.4F))
         .with_perceptual_roughness(1.0F)
         .with_reflectance(0.0F),
@@ -345,10 +349,9 @@ fn update(
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   try! sphere_query.view(fn(_entity, transform) {
-    transform.get_ref().val.translation.y = @math.sin(
-        time.get().elapsed_secs() / 1.7F,
-      ) *
-      0.7F
+    transform.modify(fn(value) {
+      value.translation.y = @math.sin(time.get().elapsed_secs() / 1.7F) * 0.7F
+    })
   })
 
   guard ssao_camera_entity(camera_query) is Some(camera_entity) else { return }

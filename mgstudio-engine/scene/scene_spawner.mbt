@@ -427,10 +427,7 @@ fn scene_attach_pending_instance(
   root_entity : @core.Entity,
   root : SceneRoot,
 ) -> Int {
-  let instance_id = scene_runtime_allocate_instance(
-    world,
-    root.scene,
-  )
+  let instance_id = scene_runtime_allocate_instance(world, root.scene)
   scene_remove_ready_component(world, root_entity)
   try! world.set_by_key(
     root_entity,

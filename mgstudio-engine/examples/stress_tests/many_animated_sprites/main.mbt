@@ -73,9 +73,9 @@ fn setup(
   let texture = asset_server
     .get()
     .load("textures/rpg/chars/gabe/gabe-idle-run.png")
-  let atlas_layout = texture_atlas_layouts.get_ref().val.add(
-    @asset.TextureAtlasLayout::from_grid(@math.UVec2::new(24, 24), 7, 1),
-  )
+  let atlas_layout = texture_atlas_layouts
+    .peek()
+    .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::new(24, 24), 7, 1))
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
   for y in -GRID_HALF_Y..<GRID_HALF_Y {
@@ -123,14 +123,17 @@ fn animate_sprites(
 ) -> Unit {
   try! sprites.for_each(fn(_entity, data) {
     let (timer, sprite) = data
-    let timer_ref = timer.get_ref()
-    let sprite_ref = sprite.get_ref()
-    timer_ref.val.timer = timer_ref.val.timer.tick(time.get().delta())
-    if !timer_ref.val.timer.just_finished() {
+    let next_timer = timer.modify(fn(value) {
+      value.timer = value.timer.tick(time.get().delta())
+      value.timer
+    })
+    if !next_timer.just_finished() {
       return
     }
-    guard sprite_ref.val.texture_atlas is Some(atlas) else { return }
-    sprite_ref.val.texture_atlas = Some(atlas.with_index((atlas.index + 1) % 7))
+    sprite.modify(fn(value) {
+      guard value.texture_atlas is Some(atlas) else { return }
+      value.texture_atlas = Some(atlas.with_index((atlas.index + 1) % 7))
+    })
   })
 }
 
@@ -143,13 +146,14 @@ fn move_camera(
   ],
 ) -> Unit {
   try! camera.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = @math.Quat::from_rotation_z(
-      time.get().elapsed_secs() * 0.5F,
-    )
-    transform_ref.val.translation = transform_ref.val.translation.add(
-      @math.Vec3::new(CAMERA_SPEED * time.get().delta_secs(), 0.0F, 0.0F),
-    )
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_z(
+        time.get().elapsed_secs() * 0.5F,
+      )
+      value.translation = value.translation.add(
+        @math.Vec3::new(CAMERA_SPEED * time.get().delta_secs(), 0.0F, 0.0F),
+      )
+    })
   })
 }
 
@@ -159,12 +163,18 @@ fn print_sprite_count(
   timer : @app.ResMut[PrintTimer],
   sprites : @ecs.Query[@ecs.Comp[AnimationTimer], @ecs.All],
 ) -> Unit {
-  let timer_ref = timer.get_ref()
-  timer_ref.val.seconds += time.get().delta_secs()
-  if timer_ref.val.seconds < 1.0F {
+  let should_print = timer.modify(fn(value) {
+    value.seconds += time.get().delta_secs()
+    if value.seconds < 1.0F {
+      false
+    } else {
+      value.seconds -= 1.0F
+      true
+    }
+  })
+  if !should_print {
     return
   }
-  timer_ref.val.seconds -= 1.0F
   println("Animated sprites: \{sprites.count()}")
 }
 

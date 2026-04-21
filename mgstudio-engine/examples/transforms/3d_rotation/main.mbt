@@ -37,16 +37,18 @@ fn setup(
     commands.spawn(
       (
         @pbr.Mesh3d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @pbr.Mesh::from_3d_geometry(
               @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
             ),
           ),
         ),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
-            @pbr.StandardMaterial::from_color(@sprite.Color::white()),
-          ),
+          materials
+          .peek()
+          .add(@pbr.StandardMaterial::from_color(@sprite.Color::white())),
         ),
         @transform.Transform::from_translation(@math.Vec3::zero()),
         Rotatable::{ speed: 0.3F },
@@ -90,8 +92,9 @@ fn rotate_cube(
   let delta = time.get().delta_secs()
   try! cubes.view(fn(_entity, data) {
     let (cube, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotate_y(cube.value().speed * (@math.pi() * 2.0F) * delta)
+    transform.modify(fn(value) {
+      value.rotate_y(cube.value().speed * (@math.pi() * 2.0F) * delta)
+    })
   })
 }
 

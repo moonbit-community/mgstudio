@@ -85,16 +85,19 @@ pub fn MeshAllocatorDiagnosticState::new(
 ///|
 fn mesh_allocator_diagnostic_sample_system(world : @ecs.World) -> Unit {
   match
-    (try world.get_resource_ref_mut(mesh_allocator_diagnostic_state_key) catch {
+    (try world.get_resource_mut(mesh_allocator_diagnostic_state_key) catch {
       _ => None
     } noraise {
       value => value
     }) {
-    Some(state_ref) => {
-      state_ref.val.sample_count = state_ref.val.sample_count + 1
-      state_ref.val.snapshot = @renderer.render_diagnostics_snapshot()
-      state_ref.val.last_sample_us = @time.host_time_now()
-    }
+    Some(state_ref) =>
+      ignore(
+        state_ref.modify(fn(value) {
+          value.sample_count = value.sample_count + 1
+          value.snapshot = @renderer.render_diagnostics_snapshot()
+          value.last_sample_us = @time.host_time_now()
+        }),
+      )
     None => ()
   }
 }

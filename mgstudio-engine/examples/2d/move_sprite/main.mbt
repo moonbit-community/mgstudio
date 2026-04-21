@@ -72,17 +72,17 @@ fn sprite_movement(
   let delta = SPEED * time.get().delta_seconds()
   try! query.for_each(fn(entity, data) {
     let (direction, transform) = data
-    let transform_ref = transform.get_ref()
-    if direction.value() is Right {
-      transform_ref.val.translation.x += delta
-    } else {
-      transform_ref.val.translation.x -= delta
-    }
-
-    let next_x = transform_ref.val.translation.x
+    let next_x = transform.modify(fn(value) {
+      if direction.value() is Right {
+        value.translation.x += delta
+      } else {
+        value.translation.x -= delta
+      }
+      value.translation.x
+    })
     if next_x > EDGE_LIMIT {
       commands.entity(entity).insert_component(Direction::Left)
-    } else if next_x < -EDGE_LIMIT {
+    } else if next_x < 0.0F - EDGE_LIMIT {
       commands.entity(entity).insert_component(Direction::Right)
     }
   })

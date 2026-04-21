@@ -212,7 +212,7 @@ fn scrollbar_update_thumb_system(
       if !has_thumb.present() {
         continue
       }
-      let node = node_mut.get_ref().val
+      let node = node_mut.peek()
       let next_node = match scrollbar.orientation {
         ControlOrientation::Horizontal => {
           let thumb_size = if content_size.x > visible_size.x {
@@ -259,7 +259,7 @@ fn scrollbar_update_thumb_system(
           .with_height(@ui.Val::Px(thumb_size))
         }
       }
-      node_mut.get_ref().val = next_node
+      node_mut.set(next_node)
       break
     }
   })

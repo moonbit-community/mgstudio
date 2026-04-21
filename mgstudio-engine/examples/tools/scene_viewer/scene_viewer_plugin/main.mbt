@@ -93,13 +93,15 @@ fn cycle_scene(
   if !keyboard.just_pressed(@window.KeyCode::Enter) {
     return
   }
-  let scenes_ref = scenes.get_ref()
-  if scenes_ref.val.handles.length() == 0 {
-    return
-  }
-  scenes_ref.val.index = (scenes_ref.val.index + 1) %
-    scenes_ref.val.handles.length()
-  let handle = scenes_ref.val.handles[scenes_ref.val.index]
+  let handle = scenes.modify(fn(value) {
+    if value.handles.length() == 0 {
+      None
+    } else {
+      value.index = (value.index + 1) % value.handles.length()
+      Some(value.handles[value.index])
+    }
+  })
+  guard handle is Some(handle) else { return }
   try! roots.for_each(fn(entity, _root) {
     commands.entity(entity).insert_component(@scene.SceneRoot::new(handle))
   })

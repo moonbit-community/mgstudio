@@ -47,14 +47,14 @@ fn update_virtual_test_resource(
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   let virtual_ref = try! world
-    .get_resource_ref_mut(virtual_time_resource_key())
+    .get_resource_mut(virtual_time_resource_key())
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(default_time_resource_key())
+    .get_resource_mut(default_time_resource_key())
     .unwrap()
-  let next_virtual = update(virtual_ref.val)
-  virtual_ref.val = next_virtual
-  time_ref.val = next_virtual.as_generic()
+  let next_virtual = update(virtual_ref.peek())
+  virtual_ref.set(next_virtual)
+  time_ref.set(next_virtual.as_generic())
   app
 }
 
@@ -333,9 +333,7 @@ test "time: fixed resource timestep changes affect later steps in the same frame
     .add_fixed_update_system_param(fn(fixed_time : @app.ResMut[Time[Fixed]]) {
       steps.val = steps.val + 1
       if steps.val == 1 {
-        fixed_time.get_ref().val = fixed_time.get_ref().val.set_timestep_seconds(
-          0.1F,
-        )
+        fixed_time.set(fixed_time.peek().set_timestep_seconds(0.1F))
       }
     })
   app = set_virtual_max_delta_seconds(app, 1.0F)

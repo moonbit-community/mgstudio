@@ -131,13 +131,17 @@ fn text_update_system(
   time : @app.Res[@time.Time[@time.Real]],
   query : @app.Single[@ecs.Mut[@text.Text], @ecs.With[AtlasDebugText]],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  state_ref.val.timer = state_ref.val.timer.tick(time.get().delta())
-  if !state_ref.val.timer.just_finished() {
-    return
-  }
-  let glyph = glyph_at(state_ref.val.next_glyph_index)
-  state_ref.val.next_glyph_index = state_ref.val.next_glyph_index + 1
+  let next_glyph = state.modify(fn(value) {
+    value.timer = value.timer.tick(time.get().delta())
+    if !value.timer.just_finished() {
+      None
+    } else {
+      let glyph = glyph_at(value.next_glyph_index)
+      value.next_glyph_index = value.next_glyph_index + 1
+      Some(glyph)
+    }
+  })
+  guard next_glyph is Some(glyph) else { return }
   let text = query.get()
   let current = text.value().content
   if !current.contains(glyph) {
@@ -152,8 +156,8 @@ fn atlas_render_system(
   font_atlas_set : @app.Res[@text.FontAtlasSet],
   images : @app.Res[@asset.Assets[@image.Image]],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  let panel = match state_ref.val.atlas_panel {
+  let state_value = state.peek()
+  let panel = match state_value.atlas_panel {
     Some(entity) => entity
     None => return
   }
@@ -162,18 +166,18 @@ fn atlas_render_system(
     return
   }
   let atlases = entries[0].atlases
-  if state_ref.val.atlas_count >= atlases.length() {
+  if state_value.atlas_count >= atlases.length() {
     return
   }
-  let atlas = atlases[state_ref.val.atlas_count]
+  let atlas = atlases[state_value.atlas_count]
   let image = match images.get().get(atlas.texture) {
     Some(image) => image
     None => return
   }
   let x_offset = Float::from_double(
-    (image.width * state_ref.val.atlas_count).to_double(),
+    (image.width * state_value.atlas_count).to_double(),
   )
-  state_ref.val.atlas_count = state_ref.val.atlas_count + 1
+  state.modify(fn(value) { value.atlas_count = value.atlas_count + 1 })
   ignore(
     commands.spawn(
       (

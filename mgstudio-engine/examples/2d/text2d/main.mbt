@@ -176,14 +176,18 @@ fn setup(
   let anchor_marker = commands.spawn(
     (
       @sprite.Mesh2d::new(
-        meshes.get_ref().val.add(
+        meshes
+        .peek()
+        .add(
           @sprite.mesh2d_geometry_rectangle(
             @sprite.Rectangle::new(10.0F, 10.0F),
           ).to_mesh(),
         ),
       ),
       @sprite.MeshMaterial2d::new(
-        materials.get_ref().val.add(
+        materials
+        .peek()
+        .add(
           @sprite.ColorMaterialAsset::from_color(
             @sprite.Color::srgb(0.68F, 0.97F, 0.97F),
           ),
@@ -240,14 +244,14 @@ fn spawn_wrapped_text_box(
   let box_entity = commands.spawn(
     (
       @sprite.Mesh2d::new(
-        meshes.get_ref().val.add(
+        meshes
+        .peek()
+        .add(
           @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::from_size(size)).to_mesh(),
         ),
       ),
       @sprite.MeshMaterial2d::new(
-        materials.get_ref().val.add(
-          @sprite.ColorMaterialAsset::from_color(box_color),
-        ),
+        materials.peek().add(@sprite.ColorMaterialAsset::from_color(box_color)),
       ),
       @transform.Transform::from_xyz(center.x, center.y, 0.0F),
     ),
@@ -367,9 +371,10 @@ fn animate_translation(
   let elapsed = time.get().elapsed_seconds()
   try! query.for_each(fn(_entity, data) {
     let (transform, _text, _marker) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.x = 100.0F * @math.sin(elapsed) - 400.0F
-    transform_ref.val.translation.y = 100.0F * @math.cos(elapsed)
+    transform.modify(fn(value) {
+      value.translation.x = 100.0F * @math.sin(elapsed) - 400.0F
+      value.translation.y = 100.0F * @math.cos(elapsed)
+    })
   })
 }
 
@@ -388,8 +393,10 @@ fn animate_rotation(
   let elapsed = time.get().elapsed_seconds()
   try! query.for_each(fn(_entity, data) {
     let (transform, _text, _marker) = data
-    transform.get_ref().val.rotation = @math.Quat::from_rotation_z(
-      @math.cos(elapsed),
+    transform.set(
+      transform
+      .value()
+      .with_rotation(@math.Quat::from_rotation_z(@math.cos(elapsed))),
     )
   })
 }
@@ -410,8 +417,9 @@ fn animate_scale(
   let scale = (@math.sin(elapsed) + 1.1F) * 2.0F
   try! query.for_each(fn(_entity, data) {
     let (transform, _text, _marker) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.scale.x = scale
-    transform_ref.val.scale.y = scale
+    transform.modify(fn(value) {
+      value.scale.x = scale
+      value.scale.y = scale
+    })
   })
 }

@@ -64,16 +64,23 @@ fn capture_system(
   state : @app.ResMut[CaptureState],
   app_exit : @ecs.MessageWriter[@app.AppExit],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  if state_ref.val.target is Some(target) {
-    if state_ref.val.frame < 10 {
-      let path = "test_images/screenshot\{state_ref.val.frame.to_string()}.png"
-      @asset.asset_save_texture_png(target, path)
+  let capture = state.modify(fn(value) {
+    match value.target {
+      Some(target) => {
+        let frame = value.frame
+        value.frame = value.frame + 1
+        Some((target, frame))
+      }
+      None => None
     }
-    state_ref.val.frame = state_ref.val.frame + 1
-    if state_ref.val.frame >= 12 {
-      ignore(app_exit.write(@app.AppExit::Success))
-    }
+  })
+  guard capture is Some((target, frame)) else { return }
+  if frame < 10 {
+    let path = "test_images/screenshot\{frame.to_string()}.png"
+    @asset.asset_save_texture_png(target, path)
+  }
+  if frame + 1 >= 12 {
+    ignore(app_exit.write(@app.AppExit::Success))
   }
 }
 

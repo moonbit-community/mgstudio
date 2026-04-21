@@ -51,8 +51,8 @@ test "ecs message: mutator reads unread messages as in-place refs" {
   let mutator = world.message_mutator(key, cursor)
   let unread = try! mutator.read()
   debug_inspect(unread.length(), content="2")
-  unread[0].val.value = unread[0].val.value + 9
-  unread[1].val.value = unread[1].val.value + 18
+  unread[0].value = unread[0].value + 9
+  unread[1].value = unread[1].value + 18
   debug_inspect(mutator.is_empty(), content="true")
 
   let reader = world.message_reader(key, Ref::new(0))

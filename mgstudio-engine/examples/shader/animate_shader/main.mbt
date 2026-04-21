@@ -34,11 +34,13 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let cube_mesh = meshes.get_ref().val
+  let cube_mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(1.2F, 1.2F, 1.2F))
-  let material_handle = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.72F, 0.95F)),
-  )
+  let material_handle = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.72F, 0.95F)),
+    )
 
   commands.spawn(
     (
@@ -75,14 +77,14 @@ fn animate_material_color(
   let elapsed = time.get().elapsed_seconds()
   try! query.view(fn(_entity, component) {
     let handle = component.value().material
-    guard materials.get_ref().val.get(handle) is Some(material) else { return }
+    guard materials.peek().get(handle) is Some(material) else { return }
     let red = 0.45F + 0.4F * @math.sin(elapsed * 1.1F)
     let green = 0.5F + 0.35F * @math.sin(elapsed * 0.8F + 1.7F)
     let blue = 0.6F + 0.3F * @math.sin(elapsed * 1.5F + 3.1F)
     let updated = material.with_base_color(
       @sprite.Color::srgb(red, green, blue),
     )
-    materials.get_ref().val.set(handle, updated) |> ignore
+    materials.peek().set(handle, updated) |> ignore
   })
 }
 

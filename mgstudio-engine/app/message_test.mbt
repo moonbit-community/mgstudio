@@ -171,7 +171,7 @@ test "app: MessageMutator mutates unread messages and MessageWriter write_defaul
       system(
         system_param(fn(mutator : @ecs.MessageMutator[TestDefaultAppMessage]) {
           for message in (try! mutator.read()) {
-            message.val.value = message.val.value + 4
+            message.value = message.value + 4
           }
         }),
       ).in_set(test_message_mutator_set),

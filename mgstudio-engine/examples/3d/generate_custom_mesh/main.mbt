@@ -138,13 +138,13 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
   let custom_texture = asset_server.get().load("textures/array_texture.png")
-  let material = materials.get_ref().val
+  let material = materials.peek()
     |> @pbr.add_material(
       @pbr.StandardMaterial::default().with_base_color_texture(
         Some(custom_texture),
       ),
     )
-  let cube_mesh_handle = meshes.get_ref().val.add(create_cube_mesh(true))
+  let cube_mesh_handle = meshes.peek().add(create_cube_mesh(true))
 
   ignore(
     commands.spawn(
@@ -194,7 +194,7 @@ fn input_handler(
   query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[CustomUV]],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  let mesh_assets = meshes.get_ref().val
+  let mesh_assets = meshes.peek()
   if keyboard_input.just_pressed(@window.KeyCode::Space) {
     guard (mesh_query.single() catch { _ => None }) is Some(mesh_handle_comp) else {
       return
@@ -206,31 +206,43 @@ fn input_handler(
   }
   if keyboard_input.pressed(@window.KeyCode::KeyX) {
     try! query.view(fn(_entity, transform) {
-      let transform_ref = transform.get_ref()
-      transform_ref.val.rotation = transform_ref.val.rotation
-        .mul(@math.Quat::from_rotation_x(time.get().delta_seconds() / 1.2F))
-        .normalize()
+      let current = transform.value()
+      transform.set(
+        current.with_rotation(
+          current.rotation
+          .mul(@math.Quat::from_rotation_x(time.get().delta_seconds() / 1.2F))
+          .normalize(),
+        ),
+      )
     })
   }
   if keyboard_input.pressed(@window.KeyCode::KeyY) {
     try! query.view(fn(_entity, transform) {
-      let transform_ref = transform.get_ref()
-      transform_ref.val.rotation = transform_ref.val.rotation
-        .mul(@math.Quat::from_rotation_y(time.get().delta_seconds() / 1.2F))
-        .normalize()
+      let current = transform.value()
+      transform.set(
+        current.with_rotation(
+          current.rotation
+          .mul(@math.Quat::from_rotation_y(time.get().delta_seconds() / 1.2F))
+          .normalize(),
+        ),
+      )
     })
   }
   if keyboard_input.pressed(@window.KeyCode::KeyZ) {
     try! query.view(fn(_entity, transform) {
-      let transform_ref = transform.get_ref()
-      transform_ref.val.rotation = transform_ref.val.rotation
-        .mul(@math.Quat::from_rotation_z(time.get().delta_seconds() / 1.2F))
-        .normalize()
+      let current = transform.value()
+      transform.set(
+        current.with_rotation(
+          current.rotation
+          .mul(@math.Quat::from_rotation_z(time.get().delta_seconds() / 1.2F))
+          .normalize(),
+        ),
+      )
     })
   }
   if keyboard_input.pressed(@window.KeyCode::KeyR) {
     try! query.view(fn(_entity, transform) {
-      transform.get_ref().val.rotation = @math.Quat::identity()
+      transform.set(transform.value().with_rotation(@math.Quat::identity()))
     })
   }
 }

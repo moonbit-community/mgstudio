@@ -79,22 +79,24 @@ fn picking_debug_log_system(
   if !dev_tools_picking_debug_enabled(debug_mode) {
     return
   }
-  let events_ref = events.get_ref()
-  let captured_events = @app.PickingEvents::drain(events_ref)
-  for event in captured_events {
-    if picking_debug_should_log(debug_mode, event) {
-      let target_label = match event.target {
-        Some(entity) =>
-          "Some(\{entity.id.to_string()}/\{entity.generation.to_string()})"
-        None => "None"
+  events.modify(fn(value) {
+    let events_ref = Ref::new(value)
+    let captured_events = @app.PickingEvents::drain(events_ref)
+    for event in captured_events {
+      if picking_debug_should_log(debug_mode, event) {
+        let target_label = match event.target {
+          Some(entity) =>
+            "Some(\{entity.id.to_string()}/\{entity.generation.to_string()})"
+          None => "None"
+        }
+        let position_label = "(\{event.position.x.to_string()}, \{event.position.y.to_string()})"
+        println(
+          "[picking_debug] pointer=\{event.pointer.to_string()} kind=\{to_repr(event.kind).to_string()} target=\{target_label} position=\{position_label}",
+        )
       }
-      let position_label = "(\{event.position.x.to_string()}, \{event.position.y.to_string()})"
-      println(
-        "[picking_debug] pointer=\{event.pointer.to_string()} kind=\{to_repr(event.kind).to_string()} target=\{target_label} position=\{position_label}",
-      )
+      @app.PickingEvents::push(events_ref, event)
     }
-    @app.PickingEvents::push(events_ref, event)
-  }
+  })
 }
 
 ///|

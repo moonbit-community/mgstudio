@@ -192,12 +192,16 @@ fn setup(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_circle(@sprite.Circle::new(100.0F)).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @sprite.ColorMaterialAsset::from_color(
               @sprite.Color::srgb(7.5F, 0.0F, 7.5F),
             ),
@@ -212,14 +216,18 @@ fn setup(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_regular_polygon(
               @sprite.RegularPolygon::new(100.0F, 6),
             ).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @sprite.ColorMaterialAsset::from_color(
               @sprite.Color::srgb(6.25F, 9.4F, 9.1F),
             ),
@@ -273,9 +281,9 @@ fn update_bloom_settings(
 
   try! help_query.for_each(fn(_entity, data) {
     let (_help_text, help_text) = data
-    help_text.get_ref().val.content = bloom_help_text(
-      current_bloom, tonemapping,
-    )
+    help_text.modify(fn(value) {
+      value.content = bloom_help_text(current_bloom, tonemapping)
+    })
   })
 
   let dt = time.get().delta_seconds()

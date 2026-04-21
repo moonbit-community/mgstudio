@@ -55,11 +55,12 @@ fn setup(
   ignore(
     commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
   )
-  let store_ref = config_store.get_ref()
-  let (config, _group) = store_ref.val.config_mut(
-    @gizmos.DefaultGizmoConfigGroup::default(),
-  )
-  config.val = { ..config.val, line: { ..config.val.line, width: 1.0F } }
+  config_store.modify(fn(store) {
+    let (config, _group) = store.config_mut(
+      @gizmos.DefaultGizmoConfigGroup::default(),
+    )
+    config.val = { ..config.val, line: { ..config.val.line, width: 1.0F } }
+  })
 }
 
 ///|

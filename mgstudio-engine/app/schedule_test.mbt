@@ -806,7 +806,7 @@ test "app: SystemParam Query2 injects typed query into update system" {
     ) {
       try! query.for_each(fn(_entity, data) {
         let (position, velocity) = data
-        position.get_ref().val.x = position.get_ref().val.x + velocity.value().x
+        position.modify(fn(value) { value.x = value.x + velocity.value().x })
       })
     })
     .run_startup()

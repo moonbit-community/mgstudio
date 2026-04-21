@@ -67,11 +67,17 @@ fn print_message_system(
   state : @app.ResMut[PrintMessageState],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  let timer = state_ref.val.timer.tick(time.get().delta())
-  state_ref.val.timer = timer
-  if timer.is_finished() {
-    println(state_ref.val.message)
+  let message = state.modify(fn(value) {
+    let timer = value.timer.tick(time.get().delta())
+    value.timer = timer
+    if timer.is_finished() {
+      Some(value.message)
+    } else {
+      None
+    }
+  })
+  if message is Some(message) {
+    println(message)
   }
 }
 

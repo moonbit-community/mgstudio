@@ -203,14 +203,18 @@ fn setup_scene(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_rectangle(
               @sprite.Rectangle::new(1000.0F, 700.0F),
             ).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @sprite.ColorMaterialAsset::from_color(
               @sprite.Color::srgb(0.2F, 0.2F, 0.3F),
             ),
@@ -223,14 +227,18 @@ fn setup_scene(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_rectangle(
               @sprite.Rectangle::new(50.0F, 100.0F),
             ).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @sprite.ColorMaterialAsset::from_color(
               @sprite.Color::srgb(0.25F, 0.94F, 0.91F),
             ),
@@ -244,14 +252,18 @@ fn setup_scene(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_rectangle(
               @sprite.Rectangle::new(50.0F, 50.0F),
             ).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @sprite.ColorMaterialAsset::from_color(
               @sprite.Color::srgb(0.85F, 0.0F, 0.2F),
             ),
@@ -265,14 +277,18 @@ fn setup_scene(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_rectangle(
               @sprite.Rectangle::new(70.0F, 50.0F),
             ).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @sprite.ColorMaterialAsset::from_color(
               @sprite.Color::srgb(0.5F, 0.8F, 0.2F),
             ),
@@ -327,11 +343,7 @@ fn reset_transform(
   ],
 ) -> Unit {
   let (state, transform) = camera_shake.get()
-  let original = state.value().original_transform
-  let transform_ref = transform.get_ref()
-  transform_ref.val.translation = original.translation
-  transform_ref.val.rotation = original.rotation
-  transform_ref.val.scale = original.scale
+  transform.set(state.value().original_transform)
 }
 
 ///|
@@ -339,12 +351,9 @@ fn increase_trauma(
   camera_shake : @app.Single[@ecs.Mut[CameraShakeState], @ecs.All],
 ) -> Unit {
   let state = camera_shake.get()
-  let state_ref = state.get_ref()
-  state_ref.val.trauma = clampf(
-    state_ref.val.trauma + TRAUMA_PER_PRESS,
-    0.0F,
-    1.0F,
-  )
+  state.modify(fn(value) {
+    value.trauma = clampf(value.trauma + TRAUMA_PER_PRESS, 0.0F, 1.0F)
+  })
 }
 
 ///|
@@ -362,26 +371,30 @@ fn shake_camera(
   let elapsed_seconds = time.get().elapsed_seconds()
   let delta_seconds = time.get().delta_seconds()
   let (state, config, transform) = camera_shake.get()
-  let state_ref = state.get_ref()
   let config = config.value()
-  let transform_ref = transform.get_ref()
-  state_ref.val.original_transform = transform_ref.val
+  let original_transform = transform.value()
+  let shake = state.modify(fn(value) {
+    value.original_transform = original_transform
+    let shake = @math.pow(value.trauma, config.exponent)
+    value.trauma = clampf(
+      value.trauma - config.trauma_decay_per_second * delta_seconds,
+      0.0F,
+      1.0F,
+    )
+    shake
+  })
 
   let t = elapsed_seconds * config.noise_speed
   let rotation_noise = perlin_noise_generate(t + 0.0F)
   let x_noise = perlin_noise_generate(t + 100.0F)
   let y_noise = perlin_noise_generate(t + 200.0F)
-  let shake = @math.pow(state_ref.val.trauma, config.exponent)
   let roll_offset = rotation_noise * shake * config.max_angle
   let x_offset = x_noise * shake * config.max_translation
   let y_offset = y_noise * shake * config.max_translation
 
-  transform_ref.val.translation.x = transform_ref.val.translation.x + x_offset
-  transform_ref.val.translation.y = transform_ref.val.translation.y + y_offset
-  transform_ref.val.rotate_z(roll_offset)
-  state_ref.val.trauma = clampf(
-    state_ref.val.trauma - config.trauma_decay_per_second * delta_seconds,
-    0.0F,
-    1.0F,
-  )
+  transform.modify(fn(value) {
+    value.translation.x = value.translation.x + x_offset
+    value.translation.y = value.translation.y + y_offset
+    value.rotate_z(roll_offset)
+  })
 }

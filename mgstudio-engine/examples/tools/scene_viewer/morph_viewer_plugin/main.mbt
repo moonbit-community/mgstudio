@@ -119,8 +119,9 @@ fn play_animation_when_ready(
     is Some(player_mut) else {
     return
   }
-  player_mut.get_ref().val.play(animation_to_play.value().index).repeat()
-  |> ignore
+  player_mut.modify(fn(value) {
+    value.play(animation_to_play.value().index).repeat() |> ignore
+  })
   commands
   .entity(scene_ready.entity)
   .insert_component(
@@ -134,7 +135,8 @@ fn print_morph_target_names(
   events : @ecs.MessageReader[@asset.AssetEvent[@mesh.Mesh]],
   meshes : @app.Res[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
-  if state.get_ref().val.printed {
+  let state_value = state.get()
+  if state_value.printed {
     return
   }
   for event in (try! events.read()) {
@@ -144,14 +146,15 @@ fn print_morph_target_names(
       _ => None
     }
     guard handle is Some(mesh_handle) else { continue }
-    if mesh_handle.id() != state.get_ref().val.primitive_handle.id() {
+    if mesh_handle.id() != state_value.primitive_handle.id() {
       continue
     }
     guard meshes.get().get(mesh_handle) is Some(mesh_asset) else { continue }
     guard mesh_asset.morph_target_names() is Some(names) else { continue }
     let joined_names = names.join(", ")
     println("Morph targets: \{joined_names}")
-    state.get_ref().val.printed = true
+    state.modify(fn(value) { value.printed = true })
+    return
   }
 }
 

@@ -286,7 +286,7 @@ fn update_text(
   guard content_ref.val is Some(content) else { return }
   try! info_text_query.for_each(fn(_entity, data) {
     let (_marker, info_text) = data
-    info_text.get_ref().val.content = content
+    info_text.modify(fn(value) { value.content = content })
   })
 }
 
@@ -334,32 +334,40 @@ fn spawn_world(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
 ) -> Unit {
-  let cube = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
-  )
-  let floor = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)),
-  )
-  let sphere = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.5F)),
-  )
-  let wall = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.2F, 4.0F, 3.0F)),
-  )
+  let cube = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+    )
+  let floor = meshes
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)))
+  let sphere = meshes
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.5F)))
+  let wall = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.2F, 4.0F, 3.0F)),
+    )
 
-  let blue_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.11F, 0.31F, 0.66F, 1.0F),
-    ),
-  )
-  let red_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.25F, 0.03F, 0.05F, 1.0F),
-    ),
-  )
-  let white_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
-  )
+  let blue_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::new(0.11F, 0.31F, 0.66F, 1.0F),
+      ),
+    )
+  let red_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::new(0.25F, 0.03F, 0.05F, 1.0F),
+      ),
+    )
+  let white_material = materials
+    .peek()
+    .add(@pbr.StandardMaterial::from_color(@sprite.Color::white()))
 
   ignore(
     commands.spawn(

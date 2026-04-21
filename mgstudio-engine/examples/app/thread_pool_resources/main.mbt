@@ -73,23 +73,35 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let floor_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(90.0F, 0.1F, 90.0F)),
-  )
-  let floor_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.14F, 0.18F, 0.22F)),
-  )
+  let floor_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(
+        @pbr.mesh3d_geometry_cuboid(90.0F, 0.1F, 90.0F),
+      ),
+    )
+  let floor_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.14F, 0.18F, 0.22F),
+      ),
+    )
   ignore(
     commands.spawn(
       (@pbr.Mesh3d::new(floor_mesh), @pbr.MeshMaterial3d::new(floor_material)),
     ),
   )
-  let cube_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
-  )
-  let cube_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.55F, 0.75F, 1.0F)),
-  )
+  let cube_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
+    )
+  let cube_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.55F, 0.75F, 1.0F)),
+    )
   let side = 9
   let half = float_from_int(side) / 2.0F
   for i in 0..<CUBE_COUNT {
@@ -135,16 +147,17 @@ fn setup(
 
 ///|
 fn input_control(pool : @app.ResMut[SimulatedPool]) -> Unit {
-  let pool_ref = pool.get_ref()
-  if @input.key_just_pressed(@window.KeyCode::Space) {
-    pool_ref.val.busy = !pool_ref.val.busy
-  }
-  if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
-    pool_ref.val.worker_count += 1
-  }
-  if @input.key_just_pressed(@window.KeyCode::ArrowDown) {
-    pool_ref.val.worker_count = max_int(pool_ref.val.worker_count - 1, 1)
-  }
+  pool.modify(fn(value) {
+    if @input.key_just_pressed(@window.KeyCode::Space) {
+      value.busy = !value.busy
+    }
+    if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
+      value.worker_count += 1
+    }
+    if @input.key_just_pressed(@window.KeyCode::ArrowDown) {
+      value.worker_count = max_int(value.worker_count - 1, 1)
+    }
+  })
 }
 
 ///|
@@ -152,25 +165,31 @@ fn simulate_pool(
   time : @app.Res[@time.Time[Unit]],
   pool : @app.ResMut[SimulatedPool],
 ) -> Unit {
-  let pool_ref = pool.get_ref()
-  if pool_ref.val.busy {
-    pool_ref.val.queued_jobs += (time.get().delta_secs() * 70.0F).to_int()
-    let drained = (time.get().delta_secs() *
-    float_from_int(pool_ref.val.worker_count) *
-    9.0F).to_int()
-    pool_ref.val.queued_jobs = max_int(pool_ref.val.queued_jobs - drained, 0)
-  } else {
-    pool_ref.val.queued_jobs = max_int(
-      pool_ref.val.queued_jobs - (time.get().delta_secs() * 30.0F).to_int(),
-      0,
-    )
-  }
-  pool_ref.val.print_timer += time.get().delta_secs()
-  if pool_ref.val.print_timer >= 1.0F {
-    pool_ref.val.print_timer -= 1.0F
-    println(
-      "sim-pool workers=\{pool_ref.val.worker_count} queued=\{pool_ref.val.queued_jobs} busy=\{pool_ref.val.busy}",
-    )
+  let message = pool.modify(fn(value) {
+    if value.busy {
+      value.queued_jobs += (time.get().delta_secs() * 70.0F).to_int()
+      let drained = (time.get().delta_secs() *
+      float_from_int(value.worker_count) *
+      9.0F).to_int()
+      value.queued_jobs = max_int(value.queued_jobs - drained, 0)
+    } else {
+      value.queued_jobs = max_int(
+        value.queued_jobs - (time.get().delta_secs() * 30.0F).to_int(),
+        0,
+      )
+    }
+    value.print_timer += time.get().delta_secs()
+    if value.print_timer >= 1.0F {
+      value.print_timer -= 1.0F
+      Some(
+        "sim-pool workers=\{value.worker_count} queued=\{value.queued_jobs} busy=\{value.busy}",
+      )
+    } else {
+      None
+    }
+  })
+  if message is Some(message) {
+    println(message)
   }
 }
 
@@ -187,11 +206,12 @@ fn animate_cubes(
   let t = time.get().elapsed_secs()
   try! cubes.for_each(fn(_entity, data) {
     let (worker, transform) = data
-    let transform_ref = transform.get_ref()
     let phase = worker.value().phase
-    transform_ref.val.translation.y = 0.45F +
-      @math.sin(t * 2.0F + phase) * (0.2F + load * 1.2F)
-    transform_ref.val.rotation = @math.Quat::from_rotation_y(t * 0.6F + phase)
+    transform.modify(fn(value) {
+      value.translation.y = 0.45F +
+        @math.sin(t * 2.0F + phase) * (0.2F + load * 1.2F)
+      value.rotation = @math.Quat::from_rotation_y(t * 0.6F + phase)
+    })
   })
 }
 

@@ -145,12 +145,11 @@ fn update_camera_orders(
     guard (cameras.get(box.camera_entity) catch { _ => None }) is Some(camera) else {
       return
     }
-    let camera_ref = camera.get_ref()
-    let next_order = camera_ref.val.order + delta
-    camera_ref.val = camera_ref.val.with_order(next_order)
+    let next_order = camera.value().order + delta
+    camera.set(camera.value().with_order(next_order))
 
     if (texts.get(box.label_entity) catch { _ => None }) is Some(label_text) {
-      label_text.get_ref().val.content = next_order.to_string()
+      label_text.modify(fn(value) { value.content = next_order.to_string() })
     }
   })
 }

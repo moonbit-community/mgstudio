@@ -78,7 +78,9 @@ fn rotate_saved_texture(
 ) -> Unit {
   let t = time.get().elapsed_secs()
   try! sprites.for_each(fn(_entity, transform) {
-    transform.get_ref().val.rotation = @math.Quat::from_rotation_z(t * 0.35F)
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_z(t * 0.35F)
+    })
   })
 }
 

@@ -15,8 +15,8 @@
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/direct_access_ext.rs`.
 pub fn[T] asset_world_add(world : @ecs.World, asset : T) -> Handle[T] {
-  match (try! world.get_resource_ref_mut(assets_resource_key())) {
-    Some(assets) => assets.val.add(asset)
+  match (try! world.get_resource_mut(assets_resource_key())) {
+    Some(assets) => assets.modify(fn(value) { value.add(asset) })
     None =>
       abort(
         "Assets resource is missing; initialize the asset store before inserting through direct asset access",

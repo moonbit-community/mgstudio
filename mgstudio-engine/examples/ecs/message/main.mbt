@@ -25,7 +25,7 @@ struct ArmorBlockedDamage {} derive(Debug)
 
 ///|
 struct DamageTimer {
-  mut timer : @time.Timer
+  timer : @time.Timer
 } derive(Debug)
 
 ///|
@@ -104,9 +104,9 @@ fn deal_damage_over_time(
   state : @app.ResMut[DamageTimer],
   deal_damage_writer : @ecs.MessageWriter[DealDamage],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  state_ref.val.timer = state_ref.val.timer.tick(time.get().delta())
-  if state_ref.val.timer.is_finished() {
+  let next_timer = state.get().timer.tick(time.get().delta())
+  state.set(DamageTimer::{ timer: next_timer })
+  if next_timer.is_finished() {
     ignore(deal_damage_writer.write(DealDamage::{ amount: 10 }))
   }
 }
@@ -117,8 +117,8 @@ fn apply_armor_to_damage(
   armor_messages : @ecs.MessageWriter[ArmorBlockedDamage],
 ) -> Unit {
   for message in (try! dmg_messages.read()) {
-    message.val.amount = message.val.amount - 1
-    if message.val.amount <= 0 {
+    message.amount = message.amount - 1
+    if message.amount <= 0 {
       ignore(armor_messages.write(ArmorBlockedDamage::{  }))
     }
   }

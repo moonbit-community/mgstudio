@@ -18,7 +18,7 @@ const AUDIO_PATH : String = "sounds/Windless Slopes.ogg"
 ///|
 struct DecodableState {
   blob : @asset.Handle[@asset.Blob]
-  mut played : Bool
+  played : Bool
 }
 
 ///|
@@ -50,19 +50,19 @@ fn play_when_decoded(
   audio_sources : @app.ResMut[@audio.AudioSourceAssets],
   commands : @app.Commands,
 ) -> Unit {
-  let state_ref = state.get_ref()
-  if state_ref.val.played {
+  let state_value = state.get()
+  if state_value.played {
     return
   }
-  guard @audio.audio_source_from_blob(state_ref.val.blob) is Some(source) else {
+  guard @audio.audio_source_from_blob(state_value.blob) is Some(source) else {
     return
   }
-  let handle = audio_sources.get_ref().val.add(source)
+  let handle = audio_sources.peek().add(source)
   commands.spawn(
     (@audio.AudioPlayer::new(handle), @audio.PlaybackSettings::despawn()),
   )
   |> ignore
-  state_ref.val.played = true
+  state.set(DecodableState::{ ..state_value, played: true })
 }
 
 ///|

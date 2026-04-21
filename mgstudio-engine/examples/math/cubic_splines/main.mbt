@@ -47,12 +47,12 @@ struct ControlPoints {
 
 ///|
 struct MouseEditMove {
-  mut start : @math.Vec2?
+  start : @math.Vec2?
 }
 
 ///|
 struct MousePosition {
-  mut position : @math.Vec2?
+  position : @math.Vec2?
 }
 
 ///|
@@ -310,10 +310,8 @@ fn update_curve(
   cycling_mode : @app.Res[CyclingMode],
   curve : @app.ResMut[Curve],
 ) -> Unit {
-  curve.get_ref().val = form_curve(
-    control_points.get(),
-    spline_mode.get(),
-    cycling_mode.get(),
+  curve.set(
+    form_curve(control_points.get(), spline_mode.get(), cycling_mode.get()),
   )
 }
 
@@ -449,9 +447,8 @@ fn handle_mouse_move(
   cursor_moved_reader : @ecs.MessageReader[@window.CursorMoved],
   mouse_position : @app.ResMut[MousePosition],
 ) -> Unit {
-  let mouse_position_ref = mouse_position.get_ref()
   for event in (try! cursor_moved_reader.read()) {
-    mouse_position_ref.val.position = Some(event.position)
+    mouse_position.set(MousePosition::{ position: Some(event.position) })
   }
 }
 
@@ -463,24 +460,24 @@ fn handle_mouse_press(
   control_points : @app.ResMut[ControlPoints],
 ) -> Unit {
   guard mouse_position.get().position is Some(mouse_pos) else { return }
-  let edit_move_ref = edit_move.get_ref()
-  let control_points_ref = control_points.get_ref()
   for event in (try! mouse_button_input_reader.read()) {
     match event.button {
       Left =>
         match event.state {
           Pressed =>
-            if edit_move_ref.val.start is None {
-              edit_move_ref.val.start = Some(mouse_pos)
+            if edit_move.get().start is None {
+              edit_move.set(MouseEditMove::{ start: Some(mouse_pos) })
             }
           Released =>
-            if edit_move_ref.val.start is Some(start) {
+            if edit_move.get().start is Some(start) {
               if screen_to_world(start) is Some(point) {
                 if screen_to_world(mouse_pos) is Some(end_point) {
-                  control_points_ref.val.points_and_tangents.push(
-                    (point, end_point.sub(point)),
-                  )
-                  edit_move_ref.val.start = None
+                  control_points.modify(fn(value) {
+                    value.points_and_tangents.push(
+                      (point, end_point.sub(point)),
+                    )
+                  })
+                  edit_move.set(MouseEditMove::{ start: None })
                 }
               }
             }
@@ -518,18 +515,17 @@ fn handle_keypress(
   control_points : @app.ResMut[ControlPoints],
 ) -> Unit {
   if keyboard.just_pressed(KeyS) {
-    let spline_mode_ref = spline_mode.get_ref()
-    spline_mode_ref.val = next_spline_mode(spline_mode_ref.val)
+    spline_mode.set(next_spline_mode(spline_mode.get()))
   }
   if keyboard.just_pressed(KeyC) {
-    let cycling_mode_ref = cycling_mode.get_ref()
-    cycling_mode_ref.val = next_cycling_mode(cycling_mode_ref.val)
+    cycling_mode.set(next_cycling_mode(cycling_mode.get()))
   }
   if keyboard.just_pressed(KeyR) {
-    let control_points_ref = control_points.get_ref()
-    if control_points_ref.val.points_and_tangents.length() > 0 {
-      control_points_ref.val.points_and_tangents.pop() |> ignore
-    }
+    control_points.modify(fn(value) {
+      if value.points_and_tangents.length() > 0 {
+        value.points_and_tangents.pop() |> ignore
+      }
+    })
   }
 }
 

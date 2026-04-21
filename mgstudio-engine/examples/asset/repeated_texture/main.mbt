@@ -23,47 +23,53 @@ fn setup(
     .get()
     .load("textures/fantasy_ui_borders/panel-border-010.png")
 
-  let center_mesh = meshes.get_ref().val
+  let center_mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
-  let left_mesh = meshes.get_ref().val
+  let left_mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
-  let right_mesh = meshes.get_ref().val
+  let right_mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
 
-  let center_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::default().with_base_color_texture(
-      Some(image_with_default_sampler),
-    ),
-  )
-  let left_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::default()
-    .with_base_color_texture(
-      Some(
-        asset_server
-        .get()
-        .load_with_settings(
-          "textures/fantasy_ui_borders/panel-border-010-repeated.png",
-          fn(settings) {
-            settings.sampler = @asset.ImageSampler::Descriptor(
-              @asset.ImageSamplerDescriptor::default().set_address_mode(
-                @asset.ImageAddressMode::Repeat,
-              ),
-            )
-          },
-        ),
+  let center_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::default().with_base_color_texture(
+        Some(image_with_default_sampler),
       ),
     )
-    .with_uv_transform(
-      @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
-    ),
-  )
-  let right_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::default()
-    .with_base_color_texture(Some(image_with_default_sampler))
-    .with_uv_transform(
-      @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
-    ),
-  )
+  let left_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::default()
+      .with_base_color_texture(
+        Some(
+          asset_server
+          .get()
+          .load_with_settings(
+            "textures/fantasy_ui_borders/panel-border-010-repeated.png",
+            fn(settings) {
+              settings.sampler = @asset.ImageSampler::Descriptor(
+                @asset.ImageSamplerDescriptor::default().set_address_mode(
+                  @asset.ImageAddressMode::Repeat,
+                ),
+              )
+            },
+          ),
+        ),
+      )
+      .with_uv_transform(
+        @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
+      ),
+    )
+  let right_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::default()
+      .with_base_color_texture(Some(image_with_default_sampler))
+      .with_uv_transform(
+        @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
+      ),
+    )
 
   ignore(
     commands.spawn(

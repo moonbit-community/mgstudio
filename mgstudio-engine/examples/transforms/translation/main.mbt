@@ -45,11 +45,10 @@ fn setup(
     commands.spawn(
       (
         @pbr.Mesh3d::new(
-          meshes.get_ref().val
-          |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+          meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val |> @pbr.add_material(@sprite.Color::white()),
+          materials.peek() |> @pbr.add_material(@sprite.Color::white()),
         ),
         @transform.Transform::from_translation(entity_spawn),
         Movable::new(entity_spawn),
@@ -94,17 +93,19 @@ fn move_cube(
   let delta = time.get().delta_secs()
   try! cubes.view(fn(entity, data) {
     let (movable, transform) = data
-    let transform_ref = transform.get_ref()
     let next_movable = movable.value()
-    if movable.value().spawn.sub(transform_ref.val.translation).length() >
+    let current_transform = transform.value()
+    if movable.value().spawn.sub(current_transform.translation).length() >
       movable.value().max_distance {
       next_movable.speed = -next_movable.speed
     }
 
-    let direction = transform_ref.val.local_x()
-    transform_ref.val.translation = transform_ref.val.translation.add(
-      direction.mul_scalar(next_movable.speed * delta),
-    )
+    transform.modify(fn(value) {
+      let direction = value.local_x()
+      value.translation = value.translation.add(
+        direction.mul_scalar(next_movable.speed * delta),
+      )
+    })
     if next_movable.speed != movable.value().speed {
       commands.entity(entity).insert_component(next_movable)
     }

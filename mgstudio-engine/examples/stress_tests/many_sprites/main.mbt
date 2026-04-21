@@ -99,11 +99,12 @@ fn move_camera(
 ) -> Unit {
   let elapsed = time.get().elapsed_secs()
   try! camera.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = @math.Quat::from_rotation_z(elapsed * 0.5F)
-    transform_ref.val.translation = transform_ref.val.translation.add(
-      @math.Vec3::new(CAMERA_SPEED * time.get().delta_secs(), 0.0F, 0.0F),
-    )
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_z(elapsed * 0.5F)
+      value.translation = value.translation.add(
+        @math.Vec3::new(CAMERA_SPEED * time.get().delta_secs(), 0.0F, 0.0F),
+      )
+    })
   })
 }
 
@@ -113,12 +114,18 @@ fn print_sprite_count(
   stats : @app.ResMut[SpriteStats],
   sprites : @ecs.Query[@ecs.Comp[@sprite.Sprite], @ecs.All],
 ) -> Unit {
-  let stats_ref = stats.get_ref()
-  stats_ref.val.print_timer += time.get().delta_secs()
-  if stats_ref.val.print_timer < 1.0F {
+  let should_print = stats.modify(fn(value) {
+    value.print_timer += time.get().delta_secs()
+    if value.print_timer < 1.0F {
+      false
+    } else {
+      value.print_timer -= 1.0F
+      true
+    }
+  })
+  if !should_print {
     return
   }
-  stats_ref.val.print_timer -= 1.0F
   println("Sprites: \{sprites.count()}")
 }
 

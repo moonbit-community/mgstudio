@@ -40,11 +40,13 @@ fn cycle_modes(
   if !keyboard.just_pressed(@window.KeyCode::Space) {
     return
   }
-  mode.get_ref().val = match mode.get_ref().val {
-    Game => Application
-    Application => ApplicationWithRequestRedraw
-    ApplicationWithRequestRedraw => Game
-  }
+  mode.set(
+    match mode.peek() {
+      Game => Application
+      Application => ApplicationWithRequestRedraw
+      ApplicationWithRequestRedraw => Game
+    },
+  )
 }
 
 ///|
@@ -53,14 +55,16 @@ fn update_winit(
   settings : @app.ResMut[@winit.WinitSettings],
   redraw_request_writer : @ecs.MessageWriter[@window.RequestRedraw],
 ) -> Unit {
-  settings.get_ref().val = match mode.get() {
-    Game => @winit.WinitSettings::game()
-    Application => @winit.WinitSettings::desktop_app()
-    ApplicationWithRequestRedraw => {
-      ignore(redraw_request_writer.write(@window.RequestRedraw::{  }))
-      @winit.WinitSettings::desktop_app()
-    }
-  }
+  settings.set(
+    match mode.get() {
+      Game => @winit.WinitSettings::game()
+      Application => @winit.WinitSettings::desktop_app()
+      ApplicationWithRequestRedraw => {
+        ignore(redraw_request_writer.write(@window.RequestRedraw::{  }))
+        @winit.WinitSettings::desktop_app()
+      }
+    },
+  )
 }
 
 ///|

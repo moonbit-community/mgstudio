@@ -84,16 +84,17 @@ fn setup(commands : @app.Commands) -> Unit {
 
 ///|
 fn input(config : @app.ResMut[Config]) -> Unit {
-  let config_ref = config.get_ref()
-  if @input.key_just_pressed(@input_events.KeyCode::ArrowUp) {
-    config_ref.val.line_count += 10000
-  }
-  if @input.key_just_pressed(@input_events.KeyCode::ArrowDown) {
-    config_ref.val.line_count = max_int(config_ref.val.line_count - 10000, 0)
-  }
-  if @input.key_just_pressed(@input_events.KeyCode::Space) {
-    config_ref.val.fancy = !config_ref.val.fancy
-  }
+  config.modify(fn(value) {
+    if @input.key_just_pressed(@input_events.KeyCode::ArrowUp) {
+      value.line_count += 10000
+    }
+    if @input.key_just_pressed(@input_events.KeyCode::ArrowDown) {
+      value.line_count = max_int(value.line_count - 10000, 0)
+    }
+    if @input.key_just_pressed(@input_events.KeyCode::Space) {
+      value.fancy = !value.fancy
+    }
+  })
 }
 
 ///|

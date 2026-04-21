@@ -91,8 +91,8 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
   let cube = mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
 
   ignore(
@@ -154,7 +154,7 @@ fn animate_materials(
   if delta <= 0.0F {
     return
   }
-  let material_assets = materials.get_ref().val
+  let material_assets = materials.peek()
   try! material_handles.view(fn(_entity, material_handle) {
     let handle = material_handle.value().material
     if material_assets.get(handle) is Some(material) {

@@ -208,17 +208,19 @@ fn setup(
   commands.insert_resource(PanelDragState::default())
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let image_handle = images.get_ref().val.add(
-    @asset.Image::new_target_texture(
-      UI_TEXTURE_SIZE,
-      UI_TEXTURE_SIZE,
-      @asset.TextureFormat::Rgba8Unorm,
-      Some(@asset.TextureFormat::Rgba8UnormSrgb),
-    ),
-  )
-  let cube_mesh = meshes.get_ref().val
+  let image_handle = images
+    .peek()
+    .add(
+      @asset.Image::new_target_texture(
+        UI_TEXTURE_SIZE,
+        UI_TEXTURE_SIZE,
+        @asset.TextureFormat::Rgba8Unorm,
+        Some(@asset.TextureFormat::Rgba8UnormSrgb),
+      ),
+    )
+  let cube_mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE))
-  let cube_material = materials.get_ref().val
+  let cube_material = materials.peek()
     |> @pbr.add_material(
       @pbr.StandardMaterial::from_color(@sprite.Color::white())
       .with_base_color_texture(Some(image_handle))
@@ -295,7 +297,7 @@ fn setup(
       drag_state : @app.ResMut[PanelDragState],
     ) {
       ignore(pointer)
-      drag_state.get_ref().val.active = true
+      drag_state.modify(fn(value) { value.active = true })
     }),
   )
 
@@ -344,11 +346,15 @@ fn rotate_cube(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   cubes.view(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = transform_ref.val.rotation
-      .mul(@math.Quat::from_rotation_x(delta * ROTATION_SPEED))
-      .mul(@math.Quat::from_rotation_y(delta * ROTATION_SPEED * 0.7F))
-      .normalize()
+    let current = transform.value()
+    transform.set(
+      current.with_rotation(
+        current.rotation
+        .mul(@math.Quat::from_rotation_x(delta * ROTATION_SPEED))
+        .mul(@math.Quat::from_rotation_y(delta * ROTATION_SPEED * 0.7F))
+        .normalize(),
+      ),
+    )
   }) catch {
     _ => return
   }
@@ -427,7 +433,7 @@ fn drag_panel(
   panels : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[DraggablePanel]],
 ) -> Unit {
   guard pointer.pointer() == DIEGETIC_POINTER_ID else { return }
-  guard drag_state.get_ref().val.active else { return }
+  guard drag_state.get().active else { return }
   let panel_node = panels.single() catch { _ => None }
   guard panel_node is Some(panel_node) else { return }
   panel_node.set(
@@ -444,7 +450,7 @@ fn stop_drag_panel(
   drag_state : @app.ResMut[PanelDragState],
 ) -> Unit {
   guard pointer.pointer() == DIEGETIC_POINTER_ID else { return }
-  drag_state.get_ref().val.active = false
+  drag_state.modify(fn(value) { value.active = false })
 }
 
 ///|

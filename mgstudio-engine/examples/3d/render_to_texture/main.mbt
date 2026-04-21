@@ -48,16 +48,18 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   images : @app.ResMut[@asset.Assets[@asset.Image]],
 ) -> Unit {
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
-  let image = images.get_ref().val.add(
-    @asset.Image::new_target_texture(
-      512,
-      512,
-      @asset.TextureFormat::Rgba8Unorm,
-      Some(@asset.TextureFormat::Rgba8UnormSrgb),
-    ),
-  )
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
+  let image = images
+    .peek()
+    .add(
+      @asset.Image::new_target_texture(
+        512,
+        512,
+        @asset.TextureFormat::Rgba8Unorm,
+        Some(@asset.TextureFormat::Rgba8UnormSrgb),
+      ),
+    )
   let first_pass_layer = @sprite.RenderLayers::layer(1)
   let cube_handle = mesh_assets
     |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 4.0F, 4.0F))
@@ -144,11 +146,15 @@ fn rotator_system(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = transform_ref.val.rotation
-      .mul(@math.Quat::from_rotation_x(1.5F * delta))
-      .mul(@math.Quat::from_rotation_z(1.3F * delta))
-      .normalize()
+    let current = transform.value()
+    transform.set(
+      current.with_rotation(
+        current.rotation
+        .mul(@math.Quat::from_rotation_x(1.5F * delta))
+        .mul(@math.Quat::from_rotation_z(1.3F * delta))
+        .normalize(),
+      ),
+    )
   })
 }
 
@@ -159,11 +165,15 @@ fn cube_rotator_system(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = transform_ref.val.rotation
-      .mul(@math.Quat::from_rotation_x(1.0F * delta))
-      .mul(@math.Quat::from_rotation_y(0.7F * delta))
-      .normalize()
+    let current = transform.value()
+    transform.set(
+      current.with_rotation(
+        current.rotation
+        .mul(@math.Quat::from_rotation_x(1.0F * delta))
+        .mul(@math.Quat::from_rotation_y(0.7F * delta))
+        .normalize(),
+      ),
+    )
   })
 }
 

@@ -6,6 +6,10 @@ import {
   "tonyfettes/any",
 }
 
+import {
+  "moonbitlang/core/bench",
+} for "test"
+
 options(
   "native-stub": [ "raw_table_stub.c" ],
   targets: {

@@ -162,7 +162,7 @@ fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit 
   commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
   |> ignore
 
-  let families = dedup_sorted_families(font_cx.get_ref().val.family_names())
+  let families = dedup_sorted_families(font_cx.peek().family_names())
   let root = commands.spawn(
     (
       @ui.UiRoot::default(),

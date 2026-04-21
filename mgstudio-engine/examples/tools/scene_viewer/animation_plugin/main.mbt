@@ -84,12 +84,14 @@ fn rotate_preview(
   let t = time.get().elapsed_secs()
   try! previews.for_each(fn(_entity, data) {
     let (spin, transform) = data
-    transform.get_ref().val.rotation = @math.Quat::from_euler(
-      @math.EulerRot::ZYX,
-      0.0F,
-      t * spin.value().speed,
-      t * spin.value().speed * 0.35F,
-    )
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_euler(
+        @math.EulerRot::ZYX,
+        0.0F,
+        t * spin.value().speed,
+        t * spin.value().speed * 0.35F,
+      )
+    })
   })
 }
 

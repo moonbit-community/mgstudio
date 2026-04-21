@@ -35,14 +35,18 @@ fn spawn_panel(
   let panel = commands.spawn(
     (
       @sprite.Mesh2d::new(
-        meshes.get_ref().val.add(
+        meshes
+        .peek()
+        .add(
           @sprite.mesh2d_geometry_rectangle(
             @sprite.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
           ).to_mesh(),
         ),
       ),
       @sprite.MeshMaterial2d::new(
-        materials.get_ref().val.add(
+        materials
+        .peek()
+        .add(
           @sprite.ColorMaterialAsset::from_image(texture).with_uv_scale(
             uv_scale,
           ),

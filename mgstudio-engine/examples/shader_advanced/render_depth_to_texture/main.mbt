@@ -36,14 +36,16 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let offscreen_layer = @sprite.RenderLayers::layer(1)
-  let render_target = images.get_ref().val.add(
-    @asset.Image::new_target_texture(
-      768,
-      768,
-      @asset.TextureFormat::Rgba8Unorm,
-      Some(@asset.TextureFormat::Rgba8UnormSrgb),
-    ),
-  )
+  let render_target = images
+    .peek()
+    .add(
+      @asset.Image::new_target_texture(
+        768,
+        768,
+        @asset.TextureFormat::Rgba8Unorm,
+        Some(@asset.TextureFormat::Rgba8UnormSrgb),
+      ),
+    )
 
   commands.spawn(
     (
@@ -59,11 +61,12 @@ fn setup(
   )
   |> ignore
 
-  let offscreen_mesh = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Sphere::new(1.1F))
-  let offscreen_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.85F, 0.92F, 1.0F)),
-  )
+  let offscreen_mesh = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(1.1F))
+  let offscreen_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.85F, 0.92F, 1.0F)),
+    )
   commands.spawn(
     (
       OffscreenObject::{  },
@@ -75,14 +78,16 @@ fn setup(
   )
   |> ignore
 
-  let preview_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
-  )
-  let preview_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
-      Some(render_target),
-    ),
-  )
+  let preview_mesh = meshes
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)))
+  let preview_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
+        Some(render_target),
+      ),
+    )
   commands.spawn(
     (
       @pbr.Mesh3d::new(preview_mesh),
@@ -120,8 +125,10 @@ fn spin_offscreen_object(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.get_ref().val.rotate_y(delta * 0.8F)
-    transform.get_ref().val.rotate_z(delta * 0.5F)
+    transform.modify(fn(value) {
+      value.rotate_y(delta * 0.8F)
+      value.rotate_z(delta * 0.5F)
+    })
   })
 }
 

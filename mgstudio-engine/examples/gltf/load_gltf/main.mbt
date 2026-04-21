@@ -88,12 +88,14 @@ fn animate_light_direction(
 ) -> Unit {
   let elapsed = time.get().elapsed_secs()
   try! lights.view(fn(_entity, transform) {
-    transform.get_ref().val.rotation = @math.Quat::from_euler(
-      @math.EulerRot::ZYX,
-      0.0F,
-      elapsed * PI / 5.0F,
-      -FRAC_PI_4,
-    )
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_euler(
+        @math.EulerRot::ZYX,
+        0.0F,
+        elapsed * PI / 5.0F,
+        -FRAC_PI_4,
+      )
+    })
   })
 }
 

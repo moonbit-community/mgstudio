@@ -84,7 +84,7 @@ fn MovementSystemParam::integrate(self : MovementSystemParam) -> Int {
   let moved : Ref[Int] = Ref::new(0)
   try! self.query.view(fn(_entity, data) {
     let (position, velocity) = data
-    position.get_ref().val.x = position.get_ref().val.x + velocity.value().dx
+    position.modify(fn(value) { value.x = value.x + velocity.value().dx })
     moved.val = moved.val + 1
   })
   moved.val

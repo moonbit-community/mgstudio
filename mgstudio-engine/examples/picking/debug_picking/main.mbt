@@ -60,8 +60,8 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
 
   ignore(
     commands.spawn(
@@ -133,7 +133,7 @@ fn setup(
 ///|
 fn update_debug_mode(state : @app.ResMut[DebugPickingState]) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::F3) {
-    state.get_ref().val.mode = state.get_ref().val.mode.next()
+    state.modify(fn(value) { value.mode = value.mode.next() })
   }
 }
 
@@ -142,12 +142,12 @@ fn on_pointer_move(
   pointer : @app.OnPointer[@app.PointerMove],
   state : @app.ResMut[DebugPickingState],
 ) -> Unit {
-  if state.get_ref().val.mode is DebugPickingMode::Noisy {
+  if state.peek().mode is DebugPickingMode::Noisy {
     let target_text = match pointer.target() {
       Some(entity) => entity.id.to_string()
       None => "none"
     }
-    state.get_ref().val.last_event = "move target=\{target_text}"
+    state.modify(fn(value) { value.last_event = "move target=\{target_text}" })
   }
 }
 
@@ -156,14 +156,14 @@ fn on_pointer_click(
   pointer : @app.OnPointer[@app.PointerClick],
   state : @app.ResMut[DebugPickingState],
 ) -> Unit {
-  if state.get_ref().val.mode is DebugPickingMode::Disabled {
+  if state.peek().mode is DebugPickingMode::Disabled {
     return
   }
   let target_text = match pointer.target() {
     Some(entity) => entity.id.to_string()
     None => "none"
   }
-  state.get_ref().val.last_event = "click target=\{target_text}"
+  state.modify(fn(value) { value.last_event = "click target=\{target_text}" })
 }
 
 ///|
@@ -173,8 +173,10 @@ fn refresh_overlay(
 ) -> Unit {
   let text = texts.get(state.get().label_entity) catch { _ => None }
   if text is Some(text) {
-    text.get_ref().val = @text.Text::new(
-      "Press F3 to cycle debug mode\nMode: \{debug_mode_name(state.get().mode)}\nLast event: \{state.get().last_event}",
+    text.set(
+      @text.Text::new(
+        "Press F3 to cycle debug mode\nMode: \{debug_mode_name(state.get().mode)}\nLast event: \{state.get().last_event}",
+      ),
     )
   }
 }

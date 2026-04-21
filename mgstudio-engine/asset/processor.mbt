@@ -127,7 +127,7 @@ pub fn[T] register_asset_processor(
       if (try! world.get_resource(key)) is None {
         world.insert_resource(key, Assets::new())
       }
-      let assets_ref = match (try! world.get_resource_ref_mut(key)) {
+      let assets = match (try! world.get_resource_mut(key)) {
         Some(value) => value
         None =>
           abort(
@@ -141,7 +141,9 @@ pub fn[T] register_asset_processor(
             "asset processor produced a mismatched asset value for \{type_name}",
           )
       }
-      ignore(assets_ref.val.insert(Handle::new(handle_id), value))
+      ignore(
+        assets.modify(fn(store) { store.insert(Handle::new(handle_id), value) }),
+      )
     },
   })
   asset_processor_registry.val.set(type_name, next_entries)

@@ -97,7 +97,7 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
 ///|
 fn render3d_refresh_sorted_cameras(
   source_world : @ecs.World,
-  sorted_cameras_ref : Ref[@render.SortedCameras],
+  sorted_cameras_ref : @ecs.ResourceMut[@render.SortedCameras],
 ) -> Unit {
   @render.sorted_cameras_replace_entities(
     sorted_cameras_ref,

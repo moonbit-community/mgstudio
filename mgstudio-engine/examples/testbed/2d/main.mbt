@@ -70,13 +70,14 @@ fn move_camera(
 ) -> Unit {
   let t = time.get().elapsed_secs()
   try! camera.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation = @math.Vec3::new(
-      @math.cos(t * 0.22F) * 360.0F,
-      @math.sin(t * 0.22F) * 220.0F,
-      0.0F,
-    )
-    transform_ref.val.rotation = @math.Quat::from_rotation_z(t * 0.08F)
+    transform.modify(fn(value) {
+      value.translation = @math.Vec3::new(
+        @math.cos(t * 0.22F) * 360.0F,
+        @math.sin(t * 0.22F) * 220.0F,
+        0.0F,
+      )
+      value.rotation = @math.Quat::from_rotation_z(t * 0.08F)
+    })
   })
 }
 

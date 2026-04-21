@@ -238,11 +238,12 @@ fn move_camera(
 ) -> Unit {
   let dt = time.get().delta_secs()
   try! camera.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotate_z(dt * 0.5F)
-    transform_ref.val.translation = transform_ref.val.translation.add(
-      transform_ref.val.local_x().mul_scalar(CAMERA_SPEED * dt),
-    )
+    transform.modify(fn(value) {
+      value.rotate_z(dt * 0.5F)
+      value.translation = value.translation.add(
+        value.local_x().mul_scalar(CAMERA_SPEED * dt),
+      )
+    })
   })
 }
 
@@ -261,12 +262,18 @@ fn print_counts(
   ],
   atlas_set : @app.Res[@text.FontAtlasSet],
 ) -> Unit {
-  let stats_ref = stats.get_ref()
-  stats_ref.val.print_timer += time.get().delta_secs()
-  if stats_ref.val.print_timer < 1.0F {
+  let should_print = stats.modify(fn(value) {
+    value.print_timer += time.get().delta_secs()
+    if value.print_timer < 1.0F {
+      false
+    } else {
+      value.print_timer -= 1.0F
+      true
+    }
+  })
+  if !should_print {
     return
   }
-  stats_ref.val.print_timer -= 1.0F
   let mut atlas_count = 0
   for entry in atlas_set.get().entries {
     atlas_count += entry.atlases.length()

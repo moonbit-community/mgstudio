@@ -348,12 +348,10 @@ fn bounce_spheres(
   let elapsed = time.get().elapsed_secs()
   try! query.view(fn(_entity, data) {
     let (_bouncing, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.y = @math.sin(
-      transform_ref.val.translation.x +
-      transform_ref.val.translation.z +
-      elapsed,
-    )
+    let current = transform.value().translation
+    transform.modify(fn(value) {
+      value.translation.y = @math.sin(current.x + current.z + elapsed)
+    })
   })
 }
 

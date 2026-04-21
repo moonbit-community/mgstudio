@@ -439,8 +439,7 @@ fn World::insert_component_with_requirements(
     _ => {}
   }
   let previous_pending_context = self.push_pending_component_payload_context(
-    entity,
-    pending_payloads,
+    entity, pending_payloads,
   )
   self.insert_component_with_requirements_unchecked(
     entity,
@@ -451,7 +450,9 @@ fn World::insert_component_with_requirements(
     caller~,
   )
   if structural_changed_ref.val {
-    self.refresh_entity_archetype_with_pending_payloads(entity, pending_payloads)
+    self.refresh_entity_archetype_with_pending_payloads(
+      entity, pending_payloads,
+    )
     self.mark_structure_changed()
   }
   self.restore_pending_component_payload_context(previous_pending_context)
@@ -471,30 +472,29 @@ fn World::insert_component_with_requirements_unchecked(
   let component_local_id = self.ensure_component_registered(
     component_definition_id,
   )
-  let replacing = self.component_payload(component_definition_id, entity) is Some(_)
+  let replacing = self.component_payload(component_definition_id, entity)
+    is Some(_)
   if replacing {
     self.run_component_replace_hooks(entity, component_definition_id, caller~)
     self.run_replace_observers(entity, component_definition_id)
   }
   if replacing {
-    ignore(self.replace_component_payload(component_definition_id, entity, payload))
+    ignore(
+      self.replace_component_payload(component_definition_id, entity, payload),
+    )
   } else {
     pending_payloads.set(component_local_id, payload)
   }
   self.mark_component_used(component_local_id)
   self.record_component_changed_with_caller(
-    entity,
-    component_definition_id,
-    caller,
+    entity, component_definition_id, caller,
   )
 
   if !replacing {
     self.entity_add_component_local_id(entity, component_local_id)
     structural_changed_ref.val = true
     self.record_component_added_with_caller(
-      entity,
-      component_definition_id,
-      caller,
+      entity, component_definition_id, caller,
     )
     self.ensure_added_component_messages(component_definition_id).val.send(
       component_write_sequence(self),

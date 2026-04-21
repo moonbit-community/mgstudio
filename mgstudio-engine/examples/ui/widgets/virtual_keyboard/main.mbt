@@ -182,10 +182,11 @@ fn keyboard_input_system(
     let (key_cap, interaction, was_pressed, background) = data
     let pressed = interaction.value() == @ui.Interaction::Pressed
     if pressed && !was_pressed.value().down {
-      buffer.get_ref().val.value = buffer.get_ref().val.value +
-        key_cap.value().value
+      buffer.modify(fn(value) {
+        value.value = value.value + key_cap.value().value
+      })
     }
-    was_pressed.get_ref().val.down = pressed
+    was_pressed.modify(fn(value) { value.down = pressed })
     background.set(
       @ui.BackgroundColor::new(
         if pressed {

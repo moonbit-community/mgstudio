@@ -89,11 +89,11 @@ pub fn[C] gpu_component_array_buffer_state_key(
 fn[C] gpu_component_array_buffer_state_ref(
   world : @ecs.World,
   state_key : @ecs.ResourceKey[GpuComponentArrayBufferState[C]],
-) -> Ref[GpuComponentArrayBufferState[C]] {
+) -> @ecs.ResourceMut[GpuComponentArrayBufferState[C]] {
   if (try! world.get_resource(state_key)) is None {
     world.insert_resource(state_key, GpuComponentArrayBufferState::new())
   }
-  match (try! world.get_resource_ref_mut(state_key)) {
+  match (try! world.get_resource_mut(state_key)) {
     Some(state_ref) => state_ref
     None => abort("Missing GpuComponentArrayBufferState resource")
   }
@@ -113,15 +113,16 @@ pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(
   component_key? : @ecs.ComponentKey[C] = C::component(),
 ) -> Unit {
   let state_ref = gpu_component_array_buffer_state_ref(world, state_key)
-  state_ref.val.clear()
-  world.for_each_component(component_key, fn(entity, component) {
-    let index = state_ref.val.buffer.len().reinterpret_as_uint()
-    state_ref.val.buffer.push(component)
-    state_ref.val.indices.set(
-      gpu_component_array_buffer_entity_key(entity),
-      index,
-    )
-  })
+  ignore(
+    state_ref.modify(fn(state) {
+      state.clear()
+      world.for_each_component(component_key, fn(entity, component) {
+        let index = state.buffer.len().reinterpret_as_uint()
+        state.buffer.push(component)
+        state.indices.set(gpu_component_array_buffer_entity_key(entity), index)
+      })
+    }),
+  )
 }
 
 ///|

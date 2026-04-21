@@ -50,8 +50,8 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
 
   let plane_mesh = mesh_assets
     |> @pbr.add_mesh(@pbr.mesh3d_geometry_plane(26.0F, 10.0F))
@@ -136,10 +136,11 @@ fn rotate(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    let value = transform.get_ref()
-    value.val.rotation = value.val.rotation
-      .mul(@math.Quat::from_rotation_y(delta * 0.8F))
-      .normalize()
+    transform.modify(fn(value) {
+      value.rotation = value.rotation
+        .mul(@math.Quat::from_rotation_y(delta * 0.8F))
+        .normalize()
+    })
   })
 }
 

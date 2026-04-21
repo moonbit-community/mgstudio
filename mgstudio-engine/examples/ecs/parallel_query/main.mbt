@@ -77,14 +77,15 @@ fn move_system(
   .par_iter()
   .for_each(fn(_entity, data) {
     let (velocity, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation = transform_ref.val.translation.add(
-      @math.Vec3::new(
-        velocity.value().vector.x,
-        velocity.value().vector.y,
-        0.0F,
-      ),
-    )
+    transform.modify(fn(value) {
+      value.translation = value.translation.add(
+        @math.Vec3::new(
+          velocity.value().vector.x,
+          velocity.value().vector.y,
+          0.0F,
+        ),
+      )
+    })
   })
 }
 
@@ -119,8 +120,9 @@ fn bounce_system(
       translation.x < right &&
       bottom < translation.y &&
       translation.y < top) {
-      let velocity_ref = velocity.get_ref()
-      velocity_ref.val.vector = velocity_ref.val.vector.mul_scalar(-1.0F)
+      velocity.modify(fn(value) {
+        value.vector = value.vector.mul_scalar(-1.0F)
+      })
     }
   })
 }

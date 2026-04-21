@@ -81,14 +81,13 @@ fn animate(
   let t = time.get().elapsed_secs()
   try! items.for_each(fn(_entity, data) {
     let (wiggle, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.x += @math.sin(t + wiggle.value().phase) *
-      0.7F
-    transform_ref.val.translation.y += @math.cos(t + wiggle.value().phase) *
-      0.7F
-    transform_ref.val.rotation = @math.Quat::from_rotation_z(
-      t * 0.4F + wiggle.value().phase,
-    )
+    transform.modify(fn(value) {
+      value.translation.x += @math.sin(t + wiggle.value().phase) * 0.7F
+      value.translation.y += @math.cos(t + wiggle.value().phase) * 0.7F
+      value.rotation = @math.Quat::from_rotation_z(
+        t * 0.4F + wiggle.value().phase,
+      )
+    })
   })
 }
 

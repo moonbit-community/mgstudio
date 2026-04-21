@@ -77,9 +77,9 @@ fn[T] register_asset_event_dispatch(
     if !world.contains_message(message_key) {
       world.init_message(message_key)
     }
-    match (try! world.get_resource_ref_mut(key)) {
-      Some(assets_ref) => {
-        let events = assets_ref.val.drain_events()
+    match (try! world.get_resource_mut(key)) {
+      Some(assets) => {
+        let events = assets.modify(fn(value) { value.drain_events() })
         for event in events {
           ignore(world.send_message(message_key, event))
         }

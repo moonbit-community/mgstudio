@@ -356,11 +356,12 @@ fn setup_scene_once_loaded(
         is Some(player_mut) else {
         return
       }
-      let player_ref = player_mut.get_ref()
-      let active = player_ref.val.play(animation_node).repeat()
-      if !sync {
-        active.seek_to(float_from_int(scene_entity.id) / 10.0F) |> ignore
-      }
+      player_mut.modify(fn(player) {
+        let active = player.play(animation_node).repeat()
+        if !sync {
+          active.seek_to(float_from_int(scene_entity.id) / 10.0F) |> ignore
+        }
+      })
       try! (world
       .entity_mut(descendant)
       .insert(
@@ -387,7 +388,6 @@ fn keyboard_animation_control(
   animations : @app.Res[FoxAnimations],
   current_animation : @app.Local[Int],
 ) -> Unit {
-  let foxes_ref = foxes.get_ref()
   let space = @input.key_just_pressed(@input_events.KeyCode::Space)
   let up = @input.key_just_pressed(@input_events.KeyCode::ArrowUp)
   let down = @input.key_just_pressed(@input_events.KeyCode::ArrowDown)
@@ -395,14 +395,18 @@ fn keyboard_animation_control(
   let right = @input.key_just_pressed(@input_events.KeyCode::ArrowRight)
   let enter = @input.key_just_pressed(@input_events.KeyCode::Enter)
 
-  if space {
-    foxes_ref.val.moving = !foxes_ref.val.moving
-  }
-  if up {
-    foxes_ref.val.speed *= 1.25F
-  }
-  if down {
-    foxes_ref.val.speed *= 0.8F
+  if space || up || down {
+    foxes.modify(fn(value) {
+      if space {
+        value.moving = !value.moving
+      }
+      if up {
+        value.speed *= 1.25F
+      }
+      if down {
+        value.speed *= 0.8F
+      }
+    })
   }
   let next_animation_index = if enter {
     let next_index = (current_animation.get() + 1) %
@@ -414,35 +418,35 @@ fn keyboard_animation_control(
   }
   try! players.for_each(fn(_entity, data) {
     let (player_mut, transitions_mut) = data
-    let player_ref = player_mut.get_ref()
-    let transitions_ref = transitions_mut.get_ref()
-    if space {
-      if player_ref.val.all_paused() {
-        player_ref.val.resume_all() |> ignore
-      } else {
-        player_ref.val.pause_all() |> ignore
+    player_mut.modify(fn(player) {
+      if space {
+        if player.all_paused() {
+          player.resume_all() |> ignore
+        } else {
+          player.pause_all() |> ignore
+        }
       }
-    }
-    if up {
-      player_ref.val.adjust_speeds(1.25F) |> ignore
-    }
-    if down {
-      player_ref.val.adjust_speeds(0.8F) |> ignore
-    }
-    if left {
-      player_ref.val.seek_all_by(-0.1F) |> ignore
-    }
-    if right {
-      player_ref.val.seek_all_by(0.1F) |> ignore
-    }
-    match next_animation_index {
-      Some(next_index) =>
-        transitions_ref.val
-        .play(player_ref.val, animations.get().node_indices[next_index], 0.25F)
-        .repeat()
-        |> ignore
-      None => ()
-    }
+      if up {
+        player.adjust_speeds(1.25F) |> ignore
+      }
+      if down {
+        player.adjust_speeds(0.8F) |> ignore
+      }
+      if left {
+        player.seek_all_by(-0.1F) |> ignore
+      }
+      if right {
+        player.seek_all_by(0.1F) |> ignore
+      }
+      if next_animation_index is Some(next_index) {
+        transitions_mut.modify(fn(transitions) {
+          transitions
+          .play(player, animations.get().node_indices[next_index], 0.25F)
+          .repeat()
+          |> ignore
+        })
+      }
+    })
   })
 }
 
@@ -465,9 +469,10 @@ fn update_fox_rings(
   let dt = time.get().delta_secs()
   try! motions.for_each(fn(_entity, data) {
     let (ring, direction, transform) = data
-    let transform_ref = transform.get_ref()
     let angular_velocity = foxes.get().speed / ring.value().radius
-    transform_ref.val.rotate_y(direction.value().sign * angular_velocity * dt)
+    transform.modify(fn(value) {
+      value.rotate_y(direction.value().sign * angular_velocity * dt)
+    })
   })
 }
 

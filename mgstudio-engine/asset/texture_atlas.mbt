@@ -438,14 +438,16 @@ pub fn TextureAtlasBuilder::add_texture(
 }
 
 ///|
-fn texture_atlas_layout_assets_mut_or_abort() -> Ref[Assets[TextureAtlasLayout]] {
+fn texture_atlas_layout_assets_mut_or_abort() -> @ecs.ResourceMut[
+  Assets[TextureAtlasLayout],
+] {
   let key : @ecs.ResourceKey[Assets[TextureAtlasLayout]] = registered_assets_resource_key()
   match asset_current_world() {
     Some(world) => {
-      if (try! world.get_resource_ref_mut(key)) is None {
+      if (try! world.get_resource_mut(key)) is None {
         world.insert_resource(key, Assets::new())
       }
-      match (try! world.get_resource_ref_mut(key)) {
+      match (try! world.get_resource_mut(key)) {
         Some(assets) => assets
         None =>
           abort(
@@ -465,7 +467,7 @@ fn texture_atlas_layout_assets_or_abort() -> Assets[TextureAtlasLayout] {
   let key : @ecs.ResourceKey[Assets[TextureAtlasLayout]] = registered_assets_resource_key()
   match asset_current_world() {
     Some(world) => {
-      if (try! world.get_resource_ref_mut(key)) is None {
+      if (try! world.get_resource(key)) is None {
         world.insert_resource(key, Assets::new())
       }
       match (try! world.get_resource(key)) {
@@ -487,7 +489,9 @@ fn texture_atlas_layout_assets_or_abort() -> Assets[TextureAtlasLayout] {
 pub fn asset_add_texture_atlas_layout(
   layout : TextureAtlasLayout,
 ) -> Handle[TextureAtlasLayout] {
-  texture_atlas_layout_assets_mut_or_abort().val.add(layout)
+  texture_atlas_layout_assets_mut_or_abort().modify(fn(assets) {
+    assets.add(layout)
+  })
 }
 
 ///|
@@ -502,7 +506,9 @@ pub fn asset_set_texture_atlas_layout(
   handle : Handle[TextureAtlasLayout],
   layout : TextureAtlasLayout,
 ) -> Bool {
-  texture_atlas_layout_assets_mut_or_abort().val.set(handle, layout)
+  texture_atlas_layout_assets_mut_or_abort().modify(fn(assets) {
+    assets.set(handle, layout)
+  })
 }
 
 ///|

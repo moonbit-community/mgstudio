@@ -364,9 +364,10 @@ test "ecs query: query1 view and for_each" {
 
   let write_query : Query[Mut[Position], All] = query(world)
   try! write_query.view(fn(_entity, position) {
-    let position = position.get_ref()
-    position.val.x = position.val.x + 10
-    position.val.y = position.val.y + 20
+    position.modify(fn(value) {
+      value.x = value.x + 10
+      value.y = value.y + 20
+    })
   })
 
   debug_inspect(
@@ -463,12 +464,15 @@ test "ecs query: query2 view intersection and for_each" {
   let write_query : Query[(Mut[Position], Mut[Velocity]), All] = query(world)
   try! write_query.view(fn(_entity, data) {
     let (p, v) = data
-    let p = p.get_ref()
-    let v = v.get_ref()
-    p.val.x = p.val.x + v.val.dx
-    p.val.y = p.val.y + v.val.dy
-    v.val.dx = v.val.dx + 1
-    v.val.dy = v.val.dy + 1
+    p.modify(fn(position) {
+      let velocity = v.peek()
+      position.x = position.x + velocity.dx
+      position.y = position.y + velocity.dy
+    })
+    v.modify(fn(velocity) {
+      velocity.dx = velocity.dx + 1
+      velocity.dy = velocity.dy + 1
+    })
   })
 
   debug_inspect(
@@ -532,15 +536,18 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
   ] = query(world)
   try! write_query.view(fn(_entity, data) {
     let (p, v, a) = data
-    let p = p.get_ref()
-    let v = v.get_ref()
-    let a = a.get_ref()
-    p.val.x = p.val.x + 100
-    p.val.y = p.val.y + 100
-    v.val.dx = v.val.dx + 10
-    v.val.dy = v.val.dy + 10
-    a.val.ax = a.val.ax + 1
-    a.val.ay = a.val.ay + 1
+    p.modify(fn(position) {
+      position.x = position.x + 100
+      position.y = position.y + 100
+    })
+    v.modify(fn(velocity) {
+      velocity.dx = velocity.dx + 10
+      velocity.dy = velocity.dy + 10
+    })
+    a.modify(fn(acceleration) {
+      acceleration.ax = acceleration.ax + 1
+      acceleration.ay = acceleration.ay + 1
+    })
   })
   debug_inspect(
     try! world.get_by_key(e2, comp_position),
@@ -1582,10 +1589,12 @@ test "ecs query: iter_combinations supports mut query data across distinct entit
     if (try! combinations.fetch_next()) is Some((left, right)) {
       let (left_position, left_velocity) = left
       let (right_position, right_velocity) = right
-      let left_ref = left_position.get_ref()
-      let right_ref = right_position.get_ref()
-      left_ref.val.x = left_ref.val.x + right_velocity.value().dx
-      right_ref.val.x = right_ref.val.x + left_velocity.value().dx
+      left_position.modify(fn(position) {
+        position.x = position.x + right_velocity.value().dx
+      })
+      right_position.modify(fn(position) {
+        position.x = position.x + left_velocity.value().dx
+      })
     } else {
       break
     }

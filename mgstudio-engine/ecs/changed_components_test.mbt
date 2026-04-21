@@ -88,7 +88,7 @@ test "ecs changed components: Mut::set emits changed event" {
 }
 
 ///|
-test "ecs changed components: Mut::get_ref marks changed on mutable borrow" {
+test "ecs changed components: Mut::modify marks changed on explicit mutation" {
   let world = World::new()
   let entity = world.spawn()
 
@@ -100,7 +100,7 @@ test "ecs changed components: Mut::get_ref marks changed on mutable borrow" {
     Some(item) => item
     None => abort("expected mutable component")
   }
-  item.get_ref().val.value = 11
+  item.modify(fn(value) { value.value = 11 })
 
   let changed = world
     .changed_components(changed_marker_key, @core.SystemSequence::new(1, 2))

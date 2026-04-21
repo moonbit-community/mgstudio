@@ -87,12 +87,13 @@ fn animate_contributors(
     let (orbit, transform) = data
     let angle = orbit.value().base_angle + t * orbit.value().speed
     let wobble = 1.0F + 0.07F * @math.sin(t * 2.0F + orbit.value().base_angle)
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation = @math.Vec3::new(
-      @math.cos(angle) * orbit.value().radius * wobble,
-      @math.sin(angle) * orbit.value().radius * wobble,
-      0.0F,
-    )
+    transform.modify(fn(value) {
+      value.translation = @math.Vec3::new(
+        @math.cos(angle) * orbit.value().radius * wobble,
+        @math.sin(angle) * orbit.value().radius * wobble,
+        0.0F,
+      )
+    })
   })
 }
 

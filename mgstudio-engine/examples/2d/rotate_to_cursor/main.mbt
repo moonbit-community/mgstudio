@@ -138,13 +138,15 @@ fn player_movement_system(
   }
 
   try! players.view(fn(_entity, player) {
-    let player_ref = player.get_ref()
-    player_ref.val.rotation = @math.Quat::from_rotation_z(
-      @math.Vec2::new(
-        cursor_world_pos.x - player_ref.val.translation.x,
-        cursor_world_pos.y - player_ref.val.translation.y,
-      ).to_angle() -
-      @math.pi_half(),
-    )
+    let current = player.value()
+    player.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_z(
+        @math.Vec2::new(
+          cursor_world_pos.x - current.translation.x,
+          cursor_world_pos.y - current.translation.y,
+        ).to_angle() -
+        @math.pi_half(),
+      )
+    })
   })
 }

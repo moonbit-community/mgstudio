@@ -153,8 +153,8 @@ fn relative_cursor_position_system(
 
   try! outputs.view(fn(_entity, data) {
     let (_readout, text, text_color) = data
-    text.get_ref().val.content = content
-    text_color.get_ref().val.color = color
+    text.modify(fn(value) { value.content = content })
+    text_color.modify(fn(value) { value.color = color })
   })
 }
 

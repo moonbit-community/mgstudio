@@ -277,8 +277,8 @@ fn entity_sync_system(
   }
 
   let records = match
-    (try! main_world.get_resource_ref_mut(PendingSyncEntity::resource())) {
-    Some(pending_ref) => pending_ref.val.drain()
+    (try! main_world.get_resource_mut(PendingSyncEntity::resource())) {
+    Some(pending_ref) => pending_ref.modify(fn(value) { value.drain() })
     None => []
   }
   for record in records {

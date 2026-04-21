@@ -34,13 +34,16 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let sphere_mesh = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Sphere::new(1.0F))
-  let material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.92F, 0.25F, 0.25F))
-    .with_reflectance(0.4F)
-    .with_perceptual_roughness(0.35F),
-  )
+  let sphere_mesh = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(1.0F))
+  let material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.92F, 0.25F, 0.25F),
+      )
+      .with_reflectance(0.4F)
+      .with_perceptual_roughness(0.35F),
+    )
 
   commands.spawn(
     (
@@ -84,7 +87,7 @@ fn rotate_light(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.get_ref().val.rotate_y(delta)
+    transform.modify(fn(value) { value.rotate_y(delta) })
   })
 }
 

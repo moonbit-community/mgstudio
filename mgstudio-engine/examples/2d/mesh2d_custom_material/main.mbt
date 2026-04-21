@@ -126,7 +126,9 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let mesh = @sprite.Mesh2d::new(
-    @sprite.mesh_assets_mut_or_abort().val.add(
+    @sprite.mesh_assets_mut_or_abort()
+    .peek()
+    .add(
       @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(180.0F, 180.0F)).to_mesh(),
     ),
   )

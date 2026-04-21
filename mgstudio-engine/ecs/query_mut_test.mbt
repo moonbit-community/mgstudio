@@ -119,7 +119,7 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
   let seen_visible : Array[Int] = []
   try! visible_query.view(fn(entity, position_mut) {
     seen_visible.push(entity.id)
-    position_mut.get_ref().val.x = position_mut.get_ref().val.x + 10
+    position_mut.modify(fn(value) { value.x = value.x + 10 })
   })
 
   let disabled_query : Query[Mut[MutQueryPosition], With[Disabled]] = query_filtered(
@@ -129,7 +129,7 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
   let seen_disabled : Array[Int] = []
   try! disabled_query.view(fn(entity, position_mut) {
     seen_disabled.push(entity.id)
-    position_mut.get_ref().val.x = position_mut.get_ref().val.x + 100
+    position_mut.modify(fn(value) { value.x = value.x + 100 })
   })
 
   debug_inspect(seen_visible, content="[0]")
@@ -145,7 +145,7 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
 }
 
 ///|
-test "ecs mut query: detect changes helpers support bypass and explicit marking" {
+test "ecs mut query: detect changes helpers support explicit mutation and marking" {
   let world = World::new()
   let entity = world.spawn()
 
@@ -175,9 +175,8 @@ test "ecs mut query: detect changes helpers support bypass and explicit marking"
   debug_inspect(second_position.is_added(), content="false")
   debug_inspect(second_position.is_changed(), content="false")
 
-  let bypass_ref = second_position.bypass_change_detection()
-  bypass_ref.val.x = 9
-  debug_inspect(second_position.last_changed(), content="1")
+  second_position.modify(fn(value) { value.x = 9 })
+  debug_inspect(second_position.last_changed(), content="2")
 
   second_position.set_changed()
   debug_inspect(second_position.last_changed(), content="2")
@@ -229,15 +228,14 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
   debug_inspect(state.count(world), content="1")
   if (try! state.get(world, e0)) is Some((position, velocity_mut)) {
     debug_inspect(position.value(), content="{ x: 2, y: 3 }")
-    velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
-      position.value().x
+    velocity_mut.modify(fn(value) { value.dx = value.dx + position.value().x })
   } else {
     fail("expected matching entity")
   }
 
   let (single_position, single_velocity) = try! state.require_single(world)
   debug_inspect(single_position.value(), content="{ x: 2, y: 3 }")
-  debug_inspect(single_velocity.get_ref().val, content="{ dx: 12, dy: 20 }")
+  debug_inspect(single_velocity.peek(), content="{ dx: 12, dy: 20 }")
 
   let query : Query[
     (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
@@ -260,8 +258,7 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
   while (try! iter.fetch_next()) is Some((entity, data)) {
     seen.push(entity.id)
     let (position, velocity_mut) = data
-    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy +
-      position.value().y
+    velocity_mut.modify(fn(value) { value.dy = value.dy + position.value().y })
   }
 
   debug_inspect(seen, content="[0]")
@@ -322,8 +319,7 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Mut query da
   let chunk_values : Array[Int] = []
   while (try! iter.fetch_next()) is Some((position, velocity_mut)) {
     chunk_values.push(position.value().x)
-    velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
-      position.value().x
+    velocity_mut.modify(fn(value) { value.dx = value.dx + position.value().x })
   }
   debug_inspect(chunk_values, content="[1, 2, 4]")
 
@@ -335,8 +331,7 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Mut query da
   .batching_strategy(BatchingStrategy::fixed(32))
   .for_each(fn(_entity, data) {
     let (position, velocity_mut) = data
-    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy +
-      position.value().y
+    velocity_mut.modify(fn(value) { value.dy = value.dy + position.value().y })
   })
 
   debug_inspect(
@@ -386,7 +381,7 @@ test "ecs mut query: EntityMut query data provides Bevy-style entity access" {
     content="true",
   )
   if (try! entity_mut.get_mut(key=mut_query_velocity_key)) is Some(velocity_mut) {
-    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy + 5
+    velocity_mut.modify(fn(value) { value.dy = value.dy + 5 })
   } else {
     fail("expected mutable velocity")
   }

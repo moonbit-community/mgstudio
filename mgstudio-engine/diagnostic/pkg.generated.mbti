@@ -193,7 +193,7 @@ pub fn EntityCountDiagnosticsPlugin::new(Int) -> Self
 pub impl @app.Plugin for EntityCountDiagnosticsPlugin
 
 pub struct FrameCount {
-  mut value : Int
+  value : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn FrameCount::default() -> Self
 pub impl @app.Resource for FrameCount

@@ -646,7 +646,9 @@ fn setup(
       ),
     ),
     @pbr.MeshMaterial3d::new(
-      materials.get_ref().val.add(
+      materials
+      .peek()
+      .add(
         @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F))
         .with_perceptual_roughness(0.95F)
         .with_metallic(0.0F),
@@ -656,14 +658,16 @@ fn setup(
   ).spawn(world)
   |> ignore
 
-  let shape_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
+  let shape_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
+      )
+      .with_reflectance(0.0F)
+      .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+      .with_cull_mode(None),
     )
-    .with_reflectance(0.0F)
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
-    .with_cull_mode(None),
-  )
 
   guard (try! world.get_resource(SampledShapes::resource()))
     is Some(sampled_shapes) else {
@@ -738,12 +742,16 @@ fn setup(
     ),
   })
   world.insert_resource(PointMaterial::resource(), PointMaterial::{
-    interior: materials.get_ref().val.add(
+    interior: materials
+    .peek()
+    .add(
       @pbr.StandardMaterial::from_color(@sprite.Color::black())
       .with_reflectance(0.05F)
       .with_emissive(@sprite.Color::srgba(2.1375F, 2.75F, 0.025F, 1.0F)),
     ),
-    boundary: materials.get_ref().val.add(
+    boundary: materials
+    .peek()
+    .add(
       @pbr.StandardMaterial::from_color(@sprite.Color::black())
       .with_reflectance(0.05F)
       .with_emissive(@sprite.Color::srgba(0.12F, 0.3F, 1.35F, 1.0F)),

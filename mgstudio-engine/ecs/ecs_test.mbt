@@ -538,10 +538,7 @@ test "ecs: spawn_bundle supports flat bundles and empty bundles" {
     world.entity_archetype_id(empty).unwrap_or(-1) == 0,
     content="true",
   )
-  debug_inspect(
-    try! world.get_by_key(empty, typed_counter_key),
-    content="None",
-  )
+  debug_inspect(try! world.get_by_key(empty, typed_counter_key), content="None")
   debug_inspect(
     try! world.get_by_key(nested, typed_counter_key),
     content="Some({ value: 9 })",
@@ -568,7 +565,9 @@ test "ecs: for_each_component tolerates structural changes during iteration" {
 
   world.for_each_component(typed_counter_key, fn(entity, _counter) {
     visited.push(entity.id)
-    try! world.set_by_key(entity, typed_marker_key, TypedMarker::{ enabled: true })
+    try! world.set_by_key(entity, typed_marker_key, TypedMarker::{
+      enabled: true,
+    })
   })
 
   visited.sort()

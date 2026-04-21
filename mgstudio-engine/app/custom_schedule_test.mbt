@@ -89,14 +89,20 @@ test "app: multithreaded schedules defer Commands until the compatible batch end
   let mut sub_app = SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(MultiThreaded))
-    .add_systems(stage, system_config_param(fn(commands : Commands) {
-      ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
-    }))
-    .add_systems(stage, system_config_param(fn(
-      query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
-    ) {
-      observed.push(query.count())
-    }))
+    .add_systems(
+      stage,
+      system_config_param(fn(commands : Commands) {
+        ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
+      }),
+    )
+    .add_systems(
+      stage,
+      system_config_param(fn(
+        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+      ) {
+        observed.push(query.count())
+      }),
+    )
 
   sub_app = sub_app.update()
 
@@ -115,14 +121,20 @@ test "app: single-threaded schedules apply Commands after each system" {
   let mut sub_app = SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
-    .add_systems(stage, system_config_param(fn(commands : Commands) {
-      ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
-    }))
-    .add_systems(stage, system_config_param(fn(
-      query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
-    ) {
-      observed.push(query.count())
-    }))
+    .add_systems(
+      stage,
+      system_config_param(fn(commands : Commands) {
+        ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
+      }),
+    )
+    .add_systems(
+      stage,
+      system_config_param(fn(
+        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+      ) {
+        observed.push(query.count())
+      }),
+    )
 
   sub_app = sub_app.update()
 

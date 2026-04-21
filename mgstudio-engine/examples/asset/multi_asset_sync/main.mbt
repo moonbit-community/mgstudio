@@ -16,7 +16,7 @@
 struct PendingTextures {
   icon : @asset.Handle[@asset.Image]
   bird : @asset.Handle[@asset.Image]
-  mut spawned : Bool
+  spawned : Bool
 }
 
 ///|
@@ -63,19 +63,19 @@ fn spawn_when_loaded(
   commands : @app.Commands,
   pending : @app.ResMut[PendingTextures],
 ) -> Unit {
-  let pending_ref = pending.get_ref()
-  if pending_ref.val.spawned {
+  let pending_state = pending.get()
+  if pending_state.spawned {
     return
   }
-  let icon_loaded = @asset.asset_is_texture_loaded(pending_ref.val.icon)
-  let bird_loaded = @asset.asset_is_texture_loaded(pending_ref.val.bird)
+  let icon_loaded = @asset.asset_is_texture_loaded(pending_state.icon)
+  let bird_loaded = @asset.asset_is_texture_loaded(pending_state.bird)
   if !(icon_loaded && bird_loaded) {
     return
   }
   ignore(
     commands.spawn(
       (
-        @sprite.Sprite::from_image(pending_ref.val.icon).with_custom_size(
+        @sprite.Sprite::from_image(pending_state.icon).with_custom_size(
           Some(@math.Vec2::new(240.0F, 240.0F)),
         ),
         @transform.Transform::from_xyz(-220.0F, 0.0F, 0.0F),
@@ -86,7 +86,7 @@ fn spawn_when_loaded(
   ignore(
     commands.spawn(
       (
-        @sprite.Sprite::from_image(pending_ref.val.bird).with_custom_size(
+        @sprite.Sprite::from_image(pending_state.bird).with_custom_size(
           Some(@math.Vec2::new(240.0F, 240.0F)),
         ),
         @transform.Transform::from_xyz(220.0F, 0.0F, 0.0F),
@@ -94,7 +94,7 @@ fn spawn_when_loaded(
       ),
     ),
   )
-  pending_ref.val.spawned = true
+  pending.set(PendingTextures::{ ..pending_state, spawned: true })
   @window.host_debug_string(
     value="[multi_asset_sync] all requested textures loaded and spawned",
   )
@@ -111,9 +111,9 @@ fn animate_loaded_sprites(
   let t = time.get().elapsed_secs()
   try! sprites.for_each(fn(_entity, data) {
     let (loaded, transform) = data
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.y = @math.sin(t * 1.5F + loaded.value().phase) *
-      48.0F
+    transform.modify(fn(value) {
+      value.translation.y = @math.sin(t * 1.5F + loaded.value().phase) * 48.0F
+    })
   })
 }
 

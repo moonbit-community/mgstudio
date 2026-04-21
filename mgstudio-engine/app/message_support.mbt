@@ -116,7 +116,7 @@ pub fn[T : @ecs.Message] ResMut::write(
   message : T,
 ) -> Int {
   let key : @ecs.MessageKey[T] = @ecs.Message::message()
-  self.get_ref().val.write_message(key, message)
+  self.modify(fn(queue) { queue.write_message(key, message) })
 }
 
 ///|
@@ -134,7 +134,7 @@ pub fn[T : @ecs.Message + Default] ResMut::write_default(
   self : ResMut[@ecs.Messages[T]],
 ) -> Int {
   let key : @ecs.MessageKey[T] = @ecs.Message::message()
-  self.get_ref().val.write_message_default(key)
+  self.modify(fn(queue) { queue.write_message_default(key) })
 }
 
 ///|
@@ -143,7 +143,7 @@ pub fn[T : @ecs.Message] Local::read(
   messages : ResMut[@ecs.Messages[T]],
 ) -> Array[T] raise @ecs.EcsError {
   let cursor = self.get()
-  let unread = cursor.read(messages.get_ref().val)
+  let unread = cursor.read(messages.peek())
   self.set(cursor)
   unread
 }
@@ -152,9 +152,9 @@ pub fn[T : @ecs.Message] Local::read(
 pub fn[T : @ecs.Message] Local::read_mut(
   self : Local[@ecs.MessageCursor[T]],
   messages : ResMut[@ecs.Messages[T]],
-) -> Array[Ref[T]] raise @ecs.EcsError {
+) -> Array[T] raise @ecs.EcsError {
   let cursor = self.get()
-  let unread = cursor.read_mut(messages.get_ref().val)
+  let unread = cursor.read_mut(messages.peek())
   self.set(cursor)
   unread
 }

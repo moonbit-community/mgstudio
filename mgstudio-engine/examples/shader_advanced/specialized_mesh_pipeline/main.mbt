@@ -34,19 +34,22 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let cube = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.1F, 1.1F, 1.1F))
-  let sphere = meshes.get_ref().val |> @pbr.add_mesh(@math.Sphere::new(0.7F))
-  let matte = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.82F, 0.24F, 0.3F)).with_perceptual_roughness(
-      0.95F,
-    ),
-  )
-  let glossy = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.38F, 0.95F)).with_perceptual_roughness(
-      0.15F,
-    ),
-  )
+  let cube = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.1F, 1.1F, 1.1F))
+  let sphere = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(0.7F))
+  let matte = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.82F, 0.24F, 0.3F)).with_perceptual_roughness(
+        0.95F,
+      ),
+    )
+  let glossy = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.38F, 0.95F)).with_perceptual_roughness(
+        0.15F,
+      ),
+    )
 
   commands.spawn(
     (
@@ -72,12 +75,14 @@ fn setup(
     ),
   )
   |> ignore
-  let floor = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)),
-  )
-  let floor_mat = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.22F, 0.26F)),
-  )
+  let floor = meshes
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)))
+  let floor_mat = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.2F, 0.22F, 0.26F)),
+    )
   commands.spawn(
     (
       @pbr.Mesh3d::new(floor),
@@ -112,7 +117,7 @@ fn rotate(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.get_ref().val.rotate_y(delta * 0.8F)
+    transform.modify(fn(value) { value.rotate_y(delta * 0.8F) })
   })
 }
 

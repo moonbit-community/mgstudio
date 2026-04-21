@@ -458,15 +458,18 @@ fn update_buttons(
     @ecs.All,
   ],
 ) -> Unit {
-  let settings_ref = settings.get_ref()
   try! buttons.view(fn(_entity, data) {
     let ((background_mut, border_mut), (interaction_comp, button_comp)) = data
     let interaction = interaction_comp.value()
     let button = button_comp.value()
-    if interaction == @ui.Interaction::Pressed {
-      settings_ref.val = apply_constraint(settings_ref.val, button)
+    let current_settings = if interaction == @ui.Interaction::Pressed {
+      let next_settings = apply_constraint(settings.peek(), button)
+      settings.set(next_settings)
+      next_settings
+    } else {
+      settings.peek()
     }
-    let active = settings_value(settings_ref.val, button.kind) == button.value
+    let active = settings_value(current_settings, button.kind) == button.value
     let background_color = match interaction {
       @ui.Interaction::Pressed => active_button_color()
       @ui.Interaction::Hovered => hovered_button_color()

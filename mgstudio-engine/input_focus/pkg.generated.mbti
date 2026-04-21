@@ -14,7 +14,7 @@ import {
 // Values
 pub fn advance_tab_focus(@ecs.World, Bool) -> Unit
 
-pub fn auto_generate_navigation_edges(@ref.Ref[DirectionalNavigationMap], Array[FocusableArea], AutoNavigationConfig) -> Unit
+pub fn auto_generate_navigation_edges(DirectionalNavigationMap, Array[FocusableArea], AutoNavigationConfig) -> Unit
 
 pub fn directional_navigation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

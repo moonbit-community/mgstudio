@@ -142,12 +142,12 @@ fn move_paddle(
   }
   let dt = time.get().delta_secs()
   try! paddles.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.x = clampf(
-      transform_ref.val.translation.x + dir * 560.0F * dt,
-      -WALL_X + 90.0F,
+    let next_x = clampf(
+      transform.value().translation.x + dir * 560.0F * dt,
+      0.0F - WALL_X + 90.0F,
       WALL_X - 90.0F,
     )
+    transform.modify(fn(value) { value.translation.x = next_x })
   })
 }
 
@@ -164,44 +164,41 @@ fn move_ball(
   let mut brick_to_remove = None
   try! balls.for_each(fn(_ball_entity, data) {
     let (ball, transform) = data
-    let ball_ref = ball.get_ref()
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.x += ball_ref.val.velocity.x * dt
-    transform_ref.val.translation.y += ball_ref.val.velocity.y * dt
-    if transform_ref.val.translation.x > WALL_X ||
-      transform_ref.val.translation.x < -WALL_X {
-      ball_ref.val.velocity.x = -ball_ref.val.velocity.x
+    let mut velocity = ball.value().velocity
+    let mut next_translation = transform.value().translation
+    next_translation.x += velocity.x * dt
+    next_translation.y += velocity.y * dt
+    if next_translation.x > WALL_X || next_translation.x < 0.0F - WALL_X {
+      velocity.x = -velocity.x
     }
-    if transform_ref.val.translation.y > WALL_Y {
-      ball_ref.val.velocity.y = -@math.abs(ball_ref.val.velocity.y)
+    if next_translation.y > WALL_Y {
+      velocity.y = -@math.abs(velocity.y)
     }
-    if transform_ref.val.translation.y < -WALL_Y {
-      transform_ref.val.translation = @math.Vec3::new(0.0F, -210.0F, 0.2F)
-      ball_ref.val.velocity = @math.Vec2::new(260.0F, 280.0F)
+    if next_translation.y < 0.0F - WALL_Y {
+      next_translation = @math.Vec3::new(0.0F, -210.0F, 0.2F)
+      velocity = @math.Vec2::new(260.0F, 280.0F)
     }
-    let paddle_dx = transform_ref.val.translation.x -
-      paddle.value().translation.x
-    let paddle_dy = transform_ref.val.translation.y -
-      paddle.value().translation.y
+    let paddle_dx = next_translation.x - paddle.value().translation.x
+    let paddle_dy = next_translation.y - paddle.value().translation.y
     if @math.abs(paddle_dx) < 98.0F &&
       @math.abs(paddle_dy) < 24.0F &&
-      ball_ref.val.velocity.y < 0.0F {
-      ball_ref.val.velocity.y = @math.abs(ball_ref.val.velocity.y)
-      ball_ref.val.velocity.x += paddle_dx * 1.4F
+      velocity.y < 0.0F {
+      velocity.y = @math.abs(velocity.y)
+      velocity.x += paddle_dx * 1.4F
     }
     try! bricks.for_each(fn(entity, brick_transform) {
       if brick_to_remove is Some(_) {
         return
       }
-      let brick_dx = transform_ref.val.translation.x -
-        brick_transform.value().translation.x
-      let brick_dy = transform_ref.val.translation.y -
-        brick_transform.value().translation.y
+      let brick_dx = next_translation.x - brick_transform.value().translation.x
+      let brick_dy = next_translation.y - brick_transform.value().translation.y
       if @math.abs(brick_dx) < 54.0F && @math.abs(brick_dy) < 24.0F {
         brick_to_remove = Some(entity)
-        ball_ref.val.velocity.y = -ball_ref.val.velocity.y
+        velocity.y = -velocity.y
       }
     })
+    ball.modify(fn(value) { value.velocity = velocity })
+    transform.modify(fn(value) { value.translation = next_translation })
   })
   if brick_to_remove is Some(entity) {
     commands.entity(entity).despawn()

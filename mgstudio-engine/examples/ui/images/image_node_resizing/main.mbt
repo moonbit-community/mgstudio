@@ -66,7 +66,7 @@ pub(all) enum ResizeAxis {
 struct TextUpdate {
   change : Float
   direction : ResizeAxis
-  mut entity : @core.Entity
+  entity : @core.Entity
 }
 
 ///|
@@ -121,10 +121,10 @@ pub impl @ecs.TriggerEvent for ImageGroupResize with observer_entity(_self) {
 
 ///|
 pub impl @ecs.TriggerEvent for ImageGroupResize with set_observer_entity(
-  _event_ref,
+  self,
   _entity,
 ) {
-
+  self
 }
 
 ///|
@@ -148,11 +148,8 @@ pub impl @ecs.TriggerEvent for TextUpdate with observer_entity(self) {
 }
 
 ///|
-pub impl @ecs.TriggerEvent for TextUpdate with set_observer_entity(
-  event_ref,
-  entity,
-) {
-  event_ref.val.entity = entity
+pub impl @ecs.TriggerEvent for TextUpdate with set_observer_entity(self, entity) {
+  TextUpdate::{ change: self.change, direction: self.direction, entity }
 }
 
 ///|
@@ -192,46 +189,55 @@ fn resize_label_text(width : Float, height : Float) -> String {
 
 ///|
 fn resize_group_node(
-  node_ref : Ref[@ui.Node],
+  node_mut : @ecs.Mut[@ui.Node],
   event : ImageGroupResize,
 ) -> Unit {
+  let node = node_mut.peek()
   match event {
     HeightGrow =>
-      match node_ref.val.height {
+      match node.height {
         Percent(value) =>
-          node_ref.val = node_ref.val.with_height(
-            @ui.Val::Percent(
-              (value + MIN_RESIZE_VAL).min(IMAGE_GROUP_BOX_MAX_HEIGHT),
+          node_mut.set(
+            node.with_height(
+              @ui.Val::Percent(
+                (value + MIN_RESIZE_VAL).min(IMAGE_GROUP_BOX_MAX_HEIGHT),
+              ),
             ),
           )
         _ => ()
       }
     HeightShrink =>
-      match node_ref.val.height {
+      match node.height {
         Percent(value) =>
-          node_ref.val = node_ref.val.with_height(
-            @ui.Val::Percent(
-              (value - MIN_RESIZE_VAL).max(IMAGE_GROUP_BOX_MIN_HEIGHT),
+          node_mut.set(
+            node.with_height(
+              @ui.Val::Percent(
+                (value - MIN_RESIZE_VAL).max(IMAGE_GROUP_BOX_MIN_HEIGHT),
+              ),
             ),
           )
         _ => ()
       }
     WidthGrow =>
-      match node_ref.val.width {
+      match node.width {
         Percent(value) =>
-          node_ref.val = node_ref.val.with_width(
-            @ui.Val::Percent(
-              (value + MIN_RESIZE_VAL).min(IMAGE_GROUP_BOX_MAX_WIDTH),
+          node_mut.set(
+            node.with_width(
+              @ui.Val::Percent(
+                (value + MIN_RESIZE_VAL).min(IMAGE_GROUP_BOX_MAX_WIDTH),
+              ),
             ),
           )
         _ => ()
       }
     WidthShrink =>
-      match node_ref.val.width {
+      match node.width {
         Percent(value) =>
-          node_ref.val = node_ref.val.with_width(
-            @ui.Val::Percent(
-              (value - MIN_RESIZE_VAL).max(IMAGE_GROUP_BOX_MIN_WIDTH),
+          node_mut.set(
+            node.with_width(
+              @ui.Val::Percent(
+                (value - MIN_RESIZE_VAL).max(IMAGE_GROUP_BOX_MIN_WIDTH),
+              ),
             ),
           )
         _ => ()
@@ -421,26 +427,23 @@ fn update_text(
     return
   }
 
-  let text_data_ref = text_data_mut.get_ref()
-  let text_ref = text_mut.get_ref()
-  match event.event().direction {
-    Height =>
-      text_data_ref.val.height = (text_data_ref.val.height +
-      event.event().change).clamp(
-        min=IMAGE_GROUP_BOX_MIN_HEIGHT,
-        max=IMAGE_GROUP_BOX_MAX_HEIGHT,
-      )
-    Width =>
-      text_data_ref.val.width = (text_data_ref.val.width + event.event().change).clamp(
-        min=IMAGE_GROUP_BOX_MIN_WIDTH,
-        max=IMAGE_GROUP_BOX_MAX_WIDTH,
-      )
-  }
+  let (width, height) = text_data_mut.modify(fn(value) {
+    match event.event().direction {
+      Height =>
+        value.height = (value.height + event.event().change).clamp(
+          min=IMAGE_GROUP_BOX_MIN_HEIGHT,
+          max=IMAGE_GROUP_BOX_MAX_HEIGHT,
+        )
+      Width =>
+        value.width = (value.width + event.event().change).clamp(
+          min=IMAGE_GROUP_BOX_MIN_WIDTH,
+          max=IMAGE_GROUP_BOX_MAX_WIDTH,
+        )
+    }
+    (value.width, value.height)
+  })
 
-  text_ref.val.content = resize_label_text(
-    text_data_ref.val.width,
-    text_data_ref.val.height,
-  )
+  text_mut.modify(fn(value) { value.content = resize_label_text(width, height) })
 }
 
 ///|
@@ -449,7 +452,7 @@ fn on_trigger_image_group(
   groups : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.With[ImageGroup]],
 ) -> Unit {
   try! groups.view(fn(_entity, node_mut) {
-    resize_group_node(node_mut.get_ref(), event.event())
+    resize_group_node(node_mut, event.event())
   })
 }
 

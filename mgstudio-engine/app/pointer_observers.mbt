@@ -40,6 +40,15 @@ pub fn PickingEvents::drain(
 }
 
 ///|
+pub fn PickingEvents::drain_all(
+  self : PickingEvents,
+) -> Array[@pointer_events.PointerEvent] {
+  let out = self.events
+  self.events = []
+  out
+}
+
+///|
 let ecs_res_key_picking_events : @ecs.ResourceKey[PickingEvents] = @ecs.register_resource(
   debug_name="picking.picking_events",
 )

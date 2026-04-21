@@ -167,7 +167,9 @@ fn animate_joint(
 ) -> Unit {
   let angle = 0.8F * @math.sin(time.get().elapsed_secs())
   try! joints.view(fn(_entity, transform) {
-    transform.get_ref().val.rotation = @math.Quat::from_rotation_z(angle)
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_z(angle)
+    })
   })
 }
 

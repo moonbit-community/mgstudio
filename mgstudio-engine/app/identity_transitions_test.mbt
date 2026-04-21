@@ -65,9 +65,8 @@ fn on_reexit_a(_world : @ecs.World) -> Unit {
 
 ///|
 fn trigger_identity_transition_once(step : ResMut[TriggerIdentityOnce]) -> Unit {
-  let step_ref = step.get_ref()
-  guard !step_ref.val.done else { return }
-  step_ref.val.done = true
+  guard !step.peek().done else { return }
+  step.modify(fn(value) { value.done = true })
   set_state(TestState::A)
 }
 

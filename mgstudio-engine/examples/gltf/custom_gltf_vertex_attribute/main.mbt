@@ -97,17 +97,17 @@ fn spawn_converted_mesh(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
-  if state.get_ref().val.spawned {
+  let state_value = state.get()
+  if state_value.spawned {
     return
   }
-  guard meshes.get_ref().val.get(state.get_ref().val.source_handle)
-    is Some(source_mesh) else {
+  guard meshes.peek().get(state_value.source_handle) is Some(source_mesh) else {
     return
   }
   guard mesh3d_to_mesh2d(source_mesh) is Some(converted) else { return }
 
-  let mesh_handle = meshes.get_ref().val.add(converted)
-  let material_handle = materials.get_ref().val
+  let mesh_handle = meshes.peek().add(converted)
+  let material_handle = materials.peek()
     |> @sprite.add_material(@sprite.Color::white())
   ignore(
     commands.spawn(
@@ -118,10 +118,10 @@ fn spawn_converted_mesh(
       ),
     ),
   )
-  state.get_ref().val = ConvertedMeshState::{
-    ..state.get_ref().val,
+  state.set(ConvertedMeshState::{
+    source_handle: state_value.source_handle,
     spawned: true,
-  }
+  })
 }
 
 ///|

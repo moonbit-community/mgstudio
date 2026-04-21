@@ -178,24 +178,25 @@ fn setup(
   )
   spawn_help_overlay(commands, asset_server)
 
-  let store_ref = config_store.get_ref()
-  let (default_config, _default_group) = store_ref.val.config_mut(
-    @gizmos.DefaultGizmoConfigGroup::default(),
-  )
-  let current_default = default_config.val
-  default_config.val = gizmo_config_with_line_joints(
-    gizmo_config_with_line_width(current_default, 2.0F),
-    None,
-  )
+  config_store.modify(fn(store) {
+    let (default_config, _default_group) = store.config_mut(
+      @gizmos.DefaultGizmoConfigGroup::default(),
+    )
+    let current_default = default_config.val
+    default_config.val = gizmo_config_with_line_joints(
+      gizmo_config_with_line_width(current_default, 2.0F),
+      None,
+    )
 
-  let (round_config, _round_group) = store_ref.val.config_mut(
-    MyRoundGizmos::default(),
-  )
-  let current_round = round_config.val
-  round_config.val = gizmo_config_with_line_joints(
-    gizmo_config_with_line_width(current_round, 4.0F),
-    Round(4),
-  )
+    let (round_config, _round_group) = store.config_mut(
+      MyRoundGizmos::default(),
+    )
+    let current_round = round_config.val
+    round_config.val = gizmo_config_with_line_joints(
+      gizmo_config_with_line_width(current_round, 4.0F),
+      Round(4),
+    )
+  })
 }
 
 ///|
@@ -329,80 +330,79 @@ fn update_config(
   virtual_time : @app.ResMut[@time.Time[@time.Virtual]],
 ) -> Unit {
   let delta = real_time.get().delta_secs()
-  let store_ref = config_store.get_ref()
+  config_store.modify(fn(store) {
+    let (default_config, _default_group) = store.config_mut(
+      @gizmos.DefaultGizmoConfigGroup::default(),
+    )
+    if keyboard.pressed(ArrowRight) {
+      let current = default_config.val
+      default_config.val = gizmo_config_with_line_width(
+        current,
+        clamp_float(current.line.width + 5.0F * delta, 0.0F, 50.0F),
+      )
+    }
+    if keyboard.pressed(ArrowLeft) {
+      let current = default_config.val
+      default_config.val = gizmo_config_with_line_width(
+        current,
+        clamp_float(current.line.width - 5.0F * delta, 0.0F, 50.0F),
+      )
+    }
+    if keyboard.just_pressed(Digit1) {
+      default_config.val = gizmo_config_toggle_enabled(default_config.val)
+    }
+    if keyboard.just_pressed(KeyU) {
+      let current = default_config.val
+      default_config.val = gizmo_config_with_line_style(
+        current,
+        cycle_line_style_forward(current.line.style),
+      )
+    }
+    if keyboard.just_pressed(KeyJ) {
+      let current = default_config.val
+      default_config.val = gizmo_config_with_line_joints(
+        current,
+        cycle_line_joint_forward(current.line.joints),
+      )
+    }
 
-  let (default_config, _default_group) = store_ref.val.config_mut(
-    @gizmos.DefaultGizmoConfigGroup::default(),
-  )
-  if keyboard.pressed(ArrowRight) {
-    let current = default_config.val
-    default_config.val = gizmo_config_with_line_width(
-      current,
-      clamp_float(current.line.width + 5.0F * delta, 0.0F, 50.0F),
+    let (round_config, _round_group) = store.config_mut(
+      MyRoundGizmos::default(),
     )
-  }
-  if keyboard.pressed(ArrowLeft) {
-    let current = default_config.val
-    default_config.val = gizmo_config_with_line_width(
-      current,
-      clamp_float(current.line.width - 5.0F * delta, 0.0F, 50.0F),
-    )
-  }
-  if keyboard.just_pressed(Digit1) {
-    default_config.val = gizmo_config_toggle_enabled(default_config.val)
-  }
-  if keyboard.just_pressed(KeyU) {
-    let current = default_config.val
-    default_config.val = gizmo_config_with_line_style(
-      current,
-      cycle_line_style_forward(current.line.style),
-    )
-  }
-  if keyboard.just_pressed(KeyJ) {
-    let current = default_config.val
-    default_config.val = gizmo_config_with_line_joints(
-      current,
-      cycle_line_joint_forward(current.line.joints),
-    )
-  }
-
-  let (round_config, _round_group) = store_ref.val.config_mut(
-    MyRoundGizmos::default(),
-  )
-  if keyboard.pressed(ArrowUp) {
-    let current = round_config.val
-    round_config.val = gizmo_config_with_line_width(
-      current,
-      clamp_float(current.line.width + 5.0F * delta, 0.0F, 50.0F),
-    )
-  }
-  if keyboard.pressed(ArrowDown) {
-    let current = round_config.val
-    round_config.val = gizmo_config_with_line_width(
-      current,
-      clamp_float(current.line.width - 5.0F * delta, 0.0F, 50.0F),
-    )
-  }
-  if keyboard.just_pressed(Digit2) {
-    round_config.val = gizmo_config_toggle_enabled(round_config.val)
-  }
-  if keyboard.just_pressed(KeyI) {
-    let current = round_config.val
-    round_config.val = gizmo_config_with_line_style(
-      current,
-      cycle_line_style_backward(current.line.style),
-    )
-  }
-  if keyboard.just_pressed(KeyK) {
-    let current = round_config.val
-    round_config.val = gizmo_config_with_line_joints(
-      current,
-      cycle_line_joint_backward(current.line.joints),
-    )
-  }
+    if keyboard.pressed(ArrowUp) {
+      let current = round_config.val
+      round_config.val = gizmo_config_with_line_width(
+        current,
+        clamp_float(current.line.width + 5.0F * delta, 0.0F, 50.0F),
+      )
+    }
+    if keyboard.pressed(ArrowDown) {
+      let current = round_config.val
+      round_config.val = gizmo_config_with_line_width(
+        current,
+        clamp_float(current.line.width - 5.0F * delta, 0.0F, 50.0F),
+      )
+    }
+    if keyboard.just_pressed(Digit2) {
+      round_config.val = gizmo_config_toggle_enabled(round_config.val)
+    }
+    if keyboard.just_pressed(KeyI) {
+      let current = round_config.val
+      round_config.val = gizmo_config_with_line_style(
+        current,
+        cycle_line_style_backward(current.line.style),
+      )
+    }
+    if keyboard.just_pressed(KeyK) {
+      let current = round_config.val
+      round_config.val = gizmo_config_with_line_joints(
+        current,
+        cycle_line_joint_backward(current.line.joints),
+      )
+    }
+  })
   if keyboard.just_pressed(Space) {
-    let virtual_time_ref = virtual_time.get_ref()
-    virtual_time_ref.val = virtual_time_ref.val.toggle()
+    virtual_time.set(virtual_time.get().toggle())
   }
 }
 

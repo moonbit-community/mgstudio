@@ -31,7 +31,7 @@ struct CameraTransform {
 
 ///|
 struct CurrentScene {
-  mut value : Int
+  value : Int
 }
 
 ///|
@@ -487,12 +487,16 @@ fn setup_image_viewer_scene(
   camera_transform : @app.Res[CameraTransform],
   ui_root_query : @ecs.Query[@ecs.Comp[TonemappingUiRoot], @ecs.All],
 ) -> Unit {
-  let mesh_handle = mesh_assets.get_ref().val.add(
-    @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(1.0F, 1.0F)),
-  )
-  let material_handle = material_assets.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(true),
-  )
+  let mesh_handle = mesh_assets
+    .peek()
+    .add(
+      @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(1.0F, 1.0F)),
+    )
+  let material_handle = material_assets
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(true),
+    )
 
   let transform = camera_transform.get().transform
   transform.translation = transform.translation.add(transform.forward())
@@ -550,7 +554,7 @@ fn toggle_scene(
     None
   }
   guard next_scene is Some(scene) else { return }
-  current_scene.get_ref().val.value = scene
+  current_scene.set(CurrentScene::{ value: scene })
 
   try! scene_query.view(fn(entity, scene_number) {
     let visibility = if scene_number.value().value == scene {
@@ -559,7 +563,7 @@ fn toggle_scene(
       @visibility.Visibility::Hidden
     }
     if (visibility_query.get(entity) catch { _ => None }) is Some(component) {
-      component.get_ref().val = visibility
+      component.set(visibility)
     }
   })
 }
@@ -602,7 +606,7 @@ fn toggle_tonemapping_method(
   let mut current_tonemapping = initial_tonemapping.value()
   if next_method is Some(tonemapper) {
     if (tonemapping_query.get(camera) catch { _ => None }) is Some(component) {
-      component.get_ref().val = tonemapper
+      component.set(tonemapper)
       current_tonemapping = tonemapper
     }
   }
@@ -612,7 +616,7 @@ fn toggle_tonemapping_method(
     return
   }
   if (color_grading_query.get(camera) catch { _ => None }) is Some(component) {
-    component.get_ref().val = color_grading
+    component.set(color_grading)
   }
 }
 
@@ -633,10 +637,10 @@ fn update_color_grading_settings(
   let current_method = current_method.value()
 
   if keys.just_pressed(ArrowDown) {
-    selected_parameter.get_ref().val.next()
+    selected_parameter.modify(fn(value) { value.next() })
   }
   if keys.just_pressed(ArrowUp) {
-    selected_parameter.get_ref().val.prev()
+    selected_parameter.modify(fn(value) { value.prev() })
   }
 
   let mut delta = time.get().delta_seconds() * 0.25F
@@ -647,40 +651,44 @@ fn update_color_grading_settings(
   }
 
   if delta != 0.0F {
-    let next = per_method_settings.get_ref().val.settings
-      .get(current_method)
-      .unwrap_or(@post_process.ColorGrading::default())
-    match selected_parameter.get_ref().val.value {
-      0 => next.global.exposure = next.global.exposure + delta
-      1 =>
-        for section in next.all_sections_mut() {
-          section.gamma = section.gamma + delta
-        }
-      2 =>
-        for section in next.all_sections_mut() {
-          section.saturation = section.saturation + delta
-        }
-      _ => next.global.post_saturation = next.global.post_saturation + delta
-    }
-    per_method_settings.get_ref().val.settings.set(current_method, next)
+    let selected_value = selected_parameter.get().value
+    per_method_settings.modify(fn(value) {
+      let next = value.settings
+        .get(current_method)
+        .unwrap_or(@post_process.ColorGrading::default())
+      match selected_value {
+        0 => next.global.exposure = next.global.exposure + delta
+        1 =>
+          for section in next.all_sections_mut() {
+            section.gamma = section.gamma + delta
+          }
+        2 =>
+          for section in next.all_sections_mut() {
+            section.saturation = section.saturation + delta
+          }
+        _ => next.global.post_saturation = next.global.post_saturation + delta
+      }
+      value.settings.set(current_method, next)
+    })
   }
 
   if keys.just_pressed(Space) {
-    for tonemapper in tonemapping_methods() {
-      per_method_settings.get_ref().val.settings.set(
-        tonemapper,
-        @post_process.ColorGrading::default(),
-      )
-    }
+    per_method_settings.modify(fn(value) {
+      for tonemapper in tonemapping_methods() {
+        value.settings.set(tonemapper, @post_process.ColorGrading::default())
+      }
+    })
   }
 
   if keys.just_pressed(Enter) && current_scene.get().value == 1 {
-    for tonemapper in tonemapping_methods() {
-      per_method_settings.get_ref().val.settings.set(
-        tonemapper,
-        PerMethodSettings::basic_scene_recommendation(tonemapper),
-      )
-    }
+    per_method_settings.modify(fn(value) {
+      for tonemapper in tonemapping_methods() {
+        value.settings.set(
+          tonemapper,
+          PerMethodSettings::basic_scene_recommendation(tonemapper),
+        )
+      }
+    })
   }
 }
 
@@ -712,12 +720,13 @@ fn drag_drop_image(
     is Some((_viewer_entity, _viewer, viewer_material)) else {
     return
   }
-  guard material_assets.get_ref().val.get(viewer_material.material)
-    is Some(material) else {
+  guard material_assets.peek().get(viewer_material.material) is Some(material) else {
     return
   }
   ignore(
-    material_assets.get_ref().val.set(
+    material_assets
+    .peek()
+    .set(
       viewer_material.material,
       material.with_base_color_texture(Some(image)),
     ),
@@ -781,7 +790,9 @@ fn resize_image(
     .mul_scalar(1.4F)
 
   ignore(
-    mesh_assets.get_ref().val.insert(
+    mesh_assets
+    .peek()
+    .insert(
       viewer_mesh.mesh,
       @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::rectangle(size.x, size.y),

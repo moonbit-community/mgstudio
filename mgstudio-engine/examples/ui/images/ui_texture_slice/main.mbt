@@ -93,19 +93,19 @@ fn button_system(
     guard (texts.get(label) catch { _ => None }) is Some(text) else { return }
     match interaction_comp.value() {
       @ui.Interaction::Pressed => {
-        text.get_ref().val.content = "Press"
+        text.modify(fn(value) { value.content = "Press" })
         image.set(
           image.value().with_color(@sprite.Color::srgb(1.0F, 0.84F, 0.0F)),
         )
       }
       @ui.Interaction::Hovered => {
-        text.get_ref().val.content = "Hover"
+        text.modify(fn(value) { value.content = "Hover" })
         image.set(
           image.value().with_color(@sprite.Color::srgb(1.0F, 0.55F, 0.0F)),
         )
       }
       @ui.Interaction::None => {
-        text.get_ref().val.content = "Button"
+        text.modify(fn(value) { value.content = "Button" })
         image.set(image.value().with_color(@sprite.Color::white()))
       }
     }

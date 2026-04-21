@@ -182,7 +182,7 @@ fn spawn_override_button(
       buttons : @ecs.Query[@ecs.Mut[OverrideState], @ecs.With[OverrideState]],
       status : @app.ResMut[OverrideStatus],
     ) {
-      focus.get_ref().val.set(button)
+      focus.modify(fn(value) { value.set(button) })
       let state : @ecs.Mut[OverrideState]? = try buttons.get(button) catch {
         _ => None
       } noraise {
@@ -191,7 +191,7 @@ fn spawn_override_button(
       if state is Some(state) {
         state.set(OverrideState::{ active: !state.value().active })
       }
-      status.get_ref().val.label = "Last Input: Pointer Click"
+      status.modify(fn(value) { value.label = "Last Input: Pointer Click" })
     }),
   )
   button
@@ -281,33 +281,26 @@ fn setup_override_ui(
     spawn_override_button(commands, root, font, "Right Bottom", 730.0F, 418.0F),
   ]
 
-  let map_ref = nav_map.get_ref()
-  map_ref.val.add_edge(
-    left_buttons[0],
-    left_buttons[2],
-    @math.CompassOctant::North,
-  )
-  map_ref.val.add_edge(
-    left_buttons[2],
-    left_buttons[0],
-    @math.CompassOctant::South,
-  )
-  map_ref.val.add_edge(
-    right_buttons[0],
-    right_buttons[2],
-    @math.CompassOctant::North,
-  )
-  map_ref.val.add_edge(
-    right_buttons[2],
-    right_buttons[0],
-    @math.CompassOctant::South,
-  )
-  map_ref.val.add_symmetrical_edge(
-    left_buttons[1],
-    right_buttons[1],
-    @math.CompassOctant::East,
-  )
-  focus.get_ref().val.set(left_buttons[0])
+  nav_map.modify(fn(value) {
+    value.add_edge(left_buttons[0], left_buttons[2], @math.CompassOctant::North)
+    value.add_edge(left_buttons[2], left_buttons[0], @math.CompassOctant::South)
+    value.add_edge(
+      right_buttons[0],
+      right_buttons[2],
+      @math.CompassOctant::North,
+    )
+    value.add_edge(
+      right_buttons[2],
+      right_buttons[0],
+      @math.CompassOctant::South,
+    )
+    value.add_symmetrical_edge(
+      left_buttons[1],
+      right_buttons[1],
+      @math.CompassOctant::East,
+    )
+  })
+  focus.modify(fn(value) { value.set(left_buttons[0]) })
 }
 
 ///|
@@ -370,11 +363,13 @@ fn navigate_override_ui(
   } noraise {
     value => Some(value)
   }
-  status.get_ref().val.label = if next_focus is Some(_) {
-    "Last Input: Navigate \{override_direction_text(direction)}"
-  } else {
-    "Last Input: Blocked \{override_direction_text(direction)}"
-  }
+  status.modify(fn(value) {
+    value.label = if next_focus is Some(_) {
+      "Last Input: Navigate \{override_direction_text(direction)}"
+    } else {
+      "Last Input: Blocked \{override_direction_text(direction)}"
+    }
+  })
 }
 
 ///|
@@ -416,7 +411,7 @@ fn activate_override_button(world : @ecs.World) -> Unit {
     @ecs.With[OverrideButton],
   ] = @ecs.query_filtered(world, @ecs.With::new(OverrideButton::component()))
   let status_ref = match
-    (try! world.get_resource_ref_mut(OverrideStatus::resource())) {
+    (try! world.get_resource_mut(OverrideStatus::resource())) {
     Some(status_ref) => status_ref
     None => return
   }
@@ -436,7 +431,9 @@ fn activate_override_button(world : @ecs.World) -> Unit {
       Some(label) => label.value().label
       None => "Unknown"
     }
-    status_ref.val.label = "Last Input: Activate \{button_label}"
+    status_ref.modify(fn(value) {
+      value.label = "Last Input: Activate \{button_label}"
+    })
   }
 }
 

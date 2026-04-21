@@ -109,10 +109,9 @@ fn ensure_transform_runtime_resources(world : @ecs.World) -> Unit {
 ///|
 fn transform_propagation_scratch_ref_or_init(
   world : @ecs.World,
-) -> Ref[TransformPropagationScratch] {
+) -> @ecs.ResourceMut[TransformPropagationScratch] {
   ensure_transform_runtime_resources(world)
-  match
-    (try! world.get_resource_ref_mut(ecs_key_transform_propagation_scratch)) {
+  match (try! world.get_resource_mut(ecs_key_transform_propagation_scratch)) {
     Some(scratch_ref) => scratch_ref
     None => abort("Missing TransformPropagationScratch resource")
   }
@@ -256,7 +255,7 @@ fn propagate_parent_transforms_dense(
   columns : TransformPropagationColumns,
 ) -> Unit {
   guard columns.parent is Some(parent_column) else { return }
-  columns.children.for_each_ref(fn(entity, children) {
+  columns.children.for_each(fn(entity, children) {
     if parent_column.contains(entity) {
       return
     }
@@ -266,11 +265,7 @@ fn propagate_parent_transforms_dense(
       return
     }
     propagate_descendants_dense(
-      columns,
-      parent_column,
-      entity,
-      root_global,
-      children.val,
+      columns, parent_column, entity, root_global, children,
     )
   })
 }
@@ -519,7 +514,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
     return
   }
   let scratch_ref = transform_propagation_scratch_ref_or_init(world)
-  let scratch = scratch_ref.val
+  let scratch = scratch_ref.peek()
   transform_id_flags_reset(
     scratch.transform_changed,
     scratch.transform_changed_touched,
@@ -609,7 +604,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
     )
   }
   guard transform_propagation_columns(world) is Some(columns) else { return }
-  columns.children.for_each_ref(fn(entity, children) {
+  columns.children.for_each(fn(entity, children) {
     if columns.parent is Some(parent_column) && parent_column.contains(entity) {
       return
     }
@@ -639,7 +634,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
       columns,
       entity,
       next_root_global,
-      children.val,
+      children,
       static_optimizations.enabled,
       transform_changed,
       global_added,

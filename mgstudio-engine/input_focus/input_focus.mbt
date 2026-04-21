@@ -174,8 +174,8 @@ fn[T] input_focus_world_resource(
 fn input_focus_world_resource_ref_mut(
   world : @ecs.World,
   key : @ecs.ResourceKey[InputFocus],
-) -> Ref[InputFocus]? {
-  try world.get_resource_ref_mut(key) catch {
+) -> @ecs.ResourceMut[InputFocus]? {
+  try world.get_resource_mut(key) catch {
     _ => None
   } noraise {
     value => value
@@ -354,11 +354,11 @@ pub impl @app.SystemParam for IsFocusedHelper with store(self, state) {
 pub fn set_initial_focus(world : @ecs.World) -> Unit {
   guard input_focus_primary_window_entity(world) is Some(window) else { return }
   guard input_focus_world_resource_ref_mut(world, InputFocus::resource())
-    is Some(focus_ref) else {
+    is Some(focus) else {
     return
   }
-  if focus_ref.val.get() is None {
-    focus_ref.val.set(window)
+  if focus.peek().get() is None {
+    focus.modify(fn(value) { value.set(window) })
   }
 }
 
@@ -373,13 +373,12 @@ pub fn[M : @ecs.Message] dispatch_focused_input(
   }
   let world = current_input_focus_world_abort_missing()
   guard input_focus_primary_window_entity(world) is Some(window) else { return }
-  let focus_ref = focus.get_ref()
-  let focused_entity = match focus_ref.val.get() {
+  let focused_entity = match focus.peek().get() {
     Some(entity) =>
       if world.is_alive(entity) {
         entity
       } else {
-        focus_ref.val.clear()
+        focus.modify(fn(value) { value.clear() })
         window
       }
     None => window

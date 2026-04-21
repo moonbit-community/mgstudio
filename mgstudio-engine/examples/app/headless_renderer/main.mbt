@@ -65,12 +65,20 @@ fn capture_system(
   state : @app.ResMut[CaptureState],
   app_exit : @ecs.MessageWriter[@app.AppExit],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  if state_ref.val.target is Some(target) {
-    let path = "test_images/headless_renderer_\{state_ref.val.frame.to_string()}.png"
+  let capture = state.modify(fn(value) {
+    match value.target {
+      Some(target) => {
+        let frame = value.frame
+        value.frame = value.frame + 1
+        Some((target, frame, value.single_image))
+      }
+      None => None
+    }
+  })
+  if capture is Some((target, frame, single_image)) {
+    let path = "test_images/headless_renderer_\{frame.to_string()}.png"
     @asset.asset_save_texture_png(target, path)
-    state_ref.val.frame = state_ref.val.frame + 1
-    if state_ref.val.single_image {
+    if single_image {
       ignore(app_exit.write(@app.AppExit::Success))
     }
   }

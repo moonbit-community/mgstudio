@@ -160,10 +160,12 @@ fn on_drag_start(
   guard pointer.target() is Some(target) else { return }
   let draggable = draggables.get(target) catch { _ => None }
   guard draggable is Some(_) else { return }
-  let state = drag_state.get_ref()
-  state.val.active = true
-  state.val.drop_hovered = false
-  if state.val.ghost is Some(ghost) {
+  let previous_ghost = drag_state.modify(fn(value) {
+    value.active = true
+    value.drop_hovered = false
+    value.ghost
+  })
+  if previous_ghost is Some(ghost) {
     commands.entity(ghost).despawn()
   }
   let ghost = commands.spawn(
@@ -178,7 +180,7 @@ fn on_drag_start(
       @ui.BackgroundColor::new(@sprite.Color::new(1.0F, 1.0F, 0.6F, 0.5F)),
     ),
   )
-  state.val.ghost = Some(ghost)
+  drag_state.modify(fn(value) { value.ghost = Some(ghost) })
 }
 
 ///|
@@ -187,16 +189,18 @@ fn on_drag_move(
   drag_state : @app.ResMut[DragState],
   ghost_nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
 ) -> Unit {
-  let state = drag_state.get_ref()
-  guard state.val.active else { return }
-  state.val.drop_hovered = pointer.target() == Some(state.val.drop_area)
-  if state.val.ghost is Some(ghost) &&
+  let state = drag_state.peek()
+  guard state.active else { return }
+  drag_state.modify(fn(value) {
+    value.drop_hovered = pointer.target() == Some(value.drop_area)
+  })
+  if state.ghost is Some(ghost) &&
     (ghost_nodes.get(ghost) catch { _ => None }) is Some(node) {
     let next = node
       .value()
       .with_left(@ui.Val::Px(pointer.position().x - 15.0F))
       .with_top(@ui.Val::Px(pointer.position().y - 15.0F))
-    node.get_ref().val = next
+    node.set(next)
   }
 }
 
@@ -206,9 +210,9 @@ fn on_drag_end(
   commands : @app.Commands,
   drag_state : @app.ResMut[DragState],
 ) -> Unit {
-  let state = drag_state.get_ref()
-  guard state.val.active else { return }
-  if state.val.drop_hovered {
+  let state = drag_state.peek()
+  guard state.active else { return }
+  if state.drop_hovered {
     ignore(
       commands.spawn(
         (
@@ -223,12 +227,14 @@ fn on_drag_end(
       ),
     )
   }
-  if state.val.ghost is Some(ghost) {
+  if state.ghost is Some(ghost) {
     commands.entity(ghost).despawn()
   }
-  state.val.active = false
-  state.val.drop_hovered = false
-  state.val.ghost = None
+  drag_state.modify(fn(value) {
+    value.active = false
+    value.drop_hovered = false
+    value.ghost = None
+  })
 }
 
 ///|

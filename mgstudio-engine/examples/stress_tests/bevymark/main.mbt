@@ -146,7 +146,9 @@ fn setup(
   )
   let bird = asset_server.get().load("branding/icon.png")
   commands.insert_resource(BirdAssets::{ bird, })
-  counter.get_ref().val.count = spawn_birds(commands, bird, INITIAL_BIRDS, 0)
+  counter.modify(fn(value) {
+    value.count = spawn_birds(commands, bird, INITIAL_BIRDS, 0)
+  })
 }
 
 ///|
@@ -158,13 +160,14 @@ fn spawn_on_click(
   if !@input.mouse_button_just_pressed(@input_events.MouseButton::Left) {
     return
   }
-  let counter_ref = counter.get_ref()
-  counter_ref.val.count = spawn_birds(
-    commands,
-    assets.get().bird,
-    BIRDS_PER_CLICK,
-    counter_ref.val.count,
-  )
+  counter.modify(fn(value) {
+    value.count = spawn_birds(
+      commands,
+      assets.get().bird,
+      BIRDS_PER_CLICK,
+      value.count,
+    )
+  })
 }
 
 ///|
@@ -175,24 +178,26 @@ fn movement_system(
   let dt = time.get().delta_secs()
   try! birds.for_each(fn(_entity, data) {
     let (bird, transform) = data
-    let bird_ref = bird.get_ref()
-    let transform_ref = transform.get_ref()
-    transform_ref.val.translation.x += bird_ref.val.velocity.x * dt
-    transform_ref.val.translation.y += bird_ref.val.velocity.y * dt
-    if transform_ref.val.translation.x > HALF_WIDTH - 12.0F {
-      transform_ref.val.translation.x = HALF_WIDTH - 12.0F
-      bird_ref.val.velocity.x = -@math.abs(bird_ref.val.velocity.x)
-    } else if transform_ref.val.translation.x < -HALF_WIDTH + 12.0F {
-      transform_ref.val.translation.x = -HALF_WIDTH + 12.0F
-      bird_ref.val.velocity.x = @math.abs(bird_ref.val.velocity.x)
-    }
-    if transform_ref.val.translation.y > HALF_HEIGHT - 12.0F {
-      transform_ref.val.translation.y = HALF_HEIGHT - 12.0F
-      bird_ref.val.velocity.y = -@math.abs(bird_ref.val.velocity.y)
-    } else if transform_ref.val.translation.y < -HALF_HEIGHT + 12.0F {
-      transform_ref.val.translation.y = -HALF_HEIGHT + 12.0F
-      bird_ref.val.velocity.y = @math.abs(bird_ref.val.velocity.y)
-    }
+    bird.modify(fn(bird_value) {
+      transform.modify(fn(transform_value) {
+        transform_value.translation.x += bird_value.velocity.x * dt
+        transform_value.translation.y += bird_value.velocity.y * dt
+        if transform_value.translation.x > HALF_WIDTH - 12.0F {
+          transform_value.translation.x = HALF_WIDTH - 12.0F
+          bird_value.velocity.x = -@math.abs(bird_value.velocity.x)
+        } else if transform_value.translation.x < -HALF_WIDTH + 12.0F {
+          transform_value.translation.x = -HALF_WIDTH + 12.0F
+          bird_value.velocity.x = @math.abs(bird_value.velocity.x)
+        }
+        if transform_value.translation.y > HALF_HEIGHT - 12.0F {
+          transform_value.translation.y = HALF_HEIGHT - 12.0F
+          bird_value.velocity.y = -@math.abs(bird_value.velocity.y)
+        } else if transform_value.translation.y < -HALF_HEIGHT + 12.0F {
+          transform_value.translation.y = -HALF_HEIGHT + 12.0F
+          bird_value.velocity.y = @math.abs(bird_value.velocity.y)
+        }
+      })
+    })
   })
 }
 
@@ -201,13 +206,17 @@ fn counter_system(
   time : @app.Res[@time.Time[Unit]],
   counter : @app.ResMut[BirdCounter],
 ) -> Unit {
-  let counter_ref = counter.get_ref()
-  counter_ref.val.print_timer += time.get().delta_secs()
-  if counter_ref.val.print_timer < 1.0F {
-    return
-  }
-  counter_ref.val.print_timer -= 1.0F
-  println("Bird count: \{counter_ref.val.count}")
+  let count = counter.modify(fn(value) {
+    value.print_timer += time.get().delta_secs()
+    if value.print_timer < 1.0F {
+      None
+    } else {
+      value.print_timer -= 1.0F
+      Some(value.count)
+    }
+  })
+  guard count is Some(count) else { return }
+  println("Bird count: \{count}")
 }
 
 ///|

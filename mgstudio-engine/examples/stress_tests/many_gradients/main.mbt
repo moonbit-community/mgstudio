@@ -103,7 +103,7 @@ fn animate_cells(
     let idxf = float_from_int(cell.value().index)
     let h = (@math.sin(t + idxf * 0.01F) * 0.5F + 0.5F) * 360.0F
     let color = @sprite.Color::hsl(h, 1.0F, 0.5F)
-    background.get_ref().val = @ui.BackgroundColor::new(color)
+    background.set(@ui.BackgroundColor::new(color))
   })
 }
 

@@ -3452,7 +3452,7 @@ fn scene_build_from_gltf(
         }
         let inverse_bindposes_assets_ref : Ref[
           @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
-        ] = @asset.asset_assets_ref_mut_or_abort()
+        ] = Ref::new(@asset.asset_assets_ref_mut_or_abort().peek())
         Some(
           inverse_bindposes_assets_ref.val.add(
             @mesh.SkinnedMeshInverseBindposes::new(normalized_values),

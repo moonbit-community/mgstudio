@@ -112,8 +112,8 @@ fn setup(
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
   spawn_body(
     commands,
     mesh_assets,
@@ -193,14 +193,16 @@ fn interact_bodies(
       let force_unit_mass = delta
         .normalize_or_zero()
         .mul_scalar(GRAVITY_CONSTANT / distance_sq)
-      let left_ref = left_acceleration.get_ref()
-      let right_ref = right_acceleration.get_ref()
-      left_ref.val.linear = left_ref.val.linear.add(
-        force_unit_mass.mul_scalar(right_mass.value().value),
-      )
-      right_ref.val.linear = right_ref.val.linear.add(
-        force_unit_mass.mul_scalar(-left_mass.value().value),
-      )
+      left_acceleration.modify(fn(value) {
+        value.linear = value.linear.add(
+          force_unit_mass.mul_scalar(right_mass.value().value),
+        )
+      })
+      right_acceleration.modify(fn(value) {
+        value.linear = value.linear.add(
+          force_unit_mass.mul_scalar(-left_mass.value().value),
+        )
+      })
     } else {
       break
     }
@@ -218,17 +220,18 @@ fn integrate(
   let delta = fixed_time.get().delta_seconds()
   try! query.view(fn(_entity, body) {
     let (acceleration, velocity, transform) = body
-    let acceleration_ref = acceleration.get_ref()
-    let velocity_ref = velocity.get_ref()
-    let transform_ref = transform.get_ref()
-    velocity_ref.val.linear = velocity_ref.val.linear.add(
-      acceleration_ref.val.linear.mul_scalar(delta),
-    )
-    transform_ref.val.translation.x = transform_ref.val.translation.x +
-      velocity_ref.val.linear.x * delta
-    transform_ref.val.translation.y = transform_ref.val.translation.y +
-      velocity_ref.val.linear.y * delta
-    acceleration_ref.val.linear = @math.Vec2::new(0.0F, 0.0F)
+    let acceleration_value = acceleration.peek()
+    let next_velocity = velocity.modify(fn(value) {
+      value.linear = value.linear.add(
+        acceleration_value.linear.mul_scalar(delta),
+      )
+      value.linear
+    })
+    transform.modify(fn(value) {
+      value.translation.x = value.translation.x + next_velocity.x * delta
+      value.translation.y = value.translation.y + next_velocity.y * delta
+    })
+    acceleration.modify(fn(value) { value.linear = @math.Vec2::new(0.0F, 0.0F) })
   })
 }
 

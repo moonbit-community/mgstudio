@@ -124,13 +124,14 @@ fn spin_light(
   let t = time.get().elapsed_secs()
   try! lights.for_each(fn(_entity, data) {
     let (spin, transform) = data
-    let transform_ref = transform.get_ref()
     let angle = t * spin.value().speed
-    transform_ref.val.translation = @math.Vec3::new(
-      @math.cos(angle) * 28.0F,
-      36.0F,
-      @math.sin(angle) * 28.0F,
-    )
+    transform.modify(fn(value) {
+      value.translation = @math.Vec3::new(
+        @math.cos(angle) * 28.0F,
+        36.0F,
+        @math.sin(angle) * 28.0F,
+      )
+    })
   })
 }
 

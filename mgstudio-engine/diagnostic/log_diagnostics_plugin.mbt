@@ -235,15 +235,16 @@ fn log_diagnostics_system(
   time : @app.Res[@time.Time[@time.Real]],
   diagnostics : @app.Res[DiagnosticsStore],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  state_ref.val.timer = state_ref.val.timer.tick(time.get().delta())
-  if !state_ref.val.timer.is_finished() {
+  let state_value = state.peek()
+  state.set_changed()
+  state_value.timer = state_value.timer.tick(time.get().delta())
+  if !state_value.timer.is_finished() {
     return
   }
 
   for diagnostic in log_diagnostics_sorted(diagnostics.get()) {
     if !diagnostic.is_enabled ||
-      !log_diagnostics_state_allows(state_ref.val, diagnostic.path()) {
+      !log_diagnostics_state_allows(state_value, diagnostic.path()) {
       continue
     }
     let message = log_diagnostic_message(diagnostic)
@@ -259,15 +260,16 @@ fn log_diagnostics_debug_system(
   time : @app.Res[@time.Time[@time.Real]],
   diagnostics : @app.Res[DiagnosticsStore],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  state_ref.val.timer = state_ref.val.timer.tick(time.get().delta())
-  if !state_ref.val.timer.is_finished() {
+  let state_value = state.peek()
+  state.set_changed()
+  state_value.timer = state_value.timer.tick(time.get().delta())
+  if !state_value.timer.is_finished() {
     return
   }
 
   for diagnostic in log_diagnostics_sorted(diagnostics.get()) {
     if !diagnostic.is_enabled ||
-      !log_diagnostics_state_allows(state_ref.val, diagnostic.path()) {
+      !log_diagnostics_state_allows(state_value, diagnostic.path()) {
       continue
     }
     @app.log_record(

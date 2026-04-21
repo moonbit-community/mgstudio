@@ -139,35 +139,42 @@ fn[D, F] query_param_store_query_state(
   query_param_cache_by_slot.set(slot, query.cache_snapshot())
 }
 
-pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[D, F] with init_state(
-  _world,
-) {
+///|
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
+  D,
+  F,
+] with init_state(_world) {
   query_param_allocate_slot().to_json()
 }
 
 ///|
-pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[D, F] with get(state) {
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
+  D,
+  F,
+] with get(state) {
   query_param_query_from_state(state)
 }
 
 ///|
-pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[D, F] with store(
-  self,
-  state,
-) {
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
+  D,
+  F,
+] with store(self, state) {
   query_param_store_query_state(self, state)
 }
 
 ///|
-pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[D, F] with access(world) {
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
+  D,
+  F,
+] with access(world) {
   let access = SystemAccess::new()
   let filter = F::from_world(world)
-  let (data_access, filter_access) = @ecs.query_access_descriptor(
-    filter,
-    fn(data_access : @ecs.QueryDataAccess) {
-      D::collect_access(data_access)
-    },
-  )
+  let (data_access, filter_access) = @ecs.query_access_descriptor(filter, fn(
+    data_access : @ecs.QueryDataAccess,
+  ) {
+    D::collect_access(data_access)
+  })
   access.add_query_access(data_access, filter_access)
   access
 }
@@ -227,12 +234,11 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
 ] with access(world) {
   let access = SystemAccess::new()
   let filter = F::from_world(world)
-  let (data_access, filter_access) = @ecs.query_access_descriptor(
-    filter,
-    fn(data_access : @ecs.QueryDataAccess) {
-      D::collect_access(data_access)
-    },
-  )
+  let (data_access, filter_access) = @ecs.query_access_descriptor(filter, fn(
+    data_access : @ecs.QueryDataAccess,
+  ) {
+    D::collect_access(data_access)
+  })
   access.add_query_access(data_access, filter_access)
   access
 }
@@ -273,12 +279,11 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
 ] with access(world) {
   let access = SystemAccess::new()
   let filter = F::from_world(world)
-  let (data_access, filter_access) = @ecs.query_access_descriptor(
-    filter,
-    fn(data_access : @ecs.QueryDataAccess) {
-      D::collect_access(data_access)
-    },
-  )
+  let (data_access, filter_access) = @ecs.query_access_descriptor(filter, fn(
+    data_access : @ecs.QueryDataAccess,
+  ) {
+    D::collect_access(data_access)
+  })
   access.add_query_access(data_access, filter_access)
   access
 }

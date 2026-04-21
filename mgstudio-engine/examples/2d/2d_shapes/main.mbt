@@ -70,8 +70,8 @@ fn setup(
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
   let shapes : Array[@asset.Handle[@mesh.Mesh]] = [
     mesh_assets |> @sprite.add_mesh(@sprite.Circle::new(50.0F)),
     mesh_assets |> @sprite.add_mesh(@sprite.CircularSector::new(50.0F, 1.0F)),
@@ -210,8 +210,8 @@ fn setup(
 
 ///|
 fn toggle_wireframe(config : @app.ResMut[@sprite.Wireframe2dConfig]) -> Unit {
-  let current = config.get_ref().val
-  config.get_ref().val = current.with_global(!current.global)
+  let current = config.get()
+  config.set(current.with_global(!current.global))
 }
 
 ///|
@@ -226,8 +226,9 @@ fn rotate(
   let speed = 0.5F
   try! query.for_each(fn(_entity, data) {
     let (transform, _mesh) = data
-    let transform_ref = transform.get_ref()
-    let next_rotation = transform_ref.val.rotation_z() + speed * delta_secs
-    transform_ref.val.rotation = @math.Quat::from_rotation_z(next_rotation)
+    let next_rotation = transform.value().rotation_z() + speed * delta_secs
+    transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_z(next_rotation)
+    })
   })
 }

@@ -216,8 +216,8 @@ fn render3d_extracted_material_instances_ref_or_init(
     )
   }
   match
-    (try! world.get_resource_ref_mut(ExtractedMaterialInstances3d::resource())) {
-    Some(v) => v
+    (try! world.get_resource_mut(ExtractedMaterialInstances3d::resource())) {
+    Some(v) => Ref::new(v.peek())
     None => abort("Missing ExtractedMaterialInstances3d resource")
   }
 }

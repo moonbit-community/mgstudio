@@ -264,7 +264,7 @@ fn player_movement_system(
   try! query.for_each(fn(_entity, data) {
     let (player, transform) = data
     let player = player.value()
-    let transform_ref = transform.get_ref()
+    let next_transform = transform.value()
     let mut rotation_factor = 0.0F
     let mut movement_factor = 0.0F
 
@@ -278,24 +278,25 @@ fn player_movement_system(
       movement_factor += 1.0F
     }
 
-    transform_ref.val.rotate_z(
+    next_transform.rotate_z(
       rotation_factor * player.rotation_speed * time.get().delta_seconds(),
     )
 
-    let movement_direction = transform_ref.val.local_y()
+    let movement_direction = next_transform.local_y()
     let movement_distance = movement_factor *
       player.movement_speed *
       time.get().delta_seconds()
-    transform_ref.val.translation.x = clampf(
-      transform_ref.val.translation.x + movement_direction.x * movement_distance,
+    next_transform.translation.x = clampf(
+      next_transform.translation.x + movement_direction.x * movement_distance,
       -BOUNDS_X / 2.0F,
       BOUNDS_X / 2.0F,
     )
-    transform_ref.val.translation.y = clampf(
-      transform_ref.val.translation.y + movement_direction.y * movement_distance,
+    next_transform.translation.y = clampf(
+      next_transform.translation.y + movement_direction.y * movement_distance,
       -BOUNDS_Y / 2.0F,
       BOUNDS_Y / 2.0F,
     )
+    transform.set(next_transform)
   })
 }
 
@@ -309,20 +310,21 @@ fn snap_to_player_system(
   }
 
   try! query.for_each(fn(_entity, enemy_transform) {
-    let enemy_transform_ref = enemy_transform.get_ref()
+    let next_transform = enemy_transform.value()
     let to_player = vec2_normalize_or_zero(
       @math.Vec2::new(
-        player_position.x - enemy_transform_ref.val.translation.x,
-        player_position.y - enemy_transform_ref.val.translation.y,
+        player_position.x - next_transform.translation.x,
+        player_position.y - next_transform.translation.y,
       ),
     )
     if absf(to_player.x) <= EPSILON && absf(to_player.y) <= EPSILON {
       return
     }
 
-    enemy_transform_ref.val.rotation = @math.Quat::from_rotation_z(
+    next_transform.rotation = @math.Quat::from_rotation_z(
       to_player.to_angle() - @math.pi_half(),
     )
+    enemy_transform.set(next_transform)
   })
 }
 
@@ -342,13 +344,13 @@ fn rotate_to_player_system(
   try! query.for_each(fn(_entity, data) {
     let (config, enemy_transform) = data
     let config = config.value()
-    let enemy_transform_ref = enemy_transform.get_ref()
-    let enemy_forward3 = enemy_transform_ref.val.local_y()
+    let next_transform = enemy_transform.value()
+    let enemy_forward3 = next_transform.local_y()
     let enemy_forward = @math.Vec2::new(enemy_forward3.x, enemy_forward3.y)
     let to_player = vec2_normalize_or_zero(
       @math.Vec2::new(
-        player_position.x - enemy_transform_ref.val.translation.x,
-        player_position.y - enemy_transform_ref.val.translation.y,
+        player_position.x - next_transform.translation.x,
+        player_position.y - next_transform.translation.y,
       ),
     )
     if absf(to_player.x) <= EPSILON && absf(to_player.y) <= EPSILON {
@@ -360,13 +362,14 @@ fn rotate_to_player_system(
       return
     }
 
-    let enemy_right3 = enemy_transform_ref.val.local_x()
+    let enemy_right3 = next_transform.local_x()
     let enemy_right = @math.Vec2::new(enemy_right3.x, enemy_right3.y)
     let right_dot_player = vec2_dot(enemy_right, to_player)
     let rotation_sign = if right_dot_player < 0.0F { 1.0F } else { -1.0F }
     let max_angle = acosf(forward_dot_player)
     let rotation_angle = rotation_sign *
       minf(config.rotation_speed * time.get().delta_seconds(), max_angle)
-    enemy_transform_ref.val.rotate_z(rotation_angle)
+    next_transform.rotate_z(rotation_angle)
+    enemy_transform.set(next_transform)
   })
 }

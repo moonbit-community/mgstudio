@@ -35,7 +35,7 @@ pub impl @ecs.Component for ReadbackSample with component() {
 
 ///|
 struct ReadbackState {
-  mut average_height : Float
+  average_height : Float
 }
 
 ///|
@@ -56,11 +56,13 @@ fn setup(
 ) -> Unit {
   commands.insert_resource(ReadbackState::{ average_height: 0.0F })
 
-  let mesh = meshes.get_ref().val
+  let mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(0.25F, 0.25F, 0.25F))
-  let material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.26F, 0.4F, 0.9F)),
-  )
+  let material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.26F, 0.4F, 0.9F)),
+    )
   for i in 0..<SAMPLE_COUNT {
     let x = Float::from_int(i % 12) - 5.5F
     let y = Float::from_int(i / 12) - 1.0F
@@ -107,10 +109,9 @@ fn animate_samples(
   let elapsed = time.get().elapsed_seconds()
   try! samples.view(fn(_entity, data) {
     let (sample, transform) = data
-    transform.get_ref().val.translation.z = @math.sin(
-        elapsed + sample.value().phase,
-      ) *
-      0.8F
+    transform.modify(fn(value) {
+      value.translation.z = @math.sin(elapsed + sample.value().phase) * 0.8F
+    })
   })
 }
 
@@ -129,7 +130,9 @@ fn emulate_gpu_readback(
     count = count + 1
   })
   if count > 0 {
-    readback_state.get_ref().val.average_height = total / Float::from_int(count)
+    readback_state.set(ReadbackState::{
+      average_height: total / Float::from_int(count),
+    })
   }
 }
 
@@ -142,11 +145,11 @@ fn tint_from_readback(
   let value = 0.5F + readback_state.get().average_height * 0.4F
   try! mesh_materials.view(fn(_entity, mesh_material) {
     let handle = mesh_material.value().material
-    guard materials.get_ref().val.get(handle) is Some(material) else { return }
+    guard materials.peek().get(handle) is Some(material) else { return }
     let updated = material.with_base_color(
       @sprite.Color::srgb(0.18F + value * 0.3F, 0.28F + value * 0.35F, 0.7F),
     )
-    materials.get_ref().val.set(handle, updated) |> ignore
+    materials.peek().set(handle, updated) |> ignore
   })
 }
 

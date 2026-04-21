@@ -39,11 +39,13 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_handle = meshes.get_ref().val
+  let mesh_handle = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(0.18F, 0.18F, 0.18F))
-  let material_handle = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.95F, 0.96F, 1.0F)),
-  )
+  let material_handle = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.95F, 0.96F, 1.0F)),
+    )
 
   for i in 0..<INSTANCE_COUNT {
     let x = Float::from_int(i % 16) - 7.5F
@@ -85,7 +87,9 @@ fn animate_instances(
   try! query.view(fn(_entity, data) {
     let (phase, transform) = data
     let value = Float::from_int(phase.value().index) * 0.07F
-    transform.get_ref().val.translation.z = 0.75F * @math.sin(elapsed + value)
+    transform.modify(fn(current) {
+      current.translation.z = 0.75F * @math.sin(elapsed + value)
+    })
   })
 }
 

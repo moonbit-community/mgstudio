@@ -80,9 +80,9 @@ fn joint_animation(
       is Some(second_joint_transform) else {
       return
     }
-    second_joint_transform.get_ref().val.rotation = @math.Quat::from_rotation_z(
-      angle,
-    )
+    second_joint_transform.modify(fn(value) {
+      value.rotation = @math.Quat::from_rotation_z(angle)
+    })
   })
 }
 

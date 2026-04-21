@@ -152,14 +152,16 @@ fn setup_mesh(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @sprite.mesh2d_geometry_capsule(@sprite.Capsule2d::default()).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
-            @sprite.ColorMaterialAsset::from_color(@sprite.Color::black()),
-          ),
+          materials
+          .peek()
+          .add(@sprite.ColorMaterialAsset::from_color(@sprite.Color::black())),
         ),
         @transform.Transform::from_xyz(25.0F, 0.0F, 2.0F).with_scale(
           @math.Vec3::splat(32.0F),
@@ -216,7 +218,7 @@ fn rotate(
   transforms : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Rotate]],
 ) -> Unit {
   try! transforms.for_each(fn(_entity, transform) {
-    transform.get_ref().val.rotate_z(time.get().delta_secs())
+    transform.modify(fn(value) { value.rotate_z(time.get().delta_secs()) })
   })
 }
 
@@ -240,12 +242,9 @@ fn fit_canvas(
     }
     let projection_scale = 1.0F / rounded_scale
     try! projection_query.view(fn(_entity, projection) {
-      let projection_ref = projection.get_ref()
-      match projection_ref.val {
+      match projection.value() {
         Orthographic(current) =>
-          projection_ref.val = Orthographic(
-            current.with_scale(projection_scale),
-          )
+          projection.set(Orthographic(current.with_scale(projection_scale)))
       }
     })
   }

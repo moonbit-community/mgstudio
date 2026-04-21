@@ -142,25 +142,24 @@ fn update_values(
   keyboard : @input.ButtonInput[@window.KeyCode],
   values : @app.ResMut[SliderValues],
 ) -> Unit {
-  if keyboard.pressed(@window.KeyCode::ArrowUp) {
-    values.get_ref().val.vertical = (values.get_ref().val.vertical + 0.01F).min(
-      1.0F,
-    )
-  }
-  if keyboard.pressed(@window.KeyCode::ArrowDown) {
-    values.get_ref().val.vertical = (values.get_ref().val.vertical - 0.01F).max(
-      0.0F,
-    )
-  }
-  if keyboard.pressed(@window.KeyCode::ArrowRight) {
-    values.get_ref().val.horizontal = (values.get_ref().val.horizontal + 0.01F).min(
-      1.0F,
-    )
-  }
-  if keyboard.pressed(@window.KeyCode::ArrowLeft) {
-    values.get_ref().val.horizontal = (values.get_ref().val.horizontal - 0.01F).max(
-      0.0F,
-    )
+  if keyboard.pressed(@window.KeyCode::ArrowUp) ||
+    keyboard.pressed(@window.KeyCode::ArrowDown) ||
+    keyboard.pressed(@window.KeyCode::ArrowRight) ||
+    keyboard.pressed(@window.KeyCode::ArrowLeft) {
+    values.modify(fn(value) {
+      if keyboard.pressed(@window.KeyCode::ArrowUp) {
+        value.vertical = (value.vertical + 0.01F).min(1.0F)
+      }
+      if keyboard.pressed(@window.KeyCode::ArrowDown) {
+        value.vertical = (value.vertical - 0.01F).max(0.0F)
+      }
+      if keyboard.pressed(@window.KeyCode::ArrowRight) {
+        value.horizontal = (value.horizontal + 0.01F).min(1.0F)
+      }
+      if keyboard.pressed(@window.KeyCode::ArrowLeft) {
+        value.horizontal = (value.horizontal - 0.01F).max(0.0F)
+      }
+    })
   }
 }
 

@@ -490,10 +490,10 @@ fn[T] render2d_asset_store_or_abort() -> @asset.Assets[T] {
 }
 
 ///|
-fn[T] render2d_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
+fn[T] render2d_asset_store_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[T]] {
   let world = @render.render_source_world(render2d_current_world_or_abort())
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key)) {
+  match (try! world.get_resource_mut(key)) {
     Some(assets) => assets
     None =>
       abort(
@@ -508,7 +508,7 @@ pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh] {
 }
 
 ///|
-pub fn mesh_assets_mut_or_abort() -> Ref[@asset.Assets[@mesh.Mesh]] {
+pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]] {
   render2d_asset_store_mut_or_abort()
 }
 
@@ -1018,7 +1018,10 @@ fn uploaded_mesh_base_radius(mesh_id : Int) -> Float {
 
 ///|
 fn mesh_upload_cache_sync_with_asset_events() -> Unit {
-  for event in mesh_assets_mut_or_abort().val.drain_events() {
+  let events = mesh_assets_mut_or_abort().modify(fn(assets) {
+    assets.drain_events()
+  })
+  for event in events {
     match event {
       @asset.AssetEvent::Modified(handle) =>
         if mesh_upload_cache.val.get(handle.id()) is Some(mesh_id) {
@@ -1054,7 +1057,7 @@ fn mesh_upload_cache_sync_with_asset_events() -> Unit {
 
 ///|
 fn mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
-  mesh_assets_mut_or_abort().val.add(mesh)
+  mesh_assets_mut_or_abort().modify(fn(assets) { assets.add(mesh) })
 }
 
 ///|
@@ -1067,7 +1070,7 @@ fn mesh_asset_set(
   handle : @asset.Handle[@mesh.Mesh],
   mesh : @mesh.Mesh,
 ) -> Bool {
-  mesh_assets_mut_or_abort().val.set(handle, mesh)
+  mesh_assets_mut_or_abort().modify(fn(assets) { assets.set(handle, mesh) })
 }
 
 ///|

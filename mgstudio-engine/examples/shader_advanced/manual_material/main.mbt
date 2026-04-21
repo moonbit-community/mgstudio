@@ -25,24 +25,28 @@ fn setup(
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let plane_mesh = mesh_assets.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)),
-  )
-  let cube_mesh = mesh_assets.get_ref().val
+  let plane_mesh = mesh_assets
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)))
+  let cube_mesh = mesh_assets.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F))
 
-  let plane_material = material_assets.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.15F, 0.2F, 0.18F)),
-  )
-  let custom_material = material_assets.get_ref().val.add(
-    @pbr.StandardMaterial::default()
-    .with_base_color(@sprite.Color::white())
-    .with_base_color_texture(
-      Some(asset_server.get().load_image(IMAGE_ASSET_PATH)),
+  let plane_material = material_assets
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.15F, 0.2F, 0.18F)),
     )
-    .with_reflectance(0.45F)
-    .with_perceptual_roughness(0.95F),
-  )
+  let custom_material = material_assets
+    .peek()
+    .add(
+      @pbr.StandardMaterial::default()
+      .with_base_color(@sprite.Color::white())
+      .with_base_color_texture(
+        Some(asset_server.get().load_image(IMAGE_ASSET_PATH)),
+      )
+      .with_reflectance(0.45F)
+      .with_perceptual_roughness(0.95F),
+    )
 
   ignore(
     commands.spawn(

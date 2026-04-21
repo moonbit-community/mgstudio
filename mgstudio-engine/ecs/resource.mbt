@@ -39,31 +39,6 @@ pub fn[T] World::get_resource(
 }
 
 ///|
-pub fn[T] World::get_resource_ref(
-  self : World,
-  key : ResourceKey[T],
-) -> Ref[T]? raise EcsError {
-  match self.resources.get(key.id()) {
-    Some(slot) => Some(self.resource_ref(key, slot.payload))
-    None => None
-  }
-}
-
-///|
-pub fn[T] World::get_resource_ref_mut(
-  self : World,
-  key : ResourceKey[T],
-) -> Ref[T]? raise EcsError {
-  match self.resources.get(key.id()) {
-    Some(slot) => {
-      self.record_resource_changed(key.id())
-      Some(self.resource_ref(key, slot.payload))
-    }
-    None => None
-  }
-}
-
-///|
 pub fn[T] World::remove_resource(
   self : World,
   key : ResourceKey[T],
@@ -89,12 +64,12 @@ pub fn[T] World::update_resource(
 }
 
 ///|
-fn[T] World::resource_ref(
+fn[T] World::resource_value(
   _self : World,
   key : ResourceKey[T],
   payload : ErasedValue,
-) -> Ref[T] raise EcsError {
-  payload.to_ref() catch {
+) -> T raise EcsError {
+  payload.to_value() catch {
     _ =>
       raise ResourceTypeMismatch(
         key.id(),
@@ -102,15 +77,6 @@ fn[T] World::resource_ref(
         payload.type_name(),
       )
   }
-}
-
-///|
-fn[T] World::resource_value(
-  self : World,
-  key : ResourceKey[T],
-  payload : ErasedValue,
-) -> T raise EcsError {
-  self.resource_ref(key, payload).val
 }
 
 ///|

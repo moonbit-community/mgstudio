@@ -20,7 +20,6 @@ pub struct ResourceAccess[T] {
 
 ///|
 pub struct ResourceMut[T] {
-  value_ref : Ref[T]?
   world : World?
   key : ResourceKey[T]?
 }
@@ -38,8 +37,30 @@ pub fn[T] World::get_resource_mut(
   self : World,
   key : ResourceKey[T],
 ) -> ResourceMut[T]? raise EcsError {
-  match self.get_resource_ref(key) {
-    Some(value_ref) => Some(ResourceMut::{ value_ref: Some(value_ref), world: Some(self), key: Some(key) })
+  match self.get_resource(key) {
+    Some(_) => Some(ResourceMut::{ world: Some(self), key: Some(key) })
+    None => None
+  }
+}
+
+///|
+pub fn[T] World::get_resource_ref_mut(
+  self : World,
+  key : ResourceKey[T],
+) -> Ref[T]? raise EcsError {
+  match self.get_resource_mut(key) {
+    Some(resource) => Some(Ref::new(resource.peek()))
+    None => None
+  }
+}
+
+///|
+pub fn[T] World::get_resource_ref(
+  self : World,
+  key : ResourceKey[T],
+) -> Ref[T]? raise EcsError {
+  match self.get_resource(key) {
+    Some(resource) => Some(Ref::new(resource))
     None => None
   }
 }
@@ -62,7 +83,9 @@ pub fn[T] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
 }
 
 ///|
-pub fn[T] ResourceAccess::get_mut(self : ResourceAccess[T]) -> ResourceMut[T]? raise EcsError {
+pub fn[T] ResourceAccess::get_mut(
+  self : ResourceAccess[T],
+) -> ResourceMut[T]? raise EcsError {
   self.world.get_resource_mut(self.key)
 }
 
@@ -99,14 +122,6 @@ pub fn[T] ResourceAccess::update(
 }
 
 ///|
-fn[T] resource_mut_ref_or_abort(item : ResourceMut[T]) -> Ref[T] {
-  match item.value_ref {
-    Some(value_ref) => value_ref
-    None => abort("ResourceMut expected a fetched resource")
-  }
-}
-
-///|
 fn[T] resource_mut_world_or_abort(item : ResourceMut[T]) -> World {
   match item.world {
     Some(world) => world
@@ -123,8 +138,36 @@ fn[T] resource_mut_key_or_abort(item : ResourceMut[T]) -> ResourceKey[T] {
 }
 
 ///|
+fn[T] resource_mut_value_or_abort(item : ResourceMut[T]) -> T {
+  let world = resource_mut_world_or_abort(item)
+  let key = resource_mut_key_or_abort(item)
+  match world.resources.get(key.id()) {
+    Some(slot) => try! world.resource_value(key, slot.payload)
+    None => abort("ResourceMut expected a fetched resource")
+  }
+}
+
+///|
+fn[T] resource_mut_replace_value_or_abort(
+  item : ResourceMut[T],
+  value : T,
+) -> Unit {
+  let world = resource_mut_world_or_abort(item)
+  let key = resource_mut_key_or_abort(item)
+  if !world.resources.contains(key.id()) {
+    abort("ResourceMut expected a fetched resource")
+  }
+  world.resources.set(key.id(), ResourceSlot::{ payload: erased_value(value) })
+}
+
+///|
+pub fn[T] ResourceMut::peek(self : ResourceMut[T]) -> T {
+  resource_mut_value_or_abort(self)
+}
+
+///|
 pub fn[T] ResourceMut::value(self : ResourceMut[T]) -> T {
-  resource_mut_ref_or_abort(self).val
+  self.peek()
 }
 
 ///|
@@ -159,7 +202,8 @@ pub fn[T] ResourceMut::last_changed(self : ResourceMut[T]) -> @core.Sequence {
   let world = resource_mut_world_or_abort(self)
   match world.resource_changed_tick(resource_mut_key_or_abort(self)) {
     Some(sequence) => sequence
-    None => abort("ResourceMut::last_changed expected resource sequence metadata")
+    None =>
+      abort("ResourceMut::last_changed expected resource sequence metadata")
   }
 }
 
@@ -167,21 +211,6 @@ pub fn[T] ResourceMut::last_changed(self : ResourceMut[T]) -> @core.Sequence {
 pub fn[T] ResourceMut::changed_by(self : ResourceMut[T]) -> String? {
   let world = resource_mut_world_or_abort(self)
   world.resource_changed_by(resource_mut_key_or_abort(self))
-}
-
-///|
-#callsite(autofill(loc))
-pub fn[T] ResourceMut::get_ref(
-  self : ResourceMut[T],
-  loc~ : SourceLoc,
-) -> Ref[T] {
-  self.set_changed(loc~)
-  resource_mut_ref_or_abort(self)
-}
-
-///|
-pub fn[T] ResourceMut::bypass_change_detection(self : ResourceMut[T]) -> Ref[T] {
-  resource_mut_ref_or_abort(self)
 }
 
 ///|
@@ -212,9 +241,37 @@ pub fn[T] ResourceMut::set_added(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] ResourceMut::set(self : ResourceMut[T], value : T, loc~ : SourceLoc) -> Unit {
+pub fn[T, R] ResourceMut::modify(
+  self : ResourceMut[T],
+  f : (T) -> R,
+  loc~ : SourceLoc,
+) -> R {
+  let value = self.peek()
+  let result = f(value)
   self.set_changed(loc~)
-  resource_mut_ref_or_abort(self).val = value
+  resource_mut_replace_value_or_abort(self, value)
+  result
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] ResourceMut::update(
+  self : ResourceMut[T],
+  f : (T) -> T,
+  loc~ : SourceLoc,
+) -> Unit {
+  self.set(f(self.peek()), loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] ResourceMut::set(
+  self : ResourceMut[T],
+  value : T,
+  loc~ : SourceLoc,
+) -> Unit {
+  self.set_changed(loc~)
+  resource_mut_replace_value_or_abort(self, value)
 }
 
 ///|
@@ -224,10 +281,9 @@ pub fn[T : Eq] ResourceMut::set_if_neq(
   value : T,
   loc~ : SourceLoc,
 ) -> Bool {
-  let value_ref = self.bypass_change_detection()
-  if value_ref.val != value {
-    value_ref.val = value
-    self.set_changed(loc~)
+  let current = self.peek()
+  if current != value {
+    self.set(value, loc~)
     true
   } else {
     false

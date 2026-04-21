@@ -70,9 +70,11 @@ fn setup(
 ) -> Unit {
   let left_shape = Shape::Cube
   let right_shape = Shape::Cube
-  let material_handle = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.6F, 0.8F, 0.6F)),
-  )
+  let material_handle = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.6F, 0.8F, 0.6F)),
+    )
   let left_shape_model : @asset.Handle[@mesh.Mesh] = asset_server
     .get()
     .load_with_settings(left_shape.mesh_asset_path(), fn(
@@ -186,7 +188,7 @@ fn alter_mesh(
     return
   }
   let mesh3d = mesh3d_comp.value()
-  let mesh_assets = meshes.get_ref().val
+  let mesh_assets = meshes.peek()
   guard mesh_assets.get_mut(mesh3d.mesh) is Some(mesh_asset) else { return }
   guard mesh_asset.as_3d_geometry() is Some(geometry) else { return }
 

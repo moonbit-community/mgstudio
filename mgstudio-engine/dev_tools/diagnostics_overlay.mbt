@@ -401,20 +401,20 @@ fn diagnostics_overlay_rebuild_entries(
 ///|
 fn diagnostics_overlay_build_plane_system(world : @ecs.World) -> Unit {
   let state_ref = try! world
-    .get_resource_ref_mut(diagnostics_overlay_runtime_state_resource_key)
+    .get_resource_mut(diagnostics_overlay_runtime_state_resource_key)
     .unwrap()
-  ignore(diagnostics_overlay_ensure_plane(world, state_ref.val))
+  ignore(diagnostics_overlay_ensure_plane(world, state_ref.peek()))
 }
 
 ///|
 fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource_ref_mut(
+  guard (try! world.get_resource_mut(
       diagnostics_overlay_runtime_state_resource_key,
     ))
     is Some(runtime_state) else {
     return
   }
-  let plane = diagnostics_overlay_ensure_plane(world, runtime_state.val)
+  let plane = diagnostics_overlay_ensure_plane(world, runtime_state.peek())
   let diagnostics_store = (try! world.get_resource(
     @diagnostic.DiagnosticsStore::resource(),
   )).unwrap_or(@diagnostic.DiagnosticsStore::default())
@@ -556,7 +556,7 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
 
 ///|
 fn diagnostics_overlay_rebuild_system(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource_ref_mut(
+  guard (try! world.get_resource_mut(
       diagnostics_overlay_runtime_state_resource_key,
     ))
     is Some(state_ref) else {
@@ -566,8 +566,10 @@ fn diagnostics_overlay_rebuild_system(world : @ecs.World) -> Unit {
     is Some(time_real) else {
     return
   }
-  state_ref.val.timer = state_ref.val.timer.tick(time_real.delta())
-  if !state_ref.val.timer.is_finished() {
+  state_ref.modify(fn(value) {
+    value.timer = value.timer.tick(time_real.delta())
+  })
+  if !state_ref.peek().timer.is_finished() {
     return
   }
   let diagnostics_store = (try! world.get_resource(
@@ -603,10 +605,12 @@ fn diagnostics_overlay_pointer_down(
   guard overlay_node is Some(overlay_node) else { return }
   let left = diagnostics_overlay_val_px(overlay_node.value().left)
   let top = diagnostics_overlay_val_px(overlay_node.value().top)
-  drag_state.get_ref().val.active_overlay = Some(header.overlay_entity)
-  drag_state.get_ref().val.pointer_id = Some(pointer.pointer())
-  drag_state.get_ref().val.offset_x = pointer.position().x - left
-  drag_state.get_ref().val.offset_y = pointer.position().y - top
+  drag_state.modify(fn(value) {
+    value.active_overlay = Some(header.overlay_entity)
+    value.pointer_id = Some(pointer.pointer())
+    value.offset_x = pointer.position().x - left
+    value.offset_y = pointer.position().y - top
+  })
 }
 
 ///|
@@ -615,15 +619,14 @@ fn diagnostics_overlay_pointer_move(
   drag_state : @app.ResMut[DiagnosticsOverlayDragState],
   overlays : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
 ) -> Unit {
-  guard drag_state.get_ref().val.active_overlay is Some(overlay_entity) else {
-    return
-  }
-  guard drag_state.get_ref().val.pointer_id is Some(pointer_id) else { return }
+  let drag_state_value = drag_state.get()
+  guard drag_state_value.active_overlay is Some(overlay_entity) else { return }
+  guard drag_state_value.pointer_id is Some(pointer_id) else { return }
   guard pointer.pointer() == pointer_id else { return }
   let overlay_node = overlays.get(overlay_entity) catch { _ => None }
   guard overlay_node is Some(overlay_node) else { return }
-  let x = pointer.position().x - drag_state.get_ref().val.offset_x
-  let y = pointer.position().y - drag_state.get_ref().val.offset_y
+  let x = pointer.position().x - drag_state_value.offset_x
+  let y = pointer.position().y - drag_state_value.offset_y
   overlay_node.set(
     overlay_node.value().with_left(@ui.Val::Px(x)).with_top(@ui.Val::Px(y)),
   )
@@ -634,10 +637,12 @@ fn diagnostics_overlay_pointer_up(
   pointer : @app.OnPointer[@app.PointerUp],
   drag_state : @app.ResMut[DiagnosticsOverlayDragState],
 ) -> Unit {
-  guard drag_state.get_ref().val.pointer_id is Some(pointer_id) else { return }
+  guard drag_state.get().pointer_id is Some(pointer_id) else { return }
   guard pointer.pointer() == pointer_id else { return }
-  drag_state.get_ref().val.active_overlay = None
-  drag_state.get_ref().val.pointer_id = None
+  drag_state.modify(fn(value) {
+    value.active_overlay = None
+    value.pointer_id = None
+  })
 }
 
 ///|
@@ -653,9 +658,9 @@ fn diagnostics_overlay_pointer_click(
   let header = header_comp.value()
   let window_mut = windows.get(header.overlay_entity) catch { _ => None }
   guard window_mut is Some(window_mut) else { return }
-  let collapsed = !window_mut.get_ref().val.collapsed
-  window_mut.get_ref().val.collapsed = collapsed
-  let contents_entity = window_mut.get_ref().val.contents_entity
+  let collapsed = !window_mut.value().collapsed
+  let contents_entity = window_mut.value().contents_entity
+  window_mut.modify(fn(value) { value.collapsed = collapsed })
   let contents_node = nodes.get(contents_entity) catch { _ => None }
   guard contents_node is Some(contents_node) else { return }
   contents_node.set(

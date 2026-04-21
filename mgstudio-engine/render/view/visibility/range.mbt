@@ -232,24 +232,29 @@ fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
   let removed_ranges = main_world.removed_components(
     @root_visibility.ecs_key_visibility_range, system_sequence,
   )
-  let ranges_ref = match
-    (try! render_world.get_resource_ref_mut(ecs_key_render_visibility_ranges)) {
+  let ranges = match
+    (try! render_world.get_resource_mut(ecs_key_render_visibility_ranges)) {
     Some(value) => value
     None =>
       abort(
         "render visibility range: missing RenderVisibilityRanges resource in render world",
       )
   }
-  let ranges = ranges_ref.val
   if changed_ranges.is_empty() && removed_ranges.is_empty() {
     return
   }
   let query : @ecs.Query[@ecs.Comp[@root_visibility.VisibilityRange], @ecs.All] = @ecs.query(
     main_world,
   )
-  ranges.clear()
+  let next_ranges : Array[(Int, @root_visibility.VisibilityRange)] = []
   try! query.view(fn(entity, visibility_range) {
-    ranges.insert(entity.id, visibility_range.value())
+    next_ranges.push((entity.id, visibility_range.value()))
+  })
+  ranges.modify(fn(value) {
+    value.clear()
+    for entry in next_ranges {
+      value.insert(entry.0, entry.1)
+    }
   })
 }
 
@@ -279,20 +284,22 @@ fn render_visibility_ranges_write(
 
 ///|
 fn write_render_visibility_ranges_system(render_world : @ecs.World) -> Unit {
-  let ranges_ref = match
-    (try! render_world.get_resource_ref_mut(ecs_key_render_visibility_ranges)) {
+  let ranges = match
+    (try! render_world.get_resource_mut(ecs_key_render_visibility_ranges)) {
     Some(v) => v
     None =>
       abort(
         "render visibility range: missing RenderVisibilityRanges resource in render world",
       )
   }
-  render_visibility_ranges_write(
-    ranges_ref.val,
-    @render.host_gpu_read_only_binding_type_uniform(
-      VISIBILITY_RANGES_STORAGE_BUFFER_COUNT,
-    ),
-  )
+  ranges.modify(fn(value) {
+    render_visibility_ranges_write(
+      value,
+      @render.host_gpu_read_only_binding_type_uniform(
+        VISIBILITY_RANGES_STORAGE_BUFFER_COUNT,
+      ),
+    )
+  })
 }
 
 ///|

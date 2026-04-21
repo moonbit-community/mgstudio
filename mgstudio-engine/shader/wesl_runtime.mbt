@@ -64,11 +64,11 @@ fn shader_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
 }
 
 ///|
-fn shader_runtime_cache_ref_mut_or_abort(
+fn shader_runtime_cache_mut_or_abort(
   world : @ecs.World,
-) -> Ref[ShaderRuntimeCache] {
-  match (try! world.get_resource_ref_mut(ShaderRuntimeCache::resource())) {
-    Some(cache_ref) => cache_ref
+) -> @ecs.ResourceMut[ShaderRuntimeCache] {
+  match (try! world.get_resource_mut(ShaderRuntimeCache::resource())) {
+    Some(cache) => cache
     None =>
       abort(
         "ShaderRuntimeCache resource is missing; ShaderPlugin must initialize it before WESL compilation",
@@ -103,15 +103,19 @@ fn shader_asset_paths_or_abort(world : @ecs.World) -> ShaderAssetPaths {
 fn shader_runtime_cache_sync_loaded_assets(world : @ecs.World) -> Unit {
   let shader_assets = shader_assets_or_abort(world)
   let shader_paths = shader_asset_paths_or_abort(world)
-  let cache_ref = shader_runtime_cache_ref_mut_or_abort(world)
+  let cache = shader_runtime_cache_mut_or_abort(world)
   for entry in shader_paths.entries {
     let handle = entry.1
-    if cache_ref.val.cache.contains_shader(handle.asset_id()) {
+    if cache.peek().cache.contains_shader(handle.asset_id()) {
       continue
     }
     match shader_assets.get(handle) {
       Some(shader) =>
-        ignore(cache_ref.val.cache.set_shader(handle.asset_id(), shader))
+        ignore(
+          cache.modify(fn(value) {
+            value.cache.set_shader(handle.asset_id(), shader)
+          }),
+        )
       None => ()
     }
   }
@@ -191,8 +195,8 @@ pub fn shader_register_wesl_runtime_source(
   let asset_server = shader_asset_server_or_abort(world)
   let handle : @asset.Handle[Shader] = asset_server.load(path)
   shader_runtime_cache_sync_loaded_assets(world)
-  let cache_ref = shader_runtime_cache_ref_mut_or_abort(world)
-  let compiled = cache_ref.val.cache.get(0, handle.asset_id(), shader_defs)
+  let cache = shader_runtime_cache_mut_or_abort(world)
+  let compiled = cache.peek().cache.get(0, handle.asset_id(), shader_defs)
   @render.register_wgsl_source(path, compiled)
 }
 

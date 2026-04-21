@@ -22,8 +22,7 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let mesh = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
   let textures : Array[@asset.Handle[@asset.Image]] = [
     asset_server.get().load_image("branding/icon.png"),
     asset_server.get().load_image("branding/banner.png"),
@@ -32,11 +31,13 @@ fn setup(
     asset_server.get().load_image("branding/icon.png"),
   ]
   for i in 0..<textures.length() {
-    let material = materials.get_ref().val.add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white())
-      .with_base_color_texture(Some(textures[i]))
-      .with_metallic(0.2F),
-    )
+    let material = materials
+      .peek()
+      .add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white())
+        .with_base_color_texture(Some(textures[i]))
+        .with_metallic(0.2F),
+      )
     let x = Float::from_int(i) - Float::from_int(textures.length() - 1) * 0.5F
     commands.spawn(
       (

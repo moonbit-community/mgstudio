@@ -697,7 +697,8 @@ fn World::table_payloads_for_archetype_migration(
     let source_payload = match source_row {
       Some(row) =>
         match source_table_ref {
-          Some(table_ref) => table_ref.val.payload_at_row(row, component_local_id)
+          Some(table_ref) =>
+            table_ref.val.payload_at_row(row, component_local_id)
           None => None
         }
       None => None
@@ -743,9 +744,7 @@ fn World::swap_remove_entity_from_table(
       self.ensure_entity_archetype_capacity(result.removed_entity.id)
       self.entity_table_rows[result.removed_entity.id] = -1
     }
-    None => {
-      self.entity_table_rows[entity.id] = -1
-    }
+    None => self.entity_table_rows[entity.id] = -1
   }
 }
 
@@ -780,15 +779,12 @@ fn World::bundle_migrate_new_archetype_new_table(
   let target_row = if to_table_id >= 0 &&
     target_component_local_ids.length() > 0 {
     let ordered_payloads = self.table_payloads_for_archetype_migration(
-      entity,
-      from_table_id,
-      to_table_id,
-      pending_payloads,
+      entity, from_table_id, to_table_id, pending_payloads,
     )
-    match self.ensure_table_storage(to_table_id).val.append_row(
-      entity,
-      ordered_payloads,
-    ) {
+    match
+      self.ensure_table_storage(to_table_id).val.append_row(
+        entity, ordered_payloads,
+      ) {
       Some(row) => Some(row)
       None =>
         abort(
@@ -1105,10 +1101,7 @@ fn World::refresh_entity_archetype_with_pending_payloads(
   }
   ignore(
     self.migrate_entity_bundle(
-      entity,
-      previous_archetype_id,
-      next_archetype_id,
-      pending_payloads,
+      entity, previous_archetype_id, next_archetype_id, pending_payloads,
     ),
   )
 }

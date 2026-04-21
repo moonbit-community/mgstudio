@@ -737,7 +737,9 @@ pub fn AnimationGraphHandle::graph(
 pub fn animation_graph_add(
   graph : AnimationGraph,
 ) -> @asset.Handle[AnimationGraph] {
-  animation_asset_store_mut_or_abort().val.add(graph)
+  let assets = animation_asset_store_mut_or_abort()
+  assets.set_changed()
+  assets.peek().add(graph)
 }
 
 ///|
@@ -752,7 +754,9 @@ pub fn animation_graph_set(
   handle : @asset.Handle[AnimationGraph],
   graph : AnimationGraph,
 ) -> Bool {
-  animation_asset_store_mut_or_abort().val.set(handle, graph)
+  let assets = animation_asset_store_mut_or_abort()
+  assets.set_changed()
+  assets.peek().set(handle, graph)
 }
 
 ///|
@@ -762,35 +766,38 @@ fn thread_animation_graphs(
   threaded_graphs : @app.ResMut[ThreadedAnimationGraphs],
 ) -> Unit {
   let graph_assets_value = graph_assets.get()
-  let threaded_graphs_ref = threaded_graphs.get_ref()
+  let threaded_graphs_value = threaded_graphs.peek()
   for event in (try! graph_events.read()) {
     match event {
       @asset.AssetEvent::Added(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
+          threaded_graphs.set_changed()
           thread_animation_graph_rebuild(
-            threaded_graphs_ref.val,
+            threaded_graphs_value,
             handle.id(),
             graph,
           )
         }
       @asset.AssetEvent::Modified(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
+          threaded_graphs.set_changed()
           thread_animation_graph_rebuild(
-            threaded_graphs_ref.val,
+            threaded_graphs_value,
             handle.id(),
             graph,
           )
         }
       @asset.AssetEvent::LoadedWithDependencies(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
+          threaded_graphs.set_changed()
           thread_animation_graph_rebuild(
-            threaded_graphs_ref.val,
+            threaded_graphs_value,
             handle.id(),
             graph,
           )
         }
       @asset.AssetEvent::Removed(handle) =>
-        ignore(threaded_graphs_ref.val.graphs.remove(handle.id()))
+        ignore(threaded_graphs_value.graphs.remove(handle.id()))
     }
   }
 }

@@ -159,9 +159,11 @@ pub fn ensure_sorted_cameras_resource(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn sorted_cameras_ref_or_abort(world : @ecs.World) -> Ref[SortedCameras] {
+pub fn sorted_cameras_ref_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[SortedCameras] {
   ensure_sorted_cameras_resource(world)
-  match (try! world.get_resource_ref_mut(SortedCameras::resource())) {
+  match (try! world.get_resource_mut(SortedCameras::resource())) {
     Some(state) => state
     None => abort("Missing SortedCameras resource in render world")
   }
@@ -178,13 +180,15 @@ pub fn sorted_cameras_or_default(world : @ecs.World) -> SortedCameras {
 
 ///|
 pub fn sorted_cameras_replace_entities(
-  sorted_cameras_ref : Ref[SortedCameras],
+  sorted_cameras_ref : @ecs.ResourceMut[SortedCameras],
   entities : Array[@core.Entity],
 ) -> Unit {
-  sorted_cameras_ref.val.entities = entities
+  sorted_cameras_ref.modify(fn(value) { value.entities = entities })
 }
 
 ///|
-pub fn sorted_cameras_clear(sorted_cameras_ref : Ref[SortedCameras]) -> Unit {
-  sorted_cameras_ref.val.entities.clear()
+pub fn sorted_cameras_clear(
+  sorted_cameras_ref : @ecs.ResourceMut[SortedCameras],
+) -> Unit {
+  sorted_cameras_ref.modify(fn(value) { value.entities.clear() })
 }

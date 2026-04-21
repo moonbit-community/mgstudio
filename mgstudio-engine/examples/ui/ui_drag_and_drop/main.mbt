@@ -131,10 +131,11 @@ fn begin_drag(
     @ecs.All,
   ],
 ) -> Unit {
-  let state_ref = drag_state.get_ref()
-  state_ref.val.active = Some(entity)
-  state_ref.val.hovered = Some(entity)
-  state_ref.val.start_position = position
+  drag_state.modify(fn(value) {
+    value.active = Some(entity)
+    value.hovered = Some(entity)
+    value.start_position = position
+  })
   let visual = visuals.get(entity) catch { _ => None }
   if visual is Some((outline, global_z)) {
     outline.set(
@@ -154,17 +155,20 @@ fn drag_active_tile(
   drag_state : @app.ResMut[DragState],
   transforms : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
 ) -> Unit {
-  let state_ref = drag_state.get_ref()
-  guard state_ref.val.active is Some(active) else { return }
+  let state_value = drag_state.peek()
+  guard state_value.active is Some(active) else { return }
   let transform = transforms.get(active) catch { _ => None }
   if transform is Some(transform) {
     let current = pointer.position()
-    let start = state_ref.val.start_position
+    let start = state_value.start_position
     let delta_x = current.x - start.x
     let delta_y = current.y - start.y
-    let transform_ref = transform.get_ref()
-    let z = transform_ref.val.translation.z
-    transform_ref.val.translation = @math.Vec3::new(delta_x, delta_y, z)
+    let current_transform = transform.value()
+    let z = current_transform.translation.z
+    transform.set(@transform.Transform::{
+      ..current_transform,
+      translation: @math.Vec3::new(delta_x, delta_y, z),
+    })
   }
 }
 
@@ -182,20 +186,23 @@ fn release_active_tile(
   ],
   nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
 ) -> Unit {
-  let state_ref = drag_state.get_ref()
-  guard state_ref.val.active is Some(active) else { return }
+  let state_value = drag_state.peek()
+  guard state_value.active is Some(active) else { return }
 
   let active_visual = visuals.get(active) catch { _ => None }
   if active_visual is Some((transform, outline, global_z)) {
-    let transform_ref = transform.get_ref()
-    let z = transform_ref.val.translation.z
-    transform_ref.val.translation = @math.Vec3::new(0.0F, 0.0F, z)
+    let current_transform = transform.value()
+    let z = current_transform.translation.z
+    transform.set(@transform.Transform::{
+      ..current_transform,
+      translation: @math.Vec3::new(0.0F, 0.0F, z),
+    })
     outline.set(@ui.Outline::default())
     global_z.set(@ui.GlobalZIndex::new(0))
   }
 
   let active_node = nodes.get(active) catch { _ => None }
-  if state_ref.val.hovered is Some(hovered) &&
+  if state_value.hovered is Some(hovered) &&
     hovered != active &&
     active_node is Some(active_node) {
     let hovered_node = nodes.get(hovered) catch { _ => None }
@@ -215,7 +222,7 @@ fn release_active_tile(
     }
   }
 
-  state_ref.val.active = None
+  drag_state.modify(fn(value) { value.active = None })
 }
 
 ///|
@@ -301,7 +308,7 @@ fn setup(
             @ecs.All,
           ],
         ) {
-          drag_state.get_ref().val.hovered = Some(tile)
+          drag_state.modify(fn(value) { value.hovered = Some(tile) })
           set_tile_colors(
             tile, tile_hover_color, tile_hover_border_color, colors,
           )
@@ -314,10 +321,11 @@ fn setup(
             @ecs.All,
           ],
         ) {
-          let state_ref = drag_state.get_ref()
-          if state_ref.val.hovered is Some(hovered) && hovered == tile {
-            state_ref.val.hovered = None
-          }
+          drag_state.modify(fn(value) {
+            if value.hovered is Some(hovered) && hovered == tile {
+              value.hovered = None
+            }
+          })
           set_tile_colors(tile, tile_color, tile_border_color, colors)
         })
         .observe_pointer3(fn(

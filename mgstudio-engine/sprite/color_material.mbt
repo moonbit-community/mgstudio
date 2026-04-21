@@ -18,7 +18,7 @@ pub fn color_material_assets_or_abort() -> @asset.Assets[ColorMaterialAsset] {
 }
 
 ///|
-pub fn color_material_assets_mut_or_abort() -> Ref[
+pub fn color_material_assets_mut_or_abort() -> @ecs.ResourceMut[
   @asset.Assets[ColorMaterialAsset],
 ] {
   render2d_asset_store_mut_or_abort()
@@ -170,9 +170,17 @@ fn color_material_add(
   uv_offset : @math.Vec2,
   uv_scale : @math.Vec2,
 ) -> ColorMaterial {
-  let handle = color_material_assets_mut_or_abort().val.add(
-    ColorMaterialAsset::new(color, alpha_mode, texture~, uv_offset~, uv_scale~),
-  )
+  let handle = color_material_assets_mut_or_abort().modify(fn(assets) {
+    assets.add(
+      ColorMaterialAsset::new(
+        color,
+        alpha_mode,
+        texture~,
+        uv_offset~,
+        uv_scale~,
+      ),
+    )
+  })
   ColorMaterial::{ handle, }
 }
 
@@ -387,11 +395,13 @@ fn init_default_color_material_asset(
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   let key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
-  if (try! world.get_resource_ref_mut(key)) is Some(assets_ref) {
+  if (try! world.get_resource_mut(key)) is Some(assets) {
     let handle = default_color_material_asset_handle()
-    if !assets_ref.val.contains(handle) {
-      assets_ref.val.insert(handle, default_color_material_asset()) |> ignore
-    }
+    assets.modify(fn(value) {
+      if !value.contains(handle) {
+        value.insert(handle, default_color_material_asset()) |> ignore
+      }
+    })
   }
   app
 }

@@ -47,16 +47,17 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Cuboid::new(0.8F, 0.8F, 0.8F))
+  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(0.8F, 0.8F, 0.8F))
   for i in 0..<16 {
     let x = Float::from_int(i % 4) - 1.5F
     let z = Float::from_int(i / 4) - 1.5F
-    let material = materials.get_ref().val.add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::srgb(0.95F, 0.95F, 0.98F),
-      ).with_perceptual_roughness(0.4F),
-    )
+    let material = materials
+      .peek()
+      .add(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::srgb(0.95F, 0.95F, 0.98F),
+        ).with_perceptual_roughness(0.4F),
+      )
     if i % 2 == 0 {
       commands.spawn(
         (
@@ -109,8 +110,9 @@ fn animate_phase_a(
 ) -> Unit {
   let elapsed = time.get().elapsed_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.get_ref().val.translation.y = 0.6F +
-      @math.sin(elapsed * 1.2F) * 0.3F
+    transform.modify(fn(value) {
+      value.translation.y = 0.6F + @math.sin(elapsed * 1.2F) * 0.3F
+    })
   })
 }
 
@@ -121,8 +123,9 @@ fn animate_phase_b(
 ) -> Unit {
   let elapsed = time.get().elapsed_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.get_ref().val.translation.y = 0.6F +
-      @math.cos(elapsed * 1.2F) * 0.3F
+    transform.modify(fn(value) {
+      value.translation.y = 0.6F + @math.cos(elapsed * 1.2F) * 0.3F
+    })
   })
 }
 

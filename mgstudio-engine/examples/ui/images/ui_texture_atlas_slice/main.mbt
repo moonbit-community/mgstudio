@@ -23,14 +23,16 @@ fn setup(
   let texture = server.load_image(
     "textures/fantasy_ui_borders/border_sheet.png",
   )
-  let atlas_layout = texture_atlases.get_ref().val.add(
-    @asset.TextureAtlasLayout::from_grid(
-      @math.UVec2::new(50, 50),
-      6,
-      6,
-      padding=@math.UVec2::splat(2),
-    ),
-  )
+  let atlas_layout = texture_atlases
+    .peek()
+    .add(
+      @asset.TextureAtlasLayout::from_grid(
+        @math.UVec2::new(50, 50),
+        6,
+        6,
+        padding=@math.UVec2::splat(2),
+      ),
+    )
   let slicer = @ui.TextureSlicer::new(@ui.BorderRect::square(24.0F))
 
   commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
@@ -107,7 +109,7 @@ fn button_system(
     }
     match interaction.value() {
       @ui.Interaction::Pressed => {
-        text.get_ref().val.content = "Press"
+        text.modify(fn(value) { value.content = "Press" })
         if image.value().texture_atlas is Some(atlas) {
           image.set(
             image
@@ -118,13 +120,13 @@ fn button_system(
         }
       }
       @ui.Interaction::Hovered => {
-        text.get_ref().val.content = "Hover"
+        text.modify(fn(value) { value.content = "Hover" })
         image.set(
           image.value().with_color(@sprite.Color::srgb(1.0F, 0.55F, 0.0F)),
         )
       }
       @ui.Interaction::None => {
-        text.get_ref().val.content = "Button"
+        text.modify(fn(value) { value.content = "Button" })
         image.set(image.value().with_color(@sprite.Color::white()))
       }
     }

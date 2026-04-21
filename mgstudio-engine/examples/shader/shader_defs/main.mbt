@@ -34,18 +34,21 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let cube = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.3F, 1.3F, 1.3F))
-  let low_steps = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.85F, 0.28F, 0.28F)).with_reflectance(
-      0.05F,
-    ),
-  )
-  let high_steps = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.28F, 0.45F, 0.95F)).with_reflectance(
-      0.95F,
-    ),
-  )
+  let cube = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.3F, 1.3F, 1.3F))
+  let low_steps = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.85F, 0.28F, 0.28F),
+      ).with_reflectance(0.05F),
+    )
+  let high_steps = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.28F, 0.45F, 0.95F),
+      ).with_reflectance(0.95F),
+    )
 
   commands.spawn(
     (
@@ -95,7 +98,7 @@ fn rotate(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.get_ref().val.rotate_y(delta * 0.75F)
+    transform.modify(fn(value) { value.rotate_y(delta * 0.75F) })
   })
 }
 

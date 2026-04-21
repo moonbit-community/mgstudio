@@ -77,13 +77,14 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let mesh = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.5F, 1.5F, 1.5F))
-  let material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
-      Some(asset_server.get().load_image("branding/icon.png")),
-    ),
-  )
+  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.5F, 1.5F, 1.5F))
+  let material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
+        Some(asset_server.get().load_image("branding/icon.png")),
+      ),
+    )
   commands.spawn(
     (
       Spin::{  },
@@ -98,12 +99,16 @@ fn setup(
   commands.spawn(
     (
       @pbr.Mesh3d::new(
-        meshes.get_ref().val.add(
+        meshes
+        .peek()
+        .add(
           @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)),
         ),
       ),
       @pbr.MeshMaterial3d::new(
-        materials.get_ref().val.add(
+        materials
+        .peek()
+        .add(
           @pbr.StandardMaterial::from_color(
             @sprite.Color::srgb(0.1F, 0.11F, 0.15F),
           ),
@@ -142,8 +147,10 @@ fn spin_system(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.get_ref().val.rotate_y(delta * 0.9F)
-    transform.get_ref().val.rotate_z(delta * 0.4F)
+    transform.modify(fn(value) {
+      value.rotate_y(delta * 0.9F)
+      value.rotate_z(delta * 0.4F)
+    })
   })
 }
 

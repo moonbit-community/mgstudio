@@ -19,7 +19,7 @@ struct Name {
 
 ///|
 struct NameIndex {
-  mut entries : Map[String, @core.Entity]
+  entries : Map[String, @core.Entity]
 }
 
 ///|
@@ -54,10 +54,10 @@ fn rebuild_name_index(
   names : @ecs.Query[(@core.Entity, @ecs.Comp[Name]), @ecs.All],
   index : @app.ResMut[NameIndex],
 ) -> Unit {
-  index.get_ref().val.entries = {}
+  index.set(NameIndex::{ entries: {} })
   try! names.view(fn(_query_entity, data) {
     let (entity, name) = data
-    index.get_ref().val.entries[name.value().value] = entity
+    index.modify(fn(value) { value.entries[name.value().value] = entity })
   })
 }
 

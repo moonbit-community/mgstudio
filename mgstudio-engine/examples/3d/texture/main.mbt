@@ -25,8 +25,8 @@ fn setup(
   let texture = asset_server.get().load("branding/bevy_logo_dark_big.png")
   let aspect = 0.25F
   let quad_width = 8.0F
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
   let quad_handle = mesh_assets
     |> @pbr.add_mesh(
       @mesh.Mesh3dGeometry::rectangle(quad_width, quad_width * aspect),

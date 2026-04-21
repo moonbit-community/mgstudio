@@ -489,24 +489,13 @@ pub fn[T : Resource] Res::changed_by(self : Res[T]) -> String? {
 
 ///|
 pub struct ResMut[T] {
-  value : Ref[T]
   world : @ecs.World?
-  key_id : Int?
+  key : @ecs.ResourceKey[T]?
 }
 
 ///|
-#callsite(autofill(loc))
-pub fn[T : Resource] ResMut::get_ref(
-  self : ResMut[T],
-  loc~ : SourceLoc,
-) -> Ref[T] {
-  self.set_changed(loc~)
-  self.value
-}
-
-///|
-pub fn[T] ResMut::get(self : ResMut[T]) -> T {
-  self.value.val
+pub fn[T : Resource] ResMut::get(self : ResMut[T]) -> T {
+  self.peek()
 }
 
 ///|
@@ -519,8 +508,8 @@ fn[T] res_mut_world_or_abort(item : ResMut[T]) -> @ecs.World {
 
 ///|
 fn[T] res_mut_key_id_or_abort(item : ResMut[T]) -> Int {
-  match item.key_id {
-    Some(key_id) => key_id
+  match item.key {
+    Some(key) => key.id()
     None => abort("ResMut expected a fetched system parameter")
   }
 }
@@ -589,8 +578,57 @@ pub fn[T : Resource] ResMut::set_added(
 }
 
 ///|
-pub fn[T] ResMut::bypass_change_detection(self : ResMut[T]) -> Ref[T] {
-  self.value
+fn[T : Resource] res_mut_value_or_abort(item : ResMut[T]) -> T {
+  let world = res_mut_world_or_abort(item)
+  match
+    (try world.get_resource(T::resource()) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(value) => value
+    None => abort("ResMut expected a fetched system parameter")
+  }
+}
+
+///|
+pub fn[T : Resource] ResMut::peek(self : ResMut[T]) -> T {
+  res_mut_value_or_abort(self)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Resource, R] ResMut::modify(
+  self : ResMut[T],
+  f : (T) -> R,
+  loc~ : SourceLoc,
+) -> R {
+  let value = self.peek()
+  let result = f(value)
+  res_mut_world_or_abort(self).insert_resource(T::resource(), value)
+  self.set_changed(loc~)
+  result
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Resource] ResMut::update(
+  self : ResMut[T],
+  f : (T) -> T,
+  loc~ : SourceLoc,
+) -> Unit {
+  self.set(f(self.peek()), loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Resource] ResMut::set(
+  self : ResMut[T],
+  value : T,
+  loc~ : SourceLoc,
+) -> Unit {
+  res_mut_world_or_abort(self).insert_resource(T::resource(), value)
+  self.set_changed(loc~)
 }
 
 ///|
@@ -600,16 +638,16 @@ pub fn[T : Resource + Eq] ResMut::set_if_neq(
   value : T,
   loc~ : SourceLoc,
 ) -> Bool {
-  let value_ref = self.bypass_change_detection()
-  if value_ref.val != value {
-    value_ref.val = value
-    self.set_changed(loc~)
+  let current = self.peek()
+  if current != value {
+    self.set(value, loc~)
     true
   } else {
     false
   }
 }
 
+///|
 fn[T] system_param_raise_invalid_missing_resource() -> T raise @ecs.SystemParamValidationError {
   raise @ecs.Invalid("Missing resource for system parameter")
 }
@@ -620,20 +658,6 @@ fn[T : Resource] world_resource_value_or_raise(
 ) -> T raise @ecs.SystemParamValidationError {
   match
     (try world.get_resource(Resource::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
-    Some(value) => value
-    None => system_param_raise_invalid_missing_resource()
-  }
-}
-
-fn[T : Resource] world_resource_ref_mut_or_raise(
-  world : @ecs.World,
-) -> Ref[T] raise @ecs.SystemParamValidationError {
-  match
-    (try world.get_resource_ref(Resource::resource()) catch {
       _ => None
     } noraise {
       value => value
@@ -763,10 +787,13 @@ pub fn[W, O] OutputSystemConfig::pipe(
   self : OutputSystemConfig[W, O],
   handler : (In[O]) -> Unit,
 ) -> SystemConfig[W] {
-  system_config_with_access(fn(world : W) {
-    guard (self.system)(world) is Some(output) else { return }
-    handler(In::{ value: output })
-  }, fn(world : @ecs.World) { self.output_system_base_access(world) })
+  system_config_with_access(
+    fn(world : W) {
+      guard (self.system)(world) is Some(output) else { return }
+      handler(In::{ value: output })
+    },
+    fn(world : @ecs.World) { self.output_system_base_access(world) },
+  )
 }
 
 ///|
@@ -776,26 +803,29 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::pipe_param(
 ) -> SystemConfig[W] {
   let state = Ref::new(Json::null())
   let state_initialized = Ref::new(false)
-  system_config_with_access(fn(world : W) {
-    guard (self.system)(world) is Some(output) else { return }
-    let current_world = system_param_abort_missing_world()
-    if !state_initialized.val {
-      state.val = P::init_state(current_world)
-      state_initialized.val = true
-    }
-    let param_opt : P? = system_param_get_or_record(state)
-    guard param_opt is Some(param) else { return }
-    handler(In::{ value: output }, param)
-    P::store(param, state)
-  }, fn(world : @ecs.World) {
-    let access = self.output_system_base_access(world)
-    system_access_merge_validated(
-      access,
-      P::access(world),
-      @hashmap.HashMap::new(),
-    )
-    access
-  })
+  system_config_with_access(
+    fn(world : W) {
+      guard (self.system)(world) is Some(output) else { return }
+      let current_world = system_param_abort_missing_world()
+      if !state_initialized.val {
+        state.val = P::init_state(current_world)
+        state_initialized.val = true
+      }
+      let param_opt : P? = system_param_get_or_record(state)
+      guard param_opt is Some(param) else { return }
+      handler(In::{ value: output }, param)
+      P::store(param, state)
+    },
+    fn(world : @ecs.World) {
+      let access = self.output_system_base_access(world)
+      system_access_merge_validated(
+        access,
+        P::access(world),
+        @hashmap.HashMap::new(),
+      )
+      access
+    },
+  )
 }
 
 ///|
@@ -803,10 +833,13 @@ pub fn[W, O] OutputSystemConfig::map(
   self : OutputSystemConfig[W, O],
   handler : (O) -> Unit,
 ) -> SystemConfig[W] {
-  system_config_with_access(fn(world : W) {
-    guard (self.system)(world) is Some(output) else { return }
-    handler(output)
-  }, fn(world : @ecs.World) { self.output_system_base_access(world) })
+  system_config_with_access(
+    fn(world : W) {
+      guard (self.system)(world) is Some(output) else { return }
+      handler(output)
+    },
+    fn(world : @ecs.World) { self.output_system_base_access(world) },
+  )
 }
 
 ///|
@@ -816,26 +849,29 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::map_param(
 ) -> SystemConfig[W] {
   let state = Ref::new(Json::null())
   let state_initialized = Ref::new(false)
-  system_config_with_access(fn(world : W) {
-    guard (self.system)(world) is Some(output) else { return }
-    let current_world = system_param_abort_missing_world()
-    if !state_initialized.val {
-      state.val = P::init_state(current_world)
-      state_initialized.val = true
-    }
-    let param_opt : P? = system_param_get_or_record(state)
-    guard param_opt is Some(param) else { return }
-    handler(output, param)
-    P::store(param, state)
-  }, fn(world : @ecs.World) {
-    let access = self.output_system_base_access(world)
-    system_access_merge_validated(
-      access,
-      P::access(world),
-      @hashmap.HashMap::new(),
-    )
-    access
-  })
+  system_config_with_access(
+    fn(world : W) {
+      guard (self.system)(world) is Some(output) else { return }
+      let current_world = system_param_abort_missing_world()
+      if !state_initialized.val {
+        state.val = P::init_state(current_world)
+        state_initialized.val = true
+      }
+      let param_opt : P? = system_param_get_or_record(state)
+      guard param_opt is Some(param) else { return }
+      handler(output, param)
+      P::store(param, state)
+    },
+    fn(world : @ecs.World) {
+      let access = self.output_system_base_access(world)
+      system_access_merge_validated(
+        access,
+        P::access(world),
+        @hashmap.HashMap::new(),
+      )
+      access
+    },
+  )
 }
 
 ///|
@@ -877,7 +913,9 @@ pub fn[W, P : SystemParam] system_config_param(
 pub fn[W, P : SystemParam] fallible_system_config_param(
   system : (P) -> Unit raise,
 ) -> SystemConfig[W] {
-  system_config_with_access(fallible_system_param(system), fn(world : @ecs.World) {
+  system_config_with_access(fallible_system_param(system), fn(
+    world : @ecs.World,
+  ) {
     let access = SystemAccess::new()
     system_access_merge_validated(
       access,
@@ -912,7 +950,9 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] system_config_param2(
 pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_config_param2(
   system : (P1, P2) -> Unit raise,
 ) -> SystemConfig[W] {
-  system_config_with_access(fallible_system_param2(system), fn(world : @ecs.World) {
+  system_config_with_access(fallible_system_param2(system), fn(
+    world : @ecs.World,
+  ) {
     let access = SystemAccess::new()
     system_access_merge_validated(
       access,
@@ -957,7 +997,9 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_config_pa
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_config_param3(
   system : (P1, P2, P3) -> Unit raise,
 ) -> SystemConfig[W] {
-  system_config_with_access(fallible_system_param3(system), fn(world : @ecs.World) {
+  system_config_with_access(fallible_system_param3(system), fn(
+    world : @ecs.World,
+  ) {
     let access = SystemAccess::new()
     system_access_merge_validated(
       access,
@@ -979,7 +1021,13 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_
 }
 
 ///|
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_config_param4(
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] system_config_param4(
   system : (P1, P2, P3, P4) -> Unit,
 ) -> SystemConfig[W] {
   system_config_with_access(system_param4(system), fn(world : @ecs.World) {
@@ -1009,10 +1057,18 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 }
 
 ///|
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] fallible_system_config_param4(
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] fallible_system_config_param4(
   system : (P1, P2, P3, P4) -> Unit raise,
 ) -> SystemConfig[W] {
-  system_config_with_access(fallible_system_param4(system), fn(world : @ecs.World) {
+  system_config_with_access(fallible_system_param4(system), fn(
+    world : @ecs.World,
+  ) {
     let access = SystemAccess::new()
     system_access_merge_validated(
       access,
@@ -1620,9 +1676,9 @@ let current_app_schedule_ref : Ref[ScheduleRegistry[@ecs.World]?] = Ref::new(
 )
 
 ///|
-let current_allowed_ambiguous_components_ref : Ref[
-  @hashmap.HashMap[Int, Bool]?
-] = Ref::new(None)
+let current_allowed_ambiguous_components_ref : Ref[@hashmap.HashMap[Int, Bool]?] = Ref::new(
+  None,
+)
 
 ///|
 pub fn current_world() -> @ecs.World? {
@@ -1731,11 +1787,7 @@ pub impl[T : Resource] SystemParam for ResMut[T] with init_state(world) {
 ///|
 pub impl[T : Resource] SystemParam for ResMut[T] with get(_state) {
   let world = system_param_abort_missing_world()
-  ResMut::{
-    value: world_resource_ref_mut_or_raise(world),
-    world: Some(world),
-    key_id: Some(T::resource().id()),
-  }
+  ResMut::{ world: Some(world), key: Some(T::resource()) }
 }
 
 ///|
@@ -2028,7 +2080,11 @@ pub impl ChainedSystemConfigs for (
   chain_copy_order_edges(chained, first_ref.val)
   chain_copy_order_edges(chained, second_ref.val)
   chain_copy_order_edges(chained, third_ref.val)
-  chain_copy_access_factories(chained, [first_ref.val, second_ref.val, third_ref.val])
+  chain_copy_access_factories(chained, [
+    first_ref.val,
+    second_ref.val,
+    third_ref.val,
+  ])
   chained
 }
 
@@ -2054,10 +2110,12 @@ pub impl ChainedSystemConfigs for (
   chain_copy_order_edges(chained, second_ref.val)
   chain_copy_order_edges(chained, third_ref.val)
   chain_copy_order_edges(chained, fourth_ref.val)
-  chain_copy_access_factories(
-    chained,
-    [first_ref.val, second_ref.val, third_ref.val, fourth_ref.val],
-  )
+  chain_copy_access_factories(chained, [
+    first_ref.val,
+    second_ref.val,
+    third_ref.val,
+    fourth_ref.val,
+  ])
   chained
 }
 
@@ -2087,16 +2145,13 @@ pub impl ChainedSystemConfigs for (
   chain_copy_order_edges(chained, third_ref.val)
   chain_copy_order_edges(chained, fourth_ref.val)
   chain_copy_order_edges(chained, fifth_ref.val)
-  chain_copy_access_factories(
-    chained,
-    [
-      first_ref.val,
-      second_ref.val,
-      third_ref.val,
-      fourth_ref.val,
-      fifth_ref.val,
-    ],
-  )
+  chain_copy_access_factories(chained, [
+    first_ref.val,
+    second_ref.val,
+    third_ref.val,
+    fourth_ref.val,
+    fifth_ref.val,
+  ])
   chained
 }
 
@@ -2130,17 +2185,14 @@ pub impl ChainedSystemConfigs for (
   chain_copy_order_edges(chained, fourth_ref.val)
   chain_copy_order_edges(chained, fifth_ref.val)
   chain_copy_order_edges(chained, sixth_ref.val)
-  chain_copy_access_factories(
-    chained,
-    [
-      first_ref.val,
-      second_ref.val,
-      third_ref.val,
-      fourth_ref.val,
-      fifth_ref.val,
-      sixth_ref.val,
-    ],
-  )
+  chain_copy_access_factories(chained, [
+    first_ref.val,
+    second_ref.val,
+    third_ref.val,
+    fourth_ref.val,
+    fifth_ref.val,
+    sixth_ref.val,
+  ])
   chained
 }
 
@@ -3870,11 +3922,10 @@ fn run_systems(
 
   let execution_batches : Array[Array[Int]] = []
   match executor_kind {
-    SingleThreaded => {
+    SingleThreaded =>
       for system_i in execution_order {
         execution_batches.push([system_i])
       }
-    }
     MultiThreaded => {
       let current_batch_ref : Ref[Array[Int]] = Ref::new([])
       let current_batch_layer_ref : Ref[Int?] = Ref::new(None)
@@ -3914,7 +3965,7 @@ fn run_systems(
       }
     }
   }
-  let stepping_ref = stepping_resource_ref(world)
+  let stepping_ref = stepping_resource_mut(world)
   stepping_prepare_stage(stepping_ref, stage, systems, execution_order)
   fn system_trace_name(
     cfg : SystemConfig[@ecs.World],
@@ -3953,11 +4004,7 @@ fn run_systems(
       let cfg = systems[system_i]
       execution_i_ref.val = execution_i + 1
       if !stepping_should_run_system(
-          stepping_ref,
-          stage,
-          systems,
-          system_i,
-          execution_i,
+          stepping_ref, stage, systems, system_i, execution_i,
         ) {
         continue
       }
@@ -4040,11 +4087,7 @@ fn run_systems(
           }
           systems[system_i].last_run_sequence = this_run
           stepping_record_system_run(
-            stepping_ref,
-            stage,
-            systems,
-            system_i,
-            execution_i,
+            stepping_ref, stage, systems, system_i, execution_i,
           )
         }
         Skipped(_) => continue
@@ -4077,11 +4120,7 @@ fn run_systems(
           }
           systems[system_i].last_run_sequence = this_run
           stepping_record_system_run(
-            stepping_ref,
-            stage,
-            systems,
-            system_i,
-            execution_i,
+            stepping_ref, stage, systems, system_i, execution_i,
           )
           match systems[system_i].error_handler {
             Some(handler) =>

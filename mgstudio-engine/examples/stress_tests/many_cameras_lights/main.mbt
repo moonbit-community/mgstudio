@@ -58,12 +58,14 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let plane_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(9.0F, 0.1F, 9.0F)),
-  )
-  let white_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
-  )
+  let plane_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(9.0F, 0.1F, 9.0F)),
+    )
+  let white_material = materials
+    .peek()
+    .add(@pbr.StandardMaterial::from_color(@sprite.Color::white()))
   ignore(
     commands.spawn(
       (
@@ -74,9 +76,11 @@ fn setup(
     ),
   )
 
-  let cube_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
-  )
+  let cube_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+    )
   ignore(
     commands.spawn(
       (
@@ -161,16 +165,17 @@ fn rotate_cameras(
 ) -> Unit {
   try! cameras.for_each(fn(_entity, data) {
     let (orbit, transform) = data
-    let orbit_ref = orbit.get_ref()
-    let transform_ref = transform.get_ref()
-    orbit_ref.val.angle += time.get().delta_secs()
-    transform_ref.val = @transform.Transform::from_xyz(
-      @math.sin(orbit_ref.val.angle) * orbit_ref.val.radius,
-      orbit_ref.val.height,
-      @math.cos(orbit_ref.val.angle) * orbit_ref.val.radius,
-    ).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    let next_angle = orbit.value().angle + time.get().delta_secs()
+    orbit.modify(fn(value) { value.angle = next_angle })
+    transform.set(
+      @transform.Transform::from_xyz(
+        @math.sin(next_angle) * orbit.value().radius,
+        orbit.value().height,
+        @math.cos(next_angle) * orbit.value().radius,
+      ).looking_at(
+        @math.Vec3::new(0.0F, 0.0F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
     )
   })
 }

@@ -22,21 +22,26 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let plane_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)),
-  )
-  let torus_mesh = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Sphere::new(1.0F))
-  let floor_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.15F, 0.18F, 0.22F)),
-  )
-  let torus_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
-    .with_base_color_texture(
-      Some(asset_server.get().load_image("branding/banner.png")),
+  let plane_mesh = meshes
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)))
+  let torus_mesh = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(1.0F))
+  let floor_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.15F, 0.18F, 0.22F),
+      ),
     )
-    .with_reflectance(0.5F),
-  )
+  let torus_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::white())
+      .with_base_color_texture(
+        Some(asset_server.get().load_image("branding/banner.png")),
+      )
+      .with_reflectance(0.5F),
+    )
 
   commands.spawn(
     (

@@ -207,17 +207,18 @@ fn setup_scene(world : @ecs.World) -> Unit {
 fn configure_light_gizmos(
   config_store : @app.ResMut[@gizmos.GizmoConfigStore],
 ) -> Unit {
-  let store_ref = config_store.get_ref()
-  let (config, group) = store_ref.val.config_mut(
-    @light.LightGizmoConfigGroup::default(),
-  )
-  config.val = {
-    ..config.val,
-    enabled: true,
-    line: { ..config.val.line, width: 2.0F },
-  }
-  group.val = { ..group.val, draw_all: true, color: @light.MatchLightColor }
-  update_color_text(group.val)
+  config_store.modify(fn(store) {
+    let (config, group) = store.config_mut(
+      @light.LightGizmoConfigGroup::default(),
+    )
+    config.val = {
+      ..config.val,
+      enabled: true,
+      line: { ..config.val.line, width: 2.0F },
+    }
+    group.val = { ..group.val, draw_all: true, color: @light.MatchLightColor }
+    update_color_text(group.val)
+  })
 }
 
 ///|
@@ -248,61 +249,62 @@ fn update_config(
   config_store : @app.ResMut[@gizmos.GizmoConfigStore],
   time : @app.Res[@time.Time[@time.Virtual]],
 ) -> Unit {
-  let store_ref = config_store.get_ref()
-  let (config, group) = store_ref.val.config_mut(
-    @light.LightGizmoConfigGroup::default(),
-  )
-  if @input.key_just_pressed(@window.KeyCode::KeyD) {
-    config.val = {
-      ..config.val,
-      depth_bias: if config.val.depth_bias == 0.0F {
-        -1.0F
-      } else {
-        0.0F
-      },
+  config_store.modify(fn(store) {
+    let (config, group) = store.config_mut(
+      @light.LightGizmoConfigGroup::default(),
+    )
+    if @input.key_just_pressed(@window.KeyCode::KeyD) {
+      config.val = {
+        ..config.val,
+        depth_bias: if config.val.depth_bias == 0.0F {
+          -1.0F
+        } else {
+          0.0F
+        },
+      }
     }
-  }
-  if @input.key_pressed(@window.KeyCode::ArrowRight) {
-    config.val = {
-      ..config.val,
-      line: {
-        ..config.val.line,
-        width: clamp_float(
-          config.val.line.width + 5.0F * time.get().delta_secs(),
-          0.0F,
-          50.0F,
-        ),
-      },
+    if @input.key_pressed(@window.KeyCode::ArrowRight) {
+      config.val = {
+        ..config.val,
+        line: {
+          ..config.val.line,
+          width: clamp_float(
+            config.val.line.width + 5.0F * time.get().delta_secs(),
+            0.0F,
+            50.0F,
+          ),
+        },
+      }
     }
-  }
-  if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-    config.val = {
-      ..config.val,
-      line: {
-        ..config.val.line,
-        width: clamp_float(
-          config.val.line.width - 5.0F * time.get().delta_secs(),
-          0.0F,
-          50.0F,
-        ),
-      },
+    if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+      config.val = {
+        ..config.val,
+        line: {
+          ..config.val.line,
+          width: clamp_float(
+            config.val.line.width - 5.0F * time.get().delta_secs(),
+            0.0F,
+            50.0F,
+          ),
+        },
+      }
     }
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyA) {
-    config.val = { ..config.val, enabled: !config.val.enabled }
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyC) {
-    group.val = {
-      ..group.val,
-      color: match group.val.color {
-        Manual(_) => @light.Varied
-        Varied => @light.MatchLightColor
-        MatchLightColor => @light.ByLightType
-        ByLightType => @light.Manual(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
-      },
+    if @input.key_just_pressed(@window.KeyCode::KeyA) {
+      config.val = { ..config.val, enabled: !config.val.enabled }
     }
-    update_color_text(group.val)
-  }
+    if @input.key_just_pressed(@window.KeyCode::KeyC) {
+      group.val = {
+        ..group.val,
+        color: match group.val.color {
+          Manual(_) => @light.Varied
+          Varied => @light.MatchLightColor
+          MatchLightColor => @light.ByLightType
+          ByLightType => @light.Manual(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
+        },
+      }
+      update_color_text(group.val)
+    }
+  })
 }
 
 ///|

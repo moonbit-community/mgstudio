@@ -75,10 +75,10 @@ pub impl @ecs.TriggerEvent for ExplodeMines with observer_entity(_self) {
 
 ///|
 pub impl @ecs.TriggerEvent for ExplodeMines with set_observer_entity(
-  _event_ref,
+  self,
   _entity,
 ) {
-
+  self
 }
 
 ///|
@@ -93,7 +93,7 @@ pub impl @ecs.TriggerEvent for ExplodeMines with debug_name() {
 
 ///|
 struct Explode {
-  mut entity : @core.Entity
+  entity : @core.Entity
 }
 
 ///|
@@ -112,11 +112,8 @@ pub impl @ecs.TriggerEvent for Explode with observer_entity(self) {
 }
 
 ///|
-pub impl @ecs.TriggerEvent for Explode with set_observer_entity(
-  event_ref,
-  entity,
-) {
-  event_ref.val.entity = entity
+pub impl @ecs.TriggerEvent for Explode with set_observer_entity(_self, entity) {
+  Explode::{ entity, }
 }
 
 ///|
@@ -249,7 +246,7 @@ fn on_add_mine(
 ) -> Unit {
   let mine_comp = mines.get(event.entity) catch { _ => None }
   guard mine_comp is Some(mine_comp) else { return }
-  state.get_ref().val.insert(event.entity, mine_comp.value())
+  state.peek().insert(event.entity, mine_comp.value())
 }
 
 ///|
@@ -257,7 +254,7 @@ fn on_remove_mine(
   event : @ecs.ComponentOn[@ecs.Remove, Mine],
   state : @app.ResMut[MineWorldState],
 ) -> Unit {
-  state.get_ref().val.remove_entity(event.entity)
+  state.modify(fn(value) { value.remove_entity(event.entity) })
 }
 
 ///|
@@ -302,13 +299,11 @@ fn toggle_explosions(
   state : @app.ResMut[MineWorldState],
 ) -> Unit {
   if keyboard_input.just_pressed(Space) {
-    let state_ref = state.get_ref()
-    state_ref.val.explosions_enabled = !state_ref.val.explosions_enabled
-    let label = if state_ref.val.explosions_enabled {
-      "enabled"
-    } else {
-      "disabled"
-    }
+    let explosions_enabled = state.modify(fn(value) {
+      value.explosions_enabled = !value.explosions_enabled
+      value.explosions_enabled
+    })
+    let label = if explosions_enabled { "enabled" } else { "disabled" }
     @app.log_info("Mine explosions \{label}")
   }
 }

@@ -89,10 +89,10 @@ fn rotate_sprite(
     @math.Quat::from_rotation_y(delta_seconds),
   )
   let transform = sprite.get()
-  let transform_ref = transform.get_ref()
-  transform_ref.val.rotation = rotation
-    .mul(transform_ref.val.rotation)
-    .normalize()
+  let current = transform.value()
+  transform.set(
+    current.with_rotation(rotation.mul(current.rotation).normalize()),
+  )
 }
 
 ///|

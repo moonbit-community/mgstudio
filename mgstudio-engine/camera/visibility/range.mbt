@@ -108,14 +108,14 @@ pub fn VisibleEntityRanges::entity_is_in_range_of_any_view(
 
 ///|
 pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
-  let visible_ranges_ref = (world.get_resource_ref_mut(
-    ecs_key_visible_entity_ranges,
-  ) catch {
+  let visible_ranges = (world.get_resource_mut(ecs_key_visible_entity_ranges) catch {
     _ => None
   }).unwrap()
-  let visible_ranges = visible_ranges_ref.val
-  visible_ranges.clear()
+  visible_ranges.set_changed()
+  let visible_ranges_value = visible_ranges.peek()
+  visible_ranges_value.clear()
 
+  let view_entries : Array[(Int, Int)] = []
   let view_positions : Array[(Int, @math.Vec3)] = []
   let view_query : @ecs.Query[
     (
@@ -131,10 +131,13 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
     }
     let (entity, global_transform_component, _camera) = data
     let view_index = view_positions.length()
-    visible_ranges.views.set(entity.id, view_index)
+    view_entries.push((entity.id, view_index))
     let view_position = global_transform_component.value().translation()
     view_positions.push((view_index, view_position))
   })
+  for entry in view_entries {
+    visible_ranges_value.views.set(entry.0, entry.1)
+  }
   if view_positions.length() == 0 {
     return
   }
@@ -178,7 +181,7 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
       }
     }
     if visibility != 0 {
-      visible_ranges.entities.set(entity.id, visibility)
+      visible_ranges_value.entities.set(entity.id, visibility)
     }
   })
 }

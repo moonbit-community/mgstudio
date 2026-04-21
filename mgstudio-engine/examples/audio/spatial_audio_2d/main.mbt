@@ -208,16 +208,18 @@ fn spawn_listener_ear(
 ) -> Unit {
   let ear = @sprite.Mesh2dBundle::new_with_mesh_material(
     @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
+      @sprite.mesh_assets_mut_or_abort()
+      .peek()
+      .add(
         @sprite.mesh2d_geometry_rectangle(
           @sprite.Rectangle::new(EAR_SIZE, EAR_SIZE),
         ).to_mesh(),
       ),
     ),
     @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(color),
-      ),
+      @sprite.color_material_assets_mut_or_abort()
+      .peek()
+      .add(@sprite.ColorMaterialAsset::from_color(color)),
     ),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(offset_x, 0.0F),
@@ -248,14 +250,16 @@ fn setup(world : @ecs.World) -> Unit {
 
   let emitter = @sprite.Mesh2dBundle::new_with_mesh_material(
     @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
+      @sprite.mesh_assets_mut_or_abort()
+      .peek()
+      .add(
         @sprite.mesh2d_geometry_circle(@sprite.Circle::new(EMITTER_RADIUS)).to_mesh(),
       ),
     ),
     @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(color_blue()),
-      ),
+      @sprite.color_material_assets_mut_or_abort()
+      .peek()
+      .add(@sprite.ColorMaterialAsset::from_color(color_blue())),
     ),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, EMITTER_Y),

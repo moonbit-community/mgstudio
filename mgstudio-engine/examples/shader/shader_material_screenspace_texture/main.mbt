@@ -35,14 +35,16 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let mesh = meshes.get_ref().val |> @pbr.add_mesh(@math.Sphere::new(1.1F))
-  let material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white())
-    .with_base_color_texture(
-      Some(asset_server.get().load_image("branding/banner.png")),
+  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(1.1F))
+  let material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::white())
+      .with_base_color_texture(
+        Some(asset_server.get().load_image("branding/banner.png")),
+      )
+      .with_reflectance(0.45F),
     )
-    .with_reflectance(0.45F),
-  )
   commands.spawn(
     (
       @pbr.Mesh3d::new(mesh),
@@ -56,12 +58,16 @@ fn setup(
   commands.spawn(
     (
       @pbr.Mesh3d::new(
-        meshes.get_ref().val.add(
+        meshes
+        .peek()
+        .add(
           @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)),
         ),
       ),
       @pbr.MeshMaterial3d::new(
-        materials.get_ref().val.add(
+        materials
+        .peek()
+        .add(
           @pbr.StandardMaterial::from_color(
             @sprite.Color::srgb(0.08F, 0.1F, 0.14F),
           ),

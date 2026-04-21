@@ -107,15 +107,19 @@ fn setup(
     commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
   )
 
-  let mesh = meshes.get_ref().val.add(
-    @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::default()).to_mesh(),
-  )
-  let material = materials.get_ref().val.add(
-    custom_material(
-      @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
-      Some(asset_server.get().load_image("branding/icon.png")),
-    ),
-  )
+  let mesh = meshes
+    .peek()
+    .add(
+      @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::default()).to_mesh(),
+    )
+  let material = materials
+    .peek()
+    .add(
+      custom_material(
+        @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
+        Some(asset_server.get().load_image("branding/icon.png")),
+      ),
+    )
 
   ignore(
     commands.spawn(

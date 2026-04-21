@@ -38,8 +38,8 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
   let plane_material = material_assets
     |> @pbr.add_material(@sprite.Color::srgb(0.95F, 0.95F, 0.95F))
   ignore(
@@ -99,8 +99,8 @@ fn setup(
     ) {
       let index = cube_spawn_counter.val
       cube_spawn_counter.val = index + 1
-      let mesh_assets = meshes.get_ref().val
-      let material_assets = materials.get_ref().val
+      let mesh_assets = meshes.peek()
+      let material_assets = materials.peek()
       let normal = material_assets
         |> @pbr.add_material(
           @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
@@ -129,9 +129,7 @@ fn setup(
     ) {
       let color = texts.get(label) catch { _ => None }
       if color is Some(color) {
-        color.get_ref().val = @text.TextColor::new(
-          @sprite.Color::srgb(0.3F, 0.9F, 0.95F),
-        )
+        color.set(@text.TextColor::new(@sprite.Color::srgb(0.3F, 0.9F, 0.95F)))
       }
     })
     .observe_pointer2(fn(
@@ -140,7 +138,7 @@ fn setup(
     ) {
       let color = texts.get(label) catch { _ => None }
       if color is Some(color) {
-        color.get_ref().val = @text.TextColor::new(@sprite.Color::white())
+        color.set(@text.TextColor::new(@sprite.Color::white()))
       }
     }),
   )
@@ -157,13 +155,15 @@ fn toggle_cube_color_on_click(
   guard pointer.target() is Some(entity) else { return }
   let cube_data = cubes.get(entity) catch { _ => None }
   guard cube_data is Some((material, cube_state)) else { return }
-  cube_state.get_ref().val.active = !cube_state.get_ref().val.active
-  let next = if cube_state.get_ref().val.active {
-    cube_state.get_ref().val.selected
-  } else {
-    cube_state.get_ref().val.normal
-  }
-  material.get_ref().val = @pbr.MeshMaterial3d::new(next)
+  let next = cube_state.modify(fn(value) {
+    value.active = !value.active
+    if value.active {
+      value.selected
+    } else {
+      value.normal
+    }
+  })
+  material.set(@pbr.MeshMaterial3d::new(next))
 }
 
 ///|

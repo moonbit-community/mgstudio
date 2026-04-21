@@ -76,9 +76,9 @@ fn play_pitch(
   for _ in (try! play_pitch_reader.read()) {
     let current_frequency = frequency.get().value
     @app.log_info("playing pitch with frequency: \{current_frequency}")
-    let handle = pitch_assets.get_ref().val.add(
-      @audio.Pitch::new(current_frequency, 1.0F),
-    )
+    let handle = pitch_assets
+      .peek()
+      .add(@audio.Pitch::new(current_frequency, 1.0F))
     commands.spawn(
       (@audio.AudioPlayer::new(handle), @audio.PlaybackSettings::despawn()),
     )
@@ -93,12 +93,16 @@ fn keyboard_input_system(
   play_pitch_writer : @ecs.MessageWriter[PlayPitch],
 ) -> Unit {
   let semitone_ratio = @math.pow(2.0F, 1.0F / 12.0F)
-  let frequency_ref = frequency.get_ref()
-  if keyboard_input.just_pressed(@window.KeyCode::ArrowUp) {
-    frequency_ref.val.value = frequency_ref.val.value * semitone_ratio
-  }
-  if keyboard_input.just_pressed(@window.KeyCode::ArrowDown) {
-    frequency_ref.val.value = frequency_ref.val.value / semitone_ratio
+  if keyboard_input.just_pressed(@window.KeyCode::ArrowUp) ||
+    keyboard_input.just_pressed(@window.KeyCode::ArrowDown) {
+    frequency.modify(fn(value) {
+      if keyboard_input.just_pressed(@window.KeyCode::ArrowUp) {
+        value.value = value.value * semitone_ratio
+      }
+      if keyboard_input.just_pressed(@window.KeyCode::ArrowDown) {
+        value.value = value.value / semitone_ratio
+      }
+    })
   }
   if keyboard_input.just_pressed(@window.KeyCode::Space) {
     play_pitch_writer.write_default() |> ignore

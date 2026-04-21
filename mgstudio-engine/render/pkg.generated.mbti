@@ -331,15 +331,15 @@ pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
 pub fn set_render_error_handler((@app.RenderRuntimeError) -> @app.RenderErrorPolicy) -> Unit
 
-pub fn sorted_cameras_clear(@ref.Ref[SortedCameras]) -> Unit
+pub fn sorted_cameras_clear(@ecs.ResourceMut[SortedCameras]) -> Unit
 
 pub let sorted_cameras_key : @ecs.ResourceKey[SortedCameras]
 
 pub fn sorted_cameras_or_default(@ecs.World) -> SortedCameras
 
-pub fn sorted_cameras_ref_or_abort(@ecs.World) -> @ref.Ref[SortedCameras]
+pub fn sorted_cameras_ref_or_abort(@ecs.World) -> @ecs.ResourceMut[SortedCameras]
 
-pub fn sorted_cameras_replace_entities(@ref.Ref[SortedCameras], Array[@core.Entity]) -> Unit
+pub fn sorted_cameras_replace_entities(@ecs.ResourceMut[SortedCameras], Array[@core.Entity]) -> Unit
 
 pub fn sync_build(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

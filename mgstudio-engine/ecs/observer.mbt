@@ -29,9 +29,10 @@ pub struct Despawn {}
 
 ///|
 pub struct On[E] {
+  world : World
+  event_key : EventKey[E]
   entity : @core.Entity?
   caller : String?
-  event_ref : Ref[E]
   propagate_ref : Ref[Bool]
 }
 
@@ -47,12 +48,13 @@ pub fn[E] On::entity(self : On[E]) -> @core.Entity? {
 
 ///|
 pub fn[E] On::event(self : On[E]) -> E {
-  self.event_ref.val
-}
-
-///|
-pub fn[E] On::get_ref(self : On[E]) -> Ref[E] {
-  self.event_ref
+  let context = current_trigger_observer_context_abort_missing()
+  if context.event_key_id != self.event_key.id() {
+    abort("Current observer event payload is no longer available")
+  }
+  context.payload.to_value() catch {
+    _ => abort("Current observer event payload type mismatch")
+  }
 }
 
 ///|
@@ -63,6 +65,26 @@ pub fn[E] On::propagate(self : On[E], enabled : Bool) -> Unit {
 ///|
 pub fn[E] On::is_propagating(self : On[E]) -> Bool {
   self.propagate_ref.val
+}
+
+///|
+pub fn[E, R] On::modify(self : On[E], f : (E) -> R) -> R {
+  let context = current_trigger_observer_context_abort_missing()
+  if context.event_key_id != self.event_key.id() {
+    abort("Current observer event payload is no longer available")
+  }
+  let event : E = context.payload.to_value() catch {
+    _ => abort("Current observer event payload type mismatch")
+  }
+  let result = f(event)
+  self.world.current_trigger_observer_context = Some({
+    event_key_id: context.event_key_id,
+    entity: context.entity,
+    payload: erased_value(event),
+    caller: context.caller,
+    propagate_ref: context.propagate_ref,
+  })
+  result
 }
 
 ///|
@@ -91,7 +113,7 @@ pub(open) trait ComponentObserverEvent {
 pub(open) trait TriggerEvent {
   observer_event() -> EventKey[Self]
   observer_entity(Self) -> @core.Entity?
-  set_observer_entity(Ref[Self], @core.Entity) -> Unit
+  set_observer_entity(Self, @core.Entity) -> Self
   auto_propagate(Self) -> Bool
   debug_name() -> String
 }
@@ -210,11 +232,6 @@ fn observer_registry_ref(world : World) -> Ref[WorldObserverRegistry] {
 }
 
 ///|
-fn[T] erased_ref(value_ref : Ref[T]) -> ErasedValue {
-  { value: @any.of(value_ref) }
-}
-
-///|
 pub fn current_observer_world() -> World? {
   current_observer_world_ref.val
 }
@@ -248,22 +265,18 @@ fn current_trigger_observer_context_abort_missing() -> TriggerObserverContext {
 ///|
 pub fn[E : TriggerEvent] current_observer() -> On[E] {
   let context = current_trigger_observer_context_abort_missing()
+  let world = current_observer_world_abort_missing()
   let event_key : EventKey[E] = E::observer_event()
   if context.event_key_id != event_key.id() {
     abort(
       "Current \{E::debug_name()} observer context does not match event `\{event_key.debug_name()}`",
     )
   }
-  let event_ref : Ref[E] = context.payload.to_ref() catch {
-    _ =>
-      abort(
-        "Current trigger observer payload type mismatch for `\{E::debug_name()}`",
-      )
-  }
   On::{
+    world,
+    event_key,
     entity: context.entity,
     caller: context.caller,
-    event_ref,
     propagate_ref: context.propagate_ref,
   }
 }
@@ -858,22 +871,28 @@ pub fn[E : TriggerEvent] World::trigger(
   caller? : String? = None,
 ) -> Unit {
   let event_key : EventKey[E] = E::observer_event()
-  let event_ref : Ref[E] = Ref::new(event)
-  let payload = erased_ref(event_ref)
-  let propagate_ref : Ref[Bool] = Ref::new(E::auto_propagate(event_ref.val))
+  let mut current_event = event
+  let propagate_ref : Ref[Bool] = Ref::new(E::auto_propagate(current_event))
   let previous_context = self.current_trigger_observer_context
   let previous_world = current_observer_world_ref.val
   current_observer_world_ref.val = Some(self)
   while true {
-    let entity = E::observer_entity(event_ref.val)
+    let entity = E::observer_entity(current_event)
     self.current_trigger_observer_context = Some({
       event_key_id: event_key.id(),
       entity,
-      payload,
+      payload: erased_value(current_event),
       caller,
       propagate_ref,
     })
     self.run_trigger_observers(event_key.id())
+    let context = current_trigger_observer_context_abort_missing()
+    current_event = context.payload.to_value() catch {
+      _ =>
+        abort(
+          "Current trigger observer payload type mismatch for `\{E::debug_name()}`",
+        )
+    }
     if !propagate_ref.val {
       break
     }
@@ -881,7 +900,7 @@ pub fn[E : TriggerEvent] World::trigger(
     guard observer_parent_entity(self, current_entity) is Some(parent) else {
       break
     }
-    E::set_observer_entity(event_ref, parent)
+    current_event = E::set_observer_entity(current_event, parent)
   }
   current_observer_world_ref.val = previous_world
   self.current_trigger_observer_context = previous_context

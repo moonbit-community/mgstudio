@@ -392,8 +392,8 @@ pub fn update_ui_radio_button(
   background_color : @ecs.Mut[@ui.BackgroundColor],
   selected : Bool,
 ) -> Unit {
-  background_color.get_ref().val = @ui.BackgroundColor::new(
-    radio_button_background_color(selected),
+  background_color.set(
+    @ui.BackgroundColor::new(radio_button_background_color(selected)),
   )
 }
 
@@ -402,7 +402,5 @@ pub fn update_ui_radio_button_text(
   text_color : @ecs.Mut[@text.TextColor],
   selected : Bool,
 ) -> Unit {
-  text_color.get_ref().val = @text.TextColor::new(
-    radio_button_foreground_color(selected),
-  )
+  text_color.set(@text.TextColor::new(radio_button_foreground_color(selected)))
 }

@@ -31,8 +31,8 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh_assets = meshes.get_ref().val
-  let material_assets = materials.get_ref().val
+  let mesh_assets = meshes.peek()
+  let material_assets = materials.peek()
   let cube_handle = mesh_assets
     |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F))
   let material = material_assets
@@ -92,10 +92,9 @@ fn rotator_system(
   let delta = 3.0F * time.get().delta_seconds()
   let spin = @math.Quat::from_rotation_x(delta)
   try! query.view(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    transform_ref.val.rotation = transform_ref.val.rotation
-      .mul(spin)
-      .normalize()
+    transform.modify(fn(value) {
+      value.rotation = value.rotation.mul(spin).normalize()
+    })
   })
 }
 

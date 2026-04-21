@@ -36,7 +36,9 @@ fn spawn_quad(
       (
         @sprite.Mesh2d::new(mesh),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @sprite.ColorMaterialAsset::new(
               color,
               alpha_mode,
@@ -60,11 +62,13 @@ fn setup(
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
   let texture = asset_server.get().load("branding/icon.png")
-  let mesh = meshes.get_ref().val.add(
-    @sprite.mesh2d_geometry_rectangle(
-      @sprite.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
-    ).to_mesh(),
-  )
+  let mesh = meshes
+    .peek()
+    .add(
+      @sprite.mesh2d_geometry_rectangle(
+        @sprite.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
+      ).to_mesh(),
+    )
   let white = @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F)
   let blue = @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
   let blue_blend = @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.7F)

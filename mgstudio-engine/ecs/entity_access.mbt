@@ -26,10 +26,9 @@ pub struct EntityMut {
 
 ///|
 pub struct Mut[T] {
-  value_ref : Ref[T]?
   world : World?
   entity : @core.Entity?
-  key_id : Int?
+  key : ComponentKey[T]?
 }
 
 ///|
@@ -40,14 +39,6 @@ pub(open) trait Bundle {
     entity : @core.Entity,
     loc~ : SourceLoc,
   ) -> Unit raise EcsError
-}
-
-///|
-fn[T] mut_value_ref_or_abort(item : Mut[T]) -> Ref[T] {
-  match item.value_ref {
-    Some(value_ref) => value_ref
-    None => abort("Mut expected a fetched query item")
-  }
 }
 
 ///|
@@ -68,9 +59,38 @@ fn[T] mut_entity_or_abort(item : Mut[T]) -> @core.Entity {
 
 ///|
 fn[T] mut_key_id_or_abort(item : Mut[T]) -> Int {
-  match item.key_id {
-    Some(key_id) => key_id
+  match item.key {
+    Some(key) => key.id()
     None => abort("Mut expected a fetched query item")
+  }
+}
+
+///|
+fn[T] mut_key_or_abort(item : Mut[T]) -> ComponentKey[T] {
+  match item.key {
+    Some(key) => key
+    None => abort("Mut expected a fetched query item")
+  }
+}
+
+///|
+fn[T] mut_value_or_abort(item : Mut[T]) -> T {
+  let world = mut_world_or_abort(item)
+  let entity = mut_entity_or_abort(item)
+  let key = mut_key_or_abort(item)
+  match world.component_payload(key.id(), entity) {
+    Some(payload) => try! world.component_value(key, entity, payload)
+    None => abort("Mut expected a fetched query item")
+  }
+}
+
+///|
+fn[T] mut_replace_value_or_abort(item : Mut[T], value : T) -> Unit {
+  let world = mut_world_or_abort(item)
+  let entity = mut_entity_or_abort(item)
+  let key_id = mut_key_id_or_abort(item)
+  if !world.replace_component_payload(key_id, entity, erased_value(value)) {
+    abort("Mut expected a fetched query item")
   }
 }
 
@@ -78,8 +98,8 @@ fn[T] mut_key_id_or_abort(item : Mut[T]) -> Int {
 fn[T] mut_mark_changed(item : Mut[T], caller? : String? = None) -> Unit {
   if item.world is Some(world) {
     if item.entity is Some(entity) {
-      if item.key_id is Some(key_id) {
-        world.record_component_changed_with_caller(entity, key_id, caller)
+      if item.key is Some(key) {
+        world.record_component_changed_with_caller(entity, key.id(), caller)
       }
     }
   }
@@ -88,7 +108,7 @@ fn[T] mut_mark_changed(item : Mut[T], caller? : String? = None) -> Unit {
 ///|
 pub fn[T] Mut::new(key : ComponentKey[T]) -> Mut[T] {
   ignore(key)
-  { value_ref: None, world: None, entity: None, key_id: None }
+  { world: None, entity: None, key: None }
 }
 
 ///|
@@ -98,15 +118,13 @@ pub fn[T : Component] Mut::key(self : Mut[T]) -> ComponentKey[T] {
 }
 
 ///|
-#callsite(autofill(loc))
-pub fn[T] Mut::get_ref(self : Mut[T], loc~ : SourceLoc) -> Ref[T] {
-  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
-  mut_value_ref_or_abort(self)
+pub fn[T] Mut::peek(self : Mut[T]) -> T {
+  mut_value_or_abort(self)
 }
 
 ///|
 pub fn[T] Mut::value(self : Mut[T]) -> T {
-  mut_value_ref_or_abort(self).val
+  self.peek()
 }
 
 ///|
@@ -169,20 +187,14 @@ pub fn[T : Component] Mut::changed_by(self : Mut[T]) -> String? {
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component] Mut::set_changed(
-  self : Mut[T],
-  loc~ : SourceLoc,
-) -> Unit {
+pub fn[T : Component] Mut::set_changed(self : Mut[T], loc~ : SourceLoc) -> Unit {
   ignore(T::component())
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component] Mut::set_added(
-  self : Mut[T],
-  loc~ : SourceLoc,
-) -> Unit {
+pub fn[T : Component] Mut::set_added(self : Mut[T], loc~ : SourceLoc) -> Unit {
   ignore(T::component())
   let world = mut_world_or_abort(self)
   let entity = mut_entity_or_abort(self)
@@ -197,21 +209,33 @@ pub fn[T : Component] Mut::set_added(
 }
 
 ///|
-pub fn[T] Mut::bypass_change_detection(self : Mut[T]) -> Ref[T] {
-  mut_value_ref_or_abort(self)
+
+///|
+#callsite(autofill(loc))
+pub fn[T, R] Mut::modify(self : Mut[T], f : (T) -> R, loc~ : SourceLoc) -> R {
+  let value = self.peek()
+  let result = f(value)
+  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
+  mut_replace_value_or_abort(self, value)
+  result
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component + Eq] Mut::set_if_neq(
+pub fn[T] Mut::update(self : Mut[T], f : (T) -> T, loc~ : SourceLoc) -> Unit {
+  self.set(f(self.peek()), loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T : Eq] Mut::set_if_neq(
   self : Mut[T],
   value : T,
   loc~ : SourceLoc,
 ) -> Bool {
-  let value_ref = self.bypass_change_detection()
-  if value_ref.val != value {
-    value_ref.val = value
-    self.set_changed(loc~)
+  let current = self.peek()
+  if current != value {
+    self.set(value, loc~)
     true
   } else {
     false
@@ -222,7 +246,7 @@ pub fn[T : Component + Eq] Mut::set_if_neq(
 #callsite(autofill(loc))
 pub fn[T] Mut::set(self : Mut[T], value : T, loc~ : SourceLoc) -> Unit {
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
-  mut_value_ref_or_abort(self).val = value
+  mut_replace_value_or_abort(self, value)
 }
 
 ///|
@@ -232,16 +256,10 @@ fn[T] world_component_mut(
   key : ComponentKey[T],
 ) -> Mut[T]? raise EcsError {
   world.ensure_entity_alive(entity)
-  guard world.component_payload(key.id(), entity) is Some(payload) else {
+  guard world.component_payload(key.id(), entity) is Some(_) else {
     return None
   }
-  let value_ref = try! world.component_ref(key, entity, payload)
-  Some({
-    value_ref: Some(value_ref),
-    world: Some(world),
-    entity: Some(entity),
-    key_id: Some(key.id()),
-  })
+  Some({ world: Some(world), entity: Some(entity), key: Some(key) })
 }
 
 ///|
@@ -433,12 +451,7 @@ pub impl[
   E : Component,
   F : Component,
   G : Component,
-] Bundle for (A, B, C, D, E, F, G) with insert_into(
-  self,
-  world,
-  entity,
-  loc~,
-) {
+] Bundle for (A, B, C, D, E, F, G) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e, f, g) = self
   try! world.set_by_key(entity, A::component(), a, loc~)
   try! world.set_by_key(entity, B::component(), b, loc~)

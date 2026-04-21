@@ -117,14 +117,18 @@ fn setup(
     commands.spawn(
       (
         @pbr.Mesh3d::new(
-          meshes.get_ref().val.add(
+          meshes
+          .peek()
+          .add(
             @pbr.Mesh::from_3d_geometry(
               @pbr.mesh3d_geometry_plane(12.0F, 12.0F),
             ),
           ),
         ),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @pbr.StandardMaterial::from_color(
               @sprite.Color::srgb(0.3F, 0.15F, 0.3F),
             ),
@@ -135,15 +139,17 @@ fn setup(
     ),
   )
 
-  let sphere_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)),
-  )
+  let sphere_mesh = meshes
+    .peek()
+    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)))
   ignore(
     commands.spawn(
       (
         @pbr.Mesh3d::new(sphere_mesh),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @pbr.StandardMaterial::from_color(
               @sprite.Color::srgb(0.3F, 0.15F, 0.9F),
             ),
@@ -159,7 +165,9 @@ fn setup(
       (
         @pbr.Mesh3d::new(sphere_mesh),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
+          materials
+          .peek()
+          .add(
             @pbr.StandardMaterial::from_color(
               @sprite.Color::srgb(0.9F, 0.3F, 0.3F),
             ),
@@ -211,12 +219,11 @@ fn move_target(
   rng : @app.ResMut[RandomSource],
 ) -> Unit {
   let delta_time = time.get().delta_secs()
-  let target_position = target_pos.get_ref()
-  let random_source = rng.get_ref()
+  let current_target_position = target_pos.peek().value
 
   try! target.view(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    let offset = target_position.val.value.sub(transform_ref.val.translation)
+    let current_translation = transform.value().translation
+    let offset = current_target_position.sub(current_translation)
     let abs_delta = offset.length()
 
     if abs_delta > 0.000001F {
@@ -224,14 +231,17 @@ fn move_target(
         abs_delta,
         delta_time * target_speed.get().value,
       )
-      transform_ref.val.translation = transform_ref.val.translation.add(
-        offset.normalize_or_zero().mul_scalar(magnitude),
-      )
+      transform.modify(fn(value) {
+        value.translation = value.translation.add(
+          offset.normalize_or_zero().mul_scalar(magnitude),
+        )
+      })
     } else {
       let legal_region = @math.Cuboid::from_size(@math.Vec3::splat(4.0F))
-      target_position.val.value = legal_region.sample_interior(
-        random_source.val.rng,
-      )
+      let next_target = rng.modify(fn(value) {
+        legal_region.sample_interior(value.rng)
+      })
+      target_pos.modify(fn(value) { value.value = next_target })
     }
   })
 }
@@ -256,14 +266,13 @@ fn move_follower(
 
   let delta_time = time.get().delta_secs()
   try! following.view(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    let next_translation = transform_ref.val.translation
+    let next_translation = transform.value().translation
     next_translation.smooth_nudge(
       target_transform.translation,
       decay_rate.get().value,
       delta_time,
     )
-    transform_ref.val.translation = next_translation
+    transform.modify(fn(value) { value.translation = next_translation })
   })
 }
 

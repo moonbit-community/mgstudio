@@ -210,8 +210,7 @@ fn query_system_accesses_compatible(
   }
   let conflict_ids = query_system_access_component_conflict_ids(lhs, rhs)
   system_access_component_conflicts_allowed(
-    conflict_ids,
-    allowed_ambiguous_components,
+    conflict_ids, allowed_ambiguous_components,
   )
 }
 
@@ -251,9 +250,7 @@ pub fn system_access_compatible(
   for lhs_query_access in lhs.query_accesses {
     for rhs_query_access in rhs.query_accesses {
       if !query_system_accesses_compatible(
-          lhs_query_access,
-          rhs_query_access,
-          allowed_ambiguous_components,
+          lhs_query_access, rhs_query_access, allowed_ambiguous_components,
         ) {
         return false
       }

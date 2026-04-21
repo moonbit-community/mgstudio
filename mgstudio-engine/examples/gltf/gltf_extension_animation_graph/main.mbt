@@ -174,8 +174,9 @@ fn play_animation_when_ready(
     is Some(player_mut) else {
     return
   }
-  player_mut.get_ref().val.play(animation_to_play.value().index).repeat()
-  |> ignore
+  player_mut.modify(fn(value) {
+    ignore(value.play(animation_to_play.value().index).repeat())
+  })
   commands
   .entity(scene_ready.entity)
   .insert_component(

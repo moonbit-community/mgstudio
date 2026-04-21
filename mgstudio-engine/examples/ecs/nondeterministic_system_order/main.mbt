@@ -49,17 +49,17 @@ fn reads_a(a : @app.Res[A]) -> Unit {
 
 ///|
 fn writes_a(a : @app.ResMut[A]) -> Unit {
-  a.get_ref().val.value = a.get_ref().val.value + 1
+  a.modify(fn(value) { value.value = value.value + 1 })
 }
 
 ///|
 fn adds_one_to_b(b : @app.ResMut[B]) -> Unit {
-  b.get_ref().val.value = b.get_ref().val.value + 1
+  b.modify(fn(value) { value.value = value.value + 1 })
 }
 
 ///|
 fn doubles_b(b : @app.ResMut[B]) -> Unit {
-  b.get_ref().val.value = b.get_ref().val.value * 2
+  b.modify(fn(value) { value.value = value.value * 2 })
 }
 
 ///|

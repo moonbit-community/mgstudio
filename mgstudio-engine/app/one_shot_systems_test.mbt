@@ -35,7 +35,7 @@ test "app: world run_system_once supports system params" {
   try! run_system_once_param(world, fn(
     counter : ResMut[OneShotCounterResource],
   ) {
-    counter.get_ref().val.value = counter.get_ref().val.value + 1
+    counter.modify(fn(value) { value.value = value.value + 1 })
   })
 
   debug_inspect(
@@ -55,7 +55,7 @@ test "app: registered systems preserve local state across runs" {
   ) {
     let next = local_counter.get() + 1
     local_counter.set(next)
-    counter.get_ref().val.value = counter.get_ref().val.value + next
+    counter.modify(fn(value) { value.value = value.value + next })
   })
 
   try! run_system(world, system_id)
@@ -76,7 +76,7 @@ test "app: commands can register and run one-shot systems" {
     let system_id = commands.register_system_param(fn(
       counter : ResMut[OneShotCounterResource],
     ) {
-      counter.get_ref().val.value = counter.get_ref().val.value + 1
+      counter.modify(fn(value) { value.value = value.value + 1 })
     })
     commands.run_system(system_id)
   })

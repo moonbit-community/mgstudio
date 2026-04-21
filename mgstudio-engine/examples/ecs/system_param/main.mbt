@@ -17,7 +17,12 @@ struct Player {}
 
 ///|
 struct PlayerCount {
-  mut value : Int
+  value : Int
+}
+
+///|
+fn PlayerCount::value(self : PlayerCount) -> Int {
+  self.value
 }
 
 ///|
@@ -99,9 +104,9 @@ impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCo
 
 ///|
 fn PlayerCounterParam::count_players(self : PlayerCounterParam) -> Int {
-  let count_ref = self.count.get_ref()
-  count_ref.val.value = self.players.count()
-  count_ref.val.value
+  let count = self.players.count()
+  self.count.set(PlayerCount::{ value: count })
+  self.count.get().value()
 }
 
 ///|

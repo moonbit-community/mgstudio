@@ -34,13 +34,14 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let mesh = meshes.get_ref().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.8F, 1.8F, 1.8F))
-  let material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.7F, 0.85F, 1.0F)).with_reflectance(
-      0.4F,
-    ),
-  )
+  let mesh = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.8F, 1.8F, 1.8F))
+  let material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.7F, 0.85F, 1.0F)).with_reflectance(
+        0.4F,
+      ),
+    )
 
   commands.spawn(
     (
@@ -82,7 +83,7 @@ fn rotate(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.get_ref().val.rotate_y(delta * 0.9F)
+    transform.modify(fn(value) { value.rotate_y(delta * 0.9F) })
   })
 }
 

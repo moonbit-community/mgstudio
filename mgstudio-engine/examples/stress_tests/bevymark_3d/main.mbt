@@ -123,14 +123,20 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   counter : @app.ResMut[CubeCounter],
 ) -> Unit {
-  let floor_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(
-      @pbr.mesh3d_geometry_cuboid(120.0F, 1.0F, 120.0F),
-    ),
-  )
-  let floor_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.16F, 0.19F, 0.24F)),
-  )
+  let floor_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(
+        @pbr.mesh3d_geometry_cuboid(120.0F, 1.0F, 120.0F),
+      ),
+    )
+  let floor_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.16F, 0.19F, 0.24F),
+      ),
+    )
   ignore(
     commands.spawn(
       (
@@ -141,12 +147,18 @@ fn setup(
     ),
   )
 
-  let cube_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
-  )
-  let cube_material = materials.get_ref().val.add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.78F, 0.86F, 0.95F)),
-  )
+  let cube_mesh = meshes
+    .peek()
+    .add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
+    )
+  let cube_material = materials
+    .peek()
+    .add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::srgb(0.78F, 0.86F, 0.95F),
+      ),
+    )
   let cube_assets = CubeAssets::{ mesh: cube_mesh, material: cube_material }
   commands.insert_resource(cube_assets)
 
@@ -173,12 +185,9 @@ fn setup(
     ),
   )
 
-  counter.get_ref().val.count = spawn_cubes(
-    commands,
-    cube_assets,
-    INITIAL_CUBES,
-    0,
-  )
+  counter.modify(fn(value) {
+    value.count = spawn_cubes(commands, cube_assets, INITIAL_CUBES, 0)
+  })
 }
 
 ///|
@@ -190,13 +199,13 @@ fn mouse_spawn(
   if !@input.mouse_button_just_pressed(@input_events.MouseButton::Left) {
     return
   }
-  let counter_ref = counter.get_ref()
-  counter_ref.val.count = spawn_cubes(
+  let next_count = spawn_cubes(
     commands,
     assets.get(),
     CUBES_PER_CLICK,
-    counter_ref.val.count,
+    counter.peek().count,
   )
+  counter.modify(fn(value) { value.count = next_count })
 }
 
 ///|
@@ -210,32 +219,35 @@ fn movement(
   let dt = time.get().delta_secs()
   try! cubes.for_each(fn(_entity, data) {
     let (velocity, transform) = data
-    let velocity_ref = velocity.get_ref()
-    let transform_ref = transform.get_ref()
+    let next_velocity = velocity.value().value
+    let next_transform = transform.value()
 
-    velocity_ref.val.value.y += GRAVITY * dt
-    transform_ref.val.translation.x += velocity_ref.val.value.x * dt
-    transform_ref.val.translation.y += velocity_ref.val.value.y * dt
-    transform_ref.val.translation.z += velocity_ref.val.value.z * dt
+    next_velocity.y += GRAVITY * dt
+    next_transform.translation.x += next_velocity.x * dt
+    next_transform.translation.y += next_velocity.y * dt
+    next_transform.translation.z += next_velocity.z * dt
 
-    if transform_ref.val.translation.y < FLOOR_Y {
-      transform_ref.val.translation.y = FLOOR_Y
-      velocity_ref.val.value.y = -velocity_ref.val.value.y * 0.72F
+    if next_transform.translation.y < FLOOR_Y {
+      next_transform.translation.y = FLOOR_Y
+      next_velocity.y = -next_velocity.y * 0.72F
     }
-    if transform_ref.val.translation.x > BOUNDS {
-      transform_ref.val.translation.x = BOUNDS
-      velocity_ref.val.value.x = -@math.abs(velocity_ref.val.value.x)
-    } else if transform_ref.val.translation.x < -BOUNDS {
-      transform_ref.val.translation.x = -BOUNDS
-      velocity_ref.val.value.x = @math.abs(velocity_ref.val.value.x)
+    if next_transform.translation.x > BOUNDS {
+      next_transform.translation.x = BOUNDS
+      next_velocity.x = -@math.abs(next_velocity.x)
+    } else if next_transform.translation.x < 0.0F - BOUNDS {
+      next_transform.translation.x = 0.0F - BOUNDS
+      next_velocity.x = @math.abs(next_velocity.x)
     }
-    if transform_ref.val.translation.z > BOUNDS {
-      transform_ref.val.translation.z = BOUNDS
-      velocity_ref.val.value.z = -@math.abs(velocity_ref.val.value.z)
-    } else if transform_ref.val.translation.z < -BOUNDS {
-      transform_ref.val.translation.z = -BOUNDS
-      velocity_ref.val.value.z = @math.abs(velocity_ref.val.value.z)
+    if next_transform.translation.z > BOUNDS {
+      next_transform.translation.z = BOUNDS
+      next_velocity.z = -@math.abs(next_velocity.z)
+    } else if next_transform.translation.z < 0.0F - BOUNDS {
+      next_transform.translation.z = 0.0F - BOUNDS
+      next_velocity.z = @math.abs(next_velocity.z)
     }
+
+    velocity.set(CubeVelocity::{ value: next_velocity })
+    transform.set(next_transform)
   })
 }
 
@@ -244,13 +256,18 @@ fn print_count(
   time : @app.Res[@time.Time[Unit]],
   counter : @app.ResMut[CubeCounter],
 ) -> Unit {
-  let counter_ref = counter.get_ref()
-  counter_ref.val.print_timer += time.get().delta_secs()
-  if counter_ref.val.print_timer < 1.0F {
-    return
+  let printed_count = counter.modify(fn(value) {
+    value.print_timer += time.get().delta_secs()
+    if value.print_timer < 1.0F {
+      None
+    } else {
+      value.print_timer -= 1.0F
+      Some(value.count)
+    }
+  })
+  if printed_count is Some(count) {
+    println("Cubes: \{count}")
   }
-  counter_ref.val.print_timer -= 1.0F
-  println("Cubes: \{counter_ref.val.count}")
 }
 
 ///|

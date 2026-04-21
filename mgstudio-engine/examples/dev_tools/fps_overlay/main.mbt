@@ -124,34 +124,34 @@ fn customize_config(
   input : @input.ButtonInput[@window.KeyCode],
   overlay : @app.ResMut[@dev_tools.FpsOverlayConfig],
 ) -> Unit {
-  if input.just_pressed(Digit1) {
-    if color_is_green(overlay.get_ref().val.text_color) {
-      overlay.get_ref().val.text_color = overlay_red()
-    } else {
-      overlay.get_ref().val.text_color = overlay_green()
+  overlay.modify(fn(value) {
+    if input.just_pressed(Digit1) {
+      if color_is_green(value.text_color) {
+        value.text_color = overlay_red()
+      } else {
+        value.text_color = overlay_green()
+      }
     }
-  }
 
-  if input.just_pressed(Digit2) {
-    let next_size = overlay_font_size_px(overlay.get_ref().val) - 2.0F
-    if next_size < 2.0F {
-      overlay.get_ref().val.text_config.font_size = @text.FontSize::Px(2.0F)
-    } else {
-      overlay.get_ref().val.text_config.font_size = @text.FontSize::Px(
-        next_size,
+    if input.just_pressed(Digit2) {
+      let next_size = overlay_font_size_px(value) - 2.0F
+      if next_size < 2.0F {
+        value.text_config.font_size = @text.FontSize::Px(2.0F)
+      } else {
+        value.text_config.font_size = @text.FontSize::Px(next_size)
+      }
+    }
+    if input.just_pressed(Digit3) {
+      value.text_config.font_size = @text.FontSize::Px(
+        overlay_font_size_px(value) + 2.0F,
       )
     }
-  }
-  if input.just_pressed(Digit3) {
-    overlay.get_ref().val.text_config.font_size = @text.FontSize::Px(
-      overlay_font_size_px(overlay.get_ref().val) + 2.0F,
-    )
-  }
-  if input.just_pressed(Digit4) {
-    overlay.get_ref().val.enabled = !overlay.get_ref().val.enabled
-  }
-  if input.just_released(Digit5) {
-    let current = overlay.get_ref().val.frame_time_graph_config.enabled
-    overlay.get_ref().val.frame_time_graph_config.enabled = !current
-  }
+    if input.just_pressed(Digit4) {
+      value.enabled = !value.enabled
+    }
+    if input.just_released(Digit5) {
+      let current = value.frame_time_graph_config.enabled
+      value.frame_time_graph_config.enabled = !current
+    }
+  })
 }

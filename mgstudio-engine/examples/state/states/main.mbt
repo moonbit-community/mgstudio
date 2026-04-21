@@ -180,30 +180,33 @@ fn movement(
 ) -> Unit {
   let delta_seconds = time.get().delta_seconds()
   try! query.for_each(fn(_entity, transform) {
-    let transform_ref = transform.get_ref()
-    let direction = @math.Vec3::zero()
+    let mut dx = 0.0F
+    let mut dy = 0.0F
     if input.pressed(@window.KeyCode::ArrowLeft) {
-      direction.x = direction.x - 1.0F
+      dx -= 1.0F
     }
     if input.pressed(@window.KeyCode::ArrowRight) {
-      direction.x = direction.x + 1.0F
+      dx += 1.0F
     }
     if input.pressed(@window.KeyCode::ArrowUp) {
-      direction.y = direction.y + 1.0F
+      dy += 1.0F
     }
     if input.pressed(@window.KeyCode::ArrowDown) {
-      direction.y = direction.y - 1.0F
+      dy -= 1.0F
     }
-    if direction.x == 0.0F && direction.y == 0.0F {
+    if dx == 0.0F && dy == 0.0F {
       return
     }
-    transform_ref.val.translation = @math.Vec3::add(
-      transform_ref.val.translation,
-      @math.Vec3::mul_scalar(
-        direction.normalize_or_zero(),
-        100.0F * delta_seconds,
-      ),
-    )
+    let direction = @math.Vec3::new(dx, dy, 0.0F)
+    transform.modify(fn(value) {
+      value.translation = @math.Vec3::add(
+        value.translation,
+        @math.Vec3::mul_scalar(
+          direction.normalize_or_zero(),
+          100.0F * delta_seconds,
+        ),
+      )
+    })
   })
 }
 
@@ -214,6 +217,8 @@ fn change_color(
 ) -> Unit {
   let hue = time.get().elapsed_seconds() * 60.0F
   try! query.for_each(fn(_entity, sprite) {
-    sprite.get_ref().val.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
+    sprite.modify(fn(value) {
+      value.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
+    })
   })
 }

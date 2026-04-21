@@ -70,9 +70,11 @@ fn print_when_completed(
 ) -> Unit {
   let delta = time.get().delta()
   try! query.view(fn(_entity, timer_component) {
-    let timer_ref = timer_component.get_ref()
-    timer_ref.val.timer = timer_ref.val.timer.tick(delta)
-    if timer_ref.val.timer.just_finished() {
+    let just_finished = timer_component.modify(fn(value) {
+      value.timer = value.timer.tick(delta)
+      value.timer.just_finished()
+    })
+    if just_finished {
       @app.log_info("Entity timer just finished")
     }
   })
@@ -84,20 +86,24 @@ fn countdown(
   countdown : @app.ResMut[Countdown],
 ) -> Unit {
   let delta = time.get().delta()
-  let countdown_ref = countdown.get_ref()
-  countdown_ref.val.main_timer = countdown_ref.val.main_timer.tick(delta)
-  countdown_ref.val.percent_trigger = countdown_ref.val.percent_trigger.tick(
-    delta,
-  )
+  let status = countdown.modify(fn(value) {
+    value.main_timer = value.main_timer.tick(delta)
+    value.percent_trigger = value.percent_trigger.tick(delta)
 
-  if countdown_ref.val.percent_trigger.just_finished() {
-    if !countdown_ref.val.main_timer.is_finished() {
-      let percent_complete = (countdown_ref.val.main_timer.fraction() * 100.0F).to_int()
-      @app.log_info("Timer is \{percent_complete}% complete!")
+    if !value.percent_trigger.just_finished() {
+      None
+    } else if !value.main_timer.is_finished() {
+      Some((value.main_timer.fraction() * 100.0F).to_int())
     } else {
-      countdown_ref.val.percent_trigger = countdown_ref.val.percent_trigger.pause()
-      @app.log_info("Paused percent trigger timer")
+      value.percent_trigger = value.percent_trigger.pause()
+      Some(-1)
     }
+  })
+  match status {
+    Some(percent_complete) if percent_complete >= 0 =>
+      @app.log_info("Timer is \{percent_complete}% complete!")
+    Some(_) => @app.log_info("Paused percent trigger timer")
+    None => ()
   }
 }
 

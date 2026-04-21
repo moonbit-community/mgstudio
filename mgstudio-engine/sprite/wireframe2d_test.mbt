@@ -18,9 +18,8 @@ test "sprite: Wireframe2dConfig can be accessed through ResMut" {
   let app = @app.App::new(@ecs.World::new())
     .insert_resource(Wireframe2dConfig::default())
     .add_system_param(fn(config : @app.ResMut[Wireframe2dConfig]) {
-      let config_ref = config.get_ref()
-      observed.val = Some(config_ref.val.global)
-      config_ref.val = config_ref.val.with_global(true)
+      observed.val = Some(config.get().global)
+      config.update(fn(value) { value.with_global(true) })
     })
 
   app.run_once() |> ignore

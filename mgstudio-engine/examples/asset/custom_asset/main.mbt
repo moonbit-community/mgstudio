@@ -165,12 +165,11 @@ fn setup(
   state : @app.ResMut[State],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  state_ref.val.handle = asset_server.get().load("data/asset.custom")
-  state_ref.val.other_handle = asset_server
-    .get()
-    .load("data/asset_no_extension")
-  state_ref.val.blob = asset_server.get().load("data/asset.custom")
+  state.modify(fn(value) {
+    value.handle = asset_server.get().load("data/asset.custom")
+    value.other_handle = asset_server.get().load("data/asset_no_extension")
+    value.blob = asset_server.get().load("data/asset.custom")
+  })
 }
 
 ///|
@@ -179,21 +178,21 @@ fn print_on_load(
   custom_assets : @app.Res[@asset.Assets[CustomAsset]],
   blob_assets : @app.Res[@asset.Assets[Blob]],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  if state_ref.val.printed {
+  let current_state = state.peek()
+  if current_state.printed {
     return
   }
 
-  guard custom_assets.get().get(state_ref.val.handle) is Some(custom_asset) else {
+  guard custom_assets.get().get(current_state.handle) is Some(custom_asset) else {
     println("Custom Asset Not Ready")
     return
   }
-  guard custom_assets.get().get(state_ref.val.other_handle)
+  guard custom_assets.get().get(current_state.other_handle)
     is Some(other_custom_asset) else {
     println("Other Custom Asset Not Ready")
     return
   }
-  guard blob_assets.get().get(state_ref.val.blob) is Some(blob) else {
+  guard blob_assets.get().get(current_state.blob) is Some(blob) else {
     println("Blob Not Ready")
     return
   }
@@ -201,7 +200,7 @@ fn print_on_load(
   println("Custom asset loaded: value=\{custom_asset.value}")
   println("Custom asset loaded: value=\{other_custom_asset.value}")
   println("Blob Size: \{blob.bytes.length()} Bytes")
-  state_ref.val.printed = true
+  state.modify(fn(value) { value.printed = true })
 }
 
 ///|

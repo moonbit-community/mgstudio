@@ -48,8 +48,7 @@ fn apply_health_decay(
 ) -> Unit {
   guard query.contiguous_iter() is Some(iter) else { return }
   while (iter.fetch_next() catch { _ => None }) is Some((decay, health)) {
-    let health_ref = health.get_ref()
-    health_ref.val.value = health_ref.val.value * decay.value().factor
+    health.modify(fn(value) { value.value = value.value * decay.value().factor })
   }
 }
 
@@ -64,9 +63,9 @@ fn finish_off_first(
       return
     }
     finished.val = true
-    let health_ref = health.get_ref()
-    health_ref.val.value = health_ref.val.value - 1.0F
-    if health_ref.val.value <= 0.0F {
+    let next_value = health.value().value - 1.0F
+    health.modify(fn(value) { value.value = next_value })
+    if next_value <= 0.0F {
       commands.entity(entity).despawn()
       @app.log_info("Finishing off one entity")
     }

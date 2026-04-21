@@ -42,12 +42,14 @@ fn ldtk_settings_or_default(world : @ecs.World) -> LdtkSettings {
 }
 
 ///|
-fn ldtk_runtime_state_ref_or_init(world : @ecs.World) -> Ref[LdtkRuntimeState] {
+fn ldtk_runtime_state_ref_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[LdtkRuntimeState] {
   let key : @ecs.ResourceKey[LdtkRuntimeState] = LdtkRuntimeState::resource()
   if (try! world.get_resource(key)) is None {
     world.insert_resource(key, LdtkRuntimeState::default())
   }
-  match (try! world.get_resource_ref_mut(key)) {
+  match (try! world.get_resource_mut(key)) {
     Some(value) => value
     None => abort("Failed to initialize LdtkRuntimeState")
   }
@@ -56,9 +58,9 @@ fn ldtk_runtime_state_ref_or_init(world : @ecs.World) -> Ref[LdtkRuntimeState] {
 ///|
 fn ldtk_project_assets_ref_or_abort(
   world : @ecs.World,
-) -> Ref[@asset.Assets[LdtkProject]] {
+) -> @ecs.ResourceMut[@asset.Assets[LdtkProject]] {
   let key : @ecs.ResourceKey[@asset.Assets[LdtkProject]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key)) {
+  match (try! world.get_resource_mut(key)) {
     Some(value) => value
     None =>
       abort(
@@ -186,7 +188,8 @@ fn ldtk_apply_level_set_for_world(
     return false
   }
   let runtime_ref = ldtk_runtime_state_ref_or_init(world)
-  let spawned = runtime_ref.val.world_spawned_levels(world_entity)
+  runtime_ref.set_changed()
+  let spawned = runtime_ref.peek().world_spawned_levels(world_entity)
   let mut spawned_any = false
   let desired_iid_lookup : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   for level_iid in level_set.iids() {
@@ -238,8 +241,10 @@ fn ldtk_apply_level_set_for_world(
 pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
   let ldtk_settings = ldtk_settings_or_default(world)
   let assets_ref = ldtk_project_assets_ref_or_abort(world)
+  assets_ref.set_changed()
+  let assets = assets_ref.peek()
   let changed_handles : @hashmap.HashMap[Int, Bool] = @hashmap.HashMap::new()
-  for event in assets_ref.val.drain_events() {
+  for event in assets.drain_events() {
     match event {
       @asset.AssetEvent::Added(handle) => changed_handles.set(handle.id(), true)
       @asset.AssetEvent::Modified(handle) =>
@@ -261,7 +266,7 @@ pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
         try! world.set_by_key(entity, ecs_key_respawn, Respawn::{  })
       }
       if ldtk_set_clear_color_from_editor_background(ldtk_settings) {
-        if assets_ref.val.get(handle.value().handle()) is Some(project) {
+        if assets.get(handle.value().handle()) is Some(project) {
           ldtk_set_clear_color(world, project.json_data().bg_color)
         }
       }
@@ -457,9 +462,7 @@ pub fn detect_level_spawned_events(
       _ => ()
     }
   }
-  spawned_level_iids.get_ref().val = LdtkSpawnedLevelIids::{
-    iids: spawned_iids,
-  }
+  spawned_level_iids.set(LdtkSpawnedLevelIids::{ iids: spawned_iids })
 }
 
 ///|
@@ -467,10 +470,10 @@ pub fn fire_level_transformed_events(
   spawned_level_iids : @app.ResMut[LdtkSpawnedLevelIids],
   level_events : @ecs.MessageWriter[LevelEvent],
 ) -> Unit {
-  for iid in spawned_level_iids.get_ref().val.iids() {
+  for iid in spawned_level_iids.peek().iids() {
     ignore(level_events.write(Transformed(iid)))
   }
-  spawned_level_iids.get_ref().val = LdtkSpawnedLevelIids::default()
+  spawned_level_iids.set(LdtkSpawnedLevelIids::default())
 }
 
 ///|

@@ -86,8 +86,7 @@ fn easy_screenshot_schedule_capture_system(
   if !config.get().enabled {
     return
   }
-  let state_ref = state.get_ref()
-  if state_ref.val.pending_capture_frames >= 0 {
+  if state.peek().pending_capture_frames >= 0 {
     return
   }
   if !input.just_pressed(@window.KeyCode::F12) {
@@ -98,7 +97,7 @@ fn easy_screenshot_schedule_capture_system(
   } else {
     config.get().delay_frames
   }
-  state_ref.val.pending_capture_frames = delay
+  state.modify(fn(value) { value.pending_capture_frames = delay })
 }
 
 ///|
@@ -109,17 +108,17 @@ fn easy_screenshot_flush_capture_system(
   if !config.get().enabled {
     return
   }
-  let state_ref = state.get_ref()
-  let pending = state_ref.val.pending_capture_frames
+  let state_value = state.peek()
+  let pending = state_value.pending_capture_frames
   if pending < 0 {
     return
   }
   if pending > 0 {
-    state_ref.val.pending_capture_frames = pending - 1
+    state.modify(fn(value) { value.pending_capture_frames = pending - 1 })
     return
   }
   guard @app.current_world() is Some(world) else { return }
-  let path = easy_screenshot_default_path(state_ref.val.next_capture_index)
+  let path = easy_screenshot_default_path(state_value.next_capture_index)
   let screenshot_entity = world.spawn()
   ignore(
     world.add_entity_component_observer(
@@ -132,8 +131,10 @@ fn easy_screenshot_flush_capture_system(
     @window.ecs_key_screenshot,
     @window.Screenshot::primary_window(),
   )
-  state_ref.val.next_capture_index = state_ref.val.next_capture_index + 1
-  state_ref.val.pending_capture_frames = -1
+  state.modify(fn(value) {
+    value.next_capture_index = value.next_capture_index + 1
+    value.pending_capture_frames = -1
+  })
 }
 
 ///|

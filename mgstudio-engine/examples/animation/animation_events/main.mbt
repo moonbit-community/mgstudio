@@ -17,7 +17,7 @@ struct MessageText {}
 
 ///|
 struct SetMessage {
-  mut observer_entity : @core.Entity?
+  observer_entity : @core.Entity?
   value : String
   palette : MessagePalette
 }
@@ -31,7 +31,7 @@ pub(all) enum MessagePalette {
 
 ///|
 struct MessageFade {
-  mut palette : MessagePalette
+  palette : MessagePalette
 }
 
 ///|
@@ -77,11 +77,12 @@ pub impl @ecs.TriggerEvent for SetMessage with observer_entity(self) {
 }
 
 ///|
-pub impl @ecs.TriggerEvent for SetMessage with set_observer_entity(
-  event_ref,
-  entity,
-) {
-  event_ref.val.observer_entity = Some(entity)
+pub impl @ecs.TriggerEvent for SetMessage with set_observer_entity(self, entity) {
+  SetMessage::{
+    observer_entity: Some(entity),
+    value: self.value,
+    palette: self.palette,
+  }
 }
 
 ///|
@@ -167,7 +168,7 @@ fn on_set_message(
   let event = set_message.event()
   let (text2d, color, fade) = text.get()
   text2d.set(@text.Text2d::new(event.value))
-  fade.get_ref().val.palette = event.palette
+  fade.set(MessageFade::{ palette: event.palette })
   color.set(@text.TextColor::new(message_color(event.palette, 1.0F)))
 }
 
@@ -182,7 +183,7 @@ fn animate_text_opacity(
   let delta = time.get().delta_seconds()
   try! text.view(fn(_entity, entry) {
     let (color, fade) = entry
-    let current_alpha = color.get_ref().val.color.alpha()
+    let current_alpha = color.value().color.alpha()
     let next_alpha = if current_alpha > delta {
       current_alpha - delta
     } else {

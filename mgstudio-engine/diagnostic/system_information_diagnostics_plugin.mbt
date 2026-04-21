@@ -265,14 +265,15 @@ fn refresh_system_information_diagnostics(
   state : @app.ResMut[SysinfoRefreshState],
   time : @app.Res[@time.Time[@time.Real]],
 ) -> Unit {
-  let state_ref = state.get_ref()
-  state_ref.val.elapsed_ms = state_ref.val.elapsed_ms +
+  let state_value = state.peek()
+  state.set_changed()
+  state_value.elapsed_ms = state_value.elapsed_ms +
     time.get().delta().as_millis()
-  if state_ref.val.elapsed_ms < minimum_refresh_interval_ms() {
+  if state_value.elapsed_ms < minimum_refresh_interval_ms() {
     return
   }
 
-  state_ref.val.elapsed_ms = 0
+  state_value.elapsed_ms = 0
   apply_sysinfo_refresh_data(diagnostics, collect_sysinfo_refresh_data_once())
 }
 

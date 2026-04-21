@@ -11,7 +11,6 @@ import {
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
-  "moonbitlang/core/ref",
 }
 
 // Values
@@ -47,15 +46,15 @@ pub fn pbr_forward_decal_specialized_label(String) -> String
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
-pub fn render3d_decals_buffer_ref(@ecs.World) -> @ref.Ref[DecalsBuffer]?
+pub fn render3d_decals_buffer_ref(@ecs.World) -> @ecs.ResourceMut[DecalsBuffer]?
 
-pub fn render3d_decals_buffer_ref_or_init(@ecs.World) -> @ref.Ref[DecalsBuffer]
+pub fn render3d_decals_buffer_ref_or_init(@ecs.World) -> @ecs.ResourceMut[DecalsBuffer]
 
 pub fn render3d_extract_clustered_decals_system(@ecs.World) -> Unit
 
-pub fn render3d_render_clustered_decals_ref(@ecs.World) -> @ref.Ref[RenderClusteredDecals]?
+pub fn render3d_render_clustered_decals_ref(@ecs.World) -> @ecs.ResourceMut[RenderClusteredDecals]?
 
-pub fn render3d_render_clustered_decals_ref_or_init(@ecs.World) -> @ref.Ref[RenderClusteredDecals]
+pub fn render3d_render_clustered_decals_ref_or_init(@ecs.World) -> @ecs.ResourceMut[RenderClusteredDecals]
 
 pub fn render3d_upload_decals(RenderClusteredDecals, DecalsBuffer) -> Unit
 

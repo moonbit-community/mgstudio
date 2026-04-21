@@ -245,67 +245,63 @@ fn filters_inputs(
   filters : @app.ResMut[LogDiagnosticsFilters],
   log_state : @app.ResMut[@diagnostic.LogDiagnosticsState],
 ) -> Unit {
-  let status_ref = status.get_ref()
-  let filters_ref = filters.get_ref()
-  let log_state_ref = log_state.get_ref()
-
   if @input.key_just_pressed(@window.KeyCode::KeyQ) {
-    match status_ref.val {
+    match status.get() {
       LogDiagnosticsStatus::Enabled => {
-        log_state_ref.val.disable_filtering()
-        status_ref.val = LogDiagnosticsStatus::Disabled
+        log_state.modify(fn(value) { value.disable_filtering() })
+        status.set(LogDiagnosticsStatus::Disabled)
       }
       LogDiagnosticsStatus::Disabled => {
-        log_state_ref.val.enable_filtering()
-        set_filter_enabled(
-          log_state_ref.val,
-          frame_time_diagnostics(),
-          filters_ref.val.frame_time,
-        )
-        set_filter_enabled(
-          log_state_ref.val,
-          entity_count_diagnostics(),
-          filters_ref.val.entity_count,
-        )
-        set_filter_enabled(
-          log_state_ref.val,
-          system_info_diagnostics(),
-          filters_ref.val.system_info,
-        )
-        status_ref.val = LogDiagnosticsStatus::Enabled
+        let current_filters = filters.peek()
+        log_state.modify(fn(value) {
+          value.enable_filtering()
+          set_filter_enabled(
+            value,
+            frame_time_diagnostics(),
+            current_filters.frame_time,
+          )
+          set_filter_enabled(
+            value,
+            entity_count_diagnostics(),
+            current_filters.entity_count,
+          )
+          set_filter_enabled(
+            value,
+            system_info_diagnostics(),
+            current_filters.system_info,
+          )
+        })
+        status.set(LogDiagnosticsStatus::Enabled)
       }
     }
   }
 
-  let enabled = status_enabled(status_ref.val)
+  let enabled = status_enabled(status.get())
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    filters_ref.val.frame_time = !filters_ref.val.frame_time
+    let next_enabled = !filters.peek().frame_time
+    filters.modify(fn(value) { value.frame_time = next_enabled })
     if enabled {
-      set_filter_enabled(
-        log_state_ref.val,
-        frame_time_diagnostics(),
-        filters_ref.val.frame_time,
-      )
+      log_state.modify(fn(value) {
+        set_filter_enabled(value, frame_time_diagnostics(), next_enabled)
+      })
     }
   }
   if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    filters_ref.val.entity_count = !filters_ref.val.entity_count
+    let next_enabled = !filters.peek().entity_count
+    filters.modify(fn(value) { value.entity_count = next_enabled })
     if enabled {
-      set_filter_enabled(
-        log_state_ref.val,
-        entity_count_diagnostics(),
-        filters_ref.val.entity_count,
-      )
+      log_state.modify(fn(value) {
+        set_filter_enabled(value, entity_count_diagnostics(), next_enabled)
+      })
     }
   }
   if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    filters_ref.val.system_info = !filters_ref.val.system_info
+    let next_enabled = !filters.peek().system_info
+    filters.modify(fn(value) { value.system_info = next_enabled })
     if enabled {
-      set_filter_enabled(
-        log_state_ref.val,
-        system_info_diagnostics(),
-        filters_ref.val.system_info,
-      )
+      log_state.modify(fn(value) {
+        set_filter_enabled(value, system_info_diagnostics(), next_enabled)
+      })
     }
   }
 }

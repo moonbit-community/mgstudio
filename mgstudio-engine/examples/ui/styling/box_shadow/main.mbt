@@ -573,9 +573,8 @@ fn update_shadow_controls(
     @ecs.All,
   ],
 ) -> Unit {
-  let settings_ref = settings.get_ref()
-  let pressed_ref = pressed_controls.get_ref()
-  let previous = pressed_ref.val.entities
+  let previous = pressed_controls.peek().entities
+  let mut next_settings = settings.peek()
   let next_pressed : Array[@core.Entity] = []
   try! buttons.view(fn(_query_entity, data) {
     let entity = data.0
@@ -599,11 +598,12 @@ fn update_shadow_controls(
     if interaction == @ui.Interaction::Pressed {
       next_pressed.push(entity)
       if !array_contains_entity(previous, entity) {
-        settings_ref.val = apply_action(settings_ref.val, action)
+        next_settings = apply_action(next_settings, action)
       }
     }
   })
-  pressed_ref.val = PressedControls::{ entities: next_pressed }
+  settings.set(next_settings)
+  pressed_controls.set(PressedControls::{ entities: next_pressed })
 }
 
 ///|
@@ -647,8 +647,7 @@ fn update_shadow_labels(
   try! labels.view(fn(_entity, data) {
     let text_mut = data.0
     let field = data.1.value().field
-    let text_ref = text_mut.get_ref()
-    text_ref.val.content = field_value(current, field)
+    text_mut.modify(fn(value) { value.content = field_value(current, field) })
   })
 }
 

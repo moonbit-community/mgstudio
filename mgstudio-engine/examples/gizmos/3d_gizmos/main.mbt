@@ -203,22 +203,23 @@ fn setup(
     ),
   )
 
-  let store_ref = config_store.get_ref()
-  let (default_config, _default_group) = store_ref.val.config_mut(
-    @gizmos.DefaultGizmoConfigGroup::default(),
-  )
-  default_config.val = gizmo_config_with_line_joints(
-    gizmo_config_with_line_width(default_config.val, 2.0F),
-    None,
-  )
+  config_store.modify(fn(store) {
+    let (default_config, _default_group) = store.config_mut(
+      @gizmos.DefaultGizmoConfigGroup::default(),
+    )
+    default_config.val = gizmo_config_with_line_joints(
+      gizmo_config_with_line_width(default_config.val, 2.0F),
+      None,
+    )
 
-  let (round_config, _round_group) = store_ref.val.config_mut(
-    MyRoundGizmos::default(),
-  )
-  round_config.val = gizmo_config_with_line_joints(
-    gizmo_config_with_line_width(round_config.val, 4.0F),
-    Round(4),
-  )
+    let (round_config, _round_group) = store.config_mut(
+      MyRoundGizmos::default(),
+    )
+    round_config.val = gizmo_config_with_line_joints(
+      gizmo_config_with_line_width(round_config.val, 4.0F),
+      Round(4),
+    )
+  })
 }
 
 ///|
@@ -332,72 +333,71 @@ fn update_config(
   virtual_time : @app.ResMut[@time.Time[@time.Virtual]],
 ) -> Unit {
   let delta = real_time.get().delta_secs()
-  let store_ref = config_store.get_ref()
+  config_store.modify(fn(store) {
+    let (default_config, _default_group) = store.config_mut(
+      @gizmos.DefaultGizmoConfigGroup::default(),
+    )
+    if keyboard.pressed(ArrowRight) {
+      default_config.val = gizmo_config_with_line_width(
+        default_config.val,
+        clamp_float(default_config.val.line.width + 5.0F * delta, 0.0F, 50.0F),
+      )
+    }
+    if keyboard.pressed(ArrowLeft) {
+      default_config.val = gizmo_config_with_line_width(
+        default_config.val,
+        clamp_float(default_config.val.line.width - 5.0F * delta, 0.0F, 50.0F),
+      )
+    }
+    if keyboard.just_pressed(Digit1) {
+      default_config.val = gizmo_config_toggle_enabled(default_config.val)
+    }
+    if keyboard.just_pressed(KeyU) {
+      default_config.val = gizmo_config_with_line_style(
+        default_config.val,
+        cycle_line_style_forward(default_config.val.line.style),
+      )
+    }
+    if keyboard.just_pressed(KeyJ) {
+      default_config.val = gizmo_config_with_line_joints(
+        default_config.val,
+        cycle_line_joint_forward(default_config.val.line.joints),
+      )
+    }
 
-  let (default_config, _default_group) = store_ref.val.config_mut(
-    @gizmos.DefaultGizmoConfigGroup::default(),
-  )
-  if keyboard.pressed(ArrowRight) {
-    default_config.val = gizmo_config_with_line_width(
-      default_config.val,
-      clamp_float(default_config.val.line.width + 5.0F * delta, 0.0F, 50.0F),
+    let (round_config, _round_group) = store.config_mut(
+      MyRoundGizmos::default(),
     )
-  }
-  if keyboard.pressed(ArrowLeft) {
-    default_config.val = gizmo_config_with_line_width(
-      default_config.val,
-      clamp_float(default_config.val.line.width - 5.0F * delta, 0.0F, 50.0F),
-    )
-  }
-  if keyboard.just_pressed(Digit1) {
-    default_config.val = gizmo_config_toggle_enabled(default_config.val)
-  }
-  if keyboard.just_pressed(KeyU) {
-    default_config.val = gizmo_config_with_line_style(
-      default_config.val,
-      cycle_line_style_forward(default_config.val.line.style),
-    )
-  }
-  if keyboard.just_pressed(KeyJ) {
-    default_config.val = gizmo_config_with_line_joints(
-      default_config.val,
-      cycle_line_joint_forward(default_config.val.line.joints),
-    )
-  }
-
-  let (round_config, _round_group) = store_ref.val.config_mut(
-    MyRoundGizmos::default(),
-  )
-  if keyboard.pressed(ArrowUp) {
-    round_config.val = gizmo_config_with_line_width(
-      round_config.val,
-      clamp_float(round_config.val.line.width + 5.0F * delta, 0.0F, 50.0F),
-    )
-  }
-  if keyboard.pressed(ArrowDown) {
-    round_config.val = gizmo_config_with_line_width(
-      round_config.val,
-      clamp_float(round_config.val.line.width - 5.0F * delta, 0.0F, 50.0F),
-    )
-  }
-  if keyboard.just_pressed(Digit2) {
-    round_config.val = gizmo_config_toggle_enabled(round_config.val)
-  }
-  if keyboard.just_pressed(KeyI) {
-    round_config.val = gizmo_config_with_line_style(
-      round_config.val,
-      cycle_line_style_backward(round_config.val.line.style),
-    )
-  }
-  if keyboard.just_pressed(KeyK) {
-    round_config.val = gizmo_config_with_line_joints(
-      round_config.val,
-      cycle_line_joint_backward(round_config.val.line.joints),
-    )
-  }
+    if keyboard.pressed(ArrowUp) {
+      round_config.val = gizmo_config_with_line_width(
+        round_config.val,
+        clamp_float(round_config.val.line.width + 5.0F * delta, 0.0F, 50.0F),
+      )
+    }
+    if keyboard.pressed(ArrowDown) {
+      round_config.val = gizmo_config_with_line_width(
+        round_config.val,
+        clamp_float(round_config.val.line.width - 5.0F * delta, 0.0F, 50.0F),
+      )
+    }
+    if keyboard.just_pressed(Digit2) {
+      round_config.val = gizmo_config_toggle_enabled(round_config.val)
+    }
+    if keyboard.just_pressed(KeyI) {
+      round_config.val = gizmo_config_with_line_style(
+        round_config.val,
+        cycle_line_style_backward(round_config.val.line.style),
+      )
+    }
+    if keyboard.just_pressed(KeyK) {
+      round_config.val = gizmo_config_with_line_joints(
+        round_config.val,
+        cycle_line_joint_backward(round_config.val.line.joints),
+      )
+    }
+  })
   if keyboard.just_pressed(Space) {
-    let virtual_time_ref = virtual_time.get_ref()
-    virtual_time_ref.val = virtual_time_ref.val.toggle()
+    virtual_time.set(virtual_time.get().toggle())
   }
 }
 

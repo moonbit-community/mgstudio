@@ -70,12 +70,10 @@ pub impl @app.Resource for PitchAssets with resource() {
 
 ///|
 pub fn pitch_add(world : @ecs.World, pitch : Pitch) -> @asset.Handle[Pitch] {
-  let assets_ref = audio_resource_ensure_ref_mut(
-    world,
-    PitchAssets::resource(),
-    fn() { PitchAssets::new() },
-  )
-  assets_ref.val.add(pitch)
+  let assets = audio_resource_ensure_mut(world, PitchAssets::resource(), fn() {
+    PitchAssets::new()
+  })
+  assets.modify(fn(value) { value.add(pitch) })
 }
 
 ///|
@@ -92,9 +90,8 @@ pub fn pitch_set(
   handle : @asset.Handle[Pitch],
   pitch : Pitch,
 ) -> Bool {
-  guard audio_resource_ref_mut(world, PitchAssets::resource())
-    is Some(assets_ref) else {
+  guard audio_resource_mut(world, PitchAssets::resource()) is Some(assets) else {
     return false
   }
-  assets_ref.val.set(handle, pitch)
+  assets.modify(fn(value) { value.set(handle, pitch) })
 }
