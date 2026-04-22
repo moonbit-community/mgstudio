@@ -247,7 +247,7 @@ fn pbr_plugin_install_with(
   plugin : PbrPlugin,
 ) -> @app.App[@ecs.World] {
   let runtime_config = PbrPluginRuntimeConfig::from_plugin(plugin)
-  let mut next = app
+  let mut next = @shader.shader_plugin(app)
   if !next.contains_resource(ecs_key_pbr_plugin_marker) {
     let distance_fog_extract_plugin : @render.ExtractComponentPlugin[
       DistanceFog,

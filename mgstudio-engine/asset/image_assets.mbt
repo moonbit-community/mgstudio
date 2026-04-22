@@ -172,24 +172,3 @@ fn[T] assets_store_insert(
   }
   true
 }
-
-///|
-fn[T] assets_store_insert_silent(
-  assets : Assets[T],
-  handle : Handle[T],
-  value : T,
-) -> Bool {
-  let id = handle.id()
-  if id < 0 {
-    return false
-  }
-  while assets.items.length() <= id {
-    assets.items.push(None)
-  }
-  let existed = assets.items[id] is Some(_)
-  assets.items[id] = Some(value)
-  if !existed {
-    assets.alive = assets.alive + 1
-  }
-  true
-}

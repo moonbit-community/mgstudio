@@ -56,11 +56,11 @@ pub struct AssetServer {
   paths : Ref[Array[String]]
   path_fingerprints : Ref[@hashmap.HashMap[String, Int]]
   typed_asset_paths : Ref[@hashmap.HashMap[String, Int]]
+  pending_load_failures : Ref[Array[UntypedAssetLoadFailedEvent]]
   pending_processed_asset_loads : Ref[Array[PendingProcessedAssetLoad]]
   pending_typed_asset_loads : Ref[Array[PendingTypedAssetLoad]]
   pending_acquired_loads : Ref[Array[PendingAcquiredLoad]]
   image_paths : Ref[Array[(String, Handle[Image])]]
-  image_loaded_states : Ref[@hashmap.HashMap[Int, Bool]]
   pending_image_assets : Ref[@hashmap.HashMap[Int, Image]]
   image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]]
   image_render_asset_usages : Ref[Array[(Int, RenderAssetUsages)]]
@@ -103,11 +103,11 @@ fn asset_server_standalone() -> AssetServer {
     paths: Ref::new([]),
     path_fingerprints: Ref::new(@hashmap.HashMap::new()),
     typed_asset_paths: Ref::new(@hashmap.HashMap::new()),
+    pending_load_failures: Ref::new([]),
     pending_processed_asset_loads: Ref::new([]),
     pending_typed_asset_loads: Ref::new([]),
     pending_acquired_loads: Ref::new([]),
     image_paths: Ref::new([]),
-    image_loaded_states: Ref::new(@hashmap.HashMap::new()),
     pending_image_assets: Ref::new(@hashmap.HashMap::new()),
     image_array_layouts: Ref::new([]),
     image_render_asset_usages: Ref::new([]),
@@ -403,7 +403,8 @@ fn AssetServer::track_image_handle(
   self : AssetServer,
   handle : Handle[Image],
 ) -> Unit {
-  self.image_loaded_states.val.set(handle.id(), false)
+  self |> ignore
+  handle |> ignore
 }
 
 ///|
@@ -1100,32 +1101,76 @@ fn asset_image_handle_type_name() -> String {
 }
 
 ///|
+fn asset_enqueue_load_failure(
+  asset_server : AssetServer,
+  failure : UntypedAssetLoadFailedEvent,
+) -> Unit {
+  asset_server.pending_load_failures.val.push(failure)
+  @app.log_error_once(
+    "asset-load-failure:\{failure.type_name}:\{asset_format_path(failure.path)}",
+    "\{failure.error}",
+  )
+}
+
+///|
+fn[T] AssetServer::reserve_missing_loader_handle(
+  self : AssetServer,
+  parsed_path : AssetPath,
+  asset_type_name : String,
+  reason : String,
+) -> Handle[T] {
+  let cache_key = typed_asset_loader_path_key(asset_type_name, parsed_path)
+  if self.typed_asset_paths.val.get(cache_key) is Some(handle_id) {
+    return Handle::new(handle_id)
+  }
+  let handle = asset_assets_mut_or_init().modify(fn(store) {
+    store.reserve_handle()
+  })
+  self.typed_asset_paths.val.set(cache_key, handle.id())
+  let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
+  self.record_path(canonical_path)
+  asset_enqueue_load_failure(
+    self,
+    UntypedAssetLoadFailedEvent::new(
+      asset_type_name,
+      handle.id(),
+      parsed_path,
+      reason,
+    ),
+  )
+  handle
+}
+
+///|
 pub fn[T, P : IntoAssetPath] AssetServer::load(
   self : AssetServer,
   path : P,
 ) -> Handle[T] {
   asset_register_builtin_loaders()
+  let parsed_path = path.into_asset_path()
   let asset_probe : Assets[T] = Assets::new()
   let asset_type_name = @any.of(asset_probe).type_name()
   if typed_asset_loader_registry.val.contains(asset_type_name) {
-    return self.load_registered_asset(path)
+    return self.load_registered_asset(parsed_path)
   }
-  let formatted_path = asset_path_string(path)
+  let formatted_path = asset_format_path(parsed_path)
   let probe : Handle[T] = Handle::new(0)
-  let type_name = asset_loader_type_name(probe)
-  match asset_loader_registry.val.get(type_name) {
+  let loader_type_name = asset_loader_type_name(probe)
+  match asset_loader_registry.val.get(loader_type_name) {
     Some(entry) =>
       match (entry.load)(self, formatted_path).try_to() {
         Some(handle) => handle
-        None =>
-          abort(
-            "asset loader registry returned a mismatched handle type for \{type_name}",
-          )
+        None => self.reserve_missing_loader_handle(
+          parsed_path,
+          asset_type_name,
+          "asset loader registry returned a mismatched handle type for \{loader_type_name}",
+        )
       }
-    None =>
-      abort(
-        "No asset loader is registered for \{type_name}; load the plugin that owns this asset type before calling AssetServer::load",
-      )
+    None => self.reserve_missing_loader_handle(
+      parsed_path,
+      asset_type_name,
+      "No asset loader is registered for \{loader_type_name}; load the plugin that owns this asset type before calling AssetServer::load",
+    )
   }
 }
 
@@ -1380,34 +1425,6 @@ pub fn asset_create_texture_mip_view(
 }
 
 ///|
-fn asset_update_image_event_messages(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(asset_server_resource_key()))
-    is Some(asset_server) else {
-    return
-  }
-
-  let message_key : @ecs.MessageKey[AssetEvent[Image]] = @ecs.Message::message()
-  if !world.contains_message(message_key) {
-    world.init_message(message_key)
-  }
-
-  let became_loaded : Array[Int] = []
-  for entry in asset_server.image_loaded_states.val.iter() {
-    let (image_id, was_loaded) = entry
-    if !was_loaded && host_asset_is_texture_loaded(image_id) {
-      became_loaded.push(image_id)
-    }
-  }
-
-  for image_id in became_loaded {
-    asset_server.image_loaded_states.val.set(image_id, true)
-    ignore(
-      world.send_message(message_key, AssetEvent::Added(Handle::new(image_id))),
-    )
-  }
-}
-
-///|
 fn asset_poll_modified_paths(asset_server : AssetServer) -> Array[String] {
   let modified_paths : Array[String] = []
   for path in asset_server.paths.val {
@@ -1459,7 +1476,9 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
         image_asset_sync_metadata(handle, image)
         ignore(
           images_ref.modify(fn(store) {
-            assets_store_insert_silent(store, handle, image)
+            let existed = store.get(handle) is Some(_)
+            store.push_event(AssetEvent::LoadedWithDependencies(handle))
+            assets_store_insert(store, handle, image, existed)
           }),
         )
         synced.push(image_id)
@@ -1505,6 +1524,20 @@ fn asset_release_ready_acquired_loads(
 }
 
 ///|
+fn asset_dispatch_load_failed_messages(
+  world : @ecs.World,
+  asset_server : AssetServer,
+) -> Unit {
+  if asset_server.pending_load_failures.val.length() == 0 {
+    return
+  }
+  for failure in asset_server.pending_load_failures.val {
+    asset_dispatch_load_failed_event(world, failure)
+  }
+  asset_server.pending_load_failures.val.clear()
+}
+
+///|
 pub fn asset_texture_width(texture : Handle[Image]) -> Int {
   host_asset_texture_width(texture.id())
 }
@@ -1546,10 +1579,9 @@ pub fn asset_system(world : @ecs.World) -> Unit {
     asset_update_loaded_folders(world)
     asset_process_pending_processed_asset_loads(world, asset_server)
     asset_process_pending_typed_asset_loads(world, asset_server)
+    asset_dispatch_load_failed_messages(world, asset_server)
     asset_sync_dirty_image_assets(world)
-    asset_update_event_messages(world)
     asset_sync_loaded_image_assets(world)
-    asset_update_image_event_messages(world)
     asset_release_ready_acquired_loads(world, asset_server)
   })
 }

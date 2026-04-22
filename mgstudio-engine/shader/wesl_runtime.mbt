@@ -132,7 +132,7 @@ fn shader_runtime_register_loaded_wgsl_sources(world : @ecs.World) -> Unit {
       Some(shader) =>
         match shader.source {
           Source::Wgsl(source) =>
-            @render.register_wgsl_source(canonical_path, source)
+            @renderer.register_wgsl_source(canonical_path, source)
           _ => ()
         }
       None => ()
@@ -141,18 +141,14 @@ fn shader_runtime_register_loaded_wgsl_sources(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn shader_load_runtime_asset_or_abort(
+fn shader_load_runtime_asset(
   world : @ecs.World,
   path : String,
-) -> Shader {
+) -> Shader? {
   let asset_server = shader_asset_server_or_abort(world)
   let handle : @asset.Handle[Shader] = asset_server.load(path)
   let shader_assets = shader_assets_or_abort(world)
-  match shader_assets.get(handle) {
-    Some(shader) => shader
-    None =>
-      abort("failed to load shader asset for runtime registration: \{path}")
-  }
+  shader_assets.get(handle)
 }
 
 ///|
@@ -165,7 +161,15 @@ pub fn shader_register_wgsl_runtime_source(
       "shader_register_wgsl_runtime_source only supports .wgsl assets: \{path}",
     )
   }
-  let shader = shader_load_runtime_asset_or_abort(world, path)
+  let shader = match shader_load_runtime_asset(world, path) {
+    Some(shader) => shader
+    None => {
+      @app.log_warn(
+        "shader runtime registration deferred because asset is unavailable: \{path}",
+      )
+      return
+    }
+  }
   match shader.source {
     Source::Wgsl(_) => shader_runtime_register_loaded_wgsl_sources(world)
     Source::Wesl(_) =>
@@ -196,8 +200,14 @@ pub fn shader_register_wesl_runtime_source(
   let handle : @asset.Handle[Shader] = asset_server.load(path)
   shader_runtime_cache_sync_loaded_assets(world)
   let cache = shader_runtime_cache_mut_or_abort(world)
+  if !cache.peek().cache.contains_shader(handle.asset_id()) {
+    @app.log_warn(
+      "WESL shader runtime registration deferred because asset is unavailable: \{path}",
+    )
+    return
+  }
   let compiled = cache.peek().cache.get(0, handle.asset_id(), shader_defs)
-  @render.register_wgsl_source(path, compiled)
+  @renderer.register_wgsl_source(path, compiled)
 }
 
 ///|

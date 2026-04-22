@@ -8531,6 +8531,7 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  let app = @shader.shader_plugin(app)
   ensure_render2d_required_components(app.world())
   let next = init_gizmo_group(
       app.init_resource(fn() { ClearColor::default() }),
@@ -8553,6 +8554,7 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 fn render2d_plugin_ecs_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
+  let app = @shader.shader_plugin(app)
   ensure_render2d_required_components(app.world())
   let next = init_gizmo_group(
       app.init_resource(fn() { ClearColor::default() }),

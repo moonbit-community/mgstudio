@@ -17,6 +17,21 @@
 const ASSET_PLUGIN_NAME : String = "mgstudio.asset.AssetPlugin"
 
 ///|
+pub fn asset_internal_system_set() -> @app.SystemSet {
+  @app.system_set("mgstudio.asset.AssetInternalSystems")
+}
+
+///|
+pub fn asset_tracking_system_set() -> @app.SystemSet {
+  @app.system_set("mgstudio.asset.AssetTrackingSystems")
+}
+
+///|
+pub fn asset_event_system_set() -> @app.SystemSet {
+  @app.system_set("mgstudio.asset.AssetEventSystems")
+}
+
+///|
 pub(all) struct AssetPlugin {
   default_sampler_nearest : Bool
   mode : AssetMode
@@ -116,7 +131,17 @@ fn asset_plugin_with_server(
     let assets : Assets[TextureAtlasLayout] = Assets::new()
     assets
   })
-  .add_pre_update_system(asset_system)
+  .configure_sets(
+    @app.PreUpdate,
+    asset_tracking_system_set(),
+    after=[asset_internal_system_set()],
+  )
+  .add_pre_update_system_config(
+    @app.system(asset_system).in_set(asset_internal_system_set()),
+  )
+  .add_post_update_system_config(
+    @app.system(asset_update_event_messages).in_set(asset_event_system_set()),
+  )
 }
 
 ///|

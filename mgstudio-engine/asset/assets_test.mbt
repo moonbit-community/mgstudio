@@ -166,6 +166,150 @@ test "asset system forwards asset events to ECS messages" {
 }
 
 ///|
+struct MissingLoaderAsset {}
+
+///|
+fn missing_loader_asset_loader(
+  _asset_server : AssetServer,
+  _path : AssetPath,
+  _bytes : Bytes,
+) -> MissingLoaderAsset {
+  MissingLoaderAsset::{  }
+}
+
+///|
+test "asset server load without registered loader emits typed/untyped AssetLoadFailedEvent instead of aborting" {
+  MissingLoaderAsset::{  } |> ignore
+  let world = @ecs.World::new()
+  world.insert_resource(asset_server_resource_key(), AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+
+  let handle : Handle[MissingLoaderAsset] = asset_with_world(world, fn() {
+    asset_server.load("does_not_exist/missing_loader.asset")
+  })
+
+  let missing_assets_key : @ecs.ResourceKey[Assets[MissingLoaderAsset]] = assets_resource_key()
+  debug_inspect(
+    match (try! world.get_resource(missing_assets_key)) {
+      Some(assets) => assets.get(handle) is None
+      None => false
+    },
+    content="true",
+  )
+
+  asset_with_world(world, fn() { asset_system(world) })
+
+  let untyped_cursor : Ref[Int] = Ref::new(0)
+  let untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent] = @ecs.Message::message()
+  let untyped_reader = world.message_reader(untyped_key, untyped_cursor)
+  let failures = try! untyped_reader.read()
+  debug_inspect(failures.length(), content="1")
+  let failure = failures[0]
+  debug_inspect(failure.type_name.length() > 0, content="true")
+  debug_inspect(
+    asset_format_path(failure.path) == "does_not_exist/missing_loader.asset",
+    content="true",
+  )
+  debug_inspect(failure.id == handle.id(), content="true")
+  debug_inspect(
+    failure.error.contains("No asset loader is registered"),
+    content="true",
+  )
+
+  let typed_cursor : Ref[Int] = Ref::new(0)
+  let typed_key : @ecs.MessageKey[AssetLoadFailedEvent[MissingLoaderAsset]] = @ecs.Message::message()
+  let typed_reader = world.message_reader(typed_key, typed_cursor)
+  let typed_failures = try! typed_reader.read()
+  debug_inspect(typed_failures.length(), content="1")
+  let typed_failure = typed_failures[0]
+  debug_inspect(typed_failure.id.index() == handle.id(), content="true")
+  debug_inspect(
+    asset_format_path(typed_failure.path) == "does_not_exist/missing_loader.asset",
+    content="true",
+  )
+}
+
+///|
+test "asset server retries failed typed loads with the same handle after loader registration" {
+  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let world = app.world()
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+
+  let first : Handle[MissingLoaderAsset] = asset_with_world(world, fn() {
+    asset_server.load("data/asset.custom")
+  })
+  asset_with_world(world, fn() { asset_system(world) })
+
+  let untyped_cursor : Ref[Int] = Ref::new(0)
+  let untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent] = @ecs.Message::message()
+  let untyped_reader = world.message_reader(untyped_key, untyped_cursor)
+  let failures = try! untyped_reader.read()
+  debug_inspect(failures.length(), content="1")
+  debug_inspect(failures[0].id == first.id(), content="true")
+
+  let app = init_asset_loader(
+    app,
+    AssetLoader::new(["custom"], missing_loader_asset_loader),
+  )
+  let world = app.world()
+  let second : Handle[MissingLoaderAsset] = asset_with_world(world, fn() {
+    asset_server.load("data/asset.custom")
+  })
+  debug_inspect(first.id() == second.id(), content="true")
+
+  let key : @ecs.ResourceKey[Assets[MissingLoaderAsset]] = assets_resource_key()
+  for _ in 0..<4 {
+    asset_with_world(world, fn() { asset_system(world) })
+    if (match (try! world.get_resource(key)) {
+      Some(assets) => assets.contains(second)
+      None => false
+    }) {
+      break
+    }
+  }
+  debug_inspect(
+    match (try! world.get_resource(key)) {
+      Some(assets) => assets.contains(second)
+      None => false
+    },
+    content="true",
+  )
+
+  asset_update_event_messages(world)
+  let event_cursor : Ref[Int] = Ref::new(0)
+  let event_key : @ecs.MessageKey[AssetEvent[MissingLoaderAsset]] = @ecs.Message::message()
+  let event_reader = world.message_reader(event_key, event_cursor)
+  let events = try! event_reader.read()
+  let loaded_count = Ref::new(0)
+  let added_count = Ref::new(0)
+  for event in events {
+    match event {
+      AssetEvent::LoadedWithDependencies(handle) =>
+        if handle.id() == second.id() {
+          loaded_count.val = loaded_count.val + 1
+        }
+      AssetEvent::Added(handle) =>
+        if handle.id() == second.id() {
+          added_count.val = added_count.val + 1
+        }
+      _ => ()
+    }
+  }
+  debug_inspect(loaded_count.val, content="1")
+  debug_inspect(added_count.val, content="1")
+}
+
+///|
 test "asset system forwards image load completion to ECS messages" {
   let world = @ecs.World::new()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
@@ -209,6 +353,10 @@ test "asset system forwards image load completion to ECS messages" {
     },
     content="true",
   )
+  // `asset_sync_loaded_image_assets` queues events; they are dispatched on the next
+  // asset system tick.
+  asset_with_world(world, fn() { asset_system(world) })
+  asset_update_event_messages(world)
 
   let cursor_ref : Ref[Int] = Ref::new(0)
   let message_key : @ecs.MessageKey[AssetEvent[Image]] = @ecs.Message::message()
@@ -216,9 +364,14 @@ test "asset system forwards image load completion to ECS messages" {
   let events = try! reader.read()
 
   let found = Ref::new(false)
+  let loaded_count = Ref::new(0)
   let added_count = Ref::new(0)
   for event in events {
     match event {
+      AssetEvent::LoadedWithDependencies(handle) =>
+        if handle.id() == image.id() {
+          loaded_count.val = loaded_count.val + 1
+        }
       AssetEvent::Added(handle) => {
         added_count.val = added_count.val + 1
         if handle.id() == image.id() {
@@ -228,6 +381,7 @@ test "asset system forwards image load completion to ECS messages" {
       _ => ()
     }
   }
+  debug_inspect(loaded_count.val, content="1")
   debug_inspect(added_count.val, content="1")
   debug_inspect(found.val, content="true")
 }

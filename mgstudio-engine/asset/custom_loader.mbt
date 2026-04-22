@@ -137,32 +137,79 @@ fn[T, P : IntoAssetPath] AssetServer::load_registered_asset(
   self : AssetServer,
   path : P,
 ) -> Handle[T] {
+  fn pending_processed_contains(
+    asset_server : AssetServer,
+    type_name : String,
+    handle_id : Int,
+    path : AssetPath,
+  ) -> Bool {
+    for pending in asset_server.pending_processed_asset_loads.val {
+      if pending.type_name == type_name &&
+        pending.handle_id == handle_id &&
+        pending.path == path {
+        return true
+      }
+    }
+    false
+  }
+
+  fn pending_typed_contains(
+    asset_server : AssetServer,
+    type_name : String,
+    handle_id : Int,
+    path : AssetPath,
+  ) -> Bool {
+    for pending in asset_server.pending_typed_asset_loads.val {
+      if pending.type_name == type_name &&
+        pending.handle_id == handle_id &&
+        pending.path == path {
+        return true
+      }
+    }
+    false
+  }
+
+  fn queue_registered_load(
+    asset_server : AssetServer,
+    type_name : String,
+    handle : Handle[T],
+    path : AssetPath,
+  ) -> Unit {
+    if asset_should_process_registered_asset(asset_server, type_name, path) {
+      if !pending_processed_contains(asset_server, type_name, handle.id(), path) {
+        asset_server.pending_processed_asset_loads.val.push(PendingProcessedAssetLoad::{
+          type_name,
+          handle_id: handle.id(),
+          path,
+        })
+      }
+    } else if !pending_typed_contains(asset_server, type_name, handle.id(), path) {
+      asset_server.pending_typed_asset_loads.val.push(PendingTypedAssetLoad::{
+        type_name,
+        handle_id: handle.id(),
+        path,
+      })
+    }
+  }
+
   let parsed_path = path.into_asset_path()
   let formatted_path = asset_format_path(parsed_path)
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
   let cache_key = typed_asset_loader_path_key(type_name, parsed_path)
   if self.typed_asset_paths.val.get(cache_key) is Some(handle_id) {
-    return Handle::new(handle_id)
+    let handle = Handle::new(handle_id)
+    if !asset_assets_ref_or_abort().contains(handle) {
+      queue_registered_load(self, type_name, handle, parsed_path)
+    }
+    return handle
   }
   let handle = asset_assets_mut_or_init().modify(fn(assets) {
     assets.reserve_handle()
   })
   self.record_path(asset_canonical_path(formatted_path))
   self.typed_asset_paths.val.set(cache_key, handle.id())
-  if asset_should_process_registered_asset(self, type_name, parsed_path) {
-    self.pending_processed_asset_loads.val.push(PendingProcessedAssetLoad::{
-      type_name,
-      handle_id: handle.id(),
-      path: parsed_path,
-    })
-  } else {
-    self.pending_typed_asset_loads.val.push(PendingTypedAssetLoad::{
-      type_name,
-      handle_id: handle.id(),
-      path: parsed_path,
-    })
-  }
+  queue_registered_load(self, type_name, handle, parsed_path)
   handle
 }
 
@@ -212,7 +259,11 @@ pub fn[T] register_asset_loader(
           )
       }
       ignore(
-        assets.modify(fn(store) { store.insert(Handle::new(handle_id), value) }),
+        assets.modify(fn(store) {
+          let handle = Handle::new(handle_id)
+          store.push_event(AssetEvent::LoadedWithDependencies(handle))
+          store.insert(handle, value)
+        }),
       )
     },
   })

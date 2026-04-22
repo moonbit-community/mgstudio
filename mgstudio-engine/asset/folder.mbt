@@ -117,8 +117,6 @@ pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]] {
 pub fn asset_update_loaded_folders(world : @ecs.World) -> Unit {
   let assets = loaded_folder_assets_mut_or_abort(world)
   assets.modify(fn(store) {
-    // Ensure any leftover internal asset events don't leak between frames.
-    store.drain_events() |> ignore
     while true {
       let kind = host_asset_poll_loaded_folder_event_kind()
       if kind < 0 {
@@ -136,8 +134,8 @@ pub fn asset_update_loaded_folders(world : @ecs.World) -> Unit {
             ),
           )
         }
-        store.insert(handle, LoadedFolder::{ handles, }) |> ignore
         store.push_event(LoadedWithDependencies(handle))
+        store.insert(handle, LoadedFolder::{ handles, }) |> ignore
       } else if kind == 0 {
         store.insert(handle, LoadedFolder::{ handles: [] }) |> ignore
       } else if kind == 1 {

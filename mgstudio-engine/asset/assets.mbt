@@ -112,6 +112,7 @@ fn[T] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
     }
   }
   register_asset_event_dispatch(type_name, key)
+  asset_register_load_failed_event_for_asset_type(probe)
   key
 }
 
