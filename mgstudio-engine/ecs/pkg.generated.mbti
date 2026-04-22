@@ -6,12 +6,15 @@ import {
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
+  "tonyfettes/any",
 }
 
 // Values
 pub fn[T] component_key_from_id(Int, debug_name? : String) -> ComponentKey[T]
 
 pub fn[T] component_metadata_builder(ComponentKey[T]) -> ComponentMetadataBuilder[T]
+
+pub fn[T] component_writer(ComponentKey[T], T) -> ErasedWriter
 
 pub fn[C : Component] current_add_observer() -> ComponentOn[Add, C]
 
@@ -198,14 +201,36 @@ type ComponentCallerTable
 pub struct ComponentColumn[T] {
   world : World
   key : ComponentKey[T]
+  local_component_id : Int
+  storage_type : ComponentStorageType
   changed_sequence_table : ComponentSequenceTable
+  table_column_cache : @ref.Ref[Array[@any.Any?]]
+  table_column_cache_ready : @ref.Ref[Array[Bool]]
 }
 pub fn[T] ComponentColumn::contains(Self[T], @core.Entity) -> Bool
 pub fn[T] ComponentColumn::for_each(Self[T], (@core.Entity, T) -> Unit) -> Unit
+pub fn[T, U] ComponentColumn::for_each_with(Self[T], Self[U], (@core.Entity, T, U) -> Unit) -> Unit
+pub fn[T, U] ComponentColumn::for_each_with_fast(Self[T], Self[U], (@core.Entity, T, U) -> Unit) -> Unit
+pub fn[T, U] ComponentColumn::for_each_without(Self[T], Self[U], (@core.Entity, T) -> Unit) -> Unit
+pub fn[T, U] ComponentColumn::for_each_without_fast(Self[T], Self[U], (@core.Entity, T) -> Unit) -> Unit
 pub fn[T] ComponentColumn::get(Self[T], @core.Entity) -> T?
+pub fn[T] ComponentColumn::get_fast(Self[T], @core.Entity) -> T?
 pub fn[T] ComponentColumn::get_mut(Self[T], @core.Entity) -> Mut[T]?
 pub fn[T] ComponentColumn::set(Self[T], @core.Entity, T) -> Bool
 pub fn[T] ComponentColumn::set_sequence_only(Self[T], @core.Entity, T) -> Bool
+pub fn[T] ComponentColumn::set_sequence_only_fast(Self[T], @core.Entity, T) -> Bool
+pub fn[T] ComponentColumn::set_sequence_only_hot(Self[T], @core.Entity, T) -> Bool
+pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(Self[T], @core.Entity, Array[T], Int, T, Int) -> Bool
+pub fn[T] ComponentColumn::table_values(Self[T], Int) -> Array[T]?
+
+pub(all) struct ComponentColumnOps {
+  payload_at_row : (@any.Any, Int) -> ErasedValue?
+  writer_from_payload : (ErasedValue) -> ErasedWriter?
+  append_writer : (@any.Any, ErasedWriter) -> Bool
+  replace_writer_at_row : (@any.Any, Int, ErasedWriter) -> Bool
+  append_from_row : (@any.Any, Int, @any.Any) -> Bool
+  swap_remove_row : (@any.Any, Int) -> Bool
+}
 
 pub(all) enum ComponentHookKind {
   OnAdd
@@ -266,6 +291,13 @@ pub struct ComponentOn[E, C] {
   marker_component : C?
 }
 pub fn[E, C] ComponentOn::caller(Self[E, C]) -> String?
+
+pub(all) struct ComponentOps {
+  definition_id : Int
+  debug_name : String
+  new_values : () -> @any.Any
+  column_ops : ComponentColumnOps
+}
 
 pub(all) struct ComponentRelationshipSourceMetadata {
   target_entity : (World, @core.Entity) -> @core.Entity?
@@ -387,6 +419,15 @@ pub fn EntityRef::id(Self) -> @core.Entity
 pub impl QueryData for EntityRef
 
 type ErasedValue
+
+pub struct ErasedWriter {
+  component_definition_id : Int
+  component_debug_name : String
+  value_type_name : String
+  to_value : () -> ErasedValue
+  append_to_values : (@any.Any) -> Bool
+  replace_in_values : (@any.Any, Int) -> Bool
+}
 
 pub struct EventKey[_] {
   id : Int
@@ -693,6 +734,8 @@ pub struct QueryParallel[D, F] {
 pub fn[D, F] QueryParallel::batching_strategy(Self[D, F], BatchingStrategy) -> Self[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryParallel::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 
+type QuerySparseAnchorPayloadContext
+
 pub struct QueryState[_, F] {
   filter : F
   mut cached_candidate_archetypes : Array[Int]
@@ -841,6 +884,7 @@ pub struct World {
   mut sequence : Int
   mut system_context : @core.SystemSequenceContext
   mut pending_component_payload_context : PendingComponentPayloadContext?
+  mut current_query_sparse_anchor_payload_context : QuerySparseAnchorPayloadContext?
   tables : Map[Int, @ref.Ref[RawTable]]
   sparse_component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
   component_store_cache_by_definition_id : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
@@ -865,6 +909,7 @@ pub struct World {
   component_membership_counts : Map[Int, Int]
   archetype_entities : Map[Int, Array[@core.Entity]]
   entity_archetype_ids : Array[Int]
+  entity_table_ids : Array[Int]
   entity_table_rows : Array[Int]
   entity_archetype_rows : Array[Int]
   entity_component_local_ids : Array[Array[Int]]
@@ -942,6 +987,7 @@ pub fn[T] World::get_resource_ref(Self, ResourceKey[T]) -> @ref.Ref[T]? raise Ec
 pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T]) -> @ref.Ref[T]? raise EcsError
 pub fn World::get_sequence_context(Self) -> @core.SystemSequenceContext
 pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
+pub fn World::insert_component_writers(Self, @core.Entity, Array[ErasedWriter], caller? : String?) -> Unit raise EcsError
 pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
 pub fn[T] World::is_added_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemSequence) -> Bool
 pub fn World::is_alive(Self, @core.Entity) -> Bool

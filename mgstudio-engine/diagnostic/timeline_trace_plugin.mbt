@@ -31,6 +31,9 @@ const TIMELINE_TRACE_PLUGIN_NAME : String = "mgstudio.diagnostic.TimelineTracePl
 const STRESS_DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic.StressDiagnosticsPlugin"
 
 ///|
+const STRESS_DIAGNOSTICS_ENV_GENERIC : String = "MGSTUDIO_STRESS_USE_GENERIC_DIAGNOSTICS"
+
+///|
 pub struct TimelineTraceConfig {
   enabled : Bool
   output_path : String
@@ -118,11 +121,30 @@ pub impl @app.Plugin for TimelineTracePlugin with build(self, app) {
 }
 
 ///|
-pub struct StressDiagnosticsPlugin {}
+pub struct StressDiagnosticsPlugin {
+  use_generic_stack : Bool?
+  log_interval_seconds : Float
+}
 
 ///|
 pub fn StressDiagnosticsPlugin::default() -> StressDiagnosticsPlugin {
-  StressDiagnosticsPlugin::{  }
+  StressDiagnosticsPlugin::{ use_generic_stack: None, log_interval_seconds: 1.0F }
+}
+
+///|
+pub fn StressDiagnosticsPlugin::with_use_generic_stack(
+  self : StressDiagnosticsPlugin,
+  use_generic_stack : Bool,
+) -> StressDiagnosticsPlugin {
+  StressDiagnosticsPlugin::{ ..self, use_generic_stack: Some(use_generic_stack) }
+}
+
+///|
+pub fn StressDiagnosticsPlugin::with_log_interval_seconds(
+  self : StressDiagnosticsPlugin,
+  log_interval_seconds : Float,
+) -> StressDiagnosticsPlugin {
+  StressDiagnosticsPlugin::{ ..self, log_interval_seconds }
 }
 
 ///|
@@ -133,6 +155,100 @@ pub impl @app.Plugin for StressDiagnosticsPlugin with name(_self) {
 ///|
 pub impl @app.Plugin for StressDiagnosticsPlugin with build(self, app) {
   stress_diagnostics_plugin_with(app, self)
+}
+
+///|
+priv struct StressMetricsState {
+  mut timer : @time.Timer
+  mut frame_count : Int
+  mut elapsed_seconds : Float
+}
+
+///|
+fn stress_metrics_state_default(
+  log_interval_seconds : Float,
+) -> StressMetricsState {
+  {
+    timer: @time.Timer::from_seconds(log_interval_seconds, @time.Repeating),
+    frame_count: 0,
+    elapsed_seconds: 0.0F,
+  }
+}
+
+///|
+let stress_metrics_state_key : @ecs.ResourceKey[StressMetricsState] = @ecs.register_resource(
+  debug_name="mgstudio_diagnostic::StressMetricsState",
+)
+
+///|
+impl @app.Resource for StressMetricsState with resource() {
+  stress_metrics_state_key
+}
+
+///|
+fn stress_diagnostics_use_generic_stack() -> Bool {
+  match @sys.get_env_var(STRESS_DIAGNOSTICS_ENV_GENERIC) {
+    Some(raw) => {
+      let token = raw.trim().to_string()
+      token == "1" ||
+      token == "true" ||
+      token == "TRUE" ||
+      token == "yes" ||
+      token == "YES" ||
+      token == "on" ||
+      token == "ON"
+    }
+    None => false
+  }
+}
+
+///|
+fn stress_diagnostics_resolve_generic_stack(
+  plugin : StressDiagnosticsPlugin,
+) -> Bool {
+  match plugin.use_generic_stack {
+    Some(value) => value
+    None => stress_diagnostics_use_generic_stack()
+  }
+}
+
+///|
+fn stress_metrics_system(
+  state : @app.ResMut[StressMetricsState],
+  time : @app.Res[@time.Time[@time.Real]],
+) -> Unit {
+  let state_value = state.peek()
+  state.set_changed()
+  let delta = time.get().delta()
+  let delta_seconds = time.get().delta_seconds()
+  if delta_seconds < 0.0F {
+    return
+  }
+  state_value.frame_count = state_value.frame_count + 1
+  state_value.elapsed_seconds = state_value.elapsed_seconds + delta_seconds
+  state_value.timer = state_value.timer.tick(delta)
+  if !state_value.timer.is_finished() || state_value.elapsed_seconds <= 0.0F {
+    return
+  }
+  let frame_count = state_value.frame_count
+  let fps = Float::from_int(frame_count) / state_value.elapsed_seconds
+  let frame_time_ms = state_value.elapsed_seconds * 1000.0F /
+    Float::from_int(frame_count)
+  @app.log_record(
+    @app.Info,
+    message="fps: \{fps.to_string()} (avg \{fps.to_string()})",
+    target="mgstudio_diagnostic",
+  )
+  @app.log_record(
+    @app.Info,
+    message="frame_time: \{frame_time_ms.to_string()}ms (avg \{frame_time_ms.to_string()}ms)",
+    target="mgstudio_diagnostic",
+  )
+  @app.log_record(
+    @app.Info,
+    message="frame_count: \{frame_count.to_string()}",
+    target="mgstudio_diagnostic",
+  )
 }
 
 ///|
@@ -444,29 +560,76 @@ pub fn stress_diagnostics_plugin(
 }
 
 ///|
+pub fn stress_diagnostics_has_lightweight_metrics(
+  app : @app.App[@ecs.World],
+) -> Bool {
+  app.contains_resource(stress_metrics_state_key)
+}
+
+///|
 pub fn stress_diagnostics_plugin_with(
   app : @app.App[@ecs.World],
   plugin : StressDiagnosticsPlugin,
 ) -> @app.App[@ecs.World] {
-  ignore(plugin)
-  let log_plugin = LogDiagnosticsPlugin::{
-    ..LogDiagnosticsPlugin::filtered([
-      frame_time_diagnostic_fps, frame_time_diagnostic_frame_time, frame_time_diagnostic_frame_count,
-      render_diagnostic_prepared_cameras_2d, render_diagnostic_queued_draw_items_2d,
-      render_diagnostic_queue_cpu_ms_2d, render_diagnostic_execute_cpu_ms_2d, render_diagnostic_prepared_cameras_3d,
-      render_diagnostic_visible_meshes_3d, render_diagnostic_queue_cpu_ms_3d, render_diagnostic_execute_cpu_ms_3d,
-      render_diagnostic_pass_total_count, render_diagnostic_pass_2d_count, render_diagnostic_pass_3d_main_count,
-      render_diagnostic_pass_3d_motion_vector_count, render_diagnostic_pass_3d_point_shadow_count,
-      render_diagnostic_pass_total_cpu_ms, render_diagnostic_pass_2d_cpu_ms, render_diagnostic_pass_3d_main_cpu_ms,
-      render_diagnostic_pass_3d_motion_vector_cpu_ms, render_diagnostic_pass_3d_point_shadow_cpu_ms,
-      render_diagnostic_mesh2d_draw_calls, render_diagnostic_mesh2d_executed_draw_calls,
-      render_diagnostic_mesh3d_draw_calls, render_diagnostic_mesh3d_executed_draw_calls,
-    ]),
-    wait_duration_seconds: 1.0F,
+  if !stress_diagnostics_resolve_generic_stack(plugin) {
+    let next = if app.contains_resource(stress_metrics_state_key) {
+      app
+    } else {
+      app.insert_world_resource(
+        stress_metrics_state_key,
+        stress_metrics_state_default(plugin.log_interval_seconds),
+      )
+    }
+    return next
+      .add_systems(
+        @app.PostUpdate,
+        @app.system(@app.system_param2(stress_metrics_system)),
+      )
+      .add_plugins(TimelineTracePlugin::default())
   }
-  app
-  .add_plugins(FrameTimeDiagnosticsPlugin::default())
-  .add_plugins(RenderDiagnosticsPlugin::default())
-  .add_plugins(log_plugin)
-  .add_plugins(TimelineTracePlugin::default())
+  let include_render_diagnostics = match @sys.get_env_var(
+    "MGSTUDIO_STRESS_INCLUDE_RENDER_DIAGNOSTICS",
+  ) {
+    Some(value) => value == "1" || value == "true" || value == "TRUE"
+    None => false
+  }
+  let filtered_paths = [
+    frame_time_diagnostic_fps, frame_time_diagnostic_frame_time, frame_time_diagnostic_frame_count,
+  ]
+  if include_render_diagnostics {
+    filtered_paths.push(render_diagnostic_prepared_cameras_2d)
+    filtered_paths.push(render_diagnostic_queued_draw_items_2d)
+    filtered_paths.push(render_diagnostic_queue_cpu_ms_2d)
+    filtered_paths.push(render_diagnostic_execute_cpu_ms_2d)
+    filtered_paths.push(render_diagnostic_prepared_cameras_3d)
+    filtered_paths.push(render_diagnostic_visible_meshes_3d)
+    filtered_paths.push(render_diagnostic_queue_cpu_ms_3d)
+    filtered_paths.push(render_diagnostic_execute_cpu_ms_3d)
+    filtered_paths.push(render_diagnostic_pass_total_count)
+    filtered_paths.push(render_diagnostic_pass_2d_count)
+    filtered_paths.push(render_diagnostic_pass_3d_main_count)
+    filtered_paths.push(render_diagnostic_pass_3d_motion_vector_count)
+    filtered_paths.push(render_diagnostic_pass_3d_point_shadow_count)
+    filtered_paths.push(render_diagnostic_pass_total_cpu_ms)
+    filtered_paths.push(render_diagnostic_pass_2d_cpu_ms)
+    filtered_paths.push(render_diagnostic_pass_3d_main_cpu_ms)
+    filtered_paths.push(render_diagnostic_pass_3d_motion_vector_cpu_ms)
+    filtered_paths.push(render_diagnostic_pass_3d_point_shadow_cpu_ms)
+    filtered_paths.push(render_diagnostic_mesh2d_draw_calls)
+    filtered_paths.push(render_diagnostic_mesh2d_executed_draw_calls)
+    filtered_paths.push(render_diagnostic_mesh3d_draw_calls)
+    filtered_paths.push(render_diagnostic_mesh3d_executed_draw_calls)
+  }
+  let log_plugin = LogDiagnosticsPlugin::{
+    ..LogDiagnosticsPlugin::filtered(filtered_paths),
+    wait_duration_seconds: plugin.log_interval_seconds,
+  }
+  let mut next = app
+    .add_plugins(FrameTimeDiagnosticsPlugin::default())
+    .add_plugins(log_plugin)
+    .add_plugins(TimelineTracePlugin::default())
+  if include_render_diagnostics {
+    next = next.add_plugins(RenderDiagnosticsPlugin::default())
+  }
+  next
 }

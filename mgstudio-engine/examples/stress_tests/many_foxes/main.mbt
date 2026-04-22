@@ -28,6 +28,12 @@ const RING_SPACING : Float = 2.0F
 const FOX_SCALE : Float = 0.01F
 
 ///|
+const STRESS_METRICS_OUTPUT_PATH : String = "/tmp/many_foxes_fps.txt"
+
+///|
+const STARTUP_METRICS_OUTPUT_PATH : String = "/tmp/many_foxes_startup.txt"
+
+///|
 struct FoxAnimations {
   graph_handle : @asset.Handle[@animation.AnimationGraph]
   node_indices : Array[@animation.AnimationNodeIndex]
@@ -62,8 +68,37 @@ impl @app.Resource for Foxes with resource() {
 }
 
 ///|
+let scene_ready_counter_ref : Ref[Int] = Ref::new(0)
+
+///|
 fn Foxes::default() -> Foxes {
   { count: DEFAULT_FOX_COUNT, speed: 2.0F, moving: true, sync: false }
+}
+
+///|
+struct StressMetricsState {
+  mut timer : @time.Timer
+  mut frame_count : Int
+  mut elapsed_seconds : Float
+}
+
+///|
+let stress_metrics_state_key : @ecs.ResourceKey[StressMetricsState] = @ecs.register_resource(
+  debug_name="examples.stress_tests.many_foxes.StressMetricsState",
+)
+
+///|
+impl @app.Resource for StressMetricsState with resource() {
+  stress_metrics_state_key
+}
+
+///|
+fn stress_metrics_state_default() -> StressMetricsState {
+  {
+    timer: @time.Timer::from_seconds(0.5F, @time.Repeating),
+    frame_count: 0,
+    elapsed_seconds: 0.0F,
+  }
 }
 
 ///|
@@ -110,7 +145,7 @@ fn configured_window() -> @window.Window {
   let window = @window.Window::default()
   window.title = "🦊🦊🦊 Many Foxes! 🦊🦊🦊"
   window.present_mode = @window.PresentMode::AutoNoVsync
-  window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
+  window.resolution = @window.WindowResolution::new(1600, 900).with_scale_factor_override(
     1.0F,
   )
   window
@@ -169,12 +204,43 @@ fn max_int(a : Int, b : Int) -> Int {
   }
 }
 
+fn stress_metrics_system(
+  state : @app.ResMut[StressMetricsState],
+  time : @app.Res[@time.Time[@time.Real]],
+) -> Unit {
+  let state_value = state.peek()
+  state.set_changed()
+  let delta = time.get().delta()
+  let delta_seconds = time.get().delta_seconds()
+  if delta_seconds < 0.0F {
+    return
+  }
+  state_value.frame_count = state_value.frame_count + 1
+  state_value.elapsed_seconds = state_value.elapsed_seconds + delta_seconds
+  state_value.timer = state_value.timer.tick(delta)
+  if !state_value.timer.is_finished() || state_value.elapsed_seconds <= 0.0F {
+    return
+  }
+  let fps = Float::from_int(state_value.frame_count) / state_value.elapsed_seconds
+  let frame_time_ms = state_value.elapsed_seconds * 1000.0F /
+    Float::from_int(state_value.frame_count)
+  let line =
+    "many_foxes fps=\{fps.to_string()} frame_time=\{frame_time_ms.to_string()}ms samples=\{state_value.frame_count.to_string()}"
+  println(line)
+  @fs.write_string_to_file(STRESS_METRICS_OUTPUT_PATH, "\{line}\n") catch {
+    _ => ()
+  }
+  state_value.frame_count = 0
+  state_value.elapsed_seconds = 0.0F
+}
+
 ///|
 fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   foxes : @app.Res[Foxes],
 ) -> Unit {
+  let start = @core.Instant::now()
   println(
     "This is a stress test used to push mgstudio to its limit and debug performance issues. It is not representative of an actual game. It must be run in release mode using --release or it will be very slow.",
   )
@@ -225,29 +291,33 @@ fn setup(
     let foxes_in_ring = min_int(estimated, foxes_remaining)
     let fox_spacing_angle = circumference /
       (float_from_int(foxes_in_ring) * radius)
+    let fox_batch : Array[(
+      @hierarchy.Parent,
+      @scene.SceneRoot,
+      @transform.Transform,
+    )] = []
     for fox_i in 0..<foxes_in_ring {
       let angle = float_from_int(fox_i) * fox_spacing_angle
       let x = @math.cos(angle) * radius
       let z = @math.sin(angle) * radius
-      ignore(
-        commands.spawn(
-          (
-            @hierarchy.Parent::new(ring_parent),
-            @scene.SceneRoot::new(fox_scene),
-            @transform.Transform::from_xyz(x, 0.0F, z)
-            .with_scale(@math.Vec3::splat(FOX_SCALE))
-            .with_rotation(
-              base_rotation.mul(@math.Quat::from_rotation_y(0.0F - angle)),
-            ),
+      fox_batch.push(
+        (
+          @hierarchy.Parent::new(ring_parent),
+          @scene.SceneRoot::new(fox_scene),
+          @transform.Transform::from_xyz(x, 0.0F, z)
+          .with_scale(@math.Vec3::splat(FOX_SCALE))
+          .with_rotation(
+            base_rotation.mul(@math.Quat::from_rotation_y(0.0F - angle)),
           ),
         ),
       )
     }
+    ignore(commands.spawn_batch(fox_batch))
     foxes_remaining -= foxes_in_ring
     ring_index += 1
   }
 
-  let zoom = 0.8F
+  let zoom = 0.5F
   let camera_translation = @math.Vec3::new(
     outer_radius * 1.25F * zoom,
     outer_radius * 0.5F * zoom,
@@ -294,7 +364,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
+        @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, false).with_cascade_shadow_config_builder(
           @pbr.CascadeShadowConfigBuilder::default()
           .with_first_cascade_far_bound(0.9F * outer_radius)
           .with_maximum_distance(2.8F * outer_radius),
@@ -315,63 +385,73 @@ fn setup(
   println("  - arrow up / down: speed up / slow down animation playback")
   println("  - arrow left / right: seek backward / forward")
   println("  - return: change animation")
-}
-
-///|
-fn visit_descendants(
-  world : @ecs.World,
-  children_state : @ecs.QueryState[@ecs.Comp[@hierarchy.Children], @ecs.All],
-  entity : @core.Entity,
-  f : (@core.Entity) -> Unit,
-) -> Unit raise {
-  guard children_state.get(world, entity) is Some(children_comp) else { return }
-  for child in children_comp.value().entities() {
-    f(child)
-    visit_descendants(world, children_state, child, f)
+  @fs.write_string_to_file(
+    STARTUP_METRICS_OUTPUT_PATH,
+    "setup_ms=\{start.elapsed().as_millis().to_string()}\n",
+  ) catch {
+    _ => ()
   }
 }
 
 ///|
 fn setup_scene_once_loaded(
-  scene_ready : @ecs.ComponentOn[@ecs.Insert, @scene.SceneInstanceReady],
+  scene_ready_entities : @ecs.Query[
+    @ecs.Comp[@scene.SceneInstanceReady],
+    @ecs.Added[@scene.SceneInstanceReady],
+  ],
   commands : @app.Commands,
   animations : @app.Res[FoxAnimations],
   foxes : @app.Res[Foxes],
 ) -> Unit {
-  let scene_entity = scene_ready.entity
+  let ready_scene_instances : Array[(@core.Entity, Int)] = []
+  try! scene_ready_entities.for_each(fn(scene_entity, scene_ready) {
+    ready_scene_instances.push((scene_entity, scene_ready.value().instance_id))
+  })
+  if ready_scene_instances.is_empty() {
+    return
+  }
+  scene_ready_counter_ref.val = scene_ready_counter_ref.val +
+    ready_scene_instances.length()
+  if scene_ready_counter_ref.val == 1 || scene_ready_counter_ref.val % 50 == 0 {
+    @fs.write_string_to_file(
+      STARTUP_METRICS_OUTPUT_PATH,
+      "scene_ready_count=\{scene_ready_counter_ref.val.to_string()}\n",
+    ) catch {
+      _ => ()
+    }
+  }
   let animation_node = animations.get().node_indices[0]
   let graph_handle = animations.get().graph_handle
   let sync = foxes.get().sync
   commands.queue(fn(world : @ecs.World) {
-    let children_state : @ecs.QueryState[
-      @ecs.Comp[@hierarchy.Children],
-      @ecs.All,
-    ] = world.query()
     let players_state : @ecs.QueryState[
       @ecs.Mut[@animation.AnimationPlayer],
       @ecs.All,
     ] = world.query()
-    try! visit_descendants(world, children_state, scene_entity, fn(descendant) {
-      guard (players_state.get(world, descendant) catch { _ => None })
-        is Some(player_mut) else {
-        return
-      }
-      player_mut.modify(fn(player) {
-        let active = player.play(animation_node).repeat()
-        if !sync {
-          active.seek_to(float_from_int(scene_entity.id) / 10.0F) |> ignore
+    for ready_scene in ready_scene_instances {
+      let (scene_entity, instance_id) = ready_scene
+      for descendant in @scene.scene_iter_instance_entities(world, instance_id) {
+        guard (players_state.get(world, descendant) catch { _ => None })
+          is Some(player_mut) else {
+          continue
         }
-      })
-      try! (world
-      .entity_mut(descendant)
-      .insert(
-        (
-          @animation.AnimationGraphHandle::new(graph_handle),
-          @animation.AnimationTransitions::new(),
-        ),
-      )
-      |> ignore)
-    })
+        player_mut.modify(fn(player) {
+          let active = player.play(animation_node).repeat()
+          if !sync {
+            active.seek_to(float_from_int(scene_entity.id) / 10.0F) |> ignore
+          }
+        })
+        try! (world
+        .entity_mut(descendant)
+        .insert(
+          (
+            @animation.AnimationGraphHandle::new(graph_handle),
+            @animation.AnimationTransitions::new(),
+          ),
+        )
+        |> ignore)
+      }
+    }
   })
 }
 
@@ -485,7 +565,8 @@ fn main {
       count: args.count,
       sync: args.sync,
     })
-    .insert_resource(@transform.StaticTransformOptimizations::disabled())
+    .insert_resource(stress_metrics_state_default())
+    .insert_resource(@transform.StaticTransformOptimizations::enabled())
     .insert_resource(@winit.WinitSettings::continuous())
     .add_plugins(
       @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
@@ -495,14 +576,18 @@ fn main {
         close_when_requested: true,
       }),
     )
-    .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+    .add_plugins(@diagnostic.TimelineTracePlugin::default())
     .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-    .add_component_observer4(setup_scene_once_loaded)
+    .add_systems(@app.Update, @app.system(@app.system_param4(setup_scene_once_loaded)))
     .add_systems(
       @app.Update,
       @app.system(@app.system_param4(keyboard_animation_control)),
     )
     .add_systems(@app.Update, @app.system(@app.system_param3(update_fox_rings)))
+    .add_systems(
+      @app.PostUpdate,
+      @app.system(@app.system_param2(stress_metrics_system)),
+    )
   if args.dump_postupdate_schedule {
     println(app.schedule_graph_dot(@app.PostUpdate))
     return

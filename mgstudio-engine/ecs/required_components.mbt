@@ -22,7 +22,7 @@ pub(all) suberror RequiredComponentsError {
 ///|
 priv struct RequiredComponentRegistration {
   component_id : Int
-  init : () -> ErasedValue
+  init : () -> ErasedWriter
   depth : Int
 }
 
@@ -271,7 +271,7 @@ fn World::register_required_components_by_keys(
   self : World,
   requiree : Int,
   required : Int,
-  init_value : () -> ErasedValue,
+  init_value : () -> ErasedWriter,
 ) -> Unit raise RequiredComponentsError {
   let requiree_local_id = self.ensure_component_registered(requiree)
   if self.component_has_been_used(requiree_local_id) {
@@ -313,7 +313,7 @@ pub fn[T, R : Default] World::register_required_components(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { erased_value(R::default()) },
+    fn() { erased_writer(required_key, R::default()) },
   )
 }
 
@@ -327,7 +327,7 @@ pub fn[T, R] World::register_required_components_with(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { erased_value(init()) },
+    fn() { erased_writer(required_key, init()) },
   )
 }
 
@@ -340,7 +340,7 @@ pub fn[T, R : Default] World::try_register_required_components(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { erased_value(R::default()) },
+    fn() { erased_writer(required_key, R::default()) },
   )
 }
 
@@ -354,7 +354,7 @@ pub fn[T, R] World::try_register_required_components_with(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { erased_value(init()) },
+    fn() { erased_writer(required_key, init()) },
   )
 }
 
@@ -427,13 +427,27 @@ fn World::insert_component_with_requirements(
   self : World,
   entity : @core.Entity,
   component_id : Int,
-  payload : ErasedValue,
+  writer : ErasedWriter,
+  caller? : String? = None,
+) -> Unit raise EcsError {
+  self.insert_component_payloads_with_requirements(
+    entity,
+    [(component_id, writer)],
+    caller~,
+  )
+}
+
+///|
+fn World::insert_component_payloads_with_requirements(
+  self : World,
+  entity : @core.Entity,
+  payloads : Array[(Int, ErasedWriter)],
   caller? : String? = None,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
   let structural_changed_ref = Ref::new(false)
-  let pending_payloads : Map[Int, ErasedValue] = match
+  let pending_payloads : Map[Int, ErasedWriter] = match
     self.pending_component_payload_context {
     Some(context) if context.entity_id == entity.id => context.payloads
     _ => {}
@@ -441,14 +455,16 @@ fn World::insert_component_with_requirements(
   let previous_pending_context = self.push_pending_component_payload_context(
     entity, pending_payloads,
   )
-  self.insert_component_with_requirements_unchecked(
-    entity,
-    component_id,
-    payload,
-    structural_changed_ref,
-    pending_payloads,
-    caller~,
-  )
+  for payload in payloads {
+    self.insert_component_with_requirements_unchecked(
+      entity,
+      payload.0,
+      payload.1,
+      structural_changed_ref,
+      pending_payloads,
+      caller~,
+    )
+  }
   if structural_changed_ref.val {
     self.refresh_entity_archetype_with_pending_payloads(
       entity, pending_payloads,
@@ -460,13 +476,30 @@ fn World::insert_component_with_requirements(
 }
 
 ///|
+pub fn World::insert_component_writers(
+  self : World,
+  entity : @core.Entity,
+  writers : Array[ErasedWriter],
+  caller? : String? = None,
+) -> Unit raise EcsError {
+  if writers.is_empty() {
+    return
+  }
+  let payloads : Array[(Int, ErasedWriter)] = []
+  for writer in writers {
+    payloads.push((writer.component_definition_id, writer))
+  }
+  self.insert_component_payloads_with_requirements(entity, payloads, caller~)
+}
+
+///|
 fn World::insert_component_with_requirements_unchecked(
   self : World,
   entity : @core.Entity,
   component_definition_id : Int,
-  payload : ErasedValue,
+  writer : ErasedWriter,
   structural_changed_ref : Ref[Bool],
-  pending_payloads : Map[Int, ErasedValue],
+  pending_payloads : Map[Int, ErasedWriter],
   caller? : String? = None,
 ) -> Unit {
   let component_local_id = self.ensure_component_registered(
@@ -480,10 +513,10 @@ fn World::insert_component_with_requirements_unchecked(
   }
   if replacing {
     ignore(
-      self.replace_component_payload(component_definition_id, entity, payload),
+      self.replace_component_writer(component_definition_id, entity, writer),
     )
   } else {
-    pending_payloads.set(component_local_id, payload)
+    pending_payloads.set(component_local_id, writer)
   }
   self.mark_component_used(component_local_id)
   self.record_component_changed_with_caller(

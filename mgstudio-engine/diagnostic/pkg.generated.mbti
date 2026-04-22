@@ -91,6 +91,8 @@ pub fn render_diagnostics_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render_diagnostics_plugin_with(@app.App[@ecs.World], RenderDiagnosticsPlugin) -> @app.App[@ecs.World]
 
+pub fn stress_diagnostics_has_lightweight_metrics(@app.App[@ecs.World]) -> Bool
+
 pub fn stress_diagnostics_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn stress_diagnostics_plugin_with(@app.App[@ecs.World], StressDiagnosticsPlugin) -> @app.App[@ecs.World]

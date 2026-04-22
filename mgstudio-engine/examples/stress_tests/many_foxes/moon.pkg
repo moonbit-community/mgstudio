@@ -21,6 +21,7 @@ import {
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/winit",
   "moonbitlang/core/env",
+  "moonbitlang/x/fs",
   "moonbitlang/core/string",
 }
 

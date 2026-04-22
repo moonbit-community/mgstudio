@@ -463,26 +463,29 @@ fn scene_spawn_instance_when_ready(
     return
   }
 
+  let root_writers : Array[@ecs.ErasedWriter] = []
   if scene.gltf_scene_extras is Some(scene_extras) &&
     (try! world.get_by_key(root_entity, @gltf.GltfSceneExtras::component()))
     is None {
-    try! world.set_by_key(
-      root_entity,
-      @gltf.GltfSceneExtras::component(),
-      scene_extras,
+    root_writers.push(
+      @ecs.component_writer(@gltf.GltfSceneExtras::component(), scene_extras),
     )
   }
-
   if (try! world.get_by_key(root_entity, @animation.ecs_key_animation_player))
     is None {
-    try! world.set_by_key(
-      root_entity,
-      @animation.ecs_key_animation_player,
-      @animation.AnimationPlayer::default(),
+    root_writers.push(
+      @ecs.component_writer(
+        @animation.ecs_key_animation_player,
+        @animation.AnimationPlayer::default(),
+      ),
     )
   }
+  try! world.insert_component_writers(root_entity, root_writers)
 
   let spawned_entities : Array[@core.Entity] = []
+  for _ in scene.nodes3d {
+    spawned_entities.push(world.spawn_empty())
+  }
   let pending_skinned_meshes : Array[
     (
       Int,
@@ -496,87 +499,125 @@ fn scene_spawn_instance_when_ready(
     Some(path) => path
     None => "scene#\{root.scene.id().to_string()}"
   }
-  for node in scene.nodes3d {
-    let child = world.spawn_empty()
-    spawned_entities.push(child)
+  for i in 0..<scene.nodes3d.length() {
+    let node = scene.nodes3d[i]
+    let child = spawned_entities[i]
+    let parent_entity = match node.parent_node_index {
+      Some(parent_index) =>
+        if parent_index >= 0 && parent_index < spawned_entities.length() {
+          spawned_entities[parent_index]
+        } else {
+          root_entity
+        }
+      None => root_entity
+    }
+    let child_writers : Array[@ecs.ErasedWriter] = [
+      @ecs.component_writer(
+        @hierarchy.ecs_key_parent,
+        @hierarchy.Parent::new(parent_entity),
+      ),
+      @ecs.component_writer(@transform.ecs_key_transform, node.transform),
+    ]
     if node.name is Some(name) {
-      try! world.set_by_key(child, @ecs.Name::component(), name)
+      child_writers.push(@ecs.component_writer(@ecs.Name::component(), name))
     }
     if node.gltf_scene_index is Some(scene_index) {
-      try! world.set_by_key(
-        child,
-        @gltf.GltfSceneIndex::component(),
-        scene_index,
+      child_writers.push(
+        @ecs.component_writer(@gltf.GltfSceneIndex::component(), scene_index),
       )
     }
     if node.gltf_scene_extras is Some(scene_extras) {
-      try! world.set_by_key(
-        child,
-        @gltf.GltfSceneExtras::component(),
-        scene_extras,
+      child_writers.push(
+        @ecs.component_writer(
+          @gltf.GltfSceneExtras::component(),
+          scene_extras,
+        ),
       )
     }
     if node.gltf_node_index is Some(node_index) {
-      try! world.set_by_key(child, @gltf.GltfNodeIndex::component(), node_index)
+      child_writers.push(
+        @ecs.component_writer(@gltf.GltfNodeIndex::component(), node_index),
+      )
     }
     if node.gltf_mesh_index is Some(mesh_index) {
-      try! world.set_by_key(child, @gltf.GltfMeshIndex::component(), mesh_index)
+      child_writers.push(
+        @ecs.component_writer(@gltf.GltfMeshIndex::component(), mesh_index),
+      )
     }
     if node.gltf_primitive_index is Some(primitive_index) {
-      try! world.set_by_key(
-        child,
-        @gltf.GltfPrimitiveIndex::component(),
-        primitive_index,
+      child_writers.push(
+        @ecs.component_writer(
+          @gltf.GltfPrimitiveIndex::component(),
+          primitive_index,
+        ),
       )
     }
     if node.gltf_skin_index is Some(skin_index) {
-      try! world.set_by_key(child, @gltf.GltfSkinIndex::component(), skin_index)
+      child_writers.push(
+        @ecs.component_writer(@gltf.GltfSkinIndex::component(), skin_index),
+      )
     }
     if node.gltf_material_name is Some(material_name) {
-      try! world.set_by_key(
-        child,
-        @gltf.GltfMaterialName::component(),
-        material_name,
+      child_writers.push(
+        @ecs.component_writer(
+          @gltf.GltfMaterialName::component(),
+          material_name,
+        ),
       )
     }
     if node.gltf_extras is Some(extras) {
-      try! world.set_by_key(child, @gltf.GltfExtras::component(), extras)
+      child_writers.push(
+        @ecs.component_writer(@gltf.GltfExtras::component(), extras),
+      )
     }
     if node.gltf_mesh_extras is Some(mesh_extras) {
-      try! world.set_by_key(
-        child,
-        @gltf.GltfMeshExtras::component(),
-        mesh_extras,
+      child_writers.push(
+        @ecs.component_writer(
+          @gltf.GltfMeshExtras::component(),
+          mesh_extras,
+        ),
       )
     }
     if node.gltf_material_extras is Some(material_extras) {
-      try! world.set_by_key(
-        child,
-        @gltf.GltfMaterialExtras::component(),
-        material_extras,
+      child_writers.push(
+        @ecs.component_writer(
+          @gltf.GltfMaterialExtras::component(),
+          material_extras,
+        ),
       )
     }
     if node.camera is Some(camera) {
-      try! world.set_by_key(child, @sprite.Camera::component(), camera)
+      child_writers.push(
+        @ecs.component_writer(@sprite.Camera::component(), camera),
+      )
     }
     if node.camera3d is Some(camera3d) {
-      try! world.set_by_key(child, @camera.Camera3d::component(), camera3d)
+      child_writers.push(
+        @ecs.component_writer(@camera.Camera3d::component(), camera3d),
+      )
     }
     if node.projection is Some(projection) {
-      try! world.set_by_key(child, @camera.Projection::component(), projection)
+      child_writers.push(
+        @ecs.component_writer(@camera.Projection::component(), projection),
+      )
     }
     if node.directional_light is Some(directional_light) {
-      try! world.set_by_key(
-        child,
-        @light.DirectionalLight::component(),
-        directional_light,
+      child_writers.push(
+        @ecs.component_writer(
+          @light.DirectionalLight::component(),
+          directional_light,
+        ),
       )
     }
     if node.point_light is Some(point_light) {
-      try! world.set_by_key(child, @light.PointLight::component(), point_light)
+      child_writers.push(
+        @ecs.component_writer(@light.PointLight::component(), point_light),
+      )
     }
     if node.spot_light is Some(spot_light) {
-      try! world.set_by_key(child, @light.SpotLight::component(), spot_light)
+      child_writers.push(
+        @ecs.component_writer(@light.SpotLight::component(), spot_light),
+      )
     }
     if node.mesh is Some(mesh_component) {
       let source_mesh_handle = mesh_component.mesh()
@@ -603,24 +644,30 @@ fn scene_spawn_instance_when_ready(
       } else {
         mesh_component
       }
-      try! world.set_by_key(child, @pbr.ecs_key_mesh3d, effective_mesh)
+      child_writers.push(
+        @ecs.component_writer(@pbr.ecs_key_mesh3d, effective_mesh),
+      )
       if node.material is Some(material) {
-        try! world.set_by_key(child, @pbr.ecs_key_mesh_material3d, material)
+        child_writers.push(
+          @ecs.component_writer(@pbr.ecs_key_mesh_material3d, material),
+        )
       }
       if has_morph_targets {
-        try! world.set_by_key(
-          child,
-          @mesh.MorphTargetMesh::component(),
-          @mesh.MorphTargetMesh::new(source_mesh_handle),
+        child_writers.push(
+          @ecs.component_writer(
+            @mesh.MorphTargetMesh::component(),
+            @mesh.MorphTargetMesh::new(source_mesh_handle),
+          ),
         )
         let default_morph_weights = match node.default_morph_weights {
           Some(weights) => weights
           None => []
         }
-        try! world.set_by_key(
-          child,
-          @mesh.MorphWeights::component(),
-          @mesh.MorphWeights::new(default_morph_weights),
+        child_writers.push(
+          @ecs.component_writer(
+            @mesh.MorphWeights::component(),
+            @mesh.MorphWeights::new(default_morph_weights),
+          ),
         )
       }
       if node.skinned_joint_node_indices is Some(joint_node_indices) &&
@@ -631,7 +678,7 @@ fn scene_spawn_instance_when_ready(
         }
         pending_skinned_meshes.push(
           (
-            spawned_entities.length() - 1,
+            i,
             joint_node_indices,
             inverse_bindposes,
             skinned_mesh_bounds_policy,
@@ -639,20 +686,23 @@ fn scene_spawn_instance_when_ready(
         )
       }
     }
-    try! world.set_by_key(child, @transform.ecs_key_transform, node.transform)
     if node.visibility_range is Some(range) {
-      try! world.set_by_key(child, @visibility.ecs_key_visibility_range, range)
+      child_writers.push(
+        @ecs.component_writer(@visibility.ecs_key_visibility_range, range),
+      )
     }
     if node.animation_target is Some(target_id) {
-      try! world.set_by_key(
-        child, @animation.ecs_key_animation_target_id, target_id,
+      child_writers.push(
+        @ecs.component_writer(@animation.ecs_key_animation_target_id, target_id),
       )
-      try! world.set_by_key(
-        child,
-        @animation.ecs_key_animated_by,
-        @animation.AnimatedBy::new(root_entity),
+      child_writers.push(
+        @ecs.component_writer(
+          @animation.ecs_key_animated_by,
+          @animation.AnimatedBy::new(root_entity),
+        ),
       )
     }
+    try! world.insert_component_writers(child, child_writers)
     if node.gltf_node_index is Some(node_index) {
       @gltf_loader_extensions.gltf_extension_notify_node_spawned(
         gltf_scene_asset_path,
@@ -671,25 +721,6 @@ fn scene_spawn_instance_when_ready(
         world,
       )
     }
-  }
-
-  for i in 0..<scene.nodes3d.length() {
-    let node = scene.nodes3d[i]
-    let child = spawned_entities[i]
-    let parent_entity = match node.parent_node_index {
-      Some(parent_index) =>
-        if parent_index >= 0 && parent_index < spawned_entities.length() {
-          spawned_entities[parent_index]
-        } else {
-          root_entity
-        }
-      None => root_entity
-    }
-    try! world.set_by_key(
-      child,
-      @hierarchy.ecs_key_parent,
-      @hierarchy.Parent::new(parent_entity),
-    )
   }
 
   let spawned_scene_index_by_gltf_node : Array[Int?] = []

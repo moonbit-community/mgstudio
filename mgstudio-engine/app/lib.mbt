@@ -875,13 +875,16 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::map_param(
 }
 
 ///|
+#callsite(autofill(loc))
 fn[W] system_config_with_access(
   system : SystemFn[W],
   access_factory : (@ecs.World) -> SystemAccess,
+  loc~ : SourceLoc,
 ) -> SystemConfig[W] {
   SystemConfig::{
     system,
     name: None,
+    debug_name: Some(loc.to_string()),
     error_handler: None,
     run_ifs: [],
     run_if_states: [],
@@ -1095,11 +1098,16 @@ pub fn[
 }
 
 ///|
-pub fn[W] fallible_system(system : FallibleSystemFn[W]) -> SystemConfig[W] {
+#callsite(autofill(loc))
+pub fn[W] fallible_system(
+  system : FallibleSystemFn[W],
+  loc~ : SourceLoc,
+) -> SystemConfig[W] {
   let wrapped = fn(world : W) { run_fallible_system_body(() => system(world)) }
   SystemConfig::{
     system: wrapped,
     name: None,
+    debug_name: Some(loc.to_string()),
     error_handler: None,
     run_ifs: [],
     run_if_states: [],
@@ -1806,6 +1814,7 @@ pub impl[T : Resource] SystemParam for ResMut[T] with access(_world) {
 pub struct SystemConfig[W] {
   system : SystemFn[W]
   name : String?
+  debug_name : String?
   error_handler : ErrorHandler?
   run_ifs : Array[StatefulRunConditionFn[W]]
   run_if_states : Array[Ref[Json]]
@@ -1818,10 +1827,12 @@ pub struct SystemConfig[W] {
 }
 
 ///|
-pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
+#callsite(autofill(loc))
+pub fn[W] system(system : SystemFn[W], loc~ : SourceLoc) -> SystemConfig[W] {
   SystemConfig::{
     system,
     name: None,
+    debug_name: Some(loc.to_string()),
     error_handler: None,
     run_ifs: [],
     run_if_states: [],
@@ -3978,10 +3989,15 @@ fn run_systems(
         match cfg.set {
           Some(set) => "\{set}#\{fallback_index.to_string()}"
           None =>
-            match stage {
-              Some(stage_name) =>
-                "\{to_repr(stage_name).to_string()}::__system#\{fallback_index.to_string()}"
-              None => "__system#\{fallback_index.to_string()}"
+            match cfg.debug_name {
+              Some(debug_name) =>
+                "\{debug_name}#\{fallback_index.to_string()}"
+              None =>
+                match stage {
+                  Some(stage_name) =>
+                    "\{to_repr(stage_name).to_string()}::__system#\{fallback_index.to_string()}"
+                  None => "__system#\{fallback_index.to_string()}"
+                }
             }
         }
     }

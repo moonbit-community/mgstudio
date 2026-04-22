@@ -133,7 +133,7 @@ pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
   next_component_id_ref.val = id + 1
   ignore(component_metadata_ref(id, debug_name~))
   let key = ComponentKey::{ id, debug_name }
-  register_component_table_column_descriptor(id, key)
+  register_component_ops(id, key)
   key
 }
 
@@ -144,7 +144,7 @@ pub fn[T] component_key_from_id(
 ) -> ComponentKey[T] {
   ignore(component_metadata_ref(id, debug_name~))
   let key = ComponentKey::{ id, debug_name }
-  register_component_table_column_descriptor(id, key)
+  register_component_ops(id, key)
   key
 }
 
@@ -202,7 +202,14 @@ struct ResourceSlot {
 ///|
 struct PendingComponentPayloadContext {
   entity_id : Int
-  payloads : Map[Int, ErasedValue]
+  payloads : Map[Int, ErasedWriter]
+}
+
+///|
+struct QuerySparseAnchorPayloadContext {
+  entity_id : Int
+  local_component_id : Int
+  payload : ErasedValue
 }
 
 ///|
@@ -326,6 +333,7 @@ pub struct World {
   mut sequence : @core.Sequence
   mut system_context : @core.SystemSequenceContext
   mut pending_component_payload_context : PendingComponentPayloadContext?
+  mut current_query_sparse_anchor_payload_context : QuerySparseAnchorPayloadContext?
   tables : Map[Int, Ref[RawTable]]
   sparse_component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
   component_store_cache_by_definition_id : Map[
@@ -353,6 +361,7 @@ pub struct World {
   component_membership_counts : Map[Int, Int]
   archetype_entities : Map[Int, Array[@core.Entity]]
   entity_archetype_ids : Array[Int]
+  entity_table_ids : Array[Int]
   entity_table_rows : Array[Int]
   entity_archetype_rows : Array[Int]
   entity_component_local_ids : Array[Array[Int]]
@@ -395,6 +404,7 @@ pub fn World::new() -> World {
     sequence: 0,
     system_context: @core.SystemSequenceContext::new(),
     pending_component_payload_context: None,
+    current_query_sparse_anchor_payload_context: None,
     tables: {},
     sparse_component_columns: {},
     component_store_cache_by_definition_id: {},
@@ -419,6 +429,7 @@ pub fn World::new() -> World {
     component_membership_counts: {},
     archetype_entities: { 0: [] },
     entity_archetype_ids: [],
+    entity_table_ids: [],
     entity_table_rows: [],
     entity_archetype_rows: [],
     entity_component_local_ids: [],
@@ -540,7 +551,7 @@ pub fn[T] World::set_by_key(
   self.insert_component_with_requirements(
     entity,
     key.id(),
-    erased_value(value),
+    erased_writer(key, value),
     caller=hook_caller_from_loc(loc),
   )
 }

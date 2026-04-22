@@ -40,7 +40,11 @@ fn schedule_graph_system_name(
     None =>
       match cfg.set {
         Some(set) => "\{set}#\{index.to_string()}"
-        None => "__system#\{index.to_string()}"
+        None =>
+          match cfg.debug_name {
+            Some(debug_name) => "\{debug_name}#\{index.to_string()}"
+            None => "__system#\{index.to_string()}"
+          }
       }
   }
 }

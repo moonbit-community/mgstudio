@@ -68,6 +68,7 @@ pub fn camera_projection_plugin(
 ) -> @app.App[@ecs.World] {
   app.add_post_update_system_config(
     @app.system(@pbr.render3d_update_frusta_system)
+    .named("mgstudio.pbr.render3d_update_frusta")
     .in_set(camera_update_systems)
     .after(@transform.transform_set_propagate),
   )

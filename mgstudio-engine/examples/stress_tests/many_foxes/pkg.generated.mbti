@@ -22,6 +22,8 @@ pub impl @ecs.Component for Ring
 type RotationDirection
 pub impl @ecs.Component for RotationDirection
 
+type StressMetricsState
+
 // Type aliases
 
 // Traits

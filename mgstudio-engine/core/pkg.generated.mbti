@@ -21,6 +21,7 @@ pub struct ComponentStore[T] {
   storage : SparseSet[T]
 }
 pub fn[T] ComponentStore::contains(Self[T], Entity) -> Bool
+pub fn[T] ComponentStore::entity_at(Self[T], Int) -> Entity
 pub fn[T] ComponentStore::for_each(Self[T], (Entity, T) -> Unit) -> Unit
 pub fn[T] ComponentStore::get(Self[T], Entity) -> T?
 pub fn[T] ComponentStore::insert(Self[T], Entity, T) -> Unit
@@ -30,6 +31,7 @@ pub fn[T] ComponentStore::remove(Self[T], Entity) -> T?
 pub fn[T] ComponentStore::set(Self[T], Entity, T) -> Bool
 pub fn[T] ComponentStore::update(Self[T], Entity, (T) -> T) -> Bool
 pub fn[T] ComponentStore::upsert(Self[T], Entity, T) -> Unit
+pub fn[T] ComponentStore::value_at(Self[T], Int) -> T
 
 pub struct Duration {
   nanos : Int64

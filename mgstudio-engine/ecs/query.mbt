@@ -134,6 +134,11 @@ pub struct QueryParallel[D, F] {
 }
 
 ///|
+priv struct QuerySparseAnchorInfo {
+  local_component_id : Int
+}
+
+///|
 pub struct Has[_] {
   present : Bool
 }
@@ -315,6 +320,156 @@ fn[D, F] Query::ensure_cache(self : Query[D, F]) -> QueryCache {
 }
 
 ///|
+fn query_sparse_anchor_info(
+  world : World,
+  data_anchor_component_ids : Array[Int],
+  filter_anchor_component_ids : Array[Int],
+) -> QuerySparseAnchorInfo? {
+  let data_anchor_component_id = query_min_anchor_component_id(
+    world,
+    data_anchor_component_ids,
+  )
+  let filter_anchor_component_id = query_min_anchor_component_id(
+    world,
+    filter_anchor_component_ids,
+  )
+  guard query_candidate_anchor_component_id(
+      world,
+      data_anchor_component_id,
+      filter_anchor_component_id,
+    ) is Some(component_id) else {
+    return None
+  }
+  guard world.local_component_id(component_id) is Some(local_component_id) else {
+    return None
+  }
+  guard world.local_component_storage_type(local_component_id) == Some(SparseSet) else {
+    return None
+  }
+  Some({ local_component_id, })
+}
+
+///|
+fn[D : QueryData] query_fetch_with_sparse_anchor(
+  world : World,
+  entity : @core.Entity,
+  anchor_info : QuerySparseAnchorInfo,
+  payload : ErasedValue,
+) -> D raise EcsError {
+  world.set_query_sparse_anchor_payload_context(
+    entity,
+    anchor_info.local_component_id,
+    payload,
+  )
+  try D::fetch(world, entity) catch {
+    err => {
+      world.clear_query_sparse_anchor_payload_context()
+      raise err
+    }
+  } noraise {
+    data => {
+      world.clear_query_sparse_anchor_payload_context()
+      data
+    }
+  }
+}
+
+///|
+fn[D : QueryData] query_sparse_anchor_for_each_matching(
+  world : World,
+  anchor_info : QuerySparseAnchorInfo,
+  matched_archetype_bits : Array[Bool],
+  visit : (@core.Entity, D) -> Unit,
+) -> Unit raise EcsError {
+  guard world.sparse_component_columns.get(anchor_info.local_component_id)
+    is Some(store_ref) else {
+    return
+  }
+  let store = store_ref.val
+  for index in 0..<store.len() {
+    let entity = store.entity_at(index)
+    guard world.entity_archetype_id(entity) is Some(archetype_id) else {
+      continue
+    }
+    guard query_bitset_contains(matched_archetype_bits, archetype_id) else {
+      continue
+    }
+    visit(
+      entity,
+      query_fetch_with_sparse_anchor(
+        world,
+        entity,
+        anchor_info,
+        store.value_at(index),
+      ),
+    )
+  }
+}
+
+///|
+fn query_sparse_anchor_count_matching(
+  world : World,
+  anchor_info : QuerySparseAnchorInfo,
+  matched_archetype_bits : Array[Bool],
+) -> Int {
+  guard world.sparse_component_columns.get(anchor_info.local_component_id)
+    is Some(store_ref) else {
+    return 0
+  }
+  let store = store_ref.val
+  let count = Ref::new(0)
+  for index in 0..<store.len() {
+    let entity = store.entity_at(index)
+    guard world.entity_archetype_id(entity) is Some(archetype_id) else {
+      continue
+    }
+    if query_bitset_contains(matched_archetype_bits, archetype_id) {
+      count.val = count.val + 1
+    }
+  }
+  count.val
+}
+
+///|
+fn[D : QueryData] query_sparse_anchor_single_matching(
+  world : World,
+  anchor_info : QuerySparseAnchorInfo,
+  matched_archetype_bits : Array[Bool],
+) -> D? raise EcsError {
+  guard world.sparse_component_columns.get(anchor_info.local_component_id)
+    is Some(store_ref) else {
+    return None
+  }
+  let store = store_ref.val
+  let found_index = Ref::new(-1)
+  for index in 0..<store.len() {
+    let entity = store.entity_at(index)
+    guard world.entity_archetype_id(entity) is Some(archetype_id) else {
+      continue
+    }
+    guard query_bitset_contains(matched_archetype_bits, archetype_id) else {
+      continue
+    }
+    if found_index.val >= 0 {
+      return None
+    }
+    found_index.val = index
+  }
+  if found_index.val < 0 {
+    return None
+  }
+  let entity = store.entity_at(found_index.val)
+  Some(
+    query_fetch_with_sparse_anchor(
+      world,
+      entity,
+      anchor_info,
+      store.value_at(found_index.val),
+    ),
+  )
+}
+
+///|
 pub fn[D : QueryData, F : QueryFilter] Query::get(
   self : Query[D, F],
   entity : @core.Entity,
@@ -349,6 +504,10 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
   self : Query[D, F],
   f : (@core.Entity, D) -> Unit,
 ) -> Unit raise EcsError {
+  let data_anchor_component_ids = D::iteration_anchor_components()
+  let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
+    self.filter,
+  )
   let data_requires_entity_check = D::requires_entity_check()
   let filter_requires_entity_check = QueryFilter::requires_entity_check(
     self.filter,
@@ -372,7 +531,26 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
       }
       return
     }
-    for archetype_id in self.matching_archetypes() {
+    let matched_archetypes = self.matching_archetypes()
+    let cache = self.ensure_cache()
+    match
+      query_sparse_anchor_info(
+        self.world,
+        data_anchor_component_ids,
+        filter_anchor_component_ids,
+      ) {
+      Some(anchor_info) if !cache.cached_is_dense => {
+        query_sparse_anchor_for_each_matching(
+          self.world,
+          anchor_info,
+          cache.cached_matching_archetype_bits,
+          f,
+        )
+        return
+      }
+      _ => ()
+    }
+    for archetype_id in matched_archetypes {
       match self.world.archetype_entities_view(archetype_id) {
         Some(entities) =>
           for entity in entities {
@@ -398,6 +576,10 @@ pub fn[D : QueryData, F : QueryFilter] Query::for_each(
 
 ///|
 pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
+  let data_anchor_component_ids = D::iteration_anchor_components()
+  let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
+    self.filter,
+  )
   let data_requires_entity_check = D::requires_entity_check()
   let filter_requires_entity_check = QueryFilter::requires_entity_check(
     self.filter,
@@ -417,8 +599,24 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
       }
       return count.val
     }
+    let matched_archetypes = self.matching_archetypes()
+    let cache = self.ensure_cache()
+    match
+      query_sparse_anchor_info(
+        self.world,
+        data_anchor_component_ids,
+        filter_anchor_component_ids,
+      ) {
+      Some(anchor_info) if !cache.cached_is_dense =>
+        return query_sparse_anchor_count_matching(
+          self.world,
+          anchor_info,
+          cache.cached_matching_archetype_bits,
+        )
+      _ => ()
+    }
     let count = Ref::new(0)
-    for archetype_id in self.matching_archetypes() {
+    for archetype_id in matched_archetypes {
       count.val = count.val + self.world.archetype_entity_count(archetype_id)
     }
     return count.val
@@ -430,6 +628,10 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
 pub fn[D : QueryData, F : QueryFilter] Query::single(
   self : Query[D, F],
 ) -> D? raise EcsError {
+  let data_anchor_component_ids = D::iteration_anchor_components()
+  let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
+    self.filter,
+  )
   let data_requires_entity_check = D::requires_entity_check()
   let filter_requires_entity_check = QueryFilter::requires_entity_check(
     self.filter,
@@ -460,8 +662,24 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
         None => None
       }
     } else {
+      let matched_archetypes = self.matching_archetypes()
+      let cache = self.ensure_cache()
+      match
+        query_sparse_anchor_info(
+          self.world,
+          data_anchor_component_ids,
+          filter_anchor_component_ids,
+        ) {
+        Some(anchor_info) if !cache.cached_is_dense =>
+          return query_sparse_anchor_single_matching(
+            self.world,
+            anchor_info,
+            cache.cached_matching_archetype_bits,
+          )
+        _ => ()
+      }
       let found : Ref[@core.Entity?] = Ref::new(None)
-      for archetype_id in self.matching_archetypes() {
+      for archetype_id in matched_archetypes {
         match self.world.archetype_entities_view(archetype_id) {
           Some(entities) =>
             for entity in entities {
@@ -1430,6 +1648,10 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
   self : QueryState[D, F],
   world : World,
 ) -> D? raise EcsError {
+  let data_anchor_component_ids = D::iteration_anchor_components()
+  let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
+    self.filter,
+  )
   let data_requires_entity_check = D::requires_entity_check()
   let filter_requires_entity_check = QueryFilter::requires_entity_check(
     self.filter,
@@ -1460,8 +1682,23 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
         None => None
       }
     } else {
+      let matched_archetypes = self.query_matching_archetypes(world)
+      match
+        query_sparse_anchor_info(
+          world,
+          data_anchor_component_ids,
+          filter_anchor_component_ids,
+        ) {
+        Some(anchor_info) if !self.cached_is_dense =>
+          return query_sparse_anchor_single_matching(
+            world,
+            anchor_info,
+            self.cached_matching_archetype_bits,
+          )
+        _ => ()
+      }
       let found : Ref[@core.Entity?] = Ref::new(None)
-      for archetype_id in self.query_matching_archetypes(world) {
+      for archetype_id in matched_archetypes {
         match world.archetype_entities_view(archetype_id) {
           Some(entities) =>
             for entity in entities {
@@ -1501,6 +1738,10 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::count(
   self : QueryState[D, F],
   world : World,
 ) -> Int {
+  let data_anchor_component_ids = D::iteration_anchor_components()
+  let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
+    self.filter,
+  )
   let data_requires_entity_check = D::requires_entity_check()
   let filter_requires_entity_check = QueryFilter::requires_entity_check(
     self.filter,
@@ -1519,8 +1760,23 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::count(
       }
       return count.val
     }
+    let matched_archetypes = self.query_matching_archetypes(world)
+    match
+      query_sparse_anchor_info(
+        world,
+        data_anchor_component_ids,
+        filter_anchor_component_ids,
+      ) {
+      Some(anchor_info) if !self.cached_is_dense =>
+        return query_sparse_anchor_count_matching(
+          world,
+          anchor_info,
+          self.cached_matching_archetype_bits,
+        )
+      _ => ()
+    }
     let count = Ref::new(0)
-    for archetype_id in self.query_matching_archetypes(world) {
+    for archetype_id in matched_archetypes {
       count.val = count.val + world.archetype_entity_count(archetype_id)
     }
     return count.val

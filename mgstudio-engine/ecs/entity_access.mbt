@@ -94,14 +94,8 @@ fn[T] mut_replace_value_or_abort(item : Mut[T], value : T) -> Unit {
   let world = mut_world_or_abort(item)
   let entity = mut_entity_or_abort(item)
   let key = mut_key_or_abort(item)
-  let result : Result[Bool, EcsError] = try? world.replace_component_value_by_key(
-    entity,
-    key,
-    value,
-  )
-  match result {
-    Ok(true) => ()
-    _ => abort("Mut expected a fetched query item")
+  if !world.replace_component_value_by_key(entity, key, value) {
+    abort("Mut expected a fetched query item")
   }
 }
 
@@ -274,6 +268,12 @@ fn[T] world_component_mut(
 }
 
 ///|
+fn[T : Component] component_bundle_writer(value : T) -> (Int, ErasedWriter) {
+  let key = T::component()
+  (key.id(), erased_writer(key, value))
+}
+
+///|
 pub fn[T] World::contains_by_key(
   self : World,
   entity : @core.Entity,
@@ -388,8 +388,15 @@ pub impl[A : Component, B : Component] Bundle for (A, B) with insert_into(
   loc~,
 ) {
   let (a, b) = self
-  try! world.set_by_key(entity, A::component(), a, loc~)
-  try! world.set_by_key(entity, B::component(), b, loc~)
+  let payloads : Array[(Int, ErasedWriter)] = [
+    component_bundle_writer(a),
+    component_bundle_writer(b),
+  ]
+  try! world.insert_component_payloads_with_requirements(
+    entity,
+    payloads,
+    caller=hook_caller_from_loc(loc),
+  )
 }
 
 ///|
@@ -400,9 +407,16 @@ pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C) with 
   loc~,
 ) {
   let (a, b, c) = self
-  try! world.set_by_key(entity, A::component(), a, loc~)
-  try! world.set_by_key(entity, B::component(), b, loc~)
-  try! world.set_by_key(entity, C::component(), c, loc~)
+  let payloads : Array[(Int, ErasedWriter)] = [
+    component_bundle_writer(a),
+    component_bundle_writer(b),
+    component_bundle_writer(c),
+  ]
+  try! world.insert_component_payloads_with_requirements(
+    entity,
+    payloads,
+    caller=hook_caller_from_loc(loc),
+  )
 }
 
 ///|
@@ -413,10 +427,17 @@ pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for 
   D,
 ) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d) = self
-  try! world.set_by_key(entity, A::component(), a, loc~)
-  try! world.set_by_key(entity, B::component(), b, loc~)
-  try! world.set_by_key(entity, C::component(), c, loc~)
-  try! world.set_by_key(entity, D::component(), d, loc~)
+  let payloads : Array[(Int, ErasedWriter)] = [
+    component_bundle_writer(a),
+    component_bundle_writer(b),
+    component_bundle_writer(c),
+    component_bundle_writer(d),
+  ]
+  try! world.insert_component_payloads_with_requirements(
+    entity,
+    payloads,
+    caller=hook_caller_from_loc(loc),
+  )
 }
 
 ///|
@@ -428,11 +449,18 @@ pub impl[
   E : Component,
 ] Bundle for (A, B, C, D, E) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e) = self
-  try! world.set_by_key(entity, A::component(), a, loc~)
-  try! world.set_by_key(entity, B::component(), b, loc~)
-  try! world.set_by_key(entity, C::component(), c, loc~)
-  try! world.set_by_key(entity, D::component(), d, loc~)
-  try! world.set_by_key(entity, E::component(), e, loc~)
+  let payloads : Array[(Int, ErasedWriter)] = [
+    component_bundle_writer(a),
+    component_bundle_writer(b),
+    component_bundle_writer(c),
+    component_bundle_writer(d),
+    component_bundle_writer(e),
+  ]
+  try! world.insert_component_payloads_with_requirements(
+    entity,
+    payloads,
+    caller=hook_caller_from_loc(loc),
+  )
 }
 
 ///|
@@ -445,12 +473,19 @@ pub impl[
   F : Component,
 ] Bundle for (A, B, C, D, E, F) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e, f) = self
-  try! world.set_by_key(entity, A::component(), a, loc~)
-  try! world.set_by_key(entity, B::component(), b, loc~)
-  try! world.set_by_key(entity, C::component(), c, loc~)
-  try! world.set_by_key(entity, D::component(), d, loc~)
-  try! world.set_by_key(entity, E::component(), e, loc~)
-  try! world.set_by_key(entity, F::component(), f, loc~)
+  let payloads : Array[(Int, ErasedWriter)] = [
+    component_bundle_writer(a),
+    component_bundle_writer(b),
+    component_bundle_writer(c),
+    component_bundle_writer(d),
+    component_bundle_writer(e),
+    component_bundle_writer(f),
+  ]
+  try! world.insert_component_payloads_with_requirements(
+    entity,
+    payloads,
+    caller=hook_caller_from_loc(loc),
+  )
 }
 
 ///|
@@ -464,13 +499,20 @@ pub impl[
   G : Component,
 ] Bundle for (A, B, C, D, E, F, G) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e, f, g) = self
-  try! world.set_by_key(entity, A::component(), a, loc~)
-  try! world.set_by_key(entity, B::component(), b, loc~)
-  try! world.set_by_key(entity, C::component(), c, loc~)
-  try! world.set_by_key(entity, D::component(), d, loc~)
-  try! world.set_by_key(entity, E::component(), e, loc~)
-  try! world.set_by_key(entity, F::component(), f, loc~)
-  try! world.set_by_key(entity, G::component(), g, loc~)
+  let payloads : Array[(Int, ErasedWriter)] = [
+    component_bundle_writer(a),
+    component_bundle_writer(b),
+    component_bundle_writer(c),
+    component_bundle_writer(d),
+    component_bundle_writer(e),
+    component_bundle_writer(f),
+    component_bundle_writer(g),
+  ]
+  try! world.insert_component_payloads_with_requirements(
+    entity,
+    payloads,
+    caller=hook_caller_from_loc(loc),
+  )
 }
 
 ///|
@@ -490,14 +532,21 @@ pub impl[
   loc~,
 ) {
   let (a, b, c, d, e, f, g, h) = self
-  try! world.set_by_key(entity, A::component(), a, loc~)
-  try! world.set_by_key(entity, B::component(), b, loc~)
-  try! world.set_by_key(entity, C::component(), c, loc~)
-  try! world.set_by_key(entity, D::component(), d, loc~)
-  try! world.set_by_key(entity, E::component(), e, loc~)
-  try! world.set_by_key(entity, F::component(), f, loc~)
-  try! world.set_by_key(entity, G::component(), g, loc~)
-  try! world.set_by_key(entity, H::component(), h, loc~)
+  let payloads : Array[(Int, ErasedWriter)] = [
+    component_bundle_writer(a),
+    component_bundle_writer(b),
+    component_bundle_writer(c),
+    component_bundle_writer(d),
+    component_bundle_writer(e),
+    component_bundle_writer(f),
+    component_bundle_writer(g),
+    component_bundle_writer(h),
+  ]
+  try! world.insert_component_payloads_with_requirements(
+    entity,
+    payloads,
+    caller=hook_caller_from_loc(loc),
+  )
 }
 
 ///|

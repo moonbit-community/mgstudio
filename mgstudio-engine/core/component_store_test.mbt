@@ -49,3 +49,17 @@ test "component_store: update and upsert" {
   debug_inspect(store.update(e, fn(v) { v + 5 }), content="true")
   assert_true(store.get(e) is Some(15))
 }
+
+///|
+test "component_store: dense index access follows sparse-set order" {
+  let entities = Entities::new()
+  let e0 = entities.spawn()
+  let e1 = entities.spawn()
+  let store : ComponentStore[Int] = ComponentStore::new()
+  store.insert(e0, 10)
+  store.insert(e1, 20)
+  debug_inspect(store.entity_at(0) == e0, content="true")
+  debug_inspect(store.value_at(0) == 10, content="true")
+  debug_inspect(store.entity_at(1) == e1, content="true")
+  debug_inspect(store.value_at(1) == 20, content="true")
+}

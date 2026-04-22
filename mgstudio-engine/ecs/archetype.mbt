@@ -213,6 +213,9 @@ fn World::ensure_entity_archetype_capacity(
   while self.entity_component_local_ids.length() <= entity_id {
     self.entity_component_local_ids.push([])
   }
+  while self.entity_table_ids.length() <= entity_id {
+    self.entity_table_ids.push(-1)
+  }
   while self.entity_table_rows.length() <= entity_id {
     self.entity_table_rows.push(-1)
   }
@@ -644,6 +647,7 @@ fn World::bundle_migrate_same_archetype(
   archetype_id : Int,
 ) -> Unit {
   self.entity_archetype_ids[entity.id] = archetype_id
+  self.entity_table_ids[entity.id] = self.archetype_table_id_or_invalid(archetype_id)
   if archetype_id < 0 {
     self.entity_archetype_rows[entity.id] = -1
     return
@@ -668,54 +672,12 @@ fn World::bundle_migrate_new_archetype(
     self.archetype_remove_entity_by_id(from_archetype_id, entity.id)
   }
   self.entity_archetype_ids[entity.id] = to_archetype_id
+  self.entity_table_ids[entity.id] = self.archetype_table_id_or_invalid(to_archetype_id)
   if to_archetype_id >= 0 {
     self.archetype_add_entity(to_archetype_id, entity)
   } else {
     self.entity_archetype_rows[entity.id] = -1
   }
-}
-
-///|
-fn World::table_payloads_for_archetype_migration(
-  self : World,
-  entity : @core.Entity,
-  from_table_id : Int,
-  to_table_id : Int,
-  pending_payloads : Map[Int, ErasedValue],
-) -> Array[ErasedValue] {
-  let target_component_local_ids = self.table_component_local_ids
-    .get(to_table_id)
-    .unwrap_or([])
-  let ordered_payloads : Array[ErasedValue] = []
-  let source_row = self.entity_table_row(entity)
-  let source_table_ref = if from_table_id >= 0 {
-    self.table_storage(from_table_id)
-  } else {
-    None
-  }
-  for component_local_id in target_component_local_ids {
-    let source_payload = match source_row {
-      Some(row) =>
-        match source_table_ref {
-          Some(table_ref) =>
-            table_ref.val.payload_at_row(row, component_local_id)
-          None => None
-        }
-      None => None
-    }
-    match source_payload {
-      Some(payload) => ordered_payloads.push(payload)
-      None =>
-        match pending_payloads.get(component_local_id) {
-          Some(payload) => ordered_payloads.push(payload)
-          None =>
-            abort(
-              "Missing table payload during archetype migration for entity \{entity.id.to_string()}, component local id \{component_local_id.to_string()}, from table \{from_table_id.to_string()}, to table \{to_table_id.to_string()}",
-            )
-        }
-    }
-  }
-  ordered_payloads
 }
 
 ///|
@@ -726,11 +688,13 @@ fn World::swap_remove_entity_from_table(
 ) -> Unit {
   guard self.entity_table_row(entity) is Some(row) else {
     if entity.id >= 0 && entity.id < self.entity_table_rows.length() {
+      self.entity_table_ids[entity.id] = -1
       self.entity_table_rows[entity.id] = -1
     }
     return
   }
   guard self.table_storage(table_id) is Some(table_ref) else {
+    self.entity_table_ids[entity.id] = -1
     self.entity_table_rows[entity.id] = -1
     return
   }
@@ -742,9 +706,13 @@ fn World::swap_remove_entity_from_table(
         self.entity_table_rows[swapped_entity.id] = swapped_row.index()
       }
       self.ensure_entity_archetype_capacity(result.removed_entity.id)
+      self.entity_table_ids[result.removed_entity.id] = -1
       self.entity_table_rows[result.removed_entity.id] = -1
     }
-    None => self.entity_table_rows[entity.id] = -1
+    None => {
+      self.entity_table_ids[entity.id] = -1
+      self.entity_table_rows[entity.id] = -1
+    }
   }
 }
 
@@ -754,7 +722,7 @@ fn World::bundle_migrate_new_archetype_same_table(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : Map[Int, ErasedValue],
+  pending_payloads : Map[Int, ErasedWriter],
 ) -> Unit {
   ignore(pending_payloads)
   self.bundle_migrate_new_archetype(entity, from_archetype_id, to_archetype_id)
@@ -767,10 +735,16 @@ fn World::bundle_migrate_new_archetype_new_table(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : Map[Int, ErasedValue],
+  pending_payloads : Map[Int, ErasedWriter],
 ) -> Unit {
   let from_table_id = self.archetype_table_id_or_invalid(from_archetype_id)
   let to_table_id = self.archetype_table_id_or_invalid(to_archetype_id)
+  let source_row = self.entity_table_row(entity)
+  let source_table = if from_table_id >= 0 {
+    self.table_storage(from_table_id)
+  } else {
+    None
+  }
   let target_component_local_ids = if to_table_id >= 0 {
     self.table_component_local_ids.get(to_table_id).unwrap_or([])
   } else {
@@ -778,12 +752,12 @@ fn World::bundle_migrate_new_archetype_new_table(
   }
   let target_row = if to_table_id >= 0 &&
     target_component_local_ids.length() > 0 {
-    let ordered_payloads = self.table_payloads_for_archetype_migration(
-      entity, from_table_id, to_table_id, pending_payloads,
-    )
     let appended_row = match
-      self.ensure_table_storage(to_table_id).val.append_row(
-        entity, ordered_payloads,
+      self.ensure_table_storage(to_table_id).val.append_row_from_source_table(
+        entity,
+        source_table,
+        source_row,
+        pending_payloads,
       ) {
       Some(row) => Some(row)
       None =>
@@ -806,6 +780,7 @@ fn World::bundle_migrate_new_archetype_new_table(
   if from_table_id >= 0 {
     self.swap_remove_entity_from_table(entity, from_table_id)
   } else if entity.id >= 0 && entity.id < self.entity_table_rows.length() {
+    self.entity_table_ids[entity.id] = -1
     self.entity_table_rows[entity.id] = -1
   }
   if from_archetype_id >= 0 {
@@ -816,6 +791,12 @@ fn World::bundle_migrate_new_archetype_new_table(
     self.archetype_add_entity(to_archetype_id, entity)
   } else {
     self.entity_archetype_rows[entity.id] = -1
+  }
+  self.entity_table_ids[entity.id] = if to_table_id >= 0 &&
+    target_component_local_ids.length() > 0 {
+    to_table_id
+  } else {
+    -1
   }
   self.entity_table_rows[entity.id] = match target_row {
     Some(row) => row.index()
@@ -829,7 +810,7 @@ fn World::execute_bundle_migration_plan(
   self : World,
   entity : @core.Entity,
   plan : ArchetypeBundleMigrationPlan,
-  pending_payloads : Map[Int, ErasedValue],
+  pending_payloads : Map[Int, ErasedWriter],
 ) -> ArchetypeBundleMigrationPath {
   self.ensure_entity_archetype_capacity(entity.id)
   match plan.path {
@@ -877,7 +858,7 @@ fn World::migrate_entity_bundle(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : Map[Int, ErasedValue],
+  pending_payloads : Map[Int, ErasedWriter],
 ) -> ArchetypeBundleMigrationPath {
   let plan = self.bundle_migration_plan(from_archetype_id, to_archetype_id)
   self.execute_bundle_migration_plan(entity, plan, pending_payloads)
@@ -1002,7 +983,7 @@ fn World::entity_remove_component_local_id(
 fn World::refresh_entity_archetype_with_pending_payloads(
   self : World,
   entity : @core.Entity,
-  pending_payloads : Map[Int, ErasedValue],
+  pending_payloads : Map[Int, ErasedWriter],
 ) -> Unit {
   if !self.is_alive(entity) {
     return

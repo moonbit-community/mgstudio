@@ -40,9 +40,15 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_systems(
     @app.PostStartup,
     (
-      @app.system(mark_dirty_trees).in_set(transform_set_mark_dirty_trees),
-      @app.system(propagate_parent_transforms).in_set(transform_set_propagate),
-      @app.system(sync_simple_transforms_world).in_set(
+      @app.system(mark_dirty_trees)
+      .named("mgstudio.transform.mark_dirty_trees")
+      .in_set(transform_set_mark_dirty_trees),
+      @app.system(propagate_parent_transforms)
+      .named("mgstudio.transform.propagate_parent_transforms")
+      .in_set(transform_set_propagate),
+      @app.system(sync_simple_transforms_world)
+      .named("mgstudio.transform.sync_simple_transforms_world")
+      .in_set(
         transform_set_sync_simple_transforms,
       ),
     )
@@ -57,9 +63,15 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_systems(
     @app.PostUpdate,
     (
-      @app.system(mark_dirty_trees).in_set(transform_set_mark_dirty_trees),
-      @app.system(propagate_parent_transforms).in_set(transform_set_propagate),
-      @app.system(sync_simple_transforms_world).in_set(
+      @app.system(mark_dirty_trees)
+      .named("mgstudio.transform.mark_dirty_trees")
+      .in_set(transform_set_mark_dirty_trees),
+      @app.system(propagate_parent_transforms)
+      .named("mgstudio.transform.propagate_parent_transforms")
+      .in_set(transform_set_propagate),
+      @app.system(sync_simple_transforms_world)
+      .named("mgstudio.transform.sync_simple_transforms_world")
+      .in_set(
         transform_set_sync_simple_transforms,
       ),
     )

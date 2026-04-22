@@ -80,22 +80,13 @@ test "diagnostics: timeline trace plugin captures direct render queue spans" {
 }
 
 ///|
-test "diagnostics: stress diagnostics plugin installs frame and render diagnostics" {
+test "diagnostics: stress diagnostics plugin installs lightweight metrics by default" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@time.TimePlugin::default())
-    .add_plugins(DiagnosticsPlugin::default())
     .add_plugins(StressDiagnosticsPlugin::default())
     .update()
-  let diagnostics_store = try! app
-    .world()
-    .get_resource(DiagnosticsStore::resource())
-    .unwrap()
   debug_inspect(
-    diagnostics_store.get(frame_time_diagnostic_fps) is Some(_),
-    content="true",
-  )
-  debug_inspect(
-    diagnostics_store.get(render_diagnostic_queue_cpu_ms_2d) is Some(_),
+    stress_diagnostics_has_lightweight_metrics(app),
     content="true",
   )
 }

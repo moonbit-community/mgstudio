@@ -13,26 +13,6 @@
 // limitations under the License.
 
 ///|
-pub(all) struct RawTableColumnOps {
-  payload_at_row : (@any.Any, Int) -> ErasedValue?
-  replace_payload_at_row : (@any.Any, Int, ErasedValue) -> Bool
-  append_payload : (@any.Any, ErasedValue) -> Bool
-  swap_remove_row : (@any.Any, Int) -> Bool
-}
-
-///|
-pub(all) struct RawTableColumnDescriptor {
-  new_values : () -> @any.Any
-  ops : RawTableColumnOps
-}
-
-///|
-let component_table_column_descriptors : @hashmap.HashMap[
-  Int,
-  RawTableColumnDescriptor,
-] = @hashmap.HashMap::new()
-
-///|
 fn raw_table_invalid_sequence() -> @core.Sequence {
   -1
 }
@@ -55,84 +35,44 @@ fn raw_table_load_sequence(sequence : @core.Sequence) -> @core.Sequence? {
 }
 
 ///|
-fn[T] raw_table_column_descriptor_for_key(
-  _key : ComponentKey[T],
-) -> RawTableColumnDescriptor {
-  let ops : RawTableColumnOps = {
-    payload_at_row: fn(values_any, row_index) {
-      let values : Array[T] = values_any.unsafe_coerce()
-      if row_index < 0 || row_index >= values.length() {
-        return None
+let raw_table_changed_caller_ids : @hashmap.HashMap[String, Int] = @hashmap.HashMap::new()
+
+///|
+let raw_table_changed_callers_ref : Ref[Array[String?]] = Ref::new([None])
+
+///|
+fn raw_table_store_changed_caller(caller : String?) -> Int {
+  match caller {
+    Some(caller) =>
+      match raw_table_changed_caller_ids.get(caller) {
+        Some(id) => id
+        None => {
+          let id = raw_table_changed_callers_ref.val.length()
+          raw_table_changed_caller_ids.set(caller, id)
+          raw_table_changed_callers_ref.val.push(Some(caller))
+          id
+        }
       }
-      Some(erased_value(values[row_index]))
-    },
-    replace_payload_at_row: fn(values_any, row_index, payload) {
-      let values : Array[T] = values_any.unsafe_coerce()
-      if row_index < 0 || row_index >= values.length() {
-        return false
-      }
-      values[row_index] = payload.unsafe_to_value()
-      true
-    },
-    append_payload: fn(values_any, payload) {
-      let values : Array[T] = values_any.unsafe_coerce()
-      values.push(payload.unsafe_to_value())
-      true
-    },
-    swap_remove_row: fn(values_any, row_index) {
-      let values : Array[T] = values_any.unsafe_coerce()
-      if row_index < 0 || row_index >= values.length() {
-        return false
-      }
-      let last_index = values.length() - 1
-      if row_index != last_index {
-        values[row_index] = values[last_index]
-      }
-      ignore(values.pop())
-      true
-    },
-  }
-  {
-    new_values: fn() {
-      let values : Array[T] = []
-      @any.of(values)
-    },
-    ops,
+    None => 0
   }
 }
 
 ///|
-fn[T] register_component_table_column_descriptor(
-  component_id : Int,
-  key : ComponentKey[T],
-) -> Unit {
-  if component_table_column_descriptors.get(component_id) is Some(_) {
-    return
+fn raw_table_load_changed_caller(caller_id : Int) -> String? {
+  if caller_id <= 0 {
+    return None
   }
-  let descriptor = raw_table_column_descriptor_for_key(key)
-  component_table_column_descriptors.set(component_id, descriptor)
-}
-
-///|
-fn component_table_column_descriptor(
-  component_id : Int,
-) -> RawTableColumnDescriptor {
-  match component_table_column_descriptors.get(component_id) {
-    Some(descriptor) => descriptor
-    None =>
-      abort(
-        "Missing raw table column descriptor for component definition \{component_id.to_string()}",
-      )
+  match raw_table_changed_callers_ref.val.get(caller_id) {
+    Some(caller) => caller
+    None => None
   }
 }
 
 ///|
 priv struct RawTableColumn {
+  component_ops : ComponentOps
   values : @any.Any
-  ops : RawTableColumnOps
-  mut added_sequences : Array[@core.Sequence]
-  mut changed_sequences : Array[@core.Sequence]
-  mut changed_callers : Array[String?]
+  metadata : RawTableMetadataKernel
 }
 
 ///|
@@ -152,14 +92,12 @@ priv struct RawTableSwapRemoveResult {
 
 ///|
 fn raw_table_column_new(
-  descriptor : RawTableColumnDescriptor,
+  component_ops : ComponentOps,
 ) -> RawTableColumn {
   {
-    values: (descriptor.new_values)(),
-    ops: descriptor.ops,
-    added_sequences: [],
-    changed_sequences: [],
-    changed_callers: [],
+    component_ops,
+    values: (component_ops.new_values)(),
+    metadata: raw_table_metadata_kernel_new(),
   }
 }
 
@@ -168,7 +106,7 @@ fn RawTableColumn::payload_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> ErasedValue? {
-  (self.ops.payload_at_row)(self.values, row_index)
+  (self.component_ops.column_ops.payload_at_row)(self.values, row_index)
 }
 
 ///|
@@ -177,22 +115,57 @@ fn RawTableColumn::replace_payload_at_row(
   row_index : Int,
   payload : ErasedValue,
 ) -> Bool {
-  (self.ops.replace_payload_at_row)(self.values, row_index, payload)
+  match (self.component_ops.column_ops.writer_from_payload)(payload) {
+    Some(writer) =>
+      self.replace_writer_at_row(row_index, writer)
+    None => false
+  }
 }
 
 ///|
-fn RawTableColumn::append_payload(
+fn RawTableColumn::replace_writer_at_row(
   self : RawTableColumn,
-  payload : ErasedValue,
+  row_index : Int,
+  writer : ErasedWriter,
 ) -> Bool {
-  (self.ops.append_payload)(self.values, payload)
+  (self.component_ops.column_ops.replace_writer_at_row)(
+    self.values,
+    row_index,
+    writer,
+  )
+}
+
+///|
+fn RawTableColumn::append_writer(
+  self : RawTableColumn,
+  writer : ErasedWriter,
+) -> Bool {
+  (self.component_ops.column_ops.append_writer)(self.values, writer)
+}
+
+///|
+fn RawTableColumn::append_from_row(
+  self : RawTableColumn,
+  source : RawTableColumn,
+  row_index : Int,
+) -> Bool {
+  (self.component_ops.column_ops.append_from_row)(
+    source.values,
+    row_index,
+    self.values,
+  )
 }
 
 ///|
 fn RawTableColumn::append_metadata(self : RawTableColumn) -> Unit {
-  self.added_sequences.push(raw_table_invalid_sequence())
-  self.changed_sequences.push(raw_table_invalid_sequence())
-  self.changed_callers.push(None)
+  ignore(
+    raw_table_metadata_kernel_push(
+      self.metadata,
+      raw_table_invalid_sequence(),
+      raw_table_invalid_sequence(),
+      0,
+    ),
+  )
 }
 
 ///|
@@ -203,14 +176,15 @@ fn RawTableColumn::set_metadata_at_row(
   changed_sequence : @core.Sequence?,
   changed_caller : String?,
 ) -> Bool {
-  if row_index < 0 || row_index >= self.added_sequences.length() {
+  if !raw_table_metadata_kernel_set(
+      self.metadata,
+      row_index,
+      raw_table_store_sequence(added_sequence),
+      raw_table_store_sequence(changed_sequence),
+      raw_table_store_changed_caller(changed_caller),
+    ) {
     return false
   }
-  self.added_sequences[row_index] = raw_table_store_sequence(added_sequence)
-  self.changed_sequences[row_index] = raw_table_store_sequence(
-    changed_sequence,
-  )
-  self.changed_callers[row_index] = changed_caller
   true
 }
 
@@ -219,10 +193,10 @@ fn RawTableColumn::added_sequence_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> @core.Sequence? {
-  if row_index < 0 || row_index >= self.added_sequences.length() {
+  if row_index < 0 || row_index >= raw_table_metadata_kernel_len(self.metadata) {
     return None
   }
-  raw_table_load_sequence(self.added_sequences[row_index])
+  raw_table_load_sequence(raw_table_metadata_kernel_added(self.metadata, row_index))
 }
 
 ///|
@@ -230,10 +204,10 @@ fn RawTableColumn::changed_sequence_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> @core.Sequence? {
-  if row_index < 0 || row_index >= self.changed_sequences.length() {
+  if row_index < 0 || row_index >= raw_table_metadata_kernel_len(self.metadata) {
     return None
   }
-  raw_table_load_sequence(self.changed_sequences[row_index])
+  raw_table_load_sequence(raw_table_metadata_kernel_changed(self.metadata, row_index))
 }
 
 ///|
@@ -241,10 +215,12 @@ fn RawTableColumn::changed_caller_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> String? {
-  if row_index < 0 || row_index >= self.changed_callers.length() {
+  if row_index < 0 || row_index >= raw_table_metadata_kernel_len(self.metadata) {
     return None
   }
-  self.changed_callers[row_index]
+  raw_table_load_changed_caller(
+    raw_table_metadata_kernel_changed_caller_id(self.metadata, row_index),
+  )
 }
 
 ///|
@@ -290,22 +266,8 @@ fn[T] RawTableColumn::value_at_row(
 }
 
 ///|
-fn[T] RawTableColumn::replace_value_at_row(
-  self : RawTableColumn,
-  row_index : Int,
-  value : T,
-) -> Bool raise @any.TypeMismatch {
-  let values : Array[T] = self.values.to()
-  if row_index < 0 || row_index >= values.length() {
-    return false
-  }
-  values[row_index] = value
-  true
-}
-
-///|
 fn RawTableColumn::type_name(self : RawTableColumn) -> String {
-  self.values.type_name()
+  self.component_ops.debug_name
 }
 
 ///|
@@ -314,21 +276,16 @@ fn raw_table_column_swap_remove(
   row_index : Int,
 ) -> Bool {
   let column = column_ref.val
-  if !(column.ops.swap_remove_row)(column.values, row_index) {
+  if !(column.component_ops.column_ops.swap_remove_row)(column.values, row_index) {
     return false
   }
-  let last_index = column.added_sequences.length() - 1
+  let last_index = raw_table_metadata_kernel_len(column.metadata) - 1
   if row_index < 0 || row_index > last_index {
     return false
   }
-  if row_index != last_index {
-    column.added_sequences[row_index] = column.added_sequences[last_index]
-    column.changed_sequences[row_index] = column.changed_sequences[last_index]
-    column.changed_callers[row_index] = column.changed_callers[last_index]
+  if !raw_table_metadata_kernel_swap_remove(column.metadata, row_index) {
+    return false
   }
-  ignore(column.added_sequences.pop())
-  ignore(column.changed_sequences.pop())
-  ignore(column.changed_callers.pop())
   true
 }
 
@@ -346,8 +303,8 @@ fn raw_table_new(world : World, component_local_ids : Array[Int]) -> RawTable {
           "Missing component definition id for local component \{component_local_id.to_string()}",
         )
     }
-    let descriptor = component_table_column_descriptor(definition_id)
-    columns.push(Ref::new(raw_table_column_new(descriptor)))
+    let ops = component_ops(definition_id)
+    columns.push(Ref::new(raw_table_column_new(ops)))
   }
   {
     component_local_ids: component_local_ids.copy(),
@@ -432,16 +389,16 @@ fn RawTable::replace_payload_at_row(
 }
 
 ///|
-fn[T] RawTable::replace_value_at_row(
+fn RawTable::replace_writer_at_row(
   self : RawTable,
   row : TableRow,
   component_local_id : Int,
-  value : T,
-) -> Bool raise @any.TypeMismatch {
+  writer : ErasedWriter,
+) -> Bool {
   guard self.column(component_local_id) is Some(column_ref) else {
     return false
   }
-  column_ref.val.replace_value_at_row(row.index(), value)
+  column_ref.val.replace_writer_at_row(row.index(), writer)
 }
 
 ///|
@@ -529,18 +486,51 @@ fn RawTable::record_changed_at_row(
 }
 
 ///|
-fn RawTable::append_row(
+fn RawTable::append_row_from_source_table(
   self : RawTable,
   entity : @core.Entity,
-  ordered_payloads : Array[ErasedValue],
+  source_table : Ref[RawTable]?,
+  source_row : TableRow?,
+  pending_payloads : Map[Int, ErasedWriter],
 ) -> TableRow? {
-  if ordered_payloads.length() != self.columns.length() {
-    return None
-  }
   let row = raw_table_row_kernel_push(self.rows, entity)
+  let row_index = row
   for column_index in 0..<self.columns.length() {
+    let component_local_id = self.component_local_ids[column_index]
     let column = self.columns[column_index].val
-    if !column.append_payload(ordered_payloads[column_index]) {
+    let appended = match source_table {
+      Some(source_table_ref) =>
+        match source_row {
+          Some(source_row) =>
+            match source_table_ref.val.column(component_local_id) {
+              Some(source_column_ref) =>
+                column.append_from_row(
+                  source_column_ref.val,
+                  source_row.index(),
+                )
+              None =>
+                match pending_payloads.get(component_local_id) {
+                  Some(writer) => column.append_writer(writer)
+                  None => false
+                }
+            }
+          None =>
+            match pending_payloads.get(component_local_id) {
+              Some(writer) => column.append_writer(writer)
+              None => false
+            }
+        }
+      None =>
+        match pending_payloads.get(component_local_id) {
+          Some(writer) => column.append_writer(writer)
+          None => false
+        }
+    }
+    if !appended {
+      for rollback_column_index in 0..<column_index {
+        ignore(raw_table_column_swap_remove(self.columns[rollback_column_index], row_index))
+      }
+      ignore(raw_table_row_kernel_swap_remove(self.rows, row_index))
       return None
     }
     column.append_metadata()
@@ -609,7 +599,10 @@ fn World::pending_component_payload(
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id {
-        context.payloads.get(local_component_id)
+        match context.payloads.get(local_component_id) {
+          Some(writer) => Some(writer.to_erased_value())
+          None => None
+        }
       } else {
         None
       }
@@ -621,7 +614,7 @@ fn World::pending_component_payload(
 fn World::push_pending_component_payload_context(
   self : World,
   entity : @core.Entity,
-  payloads : Map[Int, ErasedValue],
+  payloads : Map[Int, ErasedWriter],
 ) -> PendingComponentPayloadContext? {
   let previous = self.pending_component_payload_context
   self.pending_component_payload_context = Some({
@@ -640,20 +633,57 @@ fn World::restore_pending_component_payload_context(
 }
 
 ///|
+fn World::set_query_sparse_anchor_payload_context(
+  self : World,
+  entity : @core.Entity,
+  local_component_id : Int,
+  payload : ErasedValue,
+) -> Unit {
+  self.current_query_sparse_anchor_payload_context = Some({
+    entity_id: entity.id,
+    local_component_id,
+    payload,
+  })
+}
+
+///|
+fn World::clear_query_sparse_anchor_payload_context(self : World) -> Unit {
+  self.current_query_sparse_anchor_payload_context = None
+}
+
+///|
+fn World::query_sparse_anchor_payload(
+  self : World,
+  entity : @core.Entity,
+  local_component_id : Int,
+) -> ErasedValue? {
+  match self.current_query_sparse_anchor_payload_context {
+    Some(context) =>
+      if context.entity_id == entity.id &&
+        context.local_component_id == local_component_id {
+        Some(context.payload)
+      } else {
+        None
+      }
+    None => None
+  }
+}
+
+///|
 fn World::table_id_for_entity(self : World, entity : @core.Entity) -> Int? {
   self.table_id_for_entity_id(entity.id)
 }
 
 ///|
 fn World::table_id_for_entity_id(self : World, entity_id : Int) -> Int? {
-  guard entity_id >= 0 && entity_id < self.entity_archetype_ids.length() else {
+  guard entity_id >= 0 && entity_id < self.entity_table_ids.length() else {
     return None
   }
-  let archetype_id = self.entity_archetype_ids[entity_id]
-  if archetype_id < 0 {
+  let table_id = self.entity_table_ids[entity_id]
+  if table_id < 0 {
     return None
   }
-  self.archetype_table_ids.get(archetype_id)
+  Some(table_id)
 }
 
 ///|
@@ -677,6 +707,9 @@ fn[T] World::component_value_by_local_id(
   local_component_id : Int,
 ) -> T? raise EcsError {
   if self.pending_component_payload(entity, local_component_id) is Some(payload) {
+    return Some(self.component_value(key, entity, payload))
+  }
+  if self.query_sparse_anchor_payload(entity, local_component_id) is Some(payload) {
     return Some(self.component_value(key, entity, payload))
   }
   match self.local_component_storage_type(local_component_id) {
@@ -736,12 +769,12 @@ fn[T] World::replace_component_value_by_local_id(
   key : ComponentKey[T],
   local_component_id : Int,
   value : T,
-) -> Bool raise EcsError {
+) -> Bool {
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id &&
         context.payloads.get(local_component_id) is Some(_) {
-        context.payloads.set(local_component_id, erased_value(value))
+        context.payloads.set(local_component_id, erased_writer(key, value))
         return true
       }
     None => ()
@@ -762,20 +795,11 @@ fn[T] World::replace_component_value_by_local_id(
         return false
       }
       guard self.entity_table_row(entity) is Some(row) else { return false }
-      let result : Result[Bool, @any.TypeMismatch] = try? table_ref.val
-        .replace_value_at_row(row, local_component_id, value)
-      match result {
-        Ok(ok) => ok
-        Err(_) =>
-          raise ComponentTypeMismatch(
-            key.id(),
-            key.debug_name(),
-            entity,
-            table_ref.val.column_type_name(local_component_id).unwrap_or(
-              "unknown",
-            ),
-          )
-      }
+      table_ref.val.replace_writer_at_row(
+        row,
+        local_component_id,
+        erased_writer(key, value),
+      )
     }
     None => false
   }
@@ -787,7 +811,7 @@ fn[T] World::replace_component_value_by_key(
   entity : @core.Entity,
   key : ComponentKey[T],
   value : T,
-) -> Bool raise EcsError {
+) -> Bool {
   match self.local_component_id(key.id()) {
     Some(local_component_id) =>
       self.replace_component_value_by_local_id(
@@ -943,6 +967,9 @@ fn World::component_payload_by_local_id(
   if self.pending_component_payload(entity, local_component_id) is Some(payload) {
     return Some(payload)
   }
+  if self.query_sparse_anchor_payload(entity, local_component_id) is Some(payload) {
+    return Some(payload)
+  }
   match self.local_component_storage_type(local_component_id) {
     Some(SparseSet) =>
       match self.sparse_component_columns.get(local_component_id) {
@@ -985,8 +1012,18 @@ fn World::replace_component_payload_by_local_id(
     Some(context) =>
       if context.entity_id == entity.id &&
         context.payloads.get(local_component_id) is Some(_) {
-        context.payloads.set(local_component_id, payload)
-        return true
+        guard self.definition_component_id(local_component_id)
+          is Some(definition_id) else {
+          return false
+        }
+        let ops = component_ops(definition_id)
+        match (ops.column_ops.writer_from_payload)(payload) {
+          Some(writer) => {
+            context.payloads.set(local_component_id, writer)
+            return true
+          }
+          None => return false
+        }
       }
     None => ()
   }
@@ -1013,24 +1050,61 @@ fn World::replace_component_payload_by_local_id(
 }
 
 ///|
-fn World::replace_component_payload(
+fn World::replace_component_writer_by_local_id(
   self : World,
-  component_definition_id : Int,
   entity : @core.Entity,
-  payload : ErasedValue,
+  local_component_id : Int,
+  writer : ErasedWriter,
 ) -> Bool {
-  match self.local_component_id(component_definition_id) {
-    Some(local_component_id) =>
-      self.replace_component_payload_by_local_id(
-        entity,
+  match self.pending_component_payload_context {
+    Some(context) =>
+      if context.entity_id == entity.id &&
+        context.payloads.get(local_component_id) is Some(_) {
+        context.payloads.set(local_component_id, writer)
+        return true
+      }
+    None => ()
+  }
+  match self.local_component_storage_type(local_component_id) {
+    Some(SparseSet) => {
+      let store_ref = self.ensure_component_store_for_local_id(
         local_component_id,
-        payload,
+        SparseSet,
       )
+      store_ref.val.set(entity, writer.to_erased_value())
+    }
+    Some(Table) => {
+      guard self.table_id_for_entity(entity) is Some(table_id) else {
+        return false
+      }
+      guard self.table_storage(table_id) is Some(table_ref) else {
+        return false
+      }
+      guard self.entity_table_row(entity) is Some(row) else { return false }
+      table_ref.val.replace_writer_at_row(row, local_component_id, writer)
+    }
     None => false
   }
 }
 
 ///|
+fn World::replace_component_writer(
+  self : World,
+  component_definition_id : Int,
+  entity : @core.Entity,
+  writer : ErasedWriter,
+) -> Bool {
+  match self.local_component_id(component_definition_id) {
+    Some(local_component_id) =>
+      self.replace_component_writer_by_local_id(
+        entity,
+        local_component_id,
+        writer,
+      )
+    None => false
+  }
+}
+
 fn World::remove_sparse_component_payload_by_local_id(
   self : World,
   entity : @core.Entity,
@@ -1049,11 +1123,11 @@ fn World::remove_sparse_component_payload_by_local_id(
 fn World::write_pending_sparse_component_payloads(
   self : World,
   entity : @core.Entity,
-  pending_payloads : Map[Int, ErasedValue],
+  pending_payloads : Map[Int, ErasedWriter],
 ) -> Unit {
   for entry in pending_payloads.iter() {
     let component_local_id = entry.0
-    let payload = entry.1
+    let payload = entry.1.to_erased_value()
     if self.local_component_storage_type(component_local_id) == Some(SparseSet) {
       let store_ref = self.ensure_component_store_for_local_id(
         component_local_id,

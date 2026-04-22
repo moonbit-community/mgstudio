@@ -98,6 +98,22 @@ pub fn[T] ComponentStore::remove(
 }
 
 ///|
+pub fn[T] ComponentStore::entity_at(
+  self : ComponentStore[T],
+  dense_index : Int,
+) -> Entity {
+  self.storage.entity_at(dense_index)
+}
+
+///|
+pub fn[T] ComponentStore::value_at(
+  self : ComponentStore[T],
+  dense_index : Int,
+) -> T {
+  self.storage.value_at(dense_index)
+}
+
+///|
 pub fn[T] ComponentStore::for_each(
   self : ComponentStore[T],
   f : (Entity, T) -> Unit,

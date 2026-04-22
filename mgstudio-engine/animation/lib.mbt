@@ -1448,8 +1448,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let evaluation_state = animation_evaluation_state_new()
   if target_id_column is Some(target_id_column) &&
     animated_by_column is Some(animated_by_column) {
-    animated_by_column.for_each(fn(entity, animated_by) {
-      guard target_id_column.get(entity) is Some(target_id) else { return }
+    animated_by_column.for_each_with_fast(target_id_column, fn(entity, animated_by, target_id) {
       let player_entity = animated_by.player()
       let player_id = player_entity.id
       if player_id < 0 {
@@ -1480,22 +1479,22 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         clip_cache,
         evaluation_state,
         match transform_column {
-          Some(column) => column.get(entity)
+          Some(column) => column.get_fast(entity)
           None => None
         },
         match weights_column {
-          Some(column) => column.get(entity)
+          Some(column) => column.get_fast(entity)
           None => None
         },
         match text_color_column {
-          Some(column) => column.get(entity)
+          Some(column) => column.get_fast(entity)
           None => None
         },
       )
 
       if next_transform is Some(transform) {
         let wrote = match transform_column {
-          Some(column) => column.set_sequence_only(entity, transform)
+          Some(column) => column.set_sequence_only_hot(entity, transform)
           None => false
         }
         if !wrote {
@@ -1504,7 +1503,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       }
       if next_weights is Some(weights) {
         let wrote = match weights_column {
-          Some(column) => column.set_sequence_only(entity, weights)
+          Some(column) => column.set_sequence_only_hot(entity, weights)
           None => false
         }
         if !wrote {
@@ -1513,7 +1512,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       }
       if next_text_color is Some(text_color) {
         let wrote = match text_color_column {
-          Some(column) => column.set_sequence_only(entity, text_color)
+          Some(column) => column.set_sequence_only_hot(entity, text_color)
           None => false
         }
         if !wrote {

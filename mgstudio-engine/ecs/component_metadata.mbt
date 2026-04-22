@@ -15,7 +15,7 @@
 ///|
 priv struct ComponentRequiredMetadata {
   required_component_id : Int
-  init_value : () -> ErasedValue
+  init_value : () -> ErasedWriter
 }
 
 ///|
@@ -293,7 +293,7 @@ pub fn[T, R] ComponentMetadataBuilder::require_with(
   let entries = metadata_ref.val.required_components
   entries.push({
     required_component_id: required_key.id(),
-    init_value: fn() { erased_value(init()) },
+    init_value: fn() { erased_writer(required_key, init()) },
   })
   metadata_ref.val = ComponentMetadata::{
     ..metadata_ref.val,
