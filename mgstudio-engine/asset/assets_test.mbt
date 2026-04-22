@@ -369,6 +369,63 @@ test "asset server retries failed typed loads with the same handle after loader 
 }
 
 ///|
+test "typed asset loaders are world-scoped per app world" {
+  let app_a = init_asset_loader(
+    asset_plugin(@app.App::new(@ecs.World::new())),
+    AssetLoader::new(["custom"], missing_loader_asset_loader),
+  )
+  let world_a = app_a.world()
+  let server_a = match (try! world_a.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource for world A")
+  }
+  let handle_a : Handle[MissingLoaderAsset] = asset_with_world(world_a, fn() {
+    server_a.load("data/asset.custom")
+  })
+  let assets_key : @ecs.ResourceKey[Assets[MissingLoaderAsset]] = assets_resource_key()
+  for _ in 0..<4 {
+    asset_with_world(world_a, fn() { asset_system(world_a) })
+    if (match (try! world_a.get_resource(assets_key)) {
+      Some(assets) => assets.contains(handle_a)
+      None => false
+    }) {
+      break
+    }
+  }
+  debug_inspect(
+    match (try! world_a.get_resource(assets_key)) {
+      Some(assets) => assets.contains(handle_a)
+      None => false
+    },
+    content="true",
+  )
+
+  let app_b = asset_plugin(@app.App::new(@ecs.World::new()))
+  let world_b = app_b.world()
+  let server_b = match (try! world_b.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource for world B")
+  }
+  let handle_b : Handle[MissingLoaderAsset] = asset_with_world(world_b, fn() {
+    server_b.load("data/asset.custom")
+  })
+  asset_with_world(world_b, fn() { asset_system(world_b) })
+  debug_inspect(
+    match (try! world_b.get_resource(assets_key)) {
+      Some(assets) => assets.contains(handle_b)
+      None => false
+    },
+    content="false",
+  )
+  let cursor : Ref[Int] = Ref::new(0)
+  let key : @ecs.MessageKey[AssetLoadFailedEvent[MissingLoaderAsset]] = @ecs.Message::message()
+  let reader = world_b.message_reader(key, cursor)
+  let failures = try! reader.read()
+  debug_inspect(failures.length(), content="1")
+  debug_inspect(failures[0].id.index() == handle_b.id(), content="true")
+}
+
+///|
 test "asset system forwards image load completion to ECS messages" {
   let world = @ecs.World::new()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()

@@ -32,9 +32,55 @@ priv struct TypedAssetLoaderEntry {
 }
 
 ///|
-let typed_asset_loader_registry : Ref[
+priv struct TypedAssetLoaderRegistryState {
+  loaders : Ref[@hashmap.HashMap[String, TypedAssetLoaderEntry]]
+}
+
+///|
+fn typed_asset_loader_registry_resource_key() -> @ecs.ResourceKey[
+  TypedAssetLoaderRegistryState,
+] {
+  @ecs.register_resource(
+    debug_name="mgstudio_asset::TypedAssetLoaderRegistryState",
+  )
+}
+
+///|
+let typed_asset_loader_registry_fallback : Ref[
   @hashmap.HashMap[String, TypedAssetLoaderEntry],
 ] = Ref::new(@hashmap.HashMap::new())
+
+///|
+fn typed_asset_loader_registry_for_world(
+  world : @ecs.World,
+) -> Ref[@hashmap.HashMap[String, TypedAssetLoaderEntry]] {
+  let key = typed_asset_loader_registry_resource_key()
+  if (try! world.get_resource(key)) is None {
+    world.insert_resource(
+      key,
+      TypedAssetLoaderRegistryState::{ loaders: Ref::new(@hashmap.HashMap::new()) },
+    )
+  }
+  match (try! world.get_resource(key)) {
+    Some(state) => state.loaders
+    None => abort("Failed to initialize typed asset loader registry resource")
+  }
+}
+
+///|
+fn typed_asset_loader_registry_active() -> Ref[
+  @hashmap.HashMap[String, TypedAssetLoaderEntry],
+] {
+  match asset_current_world() {
+    Some(world) => typed_asset_loader_registry_for_world(world)
+    None => typed_asset_loader_registry_fallback
+  }
+}
+
+///|
+fn typed_asset_loader_is_registered(type_name : String) -> Bool {
+  typed_asset_loader_registry_active().val.contains(type_name)
+}
 
 ///|
 pub fn[T] AssetLoader::new(
@@ -250,7 +296,8 @@ pub fn[T] register_asset_loader(
 ) -> @app.App[@ecs.World] {
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
-  typed_asset_loader_registry.val.set(type_name, TypedAssetLoaderEntry::{
+  let registry = typed_asset_loader_registry_for_world(app.world())
+  registry.val.set(type_name, TypedAssetLoaderEntry::{
     load: fn(context, bytes) { @any.of((loader.load)(context, bytes)) },
     insert: fn(world, handle_id, value_any) {
       let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
@@ -344,8 +391,9 @@ pub fn[T, P : IntoAssetPath] AssetServer::load_direct(
   let parsed_path = path.into_asset_path()
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
+  let registry = typed_asset_loader_registry_active()
 
-  match typed_asset_loader_registry.val.get(type_name) {
+  match registry.val.get(type_name) {
     Some(entry) =>
       match
         (entry.load)(LoadContext::new_detached(self, parsed_path), bytes).try_to() {
@@ -368,8 +416,9 @@ fn asset_process_pending_typed_asset_loads(
   asset_server : AssetServer,
 ) -> Unit {
   let remaining : Array[PendingTypedAssetLoad] = []
+  let registry = typed_asset_loader_registry_for_world(world)
   for pending in asset_server.pending_typed_asset_loads.val {
-    match typed_asset_loader_registry.val.get(pending.type_name) {
+    match registry.val.get(pending.type_name) {
       Some(entry) => {
         let formatted_path = asset_format_path(pending.path)
         let bytes = load_asset_file_bytes(asset_canonical_path(formatted_path))

@@ -1393,7 +1393,7 @@ pub fn[T, P : IntoAssetPath] AssetServer::load(
   let parsed_path = path.into_asset_path()
   let asset_probe : Assets[T] = Assets::new()
   let asset_type_name = @any.of(asset_probe).type_name()
-  if typed_asset_loader_registry.val.contains(asset_type_name) {
+  if typed_asset_loader_is_registered(asset_type_name) {
     return self.load_registered_asset(parsed_path)
   }
   let formatted_path = asset_format_path(parsed_path)
