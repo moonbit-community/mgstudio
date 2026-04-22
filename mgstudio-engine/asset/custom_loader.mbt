@@ -220,7 +220,9 @@ pub fn[T] init_asset(
 ) -> @app.App[@ecs.World] {
   asset_init() |> ignore
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-  if app.contains_resource(key) {
+  let event_key : @ecs.MessageKey[AssetEvent[T]] = @ecs.Message::message()
+  let load_failed_key : @ecs.MessageKey[AssetLoadFailedEvent[T]] = @ecs.Message::message()
+  let app = if app.contains_resource(key) {
     app
   } else {
     app.init_resource(fn() {
@@ -228,6 +230,7 @@ pub fn[T] init_asset(
       assets
     })
   }
+  app.add_message(event_key).add_message(load_failed_key)
 }
 
 ///|

@@ -1068,11 +1068,7 @@ pub fn scene_plugin_with(
   scene_install_component_metadata()
   scene_install_asset_hooks()
   scene_runtime_plugin_base(
-    scene_init_gltf_assets(app)
-    .init_resource(fn() {
-      let assets : @asset.Assets[Scene] = @asset.Assets::new()
-      assets
-    })
+    @asset.init_asset(scene_init_gltf_assets(app), scene_pending)
     .init_resource(fn() {
       SceneAssetRegistryState::{
         scene_registry: [],

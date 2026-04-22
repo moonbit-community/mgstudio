@@ -52,10 +52,19 @@ pub type ImageSamplerDescriptor = @image.ImageSamplerDescriptor
 pub struct Blob {}
 
 ///|
+pub(all) enum LoadState {
+  NotLoaded
+  Loading
+  Loaded
+  Failed(String)
+} derive(Eq, Debug)
+
+///|
 pub struct AssetServer {
   paths : Ref[Array[String]]
   path_fingerprints : Ref[@hashmap.HashMap[String, Int]]
   typed_asset_paths : Ref[@hashmap.HashMap[String, Int]]
+  typed_asset_load_states : Ref[@hashmap.HashMap[String, LoadState]]
   pending_load_failures : Ref[Array[UntypedAssetLoadFailedEvent]]
   pending_processed_asset_loads : Ref[Array[PendingProcessedAssetLoad]]
   pending_typed_asset_loads : Ref[Array[PendingTypedAssetLoad]]
@@ -103,6 +112,7 @@ fn asset_server_standalone() -> AssetServer {
     paths: Ref::new([]),
     path_fingerprints: Ref::new(@hashmap.HashMap::new()),
     typed_asset_paths: Ref::new(@hashmap.HashMap::new()),
+    typed_asset_load_states: Ref::new(@hashmap.HashMap::new()),
     pending_load_failures: Ref::new([]),
     pending_processed_asset_loads: Ref::new([]),
     pending_typed_asset_loads: Ref::new([]),
@@ -1074,6 +1084,7 @@ fn AssetServer::load_image_with_settings(
   )
   self.record_path(canonical_path)
   let handle = Handle::new(id)
+  self.set_typed_load_state(asset_image_handle_type_name(), handle.id(), Loading)
   self.register_image_path(canonical_path, handle)
   self.track_image_handle(handle)
   if settings.sampler is Descriptor(_) {
@@ -1101,10 +1112,62 @@ fn asset_image_handle_type_name() -> String {
 }
 
 ///|
+fn asset_load_state_key(type_name : String, handle_id : Int) -> String {
+  "\{type_name}::\{handle_id.to_string()}"
+}
+
+pub fn AssetServer::set_typed_load_state(
+  self : AssetServer,
+  type_name : String,
+  handle_id : Int,
+  state : LoadState,
+) -> Unit {
+  self.typed_asset_load_states.val.set(
+    asset_load_state_key(type_name, handle_id),
+    state,
+  )
+}
+
+///|
+fn AssetServer::typed_load_state(
+  self : AssetServer,
+  type_name : String,
+  handle_id : Int,
+) -> LoadState {
+  match self.typed_asset_load_states.val.get(asset_load_state_key(type_name, handle_id)) {
+    Some(state) => state
+    None => NotLoaded
+  }
+}
+
+///|
+pub fn[T] AssetServer::load_state(
+  self : AssetServer,
+  handle : Handle[T],
+) -> LoadState {
+  let probe : Assets[T] = Assets::new()
+  let type_name = @any.of(probe).type_name()
+  self.typed_load_state(type_name, handle.id())
+}
+
+///|
+pub fn[T] AssetServer::is_loaded_with_dependencies(
+  self : AssetServer,
+  handle : Handle[T],
+) -> Bool {
+  self.load_state(handle) is Loaded
+}
+
+///|
 fn asset_enqueue_load_failure(
   asset_server : AssetServer,
   failure : UntypedAssetLoadFailedEvent,
 ) -> Unit {
+  asset_server.set_typed_load_state(
+    failure.type_name,
+    failure.id,
+    Failed(failure.error),
+  )
   asset_server.pending_load_failures.val.push(failure)
   @app.log_error_once(
     "asset-load-failure:\{failure.type_name}:\{asset_format_path(failure.path)}",
@@ -1126,6 +1189,7 @@ fn[T] AssetServer::reserve_missing_loader_handle(
   let handle = asset_assets_mut_or_init().modify(fn(store) {
     store.reserve_handle()
   })
+  self.set_typed_load_state(asset_type_name, handle.id(), Loading)
   self.typed_asset_paths.val.set(cache_key, handle.id())
   let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
   self.record_path(canonical_path)
