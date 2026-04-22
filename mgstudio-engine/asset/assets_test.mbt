@@ -230,7 +230,8 @@ test "asset server load without registered loader emits typed/untyped AssetLoadF
   let typed_failure = typed_failures[0]
   debug_inspect(typed_failure.id.index() == handle.id(), content="true")
   debug_inspect(
-    asset_format_path(typed_failure.path) == "does_not_exist/missing_loader.asset",
+    asset_format_path(typed_failure.path) ==
+    "does_not_exist/missing_loader.asset",
     content="true",
   )
 }
@@ -248,6 +249,26 @@ test "asset server retries failed typed loads with the same handle after loader 
   let first : Handle[MissingLoaderAsset] = asset_with_world(world, fn() {
     asset_server.load("data/asset.custom")
   })
+  debug_inspect(
+    asset_with_world(world, fn() {
+      asset_server.load_state(first) is LoadState::Failed(_)
+    }),
+    content="true",
+  )
+  debug_inspect(
+    asset_with_world(world, fn() {
+      asset_server.dependency_load_state(first)
+      is DependencyLoadState::Failed(_)
+    }),
+    content="true",
+  )
+  debug_inspect(
+    asset_with_world(world, fn() {
+      asset_server.recursive_dependency_load_state(first)
+      is RecursiveDependencyLoadState::Failed(_)
+    }),
+    content="true",
+  )
   asset_with_world(world, fn() { asset_system(world) })
 
   let untyped_cursor : Ref[Int] = Ref::new(0)
@@ -266,14 +287,33 @@ test "asset server retries failed typed loads with the same handle after loader 
     asset_server.load("data/asset.custom")
   })
   debug_inspect(first.id() == second.id(), content="true")
+  debug_inspect(
+    asset_with_world(world, fn() {
+      asset_server.load_state(second) == LoadState::Loading
+    }),
+    content="true",
+  )
+  debug_inspect(
+    asset_with_world(world, fn() {
+      asset_server.dependency_load_state(second) == DependencyLoadState::Loading
+    }),
+    content="true",
+  )
+  debug_inspect(
+    asset_with_world(world, fn() {
+      asset_server.recursive_dependency_load_state(second) ==
+      RecursiveDependencyLoadState::Loading
+    }),
+    content="true",
+  )
 
   let key : @ecs.ResourceKey[Assets[MissingLoaderAsset]] = assets_resource_key()
   for _ in 0..<4 {
     asset_with_world(world, fn() { asset_system(world) })
     if (match (try! world.get_resource(key)) {
-      Some(assets) => assets.contains(second)
-      None => false
-    }) {
+        Some(assets) => assets.contains(second)
+        None => false
+      }) {
       break
     }
   }
@@ -282,6 +322,25 @@ test "asset server retries failed typed loads with the same handle after loader 
       Some(assets) => assets.contains(second)
       None => false
     },
+    content="true",
+  )
+  debug_inspect(
+    asset_with_world(world, fn() {
+      asset_server.load_state(second) == LoadState::Loaded
+    }),
+    content="true",
+  )
+  debug_inspect(
+    asset_with_world(world, fn() {
+      asset_server.dependency_load_state(second) == DependencyLoadState::Loaded
+    }),
+    content="true",
+  )
+  debug_inspect(
+    asset_with_world(world, fn() {
+      asset_server.recursive_dependency_load_state(second) ==
+      RecursiveDependencyLoadState::Loaded
+    }),
     content="true",
   )
 
@@ -324,6 +383,19 @@ test "asset system forwards image load completion to ECS messages" {
   }
   let image = asset_server.load_image("branding/bevy_logo_dark_big.png")
   debug_inspect(
+    asset_server.load_state(image) == LoadState::Loading,
+    content="true",
+  )
+  debug_inspect(
+    asset_server.dependency_load_state(image) == DependencyLoadState::Loading,
+    content="true",
+  )
+  debug_inspect(
+    asset_server.recursive_dependency_load_state(image) ==
+    RecursiveDependencyLoadState::Loading,
+    content="true",
+  )
+  debug_inspect(
     match (try! world.get_resource(image_assets_key)) {
       Some(images) => images.get(image) is None
       None => false
@@ -351,6 +423,19 @@ test "asset system forwards image load completion to ECS messages" {
         }
       None => false
     },
+    content="true",
+  )
+  debug_inspect(
+    asset_server.load_state(image) == LoadState::Loaded,
+    content="true",
+  )
+  debug_inspect(
+    asset_server.dependency_load_state(image) == DependencyLoadState::Loaded,
+    content="true",
+  )
+  debug_inspect(
+    asset_server.recursive_dependency_load_state(image) ==
+    RecursiveDependencyLoadState::Loaded,
     content="true",
   )
   // `asset_sync_loaded_image_assets` queues events; they are dispatched on the next

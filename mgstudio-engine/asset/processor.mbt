@@ -270,6 +270,10 @@ fn asset_process_pending_processed_asset_loads(
           }
         }
         (entry.insert)(world, pending.handle_id, processed.asset)
+        asset_server.set_typed_loaded_states(
+          pending.type_name,
+          pending.handle_id,
+        )
         if processed.saved_bytes is Some(saved_bytes) {
           if asset_processed_output_path(asset_server, pending.path)
             is Some(output_path) {

@@ -60,11 +60,33 @@ pub(all) enum LoadState {
 } derive(Eq, Debug)
 
 ///|
+pub(all) enum DependencyLoadState {
+  NotLoaded
+  Loading
+  Loaded
+  Failed(String)
+} derive(Eq, Debug)
+
+///|
+pub(all) enum RecursiveDependencyLoadState {
+  NotLoaded
+  Loading
+  Loaded
+  Failed(String)
+} derive(Eq, Debug)
+
+///|
 pub struct AssetServer {
   paths : Ref[Array[String]]
   path_fingerprints : Ref[@hashmap.HashMap[String, Int]]
   typed_asset_paths : Ref[@hashmap.HashMap[String, Int]]
   typed_asset_load_states : Ref[@hashmap.HashMap[String, LoadState]]
+  typed_asset_dependency_load_states : Ref[
+    @hashmap.HashMap[String, DependencyLoadState],
+  ]
+  typed_asset_recursive_dependency_load_states : Ref[
+    @hashmap.HashMap[String, RecursiveDependencyLoadState],
+  ]
   pending_load_failures : Ref[Array[UntypedAssetLoadFailedEvent]]
   pending_processed_asset_loads : Ref[Array[PendingProcessedAssetLoad]]
   pending_typed_asset_loads : Ref[Array[PendingTypedAssetLoad]]
@@ -113,6 +135,10 @@ fn asset_server_standalone() -> AssetServer {
     path_fingerprints: Ref::new(@hashmap.HashMap::new()),
     typed_asset_paths: Ref::new(@hashmap.HashMap::new()),
     typed_asset_load_states: Ref::new(@hashmap.HashMap::new()),
+    typed_asset_dependency_load_states: Ref::new(@hashmap.HashMap::new()),
+    typed_asset_recursive_dependency_load_states: Ref::new(
+      @hashmap.HashMap::new(),
+    ),
     pending_load_failures: Ref::new([]),
     pending_processed_asset_loads: Ref::new([]),
     pending_typed_asset_loads: Ref::new([]),
@@ -1084,7 +1110,7 @@ fn AssetServer::load_image_with_settings(
   )
   self.record_path(canonical_path)
   let handle = Handle::new(id)
-  self.set_typed_load_state(asset_image_handle_type_name(), handle.id(), Loading)
+  self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())
   self.register_image_path(canonical_path, handle)
   self.track_image_handle(handle)
   if settings.sampler is Descriptor(_) {
@@ -1112,10 +1138,23 @@ fn asset_image_handle_type_name() -> String {
 }
 
 ///|
+fn asset_image_assets_type_name() -> String {
+  let probe : Assets[Image] = Assets::new()
+  @any.of(probe).type_name()
+}
+
+///|
+fn asset_blob_assets_type_name() -> String {
+  let probe : Assets[Blob] = Assets::new()
+  @any.of(probe).type_name()
+}
+
+///|
 fn asset_load_state_key(type_name : String, handle_id : Int) -> String {
   "\{type_name}::\{handle_id.to_string()}"
 }
 
+///|
 pub fn AssetServer::set_typed_load_state(
   self : AssetServer,
   type_name : String,
@@ -1129,14 +1168,131 @@ pub fn AssetServer::set_typed_load_state(
 }
 
 ///|
+pub fn AssetServer::set_typed_dependency_load_state(
+  self : AssetServer,
+  type_name : String,
+  handle_id : Int,
+  state : DependencyLoadState,
+) -> Unit {
+  self.typed_asset_dependency_load_states.val.set(
+    asset_load_state_key(type_name, handle_id),
+    state,
+  )
+}
+
+///|
+pub fn AssetServer::set_typed_recursive_dependency_load_state(
+  self : AssetServer,
+  type_name : String,
+  handle_id : Int,
+  state : RecursiveDependencyLoadState,
+) -> Unit {
+  self.typed_asset_recursive_dependency_load_states.val.set(
+    asset_load_state_key(type_name, handle_id),
+    state,
+  )
+}
+
+///|
+pub fn AssetServer::set_typed_loading_states(
+  self : AssetServer,
+  type_name : String,
+  handle_id : Int,
+) -> Unit {
+  self.set_typed_load_state(type_name, handle_id, LoadState::Loading)
+  self.set_typed_dependency_load_state(
+    type_name,
+    handle_id,
+    DependencyLoadState::Loading,
+  )
+  self.set_typed_recursive_dependency_load_state(
+    type_name,
+    handle_id,
+    RecursiveDependencyLoadState::Loading,
+  )
+}
+
+///|
+pub fn AssetServer::set_typed_loaded_states(
+  self : AssetServer,
+  type_name : String,
+  handle_id : Int,
+) -> Unit {
+  self.set_typed_load_state(type_name, handle_id, LoadState::Loaded)
+  self.set_typed_dependency_load_state(
+    type_name,
+    handle_id,
+    DependencyLoadState::Loaded,
+  )
+  self.set_typed_recursive_dependency_load_state(
+    type_name,
+    handle_id,
+    RecursiveDependencyLoadState::Loaded,
+  )
+}
+
+///|
+pub fn AssetServer::set_typed_failed_states(
+  self : AssetServer,
+  type_name : String,
+  handle_id : Int,
+  error : String,
+) -> Unit {
+  self.set_typed_load_state(type_name, handle_id, LoadState::Failed(error))
+  self.set_typed_dependency_load_state(
+    type_name,
+    handle_id,
+    DependencyLoadState::Failed(error),
+  )
+  self.set_typed_recursive_dependency_load_state(
+    type_name,
+    handle_id,
+    RecursiveDependencyLoadState::Failed(error),
+  )
+}
+
+///|
 fn AssetServer::typed_load_state(
   self : AssetServer,
   type_name : String,
   handle_id : Int,
 ) -> LoadState {
-  match self.typed_asset_load_states.val.get(asset_load_state_key(type_name, handle_id)) {
+  match
+    self.typed_asset_load_states.val.get(
+      asset_load_state_key(type_name, handle_id),
+    ) {
     Some(state) => state
-    None => NotLoaded
+    None => LoadState::NotLoaded
+  }
+}
+
+///|
+fn AssetServer::typed_dependency_load_state(
+  self : AssetServer,
+  type_name : String,
+  handle_id : Int,
+) -> DependencyLoadState {
+  match
+    self.typed_asset_dependency_load_states.val.get(
+      asset_load_state_key(type_name, handle_id),
+    ) {
+    Some(state) => state
+    None => DependencyLoadState::NotLoaded
+  }
+}
+
+///|
+fn AssetServer::typed_recursive_dependency_load_state(
+  self : AssetServer,
+  type_name : String,
+  handle_id : Int,
+) -> RecursiveDependencyLoadState {
+  match
+    self.typed_asset_recursive_dependency_load_states.val.get(
+      asset_load_state_key(type_name, handle_id),
+    ) {
+    Some(state) => state
+    None => RecursiveDependencyLoadState::NotLoaded
   }
 }
 
@@ -1151,11 +1307,34 @@ pub fn[T] AssetServer::load_state(
 }
 
 ///|
+pub fn[T] AssetServer::dependency_load_state(
+  self : AssetServer,
+  handle : Handle[T],
+) -> DependencyLoadState {
+  let probe : Assets[T] = Assets::new()
+  let type_name = @any.of(probe).type_name()
+  self.typed_dependency_load_state(type_name, handle.id())
+}
+
+///|
+pub fn[T] AssetServer::recursive_dependency_load_state(
+  self : AssetServer,
+  handle : Handle[T],
+) -> RecursiveDependencyLoadState {
+  let probe : Assets[T] = Assets::new()
+  let type_name = @any.of(probe).type_name()
+  self.typed_recursive_dependency_load_state(type_name, handle.id())
+}
+
+///|
 pub fn[T] AssetServer::is_loaded_with_dependencies(
   self : AssetServer,
   handle : Handle[T],
 ) -> Bool {
-  self.load_state(handle) is Loaded
+  self.load_state(handle) is LoadState::Loaded &&
+  self.dependency_load_state(handle) is DependencyLoadState::Loaded &&
+  self.recursive_dependency_load_state(handle)
+  is RecursiveDependencyLoadState::Loaded
 }
 
 ///|
@@ -1163,10 +1342,10 @@ fn asset_enqueue_load_failure(
   asset_server : AssetServer,
   failure : UntypedAssetLoadFailedEvent,
 ) -> Unit {
-  asset_server.set_typed_load_state(
+  asset_server.set_typed_failed_states(
     failure.type_name,
     failure.id,
-    Failed(failure.error),
+    failure.error,
   )
   asset_server.pending_load_failures.val.push(failure)
   @app.log_error_once(
@@ -1189,7 +1368,7 @@ fn[T] AssetServer::reserve_missing_loader_handle(
   let handle = asset_assets_mut_or_init().modify(fn(store) {
     store.reserve_handle()
   })
-  self.set_typed_load_state(asset_type_name, handle.id(), Loading)
+  self.set_typed_loading_states(asset_type_name, handle.id())
   self.typed_asset_paths.val.set(cache_key, handle.id())
   let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
   self.record_path(canonical_path)
@@ -1224,17 +1403,19 @@ pub fn[T, P : IntoAssetPath] AssetServer::load(
     Some(entry) =>
       match (entry.load)(self, formatted_path).try_to() {
         Some(handle) => handle
-        None => self.reserve_missing_loader_handle(
-          parsed_path,
-          asset_type_name,
-          "asset loader registry returned a mismatched handle type for \{loader_type_name}",
-        )
+        None =>
+          self.reserve_missing_loader_handle(
+            parsed_path,
+            asset_type_name,
+            "asset loader registry returned a mismatched handle type for \{loader_type_name}",
+          )
       }
-    None => self.reserve_missing_loader_handle(
-      parsed_path,
-      asset_type_name,
-      "No asset loader is registered for \{loader_type_name}; load the plugin that owns this asset type before calling AssetServer::load",
-    )
+    None =>
+      self.reserve_missing_loader_handle(
+        parsed_path,
+        asset_type_name,
+        "No asset loader is registered for \{loader_type_name}; load the plugin that owns this asset type before calling AssetServer::load",
+      )
   }
 }
 
@@ -1297,6 +1478,7 @@ pub fn AssetServer::load_texture_bytes(
 ) -> Handle[Image] {
   let id = host_asset_load_texture_bytes(bytes~, nearest~)
   let handle = Handle::new(id)
+  self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())
   self.track_image_handle(handle)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   self.set_image_render_asset_usages(handle, RenderAssetUsages::all())
@@ -1338,7 +1520,9 @@ pub fn AssetServer::load_bytes(
   let id = host_asset_load_bytes(path=canonical_path)
   self.record_path(canonical_path)
   Blob::{  } |> ignore
-  Handle::new(id)
+  let handle : Handle[Blob] = Handle::new(id)
+  self.set_typed_loaded_states(asset_blob_assets_type_name(), handle.id())
+  handle
 }
 
 ///|
@@ -1420,6 +1604,10 @@ pub fn asset_create_dynamic_texture_with_mips(
   )
   let handle = Handle::new(id)
   let asset_server = AssetServer::new()
+  asset_server.set_typed_loaded_states(
+    asset_image_assets_type_name(),
+    handle.id(),
+  )
   asset_server.track_image_handle(handle)
   asset_server.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_DYNAMIC)
   handle
@@ -1483,6 +1671,10 @@ pub fn asset_create_texture_mip_view(
   )
   let handle = Handle::new(id)
   let asset_server = AssetServer::new()
+  asset_server.set_typed_loaded_states(
+    asset_image_assets_type_name(),
+    handle.id(),
+  )
   asset_server.track_image_handle(handle)
   asset_server.set_image_usage_bits(handle, asset_image_usage_bits(texture))
   handle
@@ -1537,6 +1729,10 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
       let (image_id, image) = entry
       if host_asset_is_texture_loaded(image_id) {
         let handle : Handle[Image] = Handle::new(image_id)
+        asset_server.set_typed_loaded_states(
+          asset_image_assets_type_name(),
+          handle.id(),
+        )
         image_asset_sync_metadata(handle, image)
         ignore(
           images_ref.modify(fn(store) {

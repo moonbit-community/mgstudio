@@ -129,6 +129,7 @@ pub fn[T] LoadContext::add_labeled_asset(
   let type_name = @any.of(probe).type_name()
   let cache_key = typed_asset_loader_path_key(type_name, labeled_path)
   self.asset_server.typed_asset_paths.val.set(cache_key, handle.id())
+  self.asset_server.set_typed_loaded_states(type_name, handle.id())
   handle
 }
 
@@ -183,7 +184,12 @@ fn[T, P : IntoAssetPath] AssetServer::load_registered_asset(
           path,
         })
       }
-    } else if !pending_typed_contains(asset_server, type_name, handle.id(), path) {
+    } else if !pending_typed_contains(
+        asset_server,
+        type_name,
+        handle.id(),
+        path,
+      ) {
       asset_server.pending_typed_asset_loads.val.push(PendingTypedAssetLoad::{
         type_name,
         handle_id: handle.id(),
@@ -200,13 +206,17 @@ fn[T, P : IntoAssetPath] AssetServer::load_registered_asset(
   if self.typed_asset_paths.val.get(cache_key) is Some(handle_id) {
     let handle = Handle::new(handle_id)
     if !asset_assets_ref_or_abort().contains(handle) {
+      self.set_typed_loading_states(type_name, handle.id())
       queue_registered_load(self, type_name, handle, parsed_path)
+    } else {
+      self.set_typed_loaded_states(type_name, handle.id())
     }
     return handle
   }
   let handle = asset_assets_mut_or_init().modify(fn(assets) {
     assets.reserve_handle()
   })
+  self.set_typed_loading_states(type_name, handle.id())
   self.record_path(asset_canonical_path(formatted_path))
   self.typed_asset_paths.val.set(cache_key, handle.id())
   queue_registered_load(self, type_name, handle, parsed_path)
@@ -291,8 +301,13 @@ pub fn[T] init_asset_loader(
 
 ///|
 pub fn[T] AssetServer::add(self : AssetServer, asset : T) -> Handle[T] {
-  self |> ignore
-  asset_assets_mut_or_init().modify(fn(assets) { assets.add(asset) })
+  let probe : Assets[T] = Assets::new()
+  let type_name = @any.of(probe).type_name()
+  let handle = asset_assets_mut_or_init().modify(fn(assets) {
+    assets.add(asset)
+  })
+  self.set_typed_loaded_states(type_name, handle.id())
+  handle
 }
 
 ///|
@@ -363,6 +378,10 @@ fn asset_process_pending_typed_asset_loads(
           bytes,
         )
         (entry.insert)(world, pending.handle_id, value_any)
+        asset_server.set_typed_loaded_states(
+          pending.type_name,
+          pending.handle_id,
+        )
       }
       None => remaining.push(pending)
     }
