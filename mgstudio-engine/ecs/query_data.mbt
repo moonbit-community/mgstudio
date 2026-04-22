@@ -263,8 +263,8 @@ fn[T] query_data_require_component(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> T raise EcsError {
-  match world.component_payload(key.id(), entity) {
-    Some(payload) => world.component_value(key, entity, payload)
+  match world.component_value_by_key(entity, key) {
+    Some(value) => value
     None =>
       abort(
         "QueryData::fetch expected component payload to exist after matches",
@@ -287,10 +287,7 @@ pub fn[T] query_data_component_optional(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> T? raise EcsError {
-  match world.component_payload(key.id(), entity) {
-    Some(payload) => Some(world.component_value(key, entity, payload))
-    None => None
-  }
+  world.component_value_by_key(entity, key)
 }
 
 ///|

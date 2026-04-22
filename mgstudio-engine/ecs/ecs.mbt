@@ -132,7 +132,9 @@ pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
   let id = next_component_id_ref.val
   next_component_id_ref.val = id + 1
   ignore(component_metadata_ref(id, debug_name~))
-  ComponentKey::{ id, debug_name }
+  let key = ComponentKey::{ id, debug_name }
+  register_component_table_column_descriptor(id, key)
+  key
 }
 
 ///|
@@ -141,7 +143,9 @@ pub fn[T] component_key_from_id(
   debug_name? : String = "",
 ) -> ComponentKey[T] {
   ignore(component_metadata_ref(id, debug_name~))
-  ComponentKey::{ id, debug_name }
+  let key = ComponentKey::{ id, debug_name }
+  register_component_table_column_descriptor(id, key)
+  key
 }
 
 ///|
@@ -548,10 +552,7 @@ pub fn[T] World::get_by_key(
   key : ComponentKey[T],
 ) -> T? raise EcsError {
   self.ensure_entity_alive(entity)
-  match self.component_payload(key.id(), entity) {
-    Some(payload) => Some(self.component_value(key, entity, payload))
-    None => None
-  }
+  self.component_value_by_key(entity, key)
 }
 
 ///|
@@ -565,17 +566,15 @@ pub fn[T] World::update_by_key(
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
-  guard self.component_payload(key.id(), entity) is Some(payload) else {
+  guard self.component_value_by_key(entity, key) is Some(old_value) else {
     self.end_deferred_hook_command_scope(outermost)
     return false
   }
-  let old_value : T = self.component_value(key, entity, payload)
   let new_value = update(old_value)
-  let new_payload = erased_value(new_value)
   let caller = hook_caller_from_loc(loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
   self.run_replace_observers(entity, key.id())
-  ignore(self.replace_component_payload(key.id(), entity, new_payload))
+  ignore(self.replace_component_value_by_key(entity, key, new_value))
   self.record_component_changed_with_caller(entity, key.id(), caller)
   self.run_component_insert_hooks(entity, key.id(), caller~)
   self.run_insert_observers(entity, key.id())
@@ -819,10 +818,17 @@ fn World::record_component_added_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
-  self
-  .ensure_added_component_sequence_map(key_id)
-  .set(entity.id, component_write_sequence(self))
+  let sequence = component_write_sequence(self)
+  self.ensure_added_component_sequence_map(key_id).set(entity.id, sequence)
   self.ensure_changed_component_caller_table(key_id).set(entity.id, caller)
+  if self.local_component_id(key_id) is Some(local_id) {
+    self.record_table_component_added_by_local_id(
+      entity,
+      local_id,
+      sequence,
+      caller,
+    )
+  }
 }
 
 ///|
@@ -848,10 +854,17 @@ fn World::record_component_changed_sequence_only_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
-  self
-  .ensure_changed_component_sequence_table(key_id)
-  .set(entity.id, component_write_sequence(self))
+  let sequence = component_write_sequence(self)
+  self.ensure_changed_component_sequence_table(key_id).set(entity.id, sequence)
   self.ensure_changed_component_caller_table(key_id).set(entity.id, caller)
+  if self.local_component_id(key_id) is Some(local_id) {
+    self.record_table_component_changed_by_local_id(
+      entity,
+      local_id,
+      sequence,
+      caller,
+    )
+  }
 }
 
 ///|
@@ -933,6 +946,10 @@ fn World::changed_component_caller(
   entity_id : Int,
 ) -> String? {
   guard self.local_component_id(key_id) is Some(local_id) else { return None }
+  if self.table_component_changed_caller_by_local_id(entity_id, local_id)
+    is Some(caller) {
+    return Some(caller)
+  }
   match self.changed_component_callers.get(local_id) {
     Some(caller_by_entity) => caller_by_entity.get(entity_id)
     None => None
@@ -962,6 +979,10 @@ fn World::added_component_sequence(
   entity_id : Int,
 ) -> @core.Sequence? {
   guard self.local_component_id(key_id) is Some(local_id) else { return None }
+  if self.table_component_added_sequence_by_local_id(entity_id, local_id)
+    is Some(sequence) {
+    return Some(sequence)
+  }
   match self.added_component_sequences.get(local_id) {
     Some(sequence_by_entity) => sequence_by_entity.get(entity_id)
     None => None
@@ -986,6 +1007,10 @@ fn World::changed_component_sequence(
   entity_id : Int,
 ) -> @core.Sequence? {
   guard self.local_component_id(key_id) is Some(local_id) else { return None }
+  if self.table_component_changed_sequence_by_local_id(entity_id, local_id)
+    is Some(sequence) {
+    return Some(sequence)
+  }
   match self.changed_component_sequences.get(local_id) {
     Some(sequence_by_entity) => sequence_by_entity.get(entity_id)
     None => None

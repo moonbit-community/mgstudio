@@ -781,7 +781,7 @@ fn World::bundle_migrate_new_archetype_new_table(
     let ordered_payloads = self.table_payloads_for_archetype_migration(
       entity, from_table_id, to_table_id, pending_payloads,
     )
-    match
+    let appended_row = match
       self.ensure_table_storage(to_table_id).val.append_row(
         entity, ordered_payloads,
       ) {
@@ -791,6 +791,15 @@ fn World::bundle_migrate_new_archetype_new_table(
           "Failed to append target table row during archetype migration for table \{to_table_id.to_string()}",
         )
     }
+    if appended_row is Some(row) {
+      self.sync_table_component_metadata_for_entity(
+        entity,
+        to_table_id,
+        row,
+        target_component_local_ids,
+      )
+    }
+    appended_row
   } else {
     None
   }

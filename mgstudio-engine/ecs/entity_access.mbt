@@ -78,9 +78,14 @@ fn[T] mut_value_or_abort(item : Mut[T]) -> T {
   let world = mut_world_or_abort(item)
   let entity = mut_entity_or_abort(item)
   let key = mut_key_or_abort(item)
-  match world.component_payload(key.id(), entity) {
-    Some(payload) => try! world.component_value(key, entity, payload)
-    None => abort("Mut expected a fetched query item")
+  let result : Result[T?, EcsError] = try? world.component_value_by_key(
+    entity,
+    key,
+  )
+  match result {
+    Ok(Some(value)) => value
+    Ok(None) => abort("Mut expected a fetched query item")
+    _ => abort("Mut expected a fetched query item")
   }
 }
 
@@ -88,9 +93,15 @@ fn[T] mut_value_or_abort(item : Mut[T]) -> T {
 fn[T] mut_replace_value_or_abort(item : Mut[T], value : T) -> Unit {
   let world = mut_world_or_abort(item)
   let entity = mut_entity_or_abort(item)
-  let key_id = mut_key_id_or_abort(item)
-  if !world.replace_component_payload(key_id, entity, erased_value(value)) {
-    abort("Mut expected a fetched query item")
+  let key = mut_key_or_abort(item)
+  let result : Result[Bool, EcsError] = try? world.replace_component_value_by_key(
+    entity,
+    key,
+    value,
+  )
+  match result {
+    Ok(true) => ()
+    _ => abort("Mut expected a fetched query item")
   }
 }
 

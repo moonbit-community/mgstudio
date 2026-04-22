@@ -20,11 +20,6 @@ pub struct ComponentColumn[T] {
 }
 
 ///|
-fn[T] erased_value_value_fast(payload : ErasedValue) -> T? {
-  Some(payload.unsafe_to_value())
-}
-
-///|
 pub fn[T] World::component_column(
   self : World,
   key : ComponentKey[T],
@@ -55,9 +50,13 @@ pub fn[T] ComponentColumn::get(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> T? {
-  match self.world.component_payload(self.key.id(), entity) {
-    Some(payload) => erased_value_value_fast(payload)
-    None => None
+  let result : Result[T?, EcsError] = try? self.world.component_value_by_key(
+    entity,
+    self.key,
+  )
+  match result {
+    Ok(value) => value
+    Err(_) => None
   }
 }
 
@@ -96,16 +95,18 @@ pub fn[T] ComponentColumn::set(
   entity : @core.Entity,
   value : T,
 ) -> Bool {
-  let payload = erased_value(value)
-  if self.world.replace_component_payload(self.key.id(), entity, payload) {
-    let sequence = component_write_sequence(self.world)
-    self.changed_sequence_table.set(entity.id, sequence)
-    self.world.ensure_changed_component_messages(self.key.id()).val.send(
-      sequence, entity,
-    )
-    true
-  } else {
-    false
+  let replaced : Result[Bool, EcsError] = try? self.world
+    .replace_component_value_by_key(entity, self.key, value)
+  match replaced {
+    Ok(true) => {
+      self.world.record_component_changed_with_caller(
+        entity,
+        self.key.id(),
+        None,
+      )
+      true
+    }
+    _ => false
   }
 }
 
@@ -115,14 +116,17 @@ pub fn[T] ComponentColumn::set_sequence_only(
   entity : @core.Entity,
   value : T,
 ) -> Bool {
-  let payload = erased_value(value)
-  if self.world.replace_component_payload(self.key.id(), entity, payload) {
-    self.changed_sequence_table.set(
-      entity.id,
-      component_write_sequence(self.world),
-    )
-    true
-  } else {
-    false
+  let replaced : Result[Bool, EcsError] = try? self.world
+    .replace_component_value_by_key(entity, self.key, value)
+  match replaced {
+    Ok(true) => {
+      self.world.record_component_changed_sequence_only_with_caller(
+        entity,
+        self.key.id(),
+        None,
+      )
+      true
+    }
+    _ => false
   }
 }
