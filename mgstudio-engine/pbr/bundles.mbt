@@ -441,6 +441,11 @@ pub impl @app.CommandSpawnComponents for Camera3dBundle with spawn_components(
 }
 
 ///|
+pub impl @ecs.Bundle for Camera3dBundle with insert_into(self, world, entity, loc~) {
+  camera3d_bundle_insert(self, world, entity, loc~)
+}
+
+///|
 #callsite(autofill(loc))
 pub fn Camera3dBundle::spawn(
   self : Camera3dBundle,
@@ -553,6 +558,16 @@ pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle with spawn_compone
   loc~,
 ) {
   ignore(sequence)
+  mesh_material3d_bundle_insert(self, world, entity, loc~)
+}
+
+///|
+pub impl @ecs.Bundle for MeshMaterial3dBundle with insert_into(
+  self,
+  world,
+  entity,
+  loc~,
+) {
   mesh_material3d_bundle_insert(self, world, entity, loc~)
 }
 

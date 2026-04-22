@@ -66,13 +66,10 @@ fn setup(
     primitive_handle,
     named: false,
   })
-  commands.insert_world_resource(
-    @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 800.0F),
-  )
+  commands.insert_resource(@pbr.GlobalAmbientLight::new(@sprite.Color::white(), 800.0F))
 
   ignore(
-    commands.spawn(@camera.Camera3dBundle::new(
+    commands.spawn_bundle(@camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
         @math.Vec3::zero(),

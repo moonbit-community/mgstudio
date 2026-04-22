@@ -66,7 +66,7 @@ fn setup(
     printed: false,
   })
   ignore(
-    commands.spawn(@camera.Camera3dBundle::new(
+    commands.spawn_bundle(@camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
         @math.Vec3::zero(),

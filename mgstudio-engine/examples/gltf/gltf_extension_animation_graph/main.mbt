@@ -120,13 +120,10 @@ fn setup_environment(
     ),
   )
 
-  commands.insert_world_resource(
-    @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 2000.0F),
-  )
+  commands.insert_resource(@pbr.GlobalAmbientLight::new(@sprite.Color::white(), 2000.0F))
 
   ignore(
-    commands.spawn(@camera.Camera3dBundle::new(
+    commands.spawn_bundle(@camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
         @math.Vec3::new(0.0F, 20.0F, 0.0F),

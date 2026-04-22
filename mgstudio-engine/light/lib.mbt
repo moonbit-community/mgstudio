@@ -1880,6 +1880,21 @@ pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="render3d.directional_light_shadow_map")
 
 ///|
+pub impl @app.Resource for GlobalAmbientLight with resource() {
+  ecs_key_global_ambient_light
+}
+
+///|
+pub impl @app.Resource for PointLightShadowMap with resource() {
+  ecs_key_point_light_shadow_map
+}
+
+///|
+pub impl @app.Resource for DirectionalLightShadowMap with resource() {
+  ecs_key_directional_light_shadow_map
+}
+
+///|
 pub fn get_global_ambient_light_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[GlobalAmbientLight] {

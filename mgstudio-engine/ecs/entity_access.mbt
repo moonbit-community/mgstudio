@@ -375,6 +375,15 @@ pub fn[T : Component] EntityMut::get_mut(
 }
 
 ///|
+pub fn[E : TriggerEvent] EntityMut::observe(
+  self : EntityMut,
+  observer : (On[E]) -> Unit,
+) -> EntityMut {
+  ignore(self.world.add_entity_observer(self.entity, observer))
+  self
+}
+
+///|
 pub impl Bundle for Unit with insert_into(_self, _world, _entity, loc~) {
   ignore(loc)
   ()
