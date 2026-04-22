@@ -107,8 +107,10 @@ fn attach_extension_animation_graph(
 }
 
 ///|
-fn setup_environment(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
+fn setup_environment(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
   @gltf_loader_extensions.gltf_clear_extension_handlers()
   extension_animation_clips.clear()
   @gltf_loader_extensions.gltf_register_extension_handler(
@@ -118,26 +120,23 @@ fn setup_environment(world : @ecs.World) -> Unit {
     ),
   )
 
-  world.insert_resource(
+  commands.insert_world_resource(
     @pbr.ecs_key_global_ambient_light,
     @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 2000.0F),
   )
 
   ignore(
-    @camera.Camera3dBundle::new(
+    commands.spawn(@camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
         @math.Vec3::new(0.0F, 20.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
-    ).spawn(world),
+    )),
   )
 
-  let light = world.spawn_empty()
   ignore(
-    try! world
-    .entity_mut(light)
-    .insert(
+    commands.spawn(
       (
         @transform.Transform::from_rotation(
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -0.7853982F),
@@ -147,30 +146,27 @@ fn setup_environment(world : @ecs.World) -> Unit {
     ),
   )
 
-  let root = world.spawn_empty()
-  ignore(
-    try! world
-    .entity_mut(root)
-    .insert_component(
-      @scene.SceneRoot::new(
-        asset_server.load(@gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH)),
-      ),
+  let root = commands.spawn_component(
+    @scene.SceneRoot::new(
+      asset_server.get().load(@gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH)),
     ),
   )
+  ignore(commands.entity(root).observe4(play_animation_when_ready))
 }
 
 ///|
 fn play_animation_when_ready(
-  scene_ready : @ecs.ComponentOn[@ecs.Insert, @scene.SceneInstanceReady],
+  scene_ready : @ecs.On[@scene.SceneInstanceReady],
   commands : @app.Commands,
   animations_to_play : @ecs.Query[@ecs.Comp[AnimationToPlay], @ecs.All],
   players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
-  guard (animations_to_play.get(scene_ready.entity) catch { _ => None })
+  guard scene_ready.entity() is Some(scene_entity) else { return }
+  guard (animations_to_play.get(scene_entity) catch { _ => None })
     is Some(animation_to_play) else {
     return
   }
-  guard (players.get(scene_ready.entity) catch { _ => None })
+  guard (players.get(scene_entity) catch { _ => None })
     is Some(player_mut) else {
     return
   }
@@ -178,7 +174,7 @@ fn play_animation_when_ready(
     ignore(value.play(animation_to_play.value().index).repeat())
   })
   commands
-  .entity(scene_ready.entity)
+  .entity(scene_entity)
   .insert_component(
     @animation.AnimationGraphHandle::new(animation_to_play.value().graph_handle),
   )
@@ -188,7 +184,6 @@ fn play_animation_when_ready(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_systems(@app.Startup, @app.system(setup_environment))
-  .add_component_observer4(play_animation_when_ready)
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup_environment)))
   .run()
 }

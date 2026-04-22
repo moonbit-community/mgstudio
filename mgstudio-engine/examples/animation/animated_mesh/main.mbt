@@ -35,42 +35,43 @@ pub impl @ecs.Component for AnimationToPlay with component() {
 }
 
 ///|
-fn setup_mesh_and_animation(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
+fn setup_mesh_and_animation(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
   let (graph, index) = @animation.AnimationGraph::from_clip(
-    asset_server.load(@gltf.GltfAssetLabel::Animation(2).from_asset(GLTF_PATH)),
+    asset_server
+    .get()
+    .load(@gltf.GltfAssetLabel::Animation(2).from_asset(GLTF_PATH)),
   )
   let graph_handle = @animation.animation_graph_add(graph)
 
-  let root = world.spawn_empty()
-  ignore(
-    try! world
-    .entity_mut(root)
-    .insert(
-      (
-        AnimationToPlay::{ graph_handle, index },
-        @scene.SceneRoot::new(
-          asset_server.load(
-            @gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH),
-          ),
+  let root = commands.spawn(
+    (
+      AnimationToPlay::{ graph_handle, index },
+      @scene.SceneRoot::new(
+        asset_server.get().load(
+          @gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH),
         ),
       ),
     ),
   )
+  ignore(commands.entity(root).observe4(play_animation_when_ready))
 }
 
 ///|
 fn play_animation_when_ready(
-  scene_ready : @ecs.ComponentOn[@ecs.Insert, @scene.SceneInstanceReady],
+  scene_ready : @ecs.On[@scene.SceneInstanceReady],
   commands : @app.Commands,
   animations_to_play : @ecs.Query[@ecs.Comp[AnimationToPlay], @ecs.All],
   players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
-  guard (animations_to_play.get(scene_ready.entity) catch { _ => None })
+  guard scene_ready.entity() is Some(scene_entity) else { return }
+  guard (animations_to_play.get(scene_entity) catch { _ => None })
     is Some(animation_to_play) else {
     return
   }
-  guard (players.get(scene_ready.entity) catch { _ => None })
+  guard (players.get(scene_entity) catch { _ => None })
     is Some(player_mut) else {
     return
   }
@@ -78,7 +79,7 @@ fn play_animation_when_ready(
     player.play(animation_to_play.value().index).repeat() |> ignore
   })
   commands
-  .entity(scene_ready.entity)
+  .entity(scene_entity)
   .insert_component(
     @animation.AnimationGraphHandle::new(animation_to_play.value().graph_handle),
   )
@@ -144,8 +145,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_systems(@app.Startup, @app.system(setup_mesh_and_animation))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup_mesh_and_animation)))
   .add_systems(@app.Startup, @app.system(setup_camera_and_environment))
-  .add_component_observer4(play_animation_when_ready)
   .run()
 }

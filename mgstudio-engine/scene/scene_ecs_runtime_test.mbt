@@ -15,6 +15,7 @@
 ///|
 test "scene ecs: SceneRoot spawns children and marks ready" {
   let instance_id = Ref::new(0)
+  let ready_instance_id = Ref::new(0)
   let spawned_entities = Ref::new(0)
   let child_count = Ref::new(0)
   let has_mesh = Ref::new(false)
@@ -25,9 +26,8 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   let has_animated_by = Ref::new(false)
   let instance_after_second_tick = Ref::new(0)
   ignore(instance_after_second_tick)
-  let ready_after_second_tick = Ref::new(0)
-  ignore(ready_after_second_tick)
-  let ready_entity_count = Ref::new(0)
+  let ready_event_count_after_second_tick = Ref::new(0)
+  let ready_event_count = Ref::new(0)
   let ready_entity_matches_root = Ref::new(false)
 
   @app.App::new(@ecs.World::new())
@@ -66,6 +66,22 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     )
 
     let root = world.spawn()
+    ignore(
+      world.add_observer(fn(event : @ecs.On[@scene.SceneInstanceReady]) {
+        guard event.entity() is Some(event_entity) else { return }
+        if event_entity.id != root.id {
+          return
+        }
+        let ready = event.event()
+        ready_instance_id.val = ready.instance_id
+        spawned_entities.val = @scene.scene_iter_instance_entities(
+          world,
+          ready.instance_id,
+        ).length()
+        ready_event_count.val = ready_event_count.val + 1
+        ready_entity_matches_root.val = true
+      }),
+    )
     try! world.set_by_key(
       root,
       @scene.ecs_key_scene_root,
@@ -75,11 +91,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     @scene.scene_spawn_roots_system(world)
 
     let instance = (try! world.get_by_key(root, @scene.ecs_key_scene_instance)).unwrap()
-    let ready = (try! world.get_by_key(
-      root, @scene.ecs_key_scene_instance_ready,
-    )).unwrap()
     instance_id.val = instance.instance_id
-    spawned_entities.val = ready.spawned_entities
 
     let children : Array[@core.Entity] = []
     let parent_query : @ecs.Query[@ecs.Comp[@hierarchy.Parent], @ecs.All] = @ecs.query(
@@ -120,24 +132,14 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     let instance_second = (try! world.get_by_key(
       root, @scene.ecs_key_scene_instance,
     )).unwrap()
-    let ready_second = (try! world.get_by_key(
-      root, @scene.ecs_key_scene_instance_ready,
-    )).unwrap()
     instance_after_second_tick.val = instance_second.instance_id
-    ready_after_second_tick.val = ready_second.spawned_entities
-
-    let ready_entities : Array[@core.Entity] = []
-    let ready_query : @ecs.Query[@ecs.Comp[@scene.SceneInstanceReady], @ecs.All] = @ecs.query(
-      world,
-    )
-    try! ready_query.view(fn(entity, _ready) { ready_entities.push(entity) })
-    ready_entity_count.val = ready_entities.length()
-    ready_entity_matches_root.val = ready_entities[0].id == root.id
+    ready_event_count_after_second_tick.val = ready_event_count.val
   })
   .run_once()
   |> ignore
 
   debug_inspect(instance_id.val, content="1")
+  debug_inspect(ready_instance_id.val, content="1")
   debug_inspect(spawned_entities.val, content="1")
   debug_inspect(child_count.val, content="1")
   debug_inspect(has_mesh.val, content="true")
@@ -147,8 +149,8 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   debug_inspect(has_target.val, content="true")
   debug_inspect(has_animated_by.val, content="true")
   debug_inspect(instance_after_second_tick.val, content="1")
-  debug_inspect(ready_after_second_tick.val, content="1")
-  debug_inspect(ready_entity_count.val, content="1")
+  debug_inspect(ready_event_count_after_second_tick.val, content="1")
+  debug_inspect(ready_event_count.val, content="1")
   debug_inspect(ready_entity_matches_root.val, content="true")
 }
 
@@ -156,7 +158,8 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
 test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
   let old_instance_id = Ref::new(0)
   let new_instance_id = Ref::new(0)
-  let ready_instance_matches = Ref::new(false)
+  let ready_instance_id = Ref::new(0)
+  let spawned_entities = Ref::new(0)
   let old_child_alive = Ref::new(true)
   let new_child_count = Ref::new(0)
   let new_child_x = Ref::new(0.0)
@@ -221,6 +224,20 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     )
 
     let root = world.spawn()
+    ignore(
+      world.add_observer(fn(event : @ecs.On[@scene.SceneInstanceReady]) {
+        guard event.entity() is Some(event_entity) else { return }
+        if event_entity.id != root.id {
+          return
+        }
+        let ready = event.event()
+        ready_instance_id.val = ready.instance_id
+        spawned_entities.val = @scene.scene_iter_instance_entities(
+          world,
+          ready.instance_id,
+        ).length()
+      }),
+    )
     try! world.set_by_key(
       root,
       @scene.ecs_key_scene_root,
@@ -254,12 +271,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     let second_instance = (try! world.get_by_key(
       root, @scene.ecs_key_scene_instance,
     )).unwrap()
-    let ready = (try! world.get_by_key(
-      root, @scene.ecs_key_scene_instance_ready,
-    )).unwrap()
     new_instance_id.val = second_instance.instance_id
-    ready_instance_matches.val = ready.instance_id ==
-      second_instance.instance_id
     old_child_alive.val = world.is_alive(first_child)
 
     let second_children : Array[@core.Entity] = []
@@ -279,7 +291,8 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
   |> ignore
 
   debug_inspect(old_instance_id.val == new_instance_id.val, content="false")
-  debug_inspect(ready_instance_matches.val, content="true")
+  debug_inspect(ready_instance_id.val == new_instance_id.val, content="true")
+  debug_inspect(spawned_entities.val, content="1")
   debug_inspect(old_child_alive.val, content="false")
   debug_inspect(new_child_count.val, content="1")
   debug_inspect(new_child_x.val, content="9")

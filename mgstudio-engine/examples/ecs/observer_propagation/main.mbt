@@ -107,7 +107,7 @@ fn setup(commands : @app.Commands) -> Unit {
   let goblin = commands.spawn(
     (@ecs.Name::new("Goblin"), HitPoints::{ value: 50 }),
   )
-  ignore(commands.entity(goblin).observe3(take_damage))
+  ignore(commands.entity(goblin).observe3_fallible(take_damage))
 
   let helmet = commands.spawn(
     (
@@ -116,7 +116,7 @@ fn setup(commands : @app.Commands) -> Unit {
       @hierarchy.Parent::new(goblin),
     ),
   )
-  ignore(commands.entity(helmet).observe2(block_attack))
+  ignore(commands.entity(helmet).observe2_fallible(block_attack))
 
   let socks = commands.spawn(
     (
@@ -125,7 +125,7 @@ fn setup(commands : @app.Commands) -> Unit {
       @hierarchy.Parent::new(goblin),
     ),
   )
-  ignore(commands.entity(socks).observe2(block_attack))
+  ignore(commands.entity(socks).observe2_fallible(block_attack))
 
   let shirt = commands.spawn(
     (
@@ -134,7 +134,7 @@ fn setup(commands : @app.Commands) -> Unit {
       @hierarchy.Parent::new(goblin),
     ),
   )
-  ignore(commands.entity(shirt).observe2(block_attack))
+  ignore(commands.entity(shirt).observe2_fallible(block_attack))
 }
 
 ///|

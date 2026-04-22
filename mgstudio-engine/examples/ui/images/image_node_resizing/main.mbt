@@ -272,7 +272,7 @@ fn spawn_label(
       @ui.Node::default().with_margin(@ui.UiRect::all(@ui.Val::Px(10.0F))),
     ),
   )
-  ignore(commands.entity(label).observe2(update_text))
+  ignore(commands.entity(label).observe2_fallible(update_text))
   label
 }
 

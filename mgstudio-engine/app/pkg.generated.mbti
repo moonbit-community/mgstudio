@@ -47,7 +47,8 @@ pub let ecs_key_despawn_on_enter : @ecs.ComponentKey[DespawnOnEnter]
 
 pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit]
 
-pub fn[W] fallible_system((W) -> Unit raise) -> SystemConfig[W]
+#callsite(autofill(loc))
+pub fn[W] fallible_system((W) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
 
 pub fn[W, P : SystemParam] fallible_system_config_param((P) -> Unit raise) -> SystemConfig[W]
 
@@ -245,7 +246,8 @@ pub fn[S : States] state_set_dependency_depth(S) -> Int
 
 pub fn[S : States] state_transition_event_resource_key(S) -> @ecs.ResourceKey[StateTransitionEvent[S]]
 
-pub fn[W] system((W) -> Unit) -> SystemConfig[W]
+#callsite(autofill(loc))
+pub fn[W] system((W) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
 pub fn system_access_compatible(SystemAccess, SystemAccess, @hashmap.HashMap[Int, Bool]) -> Bool
 
@@ -1147,6 +1149,7 @@ pub fn SystemAccess::validation_error(Self) -> String?
 pub struct SystemConfig[W] {
   system : (W) -> Unit
   name : String?
+  debug_name : String?
   error_handler : ((Error, ErrorContext) -> Unit)?
   run_ifs : Array[(W, @ref.Ref[Json]) -> Bool]
   run_if_states : Array[@ref.Ref[Json]]

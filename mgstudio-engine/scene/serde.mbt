@@ -39,20 +39,19 @@ pub impl @json.FromJson for SceneInstance with from_json(json, path) {
 
 ///|
 pub impl ToJson for SceneInstanceReady with to_json(self) {
-  (self.instance_id, self.spawned_entities).to_json()
+  (self.entity, self.instance_id).to_json()
 }
 
 ///|
 pub impl @json.FromJson for SceneInstanceReady with from_json(json, path) {
-  let pair : (Int, Int)? = Some(@json.from_json(json, path~)) catch {
+  let pair : (@core.Entity?, Int)? = Some(@json.from_json(json, path~)) catch {
     _ => None
   }
   match pair {
-    Some((instance_id, spawned_entities)) =>
-      SceneInstanceReady::new(instance_id, spawned_entities)
+    Some((entity, instance_id)) => SceneInstanceReady::new(entity, instance_id)
     None => {
-      let spawned_entities : Int = @json.from_json(json, path~)
-      SceneInstanceReady::new(0, spawned_entities)
+      let instance_id : Int = @json.from_json(json, path~)
+      SceneInstanceReady::new(None, instance_id)
     }
   }
 }

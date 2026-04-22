@@ -84,5 +84,5 @@ pub fn[E : @ecs.TriggerEvent] observe(
   commands : @app.EntityCommands,
   observer : (@ecs.On[E]) -> Unit raise,
 ) -> @app.EntityCommands {
-  commands.observe(observer)
+  commands.observe_fallible(observer)
 }

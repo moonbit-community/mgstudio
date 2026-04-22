@@ -312,7 +312,10 @@ fn setup(
         ),
       )
     }
-    ignore(commands.spawn_batch(fox_batch))
+    let fox_entities = commands.spawn_batch(fox_batch)
+    for fox_entity in fox_entities {
+      ignore(commands.entity(fox_entity).observe4(setup_scene_once_loaded))
+    }
     foxes_remaining -= foxes_in_ring
     ring_index += 1
   }
@@ -395,23 +398,14 @@ fn setup(
 
 ///|
 fn setup_scene_once_loaded(
-  scene_ready_entities : @ecs.Query[
-    @ecs.Comp[@scene.SceneInstanceReady],
-    @ecs.Added[@scene.SceneInstanceReady],
-  ],
+  scene_ready : @ecs.On[@scene.SceneInstanceReady],
   commands : @app.Commands,
   animations : @app.Res[FoxAnimations],
   foxes : @app.Res[Foxes],
 ) -> Unit {
-  let ready_scene_instances : Array[(@core.Entity, Int)] = []
-  try! scene_ready_entities.for_each(fn(scene_entity, scene_ready) {
-    ready_scene_instances.push((scene_entity, scene_ready.value().instance_id))
-  })
-  if ready_scene_instances.is_empty() {
-    return
-  }
-  scene_ready_counter_ref.val = scene_ready_counter_ref.val +
-    ready_scene_instances.length()
+  guard scene_ready.entity() is Some(scene_entity) else { return }
+  let scene_ready_event = scene_ready.event()
+  scene_ready_counter_ref.val = scene_ready_counter_ref.val + 1
   if scene_ready_counter_ref.val == 1 || scene_ready_counter_ref.val % 50 == 0 {
     @fs.write_string_to_file(
       STARTUP_METRICS_OUTPUT_PATH,
@@ -428,29 +422,30 @@ fn setup_scene_once_loaded(
       @ecs.Mut[@animation.AnimationPlayer],
       @ecs.All,
     ] = world.query()
-    for ready_scene in ready_scene_instances {
-      let (scene_entity, instance_id) = ready_scene
-      for descendant in @scene.scene_iter_instance_entities(world, instance_id) {
-        guard (players_state.get(world, descendant) catch { _ => None })
-          is Some(player_mut) else {
-          continue
-        }
-        player_mut.modify(fn(player) {
-          let active = player.play(animation_node).repeat()
-          if !sync {
-            active.seek_to(float_from_int(scene_entity.id) / 10.0F) |> ignore
-          }
-        })
-        try! (world
-        .entity_mut(descendant)
-        .insert(
-          (
-            @animation.AnimationGraphHandle::new(graph_handle),
-            @animation.AnimationTransitions::new(),
-          ),
-        )
-        |> ignore)
+    for
+      descendant in @scene.scene_iter_instance_entities(
+        world,
+        scene_ready_event.instance_id,
+      ) {
+      guard (players_state.get(world, descendant) catch { _ => None })
+        is Some(player_mut) else {
+        continue
       }
+      player_mut.modify(fn(player) {
+        let active = player.play(animation_node).repeat()
+        if !sync {
+          active.seek_to(float_from_int(scene_entity.id) / 10.0F) |> ignore
+        }
+      })
+      try! (world
+      .entity_mut(descendant)
+      .insert(
+        (
+          @animation.AnimationGraphHandle::new(graph_handle),
+          @animation.AnimationTransitions::new(),
+        ),
+      )
+      |> ignore)
     }
   })
 }
@@ -578,7 +573,6 @@ fn main {
     )
     .add_plugins(@diagnostic.TimelineTracePlugin::default())
     .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
-    .add_systems(@app.Update, @app.system(@app.system_param4(setup_scene_once_loaded)))
     .add_systems(
       @app.Update,
       @app.system(@app.system_param4(keyboard_animation_control)),

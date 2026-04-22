@@ -85,24 +85,27 @@ fn setup(
   let flight_helmet = server.load(
     @gltf.GltfAssetLabel::Scene(0).from_asset(FLIGHT_HELMET_SCENE_ASSET),
   )
-  ignore(commands.spawn_component(@scene.SceneRoot::new(flight_helmet)))
+  let plain_helmet = commands.spawn_component(@scene.SceneRoot::new(flight_helmet))
+  ignore(commands.entity(plain_helmet).observe4(change_material))
   ignore(
-    commands.spawn(
+    commands.entity(commands.spawn(
       (
         @scene.SceneRoot::new(flight_helmet),
         @transform.Transform::from_xyz(-1.25F, 0.0F, 0.0F),
         ColorOverride::new(@sprite.Color::srgb(0.98F, 0.65F, 0.65F)),
       ),
-    ),
+    ))
+    .observe4(change_material),
   )
   ignore(
-    commands.spawn(
+    commands.entity(commands.spawn(
       (
         @scene.SceneRoot::new(flight_helmet),
         @transform.Transform::from_xyz(1.25F, 0.0F, 0.0F),
         ColorOverride::new(@sprite.Color::srgb(0.55F, 0.9F, 0.55F)),
       ),
-    ),
+    ))
+    .observe4(change_material),
   )
 }
 
@@ -121,7 +124,7 @@ fn visit_descendants(
 
 ///|
 fn change_material(
-  event : @ecs.ComponentOn[@ecs.Insert, @scene.SceneInstanceReady],
+  event : @ecs.On[@scene.SceneInstanceReady],
   colors : @ecs.Query[@ecs.Comp[ColorOverride], @ecs.All],
   children_query : @ecs.Query[@ecs.Comp[@hierarchy.Children], @ecs.All],
   mesh_materials : @ecs.Query[
@@ -129,7 +132,7 @@ fn change_material(
     @ecs.All,
   ],
 ) -> Unit {
-  let scene_entity = event.entity
+  guard event.entity() is Some(scene_entity) else { return }
   guard (colors.get(scene_entity) catch { _ => None }) is Some(color_override) else {
     return
   }
@@ -158,6 +161,5 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
-  .add_component_observer4(change_material)
   .run()
 }

@@ -414,6 +414,21 @@ pub fn[T : Resource] Commands::insert_resource(
 }
 
 ///|
+pub fn[T] Commands::insert_world_resource(
+  self : Commands,
+  key : @ecs.ResourceKey[T],
+  resource : T,
+) -> Unit {
+  self.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+      world.insert_resource(key, resource)
+    },
+    error_handler: None,
+    source: "Commands::insert_world_resource",
+  })
+}
+
+///|
 pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
   let key : @ecs.ResourceKey[T] = T::resource()
   self.queue.push({

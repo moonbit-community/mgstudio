@@ -23,7 +23,7 @@ pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance] = @ecs.registe
 )
 
 ///|
-pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady] = @ecs.register_component(
+pub let event_key_scene_instance_ready : @ecs.EventKey[SceneInstanceReady] = @ecs.register_event(
   debug_name="scene.scene_instance_ready",
 )
 
@@ -38,8 +38,31 @@ pub impl @ecs.Component for SceneInstance with component() {
 }
 
 ///|
-pub impl @ecs.Component for SceneInstanceReady with component() {
-  ecs_key_scene_instance_ready
+pub impl @ecs.TriggerEvent for SceneInstanceReady with observer_event() {
+  event_key_scene_instance_ready
+}
+
+///|
+pub impl @ecs.TriggerEvent for SceneInstanceReady with observer_entity(self) {
+  self.entity
+}
+
+///|
+pub impl @ecs.TriggerEvent for SceneInstanceReady with set_observer_entity(
+  self,
+  entity,
+) {
+  SceneInstanceReady::{ ..self, entity: Some(entity) }
+}
+
+///|
+pub impl @ecs.TriggerEvent for SceneInstanceReady with auto_propagate(_self) {
+  false
+}
+
+///|
+pub impl @ecs.TriggerEvent for SceneInstanceReady with debug_name() {
+  "SceneInstanceReady"
 }
 
 ///|

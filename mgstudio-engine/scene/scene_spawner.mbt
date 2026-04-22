@@ -29,7 +29,7 @@ type SceneRootChangedQuery = @ecs.Query[
 ///|
 type SceneRootPendingQuery = @ecs.Query[
   (@ecs.Comp[SceneRoot], @ecs.Comp[SceneInstance]),
-  @ecs.Without[SceneInstanceReady],
+  @ecs.All,
 ]
 
 ///|
@@ -61,7 +61,6 @@ priv struct SceneRootQueueEntry {
 priv struct SceneReadyQueueEntry {
   root_entity : @core.Entity
   instance_id : Int
-  spawned_entities : Int
 }
 
 ///|
@@ -252,13 +251,11 @@ fn scene_runtime_queue_instance_ready(
   world : @ecs.World,
   root_entity : @core.Entity,
   instance_id : Int,
-  spawned_entities : Int,
 ) -> Unit {
   let state_ref = scene_runtime_state_mut_or_abort(world)
   state_ref.val.instances_ready.push(SceneReadyQueueEntry::{
     root_entity,
     instance_id,
-    spawned_entities,
   })
 }
 
@@ -291,10 +288,8 @@ fn scene_remove_ready_component(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
-  guard world.is_alive(entity) else { return }
-  if (try! world.contains_by_key(entity, ecs_key_scene_instance_ready)) {
-    try! (world.remove_by_key(entity, ecs_key_scene_instance_ready) |> ignore)
-  }
+  ignore(world)
+  ignore(entity)
 }
 
 ///|
@@ -448,12 +443,6 @@ fn scene_spawn_instance_when_ready(
     return
   }
   if instance.ready {
-    scene_runtime_queue_instance_ready(
-      world,
-      root_entity,
-      instance_id,
-      instance.spawned_entities.length(),
-    )
     return
   }
   guard scene_assets_from_world_or_abort(world).get(root.scene) is Some(scene) else {
@@ -785,11 +774,8 @@ fn scene_spawn_instance_when_ready(
     }
   }
 
-  let spawned_entities_count = spawned_entities.length()
   scene_runtime_mark_ready(world, instance_id, spawned_entities) |> ignore
-  scene_runtime_queue_instance_ready(
-    world, root_entity, instance_id, spawned_entities_count,
-  )
+  scene_runtime_queue_instance_ready(world, root_entity, instance_id)
   let spawned_scene_index = if scene.nodes3d.length() > 0 {
     match scene.nodes3d[0].gltf_scene_index {
       Some(scene_index) => scene_index.index()
@@ -809,10 +795,8 @@ fn scene_flush_ready_queue_system(world : @ecs.World) -> Unit {
     if !world.is_alive(entry.root_entity) {
       continue
     }
-    try! world.set_by_key(
-      entry.root_entity,
-      ecs_key_scene_instance_ready,
-      SceneInstanceReady::new(entry.instance_id, entry.spawned_entities),
+    world.trigger(
+      SceneInstanceReady::new(Some(entry.root_entity), entry.instance_id),
     )
   }
 }
@@ -928,12 +912,12 @@ pub fn scene_collect_root_spawn_requests_system(world : @ecs.World) -> Unit {
     }
   })
 
-  let pending_query : SceneRootPendingQuery = @ecs.query_filtered(
-    world,
-    @ecs.Without::new(ecs_key_scene_instance_ready),
-  )
+  let pending_query : SceneRootPendingQuery = @ecs.query(world)
   try! pending_query.view(fn(entity, data) {
-    let (root_ref, _scene_instance_ref) = data
+    let (root_ref, scene_instance_ref) = data
+    if scene_instance_is_ready(world, scene_instance_ref.value().instance_id) {
+      return
+    }
     ignore(
       push_root_if_needed(
         world,

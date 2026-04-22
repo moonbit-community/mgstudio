@@ -648,7 +648,44 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
   let transform_changed_entities = world
     .changed_components(ecs_key_transform, sequence)
     .read()
-  if !static_optimizations.enabled && transform_changed_entities.length() >= 256 {
+  let global_added_entities = world
+    .added_components(ecs_key_global_transform, sequence)
+    .read()
+  let parent_changed_entities = world
+    .changed_components(@hierarchy.ecs_key_parent, sequence)
+    .read()
+  let parent_added_entities = world
+    .added_components(@hierarchy.ecs_key_parent, sequence)
+    .read()
+  let orphaned_entities = world
+    .removed_components(@hierarchy.ecs_key_parent, sequence)
+    .read()
+  let tree_changed_entities : Array[@core.Entity] = if static_optimizations.enabled {
+    world.changed_components(ecs_key_transform_tree_changed, sequence).read()
+  } else {
+    []
+  }
+  let tree_added_entities : Array[@core.Entity] = if static_optimizations.enabled {
+    world.added_components(ecs_key_transform_tree_changed, sequence).read()
+  } else {
+    []
+  }
+  let total_transforms = world.component_count(ecs_key_transform)
+  let hierarchy_change_count = parent_changed_entities.length() +
+    parent_added_entities.length() +
+    orphaned_entities.length()
+  let tree_change_count = tree_changed_entities.length() +
+    tree_added_entities.length()
+  let prefer_dense = if total_transforms >= 2048 {
+    if static_optimizations.enabled {
+      tree_change_count > 0 || hierarchy_change_count > 0
+    } else {
+      transform_changed_entities.length() + hierarchy_change_count >= 256
+    }
+  } else {
+    !static_optimizations.enabled && transform_changed_entities.length() >= 256
+  }
+  if prefer_dense {
     guard transform_propagation_columns(world) is Some(columns) else { return }
     propagate_parent_transforms_dense(world, columns)
     return
@@ -682,26 +719,21 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
       entity,
     )
   }
-  for
-    entity in world.added_components(ecs_key_global_transform, sequence).read() {
+  for entity in global_added_entities {
     transform_id_flags_set_tracked(
       global_added,
       scratch.global_added_touched,
       entity,
     )
   }
-  for
-    entity in world
-    .changed_components(@hierarchy.ecs_key_parent, sequence)
-    .read() {
+  for entity in parent_changed_entities {
     transform_id_flags_set_tracked(
       parent_changed,
       scratch.parent_changed_touched,
       entity,
     )
   }
-  for
-    entity in world.added_components(@hierarchy.ecs_key_parent, sequence).read() {
+  for entity in parent_added_entities {
     transform_id_flags_set_tracked(
       parent_changed,
       scratch.parent_changed_touched,
@@ -709,20 +741,14 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
     )
   }
   if static_optimizations.enabled {
-    for
-      entity in world
-      .changed_components(ecs_key_transform_tree_changed, sequence)
-      .read() {
+    for entity in tree_changed_entities {
       transform_id_flags_set_tracked(
         tree_changed,
         scratch.tree_changed_touched,
         entity,
       )
     }
-    for
-      entity in world
-      .added_components(ecs_key_transform_tree_changed, sequence)
-      .read() {
+    for entity in tree_added_entities {
       transform_id_flags_set_tracked(
         tree_changed,
         scratch.tree_changed_touched,
@@ -730,10 +756,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
       )
     }
   }
-  for
-    entity in world
-    .removed_components(@hierarchy.ecs_key_parent, sequence)
-    .read() {
+  for entity in orphaned_entities {
     if !world.is_alive(entity) {
       continue
     }

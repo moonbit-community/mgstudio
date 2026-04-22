@@ -1018,8 +1018,9 @@ test "scene: removing SceneRoot despawns spawned children" {
     has_instance_after_remove.val = try! world.contains_by_key(
       root, @scene.ecs_key_scene_instance,
     )
-    has_ready_after_remove.val = try! world.contains_by_key(
-      root, @scene.ecs_key_scene_instance_ready,
+    has_ready_after_remove.val = @scene.scene_components_has_scene_instance_ready(
+      world,
+      root,
     )
   })
   debug_inspect(child_alive_after_remove.val, content="false")
@@ -1074,6 +1075,20 @@ test "scene: SceneRoot spawns children and marks ready" {
     )
 
     let root = world.spawn_empty()
+    ignore(
+      world.add_observer(fn(event : @ecs.On[@scene.SceneInstanceReady]) {
+        guard event.entity() is Some(event_entity) else { return }
+        if event_entity.id != root.id {
+          return
+        }
+        let ready = event.event()
+        ready_instance_id.val = ready.instance_id
+        spawned_entities.val = @scene.scene_iter_instance_entities(
+          world,
+          ready.instance_id,
+        ).length()
+      }),
+    )
     try! world.set_by_key(
       root,
       @scene.ecs_key_scene_root,
@@ -1085,12 +1100,7 @@ test "scene: SceneRoot spawns children and marks ready" {
     let instance = try! world
       .get_by_key(root, @scene.ecs_key_scene_instance)
       .unwrap()
-    let ready = try! world
-      .get_by_key(root, @scene.ecs_key_scene_instance_ready)
-      .unwrap()
     instance_id.val = instance.instance_id
-    ready_instance_id.val = ready.instance_id
-    spawned_entities.val = ready.spawned_entities
 
     let children : Array[@core.Entity] = []
     world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
@@ -1125,11 +1135,8 @@ test "scene: SceneRoot spawns children and marks ready" {
     let instance_second = try! world
       .get_by_key(root, @scene.ecs_key_scene_instance)
       .unwrap()
-    let ready_second = try! world
-      .get_by_key(root, @scene.ecs_key_scene_instance_ready)
-      .unwrap()
     instance_after_second_tick.val = instance_second.instance_id
-    ready_after_second_tick.val = ready_second.spawned_entities
+    ready_after_second_tick.val = spawned_entities.val
 
     let children_second : Array[@core.Entity] = []
     world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
@@ -1179,10 +1186,10 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
         root, @scene.ecs_key_scene_instance,
       ))
       is Some(_)
-    has_ready_before_register.val = (try! world.get_by_key(
-        root, @scene.ecs_key_scene_instance_ready,
-      ))
-      is Some(_)
+    has_ready_before_register.val = @scene.scene_components_has_scene_instance_ready(
+      world,
+      root,
+    )
 
     ignore(
       @scene.scene_register_gltf_scene(
@@ -1208,10 +1215,10 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
     )
 
     @scene.scene_spawn_roots_system(world)
-    ready_after_register.val = (try! world.get_by_key(
-        root, @scene.ecs_key_scene_instance_ready,
-      ))
-      is Some(_)
+    ready_after_register.val = @scene.scene_components_has_scene_instance_ready(
+      world,
+      root,
+    )
 
     let child_count = Ref::new(0)
     world.for_each_component(@hierarchy.ecs_key_parent, fn(_entity, parent) {
@@ -1430,6 +1437,20 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     )
 
     let root = world.spawn_empty()
+    ignore(
+      world.add_observer(fn(event : @ecs.On[@scene.SceneInstanceReady]) {
+        guard event.entity() is Some(event_entity) else { return }
+        if event_entity.id != root.id {
+          return
+        }
+        let ready = event.event()
+        ready_instance_id.val = ready.instance_id
+        spawned_entities.val = @scene.scene_iter_instance_entities(
+          world,
+          ready.instance_id,
+        ).length()
+      }),
+    )
     try! world.set_by_key(
       root,
       @scene.ecs_key_scene_root,
@@ -1462,12 +1483,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     let second_instance = try! world
       .get_by_key(root, @scene.ecs_key_scene_instance)
       .unwrap()
-    let ready = try! world
-      .get_by_key(root, @scene.ecs_key_scene_instance_ready)
-      .unwrap()
     new_instance_id.val = second_instance.instance_id
-    ready_instance_id.val = ready.instance_id
-    spawned_entities.val = ready.spawned_entities
     old_child_alive.val = world.is_alive(first_child)
 
     let second_children : Array[@core.Entity] = []

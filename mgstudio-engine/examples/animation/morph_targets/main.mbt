@@ -48,40 +48,41 @@ pub impl @app.Resource for MorphTargetAssetState with resource() {
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let primitive_handle = asset_server.load(
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let primitive_handle = asset_server.get().load(
     @gltf.GltfAssetLabel::Primitive(0, 0).from_asset(GLTF_PATH),
   )
   let (graph, index) = @animation.AnimationGraph::from_clip(
-    asset_server.load(@gltf.GltfAssetLabel::Animation(0).from_asset(GLTF_PATH)),
+    asset_server
+    .get()
+    .load(@gltf.GltfAssetLabel::Animation(0).from_asset(GLTF_PATH)),
   )
   let graph_handle = @animation.animation_graph_add(graph)
 
-  world.insert_resource(morph_target_asset_state_key, MorphTargetAssetState::{
+  commands.insert_resource(MorphTargetAssetState::{
     primitive_handle,
     named: false,
   })
-  world.insert_resource(
+  commands.insert_world_resource(
     @pbr.ecs_key_global_ambient_light,
     @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 800.0F),
   )
 
   ignore(
-    @camera.Camera3dBundle::new(
+    commands.spawn(@camera.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
-    ).spawn(world),
+    )),
   )
 
-  let light = world.spawn_empty()
   ignore(
-    try! world
-    .entity_mut(light)
-    .insert(
+    commands.spawn(
       (
         @transform.Transform::from_rotation(
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 0.9F, -0.6F),
@@ -91,36 +92,33 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
 
-  let root = world.spawn_empty()
-  ignore(
-    try! world
-    .entity_mut(root)
-    .insert(
-      (
-        AnimationToPlay::{ graph_handle, index },
-        @scene.SceneRoot::new(
-          asset_server.load(
-            @gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH),
-          ),
+  let root = commands.spawn(
+    (
+      AnimationToPlay::{ graph_handle, index },
+      @scene.SceneRoot::new(
+        asset_server.get().load(
+          @gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH),
         ),
-        @transform.Transform::identity().with_scale(@math.Vec3::splat(1.8F)),
       ),
+      @transform.Transform::identity().with_scale(@math.Vec3::splat(1.8F)),
     ),
   )
+  ignore(commands.entity(root).observe4(play_animation_when_ready))
 }
 
 ///|
 fn play_animation_when_ready(
-  scene_ready : @ecs.ComponentOn[@ecs.Insert, @scene.SceneInstanceReady],
+  scene_ready : @ecs.On[@scene.SceneInstanceReady],
   commands : @app.Commands,
   animations_to_play : @ecs.Query[@ecs.Comp[AnimationToPlay], @ecs.All],
   players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
-  guard (animations_to_play.get(scene_ready.entity) catch { _ => None })
+  guard scene_ready.entity() is Some(scene_entity) else { return }
+  guard (animations_to_play.get(scene_entity) catch { _ => None })
     is Some(animation_to_play) else {
     return
   }
-  guard (players.get(scene_ready.entity) catch { _ => None })
+  guard (players.get(scene_entity) catch { _ => None })
     is Some(player_mut) else {
     return
   }
@@ -128,7 +126,7 @@ fn play_animation_when_ready(
     player.play(animation_to_play.value().index).repeat() |> ignore
   })
   commands
-  .entity(scene_ready.entity)
+  .entity(scene_entity)
   .insert_component(
     @animation.AnimationGraphHandle::new(animation_to_play.value().graph_handle),
   )
@@ -165,8 +163,7 @@ fn name_morph_targets(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_component_observer4(play_animation_when_ready)
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(name_morph_targets)))
   .run()
 }

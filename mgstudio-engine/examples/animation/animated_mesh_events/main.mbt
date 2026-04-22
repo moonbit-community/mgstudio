@@ -269,16 +269,18 @@ fn setup(world : @ecs.World) -> Unit {
       ),
     ),
   )
+  @app.observe_entity4(world, fox, setup_scene_once_loaded)
 }
 
 ///|
 fn setup_scene_once_loaded(
-  scene_ready : @ecs.ComponentOn[@ecs.Insert, @scene.SceneInstanceReady],
+  scene_ready : @ecs.On[@scene.SceneInstanceReady],
   commands : @app.Commands,
   animation_setup : @app.ResMut[AnimationSetup],
   players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
-  guard (players.get(scene_ready.entity) catch { _ => None })
+  guard scene_ready.entity() is Some(scene_entity) else { return }
+  guard (players.get(scene_entity) catch { _ => None })
     is Some(player_mut) else {
     return
   }
@@ -302,7 +304,7 @@ fn setup_scene_once_loaded(
     ignore(transitions.play(player, setup_value.index, 0.0F).repeat())
   })
   commands
-  .entity(scene_ready.entity)
+  .entity(scene_entity)
   .insert(
     (
       @animation.AnimationGraphHandle::new(setup_value.graph_handle),
@@ -397,7 +399,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(setup))
-  .add_component_observer4(setup_scene_once_loaded)
   .add_observer4(observe_on_step)
   .add_systems(@app.Update, @app.system(@app.system_param3(simulate_particles)))
   .run()

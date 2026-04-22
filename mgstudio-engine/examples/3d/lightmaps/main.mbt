@@ -191,9 +191,7 @@ fn add_lightmaps_to_meshes(world : @ecs.World) -> Unit {
   }
 
   guard lightmaps_state.val.scene_root is Some(scene_root) else { return }
-  if !(try! world.contains_by_key(
-      scene_root, @scene.ecs_key_scene_instance_ready,
-    )) {
+  if !@scene.scene_components_has_scene_instance_ready(world, scene_root) {
     return
   }
 

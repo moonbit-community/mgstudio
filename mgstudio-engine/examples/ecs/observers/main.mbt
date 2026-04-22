@@ -219,7 +219,7 @@ fn spawn_mine(
   size : Float,
 ) -> @core.Entity {
   let entity = commands.spawn_component(Mine::{ pos, size })
-  ignore(commands.entity(entity).observe3(explode_mine))
+  ignore(commands.entity(entity).observe3_fallible(explode_mine))
   entity
 }
 

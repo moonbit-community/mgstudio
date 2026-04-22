@@ -37,16 +37,16 @@ pub fn SceneInstance::new(instance_id : Int) -> SceneInstance {
 
 ///|
 pub struct SceneInstanceReady {
+  entity : @core.Entity?
   instance_id : Int
-  spawned_entities : Int
 }
 
 ///|
 pub fn SceneInstanceReady::new(
+  entity : @core.Entity?,
   instance_id : Int,
-  spawned_entities : Int,
 ) -> SceneInstanceReady {
-  SceneInstanceReady::{ instance_id, spawned_entities }
+  SceneInstanceReady::{ entity, instance_id }
 }
 
 ///|
@@ -70,7 +70,10 @@ pub fn scene_components_has_scene_instance_ready(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Bool {
-  try! world.contains_by_key(entity, ecs_key_scene_instance_ready)
+  guard scene_instance_component(world, entity) is Some(instance) else {
+    return false
+  }
+  scene_instance_is_ready(world, instance.instance_id)
 }
 
 ///|
