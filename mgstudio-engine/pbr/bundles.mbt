@@ -452,10 +452,7 @@ pub fn Camera3dBundle::spawn(
   world : @ecs.World,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let ecs_world = world
-  let entity = ecs_world.spawn_empty()
-  try! camera3d_bundle_insert(self, ecs_world, entity, loc~)
-  entity
+  try! world.spawn_bundle(self, loc~)
 }
 
 ///|
@@ -578,8 +575,5 @@ pub fn MeshMaterial3dBundle::spawn(
   world : @ecs.World,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let ecs_world = world
-  let entity = ecs_world.spawn_empty()
-  try! mesh_material3d_bundle_insert(self, ecs_world, entity, loc~)
-  entity
+  try! world.spawn_bundle(self, loc~)
 }

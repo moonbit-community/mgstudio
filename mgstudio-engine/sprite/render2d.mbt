@@ -3755,9 +3755,7 @@ pub fn SpriteBundle::spawn(
   world : @ecs.World,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let e = world.spawn_empty()
-  try! sprite_bundle_insert(self, world, e, loc~)
-  e
+  try! world.spawn_bundle(self, loc~)
 }
 
 ///|
@@ -3768,6 +3766,11 @@ pub impl @app.CommandSpawnComponents for SpriteBundle with spawn_components(
   _sequence,
   loc~,
 ) {
+  sprite_bundle_insert(self, world, entity, loc~)
+}
+
+///|
+pub impl @ecs.Bundle for SpriteBundle with insert_into(self, world, entity, loc~) {
   sprite_bundle_insert(self, world, entity, loc~)
 }
 
@@ -3810,42 +3813,60 @@ pub impl @app.CommandSpawnComponents for Camera2dBundle with spawn_components(
 }
 
 ///|
+pub impl @ecs.Bundle for Camera2dBundle with insert_into(
+  self,
+  world,
+  entity,
+  loc~,
+) {
+  camera2d_bundle_insert(self, world, entity, loc~)
+}
+
+///|
 #callsite(autofill(loc))
 pub fn Camera2dBundle::spawn(
   self : Camera2dBundle,
   world : @ecs.World,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let e = world.spawn_empty()
-  try! camera2d_bundle_insert(self, world, e, loc~)
-  e
+  try! world.spawn_bundle(self, loc~)
 }
 
 ///|
+fn mesh2d_bundle_insert(
+  bundle : Mesh2dBundle,
+  world : @ecs.World,
+  entity : @core.Entity,
+  loc~ : SourceLoc,
+) -> Unit raise @ecs.EcsError {
+  world.set_by_key(entity, ecs_key_mesh2d, bundle.mesh, loc~)
+  world.set_by_key(entity, ecs_key_mesh_material2d, bundle.material, loc~)
+  world.set_by_key(entity, ecs_key_render_layers, bundle.layers, loc~)
+  world.set_by_key(entity, @visibility.ecs_key_visibility, bundle.visibility, loc~)
+  world.set_by_key(
+    entity,
+    @visibility.ecs_key_inherited_visibility,
+    bundle.inherited_visibility,
+    loc~,
+  )
+  world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    bundle.view_visibility,
+    loc~,
+  )
+  world.set_by_key(entity, @transform.ecs_key_transform, bundle.transform, loc~)
+}
+
+///|
+#callsite(autofill(loc))
 pub fn Mesh2dBundle::spawn(
   self : Mesh2dBundle,
   world : @ecs.World,
+  loc~ : SourceLoc,
 ) -> @core.Entity {
   let e = world.spawn_empty()
-  try! (world.set_by_key(e, ecs_key_mesh2d, self.mesh) |> ignore)
-  try! (world.set_by_key(e, ecs_key_mesh_material2d, self.material) |> ignore)
-  try! (world.set_by_key(e, ecs_key_render_layers, self.layers) |> ignore)
-  try! (world.set_by_key(e, @visibility.ecs_key_visibility, self.visibility)
-  |> ignore)
-  try! (world.set_by_key(
-    e,
-    @visibility.ecs_key_inherited_visibility,
-    self.inherited_visibility,
-  )
-  |> ignore)
-  try! (world.set_by_key(
-    e,
-    @visibility.ecs_key_view_visibility,
-    self.view_visibility,
-  )
-  |> ignore)
-  try! (world.set_by_key(e, @transform.ecs_key_transform, self.transform)
-  |> ignore)
+  try! mesh2d_bundle_insert(self, world, e, loc~)
   e
 }
 
@@ -3857,22 +3878,12 @@ pub impl @app.CommandSpawnComponents for Mesh2dBundle with spawn_components(
   _tick,
   loc~,
 ) {
-  ignore(loc)
-  world.set_by_key(entity, ecs_key_mesh2d, self.mesh)
-  world.set_by_key(entity, ecs_key_mesh_material2d, self.material)
-  world.set_by_key(entity, ecs_key_render_layers, self.layers)
-  world.set_by_key(entity, @visibility.ecs_key_visibility, self.visibility)
-  world.set_by_key(
-    entity,
-    @visibility.ecs_key_inherited_visibility,
-    self.inherited_visibility,
-  )
-  world.set_by_key(
-    entity,
-    @visibility.ecs_key_view_visibility,
-    self.view_visibility,
-  )
-  world.set_by_key(entity, @transform.ecs_key_transform, self.transform)
+  mesh2d_bundle_insert(self, world, entity, loc~)
+}
+
+///|
+pub impl @ecs.Bundle for Mesh2dBundle with insert_into(self, world, entity, loc~) {
+  mesh2d_bundle_insert(self, world, entity, loc~)
 }
 
 ///|

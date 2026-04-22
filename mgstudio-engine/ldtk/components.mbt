@@ -333,9 +333,7 @@ pub fn LdtkWorldBundle::spawn(
   world : @ecs.World,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let entity = world.spawn_empty()
-  try! ldtk_world_bundle_insert(self, world, entity, loc~)
-  entity
+  try! world.spawn_bundle(self, loc~)
 }
 
 ///|
@@ -344,6 +342,16 @@ pub impl @app.CommandSpawnComponents for LdtkWorldBundle with spawn_components(
   world,
   entity,
   _sequence,
+  loc~,
+) {
+  ldtk_world_bundle_insert(self, world, entity, loc~)
+}
+
+///|
+pub impl @ecs.Bundle for LdtkWorldBundle with insert_into(
+  self,
+  world,
+  entity,
   loc~,
 ) {
   ldtk_world_bundle_insert(self, world, entity, loc~)
