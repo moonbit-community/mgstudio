@@ -1070,50 +1070,23 @@ fn[W] schedule_set_executor_kind(
 }
 
 ///|
-fn[W] schedule_set_apply_final_deferred(
+fn[W] schedule_replace_entry(
   schedule_registry : ScheduleRegistry[W],
-  stage : ScheduleStage,
-  apply_final_deferred : Bool,
+  schedule : Schedule,
 ) -> Unit {
-  schedule_entry_ref(
-    schedule_registry,
-    stage,
-  ).val.apply_final_deferred = apply_final_deferred
-}
-
-///|
-fn[W] schedule_set_build_settings(
-  schedule_registry : ScheduleRegistry[W],
-  stage : ScheduleStage,
-  build_settings : ScheduleBuildSettings,
-) -> Unit {
-  let entry_ref = schedule_entry_ref(schedule_registry, stage)
-  if entry_ref.val.build_settings != build_settings {
-    entry_ref.val.build_settings = build_settings
-    entry_ref.val.cached_access_plan = None
-    entry_ref.val.last_reported_invalid_access_key = None
-  }
+  let key = schedule_stage_storage_key(schedule.label())
+  let entry_ref = Ref::new(ScheduleEntry::new())
+  entry_ref.val.executor_kind = schedule.get_executor_kind()
+  entry_ref.val.build_settings = schedule.get_build_settings()
+  entry_ref.val.apply_final_deferred = schedule.get_apply_final_deferred()
+  schedule_registry.entries.set(key, entry_ref)
 }
 
 pub fn[W] SubApp::add_schedule(
   self : SubApp[W],
   schedule : Schedule,
 ) -> SubApp[W] {
-  schedule_set_executor_kind(
-    self.schedule,
-    schedule.label(),
-    schedule.get_executor_kind(),
-  )
-  schedule_set_build_settings(
-    self.schedule,
-    schedule.label(),
-    schedule.get_build_settings(),
-  )
-  schedule_set_apply_final_deferred(
-    self.schedule,
-    schedule.label(),
-    schedule.get_apply_final_deferred(),
-  )
+  schedule_replace_entry(self.schedule, schedule)
   self
 }
 

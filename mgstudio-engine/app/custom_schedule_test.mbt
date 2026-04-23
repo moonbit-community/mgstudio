@@ -543,16 +543,18 @@ test "app: set run_if evaluates once per run and gates all systems in the set" {
 
 ///|
 test "app: disabling apply_final_deferred keeps deferred commands pending until a later apply" {
-  let stage = schedule_label("NoFinalDeferredFlush")
+  let enqueue_stage = schedule_label("NoFinalDeferredFlush.Enqueue")
+  let flush_stage = schedule_label("NoFinalDeferredFlush.Flush")
   let mut sub_app = SubApp::new(@ecs.World::new())
-    .set_update_schedule(Some(stage))
+    .set_update_schedule(Some(enqueue_stage))
     .add_schedule(
-      Schedule::new(stage).set_executor_kind(
+      Schedule::new(enqueue_stage).set_executor_kind(
         SingleThreaded,
       ).set_apply_final_deferred(false),
     )
+    .add_schedule(Schedule::new(flush_stage).set_executor_kind(SingleThreaded))
     .add_systems(
-      stage,
+      enqueue_stage,
       system_config_param(fn(commands : Commands) {
         ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
       }),
@@ -565,17 +567,43 @@ test "app: disabling apply_final_deferred keeps deferred commands pending until 
   )
   debug_inspect(query_after_first.count(), content="0")
 
-  // Re-enable final deferred apply: pending commands from the previous run
-  // and newly queued commands should flush together.
-  sub_app = sub_app.add_schedule(
-    Schedule::new(stage).set_executor_kind(SingleThreaded),
-  )
+  sub_app = sub_app.set_update_schedule(Some(flush_stage))
   sub_app = sub_app.update()
   let world_after_second = sub_app.world()
   let query_after_second : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
     world_after_second,
   )
-  debug_inspect(query_after_second.count(), content="2")
+  debug_inspect(query_after_second.count(), content="1")
+}
+
+///|
+test "app: add_schedule reinserts and replaces previous schedule content" {
+  let stage = schedule_label("ReinsertScheduleReplacesContent")
+  let mut sub_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(stage))
+    .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+    .add_systems(
+      stage,
+      system_config_param(fn(commands : Commands) {
+        ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
+      }),
+    )
+
+  sub_app = sub_app.update()
+  let world_after_first = sub_app.world()
+  let query_after_first : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+    world_after_first,
+  )
+  debug_inspect(query_after_first.count(), content="1")
+
+  // Bevy parity: re-inserting the same schedule label replaces the old schedule.
+  sub_app = sub_app.add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+  sub_app = sub_app.update()
+  let world_after_second = sub_app.world()
+  let query_after_second : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
+    world_after_second,
+  )
+  debug_inspect(query_after_second.count(), content="1")
 }
 
 ///|

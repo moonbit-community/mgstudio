@@ -643,23 +643,35 @@ fn propagate_descendants(
 
 ///|
 pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
-  let sequence = world.get_sequence_context().sequence()
   let static_optimizations = read_static_transform_optimizations(world)
-  let transform_changed_entities = world
-    .changed_components(ecs_key_transform, sequence)
-    .read()
-  let global_added_entities = world
-    .added_components(ecs_key_global_transform, sequence)
-    .read()
-  let parent_changed_entities = world
-    .changed_components(@hierarchy.ecs_key_parent, sequence)
-    .read()
-  let parent_added_entities = world
-    .added_components(@hierarchy.ecs_key_parent, sequence)
-    .read()
-  let orphaned_entities = world
-    .removed_components(@hierarchy.ecs_key_parent, sequence)
-    .read()
+  if !static_optimizations.enabled {
+    // Bevy parity path: when static-scene optimization is disabled, skip dirty-tree
+    // tracking prepass and propagate directly through the hierarchy.
+    guard transform_propagation_columns(world) is Some(columns) else { return }
+    propagate_parent_transforms_dense(world, columns)
+    return
+  }
+  let sequence = world.get_sequence_context().sequence()
+  let transform_changed_entities = world.changed_components(
+    ecs_key_transform,
+    sequence,
+  ).read()
+  let global_added_entities = world.added_components(
+    ecs_key_global_transform,
+    sequence,
+  ).read()
+  let parent_changed_entities = world.changed_components(
+    @hierarchy.ecs_key_parent,
+    sequence,
+  ).read()
+  let parent_added_entities = world.added_components(
+    @hierarchy.ecs_key_parent,
+    sequence,
+  ).read()
+  let orphaned_entities = world.removed_components(
+    @hierarchy.ecs_key_parent,
+    sequence,
+  ).read()
   let tree_changed_entities : Array[@core.Entity] = if static_optimizations.enabled {
     world.changed_components(ecs_key_transform_tree_changed, sequence).read()
   } else {

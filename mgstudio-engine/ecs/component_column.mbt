@@ -663,6 +663,7 @@ pub fn[T] ComponentColumn::set_sequence_only_hot(
       }
       values[row_index] = value
       self.changed_sequence_table.set(entity.id, sequence)
+      ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
       true
     }
   }
@@ -683,5 +684,16 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(
   }
   values[row_index] = value
   self.changed_sequence_table.set(entity.id, sequence)
+  let entity_id = entity.id
+  guard entity_id >= 0 &&
+    entity_id < self.world.entity_table_ids.length() else {
+    return false
+  }
+  let table_id = self.world.entity_table_ids[entity_id]
+  guard table_id >= 0 else { return false }
+  guard self.table_column_ref(table_id) is Some(column_ref) else {
+    return false
+  }
+  ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
   true
 }
