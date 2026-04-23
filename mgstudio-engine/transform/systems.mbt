@@ -102,16 +102,12 @@ fn transform_dense_table_cache_prepare(
 priv struct TransformPropagationScratch {
   transform_changed : Array[Bool]
   transform_changed_touched : Array[Int]
-  global_added : Array[Bool]
-  global_added_touched : Array[Int]
-  parent_changed : Array[Bool]
-  parent_changed_touched : Array[Int]
   tree_changed : Array[Bool]
   tree_changed_touched : Array[Int]
-  orphaned_roots : Array[Bool]
-  orphaned_roots_touched : Array[Int]
   dense_stack_entities : Array[@core.Entity]
+  dense_stack_parents : Array[@core.Entity]
   dense_stack_parent_globals : Array[GlobalTransform]
+  dense_stack_parent_global_changed : Array[Bool]
 }
 
 ///|
@@ -119,16 +115,12 @@ fn transform_propagation_scratch_default() -> TransformPropagationScratch {
   {
     transform_changed: [],
     transform_changed_touched: [],
-    global_added: [],
-    global_added_touched: [],
-    parent_changed: [],
-    parent_changed_touched: [],
     tree_changed: [],
     tree_changed_touched: [],
-    orphaned_roots: [],
-    orphaned_roots_touched: [],
     dense_stack_entities: [],
+    dense_stack_parents: [],
     dense_stack_parent_globals: [],
+    dense_stack_parent_global_changed: [],
   }
 }
 
@@ -284,31 +276,88 @@ fn transform_propagation_columns(
 }
 
 ///|
+fn transform_set_global_if_neq_hot_at_row(
+  columns : TransformPropagationColumns,
+  entity : @core.Entity,
+  global_values : Array[GlobalTransform],
+  row_index : Int,
+  next_global : GlobalTransform,
+  sequence : @core.Sequence,
+) -> Bool {
+  if row_index < 0 || row_index >= global_values.length() {
+    return false
+  }
+  if global_transform_eq(global_values[row_index], next_global) {
+    return false
+  }
+  columns.global.set_sequence_only_hot_at_row(
+    entity,
+    global_values,
+    row_index,
+    next_global,
+    sequence,
+  )
+}
+
+///|
 fn propagate_descendants_dense(
   world : @ecs.World,
   columns : TransformPropagationColumns,
   scratch : TransformPropagationScratch,
   cache : Ref[TransformDenseTableCache],
   sequence : @core.Sequence,
+  static_optimizations_enabled : Bool,
+  tree_changed : Array[Bool],
+  parent : @core.Entity,
   parent_global : GlobalTransform,
+  parent_global_changed : Bool,
   children : @hierarchy.Children,
 ) -> Unit {
   scratch.dense_stack_entities.clear()
+  scratch.dense_stack_parents.clear()
   scratch.dense_stack_parent_globals.clear()
+  scratch.dense_stack_parent_global_changed.clear()
   let root_children = children.entities()
   for index in 0..<root_children.length() {
     let reverse_index = root_children.length() - 1 - index
     scratch.dense_stack_entities.push(root_children[reverse_index])
+    scratch.dense_stack_parents.push(parent)
     scratch.dense_stack_parent_globals.push(parent_global)
+    scratch.dense_stack_parent_global_changed.push(parent_global_changed)
   }
   while scratch.dense_stack_entities.length() > 0 {
     let child = match scratch.dense_stack_entities.pop() {
       Some(child) => child
       None => break
     }
+    let current_parent = match scratch.dense_stack_parents.pop() {
+      Some(entity) => entity
+      None => break
+    }
     let current_parent_global = match scratch.dense_stack_parent_globals.pop() {
       Some(global) => global
       None => break
+    }
+    let current_parent_global_changed = match
+      scratch.dense_stack_parent_global_changed.pop() {
+      Some(changed) => changed
+      None => break
+    }
+    let child_parent = match columns.parent {
+      Some(parent_column) =>
+        match parent_column.get(child) {
+          Some(child_parent) => child_parent
+          None => continue
+        }
+      None => continue
+    }
+    if !entity_eq(child_parent.entity(), current_parent) {
+      transform_abort_malformed_hierarchy()
+    }
+    if static_optimizations_enabled &&
+      !transform_id_flags_contains(tree_changed, child) &&
+      !current_parent_global_changed {
+      continue
     }
     guard transform_dense_entity_slot(world, child) is Some((table_id, row_index)) else {
       continue
@@ -328,14 +377,18 @@ fn propagate_descendants_dense(
     }
     let local_transform = transform_values[row_index]
     let child_global = current_parent_global.mul_transform(local_transform)
-    if !columns.global.set_sequence_only_hot_at_row(
-        child,
-        global_values,
-        row_index,
-        child_global,
-        sequence,
-      ) {
-      continue
+    let child_global_changed = transform_set_global_if_neq_hot_at_row(
+      columns,
+      child,
+      global_values,
+      row_index,
+      child_global,
+      sequence,
+    )
+    let next_parent_global = if child_global_changed {
+      child_global
+    } else {
+      global_values[row_index]
     }
     match cache.val.children_values[table_id] {
       Some(children_values) => {
@@ -347,7 +400,9 @@ fn propagate_descendants_dense(
         for index in 0..<grandchildren.length() {
           let reverse_index = grandchildren.length() - 1 - index
           scratch.dense_stack_entities.push(grandchildren[reverse_index])
-          scratch.dense_stack_parent_globals.push(child_global)
+          scratch.dense_stack_parents.push(child)
+          scratch.dense_stack_parent_globals.push(next_parent_global)
+          scratch.dense_stack_parent_global_changed.push(child_global_changed)
         }
       }
       None => ()
@@ -359,6 +414,8 @@ fn propagate_descendants_dense(
 fn propagate_parent_transforms_dense(
   world : @ecs.World,
   columns : TransformPropagationColumns,
+  static_optimizations_enabled : Bool,
+  tree_changed : Array[Bool],
 ) -> Unit {
   guard columns.parent is Some(parent_column) else { return }
   let sequence = {
@@ -373,6 +430,10 @@ fn propagate_parent_transforms_dense(
   let scratch = scratch_ref.peek()
   let cache = Ref::new(transform_dense_table_cache_default())
   columns.children.for_each_without_fast(parent_column, fn(entity, children) {
+    if static_optimizations_enabled &&
+      !transform_id_flags_contains(tree_changed, entity) {
+      return
+    }
     guard transform_dense_entity_slot(world, entity) is Some((table_id, row_index)) else {
       return
     }
@@ -389,14 +450,18 @@ fn propagate_parent_transforms_dense(
     }
     let root_transform = transform_values[row_index]
     let root_global = GlobalTransform::from_transform(root_transform)
-    if !columns.global.set_sequence_only_hot_at_row(
-        entity,
-        global_values,
-        row_index,
-        root_global,
-        sequence,
-      ) {
-      return
+    let root_global_changed = transform_set_global_if_neq_hot_at_row(
+      columns,
+      entity,
+      global_values,
+      row_index,
+      root_global,
+      sequence,
+    )
+    let next_root_global = if root_global_changed {
+      root_global
+    } else {
+      global_values[row_index]
     }
     propagate_descendants_dense(
       world,
@@ -404,7 +469,11 @@ fn propagate_parent_transforms_dense(
       scratch,
       cache,
       sequence,
-      root_global,
+      static_optimizations_enabled,
+      tree_changed,
+      entity,
+      next_root_global,
+      root_global_changed,
       children,
     )
   })
@@ -494,6 +563,22 @@ pub fn sync_simple_transforms_world(world : @ecs.World) -> Unit {
 ///|
 pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
   let sequence = world.get_sequence_context().sequence()
+  let changed_transform_entities = world.changed_components(
+    ecs_key_transform,
+    sequence,
+  ).read()
+  let changed_parent_entities = world.changed_components(
+    @hierarchy.ecs_key_parent,
+    sequence,
+  ).read()
+  let added_global_entities = world.added_components(
+    ecs_key_global_transform,
+    sequence,
+  ).read()
+  let orphaned_entities = world.removed_components(
+    @hierarchy.ecs_key_parent,
+    sequence,
+  ).read()
   let static_optimizations = read_static_transform_optimizations(world)
   let threshold = if static_optimizations.threshold < 0.0F {
     0.0F
@@ -504,23 +589,46 @@ pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
   }
   if threshold == 0.0F {
     static_optimizations.enabled = false
-    write_static_transform_optimizations(world, static_optimizations)
-    return
-  }
-  let total = Float::from_int(
-    world.component_count(ecs_key_transform_tree_changed),
-  )
-  if threshold == 1.0F || total == 0.0F {
+  } else if threshold == 1.0F {
     static_optimizations.enabled = true
   } else {
-    let dynamic_count = world
-      .changed_components(ecs_key_transform, sequence)
-      .len() +
-      world.changed_components(@hierarchy.ecs_key_parent, sequence).len() +
-      world.added_components(ecs_key_global_transform, sequence).len() +
-      world.removed_components(@hierarchy.ecs_key_parent, sequence).len()
-    static_optimizations.enabled = Float::from_int(dynamic_count) / total <=
-      threshold
+    static_optimizations.enabled = true
+    let total = Float::from_int(
+      world.component_count(ecs_key_transform_tree_changed),
+    )
+    if total > 0.0F {
+      let scratch_ref = transform_propagation_scratch_ref_or_init(world)
+      let scratch = scratch_ref.peek()
+      transform_id_flags_reset(
+        scratch.transform_changed,
+        scratch.transform_changed_touched,
+      )
+      for entity in changed_transform_entities {
+        transform_id_flags_set_tracked(
+          scratch.transform_changed,
+          scratch.transform_changed_touched,
+          entity,
+        )
+      }
+      for entity in changed_parent_entities {
+        transform_id_flags_set_tracked(
+          scratch.transform_changed,
+          scratch.transform_changed_touched,
+          entity,
+        )
+      }
+      for entity in added_global_entities {
+        transform_id_flags_set_tracked(
+          scratch.transform_changed,
+          scratch.transform_changed_touched,
+          entity,
+        )
+      }
+      let dynamic_count = Float::from_int(scratch.transform_changed_touched.length())
+      if dynamic_count / total > threshold {
+        static_optimizations.enabled = false
+      }
+    }
   }
   write_static_transform_optimizations(world, static_optimizations)
   if !static_optimizations.enabled {
@@ -533,24 +641,15 @@ pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
       if !world.is_alive(next) {
         break
       }
-      if !(try! world.contains_by_key(next, ecs_key_transform_tree_changed)) {
+      guard
+        (try! world.get_mut(next, key=ecs_key_transform_tree_changed))
+        is Some(tree_changed_mut) else {
         break
       }
-      let already_changed = world.is_changed_by_key(
-        next, ecs_key_transform_tree_changed, sequence,
-      )
-      let was_added = world.is_added_by_key(
-        next, ecs_key_transform_tree_changed, sequence,
-      )
-      if already_changed && !was_added {
+      if tree_changed_mut.is_changed() && !tree_changed_mut.is_added() {
         break
       }
-      try! (world.replace(
-        next,
-        ecs_key_transform_tree_changed,
-        TransformTreeChanged::default(),
-      )
-      |> ignore)
+      tree_changed_mut.set_changed()
       match parent_column {
         Some(parent_store) =>
           match parent_store.get(next) {
@@ -561,263 +660,58 @@ pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
       }
     }
   }
-  for entity in world.changed_components(ecs_key_transform, sequence).read() {
+  for entity in changed_transform_entities {
     mark_tree_changed_chain(entity)
   }
-  for
-    entity in world
-    .changed_components(@hierarchy.ecs_key_parent, sequence)
-    .read() {
+  for entity in changed_parent_entities {
     mark_tree_changed_chain(entity)
   }
-  for
-    entity in world.added_components(ecs_key_global_transform, sequence).read() {
+  for entity in added_global_entities {
     mark_tree_changed_chain(entity)
-  }
-  for
-    entity in world
-    .removed_components(@hierarchy.ecs_key_parent, sequence)
-    .read() {
-    mark_tree_changed_chain(entity)
-  }
-}
-
-///|
-fn propagate_descendants(
-  columns : TransformPropagationColumns,
-  parent : @core.Entity,
-  parent_global : GlobalTransform,
-  children : @hierarchy.Children,
-  static_optimizations_enabled : Bool,
-  transform_changed : Array[Bool],
-  global_added : Array[Bool],
-  parent_changed : Array[Bool],
-  tree_changed : Array[Bool],
-  parent_global_changed : Bool,
-) -> Unit {
-  for child in children.entities() {
-    guard columns.transform.get(child) is Some(local_transform) else {
-      continue
-    }
-    let child_parent = match columns.parent {
-      Some(parent_column) =>
-        match parent_column.get(child) {
-          Some(child_parent) => child_parent
-          None => continue
-        }
-      None => continue
-    }
-    if !entity_eq(child_parent.entity(), parent) {
-      transform_abort_malformed_hierarchy()
-    }
-    if static_optimizations_enabled {
-      let child_tree_changed = transform_id_flags_contains(tree_changed, child)
-      if !child_tree_changed && !parent_global_changed {
-        continue
-      }
-    }
-    let child_changed = parent_global_changed ||
-      transform_id_flags_contains(transform_changed, child) ||
-      transform_id_flags_contains(global_added, child) ||
-      transform_id_flags_contains(parent_changed, child)
-    let next_global = if child_changed {
-      let computed = parent_global.mul_transform(local_transform)
-      if !columns.global.set_sequence_only(child, computed) {
-        continue
-      }
-      computed
-    } else {
-      guard columns.global.get(child) is Some(current_global) else { continue }
-      current_global
-    }
-    match columns.children.get(child) {
-      Some(grand_children) =>
-        propagate_descendants(
-          columns, child, next_global, grand_children, static_optimizations_enabled,
-          transform_changed, global_added, parent_changed, tree_changed, child_changed,
-        )
-      None => ()
-    }
-  }
-}
-
-///|
-pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
-  let static_optimizations = read_static_transform_optimizations(world)
-  if !static_optimizations.enabled {
-    // Bevy parity path: when static-scene optimization is disabled, skip dirty-tree
-    // tracking prepass and propagate directly through the hierarchy.
-    guard transform_propagation_columns(world) is Some(columns) else { return }
-    propagate_parent_transforms_dense(world, columns)
-    return
-  }
-  let sequence = world.get_sequence_context().sequence()
-  let transform_changed_entities = world.changed_components(
-    ecs_key_transform,
-    sequence,
-  ).read()
-  let global_added_entities = world.added_components(
-    ecs_key_global_transform,
-    sequence,
-  ).read()
-  let parent_changed_entities = world.changed_components(
-    @hierarchy.ecs_key_parent,
-    sequence,
-  ).read()
-  let parent_added_entities = world.added_components(
-    @hierarchy.ecs_key_parent,
-    sequence,
-  ).read()
-  let orphaned_entities = world.removed_components(
-    @hierarchy.ecs_key_parent,
-    sequence,
-  ).read()
-  let tree_changed_entities : Array[@core.Entity] = if static_optimizations.enabled {
-    world.changed_components(ecs_key_transform_tree_changed, sequence).read()
-  } else {
-    []
-  }
-  let tree_added_entities : Array[@core.Entity] = if static_optimizations.enabled {
-    world.added_components(ecs_key_transform_tree_changed, sequence).read()
-  } else {
-    []
-  }
-  let total_transforms = world.component_count(ecs_key_transform)
-  let hierarchy_change_count = parent_changed_entities.length() +
-    parent_added_entities.length() +
-    orphaned_entities.length()
-  let tree_change_count = tree_changed_entities.length() +
-    tree_added_entities.length()
-  let prefer_dense = if total_transforms >= 2048 {
-    if static_optimizations.enabled {
-      tree_change_count > 0 || hierarchy_change_count > 0
-    } else {
-      transform_changed_entities.length() + hierarchy_change_count >= 256
-    }
-  } else {
-    !static_optimizations.enabled && transform_changed_entities.length() >= 256
-  }
-  if prefer_dense {
-    guard transform_propagation_columns(world) is Some(columns) else { return }
-    propagate_parent_transforms_dense(world, columns)
-    return
-  }
-  let scratch_ref = transform_propagation_scratch_ref_or_init(world)
-  let scratch = scratch_ref.peek()
-  transform_id_flags_reset(
-    scratch.transform_changed,
-    scratch.transform_changed_touched,
-  )
-  transform_id_flags_reset(scratch.global_added, scratch.global_added_touched)
-  transform_id_flags_reset(
-    scratch.parent_changed,
-    scratch.parent_changed_touched,
-  )
-  transform_id_flags_reset(scratch.tree_changed, scratch.tree_changed_touched)
-  transform_id_flags_reset(
-    scratch.orphaned_roots,
-    scratch.orphaned_roots_touched,
-  )
-
-  let transform_changed = scratch.transform_changed
-  let global_added = scratch.global_added
-  let parent_changed = scratch.parent_changed
-  let tree_changed = scratch.tree_changed
-  let orphaned_roots = scratch.orphaned_roots
-  for entity in transform_changed_entities {
-    transform_id_flags_set_tracked(
-      transform_changed,
-      scratch.transform_changed_touched,
-      entity,
-    )
-  }
-  for entity in global_added_entities {
-    transform_id_flags_set_tracked(
-      global_added,
-      scratch.global_added_touched,
-      entity,
-    )
-  }
-  for entity in parent_changed_entities {
-    transform_id_flags_set_tracked(
-      parent_changed,
-      scratch.parent_changed_touched,
-      entity,
-    )
-  }
-  for entity in parent_added_entities {
-    transform_id_flags_set_tracked(
-      parent_changed,
-      scratch.parent_changed_touched,
-      entity,
-    )
-  }
-  if static_optimizations.enabled {
-    for entity in tree_changed_entities {
-      transform_id_flags_set_tracked(
-        tree_changed,
-        scratch.tree_changed_touched,
-        entity,
-      )
-    }
-    for entity in tree_added_entities {
-      transform_id_flags_set_tracked(
-        tree_changed,
-        scratch.tree_changed_touched,
-        entity,
-      )
-    }
   }
   for entity in orphaned_entities {
-    if !world.is_alive(entity) {
-      continue
-    }
-    transform_id_flags_set_tracked(
-      orphaned_roots,
-      scratch.orphaned_roots_touched,
-      entity,
-    )
+    mark_tree_changed_chain(entity)
   }
+}
+
+pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
   guard transform_propagation_columns(world) is Some(columns) else { return }
-  columns.children.for_each(fn(entity, children) {
-    if columns.parent is Some(parent_column) && parent_column.contains(entity) {
-      return
+  let static_optimizations = read_static_transform_optimizations(world)
+  let sequence = world.get_sequence_context().sequence()
+  let tree_changed : Array[Bool] = if static_optimizations.enabled {
+    let scratch_ref = transform_propagation_scratch_ref_or_init(world)
+    let scratch = scratch_ref.peek()
+    transform_id_flags_reset(scratch.tree_changed, scratch.tree_changed_touched)
+    for
+      entity in world
+      .changed_components(ecs_key_transform_tree_changed, sequence)
+      .read() {
+      transform_id_flags_set_tracked(
+        scratch.tree_changed,
+        scratch.tree_changed_touched,
+        entity,
+      )
     }
-    guard columns.transform.get(entity) is Some(root_transform) else { return }
-    if static_optimizations.enabled {
-      let root_tree_changed = transform_id_flags_contains(tree_changed, entity)
-      if !root_tree_changed {
-        return
-      }
+    for
+      entity in world
+      .added_components(ecs_key_transform_tree_changed, sequence)
+      .read() {
+      transform_id_flags_set_tracked(
+        scratch.tree_changed,
+        scratch.tree_changed_touched,
+        entity,
+      )
     }
-    let root_changed = transform_id_flags_contains(transform_changed, entity) ||
-      transform_id_flags_contains(global_added, entity) ||
-      transform_id_flags_contains(orphaned_roots, entity)
-    let next_root_global = if root_changed {
-      let computed = GlobalTransform::from_transform(root_transform)
-      if !columns.global.set_sequence_only(entity, computed) {
-        return
-      }
-      computed
-    } else {
-      guard columns.global.get(entity) is Some(current_root_global) else {
-        return
-      }
-      current_root_global
-    }
-    propagate_descendants(
-      columns,
-      entity,
-      next_root_global,
-      children,
-      static_optimizations.enabled,
-      transform_changed,
-      global_added,
-      parent_changed,
-      tree_changed,
-      root_changed,
-    )
-  })
+    scratch.tree_changed
+  } else {
+    []
+  }
+  propagate_parent_transforms_dense(
+    world,
+    columns,
+    static_optimizations.enabled,
+    tree_changed,
+  )
 }
 
 ///|
