@@ -18,7 +18,6 @@ pub struct ComponentColumn[T] {
   key : ComponentKey[T]
   local_component_id : Int
   storage_type : ComponentStorageType
-  changed_sequence_table : ComponentSequenceTable
   table_column_cache : Ref[Array[@any.Any?]]
   table_column_cache_ready : Ref[Array[Bool]]
 }
@@ -37,9 +36,6 @@ pub fn[T] World::component_column(
             key,
             local_component_id,
             storage_type,
-            changed_sequence_table: self.ensure_changed_component_sequence_table(
-              key.id(),
-            ),
             table_column_cache: Ref::new([]),
             table_column_cache_ready: Ref::new([]),
           })
@@ -517,6 +513,7 @@ pub fn[T] ComponentColumn::set_sequence_only(
   entity : @core.Entity,
   value : T,
 ) -> Bool {
+  let sequence = component_write_sequence(self.world)
   match self.world.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id &&
@@ -525,21 +522,31 @@ pub fn[T] ComponentColumn::set_sequence_only(
           self.local_component_id,
           erased_writer(self.key, value),
         )
+        ignore(
+          self.world.record_pending_component_changed_metadata(
+            entity,
+            self.local_component_id,
+            sequence,
+            None,
+          ),
+        )
         return true
       }
     None => ()
   }
-  let sequence = component_write_sequence(self.world)
   match self.storage_type {
     SparseSet =>
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) => {
           guard store_ref.val.set(entity, erased_value(value)) else { return false }
-          self.changed_sequence_table.set(entity.id, sequence)
-          match self.world.changed_component_callers.get(self.local_component_id) {
-            Some(caller_table) => caller_table.set(entity.id, None)
-            None => ()
-          }
+          ignore(
+            self.world.record_sparse_component_changed_by_local_id(
+              entity,
+              self.local_component_id,
+              sequence,
+              None,
+            ),
+          )
           true
         }
         None => false
@@ -558,11 +565,6 @@ pub fn[T] ComponentColumn::set_sequence_only(
         return false
       }
       values[row_index] = value
-      self.changed_sequence_table.set(entity.id, sequence)
-      match self.world.changed_component_callers.get(self.local_component_id) {
-        Some(caller_table) => caller_table.set(entity.id, None)
-        None => ()
-      }
       guard self.world.table_storage(table_id) is Some(table_ref) else { return false }
       ignore(
         table_ref.val.record_changed_at_row(
@@ -589,11 +591,14 @@ pub fn[T] ComponentColumn::set_sequence_only_fast(
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) => {
           guard store_ref.val.set(entity, erased_value(value)) else { return false }
-          self.changed_sequence_table.set(entity.id, sequence)
-          match self.world.changed_component_callers.get(self.local_component_id) {
-            Some(caller_table) => caller_table.set(entity.id, None)
-            None => ()
-          }
+          ignore(
+            self.world.record_sparse_component_changed_by_local_id(
+              entity,
+              self.local_component_id,
+              sequence,
+              None,
+            ),
+          )
           true
         }
         None => false
@@ -616,11 +621,6 @@ pub fn[T] ComponentColumn::set_sequence_only_fast(
         return false
       }
       values[row_index] = value
-      self.changed_sequence_table.set(entity.id, sequence)
-      match self.world.changed_component_callers.get(self.local_component_id) {
-        Some(caller_table) => caller_table.set(entity.id, None)
-        None => ()
-      }
       ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
       true
     }
@@ -639,7 +639,14 @@ pub fn[T] ComponentColumn::set_sequence_only_hot(
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) => {
           guard store_ref.val.set(entity, erased_value(value)) else { return false }
-          self.changed_sequence_table.set(entity.id, sequence)
+          ignore(
+            self.world.record_sparse_component_changed_by_local_id(
+              entity,
+              self.local_component_id,
+              sequence,
+              None,
+            ),
+          )
           true
         }
         None => false
@@ -662,7 +669,6 @@ pub fn[T] ComponentColumn::set_sequence_only_hot(
         return false
       }
       values[row_index] = value
-      self.changed_sequence_table.set(entity.id, sequence)
       ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
       true
     }
@@ -683,7 +689,6 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(
     return false
   }
   values[row_index] = value
-  self.changed_sequence_table.set(entity.id, sequence)
   let entity_id = entity.id
   guard entity_id >= 0 &&
     entity_id < self.world.entity_table_ids.length() else {

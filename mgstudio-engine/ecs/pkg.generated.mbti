@@ -196,14 +196,11 @@ pub fn[T] Comp::new(ComponentKey[T]) -> Self[T]
 pub fn[T] Comp::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Comp[T]
 
-type ComponentCallerTable
-
 pub struct ComponentColumn[T] {
   world : World
   key : ComponentKey[T]
   local_component_id : Int
   storage_type : ComponentStorageType
-  changed_sequence_table : ComponentSequenceTable
   table_column_cache : @ref.Ref[Array[@any.Any?]]
   table_column_cache_ready : @ref.Ref[Array[Bool]]
 }
@@ -309,12 +306,12 @@ pub(all) struct ComponentRelationshipTargetMetadata {
   linked_entities : ((DeferredWorld, @core.Entity) -> Array[@core.Entity])?
 }
 
-type ComponentSequenceTable
-
 pub enum ComponentStorageType {
   Table
   SparseSet
 } derive(Eq)
+
+type ComponentTickMetadata
 
 pub struct ComponentsQueuedRegistrator {
   world : World
@@ -404,6 +401,7 @@ pub fn EntityMut::id(Self) -> @core.Entity
 pub fn[B : Bundle] EntityMut::insert(Self, B, loc~ : SourceLoc) -> Self raise EcsError
 #callsite(autofill(loc))
 pub fn[T : Component] EntityMut::insert_component(Self, T, loc~ : SourceLoc) -> Self raise EcsError
+pub fn[E : TriggerEvent] EntityMut::observe(Self, (On[E]) -> Unit) -> Self
 #callsite(autofill(loc))
 pub fn[T : Component] EntityMut::remove_component(Self, loc~ : SourceLoc) -> T? raise EcsError
 pub impl QueryData for EntityMut
@@ -887,6 +885,7 @@ pub struct World {
   mut current_query_sparse_anchor_payload_context : QuerySparseAnchorPayloadContext?
   tables : Map[Int, @ref.Ref[RawTable]]
   sparse_component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
+  sparse_component_metadata : Map[Int, @ref.Ref[@core.ComponentStore[ComponentTickMetadata]]]
   component_store_cache_by_definition_id : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
   mut next_archetype_id : Int
   mut next_table_id : Int
@@ -917,15 +916,9 @@ pub struct World {
   used_components : Map[Int, Bool]
   added_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   changed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
-  added_component_sequences : Map[Int, ComponentSequenceTable]
-  changed_component_sequences : Map[Int, ComponentSequenceTable]
-  changed_component_callers : Map[Int, ComponentCallerTable]
   removed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   component_hooks_registry : Map[Int, ComponentHooks]
   resources : Map[Int, ResourceSlot]
-  resource_added_sequences : Map[Int, Int]
-  resource_changed_sequences : Map[Int, Int]
-  resource_changed_callers : Map[Int, String]
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
   mut deferred_hook_command_depth : Int
@@ -963,6 +956,7 @@ pub fn[T] World::component_column(Self, ComponentKey[T]) -> ComponentColumn[T]?
 pub fn[T] World::component_count(Self, ComponentKey[T]) -> Int
 pub fn[T : Component] World::component_id(Self, key? : ComponentKey[T]) -> Int?
 pub fn[T] World::component_id_by_key(Self, ComponentKey[T]) -> Int?
+pub fn World::component_registration_generation(Self) -> Int
 pub fn World::components_registrator(Self) -> ComponentsRegistrator
 pub fn[T : Component] World::contains(Self, @core.Entity, key? : ComponentKey[T]) -> Bool raise EcsError
 pub fn[T] World::contains_by_key(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError

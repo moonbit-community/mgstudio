@@ -154,10 +154,10 @@ fn[T] resource_mut_replace_value_or_abort(
 ) -> Unit {
   let world = resource_mut_world_or_abort(item)
   let key = resource_mut_key_or_abort(item)
-  if !world.resources.contains(key.id()) {
-    abort("ResourceMut expected a fetched resource")
+  match world.resources.get(key.id()) {
+    Some(slot) => slot.payload = erased_value(value)
+    None => abort("ResourceMut expected a fetched resource")
   }
-  world.resources.set(key.id(), ResourceSlot::{ payload: erased_value(value) })
 }
 
 ///|

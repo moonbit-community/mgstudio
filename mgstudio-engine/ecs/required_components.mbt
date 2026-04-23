@@ -447,13 +447,17 @@ fn World::insert_component_payloads_with_requirements(
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
   let structural_changed_ref = Ref::new(false)
-  let pending_payloads : Map[Int, ErasedWriter] = match
+  let (pending_payloads, pending_metadata) : (
+    Map[Int, ErasedWriter],
+    Map[Int, ComponentTickMetadata],
+  ) = match
     self.pending_component_payload_context {
-    Some(context) if context.entity_id == entity.id => context.payloads
-    _ => {}
+    Some(context) if context.entity_id == entity.id =>
+      (context.payloads, context.metadata)
+    _ => ({}, {})
   }
   let previous_pending_context = self.push_pending_component_payload_context(
-    entity, pending_payloads,
+    entity, pending_payloads, pending_metadata,
   )
   for payload in payloads {
     self.insert_component_with_requirements_unchecked(
@@ -467,7 +471,7 @@ fn World::insert_component_payloads_with_requirements(
   }
   if structural_changed_ref.val {
     self.refresh_entity_archetype_with_pending_payloads(
-      entity, pending_payloads,
+      entity, pending_payloads, pending_metadata,
     )
     self.mark_structure_changed()
   }
