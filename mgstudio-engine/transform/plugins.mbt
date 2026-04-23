@@ -54,12 +54,6 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     )
     |> @app.chain(),
   )
-  .configure_set(@app.PostStartup, transform_set_mark_dirty_trees, before=[
-    transform_set_propagate,
-  ])
-  .configure_set(@app.PostStartup, transform_set_propagate, before=[
-    transform_set_sync_simple_transforms,
-  ])
   .add_systems(
     @app.PostUpdate,
     (
@@ -77,10 +71,4 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     )
     |> @app.chain(),
   )
-  .configure_set(@app.PostUpdate, transform_set_mark_dirty_trees, before=[
-    transform_set_propagate,
-  ])
-  .configure_set(@app.PostUpdate, transform_set_propagate, before=[
-    transform_set_sync_simple_transforms,
-  ])
 }
