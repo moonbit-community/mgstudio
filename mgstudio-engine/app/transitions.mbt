@@ -256,12 +256,37 @@ fn run_state_transition_hooks(
   for config_ref in matched_refs {
     matched_configs.push(config_ref.val)
   }
+  let execution_order : Array[Int] = []
+  let execution_batches : Array[Array[Int]] = []
+  for i in 0..<matched_configs.length() {
+    let access = match matched_configs[i].access_factory {
+      Some(access_factory) => access_factory(world)
+      None => SystemAccess::exclusive()
+    }
+    match access.validation_error() {
+      Some(message) =>
+        report_world_error(
+          world,
+          @ecs.Invalid(message),
+          system_context(
+            matched_configs[i],
+            ErrorContextKind::Validation,
+            current_schedule_stage(),
+          ),
+        )
+      None => {
+        execution_order.push(i)
+        execution_batches.push([i])
+      }
+    }
+  }
   run_systems(
     world,
     matched_configs,
+    execution_order,
+    execution_batches,
     [],
     current_schedule_stage(),
-    SingleThreaded,
   )
   for i in 0..<matched_refs.length() {
     matched_refs[i].val = matched_configs[i]

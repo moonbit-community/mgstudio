@@ -217,7 +217,7 @@ fn World::assign_local_component_id(self : World, definition_id : Int) -> Int {
 }
 
 ///|
-fn World::component_registration_generation(self : World) -> Int {
+pub fn World::component_registration_generation(self : World) -> Int {
   self.component_registration_generation
 }
 

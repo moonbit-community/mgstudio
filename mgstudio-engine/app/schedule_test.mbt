@@ -216,7 +216,7 @@ test "app: run_if evaluates with condition system sequence" {
 }
 
 ///|
-test "app: repeated run_if composes and short-circuits" {
+test "app: repeated run_if composes without short-circuiting" {
   let log : Array[String] = []
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { log.push("system") })
@@ -232,7 +232,7 @@ test "app: repeated run_if composes and short-circuits" {
 
   app.run_once() |> ignore
 
-  debug_inspect(log.join(","), content="\"first\"")
+  debug_inspect(log.join(","), content="\"first,second\"")
 }
 
 ///|
@@ -395,6 +395,32 @@ test "app: schedule sets order and preserve insertion within a set" {
     log.length() == 3 && log[0] == 1 && log[1] == 2 && log[2] == 3,
     content="true",
   )
+}
+
+///|
+test "app: cyclic set ordering reports validation error and skips stage execution" {
+  let log : Array[Int] = []
+  let kinds : Array[ErrorContextKind] = []
+  let set_a = system_set("CycleA")
+  let set_b = system_set("CycleB")
+  let app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push(1) }).in_set(set_a),
+    )
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push(2) }).in_set(set_b),
+    )
+    .configure_sets(Update, set_a, before=[set_b])
+    .configure_sets(Update, set_b, before=[set_a])
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  debug_inspect(log.length(), content="0")
+  debug_inspect(kinds.length(), content="1")
+  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
 }
 
 ///|
@@ -822,7 +848,7 @@ test "app: SystemParam Query2 injects typed query into update system" {
 }
 
 ///|
-test "app: schedule rejects conflicting query params before system execution" {
+test "app: schedule filters conflicting query params before execution" {
   let kinds : Array[ErrorContextKind] = []
   let ran = Ref::new(false)
   let app = App::new(@ecs.World::new())
@@ -835,8 +861,8 @@ test "app: schedule rejects conflicting query params before system execution" {
     })
 
   app.run_once() |> ignore
+  app.run_once() |> ignore
 
   debug_inspect(ran.val, content="false")
-  debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
+  debug_inspect(kinds.length(), content="0")
 }

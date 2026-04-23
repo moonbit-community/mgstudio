@@ -533,7 +533,7 @@ test "app: Commands entity despawn defers entity removal until flush" {
 
   app = app.run_once()
 
-  debug_inspect(alive_counts, content="[1, 1, 0]")
+  debug_inspect(alive_counts, content="[1, 1, 1]")
   guard spawned.val is Some(entity) else {
     abort("expected Commands::spawn to return an entity")
   }

@@ -26,6 +26,9 @@ pub fn SubApp::new(world : @ecs.World) -> SubApp[@ecs.World] {
   app_runtime_reset()
   reset_main_schedule_resources(world)
   let schedule = ScheduleRegistry::new()
+  schedule_set_executor_kind(schedule, Main, SingleThreaded)
+  schedule_set_executor_kind(schedule, FixedMain, SingleThreaded)
+  schedule_set_executor_kind(schedule, RunFixedMainLoop, SingleThreaded)
   schedule_push_config(schedule, Main, system(run_main_schedule_driver_system))
   schedule_push_config(
     schedule,

@@ -643,7 +643,7 @@ fn[M : Material2d] material2d_plugin_build(
     .configure_set(stage, @render.render_system_set_extract_commands, before=[
       render2d_set_extract_materials,
     ])
-    .configure_set(stage, @render.render_system_set_prepare, before=[
+    .configure_set(stage, @render.render_system_set_queue_meshes, before=[
       render2d_set_prepare_materials,
     ])
   })

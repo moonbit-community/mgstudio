@@ -889,9 +889,13 @@ fn[W] system_config_with_access(
     run_ifs: [],
     run_if_states: [],
     chain_members: None,
+    chain_ignore_deferred: false,
     set: None,
     before: [],
     after: [],
+    before_ignore_deferred: [],
+    after_ignore_deferred: [],
+    is_apply_deferred_node: false,
     run_if_last_run_sequences: [],
     last_run_sequence: 0,
     access_factory: Some(access_factory),
@@ -1113,9 +1117,13 @@ pub fn[W] fallible_system(
     run_ifs: [],
     run_if_states: [],
     chain_members: None,
+    chain_ignore_deferred: false,
     set: None,
     before: [],
     after: [],
+    before_ignore_deferred: [],
+    after_ignore_deferred: [],
+    is_apply_deferred_node: false,
     run_if_last_run_sequences: [],
     last_run_sequence: 0,
     access_factory: None,
@@ -1821,9 +1829,13 @@ pub struct SystemConfig[W] {
   run_ifs : Array[StatefulRunConditionFn[W]]
   run_if_states : Array[Ref[Json]]
   chain_members : Array[SystemConfig[W]]?
+  chain_ignore_deferred : Bool
   set : SystemSet?
   before : Array[SystemSet]
   after : Array[SystemSet]
+  before_ignore_deferred : Array[SystemSet]
+  after_ignore_deferred : Array[SystemSet]
+  is_apply_deferred_node : Bool
   run_if_last_run_sequences : Array[@core.Sequence]
   mut last_run_sequence : @core.Sequence
   mut access_factory : ((@ecs.World) -> SystemAccess)?
@@ -1840,9 +1852,13 @@ pub fn[W] system(system : SystemFn[W], loc~ : SourceLoc) -> SystemConfig[W] {
     run_ifs: [],
     run_if_states: [],
     chain_members: None,
+    chain_ignore_deferred: false,
     set: None,
     before: [],
     after: [],
+    before_ignore_deferred: [],
+    after_ignore_deferred: [],
+    is_apply_deferred_node: false,
     run_if_last_run_sequences: [],
     last_run_sequence: 0,
     access_factory: None,
@@ -1888,6 +1904,13 @@ pub fn[W] SystemConfig::run_if_stateful(
 }
 
 ///|
+pub fn[W] SystemConfig::chain_ignore_deferred(
+  self : SystemConfig[W],
+) -> SystemConfig[W] {
+  SystemConfig::{ ..self, chain_ignore_deferred: true }
+}
+
+///|
 pub fn[W] SystemConfig::in_set(
   self : SystemConfig[W],
   set : SystemSet,
@@ -1911,6 +1934,40 @@ pub fn[W] SystemConfig::after(
 ) -> SystemConfig[W] {
   self.after.push(set)
   self
+}
+
+///|
+pub fn[W] SystemConfig::before_ignore_deferred(
+  self : SystemConfig[W],
+  set : SystemSet,
+) -> SystemConfig[W] {
+  self.before_ignore_deferred.push(set)
+  self
+}
+
+///|
+pub fn[W] SystemConfig::after_ignore_deferred(
+  self : SystemConfig[W],
+  set : SystemSet,
+) -> SystemConfig[W] {
+  self.after_ignore_deferred.push(set)
+  self
+}
+
+///|
+pub fn apply_deferred_system() -> SystemConfig[@ecs.World] {
+  let config = system(fn(world : @ecs.World) {
+    end_deferred_command_batch(world)
+    begin_deferred_command_batch()
+  })
+  SystemConfig::{
+    ..config,
+    name: Some("bevy_ecs::apply_deferred"),
+    is_apply_deferred_node: true,
+    access_factory: Some(fn(_world : @ecs.World) {
+      SystemAccess::new()
+    }),
+  }
 }
 
 ///|
@@ -3527,239 +3584,19 @@ pub fn[
 fn run_systems(
   world : @ecs.World,
   systems : Array[SystemConfig[@ecs.World]],
-  set_edges : Array[(SystemSet, SystemSet)],
+  execution_order : Array[Int],
+  execution_batches : Array[Array[Int]],
+  apply_after_execution_order : Array[Bool],
   stage : ScheduleStage?,
-  executor_kind : ExecutorKind,
+  apply_final_deferred? : Bool = true,
+  set_run_conditions? : @hashmap.HashMap[
+    SystemSet,
+    Ref[ScheduleSetRunConditions[@ecs.World]],
+  ] = @hashmap.HashMap::new(),
 ) -> Unit {
   let timeline_enabled = timeline_trace_enabled()
   current_system_sequence_ref.val = None
   current_world_ref.val = None
-  let allowed_ambiguous_components = current_allowed_ambiguous_components()
-  let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
-  let set_order : Array[SystemSet] = []
-  fn push_unique(
-    seen : @hashmap.HashMap[SystemSet, Bool],
-    set_order : Array[SystemSet],
-    set : SystemSet,
-  ) -> Unit {
-    if !seen.contains(set) {
-      set_order.push(set)
-      seen.set(set, true)
-    }
-  }
-
-  let system_count = systems.length()
-  let groups : Array[SystemSet] = []
-  for i in 0..<system_count {
-    let cfg = systems[i]
-    let set = if cfg.set is Some(s) { s } else { "__anon#\{i.to_string()}" }
-    groups.push(set)
-    push_unique(seen, set_order, set)
-    for other in cfg.before {
-      push_unique(seen, set_order, other)
-    }
-    for other in cfg.after {
-      push_unique(seen, set_order, other)
-    }
-  }
-  for edge in set_edges {
-    push_unique(seen, set_order, edge.0)
-    push_unique(seen, set_order, edge.1)
-  }
-  let set_count = set_order.length()
-  let set_index : @hashmap.HashMap[SystemSet, Int] = @hashmap.HashMap::new()
-  for i in 0..<set_count {
-    set_index.set(set_order[i], i)
-  }
-  let indeg : Array[Int] = []
-  let adj : Array[Array[Int]] = []
-  for _ in 0..<set_count {
-    indeg.push(0)
-    adj.push([])
-  }
-  fn add_edge(
-    set_index : @hashmap.HashMap[SystemSet, Int],
-    indeg : Array[Int],
-    adj : Array[Array[Int]],
-    from : SystemSet,
-    to : SystemSet,
-  ) -> Unit {
-    let from_i = set_index.at(from)
-    let to_i = set_index.at(to)
-    adj[from_i].push(to_i)
-    indeg[to_i] = indeg[to_i] + 1
-  }
-
-  for edge in set_edges {
-    add_edge(set_index, indeg, adj, edge.0, edge.1)
-  }
-  for i in 0..<system_count {
-    let cfg = systems[i]
-    let group = groups[i]
-    for other in cfg.before {
-      add_edge(set_index, indeg, adj, group, other)
-    }
-    for other in cfg.after {
-      add_edge(set_index, indeg, adj, other, group)
-    }
-  }
-  let indeg_for_topo : Array[Int] = []
-  for value in indeg {
-    indeg_for_topo.push(value)
-  }
-  fn pop_smallest(ready : Array[Int]) -> Int {
-    let mut best_pos = 0
-    let mut best_value = ready[0]
-    let len = ready.length()
-    for i in 1..<len {
-      let value = ready[i]
-      if value < best_value {
-        best_value = value
-        best_pos = i
-      }
-    }
-    let last_index = ready.length() - 1
-    ready[best_pos] = ready[last_index]
-    ready.pop().unwrap() |> ignore
-    best_value
-  }
-
-  let ready : Array[Int] = []
-  for i in 0..<set_count {
-    if indeg[i] == 0 {
-      ready.push(i)
-    }
-  }
-  let set_layers : Array[Array[Int]] = []
-  let visited_count = Ref::new(0)
-  while ready.length() > 0 {
-    let layer : Array[Int] = []
-    while ready.length() > 0 {
-      layer.push(pop_smallest(ready))
-    }
-    visited_count.val = visited_count.val + layer.length()
-    set_layers.push(layer)
-    let next_ready : Array[Int] = []
-    for next in layer {
-      for to in adj[next] {
-        indeg[to] = indeg[to] - 1
-        if indeg[to] == 0 {
-          next_ready.push(to)
-        }
-      }
-    }
-    for next in next_ready {
-      ready.push(next)
-    }
-  }
-
-  // Cycle fallback: preserve first-seen order.
-  if visited_count.val != set_count {
-    set_layers.clear()
-    for i in 0..<set_count {
-      set_layers.push([i])
-    }
-  }
-  let set_layer_index : Array[Int] = []
-  for _ in 0..<set_count {
-    set_layer_index.push(0)
-  }
-  for layer_i in 0..<set_layers.length() {
-    for set_i in set_layers[layer_i] {
-      set_layer_index[set_i] = layer_i
-    }
-  }
-  let topo_ready : Array[Int] = []
-  for i in 0..<set_count {
-    if indeg_for_topo[i] == 0 {
-      topo_ready.push(i)
-    }
-  }
-  let topo : Array[Int] = []
-  while topo_ready.length() > 0 {
-    let next = pop_smallest(topo_ready)
-    topo.push(next)
-    for to in adj[next] {
-      indeg_for_topo[to] = indeg_for_topo[to] - 1
-      if indeg_for_topo[to] == 0 {
-        topo_ready.push(to)
-      }
-    }
-  }
-  if topo.length() != set_count {
-    topo.clear()
-    for i in 0..<set_count {
-      topo.push(i)
-    }
-  }
-  let systems_by_set : Array[Array[Int]] = []
-  for _ in 0..<set_count {
-    systems_by_set.push([])
-  }
-  for i in 0..<system_count {
-    let set_i = set_index.at(groups[i])
-    systems_by_set[set_i].push(i)
-  }
-  let execution_order : Array[Int] = []
-  for set_i in topo {
-    for system_i in systems_by_set[set_i] {
-      execution_order.push(system_i)
-    }
-  }
-
-  let system_accesses : Array[SystemAccess] = []
-  for i in 0..<system_count {
-    match systems[i].access_factory {
-      Some(access_factory) => system_accesses.push(access_factory(world))
-      None => system_accesses.push(SystemAccess::exclusive())
-    }
-  }
-
-  let execution_batches : Array[Array[Int]] = []
-  match executor_kind {
-    SingleThreaded =>
-      for system_i in execution_order {
-        execution_batches.push([system_i])
-      }
-    MultiThreaded => {
-      let current_batch_ref : Ref[Array[Int]] = Ref::new([])
-      let current_batch_layer_ref : Ref[Int?] = Ref::new(None)
-      for system_i in execution_order {
-        let set_i = set_index.at(groups[system_i])
-        let system_layer = set_layer_index[set_i]
-        let access = system_accesses[system_i]
-        let can_join_current_batch = Ref::new(
-          current_batch_ref.val.length() > 0 &&
-          current_batch_layer_ref.val == Some(system_layer),
-        )
-        if can_join_current_batch.val {
-          for existing_i in current_batch_ref.val {
-            if !system_access_compatible(
-                system_accesses[existing_i],
-                access,
-                allowed_ambiguous_components,
-              ) {
-              can_join_current_batch.val = false
-              break
-            }
-          }
-        }
-        if current_batch_ref.val.length() == 0 {
-          current_batch_ref.val = [system_i]
-          current_batch_layer_ref.val = Some(system_layer)
-        } else if can_join_current_batch.val {
-          current_batch_ref.val.push(system_i)
-        } else {
-          execution_batches.push(current_batch_ref.val)
-          current_batch_ref.val = [system_i]
-          current_batch_layer_ref.val = Some(system_layer)
-        }
-      }
-      if current_batch_ref.val.length() > 0 {
-        execution_batches.push(current_batch_ref.val)
-      }
-    }
-  }
   let stepping_ref = stepping_resource_mut(world)
   stepping_prepare_stage(stepping_ref, stage, systems, execution_order)
   fn system_default_trace_name(
@@ -3806,9 +3643,56 @@ fn run_systems(
       _ => true
     }
   }
+  fn apply_deferred_boundary(execution_i : Int) -> Unit {
+    if execution_i < apply_after_execution_order.length() &&
+      apply_after_execution_order[execution_i] {
+      end_deferred_command_batch(world)
+      begin_deferred_command_batch()
+    }
+  }
+  begin_deferred_command_batch()
+  let set_run_if_results : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
+  fn evaluate_set_run_if_once(set : SystemSet) -> Bool {
+    match set_run_if_results.get(set) {
+      Some(cached) => cached
+      None => {
+        let should_run = match set_run_conditions.get(set) {
+          None => true
+          Some(run_conditions_ref) => {
+            let mut matches = true
+            for cond_i in 0..<run_conditions_ref.val.run_ifs.length() {
+              let cond = run_conditions_ref.val.run_ifs[cond_i]
+              let cond_this_run = world.advance_sequence()
+              let cond_ticks = @core.SystemSequence::new(
+                run_conditions_ref.val.run_if_last_run_sequences[cond_i],
+                cond_this_run,
+              )
+              let cond_ctx = world.get_sequence_context()
+              cond_ctx.set(cond_ticks)
+              world.set_sequence_context(cond_ctx)
+              let prev_world = current_world_ref.val
+              current_world_ref.val = Some(world)
+              current_system_sequence_ref.val = Some(cond_ticks)
+              let cond_result = cond(
+                world,
+                run_conditions_ref.val.run_if_states[cond_i],
+              )
+              current_system_sequence_ref.val = None
+              current_world_ref.val = prev_world
+              run_conditions_ref.val.run_if_last_run_sequences[cond_i] =
+                cond_this_run
+              matches = matches && cond_result
+            }
+            matches
+          }
+        }
+        set_run_if_results.set(set, should_run)
+        should_run
+      }
+    }
+  }
   let execution_i_ref = Ref::new(0)
   for batch in execution_batches {
-    begin_deferred_command_batch()
     for system_i in batch {
       let execution_i = execution_i_ref.val
       let cfg = systems[system_i]
@@ -3816,21 +3700,15 @@ fn run_systems(
       if !stepping_should_run_system(
           stepping_ref, stage, systems, system_i, execution_i,
         ) {
+        apply_deferred_boundary(execution_i)
         continue
       }
-      match system_accesses[system_i].validation_error() {
-        Some(message) => {
-          report_world_error(
-            world,
-            @ecs.Invalid(message),
-            system_context(
-              systems[system_i],
-              ErrorContextKind::Validation,
-              current_schedule_stage(),
-            ),
-          )
-          continue
-        }
+      match cfg.set {
+        Some(set) =>
+          if !evaluate_set_run_if_once(set) {
+            apply_deferred_boundary(execution_i)
+            continue
+          }
         None => ()
       }
       let mut should_skip = false
@@ -3851,12 +3729,10 @@ fn run_systems(
         current_system_sequence_ref.val = None
         current_world_ref.val = prev_world
         systems[system_i].run_if_last_run_sequences[cond_i] = cond_this_run
-        if !should_run {
-          should_skip = true
-          break
-        }
+        should_skip = should_skip || !should_run
       }
       if should_skip {
+        apply_deferred_boundary(execution_i)
         continue
       }
 
@@ -3900,7 +3776,10 @@ fn run_systems(
             stepping_ref, stage, systems, system_i, execution_i,
           )
         }
-        Skipped(_) => continue
+        Skipped(_) => {
+          apply_deferred_boundary(execution_i)
+          continue
+        }
         Invalid(message) => {
           if timeline_enabled && system_trace_start_us >= 0L {
             timeline_trace_end_span(
@@ -3918,6 +3797,7 @@ fn run_systems(
               current_schedule_stage(),
             ),
           )
+          apply_deferred_boundary(execution_i)
           continue
         }
         Error(err) => {
@@ -3955,7 +3835,10 @@ fn run_systems(
           }
         }
       }
+      apply_deferred_boundary(execution_i)
     }
+  }
+  if apply_final_deferred {
     end_deferred_command_batch(world)
   }
   stepping_finish_stage(stepping_ref, stage, execution_order.length())
@@ -3972,12 +3855,47 @@ fn run_schedule_stage(
     to_repr(stage).to_string(),
   )
   current_schedule_stage_ref.val = Some(stage)
+  let execution_plan = schedule_execution_plan(
+    schedule,
+    stage,
+    world,
+    current_allowed_ambiguous_components(),
+  )
+  match execution_plan.build_error {
+    Some(message) => {
+      if execution_plan.report_build_error {
+        report_world_error(
+          world,
+          @ecs.Invalid(message),
+          ErrorContext::new(
+            ErrorContextKind::Validation,
+            "\{to_repr(stage).to_string()}::<schedule>",
+            stage=Some(stage),
+          ),
+        )
+      }
+      current_schedule_stage_ref.val = None
+      timeline_trace_end_span(
+        TimelineTraceCategory::ScheduleStage,
+        to_repr(stage).to_string(),
+        stage_trace_start_us,
+      )
+      return
+    }
+    None => ()
+  }
+  // Runtime validation reports are produced by system execution outcomes.
+  ignore(execution_plan.invalid_system_errors.length())
+  ignore(execution_plan.report_invalid_system_errors)
   run_systems(
     world,
-    schedule_systems(schedule, stage),
-    schedule_set_edges(schedule, stage),
+    execution_plan.systems,
+    execution_plan.execution_order,
+    execution_plan.execution_batches,
+    execution_plan.apply_after_execution_order,
     Some(stage),
-    schedule_executor_kind(schedule, stage),
+    apply_final_deferred=execution_plan.apply_final_deferred,
+    set_run_conditions=execution_plan.set_run_conditions,
   )
   current_schedule_stage_ref.val = None
   timeline_trace_end_span(

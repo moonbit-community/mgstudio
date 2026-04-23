@@ -110,7 +110,7 @@ fn core_2d_configure_render_sub_app(
     core_2d_set_extract,
   ])
   .configure_set(stage, core_2d_set_extract, before=[core_2d_set_prepare])
-  .configure_set(stage, @render.render_system_set_prepare, before=[
+  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     core_2d_set_prepare,
   ])
   .configure_set(stage, core_2d_set_prepare, before=[core_2d_set_queue])
