@@ -504,7 +504,9 @@ pub fn gltf_plugin_build_with(
 
 ///|
 pub fn gltf_plugin_finish(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  gltf_register_asset_loaders_once()
+  @asset.asset_with_world(app.world(), fn() {
+    gltf_register_asset_loaders_once()
+  })
   app
 }
 

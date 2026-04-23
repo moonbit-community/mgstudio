@@ -1066,7 +1066,7 @@ pub fn scene_plugin_with(
   @hierarchy.hierarchy_install_component_metadata()
   @transform.transform_install_component_metadata()
   scene_install_component_metadata()
-  scene_install_asset_hooks()
+  scene_install_asset_hooks(app.world())
   scene_runtime_plugin_base(
     @asset.init_asset(scene_init_gltf_assets(app), scene_pending)
     .init_resource(fn() {

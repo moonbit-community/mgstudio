@@ -57,11 +57,13 @@ pub fn AssetServer::load_folder(
   self : AssetServer,
   path : String,
 ) -> Handle[LoadedFolder] {
-  let canonical_path = asset_canonical_path(path)
-  let host_id = host_asset_load_folder(path=canonical_path)
-  self.record_path(canonical_path)
-  let handle = Handle::new(host_id)
-  handle
+  asset_with_server_world(self, fn() {
+    let canonical_path = asset_canonical_path(path)
+    let host_id = host_asset_load_folder(path=canonical_path)
+    self.record_path(canonical_path)
+    let handle = Handle::new(host_id)
+    handle
+  })
 }
 
 ///|

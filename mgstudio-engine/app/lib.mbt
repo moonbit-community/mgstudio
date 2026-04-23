@@ -888,6 +888,7 @@ fn[W] system_config_with_access(
     error_handler: None,
     run_ifs: [],
     run_if_states: [],
+    chain_members: None,
     set: None,
     before: [],
     after: [],
@@ -1111,6 +1112,7 @@ pub fn[W] fallible_system(
     error_handler: None,
     run_ifs: [],
     run_if_states: [],
+    chain_members: None,
     set: None,
     before: [],
     after: [],
@@ -1818,6 +1820,7 @@ pub struct SystemConfig[W] {
   error_handler : ErrorHandler?
   run_ifs : Array[StatefulRunConditionFn[W]]
   run_if_states : Array[Ref[Json]]
+  chain_members : Array[SystemConfig[W]]?
   set : SystemSet?
   before : Array[SystemSet]
   after : Array[SystemSet]
@@ -1836,6 +1839,7 @@ pub fn[W] system(system : SystemFn[W], loc~ : SourceLoc) -> SystemConfig[W] {
     error_handler: None,
     run_ifs: [],
     run_if_states: [],
+    chain_members: None,
     set: None,
     before: [],
     after: [],
@@ -1920,139 +1924,16 @@ pub fn[T : ChainedSystemConfigs] chain(configs : T) -> SystemConfig[@ecs.World] 
 }
 
 ///|
-fn run_chained_system_config(
-  world : @ecs.World,
-  config_ref : Ref[SystemConfig[@ecs.World]],
-) -> Unit {
-  let mut should_skip = false
-  for cond_i in 0..<config_ref.val.run_ifs.length() {
-    let cond = config_ref.val.run_ifs[cond_i]
-    let cond_this_run = world.advance_sequence()
-    let cond_ticks = @core.SystemSequence::new(
-      config_ref.val.run_if_last_run_sequences[cond_i],
-      cond_this_run,
-    )
-    let cond_ctx = world.get_sequence_context()
-    cond_ctx.set(cond_ticks)
-    world.set_sequence_context(cond_ctx)
-    let prev_world = current_world_ref.val
-    current_world_ref.val = Some(world)
-    let prev_ticks = current_system_sequence_ref.val
-    ignore(prev_ticks)
-    current_system_sequence_ref.val = Some(cond_ticks)
-    let should_run = cond(world, config_ref.val.run_if_states[cond_i])
-    current_system_sequence_ref.val = prev_ticks
-    current_world_ref.val = prev_world
-    config_ref.val.run_if_last_run_sequences[cond_i] = cond_this_run
-    if !should_run {
-      should_skip = true
-      break
-    }
+fn chain_group_config(
+  members : Array[SystemConfig[@ecs.World]],
+) -> SystemConfig[@ecs.World] {
+  let config = system(fn(_world : @ecs.World) -> Unit {})
+  SystemConfig::{
+    ..config,
+    chain_members: Some(members),
+    // This wrapper is expanded in schedule_push_config and never executed directly.
+    access_factory: None,
   }
-  if should_skip {
-    return
-  }
-
-  let this_run = world.advance_sequence()
-  let sys_ticks = @core.SystemSequence::new(
-    config_ref.val.last_run_sequence,
-    this_run,
-  )
-  let ctx = world.get_sequence_context()
-  ctx.set(sys_ticks)
-  world.set_sequence_context(ctx)
-  let prev_world = current_world_ref.val
-  current_world_ref.val = Some(world)
-  let prev_ticks = current_system_sequence_ref.val
-  ignore(prev_ticks)
-  current_system_sequence_ref.val = Some(sys_ticks)
-  let prev_outcome = current_system_execution_outcome()
-  reset_system_execution_outcome()
-  (config_ref.val.system)(world)
-  let outcome = current_system_execution_outcome()
-  current_system_execution_outcome_ref.val = prev_outcome
-  current_system_sequence_ref.val = prev_ticks
-  current_world_ref.val = prev_world
-  match outcome {
-    Success => config_ref.val.last_run_sequence = this_run
-    Skipped(_) => return
-    Invalid(message) => {
-      report_world_error(
-        world,
-        @ecs.Invalid(message),
-        system_context(
-          config_ref.val,
-          ErrorContextKind::Validation,
-          current_schedule_stage(),
-        ),
-      )
-      return
-    }
-    Error(err) => {
-      config_ref.val.last_run_sequence = this_run
-      match config_ref.val.error_handler {
-        Some(handler) =>
-          handler(
-            err,
-            system_context(
-              config_ref.val,
-              ErrorContextKind::System,
-              current_schedule_stage(),
-            ),
-          )
-        None =>
-          report_world_error(
-            world,
-            err,
-            system_context(
-              config_ref.val,
-              ErrorContextKind::System,
-              current_schedule_stage(),
-            ),
-          )
-      }
-    }
-  }
-}
-
-///|
-fn chain_copy_order_edges(
-  target : SystemConfig[@ecs.World],
-  source : SystemConfig[@ecs.World],
-) -> Unit {
-  for before_set in source.before {
-    target.before.push(before_set)
-  }
-  for after_set in source.after {
-    target.after.push(after_set)
-  }
-}
-
-///|
-fn chain_copy_access_factories(
-  target : SystemConfig[@ecs.World],
-  sources : Array[SystemConfig[@ecs.World]],
-) -> Unit {
-  let access_factories : Array[(@ecs.World) -> SystemAccess] = []
-  for source in sources {
-    match source.access_factory {
-      Some(access_factory) => access_factories.push(access_factory)
-      None => {
-        target.access_factory = None
-        return
-      }
-    }
-  }
-  if access_factories.length() == 0 {
-    return
-  }
-  target.access_factory = Some(fn(world : @ecs.World) {
-    let access = SystemAccess::new()
-    for access_factory in access_factories {
-      system_access_merge_unchecked(access, access_factory(world))
-    }
-    access
-  })
 }
 
 ///|
@@ -2061,16 +1942,7 @@ pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
 ) with chain(self) {
   let (first, second) = self
-  let first_ref = Ref::new(first)
-  let second_ref = Ref::new(second)
-  let chained = system(fn(world) {
-    run_chained_system_config(world, first_ref)
-    run_chained_system_config(world, second_ref)
-  })
-  chain_copy_order_edges(chained, first_ref.val)
-  chain_copy_order_edges(chained, second_ref.val)
-  chain_copy_access_factories(chained, [first_ref.val, second_ref.val])
-  chained
+  chain_group_config([first, second])
 }
 
 ///|
@@ -2080,23 +1952,7 @@ pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
 ) with chain(self) {
   let (first, second, third) = self
-  let first_ref = Ref::new(first)
-  let second_ref = Ref::new(second)
-  let third_ref = Ref::new(third)
-  let chained = system(fn(world) {
-    run_chained_system_config(world, first_ref)
-    run_chained_system_config(world, second_ref)
-    run_chained_system_config(world, third_ref)
-  })
-  chain_copy_order_edges(chained, first_ref.val)
-  chain_copy_order_edges(chained, second_ref.val)
-  chain_copy_order_edges(chained, third_ref.val)
-  chain_copy_access_factories(chained, [
-    first_ref.val,
-    second_ref.val,
-    third_ref.val,
-  ])
-  chained
+  chain_group_config([first, second, third])
 }
 
 ///|
@@ -2107,27 +1963,7 @@ pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
 ) with chain(self) {
   let (first, second, third, fourth) = self
-  let first_ref = Ref::new(first)
-  let second_ref = Ref::new(second)
-  let third_ref = Ref::new(third)
-  let fourth_ref = Ref::new(fourth)
-  let chained = system(fn(world) {
-    run_chained_system_config(world, first_ref)
-    run_chained_system_config(world, second_ref)
-    run_chained_system_config(world, third_ref)
-    run_chained_system_config(world, fourth_ref)
-  })
-  chain_copy_order_edges(chained, first_ref.val)
-  chain_copy_order_edges(chained, second_ref.val)
-  chain_copy_order_edges(chained, third_ref.val)
-  chain_copy_order_edges(chained, fourth_ref.val)
-  chain_copy_access_factories(chained, [
-    first_ref.val,
-    second_ref.val,
-    third_ref.val,
-    fourth_ref.val,
-  ])
-  chained
+  chain_group_config([first, second, third, fourth])
 }
 
 ///|
@@ -2139,31 +1975,7 @@ pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
 ) with chain(self) {
   let (first, second, third, fourth, fifth) = self
-  let first_ref = Ref::new(first)
-  let second_ref = Ref::new(second)
-  let third_ref = Ref::new(third)
-  let fourth_ref = Ref::new(fourth)
-  let fifth_ref = Ref::new(fifth)
-  let chained = system(fn(world) {
-    run_chained_system_config(world, first_ref)
-    run_chained_system_config(world, second_ref)
-    run_chained_system_config(world, third_ref)
-    run_chained_system_config(world, fourth_ref)
-    run_chained_system_config(world, fifth_ref)
-  })
-  chain_copy_order_edges(chained, first_ref.val)
-  chain_copy_order_edges(chained, second_ref.val)
-  chain_copy_order_edges(chained, third_ref.val)
-  chain_copy_order_edges(chained, fourth_ref.val)
-  chain_copy_order_edges(chained, fifth_ref.val)
-  chain_copy_access_factories(chained, [
-    first_ref.val,
-    second_ref.val,
-    third_ref.val,
-    fourth_ref.val,
-    fifth_ref.val,
-  ])
-  chained
+  chain_group_config([first, second, third, fourth, fifth])
 }
 
 ///|
@@ -2176,35 +1988,7 @@ pub impl ChainedSystemConfigs for (
   SystemConfig[@ecs.World],
 ) with chain(self) {
   let (first, second, third, fourth, fifth, sixth) = self
-  let first_ref = Ref::new(first)
-  let second_ref = Ref::new(second)
-  let third_ref = Ref::new(third)
-  let fourth_ref = Ref::new(fourth)
-  let fifth_ref = Ref::new(fifth)
-  let sixth_ref = Ref::new(sixth)
-  let chained = system(fn(world) {
-    run_chained_system_config(world, first_ref)
-    run_chained_system_config(world, second_ref)
-    run_chained_system_config(world, third_ref)
-    run_chained_system_config(world, fourth_ref)
-    run_chained_system_config(world, fifth_ref)
-    run_chained_system_config(world, sixth_ref)
-  })
-  chain_copy_order_edges(chained, first_ref.val)
-  chain_copy_order_edges(chained, second_ref.val)
-  chain_copy_order_edges(chained, third_ref.val)
-  chain_copy_order_edges(chained, fourth_ref.val)
-  chain_copy_order_edges(chained, fifth_ref.val)
-  chain_copy_order_edges(chained, sixth_ref.val)
-  chain_copy_access_factories(chained, [
-    first_ref.val,
-    second_ref.val,
-    third_ref.val,
-    fourth_ref.val,
-    fifth_ref.val,
-    sixth_ref.val,
-  ])
-  chained
+  chain_group_config([first, second, third, fourth, fifth, sixth])
 }
 
 ///|
@@ -3978,6 +3762,21 @@ fn run_systems(
   }
   let stepping_ref = stepping_resource_mut(world)
   stepping_prepare_stage(stepping_ref, stage, systems, execution_order)
+  fn system_default_trace_name(
+    cfg : SystemConfig[@ecs.World],
+    stage : ScheduleStage?,
+    fallback_index : Int,
+  ) -> String {
+    match cfg.debug_name {
+      Some(debug_name) => "\{debug_name}#\{fallback_index.to_string()}"
+      None =>
+        match stage {
+          Some(stage_name) =>
+            "\{to_repr(stage_name).to_string()}::__system#\{fallback_index.to_string()}"
+          None => "__system#\{fallback_index.to_string()}"
+        }
+    }
+  }
   fn system_trace_name(
     cfg : SystemConfig[@ecs.World],
     stage : ScheduleStage?,
@@ -3987,18 +3786,13 @@ fn run_systems(
       Some(name) => name
       None =>
         match cfg.set {
-          Some(set) => "\{set}#\{fallback_index.to_string()}"
-          None =>
-            match cfg.debug_name {
-              Some(debug_name) =>
-                "\{debug_name}#\{fallback_index.to_string()}"
-              None =>
-                match stage {
-                  Some(stage_name) =>
-                    "\{to_repr(stage_name).to_string()}::__system#\{fallback_index.to_string()}"
-                  None => "__system#\{fallback_index.to_string()}"
-                }
+          Some(set) =>
+            if set.has_prefix("__chain__:") {
+              system_default_trace_name(cfg, stage, fallback_index)
+            } else {
+              "\{set}#\{fallback_index.to_string()}"
             }
+          None => system_default_trace_name(cfg, stage, fallback_index)
         }
     }
   }

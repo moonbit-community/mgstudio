@@ -101,6 +101,7 @@ pub struct AssetServer {
   default_sampler_nearest : Ref[Bool]
   mode : Ref[AssetMode]
   processed_file_path : Ref[String?]
+  owner_world : Ref[@ecs.World?]
 }
 
 ///|
@@ -153,54 +154,22 @@ fn asset_server_standalone() -> AssetServer {
     default_sampler_nearest: Ref::new(false),
     mode: Ref::new(AssetMode::Unprocessed),
     processed_file_path: Ref::new(None),
+    owner_world: Ref::new(None),
   }
 }
 
-///|
-let asset_loader_registry : Ref[@hashmap.HashMap[String, AssetLoaderEntry]] = Ref::new(
-  @hashmap.HashMap::new(),
-)
-
-///|
-let asset_builtin_loaders_registered : Ref[Bool] = Ref::new(false)
-
-///|
-let asset_source_builder_registry : Ref[
-  Array[(AssetSourceId, AssetSourceBuilder)],
-] = Ref::new([])
-
-///|
-let asset_reload_hook_registry : Array[AssetReloadHook] = []
-
-///|
-let asset_ready_checker_registry : Ref[
-  @hashmap.HashMap[String, AssetReadyCheck],
-] = Ref::new(@hashmap.HashMap::new())
-
-///|
-fn[T] asset_registered_ready_check(_probe : Handle[T]) -> AssetReadyCheck {
+fn[T] asset_registered_ready_check_option(_probe : Handle[T]) -> AssetReadyCheck? {
   let probe : Handle[T] = Handle::new(0)
   let type_name = asset_loader_type_name(probe)
-  match asset_ready_checker_registry.val.get(type_name) {
-    Some(check_ready) => check_ready
-    None => {
-      let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-      fn(world, handle_id) {
-        match (try! world.get_resource(key)) {
-          Some(assets) => assets.contains(Handle::new(handle_id))
-          None => false
-        }
-      }
-    }
-  }
+  asset_ready_checker_registry_active().val.get(type_name)
 }
 
 ///|
 fn asset_register_builtin_loaders() -> Unit {
-  if asset_builtin_loaders_registered.val {
+  if asset_builtin_loaders_registered_active() {
     return
   }
-  asset_builtin_loaders_registered.val = true
+  asset_set_builtin_loaders_registered_active(true)
   asset_register_loader(fn(asset_server, path) { asset_server.load_image(path) })
   asset_register_loader(fn(asset_server, path) { asset_server.load_bytes(path) })
   asset_register_loader(fn(asset_server, path) { asset_server.load_font(path) })
@@ -237,6 +206,18 @@ pub fn[T] asset_with_world(world : @ecs.World, f : () -> T) -> T {
   let result = f()
   asset_world_override_ref.val = previous
   result
+}
+
+///|
+fn[T] asset_with_server_world(asset_server : AssetServer, f : () -> T) -> T {
+  match asset_current_world() {
+    Some(_) => f()
+    None =>
+      match asset_server.owner_world.val {
+        Some(world) => asset_with_world(world, f)
+        None => f()
+      }
+  }
 }
 
 ///|
@@ -324,10 +305,21 @@ pub fn[T] asset_assets_ref_mut_or_abort() -> @ecs.ResourceMut[Assets[T]] {
 
 ///|
 pub fn AssetServer::new() -> AssetServer {
-  asset_register_builtin_loaders()
   match asset_server_from_active_world() {
-    Some(server) => server
-    None => asset_server_standalone()
+    Some(server) => {
+      asset_with_server_world(server, fn() { asset_register_builtin_loaders() })
+      server
+    }
+    None => {
+      let server = asset_server_standalone()
+      let owner = match asset_current_world() {
+        Some(world) => world
+        None => @ecs.World::new()
+      }
+      server.owner_world.val = Some(owner)
+      asset_with_server_world(server, fn() { asset_register_builtin_loaders() })
+      server
+    }
   }
 }
 
@@ -1049,9 +1041,11 @@ pub fn[P : IntoAssetPath] AssetServer::load_image(
   self : AssetServer,
   path : P,
 ) -> Handle[Image] {
-  let canonical_path = asset_canonical_path(asset_path_string(path))
-  let settings = self.image_loader_settings_for_path(canonical_path)
-  self.load_image_with_settings(canonical_path, settings)
+  asset_with_server_world(self, fn() {
+    let canonical_path = asset_canonical_path(asset_path_string(path))
+    let settings = self.image_loader_settings_for_path(canonical_path)
+    self.load_image_with_settings(canonical_path, settings)
+  })
 }
 
 ///|
@@ -1059,10 +1053,12 @@ pub fn[P : IntoAssetPath] AssetServer::load_nearest(
   self : AssetServer,
   path : P,
 ) -> Handle[Image] {
-  let canonical_path = asset_canonical_path(asset_path_string(path))
-  let settings = self.image_loader_settings_for_path(canonical_path)
-  settings.sampler = ImageSampler::nearest()
-  self.load_image_with_settings(canonical_path, settings)
+  asset_with_server_world(self, fn() {
+    let canonical_path = asset_canonical_path(asset_path_string(path))
+    let settings = self.image_loader_settings_for_path(canonical_path)
+    settings.sampler = ImageSampler::nearest()
+    self.load_image_with_settings(canonical_path, settings)
+  })
 }
 
 ///|
@@ -1100,35 +1096,37 @@ fn AssetServer::load_image_with_settings(
   canonical_path : String,
   settings : ImageLoaderSettings,
 ) -> Handle[Image] {
-  if self.get_handle(canonical_path) is Some(handle) {
-    return handle
-  }
-  let bytes = load_asset_file_bytes(canonical_path)
-  let id = host_asset_load_texture(
-    path=canonical_path,
-    nearest=self.image_sampler_uses_nearest(settings.sampler),
-  )
-  self.record_path(canonical_path)
-  let handle = Handle::new(id)
-  self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())
-  self.register_image_path(canonical_path, handle)
-  self.track_image_handle(handle)
-  if settings.sampler is Descriptor(_) {
-    asset_set_texture_sampler(handle, settings.sampler)
-  }
-  self.set_image_array_layout(handle, settings.array_layout)
-  self.set_image_is_srgb(handle, settings.is_srgb)
-  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
-  self.set_image_render_asset_usages(handle, settings.asset_usage)
-  self.update_pending_image_asset_from_bytes(
-    handle,
-    canonical_path,
-    bytes,
-    settings.is_srgb,
-    settings.format,
-    settings.texture_format,
-  )
-  handle
+  asset_with_server_world(self, fn() {
+    if self.get_handle(canonical_path) is Some(handle) {
+      return handle
+    }
+    let bytes = load_asset_file_bytes(canonical_path)
+    let id = host_asset_load_texture(
+      path=canonical_path,
+      nearest=self.image_sampler_uses_nearest(settings.sampler),
+    )
+    self.record_path(canonical_path)
+    let handle = Handle::new(id)
+    self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())
+    self.register_image_path(canonical_path, handle)
+    self.track_image_handle(handle)
+    if settings.sampler is Descriptor(_) {
+      asset_set_texture_sampler(handle, settings.sampler)
+    }
+    self.set_image_array_layout(handle, settings.array_layout)
+    self.set_image_is_srgb(handle, settings.is_srgb)
+    self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+    self.set_image_render_asset_usages(handle, settings.asset_usage)
+    self.update_pending_image_asset_from_bytes(
+      handle,
+      canonical_path,
+      bytes,
+      settings.is_srgb,
+      settings.format,
+      settings.texture_format,
+    )
+    handle
+  })
 }
 
 ///|
@@ -1389,34 +1387,36 @@ pub fn[T, P : IntoAssetPath] AssetServer::load(
   self : AssetServer,
   path : P,
 ) -> Handle[T] {
-  asset_register_builtin_loaders()
-  let parsed_path = path.into_asset_path()
-  let asset_probe : Assets[T] = Assets::new()
-  let asset_type_name = @any.of(asset_probe).type_name()
-  if typed_asset_loader_is_registered(asset_type_name) {
-    return self.load_registered_asset(parsed_path)
-  }
-  let formatted_path = asset_format_path(parsed_path)
-  let probe : Handle[T] = Handle::new(0)
-  let loader_type_name = asset_loader_type_name(probe)
-  match asset_loader_registry.val.get(loader_type_name) {
-    Some(entry) =>
-      match (entry.load)(self, formatted_path).try_to() {
-        Some(handle) => handle
-        None =>
-          self.reserve_missing_loader_handle(
-            parsed_path,
-            asset_type_name,
-            "asset loader registry returned a mismatched handle type for \{loader_type_name}",
-          )
-      }
-    None =>
-      self.reserve_missing_loader_handle(
-        parsed_path,
-        asset_type_name,
-        "No asset loader is registered for \{loader_type_name}; load the plugin that owns this asset type before calling AssetServer::load",
-      )
-  }
+  asset_with_server_world(self, fn() {
+    asset_register_builtin_loaders()
+    let parsed_path = path.into_asset_path()
+    let asset_probe : Assets[T] = Assets::new()
+    let asset_type_name = @any.of(asset_probe).type_name()
+    if typed_asset_loader_is_registered(asset_type_name) {
+      return self.load_registered_asset(parsed_path)
+    }
+    let formatted_path = asset_format_path(parsed_path)
+    let probe : Handle[T] = Handle::new(0)
+    let loader_type_name = asset_loader_type_name(probe)
+    match asset_loader_registry_active().val.get(loader_type_name) {
+      Some(entry) =>
+        match (entry.load)(self, formatted_path).try_to() {
+          Some(handle) => handle
+          None =>
+            self.reserve_missing_loader_handle(
+              parsed_path,
+              asset_type_name,
+              "asset loader registry returned a mismatched handle type for \{loader_type_name}",
+            )
+        }
+      None =>
+        self.reserve_missing_loader_handle(
+          parsed_path,
+          asset_type_name,
+          "No asset loader is registered for \{loader_type_name}; load the plugin that owns this asset type before calling AssetServer::load",
+        )
+    }
+  })
 }
 
 ///|
@@ -1425,23 +1425,43 @@ pub fn[T, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(
   path : P,
   load_guard : G,
 ) -> Handle[T] {
-  let handle = self.load(path)
-  let ready : AssetReadyCheck = asset_registered_ready_check(handle)
-  let release : AssetLoadRelease = fn() { load_guard.release() }
-  match asset_current_world() {
-    Some(world) =>
-      if ready(world, handle.id()) {
-        release()
-      } else {
-        self.pending_acquired_loads.val.push(PendingAcquiredLoad::{
-          handle_id: handle.id(),
-          is_ready: ready,
-          release,
-        })
+  asset_with_server_world(self, fn() {
+    let handle = self.load(path)
+    let custom_ready : AssetReadyCheck? = asset_registered_ready_check_option(handle)
+    let assets_probe : Assets[T] = Assets::new()
+    let asset_type_name = @any.of(assets_probe).type_name()
+    let ready_or_failed : AssetReadyCheck = fn(world, handle_id) {
+      match custom_ready {
+        Some(ready) =>
+          if ready(world, handle_id) {
+            true
+          } else {
+            self.typed_load_state(asset_type_name, handle_id) is LoadState::Failed(_)
+          }
+        None =>
+          match self.typed_load_state(asset_type_name, handle_id) {
+            LoadState::Loaded => true
+            LoadState::Failed(_) => true
+            _ => false
+          }
       }
-    None => release()
-  }
-  handle
+    }
+    let release : AssetLoadRelease = fn() { load_guard.release() }
+    match asset_current_world() {
+      Some(world) =>
+        if ready_or_failed(world, handle.id()) {
+          release()
+        } else {
+          self.pending_acquired_loads.val.push(PendingAcquiredLoad::{
+            handle_id: handle.id(),
+            is_ready: ready_or_failed,
+            release,
+          })
+        }
+      None => release()
+    }
+    handle
+  })
 }
 
 ///|
@@ -1450,24 +1470,26 @@ pub fn[T, P : IntoAssetPath] AssetServer::load_with_settings(
   path : P,
   configure : (ImageLoaderSettings) -> Unit,
 ) -> Handle[T] {
-  let formatted_path = asset_path_string(path)
-  let probe : Handle[T] = Handle::new(0)
-  let type_name = asset_loader_type_name(probe)
-  if type_name == asset_image_handle_type_name() {
-    let canonical_path = asset_canonical_path(formatted_path)
-    if self.get_handle(canonical_path) is Some(handle) {
-      return @any.of(handle).try_to().unwrap()
+  asset_with_server_world(self, fn() {
+    let formatted_path = asset_path_string(path)
+    let probe : Handle[T] = Handle::new(0)
+    let type_name = asset_loader_type_name(probe)
+    if type_name == asset_image_handle_type_name() {
+      let canonical_path = asset_canonical_path(formatted_path)
+      if self.get_handle(canonical_path) is Some(handle) {
+        return @any.of(handle).try_to().unwrap()
+      }
+      let settings = self.image_loader_settings_for_path(canonical_path)
+      configure(settings)
+      return @any.of(self.load_image_with_settings(canonical_path, settings))
+        .try_to()
+        .unwrap()
     }
-    let settings = self.image_loader_settings_for_path(canonical_path)
+    let settings = ImageLoaderSettings::default()
     configure(settings)
-    return @any.of(self.load_image_with_settings(canonical_path, settings))
-      .try_to()
-      .unwrap()
-  }
-  let settings = ImageLoaderSettings::default()
-  configure(settings)
-  self.set_gltf_loader_settings(formatted_path, settings)
-  self.load(formatted_path)
+    self.set_gltf_loader_settings(formatted_path, settings)
+    self.load(formatted_path)
+  })
 }
 
 ///|
@@ -1516,13 +1538,15 @@ pub fn AssetServer::load_bytes(
   self : AssetServer,
   path : String,
 ) -> Handle[Blob] {
-  let canonical_path = asset_canonical_path(path)
-  let id = host_asset_load_bytes(path=canonical_path)
-  self.record_path(canonical_path)
-  Blob::{  } |> ignore
-  let handle : Handle[Blob] = Handle::new(id)
-  self.set_typed_loaded_states(asset_blob_assets_type_name(), handle.id())
-  handle
+  asset_with_server_world(self, fn() {
+    let canonical_path = asset_canonical_path(path)
+    let id = host_asset_load_bytes(path=canonical_path)
+    self.record_path(canonical_path)
+    Blob::{  } |> ignore
+    let handle : Handle[Blob] = Handle::new(id)
+    self.set_typed_loaded_states(asset_blob_assets_type_name(), handle.id())
+    handle
+  })
 }
 
 ///|
@@ -1531,10 +1555,12 @@ pub fn AssetServer::load_with_registered_loader(
   path : String,
   nearest : Bool,
 ) -> Int {
-  let canonical_path = asset_canonical_path(path)
-  let id = host_asset_load_with_registered_loader(path=canonical_path, nearest~)
-  self.record_path(canonical_path)
-  id
+  asset_with_server_world(self, fn() {
+    let canonical_path = asset_canonical_path(path)
+    let id = host_asset_load_with_registered_loader(path=canonical_path, nearest~)
+    self.record_path(canonical_path)
+    id
+  })
 }
 
 ///|
@@ -1708,7 +1734,7 @@ fn asset_reload_modified_paths(world : @ecs.World) -> Unit {
     return
   }
   for path in modified_paths {
-    for hook in asset_reload_hook_registry {
+    for hook in asset_reload_hook_registry_active().val {
       hook(world, asset_server, path)
     }
   }
@@ -1835,6 +1861,7 @@ pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
 pub fn asset_system(world : @ecs.World) -> Unit {
   asset_with_world(world, fn() {
     let asset_server = asset_server_or_abort()
+    asset_server.owner_world.val = Some(world)
     asset_reload_modified_paths(world)
     asset_update_loaded_folders(world)
     asset_process_pending_processed_asset_loads(world, asset_server)

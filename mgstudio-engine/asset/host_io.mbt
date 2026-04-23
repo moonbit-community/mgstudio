@@ -66,17 +66,48 @@ let pending_folder_event_ref : Ref[FolderEvent?] = Ref::new(None)
 const DEFAULT_ASSETS_DIR : String = "./assets"
 
 ///|
-let assets_dir_override_ref : Ref[String?] = Ref::new(None)
+priv struct AssetIoRuntimeState {
+  assets_dir_override : Ref[String?]
+  source_dir_overrides : Ref[@hashmap.HashMap[String, String]]
+  source_readers : Ref[@hashmap.HashMap[String, AssetReader]]
+}
 
 ///|
-let asset_source_dir_overrides_ref : Ref[@hashmap.HashMap[String, String]] = Ref::new(
-  @hashmap.HashMap::new(),
-)
+fn asset_io_runtime_state_resource_key() -> @ecs.ResourceKey[AssetIoRuntimeState] {
+  @ecs.register_resource(
+    debug_name="mgstudio_asset::AssetIoRuntimeState",
+  )
+}
 
 ///|
-let asset_source_readers_ref : Ref[@hashmap.HashMap[String, AssetReader]] = Ref::new(
-  @hashmap.HashMap::new(),
-)
+fn asset_io_runtime_state_for_world(world : @ecs.World) -> AssetIoRuntimeState {
+  let key = asset_io_runtime_state_resource_key()
+  if (try! world.get_resource(key)) is None {
+    world.insert_resource(
+      key,
+      AssetIoRuntimeState::{
+        assets_dir_override: Ref::new(None),
+        source_dir_overrides: Ref::new(@hashmap.HashMap::new()),
+        source_readers: Ref::new(@hashmap.HashMap::new()),
+      },
+    )
+  }
+  match (try! world.get_resource(key)) {
+    Some(state) => state
+    None => abort("Failed to initialize asset io runtime state resource")
+  }
+}
+
+///|
+fn asset_io_runtime_state_active() -> AssetIoRuntimeState {
+  match asset_current_world() {
+    Some(world) => asset_io_runtime_state_for_world(world)
+    None =>
+      abort(
+        "Asset IO runtime state requires an active world; use asset_with_world or call via a world-owned AssetServer",
+      )
+  }
+}
 
 ///|
 const DEFAULT_DATA_DIR : String = "./tmp/data"
@@ -255,7 +286,8 @@ fn default_runtime_assets_dir() -> String {
 
 ///|
 fn runtime_assets_dir() -> String {
-  match assets_dir_override_ref.val {
+  let state = asset_io_runtime_state_active()
+  match state.assets_dir_override.val {
     Some(path) if path.length() > 0 => path
     _ => default_runtime_assets_dir()
   }
@@ -273,12 +305,13 @@ fn path_join(lhs : String, rhs : String) -> String {
 
 ///|
 fn set_runtime_assets_dir_override(path : String?) -> Unit {
+  let state = asset_io_runtime_state_active()
   match path {
     Some(value) if value.trim().to_string() != "" =>
-      assets_dir_override_ref.val = Some(
+      state.assets_dir_override.val = Some(
         @path.Path::normalize(value).to_string(),
       )
-    _ => assets_dir_override_ref.val = None
+    _ => state.assets_dir_override.val = None
   }
 }
 
@@ -286,11 +319,12 @@ fn set_runtime_assets_dir_override(path : String?) -> Unit {
 fn set_runtime_asset_source_dir_overrides(
   entries : Array[(String, String)],
 ) -> Unit {
+  let state = asset_io_runtime_state_active()
   let next = @hashmap.HashMap::new()
   for entry in entries {
     next.set(entry.0, entry.1)
   }
-  asset_source_dir_overrides_ref.val = next
+  state.source_dir_overrides.val = next
 }
 
 ///|
@@ -355,6 +389,7 @@ fn default_asset_source_reader(source_id : AssetSourceId) -> AssetReader {
 fn set_runtime_asset_source_readers(
   entries : Array[(AssetSourceId, AssetSourceBuilder)],
 ) -> Unit {
+  let state = asset_io_runtime_state_active()
   let next = @hashmap.HashMap::new()
   for entry in entries {
     guard entry.1.reader_builder is Some(reader_builder) else { continue }
@@ -365,13 +400,14 @@ fn set_runtime_asset_source_readers(
       reader,
     )
   }
-  asset_source_readers_ref.val = next
+  state.source_readers.val = next
 }
 
 ///|
 fn asset_source_reader_for_path(path : String) -> AssetReader? {
   let parsed = parse_virtual_asset_path(path)
-  asset_source_readers_ref.val.get(asset_source_reader_key(parsed.source_name))
+  let state = asset_io_runtime_state_active()
+  state.source_readers.val.get(asset_source_reader_key(parsed.source_name))
 }
 
 ///|
@@ -476,9 +512,10 @@ fn source_env_suffix(source_name : String) -> String {
 
 ///|
 fn source_root_dir(source_name : String?) -> String {
+  let state = asset_io_runtime_state_active()
   match source_name {
     Some(name) if name.length() > 0 => {
-      if asset_source_dir_overrides_ref.val.get(name) is Some(override_root) {
+      if state.source_dir_overrides.val.get(name) is Some(override_root) {
         return override_root
       }
       let env_key = "MGSTUDIO_ASSET_SOURCE_\{source_env_suffix(name)}_DIR"

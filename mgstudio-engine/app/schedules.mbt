@@ -47,11 +47,17 @@ priv struct ScheduleEntry[W] {
   systems : Array[SystemConfig[W]]
   set_edges : Array[(SystemSet, SystemSet)]
   mut executor_kind : ExecutorKind
+  mut chain_internal_set_counter : Int
 }
 
 ///|
 fn[W] ScheduleEntry::new() -> ScheduleEntry[W] {
-  { systems: [], set_edges: [], executor_kind: MultiThreaded }
+  {
+    systems: [],
+    set_edges: [],
+    executor_kind: MultiThreaded,
+    chain_internal_set_counter: 0,
+  }
 }
 
 ///|
@@ -146,12 +152,132 @@ fn[W] ScheduleRegistry::new() -> ScheduleRegistry[W] {
 }
 
 ///|
+fn[W] schedule_next_chain_internal_set(
+  schedule_entry : ScheduleEntry[W],
+  stage : ScheduleStage,
+) -> SystemSet {
+  let next_id = schedule_entry.chain_internal_set_counter
+  schedule_entry.chain_internal_set_counter = next_id + 1
+  "__chain__:\{schedule_stage_storage_key(stage)}:\{next_id.to_string()}"
+}
+
+///|
+fn[W] schedule_chain_inherit_config(
+  child : SystemConfig[W],
+  wrapper : SystemConfig[W],
+) -> SystemConfig[W] {
+  let inherited_error_handler = match child.error_handler {
+    Some(_) => child.error_handler
+    None => wrapper.error_handler
+  }
+  let inherited_set = match child.set {
+    Some(_) => child.set
+    None => wrapper.set
+  }
+  let run_ifs : Array[StatefulRunConditionFn[W]] = []
+  for cond in child.run_ifs {
+    run_ifs.push(cond)
+  }
+  for cond in wrapper.run_ifs {
+    run_ifs.push(cond)
+  }
+  let run_if_states : Array[Ref[Json]] = []
+  for state in child.run_if_states {
+    run_if_states.push(state)
+  }
+  for state in wrapper.run_if_states {
+    run_if_states.push(Ref::new(state.val))
+  }
+  let before : Array[SystemSet] = []
+  for set in child.before {
+    before.push(set)
+  }
+  for set in wrapper.before {
+    before.push(set)
+  }
+  let after : Array[SystemSet] = []
+  for set in child.after {
+    after.push(set)
+  }
+  for set in wrapper.after {
+    after.push(set)
+  }
+  let run_if_last_run_sequences : Array[@core.Sequence] = []
+  for sequence in child.run_if_last_run_sequences {
+    run_if_last_run_sequences.push(sequence)
+  }
+  for _ in wrapper.run_if_last_run_sequences {
+    run_if_last_run_sequences.push(0)
+  }
+  SystemConfig::{
+    ..child,
+    error_handler: inherited_error_handler,
+    run_ifs,
+    run_if_states,
+    set: inherited_set,
+    before,
+    after,
+    run_if_last_run_sequences,
+  }
+}
+
+///|
+fn[W] schedule_collect_expanded_chain_members(
+  config : SystemConfig[W],
+  out : Array[SystemConfig[W]],
+) -> Unit {
+  match config.chain_members {
+    Some(members) =>
+      for child_config in members {
+        let inherited = schedule_chain_inherit_config(child_config, config)
+        schedule_collect_expanded_chain_members(inherited, out)
+      }
+    None => out.push(config)
+  }
+}
+
+///|
 fn[W] schedule_push_config(
   schedule_registry : ScheduleRegistry[W],
   stage : ScheduleStage,
   config : SystemConfig[W],
 ) -> Unit {
-  schedule_entry_ref(schedule_registry, stage).val.systems.push(config)
+  let entry_ref = schedule_entry_ref(schedule_registry, stage)
+  match config.chain_members {
+    Some(_) => {
+      let expanded_members : Array[SystemConfig[W]] = []
+      schedule_collect_expanded_chain_members(config, expanded_members)
+      if expanded_members.length() == 0 {
+        return
+      }
+      let normalized_members : Array[SystemConfig[W]] = []
+      for child_config in expanded_members {
+        let normalized_member = match child_config.set {
+          Some(_) => child_config
+          None =>
+            SystemConfig::{
+              ..child_config,
+              set: Some(
+                schedule_next_chain_internal_set(entry_ref.val, stage),
+              ),
+            }
+        }
+        normalized_members.push(normalized_member)
+        entry_ref.val.systems.push(normalized_member)
+      }
+      if normalized_members.length() <= 1 {
+        return
+      }
+      for i in 0..<(normalized_members.length() - 1) {
+        guard normalized_members[i].set is Some(left_set) else { continue }
+        guard normalized_members[i + 1].set is Some(right_set) else { continue }
+        if left_set != right_set {
+          entry_ref.val.set_edges.push((left_set, right_set))
+        }
+      }
+    }
+    None => entry_ref.val.systems.push(config)
+  }
 }
 
 ///|

@@ -145,7 +145,7 @@ fn configured_window() -> @window.Window {
   let window = @window.Window::default()
   window.title = "🦊🦊🦊 Many Foxes! 🦊🦊🦊"
   window.present_mode = @window.PresentMode::AutoNoVsync
-  window.resolution = @window.WindowResolution::new(1600, 900).with_scale_factor_override(
+  window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
     1.0F,
   )
   window
@@ -268,11 +268,9 @@ fn setup(
     .load(@gltf.GltfAssetLabel::Scene(0).from_asset(FOX_PATH))
 
   let mut ring_index = 0
+  let mut radius = RING_SPACING
   let mut foxes_remaining = foxes.get().count
-  let mut outer_radius = RING_SPACING
   while foxes_remaining > 0 {
-    let radius = RING_SPACING + float_from_int(ring_index) * RING_SPACING
-    outer_radius = radius
     let (base_rotation, direction_sign) = if ring_index % 2 == 0 {
       (@math.Quat::from_rotation_y(3.141592653589793F), 1.0F)
     } else {
@@ -317,14 +315,15 @@ fn setup(
       ignore(commands.entity(fox_entity).observe4(setup_scene_once_loaded))
     }
     foxes_remaining -= foxes_in_ring
+    radius += RING_SPACING
     ring_index += 1
   }
 
-  let zoom = 0.5F
+  let zoom = 0.8F
   let camera_translation = @math.Vec3::new(
-    outer_radius * 1.25F * zoom,
-    outer_radius * 0.5F * zoom,
-    outer_radius * 1.5F * zoom,
+    radius * 1.25F * zoom,
+    radius * 0.5F * zoom,
+    radius * 1.5F * zoom,
   )
   ignore(
     commands.spawn(
@@ -369,8 +368,8 @@ fn setup(
       (
         @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, false).with_cascade_shadow_config_builder(
           @pbr.CascadeShadowConfigBuilder::default()
-          .with_first_cascade_far_bound(0.9F * outer_radius)
-          .with_maximum_distance(2.8F * outer_radius),
+          .with_first_cascade_far_bound(0.9F * radius)
+          .with_maximum_distance(2.8F * radius),
         ),
         @transform.Transform::from_rotation(
           @math.Quat::from_euler(
@@ -554,6 +553,12 @@ fn update_fox_rings(
 ///|
 fn main {
   let args = parse_args()
+  let keyboard_animation_control_system : @app.SystemConfig[
+    @ecs.World,
+  ] = @app.system(@app.system_param4(keyboard_animation_control))
+  let update_fox_rings_system : @app.SystemConfig[
+    @ecs.World,
+  ] = @app.system(@app.system_param3(update_fox_rings))
   let app = @app.App::new(@ecs.World::new())
     .insert_resource(Foxes::{
       ..Foxes::default(),
@@ -561,7 +566,7 @@ fn main {
       sync: args.sync,
     })
     .insert_resource(stress_metrics_state_default())
-    .insert_resource(@transform.StaticTransformOptimizations::enabled())
+    .insert_resource(@transform.StaticTransformOptimizations::disabled())
     .insert_resource(@winit.WinitSettings::continuous())
     .add_plugins(
       @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
@@ -575,9 +580,11 @@ fn main {
     .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
     .add_systems(
       @app.Update,
-      @app.system(@app.system_param4(keyboard_animation_control)),
+      (
+        keyboard_animation_control_system, update_fox_rings_system,
+      )
+      |> @app.chain(),
     )
-    .add_systems(@app.Update, @app.system(@app.system_param3(update_fox_rings)))
     .add_systems(
       @app.PostUpdate,
       @app.system(@app.system_param2(stress_metrics_system)),

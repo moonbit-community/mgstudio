@@ -448,7 +448,9 @@ fn ldtk_project_ready(
 
 ///|
 pub fn ldtk_init_assets(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @asset.asset_register_ready_checker(ldtk_project_ready)
+  @asset.asset_with_world(app.world(), fn() {
+    @asset.asset_register_ready_checker(ldtk_project_ready)
+  })
   @asset.init_asset_loader(
     @asset.init_asset(app, ldtk_project_asset_default),
     @asset.AssetLoader::new_with_context(["ldtk"], ldtk_load_project_asset),

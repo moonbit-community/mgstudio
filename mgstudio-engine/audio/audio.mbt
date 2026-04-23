@@ -298,8 +298,10 @@ pub fn audio_plugin_with(
   app : @app.App[@ecs.World],
   plugin : AudioPlugin,
 ) -> @app.App[@ecs.World] {
-  @asset.asset_register_loader(fn(asset_server, path) {
-    audio_source_load_registered(asset_server, path)
+  @asset.asset_with_world(app.world(), fn() {
+    @asset.asset_register_loader(fn(asset_server, path) {
+      audio_source_load_registered(asset_server, path)
+    })
   })
   app
   .insert_resource(plugin.global_volume)

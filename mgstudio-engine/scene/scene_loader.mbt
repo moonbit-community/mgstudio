@@ -50,8 +50,10 @@ fn gltf_asset_ready(world : @ecs.World, handle : @asset.Handle[Gltf]) -> Bool {
 
 ///|
 fn scene_init_gltf_assets(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @asset.asset_register_ready_checker(scene_asset_ready)
-  @asset.asset_register_ready_checker(gltf_asset_ready)
+  @asset.asset_with_world(app.world(), fn() {
+    @asset.asset_register_ready_checker(scene_asset_ready)
+    @asset.asset_register_ready_checker(gltf_asset_ready)
+  })
   @asset.init_asset_loader(
     @asset.init_asset(app, gltf_asset_default),
     @asset.AssetLoader::new(["gltf", "glb"], scene_load_gltf_root_asset),
