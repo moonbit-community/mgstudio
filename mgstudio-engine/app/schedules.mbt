@@ -148,8 +148,11 @@ priv struct ScheduleAccessPlan[W] {
   component_registration_generation : Int
   allowed_ambiguous_fingerprint : Int
   auto_insert_apply_deferred : Bool
+  system_ids : Array[Int]
   systems : Array[SystemConfig[W]]
   system_accesses : Array[SystemAccess]
+  system_dependencies : Array[Int]
+  system_dependents : Array[Array[Int]]
   set_ids : Array[SystemSet]
   sets_with_conditions_of_systems : Array[Array[Int]]
   systems_in_sets_with_conditions : Array[Array[Int]]
@@ -1069,8 +1072,11 @@ fn[W] schedule_build_access_plan(
       component_registration_generation,
       allowed_ambiguous_fingerprint,
       auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
+      system_ids: [],
       systems: [],
       system_accesses: [],
+      system_dependencies: [],
+      system_dependents: [],
       set_ids: [],
       sets_with_conditions_of_systems: [],
       systems_in_sets_with_conditions: [],
@@ -1180,6 +1186,7 @@ fn[W] schedule_build_access_plan(
   }
   let execution_systems : Array[SystemConfig[W]] = []
   let execution_system_accesses : Array[SystemAccess] = []
+  let execution_system_ids : Array[Int] = []
   let ordered_execution_order : Array[ScheduleExecutionNode] = []
   for node in execution_order {
     match node {
@@ -1190,7 +1197,30 @@ fn[W] schedule_build_access_plan(
         execution_system_accesses.push(
           execution_system_accesses_by_source[source_system_i],
         )
+        execution_system_ids.push(source_system_i)
         ordered_execution_order.push(ScheduledSystem(execution_system_i))
+      }
+    }
+  }
+  let system_dependencies : Array[Int] = []
+  let system_dependents : Array[Array[Int]] = []
+  for _ in 0..<execution_systems.length() {
+    system_dependencies.push(0)
+    system_dependents.push([])
+  }
+  for edge in build_pass_graph.node_edges {
+    let from_node = edge.0
+    let to_node = edge.1
+    match (build_pass_graph.nodes[from_node], build_pass_graph.nodes[to_node]) {
+      (ScheduledSystem(from_source_i), ScheduledSystem(to_source_i)) => {
+        let from_execution_i = source_to_execution_system[from_source_i]
+        let to_execution_i = source_to_execution_system[to_source_i]
+        if from_execution_i >= 0 && to_execution_i >= 0 {
+          system_dependencies[to_execution_i] = system_dependencies[to_execution_i] + 1
+          if !system_dependents[from_execution_i].contains(to_execution_i) {
+            system_dependents[from_execution_i].push(to_execution_i)
+          }
+        }
       }
     }
   }
@@ -1302,8 +1332,11 @@ fn[W] schedule_build_access_plan(
     component_registration_generation,
     allowed_ambiguous_fingerprint,
     auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
+    system_ids: execution_system_ids,
     systems: execution_systems,
     system_accesses: execution_system_accesses,
+    system_dependencies,
+    system_dependents,
     set_ids,
     sets_with_conditions_of_systems: ordered_sets_with_conditions_of_systems,
     systems_in_sets_with_conditions: ordered_systems_in_sets_with_conditions,
