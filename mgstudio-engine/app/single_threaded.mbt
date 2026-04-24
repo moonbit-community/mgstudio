@@ -17,7 +17,7 @@ priv struct SingleThreadedExecutorState {
   evaluated_sets : Array[Bool]
   completed_systems : Array[Bool]
   unapplied_systems : Array[Bool]
-  apply_final_deferred : Bool
+  mut apply_final_deferred : Bool
 }
 
 ///|
@@ -26,21 +26,54 @@ fn single_threaded_executor_state_new(
   set_count : Int,
   apply_final_deferred : Bool,
 ) -> SingleThreadedExecutorState {
-  let evaluated_sets : Array[Bool] = []
-  for _ in 0..<set_count {
-    evaluated_sets.push(false)
-  }
-  let completed_systems : Array[Bool] = []
-  let unapplied_systems : Array[Bool] = []
-  for _ in 0..<system_count {
-    completed_systems.push(false)
-    unapplied_systems.push(false)
-  }
-  {
-    evaluated_sets,
-    completed_systems,
-    unapplied_systems,
+  let state = {
+    evaluated_sets: [],
+    completed_systems: [],
+    unapplied_systems: [],
     apply_final_deferred,
+  }
+  state.init(system_count, set_count, apply_final_deferred)
+  state
+}
+
+///|
+fn single_threaded_resize_bool_array(values : Array[Bool], len : Int) -> Unit {
+  while values.length() < len {
+    values.push(false)
+  }
+  while values.length() > len {
+    values.pop().unwrap() |> ignore
+  }
+  for i in 0..<values.length() {
+    values[i] = false
+  }
+}
+
+///|
+fn SingleThreadedExecutorState::init(
+  self : SingleThreadedExecutorState,
+  system_count : Int,
+  set_count : Int,
+  apply_final_deferred : Bool,
+) -> Unit {
+  single_threaded_resize_bool_array(self.evaluated_sets, set_count)
+  single_threaded_resize_bool_array(self.completed_systems, system_count)
+  single_threaded_resize_bool_array(self.unapplied_systems, system_count)
+  self.apply_final_deferred = apply_final_deferred
+}
+
+///|
+fn SingleThreadedExecutorState::clear_run_state(
+  self : SingleThreadedExecutorState,
+) -> Unit {
+  for i in 0..<self.evaluated_sets.length() {
+    self.evaluated_sets[i] = false
+  }
+  for i in 0..<self.completed_systems.length() {
+    self.completed_systems[i] = false
+  }
+  for i in 0..<self.unapplied_systems.length() {
+    self.unapplied_systems[i] = false
   }
 }
 

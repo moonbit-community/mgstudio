@@ -3658,6 +3658,7 @@ fn run_schedule_stage(
     systems_in_sets_with_conditions=execution_plan.systems_in_sets_with_conditions,
     apply_final_deferred=execution_plan.apply_final_deferred,
     set_run_conditions=execution_plan.set_run_conditions,
+    executor_state_ref=Some(execution_plan.executor_state),
   )
   current_schedule_stage_ref.val = None
   timeline_trace_end_span(

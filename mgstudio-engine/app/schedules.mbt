@@ -177,6 +177,7 @@ priv struct ScheduleExecutionPlan[W] {
   report_invalid_system_errors : Bool
   build_error : String?
   report_build_error : Bool
+  executor_state : Ref[SingleThreadedExecutorState]
 }
 
 ///|
@@ -205,6 +206,7 @@ priv struct ScheduleEntry[W] {
   mut last_reported_invalid_access_key : (Int, Int, Int, Int, Bool)?
   mut build_settings : ScheduleBuildSettings
   mut build_passes : Array[ScheduleBuildPassKind]
+  executor_state : Ref[SingleThreadedExecutorState]
 }
 
 ///|
@@ -224,6 +226,7 @@ fn[W] ScheduleEntry::new() -> ScheduleEntry[W] {
     last_reported_invalid_access_key: None,
     build_settings: ScheduleBuildSettings::new(),
     build_passes: schedule_build_passes_for_settings(ScheduleBuildSettings::new()),
+    executor_state: Ref::new(single_threaded_executor_state_new(0, 0, true)),
   }
 }
 
@@ -1401,6 +1404,7 @@ fn[W] schedule_execution_plan(
     report_invalid_system_errors: report_invalid_system_errors.val,
     build_error: graph_plan.build_error,
     report_build_error: report_build_error.val,
+    executor_state: schedule_entry.executor_state,
   }
 }
 

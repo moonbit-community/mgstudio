@@ -28,6 +28,7 @@ fn run_systems(
     SystemSet,
     Ref[ScheduleSetRunConditions[@ecs.World]],
   ] = @hashmap.HashMap::new(),
+  executor_state_ref? : Ref[SingleThreadedExecutorState]? = None,
 ) -> Unit {
   let timeline_enabled = timeline_trace_enabled()
   current_system_sequence_ref.val = None
@@ -86,11 +87,18 @@ fn run_systems(
     }
   }
   begin_deferred_command_batch()
-  let executor_state = single_threaded_executor_state_new(
-    systems.length(),
-    set_ids.length(),
-    apply_final_deferred,
-  )
+  let executor_state = match executor_state_ref {
+    Some(state_ref) => {
+      state_ref.val.init(systems.length(), set_ids.length(), apply_final_deferred)
+      state_ref.val
+    }
+    None =>
+      single_threaded_executor_state_new(
+        systems.length(),
+        set_ids.length(),
+        apply_final_deferred,
+      )
+  }
   let set_run_if_results : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
   fn evaluate_set_run_if_once(set : SystemSet) -> Bool {
     match set_run_if_results.get(set) {
@@ -320,5 +328,6 @@ fn run_systems(
   if executor_state.apply_final_deferred {
     executor_state.apply_deferred(world, restart_batch=false)
   }
+  executor_state.clear_run_state()
   stepping_finish_stage(stepping_ref, stage, execution_order.length())
 }
