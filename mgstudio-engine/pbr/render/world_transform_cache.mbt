@@ -196,7 +196,7 @@ fn render3d_entity_global_transform(
 ) -> @transform.Transform? {
   match columns.global {
     Some(global_column) =>
-      match global_column.get(entity) {
+      match global_column.get_fast(entity) {
         Some(global_transform) => Some(global_transform.to_transform_approx())
         None => None
       }
@@ -224,7 +224,7 @@ fn render3d_entity_local_transform_cached_with_columns(
   }
   let local_transform = match columns.transform {
     Some(transform_column) =>
-      match transform_column.get(entity) {
+      match transform_column.get_fast(entity) {
         Some(value) => value
         None => @transform.Transform::identity()
       }
@@ -265,7 +265,7 @@ fn render3d_entity_parent_cached_with_columns(
   }
   let parent_entity = match columns.parent {
     Some(parent_column) =>
-      match parent_column.get(entity) {
+      match parent_column.get_fast(entity) {
         Some(parent) => Some(parent.entity())
         None => None
       }
@@ -526,7 +526,7 @@ pub fn render3d_extract_skinning_matrices_with_columns(
     }
     match global_column {
       Some(store) =>
-        match store.get(joint_entity) {
+        match store.get_fast(joint_entity) {
           Some(joint_global) =>
             @mesh.SkinningMat4::from_global_transform(joint_global).mul_write_row_major_f32(
               inverse_bindpose, out, out_base,

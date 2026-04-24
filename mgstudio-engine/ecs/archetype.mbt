@@ -45,6 +45,24 @@ fn archetype_signature_from_local_component_ids(
 }
 
 ///|
+fn archetype_bundle_signature_from_pending_payloads(
+  pending_payloads : Map[Int, ErasedWriter],
+) -> String? {
+  let component_local_ids : Array[Int] = []
+  for entry in pending_payloads.iter() {
+    component_local_ids.push(entry.0)
+  }
+  if component_local_ids.length() == 0 {
+    return None
+  }
+  Some(
+    archetype_signature_from_local_component_ids(
+      archetype_sorted_unique_local_component_ids(component_local_ids),
+    ),
+  )
+}
+
+///|
 fn archetype_local_components_with_added_component(
   component_local_ids : Array[Int],
   component_local_id : Int,
@@ -489,6 +507,32 @@ fn World::cache_archetype_remove_edge(
     fn() { {} },
   )
   add_edges.set(component_local_id, from_archetype_id)
+}
+
+///|
+fn World::cached_archetype_insert_bundle_edge_target(
+  self : World,
+  from_archetype_id : Int,
+  bundle_signature : String,
+) -> Int? {
+  match self.archetype_insert_bundle_edges_by_signature.get(from_archetype_id) {
+    Some(edges) => edges.get(bundle_signature)
+    None => None
+  }
+}
+
+///|
+fn World::cache_archetype_insert_bundle_edge(
+  self : World,
+  from_archetype_id : Int,
+  bundle_signature : String,
+  to_archetype_id : Int,
+) -> Unit {
+  let edges = self.archetype_insert_bundle_edges_by_signature.get_or_init(
+    from_archetype_id,
+    fn() { {} },
+  )
+  edges.set(bundle_signature, to_archetype_id)
 }
 
 ///|
@@ -1011,7 +1055,19 @@ fn World::refresh_entity_archetype_with_pending_payloads(
   let current_component_local_ids = self.entity_local_components(entity)
   let mut next_archetype_id : Int? = None
   let mut normalized_components : Array[Int]? = None
-  if previous_archetype_id >= 0 &&
+  let bundle_signature = archetype_bundle_signature_from_pending_payloads(
+    pending_payloads,
+  )
+  match bundle_signature {
+    Some(signature) if previous_archetype_id >= 0 =>
+      next_archetype_id = self.cached_archetype_insert_bundle_edge_target(
+        previous_archetype_id,
+        signature,
+      )
+    _ => ()
+  }
+  if next_archetype_id is None &&
+    previous_archetype_id >= 0 &&
     self.archetype_component_local_ids.get(previous_archetype_id)
     is Some(previous_component_local_ids) {
     let previous_len = previous_component_local_ids.length()
@@ -1101,6 +1157,15 @@ fn World::refresh_entity_archetype_with_pending_payloads(
     )
   }
   guard next_archetype_id is Some(next_archetype_id) else { return }
+  match bundle_signature {
+    Some(signature) if previous_archetype_id >= 0 =>
+      self.cache_archetype_insert_bundle_edge(
+        previous_archetype_id,
+        signature,
+        next_archetype_id,
+      )
+    _ => ()
+  }
   if self.archetype_component_local_ids.get(next_archetype_id)
     is Some(next_component_local_ids) {
     self.entity_component_local_ids[entity.id] = next_component_local_ids.copy()

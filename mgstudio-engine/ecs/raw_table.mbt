@@ -71,8 +71,8 @@ fn raw_table_load_changed_caller(caller_id : Int) -> String? {
 ///|
 priv struct RawTableColumn {
   component_ops : ComponentOps
-  values : @any.Any
-  metadata : RawTableMetadataKernel
+  storage : RawTableValueColumnKernel
+  mut values_cache : @any.Any?
 }
 
 ///|
@@ -96,8 +96,8 @@ fn raw_table_column_new(
 ) -> RawTableColumn {
   {
     component_ops,
-    values: (component_ops.new_values)(),
-    metadata: raw_table_metadata_kernel_new(),
+    storage: raw_table_value_column_kernel_new(),
+    values_cache: Some((component_ops.new_values)()),
   }
 }
 
@@ -106,7 +106,15 @@ fn RawTableColumn::payload_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> ErasedValue? {
-  (self.component_ops.column_ops.payload_at_row)(self.values, row_index)
+  match self.values_cache {
+    Some(values) =>
+      return (self.component_ops.column_ops.payload_at_row)(values, row_index)
+    None => ()
+  }
+  match raw_table_value_column_kernel_value(self.storage, row_index) {
+    Some(value) => Some({ value, })
+    None => None
+  }
 }
 
 ///|
@@ -128,11 +136,25 @@ fn RawTableColumn::replace_writer_at_row(
   row_index : Int,
   writer : ErasedWriter,
 ) -> Bool {
-  (self.component_ops.column_ops.replace_writer_at_row)(
-    self.values,
+  if writer.component_definition_id != self.component_ops.definition_id {
+    return false
+  }
+  guard raw_table_value_column_kernel_replace(
+    self.storage,
     row_index,
-    writer,
-  )
+    writer.to_any(),
+  ) else {
+    return false
+  }
+  match self.values_cache {
+    Some(values) =>
+      (self.component_ops.column_ops.replace_writer_at_row)(
+        values,
+        row_index,
+        writer,
+      )
+    None => true
+  }
 }
 
 ///|
@@ -140,7 +162,23 @@ fn RawTableColumn::append_writer(
   self : RawTableColumn,
   writer : ErasedWriter,
 ) -> Bool {
-  (self.component_ops.column_ops.append_writer)(self.values, writer)
+  if writer.component_definition_id != self.component_ops.definition_id {
+    return false
+  }
+  guard raw_table_value_column_kernel_push(
+    self.storage,
+    writer.to_any(),
+    raw_table_invalid_sequence(),
+    raw_table_invalid_sequence(),
+    0,
+  ) else {
+    return false
+  }
+  match self.values_cache {
+    Some(values) =>
+      (self.component_ops.column_ops.append_writer)(values, writer)
+    None => true
+  }
 }
 
 ///|
@@ -149,23 +187,19 @@ fn RawTableColumn::append_from_row(
   source : RawTableColumn,
   row_index : Int,
 ) -> Bool {
-  (self.component_ops.column_ops.append_from_row)(
-    source.values,
-    row_index,
-    self.values,
-  )
+  match source.payload_at_row(row_index) {
+    Some(payload) =>
+      match (self.component_ops.column_ops.writer_from_payload)(payload) {
+        Some(writer) => self.append_writer(writer)
+        None => false
+      }
+    None => false
+  }
 }
 
 ///|
 fn RawTableColumn::append_metadata(self : RawTableColumn) -> Unit {
-  ignore(
-    raw_table_metadata_kernel_push(
-      self.metadata,
-      raw_table_invalid_sequence(),
-      raw_table_invalid_sequence(),
-      0,
-    ),
-  )
+  ignore(self)
 }
 
 ///|
@@ -176,8 +210,8 @@ fn RawTableColumn::set_metadata_at_row(
   changed_sequence : @core.Sequence?,
   changed_caller : String?,
 ) -> Bool {
-  if !raw_table_metadata_kernel_set(
-      self.metadata,
+  if !raw_table_value_column_kernel_set_metadata(
+      self.storage,
       row_index,
       raw_table_store_sequence(added_sequence),
       raw_table_store_sequence(changed_sequence),
@@ -193,10 +227,13 @@ fn RawTableColumn::added_sequence_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> @core.Sequence? {
-  if row_index < 0 || row_index >= raw_table_metadata_kernel_len(self.metadata) {
+  if row_index < 0 ||
+    row_index >= raw_table_value_column_kernel_len(self.storage) {
     return None
   }
-  raw_table_load_sequence(raw_table_metadata_kernel_added(self.metadata, row_index))
+  raw_table_load_sequence(
+    raw_table_value_column_kernel_added(self.storage, row_index),
+  )
 }
 
 ///|
@@ -204,10 +241,13 @@ fn RawTableColumn::changed_sequence_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> @core.Sequence? {
-  if row_index < 0 || row_index >= raw_table_metadata_kernel_len(self.metadata) {
+  if row_index < 0 ||
+    row_index >= raw_table_value_column_kernel_len(self.storage) {
     return None
   }
-  raw_table_load_sequence(raw_table_metadata_kernel_changed(self.metadata, row_index))
+  raw_table_load_sequence(
+    raw_table_value_column_kernel_changed(self.storage, row_index),
+  )
 }
 
 ///|
@@ -215,11 +255,12 @@ fn RawTableColumn::changed_caller_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> String? {
-  if row_index < 0 || row_index >= raw_table_metadata_kernel_len(self.metadata) {
+  if row_index < 0 ||
+    row_index >= raw_table_value_column_kernel_len(self.storage) {
     return None
   }
   raw_table_load_changed_caller(
-    raw_table_metadata_kernel_changed_caller_id(self.metadata, row_index),
+    raw_table_value_column_kernel_changed_caller_id(self.storage, row_index),
   )
 }
 
@@ -258,11 +299,85 @@ fn[T] RawTableColumn::value_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> T? raise @any.TypeMismatch {
-  let values : Array[T] = self.values.to()
-  if row_index < 0 || row_index >= values.length() {
-    return None
+  match self.values_cache {
+    Some(values_any) => {
+      let values : Array[T] = values_any.unsafe_coerce()
+      if row_index < 0 || row_index >= values.length() {
+        return None
+      }
+      return Some(values[row_index])
+    }
+    None =>
+      match self.values_snapshot() {
+        Some(values) => {
+          self.values_cache = Some(@any.of(values))
+          if row_index < 0 || row_index >= values.length() {
+            return None
+          }
+          return Some(values[row_index])
+        }
+        None => ()
+      }
   }
-  Some(values[row_index])
+  match raw_table_value_column_kernel_value(self.storage, row_index) {
+    Some(value) => Some(value.to())
+    None => None
+  }
+}
+
+///|
+fn[T] RawTableColumn::values_snapshot(
+  self : RawTableColumn,
+) -> Array[T]? {
+  let values : Array[T] = []
+  let len = raw_table_value_column_kernel_len(self.storage)
+  for row_index in 0..<len {
+    guard raw_table_value_column_kernel_value(self.storage, row_index)
+      is Some(value_any) else {
+      return None
+    }
+    let result : Result[T, @any.TypeMismatch] = try? value_any.to()
+    match result {
+      Ok(value) => values.push(value)
+      Err(_) => return None
+    }
+  }
+  Some(values)
+}
+
+///|
+fn[T] RawTableColumn::values_cached(self : RawTableColumn) -> Array[T]? {
+  match self.values_cache {
+    Some(values) => Some(values.unsafe_coerce())
+    None =>
+      match self.values_snapshot() {
+        Some(values) => {
+          self.values_cache = Some(@any.of(values))
+          Some(values)
+        }
+        None => None
+      }
+  }
+}
+
+///|
+fn RawTableColumn::values_cache_active(self : RawTableColumn) -> Bool {
+  self.values_cache is Some(_)
+}
+
+///|
+fn[T] RawTableColumn::replace_cached_value_at_row(
+  self : RawTableColumn,
+  row_index : Int,
+  value : T,
+) -> Bool {
+  guard self.values_cache is Some(values_any) else { return false }
+  let values : Array[T] = values_any.unsafe_coerce()
+  if row_index < 0 || row_index >= values.length() {
+    return false
+  }
+  values[row_index] = value
+  true
 }
 
 ///|
@@ -276,15 +391,15 @@ fn raw_table_column_swap_remove(
   row_index : Int,
 ) -> Bool {
   let column = column_ref.val
-  if !(column.component_ops.column_ops.swap_remove_row)(column.values, row_index) {
+  if !raw_table_value_column_kernel_swap_remove(column.storage, row_index) {
     return false
   }
-  let last_index = raw_table_metadata_kernel_len(column.metadata) - 1
-  if row_index < 0 || row_index > last_index {
-    return false
-  }
-  if !raw_table_metadata_kernel_swap_remove(column.metadata, row_index) {
-    return false
+  match column.values_cache {
+    Some(values) =>
+      if !(column.component_ops.column_ops.swap_remove_row)(values, row_index) {
+        return false
+      }
+    None => ()
   }
   true
 }
@@ -364,15 +479,16 @@ fn RawTable::payload_at_row(
 }
 
 ///|
-fn[T] RawTable::value_at_row(
+///|
+fn[T] RawTable::value_at_row_index(
   self : RawTable,
-  row : TableRow,
+  row_index : Int,
   component_local_id : Int,
 ) -> T? raise @any.TypeMismatch {
   guard self.column(component_local_id) is Some(column_ref) else {
     return None
   }
-  column_ref.val.value_at_row(row.index())
+  column_ref.val.value_at_row(row_index)
 }
 
 ///|
@@ -399,6 +515,24 @@ fn RawTable::replace_writer_at_row(
     return false
   }
   column_ref.val.replace_writer_at_row(row.index(), writer)
+}
+
+///|
+fn[T] RawTable::replace_value_at_row_index(
+  self : RawTable,
+  row_index : Int,
+  component_local_id : Int,
+  key : ComponentKey[T],
+  value : T,
+) -> Bool {
+  guard self.column(component_local_id) is Some(column_ref) else {
+    return false
+  }
+  if column_ref.val.values_cache_active() {
+    column_ref.val.replace_cached_value_at_row(row_index, value)
+  } else {
+    column_ref.val.replace_writer_at_row(row_index, erased_writer(key, value))
+  }
 }
 
 fn RawTable::added_sequence_at_row(
@@ -770,11 +904,21 @@ fn[T] World::component_value_by_local_id(
   key : ComponentKey[T],
   local_component_id : Int,
 ) -> T? raise EcsError {
-  if self.pending_component_payload(entity, local_component_id) is Some(payload) {
-    return Some(self.component_value(key, entity, payload))
+  match self.pending_component_payload_context {
+    Some(_) =>
+      if self.pending_component_payload(entity, local_component_id)
+        is Some(payload) {
+        return Some(self.component_value(key, entity, payload))
+      }
+    None => ()
   }
-  if self.query_sparse_anchor_payload(entity, local_component_id) is Some(payload) {
-    return Some(self.component_value(key, entity, payload))
+  match self.current_query_sparse_anchor_payload_context {
+    Some(_) =>
+      if self.query_sparse_anchor_payload(entity, local_component_id)
+        is Some(payload) {
+        return Some(self.component_value(key, entity, payload))
+      }
+    None => ()
   }
   match self.local_component_storage_type(local_component_id) {
     Some(SparseSet) =>
@@ -787,26 +931,22 @@ fn[T] World::component_value_by_local_id(
         None => None
       }
     Some(Table) => {
-      guard self.table_id_for_entity(entity) is Some(table_id) else {
+      let entity_id = entity.id
+      guard entity_id >= 0 &&
+        entity_id < self.entity_table_ids.length() &&
+        entity_id < self.entity_table_rows.length() else {
         return None
       }
+      let table_id = self.entity_table_ids[entity_id]
+      let row_index = self.entity_table_rows[entity_id]
+      guard table_id >= 0 && row_index >= 0 else { return None }
       guard self.table_storage(table_id) is Some(table_ref) else { return None }
-      guard self.entity_table_row(entity) is Some(row) else { return None }
-      let result : Result[T?, @any.TypeMismatch] = try? table_ref.val.value_at_row(
-        row,
-        local_component_id,
-      )
-      match result {
-        Ok(value) => value
-        Err(_) =>
-          raise ComponentTypeMismatch(
-            key.id(),
-            key.debug_name(),
-            entity,
-            table_ref.val.column_type_name(local_component_id).unwrap_or(
-              "unknown",
-            ),
-          )
+      guard table_ref.val.column(local_component_id) is Some(column_ref) else {
+        return None
+      }
+      match column_ref.val.payload_at_row(row_index) {
+        Some(payload) => Some(self.component_value(key, entity, payload))
+        None => None
       }
     }
     None => None
@@ -889,6 +1029,27 @@ fn[T] World::replace_component_value_by_key(
 }
 
 ///|
+fn[T] World::replace_component_value_at_table_row(
+  self : World,
+  key : ComponentKey[T],
+  local_component_id : Int,
+  table_id : Int,
+  row_index : Int,
+  value : T,
+) -> Bool {
+  guard self.local_component_storage_type(local_component_id) == Some(Table) else {
+    return false
+  }
+  guard self.table_storage(table_id) is Some(table_ref) else { return false }
+  table_ref.val.replace_value_at_row_index(
+    row_index,
+    local_component_id,
+    key,
+    value,
+  )
+}
+
+///|
 fn World::table_component_added_sequence_by_local_id(
   self : World,
   entity_id : Int,
@@ -937,6 +1098,51 @@ fn World::table_component_changed_caller_by_local_id(
   guard self.table_storage(table_id) is Some(table_ref) else { return None }
   guard self.entity_table_row_by_id(entity_id) is Some(row) else { return None }
   table_ref.val.changed_caller_at_row(row, local_component_id)
+}
+
+///|
+fn World::table_has_component_local_id(
+  self : World,
+  table_id : Int,
+  local_component_id : Int,
+) -> Bool {
+  guard table_id >= 0 else { return false }
+  match self.table_storage(table_id) {
+    Some(table_ref) => table_ref.val.column(local_component_id) is Some(_)
+    None => false
+  }
+}
+
+///|
+fn[T] World::component_value_by_key_at_table_row(
+  self : World,
+  key : ComponentKey[T],
+  table_id : Int,
+  row_index : Int,
+) -> T? raise EcsError {
+  guard self.local_component_id(key.id()) is Some(local_component_id) else {
+    return None
+  }
+  guard self.local_component_storage_type(local_component_id) == Some(Table) else {
+    return None
+  }
+  guard self.table_storage(table_id) is Some(table_ref) else { return None }
+  let result : Result[T?, @any.TypeMismatch] = try? table_ref.val.value_at_row_index(
+    row_index,
+    local_component_id,
+  )
+  match result {
+    Ok(value) => value
+    Err(_) =>
+      raise ComponentTypeMismatch(
+        key.id(),
+        key.debug_name(),
+        @core.Entity::placeholder(),
+        table_ref.val.column_type_name(local_component_id).unwrap_or(
+          "unknown",
+        ),
+      )
+  }
 }
 
 ///|

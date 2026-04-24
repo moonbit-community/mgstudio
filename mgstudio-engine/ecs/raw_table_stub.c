@@ -31,6 +31,15 @@ typedef struct {
   int32_t cap;
 } mgstudio_ecs_raw_table_metadata_t;
 
+typedef struct {
+  void **values;
+  int32_t *added_sequences;
+  int32_t *changed_sequences;
+  int32_t *changed_caller_ids;
+  int32_t len;
+  int32_t cap;
+} mgstudio_ecs_raw_table_value_column_t;
+
 static void mgstudio_ecs_raw_table_rows_finalize(void *ptr) {
   mgstudio_ecs_raw_table_rows_t *rows = (mgstudio_ecs_raw_table_rows_t *)ptr;
   if (rows->data != NULL) {
@@ -58,6 +67,35 @@ static void mgstudio_ecs_raw_table_metadata_finalize(void *ptr) {
   }
   metadata->len = 0;
   metadata->cap = 0;
+}
+
+static void mgstudio_ecs_raw_table_value_column_finalize(void *ptr) {
+  mgstudio_ecs_raw_table_value_column_t *column =
+    (mgstudio_ecs_raw_table_value_column_t *)ptr;
+  if (column->values != NULL) {
+    for (int32_t i = 0; i < column->len; i += 1) {
+      if (column->values[i] != NULL) {
+        moonbit_decref(column->values[i]);
+        column->values[i] = NULL;
+      }
+    }
+    free(column->values);
+    column->values = NULL;
+  }
+  if (column->added_sequences != NULL) {
+    free(column->added_sequences);
+    column->added_sequences = NULL;
+  }
+  if (column->changed_sequences != NULL) {
+    free(column->changed_sequences);
+    column->changed_sequences = NULL;
+  }
+  if (column->changed_caller_ids != NULL) {
+    free(column->changed_caller_ids);
+    column->changed_caller_ids = NULL;
+  }
+  column->len = 0;
+  column->cap = 0;
 }
 
 static int mgstudio_ecs_raw_table_rows_reserve(
@@ -140,6 +178,65 @@ static int mgstudio_ecs_raw_table_metadata_reserve(
   return 1;
 }
 
+static int mgstudio_ecs_raw_table_value_column_reserve(
+  mgstudio_ecs_raw_table_value_column_t *column,
+  int32_t min_cap
+) {
+  if (column->cap >= min_cap) {
+    return 1;
+  }
+  int32_t next_cap = column->cap > 0 ? column->cap : 4;
+  while (next_cap < min_cap) {
+    if (next_cap > INT32_MAX / 2) {
+      next_cap = min_cap;
+      break;
+    }
+    next_cap *= 2;
+  }
+  void **next_values =
+    (void **)malloc((size_t)next_cap * sizeof(void *));
+  int32_t *next_added =
+    (int32_t *)malloc((size_t)next_cap * sizeof(int32_t));
+  int32_t *next_changed =
+    (int32_t *)malloc((size_t)next_cap * sizeof(int32_t));
+  int32_t *next_caller_ids =
+    (int32_t *)malloc((size_t)next_cap * sizeof(int32_t));
+  if (
+    next_values == NULL ||
+    next_added == NULL ||
+    next_changed == NULL ||
+    next_caller_ids == NULL
+  ) {
+    free(next_values);
+    free(next_added);
+    free(next_changed);
+    free(next_caller_ids);
+    return 0;
+  }
+  for (int32_t i = 0; i < column->len; i += 1) {
+    next_values[i] = column->values[i];
+    next_added[i] = column->added_sequences[i];
+    next_changed[i] = column->changed_sequences[i];
+    next_caller_ids[i] = column->changed_caller_ids[i];
+  }
+  for (int32_t i = column->len; i < next_cap; i += 1) {
+    next_values[i] = NULL;
+    next_added[i] = -1;
+    next_changed[i] = -1;
+    next_caller_ids[i] = 0;
+  }
+  free(column->values);
+  free(column->added_sequences);
+  free(column->changed_sequences);
+  free(column->changed_caller_ids);
+  column->values = next_values;
+  column->added_sequences = next_added;
+  column->changed_sequences = next_changed;
+  column->changed_caller_ids = next_caller_ids;
+  column->cap = next_cap;
+  return 1;
+}
+
 MOONBIT_FFI_EXPORT
 mgstudio_ecs_raw_table_rows_t *mgstudio_ecs_raw_table_rows_new(void) {
   mgstudio_ecs_raw_table_rows_t *rows =
@@ -151,6 +248,24 @@ mgstudio_ecs_raw_table_rows_t *mgstudio_ecs_raw_table_rows_new(void) {
   rows->len = 0;
   rows->cap = 0;
   return rows;
+}
+
+MOONBIT_FFI_EXPORT
+mgstudio_ecs_raw_table_value_column_t *mgstudio_ecs_raw_table_value_column_new(
+  void
+) {
+  mgstudio_ecs_raw_table_value_column_t *column =
+    (mgstudio_ecs_raw_table_value_column_t *)moonbit_make_external_object(
+      mgstudio_ecs_raw_table_value_column_finalize,
+      (uint32_t)sizeof(mgstudio_ecs_raw_table_value_column_t)
+    );
+  column->values = NULL;
+  column->added_sequences = NULL;
+  column->changed_sequences = NULL;
+  column->changed_caller_ids = NULL;
+  column->len = 0;
+  column->cap = 0;
+  return column;
 }
 
 MOONBIT_FFI_EXPORT
@@ -180,6 +295,13 @@ int32_t mgstudio_ecs_raw_table_metadata_len(
   mgstudio_ecs_raw_table_metadata_t *metadata
 ) {
   return metadata != NULL ? metadata->len : 0;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t mgstudio_ecs_raw_table_value_column_len(
+  mgstudio_ecs_raw_table_value_column_t *column
+) {
+  return column != NULL ? column->len : 0;
 }
 
 MOONBIT_FFI_EXPORT
@@ -219,6 +341,29 @@ int32_t mgstudio_ecs_raw_table_metadata_push(
 }
 
 MOONBIT_FFI_EXPORT
+int32_t mgstudio_ecs_raw_table_value_column_push(
+  mgstudio_ecs_raw_table_value_column_t *column,
+  void *value,
+  int32_t added_sequence,
+  int32_t changed_sequence,
+  int32_t changed_caller_id
+) {
+  if (column == NULL || value == NULL) {
+    return 0;
+  }
+  if (!mgstudio_ecs_raw_table_value_column_reserve(column, column->len + 1)) {
+    return 0;
+  }
+  moonbit_incref(value);
+  column->values[column->len] = value;
+  column->added_sequences[column->len] = added_sequence;
+  column->changed_sequences[column->len] = changed_sequence;
+  column->changed_caller_ids[column->len] = changed_caller_id;
+  column->len += 1;
+  return 1;
+}
+
+MOONBIT_FFI_EXPORT
 uint64_t mgstudio_ecs_raw_table_rows_get(
   mgstudio_ecs_raw_table_rows_t *rows,
   int32_t row
@@ -247,6 +392,73 @@ int32_t mgstudio_ecs_raw_table_metadata_set(
 }
 
 MOONBIT_FFI_EXPORT
+int32_t mgstudio_ecs_raw_table_value_column_set_metadata(
+  mgstudio_ecs_raw_table_value_column_t *column,
+  int32_t row,
+  int32_t added_sequence,
+  int32_t changed_sequence,
+  int32_t changed_caller_id
+) {
+  if (column == NULL || row < 0 || row >= column->len) {
+    return 0;
+  }
+  column->added_sequences[row] = added_sequence;
+  column->changed_sequences[row] = changed_sequence;
+  column->changed_caller_ids[row] = changed_caller_id;
+  return 1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t mgstudio_ecs_raw_table_value_column_replace(
+  mgstudio_ecs_raw_table_value_column_t *column,
+  int32_t row,
+  void *value
+) {
+  if (column == NULL || value == NULL || row < 0 || row >= column->len) {
+    return 0;
+  }
+  moonbit_incref(value);
+  if (column->values[row] != NULL) {
+    moonbit_decref(column->values[row]);
+  }
+  column->values[row] = value;
+  return 1;
+}
+
+MOONBIT_FFI_EXPORT
+void *mgstudio_ecs_raw_table_value_column_value(
+  mgstudio_ecs_raw_table_value_column_t *column,
+  int32_t row
+) {
+  if (column == NULL || row < 0 || row >= column->len) {
+    return NULL;
+  }
+  void *value = column->values[row];
+  if (value != NULL) {
+    moonbit_incref(value);
+  }
+  return value;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t mgstudio_ecs_raw_table_value_column_append_from_row(
+  mgstudio_ecs_raw_table_value_column_t *dst,
+  mgstudio_ecs_raw_table_value_column_t *src,
+  int32_t row
+) {
+  if (dst == NULL || src == NULL || row < 0 || row >= src->len) {
+    return 0;
+  }
+  return mgstudio_ecs_raw_table_value_column_push(
+    dst,
+    src->values[row],
+    -1,
+    -1,
+    0
+  );
+}
+
+MOONBIT_FFI_EXPORT
 int32_t mgstudio_ecs_raw_table_metadata_added(
   mgstudio_ecs_raw_table_metadata_t *metadata,
   int32_t row
@@ -255,6 +467,17 @@ int32_t mgstudio_ecs_raw_table_metadata_added(
     return -1;
   }
   return metadata->added_sequences[row];
+}
+
+MOONBIT_FFI_EXPORT
+int32_t mgstudio_ecs_raw_table_value_column_added(
+  mgstudio_ecs_raw_table_value_column_t *column,
+  int32_t row
+) {
+  if (column == NULL || row < 0 || row >= column->len) {
+    return -1;
+  }
+  return column->added_sequences[row];
 }
 
 MOONBIT_FFI_EXPORT
@@ -269,6 +492,17 @@ int32_t mgstudio_ecs_raw_table_metadata_changed(
 }
 
 MOONBIT_FFI_EXPORT
+int32_t mgstudio_ecs_raw_table_value_column_changed(
+  mgstudio_ecs_raw_table_value_column_t *column,
+  int32_t row
+) {
+  if (column == NULL || row < 0 || row >= column->len) {
+    return -1;
+  }
+  return column->changed_sequences[row];
+}
+
+MOONBIT_FFI_EXPORT
 int32_t mgstudio_ecs_raw_table_metadata_changed_caller_id(
   mgstudio_ecs_raw_table_metadata_t *metadata,
   int32_t row
@@ -277,6 +511,17 @@ int32_t mgstudio_ecs_raw_table_metadata_changed_caller_id(
     return 0;
   }
   return metadata->changed_caller_ids[row];
+}
+
+MOONBIT_FFI_EXPORT
+int32_t mgstudio_ecs_raw_table_value_column_changed_caller_id(
+  mgstudio_ecs_raw_table_value_column_t *column,
+  int32_t row
+) {
+  if (column == NULL || row < 0 || row >= column->len) {
+    return 0;
+  }
+  return column->changed_caller_ids[row];
 }
 
 MOONBIT_FFI_EXPORT
@@ -313,5 +558,31 @@ int32_t mgstudio_ecs_raw_table_metadata_swap_remove(
       metadata->changed_caller_ids[last_index];
   }
   metadata->len = last_index;
+  return 1;
+}
+
+MOONBIT_FFI_EXPORT
+int32_t mgstudio_ecs_raw_table_value_column_swap_remove(
+  mgstudio_ecs_raw_table_value_column_t *column,
+  int32_t row
+) {
+  if (column == NULL || row < 0 || row >= column->len) {
+    return 0;
+  }
+  int32_t last_index = column->len - 1;
+  if (column->values[row] != NULL) {
+    moonbit_decref(column->values[row]);
+  }
+  if (row != last_index) {
+    column->values[row] = column->values[last_index];
+    column->added_sequences[row] = column->added_sequences[last_index];
+    column->changed_sequences[row] = column->changed_sequences[last_index];
+    column->changed_caller_ids[row] = column->changed_caller_ids[last_index];
+  }
+  column->values[last_index] = NULL;
+  column->added_sequences[last_index] = -1;
+  column->changed_sequences[last_index] = -1;
+  column->changed_caller_ids[last_index] = 0;
+  column->len = last_index;
   return 1;
 }

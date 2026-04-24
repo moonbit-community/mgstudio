@@ -38,6 +38,9 @@ pub(all) struct WorldComponents {
   local_ids_by_definition_id : Map[Int, Int]
   definition_ids_by_local_id : Map[Int, Int]
   storage_types_by_local_id : Map[Int, ComponentStorageType]
+  mut local_ids_by_definition_id_dense : Array[Int]
+  mut definition_ids_by_local_id_dense : Array[Int]
+  mut storage_types_by_local_id_dense : Array[ComponentStorageType?]
   queued : WorldQueuedRegistrations
 }
 
@@ -57,6 +60,9 @@ fn world_components_new() -> WorldComponents {
     local_ids_by_definition_id: {},
     definition_ids_by_local_id: {},
     storage_types_by_local_id: {},
+    local_ids_by_definition_id_dense: [],
+    definition_ids_by_local_id_dense: [],
+    storage_types_by_local_id_dense: [],
     queued: world_queued_registrations_new(),
   }
 }
@@ -162,6 +168,13 @@ pub fn[T : Component] ComponentsQueuedRegistrator::register_component(
 
 ///|
 fn World::local_component_id(self : World, definition_id : Int) -> Int? {
+  if definition_id >= 0 &&
+    definition_id < self.components.local_ids_by_definition_id_dense.length() {
+    let local_id = self.components.local_ids_by_definition_id_dense[definition_id]
+    if local_id >= 0 {
+      return Some(local_id)
+    }
+  }
   self.components.local_ids_by_definition_id.get(definition_id)
 }
 
@@ -183,6 +196,13 @@ pub fn[T : Component] World::component_id(
 
 ///|
 fn World::definition_component_id(self : World, local_id : Int) -> Int? {
+  if local_id >= 0 &&
+    local_id < self.components.definition_ids_by_local_id_dense.length() {
+    let definition_id = self.components.definition_ids_by_local_id_dense[local_id]
+    if definition_id >= 0 {
+      return Some(definition_id)
+    }
+  }
   self.components.definition_ids_by_local_id.get(local_id)
 }
 
@@ -191,6 +211,13 @@ fn World::local_component_storage_type(
   self : World,
   local_id : Int,
 ) -> ComponentStorageType? {
+  if local_id >= 0 &&
+    local_id < self.components.storage_types_by_local_id_dense.length() {
+    match self.components.storage_types_by_local_id_dense[local_id] {
+      Some(storage_type) => return Some(storage_type)
+      None => ()
+    }
+  }
   self.components.storage_types_by_local_id.get(local_id)
 }
 
@@ -211,6 +238,17 @@ fn World::assign_local_component_id(self : World, definition_id : Int) -> Int {
   self.component_ids.next_local_id = local_id + 1
   self.components.local_ids_by_definition_id.set(definition_id, local_id)
   self.components.definition_ids_by_local_id.set(local_id, definition_id)
+  if definition_id >= 0 {
+    while self.components.local_ids_by_definition_id_dense.length() <=
+      definition_id {
+      self.components.local_ids_by_definition_id_dense.push(-1)
+    }
+    self.components.local_ids_by_definition_id_dense[definition_id] = local_id
+  }
+  while self.components.definition_ids_by_local_id_dense.length() <= local_id {
+    self.components.definition_ids_by_local_id_dense.push(-1)
+  }
+  self.components.definition_ids_by_local_id_dense[local_id] = definition_id
   self.component_registration_generation = self.component_registration_generation +
     1
   local_id
@@ -412,6 +450,13 @@ fn World::install_component_metadata(
   }
   self.components.storage_types_by_local_id.set(
     local_component_id,
+    metadata.storage_type,
+  )
+  while self.components.storage_types_by_local_id_dense.length() <=
+    local_component_id {
+    self.components.storage_types_by_local_id_dense.push(None)
+  }
+  self.components.storage_types_by_local_id_dense[local_component_id] = Some(
     metadata.storage_type,
   )
   for required in metadata.required_components {

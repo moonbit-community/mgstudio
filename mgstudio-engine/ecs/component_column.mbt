@@ -20,6 +20,8 @@ pub struct ComponentColumn[T] {
   storage_type : ComponentStorageType
   table_column_cache : Ref[Array[@any.Any?]]
   table_column_cache_ready : Ref[Array[Bool]]
+  table_values_cache : Ref[Array[@any.Any?]]
+  table_values_cache_ready : Ref[Array[Bool]]
 }
 
 ///|
@@ -38,6 +40,8 @@ pub fn[T] World::component_column(
             storage_type,
             table_column_cache: Ref::new([]),
             table_column_cache_ready: Ref::new([]),
+            table_values_cache: Ref::new([]),
+            table_values_cache_ready: Ref::new([]),
           })
         None => None
       }
@@ -82,12 +86,50 @@ fn[T] ComponentColumn::table_column_ref(
 }
 
 ///|
+fn[T] ComponentColumn::table_values_ref(
+  self : ComponentColumn[T],
+  table_id : Int,
+) -> Array[T]? {
+  if table_id < 0 {
+    return None
+  }
+  while self.table_values_cache.val.length() <= table_id {
+    self.table_values_cache.val.push(None)
+  }
+  while self.table_values_cache_ready.val.length() <= table_id {
+    self.table_values_cache_ready.val.push(false)
+  }
+  if self.table_values_cache_ready.val[table_id] {
+    return match self.table_values_cache.val[table_id] {
+      Some(values_any) => Some(values_any.unsafe_coerce())
+      None => None
+    }
+  }
+  self.table_values_cache_ready.val[table_id] = true
+  guard self.table_column_ref(table_id) is Some(column_ref) else {
+    return None
+  }
+  match column_ref.val.values_cached() {
+    Some(values) => {
+      self.table_values_cache.val[table_id] = Some(@any.of(values))
+      Some(values)
+    }
+    None => None
+  }
+}
+
+///|
 pub fn[T] ComponentColumn::contains(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> Bool {
-  if self.world.pending_component_payload(entity, self.local_component_id) is Some(_) {
-    return true
+  match self.world.pending_component_payload_context {
+    Some(_) =>
+      if self.world.pending_component_payload(entity, self.local_component_id)
+        is Some(_) {
+        return true
+      }
+    None => ()
   }
   match self.storage_type {
     SparseSet =>
@@ -96,11 +138,19 @@ pub fn[T] ComponentColumn::contains(
         None => false
       }
     Table => {
-      guard self.world.table_id_for_entity(entity) is Some(table_id) else {
+      let entity_id = entity.id
+      guard entity_id >= 0 &&
+        entity_id < self.world.entity_table_ids.length() &&
+        entity_id < self.world.entity_table_rows.length() else {
         return false
       }
-      guard self.world.entity_table_row(entity) is Some(_) else { return false }
-      self.table_column_ref(table_id) is Some(_)
+      let table_id = self.world.entity_table_ids[entity_id]
+      let row_index = self.world.entity_table_rows[entity_id]
+      guard table_id >= 0 && row_index >= 0 else { return false }
+      match self.table_values_ref(table_id) {
+        Some(values) => row_index < values.length()
+        None => false
+      }
     }
   }
 }
@@ -110,13 +160,17 @@ pub fn[T] ComponentColumn::get(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> T? {
-  if self.world.pending_component_payload(entity, self.local_component_id)
-    is Some(payload) {
-    let result : Result[T, @any.TypeMismatch] = try? payload.to_value()
-    return match result {
-      Ok(value) => Some(value)
-      Err(_) => None
-    }
+  match self.world.pending_component_payload_context {
+    Some(_) =>
+      if self.world.pending_component_payload(entity, self.local_component_id)
+        is Some(payload) {
+        let result : Result[T, @any.TypeMismatch] = try? payload.to_value()
+        return match result {
+          Ok(value) => Some(value)
+          Err(_) => None
+        }
+      }
+    None => ()
   }
   match self.storage_type {
     SparseSet =>
@@ -135,15 +189,16 @@ pub fn[T] ComponentColumn::get(
         None => None
       }
     Table => {
-      guard self.world.table_id_for_entity(entity) is Some(table_id) else {
+      let entity_id = entity.id
+      guard entity_id >= 0 &&
+        entity_id < self.world.entity_table_ids.length() &&
+        entity_id < self.world.entity_table_rows.length() else {
         return None
       }
-      guard self.world.entity_table_row(entity) is Some(row) else { return None }
-      guard self.table_column_ref(table_id) is Some(column_ref) else {
-        return None
-      }
-      let values : Array[T] = column_ref.val.values.unsafe_coerce()
-      let row_index = row.index()
+      let table_id = self.world.entity_table_ids[entity_id]
+      let row_index = self.world.entity_table_rows[entity_id]
+      guard table_id >= 0 && row_index >= 0 else { return None }
+      guard self.table_values_ref(table_id) is Some(values) else { return None }
       if row_index < 0 || row_index >= values.length() {
         None
       } else {
@@ -184,10 +239,7 @@ pub fn[T] ComponentColumn::get_fast(
       let table_id = self.world.entity_table_ids[entity_id]
       let row_index = self.world.entity_table_rows[entity_id]
       guard table_id >= 0 && row_index >= 0 else { return None }
-      guard self.table_column_ref(table_id) is Some(column_ref) else {
-        return None
-      }
-      let values : Array[T] = column_ref.val.values.unsafe_coerce()
+      guard self.table_values_ref(table_id) is Some(values) else { return None }
       if row_index >= values.length() {
         None
       } else {
@@ -203,10 +255,22 @@ pub fn[T] ComponentColumn::table_values(
   table_id : Int,
 ) -> Array[T]? {
   guard self.storage_type == Table else { return None }
-  guard self.table_column_ref(table_id) is Some(column_ref) else {
-    return None
+  self.table_values_ref(table_id)
+}
+
+///|
+pub fn[T] ComponentColumn::table_value_at_row(
+  self : ComponentColumn[T],
+  table_id : Int,
+  row_index : Int,
+) -> T? {
+  guard self.storage_type == Table else { return None }
+  guard self.table_values_ref(table_id) is Some(values) else { return None }
+  if row_index < 0 || row_index >= values.length() {
+    None
+  } else {
+    Some(values[row_index])
   }
-  Some(column_ref.val.values.unsafe_coerce())
 }
 
 ///|
@@ -245,6 +309,12 @@ pub fn[T] ComponentColumn::get_mut(
       world: Some(self.world),
       entity: Some(entity),
       key: Some(self.key),
+      table_id: self.world.table_id_for_entity(entity),
+      row_index: match self.world.entity_table_row(entity) {
+        Some(row) => Some(row.index())
+        None => None
+      },
+      local_component_id: Some(self.local_component_id),
     })
   } else {
     None
@@ -281,14 +351,14 @@ pub fn[T] ComponentColumn::for_each(
         guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
           continue
         }
-        guard self.table_column_ref(table_id) is Some(column_ref) else {
-          continue
-        }
         let entity_snapshot = entities.copy()
-        let values : Array[T] = column_ref.val.values.unsafe_coerce()
+        guard self.table_values_ref(table_id) is Some(values) else { continue }
         for entity in entity_snapshot {
-          guard self.world.entity_table_row(entity) is Some(row) else { continue }
-          let row_index = row.index()
+          let entity_id = entity.id
+          if entity_id < 0 || entity_id >= self.world.entity_table_rows.length() {
+            continue
+          }
+          let row_index = self.world.entity_table_rows[entity_id]
           if row_index < 0 || row_index >= values.length() {
             continue
           }
@@ -342,7 +412,7 @@ pub fn[T, U] ComponentColumn::for_each_without(
       continue
     }
     let entity_snapshot = entities.copy()
-    let values : Array[T] = column_ref.val.values.unsafe_coerce()
+    guard column_ref.val.values_cached() is Some(values) else { continue }
     for entity in entity_snapshot {
       guard self.world.entity_table_row(entity) is Some(row) else { continue }
       let row_index = row.index()
@@ -398,8 +468,12 @@ pub fn[T, U] ComponentColumn::for_each_with(
       continue
     }
     let entity_snapshot = entities.copy()
-    let left_values : Array[T] = left_column_ref.val.values.unsafe_coerce()
-    let right_values : Array[U] = right_column_ref.val.values.unsafe_coerce()
+    guard left_column_ref.val.values_cached() is Some(left_values) else {
+      continue
+    }
+    guard right_column_ref.val.values_cached() is Some(right_values) else {
+      continue
+    }
     for entity in entity_snapshot {
       guard self.world.entity_table_row(entity) is Some(row) else { continue }
       let row_index = row.index()
@@ -447,7 +521,7 @@ pub fn[T, U] ComponentColumn::for_each_without_fast(
     guard self.table_column_ref(table_id) is Some(column_ref) else {
       continue
     }
-    let values : Array[T] = column_ref.val.values.unsafe_coerce()
+    guard column_ref.val.values_cached() is Some(values) else { continue }
     for entity in entities {
       let entity_id = entity.id
       if entity_id < 0 || entity_id >= self.world.entity_table_rows.length() {
@@ -499,8 +573,12 @@ pub fn[T, U] ComponentColumn::for_each_with_fast(
     guard other.table_column_ref(table_id) is Some(right_column_ref) else {
       continue
     }
-    let left_values : Array[T] = left_column_ref.val.values.unsafe_coerce()
-    let right_values : Array[U] = right_column_ref.val.values.unsafe_coerce()
+    guard left_column_ref.val.values_cached() is Some(left_values) else {
+      continue
+    }
+    guard right_column_ref.val.values_cached() is Some(right_values) else {
+      continue
+    }
     for entity in entities {
       let entity_id = entity.id
       if entity_id < 0 || entity_id >= self.world.entity_table_rows.length() {
@@ -585,12 +663,16 @@ pub fn[T] ComponentColumn::set_sequence_only(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return false
       }
-      let values : Array[T] = column_ref.val.values.unsafe_coerce()
       let row_index = row.index()
-      if row_index < 0 || row_index >= values.length() {
-        return false
+      if column_ref.val.values_cache_active() {
+        guard column_ref.val.replace_cached_value_at_row(row_index, value) else {
+          return false
+        }
+      } else {
+        guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
+          return false
+        }
       }
-      values[row_index] = value
       guard self.world.table_storage(table_id) is Some(table_ref) else { return false }
       ignore(
         table_ref.val.record_changed_at_row(
@@ -642,11 +724,15 @@ pub fn[T] ComponentColumn::set_sequence_only_fast(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return false
       }
-      let values : Array[T] = column_ref.val.values.unsafe_coerce()
-      if row_index >= values.length() {
-        return false
+      if column_ref.val.values_cache_active() {
+        guard column_ref.val.replace_cached_value_at_row(row_index, value) else {
+          return false
+        }
+      } else {
+        guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
+          return false
+        }
       }
-      values[row_index] = value
       ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
       true
     }
@@ -690,11 +776,15 @@ pub fn[T] ComponentColumn::set_sequence_only_hot(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return false
       }
-      let values : Array[T] = column_ref.val.values.unsafe_coerce()
-      if row_index >= values.length() {
-        return false
+      if column_ref.val.values_cache_active() {
+        guard column_ref.val.replace_cached_value_at_row(row_index, value) else {
+          return false
+        }
+      } else {
+        guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
+          return false
+        }
       }
-      values[row_index] = value
       ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
       true
     }
@@ -725,6 +815,11 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
+  if !column_ref.val.values_cache_active() {
+    guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
+      return false
+    }
+  }
   ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
   true
 }
@@ -744,6 +839,47 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row(
   }
   values[row_index] = value
   guard table_id >= 0 else { return false }
+  guard self.table_column_ref(table_id) is Some(column_ref) else {
+    return false
+  }
+  if !column_ref.val.values_cache_active() {
+    guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
+      return false
+    }
+  }
+  ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
+  true
+}
+
+///|
+pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row_value(
+  self : ComponentColumn[T],
+  table_id : Int,
+  row_index : Int,
+  value : T,
+  sequence : @core.Sequence,
+) -> Bool {
+  guard self.storage_type == Table else { return false }
+  guard table_id >= 0 && row_index >= 0 else { return false }
+  guard self.table_column_ref(table_id) is Some(column_ref) else {
+    return false
+  }
+  guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
+    return false
+  }
+  ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
+  true
+}
+
+///|
+pub fn[T] ComponentColumn::record_changed_hot_at_table_row(
+  self : ComponentColumn[T],
+  table_id : Int,
+  row_index : Int,
+  sequence : @core.Sequence,
+) -> Bool {
+  guard self.storage_type == Table else { return false }
+  guard table_id >= 0 && row_index >= 0 else { return false }
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }

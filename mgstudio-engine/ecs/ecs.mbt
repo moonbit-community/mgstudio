@@ -302,6 +302,7 @@ pub struct World {
   archetype_ids_by_component_local_id : Map[Int, Array[Int]]
   archetype_add_edges_by_component_local_id : Map[Int, Map[Int, Int]]
   archetype_remove_edges_by_component_local_id : Map[Int, Map[Int, Int]]
+  archetype_insert_bundle_edges_by_signature : Map[Int, Map[String, Int]]
   archetype_non_empty_ids_by_component_local_id : Map[Int, Array[Int]]
   mut non_empty_archetype_ids_sorted : Array[Int]
   mut non_empty_archetype_generation : Int
@@ -365,6 +366,7 @@ pub fn World::new() -> World {
     archetype_ids_by_component_local_id: {},
     archetype_add_edges_by_component_local_id: {},
     archetype_remove_edges_by_component_local_id: {},
+    archetype_insert_bundle_edges_by_signature: {},
     archetype_non_empty_ids_by_component_local_id: {},
     non_empty_archetype_ids_sorted: [],
     non_empty_archetype_generation: 0,

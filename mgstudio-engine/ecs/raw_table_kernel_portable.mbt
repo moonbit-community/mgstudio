@@ -163,3 +163,139 @@ fn raw_table_metadata_kernel_swap_remove(
   ignore(kernel.changed_caller_ids.pop())
   true
 }
+
+///|
+priv struct RawTableValueColumnKernel {
+  mut values : Array[@any.Any]
+  mut added_sequences : Array[@core.Sequence]
+  mut changed_sequences : Array[@core.Sequence]
+  mut changed_caller_ids : Array[Int]
+}
+
+///|
+fn raw_table_value_column_kernel_new() -> RawTableValueColumnKernel {
+  {
+    values: [],
+    added_sequences: [],
+    changed_sequences: [],
+    changed_caller_ids: [],
+  }
+}
+
+///|
+fn raw_table_value_column_kernel_len(
+  kernel : RawTableValueColumnKernel,
+) -> Int {
+  kernel.values.length()
+}
+
+///|
+fn raw_table_value_column_kernel_push(
+  kernel : RawTableValueColumnKernel,
+  value : @any.Any,
+  added_sequence : @core.Sequence,
+  changed_sequence : @core.Sequence,
+  changed_caller_id : Int,
+) -> Bool {
+  kernel.values.push(value)
+  kernel.added_sequences.push(added_sequence)
+  kernel.changed_sequences.push(changed_sequence)
+  kernel.changed_caller_ids.push(changed_caller_id)
+  true
+}
+
+///|
+fn raw_table_value_column_kernel_replace(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+  value : @any.Any,
+) -> Bool {
+  if row < 0 || row >= kernel.values.length() {
+    return false
+  }
+  kernel.values[row] = value
+  true
+}
+
+///|
+fn raw_table_value_column_kernel_value(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+) -> @any.Any? {
+  if row < 0 || row >= kernel.values.length() {
+    return None
+  }
+  Some(kernel.values[row])
+}
+
+///|
+fn raw_table_value_column_kernel_set_metadata(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+  added_sequence : @core.Sequence,
+  changed_sequence : @core.Sequence,
+  changed_caller_id : Int,
+) -> Bool {
+  if row < 0 || row >= kernel.values.length() {
+    return false
+  }
+  kernel.added_sequences[row] = added_sequence
+  kernel.changed_sequences[row] = changed_sequence
+  kernel.changed_caller_ids[row] = changed_caller_id
+  true
+}
+
+///|
+fn raw_table_value_column_kernel_added(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+) -> @core.Sequence {
+  if row < 0 || row >= kernel.added_sequences.length() {
+    return -1
+  }
+  kernel.added_sequences[row]
+}
+
+///|
+fn raw_table_value_column_kernel_changed(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+) -> @core.Sequence {
+  if row < 0 || row >= kernel.changed_sequences.length() {
+    return -1
+  }
+  kernel.changed_sequences[row]
+}
+
+///|
+fn raw_table_value_column_kernel_changed_caller_id(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+) -> Int {
+  if row < 0 || row >= kernel.changed_caller_ids.length() {
+    return 0
+  }
+  kernel.changed_caller_ids[row]
+}
+
+///|
+fn raw_table_value_column_kernel_swap_remove(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+) -> Bool {
+  if row < 0 || row >= kernel.values.length() {
+    return false
+  }
+  let last_index = kernel.values.length() - 1
+  if row != last_index {
+    kernel.values[row] = kernel.values[last_index]
+    kernel.added_sequences[row] = kernel.added_sequences[last_index]
+    kernel.changed_sequences[row] = kernel.changed_sequences[last_index]
+    kernel.changed_caller_ids[row] = kernel.changed_caller_ids[last_index]
+  }
+  ignore(kernel.values.pop())
+  ignore(kernel.added_sequences.pop())
+  ignore(kernel.changed_sequences.pop())
+  ignore(kernel.changed_caller_ids.pop())
+  true
+}

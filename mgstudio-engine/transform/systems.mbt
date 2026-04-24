@@ -459,11 +459,10 @@ fn transform_set_global_if_neq_hot_at_row(
   if global_transform_eq(global_values[row_index], next_global) {
     return false
   }
-  columns.global.set_sequence_only_hot_at_table_row(
+  global_values[row_index] = next_global
+  columns.global.record_changed_hot_at_table_row(
     table_id,
-    global_values,
     row_index,
-    next_global,
     sequence,
   )
 }
@@ -480,15 +479,8 @@ fn transform_set_global_hot_at_row(
   if row_index < 0 || row_index >= global_values.length() {
     return
   }
-  ignore(
-    columns.global.set_sequence_only_hot_at_table_row(
-      table_id,
-      global_values,
-      row_index,
-      next_global,
-      sequence,
-    ),
-  )
+  global_values[row_index] = next_global
+  ignore(columns.global.record_changed_hot_at_table_row(table_id, row_index, sequence))
 }
 
 ///|

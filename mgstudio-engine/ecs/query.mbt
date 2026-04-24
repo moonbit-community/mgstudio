@@ -361,7 +361,27 @@ fn[D : QueryData] query_fetch_with_sparse_anchor(
     anchor_info.local_component_id,
     payload,
   )
-  try D::fetch(world, entity) catch {
+  let fetch = fn() -> D raise EcsError {
+    let entity_id = entity.id
+    if entity_id >= 0 &&
+      entity_id < world.entity_table_ids.length() &&
+      entity_id < world.entity_table_rows.length() {
+      let table_id = world.entity_table_ids[entity_id]
+      let row_index = world.entity_table_rows[entity_id]
+      if table_id >= 0 && row_index >= 0 {
+        return D::fetch_sparse_anchor(
+          world,
+          entity,
+          anchor_info.local_component_id,
+          payload,
+          table_id,
+          row_index,
+        )
+      }
+    }
+    D::fetch(world, entity)
+  }
+  try fetch() catch {
     err => {
       world.clear_query_sparse_anchor_payload_context()
       raise err
@@ -520,10 +540,25 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
     if dense_table_groups.length() > 0 {
       for table_group in dense_table_groups {
         for archetype_id in table_group {
+          guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
+            continue
+          }
           match self.world.archetype_entities_view(archetype_id) {
             Some(entities) =>
               for entity in entities {
-                f(entity, D::fetch(self.world, entity))
+                let entity_id = entity.id
+                guard entity_id >= 0 &&
+                  entity_id < self.world.entity_table_rows.length() else {
+                  continue
+                }
+                let row_index = self.world.entity_table_rows[entity_id]
+                if row_index < 0 {
+                  continue
+                }
+                f(
+                  entity,
+                  D::fetch_table_row(self.world, entity, table_id, row_index),
+                )
               }
             None => ()
           }
@@ -643,22 +678,45 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
     let dense_table_groups = self.matching_dense_table_groups()
     if dense_table_groups.length() > 0 {
       let found : Ref[@core.Entity?] = Ref::new(None)
+      let found_table_id = Ref::new(-1)
+      let found_row_index = Ref::new(-1)
       for table_group in dense_table_groups {
         for archetype_id in table_group {
+          guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
+            continue
+          }
           match self.world.archetype_entities_view(archetype_id) {
             Some(entities) =>
               for entity in entities {
                 if found.val is Some(_) {
                   return None
                 }
+                let entity_id = entity.id
+                guard entity_id >= 0 &&
+                  entity_id < self.world.entity_table_rows.length() else {
+                  continue
+                }
+                let row_index = self.world.entity_table_rows[entity_id]
+                if row_index < 0 {
+                  continue
+                }
                 found.val = Some(entity)
+                found_table_id.val = table_id
+                found_row_index.val = row_index
               }
             None => ()
           }
         }
       }
       match found.val {
-        Some(entity) => Some(D::fetch(self.world, entity))
+        Some(entity) => Some(
+          D::fetch_table_row(
+            self.world,
+            entity,
+            found_table_id.val,
+            found_row_index.val,
+          ),
+        )
         None => None
       }
     } else {

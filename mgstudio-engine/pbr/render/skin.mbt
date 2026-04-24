@@ -132,13 +132,17 @@ fn render3d_phase_begin_skin_frame(
   }
 }
 
-///|
-fn render3d_skin_is_visible(world : @ecs.World, entity : @core.Entity) -> Bool {
-  if (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility))
-    is Some(view_visibility) {
-    view_visibility.is_visible()
-  } else {
-    true
+fn render3d_skin_is_visible_with_column(
+  visibility_column : @ecs.ComponentColumn[@visibility.ViewVisibility]?,
+  entity : @core.Entity,
+) -> Bool {
+  match visibility_column {
+    Some(column) =>
+      match column.get_fast(entity) {
+        Some(view_visibility) => view_visibility.is_visible()
+        None => true
+      }
+    None => true
   }
 }
 
@@ -538,6 +542,10 @@ pub fn render3d_extract_skin_bindings(
     None => return
   }
   let transform_columns = render3d_transform_columns(source_world)
+  let visibility_column = source_world.component_column(
+    @visibility.ecs_key_view_visibility,
+  )
+  let skinned_mesh_column = source_world.component_column(skinned_mesh_key)
   let changed_visibility_filter = @ecs.Changed::new(
     @visibility.ecs_key_view_visibility,
   )
@@ -627,7 +635,7 @@ pub fn render3d_extract_skin_bindings(
       if !render3d_has_prepared_skin_binding(skin_uniforms_ref, entity) {
         return
       }
-      if !render3d_skin_is_visible(source_world, entity) {
+      if !render3d_skin_is_visible_with_column(visibility_column, entity) {
         return
       }
       if render3d_extract_skinning_matrices_with_columns(
@@ -658,11 +666,16 @@ pub fn render3d_extract_skin_bindings(
           if !render3d_has_prepared_skin_binding(skin_uniforms_ref, skin_entity) {
             continue
           }
-          if !render3d_skin_is_visible(source_world, skin_entity) {
+          if !render3d_skin_is_visible_with_column(
+              visibility_column,
+              skin_entity,
+            ) {
             continue
           }
-          guard (try! source_world.get_by_key(skin_entity, skinned_mesh_key))
-            is Some(skinned_mesh) else {
+          guard skinned_mesh_column is Some(skinned_column) else {
+            continue
+          }
+          guard skinned_column.get_fast(skin_entity) is Some(skinned_mesh) else {
             continue
           }
           if render3d_extract_skinning_matrices_with_columns(

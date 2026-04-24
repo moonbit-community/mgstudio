@@ -71,24 +71,8 @@ pub fn[T] World::for_each_component(
   key : ComponentKey[T],
   visit : (@core.Entity, T) -> Unit,
 ) -> Unit {
-  guard self.local_component_id(key.id()) is Some(local_component_id) else {
-    return
-  }
-  let archetype_ids = self
-    .archetype_ids_for_component_local_id(local_component_id)
-    .copy()
-  for archetype_id in archetype_ids {
-    guard self.archetype_entities_view(archetype_id) is Some(entities) else {
-      continue
-    }
-    let entity_snapshot = entities.copy()
-    for entity in entity_snapshot {
-      try self.get_by_key(entity, key) catch {
-        _ => ()
-      } noraise {
-        Some(value) => visit(entity, value)
-        None => ()
-      }
-    }
+  match self.component_column(key) {
+    Some(column) => column.for_each(visit)
+    None => ()
   }
 }

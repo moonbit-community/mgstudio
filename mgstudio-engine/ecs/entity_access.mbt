@@ -29,6 +29,9 @@ pub struct Mut[T] {
   world : World?
   entity : @core.Entity?
   key : ComponentKey[T]?
+  table_id : Int?
+  row_index : Int?
+  local_component_id : Int?
 }
 
 ///|
@@ -76,8 +79,16 @@ fn[T] mut_key_or_abort(item : Mut[T]) -> ComponentKey[T] {
 ///|
 fn[T] mut_value_or_abort(item : Mut[T]) -> T {
   let world = mut_world_or_abort(item)
-  let entity = mut_entity_or_abort(item)
   let key = mut_key_or_abort(item)
+  match (item.table_id, item.row_index) {
+    (Some(table_id), Some(row_index)) =>
+      match (try! world.component_value_by_key_at_table_row(key, table_id, row_index)) {
+        Some(value) => return value
+        None => ()
+      }
+    _ => ()
+  }
+  let entity = mut_entity_or_abort(item)
   let result : Result[T?, EcsError] = try? world.component_value_by_key(
     entity,
     key,
@@ -92,8 +103,21 @@ fn[T] mut_value_or_abort(item : Mut[T]) -> T {
 ///|
 fn[T] mut_replace_value_or_abort(item : Mut[T], value : T) -> Unit {
   let world = mut_world_or_abort(item)
-  let entity = mut_entity_or_abort(item)
   let key = mut_key_or_abort(item)
+  match (item.table_id, item.row_index, item.local_component_id) {
+    (Some(table_id), Some(row_index), Some(local_component_id)) =>
+      if world.replace_component_value_at_table_row(
+          key,
+          local_component_id,
+          table_id,
+          row_index,
+          value,
+        ) {
+        return
+      }
+    _ => ()
+  }
+  let entity = mut_entity_or_abort(item)
   if !world.replace_component_value_by_key(entity, key, value) {
     abort("Mut expected a fetched query item")
   }
@@ -113,7 +137,14 @@ fn[T] mut_mark_changed(item : Mut[T], caller? : String? = None) -> Unit {
 ///|
 pub fn[T] Mut::new(key : ComponentKey[T]) -> Mut[T] {
   ignore(key)
-  { world: None, entity: None, key: None }
+  {
+    world: None,
+    entity: None,
+    key: None,
+    table_id: None,
+    row_index: None,
+    local_component_id: None,
+  }
 }
 
 ///|
@@ -264,7 +295,20 @@ fn[T] world_component_mut(
   guard world.component_payload(key.id(), entity) is Some(_) else {
     return None
   }
-  Some({ world: Some(world), entity: Some(entity), key: Some(key) })
+  let local_component_id = world.local_component_id(key.id())
+  let table_id = world.table_id_for_entity(entity)
+  let row_index = match world.entity_table_row(entity) {
+    Some(row) => Some(row.index())
+    None => None
+  }
+  Some({
+    world: Some(world),
+    entity: Some(entity),
+    key: Some(key),
+    table_id,
+    row_index,
+    local_component_id,
+  })
 }
 
 ///|
