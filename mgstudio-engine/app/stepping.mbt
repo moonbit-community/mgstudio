@@ -373,8 +373,6 @@ fn schedule_execution_node_name(
 ) -> String {
   match node {
     ScheduledSystem(system_i) => system_config_name(systems[system_i], system_i)
-    AutoApplyDeferred(sync_i) =>
-      "bevy_ecs::apply_deferred#auto\{sync_i.to_string()}"
   }
 }
 

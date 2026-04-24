@@ -141,13 +141,6 @@ fn run_systems(
         continue
       }
       match node {
-        AutoApplyDeferred(_) => {
-          executor_state.apply_deferred(world)
-          stepping_record_system_run(
-            stepping_ref, stage, systems, node, execution_i,
-          )
-          continue
-        }
         ScheduledSystem(system_i) => {
           if executor_state.is_completed(system_i) {
             continue

@@ -64,8 +64,6 @@ fn schedule_graph_node_name(
 ) -> String {
   match node {
     ScheduledSystem(system_i) => schedule_graph_system_name(systems[system_i], system_i)
-    AutoApplyDeferred(sync_i) =>
-      "bevy_ecs::apply_deferred#auto\{sync_i.to_string()}"
   }
 }
 

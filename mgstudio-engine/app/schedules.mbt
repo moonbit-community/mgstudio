@@ -129,7 +129,6 @@ priv struct ScheduleGraphPlan {
 ///|
 priv enum ScheduleExecutionNode {
   ScheduledSystem(Int)
-  AutoApplyDeferred(Int)
 }
 
 priv struct ScheduleBuildPassGraph[W] {
@@ -1191,10 +1190,6 @@ fn[W] schedule_build_access_plan(
   }
   for node in execution_order {
     match node {
-      AutoApplyDeferred(_) => {
-        flush_current_batch()
-        multi_threaded_batches.push([node])
-      }
       ScheduledSystem(system_i) => {
         if execution_systems[system_i].is_apply_deferred_node {
           flush_current_batch()
@@ -1219,10 +1214,6 @@ fn[W] schedule_build_access_plan(
                   can_join_current_batch.val = false
                   break
                 }
-              AutoApplyDeferred(_) => {
-                can_join_current_batch.val = false
-                break
-              }
             }
           }
         }
