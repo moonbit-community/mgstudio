@@ -576,7 +576,8 @@ fn main {
         close_when_requested: true,
       }),
     )
-    .add_plugins(@diagnostic.TimelineTracePlugin::default())
+    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+    .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
     .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
     .add_systems(
       @app.Update,

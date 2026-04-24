@@ -50,21 +50,118 @@ type TransformTreeChangedMutQuery = @ecs.Query[
 type TransformParentQuery = @ecs.Query[@ecs.Comp[@hierarchy.Parent], @ecs.All]
 
 ///|
-type PropagateRootQuery = @ecs.Query[
-  (@ecs.Comp[@hierarchy.Children], @ecs.Comp[Transform], @ecs.Mut[GlobalTransform]),
-  @ecs.Without[@hierarchy.Parent],
-]
+priv struct TransformPropagationColumns {
+  transform : @ecs.ComponentColumn[Transform]
+  global : @ecs.ComponentColumn[GlobalTransform]
+  tree_changed : @ecs.ComponentColumn[TransformTreeChanged]
+  children : @ecs.ComponentColumn[@hierarchy.Children]
+  parent : @ecs.ComponentColumn[@hierarchy.Parent]?
+}
 
 ///|
-type PropagateNodeQuery = @ecs.Query[
-  (
-    @ecs.Comp[@hierarchy.Parent],
-    @ecs.Comp[Transform],
-    @ecs.Mut[GlobalTransform],
-    @ecs.Comp[@hierarchy.Children]?,
-  ),
-  @ecs.With[GlobalTransform],
-]
+priv struct TransformDenseTableCache {
+  loaded : Array[Bool]
+  transform_values : Array[Array[Transform]?]
+  global_values : Array[Array[GlobalTransform]?]
+  children_values : Array[Array[@hierarchy.Children]?]
+  parent_values : Array[Array[@hierarchy.Parent]?]
+}
+
+///|
+fn transform_dense_table_cache_default() -> TransformDenseTableCache {
+  {
+    loaded: [],
+    transform_values: [],
+    global_values: [],
+    children_values: [],
+    parent_values: [],
+  }
+}
+
+///|
+fn transform_dense_entity_slot(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> (Int, Int)? {
+  let entity_id = entity.id
+  guard entity_id >= 0 &&
+    entity_id < world.entity_table_ids.length() &&
+    entity_id < world.entity_table_rows.length() else {
+    return None
+  }
+  let table_id = world.entity_table_ids[entity_id]
+  let row_index = world.entity_table_rows[entity_id]
+  if table_id < 0 || row_index < 0 {
+    return None
+  }
+  Some((table_id, row_index))
+}
+
+///|
+fn transform_dense_table_cache_prepare(
+  columns : TransformPropagationColumns,
+  cache : Ref[TransformDenseTableCache],
+  table_id : Int,
+) -> Bool {
+  if table_id < 0 {
+    return false
+  }
+  while cache.val.loaded.length() <= table_id {
+    cache.val.loaded.push(false)
+    cache.val.transform_values.push(None)
+    cache.val.global_values.push(None)
+    cache.val.children_values.push(None)
+    cache.val.parent_values.push(None)
+  }
+  if !cache.val.loaded[table_id] {
+    cache.val.transform_values[table_id] = columns.transform.table_values(table_id)
+    cache.val.global_values[table_id] = columns.global.table_values(table_id)
+    cache.val.children_values[table_id] = columns.children.table_values(table_id)
+    cache.val.parent_values[table_id] = match columns.parent {
+      Some(parent_column) => parent_column.table_values(table_id)
+      None => None
+    }
+    cache.val.loaded[table_id] = true
+  }
+  cache.val.transform_values[table_id] is Some(_) &&
+  cache.val.global_values[table_id] is Some(_)
+}
+
+///|
+priv struct TransformPropagationScratch {
+  dense_stack_entities : Array[@core.Entity]
+  dense_stack_parents : Array[@core.Entity]
+  dense_stack_parent_globals : Array[GlobalTransform]
+  dense_stack_parent_global_changed : Array[Bool]
+}
+
+///|
+fn transform_propagation_scratch_default() -> TransformPropagationScratch {
+  {
+    dense_stack_entities: [],
+    dense_stack_parents: [],
+    dense_stack_parent_globals: [],
+    dense_stack_parent_global_changed: [],
+  }
+}
+
+///|
+let ecs_key_transform_propagation_scratch : @ecs.ResourceKey[
+  TransformPropagationScratch,
+] = @ecs.register_resource(
+  debug_name="mgstudio_transform::TransformPropagationScratch",
+)
+
+///|
+fn transform_propagation_scratch_ref_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[TransformPropagationScratch] {
+  ensure_transform_runtime_resources(world)
+  match (try! world.get_resource_mut(ecs_key_transform_propagation_scratch)) {
+    Some(scratch_ref) => scratch_ref
+    None => abort("Missing TransformPropagationScratch resource")
+  }
+}
 
 ///|
 fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
@@ -83,6 +180,12 @@ fn ensure_transform_runtime_resources(world : @ecs.World) -> Unit {
   let key = static_transform_optimizations_resource_key()
   if !world.resource(key).is_present() {
     world.insert_resource(key, StaticTransformOptimizations::default())
+  }
+  if (try! world.get_resource(ecs_key_transform_propagation_scratch)) is None {
+    world.insert_resource(
+      ecs_key_transform_propagation_scratch,
+      transform_propagation_scratch_default(),
+    )
   }
 }
 
@@ -128,19 +231,6 @@ fn global_transform_eq(a : GlobalTransform, b : GlobalTransform) -> Bool {
 }
 
 ///|
-fn transform_set_global_if_neq_mut(
-  global_transform : @ecs.Mut[GlobalTransform],
-  next_global : GlobalTransform,
-) -> Bool {
-  if global_transform_eq(global_transform.peek(), next_global) {
-    false
-  } else {
-    global_transform.set(next_global)
-    true
-  }
-}
-
-///|
 fn sync_simple_transforms_changed(query : SimpleTransformChangedQuery) -> Unit {
   try! query.for_each(fn(_entity, data) {
     let (transform, global_transform) = data
@@ -153,16 +243,13 @@ fn sync_simple_transforms_orphaned(
   query : SimpleTransformOrphanQuery,
   orphaned : Array[@core.Entity],
 ) -> Unit {
-  let iter = query.iter_many(orphaned)
-  while true {
-    match (try! iter.fetch_next()) {
-      Some((_entity, data)) => {
-        let (transform, global_transform) = data
+  for entity in orphaned {
+    match (query.get(entity) catch { _ => None }) {
+      Some((transform, global_transform)) =>
         if !transform.is_changed() && !global_transform.is_added() {
           global_transform.set(GlobalTransform::from_transform(transform.value()))
         }
-      }
-      None => break
+      None => ()
     }
   }
 }
@@ -225,47 +312,6 @@ fn clamp_static_transform_threshold(threshold : Float) -> Float {
 }
 
 ///|
-fn entity_sort_compare(left : @core.Entity, right : @core.Entity) -> Int {
-  if left.id < right.id {
-    -1
-  } else if left.id > right.id {
-    1
-  } else if left.generation < right.generation {
-    -1
-  } else if left.generation > right.generation {
-    1
-  } else {
-    0
-  }
-}
-
-///|
-fn entity_sort_unstable_for_lookup(entities : Array[@core.Entity]) -> Unit {
-  entities.sort_by(entity_sort_compare)
-}
-
-///|
-fn entity_binary_search(
-  entities : Array[@core.Entity],
-  target : @core.Entity,
-) -> Bool {
-  let mut left = 0
-  let mut right = entities.length()
-  while left < right {
-    let mid = left + (right - left) / 2
-    let order = entity_sort_compare(entities[mid], target)
-    if order < 0 {
-      left = mid + 1
-    } else if order > 0 {
-      right = mid
-    } else {
-      return true
-    }
-  }
-  false
-}
-
-///|
 fn mark_dirty_tree_chain(
   transforms : TransformTreeChangedMutQuery,
   parents : TransformParentQuery,
@@ -290,8 +336,8 @@ fn mark_dirty_tree_chain(
 ///|
 fn mark_dirty_trees_enabled_state(
   static_optimizations : StaticTransformOptimizations,
-  dynamic_count : Int,
-  total : Int,
+  dynamic_count : () -> Int,
+  total : () -> Int,
 ) -> StaticTransformOptimizations {
   let threshold = clamp_static_transform_threshold(static_optimizations.threshold)
   if threshold == 0.0F {
@@ -300,8 +346,12 @@ fn mark_dirty_trees_enabled_state(
     static_optimizations.enabled = true
   } else {
     static_optimizations.enabled = true
-    if Float::from_int(dynamic_count) / Float::from_int(total) > threshold {
-      static_optimizations.enabled = false
+    let total_count = total()
+    if total_count > 0 {
+      if Float::from_int(dynamic_count()) / Float::from_int(total_count) >
+        threshold {
+        static_optimizations.enabled = false
+      }
     }
   }
   static_optimizations
@@ -318,8 +368,8 @@ pub fn mark_dirty_trees_system(
   let parents = query_set.p1()
   let static_optimizations = mark_dirty_trees_enabled_state(
     static_optimizations_ref.peek(),
-    changed_transforms.count(),
-    transforms.count(),
+    fn() { changed_transforms.count() },
+    fn() { transforms.count() },
   )
   ignore(static_optimizations_ref.set_if_neq(static_optimizations))
   if !static_optimizations.enabled {
@@ -355,8 +405,8 @@ pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
 
   let static_optimizations = mark_dirty_trees_enabled_state(
     read_static_transform_optimizations(world),
-    changed_transforms.count(),
-    transforms.count(),
+    fn() { changed_transforms.count() },
+    fn() { transforms.count() },
   )
   write_static_transform_optimizations(world, static_optimizations)
   if !static_optimizations.enabled {
@@ -372,121 +422,268 @@ pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn propagate_recursive_iter_many(
+fn transform_propagation_columns(
+  world : @ecs.World,
+) -> TransformPropagationColumns? {
+  match
+    (
+      world.component_column(ecs_key_transform),
+      world.component_column(ecs_key_global_transform),
+      world.component_column(ecs_key_transform_tree_changed),
+      world.component_column(@hierarchy.ecs_key_children),
+    ) {
+    (Some(transform), Some(global), Some(tree_changed), Some(children)) =>
+      Some({
+        transform,
+        global,
+        tree_changed,
+        children,
+        parent: world.component_column(@hierarchy.ecs_key_parent),
+      })
+    _ => None
+  }
+}
+
+///|
+fn transform_set_global_if_neq_hot_at_row(
+  columns : TransformPropagationColumns,
+  table_id : Int,
+  global_values : Array[GlobalTransform],
+  row_index : Int,
+  next_global : GlobalTransform,
+  sequence : @core.Sequence,
+) -> Bool {
+  if row_index < 0 || row_index >= global_values.length() {
+    return false
+  }
+  if global_transform_eq(global_values[row_index], next_global) {
+    return false
+  }
+  columns.global.set_sequence_only_hot_at_table_row(
+    table_id,
+    global_values,
+    row_index,
+    next_global,
+    sequence,
+  )
+}
+
+///|
+fn transform_set_global_hot_at_row(
+  columns : TransformPropagationColumns,
+  table_id : Int,
+  global_values : Array[GlobalTransform],
+  row_index : Int,
+  next_global : GlobalTransform,
+  sequence : @core.Sequence,
+) -> Unit {
+  if row_index < 0 || row_index >= global_values.length() {
+    return
+  }
+  ignore(
+    columns.global.set_sequence_only_hot_at_table_row(
+      table_id,
+      global_values,
+      row_index,
+      next_global,
+      sequence,
+    ),
+  )
+}
+
+///|
+fn propagate_descendants_dense(
+  _world : @ecs.World,
+  columns : TransformPropagationColumns,
+  scratch : TransformPropagationScratch,
+  cache : Ref[TransformDenseTableCache],
+  sequence : @core.Sequence,
+  static_optimizations_enabled : Bool,
+  system_sequence : @core.SystemSequence,
   parent : @core.Entity,
   parent_global : GlobalTransform,
-  nodes : PropagateNodeQuery,
+  parent_global_changed : Bool,
   children : @hierarchy.Children,
-  parent_changed : Bool,
 ) -> Unit {
-  let iter = nodes.iter_many(children.entities())
-  while true {
-    match (try! iter.fetch_next()) {
-      Some((child, data)) => {
-        let (child_of, transform, global_transform, child_children) = data
-        if !entity_eq(child_of.value().entity(), parent) {
-          transform_abort_malformed_hierarchy()
+  scratch.dense_stack_entities.clear()
+  scratch.dense_stack_parents.clear()
+  scratch.dense_stack_parent_globals.clear()
+  scratch.dense_stack_parent_global_changed.clear()
+  let root_children = children.entities()
+  for index in 0..<root_children.length() {
+    let reverse_index = root_children.length() - 1 - index
+    scratch.dense_stack_entities.push(root_children[reverse_index])
+    scratch.dense_stack_parents.push(parent)
+    scratch.dense_stack_parent_globals.push(parent_global)
+    scratch.dense_stack_parent_global_changed.push(parent_global_changed)
+  }
+  while scratch.dense_stack_entities.length() > 0 {
+    let child = match scratch.dense_stack_entities.pop() {
+      Some(child) => child
+      None => break
+    }
+    let current_parent = match scratch.dense_stack_parents.pop() {
+      Some(entity) => entity
+      None => break
+    }
+    let current_parent_global = match scratch.dense_stack_parent_globals.pop() {
+      Some(global) => global
+      None => break
+    }
+    let current_parent_global_changed = match
+      scratch.dense_stack_parent_global_changed.pop() {
+      Some(changed) => changed
+      None => break
+    }
+    guard transform_dense_entity_slot(_world, child) is Some((table_id, row_index)) else {
+      continue
+    }
+    if static_optimizations_enabled &&
+      !columns.tree_changed.table_is_changed_at_row(
+        table_id,
+        row_index,
+        system_sequence,
+      ) &&
+      !current_parent_global_changed {
+      continue
+    }
+    guard transform_dense_table_cache_prepare(columns, cache, table_id) else {
+      continue
+    }
+    guard cache.val.transform_values[table_id] is Some(transform_values) else {
+      continue
+    }
+    guard cache.val.global_values[table_id] is Some(global_values) else {
+      continue
+    }
+    guard cache.val.parent_values[table_id] is Some(parent_values) else {
+      continue
+    }
+    if row_index >= transform_values.length() ||
+      row_index >= global_values.length() ||
+      row_index >= parent_values.length() {
+      continue
+    }
+    if !entity_eq(parent_values[row_index].entity(), current_parent) {
+      transform_abort_malformed_hierarchy()
+    }
+    let local_transform = transform_values[row_index]
+    let child_global = current_parent_global.mul_transform(local_transform)
+    let child_global_changed = transform_set_global_if_neq_hot_at_row(
+      columns,
+      table_id,
+      global_values,
+      row_index,
+      child_global,
+      sequence,
+    )
+    let next_parent_global = if child_global_changed {
+      child_global
+    } else {
+      global_values[row_index]
+    }
+    match cache.val.children_values[table_id] {
+      Some(children_values) => {
+        if row_index >= children_values.length() {
+          continue
         }
-
-        let mut changed = parent_changed || child_of.is_changed()
-        changed = changed || transform.is_changed() || global_transform.is_added()
-
-        let next_global = if changed {
-          let next = parent_global.mul_transform(transform.value())
-          ignore(transform_set_global_if_neq_mut(global_transform, next))
-          next
-        } else {
-          global_transform.peek()
-        }
-
-        match child_children {
-          Some(grand_children) =>
-            propagate_recursive_iter_many(
-              child,
-              next_global,
-              nodes,
-              grand_children.value(),
-              changed,
-            )
-          None => ()
+        let grand_children = children_values[row_index]
+        let grandchildren = grand_children.entities()
+        for index in 0..<grandchildren.length() {
+          let reverse_index = grandchildren.length() - 1 - index
+          scratch.dense_stack_entities.push(grandchildren[reverse_index])
+          scratch.dense_stack_parents.push(child)
+          scratch.dense_stack_parent_globals.push(next_parent_global)
+          scratch.dense_stack_parent_global_changed.push(child_global_changed)
         }
       }
-      None => break
+      None => ()
     }
   }
 }
 
 ///|
-fn propagate_parent_transforms_impl(
-  roots : PropagateRootQuery,
-  nodes : PropagateNodeQuery,
-  orphaned_entities : Array[@core.Entity],
+fn propagate_parent_transforms_dense(
+  world : @ecs.World,
+  columns : TransformPropagationColumns,
+  static_optimizations_enabled : Bool,
 ) -> Unit {
-  try! roots.for_each(fn(root, data) {
-    let (children, transform, global_transform) = data
-    let mut changed = transform.is_changed() || global_transform.is_added()
-    if entity_binary_search(orphaned_entities, root) {
-      changed = true
-    }
-
-    let root_global = if changed {
-      let next = GlobalTransform::from_transform(transform.value())
-      ignore(transform_set_global_if_neq_mut(global_transform, next))
-      next
+  guard columns.parent is Some(parent_column) else { return }
+  let sequence = {
+    let tick = world.read_sequence()
+    if tick > 0 {
+      tick
     } else {
-      global_transform.peek()
+      1
     }
-
-    propagate_recursive_iter_many(
-      root,
+  }
+  let system_sequence = world.get_sequence_context().sequence()
+  let scratch_ref = transform_propagation_scratch_ref_or_init(world)
+  let scratch = scratch_ref.peek()
+  let cache = Ref::new(transform_dense_table_cache_default())
+  columns.children.for_each_without_fast(parent_column, fn(entity, children) {
+    guard transform_dense_entity_slot(world, entity) is Some((table_id, row_index)) else {
+      return
+    }
+    if static_optimizations_enabled &&
+      !columns.tree_changed.table_is_changed_at_row(
+        table_id,
+        row_index,
+        system_sequence,
+      ) {
+      return
+    }
+    guard transform_dense_table_cache_prepare(columns, cache, table_id) else {
+      return
+    }
+    guard cache.val.transform_values[table_id] is Some(transform_values) else {
+      return
+    }
+    guard cache.val.global_values[table_id] is Some(global_values) else { return }
+    if row_index >= transform_values.length() ||
+      row_index >= global_values.length() {
+      return
+    }
+    let root_transform = transform_values[row_index]
+    let root_global = GlobalTransform::from_transform(root_transform)
+    transform_set_global_hot_at_row(
+      columns,
+      table_id,
+      global_values,
+      row_index,
       root_global,
-      nodes,
-      children.value(),
-      changed,
+      sequence,
+    )
+    propagate_descendants_dense(
+      world,
+      columns,
+      scratch,
+      cache,
+      sequence,
+      static_optimizations_enabled,
+      system_sequence,
+      entity,
+      root_global,
+      true,
+      children,
     )
   })
 }
 
 ///|
-pub fn propagate_parent_transforms_system(
-  roots : PropagateRootQuery,
-  orphaned : @ecs.RemovedComponents[@hierarchy.Parent],
-  nodes : PropagateNodeQuery,
-  orphaned_entities_local : @app.Local[Array[@core.Entity]],
-) -> Unit {
-  let orphaned_entities_ref = orphaned_entities_local.get_ref()
-  orphaned_entities_ref.val.clear()
-  for entity in orphaned.read() {
-    orphaned_entities_ref.val.push(entity)
-  }
-  entity_sort_unstable_for_lookup(orphaned_entities_ref.val)
-  propagate_parent_transforms_impl(
-    roots,
-    nodes,
-    orphaned_entities_ref.val,
+pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
+  guard transform_propagation_columns(world) is Some(columns) else { return }
+  let static_optimizations = read_static_transform_optimizations(world)
+  propagate_parent_transforms_dense(
+    world,
+    columns,
+    static_optimizations.enabled,
   )
 }
 
 ///|
-pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
-  let roots : PropagateRootQuery = @ecs.query_filtered(
-    world,
-    @ecs.Without::new(@hierarchy.ecs_key_parent),
-  )
-  let nodes : PropagateNodeQuery = @ecs.query_filtered(
-    world,
-    @ecs.With::new(ecs_key_global_transform),
-  )
-  let orphaned_entities = world.removed_components(
-    @hierarchy.ecs_key_parent,
-    world.get_sequence_context().sequence(),
-  ).read()
-  let orphaned_sorted : Array[@core.Entity] = []
-  for entity in orphaned_entities {
-    orphaned_sorted.push(entity)
-  }
-  entity_sort_unstable_for_lookup(orphaned_sorted)
-  propagate_parent_transforms_impl(roots, nodes, orphaned_sorted)
+pub fn propagate_parent_transforms_system(world : @ecs.World) -> Unit {
+  propagate_parent_transforms(world)
 }
 
 ///|

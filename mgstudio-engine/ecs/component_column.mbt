@@ -210,6 +210,32 @@ pub fn[T] ComponentColumn::table_values(
 }
 
 ///|
+pub fn[T] ComponentColumn::table_changed_sequence_at_row(
+  self : ComponentColumn[T],
+  table_id : Int,
+  row_index : Int,
+) -> @core.Sequence? {
+  guard self.storage_type == Table else { return None }
+  guard self.table_column_ref(table_id) is Some(column_ref) else {
+    return None
+  }
+  column_ref.val.changed_sequence_at_row(row_index)
+}
+
+///|
+pub fn[T] ComponentColumn::table_is_changed_at_row(
+  self : ComponentColumn[T],
+  table_id : Int,
+  row_index : Int,
+  system_sequence : @core.SystemSequence,
+) -> Bool {
+  match self.table_changed_sequence_at_row(table_id, row_index) {
+    Some(sequence) => system_sequence.contains(sequence)
+    None => false
+  }
+}
+
+///|
 pub fn[T] ComponentColumn::get_mut(
   self : ComponentColumn[T],
   entity : @core.Entity,
@@ -695,6 +721,28 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(
     return false
   }
   let table_id = self.world.entity_table_ids[entity_id]
+  guard table_id >= 0 else { return false }
+  guard self.table_column_ref(table_id) is Some(column_ref) else {
+    return false
+  }
+  ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
+  true
+}
+
+///|
+pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row(
+  self : ComponentColumn[T],
+  table_id : Int,
+  values : Array[T],
+  row_index : Int,
+  value : T,
+  sequence : @core.Sequence,
+) -> Bool {
+  guard self.storage_type == Table else { return false }
+  if row_index < 0 || row_index >= values.length() {
+    return false
+  }
+  values[row_index] = value
   guard table_id >= 0 else { return false }
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
