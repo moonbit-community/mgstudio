@@ -1169,13 +1169,75 @@ fn[W] schedule_build_access_plan(
     runnable_mask,
   )
   let execution_order = schedule_build_pass_graph_execution_order(build_pass_graph)
-  let execution_systems = build_pass_graph.systems
-  let execution_system_accesses = build_pass_graph.system_accesses
-  while sets_with_conditions_of_systems.length() < execution_systems.length() {
-    sets_with_conditions_of_systems.push([])
+  let execution_systems_by_source = build_pass_graph.systems
+  let execution_system_accesses_by_source = build_pass_graph.system_accesses
+  let source_to_execution_system : Array[Int] = []
+  for _ in 0..<execution_systems_by_source.length() {
+    source_to_execution_system.push(-1)
+  }
+  let execution_systems : Array[SystemConfig[W]] = []
+  let execution_system_accesses : Array[SystemAccess] = []
+  let ordered_execution_order : Array[ScheduleExecutionNode] = []
+  for node in execution_order {
+    match node {
+      ScheduledSystem(source_system_i) => {
+        let execution_system_i = execution_systems.length()
+        source_to_execution_system[source_system_i] = execution_system_i
+        execution_systems.push(execution_systems_by_source[source_system_i])
+        execution_system_accesses.push(
+          execution_system_accesses_by_source[source_system_i],
+        )
+        ordered_execution_order.push(ScheduledSystem(execution_system_i))
+      }
+    }
+  }
+  let ordered_sets_with_conditions_of_systems : Array[Array[Int]] = []
+  for _ in 0..<execution_systems.length() {
+    ordered_sets_with_conditions_of_systems.push([])
+  }
+  for source_system_i in 0..<sets_with_conditions_of_systems.length() {
+    if source_system_i < source_to_execution_system.length() {
+      let execution_system_i = source_to_execution_system[source_system_i]
+      if execution_system_i >= 0 {
+        ordered_sets_with_conditions_of_systems[execution_system_i] = sets_with_conditions_of_systems[source_system_i]
+      }
+    }
+  }
+  let ordered_systems_in_sets_with_conditions : Array[Array[Int]] = []
+  for set_systems in systems_in_sets_with_conditions {
+    let ordered_set_systems : Array[Int] = []
+    for source_system_i in set_systems {
+      if source_system_i < source_to_execution_system.length() {
+        let execution_system_i = source_to_execution_system[source_system_i]
+        if execution_system_i >= 0 {
+          ordered_set_systems.push(execution_system_i)
+        }
+      }
+    }
+    ordered_systems_in_sets_with_conditions.push(ordered_set_systems)
+  }
+  let ordered_invalid_system_errors : Array[(Int, String)] = []
+  for invalid in invalid_system_errors {
+    let source_system_i = invalid.0
+    if source_system_i < source_to_execution_system.length() {
+      let execution_system_i = source_to_execution_system[source_system_i]
+      if execution_system_i >= 0 {
+        ordered_invalid_system_errors.push((execution_system_i, invalid.1))
+      }
+    }
+  }
+  let execution_system_layers : Array[Int] = []
+  for _ in 0..<execution_systems.length() {
+    execution_system_layers.push(0)
+  }
+  for source_system_i in 0..<source_to_execution_system.length() {
+    let execution_system_i = source_to_execution_system[source_system_i]
+    if execution_system_i >= 0 && source_system_i < graph_plan.system_layers.length() {
+      execution_system_layers[execution_system_i] = graph_plan.system_layers[source_system_i]
+    }
   }
   let single_threaded_batches : Array[Array[ScheduleExecutionNode]] = []
-  for node in execution_order {
+  for node in ordered_execution_order {
     single_threaded_batches.push([node])
   }
   let multi_threaded_batches : Array[Array[ScheduleExecutionNode]] = []
@@ -1188,7 +1250,7 @@ fn[W] schedule_build_access_plan(
       current_batch_layer_ref.val = None
     }
   }
-  for node in execution_order {
+  for node in ordered_execution_order {
     match node {
       ScheduledSystem(system_i) => {
         if execution_systems[system_i].is_apply_deferred_node {
@@ -1196,7 +1258,7 @@ fn[W] schedule_build_access_plan(
           multi_threaded_batches.push([node])
           continue
         }
-        let system_layer = graph_plan.system_layers[system_i]
+        let system_layer = execution_system_layers[system_i]
         let access = execution_system_accesses[system_i]
         let can_join_current_batch = Ref::new(
           current_batch_ref.val.length() > 0 &&
@@ -1240,10 +1302,10 @@ fn[W] schedule_build_access_plan(
     systems: execution_systems,
     system_accesses: execution_system_accesses,
     set_ids,
-    sets_with_conditions_of_systems,
-    systems_in_sets_with_conditions,
-    execution_order,
-    invalid_system_errors,
+    sets_with_conditions_of_systems: ordered_sets_with_conditions_of_systems,
+    systems_in_sets_with_conditions: ordered_systems_in_sets_with_conditions,
+    execution_order: ordered_execution_order,
+    invalid_system_errors: ordered_invalid_system_errors,
     single_threaded_batches,
     multi_threaded_batches,
   }
