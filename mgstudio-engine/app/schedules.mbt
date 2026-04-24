@@ -108,6 +108,7 @@ priv struct ScheduleGraphPlan {
   graph_generation : Int
   set_order : Array[SystemSet]
   dependency_edges : Array[(Int, Int, Bool)]
+  system_dependency_edges : Array[(Int, Int, Bool)]
   groups : Array[SystemSet]
   system_layers : Array[Int]
   execution_order : Array[Int]
@@ -318,6 +319,107 @@ fn schedule_pop_smallest(ready : Array[Int]) -> Int {
   ready[best_pos] = ready[last_index]
   ready.pop().unwrap() |> ignore
   best_value
+}
+
+///|
+fn schedule_add_unique_system_edge(
+  edges : Array[(Int, Int, Bool)],
+  from_system : Int,
+  to_system : Int,
+  ignore_deferred : Bool,
+) -> Unit {
+  if from_system == to_system {
+    return
+  }
+  for edge_i in 0..<edges.length() {
+    let (existing_from, existing_to, existing_ignore) = edges[edge_i]
+    if existing_from == from_system && existing_to == to_system {
+      if existing_ignore && !ignore_deferred {
+        edges[edge_i] = (from_system, to_system, false)
+      }
+      return
+    }
+  }
+  edges.push((from_system, to_system, ignore_deferred))
+}
+
+///|
+fn schedule_pop_ready_by_rank(ready : Array[Int], rank : Array[Int]) -> Int {
+  let mut best_pos = 0
+  let mut best_value = ready[0]
+  let mut best_rank = rank[best_value]
+  let len = ready.length()
+  for i in 1..<len {
+    let value = ready[i]
+    let value_rank = rank[value]
+    if value_rank < best_rank ||
+      (value_rank == best_rank && value < best_value) {
+      best_value = value
+      best_rank = value_rank
+      best_pos = i
+    }
+  }
+  let last_index = ready.length() - 1
+  ready[best_pos] = ready[last_index]
+  ready.pop().unwrap() |> ignore
+  best_value
+}
+
+///|
+fn schedule_topo_system_order(
+  system_count : Int,
+  base_order : Array[Int],
+  edges : Array[(Int, Int, Bool)],
+  runnable_mask : Array[Bool],
+) -> Array[Int]? {
+  let rank : Array[Int] = []
+  for i in 0..<system_count {
+    rank.push(system_count + i)
+  }
+  for order_i in 0..<base_order.length() {
+    rank[base_order[order_i]] = order_i
+  }
+  let indeg : Array[Int] = []
+  let adj : Array[Array[Int]] = []
+  for _ in 0..<system_count {
+    indeg.push(0)
+    adj.push([])
+  }
+  for edge in edges {
+    let (from_system, to_system, _) = edge
+    if runnable_mask[from_system] && runnable_mask[to_system] {
+      if !adj[from_system].contains(to_system) {
+        adj[from_system].push(to_system)
+        indeg[to_system] = indeg[to_system] + 1
+      }
+    }
+  }
+  let ready : Array[Int] = []
+  let mut runnable_count = 0
+  for i in 0..<system_count {
+    if runnable_mask[i] {
+      runnable_count = runnable_count + 1
+      if indeg[i] == 0 {
+        ready.push(i)
+      }
+    }
+  }
+  let order : Array[Int] = []
+  while ready.length() > 0 {
+    let system_i = schedule_pop_ready_by_rank(ready, rank)
+    order.push(system_i)
+    for to_system in adj[system_i] {
+      indeg[to_system] = indeg[to_system] - 1
+      if indeg[to_system] == 0 {
+        ready.push(to_system)
+      }
+    }
+  }
+  if order.length() == runnable_count {
+    Some(order)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -563,6 +665,7 @@ fn[W] schedule_build_graph_plan(
       graph_generation: schedule_entry.graph_generation,
       set_order,
       dependency_edges,
+      system_dependency_edges: [],
       groups,
       system_layers,
       execution_order: [],
@@ -606,6 +709,7 @@ fn[W] schedule_build_graph_plan(
       graph_generation: schedule_entry.graph_generation,
       set_order,
       dependency_edges,
+      system_dependency_edges: [],
       groups,
       system_layers,
       execution_order: [],
@@ -622,6 +726,46 @@ fn[W] schedule_build_graph_plan(
     let set_i = set_index.at(groups[i])
     systems_by_set[set_i].push(i)
   }
+  let set_out_edges : Array[Array[(Int, Bool)]] = []
+  for _ in 0..<set_count {
+    set_out_edges.push([])
+  }
+  for edge in dependency_edges {
+    let (from_i, to_i, ignore_deferred) = edge
+    set_out_edges[from_i].push((to_i, ignore_deferred))
+  }
+  let system_dependency_edges : Array[(Int, Int, Bool)] = []
+  fn walk_system_dependency_edges(
+    source_system : Int,
+    set_i : Int,
+    path_ignore_deferred : Bool,
+  ) -> Unit {
+    for edge in set_out_edges[set_i] {
+      let (to_set_i, edge_ignore_deferred) = edge
+      let next_ignore_deferred = path_ignore_deferred && edge_ignore_deferred
+      if systems_by_set[to_set_i].length() > 0 {
+        for target_system in systems_by_set[to_set_i] {
+          schedule_add_unique_system_edge(
+            system_dependency_edges,
+            source_system,
+            target_system,
+            next_ignore_deferred,
+          )
+        }
+      } else {
+        walk_system_dependency_edges(
+          source_system,
+          to_set_i,
+          next_ignore_deferred,
+        )
+      }
+    }
+  }
+  for set_i in 0..<set_count {
+    for source_system in systems_by_set[set_i] {
+      walk_system_dependency_edges(source_system, set_i, true)
+    }
+  }
   let execution_order : Array[Int] = []
   for set_i in topo {
     for system_i in systems_by_set[set_i] {
@@ -637,6 +781,7 @@ fn[W] schedule_build_graph_plan(
     graph_generation: schedule_entry.graph_generation,
     set_order,
     dependency_edges,
+    system_dependency_edges,
     groups,
     system_layers,
     execution_order,
@@ -657,6 +802,41 @@ fn[W] schedule_resolve_graph_plan(
       plan
     }
   }
+}
+
+///|
+fn[W] schedule_set_has_run_conditions(
+  schedule_entry : ScheduleEntry[W],
+  set : SystemSet,
+) -> Bool {
+  match schedule_entry.set_run_conditions.get(set) {
+    Some(run_conditions_ref) => run_conditions_ref.val.run_ifs.length() > 0
+    None => false
+  }
+}
+
+///|
+fn[W] schedule_system_has_run_conditions(
+  schedule_entry : ScheduleEntry[W],
+  config : SystemConfig[W],
+) -> Bool {
+  if config.run_ifs.length() > 0 {
+    return true
+  }
+  match config.set {
+    Some(set) =>
+      if !set.has_prefix("__chain__:") &&
+        schedule_set_has_run_conditions(schedule_entry, set) {
+        return true
+      }
+    None => ()
+  }
+  for set in config.member_sets {
+    if schedule_set_has_run_conditions(schedule_entry, set) {
+      return true
+    }
+  }
+  false
 }
 
 ///|
@@ -701,127 +881,232 @@ fn[W] schedule_build_access_plan(
       None => system_accesses.push(SystemAccess::exclusive())
     }
   }
-  let runnable_execution_order : Array[Int] = []
-  for system_i in graph_plan.execution_order {
-    if system_accesses[system_i].validation_error() is None {
-      runnable_execution_order.push(system_i)
+  let runnable_mask : Array[Bool] = []
+  for system_i in 0..<system_count {
+    runnable_mask.push(system_accesses[system_i].validation_error() is None)
+  }
+  let base_system_edges : Array[(Int, Int, Bool)] = []
+  for edge in graph_plan.system_dependency_edges {
+    let (from_system, to_system, ignore_deferred) = edge
+    if runnable_mask[from_system] && runnable_mask[to_system] {
+      schedule_add_unique_system_edge(
+        base_system_edges,
+        from_system,
+        to_system,
+        ignore_deferred,
+      )
     }
   }
+  let base_runnable_execution_order = match schedule_topo_system_order(
+    system_count,
+    graph_plan.execution_order,
+    base_system_edges,
+    runnable_mask,
+  ) {
+    Some(order) => order
+    None => {
+      let order : Array[Int] = []
+      for system_i in graph_plan.execution_order {
+        if runnable_mask[system_i] {
+          order.push(system_i)
+        }
+      }
+      order
+    }
+  }
+  let mut runnable_execution_order = base_runnable_execution_order
   let apply_after_execution_order : Array[Bool] = []
-  for _ in 0..<runnable_execution_order.length() {
-    apply_after_execution_order.push(false)
-  }
   if build_settings.auto_insert_apply_deferred() {
-    let set_count = graph_plan.set_order.length()
-    let set_index : @hashmap.HashMap[SystemSet, Int] = @hashmap.HashMap::new()
-    for i in 0..<set_count {
-      set_index.set(graph_plan.set_order[i], i)
+    let valid_explicit_sync : Array[Bool] = []
+    let distance : Array[Int] = []
+    let pending_sync : Array[Bool] = []
+    let outgoing_edges : Array[Array[(Int, Bool)]] = []
+    for system_i in 0..<system_count {
+      valid_explicit_sync.push(
+        runnable_mask[system_i] &&
+        schedule_entry.systems[system_i].is_apply_deferred_node &&
+        !schedule_system_has_run_conditions(
+          schedule_entry,
+          schedule_entry.systems[system_i],
+        ),
+      )
+      distance.push(0)
+      pending_sync.push(false)
+      outgoing_edges.push([])
     }
-    let set_has_deferred : Array[Bool] = []
-    let set_has_exclusive : Array[Bool] = []
-    let set_has_apply_deferred_node : Array[Bool] = []
-    let set_has_unconditional_apply_deferred_node : Array[Bool] = []
-    let set_has_run_conditions : Array[Bool] = []
-    let set_first_execution_pos : Array[Int] = []
-    let runnable_set_order : Array[Int] = []
-    for i in 0..<set_count {
-      set_has_deferred.push(false)
-      set_has_exclusive.push(false)
-      set_has_apply_deferred_node.push(false)
-      set_has_unconditional_apply_deferred_node.push(false)
-      let set_name = graph_plan.set_order[i]
-      let has_run_conditions = match schedule_entry.set_run_conditions.get(set_name) {
-        Some(run_conditions_ref) => run_conditions_ref.val.run_ifs.length() > 0
-        None => false
-      }
-      set_has_run_conditions.push(has_run_conditions)
-      set_first_execution_pos.push(-1)
+    for edge in base_system_edges {
+      let (from_system, to_system, ignore_deferred) = edge
+      outgoing_edges[from_system].push((to_system, ignore_deferred))
     }
-    let mut last_set_i : Int? = None
-    for execution_i in 0..<runnable_execution_order.length() {
-      let system_i = runnable_execution_order[execution_i]
-      let config = schedule_entry.systems[system_i]
-      let access = system_accesses[system_i]
-      let set_i = set_index.at(graph_plan.groups[system_i])
-      if set_first_execution_pos[set_i] < 0 {
-        set_first_execution_pos[set_i] = execution_i
-      }
-      if last_set_i != Some(set_i) {
-        runnable_set_order.push(set_i)
-        last_set_i = Some(set_i)
-      }
-      if access.uses_deferred_commands() {
-        set_has_deferred[set_i] = true
-      }
-      if access.is_exclusive() {
-        set_has_exclusive[set_i] = true
-      }
-      if config.is_apply_deferred_node {
-        set_has_apply_deferred_node[set_i] = true
-        if config.run_ifs.length() == 0 && !set_has_run_conditions[set_i] {
-          set_has_unconditional_apply_deferred_node[set_i] = true
+    let explicit_sync_distances : Array[(Int, Int)] = []
+    fn explicit_sync_for_distance(distance_value : Int) -> Int? {
+      for entry in explicit_sync_distances {
+        if entry.0 == distance_value {
+          return Some(entry.1)
         }
       }
+      None
     }
-    let incoming_sets_all : Array[Array[Int]] = []
-    let incoming_sets_requiring_sync : Array[Array[Int]] = []
-    for _ in 0..<set_count {
-      incoming_sets_all.push([])
-      incoming_sets_requiring_sync.push([])
-    }
-    for edge in graph_plan.dependency_edges {
-      let (from_i, to_i, ignore_deferred) = edge
-      if !incoming_sets_all[to_i].contains(from_i) {
-        incoming_sets_all[to_i].push(from_i)
+    fn record_explicit_sync(distance_value : Int, system_i : Int) -> Unit {
+      if explicit_sync_for_distance(distance_value) is None {
+        explicit_sync_distances.push((distance_value, system_i))
       }
-      if !ignore_deferred || set_has_exclusive[to_i] {
-        if !incoming_sets_requiring_sync[to_i].contains(from_i) {
-          incoming_sets_requiring_sync[to_i].push(from_i)
+    }
+    for system_i in base_runnable_execution_order {
+      let node_distance = distance[system_i]
+      let mut node_needs_sync = pending_sync[system_i]
+      if valid_explicit_sync[system_i] {
+        record_explicit_sync(node_distance, system_i)
+        node_needs_sync = false
+      } else if !node_needs_sync &&
+        system_accesses[system_i].uses_deferred_commands() {
+        node_needs_sync = true
+      }
+      for edge in outgoing_edges[system_i] {
+        let (target_system, ignore_deferred) = edge
+        let mut edge_needs_sync = node_needs_sync
+        if node_needs_sync &&
+          !system_accesses[target_system].is_exclusive() &&
+          ignore_deferred {
+          pending_sync[target_system] = true
+          edge_needs_sync = false
         }
-      }
-    }
-    let pending_deferred_after_set : Array[Bool] = []
-    for _ in 0..<set_count {
-      pending_deferred_after_set.push(false)
-    }
-    for set_i in runnable_set_order {
-      let mut pending_deferred_before_set = false
-      for from_i in incoming_sets_all[set_i] {
-        if pending_deferred_after_set[from_i] {
-          pending_deferred_before_set = true
-          break
-        }
-      }
-      let mut needs_sync_before_set = false
-      for from_i in incoming_sets_requiring_sync[set_i] {
-        if pending_deferred_after_set[from_i] {
-          needs_sync_before_set = true
-          break
-        }
-      }
-      if needs_sync_before_set {
-        if set_has_unconditional_apply_deferred_node[set_i] {
-          // Unconditional explicit ApplyDeferred acts as the sync point.
-          pending_deferred_before_set = false
-        } else if set_has_apply_deferred_node[set_i] {
-          // Conditional explicit ApplyDeferred cannot be reused as an auto sync point.
-          // Keep pending deferred and let it bubble to the next required boundary.
-          ()
+        let weight = if edge_needs_sync || valid_explicit_sync[target_system] {
+          1
         } else {
-          let first_pos = set_first_execution_pos[set_i]
-          if first_pos > 0 {
-            apply_after_execution_order[first_pos - 1] = true
-          }
-          pending_deferred_before_set = false
+          0
+        }
+        let target_distance = node_distance + weight
+        if target_distance > distance[target_system] {
+          distance[target_system] = target_distance
         }
       }
-      if set_has_unconditional_apply_deferred_node[set_i] {
-        // The explicit ApplyDeferred in this set drains deferred commands.
-        pending_deferred_after_set[set_i] = set_has_deferred[set_i]
-      } else {
-        pending_deferred_after_set[set_i] =
-          pending_deferred_before_set || set_has_deferred[set_i]
+    }
+    let final_edges : Array[(Int, Int, Bool)] = []
+    for edge in base_system_edges {
+      let (from_system, to_system, ignore_deferred) = edge
+      schedule_add_unique_system_edge(
+        final_edges,
+        from_system,
+        to_system,
+        ignore_deferred,
+      )
+    }
+    let synthetic_distances : Array[Int] = []
+    let synthetic_sources : Array[Array[Int]] = []
+    let synthetic_targets : Array[Array[Int]] = []
+    fn synthetic_bucket_index(distance_value : Int) -> Int {
+      for i in 0..<synthetic_distances.length() {
+        if synthetic_distances[i] == distance_value {
+          return i
+        }
       }
+      synthetic_distances.push(distance_value)
+      synthetic_sources.push([])
+      synthetic_targets.push([])
+      synthetic_distances.length() - 1
+    }
+    fn add_synthetic_sync_edge(
+      distance_value : Int,
+      from_system : Int,
+      to_system : Int,
+    ) -> Unit {
+      let bucket_i = synthetic_bucket_index(distance_value)
+      if !synthetic_sources[bucket_i].contains(from_system) {
+        synthetic_sources[bucket_i].push(from_system)
+      }
+      if !synthetic_targets[bucket_i].contains(to_system) {
+        synthetic_targets[bucket_i].push(to_system)
+      }
+    }
+    for system_i in base_runnable_execution_order {
+      for edge in outgoing_edges[system_i] {
+        let target_system = edge.0
+        if distance[system_i] == distance[target_system] {
+          continue
+        }
+        if schedule_entry.systems[target_system].is_apply_deferred_node {
+          continue
+        }
+        match explicit_sync_for_distance(distance[target_system]) {
+          Some(sync_system) => {
+            schedule_add_unique_system_edge(
+              final_edges,
+              system_i,
+              sync_system,
+              false,
+            )
+            schedule_add_unique_system_edge(
+              final_edges,
+              sync_system,
+              target_system,
+              false,
+            )
+          }
+          None =>
+            add_synthetic_sync_edge(
+              distance[target_system],
+              system_i,
+              target_system,
+            )
+        }
+      }
+    }
+    for bucket_i in 0..<synthetic_distances.length() {
+      for source_system in synthetic_sources[bucket_i] {
+        for target_system in synthetic_targets[bucket_i] {
+          schedule_add_unique_system_edge(
+            final_edges,
+            source_system,
+            target_system,
+            false,
+          )
+        }
+      }
+    }
+    match schedule_topo_system_order(
+      system_count,
+      base_runnable_execution_order,
+      final_edges,
+      runnable_mask,
+    ) {
+      Some(order) => runnable_execution_order = order
+      None => ()
+    }
+    let position : Array[Int] = []
+    for _ in 0..<system_count {
+      position.push(-1)
+    }
+    for execution_i in 0..<runnable_execution_order.length() {
+      position[runnable_execution_order[execution_i]] = execution_i
+    }
+    for _ in 0..<runnable_execution_order.length() {
+      apply_after_execution_order.push(false)
+    }
+    for bucket_i in 0..<synthetic_distances.length() {
+      let mut max_source_pos = -1
+      let mut min_target_pos = runnable_execution_order.length()
+      for source_system in synthetic_sources[bucket_i] {
+        let source_pos = position[source_system]
+        if source_pos > max_source_pos {
+          max_source_pos = source_pos
+        }
+      }
+      for target_system in synthetic_targets[bucket_i] {
+        let target_pos = position[target_system]
+        if target_pos >= 0 && target_pos < min_target_pos {
+          min_target_pos = target_pos
+        }
+      }
+      if max_source_pos >= 0 &&
+        max_source_pos < min_target_pos &&
+        max_source_pos < apply_after_execution_order.length() {
+        apply_after_execution_order[max_source_pos] = true
+      }
+    }
+  } else {
+    for _ in 0..<runnable_execution_order.length() {
+      apply_after_execution_order.push(false)
     }
   }
   let single_threaded_batches : Array[Array[Int]] = []
@@ -831,11 +1116,14 @@ fn[W] schedule_build_access_plan(
   let multi_threaded_batches : Array[Array[Int]] = []
   let current_batch_ref : Ref[Array[Int]] = Ref::new([])
   let current_batch_layer_ref : Ref[Int?] = Ref::new(None)
-  for system_i in runnable_execution_order {
+  for execution_i in 0..<runnable_execution_order.length() {
+    let system_i = runnable_execution_order[execution_i]
     let system_layer = graph_plan.system_layers[system_i]
     let access = system_accesses[system_i]
     let can_join_current_batch = Ref::new(
       current_batch_ref.val.length() > 0 &&
+      execution_i > 0 &&
+      !apply_after_execution_order[execution_i - 1] &&
       current_batch_layer_ref.val == Some(system_layer),
     )
     if can_join_current_batch.val {

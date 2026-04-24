@@ -451,7 +451,9 @@ test "app: explicit_sync_point_used_as_auto_sync_point" {
 
   sub_app = sub_app.update()
 
-  debug_inspect(observed, content="[0, 1]")
+  // Bevy reuses the explicit sync point by inserting it on the dependency edge,
+  // so the reader in the same target set must run after ApplyDeferred.
+  debug_inspect(observed, content="[1, 1]")
 }
 
 ///|
@@ -497,7 +499,9 @@ test "app: conditional_explicit_sync_point_not_used_as_auto_sync_point" {
 
   sub_app = sub_app.update()
 
-  debug_inspect(observed, content="[0, 1]")
+  // Conditional explicit ApplyDeferred cannot be reused, so an automatic sync
+  // point is inserted before the dependent reader instead.
+  debug_inspect(observed, content="[1, 1]")
 }
 
 ///|
