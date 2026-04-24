@@ -175,6 +175,8 @@ pub fn morph_uniforms_ref_or_abort(@ecs.World) -> @ref.Ref[MorphUniforms]
 
 pub fn morph_uniforms_swap_and_reset(@ref.Ref[MorphUniforms]) -> Unit
 
+pub fn no_automatic_skin_batching(@ecs.World) -> Unit
+
 pub fn orthographic_scaling_mode_sanitize(OrthographicScalingMode3d) -> OrthographicScalingMode3d
 
 pub fn prepare_fog(Array[(@core.Entity, Render3dViewFogData?)], FogMeta) -> Array[(@core.Entity, ViewFogUniformOffset)]
@@ -458,6 +460,8 @@ pub fn render3d_world_transform_cache_ref(@ecs.World) -> @ref.Ref[Render3dWorldT
 pub let skin_uniforms_key : @ecs.ResourceKey[SkinUniforms]
 
 pub fn skin_uniforms_ref_or_abort(@ecs.World) -> @ref.Ref[SkinUniforms]
+
+pub fn skins_use_uniform_buffers() -> Bool
 
 // Errors
 
@@ -1120,28 +1124,34 @@ pub struct ResetIndirectBatchSetsPipeline {
 }
 pub fn ResetIndirectBatchSetsPipeline::new(String, String) -> Self
 
-pub struct SkinBindingFreeRange {
+pub(all) struct SkinAllocation {
   offset : Int
-  length : Int
+  size : Int
+}
+
+pub(all) struct SkinOffsetAllocator {
+  mut next_offset : Int
+  mut free_ranges : Array[SkinOffsetFreeRange]
+}
+
+pub(all) struct SkinOffsetFreeRange {
+  offset : Int
+  size : Int
 }
 
 pub struct SkinUniformInfo {
-  entity_generation : Int
-  key_hi : Int
-  key_lo : Int
+  allocation : SkinAllocation
   joints : Array[@core.Entity]
 }
 
 pub struct SkinUniforms {
-  skin_uniform_info : Map[Int, SkinUniformInfo]
-  mut next_skin_binding_index : Int
-  mut skin_binding_free_ranges : Array[SkinBindingFreeRange]
+  skin_uniform_info : Map[UInt64, SkinUniformInfo]
+  allocator : SkinOffsetAllocator
   joint_to_skins : Map[UInt64, Array[@core.Entity]]
   current_skins : Map[UInt64, Bool]
   previous_skins : Map[UInt64, Bool]
   current_staging_buffer : Array[Float]
   mut total_joints : Int
-  skin_upload_queue : Array[@core.Entity]
 }
 pub fn SkinUniforms::new() -> Self
 pub impl @app.Resource for SkinUniforms

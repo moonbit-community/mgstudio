@@ -93,6 +93,7 @@ fn configure_mesh_render_sets(
   app
   .add_pre_update_system(update_mesh_previous_global_transforms)
   .add_pre_update_system(update_previous_view_data)
+  .add_post_update_system(@pbr_render.no_automatic_skin_batching)
 }
 
 ///|
