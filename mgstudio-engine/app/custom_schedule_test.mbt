@@ -672,6 +672,56 @@ test "app: set run_if evaluates all conditions without short-circuiting and cach
 }
 
 ///|
+test "app: failed set run_if does not skip other set or system conditions" {
+  let stage = schedule_label("SetRunIfEvaluatesAllAncestors")
+  let set_a = system_set("SetRunIf.All.A")
+  let set_b = system_set("SetRunIf.All.B")
+  let set_b_condition_hits : Array[Int] = []
+  let system_condition_hits : Array[Int] = []
+  let system_runs : Array[String] = []
+  let mut sub_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(stage))
+    .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+    .add_systems(
+      stage,
+      system(fn(_world : @ecs.World) { system_runs.push("body") })
+      .in_set(set_a)
+      .in_set(set_b)
+      .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
+        let value : Int = try! @json.from_json(state.val)
+        system_condition_hits.push(value)
+        state.val = (value + 1).to_json()
+        true
+      }),
+    )
+    .configure_sets(
+      stage,
+      set_a,
+      set_run_ifs=[fn(_world : @ecs.World) { false }],
+    )
+    .configure_sets(
+      stage,
+      set_b,
+      set_run_if_statefuls=[(
+        (0).to_json(),
+        fn(_world : @ecs.World, state : Ref[Json]) {
+          let value : Int = try! @json.from_json(state.val)
+          set_b_condition_hits.push(value)
+          state.val = (value + 1).to_json()
+          true
+        },
+      )],
+    )
+
+  sub_app = sub_app.update()
+  sub_app = sub_app.update()
+
+  debug_inspect(system_runs, content="[]")
+  debug_inspect(set_b_condition_hits, content="[0, 1]")
+  debug_inspect(system_condition_hits, content="[0, 1]")
+}
+
+///|
 test "app: runtime-invalid system is still scheduled and validated during execution" {
   ignore(MissingRunIfParityResource::{  })
   let validation_kinds : Array[ErrorContextKind] = []
@@ -684,6 +734,43 @@ test "app: runtime-invalid system is still scheduled and validated during execut
     })
     .add_system_config(
       system_config_param(fn(_res : Res[MissingRunIfParityResource]) {
+        body_runs.val = body_runs.val + 1
+      }).run_if(fn(_world : @ecs.World) {
+        run_if_hits.val = run_if_hits.val + 1
+        true
+      }),
+    )
+    .add_system(fn(_world : @ecs.World) { follower_runs.val = follower_runs.val + 1 })
+
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  debug_inspect(run_if_hits.val, content="2")
+  debug_inspect(body_runs.val, content="0")
+  debug_inspect(follower_runs.val, content="2")
+  debug_inspect(validation_kinds.length(), content="2")
+  debug_inspect(
+    validation_kinds[0] == ErrorContextKind::Validation &&
+    validation_kinds[1] == ErrorContextKind::Validation,
+    content="true",
+  )
+}
+
+///|
+test "app: statically invalid system stays in order and evaluates conditions before validation" {
+  let validation_kinds : Array[ErrorContextKind] = []
+  let run_if_hits = Ref::new(0)
+  let body_runs = Ref::new(0)
+  let follower_runs = Ref::new(0)
+  let app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) {
+      validation_kinds.push(context.kind())
+    })
+    .add_system_config(
+      system_config_param2(fn(
+        _a : @ecs.Query[@ecs.Mut[ScheduleBatchMarker], @ecs.All],
+        _b : @ecs.Query[@ecs.Mut[ScheduleBatchMarker], @ecs.All],
+      ) {
         body_runs.val = body_runs.val + 1
       }).run_if(fn(_world : @ecs.World) {
         run_if_hits.val = run_if_hits.val + 1

@@ -104,6 +104,17 @@ pub fn Schedule::set_apply_final_deferred(
 }
 
 ///|
+fn schedule_build_passes_for_settings(
+  settings : ScheduleBuildSettings,
+) -> Array[ScheduleBuildPassKind] {
+  if settings.auto_insert_apply_deferred() {
+    [AutoInsertApplyDeferredPass]
+  } else {
+    []
+  }
+}
+
+///|
 priv struct ScheduleGraphPlan {
   graph_generation : Int
   set_order : Array[SystemSet]
@@ -119,6 +130,14 @@ priv struct ScheduleGraphPlan {
 priv enum ScheduleExecutionNode {
   ScheduledSystem(Int)
   AutoApplyDeferred(Int)
+}
+
+priv struct ScheduleBuildPassGraph {
+  system_to_node : Array[Int]
+  nodes : Array[ScheduleExecutionNode]
+  node_edges : Array[(Int, Int)]
+  base_node_order : Array[Int]
+  mut auto_sync_count : Int
 }
 
 ///|
@@ -140,6 +159,7 @@ priv struct ScheduleExecutionPlan[W] {
   systems : Array[SystemConfig[W]]
   execution_order : Array[ScheduleExecutionNode]
   execution_batches : Array[Array[ScheduleExecutionNode]]
+  system_accesses : Array[SystemAccess]
   apply_final_deferred : Bool
   set_run_conditions : @hashmap.HashMap[
     SystemSet,
@@ -176,6 +196,7 @@ priv struct ScheduleEntry[W] {
   mut last_reported_build_error_generation : Int?
   mut last_reported_invalid_access_key : (Int, Int, Int, Int, Bool)?
   mut build_settings : ScheduleBuildSettings
+  mut build_passes : Array[ScheduleBuildPassKind]
 }
 
 ///|
@@ -194,6 +215,7 @@ fn[W] ScheduleEntry::new() -> ScheduleEntry[W] {
     last_reported_build_error_generation: None,
     last_reported_invalid_access_key: None,
     build_settings: ScheduleBuildSettings::new(),
+    build_passes: schedule_build_passes_for_settings(ScheduleBuildSettings::new()),
   }
 }
 
@@ -499,6 +521,106 @@ fn schedule_topo_node_order(
   } else {
     None
   }
+}
+
+///|
+fn schedule_build_pass_graph_new(
+  system_count : Int,
+  base_system_order : Array[Int],
+  base_system_edges : Array[(Int, Int, Bool)],
+) -> ScheduleBuildPassGraph {
+  let system_to_node : Array[Int] = []
+  for _ in 0..<system_count {
+    system_to_node.push(-1)
+  }
+  let nodes : Array[ScheduleExecutionNode] = []
+  let base_node_order : Array[Int] = []
+  for system_i in base_system_order {
+    let node_i = nodes.length()
+    system_to_node[system_i] = node_i
+    nodes.push(ScheduledSystem(system_i))
+    base_node_order.push(node_i)
+  }
+  let node_edges : Array[(Int, Int)] = []
+  for edge in base_system_edges {
+    let from_node = system_to_node[edge.0]
+    let to_node = system_to_node[edge.1]
+    if from_node >= 0 && to_node >= 0 {
+      schedule_add_unique_node_edge(node_edges, from_node, to_node)
+    }
+  }
+  {
+    system_to_node,
+    nodes,
+    node_edges,
+    base_node_order,
+    auto_sync_count: 0,
+  }
+}
+
+///|
+fn ScheduleBuildPassGraph::add_auto_sync_node(
+  self : ScheduleBuildPassGraph,
+) -> Int {
+  let node_i = self.nodes.length()
+  let sync_i = self.auto_sync_count
+  self.auto_sync_count = sync_i + 1
+  self.nodes.push(AutoApplyDeferred(sync_i))
+  self.base_node_order.push(node_i)
+  node_i
+}
+
+///|
+fn ScheduleBuildPassGraph::system_node(
+  self : ScheduleBuildPassGraph,
+  system_i : Int,
+) -> Int {
+  self.system_to_node[system_i]
+}
+
+///|
+fn ScheduleBuildPassGraph::add_edge(
+  self : ScheduleBuildPassGraph,
+  from_node : Int,
+  to_node : Int,
+) -> Unit {
+  if from_node >= 0 && to_node >= 0 {
+    schedule_add_unique_node_edge(self.node_edges, from_node, to_node)
+  }
+}
+
+///|
+fn ScheduleBuildPassGraph::remove_edge(
+  self : ScheduleBuildPassGraph,
+  from_node : Int,
+  to_node : Int,
+) -> Unit {
+  for edge_i in 0..<self.node_edges.length() {
+    let edge = self.node_edges[edge_i]
+    if edge.0 == from_node && edge.1 == to_node {
+      self.node_edges.remove(edge_i) |> ignore
+      return
+    }
+  }
+}
+
+///|
+fn schedule_build_pass_graph_execution_order(
+  graph : ScheduleBuildPassGraph,
+) -> Array[ScheduleExecutionNode] {
+  let node_order = match schedule_topo_node_order(
+    graph.nodes.length(),
+    graph.base_node_order,
+    graph.node_edges,
+  ) {
+    Some(order) => order
+    None => graph.base_node_order
+  }
+  let execution_order : Array[ScheduleExecutionNode] = []
+  for node_i in node_order {
+    execution_order.push(graph.nodes[node_i])
+  }
+  execution_order
 }
 
 ///|
@@ -911,7 +1033,6 @@ fn[W] schedule_system_has_run_conditions(
   false
 }
 
-///|
 fn[W] schedule_build_access_plan(
   schedule_entry : ScheduleEntry[W],
   graph_plan : ScheduleGraphPlan,
@@ -953,8 +1074,8 @@ fn[W] schedule_build_access_plan(
     }
   }
   let runnable_mask : Array[Bool] = []
-  for system_i in 0..<system_count {
-    runnable_mask.push(system_accesses[system_i].validation_error() is None)
+  for _ in 0..<system_count {
+    runnable_mask.push(true)
   }
   let base_system_edges : Array[(Int, Int, Bool)] = []
   for edge in graph_plan.system_dependency_edges {
@@ -983,165 +1104,20 @@ fn[W] schedule_build_access_plan(
       order
     }
   }
-  let execution_order : Array[ScheduleExecutionNode] = []
-  if build_settings.auto_insert_apply_deferred() {
-    let valid_explicit_sync : Array[Bool] = []
-    let distance : Array[Int] = []
-    let pending_sync : Array[Bool] = []
-    let outgoing_edges : Array[Array[(Int, Bool)]] = []
-    for system_i in 0..<system_count {
-      valid_explicit_sync.push(
-        runnable_mask[system_i] &&
-        schedule_entry.systems[system_i].is_apply_deferred_node &&
-        !schedule_system_has_run_conditions(
-          schedule_entry,
-          schedule_entry.systems[system_i],
-        ),
-      )
-      distance.push(0)
-      pending_sync.push(false)
-      outgoing_edges.push([])
-    }
-    for edge in base_system_edges {
-      let (from_system, to_system, ignore_deferred) = edge
-      outgoing_edges[from_system].push((to_system, ignore_deferred))
-    }
-    let explicit_sync_distances : Array[(Int, Int)] = []
-    fn explicit_sync_for_distance(distance_value : Int) -> Int? {
-      for entry in explicit_sync_distances {
-        if entry.0 == distance_value {
-          return Some(entry.1)
-        }
-      }
-      None
-    }
-    fn record_explicit_sync(distance_value : Int, system_i : Int) -> Unit {
-      if explicit_sync_for_distance(distance_value) is None {
-        explicit_sync_distances.push((distance_value, system_i))
-      }
-    }
-    for system_i in base_runnable_execution_order {
-      let node_distance = distance[system_i]
-      let mut node_needs_sync = pending_sync[system_i]
-      if valid_explicit_sync[system_i] {
-        record_explicit_sync(node_distance, system_i)
-        node_needs_sync = false
-      } else if !node_needs_sync &&
-        system_accesses[system_i].uses_deferred_commands() {
-        node_needs_sync = true
-      }
-      for edge in outgoing_edges[system_i] {
-        let (target_system, ignore_deferred) = edge
-        let mut edge_needs_sync = node_needs_sync
-        if node_needs_sync &&
-          !system_accesses[target_system].is_exclusive() &&
-          ignore_deferred {
-          pending_sync[target_system] = true
-          edge_needs_sync = false
-        }
-        let weight = if edge_needs_sync || valid_explicit_sync[target_system] {
-          1
-        } else {
-          0
-        }
-        let target_distance = node_distance + weight
-        if target_distance > distance[target_system] {
-          distance[target_system] = target_distance
-        }
-      }
-    }
-    let node_edges : Array[(Int, Int)] = []
-    for edge in base_system_edges {
-      schedule_add_unique_node_edge(node_edges, edge.0, edge.1)
-    }
-    let synthetic_distances : Array[Int] = []
-    let synthetic_sources : Array[Array[Int]] = []
-    let synthetic_targets : Array[Array[Int]] = []
-    fn synthetic_bucket_index(distance_value : Int) -> Int {
-      for i in 0..<synthetic_distances.length() {
-        if synthetic_distances[i] == distance_value {
-          return i
-        }
-      }
-      synthetic_distances.push(distance_value)
-      synthetic_sources.push([])
-      synthetic_targets.push([])
-      synthetic_distances.length() - 1
-    }
-    fn add_synthetic_sync_edge(
-      distance_value : Int,
-      from_system : Int,
-      to_system : Int,
-    ) -> Unit {
-      let bucket_i = synthetic_bucket_index(distance_value)
-      if !synthetic_sources[bucket_i].contains(from_system) {
-        synthetic_sources[bucket_i].push(from_system)
-      }
-      if !synthetic_targets[bucket_i].contains(to_system) {
-        synthetic_targets[bucket_i].push(to_system)
-      }
-    }
-    for system_i in base_runnable_execution_order {
-      for edge in outgoing_edges[system_i] {
-        let target_system = edge.0
-        if distance[system_i] == distance[target_system] {
-          continue
-        }
-        if schedule_entry.systems[target_system].is_apply_deferred_node {
-          continue
-        }
-        match explicit_sync_for_distance(distance[target_system]) {
-          Some(sync_system) => {
-            schedule_add_unique_node_edge(node_edges, system_i, sync_system)
-            schedule_add_unique_node_edge(
-              node_edges, sync_system, target_system,
-            )
-          }
-          None =>
-            add_synthetic_sync_edge(
-              distance[target_system],
-              system_i,
-              target_system,
-            )
-        }
-      }
-    }
-    for bucket_i in 0..<synthetic_distances.length() {
-      let sync_node_i = system_count + bucket_i
-      for source_system in synthetic_sources[bucket_i] {
-        schedule_add_unique_node_edge(node_edges, source_system, sync_node_i)
-      }
-      for target_system in synthetic_targets[bucket_i] {
-        schedule_add_unique_node_edge(node_edges, sync_node_i, target_system)
-      }
-    }
-    let base_node_order : Array[Int] = []
-    for system_i in base_runnable_execution_order {
-      base_node_order.push(system_i)
-    }
-    for bucket_i in 0..<synthetic_distances.length() {
-      base_node_order.push(system_count + bucket_i)
-    }
-    let node_count = system_count + synthetic_distances.length()
-    let node_order = match
-      schedule_topo_node_order(node_count, base_node_order, node_edges) {
-      Some(order) => order
-      None => base_node_order
-    }
-    for node_i in node_order {
-      if node_i < system_count {
-        if runnable_mask[node_i] {
-          execution_order.push(ScheduledSystem(node_i))
-        }
-      } else {
-        execution_order.push(AutoApplyDeferred(node_i - system_count))
-      }
-    }
-  } else {
-    for system_i in base_runnable_execution_order {
-      execution_order.push(ScheduledSystem(system_i))
-    }
-  }
+  let build_pass_graph = schedule_build_pass_graph_new(
+    system_count,
+    base_runnable_execution_order,
+    base_system_edges,
+  )
+  schedule_run_build_passes(
+    schedule_entry,
+    build_pass_graph,
+    base_runnable_execution_order,
+    base_system_edges,
+    system_accesses,
+    runnable_mask,
+  )
+  let execution_order = schedule_build_pass_graph_execution_order(build_pass_graph)
   let single_threaded_batches : Array[Array[ScheduleExecutionNode]] = []
   for node in execution_order {
     single_threaded_batches.push([node])
@@ -1301,6 +1277,7 @@ fn[W] schedule_execution_plan(
     systems: schedule_entry.systems,
     execution_order: access_plan.execution_order,
     execution_batches,
+    system_accesses: access_plan.system_accesses,
     apply_final_deferred: schedule_entry.apply_final_deferred,
     set_run_conditions: schedule_entry.set_run_conditions,
     invalid_system_errors: access_plan.invalid_system_errors,
@@ -1509,6 +1486,9 @@ fn[W] schedule_replace_entry(
   let entry_ref = Ref::new(ScheduleEntry::new())
   entry_ref.val.executor_kind = schedule.get_executor_kind()
   entry_ref.val.build_settings = schedule.get_build_settings()
+  entry_ref.val.build_passes = schedule_build_passes_for_settings(
+    schedule.get_build_settings(),
+  )
   entry_ref.val.apply_final_deferred = schedule.get_apply_final_deferred()
   schedule_registry.entries.set(key, entry_ref)
 }

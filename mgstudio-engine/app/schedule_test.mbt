@@ -905,7 +905,7 @@ test "app: SystemParam Query2 injects typed query into update system" {
 }
 
 ///|
-test "app: schedule filters conflicting query params before execution" {
+test "app: schedule reports conflicting query params during execution validation" {
   let kinds : Array[ErrorContextKind] = []
   let ran = Ref::new(false)
   let app = App::new(@ecs.World::new())
@@ -921,5 +921,10 @@ test "app: schedule filters conflicting query params before execution" {
   app.run_once() |> ignore
 
   debug_inspect(ran.val, content="false")
-  debug_inspect(kinds.length(), content="0")
+  debug_inspect(kinds.length(), content="2")
+  debug_inspect(
+    kinds[0] == ErrorContextKind::Validation &&
+    kinds[1] == ErrorContextKind::Validation,
+    content="true",
+  )
 }
