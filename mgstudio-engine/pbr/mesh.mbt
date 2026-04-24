@@ -471,7 +471,7 @@ fn render3d_morph_is_visible(
 fn render3d_resolved_morph_weights(
   source_world : @ecs.World,
   entity : @core.Entity,
-) -> Array[Float] {
+) -> (Array[Float], @mesh.MorphWeights?) {
   let animation_weights : @animation.AnimationWeights? = try! source_world
     .entity(entity)
     .get()
@@ -481,17 +481,12 @@ fn render3d_resolved_morph_weights(
   match animation_weights {
     Some(weights) => {
       let values = weights.values()
-      try! source_world.set_by_key(
-        entity,
-        @mesh.MorphWeights::component(),
-        @mesh.MorphWeights::new(values),
-      )
-      values
+      (values, Some(@mesh.MorphWeights::new(values)))
     }
     None =>
       match morph_weights_component {
-        Some(weights) => weights.values()
-        None => []
+        Some(weights) => (weights.values(), None)
+        None => ([], None)
       }
   }
 }
@@ -690,14 +685,18 @@ pub fn render3d_extract_morphs(
     (@core.Entity, @ecs.Comp[Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
     @ecs.All,
   ] = @ecs.query(source_world)
+  let morph_weight_updates : Array[(@core.Entity, @mesh.MorphWeights)] = []
   try! mesh_query.view(fn(_entity, data) {
     let (entity, _mesh_component, _morph_target_mesh_component) = data
     if !render3d_morph_is_visible(source_world, entity) {
       return
     }
-    let active_morph_weights = render3d_resolved_morph_weights(
+    let (active_morph_weights, morph_weight_update) = render3d_resolved_morph_weights(
       source_world, entity,
     )
+    if morph_weight_update is Some(weights) {
+      morph_weight_updates.push((entity, weights))
+    }
     let uniform_offset = render3d_push_morph_weights_to_uniform_buffer(
       morph_uniforms_ref.val.current_buffer,
       active_morph_weights,
@@ -707,6 +706,14 @@ pub fn render3d_extract_morphs(
       uniform_offset,
     )
   })
+  for update in morph_weight_updates {
+    let (entity, morph_weights) = update
+    try! source_world.set_by_key(
+      entity,
+      @mesh.MorphWeights::component(),
+      morph_weights,
+    )
+  }
 }
 
 ///|

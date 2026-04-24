@@ -165,6 +165,72 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
 }
 
 ///|
+test "ecs query: view permits non-structural replacement but rejects structural insertion" {
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
+    x: 1,
+    y: 2,
+  })
+  let query : Query[Comp[MutQueryPosition], All] = query(world)
+  let replace_result : Ref[Result[Unit, EcsError]?] = Ref::new(None)
+  try! query.view(fn(entity, _position) {
+    replace_result.val = Some(
+      try? world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
+        x: 3,
+        y: 4,
+      }),
+    )
+  })
+  guard replace_result.val is Some(Ok(_)) else {
+    fail("expected existing component replacement to be allowed")
+  }
+  debug_inspect(
+    try! world.get_by_key(entity, mut_query_position_key),
+    content="Some({ x: 3, y: 4 })",
+  )
+
+  let insert_result : Ref[Result[Unit, EcsError]?] = Ref::new(None)
+  try! query.view(fn(entity, _position) {
+    insert_result.val = Some(
+      try? world.set_by_key(entity, mut_query_velocity_key, MutQueryVelocity::{
+        dx: 1,
+        dy: 1,
+      }),
+    )
+  })
+  guard insert_result.val is Some(
+    Err(StructuralChangeDuringQueryIteration("insert component")),
+  ) else {
+    fail("expected inserting a new component during Query::view to be rejected")
+  }
+}
+
+///|
+test "ecs query: view rejects structural removal" {
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
+    x: 1,
+    y: 2,
+  })
+  let query : Query[Comp[MutQueryPosition], All] = query(world)
+  let remove_result : Ref[Result[Bool, EcsError]?] = Ref::new(None)
+  try! query.view(fn(entity, _position) {
+    remove_result.val = Some(try? world.remove_by_key(entity, mut_query_position_key))
+  })
+  guard remove_result.val is Some(
+    Err(StructuralChangeDuringQueryIteration("remove component")),
+  ) else {
+    fail("expected removing a component during Query::view to be rejected")
+  }
+  debug_inspect(
+    try! world.get_by_key(entity, mut_query_position_key),
+    content="Some({ x: 1, y: 2 })",
+  )
+}
+
+///|
 test "ecs mut query: detect changes helpers support explicit mutation and marking" {
   let world = World::new()
   let entity = world.spawn()

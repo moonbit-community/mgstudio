@@ -445,6 +445,13 @@ fn World::insert_component_payloads_with_requirements(
   caller? : String? = None,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
+  if self.has_active_query_iteration() {
+    for payload in payloads {
+      if self.component_payload(payload.0, entity) is None {
+        self.ensure_query_iteration_can_change_structure("insert component")
+      }
+    }
+  }
   let outermost = self.begin_deferred_hook_command_scope()
   let structural_changed_ref = Ref::new(false)
   let bundle_info = self.ensure_bundle_info_for_payloads(payloads)

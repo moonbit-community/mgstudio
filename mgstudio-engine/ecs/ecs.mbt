@@ -188,6 +188,7 @@ pub(all) suberror EcsError {
   EntityStateError(@core.EntityError)
   EntityNotAlive(@core.Entity)
   NonUniqueEntityList(@core.Entity)
+  StructuralChangeDuringQueryIteration(String)
   ComponentTypeMismatch(Int, String, @core.Entity, String)
   ResourceTypeMismatch(Int, String, String)
   EventTypeMismatch(Int, String, Int, String)
@@ -284,6 +285,7 @@ pub struct World {
   mut system_context : @core.SystemSequenceContext
   mut pending_component_payload_context : PendingComponentPayloadContext?
   mut current_query_sparse_anchor_payload_context : QuerySparseAnchorPayloadContext?
+  mut active_query_iteration_count : Int
   tables : Map[Int, Ref[RawTable]]
   sparse_component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
   sparse_component_metadata : Map[
@@ -357,6 +359,7 @@ pub fn World::new() -> World {
     system_context: @core.SystemSequenceContext::new(),
     pending_component_payload_context: None,
     current_query_sparse_anchor_payload_context: None,
+    active_query_iteration_count: 0,
     tables: {},
     sparse_component_columns: {},
     sparse_component_metadata: {},
@@ -417,6 +420,7 @@ pub fn World::world_id(self : World) -> Int {
 
 ///|
 pub fn World::spawn(self : World) -> @core.Entity {
+  self.abort_if_query_iteration_would_be_invalidated("spawn entity")
   let entity = self.entities.spawn()
   self.initialize_entity_archetype_tracking(entity)
   self.mark_entity_lifecycle_changed()
@@ -447,6 +451,7 @@ pub fn World::despawn(
   loc~ : SourceLoc,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
+  self.ensure_query_iteration_can_change_structure("despawn entity")
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   let removed_components : Array[(Int, ErasedValue)] = []
@@ -559,6 +564,7 @@ pub fn[T] World::remove_by_key(
     self.end_deferred_hook_command_scope(outermost)
     return false
   }
+  self.ensure_query_iteration_can_change_structure("remove component")
   let component_local_id = self.ensure_component_registered(key.id())
   self.run_component_replace_hooks(entity, key.id(), caller~)
   self.run_replace_observers(entity, key.id())
@@ -647,6 +653,43 @@ pub fn World::structural_generation(self : World) -> Int {
 ///|
 fn World::mark_structure_changed(self : World) -> Unit {
   self.structural_generation = self.structural_generation + 1
+}
+
+///|
+fn World::begin_query_iteration(self : World) -> Unit {
+  self.active_query_iteration_count = self.active_query_iteration_count + 1
+}
+
+///|
+fn World::end_query_iteration(self : World) -> Unit {
+  self.active_query_iteration_count = self.active_query_iteration_count - 1
+}
+
+///|
+fn World::has_active_query_iteration(self : World) -> Bool {
+  self.active_query_iteration_count > 0
+}
+
+///|
+fn World::ensure_query_iteration_can_change_structure(
+  self : World,
+  operation : String,
+) -> Unit raise EcsError {
+  if self.has_active_query_iteration() {
+    raise StructuralChangeDuringQueryIteration(operation)
+  }
+}
+
+///|
+fn World::abort_if_query_iteration_would_be_invalidated(
+  self : World,
+  operation : String,
+) -> Unit {
+  if self.has_active_query_iteration() {
+    abort(
+      "Structural ECS change during Query::view is not allowed: \{operation}",
+    )
+  }
 }
 
 ///|

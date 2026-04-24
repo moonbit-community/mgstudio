@@ -561,6 +561,20 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
   self : Query[D, F],
   f : (@core.Entity, D) -> Unit,
 ) -> Unit raise EcsError {
+  self.world.begin_query_iteration()
+  let result : Result[Unit, EcsError] = try? self.view_unchecked(f)
+  self.world.end_query_iteration()
+  match result {
+    Ok(_) => ()
+    Err(err) => raise err
+  }
+}
+
+///|
+fn[D : QueryData, F : QueryFilter] Query::view_unchecked(
+  self : Query[D, F],
+  f : (@core.Entity, D) -> Unit,
+) -> Unit raise EcsError {
   let data_anchor_component_ids = D::iteration_anchor_components()
   let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
     self.filter,

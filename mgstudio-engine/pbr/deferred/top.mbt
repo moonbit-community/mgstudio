@@ -118,15 +118,19 @@ fn insert_deferred_lighting_pass_id_component(world : @ecs.World) -> Unit {
     world,
     @ecs.With::new(@core_pipeline.DeferredPrepass::component()),
   )
+  let missing_depth_id_entities = []
   try! query.view(fn(entity, has_depth_id) {
     if !has_depth_id.present() {
-      try! world.set_by_key(
-        entity,
-        ecs_key_pbr_deferred_lighting_depth_id,
-        PbrDeferredLightingDepthId::default(),
-      )
+      missing_depth_id_entities.push(entity)
     }
   })
+  for entity in missing_depth_id_entities {
+    try! world.set_by_key(
+      entity,
+      ecs_key_pbr_deferred_lighting_depth_id,
+      PbrDeferredLightingDepthId::default(),
+    )
+  }
 }
 
 ///|

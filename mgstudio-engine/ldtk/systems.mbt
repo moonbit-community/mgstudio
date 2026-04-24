@@ -260,10 +260,11 @@ pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
   let query : @ecs.Query[@ecs.Comp[LdtkProjectHandle], @ecs.All] = @ecs.query(
     world,
   )
+  let respawn_entities : Array[@core.Entity] = []
   try! query.view(fn(entity, handle) {
     if changed_handles.contains(handle.value().id()) {
       if !(try! world.contains_by_key(entity, ecs_key_respawn)) {
-        try! world.set_by_key(entity, ecs_key_respawn, Respawn::{  })
+        respawn_entities.push(entity)
       }
       if ldtk_set_clear_color_from_editor_background(ldtk_settings) {
         if assets.get(handle.value().handle()) is Some(project) {
@@ -272,6 +273,9 @@ pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
       }
     }
   })
+  for entity in respawn_entities {
+    try! world.set_by_key(entity, ecs_key_respawn, Respawn::{  })
+  }
 }
 
 ///|
@@ -327,13 +331,24 @@ pub fn apply_level_set(world : @ecs.World) -> Unit {
     (@ecs.Comp[LdtkProjectHandle], @ecs.Comp[LevelSet]),
     @ecs.All,
   ] = @ecs.query(world)
+  let level_set_entries : Array[
+    (@core.Entity, LdtkProjectHandle, LevelSet)
+  ] = []
   try! query.view(fn(world_entity, data) {
     let (project_handle, level_set) = data
-    let spawned_any = ldtk_apply_level_set_for_world(
-      world,
+    level_set_entries.push((
       world_entity,
       project_handle.value(),
       level_set.value(),
+    ))
+  })
+  for entry in level_set_entries {
+    let (world_entity, project_handle, level_set) = entry
+    let spawned_any = ldtk_apply_level_set_for_world(
+      world,
+      world_entity,
+      project_handle,
+      level_set,
       ldtk_settings,
       project_assets,
       blob_assets,
@@ -342,7 +357,7 @@ pub fn apply_level_set(world : @ecs.World) -> Unit {
       (try! world.contains_by_key(world_entity, ecs_key_respawn)) {
       ignore(try! world.remove_by_key(world_entity, ecs_key_respawn))
     }
-  })
+  }
 }
 
 ///|
@@ -357,6 +372,8 @@ pub fn clean_respawn_entities(world : @ecs.World) -> Unit {
       @ecs.With::new(ecs_key_respawn),
     ),
   )
+  let despawn_entities : Array[@core.Entity] = []
+  let despawned_level_events : Array[LevelIid] = []
   try! worlds_query.view(fn(_world_entity, children) {
     for child in children.value().entities() {
       let is_level = try! world.contains_by_key(child, ecs_key_level_iid)
@@ -364,10 +381,10 @@ pub fn clean_respawn_entities(world : @ecs.World) -> Unit {
       let child_has_respawn = try! world.contains_by_key(child, ecs_key_respawn)
       if (is_level && !child_has_respawn) || is_worldly {
         if (try! world.get_by_key(child, ecs_key_level_iid)) is Some(level_iid) {
-          ldtk_send_level_event(world, Despawned(level_iid))
+          despawned_level_events.push(level_iid)
         }
         if world.is_alive(child) {
-          try! world.despawn(child)
+          despawn_entities.push(child)
         }
       }
     }
@@ -379,13 +396,21 @@ pub fn clean_respawn_entities(world : @ecs.World) -> Unit {
   ] = @ecs.query_filtered(world, @ecs.With::new(ecs_key_respawn))
   try! levels_query.view(fn(_level_entity, data) {
     let (level_iid, children) = data
-    ldtk_send_level_event(world, Despawned(level_iid.value()))
+    despawned_level_events.push(level_iid.value())
     for child in children.value().entities() {
       if world.is_alive(child) {
-        try! world.despawn(child)
+        despawn_entities.push(child)
       }
     }
   })
+  for level_iid in despawned_level_events {
+    ldtk_send_level_event(world, Despawned(level_iid))
+  }
+  for entity in despawn_entities {
+    if world.is_alive(entity) {
+      try! world.despawn(entity)
+    }
+  }
 }
 
 ///|
@@ -401,25 +426,33 @@ pub fn process_ldtk_levels(world : @ecs.World) -> Unit {
     (@ecs.Comp[LevelIid], @ecs.Comp[@hierarchy.Parent], @ecs.Comp[Respawn]),
     @ecs.All,
   ] = @ecs.query(world)
+  let respawn_levels : Array[(@core.Entity, LevelIid, @core.Entity)] = []
   try! query.view(fn(level_entity, data) {
     let (level_iid, parent, _respawn) = data
-    let world_entity = parent.value().entity()
+    respawn_levels.push((
+      level_entity,
+      level_iid.value(),
+      parent.value().entity(),
+    ))
+  })
+  for entry in respawn_levels {
+    let (level_entity, level_iid, world_entity) = entry
     guard (try! world.get_by_key(world_entity, ecs_key_ldtk_project_handle))
       is Some(project_handle) else {
-      return
+      continue
     }
     guard project_assets.get(project_handle.handle()) is Some(project) else {
-      return
+      continue
     }
     let level_opt = match blob_assets {
       Some(loaded_blob_assets) =>
         project.get_loaded_level_by_iid(
           loaded_blob_assets,
-          level_iid.value().get(),
+          level_iid.get(),
         )
-      None => project.get_raw_level_by_iid(level_iid.value().get())
+      None => project.get_raw_level_by_iid(level_iid.get())
     }
-    guard level_opt is Some(level) else { return }
+    guard level_opt is Some(level) else { continue }
     let metadata = project.get_level_metadata_by_iid(level.iid)
     let background_image = match metadata {
       Some(info) => info.bg_image
@@ -446,7 +479,7 @@ pub fn process_ldtk_levels(world : @ecs.World) -> Unit {
     )
     ldtk_send_level_event(world, Spawned(LevelIid::new(level.iid)))
     ignore(try! world.remove_by_key(level_entity, ecs_key_respawn))
-  })
+  }
 }
 
 ///|
@@ -482,6 +515,7 @@ pub fn worldly_adoption(world : @ecs.World) -> Unit {
     world,
     @ecs.Added::new(ecs_key_worldly),
   )
+  let parent_updates : Array[(@core.Entity, @hierarchy.Parent?)] = []
   try! query.view(fn(worldly_entity, _worldly) {
     let mut ancestor : @core.Entity? = Some(worldly_entity)
     for _ in 0..<3 {
@@ -496,19 +530,29 @@ pub fn worldly_adoption(world : @ecs.World) -> Unit {
     }
     match ancestor {
       Some(world_entity) =>
-        try! world.set_by_key(
+        parent_updates.push((
           worldly_entity,
-          @hierarchy.ecs_key_parent,
-          @hierarchy.Parent::new(world_entity),
-        )
+          Some(@hierarchy.Parent::new(world_entity)),
+        ))
       None =>
         if (try! world.contains_by_key(
             worldly_entity, @hierarchy.ecs_key_parent,
           )) {
-          ignore(
-            try! world.remove_by_key(worldly_entity, @hierarchy.ecs_key_parent),
-          )
+          parent_updates.push((worldly_entity, None))
         }
     }
   })
+  for update in parent_updates {
+    let (entity, parent) = update
+    match parent {
+      Some(parent_component) =>
+        try! world.set_by_key(
+          entity,
+          @hierarchy.ecs_key_parent,
+          parent_component,
+        )
+      None =>
+        ignore(try! world.remove_by_key(entity, @hierarchy.ecs_key_parent))
+    }
+  }
 }

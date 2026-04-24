@@ -97,6 +97,7 @@ pub(all) suberror EcsError {
   EntityStateError(@core.EntityError)
   EntityNotAlive(@core.Entity)
   NonUniqueEntityList(@core.Entity)
+  StructuralChangeDuringQueryIteration(String)
   ComponentTypeMismatch(Int, String, @core.Entity, String)
   ResourceTypeMismatch(Int, String, String)
   EventTypeMismatch(Int, String, Int, String)
@@ -901,6 +902,7 @@ pub struct World {
   mut system_context : @core.SystemSequenceContext
   mut pending_component_payload_context : PendingComponentPayloadContext?
   mut current_query_sparse_anchor_payload_context : QuerySparseAnchorPayloadContext?
+  mut active_query_iteration_count : Int
   tables : Map[Int, @ref.Ref[RawTable]]
   sparse_component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
   sparse_component_metadata : Map[Int, @ref.Ref[@core.ComponentStore[ComponentTickMetadata]]]
