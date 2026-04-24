@@ -58,6 +58,18 @@ fn schedule_graph_system_name(
 }
 
 ///|
+fn schedule_graph_node_name(
+  systems : Array[SystemConfig[@ecs.World]],
+  node : ScheduleExecutionNode,
+) -> String {
+  match node {
+    ScheduledSystem(system_i) => schedule_graph_system_name(systems[system_i], system_i)
+    AutoApplyDeferred(sync_i) =>
+      "bevy_ecs::apply_deferred#auto\{sync_i.to_string()}"
+  }
+}
+
+///|
 fn schedule_graph_include(
   settings : ScheduleGraphSettings,
   name : String,
@@ -75,18 +87,22 @@ pub fn App::schedule_graph_dot(
   settings? : ScheduleGraphSettings = ScheduleGraphSettings::default(),
 ) -> String {
   let systems = schedule_systems(self.sub_apps.main.schedule, stage)
-  let graph_plan = schedule_resolve_graph_plan(
-    schedule_entry_ref(self.sub_apps.main.schedule, stage).val,
-    stage,
-  )
+  let schedule_entry = schedule_entry_ref(self.sub_apps.main.schedule, stage).val
+  let graph_plan = schedule_resolve_graph_plan(schedule_entry, stage)
   let execution_order = if graph_plan.build_error is Some(_) {
-    let fallback : Array[Int] = []
+    let fallback : Array[ScheduleExecutionNode] = []
     for i in 0..<systems.length() {
-      fallback.push(i)
+      fallback.push(ScheduledSystem(i))
     }
     fallback
   } else {
-    graph_plan.execution_order
+    schedule_resolve_access_plan(
+      schedule_entry,
+      graph_plan,
+      schedule_entry.build_settings,
+      self.world(),
+      @hashmap.HashMap::new(),
+    ).execution_order
   }
 
   let lines : Array[String] = [
@@ -98,8 +114,7 @@ pub fn App::schedule_graph_dot(
 
   let included_system_names : Array[String] = []
   for execution_i in 0..<execution_order.length() {
-    let system_i = execution_order[execution_i]
-    let name = schedule_graph_system_name(systems[system_i], system_i)
+    let name = schedule_graph_node_name(systems, execution_order[execution_i])
     if schedule_graph_include(settings, name) {
       included_system_names.push(name)
       lines.push("  \"\{name}\";")

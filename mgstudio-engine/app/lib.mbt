@@ -1975,9 +1975,7 @@ pub fn apply_deferred_system() -> SystemConfig[@ecs.World] {
     ..config,
     name: Some("bevy_ecs::apply_deferred"),
     is_apply_deferred_node: true,
-    access_factory: Some(fn(_world : @ecs.World) {
-      SystemAccess::new()
-    }),
+    access_factory: Some(fn(_world : @ecs.World) { SystemAccess::new() }),
   }
 }
 
@@ -1995,7 +1993,7 @@ pub fn[T : ChainedSystemConfigs] chain(configs : T) -> SystemConfig[@ecs.World] 
 fn chain_group_config(
   members : Array[SystemConfig[@ecs.World]],
 ) -> SystemConfig[@ecs.World] {
-  let config = system(fn(_world : @ecs.World) -> Unit {})
+  let config = system(fn(_world : @ecs.World) -> Unit {  })
   SystemConfig::{
     ..config,
     chain_members: Some(members),
@@ -3595,9 +3593,8 @@ pub fn[
 fn run_systems(
   world : @ecs.World,
   systems : Array[SystemConfig[@ecs.World]],
-  execution_order : Array[Int],
-  execution_batches : Array[Array[Int]],
-  apply_after_execution_order : Array[Bool],
+  execution_order : Array[ScheduleExecutionNode],
+  execution_batches : Array[Array[ScheduleExecutionNode]],
   stage : ScheduleStage?,
   apply_final_deferred? : Bool = true,
   set_run_conditions? : @hashmap.HashMap[
@@ -3654,12 +3651,9 @@ fn run_systems(
       _ => true
     }
   }
-  fn apply_deferred_boundary(execution_i : Int) -> Unit {
-    if execution_i < apply_after_execution_order.length() &&
-      apply_after_execution_order[execution_i] {
-      end_deferred_command_batch(world)
-      begin_deferred_command_batch()
-    }
+  fn apply_deferred_boundary() -> Unit {
+    end_deferred_command_batch(world)
+    begin_deferred_command_batch()
   }
   begin_deferred_command_batch()
   let set_run_if_results : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
@@ -3690,8 +3684,7 @@ fn run_systems(
               )
               current_system_sequence_ref.val = None
               current_world_ref.val = prev_world
-              run_conditions_ref.val.run_if_last_run_sequences[cond_i] =
-                cond_this_run
+              run_conditions_ref.val.run_if_last_run_sequences[cond_i] = cond_this_run
               matches = matches && cond_result
             }
             matches
@@ -3704,166 +3697,179 @@ fn run_systems(
   }
   let execution_i_ref = Ref::new(0)
   for batch in execution_batches {
-    for system_i in batch {
+    for node in batch {
       let execution_i = execution_i_ref.val
-      let cfg = systems[system_i]
       execution_i_ref.val = execution_i + 1
       if !stepping_should_run_system(
-          stepping_ref, stage, systems, system_i, execution_i,
+          stepping_ref, stage, systems, node, execution_i,
         ) {
-        apply_deferred_boundary(execution_i)
         continue
       }
-      let checked_sets : Array[SystemSet] = []
-      let set_conditions_passed = Ref::new(true)
-      fn check_set_run_conditions(set : SystemSet) -> Unit {
-        if checked_sets.contains(set) || !set_conditions_passed.val {
-          return
+      match node {
+        AutoApplyDeferred(_) => {
+          apply_deferred_boundary()
+          stepping_record_system_run(
+            stepping_ref, stage, systems, node, execution_i,
+          )
+          continue
         }
-        checked_sets.push(set)
-        if !evaluate_set_run_if_once(set) {
-          set_conditions_passed.val = false
-        }
-      }
-      for set in cfg.member_sets {
-        check_set_run_conditions(set)
-      }
-      match cfg.set {
-        Some(set) =>
-          if !set.has_prefix("__chain__:") {
+        ScheduledSystem(system_i) => {
+          let cfg = systems[system_i]
+          let checked_sets : Array[SystemSet] = []
+          let set_conditions_passed = Ref::new(true)
+          fn check_set_run_conditions(set : SystemSet) -> Unit {
+            if checked_sets.contains(set) || !set_conditions_passed.val {
+              return
+            }
+            checked_sets.push(set)
+            if !evaluate_set_run_if_once(set) {
+              set_conditions_passed.val = false
+            }
+          }
+          for set in cfg.member_sets {
             check_set_run_conditions(set)
           }
-        None => ()
-      }
-      if !set_conditions_passed.val {
-        apply_deferred_boundary(execution_i)
-        continue
-      }
-      let mut should_skip = false
-      for cond_i in 0..<cfg.run_ifs.length() {
-        let cond = cfg.run_ifs[cond_i]
-        let cond_this_run = world.advance_sequence()
-        let cond_ticks = @core.SystemSequence::new(
-          cfg.run_if_last_run_sequences[cond_i],
-          cond_this_run,
-        )
-        let cond_ctx = world.get_sequence_context()
-        cond_ctx.set(cond_ticks)
-        world.set_sequence_context(cond_ctx)
-        let prev_world = current_world_ref.val
-        current_world_ref.val = Some(world)
-        current_system_sequence_ref.val = Some(cond_ticks)
-        let should_run = cond(world, cfg.run_if_states[cond_i])
-        current_system_sequence_ref.val = None
-        current_world_ref.val = prev_world
-        systems[system_i].run_if_last_run_sequences[cond_i] = cond_this_run
-        should_skip = should_skip || !should_run
-      }
-      if should_skip {
-        apply_deferred_boundary(execution_i)
-        continue
-      }
+          match cfg.set {
+            Some(set) =>
+              if !set.has_prefix("__chain__:") {
+                check_set_run_conditions(set)
+              }
+            None => ()
+          }
+          if !set_conditions_passed.val {
+            continue
+          }
+          let mut should_skip = false
+          for cond_i in 0..<cfg.run_ifs.length() {
+            let cond = cfg.run_ifs[cond_i]
+            let cond_this_run = world.advance_sequence()
+            let cond_ticks = @core.SystemSequence::new(
+              cfg.run_if_last_run_sequences[cond_i],
+              cond_this_run,
+            )
+            let cond_ctx = world.get_sequence_context()
+            cond_ctx.set(cond_ticks)
+            world.set_sequence_context(cond_ctx)
+            let prev_world = current_world_ref.val
+            current_world_ref.val = Some(world)
+            current_system_sequence_ref.val = Some(cond_ticks)
+            let should_run = cond(world, cfg.run_if_states[cond_i])
+            current_system_sequence_ref.val = None
+            current_world_ref.val = prev_world
+            systems[system_i].run_if_last_run_sequences[cond_i] = cond_this_run
+            should_skip = should_skip || !should_run
+          }
+          if should_skip {
+            continue
+          }
+          if cfg.is_apply_deferred_node {
+            apply_deferred_boundary()
+            stepping_record_system_run(
+              stepping_ref, stage, systems, node, execution_i,
+            )
+            continue
+          }
 
-      let trace_name = system_trace_name(cfg, stage, execution_i)
-      let system_trace_start_us = if timeline_enabled &&
-        should_trace_system(cfg, stage, systems.length()) {
-        timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
-      } else {
-        -1L
-      }
+          let trace_name = system_trace_name(cfg, stage, execution_i)
+          let system_trace_start_us = if timeline_enabled &&
+            should_trace_system(cfg, stage, systems.length()) {
+            timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
+          } else {
+            -1L
+          }
 
-      // Align with Bevy: increment global change tick once per executed system
-      // and expose SystemSequence via World-backed context for change detection.
-      let this_run = world.advance_sequence()
-      let sys_ticks = @core.SystemSequence::new(cfg.last_run_sequence, this_run)
-      let ctx = world.get_sequence_context()
-      ctx.set(sys_ticks)
-      world.set_sequence_context(ctx)
-      let prev_world = current_world_ref.val
-      current_world_ref.val = Some(world)
-      let prev_ticks = current_system_sequence_ref.val
-      current_system_sequence_ref.val = Some(sys_ticks)
-      let prev_outcome = current_system_execution_outcome()
-      reset_system_execution_outcome()
-      (cfg.system)(world)
-      let outcome = current_system_execution_outcome()
-      current_system_execution_outcome_ref.val = prev_outcome
-      current_system_sequence_ref.val = prev_ticks
-      current_world_ref.val = prev_world
-      match outcome {
-        Success => {
-          if timeline_enabled && system_trace_start_us >= 0L {
-            timeline_trace_end_span(
-              TimelineTraceCategory::System,
-              trace_name,
-              system_trace_start_us,
-            )
-          }
-          systems[system_i].last_run_sequence = this_run
-          stepping_record_system_run(
-            stepping_ref, stage, systems, system_i, execution_i,
+          // Align with Bevy: increment global change tick once per executed system
+          // and expose SystemSequence via World-backed context for change detection.
+          let this_run = world.advance_sequence()
+          let sys_ticks = @core.SystemSequence::new(
+            cfg.last_run_sequence,
+            this_run,
           )
-        }
-        Skipped(_) => {
-          apply_deferred_boundary(execution_i)
-          continue
-        }
-        Invalid(message) => {
-          if timeline_enabled && system_trace_start_us >= 0L {
-            timeline_trace_end_span(
-              TimelineTraceCategory::System,
-              trace_name,
-              system_trace_start_us,
-            )
-          }
-          report_world_error(
-            world,
-            @ecs.Invalid(message),
-            system_context(
-              systems[system_i],
-              ErrorContextKind::Validation,
-              current_schedule_stage(),
-            ),
-          )
-          apply_deferred_boundary(execution_i)
-          continue
-        }
-        Error(err) => {
-          if timeline_enabled && system_trace_start_us >= 0L {
-            timeline_trace_end_span(
-              TimelineTraceCategory::System,
-              trace_name,
-              system_trace_start_us,
-            )
-          }
-          systems[system_i].last_run_sequence = this_run
-          stepping_record_system_run(
-            stepping_ref, stage, systems, system_i, execution_i,
-          )
-          match systems[system_i].error_handler {
-            Some(handler) =>
-              handler(
-                err,
-                system_context(
-                  systems[system_i],
-                  ErrorContextKind::System,
-                  current_schedule_stage(),
-                ),
+          let ctx = world.get_sequence_context()
+          ctx.set(sys_ticks)
+          world.set_sequence_context(ctx)
+          let prev_world = current_world_ref.val
+          current_world_ref.val = Some(world)
+          let prev_ticks = current_system_sequence_ref.val
+          current_system_sequence_ref.val = Some(sys_ticks)
+          let prev_outcome = current_system_execution_outcome()
+          reset_system_execution_outcome()
+          (cfg.system)(world)
+          let outcome = current_system_execution_outcome()
+          current_system_execution_outcome_ref.val = prev_outcome
+          current_system_sequence_ref.val = prev_ticks
+          current_world_ref.val = prev_world
+          match outcome {
+            Success => {
+              if timeline_enabled && system_trace_start_us >= 0L {
+                timeline_trace_end_span(
+                  TimelineTraceCategory::System,
+                  trace_name,
+                  system_trace_start_us,
+                )
+              }
+              systems[system_i].last_run_sequence = this_run
+              stepping_record_system_run(
+                stepping_ref, stage, systems, node, execution_i,
               )
-            None =>
+            }
+            Skipped(_) => continue
+            Invalid(message) => {
+              if timeline_enabled && system_trace_start_us >= 0L {
+                timeline_trace_end_span(
+                  TimelineTraceCategory::System,
+                  trace_name,
+                  system_trace_start_us,
+                )
+              }
               report_world_error(
                 world,
-                err,
+                @ecs.Invalid(message),
                 system_context(
                   systems[system_i],
-                  ErrorContextKind::System,
+                  ErrorContextKind::Validation,
                   current_schedule_stage(),
                 ),
               )
+              continue
+            }
+            Error(err) => {
+              if timeline_enabled && system_trace_start_us >= 0L {
+                timeline_trace_end_span(
+                  TimelineTraceCategory::System,
+                  trace_name,
+                  system_trace_start_us,
+                )
+              }
+              systems[system_i].last_run_sequence = this_run
+              stepping_record_system_run(
+                stepping_ref, stage, systems, node, execution_i,
+              )
+              match systems[system_i].error_handler {
+                Some(handler) =>
+                  handler(
+                    err,
+                    system_context(
+                      systems[system_i],
+                      ErrorContextKind::System,
+                      current_schedule_stage(),
+                    ),
+                  )
+                None =>
+                  report_world_error(
+                    world,
+                    err,
+                    system_context(
+                      systems[system_i],
+                      ErrorContextKind::System,
+                      current_schedule_stage(),
+                    ),
+                  )
+              }
+            }
           }
         }
       }
-      apply_deferred_boundary(execution_i)
     }
   }
   if apply_final_deferred {
@@ -3920,7 +3926,6 @@ fn run_schedule_stage(
     execution_plan.systems,
     execution_plan.execution_order,
     execution_plan.execution_batches,
-    execution_plan.apply_after_execution_order,
     Some(stage),
     apply_final_deferred=execution_plan.apply_final_deferred,
     set_run_conditions=execution_plan.set_run_conditions,

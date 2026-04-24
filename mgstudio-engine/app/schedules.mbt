@@ -35,7 +35,7 @@ pub fn ScheduleBuildSettings::set_auto_insert_apply_deferred(
   auto_insert_apply_deferred : Bool,
 ) -> ScheduleBuildSettings {
   ignore(self)
-  ScheduleBuildSettings::{ auto_insert_apply_deferred }
+  ScheduleBuildSettings::{ auto_insert_apply_deferred, }
 }
 
 ///|
@@ -116,6 +116,12 @@ priv struct ScheduleGraphPlan {
 }
 
 ///|
+priv enum ScheduleExecutionNode {
+  ScheduledSystem(Int)
+  AutoApplyDeferred(Int)
+}
+
+///|
 priv struct ScheduleAccessPlan {
   graph_generation : Int
   world_id : Int
@@ -123,27 +129,29 @@ priv struct ScheduleAccessPlan {
   allowed_ambiguous_fingerprint : Int
   auto_insert_apply_deferred : Bool
   system_accesses : Array[SystemAccess]
-  runnable_execution_order : Array[Int]
-  apply_after_execution_order : Array[Bool]
+  execution_order : Array[ScheduleExecutionNode]
   invalid_system_errors : Array[(Int, String)]
-  single_threaded_batches : Array[Array[Int]]
-  multi_threaded_batches : Array[Array[Int]]
+  single_threaded_batches : Array[Array[ScheduleExecutionNode]]
+  multi_threaded_batches : Array[Array[ScheduleExecutionNode]]
 }
 
 ///|
 priv struct ScheduleExecutionPlan[W] {
   systems : Array[SystemConfig[W]]
-  execution_order : Array[Int]
-  execution_batches : Array[Array[Int]]
-  apply_after_execution_order : Array[Bool]
+  execution_order : Array[ScheduleExecutionNode]
+  execution_batches : Array[Array[ScheduleExecutionNode]]
   apply_final_deferred : Bool
-  set_run_conditions : @hashmap.HashMap[SystemSet, Ref[ScheduleSetRunConditions[W]]]
+  set_run_conditions : @hashmap.HashMap[
+    SystemSet,
+    Ref[ScheduleSetRunConditions[W]],
+  ]
   invalid_system_errors : Array[(Int, String)]
   report_invalid_system_errors : Bool
   build_error : String?
   report_build_error : Bool
 }
 
+///|
 priv struct ScheduleSetRunConditions[W] {
   run_ifs : Array[StatefulRunConditionFn[W]]
   run_if_states : Array[Ref[Json]]
@@ -155,7 +163,10 @@ priv struct ScheduleEntry[W] {
   systems : Array[SystemConfig[W]]
   set_edges : Array[(SystemSet, SystemSet)]
   set_edges_ignore_deferred : Array[(SystemSet, SystemSet)]
-  set_run_conditions : @hashmap.HashMap[SystemSet, Ref[ScheduleSetRunConditions[W]]]
+  set_run_conditions : @hashmap.HashMap[
+    SystemSet,
+    Ref[ScheduleSetRunConditions[W]],
+  ]
   mut executor_kind : ExecutorKind
   mut apply_final_deferred : Bool
   mut chain_internal_set_counter : Int
@@ -278,7 +289,9 @@ fn[W] ScheduleRegistry::new() -> ScheduleRegistry[W] {
 }
 
 ///|
-fn[W] schedule_entry_mark_graph_changed(schedule_entry : ScheduleEntry[W]) -> Unit {
+fn[W] schedule_entry_mark_graph_changed(
+  schedule_entry : ScheduleEntry[W],
+) -> Unit {
   schedule_entry.graph_generation = schedule_entry.graph_generation + 1
   schedule_entry.cached_graph_plan = None
   schedule_entry.cached_access_plan = None
@@ -298,7 +311,7 @@ fn schedule_allowed_ambiguous_fingerprint(
     let value = if entry.1 { 1 } else { 0 }
     count = count + 1
     sum = sum + (key * 31 + value)
-    sum_sq = sum_sq + ((key * key + 17) * (value + 1))
+    sum_sq = sum_sq + (key * key + 17) * (value + 1)
   }
   count * 1_000_003 + sum * 97 + sum_sq * 7
 }
@@ -344,6 +357,23 @@ fn schedule_add_unique_system_edge(
 }
 
 ///|
+fn schedule_add_unique_node_edge(
+  edges : Array[(Int, Int)],
+  from_node : Int,
+  to_node : Int,
+) -> Unit {
+  if from_node == to_node {
+    return
+  }
+  for edge in edges {
+    if edge.0 == from_node && edge.1 == to_node {
+      return
+    }
+  }
+  edges.push((from_node, to_node))
+}
+
+///|
 fn schedule_pop_ready_by_rank(ready : Array[Int], rank : Array[Int]) -> Int {
   let mut best_pos = 0
   let mut best_value = ready[0]
@@ -352,8 +382,7 @@ fn schedule_pop_ready_by_rank(ready : Array[Int], rank : Array[Int]) -> Int {
   for i in 1..<len {
     let value = ready[i]
     let value_rank = rank[value]
-    if value_rank < best_rank ||
-      (value_rank == best_rank && value < best_value) {
+    if value_rank < best_rank || (value_rank == best_rank && value < best_value) {
       best_value = value
       best_rank = value_rank
       best_pos = i
@@ -423,6 +452,56 @@ fn schedule_topo_system_order(
 }
 
 ///|
+fn schedule_topo_node_order(
+  node_count : Int,
+  base_order : Array[Int],
+  edges : Array[(Int, Int)],
+) -> Array[Int]? {
+  let rank : Array[Int] = []
+  for i in 0..<node_count {
+    rank.push(node_count + i)
+  }
+  for order_i in 0..<base_order.length() {
+    rank[base_order[order_i]] = order_i
+  }
+  let indeg : Array[Int] = []
+  let adj : Array[Array[Int]] = []
+  for _ in 0..<node_count {
+    indeg.push(0)
+    adj.push([])
+  }
+  for edge in edges {
+    let (from_node, to_node) = edge
+    if from_node != to_node && !adj[from_node].contains(to_node) {
+      adj[from_node].push(to_node)
+      indeg[to_node] = indeg[to_node] + 1
+    }
+  }
+  let ready : Array[Int] = []
+  for i in 0..<node_count {
+    if indeg[i] == 0 {
+      ready.push(i)
+    }
+  }
+  let order : Array[Int] = []
+  while ready.length() > 0 {
+    let node_i = schedule_pop_ready_by_rank(ready, rank)
+    order.push(node_i)
+    for to_node in adj[node_i] {
+      indeg[to_node] = indeg[to_node] - 1
+      if indeg[to_node] == 0 {
+        ready.push(to_node)
+      }
+    }
+  }
+  if order.length() == node_count {
+    Some(order)
+  } else {
+    None
+  }
+}
+
+///|
 fn[W] schedule_build_graph_plan(
   schedule_entry : ScheduleEntry[W],
   stage : ScheduleStage,
@@ -449,10 +528,7 @@ fn[W] schedule_build_graph_plan(
     group : SystemSet,
   ) -> Unit {
     match membership_groups.get(member_set) {
-      Some(groups) =>
-        if !groups.contains(group) {
-          groups.push(group)
-        }
+      Some(groups) => if !groups.contains(group) { groups.push(group) }
       None => membership_groups.set(member_set, [group])
     }
   }
@@ -746,17 +822,12 @@ fn[W] schedule_build_graph_plan(
       if systems_by_set[to_set_i].length() > 0 {
         for target_system in systems_by_set[to_set_i] {
           schedule_add_unique_system_edge(
-            system_dependency_edges,
-            source_system,
-            target_system,
-            next_ignore_deferred,
+            system_dependency_edges, source_system, target_system, next_ignore_deferred,
           )
         }
       } else {
         walk_system_dependency_edges(
-          source_system,
-          to_set_i,
-          next_ignore_deferred,
+          source_system, to_set_i, next_ignore_deferred,
         )
       }
     }
@@ -795,7 +866,8 @@ fn[W] schedule_resolve_graph_plan(
   stage : ScheduleStage,
 ) -> ScheduleGraphPlan {
   match schedule_entry.cached_graph_plan {
-    Some(plan) if plan.graph_generation == schedule_entry.graph_generation => plan
+    Some(plan) if plan.graph_generation == schedule_entry.graph_generation =>
+      plan
     _ => {
       let plan = schedule_build_graph_plan(schedule_entry, stage)
       schedule_entry.cached_graph_plan = Some(plan)
@@ -858,8 +930,7 @@ fn[W] schedule_build_access_plan(
       allowed_ambiguous_fingerprint,
       auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
       system_accesses: [],
-      runnable_execution_order: [],
-      apply_after_execution_order: [],
+      execution_order: [],
       invalid_system_errors: [],
       single_threaded_batches: [],
       multi_threaded_batches: [],
@@ -890,19 +961,17 @@ fn[W] schedule_build_access_plan(
     let (from_system, to_system, ignore_deferred) = edge
     if runnable_mask[from_system] && runnable_mask[to_system] {
       schedule_add_unique_system_edge(
-        base_system_edges,
-        from_system,
-        to_system,
-        ignore_deferred,
+        base_system_edges, from_system, to_system, ignore_deferred,
       )
     }
   }
-  let base_runnable_execution_order = match schedule_topo_system_order(
-    system_count,
-    graph_plan.execution_order,
-    base_system_edges,
-    runnable_mask,
-  ) {
+  let base_runnable_execution_order = match
+    schedule_topo_system_order(
+      system_count,
+      graph_plan.execution_order,
+      base_system_edges,
+      runnable_mask,
+    ) {
     Some(order) => order
     None => {
       let order : Array[Int] = []
@@ -914,8 +983,7 @@ fn[W] schedule_build_access_plan(
       order
     }
   }
-  let mut runnable_execution_order = base_runnable_execution_order
-  let apply_after_execution_order : Array[Bool] = []
+  let execution_order : Array[ScheduleExecutionNode] = []
   if build_settings.auto_insert_apply_deferred() {
     let valid_explicit_sync : Array[Bool] = []
     let distance : Array[Int] = []
@@ -982,15 +1050,9 @@ fn[W] schedule_build_access_plan(
         }
       }
     }
-    let final_edges : Array[(Int, Int, Bool)] = []
+    let node_edges : Array[(Int, Int)] = []
     for edge in base_system_edges {
-      let (from_system, to_system, ignore_deferred) = edge
-      schedule_add_unique_system_edge(
-        final_edges,
-        from_system,
-        to_system,
-        ignore_deferred,
-      )
+      schedule_add_unique_node_edge(node_edges, edge.0, edge.1)
     }
     let synthetic_distances : Array[Int] = []
     let synthetic_sources : Array[Array[Int]] = []
@@ -1030,17 +1092,9 @@ fn[W] schedule_build_access_plan(
         }
         match explicit_sync_for_distance(distance[target_system]) {
           Some(sync_system) => {
-            schedule_add_unique_system_edge(
-              final_edges,
-              system_i,
-              sync_system,
-              false,
-            )
-            schedule_add_unique_system_edge(
-              final_edges,
-              sync_system,
-              target_system,
-              false,
+            schedule_add_unique_node_edge(node_edges, system_i, sync_system)
+            schedule_add_unique_node_edge(
+              node_edges, sync_system, target_system,
             )
           }
           None =>
@@ -1053,105 +1107,106 @@ fn[W] schedule_build_access_plan(
       }
     }
     for bucket_i in 0..<synthetic_distances.length() {
+      let sync_node_i = system_count + bucket_i
       for source_system in synthetic_sources[bucket_i] {
-        for target_system in synthetic_targets[bucket_i] {
-          schedule_add_unique_system_edge(
-            final_edges,
-            source_system,
-            target_system,
-            false,
-          )
-        }
-      }
-    }
-    match schedule_topo_system_order(
-      system_count,
-      base_runnable_execution_order,
-      final_edges,
-      runnable_mask,
-    ) {
-      Some(order) => runnable_execution_order = order
-      None => ()
-    }
-    let position : Array[Int] = []
-    for _ in 0..<system_count {
-      position.push(-1)
-    }
-    for execution_i in 0..<runnable_execution_order.length() {
-      position[runnable_execution_order[execution_i]] = execution_i
-    }
-    for _ in 0..<runnable_execution_order.length() {
-      apply_after_execution_order.push(false)
-    }
-    for bucket_i in 0..<synthetic_distances.length() {
-      let mut max_source_pos = -1
-      let mut min_target_pos = runnable_execution_order.length()
-      for source_system in synthetic_sources[bucket_i] {
-        let source_pos = position[source_system]
-        if source_pos > max_source_pos {
-          max_source_pos = source_pos
-        }
+        schedule_add_unique_node_edge(node_edges, source_system, sync_node_i)
       }
       for target_system in synthetic_targets[bucket_i] {
-        let target_pos = position[target_system]
-        if target_pos >= 0 && target_pos < min_target_pos {
-          min_target_pos = target_pos
-        }
+        schedule_add_unique_node_edge(node_edges, sync_node_i, target_system)
       }
-      if max_source_pos >= 0 &&
-        max_source_pos < min_target_pos &&
-        max_source_pos < apply_after_execution_order.length() {
-        apply_after_execution_order[max_source_pos] = true
+    }
+    let base_node_order : Array[Int] = []
+    for system_i in base_runnable_execution_order {
+      base_node_order.push(system_i)
+    }
+    for bucket_i in 0..<synthetic_distances.length() {
+      base_node_order.push(system_count + bucket_i)
+    }
+    let node_count = system_count + synthetic_distances.length()
+    let node_order = match
+      schedule_topo_node_order(node_count, base_node_order, node_edges) {
+      Some(order) => order
+      None => base_node_order
+    }
+    for node_i in node_order {
+      if node_i < system_count {
+        if runnable_mask[node_i] {
+          execution_order.push(ScheduledSystem(node_i))
+        }
+      } else {
+        execution_order.push(AutoApplyDeferred(node_i - system_count))
       }
     }
   } else {
-    for _ in 0..<runnable_execution_order.length() {
-      apply_after_execution_order.push(false)
+    for system_i in base_runnable_execution_order {
+      execution_order.push(ScheduledSystem(system_i))
     }
   }
-  let single_threaded_batches : Array[Array[Int]] = []
-  for system_i in runnable_execution_order {
-    single_threaded_batches.push([system_i])
+  let single_threaded_batches : Array[Array[ScheduleExecutionNode]] = []
+  for node in execution_order {
+    single_threaded_batches.push([node])
   }
-  let multi_threaded_batches : Array[Array[Int]] = []
-  let current_batch_ref : Ref[Array[Int]] = Ref::new([])
+  let multi_threaded_batches : Array[Array[ScheduleExecutionNode]] = []
+  let current_batch_ref : Ref[Array[ScheduleExecutionNode]] = Ref::new([])
   let current_batch_layer_ref : Ref[Int?] = Ref::new(None)
-  for execution_i in 0..<runnable_execution_order.length() {
-    let system_i = runnable_execution_order[execution_i]
-    let system_layer = graph_plan.system_layers[system_i]
-    let access = system_accesses[system_i]
-    let can_join_current_batch = Ref::new(
-      current_batch_ref.val.length() > 0 &&
-      execution_i > 0 &&
-      !apply_after_execution_order[execution_i - 1] &&
-      current_batch_layer_ref.val == Some(system_layer),
-    )
-    if can_join_current_batch.val {
-      for existing_i in current_batch_ref.val {
-        if !system_access_compatible(
-            system_accesses[existing_i],
-            access,
-            allowed_ambiguous_components,
-          ) {
-          can_join_current_batch.val = false
-          break
+  fn flush_current_batch() -> Unit {
+    if current_batch_ref.val.length() > 0 {
+      multi_threaded_batches.push(current_batch_ref.val)
+      current_batch_ref.val = []
+      current_batch_layer_ref.val = None
+    }
+  }
+  for node in execution_order {
+    match node {
+      AutoApplyDeferred(_) => {
+        flush_current_batch()
+        multi_threaded_batches.push([node])
+      }
+      ScheduledSystem(system_i) => {
+        if schedule_entry.systems[system_i].is_apply_deferred_node {
+          flush_current_batch()
+          multi_threaded_batches.push([node])
+          continue
+        }
+        let system_layer = graph_plan.system_layers[system_i]
+        let access = system_accesses[system_i]
+        let can_join_current_batch = Ref::new(
+          current_batch_ref.val.length() > 0 &&
+          current_batch_layer_ref.val == Some(system_layer),
+        )
+        if can_join_current_batch.val {
+          for existing_node in current_batch_ref.val {
+            match existing_node {
+              ScheduledSystem(existing_i) =>
+                if !system_access_compatible(
+                    system_accesses[existing_i],
+                    access,
+                    allowed_ambiguous_components,
+                  ) {
+                  can_join_current_batch.val = false
+                  break
+                }
+              AutoApplyDeferred(_) => {
+                can_join_current_batch.val = false
+                break
+              }
+            }
+          }
+        }
+        if current_batch_ref.val.length() == 0 {
+          current_batch_ref.val = [node]
+          current_batch_layer_ref.val = Some(system_layer)
+        } else if can_join_current_batch.val {
+          current_batch_ref.val.push(node)
+        } else {
+          multi_threaded_batches.push(current_batch_ref.val)
+          current_batch_ref.val = [node]
+          current_batch_layer_ref.val = Some(system_layer)
         }
       }
     }
-    if current_batch_ref.val.length() == 0 {
-      current_batch_ref.val = [system_i]
-      current_batch_layer_ref.val = Some(system_layer)
-    } else if can_join_current_batch.val {
-      current_batch_ref.val.push(system_i)
-    } else {
-      multi_threaded_batches.push(current_batch_ref.val)
-      current_batch_ref.val = [system_i]
-      current_batch_layer_ref.val = Some(system_layer)
-    }
   }
-  if current_batch_ref.val.length() > 0 {
-    multi_threaded_batches.push(current_batch_ref.val)
-  }
+  flush_current_batch()
   {
     graph_generation: graph_plan.graph_generation,
     world_id,
@@ -1159,8 +1214,7 @@ fn[W] schedule_build_access_plan(
     allowed_ambiguous_fingerprint,
     auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
     system_accesses,
-    runnable_execution_order,
-    apply_after_execution_order,
+    execution_order,
     invalid_system_errors,
     single_threaded_batches,
     multi_threaded_batches,
@@ -1183,20 +1237,16 @@ fn[W] schedule_resolve_access_plan(
   match schedule_entry.cached_access_plan {
     Some(plan) if plan.graph_generation == graph_plan.graph_generation &&
       plan.world_id == world_id &&
-      plan.component_registration_generation == component_registration_generation &&
+      plan.component_registration_generation ==
+      component_registration_generation &&
       plan.auto_insert_apply_deferred ==
       build_settings.auto_insert_apply_deferred() &&
-      plan.allowed_ambiguous_fingerprint == allowed_ambiguous_fingerprint => plan
+      plan.allowed_ambiguous_fingerprint == allowed_ambiguous_fingerprint =>
+      plan
     _ => {
       let plan = schedule_build_access_plan(
-        schedule_entry,
-        graph_plan,
-        build_settings,
-        world,
-        allowed_ambiguous_components,
-        world_id,
-        component_registration_generation,
-        allowed_ambiguous_fingerprint,
+        schedule_entry, graph_plan, build_settings, world, allowed_ambiguous_components,
+        world_id, component_registration_generation, allowed_ambiguous_fingerprint,
       )
       schedule_entry.cached_access_plan = Some(plan)
       plan
@@ -1249,9 +1299,8 @@ fn[W] schedule_execution_plan(
   }
   {
     systems: schedule_entry.systems,
-    execution_order: access_plan.runnable_execution_order,
+    execution_order: access_plan.execution_order,
     execution_batches,
-    apply_after_execution_order: access_plan.apply_after_execution_order,
     apply_final_deferred: schedule_entry.apply_final_deferred,
     set_run_conditions: schedule_entry.set_run_conditions,
     invalid_system_errors: access_plan.invalid_system_errors,
@@ -1394,8 +1443,7 @@ fn[W] schedule_push_config(
         }
         match child_config.set {
           Some(set) =>
-            if !member_sets.contains(set) &&
-              !set.has_prefix("__chain__:") {
+            if !member_sets.contains(set) && !set.has_prefix("__chain__:") {
               member_sets.push(set)
             }
           None => ()
@@ -1465,6 +1513,7 @@ fn[W] schedule_replace_entry(
   schedule_registry.entries.set(key, entry_ref)
 }
 
+///|
 pub fn[W] SubApp::add_schedule(
   self : SubApp[W],
   schedule : Schedule,
@@ -1504,11 +1553,9 @@ fn[W] schedule_configure_set_run_conditions(
     }
   }
   for cond in set_run_ifs {
-    run_conditions_ref.val.run_ifs.push(
-      fn(world : W, _state : Ref[Json]) {
-        cond(world)
-      },
-    )
+    run_conditions_ref.val.run_ifs.push(fn(world : W, _state : Ref[Json]) {
+      cond(world)
+    })
     run_conditions_ref.val.run_if_states.push(Ref::new(Json::null()))
     run_conditions_ref.val.run_if_last_run_sequences.push(0)
   }

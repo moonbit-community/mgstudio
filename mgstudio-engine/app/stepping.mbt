@@ -367,6 +367,18 @@ fn system_config_name(
 }
 
 ///|
+fn schedule_execution_node_name(
+  systems : Array[SystemConfig[@ecs.World]],
+  node : ScheduleExecutionNode,
+) -> String {
+  match node {
+    ScheduledSystem(system_i) => system_config_name(systems[system_i], system_i)
+    AutoApplyDeferred(sync_i) =>
+      "bevy_ecs::apply_deferred#auto\{sync_i.to_string()}"
+  }
+}
+
+///|
 fn stepping_begin_frame(world : @ecs.World) -> Unit {
   if stepping_resource_mut(world) is Some(stepping) {
     stepping.modify(fn(value) { stepping_next_frame(value) })
@@ -378,7 +390,7 @@ fn stepping_prepare_stage(
   stepping_ref : @ecs.ResourceMut[Stepping]?,
   stage : ScheduleStage?,
   systems : Array[SystemConfig[@ecs.World]],
-  execution_order : Array[Int],
+  execution_order : Array[ScheduleExecutionNode],
 ) -> Unit {
   guard stage is Some(schedule) else { return }
   guard stepping_ref is Some(resource_ref) else { return }
@@ -390,8 +402,10 @@ fn stepping_prepare_stage(
     return
   }
   while stepping.cursor_system < execution_order.length() {
-    let system_i = execution_order[stepping.cursor_system]
-    let system_name = system_config_name(systems[system_i], system_i)
+    let system_name = schedule_execution_node_name(
+      systems,
+      execution_order[stepping.cursor_system],
+    )
     match stepping_behavior_for(stepping, schedule, system_name) {
       AlwaysRun | NeverRun =>
         stepping.cursor_system = stepping.cursor_system + 1
@@ -409,7 +423,7 @@ fn stepping_should_run_system(
   stepping_ref : @ecs.ResourceMut[Stepping]?,
   stage : ScheduleStage?,
   systems : Array[SystemConfig[@ecs.World]],
-  system_i : Int,
+  node : ScheduleExecutionNode,
   execution_index : Int,
 ) -> Bool {
   guard stage is Some(schedule) else { return true }
@@ -418,7 +432,7 @@ fn stepping_should_run_system(
     guard schedule_index(stepping.schedules, schedule) is Some(stage_index) else {
       return true
     }
-    let system_name = system_config_name(systems[system_i], system_i)
+    let system_name = schedule_execution_node_name(systems, node)
     let behavior = stepping_behavior_for(stepping, schedule, system_name)
     guard stepping.action != RunAll else { return true }
     match behavior {
@@ -470,7 +484,7 @@ fn stepping_record_system_run(
   stepping_ref : @ecs.ResourceMut[Stepping]?,
   stage : ScheduleStage?,
   systems : Array[SystemConfig[@ecs.World]],
-  system_i : Int,
+  node : ScheduleExecutionNode,
   execution_index : Int,
 ) -> Unit {
   guard stage is Some(schedule) else { return }
@@ -481,7 +495,7 @@ fn stepping_record_system_run(
         return ()
       }
       guard stepping.action != RunAll else { return () }
-      let system_name = system_config_name(systems[system_i], system_i)
+      let system_name = schedule_execution_node_name(systems, node)
       match stepping_behavior_for(stepping, schedule, system_name) {
         AlwaysRun | NeverRun => ()
         Break | Continue =>

@@ -256,8 +256,8 @@ fn run_state_transition_hooks(
   for config_ref in matched_refs {
     matched_configs.push(config_ref.val)
   }
-  let execution_order : Array[Int] = []
-  let execution_batches : Array[Array[Int]] = []
+  let execution_order : Array[ScheduleExecutionNode] = []
+  let execution_batches : Array[Array[ScheduleExecutionNode]] = []
   for i in 0..<matched_configs.length() {
     let access = match matched_configs[i].access_factory {
       Some(access_factory) => access_factory(world)
@@ -275,8 +275,9 @@ fn run_state_transition_hooks(
           ),
         )
       None => {
-        execution_order.push(i)
-        execution_batches.push([i])
+        let node = ScheduledSystem(i)
+        execution_order.push(node)
+        execution_batches.push([node])
       }
     }
   }
@@ -285,7 +286,6 @@ fn run_state_transition_hooks(
     matched_configs,
     execution_order,
     execution_batches,
-    [],
     current_schedule_stage(),
   )
   for i in 0..<matched_refs.length() {
