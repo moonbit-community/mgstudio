@@ -555,10 +555,14 @@ fn main {
   let args = parse_args()
   let keyboard_animation_control_system : @app.SystemConfig[
     @ecs.World,
-  ] = @app.system(@app.system_param4(keyboard_animation_control))
+  ] = @app.system(@app.system_param4(keyboard_animation_control)).named(
+    "examples.stress_tests.many_foxes.keyboard_animation_control",
+  )
   let update_fox_rings_system : @app.SystemConfig[
     @ecs.World,
-  ] = @app.system(@app.system_param3(update_fox_rings))
+  ] = @app.system(@app.system_param3(update_fox_rings)).named(
+    "examples.stress_tests.many_foxes.update_fox_rings",
+  )
   let app = @app.App::new(@ecs.World::new())
     .insert_resource(Foxes::{
       ..Foxes::default(),
@@ -578,7 +582,13 @@ fn main {
     )
     .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
     .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
-    .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+    .add_plugins(@diagnostic.TimelineTracePlugin::default())
+    .add_systems(
+      @app.Startup,
+      @app.system(@app.system_param3(setup)).named(
+        "examples.stress_tests.many_foxes.setup",
+      ),
+    )
     .add_systems(
       @app.Update,
       (
@@ -588,7 +598,9 @@ fn main {
     )
     .add_systems(
       @app.PostUpdate,
-      @app.system(@app.system_param2(stress_metrics_system)),
+      @app.system(@app.system_param2(stress_metrics_system)).named(
+        "examples.stress_tests.many_foxes.stress_metrics",
+      ),
     )
   if args.dump_postupdate_schedule {
     println(app.schedule_graph_dot(@app.PostUpdate))

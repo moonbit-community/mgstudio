@@ -63,7 +63,7 @@ fn run_systems(
             if set.has_prefix("__chain__:") {
               system_default_trace_name(cfg, stage, fallback_index)
             } else {
-              "\{set}#\{fallback_index.to_string()}"
+              "\{set}::\{system_default_trace_name(cfg, stage, fallback_index)}"
             }
           None => system_default_trace_name(cfg, stage, fallback_index)
         }

@@ -904,8 +904,10 @@ fn[W] system_config_with_access(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W, P : SystemParam] system_config_param(
   system : (P) -> Unit,
+  loc~ : SourceLoc,
 ) -> SystemConfig[W] {
   system_config_with_access(system_param(system), fn(world : @ecs.World) {
     let access = SystemAccess::new()
@@ -915,12 +917,14 @@ pub fn[W, P : SystemParam] system_config_param(
       @hashmap.HashMap::new(),
     )
     access
-  })
+  }, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W, P : SystemParam] fallible_system_config_param(
   system : (P) -> Unit raise,
+  loc~ : SourceLoc,
 ) -> SystemConfig[W] {
   system_config_with_access(fallible_system_param(system), fn(
     world : @ecs.World,
@@ -932,12 +936,14 @@ pub fn[W, P : SystemParam] fallible_system_config_param(
       @hashmap.HashMap::new(),
     )
     access
-  })
+  }, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W, P1 : SystemParam, P2 : SystemParam] system_config_param2(
   system : (P1, P2) -> Unit,
+  loc~ : SourceLoc,
 ) -> SystemConfig[W] {
   system_config_with_access(system_param2(system), fn(world : @ecs.World) {
     let access = SystemAccess::new()
@@ -952,12 +958,14 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] system_config_param2(
       @hashmap.HashMap::new(),
     )
     access
-  })
+  }, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_config_param2(
   system : (P1, P2) -> Unit raise,
+  loc~ : SourceLoc,
 ) -> SystemConfig[W] {
   system_config_with_access(fallible_system_param2(system), fn(
     world : @ecs.World,
@@ -974,12 +982,14 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_config_param2(
       @hashmap.HashMap::new(),
     )
     access
-  })
+  }, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_config_param3(
   system : (P1, P2, P3) -> Unit,
+  loc~ : SourceLoc,
 ) -> SystemConfig[W] {
   system_config_with_access(system_param3(system), fn(world : @ecs.World) {
     let access = SystemAccess::new()
@@ -999,12 +1009,14 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_config_pa
       @hashmap.HashMap::new(),
     )
     access
-  })
+  }, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_config_param3(
   system : (P1, P2, P3) -> Unit raise,
+  loc~ : SourceLoc,
 ) -> SystemConfig[W] {
   system_config_with_access(fallible_system_param3(system), fn(
     world : @ecs.World,
@@ -1026,10 +1038,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_
       @hashmap.HashMap::new(),
     )
     access
-  })
+  }, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[
   W,
   P1 : SystemParam,
@@ -1038,6 +1051,7 @@ pub fn[
   P4 : SystemParam,
 ] system_config_param4(
   system : (P1, P2, P3, P4) -> Unit,
+  loc~ : SourceLoc,
 ) -> SystemConfig[W] {
   system_config_with_access(system_param4(system), fn(world : @ecs.World) {
     let access = SystemAccess::new()
@@ -1062,10 +1076,11 @@ pub fn[
       @hashmap.HashMap::new(),
     )
     access
-  })
+  }, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[
   W,
   P1 : SystemParam,
@@ -1074,6 +1089,7 @@ pub fn[
   P4 : SystemParam,
 ] fallible_system_config_param4(
   system : (P1, P2, P3, P4) -> Unit raise,
+  loc~ : SourceLoc,
 ) -> SystemConfig[W] {
   system_config_with_access(fallible_system_param4(system), fn(
     world : @ecs.World,
@@ -1100,7 +1116,7 @@ pub fn[
       @hashmap.HashMap::new(),
     )
     access
-  })
+  }, loc~)
 }
 
 ///|
@@ -2433,14 +2449,16 @@ pub fn[W] App::add_pre_startup_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_pre_startup_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     PreStartup,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -2513,11 +2531,17 @@ pub fn[W] App::add_startup_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_startup_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
-  schedule_push_config(self.sub_apps.main.schedule, Startup, system(system_fn))
+  schedule_push_config(
+    self.sub_apps.main.schedule,
+    Startup,
+    system(system_fn, loc~),
+  )
   self
 }
 
@@ -2589,14 +2613,16 @@ pub fn[W] App::add_post_startup_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_post_startup_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     PostStartup,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -2669,11 +2695,17 @@ pub fn[W] App::add_first_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_first_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
-  schedule_push_config(self.sub_apps.main.schedule, First, system(system_fn))
+  schedule_push_config(
+    self.sub_apps.main.schedule,
+    First,
+    system(system_fn, loc~),
+  )
   self
 }
 
@@ -2745,14 +2777,16 @@ pub fn[W] App::add_pre_update_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_pre_update_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     PreUpdate,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -2825,14 +2859,16 @@ pub fn[W] App::add_run_fixed_main_loop_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_run_fixed_main_loop_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     RunFixedMainLoop,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -2905,14 +2941,16 @@ pub fn[W] App::add_fixed_first_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_fixed_first_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedFirst,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -2985,14 +3023,16 @@ pub fn[W] App::add_fixed_pre_update_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_fixed_pre_update_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedPreUpdate,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -3065,14 +3105,16 @@ pub fn[W] App::add_fixed_update_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_fixed_update_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedUpdate,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -3145,14 +3187,16 @@ pub fn[W] App::add_fixed_post_update_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_fixed_post_update_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedPostUpdate,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -3225,14 +3269,16 @@ pub fn[W] App::add_fixed_last_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_fixed_last_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     FixedLast,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -3305,8 +3351,17 @@ pub fn[W] App::add_system_config(
 }
 
 ///|
-pub fn[W] App::add_system(self : App[W], system_fn : SystemFn[W]) -> App[W] {
-  schedule_push_config(self.sub_apps.main.schedule, Update, system(system_fn))
+#callsite(autofill(loc))
+pub fn[W] App::add_system(
+  self : App[W],
+  system_fn : SystemFn[W],
+  loc~ : SourceLoc,
+) -> App[W] {
+  schedule_push_config(
+    self.sub_apps.main.schedule,
+    Update,
+    system(system_fn, loc~),
+  )
   self
 }
 
@@ -3378,14 +3433,16 @@ pub fn[W] App::add_spawn_scene_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_spawn_scene_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     SpawnScene,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -3458,14 +3515,16 @@ pub fn[W] App::add_post_update_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_post_update_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
   schedule_push_config(
     self.sub_apps.main.schedule,
     PostUpdate,
-    system(system_fn),
+    system(system_fn, loc~),
   )
   self
 }
@@ -3538,11 +3597,17 @@ pub fn[W] App::add_last_system_config(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[W] App::add_last_system(
   self : App[W],
   system_fn : SystemFn[W],
+  loc~ : SourceLoc,
 ) -> App[W] {
-  schedule_push_config(self.sub_apps.main.schedule, Last, system(system_fn))
+  schedule_push_config(
+    self.sub_apps.main.schedule,
+    Last,
+    system(system_fn, loc~),
+  )
   self
 }
 
