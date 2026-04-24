@@ -146,8 +146,6 @@ pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapL
 
 pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
 
-pub let ecs_key_extracted_material_instances_3d : @ecs.ResourceKey[ExtractedMaterialInstances3d]
-
 pub let ecs_key_fog_volume : @ecs.ComponentKey[@light.FogVolume]
 
 pub let ecs_key_forward_decal : @ecs.ComponentKey[@decal.ForwardDecal]
@@ -477,8 +475,6 @@ pub fn render3d_material_allocator_slabs_path(String) -> String
 pub fn render3d_material_allocator_slabs_size_path(String) -> String
 
 pub fn render3d_material_allocator_snapshot_for_key(MaterialBindGroupAllocators, String) -> MaterialAllocatorDiagnosticsSnapshot?
-
-pub fn render3d_material_instance_for_entity(@ecs.World, @core.Entity) -> ExtractedMaterialInstance3d?
 
 pub fn render3d_orthographic_projection_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @render.Frustum
 
@@ -872,17 +868,6 @@ pub fn[B, E : MaterialExtension] ExtendedMaterial::metadata(Self[B, E]) -> @mate
 pub fn[B, E] ExtendedMaterial::new(B, E) -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::with_base(Self[B, E], B) -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::with_extension(Self[B, E], E) -> Self[B, E]
-
-pub struct ExtractedMaterialInstance3d {
-  entity : @core.Entity
-  properties : @material.MaterialProperties
-}
-
-pub struct ExtractedMaterialInstances3d {
-  mut by_entity_id : Map[Int, ExtractedMaterialInstance3d]
-}
-pub fn ExtractedMaterialInstances3d::default() -> Self
-pub impl @app.Resource for ExtractedMaterialInstances3d
 
 pub enum FogFalloff3d {
   Linear(Float, Float)

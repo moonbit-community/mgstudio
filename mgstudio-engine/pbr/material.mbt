@@ -105,35 +105,6 @@ pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
   MaterialsPlugin::default()
 }
 
-///|
-pub struct ExtractedMaterialInstance3d {
-  entity : @core.Entity
-  properties : @material.MaterialProperties
-}
-
-///|
-pub struct ExtractedMaterialInstances3d {
-  mut by_entity_id : Map[Int, ExtractedMaterialInstance3d]
-}
-
-///|
-pub fn ExtractedMaterialInstances3d::default() -> ExtractedMaterialInstances3d {
-  ExtractedMaterialInstances3d::{ by_entity_id: {} }
-}
-
-///|
-pub let ecs_key_extracted_material_instances_3d : @ecs.ResourceKey[
-  ExtractedMaterialInstances3d,
-] = @ecs.register_resource(
-  debug_name="mgstudio_pbr::ExtractedMaterialInstances3d",
-)
-
-///|
-pub impl @app.Resource for ExtractedMaterialInstances3d with resource() {
-  ecs_key_extracted_material_instances_3d
-}
-
-///|
 pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 0x0001UL
 
 ///|
@@ -187,80 +158,11 @@ fn render3d_material_properties_for_standard_material(
 }
 
 ///|
-fn render3d_extracted_material_instance_for_mesh(
-  mesh : ExtractedMesh3d,
-  default_opaque_renderer_method : OpaqueRendererMethod,
-  prepass_enabled : Bool,
-) -> ExtractedMaterialInstance3d {
-  let material = mesh.payload.material
-  let extension = mesh.payload.material_extension
-  let properties = render3d_material_properties_for_standard_material(
-    material, extension, default_opaque_renderer_method, prepass_enabled,
-  )
-  ExtractedMaterialInstance3d::{ entity: mesh.entity.main_entity, properties }
-}
-
-///|
-fn render3d_extracted_material_entity_id(entity : @core.Entity) -> Int {
-  entity.id * 131 + entity.generation
-}
-
-///|
-fn render3d_extracted_material_instances_ref_or_init(
-  world : @ecs.World,
-) -> Ref[ExtractedMaterialInstances3d] {
-  if (try! world.get_resource(ExtractedMaterialInstances3d::resource())) is None {
-    world.insert_resource(
-      ExtractedMaterialInstances3d::resource(),
-      ExtractedMaterialInstances3d::default(),
-    )
-  }
-  match
-    (try! world.get_resource_mut(ExtractedMaterialInstances3d::resource())) {
-    Some(v) => Ref::new(v.peek())
-    None => abort("Missing ExtractedMaterialInstances3d resource")
-  }
-}
-
-///|
 fn render3d_material_default_opaque_renderer_method(
   world : @ecs.World,
 ) -> OpaqueRendererMethod {
   match (try! world.get_resource(ecs_key_default_opaque_renderer_method)) {
     Some(default_method) => default_method.renderer_method()
     None => OpaqueRendererMethod::Forward
-  }
-}
-
-///|
-fn render3d_extract_material_instances(
-  world : @ecs.World,
-  meshes : Array[ExtractedMesh3d],
-) -> Unit {
-  let extracted_ref = render3d_extracted_material_instances_ref_or_init(world)
-  let default_opaque_renderer_method = render3d_material_default_opaque_renderer_method(
-    world,
-  )
-  let prepass_enabled = standard_material_prepass_enabled(world)
-  let next : Map[Int, ExtractedMaterialInstance3d] = {}
-  for mesh in meshes {
-    let instance = render3d_extracted_material_instance_for_mesh(
-      mesh, default_opaque_renderer_method, prepass_enabled,
-    )
-    let entity_id = render3d_extracted_material_entity_id(instance.entity)
-    next.set(entity_id, instance)
-  }
-  extracted_ref.val.by_entity_id = next
-}
-
-///|
-pub fn render3d_material_instance_for_entity(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> ExtractedMaterialInstance3d? {
-  match (try! world.get_resource(ExtractedMaterialInstances3d::resource())) {
-    Some(instances) =>
-      instances.by_entity_id.get(render3d_extracted_material_entity_id(entity))
-    None => None
   }
 }

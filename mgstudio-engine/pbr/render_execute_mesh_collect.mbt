@@ -19,49 +19,6 @@ fn render3d_mesh_entity_key(entity : @core.Entity) -> UInt64 {
   (hi << 32) | lo
 }
 
-///|
-priv struct Render3dExtractedMeshCache {
-  by_entity : Map[UInt64, ExtractedMesh3d]
-  reextract_next_frame : Map[UInt64, @core.Entity]
-}
-
-///|
-fn render3d_extracted_mesh_cache_default() -> Render3dExtractedMeshCache {
-  Render3dExtractedMeshCache::{ by_entity: {}, reextract_next_frame: {} }
-}
-
-///|
-let render3d_extracted_mesh_cache_key : @ecs.ResourceKey[
-  Render3dExtractedMeshCache,
-] = @ecs.register_resource(debug_name="mgstudio.render3d.extracted_mesh_cache")
-
-///|
-impl @app.Resource for Render3dExtractedMeshCache with resource() {
-  render3d_extracted_mesh_cache_key
-}
-
-///|
-fn ensure_render3d_extracted_mesh_cache(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(Render3dExtractedMeshCache::resource())) is None {
-    world.insert_resource(
-      Render3dExtractedMeshCache::resource(),
-      render3d_extracted_mesh_cache_default(),
-    )
-  }
-}
-
-///|
-fn render3d_extracted_mesh_cache_ref_or_abort(
-  world : @ecs.World,
-) -> Ref[Render3dExtractedMeshCache] {
-  ensure_render3d_extracted_mesh_cache(world)
-  match (try! world.get_resource_mut(Render3dExtractedMeshCache::resource())) {
-    Some(cache_ref) => Ref::new(cache_ref.peek())
-    None => abort("Missing Render3dExtractedMeshCache resource in render world")
-  }
-}
-
-///|
 fn render3d_resolve_standard_material(
   material_handle : MeshMaterial3d,
   standard_material_frame_cache : Map[Int, StandardMaterial],
@@ -100,6 +57,8 @@ fn render3d_extract_mesh_for_entity(
   world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
   standard_material_frame_cache : Map[Int, StandardMaterial],
   needs_mesh_previous_transform : Bool,
+  default_opaque_renderer_method : OpaqueRendererMethod,
+  material_prepass_enabled : Bool,
   required_components : Render3dExtractMeshRequiredComponents?,
 ) -> (ExtractedMesh3d?, Bool) {
   guard source_world.is_alive(entity) else { return (None, false) }
@@ -184,6 +143,21 @@ fn render3d_extract_mesh_for_entity(
     base_material,
     material_handle.extended_material,
   )
+  let material_properties = render3d_material_properties_for_standard_material(
+    material,
+    material_handle.extended_material,
+    default_opaque_renderer_method,
+    material_prepass_enabled,
+  )
+  let material_shader_path = match
+    material_properties.get_shader("material.fragment") {
+    Some(path) => Some(path)
+    None =>
+      match material_handle.extended_material {
+        Some(extension) => extension.shader_path
+        None => None
+      }
+  }
   let layers = match prefetched_layers {
     Some(v) => v
     None => @sprite.RenderLayers::default()
@@ -307,6 +281,8 @@ fn render3d_extract_mesh_for_entity(
         aabb_center_world,
         material,
         material_extension: material_handle.extended_material,
+        material_properties,
+        material_shader_path,
         lightmap,
         is_forward_decal,
         forward_decal_material_ext,
@@ -344,9 +320,10 @@ fn render3d_execute_collect_meshes(
     "execute_3d_collect_meshes",
   )
   let standard_material_frame_cache : Map[Int, StandardMaterial] = {}
-  let mesh_cache_ref = render3d_extracted_mesh_cache_ref_or_abort(world)
-  mesh_cache_ref.val.by_entity.clear()
-  mesh_cache_ref.val.reextract_next_frame.clear()
+  let default_opaque_renderer_method = render3d_material_default_opaque_renderer_method(
+    world,
+  )
+  let material_prepass_enabled = standard_material_prepass_enabled(world)
   let meshes : Array[ExtractedMesh3d] = []
   let mesh_query : @ecs.Query[
     (
@@ -370,7 +347,6 @@ fn render3d_execute_collect_meshes(
       (mesh3d, material, view_visibility, global_transform),
       (previous_global_transform, render_layers),
     ) = data
-    let entity_key = render3d_mesh_entity_key(entity)
     let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
       source_world,
       entity,
@@ -380,6 +356,8 @@ fn render3d_execute_collect_meshes(
       world_transform_cache_ref,
       standard_material_frame_cache,
       needs_mesh_previous_transform,
+      default_opaque_renderer_method,
+      material_prepass_enabled,
       Some(Render3dExtractMeshRequiredComponents::{
         mesh3d: mesh3d.value(),
         material_handle: material.value(),
@@ -390,15 +368,10 @@ fn render3d_execute_collect_meshes(
       }),
     )
     match next_mesh {
-      Some(extracted_mesh) => {
-        mesh_cache_ref.val.by_entity.set(entity_key, extracted_mesh)
-        meshes.push(extracted_mesh)
-      }
-      None => mesh_cache_ref.val.by_entity.remove(entity_key)
+      Some(extracted_mesh) => meshes.push(extracted_mesh)
+      None => ()
     }
-    if needs_reextract_next_frame {
-      mesh_cache_ref.val.reextract_next_frame.set(entity_key, entity)
-    }
+    ignore(needs_reextract_next_frame)
   })
   ignore(needs_mesh_previous_transform)
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(

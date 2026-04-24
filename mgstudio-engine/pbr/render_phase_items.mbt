@@ -140,6 +140,8 @@ priv struct Mesh3dExtractedPayload {
   aabb_center_world : @math.Vec3?
   material : StandardMaterial
   material_extension : ExtendedMaterialMetadata3d?
+  material_properties : @material.MaterialProperties
+  material_shader_path : String?
   lightmap : Lightmap?
   is_forward_decal : Bool
   forward_decal_material_ext : ForwardDecalMaterialExt?

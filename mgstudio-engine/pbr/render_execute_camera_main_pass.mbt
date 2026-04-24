@@ -104,7 +104,6 @@ fn render3d_execute_camera_main_pass(
   camera_forward_decal_enabled : Bool,
   camera_clustered_decal_enabled : Bool,
   camera_deferred_enabled : Bool,
-  default_opaque_renderer_method : OpaqueRendererMethod,
   camera_near : Float,
   camera_far : Float,
   distance_fog : DistanceFog,
@@ -115,7 +114,6 @@ fn render3d_execute_camera_main_pass(
   wireframe_config : WireframeConfig?,
 ) -> Unit {
   let draw_items = draw_queue_entry.draw_items
-  let material_prepass_enabled = standard_material_prepass_enabled(world)
   fn prepare_view_bind_group(transmission_source_texture_id : Int) -> Unit {
     @render.host_gpu_prepare_mesh3d_view_bind_group(
       transmission_source_texture_id~,
@@ -181,10 +179,6 @@ fn render3d_execute_camera_main_pass(
     let draw_item = draw_items[draw_item_index]
     let extracted_mesh = meshes[draw_item.extracted_index]
     let mesh = extracted_mesh.payload
-    let extracted_material_instance = render3d_material_instance_for_entity(
-      world,
-      extracted_mesh.entity.main_entity,
-    )
     if mesh.is_forward_decal && !camera_forward_decal_enabled {
       continue
     }
@@ -199,16 +193,7 @@ fn render3d_execute_camera_main_pass(
         continue
       }
     }
-    let material_properties = match extracted_material_instance {
-      Some(instance) => instance.properties
-      None =>
-        render3d_material_properties_for_standard_material(
-          mesh.material,
-          mesh.material_extension,
-          default_opaque_renderer_method,
-          material_prepass_enabled,
-        )
-    }
+    let material_properties = mesh.material_properties
     let mesh_opaque_mode = material_properties.render_method
     if mesh_opaque_mode is OpaqueRendererMethod::Deferred &&
       !camera_deferred_enabled {
