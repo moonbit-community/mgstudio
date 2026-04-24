@@ -37,15 +37,21 @@ fn single_threaded_executor_state_new(
 }
 
 ///|
-fn single_threaded_resize_bool_array(values : Array[Bool], len : Int) -> Unit {
+fn single_threaded_resize_bool_array(
+  values : Array[Bool],
+  len : Int,
+  clear : Bool,
+) -> Unit {
   while values.length() < len {
     values.push(false)
   }
   while values.length() > len {
     values.pop().unwrap() |> ignore
   }
-  for i in 0..<values.length() {
-    values[i] = false
+  if clear {
+    for i in 0..<values.length() {
+      values[i] = false
+    }
   }
 }
 
@@ -56,9 +62,24 @@ fn SingleThreadedExecutorState::init(
   set_count : Int,
   apply_final_deferred : Bool,
 ) -> Unit {
-  single_threaded_resize_bool_array(self.evaluated_sets, set_count)
-  single_threaded_resize_bool_array(self.completed_systems, system_count)
-  single_threaded_resize_bool_array(self.unapplied_systems, system_count)
+  single_threaded_resize_bool_array(self.evaluated_sets, set_count, true)
+  single_threaded_resize_bool_array(self.completed_systems, system_count, true)
+  single_threaded_resize_bool_array(self.unapplied_systems, system_count, true)
+  self.apply_final_deferred = apply_final_deferred
+}
+
+///|
+fn SingleThreadedExecutorState::prepare_run(
+  self : SingleThreadedExecutorState,
+  system_count : Int,
+  set_count : Int,
+  apply_final_deferred : Bool,
+) -> Unit {
+  single_threaded_resize_bool_array(self.evaluated_sets, set_count, true)
+  single_threaded_resize_bool_array(self.completed_systems, system_count, true)
+  if self.unapplied_systems.length() != system_count {
+    single_threaded_resize_bool_array(self.unapplied_systems, system_count, true)
+  }
   self.apply_final_deferred = apply_final_deferred
 }
 
@@ -71,9 +92,6 @@ fn SingleThreadedExecutorState::clear_run_state(
   }
   for i in 0..<self.completed_systems.length() {
     self.completed_systems[i] = false
-  }
-  for i in 0..<self.unapplied_systems.length() {
-    self.unapplied_systems[i] = false
   }
 }
 

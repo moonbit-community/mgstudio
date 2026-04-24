@@ -89,7 +89,11 @@ fn run_systems(
   begin_deferred_command_batch()
   let executor_state = match executor_state_ref {
     Some(state_ref) => {
-      state_ref.val.init(systems.length(), set_ids.length(), apply_final_deferred)
+      state_ref.val.prepare_run(
+        systems.length(),
+        set_ids.length(),
+        apply_final_deferred,
+      )
       state_ref.val
     }
     None =>
