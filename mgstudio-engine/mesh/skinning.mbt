@@ -443,6 +443,71 @@ pub fn SkinningMat4::mul_write_row_major_f32(
 }
 
 ///|
+pub fn SkinningMat4::write_affine3_mul_row_major_f32(
+  self : SkinningMat4,
+  affine : @math.Affine3,
+  out : Array[Float],
+  base_index : Int,
+) -> Unit {
+  let x_axis = affine.matrix3.x_axis
+  let y_axis = affine.matrix3.y_axis
+  let z_axis = affine.matrix3.z_axis
+  let translation = affine.translation
+  out[base_index] = x_axis.x * self.m00 +
+    y_axis.x * self.m10 +
+    z_axis.x * self.m20 +
+    translation.x * self.m30
+  out[base_index + 1] = x_axis.x * self.m01 +
+    y_axis.x * self.m11 +
+    z_axis.x * self.m21 +
+    translation.x * self.m31
+  out[base_index + 2] = x_axis.x * self.m02 +
+    y_axis.x * self.m12 +
+    z_axis.x * self.m22 +
+    translation.x * self.m32
+  out[base_index + 3] = x_axis.x * self.m03 +
+    y_axis.x * self.m13 +
+    z_axis.x * self.m23 +
+    translation.x * self.m33
+  out[base_index + 4] = x_axis.y * self.m00 +
+    y_axis.y * self.m10 +
+    z_axis.y * self.m20 +
+    translation.y * self.m30
+  out[base_index + 5] = x_axis.y * self.m01 +
+    y_axis.y * self.m11 +
+    z_axis.y * self.m21 +
+    translation.y * self.m31
+  out[base_index + 6] = x_axis.y * self.m02 +
+    y_axis.y * self.m12 +
+    z_axis.y * self.m22 +
+    translation.y * self.m32
+  out[base_index + 7] = x_axis.y * self.m03 +
+    y_axis.y * self.m13 +
+    z_axis.y * self.m23 +
+    translation.y * self.m33
+  out[base_index + 8] = x_axis.z * self.m00 +
+    y_axis.z * self.m10 +
+    z_axis.z * self.m20 +
+    translation.z * self.m30
+  out[base_index + 9] = x_axis.z * self.m01 +
+    y_axis.z * self.m11 +
+    z_axis.z * self.m21 +
+    translation.z * self.m31
+  out[base_index + 10] = x_axis.z * self.m02 +
+    y_axis.z * self.m12 +
+    z_axis.z * self.m22 +
+    translation.z * self.m32
+  out[base_index + 11] = x_axis.z * self.m03 +
+    y_axis.z * self.m13 +
+    z_axis.z * self.m23 +
+    translation.z * self.m33
+  out[base_index + 12] = self.m30
+  out[base_index + 13] = self.m31
+  out[base_index + 14] = self.m32
+  out[base_index + 15] = self.m33
+}
+
+///|
 pub fn SkinningMat4::transform_point3(
   self : SkinningMat4,
   point : @math.Vec3,

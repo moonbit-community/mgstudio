@@ -428,18 +428,18 @@ fn render3d_mesh_local_aabb_center(mesh3d : Mesh3d) -> @math.Vec3? {
 fn render3d_visibility_range_visible(
   visibility_range : @visibility.VisibilityRange,
   camera_transform : @transform.Transform,
-  mesh_transform : @transform.Transform,
+  mesh_position : @math.Vec3,
   mesh_aabb_center_world : @math.Vec3?,
 ) -> Bool {
-  let mesh_position = if visibility_range.use_aabb() {
+  let resolved_mesh_position = if visibility_range.use_aabb() {
     match mesh_aabb_center_world {
       Some(center) => center
-      None => mesh_transform.translation
+      None => mesh_position
     }
   } else {
-    mesh_transform.translation
+    mesh_position
   }
-  let to_mesh = mesh_position.sub(camera_transform.translation)
+  let to_mesh = resolved_mesh_position.sub(camera_transform.translation)
   let distance = to_mesh.length()
   visibility_range.is_visible_at_all(distance)
 }

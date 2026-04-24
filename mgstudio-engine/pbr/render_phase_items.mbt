@@ -132,6 +132,8 @@ priv struct Mesh3dExtractedPayload {
   mesh_topology_kind : Int
   mesh_is_indexed : Bool
   mesh_preprocess_static : MeshPreprocessStatic3d?
+  world_from_local : @math.Affine3
+  previous_world_from_local : @math.Affine3
   transform : @transform.Transform
   previous_transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?

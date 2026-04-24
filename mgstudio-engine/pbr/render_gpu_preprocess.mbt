@@ -54,22 +54,36 @@ fn render3d_mesh_frustum_visible(
   if !mesh_static.has_local_aabb {
     return true
   }
-  let center_world = @pbr_render.render3d_transform_point(
-    payload.transform,
+  let center_world = payload.world_from_local.transform_point3(
     mesh_static.aabb_center,
   )
-  let scaled_half_extents = @math.Vec3::new(
-    mesh_static.aabb_half_extents.x * render3d_absf(payload.transform.scale.x),
-    mesh_static.aabb_half_extents.y * render3d_absf(payload.transform.scale.y),
-    mesh_static.aabb_half_extents.z * render3d_absf(payload.transform.scale.z),
-  )
-  let radius = scaled_half_extents.length()
+  let matrix3 = payload.world_from_local.matrix3
   for plane in camera_frustum_planes {
     let signed_distance = plane.normal_x * center_world.x +
       plane.normal_y * center_world.y +
       plane.normal_z * center_world.z +
       plane.distance
-    if signed_distance < 0.0F - radius {
+    // Bevy `mesh_preprocess.wgsl::view_frustum_intersects_obb` computes an
+    // OBB radius by projecting each world-space model axis onto the plane.
+    let relative_radius = render3d_absf(
+        plane.normal_x * matrix3.x_axis.x +
+        plane.normal_y * matrix3.x_axis.y +
+        plane.normal_z * matrix3.x_axis.z,
+      ) *
+      mesh_static.aabb_half_extents.x +
+      render3d_absf(
+        plane.normal_x * matrix3.y_axis.x +
+        plane.normal_y * matrix3.y_axis.y +
+        plane.normal_z * matrix3.y_axis.z,
+      ) *
+      mesh_static.aabb_half_extents.y +
+      render3d_absf(
+        plane.normal_x * matrix3.z_axis.x +
+        plane.normal_y * matrix3.z_axis.y +
+        plane.normal_z * matrix3.z_axis.z,
+      ) *
+      mesh_static.aabb_half_extents.z
+    if signed_distance < 0.0F - relative_radius {
       return false
     }
   }
@@ -114,7 +128,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       !render3d_visibility_range_visible(
         visibility_range,
         camera_transform,
-        payload.transform,
+        payload.world_from_local.translation,
         payload.aabb_center_world,
       ) {
       continue
@@ -139,8 +153,8 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       entity: mesh.entity,
       extracted_index: i,
       phase,
-      distance: @pbr_render.render3d_mesh_view_depth(
-        payload.transform,
+      distance: @pbr_render.render3d_mesh_position_view_depth(
+        payload.world_from_local.translation,
         camera_transform,
       ),
     })
@@ -197,7 +211,7 @@ fn render3d_collect_meshes_for_gpu_building(
       !render3d_visibility_range_visible(
         visibility_range,
         camera_transform,
-        payload.transform,
+        payload.world_from_local.translation,
         payload.aabb_center_world,
       ) {
       continue
@@ -221,8 +235,8 @@ fn render3d_collect_meshes_for_gpu_building(
       entity: mesh.entity,
       extracted_index: i,
       phase,
-      distance: @pbr_render.render3d_mesh_view_depth(
-        payload.transform,
+      distance: @pbr_render.render3d_mesh_position_view_depth(
+        payload.world_from_local.translation,
         camera_transform,
       ),
     })
@@ -1052,6 +1066,30 @@ fn render3d_host_preprocess_mesh_input(
       previous_scale_x: 1.0F,
       previous_scale_y: 1.0F,
       previous_scale_z: 1.0F,
+      world_from_local_x_axis_x: 1.0F,
+      world_from_local_x_axis_y: 0.0F,
+      world_from_local_x_axis_z: 0.0F,
+      world_from_local_y_axis_x: 0.0F,
+      world_from_local_y_axis_y: 1.0F,
+      world_from_local_y_axis_z: 0.0F,
+      world_from_local_z_axis_x: 0.0F,
+      world_from_local_z_axis_y: 0.0F,
+      world_from_local_z_axis_z: 1.0F,
+      world_from_local_translation_x: 0.0F,
+      world_from_local_translation_y: 0.0F,
+      world_from_local_translation_z: 0.0F,
+      previous_world_from_local_x_axis_x: 1.0F,
+      previous_world_from_local_x_axis_y: 0.0F,
+      previous_world_from_local_x_axis_z: 0.0F,
+      previous_world_from_local_y_axis_x: 0.0F,
+      previous_world_from_local_y_axis_y: 1.0F,
+      previous_world_from_local_y_axis_z: 0.0F,
+      previous_world_from_local_z_axis_x: 0.0F,
+      previous_world_from_local_z_axis_y: 0.0F,
+      previous_world_from_local_z_axis_z: 1.0F,
+      previous_world_from_local_translation_x: 0.0F,
+      previous_world_from_local_translation_y: 0.0F,
+      previous_world_from_local_translation_z: 0.0F,
       flags: 0U,
       first_vertex_index: 0,
       first_index_index: 0,
@@ -1102,6 +1140,30 @@ fn render3d_host_preprocess_mesh_input(
     previous_scale_x: mesh.previous_transform.scale.x,
     previous_scale_y: mesh.previous_transform.scale.y,
     previous_scale_z: mesh.previous_transform.scale.z,
+    world_from_local_x_axis_x: mesh.world_from_local.matrix3.x_axis.x,
+    world_from_local_x_axis_y: mesh.world_from_local.matrix3.x_axis.y,
+    world_from_local_x_axis_z: mesh.world_from_local.matrix3.x_axis.z,
+    world_from_local_y_axis_x: mesh.world_from_local.matrix3.y_axis.x,
+    world_from_local_y_axis_y: mesh.world_from_local.matrix3.y_axis.y,
+    world_from_local_y_axis_z: mesh.world_from_local.matrix3.y_axis.z,
+    world_from_local_z_axis_x: mesh.world_from_local.matrix3.z_axis.x,
+    world_from_local_z_axis_y: mesh.world_from_local.matrix3.z_axis.y,
+    world_from_local_z_axis_z: mesh.world_from_local.matrix3.z_axis.z,
+    world_from_local_translation_x: mesh.world_from_local.translation.x,
+    world_from_local_translation_y: mesh.world_from_local.translation.y,
+    world_from_local_translation_z: mesh.world_from_local.translation.z,
+    previous_world_from_local_x_axis_x: mesh.previous_world_from_local.matrix3.x_axis.x,
+    previous_world_from_local_x_axis_y: mesh.previous_world_from_local.matrix3.x_axis.y,
+    previous_world_from_local_x_axis_z: mesh.previous_world_from_local.matrix3.x_axis.z,
+    previous_world_from_local_y_axis_x: mesh.previous_world_from_local.matrix3.y_axis.x,
+    previous_world_from_local_y_axis_y: mesh.previous_world_from_local.matrix3.y_axis.y,
+    previous_world_from_local_y_axis_z: mesh.previous_world_from_local.matrix3.y_axis.z,
+    previous_world_from_local_z_axis_x: mesh.previous_world_from_local.matrix3.z_axis.x,
+    previous_world_from_local_z_axis_y: mesh.previous_world_from_local.matrix3.z_axis.y,
+    previous_world_from_local_z_axis_z: mesh.previous_world_from_local.matrix3.z_axis.z,
+    previous_world_from_local_translation_x: mesh.previous_world_from_local.translation.x,
+    previous_world_from_local_translation_y: mesh.previous_world_from_local.translation.y,
+    previous_world_from_local_translation_z: mesh.previous_world_from_local.translation.z,
     flags,
     first_vertex_index: metadata.first_vertex_index,
     first_index_index: metadata.first_index_index,

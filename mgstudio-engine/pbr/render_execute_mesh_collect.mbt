@@ -21,18 +21,13 @@ fn render3d_mesh_entity_key(entity : @core.Entity) -> UInt64 {
 
 ///|
 priv struct Render3dExtractedMeshCache {
-  mut initialized : Bool
   by_entity : Map[UInt64, ExtractedMesh3d]
   reextract_next_frame : Map[UInt64, @core.Entity]
 }
 
 ///|
 fn render3d_extracted_mesh_cache_default() -> Render3dExtractedMeshCache {
-  Render3dExtractedMeshCache::{
-    initialized: false,
-    by_entity: {},
-    reextract_next_frame: {},
-  }
+  Render3dExtractedMeshCache::{ by_entity: {}, reextract_next_frame: {} }
 }
 
 ///|
@@ -67,63 +62,6 @@ fn render3d_extracted_mesh_cache_ref_or_abort(
 }
 
 ///|
-fn render3d_add_mesh_candidate(
-  candidates : Map[UInt64, @core.Entity],
-  entity : @core.Entity,
-) -> Unit {
-  candidates.set(render3d_mesh_entity_key(entity), entity)
-}
-
-///|
-fn render3d_add_mesh_candidate_if_cached(
-  cache : Render3dExtractedMeshCache,
-  candidates : Map[UInt64, @core.Entity],
-  entity : @core.Entity,
-) -> Unit {
-  let key = render3d_mesh_entity_key(entity)
-  if cache.by_entity.contains(key) {
-    candidates.set(key, entity)
-  }
-}
-
-///|
-fn[T] render3d_collect_component_delta_entities(
-  source_world : @ecs.World,
-  sequence : @core.SystemSequence,
-  component_key : @ecs.ComponentKey[T],
-  candidates : Map[UInt64, @core.Entity],
-) -> Unit {
-  for entity in source_world.added_components(component_key, sequence).read() {
-    render3d_add_mesh_candidate(candidates, entity)
-  }
-  for entity in source_world.changed_components(component_key, sequence).read() {
-    render3d_add_mesh_candidate(candidates, entity)
-  }
-  for entity in source_world.removed_components(component_key, sequence).read() {
-    render3d_add_mesh_candidate(candidates, entity)
-  }
-}
-
-///|
-fn[T] render3d_collect_component_delta_entities_if_cached(
-  source_world : @ecs.World,
-  sequence : @core.SystemSequence,
-  component_key : @ecs.ComponentKey[T],
-  cache : Render3dExtractedMeshCache,
-  candidates : Map[UInt64, @core.Entity],
-) -> Unit {
-  for entity in source_world.added_components(component_key, sequence).read() {
-    render3d_add_mesh_candidate_if_cached(cache, candidates, entity)
-  }
-  for entity in source_world.changed_components(component_key, sequence).read() {
-    render3d_add_mesh_candidate_if_cached(cache, candidates, entity)
-  }
-  for entity in source_world.removed_components(component_key, sequence).read() {
-    render3d_add_mesh_candidate_if_cached(cache, candidates, entity)
-  }
-}
-
-///|
 fn render3d_resolve_standard_material(
   material_handle : MeshMaterial3d,
   standard_material_frame_cache : Map[Int, StandardMaterial],
@@ -147,7 +85,8 @@ priv struct Render3dExtractMeshRequiredComponents {
   mesh3d : Mesh3d
   material_handle : MeshMaterial3d
   view_visibility : @visibility.ViewVisibility
-  local_transform : @transform.Transform
+  global_transform : @transform.GlobalTransform
+  previous_global_transform : @pbr_prepass.PreviousGlobalTransform?
   layers : @sprite.RenderLayers?
 }
 
@@ -168,7 +107,8 @@ fn render3d_extract_mesh_for_entity(
     mesh3d,
     material_handle,
     view_visibility,
-    local_transform,
+    global_transform,
+    prefetched_previous_global_transform,
     prefetched_layers,
   ) = match required_components {
     Some(components) =>
@@ -176,7 +116,8 @@ fn render3d_extract_mesh_for_entity(
         components.mesh3d,
         components.material_handle,
         components.view_visibility,
-        components.local_transform,
+        components.global_transform,
+        components.previous_global_transform,
         components.layers,
       )
     None => {
@@ -197,15 +138,36 @@ fn render3d_extract_mesh_for_entity(
         Some(v) => v
         None => return (None, false)
       }
-      let local_transform = match
-        (try! source_world.get_by_key(entity, @transform.ecs_key_transform)) {
+      let global_transform = match
+        (try! source_world.get_by_key(
+          entity, @transform.ecs_key_global_transform,
+        )) {
         Some(v) => v
-        None => return (None, false)
+        None => {
+          let local_transform = match
+            (try! source_world.get_by_key(entity, @transform.ecs_key_transform)) {
+            Some(v) => v
+            None => return (None, false)
+          }
+          @transform.GlobalTransform::from_transform(
+            @pbr_render.render3d_entity_world_transform_from_components(
+              source_world, entity, local_transform, world_transform_cache_ref,
+            ),
+          )
+        }
+      }
+      let previous_global_transform = if needs_mesh_previous_transform {
+        try! source_world.get_by_key(entity, ecs_key_previous_global_transform)
+      } else {
+        None
       }
       let layers = try! source_world.get_by_key(
         entity, @sprite.ecs_key_render_layers,
       )
-      (mesh3d, material_handle, view_visibility, local_transform, layers)
+      (
+        mesh3d, material_handle, view_visibility, global_transform, previous_global_transform,
+        layers,
+      )
     }
   }
   if !view_visibility.is_visible() {
@@ -226,11 +188,12 @@ fn render3d_extract_mesh_for_entity(
     Some(v) => v
     None => @sprite.RenderLayers::default()
   }
-  let transform = @pbr_render.render3d_entity_world_transform_from_components(
-    source_world, entity, local_transform, world_transform_cache_ref,
-  )
+  // Bevy `bevy_pbr::render::mesh::extract_meshes_for_cpu_building` reads
+  // `&GlobalTransform` directly and derives render instance transforms from it.
+  let world_from_local = global_transform.affine()
+  let transform = global_transform.to_transform_approx()
   let previous_global_transform = if needs_mesh_previous_transform {
-    try! source_world.get_by_key(entity, ecs_key_previous_global_transform)
+    prefetched_previous_global_transform
   } else {
     None
   }
@@ -258,13 +221,18 @@ fn render3d_extract_mesh_for_entity(
     Some(v) => v.transform()
     None => transform
   }
+  let previous_world_from_local = match previous_global_transform {
+    Some(v) =>
+      @transform.GlobalTransform::from_transform(v.transform()).affine()
+    None => world_from_local
+  }
   let visibility_range = try! source_world.get_by_key(
     entity, @visibility.ecs_key_visibility_range,
   )
   let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
     match render3d_mesh_local_aabb_center(mesh3d) {
       Some(local_center) =>
-        Some(@pbr_render.render3d_transform_point(transform, local_center))
+        Some(world_from_local.transform_point3(local_center))
       None => None
     }
   } else {
@@ -331,6 +299,8 @@ fn render3d_extract_mesh_for_entity(
         mesh_topology_kind,
         mesh_is_indexed: mesh_preprocess_static.is_indexed,
         mesh_preprocess_static: Some(mesh_preprocess_static),
+        world_from_local,
+        previous_world_from_local,
         transform,
         previous_transform,
         visibility_range,
@@ -375,222 +345,58 @@ fn render3d_execute_collect_meshes(
   )
   let standard_material_frame_cache : Map[Int, StandardMaterial] = {}
   let mesh_cache_ref = render3d_extracted_mesh_cache_ref_or_abort(world)
-  let sequence = source_world.get_sequence_context().sequence()
-
-  if !mesh_cache_ref.val.initialized {
-    mesh_cache_ref.val.by_entity.clear()
-    mesh_cache_ref.val.reextract_next_frame.clear()
-    let mesh_query : @ecs.Query[
+  mesh_cache_ref.val.by_entity.clear()
+  mesh_cache_ref.val.reextract_next_frame.clear()
+  let mesh_query : @ecs.Query[
+    (
+      @core.Entity,
       (
-        @core.Entity,
-        (
-          @ecs.Comp[Mesh3d],
-          @ecs.Comp[MeshMaterial3d],
-          @ecs.Comp[@visibility.ViewVisibility],
-          @ecs.Comp[@transform.Transform],
-        ),
+        @ecs.Comp[Mesh3d],
+        @ecs.Comp[MeshMaterial3d],
+        @ecs.Comp[@visibility.ViewVisibility],
+        @ecs.Comp[@transform.GlobalTransform],
+      ),
+      (
+        @ecs.Optional[@pbr_prepass.PreviousGlobalTransform],
         @ecs.Optional[@sprite.RenderLayers],
       ),
-      @ecs.All,
-    ] = @ecs.query(source_world)
-    try! mesh_query.view(fn(_query_entity, data) {
-      let (entity, (mesh3d, material, view_visibility, transform), render_layers
-      ) = data
-      let entity_key = render3d_mesh_entity_key(entity)
-      let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
-        source_world,
-        entity,
-        mesh_runtime_state_ref,
-        morph_indices_ref,
-        skin_uniforms_ref,
-        world_transform_cache_ref,
-        standard_material_frame_cache,
-        needs_mesh_previous_transform,
-        Some(Render3dExtractMeshRequiredComponents::{
-          mesh3d: mesh3d.value(),
-          material_handle: material.value(),
-          view_visibility: view_visibility.value(),
-          local_transform: transform.value(),
-          layers: render_layers.value(),
-        }),
-      )
-      match next_mesh {
-        Some(extracted_mesh) =>
-          mesh_cache_ref.val.by_entity.set(entity_key, extracted_mesh)
-        None => mesh_cache_ref.val.by_entity.remove(entity_key)
-      }
-      if needs_reextract_next_frame {
-        mesh_cache_ref.val.reextract_next_frame.set(entity_key, entity)
-      }
-    })
-    mesh_cache_ref.val.initialized = true
-  } else {
-    let candidates : Map[UInt64, @core.Entity] = {}
-    for entry in mesh_cache_ref.val.reextract_next_frame.iter() {
-      let (_entity_key, entity) = entry
-      render3d_add_mesh_candidate(candidates, entity)
+    ),
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  try! mesh_query.view(fn(_query_entity, data) {
+    let (
+      entity,
+      (mesh3d, material, view_visibility, global_transform),
+      (previous_global_transform, render_layers),
+    ) = data
+    let entity_key = render3d_mesh_entity_key(entity)
+    let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
+      source_world,
+      entity,
+      mesh_runtime_state_ref,
+      morph_indices_ref,
+      skin_uniforms_ref,
+      world_transform_cache_ref,
+      standard_material_frame_cache,
+      needs_mesh_previous_transform,
+      Some(Render3dExtractMeshRequiredComponents::{
+        mesh3d: mesh3d.value(),
+        material_handle: material.value(),
+        view_visibility: view_visibility.value(),
+        global_transform: global_transform.value(),
+        previous_global_transform: previous_global_transform.value(),
+        layers: render_layers.value(),
+      }),
+    )
+    match next_mesh {
+      Some(extracted_mesh) =>
+        mesh_cache_ref.val.by_entity.set(entity_key, extracted_mesh)
+      None => mesh_cache_ref.val.by_entity.remove(entity_key)
     }
-    mesh_cache_ref.val.reextract_next_frame.clear()
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_mesh3d, candidates,
-    )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, ecs_key_mesh_material3d, candidates,
-    )
-    render3d_collect_component_delta_entities(
-      source_world, sequence, @visibility.ecs_key_view_visibility, candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      @transform.ecs_key_transform,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      @transform.ecs_key_global_transform,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_previous_global_transform,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      @mesh.ecs_key_skinned_mesh,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      @sprite.ecs_key_render_layers,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      @visibility.ecs_key_visibility_range,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_lightmap,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_forward_decal,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_forward_decal_material_ext,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_clustered_decal,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_not_shadow_caster,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      @visibility.ecs_key_no_frustum_culling,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      @visibility.ecs_key_no_cpu_culling,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_not_shadow_receiver,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_transmitted_shadow_receiver,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_wireframe,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_no_wireframe,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    render3d_collect_component_delta_entities_if_cached(
-      source_world,
-      sequence,
-      ecs_key_wireframe_color,
-      mesh_cache_ref.val,
-      candidates,
-    )
-    for entry in candidates.iter() {
-      let (_entity_key, entity) = entry
-      let entity_key = render3d_mesh_entity_key(entity)
-      let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
-        source_world,
-        entity,
-        mesh_runtime_state_ref,
-        morph_indices_ref,
-        skin_uniforms_ref,
-        world_transform_cache_ref,
-        standard_material_frame_cache,
-        needs_mesh_previous_transform,
-        None,
-      )
-      match next_mesh {
-        Some(extracted_mesh) =>
-          mesh_cache_ref.val.by_entity.set(entity_key, extracted_mesh)
-        None => mesh_cache_ref.val.by_entity.remove(entity_key)
-      }
-      if needs_reextract_next_frame {
-        mesh_cache_ref.val.reextract_next_frame.set(entity_key, entity)
-      }
+    if needs_reextract_next_frame {
+      mesh_cache_ref.val.reextract_next_frame.set(entity_key, entity)
     }
-  }
-
+  })
   let meshes : Array[ExtractedMesh3d] = []
   for entry in mesh_cache_ref.val.by_entity.iter() {
     let (_entity_key, extracted_mesh) = entry

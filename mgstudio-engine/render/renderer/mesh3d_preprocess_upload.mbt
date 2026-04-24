@@ -337,11 +337,20 @@ fn mesh3d_preprocess_work_items_bytes(
 
 ///|
 fn mesh3d_preprocess_mesh_input_sign_determinant(
-  scale_x : Float,
-  scale_y : Float,
-  scale_z : Float,
+  x_axis_x : Float,
+  x_axis_y : Float,
+  x_axis_z : Float,
+  y_axis_x : Float,
+  y_axis_y : Float,
+  y_axis_z : Float,
+  z_axis_x : Float,
+  z_axis_y : Float,
+  z_axis_z : Float,
 ) -> UInt {
-  if scale_x * scale_y * scale_z >= 0.0F {
+  let det = x_axis_x * (y_axis_y * z_axis_z - y_axis_z * z_axis_y) -
+    y_axis_x * (x_axis_y * z_axis_z - x_axis_z * z_axis_y) +
+    z_axis_x * (x_axis_y * y_axis_z - x_axis_z * y_axis_y)
+  if det >= 0.0F {
     MESH3D_PREPROCESS_INPUT_FLAG_SIGN_DETERMINANT_MODEL_3X3
   } else {
     0U
@@ -350,16 +359,18 @@ fn mesh3d_preprocess_mesh_input_sign_determinant(
 
 ///|
 fn mesh3d_preprocess_mesh_input_words(
+  x_axis_x : Float,
+  x_axis_y : Float,
+  x_axis_z : Float,
+  y_axis_x : Float,
+  y_axis_y : Float,
+  y_axis_z : Float,
+  z_axis_x : Float,
+  z_axis_y : Float,
+  z_axis_z : Float,
   translation_x : Float,
   translation_y : Float,
   translation_z : Float,
-  rotation_x : Float,
-  rotation_y : Float,
-  rotation_z : Float,
-  rotation_w : Float,
-  scale_x : Float,
-  scale_y : Float,
-  scale_z : Float,
   flags : UInt,
   previous_input_index : UInt,
   first_vertex_index : Int,
@@ -369,13 +380,18 @@ fn mesh3d_preprocess_mesh_input_words(
   frame_count : UInt,
 ) -> Array[UInt] {
   let words : Array[UInt] = []
-  for
-    word in mesh3d_world_from_local_words(
-      translation_x, translation_y, translation_z, rotation_x, rotation_y, rotation_z,
-      rotation_w, scale_x, scale_y, scale_z,
-    ) {
-    words.push(word)
-  }
+  words.push(f32_bits(x_axis_x))
+  words.push(f32_bits(y_axis_x))
+  words.push(f32_bits(z_axis_x))
+  words.push(f32_bits(translation_x))
+  words.push(f32_bits(x_axis_y))
+  words.push(f32_bits(y_axis_y))
+  words.push(f32_bits(z_axis_y))
+  words.push(f32_bits(translation_y))
+  words.push(f32_bits(x_axis_z))
+  words.push(f32_bits(y_axis_z))
+  words.push(f32_bits(z_axis_z))
+  words.push(f32_bits(translation_z))
   words.push(0U)
   words.push(0U)
   words.push(flags)
@@ -402,22 +418,30 @@ fn mesh3d_preprocess_mesh_inputs_bytes(
   for input in inputs {
     let runtime_flags = input.flags |
       mesh3d_preprocess_mesh_input_sign_determinant(
-        input.scale_x,
-        input.scale_y,
-        input.scale_z,
+        input.world_from_local_x_axis_x,
+        input.world_from_local_x_axis_y,
+        input.world_from_local_x_axis_z,
+        input.world_from_local_y_axis_x,
+        input.world_from_local_y_axis_y,
+        input.world_from_local_y_axis_z,
+        input.world_from_local_z_axis_x,
+        input.world_from_local_z_axis_y,
+        input.world_from_local_z_axis_z,
       )
     for
       word in mesh3d_preprocess_mesh_input_words(
-        input.translation_x,
-        input.translation_y,
-        input.translation_z,
-        input.rotation_x,
-        input.rotation_y,
-        input.rotation_z,
-        input.rotation_w,
-        input.scale_x,
-        input.scale_y,
-        input.scale_z,
+        input.world_from_local_x_axis_x,
+        input.world_from_local_x_axis_y,
+        input.world_from_local_x_axis_z,
+        input.world_from_local_y_axis_x,
+        input.world_from_local_y_axis_y,
+        input.world_from_local_y_axis_z,
+        input.world_from_local_z_axis_x,
+        input.world_from_local_z_axis_y,
+        input.world_from_local_z_axis_z,
+        input.world_from_local_translation_x,
+        input.world_from_local_translation_y,
+        input.world_from_local_translation_z,
         runtime_flags,
         if input_len > 0 {
           (words.length() / 24).reinterpret_as_uint()
@@ -434,22 +458,30 @@ fn mesh3d_preprocess_mesh_inputs_bytes(
     }
     let previous_flags = input.flags |
       mesh3d_preprocess_mesh_input_sign_determinant(
-        input.previous_scale_x,
-        input.previous_scale_y,
-        input.previous_scale_z,
+        input.previous_world_from_local_x_axis_x,
+        input.previous_world_from_local_x_axis_y,
+        input.previous_world_from_local_x_axis_z,
+        input.previous_world_from_local_y_axis_x,
+        input.previous_world_from_local_y_axis_y,
+        input.previous_world_from_local_y_axis_z,
+        input.previous_world_from_local_z_axis_x,
+        input.previous_world_from_local_z_axis_y,
+        input.previous_world_from_local_z_axis_z,
       )
     for
       word in mesh3d_preprocess_mesh_input_words(
-        input.previous_translation_x,
-        input.previous_translation_y,
-        input.previous_translation_z,
-        input.previous_rotation_x,
-        input.previous_rotation_y,
-        input.previous_rotation_z,
-        input.previous_rotation_w,
-        input.previous_scale_x,
-        input.previous_scale_y,
-        input.previous_scale_z,
+        input.previous_world_from_local_x_axis_x,
+        input.previous_world_from_local_x_axis_y,
+        input.previous_world_from_local_x_axis_z,
+        input.previous_world_from_local_y_axis_x,
+        input.previous_world_from_local_y_axis_y,
+        input.previous_world_from_local_y_axis_z,
+        input.previous_world_from_local_z_axis_x,
+        input.previous_world_from_local_z_axis_y,
+        input.previous_world_from_local_z_axis_z,
+        input.previous_world_from_local_translation_x,
+        input.previous_world_from_local_translation_y,
+        input.previous_world_from_local_translation_z,
         previous_flags,
         0xffffffffU,
         input.first_vertex_index,

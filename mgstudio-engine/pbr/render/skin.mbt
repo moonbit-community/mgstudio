@@ -389,8 +389,11 @@ fn render3d_write_skin_matrix(
     return
   }
   render3d_ensure_skin_staging_rows(skin_uniforms_ref, base + 16)
-  @mesh.SkinningMat4::from_global_transform(joint_global).mul_write_row_major_f32(
-    inverse_bindpose,
+  // Bevy `bevy_pbr::render::skin::extract_joints_for_skin` writes
+  // `joint_transform.affine() * inverse_bindpose` directly into the staging
+  // buffer. Avoid constructing a transient `SkinningMat4` per joint here.
+  inverse_bindpose.write_affine3_mul_row_major_f32(
+    joint_global.affine(),
     skin_uniforms_ref.val.current_staging_buffer,
     base,
   )
