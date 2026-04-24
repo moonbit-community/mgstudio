@@ -347,6 +347,7 @@ fn render3d_execute_collect_meshes(
   let mesh_cache_ref = render3d_extracted_mesh_cache_ref_or_abort(world)
   mesh_cache_ref.val.by_entity.clear()
   mesh_cache_ref.val.reextract_next_frame.clear()
+  let meshes : Array[ExtractedMesh3d] = []
   let mesh_query : @ecs.Query[
     (
       @core.Entity,
@@ -389,19 +390,16 @@ fn render3d_execute_collect_meshes(
       }),
     )
     match next_mesh {
-      Some(extracted_mesh) =>
+      Some(extracted_mesh) => {
         mesh_cache_ref.val.by_entity.set(entity_key, extracted_mesh)
+        meshes.push(extracted_mesh)
+      }
       None => mesh_cache_ref.val.by_entity.remove(entity_key)
     }
     if needs_reextract_next_frame {
       mesh_cache_ref.val.reextract_next_frame.set(entity_key, entity)
     }
   })
-  let meshes : Array[ExtractedMesh3d] = []
-  for entry in mesh_cache_ref.val.by_entity.iter() {
-    let (_entity_key, extracted_mesh) = entry
-    meshes.push(extracted_mesh)
-  }
   ignore(needs_mesh_previous_transform)
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,
