@@ -361,26 +361,6 @@ fn[T] RawTableColumn::values_cached(self : RawTableColumn) -> Array[T]? {
 }
 
 ///|
-fn RawTableColumn::values_cache_active(self : RawTableColumn) -> Bool {
-  self.values_cache is Some(_)
-}
-
-///|
-fn[T] RawTableColumn::replace_cached_value_at_row(
-  self : RawTableColumn,
-  row_index : Int,
-  value : T,
-) -> Bool {
-  guard self.values_cache is Some(values_any) else { return false }
-  let values : Array[T] = values_any.unsafe_coerce()
-  if row_index < 0 || row_index >= values.length() {
-    return false
-  }
-  values[row_index] = value
-  true
-}
-
-///|
 fn RawTableColumn::type_name(self : RawTableColumn) -> String {
   self.component_ops.debug_name
 }
@@ -528,11 +508,7 @@ fn[T] RawTable::replace_value_at_row_index(
   guard self.column(component_local_id) is Some(column_ref) else {
     return false
   }
-  if column_ref.val.values_cache_active() {
-    column_ref.val.replace_cached_value_at_row(row_index, value)
-  } else {
-    column_ref.val.replace_writer_at_row(row_index, erased_writer(key, value))
-  }
+  column_ref.val.replace_writer_at_row(row_index, erased_writer(key, value))
 }
 
 fn RawTable::added_sequence_at_row(

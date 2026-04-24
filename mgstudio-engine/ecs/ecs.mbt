@@ -261,6 +261,12 @@ struct QuerySparseAnchorPayloadContext {
 }
 
 ///|
+struct BundleInfo {
+  id : Int
+  component_local_ids : Array[Int]
+}
+
+///|
 pub struct World {
   world_id : Int
   mut structural_generation : Int
@@ -290,6 +296,9 @@ pub struct World {
   ]
   mut next_archetype_id : Int
   mut next_table_id : Int
+  mut next_bundle_id : Int
+  bundle_ids_by_signature : Map[String, Int]
+  bundle_infos : Map[Int, BundleInfo]
   archetype_ids_by_signature : Map[String, Int]
   table_ids_by_signature : Map[String, Int]
   table_component_local_ids : Map[Int, Array[Int]]
@@ -302,7 +311,7 @@ pub struct World {
   archetype_ids_by_component_local_id : Map[Int, Array[Int]]
   archetype_add_edges_by_component_local_id : Map[Int, Map[Int, Int]]
   archetype_remove_edges_by_component_local_id : Map[Int, Map[Int, Int]]
-  archetype_insert_bundle_edges_by_signature : Map[Int, Map[String, Int]]
+  archetype_insert_bundle_edges_by_id : Map[Int, Map[Int, Int]]
   archetype_non_empty_ids_by_component_local_id : Map[Int, Array[Int]]
   mut non_empty_archetype_ids_sorted : Array[Int]
   mut non_empty_archetype_generation : Int
@@ -354,6 +363,9 @@ pub fn World::new() -> World {
     component_store_cache_by_definition_id: {},
     next_archetype_id: 1,
     next_table_id: 1,
+    next_bundle_id: 1,
+    bundle_ids_by_signature: {},
+    bundle_infos: {},
     archetype_ids_by_signature: { "": 0 },
     table_ids_by_signature: { "": 0 },
     table_component_local_ids: { 0: [] },
@@ -366,7 +378,7 @@ pub fn World::new() -> World {
     archetype_ids_by_component_local_id: {},
     archetype_add_edges_by_component_local_id: {},
     archetype_remove_edges_by_component_local_id: {},
-    archetype_insert_bundle_edges_by_signature: {},
+    archetype_insert_bundle_edges_by_id: {},
     archetype_non_empty_ids_by_component_local_id: {},
     non_empty_archetype_ids_sorted: [],
     non_empty_archetype_generation: 0,

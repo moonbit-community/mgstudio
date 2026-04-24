@@ -101,6 +101,7 @@ pub struct QueryMany[D, F] {
   mut archetype_index : Int
   mut archetype_entities : Array[@core.Entity]
   mut archetype_entity_index : Int
+  mut current_table_id : Int
   dense_table_groups : Array[Array[Int]]
   mut dense_table_group_index : Int
   mut dense_table_group_archetype_index : Int
@@ -326,24 +327,22 @@ fn query_sparse_anchor_info(
   filter_anchor_component_ids : Array[Int],
 ) -> QuerySparseAnchorInfo? {
   let data_anchor_component_id = query_min_anchor_component_id(
-    world,
-    data_anchor_component_ids,
+    world, data_anchor_component_ids,
   )
   let filter_anchor_component_id = query_min_anchor_component_id(
-    world,
-    filter_anchor_component_ids,
+    world, filter_anchor_component_ids,
   )
   guard query_candidate_anchor_component_id(
-      world,
-      data_anchor_component_id,
-      filter_anchor_component_id,
-    ) is Some(component_id) else {
+      world, data_anchor_component_id, filter_anchor_component_id,
+    )
+    is Some(component_id) else {
     return None
   }
   guard world.local_component_id(component_id) is Some(local_component_id) else {
     return None
   }
-  guard world.local_component_storage_type(local_component_id) == Some(SparseSet) else {
+  guard world.local_component_storage_type(local_component_id) ==
+    Some(SparseSet) else {
     return None
   }
   Some({ local_component_id, })
@@ -392,6 +391,44 @@ fn[D : QueryData] query_fetch_with_sparse_anchor(
       data
     }
   }
+}
+
+///|
+fn[D : QueryData] query_fetch_entity_table_row(
+  world : World,
+  entity : @core.Entity,
+) -> D raise EcsError {
+  let entity_id = entity.id
+  if entity_id >= 0 &&
+    entity_id < world.entity_table_ids.length() &&
+    entity_id < world.entity_table_rows.length() {
+    let table_id = world.entity_table_ids[entity_id]
+    let row_index = world.entity_table_rows[entity_id]
+    if table_id >= 0 && row_index >= 0 {
+      return D::fetch_table_row(world, entity, table_id, row_index)
+    }
+  }
+  D::fetch(world, entity)
+}
+
+///|
+fn[D : QueryData] query_fetch_known_table_row(
+  world : World,
+  entity : @core.Entity,
+  table_id : Int,
+) -> D raise EcsError {
+  let entity_id = entity.id
+  if table_id >= 0 &&
+    entity_id >= 0 &&
+    entity_id < world.entity_table_ids.length() &&
+    entity_id < world.entity_table_rows.length() &&
+    world.entity_table_ids[entity_id] == table_id {
+    let row_index = world.entity_table_rows[entity_id]
+    if row_index >= 0 {
+      return D::fetch_table_row(world, entity, table_id, row_index)
+    }
+  }
+  query_fetch_entity_table_row(world, entity)
 }
 
 ///|
@@ -516,7 +553,7 @@ fn[D : QueryData, F : QueryFilter] query_get_with_default_filter_component_ids(
     return None
   }
   guard D::matches(query.world, entity) else { return None }
-  Some(D::fetch(query.world, entity))
+  Some(query_fetch_entity_table_row(query.world, entity))
 }
 
 ///|
@@ -586,10 +623,14 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
       _ => ()
     }
     for archetype_id in matched_archetypes {
+      let table_id = match self.world.archetype_table_id(archetype_id) {
+        Some(table_id) => table_id
+        None => -1
+      }
       match self.world.archetype_entities_view(archetype_id) {
         Some(entities) =>
           for entity in entities {
-            f(entity, D::fetch(self.world, entity))
+            f(entity, query_fetch_known_table_row(self.world, entity, table_id))
           }
         None => ()
       }
@@ -597,7 +638,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
     return
   }
   for entity in self.matching_entities() {
-    f(entity, D::fetch(self.world, entity))
+    f(entity, query_fetch_entity_table_row(self.world, entity))
   }
 }
 
@@ -709,14 +750,15 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
         }
       }
       match found.val {
-        Some(entity) => Some(
-          D::fetch_table_row(
-            self.world,
-            entity,
-            found_table_id.val,
-            found_row_index.val,
-          ),
-        )
+        Some(entity) =>
+          Some(
+            D::fetch_table_row(
+              self.world,
+              entity,
+              found_table_id.val,
+              found_row_index.val,
+            ),
+          )
         None => None
       }
     } else {
@@ -750,7 +792,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
         }
       }
       match found.val {
-        Some(entity) => Some(D::fetch(self.world, entity))
+        Some(entity) => Some(query_fetch_entity_table_row(self.world, entity))
         None => None
       }
     }
@@ -759,7 +801,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
     if entities.length() != 1 {
       return None
     }
-    Some(D::fetch(self.world, entities[0]))
+    Some(query_fetch_entity_table_row(self.world, entities[0]))
   }
 }
 
@@ -788,6 +830,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
     archetype_index: 0,
     archetype_entities: [],
     archetype_entity_index: 0,
+    current_table_id: -1,
     dense_table_groups: [],
     dense_table_group_index: 0,
     dense_table_group_archetype_index: 0,
@@ -1647,6 +1690,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter(
     archetype_index: 0,
     archetype_entities: [],
     archetype_entity_index: 0,
+    current_table_id: -1,
     dense_table_groups: if dense_driven {
       self.query_matching_table_groups(world)
     } else {
@@ -1676,6 +1720,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
     archetype_index: 0,
     archetype_entities: [],
     archetype_entity_index: 0,
+    current_table_id: -1,
     dense_table_groups: [],
     dense_table_group_index: 0,
     dense_table_group_archetype_index: 0,
@@ -1721,31 +1766,53 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
     let dense_table_groups = self.query_matching_table_groups(world)
     if dense_table_groups.length() > 0 {
       let found : Ref[@core.Entity?] = Ref::new(None)
+      let found_table_id = Ref::new(-1)
+      let found_row_index = Ref::new(-1)
       for table_group in dense_table_groups {
         for archetype_id in table_group {
+          guard world.archetype_table_id(archetype_id) is Some(table_id) else {
+            continue
+          }
           match world.archetype_entities_view(archetype_id) {
             Some(entities) =>
               for entity in entities {
                 if found.val is Some(_) {
                   return None
                 }
+                let entity_id = entity.id
+                guard entity_id >= 0 &&
+                  entity_id < world.entity_table_rows.length() else {
+                  continue
+                }
+                let row_index = world.entity_table_rows[entity_id]
+                if row_index < 0 {
+                  continue
+                }
                 found.val = Some(entity)
+                found_table_id.val = table_id
+                found_row_index.val = row_index
               }
             None => ()
           }
         }
       }
       match found.val {
-        Some(entity) => Some(D::fetch(world, entity))
+        Some(entity) =>
+          Some(
+            D::fetch_table_row(
+              world,
+              entity,
+              found_table_id.val,
+              found_row_index.val,
+            ),
+          )
         None => None
       }
     } else {
       let matched_archetypes = self.query_matching_archetypes(world)
       match
         query_sparse_anchor_info(
-          world,
-          data_anchor_component_ids,
-          filter_anchor_component_ids,
+          world, data_anchor_component_ids, filter_anchor_component_ids,
         ) {
         Some(anchor_info) if !self.cached_is_dense =>
           return query_sparse_anchor_single_matching(
@@ -1769,7 +1836,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
         }
       }
       match found.val {
-        Some(entity) => Some(D::fetch(world, entity))
+        Some(entity) => Some(query_fetch_entity_table_row(world, entity))
         None => None
       }
     }
@@ -1778,7 +1845,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
     if entities.length() != 1 {
       return None
     }
-    Some(D::fetch(world, entities[0]))
+    Some(query_fetch_entity_table_row(world, entities[0]))
   }
 }
 
@@ -1821,9 +1888,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::count(
     let matched_archetypes = self.query_matching_archetypes(world)
     match
       query_sparse_anchor_info(
-        world,
-        data_anchor_component_ids,
-        filter_anchor_component_ids,
+        world, data_anchor_component_ids, filter_anchor_component_ids,
       ) {
       Some(anchor_info) if !self.cached_is_dense =>
         return query_sparse_anchor_count_matching(
@@ -2140,7 +2205,16 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
       if self.archetype_entity_index < self.archetype_entities.length() {
         let entity = self.archetype_entities[self.archetype_entity_index]
         self.archetype_entity_index = self.archetype_entity_index + 1
-        return Some((entity, D::fetch(self.query.world, entity)))
+        return Some(
+          (
+            entity,
+            query_fetch_known_table_row(
+              self.query.world,
+              entity,
+              self.current_table_id,
+            ),
+          ),
+        )
       }
       if self.dense_table_group_index >= self.dense_table_groups.length() {
         return None
@@ -2154,6 +2228,11 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
       let archetype_id = table_group[self.dense_table_group_archetype_index]
       self.dense_table_group_archetype_index = self.dense_table_group_archetype_index +
         1
+      self.current_table_id = match
+        self.query.world.archetype_table_id(archetype_id) {
+        Some(table_id) => table_id
+        None => -1
+      }
       self.archetype_entities = match
         self.query.world.archetype_entities_view(archetype_id) {
         Some(entities) => entities
@@ -2167,13 +2246,27 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
       if self.archetype_entity_index < self.archetype_entities.length() {
         let entity = self.archetype_entities[self.archetype_entity_index]
         self.archetype_entity_index = self.archetype_entity_index + 1
-        return Some((entity, D::fetch(self.query.world, entity)))
+        return Some(
+          (
+            entity,
+            query_fetch_known_table_row(
+              self.query.world,
+              entity,
+              self.current_table_id,
+            ),
+          ),
+        )
       }
       if self.archetype_index >= self.archetypes.length() {
         return None
       }
       let archetype_id = self.archetypes[self.archetype_index]
       self.archetype_index = self.archetype_index + 1
+      self.current_table_id = match
+        self.query.world.archetype_table_id(archetype_id) {
+        Some(table_id) => table_id
+        None => -1
+      }
       self.archetype_entities = match
         self.query.world.archetype_entities_view(archetype_id) {
         Some(entities) => entities
@@ -2186,7 +2279,9 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
     let entity = self.entities[self.index]
     self.index = self.index + 1
     if self.entities_pre_matched {
-      return Some((entity, D::fetch(self.query.world, entity)))
+      return Some(
+        (entity, query_fetch_entity_table_row(self.query.world, entity)),
+      )
     }
     if query_get_with_default_filter_component_ids(
         self.query,
@@ -2216,8 +2311,8 @@ pub fn[D : QueryData, F : QueryFilter] QueryCombinations::fetch_next(
     if self.entities_pre_matched {
       return Some(
         (
-          D::fetch(self.query.world, left_entity),
-          D::fetch(self.query.world, right_entity),
+          query_fetch_entity_table_row(self.query.world, left_entity),
+          query_fetch_entity_table_row(self.query.world, right_entity),
         ),
       )
     }
@@ -2250,7 +2345,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryContiguousIter::fetch_next(
     let entity = self.entities[self.index]
     self.index = self.index + 1
     if self.entities_pre_matched {
-      return Some(D::fetch(self.query.world, entity))
+      return Some(query_fetch_entity_table_row(self.query.world, entity))
     }
     if query_get_with_default_filter_component_ids(
         self.query,

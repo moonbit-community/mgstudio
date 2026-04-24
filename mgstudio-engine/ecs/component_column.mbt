@@ -664,14 +664,11 @@ pub fn[T] ComponentColumn::set_sequence_only(
         return false
       }
       let row_index = row.index()
-      if column_ref.val.values_cache_active() {
-        guard column_ref.val.replace_cached_value_at_row(row_index, value) else {
-          return false
-        }
-      } else {
-        guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
-          return false
-        }
+      guard column_ref.val.replace_writer_at_row(
+          row_index,
+          erased_writer(self.key, value),
+        ) else {
+        return false
       }
       guard self.world.table_storage(table_id) is Some(table_ref) else { return false }
       ignore(
@@ -724,14 +721,11 @@ pub fn[T] ComponentColumn::set_sequence_only_fast(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return false
       }
-      if column_ref.val.values_cache_active() {
-        guard column_ref.val.replace_cached_value_at_row(row_index, value) else {
-          return false
-        }
-      } else {
-        guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
-          return false
-        }
+      guard column_ref.val.replace_writer_at_row(
+          row_index,
+          erased_writer(self.key, value),
+        ) else {
+        return false
       }
       ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
       true
@@ -776,14 +770,11 @@ pub fn[T] ComponentColumn::set_sequence_only_hot(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return false
       }
-      if column_ref.val.values_cache_active() {
-        guard column_ref.val.replace_cached_value_at_row(row_index, value) else {
-          return false
-        }
-      } else {
-        guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
-          return false
-        }
+      guard column_ref.val.replace_writer_at_row(
+          row_index,
+          erased_writer(self.key, value),
+        ) else {
+        return false
       }
       ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
       true
@@ -815,10 +806,11 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  if !column_ref.val.values_cache_active() {
-    guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
-      return false
-    }
+  guard column_ref.val.replace_writer_at_row(
+      row_index,
+      erased_writer(self.key, value),
+    ) else {
+    return false
   }
   ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
   true
@@ -842,10 +834,11 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row(
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  if !column_ref.val.values_cache_active() {
-    guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
-      return false
-    }
+  guard column_ref.val.replace_writer_at_row(
+      row_index,
+      erased_writer(self.key, value),
+    ) else {
+    return false
   }
   ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
   true
@@ -864,7 +857,10 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row_value(
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  guard column_ref.val.replace_payload_at_row(row_index, erased_value(value)) else {
+  guard column_ref.val.replace_writer_at_row(
+      row_index,
+      erased_writer(self.key, value),
+    ) else {
     return false
   }
   ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))

@@ -201,6 +201,45 @@ test "app: Query1 system param exposes plain mutable query" {
 }
 
 ///|
+test "app: Query system param refreshes after initially empty match" {
+  let world = @ecs.World::new()
+  let inserted : Ref[@core.Entity?] = Ref::new(None)
+  let counts : Array[Int] = []
+  let mut app = App::new(world).add_system_param2(fn(
+    commands : Commands,
+    query : @ecs.Query[@ecs.Mut[QueryPosition], @ecs.All],
+  ) {
+    counts.push(query.count())
+    try! query.view(fn(_entity, position) {
+      position.modify(fn(value) { value.x = value.x + 1 })
+    })
+    if inserted.val is None {
+      inserted.val = Some(
+        commands.spawn(
+          (
+            QueryPosition::{ x: 10, y: 20 },
+            QueryVelocity::{ dx: 0, dy: 0 },
+          ),
+        ),
+      )
+    }
+  })
+
+  app = app.run_once()
+  app = app.run_once()
+  app = app.run_once()
+
+  debug_inspect(counts, content="[0, 1, 1]")
+  guard inserted.val is Some(entity) else {
+    fail("expected inserted entity")
+  }
+  debug_inspect(
+    try! app.world().get_by_key(entity, query_position_key),
+    content="Some({ x: 12, y: 20 })",
+  )
+}
+
+///|
 test "app: filtered query system param builds filters from component owners" {
   let world = @ecs.World::new()
   let e0 = world.spawn()

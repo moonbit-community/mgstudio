@@ -45,24 +45,6 @@ fn archetype_signature_from_local_component_ids(
 }
 
 ///|
-fn archetype_bundle_signature_from_pending_payloads(
-  pending_payloads : Map[Int, ErasedWriter],
-) -> String? {
-  let component_local_ids : Array[Int] = []
-  for entry in pending_payloads.iter() {
-    component_local_ids.push(entry.0)
-  }
-  if component_local_ids.length() == 0 {
-    return None
-  }
-  Some(
-    archetype_signature_from_local_component_ids(
-      archetype_sorted_unique_local_component_ids(component_local_ids),
-    ),
-  )
-}
-
-///|
 fn archetype_local_components_with_added_component(
   component_local_ids : Array[Int],
   component_local_id : Int,
@@ -146,6 +128,96 @@ fn archetype_remove_sorted(ids : Array[Int], archetype_id : Int) -> Bool {
     i = i + 1
   }
   ignore(ids.pop())
+  true
+}
+
+///|
+fn archetype_union_sorted_unique_local_component_ids(
+  base_component_local_ids : Array[Int],
+  added_component_local_ids : Array[Int],
+) -> Array[Int] {
+  let result = base_component_local_ids.copy()
+  for component_local_id in added_component_local_ids {
+    if !result.contains(component_local_id) {
+      result.push(component_local_id)
+    }
+  }
+  result.sort()
+  result
+}
+
+///|
+fn World::ensure_bundle_info_for_payloads(
+  self : World,
+  payloads : Array[(Int, ErasedWriter)],
+) -> BundleInfo? {
+  if payloads.length() == 0 {
+    return None
+  }
+  if payloads.length() == 1 {
+    return None
+  }
+  let component_definition_ids : Array[Int] = []
+  for payload in payloads {
+    let component_definition_id = payload.0
+    if !component_definition_ids.contains(component_definition_id) {
+      component_definition_ids.push(component_definition_id)
+    }
+  }
+  if component_definition_ids.length() == 0 {
+    return None
+  }
+  component_definition_ids.sort()
+  let signature = archetype_signature_from_local_component_ids(
+    component_definition_ids,
+  )
+  match self.bundle_ids_by_signature.get(signature) {
+    Some(bundle_id) =>
+      match self.bundle_infos.get(bundle_id) {
+        Some(info) => return Some(info)
+        None => ()
+      }
+    None => ()
+  }
+  let component_local_ids : Array[Int] = []
+  for component_definition_id in component_definition_ids {
+    let component_local_id = self.ensure_component_registered(
+      component_definition_id,
+    )
+    component_local_ids.push(component_local_id)
+    match self.required_components_state(component_local_id) {
+      Some(state_ref) =>
+        for entry in state_ref.val.all {
+          component_local_ids.push(entry.component_id)
+        }
+      None => ()
+    }
+  }
+  let bundle_id = self.next_bundle_id
+  self.next_bundle_id = bundle_id + 1
+  let info = BundleInfo::{
+    id: bundle_id,
+    component_local_ids: archetype_sorted_unique_local_component_ids(
+      component_local_ids,
+    ),
+  }
+  self.bundle_ids_by_signature.set(signature, bundle_id)
+  self.bundle_infos.set(bundle_id, info)
+  Some(info)
+}
+
+///|
+fn archetype_bundle_info_covers_pending_payloads(
+  pending_payloads : Map[Int, ErasedWriter],
+  bundle_info : BundleInfo,
+) -> Bool {
+  for entry in pending_payloads.iter() {
+    let component_local_id = entry.0
+    if
+      !bundle_info.component_local_ids.contains(component_local_id) {
+      return false
+    }
+  }
   true
 }
 
@@ -513,10 +585,10 @@ fn World::cache_archetype_remove_edge(
 fn World::cached_archetype_insert_bundle_edge_target(
   self : World,
   from_archetype_id : Int,
-  bundle_signature : String,
+  bundle_id : Int,
 ) -> Int? {
-  match self.archetype_insert_bundle_edges_by_signature.get(from_archetype_id) {
-    Some(edges) => edges.get(bundle_signature)
+  match self.archetype_insert_bundle_edges_by_id.get(from_archetype_id) {
+    Some(edges) => edges.get(bundle_id)
     None => None
   }
 }
@@ -525,14 +597,45 @@ fn World::cached_archetype_insert_bundle_edge_target(
 fn World::cache_archetype_insert_bundle_edge(
   self : World,
   from_archetype_id : Int,
-  bundle_signature : String,
+  bundle_id : Int,
   to_archetype_id : Int,
 ) -> Unit {
-  let edges = self.archetype_insert_bundle_edges_by_signature.get_or_init(
+  let edges = self.archetype_insert_bundle_edges_by_id.get_or_init(
     from_archetype_id,
     fn() { {} },
   )
-  edges.set(bundle_signature, to_archetype_id)
+  edges.set(bundle_id, to_archetype_id)
+}
+
+///|
+fn World::ensure_archetype_insert_bundle_edge_target(
+  self : World,
+  from_archetype_id : Int,
+  bundle_info : BundleInfo,
+) -> Int {
+  match self.cached_archetype_insert_bundle_edge_target(
+    from_archetype_id, bundle_info.id,
+  ) {
+    Some(target_archetype_id) => target_archetype_id
+    None => {
+      let from_components = self.archetype_component_local_ids
+        .get(from_archetype_id)
+        .unwrap_or([])
+      let target_components = archetype_union_sorted_unique_local_component_ids(
+        from_components,
+        bundle_info.component_local_ids,
+      )
+      let target_archetype_id = self.ensure_archetype_for_local_components(
+        target_components,
+      )
+      self.cache_archetype_insert_bundle_edge(
+        from_archetype_id,
+        bundle_info.id,
+        target_archetype_id,
+      )
+      target_archetype_id
+    }
+  }
 }
 
 ///|
@@ -1041,9 +1144,10 @@ fn World::entity_remove_component_local_id(
 }
 
 ///|
-fn World::refresh_entity_archetype_with_pending_payloads(
+fn World::refresh_entity_archetype_with_bundle_info(
   self : World,
   entity : @core.Entity,
+  bundle_info : BundleInfo?,
   pending_payloads : Map[Int, ErasedWriter],
   pending_metadata : Map[Int, ComponentTickMetadata],
 ) -> Unit {
@@ -1055,15 +1159,19 @@ fn World::refresh_entity_archetype_with_pending_payloads(
   let current_component_local_ids = self.entity_local_components(entity)
   let mut next_archetype_id : Int? = None
   let mut normalized_components : Array[Int]? = None
-  let bundle_signature = archetype_bundle_signature_from_pending_payloads(
-    pending_payloads,
-  )
-  match bundle_signature {
-    Some(signature) if previous_archetype_id >= 0 =>
-      next_archetype_id = self.cached_archetype_insert_bundle_edge_target(
-        previous_archetype_id,
-        signature,
-      )
+  match bundle_info {
+    Some(bundle_info) if previous_archetype_id >= 0 =>
+      if archetype_bundle_info_covers_pending_payloads(
+          pending_payloads,
+          bundle_info,
+        ) {
+        next_archetype_id = Some(
+          self.ensure_archetype_insert_bundle_edge_target(
+            previous_archetype_id,
+            bundle_info,
+          ),
+        )
+      }
     _ => ()
   }
   if next_archetype_id is None &&
@@ -1157,15 +1265,6 @@ fn World::refresh_entity_archetype_with_pending_payloads(
     )
   }
   guard next_archetype_id is Some(next_archetype_id) else { return }
-  match bundle_signature {
-    Some(signature) if previous_archetype_id >= 0 =>
-      self.cache_archetype_insert_bundle_edge(
-        previous_archetype_id,
-        signature,
-        next_archetype_id,
-      )
-    _ => ()
-  }
   if self.archetype_component_local_ids.get(next_archetype_id)
     is Some(next_component_local_ids) {
     self.entity_component_local_ids[entity.id] = next_component_local_ids.copy()
@@ -1180,6 +1279,18 @@ fn World::refresh_entity_archetype_with_pending_payloads(
       pending_payloads,
       pending_metadata,
     ),
+  )
+}
+
+///|
+fn World::refresh_entity_archetype_with_pending_payloads(
+  self : World,
+  entity : @core.Entity,
+  pending_payloads : Map[Int, ErasedWriter],
+  pending_metadata : Map[Int, ComponentTickMetadata],
+) -> Unit {
+  self.refresh_entity_archetype_with_bundle_info(
+    entity, None, pending_payloads, pending_metadata,
   )
 }
 
