@@ -210,6 +210,7 @@ pub struct ComponentColumn[T] {
 }
 pub fn[T] ComponentColumn::contains(Self[T], @core.Entity) -> Bool
 pub fn[T] ComponentColumn::for_each(Self[T], (@core.Entity, T) -> Unit) -> Unit
+pub fn[T] ComponentColumn::for_each_changed_table_entity(Self[T], @core.SystemSequence, (@core.Entity, Int, Int) -> Bool) -> Bool
 pub fn[T, U] ComponentColumn::for_each_with(Self[T], Self[U], (@core.Entity, T, U) -> Unit) -> Unit
 pub fn[T, U] ComponentColumn::for_each_with_fast(Self[T], Self[U], (@core.Entity, T, U) -> Unit) -> Unit
 pub fn[T, U] ComponentColumn::for_each_without(Self[T], Self[U], (@core.Entity, T) -> Unit) -> Unit
@@ -226,7 +227,10 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(Self[T], @core.Entity, A
 pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row(Self[T], Int, Array[T], Int, T, Int) -> Bool
 pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row_value(Self[T], Int, Int, T, Int) -> Bool
 pub fn[T] ComponentColumn::table_changed_sequence_at_row(Self[T], Int, Int) -> Int?
+pub fn[T] ComponentColumn::table_is_changed_at_entity_row(Self[T], @core.Entity, Int, Int, @core.SystemSequence) -> Bool?
 pub fn[T] ComponentColumn::table_is_changed_at_row(Self[T], Int, Int, @core.SystemSequence) -> Bool
+pub fn[T] ComponentColumn::table_row_location(Self[T], @core.Entity) -> (Int, Int)?
+pub fn[T] ComponentColumn::table_value_at_entity_row(Self[T], @core.Entity, Int, Int) -> T?
 pub fn[T] ComponentColumn::table_value_at_row(Self[T], Int, Int) -> T?
 pub fn[T] ComponentColumn::table_values(Self[T], Int) -> Array[T]?
 

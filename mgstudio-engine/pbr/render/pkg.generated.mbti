@@ -315,6 +315,8 @@ pub fn render3d_mesh_pipeline_view_layout(Bool, Bool, MeshPipelineViewLayoutKey,
 
 pub fn render3d_mesh_pipeline_view_layouts(Bool, Bool, clustered_decals_usable? : Bool, irradiance_volumes_usable? : Bool, oit_supported? : Bool) -> MeshPipelineViewLayouts
 
+pub fn render3d_mesh_position_view_depth(@math.Vec3, @transform.Transform) -> Float
+
 pub let render3d_mesh_runtime_state_key : @ecs.ResourceKey[Render3dMeshRuntimeState]
 
 pub fn render3d_mesh_runtime_state_ref_or_abort(@ecs.World) -> @ref.Ref[Render3dMeshRuntimeState]
@@ -1142,6 +1144,8 @@ pub(all) struct SkinOffsetFreeRange {
 pub struct SkinUniformInfo {
   allocation : SkinAllocation
   joints : Array[@core.Entity]
+  joint_table_ids : Array[Int]
+  joint_row_indices : Array[Int]
 }
 
 pub struct SkinUniforms {

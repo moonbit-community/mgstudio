@@ -318,6 +318,7 @@ pub fn SkinningMat4::mul(Self, Self) -> Self
 pub fn SkinningMat4::mul_write_row_major_f32(Self, Self, Array[Float], Int) -> Unit
 pub fn SkinningMat4::to_row_major_f32(Self) -> Array[Float]
 pub fn SkinningMat4::transform_point3(Self, @math.Vec3) -> @math.Vec3
+pub fn SkinningMat4::write_affine3_mul_row_major_f32(Self, @math.Affine3, Array[Float], Int) -> Unit
 pub fn SkinningMat4::write_row_major_f32(Self, Array[Float], Int) -> Unit
 
 // Type aliases

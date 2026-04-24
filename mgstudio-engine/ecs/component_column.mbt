@@ -274,6 +274,50 @@ pub fn[T] ComponentColumn::table_value_at_row(
 }
 
 ///|
+pub fn[T] ComponentColumn::table_row_location(
+  self : ComponentColumn[T],
+  entity : @core.Entity,
+) -> (Int, Int)? {
+  guard self.storage_type == Table else { return None }
+  let entity_id = entity.id
+  guard entity_id >= 0 &&
+    entity_id < self.world.entity_table_ids.length() &&
+    entity_id < self.world.entity_table_rows.length() else {
+    return None
+  }
+  let table_id = self.world.entity_table_ids[entity_id]
+  let row_index = self.world.entity_table_rows[entity_id]
+  guard table_id >= 0 && row_index >= 0 else { return None }
+  guard self.table_values_ref(table_id) is Some(values) else { return None }
+  guard row_index < values.length() else { return None }
+  Some((table_id, row_index))
+}
+
+///|
+pub fn[T] ComponentColumn::table_value_at_entity_row(
+  self : ComponentColumn[T],
+  entity : @core.Entity,
+  table_id : Int,
+  row_index : Int,
+) -> T? {
+  guard self.storage_type == Table else { return None }
+  guard TableRow::from_index(row_index) is Some(row) else { return None }
+  guard self.world.table_storage(table_id) is Some(table_ref) else {
+    return None
+  }
+  guard table_ref.val.entity_at_row(row) is Some(row_entity) else {
+    return None
+  }
+  guard row_entity.to_bits() == entity.to_bits() else { return None }
+  guard self.table_values_ref(table_id) is Some(values) else { return None }
+  if row_index < 0 || row_index >= values.length() {
+    None
+  } else {
+    Some(values[row_index])
+  }
+}
+
+///|
 pub fn[T] ComponentColumn::table_changed_sequence_at_row(
   self : ComponentColumn[T],
   table_id : Int,
@@ -297,6 +341,57 @@ pub fn[T] ComponentColumn::table_is_changed_at_row(
     Some(sequence) => system_sequence.contains(sequence)
     None => false
   }
+}
+
+///|
+pub fn[T] ComponentColumn::table_is_changed_at_entity_row(
+  self : ComponentColumn[T],
+  entity : @core.Entity,
+  table_id : Int,
+  row_index : Int,
+  system_sequence : @core.SystemSequence,
+) -> Bool? {
+  guard self.storage_type == Table else { return None }
+  guard TableRow::from_index(row_index) is Some(row) else { return None }
+  guard self.world.table_storage(table_id) is Some(table_ref) else {
+    return None
+  }
+  guard table_ref.val.entity_at_row(row) is Some(row_entity) else {
+    return None
+  }
+  guard row_entity.to_bits() == entity.to_bits() else { return None }
+  Some(self.table_is_changed_at_row(table_id, row_index, system_sequence))
+}
+
+///|
+pub fn[T] ComponentColumn::for_each_changed_table_entity(
+  self : ComponentColumn[T],
+  system_sequence : @core.SystemSequence,
+  visit : (@core.Entity, Int, Int) -> Bool,
+) -> Bool {
+  guard self.storage_type == Table else { return true }
+  for entry in self.world.tables.iter() {
+    let (table_id, table_ref) = entry
+    guard self.table_column_ref(table_id) is Some(column_ref) else {
+      continue
+    }
+    let row_count = table_ref.val.row_count()
+    for row_index in 0..<row_count {
+      let changed = match column_ref.val.changed_sequence_at_row(row_index) {
+        Some(sequence) => system_sequence.contains(sequence)
+        None => false
+      }
+      if !changed {
+        continue
+      }
+      guard TableRow::from_index(row_index) is Some(row) else { continue }
+      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
+      if !visit(entity, table_id, row_index) {
+        return false
+      }
+    }
+  }
+  true
 }
 
 ///|

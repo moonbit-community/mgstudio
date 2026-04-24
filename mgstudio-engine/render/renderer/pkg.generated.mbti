@@ -1028,6 +1028,30 @@ pub(all) struct HostMesh3dPreprocessMeshInput {
   previous_scale_x : Float
   previous_scale_y : Float
   previous_scale_z : Float
+  world_from_local_x_axis_x : Float
+  world_from_local_x_axis_y : Float
+  world_from_local_x_axis_z : Float
+  world_from_local_y_axis_x : Float
+  world_from_local_y_axis_y : Float
+  world_from_local_y_axis_z : Float
+  world_from_local_z_axis_x : Float
+  world_from_local_z_axis_y : Float
+  world_from_local_z_axis_z : Float
+  world_from_local_translation_x : Float
+  world_from_local_translation_y : Float
+  world_from_local_translation_z : Float
+  previous_world_from_local_x_axis_x : Float
+  previous_world_from_local_x_axis_y : Float
+  previous_world_from_local_x_axis_z : Float
+  previous_world_from_local_y_axis_x : Float
+  previous_world_from_local_y_axis_y : Float
+  previous_world_from_local_y_axis_z : Float
+  previous_world_from_local_z_axis_x : Float
+  previous_world_from_local_z_axis_y : Float
+  previous_world_from_local_z_axis_z : Float
+  previous_world_from_local_translation_x : Float
+  previous_world_from_local_translation_y : Float
+  previous_world_from_local_translation_z : Float
   flags : UInt
   first_vertex_index : Int
   first_index_index : Int
