@@ -3638,6 +3638,9 @@ fn run_schedule_stage(
     execution_plan.execution_batches,
     Some(stage),
     system_accesses=execution_plan.system_accesses,
+    set_ids=execution_plan.set_ids,
+    sets_with_conditions_of_systems=execution_plan.sets_with_conditions_of_systems,
+    systems_in_sets_with_conditions=execution_plan.systems_in_sets_with_conditions,
     apply_final_deferred=execution_plan.apply_final_deferred,
     set_run_conditions=execution_plan.set_run_conditions,
   )

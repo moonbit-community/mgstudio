@@ -722,6 +722,52 @@ test "app: failed set run_if does not skip other set or system conditions" {
 }
 
 ///|
+test "app: failed set run_if marks remaining set systems completed" {
+  let stage = schedule_label("SetRunIfCompletesRemainingSystems")
+  let set_a = system_set("SetRunIf.CompletesRemaining")
+  let first_system_condition_hits : Array[Int] = []
+  let second_system_condition_hits : Array[Int] = []
+  let system_runs : Array[String] = []
+  let mut sub_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(stage))
+    .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+    .add_systems(
+      stage,
+      system(fn(_world : @ecs.World) { system_runs.push("first") })
+      .in_set(set_a)
+      .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
+        let value : Int = try! @json.from_json(state.val)
+        first_system_condition_hits.push(value)
+        state.val = (value + 1).to_json()
+        true
+      }),
+    )
+    .add_systems(
+      stage,
+      system(fn(_world : @ecs.World) { system_runs.push("second") })
+      .in_set(set_a)
+      .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
+        let value : Int = try! @json.from_json(state.val)
+        second_system_condition_hits.push(value)
+        state.val = (value + 1).to_json()
+        true
+      }),
+    )
+    .configure_sets(
+      stage,
+      set_a,
+      set_run_ifs=[fn(_world : @ecs.World) { false }],
+    )
+
+  sub_app = sub_app.update()
+  sub_app = sub_app.update()
+
+  debug_inspect(system_runs, content="[]")
+  debug_inspect(first_system_condition_hits, content="[0, 1]")
+  debug_inspect(second_system_condition_hits, content="[]")
+}
+
+///|
 test "app: runtime-invalid system is still scheduled and validated during execution" {
   ignore(MissingRunIfParityResource::{  })
   let validation_kinds : Array[ErrorContextKind] = []

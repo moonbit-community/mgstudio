@@ -13,6 +13,92 @@
 // limitations under the License.
 
 ///|
+priv struct SingleThreadedExecutorState {
+  evaluated_sets : Array[Bool]
+  completed_systems : Array[Bool]
+  unapplied_systems : Array[Bool]
+  apply_final_deferred : Bool
+}
+
+///|
+fn single_threaded_executor_state_new(
+  system_count : Int,
+  set_count : Int,
+  apply_final_deferred : Bool,
+) -> SingleThreadedExecutorState {
+  let evaluated_sets : Array[Bool] = []
+  for _ in 0..<set_count {
+    evaluated_sets.push(false)
+  }
+  let completed_systems : Array[Bool] = []
+  let unapplied_systems : Array[Bool] = []
+  for _ in 0..<system_count {
+    completed_systems.push(false)
+    unapplied_systems.push(false)
+  }
+  {
+    evaluated_sets,
+    completed_systems,
+    unapplied_systems,
+    apply_final_deferred,
+  }
+}
+
+///|
+fn SingleThreadedExecutorState::mark_completed(
+  self : SingleThreadedExecutorState,
+  system_i : Int,
+) -> Unit {
+  if system_i >= 0 && system_i < self.completed_systems.length() {
+    self.completed_systems[system_i] = true
+  }
+}
+
+///|
+fn SingleThreadedExecutorState::is_completed(
+  self : SingleThreadedExecutorState,
+  system_i : Int,
+) -> Bool {
+  system_i >= 0 &&
+  system_i < self.completed_systems.length() &&
+  self.completed_systems[system_i]
+}
+
+///|
+fn SingleThreadedExecutorState::mark_unapplied(
+  self : SingleThreadedExecutorState,
+  system_i : Int,
+) -> Unit {
+  if system_i >= 0 && system_i < self.unapplied_systems.length() {
+    self.unapplied_systems[system_i] = true
+  }
+}
+
+///|
+fn SingleThreadedExecutorState::apply_deferred(
+  self : SingleThreadedExecutorState,
+  world : @ecs.World,
+  restart_batch? : Bool = true,
+) -> Unit {
+  let mut has_unapplied = false
+  for unapplied in self.unapplied_systems {
+    if unapplied {
+      has_unapplied = true
+      break
+    }
+  }
+  if has_unapplied || deferred_command_batch_has_entries() {
+    end_deferred_command_batch(world)
+  }
+  for i in 0..<self.unapplied_systems.length() {
+    self.unapplied_systems[i] = false
+  }
+  if restart_batch {
+    begin_deferred_command_batch()
+  }
+}
+
+///|
 fn run_systems(
   world : @ecs.World,
   systems : Array[SystemConfig[@ecs.World]],
@@ -20,6 +106,9 @@ fn run_systems(
   execution_batches : Array[Array[ScheduleExecutionNode]],
   stage : ScheduleStage?,
   system_accesses? : Array[SystemAccess] = [],
+  set_ids? : Array[SystemSet] = [],
+  sets_with_conditions_of_systems? : Array[Array[Int]] = [],
+  systems_in_sets_with_conditions? : Array[Array[Int]] = [],
   apply_final_deferred? : Bool = true,
   set_run_conditions? : @hashmap.HashMap[
     SystemSet,
@@ -75,10 +164,6 @@ fn run_systems(
       _ => true
     }
   }
-  fn apply_deferred_boundary() -> Unit {
-    end_deferred_command_batch(world)
-    begin_deferred_command_batch()
-  }
   fn system_validation_error(system_i : Int) -> String? {
     if system_i >= 0 && system_i < system_accesses.length() {
       system_accesses[system_i].validation_error()
@@ -87,6 +172,11 @@ fn run_systems(
     }
   }
   begin_deferred_command_batch()
+  let executor_state = single_threaded_executor_state_new(
+    systems.length(),
+    set_ids.length(),
+    apply_final_deferred,
+  )
   let set_run_if_results : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
   fn evaluate_set_run_if_once(set : SystemSet) -> Bool {
     match set_run_if_results.get(set) {
@@ -138,37 +228,38 @@ fn run_systems(
       }
       match node {
         AutoApplyDeferred(_) => {
-          apply_deferred_boundary()
+          executor_state.apply_deferred(world)
           stepping_record_system_run(
             stepping_ref, stage, systems, node, execution_i,
           )
           continue
         }
         ScheduledSystem(system_i) => {
+          if executor_state.is_completed(system_i) {
+            continue
+          }
           let cfg = systems[system_i]
           let mut should_run_system = true
-          let checked_sets : Array[SystemSet] = []
-          let set_conditions_passed = Ref::new(true)
-          fn check_set_run_conditions(set : SystemSet) -> Unit {
-            if checked_sets.contains(set) {
-              return
-            }
-            checked_sets.push(set)
-            if !evaluate_set_run_if_once(set) {
-              set_conditions_passed.val = false
-            }
-          }
-          for set in cfg.member_sets {
-            check_set_run_conditions(set)
-          }
-          match cfg.set {
-            Some(set) =>
-              if !set.has_prefix("__chain__:") {
-                check_set_run_conditions(set)
+          if system_i >= 0 &&
+            system_i < sets_with_conditions_of_systems.length() {
+            for set_i in sets_with_conditions_of_systems[system_i] {
+              if set_i >= 0 && set_i < set_ids.length() {
+                if set_i < executor_state.evaluated_sets.length() &&
+                  !executor_state.evaluated_sets[set_i] {
+                  let set_conditions_met = evaluate_set_run_if_once(set_ids[set_i])
+                  if !set_conditions_met &&
+                    set_i < systems_in_sets_with_conditions.length() {
+                    for skip_system_i in systems_in_sets_with_conditions[set_i] {
+                      executor_state.mark_completed(skip_system_i)
+                    }
+                  }
+                  executor_state.evaluated_sets[set_i] = true
+                }
+                should_run_system = should_run_system &&
+                  evaluate_set_run_if_once(set_ids[set_i])
               }
-            None => ()
+            }
           }
-          should_run_system = should_run_system && set_conditions_passed.val
           for cond_i in 0..<cfg.run_ifs.length() {
             let cond = cfg.run_ifs[cond_i]
             let cond_this_run = world.advance_sequence()
@@ -188,6 +279,7 @@ fn run_systems(
             systems[system_i].run_if_last_run_sequences[cond_i] = cond_this_run
             should_run_system = should_run_system && should_run
           }
+          executor_state.mark_completed(system_i)
           if !should_run_system {
             continue
           }
@@ -207,7 +299,7 @@ fn run_systems(
             None => ()
           }
           if cfg.is_apply_deferred_node {
-            apply_deferred_boundary()
+            executor_state.apply_deferred(world)
             stepping_record_system_run(
               stepping_ref, stage, systems, node, execution_i,
             )
@@ -253,6 +345,7 @@ fn run_systems(
                 )
               }
               systems[system_i].last_run_sequence = this_run
+              executor_state.mark_unapplied(system_i)
               stepping_record_system_run(
                 stepping_ref, stage, systems, node, execution_i,
               )
@@ -286,6 +379,7 @@ fn run_systems(
                 )
               }
               systems[system_i].last_run_sequence = this_run
+              executor_state.mark_unapplied(system_i)
               stepping_record_system_run(
                 stepping_ref, stage, systems, node, execution_i,
               )
@@ -316,8 +410,8 @@ fn run_systems(
       }
     }
   }
-  if apply_final_deferred {
-    end_deferred_command_batch(world)
+  if executor_state.apply_final_deferred {
+    executor_state.apply_deferred(world, restart_batch=false)
   }
   stepping_finish_stage(stepping_ref, stage, execution_order.length())
 }

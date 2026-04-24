@@ -148,6 +148,9 @@ priv struct ScheduleAccessPlan {
   allowed_ambiguous_fingerprint : Int
   auto_insert_apply_deferred : Bool
   system_accesses : Array[SystemAccess]
+  set_ids : Array[SystemSet]
+  sets_with_conditions_of_systems : Array[Array[Int]]
+  systems_in_sets_with_conditions : Array[Array[Int]]
   execution_order : Array[ScheduleExecutionNode]
   invalid_system_errors : Array[(Int, String)]
   single_threaded_batches : Array[Array[ScheduleExecutionNode]]
@@ -160,6 +163,9 @@ priv struct ScheduleExecutionPlan[W] {
   execution_order : Array[ScheduleExecutionNode]
   execution_batches : Array[Array[ScheduleExecutionNode]]
   system_accesses : Array[SystemAccess]
+  set_ids : Array[SystemSet]
+  sets_with_conditions_of_systems : Array[Array[Int]]
+  systems_in_sets_with_conditions : Array[Array[Int]]
   apply_final_deferred : Bool
   set_run_conditions : @hashmap.HashMap[
     SystemSet,
@@ -1051,6 +1057,9 @@ fn[W] schedule_build_access_plan(
       allowed_ambiguous_fingerprint,
       auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
       system_accesses: [],
+      set_ids: [],
+      sets_with_conditions_of_systems: [],
+      systems_in_sets_with_conditions: [],
       execution_order: [],
       invalid_system_errors: [],
       single_threaded_batches: [],
@@ -1076,6 +1085,35 @@ fn[W] schedule_build_access_plan(
   let runnable_mask : Array[Bool] = []
   for _ in 0..<system_count {
     runnable_mask.push(true)
+  }
+  let set_ids : Array[SystemSet] = []
+  for set in graph_plan.set_order {
+    if schedule_set_has_run_conditions(schedule_entry, set) {
+      set_ids.push(set)
+    }
+  }
+  let sets_with_conditions_of_systems : Array[Array[Int]] = []
+  for _ in 0..<system_count {
+    sets_with_conditions_of_systems.push([])
+  }
+  let systems_in_sets_with_conditions : Array[Array[Int]] = []
+  for _ in 0..<set_ids.length() {
+    systems_in_sets_with_conditions.push([])
+  }
+  for set_i in 0..<set_ids.length() {
+    let set = set_ids[set_i]
+    for system_i in 0..<system_count {
+      let cfg = schedule_entry.systems[system_i]
+      let mut in_set = cfg.member_sets.contains(set)
+      match cfg.set {
+        Some(primary_set) => if primary_set == set { in_set = true }
+        None => ()
+      }
+      if in_set {
+        sets_with_conditions_of_systems[system_i].push(set_i)
+        systems_in_sets_with_conditions[set_i].push(system_i)
+      }
+    }
   }
   let base_system_edges : Array[(Int, Int, Bool)] = []
   for edge in graph_plan.system_dependency_edges {
@@ -1190,6 +1228,9 @@ fn[W] schedule_build_access_plan(
     allowed_ambiguous_fingerprint,
     auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
     system_accesses,
+    set_ids,
+    sets_with_conditions_of_systems,
+    systems_in_sets_with_conditions,
     execution_order,
     invalid_system_errors,
     single_threaded_batches,
@@ -1278,6 +1319,9 @@ fn[W] schedule_execution_plan(
     execution_order: access_plan.execution_order,
     execution_batches,
     system_accesses: access_plan.system_accesses,
+    set_ids: access_plan.set_ids,
+    sets_with_conditions_of_systems: access_plan.sets_with_conditions_of_systems,
+    systems_in_sets_with_conditions: access_plan.systems_in_sets_with_conditions,
     apply_final_deferred: schedule_entry.apply_final_deferred,
     set_run_conditions: schedule_entry.set_run_conditions,
     invalid_system_errors: access_plan.invalid_system_errors,

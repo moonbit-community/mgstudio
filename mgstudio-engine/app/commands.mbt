@@ -220,6 +220,14 @@ fn begin_deferred_command_batch() -> Unit {
 }
 
 ///|
+fn deferred_command_batch_has_entries() -> Bool {
+  match deferred_command_batch_queue_ref.val {
+    Some(entries) => entries.length() > 0
+    None => false
+  }
+}
+
+///|
 fn flush_deferred_command_entries(
   world : @ecs.World,
   entries : Array[(@core.Sequence, DeferredCommandEntry)],
