@@ -86,9 +86,19 @@ pub fn App::schedule_graph_dot(
   stage : ScheduleStage,
   settings? : ScheduleGraphSettings = ScheduleGraphSettings::default(),
 ) -> String {
-  let systems = schedule_systems(self.sub_apps.main.schedule, stage)
   let schedule_entry = schedule_entry_ref(self.sub_apps.main.schedule, stage).val
   let graph_plan = schedule_resolve_graph_plan(schedule_entry, stage)
+  let systems = if graph_plan.build_error is Some(_) {
+    schedule_systems(self.sub_apps.main.schedule, stage)
+  } else {
+    schedule_resolve_access_plan(
+      schedule_entry,
+      graph_plan,
+      schedule_entry.build_settings,
+      self.world(),
+      @hashmap.HashMap::new(),
+    ).systems
+  }
   let execution_order = if graph_plan.build_error is Some(_) {
     let fallback : Array[ScheduleExecutionNode] = []
     for i in 0..<systems.length() {

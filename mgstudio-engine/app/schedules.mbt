@@ -132,7 +132,9 @@ priv enum ScheduleExecutionNode {
   AutoApplyDeferred(Int)
 }
 
-priv struct ScheduleBuildPassGraph {
+priv struct ScheduleBuildPassGraph[W] {
+  systems : Array[SystemConfig[W]]
+  system_accesses : Array[SystemAccess]
   system_to_node : Array[Int]
   nodes : Array[ScheduleExecutionNode]
   node_edges : Array[(Int, Int)]
@@ -141,12 +143,13 @@ priv struct ScheduleBuildPassGraph {
 }
 
 ///|
-priv struct ScheduleAccessPlan {
+priv struct ScheduleAccessPlan[W] {
   graph_generation : Int
   world_id : Int
   component_registration_generation : Int
   allowed_ambiguous_fingerprint : Int
   auto_insert_apply_deferred : Bool
+  systems : Array[SystemConfig[W]]
   system_accesses : Array[SystemAccess]
   set_ids : Array[SystemSet]
   sets_with_conditions_of_systems : Array[Array[Int]]
@@ -198,7 +201,7 @@ priv struct ScheduleEntry[W] {
   mut chain_internal_set_counter : Int
   mut graph_generation : Int
   mut cached_graph_plan : ScheduleGraphPlan?
-  mut cached_access_plan : ScheduleAccessPlan?
+  mut cached_access_plan : ScheduleAccessPlan[W]?
   mut last_reported_build_error_generation : Int?
   mut last_reported_invalid_access_key : (Int, Int, Int, Int, Bool)?
   mut build_settings : ScheduleBuildSettings
@@ -530,11 +533,13 @@ fn schedule_topo_node_order(
 }
 
 ///|
-fn schedule_build_pass_graph_new(
+fn[W] schedule_build_pass_graph_new(
   system_count : Int,
+  systems : Array[SystemConfig[W]],
+  system_accesses : Array[SystemAccess],
   base_system_order : Array[Int],
   base_system_edges : Array[(Int, Int, Bool)],
-) -> ScheduleBuildPassGraph {
+) -> ScheduleBuildPassGraph[W] {
   let system_to_node : Array[Int] = []
   for _ in 0..<system_count {
     system_to_node.push(-1)
@@ -556,6 +561,8 @@ fn schedule_build_pass_graph_new(
     }
   }
   {
+    systems: systems.copy(),
+    system_accesses: system_accesses.copy(),
     system_to_node,
     nodes,
     node_edges,
@@ -565,28 +572,32 @@ fn schedule_build_pass_graph_new(
 }
 
 ///|
-fn ScheduleBuildPassGraph::add_auto_sync_node(
-  self : ScheduleBuildPassGraph,
+fn[W] ScheduleBuildPassGraph::add_auto_sync_node(
+  self : ScheduleBuildPassGraph[W],
 ) -> Int {
   let node_i = self.nodes.length()
   let sync_i = self.auto_sync_count
   self.auto_sync_count = sync_i + 1
-  self.nodes.push(AutoApplyDeferred(sync_i))
+  let system_i = self.systems.length()
+  self.systems.push(auto_apply_deferred_system(sync_i))
+  self.system_accesses.push(SystemAccess::new())
+  self.system_to_node.push(node_i)
+  self.nodes.push(ScheduledSystem(system_i))
   self.base_node_order.push(node_i)
   node_i
 }
 
 ///|
-fn ScheduleBuildPassGraph::system_node(
-  self : ScheduleBuildPassGraph,
+fn[W] ScheduleBuildPassGraph::system_node(
+  self : ScheduleBuildPassGraph[W],
   system_i : Int,
 ) -> Int {
   self.system_to_node[system_i]
 }
 
 ///|
-fn ScheduleBuildPassGraph::add_edge(
-  self : ScheduleBuildPassGraph,
+fn[W] ScheduleBuildPassGraph::add_edge(
+  self : ScheduleBuildPassGraph[W],
   from_node : Int,
   to_node : Int,
 ) -> Unit {
@@ -596,8 +607,8 @@ fn ScheduleBuildPassGraph::add_edge(
 }
 
 ///|
-fn ScheduleBuildPassGraph::remove_edge(
-  self : ScheduleBuildPassGraph,
+fn[W] ScheduleBuildPassGraph::remove_edge(
+  self : ScheduleBuildPassGraph[W],
   from_node : Int,
   to_node : Int,
 ) -> Unit {
@@ -611,8 +622,8 @@ fn ScheduleBuildPassGraph::remove_edge(
 }
 
 ///|
-fn schedule_build_pass_graph_execution_order(
-  graph : ScheduleBuildPassGraph,
+fn[W] schedule_build_pass_graph_execution_order(
+  graph : ScheduleBuildPassGraph[W],
 ) -> Array[ScheduleExecutionNode] {
   let node_order = match schedule_topo_node_order(
     graph.nodes.length(),
@@ -1048,7 +1059,7 @@ fn[W] schedule_build_access_plan(
   world_id : Int,
   component_registration_generation : Int,
   allowed_ambiguous_fingerprint : Int,
-) -> ScheduleAccessPlan {
+) -> ScheduleAccessPlan[W] {
   if graph_plan.build_error is Some(_) {
     return {
       graph_generation: graph_plan.graph_generation,
@@ -1056,6 +1067,7 @@ fn[W] schedule_build_access_plan(
       component_registration_generation,
       allowed_ambiguous_fingerprint,
       auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
+      systems: [],
       system_accesses: [],
       set_ids: [],
       sets_with_conditions_of_systems: [],
@@ -1144,6 +1156,8 @@ fn[W] schedule_build_access_plan(
   }
   let build_pass_graph = schedule_build_pass_graph_new(
     system_count,
+    schedule_entry.systems,
+    system_accesses,
     base_runnable_execution_order,
     base_system_edges,
   )
@@ -1156,6 +1170,11 @@ fn[W] schedule_build_access_plan(
     runnable_mask,
   )
   let execution_order = schedule_build_pass_graph_execution_order(build_pass_graph)
+  let execution_systems = build_pass_graph.systems
+  let execution_system_accesses = build_pass_graph.system_accesses
+  while sets_with_conditions_of_systems.length() < execution_systems.length() {
+    sets_with_conditions_of_systems.push([])
+  }
   let single_threaded_batches : Array[Array[ScheduleExecutionNode]] = []
   for node in execution_order {
     single_threaded_batches.push([node])
@@ -1177,13 +1196,13 @@ fn[W] schedule_build_access_plan(
         multi_threaded_batches.push([node])
       }
       ScheduledSystem(system_i) => {
-        if schedule_entry.systems[system_i].is_apply_deferred_node {
+        if execution_systems[system_i].is_apply_deferred_node {
           flush_current_batch()
           multi_threaded_batches.push([node])
           continue
         }
         let system_layer = graph_plan.system_layers[system_i]
-        let access = system_accesses[system_i]
+        let access = execution_system_accesses[system_i]
         let can_join_current_batch = Ref::new(
           current_batch_ref.val.length() > 0 &&
           current_batch_layer_ref.val == Some(system_layer),
@@ -1193,7 +1212,7 @@ fn[W] schedule_build_access_plan(
             match existing_node {
               ScheduledSystem(existing_i) =>
                 if !system_access_compatible(
-                    system_accesses[existing_i],
+                    execution_system_accesses[existing_i],
                     access,
                     allowed_ambiguous_components,
                   ) {
@@ -1227,7 +1246,8 @@ fn[W] schedule_build_access_plan(
     component_registration_generation,
     allowed_ambiguous_fingerprint,
     auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
-    system_accesses,
+    systems: execution_systems,
+    system_accesses: execution_system_accesses,
     set_ids,
     sets_with_conditions_of_systems,
     systems_in_sets_with_conditions,
@@ -1245,7 +1265,7 @@ fn[W] schedule_resolve_access_plan(
   build_settings : ScheduleBuildSettings,
   world : @ecs.World,
   allowed_ambiguous_components : @hashmap.HashMap[Int, Bool],
-) -> ScheduleAccessPlan {
+) -> ScheduleAccessPlan[W] {
   let world_id = world.world_id()
   let component_registration_generation = world.component_registration_generation()
   let allowed_ambiguous_fingerprint = schedule_allowed_ambiguous_fingerprint(
@@ -1315,7 +1335,7 @@ fn[W] schedule_execution_plan(
     MultiThreaded => access_plan.multi_threaded_batches
   }
   {
-    systems: schedule_entry.systems,
+    systems: access_plan.systems,
     execution_order: access_plan.execution_order,
     execution_batches,
     system_accesses: access_plan.system_accesses,

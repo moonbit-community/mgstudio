@@ -1980,6 +1980,21 @@ pub fn apply_deferred_system() -> SystemConfig[@ecs.World] {
 }
 
 ///|
+fn[W] auto_apply_deferred_system(sync_i : Int) -> SystemConfig[W] {
+  let config = system(fn(_world : W) {
+    let world = current_world_or_abort()
+    end_deferred_command_batch(world)
+    begin_deferred_command_batch()
+  })
+  SystemConfig::{
+    ..config,
+    name: Some("bevy_ecs::apply_deferred#auto\{sync_i.to_string()}"),
+    is_apply_deferred_node: true,
+    access_factory: Some(fn(_world : @ecs.World) { SystemAccess::new() }),
+  }
+}
+
+///|
 pub(open) trait ChainedSystemConfigs {
   chain(Self) -> SystemConfig[@ecs.World]
 }

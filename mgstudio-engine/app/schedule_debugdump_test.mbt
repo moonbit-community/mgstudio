@@ -40,3 +40,27 @@ test "app schedule graph dot includes filtered system order for stage" {
   debug_inspect(filtered.contains("\"tests.a\""), content="false")
   debug_inspect(filtered.contains("\"tests.b\""), content="true")
 }
+
+///|
+test "app schedule graph dot includes auto apply deferred system node" {
+  let deferred_system : SystemConfig[@ecs.World] = system_config_param(fn(
+    commands : Commands,
+  ) {
+    ignore(commands.spawn_empty())
+  }).named("tests.deferred")
+  let reader_system = system(fn(_world : @ecs.World) { () }).named(
+    "tests.reader",
+  )
+  let app = App::new(@ecs.World::new()).add_systems(
+    PostUpdate,
+    chain((deferred_system, reader_system)),
+  )
+
+  let dot = app.schedule_graph_dot(PostUpdate)
+  debug_inspect(dot.contains("\"tests.deferred\""), content="true")
+  debug_inspect(
+    dot.contains("\"bevy_ecs::apply_deferred#auto0\""),
+    content="true",
+  )
+  debug_inspect(dot.contains("\"tests.reader\""), content="true")
+}

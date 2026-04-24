@@ -20,7 +20,7 @@ priv enum ScheduleBuildPassKind {
 ///|
 fn[W] schedule_run_build_passes(
   schedule_entry : ScheduleEntry[W],
-  graph : ScheduleBuildPassGraph,
+  graph : ScheduleBuildPassGraph[W],
   base_system_order : Array[Int],
   base_system_edges : Array[(Int, Int, Bool)],
   system_accesses : Array[SystemAccess],

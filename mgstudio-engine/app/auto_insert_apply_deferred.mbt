@@ -15,7 +15,7 @@
 ///|
 fn[W] schedule_auto_insert_apply_deferred_pass(
   schedule_entry : ScheduleEntry[W],
-  graph : ScheduleBuildPassGraph,
+  graph : ScheduleBuildPassGraph[W],
   base_system_order : Array[Int],
   base_system_edges : Array[(Int, Int, Bool)],
   system_accesses : Array[SystemAccess],
