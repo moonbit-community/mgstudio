@@ -891,6 +891,7 @@ fn[W] system_config_with_access(
     chain_members: None,
     chain_ignore_deferred: false,
     set: None,
+    member_sets: [],
     before: [],
     after: [],
     before_ignore_deferred: [],
@@ -1119,6 +1120,7 @@ pub fn[W] fallible_system(
     chain_members: None,
     chain_ignore_deferred: false,
     set: None,
+    member_sets: [],
     before: [],
     after: [],
     before_ignore_deferred: [],
@@ -1831,6 +1833,7 @@ pub struct SystemConfig[W] {
   chain_members : Array[SystemConfig[W]]?
   chain_ignore_deferred : Bool
   set : SystemSet?
+  member_sets : Array[SystemSet]
   before : Array[SystemSet]
   after : Array[SystemSet]
   before_ignore_deferred : Array[SystemSet]
@@ -1854,6 +1857,7 @@ pub fn[W] system(system : SystemFn[W], loc~ : SourceLoc) -> SystemConfig[W] {
     chain_members: None,
     chain_ignore_deferred: false,
     set: None,
+    member_sets: [],
     before: [],
     after: [],
     before_ignore_deferred: [],
@@ -1915,7 +1919,14 @@ pub fn[W] SystemConfig::in_set(
   self : SystemConfig[W],
   set : SystemSet,
 ) -> SystemConfig[W] {
-  SystemConfig::{ ..self, set: Some(set) }
+  if !self.member_sets.contains(set) {
+    self.member_sets.push(set)
+  }
+  let primary_set = match self.set {
+    Some(current) => Some(current)
+    None => Some(set)
+  }
+  SystemConfig::{ ..self, set: primary_set }
 }
 
 ///|
@@ -3703,13 +3714,30 @@ fn run_systems(
         apply_deferred_boundary(execution_i)
         continue
       }
+      let checked_sets : Array[SystemSet] = []
+      let set_conditions_passed = Ref::new(true)
+      fn check_set_run_conditions(set : SystemSet) -> Unit {
+        if checked_sets.contains(set) || !set_conditions_passed.val {
+          return
+        }
+        checked_sets.push(set)
+        if !evaluate_set_run_if_once(set) {
+          set_conditions_passed.val = false
+        }
+      }
+      for set in cfg.member_sets {
+        check_set_run_conditions(set)
+      }
       match cfg.set {
         Some(set) =>
-          if !evaluate_set_run_if_once(set) {
-            apply_deferred_boundary(execution_i)
-            continue
+          if !set.has_prefix("__chain__:") {
+            check_set_run_conditions(set)
           }
         None => ()
+      }
+      if !set_conditions_passed.val {
+        apply_deferred_boundary(execution_i)
+        continue
       }
       let mut should_skip = false
       for cond_i in 0..<cfg.run_ifs.length() {

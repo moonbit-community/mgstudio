@@ -2169,7 +2169,7 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       text_set_sync_ecs,
       after=[
         @app.system_set("mgstudio.ui.stack"),
-        @transform.transform_set_sync_simple_transforms,
+        @transform.transform_set_propagate,
       ],
       before=[text_set_render_prepare],
     )

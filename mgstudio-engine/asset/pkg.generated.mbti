@@ -56,6 +56,10 @@ pub fn asset_create_dynamic_texture_with_mips(@math.UVec2, Int, Bool) -> Handle[
 
 pub fn asset_create_texture_mip_view(Handle[@image.Image], Int) -> Handle[@image.Image]
 
+pub fn asset_dispatch_load_failed_event(@ecs.World, UntypedAssetLoadFailedEvent) -> Unit
+
+pub fn asset_event_system_set() -> String
+
 pub fn[T] asset_events_include_change(Array[AssetEvent[T]], Handle[T]) -> Bool
 
 pub fn[T] asset_events_include_removal(Array[AssetEvent[T]], Handle[T]) -> Bool
@@ -84,6 +88,8 @@ pub fn asset_image_set_usage_bits(Handle[@image.Image], Int) -> Unit
 
 pub fn asset_image_usage_bits(Handle[@image.Image]) -> Int
 
+pub fn asset_internal_system_set() -> String
+
 pub fn asset_is_texture_loaded(Handle[@image.Image]) -> Bool
 
 pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]]
@@ -97,6 +103,8 @@ pub fn asset_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn asset_plugin_nearest(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[T] asset_processed(T) -> ProcessedAsset[T]
+
+pub fn[T] asset_register_load_failed_event_for_asset_type(Assets[T]) -> Unit
 
 pub fn[T] asset_register_loader((AssetServer, String) -> Handle[T]) -> Unit
 
@@ -135,6 +143,8 @@ pub fn asset_text_to_bytes(String) -> Bytes
 pub fn asset_texture_height(Handle[@image.Image]) -> Int
 
 pub fn asset_texture_width(Handle[@image.Image]) -> Int
+
+pub fn asset_tracking_system_set() -> String
 
 pub fn[T] asset_transform_and_save(Array[String], (AssetServer, AssetPath, Bytes) -> ProcessedAsset[T] raise AssetProcessError) -> LoadTransformAndSave[T]
 
@@ -252,6 +262,8 @@ pub fn[T] register_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.Ap
 
 pub fn[T] register_asset_processor(@app.App[@ecs.World], LoadTransformAndSave[T]) -> @app.App[@ecs.World]
 
+pub fn[T] register_asset_processor_named(@app.App[@ecs.World], String, LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+
 pub fn register_asset_source(@app.App[@ecs.World], AssetSourceId, AssetSourceBuilder) -> @app.App[@ecs.World]
 
 pub fn register_embedded_asset_virtual_bytes(String, Bytes) -> Unit
@@ -259,6 +271,8 @@ pub fn register_embedded_asset_virtual_bytes(String, Bytes) -> Unit
 pub fn[T, Settings, P : IntoAssetPath] save_using_saver(AssetServer, AssetSaver[T, Settings], P, SavedAsset[T], Settings) -> Unit raise AssetSaveError
 
 pub fn set_default_asset_processor(@app.App[@ecs.World], String) -> @app.App[@ecs.World]
+
+pub fn set_default_asset_processor_by_name(@app.App[@ecs.World], String, String) -> @app.App[@ecs.World]
 
 pub fn web_asset_http_runtime_supported() -> Bool
 
@@ -296,6 +310,14 @@ pub struct AssetId[_] {
 } derive(Eq, @debug.Debug)
 pub fn[T] AssetId::index(Self[T]) -> Int
 pub fn[T] AssetId::new(Int) -> Self[T]
+
+pub struct AssetLoadFailedEvent[T] {
+  id : AssetId[T]
+  path : AssetPath
+  error : String
+}
+pub fn[T] AssetLoadFailedEvent::untyped(Self[T]) -> UntypedAssetLoadFailedEvent
+pub impl[T] @ecs.Message for AssetLoadFailedEvent[T]
 
 pub struct AssetLoader[T] {
   extensions : Array[String]
@@ -363,11 +385,14 @@ pub struct AssetServer {
   paths : @ref.Ref[Array[String]]
   path_fingerprints : @ref.Ref[@hashmap.HashMap[String, Int]]
   typed_asset_paths : @ref.Ref[@hashmap.HashMap[String, Int]]
+  typed_asset_load_states : @ref.Ref[@hashmap.HashMap[String, LoadState]]
+  typed_asset_dependency_load_states : @ref.Ref[@hashmap.HashMap[String, DependencyLoadState]]
+  typed_asset_recursive_dependency_load_states : @ref.Ref[@hashmap.HashMap[String, RecursiveDependencyLoadState]]
+  pending_load_failures : @ref.Ref[Array[UntypedAssetLoadFailedEvent]]
   pending_processed_asset_loads : @ref.Ref[Array[PendingProcessedAssetLoad]]
   pending_typed_asset_loads : @ref.Ref[Array[PendingTypedAssetLoad]]
   pending_acquired_loads : @ref.Ref[Array[PendingAcquiredLoad]]
   image_paths : @ref.Ref[Array[(String, Handle[@image.Image])]]
-  image_loaded_states : @ref.Ref[@hashmap.HashMap[Int, Bool]]
   pending_image_assets : @ref.Ref[@hashmap.HashMap[Int, @image.Image]]
   image_array_layouts : @ref.Ref[Array[(Int, @image.ImageArrayLayout)]]
   image_render_asset_usages : @ref.Ref[Array[(Int, RenderAssetUsages)]]
@@ -377,10 +402,13 @@ pub struct AssetServer {
   default_sampler_nearest : @ref.Ref[Bool]
   mode : @ref.Ref[AssetMode]
   processed_file_path : @ref.Ref[String?]
+  owner_world : @ref.Ref[@ecs.World?]
 }
 pub fn[T] AssetServer::add(Self, T) -> Handle[T]
+pub fn[T] AssetServer::dependency_load_state(Self, Handle[T]) -> DependencyLoadState
 pub fn[P : IntoAssetPath] AssetServer::get_handle(Self, P) -> Handle[@image.Image]?
 pub fn AssetServer::gltf_loader_settings_for_asset_path(Self, String) -> ImageLoaderSettings
+pub fn[T] AssetServer::is_loaded_with_dependencies(Self, Handle[T]) -> Bool
 pub fn[T, P : IntoAssetPath] AssetServer::load(Self, P) -> Handle[T]
 pub fn[T, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(Self, P, G) -> Handle[T]
 pub fn AssetServer::load_bytes(Self, String) -> Handle[Blob]
@@ -390,10 +418,18 @@ pub fn AssetServer::load_font(Self, String) -> Handle[Font]
 pub fn[P : IntoAssetPath] AssetServer::load_image(Self, P) -> Handle[@image.Image]
 pub fn[P : IntoAssetPath] AssetServer::load_image_direct(Self, P, Bytes) -> @image.Image
 pub fn[P : IntoAssetPath] AssetServer::load_nearest(Self, P) -> Handle[@image.Image]
+pub fn[T] AssetServer::load_state(Self, Handle[T]) -> LoadState
 pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[@image.Image]
 pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int
 pub fn[T, P : IntoAssetPath] AssetServer::load_with_settings(Self, P, (ImageLoaderSettings) -> Unit) -> Handle[T]
 pub fn AssetServer::new() -> Self
+pub fn[T] AssetServer::recursive_dependency_load_state(Self, Handle[T]) -> RecursiveDependencyLoadState
+pub fn AssetServer::set_typed_dependency_load_state(Self, String, Int, DependencyLoadState) -> Unit
+pub fn AssetServer::set_typed_failed_states(Self, String, Int, String) -> Unit
+pub fn AssetServer::set_typed_load_state(Self, String, Int, LoadState) -> Unit
+pub fn AssetServer::set_typed_loaded_states(Self, String, Int) -> Unit
+pub fn AssetServer::set_typed_loading_states(Self, String, Int) -> Unit
+pub fn AssetServer::set_typed_recursive_dependency_load_state(Self, String, Int, RecursiveDependencyLoadState) -> Unit
 pub impl @app.Resource for AssetServer
 
 pub struct AssetSourceBuilder {
@@ -432,6 +468,13 @@ pub impl[T] @app.Resource for Assets[T]
 
 pub struct Blob {
 }
+
+pub(all) enum DependencyLoadState {
+  NotLoaded
+  Loading
+  Loaded
+  Failed(String)
+} derive(Eq, @debug.Debug)
 
 pub struct DynamicTextureAtlasBuilder {
   size : @math.UVec2
@@ -489,6 +532,13 @@ pub fn[T] LoadContext::add_labeled_asset(Self, String, T) -> Handle[T]
 pub fn LoadContext::asset_server(Self) -> AssetServer
 pub fn LoadContext::path(Self) -> AssetPath
 
+pub(all) enum LoadState {
+  NotLoaded
+  Loading
+  Loaded
+  Failed(String)
+} derive(Eq, @debug.Debug)
+
 pub struct LoadTransformAndSave[T] {
   extensions : Array[String]
   process : (AssetServer, AssetPath, Bytes) -> ProcessedAsset[T] raise AssetProcessError
@@ -513,6 +563,13 @@ pub fn[T] ProcessedAsset::asset(Self[T]) -> T
 pub fn[T] ProcessedAsset::new(T) -> Self[T]
 pub fn[T] ProcessedAsset::saved_bytes(Self[T]) -> Bytes?
 pub fn[T] ProcessedAsset::with_saved_bytes(Self[T], Bytes) -> Self[T]
+
+pub(all) enum RecursiveDependencyLoadState {
+  NotLoaded
+  Loading
+  Loaded
+  Failed(String)
+} derive(Eq, @debug.Debug)
 
 pub struct RenderAssetUsages {
   bits : Int
@@ -585,6 +642,15 @@ pub struct TextureAtlasSources {
 }
 pub fn TextureAtlasSources::handle(Self, Handle[TextureAtlasLayout], Handle[@image.Image]) -> TextureAtlas?
 pub fn TextureAtlasSources::texture_index(Self, Handle[@image.Image]) -> Int?
+
+pub struct UntypedAssetLoadFailedEvent {
+  type_name : String
+  id : Int
+  path : AssetPath
+  error : String
+}
+pub fn UntypedAssetLoadFailedEvent::new(String, Int, AssetPath, String) -> Self
+pub impl @ecs.Message for UntypedAssetLoadFailedEvent
 
 pub(all) struct WebAssetPlugin {
   silence_startup_warning : Bool

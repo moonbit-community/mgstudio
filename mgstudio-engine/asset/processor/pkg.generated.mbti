@@ -22,7 +22,11 @@ pub fn[T] init_asset_processor(@app.App[@ecs.World], @asset.LoadTransformAndSave
 
 pub fn[T] register_asset_processor(@app.App[@ecs.World], @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
 
+pub fn[T] register_asset_processor_named(@app.App[@ecs.World], String, @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+
 pub fn set_default_asset_processor(@app.App[@ecs.World], String) -> @app.App[@ecs.World]
+
+pub fn set_default_asset_processor_by_name(@app.App[@ecs.World], String, String) -> @app.App[@ecs.World]
 
 // Errors
 

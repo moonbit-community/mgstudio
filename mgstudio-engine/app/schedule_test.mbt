@@ -463,6 +463,63 @@ test "app: chained tuple preserves per-system run_if evaluation" {
 }
 
 ///|
+test "app: chained tuple in_set preserves order and set boundaries" {
+  let log : Array[String] = []
+  let propagate_set = system_set("test.chain.propagate")
+  let app = App::new(@ecs.World::new())
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push("before") }).before(
+        propagate_set,
+      ),
+    )
+    .add_systems(
+      Update,
+      (
+        system(fn(_world : @ecs.World) { log.push("mark") }),
+        system(fn(_world : @ecs.World) { log.push("propagate") }),
+        system(fn(_world : @ecs.World) { log.push("sync") }),
+      )
+      |> chain()
+      |> SystemConfig::in_set(propagate_set),
+    )
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push("after") }).after(
+        propagate_set,
+      ),
+    )
+  app.run_once() |> ignore
+  debug_inspect(
+    log.join(","),
+    content="\"before,mark,propagate,sync,after\"",
+  )
+}
+
+///|
+test "app: chained tuple in_set applies set run conditions" {
+  let log : Array[String] = []
+  let gated_set = system_set("test.chain.gated")
+  let app = App::new(@ecs.World::new())
+    .add_systems(
+      Update,
+      (
+        system(fn(_world : @ecs.World) { log.push("first") }),
+        system(fn(_world : @ecs.World) { log.push("second") }),
+      )
+      |> chain()
+      |> SystemConfig::in_set(gated_set),
+    )
+    .configure_sets(
+      Update,
+      gated_set,
+      set_run_ifs=[fn(_world : @ecs.World) { false }],
+    )
+  app.run_once() |> ignore
+  debug_inspect(log, content="[]")
+}
+
+///|
 test "app: Last stage runs after PostUpdate" {
   let log : Array[String] = []
   let app = App::new(@ecs.World::new())

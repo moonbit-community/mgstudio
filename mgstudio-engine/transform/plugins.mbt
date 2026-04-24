@@ -13,25 +13,14 @@
 // limitations under the License.
 
 ///|
-pub let transform_set_mark_dirty_trees : @app.SystemSet = @app.system_set(
-  "mgstudio.transform.mark_dirty_trees",
-)
-
-///|
 pub let transform_set_propagate : @app.SystemSet = @app.system_set(
   "mgstudio.transform.propagate",
-)
-
-///|
-pub let transform_set_sync_simple_transforms : @app.SystemSet = @app.system_set(
-  "mgstudio.transform.sync_simple_transforms",
 )
 
 ///|
 fn transform_mark_dirty_trees_system_config() -> @app.SystemConfig[@ecs.World] {
   @app.system(@app.system_param4(mark_dirty_trees_system))
   .named("mgstudio.transform.mark_dirty_trees_system")
-  .in_set(transform_set_mark_dirty_trees)
 }
 
 ///|
@@ -39,7 +28,6 @@ fn transform_propagate_parent_transforms_system_config(
 ) -> @app.SystemConfig[@ecs.World] {
   @app.system(propagate_parent_transforms_system)
   .named("mgstudio.transform.propagate_parent_transforms_system")
-  .in_set(transform_set_propagate)
 }
 
 ///|
@@ -47,7 +35,6 @@ fn transform_sync_simple_transforms_system_config(
 ) -> @app.SystemConfig[@ecs.World] {
   @app.system(@app.system_param2(sync_simple_transforms))
   .named("mgstudio.transform.sync_simple_transforms")
-  .in_set(transform_set_sync_simple_transforms)
 }
 
 ///|
@@ -67,7 +54,8 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       transform_propagate_parent_transforms_system_config(),
       transform_sync_simple_transforms_system_config(),
     )
-    |> @app.chain(),
+    |> @app.chain()
+    |> @app.SystemConfig::in_set(transform_set_propagate),
   )
   .add_systems(
     @app.PostUpdate,
@@ -76,6 +64,7 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       transform_propagate_parent_transforms_system_config(),
       transform_sync_simple_transforms_system_config(),
     )
-    |> @app.chain(),
+    |> @app.chain()
+    |> @app.SystemConfig::in_set(transform_set_propagate),
   )
 }

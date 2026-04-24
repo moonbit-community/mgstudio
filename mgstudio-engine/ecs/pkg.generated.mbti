@@ -218,6 +218,9 @@ pub fn[T] ComponentColumn::set_sequence_only(Self[T], @core.Entity, T) -> Bool
 pub fn[T] ComponentColumn::set_sequence_only_fast(Self[T], @core.Entity, T) -> Bool
 pub fn[T] ComponentColumn::set_sequence_only_hot(Self[T], @core.Entity, T) -> Bool
 pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(Self[T], @core.Entity, Array[T], Int, T, Int) -> Bool
+pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row(Self[T], Int, Array[T], Int, T, Int) -> Bool
+pub fn[T] ComponentColumn::table_changed_sequence_at_row(Self[T], Int, Int) -> Int?
+pub fn[T] ComponentColumn::table_is_changed_at_row(Self[T], Int, Int, @core.SystemSequence) -> Bool
 pub fn[T] ComponentColumn::table_values(Self[T], Int) -> Array[T]?
 
 pub(all) struct ComponentColumnOps {

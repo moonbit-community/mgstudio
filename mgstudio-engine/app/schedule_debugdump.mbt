@@ -39,7 +39,15 @@ fn schedule_graph_system_name(
     Some(name) => name
     None =>
       match cfg.set {
-        Some(set) => "\{set}#\{index.to_string()}"
+        Some(set) =>
+          if set.has_prefix("__chain__:") {
+            match cfg.debug_name {
+              Some(debug_name) => "\{debug_name}#\{index.to_string()}"
+              None => "__system#\{index.to_string()}"
+            }
+          } else {
+            "\{set}#\{index.to_string()}"
+          }
         None =>
           match cfg.debug_name {
             Some(debug_name) => "\{debug_name}#\{index.to_string()}"
@@ -61,147 +69,24 @@ fn schedule_graph_include(
 }
 
 ///|
-fn schedule_graph_add_edge(
-  set_index : @hashmap.HashMap[SystemSet, Int],
-  indeg : Array[Int],
-  adj : Array[Array[Int]],
-  from : SystemSet,
-  to : SystemSet,
-) -> Unit {
-  let from_i = set_index.at(from)
-  let to_i = set_index.at(to)
-  adj[from_i].push(to_i)
-  indeg[to_i] = indeg[to_i] + 1
-}
-
-///|
-fn schedule_graph_pop_smallest(ready : Array[Int]) -> Int {
-  let mut best_pos = 0
-  let mut best_value = ready[0]
-  let len = ready.length()
-  for i in 1..<len {
-    let value = ready[i]
-    if value < best_value {
-      best_value = value
-      best_pos = i
-    }
-  }
-  let last_index = ready.length() - 1
-  ready[best_pos] = ready[last_index]
-  ignore(ready.pop())
-  best_value
-}
-
-///|
 pub fn App::schedule_graph_dot(
   self : App[@ecs.World],
   stage : ScheduleStage,
   settings? : ScheduleGraphSettings = ScheduleGraphSettings::default(),
 ) -> String {
   let systems = schedule_systems(self.sub_apps.main.schedule, stage)
-  let set_edges = schedule_set_edges(self.sub_apps.main.schedule, stage)
-
-  let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
-  let set_order : Array[SystemSet] = []
-
-  fn push_unique(
-    seen : @hashmap.HashMap[SystemSet, Bool],
-    set_order : Array[SystemSet],
-    set : SystemSet,
-  ) -> Unit {
-    if !seen.contains(set) {
-      set_order.push(set)
-      seen.set(set, true)
+  let graph_plan = schedule_resolve_graph_plan(
+    schedule_entry_ref(self.sub_apps.main.schedule, stage).val,
+    stage,
+  )
+  let execution_order = if graph_plan.build_error is Some(_) {
+    let fallback : Array[Int] = []
+    for i in 0..<systems.length() {
+      fallback.push(i)
     }
-  }
-
-  let system_count = systems.length()
-  let groups : Array[SystemSet] = []
-  for i in 0..<system_count {
-    let cfg = systems[i]
-    let group = if cfg.set is Some(set) {
-      set
-    } else {
-      "__anon#\{i.to_string()}"
-    }
-    groups.push(group)
-    push_unique(seen, set_order, group)
-    for other in cfg.before {
-      push_unique(seen, set_order, other)
-    }
-    for other in cfg.after {
-      push_unique(seen, set_order, other)
-    }
-  }
-  for edge in set_edges {
-    push_unique(seen, set_order, edge.0)
-    push_unique(seen, set_order, edge.1)
-  }
-
-  let set_count = set_order.length()
-  let set_index : @hashmap.HashMap[SystemSet, Int] = @hashmap.HashMap::new()
-  for i in 0..<set_count {
-    set_index.set(set_order[i], i)
-  }
-  let indeg : Array[Int] = []
-  let adj : Array[Array[Int]] = []
-  for _ in 0..<set_count {
-    indeg.push(0)
-    adj.push([])
-  }
-
-  for edge in set_edges {
-    schedule_graph_add_edge(set_index, indeg, adj, edge.0, edge.1)
-  }
-  for i in 0..<system_count {
-    let cfg = systems[i]
-    let group = groups[i]
-    for other in cfg.before {
-      schedule_graph_add_edge(set_index, indeg, adj, group, other)
-    }
-    for other in cfg.after {
-      schedule_graph_add_edge(set_index, indeg, adj, other, group)
-    }
-  }
-
-  let ready : Array[Int] = []
-  for i in 0..<set_count {
-    if indeg[i] == 0 {
-      ready.push(i)
-    }
-  }
-  let topo : Array[Int] = []
-  while ready.length() > 0 {
-    let next = schedule_graph_pop_smallest(ready)
-    topo.push(next)
-    for to in adj[next] {
-      indeg[to] = indeg[to] - 1
-      if indeg[to] == 0 {
-        ready.push(to)
-      }
-    }
-  }
-  if topo.length() != set_count {
-    topo.clear()
-    for i in 0..<set_count {
-      topo.push(i)
-    }
-  }
-
-  let systems_by_set : Array[Array[Int]] = []
-  for _ in 0..<set_count {
-    systems_by_set.push([])
-  }
-  for i in 0..<system_count {
-    let set_i = set_index.at(groups[i])
-    systems_by_set[set_i].push(i)
-  }
-
-  let execution_order : Array[Int] = []
-  for set_i in topo {
-    for system_i in systems_by_set[set_i] {
-      execution_order.push(system_i)
-    }
+    fallback
+  } else {
+    graph_plan.execution_order
   }
 
   let lines : Array[String] = [

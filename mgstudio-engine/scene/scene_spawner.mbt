@@ -1017,7 +1017,7 @@ fn scene_runtime_plugin_base(
     |> @app.chain(),
   )
   .configure_set(@app.PreUpdate, scene_spawner_set_spawn, before=[
-    @transform.transform_set_mark_dirty_trees, @transform.transform_set_propagate,
+    @transform.transform_set_propagate,
   ])
 }
 

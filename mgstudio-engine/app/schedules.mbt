@@ -340,31 +340,85 @@ fn[W] schedule_build_graph_plan(
 
   let system_count = schedule_entry.systems.length()
   let groups : Array[SystemSet] = []
+  let membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]] = @hashmap.HashMap::new()
+  fn add_membership_group(
+    membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]],
+    member_set : SystemSet,
+    group : SystemSet,
+  ) -> Unit {
+    match membership_groups.get(member_set) {
+      Some(groups) =>
+        if !groups.contains(group) {
+          groups.push(group)
+        }
+      None => membership_groups.set(member_set, [group])
+    }
+  }
+  fn member_groups_for_set(
+    membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]],
+    set : SystemSet,
+  ) -> Array[SystemSet] {
+    match membership_groups.get(set) {
+      Some(groups) if groups.length() > 0 => groups
+      _ => [set]
+    }
+  }
   for i in 0..<system_count {
     let cfg = schedule_entry.systems[i]
     let set = if cfg.set is Some(s) { s } else { "__anon#\{i.to_string()}" }
     groups.push(set)
     push_unique(seen, set_order, set)
-    for other in cfg.before {
-      push_unique(seen, set_order, other)
+    for member_set in cfg.member_sets {
+      add_membership_group(membership_groups, member_set, set)
+      push_unique(seen, set_order, member_set)
     }
-    for other in cfg.after {
-      push_unique(seen, set_order, other)
-    }
-    for other in cfg.before_ignore_deferred {
-      push_unique(seen, set_order, other)
-    }
-    for other in cfg.after_ignore_deferred {
-      push_unique(seen, set_order, other)
+    match cfg.set {
+      Some(member_set) =>
+        if !member_set.has_prefix("__chain__:") {
+          add_membership_group(membership_groups, member_set, set)
+          push_unique(seen, set_order, member_set)
+        }
+      None => ()
     }
   }
   for edge in schedule_entry.set_edges {
-    push_unique(seen, set_order, edge.0)
-    push_unique(seen, set_order, edge.1)
+    for set in member_groups_for_set(membership_groups, edge.0) {
+      push_unique(seen, set_order, set)
+    }
+    for set in member_groups_for_set(membership_groups, edge.1) {
+      push_unique(seen, set_order, set)
+    }
   }
   for edge in schedule_entry.set_edges_ignore_deferred {
-    push_unique(seen, set_order, edge.0)
-    push_unique(seen, set_order, edge.1)
+    for set in member_groups_for_set(membership_groups, edge.0) {
+      push_unique(seen, set_order, set)
+    }
+    for set in member_groups_for_set(membership_groups, edge.1) {
+      push_unique(seen, set_order, set)
+    }
+  }
+  for i in 0..<system_count {
+    let cfg = schedule_entry.systems[i]
+    for other in cfg.before {
+      for set in member_groups_for_set(membership_groups, other) {
+        push_unique(seen, set_order, set)
+      }
+    }
+    for other in cfg.after {
+      for set in member_groups_for_set(membership_groups, other) {
+        push_unique(seen, set_order, set)
+      }
+    }
+    for other in cfg.before_ignore_deferred {
+      for set in member_groups_for_set(membership_groups, other) {
+        push_unique(seen, set_order, set)
+      }
+    }
+    for other in cfg.after_ignore_deferred {
+      for set in member_groups_for_set(membership_groups, other) {
+        push_unique(seen, set_order, set)
+      }
+    }
   }
   let set_count = set_order.length()
   let set_index : @hashmap.HashMap[SystemSet, Int] = @hashmap.HashMap::new()
@@ -386,33 +440,74 @@ fn[W] schedule_build_graph_plan(
     to : SystemSet,
     ignore_deferred : Bool,
   ) -> Unit {
+    if from == to {
+      return
+    }
     let from_i = set_index.at(from)
     let to_i = set_index.at(to)
     adj[from_i].push(to_i)
     dependency_edges.push((from_i, to_i, ignore_deferred))
     indeg[to_i] = indeg[to_i] + 1
   }
+  fn add_group_to_set_edges(
+    set_index : @hashmap.HashMap[SystemSet, Int],
+    indeg : Array[Int],
+    adj : Array[Array[Int]],
+    from : SystemSet,
+    to_set : SystemSet,
+    ignore_deferred : Bool,
+  ) -> Unit {
+    for to in member_groups_for_set(membership_groups, to_set) {
+      add_edge(set_index, indeg, adj, from, to, ignore_deferred)
+    }
+  }
+  fn add_set_to_group_edges(
+    set_index : @hashmap.HashMap[SystemSet, Int],
+    indeg : Array[Int],
+    adj : Array[Array[Int]],
+    from_set : SystemSet,
+    to : SystemSet,
+    ignore_deferred : Bool,
+  ) -> Unit {
+    for from in member_groups_for_set(membership_groups, from_set) {
+      add_edge(set_index, indeg, adj, from, to, ignore_deferred)
+    }
+  }
+  fn add_set_to_set_edges(
+    set_index : @hashmap.HashMap[SystemSet, Int],
+    indeg : Array[Int],
+    adj : Array[Array[Int]],
+    from_set : SystemSet,
+    to_set : SystemSet,
+    ignore_deferred : Bool,
+  ) -> Unit {
+    for from in member_groups_for_set(membership_groups, from_set) {
+      for to in member_groups_for_set(membership_groups, to_set) {
+        add_edge(set_index, indeg, adj, from, to, ignore_deferred)
+      }
+    }
+  }
 
   for edge in schedule_entry.set_edges {
-    add_edge(set_index, indeg, adj, edge.0, edge.1, false)
+    add_set_to_set_edges(set_index, indeg, adj, edge.0, edge.1, false)
   }
   for edge in schedule_entry.set_edges_ignore_deferred {
-    add_edge(set_index, indeg, adj, edge.0, edge.1, true)
+    add_set_to_set_edges(set_index, indeg, adj, edge.0, edge.1, true)
   }
   for i in 0..<system_count {
     let cfg = schedule_entry.systems[i]
     let group = groups[i]
     for other in cfg.before {
-      add_edge(set_index, indeg, adj, group, other, false)
+      add_group_to_set_edges(set_index, indeg, adj, group, other, false)
     }
     for other in cfg.after {
-      add_edge(set_index, indeg, adj, other, group, false)
+      add_set_to_group_edges(set_index, indeg, adj, other, group, false)
     }
     for other in cfg.before_ignore_deferred {
-      add_edge(set_index, indeg, adj, group, other, true)
+      add_group_to_set_edges(set_index, indeg, adj, group, other, true)
     }
     for other in cfg.after_ignore_deferred {
-      add_edge(set_index, indeg, adj, other, group, true)
+      add_set_to_group_edges(set_index, indeg, adj, other, group, true)
     }
   }
   let indeg_for_topo : Array[Int] = []
@@ -897,9 +992,16 @@ fn[W] schedule_chain_inherit_config(
     Some(_) => child.error_handler
     None => wrapper.error_handler
   }
-  let inherited_set = match child.set {
-    Some(_) => child.set
-    None => wrapper.set
+  let member_sets : Array[SystemSet] = []
+  for set in child.member_sets {
+    if !member_sets.contains(set) {
+      member_sets.push(set)
+    }
+  }
+  for set in wrapper.member_sets {
+    if !member_sets.contains(set) {
+      member_sets.push(set)
+    }
   }
   let run_ifs : Array[StatefulRunConditionFn[W]] = []
   for cond in child.run_ifs {
@@ -955,7 +1057,7 @@ fn[W] schedule_chain_inherit_config(
     error_handler: inherited_error_handler,
     run_ifs,
     run_if_states,
-    set: inherited_set,
+    member_sets,
     before,
     after,
     before_ignore_deferred,
@@ -996,15 +1098,24 @@ fn[W] schedule_push_config(
       }
       let normalized_members : Array[SystemConfig[W]] = []
       for child_config in expanded_members {
-        let normalized_member = match child_config.set {
-          Some(_) => child_config
-          None =>
-            SystemConfig::{
-              ..child_config,
-              set: Some(
-                schedule_next_chain_internal_set(entry_ref.val, stage),
-              ),
+        let member_sets : Array[SystemSet] = []
+        for set in child_config.member_sets {
+          if !member_sets.contains(set) {
+            member_sets.push(set)
+          }
+        }
+        match child_config.set {
+          Some(set) =>
+            if !member_sets.contains(set) &&
+              !set.has_prefix("__chain__:") {
+              member_sets.push(set)
             }
+          None => ()
+        }
+        let normalized_member = SystemConfig::{
+          ..child_config,
+          set: Some(schedule_next_chain_internal_set(entry_ref.val, stage)),
+          member_sets,
         }
         normalized_members.push(normalized_member)
         entry_ref.val.systems.push(normalized_member)
@@ -1042,22 +1153,6 @@ fn[W] schedule_systems(
   stage : ScheduleStage,
 ) -> Array[SystemConfig[W]] {
   schedule_entry_ref(schedule_registry, stage).val.systems
-}
-
-///|
-fn[W] schedule_set_edges(
-  schedule_registry : ScheduleRegistry[W],
-  stage : ScheduleStage,
-) -> Array[(SystemSet, SystemSet)] {
-  let entry = schedule_entry_ref(schedule_registry, stage).val
-  let edges : Array[(SystemSet, SystemSet)] = []
-  for edge in entry.set_edges {
-    edges.push(edge)
-  }
-  for edge in entry.set_edges_ignore_deferred {
-    edges.push(edge)
-  }
-  edges
 }
 
 ///|

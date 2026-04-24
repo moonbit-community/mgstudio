@@ -378,6 +378,7 @@ pub fn Camera2dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> 
 pub fn Camera2dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
 pub fn Camera2dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
 pub impl @app.CommandSpawnComponents for Camera2dBundle
+pub impl @ecs.Bundle for Camera2dBundle
 
 pub struct CameraComputedValues {
   target_info : CameraTargetInfo?
@@ -635,8 +636,10 @@ pub struct Mesh2dBundle {
 }
 pub fn Mesh2dBundle::new_with_mesh_material(@mesh.Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform) -> Self
 pub fn Mesh2dBundle::new_with_mesh_material_layers(@mesh.Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform, RenderLayers) -> Self
-pub fn Mesh2dBundle::spawn(Self, @ecs.World) -> @core.Entity
+#callsite(autofill(loc))
+pub fn Mesh2dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @app.CommandSpawnComponents for Mesh2dBundle
+pub impl @ecs.Bundle for Mesh2dBundle
 
 pub struct MeshMaterial2d[M] {
   handle : @asset.Handle[M]
@@ -855,6 +858,7 @@ pub fn SpriteBundle::new_with_layers(Sprite, @transform.Transform, RenderLayers)
 #callsite(autofill(loc))
 pub fn SpriteBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @app.CommandSpawnComponents for SpriteBundle
+pub impl @ecs.Bundle for SpriteBundle
 
 pub(all) enum SpriteImageMode {
   Auto

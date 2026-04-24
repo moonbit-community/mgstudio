@@ -41,7 +41,7 @@ pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy
 
-pub fn scene_install_asset_hooks() -> Unit
+pub fn scene_install_asset_hooks(@ecs.World) -> Unit
 
 pub fn scene_install_component_metadata() -> Unit
 
