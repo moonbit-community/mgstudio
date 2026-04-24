@@ -196,8 +196,7 @@ fn render3d_extract_mesh_for_entity(
     None => transform
   }
   let previous_world_from_local = match previous_global_transform {
-    Some(v) =>
-      @transform.GlobalTransform::from_transform(v.transform()).affine()
+    Some(v) => v.affine()
     None => world_from_local
   }
   let visibility_range = try! source_world.get_by_key(

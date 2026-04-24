@@ -16,12 +16,8 @@
 fn render3d_entity_global_transform_from_main_world(
   world : @ecs.World,
   entity : @core.Entity,
-) -> @transform.Transform? {
-  (try! world.get_by_key(entity, @transform.ecs_key_global_transform)).map(fn(
-    global_transform,
-  ) {
-    global_transform.compute_transform()
-  })
+) -> @transform.GlobalTransform? {
+  try! world.get_by_key(entity, @transform.ecs_key_global_transform)
 }
 
 ///|
@@ -38,13 +34,15 @@ fn update_previous_view_data(world : @ecs.World) -> Unit {
       None => Projection::default()
     }
     let view_from_world = @pbr_render.render3d_view_from_world_matrix(
-      world_transform,
+      world_transform.compute_transform(),
     )
     let clip_from_world = projection.get_clip_from_view().mul(view_from_world)
     try! world.set_by_key(
       entity,
       ecs_key_previous_view_data,
-      @pbr_prepass.PreviousViewData::new(world_transform, clip_from_world),
+      @pbr_prepass.PreviousViewData::new(
+        world_transform.compute_transform(), clip_from_world,
+      ),
     )
   })
 }
@@ -77,7 +75,9 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       entity,
       ecs_key_previous_global_transform,
-      @pbr_prepass.PreviousGlobalTransform::new(world_transform),
+      @pbr_prepass.PreviousGlobalTransform::from_global_transform(
+        world_transform,
+      ),
     )
   })
 }

@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/core_pipeline/deferred",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
@@ -105,8 +106,11 @@ pub struct PrepassPluginState {
 pub fn PrepassPluginState::default() -> Self
 
 pub struct PreviousGlobalTransform {
-  transform : @transform.Transform
+  affine : @math.Affine3
 }
+pub fn PreviousGlobalTransform::affine(Self) -> @math.Affine3
+pub fn PreviousGlobalTransform::from_affine(@math.Affine3) -> Self
+pub fn PreviousGlobalTransform::from_global_transform(@transform.GlobalTransform) -> Self
 pub fn PreviousGlobalTransform::new(@transform.Transform) -> Self
 pub fn PreviousGlobalTransform::transform(Self) -> @transform.Transform
 pub impl @ecs.Component for PreviousGlobalTransform

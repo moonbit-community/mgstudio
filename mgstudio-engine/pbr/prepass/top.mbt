@@ -86,21 +86,45 @@ pub struct PreviousViewData {
 
 ///|
 pub struct PreviousGlobalTransform {
-  transform : @transform.Transform
+  affine : @math.Affine3
 }
 
 ///|
 pub fn PreviousGlobalTransform::new(
   transform : @transform.Transform,
 ) -> PreviousGlobalTransform {
-  PreviousGlobalTransform::{ transform, }
+  PreviousGlobalTransform::{
+    affine: @transform.GlobalTransform::from_transform(transform).affine(),
+  }
+}
+
+///|
+pub fn PreviousGlobalTransform::from_affine(
+  affine : @math.Affine3,
+) -> PreviousGlobalTransform {
+  PreviousGlobalTransform::{ affine }
+}
+
+///|
+pub fn PreviousGlobalTransform::from_global_transform(
+  transform : @transform.GlobalTransform,
+) -> PreviousGlobalTransform {
+  PreviousGlobalTransform::{ affine: transform.affine() }
+}
+
+///|
+pub fn PreviousGlobalTransform::affine(
+  self : PreviousGlobalTransform,
+) -> @math.Affine3 {
+  self.affine
 }
 
 ///|
 pub fn PreviousGlobalTransform::transform(
   self : PreviousGlobalTransform,
 ) -> @transform.Transform {
-  self.transform
+  let (scale, rotation, translation) = self.affine.to_scale_rotation_translation()
+  @transform.Transform::new(translation, rotation, scale)
 }
 
 ///|
