@@ -505,6 +505,53 @@ test "app: conditional_explicit_sync_point_not_used_as_auto_sync_point" {
 }
 
 ///|
+test "app: conditional explicit sync point in child set is not reused as auto sync point" {
+  let stage = schedule_label("ConditionalNestedExplicitSyncNoReuse")
+  let observed : Array[Int] = []
+  let set_a = system_set("ConditionalNestedSync.A")
+  let set_b = system_set("ConditionalNestedSync.B")
+  let set_c = system_set("ConditionalNestedSync.C")
+  let parent_set = system_set("ConditionalNestedSync.Parent")
+  let mut sub_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(stage))
+    .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+    .add_systems(
+      stage,
+      system_config_param(fn(commands : Commands) {
+        ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
+      }).in_set(set_a),
+    )
+    .add_systems(
+      stage,
+      system_config_param(fn(
+        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+      ) {
+        observed.push(query.count())
+      }).in_set(set_b),
+    )
+    .add_systems(stage, apply_deferred_system().in_set(set_b))
+    .add_systems(
+      stage,
+      system_config_param(fn(
+        query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+      ) {
+        observed.push(query.count())
+      }).in_set(set_c),
+    )
+    .configure_sets(stage, set_a, before=[set_b])
+    .configure_sets(stage, set_b, before=[set_c], in_sets=[parent_set])
+    .configure_sets(
+      stage,
+      parent_set,
+      set_run_ifs=[fn(_world : @ecs.World) { false }],
+    )
+
+  sub_app = sub_app.update()
+
+  debug_inspect(observed, content="[1]")
+}
+
+///|
 test "app: set run_if evaluates once per run and gates all systems in the set" {
   let stage = schedule_label("SetRunIfOncePerFrame")
   let gated_set = system_set("SetRunIf.Once")
@@ -837,4 +884,194 @@ test "app: statically invalid system stays in order and evaluates conditions bef
     validation_kinds[1] == ErrorContextKind::Validation,
     content="true",
   )
+}
+
+///|
+test "app: consecutive deferred chain inserts one sync point per deferred edge" {
+  let stage = schedule_label("ConsecutiveDeferredSyncPoints")
+  let command_a : SystemConfig[@ecs.World] = system_config_param(fn(
+    commands : Commands,
+  ) {
+    ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
+  }).named("tests.command_a")
+  let command_b : SystemConfig[@ecs.World] = system_config_param(fn(
+    commands : Commands,
+  ) {
+    ignore(commands.spawn_component(ScheduleBatchMarker::{  }))
+  }).named("tests.command_b")
+  let reader : SystemConfig[@ecs.World] = system_config_param(fn(
+    _query : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All],
+  ) {
+    ()
+  }).named("tests.reader")
+  let app = App::new(@ecs.World::new())
+    .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+    .add_systems(stage, chain((command_a, command_b, reader)))
+
+  let dot = app.schedule_graph_dot(stage)
+  debug_inspect(
+    dot.contains("\"bevy_ecs::apply_deferred#auto0\""),
+    content="true",
+  )
+  debug_inspect(
+    dot.contains("\"bevy_ecs::apply_deferred#auto1\""),
+    content="true",
+  )
+  debug_inspect(
+    dot.contains("\"bevy_ecs::apply_deferred#auto2\""),
+    content="false",
+  )
+}
+
+///|
+test "app: chain run_if is a collective set condition evaluated once" {
+  let stage = schedule_label("ChainCollectiveRunIf")
+  let condition_hits = Ref::new(0)
+  let system_runs : Array[String] = []
+  let mut sub_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(stage))
+    .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+    .add_systems(
+      stage,
+      chain((
+        system(fn(_world : @ecs.World) { system_runs.push("a") }),
+        system(fn(_world : @ecs.World) { system_runs.push("b") }),
+      )).run_if(fn(_world : @ecs.World) {
+        condition_hits.val = condition_hits.val + 1
+        condition_hits.val % 2 == 0
+      }),
+    )
+
+  sub_app = sub_app.update()
+  sub_app = sub_app.update()
+
+  debug_inspect(condition_hits.val, content="2")
+  debug_inspect(system_runs, content="[\"a\", \"b\"]")
+}
+
+///|
+test "app: parent set run_if is evaluated before child set run_if" {
+  let stage = schedule_label("ParentBeforeChildRunIf")
+  let parent = system_set("ParentBeforeChild.Parent")
+  let child = system_set("ParentBeforeChild.Child")
+  let log : Array[String] = []
+  let mut sub_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(stage))
+    .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+    .add_systems(stage, system(fn(_world : @ecs.World) { log.push("system") }).in_set(child))
+    .configure_sets(
+      stage,
+      parent,
+      set_run_ifs=[fn(_world : @ecs.World) {
+        log.push("parent")
+        true
+      }],
+    )
+    .configure_sets(
+      stage,
+      child,
+      in_sets=[parent],
+      set_run_ifs=[fn(_world : @ecs.World) {
+        log.push("child")
+        true
+      }],
+    )
+
+  sub_app = sub_app.update()
+
+  debug_inspect(log, content="[\"parent\", \"child\", \"system\"]")
+}
+
+///|
+test "app: ordered overlapping sets fail schedule build" {
+  let stage = schedule_label("OrderedOverlappingSets")
+  let set_a = system_set("OrderedOverlappingSets.A")
+  let set_b = system_set("OrderedOverlappingSets.B")
+  let validation_kinds : Array[ErrorContextKind] = []
+  let mut app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) {
+      validation_kinds.push(context.kind())
+    })
+    .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+    .add_systems(
+      stage,
+      system(fn(_world : @ecs.World) { () }).in_set(set_a).in_set(set_b),
+    )
+    .configure_sets(stage, set_a, before=[set_b])
+  let order = world_main_schedule_order(app.world()).insert_after(Update, stage)
+  app.world().insert_resource(main_schedule_order_resource_key(), order)
+
+  app = app.run_once()
+
+  ignore(app)
+  debug_inspect(validation_kinds, content="[Validation]")
+}
+
+///|
+test "app: hierarchy redundancy can be promoted to build error" {
+  let stage = schedule_label("HierarchyRedundancyAsError")
+  let child = system_set("HierarchyRedundancy.Child")
+  let parent = system_set("HierarchyRedundancy.Parent")
+  let grandparent = system_set("HierarchyRedundancy.Grandparent")
+  let validation_kinds : Array[ErrorContextKind] = []
+  let settings = ScheduleBuildSettings::new().set_hierarchy_detection(
+    ScheduleBuildError,
+  )
+  let mut app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) {
+      validation_kinds.push(context.kind())
+    })
+    .add_schedule(
+      Schedule::new(stage).set_executor_kind(
+        SingleThreaded,
+      ).set_build_settings(settings),
+    )
+    .add_systems(stage, system(fn(_world : @ecs.World) { () }).in_set(child))
+    .configure_sets(stage, child, in_sets=[parent, grandparent])
+    .configure_sets(stage, parent, in_sets=[grandparent])
+  let order = world_main_schedule_order(app.world()).insert_after(Update, stage)
+  app.world().insert_resource(main_schedule_order_resource_key(), order)
+
+  app = app.run_once()
+
+  ignore(app)
+  debug_inspect(validation_kinds, content="[Validation]")
+}
+
+///|
+test "app: ambiguity detection can be promoted to build error" {
+  let stage = schedule_label("AmbiguityDetectionAsError")
+  let validation_kinds : Array[ErrorContextKind] = []
+  let settings = ScheduleBuildSettings::new().set_ambiguity_detection(
+    ScheduleBuildError,
+  )
+  let mut app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) {
+      validation_kinds.push(context.kind())
+    })
+    .insert_resource(MissingRunIfParityResource::{  })
+    .add_schedule(
+      Schedule::new(stage).set_executor_kind(
+        SingleThreaded,
+      ).set_build_settings(settings),
+    )
+    .add_systems(
+      stage,
+      system_config_param(fn(_res : ResMut[MissingRunIfParityResource]) {
+        ()
+      }).named("tests.ambiguous_a"),
+    )
+    .add_systems(
+      stage,
+      system_config_param(fn(_res : ResMut[MissingRunIfParityResource]) {
+        ()
+      }).named("tests.ambiguous_b"),
+    )
+  let order = world_main_schedule_order(app.world()).insert_after(Update, stage)
+  app.world().insert_resource(main_schedule_order_resource_key(), order)
+
+  app = app.run_once()
+
+  ignore(app)
+  debug_inspect(validation_kinds, content="[Validation]")
 }

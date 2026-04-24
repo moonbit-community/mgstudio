@@ -92,10 +92,10 @@ pub fn App::schedule_graph_dot(
     schedule_resolve_access_plan(
       schedule_entry,
       graph_plan,
-      schedule_entry.build_settings,
+      schedule_entry.graph.settings,
       self.world(),
       @hashmap.HashMap::new(),
-    ).systems
+    ).schedule.systems
   }
   let execution_order = if graph_plan.build_error is Some(_) {
     let fallback : Array[ScheduleExecutionNode] = []
@@ -107,10 +107,10 @@ pub fn App::schedule_graph_dot(
     schedule_resolve_access_plan(
       schedule_entry,
       graph_plan,
-      schedule_entry.build_settings,
+      schedule_entry.graph.settings,
       self.world(),
       @hashmap.HashMap::new(),
-    ).execution_order
+    ).schedule.execution_order
   }
 
   let lines : Array[String] = [

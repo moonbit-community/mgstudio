@@ -107,6 +107,25 @@ test "app: Res and ResMut expose change detection without eager writes" {
 }
 
 ///|
+test "app: schedule rebuild preserves system last run for change detection" {
+  let observed_changed : Array[Bool] = []
+  let mut app = App::new(@ecs.World::new())
+    .insert_resource(CounterResource::{ value: 1 })
+    .add_system_config(
+      system_config_param(fn(resource : Res[CounterResource]) {
+        observed_changed.push(resource.is_changed())
+      }),
+    )
+
+  app = app.run_once()
+  app = app.run_once()
+  app = app.add_system_config(system(fn(_world : @ecs.World) {  }))
+  app = app.run_once()
+
+  debug_inspect(observed_changed, content="[true, false, false]")
+}
+
+///|
 test "app: ResMut::get is read-only until explicit mutation" {
   let observed_changed : Array[Bool] = []
   let observed_values : Array[Int] = []

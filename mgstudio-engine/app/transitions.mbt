@@ -258,11 +258,13 @@ fn run_state_transition_hooks(
   }
   let execution_order : Array[ScheduleExecutionNode] = []
   let execution_batches : Array[Array[ScheduleExecutionNode]] = []
+  let system_accesses : Array[SystemAccess] = []
   for i in 0..<matched_configs.length() {
     let access = match matched_configs[i].access_factory {
       Some(access_factory) => access_factory(world)
       None => SystemAccess::exclusive()
     }
+    system_accesses.push(access)
     match access.validation_error() {
       Some(message) =>
         report_world_error(
@@ -281,10 +283,38 @@ fn run_state_transition_hooks(
       }
     }
   }
+  let system_ids : Array[Int] = []
+  let system_conditions : Array[ScheduleSystemRunConditions[@ecs.World]] = []
+  let system_dependencies : Array[Int] = []
+  let system_dependents : Array[Array[Int]] = []
+  let sets_with_conditions_of_systems : Array[Array[Int]] = []
+  for i in 0..<matched_configs.length() {
+    system_ids.push(i)
+    system_conditions.push(
+      schedule_system_run_conditions_from_config(matched_configs[i]),
+    )
+    system_dependencies.push(0)
+    system_dependents.push([])
+    sets_with_conditions_of_systems.push([])
+  }
+  let schedule : SystemSchedule[@ecs.World] = {
+    system_ids,
+    systems: matched_configs,
+    system_accesses,
+    system_conditions,
+    system_dependencies,
+    system_dependents,
+    set_ids: [],
+    set_run_conditions: [],
+    sets_with_conditions_of_systems,
+    systems_in_sets_with_conditions: [],
+    execution_order,
+    single_threaded_batches: execution_batches,
+    multi_threaded_batches: execution_batches,
+  }
   run_systems(
     world,
-    matched_configs,
-    execution_order,
+    schedule,
     execution_batches,
     current_schedule_stage(),
   )

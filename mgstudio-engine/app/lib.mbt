@@ -3648,16 +3648,11 @@ fn run_schedule_stage(
   ignore(execution_plan.report_invalid_system_errors)
   run_systems(
     world,
-    execution_plan.systems,
-    execution_plan.execution_order,
+    execution_plan.schedule,
     execution_plan.execution_batches,
     Some(stage),
-    system_accesses=execution_plan.system_accesses,
-    set_ids=execution_plan.set_ids,
-    sets_with_conditions_of_systems=execution_plan.sets_with_conditions_of_systems,
-    systems_in_sets_with_conditions=execution_plan.systems_in_sets_with_conditions,
+    executor_kind=execution_plan.executor_kind,
     apply_final_deferred=execution_plan.apply_final_deferred,
-    set_run_conditions=execution_plan.set_run_conditions,
     executor_state_ref=Some(execution_plan.executor_state),
   )
   current_schedule_stage_ref.val = None

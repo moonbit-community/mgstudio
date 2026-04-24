@@ -26,7 +26,7 @@ fn[W] schedule_run_build_passes(
   system_accesses : Array[SystemAccess],
   runnable_mask : Array[Bool],
 ) -> Unit {
-  for pass_kind in schedule_entry.build_passes {
+  for pass_kind in schedule_entry.graph.build_passes {
     match pass_kind {
       AutoInsertApplyDeferredPass =>
         schedule_auto_insert_apply_deferred_pass(

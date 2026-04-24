@@ -15,21 +15,21 @@
 ///|
 fn run_systems(
   world : @ecs.World,
-  systems : Array[SystemConfig[@ecs.World]],
-  execution_order : Array[ScheduleExecutionNode],
+  schedule : SystemSchedule[@ecs.World],
   execution_batches : Array[Array[ScheduleExecutionNode]],
   stage : ScheduleStage?,
-  system_accesses? : Array[SystemAccess] = [],
-  set_ids? : Array[SystemSet] = [],
-  sets_with_conditions_of_systems? : Array[Array[Int]] = [],
-  systems_in_sets_with_conditions? : Array[Array[Int]] = [],
+  executor_kind? : ExecutorKind = SingleThreaded,
   apply_final_deferred? : Bool = true,
-  set_run_conditions? : @hashmap.HashMap[
-    SystemSet,
-    Ref[ScheduleSetRunConditions[@ecs.World]],
-  ] = @hashmap.HashMap::new(),
   executor_state_ref? : Ref[SingleThreadedExecutorState]? = None,
 ) -> Unit {
+  let systems = schedule.systems
+  let system_conditions = schedule.system_conditions
+  let execution_order = schedule.execution_order
+  let system_accesses = schedule.system_accesses
+  let set_ids = schedule.set_ids
+  let set_run_conditions = schedule.set_run_conditions
+  let sets_with_conditions_of_systems = schedule.sets_with_conditions_of_systems
+  let systems_in_sets_with_conditions = schedule.systems_in_sets_with_conditions
   let timeline_enabled = timeline_trace_enabled()
   current_system_sequence_ref.val = None
   current_world_ref.val = None
@@ -103,87 +103,82 @@ fn run_systems(
         apply_final_deferred,
       )
   }
-  let set_run_if_results : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
-  fn evaluate_set_run_if_once(set : SystemSet) -> Bool {
-    match set_run_if_results.get(set) {
-      Some(cached) => cached
-      None => {
-        let should_run = match set_run_conditions.get(set) {
-          None => true
-          Some(run_conditions_ref) => {
-            let mut matches = true
-            for cond_i in 0..<run_conditions_ref.val.run_ifs.length() {
-              let cond = run_conditions_ref.val.run_ifs[cond_i]
-              let cond_this_run = world.advance_sequence()
-              let cond_ticks = @core.SystemSequence::new(
-                run_conditions_ref.val.run_if_last_run_sequences[cond_i],
-                cond_this_run,
-              )
-              let cond_ctx = world.get_sequence_context()
-              cond_ctx.set(cond_ticks)
-              world.set_sequence_context(cond_ctx)
-              let prev_world = current_world_ref.val
-              current_world_ref.val = Some(world)
-              current_system_sequence_ref.val = Some(cond_ticks)
-              let cond_result = cond(
-                world,
-                run_conditions_ref.val.run_if_states[cond_i],
-              )
-              current_system_sequence_ref.val = None
-              current_world_ref.val = prev_world
-              run_conditions_ref.val.run_if_last_run_sequences[cond_i] = cond_this_run
-              matches = matches && cond_result
-            }
-            matches
-          }
-        }
-        set_run_if_results.set(set, should_run)
-        should_run
+  let set_run_if_results : Array[Bool] = []
+  for _ in 0..<set_ids.length() {
+    set_run_if_results.push(true)
+  }
+  fn evaluate_set_run_if_once(set_i : Int) -> Bool {
+    if set_i < 0 || set_i >= set_run_conditions.length() {
+      return true
+    }
+    if set_i < executor_state.evaluated_sets.length() &&
+      executor_state.evaluated_sets[set_i] {
+      return set_run_if_results[set_i]
+    }
+    let run_conditions_ref = set_run_conditions[set_i]
+    let mut matches = true
+    for cond_i in 0..<run_conditions_ref.val.run_ifs.length() {
+      let cond = run_conditions_ref.val.run_ifs[cond_i]
+      let cond_this_run = world.advance_sequence()
+      let cond_ticks = @core.SystemSequence::new(
+        run_conditions_ref.val.run_if_last_run_sequences[cond_i],
+        cond_this_run,
+      )
+      let cond_ctx = world.get_sequence_context()
+      cond_ctx.set(cond_ticks)
+      world.set_sequence_context(cond_ctx)
+      let prev_world = current_world_ref.val
+      current_world_ref.val = Some(world)
+      current_system_sequence_ref.val = Some(cond_ticks)
+      let cond_result = cond(
+        world,
+        run_conditions_ref.val.run_if_states[cond_i],
+      )
+      current_system_sequence_ref.val = None
+      current_world_ref.val = prev_world
+      run_conditions_ref.val.run_if_last_run_sequences[cond_i] = cond_this_run
+      matches = matches && cond_result
+    }
+    set_run_if_results[set_i] = matches
+    if !matches && set_i < systems_in_sets_with_conditions.length() {
+      for skip_system_i in systems_in_sets_with_conditions[set_i] {
+        executor_state.mark_completed(skip_system_i)
       }
     }
+    if set_i < executor_state.evaluated_sets.length() {
+      executor_state.evaluated_sets[set_i] = true
+    }
+    matches
   }
-  let execution_i_ref = Ref::new(0)
-  for batch in execution_batches {
-    for node in batch {
-      let execution_i = execution_i_ref.val
-      execution_i_ref.val = execution_i + 1
-      if !stepping_should_run_system(
-          stepping_ref, stage, systems, node, execution_i,
-        ) {
-        continue
-      }
-      match node {
-        ScheduledSystem(system_i) => {
-          if executor_state.is_completed(system_i) {
-            continue
-          }
-          let cfg = systems[system_i]
-          let mut should_run_system = true
-          if system_i >= 0 &&
-            system_i < sets_with_conditions_of_systems.length() {
-            for set_i in sets_with_conditions_of_systems[system_i] {
-              if set_i >= 0 && set_i < set_ids.length() {
-                if set_i < executor_state.evaluated_sets.length() &&
-                  !executor_state.evaluated_sets[set_i] {
-                  let set_conditions_met = evaluate_set_run_if_once(set_ids[set_i])
-                  if !set_conditions_met &&
-                    set_i < systems_in_sets_with_conditions.length() {
-                    for skip_system_i in systems_in_sets_with_conditions[set_i] {
-                      executor_state.mark_completed(skip_system_i)
-                    }
-                  }
-                  executor_state.evaluated_sets[set_i] = true
-                }
-                should_run_system = should_run_system &&
-                  evaluate_set_run_if_once(set_ids[set_i])
-              }
+  fn run_execution_node(node : ScheduleExecutionNode, execution_i : Int) -> Unit {
+    if !stepping_should_run_system(
+        stepping_ref, stage, systems, node, execution_i,
+      ) {
+      return
+    }
+    match node {
+      ScheduledSystem(system_i) => {
+        if executor_state.is_completed(system_i) {
+          return
+        }
+        let cfg = systems[system_i]
+        let mut should_run_system = true
+        if system_i >= 0 &&
+          system_i < sets_with_conditions_of_systems.length() {
+          for set_i in sets_with_conditions_of_systems[system_i] {
+            if set_i >= 0 && set_i < set_ids.length() {
+              let set_conditions_met = evaluate_set_run_if_once(set_i)
+              should_run_system = should_run_system && set_conditions_met
             }
           }
-          for cond_i in 0..<cfg.run_ifs.length() {
-            let cond = cfg.run_ifs[cond_i]
+        }
+        if system_i >= 0 && system_i < system_conditions.length() {
+          let conditions = system_conditions[system_i]
+          for cond_i in 0..<conditions.run_ifs.length() {
+            let cond = conditions.run_ifs[cond_i]
             let cond_this_run = world.advance_sequence()
             let cond_ticks = @core.SystemSequence::new(
-              cfg.run_if_last_run_sequences[cond_i],
+              conditions.run_if_last_run_sequences[cond_i],
               cond_this_run,
             )
             let cond_ctx = world.get_sequence_context()
@@ -192,15 +187,16 @@ fn run_systems(
             let prev_world = current_world_ref.val
             current_world_ref.val = Some(world)
             current_system_sequence_ref.val = Some(cond_ticks)
-            let should_run = cond(world, cfg.run_if_states[cond_i])
+            let should_run = cond(world, conditions.run_if_states[cond_i])
             current_system_sequence_ref.val = None
             current_world_ref.val = prev_world
-            systems[system_i].run_if_last_run_sequences[cond_i] = cond_this_run
+            conditions.run_if_last_run_sequences[cond_i] = cond_this_run
             should_run_system = should_run_system && should_run
           }
+        }
           executor_state.mark_completed(system_i)
           if !should_run_system {
-            continue
+            return
           }
           match system_validation_error(system_i) {
             Some(message) => {
@@ -213,7 +209,7 @@ fn run_systems(
                   current_schedule_stage(),
                 ),
               )
-              continue
+              return
             }
             None => ()
           }
@@ -222,7 +218,7 @@ fn run_systems(
             stepping_record_system_run(
               stepping_ref, stage, systems, node, execution_i,
             )
-            continue
+            return
           }
 
           let trace_name = system_trace_name(cfg, stage, execution_i)
@@ -269,7 +265,7 @@ fn run_systems(
                 stepping_ref, stage, systems, node, execution_i,
               )
             }
-            Skipped(_) => continue
+            Skipped(_) => return
             Invalid(message) => {
               if timeline_enabled && system_trace_start_us >= 0L {
                 timeline_trace_end_span(
@@ -287,7 +283,7 @@ fn run_systems(
                   current_schedule_stage(),
                 ),
               )
-              continue
+              return
             }
             Error(err) => {
               if timeline_enabled && system_trace_start_us >= 0L {
@@ -327,8 +323,24 @@ fn run_systems(
           }
         }
       }
-    }
   }
+  let execution_i_ref = Ref::new(0)
+  match executor_kind {
+    SingleThreaded =>
+      for system_i in 0..<systems.length() {
+        let execution_i = execution_i_ref.val
+        execution_i_ref.val = execution_i + 1
+        run_execution_node(ScheduledSystem(system_i), execution_i)
+      }
+    MultiThreaded =>
+      for batch in execution_batches {
+        for node in batch {
+          let execution_i = execution_i_ref.val
+          execution_i_ref.val = execution_i + 1
+          run_execution_node(node, execution_i)
+        }
+      }
+    }
   if executor_state.apply_final_deferred {
     executor_state.apply_deferred(world, restart_batch=false)
   }

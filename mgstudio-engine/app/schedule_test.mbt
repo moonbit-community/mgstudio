@@ -398,6 +398,102 @@ test "app: schedule sets order and preserve insertion within a set" {
 }
 
 ///|
+test "app: system before and after are node dependencies, not whole-set dependencies" {
+  let log : Array[String] = []
+  let set_a = system_set("NodeDependency.A")
+  let set_b = system_set("NodeDependency.B")
+  let app = App::new(@ecs.World::new())
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push("first") })
+      .in_set(set_a)
+      .before(set_b),
+    )
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push("second") })
+      .in_set(set_a)
+      .after(set_b),
+    )
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push("middle") }).in_set(set_b),
+    )
+
+  app.run_once() |> ignore
+
+  debug_inspect(log.join(","), content="\"first,middle,second\"")
+}
+
+///|
+test "app: parent set conditions apply to child set systems" {
+  let log : Array[String] = []
+  let child_set = system_set("Hierarchy.Child")
+  let parent_set = system_set("Hierarchy.Parent")
+  let app = App::new(@ecs.World::new())
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push("child") }).in_set(child_set),
+    )
+    .configure_sets(Update, child_set, in_sets=[parent_set])
+    .configure_sets(
+      Update,
+      parent_set,
+      set_run_ifs=[fn(_world : @ecs.World) { false }],
+    )
+
+  app.run_once() |> ignore
+
+  debug_inspect(log, content="[]")
+}
+
+///|
+test "app: parent set ordering applies to child set systems" {
+  let log : Array[String] = []
+  let child_set = system_set("Hierarchy.Order.Child")
+  let parent_set = system_set("Hierarchy.Order.Parent")
+  let after_set = system_set("Hierarchy.Order.After")
+  let app = App::new(@ecs.World::new())
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push("after") }).in_set(after_set),
+    )
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push("child") }).in_set(child_set),
+    )
+    .configure_sets(Update, child_set, in_sets=[parent_set])
+    .configure_sets(Update, parent_set, before=[after_set])
+
+  app.run_once() |> ignore
+
+  debug_inspect(log.join(","), content="\"child,after\"")
+}
+
+///|
+test "app: cyclic set hierarchy reports validation error and skips stage execution" {
+  let log : Array[Int] = []
+  let kinds : Array[ErrorContextKind] = []
+  let set_a = system_set("HierarchyCycle.A")
+  let set_b = system_set("HierarchyCycle.B")
+  let app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push(1) }).in_set(set_a),
+    )
+    .configure_sets(Update, set_a, in_sets=[set_b])
+    .configure_sets(Update, set_b, in_sets=[set_a])
+
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  debug_inspect(log.length(), content="0")
+  debug_inspect(kinds.length(), content="1")
+  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
+}
+
+///|
 test "app: cyclic set ordering reports validation error and skips stage execution" {
   let log : Array[Int] = []
   let kinds : Array[ErrorContextKind] = []

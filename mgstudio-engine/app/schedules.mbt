@@ -13,13 +13,60 @@
 // limitations under the License.
 
 ///|
+pub(all) enum ScheduleBuildLogLevel {
+  ScheduleBuildIgnore
+  ScheduleBuildWarn
+  ScheduleBuildError
+} derive(Eq, Debug)
+
+///|
 pub struct ScheduleBuildSettings {
+  ambiguity_detection : ScheduleBuildLogLevel
+  hierarchy_detection : ScheduleBuildLogLevel
   auto_insert_apply_deferred : Bool
+  use_shortnames : Bool
+  report_sets : Bool
 } derive(Eq, Debug)
 
 ///|
 pub fn ScheduleBuildSettings::new() -> ScheduleBuildSettings {
-  { auto_insert_apply_deferred: true }
+  {
+    ambiguity_detection: ScheduleBuildIgnore,
+    hierarchy_detection: ScheduleBuildWarn,
+    auto_insert_apply_deferred: true,
+    use_shortnames: true,
+    report_sets: true,
+  }
+}
+
+///|
+pub fn ScheduleBuildSettings::ambiguity_detection(
+  self : ScheduleBuildSettings,
+) -> ScheduleBuildLogLevel {
+  self.ambiguity_detection
+}
+
+///|
+pub fn ScheduleBuildSettings::set_ambiguity_detection(
+  self : ScheduleBuildSettings,
+  ambiguity_detection : ScheduleBuildLogLevel,
+) -> ScheduleBuildSettings {
+  ScheduleBuildSettings::{ ..self, ambiguity_detection }
+}
+
+///|
+pub fn ScheduleBuildSettings::hierarchy_detection(
+  self : ScheduleBuildSettings,
+) -> ScheduleBuildLogLevel {
+  self.hierarchy_detection
+}
+
+///|
+pub fn ScheduleBuildSettings::set_hierarchy_detection(
+  self : ScheduleBuildSettings,
+  hierarchy_detection : ScheduleBuildLogLevel,
+) -> ScheduleBuildSettings {
+  ScheduleBuildSettings::{ ..self, hierarchy_detection }
 }
 
 ///|
@@ -34,8 +81,35 @@ pub fn ScheduleBuildSettings::set_auto_insert_apply_deferred(
   self : ScheduleBuildSettings,
   auto_insert_apply_deferred : Bool,
 ) -> ScheduleBuildSettings {
-  ignore(self)
-  ScheduleBuildSettings::{ auto_insert_apply_deferred, }
+  ScheduleBuildSettings::{ ..self, auto_insert_apply_deferred }
+}
+
+///|
+pub fn ScheduleBuildSettings::use_shortnames(
+  self : ScheduleBuildSettings,
+) -> Bool {
+  self.use_shortnames
+}
+
+///|
+pub fn ScheduleBuildSettings::set_use_shortnames(
+  self : ScheduleBuildSettings,
+  use_shortnames : Bool,
+) -> ScheduleBuildSettings {
+  ScheduleBuildSettings::{ ..self, use_shortnames }
+}
+
+///|
+pub fn ScheduleBuildSettings::report_sets(self : ScheduleBuildSettings) -> Bool {
+  self.report_sets
+}
+
+///|
+pub fn ScheduleBuildSettings::set_report_sets(
+  self : ScheduleBuildSettings,
+  report_sets : Bool,
+) -> ScheduleBuildSettings {
+  ScheduleBuildSettings::{ ..self, report_sets }
 }
 
 ///|
@@ -118,9 +192,11 @@ fn schedule_build_passes_for_settings(
 priv struct ScheduleGraphPlan {
   graph_generation : Int
   set_order : Array[SystemSet]
+  hierarchy_set_order : Array[SystemSet]
   dependency_edges : Array[(Int, Int, Bool)]
   system_dependency_edges : Array[(Int, Int, Bool)]
   groups : Array[SystemSet]
+  systems_by_set : Array[Array[Int]]
   system_layers : Array[Int]
   execution_order : Array[Int]
   build_error : String?
@@ -142,40 +218,59 @@ priv struct ScheduleBuildPassGraph[W] {
 }
 
 ///|
+priv struct SystemSchedule[W] {
+  system_ids : Array[Int]
+  systems : Array[SystemConfig[W]]
+  system_accesses : Array[SystemAccess]
+  system_conditions : Array[ScheduleSystemRunConditions[W]]
+  system_dependencies : Array[Int]
+  system_dependents : Array[Array[Int]]
+  set_ids : Array[SystemSet]
+  set_run_conditions : Array[Ref[ScheduleSetRunConditions[W]]]
+  sets_with_conditions_of_systems : Array[Array[Int]]
+  systems_in_sets_with_conditions : Array[Array[Int]]
+  execution_order : Array[ScheduleExecutionNode]
+  single_threaded_batches : Array[Array[ScheduleExecutionNode]]
+  multi_threaded_batches : Array[Array[ScheduleExecutionNode]]
+}
+
+///|
+fn[W] SystemSchedule::new() -> SystemSchedule[W] {
+  {
+    system_ids: [],
+    systems: [],
+    system_accesses: [],
+    system_conditions: [],
+    system_dependencies: [],
+    system_dependents: [],
+    set_ids: [],
+    set_run_conditions: [],
+    sets_with_conditions_of_systems: [],
+    systems_in_sets_with_conditions: [],
+    execution_order: [],
+    single_threaded_batches: [],
+    multi_threaded_batches: [],
+  }
+}
+
+///|
 priv struct ScheduleAccessPlan[W] {
   graph_generation : Int
   world_id : Int
   component_registration_generation : Int
   allowed_ambiguous_fingerprint : Int
   auto_insert_apply_deferred : Bool
-  system_ids : Array[Int]
-  systems : Array[SystemConfig[W]]
-  system_accesses : Array[SystemAccess]
-  system_dependencies : Array[Int]
-  system_dependents : Array[Array[Int]]
-  set_ids : Array[SystemSet]
-  sets_with_conditions_of_systems : Array[Array[Int]]
-  systems_in_sets_with_conditions : Array[Array[Int]]
-  execution_order : Array[ScheduleExecutionNode]
+  schedule : SystemSchedule[W]
   invalid_system_errors : Array[(Int, String)]
-  single_threaded_batches : Array[Array[ScheduleExecutionNode]]
-  multi_threaded_batches : Array[Array[ScheduleExecutionNode]]
+  build_error : String?
 }
 
 ///|
 priv struct ScheduleExecutionPlan[W] {
-  systems : Array[SystemConfig[W]]
-  execution_order : Array[ScheduleExecutionNode]
+  schedule : SystemSchedule[W]
   execution_batches : Array[Array[ScheduleExecutionNode]]
-  system_accesses : Array[SystemAccess]
-  set_ids : Array[SystemSet]
-  sets_with_conditions_of_systems : Array[Array[Int]]
-  systems_in_sets_with_conditions : Array[Array[Int]]
+  executor_kind : ExecutorKind
   apply_final_deferred : Bool
-  set_run_conditions : @hashmap.HashMap[
-    SystemSet,
-    Ref[ScheduleSetRunConditions[W]],
-  ]
   invalid_system_errors : Array[(Int, String)]
   report_invalid_system_errors : Bool
   build_error : String?
@@ -191,44 +286,80 @@ priv struct ScheduleSetRunConditions[W] {
 }
 
 ///|
-priv struct ScheduleEntry[W] {
+priv struct ScheduleSystemRunConditions[W] {
+  run_ifs : Array[StatefulRunConditionFn[W]]
+  run_if_states : Array[Ref[Json]]
+  run_if_last_run_sequences : Array[@core.Sequence]
+}
+
+///|
+priv struct ScheduleGraph[W] {
   systems : Array[SystemConfig[W]]
   set_edges : Array[(SystemSet, SystemSet)]
   set_edges_ignore_deferred : Array[(SystemSet, SystemSet)]
+  set_hierarchy_edges : Array[(SystemSet, SystemSet)]
   set_run_conditions : @hashmap.HashMap[
     SystemSet,
     Ref[ScheduleSetRunConditions[W]],
   ]
+  mut changed : Bool
+  mut generation : Int
+  mut settings : ScheduleBuildSettings
+  mut build_passes : Array[ScheduleBuildPassKind]
+  auto_insert_apply_deferred_pass : AutoInsertApplyDeferredPass
+}
+
+///|
+fn[W] ScheduleGraph::new() -> ScheduleGraph[W] {
+  let settings = ScheduleBuildSettings::new()
+  {
+    systems: [],
+    set_edges: [],
+    set_edges_ignore_deferred: [],
+    set_hierarchy_edges: [],
+    set_run_conditions: @hashmap.HashMap::new(),
+    changed: false,
+    generation: 0,
+    settings,
+    build_passes: schedule_build_passes_for_settings(settings),
+    auto_insert_apply_deferred_pass: AutoInsertApplyDeferredPass::new(),
+  }
+}
+
+///|
+fn[W] ScheduleGraph::mark_changed(self : ScheduleGraph[W]) -> Unit {
+  self.changed = true
+  self.generation = self.generation + 1
+}
+
+///|
+priv struct ScheduleEntry[W] {
+  graph : ScheduleGraph[W]
+  mut executable : SystemSchedule[W]
   mut executor_kind : ExecutorKind
   mut apply_final_deferred : Bool
   mut chain_internal_set_counter : Int
-  mut graph_generation : Int
   mut cached_graph_plan : ScheduleGraphPlan?
   mut cached_access_plan : ScheduleAccessPlan[W]?
+  mut executor_initialized : Bool
   mut last_reported_build_error_generation : Int?
   mut last_reported_invalid_access_key : (Int, Int, Int, Int, Bool)?
-  mut build_settings : ScheduleBuildSettings
-  mut build_passes : Array[ScheduleBuildPassKind]
   executor_state : Ref[SingleThreadedExecutorState]
 }
 
 ///|
 fn[W] ScheduleEntry::new() -> ScheduleEntry[W] {
   {
-    systems: [],
-    set_edges: [],
-    set_edges_ignore_deferred: [],
-    set_run_conditions: @hashmap.HashMap::new(),
+    graph: ScheduleGraph::new(),
+    executable: SystemSchedule::new(),
     executor_kind: MultiThreaded,
     apply_final_deferred: true,
     chain_internal_set_counter: 0,
-    graph_generation: 0,
     cached_graph_plan: None,
     cached_access_plan: None,
+    executor_initialized: false,
     last_reported_build_error_generation: None,
     last_reported_invalid_access_key: None,
-    build_settings: ScheduleBuildSettings::new(),
-    build_passes: schedule_build_passes_for_settings(ScheduleBuildSettings::new()),
     executor_state: Ref::new(single_threaded_executor_state_new(0, 0, true)),
   }
 }
@@ -309,13 +440,13 @@ fn[W] ScheduleRegistry::new() -> ScheduleRegistry[W] {
   for stage in default_schedule_labels() {
     ignore(schedule_entry_ref(schedule, stage))
   }
-  schedule_entry_ref(schedule, RunFixedMainLoop).val.set_edges.push(
+  schedule_entry_ref(schedule, RunFixedMainLoop).val.graph.set_edges.push(
     (
       run_fixed_main_loop_system_set_name(BeforeFixedMainLoop),
       run_fixed_main_loop_system_set_name(FixedMainLoop),
     ),
   )
-  schedule_entry_ref(schedule, RunFixedMainLoop).val.set_edges.push(
+  schedule_entry_ref(schedule, RunFixedMainLoop).val.graph.set_edges.push(
     (
       run_fixed_main_loop_system_set_name(FixedMainLoop),
       run_fixed_main_loop_system_set_name(AfterFixedMainLoop),
@@ -328,9 +459,10 @@ fn[W] ScheduleRegistry::new() -> ScheduleRegistry[W] {
 fn[W] schedule_entry_mark_graph_changed(
   schedule_entry : ScheduleEntry[W],
 ) -> Unit {
-  schedule_entry.graph_generation = schedule_entry.graph_generation + 1
+  schedule_entry.graph.mark_changed()
   schedule_entry.cached_graph_plan = None
   schedule_entry.cached_access_plan = None
+  schedule_entry.executor_initialized = false
   schedule_entry.last_reported_build_error_generation = None
   schedule_entry.last_reported_invalid_access_key = None
 }
@@ -538,6 +670,89 @@ fn schedule_topo_node_order(
 }
 
 ///|
+fn schedule_graph_path_exists_excluding_edge(
+  adj : Array[Array[Int]],
+  from_node : Int,
+  to_node : Int,
+  skip_from : Int,
+  skip_to : Int,
+) -> Bool {
+  let visited : Array[Bool] = []
+  for _ in 0..<adj.length() {
+    visited.push(false)
+  }
+  let pending : Array[Int] = [from_node]
+  while pending.length() > 0 {
+    let current = pending.pop().unwrap()
+    if current == to_node {
+      return true
+    }
+    if current < 0 || current >= visited.length() || visited[current] {
+      continue
+    }
+    visited[current] = true
+    for next in adj[current] {
+      if current == skip_from && next == skip_to {
+        continue
+      }
+      if next >= 0 && next < visited.length() && !visited[next] {
+        pending.push(next)
+      }
+    }
+  }
+  false
+}
+
+///|
+fn schedule_system_sets_overlap(
+  left : Array[Int],
+  right : Array[Int],
+) -> Bool {
+  for system_i in left {
+    if right.contains(system_i) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn schedule_dependency_reachable(
+  system_count : Int,
+  edges : Array[(Int, Int, Bool)],
+  from_system : Int,
+  to_system : Int,
+) -> Bool {
+  let adj : Array[Array[Int]] = []
+  for _ in 0..<system_count {
+    adj.push([])
+  }
+  for edge in edges {
+    let (from_i, to_i, _) = edge
+    if from_i >= 0 && from_i < system_count && to_i >= 0 &&
+      to_i < system_count && !adj[from_i].contains(to_i) {
+      adj[from_i].push(to_i)
+    }
+  }
+  schedule_graph_path_exists_excluding_edge(adj, from_system, to_system, -1, -1)
+}
+
+///|
+fn[W] schedule_system_report_name(
+  config : SystemConfig[W],
+  index : Int,
+) -> String {
+  match config.name {
+    Some(name) => name
+    None =>
+      match config.debug_name {
+        Some(debug_name) => debug_name
+        None => "system#\{index.to_string()}"
+      }
+  }
+}
+
+///|
 fn[W] schedule_build_pass_graph_new(
   system_count : Int,
   systems : Array[SystemConfig[W]],
@@ -579,12 +794,12 @@ fn[W] schedule_build_pass_graph_new(
 ///|
 fn[W] ScheduleBuildPassGraph::add_auto_sync_node(
   self : ScheduleBuildPassGraph[W],
+  stable_sync_i : Int,
 ) -> Int {
   let node_i = self.nodes.length()
-  let sync_i = self.auto_sync_count
-  self.auto_sync_count = sync_i + 1
+  self.auto_sync_count = self.auto_sync_count + 1
   let system_i = self.systems.length()
-  self.systems.push(auto_apply_deferred_system(sync_i))
+  self.systems.push(auto_apply_deferred_system(stable_sync_i))
   self.system_accesses.push(SystemAccess::new())
   self.system_to_node.push(node_i)
   self.nodes.push(ScheduledSystem(system_i))
@@ -663,17 +878,26 @@ fn[W] schedule_build_graph_plan(
     }
   }
 
-  let system_count = schedule_entry.systems.length()
+  let system_count = schedule_entry.graph.systems.length()
   let groups : Array[SystemSet] = []
   let membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]] = @hashmap.HashMap::new()
   fn add_membership_group(
     membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]],
     member_set : SystemSet,
     group : SystemSet,
-  ) -> Unit {
+  ) -> Bool {
     match membership_groups.get(member_set) {
-      Some(groups) => if !groups.contains(group) { groups.push(group) }
-      None => membership_groups.set(member_set, [group])
+      Some(groups) =>
+        if !groups.contains(group) {
+          groups.push(group)
+          true
+        } else {
+          false
+        }
+      None => {
+        membership_groups.set(member_set, [group])
+        true
+      }
     }
   }
   fn member_groups_for_set(
@@ -686,24 +910,46 @@ fn[W] schedule_build_graph_plan(
     }
   }
   for i in 0..<system_count {
-    let cfg = schedule_entry.systems[i]
+    let cfg = schedule_entry.graph.systems[i]
     let set = if cfg.set is Some(s) { s } else { "__anon#\{i.to_string()}" }
     groups.push(set)
     push_unique(seen, set_order, set)
     for member_set in cfg.member_sets {
-      add_membership_group(membership_groups, member_set, set)
+      ignore(add_membership_group(membership_groups, member_set, set))
       push_unique(seen, set_order, member_set)
     }
     match cfg.set {
       Some(member_set) =>
         if !member_set.has_prefix("__chain__:") {
-          add_membership_group(membership_groups, member_set, set)
+          ignore(add_membership_group(membership_groups, member_set, set))
           push_unique(seen, set_order, member_set)
         }
       None => ()
     }
   }
-  for edge in schedule_entry.set_edges {
+  for edge in schedule_entry.graph.set_hierarchy_edges {
+    push_unique(seen, set_order, edge.0)
+    push_unique(seen, set_order, edge.1)
+  }
+  let hierarchy_changed = Ref::new(true)
+  while hierarchy_changed.val {
+    hierarchy_changed.val = false
+    for edge in schedule_entry.graph.set_hierarchy_edges {
+      let (child_set, parent_set) = edge
+      match membership_groups.get(child_set) {
+        Some(child_groups) =>
+          for group in child_groups {
+            if add_membership_group(
+              membership_groups, parent_set, group,
+            ) {
+              hierarchy_changed.val = true
+            }
+          }
+        None => ()
+      }
+    }
+  }
+  for edge in schedule_entry.graph.set_edges {
     for set in member_groups_for_set(membership_groups, edge.0) {
       push_unique(seen, set_order, set)
     }
@@ -711,7 +957,7 @@ fn[W] schedule_build_graph_plan(
       push_unique(seen, set_order, set)
     }
   }
-  for edge in schedule_entry.set_edges_ignore_deferred {
+  for edge in schedule_entry.graph.set_edges_ignore_deferred {
     for set in member_groups_for_set(membership_groups, edge.0) {
       push_unique(seen, set_order, set)
     }
@@ -720,7 +966,7 @@ fn[W] schedule_build_graph_plan(
     }
   }
   for i in 0..<system_count {
-    let cfg = schedule_entry.systems[i]
+    let cfg = schedule_entry.graph.systems[i]
     for other in cfg.before {
       for set in member_groups_for_set(membership_groups, other) {
         push_unique(seen, set_order, set)
@@ -747,6 +993,154 @@ fn[W] schedule_build_graph_plan(
   for i in 0..<set_count {
     set_index.set(set_order[i], i)
   }
+  let hierarchy_set_order : Array[SystemSet] = []
+  let hierarchy_indeg : Array[Int] = []
+  let hierarchy_adj : Array[Array[Int]] = []
+  let hierarchy_parent_indeg : Array[Int] = []
+  let hierarchy_parent_adj : Array[Array[Int]] = []
+  for _ in 0..<set_count {
+    hierarchy_indeg.push(0)
+    hierarchy_adj.push([])
+    hierarchy_parent_indeg.push(0)
+    hierarchy_parent_adj.push([])
+  }
+  for edge in schedule_entry.graph.set_hierarchy_edges {
+    let child_i = set_index.at(edge.0)
+    let parent_i = set_index.at(edge.1)
+    if child_i == parent_i {
+      return {
+        graph_generation: schedule_entry.graph.generation,
+        set_order,
+        hierarchy_set_order: set_order,
+        dependency_edges: [],
+        system_dependency_edges: [],
+        groups,
+        systems_by_set: [],
+        system_layers: [],
+        execution_order: [],
+        build_error: Some(
+          "Schedule `\{to_repr(stage).to_string()}` has a hierarchy cycle between system sets. Cyclic sets: \{edge.0}.",
+        ),
+      }
+    }
+    if !hierarchy_adj[child_i].contains(parent_i) {
+      hierarchy_adj[child_i].push(parent_i)
+      hierarchy_indeg[parent_i] = hierarchy_indeg[parent_i] + 1
+    }
+    if !hierarchy_parent_adj[parent_i].contains(child_i) {
+      hierarchy_parent_adj[parent_i].push(child_i)
+      hierarchy_parent_indeg[child_i] = hierarchy_parent_indeg[child_i] + 1
+    }
+  }
+  let hierarchy_ready : Array[Int] = []
+  for i in 0..<set_count {
+    if hierarchy_indeg[i] == 0 {
+      hierarchy_ready.push(i)
+    }
+  }
+  let mut hierarchy_visited_count = 0
+  while hierarchy_ready.length() > 0 {
+    let next = schedule_pop_smallest(hierarchy_ready)
+    hierarchy_visited_count = hierarchy_visited_count + 1
+    for to in hierarchy_adj[next] {
+      hierarchy_indeg[to] = hierarchy_indeg[to] - 1
+      if hierarchy_indeg[to] == 0 {
+        hierarchy_ready.push(to)
+      }
+    }
+  }
+  if hierarchy_visited_count != set_count {
+    let cycle_sets : Array[String] = []
+    for i in 0..<set_count {
+      if hierarchy_indeg[i] > 0 {
+        cycle_sets.push(set_order[i])
+      }
+    }
+    let cycle_set_names = cycle_sets.join(", ")
+    let cycle_hint = if cycle_sets.length() > 0 {
+      " Cyclic sets: \{cycle_set_names}."
+    } else {
+      ""
+    }
+    return {
+      graph_generation: schedule_entry.graph.generation,
+      set_order,
+      hierarchy_set_order: set_order,
+      dependency_edges: [],
+      system_dependency_edges: [],
+      groups,
+      systems_by_set: [],
+      system_layers: [],
+      execution_order: [],
+      build_error: Some(
+        "Schedule `\{to_repr(stage).to_string()}` has a hierarchy cycle between system sets.\{cycle_hint}",
+      ),
+    }
+  }
+  let redundant_hierarchy_edges : Array[(SystemSet, SystemSet)] = []
+  if schedule_entry.graph.settings.hierarchy_detection() != ScheduleBuildIgnore {
+    for edge in schedule_entry.graph.set_hierarchy_edges {
+      let child_i = set_index.at(edge.0)
+      let parent_i = set_index.at(edge.1)
+      if schedule_graph_path_exists_excluding_edge(
+        hierarchy_parent_adj,
+        parent_i,
+        child_i,
+        parent_i,
+        child_i,
+      ) {
+        redundant_hierarchy_edges.push(edge)
+      }
+    }
+    if redundant_hierarchy_edges.length() > 0 {
+      let names : Array[String] = []
+      for edge in redundant_hierarchy_edges {
+        names.push("\{edge.0} in \{edge.1}")
+      }
+      let redundant_names = names.join(", ")
+      let message = "Schedule `\{to_repr(stage).to_string()}` has redundant system set hierarchy edges: \{redundant_names}."
+      match schedule_entry.graph.settings.hierarchy_detection() {
+        ScheduleBuildError =>
+          return {
+            graph_generation: schedule_entry.graph.generation,
+            set_order,
+            hierarchy_set_order: set_order,
+            dependency_edges: [],
+            system_dependency_edges: [],
+            groups,
+            systems_by_set: [],
+            system_layers: [],
+            execution_order: [],
+            build_error: Some(message),
+          }
+        ScheduleBuildWarn => log_warn(message)
+        ScheduleBuildIgnore => ()
+      }
+    }
+  }
+  let hierarchy_parent_ready : Array[Int] = []
+  for i in 0..<set_count {
+    if hierarchy_parent_indeg[i] == 0 {
+      hierarchy_parent_ready.push(i)
+    }
+  }
+  while hierarchy_parent_ready.length() > 0 {
+    let next = schedule_pop_smallest(hierarchy_parent_ready)
+    hierarchy_set_order.push(set_order[next])
+    for to in hierarchy_parent_adj[next] {
+      hierarchy_parent_indeg[to] = hierarchy_parent_indeg[to] - 1
+      if hierarchy_parent_indeg[to] == 0 {
+        hierarchy_parent_ready.push(to)
+      }
+    }
+  }
+  if hierarchy_set_order.length() != set_count {
+    for set in set_order {
+      if !hierarchy_set_order.contains(set) {
+        hierarchy_set_order.push(set)
+      }
+    }
+  }
   let indeg : Array[Int] = []
   let adj : Array[Array[Int]] = []
   let dependency_edges : Array[(Int, Int, Bool)] = []
@@ -767,33 +1161,12 @@ fn[W] schedule_build_graph_plan(
     }
     let from_i = set_index.at(from)
     let to_i = set_index.at(to)
+    if adj[from_i].contains(to_i) {
+      return
+    }
     adj[from_i].push(to_i)
     dependency_edges.push((from_i, to_i, ignore_deferred))
     indeg[to_i] = indeg[to_i] + 1
-  }
-  fn add_group_to_set_edges(
-    set_index : @hashmap.HashMap[SystemSet, Int],
-    indeg : Array[Int],
-    adj : Array[Array[Int]],
-    from : SystemSet,
-    to_set : SystemSet,
-    ignore_deferred : Bool,
-  ) -> Unit {
-    for to in member_groups_for_set(membership_groups, to_set) {
-      add_edge(set_index, indeg, adj, from, to, ignore_deferred)
-    }
-  }
-  fn add_set_to_group_edges(
-    set_index : @hashmap.HashMap[SystemSet, Int],
-    indeg : Array[Int],
-    adj : Array[Array[Int]],
-    from_set : SystemSet,
-    to : SystemSet,
-    ignore_deferred : Bool,
-  ) -> Unit {
-    for from in member_groups_for_set(membership_groups, from_set) {
-      add_edge(set_index, indeg, adj, from, to, ignore_deferred)
-    }
   }
   fn add_set_to_set_edges(
     set_index : @hashmap.HashMap[SystemSet, Int],
@@ -810,26 +1183,33 @@ fn[W] schedule_build_graph_plan(
     }
   }
 
-  for edge in schedule_entry.set_edges {
+  for edge in schedule_entry.graph.set_edges {
     add_set_to_set_edges(set_index, indeg, adj, edge.0, edge.1, false)
   }
-  for edge in schedule_entry.set_edges_ignore_deferred {
+  for edge in schedule_entry.graph.set_edges_ignore_deferred {
     add_set_to_set_edges(set_index, indeg, adj, edge.0, edge.1, true)
   }
   for i in 0..<system_count {
-    let cfg = schedule_entry.systems[i]
-    let group = groups[i]
+    let cfg = schedule_entry.graph.systems[i]
     for other in cfg.before {
-      add_group_to_set_edges(set_index, indeg, adj, group, other, false)
+      for set in member_groups_for_set(membership_groups, other) {
+        ignore(set_index.at(set))
+      }
     }
     for other in cfg.after {
-      add_set_to_group_edges(set_index, indeg, adj, other, group, false)
+      for set in member_groups_for_set(membership_groups, other) {
+        ignore(set_index.at(set))
+      }
     }
     for other in cfg.before_ignore_deferred {
-      add_group_to_set_edges(set_index, indeg, adj, group, other, true)
+      for set in member_groups_for_set(membership_groups, other) {
+        ignore(set_index.at(set))
+      }
     }
     for other in cfg.after_ignore_deferred {
-      add_set_to_group_edges(set_index, indeg, adj, other, group, true)
+      for set in member_groups_for_set(membership_groups, other) {
+        ignore(set_index.at(set))
+      }
     }
   }
   let indeg_for_topo : Array[Int] = []
@@ -882,11 +1262,13 @@ fn[W] schedule_build_graph_plan(
       system_layers.push(0)
     }
     return {
-      graph_generation: schedule_entry.graph_generation,
+      graph_generation: schedule_entry.graph.generation,
       set_order,
+      hierarchy_set_order,
       dependency_edges,
       system_dependency_edges: [],
       groups,
+      systems_by_set: [],
       system_layers,
       execution_order: [],
       build_error: Some(
@@ -926,11 +1308,13 @@ fn[W] schedule_build_graph_plan(
       system_layers.push(0)
     }
     return {
-      graph_generation: schedule_entry.graph_generation,
+      graph_generation: schedule_entry.graph.generation,
       set_order,
+      hierarchy_set_order,
       dependency_edges,
       system_dependency_edges: [],
       groups,
+      systems_by_set: [],
       system_layers,
       execution_order: [],
       build_error: Some(
@@ -938,13 +1322,98 @@ fn[W] schedule_build_graph_plan(
       ),
     }
   }
-  let systems_by_set : Array[Array[Int]] = []
+  let primary_systems_by_set : Array[Array[Int]] = []
   for _ in 0..<set_count {
-    systems_by_set.push([])
+    primary_systems_by_set.push([])
   }
   for i in 0..<system_count {
     let set_i = set_index.at(groups[i])
-    systems_by_set[set_i].push(i)
+    primary_systems_by_set[set_i].push(i)
+  }
+  let systems_by_set : Array[Array[Int]] = []
+  for set in set_order {
+    let set_systems : Array[Int] = []
+    for group in member_groups_for_set(membership_groups, set) {
+      let group_i = set_index.at(group)
+      for system_i in primary_systems_by_set[group_i] {
+        if !set_systems.contains(system_i) {
+          set_systems.push(system_i)
+        }
+      }
+    }
+    systems_by_set.push(set_systems)
+  }
+  fn ordered_sets_overlap_error(from_set : SystemSet, to_set : SystemSet) -> String? {
+    for from_group in member_groups_for_set(membership_groups, from_set) {
+      let from_i = set_index.at(from_group)
+      for to_group in member_groups_for_set(membership_groups, to_set) {
+        let to_i = set_index.at(to_group)
+        if schedule_system_sets_overlap(systems_by_set[from_i], systems_by_set[to_i]) {
+          return Some(
+            "Schedule `\{to_repr(stage).to_string()}` has ordered system sets with overlapping systems: `\{from_set}` and `\{to_set}`.",
+          )
+        }
+      }
+    }
+    None
+  }
+  for edge in schedule_entry.graph.set_edges {
+    match ordered_sets_overlap_error(edge.0, edge.1) {
+      Some(message) =>
+        return {
+          graph_generation: schedule_entry.graph.generation,
+          set_order,
+          hierarchy_set_order,
+          dependency_edges,
+          system_dependency_edges: [],
+          groups,
+          systems_by_set,
+          system_layers: [],
+          execution_order: [],
+          build_error: Some(message),
+        }
+      None => ()
+    }
+  }
+  for edge in schedule_entry.graph.set_edges_ignore_deferred {
+    match ordered_sets_overlap_error(edge.0, edge.1) {
+      Some(message) =>
+        return {
+          graph_generation: schedule_entry.graph.generation,
+          set_order,
+          hierarchy_set_order,
+          dependency_edges,
+          system_dependency_edges: [],
+          groups,
+          systems_by_set,
+          system_layers: [],
+          execution_order: [],
+          build_error: Some(message),
+        }
+      None => ()
+    }
+  }
+  for from_i in 0..<set_count {
+    for to_i in 0..<set_count {
+      if from_i != to_i &&
+        schedule_graph_path_exists_excluding_edge(adj, from_i, to_i, -1, -1) &&
+        schedule_system_sets_overlap(systems_by_set[from_i], systems_by_set[to_i]) {
+        return {
+          graph_generation: schedule_entry.graph.generation,
+          set_order,
+          hierarchy_set_order,
+          dependency_edges,
+          system_dependency_edges: [],
+          groups,
+          systems_by_set,
+          system_layers: [],
+          execution_order: [],
+          build_error: Some(
+            "Schedule `\{to_repr(stage).to_string()}` has ordered system sets with overlapping systems: `\{set_order[from_i]}` and `\{set_order[to_i]}`.",
+          ),
+        }
+      }
+    }
   }
   let set_out_edges : Array[Array[(Int, Bool)]] = []
   for _ in 0..<set_count {
@@ -955,6 +1424,34 @@ fn[W] schedule_build_graph_plan(
     set_out_edges[from_i].push((to_i, ignore_deferred))
   }
   let system_dependency_edges : Array[(Int, Int, Bool)] = []
+  fn add_system_to_set_dependency_edges(
+    source_system : Int,
+    to_set : SystemSet,
+    ignore_deferred : Bool,
+  ) -> Unit {
+    for to_group in member_groups_for_set(membership_groups, to_set) {
+      let to_set_i = set_index.at(to_group)
+      for target_system in systems_by_set[to_set_i] {
+        schedule_add_unique_system_edge(
+          system_dependency_edges, source_system, target_system, ignore_deferred,
+        )
+      }
+    }
+  }
+  fn add_set_to_system_dependency_edges(
+    from_set : SystemSet,
+    target_system : Int,
+    ignore_deferred : Bool,
+  ) -> Unit {
+    for from_group in member_groups_for_set(membership_groups, from_set) {
+      let from_set_i = set_index.at(from_group)
+      for source_system in systems_by_set[from_set_i] {
+        schedule_add_unique_system_edge(
+          system_dependency_edges, source_system, target_system, ignore_deferred,
+        )
+      }
+    }
+  }
   fn walk_system_dependency_edges(
     source_system : Int,
     set_i : Int,
@@ -981,10 +1478,50 @@ fn[W] schedule_build_graph_plan(
       walk_system_dependency_edges(source_system, set_i, true)
     }
   }
+  for system_i in 0..<system_count {
+    let cfg = schedule_entry.graph.systems[system_i]
+    for other in cfg.before {
+      add_system_to_set_dependency_edges(system_i, other, false)
+    }
+    for other in cfg.after {
+      add_set_to_system_dependency_edges(other, system_i, false)
+    }
+    for other in cfg.before_ignore_deferred {
+      add_system_to_set_dependency_edges(system_i, other, true)
+    }
+    for other in cfg.after_ignore_deferred {
+      add_set_to_system_dependency_edges(other, system_i, true)
+    }
+  }
   let execution_order : Array[Int] = []
   for set_i in topo {
     for system_i in systems_by_set[set_i] {
       execution_order.push(system_i)
+    }
+  }
+  let all_systems_runnable : Array[Bool] = []
+  for _ in 0..<system_count {
+    all_systems_runnable.push(true)
+  }
+  if schedule_topo_system_order(
+    system_count,
+    execution_order,
+    system_dependency_edges,
+    all_systems_runnable,
+  ) is None {
+    return {
+      graph_generation: schedule_entry.graph.generation,
+      set_order,
+      hierarchy_set_order,
+      dependency_edges,
+      system_dependency_edges,
+      groups,
+      systems_by_set,
+      system_layers: [],
+      execution_order: [],
+      build_error: Some(
+        "Schedule `\{to_repr(stage).to_string()}` has a dependency cycle between systems.",
+      ),
     }
   }
   let system_layers : Array[Int] = []
@@ -993,11 +1530,13 @@ fn[W] schedule_build_graph_plan(
     system_layers.push(set_layer_index[set_i])
   }
   {
-    graph_generation: schedule_entry.graph_generation,
+    graph_generation: schedule_entry.graph.generation,
     set_order,
+    hierarchy_set_order,
     dependency_edges,
     system_dependency_edges,
     groups,
+    systems_by_set,
     system_layers,
     execution_order,
     build_error: None,
@@ -1010,7 +1549,8 @@ fn[W] schedule_resolve_graph_plan(
   stage : ScheduleStage,
 ) -> ScheduleGraphPlan {
   match schedule_entry.cached_graph_plan {
-    Some(plan) if plan.graph_generation == schedule_entry.graph_generation =>
+    Some(plan) if !schedule_entry.graph.changed &&
+      plan.graph_generation == schedule_entry.graph.generation =>
       plan
     _ => {
       let plan = schedule_build_graph_plan(schedule_entry, stage)
@@ -1025,10 +1565,35 @@ fn[W] schedule_set_has_run_conditions(
   schedule_entry : ScheduleEntry[W],
   set : SystemSet,
 ) -> Bool {
-  match schedule_entry.set_run_conditions.get(set) {
+  match schedule_entry.graph.set_run_conditions.get(set) {
     Some(run_conditions_ref) => run_conditions_ref.val.run_ifs.length() > 0
     None => false
   }
+}
+
+///|
+fn[W] schedule_set_or_ancestor_has_run_conditions(
+  schedule_entry : ScheduleEntry[W],
+  set : SystemSet,
+  visited : Array[SystemSet],
+) -> Bool {
+  if visited.contains(set) {
+    return false
+  }
+  visited.push(set)
+  if schedule_set_has_run_conditions(schedule_entry, set) {
+    return true
+  }
+  for edge in schedule_entry.graph.set_hierarchy_edges {
+    let (child_set, parent_set) = edge
+    if child_set == set &&
+      schedule_set_or_ancestor_has_run_conditions(
+        schedule_entry, parent_set, visited,
+      ) {
+      return true
+    }
+  }
+  false
 }
 
 ///|
@@ -1042,17 +1607,46 @@ fn[W] schedule_system_has_run_conditions(
   match config.set {
     Some(set) =>
       if !set.has_prefix("__chain__:") &&
-        schedule_set_has_run_conditions(schedule_entry, set) {
+        schedule_set_or_ancestor_has_run_conditions(schedule_entry, set, []) {
         return true
       }
     None => ()
   }
   for set in config.member_sets {
-    if schedule_set_has_run_conditions(schedule_entry, set) {
+    if schedule_set_or_ancestor_has_run_conditions(schedule_entry, set, []) {
       return true
     }
   }
   false
+}
+
+///|
+fn[W] schedule_system_run_conditions_from_config(
+  config : SystemConfig[W],
+) -> ScheduleSystemRunConditions[W] {
+  let run_ifs : Array[StatefulRunConditionFn[W]] = []
+  for cond in config.run_ifs {
+    run_ifs.push(cond)
+  }
+  let run_if_states : Array[Ref[Json]] = []
+  for state in config.run_if_states {
+    run_if_states.push(state)
+  }
+  let run_if_last_run_sequences : Array[@core.Sequence] = []
+  for sequence in config.run_if_last_run_sequences {
+    run_if_last_run_sequences.push(sequence)
+  }
+  { run_ifs, run_if_states, run_if_last_run_sequences }
+}
+
+///|
+fn[W] schedule_system_conditions_compatible(
+  left : ScheduleSystemRunConditions[W],
+  right : ScheduleSystemRunConditions[W],
+) -> Bool {
+  left.run_ifs.length() == right.run_ifs.length() &&
+  left.run_if_states.length() == right.run_if_states.length() &&
+  left.run_if_last_run_sequences.length() == right.run_if_last_run_sequences.length()
 }
 
 fn[W] schedule_build_access_plan(
@@ -1072,25 +1666,16 @@ fn[W] schedule_build_access_plan(
       component_registration_generation,
       allowed_ambiguous_fingerprint,
       auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
-      system_ids: [],
-      systems: [],
-      system_accesses: [],
-      system_dependencies: [],
-      system_dependents: [],
-      set_ids: [],
-      sets_with_conditions_of_systems: [],
-      systems_in_sets_with_conditions: [],
-      execution_order: [],
+      schedule: SystemSchedule::new(),
       invalid_system_errors: [],
-      single_threaded_batches: [],
-      multi_threaded_batches: [],
+      build_error: None,
     }
   }
-  let system_count = schedule_entry.systems.length()
+  let system_count = schedule_entry.graph.systems.length()
   let system_accesses : Array[SystemAccess] = []
   let invalid_system_errors : Array[(Int, String)] = []
   for i in 0..<system_count {
-    match schedule_entry.systems[i].access_factory {
+    match schedule_entry.graph.systems[i].access_factory {
       Some(access_factory) => {
         let access = access_factory(world)
         match access.validation_error() {
@@ -1107,9 +1692,15 @@ fn[W] schedule_build_access_plan(
     runnable_mask.push(true)
   }
   let set_ids : Array[SystemSet] = []
-  for set in graph_plan.set_order {
-    if schedule_set_has_run_conditions(schedule_entry, set) {
-      set_ids.push(set)
+  let set_run_conditions : Array[Ref[ScheduleSetRunConditions[W]]] = []
+  for set in graph_plan.hierarchy_set_order {
+    match schedule_entry.graph.set_run_conditions.get(set) {
+      Some(run_conditions_ref) =>
+        if run_conditions_ref.val.run_ifs.length() > 0 {
+          set_ids.push(set)
+          set_run_conditions.push(run_conditions_ref)
+        }
+      _ => ()
     }
   }
   let sets_with_conditions_of_systems : Array[Array[Int]] = []
@@ -1120,18 +1711,39 @@ fn[W] schedule_build_access_plan(
   for _ in 0..<set_ids.length() {
     systems_in_sets_with_conditions.push([])
   }
+  fn graph_plan_set_index(set : SystemSet) -> Int? {
+    for i in 0..<graph_plan.set_order.length() {
+      if graph_plan.set_order[i] == set {
+        return Some(i)
+      }
+    }
+    None
+  }
   for set_i in 0..<set_ids.length() {
     let set = set_ids[set_i]
-    for system_i in 0..<system_count {
-      let cfg = schedule_entry.systems[system_i]
-      let mut in_set = cfg.member_sets.contains(set)
-      match cfg.set {
-        Some(primary_set) => if primary_set == set { in_set = true }
-        None => ()
-      }
-      if in_set {
-        sets_with_conditions_of_systems[system_i].push(set_i)
-        systems_in_sets_with_conditions[set_i].push(system_i)
+    match graph_plan_set_index(set) {
+      Some(source_set_i) =>
+        for system_i in graph_plan.systems_by_set[source_set_i] {
+          if !sets_with_conditions_of_systems[system_i].contains(set_i) {
+            sets_with_conditions_of_systems[system_i].push(set_i)
+          }
+          if !systems_in_sets_with_conditions[set_i].contains(system_i) {
+            systems_in_sets_with_conditions[set_i].push(system_i)
+          }
+        }
+      None => {
+        for system_i in 0..<system_count {
+          let cfg = schedule_entry.graph.systems[system_i]
+          let mut in_set = cfg.member_sets.contains(set)
+          match cfg.set {
+            Some(primary_set) => if primary_set == set { in_set = true }
+            None => ()
+          }
+          if in_set {
+            sets_with_conditions_of_systems[system_i].push(set_i)
+            systems_in_sets_with_conditions[set_i].push(system_i)
+          }
+        }
       }
     }
   }
@@ -1142,6 +1754,57 @@ fn[W] schedule_build_access_plan(
       schedule_add_unique_system_edge(
         base_system_edges, from_system, to_system, ignore_deferred,
       )
+    }
+  }
+  if build_settings.ambiguity_detection() != ScheduleBuildIgnore {
+    let ambiguities : Array[String] = []
+    for left_i in 0..<system_count {
+      let left_access = system_accesses[left_i]
+      if left_access.validation_error() is Some(_) || left_access.is_exclusive() {
+        continue
+      }
+      for right_i in (left_i + 1)..<system_count {
+        let right_access = system_accesses[right_i]
+        if right_access.validation_error() is Some(_) ||
+          right_access.is_exclusive() {
+          continue
+        }
+        if system_access_compatible(
+            left_access, right_access, allowed_ambiguous_components,
+          ) {
+          continue
+        }
+        if schedule_dependency_reachable(
+            system_count, base_system_edges, left_i, right_i,
+          ) ||
+          schedule_dependency_reachable(
+            system_count, base_system_edges, right_i, left_i,
+          ) {
+          continue
+        }
+        ambiguities.push(
+          "`\{schedule_system_report_name(schedule_entry.graph.systems[left_i], left_i)}` conflicts with `\{schedule_system_report_name(schedule_entry.graph.systems[right_i], right_i)}`",
+        )
+      }
+    }
+    if ambiguities.length() > 0 {
+      let ambiguity_names = ambiguities.join("; ")
+      let message = "Schedule has ambiguous system order: \{ambiguity_names}."
+      match build_settings.ambiguity_detection() {
+        ScheduleBuildError =>
+          return {
+            graph_generation: graph_plan.graph_generation,
+            world_id,
+            component_registration_generation,
+            allowed_ambiguous_fingerprint,
+            auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
+            schedule: SystemSchedule::new(),
+            invalid_system_errors,
+            build_error: Some(message),
+          }
+        ScheduleBuildWarn => log_warn(message)
+        ScheduleBuildIgnore => ()
+      }
     }
   }
   let base_runnable_execution_order = match
@@ -1164,7 +1827,7 @@ fn[W] schedule_build_access_plan(
   }
   let build_pass_graph = schedule_build_pass_graph_new(
     system_count,
-    schedule_entry.systems,
+    schedule_entry.graph.systems,
     system_accesses,
     base_runnable_execution_order,
     base_system_edges,
@@ -1186,6 +1849,7 @@ fn[W] schedule_build_access_plan(
   }
   let execution_systems : Array[SystemConfig[W]] = []
   let execution_system_accesses : Array[SystemAccess] = []
+  let execution_system_conditions : Array[ScheduleSystemRunConditions[W]] = []
   let execution_system_ids : Array[Int] = []
   let ordered_execution_order : Array[ScheduleExecutionNode] = []
   for node in execution_order {
@@ -1196,6 +1860,11 @@ fn[W] schedule_build_access_plan(
         execution_systems.push(execution_systems_by_source[source_system_i])
         execution_system_accesses.push(
           execution_system_accesses_by_source[source_system_i],
+        )
+        execution_system_conditions.push(
+          schedule_system_run_conditions_from_config(
+            execution_systems_by_source[source_system_i],
+          ),
         )
         execution_system_ids.push(source_system_i)
         ordered_execution_order.push(ScheduledSystem(execution_system_i))
@@ -1269,6 +1938,23 @@ fn[W] schedule_build_access_plan(
       execution_system_layers[execution_system_i] = graph_plan.system_layers[source_system_i]
     }
   }
+  let previous_schedule = schedule_entry.executable
+  for execution_i in 0..<execution_system_ids.length() {
+    let source_system_i = execution_system_ids[execution_i]
+    for previous_i in 0..<previous_schedule.system_ids.length() {
+      if previous_schedule.system_ids[previous_i] == source_system_i {
+        execution_systems[execution_i].last_run_sequence = previous_schedule.systems[previous_i].last_run_sequence
+        if previous_i < previous_schedule.system_conditions.length() &&
+          schedule_system_conditions_compatible(
+            execution_system_conditions[execution_i],
+            previous_schedule.system_conditions[previous_i],
+          ) {
+          execution_system_conditions[execution_i] = previous_schedule.system_conditions[previous_i]
+        }
+        break
+      }
+    }
+  }
   let single_threaded_batches : Array[Array[ScheduleExecutionNode]] = []
   for node in ordered_execution_order {
     single_threaded_batches.push([node])
@@ -1332,18 +2018,23 @@ fn[W] schedule_build_access_plan(
     component_registration_generation,
     allowed_ambiguous_fingerprint,
     auto_insert_apply_deferred: build_settings.auto_insert_apply_deferred(),
-    system_ids: execution_system_ids,
-    systems: execution_systems,
-    system_accesses: execution_system_accesses,
-    system_dependencies,
-    system_dependents,
-    set_ids,
-    sets_with_conditions_of_systems: ordered_sets_with_conditions_of_systems,
-    systems_in_sets_with_conditions: ordered_systems_in_sets_with_conditions,
-    execution_order: ordered_execution_order,
+    schedule: {
+      system_ids: execution_system_ids,
+      systems: execution_systems,
+      system_accesses: execution_system_accesses,
+      system_conditions: execution_system_conditions,
+      system_dependencies,
+      system_dependents,
+      set_ids,
+      set_run_conditions,
+      sets_with_conditions_of_systems: ordered_sets_with_conditions_of_systems,
+      systems_in_sets_with_conditions: ordered_systems_in_sets_with_conditions,
+      execution_order: ordered_execution_order,
+      single_threaded_batches,
+      multi_threaded_batches,
+    },
     invalid_system_errors: ordered_invalid_system_errors,
-    single_threaded_batches,
-    multi_threaded_batches,
+    build_error: None,
   }
 }
 
@@ -1401,10 +2092,34 @@ fn[W] schedule_execution_plan(
   let access_plan = schedule_resolve_access_plan(
     schedule_entry,
     graph_plan,
-    schedule_entry.build_settings,
+    schedule_entry.graph.settings,
     world,
     allowed_ambiguous_components,
   )
+  let resolved_build_error = match graph_plan.build_error {
+    Some(message) => Some(message)
+    None => access_plan.build_error
+  }
+  if resolved_build_error is Some(_) &&
+    schedule_entry.last_reported_build_error_generation !=
+    Some(graph_plan.graph_generation) {
+    report_build_error.val = true
+    schedule_entry.last_reported_build_error_generation = Some(
+      graph_plan.graph_generation,
+    )
+  }
+  if graph_plan.build_error is None && access_plan.build_error is None {
+    schedule_entry.executable = access_plan.schedule
+    schedule_entry.graph.changed = false
+  }
+  if !schedule_entry.executor_initialized {
+    schedule_entry.executor_state.val.init(
+      access_plan.schedule.systems.length(),
+      access_plan.schedule.set_ids.length(),
+      schedule_entry.apply_final_deferred,
+    )
+    schedule_entry.executor_initialized = true
+  }
   let report_invalid_system_errors = Ref::new(false)
   if access_plan.invalid_system_errors.length() > 0 {
     let access_key = (
@@ -1420,22 +2135,17 @@ fn[W] schedule_execution_plan(
     }
   }
   let execution_batches = match schedule_entry.executor_kind {
-    SingleThreaded => access_plan.single_threaded_batches
-    MultiThreaded => access_plan.multi_threaded_batches
+    SingleThreaded => access_plan.schedule.single_threaded_batches
+    MultiThreaded => access_plan.schedule.multi_threaded_batches
   }
   {
-    systems: access_plan.systems,
-    execution_order: access_plan.execution_order,
+    schedule: schedule_entry.executable,
     execution_batches,
-    system_accesses: access_plan.system_accesses,
-    set_ids: access_plan.set_ids,
-    sets_with_conditions_of_systems: access_plan.sets_with_conditions_of_systems,
-    systems_in_sets_with_conditions: access_plan.systems_in_sets_with_conditions,
+    executor_kind: schedule_entry.executor_kind,
     apply_final_deferred: schedule_entry.apply_final_deferred,
-    set_run_conditions: schedule_entry.set_run_conditions,
     invalid_system_errors: access_plan.invalid_system_errors,
     report_invalid_system_errors: report_invalid_system_errors.val,
-    build_error: graph_plan.build_error,
+    build_error: resolved_build_error,
     report_build_error: report_build_error.val,
     executor_state: schedule_entry.executor_state,
   }
@@ -1560,9 +2270,24 @@ fn[W] schedule_push_config(
   match config.chain_members {
     Some(_) => {
       let expanded_members : Array[SystemConfig[W]] = []
-      schedule_collect_expanded_chain_members(config, expanded_members)
+      let config_without_collective_conditions = SystemConfig::{
+        ..config,
+        run_ifs: [],
+        run_if_states: [],
+        run_if_last_run_sequences: [],
+      }
+      schedule_collect_expanded_chain_members(
+        config_without_collective_conditions,
+        expanded_members,
+      )
       if expanded_members.length() == 0 {
         return
+      }
+      let collective_condition_set = if config.run_ifs.length() > 0 &&
+        expanded_members.length() > 1 {
+        Some(schedule_next_chain_internal_set(entry_ref.val, stage))
+      } else {
+        None
       }
       let normalized_members : Array[SystemConfig[W]] = []
       for child_config in expanded_members {
@@ -1579,13 +2304,61 @@ fn[W] schedule_push_config(
             }
           None => ()
         }
+        match collective_condition_set {
+          Some(condition_set) =>
+            if !member_sets.contains(condition_set) {
+              member_sets.push(condition_set)
+            }
+          None => ()
+        }
+        let run_ifs : Array[StatefulRunConditionFn[W]] = []
+        let run_if_states : Array[Ref[Json]] = []
+        let run_if_last_run_sequences : Array[@core.Sequence] = []
+        for cond in child_config.run_ifs {
+          run_ifs.push(cond)
+        }
+        for state in child_config.run_if_states {
+          run_if_states.push(state)
+        }
+        for sequence in child_config.run_if_last_run_sequences {
+          run_if_last_run_sequences.push(sequence)
+        }
+        if expanded_members.length() == 1 {
+          for cond in config.run_ifs {
+            run_ifs.push(cond)
+          }
+          for state in config.run_if_states {
+            run_if_states.push(state)
+          }
+          for sequence in config.run_if_last_run_sequences {
+            run_if_last_run_sequences.push(sequence)
+          }
+        }
         let normalized_member = SystemConfig::{
           ..child_config,
           set: Some(schedule_next_chain_internal_set(entry_ref.val, stage)),
           member_sets,
+          run_ifs,
+          run_if_states,
+          run_if_last_run_sequences,
         }
         normalized_members.push(normalized_member)
-        entry_ref.val.systems.push(normalized_member)
+        entry_ref.val.graph.systems.push(normalized_member)
+      }
+      match collective_condition_set {
+        Some(condition_set) => {
+          ignore(
+            schedule_configure_set_run_conditions_from_refs(
+              entry_ref.val,
+              condition_set,
+              config.run_ifs,
+              config.run_if_states,
+              config.run_if_last_run_sequences,
+            ),
+          )
+          graph_changed_ref.val = true
+        }
+        None => ()
       }
       if normalized_members.length() <= 1 {
         return
@@ -1595,9 +2368,9 @@ fn[W] schedule_push_config(
         guard normalized_members[i + 1].set is Some(right_set) else { continue }
         if left_set != right_set {
           if config.chain_ignore_deferred {
-            entry_ref.val.set_edges_ignore_deferred.push((left_set, right_set))
+            entry_ref.val.graph.set_edges_ignore_deferred.push((left_set, right_set))
           } else {
-            entry_ref.val.set_edges.push((left_set, right_set))
+            entry_ref.val.graph.set_edges.push((left_set, right_set))
           }
           graph_changed_ref.val = true
         }
@@ -1605,7 +2378,7 @@ fn[W] schedule_push_config(
       graph_changed_ref.val = true
     }
     None => {
-      entry_ref.val.systems.push(config)
+      entry_ref.val.graph.systems.push(config)
       graph_changed_ref.val = true
     }
   }
@@ -1619,7 +2392,7 @@ fn[W] schedule_systems(
   schedule_registry : ScheduleRegistry[W],
   stage : ScheduleStage,
 ) -> Array[SystemConfig[W]] {
-  schedule_entry_ref(schedule_registry, stage).val.systems
+  schedule_entry_ref(schedule_registry, stage).val.graph.systems
 }
 
 ///|
@@ -1639,8 +2412,8 @@ fn[W] schedule_replace_entry(
   let key = schedule_stage_storage_key(schedule.label())
   let entry_ref = Ref::new(ScheduleEntry::new())
   entry_ref.val.executor_kind = schedule.get_executor_kind()
-  entry_ref.val.build_settings = schedule.get_build_settings()
-  entry_ref.val.build_passes = schedule_build_passes_for_settings(
+  entry_ref.val.graph.settings = schedule.get_build_settings()
+  entry_ref.val.graph.build_passes = schedule_build_passes_for_settings(
     schedule.get_build_settings(),
   )
   entry_ref.val.apply_final_deferred = schedule.get_apply_final_deferred()
@@ -1674,7 +2447,7 @@ fn[W] schedule_configure_set_run_conditions(
   guard set_run_ifs.length() > 0 || set_run_if_statefuls.length() > 0 else {
     return false
   }
-  let run_conditions_ref = match schedule_entry.set_run_conditions.get(set) {
+  let run_conditions_ref = match schedule_entry.graph.set_run_conditions.get(set) {
     Some(existing_ref) => existing_ref
     None => {
       let created_ref = Ref::new(ScheduleSetRunConditions::{
@@ -1682,7 +2455,7 @@ fn[W] schedule_configure_set_run_conditions(
         run_if_states: [],
         run_if_last_run_sequences: [],
       })
-      schedule_entry.set_run_conditions.set(set, created_ref)
+      schedule_entry.graph.set_run_conditions.set(set, created_ref)
       created_ref
     }
   }
@@ -1698,6 +2471,39 @@ fn[W] schedule_configure_set_run_conditions(
     run_conditions_ref.val.run_ifs.push(cond)
     run_conditions_ref.val.run_if_states.push(Ref::new(init_state))
     run_conditions_ref.val.run_if_last_run_sequences.push(0)
+  }
+  true
+}
+
+///|
+fn[W] schedule_configure_set_run_conditions_from_refs(
+  schedule_entry : ScheduleEntry[W],
+  set : SystemSet,
+  run_ifs : Array[StatefulRunConditionFn[W]],
+  run_if_states : Array[Ref[Json]],
+  run_if_last_run_sequences : Array[@core.Sequence],
+) -> Bool {
+  guard run_ifs.length() > 0 else { return false }
+  let run_conditions_ref = match schedule_entry.graph.set_run_conditions.get(set) {
+    Some(existing_ref) => existing_ref
+    None => {
+      let created_ref = Ref::new(ScheduleSetRunConditions::{
+        run_ifs: [],
+        run_if_states: [],
+        run_if_last_run_sequences: [],
+      })
+      schedule_entry.graph.set_run_conditions.set(set, created_ref)
+      created_ref
+    }
+  }
+  for cond in run_ifs {
+    run_conditions_ref.val.run_ifs.push(cond)
+  }
+  for state in run_if_states {
+    run_conditions_ref.val.run_if_states.push(state)
+  }
+  for sequence in run_if_last_run_sequences {
+    run_conditions_ref.val.run_if_last_run_sequences.push(sequence)
   }
   true
 }
@@ -1723,10 +2529,11 @@ pub fn[W] SubApp::configure_set(
   after_ignore_deferred? : Array[SystemSet] = [],
   set_run_ifs? : Array[RunConditionFn[W]] = [],
   set_run_if_statefuls? : Array[(Json, StatefulRunConditionFn[W])] = [],
+  in_sets? : Array[SystemSet] = [],
 ) -> SubApp[W] {
   let entry_ref = schedule_entry_ref(self.schedule, stage)
-  let edges = entry_ref.val.set_edges
-  let ignore_deferred_edges = entry_ref.val.set_edges_ignore_deferred
+  let edges = entry_ref.val.graph.set_edges
+  let ignore_deferred_edges = entry_ref.val.graph.set_edges_ignore_deferred
   let mut graph_changed = false
   for other in before {
     edges.push((set, other))
@@ -1744,17 +2551,18 @@ pub fn[W] SubApp::configure_set(
     ignore_deferred_edges.push((other, set))
     graph_changed = true
   }
+  for parent_set in in_sets {
+    entry_ref.val.graph.set_hierarchy_edges.push((set, parent_set))
+    graph_changed = true
+  }
   let access_changed = schedule_configure_set_run_conditions(
     entry_ref.val,
     set,
     set_run_ifs,
     set_run_if_statefuls,
   )
-  if graph_changed {
+  if graph_changed || access_changed {
     schedule_entry_mark_graph_changed(entry_ref.val)
-  } else if access_changed {
-    entry_ref.val.cached_access_plan = None
-    entry_ref.val.last_reported_invalid_access_key = None
   }
   self
 }
@@ -1770,6 +2578,7 @@ pub fn[W] SubApp::configure_sets(
   after_ignore_deferred? : Array[SystemSet] = [],
   set_run_ifs? : Array[RunConditionFn[W]] = [],
   set_run_if_statefuls? : Array[(Json, StatefulRunConditionFn[W])] = [],
+  in_sets? : Array[SystemSet] = [],
 ) -> SubApp[W] {
   self.configure_set(
     stage,
@@ -1780,6 +2589,7 @@ pub fn[W] SubApp::configure_sets(
     after_ignore_deferred~,
     set_run_ifs~,
     set_run_if_statefuls~,
+    in_sets~,
   )
 }
 
@@ -1818,6 +2628,7 @@ pub fn[W] App::configure_set(
   after_ignore_deferred? : Array[SystemSet] = [],
   set_run_ifs? : Array[RunConditionFn[W]] = [],
   set_run_if_statefuls? : Array[(Json, StatefulRunConditionFn[W])] = [],
+  in_sets? : Array[SystemSet] = [],
 ) -> App[W] {
   self.sub_apps.main = self.sub_apps.main.configure_set(
     stage,
@@ -1828,6 +2639,7 @@ pub fn[W] App::configure_set(
     after_ignore_deferred~,
     set_run_ifs~,
     set_run_if_statefuls~,
+    in_sets~,
   )
   self
 }
@@ -1843,6 +2655,7 @@ pub fn[W] App::configure_sets(
   after_ignore_deferred? : Array[SystemSet] = [],
   set_run_ifs? : Array[RunConditionFn[W]] = [],
   set_run_if_statefuls? : Array[(Json, StatefulRunConditionFn[W])] = [],
+  in_sets? : Array[SystemSet] = [],
 ) -> App[W] {
   self.configure_set(
     stage,
@@ -1853,5 +2666,6 @@ pub fn[W] App::configure_sets(
     after_ignore_deferred~,
     set_run_ifs~,
     set_run_if_statefuls~,
+    in_sets~,
   )
 }

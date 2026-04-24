@@ -499,8 +499,8 @@ pub fn[T : @ecs.Component] App::allow_ambiguous_component(Self[@ecs.World], key?
 pub fn[W] App::cleanup(Self[W]) -> Self[W]
 pub fn[W] App::cleanup_plugins(Self[W]) -> Self[W]
 pub fn[W] App::clear_plugin_names(Self[W]) -> Self[W]
-pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)]) -> Self[W]
-pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)]) -> Self[W]
+pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)], in_sets? : Array[String]) -> Self[W]
+pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)], in_sets? : Array[String]) -> Self[W]
 pub fn[T] App::contains_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> Bool
 pub fn[W] App::finish(Self[W]) -> Self[W]
 pub fn[W] App::finish_plugins(Self[W]) -> Self[W]
@@ -999,12 +999,30 @@ pub fn Schedule::set_apply_final_deferred(Self, Bool) -> Self
 pub fn Schedule::set_build_settings(Self, ScheduleBuildSettings) -> Self
 pub fn Schedule::set_executor_kind(Self, ExecutorKind) -> Self
 
-pub struct ScheduleBuildSettings {
-  auto_insert_apply_deferred : Bool
+pub(all) enum ScheduleBuildLogLevel {
+  ScheduleBuildIgnore
+  ScheduleBuildWarn
+  ScheduleBuildError
 } derive(Eq, @debug.Debug)
+
+pub struct ScheduleBuildSettings {
+  ambiguity_detection : ScheduleBuildLogLevel
+  hierarchy_detection : ScheduleBuildLogLevel
+  auto_insert_apply_deferred : Bool
+  use_shortnames : Bool
+  report_sets : Bool
+} derive(Eq, @debug.Debug)
+pub fn ScheduleBuildSettings::ambiguity_detection(Self) -> ScheduleBuildLogLevel
 pub fn ScheduleBuildSettings::auto_insert_apply_deferred(Self) -> Bool
+pub fn ScheduleBuildSettings::hierarchy_detection(Self) -> ScheduleBuildLogLevel
 pub fn ScheduleBuildSettings::new() -> Self
+pub fn ScheduleBuildSettings::report_sets(Self) -> Bool
+pub fn ScheduleBuildSettings::set_ambiguity_detection(Self, ScheduleBuildLogLevel) -> Self
 pub fn ScheduleBuildSettings::set_auto_insert_apply_deferred(Self, Bool) -> Self
+pub fn ScheduleBuildSettings::set_hierarchy_detection(Self, ScheduleBuildLogLevel) -> Self
+pub fn ScheduleBuildSettings::set_report_sets(Self, Bool) -> Self
+pub fn ScheduleBuildSettings::set_use_shortnames(Self, Bool) -> Self
+pub fn ScheduleBuildSettings::use_shortnames(Self) -> Bool
 
 pub struct ScheduleGraphSettings {
   include_system_name : ((String) -> Bool)?
@@ -1137,8 +1155,8 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemP
 pub fn[W] SubApp::add_schedule(Self[W], Schedule) -> Self[W]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[T : @ecs.Component] SubApp::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
-pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)]) -> Self[W]
-pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)]) -> Self[W]
+pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)], in_sets? : Array[String]) -> Self[W]
+pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)], in_sets? : Array[String]) -> Self[W]
 pub fn[W] SubApp::get_schedule_executor_kind(Self[W], ScheduleStage) -> ExecutorKind
 pub fn[T : @ecs.Component] SubApp::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn SubApp::new(@ecs.World) -> Self[@ecs.World]
