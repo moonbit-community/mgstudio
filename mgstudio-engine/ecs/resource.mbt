@@ -20,7 +20,20 @@ pub fn[T] World::insert_resource(
 ) -> Unit {
   let existed = self.resources.contains(key.id())
   let payload = erased_value(value)
-  self.resources.set(key.id(), ResourceSlot::{ payload, })
+  if existed {
+    guard self.resources.get(key.id()) is Some(slot) else { return }
+    slot.payload = payload
+  } else {
+    self.resources.set(
+      key.id(),
+      ResourceSlot::{
+        payload,
+        added_sequence: None,
+        changed_sequence: None,
+        changed_caller: None,
+      },
+    )
+  }
   if !existed {
     self.record_resource_added(key.id())
   }
@@ -45,9 +58,6 @@ pub fn[T] World::remove_resource(
 ) -> T? raise EcsError {
   guard self.get_resource(key) is Some(value) else { return None }
   self.resources.remove(key.id())
-  self.resource_added_sequences.remove(key.id())
-  self.resource_changed_sequences.remove(key.id())
-  self.resource_changed_callers.remove(key.id())
   Some(value)
 }
 

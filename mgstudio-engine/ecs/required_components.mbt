@@ -447,13 +447,29 @@ fn World::insert_component_payloads_with_requirements(
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
   let structural_changed_ref = Ref::new(false)
-  let pending_payloads : Map[Int, ErasedWriter] = match
+  let bundle_info = self.ensure_bundle_info_for_payloads(payloads)
+  let has_existing_pending_context = match
     self.pending_component_payload_context {
-    Some(context) if context.entity_id == entity.id => context.payloads
-    _ => {}
+    Some(context) if context.entity_id == entity.id => true
+    _ => false
+  }
+  let assume_no_existing_components = !has_existing_pending_context &&
+    entity.id >= 0 &&
+    entity.id < self.entity_archetype_ids.length() &&
+    self.entity_archetype_ids[entity.id] == 0 &&
+    entity.id < self.entity_component_local_ids.length() &&
+    self.entity_component_local_ids[entity.id].length() == 0
+  let (pending_payloads, pending_metadata) : (
+    Map[Int, ErasedWriter],
+    Map[Int, ComponentTickMetadata],
+  ) = match
+    self.pending_component_payload_context {
+    Some(context) if context.entity_id == entity.id =>
+      (context.payloads, context.metadata)
+    _ => ({}, {})
   }
   let previous_pending_context = self.push_pending_component_payload_context(
-    entity, pending_payloads,
+    entity, pending_payloads, pending_metadata,
   )
   for payload in payloads {
     self.insert_component_with_requirements_unchecked(
@@ -462,12 +478,13 @@ fn World::insert_component_payloads_with_requirements(
       payload.1,
       structural_changed_ref,
       pending_payloads,
+      assume_no_existing_components,
       caller~,
     )
   }
   if structural_changed_ref.val {
-    self.refresh_entity_archetype_with_pending_payloads(
-      entity, pending_payloads,
+    self.refresh_entity_archetype_with_bundle_info(
+      entity, bundle_info, pending_payloads, pending_metadata,
     )
     self.mark_structure_changed()
   }
@@ -500,13 +517,17 @@ fn World::insert_component_with_requirements_unchecked(
   writer : ErasedWriter,
   structural_changed_ref : Ref[Bool],
   pending_payloads : Map[Int, ErasedWriter],
+  assume_no_existing_components : Bool,
   caller? : String? = None,
 ) -> Unit {
   let component_local_id = self.ensure_component_registered(
     component_definition_id,
   )
-  let replacing = self.component_payload(component_definition_id, entity)
-    is Some(_)
+  let replacing = if assume_no_existing_components {
+    pending_payloads.get(component_local_id) is Some(_)
+  } else {
+    self.component_payload(component_definition_id, entity) is Some(_)
+  }
   if replacing {
     self.run_component_replace_hooks(entity, component_definition_id, caller~)
     self.run_replace_observers(entity, component_definition_id)
@@ -560,6 +581,7 @@ fn World::insert_component_with_requirements_unchecked(
       (entry.init)(),
       structural_changed_ref,
       pending_payloads,
+      assume_no_existing_components,
       caller~,
     )
   }

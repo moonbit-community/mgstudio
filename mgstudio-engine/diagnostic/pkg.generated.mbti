@@ -244,8 +244,12 @@ pub fn RenderDiagnosticsPlugin::new(Int) -> Self
 pub impl @app.Plugin for RenderDiagnosticsPlugin
 
 pub struct StressDiagnosticsPlugin {
+  use_generic_stack : Bool?
+  log_interval_seconds : Float
 }
 pub fn StressDiagnosticsPlugin::default() -> Self
+pub fn StressDiagnosticsPlugin::with_log_interval_seconds(Self, Float) -> Self
+pub fn StressDiagnosticsPlugin::with_use_generic_stack(Self, Bool) -> Self
 pub impl @app.Plugin for StressDiagnosticsPlugin
 
 pub struct SystemInfo {

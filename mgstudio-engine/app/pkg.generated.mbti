@@ -27,6 +27,8 @@ pub fn app_runtime_reset() -> Unit
 
 pub fn app_stdin_read_line() -> String?
 
+pub fn apply_deferred_system() -> SystemConfig[@ecs.World]
+
 pub fn[T : ChainedSystemConfigs] chain(T) -> SystemConfig[@ecs.World]
 
 pub fn[C] check_parent_has_component_message_key(@ecs.ComponentKey[C]) -> @ecs.MessageKey[CheckParentHasComponent[C]]
@@ -123,6 +125,22 @@ pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder]
 pub let message_update_system_set : String
 
 pub fn[S : States] next_state_resource_key(S) -> @ecs.ResourceKey[NextState[S]]
+
+pub fn[E : @ecs.TriggerEvent] observe_entity(@ecs.World, @core.Entity, (@ecs.On[E]) -> Unit) -> Unit
+
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] observe_entity2(@ecs.World, @core.Entity, (@ecs.On[E], P2) -> Unit) -> Unit
+
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] observe_entity2_fallible(@ecs.World, @core.Entity, (@ecs.On[E], P2) -> Unit raise) -> Unit
+
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] observe_entity3(@ecs.World, @core.Entity, (@ecs.On[E], P2, P3) -> Unit) -> Unit
+
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] observe_entity3_fallible(@ecs.World, @core.Entity, (@ecs.On[E], P2, P3) -> Unit raise) -> Unit
+
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] observe_entity4(@ecs.World, @core.Entity, (@ecs.On[E], P2, P3, P4) -> Unit) -> Unit
+
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] observe_entity4_fallible(@ecs.World, @core.Entity, (@ecs.On[E], P2, P3, P4) -> Unit raise) -> Unit
+
+pub fn[E : @ecs.TriggerEvent] observe_entity_fallible(@ecs.World, @core.Entity, (@ecs.On[E]) -> Unit raise) -> Unit
 
 pub fn[M] on_message(@ecs.World, @ecs.MessageKey[M], @ref.Ref[Json]) -> Bool
 
@@ -481,11 +499,12 @@ pub fn[T : @ecs.Component] App::allow_ambiguous_component(Self[@ecs.World], key?
 pub fn[W] App::cleanup(Self[W]) -> Self[W]
 pub fn[W] App::cleanup_plugins(Self[W]) -> Self[W]
 pub fn[W] App::clear_plugin_names(Self[W]) -> Self[W]
-pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
-pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
+pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)]) -> Self[W]
+pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)]) -> Self[W]
 pub fn[T] App::contains_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> Bool
 pub fn[W] App::finish(Self[W]) -> Self[W]
 pub fn[W] App::finish_plugins(Self[W]) -> Self[W]
+pub fn[W] App::get_schedule_executor_kind(Self[W], ScheduleStage) -> ExecutorKind
 pub fn[W] App::get_sub_app(Self[W], AppLabel) -> SubApp[W]?
 pub fn[W] App::get_sub_app_mut(Self[W], AppLabel) -> @ref.Ref[SubApp[W]]?
 pub fn[T : Resource] App::init_resource(Self[@ecs.World], () -> T) -> Self[@ecs.World]
@@ -549,6 +568,7 @@ pub struct Commands {
 }
 pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
 pub fn[T : Resource] Commands::insert_resource(Self, T) -> Unit
+pub fn[T] Commands::insert_world_resource(Self, @ecs.ResourceKey[T], T) -> Unit
 pub fn Commands::queue(Self, (@ecs.World) -> Unit raise) -> Unit
 pub fn Commands::queue_handled(Self, (@ecs.World) -> Unit raise, (Error, ErrorContext) -> Unit) -> Unit
 pub fn Commands::register_system(Self, SystemConfig[@ecs.World]) -> SystemId
@@ -607,10 +627,14 @@ pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T, loc~ : Source
 pub fn[B : @ecs.Bundle] EntityCommands::insert_bundle(Self, B, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T, loc~ : SourceLoc) -> Unit
-pub fn[E : @ecs.TriggerEvent] EntityCommands::observe(Self, (@ecs.On[E]) -> Unit raise) -> Self
-pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2(Self, (@ecs.On[E], P2) -> Unit raise) -> Self
-pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe3(Self, (@ecs.On[E], P2, P3) -> Unit raise) -> Self
-pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] EntityCommands::observe4(Self, (@ecs.On[E], P2, P3, P4) -> Unit raise) -> Self
+pub fn[E : @ecs.TriggerEvent] EntityCommands::observe(Self, (@ecs.On[E]) -> Unit) -> Self
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2(Self, (@ecs.On[E], P2) -> Unit) -> Self
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2_fallible(Self, (@ecs.On[E], P2) -> Unit raise) -> Self
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe3(Self, (@ecs.On[E], P2, P3) -> Unit) -> Self
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe3_fallible(Self, (@ecs.On[E], P2, P3) -> Unit raise) -> Self
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] EntityCommands::observe4(Self, (@ecs.On[E], P2, P3, P4) -> Unit) -> Self
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] EntityCommands::observe4_fallible(Self, (@ecs.On[E], P2, P3, P4) -> Unit raise) -> Self
+pub fn[E : @ecs.TriggerEvent] EntityCommands::observe_fallible(Self, (@ecs.On[E]) -> Unit raise) -> Self
 pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(Self, (OnPointer[K]) -> Unit) -> Self
 pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointer2(Self, (OnPointer[K], P2) -> Unit) -> Self
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe_pointer3(Self, (OnPointer[K], P2, P3) -> Unit) -> Self
@@ -963,11 +987,24 @@ pub(all) enum RunFixedMainLoopSystems {
 pub struct Schedule {
   label : ScheduleStage
   mut executor_kind : ExecutorKind
+  mut build_settings : ScheduleBuildSettings
+  mut apply_final_deferred : Bool
 }
+pub fn Schedule::get_apply_final_deferred(Self) -> Bool
+pub fn Schedule::get_build_settings(Self) -> ScheduleBuildSettings
 pub fn Schedule::get_executor_kind(Self) -> ExecutorKind
 pub fn Schedule::label(Self) -> ScheduleStage
 pub fn Schedule::new(ScheduleStage) -> Self
+pub fn Schedule::set_apply_final_deferred(Self, Bool) -> Self
+pub fn Schedule::set_build_settings(Self, ScheduleBuildSettings) -> Self
 pub fn Schedule::set_executor_kind(Self, ExecutorKind) -> Self
+
+pub struct ScheduleBuildSettings {
+  auto_insert_apply_deferred : Bool
+} derive(Eq, @debug.Debug)
+pub fn ScheduleBuildSettings::auto_insert_apply_deferred(Self) -> Bool
+pub fn ScheduleBuildSettings::new() -> Self
+pub fn ScheduleBuildSettings::set_auto_insert_apply_deferred(Self, Bool) -> Self
 
 pub struct ScheduleGraphSettings {
   include_system_name : ((String) -> Bool)?
@@ -1100,8 +1137,9 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemP
 pub fn[W] SubApp::add_schedule(Self[W], Schedule) -> Self[W]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[T : @ecs.Component] SubApp::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
-pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
-pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
+pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)]) -> Self[W]
+pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)]) -> Self[W]
+pub fn[W] SubApp::get_schedule_executor_kind(Self[W], ScheduleStage) -> ExecutorKind
 pub fn[T : @ecs.Component] SubApp::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn SubApp::new(@ecs.World) -> Self[@ecs.World]
 pub fn SubApp::run_once(Self[@ecs.World]) -> Self[@ecs.World]
@@ -1153,15 +1191,24 @@ pub struct SystemConfig[W] {
   error_handler : ((Error, ErrorContext) -> Unit)?
   run_ifs : Array[(W, @ref.Ref[Json]) -> Bool]
   run_if_states : Array[@ref.Ref[Json]]
+  chain_members : Array[SystemConfig[W]]?
+  chain_ignore_deferred : Bool
   set : String?
+  member_sets : Array[String]
   before : Array[String]
   after : Array[String]
+  before_ignore_deferred : Array[String]
+  after_ignore_deferred : Array[String]
+  is_apply_deferred_node : Bool
   run_if_last_run_sequences : Array[Int]
   mut last_run_sequence : Int
   mut access_factory : ((@ecs.World) -> SystemAccess)?
 }
 pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]
+pub fn[W] SystemConfig::after_ignore_deferred(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::before(Self[W], String) -> Self[W]
+pub fn[W] SystemConfig::before_ignore_deferred(Self[W], String) -> Self[W]
+pub fn[W] SystemConfig::chain_ignore_deferred(Self[W]) -> Self[W]
 pub fn[W] SystemConfig::handle_error_with(Self[W], (Error, ErrorContext) -> Unit) -> Self[W]
 pub fn[W] SystemConfig::in_set(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::named(Self[W], String) -> Self[W]

@@ -1809,6 +1809,6 @@ pub fn animation_plugin_with(
     animation_set_expire_transitions,
   ])
   .configure_set(@app.PostUpdate, animation_set_animate_targets, before=[
-    @transform.transform_set_mark_dirty_trees,
+    @transform.transform_set_propagate,
   ])
 }

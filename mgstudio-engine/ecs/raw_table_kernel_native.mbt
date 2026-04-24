@@ -91,83 +91,104 @@ fn raw_table_row_kernel_swap_remove(
 
 ///|
 #external
-priv type RawTableMetadataKernel
+priv type RawTableValueColumnKernel
 
 ///|
-extern "c" fn raw_table_metadata_kernel_new_native() -> RawTableMetadataKernel = "mgstudio_ecs_raw_table_metadata_new"
-
-///|
-#borrow(kernel)
-extern "c" fn raw_table_metadata_kernel_len_native(
-  kernel : RawTableMetadataKernel,
-) -> Int = "mgstudio_ecs_raw_table_metadata_len"
+extern "c" fn raw_table_value_column_kernel_new_native(
+) -> RawTableValueColumnKernel = "mgstudio_ecs_raw_table_value_column_new"
 
 ///|
 #borrow(kernel)
-extern "c" fn raw_table_metadata_kernel_push_native(
-  kernel : RawTableMetadataKernel,
+extern "c" fn raw_table_value_column_kernel_len_native(
+  kernel : RawTableValueColumnKernel,
+) -> Int = "mgstudio_ecs_raw_table_value_column_len"
+
+///|
+#borrow(kernel, value)
+extern "c" fn raw_table_value_column_kernel_push_native(
+  kernel : RawTableValueColumnKernel,
+  value : @any.Any,
   added_sequence : Int,
   changed_sequence : Int,
   changed_caller_id : Int,
-) -> Bool = "mgstudio_ecs_raw_table_metadata_push"
+) -> Bool = "mgstudio_ecs_raw_table_value_column_push"
+
+///|
+#borrow(kernel, value)
+extern "c" fn raw_table_value_column_kernel_replace_native(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+  value : @any.Any,
+) -> Bool = "mgstudio_ecs_raw_table_value_column_replace"
 
 ///|
 #borrow(kernel)
-extern "c" fn raw_table_metadata_kernel_set_native(
-  kernel : RawTableMetadataKernel,
+extern "c" fn raw_table_value_column_kernel_value_native(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+) -> @any.Any = "mgstudio_ecs_raw_table_value_column_value"
+
+///|
+#borrow(kernel)
+extern "c" fn raw_table_value_column_kernel_set_metadata_native(
+  kernel : RawTableValueColumnKernel,
   row : Int,
   added_sequence : Int,
   changed_sequence : Int,
   changed_caller_id : Int,
-) -> Bool = "mgstudio_ecs_raw_table_metadata_set"
+) -> Bool = "mgstudio_ecs_raw_table_value_column_set_metadata"
 
 ///|
 #borrow(kernel)
-extern "c" fn raw_table_metadata_kernel_added_native(
-  kernel : RawTableMetadataKernel,
+extern "c" fn raw_table_value_column_kernel_added_native(
+  kernel : RawTableValueColumnKernel,
   row : Int,
-) -> Int = "mgstudio_ecs_raw_table_metadata_added"
+) -> Int = "mgstudio_ecs_raw_table_value_column_added"
 
 ///|
 #borrow(kernel)
-extern "c" fn raw_table_metadata_kernel_changed_native(
-  kernel : RawTableMetadataKernel,
+extern "c" fn raw_table_value_column_kernel_changed_native(
+  kernel : RawTableValueColumnKernel,
   row : Int,
-) -> Int = "mgstudio_ecs_raw_table_metadata_changed"
+) -> Int = "mgstudio_ecs_raw_table_value_column_changed"
 
 ///|
 #borrow(kernel)
-extern "c" fn raw_table_metadata_kernel_changed_caller_id_native(
-  kernel : RawTableMetadataKernel,
+extern "c" fn raw_table_value_column_kernel_changed_caller_id_native(
+  kernel : RawTableValueColumnKernel,
   row : Int,
-) -> Int = "mgstudio_ecs_raw_table_metadata_changed_caller_id"
+) -> Int = "mgstudio_ecs_raw_table_value_column_changed_caller_id"
 
 ///|
 #borrow(kernel)
-extern "c" fn raw_table_metadata_kernel_swap_remove_native(
-  kernel : RawTableMetadataKernel,
+extern "c" fn raw_table_value_column_kernel_swap_remove_native(
+  kernel : RawTableValueColumnKernel,
   row : Int,
-) -> Bool = "mgstudio_ecs_raw_table_metadata_swap_remove"
+) -> Bool = "mgstudio_ecs_raw_table_value_column_swap_remove"
 
 ///|
-fn raw_table_metadata_kernel_new() -> RawTableMetadataKernel {
-  raw_table_metadata_kernel_new_native()
+fn raw_table_value_column_kernel_new() -> RawTableValueColumnKernel {
+  raw_table_value_column_kernel_new_native()
 }
 
 ///|
-fn raw_table_metadata_kernel_len(kernel : RawTableMetadataKernel) -> Int {
-  raw_table_metadata_kernel_len_native(kernel)
+fn raw_table_value_column_kernel_len(
+  kernel : RawTableValueColumnKernel,
+) -> Int {
+  raw_table_value_column_kernel_len_native(kernel)
 }
 
 ///|
-fn raw_table_metadata_kernel_push(
-  kernel : RawTableMetadataKernel,
+fn raw_table_value_column_kernel_push(
+  kernel : RawTableValueColumnKernel,
+  value : @any.Any,
   added_sequence : @core.Sequence,
   changed_sequence : @core.Sequence,
   changed_caller_id : Int,
 ) -> Bool {
-  raw_table_metadata_kernel_push_native(
+  raw_table_value_column_kernel_push_native(
     kernel,
+    value,
     added_sequence,
     changed_sequence,
     changed_caller_id,
@@ -175,14 +196,37 @@ fn raw_table_metadata_kernel_push(
 }
 
 ///|
-fn raw_table_metadata_kernel_set(
-  kernel : RawTableMetadataKernel,
+fn raw_table_value_column_kernel_replace(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+  value : @any.Any,
+) -> Bool {
+  if row < 0 || row >= raw_table_value_column_kernel_len(kernel) {
+    return false
+  }
+  raw_table_value_column_kernel_replace_native(kernel, row, value)
+}
+
+///|
+fn raw_table_value_column_kernel_value(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+) -> @any.Any? {
+  if row < 0 || row >= raw_table_value_column_kernel_len(kernel) {
+    return None
+  }
+  Some(raw_table_value_column_kernel_value_native(kernel, row))
+}
+
+///|
+fn raw_table_value_column_kernel_set_metadata(
+  kernel : RawTableValueColumnKernel,
   row : Int,
   added_sequence : @core.Sequence,
   changed_sequence : @core.Sequence,
   changed_caller_id : Int,
 ) -> Bool {
-  raw_table_metadata_kernel_set_native(
+  raw_table_value_column_kernel_set_metadata_native(
     kernel,
     row,
     added_sequence,
@@ -192,33 +236,33 @@ fn raw_table_metadata_kernel_set(
 }
 
 ///|
-fn raw_table_metadata_kernel_added(
-  kernel : RawTableMetadataKernel,
+fn raw_table_value_column_kernel_added(
+  kernel : RawTableValueColumnKernel,
   row : Int,
 ) -> @core.Sequence {
-  raw_table_metadata_kernel_added_native(kernel, row)
+  raw_table_value_column_kernel_added_native(kernel, row)
 }
 
 ///|
-fn raw_table_metadata_kernel_changed(
-  kernel : RawTableMetadataKernel,
+fn raw_table_value_column_kernel_changed(
+  kernel : RawTableValueColumnKernel,
   row : Int,
 ) -> @core.Sequence {
-  raw_table_metadata_kernel_changed_native(kernel, row)
+  raw_table_value_column_kernel_changed_native(kernel, row)
 }
 
 ///|
-fn raw_table_metadata_kernel_changed_caller_id(
-  kernel : RawTableMetadataKernel,
+fn raw_table_value_column_kernel_changed_caller_id(
+  kernel : RawTableValueColumnKernel,
   row : Int,
 ) -> Int {
-  raw_table_metadata_kernel_changed_caller_id_native(kernel, row)
+  raw_table_value_column_kernel_changed_caller_id_native(kernel, row)
 }
 
 ///|
-fn raw_table_metadata_kernel_swap_remove(
-  kernel : RawTableMetadataKernel,
+fn raw_table_value_column_kernel_swap_remove(
+  kernel : RawTableValueColumnKernel,
   row : Int,
 ) -> Bool {
-  raw_table_metadata_kernel_swap_remove_native(kernel, row)
+  raw_table_value_column_kernel_swap_remove_native(kernel, row)
 }

@@ -16,6 +16,15 @@
 pub(open) trait QueryData {
   matches(World, @core.Entity) -> Bool
   fetch(World, @core.Entity) -> Self raise EcsError
+  fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
+  fetch_sparse_anchor(
+    World,
+    @core.Entity,
+    Int,
+    ErasedValue,
+    Int,
+    Int,
+  ) -> Self raise EcsError = _
   mentions_component(Int) -> Bool
   matches_component_set((Int) -> Bool) -> Bool
   collect_access(QueryDataAccess) -> Unit = _
@@ -34,6 +43,23 @@ impl QueryData with collect_access(_access) {
 ///|
 impl QueryData with is_dense(_world) {
   false
+}
+
+///|
+impl QueryData with fetch_table_row(world, entity, _table_id, _row_index) {
+  Self::fetch(world, entity)
+}
+
+///|
+impl QueryData with fetch_sparse_anchor(
+  world,
+  entity,
+  _anchor_local_component_id,
+  _anchor_payload,
+  table_id,
+  row_index,
+) {
+  Self::fetch_table_row(world, entity, table_id, row_index)
 }
 
 ///|
@@ -299,7 +325,20 @@ fn[T] query_data_require_component_mut(
   guard world.component_payload(key.id(), entity) is Some(_) else {
     abort("QueryData::fetch expected component payload to exist after matches")
   }
-  { world: Some(world), entity: Some(entity), key: Some(key) }
+  let local_component_id = world.local_component_id(key.id())
+  let table_id = world.table_id_for_entity(entity)
+  let row_index = match world.entity_table_row(entity) {
+    Some(row) => Some(row.index())
+    None => None
+  }
+  {
+    world: Some(world),
+    entity: Some(entity),
+    key: Some(key),
+    table_id,
+    row_index,
+    local_component_id,
+  }
 }
 
 ///|
@@ -318,6 +357,28 @@ pub impl QueryData for @core.Entity with matches(_world, _entity) {
 
 ///|
 pub impl QueryData for @core.Entity with fetch(_world, entity) {
+  entity
+}
+
+///|
+pub impl QueryData for @core.Entity with fetch_table_row(
+  _world,
+  entity,
+  _table_id,
+  _row_index,
+) {
+  entity
+}
+
+///|
+pub impl QueryData for @core.Entity with fetch_sparse_anchor(
+  _world,
+  entity,
+  _anchor_local_component_id,
+  _anchor_payload,
+  _table_id,
+  _row_index,
+) {
   entity
 }
 
@@ -368,6 +429,67 @@ pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
     world: Some(world),
     entity: Some(entity),
     key_id: Some(T::component().id()),
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
+  world,
+  entity,
+  table_id,
+  row_index,
+) {
+  match
+    world.component_value_by_key_at_table_row(
+      T::component(),
+      table_id,
+      row_index,
+    ) {
+    Some(value) =>
+      {
+        value: Some(value),
+        world: Some(world),
+        entity: Some(entity),
+        key_id: Some(T::component().id()),
+      }
+    None =>
+      {
+        value: Some(query_data_require_component(world, entity, T::component())),
+        world: Some(world),
+        entity: Some(entity),
+        key_id: Some(T::component().id()),
+      }
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+) {
+  let key = T::component()
+  match world.local_component_id(key.id()) {
+    Some(local_component_id) if local_component_id == anchor_local_component_id => {
+      let result : Result[T, @any.TypeMismatch] = try? anchor_payload.to_value()
+      let value = match result {
+        Ok(value) => value
+        Err(_) =>
+          abort(
+            "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
+          )
+      }
+      {
+        value: Some(value),
+        world: Some(world),
+        entity: Some(entity),
+        key_id: Some(key.id()),
+      }
+    }
+    _ => Comp::fetch_table_row(world, entity, table_id, row_index)
   }
 }
 
@@ -426,6 +548,42 @@ pub impl[T : Component] QueryData for Mut[T] with fetch(world, entity) {
 }
 
 ///|
+pub impl[T : Component] QueryData for Mut[T] with fetch_table_row(
+  world,
+  entity,
+  table_id,
+  row_index,
+) {
+  {
+    world: Some(world),
+    entity: Some(entity),
+    key: Some(T::component()),
+    table_id: Some(table_id),
+    row_index: Some(row_index),
+    local_component_id: world.local_component_id(T::component().id()),
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with fetch_sparse_anchor(
+  world,
+  entity,
+  _anchor_local_component_id,
+  _anchor_payload,
+  table_id,
+  row_index,
+) {
+  {
+    world: Some(world),
+    entity: Some(entity),
+    key: Some(T::component()),
+    table_id: Some(table_id),
+    row_index: Some(row_index),
+    local_component_id: world.local_component_id(T::component().id()),
+  }
+}
+
+///|
 pub impl[T : Component] QueryData for Mut[T] with mentions_component(
   component_id,
 ) {
@@ -480,6 +638,28 @@ pub impl QueryData for EntityRef with fetch(world, entity) {
 }
 
 ///|
+pub impl QueryData for EntityRef with fetch_table_row(
+  world,
+  entity,
+  _table_id,
+  _row_index,
+) {
+  EntityRef::{ world, entity, }
+}
+
+///|
+pub impl QueryData for EntityRef with fetch_sparse_anchor(
+  world,
+  entity,
+  _anchor_local_component_id,
+  _anchor_payload,
+  _table_id,
+  _row_index,
+) {
+  EntityRef::{ world, entity, }
+}
+
+///|
 pub impl QueryData for EntityRef with mentions_component(_component_id) {
   false
 }
@@ -522,6 +702,28 @@ pub impl QueryData for EntityMut with matches(_world, _entity) {
 ///|
 pub impl QueryData for EntityMut with fetch(world, entity) {
   try! world.entity_mut(entity)
+}
+
+///|
+pub impl QueryData for EntityMut with fetch_table_row(
+  world,
+  entity,
+  _table_id,
+  _row_index,
+) {
+  EntityMut::{ world, entity, }
+}
+
+///|
+pub impl QueryData for EntityMut with fetch_sparse_anchor(
+  world,
+  entity,
+  _anchor_local_component_id,
+  _anchor_payload,
+  _table_id,
+  _row_index,
+) {
+  EntityMut::{ world, entity, }
 }
 
 ///|
@@ -568,6 +770,45 @@ pub impl[T : QueryData] QueryData for T? with matches(_world, _entity) {
 pub impl[T : QueryData] QueryData for T? with fetch(world, entity) {
   if T::matches(world, entity) {
     Some(T::fetch(world, entity))
+  } else {
+    None
+  }
+}
+
+///|
+pub impl[T : QueryData] QueryData for T? with fetch_table_row(
+  world,
+  entity,
+  table_id,
+  row_index,
+) {
+  if T::matches(world, entity) {
+    Some(T::fetch_table_row(world, entity, table_id, row_index))
+  } else {
+    None
+  }
+}
+
+///|
+pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+) {
+  if T::matches(world, entity) {
+    Some(
+      T::fetch_sparse_anchor(
+        world,
+        entity,
+        anchor_local_component_id,
+        anchor_payload,
+        table_id,
+        row_index,
+      ),
+    )
   } else {
     None
   }
@@ -621,6 +862,49 @@ pub impl[T : Component] QueryData for Has[T] with fetch(world, entity) {
 }
 
 ///|
+pub impl[T : Component] QueryData for Has[T] with fetch_table_row(
+  world,
+  entity,
+  table_id,
+  _row_index,
+) {
+  let present = match world.local_component_id(T::component().id()) {
+    Some(local_component_id) =>
+      if world.local_component_storage_type(local_component_id) == Some(Table) {
+        world.table_has_component_local_id(table_id, local_component_id)
+      } else {
+        entity_has_component_id(world, T::component().id(), entity)
+      }
+    None => false
+  }
+  { present, }
+}
+
+///|
+pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor(
+  world,
+  entity,
+  anchor_local_component_id,
+  _anchor_payload,
+  table_id,
+  row_index,
+) {
+  ignore(row_index)
+  let present = match world.local_component_id(T::component().id()) {
+    Some(local_component_id) if local_component_id == anchor_local_component_id =>
+      true
+    Some(local_component_id) =>
+      if world.local_component_storage_type(local_component_id) == Some(Table) {
+        world.table_has_component_local_id(table_id, local_component_id)
+      } else {
+        entity_has_component_id(world, T::component().id(), entity)
+      }
+    None => false
+  }
+  { present, }
+}
+
+///|
 pub impl[T : Component] QueryData for Has[T] with mentions_component(
   component_id,
 ) {
@@ -667,6 +951,49 @@ pub impl[T : Component] QueryData for Optional[T] with matches(_world, _entity) 
 ///|
 pub impl[T : Component] QueryData for Optional[T] with fetch(world, entity) {
   { value: world.get_by_key(entity, T::component()) }
+}
+
+///|
+pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
+  world,
+  entity,
+  table_id,
+  row_index,
+) {
+  match
+    world.component_value_by_key_at_table_row(
+      T::component(),
+      table_id,
+      row_index,
+    ) {
+    Some(value) => { value: Some(value), }
+    None => { value: world.get_by_key(entity, T::component()), }
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+) {
+  match world.local_component_id(T::component().id()) {
+    Some(local_component_id) if local_component_id == anchor_local_component_id => {
+      let result : Result[T, @any.TypeMismatch] = try? anchor_payload.to_value()
+      let value = match result {
+        Ok(value) => value
+        Err(_) =>
+          abort(
+            "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
+          )
+      }
+      { value: Some(value), }
+    }
+    _ => Optional::fetch_table_row(world, entity, table_id, row_index)
+  }
 }
 
 ///|
@@ -719,6 +1046,28 @@ pub impl QueryData for Unit with fetch(_world, _entity) {
 }
 
 ///|
+pub impl QueryData for Unit with fetch_table_row(
+  _world,
+  _entity,
+  _table_id,
+  _row_index,
+) {
+  ()
+}
+
+///|
+pub impl QueryData for Unit with fetch_sparse_anchor(
+  _world,
+  _entity,
+  _anchor_local_component_id,
+  _anchor_payload,
+  _table_id,
+  _row_index,
+) {
+  ()
+}
+
+///|
 pub impl QueryData for Unit with mentions_component(_component_id) {
   false
 }
@@ -767,6 +1116,48 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch(
   entity,
 ) {
   (A::fetch(world, entity), B::fetch(world, entity))
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_table_row(
+  world,
+  entity,
+  table_id,
+  row_index,
+) {
+  (
+    A::fetch_table_row(world, entity, table_id, row_index),
+    B::fetch_table_row(world, entity, table_id, row_index),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_anchor(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+) {
+  (
+    A::fetch_sparse_anchor(
+      world,
+      entity,
+      anchor_local_component_id,
+      anchor_payload,
+      table_id,
+      row_index,
+    ),
+    B::fetch_sparse_anchor(
+      world,
+      entity,
+      anchor_local_component_id,
+      anchor_payload,
+      table_id,
+      row_index,
+    ),
+  )
 }
 
 ///|
@@ -845,6 +1236,57 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
   entity,
 ) {
   (A::fetch(world, entity), B::fetch(world, entity), C::fetch(world, entity))
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_table_row(
+  world,
+  entity,
+  table_id,
+  row_index,
+) {
+  (
+    A::fetch_table_row(world, entity, table_id, row_index),
+    B::fetch_table_row(world, entity, table_id, row_index),
+    C::fetch_table_row(world, entity, table_id, row_index),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_sparse_anchor(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+) {
+  (
+    A::fetch_sparse_anchor(
+      world,
+      entity,
+      anchor_local_component_id,
+      anchor_payload,
+      table_id,
+      row_index,
+    ),
+    B::fetch_sparse_anchor(
+      world,
+      entity,
+      anchor_local_component_id,
+      anchor_payload,
+      table_id,
+      row_index,
+    ),
+    C::fetch_sparse_anchor(
+      world,
+      entity,
+      anchor_local_component_id,
+      anchor_payload,
+      table_id,
+      row_index,
+    ),
+  )
 }
 
 ///|
@@ -950,6 +1392,71 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
     B::fetch(world, entity),
     C::fetch(world, entity),
     D::fetch(world, entity),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with fetch_table_row(world, entity, table_id, row_index) {
+  (
+    A::fetch_table_row(world, entity, table_id, row_index),
+    B::fetch_table_row(world, entity, table_id, row_index),
+    C::fetch_table_row(world, entity, table_id, row_index),
+    D::fetch_table_row(world, entity, table_id, row_index),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with fetch_sparse_anchor(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+) {
+  (
+    A::fetch_sparse_anchor(
+      world,
+      entity,
+      anchor_local_component_id,
+      anchor_payload,
+      table_id,
+      row_index,
+    ),
+    B::fetch_sparse_anchor(
+      world,
+      entity,
+      anchor_local_component_id,
+      anchor_payload,
+      table_id,
+      row_index,
+    ),
+    C::fetch_sparse_anchor(
+      world,
+      entity,
+      anchor_local_component_id,
+      anchor_payload,
+      table_id,
+      row_index,
+    ),
+    D::fetch_sparse_anchor(
+      world,
+      entity,
+      anchor_local_component_id,
+      anchor_payload,
+      table_id,
+      row_index,
+    ),
   )
 }
 

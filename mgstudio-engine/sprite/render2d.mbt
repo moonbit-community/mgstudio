@@ -8413,11 +8413,11 @@ fn configure_render2d_render_sub_app(
   .configure_set(stage, render2d_set_prepare_materials, before=[
     render2d_set_prepare,
   ])
-  .configure_set(stage, @render.render_system_set_prepare, before=[
+  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     render2d_set_prepare_materials,
   ])
   .configure_set(stage, render2d_set_prepare, before=[render2d_set_queue])
-  .configure_set(stage, @render.render_system_set_prepare, before=[
+  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     render2d_set_prepare,
   ])
   .configure_set(stage, render2d_set_queue, before=[render2d_set_render])
@@ -8467,11 +8467,11 @@ fn configure_render2d_render_sub_app_ecs(
   .configure_set(stage, render2d_set_prepare_materials, before=[
     render2d_set_prepare,
   ])
-  .configure_set(stage, @render.render_system_set_prepare, before=[
+  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     render2d_set_prepare_materials,
   ])
   .configure_set(stage, render2d_set_prepare, before=[render2d_set_queue])
-  .configure_set(stage, @render.render_system_set_prepare, before=[
+  .configure_set(stage, @render.render_system_set_queue_meshes, before=[
     render2d_set_prepare,
   ])
   .configure_set(stage, render2d_set_queue, before=[render2d_set_render])

@@ -83,3 +83,8 @@ fn ErasedValue::type_name(self : ErasedValue) -> String {
 fn ErasedWriter::to_erased_value(self : ErasedWriter) -> ErasedValue {
   (self.to_value)()
 }
+
+///|
+fn ErasedWriter::to_any(self : ErasedWriter) -> @any.Any {
+  self.to_erased_value().value
+}

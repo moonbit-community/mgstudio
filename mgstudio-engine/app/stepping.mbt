@@ -355,7 +355,12 @@ fn system_config_name(
     Some(name) => name
     None =>
       match config.set {
-        Some(set_name) => set_name
+        Some(set_name) =>
+          if set_name.has_prefix("__chain__:") {
+            "__anon_system#\{system_index.to_string()}"
+          } else {
+            set_name
+          }
         None => "__anon_system#\{system_index.to_string()}"
       }
   }

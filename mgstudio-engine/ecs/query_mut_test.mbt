@@ -34,6 +34,16 @@ struct MutQueryAcceleration {
 struct MutQueryMarker {} derive(Debug, Eq)
 
 ///|
+struct MutQueryMethodValue {
+  mut value : Int
+} derive(Debug, Eq)
+
+///|
+fn MutQueryMethodValue::bump(self : MutQueryMethodValue) -> Unit {
+  self.value = self.value + 1
+}
+
+///|
 let mut_query_position_key : ComponentKey[MutQueryPosition] = register_component(
   debug_name="tests.ecs.mut_query.position",
 )
@@ -54,6 +64,11 @@ let mut_query_marker_key : ComponentKey[MutQueryMarker] = register_component(
 )
 
 ///|
+let mut_query_method_value_key : ComponentKey[MutQueryMethodValue] = register_component(
+  debug_name="tests.ecs.mut_query.method_value",
+)
+
+///|
 pub impl Component for MutQueryPosition with component() {
   mut_query_position_key
 }
@@ -71,6 +86,11 @@ pub impl Component for MutQueryAcceleration with component() {
 ///|
 pub impl Component for MutQueryMarker with component() {
   mut_query_marker_key
+}
+
+///|
+pub impl Component for MutQueryMethodValue with component() {
+  mut_query_method_value_key
 }
 
 ///|
@@ -187,6 +207,24 @@ test "ecs mut query: detect changes helpers support explicit mutation and markin
   debug_inspect(
     try! world.get_by_key(entity, mut_query_position_key),
     content="Some({ x: 9, y: 3 })",
+  )
+}
+
+///|
+test "ecs mut query: Mut::modify persists method-style mutations" {
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    mut_query_method_value_key,
+    MutQueryMethodValue::{ value: 1 },
+  )
+  let query : Query[Mut[MutQueryMethodValue], All] = query(world)
+  let component_mut = try! query.require_single()
+  component_mut.modify(fn(value) { value.bump() })
+  debug_inspect(
+    try! world.get_by_key(entity, mut_query_method_value_key),
+    content="Some({ value: 2 })",
   )
 }
 

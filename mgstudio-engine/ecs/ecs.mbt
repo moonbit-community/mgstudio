@@ -196,13 +196,61 @@ pub(all) suberror EcsError {
 
 ///|
 struct ResourceSlot {
-  payload : ErasedValue
+  mut payload : ErasedValue
+  mut added_sequence : @core.Sequence?
+  mut changed_sequence : @core.Sequence?
+  mut changed_caller : String?
+}
+
+///|
+struct ComponentTickMetadata {
+  added_sequence : @core.Sequence?
+  changed_sequence : @core.Sequence?
+  changed_caller : String?
+}
+
+///|
+fn component_tick_metadata_empty() -> ComponentTickMetadata {
+  {
+    added_sequence: None,
+    changed_sequence: None,
+    changed_caller: None,
+  }
+}
+
+///|
+fn component_tick_metadata_with_added(
+  previous : ComponentTickMetadata?,
+  sequence : @core.Sequence,
+  caller : String?,
+) -> ComponentTickMetadata {
+  let previous = previous.unwrap_or(component_tick_metadata_empty())
+  {
+    added_sequence: Some(sequence),
+    changed_sequence: previous.changed_sequence,
+    changed_caller: caller,
+  }
+}
+
+///|
+fn component_tick_metadata_with_changed(
+  previous : ComponentTickMetadata?,
+  sequence : @core.Sequence,
+  caller : String?,
+) -> ComponentTickMetadata {
+  let previous = previous.unwrap_or(component_tick_metadata_empty())
+  {
+    added_sequence: previous.added_sequence,
+    changed_sequence: Some(sequence),
+    changed_caller: caller,
+  }
 }
 
 ///|
 struct PendingComponentPayloadContext {
   entity_id : Int
   payloads : Map[Int, ErasedWriter]
+  metadata : Map[Int, ComponentTickMetadata]
 }
 
 ///|
@@ -213,107 +261,9 @@ struct QuerySparseAnchorPayloadContext {
 }
 
 ///|
-struct ComponentSequenceTable {
-  by_entity : Array[@core.Sequence]
-}
-
-///|
-fn ComponentSequenceTable::new() -> ComponentSequenceTable {
-  { by_entity: [] }
-}
-
-///|
-fn ComponentSequenceTable::set(
-  self : ComponentSequenceTable,
-  entity_id : Int,
-  sequence : @core.Sequence,
-) -> Unit {
-  if entity_id < 0 {
-    return
-  }
-  while self.by_entity.length() <= entity_id {
-    self.by_entity.push(0)
-  }
-  self.by_entity[entity_id] = sequence
-}
-
-///|
-fn ComponentSequenceTable::get(
-  self : ComponentSequenceTable,
-  entity_id : Int,
-) -> @core.Sequence? {
-  if entity_id < 0 {
-    return None
-  }
-  match self.by_entity.get(entity_id) {
-    Some(sequence) if sequence > 0 => Some(sequence)
-    _ => None
-  }
-}
-
-///|
-fn ComponentSequenceTable::remove(
-  self : ComponentSequenceTable,
-  entity_id : Int,
-) -> Unit {
-  if entity_id < 0 {
-    return
-  }
-  if self.by_entity.get(entity_id) is Some(_) {
-    self.by_entity[entity_id] = 0
-  }
-}
-
-///|
-struct ComponentCallerTable {
-  by_entity : Array[String?]
-}
-
-///|
-fn ComponentCallerTable::new() -> ComponentCallerTable {
-  { by_entity: [] }
-}
-
-///|
-fn ComponentCallerTable::set(
-  self : ComponentCallerTable,
-  entity_id : Int,
-  caller : String?,
-) -> Unit {
-  if entity_id < 0 {
-    return
-  }
-  while self.by_entity.length() <= entity_id {
-    self.by_entity.push(None)
-  }
-  self.by_entity[entity_id] = caller
-}
-
-///|
-fn ComponentCallerTable::get(
-  self : ComponentCallerTable,
-  entity_id : Int,
-) -> String? {
-  if entity_id < 0 {
-    return None
-  }
-  match self.by_entity.get(entity_id) {
-    Some(caller) => caller
-    None => None
-  }
-}
-
-///|
-fn ComponentCallerTable::remove(
-  self : ComponentCallerTable,
-  entity_id : Int,
-) -> Unit {
-  if entity_id < 0 {
-    return
-  }
-  if self.by_entity.get(entity_id) is Some(_) {
-    self.by_entity[entity_id] = None
-  }
+struct BundleInfo {
+  id : Int
+  component_local_ids : Array[Int]
 }
 
 ///|
@@ -336,12 +286,19 @@ pub struct World {
   mut current_query_sparse_anchor_payload_context : QuerySparseAnchorPayloadContext?
   tables : Map[Int, Ref[RawTable]]
   sparse_component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
+  sparse_component_metadata : Map[
+    Int,
+    Ref[@core.ComponentStore[ComponentTickMetadata]],
+  ]
   component_store_cache_by_definition_id : Map[
     Int,
     Ref[@core.ComponentStore[ErasedValue]],
   ]
   mut next_archetype_id : Int
   mut next_table_id : Int
+  mut next_bundle_id : Int
+  bundle_ids_by_signature : Map[String, Int]
+  bundle_infos : Map[Int, BundleInfo]
   archetype_ids_by_signature : Map[String, Int]
   table_ids_by_signature : Map[String, Int]
   table_component_local_ids : Map[Int, Array[Int]]
@@ -354,6 +311,7 @@ pub struct World {
   archetype_ids_by_component_local_id : Map[Int, Array[Int]]
   archetype_add_edges_by_component_local_id : Map[Int, Map[Int, Int]]
   archetype_remove_edges_by_component_local_id : Map[Int, Map[Int, Int]]
+  archetype_insert_bundle_edges_by_id : Map[Int, Map[Int, Int]]
   archetype_non_empty_ids_by_component_local_id : Map[Int, Array[Int]]
   mut non_empty_archetype_ids_sorted : Array[Int]
   mut non_empty_archetype_generation : Int
@@ -369,15 +327,9 @@ pub struct World {
   used_components : Map[Int, Bool]
   added_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   changed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
-  added_component_sequences : Map[Int, ComponentSequenceTable]
-  changed_component_sequences : Map[Int, ComponentSequenceTable]
-  changed_component_callers : Map[Int, ComponentCallerTable]
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   component_hooks_registry : Map[Int, ComponentHooks]
   resources : Map[Int, ResourceSlot]
-  resource_added_sequences : Map[Int, @core.Sequence]
-  resource_changed_sequences : Map[Int, @core.Sequence]
-  resource_changed_callers : Map[Int, String]
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
   mut deferred_hook_command_depth : Int
@@ -407,9 +359,13 @@ pub fn World::new() -> World {
     current_query_sparse_anchor_payload_context: None,
     tables: {},
     sparse_component_columns: {},
+    sparse_component_metadata: {},
     component_store_cache_by_definition_id: {},
     next_archetype_id: 1,
     next_table_id: 1,
+    next_bundle_id: 1,
+    bundle_ids_by_signature: {},
+    bundle_infos: {},
     archetype_ids_by_signature: { "": 0 },
     table_ids_by_signature: { "": 0 },
     table_component_local_ids: { 0: [] },
@@ -422,6 +378,7 @@ pub fn World::new() -> World {
     archetype_ids_by_component_local_id: {},
     archetype_add_edges_by_component_local_id: {},
     archetype_remove_edges_by_component_local_id: {},
+    archetype_insert_bundle_edges_by_id: {},
     archetype_non_empty_ids_by_component_local_id: {},
     non_empty_archetype_ids_sorted: [],
     non_empty_archetype_generation: 0,
@@ -437,15 +394,9 @@ pub fn World::new() -> World {
     used_components: {},
     added_components: {},
     changed_components: {},
-    added_component_sequences: {},
-    changed_component_sequences: {},
-    changed_component_callers: {},
     removed_components: {},
     component_hooks_registry: {},
     resources: {},
-    resource_added_sequences: {},
-    resource_changed_sequences: {},
-    resource_changed_callers: {},
     previous_events: {},
     current_events: {},
     deferred_hook_command_depth: 0,
@@ -775,50 +726,105 @@ fn World::ensure_changed_component_messages(
 }
 
 ///|
-fn World::ensure_added_component_sequence_map(
+fn World::ensure_sparse_component_metadata_store_for_local_id(
   self : World,
-  key_id : Int,
-) -> ComponentSequenceTable {
-  let local_id = self.ensure_component_registered(key_id)
-  match self.added_component_sequences.get(local_id) {
-    Some(sequence_by_entity) => sequence_by_entity
-    None => {
-      let sequence_by_entity = ComponentSequenceTable::new()
-      self.added_component_sequences.set(local_id, sequence_by_entity)
-      sequence_by_entity
-    }
+  local_id : Int,
+) -> Ref[@core.ComponentStore[ComponentTickMetadata]] {
+  guard self.local_component_storage_type(local_id) == Some(SparseSet) else {
+    abort(
+      "Sparse component metadata store lookup is invalid for local component id \{local_id.to_string()}",
+    )
+  }
+  self.sparse_component_metadata.get_or_init(local_id, fn() {
+    Ref::new(@core.ComponentStore::new())
+  })
+}
+
+///|
+fn World::sparse_component_metadata_for_entity(
+  self : World,
+  entity : @core.Entity,
+  local_component_id : Int,
+) -> ComponentTickMetadata? {
+  guard self.local_component_storage_type(local_component_id) == Some(SparseSet) else {
+    return None
+  }
+  match self.sparse_component_metadata.get(local_component_id) {
+    Some(store_ref) => store_ref.val.get(entity)
+    None => None
   }
 }
 
 ///|
-fn World::ensure_changed_component_sequence_table(
+fn World::pending_component_tick_metadata(
   self : World,
-  key_id : Int,
-) -> ComponentSequenceTable {
-  let local_id = self.ensure_component_registered(key_id)
-  match self.changed_component_sequences.get(local_id) {
-    Some(sequence_by_entity) => sequence_by_entity
-    None => {
-      let sequence_by_entity = ComponentSequenceTable::new()
-      self.changed_component_sequences.set(local_id, sequence_by_entity)
-      sequence_by_entity
-    }
+  entity_id : Int,
+  local_component_id : Int,
+) -> ComponentTickMetadata? {
+  match self.pending_component_payload_context {
+    Some(context) =>
+      if context.entity_id == entity_id {
+        context.metadata.get(local_component_id)
+      } else {
+        None
+      }
+    None => None
   }
 }
 
 ///|
-fn World::ensure_changed_component_caller_table(
+fn World::record_pending_component_added_metadata(
   self : World,
-  key_id : Int,
-) -> ComponentCallerTable {
-  let local_id = self.ensure_component_registered(key_id)
-  match self.changed_component_callers.get(local_id) {
-    Some(caller_by_entity) => caller_by_entity
-    None => {
-      let caller_by_entity = ComponentCallerTable::new()
-      self.changed_component_callers.set(local_id, caller_by_entity)
-      caller_by_entity
-    }
+  entity : @core.Entity,
+  local_component_id : Int,
+  sequence : @core.Sequence,
+  caller : String?,
+) -> Bool {
+  match self.pending_component_payload_context {
+    Some(context) =>
+      if context.entity_id == entity.id &&
+        context.payloads.get(local_component_id) is Some(_) {
+        context.metadata.set(
+          local_component_id,
+          component_tick_metadata_with_added(
+            context.metadata.get(local_component_id),
+            sequence,
+            caller,
+          ),
+        )
+        true
+      } else {
+        false
+      }
+    None => false
+  }
+}
+
+///|
+fn World::record_pending_component_changed_metadata(
+  self : World,
+  entity : @core.Entity,
+  local_component_id : Int,
+  sequence : @core.Sequence,
+  caller : String?,
+) -> Bool {
+  match self.pending_component_payload_context {
+    Some(context) =>
+      if context.entity_id == entity.id &&
+        context.payloads.get(local_component_id) is Some(_) {
+        context.metadata.set(
+          local_component_id,
+          component_tick_metadata_with_changed(
+            context.metadata.get(local_component_id),
+            sequence,
+            caller,
+          ),
+        )
+        true
+      } else {
+        false
+      }
+    None => false
   }
 }
 
@@ -830,14 +836,32 @@ fn World::record_component_added_with_caller(
   caller : String?,
 ) -> Unit {
   let sequence = component_write_sequence(self)
-  self.ensure_added_component_sequence_map(key_id).set(entity.id, sequence)
-  self.ensure_changed_component_caller_table(key_id).set(entity.id, caller)
-  if self.local_component_id(key_id) is Some(local_id) {
-    self.record_table_component_added_by_local_id(
-      entity,
-      local_id,
-      sequence,
-      caller,
+  let local_id = self.ensure_component_registered(key_id)
+  let recorded = match self.local_component_storage_type(local_id) {
+    Some(Table) =>
+      self.record_table_component_added_by_local_id(
+        entity,
+        local_id,
+        sequence,
+        caller,
+      )
+    Some(SparseSet) =>
+      self.record_sparse_component_added_by_local_id(
+        entity,
+        local_id,
+        sequence,
+        caller,
+      )
+    None => false
+  }
+  if !recorded {
+    ignore(
+      self.record_pending_component_added_metadata(
+        entity,
+        local_id,
+        sequence,
+        caller,
+      ),
     )
   }
 }
@@ -866,14 +890,32 @@ fn World::record_component_changed_sequence_only_with_caller(
   caller : String?,
 ) -> Unit {
   let sequence = component_write_sequence(self)
-  self.ensure_changed_component_sequence_table(key_id).set(entity.id, sequence)
-  self.ensure_changed_component_caller_table(key_id).set(entity.id, caller)
-  if self.local_component_id(key_id) is Some(local_id) {
-    self.record_table_component_changed_by_local_id(
-      entity,
-      local_id,
-      sequence,
-      caller,
+  let local_id = self.ensure_component_registered(key_id)
+  let recorded = match self.local_component_storage_type(local_id) {
+    Some(Table) =>
+      self.record_table_component_changed_by_local_id(
+        entity,
+        local_id,
+        sequence,
+        caller,
+      )
+    Some(SparseSet) =>
+      self.record_sparse_component_changed_by_local_id(
+        entity,
+        local_id,
+        sequence,
+        caller,
+      )
+    None => false
+  }
+  if !recorded {
+    ignore(
+      self.record_pending_component_changed_metadata(
+        entity,
+        local_id,
+        sequence,
+        caller,
+      ),
     )
   }
 }
@@ -885,14 +927,15 @@ fn World::clear_component_sequence_records(
   key_id : Int,
 ) -> Unit {
   guard self.local_component_id(key_id) is Some(local_id) else { return }
-  if self.added_component_sequences.get(local_id) is Some(sequence_by_entity) {
-    sequence_by_entity.remove(entity.id)
+  if self.local_component_storage_type(local_id) == Some(SparseSet) {
+    self.clear_sparse_component_metadata_by_local_id(entity, local_id)
   }
-  if self.changed_component_sequences.get(local_id) is Some(sequence_by_entity) {
-    sequence_by_entity.remove(entity.id)
-  }
-  if self.changed_component_callers.get(local_id) is Some(caller_by_entity) {
-    caller_by_entity.remove(entity.id)
+  match self.pending_component_payload_context {
+    Some(context) =>
+      if context.entity_id == entity.id {
+        context.metadata.remove(local_id)
+      }
+    None => ()
   }
 }
 
@@ -912,12 +955,9 @@ fn World::record_resource_added_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
-  self.resource_added_sequences.set(key_id, resource_write_sequence(self))
-  if caller is Some(caller) {
-    self.resource_changed_callers.set(key_id, caller)
-  } else {
-    self.resource_changed_callers.remove(key_id)
-  }
+  guard self.resources.get(key_id) is Some(slot) else { return }
+  slot.added_sequence = Some(resource_write_sequence(self))
+  slot.changed_caller = caller
 }
 
 ///|
@@ -926,12 +966,9 @@ fn World::record_resource_changed_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
-  self.resource_changed_sequences.set(key_id, resource_write_sequence(self))
-  if caller is Some(caller) {
-    self.resource_changed_callers.set(key_id, caller)
-  } else {
-    self.resource_changed_callers.remove(key_id)
-  }
+  guard self.resources.get(key_id) is Some(slot) else { return }
+  slot.changed_sequence = Some(resource_write_sequence(self))
+  slot.changed_caller = caller
 }
 
 ///|
@@ -939,7 +976,10 @@ fn World::resource_added_sequence(
   self : World,
   key_id : Int,
 ) -> @core.Sequence? {
-  self.resource_added_sequences.get(key_id)
+  match self.resources.get(key_id) {
+    Some(slot) => slot.added_sequence
+    None => None
+  }
 }
 
 ///|
@@ -947,7 +987,10 @@ fn World::resource_changed_sequence(
   self : World,
   key_id : Int,
 ) -> @core.Sequence? {
-  self.resource_changed_sequences.get(key_id)
+  match self.resources.get(key_id) {
+    Some(slot) => slot.changed_sequence
+    None => None
+  }
 }
 
 ///|
@@ -961,15 +1004,24 @@ fn World::changed_component_caller(
     is Some(caller) {
     return Some(caller)
   }
-  match self.changed_component_callers.get(local_id) {
-    Some(caller_by_entity) => caller_by_entity.get(entity_id)
+  if self.alive_entity_by_id(entity_id) is Some(entity) {
+    if self.sparse_component_changed_caller_by_local_id(entity, local_id)
+      is Some(caller) {
+      return Some(caller)
+    }
+  }
+  match self.pending_component_tick_metadata(entity_id, local_id) {
+    Some(metadata) => metadata.changed_caller
     None => None
   }
 }
 
 ///|
 fn World::resource_changed_caller(self : World, key_id : Int) -> String? {
-  self.resource_changed_callers.get(key_id)
+  match self.resources.get(key_id) {
+    Some(slot) => slot.changed_caller
+    None => None
+  }
 }
 
 ///|
@@ -994,8 +1046,14 @@ fn World::added_component_sequence(
     is Some(sequence) {
     return Some(sequence)
   }
-  match self.added_component_sequences.get(local_id) {
-    Some(sequence_by_entity) => sequence_by_entity.get(entity_id)
+  if self.alive_entity_by_id(entity_id) is Some(entity) {
+    if self.sparse_component_added_sequence_by_local_id(entity, local_id)
+      is Some(sequence) {
+      return Some(sequence)
+    }
+  }
+  match self.pending_component_tick_metadata(entity_id, local_id) {
+    Some(metadata) => metadata.added_sequence
     None => None
   }
 }
@@ -1022,8 +1080,14 @@ fn World::changed_component_sequence(
     is Some(sequence) {
     return Some(sequence)
   }
-  match self.changed_component_sequences.get(local_id) {
-    Some(sequence_by_entity) => sequence_by_entity.get(entity_id)
+  if self.alive_entity_by_id(entity_id) is Some(entity) {
+    if self.sparse_component_changed_sequence_by_local_id(entity, local_id)
+      is Some(sequence) {
+      return Some(sequence)
+    }
+  }
+  match self.pending_component_tick_metadata(entity_id, local_id) {
+    Some(metadata) => metadata.changed_sequence
     None => None
   }
 }

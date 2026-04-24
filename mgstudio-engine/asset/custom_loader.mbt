@@ -27,13 +27,14 @@ pub struct LoadContext {
 
 ///|
 priv struct TypedAssetLoaderEntry {
+  extensions : Array[String]
   load : (LoadContext, Bytes) -> @any.Any
   insert : (@ecs.World, Int, @any.Any) -> Unit
 }
 
 ///|
 priv struct TypedAssetLoaderRegistryState {
-  loaders : Ref[@hashmap.HashMap[String, TypedAssetLoaderEntry]]
+  loaders : Ref[@hashmap.HashMap[String, Array[TypedAssetLoaderEntry]]]
 }
 
 ///|
@@ -46,14 +47,20 @@ fn typed_asset_loader_registry_resource_key() -> @ecs.ResourceKey[
 }
 
 ///|
-let typed_asset_loader_registry_fallback : Ref[
-  @hashmap.HashMap[String, TypedAssetLoaderEntry],
-] = Ref::new(@hashmap.HashMap::new())
+fn typed_asset_loader_clone_entries(
+  entries : Array[TypedAssetLoaderEntry],
+) -> Array[TypedAssetLoaderEntry] {
+  let next : Array[TypedAssetLoaderEntry] = []
+  for entry in entries {
+    next.push(entry)
+  }
+  next
+}
 
 ///|
 fn typed_asset_loader_registry_for_world(
   world : @ecs.World,
-) -> Ref[@hashmap.HashMap[String, TypedAssetLoaderEntry]] {
+) -> Ref[@hashmap.HashMap[String, Array[TypedAssetLoaderEntry]]] {
   let key = typed_asset_loader_registry_resource_key()
   if (try! world.get_resource(key)) is None {
     world.insert_resource(
@@ -69,17 +76,23 @@ fn typed_asset_loader_registry_for_world(
 
 ///|
 fn typed_asset_loader_registry_active() -> Ref[
-  @hashmap.HashMap[String, TypedAssetLoaderEntry],
+  @hashmap.HashMap[String, Array[TypedAssetLoaderEntry]],
 ] {
   match asset_current_world() {
     Some(world) => typed_asset_loader_registry_for_world(world)
-    None => typed_asset_loader_registry_fallback
+    None =>
+      abort(
+        "Typed asset loader registry requires an active world; use asset_with_world or call via a world-owned AssetServer",
+      )
   }
 }
 
 ///|
 fn typed_asset_loader_is_registered(type_name : String) -> Bool {
-  typed_asset_loader_registry_active().val.contains(type_name)
+  match typed_asset_loader_registry_active().val.get(type_name) {
+    Some(entries) => entries.length() > 0
+    None => false
+  }
 }
 
 ///|
@@ -133,6 +146,170 @@ pub fn LoadContext::path(self : LoadContext) -> AssetPath {
 ///|
 fn typed_asset_loader_path_key(type_name : String, path : AssetPath) -> String {
   "\{type_name}::\{asset_canonical_path(asset_format_path(path))}"
+}
+
+///|
+fn typed_asset_loader_normalize_extension(extension : String) -> String {
+  let trimmed = extension.trim().to_string()
+  if trimmed == "" {
+    return ""
+  }
+  if trimmed.code_unit_at(0) == 46 {
+    return trimmed[1:trimmed.length()].to_string()
+  }
+  trimmed
+}
+
+///|
+fn typed_asset_loader_normalize_extensions(
+  extensions : Array[String],
+) -> Array[String] {
+  let normalized : Array[String] = []
+  for extension in extensions {
+    let value = typed_asset_loader_normalize_extension(extension)
+    if value == "" {
+      continue
+    }
+    if !normalized.contains(value) {
+      normalized.push(value)
+    }
+  }
+  normalized
+}
+
+///|
+fn typed_asset_loader_filename(path : String) -> String {
+  let mut split = -1
+  for i in 0..<path.length() {
+    let code = path.code_unit_at(i).to_int()
+    if code == 47 || code == 92 {
+      split = i
+    }
+  }
+  if split < 0 {
+    path
+  } else if split + 1 < path.length() {
+    path[split + 1:path.length()].to_string()
+  } else {
+    ""
+  }
+}
+
+///|
+fn typed_asset_loader_full_extension(path : AssetPath) -> String? {
+  let file_name = typed_asset_loader_filename(asset_format_path(path))
+  let mut split = -1
+  for i in 0..<file_name.length() {
+    if file_name.code_unit_at(i).to_int() == 46 {
+      split = i
+      break
+    }
+  }
+  if split < 0 || split + 1 >= file_name.length() {
+    None
+  } else {
+    Some(file_name[split + 1:file_name.length()].to_string())
+  }
+}
+
+///|
+fn typed_asset_loader_secondary_extensions(
+  full_extension : String,
+) -> Array[String] {
+  let secondary : Array[String] = []
+  for i in 0..<full_extension.length() {
+    if full_extension.code_unit_at(i).to_int() == 46 &&
+      i + 1 < full_extension.length() {
+      secondary.push(full_extension[i + 1:full_extension.length()].to_string())
+    }
+  }
+  secondary
+}
+
+///|
+fn typed_asset_loader_entry_supports_extension(
+  entry : TypedAssetLoaderEntry,
+  extension : String,
+) -> Bool {
+  let normalized = typed_asset_loader_normalize_extension(extension)
+  if normalized == "" {
+    return false
+  }
+  entry.extensions.contains(normalized)
+}
+
+///|
+fn typed_asset_loader_warn_duplicate_extensions(
+  type_name : String,
+  existing : Array[TypedAssetLoaderEntry],
+  next_extensions : Array[String],
+) -> Unit {
+  let duplicates : Array[String] = []
+  for extension in next_extensions {
+    let mut duplicated = false
+    for entry in existing {
+      if typed_asset_loader_entry_supports_extension(entry, extension) {
+        duplicated = true
+        break
+      }
+    }
+    if duplicated {
+      duplicates.push(extension)
+    }
+  }
+  if duplicates.length() > 0 {
+    println(
+      "Warning: duplicate typed asset loader extensions for \{type_name}: \{duplicates}; explicit loader metadata is required to disambiguate",
+    )
+  }
+}
+
+///|
+fn typed_asset_loader_entry_for_path(
+  registry : Ref[@hashmap.HashMap[String, Array[TypedAssetLoaderEntry]]],
+  type_name : String,
+  path : AssetPath,
+) -> TypedAssetLoaderEntry? {
+  guard registry.val.get(type_name) is Some(entries) else { return None }
+  if entries.length() == 0 {
+    return None
+  }
+  if entries.length() == 1 {
+    return Some(entries[0])
+  }
+
+  fn search_entries_by_extension(
+    entries : Array[TypedAssetLoaderEntry],
+    extension : String,
+  ) -> TypedAssetLoaderEntry? {
+    for offset in 0..<entries.length() {
+      let index = entries.length() - 1 - offset
+      let entry = entries[index]
+      if typed_asset_loader_entry_supports_extension(entry, extension) {
+        return Some(entry)
+      }
+    }
+    None
+  }
+
+  match typed_asset_loader_full_extension(path) {
+    Some(full_extension) => {
+      if search_entries_by_extension(entries, full_extension) is Some(entry) {
+        return Some(entry)
+      }
+      for secondary in typed_asset_loader_secondary_extensions(full_extension) {
+        if search_entries_by_extension(entries, secondary) is Some(entry) {
+          return Some(entry)
+        }
+      }
+    }
+    None => ()
+  }
+
+  println(
+    "Warning: multiple typed asset loaders found for \{type_name} at path \{asset_format_path(path)}; using latest registered loader",
+  )
+  Some(entries[entries.length() - 1])
 }
 
 ///|
@@ -297,7 +474,19 @@ pub fn[T] register_asset_loader(
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
   let registry = typed_asset_loader_registry_for_world(app.world())
-  registry.val.set(type_name, TypedAssetLoaderEntry::{
+  let normalized_extensions = typed_asset_loader_normalize_extensions(loader.extensions)
+  let existing = match registry.val.get(type_name) {
+    Some(entries) => entries
+    None => []
+  }
+  typed_asset_loader_warn_duplicate_extensions(
+    type_name,
+    existing,
+    normalized_extensions,
+  )
+  let next_entries = typed_asset_loader_clone_entries(existing)
+  next_entries.push(TypedAssetLoaderEntry::{
+    extensions: normalized_extensions,
     load: fn(context, bytes) { @any.of((loader.load)(context, bytes)) },
     insert: fn(world, handle_id, value_any) {
       let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
@@ -327,6 +516,7 @@ pub fn[T] register_asset_loader(
       )
     },
   })
+  registry.val.set(type_name, next_entries)
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
   if app.contains_resource(key) {
     app
@@ -388,26 +578,32 @@ pub fn[T, P : IntoAssetPath] AssetServer::load_direct(
   path : P,
   bytes : Bytes,
 ) -> T {
-  let parsed_path = path.into_asset_path()
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
-  let registry = typed_asset_loader_registry_active()
+  asset_with_server_world(self, fn() {
+    let parsed_path = path.into_asset_path()
+    let probe : Assets[T] = Assets::new()
+    let type_name = @any.of(probe).type_name()
+    let registry = typed_asset_loader_registry_active()
 
-  match registry.val.get(type_name) {
-    Some(entry) =>
-      match
-        (entry.load)(LoadContext::new_detached(self, parsed_path), bytes).try_to() {
-        Some(value) => value
-        None =>
-          abort(
-            "typed asset loader returned a mismatched asset value for \{type_name}",
-          )
-      }
-    None =>
-      abort(
-        "No typed asset loader is registered for \{type_name}; register the loader before calling AssetServer::load_direct",
-      )
-  }
+    let context = match asset_current_world() {
+      Some(world) => LoadContext::new(world, self, parsed_path)
+      None => LoadContext::new_detached(self, parsed_path)
+    }
+
+    match typed_asset_loader_entry_for_path(registry, type_name, parsed_path) {
+      Some(entry) =>
+        match (entry.load)(context, bytes).try_to() {
+          Some(value) => value
+          None =>
+            abort(
+              "typed asset loader returned a mismatched asset value for \{type_name}",
+            )
+        }
+      None =>
+        abort(
+          "No typed asset loader is registered for \{type_name}; register the loader before calling AssetServer::load_direct",
+        )
+    }
+  })
 }
 
 ///|
@@ -418,7 +614,11 @@ fn asset_process_pending_typed_asset_loads(
   let remaining : Array[PendingTypedAssetLoad] = []
   let registry = typed_asset_loader_registry_for_world(world)
   for pending in asset_server.pending_typed_asset_loads.val {
-    match registry.val.get(pending.type_name) {
+    match typed_asset_loader_entry_for_path(
+      registry,
+      pending.type_name,
+      pending.path,
+    ) {
       Some(entry) => {
         let formatted_path = asset_format_path(pending.path)
         let bytes = load_asset_file_bytes(asset_canonical_path(formatted_path))

@@ -444,14 +444,46 @@ pub fn scene_get(handle : @asset.Handle[Scene]) -> Scene? {
 }
 
 ///|
-let scene_asset_hooks_installed : Ref[Bool] = Ref::new(false)
+priv struct SceneAssetHooksInstalledState {
+  installed : Bool
+}
 
 ///|
-pub fn scene_install_asset_hooks() -> Unit {
-  if scene_asset_hooks_installed.val {
+fn scene_asset_hooks_installed_state_resource_key() -> @ecs.ResourceKey[
+  SceneAssetHooksInstalledState,
+] {
+  @ecs.register_resource(
+    debug_name="mgstudio_scene::SceneAssetHooksInstalledState",
+  )
+}
+
+///|
+pub fn scene_install_asset_hooks(world : @ecs.World) -> Unit {
+  let key = scene_asset_hooks_installed_state_resource_key()
+  if (try! world.get_resource(key)) is None {
+    world.insert_resource(
+      key,
+      SceneAssetHooksInstalledState::{ installed: false },
+    )
+  }
+  let state = match (try! world.get_resource_mut(key)) {
+    Some(state) => state
+    None =>
+      abort(
+        "scene asset hook state is missing; ScenePlugin must initialize SceneAssetHooksInstalledState before installing hooks",
+      )
+  }
+  if state.peek().installed {
     return
   }
-  @gltf.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
-  @asset.asset_register_reload_hook(scene_reload_asset_path)
-  scene_asset_hooks_installed.val = true
+  @asset.asset_with_world(world, fn() {
+    @gltf.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
+    @asset.asset_register_reload_hook(scene_reload_asset_path)
+  })
+  ignore(
+    state.modify(fn(value) {
+      value |> ignore
+      SceneAssetHooksInstalledState::{ installed: true }
+    }),
+  )
 }

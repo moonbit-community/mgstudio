@@ -38,7 +38,9 @@ test "asset host io: save_rgba8_png writes a valid png file" {
 
 ///|
 test "asset host io: palette png preserves transparent background" {
-  let path = resolve_asset_path("textures/simplespace/ship_C.png")
+  let path = asset_with_world(@ecs.World::new(), fn() {
+    resolve_asset_path("textures/simplespace/ship_C.png")
+  })
   let bytes = @fs.read_file_to_bytes(path)
   let decoded = decode_texture_image_with_container(bytes, None).unwrap()
   let center = (32 * decoded.width + 32) * 4

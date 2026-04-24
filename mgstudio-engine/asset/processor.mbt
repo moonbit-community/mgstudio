@@ -94,59 +94,185 @@ priv struct AssetProcessorEntry {
 }
 
 ///|
-let asset_processor_registry : Ref[
-  @hashmap.HashMap[String, Array[AssetProcessorEntry]],
-] = Ref::new(@hashmap.HashMap::new())
+priv struct AssetProcessorRegistryState {
+  processors : Ref[@hashmap.HashMap[String, Array[AssetProcessorEntry]]]
+  default_processor_by_extension : Ref[@hashmap.HashMap[String, (String, Int)]]
+  named_processors : Ref[@hashmap.HashMap[String, Array[(String, Int)]]]
+  last_registered_entry : Ref[(String, Int)?]
+}
 
 ///|
-pub fn[T] register_asset_processor(
+fn asset_processor_registry_state_resource_key() -> @ecs.ResourceKey[
+  AssetProcessorRegistryState,
+] {
+  @ecs.register_resource(
+    debug_name="mgstudio_asset::AssetProcessorRegistryState",
+  )
+}
+
+///|
+fn asset_processor_registry_clone_entries(
+  entries : Array[AssetProcessorEntry],
+) -> Array[AssetProcessorEntry] {
+  let next : Array[AssetProcessorEntry] = []
+  for entry in entries {
+    next.push(entry)
+  }
+  next
+}
+
+///|
+fn asset_processor_registry_clone_entry_refs(
+  entries : Array[(String, Int)],
+) -> Array[(String, Int)] {
+  let next : Array[(String, Int)] = []
+  for entry in entries {
+    next.push(entry)
+  }
+  next
+}
+
+///|
+fn asset_processor_registry_push_entry_in_state(
+  state : AssetProcessorRegistryState,
+  type_name : String,
+  entry : AssetProcessorEntry,
+) -> Int {
+  let entries = match state.processors.val.get(type_name) {
+    Some(entries) => entries
+    None => []
+  }
+  let next_entries = asset_processor_registry_clone_entries(entries)
+  let next_index = next_entries.length()
+  next_entries.push(entry)
+  state.processors.val.set(type_name, next_entries)
+  state.last_registered_entry.val = Some((type_name, next_index))
+  next_index
+}
+
+///|
+fn asset_processor_registry_register_name_in_state(
+  state : AssetProcessorRegistryState,
+  processor_name : String,
+  entry_ref : (String, Int),
+) -> Unit {
+  let normalized_name = processor_name.trim().to_string()
+  if normalized_name == "" {
+    return
+  }
+  let entries = match state.named_processors.val.get(normalized_name) {
+    Some(entries) => entries
+    None => []
+  }
+  let next_entries = asset_processor_registry_clone_entry_refs(entries)
+  next_entries.push(entry_ref)
+  state.named_processors.val.set(normalized_name, next_entries)
+}
+
+///|
+fn asset_processor_registry_state_for_world(
+  world : @ecs.World,
+) -> AssetProcessorRegistryState {
+  let key = asset_processor_registry_state_resource_key()
+  if (try! world.get_resource(key)) is None {
+    world.insert_resource(
+      key,
+      AssetProcessorRegistryState::{
+        processors: Ref::new(@hashmap.HashMap::new()),
+        default_processor_by_extension: Ref::new(@hashmap.HashMap::new()),
+        named_processors: Ref::new(@hashmap.HashMap::new()),
+        last_registered_entry: Ref::new(None),
+      },
+    )
+  }
+  match (try! world.get_resource(key)) {
+    Some(state) => state
+    None => abort("Failed to initialize asset processor registry resource")
+  }
+}
+
+///|
+fn asset_processor_registry_state_active() -> AssetProcessorRegistryState {
+  match asset_current_world() {
+    Some(world) => asset_processor_registry_state_for_world(world)
+    None =>
+      abort(
+        "AssetProcessor registry requires an active world; call this from an App context",
+      )
+  }
+}
+
+///|
+fn asset_processor_registry_register_entry(
+  type_name : String,
+  entry : AssetProcessorEntry,
+  processor_name : String?,
+) -> Unit {
+  let state = asset_processor_registry_state_active()
+  let entry_index = asset_processor_registry_push_entry_in_state(
+    state,
+    type_name,
+    entry,
+  )
+  match processor_name {
+    Some(name) =>
+      asset_processor_registry_register_name_in_state(
+        state,
+        name,
+        (type_name, entry_index),
+      )
+    None => ()
+  }
+}
+
+///|
+fn[T] register_asset_processor_with_name(
   app : @app.App[@ecs.World],
+  processor_name : String?,
   processor : LoadTransformAndSave[T],
 ) -> @app.App[@ecs.World] {
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
-  let entries = match asset_processor_registry.val.get(type_name) {
-    Some(entries) => entries
-    None => []
-  }
-  let next_entries : Array[AssetProcessorEntry] = []
-  for entry in entries {
-    next_entries.push(entry)
-  }
-  next_entries.push(AssetProcessorEntry::{
-    extensions: processor.extensions,
-    process: fn(asset_server, path, bytes) raise AssetProcessError {
-      let processed = (processor.process)(asset_server, path, bytes)
-      ProcessedAssetAny::{
-        asset: @any.of(processed.asset()),
-        saved_bytes: processed.saved_bytes(),
-      }
-    },
-    insert: fn(world, handle_id, value_any) {
-      let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-      if (try! world.get_resource(key)) is None {
-        world.insert_resource(key, Assets::new())
-      }
-      let assets = match (try! world.get_resource_mut(key)) {
-        Some(value) => value
-        None =>
-          abort(
-            "Failed to initialize Assets resource for asset processor output",
+  let world = app.world()
+  asset_with_world(world, fn() {
+    asset_processor_registry_register_entry(
+      type_name,
+      AssetProcessorEntry::{
+        extensions: processor.extensions,
+        process: fn(asset_server, path, bytes) raise AssetProcessError {
+          let processed = (processor.process)(asset_server, path, bytes)
+          ProcessedAssetAny::{
+            asset: @any.of(processed.asset()),
+            saved_bytes: processed.saved_bytes(),
+          }
+        },
+        insert: fn(world, handle_id, value_any) {
+          let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
+          if (try! world.get_resource(key)) is None {
+            world.insert_resource(key, Assets::new())
+          }
+          let assets = match (try! world.get_resource_mut(key)) {
+            Some(value) => value
+            None =>
+              abort(
+                "Failed to initialize Assets resource for asset processor output",
+              )
+          }
+          let value : T = match value_any.try_to() {
+            Some(value) => value
+            None =>
+              abort(
+                "asset processor produced a mismatched asset value for \{type_name}",
+              )
+          }
+          ignore(
+            assets.modify(fn(store) { store.insert(Handle::new(handle_id), value) }),
           )
-      }
-      let value : T = match value_any.try_to() {
-        Some(value) => value
-        None =>
-          abort(
-            "asset processor produced a mismatched asset value for \{type_name}",
-          )
-      }
-      ignore(
-        assets.modify(fn(store) { store.insert(Handle::new(handle_id), value) }),
-      )
-    },
+        },
+      },
+      processor_name,
+    )
   })
-  asset_processor_registry.val.set(type_name, next_entries)
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
   if app.contains_resource(key) {
     app
@@ -156,6 +282,23 @@ pub fn[T] register_asset_processor(
       assets
     })
   }
+}
+
+///|
+pub fn[T] register_asset_processor(
+  app : @app.App[@ecs.World],
+  processor : LoadTransformAndSave[T],
+) -> @app.App[@ecs.World] {
+  register_asset_processor_with_name(app, None, processor)
+}
+
+///|
+pub fn[T] register_asset_processor_named(
+  app : @app.App[@ecs.World],
+  processor_name : String,
+  processor : LoadTransformAndSave[T],
+) -> @app.App[@ecs.World] {
+  register_asset_processor_with_name(app, Some(processor_name), processor)
 }
 
 ///|
@@ -171,7 +314,58 @@ pub fn set_default_asset_processor(
   app : @app.App[@ecs.World],
   extension : String,
 ) -> @app.App[@ecs.World] {
-  extension |> ignore
+  let normalized = asset_processor_normalize_extension(extension)
+  if normalized == "" {
+    return app
+  }
+  let world = app.world()
+  asset_with_world(world, fn() {
+    fn set_default_to_last_registered(state : AssetProcessorRegistryState) -> Unit {
+      match state.last_registered_entry.val {
+        Some(last_entry) =>
+          state.default_processor_by_extension.val.set(normalized, last_entry)
+        None => ()
+      }
+    }
+
+    set_default_to_last_registered(asset_processor_registry_state_active())
+  })
+  app
+}
+
+///|
+pub fn set_default_asset_processor_by_name(
+  app : @app.App[@ecs.World],
+  extension : String,
+  processor_name : String,
+) -> @app.App[@ecs.World] {
+  let normalized_extension = asset_processor_normalize_extension(extension)
+  if normalized_extension == "" {
+    return app
+  }
+  let normalized_name = processor_name.trim().to_string()
+  if normalized_name == "" {
+    return app
+  }
+  let world = app.world()
+  asset_with_world(world, fn() {
+    let state = asset_processor_registry_state_active()
+    match state.named_processors.val.get(normalized_name) {
+      Some(entries) if entries.length() == 1 =>
+        state.default_processor_by_extension.val.set(
+          normalized_extension,
+          entries[0],
+        )
+      Some(entries) if entries.length() > 1 =>
+        println(
+          "Warning: default asset processor `\{normalized_name}` is ambiguous (\{entries.length()} registrations); keep the previous default for extension `\{normalized_extension}`",
+        )
+      _ =>
+        println(
+          "Warning: default asset processor `\{normalized_name}` is not registered; keep the previous default for extension `\{normalized_extension}`",
+        )
+    }
+  })
   app
 }
 
@@ -212,22 +406,44 @@ fn asset_processor_entry_for_path(
   type_name : String,
   path : AssetPath,
 ) -> AssetProcessorEntry? {
-  guard asset_processor_registry.val.get(type_name) is Some(entries) else {
+  let state = asset_processor_registry_state_active()
+  guard state.processors.val.get(type_name) is Some(entries) else {
     return None
   }
+  let default_candidate : Ref[AssetProcessorEntry?] = Ref::new(None)
+  let default_length = Ref::new(-1)
   let matched_entry : Ref[AssetProcessorEntry?] = Ref::new(None)
   let matched_length = Ref::new(-1)
-  for entry in entries {
+  for entry_index in 0..<entries.length() {
+    let entry = entries[entry_index]
     for extension in entry.extensions {
       let normalized = asset_processor_normalize_extension(extension)
-      if asset_processor_path_matches_extension(path, normalized) &&
-        normalized.length() > matched_length.val {
+      if !asset_processor_path_matches_extension(path, normalized) {
+        continue
+      }
+      if normalized.length() > matched_length.val {
         matched_entry.val = Some(entry)
         matched_length.val = normalized.length()
       }
+      match state.default_processor_by_extension.val.get(normalized) {
+        Some(default_entry) => {
+          let default_type_name = default_entry.0
+          let default_entry_index = default_entry.1
+          if default_type_name == type_name &&
+            default_entry_index == entry_index &&
+            normalized.length() > default_length.val {
+            default_candidate.val = Some(entry)
+            default_length.val = normalized.length()
+          }
+        }
+        _ => ()
+      }
     }
   }
-  matched_entry.val
+  match default_candidate.val {
+    Some(entry) => Some(entry)
+    None => matched_entry.val
+  }
 }
 
 ///|

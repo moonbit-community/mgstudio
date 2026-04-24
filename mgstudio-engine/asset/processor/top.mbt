@@ -22,3 +22,21 @@ pub fn set_default_asset_processor(
 ) -> @app.App[@ecs.World] {
   @asset.set_default_asset_processor(app, name)
 }
+
+///|
+pub fn[T] register_asset_processor_named(
+  app : @app.App[@ecs.World],
+  processor_name : String,
+  processor : LoadTransformAndSave[T],
+) -> @app.App[@ecs.World] {
+  @asset.register_asset_processor_named(app, processor_name, processor)
+}
+
+///|
+pub fn set_default_asset_processor_by_name(
+  app : @app.App[@ecs.World],
+  extension : String,
+  processor_name : String,
+) -> @app.App[@ecs.World] {
+  @asset.set_default_asset_processor_by_name(app, extension, processor_name)
+}

@@ -216,7 +216,7 @@ test "app: run_if evaluates with condition system sequence" {
 }
 
 ///|
-test "app: repeated run_if composes and short-circuits" {
+test "app: repeated run_if composes without short-circuiting" {
   let log : Array[String] = []
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { log.push("system") })
@@ -232,7 +232,7 @@ test "app: repeated run_if composes and short-circuits" {
 
   app.run_once() |> ignore
 
-  debug_inspect(log.join(","), content="\"first\"")
+  debug_inspect(log.join(","), content="\"first,second\"")
 }
 
 ///|
@@ -398,6 +398,32 @@ test "app: schedule sets order and preserve insertion within a set" {
 }
 
 ///|
+test "app: cyclic set ordering reports validation error and skips stage execution" {
+  let log : Array[Int] = []
+  let kinds : Array[ErrorContextKind] = []
+  let set_a = system_set("CycleA")
+  let set_b = system_set("CycleB")
+  let app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push(1) }).in_set(set_a),
+    )
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push(2) }).in_set(set_b),
+    )
+    .configure_sets(Update, set_a, before=[set_b])
+    .configure_sets(Update, set_b, before=[set_a])
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  debug_inspect(log.length(), content="0")
+  debug_inspect(kinds.length(), content="1")
+  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
+}
+
+///|
 test "app: chained tuple system configs run in declared order" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new()).add_systems(
@@ -434,6 +460,63 @@ test "app: chained tuple preserves per-system run_if evaluation" {
   )
   app.run_once() |> ignore
   debug_inspect(log.join(","), content="\"second\"")
+}
+
+///|
+test "app: chained tuple in_set preserves order and set boundaries" {
+  let log : Array[String] = []
+  let propagate_set = system_set("test.chain.propagate")
+  let app = App::new(@ecs.World::new())
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push("before") }).before(
+        propagate_set,
+      ),
+    )
+    .add_systems(
+      Update,
+      (
+        system(fn(_world : @ecs.World) { log.push("mark") }),
+        system(fn(_world : @ecs.World) { log.push("propagate") }),
+        system(fn(_world : @ecs.World) { log.push("sync") }),
+      )
+      |> chain()
+      |> SystemConfig::in_set(propagate_set),
+    )
+    .add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push("after") }).after(
+        propagate_set,
+      ),
+    )
+  app.run_once() |> ignore
+  debug_inspect(
+    log.join(","),
+    content="\"before,mark,propagate,sync,after\"",
+  )
+}
+
+///|
+test "app: chained tuple in_set applies set run conditions" {
+  let log : Array[String] = []
+  let gated_set = system_set("test.chain.gated")
+  let app = App::new(@ecs.World::new())
+    .add_systems(
+      Update,
+      (
+        system(fn(_world : @ecs.World) { log.push("first") }),
+        system(fn(_world : @ecs.World) { log.push("second") }),
+      )
+      |> chain()
+      |> SystemConfig::in_set(gated_set),
+    )
+    .configure_sets(
+      Update,
+      gated_set,
+      set_run_ifs=[fn(_world : @ecs.World) { false }],
+    )
+  app.run_once() |> ignore
+  debug_inspect(log, content="[]")
 }
 
 ///|
@@ -822,7 +905,7 @@ test "app: SystemParam Query2 injects typed query into update system" {
 }
 
 ///|
-test "app: schedule rejects conflicting query params before system execution" {
+test "app: schedule filters conflicting query params before execution" {
   let kinds : Array[ErrorContextKind] = []
   let ran = Ref::new(false)
   let app = App::new(@ecs.World::new())
@@ -835,8 +918,8 @@ test "app: schedule rejects conflicting query params before system execution" {
     })
 
   app.run_once() |> ignore
+  app.run_once() |> ignore
 
   debug_inspect(ran.val, content="false")
-  debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
+  debug_inspect(kinds.length(), content="0")
 }

@@ -213,7 +213,10 @@ let deferred_command_batch_queue_ref : Ref[
 
 ///|
 fn begin_deferred_command_batch() -> Unit {
-  deferred_command_batch_queue_ref.val = Some([])
+  match deferred_command_batch_queue_ref.val {
+    Some(_) => ()
+    None => deferred_command_batch_queue_ref.val = Some([])
+  }
 }
 
 ///|

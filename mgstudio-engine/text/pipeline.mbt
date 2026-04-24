@@ -2169,7 +2169,7 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       text_set_sync_ecs,
       after=[
         @app.system_set("mgstudio.ui.stack"),
-        @transform.transform_set_sync_simple_transforms,
+        @transform.transform_set_propagate,
       ],
       before=[text_set_render_prepare],
     )
@@ -2216,7 +2216,7 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       after=[@sprite_render.render2d_set_extract],
       before=[text_set_render_transparent_2d],
     )
-    .configure_set(stage, @render.render_system_set_prepare, before=[
+    .configure_set(stage, @render.render_system_set_queue_meshes, before=[
       text_set_render_prepare,
     ])
     .configure_set(

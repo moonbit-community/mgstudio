@@ -256,8 +256,10 @@ fn shader_load_registered(
 
 ///|
 pub fn shader_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @asset.asset_register_loader(fn(asset_server, path) {
-    shader_load_registered(asset_server, path)
+  @asset.asset_with_world(app.world(), fn() {
+    @asset.asset_register_loader(fn(asset_server, path) {
+      shader_load_registered(asset_server, path)
+    })
   })
   app
   .init_resource(fn() {

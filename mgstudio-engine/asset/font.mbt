@@ -40,11 +40,13 @@ pub fn AssetServer::load_font(
   self : AssetServer,
   path : String,
 ) -> Handle[Font] {
-  let canonical_path = asset_canonical_path(path)
-  let id = host_asset_load_font(path=canonical_path)
-  Font::{  } |> ignore
-  self.record_path(canonical_path)
-  Handle::new(id)
+  asset_with_server_world(self, fn() {
+    let canonical_path = asset_canonical_path(path)
+    let id = host_asset_load_font(path=canonical_path)
+    Font::{  } |> ignore
+    self.record_path(canonical_path)
+    Handle::new(id)
+  })
 }
 
 ///|

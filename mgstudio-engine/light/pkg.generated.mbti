@@ -256,6 +256,7 @@ pub struct DirectionalLightShadowMap {
 pub fn DirectionalLightShadowMap::default() -> Self
 pub fn DirectionalLightShadowMap::new(Int) -> Self
 pub fn DirectionalLightShadowMap::with_size(Self, Int) -> Self
+pub impl @app.Resource for DirectionalLightShadowMap
 
 #alias(DirectionalLightTextureComponent)
 pub struct DirectionalLightTexture {
@@ -333,6 +334,7 @@ pub struct GlobalAmbientLight {
 pub fn GlobalAmbientLight::default() -> Self
 pub fn GlobalAmbientLight::new(@color.Color, Float) -> Self
 pub fn GlobalAmbientLight::with_affects_lightmapped_meshes(Self, Bool) -> Self
+pub impl @app.Resource for GlobalAmbientLight
 
 #alias(IrradianceVolumeComponent)
 pub struct IrradianceVolume {
@@ -423,6 +425,7 @@ pub struct PointLightShadowMap {
 pub fn PointLightShadowMap::default() -> Self
 pub fn PointLightShadowMap::new(Int) -> Self
 pub fn PointLightShadowMap::with_size(Self, Int) -> Self
+pub impl @app.Resource for PointLightShadowMap
 
 #alias(PointLightTextureComponent)
 pub struct PointLightTexture {

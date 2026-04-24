@@ -680,6 +680,7 @@ pub fn Camera3dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Sel
 pub fn Camera3dBundle::with_vignette(Self, @effect_stack.Vignette?) -> Self
 pub fn Camera3dBundle::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
 pub impl @app.CommandSpawnComponents for Camera3dBundle
+pub impl @ecs.Bundle for Camera3dBundle
 
 pub enum Camera3dDepthLoadOp {
   Clear(Float)
@@ -1097,6 +1098,7 @@ pub fn MeshMaterial3dBundle::new(@mesh.Mesh3d, @material.MeshMaterial3d, @transf
 #callsite(autofill(loc))
 pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle
+pub impl @ecs.Bundle for MeshMaterial3dBundle
 
 pub struct MeshRayCastHit {
   point : @math.Vec3

@@ -211,6 +211,34 @@ fn ecs_bench_dense_query_sum(
 }
 
 ///|
+fn ecs_bench_dense_query_state_iter_sum(
+  world : World,
+  state : QueryState[
+    (
+      Comp[BenchPosition],
+      Comp[BenchVelocity],
+      Comp[BenchHealth],
+      Comp[BenchMass],
+    ),
+    All,
+  ],
+) -> Int {
+  let total = Ref::new(0)
+  let iter = state.iter(world)
+  while (try! iter.fetch_next()) is Some((_entity, data)) {
+    let (position, velocity, health, mass) = data
+    total.val = total.val +
+      position.value().x +
+      position.value().y +
+      velocity.value().dx +
+      velocity.value().dy +
+      health.value().hp +
+      mass.value().value
+  }
+  total.val
+}
+
+///|
 fn ecs_bench_sparse_query_sum(
   world : World,
   cache : QueryCache,
@@ -261,6 +289,23 @@ test "bench ecs: query dense cached" (b : @bench.T) {
   let cache = QueryCache::new()
   b.bench(name="query dense cached x20000", count=100U, () => {
     b.keep(try! ecs_bench_dense_query_sum(world, cache))
+  })
+}
+
+///|
+test "bench ecs: query dense state iter cached" (b : @bench.T) {
+  let world = try! ecs_bench_seed_dense_world(20_000)
+  let state : QueryState[
+    (
+      Comp[BenchPosition],
+      Comp[BenchVelocity],
+      Comp[BenchHealth],
+      Comp[BenchMass],
+    ),
+    All,
+  ] = world.query()
+  b.bench(name="query dense state iter cached x20000", count=100U, () => {
+    b.keep(ecs_bench_dense_query_state_iter_sum(world, state))
   })
 }
 

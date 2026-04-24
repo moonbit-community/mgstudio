@@ -26,9 +26,13 @@ pub fn mark_dirty_trees(@ecs.World) -> Unit
 
 pub fn mark_dirty_trees_ecs(@ecs.World) -> Unit
 
+pub fn mark_dirty_trees_system(@ecs.Query[@core.Entity, @ecs.Or[(@ecs.Changed[Transform], @ecs.Changed[@hierarchy.Parent], @ecs.Added[GlobalTransform])]], @ecs.RemovedComponents[@hierarchy.Parent], @app.ParamSet2[@ecs.Query[@ecs.Mut[TransformTreeChanged], @ecs.All], @ecs.Query[@ecs.Comp[@hierarchy.Parent], @ecs.All]], @app.ResMut[StaticTransformOptimizations]) -> Unit
+
 pub fn propagate_parent_transforms(@ecs.World) -> Unit
 
 pub fn propagate_parent_transforms_ecs(@ecs.World) -> Unit
+
+pub fn propagate_parent_transforms_system(@ecs.World) -> Unit
 
 pub fn propagate_transforms_system(@ecs.World) -> Unit
 
@@ -44,7 +48,7 @@ pub fn set_parent_in_place(@ecs.World, @core.Entity, @core.Entity) -> Unit
 
 pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[StaticTransformOptimizations]
 
-pub fn sync_simple_transforms(@app.ParamSet2[@ecs.Query[(@ecs.Comp[Transform], @ecs.Comp[GlobalTransform]), (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children], @ecs.Changed[Transform])], @ecs.Query[(@ecs.Comp[Transform], @ecs.Comp[GlobalTransform]), (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])]], @ecs.RemovedComponents[@hierarchy.Parent]) -> Unit
+pub fn sync_simple_transforms(@app.ParamSet2[@ecs.Query[(@ecs.Comp[Transform], @ecs.Mut[GlobalTransform]), (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children], @ecs.Or[(@ecs.Changed[Transform], @ecs.Added[GlobalTransform])])], @ecs.Query[(@ecs.Comp[Transform], @ecs.Mut[GlobalTransform]), (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])]], @ecs.RemovedComponents[@hierarchy.Parent]) -> Unit
 
 pub fn sync_simple_transforms_world(@ecs.World) -> Unit
 
@@ -56,11 +60,7 @@ pub fn transform_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[T : TransformPoint] transform_points(T, Array[@math.Vec3]) -> Array[@math.Vec3]
 
-pub let transform_set_mark_dirty_trees : String
-
 pub let transform_set_propagate : String
-
-pub let transform_set_sync_simple_transforms : String
 
 // Errors
 

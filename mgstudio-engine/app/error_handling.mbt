@@ -228,7 +228,12 @@ fn system_source_label(config : SystemConfig[@ecs.World]) -> String {
     Some(name) => name
     None =>
       match config.set {
-        Some(set_name) => set_name
+        Some(set_name) =>
+          if set_name.has_prefix("__chain__:") {
+            "<anonymous system>"
+          } else {
+            set_name
+          }
         None => "<anonymous system>"
       }
   }
