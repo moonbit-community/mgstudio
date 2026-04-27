@@ -105,6 +105,41 @@ test "dev_tools: frame time graph plugin does not install fps overlay" {
 }
 
 ///|
+test "dev_tools: frame time graph values mirror diagnostics history in seconds" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@diagnostic.DiagnosticsPlugin::default())
+    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+    .add_plugins(FrameTimeGraphPlugin::default())
+  let store_ref = try! app
+    .world()
+    .get_resource_ref_mut(@diagnostic.DiagnosticsStore::resource())
+    .unwrap()
+  let frame_time_ref = store_ref.val
+    .get_ref(@diagnostic.frame_time_diagnostic_frame_time)
+    .unwrap()
+  frame_time_ref.val.add_measurement(
+    @diagnostic.DiagnosticMeasurement::new(
+      @core.Instant::from_secs_f32(1.0F),
+      16.0F,
+    ),
+  )
+  frame_time_ref.val.add_measurement(
+    @diagnostic.DiagnosticMeasurement::new(
+      @core.Instant::from_secs_f32(2.0F),
+      33.0F,
+    ),
+  )
+  update_frame_time_values(app.world())
+  let values = try! app
+    .world()
+    .get_resource(frame_time_graph_values_resource_key)
+    .unwrap().values
+  debug_inspect(values.length(), content="2")
+  debug_inspect(values[0] > 0.015F && values[0] < 0.017F, content="true")
+  debug_inspect(values[1] > 0.032F && values[1] < 0.034F, content="true")
+}
+
+///|
 test "dev_tools: fps overlay hides text and graph when disabled" {
   let mut app = overlay_test_app(FpsOverlayConfig::default()).run_startup()
   let state = try! app

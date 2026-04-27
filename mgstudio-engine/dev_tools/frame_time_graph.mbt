@@ -34,6 +34,23 @@ pub impl @app.Plugin for FrameTimeGraphPlugin with build(self, app) {
 }
 
 ///|
+priv struct FrameTimeGraphValues {
+  values : Array[Float]
+}
+
+///|
+fn FrameTimeGraphValues::default() -> FrameTimeGraphValues {
+  FrameTimeGraphValues::{ values: [] }
+}
+
+///|
+let frame_time_graph_values_resource_key : @ecs.ResourceKey[
+  FrameTimeGraphValues,
+] = @ecs.register_resource(
+  debug_name="mgstudio_dev_tools::frame_time_graph::FrameTimeGraphValues",
+)
+
+///|
 pub(all) struct FrameTimeGraphConfigUniform {
   dt_min : Float
   dt_max : Float
@@ -120,4 +137,43 @@ pub fn frame_time_graph_plugin_with(
     abort("FrameTimeGraphPlugin requires FrameTimeDiagnosticsPlugin")
   }
   app
+  .insert_world_resource(
+    frame_time_graph_values_resource_key,
+    FrameTimeGraphValues::default(),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(update_frame_time_values).in_set(fps_overlay_set_update_text),
+  )
+}
+
+///|
+fn frame_time_graph_config_enabled(world : @ecs.World) -> Bool {
+  match (try! world.get_resource(FpsOverlayConfig::resource())) {
+    Some(config) => config.frame_time_graph_config.enabled
+    None => true
+  }
+}
+
+///|
+fn update_frame_time_values(world : @ecs.World) -> Unit {
+  if !frame_time_graph_config_enabled(world) {
+    return
+  }
+  guard (try! world.get_resource(@diagnostic.DiagnosticsStore::resource()))
+    is Some(store) else {
+    return
+  }
+  guard store.get(@diagnostic.frame_time_diagnostic_frame_time)
+    is Some(frame_time) else {
+    return
+  }
+  guard (try! world.get_resource_ref_mut(frame_time_graph_values_resource_key))
+    is Some(values_ref) else {
+    return
+  }
+  values_ref.val.values.clear()
+  for value in frame_time.values() {
+    values_ref.val.values.push(value / 1000.0F)
+  }
 }
