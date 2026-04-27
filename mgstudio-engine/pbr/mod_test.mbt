@@ -78,6 +78,7 @@ fn pbr_app_with_mesh3d_entity() -> (
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
     .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(@render.RenderPlugin::default())
     .add_plugins(PbrPlugin::default())
   let world = app.world()
   let mesh_handle = mesh_assets_mut_or_abort(world).val.add(
@@ -141,7 +142,9 @@ test "render3d: non-modified Mesh asset events do not mark Mesh3d as changed" {
 
 ///|
 test "render3d: default pbr plugin installs bevy-style runtime config defaults" {
-  let app = pbr_plugin(@app.App::new(@ecs.World::new()))
+  let app = pbr_plugin(
+    @app.App::new(@ecs.World::new()).add_plugins(@render.RenderPlugin::default()),
+  )
   let config = read_pbr_runtime_config(app.world())
   debug_inspect(config.prepass_enabled, content="true")
   debug_inspect(config.add_default_deferred_lighting_plugin, content="true")
@@ -155,7 +158,7 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
     app.contains_resource(ecs_key_materials_plugin_state),
     content="true",
   )
-  debug_inspect(render_world_with_fog_meta(app), content="false")
+  debug_inspect(render_world_with_fog_meta(app), content="true")
   debug_inspect(
     read_deferred_lighting_state(app.world()).enabled,
     content="true",
@@ -172,12 +175,15 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
 
 ///|
 test "render3d: pbr plugin config updates runtime feature switches" {
-  let _app = pbr_plugin_with(@app.App::new(@ecs.World::new()), PbrPlugin::{
-    prepass_enabled: false,
-    add_default_deferred_lighting_plugin: false,
-    use_gpu_instance_buffer_builder: false,
-    gltf_render_enabled: false,
-  })
+  let _app = pbr_plugin_with(
+    @app.App::new(@ecs.World::new()).add_plugins(@render.RenderPlugin::default()),
+    PbrPlugin::{
+      prepass_enabled: false,
+      add_default_deferred_lighting_plugin: false,
+      use_gpu_instance_buffer_builder: false,
+      gltf_render_enabled: false,
+    },
+  )
 
   debug_inspect(pbr_prepass_enabled(_app.world()), content="false")
   debug_inspect(pbr_deferred_lighting_enabled(_app.world()), content="false")
@@ -207,7 +213,9 @@ test "render3d: pbr plugin config updates runtime feature switches" {
     content="true",
   )
 
-  let _reset = pbr_plugin(@app.App::new(@ecs.World::new()))
+  let _reset = pbr_plugin(
+    @app.App::new(@ecs.World::new()).add_plugins(@render.RenderPlugin::default()),
+  )
   debug_inspect(
     @gltf_loader.gltf_pbr_material_handler_enabled(),
     content="true",
@@ -216,16 +224,18 @@ test "render3d: pbr plugin config updates runtime feature switches" {
 
 ///|
 test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @app.PluginGroupBuilder::start_named("test-pbr")
-    .add(PbrPlugin::default())
-    .set(PbrPlugin::{
-      prepass_enabled: false,
-      add_default_deferred_lighting_plugin: false,
-      use_gpu_instance_buffer_builder: false,
-      gltf_render_enabled: false,
-    }),
-  )
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(
+      @app.PluginGroupBuilder::start_named("test-pbr")
+      .add(PbrPlugin::default())
+      .set(PbrPlugin::{
+        prepass_enabled: false,
+        add_default_deferred_lighting_plugin: false,
+        use_gpu_instance_buffer_builder: false,
+        gltf_render_enabled: false,
+      }),
+    )
 
   let config = read_pbr_runtime_config(app.world())
   debug_inspect(config.prepass_enabled, content="false")
@@ -248,7 +258,9 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
 
 ///|
 test "render3d: render3d_plugin alias maps to pbr plugin" {
-  let app = render3d_plugin(@app.App::new(@ecs.World::new()))
+  let app = render3d_plugin(
+    @app.App::new(@ecs.World::new()).add_plugins(@render.RenderPlugin::default()),
+  )
   debug_inspect(
     app.contains_resource(ecs_key_pbr_plugin_runtime_config),
     content="true",

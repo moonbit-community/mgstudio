@@ -40,7 +40,9 @@ fn next_system_sequence(world : @ecs.World) -> @core.SystemSequence {
 
 ///|
 test "text plugin inserts text runtime resources" {
-  let app = text_plugin(@app.App::new(@ecs.World::new()))
+  let app = text_plugin(
+    @app.App::new(@ecs.World::new()).add_plugins(@render.RenderPlugin::default()),
+  )
   debug_inspect(app.contains_resource(RemSize::resource()), content="true")
   debug_inspect(app.contains_resource(FontCx::resource()), content="true")
   debug_inspect(app.contains_resource(FontAtlasSet::resource()), content="true")

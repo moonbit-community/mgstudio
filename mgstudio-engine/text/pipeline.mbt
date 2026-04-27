@@ -607,7 +607,7 @@ fn text_sync_font_assets_from_events(world : @ecs.World) -> Bool {
   let reader = world.message_reader(
     message_key, text_font_asset_events_cursor_ref,
   )
-  let preload_font_ids : Map[Int, Bool] = {}
+  let preload_font_ids : @hashset.HashSet[Int] = @hashset.HashSet::new()
   let mut requires_reset = false
   let mut has_event = false
   for event in (try! reader.read()) {
@@ -615,12 +615,12 @@ fn text_sync_font_assets_from_events(world : @ecs.World) -> Bool {
       @asset.AssetEvent::Added(handle)
       | @asset.AssetEvent::LoadedWithDependencies(handle) => {
         has_event = true
-        preload_font_ids.set(handle.id(), true)
+        preload_font_ids.add(handle.id())
       }
       @asset.AssetEvent::Modified(handle) => {
         has_event = true
         requires_reset = true
-        preload_font_ids.set(handle.id(), true)
+        preload_font_ids.add(handle.id())
       }
       @asset.AssetEvent::Removed(_handle) => {
         has_event = true
@@ -634,8 +634,7 @@ fn text_sync_font_assets_from_events(world : @ecs.World) -> Bool {
   if requires_reset {
     text_reset_font_runtime_state()
   }
-  for entry in preload_font_ids.to_array() {
-    let handle_id = entry.0
+  for handle_id in preload_font_ids.to_array() {
     cosmic_get_or_load_font_id(@asset.Handle::new(handle_id)) |> ignore
   }
   text_mark_all_instances_for_rerender()

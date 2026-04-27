@@ -17,6 +17,7 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
+  "moonbitlang/core/hashset",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/encoding/base64",
@@ -24,6 +25,7 @@ import {
 }
 
 import {
+  "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/shader",
   "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/time",

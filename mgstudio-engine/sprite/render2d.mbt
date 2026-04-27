@@ -7077,6 +7077,7 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
   let second_uv_max_y : Ref[Double] = Ref::new(-1.0)
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@render.RenderPlugin::default())
     .add_plugins(Render2dPlugin::default())
 
   app = app.add_system(fn(world : @ecs.World) {

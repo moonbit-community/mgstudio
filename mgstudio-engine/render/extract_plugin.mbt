@@ -95,7 +95,7 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub fn with_render_app(
+pub fn try_with_render_app(
   app : @app.App[@ecs.World],
   update : (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World],
 ) -> @app.App[@ecs.World] {
@@ -104,4 +104,22 @@ pub fn with_render_app(
     sub_app_ref.val = update(sub_app_ref.val)
   }
   next
+}
+
+///|
+pub fn with_render_app(
+  app : @app.App[@ecs.World],
+  update : (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World],
+) -> @app.App[@ecs.World] {
+  let next = app
+  match next.get_sub_app_mut(@app.RenderApp) {
+    Some(sub_app_ref) => {
+      sub_app_ref.val = update(sub_app_ref.val)
+      next
+    }
+    None =>
+      abort(
+        "RenderApp is missing; add RenderPlugin before configuring render systems",
+      )
+  }
 }

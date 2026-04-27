@@ -696,13 +696,13 @@ fn[T] text_ecs_union_changed_entities_into(
   world : @ecs.World,
   key : @ecs.ComponentKey[T],
   sequence : @core.SystemSequence,
-  dirty_entities : Map[Int, Bool],
+  dirty_entities : @hashset.HashSet[Int],
   has_text_dirty_entities : Ref[Bool],
 ) -> Bool {
   let mut has_any = false
   for entity in world.changed_components(key, sequence).read() {
     has_any = true
-    dirty_entities.set(entity.id, true)
+    dirty_entities.add(entity.id)
     if !has_text_dirty_entities.val {
       let is_text_entity = world.contains_by_key(entity, ecs_key_text2d) catch {
         _ => false
@@ -717,16 +717,16 @@ fn[T] text_ecs_union_changed_entities_into(
 
 ///|
 fn text_ecs_entity_id_set_contains(
-  set : Map[Int, Bool],
+  set : @hashset.HashSet[Int],
   entity : @core.Entity,
 ) -> Bool {
-  set.get(entity.id) is Some(_)
+  set.contains(entity.id)
 }
 
 ///|
 fn text_ecs_mark_span_parents_dirty(
   span_edges : Array[(@core.Entity, @core.Entity)],
-  dirty_entities : Map[Int, Bool],
+  dirty_entities : @hashset.HashSet[Int],
   has_text_dirty_entities : Ref[Bool],
 ) -> Unit {
   for edge in span_edges {
@@ -735,7 +735,7 @@ fn text_ecs_mark_span_parents_dirty(
       continue
     }
     if !dirty_entities.contains(parent.id) {
-      dirty_entities.set(parent.id, true)
+      dirty_entities.add(parent.id)
     }
     has_text_dirty_entities.val = true
   }
@@ -1216,7 +1216,7 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
   )
   let span_edges = text_ecs_collect_span_edges(world)
   let has_any_spans = span_edges.length() > 0
-  let dirty_entities : Map[Int, Bool] = {}
+  let dirty_entities : @hashset.HashSet[Int] = @hashset.HashSet::new()
   let has_text_dirty_entities = Ref::new(false)
   ignore(
     text_ecs_union_changed_entities_into(
@@ -1695,7 +1695,7 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
   )
   let span_edges = text_ecs_collect_span_edges(world)
   let has_any_spans = span_edges.length() > 0
-  let dirty_entities : Map[Int, Bool] = {}
+  let dirty_entities : @hashset.HashSet[Int] = @hashset.HashSet::new()
   let has_text_dirty_entities = Ref::new(false)
   ignore(
     text_ecs_union_changed_entities_into(

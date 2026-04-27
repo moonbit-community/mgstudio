@@ -353,6 +353,8 @@ pub fn sync_world(@ecs.World, @ecs.World) -> (@ecs.World, @ecs.World)
 
 pub fn sync_world_plugin_with(@app.App[@ecs.World], SyncWorldPlugin) -> @app.App[@ecs.World]
 
+pub fn try_with_render_app(@app.App[@ecs.World], (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn with_render_app(@app.App[@ecs.World], (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors

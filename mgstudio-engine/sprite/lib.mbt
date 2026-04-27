@@ -29,7 +29,9 @@ let ecs_res_key_sprite_plugin_marker : @ecs.ResourceKey[SpritePluginMarker] = @e
 )
 
 ///|
-let sprite_bounds_initialized_worlds_ref : Ref[Map[Int, Bool]] = Ref::new({})
+let sprite_bounds_initialized_worlds_ref : Ref[
+  @hashset.HashSet[Int]
+] = Ref::new(@hashset.HashSet::new())
 
 ///|
 fn sprite_entity_key(entity : @core.Entity) -> UInt64 {
@@ -40,10 +42,10 @@ fn sprite_entity_key(entity : @core.Entity) -> UInt64 {
 
 ///|
 fn sprite_insert_entity_key(
-  set : Map[UInt64, Bool],
+  set : @hashset.HashSet[UInt64],
   entity : @core.Entity,
 ) -> Unit {
-  set.set(sprite_entity_key(entity), true)
+  set.add(sprite_entity_key(entity))
 }
 
 ///|
@@ -173,12 +175,13 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
     return
   }
   let world_id = world.world_id()
-  let first_run = sprite_bounds_initialized_worlds_ref.val.get(world_id) is None
+  let first_run = !sprite_bounds_initialized_worlds_ref.val.contains(world_id)
   if first_run {
-    sprite_bounds_initialized_worlds_ref.val.set(world_id, true)
+    sprite_bounds_initialized_worlds_ref.val.add(world_id)
   }
-  let changed_mesh2d_entities : Map[UInt64, Bool] = {}
-  let changed_sprite_or_anchor_entities : Map[UInt64, Bool] = {}
+  let pending_aabbs : Array[(@core.Entity, @camera_primitives.Aabb)] = []
+  let changed_mesh2d_entities : @hashset.HashSet[UInt64] = @hashset.HashSet::new()
+  let changed_sprite_or_anchor_entities : @hashset.HashSet[UInt64] = @hashset.HashSet::new()
   if !first_run {
     let sequence = world.get_sequence_context().sequence()
     for entity in world.added_components(@mesh.ecs_key_mesh2d, sequence).read() {
@@ -224,7 +227,7 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
         return
       }
       if sprite_mesh2d_aabb(mesh2d_comp.value()) is Some(aabb) {
-        sprite_set_or_replace_aabb(world, entity, aabb)
+        pending_aabbs.push((entity, aabb))
       }
     })
   }
@@ -262,9 +265,12 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
           atlas_layout_assets,
         )
         is Some(aabb) {
-        sprite_set_or_replace_aabb(world, entity, aabb)
+        pending_aabbs.push((entity, aabb))
       }
     })
+  }
+  for entry in pending_aabbs {
+    sprite_set_or_replace_aabb(world, entry.0, entry.1)
   }
 }
 

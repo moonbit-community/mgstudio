@@ -16,6 +16,7 @@ import {
   "Milky2018/moon_zeno" @moon_zeno,
   "Milky2018/moon_swash" @swash,
   "Milky2018/moon_swash/scale" @swash_scale,
+  "moonbitlang/core/hashset",
   "moonbitlang/core/ref",
 }
 

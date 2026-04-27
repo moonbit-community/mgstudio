@@ -1064,13 +1064,13 @@ fn[M : Material2d] prepare_material2d_assets_system(
     is Some(prepared_assets) else {
     return
   }
-  let prepared_ids : @hashmap.HashMap[Int, Bool] = @hashmap.HashMap::new()
+  let prepared_ids : @hashset.HashSet[Int] = @hashset.HashSet::new()
   for _, material_handle in instances.instances {
     let material_id = material_handle.id()
     if prepared_ids.contains(material_id) {
       continue
     }
-    prepared_ids.set(material_id, true)
+    prepared_ids.add(material_id)
     guard source_assets.get(material_handle) is Some(material) else { continue }
     let prepared_handle = PreparedMaterial2d::prepared_handle(material_handle)
     prepared_assets.modify(fn(value) {
