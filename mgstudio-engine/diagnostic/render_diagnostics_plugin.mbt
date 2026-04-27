@@ -247,6 +247,7 @@ fn render_diagnostics_record_measurement(
   path : DiagnosticPath,
   value : Int,
 ) -> Unit {
+  tick |> ignore
   match store.get_ref(path) {
     Some(diagnostic_ref) => {
       if !diagnostic_ref.val.is_enabled() {
@@ -254,7 +255,6 @@ fn render_diagnostics_record_measurement(
       }
       diagnostic_ref.val.add_measurement(
         DiagnosticMeasurement::new(@core.Instant::now(), Float::from_int(value)),
-        tick,
       )
     }
     None => ()
@@ -268,6 +268,7 @@ fn render_diagnostics_record_measurement_float(
   path : DiagnosticPath,
   value : Float,
 ) -> Unit {
+  tick |> ignore
   match store.get_ref(path) {
     Some(diagnostic_ref) => {
       if !diagnostic_ref.val.is_enabled() {
@@ -275,7 +276,6 @@ fn render_diagnostics_record_measurement_float(
       }
       diagnostic_ref.val.add_measurement(
         DiagnosticMeasurement::new(@core.Instant::now(), value),
-        tick,
       )
     }
     None => ()

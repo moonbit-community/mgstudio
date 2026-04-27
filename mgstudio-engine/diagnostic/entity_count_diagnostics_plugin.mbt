@@ -76,7 +76,6 @@ pub fn entity_count_diagnostics_plugin_with(
 
 ///|
 fn entity_count_diagnostic_system(world : @ecs.World) -> Unit {
-  let sequence = @app.current_system_sequence().this_run
   match
     (try world.get_resource_ref_mut(DiagnosticsStore::resource()) catch {
       _ => None
@@ -89,13 +88,10 @@ fn entity_count_diagnostic_system(world : @ecs.World) -> Unit {
           if !diagnostic_ref.val.is_enabled {
             return
           }
-          diagnostic_ref.val.add_measurement(
-            DiagnosticMeasurement::{
-              time: @core.Instant::now(),
-              value: Float::from_int(world.entity_count()),
-            },
-            sequence,
-          )
+          diagnostic_ref.val.add_measurement(DiagnosticMeasurement::{
+            time: @core.Instant::now(),
+            value: Float::from_int(world.entity_count()),
+          })
         }
         None => ()
       }

@@ -41,7 +41,9 @@ test "diagnostics: sysinfo refresh data populates diagnostics store" {
     .world()
     .get_resource_ref_mut(DiagnosticsStore::resource())
     .unwrap()
-  apply_sysinfo_refresh_data(Diagnostics::{ store_ref, }, data)
+  let diagnostics = Diagnostics::{ store_ref, buffer: @hashmap.HashMap::new() }
+  apply_sysinfo_refresh_data(diagnostics, data)
+  Diagnostics::store(diagnostics, Ref::new(Json::null()))
 
   debug_inspect(
     store_ref.val

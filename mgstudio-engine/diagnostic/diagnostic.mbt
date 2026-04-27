@@ -88,7 +88,6 @@ pub struct Diagnostic {
   ema_smoothing_factor : Float
   max_history_length : Int
   mut is_enabled : Bool
-  mut last_system_tick : Int?
 } derive(Debug)
 
 ///|
@@ -108,22 +107,6 @@ fn diagnostic_clamp01(value : Float) -> Float {
 }
 
 ///|
-fn diagnostic_replace_latest_measurement(
-  history : Array[DiagnosticMeasurement],
-  measurement : DiagnosticMeasurement,
-) -> DiagnosticMeasurement? {
-  if history.length() == 0 {
-    history.push(measurement)
-    None
-  } else {
-    let last = history.length() - 1
-    let previous = history[last]
-    history[last] = measurement
-    Some(previous)
-  }
-}
-
-///|
 pub fn Diagnostic::new(path : DiagnosticPath) -> Diagnostic {
   Diagnostic::{
     path,
@@ -134,7 +117,6 @@ pub fn Diagnostic::new(path : DiagnosticPath) -> Diagnostic {
     ema_smoothing_factor: 2.0F / 21.0F,
     max_history_length: DEFAULT_MAX_HISTORY_LENGTH,
     is_enabled: true,
-    last_system_tick: None,
   }
 }
 
@@ -246,33 +228,16 @@ pub fn Diagnostic::clear_history(self : Diagnostic) -> Unit {
   self.history.clear()
   self.sum = 0.0F
   self.ema = 0.0F
-  self.last_system_tick = None
 }
 
 ///|
 pub fn Diagnostic::add_measurement(
   self : Diagnostic,
   measurement : DiagnosticMeasurement,
-  system_tick : Int,
 ) -> Unit {
-  let previous_latest = self.measurement()
-  let had_previous = self.history.length() > 0
-  let previous_measurement = if self.last_system_tick == Some(system_tick) {
-    diagnostic_replace_latest_measurement(self.history, measurement)
-  } else {
-    self.history.push(measurement)
-    None
-  }
-
-  let effective_previous = if previous_measurement is Some(previous) {
-    Some(previous)
-  } else {
-    previous_latest
-  }
-
   if measurement.value.is_nan() {
     ()
-  } else if effective_previous is Some(previous) {
+  } else if self.measurement() is Some(previous) {
     let delta = measurement.time
       .saturating_duration_since(previous.time)
       .as_secs_f32()
@@ -287,13 +252,7 @@ pub fn Diagnostic::add_measurement(
   }
 
   if self.max_history_length > 1 {
-    if previous_measurement is Some(previous) {
-      if diagnostic_value_is_finite(previous.value) {
-        self.sum = self.sum - previous.value
-      }
-    }
-
-    while self.history.length() > self.max_history_length {
+    while self.history.length() >= self.max_history_length {
       let removed = self.history[0]
       if diagnostic_value_is_finite(removed.value) {
         self.sum = self.sum - removed.value
@@ -313,14 +272,9 @@ pub fn Diagnostic::add_measurement(
     }
   } else {
     self.history.clear()
-    self.history.push(measurement)
     self.sum = if measurement.value.is_nan() { 0.0F } else { measurement.value }
   }
-
-  if !had_previous && self.history.length() > 0 && measurement.value.is_nan() {
-    self.sum = 0.0F
-  }
-  self.last_system_tick = Some(system_tick)
+  self.history.push(measurement)
 }
 
 ///|
@@ -417,6 +371,7 @@ pub fn DiagnosticsStore::iter_mut(
 ///|
 pub struct Diagnostics {
   store_ref : Ref[DiagnosticsStore]
+  buffer : @hashmap.HashMap[String, DiagnosticMeasurement]
 }
 
 ///|
@@ -437,14 +392,21 @@ fn diagnostics_store_ref_mut(world : @ecs.World) -> Ref[DiagnosticsStore]? {
 pub impl @app.SystemParam for Diagnostics with get(_state) {
   let world = @app.current_world().unwrap()
   match diagnostics_store_ref_mut(world) {
-    Some(store_ref) => Diagnostics::{ store_ref, }
+    Some(store_ref) =>
+      Diagnostics::{ store_ref, buffer: @hashmap.HashMap::new() }
     None => abort("Missing DiagnosticsStore resource")
   }
 }
 
 ///|
 pub impl @app.SystemParam for Diagnostics with store(self, state) {
-  @app.system_param_store_no_state(self, state)
+  state |> ignore
+  for entry in self.buffer.iter() {
+    let (path, measurement) = entry
+    if self.store_ref.val.diagnostics.get(path) is Some(diagnostic_ref) {
+      diagnostic_ref.val.add_measurement(measurement)
+    }
+  }
 }
 
 ///|
@@ -462,10 +424,7 @@ pub fn Diagnostics::add_measurement(
         time: @core.Instant::now(),
         value: value(),
       }
-      diagnostic_ref.val.add_measurement(
-        measurement,
-        @app.current_system_sequence().this_run,
-      )
+      self.buffer.set(path.as_str(), measurement)
     }
     None => ()
   }

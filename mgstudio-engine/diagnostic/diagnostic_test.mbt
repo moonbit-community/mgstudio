@@ -19,28 +19,24 @@ test "diagnostic: max_history_length zero keeps only latest measurement" {
   )
   diagnostic.add_measurement(
     DiagnosticMeasurement::new(@core.Instant::from_secs_f32(1.0F), 10.0F),
-    1,
   )
   diagnostic.add_measurement(
     DiagnosticMeasurement::new(@core.Instant::from_secs_f32(2.0F), 20.0F),
-    2,
   )
   debug_inspect(diagnostic.history_len(), content="1")
   debug_inspect(diagnostic.value().unwrap(), content="20")
 }
 
 ///|
-test "diagnostic: same system sequence overwrites the latest measurement" {
+test "diagnostic: raw add_measurement appends every measurement" {
   let diagnostic = Diagnostic::new(DiagnosticPath::new("test"))
   diagnostic.add_measurement(
     DiagnosticMeasurement::new(@core.Instant::from_secs_f32(1.0F), 10.0F),
-    7,
   )
   diagnostic.add_measurement(
     DiagnosticMeasurement::new(@core.Instant::from_secs_f32(2.0F), 12.0F),
-    7,
   )
-  debug_inspect(diagnostic.history_len(), content="1")
+  debug_inspect(diagnostic.history_len(), content="2")
   debug_inspect(diagnostic.value().unwrap(), content="12")
 }
 
@@ -49,13 +45,28 @@ test "diagnostic: duration tracks instant span" {
   let diagnostic = Diagnostic::new(DiagnosticPath::new("test"))
   diagnostic.add_measurement(
     DiagnosticMeasurement::new(@core.Instant::from_millis(250L), 1.0F),
-    1,
   )
   diagnostic.add_measurement(
     DiagnosticMeasurement::new(@core.Instant::from_millis(750L), 2.0F),
-    2,
   )
   debug_inspect(diagnostic.duration().unwrap().as_millis(), content="500")
+}
+
+///|
+test "diagnostics: system param buffers and keeps last value per path" {
+  let path = DiagnosticPath::new("test/deferred")
+  let mut app = register_diagnostic(
+    @app.App::new(@ecs.World::new()).add_plugins(DiagnosticsPlugin::default()),
+    Diagnostic::new(path),
+  ).add_system_param(fn(diagnostics : Diagnostics) {
+    diagnostics.add_measurement(path, fn() { 1.0F })
+    diagnostics.add_measurement(path, fn() { 2.0F })
+  })
+  app = app.run_once()
+  let store = app.world().get_resource(DiagnosticsStore::resource()).unwrap()
+  let diagnostic = store.get(path).unwrap()
+  debug_inspect(diagnostic.history_len(), content="1")
+  debug_inspect(diagnostic.value().unwrap(), content="2")
 }
 
 ///|

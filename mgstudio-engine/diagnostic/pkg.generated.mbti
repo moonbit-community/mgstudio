@@ -127,9 +127,8 @@ pub struct Diagnostic {
   ema_smoothing_factor : Float
   max_history_length : Int
   mut is_enabled : Bool
-  mut last_system_tick : Int?
 } derive(@debug.Debug)
-pub fn Diagnostic::add_measurement(Self, DiagnosticMeasurement, Int) -> Unit
+pub fn Diagnostic::add_measurement(Self, DiagnosticMeasurement) -> Unit
 pub fn Diagnostic::average(Self) -> Float?
 pub fn Diagnostic::clear_history(Self) -> Unit
 pub fn Diagnostic::duration(Self) -> @core.Duration?
@@ -165,6 +164,7 @@ pub fn DiagnosticPath::new(String) -> Self
 
 pub struct Diagnostics {
   store_ref : @ref.Ref[DiagnosticsStore]
+  buffer : @hashmap.HashMap[String, DiagnosticMeasurement]
 }
 pub fn Diagnostics::add_measurement(Self, DiagnosticPath, () -> Float) -> Unit
 pub impl @app.SystemParam for Diagnostics
