@@ -3381,6 +3381,11 @@ fn scene_build_from_gltf(
   )
   let nodes : Array[SceneNode3d] = []
   let node_paths = gltf_collect_node_name_paths(doc)
+  let animation_roots = if request.loader_settings.load_animations {
+    gltf_collect_animation_root_indices(doc)
+  } else {
+    []
+  }
   let image_cache : Array[@asset.Handle[@asset.Image]?] = []
   for _ in doc.images {
     image_cache.push(None)
@@ -3412,6 +3417,15 @@ fn scene_build_from_gltf(
     request.loader_settings,
   )
   let active_camera_found_ref : Ref[Bool] = Ref::new(false)
+
+  fn node_is_animation_root(node_index : Int) -> Bool {
+    for root in animation_roots {
+      if root == node_index {
+        return true
+      }
+    }
+    false
+  }
 
   fn skin_inverse_bindposes_handle(
     skin_index : Int,
@@ -3510,6 +3524,7 @@ fn scene_build_from_gltf(
         node.transform,
         visibility_range,
         animation_target,
+        animation_root=node_is_animation_root(node_index),
         parent_node_index=parent_scene_node_index,
         name=if node.name == "" {
           None

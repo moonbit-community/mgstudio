@@ -460,20 +460,41 @@ fn scene_spawn_instance_when_ready(
       @ecs.component_writer(@gltf.GltfSceneExtras::component(), scene_extras),
     )
   }
-  if (try! world.get_by_key(root_entity, @animation.ecs_key_animation_player))
-    is None {
-    root_writers.push(
-      @ecs.component_writer(
-        @animation.ecs_key_animation_player,
-        @animation.AnimationPlayer::default(),
-      ),
-    )
-  }
   try! world.insert_component_writers(root_entity, root_writers)
 
   let spawned_entities : Array[@core.Entity] = []
   for _ in scene.nodes3d {
     spawned_entities.push(world.spawn_empty())
+  }
+  let animation_player_entities : Array[@core.Entity?] = []
+  let resolving_animation_player_entities : Array[Bool] = []
+  for _ in scene.nodes3d {
+    animation_player_entities.push(None)
+    resolving_animation_player_entities.push(false)
+  }
+  fn animation_player_entity_for_node(index : Int) -> @core.Entity? {
+    if index < 0 || index >= scene.nodes3d.length() {
+      return None
+    }
+    if animation_player_entities[index] is Some(entity) {
+      return Some(entity)
+    }
+    if resolving_animation_player_entities[index] {
+      return None
+    }
+    resolving_animation_player_entities[index] = true
+    let node = scene.nodes3d[index]
+    let player_entity = if node.animation_root {
+      Some(spawned_entities[index])
+    } else {
+      match node.parent_node_index {
+        Some(parent_index) => animation_player_entity_for_node(parent_index)
+        None => None
+      }
+    }
+    animation_player_entities[index] = player_entity
+    resolving_animation_player_entities[index] = false
+    player_entity
   }
   let pending_skinned_meshes : Array[
     (
@@ -491,6 +512,7 @@ fn scene_spawn_instance_when_ready(
   for i in 0..<scene.nodes3d.length() {
     let node = scene.nodes3d[i]
     let child = spawned_entities[i]
+    let animation_player_entity = animation_player_entity_for_node(i)
     let parent_entity = match node.parent_node_index {
       Some(parent_index) =>
         if parent_index >= 0 && parent_index < spawned_entities.length() {
@@ -669,16 +691,26 @@ fn scene_spawn_instance_when_ready(
         @ecs.component_writer(@visibility.ecs_key_visibility_range, range),
       )
     }
+    if node.animation_root {
+      child_writers.push(
+        @ecs.component_writer(
+          @animation.ecs_key_animation_player,
+          @animation.AnimationPlayer::default(),
+        ),
+      )
+    }
     if node.animation_target is Some(target_id) {
       child_writers.push(
         @ecs.component_writer(@animation.ecs_key_animation_target_id, target_id),
       )
-      child_writers.push(
-        @ecs.component_writer(
-          @animation.ecs_key_animated_by,
-          @animation.AnimatedBy::new(root_entity),
-        ),
-      )
+      if animation_player_entity is Some(player_entity) {
+        child_writers.push(
+          @ecs.component_writer(
+            @animation.ecs_key_animated_by,
+            @animation.AnimatedBy::new(player_entity),
+          ),
+        )
+      }
     }
     try! world.insert_component_writers(child, child_writers)
     if node.gltf_node_index is Some(node_index) {

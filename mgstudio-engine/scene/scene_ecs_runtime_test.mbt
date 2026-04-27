@@ -22,8 +22,11 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   let has_material = Ref::new(false)
   let has_transform = Ref::new(false)
   let has_visibility = Ref::new(false)
+  let has_player = Ref::new(false)
+  let root_has_player = Ref::new(true)
   let has_target = Ref::new(false)
   let has_animated_by = Ref::new(false)
+  let animated_by_points_to_player = Ref::new(false)
   let instance_after_second_tick = Ref::new(0)
   ignore(instance_after_second_tick)
   let ready_event_count_after_second_tick = Ref::new(0)
@@ -60,6 +63,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
       @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
       Some(@visibility.VisibilityRange::new(0.0F, 0.0F, 4.0F, 5.0F, false)),
       Some(@animation.AnimationTargetId::from_name("Node")),
+      animation_root=true,
     )
     let scene_handle = @scene.scene_register_gltf_scene(
       path,
@@ -120,14 +124,23 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
         child, @visibility.ecs_key_visibility_range,
       ))
       is Some(_)
+    has_player.val = try! world.contains_by_key(
+      child, @animation.ecs_key_animation_player,
+    )
+    root_has_player.val = try! world.contains_by_key(
+      root, @animation.ecs_key_animation_player,
+    )
     has_target.val = (try! world.get_by_key(
         child, @animation.ecs_key_animation_target_id,
       ))
       is Some(_)
-    has_animated_by.val = (try! world.get_by_key(
-        child, @animation.ecs_key_animated_by,
-      ))
-      is Some(_)
+    match (try! world.get_by_key(child, @animation.ecs_key_animated_by)) {
+      Some(animated_by) => {
+        has_animated_by.val = true
+        animated_by_points_to_player.val = animated_by.player().id == child.id
+      }
+      None => ()
+    }
 
     @scene.scene_spawn_roots_system(world)
     let instance_second = (try! world.get_by_key(
@@ -147,8 +160,11 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   debug_inspect(has_material.val, content="true")
   debug_inspect(has_transform.val, content="true")
   debug_inspect(has_visibility.val, content="true")
+  debug_inspect(has_player.val, content="true")
+  debug_inspect(root_has_player.val, content="false")
   debug_inspect(has_target.val, content="true")
   debug_inspect(has_animated_by.val, content="true")
+  debug_inspect(animated_by_points_to_player.val, content="true")
   debug_inspect(instance_after_second_tick.val, content="1")
   debug_inspect(ready_event_count_after_second_tick.val, content="1")
   debug_inspect(ready_event_count.val, content="1")
