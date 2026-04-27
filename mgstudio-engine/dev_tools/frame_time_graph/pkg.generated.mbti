@@ -18,26 +18,16 @@ pub fn frame_time_graph_default_config() -> @dev_tools.FrameTimeGraphConfig
 
 pub fn frame_time_graph_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn frame_time_graph_plugin_with(@app.App[@ecs.World], FrameTimeGraphPlugin) -> @app.App[@ecs.World]
+pub fn frame_time_graph_plugin_with(@app.App[@ecs.World], @dev_tools.FrameTimeGraphPlugin) -> @app.App[@ecs.World]
 
 // Errors
 
 // Types and methods
-pub(all) struct FrameTimeGraphConfigUniform {
-  dt_min : Float
-  dt_max : Float
-  dt_min_log2 : Float
-  dt_max_log2 : Float
-  proportional_width : UInt
-}
-pub fn FrameTimeGraphConfigUniform::new(Float, Float, Bool) -> Self
-
-pub struct FrameTimeGraphPlugin {
-}
-pub fn FrameTimeGraphPlugin::default() -> Self
-pub impl @app.Plugin for FrameTimeGraphPlugin
 
 // Type aliases
+pub using @dev_tools {type FrameTimeGraphConfigUniform}
+
+pub using @dev_tools {type FrameTimeGraphPlugin}
 
 // Traits
 

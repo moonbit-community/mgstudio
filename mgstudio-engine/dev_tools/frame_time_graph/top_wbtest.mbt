@@ -22,21 +22,6 @@ test "dev_tools frame_time_graph: uniform follows Bevy dt range" {
 }
 
 ///|
-test "dev_tools frame_time_graph: plugin does not install fps overlay" {
-  let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@diagnostic.DiagnosticsPlugin::default())
-    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-    .add_plugins(FrameTimeGraphPlugin::default())
-  debug_inspect(
-    (app.world().get_resource(@dev_tools.FpsOverlayConfig::resource()) catch {
-      _ => None
-    })
-    is Some(_),
-    content="false",
-  )
-}
-
-///|
 test "panic dev_tools frame_time_graph: plugin requires frame time diagnostics" {
   ignore(frame_time_graph_plugin(@app.App::new(@ecs.World::new())))
 }

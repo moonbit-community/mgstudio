@@ -238,6 +238,11 @@ fn fps_overlay_has_frame_time_diagnostics(app : @app.App[@ecs.World]) -> Bool {
 }
 
 ///|
+fn fps_overlay_has_frame_time_graph_plugin(app : @app.App[@ecs.World]) -> Bool {
+  app.plugin_names().contains("mgstudio.dev_tools.FrameTimeGraphPlugin")
+}
+
+///|
 pub fn fps_overlay_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   fps_overlay_plugin_with(app, FpsOverlayPlugin::default())
 }
@@ -253,6 +258,9 @@ pub fn fps_overlay_plugin_with(
   let mut next = app
   if !fps_overlay_has_frame_time_diagnostics(next) {
     next = next.add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+  }
+  if !fps_overlay_has_frame_time_graph_plugin(next) {
+    next = next.add_plugins(FrameTimeGraphPlugin::default())
   }
   fps_overlay_warn_on_low_interval(plugin.config)
   next

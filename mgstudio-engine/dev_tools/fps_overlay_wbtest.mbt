@@ -83,6 +83,28 @@ test "dev_tools: fps overlay startup spawns root, text, graph, and bars" {
 }
 
 ///|
+test "dev_tools: fps overlay installs frame time graph plugin" {
+  let app = overlay_test_app(FpsOverlayConfig::default())
+  debug_inspect(
+    app.plugin_names().contains("mgstudio.dev_tools.FrameTimeGraphPlugin"),
+    content="true",
+  )
+}
+
+///|
+test "dev_tools: frame time graph plugin does not install fps overlay" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@diagnostic.DiagnosticsPlugin::default())
+    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+    .add_plugins(FrameTimeGraphPlugin::default())
+  debug_inspect(
+    (app.world().get_resource(FpsOverlayConfig::resource()) catch { _ => None })
+    is Some(_),
+    content="false",
+  )
+}
+
+///|
 test "dev_tools: fps overlay hides text and graph when disabled" {
   let mut app = overlay_test_app(FpsOverlayConfig::default()).run_startup()
   let state = try! app

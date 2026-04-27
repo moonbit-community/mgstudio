@@ -42,6 +42,10 @@ pub let fps_overlay_set_customize : String
 
 pub let fps_overlay_set_update_text : String
 
+pub fn frame_time_graph_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn frame_time_graph_plugin_with(@app.App[@ecs.World], FrameTimeGraphPlugin) -> @app.App[@ecs.World]
+
 pub fn[S : @app.States] log_transitions(@ecs.World, S) -> Unit
 
 // Errors
@@ -149,6 +153,20 @@ pub(all) struct FrameTimeGraphConfig {
 }
 pub fn FrameTimeGraphConfig::default() -> Self
 pub fn FrameTimeGraphConfig::target_fps(Float) -> Self
+
+pub(all) struct FrameTimeGraphConfigUniform {
+  dt_min : Float
+  dt_max : Float
+  dt_min_log2 : Float
+  dt_max_log2 : Float
+  proportional_width : UInt
+}
+pub fn FrameTimeGraphConfigUniform::new(Float, Float, Bool) -> Self
+
+pub struct FrameTimeGraphPlugin {
+}
+pub fn FrameTimeGraphPlugin::default() -> Self
+pub impl @app.Plugin for FrameTimeGraphPlugin
 
 // Type aliases
 
