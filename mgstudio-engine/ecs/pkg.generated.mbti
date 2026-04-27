@@ -232,6 +232,7 @@ pub fn[T] ComponentColumn::table_changed_sequence_at_row(Self[T], Int, Int) -> I
 pub fn[T] ComponentColumn::table_is_changed_at_entity_row(Self[T], @core.Entity, Int, Int, @core.SystemSequence) -> Bool?
 pub fn[T] ComponentColumn::table_is_changed_at_row(Self[T], Int, Int, @core.SystemSequence) -> Bool
 pub fn[T] ComponentColumn::table_row_location(Self[T], @core.Entity) -> (Int, Int)?
+pub fn[T] ComponentColumn::table_value_at_cached_entity_row(Self[T], @core.Entity, Int, Int) -> T?
 pub fn[T] ComponentColumn::table_value_at_entity_row(Self[T], @core.Entity, Int, Int) -> T?
 pub fn[T] ComponentColumn::table_value_at_row(Self[T], Int, Int) -> T?
 pub fn[T] ComponentColumn::table_values(Self[T], Int) -> Array[T]?

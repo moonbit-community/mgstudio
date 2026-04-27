@@ -68,10 +68,37 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
   @pbr_render.render3d_world_transform_cache_begin_frame(
     world_transform_cache_ref,
   )
+  let cameras_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "extract_3d_cameras",
+  )
   render3d_refresh_sorted_cameras(source_world, sorted_cameras_ref)
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "extract_3d_cameras",
+    cameras_trace_start_us,
+  )
+  let morphs_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "extract_3d_morphs",
+  )
   render3d_extract_morphs(source_world, morph_indices_ref, morph_uniforms_ref)
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "extract_3d_morphs",
+    morphs_trace_start_us,
+  )
+  let skins_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "extract_3d_skins",
+  )
   @pbr_render.render3d_extract_skin_bindings(
     source_world, skin_uniforms_ref, world_transform_cache_ref,
+  )
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "extract_3d_skins",
+    skins_trace_start_us,
   )
   @pbr_render.render3d_set_diagnostic_prepared_camera_count(
     world,

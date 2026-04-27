@@ -49,12 +49,6 @@ fn SkinOffsetAllocator::new() -> SkinOffsetAllocator {
 }
 
 ///|
-fn SkinOffsetAllocator::clear(self : SkinOffsetAllocator) -> Unit {
-  self.next_offset = 0
-  self.free_ranges.clear()
-}
-
-///|
 fn SkinOffsetAllocator::allocate(
   self : SkinOffsetAllocator,
   size : Int,
@@ -264,17 +258,6 @@ fn render3d_phase_sync_previous_skin_flags(
 }
 
 ///|
-fn render3d_phase_clear_skins(skin_uniforms_ref : Ref[SkinUniforms]) -> Unit {
-  skin_uniforms_ref.val.skin_uniform_info.clear()
-  skin_uniforms_ref.val.allocator.clear()
-  skin_uniforms_ref.val.joint_to_skins.clear()
-  skin_uniforms_ref.val.current_skins.clear()
-  skin_uniforms_ref.val.previous_skins.clear()
-  skin_uniforms_ref.val.current_staging_buffer.clear()
-  skin_uniforms_ref.val.total_joints = 0
-}
-
-///|
 fn render3d_has_prepared_skin_binding(
   skin_uniforms_ref : Ref[SkinUniforms],
   entity : @core.Entity,
@@ -420,7 +403,8 @@ fn render3d_write_skin_joint_matrix(
         let table_id = joint_table_ids[joint_index]
         let row_index = joint_row_indices[joint_index]
         if table_id >= 0 && row_index >= 0 {
-          match column.table_value_at_entity_row(joint, table_id, row_index) {
+          match
+            column.table_value_at_cached_entity_row(joint, table_id, row_index) {
             Some(joint_global) => {
               render3d_write_skin_matrix(
                 skin_uniforms_ref, matrix_index, joint_global, inverse_bindpose,
@@ -531,13 +515,18 @@ fn render3d_add_skin(
   let inverse_bindposes_asset = inverse_bindposes_assets.get(
     skinned_mesh.inverse_bindposes(),
   )
+  let inverse_bindposes_values = match inverse_bindposes_asset {
+    Some(asset) => Some(asset.values())
+    None => None
+  }
   for joint_index in 0..<joints.length() {
     let joint = joints[joint_index]
-    let inverse_bindpose = match inverse_bindposes_asset {
-      Some(asset) =>
-        match asset.get(joint_index) {
-          Some(value) => Some(value)
-          None => None
+    let inverse_bindpose = match inverse_bindposes_values {
+      Some(values) =>
+        if joint_index < values.length() {
+          Some(values[joint_index])
+        } else {
+          None
         }
       None => None
     }
@@ -659,21 +648,24 @@ fn render3d_extract_joints_for_skin(
     Some(asset) => asset
     None => return
   }
+  let inverse_bindposes_values = inverse_bindposes_asset.values()
   let joints = skinned_mesh.joints()
   let joint_count = if joints.length() < info.joints.length() {
     joints.length()
   } else {
     info.joints.length()
   }
+  let joint_count = if joint_count < inverse_bindposes_values.length() {
+    joint_count
+  } else {
+    inverse_bindposes_values.length()
+  }
   let matrix_offset = info.offset()
   let joint_table_ids = info.joint_table_ids
   let joint_row_indices = info.joint_row_indices
   for joint_index in 0..<joint_count {
     let joint = joints[joint_index]
-    let inverse_bindpose = match inverse_bindposes_asset.get(joint_index) {
-      Some(value) => value
-      None => continue
-    }
+    let inverse_bindpose = inverse_bindposes_values[joint_index]
     render3d_write_skin_joint_matrix(
       source_world,
       skin_uniforms_ref,
@@ -800,14 +792,6 @@ pub fn render3d_extract_skin_bindings(
 ) -> Unit {
   render3d_phase_begin_skin_frame(skin_uniforms_ref)
   let skinned_mesh_key = @mesh.SkinnedMesh::component()
-  let skinned_mesh_presence_query : @ecs.QueryState[
-    @core.Entity,
-    @ecs.With[@mesh.SkinnedMesh],
-  ] = source_world.query_filtered(@ecs.With::new(skinned_mesh_key))
-  if skinned_mesh_presence_query.count(source_world) == 0 {
-    render3d_phase_clear_skins(skin_uniforms_ref)
-    return
-  }
   let inverse_bindposes_assets_key : @ecs.ResourceKey[
     @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
   ] = @asset.assets_resource_key()

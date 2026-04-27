@@ -314,6 +314,32 @@ pub fn[T] ComponentColumn::table_value_at_entity_row(
 }
 
 ///|
+pub fn[T] ComponentColumn::table_value_at_cached_entity_row(
+  self : ComponentColumn[T],
+  entity : @core.Entity,
+  table_id : Int,
+  row_index : Int,
+) -> T? {
+  guard self.storage_type == Table else { return None }
+  let entity_id = entity.id
+  guard entity_id >= 0 &&
+    entity_id < self.world.entity_table_ids.length() &&
+    entity_id < self.world.entity_table_rows.length() else {
+    return None
+  }
+  if self.world.entity_table_ids[entity_id] != table_id ||
+    self.world.entity_table_rows[entity_id] != row_index {
+    return None
+  }
+  guard self.table_values_ref(table_id) is Some(values) else { return None }
+  if row_index < 0 || row_index >= values.length() {
+    None
+  } else {
+    Some(values[row_index])
+  }
+}
+
+///|
 pub fn[T] ComponentColumn::table_changed_sequence_at_row(
   self : ComponentColumn[T],
   table_id : Int,
