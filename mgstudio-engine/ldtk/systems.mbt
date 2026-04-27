@@ -247,8 +247,7 @@ pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
   for event in assets.drain_events() {
     match event {
       @asset.AssetEvent::Added(handle) => changed_handles.insert(handle.id())
-      @asset.AssetEvent::Modified(handle) =>
-        changed_handles.insert(handle.id())
+      @asset.AssetEvent::Modified(handle) => changed_handles.insert(handle.id())
       @asset.AssetEvent::LoadedWithDependencies(handle) =>
         changed_handles.insert(handle.id())
       @asset.AssetEvent::Removed(handle) => changed_handles.remove(handle.id())

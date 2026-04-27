@@ -848,9 +848,7 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   ] = @render.RenderAssets::resource()
   let instances = try! render_world.get_resource(instances_key).unwrap()
   let prepared_assets = try! render_world.get_resource(prepared_key).unwrap()
-  let prepared = prepared_assets
-    .get(handle.id())
-    .unwrap()
+  let prepared = prepared_assets.get(handle.id()).unwrap()
 
   debug_inspect(instances.contains(entity), content="true")
   debug_inspect(

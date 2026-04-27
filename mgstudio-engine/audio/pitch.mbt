@@ -27,7 +27,9 @@ pub fn Pitch::new(frequency : Float, duration_seconds : Float) -> Pitch {
 pub fn pitch_add(world : @ecs.World, pitch : Pitch) -> @asset.Handle[Pitch] {
   let key : @ecs.ResourceKey[@asset.Assets[Pitch]] = @asset.assets_resource_key()
   guard audio_resource_mut(world, key) is Some(assets) else {
-    abort("Assets<Pitch> resource is missing; add AudioPlugin before using pitch audio")
+    abort(
+      "Assets<Pitch> resource is missing; add AudioPlugin before using pitch audio",
+    )
   }
   assets.modify(fn(value) { value.add(pitch) })
 }

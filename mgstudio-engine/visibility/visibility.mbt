@@ -139,7 +139,7 @@ pub impl @json.FromJson for ViewVisibility with from_json(json, _path) {
 
 ///|
 pub fn ViewVisibility::new(visible : Bool) -> ViewVisibility {
-  ViewVisibility::{ bits: if visible { 1 } else { 0 }, }
+  ViewVisibility::{ bits: if visible { 1 } else { 0 } }
 }
 
 ///|
@@ -159,9 +159,7 @@ pub fn ViewVisibility::is_visible(self : ViewVisibility) -> Bool {
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::ViewVisibility::was_visible_now_hidden`.
-pub fn ViewVisibility::was_visible_now_hidden(
-  self : ViewVisibility,
-) -> Bool {
+pub fn ViewVisibility::was_visible_now_hidden(self : ViewVisibility) -> Bool {
   (self.bits & 3) == 2
 }
 

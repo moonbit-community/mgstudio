@@ -142,10 +142,9 @@ fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
 pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
   if (try! world.get_resource(ecs_key_visibility_propagation_state)) is None {
     visibility_propagate_full_scan(world)
-    world.insert_resource(
-      ecs_key_visibility_propagation_state,
-      VisibilityPropagationState::{  },
-    )
+    world.insert_resource(ecs_key_visibility_propagation_state, VisibilityPropagationState::{
+
+    })
     return
   }
   let sequence = world.get_sequence_context().sequence()
@@ -290,11 +289,9 @@ pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   // Hierarchy hooks keep `Children` synchronized with `Parent` before schedule execution.
   try! register_visibility_required_components(app.world())
   app
-  .configure_set(
-    @app.PostUpdate,
-    visibility_set_visibility_propagate,
-    after=[@transform.transform_set_propagate],
-  )
+  .configure_set(@app.PostUpdate, visibility_set_visibility_propagate, after=[
+    @transform.transform_set_propagate,
+  ])
   .add_post_update_system_config(
     @app.system(visibility_propagate_system)
     .named("mgstudio.visibility.visibility_propagate_system")
