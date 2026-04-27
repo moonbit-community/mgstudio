@@ -168,13 +168,13 @@ pub fn ResourceManager::clear_stale_previous_depth_pyramids(
   self : ResourceManager,
   active_view_entities : Array[Int],
 ) -> Unit {
-  let active : Map[Int, Bool] = {}
+  let active = @utils.IntBitSet::new()
   for view_entity in active_view_entities {
-    active.set(meshlet_resource_non_negative(view_entity), true)
+    active.insert(meshlet_resource_non_negative(view_entity))
   }
   let stale_keys : Array[Int] = []
   for key in self.previous_depth_pyramids.keys() {
-    if active.get(key) is None {
+    if !active.contains(key) {
       stale_keys.push(key)
     }
   }

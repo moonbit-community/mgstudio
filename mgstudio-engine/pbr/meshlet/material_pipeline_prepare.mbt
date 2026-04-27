@@ -391,7 +391,7 @@ pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
   view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::default(),
 ) -> Unit {
   view_materials.clear()
-  let queued_material_ids : Map[Int, Bool] = {}
+  let queued_material_ids = @utils.IntBitSet::new()
   for material_input in material_inputs {
     if !(material_input.alpha_mode is @material.AlphaMode3d::Opaque) {
       continue
@@ -409,10 +409,10 @@ pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
       view_key,
       material_input.material_asset_id,
     )
-    if queued_material_ids.get(material_input.material_id) is Some(_) {
+    if queued_material_ids.contains(material_input.material_id) {
       continue
     }
-    queued_material_ids.set(material_input.material_id, true)
+    queued_material_ids.insert(material_input.material_id)
     view_materials.push(
       (
         material_input.material_id,
@@ -444,8 +444,8 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
 ) -> Unit {
   prepass_materials.clear()
   deferred_prepass_materials.clear()
-  let queued_prepass_material_ids : Map[Int, Bool] = {}
-  let queued_deferred_material_ids : Map[Int, Bool] = {}
+  let queued_prepass_material_ids = @utils.IntBitSet::new()
+  let queued_deferred_material_ids = @utils.IntBitSet::new()
   for material_input in material_inputs {
     if !(material_input.alpha_mode is @material.AlphaMode3d::Opaque) {
       continue
@@ -457,10 +457,10 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
       is @material.OpaqueRendererMethod::Deferred
     if deferred_enabled && view_key.deferred_prepass && material_wants_deferred {
       let prepass_view_key = view_key.for_meshlet_prepass(true)
-      if queued_deferred_material_ids.get(material_input.material_id) is Some(_) {
+      if queued_deferred_material_ids.contains(material_input.material_id) {
         continue
       }
-      queued_deferred_material_ids.set(material_input.material_id, true)
+      queued_deferred_material_ids.insert(material_input.material_id)
       let pipeline_id = meshlet_material_pipeline_id(
         3000,
         3,
@@ -479,10 +479,10 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
     if !view_key.normal_prepass && !view_key.motion_vector_prepass {
       continue
     }
-    if queued_prepass_material_ids.get(material_input.material_id) is Some(_) {
+    if queued_prepass_material_ids.contains(material_input.material_id) {
       continue
     }
-    queued_prepass_material_ids.set(material_input.material_id, true)
+    queued_prepass_material_ids.insert(material_input.material_id)
     let prepass_view_key = view_key.for_meshlet_prepass(false)
     let pipeline_id = meshlet_material_pipeline_id(
       2000,

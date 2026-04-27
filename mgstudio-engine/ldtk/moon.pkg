@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/utils" @utils,
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/encoding/utf8" @utf8,
   "moonbitlang/core/hashmap",

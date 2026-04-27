@@ -243,18 +243,18 @@ pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
   let assets_ref = ldtk_project_assets_ref_or_abort(world)
   assets_ref.set_changed()
   let assets = assets_ref.peek()
-  let changed_handles : @hashmap.HashMap[Int, Bool] = @hashmap.HashMap::new()
+  let changed_handles = @utils.IntBitSet::new()
   for event in assets.drain_events() {
     match event {
-      @asset.AssetEvent::Added(handle) => changed_handles.set(handle.id(), true)
+      @asset.AssetEvent::Added(handle) => changed_handles.insert(handle.id())
       @asset.AssetEvent::Modified(handle) =>
-        changed_handles.set(handle.id(), true)
+        changed_handles.insert(handle.id())
       @asset.AssetEvent::LoadedWithDependencies(handle) =>
-        changed_handles.set(handle.id(), true)
+        changed_handles.insert(handle.id())
       @asset.AssetEvent::Removed(handle) => changed_handles.remove(handle.id())
     }
   }
-  if changed_handles.length() == 0 {
+  if changed_handles.is_empty() {
     return
   }
   let query : @ecs.Query[@ecs.Comp[LdtkProjectHandle], @ecs.All] = @ecs.query(

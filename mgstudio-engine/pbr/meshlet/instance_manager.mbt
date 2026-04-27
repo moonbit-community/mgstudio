@@ -28,7 +28,7 @@ pub struct InstanceManager {
   mut view_instance_visibility : Map[UInt64, Array[Int]]
   mut next_material_id : Int
   material_id_lookup : Map[Int, Int]
-  material_ids_present_in_scene : Map[Int, Bool]
+  material_ids_present_in_scene : @utils.IntBitSet
 }
 
 ///|
@@ -57,7 +57,7 @@ pub fn InstanceManager::default() -> InstanceManager {
     view_instance_visibility: {},
     next_material_id: 0,
     material_id_lookup: {},
-    material_ids_present_in_scene: {},
+    material_ids_present_in_scene: @utils.IntBitSet::new(),
   }
 }
 
@@ -176,7 +176,7 @@ pub fn InstanceManager::mark_material_present_in_scene(
   self : InstanceManager,
   material_id : Int,
 ) -> Unit {
-  self.material_ids_present_in_scene.set(non_negative(material_id), true)
+  self.material_ids_present_in_scene.insert(non_negative(material_id))
 }
 
 ///|
@@ -184,10 +184,7 @@ pub fn InstanceManager::material_present_in_scene(
   self : InstanceManager,
   material_id : Int,
 ) -> Bool {
-  match self.material_ids_present_in_scene.get(non_negative(material_id)) {
-    Some(value) => value
-    None => false
-  }
+  self.material_ids_present_in_scene.contains(non_negative(material_id))
 }
 
 ///|
@@ -226,7 +223,7 @@ pub fn InstanceManager::present_material_ids(
   self : InstanceManager,
 ) -> Array[Int] {
   let ids = []
-  for material_id in self.material_ids_present_in_scene.keys() {
+  for material_id in self.material_ids_present_in_scene.to_array() {
     ids.push(material_id)
   }
   ids.sort()

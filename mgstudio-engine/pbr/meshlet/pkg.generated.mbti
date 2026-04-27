@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/utils",
   "moonbitlang/core/debug",
 }
 
@@ -213,7 +214,7 @@ pub struct InstanceManager {
   mut view_instance_visibility : Map[UInt64, Array[Int]]
   mut next_material_id : Int
   material_id_lookup : Map[Int, Int]
-  material_ids_present_in_scene : Map[Int, Bool]
+  material_ids_present_in_scene : @utils.IntBitSet
 }
 pub fn InstanceManager::add_instance(Self, @core.Entity, Int, Int, MeshletAabb, Int, render_layer_mask? : Int, not_shadow_caster? : Bool, material_slot? : Int) -> Unit
 pub fn InstanceManager::default() -> Self

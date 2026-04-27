@@ -10,6 +10,7 @@ import {
   "Milky2018/mgstudio/pbr" @pbr,
   "Milky2018/mgstudio/render" @render,
   "Milky2018/mgstudio/render/renderer" @renderer,
+  "Milky2018/mgstudio/utils" @utils,
   "Milky2018/moon_wgsl" @wgsl,
 }
 

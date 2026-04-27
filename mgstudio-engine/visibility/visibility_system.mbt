@@ -24,11 +24,26 @@
 /// (no frustum culling yet).
 
 ///|
-let visibility_initialized_worlds_ref : Ref[Map[Int, Bool]] = Ref::new({})
+priv struct VisibilityPropagationState {}
+
+///|
+let ecs_key_visibility_propagation_state : @ecs.ResourceKey[
+  VisibilityPropagationState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_visibility::VisibilityPropagationState",
+)
 
 ///|
 fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
   let roots : Array[@core.Entity] = []
+  let parent_children : Map[UInt64, Array[@core.Entity]] = {}
+  world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
+    let parent_key = parent.entity().to_bits()
+    match parent_children.get(parent_key) {
+      Some(children) => children.push(entity)
+      None => parent_children.set(parent_key, [entity])
+    }
+  })
   let visibility_query : @ecs.Query[@ecs.Comp[Visibility], @ecs.All] = @ecs.query(
     world,
   )
@@ -93,31 +108,42 @@ fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
         }
       }
     }
+    match parent_children.get(entity.to_bits()) {
+      Some(children) =>
+        for child in children {
+          if (try! world.contains_by_key(child, ecs_key_visibility)) {
+            stack.push((child, is_visible))
+          }
+        }
+      None => ()
+    }
   }
 }
 
 ///|
 pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
-  let world_id = world.world_id()
-  if visibility_initialized_worlds_ref.val.get(world_id) is None {
+  if (try! world.get_resource(ecs_key_visibility_propagation_state)) is None {
     visibility_propagate_full_scan(world)
-    visibility_initialized_worlds_ref.val.set(world_id, true)
+    world.insert_resource(
+      ecs_key_visibility_propagation_state,
+      VisibilityPropagationState::{  },
+    )
     return
   }
   let sequence = world.get_sequence_context().sequence()
   let start_entities : Array[(@core.Entity, Bool)] = []
-  let start_seen : Map[Int, Bool] = {}
+  let start_seen = @utils.IntBitSet::new()
 
   fn add_start_entity(
     world : @ecs.World,
     start_entities : Array[(@core.Entity, Bool)],
-    start_seen : Map[Int, Bool],
+    start_seen : @utils.IntBitSet,
     entity : @core.Entity,
   ) -> Unit {
-    if start_seen.get(entity.id) is Some(_) {
+    if start_seen.contains(entity.id) {
       return
     }
-    start_seen.set(entity.id, true)
+    start_seen.insert(entity.id)
     let parent_visible = match
       (world.get_by_key(entity, @hierarchy.ecs_key_parent) catch { _ => None }) {
       Some(parent) => {
