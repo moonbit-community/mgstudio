@@ -9,6 +9,8 @@ import {
 }
 
 // Values
+pub fn check_visibility_system(@ecs.World) -> Unit
+
 pub let ecs_key_inherited_visibility : @ecs.ComponentKey[InheritedVisibility]
 
 pub let ecs_key_no_auto_aabb : @ecs.ComponentKey[NoAutoAabb]
@@ -26,6 +28,10 @@ pub let ecs_key_visibility_range : @ecs.ComponentKey[VisibilityRange]
 pub fn visibility_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn visibility_propagate_system(@ecs.World) -> Unit
+
+pub let visibility_set_check_visibility : String
+
+pub let visibility_set_mark_newly_hidden_entities_invisible : String
 
 pub let visibility_set_visibility_propagate : String
 
@@ -60,12 +66,15 @@ pub fn NoFrustumCulling::default() -> Self
 pub impl @ecs.Component for NoFrustumCulling
 
 pub struct ViewVisibility {
-  visible : Bool
+  mut bits : Int
 } derive(Eq, @debug.Debug)
 pub fn ViewVisibility::get(Self) -> Bool
 pub fn ViewVisibility::hidden() -> Self
 pub fn ViewVisibility::is_visible(Self) -> Bool
 pub fn ViewVisibility::new(Bool) -> Self
+pub fn ViewVisibility::set_visible(Self) -> Unit
+pub fn ViewVisibility::update(Self) -> Unit
+pub fn ViewVisibility::was_visible_now_hidden(Self) -> Bool
 pub impl @ecs.Component for ViewVisibility
 pub impl ToJson for ViewVisibility
 pub impl @json.FromJson for ViewVisibility

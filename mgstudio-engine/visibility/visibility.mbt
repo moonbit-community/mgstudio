@@ -123,12 +123,12 @@ pub fn InheritedVisibility::is_visible(self : InheritedVisibility) -> Bool {
 
 ///|
 pub struct ViewVisibility {
-  visible : Bool
+  mut bits : Int
 } derive(Eq, Debug)
 
 ///|
 pub impl ToJson for ViewVisibility with to_json(self) {
-  self.visible.to_json()
+  self.get().to_json()
 }
 
 ///|
@@ -139,7 +139,7 @@ pub impl @json.FromJson for ViewVisibility with from_json(json, _path) {
 
 ///|
 pub fn ViewVisibility::new(visible : Bool) -> ViewVisibility {
-  ViewVisibility::{ visible, }
+  ViewVisibility::{ bits: if visible { 1 } else { 0 }, }
 }
 
 ///|
@@ -149,12 +149,34 @@ pub fn ViewVisibility::hidden() -> ViewVisibility {
 
 ///|
 pub fn ViewVisibility::get(self : ViewVisibility) -> Bool {
-  self.visible
+  (self.bits & 1) != 0
 }
 
 ///|
 pub fn ViewVisibility::is_visible(self : ViewVisibility) -> Bool {
-  self.visible
+  self.get()
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::ViewVisibility::was_visible_now_hidden`.
+pub fn ViewVisibility::was_visible_now_hidden(
+  self : ViewVisibility,
+) -> Bool {
+  (self.bits & 3) == 2
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::ViewVisibility::update`.
+pub fn ViewVisibility::update(self : ViewVisibility) -> Unit {
+  self.bits = (self.bits & 1) << 1
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::SetViewVisibility::set_visible`.
+pub fn ViewVisibility::set_visible(self : ViewVisibility) -> Unit {
+  if (self.bits & 1) == 0 {
+    self.bits = self.bits | 1
+  }
 }
 
 ///|

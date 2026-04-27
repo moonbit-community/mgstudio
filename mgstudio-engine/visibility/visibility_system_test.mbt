@@ -220,6 +220,25 @@ test "visibility: view visibility hidden/get helpers match bevy semantics" {
 }
 
 ///|
+test "visibility: view visibility tracks current and previous frame bits" {
+  let view_visibility = @visibility.ViewVisibility::new(true)
+  debug_inspect(view_visibility.get(), content="true")
+  debug_inspect(
+    view_visibility.was_visible_now_hidden(),
+    content="false",
+  )
+  view_visibility.update()
+  debug_inspect(view_visibility.get(), content="false")
+  debug_inspect(view_visibility.was_visible_now_hidden(), content="true")
+  view_visibility.set_visible()
+  debug_inspect(view_visibility.get(), content="true")
+  debug_inspect(
+    view_visibility.was_visible_now_hidden(),
+    content="false",
+  )
+}
+
+///|
 test "visibility: no-cpu-culling marker has stable default and ecs key" {
   let world = @ecs.World::new()
   let entity = world.spawn_empty()

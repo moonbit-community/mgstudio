@@ -30,6 +30,18 @@ pub let visibility_set_visibility_propagate : @app.SystemSet = @app.system_set(
 )
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::VisibilitySystems::CheckVisibility`.
+pub let visibility_set_check_visibility : @app.SystemSet = @app.system_set(
+  "mgstudio.visibility.check_visibility",
+)
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::VisibilitySystems::MarkNewlyHiddenEntitiesInvisible`.
+pub let visibility_set_mark_newly_hidden_entities_invisible : @app.SystemSet = @app.system_set(
+  "mgstudio.visibility.mark_newly_hidden_entities_invisible",
+)
+
+///|
 priv struct VisibilityPropagationState {}
 
 ///|
@@ -216,7 +228,6 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
         try! world.set_by_key(entity, ecs_key_inherited_visibility, inherited)
       }
     }
-    // Stage-1: ViewVisibility == InheritedVisibility (no frustum culling yet).
     if !(try! world.contains_by_key(entity, ecs_key_view_visibility)) ||
       (try! world.get_by_key(entity, ecs_key_view_visibility))
       .map(fn(v) { v.is_visible() })
@@ -244,6 +255,21 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::check_visibility`.
+pub fn check_visibility_system(world : @ecs.World) -> Unit {
+  let query : @ecs.Query[
+    (@ecs.Mut[ViewVisibility], @ecs.Comp[InheritedVisibility]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! query.view(fn(_entity, data) {
+    let (view_visibility, inherited_visibility) = data
+    if inherited_visibility.value().get() {
+      view_visibility.modify(fn(value) { value.set_visible() })
+    }
+  })
+}
+
+///|
 fn register_visibility_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
@@ -263,10 +289,15 @@ fn register_visibility_required_components(
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   // Hierarchy hooks keep `Children` synchronized with `Parent` before schedule execution.
   try! register_visibility_required_components(app.world())
-  app.add_post_update_system_config(
+  app
+  .configure_set(
+    @app.PostUpdate,
+    visibility_set_visibility_propagate,
+    after=[@transform.transform_set_propagate],
+  )
+  .add_post_update_system_config(
     @app.system(visibility_propagate_system)
     .named("mgstudio.visibility.visibility_propagate_system")
-    .in_set(visibility_set_visibility_propagate)
-    .after(@transform.transform_set_propagate),
+    .in_set(visibility_set_visibility_propagate),
   )
 }
