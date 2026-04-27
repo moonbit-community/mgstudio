@@ -436,11 +436,9 @@ test "app: parent set conditions apply to child set systems" {
       system(fn(_world : @ecs.World) { log.push("child") }).in_set(child_set),
     )
     .configure_sets(Update, child_set, in_sets=[parent_set])
-    .configure_sets(
-      Update,
-      parent_set,
-      set_run_ifs=[fn(_world : @ecs.World) { false }],
-    )
+    .configure_sets(Update, parent_set, set_run_ifs=[
+      fn(_world : @ecs.World) { false },
+    ])
 
   app.run_once() |> ignore
 
@@ -581,15 +579,10 @@ test "app: chained tuple in_set preserves order and set boundaries" {
     )
     .add_systems(
       Update,
-      system(fn(_world : @ecs.World) { log.push("after") }).after(
-        propagate_set,
-      ),
+      system(fn(_world : @ecs.World) { log.push("after") }).after(propagate_set),
     )
   app.run_once() |> ignore
-  debug_inspect(
-    log.join(","),
-    content="\"before,mark,propagate,sync,after\"",
-  )
+  debug_inspect(log.join(","), content="\"before,mark,propagate,sync,after\"")
 }
 
 ///|
@@ -606,11 +599,9 @@ test "app: chained tuple in_set applies set run conditions" {
       |> chain()
       |> SystemConfig::in_set(gated_set),
     )
-    .configure_sets(
-      Update,
-      gated_set,
-      set_run_ifs=[fn(_world : @ecs.World) { false }],
-    )
+    .configure_sets(Update, gated_set, set_run_ifs=[
+      fn(_world : @ecs.World) { false },
+    ])
   app.run_once() |> ignore
   debug_inspect(log, content="[]")
 }

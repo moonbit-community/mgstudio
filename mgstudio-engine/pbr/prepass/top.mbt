@@ -102,7 +102,7 @@ pub fn PreviousGlobalTransform::new(
 pub fn PreviousGlobalTransform::from_affine(
   affine : @math.Affine3,
 ) -> PreviousGlobalTransform {
-  PreviousGlobalTransform::{ affine }
+  PreviousGlobalTransform::{ affine, }
 }
 
 ///|

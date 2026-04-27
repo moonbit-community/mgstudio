@@ -85,8 +85,5 @@ test "diagnostics: stress diagnostics plugin installs lightweight metrics by def
     .add_plugins(@time.TimePlugin::default())
     .add_plugins(StressDiagnosticsPlugin::default())
     .update()
-  debug_inspect(
-    stress_diagnostics_has_lightweight_metrics(app),
-    content="true",
-  )
+  debug_inspect(stress_diagnostics_has_lightweight_metrics(app), content="true")
 }

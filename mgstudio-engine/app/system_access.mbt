@@ -209,21 +209,26 @@ fn query_system_accesses_compatible(
 }
 
 ///|
-fn system_access_resource_conflict(
+fn system_access_resource_conflict_ids(
   lhs : SystemAccess,
   rhs : SystemAccess,
-) -> Bool {
+) -> Array[Int] {
+  let conflicts : Array[Int] = []
   for id in lhs.write_resource_ids {
     if rhs.read_resource_ids.contains(id) || rhs.write_resource_ids.contains(id) {
-      return true
+      if !conflicts.contains(id) {
+        conflicts.push(id)
+      }
     }
   }
   for id in lhs.read_resource_ids {
     if rhs.write_resource_ids.contains(id) {
-      return true
+      if !conflicts.contains(id) {
+        conflicts.push(id)
+      }
     }
   }
-  false
+  conflicts
 }
 
 ///|
@@ -231,6 +236,7 @@ pub fn system_access_compatible(
   lhs : SystemAccess,
   rhs : SystemAccess,
   allowed_ambiguous_components : @utils.IntBitSet,
+  allowed_ambiguous_resources? : @utils.IntBitSet = @utils.IntBitSet::new(),
 ) -> Bool {
   if lhs.validation_error() is Some(_) || rhs.validation_error() is Some(_) {
     return false
@@ -238,7 +244,9 @@ pub fn system_access_compatible(
   if lhs.is_exclusive() || rhs.is_exclusive() {
     return false
   }
-  if system_access_resource_conflict(lhs, rhs) {
+  let resource_conflicts = system_access_resource_conflict_ids(lhs, rhs)
+  if resource_conflicts.length() > 0 &&
+    !allowed_ambiguous_resources.contains_all_array(resource_conflicts) {
     return false
   }
   for lhs_query_access in lhs.query_accesses {
@@ -258,8 +266,14 @@ pub fn system_access_merge_validated(
   target : SystemAccess,
   other : SystemAccess,
   allowed_ambiguous_components : @utils.IntBitSet,
+  allowed_ambiguous_resources? : @utils.IntBitSet = @utils.IntBitSet::new(),
 ) -> Unit {
-  if !system_access_compatible(target, other, allowed_ambiguous_components) {
+  if !system_access_compatible(
+      target,
+      other,
+      allowed_ambiguous_components,
+      allowed_ambiguous_resources~,
+    ) {
     target.set_validation_error(
       "System parameters contain conflicting world accesses. Use ParamSet to split incompatible queries.",
     )

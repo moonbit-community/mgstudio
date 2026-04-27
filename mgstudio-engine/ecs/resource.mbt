@@ -24,15 +24,12 @@ pub fn[T] World::insert_resource(
     guard self.resources.get(key.id()) is Some(slot) else { return }
     slot.payload = payload
   } else {
-    self.resources.set(
-      key.id(),
-      ResourceSlot::{
-        payload,
-        added_sequence: None,
-        changed_sequence: None,
-        changed_caller: None,
-      },
-    )
+    self.resources.set(key.id(), ResourceSlot::{
+      payload,
+      added_sequence: None,
+      changed_sequence: None,
+      changed_caller: None,
+    })
   }
   if !existed {
     self.record_resource_added(key.id())

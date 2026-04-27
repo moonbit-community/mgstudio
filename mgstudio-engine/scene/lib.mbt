@@ -461,10 +461,9 @@ fn scene_asset_hooks_installed_state_resource_key() -> @ecs.ResourceKey[
 pub fn scene_install_asset_hooks(world : @ecs.World) -> Unit {
   let key = scene_asset_hooks_installed_state_resource_key()
   if (try! world.get_resource(key)) is None {
-    world.insert_resource(
-      key,
-      SceneAssetHooksInstalledState::{ installed: false },
-    )
+    world.insert_resource(key, SceneAssetHooksInstalledState::{
+      installed: false,
+    })
   }
   let state = match (try! world.get_resource_mut(key)) {
     Some(state) => state

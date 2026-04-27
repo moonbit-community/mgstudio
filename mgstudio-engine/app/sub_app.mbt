@@ -19,6 +19,7 @@ pub struct SubApp[W] {
   schedule : ScheduleRegistry[W]
   extract : SubAppExtractFn[W]?
   allowed_ambiguous_components : @utils.IntBitSet
+  allowed_ambiguous_resources : @utils.IntBitSet
 }
 
 ///|
@@ -41,6 +42,7 @@ pub fn SubApp::new(world : @ecs.World) -> SubApp[@ecs.World] {
     schedule,
     extract: None,
     allowed_ambiguous_components: @utils.IntBitSet::new(),
+    allowed_ambiguous_resources: @utils.IntBitSet::new(),
   }
 }
 
@@ -79,12 +81,16 @@ pub fn SubApp::run_startup(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
   current_allowed_ambiguous_components_ref.val = Some(
     self.allowed_ambiguous_components,
   )
+  current_allowed_ambiguous_resources_ref.val = Some(
+    self.allowed_ambiguous_resources,
+  )
   match self.update_schedule {
     Some(Main) => run_main_schedule_startup(self.world, self.schedule)
     Some(stage) => run_schedule_stage(self.world, self.schedule, stage)
     None => ()
   }
   current_allowed_ambiguous_components_ref.val = None
+  current_allowed_ambiguous_resources_ref.val = None
   current_app_schedule_ref.val = None
   self
 }
@@ -95,12 +101,16 @@ pub fn SubApp::update(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
   current_allowed_ambiguous_components_ref.val = Some(
     self.allowed_ambiguous_components,
   )
+  current_allowed_ambiguous_resources_ref.val = Some(
+    self.allowed_ambiguous_resources,
+  )
   stepping_begin_frame(self.world)
   match self.update_schedule {
     Some(stage) => run_schedule_stage(self.world, self.schedule, stage)
     None => ()
   }
   current_allowed_ambiguous_components_ref.val = None
+  current_allowed_ambiguous_resources_ref.val = None
   current_app_schedule_ref.val = None
   self
 }
@@ -125,6 +135,23 @@ pub fn[T : @ecs.Component] SubApp::is_ambiguous_component_allowed(
   key? : @ecs.ComponentKey[T] = T::component(),
 ) -> Bool {
   self.allowed_ambiguous_components.contains(key.id())
+}
+
+///|
+pub fn[T : Resource] SubApp::allow_ambiguous_resource(
+  self : SubApp[@ecs.World],
+  key? : @ecs.ResourceKey[T] = T::resource(),
+) -> SubApp[@ecs.World] {
+  self.allowed_ambiguous_resources.insert(key.id())
+  self
+}
+
+///|
+pub fn[T : Resource] SubApp::is_ambiguous_resource_allowed(
+  self : SubApp[@ecs.World],
+  key? : @ecs.ResourceKey[T] = T::resource(),
+) -> Bool {
+  self.allowed_ambiguous_resources.contains(key.id())
 }
 
 ///|

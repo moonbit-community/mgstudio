@@ -143,7 +143,9 @@ test "render3d: non-modified Mesh asset events do not mark Mesh3d as changed" {
 ///|
 test "render3d: default pbr plugin installs bevy-style runtime config defaults" {
   let app = pbr_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(@render.RenderPlugin::default()),
+    @app.App::new(@ecs.World::new()).add_plugins(
+      @render.RenderPlugin::default(),
+    ),
   )
   let config = read_pbr_runtime_config(app.world())
   debug_inspect(config.prepass_enabled, content="true")
@@ -176,7 +178,9 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
 ///|
 test "render3d: pbr plugin config updates runtime feature switches" {
   let _app = pbr_plugin_with(
-    @app.App::new(@ecs.World::new()).add_plugins(@render.RenderPlugin::default()),
+    @app.App::new(@ecs.World::new()).add_plugins(
+      @render.RenderPlugin::default(),
+    ),
     PbrPlugin::{
       prepass_enabled: false,
       add_default_deferred_lighting_plugin: false,
@@ -214,7 +218,9 @@ test "render3d: pbr plugin config updates runtime feature switches" {
   )
 
   let _reset = pbr_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(@render.RenderPlugin::default()),
+    @app.App::new(@ecs.World::new()).add_plugins(
+      @render.RenderPlugin::default(),
+    ),
   )
   debug_inspect(
     @gltf_loader.gltf_pbr_material_handler_enabled(),
@@ -259,7 +265,9 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
 ///|
 test "render3d: render3d_plugin alias maps to pbr plugin" {
   let app = render3d_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(@render.RenderPlugin::default()),
+    @app.App::new(@ecs.World::new()).add_plugins(
+      @render.RenderPlugin::default(),
+    ),
   )
   debug_inspect(
     app.contains_resource(ecs_key_pbr_plugin_runtime_config),

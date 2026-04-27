@@ -82,7 +82,10 @@ fn[T] mut_value_or_abort(item : Mut[T]) -> T {
   let key = mut_key_or_abort(item)
   match (item.table_id, item.row_index) {
     (Some(table_id), Some(row_index)) =>
-      match (try! world.component_value_by_key_at_table_row(key, table_id, row_index)) {
+      match
+        (try! world.component_value_by_key_at_table_row(
+          key, table_id, row_index,
+        )) {
         Some(value) => return value
         None => ()
       }
@@ -90,8 +93,7 @@ fn[T] mut_value_or_abort(item : Mut[T]) -> T {
   }
   let entity = mut_entity_or_abort(item)
   let result : Result[T?, EcsError] = try? world.component_value_by_key(
-    entity,
-    key,
+    entity, key,
   )
   match result {
     Ok(Some(value)) => value
@@ -107,11 +109,7 @@ fn[T] mut_replace_value_or_abort(item : Mut[T], value : T) -> Unit {
   match (item.table_id, item.row_index, item.local_component_id) {
     (Some(table_id), Some(row_index), Some(local_component_id)) =>
       if world.replace_component_value_at_table_row(
-          key,
-          local_component_id,
-          table_id,
-          row_index,
-          value,
+          key, local_component_id, table_id, row_index, value,
         ) {
         return
       }

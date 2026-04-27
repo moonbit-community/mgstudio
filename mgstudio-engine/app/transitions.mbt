@@ -312,12 +312,7 @@ fn run_state_transition_hooks(
     single_threaded_batches: execution_batches,
     multi_threaded_batches: execution_batches,
   }
-  run_systems(
-    world,
-    schedule,
-    execution_batches,
-    current_schedule_stage(),
-  )
+  run_systems(world, schedule, execution_batches, current_schedule_stage())
   for i in 0..<matched_refs.length() {
     matched_refs[i].val = matched_configs[i]
   }

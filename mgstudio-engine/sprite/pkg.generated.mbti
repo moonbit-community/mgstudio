@@ -604,11 +604,13 @@ pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M, Material2dBindGro
 pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
 pub impl[M] @app.Resource for Material2dPipeline[M]
 
-pub struct Material2dPlugin[_] {
+pub struct Material2dPlugin[M] {
   vertex_shader : String?
   fragment_shader : String?
+  asset_init : (() -> M)?
 }
 pub fn[M] Material2dPlugin::default() -> Self[M]
+pub fn[M] Material2dPlugin::with_asset_init(Self[M], () -> M) -> Self[M]
 pub fn[M] Material2dPlugin::with_fragment_shader(Self[M], String) -> Self[M]
 pub fn[M] Material2dPlugin::with_vertex_shader(Self[M], String) -> Self[M]
 pub impl[M : Material2d] @app.Plugin for Material2dPlugin[M]

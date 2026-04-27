@@ -1448,7 +1448,11 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let evaluation_state = animation_evaluation_state_new()
   if target_id_column is Some(target_id_column) &&
     animated_by_column is Some(animated_by_column) {
-    animated_by_column.for_each_with_fast(target_id_column, fn(entity, animated_by, target_id) {
+    animated_by_column.for_each_with_fast(target_id_column, fn(
+      entity,
+      animated_by,
+      target_id,
+    ) {
       let player_entity = animated_by.player()
       let player_id = player_entity.id
       if player_id < 0 {
@@ -1748,25 +1752,10 @@ pub fn animation_plugin_with(
   plugin : AnimationPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  let animation_clip_event_key : @ecs.MessageKey[
-    @asset.AssetEvent[AnimationClip],
-  ] = @ecs.Message::message()
-  let animation_graph_event_key : @ecs.MessageKey[
-    @asset.AssetEvent[AnimationGraph],
-  ] = @ecs.Message::message()
   @asset.init_asset_loader(
-    app
-    .init_resource(fn() {
-      let assets : @asset.Assets[AnimationClip] = @asset.Assets::new()
-      assets
-    })
-    .init_resource(fn() {
-      let assets : @asset.Assets[AnimationGraph] = @asset.Assets::new()
-      assets
-    })
-    .init_resource(fn() { ThreadedAnimationGraphs::{ graphs: {} } })
-    .add_message(animation_clip_event_key)
-    .add_message(animation_graph_event_key),
+    @asset.init_asset(@asset.init_asset(app, fn() { AnimationClip::new() }), fn() {
+      AnimationGraph::new()
+    }).init_resource(fn() { ThreadedAnimationGraphs::{ graphs: {} } }),
     animation_graph_asset_loader(),
   )
   .add_post_update_system_config(

@@ -229,9 +229,9 @@ test "app: disabling auto_insert_apply_deferred removes automatic apply boundari
   let mut sub_app = SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(stage))
     .add_schedule(
-      Schedule::new(stage).set_executor_kind(
-        SingleThreaded,
-      ).set_build_settings(build_settings),
+      Schedule::new(stage)
+      .set_executor_kind(SingleThreaded)
+      .set_build_settings(build_settings),
     )
     .add_systems(stage, chain((deferred_system, read_system)))
 
@@ -297,9 +297,9 @@ test "app: explicit apply_deferred_system syncs commands when auto insertion is 
   let mut sub_app = SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(stage))
     .add_schedule(
-      Schedule::new(stage).set_executor_kind(
-        SingleThreaded,
-      ).set_build_settings(build_settings),
+      Schedule::new(stage)
+      .set_executor_kind(SingleThreaded)
+      .set_build_settings(build_settings),
     )
     .add_systems(
       stage,
@@ -540,11 +540,9 @@ test "app: conditional explicit sync point in child set is not reused as auto sy
     )
     .configure_sets(stage, set_a, before=[set_b])
     .configure_sets(stage, set_b, before=[set_c], in_sets=[parent_set])
-    .configure_sets(
-      stage,
-      parent_set,
-      set_run_ifs=[fn(_world : @ecs.World) { false }],
-    )
+    .configure_sets(stage, parent_set, set_run_ifs=[
+      fn(_world : @ecs.World) { false },
+    ])
 
   sub_app = sub_app.update()
 
@@ -562,26 +560,18 @@ test "app: set run_if evaluates once per run and gates all systems in the set" {
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
       stage,
-      system(fn(_world : @ecs.World) {
-        executed.push("A")
-      }).in_set(gated_set),
+      system(fn(_world : @ecs.World) { executed.push("A") }).in_set(gated_set),
     )
     .add_systems(
       stage,
-      system(fn(_world : @ecs.World) {
-        executed.push("B")
-      }).in_set(gated_set),
+      system(fn(_world : @ecs.World) { executed.push("B") }).in_set(gated_set),
     )
-    .configure_sets(
-      stage,
-      gated_set,
-      set_run_ifs=[
-        fn(_world : @ecs.World) {
-          condition_eval_count.val = condition_eval_count.val + 1
-          condition_eval_count.val % 2 == 0
-        },
-      ],
-    )
+    .configure_sets(stage, gated_set, set_run_ifs=[
+      fn(_world : @ecs.World) {
+        condition_eval_count.val = condition_eval_count.val + 1
+        condition_eval_count.val % 2 == 0
+      },
+    ])
 
   sub_app = sub_app.update()
   debug_inspect(condition_eval_count.val, content="1")
@@ -599,9 +589,9 @@ test "app: disabling apply_final_deferred keeps deferred commands pending until 
   let mut sub_app = SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(enqueue_stage))
     .add_schedule(
-      Schedule::new(enqueue_stage).set_executor_kind(
-        SingleThreaded,
-      ).set_apply_final_deferred(false),
+      Schedule::new(enqueue_stage)
+      .set_executor_kind(SingleThreaded)
+      .set_apply_final_deferred(false),
     )
     .add_schedule(Schedule::new(flush_stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -648,7 +638,9 @@ test "app: add_schedule reinserts and replaces previous schedule content" {
   debug_inspect(query_after_first.count(), content="1")
 
   // Bevy parity: re-inserting the same schedule label replaces the old schedule.
-  sub_app = sub_app.add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
+  sub_app = sub_app.add_schedule(
+    Schedule::new(stage).set_executor_kind(SingleThreaded),
+  )
   sub_app = sub_app.update()
   let world_after_second = sub_app.world()
   let query_after_second : @ecs.Query[@ecs.Comp[ScheduleBatchMarker], @ecs.All] = @ecs.query(
@@ -700,15 +692,17 @@ test "app: set run_if evaluates all conditions without short-circuiting and cach
       stage,
       set_a,
       set_run_ifs=[fn(_world : @ecs.World) { false }],
-      set_run_if_statefuls=[(
-        (0).to_json(),
-        fn(_world : @ecs.World, state : Ref[Json]) {
-          let value : Int = try! @json.from_json(state.val)
-          second_condition_seen.push(value)
-          state.val = (value + 1).to_json()
-          true
-        },
-      )],
+      set_run_if_statefuls=[
+        (
+          (0).to_json(),
+          fn(_world : @ecs.World, state : Ref[Json]) {
+            let value : Int = try! @json.from_json(state.val)
+            second_condition_seen.push(value)
+            state.val = (value + 1).to_json()
+            true
+          },
+        ),
+      ],
     )
 
   sub_app = sub_app.update()
@@ -734,22 +728,21 @@ test "app: failed set run_if does not skip other set or system conditions" {
       system(fn(_world : @ecs.World) { system_runs.push("body") })
       .in_set(set_a)
       .in_set(set_b)
-      .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
+      .run_if_stateful((0).to_json(), fn(
+        _world : @ecs.World,
+        state : Ref[Json],
+      ) {
         let value : Int = try! @json.from_json(state.val)
         system_condition_hits.push(value)
         state.val = (value + 1).to_json()
         true
       }),
     )
-    .configure_sets(
-      stage,
-      set_a,
-      set_run_ifs=[fn(_world : @ecs.World) { false }],
-    )
-    .configure_sets(
-      stage,
-      set_b,
-      set_run_if_statefuls=[(
+    .configure_sets(stage, set_a, set_run_ifs=[
+      fn(_world : @ecs.World) { false },
+    ])
+    .configure_sets(stage, set_b, set_run_if_statefuls=[
+      (
         (0).to_json(),
         fn(_world : @ecs.World, state : Ref[Json]) {
           let value : Int = try! @json.from_json(state.val)
@@ -757,8 +750,8 @@ test "app: failed set run_if does not skip other set or system conditions" {
           state.val = (value + 1).to_json()
           true
         },
-      )],
-    )
+      ),
+    ])
 
   sub_app = sub_app.update()
   sub_app = sub_app.update()
@@ -782,7 +775,10 @@ test "app: failed set run_if marks remaining set systems completed" {
       stage,
       system(fn(_world : @ecs.World) { system_runs.push("first") })
       .in_set(set_a)
-      .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
+      .run_if_stateful((0).to_json(), fn(
+        _world : @ecs.World,
+        state : Ref[Json],
+      ) {
         let value : Int = try! @json.from_json(state.val)
         first_system_condition_hits.push(value)
         state.val = (value + 1).to_json()
@@ -793,18 +789,19 @@ test "app: failed set run_if marks remaining set systems completed" {
       stage,
       system(fn(_world : @ecs.World) { system_runs.push("second") })
       .in_set(set_a)
-      .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
+      .run_if_stateful((0).to_json(), fn(
+        _world : @ecs.World,
+        state : Ref[Json],
+      ) {
         let value : Int = try! @json.from_json(state.val)
         second_system_condition_hits.push(value)
         state.val = (value + 1).to_json()
         true
       }),
     )
-    .configure_sets(
-      stage,
-      set_a,
-      set_run_ifs=[fn(_world : @ecs.World) { false }],
-    )
+    .configure_sets(stage, set_a, set_run_ifs=[
+      fn(_world : @ecs.World) { false },
+    ])
 
   sub_app = sub_app.update()
   sub_app = sub_app.update()
@@ -833,7 +830,9 @@ test "app: runtime-invalid system is still scheduled and validated during execut
         true
       }),
     )
-    .add_system(fn(_world : @ecs.World) { follower_runs.val = follower_runs.val + 1 })
+    .add_system(fn(_world : @ecs.World) {
+      follower_runs.val = follower_runs.val + 1
+    })
 
   app.run_once() |> ignore
   app.run_once() |> ignore
@@ -870,7 +869,9 @@ test "app: statically invalid system stays in order and evaluates conditions bef
         true
       }),
     )
-    .add_system(fn(_world : @ecs.World) { follower_runs.val = follower_runs.val + 1 })
+    .add_system(fn(_world : @ecs.World) {
+      follower_runs.val = follower_runs.val + 1
+    })
 
   app.run_once() |> ignore
   app.run_once() |> ignore
@@ -933,10 +934,12 @@ test "app: chain run_if is a collective set condition evaluated once" {
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
       stage,
-      chain((
-        system(fn(_world : @ecs.World) { system_runs.push("a") }),
-        system(fn(_world : @ecs.World) { system_runs.push("b") }),
-      )).run_if(fn(_world : @ecs.World) {
+      chain(
+        (
+          system(fn(_world : @ecs.World) { system_runs.push("a") }),
+          system(fn(_world : @ecs.World) { system_runs.push("b") }),
+        ),
+      ).run_if(fn(_world : @ecs.World) {
         condition_hits.val = condition_hits.val + 1
         condition_hits.val % 2 == 0
       }),
@@ -958,24 +961,22 @@ test "app: parent set run_if is evaluated before child set run_if" {
   let mut sub_app = SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
-    .add_systems(stage, system(fn(_world : @ecs.World) { log.push("system") }).in_set(child))
-    .configure_sets(
+    .add_systems(
       stage,
-      parent,
-      set_run_ifs=[fn(_world : @ecs.World) {
+      system(fn(_world : @ecs.World) { log.push("system") }).in_set(child),
+    )
+    .configure_sets(stage, parent, set_run_ifs=[
+      fn(_world : @ecs.World) {
         log.push("parent")
         true
-      }],
-    )
-    .configure_sets(
-      stage,
-      child,
-      in_sets=[parent],
-      set_run_ifs=[fn(_world : @ecs.World) {
+      },
+    ])
+    .configure_sets(stage, child, in_sets=[parent], set_run_ifs=[
+      fn(_world : @ecs.World) {
         log.push("child")
         true
-      }],
-    )
+      },
+    ])
 
   sub_app = sub_app.update()
 
@@ -1022,9 +1023,9 @@ test "app: hierarchy redundancy can be promoted to build error" {
       validation_kinds.push(context.kind())
     })
     .add_schedule(
-      Schedule::new(stage).set_executor_kind(
-        SingleThreaded,
-      ).set_build_settings(settings),
+      Schedule::new(stage)
+      .set_executor_kind(SingleThreaded)
+      .set_build_settings(settings),
     )
     .add_systems(stage, system(fn(_world : @ecs.World) { () }).in_set(child))
     .configure_sets(stage, child, in_sets=[parent, grandparent])
@@ -1051,21 +1052,21 @@ test "app: ambiguity detection can be promoted to build error" {
     })
     .insert_resource(MissingRunIfParityResource::{  })
     .add_schedule(
-      Schedule::new(stage).set_executor_kind(
-        SingleThreaded,
-      ).set_build_settings(settings),
+      Schedule::new(stage)
+      .set_executor_kind(SingleThreaded)
+      .set_build_settings(settings),
     )
     .add_systems(
       stage,
-      system_config_param(fn(_res : ResMut[MissingRunIfParityResource]) {
-        ()
-      }).named("tests.ambiguous_a"),
+      system_config_param(fn(_res : ResMut[MissingRunIfParityResource]) { () }).named(
+        "tests.ambiguous_a",
+      ),
     )
     .add_systems(
       stage,
-      system_config_param(fn(_res : ResMut[MissingRunIfParityResource]) {
-        ()
-      }).named("tests.ambiguous_b"),
+      system_config_param(fn(_res : ResMut[MissingRunIfParityResource]) { () }).named(
+        "tests.ambiguous_b",
+      ),
     )
   let order = world_main_schedule_order(app.world()).insert_after(Update, stage)
   app.world().insert_resource(main_schedule_order_resource_key(), order)
@@ -1074,4 +1075,44 @@ test "app: ambiguity detection can be promoted to build error" {
 
   ignore(app)
   debug_inspect(validation_kinds, content="[Validation]")
+}
+
+///|
+test "app: allowed ambiguous resource suppresses resource ambiguity" {
+  let stage = schedule_label("AllowedAmbiguousResource")
+  let validation_kinds : Array[ErrorContextKind] = []
+  let settings = ScheduleBuildSettings::new().set_ambiguity_detection(
+    ScheduleBuildError,
+  )
+  let key : @ecs.ResourceKey[MissingRunIfParityResource] = MissingRunIfParityResource::resource()
+  let mut app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) {
+      validation_kinds.push(context.kind())
+    })
+    .insert_resource(MissingRunIfParityResource::{  })
+    .allow_ambiguous_resource(key~)
+    .add_schedule(
+      Schedule::new(stage)
+      .set_executor_kind(SingleThreaded)
+      .set_build_settings(settings),
+    )
+    .add_systems(
+      stage,
+      system_config_param(fn(_res : ResMut[MissingRunIfParityResource]) { () }).named(
+        "tests.allowed_ambiguous_resource_a",
+      ),
+    )
+    .add_systems(
+      stage,
+      system_config_param(fn(_res : ResMut[MissingRunIfParityResource]) { () }).named(
+        "tests.allowed_ambiguous_resource_b",
+      ),
+    )
+  let order = world_main_schedule_order(app.world()).insert_after(Update, stage)
+  app.world().insert_resource(main_schedule_order_resource_key(), order)
+
+  app = app.run_once()
+
+  ignore(app)
+  debug_inspect(validation_kinds, content="[]")
 }

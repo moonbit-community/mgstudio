@@ -19,6 +19,7 @@ fn render3d_mesh_entity_key(entity : @core.Entity) -> UInt64 {
   (hi << 32) | lo
 }
 
+///|
 fn render3d_resolve_standard_material(
   material_handle : MeshMaterial3d,
   standard_material_frame_cache : Map[Int, StandardMaterial],

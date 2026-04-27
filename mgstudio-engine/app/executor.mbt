@@ -150,7 +150,10 @@ fn run_systems(
     }
     matches
   }
-  fn run_execution_node(node : ScheduleExecutionNode, execution_i : Int) -> Unit {
+  fn run_execution_node(
+    node : ScheduleExecutionNode,
+    execution_i : Int,
+  ) -> Unit {
     if !stepping_should_run_system(
         stepping_ref, stage, systems, node, execution_i,
       ) {
@@ -163,8 +166,7 @@ fn run_systems(
         }
         let cfg = systems[system_i]
         let mut should_run_system = true
-        if system_i >= 0 &&
-          system_i < sets_with_conditions_of_systems.length() {
+        if system_i >= 0 && system_i < sets_with_conditions_of_systems.length() {
           for set_i in sets_with_conditions_of_systems[system_i] {
             if set_i >= 0 && set_i < set_ids.length() {
               let set_conditions_met = evaluate_set_run_if_once(set_i)
@@ -194,135 +196,135 @@ fn run_systems(
             should_run_system = should_run_system && should_run
           }
         }
-          executor_state.mark_completed(system_i)
-          if !should_run_system {
-            return
-          }
-          match system_validation_error(system_i) {
-            Some(message) => {
-              report_world_error(
-                world,
-                @ecs.Invalid(message),
-                system_context(
-                  systems[system_i],
-                  ErrorContextKind::Validation,
-                  current_schedule_stage(),
-                ),
-              )
-              return
-            }
-            None => ()
-          }
-          if cfg.is_apply_deferred_node {
-            executor_state.apply_deferred(world)
-            stepping_record_system_run(
-              stepping_ref, stage, systems, node, execution_i,
+        executor_state.mark_completed(system_i)
+        if !should_run_system {
+          return
+        }
+        match system_validation_error(system_i) {
+          Some(message) => {
+            report_world_error(
+              world,
+              @ecs.Invalid(message),
+              system_context(
+                systems[system_i],
+                ErrorContextKind::Validation,
+                current_schedule_stage(),
+              ),
             )
             return
           }
-
-          let trace_name = system_trace_name(cfg, stage, execution_i)
-          let system_trace_start_us = if timeline_enabled &&
-            should_trace_system(cfg, stage, systems.length()) {
-            timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
-          } else {
-            -1L
-          }
-
-          // Align with Bevy: increment global change tick once per executed system
-          // and expose SystemSequence via World-backed context for change detection.
-          let this_run = world.advance_sequence()
-          let sys_ticks = @core.SystemSequence::new(
-            cfg.last_run_sequence,
-            this_run,
+          None => ()
+        }
+        if cfg.is_apply_deferred_node {
+          executor_state.apply_deferred(world)
+          stepping_record_system_run(
+            stepping_ref, stage, systems, node, execution_i,
           )
-          let ctx = world.get_sequence_context()
-          ctx.set(sys_ticks)
-          world.set_sequence_context(ctx)
-          let prev_world = current_world_ref.val
-          current_world_ref.val = Some(world)
-          let prev_ticks = current_system_sequence_ref.val
-          current_system_sequence_ref.val = Some(sys_ticks)
-          let prev_outcome = current_system_execution_outcome()
-          reset_system_execution_outcome()
-          (cfg.system)(world)
-          let outcome = current_system_execution_outcome()
-          current_system_execution_outcome_ref.val = prev_outcome
-          current_system_sequence_ref.val = prev_ticks
-          current_world_ref.val = prev_world
-          match outcome {
-            Success => {
-              if timeline_enabled && system_trace_start_us >= 0L {
-                timeline_trace_end_span(
-                  TimelineTraceCategory::System,
-                  trace_name,
-                  system_trace_start_us,
-                )
-              }
-              systems[system_i].last_run_sequence = this_run
-              executor_state.mark_unapplied(system_i)
-              stepping_record_system_run(
-                stepping_ref, stage, systems, node, execution_i,
+          return
+        }
+
+        let trace_name = system_trace_name(cfg, stage, execution_i)
+        let system_trace_start_us = if timeline_enabled &&
+          should_trace_system(cfg, stage, systems.length()) {
+          timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
+        } else {
+          -1L
+        }
+
+        // Align with Bevy: increment global change tick once per executed system
+        // and expose SystemSequence via World-backed context for change detection.
+        let this_run = world.advance_sequence()
+        let sys_ticks = @core.SystemSequence::new(
+          cfg.last_run_sequence,
+          this_run,
+        )
+        let ctx = world.get_sequence_context()
+        ctx.set(sys_ticks)
+        world.set_sequence_context(ctx)
+        let prev_world = current_world_ref.val
+        current_world_ref.val = Some(world)
+        let prev_ticks = current_system_sequence_ref.val
+        current_system_sequence_ref.val = Some(sys_ticks)
+        let prev_outcome = current_system_execution_outcome()
+        reset_system_execution_outcome()
+        (cfg.system)(world)
+        let outcome = current_system_execution_outcome()
+        current_system_execution_outcome_ref.val = prev_outcome
+        current_system_sequence_ref.val = prev_ticks
+        current_world_ref.val = prev_world
+        match outcome {
+          Success => {
+            if timeline_enabled && system_trace_start_us >= 0L {
+              timeline_trace_end_span(
+                TimelineTraceCategory::System,
+                trace_name,
+                system_trace_start_us,
               )
             }
-            Skipped(_) => return
-            Invalid(message) => {
-              if timeline_enabled && system_trace_start_us >= 0L {
-                timeline_trace_end_span(
-                  TimelineTraceCategory::System,
-                  trace_name,
-                  system_trace_start_us,
-                )
-              }
-              report_world_error(
-                world,
-                @ecs.Invalid(message),
-                system_context(
-                  systems[system_i],
-                  ErrorContextKind::Validation,
-                  current_schedule_stage(),
-                ),
+            systems[system_i].last_run_sequence = this_run
+            executor_state.mark_unapplied(system_i)
+            stepping_record_system_run(
+              stepping_ref, stage, systems, node, execution_i,
+            )
+          }
+          Skipped(_) => return
+          Invalid(message) => {
+            if timeline_enabled && system_trace_start_us >= 0L {
+              timeline_trace_end_span(
+                TimelineTraceCategory::System,
+                trace_name,
+                system_trace_start_us,
               )
-              return
             }
-            Error(err) => {
-              if timeline_enabled && system_trace_start_us >= 0L {
-                timeline_trace_end_span(
-                  TimelineTraceCategory::System,
-                  trace_name,
-                  system_trace_start_us,
-                )
-              }
-              systems[system_i].last_run_sequence = this_run
-              executor_state.mark_unapplied(system_i)
-              stepping_record_system_run(
-                stepping_ref, stage, systems, node, execution_i,
+            report_world_error(
+              world,
+              @ecs.Invalid(message),
+              system_context(
+                systems[system_i],
+                ErrorContextKind::Validation,
+                current_schedule_stage(),
+              ),
+            )
+            return
+          }
+          Error(err) => {
+            if timeline_enabled && system_trace_start_us >= 0L {
+              timeline_trace_end_span(
+                TimelineTraceCategory::System,
+                trace_name,
+                system_trace_start_us,
               )
-              match systems[system_i].error_handler {
-                Some(handler) =>
-                  handler(
-                    err,
-                    system_context(
-                      systems[system_i],
-                      ErrorContextKind::System,
-                      current_schedule_stage(),
-                    ),
-                  )
-                None =>
-                  report_world_error(
-                    world,
-                    err,
-                    system_context(
-                      systems[system_i],
-                      ErrorContextKind::System,
-                      current_schedule_stage(),
-                    ),
-                  )
-              }
+            }
+            systems[system_i].last_run_sequence = this_run
+            executor_state.mark_unapplied(system_i)
+            stepping_record_system_run(
+              stepping_ref, stage, systems, node, execution_i,
+            )
+            match systems[system_i].error_handler {
+              Some(handler) =>
+                handler(
+                  err,
+                  system_context(
+                    systems[system_i],
+                    ErrorContextKind::System,
+                    current_schedule_stage(),
+                  ),
+                )
+              None =>
+                report_world_error(
+                  world,
+                  err,
+                  system_context(
+                    systems[system_i],
+                    ErrorContextKind::System,
+                    current_schedule_stage(),
+                  ),
+                )
             }
           }
         }
       }
+    }
   }
   let execution_i_ref = Ref::new(0)
   match executor_kind {
@@ -340,7 +342,7 @@ fn run_systems(
           run_execution_node(node, execution_i)
         }
       }
-    }
+  }
   if executor_state.apply_final_deferred {
     executor_state.apply_deferred(world, restart_batch=false)
   }

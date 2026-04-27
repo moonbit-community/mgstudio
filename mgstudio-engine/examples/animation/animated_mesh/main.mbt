@@ -50,9 +50,9 @@ fn setup_mesh_and_animation(
     (
       AnimationToPlay::{ graph_handle, index },
       @scene.SceneRoot::new(
-        asset_server.get().load(
-          @gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH),
-        ),
+        asset_server
+        .get()
+        .load(@gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH)),
       ),
     ),
   )
@@ -71,8 +71,7 @@ fn play_animation_when_ready(
     is Some(animation_to_play) else {
     return
   }
-  guard (players.get(scene_entity) catch { _ => None })
-    is Some(player_mut) else {
+  guard (players.get(scene_entity) catch { _ => None }) is Some(player_mut) else {
     return
   }
   player_mut.modify(fn(player) {
@@ -145,7 +144,10 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup_mesh_and_animation)))
+  .add_systems(
+    @app.Startup,
+    @app.system(@app.system_param2(setup_mesh_and_animation)),
+  )
   .add_systems(@app.Startup, @app.system(setup_camera_and_environment))
   .run()
 }

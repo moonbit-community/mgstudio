@@ -141,14 +141,14 @@ fn shader_runtime_register_loaded_wgsl_sources(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn shader_load_runtime_asset(
-  world : @ecs.World,
-  path : String,
-) -> Shader? {
+fn shader_load_runtime_asset(world : @ecs.World, path : String) -> Shader? {
   let asset_server = shader_asset_server_or_abort(world)
   let handle : @asset.Handle[Shader] = asset_server.load(path)
-  let shader_assets = shader_assets_or_abort(world)
-  shader_assets.get(handle)
+  let key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
+  match (try! world.get_resource(key)) {
+    Some(shader_assets) => shader_assets.get(handle)
+    None => None
+  }
 }
 
 ///|

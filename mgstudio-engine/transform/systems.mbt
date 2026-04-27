@@ -114,9 +114,13 @@ fn transform_dense_table_cache_prepare(
     cache.val.parent_values.push(None)
   }
   if !cache.val.loaded[table_id] {
-    cache.val.transform_values[table_id] = columns.transform.table_values(table_id)
+    cache.val.transform_values[table_id] = columns.transform.table_values(
+      table_id,
+    )
     cache.val.global_values[table_id] = columns.global.table_values(table_id)
-    cache.val.children_values[table_id] = columns.children.table_values(table_id)
+    cache.val.children_values[table_id] = columns.children.table_values(
+      table_id,
+    )
     cache.val.parent_values[table_id] = match columns.parent {
       Some(parent_column) => parent_column.table_values(table_id)
       None => None
@@ -247,7 +251,9 @@ fn sync_simple_transforms_orphaned(
     match (query.get(entity) catch { _ => None }) {
       Some((transform, global_transform)) =>
         if !transform.is_changed() && !global_transform.is_added() {
-          global_transform.set(GlobalTransform::from_transform(transform.value()))
+          global_transform.set(
+            GlobalTransform::from_transform(transform.value()),
+          )
         }
       None => ()
     }
@@ -279,16 +285,21 @@ fn sync_simple_transforms_apply(world : @ecs.World) -> Unit {
   sync_simple_transforms_changed(changed_query)
   sync_simple_transforms_orphaned(
     orphan_query,
-    world.removed_components(
+    world
+    .removed_components(
       @hierarchy.ecs_key_parent,
       world.get_sequence_context().sequence(),
-    ).read(),
+    )
+    .read(),
   )
 }
 
 ///|
 pub fn sync_simple_transforms(
-  query : @app.ParamSet2[SimpleTransformChangedQuery, SimpleTransformOrphanQuery],
+  query : @app.ParamSet2[
+    SimpleTransformChangedQuery,
+    SimpleTransformOrphanQuery,
+  ],
   orphaned : @ecs.RemovedComponents[@hierarchy.Parent],
 ) -> Unit {
   sync_simple_transforms_changed(query.p0())
@@ -326,9 +337,7 @@ fn mark_dirty_tree_chain(
       break
     }
     tree_changed.set_changed()
-    guard (parents.get(next) catch { _ => None }) is Some(parent) else {
-      break
-    }
+    guard (parents.get(next) catch { _ => None }) is Some(parent) else { break }
     next = parent.value().entity()
   }
 }
@@ -339,7 +348,9 @@ fn mark_dirty_trees_enabled_state(
   dynamic_count : () -> Int,
   total : () -> Int,
 ) -> StaticTransformOptimizations {
-  let threshold = clamp_static_transform_threshold(static_optimizations.threshold)
+  let threshold = clamp_static_transform_threshold(
+    static_optimizations.threshold,
+  )
   if threshold == 0.0F {
     static_optimizations.enabled = false
   } else if threshold == 1.0F {
@@ -396,10 +407,12 @@ pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
       ),
     ),
   )
-  let orphaned_entities = world.removed_components(
-    @hierarchy.ecs_key_parent,
-    world.get_sequence_context().sequence(),
-  ).read()
+  let orphaned_entities = world
+    .removed_components(
+      @hierarchy.ecs_key_parent,
+      world.get_sequence_context().sequence(),
+    )
+    .read()
   let transforms : TransformTreeChangedMutQuery = @ecs.query(world)
   let parents : TransformParentQuery = @ecs.query(world)
 
@@ -460,11 +473,7 @@ fn transform_set_global_if_neq_hot_at_row(
     return false
   }
   global_values[row_index] = next_global
-  columns.global.record_changed_hot_at_table_row(
-    table_id,
-    row_index,
-    sequence,
-  )
+  columns.global.record_changed_hot_at_table_row(table_id, row_index, sequence)
 }
 
 ///|
@@ -480,7 +489,11 @@ fn transform_set_global_hot_at_row(
     return
   }
   global_values[row_index] = next_global
-  ignore(columns.global.record_changed_hot_at_table_row(table_id, row_index, sequence))
+  ignore(
+    columns.global.record_changed_hot_at_table_row(
+      table_id, row_index, sequence,
+    ),
+  )
 }
 
 ///|
@@ -527,14 +540,13 @@ fn propagate_descendants_dense(
       Some(changed) => changed
       None => break
     }
-    guard transform_dense_entity_slot(_world, child) is Some((table_id, row_index)) else {
+    guard transform_dense_entity_slot(_world, child)
+      is Some((table_id, row_index)) else {
       continue
     }
     if static_optimizations_enabled &&
       !columns.tree_changed.table_is_changed_at_row(
-        table_id,
-        row_index,
-        system_sequence,
+        table_id, row_index, system_sequence,
       ) &&
       !current_parent_global_changed {
       continue
@@ -562,12 +574,7 @@ fn propagate_descendants_dense(
     let local_transform = transform_values[row_index]
     let child_global = current_parent_global.mul_transform(local_transform)
     let child_global_changed = transform_set_global_if_neq_hot_at_row(
-      columns,
-      table_id,
-      global_values,
-      row_index,
-      child_global,
-      sequence,
+      columns, table_id, global_values, row_index, child_global, sequence,
     )
     let next_parent_global = if child_global_changed {
       child_global
@@ -614,14 +621,13 @@ fn propagate_parent_transforms_dense(
   let scratch = scratch_ref.peek()
   let cache = Ref::new(transform_dense_table_cache_default())
   columns.children.for_each_without_fast(parent_column, fn(entity, children) {
-    guard transform_dense_entity_slot(world, entity) is Some((table_id, row_index)) else {
+    guard transform_dense_entity_slot(world, entity)
+      is Some((table_id, row_index)) else {
       return
     }
     if static_optimizations_enabled &&
       !columns.tree_changed.table_is_changed_at_row(
-        table_id,
-        row_index,
-        system_sequence,
+        table_id, row_index, system_sequence,
       ) {
       return
     }
@@ -631,7 +637,9 @@ fn propagate_parent_transforms_dense(
     guard cache.val.transform_values[table_id] is Some(transform_values) else {
       return
     }
-    guard cache.val.global_values[table_id] is Some(global_values) else { return }
+    guard cache.val.global_values[table_id] is Some(global_values) else {
+      return
+    }
     if row_index >= transform_values.length() ||
       row_index >= global_values.length() {
       return
@@ -639,25 +647,11 @@ fn propagate_parent_transforms_dense(
     let root_transform = transform_values[row_index]
     let root_global = GlobalTransform::from_transform(root_transform)
     transform_set_global_hot_at_row(
-      columns,
-      table_id,
-      global_values,
-      row_index,
-      root_global,
-      sequence,
+      columns, table_id, global_values, row_index, root_global, sequence,
     )
     propagate_descendants_dense(
-      world,
-      columns,
-      scratch,
-      cache,
-      sequence,
-      static_optimizations_enabled,
-      system_sequence,
-      entity,
-      root_global,
-      true,
-      children,
+      world, columns, scratch, cache, sequence, static_optimizations_enabled, system_sequence,
+      entity, root_global, true, children,
     )
   })
 }

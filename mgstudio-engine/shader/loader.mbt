@@ -261,11 +261,7 @@ pub fn shader_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       shader_load_registered(asset_server, path)
     })
   })
-  app
-  .init_resource(fn() {
-    let assets : @asset.Assets[Shader] = @asset.Assets::new()
-    assets
-  })
+  @asset.init_asset(app, fn() { Shader::new("") })
   .init_resource(fn() { ShaderAssetPaths::default() })
   .init_resource(fn() { ShaderRuntimeCache::default() })
 }

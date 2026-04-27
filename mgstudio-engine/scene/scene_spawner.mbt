@@ -517,10 +517,7 @@ fn scene_spawn_instance_when_ready(
     }
     if node.gltf_scene_extras is Some(scene_extras) {
       child_writers.push(
-        @ecs.component_writer(
-          @gltf.GltfSceneExtras::component(),
-          scene_extras,
-        ),
+        @ecs.component_writer(@gltf.GltfSceneExtras::component(), scene_extras),
       )
     }
     if node.gltf_node_index is Some(node_index) {
@@ -561,10 +558,7 @@ fn scene_spawn_instance_when_ready(
     }
     if node.gltf_mesh_extras is Some(mesh_extras) {
       child_writers.push(
-        @ecs.component_writer(
-          @gltf.GltfMeshExtras::component(),
-          mesh_extras,
-        ),
+        @ecs.component_writer(@gltf.GltfMeshExtras::component(), mesh_extras),
       )
     }
     if node.gltf_material_extras is Some(material_extras) {
@@ -666,12 +660,7 @@ fn scene_spawn_instance_when_ready(
           None => @gltf.gltf_default_skinned_mesh_bounds_policy()
         }
         pending_skinned_meshes.push(
-          (
-            i,
-            joint_node_indices,
-            inverse_bindposes,
-            skinned_mesh_bounds_policy,
-          ),
+          (i, joint_node_indices, inverse_bindposes, skinned_mesh_bounds_policy),
         )
       }
     }
@@ -1068,14 +1057,14 @@ pub fn scene_plugin_with(
   scene_install_component_metadata()
   scene_install_asset_hooks(app.world())
   scene_runtime_plugin_base(
-    @asset.init_asset(scene_init_gltf_assets(app), scene_pending)
-    .init_resource(fn() {
-      SceneAssetRegistryState::{
-        scene_registry: [],
-        animation_registry: [],
-        mesh_registry: [],
-        lod_visibility_policy: plugin.lod_visibility_policy,
-      }
-    }),
+    @asset.init_asset(scene_init_gltf_assets(app), scene_pending).init_resource(fn() {
+        SceneAssetRegistryState::{
+          scene_registry: [],
+          animation_registry: [],
+          mesh_registry: [],
+          lod_visibility_policy: plugin.lod_visibility_policy,
+        }
+      },
+    ),
   )
 }

@@ -62,10 +62,7 @@ fn[T] erased_writer(key : ComponentKey[T], value : T) -> ErasedWriter {
 }
 
 ///|
-pub fn[T] component_writer(
-  key : ComponentKey[T],
-  value : T,
-) -> ErasedWriter {
+pub fn[T] component_writer(key : ComponentKey[T], value : T) -> ErasedWriter {
   erased_writer(key, value)
 }
 

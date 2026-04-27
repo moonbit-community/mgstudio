@@ -385,6 +385,7 @@ pub struct AssetServer {
   paths : @ref.Ref[Array[String]]
   path_fingerprints : @ref.Ref[@hashmap.HashMap[String, Int]]
   typed_asset_paths : @ref.Ref[@hashmap.HashMap[String, Int]]
+  typed_asset_next_ids : @ref.Ref[@hashmap.HashMap[String, Int]]
   typed_asset_load_states : @ref.Ref[@hashmap.HashMap[String, LoadState]]
   typed_asset_dependency_load_states : @ref.Ref[@hashmap.HashMap[String, DependencyLoadState]]
   typed_asset_recursive_dependency_load_states : @ref.Ref[@hashmap.HashMap[String, RecursiveDependencyLoadState]]

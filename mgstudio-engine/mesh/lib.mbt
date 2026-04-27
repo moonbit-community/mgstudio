@@ -185,15 +185,12 @@ fn mark_2d_meshes_as_changed_if_their_assets_changed(
 
 ///|
 pub fn mesh_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
-  .init_resource(fn() {
-    let assets : @asset.Assets[Mesh] = @asset.Assets::new()
-    assets
-  })
-  .init_resource(fn() {
-    let assets : @asset.Assets[SkinnedMeshInverseBindposes] = @asset.Assets::new()
-    assets
-  })
+  @asset.init_asset(
+    @asset.init_asset(app, fn() {
+      Mesh::from_3d_geometry(Mesh3dGeometry::new([], [], None))
+    }),
+    fn() { SkinnedMeshInverseBindposes::new([]) },
+  )
   .add_post_update_system(
     @app.system_param3(mark_2d_meshes_as_changed_if_their_assets_changed),
   )

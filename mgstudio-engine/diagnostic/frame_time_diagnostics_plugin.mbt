@@ -108,10 +108,10 @@ pub fn frame_time_diagnostics_plugin_with(
       Diagnostic::new(frame_time_diagnostic_fps)
       .with_max_history_length(plugin.max_history_length)
       .with_smoothing_factor(plugin.smoothing_factor),
-      ),
-      Diagnostic::new(frame_time_diagnostic_frame_count)
-      .with_smoothing_factor(0.0F)
-      .with_max_history_length(0),
+    ),
+    Diagnostic::new(frame_time_diagnostic_frame_count)
+    .with_smoothing_factor(0.0F)
+    .with_max_history_length(0),
   ).add_system_param3(frame_time_diagnostic_system)
 }
 

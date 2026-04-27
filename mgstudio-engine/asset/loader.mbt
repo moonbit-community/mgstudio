@@ -52,9 +52,7 @@ priv struct AssetLoaderRegistryState {
 fn asset_loader_registry_state_resource_key() -> @ecs.ResourceKey[
   AssetLoaderRegistryState,
 ] {
-  @ecs.register_resource(
-    debug_name="mgstudio_asset::AssetLoaderRegistryState",
-  )
+  @ecs.register_resource(debug_name="mgstudio_asset::AssetLoaderRegistryState")
 }
 
 ///|
@@ -63,15 +61,12 @@ fn asset_loader_registry_state_for_world(
 ) -> AssetLoaderRegistryState {
   let key = asset_loader_registry_state_resource_key()
   if (try! world.get_resource(key)) is None {
-    world.insert_resource(
-      key,
-      AssetLoaderRegistryState::{
-        loaders: Ref::new(@hashmap.HashMap::new()),
-        ready_checkers: Ref::new(@hashmap.HashMap::new()),
-        reload_hooks: Ref::new([]),
-        builtin_registered: Ref::new(false),
-      },
-    )
+    world.insert_resource(key, AssetLoaderRegistryState::{
+      loaders: Ref::new(@hashmap.HashMap::new()),
+      ready_checkers: Ref::new(@hashmap.HashMap::new()),
+      reload_hooks: Ref::new([]),
+      builtin_registered: Ref::new(false),
+    })
   }
   match (try! world.get_resource(key)) {
     Some(state) => state
@@ -91,7 +86,9 @@ fn asset_loader_registry_state_active() -> AssetLoaderRegistryState {
 }
 
 ///|
-fn asset_loader_registry_active() -> Ref[@hashmap.HashMap[String, AssetLoaderEntry]] {
+fn asset_loader_registry_active() -> Ref[
+  @hashmap.HashMap[String, AssetLoaderEntry],
+] {
   asset_loader_registry_state_active().loaders
 }
 
@@ -146,7 +143,10 @@ pub fn[T] asset_register_ready_checker(
 ) -> Unit {
   let probe : Handle[T] = Handle::new(0)
   let type_name = asset_loader_type_name(probe)
-  asset_ready_checker_registry_active().val.set(type_name, fn(world, handle_id) {
+  asset_ready_checker_registry_active().val.set(type_name, fn(
+    world,
+    handle_id,
+  ) {
     check_ready(world, Handle::new(handle_id))
   })
 }

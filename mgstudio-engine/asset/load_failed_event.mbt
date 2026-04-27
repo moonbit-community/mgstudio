@@ -29,10 +29,7 @@ pub struct UntypedAssetLoadFailedEvent {
 }
 
 ///|
-type AssetLoadFailedDispatch = (
-  @ecs.World,
-  UntypedAssetLoadFailedEvent,
-) -> Unit
+type AssetLoadFailedDispatch = (@ecs.World, UntypedAssetLoadFailedEvent) -> Unit
 
 ///|
 let asset_load_failed_untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent] = @ecs.register_message(
@@ -88,14 +85,11 @@ fn[T] register_asset_load_failed_dispatch_for_type_name(
       world.init_message(message_key)
     }
     ignore(
-      world.send_message(
-        message_key,
-        AssetLoadFailedEvent::{
-          id: AssetId::new(failure.id),
-          path: failure.path,
-          error: failure.error,
-        },
-      ),
+      world.send_message(message_key, AssetLoadFailedEvent::{
+        id: AssetId::new(failure.id),
+        path: failure.path,
+        error: failure.error,
+      }),
     )
   }
   asset_load_failed_dispatch_registry.val.set(type_name, dispatch)

@@ -51,11 +51,7 @@ fn world_component_ids_new() -> WorldComponentIds {
 
 ///|
 fn world_queued_registrations_new() -> WorldQueuedRegistrations {
-  {
-    pending_by_definition_id: @utils.IntBitSet::new(),
-    queue: [],
-    cursor: 0,
-  }
+  { pending_by_definition_id: @utils.IntBitSet::new(), queue: [], cursor: 0 }
 }
 
 ///|
@@ -244,7 +240,7 @@ fn World::assign_local_component_id(self : World, definition_id : Int) -> Int {
   self.components.definition_ids_by_local_id.set(local_id, definition_id)
   if definition_id >= 0 {
     while self.components.local_ids_by_definition_id_dense.length() <=
-      definition_id {
+          definition_id {
       self.components.local_ids_by_definition_id_dense.push(-1)
     }
     self.components.local_ids_by_definition_id_dense[definition_id] = local_id
@@ -450,7 +446,7 @@ fn World::install_component_metadata(
     metadata.storage_type,
   )
   while self.components.storage_types_by_local_id_dense.length() <=
-    local_component_id {
+        local_component_id {
     self.components.storage_types_by_local_id_dense.push(None)
   }
   self.components.storage_types_by_local_id_dense[local_component_id] = Some(

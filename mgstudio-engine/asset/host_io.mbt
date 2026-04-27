@@ -73,24 +73,21 @@ priv struct AssetIoRuntimeState {
 }
 
 ///|
-fn asset_io_runtime_state_resource_key() -> @ecs.ResourceKey[AssetIoRuntimeState] {
-  @ecs.register_resource(
-    debug_name="mgstudio_asset::AssetIoRuntimeState",
-  )
+fn asset_io_runtime_state_resource_key() -> @ecs.ResourceKey[
+  AssetIoRuntimeState,
+] {
+  @ecs.register_resource(debug_name="mgstudio_asset::AssetIoRuntimeState")
 }
 
 ///|
 fn asset_io_runtime_state_for_world(world : @ecs.World) -> AssetIoRuntimeState {
   let key = asset_io_runtime_state_resource_key()
   if (try! world.get_resource(key)) is None {
-    world.insert_resource(
-      key,
-      AssetIoRuntimeState::{
-        assets_dir_override: Ref::new(None),
-        source_dir_overrides: Ref::new(@hashmap.HashMap::new()),
-        source_readers: Ref::new(@hashmap.HashMap::new()),
-      },
-    )
+    world.insert_resource(key, AssetIoRuntimeState::{
+      assets_dir_override: Ref::new(None),
+      source_dir_overrides: Ref::new(@hashmap.HashMap::new()),
+      source_readers: Ref::new(@hashmap.HashMap::new()),
+    })
   }
   match (try! world.get_resource(key)) {
     Some(state) => state

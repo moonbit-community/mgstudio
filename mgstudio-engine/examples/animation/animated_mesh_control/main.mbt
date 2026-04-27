@@ -161,8 +161,7 @@ fn setup_scene_once_loaded(
   players : @ecs.Query[@ecs.Mut[@animation.AnimationPlayer], @ecs.All],
 ) -> Unit {
   guard scene_ready.entity() is Some(scene_entity) else { return }
-  guard (players.get(scene_entity) catch { _ => None })
-    is Some(player_mut) else {
+  guard (players.get(scene_entity) catch { _ => None }) is Some(player_mut) else {
     return
   }
   let transitions = @animation.AnimationTransitions::new()

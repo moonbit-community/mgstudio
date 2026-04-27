@@ -212,11 +212,7 @@ struct ComponentTickMetadata {
 
 ///|
 fn component_tick_metadata_empty() -> ComponentTickMetadata {
-  {
-    added_sequence: None,
-    changed_sequence: None,
-    changed_caller: None,
-  }
+  { added_sequence: None, changed_sequence: None, changed_caller: None }
 }
 
 ///|
@@ -883,27 +879,18 @@ fn World::record_component_added_with_caller(
   let recorded = match self.local_component_storage_type(local_id) {
     Some(Table) =>
       self.record_table_component_added_by_local_id(
-        entity,
-        local_id,
-        sequence,
-        caller,
+        entity, local_id, sequence, caller,
       )
     Some(SparseSet) =>
       self.record_sparse_component_added_by_local_id(
-        entity,
-        local_id,
-        sequence,
-        caller,
+        entity, local_id, sequence, caller,
       )
     None => false
   }
   if !recorded {
     ignore(
       self.record_pending_component_added_metadata(
-        entity,
-        local_id,
-        sequence,
-        caller,
+        entity, local_id, sequence, caller,
       ),
     )
   }
@@ -937,27 +924,18 @@ fn World::record_component_changed_sequence_only_with_caller(
   let recorded = match self.local_component_storage_type(local_id) {
     Some(Table) =>
       self.record_table_component_changed_by_local_id(
-        entity,
-        local_id,
-        sequence,
-        caller,
+        entity, local_id, sequence, caller,
       )
     Some(SparseSet) =>
       self.record_sparse_component_changed_by_local_id(
-        entity,
-        local_id,
-        sequence,
-        caller,
+        entity, local_id, sequence, caller,
       )
     None => false
   }
   if !recorded {
     ignore(
       self.record_pending_component_changed_metadata(
-        entity,
-        local_id,
-        sequence,
-        caller,
+        entity, local_id, sequence, caller,
       ),
     )
   }

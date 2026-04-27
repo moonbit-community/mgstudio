@@ -3770,7 +3770,12 @@ pub impl @app.CommandSpawnComponents for SpriteBundle with spawn_components(
 }
 
 ///|
-pub impl @ecs.Bundle for SpriteBundle with insert_into(self, world, entity, loc~) {
+pub impl @ecs.Bundle for SpriteBundle with insert_into(
+  self,
+  world,
+  entity,
+  loc~,
+) {
   sprite_bundle_insert(self, world, entity, loc~)
 }
 
@@ -3842,7 +3847,12 @@ fn mesh2d_bundle_insert(
   world.set_by_key(entity, ecs_key_mesh2d, bundle.mesh, loc~)
   world.set_by_key(entity, ecs_key_mesh_material2d, bundle.material, loc~)
   world.set_by_key(entity, ecs_key_render_layers, bundle.layers, loc~)
-  world.set_by_key(entity, @visibility.ecs_key_visibility, bundle.visibility, loc~)
+  world.set_by_key(
+    entity,
+    @visibility.ecs_key_visibility,
+    bundle.visibility,
+    loc~,
+  )
   world.set_by_key(
     entity,
     @visibility.ecs_key_inherited_visibility,
@@ -3882,7 +3892,12 @@ pub impl @app.CommandSpawnComponents for Mesh2dBundle with spawn_components(
 }
 
 ///|
-pub impl @ecs.Bundle for Mesh2dBundle with insert_into(self, world, entity, loc~) {
+pub impl @ecs.Bundle for Mesh2dBundle with insert_into(
+  self,
+  world,
+  entity,
+  loc~,
+) {
   mesh2d_bundle_insert(self, world, entity, loc~)
 }
 

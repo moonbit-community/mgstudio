@@ -111,39 +111,35 @@ fn asset_plugin_with_server(
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   asset_with_world(world, fn() {
-    let runtime_assets_dir_override = match asset_registered_default_source_dir_override() {
+    let runtime_assets_dir_override = match
+      asset_registered_default_source_dir_override() {
       Some(path) => Some(path)
       None => resolve_assets_dir_override(file_path)
     }
     asset_server.owner_world.val = Some(world)
     asset_register_builtin_loaders()
     set_runtime_assets_dir_override(runtime_assets_dir_override)
-    set_runtime_asset_source_dir_overrides(asset_registered_source_dir_entries())
+    set_runtime_asset_source_dir_overrides(
+      asset_registered_source_dir_entries(),
+    )
     set_runtime_asset_source_readers(asset_registered_source_reader_entries())
     asset_server.mode.val = mode
     asset_server.processed_file_path.val = resolve_assets_dir_override(
       processed_file_path,
     )
   })
-  app
-  .insert_resource(asset_server)
-  .init_resource(fn() {
-    let assets : Assets[LoadedFolder] = Assets::new()
-    assets
-  })
-  .init_resource(fn() {
-    let assets : Assets[Image] = Assets::new()
-    assets
-  })
-  .init_resource(fn() {
-    let assets : Assets[TextureAtlasLayout] = Assets::new()
-    assets
-  })
-  .configure_sets(
-    @app.PreUpdate,
-    asset_tracking_system_set(),
-    after=[asset_internal_system_set()],
+  init_asset(
+    init_asset(
+      init_asset(app.insert_resource(asset_server), fn() {
+        LoadedFolder::{ handles: [] }
+      }),
+      fn() { Image::new(0, 0, Bytes::from_array([])) },
+    ),
+    fn() { TextureAtlasLayout::new_empty(@math.UVec2::zero()) },
   )
+  .configure_sets(@app.PreUpdate, asset_tracking_system_set(), after=[
+    asset_internal_system_set(),
+  ])
   .add_pre_update_system_config(
     @app.system(asset_system).in_set(asset_internal_system_set()),
   )

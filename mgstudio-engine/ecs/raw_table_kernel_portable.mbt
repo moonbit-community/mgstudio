@@ -183,9 +183,7 @@ fn raw_table_value_column_kernel_new() -> RawTableValueColumnKernel {
 }
 
 ///|
-fn raw_table_value_column_kernel_len(
-  kernel : RawTableValueColumnKernel,
-) -> Int {
+fn raw_table_value_column_kernel_len(kernel : RawTableValueColumnKernel) -> Int {
   kernel.values.length()
 }
 

@@ -418,17 +418,6 @@ pub fn[M] PreparedMaterial2d::prepared_handle(
 }
 
 ///|
-fn[M] init_material2d_assets_resource(
-  app : @app.App[@ecs.World],
-  _probe : @asset.Handle[M],
-) -> @app.App[@ecs.World] {
-  app.init_resource(fn() {
-    let assets : @asset.Assets[M] = @asset.Assets::new()
-    assets
-  })
-}
-
-///|
 let material2d_pipeline_resource_registry : Ref[
   @hashmap.HashMap[String, @any.Any],
 ] = Ref::new(@hashmap.HashMap::new())
@@ -519,14 +508,19 @@ fn register_material2d_shader_sources(
 }
 
 ///|
-pub struct Material2dPlugin[_] {
+pub struct Material2dPlugin[M] {
   vertex_shader : String?
   fragment_shader : String?
+  asset_init : (() -> M)?
 }
 
 ///|
 pub fn[M] Material2dPlugin::default() -> Material2dPlugin[M] {
-  Material2dPlugin::{ vertex_shader: None, fragment_shader: None }
+  Material2dPlugin::{
+    vertex_shader: None,
+    fragment_shader: None,
+    asset_init: None,
+  }
 }
 
 ///|
@@ -543,6 +537,14 @@ pub fn[M] Material2dPlugin::with_fragment_shader(
   path : String,
 ) -> Material2dPlugin[M] {
   Material2dPlugin::{ ..self, fragment_shader: Some(path) }
+}
+
+///|
+pub fn[M] Material2dPlugin::with_asset_init(
+  self : Material2dPlugin[M],
+  init : () -> M,
+) -> Material2dPlugin[M] {
+  Material2dPlugin::{ ..self, asset_init: Some(init) }
 }
 
 ///|
@@ -618,7 +620,13 @@ fn[M : Material2d] material2d_plugin_build(
     plugin.fragment_shader,
   )
   let pipeline = material2d_pipeline_resource_from_plugin(plugin)
-  let configured = init_material2d_assets_resource(app, probe)
+  let configured = match plugin.asset_init {
+    Some(init) => @asset.init_asset(app, init)
+    None =>
+      abort(
+        "Material2dPlugin requires with_asset_init(fn() { ... }) because MoonBit cannot call init_asset with explicit generic parameters",
+      )
+  }
   let configured = @render.with_render_app(configured, fn(render_app) {
     let render_world = render_app.world()
     ensure_prepared_material2d_assets_resource_in_world(render_world, probe)

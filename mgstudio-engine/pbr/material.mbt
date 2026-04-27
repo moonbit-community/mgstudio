@@ -105,6 +105,7 @@ pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
   MaterialsPlugin::default()
 }
 
+///|
 pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 0x0001UL
 
 ///|

@@ -19,7 +19,7 @@ priv struct Render3dPreviousGlobalTransformSyncState {
 
 ///|
 let render3d_previous_global_transform_sync_state_key : @ecs.ResourceKey[
-  Render3dPreviousGlobalTransformSyncState
+  Render3dPreviousGlobalTransformSyncState,
 ] = @ecs.register_resource(
   debug_name="mgstudio.render3d.previous_global_transform_sync_state",
 )
@@ -28,20 +28,19 @@ let render3d_previous_global_transform_sync_state_key : @ecs.ResourceKey[
 fn render3d_previous_global_transform_sync_state_mut(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Render3dPreviousGlobalTransformSyncState] {
-  match (try! world.get_resource_mut(
-    render3d_previous_global_transform_sync_state_key,
-  )) {
+  match
+    (try! world.get_resource_mut(
+      render3d_previous_global_transform_sync_state_key,
+    )) {
     Some(state) => state
     None => {
-      world.insert_resource(
-        render3d_previous_global_transform_sync_state_key,
-        Render3dPreviousGlobalTransformSyncState::{
-          verified_missing_scan_generation: -1,
-        },
-      )
-      match (try! world.get_resource_mut(
-        render3d_previous_global_transform_sync_state_key,
-      )) {
+      world.insert_resource(render3d_previous_global_transform_sync_state_key, Render3dPreviousGlobalTransformSyncState::{
+        verified_missing_scan_generation: -1,
+      })
+      match
+        (try! world.get_resource_mut(
+          render3d_previous_global_transform_sync_state_key,
+        )) {
         Some(state) => state
         None =>
           abort("Missing Render3dPreviousGlobalTransformSyncState resource")
@@ -79,7 +78,8 @@ fn update_previous_view_data(world : @ecs.World) -> Unit {
       entity,
       ecs_key_previous_view_data,
       @pbr_prepass.PreviousViewData::new(
-        world_transform.compute_transform(), clip_from_world,
+        world_transform.compute_transform(),
+        clip_from_world,
       ),
     )
   })
@@ -115,10 +115,7 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
     (@ecs.With[Mesh3d], @ecs.Allow[@ecs.Disabled]),
   ] = @ecs.query_filtered(
     world,
-    (
-      @ecs.With::new(ecs_key_mesh3d),
-      @ecs.Allow::new(@ecs.ecs_key_disabled),
-    ),
+    (@ecs.With::new(ecs_key_mesh3d), @ecs.Allow::new(@ecs.ecs_key_disabled)),
   )
   try! existing_query.view(fn(_query_entity, data) {
     let (_entity, (global_transform, previous_global_transform)) = data
@@ -131,22 +128,13 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
 
   let sync_state = render3d_previous_global_transform_sync_state_mut(world)
   let current_generation = world.structural_generation()
-  guard sync_state.peek().verified_missing_scan_generation !=
-        current_generation else {
+  guard sync_state.peek().verified_missing_scan_generation != current_generation else {
     return
   }
 
-  let missing : Array[
-    (@core.Entity, @pbr_prepass.PreviousGlobalTransform)
-  ] = []
+  let missing : Array[(@core.Entity, @pbr_prepass.PreviousGlobalTransform)] = []
   let missing_query : @ecs.Query[
-    (
-      @core.Entity,
-      (
-        @ecs.Comp[Mesh3d],
-        @ecs.Comp[@transform.GlobalTransform],
-      ),
-    ),
+    (@core.Entity, (@ecs.Comp[Mesh3d], @ecs.Comp[@transform.GlobalTransform])),
     (
       @ecs.With[Mesh3d],
       @ecs.Without[@pbr_prepass.PreviousGlobalTransform],
@@ -162,24 +150,22 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
   )
   try! missing_query.view(fn(_query_entity, data) {
     let (entity, (_mesh3d, global_transform)) = data
-    missing.push((
-      entity,
-      @pbr_prepass.PreviousGlobalTransform::from_global_transform(
-        global_transform.value(),
+    missing.push(
+      (
+        entity,
+        @pbr_prepass.PreviousGlobalTransform::from_global_transform(
+          global_transform.value(),
+        ),
       ),
-    ))
+    )
   })
   for entry in missing {
     let (entity, previous_global_transform) = entry
     try! world.set_by_key(
-      entity,
-      ecs_key_previous_global_transform,
-      previous_global_transform,
+      entity, ecs_key_previous_global_transform, previous_global_transform,
     )
   }
-  sync_state.set(
-    Render3dPreviousGlobalTransformSyncState::{
-      verified_missing_scan_generation: world.structural_generation(),
-    },
-  )
+  sync_state.set(Render3dPreviousGlobalTransformSyncState::{
+    verified_missing_scan_generation: world.structural_generation(),
+  })
 }

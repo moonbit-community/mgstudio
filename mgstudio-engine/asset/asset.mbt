@@ -80,6 +80,7 @@ pub struct AssetServer {
   paths : Ref[Array[String]]
   path_fingerprints : Ref[@hashmap.HashMap[String, Int]]
   typed_asset_paths : Ref[@hashmap.HashMap[String, Int]]
+  typed_asset_next_ids : Ref[@hashmap.HashMap[String, Int]]
   typed_asset_load_states : Ref[@hashmap.HashMap[String, LoadState]]
   typed_asset_dependency_load_states : Ref[
     @hashmap.HashMap[String, DependencyLoadState],
@@ -135,6 +136,7 @@ fn asset_server_standalone() -> AssetServer {
     paths: Ref::new([]),
     path_fingerprints: Ref::new(@hashmap.HashMap::new()),
     typed_asset_paths: Ref::new(@hashmap.HashMap::new()),
+    typed_asset_next_ids: Ref::new(@hashmap.HashMap::new()),
     typed_asset_load_states: Ref::new(@hashmap.HashMap::new()),
     typed_asset_dependency_load_states: Ref::new(@hashmap.HashMap::new()),
     typed_asset_recursive_dependency_load_states: Ref::new(
@@ -158,7 +160,10 @@ fn asset_server_standalone() -> AssetServer {
   }
 }
 
-fn[T] asset_registered_ready_check_option(_probe : Handle[T]) -> AssetReadyCheck? {
+///|
+fn[T] asset_registered_ready_check_option(
+  _probe : Handle[T],
+) -> AssetReadyCheck? {
   let probe : Handle[T] = Handle::new(0)
   let type_name = asset_loader_type_name(probe)
   asset_ready_checker_registry_active().val.get(type_name)
@@ -176,6 +181,19 @@ fn asset_register_builtin_loaders() -> Unit {
   asset_register_loader(fn(asset_server, path) {
     asset_server.load_folder(path)
   })
+}
+
+///|
+fn AssetServer::reserve_typed_asset_handle_id(
+  self : AssetServer,
+  asset_type_name : String,
+) -> Int {
+  let next = match self.typed_asset_next_ids.val.get(asset_type_name) {
+    Some(value) => value
+    None => 0
+  }
+  self.typed_asset_next_ids.val.set(asset_type_name, next + 1)
+  next
 }
 
 ///|
@@ -1363,9 +1381,9 @@ fn[T] AssetServer::reserve_missing_loader_handle(
   if self.typed_asset_paths.val.get(cache_key) is Some(handle_id) {
     return Handle::new(handle_id)
   }
-  let handle = asset_assets_mut_or_init().modify(fn(store) {
-    store.reserve_handle()
-  })
+  let handle : Handle[T] = Handle::new(
+    self.reserve_typed_asset_handle_id(asset_type_name),
+  )
   self.set_typed_loading_states(asset_type_name, handle.id())
   self.typed_asset_paths.val.set(cache_key, handle.id())
   let canonical_path = asset_canonical_path(asset_format_path(parsed_path))
@@ -1427,7 +1445,9 @@ pub fn[T, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(
 ) -> Handle[T] {
   asset_with_server_world(self, fn() {
     let handle = self.load(path)
-    let custom_ready : AssetReadyCheck? = asset_registered_ready_check_option(handle)
+    let custom_ready : AssetReadyCheck? = asset_registered_ready_check_option(
+      handle,
+    )
     let assets_probe : Assets[T] = Assets::new()
     let asset_type_name = @any.of(assets_probe).type_name()
     let ready_or_failed : AssetReadyCheck = fn(world, handle_id) {
@@ -1436,7 +1456,8 @@ pub fn[T, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(
           if ready(world, handle_id) {
             true
           } else {
-            self.typed_load_state(asset_type_name, handle_id) is LoadState::Failed(_)
+            self.typed_load_state(asset_type_name, handle_id)
+            is LoadState::Failed(_)
           }
         None =>
           match self.typed_load_state(asset_type_name, handle_id) {
@@ -1557,7 +1578,10 @@ pub fn AssetServer::load_with_registered_loader(
 ) -> Int {
   asset_with_server_world(self, fn() {
     let canonical_path = asset_canonical_path(path)
-    let id = host_asset_load_with_registered_loader(path=canonical_path, nearest~)
+    let id = host_asset_load_with_registered_loader(
+      path=canonical_path,
+      nearest~,
+    )
     self.record_path(canonical_path)
     id
   })

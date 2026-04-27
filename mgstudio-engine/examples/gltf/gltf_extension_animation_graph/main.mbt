@@ -120,16 +120,20 @@ fn setup_environment(
     ),
   )
 
-  commands.insert_resource(@pbr.GlobalAmbientLight::new(@sprite.Color::white(), 2000.0F))
+  commands.insert_resource(
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 2000.0F),
+  )
 
   ignore(
-    commands.spawn_bundle(@camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
-      @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
-        @math.Vec3::new(0.0F, 20.0F, 0.0F),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    commands.spawn_bundle(
+      @camera.Camera3dBundle::new(
+        @sprite.Camera::default(),
+        @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
+          @math.Vec3::new(0.0F, 20.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
       ),
-    )),
+    ),
   )
 
   ignore(
@@ -145,7 +149,9 @@ fn setup_environment(
 
   let root = commands.spawn_component(
     @scene.SceneRoot::new(
-      asset_server.get().load(@gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH)),
+      asset_server
+      .get()
+      .load(@gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH)),
     ),
   )
   ignore(commands.entity(root).observe4(play_animation_when_ready))
@@ -163,8 +169,7 @@ fn play_animation_when_ready(
     is Some(animation_to_play) else {
     return
   }
-  guard (players.get(scene_entity) catch { _ => None })
-    is Some(player_mut) else {
+  guard (players.get(scene_entity) catch { _ => None }) is Some(player_mut) else {
     return
   }
   player_mut.modify(fn(value) {

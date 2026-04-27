@@ -331,26 +331,17 @@ pub fn apply_level_set(world : @ecs.World) -> Unit {
     (@ecs.Comp[LdtkProjectHandle], @ecs.Comp[LevelSet]),
     @ecs.All,
   ] = @ecs.query(world)
-  let level_set_entries : Array[
-    (@core.Entity, LdtkProjectHandle, LevelSet)
-  ] = []
+  let level_set_entries : Array[(@core.Entity, LdtkProjectHandle, LevelSet)] = []
   try! query.view(fn(world_entity, data) {
     let (project_handle, level_set) = data
-    level_set_entries.push((
-      world_entity,
-      project_handle.value(),
-      level_set.value(),
-    ))
+    level_set_entries.push(
+      (world_entity, project_handle.value(), level_set.value()),
+    )
   })
   for entry in level_set_entries {
     let (world_entity, project_handle, level_set) = entry
     let spawned_any = ldtk_apply_level_set_for_world(
-      world,
-      world_entity,
-      project_handle,
-      level_set,
-      ldtk_settings,
-      project_assets,
+      world, world_entity, project_handle, level_set, ldtk_settings, project_assets,
       blob_assets,
     )
     if spawned_any &&
@@ -429,11 +420,9 @@ pub fn process_ldtk_levels(world : @ecs.World) -> Unit {
   let respawn_levels : Array[(@core.Entity, LevelIid, @core.Entity)] = []
   try! query.view(fn(level_entity, data) {
     let (level_iid, parent, _respawn) = data
-    respawn_levels.push((
-      level_entity,
-      level_iid.value(),
-      parent.value().entity(),
-    ))
+    respawn_levels.push(
+      (level_entity, level_iid.value(), parent.value().entity()),
+    )
   })
   for entry in respawn_levels {
     let (level_entity, level_iid, world_entity) = entry
@@ -446,10 +435,7 @@ pub fn process_ldtk_levels(world : @ecs.World) -> Unit {
     }
     let level_opt = match blob_assets {
       Some(loaded_blob_assets) =>
-        project.get_loaded_level_by_iid(
-          loaded_blob_assets,
-          level_iid.get(),
-        )
+        project.get_loaded_level_by_iid(loaded_blob_assets, level_iid.get())
       None => project.get_raw_level_by_iid(level_iid.get())
     }
     guard level_opt is Some(level) else { continue }
@@ -530,10 +516,9 @@ pub fn worldly_adoption(world : @ecs.World) -> Unit {
     }
     match ancestor {
       Some(world_entity) =>
-        parent_updates.push((
-          worldly_entity,
-          Some(@hierarchy.Parent::new(world_entity)),
-        ))
+        parent_updates.push(
+          (worldly_entity, Some(@hierarchy.Parent::new(world_entity))),
+        )
       None =>
         if (try! world.contains_by_key(
             worldly_entity, @hierarchy.ecs_key_parent,
@@ -547,9 +532,7 @@ pub fn worldly_adoption(world : @ecs.World) -> Unit {
     match parent {
       Some(parent_component) =>
         try! world.set_by_key(
-          entity,
-          @hierarchy.ecs_key_parent,
-          parent_component,
+          entity, @hierarchy.ecs_key_parent, parent_component,
         )
       None =>
         ignore(try! world.remove_by_key(entity, @hierarchy.ecs_key_parent))

@@ -441,7 +441,12 @@ pub impl @app.CommandSpawnComponents for Camera3dBundle with spawn_components(
 }
 
 ///|
-pub impl @ecs.Bundle for Camera3dBundle with insert_into(self, world, entity, loc~) {
+pub impl @ecs.Bundle for Camera3dBundle with insert_into(
+  self,
+  world,
+  entity,
+  loc~,
+) {
   camera3d_bundle_insert(self, world, entity, loc~)
 }
 

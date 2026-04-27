@@ -63,10 +63,9 @@ fn typed_asset_loader_registry_for_world(
 ) -> Ref[@hashmap.HashMap[String, Array[TypedAssetLoaderEntry]]] {
   let key = typed_asset_loader_registry_resource_key()
   if (try! world.get_resource(key)) is None {
-    world.insert_resource(
-      key,
-      TypedAssetLoaderRegistryState::{ loaders: Ref::new(@hashmap.HashMap::new()) },
-    )
+    world.insert_resource(key, TypedAssetLoaderRegistryState::{
+      loaders: Ref::new(@hashmap.HashMap::new()),
+    })
   }
   match (try! world.get_resource(key)) {
     Some(state) => state.loaders
@@ -313,22 +312,21 @@ fn typed_asset_loader_entry_for_path(
 }
 
 ///|
-fn[T] asset_assets_mut_or_init() -> @ecs.ResourceMut[Assets[T]] {
-  asset_assets_mut_or_init_in_world(asset_world_or_abort())
+fn[T] asset_assets_mut_or_abort() -> @ecs.ResourceMut[Assets[T]] {
+  asset_assets_mut_or_abort_in_world(asset_world_or_abort())
 }
 
 ///|
-fn[T] asset_assets_mut_or_init_in_world(
+fn[T] asset_assets_mut_or_abort_in_world(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Assets[T]] {
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-  if (try! world.get_resource(key)) is None {
-    world.insert_resource(key, Assets::new())
-  }
   match (try! world.get_resource_mut(key)) {
     Some(value) => value
     None =>
-      abort("Failed to initialize Assets resource for custom asset loading")
+      abort(
+        "Assets resource is missing for custom asset loading; call init_asset before loading this asset type",
+      )
   }
 }
 
@@ -344,7 +342,7 @@ pub fn[T] LoadContext::add_labeled_asset(
   let labeled_path = self.path.with_label(Some(label))
   let formatted_path = asset_format_path(labeled_path)
   let canonical_path = asset_canonical_path(formatted_path)
-  let handle = asset_assets_mut_or_init_in_world(world).modify(fn(assets) {
+  let handle = asset_assets_mut_or_abort_in_world(world).modify(fn(assets) {
     assets.add(asset)
   })
   self.asset_server.record_path(canonical_path)
@@ -436,9 +434,10 @@ fn[T, P : IntoAssetPath] AssetServer::load_registered_asset(
     }
     return handle
   }
-  let handle = asset_assets_mut_or_init().modify(fn(assets) {
-    assets.reserve_handle()
-  })
+  let _assets : Assets[T] = asset_assets_ref_or_abort()
+  let handle : Handle[T] = Handle::new(
+    self.reserve_typed_asset_handle_id(type_name),
+  )
   self.set_typed_loading_states(type_name, handle.id())
   self.record_path(asset_canonical_path(formatted_path))
   self.typed_asset_paths.val.set(cache_key, handle.id())
@@ -455,15 +454,12 @@ pub fn[T] init_asset(
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
   let event_key : @ecs.MessageKey[AssetEvent[T]] = @ecs.Message::message()
   let load_failed_key : @ecs.MessageKey[AssetLoadFailedEvent[T]] = @ecs.Message::message()
-  let app = if app.contains_resource(key) {
-    app
-  } else {
-    app.init_resource(fn() {
-      let assets : Assets[T] = Assets::new()
-      assets
-    })
-  }
-  app.add_message(event_key).add_message(load_failed_key)
+  let assets : Assets[T] = Assets::new()
+  app
+  .insert_world_resource(key, assets)
+  .allow_ambiguous_resource(key~)
+  .add_message(event_key)
+  .add_message(load_failed_key)
 }
 
 ///|
@@ -474,15 +470,15 @@ pub fn[T] register_asset_loader(
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
   let registry = typed_asset_loader_registry_for_world(app.world())
-  let normalized_extensions = typed_asset_loader_normalize_extensions(loader.extensions)
+  let normalized_extensions = typed_asset_loader_normalize_extensions(
+    loader.extensions,
+  )
   let existing = match registry.val.get(type_name) {
     Some(entries) => entries
     None => []
   }
   typed_asset_loader_warn_duplicate_extensions(
-    type_name,
-    existing,
-    normalized_extensions,
+    type_name, existing, normalized_extensions,
   )
   let next_entries = typed_asset_loader_clone_entries(existing)
   next_entries.push(TypedAssetLoaderEntry::{
@@ -490,14 +486,11 @@ pub fn[T] register_asset_loader(
     load: fn(context, bytes) { @any.of((loader.load)(context, bytes)) },
     insert: fn(world, handle_id, value_any) {
       let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-      if (try! world.get_resource(key)) is None {
-        world.insert_resource(key, Assets::new())
-      }
       let assets = match (try! world.get_resource_mut(key)) {
         Some(value) => value
         None =>
           abort(
-            "Failed to initialize Assets resource for custom loader insertion",
+            "Assets resource is missing for custom loader insertion; call init_asset before registering or loading this asset type",
           )
       }
       let value : T = match value_any.try_to() {
@@ -517,15 +510,7 @@ pub fn[T] register_asset_loader(
     },
   })
   registry.val.set(type_name, next_entries)
-  let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-  if app.contains_resource(key) {
-    app
-  } else {
-    app.init_resource(fn() {
-      let assets : Assets[T] = Assets::new()
-      assets
-    })
-  }
+  app
 }
 
 ///|
@@ -540,9 +525,14 @@ pub fn[T] init_asset_loader(
 pub fn[T] AssetServer::add(self : AssetServer, asset : T) -> Handle[T] {
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
-  let handle = asset_assets_mut_or_init().modify(fn(assets) {
-    assets.add(asset)
-  })
+  let handle : Handle[T] = Handle::new(
+    self.reserve_typed_asset_handle_id(type_name),
+  )
+  ignore(
+    asset_assets_mut_or_abort().modify(fn(assets) {
+      assets.insert(handle, asset)
+    }),
+  )
   self.set_typed_loaded_states(type_name, handle.id())
   handle
 }
@@ -614,11 +604,12 @@ fn asset_process_pending_typed_asset_loads(
   let remaining : Array[PendingTypedAssetLoad] = []
   let registry = typed_asset_loader_registry_for_world(world)
   for pending in asset_server.pending_typed_asset_loads.val {
-    match typed_asset_loader_entry_for_path(
-      registry,
-      pending.type_name,
-      pending.path,
-    ) {
+    match
+      typed_asset_loader_entry_for_path(
+        registry,
+        pending.type_name,
+        pending.path,
+      ) {
       Some(entry) => {
         let formatted_path = asset_format_path(pending.path)
         let bytes = load_asset_file_bytes(asset_canonical_path(formatted_path))

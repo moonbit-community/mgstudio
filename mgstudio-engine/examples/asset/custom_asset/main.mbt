@@ -153,7 +153,10 @@ fn load_blob_asset(
 fn custom_asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @asset.init_asset_loader(
     @asset.init_asset_loader(
-      app,
+      @asset.init_asset(
+        @asset.init_asset(app, fn() { Blob::{ bytes: Bytes::from_array([]) } }),
+        fn() { CustomAsset::{ value: 0 } },
+      ),
       @asset.AssetLoader::new(["custom"], load_custom_asset),
     ),
     @asset.AssetLoader::new([], load_blob_asset),

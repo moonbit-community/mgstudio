@@ -422,6 +422,7 @@ pub impl @app.Plugin for ColorMaterialPlugin with name(_self) {
 ///|
 pub impl @app.Plugin for ColorMaterialPlugin with build(_self, app) {
   let plugin : Material2dPlugin[ColorMaterialAsset] = Material2dPlugin::default()
+    .with_asset_init(default_color_material_asset)
     .with_vertex_shader(MESH2D_SHADER_PATH)
     .with_fragment_shader("sprite_render/mesh2d/color_material.wgsl")
   init_default_color_material_asset(app.add_plugins(plugin))

@@ -51,7 +51,7 @@ pub fn ScheduleBuildSettings::set_ambiguity_detection(
   self : ScheduleBuildSettings,
   ambiguity_detection : ScheduleBuildLogLevel,
 ) -> ScheduleBuildSettings {
-  ScheduleBuildSettings::{ ..self, ambiguity_detection }
+  ScheduleBuildSettings::{ ..self, ambiguity_detection, }
 }
 
 ///|
@@ -66,7 +66,7 @@ pub fn ScheduleBuildSettings::set_hierarchy_detection(
   self : ScheduleBuildSettings,
   hierarchy_detection : ScheduleBuildLogLevel,
 ) -> ScheduleBuildSettings {
-  ScheduleBuildSettings::{ ..self, hierarchy_detection }
+  ScheduleBuildSettings::{ ..self, hierarchy_detection, }
 }
 
 ///|
@@ -81,7 +81,7 @@ pub fn ScheduleBuildSettings::set_auto_insert_apply_deferred(
   self : ScheduleBuildSettings,
   auto_insert_apply_deferred : Bool,
 ) -> ScheduleBuildSettings {
-  ScheduleBuildSettings::{ ..self, auto_insert_apply_deferred }
+  ScheduleBuildSettings::{ ..self, auto_insert_apply_deferred, }
 }
 
 ///|
@@ -96,7 +96,7 @@ pub fn ScheduleBuildSettings::set_use_shortnames(
   self : ScheduleBuildSettings,
   use_shortnames : Bool,
 ) -> ScheduleBuildSettings {
-  ScheduleBuildSettings::{ ..self, use_shortnames }
+  ScheduleBuildSettings::{ ..self, use_shortnames, }
 }
 
 ///|
@@ -109,7 +109,7 @@ pub fn ScheduleBuildSettings::set_report_sets(
   self : ScheduleBuildSettings,
   report_sets : Bool,
 ) -> ScheduleBuildSettings {
-  ScheduleBuildSettings::{ ..self, report_sets }
+  ScheduleBuildSettings::{ ..self, report_sets, }
 }
 
 ///|
@@ -207,6 +207,7 @@ priv enum ScheduleExecutionNode {
   ScheduledSystem(Int)
 }
 
+///|
 priv struct ScheduleBuildPassGraph[W] {
   systems : Array[SystemConfig[W]]
   system_accesses : Array[SystemAccess]
@@ -470,6 +471,7 @@ fn[W] schedule_entry_mark_graph_changed(
 ///|
 fn schedule_allowed_ambiguous_fingerprint(
   allowed_ambiguous_components : @utils.IntBitSet,
+  allowed_ambiguous_resources : @utils.IntBitSet,
 ) -> Int {
   let mut count = 0
   let mut sum = 0
@@ -478,6 +480,11 @@ fn schedule_allowed_ambiguous_fingerprint(
     count = count + 1
     sum = sum + key * 31
     sum_sq = sum_sq + key * key + 17
+  }
+  for key in allowed_ambiguous_resources.to_array() {
+    count = count + 1
+    sum = sum + key * 43
+    sum_sq = sum_sq + key * key + 29
   }
   count * 1_000_003 + sum * 97 + sum_sq * 7
 }
@@ -702,10 +709,7 @@ fn schedule_graph_path_exists_excluding_edge(
 }
 
 ///|
-fn schedule_system_sets_overlap(
-  left : Array[Int],
-  right : Array[Int],
-) -> Bool {
+fn schedule_system_sets_overlap(left : Array[Int], right : Array[Int]) -> Bool {
   for system_i in left {
     if right.contains(system_i) {
       return true
@@ -727,8 +731,11 @@ fn schedule_dependency_reachable(
   }
   for edge in edges {
     let (from_i, to_i, _) = edge
-    if from_i >= 0 && from_i < system_count && to_i >= 0 &&
-      to_i < system_count && !adj[from_i].contains(to_i) {
+    if from_i >= 0 &&
+      from_i < system_count &&
+      to_i >= 0 &&
+      to_i < system_count &&
+      !adj[from_i].contains(to_i) {
       adj[from_i].push(to_i)
     }
   }
@@ -843,11 +850,12 @@ fn[W] ScheduleBuildPassGraph::remove_edge(
 fn[W] schedule_build_pass_graph_execution_order(
   graph : ScheduleBuildPassGraph[W],
 ) -> Array[ScheduleExecutionNode] {
-  let node_order = match schedule_topo_node_order(
-    graph.nodes.length(),
-    graph.base_node_order,
-    graph.node_edges,
-  ) {
+  let node_order = match
+    schedule_topo_node_order(
+      graph.nodes.length(),
+      graph.base_node_order,
+      graph.node_edges,
+    ) {
     Some(order) => order
     None => graph.base_node_order
   }
@@ -937,9 +945,7 @@ fn[W] schedule_build_graph_plan(
       match membership_groups.get(child_set) {
         Some(child_groups) =>
           for group in child_groups {
-            if add_membership_group(
-              membership_groups, parent_set, group,
-            ) {
+            if add_membership_group(membership_groups, parent_set, group) {
               hierarchy_changed.val = true
             }
           }
@@ -1081,12 +1087,8 @@ fn[W] schedule_build_graph_plan(
       let child_i = set_index.at(edge.0)
       let parent_i = set_index.at(edge.1)
       if schedule_graph_path_exists_excluding_edge(
-        hierarchy_parent_adj,
-        parent_i,
-        child_i,
-        parent_i,
-        child_i,
-      ) {
+          hierarchy_parent_adj, parent_i, child_i, parent_i, child_i,
+        ) {
         redundant_hierarchy_edges.push(edge)
       }
     }
@@ -1341,12 +1343,18 @@ fn[W] schedule_build_graph_plan(
     }
     systems_by_set.push(set_systems)
   }
-  fn ordered_sets_overlap_error(from_set : SystemSet, to_set : SystemSet) -> String? {
+  fn ordered_sets_overlap_error(
+    from_set : SystemSet,
+    to_set : SystemSet,
+  ) -> String? {
     for from_group in member_groups_for_set(membership_groups, from_set) {
       let from_i = set_index.at(from_group)
       for to_group in member_groups_for_set(membership_groups, to_set) {
         let to_i = set_index.at(to_group)
-        if schedule_system_sets_overlap(systems_by_set[from_i], systems_by_set[to_i]) {
+        if schedule_system_sets_overlap(
+            systems_by_set[from_i],
+            systems_by_set[to_i],
+          ) {
           return Some(
             "Schedule `\{to_repr(stage).to_string()}` has ordered system sets with overlapping systems: `\{from_set}` and `\{to_set}`.",
           )
@@ -1395,7 +1403,10 @@ fn[W] schedule_build_graph_plan(
     for to_i in 0..<set_count {
       if from_i != to_i &&
         schedule_graph_path_exists_excluding_edge(adj, from_i, to_i, -1, -1) &&
-        schedule_system_sets_overlap(systems_by_set[from_i], systems_by_set[to_i]) {
+        schedule_system_sets_overlap(
+          systems_by_set[from_i],
+          systems_by_set[to_i],
+        ) {
         return {
           graph_generation: schedule_entry.graph.generation,
           set_order,
@@ -1502,11 +1513,9 @@ fn[W] schedule_build_graph_plan(
     all_systems_runnable.push(true)
   }
   if schedule_topo_system_order(
-    system_count,
-    execution_order,
-    system_dependency_edges,
-    all_systems_runnable,
-  ) is None {
+      system_count, execution_order, system_dependency_edges, all_systems_runnable,
+    )
+    is None {
     return {
       graph_generation: schedule_entry.graph.generation,
       set_order,
@@ -1548,8 +1557,7 @@ fn[W] schedule_resolve_graph_plan(
 ) -> ScheduleGraphPlan {
   match schedule_entry.cached_graph_plan {
     Some(plan) if !schedule_entry.graph.changed &&
-      plan.graph_generation == schedule_entry.graph.generation =>
-      plan
+      plan.graph_generation == schedule_entry.graph.generation => plan
     _ => {
       let plan = schedule_build_graph_plan(schedule_entry, stage)
       schedule_entry.cached_graph_plan = Some(plan)
@@ -1644,15 +1652,18 @@ fn[W] schedule_system_conditions_compatible(
 ) -> Bool {
   left.run_ifs.length() == right.run_ifs.length() &&
   left.run_if_states.length() == right.run_if_states.length() &&
-  left.run_if_last_run_sequences.length() == right.run_if_last_run_sequences.length()
+  left.run_if_last_run_sequences.length() ==
+  right.run_if_last_run_sequences.length()
 }
 
+///|
 fn[W] schedule_build_access_plan(
   schedule_entry : ScheduleEntry[W],
   graph_plan : ScheduleGraphPlan,
   build_settings : ScheduleBuildSettings,
   world : @ecs.World,
   allowed_ambiguous_components : @utils.IntBitSet,
+  allowed_ambiguous_resources : @utils.IntBitSet,
   world_id : Int,
   component_registration_generation : Int,
   allowed_ambiguous_fingerprint : Int,
@@ -1729,7 +1740,7 @@ fn[W] schedule_build_access_plan(
             systems_in_sets_with_conditions[set_i].push(system_i)
           }
         }
-      None => {
+      None =>
         for system_i in 0..<system_count {
           let cfg = schedule_entry.graph.systems[system_i]
           let mut in_set = cfg.member_sets.contains(set)
@@ -1742,7 +1753,6 @@ fn[W] schedule_build_access_plan(
             systems_in_sets_with_conditions[set_i].push(system_i)
           }
         }
-      }
     }
   }
   let base_system_edges : Array[(Int, Int, Bool)] = []
@@ -1768,7 +1778,10 @@ fn[W] schedule_build_access_plan(
           continue
         }
         if system_access_compatible(
-            left_access, right_access, allowed_ambiguous_components,
+            left_access,
+            right_access,
+            allowed_ambiguous_components,
+            allowed_ambiguous_resources~,
           ) {
           continue
         }
@@ -1831,14 +1844,12 @@ fn[W] schedule_build_access_plan(
     base_system_edges,
   )
   schedule_run_build_passes(
-    schedule_entry,
-    build_pass_graph,
-    base_runnable_execution_order,
-    base_system_edges,
-    system_accesses,
-    runnable_mask,
+    schedule_entry, build_pass_graph, base_runnable_execution_order, base_system_edges,
+    system_accesses, runnable_mask,
   )
-  let execution_order = schedule_build_pass_graph_execution_order(build_pass_graph)
+  let execution_order = schedule_build_pass_graph_execution_order(
+    build_pass_graph,
+  )
   let execution_systems_by_source = build_pass_graph.systems
   let execution_system_accesses_by_source = build_pass_graph.system_accesses
   let source_to_execution_system : Array[Int] = []
@@ -1883,7 +1894,8 @@ fn[W] schedule_build_access_plan(
         let from_execution_i = source_to_execution_system[from_source_i]
         let to_execution_i = source_to_execution_system[to_source_i]
         if from_execution_i >= 0 && to_execution_i >= 0 {
-          system_dependencies[to_execution_i] = system_dependencies[to_execution_i] + 1
+          system_dependencies[to_execution_i] = system_dependencies[to_execution_i] +
+            1
           if !system_dependents[from_execution_i].contains(to_execution_i) {
             system_dependents[from_execution_i].push(to_execution_i)
           }
@@ -1932,7 +1944,8 @@ fn[W] schedule_build_access_plan(
   }
   for source_system_i in 0..<source_to_execution_system.length() {
     let execution_system_i = source_to_execution_system[source_system_i]
-    if execution_system_i >= 0 && source_system_i < graph_plan.system_layers.length() {
+    if execution_system_i >= 0 &&
+      source_system_i < graph_plan.system_layers.length() {
       execution_system_layers[execution_system_i] = graph_plan.system_layers[source_system_i]
     }
   }
@@ -1989,6 +2002,7 @@ fn[W] schedule_build_access_plan(
                     execution_system_accesses[existing_i],
                     access,
                     allowed_ambiguous_components,
+                    allowed_ambiguous_resources~,
                   ) {
                   can_join_current_batch.val = false
                   break
@@ -2043,11 +2057,12 @@ fn[W] schedule_resolve_access_plan(
   build_settings : ScheduleBuildSettings,
   world : @ecs.World,
   allowed_ambiguous_components : @utils.IntBitSet,
+  allowed_ambiguous_resources : @utils.IntBitSet,
 ) -> ScheduleAccessPlan[W] {
   let world_id = world.world_id()
   let component_registration_generation = world.component_registration_generation()
   let allowed_ambiguous_fingerprint = schedule_allowed_ambiguous_fingerprint(
-    allowed_ambiguous_components,
+    allowed_ambiguous_components, allowed_ambiguous_resources,
   )
   match schedule_entry.cached_access_plan {
     Some(plan) if plan.graph_generation == graph_plan.graph_generation &&
@@ -2061,7 +2076,8 @@ fn[W] schedule_resolve_access_plan(
     _ => {
       let plan = schedule_build_access_plan(
         schedule_entry, graph_plan, build_settings, world, allowed_ambiguous_components,
-        world_id, component_registration_generation, allowed_ambiguous_fingerprint,
+        allowed_ambiguous_resources, world_id, component_registration_generation,
+        allowed_ambiguous_fingerprint,
       )
       schedule_entry.cached_access_plan = Some(plan)
       plan
@@ -2075,6 +2091,7 @@ fn[W] schedule_execution_plan(
   stage : ScheduleStage,
   world : @ecs.World,
   allowed_ambiguous_components : @utils.IntBitSet,
+  allowed_ambiguous_resources : @utils.IntBitSet,
 ) -> ScheduleExecutionPlan[W] {
   let schedule_entry = schedule_entry_ref(schedule_registry, stage).val
   let graph_plan = schedule_resolve_graph_plan(schedule_entry, stage)
@@ -2093,6 +2110,7 @@ fn[W] schedule_execution_plan(
     schedule_entry.graph.settings,
     world,
     allowed_ambiguous_components,
+    allowed_ambiguous_resources,
   )
   let resolved_build_error = match graph_plan.build_error {
     Some(message) => Some(message)
@@ -2275,8 +2293,7 @@ fn[W] schedule_push_config(
         run_if_last_run_sequences: [],
       }
       schedule_collect_expanded_chain_members(
-        config_without_collective_conditions,
-        expanded_members,
+        config_without_collective_conditions, expanded_members,
       )
       if expanded_members.length() == 0 {
         return
@@ -2366,7 +2383,9 @@ fn[W] schedule_push_config(
         guard normalized_members[i + 1].set is Some(right_set) else { continue }
         if left_set != right_set {
           if config.chain_ignore_deferred {
-            entry_ref.val.graph.set_edges_ignore_deferred.push((left_set, right_set))
+            entry_ref.val.graph.set_edges_ignore_deferred.push(
+              (left_set, right_set),
+            )
           } else {
             entry_ref.val.graph.set_edges.push((left_set, right_set))
           }
@@ -2445,7 +2464,8 @@ fn[W] schedule_configure_set_run_conditions(
   guard set_run_ifs.length() > 0 || set_run_if_statefuls.length() > 0 else {
     return false
   }
-  let run_conditions_ref = match schedule_entry.graph.set_run_conditions.get(set) {
+  let run_conditions_ref = match
+    schedule_entry.graph.set_run_conditions.get(set) {
     Some(existing_ref) => existing_ref
     None => {
       let created_ref = Ref::new(ScheduleSetRunConditions::{
@@ -2482,7 +2502,8 @@ fn[W] schedule_configure_set_run_conditions_from_refs(
   run_if_last_run_sequences : Array[@core.Sequence],
 ) -> Bool {
   guard run_ifs.length() > 0 else { return false }
-  let run_conditions_ref = match schedule_entry.graph.set_run_conditions.get(set) {
+  let run_conditions_ref = match
+    schedule_entry.graph.set_run_conditions.get(set) {
     Some(existing_ref) => existing_ref
     None => {
       let created_ref = Ref::new(ScheduleSetRunConditions::{

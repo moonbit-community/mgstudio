@@ -252,9 +252,7 @@ fn render3d_material_shader_path_for_extracted_mesh(
 }
 
 ///|
-fn render3d_prewarm_mesh_pipelines(
-  meshes : Array[ExtractedMesh3d],
-) -> Unit {
+fn render3d_prewarm_mesh_pipelines(meshes : Array[ExtractedMesh3d]) -> Unit {
   let prewarmed_keys : Map[String, Bool] = {}
   for extracted_mesh in meshes {
     let mesh = extracted_mesh.payload

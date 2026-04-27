@@ -94,8 +94,7 @@ fn raw_table_row_kernel_swap_remove(
 priv type RawTableValueColumnKernel
 
 ///|
-extern "c" fn raw_table_value_column_kernel_new_native(
-) -> RawTableValueColumnKernel = "mgstudio_ecs_raw_table_value_column_new"
+extern "c" fn raw_table_value_column_kernel_new_native() -> RawTableValueColumnKernel = "mgstudio_ecs_raw_table_value_column_new"
 
 ///|
 #borrow(kernel)
@@ -172,9 +171,7 @@ fn raw_table_value_column_kernel_new() -> RawTableValueColumnKernel {
 }
 
 ///|
-fn raw_table_value_column_kernel_len(
-  kernel : RawTableValueColumnKernel,
-) -> Int {
+fn raw_table_value_column_kernel_len(kernel : RawTableValueColumnKernel) -> Int {
   raw_table_value_column_kernel_len_native(kernel)
 }
 
@@ -187,11 +184,7 @@ fn raw_table_value_column_kernel_push(
   changed_caller_id : Int,
 ) -> Bool {
   raw_table_value_column_kernel_push_native(
-    kernel,
-    value,
-    added_sequence,
-    changed_sequence,
-    changed_caller_id,
+    kernel, value, added_sequence, changed_sequence, changed_caller_id,
   )
 }
 
@@ -227,11 +220,7 @@ fn raw_table_value_column_kernel_set_metadata(
   changed_caller_id : Int,
 ) -> Bool {
   raw_table_value_column_kernel_set_metadata_native(
-    kernel,
-    row,
-    added_sequence,
-    changed_sequence,
-    changed_caller_id,
+    kernel, row, added_sequence, changed_sequence, changed_caller_id,
   )
 }
 

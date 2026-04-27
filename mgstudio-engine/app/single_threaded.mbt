@@ -78,7 +78,11 @@ fn SingleThreadedExecutorState::prepare_run(
   single_threaded_resize_bool_array(self.evaluated_sets, set_count, true)
   single_threaded_resize_bool_array(self.completed_systems, system_count, true)
   if self.unapplied_systems.length() != system_count {
-    single_threaded_resize_bool_array(self.unapplied_systems, system_count, true)
+    single_threaded_resize_bool_array(
+      self.unapplied_systems,
+      system_count,
+      true,
+    )
   }
   self.apply_final_deferred = apply_final_deferred
 }

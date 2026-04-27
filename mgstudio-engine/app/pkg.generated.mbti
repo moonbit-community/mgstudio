@@ -272,11 +272,11 @@ pub fn[S : States] state_transition_event_resource_key(S) -> @ecs.ResourceKey[St
 #callsite(autofill(loc))
 pub fn[W] system((W) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
-pub fn system_access_compatible(SystemAccess, SystemAccess, @utils.IntBitSet) -> Bool
+pub fn system_access_compatible(SystemAccess, SystemAccess, @utils.IntBitSet, allowed_ambiguous_resources? : @utils.IntBitSet) -> Bool
 
 pub fn system_access_merge_unchecked(SystemAccess, SystemAccess) -> Unit
 
-pub fn system_access_merge_validated(SystemAccess, SystemAccess, @utils.IntBitSet) -> Unit
+pub fn system_access_merge_validated(SystemAccess, SystemAccess, @utils.IntBitSet, allowed_ambiguous_resources? : @utils.IntBitSet) -> Unit
 
 #callsite(autofill(loc))
 pub fn[W, P : SystemParam] system_config_param((P) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
@@ -520,6 +520,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[T : @ecs.Component] App::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
+pub fn[T : Resource] App::allow_ambiguous_resource(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Self[@ecs.World]
 pub fn[W] App::cleanup(Self[W]) -> Self[W]
 pub fn[W] App::cleanup_plugins(Self[W]) -> Self[W]
 pub fn[W] App::clear_plugin_names(Self[W]) -> Self[W]
@@ -537,6 +538,7 @@ pub fn[S : States] App::insert_state(Self[@ecs.World], S) -> Self[@ecs.World]
 pub fn[W] App::insert_sub_app(Self[W], AppLabel, SubApp[W]) -> Self[W]
 pub fn[T] App::insert_world_resource(Self[@ecs.World], @ecs.ResourceKey[T], T) -> Self[@ecs.World]
 pub fn[T : @ecs.Component] App::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
+pub fn[T : Resource] App::is_ambiguous_resource_allowed(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Bool
 pub fn App::new(@ecs.World) -> Self[@ecs.World]
 pub fn[W] App::plugin_names(Self[W]) -> Array[String]
 pub fn[W] App::plugins_state(Self[W]) -> PluginsState
@@ -1154,6 +1156,7 @@ pub struct SubApp[W] {
   schedule : ScheduleRegistry[W]
   extract : ((W, W) -> (W, W))?
   allowed_ambiguous_components : @utils.IntBitSet
+  allowed_ambiguous_resources : @utils.IntBitSet
 }
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SubApp::add_component_observer(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit) -> Self[@ecs.World]
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_component_observer2(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2) -> Unit) -> Self[@ecs.World]
@@ -1179,10 +1182,12 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemP
 pub fn[W] SubApp::add_schedule(Self[W], Schedule) -> Self[W]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[T : @ecs.Component] SubApp::allow_ambiguous_component(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Self[@ecs.World]
+pub fn[T : Resource] SubApp::allow_ambiguous_resource(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Self[@ecs.World]
 pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)], in_sets? : Array[String]) -> Self[W]
 pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String], before_ignore_deferred? : Array[String], after_ignore_deferred? : Array[String], set_run_ifs? : Array[(W) -> Bool], set_run_if_statefuls? : Array[(Json, (W, @ref.Ref[Json]) -> Bool)], in_sets? : Array[String]) -> Self[W]
 pub fn[W] SubApp::get_schedule_executor_kind(Self[W], ScheduleStage) -> ExecutorKind
 pub fn[T : @ecs.Component] SubApp::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
+pub fn[T : Resource] SubApp::is_ambiguous_resource_allowed(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Bool
 pub fn SubApp::new(@ecs.World) -> Self[@ecs.World]
 pub fn SubApp::run_once(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn SubApp::run_startup(Self[@ecs.World]) -> Self[@ecs.World]

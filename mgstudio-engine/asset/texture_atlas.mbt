@@ -443,18 +443,14 @@ fn texture_atlas_layout_assets_mut_or_abort() -> @ecs.ResourceMut[
 ] {
   let key : @ecs.ResourceKey[Assets[TextureAtlasLayout]] = registered_assets_resource_key()
   match asset_current_world() {
-    Some(world) => {
-      if (try! world.get_resource_mut(key)) is None {
-        world.insert_resource(key, Assets::new())
-      }
+    Some(world) =>
       match (try! world.get_resource_mut(key)) {
         Some(assets) => assets
         None =>
           abort(
-            "TextureAtlasLayout assets resource is missing after lazy initialization",
+            "TextureAtlasLayout assets resource is missing; add AssetPlugin before mutating texture atlas layouts",
           )
       }
-    }
     None =>
       abort(
         "TextureAtlasLayout asset mutations require an active app world; use the world-owned Assets<TextureAtlasLayout> resource directly outside scheduled systems",
@@ -466,18 +462,14 @@ fn texture_atlas_layout_assets_mut_or_abort() -> @ecs.ResourceMut[
 fn texture_atlas_layout_assets_or_abort() -> Assets[TextureAtlasLayout] {
   let key : @ecs.ResourceKey[Assets[TextureAtlasLayout]] = registered_assets_resource_key()
   match asset_current_world() {
-    Some(world) => {
-      if (try! world.get_resource(key)) is None {
-        world.insert_resource(key, Assets::new())
-      }
+    Some(world) =>
       match (try! world.get_resource(key)) {
         Some(assets) => assets
         None =>
           abort(
-            "TextureAtlasLayout assets resource is missing after lazy initialization",
+            "TextureAtlasLayout assets resource is missing; add AssetPlugin before reading texture atlas layouts",
           )
       }
-    }
     None =>
       abort(
         "TextureAtlasLayout asset lookups require an active app world; use the world-owned Assets<TextureAtlasLayout> resource directly outside scheduled systems",

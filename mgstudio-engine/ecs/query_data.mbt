@@ -17,14 +17,7 @@ pub(open) trait QueryData {
   matches(World, @core.Entity) -> Bool
   fetch(World, @core.Entity) -> Self raise EcsError
   fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
-  fetch_sparse_anchor(
-    World,
-    @core.Entity,
-    Int,
-    ErasedValue,
-    Int,
-    Int,
-  ) -> Self raise EcsError = _
+  fetch_sparse_anchor(World, @core.Entity, Int, ErasedValue, Int, Int) -> Self raise EcsError = _
   mentions_component(Int) -> Bool
   matches_component_set((Int) -> Bool) -> Bool
   collect_access(QueryDataAccess) -> Unit = _
@@ -650,7 +643,7 @@ pub impl QueryData for EntityRef with fetch_table_row(
   _table_id,
   _row_index,
 ) {
-  EntityRef::{ world, entity, }
+  EntityRef::{ world, entity }
 }
 
 ///|
@@ -662,7 +655,7 @@ pub impl QueryData for EntityRef with fetch_sparse_anchor(
   _table_id,
   _row_index,
 ) {
-  EntityRef::{ world, entity, }
+  EntityRef::{ world, entity }
 }
 
 ///|
@@ -717,7 +710,7 @@ pub impl QueryData for EntityMut with fetch_table_row(
   _table_id,
   _row_index,
 ) {
-  EntityMut::{ world, entity, }
+  EntityMut::{ world, entity }
 }
 
 ///|
@@ -729,7 +722,7 @@ pub impl QueryData for EntityMut with fetch_sparse_anchor(
   _table_id,
   _row_index,
 ) {
-  EntityMut::{ world, entity, }
+  EntityMut::{ world, entity }
 }
 
 ///|
@@ -807,12 +800,7 @@ pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor(
   if T::matches(world, entity) {
     Some(
       T::fetch_sparse_anchor(
-        world,
-        entity,
-        anchor_local_component_id,
-        anchor_payload,
-        table_id,
-        row_index,
+        world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
       ),
     )
   } else {
@@ -972,8 +960,8 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
       table_id,
       row_index,
     ) {
-    Some(value) => { value: Some(value), }
-    None => { value: world.get_by_key(entity, T::component()), }
+    Some(value) => { value: Some(value) }
+    None => { value: world.get_by_key(entity, T::component()) }
   }
 }
 
@@ -996,7 +984,7 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor(
             "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
           )
       }
-      { value: Some(value), }
+      { value: Some(value) }
     }
     _ => Optional::fetch_table_row(world, entity, table_id, row_index)
   }
@@ -1148,20 +1136,10 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_an
 ) {
   (
     A::fetch_sparse_anchor(
-      world,
-      entity,
-      anchor_local_component_id,
-      anchor_payload,
-      table_id,
-      row_index,
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
     ),
     B::fetch_sparse_anchor(
-      world,
-      entity,
-      anchor_local_component_id,
-      anchor_payload,
-      table_id,
-      row_index,
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
     ),
   )
 }
@@ -1269,28 +1247,13 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 ) {
   (
     A::fetch_sparse_anchor(
-      world,
-      entity,
-      anchor_local_component_id,
-      anchor_payload,
-      table_id,
-      row_index,
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
     ),
     B::fetch_sparse_anchor(
-      world,
-      entity,
-      anchor_local_component_id,
-      anchor_payload,
-      table_id,
-      row_index,
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
     ),
     C::fetch_sparse_anchor(
-      world,
-      entity,
-      anchor_local_component_id,
-      anchor_payload,
-      table_id,
-      row_index,
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
     ),
   )
 }
@@ -1432,36 +1395,16 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
 ) {
   (
     A::fetch_sparse_anchor(
-      world,
-      entity,
-      anchor_local_component_id,
-      anchor_payload,
-      table_id,
-      row_index,
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
     ),
     B::fetch_sparse_anchor(
-      world,
-      entity,
-      anchor_local_component_id,
-      anchor_payload,
-      table_id,
-      row_index,
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
     ),
     C::fetch_sparse_anchor(
-      world,
-      entity,
-      anchor_local_component_id,
-      anchor_payload,
-      table_id,
-      row_index,
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
     ),
     D::fetch_sparse_anchor(
-      world,
-      entity,
-      anchor_local_component_id,
-      anchor_payload,
-      table_id,
-      row_index,
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
     ),
   )
 }

@@ -85,26 +85,34 @@ fn setup(
   let flight_helmet = server.load(
     @gltf.GltfAssetLabel::Scene(0).from_asset(FLIGHT_HELMET_SCENE_ASSET),
   )
-  let plain_helmet = commands.spawn_component(@scene.SceneRoot::new(flight_helmet))
+  let plain_helmet = commands.spawn_component(
+    @scene.SceneRoot::new(flight_helmet),
+  )
   ignore(commands.entity(plain_helmet).observe4(change_material))
   ignore(
-    commands.entity(commands.spawn(
-      (
-        @scene.SceneRoot::new(flight_helmet),
-        @transform.Transform::from_xyz(-1.25F, 0.0F, 0.0F),
-        ColorOverride::new(@sprite.Color::srgb(0.98F, 0.65F, 0.65F)),
+    commands
+    .entity(
+      commands.spawn(
+        (
+          @scene.SceneRoot::new(flight_helmet),
+          @transform.Transform::from_xyz(-1.25F, 0.0F, 0.0F),
+          ColorOverride::new(@sprite.Color::srgb(0.98F, 0.65F, 0.65F)),
+        ),
       ),
-    ))
+    )
     .observe4(change_material),
   )
   ignore(
-    commands.entity(commands.spawn(
-      (
-        @scene.SceneRoot::new(flight_helmet),
-        @transform.Transform::from_xyz(1.25F, 0.0F, 0.0F),
-        ColorOverride::new(@sprite.Color::srgb(0.55F, 0.9F, 0.55F)),
+    commands
+    .entity(
+      commands.spawn(
+        (
+          @scene.SceneRoot::new(flight_helmet),
+          @transform.Transform::from_xyz(1.25F, 0.0F, 0.0F),
+          ColorOverride::new(@sprite.Color::srgb(0.55F, 0.9F, 0.55F)),
+        ),
       ),
-    ))
+    )
     .observe4(change_material),
   )
 }

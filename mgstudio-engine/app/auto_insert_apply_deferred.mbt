@@ -105,10 +105,9 @@ fn[W] schedule_auto_insert_apply_deferred_pass(
   }
   for edge in base_system_edges {
     let (from_system, to_system, _) = edge
-    outgoing_edges[from_system].push((
-      to_system,
-      pass.edge_ignores_deferred(from_system, to_system),
-    ))
+    outgoing_edges[from_system].push(
+      (to_system, pass.edge_ignores_deferred(from_system, to_system)),
+    )
   }
   let explicit_sync_distances : Array[(Int, Int)] = []
   fn explicit_sync_for_distance(distance_value : Int) -> Int? {

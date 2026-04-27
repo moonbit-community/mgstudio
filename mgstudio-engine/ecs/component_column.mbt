@@ -74,9 +74,7 @@ fn[T] ComponentColumn::table_column_ref(
     Some(table_ref) =>
       match table_ref.val.column(self.local_component_id) {
         Some(column_ref) => {
-          self.table_column_cache.val[table_id] = Some(
-            @any.of(column_ref),
-          )
+          self.table_column_cache.val[table_id] = Some(@any.of(column_ref))
           Some(column_ref)
         }
         None => None
@@ -106,9 +104,7 @@ fn[T] ComponentColumn::table_values_ref(
     }
   }
   self.table_values_cache_ready.val[table_id] = true
-  guard self.table_column_ref(table_id) is Some(column_ref) else {
-    return None
-  }
+  guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
   match column_ref.val.values_cached() {
     Some(values) => {
       self.table_values_cache.val[table_id] = Some(@any.of(values))
@@ -324,9 +320,7 @@ pub fn[T] ComponentColumn::table_changed_sequence_at_row(
   row_index : Int,
 ) -> @core.Sequence? {
   guard self.storage_type == Table else { return None }
-  guard self.table_column_ref(table_id) is Some(column_ref) else {
-    return None
-  }
+  guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
   column_ref.val.changed_sequence_at_row(row_index)
 }
 
@@ -372,9 +366,7 @@ pub fn[T] ComponentColumn::for_each_changed_table_entity(
   guard self.storage_type == Table else { return true }
   for entry in self.world.tables.iter() {
     let (table_id, table_ref) = entry
-    guard self.table_column_ref(table_id) is Some(column_ref) else {
-      continue
-    }
+    guard self.table_column_ref(table_id) is Some(column_ref) else { continue }
     let row_count = table_ref.val.row_count()
     for row_index in 0..<row_count {
       let changed = match column_ref.val.changed_sequence_at_row(row_index) {
@@ -435,8 +427,7 @@ pub fn[T] ComponentColumn::for_each(
         None => ()
       }
     Table => {
-      let archetype_ids = self
-        .world
+      let archetype_ids = self.world
         .archetype_ids_for_component_local_id(self.local_component_id)
         .copy()
       for archetype_id in archetype_ids {
@@ -486,14 +477,14 @@ pub fn[T, U] ComponentColumn::for_each_without(
     })
     return
   }
-  let archetype_ids = self
-    .world
+  let archetype_ids = self.world
     .archetype_ids_for_component_local_id(self.local_component_id)
     .copy()
   for archetype_id in archetype_ids {
-    if self
-      .world
-      .archetype_component_local_index(archetype_id, other.local_component_id)
+    if self.world.archetype_component_local_index(
+        archetype_id,
+        other.local_component_id,
+      )
       is Some(_) {
       continue
     }
@@ -503,9 +494,7 @@ pub fn[T, U] ComponentColumn::for_each_without(
     guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    guard self.table_column_ref(table_id) is Some(column_ref) else {
-      continue
-    }
+    guard self.table_column_ref(table_id) is Some(column_ref) else { continue }
     let entity_snapshot = entities.copy()
     guard column_ref.val.values_cached() is Some(values) else { continue }
     for entity in entity_snapshot {
@@ -539,14 +528,14 @@ pub fn[T, U] ComponentColumn::for_each_with(
     })
     return
   }
-  let archetype_ids = self
-    .world
+  let archetype_ids = self.world
     .archetype_ids_for_component_local_id(self.local_component_id)
     .copy()
   for archetype_id in archetype_ids {
-    guard self
-      .world
-      .archetype_component_local_index(archetype_id, other.local_component_id)
+    guard self.world.archetype_component_local_index(
+        archetype_id,
+        other.local_component_id,
+      )
       is Some(_) else {
       continue
     }
@@ -596,14 +585,14 @@ pub fn[T, U] ComponentColumn::for_each_without_fast(
     self.for_each_without(other, visit)
     return
   }
-  let archetype_ids = self
-    .world
+  let archetype_ids = self.world
     .archetype_ids_for_component_local_id(self.local_component_id)
     .copy()
   for archetype_id in archetype_ids {
-    if self
-      .world
-      .archetype_component_local_index(archetype_id, other.local_component_id)
+    if self.world.archetype_component_local_index(
+        archetype_id,
+        other.local_component_id,
+      )
       is Some(_) {
       continue
     }
@@ -613,9 +602,7 @@ pub fn[T, U] ComponentColumn::for_each_without_fast(
     guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    guard self.table_column_ref(table_id) is Some(column_ref) else {
-      continue
-    }
+    guard self.table_column_ref(table_id) is Some(column_ref) else { continue }
     guard column_ref.val.values_cached() is Some(values) else { continue }
     for entity in entities {
       let entity_id = entity.id
@@ -645,14 +632,14 @@ pub fn[T, U] ComponentColumn::for_each_with_fast(
     self.for_each_with(other, visit)
     return
   }
-  let archetype_ids = self
-    .world
+  let archetype_ids = self.world
     .archetype_ids_for_component_local_id(self.local_component_id)
     .copy()
   for archetype_id in archetype_ids {
-    guard self
-      .world
-      .archetype_component_local_index(archetype_id, other.local_component_id)
+    guard self.world.archetype_component_local_index(
+        archetype_id,
+        other.local_component_id,
+      )
       is Some(_) else {
       continue
     }
@@ -737,7 +724,9 @@ pub fn[T] ComponentColumn::set_sequence_only(
     SparseSet =>
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) => {
-          guard store_ref.val.set(entity, erased_value(value)) else { return false }
+          guard store_ref.val.set(entity, erased_value(value)) else {
+            return false
+          }
           ignore(
             self.world.record_sparse_component_changed_by_local_id(
               entity,
@@ -754,18 +743,22 @@ pub fn[T] ComponentColumn::set_sequence_only(
       guard self.world.table_id_for_entity(entity) is Some(table_id) else {
         return false
       }
-      guard self.world.entity_table_row(entity) is Some(row) else { return false }
+      guard self.world.entity_table_row(entity) is Some(row) else {
+        return false
+      }
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return false
       }
       let row_index = row.index()
       guard column_ref.val.replace_writer_at_row(
-          row_index,
-          erased_writer(self.key, value),
-        ) else {
+        row_index,
+        erased_writer(self.key, value),
+      ) else {
         return false
       }
-      guard self.world.table_storage(table_id) is Some(table_ref) else { return false }
+      guard self.world.table_storage(table_id) is Some(table_ref) else {
+        return false
+      }
       ignore(
         table_ref.val.record_changed_at_row(
           row,
@@ -790,7 +783,9 @@ pub fn[T] ComponentColumn::set_sequence_only_fast(
     SparseSet =>
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) => {
-          guard store_ref.val.set(entity, erased_value(value)) else { return false }
+          guard store_ref.val.set(entity, erased_value(value)) else {
+            return false
+          }
           ignore(
             self.world.record_sparse_component_changed_by_local_id(
               entity,
@@ -817,9 +812,9 @@ pub fn[T] ComponentColumn::set_sequence_only_fast(
         return false
       }
       guard column_ref.val.replace_writer_at_row(
-          row_index,
-          erased_writer(self.key, value),
-        ) else {
+        row_index,
+        erased_writer(self.key, value),
+      ) else {
         return false
       }
       ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
@@ -839,7 +834,9 @@ pub fn[T] ComponentColumn::set_sequence_only_hot(
     SparseSet =>
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) => {
-          guard store_ref.val.set(entity, erased_value(value)) else { return false }
+          guard store_ref.val.set(entity, erased_value(value)) else {
+            return false
+          }
           ignore(
             self.world.record_sparse_component_changed_by_local_id(
               entity,
@@ -866,9 +863,9 @@ pub fn[T] ComponentColumn::set_sequence_only_hot(
         return false
       }
       guard column_ref.val.replace_writer_at_row(
-          row_index,
-          erased_writer(self.key, value),
-        ) else {
+        row_index,
+        erased_writer(self.key, value),
+      ) else {
         return false
       }
       ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
@@ -892,8 +889,7 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(
   }
   values[row_index] = value
   let entity_id = entity.id
-  guard entity_id >= 0 &&
-    entity_id < self.world.entity_table_ids.length() else {
+  guard entity_id >= 0 && entity_id < self.world.entity_table_ids.length() else {
     return false
   }
   let table_id = self.world.entity_table_ids[entity_id]
@@ -902,9 +898,9 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(
     return false
   }
   guard column_ref.val.replace_writer_at_row(
-      row_index,
-      erased_writer(self.key, value),
-    ) else {
+    row_index,
+    erased_writer(self.key, value),
+  ) else {
     return false
   }
   ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
@@ -930,9 +926,9 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row(
     return false
   }
   guard column_ref.val.replace_writer_at_row(
-      row_index,
-      erased_writer(self.key, value),
-    ) else {
+    row_index,
+    erased_writer(self.key, value),
+  ) else {
     return false
   }
   ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
@@ -953,9 +949,9 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row_value(
     return false
   }
   guard column_ref.val.replace_writer_at_row(
-      row_index,
-      erased_writer(self.key, value),
-    ) else {
+    row_index,
+    erased_writer(self.key, value),
+  ) else {
     return false
   }
   ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))

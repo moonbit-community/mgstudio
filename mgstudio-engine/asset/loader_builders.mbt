@@ -112,16 +112,14 @@ fn asset_source_builder_registry_upsert_in_state(
   replace_existing : Bool,
 ) -> Unit {
   match source_id {
-    AssetSourceId::Default => {
+    AssetSourceId::Default =>
       if replace_existing || state.default_builder.val is None {
         state.default_builder.val = Some(builder)
       }
-    }
-    AssetSourceId::Named(source_name) => {
+    AssetSourceId::Named(source_name) =>
       if replace_existing || state.named_builders.val.get(source_name) is None {
         state.named_builders.val.set(source_name, builder)
       }
-    }
   }
 }
 
@@ -131,13 +129,10 @@ fn asset_source_builder_registry_for_world(
 ) -> AssetSourceBuilderRegistryState {
   let key = asset_source_builder_registry_resource_key()
   if (try! world.get_resource(key)) is None {
-    world.insert_resource(
-      key,
-      AssetSourceBuilderRegistryState::{
-        named_builders: Ref::new(@hashmap.HashMap::new()),
-        default_builder: Ref::new(None),
-      },
-    )
+    world.insert_resource(key, AssetSourceBuilderRegistryState::{
+      named_builders: Ref::new(@hashmap.HashMap::new()),
+      default_builder: Ref::new(None),
+    })
   }
   match (try! world.get_resource(key)) {
     Some(state) => state
@@ -186,7 +181,8 @@ fn asset_registered_source_dir_entries() -> Array[(String, String)] {
 fn asset_registered_default_source_dir_override() -> String? {
   let state = asset_source_builder_registry_state_active()
   match state.default_builder.val {
-    Some(default_builder) => resolve_assets_dir_override(Some(default_builder.path))
+    Some(default_builder) =>
+      resolve_assets_dir_override(Some(default_builder.path))
     None => None
   }
 }

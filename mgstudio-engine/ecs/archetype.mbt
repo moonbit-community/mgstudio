@@ -213,8 +213,7 @@ fn archetype_bundle_info_covers_pending_payloads(
 ) -> Bool {
   for entry in pending_payloads.iter() {
     let component_local_id = entry.0
-    if
-      !bundle_info.component_local_ids.contains(component_local_id) {
+    if !bundle_info.component_local_ids.contains(component_local_id) {
       return false
     }
   }
@@ -613,9 +612,11 @@ fn World::ensure_archetype_insert_bundle_edge_target(
   from_archetype_id : Int,
   bundle_info : BundleInfo,
 ) -> Int {
-  match self.cached_archetype_insert_bundle_edge_target(
-    from_archetype_id, bundle_info.id,
-  ) {
+  match
+    self.cached_archetype_insert_bundle_edge_target(
+      from_archetype_id,
+      bundle_info.id,
+    ) {
     Some(target_archetype_id) => target_archetype_id
     None => {
       let from_components = self.archetype_component_local_ids
@@ -794,7 +795,9 @@ fn World::bundle_migrate_same_archetype(
   archetype_id : Int,
 ) -> Unit {
   self.entity_archetype_ids[entity.id] = archetype_id
-  self.entity_table_ids[entity.id] = self.archetype_table_id_or_invalid(archetype_id)
+  self.entity_table_ids[entity.id] = self.archetype_table_id_or_invalid(
+    archetype_id,
+  )
   if archetype_id < 0 {
     self.entity_archetype_rows[entity.id] = -1
     return
@@ -819,7 +822,9 @@ fn World::bundle_migrate_new_archetype(
     self.archetype_remove_entity_by_id(from_archetype_id, entity.id)
   }
   self.entity_archetype_ids[entity.id] = to_archetype_id
-  self.entity_table_ids[entity.id] = self.archetype_table_id_or_invalid(to_archetype_id)
+  self.entity_table_ids[entity.id] = self.archetype_table_id_or_invalid(
+    to_archetype_id,
+  )
   if to_archetype_id >= 0 {
     self.archetype_add_entity(to_archetype_id, entity)
   } else {
@@ -874,9 +879,7 @@ fn World::bundle_migrate_new_archetype_same_table(
 ) -> Unit {
   self.bundle_migrate_new_archetype(entity, from_archetype_id, to_archetype_id)
   self.write_pending_sparse_component_payloads(
-    entity,
-    pending_payloads,
-    pending_metadata,
+    entity, pending_payloads, pending_metadata,
   )
 }
 
@@ -906,11 +909,7 @@ fn World::bundle_migrate_new_archetype_new_table(
     target_component_local_ids.length() > 0 {
     let appended_row = match
       self.ensure_table_storage(to_table_id).val.append_row_from_source_table(
-        entity,
-        source_table,
-        source_row,
-        pending_payloads,
-        pending_metadata,
+        entity, source_table, source_row, pending_payloads, pending_metadata,
       ) {
       Some(row) => Some(row)
       None =>
@@ -948,9 +947,7 @@ fn World::bundle_migrate_new_archetype_new_table(
     None => -1
   }
   self.write_pending_sparse_component_payloads(
-    entity,
-    pending_payloads,
-    pending_metadata,
+    entity, pending_payloads, pending_metadata,
   )
 }
 
@@ -1017,10 +1014,7 @@ fn World::migrate_entity_bundle(
 ) -> ArchetypeBundleMigrationPath {
   let plan = self.bundle_migration_plan(from_archetype_id, to_archetype_id)
   self.execute_bundle_migration_plan(
-    entity,
-    plan,
-    pending_payloads,
-    pending_metadata,
+    entity, plan, pending_payloads, pending_metadata,
   )
 }
 
@@ -1074,9 +1068,7 @@ fn World::initialize_entity_archetype_tracking(
   self.ensure_entity_archetype_capacity(entity.id)
   let previous_archetype_id = self.entity_archetype_ids[entity.id]
   self.entity_component_local_ids[entity.id] = []
-  ignore(
-    self.migrate_entity_bundle(entity, previous_archetype_id, 0, {}, {}),
-  )
+  ignore(self.migrate_entity_bundle(entity, previous_archetype_id, 0, {}, {}))
 }
 
 ///|
@@ -1093,9 +1085,7 @@ fn World::clear_entity_archetype_tracking(
     self.decrement_component_membership_count_local(component_local_id)
     self.bump_component_membership_generation_local(component_local_id)
   }
-  ignore(
-    self.migrate_entity_bundle(entity, previous_archetype_id, -1, {}, {}),
-  )
+  ignore(self.migrate_entity_bundle(entity, previous_archetype_id, -1, {}, {}))
   self.entity_component_local_ids[entity.id] = []
 }
 
@@ -1162,13 +1152,11 @@ fn World::refresh_entity_archetype_with_bundle_info(
   match bundle_info {
     Some(bundle_info) if previous_archetype_id >= 0 =>
       if archetype_bundle_info_covers_pending_payloads(
-          pending_payloads,
-          bundle_info,
+          pending_payloads, bundle_info,
         ) {
         next_archetype_id = Some(
           self.ensure_archetype_insert_bundle_edge_target(
-            previous_archetype_id,
-            bundle_info,
+            previous_archetype_id, bundle_info,
           ),
         )
       }
@@ -1180,16 +1168,16 @@ fn World::refresh_entity_archetype_with_bundle_info(
     is Some(previous_component_local_ids) {
     let previous_len = previous_component_local_ids.length()
     let current_len = current_component_local_ids.length()
-	    let previous_presence = self.archetype_component_local_id_presence
-	      .get(previous_archetype_id)
-	      .unwrap_or(@utils.IntBitSet::new())
+    let previous_presence = self.archetype_component_local_id_presence
+      .get(previous_archetype_id)
+      .unwrap_or(@utils.IntBitSet::new())
     if current_len == previous_len + 1 {
       let current_presence = @utils.IntBitSet::new()
       let mut added_component_local_id : Int? = None
       let mut valid_single_add = true
       for component_local_id in current_component_local_ids {
         current_presence.insert(component_local_id)
-	        if !previous_presence.contains(component_local_id) {
+        if !previous_presence.contains(component_local_id) {
           match added_component_local_id {
             Some(_) => {
               valid_single_add = false
@@ -1201,7 +1189,7 @@ fn World::refresh_entity_archetype_with_bundle_info(
       }
       if valid_single_add {
         for component_local_id in previous_component_local_ids {
-	          if !current_presence.contains(component_local_id) {
+          if !current_presence.contains(component_local_id) {
             valid_single_add = false
             break
           }
@@ -1224,14 +1212,14 @@ fn World::refresh_entity_archetype_with_bundle_info(
       let mut valid_single_remove = true
       for component_local_id in current_component_local_ids {
         current_presence.insert(component_local_id)
-	        if !previous_presence.contains(component_local_id) {
+        if !previous_presence.contains(component_local_id) {
           valid_single_remove = false
           break
         }
       }
       if valid_single_remove {
         for component_local_id in previous_component_local_ids {
-	          if !current_presence.contains(component_local_id) {
+          if !current_presence.contains(component_local_id) {
             match removed_component_local_id {
               Some(_) => {
                 valid_single_remove = false
@@ -1273,11 +1261,7 @@ fn World::refresh_entity_archetype_with_bundle_info(
   }
   ignore(
     self.migrate_entity_bundle(
-      entity,
-      previous_archetype_id,
-      next_archetype_id,
-      pending_payloads,
-      pending_metadata,
+      entity, previous_archetype_id, next_archetype_id, pending_payloads, pending_metadata,
     ),
   )
 }
@@ -1290,7 +1274,10 @@ fn World::refresh_entity_archetype_with_pending_payloads(
   pending_metadata : Map[Int, ComponentTickMetadata],
 ) -> Unit {
   self.refresh_entity_archetype_with_bundle_info(
-    entity, None, pending_payloads, pending_metadata,
+    entity,
+    None,
+    pending_payloads,
+    pending_metadata,
   )
 }
 

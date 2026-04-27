@@ -128,7 +128,10 @@ pub struct StressDiagnosticsPlugin {
 
 ///|
 pub fn StressDiagnosticsPlugin::default() -> StressDiagnosticsPlugin {
-  StressDiagnosticsPlugin::{ use_generic_stack: None, log_interval_seconds: 1.0F }
+  StressDiagnosticsPlugin::{
+    use_generic_stack: None,
+    log_interval_seconds: 1.0F,
+  }
 }
 
 ///|
@@ -136,7 +139,10 @@ pub fn StressDiagnosticsPlugin::with_use_generic_stack(
   self : StressDiagnosticsPlugin,
   use_generic_stack : Bool,
 ) -> StressDiagnosticsPlugin {
-  StressDiagnosticsPlugin::{ ..self, use_generic_stack: Some(use_generic_stack) }
+  StressDiagnosticsPlugin::{
+    ..self,
+    use_generic_stack: Some(use_generic_stack),
+  }
 }
 
 ///|
@@ -144,7 +150,7 @@ pub fn StressDiagnosticsPlugin::with_log_interval_seconds(
   self : StressDiagnosticsPlugin,
   log_interval_seconds : Float,
 ) -> StressDiagnosticsPlugin {
-  StressDiagnosticsPlugin::{ ..self, log_interval_seconds }
+  StressDiagnosticsPlugin::{ ..self, log_interval_seconds, }
 }
 
 ///|
@@ -232,7 +238,8 @@ fn stress_metrics_system(
   }
   let frame_count = state_value.frame_count
   let fps = Float::from_int(frame_count) / state_value.elapsed_seconds
-  let frame_time_ms = state_value.elapsed_seconds * 1000.0F /
+  let frame_time_ms = state_value.elapsed_seconds *
+    1000.0F /
     Float::from_int(frame_count)
   @app.log_record(
     @app.Info,
@@ -587,9 +594,8 @@ pub fn stress_diagnostics_plugin_with(
       )
       .add_plugins(TimelineTracePlugin::default())
   }
-  let include_render_diagnostics = match @sys.get_env_var(
-    "MGSTUDIO_STRESS_INCLUDE_RENDER_DIAGNOSTICS",
-  ) {
+  let include_render_diagnostics = match
+    @sys.get_env_var("MGSTUDIO_STRESS_INCLUDE_RENDER_DIAGNOSTICS") {
     Some(value) => value == "1" || value == "true" || value == "TRUE"
     None => false
   }

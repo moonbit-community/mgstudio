@@ -63,7 +63,8 @@ fn schedule_graph_node_name(
   node : ScheduleExecutionNode,
 ) -> String {
   match node {
-    ScheduledSystem(system_i) => schedule_graph_system_name(systems[system_i], system_i)
+    ScheduledSystem(system_i) =>
+      schedule_graph_system_name(systems[system_i], system_i)
   }
 }
 
@@ -95,6 +96,7 @@ pub fn App::schedule_graph_dot(
       schedule_entry.graph.settings,
       self.world(),
       @utils.IntBitSet::new(),
+      @utils.IntBitSet::new(),
     ).schedule.systems
   }
   let execution_order = if graph_plan.build_error is Some(_) {
@@ -109,6 +111,7 @@ pub fn App::schedule_graph_dot(
       graph_plan,
       schedule_entry.graph.settings,
       self.world(),
+      @utils.IntBitSet::new(),
       @utils.IntBitSet::new(),
     ).schedule.execution_order
   }

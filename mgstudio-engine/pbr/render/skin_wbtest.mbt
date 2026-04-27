@@ -62,11 +62,12 @@ fn skin_test_set_global_x(
 }
 
 ///|
-fn skin_test_set_local_x(world : @ecs.World, entity : @core.Entity, x : Float) -> Unit {
-  try! world.set(
-    entity,
-    @transform.Transform::from_xyz(x, 0.0F, 0.0F),
-  )
+fn skin_test_set_local_x(
+  world : @ecs.World,
+  entity : @core.Entity,
+  x : Float,
+) -> Unit {
+  try! world.set(entity, @transform.Transform::from_xyz(x, 0.0F, 0.0F))
 }
 
 ///|
@@ -86,7 +87,8 @@ fn skin_test_set_global_x_sequence_only(
   entity : @core.Entity,
   x : Float,
 ) -> Unit {
-  let column = match world.component_column(@transform.ecs_key_global_transform) {
+  let column = match
+    world.component_column(@transform.ecs_key_global_transform) {
     Some(column) => column
     None => abort("missing GlobalTransform column")
   }

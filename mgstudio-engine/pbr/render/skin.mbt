@@ -711,9 +711,7 @@ fn render3d_extract_joints(
     let (joint_key, skins) = entry
     let joint_entity = @core.Entity::from_bits(joint_key)
     if !source_world.is_changed_by_key(
-        joint_entity,
-        @transform.ecs_key_global_transform,
-        sequence,
+        joint_entity, @transform.ecs_key_global_transform, sequence,
       ) {
       continue
     }
@@ -735,8 +733,8 @@ fn render3d_extract_joints(
         return
       }
       render3d_extract_joints_for_skin(
-        source_world, skin_uniforms_ref, world_transform_cache_ref, entity,
-        skinned_mesh, changed_skin_entities, inverse_bindposes_assets, transform_columns,
+        source_world, skin_uniforms_ref, world_transform_cache_ref, entity, skinned_mesh,
+        changed_skin_entities, inverse_bindposes_assets, transform_columns,
       )
     })
     return
@@ -759,8 +757,8 @@ fn render3d_extract_joints(
       continue
     }
     render3d_extract_joints_for_skin(
-      source_world, skin_uniforms_ref, world_transform_cache_ref, skin_entity,
-      skinned_mesh, changed_skin_entities, inverse_bindposes_assets, transform_columns,
+      source_world, skin_uniforms_ref, world_transform_cache_ref, skin_entity, skinned_mesh,
+      changed_skin_entities, inverse_bindposes_assets, transform_columns,
     )
   }
 }
@@ -791,8 +789,8 @@ pub fn render3d_extract_skin_bindings(
   }
   let transform_columns = render3d_transform_columns(source_world)
   let changed_skin_entities = render3d_add_or_delete_skins(
-    source_world, skin_uniforms_ref, world_transform_cache_ref,
-    inverse_bindposes_assets, transform_columns,
+    source_world, skin_uniforms_ref, world_transform_cache_ref, inverse_bindposes_assets,
+    transform_columns,
   )
   let sequence = source_world.get_sequence_context().sequence()
   let removed_skinned_meshes = source_world.removed_components(
@@ -809,8 +807,8 @@ pub fn render3d_extract_skin_bindings(
     render3d_phase_remove_skin(skin_uniforms_ref, entity)
   }
   render3d_extract_joints(
-    source_world, skin_uniforms_ref, world_transform_cache_ref,
-    changed_skin_entities, inverse_bindposes_assets, transform_columns,
+    source_world, skin_uniforms_ref, world_transform_cache_ref, changed_skin_entities,
+    inverse_bindposes_assets, transform_columns,
   )
 }
 

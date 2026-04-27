@@ -29,9 +29,9 @@ let ecs_res_key_sprite_plugin_marker : @ecs.ResourceKey[SpritePluginMarker] = @e
 )
 
 ///|
-let sprite_bounds_initialized_worlds_ref : Ref[
-  @hashset.HashSet[Int]
-] = Ref::new(@hashset.HashSet::new())
+let sprite_bounds_initialized_worlds_ref : Ref[@hashset.HashSet[Int]] = Ref::new(
+  @hashset.HashSet::new(),
+)
 
 ///|
 fn sprite_entity_key(entity : @core.Entity) -> UInt64 {

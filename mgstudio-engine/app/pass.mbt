@@ -30,11 +30,7 @@ fn[W] schedule_run_build_passes(
     match pass_kind {
       AutoInsertApplyDeferredPass =>
         schedule_auto_insert_apply_deferred_pass(
-          schedule_entry,
-          graph,
-          base_system_order,
-          base_system_edges,
-          system_accesses,
+          schedule_entry, graph, base_system_order, base_system_edges, system_accesses,
           runnable_mask,
         )
     }

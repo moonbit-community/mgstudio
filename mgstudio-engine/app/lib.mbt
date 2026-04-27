@@ -909,15 +909,19 @@ pub fn[W, P : SystemParam] system_config_param(
   system : (P) -> Unit,
   loc~ : SourceLoc,
 ) -> SystemConfig[W] {
-  system_config_with_access(system_param(system), fn(world : @ecs.World) {
-    let access = SystemAccess::new()
-    system_access_merge_validated(
-      access,
-      P::access(world),
-      @utils.IntBitSet::new(),
-    )
-    access
-  }, loc~)
+  system_config_with_access(
+    system_param(system),
+    fn(world : @ecs.World) {
+      let access = SystemAccess::new()
+      system_access_merge_validated(
+        access,
+        P::access(world),
+        @utils.IntBitSet::new(),
+      )
+      access
+    },
+    loc~,
+  )
 }
 
 ///|
@@ -926,17 +930,19 @@ pub fn[W, P : SystemParam] fallible_system_config_param(
   system : (P) -> Unit raise,
   loc~ : SourceLoc,
 ) -> SystemConfig[W] {
-  system_config_with_access(fallible_system_param(system), fn(
-    world : @ecs.World,
-  ) {
-    let access = SystemAccess::new()
-    system_access_merge_validated(
-      access,
-      P::access(world),
-      @utils.IntBitSet::new(),
-    )
-    access
-  }, loc~)
+  system_config_with_access(
+    fallible_system_param(system),
+    fn(world : @ecs.World) {
+      let access = SystemAccess::new()
+      system_access_merge_validated(
+        access,
+        P::access(world),
+        @utils.IntBitSet::new(),
+      )
+      access
+    },
+    loc~,
+  )
 }
 
 ///|
@@ -945,20 +951,24 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] system_config_param2(
   system : (P1, P2) -> Unit,
   loc~ : SourceLoc,
 ) -> SystemConfig[W] {
-  system_config_with_access(system_param2(system), fn(world : @ecs.World) {
-    let access = SystemAccess::new()
-    system_access_merge_validated(
-      access,
-      P1::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P2::access(world),
-      @utils.IntBitSet::new(),
-    )
-    access
-  }, loc~)
+  system_config_with_access(
+    system_param2(system),
+    fn(world : @ecs.World) {
+      let access = SystemAccess::new()
+      system_access_merge_validated(
+        access,
+        P1::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P2::access(world),
+        @utils.IntBitSet::new(),
+      )
+      access
+    },
+    loc~,
+  )
 }
 
 ///|
@@ -967,22 +977,24 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_config_param2(
   system : (P1, P2) -> Unit raise,
   loc~ : SourceLoc,
 ) -> SystemConfig[W] {
-  system_config_with_access(fallible_system_param2(system), fn(
-    world : @ecs.World,
-  ) {
-    let access = SystemAccess::new()
-    system_access_merge_validated(
-      access,
-      P1::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P2::access(world),
-      @utils.IntBitSet::new(),
-    )
-    access
-  }, loc~)
+  system_config_with_access(
+    fallible_system_param2(system),
+    fn(world : @ecs.World) {
+      let access = SystemAccess::new()
+      system_access_merge_validated(
+        access,
+        P1::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P2::access(world),
+        @utils.IntBitSet::new(),
+      )
+      access
+    },
+    loc~,
+  )
 }
 
 ///|
@@ -991,25 +1003,29 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_config_pa
   system : (P1, P2, P3) -> Unit,
   loc~ : SourceLoc,
 ) -> SystemConfig[W] {
-  system_config_with_access(system_param3(system), fn(world : @ecs.World) {
-    let access = SystemAccess::new()
-    system_access_merge_validated(
-      access,
-      P1::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P2::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P3::access(world),
-      @utils.IntBitSet::new(),
-    )
-    access
-  }, loc~)
+  system_config_with_access(
+    system_param3(system),
+    fn(world : @ecs.World) {
+      let access = SystemAccess::new()
+      system_access_merge_validated(
+        access,
+        P1::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P2::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P3::access(world),
+        @utils.IntBitSet::new(),
+      )
+      access
+    },
+    loc~,
+  )
 }
 
 ///|
@@ -1018,27 +1034,29 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_
   system : (P1, P2, P3) -> Unit raise,
   loc~ : SourceLoc,
 ) -> SystemConfig[W] {
-  system_config_with_access(fallible_system_param3(system), fn(
-    world : @ecs.World,
-  ) {
-    let access = SystemAccess::new()
-    system_access_merge_validated(
-      access,
-      P1::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P2::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P3::access(world),
-      @utils.IntBitSet::new(),
-    )
-    access
-  }, loc~)
+  system_config_with_access(
+    fallible_system_param3(system),
+    fn(world : @ecs.World) {
+      let access = SystemAccess::new()
+      system_access_merge_validated(
+        access,
+        P1::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P2::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P3::access(world),
+        @utils.IntBitSet::new(),
+      )
+      access
+    },
+    loc~,
+  )
 }
 
 ///|
@@ -1053,30 +1071,34 @@ pub fn[
   system : (P1, P2, P3, P4) -> Unit,
   loc~ : SourceLoc,
 ) -> SystemConfig[W] {
-  system_config_with_access(system_param4(system), fn(world : @ecs.World) {
-    let access = SystemAccess::new()
-    system_access_merge_validated(
-      access,
-      P1::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P2::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P3::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P4::access(world),
-      @utils.IntBitSet::new(),
-    )
-    access
-  }, loc~)
+  system_config_with_access(
+    system_param4(system),
+    fn(world : @ecs.World) {
+      let access = SystemAccess::new()
+      system_access_merge_validated(
+        access,
+        P1::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P2::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P3::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P4::access(world),
+        @utils.IntBitSet::new(),
+      )
+      access
+    },
+    loc~,
+  )
 }
 
 ///|
@@ -1091,32 +1113,34 @@ pub fn[
   system : (P1, P2, P3, P4) -> Unit raise,
   loc~ : SourceLoc,
 ) -> SystemConfig[W] {
-  system_config_with_access(fallible_system_param4(system), fn(
-    world : @ecs.World,
-  ) {
-    let access = SystemAccess::new()
-    system_access_merge_validated(
-      access,
-      P1::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P2::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P3::access(world),
-      @utils.IntBitSet::new(),
-    )
-    system_access_merge_validated(
-      access,
-      P4::access(world),
-      @utils.IntBitSet::new(),
-    )
-    access
-  }, loc~)
+  system_config_with_access(
+    fallible_system_param4(system),
+    fn(world : @ecs.World) {
+      let access = SystemAccess::new()
+      system_access_merge_validated(
+        access,
+        P1::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P2::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P3::access(world),
+        @utils.IntBitSet::new(),
+      )
+      system_access_merge_validated(
+        access,
+        P4::access(world),
+        @utils.IntBitSet::new(),
+      )
+      access
+    },
+    loc~,
+  )
 }
 
 ///|
@@ -1717,6 +1741,11 @@ let current_allowed_ambiguous_components_ref : Ref[@utils.IntBitSet?] = Ref::new
 )
 
 ///|
+let current_allowed_ambiguous_resources_ref : Ref[@utils.IntBitSet?] = Ref::new(
+  None,
+)
+
+///|
 pub fn current_world() -> @ecs.World? {
   current_world_ref.val
 }
@@ -1724,6 +1753,14 @@ pub fn current_world() -> @ecs.World? {
 ///|
 fn current_allowed_ambiguous_components() -> @utils.IntBitSet {
   match current_allowed_ambiguous_components_ref.val {
+    Some(allowed) => allowed
+    None => @utils.IntBitSet::new()
+  }
+}
+
+///|
+fn current_allowed_ambiguous_resources() -> @utils.IntBitSet {
+  match current_allowed_ambiguous_resources_ref.val {
     Some(allowed) => allowed
     None => @utils.IntBitSet::new()
   }
@@ -2425,6 +2462,23 @@ pub fn[T : @ecs.Component] App::is_ambiguous_component_allowed(
   key? : @ecs.ComponentKey[T] = T::component(),
 ) -> Bool {
   self.sub_apps.main.is_ambiguous_component_allowed(key~)
+}
+
+///|
+pub fn[T : Resource] App::allow_ambiguous_resource(
+  self : App[@ecs.World],
+  key? : @ecs.ResourceKey[T] = T::resource(),
+) -> App[@ecs.World] {
+  self.sub_apps.main = self.sub_apps.main.allow_ambiguous_resource(key~)
+  self
+}
+
+///|
+pub fn[T : Resource] App::is_ambiguous_resource_allowed(
+  self : App[@ecs.World],
+  key? : @ecs.ResourceKey[T] = T::resource(),
+) -> Bool {
+  self.sub_apps.main.is_ambiguous_resource_allowed(key~)
 }
 
 ///|
@@ -3669,6 +3723,7 @@ pub fn[
   self
 }
 
+///|
 fn run_schedule_stage(
   world : @ecs.World,
   schedule : ScheduleRegistry[@ecs.World],
@@ -3684,6 +3739,7 @@ fn run_schedule_stage(
     stage,
     world,
     current_allowed_ambiguous_components(),
+    current_allowed_ambiguous_resources(),
   )
   match execution_plan.build_error {
     Some(message) => {

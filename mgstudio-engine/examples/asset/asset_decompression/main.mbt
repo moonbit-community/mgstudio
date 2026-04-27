@@ -65,7 +65,12 @@ fn load_gzip_asset(
 ///|
 fn gzip_asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @asset.init_asset_loader(
-    app,
+    @asset.init_asset(app, fn() {
+      GzAsset::{
+        uncompressed_bytes: Bytes::from_array([]),
+        uncompressed_path: @asset.AssetPath::from_path(""),
+      }
+    }),
     @asset.AssetLoader::new(["gz"], load_gzip_asset),
   )
 }

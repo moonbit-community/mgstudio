@@ -52,9 +52,9 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let primitive_handle = asset_server.get().load(
-    @gltf.GltfAssetLabel::Primitive(0, 0).from_asset(GLTF_PATH),
-  )
+  let primitive_handle = asset_server
+    .get()
+    .load(@gltf.GltfAssetLabel::Primitive(0, 0).from_asset(GLTF_PATH))
   let (graph, index) = @animation.AnimationGraph::from_clip(
     asset_server
     .get()
@@ -66,16 +66,20 @@ fn setup(
     primitive_handle,
     named: false,
   })
-  commands.insert_resource(@pbr.GlobalAmbientLight::new(@sprite.Color::white(), 800.0F))
+  commands.insert_resource(
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 800.0F),
+  )
 
   ignore(
-    commands.spawn_bundle(@camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
-      @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
-        @math.Vec3::zero(),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    commands.spawn_bundle(
+      @camera.Camera3dBundle::new(
+        @sprite.Camera::default(),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
       ),
-    )),
+    ),
   )
 
   ignore(
@@ -93,9 +97,9 @@ fn setup(
     (
       AnimationToPlay::{ graph_handle, index },
       @scene.SceneRoot::new(
-        asset_server.get().load(
-          @gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH),
-        ),
+        asset_server
+        .get()
+        .load(@gltf.GltfAssetLabel::Scene(0).from_asset(GLTF_PATH)),
       ),
       @transform.Transform::identity().with_scale(@math.Vec3::splat(1.8F)),
     ),
@@ -115,8 +119,7 @@ fn play_animation_when_ready(
     is Some(animation_to_play) else {
     return
   }
-  guard (players.get(scene_entity) catch { _ => None })
-    is Some(player_mut) else {
+  guard (players.get(scene_entity) catch { _ => None }) is Some(player_mut) else {
     return
   }
   player_mut.modify(fn(player) {

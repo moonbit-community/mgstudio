@@ -199,9 +199,8 @@ test "ecs query: view permits non-structural replacement but rejects structural 
       }),
     )
   })
-  guard insert_result.val is Some(
-    Err(StructuralChangeDuringQueryIteration("insert component")),
-  ) else {
+  guard insert_result.val
+    is Some(Err(StructuralChangeDuringQueryIteration("insert component"))) else {
     fail("expected inserting a new component during Query::view to be rejected")
   }
 }
@@ -217,11 +216,12 @@ test "ecs query: view rejects structural removal" {
   let query : Query[Comp[MutQueryPosition], All] = query(world)
   let remove_result : Ref[Result[Bool, EcsError]?] = Ref::new(None)
   try! query.view(fn(entity, _position) {
-    remove_result.val = Some(try? world.remove_by_key(entity, mut_query_position_key))
+    remove_result.val = Some(
+      try? world.remove_by_key(entity, mut_query_position_key),
+    )
   })
-  guard remove_result.val is Some(
-    Err(StructuralChangeDuringQueryIteration("remove component")),
-  ) else {
+  guard remove_result.val
+    is Some(Err(StructuralChangeDuringQueryIteration("remove component"))) else {
     fail("expected removing a component during Query::view to be rejected")
   }
   debug_inspect(
@@ -280,11 +280,9 @@ test "ecs mut query: detect changes helpers support explicit mutation and markin
 test "ecs mut query: Mut::modify persists method-style mutations" {
   let world = World::new()
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    mut_query_method_value_key,
-    MutQueryMethodValue::{ value: 1 },
-  )
+  try! world.set_by_key(entity, mut_query_method_value_key, MutQueryMethodValue::{
+    value: 1,
+  })
   let query : Query[Mut[MutQueryMethodValue], All] = query(world)
   let component_mut = try! query.require_single()
   component_mut.modify(fn(value) { value.bump() })

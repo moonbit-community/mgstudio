@@ -175,15 +175,12 @@ fn asset_processor_registry_state_for_world(
 ) -> AssetProcessorRegistryState {
   let key = asset_processor_registry_state_resource_key()
   if (try! world.get_resource(key)) is None {
-    world.insert_resource(
-      key,
-      AssetProcessorRegistryState::{
-        processors: Ref::new(@hashmap.HashMap::new()),
-        default_processor_by_extension: Ref::new(@hashmap.HashMap::new()),
-        named_processors: Ref::new(@hashmap.HashMap::new()),
-        last_registered_entry: Ref::new(None),
-      },
-    )
+    world.insert_resource(key, AssetProcessorRegistryState::{
+      processors: Ref::new(@hashmap.HashMap::new()),
+      default_processor_by_extension: Ref::new(@hashmap.HashMap::new()),
+      named_processors: Ref::new(@hashmap.HashMap::new()),
+      last_registered_entry: Ref::new(None),
+    })
   }
   match (try! world.get_resource(key)) {
     Some(state) => state
@@ -210,9 +207,7 @@ fn asset_processor_registry_register_entry(
 ) -> Unit {
   let state = asset_processor_registry_state_active()
   let entry_index = asset_processor_registry_push_entry_in_state(
-    state,
-    type_name,
-    entry,
+    state, type_name, entry,
   )
   match processor_name {
     Some(name) =>
@@ -248,14 +243,11 @@ fn[T] register_asset_processor_with_name(
         },
         insert: fn(world, handle_id, value_any) {
           let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-          if (try! world.get_resource(key)) is None {
-            world.insert_resource(key, Assets::new())
-          }
           let assets = match (try! world.get_resource_mut(key)) {
             Some(value) => value
             None =>
               abort(
-                "Failed to initialize Assets resource for asset processor output",
+                "Assets resource is missing for asset processor output; call init_asset before registering or processing this asset type",
               )
           }
           let value : T = match value_any.try_to() {
@@ -266,22 +258,16 @@ fn[T] register_asset_processor_with_name(
               )
           }
           ignore(
-            assets.modify(fn(store) { store.insert(Handle::new(handle_id), value) }),
+            assets.modify(fn(store) {
+              store.insert(Handle::new(handle_id), value)
+            }),
           )
         },
       },
       processor_name,
     )
   })
-  let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-  if app.contains_resource(key) {
-    app
-  } else {
-    app.init_resource(fn() {
-      let assets : Assets[T] = Assets::new()
-      assets
-    })
-  }
+  app
 }
 
 ///|
@@ -320,7 +306,9 @@ pub fn set_default_asset_processor(
   }
   let world = app.world()
   asset_with_world(world, fn() {
-    fn set_default_to_last_registered(state : AssetProcessorRegistryState) -> Unit {
+    fn set_default_to_last_registered(
+      state : AssetProcessorRegistryState,
+    ) -> Unit {
       match state.last_registered_entry.val {
         Some(last_entry) =>
           state.default_processor_by_extension.val.set(normalized, last_entry)

@@ -216,10 +216,7 @@ test "app: Query system param refreshes after initially empty match" {
     if inserted.val is None {
       inserted.val = Some(
         commands.spawn(
-          (
-            QueryPosition::{ x: 10, y: 20 },
-            QueryVelocity::{ dx: 0, dy: 0 },
-          ),
+          (QueryPosition::{ x: 10, y: 20 }, QueryVelocity::{ dx: 0, dy: 0 }),
         ),
       )
     }
@@ -230,9 +227,7 @@ test "app: Query system param refreshes after initially empty match" {
   app = app.run_once()
 
   debug_inspect(counts, content="[0, 1, 1]")
-  guard inserted.val is Some(entity) else {
-    fail("expected inserted entity")
-  }
+  guard inserted.val is Some(entity) else { fail("expected inserted entity") }
   debug_inspect(
     try! app.world().get_by_key(entity, query_position_key),
     content="Some({ x: 12, y: 20 })",

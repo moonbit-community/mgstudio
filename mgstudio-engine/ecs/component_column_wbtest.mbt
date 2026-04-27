@@ -31,24 +31,20 @@ pub impl Component for ComponentColumnCacheValue with component() {
 test "ecs component column: cached table values write through raw column" {
   let world = World::new()
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    component_column_cache_value_key,
-    ComponentColumnCacheValue::{ x: 1 },
-  )
+  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
+    x: 1,
+  })
   guard world.table_id_for_entity(entity) is Some(table_id) else {
     fail("expected table entity")
   }
   guard world.entity_table_row(entity) is Some(table_row) else {
     fail("expected table row")
   }
-  guard
-    world.local_component_id(component_column_cache_value_key.id())
+  guard world.local_component_id(component_column_cache_value_key.id())
     is Some(local_component_id) else {
     fail("expected local component id")
   }
-  guard
-    world.component_column(component_column_cache_value_key)
+  guard world.component_column(component_column_cache_value_key)
     is Some(component_column) else {
     fail("expected component column")
   }
@@ -58,10 +54,9 @@ test "ecs component column: cached table values write through raw column" {
   debug_inspect(values[table_row.index()], content="{ x: 1 }")
 
   ignore(
-    component_column.set_sequence_only(
-      entity,
-      ComponentColumnCacheValue::{ x: 2 },
-    ),
+    component_column.set_sequence_only(entity, ComponentColumnCacheValue::{
+      x: 2,
+    }),
   )
 
   guard world.table_storage(table_id) is Some(table_ref) else {
@@ -70,8 +65,7 @@ test "ecs component column: cached table values write through raw column" {
   guard table_ref.val.column(local_component_id) is Some(column_ref) else {
     fail("expected raw table column")
   }
-  guard
-    raw_table_value_column_kernel_value(
+  guard raw_table_value_column_kernel_value(
       column_ref.val.storage,
       table_row.index(),
     )
@@ -79,9 +73,7 @@ test "ecs component column: cached table values write through raw column" {
     fail("expected raw column value")
   }
   let result : Result[ComponentColumnCacheValue, @any.TypeMismatch] = try? raw_value.to()
-  guard result is Ok(value) else {
-    fail("expected raw value type")
-  }
+  guard result is Ok(value) else { fail("expected raw value type") }
   debug_inspect(value, content="{ x: 2 }")
 }
 
@@ -89,24 +81,20 @@ test "ecs component column: cached table values write through raw column" {
 test "ecs mut query: cached table values write through raw column" {
   let world = World::new()
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    component_column_cache_value_key,
-    ComponentColumnCacheValue::{ x: 3 },
-  )
+  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
+    x: 3,
+  })
   guard world.table_id_for_entity(entity) is Some(table_id) else {
     fail("expected table entity")
   }
   guard world.entity_table_row(entity) is Some(table_row) else {
     fail("expected table row")
   }
-  guard
-    world.local_component_id(component_column_cache_value_key.id())
+  guard world.local_component_id(component_column_cache_value_key.id())
     is Some(local_component_id) else {
     fail("expected local component id")
   }
-  guard
-    world.component_column(component_column_cache_value_key)
+  guard world.component_column(component_column_cache_value_key)
     is Some(component_column) else {
     fail("expected component column")
   }
@@ -126,8 +114,7 @@ test "ecs mut query: cached table values write through raw column" {
   guard table_ref.val.column(local_component_id) is Some(column_ref) else {
     fail("expected raw table column")
   }
-  guard
-    raw_table_value_column_kernel_value(
+  guard raw_table_value_column_kernel_value(
       column_ref.val.storage,
       table_row.index(),
     )
@@ -135,8 +122,6 @@ test "ecs mut query: cached table values write through raw column" {
     fail("expected raw column value")
   }
   let result : Result[ComponentColumnCacheValue, @any.TypeMismatch] = try? raw_value.to()
-  guard result is Ok(value) else {
-    fail("expected raw value type")
-  }
+  guard result is Ok(value) else { fail("expected raw value type") }
   debug_inspect(value, content="{ x: 4 }")
 }

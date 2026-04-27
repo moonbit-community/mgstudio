@@ -259,10 +259,7 @@ fn pbr_plugin_install_with(
     next = next
       .insert_world_resource(ecs_key_pbr_plugin_marker, PbrPluginMarker::{  })
       .insert_world_resource(ecs_key_pbr_plugin_runtime_config, runtime_config)
-      .init_resource(fn() {
-        let assets : @asset.Assets[StandardMaterial] = @asset.Assets::new()
-        assets
-      })
+    next = @asset.init_asset(next, fn() { StandardMaterial::default() })
   } else {
     next = next.insert_world_resource(
       ecs_key_pbr_plugin_runtime_config, runtime_config,

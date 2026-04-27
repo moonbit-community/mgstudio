@@ -469,8 +469,7 @@ fn World::insert_component_payloads_with_requirements(
   let (pending_payloads, pending_metadata) : (
     Map[Int, ErasedWriter],
     Map[Int, ComponentTickMetadata],
-  ) = match
-    self.pending_component_payload_context {
+  ) = match self.pending_component_payload_context {
     Some(context) if context.entity_id == entity.id =>
       (context.payloads, context.metadata)
     _ => ({}, {})

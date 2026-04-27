@@ -113,6 +113,16 @@ test "asset plugin initializes world-owned asset resources" {
 }
 
 ///|
+test "asset app: registering loader does not initialize Assets resource" {
+  let app = init_asset_loader(
+    asset_plugin(@app.App::new(@ecs.World::new())),
+    AssetLoader::new(["custom"], missing_loader_asset_loader),
+  )
+  let key : @ecs.ResourceKey[Assets[MissingLoaderAsset]] = assets_resource_key()
+  debug_inspect((try! app.world().get_resource(key)) is None, content="true")
+}
+
+///|
 test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
   let world = @ecs.World::new()
   world.insert_resource(asset_server_resource_key(), AssetServer::new())
@@ -263,9 +273,12 @@ fn named_processor_scope_run_two(
 ///|
 test "legacy loader, ready_checker and reload_hook are world-scoped per app world" {
   RegistryScopedLegacyAsset::{  } |> ignore
-  let app_a = asset_plugin(@app.App::new(@ecs.World::new()))
+  let app_a = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+    RegistryScopedLegacyAsset::{  }
+  })
   let world_a = app_a.world()
-  let server_a = match (try! world_a.get_resource(asset_server_resource_key())) {
+  let server_a = match
+    (try! world_a.get_resource(asset_server_resource_key())) {
     Some(server) => server
     None => abort("expected AssetServer resource for world A")
   }
@@ -280,10 +293,9 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
 
   let releases_a : Ref[Int] = Ref::new(0)
   let handle_a : Handle[RegistryScopedLegacyAsset] = asset_with_world(world_a, fn() {
-    server_a.load_acquire(
-      "scoped_registry.asset",
-      CountingLoadGuard::{ releases: releases_a },
-    )
+    server_a.load_acquire("scoped_registry.asset", CountingLoadGuard::{
+      releases: releases_a,
+    })
   })
   debug_inspect(handle_a.id() == 42, content="true")
   debug_inspect(releases_a.val, content="1")
@@ -293,7 +305,9 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
     path=reload_probe_path,
     bytes=Bytes::from_array([(1).to_byte()]),
   )
-  asset_with_world(world_a, fn() { ignore(server_a.load_bytes(reload_probe_path)) })
+  asset_with_world(world_a, fn() {
+    ignore(server_a.load_bytes(reload_probe_path))
+  })
   asset_with_world(world_a, fn() { asset_system(world_a) })
   debug_inspect(reload_calls_a.val.length(), content="0")
   host_asset_save_bytes(
@@ -303,18 +317,20 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
   asset_with_world(world_a, fn() { asset_system(world_a) })
   debug_inspect(reload_calls_a.val.length(), content="1")
 
-  let app_b = asset_plugin(@app.App::new(@ecs.World::new()))
+  let app_b = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+    RegistryScopedLegacyAsset::{  }
+  })
   let world_b = app_b.world()
-  let server_b = match (try! world_b.get_resource(asset_server_resource_key())) {
+  let server_b = match
+    (try! world_b.get_resource(asset_server_resource_key())) {
     Some(server) => server
     None => abort("expected AssetServer resource for world B")
   }
   let releases_b : Ref[Int] = Ref::new(0)
   let handle_b : Handle[RegistryScopedLegacyAsset] = asset_with_world(world_b, fn() {
-    server_b.load_acquire(
-      "scoped_registry.asset",
-      CountingLoadGuard::{ releases: releases_b },
-    )
+    server_b.load_acquire("scoped_registry.asset", CountingLoadGuard::{
+      releases: releases_b,
+    })
   })
   debug_inspect(releases_b.val, content="1")
   asset_with_world(world_b, fn() { asset_system(world_b) })
@@ -325,26 +341,22 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
   let reader = world_b.message_reader(key, cursor)
   let failures = try! reader.read()
   debug_inspect(failures.length(), content="1")
-  debug_inspect(
-    failures[0].id.index() == handle_b.id(),
-    content="true",
-  )
+  debug_inspect(failures[0].id.index() == handle_b.id(), content="true")
 
   host_asset_save_bytes(
     path=reload_probe_path,
     bytes=Bytes::from_array([(3).to_byte()]),
   )
-  asset_with_world(world_b, fn() { ignore(server_b.load_bytes(reload_probe_path)) })
+  asset_with_world(world_b, fn() {
+    ignore(server_b.load_bytes(reload_probe_path))
+  })
   asset_with_world(world_b, fn() { asset_system(world_b) })
   host_asset_save_bytes(
     path=reload_probe_path,
     bytes=Bytes::from_array([(4).to_byte()]),
   )
   asset_with_world(world_b, fn() { asset_system(world_b) })
-  debug_inspect(
-    reload_calls_a.val.length(),
-    content="1",
-  )
+  debug_inspect(reload_calls_a.val.length(), content="1")
 }
 
 ///|
@@ -360,8 +372,11 @@ test "asset processor registry is world-scoped per app world" {
   let app_a = set_default_asset_processor(
     register_asset_processor(
       init_asset_loader(
-        @app.App::new(@ecs.World::new()).add_plugins(
-          AssetPlugin::default().with_mode(AssetMode::Processed),
+        init_asset(
+          @app.App::new(@ecs.World::new()).add_plugins(
+            AssetPlugin::default().with_mode(AssetMode::Processed),
+          ),
+          fn() { ProcessorScopeAsset::{ from_processor: false } },
         ),
         AssetLoader::new(["pscope"], processor_scope_typed_loader),
       ),
@@ -370,7 +385,8 @@ test "asset processor registry is world-scoped per app world" {
     "pscope",
   )
   let world_a = app_a.world()
-  let server_a = match (try! world_a.get_resource(asset_server_resource_key())) {
+  let server_a = match
+    (try! world_a.get_resource(asset_server_resource_key())) {
     Some(server) => server
     None => abort("expected AssetServer resource for world A")
   }
@@ -380,10 +396,7 @@ test "asset processor registry is world-scoped per app world" {
   for _ in 0..<8 {
     asset_with_world(world_a, fn() { asset_system(world_a) })
     match (try! world_a.get_resource(assets_resource_key())) {
-      Some(assets) =>
-        if assets.get(handle_a) is Some(_) {
-          break
-        }
+      Some(assets) => if assets.get(handle_a) is Some(_) { break }
       None => ()
     }
   }
@@ -400,13 +413,17 @@ test "asset processor registry is world-scoped per app world" {
   )
 
   let app_b = init_asset_loader(
-    @app.App::new(@ecs.World::new()).add_plugins(
-      AssetPlugin::default().with_mode(AssetMode::Processed),
+    init_asset(
+      @app.App::new(@ecs.World::new()).add_plugins(
+        AssetPlugin::default().with_mode(AssetMode::Processed),
+      ),
+      fn() { ProcessorScopeAsset::{ from_processor: false } },
     ),
     AssetLoader::new(["pscope"], processor_scope_typed_loader),
   )
   let world_b = app_b.world()
-  let server_b = match (try! world_b.get_resource(asset_server_resource_key())) {
+  let server_b = match
+    (try! world_b.get_resource(asset_server_resource_key())) {
     Some(server) => server
     None => abort("expected AssetServer resource for world B")
   }
@@ -416,10 +433,7 @@ test "asset processor registry is world-scoped per app world" {
   for _ in 0..<8 {
     asset_with_world(world_b, fn() { asset_system(world_b) })
     match (try! world_b.get_resource(assets_resource_key())) {
-      Some(assets) =>
-        if assets.get(handle_b) is Some(_) {
-          break
-        }
+      Some(assets) => if assets.get(handle_b) is Some(_) { break }
       None => ()
     }
   }
@@ -449,8 +463,11 @@ test "asset processor default can be selected by processor name" {
     register_asset_processor_named(
       register_asset_processor_named(
         init_asset_loader(
-          @app.App::new(@ecs.World::new()).add_plugins(
-            AssetPlugin::default().with_mode(AssetMode::Processed),
+          init_asset(
+            @app.App::new(@ecs.World::new()).add_plugins(
+              AssetPlugin::default().with_mode(AssetMode::Processed),
+            ),
+            fn() { NamedProcessorScopeAsset::{ marker: 0 } },
           ),
           AssetLoader::new(["npscope"], named_processor_scope_typed_loader),
         ),
@@ -465,7 +482,8 @@ test "asset processor default can be selected by processor name" {
   )
 
   let world = app.world()
-  let asset_server = match (try! world.get_resource(asset_server_resource_key())) {
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -475,10 +493,7 @@ test "asset processor default can be selected by processor name" {
   for _ in 0..<8 {
     asset_with_world(world, fn() { asset_system(world) })
     match (try! world.get_resource(assets_resource_key())) {
-      Some(assets) =>
-        if assets.get(handle) is Some(_) {
-          break
-        }
+      Some(assets) => if assets.get(handle) is Some(_) { break }
       None => ()
     }
   }
@@ -508,8 +523,11 @@ test "asset processor default by name keeps previous selection when name is ambi
     register_asset_processor_named(
       register_asset_processor_named(
         init_asset_loader(
-          @app.App::new(@ecs.World::new()).add_plugins(
-            AssetPlugin::default().with_mode(AssetMode::Processed),
+          init_asset(
+            @app.App::new(@ecs.World::new()).add_plugins(
+              AssetPlugin::default().with_mode(AssetMode::Processed),
+            ),
+            fn() { NamedProcessorScopeAsset::{ marker: 0 } },
           ),
           AssetLoader::new(["npscope"], named_processor_scope_typed_loader),
         ),
@@ -524,7 +542,8 @@ test "asset processor default by name keeps previous selection when name is ambi
   )
 
   let world = app.world()
-  let asset_server = match (try! world.get_resource(asset_server_resource_key())) {
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -534,10 +553,7 @@ test "asset processor default by name keeps previous selection when name is ambi
   for _ in 0..<8 {
     asset_with_world(world, fn() { asset_system(world) })
     match (try! world.get_resource(assets_resource_key())) {
-      Some(assets) =>
-        if assets.get(handle) is Some(_) {
-          break
-        }
+      Some(assets) => if assets.get(handle) is Some(_) { break }
       None => ()
     }
   }
@@ -557,9 +573,9 @@ test "asset processor default by name keeps previous selection when name is ambi
 
 ///|
 test "asset source builder registration is world-scoped per app world" {
-  let scoped_path = AssetPath::from_path(
-    "bevy_pixel_dark_with_meta.png",
-  ).with_source(AssetSourceId::Named("scoped_source_builder"))
+  let scoped_path = AssetPath::from_path("bevy_pixel_dark_with_meta.png").with_source(
+    AssetSourceId::Named("scoped_source_builder"),
+  )
   let app_a = asset_plugin(
     register_asset_source(
       @app.App::new(@ecs.World::new()),
@@ -568,22 +584,28 @@ test "asset source builder registration is world-scoped per app world" {
     ),
   )
   let world_a = app_a.world()
-  let server_a = match (try! world_a.get_resource(asset_server_resource_key())) {
+  let server_a = match
+    (try! world_a.get_resource(asset_server_resource_key())) {
     Some(server) => server
     None => abort("expected AssetServer resource for world A")
   }
   server_a |> ignore
-  let bytes_a = asset_with_world(world_a, fn() { load_asset_source_bytes(scoped_path) })
+  let bytes_a = asset_with_world(world_a, fn() {
+    load_asset_source_bytes(scoped_path)
+  })
   debug_inspect(bytes_a.length() > 0, content="true")
 
   let app_b = asset_plugin(@app.App::new(@ecs.World::new()))
   let world_b = app_b.world()
-  let server_b = match (try! world_b.get_resource(asset_server_resource_key())) {
+  let server_b = match
+    (try! world_b.get_resource(asset_server_resource_key())) {
     Some(server) => server
     None => abort("expected AssetServer resource for world B")
   }
   server_b |> ignore
-  let bytes_b = asset_with_world(world_b, fn() { load_asset_source_bytes(scoped_path) })
+  let bytes_b = asset_with_world(world_b, fn() {
+    load_asset_source_bytes(scoped_path)
+  })
   debug_inspect(bytes_b.length(), content="0")
 
   let bytes_a_after = asset_with_world(world_a, fn() {
@@ -616,7 +638,9 @@ test "default asset source builder path override is world-scoped per app world" 
     ),
   )
   let world_a = app_a.world()
-  let bytes_a = asset_with_world(world_a, fn() { load_asset_source_bytes(relative_path) })
+  let bytes_a = asset_with_world(world_a, fn() {
+    load_asset_source_bytes(relative_path)
+  })
   debug_inspect(
     bytes_a.length() == 1 && bytes_a[0].to_uint() == 11U,
     content="true",
@@ -630,7 +654,9 @@ test "default asset source builder path override is world-scoped per app world" 
     ),
   )
   let world_b = app_b.world()
-  let bytes_b = asset_with_world(world_b, fn() { load_asset_source_bytes(relative_path) })
+  let bytes_b = asset_with_world(world_b, fn() {
+    load_asset_source_bytes(relative_path)
+  })
   debug_inspect(
     bytes_b.length() == 1 && bytes_b[0].to_uint() == 22U,
     content="true",
@@ -651,6 +677,8 @@ test "asset server load without registered loader emits typed/untyped AssetLoadF
   let world = @ecs.World::new()
   world.insert_resource(asset_server_resource_key(), AssetServer::new())
   world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+  let missing_assets : Assets[MissingLoaderAsset] = Assets::new()
+  world.insert_resource(assets_resource_key(), missing_assets)
 
   let asset_server = match
     (try! world.get_resource(asset_server_resource_key())) {
@@ -706,7 +734,9 @@ test "asset server load without registered loader emits typed/untyped AssetLoadF
 
 ///|
 test "asset server retries failed typed loads with the same handle after loader registration" {
-  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let app = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+    MissingLoaderAsset::{  }
+  })
   let world = app.world()
   let asset_server = match
     (try! world.get_resource(asset_server_resource_key())) {
@@ -839,11 +869,14 @@ test "asset server retries failed typed loads with the same handle after loader 
 ///|
 test "typed asset loaders are world-scoped per app world" {
   let app_a = init_asset_loader(
-    asset_plugin(@app.App::new(@ecs.World::new())),
+    init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+      MissingLoaderAsset::{  }
+    }),
     AssetLoader::new(["custom"], missing_loader_asset_loader),
   )
   let world_a = app_a.world()
-  let server_a = match (try! world_a.get_resource(asset_server_resource_key())) {
+  let server_a = match
+    (try! world_a.get_resource(asset_server_resource_key())) {
     Some(server) => server
     None => abort("expected AssetServer resource for world A")
   }
@@ -854,9 +887,9 @@ test "typed asset loaders are world-scoped per app world" {
   for _ in 0..<4 {
     asset_with_world(world_a, fn() { asset_system(world_a) })
     if (match (try! world_a.get_resource(assets_key)) {
-      Some(assets) => assets.contains(handle_a)
-      None => false
-    }) {
+        Some(assets) => assets.contains(handle_a)
+        None => false
+      }) {
       break
     }
   }
@@ -868,9 +901,12 @@ test "typed asset loaders are world-scoped per app world" {
     content="true",
   )
 
-  let app_b = asset_plugin(@app.App::new(@ecs.World::new()))
+  let app_b = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+    MissingLoaderAsset::{  }
+  })
   let world_b = app_b.world()
-  let server_b = match (try! world_b.get_resource(asset_server_resource_key())) {
+  let server_b = match
+    (try! world_b.get_resource(asset_server_resource_key())) {
     Some(server) => server
     None => abort("expected AssetServer resource for world B")
   }
@@ -1092,7 +1128,9 @@ test "asset system releases load_acquire guard after asset becomes ready" {
 ///|
 test "asset system releases load_acquire guard when load fails" {
   MissingLoaderAsset::{  } |> ignore
-  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let app = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+    MissingLoaderAsset::{  }
+  })
   let world = app.world()
   let asset_server = match
     (try! world.get_resource(asset_server_resource_key())) {
@@ -1101,10 +1139,9 @@ test "asset system releases load_acquire guard when load fails" {
   }
   let release_count = Ref::new(0)
   let handle : Handle[MissingLoaderAsset] = asset_with_world(world, fn() {
-    asset_server.load_acquire(
-      "asset/tests/missing_loader_for_acquire.test",
-      CountingLoadGuard::{ releases: release_count },
-    )
+    asset_server.load_acquire("asset/tests/missing_loader_for_acquire.test", CountingLoadGuard::{
+      releases: release_count,
+    })
   })
 
   debug_inspect(release_count.val, content="1")
@@ -1130,10 +1167,9 @@ test "asset load_acquire releases guard for Blob loads without Assets<Blob> stor
   }
   let release_count = Ref::new(0)
   let handle : Handle[Blob] = asset_with_world(world, fn() {
-    asset_server.load_acquire(
-      "branding/bevy_bird_dark.png",
-      CountingLoadGuard::{ releases: release_count },
-    )
+    asset_server.load_acquire("branding/bevy_bird_dark.png", CountingLoadGuard::{
+      releases: release_count,
+    })
   })
 
   debug_inspect(release_count.val, content="1")
@@ -1496,7 +1532,9 @@ fn test_custom_asset_loader(
 ///|
 test "asset server loads typed custom assets into Assets<T> and reuses handles" {
   let app = init_asset_loader(
-    asset_plugin(@app.App::new(@ecs.World::new())),
+    init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+      TestCustomAsset::{ value: 0 }
+    }),
     AssetLoader::new(["custom"], test_custom_asset_loader),
   )
   let world = app.world()
@@ -1533,7 +1571,9 @@ test "asset server loads typed custom assets into Assets<T> and reuses handles" 
 test "typed asset loaders resolve by full extension, secondary extension, then latest fallback" {
   let app = init_asset_loader(
     init_asset_loader(
-      asset_plugin(@app.App::new(@ecs.World::new())),
+      init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+        MultiLoaderAsset::{ loader_tag: 0 }
+      }),
       AssetLoader::new(["bar"], multi_loader_secondary_extension_loader),
     ),
     AssetLoader::new(["foo.bar"], multi_loader_full_extension_loader),
@@ -1548,9 +1588,10 @@ test "typed asset loaders resolve by full extension, secondary extension, then l
   let full_ext_handle : Handle[MultiLoaderAsset] = asset_with_world(world, fn() {
     asset_server.load("data/asset.foo.bar")
   })
-  let secondary_ext_handle : Handle[MultiLoaderAsset] = asset_with_world(world, fn() {
-    asset_server.load("data/asset.bar")
-  })
+  let secondary_ext_handle : Handle[MultiLoaderAsset] = asset_with_world(
+    world,
+    fn() { asset_server.load("data/asset.bar") },
+  )
   let fallback_handle : Handle[MultiLoaderAsset] = asset_with_world(world, fn() {
     asset_server.load("data/asset.unknown_ext")
   })
@@ -1595,7 +1636,9 @@ test "typed asset loaders resolve by full extension, secondary extension, then l
 
 ///|
 test "asset server add inserts a typed asset into Assets<T>" {
-  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let app = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+    TestCustomAsset::{ value: 0 }
+  })
   let world = app.world()
   let asset_server = match
     (try! world.get_resource(asset_server_resource_key())) {

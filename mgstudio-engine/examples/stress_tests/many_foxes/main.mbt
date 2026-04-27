@@ -204,6 +204,7 @@ fn max_int(a : Int, b : Int) -> Int {
   }
 }
 
+///|
 fn stress_metrics_system(
   state : @app.ResMut[StressMetricsState],
   time : @app.Res[@time.Time[@time.Real]],
@@ -221,11 +222,12 @@ fn stress_metrics_system(
   if !state_value.timer.is_finished() || state_value.elapsed_seconds <= 0.0F {
     return
   }
-  let fps = Float::from_int(state_value.frame_count) / state_value.elapsed_seconds
-  let frame_time_ms = state_value.elapsed_seconds * 1000.0F /
+  let fps = Float::from_int(state_value.frame_count) /
+    state_value.elapsed_seconds
+  let frame_time_ms = state_value.elapsed_seconds *
+    1000.0F /
     Float::from_int(state_value.frame_count)
-  let line =
-    "many_foxes fps=\{fps.to_string()} frame_time=\{frame_time_ms.to_string()}ms samples=\{state_value.frame_count.to_string()}"
+  let line = "many_foxes fps=\{fps.to_string()} frame_time=\{frame_time_ms.to_string()}ms samples=\{state_value.frame_count.to_string()}"
   println(line)
   @fs.write_string_to_file(STRESS_METRICS_OUTPUT_PATH, "\{line}\n") catch {
     _ => ()
@@ -289,11 +291,9 @@ fn setup(
     let foxes_in_ring = min_int(estimated, foxes_remaining)
     let fox_spacing_angle = circumference /
       (float_from_int(foxes_in_ring) * radius)
-    let fox_batch : Array[(
-      @hierarchy.Parent,
-      @scene.SceneRoot,
-      @transform.Transform,
-    )] = []
+    let fox_batch : Array[
+      (@hierarchy.Parent, @scene.SceneRoot, @transform.Transform),
+    ] = []
     for fox_i in 0..<foxes_in_ring {
       let angle = float_from_int(fox_i) * fox_spacing_angle
       let x = @math.cos(angle) * radius
@@ -553,16 +553,12 @@ fn update_fox_rings(
 ///|
 fn main {
   let args = parse_args()
-  let keyboard_animation_control_system : @app.SystemConfig[
-    @ecs.World,
-  ] = @app.system(@app.system_param4(keyboard_animation_control)).named(
-    "examples.stress_tests.many_foxes.keyboard_animation_control",
-  )
-  let update_fox_rings_system : @app.SystemConfig[
-    @ecs.World,
-  ] = @app.system(@app.system_param3(update_fox_rings)).named(
-    "examples.stress_tests.many_foxes.update_fox_rings",
-  )
+  let keyboard_animation_control_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param4(keyboard_animation_control),
+  ).named("examples.stress_tests.many_foxes.keyboard_animation_control")
+  let update_fox_rings_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param3(update_fox_rings),
+  ).named("examples.stress_tests.many_foxes.update_fox_rings")
   let app = @app.App::new(@ecs.World::new())
     .insert_resource(Foxes::{
       ..Foxes::default(),
@@ -591,9 +587,7 @@ fn main {
     )
     .add_systems(
       @app.Update,
-      (
-        keyboard_animation_control_system, update_fox_rings_system,
-      )
+      (keyboard_animation_control_system, update_fox_rings_system)
       |> @app.chain(),
     )
     .add_systems(

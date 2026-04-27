@@ -1023,8 +1023,7 @@ test "scene: removing SceneRoot despawns spawned children" {
       root, @scene.ecs_key_scene_instance,
     )
     has_ready_after_remove.val = @scene.scene_components_has_scene_instance_ready(
-      world,
-      root,
+      world, root,
     )
   })
   debug_inspect(child_alive_after_remove.val, content="false")
@@ -1191,8 +1190,7 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
       ))
       is Some(_)
     has_ready_before_register.val = @scene.scene_components_has_scene_instance_ready(
-      world,
-      root,
+      world, root,
     )
 
     ignore(
@@ -1220,8 +1218,7 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
 
     @scene.scene_spawn_roots_system(world)
     ready_after_register.val = @scene.scene_components_has_scene_instance_ready(
-      world,
-      root,
+      world, root,
     )
 
     let child_count = Ref::new(0)
