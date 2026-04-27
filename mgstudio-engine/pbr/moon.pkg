@@ -1,5 +1,6 @@
 import {
   "moonbitlang/core/float",
+  "moonbitlang/core/hashset",
   "moonbitlang/core/json",
   "tonyfettes/any",
   "Milky2018/mgstudio/app",

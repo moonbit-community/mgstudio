@@ -307,9 +307,9 @@ pub struct World {
   archetype_table_ids : Map[Int, Int]
   archetype_component_local_ids : Map[Int, Array[Int]]
   archetype_component_local_id_indices : Map[Int, Map[Int, Int]]
-  archetype_component_local_id_presence : Map[Int, Map[Int, Bool]]
+  archetype_component_local_id_presence : Map[Int, @utils.IntBitSet]
   archetype_component_definition_ids : Map[Int, Array[Int]]
-  archetype_component_definition_id_presence : Map[Int, Map[Int, Bool]]
+  archetype_component_definition_id_presence : Map[Int, @utils.IntBitSet]
   archetype_ids_by_component_local_id : Map[Int, Array[Int]]
   archetype_add_edges_by_component_local_id : Map[Int, Map[Int, Int]]
   archetype_remove_edges_by_component_local_id : Map[Int, Map[Int, Int]]
@@ -326,7 +326,7 @@ pub struct World {
   entity_archetype_rows : Array[Int]
   entity_component_local_ids : Array[Array[Int]]
   required_components : Map[Int, Ref[RequiredComponentsState]]
-  used_components : Map[Int, Bool]
+  used_components : @utils.IntBitSet
   added_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   changed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
@@ -375,9 +375,9 @@ pub fn World::new() -> World {
     archetype_table_ids: { 0: 0 },
     archetype_component_local_ids: { 0: [] },
     archetype_component_local_id_indices: { 0: {} },
-    archetype_component_local_id_presence: { 0: {} },
+    archetype_component_local_id_presence: { 0: @utils.IntBitSet::new() },
     archetype_component_definition_ids: { 0: [] },
-    archetype_component_definition_id_presence: { 0: {} },
+    archetype_component_definition_id_presence: { 0: @utils.IntBitSet::new() },
     archetype_ids_by_component_local_id: {},
     archetype_add_edges_by_component_local_id: {},
     archetype_remove_edges_by_component_local_id: {},
@@ -394,7 +394,7 @@ pub fn World::new() -> World {
     entity_archetype_rows: [],
     entity_component_local_ids: [],
     required_components: {},
-    used_components: {},
+    used_components: @utils.IntBitSet::new(),
     added_components: {},
     changed_components: {},
     removed_components: {},

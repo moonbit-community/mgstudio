@@ -764,7 +764,7 @@ pub fn[W, P : SystemParam, O] system_param_output(
       system_access_merge_validated(
         access,
         P::access(world),
-        @hashmap.HashMap::new(),
+        @utils.IntBitSet::new(),
       )
       access
     }),
@@ -821,7 +821,7 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::pipe_param(
       system_access_merge_validated(
         access,
         P::access(world),
-        @hashmap.HashMap::new(),
+        @utils.IntBitSet::new(),
       )
       access
     },
@@ -867,7 +867,7 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::map_param(
       system_access_merge_validated(
         access,
         P::access(world),
-        @hashmap.HashMap::new(),
+        @utils.IntBitSet::new(),
       )
       access
     },
@@ -914,7 +914,7 @@ pub fn[W, P : SystemParam] system_config_param(
     system_access_merge_validated(
       access,
       P::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     access
   }, loc~)
@@ -933,7 +933,7 @@ pub fn[W, P : SystemParam] fallible_system_config_param(
     system_access_merge_validated(
       access,
       P::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     access
   }, loc~)
@@ -950,12 +950,12 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] system_config_param2(
     system_access_merge_validated(
       access,
       P1::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P2::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     access
   }, loc~)
@@ -974,12 +974,12 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_config_param2(
     system_access_merge_validated(
       access,
       P1::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P2::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     access
   }, loc~)
@@ -996,17 +996,17 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_config_pa
     system_access_merge_validated(
       access,
       P1::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P2::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P3::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     access
   }, loc~)
@@ -1025,17 +1025,17 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_
     system_access_merge_validated(
       access,
       P1::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P2::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P3::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     access
   }, loc~)
@@ -1058,22 +1058,22 @@ pub fn[
     system_access_merge_validated(
       access,
       P1::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P2::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P3::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P4::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     access
   }, loc~)
@@ -1098,22 +1098,22 @@ pub fn[
     system_access_merge_validated(
       access,
       P1::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P2::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P3::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     system_access_merge_validated(
       access,
       P4::access(world),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     )
     access
   }, loc~)
@@ -1712,7 +1712,7 @@ let current_app_schedule_ref : Ref[ScheduleRegistry[@ecs.World]?] = Ref::new(
 )
 
 ///|
-let current_allowed_ambiguous_components_ref : Ref[@hashmap.HashMap[Int, Bool]?] = Ref::new(
+let current_allowed_ambiguous_components_ref : Ref[@utils.IntBitSet?] = Ref::new(
   None,
 )
 
@@ -1722,10 +1722,10 @@ pub fn current_world() -> @ecs.World? {
 }
 
 ///|
-fn current_allowed_ambiguous_components() -> @hashmap.HashMap[Int, Bool] {
+fn current_allowed_ambiguous_components() -> @utils.IntBitSet {
   match current_allowed_ambiguous_components_ref.val {
     Some(allowed) => allowed
-    None => @hashmap.HashMap::new()
+    None => @utils.IntBitSet::new()
   }
 }
 

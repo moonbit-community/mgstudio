@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/ecs"
 
 import {
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/utils",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
@@ -701,6 +702,8 @@ pub fn[D : QueryData, F : QueryFilter] QueryContiguousIter::fetch_next(Self[D, F
 pub struct QueryDataAccess {
   read_components : Array[Int]
   write_components : Array[Int]
+  read_component_set : @utils.IntBitSet
+  write_component_set : @utils.IntBitSet
   mut has_read_write_conflict : Bool
   mut has_duplicate_write : Bool
 }
@@ -716,6 +719,9 @@ pub struct QueryFilterAccess {
   read_components : Array[Int]
   with_components : Array[Int]
   without_components : Array[Int]
+  read_component_set : @utils.IntBitSet
+  with_component_set : @utils.IntBitSet
+  without_component_set : @utils.IntBitSet
 }
 pub fn QueryFilterAccess::add_read_component(Self, Int) -> Unit
 pub fn QueryFilterAccess::add_with_component(Self, Int) -> Unit
@@ -918,9 +924,9 @@ pub struct World {
   archetype_table_ids : Map[Int, Int]
   archetype_component_local_ids : Map[Int, Array[Int]]
   archetype_component_local_id_indices : Map[Int, Map[Int, Int]]
-  archetype_component_local_id_presence : Map[Int, Map[Int, Bool]]
+  archetype_component_local_id_presence : Map[Int, @utils.IntBitSet]
   archetype_component_definition_ids : Map[Int, Array[Int]]
-  archetype_component_definition_id_presence : Map[Int, Map[Int, Bool]]
+  archetype_component_definition_id_presence : Map[Int, @utils.IntBitSet]
   archetype_ids_by_component_local_id : Map[Int, Array[Int]]
   archetype_add_edges_by_component_local_id : Map[Int, Map[Int, Int]]
   archetype_remove_edges_by_component_local_id : Map[Int, Map[Int, Int]]
@@ -937,7 +943,7 @@ pub struct World {
   entity_archetype_rows : Array[Int]
   entity_component_local_ids : Array[Array[Int]]
   required_components : Map[Int, @ref.Ref[RequiredComponentsState]]
-  used_components : Map[Int, Bool]
+  used_components : @utils.IntBitSet
   added_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   changed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   removed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
@@ -1089,7 +1095,7 @@ pub(all) struct WorldComponents {
 type WorldObserverRegistry
 
 pub(all) struct WorldQueuedRegistrations {
-  pending_by_definition_id : Map[Int, Bool]
+  pending_by_definition_id : @utils.IntBitSet
   mut queue : Array[Int]
   mut cursor : Int
 }

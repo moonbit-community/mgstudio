@@ -69,11 +69,21 @@ pub struct QueryFilterAccess {
   read_components : Array[Int]
   with_components : Array[Int]
   without_components : Array[Int]
+  read_component_set : @utils.IntBitSet
+  with_component_set : @utils.IntBitSet
+  without_component_set : @utils.IntBitSet
 }
 
 ///|
 pub fn QueryFilterAccess::new() -> QueryFilterAccess {
-  { read_components: [], with_components: [], without_components: [] }
+  {
+    read_components: [],
+    with_components: [],
+    without_components: [],
+    read_component_set: @utils.IntBitSet::new(),
+    with_component_set: @utils.IntBitSet::new(),
+    without_component_set: @utils.IntBitSet::new(),
+  }
 }
 
 ///|
@@ -81,7 +91,8 @@ pub fn QueryFilterAccess::add_read_component(
   self : QueryFilterAccess,
   component_id : Int,
 ) -> Unit {
-  if !self.read_components.contains(component_id) {
+  if !self.read_component_set.contains(component_id) {
+    self.read_component_set.insert(component_id)
     self.read_components.push(component_id)
   }
 }
@@ -91,7 +102,8 @@ pub fn QueryFilterAccess::add_with_component(
   self : QueryFilterAccess,
   component_id : Int,
 ) -> Unit {
-  if !self.with_components.contains(component_id) {
+  if !self.with_component_set.contains(component_id) {
+    self.with_component_set.insert(component_id)
     self.with_components.push(component_id)
   }
 }
@@ -101,7 +113,8 @@ pub fn QueryFilterAccess::add_without_component(
   self : QueryFilterAccess,
   component_id : Int,
 ) -> Unit {
-  if !self.without_components.contains(component_id) {
+  if !self.without_component_set.contains(component_id) {
+    self.without_component_set.insert(component_id)
     self.without_components.push(component_id)
   }
 }

@@ -159,8 +159,8 @@ pub struct SkinUniforms {
   skin_uniform_info : Map[UInt64, SkinUniformInfo]
   allocator : SkinOffsetAllocator
   joint_to_skins : Map[UInt64, Array[@core.Entity]]
-  current_skins : Map[UInt64, Bool]
-  previous_skins : Map[UInt64, Bool]
+  current_skins : @hashset.HashSet[UInt64]
+  previous_skins : @hashset.HashSet[UInt64]
   current_staging_buffer : Array[Float]
   mut total_joints : Int
 }
@@ -171,8 +171,8 @@ pub fn SkinUniforms::new() -> SkinUniforms {
     skin_uniform_info: {},
     allocator: SkinOffsetAllocator::new(),
     joint_to_skins: {},
-    current_skins: {},
-    previous_skins: {},
+    current_skins: @hashset.HashSet::new(),
+    previous_skins: @hashset.HashSet::new(),
     current_staging_buffer: [],
     total_joints: 0,
   }
@@ -248,9 +248,8 @@ fn render3d_phase_begin_skin_frame(
   skin_uniforms_ref : Ref[SkinUniforms],
 ) -> Unit {
   skin_uniforms_ref.val.previous_skins.clear()
-  for entry in skin_uniforms_ref.val.current_skins.iter() {
-    let (skin_key, exists) = entry
-    skin_uniforms_ref.val.previous_skins.set(skin_key, exists)
+  for skin_key in skin_uniforms_ref.val.current_skins.iter() {
+    skin_uniforms_ref.val.previous_skins.add(skin_key)
   }
 }
 
@@ -259,9 +258,8 @@ fn render3d_phase_sync_previous_skin_flags(
   skin_uniforms_ref : Ref[SkinUniforms],
 ) -> Unit {
   skin_uniforms_ref.val.previous_skins.clear()
-  for entry in skin_uniforms_ref.val.current_skins.iter() {
-    let (skin_key, exists) = entry
-    skin_uniforms_ref.val.previous_skins.set(skin_key, exists)
+  for skin_key in skin_uniforms_ref.val.current_skins.iter() {
+    skin_uniforms_ref.val.previous_skins.add(skin_key)
   }
 }
 
@@ -309,8 +307,8 @@ fn render3d_phase_remove_skin(
   skin_uniforms_ref.val.allocator.free(old_info.allocation)
   let remaining = skin_uniforms_ref.val.total_joints - old_info.joints.length()
   skin_uniforms_ref.val.total_joints = if remaining > 0 { remaining } else { 0 }
-  skin_uniforms_ref.val.current_skins.remove(skin_key) |> ignore
-  skin_uniforms_ref.val.previous_skins.remove(skin_key) |> ignore
+  skin_uniforms_ref.val.current_skins.remove(skin_key)
+  skin_uniforms_ref.val.previous_skins.remove(skin_key)
   for joint in old_info.joints {
     let joint_key = render3d_skin_entity_key(joint)
     match skin_uniforms_ref.val.joint_to_skins.get(joint_key) {
@@ -582,7 +580,7 @@ fn render3d_add_skin(
   )
   let skin_key = render3d_skin_entity_key(entity)
   skin_uniforms_ref.val.skin_uniform_info.set(skin_key, info)
-  skin_uniforms_ref.val.current_skins.set(skin_key, true)
+  skin_uniforms_ref.val.current_skins.add(skin_key)
   skin_uniforms_ref.val.total_joints = skin_uniforms_ref.val.total_joints +
     joints.length()
 }
@@ -594,7 +592,7 @@ fn render3d_add_or_delete_skins(
   world_transform_cache_ref : Ref[Render3dWorldTransformCache],
   inverse_bindposes_assets : @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
   transform_columns : Render3dTransformColumns,
-) -> Map[UInt64, Bool] {
+) -> @hashset.HashSet[UInt64] {
   let skinned_mesh_key = @mesh.SkinnedMesh::component()
   let changed_visibility_filter = @ecs.Changed::new(
     @visibility.ecs_key_view_visibility,
@@ -612,14 +610,14 @@ fn render3d_add_or_delete_skins(
     source_world,
     @ecs.Or::new((changed_visibility_filter, changed_skinned_mesh_filter)),
   )
-  let changed_skin_entities : Map[UInt64, Bool] = {}
+  let changed_skin_entities = @hashset.HashSet::new()
   try! changed_skinned_query.view(fn(entity, data) {
     if entity.id < 0 {
       return
     }
     let (view_visibility_comp, skinned_mesh_comp) = data
     let skin_key = render3d_skin_entity_key(entity)
-    changed_skin_entities.set(skin_key, true)
+    changed_skin_entities.add(skin_key)
     render3d_phase_remove_skin(skin_uniforms_ref, entity)
     if !view_visibility_comp.value().is_visible() {
       return
@@ -644,7 +642,7 @@ fn render3d_extract_joints_for_skin(
   world_transform_cache_ref : Ref[Render3dWorldTransformCache],
   skin_entity : @core.Entity,
   skinned_mesh : @mesh.SkinnedMesh,
-  changed_skin_entities : Map[UInt64, Bool],
+  changed_skin_entities : @hashset.HashSet[UInt64],
   inverse_bindposes_assets : @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
   transform_columns : Render3dTransformColumns,
 ) -> Unit {
@@ -696,7 +694,7 @@ fn render3d_extract_joints(
   source_world : @ecs.World,
   skin_uniforms_ref : Ref[SkinUniforms],
   world_transform_cache_ref : Ref[Render3dWorldTransformCache],
-  changed_skin_entities : Map[UInt64, Bool],
+  changed_skin_entities : @hashset.HashSet[UInt64],
   inverse_bindposes_assets : @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
   transform_columns : Render3dTransformColumns,
 ) -> Unit {

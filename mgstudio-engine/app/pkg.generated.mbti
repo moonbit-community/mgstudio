@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/pointer_events",
+  "Milky2018/mgstudio/utils",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
@@ -52,13 +53,17 @@ pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit]
 #callsite(autofill(loc))
 pub fn[W] fallible_system((W) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
 
-pub fn[W, P : SystemParam] fallible_system_config_param((P) -> Unit raise) -> SystemConfig[W]
+#callsite(autofill(loc))
+pub fn[W, P : SystemParam] fallible_system_config_param((P) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
 
-pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_config_param2((P1, P2) -> Unit raise) -> SystemConfig[W]
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_config_param2((P1, P2) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
 
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_config_param3((P1, P2, P3) -> Unit raise) -> SystemConfig[W]
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_config_param3((P1, P2, P3) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
 
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] fallible_system_config_param4((P1, P2, P3, P4) -> Unit raise) -> SystemConfig[W]
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] fallible_system_config_param4((P1, P2, P3, P4) -> Unit raise, loc~ : SourceLoc) -> SystemConfig[W]
 
 pub fn[W, P : SystemParam] fallible_system_param((P) -> Unit raise) -> (W) -> Unit
 
@@ -267,19 +272,23 @@ pub fn[S : States] state_transition_event_resource_key(S) -> @ecs.ResourceKey[St
 #callsite(autofill(loc))
 pub fn[W] system((W) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
-pub fn system_access_compatible(SystemAccess, SystemAccess, @hashmap.HashMap[Int, Bool]) -> Bool
+pub fn system_access_compatible(SystemAccess, SystemAccess, @utils.IntBitSet) -> Bool
 
 pub fn system_access_merge_unchecked(SystemAccess, SystemAccess) -> Unit
 
-pub fn system_access_merge_validated(SystemAccess, SystemAccess, @hashmap.HashMap[Int, Bool]) -> Unit
+pub fn system_access_merge_validated(SystemAccess, SystemAccess, @utils.IntBitSet) -> Unit
 
-pub fn[W, P : SystemParam] system_config_param((P) -> Unit) -> SystemConfig[W]
+#callsite(autofill(loc))
+pub fn[W, P : SystemParam] system_config_param((P) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
-pub fn[W, P1 : SystemParam, P2 : SystemParam] system_config_param2((P1, P2) -> Unit) -> SystemConfig[W]
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam] system_config_param2((P1, P2) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_config_param3((P1, P2, P3) -> Unit) -> SystemConfig[W]
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_config_param3((P1, P2, P3) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
-pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_config_param4((P1, P2, P3, P4) -> Unit) -> SystemConfig[W]
+#callsite(autofill(loc))
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_config_param4((P1, P2, P3, P4) -> Unit, loc~ : SourceLoc) -> SystemConfig[W]
 
 pub fn[W, O] system_output((W) -> O) -> OutputSystemConfig[W, O]
 
@@ -378,43 +387,50 @@ pub fn[Source : States, Derived : States] App::add_computed_state(Self[@ecs.Worl
 pub fn[A : States, B : States, Derived : States] App::add_computed_state2(Self[@ecs.World], A, B, Derived, ((A, B)) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
 pub fn[A : States, B : States, C : States, Derived : States] App::add_computed_state3(Self[@ecs.World], A, B, C, Derived, ((A, B, C)) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
 pub fn[A : States, B : States, C : States, Derived : States] App::add_computed_state3_optional(Self[@ecs.World], A, B, OptionalStateSource[C], Derived, ((A, B, C?)) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
-pub fn[W] App::add_first_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_first_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_first_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_first_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_first_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_first_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_first_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_fixed_first_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_fixed_first_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_fixed_first_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_fixed_first_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_first_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_first_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_first_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_fixed_last_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_fixed_last_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_fixed_last_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_fixed_last_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_last_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_last_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_last_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_fixed_post_update_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_fixed_post_update_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_fixed_post_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_fixed_post_update_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_post_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_post_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_post_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_fixed_pre_update_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_fixed_pre_update_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_fixed_pre_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_fixed_pre_update_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_pre_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_pre_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_pre_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_fixed_update_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_fixed_update_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_fixed_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_fixed_update_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_last_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_last_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_last_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_last_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_last_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
@@ -444,51 +460,59 @@ pub fn[K : PointerObserverKind] App::add_pointer_observer(Self[@ecs.World], (OnP
 pub fn[K : PointerObserverKind, P2 : SystemParam] App::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] App::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_pointer_observer4(Self[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit) -> Self[@ecs.World]
-pub fn[W] App::add_post_startup_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_post_startup_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_post_startup_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_post_startup_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_post_startup_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_post_startup_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_post_startup_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_post_update_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_post_update_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_post_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_post_update_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_post_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_post_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_post_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_pre_startup_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_pre_startup_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_pre_startup_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_pre_startup_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_pre_startup_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_pre_startup_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_pre_startup_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_pre_update_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_pre_update_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_pre_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_pre_update_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_pre_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_pre_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_pre_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_run_fixed_main_loop_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_run_fixed_main_loop_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_run_fixed_main_loop_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_run_fixed_main_loop_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_run_fixed_main_loop_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_run_fixed_main_loop_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_run_fixed_main_loop_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_schedule(Self[W], Schedule) -> Self[W]
-pub fn[W] App::add_spawn_scene_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_spawn_scene_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_spawn_scene_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_spawn_scene_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_spawn_scene_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_spawn_scene_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_spawn_scene_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_startup_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_startup_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_startup_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_startup_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_startup_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_startup_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_startup_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[Source : States, Derived : SubStates] App::add_sub_state(Self[@ecs.World], Source, Derived, (Source) -> Derived?) -> Self[@ecs.World]
-pub fn[W] App::add_system(Self[W], (W) -> Unit) -> Self[W]
+#callsite(autofill(loc))
+pub fn[W] App::add_system(Self[W], (W) -> Unit, loc~ : SourceLoc) -> Self[W]
 pub fn[W] App::add_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
@@ -1129,7 +1153,7 @@ pub struct SubApp[W] {
   update_schedule : ScheduleStage?
   schedule : ScheduleRegistry[W]
   extract : ((W, W) -> (W, W))?
-  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool]
+  allowed_ambiguous_components : @utils.IntBitSet
 }
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SubApp::add_component_observer(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit) -> Self[@ecs.World]
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_component_observer2(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2) -> Unit) -> Self[@ecs.World]

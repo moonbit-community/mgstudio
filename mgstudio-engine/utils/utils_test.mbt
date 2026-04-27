@@ -40,3 +40,22 @@ test "utils atomic_id: generated ids are positive and monotonic" {
   debug_inspect(a > 0, content="true")
   debug_inspect(b > a, content="true")
 }
+
+///|
+test "utils IntBitSet tracks dense integer membership" {
+  let set = @utils.IntBitSet::new()
+  debug_inspect(set.is_empty(), content="true")
+  set.insert(0)
+  set.insert(67)
+  set.insert(5)
+  debug_inspect(set.contains(0), content="true")
+  debug_inspect(set.contains(1), content="false")
+  debug_inspect(set.contains(67), content="true")
+  debug_inspect(set.contains_all_array([0, 5, 67]), content="true")
+  debug_inspect(set.contains_all_array([0, 6]), content="false")
+  debug_inspect(set.to_array(), content="[0, 5, 67]")
+  set.remove(5)
+  debug_inspect(set.to_array(), content="[0, 67]")
+  set.clear()
+  debug_inspect(set.is_empty(), content="true")
+}

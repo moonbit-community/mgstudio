@@ -77,6 +77,25 @@ pub fn[T] BufferedSender::flush(Self[T]) -> Unit
 pub fn[T] BufferedSender::send(Self[T], T) -> Unit
 pub fn[T] BufferedSender::send_many(Self[T], Array[T]) -> Unit
 
+pub struct IntBitSet {
+  bits : Array[UInt]
+  mut bit_len : Int
+}
+pub fn IntBitSet::bit_len(Self) -> Int
+pub fn IntBitSet::capacity(Self) -> Int
+pub fn IntBitSet::clear(Self) -> Unit
+pub fn IntBitSet::clone(Self) -> Self
+pub fn IntBitSet::contains(Self, Int) -> Bool
+pub fn IntBitSet::contains_all_array(Self, Array[Int]) -> Bool
+pub fn IntBitSet::default() -> Self
+pub fn IntBitSet::insert(Self, Int) -> Unit
+pub fn IntBitSet::is_empty(Self) -> Bool
+pub fn IntBitSet::length(Self) -> Int
+pub fn IntBitSet::new() -> Self
+pub fn IntBitSet::remove(Self, Int) -> Unit
+pub fn IntBitSet::to_array(Self) -> Array[Int]
+pub fn IntBitSet::with_capacity(Int) -> Self
+
 pub struct OnceCell[T] {
   mut value : T?
 }

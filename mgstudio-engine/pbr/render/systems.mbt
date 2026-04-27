@@ -41,7 +41,7 @@ pub fn[T] render3d_update_frusta_system_by_projection_key(
   compute_frustum : (T, @transform.Transform) -> Frustum,
 ) -> Unit {
   let sequence = world.get_sequence_context().sequence()
-  let processed : Map[UInt64, Bool] = {}
+  let processed = @hashset.HashSet::new()
   fn entity_key(entity : @core.Entity) -> UInt64 {
     let hi = entity.id.reinterpret_as_uint().to_uint64()
     let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
@@ -78,7 +78,7 @@ pub fn[T] render3d_update_frusta_system_by_projection_key(
     if processed.contains(key) {
       continue
     }
-    processed.set(key, true)
+    processed.add(key)
     update_entity(world, entity, projection_key, compute_frustum)
   }
   for entity in world.changed_components(projection_key, sequence).read() {
@@ -86,7 +86,7 @@ pub fn[T] render3d_update_frusta_system_by_projection_key(
     if processed.contains(key) {
       continue
     }
-    processed.set(key, true)
+    processed.add(key)
     update_entity(world, entity, projection_key, compute_frustum)
   }
 }

@@ -94,7 +94,7 @@ pub fn App::schedule_graph_dot(
       graph_plan,
       schedule_entry.graph.settings,
       self.world(),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     ).schedule.systems
   }
   let execution_order = if graph_plan.build_error is Some(_) {
@@ -109,7 +109,7 @@ pub fn App::schedule_graph_dot(
       graph_plan,
       schedule_entry.graph.settings,
       self.world(),
-      @hashmap.HashMap::new(),
+      @utils.IntBitSet::new(),
     ).schedule.execution_order
   }
 

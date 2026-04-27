@@ -502,19 +502,19 @@ fn World::ensure_archetype_for_local_components(
       self.archetype_table_ids.set(archetype_id, table_id)
       self.archetype_component_local_ids.set(archetype_id, normalized)
       let local_component_indices : Map[Int, Int] = {}
-      let local_component_presence : Map[Int, Bool] = {}
+      let local_component_presence = @utils.IntBitSet::new()
       let definition_component_ids : Array[Int] = []
-      let definition_component_presence : Map[Int, Bool] = {}
+      let definition_component_presence = @utils.IntBitSet::new()
       for index in 0..<normalized.length() {
         let component_local_id = normalized[index]
         local_component_indices.set(component_local_id, index)
-        local_component_presence.set(component_local_id, true)
+        local_component_presence.insert(component_local_id)
         guard self.definition_component_id(component_local_id)
           is Some(definition_component_id) else {
           continue
         }
         definition_component_ids.push(definition_component_id)
-        definition_component_presence.set(definition_component_id, true)
+        definition_component_presence.insert(definition_component_id)
       }
       self.archetype_component_local_id_presence.set(
         archetype_id, local_component_presence,
@@ -1180,16 +1180,16 @@ fn World::refresh_entity_archetype_with_bundle_info(
     is Some(previous_component_local_ids) {
     let previous_len = previous_component_local_ids.length()
     let current_len = current_component_local_ids.length()
-    let previous_presence = self.archetype_component_local_id_presence
-      .get(previous_archetype_id)
-      .unwrap_or({})
+	    let previous_presence = self.archetype_component_local_id_presence
+	      .get(previous_archetype_id)
+	      .unwrap_or(@utils.IntBitSet::new())
     if current_len == previous_len + 1 {
-      let current_presence : Map[Int, Bool] = {}
+      let current_presence = @utils.IntBitSet::new()
       let mut added_component_local_id : Int? = None
       let mut valid_single_add = true
       for component_local_id in current_component_local_ids {
-        current_presence.set(component_local_id, true)
-        if previous_presence.get(component_local_id) is None {
+        current_presence.insert(component_local_id)
+	        if !previous_presence.contains(component_local_id) {
           match added_component_local_id {
             Some(_) => {
               valid_single_add = false
@@ -1201,7 +1201,7 @@ fn World::refresh_entity_archetype_with_bundle_info(
       }
       if valid_single_add {
         for component_local_id in previous_component_local_ids {
-          if current_presence.get(component_local_id) is None {
+	          if !current_presence.contains(component_local_id) {
             valid_single_add = false
             break
           }
@@ -1219,19 +1219,19 @@ fn World::refresh_entity_archetype_with_bundle_info(
         }
       }
     } else if previous_len == current_len + 1 {
-      let current_presence : Map[Int, Bool] = {}
+      let current_presence = @utils.IntBitSet::new()
       let mut removed_component_local_id : Int? = None
       let mut valid_single_remove = true
       for component_local_id in current_component_local_ids {
-        current_presence.set(component_local_id, true)
-        if previous_presence.get(component_local_id) is None {
+        current_presence.insert(component_local_id)
+	        if !previous_presence.contains(component_local_id) {
           valid_single_remove = false
           break
         }
       }
       if valid_single_remove {
         for component_local_id in previous_component_local_ids {
-          if current_presence.get(component_local_id) is None {
+	          if !current_presence.contains(component_local_id) {
             match removed_component_local_id {
               Some(_) => {
                 valid_single_remove = false
@@ -1429,7 +1429,7 @@ fn World::archetype_ids_for_component_local_id(
 fn World::archetype_local_component_presence_view(
   self : World,
   archetype_id : Int,
-) -> Map[Int, Bool]? {
+) -> @utils.IntBitSet? {
   self.archetype_component_local_id_presence.get(archetype_id)
 }
 
@@ -1437,7 +1437,7 @@ fn World::archetype_local_component_presence_view(
 fn World::archetype_definition_component_presence_view(
   self : World,
   archetype_id : Int,
-) -> Map[Int, Bool]? {
+) -> @utils.IntBitSet? {
   self.archetype_component_definition_id_presence.get(archetype_id)
 }
 

@@ -469,17 +469,15 @@ fn[W] schedule_entry_mark_graph_changed(
 
 ///|
 fn schedule_allowed_ambiguous_fingerprint(
-  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool],
+  allowed_ambiguous_components : @utils.IntBitSet,
 ) -> Int {
   let mut count = 0
   let mut sum = 0
   let mut sum_sq = 0
-  for entry in allowed_ambiguous_components.iter() {
-    let key = entry.0
-    let value = if entry.1 { 1 } else { 0 }
+  for key in allowed_ambiguous_components.to_array() {
     count = count + 1
-    sum = sum + (key * 31 + value)
-    sum_sq = sum_sq + (key * key + 17) * (value + 1)
+    sum = sum + key * 31
+    sum_sq = sum_sq + key * key + 17
   }
   count * 1_000_003 + sum * 97 + sum_sq * 7
 }
@@ -1654,7 +1652,7 @@ fn[W] schedule_build_access_plan(
   graph_plan : ScheduleGraphPlan,
   build_settings : ScheduleBuildSettings,
   world : @ecs.World,
-  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool],
+  allowed_ambiguous_components : @utils.IntBitSet,
   world_id : Int,
   component_registration_generation : Int,
   allowed_ambiguous_fingerprint : Int,
@@ -2044,7 +2042,7 @@ fn[W] schedule_resolve_access_plan(
   graph_plan : ScheduleGraphPlan,
   build_settings : ScheduleBuildSettings,
   world : @ecs.World,
-  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool],
+  allowed_ambiguous_components : @utils.IntBitSet,
 ) -> ScheduleAccessPlan[W] {
   let world_id = world.world_id()
   let component_registration_generation = world.component_registration_generation()
@@ -2076,7 +2074,7 @@ fn[W] schedule_execution_plan(
   schedule_registry : ScheduleRegistry[W],
   stage : ScheduleStage,
   world : @ecs.World,
-  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool],
+  allowed_ambiguous_components : @utils.IntBitSet,
 ) -> ScheduleExecutionPlan[W] {
   let schedule_entry = schedule_entry_ref(schedule_registry, stage).val
   let graph_plan = schedule_resolve_graph_plan(schedule_entry, stage)

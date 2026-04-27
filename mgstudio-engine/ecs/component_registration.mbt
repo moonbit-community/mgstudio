@@ -28,7 +28,7 @@ pub(all) struct WorldComponentIds {
 
 ///|
 pub(all) struct WorldQueuedRegistrations {
-  pending_by_definition_id : Map[Int, Bool]
+  pending_by_definition_id : @utils.IntBitSet
   mut queue : Array[Int]
   mut cursor : Int
 }
@@ -51,7 +51,11 @@ fn world_component_ids_new() -> WorldComponentIds {
 
 ///|
 fn world_queued_registrations_new() -> WorldQueuedRegistrations {
-  { pending_by_definition_id: {}, queue: [], cursor: 0 }
+  {
+    pending_by_definition_id: @utils.IntBitSet::new(),
+    queue: [],
+    cursor: 0,
+  }
 }
 
 ///|
@@ -273,8 +277,7 @@ fn World::is_component_registration_pending(
   self : World,
   definition_id : Int,
 ) -> Bool {
-  self.components.queued.pending_by_definition_id.get(definition_id) ==
-  Some(true)
+  self.components.queued.pending_by_definition_id.contains(definition_id)
 }
 
 ///|
@@ -307,7 +310,7 @@ pub fn[T] World::queue_register_component_by_key(
     Some(local_component_id) => local_component_id
     None => {
       let local_component_id = self.assign_local_component_id(definition_id)
-      self.components.queued.pending_by_definition_id.set(definition_id, true)
+      self.components.queued.pending_by_definition_id.insert(definition_id)
       self.components.queued.queue.push(definition_id)
       local_component_id
     }
@@ -337,13 +340,7 @@ pub fn World::apply_queued_component_registrations(self : World) -> Unit {
 
 ///|
 pub fn World::queued_component_registration_count(self : World) -> Int {
-  let count = Ref::new(0)
-  for entry in self.components.queued.pending_by_definition_id.iter() {
-    if entry.1 {
-      count.val = count.val + 1
-    }
-  }
-  count.val
+  self.components.queued.pending_by_definition_id.length()
 }
 
 ///|

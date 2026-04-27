@@ -79,6 +79,8 @@ pub struct Comp[T] {
 pub struct QueryDataAccess {
   read_components : Array[Int]
   write_components : Array[Int]
+  read_component_set : @utils.IntBitSet
+  write_component_set : @utils.IntBitSet
   mut has_read_write_conflict : Bool
   mut has_duplicate_write : Bool
 }
@@ -88,6 +90,8 @@ pub fn QueryDataAccess::new() -> QueryDataAccess {
   {
     read_components: [],
     write_components: [],
+    read_component_set: @utils.IntBitSet::new(),
+    write_component_set: @utils.IntBitSet::new(),
     has_read_write_conflict: false,
     has_duplicate_write: false,
   }
@@ -202,10 +206,11 @@ pub fn QueryDataAccess::add_read_component(
   self : QueryDataAccess,
   component_id : Int,
 ) -> Unit {
-  if self.write_components.contains(component_id) {
+  if self.write_component_set.contains(component_id) {
     self.has_read_write_conflict = true
   }
-  if !self.read_components.contains(component_id) {
+  if !self.read_component_set.contains(component_id) {
+    self.read_component_set.insert(component_id)
     self.read_components.push(component_id)
   }
 }
@@ -215,13 +220,14 @@ pub fn QueryDataAccess::add_write_component(
   self : QueryDataAccess,
   component_id : Int,
 ) -> Unit {
-  if self.write_components.contains(component_id) {
+  if self.write_component_set.contains(component_id) {
     self.has_duplicate_write = true
   }
-  if self.read_components.contains(component_id) {
+  if self.read_component_set.contains(component_id) {
     self.has_read_write_conflict = true
   }
-  if !self.write_components.contains(component_id) {
+  if !self.write_component_set.contains(component_id) {
+    self.write_component_set.insert(component_id)
     self.write_components.push(component_id)
   }
 }
@@ -241,8 +247,8 @@ pub fn QueryDataAccess::accesses_component(
   self : QueryDataAccess,
   component_id : Int,
 ) -> Bool {
-  self.read_components.contains(component_id) ||
-  self.write_components.contains(component_id)
+  self.read_component_set.contains(component_id) ||
+  self.write_component_set.contains(component_id)
 }
 
 ///|

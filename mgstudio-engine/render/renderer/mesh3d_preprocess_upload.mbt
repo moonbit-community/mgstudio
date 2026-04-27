@@ -192,9 +192,9 @@ pub fn GpuBackend::delete_old_mesh3d_preprocess_work_item_buffers(
   self : GpuBackend,
   retained_camera_keys : Array[UInt64],
 ) -> Unit {
-  let retained : Map[UInt64, Bool] = {}
+  let retained = @hashset.HashSet::new()
   for key in retained_camera_keys {
-    retained.set(key, true)
+    retained.add(key)
   }
   let kept_states : Array[GpuMesh3dPreprocessCameraUploadState] = []
   for state in self.mesh3d_preprocess_camera_upload_states {

@@ -92,12 +92,12 @@ fn World::ensure_required_components_state(
 
 ///|
 fn World::component_has_been_used(self : World, component_id : Int) -> Bool {
-  self.used_components.get(component_id).unwrap_or(false)
+  self.used_components.contains(component_id)
 }
 
 ///|
 fn World::mark_component_used(self : World, component_id : Int) -> Unit {
-  self.used_components.set(component_id, true)
+  self.used_components.insert(component_id)
 }
 
 ///|
@@ -153,15 +153,15 @@ fn World::required_components_reaches(
   self : World,
   from_component_id : Int,
   target_component_id : Int,
-  visited : Map[Int, Bool],
+  visited : @utils.IntBitSet,
 ) -> Bool {
   if from_component_id == target_component_id {
     return true
   }
-  if visited.get(from_component_id).unwrap_or(false) {
+  if visited.contains(from_component_id) {
     return false
   }
-  visited.set(from_component_id, true)
+  visited.insert(from_component_id)
   guard self.required_components_state(from_component_id) is Some(state_ref) else {
     return false
   }
@@ -180,9 +180,9 @@ fn World::required_components_reaches(
 fn World::rebuild_required_components_for(
   self : World,
   component_id : Int,
-  rebuilt : Map[Int, Bool],
+  rebuilt : @utils.IntBitSet,
 ) -> Unit {
-  if rebuilt.get(component_id).unwrap_or(false) {
+  if rebuilt.contains(component_id) {
     return
   }
 
@@ -222,7 +222,7 @@ fn World::rebuild_required_components_for(
   }
 
   state_ref.val.all = rebuilt_all
-  rebuilt.set(component_id, true)
+  rebuilt.insert(component_id)
 }
 
 ///|
@@ -254,7 +254,7 @@ fn World::rebuild_required_by_components(self : World) -> Unit {
 
 ///|
 fn World::rebuild_all_required_components(self : World) -> Unit {
-  let rebuilt : Map[Int, Bool] = {}
+  let rebuilt = @utils.IntBitSet::new()
   let component_ids : Array[Int] = []
   for entry in self.required_components.iter() {
     component_ids.push(entry.0)
@@ -288,7 +288,7 @@ fn World::register_required_components_by_keys(
     raise CyclicRequirement(requiree_local_id, required_local_id)
   }
 
-  let visited : Map[Int, Bool] = {}
+  let visited = @utils.IntBitSet::new()
   if self.required_components_reaches(
       required_local_id, requiree_local_id, visited,
     ) {

@@ -180,25 +180,19 @@ fn query_system_access_component_conflict_ids(
 ///|
 fn system_access_component_conflicts_allowed(
   conflict_ids : Array[Int],
-  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool],
+  allowed_ambiguous_components : @utils.IntBitSet,
 ) -> Bool {
   if conflict_ids.length() == 0 {
     return false
   }
-  for component_id in conflict_ids {
-    match allowed_ambiguous_components.get(component_id) {
-      Some(true) => ()
-      _ => return false
-    }
-  }
-  true
+  allowed_ambiguous_components.contains_all_array(conflict_ids)
 }
 
 ///|
 fn query_system_accesses_compatible(
   lhs : QuerySystemAccess,
   rhs : QuerySystemAccess,
-  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool],
+  allowed_ambiguous_components : @utils.IntBitSet,
 ) -> Bool {
   if @ecs.query_validate_data_data_compatibility(
       lhs.data_access,
@@ -236,7 +230,7 @@ fn system_access_resource_conflict(
 pub fn system_access_compatible(
   lhs : SystemAccess,
   rhs : SystemAccess,
-  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool],
+  allowed_ambiguous_components : @utils.IntBitSet,
 ) -> Bool {
   if lhs.validation_error() is Some(_) || rhs.validation_error() is Some(_) {
     return false
@@ -263,7 +257,7 @@ pub fn system_access_compatible(
 pub fn system_access_merge_validated(
   target : SystemAccess,
   other : SystemAccess,
-  allowed_ambiguous_components : @hashmap.HashMap[Int, Bool],
+  allowed_ambiguous_components : @utils.IntBitSet,
 ) -> Unit {
   if !system_access_compatible(target, other, allowed_ambiguous_components) {
     target.set_validation_error(
