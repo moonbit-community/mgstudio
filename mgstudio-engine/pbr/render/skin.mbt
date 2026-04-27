@@ -248,16 +248,6 @@ fn render3d_phase_begin_skin_frame(
 }
 
 ///|
-fn render3d_phase_sync_previous_skin_flags(
-  skin_uniforms_ref : Ref[SkinUniforms],
-) -> Unit {
-  skin_uniforms_ref.val.previous_skins.clear()
-  for skin_key in skin_uniforms_ref.val.current_skins.iter() {
-    skin_uniforms_ref.val.previous_skins.add(skin_key)
-  }
-}
-
-///|
 fn render3d_has_prepared_skin_binding(
   skin_uniforms_ref : Ref[SkinUniforms],
   entity : @core.Entity,
@@ -835,7 +825,6 @@ pub fn render3d_prepare_skin_bindings_upload(
     skin_uniforms_ref.val.previous_skins.clear()
     return
   }
-  render3d_phase_sync_previous_skin_flags(skin_uniforms_ref)
   if skin_uniforms_ref.val.current_staging_buffer.is_empty() {
     return
   }

@@ -371,7 +371,7 @@ test "pbr render skin: dirty joint extraction uses tick metadata without changed
 }
 
 ///|
-test "pbr render skin: prepare publishes current skins as previous-skin flags" {
+test "pbr render skin: frame begin captures previous-skin flags" {
   let world = @ecs.World::new()
   let handle = skin_test_insert_inverse_bindposes_assets(world, [
     @mesh.SkinningMat4::identity(),
@@ -380,14 +380,11 @@ test "pbr render skin: prepare publishes current skins as previous-skin flags" {
   skin_test_set_global_x(world, joint, 1.0F)
   let skin_entity = world.spawn()
   let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
-  let world_transform_cache_ref = render3d_world_transform_cache_ref(world)
   skin_test_add_skin_direct(world, skin_uniforms_ref, skin_entity, handle, [
     joint,
   ])
 
-  render3d_prepare_skin_bindings_upload(
-    world, skin_uniforms_ref, world_transform_cache_ref,
-  )
+  render3d_phase_begin_skin_frame(skin_uniforms_ref)
 
   debug_inspect(
     skin_uniforms_ref.val.previous_skins.contains(skin_entity_key(skin_entity)),
