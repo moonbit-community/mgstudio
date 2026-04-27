@@ -24,6 +24,12 @@
 /// (no frustum culling yet).
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::VisibilitySystems::VisibilityPropagate`.
+pub let visibility_set_visibility_propagate : @app.SystemSet = @app.system_set(
+  "mgstudio.visibility.visibility_propagate",
+)
+
+///|
 priv struct VisibilityPropagationState {}
 
 ///|
@@ -257,5 +263,10 @@ fn register_visibility_required_components(
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   // Hierarchy hooks keep `Children` synchronized with `Parent` before schedule execution.
   try! register_visibility_required_components(app.world())
-  app.add_pre_update_system(visibility_propagate_system)
+  app.add_post_update_system_config(
+    @app.system(visibility_propagate_system)
+    .named("mgstudio.visibility.visibility_propagate_system")
+    .in_set(visibility_set_visibility_propagate)
+    .after(@transform.transform_set_propagate),
+  )
 }
