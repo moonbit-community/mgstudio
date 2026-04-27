@@ -319,6 +319,9 @@ pub fn LogRecord::message(self : LogRecord) -> String {
 pub type LogLayer = (LogRecord) -> Unit
 
 ///|
+pub const DEFAULT_LOG_FILTER : String = "wgpu=error,naga=warn,moon_wgsl=warn,calloop::loop_logic=error,"
+
+///|
 pub struct LogPlugin {
   level : LogLevel
   filter : String
@@ -330,7 +333,7 @@ pub struct LogPlugin {
 pub fn LogPlugin::default() -> LogPlugin {
   LogPlugin::{
     level: LogLevel::Info,
-    filter: "",
+    filter: DEFAULT_LOG_FILTER,
     custom_layer: None,
     fmt_layer: None,
   }
@@ -397,14 +400,56 @@ fn log_level_label(level : LogLevel) -> String {
 }
 
 ///|
-fn log_target_allowed(config : LogPlugin, target : String) -> Bool {
-  if config.filter == "" {
-    true
-  } else if target == "" {
-    true
-  } else {
-    target.contains(config.filter)
+fn log_level_from_filter_value(value : String) -> LogLevel? {
+  match value.trim().to_string().to_lower() {
+    "error" => Some(LogLevel::Error)
+    "warn" => Some(LogLevel::Warn)
+    "warning" => Some(LogLevel::Warn)
+    "info" => Some(LogLevel::Info)
+    "debug" => Some(LogLevel::Debug)
+    "trace" => Some(LogLevel::Trace)
+    _ => None
   }
+}
+
+///|
+fn log_filter_target_matches(target : String, filter_target : String) -> Bool {
+  if filter_target == "" {
+    false
+  } else {
+    target == filter_target || target.has_prefix("\{filter_target}::")
+  }
+}
+
+///|
+fn log_effective_level(config : LogPlugin, target : String) -> LogLevel {
+  let mut effective = config.level
+  let mut best_target_len = -1
+  for raw_directive in config.filter.split(",") {
+    let directive = raw_directive.trim().to_string()
+    if directive == "" {
+      continue
+    }
+    let parts : Array[String] = []
+    for part in directive.split("=") {
+      parts.push(part.to_string())
+    }
+    if parts.length() == 1 {
+      if log_level_from_filter_value(parts[0].to_string()) is Some(level) {
+        effective = level
+      }
+    } else {
+      let filter_target = parts[0].trim().to_string()
+      let level_value = parts[1].trim().to_string()
+      if log_filter_target_matches(target, filter_target) &&
+        filter_target.length() > best_target_len &&
+        log_level_from_filter_value(level_value) is Some(level) {
+        effective = level
+        best_target_len = filter_target.length()
+      }
+    }
+  }
+  effective
 }
 
 ///|
@@ -421,10 +466,7 @@ pub fn log_record(
   name? : String = "",
 ) -> Unit {
   let config = log_state_ref.val.config
-  if log_level_rank(level) > log_level_rank(config.level) {
-    return
-  }
-  if !log_target_allowed(config, target) {
+  if log_level_rank(level) > log_level_rank(log_effective_level(config, target)) {
     return
   }
 

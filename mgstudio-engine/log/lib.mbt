@@ -29,6 +29,44 @@ pub type LogRecord = @app.LogRecord
 pub type LogPlugin = @app.LogPlugin
 
 ///|
+pub const DEFAULT_FILTER : String = @app.DEFAULT_LOG_FILTER
+
+///|
 pub fn log_plugin(plugin : LogPlugin) -> LogPlugin {
   plugin
+}
+
+///|
+pub fn log_record(
+  level : LogLevel,
+  message~ : String,
+  target? : String = "",
+  name? : String = "",
+) -> Unit {
+  @app.log_record(level, message~, target~, name~)
+}
+
+///|
+pub fn error(message : String) -> Unit {
+  @app.log_error(message)
+}
+
+///|
+pub fn warn(message : String) -> Unit {
+  @app.log_warn(message)
+}
+
+///|
+pub fn info(message : String) -> Unit {
+  @app.log_info(message)
+}
+
+///|
+pub fn debug(message : String) -> Unit {
+  @app.log_debug(message)
+}
+
+///|
+pub fn trace(message : String) -> Unit {
+  @app.log_trace(message)
 }

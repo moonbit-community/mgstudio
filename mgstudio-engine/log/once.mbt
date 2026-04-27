@@ -35,3 +35,18 @@ pub fn warn_once(callsite : String, message : String) -> Unit {
 pub fn info_once(callsite : String, message : String) -> Unit {
   @app.log_info_once(callsite, message)
 }
+
+///|
+pub fn error_once(callsite : String, message : String) -> Unit {
+  @app.log_error_once(callsite, message)
+}
+
+///|
+pub fn debug_once(callsite : String, message : String) -> Unit {
+  @app.log_debug_once(callsite, message)
+}
+
+///|
+pub fn trace_once(callsite : String, message : String) -> Unit {
+  @app.log_trace_once(callsite, message)
+}

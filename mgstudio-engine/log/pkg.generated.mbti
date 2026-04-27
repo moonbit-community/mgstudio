@@ -7,13 +7,33 @@ import {
 }
 
 // Values
+pub const DEFAULT_FILTER : String = "wgpu=error,naga=warn,moon_wgsl=warn,calloop::loop_logic=error,"
+
 pub fn[W] android_tracing_plugin(@app.App[W], AndroidTracingPlugin) -> @app.App[W]
+
+pub fn debug(String) -> Unit
+
+pub fn debug_once(String, String) -> Unit
+
+pub fn error(String) -> Unit
+
+pub fn error_once(String, String) -> Unit
+
+pub fn info(String) -> Unit
 
 pub fn info_once(String, String) -> Unit
 
 pub fn log_once(@app.LogLevel, String, String, target? : String, name? : String) -> Unit
 
 pub fn log_plugin(@app.LogPlugin) -> @app.LogPlugin
+
+pub fn log_record(@app.LogLevel, message~ : String, target? : String, name? : String) -> Unit
+
+pub fn trace(String) -> Unit
+
+pub fn trace_once(String, String) -> Unit
+
+pub fn warn(String) -> Unit
 
 pub fn warn_once(String, String) -> Unit
 

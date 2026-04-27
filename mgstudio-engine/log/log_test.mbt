@@ -17,5 +17,5 @@ test "log boundary re-exports log plugin types" {
   let layer : @log.LogLayer = fn(_record : @log.LogRecord) { () }
   let plugin = @log.LogPlugin::default().with_filter("info")
   let _ = plugin.with_custom_layer(layer)
-  debug_inspect("ok", content="ok")
+  debug_inspect("ok", content="\"ok\"")
 }
