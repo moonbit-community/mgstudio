@@ -79,6 +79,19 @@ fn transform_dense_table_cache_default() -> TransformDenseTableCache {
 }
 
 ///|
+fn transform_dense_table_cache_reset(
+  cache : Ref[TransformDenseTableCache],
+) -> Unit {
+  for table_id in 0..<cache.val.loaded.length() {
+    cache.val.loaded[table_id] = false
+    cache.val.transform_values[table_id] = None
+    cache.val.global_values[table_id] = None
+    cache.val.children_values[table_id] = None
+    cache.val.parent_values[table_id] = None
+  }
+}
+
+///|
 fn transform_dense_entity_slot(
   world : @ecs.World,
   entity : @core.Entity,
@@ -137,6 +150,7 @@ priv struct TransformPropagationScratch {
   dense_stack_parents : Array[@core.Entity]
   dense_stack_parent_globals : Array[GlobalTransform]
   dense_stack_parent_global_changed : Array[Bool]
+  dense_table_cache : TransformDenseTableCache
 }
 
 ///|
@@ -146,6 +160,7 @@ fn transform_propagation_scratch_default() -> TransformPropagationScratch {
     dense_stack_parents: [],
     dense_stack_parent_globals: [],
     dense_stack_parent_global_changed: [],
+    dense_table_cache: transform_dense_table_cache_default(),
   }
 }
 
@@ -477,26 +492,6 @@ fn transform_set_global_if_neq_hot_at_row(
 }
 
 ///|
-fn transform_set_global_hot_at_row(
-  columns : TransformPropagationColumns,
-  table_id : Int,
-  global_values : Array[GlobalTransform],
-  row_index : Int,
-  next_global : GlobalTransform,
-  sequence : @core.Sequence,
-) -> Unit {
-  if row_index < 0 || row_index >= global_values.length() {
-    return
-  }
-  global_values[row_index] = next_global
-  ignore(
-    columns.global.record_changed_hot_at_table_row(
-      table_id, row_index, sequence,
-    ),
-  )
-}
-
-///|
 fn propagate_descendants_dense(
   _world : @ecs.World,
   columns : TransformPropagationColumns,
@@ -619,7 +614,8 @@ fn propagate_parent_transforms_dense(
   let system_sequence = world.get_sequence_context().sequence()
   let scratch_ref = transform_propagation_scratch_ref_or_init(world)
   let scratch = scratch_ref.peek()
-  let cache = Ref::new(transform_dense_table_cache_default())
+  let cache = Ref::new(scratch.dense_table_cache)
+  transform_dense_table_cache_reset(cache)
   columns.children.for_each_without_fast(parent_column, fn(entity, children) {
     guard transform_dense_entity_slot(world, entity)
       is Some((table_id, row_index)) else {
@@ -646,12 +642,12 @@ fn propagate_parent_transforms_dense(
     }
     let root_transform = transform_values[row_index]
     let root_global = GlobalTransform::from_transform(root_transform)
-    transform_set_global_hot_at_row(
+    let root_global_changed = transform_set_global_if_neq_hot_at_row(
       columns, table_id, global_values, row_index, root_global, sequence,
     )
     propagate_descendants_dense(
       world, columns, scratch, cache, sequence, static_optimizations_enabled, system_sequence,
-      entity, root_global, true, children,
+      entity, root_global, root_global_changed, children,
     )
   })
 }
