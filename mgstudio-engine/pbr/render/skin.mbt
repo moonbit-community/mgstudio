@@ -707,22 +707,51 @@ fn render3d_extract_joints(
   let dirty_skins : Map[UInt64, @core.Entity] = {}
   let mut changed_transform_count = 0
   let mut must_extract_all = false
-  for entry in skin_uniforms_ref.val.joint_to_skins.iter() {
-    let (joint_key, skins) = entry
-    let joint_entity = @core.Entity::from_bits(joint_key)
-    if !source_world.is_changed_by_key(
-        joint_entity, @transform.ecs_key_global_transform, sequence,
-      ) {
-      continue
-    }
-    changed_transform_count += 1
-    if changed_transform_count > threshold {
-      must_extract_all = true
-      break
-    }
-    for skin_entity in skins {
-      dirty_skins.set(render3d_skin_entity_key(skin_entity), skin_entity)
-    }
+  match transform_columns.global {
+    Some(global_column) =>
+      ignore(
+        global_column.for_each_changed_table_entity(sequence, fn(
+          changed_entity,
+          _table_id,
+          _row_index,
+        ) {
+          changed_transform_count += 1
+          if changed_transform_count > threshold {
+            must_extract_all = true
+            return false
+          }
+          let changed_key = render3d_skin_entity_key(changed_entity)
+          match skin_uniforms_ref.val.joint_to_skins.get(changed_key) {
+            Some(skins) =>
+              for skin_entity in skins {
+                dirty_skins.set(
+                  render3d_skin_entity_key(skin_entity),
+                  skin_entity,
+                )
+              }
+            None => ()
+          }
+          true
+        }),
+      )
+    None =>
+      for entry in skin_uniforms_ref.val.joint_to_skins.iter() {
+        let (joint_key, skins) = entry
+        let joint_entity = @core.Entity::from_bits(joint_key)
+        if !source_world.is_changed_by_key(
+            joint_entity, @transform.ecs_key_global_transform, sequence,
+          ) {
+          continue
+        }
+        changed_transform_count += 1
+        if changed_transform_count > threshold {
+          must_extract_all = true
+          break
+        }
+        for skin_entity in skins {
+          dirty_skins.set(render3d_skin_entity_key(skin_entity), skin_entity)
+        }
+      }
   }
   if must_extract_all {
     source_world.for_each_component(skinned_mesh_key, fn(entity, skinned_mesh) {
