@@ -502,16 +502,15 @@ pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with bind_group(self)
 ///|
 fn prepared_color_material_assets_for_tests(
   materials : Array[(@asset.Handle[ColorMaterialAsset], ColorMaterialAsset)],
-) -> @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] {
-  let prepared : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] = @asset.Assets::new()
+) -> @render.RenderAssets[PreparedMaterial2d[ColorMaterialAsset]] {
+  let prepared : @render.RenderAssets[PreparedMaterial2d[ColorMaterialAsset]] = @render.RenderAssets::new()
   let pipeline = color_material2d_pipeline_resource()
   for material_info in materials {
     let (handle, material) = material_info
     prepared.insert(
-      PreparedMaterial2d::prepared_handle(handle),
+      handle.id(),
       PreparedMaterial2d::from_material(handle, material, pipeline),
     )
-    |> ignore
   }
   prepared
 }

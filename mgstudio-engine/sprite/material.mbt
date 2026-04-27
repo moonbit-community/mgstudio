@@ -568,10 +568,10 @@ fn[M] ensure_prepared_material2d_assets_resource_in_world(
   _probe : @asset.Handle[M],
 ) -> Unit {
   let prepared_assets_key : @ecs.ResourceKey[
-    @asset.Assets[PreparedMaterial2d[M]],
-  ] = @asset.assets_resource_key()
+    @render.RenderAssets[PreparedMaterial2d[M]],
+  ] = @render.RenderAssets::resource()
   if (try! world.get_resource(prepared_assets_key)) is None {
-    world.insert_resource(prepared_assets_key, @asset.Assets::new())
+    world.insert_resource(prepared_assets_key, @render.RenderAssets::new())
   }
 }
 
@@ -719,10 +719,10 @@ fn[M] prepared_material2d_alpha_phase(material : PreparedMaterial2d[M]) -> Int? 
 
 ///|
 fn[M] prepared_material2d_get(
-  prepared_assets : @asset.Assets[PreparedMaterial2d[M]],
+  prepared_assets : @render.RenderAssets[PreparedMaterial2d[M]],
   handle : @asset.Handle[PreparedMaterial2d[M]],
 ) -> PreparedMaterial2d[M]? {
-  prepared_assets.get(handle)
+  prepared_assets.get(handle.id())
 }
 
 ///|
@@ -791,12 +791,12 @@ fn material2d_bind_group_to_host(
 fn[M] prepared_material2d_assets_or_empty(
   world : @ecs.World,
   _probe : @asset.Handle[M],
-) -> @asset.Assets[PreparedMaterial2d[M]] {
+) -> @render.RenderAssets[PreparedMaterial2d[M]] {
   _probe |> ignore
   let prepared_assets_key : @ecs.ResourceKey[
-    @asset.Assets[PreparedMaterial2d[M]],
-  ] = @asset.assets_resource_key()
-  let empty_prepared_assets : @asset.Assets[PreparedMaterial2d[M]] = @asset.Assets::new()
+    @render.RenderAssets[PreparedMaterial2d[M]],
+  ] = @render.RenderAssets::resource()
+  let empty_prepared_assets : @render.RenderAssets[PreparedMaterial2d[M]] = @render.RenderAssets::new()
   if (try! world.get_resource(prepared_assets_key)) is Some(prepared_assets) {
     prepared_assets
   } else {
@@ -837,7 +837,7 @@ fn[M] material2d_pipeline_or_default(
 ///|
 fn[M] draw_material2d_mesh_item(
   mesh : ExtractedMesh2d,
-  prepared_assets : @asset.Assets[PreparedMaterial2d[M]],
+  prepared_assets : @render.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   pipeline : Material2dPipeline[M],
 ) -> Unit {
@@ -1056,8 +1056,8 @@ fn[M : Material2d] prepare_material2d_assets_system(
   let source_assets_key : @ecs.ResourceKey[@asset.Assets[M]] = @asset.assets_resource_key()
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[M]] = Material2dPipeline::resource()
   let prepared_assets_key : @ecs.ResourceKey[
-    @asset.Assets[PreparedMaterial2d[M]],
-  ] = @asset.assets_resource_key()
+    @render.RenderAssets[PreparedMaterial2d[M]],
+  ] = @render.RenderAssets::resource()
   guard (try! world.get_resource(instances_key)) is Some(instances) else {
     return
   }
@@ -1080,13 +1080,12 @@ fn[M : Material2d] prepare_material2d_assets_system(
     }
     prepared_ids.add(material_id)
     guard source_assets.get(material_handle) is Some(material) else { continue }
-    let prepared_handle = PreparedMaterial2d::prepared_handle(material_handle)
+    let prepared_id = material_handle.id()
     prepared_assets.modify(fn(value) {
       value.insert(
-        prepared_handle,
+        prepared_id,
         PreparedMaterial2d::from_material(material_handle, material, pipeline),
       )
-      |> ignore
     })
   }
 }

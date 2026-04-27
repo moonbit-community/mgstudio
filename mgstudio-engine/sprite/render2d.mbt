@@ -5491,7 +5491,7 @@ fn[M] append_material2d_mesh_draw_items(
   opaque_items : Array[DrawItem],
   transparent_items : Array[DrawItem],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
+  prepared_materials : @render.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   layers : RenderLayers,
   tie : Int,
@@ -5617,7 +5617,7 @@ fn[M] draw_material2d_items_for_layers(
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
+  prepared_materials : @render.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   camera_entity : @core.Entity,
   layers : RenderLayers,
@@ -5662,7 +5662,9 @@ fn draw_items_for_layers(
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  prepared_materials : @render.RenderAssets[
+    PreparedMaterial2d[ColorMaterialAsset],
+  ],
   material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
   camera_entity : @core.Entity,
   layers : RenderLayers,
@@ -5771,7 +5773,7 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
+  prepared_materials : @render.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   layers : RenderLayers,
   scene_cull_context? : SceneCullContext? = None,
@@ -5895,7 +5897,7 @@ fn[M] draw_material2d_scene_items_for_layers(
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
+  prepared_materials : @render.RenderAssets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
   layers : RenderLayers,
   scene_cull_context? : SceneCullContext? = None,
@@ -5919,7 +5921,9 @@ fn draw_scene_items_for_layers(
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  prepared_materials : @render.RenderAssets[
+    PreparedMaterial2d[ColorMaterialAsset],
+  ],
   material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
   layers : RenderLayers,
   scene_cull_context? : SceneCullContext? = None,
@@ -6097,7 +6101,9 @@ fn build_camera_draw_items(
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  prepared_materials : @render.RenderAssets[
+    PreparedMaterial2d[ColorMaterialAsset],
+  ],
   material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
   camera_entity : @core.Entity,
   layers : RenderLayers,
@@ -6478,7 +6484,9 @@ test "render2d: unified draw items order sprites and meshes by z" {
 ///|
 test "render2d: UI overlay draw items route by target camera" {
   let layers = RenderLayers::default()
-  let prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] = @asset.Assets::new()
+  let prepared_materials : @render.RenderAssets[
+    PreparedMaterial2d[ColorMaterialAsset],
+  ] = @render.RenderAssets::new()
   let material_instances : RenderMaterial2dInstances[ColorMaterialAsset] = RenderMaterial2dInstances::new()
   let camera_a = @core.Entity::new(10, 0)
   let camera_b = @core.Entity::new(11, 0)
@@ -6545,7 +6553,9 @@ test "render2d: UI overlay draw items route by target camera" {
 ///|
 test "render2d: scene draw items exclude UI overlays" {
   let layers = RenderLayers::default()
-  let prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] = @asset.Assets::new()
+  let prepared_materials : @render.RenderAssets[
+    PreparedMaterial2d[ColorMaterialAsset],
+  ] = @render.RenderAssets::new()
   let material_instances : RenderMaterial2dInstances[ColorMaterialAsset] = RenderMaterial2dInstances::new()
   let camera = @core.Entity::new(10, 0)
   let scene_items = draw_scene_items_for_layers(

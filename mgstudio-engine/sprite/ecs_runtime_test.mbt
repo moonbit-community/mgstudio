@@ -759,8 +759,8 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
-    @asset.Assets[PreparedMaterial2d[DummyMaterialAsset]],
-  ] = @asset.assets_resource_key()
+    @render.RenderAssets[PreparedMaterial2d[DummyMaterialAsset]],
+  ] = @render.RenderAssets::resource()
   let instances_key : @ecs.ResourceKey[
     RenderMaterial2dInstances[DummyMaterialAsset],
   ] = RenderMaterial2dInstances::resource()
@@ -844,12 +844,12 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     RenderMaterial2dInstances[DummyMaterialAsset],
   ] = RenderMaterial2dInstances::resource()
   let prepared_key : @ecs.ResourceKey[
-    @asset.Assets[PreparedMaterial2d[DummyMaterialAsset]],
-  ] = @asset.assets_resource_key()
+    @render.RenderAssets[PreparedMaterial2d[DummyMaterialAsset]],
+  ] = @render.RenderAssets::resource()
   let instances = try! render_world.get_resource(instances_key).unwrap()
   let prepared_assets = try! render_world.get_resource(prepared_key).unwrap()
   let prepared = prepared_assets
-    .get(PreparedMaterial2d::prepared_handle(handle))
+    .get(handle.id())
     .unwrap()
 
   debug_inspect(instances.contains(entity), content="true")
@@ -935,15 +935,14 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
   let source_key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
-    @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
-  ] = @asset.assets_resource_key()
+    @render.RenderAssets[PreparedMaterial2d[ColorMaterialAsset]],
+  ] = @render.RenderAssets::resource()
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[ColorMaterialAsset]] = Material2dPipeline::resource()
   let source_assets = try! world.get_resource(source_key).unwrap()
   let prepared_assets = try! render_world.get_resource(prepared_key).unwrap()
   let pipeline = try! render_world.get_resource(pipeline_key).unwrap()
-  let prepared_handle = PreparedMaterial2d::prepared_handle(handle)
   let source_material = source_assets.get(handle).unwrap()
-  let prepared = prepared_assets.get(prepared_handle).unwrap()
+  let prepared = prepared_assets.get(handle.id()).unwrap()
 
   debug_inspect(prepared.source.id() == handle.id(), content="true")
   debug_inspect(
