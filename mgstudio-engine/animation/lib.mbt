@@ -865,10 +865,17 @@ fn animation_player_tick(
 
 ///|
 priv struct AnimationPreparedTargetSample {
-  clip_id : Int
+  clip : AnimationClip
   seek_time : Float
   combined_weight : Float
   computed_mask : AnimationMask
+}
+
+///|
+priv struct AnimationPreparedPlayer {
+  graph_id : Int
+  graph : AnimationGraph
+  samples : Array[AnimationPreparedTargetSample]
 }
 
 ///|
@@ -902,38 +909,68 @@ fn animation_prepare_player_target_samples_into(
   samples : Array[AnimationPreparedTargetSample],
 ) -> Unit {
   samples.clear()
-  for pair in player.playing_animations() {
-    let node_index = pair.0
-    let active = pair.1
-    guard graph.get(node_index) is Some(node) else { continue }
-    guard node.node_type is Clip(clip_handle) else { continue }
-    guard animation_clip_cached_or_load(clip_handle, clip_cache) is Some(_clip) else {
-      continue
-    }
-    let node_i = node_index.index()
-    let effective_weight = if node_i >= 0 &&
-      node_i < threaded_graph.effective_weights.length() {
-      threaded_graph.effective_weights[node_i]
-    } else {
-      graph.effective_weight(node_index)
-    }
-    let combined_weight = active.weight() * effective_weight
-    if combined_weight <= 0.0F {
-      continue
-    }
-    let computed_mask = if node_i >= 0 &&
-      node_i < threaded_graph.computed_masks.length() {
-      threaded_graph.computed_masks[node_i]
-    } else {
-      graph.computed_mask(node_index)
-    }
-    samples.push({
-      clip_id: clip_handle.id(),
-      seek_time: active.seek_time(),
-      combined_weight,
-      computed_mask,
+  if player.active_animations.length() == 1 {
+    player.active_animations.each(fn(node_key, active) {
+      animation_prepare_target_sample_for_node(
+        AnimationNodeIndex::new(node_key),
+        active,
+        graph,
+        threaded_graph,
+        clip_cache,
+        samples,
+      )
     })
+  } else {
+    for pair in player.playing_animations() {
+      animation_prepare_target_sample_for_node(
+        pair.0,
+        pair.1,
+        graph,
+        threaded_graph,
+        clip_cache,
+        samples,
+      )
+    }
   }
+}
+
+///|
+fn animation_prepare_target_sample_for_node(
+  node_index : AnimationNodeIndex,
+  active : ActiveAnimation,
+  graph : AnimationGraph,
+  threaded_graph : ThreadedAnimationGraph,
+  clip_cache : Map[Int, AnimationClip],
+  samples : Array[AnimationPreparedTargetSample],
+) -> Unit {
+  guard graph.get(node_index) is Some(node) else { return }
+  guard node.node_type is Clip(clip_handle) else { return }
+  guard animation_clip_cached_or_load(clip_handle, clip_cache) is Some(clip) else {
+    return
+  }
+  let node_i = node_index.index()
+  let effective_weight = if node_i >= 0 &&
+    node_i < threaded_graph.effective_weights.length() {
+    threaded_graph.effective_weights[node_i]
+  } else {
+    graph.effective_weight(node_index)
+  }
+  let combined_weight = active.weight() * effective_weight
+  if combined_weight <= 0.0F {
+    return
+  }
+  let computed_mask = if node_i >= 0 &&
+    node_i < threaded_graph.computed_masks.length() {
+    threaded_graph.computed_masks[node_i]
+  } else {
+    graph.computed_mask(node_index)
+  }
+  samples.push({
+    clip,
+    seek_time: active.seek_time(),
+    combined_weight,
+    computed_mask,
+  })
 }
 
 ///|
@@ -1149,7 +1186,6 @@ fn animation_apply_prepared_player_to_target(
   target_id : AnimationTargetId,
   target_mask : AnimationMask,
   prepared_samples : Array[AnimationPreparedTargetSample],
-  clip_cache : Map[Int, AnimationClip],
   evaluation_state : AnimationEvaluationState,
   base_transform : @transform.Transform?,
   base_weights : AnimationWeights?,
@@ -1161,8 +1197,8 @@ fn animation_apply_prepared_player_to_target(
     if (target_mask & sample.computed_mask) != 0U {
       continue
     }
-    guard clip_cache.get(sample.clip_id) is Some(clip) else { continue }
-    guard clip.sample_target(target_id, sample.seek_time) is Some(clip_sample) else {
+    guard sample.clip.sample_target(target_id, sample.seek_time)
+      is Some(clip_sample) else {
       continue
     }
     animation_evaluation_state_apply_sample(
@@ -1212,7 +1248,7 @@ priv struct AnimationRuntimeScratch {
   transform_updates : Array[(@core.Entity, @transform.Transform)]
   weights_updates : Array[(@core.Entity, AnimationWeights)]
   text_color_updates : Array[(@core.Entity, @text.TextColor)]
-  prepared_player_cache : Map[Int, Int]
+  prepared_player_cache : Map[Int, AnimationPreparedPlayer]
   prepared_samples_cache : Map[Int, Array[AnimationPreparedTargetSample]]
   target_mask_cache : Map[(Int, UInt64), AnimationMask]
   graph_cache : Map[Int, AnimationGraph]
@@ -1278,6 +1314,9 @@ fn animation_target_mask_cached(
   graph : AnimationGraph,
   target_id : AnimationTargetId,
 ) -> AnimationMask {
+  if graph.mask_groups.length() == 0 {
+    return 0U
+  }
   let target_key = animation_target_id_lookup_key(target_id)
   let cache_key = (graph_id, target_key)
   match target_mask_cache.get(cache_key) {
@@ -1436,7 +1475,11 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       clip_cache,
       samples,
     )
-    prepared_player_cache.set(player_id, graph_handle_id)
+    prepared_player_cache.set(player_id, AnimationPreparedPlayer::{
+      graph_id: graph_handle_id,
+      graph,
+      samples,
+    })
     prepared_samples_cache.set(player_id, samples)
   })
 
@@ -1458,29 +1501,24 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       if player_id < 0 {
         return
       }
-      let graph_id = match prepared_player_cache.get(player_id) {
+      let prepared_player = match prepared_player_cache.get(player_id) {
         Some(cached) => cached
         None => return
       }
-      let prepared_samples = match prepared_samples_cache.get(player_id) {
-        Some(cached) => cached
-        None => return
-      }
+      let prepared_samples = prepared_player.samples
       if prepared_samples.length() == 0 {
         return
       }
-      let graph = match graph_cache.get(graph_id) {
-        Some(graph) => graph
-        None => return
-      }
       let target_mask = animation_target_mask_cached(
-        target_mask_cache, graph_id, graph, target_id,
+        target_mask_cache,
+        prepared_player.graph_id,
+        prepared_player.graph,
+        target_id,
       )
       let (next_transform, next_weights, next_text_color) = animation_apply_prepared_player_to_target(
         target_id,
         target_mask,
         prepared_samples,
-        clip_cache,
         evaluation_state,
         match transform_column {
           Some(column) => column.get_fast(entity)

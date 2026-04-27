@@ -228,28 +228,6 @@ fn write_static_transform_optimizations(
 }
 
 ///|
-fn vec3_eq(a : @math.Vec3, b : @math.Vec3) -> Bool {
-  a.x == b.x && a.y == b.y && a.z == b.z
-}
-
-///|
-fn mat3_eq(a : @math.Mat3, b : @math.Mat3) -> Bool {
-  vec3_eq(a.x_axis, b.x_axis) &&
-  vec3_eq(a.y_axis, b.y_axis) &&
-  vec3_eq(a.z_axis, b.z_axis)
-}
-
-///|
-fn affine3_eq(a : @math.Affine3, b : @math.Affine3) -> Bool {
-  mat3_eq(a.matrix3, b.matrix3) && vec3_eq(a.translation, b.translation)
-}
-
-///|
-fn global_transform_eq(a : GlobalTransform, b : GlobalTransform) -> Bool {
-  affine3_eq(a.affine(), b.affine())
-}
-
-///|
 fn sync_simple_transforms_changed(query : SimpleTransformChangedQuery) -> Unit {
   try! query.for_each(fn(_entity, data) {
     let (transform, global_transform) = data
@@ -473,7 +451,7 @@ fn transform_propagation_columns(
 }
 
 ///|
-fn transform_set_global_if_neq_hot_at_row(
+fn transform_set_global_hot_at_row(
   columns : TransformPropagationColumns,
   table_id : Int,
   global_values : Array[GlobalTransform],
@@ -482,9 +460,6 @@ fn transform_set_global_if_neq_hot_at_row(
   sequence : @core.Sequence,
 ) -> Bool {
   if row_index < 0 || row_index >= global_values.length() {
-    return false
-  }
-  if global_transform_eq(global_values[row_index], next_global) {
     return false
   }
   global_values[row_index] = next_global
@@ -568,14 +543,9 @@ fn propagate_descendants_dense(
     }
     let local_transform = transform_values[row_index]
     let child_global = current_parent_global.mul_transform(local_transform)
-    let child_global_changed = transform_set_global_if_neq_hot_at_row(
+    let child_global_changed = transform_set_global_hot_at_row(
       columns, table_id, global_values, row_index, child_global, sequence,
     )
-    let next_parent_global = if child_global_changed {
-      child_global
-    } else {
-      global_values[row_index]
-    }
     match cache.val.children_values[table_id] {
       Some(children_values) => {
         if row_index >= children_values.length() {
@@ -587,7 +557,7 @@ fn propagate_descendants_dense(
           let reverse_index = grandchildren.length() - 1 - index
           scratch.dense_stack_entities.push(grandchildren[reverse_index])
           scratch.dense_stack_parents.push(child)
-          scratch.dense_stack_parent_globals.push(next_parent_global)
+          scratch.dense_stack_parent_globals.push(child_global)
           scratch.dense_stack_parent_global_changed.push(child_global_changed)
         }
       }
@@ -642,7 +612,7 @@ fn propagate_parent_transforms_dense(
     }
     let root_transform = transform_values[row_index]
     let root_global = GlobalTransform::from_transform(root_transform)
-    let root_global_changed = transform_set_global_if_neq_hot_at_row(
+    let root_global_changed = transform_set_global_hot_at_row(
       columns, table_id, global_values, row_index, root_global, sequence,
     )
     propagate_descendants_dense(

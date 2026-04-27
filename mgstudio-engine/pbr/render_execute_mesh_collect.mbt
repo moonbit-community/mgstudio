@@ -347,7 +347,6 @@ fn render3d_extract_mesh_for_entity(
   let (skinning_key_hi, _skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
     skin_uniforms_ref, entity,
   )
-  let mesh_topology_kind = render3d_mesh_topology_kind(mesh3d.mesh())
   let mesh_preprocess_static = render3d_mesh_preprocess_static_cached(
     mesh3d.mesh(),
     mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
@@ -374,7 +373,7 @@ fn render3d_extract_mesh_for_entity(
       payload: Mesh3dExtractedPayload::{
         mesh_handle: mesh3d.mesh(),
         mesh_id,
-        mesh_topology_kind,
+        mesh_topology_kind: mesh_preprocess_static.topology_kind,
         mesh_is_indexed: mesh_preprocess_static.is_indexed,
         mesh_preprocess_static: Some(mesh_preprocess_static),
         world_from_local,
@@ -543,16 +542,4 @@ fn render3d_execute_collect_meshes(
     meshes,
   )
   meshes
-}
-
-///|
-fn render3d_mesh_topology_kind(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int {
-  match @sprite.render_mesh_asset_get(mesh_handle) {
-    Some(mesh_asset) =>
-      match mesh_asset.as_3d_geometry() {
-        Some(geometry) => geometry.primitive_topology().to_int()
-        None => 0
-      }
-    None => 0
-  }
 }

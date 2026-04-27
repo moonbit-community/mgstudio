@@ -846,6 +846,20 @@ fn render3d_mesh_handle_preprocess_counts(
 }
 
 ///|
+fn render3d_mesh_handle_topology_kind(
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> Int {
+  match @sprite.render_mesh_asset_get(mesh_handle) {
+    Some(mesh_asset) =>
+      match mesh_asset.as_3d_geometry() {
+        Some(geometry) => geometry.primitive_topology().to_int()
+        None => 0
+      }
+    None => 0
+  }
+}
+
+///|
 fn render3d_mesh_handle_local_aabb(
   mesh_handle : @asset.Handle[@mesh.Mesh],
 ) -> (@math.Vec3, @math.Vec3)? {
@@ -886,6 +900,7 @@ fn render3d_mesh_handle_local_aabb(
 fn render3d_mesh_preprocess_static(
   mesh_handle : @asset.Handle[@mesh.Mesh],
 ) -> MeshPreprocessStatic3d {
+  let topology_kind = render3d_mesh_handle_topology_kind(mesh_handle)
   let (is_indexed, first_vertex_index, first_index_index, index_count) = render3d_mesh_handle_preprocess_counts(
     mesh_handle,
   )
@@ -913,6 +928,7 @@ fn render3d_mesh_preprocess_static(
       )
   }
   MeshPreprocessStatic3d::{
+    topology_kind,
     is_indexed,
     first_vertex_index,
     first_index_index,
@@ -1105,6 +1121,7 @@ fn render3d_host_preprocess_mesh_input(
     Some(value) => value
     None =>
       MeshPreprocessStatic3d::{
+        topology_kind: 0,
         is_indexed: false,
         first_vertex_index: 0,
         first_index_index: 0,

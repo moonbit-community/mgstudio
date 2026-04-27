@@ -21,6 +21,7 @@ pub(all) struct PreparedSkinBinding3d {
 
 ///|
 pub(all) struct MeshPreprocessStatic3d {
+  topology_kind : Int
   is_indexed : Bool
   first_vertex_index : Int
   first_index_index : Int
