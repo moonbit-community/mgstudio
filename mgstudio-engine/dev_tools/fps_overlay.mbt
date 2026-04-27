@@ -29,7 +29,7 @@ const FRAME_TIME_GRAPH_WIDTH_SCALE : Float = 6.0F
 const FRAME_TIME_GRAPH_HEIGHT_SCALE : Float = 2.0F
 
 ///|
-const DEFAULT_OVERLAY_TEXT : String = "FPS: --"
+const FPS_OVERLAY_TEXT_PREFIX : String = "FPS: "
 
 ///|
 pub let fps_overlay_set_customize : @app.SystemSet = @app.system_set(
@@ -153,6 +153,7 @@ let fps_overlay_plugin_marker_key : @ecs.ResourceKey[FpsOverlayPluginMarker] = @
 priv struct FpsOverlayState {
   mut root_entity : @core.Entity?
   mut text_entity : @core.Entity?
+  mut text_value_span_entity : @core.Entity?
   mut graph_entity : @core.Entity?
   bar_entities : Array[@core.Entity]
 }
@@ -162,6 +163,7 @@ fn FpsOverlayState::default() -> FpsOverlayState {
   FpsOverlayState::{
     root_entity: None,
     text_entity: None,
+    text_value_span_entity: None,
     graph_entity: None,
     bar_entities: [],
   }
@@ -171,6 +173,32 @@ fn FpsOverlayState::default() -> FpsOverlayState {
 let fps_overlay_state_resource_key : @ecs.ResourceKey[FpsOverlayState] = @ecs.register_resource(
   debug_name="mgstudio_dev_tools::fps_overlay::FpsOverlayState",
 )
+
+///|
+priv struct FpsText {}
+
+///|
+let ecs_key_fps_text : @ecs.ComponentKey[FpsText] = @ecs.register_component(
+  debug_name="mgstudio_dev_tools::fps_overlay::FpsText",
+)
+
+///|
+impl @ecs.Component for FpsText with component() {
+  ecs_key_fps_text
+}
+
+///|
+priv struct FrameTimeGraph {}
+
+///|
+let ecs_key_frame_time_graph : @ecs.ComponentKey[FrameTimeGraph] = @ecs.register_component(
+  debug_name="mgstudio_dev_tools::fps_overlay::FrameTimeGraph",
+)
+
+///|
+impl @ecs.Component for FrameTimeGraph with component() {
+  ecs_key_frame_time_graph
+}
 
 ///|
 fn fps_overlay_state_ref(world : @ecs.World) -> Ref[FpsOverlayState] {
@@ -294,10 +322,10 @@ fn fps_overlay_graph_display(config : FpsOverlayConfig) -> @ui.Display {
 }
 
 ///|
-fn fps_overlay_text_value(fps : Float?) -> String {
+fn fps_overlay_text_value_span(fps : Float?) -> String {
   match fps {
-    Some(value) => "FPS: \{fps_overlay_format_with_two_decimals(value)}"
-    None => DEFAULT_OVERLAY_TEXT
+    Some(value) => fps_overlay_format_with_two_decimals(value)
+    None => ""
   }
 }
 
@@ -432,6 +460,8 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   .entity_mut(root)
   .insert_component(@ui.GlobalZIndex::new(FPS_OVERLAY_ZINDEX))
   |> ignore)
+  try! (world.entity_mut(root).insert_component(@picking.pickable_ignore)
+  |> ignore)
 
   let text_entity = world.spawn_empty()
   try! (world
@@ -442,13 +472,30 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   |> ignore)
   try! (world
   .entity_mut(text_entity)
-  .insert_component(@text.Text::new(DEFAULT_OVERLAY_TEXT))
+  .insert_component(@text.Text::new(FPS_OVERLAY_TEXT_PREFIX))
   |> ignore)
   try! (world.entity_mut(text_entity).insert_component(config.text_config)
   |> ignore)
   try! (world
   .entity_mut(text_entity)
   .insert_component(@text.TextColor::new(config.text_color))
+  |> ignore)
+  try! (world.entity_mut(text_entity).insert_component(FpsText::{  }) |> ignore)
+  try! (world.entity_mut(text_entity).insert_component(@picking.pickable_ignore)
+  |> ignore)
+
+  let text_value_span_entity = world.spawn_empty()
+  try! (world
+  .entity_mut(text_value_span_entity)
+  .insert_component(@hierarchy.Parent::new(text_entity))
+  |> ignore)
+  try! (world
+  .entity_mut(text_value_span_entity)
+  .insert_component(@text.TextSpan::default())
+  |> ignore)
+  try! (world
+  .entity_mut(text_value_span_entity)
+  .insert_component(config.text_config)
   |> ignore)
 
   let graph_entity = world.spawn_empty()
@@ -476,9 +523,16 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
     @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F)),
   )
   |> ignore)
+  try! (world.entity_mut(graph_entity).insert_component(FrameTimeGraph::{  })
+  |> ignore)
+  try! (world
+  .entity_mut(graph_entity)
+  .insert_component(@picking.pickable_ignore)
+  |> ignore)
 
   state_ref.val.root_entity = Some(root)
   state_ref.val.text_entity = Some(text_entity)
+  state_ref.val.text_value_span_entity = Some(text_value_span_entity)
   state_ref.val.graph_entity = Some(graph_entity)
   fps_overlay_customize_system(world)
 }
@@ -497,6 +551,19 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
         _ => false
       } noraise {
         value => value
+      },
+    )
+  }
+
+  if state_ref.val.text_value_span_entity is Some(span_entity) {
+    ignore(
+      try
+        world.entity_mut(span_entity).insert_component(config.text_config)
+        |> ignore
+      catch {
+        _ => false
+      } noraise {
+        _ => true
       },
     )
   }
@@ -586,12 +653,14 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
     Some(diagnostic) => diagnostic.smoothed()
     None => None
   }
-  let next_text = fps_overlay_text_value(fps_value)
-  if state_ref.val.text_entity is Some(text_entity) {
-    if (try! world.get_by_key(text_entity, @text.ecs_key_text))
-      is Some(text_value) {
-      text_value.content = next_text
-      ignore(try! world.replace(text_entity, @text.ecs_key_text, text_value))
+  let next_text = fps_overlay_text_value_span(fps_value)
+  if state_ref.val.text_value_span_entity is Some(span_entity) {
+    if (try! world.get_by_key(span_entity, @text.ecs_key_text_span))
+      is Some(span_value) {
+      span_value.content = next_text
+      ignore(
+        try! world.replace(span_entity, @text.ecs_key_text_span, span_value),
+      )
     }
   }
 

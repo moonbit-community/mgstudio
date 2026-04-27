@@ -33,6 +33,9 @@ test "dev_tools: fps overlay startup spawns root, text, graph, and bars" {
   guard state.text_entity is Some(text_entity) else {
     abort("missing overlay text")
   }
+  guard state.text_value_span_entity is Some(text_value_span_entity) else {
+    abort("missing overlay text value span")
+  }
   guard state.graph_entity is Some(graph_entity) else {
     abort("missing overlay graph")
   }
@@ -47,8 +50,35 @@ test "dev_tools: fps overlay startup spawns root, text, graph, and bars" {
     content="true",
   )
   debug_inspect(
+    try! (app.world().get_by_key(text_entity, ecs_key_fps_text) is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! app.world().get_by_key(text_entity, @picking.ecs_key_pickable).unwrap(),
+    content="{ should_block_lower: false, is_hoverable: false }",
+  )
+  debug_inspect(
+    try! (app
+    .world()
+    .get_by_key(text_value_span_entity, @text.ecs_key_text_span)
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
     try! (app.world().get_by_key(graph_entity, @ui.ecs_key_node) is Some(_)),
     content="true",
+  )
+  debug_inspect(
+    try! (app.world().get_by_key(graph_entity, ecs_key_frame_time_graph)
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! app
+    .world()
+    .get_by_key(graph_entity, @picking.ecs_key_pickable)
+    .unwrap(),
+    content="{ should_block_lower: false, is_hoverable: false }",
   )
 }
 
@@ -102,10 +132,19 @@ test "dev_tools: fps overlay updates text and graph from diagnostics" {
   guard state.text_entity is Some(text_entity) else {
     abort("missing overlay text entity")
   }
+  guard state.text_value_span_entity is Some(text_value_span_entity) else {
+    abort("missing overlay text value span")
+  }
   debug_inspect(
-    app.world().get_by_key(text_entity, @text.ecs_key_text).unwrap().content.contains(
-      "FPS: ",
-    ),
+    app.world().get_by_key(text_entity, @text.ecs_key_text).unwrap().content,
+    content="\"FPS: \"",
+  )
+  debug_inspect(
+    app
+    .world()
+    .get_by_key(text_value_span_entity, @text.ecs_key_text_span)
+    .unwrap().content.length() >
+    0,
     content="true",
   )
   debug_inspect(state.bar_entities.length() > 0, content="true")
