@@ -167,6 +167,24 @@ pub impl @json.FromJson for GlobalTransform with from_json(json, path) {
 pub fn GlobalTransform::from_transform(
   transform : Transform,
 ) -> GlobalTransform {
+  if transform.scale.x == 1.0F &&
+    transform.scale.y == 1.0F &&
+    transform.scale.z == 1.0F {
+    if transform.rotation.x == 0.0F &&
+      transform.rotation.y == 0.0F &&
+      transform.rotation.z == 0.0F &&
+      transform.rotation.w == 1.0F {
+      return GlobalTransform::{
+        affine: @math.Affine3::from_translation(transform.translation),
+      }
+    }
+    return GlobalTransform::{
+      affine: @math.Affine3::from_rotation_translation(
+        transform.rotation,
+        transform.translation,
+      ),
+    }
+  }
   GlobalTransform::{
     affine: @math.Affine3::from_scale_rotation_translation(
       transform.scale,
@@ -189,6 +207,24 @@ pub fn GlobalTransform::mul_transform(
   self : GlobalTransform,
   transform : Transform,
 ) -> GlobalTransform {
+  if transform.scale.x == 1.0F &&
+    transform.scale.y == 1.0F &&
+    transform.scale.z == 1.0F {
+    if transform.rotation.x == 0.0F &&
+      transform.rotation.y == 0.0F &&
+      transform.rotation.z == 0.0F &&
+      transform.rotation.w == 1.0F {
+      return GlobalTransform::{
+        affine: self.affine.mul_translation(transform.translation),
+      }
+    }
+    return GlobalTransform::{
+      affine: self.affine.mul_rotation_translation(
+        transform.rotation,
+        transform.translation,
+      ),
+    }
+  }
   GlobalTransform::{
     affine: self.affine.mul_transform(
       transform.scale,

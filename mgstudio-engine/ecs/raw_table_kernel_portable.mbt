@@ -244,6 +244,21 @@ fn raw_table_value_column_kernel_set_metadata(
 }
 
 ///|
+fn raw_table_value_column_kernel_set_changed(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+  changed_sequence : @core.Sequence,
+  changed_caller_id : Int,
+) -> Bool {
+  if row < 0 || row >= kernel.values.length() {
+    return false
+  }
+  kernel.changed_sequences[row] = changed_sequence
+  kernel.changed_caller_ids[row] = changed_caller_id
+  true
+}
+
+///|
 fn raw_table_value_column_kernel_added(
   kernel : RawTableValueColumnKernel,
   row : Int,

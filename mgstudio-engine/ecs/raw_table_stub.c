@@ -409,6 +409,21 @@ int32_t mgstudio_ecs_raw_table_value_column_set_metadata(
 }
 
 MOONBIT_FFI_EXPORT
+int32_t mgstudio_ecs_raw_table_value_column_set_changed(
+  mgstudio_ecs_raw_table_value_column_t *column,
+  int32_t row,
+  int32_t changed_sequence,
+  int32_t changed_caller_id
+) {
+  if (column == NULL || row < 0 || row >= column->len) {
+    return 0;
+  }
+  column->changed_sequences[row] = changed_sequence;
+  column->changed_caller_ids[row] = changed_caller_id;
+  return 1;
+}
+
+MOONBIT_FFI_EXPORT
 int32_t mgstudio_ecs_raw_table_value_column_replace(
   mgstudio_ecs_raw_table_value_column_t *column,
   int32_t row,

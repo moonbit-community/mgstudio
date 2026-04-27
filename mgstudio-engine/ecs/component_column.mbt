@@ -321,6 +321,26 @@ pub fn[T] ComponentColumn::table_value_at_cached_entity_row(
   row_index : Int,
 ) -> T? {
   guard self.storage_type == Table else { return None }
+  self.table_value_in_cached_values_at_entity_row(
+    entity,
+    table_id,
+    row_index,
+    match self.table_values_ref(table_id) {
+      Some(values) => values
+      None => return None
+    },
+  )
+}
+
+///|
+pub fn[T] ComponentColumn::table_value_in_cached_values_at_entity_row(
+  self : ComponentColumn[T],
+  entity : @core.Entity,
+  table_id : Int,
+  row_index : Int,
+  values : Array[T],
+) -> T? {
+  guard self.storage_type == Table else { return None }
   let entity_id = entity.id
   guard entity_id >= 0 &&
     entity_id < self.world.entity_table_ids.length() &&
@@ -331,7 +351,6 @@ pub fn[T] ComponentColumn::table_value_at_cached_entity_row(
     self.world.entity_table_rows[entity_id] != row_index {
     return None
   }
-  guard self.table_values_ref(table_id) is Some(values) else { return None }
   if row_index < 0 || row_index >= values.length() {
     None
   } else {

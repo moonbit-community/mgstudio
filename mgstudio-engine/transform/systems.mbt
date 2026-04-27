@@ -145,23 +145,22 @@ fn transform_dense_table_cache_prepare(
 }
 
 ///|
+priv struct TransformPropagationStackItem {
+  entity : @core.Entity
+  parent : @core.Entity
+  parent_global : GlobalTransform
+  parent_global_changed : Bool
+}
+
+///|
 priv struct TransformPropagationScratch {
-  dense_stack_entities : Array[@core.Entity]
-  dense_stack_parents : Array[@core.Entity]
-  dense_stack_parent_globals : Array[GlobalTransform]
-  dense_stack_parent_global_changed : Array[Bool]
+  dense_stack : Array[TransformPropagationStackItem]
   dense_table_cache : TransformDenseTableCache
 }
 
 ///|
 fn transform_propagation_scratch_default() -> TransformPropagationScratch {
-  {
-    dense_stack_entities: [],
-    dense_stack_parents: [],
-    dense_stack_parent_globals: [],
-    dense_stack_parent_global_changed: [],
-    dense_table_cache: transform_dense_table_cache_default(),
-  }
+  { dense_stack: [], dense_table_cache: transform_dense_table_cache_default() }
 }
 
 ///|
@@ -480,45 +479,32 @@ fn propagate_descendants_dense(
   parent_global_changed : Bool,
   children : @hierarchy.Children,
 ) -> Unit {
-  scratch.dense_stack_entities.clear()
-  scratch.dense_stack_parents.clear()
-  scratch.dense_stack_parent_globals.clear()
-  scratch.dense_stack_parent_global_changed.clear()
+  scratch.dense_stack.clear()
   let root_children = children.entities()
   for index in 0..<root_children.length() {
     let reverse_index = root_children.length() - 1 - index
-    scratch.dense_stack_entities.push(root_children[reverse_index])
-    scratch.dense_stack_parents.push(parent)
-    scratch.dense_stack_parent_globals.push(parent_global)
-    scratch.dense_stack_parent_global_changed.push(parent_global_changed)
+    scratch.dense_stack.push(TransformPropagationStackItem::{
+      entity: root_children[reverse_index],
+      parent,
+      parent_global,
+      parent_global_changed,
+    })
   }
-  while scratch.dense_stack_entities.length() > 0 {
-    let child = match scratch.dense_stack_entities.pop() {
-      Some(child) => child
+  while scratch.dense_stack.length() > 0 {
+    let stack_item = match scratch.dense_stack.pop() {
+      Some(item) => item
       None => break
     }
-    let current_parent = match scratch.dense_stack_parents.pop() {
-      Some(entity) => entity
-      None => break
-    }
-    let current_parent_global = match scratch.dense_stack_parent_globals.pop() {
-      Some(global) => global
-      None => break
-    }
-    let current_parent_global_changed = match
-      scratch.dense_stack_parent_global_changed.pop() {
-      Some(changed) => changed
-      None => break
-    }
+    let child = stack_item.entity
     guard transform_dense_entity_slot(_world, child)
       is Some((table_id, row_index)) else {
       continue
     }
     if static_optimizations_enabled &&
+      !stack_item.parent_global_changed &&
       !columns.tree_changed.table_is_changed_at_row(
         table_id, row_index, system_sequence,
-      ) &&
-      !current_parent_global_changed {
+      ) {
       continue
     }
     guard transform_dense_table_cache_prepare(columns, cache, table_id) else {
@@ -538,11 +524,11 @@ fn propagate_descendants_dense(
       row_index >= parent_values.length() {
       continue
     }
-    if !entity_eq(parent_values[row_index].entity(), current_parent) {
+    if !entity_eq(parent_values[row_index].entity(), stack_item.parent) {
       transform_abort_malformed_hierarchy()
     }
     let local_transform = transform_values[row_index]
-    let child_global = current_parent_global.mul_transform(local_transform)
+    let child_global = stack_item.parent_global.mul_transform(local_transform)
     let child_global_changed = transform_set_global_hot_at_row(
       columns, table_id, global_values, row_index, child_global, sequence,
     )
@@ -555,10 +541,12 @@ fn propagate_descendants_dense(
         let grandchildren = grand_children.entities()
         for index in 0..<grandchildren.length() {
           let reverse_index = grandchildren.length() - 1 - index
-          scratch.dense_stack_entities.push(grandchildren[reverse_index])
-          scratch.dense_stack_parents.push(child)
-          scratch.dense_stack_parent_globals.push(child_global)
-          scratch.dense_stack_parent_global_changed.push(child_global_changed)
+          scratch.dense_stack.push(TransformPropagationStackItem::{
+            entity: grandchildren[reverse_index],
+            parent: child,
+            parent_global: child_global,
+            parent_global_changed: child_global_changed,
+          })
         }
       }
       None => ()
@@ -586,6 +574,13 @@ fn propagate_parent_transforms_dense(
   let scratch = scratch_ref.peek()
   let cache = Ref::new(scratch.dense_table_cache)
   transform_dense_table_cache_reset(cache)
+  let trace_enabled = @app.timeline_trace_enabled()
+  let trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "transform_propagate_dense",
+  )
+  let mut descendants_trace_first_us = -1L
+  let mut descendants_trace_total_us = 0L
   columns.children.for_each_without_fast(parent_column, fn(entity, children) {
     guard transform_dense_entity_slot(world, entity)
       is Some((table_id, row_index)) else {
@@ -615,11 +610,39 @@ fn propagate_parent_transforms_dense(
     let root_global_changed = transform_set_global_hot_at_row(
       columns, table_id, global_values, row_index, root_global, sequence,
     )
+    let descendants_start_us = if trace_enabled {
+      let now = @app.timeline_trace_now_us()
+      if descendants_trace_first_us < 0L {
+        descendants_trace_first_us = now
+      }
+      now
+    } else {
+      -1L
+    }
     propagate_descendants_dense(
       world, columns, scratch, cache, sequence, static_optimizations_enabled, system_sequence,
       entity, root_global, root_global_changed, children,
     )
+    if descendants_start_us >= 0L {
+      let descendants_end_us = @app.timeline_trace_now_us()
+      if descendants_end_us >= descendants_start_us {
+        descendants_trace_total_us += descendants_end_us - descendants_start_us
+      }
+    }
   })
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "transform_propagate_dense",
+    trace_start_us,
+  )
+  if descendants_trace_first_us >= 0L {
+    @app.timeline_trace_emit_complete_span(
+      @app.TimelineTraceCategory::RenderQueue,
+      "transform_propagate_descendants",
+      descendants_trace_first_us,
+      descendants_trace_total_us,
+    )
+  }
 }
 
 ///|

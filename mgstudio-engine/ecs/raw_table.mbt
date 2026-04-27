@@ -281,11 +281,11 @@ fn RawTableColumn::record_changed_at_row(
   sequence : @core.Sequence,
   caller : String?,
 ) -> Bool {
-  self.set_metadata_at_row(
+  raw_table_value_column_kernel_set_changed(
+    self.storage,
     row_index,
-    self.added_sequence_at_row(row_index),
-    Some(sequence),
-    caller,
+    raw_table_store_sequence(Some(sequence)),
+    raw_table_store_changed_caller(caller),
   )
 }
 

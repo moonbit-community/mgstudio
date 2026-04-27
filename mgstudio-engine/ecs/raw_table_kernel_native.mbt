@@ -139,6 +139,15 @@ extern "c" fn raw_table_value_column_kernel_set_metadata_native(
 
 ///|
 #borrow(kernel)
+extern "c" fn raw_table_value_column_kernel_set_changed_native(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+  changed_sequence : Int,
+  changed_caller_id : Int,
+) -> Bool = "mgstudio_ecs_raw_table_value_column_set_changed"
+
+///|
+#borrow(kernel)
 extern "c" fn raw_table_value_column_kernel_added_native(
   kernel : RawTableValueColumnKernel,
   row : Int,
@@ -221,6 +230,18 @@ fn raw_table_value_column_kernel_set_metadata(
 ) -> Bool {
   raw_table_value_column_kernel_set_metadata_native(
     kernel, row, added_sequence, changed_sequence, changed_caller_id,
+  )
+}
+
+///|
+fn raw_table_value_column_kernel_set_changed(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+  changed_sequence : @core.Sequence,
+  changed_caller_id : Int,
+) -> Bool {
+  raw_table_value_column_kernel_set_changed_native(
+    kernel, row, changed_sequence, changed_caller_id,
   )
 }
 
