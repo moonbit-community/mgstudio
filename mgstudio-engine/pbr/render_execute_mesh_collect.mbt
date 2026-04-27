@@ -39,6 +39,67 @@ fn render3d_resolve_standard_material(
 }
 
 ///|
+priv struct Render3dResolvedMeshMaterial {
+  material : StandardMaterial
+  material_properties : @material.MaterialProperties
+  material_shader_path : String?
+}
+
+///|
+fn render3d_resolve_mesh_material(
+  material_handle : MeshMaterial3d,
+  standard_material_frame_cache : Map[Int, StandardMaterial],
+  resolved_material_frame_cache : Map[Int, Render3dResolvedMeshMaterial],
+  default_opaque_renderer_method : OpaqueRendererMethod,
+  material_prepass_enabled : Bool,
+) -> Render3dResolvedMeshMaterial? {
+  // Mirrors Bevy's render-material cache shape: the common non-extended
+  // material path is resolved once per frame and reused by all mesh instances.
+  let material_handle_id = material_handle.material.id()
+  if material_handle.extended_material is None {
+    match resolved_material_frame_cache.get(material_handle_id) {
+      Some(cached) => return Some(cached)
+      None => ()
+    }
+  }
+  let base_material = match
+    render3d_resolve_standard_material(
+      material_handle, standard_material_frame_cache,
+    ) {
+    Some(v) => v
+    None => return None
+  }
+  let material = @pbr_render.render3d_apply_extended_material_metadata(
+    base_material,
+    material_handle.extended_material,
+  )
+  let material_properties = render3d_material_properties_for_standard_material(
+    material,
+    material_handle.extended_material,
+    default_opaque_renderer_method,
+    material_prepass_enabled,
+  )
+  let material_shader_path = match
+    material_properties.get_shader("material.fragment") {
+    Some(path) => Some(path)
+    None =>
+      match material_handle.extended_material {
+        Some(extension) => extension.shader_path
+        None => None
+      }
+  }
+  let resolved = Render3dResolvedMeshMaterial::{
+    material,
+    material_properties,
+    material_shader_path,
+  }
+  if material_handle.extended_material is None {
+    resolved_material_frame_cache.set(material_handle_id, resolved)
+  }
+  Some(resolved)
+}
+
+///|
 priv struct Render3dExtractMeshRequiredComponents {
   mesh3d : Mesh3d
   material_handle : MeshMaterial3d
@@ -46,6 +107,19 @@ priv struct Render3dExtractMeshRequiredComponents {
   global_transform : @transform.GlobalTransform
   previous_global_transform : @pbr_prepass.PreviousGlobalTransform?
   layers : @sprite.RenderLayers?
+  visibility_range : @visibility.VisibilityRange?
+  lightmap : Lightmap?
+  is_forward_decal : Bool
+  forward_decal_material_ext : ForwardDecalMaterialExt?
+  clustered_decal : ClusteredDecal?
+  has_not_shadow_caster : Bool
+  has_no_frustum_culling : Bool
+  has_no_cpu_culling : Bool
+  has_not_shadow_receiver : Bool
+  has_transmitted_shadow_receiver : Bool
+  has_wireframe : Bool
+  has_no_wireframe : Bool
+  wireframe_color : WireframeColor?
 }
 
 ///|
@@ -57,6 +131,7 @@ fn render3d_extract_mesh_for_entity(
   skin_uniforms_ref : Ref[@pbr_render.SkinUniforms],
   world_transform_cache_ref : Ref[@pbr_render.Render3dWorldTransformCache],
   standard_material_frame_cache : Map[Int, StandardMaterial],
+  resolved_material_frame_cache : Map[Int, Render3dResolvedMeshMaterial],
   needs_mesh_previous_transform : Bool,
   default_opaque_renderer_method : OpaqueRendererMethod,
   material_prepass_enabled : Bool,
@@ -70,6 +145,19 @@ fn render3d_extract_mesh_for_entity(
     global_transform,
     prefetched_previous_global_transform,
     prefetched_layers,
+    prefetched_visibility_range,
+    prefetched_lightmap,
+    prefetched_is_forward_decal,
+    prefetched_forward_decal_material_ext,
+    prefetched_clustered_decal,
+    prefetched_has_not_shadow_caster,
+    prefetched_has_no_frustum_culling,
+    prefetched_has_no_cpu_culling,
+    prefetched_has_not_shadow_receiver,
+    prefetched_has_transmitted_shadow_receiver,
+    prefetched_has_wireframe,
+    prefetched_has_no_wireframe,
+    prefetched_wireframe_color,
   ) = match required_components {
     Some(components) =>
       (
@@ -79,6 +167,19 @@ fn render3d_extract_mesh_for_entity(
         components.global_transform,
         components.previous_global_transform,
         components.layers,
+        components.visibility_range,
+        components.lightmap,
+        components.is_forward_decal,
+        components.forward_decal_material_ext,
+        components.clustered_decal,
+        components.has_not_shadow_caster,
+        components.has_no_frustum_culling,
+        components.has_no_cpu_culling,
+        components.has_not_shadow_receiver,
+        components.has_transmitted_shadow_receiver,
+        components.has_wireframe,
+        components.has_no_wireframe,
+        components.wireframe_color,
       )
     None => {
       let mesh3d = match
@@ -124,41 +225,74 @@ fn render3d_extract_mesh_for_entity(
       let layers = try! source_world.get_by_key(
         entity, @sprite.ecs_key_render_layers,
       )
+      let visibility_range = try! source_world.get_by_key(
+        entity, @visibility.ecs_key_visibility_range,
+      )
+      let lightmap = try! source_world.get_by_key(entity, ecs_key_lightmap)
+      let is_forward_decal = (try! source_world.get_by_key(
+          entity, ecs_key_forward_decal,
+        ))
+        is Some(_)
+      let forward_decal_material_ext = try! source_world.get_by_key(
+        entity, ecs_key_forward_decal_material_ext,
+      )
+      let clustered_decal = try! source_world.get_by_key(
+        entity, ecs_key_clustered_decal,
+      )
+      let has_not_shadow_caster = (try! source_world.get_by_key(
+          entity, ecs_key_not_shadow_caster,
+        ))
+        is Some(_)
+      let has_no_frustum_culling = (try! source_world.get_by_key(
+          entity, @visibility.ecs_key_no_frustum_culling,
+        ))
+        is Some(_)
+      let has_no_cpu_culling = (try! source_world.get_by_key(
+          entity, @visibility.ecs_key_no_cpu_culling,
+        ))
+        is Some(_)
+      let has_not_shadow_receiver = (try! source_world.get_by_key(
+          entity, ecs_key_not_shadow_receiver,
+        ))
+        is Some(_)
+      let has_transmitted_shadow_receiver = (try! source_world.get_by_key(
+          entity, ecs_key_transmitted_shadow_receiver,
+        ))
+        is Some(_)
+      let has_wireframe = (try! source_world.get_by_key(
+          entity, ecs_key_wireframe,
+        ))
+        is Some(_)
+      let has_no_wireframe = (try! source_world.get_by_key(
+          entity, ecs_key_no_wireframe,
+        ))
+        is Some(_)
+      let wireframe_color = try! source_world.get_by_key(
+        entity, ecs_key_wireframe_color,
+      )
       (
         mesh3d, material_handle, view_visibility, global_transform, previous_global_transform,
-        layers,
+        layers, visibility_range, lightmap, is_forward_decal, forward_decal_material_ext,
+        clustered_decal, has_not_shadow_caster, has_no_frustum_culling, has_no_cpu_culling,
+        has_not_shadow_receiver, has_transmitted_shadow_receiver, has_wireframe,
+        has_no_wireframe, wireframe_color,
       )
     }
   }
   if !view_visibility.is_visible() {
     return (None, false)
   }
-  let base_material = match
-    render3d_resolve_standard_material(
-      material_handle, standard_material_frame_cache,
+  let resolved_material = match
+    render3d_resolve_mesh_material(
+      material_handle, standard_material_frame_cache, resolved_material_frame_cache,
+      default_opaque_renderer_method, material_prepass_enabled,
     ) {
     Some(v) => v
     None => return (None, true)
   }
-  let material = @pbr_render.render3d_apply_extended_material_metadata(
-    base_material,
-    material_handle.extended_material,
-  )
-  let material_properties = render3d_material_properties_for_standard_material(
-    material,
-    material_handle.extended_material,
-    default_opaque_renderer_method,
-    material_prepass_enabled,
-  )
-  let material_shader_path = match
-    material_properties.get_shader("material.fragment") {
-    Some(path) => Some(path)
-    None =>
-      match material_handle.extended_material {
-        Some(extension) => extension.shader_path
-        None => None
-      }
-  }
+  let material = resolved_material.material
+  let material_properties = resolved_material.material_properties
+  let material_shader_path = resolved_material.material_shader_path
   let layers = match prefetched_layers {
     Some(v) => v
     None => @sprite.RenderLayers::default()
@@ -200,9 +334,7 @@ fn render3d_extract_mesh_for_entity(
     Some(v) => v.affine()
     None => world_from_local
   }
-  let visibility_range = try! source_world.get_by_key(
-    entity, @visibility.ecs_key_visibility_range,
-  )
+  let visibility_range = prefetched_visibility_range
   let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
     match render3d_mesh_local_aabb_center(mesh3d) {
       Some(local_center) =>
@@ -224,46 +356,18 @@ fn render3d_extract_mesh_for_entity(
     mesh_runtime_state_ref,
     mesh3d.mesh(),
   )
-  let lightmap = try! source_world.get_by_key(entity, ecs_key_lightmap)
-  let is_forward_decal = (try! source_world.get_by_key(
-      entity, ecs_key_forward_decal,
-    ))
-    is Some(_)
-  let forward_decal_material_ext = try! source_world.get_by_key(
-    entity, ecs_key_forward_decal_material_ext,
-  )
-  let clustered_decal = try! source_world.get_by_key(
-    entity, ecs_key_clustered_decal,
-  )
-  let has_not_shadow_caster = (try! source_world.get_by_key(
-      entity, ecs_key_not_shadow_caster,
-    ))
-    is Some(_)
-  let has_no_frustum_culling = (try! source_world.get_by_key(
-      entity, @visibility.ecs_key_no_frustum_culling,
-    ))
-    is Some(_)
-  let has_no_cpu_culling = (try! source_world.get_by_key(
-      entity, @visibility.ecs_key_no_cpu_culling,
-    ))
-    is Some(_)
-  let has_not_shadow_receiver = (try! source_world.get_by_key(
-      entity, ecs_key_not_shadow_receiver,
-    ))
-    is Some(_)
-  let has_transmitted_shadow_receiver = (try! source_world.get_by_key(
-      entity, ecs_key_transmitted_shadow_receiver,
-    ))
-    is Some(_)
-  let has_wireframe = (try! source_world.get_by_key(entity, ecs_key_wireframe))
-    is Some(_)
-  let has_no_wireframe = (try! source_world.get_by_key(
-      entity, ecs_key_no_wireframe,
-    ))
-    is Some(_)
-  let wireframe_color = try! source_world.get_by_key(
-    entity, ecs_key_wireframe_color,
-  )
+  let lightmap = prefetched_lightmap
+  let is_forward_decal = prefetched_is_forward_decal
+  let forward_decal_material_ext = prefetched_forward_decal_material_ext
+  let clustered_decal = prefetched_clustered_decal
+  let has_not_shadow_caster = prefetched_has_not_shadow_caster
+  let has_no_frustum_culling = prefetched_has_no_frustum_culling
+  let has_no_cpu_culling = prefetched_has_no_cpu_culling
+  let has_not_shadow_receiver = prefetched_has_not_shadow_receiver
+  let has_transmitted_shadow_receiver = prefetched_has_transmitted_shadow_receiver
+  let has_wireframe = prefetched_has_wireframe
+  let has_no_wireframe = prefetched_has_no_wireframe
+  let wireframe_color = prefetched_wireframe_color
   (
     Some(ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_world_main(source_world, entity),
@@ -320,6 +424,7 @@ fn render3d_execute_collect_meshes(
     "execute_3d_collect_meshes",
   )
   let standard_material_frame_cache : Map[Int, StandardMaterial] = {}
+  let resolved_material_frame_cache : Map[Int, Render3dResolvedMeshMaterial] = {}
   let default_opaque_renderer_method = render3d_material_default_opaque_renderer_method(
     world,
   )
@@ -337,6 +442,27 @@ fn render3d_execute_collect_meshes(
       (
         @ecs.Optional[@pbr_prepass.PreviousGlobalTransform],
         @ecs.Optional[@sprite.RenderLayers],
+        @ecs.Optional[@visibility.VisibilityRange],
+        @ecs.Optional[Lightmap],
+      ),
+      (
+        (
+          @ecs.Has[ForwardDecal],
+          @ecs.Optional[ForwardDecalMaterialExt],
+          @ecs.Optional[ClusteredDecal],
+          @ecs.Has[NotShadowCaster],
+        ),
+        (
+          @ecs.Has[@visibility.NoFrustumCulling],
+          @ecs.Has[@visibility.NoCpuCulling],
+          @ecs.Has[NotShadowReceiver],
+          @ecs.Has[TransmittedShadowReceiver],
+        ),
+        (
+          @ecs.Has[Wireframe],
+          @ecs.Has[NoWireframe],
+          @ecs.Optional[WireframeColor],
+        ),
       ),
     ),
     @ecs.All,
@@ -345,7 +471,22 @@ fn render3d_execute_collect_meshes(
     let (
       entity,
       (mesh3d, material, view_visibility, global_transform),
-      (previous_global_transform, render_layers),
+      (previous_global_transform, render_layers, visibility_range, lightmap),
+      (
+        (
+          forward_decal,
+          forward_decal_material_ext,
+          clustered_decal,
+          not_shadow_caster,
+        ),
+        (
+          no_frustum_culling,
+          no_cpu_culling,
+          not_shadow_receiver,
+          transmitted_shadow_receiver,
+        ),
+        (wireframe, no_wireframe, wireframe_color),
+      ),
     ) = data
     let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
       source_world,
@@ -355,6 +496,7 @@ fn render3d_execute_collect_meshes(
       skin_uniforms_ref,
       world_transform_cache_ref,
       standard_material_frame_cache,
+      resolved_material_frame_cache,
       needs_mesh_previous_transform,
       default_opaque_renderer_method,
       material_prepass_enabled,
@@ -365,6 +507,19 @@ fn render3d_execute_collect_meshes(
         global_transform: global_transform.value(),
         previous_global_transform: previous_global_transform.value(),
         layers: render_layers.value(),
+        visibility_range: visibility_range.value(),
+        lightmap: lightmap.value(),
+        is_forward_decal: forward_decal.present(),
+        forward_decal_material_ext: forward_decal_material_ext.value(),
+        clustered_decal: clustered_decal.value(),
+        has_not_shadow_caster: not_shadow_caster.present(),
+        has_no_frustum_culling: no_frustum_culling.present(),
+        has_no_cpu_culling: no_cpu_culling.present(),
+        has_not_shadow_receiver: not_shadow_receiver.present(),
+        has_transmitted_shadow_receiver: transmitted_shadow_receiver.present(),
+        has_wireframe: wireframe.present(),
+        has_no_wireframe: no_wireframe.present(),
+        wireframe_color: wireframe_color.value(),
       }),
     )
     match next_mesh {
