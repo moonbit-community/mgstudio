@@ -32,6 +32,7 @@ priv struct Render3dExecuteCameraPassConfig {
   custom_post_process_enabled : Bool
   tonemapping_stage_enabled : Bool
   fxaa_postprocess_enabled : Bool
+  cas_postprocess_enabled : Bool
   auto_exposure_enabled : Bool
   motion_vector_prepass_enabled : Bool
   fog_enabled : Bool
@@ -139,10 +140,14 @@ fn render3d_execute_camera_pass_config(
     camera.custom_post_process3d,
   )
   let fxaa_postprocess_enabled = render3d_fxaa_enabled(camera.fxaa)
+  let cas_postprocess_enabled = render3d_cas_enabled(
+    camera.contrast_adaptive_sharpening,
+  )
   let tonemap_postprocess_enabled = tonemapping_stage_enabled ||
     effect_stack_postprocess_enabled ||
     custom_post_process_enabled ||
-    fxaa_postprocess_enabled
+    fxaa_postprocess_enabled ||
+    cas_postprocess_enabled
   let auto_exposure_enabled = camera.auto_exposure is Some(_)
   let motion_vector_prepass_enabled = prepass_enabled &&
     (
@@ -200,6 +205,7 @@ fn render3d_execute_camera_pass_config(
     custom_post_process_enabled,
     tonemapping_stage_enabled,
     fxaa_postprocess_enabled,
+    cas_postprocess_enabled,
     auto_exposure_enabled,
     motion_vector_prepass_enabled,
     fog_enabled,

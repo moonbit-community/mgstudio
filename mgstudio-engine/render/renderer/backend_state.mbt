@@ -265,6 +265,11 @@ pub struct GpuBackend {
   custom_postprocess3d_pipeline_cache : Array[
     CustomPostProcessPipelineCacheEntry,
   ]
+  mut cas_bgl : @wgpu.BindGroupLayout?
+  mut cas_pipeline_layout : @wgpu.PipelineLayout?
+  mut cas_sampler : @wgpu.Sampler?
+  mut cas_uniform_buf : @wgpu.Buffer?
+  cas_pipeline_cache : Array[CasPipelineCacheEntry]
   mut blit_bgl : @wgpu.BindGroupLayout?
   mut blit_pipeline_layout : @wgpu.PipelineLayout?
   mut blit_pipeline : @wgpu.RenderPipeline?

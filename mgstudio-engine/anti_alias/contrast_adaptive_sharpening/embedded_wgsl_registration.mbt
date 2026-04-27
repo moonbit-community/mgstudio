@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,23 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_anti_alias/src/contrast_adaptive_sharpening/node.rs`.
-
-///|
-pub fn cas_node_enabled() -> Bool {
-  CAS_RUNTIME_SUPPORTED
-}
-
-///|
-pub fn cas_node_enabled_for_entity(
-  world : @ecs.World,
-  entity : @core.Entity,
-) -> Bool {
-  if !cas_camera_component_present(world, entity) {
-    return false
-  }
-  match (try! world.entity(entity).get() : ContrastAdaptiveSharpening?) {
-    Some(cas) => cas.enabled && cas.sharpening_strength > 0.0
-    None => false
-  }
+pub fn register_embedded_wgsl_sources() -> Unit {
+  register_embedded_wgsl_sources_generated()
 }

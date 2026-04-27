@@ -9,7 +9,7 @@ import {
 }
 
 // Values
-pub const CAS_RUNTIME_SUPPORTED : Bool = false
+pub const CAS_RUNTIME_SUPPORTED : Bool = true
 
 pub fn cas_node_enabled() -> Bool
 
@@ -19,9 +19,13 @@ pub fn cas_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn cas_plugin_with(@app.App[@ecs.World], CasPlugin) -> @app.App[@ecs.World]
 
+pub fn[T] cas_register_camera_component_key(@ecs.ComponentKey[T]) -> Unit
+
 pub fn cas_update_runtime_state(@ecs.World) -> Unit
 
 pub let ecs_key_cas_runtime_state : @ecs.ResourceKey[CasRuntimeState]
+
+pub fn register_embedded_wgsl_sources() -> Unit
 
 // Errors
 

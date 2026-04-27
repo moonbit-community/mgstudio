@@ -230,6 +230,7 @@ pub impl @app.Plugin for PbrPlugin with name(_self) {
 pub impl @app.Plugin for PbrPlugin with build(self, app) {
   @pbr_render.register_embedded_wgsl_sources()
   @transmission.register_embedded_wgsl_sources()
+  @cas.cas_register_camera_component_key(@sprite.ecs_key_camera)
   pbr_plugin_install_with(app, self)
 }
 

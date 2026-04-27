@@ -5,6 +5,7 @@ import {
   "tonyfettes/any",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/animation",
+  "Milky2018/mgstudio/anti_alias/contrast_adaptive_sharpening" @cas,
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/core",

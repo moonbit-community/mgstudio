@@ -129,6 +129,8 @@ pub fn downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : In
 
 pub fn draw_blit(scene_texture_id~ : Int) -> Unit
 
+pub fn draw_contrast_adaptive_sharpening(scene_texture_id~ : Int, sharpness~ : Float, denoise~ : Bool, view_width~ : Int, view_height~ : Int) -> Unit
+
 pub fn draw_custom_postprocess3d(scene_texture_id~ : Int, shader_path~ : String, fragment_entry~ : String, uniform_x~ : Float, uniform_y~ : Float, uniform_z~ : Float, uniform_w~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
 pub fn draw_effect_stack(scene_texture_id~ : Int, chromatic_aberration_intensity~ : Float, chromatic_aberration_max_samples~ : Int, vignette_intensity~ : Float, vignette_radius~ : Float, vignette_smoothness~ : Float, vignette_roundness~ : Float, vignette_center_x~ : Float, vignette_center_y~ : Float, vignette_edge_compensation~ : Float, vignette_color_r~ : Float, vignette_color_g~ : Float, vignette_color_b~ : Float, vignette_color_a~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
@@ -322,6 +324,8 @@ pub(all) suberror GpuBackendError {
 } derive(@debug.Debug)
 
 // Types and methods
+type CasPipelineCacheEntry
+
 type CustomPostProcessPipelineCacheEntry
 
 type GpuAutoExposureViewState
@@ -575,6 +579,11 @@ pub struct GpuBackend {
   mut custom_postprocess3d_sampler : @wgpu_mbt.Sampler?
   mut custom_postprocess3d_uniform_buf : @wgpu_mbt.Buffer?
   custom_postprocess3d_pipeline_cache : Array[CustomPostProcessPipelineCacheEntry]
+  mut cas_bgl : @wgpu_mbt.BindGroupLayout?
+  mut cas_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut cas_sampler : @wgpu_mbt.Sampler?
+  mut cas_uniform_buf : @wgpu_mbt.Buffer?
+  cas_pipeline_cache : Array[CasPipelineCacheEntry]
   mut blit_bgl : @wgpu_mbt.BindGroupLayout?
   mut blit_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut blit_pipeline : @wgpu_mbt.RenderPipeline?
@@ -677,6 +686,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UI
 pub fn GpuBackend::delete_old_mesh3d_preprocess_work_item_buffers(Self, Array[UInt64]) -> Unit
 pub fn GpuBackend::downsample_mesh3d_depth_pyramid(Self, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_blit(Self, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_contrast_adaptive_sharpening(Self, Int, Float, Bool, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_custom_postprocess3d(Self, Int, String, String, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_effect_stack(Self, Int, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_fxaa(Self, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError

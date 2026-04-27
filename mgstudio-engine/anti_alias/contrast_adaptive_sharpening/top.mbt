@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_anti_alias/src/contrast_adaptive_sharpening/mod.rs`.
 
 ///|
-pub const CAS_RUNTIME_SUPPORTED : Bool = false
+pub const CAS_RUNTIME_SUPPORTED : Bool = true
 
 ///|
 const CAS_PLUGIN_NAME : String = "mgstudio.anti_alias.contrast_adaptive_sharpening.CasPlugin"
@@ -119,6 +119,16 @@ pub let ecs_key_cas_runtime_state : @ecs.ResourceKey[CasRuntimeState] = @ecs.reg
 )
 
 ///|
+let cas_camera_component_key_ref : Ref[@ecs.ComponentKey[Unit]?] = Ref::new(
+  None,
+)
+
+///|
+pub fn[T] cas_register_camera_component_key(key : @ecs.ComponentKey[T]) -> Unit {
+  cas_camera_component_key_ref.val = Some(key.cast())
+}
+
+///|
 pub impl @app.Resource for CasRuntimeState with resource() {
   ecs_key_cas_runtime_state
 }
@@ -130,6 +140,7 @@ pub impl @app.Plugin for CasPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for CasPlugin with build(self, app) {
+  register_embedded_wgsl_sources()
   cas_plugin_with(app, self)
 }
 
@@ -153,7 +164,8 @@ fn cas_camera_component_present(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Bool {
-  try! world.contains_by_key(entity, @sprite.ecs_key_camera)
+  guard cas_camera_component_key_ref.val is Some(key) else { return false }
+  try! world.contains_by_key(entity, key)
 }
 
 ///|

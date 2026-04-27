@@ -27,6 +27,7 @@ fn render3d_execute_camera_postprocess(
   custom_post_process_enabled : Bool,
   tonemapping_stage_enabled : Bool,
   fxaa_postprocess_enabled : Bool,
+  cas_postprocess_enabled : Bool,
   effective_exposure : Exposure?,
   view_width : Int,
   view_height : Int,
@@ -233,7 +234,8 @@ fn render3d_execute_camera_postprocess(
         }) +
         (if custom_post_process_enabled { 1 } else { 0 }) +
         (if tonemapping_stage_enabled { 1 } else { 0 }) +
-        (if fxaa_postprocess_enabled { 1 } else { 0 })
+        (if fxaa_postprocess_enabled { 1 } else { 0 }) +
+        (if cas_postprocess_enabled { 1 } else { 0 })
       if postprocess_stage_count > 0 {
         let stage_ping_target_id = render3d_transmission_source_target_get_or_create(
           world, camera_entity, view_width, view_height,
@@ -438,6 +440,53 @@ fn render3d_execute_camera_postprocess(
             view_height_logical,
           )
           @render.host_gpu_end_pass()
+          current_source_texture_id = stage_target_id
+          stage_index = stage_index + 1
+        }
+        if cas_postprocess_enabled {
+          let stage_target_id = render3d_postprocess_stage_target(
+            current_source_texture_id,
+            scene_target_id,
+            stage_ping_target_id,
+            camera.target_id,
+            stage_index,
+            postprocess_stage_count,
+          )
+          let (
+            cas_viewport_x,
+            cas_viewport_y,
+            cas_viewport_width,
+            cas_viewport_height,
+          ) = pass_viewport(stage_target_id)
+          @render.host_gpu_begin_pass(
+            target_id=stage_target_id,
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear_color.r,
+            clear_g=clear_color.g,
+            clear_b=clear_color.b,
+            clear_a=clear_color.a,
+            camera_x=0.0F,
+            camera_y=0.0F,
+            camera_rotation=0.0F,
+            camera_scale=1.0F,
+            viewport_x=cas_viewport_x,
+            viewport_y=cas_viewport_y,
+            viewport_width=cas_viewport_width,
+            viewport_height=cas_viewport_height,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
+              cleared_targets_this_frame, stage_target_id, clear_enabled,
+            ),
+          )
+          render3d_draw_camera_cas_stage(
+            current_source_texture_id,
+            camera.contrast_adaptive_sharpening,
+            view_width_logical,
+            view_height_logical,
+          )
+          @render.host_gpu_end_pass()
         }
       } else if postprocess_source_texture_id != camera.target_id {
         let (
@@ -561,6 +610,14 @@ fn render3d_execute_camera_postprocess(
 fn render3d_fxaa_enabled(fxaa : Fxaa?) -> Bool {
   match fxaa {
     Some(value) => value.enabled
+    None => false
+  }
+}
+
+///|
+fn render3d_cas_enabled(cas : @cas.ContrastAdaptiveSharpening?) -> Bool {
+  match cas {
+    Some(value) => value.enabled && value.sharpening_strength > 0.0F
     None => false
   }
 }
@@ -1108,6 +1165,24 @@ fn render3d_draw_camera_fxaa_stage(
     fxaa_enabled~,
     fxaa_edge_threshold_mode~,
     fxaa_edge_threshold_min_mode~,
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+  )
+}
+
+///|
+fn render3d_draw_camera_cas_stage(
+  scene_texture_id : Int,
+  cas : @cas.ContrastAdaptiveSharpening?,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  guard render3d_cas_enabled(cas) else { return }
+  guard cas is Some(value) else { return }
+  @render.host_gpu_draw_contrast_adaptive_sharpening(
+    scene_texture_id~,
+    sharpness=value.sharpening_strength,
+    denoise=value.denoise,
     view_width=view_width_logical,
     view_height=view_height_logical,
   )

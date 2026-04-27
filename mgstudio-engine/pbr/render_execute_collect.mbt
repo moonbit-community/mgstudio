@@ -119,6 +119,10 @@ fn render3d_execute_collect_cameras(
     let chromatic_aberration = try! source_world.get_by_key(
       entity, ecs_key_chromatic_aberration,
     )
+    let contrast_adaptive_sharpening = try! source_world.get_by_key(
+      entity,
+      @cas.ContrastAdaptiveSharpening::component(),
+    )
     let custom_post_process3d = try! source_world.get_by_key(
       entity, ecs_key_custom_post_process3d,
     )
@@ -244,6 +248,7 @@ fn render3d_execute_collect_cameras(
             tonemapping,
             deband_dither,
             chromatic_aberration,
+            contrast_adaptive_sharpening,
             custom_post_process3d,
             vignette,
             motion_blur,

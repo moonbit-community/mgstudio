@@ -21,6 +21,7 @@ import {
   "Milky2018/mgstudio/camera/primitives" @camera_primitives,
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/anti_alias/contrast_adaptive_sharpening" @cas,
   "Milky2018/mgstudio/transform",
 }
 

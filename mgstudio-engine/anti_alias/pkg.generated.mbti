@@ -14,7 +14,7 @@ import {
 }
 
 // Values
-pub const CAS_RUNTIME_SUPPORTED : Bool = false
+pub const CAS_RUNTIME_SUPPORTED : Bool = true
 
 pub const DLSS_RUNTIME_SUPPORTED : Bool = false
 

@@ -224,3 +224,10 @@ struct CustomPostProcessPipelineCacheEntry {
   surface_format : @wgpu.TextureFormat
   pipeline : @wgpu.RenderPipeline
 }
+
+///|
+struct CasPipelineCacheEntry {
+  surface_format : @wgpu.TextureFormat
+  denoise : Bool
+  pipeline : @wgpu.RenderPipeline
+}

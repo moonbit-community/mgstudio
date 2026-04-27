@@ -1599,6 +1599,23 @@ pub fn host_gpu_draw_fxaa(
 }
 
 ///|
+pub fn host_gpu_draw_contrast_adaptive_sharpening(
+  scene_texture_id~ : Int,
+  sharpness~ : Float,
+  denoise~ : Bool,
+  view_width~ : Int,
+  view_height~ : Int,
+) -> Unit {
+  @renderer.draw_contrast_adaptive_sharpening(
+    scene_texture_id~,
+    sharpness~,
+    denoise~,
+    view_width~,
+    view_height~,
+  )
+}
+
+///|
 pub fn host_gpu_draw_gizmo_line(
   start_x~ : Float,
   start_y~ : Float,

@@ -90,6 +90,7 @@ priv struct Camera3dViewPayload {
   tonemapping : Tonemapping?
   deband_dither : DebandDither?
   chromatic_aberration : ChromaticAberration?
+  contrast_adaptive_sharpening : @cas.ContrastAdaptiveSharpening?
   custom_post_process3d : CustomPostProcess3d?
   vignette : Vignette?
   motion_blur : MotionBlur?

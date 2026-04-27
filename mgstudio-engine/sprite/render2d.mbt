@@ -2783,6 +2783,7 @@ priv struct Render2dCameraPostprocessPlan {
   uses_intermediate_source : Bool
   apply_bloom_before_tonemapping : Bool
   tonemapping_stage_enabled : Bool
+  cas_postprocess_enabled : Bool
   draw_ui_overlay_after_postprocess : Bool
 }
 
@@ -2791,15 +2792,20 @@ fn render2d_camera_postprocess_plan(
   bloom : Bloom?,
   tonemapping_mode : Int,
   color_grading : ColorGrading?,
+  contrast_adaptive_sharpening : @cas.ContrastAdaptiveSharpening?,
 ) -> Render2dCameraPostprocessPlan {
   let tonemapping_enabled = render2d_tonemapping_stage_enabled(
     tonemapping_mode, color_grading,
   )
-  let uses_intermediate_source = bloom is Some(_) || tonemapping_enabled
+  let cas_enabled = render2d_cas_enabled(contrast_adaptive_sharpening)
+  let uses_intermediate_source = bloom is Some(_) ||
+    tonemapping_enabled ||
+    cas_enabled
   Render2dCameraPostprocessPlan::{
     uses_intermediate_source,
     apply_bloom_before_tonemapping: bloom is Some(_),
     tonemapping_stage_enabled: tonemapping_enabled,
+    cas_postprocess_enabled: cas_enabled,
     draw_ui_overlay_after_postprocess: uses_intermediate_source,
   }
 }
@@ -2838,6 +2844,35 @@ fn render2d_draw_camera_tonemapping(
 ///|
 fn render2d_draw_camera_blit(source : @asset.Handle[@asset.Image]) -> Unit {
   @render.host_gpu_draw_blit(scene_texture_id=source.id())
+}
+
+///|
+fn render2d_cas_enabled(cas : @cas.ContrastAdaptiveSharpening?) -> Bool {
+  match cas {
+    Some(value) => value.enabled && value.sharpening_strength > 0.0F
+    None => false
+  }
+}
+
+///|
+fn render2d_draw_camera_cas(
+  source : @asset.Handle[@asset.Image],
+  cas : @cas.ContrastAdaptiveSharpening?,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  if view_width_logical <= 0 || view_height_logical <= 0 {
+    return
+  }
+  guard render2d_cas_enabled(cas) else { return }
+  guard cas is Some(value) else { return }
+  @render.host_gpu_draw_contrast_adaptive_sharpening(
+    scene_texture_id=source.id(),
+    sharpness=value.sharpening_strength,
+    denoise=value.denoise,
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+  )
 }
 
 ///|
@@ -3051,6 +3086,7 @@ priv struct ExtractedCamera2d {
   tonemapping_mode : Int
   deband_dither_enabled : Bool
   color_grading : ColorGrading?
+  contrast_adaptive_sharpening : @cas.ContrastAdaptiveSharpening?
   computed : CameraComputed
 }
 
@@ -3125,6 +3161,7 @@ priv struct RenderTargetInfo {
 ///|
 priv struct PostProcessIntermediateTargetInfo {
   camera : @core.Entity
+  slot : Int
   width : Int
   height : Int
   target : @asset.Handle[@asset.Image]
@@ -4347,11 +4384,13 @@ fn render2d_get_or_create_postprocess_intermediate_target(
   camera : @core.Entity,
   width : Int,
   height : Int,
+  slot? : Int = 0,
 ) -> @asset.Handle[@asset.Image] {
   let safe_width = if width <= 0 { 1 } else { width }
   let safe_height = if height <= 0 { 1 } else { height }
   for entry in state.postprocess_intermediate_targets {
     if render2d_same_entity(entry.camera, camera) &&
+      entry.slot == slot &&
       entry.width == safe_width &&
       entry.height == safe_height {
       return entry.target
@@ -4370,9 +4409,10 @@ fn render2d_get_or_create_postprocess_intermediate_target(
   })
   for i in 0..<state.postprocess_intermediate_targets.length() {
     let entry = state.postprocess_intermediate_targets[i]
-    if render2d_same_entity(entry.camera, camera) {
+    if render2d_same_entity(entry.camera, camera) && entry.slot == slot {
       state.postprocess_intermediate_targets[i] = PostProcessIntermediateTargetInfo::{
         camera,
+        slot,
         width: safe_width,
         height: safe_height,
         target: handle,
@@ -4382,6 +4422,7 @@ fn render2d_get_or_create_postprocess_intermediate_target(
   }
   state.postprocess_intermediate_targets.push(PostProcessIntermediateTargetInfo::{
     camera,
+    slot,
     width: safe_width,
     height: safe_height,
     target: handle,
@@ -4822,6 +4863,10 @@ fn render2d_extract_camera_entity_ecs(
     RenderLayers::default(),
   )
   let bloom = try! world.get_by_key(entity, ecs_key_bloom)
+  let contrast_adaptive_sharpening = try! world.get_by_key(
+    entity,
+    @cas.ContrastAdaptiveSharpening::component(),
+  )
   let projection = match (try! world.get_by_key(entity, ecs_key_projection)) {
     Some(Orthographic(p)) => p
     _ => OrthographicProjection::default_2d()
@@ -4860,6 +4905,7 @@ fn render2d_extract_camera_entity_ecs(
     tonemapping_mode: camera_tonemapping_mode(world, entity),
     deband_dither_enabled: camera_deband_dither_enabled(world, entity),
     color_grading: camera_color_grading(world, entity),
+    contrast_adaptive_sharpening,
     computed,
   })
 }
@@ -6601,10 +6647,16 @@ test "render2d: scene draw items exclude UI overlays" {
 
 ///|
 test "render2d: host window bloom postprocess keeps Bevy stage ownership" {
-  let plan = render2d_camera_postprocess_plan(Some(Bloom::default()), 0, None)
+  let plan = render2d_camera_postprocess_plan(
+    Some(Bloom::default()),
+    0,
+    None,
+    None,
+  )
   let ok = plan.uses_intermediate_source &&
     plan.apply_bloom_before_tonemapping &&
     !plan.tonemapping_stage_enabled &&
+    !plan.cas_postprocess_enabled &&
     plan.draw_ui_overlay_after_postprocess
   debug_inspect(ok, content="true")
 }
@@ -6615,10 +6667,12 @@ test "render2d: host window tonemapping without bloom still leaves UI after post
     None,
     render2d_tonemapping_mode_to_int(TonyMcMapface),
     None,
+    None,
   )
   let ok = plan.uses_intermediate_source &&
     !plan.apply_bloom_before_tonemapping &&
     plan.tonemapping_stage_enabled &&
+    !plan.cas_postprocess_enabled &&
     plan.draw_ui_overlay_after_postprocess
   debug_inspect(ok, content="true")
 }
@@ -6629,10 +6683,28 @@ test "render2d: color grading alone keeps host window tonemapping copy stage" {
     None,
     0,
     Some(ColorGrading::default()),
+    None,
   )
   let ok = plan.uses_intermediate_source &&
     !plan.apply_bloom_before_tonemapping &&
     plan.tonemapping_stage_enabled &&
+    !plan.cas_postprocess_enabled &&
+    plan.draw_ui_overlay_after_postprocess
+  debug_inspect(ok, content="true")
+}
+
+///|
+test "render2d: CAS alone uses Bevy postprocess source path" {
+  let plan = render2d_camera_postprocess_plan(
+    None,
+    0,
+    None,
+    Some(@cas.ContrastAdaptiveSharpening::default()),
+  )
+  let ok = plan.uses_intermediate_source &&
+    !plan.apply_bloom_before_tonemapping &&
+    !plan.tonemapping_stage_enabled &&
+    plan.cas_postprocess_enabled &&
     plan.draw_ui_overlay_after_postprocess
   debug_inspect(ok, content="true")
 }
@@ -6658,6 +6730,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       tonemapping_mode: 0,
       deband_dither_enabled: false,
       color_grading: None,
+      contrast_adaptive_sharpening: None,
       computed: CameraComputed::{
         target_size: @math.IVec2::new(640, 360),
         scale_factor: 1.0F,
@@ -6674,6 +6747,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       tonemapping_mode: 0,
       deband_dither_enabled: false,
       color_grading: None,
+      contrast_adaptive_sharpening: None,
       computed: CameraComputed::{
         target_size: @math.IVec2::new(640, 360),
         scale_factor: 1.0F,
@@ -8058,6 +8132,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         camera.bloom,
         tonemapping_mode,
         color_grading,
+        camera.contrast_adaptive_sharpening,
       )
       fn scene_draw_items_need_depth(
         opaque_items : Array[DrawItem],
@@ -8089,6 +8164,33 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       }
 
       if auto_postprocess_source is Some(source) {
+        let cas_postprocess_enabled = camera_postprocess_plan.cas_postprocess_enabled
+        let cas_pre_stage_enabled = cas_postprocess_enabled &&
+          (
+            camera_postprocess_plan.apply_bloom_before_tonemapping ||
+            camera_postprocess_plan.tonemapping_stage_enabled
+          )
+        let postprocess_output_target = if cas_pre_stage_enabled {
+          render2d_get_or_create_postprocess_intermediate_target(
+            rs.val,
+            camera.entity,
+            viewport_width,
+            viewport_height,
+            slot=1,
+          )
+        } else {
+          @asset.Handle::new(target_id)
+        }
+        let (
+          postprocess_output_viewport_x,
+          postprocess_output_viewport_y,
+          postprocess_output_viewport_width,
+          postprocess_output_viewport_height,
+        ) = if cas_pre_stage_enabled {
+          (0, 0, viewport_width, viewport_height)
+        } else {
+          (viewport_x, viewport_y, viewport_width, viewport_height)
+        }
         if scene_needs_depth {
           @render.host_gpu_begin_pass_with_depth(
             target_id=@asset.Handle::id(source),
@@ -8140,7 +8242,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         @render.host_gpu_end_pass()
 
         @render.host_gpu_begin_pass(
-          target_id~,
+          target_id=postprocess_output_target.id(),
           width=view_width_logical,
           height=view_height_logical,
           clear_r=clear.r,
@@ -8151,10 +8253,10 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           camera_y=camera.transform.translation.y,
           camera_rotation~,
           camera_scale=camera_uniform_scale,
-          viewport_x~,
-          viewport_y~,
-          viewport_width~,
-          viewport_height~,
+          viewport_x=postprocess_output_viewport_x,
+          viewport_y=postprocess_output_viewport_y,
+          viewport_width=postprocess_output_viewport_width,
+          viewport_height=postprocess_output_viewport_height,
           viewport_depth_min~,
           viewport_depth_max~,
           clear_enabled=if clear_enabled { 1 } else { 0 },
@@ -8169,11 +8271,48 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             world, source, tonemapping_mode, deband_dither_enabled, color_grading,
             viewport_width, viewport_height,
           )
-        } else {
+        } else if !cas_postprocess_enabled || cas_pre_stage_enabled {
           render2d_draw_camera_blit(source)
         }
-        gizmos_draw_lines(camera.layers)
+        if !cas_postprocess_enabled {
+          gizmos_draw_lines(camera.layers)
+        }
         @render.host_gpu_end_pass()
+        if cas_postprocess_enabled {
+          @render.host_gpu_begin_pass(
+            target_id~,
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear.r,
+            clear_g=clear.g,
+            clear_b=clear.b,
+            clear_a=clear.a,
+            camera_x=camera.transform.translation.x,
+            camera_y=camera.transform.translation.y,
+            camera_rotation~,
+            camera_scale=camera_uniform_scale,
+            viewport_x~,
+            viewport_y~,
+            viewport_width~,
+            viewport_height~,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if cas_pre_stage_enabled { 1 } else { 0 },
+          )
+          let cas_source = if cas_pre_stage_enabled {
+            postprocess_output_target
+          } else {
+            source
+          }
+          render2d_draw_camera_cas(
+            cas_source,
+            camera.contrast_adaptive_sharpening,
+            viewport_width,
+            viewport_height,
+          )
+          gizmos_draw_lines(camera.layers)
+          @render.host_gpu_end_pass()
+        }
         if camera_postprocess_plan.draw_ui_overlay_after_postprocess {
           draw_ui_overlay_passes(ui_overlay_draw_items)
         }
@@ -8536,6 +8675,7 @@ pub impl @app.Plugin for Render2dPlugin with name(_self) {
 ///|
 pub impl @app.Plugin for Render2dPlugin with build(_self, app) {
   register_embedded_wgsl_sources()
+  @cas.cas_register_camera_component_key(ecs_key_camera)
   render2d_plugin_install(app)
 }
 
@@ -8547,6 +8687,7 @@ pub impl @app.Plugin for Render2dEcsPlugin with name(_self) {
 ///|
 pub impl @app.Plugin for Render2dEcsPlugin with build(_self, app) {
   register_embedded_wgsl_sources()
+  @cas.cas_register_camera_component_key(ecs_key_camera)
   render2d_plugin_ecs_install(app)
 }
 

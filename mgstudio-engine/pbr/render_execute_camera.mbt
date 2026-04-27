@@ -84,6 +84,7 @@ fn render3d_execute_camera(
   let custom_post_process_enabled = pass_config.custom_post_process_enabled
   let tonemapping_stage_enabled = pass_config.tonemapping_stage_enabled
   let fxaa_postprocess_enabled = pass_config.fxaa_postprocess_enabled
+  let cas_postprocess_enabled = pass_config.cas_postprocess_enabled
   let auto_exposure_enabled = pass_config.auto_exposure_enabled
   let motion_vector_prepass_enabled = pass_config.motion_vector_prepass_enabled
   let fog_enabled = pass_config.fog_enabled
@@ -174,9 +175,9 @@ fn render3d_execute_camera(
     world, camera_entity, camera, scene_target_id, velocity_target_id, motion_blur_active,
     bloom_enabled, tonemap_postprocess_enabled, auto_exposure_enabled, effect_stack_postprocess_enabled,
     custom_post_process_enabled, tonemapping_stage_enabled, fxaa_postprocess_enabled,
-    effective_exposure, view_width, view_height, view_width_logical, view_height_logical,
-    clear_color, viewport_x, viewport_y, viewport_width, viewport_height, viewport_depth_min,
-    viewport_depth_max, clear_enabled, delta_seconds, cleared_targets_this_frame,
+    cas_postprocess_enabled, effective_exposure, view_width, view_height, view_width_logical,
+    view_height_logical, clear_color, viewport_x, viewport_y, viewport_width, viewport_height,
+    viewport_depth_min, viewport_depth_max, clear_enabled, delta_seconds, cleared_targets_this_frame,
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,

@@ -1,8 +1,19 @@
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset" @asset,
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/sprite",
+  "Milky2018/moon_wgsl" @wgsl,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name robust_contrast_adaptive_sharpening_wgsl_source",
+      "input": "robust_contrast_adaptive_sharpening.wgsl",
+      "output": "robust_contrast_adaptive_sharpening_wgsl.mbt",
+    },
+  ],
+)

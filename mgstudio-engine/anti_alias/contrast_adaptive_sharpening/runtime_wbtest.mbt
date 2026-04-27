@@ -13,18 +13,23 @@
 // limitations under the License.
 
 ///|
+struct CasTestCamera {}
+
+///|
+let cas_test_camera_key : @ecs.ComponentKey[CasTestCamera] = @ecs.register_component(
+  debug_name="anti_alias.cas.test_camera",
+)
+
+///|
 fn cas_test_spawn_camera(world : @ecs.World) -> @core.Entity {
   let entity = world.spawn_empty()
-  try! world.set_by_key(
-    entity,
-    @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
-  )
+  try! world.set_by_key(entity, cas_test_camera_key, CasTestCamera::{  })
   entity
 }
 
 ///|
 test "anti_alias/cas: runtime state counts camera-only CAS components" {
+  cas_register_camera_component_key(cas_test_camera_key)
   let app = @app.App::new(@ecs.World::new()).add_plugins(CasPlugin::default())
   let camera_entity = cas_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()
