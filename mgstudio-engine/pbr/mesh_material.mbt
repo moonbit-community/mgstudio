@@ -64,13 +64,19 @@ fn init_mesh_render_resources(world : @ecs.World) -> Unit {
       Render3dInternalAssetsState::new(),
     )
   }
+}
+
+///|
+fn init_auto_exposure_compensation_curve_asset(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
   let auto_exposure_curve_assets_key : @ecs.ResourceKey[
     @asset.Assets[AutoExposureCompensationCurve],
   ] = @asset.assets_resource_key()
-  if (try! world.get_resource(auto_exposure_curve_assets_key)) is None {
-    world.insert_resource(auto_exposure_curve_assets_key, @asset.Assets::new())
-  }
-  if (try! world.get_resource_mut(auto_exposure_curve_assets_key))
+  let next = @asset.init_asset(app, fn() {
+    AutoExposureCompensationCurve::default()
+  })
+  if (try! next.world().get_resource_mut(auto_exposure_curve_assets_key))
     is Some(curves_ref) {
     let curves = curves_ref.peek()
     let default_curve_handle : @asset.Handle[AutoExposureCompensationCurve] = @asset.Handle::new(
@@ -84,6 +90,7 @@ fn init_mesh_render_resources(world : @ecs.World) -> Unit {
       |> ignore
     }
   }
+  next
 }
 
 ///|
@@ -262,6 +269,7 @@ pub fn mesh_render_plugin_with(
     ecs_key_mesh_render_plugin_state, state,
   )
   if !next.contains_resource(ecs_key_mesh_render_plugin_marker) {
+    next = init_auto_exposure_compensation_curve_asset(next)
     next = next
       .insert_world_resource(ecs_key_mesh_render_plugin_marker, MeshRenderPluginMarker::{
 

@@ -172,9 +172,6 @@ fn auto_exposure_curve_assets_ref_mut_or_abort(
   world : @ecs.World,
 ) -> Ref[@asset.Assets[@pbr.AutoExposureCompensationCurve]] {
   let key : @ecs.ResourceKey[@asset.Assets[@pbr.AutoExposureCompensationCurve]] = @asset.assets_resource_key()
-  if (try! world.get_resource(key)) is None {
-    world.insert_resource(key, @asset.Assets::new())
-  }
   match (try! world.get_resource_ref_mut(key)) {
     Some(assets_ref) => assets_ref
     None =>

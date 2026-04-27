@@ -68,7 +68,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn play_pitch(
-  pitch_assets : @app.ResMut[@audio.PitchAssets],
+  pitch_assets : @app.ResMut[@asset.Assets[@audio.Pitch]],
   frequency : @app.Res[PitchFrequency],
   play_pitch_reader : @ecs.MessageReader[PlayPitch],
   commands : @app.Commands,
@@ -76,9 +76,9 @@ fn play_pitch(
   for _ in (try! play_pitch_reader.read()) {
     let current_frequency = frequency.get().value
     @app.log_info("playing pitch with frequency: \{current_frequency}")
-    let handle = pitch_assets
-      .peek()
-      .add(@audio.Pitch::new(current_frequency, 1.0F))
+    let handle = pitch_assets.modify(fn(value) {
+      value.add(@audio.Pitch::new(current_frequency, 1.0F))
+    })
     commands.spawn(
       (@audio.AudioPlayer::new(handle), @audio.PlaybackSettings::despawn()),
     )

@@ -91,16 +91,6 @@ pub struct AudioSource {
 pub fn AudioSource::bytes(Self) -> Bytes
 pub fn AudioSource::new(Bytes) -> Self
 
-pub struct AudioSourceAssets {
-  assets : @asset.Assets[AudioSource]
-  paths : Array[(String, @asset.Handle[AudioSource])]
-}
-pub fn AudioSourceAssets::add(Self, AudioSource) -> @asset.Handle[AudioSource]
-pub fn AudioSourceAssets::get(Self, @asset.Handle[AudioSource]) -> AudioSource?
-pub fn AudioSourceAssets::new() -> Self
-pub fn AudioSourceAssets::set(Self, @asset.Handle[AudioSource], AudioSource) -> Bool
-pub impl @app.Resource for AudioSourceAssets
-
 pub struct DefaultSpatialScale {
   scale : SpatialScale
 } derive(ToJson, @json.FromJson)
@@ -122,15 +112,6 @@ pub struct Pitch {
   duration_seconds : Float
 } derive(ToJson, @json.FromJson)
 pub fn Pitch::new(Float, Float) -> Self
-
-pub struct PitchAssets {
-  assets : @asset.Assets[Pitch]
-}
-pub fn PitchAssets::add(Self, Pitch) -> @asset.Handle[Pitch]
-pub fn PitchAssets::get(Self, @asset.Handle[Pitch]) -> Pitch?
-pub fn PitchAssets::new() -> Self
-pub fn PitchAssets::set(Self, @asset.Handle[Pitch], Pitch) -> Bool
-pub impl @app.Resource for PitchAssets
 
 pub struct PlaybackDespawnMarker {
 } derive(ToJson, @json.FromJson)

@@ -47,7 +47,7 @@ fn setup(
 ///|
 fn play_when_decoded(
   state : @app.ResMut[DecodableState],
-  audio_sources : @app.ResMut[@audio.AudioSourceAssets],
+  audio_sources : @app.ResMut[@asset.Assets[@audio.AudioSource]],
   commands : @app.Commands,
 ) -> Unit {
   let state_value = state.get()
@@ -57,7 +57,7 @@ fn play_when_decoded(
   guard @audio.audio_source_from_blob(state_value.blob) is Some(source) else {
     return
   }
-  let handle = audio_sources.peek().add(source)
+  let handle = audio_sources.modify(fn(value) { value.add(source) })
   commands.spawn(
     (@audio.AudioPlayer::new(handle), @audio.PlaybackSettings::despawn()),
   )

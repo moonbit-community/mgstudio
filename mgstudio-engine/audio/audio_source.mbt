@@ -28,44 +28,18 @@ pub fn AudioSource::bytes(self : AudioSource) -> Bytes {
 }
 
 ///|
-pub struct AudioSourceAssets {
-  assets : @asset.Assets[AudioSource]
+priv struct AudioSourceAssetPaths {
   paths : Array[(String, @asset.Handle[AudioSource])]
 }
 
 ///|
-pub fn AudioSourceAssets::new() -> AudioSourceAssets {
-  AudioSourceAssets::{ assets: @asset.Assets::new(), paths: [] }
+fn AudioSourceAssetPaths::new() -> AudioSourceAssetPaths {
+  AudioSourceAssetPaths::{ paths: [] }
 }
 
 ///|
-pub fn AudioSourceAssets::add(
-  self : AudioSourceAssets,
-  source : AudioSource,
-) -> @asset.Handle[AudioSource] {
-  self.assets.add(source)
-}
-
-///|
-pub fn AudioSourceAssets::get(
-  self : AudioSourceAssets,
-  handle : @asset.Handle[AudioSource],
-) -> AudioSource? {
-  self.assets.get(handle)
-}
-
-///|
-pub fn AudioSourceAssets::set(
-  self : AudioSourceAssets,
-  handle : @asset.Handle[AudioSource],
-  source : AudioSource,
-) -> Bool {
-  self.assets.set(handle, source)
-}
-
-///|
-fn AudioSourceAssets::find_path_handle(
-  self : AudioSourceAssets,
+fn AudioSourceAssetPaths::find_path_handle(
+  self : AudioSourceAssetPaths,
   canonical_path : String,
 ) -> @asset.Handle[AudioSource]? {
   for i in 0..<self.paths.length() {
@@ -78,8 +52,8 @@ fn AudioSourceAssets::find_path_handle(
 }
 
 ///|
-fn AudioSourceAssets::register_path(
-  self : AudioSourceAssets,
+fn AudioSourceAssetPaths::register_path(
+  self : AudioSourceAssetPaths,
   canonical_path : String,
   handle : @asset.Handle[AudioSource],
 ) -> Unit {
@@ -93,13 +67,39 @@ fn AudioSourceAssets::register_path(
 }
 
 ///|
-let audio_source_assets_resource_key : @ecs.ResourceKey[AudioSourceAssets] = @ecs.register_resource(
-  debug_name="mgstudio_audio::AudioSourceAssets",
+let audio_source_asset_paths_resource_key : @ecs.ResourceKey[
+  AudioSourceAssetPaths,
+] = @ecs.register_resource(
+  debug_name="mgstudio_audio::AudioSourceAssetPaths",
 )
 
 ///|
-pub impl @app.Resource for AudioSourceAssets with resource() {
-  audio_source_assets_resource_key
+impl @app.Resource for AudioSourceAssetPaths with resource() {
+  audio_source_asset_paths_resource_key
+}
+
+///|
+fn audio_source_assets_mut_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[@asset.Assets[AudioSource]] {
+  let key : @ecs.ResourceKey[
+    @asset.Assets[AudioSource],
+  ] = @asset.assets_resource_key()
+  match audio_resource_mut(world, key) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "Assets<AudioSource> resource is missing; add AudioPlugin before using audio sources",
+      )
+  }
+}
+
+///|
+fn audio_source_assets_or_none(world : @ecs.World) -> @asset.Assets[AudioSource]? {
+  let key : @ecs.ResourceKey[
+    @asset.Assets[AudioSource],
+  ] = @asset.assets_resource_key()
+  audio_resource_get(world, key)
 }
 
 ///|
@@ -107,10 +107,9 @@ pub fn audio_source_add(
   world : @ecs.World,
   source : AudioSource,
 ) -> @asset.Handle[AudioSource] {
-  let assets = audio_resource_ensure_mut(world, AudioSourceAssets::resource(), fn() {
-    AudioSourceAssets::new()
+  audio_source_assets_mut_or_abort(world).modify(fn(value) {
+    value.add(source)
   })
-  assets.modify(fn(value) { value.add(source) })
 }
 
 ///|
@@ -118,7 +117,7 @@ pub fn audio_source_get(
   world : @ecs.World,
   handle : @asset.Handle[AudioSource],
 ) -> AudioSource? {
-  match audio_resource_get(world, AudioSourceAssets::resource()) {
+  match audio_source_assets_or_none(world) {
     Some(assets) => assets.get(handle)
     None => None
   }
@@ -130,10 +129,9 @@ pub fn audio_source_set(
   handle : @asset.Handle[AudioSource],
   source : AudioSource,
 ) -> Bool {
-  guard audio_resource_mut(world, AudioSourceAssets::resource()) is Some(assets) else {
-    return false
-  }
-  assets.modify(fn(value) { value.set(handle, source) })
+  audio_source_assets_mut_or_abort(world).modify(fn(value) {
+    value.set(handle, source)
+  })
 }
 
 ///|
@@ -153,20 +151,21 @@ pub fn audio_source_load(
   path : String,
 ) -> @asset.Handle[AudioSource]? {
   let canonical_path = @asset.asset_canonical_path(path)
-  let assets = audio_resource_ensure_mut(world, AudioSourceAssets::resource(), fn() {
-    AudioSourceAssets::new()
+  let paths = audio_resource_ensure_mut(world, AudioSourceAssetPaths::resource(), fn() {
+    AudioSourceAssetPaths::new()
   })
-  match assets.peek().find_path_handle(canonical_path) {
+  match paths.peek().find_path_handle(canonical_path) {
     Some(handle) => Some(handle)
     None => {
       let blob = asset_server.load_bytes(canonical_path)
       match audio_source_from_blob(blob) {
         Some(source) => {
-          let handle = assets.modify(fn(value) {
-            let handle = value.add(source)
-            value.register_path(canonical_path, handle)
-            handle
+          let handle = audio_source_assets_mut_or_abort(world).modify(fn(value) {
+            value.add(source)
           })
+          ignore(paths.modify(fn(value) {
+            value.register_path(canonical_path, handle)
+          }))
           Some(handle)
         }
         None => None

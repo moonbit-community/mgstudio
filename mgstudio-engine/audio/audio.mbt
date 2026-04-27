@@ -303,11 +303,13 @@ pub fn audio_plugin_with(
       audio_source_load_registered(asset_server, path)
     })
   })
-  app
+  @asset.init_asset(
+    @asset.init_asset(app, fn() { AudioSource::new(Bytes::from_array([])) }),
+    fn() { Pitch::new(440.0F, 1.0F) },
+  )
   .insert_resource(plugin.global_volume)
   .insert_resource(DefaultSpatialScale::new(plugin.default_spatial_scale))
   .init_resource(fn() { AudioOutput::default() })
-  .init_resource(fn() { AudioSourceAssets::new() })
-  .init_resource(fn() { PitchAssets::new() })
+  .init_resource(fn() { AudioSourceAssetPaths::new() })
   .add_post_update_system(audio_playback_system)
 }

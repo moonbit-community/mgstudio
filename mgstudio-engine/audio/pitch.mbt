@@ -24,61 +24,18 @@ pub fn Pitch::new(frequency : Float, duration_seconds : Float) -> Pitch {
 }
 
 ///|
-pub struct PitchAssets {
-  assets : @asset.Assets[Pitch]
-}
-
-///|
-pub fn PitchAssets::new() -> PitchAssets {
-  PitchAssets::{ assets: @asset.Assets::new() }
-}
-
-///|
-pub fn PitchAssets::add(
-  self : PitchAssets,
-  pitch : Pitch,
-) -> @asset.Handle[Pitch] {
-  self.assets.add(pitch)
-}
-
-///|
-pub fn PitchAssets::get(
-  self : PitchAssets,
-  handle : @asset.Handle[Pitch],
-) -> Pitch? {
-  self.assets.get(handle)
-}
-
-///|
-pub fn PitchAssets::set(
-  self : PitchAssets,
-  handle : @asset.Handle[Pitch],
-  pitch : Pitch,
-) -> Bool {
-  self.assets.set(handle, pitch)
-}
-
-///|
-let pitch_assets_resource_key : @ecs.ResourceKey[PitchAssets] = @ecs.register_resource(
-  debug_name="mgstudio_audio::PitchAssets",
-)
-
-///|
-pub impl @app.Resource for PitchAssets with resource() {
-  pitch_assets_resource_key
-}
-
-///|
 pub fn pitch_add(world : @ecs.World, pitch : Pitch) -> @asset.Handle[Pitch] {
-  let assets = audio_resource_ensure_mut(world, PitchAssets::resource(), fn() {
-    PitchAssets::new()
-  })
+  let key : @ecs.ResourceKey[@asset.Assets[Pitch]] = @asset.assets_resource_key()
+  guard audio_resource_mut(world, key) is Some(assets) else {
+    abort("Assets<Pitch> resource is missing; add AudioPlugin before using pitch audio")
+  }
   assets.modify(fn(value) { value.add(pitch) })
 }
 
 ///|
 pub fn pitch_get(world : @ecs.World, handle : @asset.Handle[Pitch]) -> Pitch? {
-  match audio_resource_get(world, PitchAssets::resource()) {
+  let key : @ecs.ResourceKey[@asset.Assets[Pitch]] = @asset.assets_resource_key()
+  match audio_resource_get(world, key) {
     Some(assets) => assets.get(handle)
     None => None
   }
@@ -90,8 +47,7 @@ pub fn pitch_set(
   handle : @asset.Handle[Pitch],
   pitch : Pitch,
 ) -> Bool {
-  guard audio_resource_mut(world, PitchAssets::resource()) is Some(assets) else {
-    return false
-  }
+  let key : @ecs.ResourceKey[@asset.Assets[Pitch]] = @asset.assets_resource_key()
+  guard audio_resource_mut(world, key) is Some(assets) else { return false }
   assets.modify(fn(value) { value.set(handle, pitch) })
 }
