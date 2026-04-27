@@ -24,9 +24,9 @@ test "diagnostics: collected system info contains host metadata" {
 
 ///|
 test "diagnostics: sysinfo refresh data populates diagnostics store" {
-  let app = @app.App::new(@ecs.World::new())
-    .add_plugins(DiagnosticsPlugin::default())
-    .add_plugins(SystemInformationDiagnosticsPlugin::default())
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+    DiagnosticsPlugin::default(),
+  )
   let pid = match @sysinfo.get_current_pid() {
     Ok(value) => value
     Err(message) => abort(message)
@@ -37,13 +37,28 @@ test "diagnostics: sysinfo refresh data populates diagnostics store" {
     .with_memory(@sysinfo.MemoryRefreshKind::everything()),
   )
   let data = collect_sysinfo_refresh_data(system, pid)
+  app = register_diagnostic(
+    register_diagnostic(
+      register_diagnostic(
+        register_diagnostic(
+          app,
+          Diagnostic::new(system_information_diagnostic_system_cpu_usage),
+        ),
+        Diagnostic::new(system_information_diagnostic_system_mem_usage),
+      ),
+      Diagnostic::new(system_information_diagnostic_process_cpu_usage),
+    ),
+    Diagnostic::new(system_information_diagnostic_process_mem_usage),
+  )
+  app = app
+    .add_system_param(fn(diagnostics : Diagnostics) {
+      apply_sysinfo_refresh_data(diagnostics, data)
+    })
+    .run_once()
   let store_ref = try! app
     .world()
     .get_resource_ref_mut(DiagnosticsStore::resource())
     .unwrap()
-  let diagnostics = Diagnostics::{ store_ref, buffer: @hashmap.HashMap::new() }
-  apply_sysinfo_refresh_data(diagnostics, data)
-  Diagnostics::store(diagnostics, Ref::new(Json::null()))
 
   debug_inspect(
     store_ref.val

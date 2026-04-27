@@ -389,9 +389,18 @@ fn diagnostics_store_ref_mut(world : @ecs.World) -> Ref[DiagnosticsStore]? {
 }
 
 ///|
+fn diagnostics_store_ref(world : @ecs.World) -> Ref[DiagnosticsStore]? {
+  try world.get_resource_ref(DiagnosticsStore::resource()) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+}
+
+///|
 pub impl @app.SystemParam for Diagnostics with get(_state) {
   let world = @app.current_world().unwrap()
-  match diagnostics_store_ref_mut(world) {
+  match diagnostics_store_ref(world) {
     Some(store_ref) =>
       Diagnostics::{ store_ref, buffer: @hashmap.HashMap::new() }
     None => abort("Missing DiagnosticsStore resource")
@@ -401,11 +410,77 @@ pub impl @app.SystemParam for Diagnostics with get(_state) {
 ///|
 pub impl @app.SystemParam for Diagnostics with store(self, state) {
   state |> ignore
+  if self.buffer.is_empty() {
+    return
+  }
+  let entries : Array[(String, DiagnosticMeasurement)] = []
   for entry in self.buffer.iter() {
-    let (path, measurement) = entry
-    if self.store_ref.val.diagnostics.get(path) is Some(diagnostic_ref) {
-      diagnostic_ref.val.add_measurement(measurement)
-    }
+    entries.push(entry)
+  }
+  self.buffer.clear()
+  @app.queue_deferred_world_action(
+    fn(world : @ecs.World) {
+      guard (world.get_resource_ref_mut(DiagnosticsStore::resource()) catch {
+          _ => None
+        })
+        is Some(store_ref) else {
+        return
+      }
+      for entry in entries {
+        let (path, measurement) = entry
+        if store_ref.val.diagnostics.get(path) is Some(diagnostic_ref) {
+          diagnostic_ref.val.add_measurement(measurement)
+        }
+      }
+    },
+    source="diagnostic::DiagnosticsBuffer",
+  )
+}
+
+///|
+pub impl @app.SystemParam for Diagnostics with access(_world) {
+  let access = @app.SystemAccess::new()
+  access.mark_deferred_commands()
+  access
+}
+
+///|
+fn diagnostics_measurement_buffer_set(
+  buffer : @hashmap.HashMap[String, DiagnosticMeasurement],
+  path : DiagnosticPath,
+  measurement : DiagnosticMeasurement,
+) -> Unit {
+  buffer.set(path.as_str(), measurement)
+}
+
+///|
+fn diagnostics_store_has_enabled_path(
+  store : DiagnosticsStore,
+  path : DiagnosticPath,
+) -> Bool {
+  match store.get_ref(path) {
+    Some(diagnostic_ref) => diagnostic_ref.val.is_enabled
+    None => false
+  }
+}
+
+///|
+fn diagnostics_measurement_now(value : () -> Float) -> DiagnosticMeasurement {
+  DiagnosticMeasurement::{ time: @core.Instant::now(), value: value() }
+}
+
+///|
+fn Diagnostics::buffer_measurement(
+  self : Diagnostics,
+  path : DiagnosticPath,
+  value : () -> Float,
+) -> Unit {
+  if diagnostics_store_has_enabled_path(self.store_ref.val, path) {
+    diagnostics_measurement_buffer_set(
+      self.buffer,
+      path,
+      diagnostics_measurement_now(value),
+    )
   }
 }
 
@@ -415,19 +490,7 @@ pub fn Diagnostics::add_measurement(
   path : DiagnosticPath,
   value : () -> Float,
 ) -> Unit {
-  match self.store_ref.val.get_ref(path) {
-    Some(diagnostic_ref) => {
-      if !diagnostic_ref.val.is_enabled {
-        return
-      }
-      let measurement = DiagnosticMeasurement::{
-        time: @core.Instant::now(),
-        value: value(),
-      }
-      self.buffer.set(path.as_str(), measurement)
-    }
-    None => ()
-  }
+  self.buffer_measurement(path, value)
 }
 
 ///|

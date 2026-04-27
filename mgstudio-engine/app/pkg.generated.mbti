@@ -167,6 +167,8 @@ pub fn[W] plugin_group_start_named(String) -> PluginGroupBuilder[W]
 
 pub fn[S : States] previous_state_resource_key(S) -> @ecs.ResourceKey[PreviousState[S]]
 
+pub fn queue_deferred_world_action((@ecs.World) -> Unit, source? : String) -> Unit
+
 pub fn[Source : States, Derived : States] register_computed_state(Source, Derived, (Source) -> Derived?, allow_same_state_transitions? : Bool) -> Unit
 
 pub fn[A : States, B : States, Derived : States] register_computed_state2(A, B, Derived, ((A, B)) -> Derived?, allow_same_state_transitions? : Bool) -> Unit

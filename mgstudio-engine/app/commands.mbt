@@ -220,6 +220,24 @@ fn begin_deferred_command_batch() -> Unit {
 }
 
 ///|
+pub fn queue_deferred_world_action(
+  action : (@ecs.World) -> Unit,
+  source? : String = "app::queue_deferred_world_action",
+) -> Unit {
+  let world = current_world_or_abort()
+  let sequence = current_system_sequence().this_run
+  let entry = DeferredCommandEntry::{
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) { action(world) },
+    error_handler: None,
+    source,
+  }
+  match deferred_command_batch_queue_ref.val {
+    Some(entries) => entries.push((sequence, entry))
+    None => flush_deferred_command_entries(world, [(sequence, entry)])
+  }
+}
+
+///|
 fn deferred_command_batch_has_entries() -> Bool {
   match deferred_command_batch_queue_ref.val {
     Some(entries) => entries.length() > 0
