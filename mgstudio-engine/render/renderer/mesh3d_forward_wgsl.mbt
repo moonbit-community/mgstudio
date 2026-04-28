@@ -643,7 +643,7 @@ let mesh3d_forward_wgsl_source : String =
   #|  if (light_local.w == 0.0) {
   #|    return 1.0;
   #|  }
-  #|  return textureSampleCompare(
+  #|  return textureSampleCompareLevel(
   #|    u_directional_shadow_texture,
   #|    u_directional_shadow_sampler,
   #|    light_local.xy,

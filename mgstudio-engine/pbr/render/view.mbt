@@ -153,15 +153,24 @@ pub fn render3d_begin_pass_3d(
   directional_shadow_cascade_count? : Int = 0,
   directional_shadow_cascade_overlap? : Float = 0.0F,
   directional_shadow_cascade_data? : Array[Float] = [],
+  clip_from_world_override? : ProjectionMatrix3d? = None,
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
-  let clip_from_world = render3d_pass_projection_clip_from_world(
-    pass_projection, camera_transform,
-  )
-  let unjittered_clip_from_world = render3d_pass_projection_unjittered_clip_from_world(
-    pass_projection, camera_transform,
-  )
+  let clip_from_world = match clip_from_world_override {
+    Some(value) => value
+    None =>
+      render3d_pass_projection_clip_from_world(
+        pass_projection, camera_transform,
+      )
+  }
+  let unjittered_clip_from_world = match clip_from_world_override {
+    Some(value) => value
+    None =>
+      render3d_pass_projection_unjittered_clip_from_world(
+        pass_projection, camera_transform,
+      )
+  }
   let resolved_previous_clip_from_world = match previous_clip_from_world {
     Some(value) => value
     None => clip_from_world

@@ -341,6 +341,8 @@ fn render3d_execute_camera_directional_shadow_pass(
     cascades.length(),
   )
   let draw_items = draw_queue_entry.draw_items
+  ignore(indexed_indirect_parameter_indices)
+  ignore(non_indexed_indirect_parameter_indices)
   for cascade_index in 0..<cascades.length() {
     let cascade = cascades[cascade_index]
     @pbr_render.render3d_begin_pass_3d(
@@ -361,6 +363,7 @@ fn render3d_execute_camera_directional_shadow_pass(
       pass_lighting,
       previous_clip_from_world=None,
       point_shadow_near=0.1F,
+      clip_from_world_override=Some(cascade.clip_from_world),
       pass_kind=shadow_pass_kind,
       clear_enabled=1,
     )
@@ -391,28 +394,14 @@ fn render3d_execute_camera_directional_shadow_pass(
       if shadow_alpha < 0.999F {
         continue
       }
-      let shadow_indexed = shadow_mesh.mesh_is_indexed
-      let shadow_indirect_parameters_index = if shadow_indexed {
-        indexed_indirect_parameter_indices[draw_item_index]
-      } else {
-        non_indexed_indirect_parameter_indices[draw_item_index]
-      }
       @pbr_render.render3d_draw_mesh_gpu_payload(
         @pbr_render.render3d_build_mesh_gpu_draw_payload(
           shadow_mesh.mesh_id,
           camera_entity.id,
           camera_entity.generation,
           draw_item_index,
-          if shadow_indirect_parameters_index >= 0 {
-            if shadow_indexed {
-              MESH3D_DRAW_INDIRECT_KIND_INDEXED
-            } else {
-              MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED
-            }
-          } else {
-            MESH3D_DRAW_INDIRECT_KIND_NONE
-          },
-          shadow_indirect_parameters_index,
+          MESH3D_DRAW_INDIRECT_KIND_NONE,
+          -1,
           shadow_mesh.material,
           shadow_mesh.transform,
           shadow_mesh.transform,
@@ -448,6 +437,8 @@ fn render3d_execute_camera_directional_shadow_pass(
           0.0F,
           0.0F,
           0,
+          skinning_key_hi=shadow_mesh.skinning_key_hi,
+          skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
         ),
       )
     }
