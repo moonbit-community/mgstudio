@@ -111,6 +111,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     position3d=true,
     topology~,
     cull_mode=cull_mode_wgpu,
+    alpha_blend=transparent,
     depth_compare_u32=if forward_decal {
       @wgpu.COMPARE_FUNCTION_ALWAYS
     } else {
@@ -413,6 +414,7 @@ fn ensure_mesh3d_pipeline_rgba8(
       position3d=true,
       topology~,
       cull_mode=cull_mode_wgpu,
+      alpha_blend=false,
     )
     let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
     @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
@@ -437,6 +439,7 @@ fn ensure_mesh3d_pipeline_rgba8(
       position3d=true,
       topology~,
       cull_mode=cull_mode_wgpu,
+      alpha_blend=true,
     )
     let pipeline_transparent = backend.device.create_render_pipeline_ptr(
       desc_transparent,
@@ -492,6 +495,7 @@ fn ensure_mesh3d_pipeline_surface(
       position3d=true,
       topology~,
       cull_mode=cull_mode_wgpu,
+      alpha_blend=false,
     )
     let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
     @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
@@ -516,6 +520,7 @@ fn ensure_mesh3d_pipeline_surface(
       position3d=true,
       topology~,
       cull_mode=cull_mode_wgpu,
+      alpha_blend=true,
     )
     let pipeline_transparent = backend.device.create_render_pipeline_ptr(
       desc_transparent,
