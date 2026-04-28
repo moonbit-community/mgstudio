@@ -464,7 +464,9 @@ pub struct GpuBackend {
   mesh3d_shadow_pipeline_cache : Array[Mesh3dShadowPipelineCacheEntry]
   mut mesh3d_point_shadow_compare_sampler : @wgpu_mbt.Sampler?
   mut mesh3d_view_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_lights_buf : @wgpu_mbt.Buffer?
   mut mesh3d_pass_view_uniform_bytes : Bytes?
+  mut mesh3d_pass_lights_uniform_bytes : Bytes?
   mut mesh3d_pass_view_uniform_frame_count : UInt
   mut mesh3d_pass_view_uniform_camera_key_hi : Int
   mut mesh3d_pass_view_uniform_camera_key_lo : Int

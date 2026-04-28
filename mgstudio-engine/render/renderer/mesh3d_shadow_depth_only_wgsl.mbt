@@ -30,10 +30,6 @@ let mesh3d_shadow_depth_only_wgsl_source : String =
   #|  exposure : vec4<f32>,
   #|};
   #|
-  #|struct Mesh3dViewBindings {
-  #|  view : Mesh3dViewUniform,
-  #|};
-  #|
   #|struct Mesh {
   #|  world_from_local : mat3x4<f32>,
   #|  previous_world_from_local : mat3x4<f32>,
@@ -56,7 +52,7 @@ let mesh3d_shadow_depth_only_wgsl_source : String =
   #|  matrices : array<mat4x4<f32>>,
   #|};
   #|
-  #|@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
+  #|@group(0) @binding(0) var<uniform> u_view : Mesh3dViewUniform;
   #|@group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
   #|@group(2) @binding(1) var<storage, read> u_skinning_matrices : Mesh3dSkinningMatricesBuffer;
   #|
@@ -121,7 +117,7 @@ let mesh3d_shadow_depth_only_wgsl_source : String =
   #|    let world_from_local = affine3_to_square(mesh.world_from_local);
   #|    world_pos = (world_from_local * vec4<f32>(position, 1.0)).xyz;
   #|  }
-  #|  out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
+  #|  out.position = u_view.clip_from_world * vec4<f32>(world_pos, 1.0);
   #|  return out;
   #|}
   #|

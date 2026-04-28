@@ -77,6 +77,10 @@ fn mesh3d_view_bg_cache_get_or_create(
     Some(v) => v
     None => fatal("wgpu: missing mesh3d view uniform buffer")
   }
+  let lights_buf = match backend.mesh3d_lights_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d lights uniform buffer")
+  }
   let point_shadow_sample_view = match point_shadow_texture.sample_view {
     Some(view) => view
     None => point_shadow_texture.view
@@ -89,8 +93,9 @@ fn mesh3d_view_bg_cache_get_or_create(
     Some(view) => view
     None => directional_shadow_texture.view
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=7UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
   let ok = builder.add_buffer(0U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
+    builder.add_buffer(1U, lights_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
     builder.add_texture_view(2U, point_shadow_sample_view) &&
     builder.add_sampler(3U, point_shadow_compare_sampler) &&
     builder.add_texture_view(5U, directional_shadow_sample_view) &&

@@ -200,12 +200,13 @@ fn ensure_mesh3d_pipeline_rgba8(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   if backend.mesh3d_pipeline_layout is None {
     let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
-    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=7UL)
+    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=8UL)
     let view_ok = view_builder.add_buffer(
         0U,
         view_stage,
         @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
       ) &&
+      view_builder.add_buffer(1U, view_stage, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
       view_builder.add_texture(
         2U,
         ss(@wgpu.SHADER_STAGE_FRAGMENT),
@@ -424,6 +425,14 @@ fn ensure_mesh3d_pipeline_rgba8(
         ),
       )
     }
+    if backend.mesh3d_lights_buf is None {
+      backend.mesh3d_lights_buf = Some(
+        backend.device.create_buffer(
+          size=MESH3D_VIEW_BUFFER_SIZE,
+          usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+        ),
+      )
+    }
     backend.mesh3d_binding_arrays_bg = None
     mesh3d_material_cache_clear(backend)
     mesh3d_custom_pipeline_cache_clear(backend)
@@ -433,6 +442,14 @@ fn ensure_mesh3d_pipeline_rgba8(
   }
   if backend.mesh3d_view_buf is None {
     backend.mesh3d_view_buf = Some(
+      backend.device.create_buffer(
+        size=MESH3D_VIEW_BUFFER_SIZE,
+        usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+      ),
+    )
+  }
+  if backend.mesh3d_lights_buf is None {
+    backend.mesh3d_lights_buf = Some(
       backend.device.create_buffer(
         size=MESH3D_VIEW_BUFFER_SIZE,
         usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),

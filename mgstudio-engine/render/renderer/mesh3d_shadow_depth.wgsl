@@ -28,10 +28,6 @@ struct Mesh3dViewUniform {
   exposure : vec4<f32>,
 };
 
-struct Mesh3dViewBindings {
-  view : Mesh3dViewUniform,
-};
-
 struct StandardMaterial {
   base_color : vec4<f32>,
   emissive : vec4<f32>,
@@ -80,7 +76,7 @@ struct Mesh3dSkinningMatricesBuffer {
   matrices : array<mat4x4<f32>>,
 };
 
-@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
+@group(0) @binding(0) var<uniform> u_view : Mesh3dViewUniform;
 @group(3) @binding(0) var<uniform> u_material : StandardMaterial;
 @group(3) @binding(1) var u_base_color_texture : texture_2d<f32>;
 @group(3) @binding(2) var u_base_color_sampler : sampler;
@@ -167,7 +163,7 @@ fn vertex(
     let world_from_local = affine3_to_square(mesh.world_from_local);
     world_pos = (world_from_local * vec4<f32>(position, 1.0)).xyz;
   }
-  out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
+  out.position = u_view.clip_from_world * vec4<f32>(world_pos, 1.0);
   let transformed_uv = u_material.uv_transform * vec3<f32>(uv, 1.0);
   out.uv = transformed_uv.xy;
   out.draw_index = instance_index;

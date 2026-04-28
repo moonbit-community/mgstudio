@@ -310,6 +310,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     0.0F
   }
   guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
+  guard self.mesh3d_lights_buf is Some(active_lights_buffer) else { return }
   guard draw_buffer is Some(active_draw_buffer) else { return }
   guard draw_bind_group is Some(active_draw_bg) else { return }
   ignore(skinning_key_lo)
@@ -320,13 +321,22 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     self.mesh3d_pass_view_uniform_pass_kind == pass_kind
   if !view_cache_hit {
     let view_bytes = mesh3d_view_uniform_bytes(ps)
+    let lights_bytes = mesh3d_lights_uniform_bytes(ps)
     let view_needs_upload = match self.mesh3d_pass_view_uniform_bytes {
       Some(cached) => cached != view_bytes
+      None => true
+    }
+    let lights_needs_upload = match self.mesh3d_pass_lights_uniform_bytes {
+      Some(cached) => cached != lights_bytes
       None => true
     }
     if view_needs_upload {
       self.queue.write_buffer(active_view_buffer, 0UL, view_bytes)
       self.mesh3d_pass_view_uniform_bytes = Some(view_bytes)
+    }
+    if lights_needs_upload {
+      self.queue.write_buffer(active_lights_buffer, 0UL, lights_bytes)
+      self.mesh3d_pass_lights_uniform_bytes = Some(lights_bytes)
     }
     self.mesh3d_pass_view_uniform_frame_count = self.frame_count
     self.mesh3d_pass_view_uniform_camera_key_hi = preprocess_camera_key_hi

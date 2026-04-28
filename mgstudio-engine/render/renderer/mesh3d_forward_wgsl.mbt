@@ -58,8 +58,7 @@ let mesh3d_forward_wgsl_source : String =
   #|  cascades : array<Mesh3dDirectionalCascadeUniform, 4>,
   #|};
   #|
-  #|struct Mesh3dViewBindings {
-  #|  view : Mesh3dViewUniform,
+  #|struct Mesh3dLightBindings {
   #|  lights : Mesh3dLightsUniform,
   #|  directional_shadow : Mesh3dDirectionalShadowUniform,
   #|};
@@ -153,7 +152,8 @@ let mesh3d_forward_wgsl_source : String =
   #|  );
   #|}
   #|
-  #|@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
+  #|@group(0) @binding(0) var<uniform> u_view : Mesh3dViewUniform;
+  #|@group(0) @binding(1) var<uniform> u_lights : Mesh3dLightBindings;
   #|@group(0) @binding(25) var u_transmission_source_texture : texture_2d<f32>;
   #|@group(0) @binding(26) var u_transmission_source_sampler : sampler;
   #|@group(0) @binding(2) var u_point_shadow_texture : texture_depth_cube;
@@ -284,7 +284,7 @@ let mesh3d_forward_wgsl_source : String =
   #|      ) * normal,
   #|    );
   #|  }
-  #|  out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
+  #|  out.position = u_view.clip_from_world * vec4<f32>(world_pos, 1.0);
   #|  let transformed_uv = u_material.uv_transform * vec3<f32>(uv, 1.0);
   #|  out.uv = transformed_uv.xy;
   #|  out.color = color * u_material.base_color;
@@ -615,9 +615,9 @@ let mesh3d_forward_wgsl_source : String =
   #|}
   #|
   #|fn directional_shadow_cascade_index(view_z : f32) -> u32 {
-  #|  let cascade_count = u32(max(u_view.directional_shadow.counts.x, 0.0));
+  #|  let cascade_count = u32(max(u_lights.directional_shadow.counts.x, 0.0));
   #|  for (var i : u32 = 0u; i < cascade_count; i = i + 1u) {
-  #|    if (-view_z < u_view.directional_shadow.cascades[i].data.y) {
+  #|    if (-view_z < u_lights.directional_shadow.cascades[i].data.y) {
   #|      return i;
   #|    }
   #|  }
@@ -628,7 +628,7 @@ let mesh3d_forward_wgsl_source : String =
   #|  cascade_index : u32,
   #|  offset_position : vec4<f32>,
   #|) -> vec4<f32> {
-  #|  let cascade = u_view.directional_shadow.cascades[cascade_index];
+  #|  let cascade = u_lights.directional_shadow.cascades[cascade_index];
   #|  let offset_position_clip = cascade.clip_from_world * offset_position;
   #|  if (offset_position_clip.w <= 0.0) {
   #|    return vec4<f32>(0.0);
@@ -648,10 +648,10 @@ let mesh3d_forward_wgsl_source : String =
   #|  frag_position : vec4<f32>,
   #|  surface_normal : vec3<f32>,
   #|) -> f32 {
-  #|  let params = u_view.directional_shadow.params;
-  #|  let cascade = u_view.directional_shadow.cascades[cascade_index];
+  #|  let params = u_lights.directional_shadow.params;
+  #|  let cascade = u_lights.directional_shadow.cascades[cascade_index];
   #|  let normal_offset = params.z * cascade.data.x * surface_normal;
-  #|  let depth_offset = params.y * safe_normalize(u_view.lights.directional_light_direction_to_light.xyz);
+  #|  let depth_offset = params.y * safe_normalize(u_lights.lights.directional_light_direction_to_light.xyz);
   #|  let offset_position = vec4<f32>(
   #|    frag_position.xyz + normal_offset + depth_offset,
   #|    frag_position.w,
@@ -674,10 +674,10 @@ let mesh3d_forward_wgsl_source : String =
   #|  surface_normal : vec3<f32>,
   #|  view_z : f32,
   #|) -> f32 {
-  #|  if (u_view.directional_shadow.params.x <= 0.5) {
+  #|  if (u_lights.directional_shadow.params.x <= 0.5) {
   #|    return 1.0;
   #|  }
-  #|  let cascade_count = u32(max(u_view.directional_shadow.counts.x, 0.0));
+  #|  let cascade_count = u32(max(u_lights.directional_shadow.counts.x, 0.0));
   #|  let cascade_index = directional_shadow_cascade_index(view_z);
   #|  if (cascade_index >= cascade_count) {
   #|    return 1.0;
@@ -689,8 +689,8 @@ let mesh3d_forward_wgsl_source : String =
   #|  );
   #|  let next_cascade_index = cascade_index + 1u;
   #|  if (next_cascade_index < cascade_count) {
-  #|    let this_far_bound = u_view.directional_shadow.cascades[cascade_index].data.y;
-  #|    let next_near_bound = (1.0 - u_view.directional_shadow.counts.y) * this_far_bound;
+  #|    let this_far_bound = u_lights.directional_shadow.cascades[cascade_index].data.y;
+  #|    let next_near_bound = (1.0 - u_lights.directional_shadow.counts.y) * this_far_bound;
   #|    if (-view_z >= next_near_bound) {
   #|      let next_shadow = sample_directional_cascade(
   #|        next_cascade_index,
@@ -1136,7 +1136,7 @@ let mesh3d_forward_wgsl_source : String =
   #|    STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT,
   #|  );
   #|  let geometric_normal = safe_normalize(in.world_normal);
-  #|  let view_dir = safe_normalize(u_view.view.world_position.xyz - in.world_pos);
+  #|  let view_dir = safe_normalize(u_view.world_position.xyz - in.world_pos);
   #|  var uv = in.uv;
   #|  if has_depth_map && has_uv && u_material.parallax_depth_scale > 0.0 {
   #|    let tbn = cotangent_frame(geometric_normal, in.world_pos, uv);
@@ -1184,7 +1184,7 @@ let mesh3d_forward_wgsl_source : String =
   #|  if has_base_map {
   #|    if use_stacked_cubemap {
   #|      let cubemap_uv = cubemap_stacked_vertical_uv(
-  #|        in.world_pos - u_view.view.world_position.xyz,
+  #|        in.world_pos - u_view.world_position.xyz,
   #|      );
   #|      base_color = textureSampleLevel(
   #|        u_base_color_texture,
@@ -1265,8 +1265,8 @@ let mesh3d_forward_wgsl_source : String =
   #|  let specular_transmission = clamp(u_material.specular_transmission, 0.0, 1.0);
   #|  let thickness = max(u_material.thickness, 0.0);
   #|  let ior = max(u_material.ior, 1.0);
-  #|  let transmission_blur_taps = i32(max(u_view.lights.spot_light_custom_data.z, 0.0));
-  #|  let transmission_steps = max(u_view.lights.spot_light_custom_data.w, 0.0);
+  #|  let transmission_blur_taps = i32(max(u_lights.lights.spot_light_custom_data.z, 0.0));
+  #|  let transmission_steps = max(u_lights.lights.spot_light_custom_data.w, 0.0);
   #|  let reflectance_rgb = max(specular_tint * u_material.reflectance, vec3<f32>(0.0));
   #|  let diffuse_color = base_color.xyz * (1.0 - metallic) *
   #|    (1.0 - specular_transmission) *
@@ -1276,12 +1276,12 @@ let mesh3d_forward_wgsl_source : String =
   #|  let specular_transmissive_color = base_color.xyz * specular_transmission;
   #|  let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
   #|    base_color.xyz * metallic;
-  #|  let environment_map_intensity = max(u_view.view.exposure.y, 0.0);
+  #|  let environment_map_intensity = max(u_view.exposure.y, 0.0);
   #|  let environment_map_rotation = quat_normalize(vec4<f32>(
-  #|    u_view.lights.ambient_color.w,
-  #|    u_view.lights.directional_light_direction_to_light.w,
-  #|    u_view.lights.directional_light_color.w,
-  #|    u_view.lights.point_light_shadow_params.w,
+  #|    u_lights.lights.ambient_color.w,
+  #|    u_lights.lights.directional_light_direction_to_light.w,
+  #|    u_lights.lights.directional_light_color.w,
+  #|    u_lights.lights.point_light_shadow_params.w,
   #|  ));
   #|  let draw_point_shadow_enabled = select(
   #|    0.0,
@@ -1290,17 +1290,17 @@ let mesh3d_forward_wgsl_source : String =
   #|  );
   #|  let draw_point_shadow_depth_bias = 0.0;
   #|  let point_shadow_params = vec4<f32>(
-  #|    u_view.lights.point_light_shadow_params.x * draw_point_shadow_enabled,
-  #|    max(u_view.lights.point_light_shadow_params.y, draw_point_shadow_depth_bias),
-  #|    u_view.lights.point_light_shadow_params.z,
-  #|    u_view.lights.point_light_shadow_params.w,
+  #|    u_lights.lights.point_light_shadow_params.x * draw_point_shadow_enabled,
+  #|    max(u_lights.lights.point_light_shadow_params.y, draw_point_shadow_depth_bias),
+  #|    u_lights.lights.point_light_shadow_params.z,
+  #|    u_lights.lights.point_light_shadow_params.w,
   #|  );
   #|
-  #|  let ambient_term = u_view.lights.ambient_color.xyz;
+  #|  let ambient_term = u_lights.lights.ambient_color.xyz;
   #|
   #|  let view_z = -dot(
-  #|    in.world_pos - u_view.view.world_position.xyz,
-  #|    safe_normalize(u_view.directional_shadow.view_forward.xyz),
+  #|    in.world_pos - u_view.world_position.xyz,
+  #|    safe_normalize(u_lights.directional_shadow.view_forward.xyz),
   #|  );
   #|  let directional_shadow_factor = directional_shadow(
   #|    in.world_pos,
@@ -1317,13 +1317,13 @@ let mesh3d_forward_wgsl_source : String =
   #|    anisotropy_strength,
   #|    anisotropy_t,
   #|    anisotropy_b,
-  #|    safe_normalize(u_view.lights.directional_light_direction_to_light.xyz),
-  #|    u_view.lights.directional_light_color.xyz * directional_shadow_factor,
+  #|    safe_normalize(u_lights.lights.directional_light_direction_to_light.xyz),
+  #|    u_lights.lights.directional_light_color.xyz * directional_shadow_factor,
   #|  );
   #|  let point_shadow_factor = point_light_shadow(
   #|    in.world_pos,
-  #|    u_view.lights.point_light_position_radius.xyz,
-  #|    max(u_view.lights.point_light_position_radius.w, 1e-4),
+  #|    u_lights.lights.point_light_position_radius.xyz,
+  #|    max(u_lights.lights.point_light_position_radius.w, 1e-4),
   #|    point_shadow_params,
   #|  );
   #|  let point = point_light(
@@ -1336,8 +1336,8 @@ let mesh3d_forward_wgsl_source : String =
   #|    anisotropy_strength,
   #|    anisotropy_t,
   #|    anisotropy_b,
-  #|    u_view.lights.point_light_position_radius,
-  #|    u_view.lights.point_light_color_inverse_square_range,
+  #|    u_lights.lights.point_light_position_radius,
+  #|    u_lights.lights.point_light_color_inverse_square_range,
   #|    point_shadow_factor,
   #|  );
   #|  let spot = spot_light(
@@ -1350,10 +1350,10 @@ let mesh3d_forward_wgsl_source : String =
   #|    anisotropy_strength,
   #|    anisotropy_t,
   #|    anisotropy_b,
-  #|    u_view.lights.spot_light_position_radius,
-  #|    u_view.lights.spot_light_direction_to_light,
-  #|    u_view.lights.spot_light_color_inverse_square_range,
-  #|    u_view.lights.spot_light_custom_data,
+  #|    u_lights.lights.spot_light_position_radius,
+  #|    u_lights.lights.spot_light_direction_to_light,
+  #|    u_lights.lights.spot_light_color_inverse_square_range,
+  #|    u_lights.lights.spot_light_custom_data,
   #|  );
   #|
   #|  let direct_diffuse = direct_diffuse_light(
@@ -1420,7 +1420,7 @@ let mesh3d_forward_wgsl_source : String =
   #|    specular_transmissive_color,
   #|    specular_transmitted_lighting,
   #|  );
-  #|  let exposure = max(u_view.view.exposure.x, 0.0);
+  #|  let exposure = max(u_view.exposure.x, 0.0);
   #|  let lighting_rgb = direct_light + indirect_light + transmitted;
   #|  let lit_rgb = lighting_rgb * exposure + emissive;
   #|  let unlit_rgb = base_color.xyz + emissive;
@@ -1439,9 +1439,9 @@ let mesh3d_forward_wgsl_source : String =
   #|
   #|@fragment
   #|fn fs_shadow(in : VertexOut) -> @location(0) vec4<f32> {
-  #|  let point_range = max(u_view.lights.point_light_position_radius.w, 1.0e-4);
+  #|  let point_range = max(u_lights.lights.point_light_position_radius.w, 1.0e-4);
   #|  let point_distance = length(
-  #|    in.world_pos - u_view.lights.point_light_position_radius.xyz,
+  #|    in.world_pos - u_lights.lights.point_light_position_radius.xyz,
   #|  );
   #|  let depth01 = clamp(point_distance / point_range, 0.0, 1.0);
   #|  return vec4<f32>(depth01, depth01, depth01, 1.0);

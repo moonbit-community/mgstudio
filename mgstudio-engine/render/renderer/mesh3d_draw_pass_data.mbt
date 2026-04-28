@@ -14,6 +14,44 @@
 
 ///|
 fn mesh3d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
+  let environment_map_enabled = pass_state.environment_map_intensity > 0.0F &&
+    pass_state.environment_diffuse_texture_id >= 0 &&
+    pass_state.environment_specular_texture_id >= 0
+  let environment_map_intensity = if environment_map_enabled {
+    pass_state.environment_map_intensity
+  } else {
+    0.0F
+  }
+  f32le_pack([
+    pass_state.camera_x,
+    pass_state.camera_y,
+    pass_state.camera_z,
+    1.0F,
+    pass_state.clip_from_world.x_axis_x,
+    pass_state.clip_from_world.x_axis_y,
+    pass_state.clip_from_world.x_axis_z,
+    pass_state.clip_from_world.x_axis_w,
+    pass_state.clip_from_world.y_axis_x,
+    pass_state.clip_from_world.y_axis_y,
+    pass_state.clip_from_world.y_axis_z,
+    pass_state.clip_from_world.y_axis_w,
+    pass_state.clip_from_world.z_axis_x,
+    pass_state.clip_from_world.z_axis_y,
+    pass_state.clip_from_world.z_axis_z,
+    pass_state.clip_from_world.z_axis_w,
+    pass_state.clip_from_world.w_axis_x,
+    pass_state.clip_from_world.w_axis_y,
+    pass_state.clip_from_world.w_axis_z,
+    pass_state.clip_from_world.w_axis_w,
+    pass_state.camera_exposure,
+    environment_map_intensity,
+    0.0F,
+    0.0F,
+  ])
+}
+
+///|
+fn mesh3d_lights_uniform_bytes(pass_state : GpuPassState) -> Bytes {
   let transmission_source_enabled = pass_state.transmission_source_texture_id >=
     0
   let transmission_blur_taps = if transmission_source_enabled {
@@ -45,11 +83,6 @@ fn mesh3d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
   let environment_map_enabled = pass_state.environment_map_intensity > 0.0F &&
     pass_state.environment_diffuse_texture_id >= 0 &&
     pass_state.environment_specular_texture_id >= 0
-  let environment_map_intensity = if environment_map_enabled {
-    pass_state.environment_map_intensity
-  } else {
-    0.0F
-  }
   let environment_map_rotation_x = if environment_map_enabled {
     pass_state.environment_map_rotation_x
   } else {
@@ -125,30 +158,6 @@ fn mesh3d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
     pass_state.spot_outer_angle,
   )
   let values : Array[Float] = [
-    pass_state.camera_x,
-    pass_state.camera_y,
-    pass_state.camera_z,
-    1.0F,
-    pass_state.clip_from_world.x_axis_x,
-    pass_state.clip_from_world.x_axis_y,
-    pass_state.clip_from_world.x_axis_z,
-    pass_state.clip_from_world.x_axis_w,
-    pass_state.clip_from_world.y_axis_x,
-    pass_state.clip_from_world.y_axis_y,
-    pass_state.clip_from_world.y_axis_z,
-    pass_state.clip_from_world.y_axis_w,
-    pass_state.clip_from_world.z_axis_x,
-    pass_state.clip_from_world.z_axis_y,
-    pass_state.clip_from_world.z_axis_z,
-    pass_state.clip_from_world.z_axis_w,
-    pass_state.clip_from_world.w_axis_x,
-    pass_state.clip_from_world.w_axis_y,
-    pass_state.clip_from_world.w_axis_z,
-    pass_state.clip_from_world.w_axis_w,
-    pass_state.camera_exposure,
-    environment_map_intensity,
-    0.0F,
-    0.0F,
     ambient_color_r,
     ambient_color_g,
     ambient_color_b,
