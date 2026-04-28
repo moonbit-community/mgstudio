@@ -26,6 +26,12 @@ priv struct ShadowPhaseItem3d {
 }
 
 ///|
+priv struct Render3dShadowPhaseView {
+  shadow_view : Render3dShadowView
+  items : Array[ShadowPhaseItem3d]
+}
+
+///|
 fn render3d_shadow_phase_item_debug_key(item : ShadowPhaseItem3d) -> Int {
   item.entity.render_entity.id * 31 +
   item.entity.render_entity.generation * 17 +
@@ -70,4 +76,74 @@ fn render3d_queue_shadow_phase_items(
     })
   }
   shadow_items
+}
+
+///|
+fn render3d_execute_shadow_phase_view(
+  camera_entity : @core.Entity,
+  pass_lighting : Render3dLightingState,
+  pass_kind : Int,
+  point_shadow_near : Float,
+  meshes : Array[ExtractedMesh3d],
+  phase_view : Render3dShadowPhaseView,
+) -> Unit {
+  render3d_shadow_view_begin_pass(
+    phase_view.shadow_view,
+    pass_lighting,
+    pass_kind,
+    point_shadow_near,
+  )
+  for shadow_phase_item in phase_view.items {
+    ignore(render3d_shadow_phase_item_debug_key(shadow_phase_item))
+    let extracted_shadow_mesh = meshes[shadow_phase_item.extracted_index]
+    let shadow_mesh = extracted_shadow_mesh.payload
+    @pbr_render.render3d_draw_mesh_gpu_payload(
+      @pbr_render.render3d_build_mesh_gpu_draw_payload(
+        shadow_mesh.mesh_id,
+        camera_entity.id,
+        camera_entity.generation,
+        shadow_phase_item.draw_item_index,
+        MESH3D_DRAW_INDIRECT_KIND_NONE,
+        -1,
+        shadow_mesh.material,
+        shadow_mesh.transform,
+        shadow_mesh.transform,
+        1.0F,
+        1.0F,
+        1.0F,
+        1.0F,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0.5F,
+        0.5F,
+        0.0F,
+        0.0F,
+        0.0F,
+        1.5F,
+        -1,
+        0.0F,
+        0.0F,
+        -1,
+        0.0F,
+        0.0F,
+        -1,
+        -1,
+        0.0F,
+        @math.Quat::identity(),
+        @sprite.Color::white(),
+        0.0F,
+        0.0F,
+        0,
+        skinning_key_hi=shadow_mesh.skinning_key_hi,
+        skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
+      ),
+    )
+  }
+  @render.host_gpu_end_pass()
 }

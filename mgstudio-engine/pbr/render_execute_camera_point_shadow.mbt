@@ -78,62 +78,14 @@ fn render3d_execute_camera_point_shadow_pass(
       ),
       pass_name: "shadow_point_light_face",
     }
-    render3d_shadow_view_begin_pass(
-      shadow_view, pass_lighting, point_shadow_pass_kind, shadow_camera_near,
+    render3d_execute_shadow_phase_view(
+      camera_entity,
+      pass_lighting,
+      point_shadow_pass_kind,
+      shadow_camera_near,
+      meshes,
+      { shadow_view, items: shadow_phase_items },
     )
-    for shadow_phase_item in shadow_phase_items {
-      ignore(render3d_shadow_phase_item_debug_key(shadow_phase_item))
-      let extracted_shadow_mesh = meshes[shadow_phase_item.extracted_index]
-      let shadow_mesh = extracted_shadow_mesh.payload
-      @pbr_render.render3d_draw_mesh_gpu_payload(
-        @pbr_render.render3d_build_mesh_gpu_draw_payload(
-          shadow_mesh.mesh_id,
-          camera_entity.id,
-          camera_entity.generation,
-          shadow_phase_item.draw_item_index,
-          MESH3D_DRAW_INDIRECT_KIND_NONE,
-          -1,
-          shadow_mesh.material,
-          shadow_mesh.transform,
-          shadow_mesh.transform,
-          1.0F,
-          1.0F,
-          1.0F,
-          1.0F,
-          -1,
-          -1,
-          -1,
-          -1,
-          -1,
-          -1,
-          -1,
-          -1,
-          0.5F,
-          0.5F,
-          0.0F,
-          0.0F,
-          0.0F,
-          1.5F,
-          -1,
-          0.0F,
-          0.0F,
-          -1,
-          0.0F,
-          0.0F,
-          -1,
-          -1,
-          0.0F,
-          @math.Quat::identity(),
-          @sprite.Color::white(),
-          0.0F,
-          0.0F,
-          0,
-          skinning_key_hi=shadow_mesh.skinning_key_hi,
-          skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
-        ),
-      )
-    }
-    @render.host_gpu_end_pass()
   }
   {
     texture_id: point_shadow_texture_id,
