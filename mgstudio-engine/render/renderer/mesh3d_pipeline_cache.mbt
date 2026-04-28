@@ -13,163 +13,58 @@
 // limitations under the License.
 
 ///|
-fn mesh3d_pipeline_get_rgba8(
+struct Mesh3dPipelineCacheEntry {
+  color_format : UInt
+  topology : UInt
+  cull_mode : Int
+  transparent : Bool
+  pipeline : @wgpu.RenderPipeline
+}
+
+///|
+fn mesh3d_pipeline_get(
   backend : GpuBackend,
+  color_format : UInt,
   topology : UInt,
+  cull_mode : Int,
   transparent : Bool,
 ) -> @wgpu.RenderPipeline? {
-  if topology == MESH3D_TOPOLOGY_LINE_LIST {
-    if transparent {
-      backend.mesh3d_pipeline_line_list_transparent
-    } else {
-      backend.mesh3d_pipeline_line_list
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  for entry in backend.mesh3d_pipeline_cache {
+    if entry.color_format == color_format &&
+      entry.topology == topology &&
+      entry.cull_mode == safe_cull_mode &&
+      entry.transparent == transparent {
+      return Some(entry.pipeline)
     }
-  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
-    if transparent {
-      backend.mesh3d_pipeline_line_strip_transparent
-    } else {
-      backend.mesh3d_pipeline_line_strip
-    }
-  } else if transparent {
-    backend.mesh3d_pipeline_transparent
-  } else {
-    backend.mesh3d_pipeline
   }
+  None
 }
 
 ///|
-fn mesh3d_pipeline_set_rgba8(
+fn mesh3d_pipeline_set(
   backend : GpuBackend,
+  color_format : UInt,
   topology : UInt,
+  cull_mode : Int,
   transparent : Bool,
-  pipeline : @wgpu.RenderPipeline?,
+  pipeline : @wgpu.RenderPipeline,
 ) -> Unit {
-  if topology == MESH3D_TOPOLOGY_LINE_LIST {
-    if transparent {
-      backend.mesh3d_pipeline_line_list_transparent = pipeline
-    } else {
-      backend.mesh3d_pipeline_line_list = pipeline
-    }
-  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
-    if transparent {
-      backend.mesh3d_pipeline_line_strip_transparent = pipeline
-    } else {
-      backend.mesh3d_pipeline_line_strip = pipeline
-    }
-  } else if transparent {
-    backend.mesh3d_pipeline_transparent = pipeline
-  } else {
-    backend.mesh3d_pipeline = pipeline
-  }
+  backend.mesh3d_pipeline_cache.push({
+    color_format,
+    topology,
+    cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
+    transparent,
+    pipeline,
+  })
 }
 
 ///|
-fn mesh3d_rgba8_pipeline_cache_clear(backend : GpuBackend) -> Unit {
-  if backend.mesh3d_pipeline is Some(old) {
-    old.release()
+fn mesh3d_pipeline_cache_clear(backend : GpuBackend) -> Unit {
+  for entry in backend.mesh3d_pipeline_cache {
+    entry.pipeline.release()
   }
-  if backend.mesh3d_pipeline_transparent is Some(old) {
-    old.release()
-  }
-  if backend.mesh3d_pipeline_line_list is Some(old) {
-    old.release()
-  }
-  if backend.mesh3d_pipeline_line_list_transparent is Some(old) {
-    old.release()
-  }
-  if backend.mesh3d_pipeline_line_strip is Some(old) {
-    old.release()
-  }
-  if backend.mesh3d_pipeline_line_strip_transparent is Some(old) {
-    old.release()
-  }
-  backend.mesh3d_pipeline = None
-  backend.mesh3d_pipeline_transparent = None
-  backend.mesh3d_pipeline_line_list = None
-  backend.mesh3d_pipeline_line_list_transparent = None
-  backend.mesh3d_pipeline_line_strip = None
-  backend.mesh3d_pipeline_line_strip_transparent = None
-  backend.mesh3d_pipeline_rgba8_cull_mode = -1
-}
-
-///|
-fn mesh3d_pipeline_get_surface(
-  backend : GpuBackend,
-  topology : UInt,
-  transparent : Bool,
-) -> @wgpu.RenderPipeline? {
-  if topology == MESH3D_TOPOLOGY_LINE_LIST {
-    if transparent {
-      backend.mesh3d_pipeline_surface_line_list_transparent
-    } else {
-      backend.mesh3d_pipeline_surface_line_list
-    }
-  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
-    if transparent {
-      backend.mesh3d_pipeline_surface_line_strip_transparent
-    } else {
-      backend.mesh3d_pipeline_surface_line_strip
-    }
-  } else if transparent {
-    backend.mesh3d_pipeline_surface_transparent
-  } else {
-    backend.mesh3d_pipeline_surface
-  }
-}
-
-///|
-fn mesh3d_pipeline_set_surface(
-  backend : GpuBackend,
-  topology : UInt,
-  transparent : Bool,
-  pipeline : @wgpu.RenderPipeline?,
-) -> Unit {
-  if topology == MESH3D_TOPOLOGY_LINE_LIST {
-    if transparent {
-      backend.mesh3d_pipeline_surface_line_list_transparent = pipeline
-    } else {
-      backend.mesh3d_pipeline_surface_line_list = pipeline
-    }
-  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
-    if transparent {
-      backend.mesh3d_pipeline_surface_line_strip_transparent = pipeline
-    } else {
-      backend.mesh3d_pipeline_surface_line_strip = pipeline
-    }
-  } else if transparent {
-    backend.mesh3d_pipeline_surface_transparent = pipeline
-  } else {
-    backend.mesh3d_pipeline_surface = pipeline
-  }
-}
-
-///|
-fn mesh3d_surface_pipeline_cache_clear(backend : GpuBackend) -> Unit {
-  if backend.mesh3d_pipeline_surface is Some(old) {
-    old.release()
-  }
-  if backend.mesh3d_pipeline_surface_transparent is Some(old) {
-    old.release()
-  }
-  if backend.mesh3d_pipeline_surface_line_list is Some(old) {
-    old.release()
-  }
-  if backend.mesh3d_pipeline_surface_line_list_transparent is Some(old) {
-    old.release()
-  }
-  if backend.mesh3d_pipeline_surface_line_strip is Some(old) {
-    old.release()
-  }
-  if backend.mesh3d_pipeline_surface_line_strip_transparent is Some(old) {
-    old.release()
-  }
-  backend.mesh3d_pipeline_surface = None
-  backend.mesh3d_pipeline_surface_transparent = None
-  backend.mesh3d_pipeline_surface_line_list = None
-  backend.mesh3d_pipeline_surface_line_list_transparent = None
-  backend.mesh3d_pipeline_surface_line_strip = None
-  backend.mesh3d_pipeline_surface_line_strip_transparent = None
-  backend.mesh3d_pipeline_surface_cull_mode = -1
+  backend.mesh3d_pipeline_cache.clear()
 }
 
 ///|

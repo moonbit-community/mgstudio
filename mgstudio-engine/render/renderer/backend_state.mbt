@@ -137,21 +137,7 @@ pub struct GpuBackend {
   mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_skin : @wgpu.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
-  mut mesh3d_pipeline : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_transparent : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_line_list : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_line_list_transparent : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_line_strip : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_line_strip_transparent : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_surface : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_surface_transparent : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_surface_line_list : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_surface_line_list_transparent : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_surface_line_strip : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_surface_line_strip_transparent : @wgpu.RenderPipeline?
-  mut mesh3d_pipeline_surface_format : @wgpu.TextureFormat?
-  mut mesh3d_pipeline_rgba8_cull_mode : Int
-  mut mesh3d_pipeline_surface_cull_mode : Int
+  mesh3d_pipeline_cache : Array[Mesh3dPipelineCacheEntry]
   mesh3d_custom_pipeline_cache : Array[Mesh3dCustomPipelineCacheEntry]
   mesh3d_shadow_pipeline_cache : Array[Mesh3dShadowPipelineCacheEntry]
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
