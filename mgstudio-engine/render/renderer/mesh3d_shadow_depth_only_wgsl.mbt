@@ -25,9 +25,15 @@ let mesh3d_shadow_depth_only_wgsl_source : String =
   #|};
   #|
   #|struct Mesh3dViewUniform {
-  #|  world_position : vec4<f32>,
   #|  clip_from_world : mat4x4<f32>,
-  #|  exposure : vec4<f32>,
+  #|  unjittered_clip_from_world : mat4x4<f32>,
+  #|  world_from_clip : mat4x4<f32>,
+  #|  world_from_view : mat4x4<f32>,
+  #|  view_from_world : mat4x4<f32>,
+  #|  clip_from_view : mat4x4<f32>,
+  #|  view_from_clip : mat4x4<f32>,
+  #|  world_position : vec3<f32>,
+  #|  exposure : f32,
   #|};
   #|
   #|struct Mesh {

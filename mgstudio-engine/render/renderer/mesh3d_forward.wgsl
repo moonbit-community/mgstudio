@@ -24,9 +24,15 @@ struct VertexOut {
 };
 
 struct Mesh3dViewUniform {
-  world_position : vec4<f32>,
   clip_from_world : mat4x4<f32>,
-  exposure : vec4<f32>, // (exposure, _, _, _)
+  unjittered_clip_from_world : mat4x4<f32>,
+  world_from_clip : mat4x4<f32>,
+  world_from_view : mat4x4<f32>,
+  view_from_world : mat4x4<f32>,
+  clip_from_view : mat4x4<f32>,
+  view_from_clip : mat4x4<f32>,
+  world_position : vec3<f32>,
+  exposure : f32,
 };
 
 struct Mesh3dLightsUniform {
@@ -56,6 +62,7 @@ struct Mesh3dDirectionalShadowUniform {
 
 struct Mesh3dLightBindings {
   lights : Mesh3dLightsUniform,
+  environment : vec4<f32>, // (intensity, _, _, _)
   directional_shadow : Mesh3dDirectionalShadowUniform,
 };
 
@@ -1272,7 +1279,7 @@ fn fs_main(
   let specular_transmissive_color = base_color.xyz * specular_transmission;
   let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
     base_color.xyz * metallic;
-  let environment_map_intensity = max(u_view.exposure.y, 0.0);
+  let environment_map_intensity = max(u_lights.environment.x, 0.0);
   let environment_map_rotation = quat_normalize(vec4<f32>(
     u_lights.lights.ambient_color.w,
     u_lights.lights.directional_light_direction_to_light.w,
@@ -1416,7 +1423,7 @@ fn fs_main(
     specular_transmissive_color,
     specular_transmitted_lighting,
   );
-  let exposure = max(u_view.exposure.x, 0.0);
+  let exposure = max(u_view.exposure, 0.0);
   let lighting_rgb = direct_light + indirect_light + transmitted;
   let lit_rgb = lighting_rgb * exposure + emissive;
   let unlit_rgb = base_color.xyz + emissive;
