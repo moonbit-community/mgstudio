@@ -58,10 +58,21 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   topology? : UInt = @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
   cull_mode? : UInt = @wgpu.CULL_MODE_NONE,
   depth_compare_u32? : UInt = @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+  vertex_entry? : String = "vs_main",
+  fragment_entry? : String = "fs_main",
 ) -> @wgpu_c.WGPURenderPipelineDescriptorPtr raise GpuBackendError {
   let builder = @wgpu_c.render_pipeline_desc_builder_new(
     layout.raw_handle(),
     shader.raw_handle(),
+  )
+  let vertex_entry_bytes = @embedded_asset.asset_text_to_bytes(vertex_entry)
+  let fragment_entry_bytes = @embedded_asset.asset_text_to_bytes(fragment_entry)
+  let set_entry_points_err = @wgpu_c.render_pipeline_desc_builder_set_entry_points_utf8(
+    builder,
+    vertex_entry_bytes,
+    vertex_entry_bytes.length().to_uint64(),
+    fragment_entry_bytes,
+    fragment_entry_bytes.length().to_uint64(),
   )
   let set_format_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_format(
     builder, format,
@@ -137,7 +148,8 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   } else {
     0U
   }
-  if set_format_err != 0U ||
+  if set_entry_points_err != 0U ||
+    set_format_err != 0U ||
     set_blend_err != 0U ||
     set_vertex_layout_err != 0U ||
     pos_err != 0U ||

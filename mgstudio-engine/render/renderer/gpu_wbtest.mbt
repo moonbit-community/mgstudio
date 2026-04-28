@@ -731,9 +731,102 @@ test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   let preprocessed = load_wgsl_preprocessed(
     "", "sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines, visited, modules,
   )
-  debug_inspect(preprocessed.contains("const PI_2"), content="true")
-  debug_inspect(preprocessed.contains("return twice_pi();"), content="true")
+  debug_inspect(
+    preprocessed.contains("const mesh_functions__PI_2"),
+    content="true",
+  )
+  debug_inspect(
+    preprocessed.contains("return mesh_functions__twice_pi();"),
+    content="true",
+  )
   debug_inspect(preprocessed.contains("mesh_functions::"), content="false")
+  clear_registered_wgsl_source_registry()
+}
+
+///|
+test "renderer: registered wgsl sources resolve nested alias imports" {
+  clear_registered_wgsl_source_registry()
+  register_wgsl_source(
+    "test/types.wgsl", "#define_import_path test::types\nstruct Lights {\n  value: f32,\n}\n",
+  )
+  register_wgsl_source(
+    "test/bindings.wgsl", "#define_import_path test::bindings\n#import test::types as types\nvar<private> lights: types::Lights;\n",
+  )
+  register_wgsl_source(
+    "test/main.wgsl", "#import test::bindings::lights\nfn demo() -> f32 {\n  return lights.value;\n}\n",
+  )
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = copy_registered_wgsl_import_module_paths()
+  let preprocessed = load_wgsl_preprocessed(
+    "", "test/main.wgsl", defines, value_defines, visited, modules,
+  )
+  debug_inspect(preprocessed.contains("types::Lights"), content="false")
+  debug_inspect(preprocessed.contains("struct types__Lights"), content="true")
+  clear_registered_wgsl_source_registry()
+}
+
+///|
+test "renderer: registered wgsl sources resolve nested alias imports through module alias" {
+  clear_registered_wgsl_source_registry()
+  register_wgsl_source(
+    "test/types.wgsl", "#define_import_path test::types\nstruct Lights {\n  value: f32,\n}\n",
+  )
+  register_wgsl_source(
+    "test/bindings.wgsl", "#define_import_path test::bindings\n#import test::types as types\nvar<private> lights: types::Lights;\n",
+  )
+  register_wgsl_source(
+    "test/main.wgsl", "#import test::bindings\nfn demo() -> f32 {\n  return bindings::lights.value;\n}\n",
+  )
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = copy_registered_wgsl_import_module_paths()
+  let preprocessed = load_wgsl_preprocessed(
+    "", "test/main.wgsl", defines, value_defines, visited, modules,
+  )
+  debug_inspect(preprocessed.contains("types::Lights"), content="false")
+  debug_inspect(
+    preprocessed.contains("struct bindings__types__Lights"),
+    content="true",
+  )
+  clear_registered_wgsl_source_registry()
+}
+
+///|
+test "renderer: registered wgsl sources resolve nested alias imports through grouped alias" {
+  clear_registered_wgsl_source_registry()
+  register_wgsl_source(
+    "test/types.wgsl", "#define_import_path test::types\nstruct Lights {\n  value: f32,\n}\n",
+  )
+  register_wgsl_source(
+    "test/bindings.wgsl", "#define_import_path test::bindings\n#import test::types as types\n#import test::atmosphere::types as atmosphere\n#import test::{ view::View, globals::Globals }\n@group(0) @binding(0) var<uniform> view: View;\n@group(0) @binding(1) var<uniform> lights: types::Lights;\n@group(0) @binding(11) var<uniform> globals: Globals;\n",
+  )
+  register_wgsl_source(
+    "test/atmosphere/types.wgsl", "#define_import_path test::atmosphere::types\nstruct Atmosphere {\n  value: f32,\n}\n",
+  )
+  register_wgsl_source(
+    "test/view.wgsl", "#define_import_path test::view\nstruct View {\n  value: f32,\n}\n",
+  )
+  register_wgsl_source(
+    "test/globals.wgsl", "#define_import_path test::globals\nstruct Globals {\n  value: f32,\n}\n",
+  )
+  register_wgsl_source(
+    "test/main.wgsl", "#import test::{ bindings as view_bindings, types }\n#import test::bindings::globals\nfn demo() -> f32 {\n  return view_bindings::lights.value + globals.value;\n}\n",
+  )
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = copy_registered_wgsl_import_module_paths()
+  let preprocessed = load_wgsl_preprocessed(
+    "", "test/main.wgsl", defines, value_defines, visited, modules,
+  )
+  debug_inspect(preprocessed.contains("types::Lights"), content="false")
+  debug_inspect(
+    preprocessed.contains("struct view_bindings__types__Lights"),
+    content="true",
+  )
   clear_registered_wgsl_source_registry()
 }
 

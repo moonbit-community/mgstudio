@@ -30,6 +30,7 @@ struct Mesh3dPipelineCacheEntry {
   topology : UInt
   cull_mode : Int
   blend_kind : Int
+  skinned : Bool
   pipeline : @wgpu.RenderPipeline
 }
 
@@ -40,13 +41,15 @@ fn mesh3d_pipeline_get(
   topology : UInt,
   cull_mode : Int,
   blend_kind : Int,
+  skinned : Bool,
 ) -> @wgpu.RenderPipeline? {
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   for entry in backend.mesh3d_pipeline_cache {
     if entry.color_format == color_format &&
       entry.topology == topology &&
       entry.cull_mode == safe_cull_mode &&
-      entry.blend_kind == blend_kind {
+      entry.blend_kind == blend_kind &&
+      entry.skinned == skinned {
       return Some(entry.pipeline)
     }
   }
@@ -60,6 +63,7 @@ fn mesh3d_pipeline_set(
   topology : UInt,
   cull_mode : Int,
   blend_kind : Int,
+  skinned : Bool,
   pipeline : @wgpu.RenderPipeline,
 ) -> Unit {
   backend.mesh3d_pipeline_cache.push({
@@ -67,6 +71,7 @@ fn mesh3d_pipeline_set(
     topology,
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
     blend_kind,
+    skinned,
     pipeline,
   })
 }

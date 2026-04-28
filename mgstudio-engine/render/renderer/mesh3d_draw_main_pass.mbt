@@ -91,6 +91,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       mesh.primitive_topology,
       cull_mode,
       draw_shader_path,
+      skinning_key_hi >= 0,
     )
     is Some(pipeline) else {
     return

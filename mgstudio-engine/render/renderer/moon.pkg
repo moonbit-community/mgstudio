@@ -23,6 +23,11 @@ options(
   "native-stub": [ "pipeline_layout_stub.c" ],
   "pre-build": [
     {
+      "command": ":embed --input $input --output $output --name mesh3d_bevy_forward_wgsl_source",
+      "input": "mesh3d_bevy_forward.wgsl",
+      "output": "mesh3d_bevy_forward_wgsl.mbt",
+    },
+    {
       "command": ":embed --input $input --output $output --name mesh3d_forward_wgsl_source",
       "input": "mesh3d_forward.wgsl",
       "output": "mesh3d_forward_wgsl.mbt",

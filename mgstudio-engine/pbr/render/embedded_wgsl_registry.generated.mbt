@@ -74,6 +74,7 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
     @asset.asset_text_to_bytes(mesh_view_types_wgsl_source),
   )
   @wgsl.register_wgsl_source("pbr/render/mesh.wgsl", mesh_wgsl_source)
+  @wgsl.register_wgsl_source("shaders/bevy_pbr/mesh.wgsl", mesh_wgsl_source)
   @wgsl.register_wgsl_source("pbr/render/morph.wgsl", morph_wgsl_source)
   @wgsl.register_wgsl_source(
     "pbr/render/occlusion_culling.wgsl", occlusion_culling_wgsl_source,
@@ -140,6 +141,7 @@ fn register_embedded_wgsl_sources_generated() -> Unit {
   )
   @wgsl.register_wgsl_source("pbr/render/pbr_types.wgsl", pbr_types_wgsl_source)
   @wgsl.register_wgsl_source("pbr/render/pbr.wgsl", pbr_wgsl_source)
+  @wgsl.register_wgsl_source("shaders/bevy_pbr/pbr.wgsl", pbr_wgsl_source)
   @wgsl.register_wgsl_source(
     "pbr/render/reset_indirect_batch_sets.wgsl", reset_indirect_batch_sets_wgsl_source,
   )

@@ -2766,9 +2766,7 @@ fn render2d_shader_asset_paths() -> Array[String] {
 fn register_render2d_shader_sources(world : @ecs.World) -> Unit {
   world |> ignore
   for path in render2d_shader_asset_paths() {
-    let source = @wgsl.Composer::default().load_wgsl_source_required_raw(
-      "assets", path,
-    ) catch {
+    let source = @wgsl.registered_wgsl_source_required(path) catch {
       err =>
         abort(
           "failed to load render2d shader asset text: \{path}: \{err.message()}",

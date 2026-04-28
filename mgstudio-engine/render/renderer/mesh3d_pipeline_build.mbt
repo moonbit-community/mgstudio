@@ -70,6 +70,48 @@ fn load_wgsl_required_mesh3d_forward_decal_pipeline(
 }
 
 ///|
+fn mesh3d_bevy_forward_shader_defines(
+  skinned : Bool,
+) -> @hashmap.HashMap[String, Bool] {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("VERTEX_POSITIONS", true)
+  defines.set("VERTEX_NORMALS", true)
+  defines.set("VERTEX_UVS", true)
+  defines.set("VERTEX_UVS_A", true)
+  defines.set("VERTEX_COLORS", true)
+  defines.set("VERTEX_OUTPUT_INSTANCE_INDEX", true)
+  defines.set("MAY_DISCARD", true)
+  if skinned {
+    defines.set("SKINNED", true)
+  }
+  defines
+}
+
+///|
+fn mesh3d_bevy_forward_value_defines() -> @hashmap.HashMap[String, Int] {
+  let value_defines = default_wgsl_value_defines()
+  value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
+  value_defines
+}
+
+///|
+fn load_wgsl_required_mesh3d_bevy_forward_pipeline(
+  assets_base : String,
+  skinned : Bool,
+) -> String raise GpuBackendError {
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base,
+    MESH3D_FORWARD_SHADER_PATH,
+    mesh3d_bevy_forward_shader_defines(skinned),
+    mesh3d_bevy_forward_value_defines(),
+    visited,
+    modules,
+  )
+}
+
+///|
 fn mesh3d_blend_kind_from_material_flags(
   material_flags : UInt,
   transparent : Bool,
@@ -244,7 +286,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     is Some(pipeline) {
     return Some(pipeline)
   }
-  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode, blend_kind)
+  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode, blend_kind, false)
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return None }
@@ -316,6 +358,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   topology : UInt,
   cull_mode : Int,
   blend_kind : Int,
+  skinned : Bool,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
@@ -615,7 +658,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   ensure_mesh3d_view_binding_buffers(backend)
   let color_format = tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32()
   if mesh3d_pipeline_get(
-      backend, color_format, topology, safe_cull_mode, blend_kind,
+      backend, color_format, topology, safe_cull_mode, blend_kind, skinned,
     )
     is Some(_) {
     return
@@ -623,7 +666,10 @@ fn ensure_mesh3d_pipeline_rgba8(
   let transparent = blend_kind != MESH3D_PIPELINE_BLEND_OPAQUE
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_from_assets_required(backend, MESH3D_FORWARD_SHADER_PATH)
+  let wgsl = load_wgsl_required_mesh3d_bevy_forward_pipeline(
+    backend.assets_base,
+    skinned,
+  )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
@@ -636,20 +682,24 @@ fn ensure_mesh3d_pipeline_rgba8(
     cull_mode=cull_mode_wgpu,
     alpha_blend=transparent,
     blend_kind~,
+    vertex_entry="vertex",
+    fragment_entry="fragment",
   )
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
   let blend_suffix = mesh3d_pipeline_blend_suffix(blend_kind)
+  let skinned_suffix = if skinned { "_skinned" } else { "_unskinned" }
   pipeline.set_label(
     "mgstudio_mesh3d_rgba8_" +
     blend_suffix +
     "_" +
     mesh3d_topology_suffix(topology) +
     "_cull_" +
-    mesh3d_cull_mode_suffix(safe_cull_mode),
+    mesh3d_cull_mode_suffix(safe_cull_mode) +
+    skinned_suffix,
   )
   mesh3d_pipeline_set(
-    backend, color_format, topology, safe_cull_mode, blend_kind, pipeline,
+    backend, color_format, topology, safe_cull_mode, blend_kind, skinned, pipeline,
   )
   sm.release()
 }
@@ -661,10 +711,13 @@ fn ensure_mesh3d_pipeline_surface(
   topology : UInt,
   cull_mode : Int,
   blend_kind : Int,
+  skinned : Bool,
 ) -> Unit raise GpuBackendError {
   // Ensure shared mesh3d pipeline resources/layout exist before creating
   // surface-format specializations.
-  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode, blend_kind)
+  ensure_mesh3d_pipeline_rgba8(
+    backend, topology, cull_mode, blend_kind, skinned,
+  )
   ensure_sprite_resources(backend)
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
@@ -672,7 +725,7 @@ fn ensure_mesh3d_pipeline_surface(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let color_format = format.to_u32()
   if mesh3d_pipeline_get(
-      backend, color_format, topology, safe_cull_mode, blend_kind,
+      backend, color_format, topology, safe_cull_mode, blend_kind, skinned,
     )
     is Some(_) {
     return
@@ -680,7 +733,10 @@ fn ensure_mesh3d_pipeline_surface(
   let transparent = blend_kind != MESH3D_PIPELINE_BLEND_OPAQUE
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_from_assets_required(backend, MESH3D_FORWARD_SHADER_PATH)
+  let wgsl = load_wgsl_required_mesh3d_bevy_forward_pipeline(
+    backend.assets_base,
+    skinned,
+  )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
@@ -693,20 +749,24 @@ fn ensure_mesh3d_pipeline_surface(
     cull_mode=cull_mode_wgpu,
     alpha_blend=transparent,
     blend_kind~,
+    vertex_entry="vertex",
+    fragment_entry="fragment",
   )
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
   let blend_suffix = mesh3d_pipeline_blend_suffix(blend_kind)
+  let skinned_suffix = if skinned { "_skinned" } else { "_unskinned" }
   pipeline.set_label(
     "mgstudio_mesh3d_surface_" +
     blend_suffix +
     "_" +
     mesh3d_topology_suffix(topology) +
     "_cull_" +
-    mesh3d_cull_mode_suffix(safe_cull_mode),
+    mesh3d_cull_mode_suffix(safe_cull_mode) +
+    skinned_suffix,
   )
   mesh3d_pipeline_set(
-    backend, color_format, topology, safe_cull_mode, blend_kind, pipeline,
+    backend, color_format, topology, safe_cull_mode, blend_kind, skinned, pipeline,
   )
   sm.release()
 }
@@ -720,6 +780,7 @@ fn mesh3d_pipeline_for_current_pass(
   topology : UInt,
   cull_mode : Int,
   shader_path : String?,
+  skinned : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let resolved_shader_path = mesh3d_shader_path_or_default(shader_path)
   let blend_kind = mesh3d_blend_kind_from_material_flags(
@@ -739,7 +800,7 @@ fn mesh3d_pipeline_for_current_pass(
   match current_pass_color_format(backend) {
     Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
       ensure_mesh3d_pipeline_surface(
-        backend, format, topology, cull_mode, blend_kind,
+        backend, format, topology, cull_mode, blend_kind, skinned,
       )
       return mesh3d_pipeline_get(
         backend,
@@ -747,17 +808,21 @@ fn mesh3d_pipeline_for_current_pass(
         topology,
         cull_mode,
         blend_kind,
+        skinned,
       )
     }
     _ => ()
   }
-  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode, blend_kind)
+  ensure_mesh3d_pipeline_rgba8(
+    backend, topology, cull_mode, blend_kind, skinned,
+  )
   mesh3d_pipeline_get(
     backend,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32(),
     topology,
     cull_mode,
     blend_kind,
+    skinned,
   )
 }
 
@@ -773,6 +838,7 @@ fn mesh3d_build_shadow_depth_pipeline(
     topology,
     cull_mode,
     MESH3D_PIPELINE_BLEND_OPAQUE,
+    false,
   )
   guard backend.mesh3d_pipeline_layout is Some(pl) else {
     fatal("wgpu: missing mesh3d pipeline layout for shadow depth pipeline")
