@@ -51,7 +51,21 @@ fn mesh3d_skin_bytes(
     backend.mesh3d_skin_staging_bytes = bytes_fixed_staging_make(byte_len)
     backend.mesh3d_skin_staging_view = backend.mesh3d_skin_staging_bytes.unsafe_reinterpret_as_bytes()
   }
-  f32le_pack_into_fixed(backend.mesh3d_skin_staging_bytes, 0, skinning_rows)
+  let matrix_count = skinning_rows.length() / 16
+  for matrix_index in 0..<matrix_count {
+    let base = matrix_index * 16
+    for column in 0..<4 {
+      for row in 0..<4 {
+        let src = base + row * 4 + column
+        let dst = (base + column * 4 + row) * 4
+        f32le_write_into_fixed(
+          backend.mesh3d_skin_staging_bytes,
+          dst,
+          skinning_rows[src],
+        )
+      }
+    }
+  }
   backend.mesh3d_skin_staging_view
 }
 

@@ -90,17 +90,6 @@ fn f32le_write_into_fixed(
 }
 
 ///|
-fn f32le_pack_into_fixed(
-  bytes : FixedArray[Byte],
-  byte_offset : Int,
-  xs : Array[Float],
-) -> Unit {
-  for i in 0..<xs.length() {
-    f32le_write_into_fixed(bytes, byte_offset + i * 4, xs[i])
-  }
-}
-
-///|
 fn normalize_shader_rel_path(rel : String) -> String {
   @wgsl.normalize_shader_rel_path(rel)
 }

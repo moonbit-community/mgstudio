@@ -76,8 +76,8 @@ struct Mesh3dDrawUniformBuffer {
   data : array<Mesh>,
 };
 
-struct Mesh3dSkinningRowsBuffer {
-  rows : array<vec4<f32>>,
+struct Mesh3dSkinningMatricesBuffer {
+  matrices : array<mat4x4<f32>>,
 };
 
 @group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
@@ -85,7 +85,7 @@ struct Mesh3dSkinningRowsBuffer {
 @group(3) @binding(1) var u_base_color_texture : texture_2d<f32>;
 @group(3) @binding(2) var u_base_color_sampler : sampler;
 @group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
-@group(2) @binding(1) var<storage, read> u_skinning_rows : Mesh3dSkinningRowsBuffer;
+@group(2) @binding(1) var<storage, read> u_skinning_matrices : Mesh3dSkinningMatricesBuffer;
 
 const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT: u32 = 1u << 0u;
 const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS: u32 = 7u << 29u;
@@ -116,7 +116,7 @@ fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
 }
 
 fn skinning_row_count() -> u32 {
-  return arrayLength(&u_skinning_rows.rows);
+  return arrayLength(&u_skinning_matrices.matrices);
 }
 
 fn skinning_transform_point(
@@ -127,16 +127,12 @@ fn skinning_transform_point(
   if skin_index == 0xffffffffu {
     return local_point;
   }
-  let base = (skin_index + joint_index) * 4u;
-  if base + 3u >= skinning_row_count() {
+  let matrix_index = skin_index + joint_index;
+  if matrix_index >= skinning_row_count() {
     return local_point;
   }
-  let value = vec4<f32>(local_point, 1.0);
-  return vec3<f32>(
-    dot(u_skinning_rows.rows[base], value),
-    dot(u_skinning_rows.rows[base + 1u], value),
-    dot(u_skinning_rows.rows[base + 2u], value),
-  );
+  return (u_skinning_matrices.matrices[matrix_index] *
+    vec4<f32>(local_point, 1.0)).xyz;
 }
 
 @vertex
