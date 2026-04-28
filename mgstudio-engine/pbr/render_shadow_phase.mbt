@@ -19,6 +19,12 @@
 // binned render phase.
 
 ///|
+const SHADOW_PIPELINE_KIND_DEPTH_ONLY : Int = 0
+
+///|
+const SHADOW_PIPELINE_KIND_MATERIAL : Int = 1
+
+///|
 priv struct ShadowPhaseItem3d {
   batch_set_key : ShadowBatchSetKey3d
   bin_key : ShadowBinKey3d
@@ -29,6 +35,8 @@ priv struct ShadowPhaseItem3d {
 
 ///|
 priv struct ShadowBatchSetKey3d {
+  pipeline_kind : Int
+  may_discard : Bool
   topology_kind : Int
   indexed : Bool
   material_flags : UInt
@@ -52,6 +60,7 @@ fn render3d_shadow_phase_item_debug_key(item : ShadowPhaseItem3d) -> Int {
   item.entity.render_entity.generation * 17 +
   item.entity.main_entity.id +
   item.bin_key.mesh_id +
+  item.batch_set_key.pipeline_kind * 13 +
   item.batch_set_key.topology_kind
 }
 
@@ -81,7 +90,16 @@ fn render3d_shadow_cmp_bool(lhs : Bool, rhs : Bool) -> Int {
 fn render3d_shadow_batch_set_key(
   mesh : Mesh3dExtractedPayload,
 ) -> ShadowBatchSetKey3d {
+  let may_discard = render3d_shadow_material_may_discard(
+    mesh.material.alpha_mode,
+  )
   {
+    pipeline_kind: if may_discard {
+      SHADOW_PIPELINE_KIND_MATERIAL
+    } else {
+      SHADOW_PIPELINE_KIND_DEPTH_ONLY
+    },
+    may_discard,
     topology_kind: mesh.mesh_topology_kind,
     indexed: mesh.mesh_is_indexed,
     material_flags: @pbr_render.render3d_standard_material_flags(
@@ -101,10 +119,35 @@ fn render3d_shadow_batch_set_key(
 }
 
 ///|
+fn render3d_shadow_material_may_discard(alpha_mode : AlphaMode3d) -> Bool {
+  // Bevy source: `bevy_pbr/src/render/light.rs::specialize_shadows`.
+  // `MeshPipelineKey::MAY_DISCARD` selects the material shadow draw function
+  // instead of the depth-only draw function for these alpha modes.
+  match alpha_mode {
+    Mask(_) | Blend | Premultiplied | Add | AlphaToCoverage => true
+    _ => false
+  }
+}
+
+///|
 fn render3d_shadow_phase_item_cmp(
   lhs : ShadowPhaseItem3d,
   rhs : ShadowPhaseItem3d,
 ) -> Int {
+  let pipeline_cmp = @pbr_render.cmp_int(
+    lhs.batch_set_key.pipeline_kind,
+    rhs.batch_set_key.pipeline_kind,
+  )
+  if pipeline_cmp != 0 {
+    return pipeline_cmp
+  }
+  let may_discard_cmp = render3d_shadow_cmp_bool(
+    lhs.batch_set_key.may_discard,
+    rhs.batch_set_key.may_discard,
+  )
+  if may_discard_cmp != 0 {
+    return may_discard_cmp
+  }
   let topology_cmp = @pbr_render.cmp_int(
     lhs.batch_set_key.topology_kind,
     rhs.batch_set_key.topology_kind,

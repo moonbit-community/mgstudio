@@ -18,7 +18,8 @@
 
 struct VertexOut {
   @builtin(position) position : vec4<f32>,
-  @location(0) @interpolate(flat) draw_index : u32,
+  @location(0) uv : vec2<f32>,
+  @location(1) @interpolate(flat) draw_index : u32,
 };
 
 struct Mesh3dViewUniform {
@@ -78,9 +79,12 @@ struct Mesh3dSkinningRowsBuffer {
 };
 
 @group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
+@group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;
+@group(1) @binding(2) var u_base_color_sampler : sampler;
 @group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
 @group(3) @binding(0) var<storage, read> u_skinning_rows : Mesh3dSkinningRowsBuffer;
 
+const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT: u32 = 1u << 0u;
 const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS: u32 = 7u << 29u;
 const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK: u32 = 1u << 29u;
 const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND: u32 = 2u << 29u;
@@ -156,6 +160,8 @@ fn vertex(
     ) + draw.transform.model_translation.xyz;
   }
   out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
+  let transformed_uv = draw.material.uv_transform * vec3<f32>(uv, 1.0);
+  out.uv = transformed_uv.xy;
   out.draw_index = instance_index;
   return out;
 }
@@ -164,7 +170,14 @@ fn vertex(
 fn fragment(in : VertexOut) -> @location(0) vec4<f32> {
   let material = u_draws.data[in.draw_index].material;
   let alpha_mode = material.flags & STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS;
-  let color = material.base_color;
+  var color = material.base_color;
+  if (material.flags & STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) != 0u {
+    color = color * textureSample(
+      u_base_color_texture,
+      u_base_color_sampler,
+      in.uv,
+    );
+  }
   if alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK {
     if color.a < material.alpha_cutoff {
       discard;

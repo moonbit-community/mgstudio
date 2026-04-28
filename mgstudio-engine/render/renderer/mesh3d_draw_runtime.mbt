@@ -155,12 +155,13 @@ pub fn GpuBackend::draw_mesh3d(
       pass, ps, mesh, pass_kind, preprocess_camera_key_hi, preprocess_camera_key_lo,
       draw_storage_index, indirect_kind, indirect_parameters_index, x, y, z, rotation_x,
       rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z, color_r, color_g,
-      color_b, color_a, uv_transform_a, uv_transform_b, uv_transform_c, uv_transform_d,
-      uv_transform_tx, uv_transform_ty, uv_transform_mode, emissive_r, emissive_g,
-      emissive_b, metallic, roughness, reflectance, parallax_depth_scale, max_parallax_layer_count,
-      max_relief_mapping_search_steps, anisotropy_strength, anisotropy_rotation,
-      specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
-      thickness, ior, alpha_cutoff, material_flags, cull_mode, skinning_key_hi, skinning_key_lo,
+      color_b, color_a, texture_id, uv_transform_a, uv_transform_b, uv_transform_c,
+      uv_transform_d, uv_transform_tx, uv_transform_ty, uv_transform_mode, emissive_r,
+      emissive_g, emissive_b, metallic, roughness, reflectance, parallax_depth_scale,
+      max_parallax_layer_count, max_relief_mapping_search_steps, anisotropy_strength,
+      anisotropy_rotation, specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission,
+      specular_transmission, thickness, ior, alpha_cutoff, material_flags, cull_mode,
+      skinning_key_hi, skinning_key_lo,
     )
     return
   }

@@ -38,6 +38,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   color_g : Float,
   color_b : Float,
   color_a : Float,
+  texture_id : Int,
   uv_transform_a : Float,
   uv_transform_b : Float,
   uv_transform_c : Float,
@@ -223,9 +224,12 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     environment_diffuse_texture, environment_specular_texture,
   )
   let default_texture = ensure_default_texture(self)
+  guard resolve_mesh3d_texture(self, texture_id) is Some(base_color_texture) else {
+    return
+  }
   let normal_texture = ensure_normal_map_fallback_texture(self)
   let material_bg = mesh3d_material_cache_get_or_create(
-    self, default_texture, normal_texture, default_texture, default_texture, default_texture,
+    self, base_color_texture, normal_texture, default_texture, default_texture, default_texture,
     default_texture, default_texture, default_texture,
   )
   pass.set_pipeline(pipeline)
