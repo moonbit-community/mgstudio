@@ -92,7 +92,10 @@ pub struct GpuPassState {
 pub struct GpuFrameState {
   surface_tex : @wgpu.SurfaceTexture
   surface_texture : @wgpu.Texture
-  surface_view : @wgpu.TextureView
+  mut surface_view : @wgpu.TextureView
+  mut present_view : @wgpu.TextureView?
+  mut screenshot_capture_texture : @wgpu.Texture?
+  mut screenshot_capture_format_raw : UInt
   encoder : @wgpu.CommandEncoder
   mut pass : @wgpu.RenderPass?
 }

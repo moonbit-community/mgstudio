@@ -275,6 +275,10 @@ pub struct GpuBackend {
   mut blit_pipeline : @wgpu.RenderPipeline?
   mut blit_pipeline_format : @wgpu.TextureFormat?
   mut blit_sampler : @wgpu.Sampler?
+  mut screenshot_to_screen_bgl : @wgpu.BindGroupLayout?
+  mut screenshot_to_screen_pipeline_layout : @wgpu.PipelineLayout?
+  mut screenshot_to_screen_pipeline : @wgpu.RenderPipeline?
+  mut screenshot_to_screen_pipeline_format : @wgpu.TextureFormat?
   mut fxaa_bgl : @wgpu.BindGroupLayout?
   mut fxaa_pipeline_layout : @wgpu.PipelineLayout?
   mut fxaa_pipeline : @wgpu.RenderPipeline?

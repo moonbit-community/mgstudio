@@ -13,6 +13,8 @@ import {
 }
 
 // Values
+pub const MESH3D_ATTRIBUTE_NORMAL_NAME : String = "Vertex_Normal"
+
 pub fn[S : IntoMeshAsset] add(@asset.Assets[Mesh], S) -> @asset.Handle[Mesh]
 
 pub let ecs_key_dynamic_skinned_mesh_bounds : @ecs.ComponentKey[DynamicSkinnedMeshBounds]

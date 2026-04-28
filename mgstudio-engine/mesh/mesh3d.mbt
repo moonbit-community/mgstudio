@@ -187,6 +187,9 @@ const MESH3D_PI : Float = 3.141592653589793F
 const MESH3D_TANGENT_EPSILON : Float = 1.0e-8F
 
 ///|
+pub const MESH3D_ATTRIBUTE_NORMAL_NAME : String = "Vertex_Normal"
+
+///|
 fn mesh3d_float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
 }
@@ -1376,6 +1379,38 @@ fn mesh3d_triangle_face_normal(
 }
 
 ///|
+fn mesh3d_normal_at_or(
+  normals : Array[@math.Vec3]?,
+  index : Int,
+  fallback : @math.Vec3,
+) -> @math.Vec3 {
+  match normals {
+    Some(values) =>
+      if index >= 0 && index < values.length() {
+        values[index]
+      } else {
+        fallback
+      }
+    None => fallback
+  }
+}
+
+///|
+fn Mesh3dGeometry::mesh3d_valid_normals(
+  self : Mesh3dGeometry,
+) -> Array[@math.Vec3]? {
+  match self.custom_attribute_vec3(MESH3D_ATTRIBUTE_NORMAL_NAME) {
+    Some(values) =>
+      if values.length() == self.positions.length() {
+        Some(values)
+      } else {
+        None
+      }
+    None => None
+  }
+}
+
+///|
 fn mesh3d_push_interleaved_xyz_normal_uv_rgba(
   out : Array[Double],
   position : @math.Vec3,
@@ -1502,6 +1537,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
     return None
   }
   let out : Array[Double] = []
+  let explicit_normals = self.mesh3d_valid_normals()
   match self.topology {
     Mesh3dPrimitiveTopology::TriangleList =>
       match self.indices {
@@ -1517,7 +1553,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
               mesh3d_push_interleaved_xyz_normal_uv_rgba(
                 out,
                 self.positions[i],
-                normal,
+                mesh3d_normal_at_or(explicit_normals, i, normal),
                 self.uvs[i],
                 mesh3d_vertex_color_or_white(self.colors, i),
               )
@@ -1539,21 +1575,21 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ia],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, ia, normal),
               self.uvs[ia],
               mesh3d_vertex_color_or_white(self.colors, ia),
             )
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ib],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, ib, normal),
               self.uvs[ib],
               mesh3d_vertex_color_or_white(self.colors, ib),
             )
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ic],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, ic, normal),
               self.uvs[ic],
               mesh3d_vertex_color_or_white(self.colors, ic),
             )
@@ -1569,7 +1605,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[i],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, i, normal),
               self.uvs[i],
               mesh3d_vertex_color_or_white(self.colors, i),
             )
@@ -1581,7 +1617,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[idx],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, idx, normal),
               self.uvs[idx],
               mesh3d_vertex_color_or_white(self.colors, idx),
             )
@@ -1597,7 +1633,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[i],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, i, normal),
               self.uvs[i],
               mesh3d_vertex_color_or_white(self.colors, i),
             )
@@ -1609,7 +1645,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[idx],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, idx, normal),
               self.uvs[idx],
               mesh3d_vertex_color_or_white(self.colors, idx),
             )
@@ -1630,6 +1666,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
   let out : Array[Double] = []
   let joint_indices = self.joint_indices
   let joint_weights = self.joint_weights
+  let explicit_normals = self.mesh3d_valid_normals()
   match self.topology {
     Mesh3dPrimitiveTopology::TriangleList =>
       match self.indices {
@@ -1645,7 +1682,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               mesh3d_push_interleaved_xyz_normal_uv_rgba(
                 out,
                 self.positions[i],
-                normal,
+                mesh3d_normal_at_or(explicit_normals, i, normal),
                 self.uvs[i],
                 mesh3d_vertex_color_or_white(self.colors, i),
               )
@@ -1670,7 +1707,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ia],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, ia, normal),
               self.uvs[ia],
               mesh3d_vertex_color_or_white(self.colors, ia),
             )
@@ -1680,7 +1717,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ib],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, ib, normal),
               self.uvs[ib],
               mesh3d_vertex_color_or_white(self.colors, ib),
             )
@@ -1690,7 +1727,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ic],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, ic, normal),
               self.uvs[ic],
               mesh3d_vertex_color_or_white(self.colors, ic),
             )
@@ -1709,7 +1746,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[i],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, i, normal),
               self.uvs[i],
               mesh3d_vertex_color_or_white(self.colors, i),
             )
@@ -1724,7 +1761,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[idx],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, idx, normal),
               self.uvs[idx],
               mesh3d_vertex_color_or_white(self.colors, idx),
             )
@@ -1743,7 +1780,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[i],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, i, normal),
               self.uvs[i],
               mesh3d_vertex_color_or_white(self.colors, i),
             )
@@ -1758,7 +1795,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[idx],
-              normal,
+              mesh3d_normal_at_or(explicit_normals, idx, normal),
               self.uvs[idx],
               mesh3d_vertex_color_or_white(self.colors, idx),
             )

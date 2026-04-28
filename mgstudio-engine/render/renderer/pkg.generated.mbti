@@ -589,6 +589,10 @@ pub struct GpuBackend {
   mut blit_pipeline : @wgpu_mbt.RenderPipeline?
   mut blit_pipeline_format : @wgpu_mbt.TextureFormat?
   mut blit_sampler : @wgpu_mbt.Sampler?
+  mut screenshot_to_screen_bgl : @wgpu_mbt.BindGroupLayout?
+  mut screenshot_to_screen_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut screenshot_to_screen_pipeline : @wgpu_mbt.RenderPipeline?
+  mut screenshot_to_screen_pipeline_format : @wgpu_mbt.TextureFormat?
   mut fxaa_bgl : @wgpu_mbt.BindGroupLayout?
   mut fxaa_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut fxaa_pipeline : @wgpu_mbt.RenderPipeline?
@@ -749,7 +753,10 @@ pub struct GpuClipMatrix {
 pub struct GpuFrameState {
   surface_tex : @wgpu_mbt.SurfaceTexture
   surface_texture : @wgpu_mbt.Texture
-  surface_view : @wgpu_mbt.TextureView
+  mut surface_view : @wgpu_mbt.TextureView
+  mut present_view : @wgpu_mbt.TextureView?
+  mut screenshot_capture_texture : @wgpu_mbt.Texture?
+  mut screenshot_capture_format_raw : UInt
   encoder : @wgpu_mbt.CommandEncoder
   mut pass : @wgpu_mbt.RenderPass?
 }

@@ -1119,10 +1119,25 @@ fn AssetServer::load_image_with_settings(
       return handle
     }
     let bytes = load_asset_file_bytes(canonical_path)
-    let id = host_asset_load_texture(
-      path=canonical_path,
-      nearest=self.image_sampler_uses_nearest(settings.sampler),
+    let nearest = self.image_sampler_uses_nearest(settings.sampler)
+    let decoded_image = image_from_loaded_texture_bytes(
+      canonical_path,
+      bytes,
+      settings.is_srgb,
+      settings.format,
+      settings.texture_format,
     )
+    let id = match decoded_image {
+      Some(image) => {
+        let created = image_asset_create_gpu_texture(image, nearest)
+        if created > 0 {
+          created
+        } else {
+          host_asset_load_texture(path=canonical_path, nearest~)
+        }
+      }
+      None => host_asset_load_texture(path=canonical_path, nearest~)
+    }
     self.record_path(canonical_path)
     let handle = Handle::new(id)
     self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())
@@ -1135,14 +1150,18 @@ fn AssetServer::load_image_with_settings(
     self.set_image_is_srgb(handle, settings.is_srgb)
     self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
     self.set_image_render_asset_usages(handle, settings.asset_usage)
-    self.update_pending_image_asset_from_bytes(
-      handle,
-      canonical_path,
-      bytes,
-      settings.is_srgb,
-      settings.format,
-      settings.texture_format,
-    )
+    match decoded_image {
+      Some(image) => self.set_pending_image_asset(handle, image)
+      None =>
+        self.update_pending_image_asset_from_bytes(
+          handle,
+          canonical_path,
+          bytes,
+          settings.is_srgb,
+          settings.format,
+          settings.texture_format,
+        )
+    }
     handle
   })
 }
@@ -1519,20 +1538,41 @@ pub fn AssetServer::load_texture_bytes(
   bytes : Bytes,
   nearest : Bool,
 ) -> Handle[Image] {
-  let id = host_asset_load_texture_bytes(bytes~, nearest~)
-  let handle = Handle::new(id)
-  self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())
-  self.track_image_handle(handle)
-  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
-  self.set_image_render_asset_usages(handle, RenderAssetUsages::all())
-  self.update_pending_image_asset_from_bytes(
-    handle,
+  let decoded_image = image_from_loaded_texture_bytes(
     "",
     bytes,
     true,
     ImageFormatSetting::Guess,
     None,
   )
+  let id = match decoded_image {
+    Some(image) => {
+      let created = image_asset_create_gpu_texture(image, nearest)
+      if created > 0 {
+        created
+      } else {
+        host_asset_load_texture_bytes(bytes~, nearest~)
+      }
+    }
+    None => host_asset_load_texture_bytes(bytes~, nearest~)
+  }
+  let handle = Handle::new(id)
+  self.set_typed_loading_states(asset_image_assets_type_name(), handle.id())
+  self.track_image_handle(handle)
+  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.set_image_render_asset_usages(handle, RenderAssetUsages::all())
+  match decoded_image {
+    Some(image) => self.set_pending_image_asset(handle, image)
+    None =>
+      self.update_pending_image_asset_from_bytes(
+        handle,
+        "",
+        bytes,
+        true,
+        ImageFormatSetting::Guess,
+        None,
+      )
+  }
   handle
 }
 

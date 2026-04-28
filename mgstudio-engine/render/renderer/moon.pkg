@@ -26,5 +26,10 @@ options(
       "input": "../../assets/shaders/mesh3d_forward.wgsl",
       "output": "mesh3d_forward_wgsl.mbt",
     },
+    {
+      "command": ":embed --input $input --output $output --name screenshot_to_screen_wgsl_source",
+      "input": "../view/window/screenshot.wgsl",
+      "output": "screenshot_to_screen_wgsl.mbt",
+    },
   ],
 )

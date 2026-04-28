@@ -257,9 +257,44 @@ fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
   state.pending_surface_screenshot_captures = remaining_captures
   state.active_surface_screenshot_capture_target_id = backend.active_surface_target_id
   backend.surface_capture_active = true
+  screenshot_prepare_intermediate_surface_target(backend)
   screenshot_debug_log(
     "activate surface capture target=\{backend.active_surface_target_id}, ids=\{captures_for_target.length()}",
   )
+}
+
+///|
+fn screenshot_prepare_intermediate_surface_target(backend : GpuBackend) -> Unit {
+  guard backend.frame is Some(frame) else { return }
+  guard backend.surface_format is Some(surface_format) else { return }
+  let width = if backend.configured_width <= 0 {
+    1
+  } else {
+    backend.configured_width
+  }
+  let height = if backend.configured_height <= 0 {
+    1
+  } else {
+    backend.configured_height
+  }
+  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_COPY_SRC |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING
+  let texture = backend.device.create_texture_u32(
+    width.reinterpret_as_uint(),
+    height.reinterpret_as_uint(),
+    1U,
+    @wgpu.TextureUsage::from_u64(usage_bits),
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    surface_format,
+    mip_level_count=1U,
+  )
+  let view = texture.create_view()
+  view.set_label("mgstudio_screenshot_capture_view")
+  frame.present_view = Some(frame.surface_view)
+  frame.surface_view = view
+  frame.screenshot_capture_texture = Some(texture)
+  frame.screenshot_capture_format_raw = surface_format.raw
 }
 
 ///|
@@ -484,6 +519,110 @@ fn screenshot_enqueue_copy_to_buffer(
 }
 
 ///|
+fn screenshot_to_screen_source_required(backend : GpuBackend) -> String {
+  backend |> ignore
+  screenshot_to_screen_wgsl_source
+}
+
+///|
+fn ensure_screenshot_to_screen_layouts(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  if backend.screenshot_to_screen_bgl is None {
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
+    let ok = builder.add_texture(
+      0U,
+      ss(@wgpu.SHADER_STAGE_FRAGMENT),
+      @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    )
+    if !ok {
+      builder.free()
+      fatal("wgpu: failed to build screenshot-to-screen bind group layout")
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_screenshot_to_screen_bgl",
+    )
+    let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+    pipeline_layout.set_label("mgstudio_screenshot_to_screen_pipeline_layout")
+    backend.screenshot_to_screen_bgl = Some(bgl)
+    backend.screenshot_to_screen_pipeline_layout = Some(pipeline_layout)
+  }
+}
+
+///|
+fn screenshot_to_screen_pipeline_for_format(
+  backend : GpuBackend,
+  format : @wgpu.TextureFormat,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  ensure_screenshot_to_screen_layouts(backend)
+  if backend.screenshot_to_screen_pipeline is Some(pipeline) &&
+    backend.screenshot_to_screen_pipeline_format is Some(cached_format) &&
+    cached_format.raw == format.raw {
+    return Some(pipeline)
+  }
+  if backend.screenshot_to_screen_pipeline is Some(old_pipeline) {
+    old_pipeline.release()
+  }
+  guard backend.screenshot_to_screen_pipeline_layout is Some(layout) else {
+    return None
+  }
+  let source = screenshot_to_screen_source_required(backend)
+  let shader = backend.device.create_shader_module_wgsl(source)
+  let pipeline = try {
+    let builder = @wgpu.RenderPipelineDescBuilder::new(shader, layout~)
+    builder.set_entry_points("vs_main", "fs_main")
+    builder.set_color_target_format(format)
+    builder.create_pipeline(backend.device)
+  } catch {
+    err => {
+      err |> ignore
+      shader.release()
+      fatal("wgpu: failed to build screenshot-to-screen pipeline")
+    }
+  }
+  pipeline.set_label("mgstudio_screenshot_to_screen")
+  shader.release()
+  backend.screenshot_to_screen_pipeline = Some(pipeline)
+  backend.screenshot_to_screen_pipeline_format = Some(format)
+  Some(pipeline)
+}
+
+///|
+fn screenshot_blit_intermediate_to_surface(
+  backend : GpuBackend,
+  frame : GpuFrameState,
+) -> Unit {
+  guard frame.present_view is Some(present_view) else { return }
+  let pipeline_opt = screenshot_to_screen_pipeline_for_format(
+    backend,
+    tf(frame.screenshot_capture_format_raw),
+  ) catch {
+    _ => None
+  }
+  guard pipeline_opt is Some(pipeline) else { return }
+  guard backend.screenshot_to_screen_bgl is Some(layout) else { return }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
+  if builder.add_texture_view(0U, frame.surface_view) {
+    let bind_group = builder.finish(
+      backend.device,
+      layout,
+      label="mgstudio_screenshot_to_screen_bind_group",
+    )
+    let pass = frame.encoder.begin_render_pass_color_load(present_view)
+    pass.set_pipeline(pipeline)
+    pass.set_bind_group(0U, bind_group, [])
+    pass.draw(3U, 1U, 0U, 0U)
+    pass.end()
+    pass.release()
+    bind_group.release()
+  } else {
+    builder.free()
+  }
+}
+
+///|
 fn screenshot_encode_pending_texture_captures(
   backend : GpuBackend,
   frame : GpuFrameState,
@@ -536,19 +675,25 @@ fn screenshot_encode_active_surface_captures(
   }
   let active_capture_ids = state.active_surface_screenshot_capture_ids
   state.active_surface_screenshot_capture_ids = []
+  let capture_texture = match frame.screenshot_capture_texture {
+    Some(texture) => texture
+    None => frame.surface_texture
+  }
+  let capture_format_raw = if frame.screenshot_capture_texture is Some(_) {
+    frame.screenshot_capture_format_raw
+  } else {
+    surface_format.raw
+  }
   for capture_id in active_capture_ids {
     screenshot_debug_log(
-      "enqueue surface capture id=\{capture_id}, size=\{width}x\{height}, format=\{surface_format.raw.reinterpret_as_int()}",
+      "enqueue surface capture id=\{capture_id}, size=\{width}x\{height}, format=\{capture_format_raw.reinterpret_as_int()}",
     )
     screenshot_enqueue_copy_to_buffer(
-      backend,
-      frame,
-      capture_id,
-      frame.surface_texture,
-      width,
-      height,
-      surface_format.raw,
+      backend, frame, capture_id, capture_texture, width, height, capture_format_raw,
     )
+  }
+  if frame.screenshot_capture_texture is Some(_) {
+    screenshot_blit_intermediate_to_surface(backend, frame)
   }
 }
 

@@ -2767,6 +2767,8 @@ fn png_encode_rgba8(width : Int, height : Int, pixels : Bytes) -> Bytes? {
     10U.to_byte(),
   ]
   push_bytes(png, png_chunk("IHDR", Bytes::from_array(ihdr)))
+  // Captured and saved RGBA8 pixels are display-referred sRGB bytes.
+  push_bytes(png, png_chunk("sRGB", Bytes::from_array([(0).to_byte()])))
   push_bytes(png, png_chunk("IDAT", compressed))
   push_bytes(png, png_chunk("IEND", Bytes::new(0)))
   Some(Bytes::from_array(png))

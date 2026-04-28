@@ -603,6 +603,9 @@ pub fn GpuBackend::begin_frame_binding(
     surface_tex: st,
     surface_texture: tex,
     surface_view: view,
+    present_view: None,
+    screenshot_capture_texture: None,
+    screenshot_capture_format_raw: 0U,
     encoder,
     pass: None,
   })
@@ -652,8 +655,14 @@ pub fn GpuBackend::end_frame_binding(
   self.surfaces[index].surface.present() |> ignore
   self.instance.process_events()
   frame.encoder.release()
-  frame.surface_texture.release()
+  if frame.present_view is Some(present_view) {
+    present_view.release()
+  }
   frame.surface_view.release()
+  if frame.screenshot_capture_texture is Some(capture_texture) {
+    capture_texture.release()
+  }
+  frame.surface_texture.release()
   frame.surface_tex.release()
   self.surfaces[index].frame = None
   self.surfaces[index].cleared_this_frame = false

@@ -187,6 +187,7 @@ def chunk(kind: bytes, payload: bytes) -> bytes:
 
 png = bytearray(b"\x89PNG\r\n\x1a\n")
 png.extend(chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)))
+png.extend(chunk(b"sRGB", b"\x00"))
 png.extend(chunk(b"IDAT", compressed))
 png.extend(chunk(b"IEND", b""))
 png_path.write_bytes(bytes(png))

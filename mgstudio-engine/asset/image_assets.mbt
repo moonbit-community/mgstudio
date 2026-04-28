@@ -68,24 +68,30 @@ fn[T] image_asset_allocate_handle(
     return image_asset_fallback_handle(assets)
   }
 
-  let id = create_dynamic_texture(
-    width=image.width,
-    height=image.height,
-    nearest~,
-  )
+  let id = image_asset_create_gpu_texture(image, nearest)
   if id > 0 {
-    update_texture_region_mip_bytes(
-      texture_id=id,
-      x=0,
-      y=0,
-      width=image.width,
-      height=image.height,
-      mip_level=0,
-      bytes=image.pixels,
-    )
     return Handle::new(id)
   }
   image_asset_fallback_handle(assets)
+}
+
+///|
+fn image_asset_create_gpu_texture(image : Image, nearest : Bool) -> Int {
+  if image.is_target_texture() {
+    return 0
+  }
+  let id = @render_texture.asset_create_texture_stacked_2d_with_format(
+    width=image.width,
+    height_per_slice=image.height,
+    slice_count=1,
+    format_raw=@image.texture_format_raw(image.format),
+    levels=[image.pixels],
+    nearest~,
+  )
+  if id > 0 {
+    set_texture_pixels(id, image.pixels)
+  }
+  id
 }
 
 ///|

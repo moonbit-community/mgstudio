@@ -107,12 +107,51 @@ fn create_cube_indices() -> Array[Int] {
 }
 
 ///|
+fn create_cube_normals() -> Array[@math.Vec3] {
+  [
+    // Top (+y)
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    // Bottom (-y)
+    @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    // Right (+x)
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    // Left (-x)
+    @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+    // Back (+z)
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    // Forward (-z)
+    @math.Vec3::new(0.0F, 0.0F, -1.0F),
+    @math.Vec3::new(0.0F, 0.0F, -1.0F),
+    @math.Vec3::new(0.0F, 0.0F, -1.0F),
+    @math.Vec3::new(0.0F, 0.0F, -1.0F),
+  ]
+}
+
+///|
 fn create_cube_mesh(upper_uv : Bool) -> @mesh.Mesh {
   @mesh.Mesh::from_3d_geometry(
     @mesh.Mesh3dGeometry::new(
       create_cube_positions(),
       create_cube_uvs(upper_uv),
       Some(create_cube_indices()),
+    ).with_custom_attribute_vec3(
+      @mesh.MESH3D_ATTRIBUTE_NORMAL_NAME,
+      create_cube_normals(),
     ),
   )
 }
