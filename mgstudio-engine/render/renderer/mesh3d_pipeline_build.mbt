@@ -625,9 +625,9 @@ fn mesh3d_build_shadow_depth_pipeline(
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 12UL, 1U)
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 2U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 3U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 48UL, 4U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 5U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 5U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_UINT32X4, 48UL, 6U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 7U)
     builder.set_topology_u32(topology)
     builder.set_depth_stencil(
       tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
@@ -717,9 +717,11 @@ fn mesh3d_build_motion_vector_pipeline(
       @wgpu.VERTEX_STEP_MODE_VERTEX,
     )
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 12UL, 1U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 2U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 3U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 1U)
+    if skinned {
+      builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_UINT32X4, 48UL, 5U)
+      builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 6U)
+    }
     builder.set_topology_u32(@wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
     builder.set_depth_stencil(
       tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),

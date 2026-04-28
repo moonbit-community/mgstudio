@@ -104,7 +104,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     0U
   }
   let uv_location = if position3d { 2U } else { 1U }
-  let color_location = if position3d { 3U } else { 2U }
+  let color_location = if position3d { 5U } else { 2U }
   let uv_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
     builder,
     @wgpu.VERTEX_FORMAT_FLOAT32X2,
@@ -120,9 +120,9 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let joints_err = if position3d {
     @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
       builder,
-      @wgpu.VERTEX_FORMAT_FLOAT32X4,
+      @wgpu.VERTEX_FORMAT_UINT32X4,
       joints_offset,
-      4U,
+      6U,
     )
   } else {
     0U
@@ -132,7 +132,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
       builder,
       @wgpu.VERTEX_FORMAT_FLOAT32X4,
       weights_offset,
-      5U,
+      7U,
     )
   } else {
     0U

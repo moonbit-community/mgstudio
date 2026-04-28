@@ -42,6 +42,49 @@ fn mesh3d_expand_vertices_with_skinning_defaults(
 }
 
 ///|
+fn mesh3d_vertex_joint_index_word(value : Float) -> UInt {
+  let index = value.round().to_int()
+  if index <= 0 {
+    0U
+  } else {
+    index.reinterpret_as_uint()
+  }
+}
+
+///|
+fn mesh3d_vertex_bytes(vertices : Array[Float]) -> Bytes {
+  let vertex_count = vertices.length() / MESH3D_VERTEX_SKINNED_FLOAT_STRIDE
+  let stride = MESH3D_VERTEX_STRIDE_BYTES.to_int()
+  let bytes = Array::make(vertex_count * stride, (0).to_byte())
+  for vertex_index in 0..<vertex_count {
+    let src = vertex_index * MESH3D_VERTEX_SKINNED_FLOAT_STRIDE
+    let dst = vertex_index * stride
+    for component in 0..<12 {
+      u32le_write_into(
+        bytes,
+        dst + component * 4,
+        f32_bits(vertices[src + component]),
+      )
+    }
+    for component in 0..<4 {
+      u32le_write_into(
+        bytes,
+        dst + 48 + component * 4,
+        mesh3d_vertex_joint_index_word(vertices[src + 12 + component]),
+      )
+    }
+    for component in 0..<4 {
+      u32le_write_into(
+        bytes,
+        dst + 64 + component * 4,
+        f32_bits(vertices[src + 16 + component]),
+      )
+    }
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 pub fn GpuBackend::create_mesh3d_xyznuvrgba(
   self : GpuBackend,
   vertices : Array[Float],
@@ -83,7 +126,7 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba(
   let vb_usage = bu(@wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let vb = self.device.create_buffer_init(
     usage=vb_usage,
-    f32le_pack(trimmed_vertices),
+    mesh3d_vertex_bytes(trimmed_vertices),
   )
   let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let ib = if uses_u32_indices {
@@ -171,6 +214,10 @@ pub fn GpuBackend::update_mesh3d_xyznuvrgba(
     }
     out
   }
-  self.queue.write_buffer(mesh.vertex_buf, 0UL, f32le_pack(trimmed_vertices))
+  self.queue.write_buffer(
+    mesh.vertex_buf,
+    0UL,
+    mesh3d_vertex_bytes(trimmed_vertices),
+  )
   true
 }

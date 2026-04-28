@@ -90,9 +90,9 @@ fn vertex(
   @location(0) position : vec3<f32>,
   @location(1) normal : vec3<f32>,
   @location(2) uv : vec2<f32>,
-  @location(3) color : vec4<f32>,
-  @location(4) joint_indices : vec4<f32>,
-  @location(5) joint_weights : vec4<f32>,
+  @location(5) color : vec4<f32>,
+  @location(6) joint_indices : vec4<u32>,
+  @location(7) joint_weights : vec4<f32>,
   @builtin(instance_index) instance_index : u32,
 ) -> VertexOut {
   _ = normal;
@@ -104,10 +104,10 @@ fn vertex(
   var world_pos = vec3<f32>(0.0, 0.0, 0.0);
   if weight_sum > 1.0e-6 {
     let skin_index = mesh.current_skin_index;
-    let i0 = u32(max(joint_indices.x, 0.0));
-    let i1 = u32(max(joint_indices.y, 0.0));
-    let i2 = u32(max(joint_indices.z, 0.0));
-    let i3 = u32(max(joint_indices.w, 0.0));
+    let i0 = joint_indices.x;
+    let i1 = joint_indices.y;
+    let i2 = joint_indices.z;
+    let i3 = joint_indices.w;
     world_pos =
       skinning_transform_point(skin_index, i0, position) * joint_weights.x +
       skinning_transform_point(skin_index, i1, position) * joint_weights.y +
