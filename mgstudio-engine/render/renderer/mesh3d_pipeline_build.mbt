@@ -643,19 +643,16 @@ fn mesh3d_shadow_depth_pipeline_for_current_pass(
   cull_mode : Int,
   material_path : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
-  if backend.mesh3d_shadow_pipeline_cull_mode != safe_cull_mode {
-    mesh3d_shadow_pipeline_cache_clear(backend)
-    backend.mesh3d_shadow_pipeline_cull_mode = safe_cull_mode
-  }
-  if mesh3d_shadow_pipeline_get(backend, topology, material_path)
+  if mesh3d_shadow_pipeline_get(backend, topology, cull_mode, material_path)
     is Some(pipeline) {
     return Some(pipeline)
   }
   let pipeline = mesh3d_build_shadow_depth_pipeline(
     backend, topology, cull_mode, material_path,
   )
-  mesh3d_shadow_pipeline_set(backend, topology, material_path, Some(pipeline))
+  mesh3d_shadow_pipeline_set(
+    backend, topology, cull_mode, material_path, pipeline,
+  )
   Some(pipeline)
 }
 
