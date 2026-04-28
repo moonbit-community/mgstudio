@@ -93,13 +93,7 @@ fn render3d_execute_camera_main_pass(
   camera_pass_projection : @pbr_render.Render3dPassProjection,
   pass_lighting : Render3dLightingState,
   camera_exposure_value : Float,
-  point_shadow_texture_id : Int,
-  point_shadow_enabled : Float,
-  point_shadow_depth_bias : Float,
-  directional_shadow_texture_id : Int,
-  directional_shadow_enabled : Float,
-  directional_shadow_cascade_data : Array[Float],
-  directional_shadow_cascade_count : Int,
+  shadow_bindings : Render3dViewShadowBindings,
   environment_map_state : Render3dEnvironmentMapState,
   point_shadow_near : Float,
   scene_pass_kind : Int,
@@ -118,16 +112,19 @@ fn render3d_execute_camera_main_pass(
   wireframe_config : WireframeConfig?,
 ) -> Unit {
   let draw_items = draw_queue_entry.draw_items
+  let point_shadow_binding = shadow_bindings.point
+  let directional_shadow_binding = shadow_bindings.directional
   fn prepare_view_bind_group(transmission_source_texture_id : Int) -> Unit {
     @render.host_gpu_prepare_mesh3d_view_bind_group(
       transmission_source_texture_id~,
-      point_shadow_texture_id~,
-      directional_shadow_texture_id~,
+      point_shadow_texture_id=point_shadow_binding.texture_id,
+      directional_shadow_texture_id=directional_shadow_binding.texture_id,
       environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
       environment_specular_texture_id=environment_map_state.specular_texture_id,
     )
   }
-  let scene_view_bind_group_prepared = point_shadow_texture_id >= 0
+  let scene_view_bind_group_prepared = point_shadow_binding.texture_id >= 0 ||
+    directional_shadow_binding.texture_id >= 0
   if scene_view_bind_group_prepared {
     prepare_view_bind_group(-1)
   }
@@ -164,17 +161,17 @@ fn render3d_execute_camera_main_pass(
     pass_lighting,
     camera_exposure=camera_exposure_value,
     previous_clip_from_world=camera.previous_clip_from_world,
-    point_shadow_texture_id~,
-    point_shadow_enabled~,
-    point_shadow_depth_bias~,
-    directional_shadow_texture_id~,
-    directional_shadow_enabled~,
+    point_shadow_texture_id=point_shadow_binding.texture_id,
+    point_shadow_enabled=point_shadow_binding.enabled,
+    point_shadow_depth_bias=point_shadow_binding.depth_bias,
+    directional_shadow_texture_id=directional_shadow_binding.texture_id,
+    directional_shadow_enabled=directional_shadow_binding.enabled,
     directional_shadow_depth_bias=pass_lighting.directional_shadow_depth_bias,
     directional_shadow_normal_bias=pass_lighting.directional_shadow_normal_bias,
     directional_shadow_soft_size=pass_lighting.directional_shadow_soft_size,
-    directional_shadow_cascade_count~,
+    directional_shadow_cascade_count=directional_shadow_binding.cascade_count,
     directional_shadow_cascade_overlap=pass_lighting.directional_cascade_overlap_proportion,
-    directional_shadow_cascade_data~,
+    directional_shadow_cascade_data=directional_shadow_binding.cascade_data,
     environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
     environment_specular_texture_id=environment_map_state.specular_texture_id,
     environment_map_intensity=environment_map_state.intensity,
@@ -363,7 +360,7 @@ fn render3d_execute_camera_main_pass(
       draw_alpha < oit_settings.alpha_threshold {
       continue
     }
-    let mut draw_point_shadow_enabled = point_shadow_enabled
+    let mut draw_point_shadow_enabled = point_shadow_binding.enabled
     if !material_properties.shadows_enabled {
       draw_point_shadow_enabled = 0.0F
     }
@@ -430,9 +427,9 @@ fn render3d_execute_camera_main_pass(
       -1,
       0.0F,
       0.0F,
-      point_shadow_texture_id,
+      point_shadow_binding.texture_id,
       draw_point_shadow_enabled,
-      point_shadow_depth_bias,
+      point_shadow_binding.depth_bias,
       environment_map_state.diffuse_texture_id,
       environment_map_state.specular_texture_id,
       environment_map_state.intensity,
@@ -566,8 +563,14 @@ fn render3d_execute_camera_main_pass(
   }
   render3d_draw_gizmo_lines_3d(camera_entity, camera)
   render3d_draw_camera_skybox(
-    world, extracted_camera, camera_far, camera_exposure_value, point_shadow_texture_id,
-    point_shadow_enabled, point_shadow_depth_bias, environment_map_state,
+    world,
+    extracted_camera,
+    camera_far,
+    camera_exposure_value,
+    point_shadow_binding.texture_id,
+    point_shadow_binding.enabled,
+    point_shadow_binding.depth_bias,
+    environment_map_state,
   )
   @render.host_gpu_end_pass()
   let transmissive_draws = render3d_sort_transmissive_phase_items(
@@ -626,9 +629,17 @@ fn render3d_execute_camera_main_pass(
           transmission_blur_taps.to_double(),
         ),
         transmission_steps=Float::from_double(transmission_steps.to_double()),
-        point_shadow_texture_id~,
-        point_shadow_enabled~,
-        point_shadow_depth_bias~,
+        point_shadow_texture_id=point_shadow_binding.texture_id,
+        point_shadow_enabled=point_shadow_binding.enabled,
+        point_shadow_depth_bias=point_shadow_binding.depth_bias,
+        directional_shadow_texture_id=directional_shadow_binding.texture_id,
+        directional_shadow_enabled=directional_shadow_binding.enabled,
+        directional_shadow_depth_bias=pass_lighting.directional_shadow_depth_bias,
+        directional_shadow_normal_bias=pass_lighting.directional_shadow_normal_bias,
+        directional_shadow_soft_size=pass_lighting.directional_shadow_soft_size,
+        directional_shadow_cascade_count=directional_shadow_binding.cascade_count,
+        directional_shadow_cascade_overlap=pass_lighting.directional_cascade_overlap_proportion,
+        directional_shadow_cascade_data=directional_shadow_binding.cascade_data,
         transmission_source_texture_id~,
         environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
         environment_specular_texture_id=environment_map_state.specular_texture_id,
@@ -680,9 +691,17 @@ fn render3d_execute_camera_main_pass(
       pass_lighting,
       camera_exposure=camera_exposure_value,
       previous_clip_from_world=camera.previous_clip_from_world,
-      point_shadow_texture_id~,
-      point_shadow_enabled~,
-      point_shadow_depth_bias~,
+      point_shadow_texture_id=point_shadow_binding.texture_id,
+      point_shadow_enabled=point_shadow_binding.enabled,
+      point_shadow_depth_bias=point_shadow_binding.depth_bias,
+      directional_shadow_texture_id=directional_shadow_binding.texture_id,
+      directional_shadow_enabled=directional_shadow_binding.enabled,
+      directional_shadow_depth_bias=pass_lighting.directional_shadow_depth_bias,
+      directional_shadow_normal_bias=pass_lighting.directional_shadow_normal_bias,
+      directional_shadow_soft_size=pass_lighting.directional_shadow_soft_size,
+      directional_shadow_cascade_count=directional_shadow_binding.cascade_count,
+      directional_shadow_cascade_overlap=pass_lighting.directional_cascade_overlap_proportion,
+      directional_shadow_cascade_data=directional_shadow_binding.cascade_data,
       environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
       environment_specular_texture_id=environment_map_state.specular_texture_id,
       environment_map_intensity=environment_map_state.intensity,

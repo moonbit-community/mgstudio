@@ -314,10 +314,10 @@ fn render3d_execute_camera_directional_shadow_pass(
   indexed_indirect_parameter_indices : Array[Int],
   non_indexed_indirect_parameter_indices : Array[Int],
   shadow_pass_kind : Int,
-) -> (Int, Float, Array[Float], Int) {
+) -> Render3dDirectionalShadowBinding {
   if !pass_lighting.directional_shadow_maps_enabled ||
     pass_lighting.directional_entity is None {
-    return (-1, 0.0F, [], 0)
+    return render3d_directional_shadow_binding_none()
   }
   let shadow_map_size = match
     (try! world.get_resource(@light.ecs_key_directional_light_shadow_map)) {
@@ -328,10 +328,10 @@ fn render3d_execute_camera_directional_shadow_pass(
     camera, pass_lighting, shadow_map_size,
   )
   if cascades.length() == 0 {
-    return (-1, 0.0F, [], 0)
+    return render3d_directional_shadow_binding_none()
   }
   guard pass_lighting.directional_entity is Some(light_entity) else {
-    return (-1, 0.0F, [], 0)
+    return render3d_directional_shadow_binding_none()
   }
   let target_id = render3d_directional_light_shadow_target_get_or_create(
     world,
@@ -422,12 +422,12 @@ fn render3d_execute_camera_directional_shadow_pass(
     }
     @render.host_gpu_end_pass()
   }
-  (
-    target_id,
-    1.0F,
-    render3d_directional_shadow_cascade_data(cascades),
-    cascades.length(),
-  )
+  {
+    texture_id: target_id,
+    enabled: 1.0F,
+    cascade_data: render3d_directional_shadow_cascade_data(cascades),
+    cascade_count: cascades.length(),
+  }
 }
 
 ///|

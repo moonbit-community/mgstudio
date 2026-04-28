@@ -37,6 +37,45 @@ priv struct Render3dShadowView {
 }
 
 ///|
+priv struct Render3dPointShadowBinding {
+  texture_id : Int
+  enabled : Float
+  depth_bias : Float
+}
+
+///|
+priv struct Render3dDirectionalShadowBinding {
+  texture_id : Int
+  enabled : Float
+  cascade_data : Array[Float]
+  cascade_count : Int
+}
+
+///|
+priv struct Render3dViewShadowBindings {
+  point : Render3dPointShadowBinding
+  directional : Render3dDirectionalShadowBinding
+}
+
+///|
+fn render3d_point_shadow_binding_none() -> Render3dPointShadowBinding {
+  { texture_id: -1, enabled: 0.0F, depth_bias: 0.0F }
+}
+
+///|
+fn render3d_directional_shadow_binding_none() -> Render3dDirectionalShadowBinding {
+  { texture_id: -1, enabled: 0.0F, cascade_data: [], cascade_count: 0 }
+}
+
+///|
+fn render3d_view_shadow_bindings_none() -> Render3dViewShadowBindings {
+  {
+    point: render3d_point_shadow_binding_none(),
+    directional: render3d_directional_shadow_binding_none(),
+  }
+}
+
+///|
 fn render3d_shadow_light_entity_debug_key(entity : Render3dLightEntity) -> Int {
   match entity {
     Directional(light_entity~, cascade_index~) =>

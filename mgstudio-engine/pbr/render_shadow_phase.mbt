@@ -34,20 +34,16 @@ fn render3d_shadow_phase_item_debug_key(item : ShadowPhaseItem3d) -> Int {
 
 ///|
 fn render3d_mesh_can_cast_shadow(mesh : Mesh3dExtractedPayload) -> Bool {
+  if !mesh.material_properties.shadows_enabled {
+    return false
+  }
   if mesh.has_not_shadow_caster {
     return false
   }
   if mesh.is_forward_decal || mesh.clustered_decal is Some(_) {
     return false
   }
-  guard render3d_mesh_draw_alpha(
-      mesh.material.alpha_mode,
-      mesh.material.base_color.a,
-    )
-    is Some(shadow_alpha) else {
-    return false
-  }
-  shadow_alpha >= 0.999F
+  true
 }
 
 ///|

@@ -18,6 +18,7 @@
 
 struct VertexOut {
   @builtin(position) position : vec4<f32>,
+  @location(0) @interpolate(flat) draw_index : u32,
 };
 
 struct Mesh3dViewUniform {
@@ -79,6 +80,14 @@ struct Mesh3dSkinningRowsBuffer {
 @group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
 @group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
 @group(3) @binding(0) var<storage, read> u_skinning_rows : Mesh3dSkinningRowsBuffer;
+
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS: u32 = 7u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK: u32 = 1u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND: u32 = 2u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED: u32 = 3u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD: u32 = 4u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE: u32 = 6u << 29u;
+const PREMULTIPLIED_ALPHA_CUTOFF: f32 = 0.05;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -147,10 +156,29 @@ fn vertex(
     ) + draw.transform.model_translation.xyz;
   }
   out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
+  out.draw_index = instance_index;
   return out;
 }
 
 @fragment
-fn fragment() -> @location(0) vec4<f32> {
+fn fragment(in : VertexOut) -> @location(0) vec4<f32> {
+  let material = u_draws.data[in.draw_index].material;
+  let alpha_mode = material.flags & STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS;
+  let color = material.base_color;
+  if alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK {
+    if color.a < material.alpha_cutoff {
+      discard;
+    }
+  } else if alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND ||
+    alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD ||
+    alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE {
+    if color.a < PREMULTIPLIED_ALPHA_CUTOFF {
+      discard;
+    }
+  } else if alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED {
+    if all(color < vec4<f32>(PREMULTIPLIED_ALPHA_CUTOFF)) {
+      discard;
+    }
+  }
   return vec4<f32>(0.0, 0.0, 0.0, 0.0);
 }

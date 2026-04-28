@@ -24,7 +24,7 @@ fn render3d_execute_camera_point_shadow_pass(
   indexed_indirect_parameter_indices : Array[Int],
   non_indexed_indirect_parameter_indices : Array[Int],
   point_shadow_pass_kind : Int,
-) -> (Int, Float, Float) {
+) -> Render3dPointShadowBinding {
   let draw_items = draw_queue_entry.draw_items
   ignore(indexed_indirect_parameter_indices)
   ignore(non_indexed_indirect_parameter_indices)
@@ -32,10 +32,10 @@ fn render3d_execute_camera_point_shadow_pass(
     pass_lighting.point_entity is None ||
     pass_lighting.point_range <= 0.0F ||
     point_light_shadow_map_size <= 0 {
-    return (-1, 0.0F, 0.0F)
+    return render3d_point_shadow_binding_none()
   }
   guard pass_lighting.point_entity is Some(point_entity) else {
-    return (-1, 0.0F, 0.0F)
+    return render3d_point_shadow_binding_none()
   }
   let shadow_target_id = render3d_point_light_shadow_target_get_or_create(
     world, point_entity, point_light_shadow_map_size,
@@ -135,7 +135,11 @@ fn render3d_execute_camera_point_shadow_pass(
     }
     @render.host_gpu_end_pass()
   }
-  (point_shadow_texture_id, point_shadow_enabled, point_shadow_depth_bias)
+  {
+    texture_id: point_shadow_texture_id,
+    enabled: point_shadow_enabled,
+    depth_bias: point_shadow_depth_bias,
+  }
 }
 
 ///|
