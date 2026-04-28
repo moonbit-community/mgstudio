@@ -145,6 +145,9 @@ pub struct GpuBackend {
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
   mut mesh3d_view_buf : @wgpu.Buffer?
   mut mesh3d_lights_buf : @wgpu.Buffer?
+  mut mesh3d_clustered_lights_buf : @wgpu.Buffer?
+  mut mesh3d_clusterable_object_index_lists_buf : @wgpu.Buffer?
+  mut mesh3d_cluster_offsets_and_counts_buf : @wgpu.Buffer?
   mut mesh3d_pass_view_uniform_bytes : Bytes?
   mut mesh3d_pass_lights_uniform_bytes : Bytes?
   mut mesh3d_pass_view_uniform_frame_count : UInt

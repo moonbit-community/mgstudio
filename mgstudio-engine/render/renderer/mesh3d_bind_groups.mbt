@@ -81,6 +81,20 @@ fn mesh3d_view_bg_cache_get_or_create(
     Some(v) => v
     None => fatal("wgpu: missing mesh3d lights uniform buffer")
   }
+  let clustered_lights_buf = match backend.mesh3d_clustered_lights_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d clustered lights buffer")
+  }
+  let clusterable_object_index_lists_buf = match
+    backend.mesh3d_clusterable_object_index_lists_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d clusterable object index lists buffer")
+  }
+  let cluster_offsets_and_counts_buf = match
+    backend.mesh3d_cluster_offsets_and_counts_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d cluster offsets and counts buffer")
+  }
   let point_shadow_sample_view = match point_shadow_texture.sample_view {
     Some(view) => view
     None => point_shadow_texture.view
@@ -93,9 +107,24 @@ fn mesh3d_view_bg_cache_get_or_create(
     Some(view) => view
     None => directional_shadow_texture.view
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=11UL)
   let ok = builder.add_buffer(0U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
     builder.add_buffer(1U, lights_buf, size=MESH3D_LIGHTS_BUFFER_SIZE) &&
+    builder.add_buffer(
+      8U,
+      clustered_lights_buf,
+      size=MESH3D_CLUSTERED_LIGHTS_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      9U,
+      clusterable_object_index_lists_buf,
+      size=MESH3D_CLUSTERABLE_OBJECT_INDEX_LISTS_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      10U,
+      cluster_offsets_and_counts_buf,
+      size=MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE,
+    ) &&
     builder.add_texture_view(2U, point_shadow_sample_view) &&
     builder.add_sampler(3U, point_shadow_compare_sampler) &&
     builder.add_texture_view(5U, directional_shadow_sample_view) &&
