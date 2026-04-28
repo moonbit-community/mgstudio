@@ -399,8 +399,23 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     environment_diffuse_texture, environment_specular_texture,
   )
   let material_bg = mesh3d_material_cache_get_or_create(
-    self, base_texture, normal_texture, emissive_texture, metallic_roughness_texture,
-    occlusion_texture, depth_texture, anisotropy_texture, specular_tint_texture,
+    self,
+    base_texture,
+    normal_texture,
+    emissive_texture,
+    metallic_roughness_texture,
+    occlusion_texture,
+    depth_texture,
+    anisotropy_texture,
+    specular_tint_texture,
+    mesh3d_standard_material_uniform_bytes(
+      color_r, color_g, color_b, color_a, uv_transform_a_value, uv_transform_b_value,
+      uv_transform_c_value, uv_transform_d_value, uv_transform_tx_value, uv_transform_ty_value,
+      emissive_r, emissive_g, emissive_b, metallic, roughness, reflectance, parallax_depth_scale,
+      max_parallax_layer_count, max_relief_mapping_search_steps, anisotropy_strength,
+      anisotropy_rotation, specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission,
+      specular_transmission, thickness, ior, alpha_cutoff, runtime_material_flags,
+    ),
   )
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, view_bg, [])

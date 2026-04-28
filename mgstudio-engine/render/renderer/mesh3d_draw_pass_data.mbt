@@ -388,6 +388,104 @@ fn mesh3d_draw_uniform_bytes(
 }
 
 ///|
+fn mesh3d_standard_material_uniform_bytes(
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  uv_transform_a : Float,
+  uv_transform_b : Float,
+  uv_transform_c : Float,
+  uv_transform_d : Float,
+  uv_transform_tx : Float,
+  uv_transform_ty : Float,
+  emissive_r : Float,
+  emissive_g : Float,
+  emissive_b : Float,
+  metallic : Float,
+  roughness : Float,
+  reflectance : Float,
+  parallax_depth_scale : Float,
+  max_parallax_layer_count : Float,
+  max_relief_mapping_search_steps : Float,
+  anisotropy_strength : Float,
+  anisotropy_rotation : Float,
+  specular_tint_r : Float,
+  specular_tint_g : Float,
+  specular_tint_b : Float,
+  diffuse_transmission : Float,
+  specular_transmission : Float,
+  thickness : Float,
+  ior : Float,
+  alpha_cutoff : Float,
+  material_flags : UInt,
+) -> Bytes {
+  let reflectance_tint_r = reflectance * specular_tint_r
+  let reflectance_tint_g = reflectance * specular_tint_g
+  let reflectance_tint_b = reflectance * specular_tint_b
+  let words : Array[UInt] = [
+    f32_bits(color_r),
+    f32_bits(color_g),
+    f32_bits(color_b),
+    f32_bits(color_a),
+    f32_bits(emissive_r),
+    f32_bits(emissive_g),
+    f32_bits(emissive_b),
+    f32_bits(0.0F),
+    f32_bits(1.0F),
+    f32_bits(1.0F),
+    f32_bits(1.0F),
+    f32_bits(1.0F),
+    f32_bits(uv_transform_a),
+    f32_bits(uv_transform_b),
+    f32_bits(0.0F),
+    0U,
+    f32_bits(uv_transform_c),
+    f32_bits(uv_transform_d),
+    f32_bits(0.0F),
+    0U,
+    f32_bits(uv_transform_tx),
+    f32_bits(uv_transform_ty),
+    f32_bits(1.0F),
+    0U,
+    f32_bits(reflectance_tint_r),
+    f32_bits(reflectance_tint_g),
+    f32_bits(reflectance_tint_b),
+    f32_bits(roughness),
+    f32_bits(metallic),
+    f32_bits(diffuse_transmission),
+    f32_bits(specular_transmission),
+    f32_bits(thickness),
+    f32_bits(ior),
+    f32_bits(1.0F),
+    f32_bits(0.0F),
+    f32_bits(0.0F),
+    f32_bits(anisotropy_strength),
+    0U,
+    f32_bits(cosf(anisotropy_rotation)),
+    f32_bits(sinf(anisotropy_rotation)),
+    material_flags,
+    f32_bits(alpha_cutoff),
+    f32_bits(parallax_depth_scale),
+    f32_bits(max_parallax_layer_count),
+    f32_bits(1.0F),
+    max_relief_mapping_search_steps.to_int().reinterpret_as_uint(),
+    1U,
+    0U,
+  ]
+  u32le_pack(words)
+}
+
+///|
+fn mesh3d_standard_material_default_uniform_bytes() -> Bytes {
+  mesh3d_standard_material_uniform_bytes(
+    1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+    0.0F, 0.5F, 0.5F, 0.1F, 16.0F, 5.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F,
+    0.0F, 1.5F, 0.5F, 0U,
+  )
+}
+
+///|
 fn mesh3d_draw_uniform_write(
   bytes : FixedArray[Byte],
   byte_offset : Int,

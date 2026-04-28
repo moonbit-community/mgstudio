@@ -20,6 +20,7 @@ fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
   backend.mesh3d_view_bg_cache.clear()
   for entry in backend.mesh3d_material_bg_cache {
     entry.bind_group.release()
+    entry.material_uniform_buffer.release()
   }
   backend.mesh3d_material_bg_cache.clear()
 }
@@ -147,6 +148,7 @@ fn mesh3d_material_cache_get_or_create(
   depth_texture : GpuTextureInfo,
   anisotropy_texture : GpuTextureInfo,
   specular_tint_texture : GpuTextureInfo,
+  material_uniform_bytes : Bytes,
 ) -> @wgpu.BindGroup raise GpuBackendError {
   for entry in backend.mesh3d_material_bg_cache {
     if entry.base_texture_id == base_texture.id &&
@@ -156,7 +158,8 @@ fn mesh3d_material_cache_get_or_create(
       entry.occlusion_texture_id == occlusion_texture.id &&
       entry.depth_texture_id == depth_texture.id &&
       entry.anisotropy_texture_id == anisotropy_texture.id &&
-      entry.specular_tint_texture_id == specular_tint_texture.id {
+      entry.specular_tint_texture_id == specular_tint_texture.id &&
+      entry.material_uniform_bytes == material_uniform_bytes {
       return entry.bind_group
     }
   }
@@ -164,11 +167,17 @@ fn mesh3d_material_cache_get_or_create(
     Some(v) => v
     None => fatal("wgpu: missing mesh3d material bind group layout")
   }
-  guard backend.mesh3d_view_buf is Some(material_dummy_buf) else {
-    fatal("wgpu: missing mesh3d material dummy uniform buffer")
-  }
+  let material_uniform_buf = backend.device.create_buffer(
+    size=MESH3D_STANDARD_MATERIAL_UNIFORM_SIZE,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  backend.queue.write_buffer(material_uniform_buf, 0UL, material_uniform_bytes)
   let builder = @wgpu.BindGroupBuilder::new(max_entries=17UL)
-  let ok = builder.add_buffer(0U, material_dummy_buf, size=16UL) &&
+  let ok = builder.add_buffer(
+      0U,
+      material_uniform_buf,
+      size=MESH3D_STANDARD_MATERIAL_UNIFORM_SIZE,
+    ) &&
     builder.add_texture_view(1U, base_texture.view) &&
     builder.add_sampler(2U, base_texture.sampler) &&
     builder.add_texture_view(3U, emissive_texture.view) &&
@@ -187,6 +196,7 @@ fn mesh3d_material_cache_get_or_create(
     builder.add_sampler(30U, specular_tint_texture.sampler)
   if !ok {
     builder.free()
+    material_uniform_buf.release()
     fatal("wgpu: failed to build mesh3d material bind group")
   }
   let bind_group = builder.finish(
@@ -203,6 +213,8 @@ fn mesh3d_material_cache_get_or_create(
     depth_texture_id: depth_texture.id,
     anisotropy_texture_id: anisotropy_texture.id,
     specular_tint_texture_id: specular_tint_texture.id,
+    material_uniform_bytes,
+    material_uniform_buffer: material_uniform_buf,
     bind_group,
   })
   bind_group
@@ -341,8 +353,16 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
   }
   ignore(
     mesh3d_material_cache_get_or_create(
-      self, base_texture, normal_texture, emissive_texture, metallic_roughness_texture,
-      occlusion_texture, depth_texture, anisotropy_texture, specular_tint_texture,
+      self,
+      base_texture,
+      normal_texture,
+      emissive_texture,
+      metallic_roughness_texture,
+      occlusion_texture,
+      depth_texture,
+      anisotropy_texture,
+      specular_tint_texture,
+      mesh3d_standard_material_default_uniform_bytes(),
     ),
   )
 }

@@ -248,12 +248,15 @@ fn ensure_mesh3d_pipeline_rgba8(
       label="mgstudio_mesh3d_view_bgl",
     )
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
+    let material_uniform_stage = ss(
+      @wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT,
+    )
     let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=17UL)
     let material_ok = material_builder.add_buffer(
         0U,
-        frag,
+        material_uniform_stage,
         @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        min_binding_size=16UL,
+        min_binding_size=MESH3D_STANDARD_MATERIAL_UNIFORM_SIZE,
       ) &&
       material_builder.add_texture(
         1U,

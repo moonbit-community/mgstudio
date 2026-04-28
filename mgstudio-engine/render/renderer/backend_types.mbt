@@ -86,6 +86,8 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   depth_texture_id : Int
   anisotropy_texture_id : Int
   specular_tint_texture_id : Int
+  material_uniform_bytes : Bytes
+  material_uniform_buffer : @wgpu.Buffer
   bind_group : @wgpu.BindGroup
 }
 

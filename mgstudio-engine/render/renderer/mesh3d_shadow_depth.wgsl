@@ -61,6 +61,32 @@ struct Mesh3dMaterialUniform {
   _reserved1 : u32,
 };
 
+struct StandardMaterial {
+  base_color : vec4<f32>,
+  emissive : vec4<f32>,
+  attenuation_color : vec4<f32>,
+  uv_transform : mat3x3<f32>,
+  reflectance : vec3<f32>,
+  perceptual_roughness : f32,
+  metallic : f32,
+  diffuse_transmission : f32,
+  specular_transmission : f32,
+  thickness : f32,
+  ior : f32,
+  attenuation_distance : f32,
+  clearcoat : f32,
+  clearcoat_perceptual_roughness : f32,
+  anisotropy_strength : f32,
+  anisotropy_rotation : vec2<f32>,
+  flags : u32,
+  alpha_cutoff : f32,
+  parallax_depth_scale : f32,
+  max_parallax_layer_count : f32,
+  lightmap_exposure : f32,
+  max_relief_mapping_search_steps : u32,
+  deferred_lighting_pass_id : u32,
+};
+
 struct Mesh3dDrawUniform {
   transform : Mesh3dTransformUniform,
   material : Mesh3dMaterialUniform,
@@ -79,6 +105,7 @@ struct Mesh3dSkinningRowsBuffer {
 };
 
 @group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
+@group(3) @binding(0) var<uniform> u_material : StandardMaterial;
 @group(3) @binding(1) var u_base_color_texture : texture_2d<f32>;
 @group(3) @binding(2) var u_base_color_sampler : sampler;
 @group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
@@ -160,7 +187,7 @@ fn vertex(
     ) + draw.transform.model_translation.xyz;
   }
   out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
-  let transformed_uv = draw.material.uv_transform * vec3<f32>(uv, 1.0);
+  let transformed_uv = u_material.uv_transform * vec3<f32>(uv, 1.0);
   out.uv = transformed_uv.xy;
   out.draw_index = instance_index;
   return out;
@@ -168,7 +195,7 @@ fn vertex(
 
 @fragment
 fn fragment(in : VertexOut) -> @location(0) vec4<f32> {
-  let material = u_draws.data[in.draw_index].material;
+  let material = u_material;
   let alpha_mode = material.flags & STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS;
   var color = material.base_color;
   if (material.flags & STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) != 0u {
