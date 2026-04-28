@@ -96,7 +96,7 @@ options(
     },
     {
       "command": ":embed --input $input --output $output --name shaders_custom_mesh2d_checker_material_wgsl_source",
-      "input": "../assets/shaders/mesh2d_checker_material.wgsl",
+      "input": "mesh2d_checker_material.wgsl",
       "output": "shaders_custom_mesh2d_checker_material_wgsl.mbt",
     },
   ],

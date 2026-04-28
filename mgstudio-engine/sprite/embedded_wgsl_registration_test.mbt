@@ -45,7 +45,7 @@ test "sprite: embedded wgsl sources are registered by sprite owner" {
     content="true",
   )
   debug_inspect(
-    sprite_wgsl_registered("shaders/mesh2d_checker_material.wgsl"),
+    sprite_wgsl_registered("sprite_render/mesh2d/checker_material.wgsl"),
     content="true",
   )
   let wireframe = sprite_wgsl_source("sprite_render/mesh2d/wireframe2d.wgsl")
@@ -54,7 +54,7 @@ test "sprite: embedded wgsl sources are registered by sprite owner" {
     wireframe.contains("return push_constants.color;"),
     content="true",
   )
-  let checker = sprite_wgsl_source("shaders/mesh2d_checker_material.wgsl")
+  let checker = sprite_wgsl_source("sprite_render/mesh2d/checker_material.wgsl")
   debug_inspect(checker.contains("fn checker_value("), content="true")
   debug_inspect(checker.contains("struct CheckerMaterial {"), content="true")
   debug_inspect(checker.contains("struct CheckerSettings {"), content="true")

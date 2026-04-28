@@ -100,7 +100,7 @@ fn checker_material_plugin() -> @sprite.Material2dPlugin[CheckerMaterialAsset] {
   let plugin : @sprite.Material2dPlugin[CheckerMaterialAsset] = @sprite.Material2dPlugin::default()
     .with_asset_init(fn() { checker_material_asset(@sprite.Color::white()) })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
-    .with_fragment_shader("shaders/mesh2d_checker_material.wgsl")
+    .with_fragment_shader("sprite_render/mesh2d/checker_material.wgsl")
   @sprite.material2d_plugin(plugin)
 }
 

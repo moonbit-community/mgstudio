@@ -62,6 +62,23 @@ def collect_copy_plan(bevy_root: Path, mgstudio_root: Path) -> list[CopyPlan]:
     return plans
 
 
+def collect_extra_asset_shaders(bevy_root: Path, mgstudio_root: Path) -> list[Path]:
+    bevy_asset_shader_root = bevy_root / "assets" / "shaders"
+    mgstudio_asset_shader_root = mgstudio_root / "assets" / "shaders"
+    if not mgstudio_asset_shader_root.exists():
+        return []
+    bevy_shader_names = {
+        source.relative_to(bevy_asset_shader_root)
+        for source in bevy_asset_shader_root.rglob("*.wgsl")
+    }
+    extras: list[Path] = []
+    for candidate in sorted(mgstudio_asset_shader_root.rglob("*.wgsl")):
+        rel = candidate.relative_to(mgstudio_asset_shader_root)
+        if rel not in bevy_shader_names:
+            extras.append(candidate)
+    return extras
+
+
 def copy_plan_is_current(plan: CopyPlan) -> bool:
     return plan.destination.exists() and filecmp.cmp(
         plan.source, plan.destination, shallow=False
@@ -81,6 +98,7 @@ def run(check: bool) -> int:
         return 2
 
     plans = collect_copy_plan(bevy_root, mgstudio_root)
+    extra_asset_shaders = collect_extra_asset_shaders(bevy_root, mgstudio_root)
     changed: list[CopyPlan] = []
     for plan in plans:
         if copy_plan_is_current(plan):
@@ -90,11 +108,17 @@ def run(check: bool) -> int:
             plan.destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(plan.source, plan.destination)
 
-    if check and changed:
+    if check and (changed or extra_asset_shaders):
         print("WGSL mirror is out of date:")
         for plan in changed:
             print(f"  {plan.source.relative_to(root)} -> {plan.destination.relative_to(root)}")
+        for extra in extra_asset_shaders:
+            print(f"  extra asset shader: {extra.relative_to(root)}")
         return 1
+
+    if not check:
+        for extra in extra_asset_shaders:
+            extra.unlink()
 
     action = "checked" if check else "copied"
     print(
