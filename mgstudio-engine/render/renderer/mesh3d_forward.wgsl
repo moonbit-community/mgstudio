@@ -127,34 +127,33 @@ const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY: u32            = 5u << 29u;
 const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE: u32   = 6u << 29u;
 
 @group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
-@group(0) @binding(1) var u_transmission_source_texture : texture_2d<f32>;
-@group(0) @binding(2) var u_transmission_source_sampler : sampler;
-@group(0) @binding(3) var u_point_shadow_texture : texture_depth_cube;
-@group(0) @binding(4) var u_point_shadow_sampler : sampler_comparison;
-@group(0) @binding(5) var u_environment_diffuse_texture : texture_2d<f32>;
-@group(0) @binding(6) var u_environment_diffuse_sampler : sampler;
-@group(0) @binding(7) var u_environment_specular_texture : texture_2d<f32>;
-@group(0) @binding(8) var u_environment_specular_sampler : sampler;
-@group(0) @binding(9) var u_directional_shadow_texture : texture_depth_2d_array;
-@group(0) @binding(10) var u_directional_shadow_sampler : sampler_comparison;
-@group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;
-@group(1) @binding(2) var u_base_color_sampler : sampler;
-@group(1) @binding(3) var u_emissive_texture : texture_2d<f32>;
-@group(1) @binding(4) var u_emissive_sampler : sampler;
-@group(1) @binding(5) var u_metallic_roughness_texture : texture_2d<f32>;
-@group(1) @binding(6) var u_metallic_roughness_sampler : sampler;
-@group(1) @binding(7) var u_occlusion_texture : texture_2d<f32>;
-@group(1) @binding(8) var u_occlusion_sampler : sampler;
-@group(1) @binding(9) var u_normal_map_texture : texture_2d<f32>;
-@group(1) @binding(10) var u_normal_map_sampler : sampler;
-@group(1) @binding(11) var u_depth_map_texture : texture_2d<f32>;
-@group(1) @binding(12) var u_depth_map_sampler : sampler;
-@group(1) @binding(13) var u_anisotropy_texture : texture_2d<f32>;
-@group(1) @binding(14) var u_anisotropy_sampler : sampler;
-@group(1) @binding(29) var u_specular_tint_texture : texture_2d<f32>;
-@group(1) @binding(30) var u_specular_tint_sampler : sampler;
+@group(0) @binding(25) var u_transmission_source_texture : texture_2d<f32>;
+@group(0) @binding(26) var u_transmission_source_sampler : sampler;
+@group(0) @binding(2) var u_point_shadow_texture : texture_depth_cube;
+@group(0) @binding(3) var u_point_shadow_sampler : sampler_comparison;
+@group(1) @binding(0) var u_environment_diffuse_texture : texture_2d<f32>;
+@group(1) @binding(1) var u_environment_specular_texture : texture_2d<f32>;
+@group(1) @binding(2) var u_environment_sampler : sampler;
+@group(0) @binding(5) var u_directional_shadow_texture : texture_depth_2d_array;
+@group(0) @binding(6) var u_directional_shadow_sampler : sampler_comparison;
+@group(3) @binding(1) var u_base_color_texture : texture_2d<f32>;
+@group(3) @binding(2) var u_base_color_sampler : sampler;
+@group(3) @binding(3) var u_emissive_texture : texture_2d<f32>;
+@group(3) @binding(4) var u_emissive_sampler : sampler;
+@group(3) @binding(5) var u_metallic_roughness_texture : texture_2d<f32>;
+@group(3) @binding(6) var u_metallic_roughness_sampler : sampler;
+@group(3) @binding(7) var u_occlusion_texture : texture_2d<f32>;
+@group(3) @binding(8) var u_occlusion_sampler : sampler;
+@group(3) @binding(9) var u_normal_map_texture : texture_2d<f32>;
+@group(3) @binding(10) var u_normal_map_sampler : sampler;
+@group(3) @binding(11) var u_depth_map_texture : texture_2d<f32>;
+@group(3) @binding(12) var u_depth_map_sampler : sampler;
+@group(3) @binding(13) var u_anisotropy_texture : texture_2d<f32>;
+@group(3) @binding(14) var u_anisotropy_sampler : sampler;
+@group(3) @binding(29) var u_specular_tint_texture : texture_2d<f32>;
+@group(3) @binding(30) var u_specular_tint_sampler : sampler;
 @group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
-@group(3) @binding(0) var<storage, read> u_skinning_rows : Mesh3dSkinningRowsBuffer;
+@group(2) @binding(1) var<storage, read> u_skinning_rows : Mesh3dSkinningRowsBuffer;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -861,7 +860,7 @@ fn sample_environment_diffuse(
   let uv = cubemap_stacked_vertical_uv(sample_dir);
   return textureSampleLevel(
     u_environment_diffuse_texture,
-    u_environment_diffuse_sampler,
+    u_environment_sampler,
     uv,
     0.0,
   ).rgb;
@@ -877,7 +876,7 @@ fn sample_environment_specular(
   let lod = clamp(perceptual_roughness * 8.0, 0.0, 8.0);
   return textureSampleLevel(
     u_environment_specular_texture,
-    u_environment_specular_sampler,
+    u_environment_sampler,
     uv,
     lod,
   ).rgb;

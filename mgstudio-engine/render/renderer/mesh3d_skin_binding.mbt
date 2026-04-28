@@ -56,33 +56,13 @@ fn mesh3d_skin_bytes(
 }
 
 ///|
-fn create_mesh3d_skin_bind_group(
-  backend : GpuBackend,
-  bgl : @wgpu.BindGroupLayout,
-  buffer : @wgpu.Buffer,
-  size : UInt64,
-  label : String,
-) -> @wgpu.BindGroup? {
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
-  let ok = builder.add_buffer(0U, buffer, size~)
-  if !ok {
-    builder.free()
-    return None
-  }
-  Some(builder.finish(backend.device, bgl, label~))
-}
-
-///|
 fn ensure_mesh3d_skin_buffers(
   backend : GpuBackend,
   required_size : UInt64,
 ) -> Bool {
-  guard backend.mesh3d_bgl_skin is Some(bgl) else { return false }
   if backend.mesh3d_skin_capacity >= required_size &&
     backend.mesh3d_skin_current_buf is Some(_) &&
-    backend.mesh3d_skin_current_bg is Some(_) &&
-    backend.mesh3d_skin_prev_buf is Some(_) &&
-    backend.mesh3d_skin_prev_bg is Some(_) {
+    backend.mesh3d_skin_prev_buf is Some(_) {
     return true
   }
   let mut next_capacity = if backend.mesh3d_skin_capacity >=
@@ -106,45 +86,13 @@ fn ensure_mesh3d_skin_buffers(
   let initial_bytes = mesh3d_skin_bytes(backend, initial_rows)
   backend.queue.write_buffer(current_buf, 0UL, initial_bytes)
   backend.queue.write_buffer(prev_buf, 0UL, initial_bytes)
-  guard create_mesh3d_skin_bind_group(
-      backend, bgl, current_buf, next_capacity, "mgstudio_mesh3d_skin_current_bg",
-    )
-    is Some(current_bg) else {
-    return false
-  }
-  guard create_mesh3d_skin_bind_group(
-      backend, bgl, prev_buf, next_capacity, "mgstudio_mesh3d_skin_prev_bg",
-    )
-    is Some(prev_bg) else {
-    return false
-  }
   backend.mesh3d_skin_current_buf = Some(current_buf)
-  backend.mesh3d_skin_current_bg = Some(current_bg)
   backend.mesh3d_skin_prev_buf = Some(prev_buf)
-  backend.mesh3d_skin_prev_bg = Some(prev_bg)
+  backend.mesh3d_skin_current_bg = None
+  backend.mesh3d_skin_prev_bg = None
   backend.mesh3d_skin_capacity = next_capacity
   backend.mesh3d_skin_revision = backend.mesh3d_skin_revision + 1
   true
-}
-
-///|
-fn ensure_mesh3d_skin_current_binding(backend : GpuBackend) -> @wgpu.BindGroup? {
-  ensure_mesh3d_skin_binding(backend, 0)
-}
-
-///|
-fn ensure_mesh3d_skin_binding(
-  backend : GpuBackend,
-  skinning_key_lo : Int,
-) -> @wgpu.BindGroup? {
-  if !ensure_mesh3d_skin_buffers(backend, MESH3D_SKINNING_STORAGE_STRIDE_BYTES) {
-    return None
-  }
-  if skinning_key_lo > 0 {
-    backend.mesh3d_skin_prev_bg
-  } else {
-    backend.mesh3d_skin_current_bg
-  }
 }
 
 ///|

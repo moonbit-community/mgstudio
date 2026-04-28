@@ -82,7 +82,7 @@ let mesh3d_shadow_depth_only_wgsl_source : String =
   #|
   #|@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
   #|@group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
-  #|@group(3) @binding(0) var<storage, read> u_skinning_rows : Mesh3dSkinningRowsBuffer;
+  #|@group(2) @binding(1) var<storage, read> u_skinning_rows : Mesh3dSkinningRowsBuffer;
   #|
   #|fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   #|  let n = max(dot(q, q), 1e-8);

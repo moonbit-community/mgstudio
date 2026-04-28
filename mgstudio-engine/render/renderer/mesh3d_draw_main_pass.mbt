@@ -312,10 +312,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
   guard draw_buffer is Some(active_draw_buffer) else { return }
   guard draw_bind_group is Some(active_draw_bg) else { return }
-  guard ensure_mesh3d_skin_binding(self, skinning_key_lo)
-    is Some(active_skin_bg) else {
-    return
-  }
+  ignore(skinning_key_lo)
   let view_cache_hit = self.mesh3d_pass_view_uniform_bytes is Some(_) &&
     self.mesh3d_pass_view_uniform_frame_count == self.frame_count &&
     self.mesh3d_pass_view_uniform_camera_key_hi == preprocess_camera_key_hi &&
@@ -397,7 +394,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }
-  let view_bg = mesh3d_view_bg_cache_get_or_create(
+  let (view_bg, binding_arrays_bg) = mesh3d_view_bg_cache_get_or_create(
     self, transmission_source_texture, point_shadow_texture, directional_shadow_texture,
     environment_diffuse_texture, environment_specular_texture,
   )
@@ -407,9 +404,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   )
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, view_bg, [])
-  pass.set_bind_group(1U, material_bg, [])
+  pass.set_bind_group(1U, binding_arrays_bg, [])
   pass.set_bind_group(2U, active_draw_bg, [])
-  pass.set_bind_group(3U, active_skin_bg, [])
+  pass.set_bind_group(3U, material_bg, [])
   let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
     mesh.vertex_stride_bytes
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)

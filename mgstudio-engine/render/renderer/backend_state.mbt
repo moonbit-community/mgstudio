@@ -133,9 +133,11 @@ pub struct GpuBackend {
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
   mesh2d_material_bg_cache_index : Map[UInt64, Array[Int]]
   mut mesh3d_bgl_view : @wgpu.BindGroupLayout?
+  mut mesh3d_bgl_binding_arrays : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_draw : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_skin : @wgpu.BindGroupLayout?
+  mut mesh3d_binding_arrays_bg : @wgpu.BindGroup?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
   mesh3d_pipeline_cache : Array[Mesh3dPipelineCacheEntry]
   mesh3d_custom_pipeline_cache : Array[Mesh3dCustomPipelineCacheEntry]
@@ -150,6 +152,7 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_pass_view_uniform_bytes : Bytes?
   mut mesh3d_motion_vector_pass_previous_view_uniform_bytes : Bytes?
   mesh3d_draw_slots : Array[GpuStorageSlot]
+  mesh3d_draw_slot_skin_revisions : Array[Int]
   mut mesh3d_draw_slot_used : Int
   mut mesh3d_skin_current_buf : @wgpu.Buffer?
   mut mesh3d_skin_current_bg : @wgpu.BindGroup?
@@ -163,6 +166,7 @@ pub struct GpuBackend {
   mut mesh3d_instance_draw_buf : @wgpu.Buffer?
   mut mesh3d_instance_draw_bg : @wgpu.BindGroup?
   mut mesh3d_instance_draw_capacity : UInt64
+  mut mesh3d_instance_draw_skin_revision : Int
   mut mesh3d_instance_draw_used : Int
   mut mesh3d_instance_draw_staging_bytes : FixedArray[Byte]
   mut mesh3d_instance_draw_staging_view : Bytes

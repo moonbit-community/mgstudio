@@ -54,19 +54,23 @@ fn mesh3d_view_bg_cache_get_or_create(
   directional_shadow_texture : GpuTextureInfo,
   environment_diffuse_texture : GpuTextureInfo,
   environment_specular_texture : GpuTextureInfo,
-) -> @wgpu.BindGroup raise GpuBackendError {
+) -> (@wgpu.BindGroup, @wgpu.BindGroup) raise GpuBackendError {
   for entry in backend.mesh3d_view_bg_cache {
     if entry.transmission_source_texture_id == transmission_source_texture.id &&
       entry.point_shadow_texture_id == point_shadow_texture.id &&
       entry.directional_shadow_texture_id == directional_shadow_texture.id &&
       entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
       entry.environment_specular_texture_id == environment_specular_texture.id {
-      return entry.bind_group
+      return (entry.bind_group, entry.binding_arrays_bind_group)
     }
   }
   let layout = match backend.mesh3d_bgl_view {
     Some(v) => v
     None => fatal("wgpu: missing mesh3d view bind group layout")
+  }
+  let binding_arrays_layout = match backend.mesh3d_bgl_binding_arrays {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d binding-array bind group layout")
   }
   let view_buf = match backend.mesh3d_view_buf {
     Some(v) => v
@@ -84,18 +88,14 @@ fn mesh3d_view_bg_cache_get_or_create(
     Some(view) => view
     None => directional_shadow_texture.view
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=11UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=7UL)
   let ok = builder.add_buffer(0U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
-    builder.add_texture_view(1U, transmission_source_texture.view) &&
-    builder.add_sampler(2U, transmission_source_texture.sampler) &&
-    builder.add_texture_view(3U, point_shadow_sample_view) &&
-    builder.add_sampler(4U, point_shadow_compare_sampler) &&
-    builder.add_texture_view(5U, environment_diffuse_texture.view) &&
-    builder.add_sampler(6U, environment_diffuse_texture.sampler) &&
-    builder.add_texture_view(7U, environment_specular_texture.view) &&
-    builder.add_sampler(8U, environment_specular_texture.sampler) &&
-    builder.add_texture_view(9U, directional_shadow_sample_view) &&
-    builder.add_sampler(10U, point_shadow_compare_sampler)
+    builder.add_texture_view(2U, point_shadow_sample_view) &&
+    builder.add_sampler(3U, point_shadow_compare_sampler) &&
+    builder.add_texture_view(5U, directional_shadow_sample_view) &&
+    builder.add_sampler(6U, point_shadow_compare_sampler) &&
+    builder.add_texture_view(25U, transmission_source_texture.view) &&
+    builder.add_sampler(26U, transmission_source_texture.sampler)
   if !ok {
     builder.free()
     fatal("wgpu: failed to build mesh3d view bind group")
@@ -105,6 +105,25 @@ fn mesh3d_view_bg_cache_get_or_create(
     layout,
     label="mgstudio_mesh3d_view_bg",
   )
+  let binding_arrays_builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+  let binding_arrays_ok = binding_arrays_builder.add_texture_view(
+      0U,
+      environment_diffuse_texture.view,
+    ) &&
+    binding_arrays_builder.add_texture_view(
+      1U,
+      environment_specular_texture.view,
+    ) &&
+    binding_arrays_builder.add_sampler(2U, environment_diffuse_texture.sampler)
+  if !binding_arrays_ok {
+    binding_arrays_builder.free()
+    fatal("wgpu: failed to build mesh3d binding-array bind group")
+  }
+  let binding_arrays_bind_group = binding_arrays_builder.finish(
+    backend.device,
+    binding_arrays_layout,
+    label="mgstudio_mesh3d_binding_arrays_bg",
+  )
   backend.mesh3d_view_bg_cache.push(Mesh3dViewBindGroupCacheEntry::{
     transmission_source_texture_id: transmission_source_texture.id,
     point_shadow_texture_id: point_shadow_texture.id,
@@ -112,8 +131,9 @@ fn mesh3d_view_bg_cache_get_or_create(
     environment_diffuse_texture_id: environment_diffuse_texture.id,
     environment_specular_texture_id: environment_specular_texture.id,
     bind_group,
+    binding_arrays_bind_group,
   })
-  bind_group
+  (bind_group, binding_arrays_bind_group)
 }
 
 ///|
@@ -144,8 +164,12 @@ fn mesh3d_material_cache_get_or_create(
     Some(v) => v
     None => fatal("wgpu: missing mesh3d material bind group layout")
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=16UL)
-  let ok = builder.add_texture_view(1U, base_texture.view) &&
+  guard backend.mesh3d_view_buf is Some(material_dummy_buf) else {
+    fatal("wgpu: missing mesh3d material dummy uniform buffer")
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=17UL)
+  let ok = builder.add_buffer(0U, material_dummy_buf, size=16UL) &&
+    builder.add_texture_view(1U, base_texture.view) &&
     builder.add_sampler(2U, base_texture.sampler) &&
     builder.add_texture_view(3U, emissive_texture.view) &&
     builder.add_sampler(4U, emissive_texture.sampler) &&

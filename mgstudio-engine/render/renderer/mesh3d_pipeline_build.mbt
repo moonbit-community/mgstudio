@@ -200,66 +200,44 @@ fn ensure_mesh3d_pipeline_rgba8(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   if backend.mesh3d_pipeline_layout is None {
     let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
-    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=11UL)
+    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=7UL)
     let view_ok = view_builder.add_buffer(
         0U,
         view_stage,
         @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
       ) &&
       view_builder.add_texture(
-        1U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      view_builder.add_sampler(
         2U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
-      ) &&
-      view_builder.add_texture(
-        3U,
         ss(@wgpu.SHADER_STAGE_FRAGMENT),
         @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
         @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
       ) &&
       view_builder.add_sampler(
-        4U,
+        3U,
         ss(@wgpu.SHADER_STAGE_FRAGMENT),
         @wgpu.SAMPLER_BINDING_TYPE_COMPARISON,
       ) &&
       view_builder.add_texture(
         5U,
         ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      view_builder.add_sampler(
-        6U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
-      ) &&
-      view_builder.add_texture(
-        7U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      view_builder.add_sampler(
-        8U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
-      ) &&
-      view_builder.add_texture(
-        9U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
         @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D_ARRAY,
       ) &&
       view_builder.add_sampler(
-        10U,
+        6U,
         ss(@wgpu.SHADER_STAGE_FRAGMENT),
         @wgpu.SAMPLER_BINDING_TYPE_COMPARISON,
+      ) &&
+      view_builder.add_texture(
+        25U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      view_builder.add_sampler(
+        26U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
       )
     if !view_ok {
       view_builder.free()
@@ -270,8 +248,14 @@ fn ensure_mesh3d_pipeline_rgba8(
       label="mgstudio_mesh3d_view_bgl",
     )
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
-    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=16UL)
-    let material_ok = material_builder.add_texture(
+    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=17UL)
+    let material_ok = material_builder.add_buffer(
+        0U,
+        frag,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=16UL,
+      ) &&
+      material_builder.add_texture(
         1U,
         frag,
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
@@ -367,13 +351,47 @@ fn ensure_mesh3d_pipeline_rgba8(
       backend.device,
       label="mgstudio_mesh3d_material_bgl",
     )
-    let mesh_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
-    let mesh_ok = mesh_builder.add_buffer(
-      0U,
-      view_stage,
-      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-      min_binding_size=MESH3D_DRAW_STORAGE_STRIDE_BYTES,
+    let binding_arrays_builder = @wgpu.BindGroupLayoutBuilder::new(
+      max_entries=3UL,
     )
+    let binding_arrays_ok = binding_arrays_builder.add_texture(
+        0U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      binding_arrays_builder.add_texture(
+        1U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      binding_arrays_builder.add_sampler(
+        2U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      )
+    if !binding_arrays_ok {
+      binding_arrays_builder.free()
+      fatal("wgpu: failed to build mesh3d binding-array bind group layout")
+    }
+    let binding_arrays_bgl = binding_arrays_builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_binding_arrays_bgl",
+    )
+    let mesh_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
+    let mesh_ok = mesh_builder.add_buffer(
+        0U,
+        view_stage,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+        min_binding_size=MESH3D_DRAW_STORAGE_STRIDE_BYTES,
+      ) &&
+      mesh_builder.add_buffer(
+        1U,
+        ss(@wgpu.SHADER_STAGE_VERTEX),
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+        min_binding_size=64UL,
+      )
     if !mesh_ok {
       mesh_builder.free()
       fatal("wgpu: failed to build mesh3d draw bind group layout")
@@ -382,32 +400,18 @@ fn ensure_mesh3d_pipeline_rgba8(
       backend.device,
       label="mgstudio_mesh3d_draw_bgl",
     )
-    let skin_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
-    let skin_ok = skin_builder.add_buffer(
-      0U,
-      ss(@wgpu.SHADER_STAGE_VERTEX),
-      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-      min_binding_size=64UL,
-    )
-    if !skin_ok {
-      skin_builder.free()
-      fatal("wgpu: failed to build mesh3d skin bind group layout")
-    }
-    let skin_bgl = skin_builder.finish(
-      backend.device,
-      label="mgstudio_mesh3d_skin_bgl",
-    )
     let pl = create_pipeline_layout_4(
       backend.device,
       view_bgl,
-      material_bgl,
+      binding_arrays_bgl,
       mesh_bgl,
-      skin_bgl,
+      material_bgl,
     )
     backend.mesh3d_bgl_view = Some(view_bgl)
+    backend.mesh3d_bgl_binding_arrays = Some(binding_arrays_bgl)
     backend.mesh3d_bgl_draw = Some(mesh_bgl)
     backend.mesh3d_bgl_material = Some(material_bgl)
-    backend.mesh3d_bgl_skin = Some(skin_bgl)
+    backend.mesh3d_bgl_skin = None
     backend.mesh3d_pipeline_layout = Some(pl)
     if backend.mesh3d_view_buf is None {
       backend.mesh3d_view_buf = Some(
@@ -417,10 +421,12 @@ fn ensure_mesh3d_pipeline_rgba8(
         ),
       )
     }
+    backend.mesh3d_binding_arrays_bg = None
     mesh3d_material_cache_clear(backend)
     mesh3d_custom_pipeline_cache_clear(backend)
     mesh3d_pipeline_cache_clear(backend)
-    ensure_mesh3d_skin_current_binding(backend) |> ignore
+    ensure_mesh3d_skin_buffers(backend, MESH3D_SKINNING_STORAGE_STRIDE_BYTES)
+    |> ignore
   }
   if backend.mesh3d_view_buf is None {
     backend.mesh3d_view_buf = Some(

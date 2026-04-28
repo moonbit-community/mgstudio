@@ -13,36 +13,79 @@
 // limitations under the License.
 
 ///|
+fn GpuBackend::create_mesh3d_draw_bind_group(
+  self : GpuBackend,
+  bgl : @wgpu.BindGroupLayout,
+  draw_buf : @wgpu.Buffer,
+  draw_size : UInt64,
+  label : String,
+) -> @wgpu.BindGroup? {
+  guard ensure_mesh3d_skin_buffers(self, MESH3D_SKINNING_STORAGE_STRIDE_BYTES) else {
+    return None
+  }
+  guard self.mesh3d_skin_current_buf is Some(current_skin_buf) else {
+    return None
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=2UL)
+  let ok = builder.add_buffer(0U, draw_buf, size=draw_size) &&
+    builder.add_buffer(1U, current_skin_buf, size=self.mesh3d_skin_capacity)
+  if !ok {
+    builder.free()
+    return None
+  }
+  Some(builder.finish(self.device, bgl, label~))
+}
+
+///|
 pub fn GpuBackend::ensure_mesh3d_draw_slot(
   self : GpuBackend,
   slot_index : Int,
 ) -> GpuStorageSlot? {
   guard self.mesh3d_bgl_draw is Some(bgl) else { return None }
+  if slot_index < self.mesh3d_draw_slots.length() &&
+    slot_index < self.mesh3d_draw_slot_skin_revisions.length() &&
+    self.mesh3d_draw_slot_skin_revisions[slot_index] ==
+    self.mesh3d_skin_revision {
+    return Some(self.mesh3d_draw_slots[slot_index])
+  }
   let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
   while self.mesh3d_draw_slots.length() <= slot_index {
     let draw_buf = self.device.create_buffer(
       size=MESH3D_DRAW_STORAGE_STRIDE_BYTES,
       usage~,
     )
-    let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
-    let ok = builder.add_buffer(
-      0U,
-      draw_buf,
-      size=MESH3D_DRAW_STORAGE_STRIDE_BYTES,
-    )
-    if !ok {
-      builder.free()
+    guard self.create_mesh3d_draw_bind_group(
+        bgl,
+        draw_buf,
+        MESH3D_DRAW_STORAGE_STRIDE_BYTES,
+        "mgstudio_mesh3d_draw_slot_bg",
+      )
+      is Some(draw_bg) else {
       return None
     }
-    let draw_bg = builder.finish(
-      self.device,
-      bgl,
-      label="mgstudio_mesh3d_draw_slot_bg",
-    )
     self.mesh3d_draw_slots.push(GpuStorageSlot::{
       buffer: draw_buf,
       bind_group: draw_bg,
     })
+    self.mesh3d_draw_slot_skin_revisions.push(self.mesh3d_skin_revision)
+  }
+  if self.mesh3d_draw_slot_skin_revisions[slot_index] !=
+    self.mesh3d_skin_revision {
+    let slot = self.mesh3d_draw_slots[slot_index]
+    guard self.create_mesh3d_draw_bind_group(
+        bgl,
+        slot.buffer,
+        MESH3D_DRAW_STORAGE_STRIDE_BYTES,
+        "mgstudio_mesh3d_draw_slot_bg",
+      )
+      is Some(draw_bg) else {
+      return None
+    }
+    self.mesh3d_draw_slots[slot_index] = GpuStorageSlot::{
+      buffer: slot.buffer,
+      bind_group: draw_bg,
+    }
+    self.mesh3d_draw_slot_skin_revisions[slot_index] = self.mesh3d_skin_revision
   }
   Some(self.mesh3d_draw_slots[slot_index])
 }
@@ -55,7 +98,8 @@ pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(
   guard self.mesh3d_bgl_draw is Some(bgl) else { return None }
   if self.mesh3d_instance_draw_buf is Some(draw_buf) &&
     self.mesh3d_instance_draw_bg is Some(draw_bg) &&
-    self.mesh3d_instance_draw_capacity >= required_size {
+    self.mesh3d_instance_draw_capacity >= required_size &&
+    self.mesh3d_instance_draw_skin_revision == self.mesh3d_skin_revision {
     return Some((draw_buf, draw_bg))
   }
   let mut next_capacity = if self.mesh3d_instance_draw_capacity > 0UL {
@@ -67,22 +111,22 @@ pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(
     next_capacity = next_capacity * 2UL
   }
   let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
-  let draw_buf = self.device.create_buffer(size=next_capacity, usage~)
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
-  let ok = builder.add_buffer(0U, draw_buf, size=next_capacity)
-  if !ok {
-    builder.free()
+  let draw_buf = match self.mesh3d_instance_draw_buf {
+    Some(existing) if self.mesh3d_instance_draw_capacity >= required_size =>
+      existing
+    _ => self.device.create_buffer(size=next_capacity, usage~)
+  }
+  guard self.create_mesh3d_draw_bind_group(
+      bgl, draw_buf, next_capacity, "mgstudio_mesh3d_instance_draw_bg",
+    )
+    is Some(draw_bg) else {
     return None
   }
-  let draw_bg = builder.finish(
-    self.device,
-    bgl,
-    label="mgstudio_mesh3d_instance_draw_bg",
-  )
   // Keep old buffer/bind group alive: commands recorded earlier in this frame
   // may still reference them when capacity grows mid-frame.
   self.mesh3d_instance_draw_buf = Some(draw_buf)
   self.mesh3d_instance_draw_bg = Some(draw_bg)
   self.mesh3d_instance_draw_capacity = next_capacity
+  self.mesh3d_instance_draw_skin_revision = self.mesh3d_skin_revision
   Some((draw_buf, draw_bg))
 }

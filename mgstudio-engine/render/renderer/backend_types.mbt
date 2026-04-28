@@ -97,6 +97,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   environment_diffuse_texture_id : Int
   environment_specular_texture_id : Int
   bind_group : @wgpu.BindGroup
+  binding_arrays_bind_group : @wgpu.BindGroup
 }
 
 ///|
