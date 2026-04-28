@@ -13,6 +13,34 @@
 // limitations under the License.
 
 ///|
+const MESH3D_SHADOW_ALPHA_MODE_RESERVED_BITS : UInt = 7U << 29
+
+///|
+const MESH3D_SHADOW_ALPHA_MODE_MASK : UInt = 1U << 29
+
+///|
+const MESH3D_SHADOW_ALPHA_MODE_BLEND : UInt = 2U << 29
+
+///|
+const MESH3D_SHADOW_ALPHA_MODE_PREMULTIPLIED : UInt = 3U << 29
+
+///|
+const MESH3D_SHADOW_ALPHA_MODE_ADD : UInt = 4U << 29
+
+///|
+const MESH3D_SHADOW_ALPHA_MODE_ALPHA_TO_COVERAGE : UInt = 6U << 29
+
+///|
+fn mesh3d_shadow_material_path_from_flags(material_flags : UInt) -> Bool {
+  let alpha_mode = material_flags & MESH3D_SHADOW_ALPHA_MODE_RESERVED_BITS
+  alpha_mode == MESH3D_SHADOW_ALPHA_MODE_MASK ||
+  alpha_mode == MESH3D_SHADOW_ALPHA_MODE_BLEND ||
+  alpha_mode == MESH3D_SHADOW_ALPHA_MODE_PREMULTIPLIED ||
+  alpha_mode == MESH3D_SHADOW_ALPHA_MODE_ADD ||
+  alpha_mode == MESH3D_SHADOW_ALPHA_MODE_ALPHA_TO_COVERAGE
+}
+
+///|
 pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   self : GpuBackend,
   pass : @wgpu.RenderPass,
@@ -70,10 +98,12 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   skinning_key_hi : Int,
   skinning_key_lo : Int,
 ) -> Unit raise GpuBackendError {
+  let material_path = mesh3d_shadow_material_path_from_flags(material_flags)
   guard mesh3d_shadow_depth_pipeline_for_current_pass(
       self,
       mesh.primitive_topology,
       cull_mode,
+      material_path,
     )
     is Some(pipeline) else {
     return
@@ -224,7 +254,15 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     environment_diffuse_texture, environment_specular_texture,
   )
   let default_texture = ensure_default_texture(self)
-  guard resolve_mesh3d_texture(self, texture_id) is Some(base_color_texture) else {
+  guard resolve_mesh3d_texture(
+      self,
+      if material_path {
+        texture_id
+      } else {
+        -1
+      },
+    )
+    is Some(base_color_texture) else {
     return
   }
   let normal_texture = ensure_normal_map_fallback_texture(self)

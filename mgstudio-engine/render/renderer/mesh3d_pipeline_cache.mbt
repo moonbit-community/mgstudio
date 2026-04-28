@@ -184,8 +184,15 @@ fn mesh3d_custom_pipeline_cache_clear(backend : GpuBackend) -> Unit {
 fn mesh3d_shadow_pipeline_get(
   backend : GpuBackend,
   topology : UInt,
+  material_path : Bool,
 ) -> @wgpu.RenderPipeline? {
-  if topology == MESH3D_TOPOLOGY_LINE_LIST {
+  if material_path && topology == MESH3D_TOPOLOGY_LINE_LIST {
+    backend.mesh3d_shadow_material_pipeline_line_list
+  } else if material_path && topology == MESH3D_TOPOLOGY_LINE_STRIP {
+    backend.mesh3d_shadow_material_pipeline_line_strip
+  } else if material_path {
+    backend.mesh3d_shadow_material_pipeline
+  } else if topology == MESH3D_TOPOLOGY_LINE_LIST {
     backend.mesh3d_shadow_pipeline_line_list
   } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
     backend.mesh3d_shadow_pipeline_line_strip
@@ -198,9 +205,16 @@ fn mesh3d_shadow_pipeline_get(
 fn mesh3d_shadow_pipeline_set(
   backend : GpuBackend,
   topology : UInt,
+  material_path : Bool,
   pipeline : @wgpu.RenderPipeline?,
 ) -> Unit {
-  if topology == MESH3D_TOPOLOGY_LINE_LIST {
+  if material_path && topology == MESH3D_TOPOLOGY_LINE_LIST {
+    backend.mesh3d_shadow_material_pipeline_line_list = pipeline
+  } else if material_path && topology == MESH3D_TOPOLOGY_LINE_STRIP {
+    backend.mesh3d_shadow_material_pipeline_line_strip = pipeline
+  } else if material_path {
+    backend.mesh3d_shadow_material_pipeline = pipeline
+  } else if topology == MESH3D_TOPOLOGY_LINE_LIST {
     backend.mesh3d_shadow_pipeline_line_list = pipeline
   } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
     backend.mesh3d_shadow_pipeline_line_strip = pipeline
@@ -220,8 +234,20 @@ fn mesh3d_shadow_pipeline_cache_clear(backend : GpuBackend) -> Unit {
   if backend.mesh3d_shadow_pipeline_line_strip is Some(old) {
     old.release()
   }
+  if backend.mesh3d_shadow_material_pipeline is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_shadow_material_pipeline_line_list is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_shadow_material_pipeline_line_strip is Some(old) {
+    old.release()
+  }
   backend.mesh3d_shadow_pipeline = None
   backend.mesh3d_shadow_pipeline_line_list = None
   backend.mesh3d_shadow_pipeline_line_strip = None
+  backend.mesh3d_shadow_material_pipeline = None
+  backend.mesh3d_shadow_material_pipeline_line_list = None
+  backend.mesh3d_shadow_material_pipeline_line_strip = None
   backend.mesh3d_shadow_pipeline_cull_mode = -1
 }

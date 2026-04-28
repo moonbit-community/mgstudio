@@ -575,14 +575,18 @@ fn mesh3d_build_shadow_depth_pipeline(
   backend : GpuBackend,
   topology : UInt,
   cull_mode : Int,
+  material_path : Bool,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
   ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else {
     fatal("wgpu: missing mesh3d pipeline layout for shadow depth pipeline")
   }
-  let sm = backend.device.create_shader_module_wgsl(
-    mesh3d_shadow_depth_wgsl_source,
-  )
+  let wgsl_source = if material_path {
+    mesh3d_shadow_depth_wgsl_source
+  } else {
+    mesh3d_shadow_depth_only_wgsl_source
+  }
+  let sm = backend.device.create_shader_module_wgsl(wgsl_source)
   let pipeline = try {
     let builder = @wgpu.RenderPipelineDescBuilder::new(sm, layout=pl)
     builder.set_entry_points("vertex", "fragment")
@@ -616,8 +620,14 @@ fn mesh3d_build_shadow_depth_pipeline(
     }
   }
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  let shadow_pipeline_suffix = if material_path {
+    "material_"
+  } else {
+    "depth_only_"
+  }
   pipeline.set_label(
-    "mgstudio_mesh3d_shadow_depth_" +
+    "mgstudio_mesh3d_shadow_" +
+    shadow_pipeline_suffix +
     mesh3d_topology_suffix(topology) +
     "_cull_" +
     mesh3d_cull_mode_suffix(safe_cull_mode),
@@ -631,19 +641,21 @@ fn mesh3d_shadow_depth_pipeline_for_current_pass(
   backend : GpuBackend,
   topology : UInt,
   cull_mode : Int,
+  material_path : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   if backend.mesh3d_shadow_pipeline_cull_mode != safe_cull_mode {
     mesh3d_shadow_pipeline_cache_clear(backend)
     backend.mesh3d_shadow_pipeline_cull_mode = safe_cull_mode
   }
-  if mesh3d_shadow_pipeline_get(backend, topology) is Some(pipeline) {
+  if mesh3d_shadow_pipeline_get(backend, topology, material_path)
+    is Some(pipeline) {
     return Some(pipeline)
   }
   let pipeline = mesh3d_build_shadow_depth_pipeline(
-    backend, topology, cull_mode,
+    backend, topology, cull_mode, material_path,
   )
-  mesh3d_shadow_pipeline_set(backend, topology, Some(pipeline))
+  mesh3d_shadow_pipeline_set(backend, topology, material_path, Some(pipeline))
   Some(pipeline)
 }
 

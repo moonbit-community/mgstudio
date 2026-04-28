@@ -156,6 +156,9 @@ pub struct GpuBackend {
   mut mesh3d_shadow_pipeline : @wgpu.RenderPipeline?
   mut mesh3d_shadow_pipeline_line_list : @wgpu.RenderPipeline?
   mut mesh3d_shadow_pipeline_line_strip : @wgpu.RenderPipeline?
+  mut mesh3d_shadow_material_pipeline : @wgpu.RenderPipeline?
+  mut mesh3d_shadow_material_pipeline_line_list : @wgpu.RenderPipeline?
+  mut mesh3d_shadow_material_pipeline_line_strip : @wgpu.RenderPipeline?
   mut mesh3d_shadow_pipeline_cull_mode : Int
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
   mut mesh3d_view_buf : @wgpu.Buffer?
