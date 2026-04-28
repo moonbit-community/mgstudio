@@ -56,9 +56,8 @@ fn render3d_execute_camera_point_shadow_pass(
     shadow_camera_near,
     pass_lighting.point_range,
   )
-  let shadow_phase_items = render3d_queue_shadow_phase_items(
-    draw_items, meshes, opaque_alpha_draw_item_indices,
-  )
+  ignore(opaque_alpha_draw_item_indices)
+  let shadow_phase_items = render3d_queue_shadow_phase_items(draw_items, meshes)
   for face_index in 0..<6 {
     let shadow_camera_transform = @pbr_render.render3d_point_shadow_face_transform(
       pass_lighting.point_pos,

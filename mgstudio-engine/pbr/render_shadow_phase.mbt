@@ -201,15 +201,10 @@ fn render3d_mesh_can_cast_shadow(mesh : Mesh3dExtractedPayload) -> Bool {
 fn render3d_queue_shadow_phase_items(
   draw_items : Array[MeshPhaseItem3d],
   meshes : Array[ExtractedMesh3d],
-  opaque_alpha_draw_item_indices : Array[Int],
 ) -> Array[ShadowPhaseItem3d] {
   let shadow_items : Array[ShadowPhaseItem3d] = []
-  for draw_item_index in opaque_alpha_draw_item_indices {
+  for draw_item_index in 0..<draw_items.length() {
     let draw_item = draw_items[draw_item_index]
-    if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
-      draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
-      continue
-    }
     let extracted_mesh = meshes[draw_item.extracted_index]
     if !render3d_mesh_can_cast_shadow(extracted_mesh.payload) {
       continue

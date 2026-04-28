@@ -341,9 +341,8 @@ fn render3d_execute_camera_directional_shadow_pass(
     cascades.length(),
   )
   let draw_items = draw_queue_entry.draw_items
-  let shadow_phase_items = render3d_queue_shadow_phase_items(
-    draw_items, meshes, opaque_alpha_draw_item_indices,
-  )
+  ignore(opaque_alpha_draw_item_indices)
+  let shadow_phase_items = render3d_queue_shadow_phase_items(draw_items, meshes)
   ignore(indexed_indirect_parameter_indices)
   ignore(non_indexed_indirect_parameter_indices)
   for cascade_index in 0..<cascades.length() {
