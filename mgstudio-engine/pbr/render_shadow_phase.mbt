@@ -20,9 +20,24 @@
 
 ///|
 priv struct ShadowPhaseItem3d {
+  batch_set_key : ShadowBatchSetKey3d
+  bin_key : ShadowBinKey3d
   entity : PhaseEntityRef3d
   extracted_index : Int
   draw_item_index : Int
+}
+
+///|
+priv struct ShadowBatchSetKey3d {
+  topology_kind : Int
+  indexed : Bool
+  material_flags : UInt
+  cull_mode : Int
+}
+
+///|
+priv struct ShadowBinKey3d {
+  mesh_id : Int
 }
 
 ///|
@@ -35,7 +50,94 @@ priv struct Render3dShadowPhaseView {
 fn render3d_shadow_phase_item_debug_key(item : ShadowPhaseItem3d) -> Int {
   item.entity.render_entity.id * 31 +
   item.entity.render_entity.generation * 17 +
-  item.entity.main_entity.id
+  item.entity.main_entity.id +
+  item.bin_key.mesh_id +
+  item.batch_set_key.topology_kind
+}
+
+///|
+fn render3d_shadow_cmp_uint(lhs : UInt, rhs : UInt) -> Int {
+  if lhs < rhs {
+    -1
+  } else if lhs > rhs {
+    1
+  } else {
+    0
+  }
+}
+
+///|
+fn render3d_shadow_cmp_bool(lhs : Bool, rhs : Bool) -> Int {
+  if lhs == rhs {
+    0
+  } else if lhs {
+    1
+  } else {
+    -1
+  }
+}
+
+///|
+fn render3d_shadow_batch_set_key(
+  mesh : Mesh3dExtractedPayload,
+) -> ShadowBatchSetKey3d {
+  {
+    topology_kind: mesh.mesh_topology_kind,
+    indexed: mesh.mesh_is_indexed,
+    material_flags: @pbr_render.render3d_standard_material_flags(
+      mesh.material,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      forward_decal=mesh.is_forward_decal,
+    ),
+    cull_mode: @pbr_render.render3d_cull_mode_value(mesh.material, 0),
+  }
+}
+
+///|
+fn render3d_shadow_phase_item_cmp(
+  lhs : ShadowPhaseItem3d,
+  rhs : ShadowPhaseItem3d,
+) -> Int {
+  let topology_cmp = @pbr_render.cmp_int(
+    lhs.batch_set_key.topology_kind,
+    rhs.batch_set_key.topology_kind,
+  )
+  if topology_cmp != 0 {
+    return topology_cmp
+  }
+  let indexed_cmp = render3d_shadow_cmp_bool(
+    lhs.batch_set_key.indexed,
+    rhs.batch_set_key.indexed,
+  )
+  if indexed_cmp != 0 {
+    return indexed_cmp
+  }
+  let flags_cmp = render3d_shadow_cmp_uint(
+    lhs.batch_set_key.material_flags,
+    rhs.batch_set_key.material_flags,
+  )
+  if flags_cmp != 0 {
+    return flags_cmp
+  }
+  let cull_cmp = @pbr_render.cmp_int(
+    lhs.batch_set_key.cull_mode,
+    rhs.batch_set_key.cull_mode,
+  )
+  if cull_cmp != 0 {
+    return cull_cmp
+  }
+  let mesh_cmp = @pbr_render.cmp_int(lhs.bin_key.mesh_id, rhs.bin_key.mesh_id)
+  if mesh_cmp != 0 {
+    return mesh_cmp
+  }
+  phase_entity_ref3d_cmp(lhs.entity, rhs.entity)
 }
 
 ///|
@@ -69,12 +171,16 @@ fn render3d_queue_shadow_phase_items(
     if !render3d_mesh_can_cast_shadow(extracted_mesh.payload) {
       continue
     }
+    let batch_set_key = render3d_shadow_batch_set_key(extracted_mesh.payload)
     shadow_items.push(ShadowPhaseItem3d::{
+      batch_set_key,
+      bin_key: { mesh_id: extracted_mesh.payload.mesh_id },
       entity: extracted_mesh.entity,
       extracted_index: draw_item.extracted_index,
       draw_item_index,
     })
   }
+  shadow_items.sort_by(render3d_shadow_phase_item_cmp)
   shadow_items
 }
 
