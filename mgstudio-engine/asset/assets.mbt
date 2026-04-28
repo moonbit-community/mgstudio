@@ -226,6 +226,28 @@ pub fn[T] Assets::get_mut(self : Assets[T], handle : Handle[T]) -> T? {
 }
 
 ///|
+pub fn[T] Assets::iter(self : Assets[T]) -> Array[(Handle[T], T)] {
+  let entries : Array[(Handle[T], T)] = []
+  for i in 0..<self.items.length() {
+    match self.items[i] {
+      Some(value) => entries.push((Handle::new(i), value))
+      None => ()
+    }
+  }
+  entries
+}
+
+///|
+pub fn[T] Assets::iter_mut(self : Assets[T]) -> Array[(Handle[T], T)] {
+  let entries = self.iter()
+  for entry in entries {
+    let (handle, _) = entry
+    assets_mark_dirty(self, handle)
+  }
+  entries
+}
+
+///|
 pub fn[T] Assets::set(self : Assets[T], handle : Handle[T], value : T) -> Bool {
   let id = handle.id()
   if id < 0 || id >= self.items.length() {

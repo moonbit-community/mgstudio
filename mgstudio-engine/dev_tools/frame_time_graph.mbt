@@ -60,6 +60,42 @@ pub(all) struct FrameTimeGraphConfigUniform {
 }
 
 ///|
+pub(all) struct FrametimeGraphMaterial {
+  values : @asset.Handle[@render_resource.StorageBuffer[Float]]
+  config : FrameTimeGraphConfigUniform
+}
+
+///|
+pub fn FrametimeGraphMaterial::new(
+  values : @asset.Handle[@render_resource.StorageBuffer[Float]],
+  config : FrameTimeGraphConfigUniform,
+) -> FrametimeGraphMaterial {
+  FrametimeGraphMaterial::{ values, config }
+}
+
+///|
+fn FrametimeGraphMaterial::asset_init_probe() -> FrametimeGraphMaterial {
+  FrametimeGraphMaterial::{
+    values: @asset.Handle::new(-1),
+    config: FrameTimeGraphConfigUniform::new(60.0F, 30.0F, true),
+  }
+}
+
+///|
+fn frame_time_graph_material_assets_key() -> @ecs.ResourceKey[
+  @asset.Assets[FrametimeGraphMaterial],
+] {
+  @asset.assets_resource_key()
+}
+
+///|
+fn frame_time_graph_buffer_assets_key() -> @ecs.ResourceKey[
+  @asset.Assets[@render_resource.StorageBuffer[Float]],
+] {
+  @asset.assets_resource_key()
+}
+
+///|
 fn frame_time_graph_log2(value : Float) -> Float {
   if value <= 0.0F {
     return 0.0F
@@ -137,12 +173,18 @@ pub fn frame_time_graph_plugin_with(
   if !frame_time_graph_has_frame_time_diagnostics(app) {
     abort("FrameTimeGraphPlugin requires FrameTimeDiagnosticsPlugin")
   }
-  app
-  .insert_world_resource(
-    frame_time_graph_values_resource_key,
-    FrameTimeGraphValues::default(),
-  )
-  .add_systems(
+  @asset.init_asset(
+    @asset.init_asset(
+      app.insert_world_resource(
+        frame_time_graph_values_resource_key,
+        FrameTimeGraphValues::default(),
+      ),
+      fn() -> @render_resource.StorageBuffer[Float] {
+        @render_resource.StorageBuffer::new()
+      },
+    ),
+    FrametimeGraphMaterial::asset_init_probe,
+  ).add_systems(
     @app.Update,
     @app.system(update_frame_time_values).in_set(fps_overlay_set_update_text),
   )
@@ -176,5 +218,33 @@ fn update_frame_time_values(world : @ecs.World) -> Unit {
   values_ref.val.values.clear()
   for value in frame_time.values() {
     values_ref.val.values.push(value / 1000.0F)
+  }
+  frame_time_graph_update_material_buffers(world, values_ref.val.values)
+}
+
+///|
+fn frame_time_graph_update_material_buffers(
+  world : @ecs.World,
+  frame_times : Array[Float],
+) -> Unit {
+  guard (try! world.get_resource_ref_mut(frame_time_graph_material_assets_key()))
+    is Some(materials_ref) else {
+    return
+  }
+  guard (try! world.get_resource_ref_mut(frame_time_graph_buffer_assets_key()))
+    is Some(buffers_ref) else {
+    return
+  }
+  for entry in materials_ref.val.iter_mut() {
+    let material = entry.1
+    match buffers_ref.val.get_mut(material.values) {
+      Some(buffer) => {
+        buffer.clear()
+        for value in frame_times {
+          buffer.push(value)
+        }
+      }
+      None => ()
+    }
   }
 }

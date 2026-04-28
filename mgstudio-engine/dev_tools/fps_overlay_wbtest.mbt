@@ -152,6 +152,64 @@ test "dev_tools: frame time graph values mirror diagnostics history in seconds" 
 }
 
 ///|
+test "dev_tools: frame time graph material buffers mirror diagnostics history" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@diagnostic.DiagnosticsPlugin::default())
+    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+    .add_plugins(FrameTimeGraphPlugin::default())
+  let buffer_handle = try! app
+  .world()
+  .get_resource_ref_mut(frame_time_graph_buffer_assets_key())
+  .unwrap().val.add(@render_resource.StorageBuffer::new())
+  ignore(
+    try! app
+    .world()
+    .get_resource_ref_mut(frame_time_graph_material_assets_key())
+    .unwrap().val.add(
+      FrametimeGraphMaterial::new(
+        buffer_handle,
+        FrameTimeGraphConfigUniform::new(60.0F, 30.0F, true),
+      ),
+    ),
+  )
+  let store_ref = try! app
+    .world()
+    .get_resource_ref_mut(@diagnostic.DiagnosticsStore::resource())
+    .unwrap()
+  let frame_time_ref = store_ref.val
+    .get_ref(@diagnostic.frame_time_diagnostic_frame_time)
+    .unwrap()
+  frame_time_ref.val.add_measurement(
+    @diagnostic.DiagnosticMeasurement::new(
+      @core.Instant::from_secs_f32(1.0F),
+      20.0F,
+    ),
+  )
+  frame_time_ref.val.add_measurement(
+    @diagnostic.DiagnosticMeasurement::new(
+      @core.Instant::from_secs_f32(2.0F),
+      40.0F,
+    ),
+  )
+  update_frame_time_values(app.world())
+  let buffer = try! app
+    .world()
+    .get_resource(frame_time_graph_buffer_assets_key())
+    .unwrap()
+    .get(buffer_handle)
+    .unwrap()
+  debug_inspect(buffer.values().length(), content="2")
+  debug_inspect(
+    buffer.values()[0] > 0.019F && buffer.values()[0] < 0.021F,
+    content="true",
+  )
+  debug_inspect(
+    buffer.values()[1] > 0.039F && buffer.values()[1] < 0.041F,
+    content="true",
+  )
+}
+
+///|
 test "dev_tools: fps overlay hides text and graph when disabled" {
   let mut app = overlay_test_app(FpsOverlayConfig::default()).run_startup()
   let state = try! app

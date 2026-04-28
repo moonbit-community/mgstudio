@@ -92,6 +92,25 @@ test "assets: reserve handle stays empty until a later insert" {
 }
 
 ///|
+test "assets: iter_mut returns live assets and marks them modified" {
+  let assets : Assets[Int] = Assets::new()
+  let first = assets.add(10)
+  ignore(assets.reserve_handle())
+  let third = assets.add(30)
+  ignore(assets.drain_events())
+  let entries = assets.iter_mut()
+  debug_inspect(entries.length(), content="2")
+  debug_inspect(entries[0].0.id(), content="0")
+  debug_inspect(entries[0].1, content="10")
+  debug_inspect(entries[1].0.id(), content="2")
+  debug_inspect(entries[1].1, content="30")
+  let events = assets.drain_events()
+  debug_inspect(events.length(), content="2")
+  debug_inspect(assets.contains(first), content="true")
+  debug_inspect(assets.contains(third), content="true")
+}
+
+///|
 test "asset plugin initializes world-owned asset resources" {
   let app = asset_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()

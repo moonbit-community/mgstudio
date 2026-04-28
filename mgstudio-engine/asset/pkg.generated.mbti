@@ -459,6 +459,8 @@ pub fn[T] Assets::get(Self[T], Handle[T]) -> T?
 pub fn[T] Assets::get_mut(Self[T], Handle[T]) -> T?
 pub fn[T] Assets::insert(Self[T], Handle[T], T) -> Bool
 pub fn[T] Assets::is_empty(Self[T]) -> Bool
+pub fn[T] Assets::iter(Self[T]) -> Array[(Handle[T], T)]
+pub fn[T] Assets::iter_mut(Self[T]) -> Array[(Handle[T], T)]
 pub fn[T] Assets::len(Self[T]) -> Int
 pub fn[T] Assets::new() -> Self[T]
 pub fn[T] Assets::push_event(Self[T], AssetEvent[T]) -> Unit

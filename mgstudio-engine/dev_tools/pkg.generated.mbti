@@ -3,10 +3,12 @@ package "Milky2018/mgstudio/dev_tools"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/text",
   "moonbitlang/core/debug",
 }
@@ -169,6 +171,12 @@ pub struct FrameTimeGraphPlugin {
 }
 pub fn FrameTimeGraphPlugin::default() -> Self
 pub impl @app.Plugin for FrameTimeGraphPlugin
+
+pub(all) struct FrametimeGraphMaterial {
+  values : @asset.Handle[@render_resource.StorageBuffer[Float]]
+  config : FrameTimeGraphConfigUniform
+}
+pub fn FrametimeGraphMaterial::new(@asset.Handle[@render_resource.StorageBuffer[Float]], FrameTimeGraphConfigUniform) -> Self
 
 // Type aliases
 
