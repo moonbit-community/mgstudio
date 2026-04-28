@@ -133,6 +133,7 @@ pub fn frame_time_graph_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : FrameTimeGraphPlugin,
 ) -> @app.App[@ecs.World] {
+  register_embedded_wgsl_sources()
   if !frame_time_graph_has_frame_time_diagnostics(app) {
     abort("FrameTimeGraphPlugin requires FrameTimeDiagnosticsPlugin")
   }

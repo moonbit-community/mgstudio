@@ -48,6 +48,8 @@ pub fn frame_time_graph_plugin_with(@app.App[@ecs.World], FrameTimeGraphPlugin) 
 
 pub fn[S : @app.States] log_transitions(@ecs.World, S) -> Unit
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

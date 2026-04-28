@@ -105,6 +105,18 @@ test "dev_tools: frame time graph plugin does not install fps overlay" {
 }
 
 ///|
+test "dev_tools: frame time graph plugin registers embedded wgsl shader" {
+  ignore(
+    @app.App::new(@ecs.World::new())
+    .add_plugins(@diagnostic.DiagnosticsPlugin::default())
+    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+    .add_plugins(FrameTimeGraphPlugin::default()),
+  )
+  let source = @wgsl.registered_wgsl_source("dev_tools/frame_time_graph.wgsl")
+  debug_inspect(source is Some(_), content="true")
+}
+
+///|
 test "dev_tools: frame time graph values mirror diagnostics history in seconds" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@diagnostic.DiagnosticsPlugin::default())
