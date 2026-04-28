@@ -69,3 +69,12 @@ mgstudio_pipeline_layout_descriptor_4_new(WGPUBindGroupLayout bind_group_layout0
   };
   return &out->desc;
 }
+
+uint32_t mgstudio_render_pipeline_descriptor_set_cull_mode(
+    WGPURenderPipelineDescriptor *descriptor, uint32_t cull_mode) {
+  if (!descriptor) {
+    return 1u;
+  }
+  descriptor->primitive.cullMode = (WGPUCullMode)cull_mode;
+  return 0u;
+}

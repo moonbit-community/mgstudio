@@ -28,6 +28,47 @@ pub extern "C" fn pipeline_layout_descriptor_4_new(
 ) -> @wgpu_c.WGPUPipelineLayoutDescriptorPtr = "mgstudio_pipeline_layout_descriptor_4_new"
 
 ///|
+#borrow(descriptor)
+extern "C" fn render_pipeline_descriptor_set_cull_mode_native(
+  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
+  cull_mode : UInt,
+) -> UInt = "mgstudio_render_pipeline_descriptor_set_cull_mode"
+
+///|
+fn render_pipeline_descriptor_set_cull_mode(
+  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
+  cull_mode : UInt,
+) -> Unit {
+  let err = render_pipeline_descriptor_set_cull_mode_native(
+    descriptor, cull_mode,
+  )
+  if err != 0U {
+    abort("wgpu: failed to configure mesh pipeline cull mode")
+  }
+}
+
+///|
+fn render_pipeline_desc_builder_create_pipeline_with_cull_mode(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  device : @wgpu.Device,
+  cull_mode : UInt,
+) -> @wgpu.RenderPipeline raise @wgpu.RenderPipelineDescError {
+  try {
+    let descriptor = builder.finish_descriptor_ptr()
+    render_pipeline_descriptor_set_cull_mode(descriptor, cull_mode)
+    let pipeline = device.create_render_pipeline_ptr(descriptor)
+    @wgpu_c.render_pipeline_descriptor_free(descriptor)
+    builder.free()
+    pipeline
+  } catch {
+    err => {
+      builder.free()
+      raise err
+    }
+  }
+}
+
+///|
 fn create_pipeline_layout_3(
   device : @wgpu.Device,
   bind_group_layout0 : @wgpu.BindGroupLayout,

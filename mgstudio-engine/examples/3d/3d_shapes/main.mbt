@@ -280,12 +280,12 @@ fn revolve_mesh(profile : Array[(Float, Float)], segments : Int) -> @pbr.Mesh3d 
     let k2 = k1 + row
     for j in 0..<safe_segments {
       indices.push(k1 + j)
-      indices.push(k2 + j)
       indices.push(k1 + j + 1)
+      indices.push(k2 + j)
 
       indices.push(k1 + j + 1)
-      indices.push(k2 + j)
       indices.push(k2 + j + 1)
+      indices.push(k2 + j)
     }
   }
 
@@ -336,13 +336,13 @@ fn sphere_uv_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     for j in 0..<safe_sectors {
       if i != 0 {
         indices.push(k1 + j)
-        indices.push(k2 + j)
         indices.push(k1 + j + 1)
+        indices.push(k2 + j)
       }
       if i != safe_stacks - 1 {
         indices.push(k1 + j + 1)
-        indices.push(k2 + j)
         indices.push(k2 + j + 1)
+        indices.push(k2 + j)
       }
     }
   }
@@ -480,12 +480,12 @@ fn torus_mesh(
     let next = (i + 1) * row
     for j in 0..<safe_minor {
       indices.push(base + j)
-      indices.push(next + j)
       indices.push(base + j + 1)
+      indices.push(next + j)
 
       indices.push(base + j + 1)
-      indices.push(next + j)
       indices.push(next + j + 1)
+      indices.push(next + j)
     }
   }
 
@@ -779,13 +779,13 @@ fn append_extruded_polygon(
       positions,
       uvs,
       @math.Vec3::new(p1.x, p1.y, half),
-      @math.Vec3::new(p2.x, p2.y, half),
-      @math.Vec3::new(p2.x, p2.y, -half),
       @math.Vec3::new(p1.x, p1.y, -half),
+      @math.Vec3::new(p2.x, p2.y, -half),
+      @math.Vec3::new(p2.x, p2.y, half),
       @math.Vec2::new(u0, 0.0F),
-      @math.Vec2::new(u1, 0.0F),
-      @math.Vec2::new(u1, 1.0F),
       @math.Vec2::new(u0, 1.0F),
+      @math.Vec2::new(u1, 1.0F),
+      @math.Vec2::new(u1, 0.0F),
     )
 
     progressed = progressed + edge_len
@@ -857,26 +857,26 @@ fn append_extruded_ring(
       positions,
       uvs,
       @math.Vec3::new(o1.x, o1.y, half),
-      @math.Vec3::new(o2.x, o2.y, half),
-      @math.Vec3::new(o2.x, o2.y, -half),
       @math.Vec3::new(o1.x, o1.y, -half),
+      @math.Vec3::new(o2.x, o2.y, -half),
+      @math.Vec3::new(o2.x, o2.y, half),
       @math.Vec2::new(u0, 0.0F),
-      @math.Vec2::new(u1, 0.0F),
-      @math.Vec2::new(u1, 1.0F),
       @math.Vec2::new(u0, 1.0F),
+      @math.Vec2::new(u1, 1.0F),
+      @math.Vec2::new(u1, 0.0F),
     )
 
     soup_push_quad(
       positions,
       uvs,
       @math.Vec3::new(i2.x, i2.y, half),
-      @math.Vec3::new(i1.x, i1.y, half),
-      @math.Vec3::new(i1.x, i1.y, -half),
       @math.Vec3::new(i2.x, i2.y, -half),
+      @math.Vec3::new(i1.x, i1.y, -half),
+      @math.Vec3::new(i1.x, i1.y, half),
       @math.Vec2::new(u0, 0.0F),
-      @math.Vec2::new(u1, 0.0F),
-      @math.Vec2::new(u1, 1.0F),
       @math.Vec2::new(u0, 1.0F),
+      @math.Vec2::new(u1, 1.0F),
+      @math.Vec2::new(u1, 0.0F),
     )
   }
 }

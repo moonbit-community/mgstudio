@@ -184,5 +184,6 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
       "wgpu: mesh pipeline descriptor builder finish failed (error=\{last_error.reinterpret_as_int()}, args=\{last_error_args.to_int()})",
     )
   }
+  render_pipeline_descriptor_set_cull_mode(desc, cull_mode)
   desc
 }

@@ -55,6 +55,24 @@ test "render3d: capsule helper builds valid geometry" {
 }
 
 ///|
+test "render3d: plane helper winds upward like Bevy Plane3d" {
+  let geometry = mesh3d_geometry_plane(2.0F, 2.0F)
+  guard geometry.vertex_position(0) is Some(a) else {
+    abort("missing plane vertex 0")
+  }
+  guard geometry.vertex_position(1) is Some(b) else {
+    abort("missing plane vertex 1")
+  }
+  guard geometry.vertex_position(2) is Some(c) else {
+    abort("missing plane vertex 2")
+  }
+  let ab = b.sub(a)
+  let ac = c.sub(a)
+  let normal = ab.cross(ac)
+  debug_inspect(normal.y > 0.0F, content="true")
+}
+
+///|
 test "render3d: tetrahedron-shape helper builds valid geometry" {
   let geometry = mesh3d_geometry_tetrahedron_shape(
     @math.Tetrahedron::new(

@@ -594,6 +594,8 @@ fn mesh3d_build_shadow_depth_pipeline(
   guard backend.mesh3d_pipeline_layout is Some(pl) else {
     fatal("wgpu: missing mesh3d pipeline layout for shadow depth pipeline")
   }
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   let wgsl_source = if material_path {
     mesh3d_shadow_depth_wgsl_source
   } else {
@@ -623,7 +625,11 @@ fn mesh3d_build_shadow_depth_pipeline(
       depth_write_enabled=true,
       depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
     )
-    builder.create_pipeline(backend.device)
+    render_pipeline_desc_builder_create_pipeline_with_cull_mode(
+      builder,
+      backend.device,
+      cull_mode_wgpu,
+    )
   } catch {
     err => {
       sm.release()
@@ -632,7 +638,6 @@ fn mesh3d_build_shadow_depth_pipeline(
       )
     }
   }
-  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let shadow_pipeline_suffix = if material_path {
     "material_"
   } else {

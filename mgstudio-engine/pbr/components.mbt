@@ -84,9 +84,9 @@ pub fn mesh3d_geometry_plane(
     positions,
     uvs,
     @math.Vec3::new(-hx, 0.0F, -hz),
-    @math.Vec3::new(hx, 0.0F, -hz),
-    @math.Vec3::new(hx, 0.0F, hz),
     @math.Vec3::new(-hx, 0.0F, hz),
+    @math.Vec3::new(hx, 0.0F, hz),
+    @math.Vec3::new(hx, 0.0F, -hz),
   )
   @mesh.Mesh3dGeometry::new(positions, uvs, None)
 }
