@@ -60,35 +60,6 @@ struct Mesh3dViewBindings {
   directional_shadow : Mesh3dDirectionalShadowUniform,
 };
 
-struct Mesh3dTransformUniform {
-  model_translation : vec4<f32>,
-  model_rotation : vec4<f32>,
-  model_scale : vec4<f32>,
-};
-
-struct Mesh3dMaterialUniform {
-  base_color : vec4<f32>,
-  emissive : vec4<f32>,
-  uv_transform : mat3x3<f32>,
-  reflectance : vec3<f32>,
-  perceptual_roughness : f32,
-  metallic : f32,
-  diffuse_transmission : f32,
-  specular_transmission : f32,
-  thickness : f32,
-  ior : f32,
-  anisotropy_strength : f32,
-  anisotropy_rotation : vec2<f32>,
-  flags : u32,
-  alpha_cutoff : f32,
-  parallax_depth_scale : f32,
-  max_parallax_layer_count : f32,
-  max_relief_mapping_search_steps : u32,
-  uv_transform_mode : f32,
-  _reserved0 : u32,
-  _reserved1 : u32,
-};
-
 struct StandardMaterial {
   base_color : vec4<f32>,
   emissive : vec4<f32>,
@@ -115,17 +86,22 @@ struct StandardMaterial {
   deferred_lighting_pass_id : u32,
 };
 
-struct Mesh3dDrawUniform {
-  transform : Mesh3dTransformUniform,
-  material : Mesh3dMaterialUniform,
+struct Mesh {
+  world_from_local : mat3x4<f32>,
+  previous_world_from_local : mat3x4<f32>,
+  local_from_world_transpose_a : mat2x4<f32>,
+  local_from_world_transpose_b : f32,
+  flags : u32,
+  lightmap_uv_rect : vec2<u32>,
+  first_vertex_index : u32,
   current_skin_index : u32,
-  _reserved2 : u32,
-  _reserved3 : u32,
-  _reserved4 : u32,
+  material_and_lightmap_bind_group_slot : u32,
+  tag : u32,
+  pad : u32,
 };
 
 struct Mesh3dDrawUniformBuffer {
-  data : array<Mesh3dDrawUniform>,
+  data : array<Mesh>,
 };
 
 struct Mesh3dSkinningRowsBuffer {
@@ -151,6 +127,27 @@ const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED: u32       = 3u << 29u;
 const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD: u32                 = 4u << 29u;
 const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY: u32            = 5u << 29u;
 const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE: u32   = 6u << 29u;
+const MESH_FLAGS_SHADOW_RECEIVER_BIT: u32                         = 1u << 29u;
+
+fn affine3_to_square(affine : mat3x4<f32>) -> mat4x4<f32> {
+  return transpose(mat4x4<f32>(
+    affine[0],
+    affine[1],
+    affine[2],
+    vec4<f32>(0.0, 0.0, 0.0, 1.0),
+  ));
+}
+
+fn mat2x4_f32_to_mat3x3_unpack(
+  a : mat2x4<f32>,
+  b : f32,
+) -> mat3x3<f32> {
+  return mat3x3<f32>(
+    a[0].xyz,
+    vec3<f32>(a[0].w, a[1].xy),
+    vec3<f32>(a[1].zw, b),
+  );
+}
 
 @group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
 @group(0) @binding(25) var u_transmission_source_texture : texture_2d<f32>;
@@ -214,6 +211,9 @@ fn skinning_transform_point(
   joint_index : u32,
   local_point : vec3<f32>,
 ) -> vec3<f32> {
+  if skin_index == 0xffffffffu {
+    return local_point;
+  }
   let base = (skin_index + joint_index) * 4u;
   if base + 3u >= skinning_row_count() {
     return local_point;
@@ -231,6 +231,9 @@ fn skinning_transform_normal(
   joint_index : u32,
   local_normal : vec3<f32>,
 ) -> vec3<f32> {
+  if skin_index == 0xffffffffu {
+    return local_normal;
+  }
   let base = (skin_index + joint_index) * 4u;
   if base + 2u >= skinning_row_count() {
     return local_normal;
@@ -254,14 +257,12 @@ fn vs_main(
   @builtin(instance_index) instance_index : u32,
 ) -> VertexOut {
   var out : VertexOut;
-  let draw = u_draws.data[instance_index];
+  let mesh = u_draws.data[instance_index];
   let weight_sum = joint_weights.x + joint_weights.y + joint_weights.z + joint_weights.w;
-  var local_pos = position;
-  var local_normal = normal;
   var world_pos = vec3<f32>(0.0, 0.0, 0.0);
   var world_normal = vec3<f32>(0.0, 0.0, 1.0);
   if weight_sum > 1.0e-6 {
-    let skin_index = draw.current_skin_index;
+    let skin_index = mesh.current_skin_index;
     let i0 = u32(max(joint_indices.x, 0.0));
     let i1 = u32(max(joint_indices.y, 0.0));
     let i2 = u32(max(joint_indices.z, 0.0));
@@ -278,15 +279,13 @@ fn vs_main(
       skinning_transform_normal(skin_index, i3, normal) * joint_weights.w
     );
   } else {
-    let model_q = quat_normalize(draw.transform.model_rotation);
-    world_pos = quat_rotate_vec3(
-      model_q,
-      local_pos * draw.transform.model_scale.xyz,
-    ) + draw.transform.model_translation.xyz;
-    world_normal = transform_normal_local_to_world(
-      model_q,
-      local_normal,
-      draw.transform.model_scale.xyz,
+    let world_from_local = affine3_to_square(mesh.world_from_local);
+    world_pos = (world_from_local * vec4<f32>(position, 1.0)).xyz;
+    world_normal = safe_normalize(
+      mat2x4_f32_to_mat3x3_unpack(
+        mesh.local_from_world_transpose_a,
+        mesh.local_from_world_transpose_b,
+      ) * normal,
     );
   }
   out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
@@ -1102,7 +1101,7 @@ fn fs_main(
   in : VertexOut,
   @builtin(front_facing) is_front : bool,
 ) -> @location(0) vec4<f32> {
-  let draw = u_draws.data[in.draw_index];
+  let mesh = u_draws.data[in.draw_index];
   let material_flags = u_material.flags;
   let has_base_map = material_flag_enabled(
     material_flags,
@@ -1132,8 +1131,10 @@ fn fs_main(
     material_flags,
     STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT,
   );
-  let use_stacked_cubemap = draw.material.uv_transform_mode < 0.0;
-  let has_uv = draw.material.uv_transform_mode > 0.0;
+  let use_stacked_cubemap = false;
+  let has_uv = has_base_map || has_emissive_map || has_metallic_roughness_map ||
+    has_occlusion_map || has_depth_map || has_anisotropy_map ||
+    has_specular_tint_map;
   let double_sided = material_flag_enabled(
     material_flags,
     STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT,
@@ -1286,8 +1287,12 @@ fn fs_main(
     u_view.lights.directional_light_color.w,
     u_view.lights.point_light_shadow_params.w,
   ));
-  let draw_point_shadow_enabled = max(bitcast<f32>(draw.material._reserved0), 0.0);
-  let draw_point_shadow_depth_bias = max(bitcast<f32>(draw.material._reserved1), 0.0);
+  let draw_point_shadow_enabled = select(
+    0.0,
+    1.0,
+    (mesh.flags & MESH_FLAGS_SHADOW_RECEIVER_BIT) != 0u,
+  );
+  let draw_point_shadow_depth_bias = 0.0;
   let point_shadow_params = vec4<f32>(
     u_view.lights.point_light_shadow_params.x * draw_point_shadow_enabled,
     max(u_view.lights.point_light_shadow_params.y, draw_point_shadow_depth_bias),

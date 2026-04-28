@@ -235,7 +235,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
       if skinning_key_hi >= 0 {
         skinning_key_hi.reinterpret_as_uint()
       } else {
-        0U
+        0xFFFFFFFFU
       },
       0.0F,
       0.0F,

@@ -387,7 +387,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       if skinning_key_hi >= 0 {
         skinning_key_hi.reinterpret_as_uint()
       } else {
-        0U
+        0xFFFFFFFFU
       },
       draw_point_shadow_enabled,
       draw_point_shadow_depth_bias,

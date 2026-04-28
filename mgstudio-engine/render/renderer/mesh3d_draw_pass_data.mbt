@@ -277,6 +277,89 @@ fn mesh3d_spot_scale_offset(
 }
 
 ///|
+fn mesh3d_mesh_uniform_words(
+  x : Float,
+  y : Float,
+  z : Float,
+  rotation_x : Float,
+  rotation_y : Float,
+  rotation_z : Float,
+  rotation_w : Float,
+  scale_x : Float,
+  scale_y : Float,
+  scale_z : Float,
+  previous_x : Float,
+  previous_y : Float,
+  previous_z : Float,
+  previous_rotation_x : Float,
+  previous_rotation_y : Float,
+  previous_rotation_z : Float,
+  previous_rotation_w : Float,
+  previous_scale_x : Float,
+  previous_scale_y : Float,
+  previous_scale_z : Float,
+  current_skin_index : UInt,
+  point_shadow_enabled : Float,
+) -> Array[UInt] {
+  let determinant = scale_x * scale_y * scale_z
+  let mut flags = 0xFFFFU
+  if point_shadow_enabled > 0.5F {
+    flags = flags | (1U << 29)
+  }
+  if determinant >= 0.0F {
+    flags = flags | (1U << 31)
+  }
+  let inverse_transpose = mesh3d_inverse_transpose_words(
+    rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
+  )
+  let words : Array[UInt] = []
+  for
+    word in mesh3d_world_from_local_words(
+      x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
+      scale_z,
+    ) {
+    words.push(word)
+  }
+  for
+    word in mesh3d_world_from_local_words(
+      previous_x, previous_y, previous_z, previous_rotation_x, previous_rotation_y,
+      previous_rotation_z, previous_rotation_w, previous_scale_x, previous_scale_y,
+      previous_scale_z,
+    ) {
+    words.push(word)
+  }
+  for i in 0..<8 {
+    words.push(inverse_transpose[i])
+  }
+  words.push(inverse_transpose[8])
+  words.push(flags)
+  words.push(0U)
+  words.push(0U)
+  words.push(0U)
+  words.push(current_skin_index)
+  words.push(0U)
+  words.push(0U)
+  words.push(0U)
+  for _ in 0..<3 {
+    words.push(0U)
+  }
+  words
+}
+
+///|
+fn mesh3d_mesh_uniform_write(
+  bytes : FixedArray[Byte],
+  byte_offset : Int,
+  words : Array[UInt],
+) -> Unit {
+  let mut cursor = byte_offset
+  for word in words {
+    u32le_write_into_fixed(bytes, cursor, word)
+    cursor += 4
+  }
+}
+
+///|
 fn mesh3d_draw_uniform_bytes(
   x : Float,
   y : Float,
@@ -323,67 +406,43 @@ fn mesh3d_draw_uniform_bytes(
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
 ) -> Bytes {
-  let reflectance_tint_r = reflectance * specular_tint_r
-  let reflectance_tint_g = reflectance * specular_tint_g
-  let reflectance_tint_b = reflectance * specular_tint_b
-  let words : Array[UInt] = [
-    f32_bits(x),
-    f32_bits(y),
-    f32_bits(z),
-    f32_bits(1.0F),
-    f32_bits(rotation_x),
-    f32_bits(rotation_y),
-    f32_bits(rotation_z),
-    f32_bits(rotation_w),
-    f32_bits(scale_x),
-    f32_bits(scale_y),
-    f32_bits(scale_z),
-    f32_bits(1.0F),
-    f32_bits(color_r),
-    f32_bits(color_g),
-    f32_bits(color_b),
-    f32_bits(color_a),
-    f32_bits(emissive_r),
-    f32_bits(emissive_g),
-    f32_bits(emissive_b),
-    f32_bits(1.0F),
-    f32_bits(uv_transform_a),
-    f32_bits(uv_transform_b),
-    f32_bits(0.0F),
-    f32_bits(0.0F),
-    f32_bits(uv_transform_c),
-    f32_bits(uv_transform_d),
-    f32_bits(0.0F),
-    f32_bits(0.0F),
-    f32_bits(uv_transform_tx),
-    f32_bits(uv_transform_ty),
-    f32_bits(1.0F),
-    f32_bits(0.0F),
-    f32_bits(reflectance_tint_r),
-    f32_bits(reflectance_tint_g),
-    f32_bits(reflectance_tint_b),
-    f32_bits(roughness),
-    f32_bits(metallic),
-    f32_bits(diffuse_transmission),
-    f32_bits(specular_transmission),
-    f32_bits(thickness),
-    f32_bits(ior),
-    f32_bits(anisotropy_strength),
-    f32_bits(cosf(anisotropy_rotation)),
-    f32_bits(sinf(anisotropy_rotation)),
-    material_flags,
-    f32_bits(alpha_cutoff),
-    f32_bits(parallax_depth_scale),
-    f32_bits(max_parallax_layer_count),
-    max_relief_mapping_search_steps.to_int().reinterpret_as_uint(),
-    f32_bits(uv_transform_mode),
-    f32_bits(point_shadow_enabled),
-    f32_bits(point_shadow_depth_bias),
-    current_skin_index,
-    0U,
-    0U,
-    0U,
-  ]
+  ignore(color_r)
+  ignore(color_g)
+  ignore(color_b)
+  ignore(color_a)
+  ignore(uv_transform_a)
+  ignore(uv_transform_b)
+  ignore(uv_transform_c)
+  ignore(uv_transform_d)
+  ignore(uv_transform_tx)
+  ignore(uv_transform_ty)
+  ignore(uv_transform_mode)
+  ignore(emissive_r)
+  ignore(emissive_g)
+  ignore(emissive_b)
+  ignore(metallic)
+  ignore(roughness)
+  ignore(reflectance)
+  ignore(parallax_depth_scale)
+  ignore(max_parallax_layer_count)
+  ignore(max_relief_mapping_search_steps)
+  ignore(anisotropy_strength)
+  ignore(anisotropy_rotation)
+  ignore(specular_tint_r)
+  ignore(specular_tint_g)
+  ignore(specular_tint_b)
+  ignore(diffuse_transmission)
+  ignore(specular_transmission)
+  ignore(thickness)
+  ignore(ior)
+  ignore(alpha_cutoff)
+  ignore(material_flags)
+  ignore(point_shadow_depth_bias)
+  let words = mesh3d_mesh_uniform_words(
+    x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
+    x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
+    current_skin_index, point_shadow_enabled,
+  )
   u32le_pack(words)
 }
 
@@ -534,127 +593,47 @@ fn mesh3d_draw_uniform_write(
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
 ) -> Unit {
-  let reflectance_tint_r = reflectance * specular_tint_r
-  let reflectance_tint_g = reflectance * specular_tint_g
-  let reflectance_tint_b = reflectance * specular_tint_b
-  let cos_anisotropy_rotation = cosf(anisotropy_rotation)
-  let sin_anisotropy_rotation = sinf(anisotropy_rotation)
-  let mut cursor = byte_offset
-  f32le_write_into_fixed(bytes, cursor, x)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, y)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, z)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, 1.0F)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, rotation_x)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, rotation_y)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, rotation_z)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, rotation_w)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, scale_x)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, scale_y)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, scale_z)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, 1.0F)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, color_r)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, color_g)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, color_b)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, color_a)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, emissive_r)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, emissive_g)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, emissive_b)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, 1.0F)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, uv_transform_a)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, uv_transform_b)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, 0.0F)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, 0.0F)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, uv_transform_c)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, uv_transform_d)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, 0.0F)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, 0.0F)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, uv_transform_tx)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, uv_transform_ty)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, 1.0F)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, 0.0F)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, reflectance_tint_r)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, reflectance_tint_g)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, reflectance_tint_b)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, roughness)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, metallic)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, diffuse_transmission)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, specular_transmission)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, thickness)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, ior)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, anisotropy_strength)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, cos_anisotropy_rotation)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, sin_anisotropy_rotation)
-  cursor += 4
-  u32le_write_into_fixed(bytes, cursor, material_flags)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, alpha_cutoff)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, parallax_depth_scale)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, max_parallax_layer_count)
-  cursor += 4
-  u32le_write_into_fixed(
+  ignore(color_r)
+  ignore(color_g)
+  ignore(color_b)
+  ignore(color_a)
+  ignore(uv_transform_a)
+  ignore(uv_transform_b)
+  ignore(uv_transform_c)
+  ignore(uv_transform_d)
+  ignore(uv_transform_tx)
+  ignore(uv_transform_ty)
+  ignore(uv_transform_mode)
+  ignore(emissive_r)
+  ignore(emissive_g)
+  ignore(emissive_b)
+  ignore(metallic)
+  ignore(roughness)
+  ignore(reflectance)
+  ignore(parallax_depth_scale)
+  ignore(max_parallax_layer_count)
+  ignore(max_relief_mapping_search_steps)
+  ignore(anisotropy_strength)
+  ignore(anisotropy_rotation)
+  ignore(specular_tint_r)
+  ignore(specular_tint_g)
+  ignore(specular_tint_b)
+  ignore(diffuse_transmission)
+  ignore(specular_transmission)
+  ignore(thickness)
+  ignore(ior)
+  ignore(alpha_cutoff)
+  ignore(material_flags)
+  ignore(point_shadow_depth_bias)
+  mesh3d_mesh_uniform_write(
     bytes,
-    cursor,
-    max_relief_mapping_search_steps.to_int().reinterpret_as_uint(),
+    byte_offset,
+    mesh3d_mesh_uniform_words(
+      x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
+      scale_z, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x,
+      scale_y, scale_z, current_skin_index, point_shadow_enabled,
+    ),
   )
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, uv_transform_mode)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, point_shadow_enabled)
-  cursor += 4
-  f32le_write_into_fixed(bytes, cursor, point_shadow_depth_bias)
-  cursor += 4
-  u32le_write_into_fixed(bytes, cursor, current_skin_index)
-  cursor += 4
-  u32le_write_into_fixed(bytes, cursor, 0U)
-  cursor += 4
-  u32le_write_into_fixed(bytes, cursor, 0U)
-  cursor += 4
-  u32le_write_into_fixed(bytes, cursor, 0U)
 }
 
 ///|

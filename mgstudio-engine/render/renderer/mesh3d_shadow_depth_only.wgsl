@@ -30,46 +30,22 @@ struct Mesh3dViewBindings {
   view : Mesh3dViewUniform,
 };
 
-struct Mesh3dTransformUniform {
-  model_translation : vec4<f32>,
-  model_rotation : vec4<f32>,
-  model_scale : vec4<f32>,
-};
-
-struct Mesh3dMaterialUniform {
-  base_color : vec4<f32>,
-  emissive : vec4<f32>,
-  uv_transform : mat3x3<f32>,
-  reflectance : vec3<f32>,
-  perceptual_roughness : f32,
-  metallic : f32,
-  diffuse_transmission : f32,
-  specular_transmission : f32,
-  thickness : f32,
-  ior : f32,
-  anisotropy_strength : f32,
-  anisotropy_rotation : vec2<f32>,
+struct Mesh {
+  world_from_local : mat3x4<f32>,
+  previous_world_from_local : mat3x4<f32>,
+  local_from_world_transpose_a : mat2x4<f32>,
+  local_from_world_transpose_b : f32,
   flags : u32,
-  alpha_cutoff : f32,
-  parallax_depth_scale : f32,
-  max_parallax_layer_count : f32,
-  max_relief_mapping_search_steps : u32,
-  uv_transform_mode : f32,
-  _reserved0 : u32,
-  _reserved1 : u32,
-};
-
-struct Mesh3dDrawUniform {
-  transform : Mesh3dTransformUniform,
-  material : Mesh3dMaterialUniform,
+  lightmap_uv_rect : vec2<u32>,
+  first_vertex_index : u32,
   current_skin_index : u32,
-  _reserved2 : u32,
-  _reserved3 : u32,
-  _reserved4 : u32,
+  material_and_lightmap_bind_group_slot : u32,
+  tag : u32,
+  pad : u32,
 };
 
 struct Mesh3dDrawUniformBuffer {
-  data : array<Mesh3dDrawUniform>,
+  data : array<Mesh>,
 };
 
 struct Mesh3dSkinningRowsBuffer {
@@ -80,14 +56,13 @@ struct Mesh3dSkinningRowsBuffer {
 @group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;
 @group(2) @binding(1) var<storage, read> u_skinning_rows : Mesh3dSkinningRowsBuffer;
 
-fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
-  let n = max(dot(q, q), 1e-8);
-  return q / sqrt(n);
-}
-
-fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
-  let t = 2.0 * cross(q.xyz, v);
-  return v + q.w * t + cross(q.xyz, t);
+fn affine3_to_square(affine : mat3x4<f32>) -> mat4x4<f32> {
+  return transpose(mat4x4<f32>(
+    affine[0],
+    affine[1],
+    affine[2],
+    vec4<f32>(0.0, 0.0, 0.0, 1.0),
+  ));
 }
 
 fn skinning_row_count() -> u32 {
@@ -99,6 +74,9 @@ fn skinning_transform_point(
   joint_index : u32,
   local_point : vec3<f32>,
 ) -> vec3<f32> {
+  if skin_index == 0xffffffffu {
+    return local_point;
+  }
   let base = (skin_index + joint_index) * 4u;
   if base + 3u >= skinning_row_count() {
     return local_point;
@@ -125,11 +103,11 @@ fn vertex(
   _ = uv;
   _ = color;
   var out : VertexOut;
-  let draw = u_draws.data[instance_index];
+  let mesh = u_draws.data[instance_index];
   let weight_sum = joint_weights.x + joint_weights.y + joint_weights.z + joint_weights.w;
   var world_pos = vec3<f32>(0.0, 0.0, 0.0);
   if weight_sum > 1.0e-6 {
-    let skin_index = draw.current_skin_index;
+    let skin_index = mesh.current_skin_index;
     let i0 = u32(max(joint_indices.x, 0.0));
     let i1 = u32(max(joint_indices.y, 0.0));
     let i2 = u32(max(joint_indices.z, 0.0));
@@ -140,11 +118,8 @@ fn vertex(
       skinning_transform_point(skin_index, i2, position) * joint_weights.z +
       skinning_transform_point(skin_index, i3, position) * joint_weights.w;
   } else {
-    let model_q = quat_normalize(draw.transform.model_rotation);
-    world_pos = quat_rotate_vec3(
-      model_q,
-      position * draw.transform.model_scale.xyz,
-    ) + draw.transform.model_translation.xyz;
+    let world_from_local = affine3_to_square(mesh.world_from_local);
+    world_pos = (world_from_local * vec4<f32>(position, 1.0)).xyz;
   }
   out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
   return out;
