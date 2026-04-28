@@ -56,62 +56,41 @@ fn render3d_execute_camera_point_shadow_pass(
     shadow_camera_near,
     pass_lighting.point_range,
   )
+  let shadow_phase_items = render3d_queue_shadow_phase_items(
+    draw_items, meshes, opaque_alpha_draw_item_indices,
+  )
   for face_index in 0..<6 {
     let shadow_camera_transform = @pbr_render.render3d_point_shadow_face_transform(
       pass_lighting.point_pos,
       face_index,
     )
-    @pbr_render.render3d_begin_pass_3d(
-      target_id=shadow_target_id,
-      target_layer=face_index,
-      width=shadow_view_size,
-      height=shadow_view_size,
-      clear_r=1.0F,
-      clear_g=1.0F,
-      clear_b=1.0F,
-      clear_a=1.0F,
-      shadow_camera_transform,
-      point_shadow_pass_projection,
-      viewport_x=0,
-      viewport_y=0,
-      viewport_width=shadow_view_size,
-      viewport_height=shadow_view_size,
-      pass_lighting,
-      previous_clip_from_world=None,
-      point_shadow_near=shadow_camera_near,
-      pass_kind=point_shadow_pass_kind,
-      clear_enabled=1,
+    let shadow_view = Render3dShadowView::{
+      target_id: shadow_target_id,
+      target_layer: face_index,
+      width: shadow_view_size,
+      height: shadow_view_size,
+      transform: shadow_camera_transform,
+      projection: point_shadow_pass_projection,
+      clip_from_world: None,
+      light_entity: Render3dLightEntity::Point(
+        light_entity=point_entity,
+        face_index~,
+      ),
+      pass_name: "shadow_point_light_face",
+    }
+    render3d_shadow_view_begin_pass(
+      shadow_view, pass_lighting, point_shadow_pass_kind, shadow_camera_near,
     )
-    for draw_item_index in opaque_alpha_draw_item_indices {
-      let shadow_draw_item = draw_items[draw_item_index]
-      if shadow_draw_item.phase != RENDER3D_PHASE_OPAQUE &&
-        shadow_draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
-        continue
-      }
-      let extracted_shadow_mesh = meshes[shadow_draw_item.extracted_index]
+    for shadow_phase_item in shadow_phase_items {
+      ignore(render3d_shadow_phase_item_debug_key(shadow_phase_item))
+      let extracted_shadow_mesh = meshes[shadow_phase_item.extracted_index]
       let shadow_mesh = extracted_shadow_mesh.payload
-      if shadow_mesh.has_not_shadow_caster {
-        continue
-      }
-      if shadow_mesh.is_forward_decal || shadow_mesh.clustered_decal is Some(_) {
-        continue
-      }
-      guard render3d_mesh_draw_alpha(
-          shadow_mesh.material.alpha_mode,
-          shadow_mesh.material.base_color.a,
-        )
-        is Some(shadow_alpha) else {
-        continue
-      }
-      if shadow_alpha < 0.999F {
-        continue
-      }
       @pbr_render.render3d_draw_mesh_gpu_payload(
         @pbr_render.render3d_build_mesh_gpu_draw_payload(
           shadow_mesh.mesh_id,
           camera_entity.id,
           camera_entity.generation,
-          draw_item_index,
+          shadow_phase_item.draw_item_index,
           MESH3D_DRAW_INDIRECT_KIND_NONE,
           -1,
           shadow_mesh.material,

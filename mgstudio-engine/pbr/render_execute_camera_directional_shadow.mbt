@@ -341,57 +341,35 @@ fn render3d_execute_camera_directional_shadow_pass(
     cascades.length(),
   )
   let draw_items = draw_queue_entry.draw_items
+  let shadow_phase_items = render3d_queue_shadow_phase_items(
+    draw_items, meshes, opaque_alpha_draw_item_indices,
+  )
   ignore(indexed_indirect_parameter_indices)
   ignore(non_indexed_indirect_parameter_indices)
   for cascade_index in 0..<cascades.length() {
     let cascade = cascades[cascade_index]
-    @pbr_render.render3d_begin_pass_3d(
-      target_id~,
-      target_layer=cascade_index,
-      width=shadow_map_size,
-      height=shadow_map_size,
-      clear_r=1.0F,
-      clear_g=1.0F,
-      clear_b=1.0F,
-      clear_a=1.0F,
-      cascade.transform,
-      cascade.projection,
-      viewport_x=0,
-      viewport_y=0,
-      viewport_width=shadow_map_size,
-      viewport_height=shadow_map_size,
-      pass_lighting,
-      previous_clip_from_world=None,
-      point_shadow_near=0.1F,
-      clip_from_world_override=Some(cascade.clip_from_world),
-      pass_kind=shadow_pass_kind,
-      clear_enabled=1,
+    let shadow_view = Render3dShadowView::{
+      target_id,
+      target_layer: cascade_index,
+      width: shadow_map_size,
+      height: shadow_map_size,
+      transform: cascade.transform,
+      projection: cascade.projection,
+      clip_from_world: Some(cascade.clip_from_world),
+      light_entity: Render3dLightEntity::Directional(
+        light_entity~,
+        cascade_index~,
+      ),
+      pass_name: "shadow_directional_light_cascade",
+    }
+    render3d_shadow_view_begin_pass(
+      shadow_view, pass_lighting, shadow_pass_kind, 0.1F,
     )
-    for draw_item_index in opaque_alpha_draw_item_indices {
-      let shadow_draw_item = draw_items[draw_item_index]
-      if shadow_draw_item.phase != RENDER3D_PHASE_OPAQUE &&
-        shadow_draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
-        continue
-      }
-      let extracted_shadow_mesh = meshes[shadow_draw_item.extracted_index]
+    for shadow_phase_item in shadow_phase_items {
+      ignore(render3d_shadow_phase_item_debug_key(shadow_phase_item))
+      let extracted_shadow_mesh = meshes[shadow_phase_item.extracted_index]
       let shadow_mesh = extracted_shadow_mesh.payload
-      if shadow_mesh.has_not_shadow_caster {
-        continue
-      }
-      if shadow_mesh.is_forward_decal || shadow_mesh.clustered_decal is Some(_) {
-        continue
-      }
       if !render3d_directional_shadow_mesh_visible(cascade, shadow_mesh) {
-        continue
-      }
-      guard render3d_mesh_draw_alpha(
-          shadow_mesh.material.alpha_mode,
-          shadow_mesh.material.base_color.a,
-        )
-        is Some(shadow_alpha) else {
-        continue
-      }
-      if shadow_alpha < 0.999F {
         continue
       }
       @pbr_render.render3d_draw_mesh_gpu_payload(
@@ -399,7 +377,7 @@ fn render3d_execute_camera_directional_shadow_pass(
           shadow_mesh.mesh_id,
           camera_entity.id,
           camera_entity.generation,
-          draw_item_index,
+          shadow_phase_item.draw_item_index,
           MESH3D_DRAW_INDIRECT_KIND_NONE,
           -1,
           shadow_mesh.material,
