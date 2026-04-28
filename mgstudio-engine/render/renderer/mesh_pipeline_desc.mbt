@@ -13,6 +13,39 @@
 // limitations under the License.
 
 ///|
+fn mesh_pipeline_desc_builder_set_blend_kind(
+  builder : @wgpu_c.RenderPipelineDescBuilderObj,
+  blend_kind : Int,
+) -> UInt {
+  if blend_kind == MESH3D_PIPELINE_BLEND_OPAQUE {
+    return @wgpu_c.render_pipeline_desc_builder_disable_blend(builder)
+  }
+  if blend_kind == MESH3D_PIPELINE_BLEND_PREMULTIPLIED_ALPHA {
+    return @wgpu_c.render_pipeline_desc_builder_set_blend_components(
+      builder,
+      @wgpu.BLEND_FACTOR_ONE,
+      @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      @wgpu.BLEND_OPERATION_ADD,
+      @wgpu.BLEND_FACTOR_ONE,
+      @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      @wgpu.BLEND_OPERATION_ADD,
+    )
+  }
+  if blend_kind == MESH3D_PIPELINE_BLEND_MULTIPLY {
+    return @wgpu_c.render_pipeline_desc_builder_set_blend_components(
+      builder,
+      @wgpu.BLEND_FACTOR_DST,
+      @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      @wgpu.BLEND_OPERATION_ADD,
+      @wgpu.BLEND_FACTOR_ONE,
+      @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      @wgpu.BLEND_OPERATION_ADD,
+    )
+  }
+  @wgpu_c.render_pipeline_desc_builder_enable_alpha_blend(builder)
+}
+
+///|
 fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   layout : @wgpu.PipelineLayout,
   shader : @wgpu.ShaderModule,
@@ -21,6 +54,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   depth_write_enabled? : Bool = true,
   position3d? : Bool = false,
   alpha_blend? : Bool = true,
+  blend_kind? : Int = MESH3D_PIPELINE_BLEND_ALPHA,
   topology? : UInt = @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
   cull_mode? : UInt = @wgpu.CULL_MODE_NONE,
   depth_compare_u32? : UInt = @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
@@ -33,9 +67,12 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     builder, format,
   )
   let set_blend_err = if alpha_blend {
-    @wgpu_c.render_pipeline_desc_builder_enable_alpha_blend(builder)
+    mesh_pipeline_desc_builder_set_blend_kind(builder, blend_kind)
   } else {
-    0U
+    mesh_pipeline_desc_builder_set_blend_kind(
+      builder,
+      MESH3D_PIPELINE_BLEND_OPAQUE,
+    )
   }
   let vertex_stride = if position3d { MESH3D_VERTEX_STRIDE_BYTES } else { 32UL }
   let pos_format = if position3d {

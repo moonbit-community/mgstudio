@@ -584,7 +584,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
     let topology = mesh3d_topology_from_kind(mesh_topology_kind)
     ignore(
       mesh3d_pipeline_for_current_pass(
-        backend, false, forward_decal, topology, cull_mode, shader_path,
+        backend, false, 0U, forward_decal, topology, cull_mode, shader_path,
       ),
     ) catch {
       Fatal(message) =>
@@ -594,7 +594,13 @@ pub fn prewarm_mesh3d_pipeline_variants(
     }
     ignore(
       mesh3d_pipeline_for_current_pass(
-        backend, true, forward_decal, topology, cull_mode, shader_path,
+        backend,
+        true,
+        MESH3D_SHADOW_ALPHA_MODE_BLEND,
+        forward_decal,
+        topology,
+        cull_mode,
+        shader_path,
       ),
     ) catch {
       Fatal(message) =>

@@ -13,11 +13,23 @@
 // limitations under the License.
 
 ///|
+const MESH3D_PIPELINE_BLEND_OPAQUE : Int = 0
+
+///|
+const MESH3D_PIPELINE_BLEND_ALPHA : Int = 1
+
+///|
+const MESH3D_PIPELINE_BLEND_PREMULTIPLIED_ALPHA : Int = 2
+
+///|
+const MESH3D_PIPELINE_BLEND_MULTIPLY : Int = 3
+
+///|
 struct Mesh3dPipelineCacheEntry {
   color_format : UInt
   topology : UInt
   cull_mode : Int
-  transparent : Bool
+  blend_kind : Int
   pipeline : @wgpu.RenderPipeline
 }
 
@@ -27,14 +39,14 @@ fn mesh3d_pipeline_get(
   color_format : UInt,
   topology : UInt,
   cull_mode : Int,
-  transparent : Bool,
+  blend_kind : Int,
 ) -> @wgpu.RenderPipeline? {
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   for entry in backend.mesh3d_pipeline_cache {
     if entry.color_format == color_format &&
       entry.topology == topology &&
       entry.cull_mode == safe_cull_mode &&
-      entry.transparent == transparent {
+      entry.blend_kind == blend_kind {
       return Some(entry.pipeline)
     }
   }
@@ -47,14 +59,14 @@ fn mesh3d_pipeline_set(
   color_format : UInt,
   topology : UInt,
   cull_mode : Int,
-  transparent : Bool,
+  blend_kind : Int,
   pipeline : @wgpu.RenderPipeline,
 ) -> Unit {
   backend.mesh3d_pipeline_cache.push({
     color_format,
     topology,
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
-    transparent,
+    blend_kind,
     pipeline,
   })
 }

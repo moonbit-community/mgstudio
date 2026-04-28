@@ -213,6 +213,7 @@ struct Mesh3dCustomPipelineCacheEntry {
   surface_format : @wgpu.TextureFormat?
   topology : UInt
   transparent : Bool
+  blend_kind : Int
   forward_decal : Bool
   cull_mode : Int
   pipeline : @wgpu.RenderPipeline

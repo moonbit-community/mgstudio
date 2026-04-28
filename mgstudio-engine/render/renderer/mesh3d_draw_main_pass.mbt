@@ -86,6 +86,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   guard mesh3d_pipeline_for_current_pass(
       self,
       transparent,
+      material_flags,
       forward_decal,
       mesh.primitive_topology,
       cull_mode,

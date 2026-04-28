@@ -27,6 +27,7 @@ fn mesh3d_custom_pipeline_cache_get(
   surface_format : @wgpu.TextureFormat?,
   topology : UInt,
   transparent : Bool,
+  blend_kind : Int,
   forward_decal : Bool,
   cull_mode : Int,
 ) -> @wgpu.RenderPipeline? {
@@ -37,6 +38,7 @@ fn mesh3d_custom_pipeline_cache_get(
     }
     if entry.topology != topology ||
       entry.transparent != transparent ||
+      entry.blend_kind != blend_kind ||
       entry.forward_decal != forward_decal ||
       entry.cull_mode != safe_cull_mode {
       continue
@@ -68,12 +70,45 @@ fn load_wgsl_required_mesh3d_forward_decal_pipeline(
 }
 
 ///|
+fn mesh3d_blend_kind_from_material_flags(
+  material_flags : UInt,
+  transparent : Bool,
+) -> Int {
+  if !transparent {
+    return MESH3D_PIPELINE_BLEND_OPAQUE
+  }
+  let alpha_mode = material_flags & MESH3D_SHADOW_ALPHA_MODE_RESERVED_BITS
+  if alpha_mode == MESH3D_SHADOW_ALPHA_MODE_PREMULTIPLIED ||
+    alpha_mode == MESH3D_SHADOW_ALPHA_MODE_ADD {
+    MESH3D_PIPELINE_BLEND_PREMULTIPLIED_ALPHA
+  } else if alpha_mode == MESH3D_SHADOW_ALPHA_MODE_MULTIPLY {
+    MESH3D_PIPELINE_BLEND_MULTIPLY
+  } else {
+    MESH3D_PIPELINE_BLEND_ALPHA
+  }
+}
+
+///|
+fn mesh3d_pipeline_blend_suffix(blend_kind : Int) -> String {
+  if blend_kind == MESH3D_PIPELINE_BLEND_PREMULTIPLIED_ALPHA {
+    "premultiplied"
+  } else if blend_kind == MESH3D_PIPELINE_BLEND_MULTIPLY {
+    "multiply"
+  } else if blend_kind == MESH3D_PIPELINE_BLEND_ALPHA {
+    "alpha"
+  } else {
+    "opaque"
+  }
+}
+
+///|
 fn mesh3d_custom_pipeline_get_or_create(
   backend : GpuBackend,
   shader_path : String,
   surface_format : @wgpu.TextureFormat?,
   topology : UInt,
   transparent : Bool,
+  blend_kind : Int,
   forward_decal : Bool,
   cull_mode : Int,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
@@ -82,13 +117,13 @@ fn mesh3d_custom_pipeline_get_or_create(
     return None
   }
   if mesh3d_custom_pipeline_cache_get(
-      backend, resolved_shader_path, surface_format, topology, transparent, forward_decal,
-      cull_mode,
+      backend, resolved_shader_path, surface_format, topology, transparent, blend_kind,
+      forward_decal, cull_mode,
     )
     is Some(pipeline) {
     return Some(pipeline)
   }
-  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode)
+  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode, blend_kind)
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return None }
@@ -112,6 +147,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     topology~,
     cull_mode=cull_mode_wgpu,
     alpha_blend=transparent,
+    blend_kind~,
     depth_compare_u32=if forward_decal {
       @wgpu.COMPARE_FUNCTION_ALWAYS
     } else {
@@ -144,6 +180,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     surface_format,
     topology,
     transparent,
+    blend_kind,
     forward_decal,
     cull_mode: safe_cull_mode,
     pipeline,
@@ -157,6 +194,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   backend : GpuBackend,
   topology : UInt,
   cull_mode : Int,
+  blend_kind : Int,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
@@ -393,68 +431,43 @@ fn ensure_mesh3d_pipeline_rgba8(
     )
   }
   let color_format = tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32()
-  if mesh3d_pipeline_get(backend, color_format, topology, safe_cull_mode, false)
-    is Some(_) &&
-    mesh3d_pipeline_get(backend, color_format, topology, safe_cull_mode, true)
+  if mesh3d_pipeline_get(
+      backend, color_format, topology, safe_cull_mode, blend_kind,
+    )
     is Some(_) {
     return
   }
+  let transparent = blend_kind != MESH3D_PIPELINE_BLEND_OPAQUE
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(backend, MESH3D_FORWARD_SHADER_PATH)
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  if mesh3d_pipeline_get(backend, color_format, topology, safe_cull_mode, false)
-    is None {
-    let desc_opaque = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
-      pl,
-      sm,
-      color_format,
-      with_depth=true,
-      depth_write_enabled=true,
-      position3d=true,
-      topology~,
-      cull_mode=cull_mode_wgpu,
-      alpha_blend=false,
-    )
-    let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
-    @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
-    pipeline_opaque.set_label(
-      "mgstudio_mesh3d_rgba8_opaque_" +
-      mesh3d_topology_suffix(topology) +
-      "_cull_" +
-      mesh3d_cull_mode_suffix(safe_cull_mode),
-    )
-    mesh3d_pipeline_set(
-      backend, color_format, topology, safe_cull_mode, false, pipeline_opaque,
-    )
-  }
-  if mesh3d_pipeline_get(backend, color_format, topology, safe_cull_mode, true)
-    is None {
-    let desc_transparent = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
-      pl,
-      sm,
-      color_format,
-      with_depth=true,
-      depth_write_enabled=false,
-      position3d=true,
-      topology~,
-      cull_mode=cull_mode_wgpu,
-      alpha_blend=true,
-    )
-    let pipeline_transparent = backend.device.create_render_pipeline_ptr(
-      desc_transparent,
-    )
-    @wgpu_c.render_pipeline_descriptor_free(desc_transparent)
-    pipeline_transparent.set_label(
-      "mgstudio_mesh3d_rgba8_transparent_" +
-      mesh3d_topology_suffix(topology) +
-      "_cull_" +
-      mesh3d_cull_mode_suffix(safe_cull_mode),
-    )
-    mesh3d_pipeline_set(
-      backend, color_format, topology, safe_cull_mode, true, pipeline_transparent,
-    )
-  }
+  let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+    pl,
+    sm,
+    color_format,
+    with_depth=true,
+    depth_write_enabled=!transparent,
+    position3d=true,
+    topology~,
+    cull_mode=cull_mode_wgpu,
+    alpha_blend=transparent,
+    blend_kind~,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  let blend_suffix = mesh3d_pipeline_blend_suffix(blend_kind)
+  pipeline.set_label(
+    "mgstudio_mesh3d_rgba8_" +
+    blend_suffix +
+    "_" +
+    mesh3d_topology_suffix(topology) +
+    "_cull_" +
+    mesh3d_cull_mode_suffix(safe_cull_mode),
+  )
+  mesh3d_pipeline_set(
+    backend, color_format, topology, safe_cull_mode, blend_kind, pipeline,
+  )
   sm.release()
 }
 
@@ -464,78 +477,54 @@ fn ensure_mesh3d_pipeline_surface(
   format : @wgpu.TextureFormat,
   topology : UInt,
   cull_mode : Int,
+  blend_kind : Int,
 ) -> Unit raise GpuBackendError {
   // Ensure shared mesh3d pipeline resources/layout exist before creating
   // surface-format specializations.
-  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode)
+  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode, blend_kind)
   ensure_sprite_resources(backend)
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let color_format = format.to_u32()
-  if mesh3d_pipeline_get(backend, color_format, topology, safe_cull_mode, false)
-    is Some(_) &&
-    mesh3d_pipeline_get(backend, color_format, topology, safe_cull_mode, true)
+  if mesh3d_pipeline_get(
+      backend, color_format, topology, safe_cull_mode, blend_kind,
+    )
     is Some(_) {
     return
   }
+  let transparent = blend_kind != MESH3D_PIPELINE_BLEND_OPAQUE
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(backend, MESH3D_FORWARD_SHADER_PATH)
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  if mesh3d_pipeline_get(backend, color_format, topology, safe_cull_mode, false)
-    is None {
-    let desc_opaque = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
-      pl,
-      sm,
-      color_format,
-      with_depth=true,
-      depth_write_enabled=true,
-      position3d=true,
-      topology~,
-      cull_mode=cull_mode_wgpu,
-      alpha_blend=false,
-    )
-    let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
-    @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
-    pipeline_opaque.set_label(
-      "mgstudio_mesh3d_surface_opaque_" +
-      mesh3d_topology_suffix(topology) +
-      "_cull_" +
-      mesh3d_cull_mode_suffix(safe_cull_mode),
-    )
-    mesh3d_pipeline_set(
-      backend, color_format, topology, safe_cull_mode, false, pipeline_opaque,
-    )
-  }
-  if mesh3d_pipeline_get(backend, color_format, topology, safe_cull_mode, true)
-    is None {
-    let desc_transparent = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
-      pl,
-      sm,
-      color_format,
-      with_depth=true,
-      depth_write_enabled=false,
-      position3d=true,
-      topology~,
-      cull_mode=cull_mode_wgpu,
-      alpha_blend=true,
-    )
-    let pipeline_transparent = backend.device.create_render_pipeline_ptr(
-      desc_transparent,
-    )
-    @wgpu_c.render_pipeline_descriptor_free(desc_transparent)
-    pipeline_transparent.set_label(
-      "mgstudio_mesh3d_surface_transparent_" +
-      mesh3d_topology_suffix(topology) +
-      "_cull_" +
-      mesh3d_cull_mode_suffix(safe_cull_mode),
-    )
-    mesh3d_pipeline_set(
-      backend, color_format, topology, safe_cull_mode, true, pipeline_transparent,
-    )
-  }
+  let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+    pl,
+    sm,
+    color_format,
+    with_depth=true,
+    depth_write_enabled=!transparent,
+    position3d=true,
+    topology~,
+    cull_mode=cull_mode_wgpu,
+    alpha_blend=transparent,
+    blend_kind~,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  let blend_suffix = mesh3d_pipeline_blend_suffix(blend_kind)
+  pipeline.set_label(
+    "mgstudio_mesh3d_surface_" +
+    blend_suffix +
+    "_" +
+    mesh3d_topology_suffix(topology) +
+    "_cull_" +
+    mesh3d_cull_mode_suffix(safe_cull_mode),
+  )
+  mesh3d_pipeline_set(
+    backend, color_format, topology, safe_cull_mode, blend_kind, pipeline,
+  )
   sm.release()
 }
 
@@ -543,12 +532,16 @@ fn ensure_mesh3d_pipeline_surface(
 fn mesh3d_pipeline_for_current_pass(
   backend : GpuBackend,
   transparent : Bool,
+  material_flags : UInt,
   forward_decal : Bool,
   topology : UInt,
   cull_mode : Int,
   shader_path : String?,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let resolved_shader_path = mesh3d_shader_path_or_default(shader_path)
+  let blend_kind = mesh3d_blend_kind_from_material_flags(
+    material_flags, transparent,
+  )
   if resolved_shader_path != MESH3D_FORWARD_SHADER_PATH || forward_decal {
     let custom_surface_format = match current_pass_color_format(backend) {
       Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) =>
@@ -557,29 +550,31 @@ fn mesh3d_pipeline_for_current_pass(
     }
     return mesh3d_custom_pipeline_get_or_create(
       backend, resolved_shader_path, custom_surface_format, topology, transparent,
-      forward_decal, cull_mode,
+      blend_kind, forward_decal, cull_mode,
     )
   }
   match current_pass_color_format(backend) {
     Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-      ensure_mesh3d_pipeline_surface(backend, format, topology, cull_mode)
+      ensure_mesh3d_pipeline_surface(
+        backend, format, topology, cull_mode, blend_kind,
+      )
       return mesh3d_pipeline_get(
         backend,
         format.to_u32(),
         topology,
         cull_mode,
-        transparent,
+        blend_kind,
       )
     }
     _ => ()
   }
-  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode)
+  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode, blend_kind)
   mesh3d_pipeline_get(
     backend,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32(),
     topology,
     cull_mode,
-    transparent,
+    blend_kind,
   )
 }
 
@@ -590,7 +585,12 @@ fn mesh3d_build_shadow_depth_pipeline(
   cull_mode : Int,
   material_path : Bool,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
-  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode)
+  ensure_mesh3d_pipeline_rgba8(
+    backend,
+    topology,
+    cull_mode,
+    MESH3D_PIPELINE_BLEND_OPAQUE,
+  )
   guard backend.mesh3d_pipeline_layout is Some(pl) else {
     fatal("wgpu: missing mesh3d pipeline layout for shadow depth pipeline")
   }
