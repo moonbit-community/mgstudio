@@ -35,10 +35,39 @@ struct Mesh3dViewUniform {
   exposure : f32,
 };
 
-struct Mesh3dLightsUniform {
-  ambient_color : vec4<f32>, // (rgb, _)
-  directional_light_direction_to_light : vec4<f32>, // (dir.xyz, _)
-  directional_light_color : vec4<f32>, // (premultiplied rgb, _)
+struct DirectionalCascade {
+  clip_from_world : mat4x4<f32>,
+  texel_size : f32,
+  far_bound : f32,
+};
+
+struct DirectionalLight {
+  cascades : array<DirectionalCascade, 4>,
+  color : vec4<f32>,
+  direction_to_light : vec3<f32>,
+  flags : u32,
+  soft_shadow_size : f32,
+  shadow_depth_bias : f32,
+  shadow_normal_bias : f32,
+  num_cascades : u32,
+  cascades_overlap_proportion : f32,
+  depth_texture_base_index : u32,
+  decal_index : u32,
+  sun_disk_angular_size : f32,
+  sun_disk_intensity : f32,
+};
+
+struct Lights {
+  directional_lights : array<DirectionalLight, 10>,
+  ambient_color : vec4<f32>,
+  cluster_dimensions : vec4<u32>,
+  cluster_factors : vec4<f32>,
+  n_directional_lights : u32,
+  spot_light_shadowmap_offset : i32,
+  ambient_light_affects_lightmapped_meshes : u32,
+};
+
+struct Mesh3dLegacyLightsUniform {
   point_light_position_radius : vec4<f32>, // (pos.xyz, radius)
   point_light_color_inverse_square_range : vec4<f32>, // (premultiplied rgb, inverse_square_range)
   point_light_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, _)
@@ -61,8 +90,10 @@ struct Mesh3dDirectionalShadowUniform {
 };
 
 struct Mesh3dLightBindings {
-  lights : Mesh3dLightsUniform,
+  lights : Lights,
+  legacy : Mesh3dLegacyLightsUniform,
   environment : vec4<f32>, // (intensity, _, _, _)
+  environment_rotation : vec4<f32>,
   directional_shadow : Mesh3dDirectionalShadowUniform,
 };
 
@@ -654,7 +685,7 @@ fn sample_directional_cascade(
   let params = u_lights.directional_shadow.params;
   let cascade = u_lights.directional_shadow.cascades[cascade_index];
   let normal_offset = params.z * cascade.data.x * surface_normal;
-  let depth_offset = params.y * safe_normalize(u_lights.lights.directional_light_direction_to_light.xyz);
+  let depth_offset = params.y * safe_normalize(u_lights.lights.directional_lights[0].direction_to_light);
   let offset_position = vec4<f32>(
     frag_position.xyz + normal_offset + depth_offset,
     frag_position.w,
@@ -1268,8 +1299,8 @@ fn fs_main(
   let specular_transmission = clamp(u_material.specular_transmission, 0.0, 1.0);
   let thickness = max(u_material.thickness, 0.0);
   let ior = max(u_material.ior, 1.0);
-  let transmission_blur_taps = i32(max(u_lights.lights.spot_light_custom_data.z, 0.0));
-  let transmission_steps = max(u_lights.lights.spot_light_custom_data.w, 0.0);
+  let transmission_blur_taps = i32(max(u_lights.legacy.spot_light_custom_data.z, 0.0));
+  let transmission_steps = max(u_lights.legacy.spot_light_custom_data.w, 0.0);
   let reflectance_rgb = max(specular_tint * u_material.reflectance, vec3<f32>(0.0));
   let diffuse_color = base_color.xyz * (1.0 - metallic) *
     (1.0 - specular_transmission) *
@@ -1280,12 +1311,7 @@ fn fs_main(
   let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
     base_color.xyz * metallic;
   let environment_map_intensity = max(u_lights.environment.x, 0.0);
-  let environment_map_rotation = quat_normalize(vec4<f32>(
-    u_lights.lights.ambient_color.w,
-    u_lights.lights.directional_light_direction_to_light.w,
-    u_lights.lights.directional_light_color.w,
-    u_lights.lights.point_light_shadow_params.w,
-  ));
+  let environment_map_rotation = quat_normalize(u_lights.environment_rotation);
   let draw_point_shadow_enabled = select(
     0.0,
     1.0,
@@ -1293,10 +1319,10 @@ fn fs_main(
   );
   let draw_point_shadow_depth_bias = 0.0;
   let point_shadow_params = vec4<f32>(
-    u_lights.lights.point_light_shadow_params.x * draw_point_shadow_enabled,
-    max(u_lights.lights.point_light_shadow_params.y, draw_point_shadow_depth_bias),
-    u_lights.lights.point_light_shadow_params.z,
-    u_lights.lights.point_light_shadow_params.w,
+    u_lights.legacy.point_light_shadow_params.x * draw_point_shadow_enabled,
+    max(u_lights.legacy.point_light_shadow_params.y, draw_point_shadow_depth_bias),
+    u_lights.legacy.point_light_shadow_params.z,
+    u_lights.legacy.point_light_shadow_params.w,
   );
 
   let ambient_term = u_lights.lights.ambient_color.xyz;
@@ -1320,13 +1346,13 @@ fn fs_main(
     anisotropy_strength,
     anisotropy_t,
     anisotropy_b,
-    safe_normalize(u_lights.lights.directional_light_direction_to_light.xyz),
-    u_lights.lights.directional_light_color.xyz * directional_shadow_factor,
+    safe_normalize(u_lights.lights.directional_lights[0].direction_to_light),
+    u_lights.lights.directional_lights[0].color.xyz * directional_shadow_factor,
   );
   let point_shadow_factor = point_light_shadow(
     in.world_pos,
-    u_lights.lights.point_light_position_radius.xyz,
-    max(u_lights.lights.point_light_position_radius.w, 1e-4),
+    u_lights.legacy.point_light_position_radius.xyz,
+    max(u_lights.legacy.point_light_position_radius.w, 1e-4),
     point_shadow_params,
   );
   let point = point_light(
@@ -1339,8 +1365,8 @@ fn fs_main(
     anisotropy_strength,
     anisotropy_t,
     anisotropy_b,
-    u_lights.lights.point_light_position_radius,
-    u_lights.lights.point_light_color_inverse_square_range,
+    u_lights.legacy.point_light_position_radius,
+    u_lights.legacy.point_light_color_inverse_square_range,
     point_shadow_factor,
   );
   let spot = spot_light(
@@ -1353,10 +1379,10 @@ fn fs_main(
     anisotropy_strength,
     anisotropy_t,
     anisotropy_b,
-    u_lights.lights.spot_light_position_radius,
-    u_lights.lights.spot_light_direction_to_light,
-    u_lights.lights.spot_light_color_inverse_square_range,
-    u_lights.lights.spot_light_custom_data,
+    u_lights.legacy.spot_light_position_radius,
+    u_lights.legacy.spot_light_direction_to_light,
+    u_lights.legacy.spot_light_color_inverse_square_range,
+    u_lights.legacy.spot_light_custom_data,
   );
 
   let direct_diffuse = direct_diffuse_light(
@@ -1442,9 +1468,9 @@ fn fs_main(
 
 @fragment
 fn fs_shadow(in : VertexOut) -> @location(0) vec4<f32> {
-  let point_range = max(u_lights.lights.point_light_position_radius.w, 1.0e-4);
+  let point_range = max(u_lights.legacy.point_light_position_radius.w, 1.0e-4);
   let point_distance = length(
-    in.world_pos - u_lights.lights.point_light_position_radius.xyz,
+    in.world_pos - u_lights.legacy.point_light_position_radius.xyz,
   );
   let depth01 = clamp(point_distance / point_range, 0.0, 1.0);
   return vec4<f32>(depth01, depth01, depth01, 1.0);

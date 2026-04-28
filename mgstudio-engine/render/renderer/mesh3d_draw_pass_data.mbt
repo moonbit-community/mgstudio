@@ -51,6 +51,127 @@ fn mesh3d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
 }
 
 ///|
+fn mesh3d_lights_push_f32(words : Array[UInt], value : Float) -> Unit {
+  words.push(f32_bits(value))
+}
+
+///|
+fn mesh3d_lights_push_u32(words : Array[UInt], value : UInt) -> Unit {
+  words.push(value)
+}
+
+///|
+fn mesh3d_lights_push_i32(words : Array[UInt], value : Int) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn mesh3d_lights_push_cascade(
+  words : Array[UInt],
+  cascade_data : Array[Float],
+  cascade_index : Int,
+) -> Unit {
+  let base = cascade_index * 20
+  for i in 0..<16 {
+    if base + i < cascade_data.length() {
+      mesh3d_lights_push_f32(words, cascade_data[base + i])
+    } else {
+      mesh3d_lights_push_f32(words, 0.0F)
+    }
+  }
+  if base + 16 < cascade_data.length() {
+    mesh3d_lights_push_f32(words, cascade_data[base + 16])
+  } else {
+    mesh3d_lights_push_f32(words, 0.0F)
+  }
+  if base + 17 < cascade_data.length() {
+    mesh3d_lights_push_f32(words, cascade_data[base + 17])
+  } else {
+    mesh3d_lights_push_f32(words, 0.0F)
+  }
+  mesh3d_lights_push_f32(words, 0.0F)
+  mesh3d_lights_push_f32(words, 0.0F)
+}
+
+///|
+fn mesh3d_lights_push_directional_light(
+  words : Array[UInt],
+  pass_state : GpuPassState,
+  directional_color_r : Float,
+  directional_color_g : Float,
+  directional_color_b : Float,
+  directional_shadow_textured : Bool,
+  light_index : Int,
+) -> Unit {
+  let is_active = light_index == 0 && pass_state.directional_illuminance > 0.0F
+  let cascade_count = if is_active &&
+    directional_shadow_textured &&
+    pass_state.directional_shadow_enabled > 0.5F {
+    if pass_state.directional_shadow_cascade_count < 0 {
+      0
+    } else if pass_state.directional_shadow_cascade_count > 4 {
+      4
+    } else {
+      pass_state.directional_shadow_cascade_count
+    }
+  } else {
+    0
+  }
+  for cascade_index in 0..<4 {
+    if is_active && cascade_index < cascade_count {
+      mesh3d_lights_push_cascade(
+        words,
+        pass_state.directional_shadow_cascade_data,
+        cascade_index,
+      )
+    } else {
+      mesh3d_lights_push_cascade(words, [], 0)
+    }
+  }
+  if is_active {
+    mesh3d_lights_push_f32(words, directional_color_r)
+    mesh3d_lights_push_f32(words, directional_color_g)
+    mesh3d_lights_push_f32(words, directional_color_b)
+    mesh3d_lights_push_f32(words, 1.0F)
+    mesh3d_lights_push_f32(words, pass_state.directional_dir_x)
+    mesh3d_lights_push_f32(words, pass_state.directional_dir_y)
+    mesh3d_lights_push_f32(words, pass_state.directional_dir_z)
+    let flags = if cascade_count > 0 { 1U } else { 0U }
+    mesh3d_lights_push_u32(words, flags)
+    mesh3d_lights_push_f32(words, pass_state.directional_shadow_soft_size)
+    mesh3d_lights_push_f32(words, pass_state.directional_shadow_depth_bias)
+    mesh3d_lights_push_f32(words, pass_state.directional_shadow_normal_bias)
+    mesh3d_lights_push_u32(words, cascade_count.reinterpret_as_uint())
+    mesh3d_lights_push_f32(words, pass_state.directional_shadow_cascade_overlap)
+    mesh3d_lights_push_u32(words, 0U)
+    mesh3d_lights_push_i32(words, -1)
+    mesh3d_lights_push_f32(words, 0.0F)
+    mesh3d_lights_push_f32(words, 0.0F)
+    mesh3d_lights_push_f32(words, 0.0F)
+    mesh3d_lights_push_f32(words, 0.0F)
+    mesh3d_lights_push_f32(words, 0.0F)
+  } else {
+    for _ in 0..<4 {
+      mesh3d_lights_push_f32(words, 0.0F)
+    }
+    for _ in 0..<3 {
+      mesh3d_lights_push_f32(words, 0.0F)
+    }
+    mesh3d_lights_push_u32(words, 0xFFFFU)
+    for _ in 0..<3 {
+      mesh3d_lights_push_f32(words, 0.0F)
+    }
+    mesh3d_lights_push_u32(words, 0U)
+    mesh3d_lights_push_f32(words, 0.0F)
+    mesh3d_lights_push_u32(words, 0U)
+    mesh3d_lights_push_i32(words, -1)
+    for _ in 0..<5 {
+      mesh3d_lights_push_f32(words, 0.0F)
+    }
+  }
+}
+
+///|
 fn mesh3d_lights_uniform_bytes(pass_state : GpuPassState) -> Bytes {
   let transmission_source_enabled = pass_state.transmission_source_texture_id >=
     0
@@ -162,19 +283,34 @@ fn mesh3d_lights_uniform_bytes(pass_state : GpuPassState) -> Bytes {
   } else {
     0.0F
   }
+  let directional_shadow_textured = pass_state.directional_shadow_texture_id >=
+    0
+  let words : Array[UInt] = []
+  for light_index in 0..<10 {
+    mesh3d_lights_push_directional_light(
+      words, pass_state, directional_color_r, directional_color_g, directional_color_b,
+      directional_shadow_textured, light_index,
+    )
+  }
+  mesh3d_lights_push_f32(words, ambient_color_r)
+  mesh3d_lights_push_f32(words, ambient_color_g)
+  mesh3d_lights_push_f32(words, ambient_color_b)
+  mesh3d_lights_push_f32(words, 1.0F)
+  mesh3d_lights_push_u32(words, 16U)
+  mesh3d_lights_push_u32(words, 9U)
+  mesh3d_lights_push_u32(words, 24U)
+  mesh3d_lights_push_u32(words, 3456U)
+  for _ in 0..<4 {
+    mesh3d_lights_push_f32(words, 0.0F)
+  }
+  mesh3d_lights_push_u32(
+    words,
+    (if pass_state.directional_illuminance > 0.0F { 1 } else { 0 }).reinterpret_as_uint(),
+  )
+  mesh3d_lights_push_i32(words, 0)
+  mesh3d_lights_push_u32(words, 0U)
+  mesh3d_lights_push_u32(words, 0U)
   let values : Array[Float] = [
-    ambient_color_r,
-    ambient_color_g,
-    ambient_color_b,
-    environment_map_rotation_x,
-    pass_state.directional_dir_x,
-    pass_state.directional_dir_y,
-    pass_state.directional_dir_z,
-    environment_map_rotation_y,
-    directional_color_r,
-    directional_color_g,
-    directional_color_b,
-    environment_map_rotation_z,
     pass_state.point_pos_x,
     pass_state.point_pos_y,
     pass_state.point_pos_z,
@@ -207,9 +343,11 @@ fn mesh3d_lights_uniform_bytes(pass_state : GpuPassState) -> Bytes {
     0.0F,
     0.0F,
     0.0F,
+    environment_map_rotation_x,
+    environment_map_rotation_y,
+    environment_map_rotation_z,
+    environment_map_rotation_w,
   ]
-  let directional_shadow_textured = pass_state.directional_shadow_texture_id >=
-    0
   values.push(
     if directional_shadow_textured {
       pass_state.directional_shadow_enabled
@@ -238,7 +376,10 @@ fn mesh3d_lights_uniform_bytes(pass_state : GpuPassState) -> Bytes {
       values.push(0.0F)
     }
   }
-  f32le_pack(values)
+  for value in values {
+    mesh3d_lights_push_f32(words, value)
+  }
+  u32le_pack(words)
 }
 
 ///|

@@ -95,7 +95,7 @@ fn mesh3d_view_bg_cache_get_or_create(
   }
   let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
   let ok = builder.add_buffer(0U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
-    builder.add_buffer(1U, lights_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
+    builder.add_buffer(1U, lights_buf, size=MESH3D_LIGHTS_BUFFER_SIZE) &&
     builder.add_texture_view(2U, point_shadow_sample_view) &&
     builder.add_sampler(3U, point_shadow_compare_sampler) &&
     builder.add_texture_view(5U, directional_shadow_sample_view) &&

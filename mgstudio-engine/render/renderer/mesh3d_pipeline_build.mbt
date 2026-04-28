@@ -428,7 +428,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     if backend.mesh3d_lights_buf is None {
       backend.mesh3d_lights_buf = Some(
         backend.device.create_buffer(
-          size=MESH3D_VIEW_BUFFER_SIZE,
+          size=MESH3D_LIGHTS_BUFFER_SIZE,
           usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
         ),
       )
@@ -451,7 +451,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   if backend.mesh3d_lights_buf is None {
     backend.mesh3d_lights_buf = Some(
       backend.device.create_buffer(
-        size=MESH3D_VIEW_BUFFER_SIZE,
+        size=MESH3D_LIGHTS_BUFFER_SIZE,
         usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
       ),
     )
