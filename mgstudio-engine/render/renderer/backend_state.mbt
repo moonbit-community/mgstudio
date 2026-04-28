@@ -148,6 +148,13 @@ pub struct GpuBackend {
   mut mesh3d_clustered_lights_buf : @wgpu.Buffer?
   mut mesh3d_clusterable_object_index_lists_buf : @wgpu.Buffer?
   mut mesh3d_cluster_offsets_and_counts_buf : @wgpu.Buffer?
+  mut mesh3d_globals_buf : @wgpu.Buffer?
+  mut mesh3d_fog_buf : @wgpu.Buffer?
+  mut mesh3d_light_probes_buf : @wgpu.Buffer?
+  mut mesh3d_visibility_ranges_buf : @wgpu.Buffer?
+  mut mesh3d_ssr_settings_buf : @wgpu.Buffer?
+  mut mesh3d_contact_shadows_settings_buf : @wgpu.Buffer?
+  mut mesh3d_environment_map_uniform_buf : @wgpu.Buffer?
   mut mesh3d_pass_view_uniform_bytes : Bytes?
   mut mesh3d_pass_lights_uniform_bytes : Bytes?
   mut mesh3d_pass_view_uniform_frame_count : UInt

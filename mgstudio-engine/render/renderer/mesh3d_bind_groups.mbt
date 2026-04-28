@@ -95,6 +95,36 @@ fn mesh3d_view_bg_cache_get_or_create(
     Some(v) => v
     None => fatal("wgpu: missing mesh3d cluster offsets and counts buffer")
   }
+  let globals_buf = match backend.mesh3d_globals_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d globals buffer")
+  }
+  let fog_buf = match backend.mesh3d_fog_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d fog buffer")
+  }
+  let light_probes_buf = match backend.mesh3d_light_probes_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d light probes buffer")
+  }
+  let visibility_ranges_buf = match backend.mesh3d_visibility_ranges_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d visibility ranges buffer")
+  }
+  let ssr_settings_buf = match backend.mesh3d_ssr_settings_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d ssr settings buffer")
+  }
+  let contact_shadows_settings_buf = match
+    backend.mesh3d_contact_shadows_settings_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d contact shadows settings buffer")
+  }
+  let environment_map_uniform_buf = match
+    backend.mesh3d_environment_map_uniform_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d environment map uniform buffer")
+  }
   let point_shadow_sample_view = match point_shadow_texture.sample_view {
     Some(view) => view
     None => point_shadow_texture.view
@@ -107,7 +137,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     Some(view) => view
     None => directional_shadow_texture.view
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=11UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=19UL)
   let ok = builder.add_buffer(0U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
     builder.add_buffer(1U, lights_buf, size=MESH3D_LIGHTS_BUFFER_SIZE) &&
     builder.add_buffer(
@@ -124,6 +154,34 @@ fn mesh3d_view_bg_cache_get_or_create(
       10U,
       cluster_offsets_and_counts_buf,
       size=MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(11U, globals_buf, size=MESH3D_GLOBALS_BUFFER_SIZE) &&
+    builder.add_buffer(12U, fog_buf, size=MESH3D_FOG_BUFFER_SIZE) &&
+    builder.add_buffer(
+      13U,
+      light_probes_buf,
+      size=MESH3D_LIGHT_PROBES_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      14U,
+      visibility_ranges_buf,
+      size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      15U,
+      ssr_settings_buf,
+      size=MESH3D_SSR_SETTINGS_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      16U,
+      contact_shadows_settings_buf,
+      size=MESH3D_CONTACT_SHADOWS_SETTINGS_BUFFER_SIZE,
+    ) &&
+    builder.add_texture_view(17U, transmission_source_texture.view) &&
+    builder.add_buffer(
+      18U,
+      environment_map_uniform_buf,
+      size=MESH3D_ENVIRONMENT_MAP_UNIFORM_BUFFER_SIZE,
     ) &&
     builder.add_texture_view(2U, point_shadow_sample_view) &&
     builder.add_sampler(3U, point_shadow_compare_sampler) &&

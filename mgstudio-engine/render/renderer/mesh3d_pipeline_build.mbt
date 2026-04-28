@@ -102,6 +102,127 @@ fn mesh3d_pipeline_blend_suffix(blend_kind : Int) -> String {
 }
 
 ///|
+fn mesh3d_create_uniform_buffer(
+  backend : GpuBackend,
+  size : UInt64,
+) -> @wgpu.Buffer {
+  backend.device.create_buffer(
+    size~,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+}
+
+///|
+fn mesh3d_create_uniform_buffer_init(
+  backend : GpuBackend,
+  size : UInt64,
+  initial_bytes : Bytes,
+) -> @wgpu.Buffer {
+  let buffer = mesh3d_create_uniform_buffer(backend, size)
+  backend.queue.write_buffer(buffer, 0UL, initial_bytes)
+  buffer
+}
+
+///|
+fn mesh3d_create_storage_buffer(
+  backend : GpuBackend,
+  size : UInt64,
+) -> @wgpu.Buffer {
+  backend.device.create_buffer(
+    size~,
+    usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+}
+
+///|
+fn mesh3d_environment_map_identity_uniform_bytes() -> Bytes {
+  f32le_pack([
+    1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 1.0F,
+  ])
+}
+
+///|
+fn ensure_mesh3d_view_binding_buffers(backend : GpuBackend) -> Unit {
+  if backend.mesh3d_view_buf is None {
+    backend.mesh3d_view_buf = Some(
+      mesh3d_create_uniform_buffer(backend, MESH3D_VIEW_BUFFER_SIZE),
+    )
+  }
+  if backend.mesh3d_lights_buf is None {
+    backend.mesh3d_lights_buf = Some(
+      mesh3d_create_uniform_buffer(backend, MESH3D_LIGHTS_BUFFER_SIZE),
+    )
+  }
+  if backend.mesh3d_clustered_lights_buf is None {
+    backend.mesh3d_clustered_lights_buf = Some(
+      mesh3d_create_storage_buffer(backend, MESH3D_CLUSTERED_LIGHTS_BUFFER_SIZE),
+    )
+  }
+  if backend.mesh3d_clusterable_object_index_lists_buf is None {
+    backend.mesh3d_clusterable_object_index_lists_buf = Some(
+      mesh3d_create_storage_buffer(
+        backend,
+        MESH3D_CLUSTERABLE_OBJECT_INDEX_LISTS_BUFFER_SIZE,
+      ),
+    )
+  }
+  if backend.mesh3d_cluster_offsets_and_counts_buf is None {
+    backend.mesh3d_cluster_offsets_and_counts_buf = Some(
+      mesh3d_create_storage_buffer(
+        backend,
+        MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE,
+      ),
+    )
+  }
+  if backend.mesh3d_globals_buf is None {
+    backend.mesh3d_globals_buf = Some(
+      mesh3d_create_uniform_buffer(backend, MESH3D_GLOBALS_BUFFER_SIZE),
+    )
+  }
+  if backend.mesh3d_fog_buf is None {
+    backend.mesh3d_fog_buf = Some(
+      mesh3d_create_uniform_buffer(backend, MESH3D_FOG_BUFFER_SIZE),
+    )
+  }
+  if backend.mesh3d_light_probes_buf is None {
+    backend.mesh3d_light_probes_buf = Some(
+      mesh3d_create_uniform_buffer(backend, MESH3D_LIGHT_PROBES_BUFFER_SIZE),
+    )
+  }
+  if backend.mesh3d_visibility_ranges_buf is None {
+    backend.mesh3d_visibility_ranges_buf = Some(
+      mesh3d_create_storage_buffer(
+        backend,
+        MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
+      ),
+    )
+  }
+  if backend.mesh3d_ssr_settings_buf is None {
+    backend.mesh3d_ssr_settings_buf = Some(
+      mesh3d_create_uniform_buffer(backend, MESH3D_SSR_SETTINGS_BUFFER_SIZE),
+    )
+  }
+  if backend.mesh3d_contact_shadows_settings_buf is None {
+    backend.mesh3d_contact_shadows_settings_buf = Some(
+      mesh3d_create_uniform_buffer(
+        backend,
+        MESH3D_CONTACT_SHADOWS_SETTINGS_BUFFER_SIZE,
+      ),
+    )
+  }
+  if backend.mesh3d_environment_map_uniform_buf is None {
+    backend.mesh3d_environment_map_uniform_buf = Some(
+      mesh3d_create_uniform_buffer_init(
+        backend,
+        MESH3D_ENVIRONMENT_MAP_UNIFORM_BUFFER_SIZE,
+        mesh3d_environment_map_identity_uniform_bytes(),
+      ),
+    )
+  }
+}
+
+///|
 fn mesh3d_custom_pipeline_get_or_create(
   backend : GpuBackend,
   shader_path : String,
@@ -200,7 +321,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   if backend.mesh3d_pipeline_layout is None {
     let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
-    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=11UL)
+    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=19UL)
     let view_ok = view_builder.add_buffer(
         0U,
         view_stage,
@@ -224,6 +345,54 @@ fn ensure_mesh3d_pipeline_rgba8(
         ss(@wgpu.SHADER_STAGE_FRAGMENT),
         @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
         min_binding_size=MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE,
+      ) &&
+      view_builder.add_buffer(
+        11U,
+        view_stage,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_GLOBALS_BUFFER_SIZE,
+      ) &&
+      view_builder.add_buffer(
+        12U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_FOG_BUFFER_SIZE,
+      ) &&
+      view_builder.add_buffer(
+        13U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_LIGHT_PROBES_BUFFER_SIZE,
+      ) &&
+      view_builder.add_buffer(
+        14U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+        min_binding_size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
+      ) &&
+      view_builder.add_buffer(
+        15U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_SSR_SETTINGS_BUFFER_SIZE,
+      ) &&
+      view_builder.add_buffer(
+        16U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_CONTACT_SHADOWS_SETTINGS_BUFFER_SIZE,
+      ) &&
+      view_builder.add_texture(
+        17U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      view_builder.add_buffer(
+        18U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_ENVIRONMENT_MAP_UNIFORM_BUFFER_SIZE,
       ) &&
       view_builder.add_texture(
         2U,
@@ -435,46 +604,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     backend.mesh3d_bgl_material = Some(material_bgl)
     backend.mesh3d_bgl_skin = None
     backend.mesh3d_pipeline_layout = Some(pl)
-    if backend.mesh3d_view_buf is None {
-      backend.mesh3d_view_buf = Some(
-        backend.device.create_buffer(
-          size=MESH3D_VIEW_BUFFER_SIZE,
-          usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
-        ),
-      )
-    }
-    if backend.mesh3d_lights_buf is None {
-      backend.mesh3d_lights_buf = Some(
-        backend.device.create_buffer(
-          size=MESH3D_LIGHTS_BUFFER_SIZE,
-          usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
-        ),
-      )
-    }
-    if backend.mesh3d_clustered_lights_buf is None {
-      backend.mesh3d_clustered_lights_buf = Some(
-        backend.device.create_buffer(
-          size=MESH3D_CLUSTERED_LIGHTS_BUFFER_SIZE,
-          usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
-        ),
-      )
-    }
-    if backend.mesh3d_clusterable_object_index_lists_buf is None {
-      backend.mesh3d_clusterable_object_index_lists_buf = Some(
-        backend.device.create_buffer(
-          size=MESH3D_CLUSTERABLE_OBJECT_INDEX_LISTS_BUFFER_SIZE,
-          usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
-        ),
-      )
-    }
-    if backend.mesh3d_cluster_offsets_and_counts_buf is None {
-      backend.mesh3d_cluster_offsets_and_counts_buf = Some(
-        backend.device.create_buffer(
-          size=MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE,
-          usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
-        ),
-      )
-    }
+    ensure_mesh3d_view_binding_buffers(backend)
     backend.mesh3d_binding_arrays_bg = None
     mesh3d_material_cache_clear(backend)
     mesh3d_custom_pipeline_cache_clear(backend)
@@ -482,46 +612,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     ensure_mesh3d_skin_buffers(backend, MESH3D_SKINNING_STORAGE_STRIDE_BYTES)
     |> ignore
   }
-  if backend.mesh3d_view_buf is None {
-    backend.mesh3d_view_buf = Some(
-      backend.device.create_buffer(
-        size=MESH3D_VIEW_BUFFER_SIZE,
-        usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
-      ),
-    )
-  }
-  if backend.mesh3d_lights_buf is None {
-    backend.mesh3d_lights_buf = Some(
-      backend.device.create_buffer(
-        size=MESH3D_LIGHTS_BUFFER_SIZE,
-        usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
-      ),
-    )
-  }
-  if backend.mesh3d_clustered_lights_buf is None {
-    backend.mesh3d_clustered_lights_buf = Some(
-      backend.device.create_buffer(
-        size=MESH3D_CLUSTERED_LIGHTS_BUFFER_SIZE,
-        usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
-      ),
-    )
-  }
-  if backend.mesh3d_clusterable_object_index_lists_buf is None {
-    backend.mesh3d_clusterable_object_index_lists_buf = Some(
-      backend.device.create_buffer(
-        size=MESH3D_CLUSTERABLE_OBJECT_INDEX_LISTS_BUFFER_SIZE,
-        usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
-      ),
-    )
-  }
-  if backend.mesh3d_cluster_offsets_and_counts_buf is None {
-    backend.mesh3d_cluster_offsets_and_counts_buf = Some(
-      backend.device.create_buffer(
-        size=MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE,
-        usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
-      ),
-    )
-  }
+  ensure_mesh3d_view_binding_buffers(backend)
   let color_format = tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32()
   if mesh3d_pipeline_get(
       backend, color_format, topology, safe_cull_mode, blend_kind,
