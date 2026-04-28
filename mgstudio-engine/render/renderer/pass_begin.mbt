@@ -168,6 +168,14 @@ pub fn GpuBackend::begin_pass(
     environment_map_rotation_z: 0.0F,
     environment_map_rotation_w: 1.0F,
     point_shadow_near: 0.1F,
+    directional_shadow_texture_id: -1,
+    directional_shadow_enabled: 0.0F,
+    directional_shadow_depth_bias: 0.0F,
+    directional_shadow_normal_bias: 0.0F,
+    directional_shadow_soft_size: 0.0F,
+    directional_shadow_cascade_count: 0,
+    directional_shadow_cascade_overlap: 0.0F,
+    directional_shadow_cascade_data: [],
   })
   self.sprite_instance_data.clear()
   self.sprite_batches.clear()
@@ -385,6 +393,14 @@ pub fn GpuBackend::begin_pass_with_depth(
     environment_map_rotation_z: 0.0F,
     environment_map_rotation_w: 1.0F,
     point_shadow_near: 0.1F,
+    directional_shadow_texture_id: -1,
+    directional_shadow_enabled: 0.0F,
+    directional_shadow_depth_bias: 0.0F,
+    directional_shadow_normal_bias: 0.0F,
+    directional_shadow_soft_size: 0.0F,
+    directional_shadow_cascade_count: 0,
+    directional_shadow_cascade_overlap: 0.0F,
+    directional_shadow_cascade_data: [],
   })
   self.sprite_instance_data.clear()
   self.sprite_batches.clear()
@@ -537,6 +553,14 @@ pub fn GpuBackend::begin_pass_3d(
   environment_map_rotation_z : Float,
   environment_map_rotation_w : Float,
   point_shadow_near : Float,
+  directional_shadow_texture_id : Int,
+  directional_shadow_enabled : Float,
+  directional_shadow_depth_bias : Float,
+  directional_shadow_normal_bias : Float,
+  directional_shadow_soft_size : Float,
+  directional_shadow_cascade_count : Int,
+  directional_shadow_cascade_overlap : Float,
+  directional_shadow_cascade_data : Array[Float],
   pass_kind : Int,
   clear_enabled : Int,
 ) -> Unit raise GpuBackendError {
@@ -819,6 +843,14 @@ pub fn GpuBackend::begin_pass_3d(
     environment_map_rotation_z,
     environment_map_rotation_w,
     point_shadow_near,
+    directional_shadow_texture_id,
+    directional_shadow_enabled,
+    directional_shadow_depth_bias,
+    directional_shadow_normal_bias,
+    directional_shadow_soft_size,
+    directional_shadow_cascade_count,
+    directional_shadow_cascade_overlap,
+    directional_shadow_cascade_data,
   })
   self.sprite_instance_data.clear()
   self.sprite_batches.clear()
@@ -1034,6 +1066,14 @@ pub fn begin_pass_3d(
   environment_map_rotation_z? : Float = 0.0F,
   environment_map_rotation_w? : Float = 1.0F,
   point_shadow_near~ : Float,
+  directional_shadow_texture_id? : Int = -1,
+  directional_shadow_enabled? : Float = 0.0F,
+  directional_shadow_depth_bias? : Float = 0.0F,
+  directional_shadow_normal_bias? : Float = 0.0F,
+  directional_shadow_soft_size? : Float = 0.0F,
+  directional_shadow_cascade_count? : Int = 0,
+  directional_shadow_cascade_overlap? : Float = 0.0F,
+  directional_shadow_cascade_data? : Array[Float] = [],
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
@@ -1068,7 +1108,10 @@ pub fn begin_pass_3d(
       point_shadow_depth_bias, transmission_source_texture_id, environment_diffuse_texture_id,
       environment_specular_texture_id, environment_map_intensity, environment_map_rotation_x,
       environment_map_rotation_y, environment_map_rotation_z, environment_map_rotation_w,
-      point_shadow_near, pass_kind, clear_enabled,
+      point_shadow_near, directional_shadow_texture_id, directional_shadow_enabled,
+      directional_shadow_depth_bias, directional_shadow_normal_bias, directional_shadow_soft_size,
+      directional_shadow_cascade_count, directional_shadow_cascade_overlap, directional_shadow_cascade_data,
+      pass_kind, clear_enabled,
     ) catch {
       err => debug_runtime_error("begin_pass_3d", err)
     }

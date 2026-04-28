@@ -51,12 +51,14 @@ fn mesh3d_view_bg_cache_get_or_create(
   backend : GpuBackend,
   transmission_source_texture : GpuTextureInfo,
   point_shadow_texture : GpuTextureInfo,
+  directional_shadow_texture : GpuTextureInfo,
   environment_diffuse_texture : GpuTextureInfo,
   environment_specular_texture : GpuTextureInfo,
 ) -> @wgpu.BindGroup raise GpuBackendError {
   for entry in backend.mesh3d_view_bg_cache {
     if entry.transmission_source_texture_id == transmission_source_texture.id &&
       entry.point_shadow_texture_id == point_shadow_texture.id &&
+      entry.directional_shadow_texture_id == directional_shadow_texture.id &&
       entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
       entry.environment_specular_texture_id == environment_specular_texture.id {
       return entry.bind_group
@@ -77,7 +79,12 @@ fn mesh3d_view_bg_cache_get_or_create(
   let point_shadow_compare_sampler = ensure_mesh3d_point_shadow_compare_sampler(
     backend,
   )
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=9UL)
+  let directional_shadow_sample_view = match
+    directional_shadow_texture.sample_view {
+    Some(view) => view
+    None => directional_shadow_texture.view
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=11UL)
   let ok = builder.add_buffer(0U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
     builder.add_texture_view(1U, transmission_source_texture.view) &&
     builder.add_sampler(2U, transmission_source_texture.sampler) &&
@@ -86,7 +93,9 @@ fn mesh3d_view_bg_cache_get_or_create(
     builder.add_texture_view(5U, environment_diffuse_texture.view) &&
     builder.add_sampler(6U, environment_diffuse_texture.sampler) &&
     builder.add_texture_view(7U, environment_specular_texture.view) &&
-    builder.add_sampler(8U, environment_specular_texture.sampler)
+    builder.add_sampler(8U, environment_specular_texture.sampler) &&
+    builder.add_texture_view(9U, directional_shadow_sample_view) &&
+    builder.add_sampler(10U, point_shadow_compare_sampler)
   if !ok {
     builder.free()
     fatal("wgpu: failed to build mesh3d view bind group")
@@ -99,6 +108,7 @@ fn mesh3d_view_bg_cache_get_or_create(
   backend.mesh3d_view_bg_cache.push(Mesh3dViewBindGroupCacheEntry::{
     transmission_source_texture_id: transmission_source_texture.id,
     point_shadow_texture_id: point_shadow_texture.id,
+    directional_shadow_texture_id: directional_shadow_texture.id,
     environment_diffuse_texture_id: environment_diffuse_texture.id,
     environment_specular_texture_id: environment_specular_texture.id,
     bind_group,
@@ -207,6 +217,24 @@ fn ensure_point_shadow_fallback_texture(
 }
 
 ///|
+fn ensure_directional_shadow_fallback_texture(
+  backend : GpuBackend,
+) -> GpuTextureInfo raise GpuBackendError {
+  if backend.directional_shadow_fallback_texture_id >= 0 {
+    if find_texture(backend, backend.directional_shadow_fallback_texture_id)
+      is Some(texture) {
+      return texture
+    }
+  }
+  let created_id = backend.create_directional_light_shadow_target(1, 1)
+  backend.directional_shadow_fallback_texture_id = created_id
+  guard find_texture(backend, created_id) is Some(texture) else {
+    fatal("wgpu: failed to initialize directional shadow fallback texture")
+  }
+  texture
+}
+
+///|
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(
   self : GpuBackend,
   texture_id : Int,
@@ -300,6 +328,7 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
   self : GpuBackend,
   transmission_source_texture_id : Int,
   point_shadow_texture_id : Int,
+  directional_shadow_texture_id : Int,
   environment_diffuse_texture_id : Int,
   environment_specular_texture_id : Int,
 ) -> Unit raise GpuBackendError {
@@ -313,6 +342,12 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
     ensure_point_shadow_fallback_texture(self).id
   } else {
     point_shadow_texture_id
+  }
+  let resolved_directional_shadow_texture_id = if directional_shadow_texture_id <
+    0 {
+    ensure_directional_shadow_fallback_texture(self).id
+  } else {
+    directional_shadow_texture_id
   }
   let resolved_environment_diffuse_texture_id = if environment_diffuse_texture_id <
     0 {
@@ -334,6 +369,10 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
     is Some(point_shadow_texture) else {
     return
   }
+  guard resolve_mesh3d_texture(self, resolved_directional_shadow_texture_id)
+    is Some(directional_shadow_texture) else {
+    return
+  }
   guard resolve_mesh3d_texture(self, resolved_environment_diffuse_texture_id)
     is Some(environment_diffuse_texture) else {
     return
@@ -344,8 +383,8 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
   }
   ignore(
     mesh3d_view_bg_cache_get_or_create(
-      self, transmission_source_texture, point_shadow_texture, environment_diffuse_texture,
-      environment_specular_texture,
+      self, transmission_source_texture, point_shadow_texture, directional_shadow_texture,
+      environment_diffuse_texture, environment_specular_texture,
     ),
   )
 }

@@ -46,9 +46,22 @@ let mesh3d_forward_wgsl_source : String =
   #|  spot_light_custom_data : vec4<f32>, // (spot_scale, spot_offset, transmission_blur_taps, transmission_steps)
   #|};
   #|
+  #|struct Mesh3dDirectionalCascadeUniform {
+  #|  clip_from_world : mat4x4<f32>,
+  #|  data : vec4<f32>, // (texel_size, far_bound, _, _)
+  #|};
+  #|
+  #|struct Mesh3dDirectionalShadowUniform {
+  #|  params : vec4<f32>, // (enabled, depth_bias, normal_bias, soft_size)
+  #|  counts : vec4<f32>, // (cascade_count, overlap, _, _)
+  #|  view_forward : vec4<f32>,
+  #|  cascades : array<Mesh3dDirectionalCascadeUniform, 4>,
+  #|};
+  #|
   #|struct Mesh3dViewBindings {
   #|  view : Mesh3dViewUniform,
   #|  lights : Mesh3dLightsUniform,
+  #|  directional_shadow : Mesh3dDirectionalShadowUniform,
   #|};
   #|
   #|struct Mesh3dTransformUniform {
@@ -126,6 +139,8 @@ let mesh3d_forward_wgsl_source : String =
   #|@group(0) @binding(6) var u_environment_diffuse_sampler : sampler;
   #|@group(0) @binding(7) var u_environment_specular_texture : texture_2d<f32>;
   #|@group(0) @binding(8) var u_environment_specular_sampler : sampler;
+  #|@group(0) @binding(9) var u_directional_shadow_texture : texture_depth_2d_array;
+  #|@group(0) @binding(10) var u_directional_shadow_sampler : sampler_comparison;
   #|@group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;
   #|@group(1) @binding(2) var u_base_color_sampler : sampler;
   #|@group(1) @binding(3) var u_emissive_texture : texture_2d<f32>;
@@ -580,6 +595,95 @@ let mesh3d_forward_wgsl_source : String =
   #|    light_color * transmitted,
   #|    light_color * diffuse * specular,
   #|  );
+  #|}
+  #|
+  #|fn directional_shadow_cascade_index(view_z : f32) -> u32 {
+  #|  let cascade_count = u32(max(u_view.directional_shadow.counts.x, 0.0));
+  #|  for (var i : u32 = 0u; i < cascade_count; i = i + 1u) {
+  #|    if (-view_z < u_view.directional_shadow.cascades[i].data.y) {
+  #|      return i;
+  #|    }
+  #|  }
+  #|  return cascade_count;
+  #|}
+  #|
+  #|fn world_to_directional_light_local(
+  #|  cascade_index : u32,
+  #|  offset_position : vec4<f32>,
+  #|) -> vec4<f32> {
+  #|  let cascade = u_view.directional_shadow.cascades[cascade_index];
+  #|  let offset_position_clip = cascade.clip_from_world * offset_position;
+  #|  if (offset_position_clip.w <= 0.0) {
+  #|    return vec4<f32>(0.0);
+  #|  }
+  #|  let offset_position_ndc = offset_position_clip.xyz / offset_position_clip.w;
+  #|  if (any(offset_position_ndc.xy < vec2<f32>(-1.0)) ||
+  #|      offset_position_ndc.z < 0.0 ||
+  #|      any(offset_position_ndc > vec3<f32>(1.0))) {
+  #|    return vec4<f32>(0.0);
+  #|  }
+  #|  let light_local = offset_position_ndc.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5);
+  #|  return vec4<f32>(light_local, offset_position_ndc.z, 1.0);
+  #|}
+  #|
+  #|fn sample_directional_cascade(
+  #|  cascade_index : u32,
+  #|  frag_position : vec4<f32>,
+  #|  surface_normal : vec3<f32>,
+  #|) -> f32 {
+  #|  let params = u_view.directional_shadow.params;
+  #|  let cascade = u_view.directional_shadow.cascades[cascade_index];
+  #|  let normal_offset = params.z * cascade.data.x * surface_normal;
+  #|  let depth_offset = params.y * safe_normalize(u_view.lights.directional_light_direction_to_light.xyz);
+  #|  let offset_position = vec4<f32>(
+  #|    frag_position.xyz + normal_offset + depth_offset,
+  #|    frag_position.w,
+  #|  );
+  #|  let light_local = world_to_directional_light_local(cascade_index, offset_position);
+  #|  if (light_local.w == 0.0) {
+  #|    return 1.0;
+  #|  }
+  #|  return textureSampleCompare(
+  #|    u_directional_shadow_texture,
+  #|    u_directional_shadow_sampler,
+  #|    light_local.xy,
+  #|    i32(cascade_index),
+  #|    clamp(light_local.z, 0.0, 1.0),
+  #|  );
+  #|}
+  #|
+  #|fn directional_shadow(
+  #|  world_pos : vec3<f32>,
+  #|  surface_normal : vec3<f32>,
+  #|  view_z : f32,
+  #|) -> f32 {
+  #|  if (u_view.directional_shadow.params.x <= 0.5) {
+  #|    return 1.0;
+  #|  }
+  #|  let cascade_count = u32(max(u_view.directional_shadow.counts.x, 0.0));
+  #|  let cascade_index = directional_shadow_cascade_index(view_z);
+  #|  if (cascade_index >= cascade_count) {
+  #|    return 1.0;
+  #|  }
+  #|  var shadow = sample_directional_cascade(
+  #|    cascade_index,
+  #|    vec4<f32>(world_pos, 1.0),
+  #|    surface_normal,
+  #|  );
+  #|  let next_cascade_index = cascade_index + 1u;
+  #|  if (next_cascade_index < cascade_count) {
+  #|    let this_far_bound = u_view.directional_shadow.cascades[cascade_index].data.y;
+  #|    let next_near_bound = (1.0 - u_view.directional_shadow.counts.y) * this_far_bound;
+  #|    if (-view_z >= next_near_bound) {
+  #|      let next_shadow = sample_directional_cascade(
+  #|        next_cascade_index,
+  #|        vec4<f32>(world_pos, 1.0),
+  #|        surface_normal,
+  #|      );
+  #|      shadow = mix(shadow, next_shadow, (-view_z - next_near_bound) / (this_far_bound - next_near_bound));
+  #|    }
+  #|  }
+  #|  return shadow;
   #|}
   #|
   #|fn point_light_shadow(
@@ -1171,6 +1275,16 @@ let mesh3d_forward_wgsl_source : String =
   #|
   #|  let ambient_term = u_view.lights.ambient_color.xyz;
   #|
+  #|  let view_z = -dot(
+  #|    in.world_pos - u_view.view.world_position.xyz,
+  #|    safe_normalize(u_view.directional_shadow.view_forward.xyz),
+  #|  );
+  #|  let directional_shadow_factor = directional_shadow(
+  #|    in.world_pos,
+  #|    normal,
+  #|    view_z,
+  #|  );
+  #|
   #|  let directional = directional_light(
   #|    normal,
   #|    view_dir,
@@ -1181,7 +1295,7 @@ let mesh3d_forward_wgsl_source : String =
   #|    anisotropy_t,
   #|    anisotropy_b,
   #|    safe_normalize(u_view.lights.directional_light_direction_to_light.xyz),
-  #|    u_view.lights.directional_light_color.xyz,
+  #|    u_view.lights.directional_light_color.xyz * directional_shadow_factor,
   #|  );
   #|  let point_shadow_factor = point_light_shadow(
   #|    in.world_pos,

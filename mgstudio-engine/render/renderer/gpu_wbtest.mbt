@@ -556,6 +556,14 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     environment_map_rotation_z: 0.0F,
     environment_map_rotation_w: 1.0F,
     point_shadow_near: 0.0F,
+    directional_shadow_texture_id: -1,
+    directional_shadow_enabled: 0.0F,
+    directional_shadow_depth_bias: 0.0F,
+    directional_shadow_normal_bias: 0.0F,
+    directional_shadow_soft_size: 0.0F,
+    directional_shadow_cascade_count: 0,
+    directional_shadow_cascade_overlap: 0.0F,
+    directional_shadow_cascade_data: [],
   }
   let mesh_bytes = mesh3d_motion_vector_mesh_bytes(
     0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F,

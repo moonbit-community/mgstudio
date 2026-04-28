@@ -96,6 +96,10 @@ fn render3d_execute_camera(
   let mut point_shadow_texture_id = -1
   let mut point_shadow_enabled = 0.0F
   let mut point_shadow_depth_bias = 0.0F
+  let mut directional_shadow_texture_id = -1
+  let mut directional_shadow_enabled = 0.0F
+  let mut directional_shadow_cascade_data : Array[Float] = []
+  let mut directional_shadow_cascade_count = 0
   let point_shadow_near = pass_config.point_shadow_near
   let draw_queue_entry = prepared_queue.draw_queue_entry
   let opaque_alpha_draw_item_indices = prepared_queue.opaque_alpha_draw_item_indices
@@ -123,6 +127,19 @@ fn render3d_execute_camera(
   point_shadow_texture_id = point_shadow_texture_id_value
   point_shadow_enabled = point_shadow_enabled_value
   point_shadow_depth_bias = point_shadow_depth_bias_value
+  let (
+    directional_shadow_texture_id_value,
+    directional_shadow_enabled_value,
+    directional_shadow_cascade_data_value,
+    directional_shadow_cascade_count_value,
+  ) = render3d_execute_camera_directional_shadow_pass(
+    world, camera_entity, camera, pass_lighting, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
+    indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices, point_shadow_pass_kind,
+  )
+  directional_shadow_texture_id = directional_shadow_texture_id_value
+  directional_shadow_enabled = directional_shadow_enabled_value
+  directional_shadow_cascade_data = directional_shadow_cascade_data_value
+  directional_shadow_cascade_count = directional_shadow_cascade_count_value
   render3d_dispatch_camera_preprocess_late(
     camera_entity, camera, prepared_queue,
   )
@@ -156,8 +173,9 @@ fn render3d_execute_camera(
     non_indexed_indirect_parameter_indices, scene_target_id, view_width, view_height,
     view_width_logical, view_height_logical, clear_color, viewport_x, viewport_y,
     viewport_width, viewport_height, camera_pass_projection, pass_lighting, camera_exposure_value,
-    point_shadow_texture_id, point_shadow_enabled, point_shadow_depth_bias, environment_map_state,
-    point_shadow_near, scene_pass_kind, clear_enabled, cleared_targets_this_frame,
+    point_shadow_texture_id, point_shadow_enabled, point_shadow_depth_bias, directional_shadow_texture_id,
+    directional_shadow_enabled, directional_shadow_cascade_data, directional_shadow_cascade_count,
+    environment_map_state, point_shadow_near, scene_pass_kind, clear_enabled, cleared_targets_this_frame,
     camera_forward_decal_enabled, camera_clustered_decal_enabled, camera_deferred_enabled,
     camera_near, camera_far, distance_fog, fog_enabled, transmission_enabled, transmission_steps,
     transmission_blur_taps, wireframe_config,

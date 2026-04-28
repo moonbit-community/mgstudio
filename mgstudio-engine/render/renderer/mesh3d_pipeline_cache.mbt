@@ -179,3 +179,49 @@ fn mesh3d_custom_pipeline_cache_clear(backend : GpuBackend) -> Unit {
   }
   backend.mesh3d_custom_pipeline_cache.clear()
 }
+
+///|
+fn mesh3d_shadow_pipeline_get(
+  backend : GpuBackend,
+  topology : UInt,
+) -> @wgpu.RenderPipeline? {
+  if topology == MESH3D_TOPOLOGY_LINE_LIST {
+    backend.mesh3d_shadow_pipeline_line_list
+  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
+    backend.mesh3d_shadow_pipeline_line_strip
+  } else {
+    backend.mesh3d_shadow_pipeline
+  }
+}
+
+///|
+fn mesh3d_shadow_pipeline_set(
+  backend : GpuBackend,
+  topology : UInt,
+  pipeline : @wgpu.RenderPipeline?,
+) -> Unit {
+  if topology == MESH3D_TOPOLOGY_LINE_LIST {
+    backend.mesh3d_shadow_pipeline_line_list = pipeline
+  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
+    backend.mesh3d_shadow_pipeline_line_strip = pipeline
+  } else {
+    backend.mesh3d_shadow_pipeline = pipeline
+  }
+}
+
+///|
+fn mesh3d_shadow_pipeline_cache_clear(backend : GpuBackend) -> Unit {
+  if backend.mesh3d_shadow_pipeline is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_shadow_pipeline_line_list is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_shadow_pipeline_line_strip is Some(old) {
+    old.release()
+  }
+  backend.mesh3d_shadow_pipeline = None
+  backend.mesh3d_shadow_pipeline_line_list = None
+  backend.mesh3d_shadow_pipeline_line_strip = None
+  backend.mesh3d_shadow_pipeline_cull_mode = -1
+}

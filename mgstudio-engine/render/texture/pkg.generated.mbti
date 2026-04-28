@@ -36,6 +36,8 @@ pub fn fallback_image_is_default(Int) -> Bool
 
 pub fn fallback_image_texture_id() -> Int
 
+pub fn host_gpu_create_directional_light_shadow_target(size~ : Int, layers~ : Int) -> Int
+
 pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int
 
 pub fn host_gpu_create_render_target(width~ : Int, height~ : Int, nearest~ : Bool) -> Int

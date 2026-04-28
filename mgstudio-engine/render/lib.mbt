@@ -188,12 +188,14 @@ pub fn host_gpu_prepare_mesh3d_material_bind_group(
 pub fn host_gpu_prepare_mesh3d_view_bind_group(
   transmission_source_texture_id~ : Int,
   point_shadow_texture_id~ : Int,
+  directional_shadow_texture_id? : Int = -1,
   environment_diffuse_texture_id~ : Int,
   environment_specular_texture_id~ : Int,
 ) -> Unit {
   @renderer.prepare_mesh3d_view_bind_group(
     transmission_source_texture_id~,
     point_shadow_texture_id~,
+    directional_shadow_texture_id~,
     environment_diffuse_texture_id~,
     environment_specular_texture_id~,
   )
@@ -575,6 +577,14 @@ pub fn host_gpu_begin_pass_3d(
   environment_map_rotation_z? : Float = 0.0F,
   environment_map_rotation_w? : Float = 1.0F,
   point_shadow_near~ : Float,
+  directional_shadow_texture_id? : Int = -1,
+  directional_shadow_enabled? : Float = 0.0F,
+  directional_shadow_depth_bias? : Float = 0.0F,
+  directional_shadow_normal_bias? : Float = 0.0F,
+  directional_shadow_soft_size? : Float = 0.0F,
+  directional_shadow_cascade_count? : Int = 0,
+  directional_shadow_cascade_overlap? : Float = 0.0F,
+  directional_shadow_cascade_data? : Array[Float] = [],
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
@@ -694,6 +704,14 @@ pub fn host_gpu_begin_pass_3d(
     environment_map_rotation_z~,
     environment_map_rotation_w~,
     point_shadow_near~,
+    directional_shadow_texture_id~,
+    directional_shadow_enabled~,
+    directional_shadow_depth_bias~,
+    directional_shadow_normal_bias~,
+    directional_shadow_soft_size~,
+    directional_shadow_cascade_count~,
+    directional_shadow_cascade_overlap~,
+    directional_shadow_cascade_data~,
     pass_kind~,
     clear_enabled~,
   )

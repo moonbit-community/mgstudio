@@ -19,6 +19,14 @@ pub(all) struct Render3dLightingState {
   directional_dir : @math.Vec3
   directional_color : @sprite.Color
   directional_illuminance : Float
+  directional_entity : @core.Entity?
+  directional_transform : @transform.Transform
+  directional_shadow_maps_enabled : Bool
+  directional_shadow_depth_bias : Float
+  directional_shadow_normal_bias : Float
+  directional_shadow_soft_size : Float
+  directional_cascade_bounds : Array[Float]
+  directional_cascade_overlap_proportion : Float
   point_entity : @core.Entity?
   point_pos : @math.Vec3
   point_color : @sprite.Color
@@ -233,6 +241,7 @@ pub struct ExtractedDirectionalLight3d {
   affects_lightmapped_mesh_diffuse : Bool
   soft_shadow_size : Float?
   cascade_count : Int
+  cascade_bounds : Array[Float]
   cascade_overlap_proportion : Float
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
@@ -462,6 +471,7 @@ fn render3d_extract_directional_light(
     } else {
       cascade_count
     },
+    cascade_bounds: cascade_config.bounds,
     cascade_overlap_proportion,
     sun_disk_angular_size: sun_disk.angular_size,
     sun_disk_intensity: sun_disk.intensity,
@@ -1196,6 +1206,14 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     directional_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
     directional_color: @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     directional_illuminance: 0.0F,
+    directional_entity: None,
+    directional_transform: @transform.Transform::identity(),
+    directional_shadow_maps_enabled: false,
+    directional_shadow_depth_bias: 0.02F,
+    directional_shadow_normal_bias: 0.6F * render3d_sqrt2(),
+    directional_shadow_soft_size: 0.0F,
+    directional_cascade_bounds: [],
+    directional_cascade_overlap_proportion: 0.0F,
     point_entity: None,
     point_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     point_color: @sprite.Color::white(),
@@ -1233,6 +1251,14 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       directional_dir: render3d_transform_back(directional.transform),
       directional_color: directional.color,
       directional_illuminance: directional.illuminance,
+      directional_entity: Some(directional.entity),
+      directional_transform: directional.transform,
+      directional_shadow_maps_enabled: directional.shadow_maps_enabled,
+      directional_shadow_depth_bias: directional.shadow_depth_bias,
+      directional_shadow_normal_bias: directional.shadow_normal_bias,
+      directional_shadow_soft_size: directional.soft_shadow_size.unwrap_or(0.0F),
+      directional_cascade_bounds: directional.cascade_bounds,
+      directional_cascade_overlap_proportion: directional.cascade_overlap_proportion,
     }
   }
   let point_lights = render3d_collect_extracted_point_lights(world)

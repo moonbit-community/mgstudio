@@ -987,6 +987,70 @@ pub fn GpuBackend::create_point_light_shadow_target(
 }
 
 ///|
+pub fn GpuBackend::create_directional_light_shadow_target(
+  self : GpuBackend,
+  size : Int,
+  layers : Int,
+) -> Int raise GpuBackendError {
+  ensure_sprite_resources(self)
+  let default_texture = ensure_default_texture(self)
+  let id = alloc_id(self)
+  let safe_size = if size <= 0 { 1U } else { size.reinterpret_as_uint() }
+  let safe_layers = if layers <= 0 { 1U } else { layers.reinterpret_as_uint() }
+  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING
+  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+  let tex = self.device.create_texture_u32(
+    safe_size,
+    safe_size,
+    safe_layers,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+  )
+  let array_view = tex.create_view_u32(
+    tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D_ARRAY,
+    @wgpu.TEXTURE_ASPECT_DEPTH_ONLY,
+    0U,
+    safe_layers,
+    0U,
+    1U,
+  )
+  let layer_views : Array[@wgpu.TextureView] = []
+  for layer in 0..<safe_layers.reinterpret_as_int() {
+    layer_views.push(
+      tex.create_view_u32(
+        tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        @wgpu.TEXTURE_ASPECT_DEPTH_ONLY,
+        layer.reinterpret_as_uint(),
+        1U,
+        0U,
+        1U,
+      ),
+    )
+  }
+  let info = GpuTextureInfo::{
+    id,
+    width: safe_size.reinterpret_as_int(),
+    height: safe_size.reinterpret_as_int(),
+    mip_level_count: 1,
+    base_mip_level: 0,
+    format_raw: @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+    texture: tex,
+    view: array_view,
+    sample_view: Some(array_view),
+    layer_views,
+    sampler: default_texture.sampler,
+    bind_group: default_texture.bind_group,
+  }
+  self.textures.push(info)
+  mesh3d_material_cache_clear(self)
+  id
+}
+
+///|
 pub fn GpuBackend::create_texture_cube_with_format(
   self : GpuBackend,
   width : Int,
@@ -1517,6 +1581,21 @@ pub fn create_point_light_shadow_target(size~ : Int) -> Int {
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_point_light_shadow_target(size)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_directional_light_shadow_target(
+  size~ : Int,
+  layers~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_directional_light_shadow_target(size, layers)
     } catch {
       _ => ()
     }

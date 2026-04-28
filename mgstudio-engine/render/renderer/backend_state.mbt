@@ -153,6 +153,10 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_rgba8_cull_mode : Int
   mut mesh3d_pipeline_surface_cull_mode : Int
   mesh3d_custom_pipeline_cache : Array[Mesh3dCustomPipelineCacheEntry]
+  mut mesh3d_shadow_pipeline : @wgpu.RenderPipeline?
+  mut mesh3d_shadow_pipeline_line_list : @wgpu.RenderPipeline?
+  mut mesh3d_shadow_pipeline_line_strip : @wgpu.RenderPipeline?
+  mut mesh3d_shadow_pipeline_cull_mode : Int
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
   mut mesh3d_view_buf : @wgpu.Buffer?
   mut mesh3d_pass_view_uniform_bytes : Bytes?
@@ -333,6 +337,7 @@ pub struct GpuBackend {
   mut next_id : Int
   mut normal_map_fallback_texture_id : Int
   mut point_shadow_fallback_texture_id : Int
+  mut directional_shadow_fallback_texture_id : Int
   mut shadow_color_texture : @wgpu.Texture?
   mut shadow_color_view : @wgpu.TextureView?
   mut shadow_color_width : Int

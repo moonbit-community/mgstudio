@@ -78,6 +78,15 @@ fn mesh3d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
   let ambient_color_r = pass_state.ambient_r * ambient_brightness
   let ambient_color_g = pass_state.ambient_g * ambient_brightness
   let ambient_color_b = pass_state.ambient_b * ambient_brightness
+  let camera_forward = mesh3d_quat_rotate_vec3(
+    pass_state.camera_rot_x,
+    pass_state.camera_rot_y,
+    pass_state.camera_rot_z,
+    pass_state.camera_rot_w,
+    0.0F,
+    0.0F,
+    -1.0F,
+  )
   let directional_illuminance = if pass_state.directional_illuminance < 0.0F {
     0.0F
   } else {
@@ -115,7 +124,7 @@ fn mesh3d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
     pass_state.spot_inner_angle,
     pass_state.spot_outer_angle,
   )
-  f32le_pack([
+  let values : Array[Float] = [
     pass_state.camera_x,
     pass_state.camera_y,
     pass_state.camera_z,
@@ -180,7 +189,58 @@ fn mesh3d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
     spot_offset,
     transmission_blur_taps,
     transmission_steps,
-  ])
+  ]
+  let directional_shadow_textured = pass_state.directional_shadow_texture_id >=
+    0
+  values.push(
+    if directional_shadow_textured {
+      pass_state.directional_shadow_enabled
+    } else {
+      0.0F
+    },
+  )
+  values.push(pass_state.directional_shadow_depth_bias)
+  values.push(pass_state.directional_shadow_normal_bias)
+  values.push(pass_state.directional_shadow_soft_size)
+  values.push(
+    Float::from_double(pass_state.directional_shadow_cascade_count.to_double()),
+  )
+  values.push(pass_state.directional_shadow_cascade_overlap)
+  values.push(0.0F)
+  values.push(0.0F)
+  values.push(camera_forward.0)
+  values.push(camera_forward.1)
+  values.push(camera_forward.2)
+  values.push(0.0F)
+  let cascade_data = pass_state.directional_shadow_cascade_data
+  for i in 0..<80 {
+    if i < cascade_data.length() {
+      values.push(cascade_data[i])
+    } else {
+      values.push(0.0F)
+    }
+  }
+  f32le_pack(values)
+}
+
+///|
+fn mesh3d_quat_rotate_vec3(
+  qx : Float,
+  qy : Float,
+  qz : Float,
+  qw : Float,
+  vx : Float,
+  vy : Float,
+  vz : Float,
+) -> (Float, Float, Float) {
+  let tx = 2.0F * (qy * vz - qz * vy)
+  let ty = 2.0F * (qz * vx - qx * vz)
+  let tz = 2.0F * (qx * vy - qy * vx)
+  (
+    vx + qw * tx + (qy * tz - qz * ty),
+    vy + qw * ty + (qz * tx - qx * tz),
+    vz + qw * tz + (qx * ty - qy * tx),
+  )
 }
 
 ///|

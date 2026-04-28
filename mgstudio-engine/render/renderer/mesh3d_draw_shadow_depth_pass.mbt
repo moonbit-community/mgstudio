@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn GpuBackend::draw_mesh3d_main_pass(
+pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   self : GpuBackend,
   pass : @wgpu.RenderPass,
   ps : GpuPassState,
@@ -38,7 +38,6 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   color_g : Float,
   color_b : Float,
   color_a : Float,
-  texture_id : Int,
   uv_transform_a : Float,
   uv_transform_b : Float,
   uv_transform_c : Float,
@@ -46,11 +45,6 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   uv_transform_tx : Float,
   uv_transform_ty : Float,
   uv_transform_mode : Float,
-  normal_texture_id : Int,
-  emissive_texture_id : Int,
-  metallic_roughness_texture_id : Int,
-  occlusion_texture_id : Int,
-  depth_texture_id : Int,
   emissive_r : Float,
   emissive_g : Float,
   emissive_b : Float,
@@ -60,10 +54,8 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   parallax_depth_scale : Float,
   max_parallax_layer_count : Float,
   max_relief_mapping_search_steps : Float,
-  anisotropy_texture_id : Int,
   anisotropy_strength : Float,
   anisotropy_rotation : Float,
-  specular_tint_texture_id : Int,
   specular_tint_r : Float,
   specular_tint_g : Float,
   specular_tint_b : Float,
@@ -73,23 +65,14 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   ior : Float,
   alpha_cutoff : Float,
   material_flags : UInt,
-  point_shadow_enabled : Float,
-  point_shadow_depth_bias : Float,
   cull_mode : Int,
-  shader_path : String?,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
-  transparent : Bool,
 ) -> Unit raise GpuBackendError {
-  let draw_shader_path = if pass_kind == 0 { shader_path } else { None }
-  let forward_decal = (material_flags & (1U << 20)) != 0U
-  guard mesh3d_pipeline_for_current_pass(
+  guard mesh3d_shadow_depth_pipeline_for_current_pass(
       self,
-      transparent,
-      forward_decal,
       mesh.primitive_topology,
       cull_mode,
-      draw_shader_path,
     )
     is Some(pipeline) else {
     return
@@ -139,174 +122,6 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     draw_bind_group = Some(draw_slot.bind_group)
     draw_write_offset = 0UL
     draw_index = 0U
-  }
-  let resolved_base_texture_id = if texture_id < 0 { -1 } else { texture_id }
-  let resolved_normal_texture_id = if normal_texture_id < 0 {
-    ensure_normal_map_fallback_texture(self).id
-  } else {
-    normal_texture_id
-  }
-  let resolved_emissive_texture_id = if emissive_texture_id < 0 {
-    -1
-  } else {
-    emissive_texture_id
-  }
-  let resolved_metallic_roughness_texture_id = if metallic_roughness_texture_id <
-    0 {
-    -1
-  } else {
-    metallic_roughness_texture_id
-  }
-  let resolved_occlusion_texture_id = if occlusion_texture_id < 0 {
-    -1
-  } else {
-    occlusion_texture_id
-  }
-  let resolved_depth_texture_id = if depth_texture_id < 0 {
-    -1
-  } else {
-    depth_texture_id
-  }
-  let resolved_anisotropy_texture_id = if anisotropy_texture_id < 0 {
-    -1
-  } else {
-    anisotropy_texture_id
-  }
-  let resolved_specular_tint_texture_id = if specular_tint_texture_id < 0 {
-    -1
-  } else {
-    specular_tint_texture_id
-  }
-  let resolved_transmission_source_texture_id = if ps.transmission_source_texture_id <
-    0 {
-    -1
-  } else {
-    ps.transmission_source_texture_id
-  }
-  let resolved_point_shadow_texture_id = if ps.point_shadow_texture_id < 0 {
-    ensure_point_shadow_fallback_texture(self).id
-  } else {
-    ps.point_shadow_texture_id
-  }
-  let resolved_directional_shadow_texture_id = if ps.directional_shadow_texture_id <
-    0 {
-    ensure_directional_shadow_fallback_texture(self).id
-  } else {
-    ps.directional_shadow_texture_id
-  }
-  let environment_map_enabled = ps.environment_map_intensity > 0.0F
-  let resolved_environment_diffuse_texture_id = if environment_map_enabled {
-    if ps.environment_diffuse_texture_id >= 0 {
-      ps.environment_diffuse_texture_id
-    } else {
-      -1
-    }
-  } else {
-    -1
-  }
-  let resolved_environment_specular_texture_id = if environment_map_enabled {
-    if ps.environment_specular_texture_id >= 0 {
-      ps.environment_specular_texture_id
-    } else {
-      -1
-    }
-  } else {
-    -1
-  }
-  guard resolve_mesh3d_texture(self, resolved_base_texture_id)
-    is Some(base_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_normal_texture_id)
-    is Some(normal_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_emissive_texture_id)
-    is Some(emissive_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_metallic_roughness_texture_id)
-    is Some(metallic_roughness_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_occlusion_texture_id)
-    is Some(occlusion_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_depth_texture_id)
-    is Some(depth_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_anisotropy_texture_id)
-    is Some(anisotropy_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_specular_tint_texture_id)
-    is Some(specular_tint_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_transmission_source_texture_id)
-    is Some(transmission_source_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_point_shadow_texture_id)
-    is Some(point_shadow_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_directional_shadow_texture_id)
-    is Some(directional_shadow_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_environment_diffuse_texture_id)
-    is Some(environment_diffuse_texture) else {
-    return
-  }
-  guard resolve_mesh3d_texture(self, resolved_environment_specular_texture_id)
-    is Some(environment_specular_texture) else {
-    return
-  }
-  let textured = texture_id >= 0
-  let normal_textured = normal_texture_id >= 0
-  let emissive_textured = emissive_texture_id >= 0
-  let metallic_roughness_textured = metallic_roughness_texture_id >= 0
-  let occlusion_textured = occlusion_texture_id >= 0
-  let depth_textured = depth_texture_id >= 0
-  let anisotropy_textured = anisotropy_texture_id >= 0
-  let specular_tint_textured = specular_tint_texture_id >= 0
-  let point_shadow_textured = ps.point_shadow_texture_id >= 0
-  let draw_point_shadow_enabled = if point_shadow_textured &&
-    point_shadow_enabled > 0.5F {
-    1.0F
-  } else {
-    0.0F
-  }
-  let draw_point_shadow_depth_bias = if point_shadow_textured {
-    point_shadow_depth_bias
-  } else {
-    0.0F
-  }
-  let uv_transform_a_value = uv_transform_a
-  let uv_transform_b_value = uv_transform_b
-  let uv_transform_c_value = uv_transform_c
-  let uv_transform_d_value = uv_transform_d
-  let uv_transform_tx_value = uv_transform_tx
-  let uv_transform_ty_value = uv_transform_ty
-  let runtime_material_flags = mesh3d_runtime_material_flags(
-    material_flags, normal_texture_id, normal_texture,
-  )
-  let uv_transform_mode_value = if uv_transform_mode < 0.0F {
-    -1.0F
-  } else if textured ||
-    normal_textured ||
-    emissive_textured ||
-    metallic_roughness_textured ||
-    occlusion_textured ||
-    depth_textured ||
-    anisotropy_textured ||
-    specular_tint_textured {
-    1.0F
-  } else {
-    0.0F
   }
   guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
   guard draw_buffer is Some(active_draw_buffer) else { return }
@@ -359,13 +174,13 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       color_g,
       color_b,
       color_a,
-      uv_transform_a_value,
-      uv_transform_b_value,
-      uv_transform_c_value,
-      uv_transform_d_value,
-      uv_transform_tx_value,
-      uv_transform_ty_value,
-      uv_transform_mode_value,
+      uv_transform_a,
+      uv_transform_b,
+      uv_transform_c,
+      uv_transform_d,
+      uv_transform_tx,
+      uv_transform_ty,
+      uv_transform_mode,
       emissive_r,
       emissive_g,
       emissive_b,
@@ -385,24 +200,33 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       thickness,
       ior,
       alpha_cutoff,
-      runtime_material_flags,
+      material_flags,
       if skinning_key_hi >= 0 {
         skinning_key_hi.reinterpret_as_uint()
       } else {
         0U
       },
-      draw_point_shadow_enabled,
-      draw_point_shadow_depth_bias,
+      0.0F,
+      0.0F,
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }
+  let transmission_source_texture = ensure_default_texture(self)
+  let point_shadow_texture = ensure_point_shadow_fallback_texture(self)
+  let directional_shadow_texture = ensure_directional_shadow_fallback_texture(
+    self,
+  )
+  let environment_diffuse_texture = ensure_default_texture(self)
+  let environment_specular_texture = ensure_default_texture(self)
   let view_bg = mesh3d_view_bg_cache_get_or_create(
     self, transmission_source_texture, point_shadow_texture, directional_shadow_texture,
     environment_diffuse_texture, environment_specular_texture,
   )
+  let default_texture = ensure_default_texture(self)
+  let normal_texture = ensure_normal_map_fallback_texture(self)
   let material_bg = mesh3d_material_cache_get_or_create(
-    self, base_texture, normal_texture, emissive_texture, metallic_roughness_texture,
-    occlusion_texture, depth_texture, anisotropy_texture, specular_tint_texture,
+    self, default_texture, normal_texture, default_texture, default_texture, default_texture,
+    default_texture, default_texture, default_texture,
   )
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, view_bg, [])

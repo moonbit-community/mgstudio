@@ -62,6 +62,14 @@ pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int {
 }
 
 ///|
+pub fn host_gpu_create_directional_light_shadow_target(
+  size~ : Int,
+  layers~ : Int,
+) -> Int {
+  @renderer.create_directional_light_shadow_target(size~, layers~)
+}
+
+///|
 pub fn asset_create_texture_empty(
   width~ : Int,
   height~ : Int,

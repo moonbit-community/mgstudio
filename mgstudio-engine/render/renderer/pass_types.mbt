@@ -86,6 +86,14 @@ pub struct GpuPassState {
   environment_map_rotation_z : Float
   environment_map_rotation_w : Float
   point_shadow_near : Float
+  directional_shadow_texture_id : Int
+  directional_shadow_enabled : Float
+  directional_shadow_depth_bias : Float
+  directional_shadow_normal_bias : Float
+  directional_shadow_soft_size : Float
+  directional_shadow_cascade_count : Int
+  directional_shadow_cascade_overlap : Float
+  directional_shadow_cascade_data : Array[Float]
 }
 
 ///|
