@@ -192,8 +192,8 @@ fn mat2x4_f32_to_mat3x3_unpack(
 @group(0) @binding(26) var u_transmission_source_sampler : sampler;
 @group(0) @binding(2) var u_point_shadow_texture : texture_depth_cube;
 @group(0) @binding(3) var u_point_shadow_sampler : sampler_comparison;
-@group(1) @binding(0) var u_environment_diffuse_texture : texture_2d<f32>;
-@group(1) @binding(1) var u_environment_specular_texture : texture_2d<f32>;
+@group(1) @binding(0) var u_environment_diffuse_texture : texture_cube<f32>;
+@group(1) @binding(1) var u_environment_specular_texture : texture_cube<f32>;
 @group(1) @binding(2) var u_environment_sampler : sampler;
 @group(0) @binding(5) var u_directional_shadow_texture : texture_depth_2d_array;
 @group(0) @binding(6) var u_directional_shadow_sampler : sampler_comparison;
@@ -912,12 +912,12 @@ fn sample_environment_diffuse(
   direction : vec3<f32>,
   rotation : vec4<f32>,
 ) -> vec3<f32> {
-  let sample_dir = quat_rotate_vec3(rotation, safe_normalize(direction));
-  let uv = cubemap_stacked_vertical_uv(sample_dir);
+  var sample_dir = quat_rotate_vec3(rotation, safe_normalize(direction));
+  sample_dir.z = -sample_dir.z;
   return textureSampleLevel(
     u_environment_diffuse_texture,
     u_environment_sampler,
-    uv,
+    sample_dir,
     0.0,
   ).rgb;
 }
@@ -927,13 +927,14 @@ fn sample_environment_specular(
   rotation : vec4<f32>,
   perceptual_roughness : f32,
 ) -> vec3<f32> {
-  let sample_dir = quat_rotate_vec3(rotation, safe_normalize(direction));
-  let uv = cubemap_stacked_vertical_uv(sample_dir);
-  let lod = clamp(perceptual_roughness * 8.0, 0.0, 8.0);
+  var sample_dir = quat_rotate_vec3(rotation, safe_normalize(direction));
+  sample_dir.z = -sample_dir.z;
+  let smallest_mip = f32(textureNumLevels(u_environment_specular_texture) - 1u);
+  let lod = clamp(perceptual_roughness * smallest_mip, 0.0, smallest_mip);
   return textureSampleLevel(
     u_environment_specular_texture,
     u_environment_sampler,
-    uv,
+    sample_dir,
     lod,
   ).rgb;
 }

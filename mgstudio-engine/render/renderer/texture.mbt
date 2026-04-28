@@ -149,6 +149,109 @@ fn ensure_normal_map_fallback_texture(
 }
 
 ///|
+fn ensure_environment_map_fallback_texture(
+  backend : GpuBackend,
+) -> GpuTextureInfo raise GpuBackendError {
+  if backend.environment_map_fallback_texture_id >= 0 {
+    if find_texture(backend, backend.environment_map_fallback_texture_id)
+      is Some(texture) {
+      return texture
+    }
+  }
+  ensure_sprite_resources(backend)
+  let default_texture = ensure_default_texture(backend)
+  let id = alloc_id(backend)
+  let tex = backend.device.create_texture_u32(
+    1U,
+    1U,
+    6U,
+    @wgpu.TextureUsage::from_u64(
+      @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+      @wgpu.TEXTURE_USAGE_COPY_DST |
+      @wgpu.TEXTURE_USAGE_COPY_SRC,
+    ),
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    mip_level_count=1U,
+  )
+  let data = Bytes::from_array([
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+  ])
+  let tex_info = @wgpu_c.texel_copy_texture_info_new(tex.raw, 0U, 0U, 0U, 0U)
+  let layout = @wgpu_c.texel_copy_buffer_layout_new(0UL, 4U, 1U)
+  let extent = @wgpu_c.extent3d_new(1U, 1U, 6U)
+  backend.queue.write_texture_ptr(
+    tex_info,
+    data,
+    layout,
+    extent,
+    data_size=24UL,
+  )
+  @wgpu_c.extent3d_free(extent)
+  @wgpu_c.texel_copy_buffer_layout_free(layout)
+  @wgpu_c.texel_copy_texture_info_free(tex_info)
+  let face0_view = tex.create_view_u32(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    @wgpu.TEXTURE_ASPECT_ALL,
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  let cube_view = tex.create_view_u32(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
+    @wgpu.TEXTURE_ASPECT_ALL,
+    0U,
+    6U,
+    0U,
+    1U,
+  )
+  let info = GpuTextureInfo::{
+    id,
+    width: 1,
+    height: 1,
+    mip_level_count: 1,
+    base_mip_level: 0,
+    format_raw: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    texture: tex,
+    view: face0_view,
+    sample_view: Some(cube_view),
+    layer_views: [],
+    sampler: default_texture.sampler,
+    bind_group: default_texture.bind_group,
+  }
+  backend.environment_map_fallback_texture_id = id
+  backend.textures.push(info)
+  mesh3d_material_cache_clear(backend)
+  info
+}
+
+///|
 fn resolve_draw_texture(
   backend : GpuBackend,
   id : Int,
@@ -1193,7 +1296,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
   } else {
     self.device.create_sampler_linear_clamp()
   }
-  let bind_group = create_cached_texture_bind_group(self, sampler, cube_view)
+  let bind_group = create_cached_texture_bind_group(self, sampler, face0_view)
   let info = GpuTextureInfo::{
     id,
     width: w,

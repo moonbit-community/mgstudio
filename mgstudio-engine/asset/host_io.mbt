@@ -3164,17 +3164,24 @@ fn load_texture_bytes_with_container(
     }
   }
   if ktx2_decode_2d_payload(bytes) is Some(payload) {
-    payload.is_cube |> ignore
-    // Current material/sprite bind-group layouts sample `texture_2d`, so KTX2
-    // cubemaps are uploaded as stacked 2D textures for runtime compatibility.
-    let texture_id = @render_texture.asset_create_texture_stacked_2d_with_format(
-      width=payload.width,
-      height_per_slice=payload.height,
-      slice_count=payload.slice_count,
-      format_raw=payload.format_raw,
-      levels=payload.levels,
-      nearest~,
-    )
+    let texture_id = if payload.is_cube && payload.slice_count == 6 {
+      @render_texture.asset_create_texture_cube_with_format(
+        width=payload.width,
+        height=payload.height,
+        format_raw=payload.format_raw,
+        levels=payload.levels,
+        nearest~,
+      )
+    } else {
+      @render_texture.asset_create_texture_stacked_2d_with_format(
+        width=payload.width,
+        height_per_slice=payload.height,
+        slice_count=payload.slice_count,
+        format_raw=payload.format_raw,
+        levels=payload.levels,
+        nearest~,
+      )
+    }
     if texture_id > 0 {
       sync_texture_record(texture_id, payload.width, payload.height, loaded)
       return texture_id

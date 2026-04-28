@@ -400,6 +400,7 @@ pub fn GpuBackend::new(
     normal_map_fallback_texture_id: -1,
     point_shadow_fallback_texture_id: -1,
     directional_shadow_fallback_texture_id: -1,
+    environment_map_fallback_texture_id: -1,
     shadow_color_texture: None,
     shadow_color_view: None,
     shadow_color_width: 0,

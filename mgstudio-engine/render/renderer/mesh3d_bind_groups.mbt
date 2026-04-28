@@ -137,6 +137,24 @@ fn mesh3d_view_bg_cache_get_or_create(
     Some(view) => view
     None => directional_shadow_texture.view
   }
+  let fallback_environment_texture = ensure_environment_map_fallback_texture(
+    backend,
+  )
+  let fallback_environment_sample_view = match
+    fallback_environment_texture.sample_view {
+    Some(view) => view
+    None => fallback_environment_texture.view
+  }
+  let environment_diffuse_sample_view = match
+    environment_diffuse_texture.sample_view {
+    Some(view) => view
+    None => fallback_environment_sample_view
+  }
+  let environment_specular_sample_view = match
+    environment_specular_texture.sample_view {
+    Some(view) => view
+    None => fallback_environment_sample_view
+  }
   let builder = @wgpu.BindGroupBuilder::new(max_entries=19UL)
   let ok = builder.add_buffer(0U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
     builder.add_buffer(1U, lights_buf, size=MESH3D_LIGHTS_BUFFER_SIZE) &&
@@ -200,12 +218,10 @@ fn mesh3d_view_bg_cache_get_or_create(
   )
   let binding_arrays_builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
   let binding_arrays_ok = binding_arrays_builder.add_texture_view(
-      0U,
-      environment_diffuse_texture.view,
+      0U, environment_diffuse_sample_view,
     ) &&
     binding_arrays_builder.add_texture_view(
-      1U,
-      environment_specular_texture.view,
+      1U, environment_specular_sample_view,
     ) &&
     binding_arrays_builder.add_sampler(2U, environment_diffuse_texture.sampler)
   if !binding_arrays_ok {
@@ -487,13 +503,13 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
   }
   let resolved_environment_diffuse_texture_id = if environment_diffuse_texture_id <
     0 {
-    -1
+    ensure_environment_map_fallback_texture(self).id
   } else {
     environment_diffuse_texture_id
   }
   let resolved_environment_specular_texture_id = if environment_specular_texture_id <
     0 {
-    -1
+    ensure_environment_map_fallback_texture(self).id
   } else {
     environment_specular_texture_id
   }

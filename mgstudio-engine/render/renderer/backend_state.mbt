@@ -337,6 +337,7 @@ pub struct GpuBackend {
   mut normal_map_fallback_texture_id : Int
   mut point_shadow_fallback_texture_id : Int
   mut directional_shadow_fallback_texture_id : Int
+  mut environment_map_fallback_texture_id : Int
   mut shadow_color_texture : @wgpu.Texture?
   mut shadow_color_view : @wgpu.TextureView?
   mut shadow_color_width : Int

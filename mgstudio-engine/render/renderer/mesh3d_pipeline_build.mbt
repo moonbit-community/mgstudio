@@ -549,13 +549,13 @@ fn ensure_mesh3d_pipeline_rgba8(
         0U,
         ss(@wgpu.SHADER_STAGE_FRAGMENT),
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
       ) &&
       binding_arrays_builder.add_texture(
         1U,
         ss(@wgpu.SHADER_STAGE_FRAGMENT),
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
       ) &&
       binding_arrays_builder.add_sampler(
         2U,
