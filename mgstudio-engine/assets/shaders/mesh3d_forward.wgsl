@@ -1398,7 +1398,16 @@ fn fs_main(
   let lit_rgb = lighting_rgb * exposure + emissive;
   let unlit_rgb = base_color.xyz + emissive;
   let final_rgb = mix(lit_rgb, unlit_rgb, unlit_factor);
-  return vec4<f32>(final_rgb, base_color.w);
+  var output_color = vec4<f32>(final_rgb, base_color.w);
+  if alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE ||
+    alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK {
+    output_color.a = 1.0;
+  } else if alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD {
+    output_color = vec4<f32>(output_color.rgb * output_color.a, 0.0);
+  } else if alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY {
+    output_color = vec4<f32>(output_color.rgb * output_color.a, output_color.a);
+  }
+  return output_color;
 }
 
 @fragment
