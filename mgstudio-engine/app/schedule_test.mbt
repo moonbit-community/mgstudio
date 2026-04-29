@@ -40,6 +40,9 @@ struct NestedParentPlugin {}
 struct NestedChildPlugin {}
 
 ///|
+struct PluginBuildDepthProbePlugin {}
+
+///|
 let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
@@ -52,6 +55,9 @@ let nested_plugin_lifecycle_log_ref : Ref[Array[Int]] = Ref::new([])
 let plugin_lifecycle_ready_ref : Ref[Bool] = Ref::new(true)
 
 ///|
+let plugin_build_depth_probe_ref : Ref[Bool] = Ref::new(false)
+
+///|
 fn plugin_group_test_reset_log() -> Unit {
   plugin_group_test_log_ref.val = []
 }
@@ -61,6 +67,7 @@ fn plugin_lifecycle_test_reset_log() -> Unit {
   plugin_lifecycle_log_ref.val = []
   nested_plugin_lifecycle_log_ref.val = []
   plugin_lifecycle_ready_ref.val = true
+  plugin_build_depth_probe_ref.val = false
 }
 
 ///|
@@ -231,6 +238,17 @@ pub impl Plugin for NestedChildPlugin with finish(_self, app) {
 ///|
 pub impl Plugin for NestedChildPlugin with cleanup(_self, app) {
   nested_plugin_lifecycle_log_ref.val.push(200)
+  app
+}
+
+///|
+pub impl Plugin for PluginBuildDepthProbePlugin with name(_self) {
+  "mgstudio.app.plugin_build_depth_probe"
+}
+
+///|
+pub impl Plugin for PluginBuildDepthProbePlugin with build(_self, app) {
+  plugin_build_depth_probe_ref.val = app.is_building_plugins()
   app
 }
 
@@ -534,6 +552,16 @@ test "app: nested plugin registry preserves parent before child lifecycle" {
     nested_plugin_lifecycle_log_ref.val,
     content="[1, 2, 10, 20, 100, 200]",
   )
+}
+
+///|
+test "app: plugin build depth is visible only during plugin build" {
+  plugin_lifecycle_test_reset_log()
+  let app = App::new(@ecs.World::new()).add_plugins(PluginBuildDepthProbePlugin::{
+
+  })
+  debug_inspect(plugin_build_depth_probe_ref.val, content="true")
+  debug_inspect(app.is_building_plugins(), content="false")
 }
 
 ///|

@@ -378,6 +378,7 @@ pub struct App[W] {
   mut plugin_names : Array[String]
   mut plugin_registry : Array[PluginGroupEntry[W]]
   mut plugins_state : PluginsState
+  mut plugin_build_depth : Int
   runner_builder : ((App[W]) -> (() -> Unit))?
 }
 pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] App::add_component_observer(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit) -> Self[@ecs.World]
@@ -544,6 +545,7 @@ pub fn[W] App::insert_sub_app(Self[W], AppLabel, SubApp[W]) -> Self[W]
 pub fn[T] App::insert_world_resource(Self[@ecs.World], @ecs.ResourceKey[T], T) -> Self[@ecs.World]
 pub fn[T : @ecs.Component] App::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn[T : Resource] App::is_ambiguous_resource_allowed(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Bool
+pub fn[W] App::is_building_plugins(Self[W]) -> Bool
 pub fn App::new(@ecs.World) -> Self[@ecs.World]
 pub fn[W] App::plugin_names(Self[W]) -> Array[String]
 pub fn[W] App::plugins_state(Self[W]) -> PluginsState

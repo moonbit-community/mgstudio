@@ -2298,6 +2298,7 @@ pub struct App[W] {
   mut plugin_names : Array[String]
   mut plugin_registry : Array[PluginGroupEntry[W]]
   mut plugins_state : PluginsState
+  mut plugin_build_depth : Int
   runner_builder : RunnerBuilder[W]?
 }
 
@@ -2312,6 +2313,7 @@ pub fn App::new(world : @ecs.World) -> App[@ecs.World] {
     plugin_names: [],
     plugin_registry: [],
     plugins_state: Adding,
+    plugin_build_depth: 0,
     runner_builder: None,
   }
 }
@@ -2336,7 +2338,9 @@ fn[W] App::add_plugin_entry(
   }
   let index = self.plugin_registry.length()
   self.plugin_registry.push(plugin_group_placeholder_entry())
+  self.plugin_build_depth = self.plugin_build_depth + 1
   let app = (entry.plugin)(self)
+  app.plugin_build_depth = app.plugin_build_depth - 1
   app.plugin_names.push(entry.id)
   app.plugin_registry[index] = entry
   app.plugins_state = Adding
@@ -2371,6 +2375,11 @@ pub fn[W] App::plugins_state(self : App[W]) -> PluginsState {
     self.plugins_state = Ready
   }
   self.plugins_state
+}
+
+///|
+pub fn[W] App::is_building_plugins(self : App[W]) -> Bool {
+  self.plugin_build_depth > 0
 }
 
 ///|
@@ -3938,6 +3947,9 @@ fn run_schedule_stage(
 
 ///|
 pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
+  if self.is_building_plugins() {
+    abort("App::run_startup() was called while a plugin was building.")
+  }
   let self = self.finalize_plugins()
   if !self.plugins_finalized() {
     return self
@@ -3948,6 +3960,9 @@ pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
 
 ///|
 pub fn App::update(self : App[@ecs.World]) -> App[@ecs.World] {
+  if self.is_building_plugins() {
+    abort("App::update() was called while a plugin was building.")
+  }
   let self = self.finalize_plugins()
   if !self.plugins_finalized() {
     return self
@@ -3963,6 +3978,9 @@ pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
 
 ///|
 pub fn App::run(self : App[@ecs.World]) -> Unit {
+  if self.is_building_plugins() {
+    abort("App::run() was called while a plugin was building.")
+  }
   if self.runner_builder is Some(builder) {
     let runner = builder(self)
     runner()
