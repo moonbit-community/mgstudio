@@ -18,6 +18,7 @@ import {
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
+  "moonbitlang/core/strconv",
 }
 
 supported_targets = "native"

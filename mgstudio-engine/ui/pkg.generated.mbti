@@ -18,6 +18,8 @@ import {
 }
 
 // Values
+pub fn auto() -> Val
+
 pub let ecs_components : Array[String]
 
 pub let ecs_key_accessibility_label : @ecs.ComponentKey[AccessibilityLabel]
@@ -90,6 +92,10 @@ pub fn get_ui_scale_resource(@ecs.World) -> @ecs.ResourceAccess[UiScale]
 
 pub fn get_ui_stack_resource(@ecs.World) -> @ecs.ResourceAccess[UiStack]
 
+pub fn percent(Float) -> Val
+
+pub fn px(Float) -> Val
+
 pub fn ui_a11y_update_system(@ecs.World) -> Unit
 
 pub fn ui_build_a11y_tree_update(@ecs.World) -> @moon_accesskit.TreeUpdate
@@ -148,7 +154,25 @@ pub fn ui_stack_system(@ecs.World) -> Unit
 
 pub fn ui_update_context_system(@ecs.World) -> Unit
 
+pub fn vh(Float) -> Val
+
+pub fn vmax(Float) -> Val
+
+pub fn vmin(Float) -> Val
+
+pub fn vw(Float) -> Val
+
 // Errors
+pub(all) suberror ValArithmeticError {
+  NonEvaluable
+}
+
+pub(all) suberror ValParseError {
+  UnitMissing
+  ValueMissing
+  InvalidValue
+  InvalidUnit
+}
 
 // Types and methods
 pub struct AccessibilityLabel {
@@ -220,14 +244,31 @@ pub impl @ecs.Component for BorderColor
 pub struct BorderRadius {
   top_left : Val
   top_right : Val
-  bottom_left : Val
   bottom_right : Val
+  bottom_left : Val
 } derive(ToJson, @json.FromJson)
 pub fn BorderRadius::all(Val) -> Self
+pub fn BorderRadius::bottom(Val) -> Self
+pub fn BorderRadius::bottom_left(Val) -> Self
+pub fn BorderRadius::bottom_right(Val) -> Self
 pub fn BorderRadius::default() -> Self
+pub fn BorderRadius::left(Val) -> Self
 pub fn BorderRadius::new(Val, Val, Val, Val) -> Self
 pub fn BorderRadius::percent(Float, Float, Float, Float) -> Self
 pub fn BorderRadius::px(Float, Float, Float, Float) -> Self
+pub fn BorderRadius::resolve_single_corner(Val, Float, Float, @math.Vec2) -> Float
+pub fn BorderRadius::right(Val) -> Self
+pub fn BorderRadius::top(Val) -> Self
+pub fn BorderRadius::top_left(Val) -> Self
+pub fn BorderRadius::top_right(Val) -> Self
+pub fn BorderRadius::with_bottom(Self, Val) -> Self
+pub fn BorderRadius::with_bottom_left(Self, Val) -> Self
+pub fn BorderRadius::with_bottom_right(Self, Val) -> Self
+pub fn BorderRadius::with_left(Self, Val) -> Self
+pub fn BorderRadius::with_right(Self, Val) -> Self
+pub fn BorderRadius::with_top(Self, Val) -> Self
+pub fn BorderRadius::with_top_left(Self, Val) -> Self
+pub fn BorderRadius::with_top_right(Self, Val) -> Self
 pub impl @ecs.Component for BorderRadius
 
 pub struct BorderRect {
@@ -677,6 +718,10 @@ pub fn UiRect::px(Float, Float, Float, Float) -> Self
 pub fn UiRect::right(Val) -> Self
 pub fn UiRect::top(Val) -> Self
 pub fn UiRect::vertical(Val) -> Self
+pub fn UiRect::with_bottom(Self, Val) -> Self
+pub fn UiRect::with_left(Self, Val) -> Self
+pub fn UiRect::with_right(Self, Val) -> Self
+pub fn UiRect::with_top(Self, Val) -> Self
 
 pub struct UiRoot {
 } derive(ToJson, @json.FromJson)
@@ -710,7 +755,22 @@ pub(all) enum Val {
   Vh(Float)
   VMin(Float)
   VMax(Float)
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+} derive(ToJson, @debug.Debug, @json.FromJson)
+pub fn Val::all(Self) -> UiRect
+pub fn Val::bottom(Self) -> UiRect
+pub fn Val::default() -> Self
+pub fn Val::div(Self, Float) -> Self
+pub fn Val::horizontal(Self) -> UiRect
+pub fn Val::left(Self) -> UiRect
+pub fn Val::mul(Self, Float) -> Self
+pub fn Val::neg(Self) -> Self
+pub fn Val::parse(String) -> Self raise ValParseError
+pub fn Val::resolve(Self, Float, Float, @math.Vec2) -> Float raise ValArithmeticError
+pub fn Val::right(Self) -> UiRect
+pub fn Val::top(Self) -> UiRect
+pub fn Val::vertical(Self) -> UiRect
+pub fn Val::zero() -> Self
+pub impl Eq for Val
 
 pub struct ZIndex {
   value : Int
