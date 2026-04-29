@@ -215,3 +215,38 @@ test "retained gizmo circle builder flushes with Bevy resolution semantics" {
   debug_inspect(asset.buffer().strip_positions().length(), content="34")
   debug_inspect(asset.buffer().list_positions().length(), content="2")
 }
+
+///|
+test "retained gizmo arc builders flush in Bevy call order" {
+  let asset = @gizmos.GizmoAsset::default()
+  ignore(
+    asset
+    .arc_2d(
+      @sprite.Isometry2d::identity(),
+      3.141592653589793F,
+      1.0F,
+      @color.Color::white(),
+    )
+    .resolution(4),
+  )
+  ignore(
+    asset
+    .circle_2d(@sprite.Isometry2d::identity(), 1.0F, @color.Color::white())
+    .resolution(3),
+  )
+  let strip = asset.buffer().strip_positions()
+  debug_inspect(strip.length(), content="11")
+  debug_inspect(strip[0].y, content="1")
+  asset.clear()
+  ignore(
+    asset
+    .arc_3d(
+      3.141592653589793F,
+      1.0F,
+      @math.Isometry3d::identity(),
+      @color.Color::white(),
+    )
+    .resolution(4),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="6")
+}

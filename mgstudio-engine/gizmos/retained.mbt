@@ -23,6 +23,9 @@ const RETAINED_DEFAULT_CIRCLE_RESOLUTION : Int = 32
 const RETAINED_TAU : Float = 6.283185307179586F
 
 ///|
+const RETAINED_HALF_PI : Float = 1.5707963267948966F
+
+///|
 fn retained_max_int(value : Int, min : Int) -> Int {
   if value < min {
     min
@@ -37,13 +40,58 @@ fn retained_float_from_int(value : Int) -> Float {
 }
 
 ///|
+fn retained_abs_float(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn retained_clamp_float(value : Float, min : Float, max : Float) -> Float {
+  if value < min {
+    min
+  } else if value > max {
+    max
+  } else {
+    value
+  }
+}
+
+///|
+fn retained_resolution_from_angle(angle : Float) -> Int {
+  let ratio = retained_abs_float(angle) / RETAINED_TAU
+  let raw = ratio * retained_float_from_int(RETAINED_DEFAULT_CIRCLE_RESOLUTION)
+  let base = raw.to_int()
+  let base_float = retained_float_from_int(base)
+  let result = if raw > base_float { base + 1 } else { base }
+  retained_max_int(result, 1)
+}
+
+///|
 struct RetainedPendingEllipse {
+  order : Int
   is_2d : Bool
   isometry2d : @sprite.Isometry2d
   isometry3d : @math.Isometry3d
   half_size : @math.Vec2
   color : @color.Color
   mut resolution : Int
+}
+
+///|
+struct RetainedPendingArc {
+  order : Int
+  is_2d : Bool
+  start_vertex : @math.Vec3
+  isometry2d : @sprite.Isometry2d
+  isometry3d : @math.Isometry3d
+  angle : Float
+  radius : Float
+  color : @color.Color
+  mut resolution : Int
+  mut has_resolution : Bool
 }
 
 ///|
@@ -54,6 +102,8 @@ pub struct GizmoBuffer {
   strip_positions : Array[@math.Vec3]
   strip_colors : Array[@color.LinearRgba]
   pending_ellipses : Array[RetainedPendingEllipse]
+  pending_arcs : Array[RetainedPendingArc]
+  mut pending_order_next : Int
 }
 
 ///|
@@ -65,6 +115,8 @@ pub fn GizmoBuffer::new() -> GizmoBuffer {
     strip_positions: [],
     strip_colors: [],
     pending_ellipses: [],
+    pending_arcs: [],
+    pending_order_next: 0,
   }
 }
 
@@ -88,6 +140,8 @@ pub fn GizmoBuffer::clear(self : GizmoBuffer) -> Unit {
   self.strip_positions.clear()
   self.strip_colors.clear()
   self.pending_ellipses.clear()
+  self.pending_arcs.clear()
+  self.pending_order_next = 0
 }
 
 ///|
@@ -139,6 +193,48 @@ fn retained_ellipse_points(
     let x = @math.cos(angle) * half_size.x
     let y = @math.sin(angle) * half_size.y
     points.push(@math.Vec2::new(x, y))
+  }
+  points
+}
+
+///|
+fn retained_arc_2d_points(
+  arc_angle : Float,
+  radius : Float,
+  resolution : Int,
+) -> Array[@math.Vec2] {
+  let steps = retained_max_int(resolution, 1)
+  let points : Array[@math.Vec2] = []
+  let denom = retained_float_from_int(steps)
+  for i in 0..<=steps {
+    let angle = arc_angle * retained_float_from_int(i) / denom +
+      RETAINED_HALF_PI
+    points.push(
+      @math.Vec2::new(@math.cos(angle) * radius, @math.sin(angle) * radius),
+    )
+  }
+  points
+}
+
+///|
+fn retained_arc_3d_points(
+  start_vertex : @math.Vec3,
+  isometry : @math.Isometry3d,
+  angle : Float,
+  radius : Float,
+  resolution : Int,
+) -> Array[@math.Vec3] {
+  let steps = retained_max_int(resolution, 1)
+  let clamped_angle = retained_clamp_float(angle, -RETAINED_TAU, RETAINED_TAU)
+  let points : Array[@math.Vec3] = []
+  let denom = retained_float_from_int(steps)
+  for i in 0..<=steps {
+    let fraction = retained_float_from_int(i) / denom
+    let rotation = @math.Quat::from_rotation_y(clamped_angle * fraction)
+    let rotated = @math.Isometry3d::new(@math.Vec3::zero(), rotation).transform_point3(
+      start_vertex,
+    )
+    points.push(isometry.transform_point3(rotated.mul_scalar(radius)))
   }
   points
 }
@@ -371,29 +467,74 @@ fn GizmoBuffer::linestrip_gradient_raw(
 
 ///|
 fn GizmoBuffer::flush_pending(self : GizmoBuffer) -> Unit {
-  if self.pending_ellipses.length() == 0 {
+  if self.pending_ellipses.length() == 0 && self.pending_arcs.length() == 0 {
     return
   }
-  for ellipse in self.pending_ellipses {
-    if ellipse.is_2d {
-      self.linestrip_2d_raw(
-        gizmo_buffer_isometry2d_points(
-          ellipse.isometry2d,
-          retained_ellipse_points(ellipse.half_size, ellipse.resolution),
-        ),
-        ellipse.color,
-      )
+  let mut ellipse_index = 0
+  let mut arc_index = 0
+  while ellipse_index < self.pending_ellipses.length() ||
+        arc_index < self.pending_arcs.length() {
+    let use_ellipse = if ellipse_index >= self.pending_ellipses.length() {
+      false
+    } else if arc_index >= self.pending_arcs.length() {
+      true
     } else {
-      self.linestrip_raw(
-        gizmo_buffer_isometry3d_points_from_2d(
-          ellipse.isometry3d,
-          retained_ellipse_points(ellipse.half_size, ellipse.resolution),
-        ),
-        ellipse.color,
-      )
+      self.pending_ellipses[ellipse_index].order <=
+      self.pending_arcs[arc_index].order
+    }
+    if use_ellipse {
+      let ellipse = self.pending_ellipses[ellipse_index]
+      if ellipse.is_2d {
+        self.linestrip_2d_raw(
+          gizmo_buffer_isometry2d_points(
+            ellipse.isometry2d,
+            retained_ellipse_points(ellipse.half_size, ellipse.resolution),
+          ),
+          ellipse.color,
+        )
+      } else {
+        self.linestrip_raw(
+          gizmo_buffer_isometry3d_points_from_2d(
+            ellipse.isometry3d,
+            retained_ellipse_points(ellipse.half_size, ellipse.resolution),
+          ),
+          ellipse.color,
+        )
+      }
+      ellipse_index += 1
+    } else {
+      let arc = self.pending_arcs[arc_index]
+      let resolution = if arc.has_resolution {
+        arc.resolution
+      } else {
+        retained_resolution_from_angle(arc.angle)
+      }
+      if arc.is_2d {
+        self.linestrip_2d_raw(
+          gizmo_buffer_isometry2d_points(
+            arc.isometry2d,
+            retained_arc_2d_points(arc.angle, arc.radius, resolution),
+          ),
+          arc.color,
+        )
+      } else {
+        self.linestrip_raw(
+          retained_arc_3d_points(
+            arc.start_vertex,
+            arc.isometry3d,
+            arc.angle,
+            arc.radius,
+            resolution,
+          ),
+          arc.color,
+        )
+      }
+      arc_index += 1
     }
   }
   self.pending_ellipses.clear()
+  self.pending_arcs.clear()
+  self.pending_order_next = 0
 }
 
 ///|
@@ -641,6 +782,26 @@ pub fn RetainedEllipseBuilder::resolution(
 }
 
 ///|
+pub struct RetainedArcBuilder {
+  id : Int
+  buffer : GizmoBuffer
+}
+
+///|
+pub fn RetainedArcBuilder::resolution(
+  self : RetainedArcBuilder,
+  resolution : Int,
+) -> RetainedArcBuilder {
+  if self.id >= 0 && self.id < self.buffer.pending_arcs.length() {
+    self.buffer.pending_arcs[self.id].resolution = retained_max_int(
+      resolution, 1,
+    )
+    self.buffer.pending_arcs[self.id].has_resolution = true
+  }
+  self
+}
+
+///|
 pub fn GizmoBuffer::ellipse(
   self : GizmoBuffer,
   isometry : @math.Isometry3d,
@@ -648,7 +809,10 @@ pub fn GizmoBuffer::ellipse(
   color : @color.Color,
 ) -> RetainedEllipseBuilder {
   let id = self.pending_ellipses.length()
+  let order = self.pending_order_next
+  self.pending_order_next = order + 1
   self.pending_ellipses.push(RetainedPendingEllipse::{
+    order,
     is_2d: false,
     isometry2d: @sprite.Isometry2d::identity(),
     isometry3d: isometry,
@@ -667,7 +831,10 @@ pub fn GizmoBuffer::ellipse_2d(
   color : @color.Color,
 ) -> RetainedEllipseBuilder {
   let id = self.pending_ellipses.length()
+  let order = self.pending_order_next
+  self.pending_order_next = order + 1
   self.pending_ellipses.push(RetainedPendingEllipse::{
+    order,
     is_2d: true,
     isometry2d: isometry,
     isometry3d: @math.Isometry3d::identity(),
@@ -696,6 +863,58 @@ pub fn GizmoBuffer::circle_2d(
   color : @color.Color,
 ) -> RetainedEllipseBuilder {
   self.ellipse_2d(isometry, @math.Vec2::new(radius, radius), color)
+}
+
+///|
+pub fn GizmoBuffer::arc_2d(
+  self : GizmoBuffer,
+  isometry : @sprite.Isometry2d,
+  arc_angle : Float,
+  radius : Float,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  let id = self.pending_arcs.length()
+  let order = self.pending_order_next
+  self.pending_order_next = order + 1
+  self.pending_arcs.push(RetainedPendingArc::{
+    order,
+    is_2d: true,
+    start_vertex: @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    isometry2d: isometry,
+    isometry3d: @math.Isometry3d::identity(),
+    angle: arc_angle,
+    radius,
+    color,
+    resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
+    has_resolution: false,
+  })
+  RetainedArcBuilder::{ id, buffer: self }
+}
+
+///|
+pub fn GizmoBuffer::arc_3d(
+  self : GizmoBuffer,
+  angle : Float,
+  radius : Float,
+  isometry : @math.Isometry3d,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  let id = self.pending_arcs.length()
+  let order = self.pending_order_next
+  self.pending_order_next = order + 1
+  self.pending_arcs.push(RetainedPendingArc::{
+    order,
+    is_2d: false,
+    start_vertex: @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    isometry2d: @sprite.Isometry2d::identity(),
+    isometry3d: isometry,
+    angle,
+    radius,
+    color,
+    resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
+    has_resolution: false,
+  })
+  RetainedArcBuilder::{ id, buffer: self }
 }
 
 ///|
@@ -971,6 +1190,28 @@ pub fn GizmoAsset::circle_2d(
   color : @color.Color,
 ) -> RetainedEllipseBuilder {
   self.buffer.circle_2d(isometry, radius, color)
+}
+
+///|
+pub fn GizmoAsset::arc_2d(
+  self : GizmoAsset,
+  isometry : @sprite.Isometry2d,
+  arc_angle : Float,
+  radius : Float,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  self.buffer.arc_2d(isometry, arc_angle, radius, color)
+}
+
+///|
+pub fn GizmoAsset::arc_3d(
+  self : GizmoAsset,
+  angle : Float,
+  radius : Float,
+  isometry : @math.Isometry3d,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  self.buffer.arc_3d(angle, radius, isometry, color)
 }
 
 ///|

@@ -174,6 +174,8 @@ pub struct GizmoAsset {
   buffer : GizmoBuffer
   config_type_name : String
 }
+pub fn GizmoAsset::arc_2d(Self, @sprite.Isometry2d, Float, Float, @color.Color) -> RetainedArcBuilder
+pub fn GizmoAsset::arc_3d(Self, Float, Float, @math.Isometry3d, @color.Color) -> RetainedArcBuilder
 pub fn GizmoAsset::buffer(Self) -> GizmoBuffer
 pub fn GizmoAsset::circle(Self, @math.Isometry3d, Float, @color.Color) -> RetainedEllipseBuilder
 pub fn GizmoAsset::circle_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> RetainedEllipseBuilder
@@ -210,7 +212,11 @@ pub struct GizmoBuffer {
   strip_positions : Array[@math.Vec3]
   strip_colors : Array[@color.Color]
   pending_ellipses : Array[RetainedPendingEllipse]
+  pending_arcs : Array[RetainedPendingArc]
+  mut pending_order_next : Int
 }
+pub fn GizmoBuffer::arc_2d(Self, @sprite.Isometry2d, Float, Float, @color.Color) -> RetainedArcBuilder
+pub fn GizmoBuffer::arc_3d(Self, Float, Float, @math.Isometry3d, @color.Color) -> RetainedArcBuilder
 pub fn GizmoBuffer::buffer(Self) -> GizmoBufferView
 pub fn GizmoBuffer::circle(Self, @math.Isometry3d, Float, @color.Color) -> RetainedEllipseBuilder
 pub fn GizmoBuffer::circle_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> RetainedEllipseBuilder
@@ -275,11 +281,19 @@ pub struct GlobalGizmosPlugin {
 pub fn GlobalGizmosPlugin::default() -> Self
 pub impl @app.Plugin for GlobalGizmosPlugin
 
+pub struct RetainedArcBuilder {
+  id : Int
+  buffer : GizmoBuffer
+}
+pub fn RetainedArcBuilder::resolution(Self, Int) -> Self
+
 pub struct RetainedEllipseBuilder {
   id : Int
   buffer : GizmoBuffer
 }
 pub fn RetainedEllipseBuilder::resolution(Self, Int) -> Self
+
+type RetainedPendingArc
 
 type RetainedPendingEllipse
 
