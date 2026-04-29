@@ -52,6 +52,12 @@ struct PluginAddedProbePlugin {}
 struct PluginReadyCountPlugin {}
 
 ///|
+struct FinishAddsDeferredFinishPlugin {}
+
+///|
+struct DeferredFinishProbePlugin {}
+
+///|
 let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
@@ -76,6 +82,9 @@ let plugin_added_probe_cleanup_ref : Ref[Bool] = Ref::new(false)
 let plugin_ready_count_ref : Ref[Int] = Ref::new(0)
 
 ///|
+let deferred_finish_probe_log_ref : Ref[Array[Int]] = Ref::new([])
+
+///|
 fn plugin_group_test_reset_log() -> Unit {
   plugin_group_test_log_ref.val = []
 }
@@ -89,6 +98,7 @@ fn plugin_lifecycle_test_reset_log() -> Unit {
   plugin_added_probe_finish_ref.val = false
   plugin_added_probe_cleanup_ref.val = false
   plugin_ready_count_ref.val = 0
+  deferred_finish_probe_log_ref.val = []
 }
 
 ///|
@@ -328,6 +338,39 @@ pub impl Plugin for PluginReadyCountPlugin with build(_self, app) {
 pub impl Plugin for PluginReadyCountPlugin with ready(_self, _app) {
   plugin_ready_count_ref.val = plugin_ready_count_ref.val + 1
   true
+}
+
+///|
+pub impl Plugin for FinishAddsDeferredFinishPlugin with name(_self) {
+  "mgstudio.app.finish_adds_deferred_finish"
+}
+
+///|
+pub impl Plugin for FinishAddsDeferredFinishPlugin with build(_self, app) {
+  app
+}
+
+///|
+pub impl Plugin for FinishAddsDeferredFinishPlugin with finish(_self, app) {
+  deferred_finish_probe_log_ref.val.push(1)
+  app.add_plugins(DeferredFinishProbePlugin::{  })
+}
+
+///|
+pub impl Plugin for DeferredFinishProbePlugin with name(_self) {
+  "mgstudio.app.deferred_finish_probe"
+}
+
+///|
+pub impl Plugin for DeferredFinishProbePlugin with build(_self, app) {
+  deferred_finish_probe_log_ref.val.push(2)
+  app
+}
+
+///|
+pub impl Plugin for DeferredFinishProbePlugin with finish(_self, app) {
+  deferred_finish_probe_log_ref.val.push(3)
+  app
 }
 
 ///|
@@ -656,6 +699,17 @@ test "app: plugin can add another plugin during finish" {
   )
   debug_inspect(app.plugin_names()[2], content="\"mgstudio.app.test_plugin_2\"")
   debug_inspect(app.plugins_state() == Finished, content="true")
+}
+
+///|
+test "app: plugin added during finish is not finished in same pass" {
+  plugin_lifecycle_test_reset_log()
+  let app = App::new(@ecs.World::new()).add_plugins(FinishAddsDeferredFinishPlugin::{
+
+  })
+  let app = app.finish()
+  debug_inspect(app.plugin_names().length(), content="2")
+  debug_inspect(deferred_finish_probe_log_ref.val, content="[1, 2]")
 }
 
 ///|

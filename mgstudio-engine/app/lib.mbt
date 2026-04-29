@@ -2394,9 +2394,10 @@ pub fn[W] App::finish_plugins(self : App[W]) -> App[W] {
   if self.plugins_state != Ready {
     return self
   }
-  let entries = self.plugin_registry
   let mut app = self
-  for entry in entries {
+  let plugin_count = app.plugin_registry.length()
+  for index in 0..<plugin_count {
+    let entry = app.plugin_registry[index]
     app = (entry.finish)(app)
   }
   app.plugins_state = Finished
@@ -2413,9 +2414,10 @@ pub fn[W] App::cleanup_plugins(self : App[W]) -> App[W] {
   if self.plugins_state != Finished {
     return self
   }
-  let entries = self.plugin_registry
   let mut app = self
-  for entry in entries {
+  let plugin_count = app.plugin_registry.length()
+  for index in 0..<plugin_count {
+    let entry = app.plugin_registry[index]
     app = (entry.cleanup)(app)
   }
   app.plugins_state = Cleaned
