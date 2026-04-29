@@ -99,34 +99,203 @@ pub fn WgpuSettings::with_force_fallback_adapter(
 
 ///|
 pub struct RenderResources {
-  device_id : Int
-  queue_id : Int
-  adapter_name : String
-} derive(Eq, Debug)
+  device : @renderer.RenderDevice
+  queue : @renderer.RenderQueue
+  adapter_info : @renderer.RenderAdapterInfo
+  render_adapter : @renderer.RenderAdapter
+  instance : @renderer.RenderInstance
+}
 
 ///|
 pub fn RenderResources::new(
-  device_id~ : Int,
-  queue_id~ : Int,
-  adapter_name~ : String,
+  device : @renderer.RenderDevice,
+  queue : @renderer.RenderQueue,
+  adapter_info : @renderer.RenderAdapterInfo,
+  render_adapter : @renderer.RenderAdapter,
+  instance : @renderer.RenderInstance,
 ) -> RenderResources {
-  RenderResources::{ device_id, queue_id, adapter_name }
+  RenderResources::{ device, queue, adapter_info, render_adapter, instance }
+}
+
+///|
+pub fn RenderResources::from_backend(
+  backend : @renderer.GpuBackend,
+) -> RenderResources {
+  RenderResources::new(
+    @renderer.RenderDevice::from_backend(backend),
+    @renderer.RenderQueue::from_backend(backend),
+    @renderer.RenderAdapterInfo::from_backend(backend),
+    @renderer.RenderAdapter::from_backend(backend),
+    @renderer.RenderInstance::from_backend(backend),
+  )
+}
+
+///|
+pub fn RenderResources::device(
+  self : RenderResources,
+) -> @renderer.RenderDevice {
+  self.device
+}
+
+///|
+pub fn RenderResources::queue(self : RenderResources) -> @renderer.RenderQueue {
+  self.queue
+}
+
+///|
+pub fn RenderResources::adapter_info(
+  self : RenderResources,
+) -> @renderer.RenderAdapterInfo {
+  self.adapter_info
+}
+
+///|
+pub fn RenderResources::render_adapter(
+  self : RenderResources,
+) -> @renderer.RenderAdapter {
+  self.render_adapter
+}
+
+///|
+pub fn RenderResources::instance(
+  self : RenderResources,
+) -> @renderer.RenderInstance {
+  self.instance
+}
+
+///|
+let ecs_key_render_device_resource : @ecs.ResourceKey[@renderer.RenderDevice] = @ecs.register_resource(
+  debug_name="mgstudio_render::RenderDevice",
+)
+
+///|
+let ecs_key_render_queue_resource : @ecs.ResourceKey[@renderer.RenderQueue] = @ecs.register_resource(
+  debug_name="mgstudio_render::RenderQueue",
+)
+
+///|
+let ecs_key_render_adapter_info_resource : @ecs.ResourceKey[
+  @renderer.RenderAdapterInfo,
+] = @ecs.register_resource(debug_name="mgstudio_render::RenderAdapterInfo")
+
+///|
+let ecs_key_render_adapter_resource : @ecs.ResourceKey[@renderer.RenderAdapter] = @ecs.register_resource(
+  debug_name="mgstudio_render::RenderAdapter",
+)
+
+///|
+let ecs_key_render_instance_resource : @ecs.ResourceKey[
+  @renderer.RenderInstance,
+] = @ecs.register_resource(debug_name="mgstudio_render::RenderInstance")
+
+///|
+let ecs_key_pipeline_cache_resource : @ecs.ResourceKey[
+  @render_resource.PipelineCache,
+] = @ecs.register_resource(debug_name="mgstudio_render::PipelineCache")
+
+///|
+pub fn render_device_resource_key() -> @ecs.ResourceKey[@renderer.RenderDevice] {
+  ecs_key_render_device_resource
+}
+
+///|
+pub fn render_queue_resource_key() -> @ecs.ResourceKey[@renderer.RenderQueue] {
+  ecs_key_render_queue_resource
+}
+
+///|
+pub fn render_adapter_info_resource_key() -> @ecs.ResourceKey[
+  @renderer.RenderAdapterInfo,
+] {
+  ecs_key_render_adapter_info_resource
+}
+
+///|
+pub fn render_adapter_resource_key() -> @ecs.ResourceKey[
+  @renderer.RenderAdapter,
+] {
+  ecs_key_render_adapter_resource
+}
+
+///|
+pub fn render_instance_resource_key() -> @ecs.ResourceKey[
+  @renderer.RenderInstance,
+] {
+  ecs_key_render_instance_resource
+}
+
+///|
+pub fn pipeline_cache_resource_key() -> @ecs.ResourceKey[
+  @render_resource.PipelineCache,
+] {
+  ecs_key_pipeline_cache_resource
+}
+
+///|
+pub fn RenderResources::unpack_into(
+  self : RenderResources,
+  main_world : @ecs.World,
+  render_world : @ecs.World,
+) -> Unit {
+  main_world.insert_resource(render_device_resource_key(), self.device)
+  main_world.insert_resource(render_queue_resource_key(), self.queue)
+  main_world.insert_resource(
+    render_adapter_info_resource_key(),
+    self.adapter_info,
+  )
+  main_world.insert_resource(render_adapter_resource_key(), self.render_adapter)
+
+  render_world.insert_resource(render_instance_resource_key(), self.instance)
+  render_world.insert_resource(
+    pipeline_cache_resource_key(),
+    @render_resource.PipelineCache::new(),
+  )
+  render_world.insert_resource(render_device_resource_key(), self.device)
+  render_world.insert_resource(render_queue_resource_key(), self.queue)
+  render_world.insert_resource(
+    render_adapter_resource_key(),
+    self.render_adapter,
+  )
+  render_world.insert_resource(
+    render_adapter_info_resource_key(),
+    self.adapter_info,
+  )
 }
 
 ///|
 pub(all) enum RenderCreation {
   Manual(RenderResources)
   Automatic(WgpuSettings)
-} derive(Eq, Debug)
+}
 
 ///|
-pub fn RenderCreation::manual(resources : RenderResources) -> RenderCreation {
+pub fn RenderCreation::manual(
+  device : @renderer.RenderDevice,
+  queue : @renderer.RenderQueue,
+  adapter_info : @renderer.RenderAdapterInfo,
+  render_adapter : @renderer.RenderAdapter,
+  instance : @renderer.RenderInstance,
+) -> RenderCreation {
+  Manual(
+    RenderResources::new(device, queue, adapter_info, render_adapter, instance),
+  )
+}
+
+///|
+pub fn RenderCreation::manual_resources(
+  resources : RenderResources,
+) -> RenderCreation {
   Manual(resources)
 }
 
 ///|
 pub fn RenderCreation::automatic(settings : WgpuSettings) -> RenderCreation {
   Automatic(settings)
+}
+
+///|
+pub fn RenderCreation::default() -> RenderCreation {
+  Automatic(WgpuSettings::default())
 }
 
 ///|

@@ -257,6 +257,8 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, ca
 
 pub fn host_mesh3d_main_pass_draw_entry(draw_storage_index~ : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, alpha_cutoff~ : Float, material_flags~ : UInt, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, skinning_key_hi~ : Int) -> @renderer.HostMesh3dMainPassDrawEntry
 
+pub fn pipeline_cache_resource_key() -> @ecs.ResourceKey[@render_resource.PipelineCache]
+
 pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
@@ -266,6 +268,12 @@ pub fn[A] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[
 pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn register_wgsl_source(String, String) -> Unit
+
+pub fn render_adapter_info_resource_key() -> @ecs.ResourceKey[@renderer.RenderAdapterInfo]
+
+pub fn render_adapter_resource_key() -> @ecs.ResourceKey[@renderer.RenderAdapter]
+
+pub fn render_device_resource_key() -> @ecs.ResourceKey[@renderer.RenderDevice]
 
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
 
@@ -277,7 +285,11 @@ pub fn render_error_policy_recover() -> @app.RenderErrorPolicy
 
 pub fn render_extract_app_label() -> @app.AppLabel
 
+pub fn render_instance_resource_key() -> @ecs.ResourceKey[@renderer.RenderInstance]
+
 pub fn render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn render_queue_resource_key() -> @ecs.ResourceKey[@renderer.RenderQueue]
 
 pub fn render_runtime_error() -> @app.RenderRuntimeError?
 
@@ -587,9 +599,11 @@ pub impl[A] @app.Resource for RenderAssets[A]
 pub(all) enum RenderCreation {
   Manual(RenderResources)
   Automatic(WgpuSettings)
-} derive(Eq, @debug.Debug)
+}
 pub fn RenderCreation::automatic(WgpuSettings) -> Self
-pub fn RenderCreation::manual(RenderResources) -> Self
+pub fn RenderCreation::default() -> Self
+pub fn RenderCreation::manual(@renderer.RenderDevice, @renderer.RenderQueue, @renderer.RenderAdapterInfo, @renderer.RenderAdapter, @renderer.RenderInstance) -> Self
+pub fn RenderCreation::manual_resources(RenderResources) -> Self
 
 pub struct RenderEntity {
   entity : @core.Entity
@@ -604,11 +618,20 @@ pub fn RenderPlugin::default() -> Self
 pub impl @app.Plugin for RenderPlugin
 
 pub struct RenderResources {
-  device_id : Int
-  queue_id : Int
-  adapter_name : String
-} derive(Eq, @debug.Debug)
-pub fn RenderResources::new(device_id~ : Int, queue_id~ : Int, adapter_name~ : String) -> Self
+  device : @renderer.RenderDevice
+  queue : @renderer.RenderQueue
+  adapter_info : @renderer.RenderAdapterInfo
+  render_adapter : @renderer.RenderAdapter
+  instance : @renderer.RenderInstance
+}
+pub fn RenderResources::adapter_info(Self) -> @renderer.RenderAdapterInfo
+pub fn RenderResources::device(Self) -> @renderer.RenderDevice
+pub fn RenderResources::from_backend(@renderer.GpuBackend) -> Self
+pub fn RenderResources::instance(Self) -> @renderer.RenderInstance
+pub fn RenderResources::new(@renderer.RenderDevice, @renderer.RenderQueue, @renderer.RenderAdapterInfo, @renderer.RenderAdapter, @renderer.RenderInstance) -> Self
+pub fn RenderResources::queue(Self) -> @renderer.RenderQueue
+pub fn RenderResources::render_adapter(Self) -> @renderer.RenderAdapter
+pub fn RenderResources::unpack_into(Self, @ecs.World, @ecs.World) -> Unit
 
 pub struct RenderStorage[K, V] {
   values : @hashmap.HashMap[K, V]
