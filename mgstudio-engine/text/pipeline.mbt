@@ -782,6 +782,21 @@ fn justify_is_left(justify : Justify) -> Bool {
 }
 
 ///|
+fn justify_to_cosmic_align(justify : Justify) -> @cosmic.Align {
+  match justify {
+    Justify::Left => @cosmic.Align::Left
+    Justify::Center => @cosmic.Align::Center
+    Justify::Right => @cosmic.Align::Right
+    Justify::Justified => @cosmic.Align::Justified
+    // Bevy maps this to parley::Alignment::Start. moon_cosmic@0.3.0
+    // does not expose Align::Start yet, so this is the LTR-compatible
+    // bridge tracked by moonbit-community/moon_cosmic#4.
+    Justify::Start => @cosmic.Align::Left
+    Justify::End => @cosmic.Align::End
+  }
+}
+
+///|
 fn font_hinting_to_cosmic(hinting : FontHinting) -> @cosmic.Hinting {
   match hinting {
     Disabled => @cosmic.Hinting::Disabled
@@ -989,12 +1004,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     LineBreak::WordOrCharacter => @cosmic.Wrap::WordOrGlyph
     LineBreak::NoWrap => @cosmic.Wrap::None
   }
-  let align = match buffer.justify {
-    Justify::Left => @cosmic.Align::Left
-    Justify::Center => @cosmic.Align::Center
-    Justify::Right => @cosmic.Align::Right
-    Justify::Justified => @cosmic.Align::Justified
-  }
+  let align = justify_to_cosmic_align(buffer.justify)
   let mut cosmic_buffer = @cosmic.Buffer::new_empty(base_metrics).set_hinting(
     font_hinting_to_cosmic(instance.font_hinting),
   )

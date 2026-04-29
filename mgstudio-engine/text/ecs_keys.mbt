@@ -566,6 +566,8 @@ fn justify_eq(lhs : Justify, rhs : Justify) -> Bool {
     (Justify::Center, Justify::Center) => true
     (Justify::Right, Justify::Right) => true
     (Justify::Justified, Justify::Justified) => true
+    (Justify::Start, Justify::Start) => true
+    (Justify::End, Justify::End) => true
     _ => false
   }
 }

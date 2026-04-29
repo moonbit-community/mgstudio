@@ -18,6 +18,8 @@ pub(all) enum Justify {
   Center
   Right
   Justified
+  Start
+  End
 }
 
 ///|

@@ -83,6 +83,26 @@ test "text: font features and family mapping cover the Bevy-facing selectors" {
 }
 
 ///|
+test "text: justify start end expose Bevy text alignment variants" {
+  debug_inspect(
+    TextLayout::new_with_justify(Justify::Start).justify is Justify::Start,
+    content="true",
+  )
+  debug_inspect(
+    TextLayout::new_with_justify(Justify::End).justify is Justify::End,
+    content="true",
+  )
+  debug_inspect(
+    justify_to_cosmic_align(Justify::End) is @cosmic.Align::End,
+    content="true",
+  )
+  debug_inspect(
+    justify_to_cosmic_align(Justify::Start) is @cosmic.Align::Left,
+    content="true",
+  )
+}
+
+///|
 test "text: font hinting follows Bevy component and atlas-key semantics" {
   debug_inspect(FontHinting::default() is FontHinting::Disabled, content="true")
   debug_inspect(FontHinting::Disabled.should_hint(), content="false")
