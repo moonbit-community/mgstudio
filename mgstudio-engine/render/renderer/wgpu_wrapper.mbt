@@ -75,12 +75,6 @@ extern "C" fn render_pass_descriptor_depth_new_native(
 ) -> @wgpu_c.WGPURenderPassDescriptorPtr = "mgstudio_render_pass_descriptor_depth_new"
 
 ///|
-#borrow(bind_group_layout)
-extern "C" fn bind_group_descriptor_empty_new_native(
-  bind_group_layout : @wgpu_c.WGPUBindGroupLayout,
-) -> @wgpu_c.WGPUBindGroupDescriptorPtr = "mgstudio_bind_group_descriptor_empty_new"
-
-///|
 fn render_pipeline_descriptor_set_cull_mode(
   descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
   cull_mode : UInt,
@@ -141,17 +135,6 @@ fn render_pipeline_descriptor_set_fragment_target_count_zero(
   if err != 0U {
     abort("wgpu: failed to configure zero color targets")
   }
-}
-
-///|
-fn create_empty_bind_group(
-  device : @wgpu.Device,
-  layout : @wgpu.BindGroupLayout,
-) -> @wgpu.BindGroup {
-  let descriptor = bind_group_descriptor_empty_new_native(layout.raw_handle())
-  let bind_group = device.create_bind_group_ptr(descriptor)
-  @wgpu_c.bind_group_descriptor_free(descriptor)
-  bind_group
 }
 
 ///|

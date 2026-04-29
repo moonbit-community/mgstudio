@@ -158,20 +158,3 @@ WGPURenderPassDescriptor *mgstudio_render_pass_descriptor_depth_new(
   };
   return &out->desc;
 }
-
-WGPUBindGroupDescriptor *
-mgstudio_bind_group_descriptor_empty_new(WGPUBindGroupLayout bind_group_layout) {
-  WGPUBindGroupDescriptor *out =
-      (WGPUBindGroupDescriptor *)malloc(sizeof(WGPUBindGroupDescriptor));
-  if (!out) {
-    return NULL;
-  }
-  *out = (WGPUBindGroupDescriptor){
-      .nextInChain = NULL,
-      .label = (WGPUStringView){.data = NULL, .length = 0},
-      .layout = bind_group_layout,
-      .entryCount = 0u,
-      .entries = NULL,
-  };
-  return out;
-}

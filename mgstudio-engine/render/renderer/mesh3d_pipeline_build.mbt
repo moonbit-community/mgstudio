@@ -985,9 +985,8 @@ fn mesh3d_create_empty_bind_group(
   layout : @wgpu.BindGroupLayout,
   label : String,
 ) -> @wgpu.BindGroup {
-  let bind_group = create_empty_bind_group(backend.device, layout)
-  bind_group.set_label(label)
-  bind_group
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=0UL)
+  builder.finish(backend.device, layout, label~)
 }
 
 ///|
