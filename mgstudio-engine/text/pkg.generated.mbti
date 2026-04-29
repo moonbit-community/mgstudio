@@ -250,7 +250,7 @@ pub struct ComputedTextBlock {
 pub fn ComputedTextBlock::buffer(Self) -> CosmicBuffer
 pub fn ComputedTextBlock::default() -> Self
 pub fn ComputedTextBlock::entities(Self) -> Array[TextEntity]
-pub fn ComputedTextBlock::needs_rerender(Self) -> Bool
+pub fn ComputedTextBlock::needs_rerender(Self, Bool, Bool) -> Bool
 
 pub struct CosmicBuffer {
   text : String

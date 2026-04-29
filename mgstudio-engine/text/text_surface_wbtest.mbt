@@ -239,3 +239,27 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
   )
   debug_inspect(text_get_content(rem_handle), content="Some(\"Rem text\")")
 }
+
+///|
+test "text: ComputedTextBlock needs_rerender follows Bevy viewport rem semantics" {
+  let clean = ComputedTextBlock::{
+    ..ComputedTextBlock::default(),
+    needs_rerender: false,
+  }
+  debug_inspect(clean.needs_rerender(false, false), content="false")
+  debug_inspect(clean.needs_rerender(true, true), content="false")
+
+  let viewport_sensitive = ComputedTextBlock::{
+    ..clean,
+    uses_viewport_sizes: true,
+  }
+  debug_inspect(viewport_sensitive.needs_rerender(true, false), content="true")
+  debug_inspect(viewport_sensitive.needs_rerender(false, true), content="false")
+
+  let rem_sensitive = ComputedTextBlock::{ ..clean, uses_rem_sizes: true }
+  debug_inspect(rem_sensitive.needs_rerender(false, true), content="true")
+  debug_inspect(rem_sensitive.needs_rerender(true, false), content="false")
+
+  let explicit_dirty = ComputedTextBlock::{ ..clean, needs_rerender: true }
+  debug_inspect(explicit_dirty.needs_rerender(false, false), content="true")
+}

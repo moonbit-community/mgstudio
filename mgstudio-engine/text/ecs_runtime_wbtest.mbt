@@ -21,7 +21,13 @@ fn reset_text_ecs_test_state() -> Unit {
   text_state.val.next_text_id = 0
   text_state.val.next_span_id = 0
   text_state_clear_instances()
-  text_reset_font_runtime_state()
+  cosmic_font_system_state.val = CosmicFontSystemState::{
+    font_system: @cosmic.FontSystem::new(),
+    handle_to_font_id: [],
+    font_id_to_handle_id: [],
+    handle_to_family: [],
+  }
+  font_atlas_set_state.val = FontAtlasSet::default()
   text_runtime_rem_size_ref.val = RemSize::default().value()
   text_runtime_mark_layout_dirty()
   text_debug_frame_state.val.draws.clear()
@@ -51,7 +57,7 @@ test "text plugin inserts text runtime resources" {
 }
 
 ///|
-test "font asset events force text rerender on next update" {
+test "font asset Added events force text rerender on next update" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
   let text_handle = text_spawn(
@@ -76,7 +82,7 @@ test "font asset events force text rerender on next update" {
   ignore(
     world.send_message(
       message_key,
-      @asset.AssetEvent::Modified(@asset.Handle::new(1)),
+      @asset.AssetEvent::Added(@asset.Handle::new(1)),
     ),
   )
 
@@ -99,6 +105,64 @@ test "font asset events force text rerender on next update" {
   text_runtime_clear_layout_dirty()
   text_sync_font_assets_system(world)
   debug_inspect(text_state.val.texts[index].layout_dirty, content="false")
+}
+
+///|
+test "font asset non-Added events follow Bevy and do not rerender text" {
+  reset_text_ecs_test_state()
+  let world = @ecs.World::new()
+  let text_handle = text_spawn(
+    Text2dBundle::new(
+      Text2d::new("Font Event"),
+      TextFont::{ ..TextFont::default(), font: FontSource::UiSansSerif },
+      @transform.Transform::identity(),
+    ),
+  )
+  let index = if text_state_find_index_by_id(text_handle.id()) is Some(i) {
+    i
+  } else {
+    panic()
+  }
+
+  text_state.val.texts[index] = text_update_layout(text_state.val.texts[index])
+  text_state.val.texts[index] = TextInstance::{
+    ..text_state.val.texts[index],
+    layout_dirty: false,
+    computed: ComputedTextBlock::{
+      ..text_state.val.texts[index].computed,
+      needs_rerender: false,
+    },
+  }
+  text_runtime_clear_layout_dirty()
+
+  let message_key : @ecs.MessageKey[@asset.AssetEvent[@asset.Font]] = @ecs.Message::message()
+  world.init_message(message_key)
+  ignore(
+    world.send_message(
+      message_key,
+      @asset.AssetEvent::LoadedWithDependencies(@asset.Handle::new(1)),
+    ),
+  )
+  ignore(
+    world.send_message(
+      message_key,
+      @asset.AssetEvent::Modified(@asset.Handle::new(1)),
+    ),
+  )
+  ignore(
+    world.send_message(
+      message_key,
+      @asset.AssetEvent::Removed(@asset.Handle::new(1)),
+    ),
+  )
+
+  text_sync_font_assets_system(world)
+  debug_inspect(text_state.val.texts[index].layout_dirty, content="false")
+  debug_inspect(
+    text_state.val.texts[index].computed.needs_rerender,
+    content="false",
+  )
+  debug_inspect(text_runtime_layout_dirty(), content="false")
 }
 
 ///|

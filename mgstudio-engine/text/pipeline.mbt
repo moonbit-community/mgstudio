@@ -82,8 +82,14 @@ pub fn ComputedTextBlock::default() -> ComputedTextBlock {
 }
 
 ///|
-pub fn ComputedTextBlock::needs_rerender(self : ComputedTextBlock) -> Bool {
-  self.needs_rerender
+pub fn ComputedTextBlock::needs_rerender(
+  self : ComputedTextBlock,
+  is_viewport_size_changed : Bool,
+  is_rem_size_changed : Bool,
+) -> Bool {
+  self.needs_rerender ||
+  (is_viewport_size_changed && self.uses_viewport_sizes) ||
+  (is_rem_size_changed && self.uses_rem_sizes)
 }
 
 ///|
@@ -573,17 +579,6 @@ fn text_pipeline_ensure_default_font_handle() -> @asset.Handle[@asset.Font] {
 }
 
 ///|
-fn text_reset_font_runtime_state() -> Unit {
-  cosmic_font_system_state.val = CosmicFontSystemState::{
-    font_system: @cosmic.FontSystem::new(),
-    handle_to_font_id: [],
-    font_id_to_handle_id: [],
-    handle_to_family: [],
-  }
-  font_atlas_set_state.val = FontAtlasSet::default()
-}
-
-///|
 fn text_mark_all_instances_for_rerender() -> Unit {
   let count = text_state.val.texts.length()
   if count <= 0 {
@@ -609,36 +604,21 @@ fn text_sync_font_assets_from_events(world : @ecs.World) -> Bool {
   let reader = world.message_reader(
     message_key, text_font_asset_events_cursor_ref,
   )
-  let preload_font_ids : @hashset.HashSet[Int] = @hashset.HashSet::new()
-  let mut requires_reset = false
-  let mut has_event = false
+  let mut new_fonts_added = false
   for event in (try! reader.read()) {
     match event {
-      @asset.AssetEvent::Added(handle)
-      | @asset.AssetEvent::LoadedWithDependencies(handle) => {
-        has_event = true
-        preload_font_ids.add(handle.id())
+      @asset.AssetEvent::Added(handle) => {
+        new_fonts_added = true
+        cosmic_get_or_load_font_id(handle) |> ignore
       }
-      @asset.AssetEvent::Modified(handle) => {
-        has_event = true
-        requires_reset = true
-        preload_font_ids.add(handle.id())
-      }
-      @asset.AssetEvent::Removed(_handle) => {
-        has_event = true
-        requires_reset = true
-      }
-      @asset.AssetEvent::Unused(_handle) => ()
+      @asset.AssetEvent::LoadedWithDependencies(_)
+      | @asset.AssetEvent::Modified(_)
+      | @asset.AssetEvent::Removed(_)
+      | @asset.AssetEvent::Unused(_) => ()
     }
   }
-  if !has_event {
+  if !new_fonts_added {
     return false
-  }
-  if requires_reset {
-    text_reset_font_runtime_state()
-  }
-  for handle_id in preload_font_ids.to_array() {
-    cosmic_get_or_load_font_id(@asset.Handle::new(handle_id)) |> ignore
   }
   text_mark_all_instances_for_rerender()
   true
@@ -866,21 +846,15 @@ fn cosmic_physical_xy(
 
 ///|
 fn text_layout_needs_update(instance : TextInstance) -> Bool {
-  if instance.computed.needs_rerender {
-    return true
-  }
-  if instance.computed.uses_viewport_sizes &&
-    !text_vec2_opt_eq(
-      instance.computed.logical_viewport_size,
-      instance.logical_viewport_size,
-    ) {
-    return true
-  }
-  if instance.computed.uses_rem_sizes &&
-    instance.computed.rem_size != text_runtime_rem_size_ref.val {
-    return true
-  }
-  false
+  let is_viewport_size_changed = !text_vec2_opt_eq(
+    instance.computed.logical_viewport_size,
+    instance.logical_viewport_size,
+  )
+  let is_rem_size_changed = instance.computed.rem_size !=
+    text_runtime_rem_size_ref.val
+  instance.computed.needs_rerender(
+    is_viewport_size_changed, is_rem_size_changed,
+  )
 }
 
 ///|
