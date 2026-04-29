@@ -45,12 +45,18 @@ pub fn UiScale::new(value : Float) -> UiScale {
 
 ///|
 pub struct UiStack {
+  mut partition : Array[(Int, Int)]
   mut uinodes : Array[@core.Entity]
 } derive(ToJson, FromJson)
 
 ///|
 pub fn UiStack::default() -> UiStack {
-  UiStack::{ uinodes: [] }
+  UiStack::{ partition: [], uinodes: [] }
+}
+
+///|
+pub fn UiStack::partition(self : UiStack) -> Array[(Int, Int)] {
+  self.partition
 }
 
 ///|
@@ -60,5 +66,6 @@ pub fn UiStack::uinodes(self : UiStack) -> Array[@core.Entity] {
 
 ///|
 pub fn UiStack::clear(self : Ref[UiStack]) -> Unit {
+  self.val.partition = []
   self.val.uinodes = []
 }

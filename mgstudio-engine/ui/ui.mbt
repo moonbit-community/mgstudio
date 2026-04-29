@@ -2957,7 +2957,10 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   }
 
   for root in roots {
+    let start = stack.val.uinodes.length()
     visit(root.0, stack)
+    let end = stack.val.uinodes.length()
+    stack.val.partition.push((start, end))
   }
 
   // Convert the Bevy-style UiStack ordering into a stable render z for the
@@ -2965,6 +2968,18 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   // world sprites, and use a coarse step to allow per-node sublayers.
   for i in 0..<stack.val.uinodes.length() {
     let entity = stack.val.uinodes[i]
+    match (try! world.get_by_key(entity, ecs_key_ui_layout)) {
+      Some(layout0) =>
+        if layout0.stack_index() != i {
+          try! (world.replace(
+            entity,
+            ecs_key_ui_layout,
+            layout0.with_stack_index(i),
+          )
+          |> ignore)
+        }
+      None => ()
+    }
     let z_base = UI_STACK_Z_BASE + int_to_float(i) * UI_STACK_Z_STEP
     let z = z_base + UI_STACK_Z_CONTENT
     match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {

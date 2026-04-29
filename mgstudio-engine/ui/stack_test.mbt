@@ -67,7 +67,8 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
 
   // Build Children from Parent.
   ui_stack_system(world)
-  let stack = get_ui_stack_resource(world).get().unwrap().uinodes()
+  let stack_resource = get_ui_stack_resource(world).get().unwrap()
+  let stack = stack_resource.uinodes()
   fn eq(a : @core.Entity, b : @core.Entity) -> Bool {
     a.id == b.id && a.generation == b.generation
   }
@@ -85,4 +86,12 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
     }
   }
   debug_inspect(ok, content="true")
+  let partitions = stack_resource.partition()
+  debug_inspect(partitions.length() == 2, content="true")
+  debug_inspect(partitions[0].0 == 0 && partitions[0].1 == 1, content="true")
+  debug_inspect(partitions[1].0 == 1 && partitions[1].1 == 6, content="true")
+  for i in 0..<expected.length() {
+    let layout = try! world.get_by_key(expected[i], ecs_key_ui_layout).unwrap()
+    debug_inspect(layout.stack_index() == i, content="true")
+  }
 }

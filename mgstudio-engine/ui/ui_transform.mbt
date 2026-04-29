@@ -113,6 +113,7 @@ pub fn ComputedUiRenderTargetInfo::logical_size(
 
 ///|
 pub struct UiLayout {
+  stack_index : Int
   rect : @math.Rect
   border : @sprite.UiBorderRect
   padding : @sprite.UiBorderRect
@@ -124,6 +125,7 @@ pub struct UiLayout {
 ///|
 pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
   UiLayout::{
+    stack_index: 0,
     rect,
     border: @sprite.UiBorderRect::zero(),
     padding: @sprite.UiBorderRect::zero(),
@@ -143,6 +145,7 @@ pub fn UiLayout::from_computed(
   outline_offset : Float,
 ) -> UiLayout {
   UiLayout::{
+    stack_index: 0,
     rect,
     border,
     padding,
@@ -150,6 +153,19 @@ pub fn UiLayout::from_computed(
     outline_width,
     outline_offset,
   }
+}
+
+///|
+pub fn UiLayout::with_stack_index(
+  self : UiLayout,
+  stack_index : Int,
+) -> UiLayout {
+  UiLayout::{ ..self, stack_index, }
+}
+
+///|
+pub fn UiLayout::stack_index(self : UiLayout) -> Int {
+  self.stack_index
 }
 
 ///|

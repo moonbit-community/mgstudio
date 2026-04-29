@@ -710,6 +710,7 @@ pub fn UiImage::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 pub impl @ecs.Component for UiImage
 
 pub struct UiLayout {
+  stack_index : Int
   rect : @math.Rect
   border : @sprite.UiBorderRect
   padding : @sprite.UiBorderRect
@@ -734,6 +735,8 @@ pub fn UiLayout::padding_box(Self) -> @math.Rect
 pub fn UiLayout::rect(Self) -> @math.Rect
 pub fn UiLayout::resolve_clip_rect(Self, Overflow, OverflowClipMargin) -> @math.Rect
 pub fn UiLayout::size(Self) -> @math.Vec2
+pub fn UiLayout::stack_index(Self) -> Int
+pub fn UiLayout::with_stack_index(Self, Int) -> Self
 pub impl @ecs.Component for UiLayout
 
 pub struct UiPlugin {
@@ -775,10 +778,12 @@ pub struct UiScale {
 pub fn UiScale::new(Float) -> Self
 
 pub struct UiStack {
+  mut partition : Array[(Int, Int)]
   mut uinodes : Array[@core.Entity]
 } derive(ToJson, @json.FromJson)
 pub fn UiStack::clear(@ref.Ref[Self]) -> Unit
 pub fn UiStack::default() -> Self
+pub fn UiStack::partition(Self) -> Array[(Int, Int)]
 pub fn UiStack::uinodes(Self) -> Array[@core.Entity]
 
 pub struct UiTargetCamera {
