@@ -17,12 +17,43 @@
 // `bevy/crates/bevy_gizmos/src/retained.rs`.
 
 ///|
+const RETAINED_DEFAULT_CIRCLE_RESOLUTION : Int = 32
+
+///|
+const RETAINED_TAU : Float = 6.283185307179586F
+
+///|
+fn retained_max_int(value : Int, min : Int) -> Int {
+  if value < min {
+    min
+  } else {
+    value
+  }
+}
+
+///|
+fn retained_float_from_int(value : Int) -> Float {
+  Float::from_int(value)
+}
+
+///|
+struct RetainedPendingEllipse {
+  is_2d : Bool
+  isometry2d : @sprite.Isometry2d
+  isometry3d : @math.Isometry3d
+  half_size : @math.Vec2
+  color : @color.Color
+  mut resolution : Int
+}
+
+///|
 pub struct GizmoBuffer {
   enabled : Bool
   list_positions : Array[@math.Vec3]
   list_colors : Array[@color.LinearRgba]
   strip_positions : Array[@math.Vec3]
   strip_colors : Array[@color.LinearRgba]
+  pending_ellipses : Array[RetainedPendingEllipse]
 }
 
 ///|
@@ -33,6 +64,7 @@ pub fn GizmoBuffer::new() -> GizmoBuffer {
     list_colors: [],
     strip_positions: [],
     strip_colors: [],
+    pending_ellipses: [],
   }
 }
 
@@ -55,10 +87,12 @@ pub fn GizmoBuffer::clear(self : GizmoBuffer) -> Unit {
   self.list_colors.clear()
   self.strip_positions.clear()
   self.strip_colors.clear()
+  self.pending_ellipses.clear()
 }
 
 ///|
 pub fn GizmoBuffer::buffer(self : GizmoBuffer) -> GizmoBufferView {
+  self.flush_pending()
   GizmoBufferView::{
     list_positions: self.list_positions,
     list_colors: self.list_colors,
@@ -68,7 +102,7 @@ pub fn GizmoBuffer::buffer(self : GizmoBuffer) -> GizmoBufferView {
 }
 
 ///|
-fn GizmoBuffer::add_list_color(
+fn GizmoBuffer::add_list_color_raw(
   self : GizmoBuffer,
   color : @color.Color,
   count : Int,
@@ -80,7 +114,7 @@ fn GizmoBuffer::add_list_color(
 }
 
 ///|
-fn GizmoBuffer::add_strip_color(
+fn GizmoBuffer::add_strip_color_raw(
   self : GizmoBuffer,
   color : @color.Color,
   count : Int,
@@ -92,7 +126,25 @@ fn GizmoBuffer::add_strip_color(
 }
 
 ///|
-pub fn GizmoBuffer::line(
+fn retained_ellipse_points(
+  half_size : @math.Vec2,
+  resolution : Int,
+) -> Array[@math.Vec2] {
+  let steps = retained_max_int(resolution, 3)
+  let points : Array[@math.Vec2] = []
+  let total = steps + 1
+  let denom = retained_float_from_int(steps)
+  for i in 0..<total {
+    let angle = RETAINED_TAU * retained_float_from_int(i) / denom
+    let x = @math.cos(angle) * half_size.x
+    let y = @math.sin(angle) * half_size.y
+    points.push(@math.Vec2::new(x, y))
+  }
+  points
+}
+
+///|
+fn GizmoBuffer::line_raw(
   self : GizmoBuffer,
   start : @math.Vec3,
   end : @math.Vec3,
@@ -103,11 +155,22 @@ pub fn GizmoBuffer::line(
   }
   self.list_positions.push(start)
   self.list_positions.push(end)
-  self.add_list_color(color, 2)
+  self.add_list_color_raw(color, 2)
 }
 
 ///|
-pub fn GizmoBuffer::line_gradient(
+pub fn GizmoBuffer::line(
+  self : GizmoBuffer,
+  start : @math.Vec3,
+  end : @math.Vec3,
+  color : @color.Color,
+) -> Unit {
+  self.flush_pending()
+  self.line_raw(start, end, color)
+}
+
+///|
+fn GizmoBuffer::line_gradient_raw(
   self : GizmoBuffer,
   start : @math.Vec3,
   end : @math.Vec3,
@@ -121,6 +184,18 @@ pub fn GizmoBuffer::line_gradient(
   self.list_positions.push(end)
   self.list_colors.push(start_color.as_linear_rgba())
   self.list_colors.push(end_color.as_linear_rgba())
+}
+
+///|
+pub fn GizmoBuffer::line_gradient(
+  self : GizmoBuffer,
+  start : @math.Vec3,
+  end : @math.Vec3,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  self.flush_pending()
+  self.line_gradient_raw(start, end, start_color, end_color)
 }
 
 ///|
@@ -211,19 +286,39 @@ pub fn GizmoBuffer::linestrip(
   positions : Array[@math.Vec3],
   color : @color.Color,
 ) -> Unit {
+  self.flush_pending()
+  self.linestrip_raw(positions, color)
+}
+
+///|
+fn GizmoBuffer::linestrip_raw(
+  self : GizmoBuffer,
+  positions : Array[@math.Vec3],
+  color : @color.Color,
+) -> Unit {
   if !self.enabled || positions.length() == 0 {
     return
   }
   for position in positions {
     self.strip_positions.push(position)
   }
-  self.add_strip_color(color, positions.length())
+  self.add_strip_color_raw(color, positions.length())
   self.strip_positions.push(gizmo_buffer_nan_vec3())
   self.strip_colors.push(gizmo_buffer_nan_color())
 }
 
 ///|
 pub fn GizmoBuffer::lineloop(
+  self : GizmoBuffer,
+  positions : Array[@math.Vec3],
+  color : @color.Color,
+) -> Unit {
+  self.flush_pending()
+  self.lineloop_raw(positions, color)
+}
+
+///|
+fn GizmoBuffer::lineloop_raw(
   self : GizmoBuffer,
   positions : Array[@math.Vec3],
   color : @color.Color,
@@ -245,11 +340,20 @@ pub fn GizmoBuffer::lineloop(
   } else {
     strip.push(first)
   }
-  self.linestrip(strip, color)
+  self.linestrip_raw(strip, color)
 }
 
 ///|
 pub fn GizmoBuffer::linestrip_gradient(
+  self : GizmoBuffer,
+  points : Array[(@math.Vec3, @color.Color)],
+) -> Unit {
+  self.flush_pending()
+  self.linestrip_gradient_raw(points)
+}
+
+///|
+fn GizmoBuffer::linestrip_gradient_raw(
   self : GizmoBuffer,
   points : Array[(@math.Vec3, @color.Color)],
 ) -> Unit {
@@ -266,6 +370,33 @@ pub fn GizmoBuffer::linestrip_gradient(
 }
 
 ///|
+fn GizmoBuffer::flush_pending(self : GizmoBuffer) -> Unit {
+  if self.pending_ellipses.length() == 0 {
+    return
+  }
+  for ellipse in self.pending_ellipses {
+    if ellipse.is_2d {
+      self.linestrip_2d_raw(
+        gizmo_buffer_isometry2d_points(
+          ellipse.isometry2d,
+          retained_ellipse_points(ellipse.half_size, ellipse.resolution),
+        ),
+        ellipse.color,
+      )
+    } else {
+      self.linestrip_raw(
+        gizmo_buffer_isometry3d_points_from_2d(
+          ellipse.isometry3d,
+          retained_ellipse_points(ellipse.half_size, ellipse.resolution),
+        ),
+        ellipse.color,
+      )
+    }
+  }
+  self.pending_ellipses.clear()
+}
+
+///|
 pub fn GizmoBuffer::line_2d(
   self : GizmoBuffer,
   start : @math.Vec2,
@@ -273,8 +404,8 @@ pub fn GizmoBuffer::line_2d(
   color : @color.Color,
 ) -> Unit {
   self.line(
-    @math.Vec3::new(start.x, start.y, 0.0F),
-    @math.Vec3::new(end.x, end.y, 0.0F),
+    gizmo_buffer_vec2_to_vec3(start),
+    gizmo_buffer_vec2_to_vec3(end),
     color,
   )
 }
@@ -288,8 +419,8 @@ pub fn GizmoBuffer::line_gradient_2d(
   end_color : @color.Color,
 ) -> Unit {
   self.line_gradient(
-    @math.Vec3::new(start.x, start.y, 0.0F),
-    @math.Vec3::new(end.x, end.y, 0.0F),
+    gizmo_buffer_vec2_to_vec3(start),
+    gizmo_buffer_vec2_to_vec3(end),
     start_color,
     end_color,
   )
@@ -301,11 +432,21 @@ pub fn GizmoBuffer::linestrip_2d(
   positions : Array[@math.Vec2],
   color : @color.Color,
 ) -> Unit {
+  self.flush_pending()
+  self.linestrip_2d_raw(positions, color)
+}
+
+///|
+fn GizmoBuffer::linestrip_2d_raw(
+  self : GizmoBuffer,
+  positions : Array[@math.Vec2],
+  color : @color.Color,
+) -> Unit {
   let converted : Array[@math.Vec3] = []
   for position in positions {
-    converted.push(@math.Vec3::new(position.x, position.y, 0.0F))
+    converted.push(gizmo_buffer_vec2_to_vec3(position))
   }
-  self.linestrip(converted, color)
+  self.linestrip_raw(converted, color)
 }
 
 ///|
@@ -316,7 +457,7 @@ pub fn GizmoBuffer::lineloop_2d(
 ) -> Unit {
   let converted : Array[@math.Vec3] = []
   for position in positions {
-    converted.push(@math.Vec3::new(position.x, position.y, 0.0F))
+    converted.push(gizmo_buffer_vec2_to_vec3(position))
   }
   self.lineloop(converted, color)
 }
@@ -326,12 +467,21 @@ pub fn GizmoBuffer::linestrip_gradient_2d(
   self : GizmoBuffer,
   points : Array[(@math.Vec2, @color.Color)],
 ) -> Unit {
+  self.flush_pending()
+  self.linestrip_gradient_2d_raw(points)
+}
+
+///|
+fn GizmoBuffer::linestrip_gradient_2d_raw(
+  self : GizmoBuffer,
+  points : Array[(@math.Vec2, @color.Color)],
+) -> Unit {
   let converted : Array[(@math.Vec3, @color.Color)] = []
   for point in points {
     let (position, color) = point
-    converted.push((@math.Vec3::new(position.x, position.y, 0.0F), color))
+    converted.push((gizmo_buffer_vec2_to_vec3(position), color))
   }
-  self.linestrip_gradient(converted)
+  self.linestrip_gradient_raw(converted)
 }
 
 ///|
@@ -472,17 +622,97 @@ pub fn GizmoBuffer::cross_2d(
 }
 
 ///|
+pub struct RetainedEllipseBuilder {
+  id : Int
+  buffer : GizmoBuffer
+}
+
+///|
+pub fn RetainedEllipseBuilder::resolution(
+  self : RetainedEllipseBuilder,
+  resolution : Int,
+) -> RetainedEllipseBuilder {
+  if self.id >= 0 && self.id < self.buffer.pending_ellipses.length() {
+    self.buffer.pending_ellipses[self.id].resolution = retained_max_int(
+      resolution, 3,
+    )
+  }
+  self
+}
+
+///|
+pub fn GizmoBuffer::ellipse(
+  self : GizmoBuffer,
+  isometry : @math.Isometry3d,
+  half_size : @math.Vec2,
+  color : @color.Color,
+) -> RetainedEllipseBuilder {
+  let id = self.pending_ellipses.length()
+  self.pending_ellipses.push(RetainedPendingEllipse::{
+    is_2d: false,
+    isometry2d: @sprite.Isometry2d::identity(),
+    isometry3d: isometry,
+    half_size,
+    color,
+    resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
+  })
+  RetainedEllipseBuilder::{ id, buffer: self }
+}
+
+///|
+pub fn GizmoBuffer::ellipse_2d(
+  self : GizmoBuffer,
+  isometry : @sprite.Isometry2d,
+  half_size : @math.Vec2,
+  color : @color.Color,
+) -> RetainedEllipseBuilder {
+  let id = self.pending_ellipses.length()
+  self.pending_ellipses.push(RetainedPendingEllipse::{
+    is_2d: true,
+    isometry2d: isometry,
+    isometry3d: @math.Isometry3d::identity(),
+    half_size,
+    color,
+    resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
+  })
+  RetainedEllipseBuilder::{ id, buffer: self }
+}
+
+///|
+pub fn GizmoBuffer::circle(
+  self : GizmoBuffer,
+  isometry : @math.Isometry3d,
+  radius : Float,
+  color : @color.Color,
+) -> RetainedEllipseBuilder {
+  self.ellipse(isometry, @math.Vec2::new(radius, radius), color)
+}
+
+///|
+pub fn GizmoBuffer::circle_2d(
+  self : GizmoBuffer,
+  isometry : @sprite.Isometry2d,
+  radius : Float,
+  color : @color.Color,
+) -> RetainedEllipseBuilder {
+  self.ellipse_2d(isometry, @math.Vec2::new(radius, radius), color)
+}
+
+///|
 pub fn GizmoBuffer::list_positions(self : GizmoBuffer) -> Array[@math.Vec3] {
+  self.flush_pending()
   self.list_positions
 }
 
 ///|
 pub fn GizmoBuffer::list_colors(self : GizmoBuffer) -> Array[@color.LinearRgba] {
+  self.flush_pending()
   self.list_colors
 }
 
 ///|
 pub fn GizmoBuffer::strip_positions(self : GizmoBuffer) -> Array[@math.Vec3] {
+  self.flush_pending()
   self.strip_positions
 }
 
@@ -490,6 +720,7 @@ pub fn GizmoBuffer::strip_positions(self : GizmoBuffer) -> Array[@math.Vec3] {
 pub fn GizmoBuffer::strip_colors(
   self : GizmoBuffer,
 ) -> Array[@color.LinearRgba] {
+  self.flush_pending()
   self.strip_colors
 }
 
@@ -700,6 +931,46 @@ pub fn GizmoAsset::cross_2d(
   color : @color.Color,
 ) -> Unit {
   self.buffer.cross_2d(isometry, half_size, color)
+}
+
+///|
+pub fn GizmoAsset::ellipse(
+  self : GizmoAsset,
+  isometry : @math.Isometry3d,
+  half_size : @math.Vec2,
+  color : @color.Color,
+) -> RetainedEllipseBuilder {
+  self.buffer.ellipse(isometry, half_size, color)
+}
+
+///|
+pub fn GizmoAsset::ellipse_2d(
+  self : GizmoAsset,
+  isometry : @sprite.Isometry2d,
+  half_size : @math.Vec2,
+  color : @color.Color,
+) -> RetainedEllipseBuilder {
+  self.buffer.ellipse_2d(isometry, half_size, color)
+}
+
+///|
+pub fn GizmoAsset::circle(
+  self : GizmoAsset,
+  isometry : @math.Isometry3d,
+  radius : Float,
+  color : @color.Color,
+) -> RetainedEllipseBuilder {
+  self.buffer.circle(isometry, radius, color)
+}
+
+///|
+pub fn GizmoAsset::circle_2d(
+  self : GizmoAsset,
+  isometry : @sprite.Isometry2d,
+  radius : Float,
+  color : @color.Color,
+) -> RetainedEllipseBuilder {
+  self.buffer.circle_2d(isometry, radius, color)
 }
 
 ///|

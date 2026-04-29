@@ -189,3 +189,29 @@ test "retained gizmo asset delegates Bevy cross helpers" {
   asset.cross_2d(@sprite.Isometry2d::identity(), 0.5F, @color.Color::white())
   debug_inspect(asset.buffer().list_positions().length(), content="10")
 }
+
+///|
+test "retained gizmo circle builder flushes with Bevy resolution semantics" {
+  let asset = @gizmos.GizmoAsset::default()
+  ignore(
+    asset
+    .circle_2d(@sprite.Isometry2d::identity(), 1.0F, @color.Color::white())
+    .resolution(8),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="10")
+  asset.clear()
+  ignore(
+    asset.ellipse(
+      @math.Isometry3d::identity(),
+      @math.Vec2::new(2.0F, 1.0F),
+      @color.Color::white(),
+    ),
+  )
+  asset.line(
+    @math.Vec3::zero(),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @color.Color::white(),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="34")
+  debug_inspect(asset.buffer().list_positions().length(), content="2")
+}

@@ -175,11 +175,15 @@ pub struct GizmoAsset {
   config_type_name : String
 }
 pub fn GizmoAsset::buffer(Self) -> GizmoBuffer
+pub fn GizmoAsset::circle(Self, @math.Isometry3d, Float, @color.Color) -> RetainedEllipseBuilder
+pub fn GizmoAsset::circle_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> RetainedEllipseBuilder
 pub fn GizmoAsset::clear(Self) -> Unit
 pub fn GizmoAsset::config_type_name(Self) -> String
 pub fn GizmoAsset::cross(Self, @math.Isometry3d, Float, @color.Color) -> Unit
 pub fn GizmoAsset::cross_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> Unit
 pub fn GizmoAsset::cube(Self, @transform.Transform, @color.Color) -> Unit
+pub fn GizmoAsset::ellipse(Self, @math.Isometry3d, @math.Vec2, @color.Color) -> RetainedEllipseBuilder
+pub fn GizmoAsset::ellipse_2d(Self, @sprite.Isometry2d, @math.Vec2, @color.Color) -> RetainedEllipseBuilder
 pub fn GizmoAsset::line(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn GizmoAsset::line_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
 pub fn GizmoAsset::line_gradient(Self, @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
@@ -205,12 +209,17 @@ pub struct GizmoBuffer {
   list_colors : Array[@color.Color]
   strip_positions : Array[@math.Vec3]
   strip_colors : Array[@color.Color]
+  pending_ellipses : Array[RetainedPendingEllipse]
 }
 pub fn GizmoBuffer::buffer(Self) -> GizmoBufferView
+pub fn GizmoBuffer::circle(Self, @math.Isometry3d, Float, @color.Color) -> RetainedEllipseBuilder
+pub fn GizmoBuffer::circle_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> RetainedEllipseBuilder
 pub fn GizmoBuffer::clear(Self) -> Unit
 pub fn GizmoBuffer::cross(Self, @math.Isometry3d, Float, @color.Color) -> Unit
 pub fn GizmoBuffer::cross_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> Unit
 pub fn GizmoBuffer::cube(Self, @transform.Transform, @color.Color) -> Unit
+pub fn GizmoBuffer::ellipse(Self, @math.Isometry3d, @math.Vec2, @color.Color) -> RetainedEllipseBuilder
+pub fn GizmoBuffer::ellipse_2d(Self, @sprite.Isometry2d, @math.Vec2, @color.Color) -> RetainedEllipseBuilder
 pub fn GizmoBuffer::line(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn GizmoBuffer::line_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
 pub fn GizmoBuffer::line_gradient(Self, @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
@@ -265,6 +274,14 @@ pub struct GlobalGizmosPlugin {
 }
 pub fn GlobalGizmosPlugin::default() -> Self
 pub impl @app.Plugin for GlobalGizmosPlugin
+
+pub struct RetainedEllipseBuilder {
+  id : Int
+  buffer : GizmoBuffer
+}
+pub fn RetainedEllipseBuilder::resolution(Self, Int) -> Self
+
+type RetainedPendingEllipse
 
 pub struct ShowAabbGizmo {
   color : @color.Color?
