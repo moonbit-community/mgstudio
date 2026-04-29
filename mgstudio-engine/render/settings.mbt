@@ -199,6 +199,26 @@ let ecs_key_pending_command_buffers_resource : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio_render::PendingCommandBuffers")
 
 ///|
+pub struct CurrentView {
+  entity : @core.Entity
+} derive(Eq, Debug)
+
+///|
+pub fn CurrentView::new(entity : @core.Entity) -> CurrentView {
+  CurrentView::{ entity, }
+}
+
+///|
+pub fn CurrentView::entity(self : CurrentView) -> @core.Entity {
+  self.entity
+}
+
+///|
+let ecs_key_current_view_resource : @ecs.ResourceKey[CurrentView] = @ecs.register_resource(
+  debug_name="mgstudio_render::CurrentView",
+)
+
+///|
 pub fn render_device_resource_key() -> @ecs.ResourceKey[@renderer.RenderDevice] {
   ecs_key_render_device_resource
 }
@@ -241,6 +261,11 @@ pub fn pending_command_buffers_resource_key() -> @ecs.ResourceKey[
   @renderer.PendingCommandBuffers,
 ] {
   ecs_key_pending_command_buffers_resource
+}
+
+///|
+pub fn current_view_resource_key() -> @ecs.ResourceKey[CurrentView] {
+  ecs_key_current_view_resource
 }
 
 ///|

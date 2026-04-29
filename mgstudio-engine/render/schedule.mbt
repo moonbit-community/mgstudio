@@ -16,6 +16,25 @@
 // Bevy source: `bevy/crates/bevy_render/src/lib.rs` (`RenderSystems`).
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/renderer/mod.rs` (`RenderGraph`).
+pub struct RenderGraph {}
+
+///|
+pub fn RenderGraph::default() -> RenderGraph {
+  RenderGraph::{  }
+}
+
+///|
+pub fn RenderGraph::schedule() -> @app.ScheduleStage {
+  render_schedule_stage()
+}
+
+///|
+pub fn RenderGraph::base_schedule() -> @app.Schedule {
+  @app.Schedule::new(RenderGraph::schedule())
+}
+
+///|
 pub let render_system_set_extract_commands : @app.SystemSet = @app.system_set(
   "mgstudio.render.extract_commands",
 )

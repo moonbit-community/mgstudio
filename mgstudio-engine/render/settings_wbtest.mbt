@@ -41,6 +41,31 @@ test "render settings: bevy renderer resources use distinct world keys" {
 }
 
 ///|
+test "render schedule: render graph aliases canonical render schedule" {
+  let graph = RenderGraph::default()
+  ignore(graph)
+  debug_inspect(
+    RenderGraph::schedule() == render_schedule_stage(),
+    content="true",
+  )
+  debug_inspect(
+    RenderGraph::base_schedule().label() == render_schedule_stage(),
+    content="true",
+  )
+}
+
+///|
+test "render settings: current view stores the render entity" {
+  let entity = @core.Entity::new(42, 7)
+  let current = CurrentView::new(entity)
+  debug_inspect(current.entity() == entity, content="true")
+  debug_inspect(
+    current_view_resource_key().id() != render_device_resource_key().id(),
+    content="true",
+  )
+}
+
+///|
 test "render plugin: initializes pending command buffers in render app" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     RenderPlugin::default(),

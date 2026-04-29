@@ -73,6 +73,8 @@ pub fn clear_registered_wgsl_source_registry() -> Unit
 
 pub fn configure_base_render_sets(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
 
+pub fn current_view_resource_key() -> @ecs.ResourceKey[CurrentView]
+
 pub fn despawn_temporary_render_entities(@ecs.World) -> Unit
 
 pub let ecs_key_main_entity : @ecs.ComponentKey[MainEntity]
@@ -402,6 +404,12 @@ pub fn[C] ComponentUniforms::default() -> Self[C]
 pub fn[C] ComponentUniforms::len(Self[C]) -> Int
 pub fn[C] ComponentUniforms::push(Self[C], C) -> Unit
 
+pub struct CurrentView {
+  entity : @core.Entity
+} derive(Eq, @debug.Debug)
+pub fn CurrentView::entity(Self) -> @core.Entity
+pub fn CurrentView::new(@core.Entity) -> Self
+
 pub struct DynamicUniformIndex[_] {
   index : UInt
 }
@@ -617,6 +625,12 @@ pub struct RenderEntity {
 pub fn RenderEntity::id(Self) -> @core.Entity
 pub fn RenderEntity::new(@core.Entity) -> Self
 pub impl @ecs.Component for RenderEntity
+
+pub struct RenderGraph {
+}
+pub fn RenderGraph::base_schedule() -> @app.Schedule
+pub fn RenderGraph::default() -> Self
+pub fn RenderGraph::schedule() -> @app.ScheduleStage
 
 pub struct RenderPlugin {
 }
