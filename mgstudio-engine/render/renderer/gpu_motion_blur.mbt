@@ -28,9 +28,58 @@ fn motion_blur_debug_log(message : String) -> Unit {
 }
 
 ///|
+fn ensure_motion_blur_layouts(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  if backend.motion_blur_bgl is None {
+    let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=6UL)
+    let ok = builder.add_texture(
+        0U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_texture(
+        1U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_texture(
+        2U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_sampler(3U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING) &&
+      builder.add_buffer(4U, frag, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+      builder.add_buffer(5U, frag, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+    if !ok {
+      builder.free()
+      fatal("wgpu: failed to build motion blur bind group layout")
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_motion_blur_layout",
+    )
+    let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+    pipeline_layout.set_label("mgstudio_motion_blur_pipeline_layout")
+    backend.motion_blur_bgl = Some(bgl)
+    backend.motion_blur_pipeline_layout = Some(pipeline_layout)
+  }
+  if backend.motion_blur_sampler is None {
+    backend.motion_blur_sampler = Some(
+      backend.device.create_sampler_nearest_clamp(),
+    )
+  }
+}
+
+///|
 fn ensure_motion_blur_pipeline_rgba8(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
+  ensure_motion_blur_layouts(backend)
   if backend.motion_blur_settings_buf is None {
     let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
     backend.motion_blur_settings_buf = Some(
@@ -46,24 +95,25 @@ fn ensure_motion_blur_pipeline_rgba8(
   if backend.motion_blur_pipeline is Some(_) {
     return
   }
-  let wgsl = load_fullscreen_postprocess_wgsl_with_defines_required(
+  guard backend.motion_blur_pipeline_layout is Some(pipeline_layout) else {
+    return
+  }
+  let sources = load_fullscreen_postprocess_wgsl_modules_with_defines_required(
     backend,
     "post_process/motion_blur/motion_blur.wgsl",
     [],
   )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let pipeline = backend.device.create_render_pipeline_color_format_entries(
-    sm,
+  let pipeline = create_postprocess_pipeline_split_modules(
+    backend,
+    pipeline_layout,
+    sources.vertex_source,
+    sources.fragment_source,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
-    vs_entry="fullscreen_vertex_shader",
-    fs_entry="fragment",
-    alpha_blend=false,
-    depth=false,
+    "fragment",
+    POSTPROCESS_BLEND_MODE_NONE,
+    "mgstudio_motion_blur_rgba8",
   )
-  pipeline.set_label("mgstudio_motion_blur_rgba8")
-  backend.motion_blur_bgl = Some(pipeline.get_bind_group_layout(0U))
   backend.motion_blur_pipeline = Some(pipeline)
-  sm.release()
 }
 
 ///|
@@ -83,24 +133,26 @@ fn ensure_motion_blur_pipeline_surface(
   if backend.motion_blur_pipeline_surface is Some(old) {
     old.release()
   }
-  let wgsl = load_fullscreen_postprocess_wgsl_with_defines_required(
+  guard backend.motion_blur_pipeline_layout is Some(pipeline_layout) else {
+    return
+  }
+  let sources = load_fullscreen_postprocess_wgsl_modules_with_defines_required(
     backend,
     "post_process/motion_blur/motion_blur.wgsl",
     [],
   )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let pipeline = backend.device.create_render_pipeline_color_format_entries(
-    sm,
+  let pipeline = create_postprocess_pipeline_split_modules(
+    backend,
+    pipeline_layout,
+    sources.vertex_source,
+    sources.fragment_source,
     format,
-    vs_entry="fullscreen_vertex_shader",
-    fs_entry="fragment",
-    alpha_blend=false,
-    depth=false,
+    "fragment",
+    POSTPROCESS_BLEND_MODE_NONE,
+    "mgstudio_motion_blur_surface",
   )
-  pipeline.set_label("mgstudio_motion_blur_surface")
   backend.motion_blur_pipeline_surface = Some(pipeline)
   backend.motion_blur_pipeline_surface_format = Some(format)
-  sm.release()
 }
 
 ///|
@@ -151,6 +203,14 @@ pub fn GpuBackend::draw_motion_blur(
     motion_blur_debug_log("skip: no globals buffer")
     return
   }
+  guard self.motion_blur_bgl is Some(material_bgl) else {
+    motion_blur_debug_log("skip: no bind group layout")
+    return
+  }
+  guard self.motion_blur_sampler is Some(sampler) else {
+    motion_blur_debug_log("skip: no sampler")
+    return
+  }
   if scene_texture_id < 0 || velocity_texture_id < 0 {
     motion_blur_debug_log(
       "skip: invalid texture ids scene=\{scene_texture_id}, velocity=\{velocity_texture_id}",
@@ -195,17 +255,15 @@ pub fn GpuBackend::draw_motion_blur(
   ])
   self.queue.write_buffer(globals_buf, 0UL, globals_bytes)
 
-  let material_bgl = pipeline.get_bind_group_layout(0U)
   let builder = @wgpu.BindGroupBuilder::new(max_entries=6UL)
   let ok = builder.add_texture_view(0U, scene_texture.view) &&
     builder.add_texture_view(1U, velocity_texture.view) &&
     builder.add_texture_view(2U, depth_view) &&
-    builder.add_sampler(3U, scene_texture.sampler) &&
+    builder.add_sampler(3U, sampler) &&
     builder.add_buffer(4U, settings_buf) &&
     builder.add_buffer(5U, globals_buf)
   if !ok {
     builder.free()
-    material_bgl.release()
     return
   }
   let material_bg = builder.finish(
@@ -220,7 +278,6 @@ pub fn GpuBackend::draw_motion_blur(
   pass.set_bind_group(0U, material_bg, [])
   pass.draw(3U, 1U, 0U, 0U)
   material_bg.release()
-  material_bgl.release()
 }
 
 ///|

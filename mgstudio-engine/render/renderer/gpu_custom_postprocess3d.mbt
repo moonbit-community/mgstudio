@@ -34,8 +34,12 @@ fn custom_postprocess3d_uniform_bytes(
 fn load_custom_postprocess3d_wgsl_required(
   backend : GpuBackend,
   shader_path : String,
-) -> String raise GpuBackendError {
-  load_fullscreen_postprocess_wgsl_with_defines_required(backend, shader_path, [])
+) -> FullscreenPostprocessWgslSources raise GpuBackendError {
+  load_fullscreen_postprocess_wgsl_modules_with_defines_required(
+    backend,
+    shader_path,
+    [],
+  )
 }
 
 ///|
@@ -116,11 +120,12 @@ fn custom_postprocess3d_pipeline_get_or_create(
   guard backend.custom_postprocess3d_pipeline_layout is Some(pipeline_layout) else {
     return None
   }
-  let source = load_custom_postprocess3d_wgsl_required(backend, shader_path)
-  let pipeline = create_postprocess_pipeline(
+  let sources = load_custom_postprocess3d_wgsl_required(backend, shader_path)
+  let pipeline = create_postprocess_pipeline_split_modules(
     backend,
     pipeline_layout,
-    source,
+    sources.vertex_source,
+    sources.fragment_source,
     format,
     fragment_entry,
     POSTPROCESS_BLEND_MODE_NONE,

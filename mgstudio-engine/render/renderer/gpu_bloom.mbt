@@ -755,107 +755,116 @@ fn ensure_bloom_pipeline_rgba8(
       is Some(intermediate_pipeline_layout) else {
       return
     }
-    let downsample_first_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+    let vertex_source = load_fullscreen_vertex_wgsl_required(backend)
+    let downsample_first_source = load_postprocess_fragment_wgsl_with_defines_required(
       backend,
       "post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "USE_THRESHOLD"],
     )
-    let downsample_first_no_threshold_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+    let downsample_first_no_threshold_source = load_postprocess_fragment_wgsl_with_defines_required(
       backend,
       "post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE"],
     )
-    let downsample_first_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+    let downsample_first_uniform_source = load_postprocess_fragment_wgsl_with_defines_required(
       backend,
       "post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "USE_THRESHOLD", "UNIFORM_SCALE"],
     )
-    let downsample_first_no_threshold_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+    let downsample_first_no_threshold_uniform_source = load_postprocess_fragment_wgsl_with_defines_required(
       backend,
       "post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "UNIFORM_SCALE"],
     )
-    let downsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+    let downsample_source = load_postprocess_fragment_wgsl_with_defines_required(
       backend,
       "post_process/bloom/bloom.wgsl",
       [],
     )
-    let downsample_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+    let downsample_uniform_source = load_postprocess_fragment_wgsl_with_defines_required(
       backend,
       "post_process/bloom/bloom.wgsl",
       ["UNIFORM_SCALE"],
     )
-    let upsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+    let upsample_source = load_postprocess_fragment_wgsl_with_defines_required(
       backend,
       "post_process/bloom/bloom.wgsl",
       [],
     )
-    let downsample_first_pipeline = create_postprocess_pipeline(
+    let downsample_first_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
+      vertex_source,
       downsample_first_source,
       mip_format,
       "downsample_first",
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline_first",
     )
-    let downsample_first_no_threshold_pipeline = create_postprocess_pipeline(
+    let downsample_first_no_threshold_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
+      vertex_source,
       downsample_first_no_threshold_source,
       mip_format,
       "downsample_first",
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline_first_no_threshold",
     )
-    let downsample_first_uniform_pipeline = create_postprocess_pipeline(
+    let downsample_first_uniform_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
+      vertex_source,
       downsample_first_uniform_source,
       mip_format,
       "downsample_first",
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline_first_uniform",
     )
-    let downsample_first_no_threshold_uniform_pipeline = create_postprocess_pipeline(
+    let downsample_first_no_threshold_uniform_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
+      vertex_source,
       downsample_first_no_threshold_uniform_source,
       mip_format,
       "downsample_first",
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline_first_no_threshold_uniform",
     )
-    let downsample_pipeline = create_postprocess_pipeline(
+    let downsample_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
+      vertex_source,
       downsample_source,
       mip_format,
       "downsample",
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline",
     )
-    let downsample_uniform_pipeline = create_postprocess_pipeline(
+    let downsample_uniform_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
+      vertex_source,
       downsample_uniform_source,
       mip_format,
       "downsample",
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline_uniform",
     )
-    let upsample_pipeline_energy = create_postprocess_pipeline(
+    let upsample_pipeline_energy = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
+      vertex_source,
       upsample_source,
       mip_format,
       "upsample",
       POSTPROCESS_BLEND_MODE_CONSTANT_ENERGY,
       "mgstudio_bloom_upsampling_pipeline_energy",
     )
-    let upsample_pipeline_additive = create_postprocess_pipeline(
+    let upsample_pipeline_additive = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
+      vertex_source,
       upsample_source,
       mip_format,
       "upsample",
@@ -903,23 +912,26 @@ fn ensure_bloom_final_composite_pipeline(
     is Some(intermediate_pipeline_layout) else {
     return
   }
-  let upsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+  let vertex_source = load_fullscreen_vertex_wgsl_required(backend)
+  let upsample_source = load_postprocess_fragment_wgsl_with_defines_required(
     backend,
     "post_process/bloom/bloom.wgsl",
     [],
   )
-  let energy_pipeline = create_postprocess_pipeline(
+  let energy_pipeline = create_postprocess_pipeline_split_modules(
     backend,
     intermediate_pipeline_layout,
+    vertex_source,
     upsample_source,
     format,
     "upsample",
     POSTPROCESS_BLEND_MODE_CONSTANT_ENERGY,
     "mgstudio_bloom_upsampling_final_pipeline_energy",
   )
-  let additive_pipeline = create_postprocess_pipeline(
+  let additive_pipeline = create_postprocess_pipeline_split_modules(
     backend,
     intermediate_pipeline_layout,
+    vertex_source,
     upsample_source,
     format,
     "upsample",

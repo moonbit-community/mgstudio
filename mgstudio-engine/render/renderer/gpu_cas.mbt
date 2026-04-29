@@ -92,7 +92,7 @@ fn cas_pipeline_get_or_create(
   guard backend.cas_pipeline_layout is Some(pipeline_layout) else {
     return None
   }
-  let source = load_fullscreen_postprocess_wgsl_with_defines_required(
+  let sources = load_fullscreen_postprocess_wgsl_modules_with_defines_required(
     backend,
     "anti_alias/contrast_adaptive_sharpening/robust_contrast_adaptive_sharpening.wgsl",
     if denoise {
@@ -102,10 +102,11 @@ fn cas_pipeline_get_or_create(
     },
   )
   let label_suffix = if denoise { "denoise" } else { "plain" }
-  let pipeline = create_postprocess_pipeline(
+  let pipeline = create_postprocess_pipeline_split_modules(
     backend,
     pipeline_layout,
-    source,
+    sources.vertex_source,
+    sources.fragment_source,
     format,
     "fragment",
     POSTPROCESS_BLEND_MODE_NONE,

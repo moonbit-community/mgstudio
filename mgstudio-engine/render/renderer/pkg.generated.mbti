@@ -570,9 +570,11 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_instance_mesh_used : Int
   mut mesh3d_motion_vector_instance_mesh_skin_revision : Int
   mut motion_blur_bgl : @wgpu_mbt.BindGroupLayout?
+  mut motion_blur_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut motion_blur_pipeline : @wgpu_mbt.RenderPipeline?
   mut motion_blur_pipeline_surface : @wgpu_mbt.RenderPipeline?
   mut motion_blur_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut motion_blur_sampler : @wgpu_mbt.Sampler?
   mut motion_blur_settings_buf : @wgpu_mbt.Buffer?
   mut motion_blur_globals_buf : @wgpu_mbt.Buffer?
   mut effect_stack_bgl : @wgpu_mbt.BindGroupLayout?

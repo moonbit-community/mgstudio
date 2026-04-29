@@ -22,124 +22,59 @@ fn clamp_non_negative(value : Float) -> Float {
 }
 
 ///|
-fn load_wgsl_asset_source_required(
-  backend : GpuBackend,
-  rel : String,
-) -> String raise GpuBackendError {
-  if backend.assets_base.trim().to_string() == "" {
-    fatal("wgpu: assets_base is empty; cannot load shader: \{rel}")
-  }
-  wgsl_runtime_composer(backend.assets_base).load_wgsl_source_required_raw(
-    backend.assets_base,
-    rel,
-  ) catch {
-    err => fatal("wgpu: failed to read shader asset \{rel}: \{err.message()}")
-  }
-}
-
-///|
-fn preprocess_manual_wgsl_source(
-  backend : GpuBackend,
-  source : String,
+fn postprocess_define_keys_map(
   define_keys : Array[String],
-  value_define_pairs : Array[(String, Int)],
-) -> String raise GpuBackendError {
+) -> @hashmap.HashMap[String, Bool] {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   for key in define_keys {
     defines.set(key, true)
   }
-  let value_defines = default_wgsl_value_defines()
-  for pair in value_define_pairs {
-    let (key, value) = pair
-    value_defines.set(key, value)
-  }
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(backend.assets_base)
-  preprocess_wgsl_source(
-    backend.assets_base,
-    source,
-    defines,
-    value_defines,
-    visited,
-    modules,
+  defines
+}
+
+///|
+priv struct FullscreenPostprocessWgslSources {
+  vertex_source : String
+  fragment_source : String
+}
+
+///|
+fn load_fullscreen_vertex_wgsl_required(
+  backend : GpuBackend,
+) -> String raise GpuBackendError {
+  load_wgsl_from_assets_required(
+    backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
   )
 }
 
 ///|
-fn replace_shader_substring_all(
-  source : String,
-  from : String,
-  to : String,
-) -> String {
-  if from == "" {
-    return source
-  }
-  let mut out = ""
-  let mut first = true
-  for piece in source.split(from) {
-    if first {
-      first = false
-    } else {
-      out = out + to
-    }
-    out = out + piece.to_string()
-  }
-  out
-}
-
-///|
-fn load_fullscreen_postprocess_wgsl_with_defines_required(
+fn load_postprocess_fragment_wgsl_with_defines_required(
   backend : GpuBackend,
   rel : String,
   define_keys : Array[String],
 ) -> String raise GpuBackendError {
-  let fullscreen_source = load_wgsl_asset_source_required(
-    backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+  load_wgsl_preprocessed(
+    backend.assets_base,
+    rel,
+    postprocess_define_keys_map(define_keys),
+    default_wgsl_value_defines(),
+    @hashmap.HashMap::new(),
+    @hashmap.HashMap::new(),
   )
-  let main_source = load_wgsl_asset_source_required(backend, rel)
-  let merged_source = merge_fullscreen_postprocess_source(
-    main_source, fullscreen_source,
-  )
-  preprocess_manual_wgsl_source(backend, merged_source, define_keys, [])
 }
 
 ///|
-fn fullscreen_vertex_shader_function_source(source : String) -> String {
-  let marker = "@vertex"
-  let parts : Array[String] = []
-  for piece in source.split(marker) {
-    parts.push(piece.to_string())
+fn load_fullscreen_postprocess_wgsl_modules_with_defines_required(
+  backend : GpuBackend,
+  rel : String,
+  define_keys : Array[String],
+) -> FullscreenPostprocessWgslSources raise GpuBackendError {
+  FullscreenPostprocessWgslSources::{
+    vertex_source: load_fullscreen_vertex_wgsl_required(backend),
+    fragment_source: load_postprocess_fragment_wgsl_with_defines_required(
+      backend, rel, define_keys,
+    ),
   }
-  if parts.length() < 2 {
-    return source
-  }
-  let mut suffix = ""
-  for i in 1..<parts.length() {
-    if i > 1 {
-      suffix = suffix + marker
-    }
-    suffix = suffix + parts[i]
-  }
-  marker + suffix
-}
-
-///|
-fn merge_fullscreen_postprocess_source(
-  main_source : String,
-  fullscreen_source : String,
-) -> String {
-  if main_source.contains("fn fullscreen_vertex_shader(") {
-    return main_source
-  }
-  let imports_fullscreen_vertex_output = main_source.contains(
-      "#import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput",
-    ) ||
-    main_source.contains("fullscreen_vertex_shader::FullscreenVertexOutput")
-  if main_source.contains("struct FullscreenVertexOutput") ||
-    imports_fullscreen_vertex_output {
-    return "\{main_source}\n\{fullscreen_vertex_shader_function_source(fullscreen_source)}"
-  }
-  "\{fullscreen_source}\n\{main_source}"
 }
 
 ///|
@@ -202,21 +137,6 @@ fn create_postprocess_shader_module(
     fatal(message)
   }
   shader
-}
-
-///|
-fn create_postprocess_pipeline(
-  backend : GpuBackend,
-  layout : @wgpu.PipelineLayout,
-  source : String,
-  format : @wgpu.TextureFormat,
-  fs_entry : String,
-  blend_mode : Int,
-  label : String,
-) -> @wgpu.RenderPipeline raise GpuBackendError {
-  create_postprocess_pipeline_split_modules(
-    backend, layout, source, source, format, fs_entry, blend_mode, label,
-  )
 }
 
 ///|

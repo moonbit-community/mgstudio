@@ -15,21 +15,16 @@
 ///|
 fn load_blit_wgsl_required(
   backend : GpuBackend,
-) -> String raise GpuBackendError {
-  let main_source = load_wgsl_asset_source_required(
-    backend, "core_pipeline/blit/blit.wgsl",
+) -> FullscreenPostprocessWgslSources raise GpuBackendError {
+  let fragment_source = load_postprocess_fragment_wgsl_with_defines_required(
+    backend,
+    "core_pipeline/blit/blit.wgsl",
+    [],
   )
-  let stripped_main_source = replace_shader_substring_all(
-    main_source, "#import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput\n",
-    "",
-  )
-  let fullscreen_source = load_wgsl_asset_source_required(
-    backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
-  )
-  let merged_source = merge_fullscreen_postprocess_source(
-    stripped_main_source, fullscreen_source,
-  )
-  preprocess_manual_wgsl_source(backend, merged_source, [], [])
+  FullscreenPostprocessWgslSources::{
+    vertex_source: load_fullscreen_vertex_wgsl_required(backend),
+    fragment_source,
+  }
 }
 
 ///|
@@ -40,10 +35,10 @@ fn ensure_blit_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
     let ok = builder.add_texture(
         0U,
         frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
       ) &&
-      builder.add_sampler(1U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING)
+      builder.add_sampler(1U, frag, @wgpu.SAMPLER_BINDING_TYPE_NON_FILTERING)
     if !ok {
       builder.free()
       fatal("wgpu: failed to build blit bind group layout")
@@ -55,7 +50,7 @@ fn ensure_blit_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
     backend.blit_pipeline_layout = Some(pipeline_layout)
   }
   if backend.blit_sampler is None {
-    backend.blit_sampler = Some(backend.device.create_sampler_linear_clamp())
+    backend.blit_sampler = Some(backend.device.create_sampler_nearest_clamp())
   }
 }
 
@@ -76,11 +71,12 @@ fn blit_pipeline_for_format(
   guard backend.blit_pipeline_layout is Some(pipeline_layout) else {
     return None
   }
-  let source = load_blit_wgsl_required(backend)
-  let pipeline = create_postprocess_pipeline(
+  let sources = load_blit_wgsl_required(backend)
+  let pipeline = create_postprocess_pipeline_split_modules(
     backend,
     pipeline_layout,
-    source,
+    sources.vertex_source,
+    sources.fragment_source,
     format,
     "fs_main",
     POSTPROCESS_BLEND_MODE_NONE,
