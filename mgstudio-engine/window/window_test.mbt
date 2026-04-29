@@ -757,6 +757,28 @@ test "window: cursor position follows bevy physical bounds semantics" {
 }
 
 ///|
+test "window: resolution can apply scale factor to physical size like bevy" {
+  let resolution = WindowResolution::new(640, 360)
+  resolution.set_scale_factor_and_apply_to_physical_size(2.0F)
+  debug_inspect(resolution.scale_factor(), content="2")
+  debug_inspect(resolution.physical_width(), content="1280")
+  debug_inspect(resolution.physical_height(), content="720")
+  debug_inspect(resolution.width(), content="640")
+  debug_inspect(resolution.height(), content="360")
+}
+
+///|
+test "window: resolution scale factor accessors preserve raw bevy values" {
+  let resolution = WindowResolution::default()
+  resolution.set_scale_factor(0.0F)
+  debug_inspect(resolution.base_scale_factor(), content="0")
+  debug_inspect(resolution.scale_factor(), content="0")
+
+  resolution.set_scale_factor_override(Some(-2.0F))
+  debug_inspect(resolution.scale_factor(), content="-2")
+}
+
+///|
 test "window: cursor events write back window cursor state like bevy winit" {
   let world = @ecs.World::new()
   let entity = world.spawn()

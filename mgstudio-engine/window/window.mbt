@@ -251,23 +251,14 @@ pub fn WindowResolution::physical_size(self : WindowResolution) -> @math.UVec2 {
 ///|
 pub fn WindowResolution::scale_factor(self : WindowResolution) -> Float {
   match self.scale_factor_override {
-    Some(scale_factor_override) =>
-      if scale_factor_override <= 0.0F {
-        1.0F
-      } else {
-        scale_factor_override
-      }
+    Some(scale_factor_override) => scale_factor_override
     None => self.base_scale_factor()
   }
 }
 
 ///|
 pub fn WindowResolution::base_scale_factor(self : WindowResolution) -> Float {
-  if self.scale_factor <= 0.0F {
-    1.0F
-  } else {
-    self.scale_factor
-  }
+  self.scale_factor
 }
 
 ///|
@@ -304,7 +295,17 @@ pub fn WindowResolution::set_scale_factor(
   self : WindowResolution,
   scale_factor : Float,
 ) -> Unit {
-  self.scale_factor = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
+  self.scale_factor = scale_factor
+}
+
+///|
+pub fn WindowResolution::set_scale_factor_and_apply_to_physical_size(
+  self : WindowResolution,
+  scale_factor : Float,
+) -> Unit {
+  self.scale_factor = scale_factor
+  self.physical_width = (Float::from_int(self.physical_width) * scale_factor).to_int()
+  self.physical_height = (Float::from_int(self.physical_height) * scale_factor).to_int()
 }
 
 ///|

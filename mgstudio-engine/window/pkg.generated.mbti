@@ -818,6 +818,7 @@ pub fn WindowResolution::scale_factor_override(Self) -> Float?
 pub fn WindowResolution::set(Self, Float, Float) -> Unit
 pub fn WindowResolution::set_physical_resolution(Self, Int, Int) -> Unit
 pub fn WindowResolution::set_scale_factor(Self, Float) -> Unit
+pub fn WindowResolution::set_scale_factor_and_apply_to_physical_size(Self, Float) -> Unit
 pub fn WindowResolution::set_scale_factor_override(Self, Float?) -> Unit
 pub fn WindowResolution::size(Self) -> @math.Vec2
 pub fn WindowResolution::width(Self) -> Float
