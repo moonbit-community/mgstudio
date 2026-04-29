@@ -49,6 +49,9 @@ struct FinishAddsPluginPlugin {}
 struct PluginAddedProbePlugin {}
 
 ///|
+struct PluginReadyCountPlugin {}
+
+///|
 let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
@@ -70,6 +73,9 @@ let plugin_added_probe_finish_ref : Ref[Bool] = Ref::new(false)
 let plugin_added_probe_cleanup_ref : Ref[Bool] = Ref::new(false)
 
 ///|
+let plugin_ready_count_ref : Ref[Int] = Ref::new(0)
+
+///|
 fn plugin_group_test_reset_log() -> Unit {
   plugin_group_test_log_ref.val = []
 }
@@ -82,6 +88,7 @@ fn plugin_lifecycle_test_reset_log() -> Unit {
   plugin_build_depth_probe_ref.val = false
   plugin_added_probe_finish_ref.val = false
   plugin_added_probe_cleanup_ref.val = false
+  plugin_ready_count_ref.val = 0
 }
 
 ///|
@@ -305,6 +312,22 @@ pub impl Plugin for PluginAddedProbePlugin with cleanup(_self, app) {
 
   })
   app
+}
+
+///|
+pub impl Plugin for PluginReadyCountPlugin with name(_self) {
+  "mgstudio.app.plugin_ready_count"
+}
+
+///|
+pub impl Plugin for PluginReadyCountPlugin with build(_self, app) {
+  app
+}
+
+///|
+pub impl Plugin for PluginReadyCountPlugin with ready(_self, _app) {
+  plugin_ready_count_ref.val = plugin_ready_count_ref.val + 1
+  true
 }
 
 ///|
@@ -654,6 +677,16 @@ test "app: is_plugin_added is available during finish and cleanup" {
   debug_inspect(plugin_added_probe_finish_ref.val, content="true")
   app.cleanup() |> ignore
   debug_inspect(plugin_added_probe_cleanup_ref.val, content="true")
+}
+
+///|
+test "app: plugins_state query does not transition out of adding" {
+  plugin_lifecycle_test_reset_log()
+  let app = App::new(@ecs.World::new()).add_plugins(PluginReadyCountPlugin::{  })
+  debug_inspect(plugin_ready_count_ref.val, content="0")
+  debug_inspect(app.plugins_state() == Ready, content="true")
+  debug_inspect(app.plugins_state() == Ready, content="true")
+  debug_inspect(plugin_ready_count_ref.val, content="2")
 }
 
 ///|

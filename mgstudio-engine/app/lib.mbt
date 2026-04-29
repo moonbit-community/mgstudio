@@ -2372,9 +2372,10 @@ fn[W] App::plugins_all_ready(self : App[W]) -> Bool {
 ///|
 pub fn[W] App::plugins_state(self : App[W]) -> PluginsState {
   if self.plugins_state == Adding && self.plugins_all_ready() {
-    self.plugins_state = Ready
+    Ready
+  } else {
+    self.plugins_state
   }
-  self.plugins_state
 }
 
 ///|
