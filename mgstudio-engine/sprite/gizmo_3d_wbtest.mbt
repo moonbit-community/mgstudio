@@ -97,3 +97,30 @@ test "gizmos system param queues into world storage before render drain" {
   debug_inspect(storage_after.state.lines_3d.length(), content="0")
   gizmos_reset()
 }
+
+///|
+test "global gizmo buffer flushes through last schedule into default storage" {
+  gizmos_reset()
+  let app = init_gizmo_group(
+    @app.App::new(@ecs.World::new()),
+    DefaultGizmoConfigGroup::default(),
+  ).add_last_system_config(@app.system(@app.system_param(flush_global_gizmos)))
+
+  gizmo().line_3d(
+    @math.Vec3::zero(),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    Color::white(),
+  )
+  ignore(app.update())
+  debug_inspect(gizmo_state.val.lines_3d.length(), content="0")
+  debug_inspect(global_gizmo_state.val.lines_3d.length(), content="0")
+  let storage_key : @ecs.ResourceKey[GizmoStorage[DefaultGizmoConfigGroup]] = GizmoStorage::resource()
+  let storage = app.world().get_resource(storage_key).unwrap()
+  debug_inspect(storage.state.lines_3d.length(), content="1")
+
+  gizmos_prepare(app.world())
+  debug_inspect(gizmo_state.val.lines_3d.length(), content="1")
+  let storage_after = app.world().get_resource(storage_key).unwrap()
+  debug_inspect(storage_after.state.lines_3d.length(), content="0")
+  gizmos_reset()
+}

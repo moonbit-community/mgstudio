@@ -37,12 +37,22 @@ pub fn global_gizmos_plugin_with(
   plugin : GlobalGizmosPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  init_gizmo_group(app, @sprite.DefaultGizmoConfigGroup::default())
+  init_gizmo_group(
+    app.add_last_system_config(
+      @app.system(@app.system_param(@sprite.flush_global_gizmos)),
+    ),
+    @sprite.DefaultGizmoConfigGroup::default(),
+  )
 }
 
 ///|
 pub fn gizmo_global_init(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   global_gizmos_plugin(app)
+}
+
+///|
+pub fn gizmo() -> @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup] {
+  @sprite.gizmo()
 }
 
 ///|

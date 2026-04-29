@@ -42,6 +42,8 @@ pub fn draw_frustum_gizmos(@ecs.Query[(@ecs.Comp[@render.Frustum], @ecs.Comp[Sho
 
 pub fn frustum_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn gizmo() -> @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup]
+
 pub fn[Config] gizmo_arc_2d(@sprite.Gizmos[Config], @sprite.Isometry2d, Float, Float, @color.Color) -> @sprite.Arc2dBuilder
 
 pub fn[Config] gizmo_arc_3d(@sprite.Gizmos[Config], @math.Isometry3d, Float, Float, @color.Color) -> Unit

@@ -559,6 +559,51 @@ fn GizmoState::append_from(self : GizmoState, other : GizmoState) -> Unit {
 }
 
 ///|
+fn GizmoState::append_from_with_config(
+  self : GizmoState,
+  other : GizmoState,
+  config : GizmoConfig,
+) -> Unit {
+  let line_config = config.line
+  let width = positive_or(line_config.width, DEFAULT_GIZMO_LINE_WIDTH)
+  for item in other.lines {
+    self.lines.push(GizmoLine::{
+      start: item.start,
+      end: item.end,
+      start_color: item.start_color,
+      end_color: item.end_color,
+      layers: config.render_layers,
+      width,
+      style: line_config.style,
+    })
+  }
+  for item in other.lines_3d {
+    self.lines_3d.push(GizmoLine3d::{
+      start: item.start,
+      end: item.end,
+      start_color: item.start_color,
+      end_color: item.end_color,
+      layers: config.render_layers,
+    })
+  }
+  for item in other.pending_ellipses {
+    self.pending_ellipses.push({ ..item, config, })
+  }
+  for item in other.pending_arcs {
+    self.pending_arcs.push({ ..item, config, })
+  }
+  for item in other.pending_rounded_rects {
+    self.pending_rounded_rects.push({ ..item, config, })
+  }
+  for item in other.pending_arrows {
+    self.pending_arrows.push({ ..item, config, })
+  }
+  for item in other.pending_grids {
+    self.pending_grids.push({ ..item, config, })
+  }
+}
+
+///|
 pub struct GizmoStorage[Config] {
   state : GizmoState
   phantom : Config?
@@ -660,6 +705,32 @@ fn[Config] Gizmos::flush(self : Gizmos[Config]) -> Unit {
 
 ///|
 let gizmo_state : Ref[GizmoState] = Ref::new(GizmoState::new())
+
+///|
+let global_gizmo_state : Ref[GizmoState] = Ref::new(GizmoState::new())
+
+///|
+pub fn gizmo() -> Gizmos[DefaultGizmoConfigGroup] {
+  Gizmos::{
+    config: GizmoConfig::default(),
+    config_group: DefaultGizmoConfigGroup::default(),
+    state: global_gizmo_state,
+    world: None,
+  }
+}
+
+///|
+pub fn flush_global_gizmos(gizmos : Gizmos[DefaultGizmoConfigGroup]) -> Unit {
+  if !gizmos.config.enabled {
+    global_gizmo_state.val.clear()
+    return
+  }
+  gizmos.state.val.append_from_with_config(
+    global_gizmo_state.val,
+    gizmos.config,
+  )
+  global_gizmo_state.val.clear()
+}
 
 ///|
 fn gizmos_add_line_with_config(
@@ -1131,6 +1202,7 @@ pub fn gizmos_clear_3d() -> Unit {
 fn gizmos_reset() -> Unit {
   gizmos_clear()
   gizmos_clear_3d()
+  global_gizmo_state.val.clear()
 }
 
 ///|

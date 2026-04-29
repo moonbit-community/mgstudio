@@ -94,9 +94,13 @@ pub let ecs_resources : Array[String]
 
 pub fn ensure_render2d_required_components(@ecs.World) -> Unit
 
+pub fn flush_global_gizmos(Gizmos[DefaultGizmoConfigGroup]) -> Unit
+
 pub fn get_render_state_resource(@ecs.World) -> @ecs.ResourceAccess[RenderState]
 
 pub fn get_wireframe2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wireframe2dConfig]
+
+pub fn gizmo() -> Gizmos[DefaultGizmoConfigGroup]
 
 pub fn gizmos_clear_3d() -> Unit
 
