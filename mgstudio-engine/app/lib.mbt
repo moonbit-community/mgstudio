@@ -2441,6 +2441,13 @@ pub fn[P : Plugin] App::add_plugins(
   self : App[@ecs.World],
   plugin : P,
 ) -> App[@ecs.World] {
+  match self.plugins_state() {
+    Cleaned | Finished =>
+      abort(
+        "Plugins cannot be added after App::cleanup() or App::finish() has been called.",
+      )
+    Adding | Ready => ()
+  }
   self.add_plugin_entry(plugin_group_entry_from_plugin(plugin))
 }
 

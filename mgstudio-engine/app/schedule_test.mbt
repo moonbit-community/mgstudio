@@ -43,6 +43,9 @@ struct NestedChildPlugin {}
 struct PluginBuildDepthProbePlugin {}
 
 ///|
+struct FinishAddsPluginPlugin {}
+
+///|
 let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
@@ -250,6 +253,21 @@ pub impl Plugin for PluginBuildDepthProbePlugin with name(_self) {
 pub impl Plugin for PluginBuildDepthProbePlugin with build(_self, app) {
   plugin_build_depth_probe_ref.val = app.is_building_plugins()
   app
+}
+
+///|
+pub impl Plugin for FinishAddsPluginPlugin with name(_self) {
+  "mgstudio.app.finish_adds_plugin"
+}
+
+///|
+pub impl Plugin for FinishAddsPluginPlugin with build(_self, app) {
+  app
+}
+
+///|
+pub impl Plugin for FinishAddsPluginPlugin with finish(_self, app) {
+  app.add_plugins(PluginGroupTestPlugin2::{  })
 }
 
 ///|
@@ -562,6 +580,22 @@ test "app: plugin build depth is visible only during plugin build" {
   })
   debug_inspect(plugin_build_depth_probe_ref.val, content="true")
   debug_inspect(app.is_building_plugins(), content="false")
+}
+
+///|
+test "app: plugin can add another plugin during finish" {
+  let app = App::new(@ecs.World::new())
+    .add_plugins(PluginGroupTestPlugin1::{  })
+    .add_plugins(FinishAddsPluginPlugin::{  })
+    .finish()
+  debug_inspect(app.plugin_names().length(), content="3")
+  debug_inspect(app.plugin_names()[0], content="\"mgstudio.app.test_plugin_1\"")
+  debug_inspect(
+    app.plugin_names()[1],
+    content="\"mgstudio.app.finish_adds_plugin\"",
+  )
+  debug_inspect(app.plugin_names()[2], content="\"mgstudio.app.test_plugin_2\"")
+  debug_inspect(app.plugins_state() == Finished, content="true")
 }
 
 ///|
