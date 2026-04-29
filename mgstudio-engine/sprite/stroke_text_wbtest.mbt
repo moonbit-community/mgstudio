@@ -23,6 +23,7 @@ test "sprite gizmo text measures multiline stroke layout" {
 test "sprite gizmo text emits line segments for supported glyphs" {
   gizmos_reset()
   stroke_text_emit_2d(
+    gizmo_state,
     GizmoConfig::default(),
     Isometry2d::identity(),
     "AB",
@@ -38,6 +39,7 @@ test "sprite gizmo text emits line segments for supported glyphs" {
 test "sprite gizmo text emits 3d line segments for supported glyphs" {
   gizmos_reset()
   stroke_text_emit_3d(
+    gizmo_state,
     GizmoConfig::default(),
     @math.Isometry3d::identity(),
     "AB",
@@ -53,6 +55,7 @@ test "sprite gizmo text emits 3d line segments for supported glyphs" {
 test "sprite gizmo text skips unsupported glyph geometry" {
   gizmos_reset()
   stroke_text_emit_2d(
+    gizmo_state,
     GizmoConfig::default(),
     Isometry2d::identity(),
     "🙂",
@@ -68,6 +71,7 @@ test "sprite gizmo text skips unsupported glyph geometry" {
 test "sprite gizmo reset clears 2d and 3d text state" {
   gizmos_reset()
   stroke_text_emit_2d(
+    gizmo_state,
     GizmoConfig::default(),
     Isometry2d::identity(),
     "A",
@@ -76,6 +80,7 @@ test "sprite gizmo reset clears 2d and 3d text state" {
     Color::white(),
   )
   stroke_text_emit_3d(
+    gizmo_state,
     GizmoConfig::default(),
     @math.Isometry3d::identity(),
     "A",

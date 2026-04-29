@@ -223,6 +223,8 @@ pub using @sprite {type GizmoLineJoint}
 
 pub using @sprite {type GizmoLineStyle}
 
+pub using @sprite {type GizmoStorage}
+
 pub using @sprite {type Gizmos}
 
 pub using @sprite {type Grid2dBuilder}

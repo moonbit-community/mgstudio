@@ -66,10 +66,9 @@ pub fn gizmo_render_plugin_with(
   if app.contains_resource(ecs_res_key_gizmo_render_plugin_marker) {
     return app
   }
-  @sprite_render.sprite_render_plugin(app).insert_world_resource(
-    ecs_res_key_gizmo_render_plugin_marker,
-    GizmoRenderPluginMarker::{  },
-  )
+  app.insert_world_resource(ecs_res_key_gizmo_render_plugin_marker, GizmoRenderPluginMarker::{
+
+  })
 }
 
 ///|

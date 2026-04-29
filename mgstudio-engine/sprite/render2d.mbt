@@ -7303,7 +7303,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       return
     }
     rs.val.draw_enabled = false
-    gizmos_prepare()
+    gizmos_prepare(world)
     let cameras = rs.val.cameras
     if cameras.length() == 0 {
       gizmos_clear()

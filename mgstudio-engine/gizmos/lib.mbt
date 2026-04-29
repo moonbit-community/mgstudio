@@ -67,6 +67,9 @@ pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(
 pub type Gizmos[G] = @sprite.Gizmos[G]
 
 ///|
+pub type GizmoStorage[G] = @sprite.GizmoStorage[G]
+
+///|
 pub type RoundedRectBuilder = @sprite.RoundedRectBuilder
 
 ///|
@@ -109,8 +112,6 @@ pub fn gizmo_plugin_with(
   next = next.insert_world_resource(ecs_res_key_gizmo_plugin_marker, GizmoPluginMarker::{
 
   })
-  next = @sprite_render.sprite_render_plugin(next)
-  next = @gizmos_render.gizmo_render_plugin(next)
   next = global_gizmos_plugin(next)
   next = aabb_gizmo_plugin(next)
   next = frustum_gizmo_plugin(next)

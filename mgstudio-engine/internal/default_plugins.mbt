@@ -64,6 +64,8 @@ fn default_plugins_builder(
   .add(@anti_alias.AntiAliasPlugin::default())
   .add(@sprite.SpritePlugin::default())
   .add(@sprite_render.SpriteRenderPlugin::default())
+  .add(@gizmos.GizmoPlugin::default())
+  .add(@gizmos_render.GizmoRenderPlugin::default())
   .add(@physics2d.Physics2dPlugin::default())
   .add(@physics3d.Physics3dPlugin::default())
 }

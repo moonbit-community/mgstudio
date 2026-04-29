@@ -162,7 +162,13 @@ pub fn[T : GizmoConfigGroup + Default] init_gizmo_group(
   app : @app.App[@ecs.World],
   group : T,
 ) -> @app.App[@ecs.World] {
-  let app = app.init_resource(fn() { GizmoConfigStore::default() })
+  let app = app
+    .init_resource(fn() { GizmoConfigStore::default() })
+    .init_resource(fn() {
+      let storage : GizmoStorage[T] = GizmoStorage::new()
+      storage
+    })
+  register_gizmo_storage_drain(group)
   let store : GizmoConfigStore? = app
     .world()
     .get_resource(GizmoConfigStore::resource()) catch {

@@ -23,7 +23,9 @@ pub fn sprite_stroke_text_emit_2d(
   anchor : @math.Vec2,
   color : Color,
 ) -> Unit {
-  stroke_text_emit_2d(config, isometry, text, font_size, anchor, color)
+  stroke_text_emit_2d(
+    gizmo_state, config, isometry, text, font_size, anchor, color,
+  )
 }
 
 ///|
@@ -35,5 +37,7 @@ pub fn sprite_stroke_text_emit_3d(
   anchor : @math.Vec2,
   color : Color,
 ) -> Unit {
-  stroke_text_emit_3d(config, isometry, text, font_size, anchor, color)
+  stroke_text_emit_3d(
+    gizmo_state, config, isometry, text, font_size, anchor, color,
+  )
 }

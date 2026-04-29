@@ -9,6 +9,8 @@ import {
   "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/gltf/loader" @gltf_loader,
+  "Milky2018/mgstudio/gizmos",
+  "Milky2018/mgstudio/gizmos_render",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/light/cluster" @light_cluster,

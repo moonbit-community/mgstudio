@@ -307,11 +307,13 @@ pub impl @json.FromJson for Anchor
 
 pub struct Arc2dBuilder {
   id : Int
+  state : @ref.Ref[GizmoState]
 }
 pub fn Arc2dBuilder::resolution(Self, Int) -> Self
 
 pub struct ArrowBuilder {
   id : Int
+  state : @ref.Ref[GizmoState]
 }
 pub fn ArrowBuilder::with_double_end(Self) -> Self
 pub fn ArrowBuilder::with_tip_length(Self, Float) -> Self
@@ -462,6 +464,7 @@ pub impl Default for DefaultGizmoConfigGroup
 
 pub struct Ellipse2dBuilder {
   id : Int
+  state : @ref.Ref[GizmoState]
 }
 pub fn Ellipse2dBuilder::resolution(Self, Int) -> Self
 
@@ -482,6 +485,24 @@ pub fn[T : GizmoConfigGroup] GizmoConfigStore::get_config_mut(Self, T) -> (@ref.
 pub fn[T : GizmoConfigGroup + Default] GizmoConfigStore::register(Self, T) -> Unit
 pub impl @app.Resource for GizmoConfigStore
 pub impl Default for GizmoConfigStore
+
+pub(all) struct GizmoLine {
+  start : @math.Vec2
+  end : @math.Vec2
+  start_color : @color.Color
+  end_color : @color.Color
+  layers : RenderLayers
+  width : Float
+  style : GizmoLineStyle
+}
+
+pub(all) struct GizmoLine3d {
+  start : @math.Vec3
+  end : @math.Vec3
+  start_color : @color.Color
+  end_color : @color.Color
+  layers : RenderLayers
+}
 
 pub(all) struct GizmoLineConfig {
   width : Float
@@ -504,9 +525,30 @@ pub(all) enum GizmoLineStyle {
   Dashed(gap_scale~ : Float, line_scale~ : Float)
 }
 
+pub(all) struct GizmoState {
+  lines : Array[GizmoLine]
+  lines_3d : Array[GizmoLine3d]
+  pending_ellipses : Array[PendingEllipse]
+  pending_arcs : Array[PendingArc]
+  pending_rounded_rects : Array[PendingRoundedRect]
+  pending_arrows : Array[PendingArrow]
+  pending_grids : Array[PendingGrid]
+  mut mesh_handle_3d : @asset.Handle[@mesh.Mesh]?
+}
+
+pub struct GizmoStorage[Config] {
+  state : GizmoState
+  phantom : Config?
+}
+pub fn[Config] GizmoStorage::new() -> Self[Config]
+pub impl[Config] @app.Resource for GizmoStorage[Config]
+pub impl[Config] Default for GizmoStorage[Config]
+
 pub struct Gizmos[Config] {
   config : GizmoConfig
   config_group : Config
+  state : @ref.Ref[GizmoState]
+  world : @ecs.World?
 }
 pub fn[Config] Gizmos::arc_2d(Self[Config], Isometry2d, Float, Float, @color.Color) -> Arc2dBuilder
 pub fn[Config] Gizmos::arc_3d(Self[Config], @math.Isometry3d, Float, Float, @color.Color) -> Unit
@@ -553,6 +595,7 @@ pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[Config
 
 pub struct Grid2dBuilder {
   id : Int
+  state : @ref.Ref[GizmoState]
 }
 pub fn Grid2dBuilder::outer_edges(Self) -> Self
 pub fn Grid2dBuilder::outer_edges_x(Self) -> Self
@@ -724,6 +767,53 @@ pub fn PanCamera::default() -> Self
 pub impl @ecs.Component for PanCamera
 pub impl Show for PanCamera
 
+pub(all) struct PendingArc {
+  isometry : Isometry2d
+  arc_angle : Float
+  radius : Float
+  color : @color.Color
+  mut resolution : Int
+  mut has_resolution : Bool
+  config : GizmoConfig
+}
+
+pub(all) struct PendingArrow {
+  start : @math.Vec2
+  end : @math.Vec2
+  color : @color.Color
+  mut tip_length : Float
+  mut double_ended : Bool
+  config : GizmoConfig
+}
+
+pub(all) struct PendingEllipse {
+  isometry : Isometry2d
+  half_size : @math.Vec2
+  color : @color.Color
+  mut resolution : Int
+  config : GizmoConfig
+}
+
+pub(all) struct PendingGrid {
+  isometry : Isometry2d
+  spacing : @math.Vec2
+  cell_count : @math.IVec2
+  mut skew : @math.Vec2
+  mut outer_edges_x : Bool
+  mut outer_edges_y : Bool
+  color : @color.Color
+  config : GizmoConfig
+}
+
+pub(all) struct PendingRoundedRect {
+  isometry : Isometry2d
+  size : @math.Vec2
+  color : @color.Color
+  mut corner_radius : Float
+  mut arc_resolution : Int
+  config : GizmoConfig
+}
+
 pub struct PreparedMaterial2d[M] {
   source : @asset.Handle[M]
   bind_group : Material2dBindGroup
@@ -799,6 +889,7 @@ pub impl @json.FromJson for RenderTarget
 
 pub struct RoundedRectBuilder {
   id : Int
+  state : @ref.Ref[GizmoState]
 }
 pub fn RoundedRectBuilder::arc_resolution(Self, Int) -> Self
 pub fn RoundedRectBuilder::corner_radius(Self, Float) -> Self

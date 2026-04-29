@@ -104,6 +104,8 @@ pub fn GizmoConfig::default() -> GizmoConfig {
 pub struct Gizmos[Config] {
   config : GizmoConfig
   config_group : Config
+  state : Ref[GizmoState]
+  world : @ecs.World?
 }
 
 ///|
@@ -132,7 +134,13 @@ fn[Config : GizmoConfigGroup + Default] gizmos_from_world(
   }
   let configs : (GizmoConfig, Config)? = store.get_config(group)
   match configs {
-    Some((config, config_group)) => Gizmos::{ config, config_group }
+    Some((config, config_group)) =>
+      Gizmos::{
+        config,
+        config_group,
+        state: Ref::new(GizmoState::new()),
+        world: Some(world),
+      }
     None => raise @ecs.Invalid(gizmo_group_missing_message(group))
   }
 }
@@ -157,7 +165,17 @@ pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[
 pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[
   Config,
 ] with store(self, state) {
+  self.flush()
   @app.system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[
+  Config,
+] with access(_world) {
+  let access = @app.SystemAccess::new()
+  access.add_read_resource(GizmoConfigStore::resource().id())
+  access
 }
 
 ///|
@@ -407,7 +425,7 @@ fn transform_point_3d(
 }
 
 ///|
-priv struct GizmoLine {
+pub(all) struct GizmoLine {
   start : @math.Vec2
   end : @math.Vec2
   start_color : Color
@@ -418,7 +436,7 @@ priv struct GizmoLine {
 }
 
 ///|
-priv struct GizmoLine3d {
+pub(all) struct GizmoLine3d {
   start : @math.Vec3
   end : @math.Vec3
   start_color : Color
@@ -427,7 +445,7 @@ priv struct GizmoLine3d {
 }
 
 ///|
-priv struct PendingEllipse {
+pub(all) struct PendingEllipse {
   isometry : Isometry2d
   half_size : @math.Vec2
   color : Color
@@ -436,7 +454,7 @@ priv struct PendingEllipse {
 }
 
 ///|
-priv struct PendingArc {
+pub(all) struct PendingArc {
   isometry : Isometry2d
   arc_angle : Float
   radius : Float
@@ -447,7 +465,7 @@ priv struct PendingArc {
 }
 
 ///|
-priv struct PendingRoundedRect {
+pub(all) struct PendingRoundedRect {
   isometry : Isometry2d
   size : @math.Vec2
   color : Color
@@ -457,7 +475,7 @@ priv struct PendingRoundedRect {
 }
 
 ///|
-priv struct PendingArrow {
+pub(all) struct PendingArrow {
   start : @math.Vec2
   end : @math.Vec2
   color : Color
@@ -467,7 +485,7 @@ priv struct PendingArrow {
 }
 
 ///|
-priv struct PendingGrid {
+pub(all) struct PendingGrid {
   isometry : Isometry2d
   spacing : @math.Vec2
   cell_count : @math.IVec2
@@ -479,7 +497,7 @@ priv struct PendingGrid {
 }
 
 ///|
-priv struct GizmoState {
+pub(all) struct GizmoState {
   lines : Array[GizmoLine]
   lines_3d : Array[GizmoLine3d]
   pending_ellipses : Array[PendingEllipse]
@@ -491,19 +509,161 @@ priv struct GizmoState {
 }
 
 ///|
-let gizmo_state : Ref[GizmoState] = Ref::new(GizmoState::{
-  lines: [],
-  lines_3d: [],
-  pending_ellipses: [],
-  pending_arcs: [],
-  pending_rounded_rects: [],
-  pending_arrows: [],
-  pending_grids: [],
-  mesh_handle_3d: None,
-})
+fn GizmoState::new() -> GizmoState {
+  GizmoState::{
+    lines: [],
+    lines_3d: [],
+    pending_ellipses: [],
+    pending_arcs: [],
+    pending_rounded_rects: [],
+    pending_arrows: [],
+    pending_grids: [],
+    mesh_handle_3d: None,
+  }
+}
+
+///|
+fn GizmoState::clear(self : GizmoState) -> Unit {
+  self.lines.clear()
+  self.lines_3d.clear()
+  self.pending_ellipses.clear()
+  self.pending_arcs.clear()
+  self.pending_rounded_rects.clear()
+  self.pending_arrows.clear()
+  self.pending_grids.clear()
+}
+
+///|
+fn GizmoState::append_from(self : GizmoState, other : GizmoState) -> Unit {
+  for item in other.lines {
+    self.lines.push(item)
+  }
+  for item in other.lines_3d {
+    self.lines_3d.push(item)
+  }
+  for item in other.pending_ellipses {
+    self.pending_ellipses.push(item)
+  }
+  for item in other.pending_arcs {
+    self.pending_arcs.push(item)
+  }
+  for item in other.pending_rounded_rects {
+    self.pending_rounded_rects.push(item)
+  }
+  for item in other.pending_arrows {
+    self.pending_arrows.push(item)
+  }
+  for item in other.pending_grids {
+    self.pending_grids.push(item)
+  }
+}
+
+///|
+pub struct GizmoStorage[Config] {
+  state : GizmoState
+  phantom : Config?
+}
+
+///|
+pub fn[Config] GizmoStorage::new() -> GizmoStorage[Config] {
+  GizmoStorage::{ state: GizmoState::new(), phantom: None }
+}
+
+///|
+pub impl[Config] Default for GizmoStorage[Config] with default() {
+  GizmoStorage::new()
+}
+
+///|
+let gizmo_storage_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+let gizmo_storage_drain_registry : Ref[
+  @hashmap.HashMap[String, (@ecs.World) -> Unit],
+] = Ref::new(@hashmap.HashMap::new())
+
+///|
+fn[Config] gizmo_storage_type_name_of(_probe : GizmoStorage[Config]) -> String {
+  @any.of(_probe).type_name()
+}
+
+///|
+fn[Config] registered_gizmo_storage_resource_key() -> @ecs.ResourceKey[
+  GizmoStorage[Config],
+] {
+  let probe : GizmoStorage[Config] = GizmoStorage::new()
+  let type_name = gizmo_storage_type_name_of(probe)
+  match gizmo_storage_resource_registry.val.get(type_name) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "gizmo storage resource registry contained a mismatched key for \{type_name}",
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[GizmoStorage[Config]] = @ecs.register_resource(
+        debug_name="mgstudio_gizmos::GizmoStorage<\{type_name}>",
+      )
+      gizmo_storage_resource_registry.val.set(type_name, @any.of(key))
+      key
+    }
+  }
+}
+
+///|
+pub impl[Config] @app.Resource for GizmoStorage[Config] with resource() {
+  registered_gizmo_storage_resource_key()
+}
+
+///|
+fn[Config] register_gizmo_storage_drain(_group : Config) -> Unit {
+  let probe : GizmoStorage[Config] = GizmoStorage::new()
+  let type_name = gizmo_storage_type_name_of(probe)
+  if gizmo_storage_drain_registry.val.contains(type_name) {
+    return
+  }
+  let drain : (@ecs.World) -> Unit = fn(world) {
+    let key : @ecs.ResourceKey[GizmoStorage[Config]] = registered_gizmo_storage_resource_key()
+    match (try! world.get_resource_mut(key)) {
+      Some(storage_ref) =>
+        storage_ref.modify(fn(storage) {
+          gizmo_state.val.append_from(storage.state)
+          storage.state.clear()
+        })
+      None => ()
+    }
+  }
+  gizmo_storage_drain_registry.val.set(type_name, drain)
+}
+
+///|
+fn[Config] Gizmos::flush(self : Gizmos[Config]) -> Unit {
+  match self.world {
+    Some(world) => {
+      let key : @ecs.ResourceKey[GizmoStorage[Config]] = registered_gizmo_storage_resource_key()
+      match (try! world.get_resource_mut(key)) {
+        Some(storage_ref) =>
+          storage_ref.modify(fn(storage) {
+            storage.state.append_from(self.state.val)
+            self.state.val.clear()
+          })
+        None => self.state.val.clear()
+      }
+    }
+    None => self.state.val.clear()
+  }
+}
+
+///|
+let gizmo_state : Ref[GizmoState] = Ref::new(GizmoState::new())
 
 ///|
 fn gizmos_add_line_with_config(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   start : @math.Vec2,
   end : @math.Vec2,
@@ -519,7 +679,7 @@ fn gizmos_add_line_with_config(
   }
   let line_config = config.line
   let width = positive_or(line_config.width, DEFAULT_GIZMO_LINE_WIDTH)
-  gizmo_state.val.lines.push(GizmoLine::{
+  state.val.lines.push(GizmoLine::{
     start,
     end,
     start_color,
@@ -532,6 +692,7 @@ fn gizmos_add_line_with_config(
 
 ///|
 fn gizmos_linestrip_with_config(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   positions : Array[@math.Vec2],
   color : Color,
@@ -545,6 +706,7 @@ fn gizmos_linestrip_with_config(
   }
   for i in 0..<(count - 1) {
     gizmos_add_line_with_config(
+      state,
       config,
       positions[i],
       positions[i + 1],
@@ -556,6 +718,7 @@ fn gizmos_linestrip_with_config(
 
 ///|
 fn gizmos_linestrip_gradient_with_config(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   positions : Array[(@math.Vec2, Color)],
 ) -> Unit {
@@ -570,13 +733,14 @@ fn gizmos_linestrip_gradient_with_config(
     let (start_pos, start_color) = positions[i]
     let (end_pos, end_color) = positions[i + 1]
     gizmos_add_line_with_config(
-      config, start_pos, end_pos, start_color, end_color,
+      state, config, start_pos, end_pos, start_color, end_color,
     )
   }
 }
 
 ///|
 fn gizmos_add_line_3d_with_config(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   start : @math.Vec3,
   end : @math.Vec3,
@@ -590,7 +754,7 @@ fn gizmos_add_line_3d_with_config(
   if effective_layers.mask == 0 {
     return
   }
-  gizmo_state.val.lines_3d.push(GizmoLine3d::{
+  state.val.lines_3d.push(GizmoLine3d::{
     start,
     end,
     start_color,
@@ -601,6 +765,7 @@ fn gizmos_add_line_3d_with_config(
 
 ///|
 fn gizmos_linestrip_3d_with_config(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   positions : Array[@math.Vec3],
   color : Color,
@@ -614,6 +779,7 @@ fn gizmos_linestrip_3d_with_config(
   }
   for i in 0..<(count - 1) {
     gizmos_add_line_3d_with_config(
+      state,
       config,
       positions[i],
       positions[i + 1],
@@ -625,6 +791,7 @@ fn gizmos_linestrip_3d_with_config(
 
 ///|
 fn gizmos_linestrip_gradient_3d_with_config(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   positions : Array[(@math.Vec3, Color)],
 ) -> Unit {
@@ -639,13 +806,14 @@ fn gizmos_linestrip_gradient_3d_with_config(
     let (start_pos, start_color) = positions[i]
     let (end_pos, end_color) = positions[i + 1]
     gizmos_add_line_3d_with_config(
-      config, start_pos, end_pos, start_color, end_color,
+      state, config, start_pos, end_pos, start_color, end_color,
     )
   }
 }
 
 ///|
 fn gizmos_lineloop_with_config(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   positions : Array[@math.Vec2],
   color : Color,
@@ -654,8 +822,9 @@ fn gizmos_lineloop_with_config(
   if count < 2 {
     return
   }
-  gizmos_linestrip_with_config(config, positions, color)
+  gizmos_linestrip_with_config(state, config, positions, color)
   gizmos_add_line_with_config(
+    state,
     config,
     positions[count - 1],
     positions[0],
@@ -666,6 +835,7 @@ fn gizmos_lineloop_with_config(
 
 ///|
 fn gizmos_arrow_with_config(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   start : @math.Vec2,
   end : @math.Vec2,
@@ -673,7 +843,7 @@ fn gizmos_arrow_with_config(
   tip_length : Float,
   double_ended : Bool,
 ) -> Unit {
-  gizmos_add_line_with_config(config, start, end, color, color)
+  gizmos_add_line_with_config(state, config, start, end, color, color)
   let delta = vec2_sub(end, start)
   let length = vec2_length(delta)
   if length <= 0.0F {
@@ -686,8 +856,8 @@ fn gizmos_arrow_with_config(
   let perp = @math.Vec2::new(-direction.y, direction.x)
   let tip_left = vec2_add(base, vec2_scale(perp, tip_width))
   let tip_right = vec2_sub(base, vec2_scale(perp, tip_width))
-  gizmos_add_line_with_config(config, end, tip_left, color, color)
-  gizmos_add_line_with_config(config, end, tip_right, color, color)
+  gizmos_add_line_with_config(state, config, end, tip_left, color, color)
+  gizmos_add_line_with_config(state, config, end, tip_right, color, color)
   if double_ended {
     let back_dir = vec2_scale(direction, -1.0F)
     let base_start = vec2_sub(start, vec2_scale(back_dir, tip_length))
@@ -697,13 +867,18 @@ fn gizmos_arrow_with_config(
       base_start,
       vec2_scale(perp_start, tip_width),
     )
-    gizmos_add_line_with_config(config, start, tip_left_start, color, color)
-    gizmos_add_line_with_config(config, start, tip_right_start, color, color)
+    gizmos_add_line_with_config(
+      state, config, start, tip_left_start, color, color,
+    )
+    gizmos_add_line_with_config(
+      state, config, start, tip_right_start, color, color,
+    )
   }
 }
 
 ///|
 fn gizmos_draw_grid_with_config(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   isometry : Isometry2d,
   cell_count : @math.IVec2,
@@ -750,19 +925,27 @@ fn gizmos_draw_grid_with_config(
     let end = vec2_add(start, vec2_scale(dx, float_from_int(count_x)))
     let world_start = isometry.transform_point(start)
     let world_end = isometry.transform_point(end)
-    gizmos_add_line_with_config(config, world_start, world_end, color, color)
+    gizmos_add_line_with_config(
+      state, config, world_start, world_end, color, color,
+    )
   }
   for i in 0..<y_line_count {
     let start = vec2_add(y_start, vec2_scale(dx, float_from_int(i)))
     let end = vec2_add(start, vec2_scale(dy, float_from_int(count_y)))
     let world_start = isometry.transform_point(start)
     let world_end = isometry.transform_point(end)
-    gizmos_add_line_with_config(config, world_start, world_end, color, color)
+    gizmos_add_line_with_config(
+      state, config, world_start, world_end, color, color,
+    )
   }
 }
 
 ///|
-fn gizmos_prepare() -> Unit {
+fn gizmos_prepare(world : @ecs.World) -> Unit {
+  for entry in gizmo_storage_drain_registry.val.iter() {
+    let (_, drain) = entry
+    drain(world)
+  }
   if gizmo_state.val.pending_ellipses.length() > 0 {
     let entries : Array[PendingEllipse] = []
     for item in gizmo_state.val.pending_ellipses {
@@ -775,7 +958,12 @@ fn gizmos_prepare() -> Unit {
       for point in points {
         transformed.push(entry.isometry.transform_point(point))
       }
-      gizmos_linestrip_with_config(entry.config, transformed, entry.color)
+      gizmos_linestrip_with_config(
+        gizmo_state,
+        entry.config,
+        transformed,
+        entry.color,
+      )
     }
   }
   if gizmo_state.val.pending_arcs.length() > 0 {
@@ -795,7 +983,12 @@ fn gizmos_prepare() -> Unit {
       for point in points {
         transformed.push(entry.isometry.transform_point(point))
       }
-      gizmos_linestrip_with_config(entry.config, transformed, entry.color)
+      gizmos_linestrip_with_config(
+        gizmo_state,
+        entry.config,
+        transformed,
+        entry.color,
+      )
     }
   }
   if gizmo_state.val.pending_rounded_rects.length() > 0 {
@@ -819,7 +1012,12 @@ fn gizmos_prepare() -> Unit {
         for point in rect_points {
           transformed.push(entry.isometry.transform_point(point))
         }
-        gizmos_lineloop_with_config(entry.config, transformed, entry.color)
+        gizmos_lineloop_with_config(
+          gizmo_state,
+          entry.config,
+          transformed,
+          entry.color,
+        )
       } else {
         let steps = max_int(entry.arc_resolution, 1)
         let points : Array[@math.Vec2] = []
@@ -864,7 +1062,12 @@ fn gizmos_prepare() -> Unit {
         for point in points {
           transformed.push(entry.isometry.transform_point(point))
         }
-        gizmos_lineloop_with_config(entry.config, transformed, entry.color)
+        gizmos_lineloop_with_config(
+          gizmo_state,
+          entry.config,
+          transformed,
+          entry.color,
+        )
       }
     }
   }
@@ -876,6 +1079,7 @@ fn gizmos_prepare() -> Unit {
     gizmo_state.val.pending_arrows.clear()
     for entry in entries {
       gizmos_arrow_with_config(
+        gizmo_state,
         entry.config,
         entry.start,
         entry.end,
@@ -893,6 +1097,7 @@ fn gizmos_prepare() -> Unit {
     gizmo_state.val.pending_grids.clear()
     for entry in entries {
       gizmos_draw_grid_with_config(
+        gizmo_state,
         entry.config,
         entry.isometry,
         entry.cell_count,
@@ -1005,7 +1210,7 @@ pub fn[Config] Gizmos::line_2d(
   end : @math.Vec2,
   color : Color,
 ) -> Unit {
-  gizmos_add_line_with_config(self.config, start, end, color, color)
+  gizmos_add_line_with_config(self.state, self.config, start, end, color, color)
 }
 
 ///|
@@ -1015,7 +1220,14 @@ pub fn[Config] Gizmos::line_3d(
   end : @math.Vec3,
   color : Color,
 ) -> Unit {
-  gizmos_add_line_3d_with_config(self.config, start, end, color, color)
+  gizmos_add_line_3d_with_config(
+    self.state,
+    self.config,
+    start,
+    end,
+    color,
+    color,
+  )
 }
 
 ///|
@@ -1050,6 +1262,7 @@ pub fn[Config] Gizmos::mesh_wireframe_2d(
     let world_start = gizmo_transform_point_2d(transform, segment.0)
     let world_end = gizmo_transform_point_2d(transform, segment.1)
     gizmos_add_line_with_config(
+      self.state,
       self.config,
       world_start,
       world_end,
@@ -1067,7 +1280,14 @@ pub fn[Config] Gizmos::line_gradient_2d(
   start_color : Color,
   end_color : Color,
 ) -> Unit {
-  gizmos_add_line_with_config(self.config, start, end, start_color, end_color)
+  gizmos_add_line_with_config(
+    self.state,
+    self.config,
+    start,
+    end,
+    start_color,
+    end_color,
+  )
 }
 
 ///|
@@ -1079,6 +1299,7 @@ pub fn[Config] Gizmos::line_gradient_3d(
   end_color : Color,
 ) -> Unit {
   gizmos_add_line_3d_with_config(
+    self.state,
     self.config,
     start,
     end,
@@ -1093,7 +1314,7 @@ pub fn[Config] Gizmos::linestrip_2d(
   positions : Array[@math.Vec2],
   color : Color,
 ) -> Unit {
-  gizmos_linestrip_with_config(self.config, positions, color)
+  gizmos_linestrip_with_config(self.state, self.config, positions, color)
 }
 
 ///|
@@ -1102,7 +1323,7 @@ pub fn[Config] Gizmos::linestrip_3d(
   positions : Array[@math.Vec3],
   color : Color,
 ) -> Unit {
-  gizmos_linestrip_3d_with_config(self.config, positions, color)
+  gizmos_linestrip_3d_with_config(self.state, self.config, positions, color)
 }
 
 ///|
@@ -1111,7 +1332,7 @@ pub fn[Config] Gizmos::lineloop_2d(
   positions : Array[@math.Vec2],
   color : Color,
 ) -> Unit {
-  gizmos_lineloop_with_config(self.config, positions, color)
+  gizmos_lineloop_with_config(self.state, self.config, positions, color)
 }
 
 ///|
@@ -1119,7 +1340,7 @@ pub fn[Config] Gizmos::linestrip_gradient_2d(
   self : Gizmos[Config],
   positions : Array[(@math.Vec2, Color)],
 ) -> Unit {
-  gizmos_linestrip_gradient_with_config(self.config, positions)
+  gizmos_linestrip_gradient_with_config(self.state, self.config, positions)
 }
 
 ///|
@@ -1127,7 +1348,7 @@ pub fn[Config] Gizmos::linestrip_gradient_3d(
   self : Gizmos[Config],
   positions : Array[(@math.Vec3, Color)],
 ) -> Unit {
-  gizmos_linestrip_gradient_3d_with_config(self.config, positions)
+  gizmos_linestrip_gradient_3d_with_config(self.state, self.config, positions)
 }
 
 ///|
@@ -1138,7 +1359,7 @@ pub fn[Config] Gizmos::ray_2d(
   color : Color,
 ) -> Unit {
   let end = vec2_add(start, vector)
-  gizmos_add_line_with_config(self.config, start, end, color, color)
+  gizmos_add_line_with_config(self.state, self.config, start, end, color, color)
 }
 
 ///|
@@ -1149,7 +1370,14 @@ pub fn[Config] Gizmos::ray_3d(
   color : Color,
 ) -> Unit {
   let end = vec3_add(start, vector)
-  gizmos_add_line_3d_with_config(self.config, start, end, color, color)
+  gizmos_add_line_3d_with_config(
+    self.state,
+    self.config,
+    start,
+    end,
+    color,
+    color,
+  )
 }
 
 ///|
@@ -1161,7 +1389,14 @@ pub fn[Config] Gizmos::ray_gradient_2d(
   end_color : Color,
 ) -> Unit {
   let end = vec2_add(start, vector)
-  gizmos_add_line_with_config(self.config, start, end, start_color, end_color)
+  gizmos_add_line_with_config(
+    self.state,
+    self.config,
+    start,
+    end,
+    start_color,
+    end_color,
+  )
 }
 
 ///|
@@ -1176,12 +1411,13 @@ pub fn[Config] Gizmos::rect_2d(
   let tr = isometry.transform_point(@math.Vec2::new(half.x, half.y))
   let br = isometry.transform_point(@math.Vec2::new(half.x, -half.y))
   let bl = isometry.transform_point(@math.Vec2::new(-half.x, -half.y))
-  gizmos_lineloop_with_config(self.config, [tl, tr, br, bl], color)
+  gizmos_lineloop_with_config(self.state, self.config, [tl, tr, br, bl], color)
 }
 
 ///|
 pub struct RoundedRectBuilder {
   id : Int
+  state : Ref[GizmoState]
 }
 
 ///|
@@ -1189,8 +1425,8 @@ pub fn RoundedRectBuilder::corner_radius(
   self : RoundedRectBuilder,
   radius : Float,
 ) -> RoundedRectBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_rounded_rects.length() {
-    gizmo_state.val.pending_rounded_rects[self.id].corner_radius = radius
+  if self.id >= 0 && self.id < self.state.val.pending_rounded_rects.length() {
+    self.state.val.pending_rounded_rects[self.id].corner_radius = radius
   }
   self
 }
@@ -1200,8 +1436,8 @@ pub fn RoundedRectBuilder::arc_resolution(
   self : RoundedRectBuilder,
   resolution : Int,
 ) -> RoundedRectBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_rounded_rects.length() {
-    gizmo_state.val.pending_rounded_rects[self.id].arc_resolution = max_int(
+  if self.id >= 0 && self.id < self.state.val.pending_rounded_rects.length() {
+    self.state.val.pending_rounded_rects[self.id].arc_resolution = max_int(
       resolution, 1,
     )
   }
@@ -1225,14 +1461,15 @@ pub fn[Config] Gizmos::rounded_rect_2d(
     arc_resolution: DEFAULT_ARC_RESOLUTION,
     config: self.config,
   }
-  let id = gizmo_state.val.pending_rounded_rects.length()
-  gizmo_state.val.pending_rounded_rects.push(entry)
-  RoundedRectBuilder::{ id, }
+  let id = self.state.val.pending_rounded_rects.length()
+  self.state.val.pending_rounded_rects.push(entry)
+  RoundedRectBuilder::{ id, state: self.state }
 }
 
 ///|
 pub struct Ellipse2dBuilder {
   id : Int
+  state : Ref[GizmoState]
 }
 
 ///|
@@ -1240,8 +1477,8 @@ pub fn Ellipse2dBuilder::resolution(
   self : Ellipse2dBuilder,
   segments : Int,
 ) -> Ellipse2dBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_ellipses.length() {
-    gizmo_state.val.pending_ellipses[self.id].resolution = max_int(segments, 3)
+  if self.id >= 0 && self.id < self.state.val.pending_ellipses.length() {
+    self.state.val.pending_ellipses[self.id].resolution = max_int(segments, 3)
   }
   self
 }
@@ -1260,9 +1497,9 @@ pub fn[Config] Gizmos::circle_2d(
     resolution: DEFAULT_CIRCLE_RESOLUTION,
     config: self.config,
   }
-  let id = gizmo_state.val.pending_ellipses.length()
-  gizmo_state.val.pending_ellipses.push(entry)
-  Ellipse2dBuilder::{ id, }
+  let id = self.state.val.pending_ellipses.length()
+  self.state.val.pending_ellipses.push(entry)
+  Ellipse2dBuilder::{ id, state: self.state }
 }
 
 ///|
@@ -1279,14 +1516,15 @@ pub fn[Config] Gizmos::ellipse_2d(
     resolution: DEFAULT_CIRCLE_RESOLUTION,
     config: self.config,
   }
-  let id = gizmo_state.val.pending_ellipses.length()
-  gizmo_state.val.pending_ellipses.push(entry)
-  Ellipse2dBuilder::{ id, }
+  let id = self.state.val.pending_ellipses.length()
+  self.state.val.pending_ellipses.push(entry)
+  Ellipse2dBuilder::{ id, state: self.state }
 }
 
 ///|
 pub struct Arc2dBuilder {
   id : Int
+  state : Ref[GizmoState]
 }
 
 ///|
@@ -1294,9 +1532,9 @@ pub fn Arc2dBuilder::resolution(
   self : Arc2dBuilder,
   segments : Int,
 ) -> Arc2dBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_arcs.length() {
-    gizmo_state.val.pending_arcs[self.id].resolution = max_int(segments, 1)
-    gizmo_state.val.pending_arcs[self.id].has_resolution = true
+  if self.id >= 0 && self.id < self.state.val.pending_arcs.length() {
+    self.state.val.pending_arcs[self.id].resolution = max_int(segments, 1)
+    self.state.val.pending_arcs[self.id].has_resolution = true
   }
   self
 }
@@ -1318,9 +1556,9 @@ pub fn[Config] Gizmos::arc_2d(
     has_resolution: false,
     config: self.config,
   }
-  let id = gizmo_state.val.pending_arcs.length()
-  gizmo_state.val.pending_arcs.push(entry)
-  Arc2dBuilder::{ id, }
+  let id = self.state.val.pending_arcs.length()
+  self.state.val.pending_arcs.push(entry)
+  Arc2dBuilder::{ id, state: self.state }
 }
 
 ///|
@@ -1361,6 +1599,7 @@ pub fn[Config] Gizmos::long_arc_2d_between(
 ///|
 pub struct ArrowBuilder {
   id : Int
+  state : Ref[GizmoState]
 }
 
 ///|
@@ -1368,16 +1607,16 @@ pub fn ArrowBuilder::with_tip_length(
   self : ArrowBuilder,
   length : Float,
 ) -> ArrowBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_arrows.length() {
-    gizmo_state.val.pending_arrows[self.id].tip_length = length
+  if self.id >= 0 && self.id < self.state.val.pending_arrows.length() {
+    self.state.val.pending_arrows[self.id].tip_length = length
   }
   self
 }
 
 ///|
 pub fn ArrowBuilder::with_double_end(self : ArrowBuilder) -> ArrowBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_arrows.length() {
-    gizmo_state.val.pending_arrows[self.id].double_ended = true
+  if self.id >= 0 && self.id < self.state.val.pending_arrows.length() {
+    self.state.val.pending_arrows[self.id].double_ended = true
   }
   self
 }
@@ -1399,9 +1638,9 @@ pub fn[Config] Gizmos::arrow_2d(
     double_ended: false,
     config: self.config,
   }
-  let id = gizmo_state.val.pending_arrows.length()
-  gizmo_state.val.pending_arrows.push(entry)
-  ArrowBuilder::{ id, }
+  let id = self.state.val.pending_arrows.length()
+  self.state.val.pending_arrows.push(entry)
+  ArrowBuilder::{ id, state: self.state }
 }
 
 ///|
@@ -1413,7 +1652,14 @@ pub fn[Config] Gizmos::arrow_3d(
 ) -> Unit {
   let delta = vec3_sub(end, start)
   let length = vec3_length(delta)
-  gizmos_add_line_3d_with_config(self.config, start, end, color, color)
+  gizmos_add_line_3d_with_config(
+    self.state,
+    self.config,
+    start,
+    end,
+    color,
+    color,
+  )
   if length <= 0.0F {
     return
   }
@@ -1443,10 +1689,38 @@ pub fn[Config] Gizmos::arrow_3d(
     end,
     vec3_add(tip_back, vec3_scale(up, -tip_length * 0.5F)),
   )
-  gizmos_add_line_3d_with_config(self.config, end, tip_left, color, color)
-  gizmos_add_line_3d_with_config(self.config, end, tip_right, color, color)
-  gizmos_add_line_3d_with_config(self.config, end, tip_up, color, color)
-  gizmos_add_line_3d_with_config(self.config, end, tip_down, color, color)
+  gizmos_add_line_3d_with_config(
+    self.state,
+    self.config,
+    end,
+    tip_left,
+    color,
+    color,
+  )
+  gizmos_add_line_3d_with_config(
+    self.state,
+    self.config,
+    end,
+    tip_right,
+    color,
+    color,
+  )
+  gizmos_add_line_3d_with_config(
+    self.state,
+    self.config,
+    end,
+    tip_up,
+    color,
+    color,
+  )
+  gizmos_add_line_3d_with_config(
+    self.state,
+    self.config,
+    end,
+    tip_down,
+    color,
+    color,
+  )
 }
 
 ///|
@@ -1490,6 +1764,7 @@ pub fn[Config] Gizmos::cross_3d(
   let axis_y = @math.Vec3::new(0.0F, half_size, 0.0F)
   let axis_z = @math.Vec3::new(0.0F, 0.0F, half_size)
   gizmos_add_line_3d_with_config(
+    self.state,
     self.config,
     center.sub(axis_x),
     center.add(axis_x),
@@ -1497,6 +1772,7 @@ pub fn[Config] Gizmos::cross_3d(
     color,
   )
   gizmos_add_line_3d_with_config(
+    self.state,
     self.config,
     center.sub(axis_y),
     center.add(axis_y),
@@ -1504,6 +1780,7 @@ pub fn[Config] Gizmos::cross_3d(
     color,
   )
   gizmos_add_line_3d_with_config(
+    self.state,
     self.config,
     center.sub(axis_z),
     center.add(axis_z),
@@ -1525,13 +1802,28 @@ pub fn[Config] Gizmos::cross_2d(
   let end_x = isometry.transform_point(vec2_scale(axis_x, -1.0F))
   let start_y = isometry.transform_point(axis_y)
   let end_y = isometry.transform_point(vec2_scale(axis_y, -1.0F))
-  gizmos_add_line_with_config(self.config, start_x, end_x, color, color)
-  gizmos_add_line_with_config(self.config, start_y, end_y, color, color)
+  gizmos_add_line_with_config(
+    self.state,
+    self.config,
+    start_x,
+    end_x,
+    color,
+    color,
+  )
+  gizmos_add_line_with_config(
+    self.state,
+    self.config,
+    start_y,
+    end_y,
+    color,
+    color,
+  )
 }
 
 ///|
 pub struct Grid2dBuilder {
   id : Int
+  state : Ref[GizmoState]
 }
 
 ///|
@@ -1539,9 +1831,9 @@ pub fn Grid2dBuilder::skew_x(
   self : Grid2dBuilder,
   skew : Float,
 ) -> Grid2dBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_grids.length() {
-    let current = gizmo_state.val.pending_grids[self.id].skew
-    gizmo_state.val.pending_grids[self.id].skew = @math.Vec2::new(
+  if self.id >= 0 && self.id < self.state.val.pending_grids.length() {
+    let current = self.state.val.pending_grids[self.id].skew
+    self.state.val.pending_grids[self.id].skew = @math.Vec2::new(
       skew,
       current.y,
     )
@@ -1554,9 +1846,9 @@ pub fn Grid2dBuilder::skew_y(
   self : Grid2dBuilder,
   skew : Float,
 ) -> Grid2dBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_grids.length() {
-    let current = gizmo_state.val.pending_grids[self.id].skew
-    gizmo_state.val.pending_grids[self.id].skew = @math.Vec2::new(
+  if self.id >= 0 && self.id < self.state.val.pending_grids.length() {
+    let current = self.state.val.pending_grids[self.id].skew
+    self.state.val.pending_grids[self.id].skew = @math.Vec2::new(
       current.x,
       skew,
     )
@@ -1569,33 +1861,33 @@ pub fn Grid2dBuilder::skew(
   self : Grid2dBuilder,
   skew : @math.Vec2,
 ) -> Grid2dBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_grids.length() {
-    gizmo_state.val.pending_grids[self.id].skew = skew
+  if self.id >= 0 && self.id < self.state.val.pending_grids.length() {
+    self.state.val.pending_grids[self.id].skew = skew
   }
   self
 }
 
 ///|
 pub fn Grid2dBuilder::outer_edges_x(self : Grid2dBuilder) -> Grid2dBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_grids.length() {
-    gizmo_state.val.pending_grids[self.id].outer_edges_x = true
+  if self.id >= 0 && self.id < self.state.val.pending_grids.length() {
+    self.state.val.pending_grids[self.id].outer_edges_x = true
   }
   self
 }
 
 ///|
 pub fn Grid2dBuilder::outer_edges_y(self : Grid2dBuilder) -> Grid2dBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_grids.length() {
-    gizmo_state.val.pending_grids[self.id].outer_edges_y = true
+  if self.id >= 0 && self.id < self.state.val.pending_grids.length() {
+    self.state.val.pending_grids[self.id].outer_edges_y = true
   }
   self
 }
 
 ///|
 pub fn Grid2dBuilder::outer_edges(self : Grid2dBuilder) -> Grid2dBuilder {
-  if self.id >= 0 && self.id < gizmo_state.val.pending_grids.length() {
-    gizmo_state.val.pending_grids[self.id].outer_edges_x = true
-    gizmo_state.val.pending_grids[self.id].outer_edges_y = true
+  if self.id >= 0 && self.id < self.state.val.pending_grids.length() {
+    self.state.val.pending_grids[self.id].outer_edges_x = true
+    self.state.val.pending_grids[self.id].outer_edges_y = true
   }
   self
 }
@@ -1618,9 +1910,9 @@ pub fn[Config] Gizmos::grid_2d(
     color,
     config: self.config,
   }
-  let id = gizmo_state.val.pending_grids.length()
-  gizmo_state.val.pending_grids.push(entry)
-  Grid2dBuilder::{ id, }
+  let id = self.state.val.pending_grids.length()
+  self.state.val.pending_grids.push(entry)
+  Grid2dBuilder::{ id, state: self.state }
 }
 
 ///|
@@ -1629,7 +1921,7 @@ pub fn[Config] Gizmos::curve_2d(
   points : Array[@math.Vec2],
   color : Color,
 ) -> Unit {
-  gizmos_linestrip_with_config(self.config, points, color)
+  gizmos_linestrip_with_config(self.state, self.config, points, color)
 }
 
 ///|
@@ -1637,7 +1929,7 @@ pub fn[Config] Gizmos::curve_gradient_2d(
   self : Gizmos[Config],
   points : Array[(@math.Vec2, Color)],
 ) -> Unit {
-  gizmos_linestrip_gradient_with_config(self.config, points)
+  gizmos_linestrip_gradient_with_config(self.state, self.config, points)
 }
 
 ///|
@@ -1658,13 +1950,27 @@ pub fn[Config] Gizmos::grid_3d(
       @math.Vec3::new(x, -half_height, 0.0F),
     )
     let end = isometry.transform_point3(@math.Vec3::new(x, half_height, 0.0F))
-    gizmos_add_line_3d_with_config(self.config, start, end, color, color)
+    gizmos_add_line_3d_with_config(
+      self.state,
+      self.config,
+      start,
+      end,
+      color,
+      color,
+    )
   }
   for row in 0..<=rows {
     let y = -half_height + spacing.y * float_from_int(row)
     let start = isometry.transform_point3(@math.Vec3::new(-half_width, y, 0.0F))
     let end = isometry.transform_point3(@math.Vec3::new(half_width, y, 0.0F))
-    gizmos_add_line_3d_with_config(self.config, start, end, color, color)
+    gizmos_add_line_3d_with_config(
+      self.state,
+      self.config,
+      start,
+      end,
+      color,
+      color,
+    )
   }
 }
 
@@ -1789,6 +2095,7 @@ pub fn[Config] Gizmos::cuboid_3d(
   for edge in edges {
     let (start_id, end_id) = edge
     gizmos_add_line_3d_with_config(
+      self.state,
       self.config,
       corners[start_id],
       corners[end_id],
@@ -1804,7 +2111,7 @@ pub fn[Config] Gizmos::curve_3d(
   points : Array[@math.Vec3],
   color : Color,
 ) -> Unit {
-  gizmos_linestrip_3d_with_config(self.config, points, color)
+  gizmos_linestrip_3d_with_config(self.state, self.config, points, color)
 }
 
 ///|
@@ -1812,7 +2119,7 @@ pub fn[Config] Gizmos::curve_gradient_3d(
   self : Gizmos[Config],
   points : Array[(@math.Vec3, Color)],
 ) -> Unit {
-  gizmos_linestrip_gradient_3d_with_config(self.config, points)
+  gizmos_linestrip_gradient_3d_with_config(self.state, self.config, points)
 }
 
 ///|
@@ -1824,7 +2131,15 @@ pub fn[Config] Gizmos::text_3d(
   anchor : @math.Vec2,
   color : Color,
 ) -> Unit {
-  stroke_text_emit_3d(self.config, isometry, text, font_size, anchor, color)
+  stroke_text_emit_3d(
+    self.state,
+    self.config,
+    isometry,
+    text,
+    font_size,
+    anchor,
+    color,
+  )
 }
 
 ///|
@@ -1836,5 +2151,13 @@ pub fn[Config] Gizmos::text_2d(
   anchor : @math.Vec2,
   color : Color,
 ) -> Unit {
-  stroke_text_emit_2d(self.config, isometry, text, font_size, anchor, color)
+  stroke_text_emit_2d(
+    self.state,
+    self.config,
+    isometry,
+    text,
+    font_size,
+    anchor,
+    color,
+  )
 }

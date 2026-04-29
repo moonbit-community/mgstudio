@@ -48,6 +48,7 @@ fn stroke_text_measure(text : String, font_size : Float) -> @math.Vec2 {
 
 ///|
 fn stroke_text_emit_2d(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   isometry : Isometry2d,
   text : String,
@@ -98,7 +99,7 @@ fn stroke_text_emit_2d(
             )
             positions.push(isometry.transform_point(point_local))
           }
-          gizmos_linestrip_with_config(config, positions, color)
+          gizmos_linestrip_with_config(state, config, positions, color)
         }
         cursor_x.val = cursor_x.val + float_from_int(advance) * scale
       }
@@ -109,6 +110,7 @@ fn stroke_text_emit_2d(
 
 ///|
 fn stroke_text_emit_3d(
+  state : Ref[GizmoState],
   config : GizmoConfig,
   isometry : @math.Isometry3d,
   text : String,
@@ -163,7 +165,7 @@ fn stroke_text_emit_3d(
               ),
             )
           }
-          gizmos_linestrip_3d_with_config(config, positions, color)
+          gizmos_linestrip_3d_with_config(state, config, positions, color)
         }
         cursor_x.val = cursor_x.val + float_from_int(advance) * scale
       }
