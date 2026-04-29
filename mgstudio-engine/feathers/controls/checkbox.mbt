@@ -16,25 +16,13 @@
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/checkbox.rs`.
 
 ///|
-pub struct CheckboxProps {
-  checked : Bool
-  disabled : Bool
-}
-
-///|
-pub fn CheckboxProps::default() -> CheckboxProps {
-  CheckboxProps::{ checked: false, disabled: false }
-}
-
-///|
-pub struct Checkbox {
-  props : CheckboxProps
+pub(all) struct Checkbox {
   label : String
 }
 
 ///|
-pub fn checkbox(props : CheckboxProps, label : String) -> Checkbox {
-  Checkbox::{ props, label }
+pub fn checkbox(label : String) -> Checkbox {
+  Checkbox::{ label, }
 }
 
 ///|

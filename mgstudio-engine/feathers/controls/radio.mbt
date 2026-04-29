@@ -16,25 +16,13 @@
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/radio.rs`.
 
 ///|
-pub struct RadioProps {
-  selected : Bool
-  disabled : Bool
-}
-
-///|
-pub fn RadioProps::default() -> RadioProps {
-  RadioProps::{ selected: false, disabled: false }
-}
-
-///|
-pub struct RadioButton {
-  props : RadioProps
+pub(all) struct RadioButton {
   label : String
 }
 
 ///|
-pub fn radio(props : RadioProps, label : String) -> RadioButton {
-  RadioButton::{ props, label }
+pub fn radio(label : String) -> RadioButton {
+  RadioButton::{ label, }
 }
 
 ///|

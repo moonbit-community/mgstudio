@@ -16,24 +16,11 @@
 // Bevy source: `bevy/crates/bevy_feathers/src/controls/toggle_switch.rs`.
 
 ///|
-pub struct ToggleSwitchProps {
-  checked : Bool
-  disabled : Bool
-}
+pub struct ToggleSwitch {}
 
 ///|
-pub fn ToggleSwitchProps::default() -> ToggleSwitchProps {
-  ToggleSwitchProps::{ checked: false, disabled: false }
-}
-
-///|
-pub struct ToggleSwitch {
-  props : ToggleSwitchProps
-}
-
-///|
-pub fn toggle_switch(props : ToggleSwitchProps) -> ToggleSwitch {
-  ToggleSwitch::{ props, }
+pub fn toggle_switch() -> ToggleSwitch {
+  ToggleSwitch::{  }
 }
 
 ///|

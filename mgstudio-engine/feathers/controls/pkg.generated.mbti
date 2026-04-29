@@ -13,7 +13,7 @@ pub fn button(ButtonProps, String) -> Button
 
 pub fn button_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn checkbox(CheckboxProps, String) -> Checkbox
+pub fn checkbox(String) -> Checkbox
 
 pub fn checkbox_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -31,7 +31,7 @@ pub fn color_swatch_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn controls_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn radio(RadioProps, String) -> RadioButton
+pub fn radio(String) -> RadioButton
 
 pub fn radio_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -39,7 +39,7 @@ pub fn slider(SliderProps) -> Slider
 
 pub fn slider_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn toggle_switch(ToggleSwitchProps) -> ToggleSwitch
+pub fn toggle_switch() -> ToggleSwitch
 
 pub fn toggle_switch_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -68,20 +68,13 @@ pub(all) enum ButtonVariant {
   Primary
 } derive(Eq, @debug.Debug)
 
-pub struct Checkbox {
-  props : CheckboxProps
+pub(all) struct Checkbox {
   label : String
 }
 
 pub struct CheckboxPlugin {
 }
 pub fn CheckboxPlugin::default() -> Self
-
-pub struct CheckboxProps {
-  checked : Bool
-  disabled : Bool
-}
-pub fn CheckboxProps::default() -> Self
 
 pub(all) enum ColorChannel {
   Red
@@ -153,20 +146,13 @@ pub struct ControlsPlugin {
 pub fn ControlsPlugin::default() -> Self
 pub impl @app.Plugin for ControlsPlugin
 
-pub struct RadioButton {
-  props : RadioProps
+pub(all) struct RadioButton {
   label : String
 }
 
 pub struct RadioPlugin {
 }
 pub fn RadioPlugin::default() -> Self
-
-pub struct RadioProps {
-  selected : Bool
-  disabled : Bool
-}
-pub fn RadioProps::default() -> Self
 
 pub struct Slider {
   props : SliderProps
@@ -189,18 +175,11 @@ pub struct SliderProps {
 pub fn SliderProps::default() -> Self
 
 pub struct ToggleSwitch {
-  props : ToggleSwitchProps
 }
 
 pub struct ToggleSwitchPlugin {
 }
 pub fn ToggleSwitchPlugin::default() -> Self
-
-pub struct ToggleSwitchProps {
-  checked : Bool
-  disabled : Bool
-}
-pub fn ToggleSwitchProps::default() -> Self
 
 pub struct VirtualKeyPressed[T] {
   entity_id : Int

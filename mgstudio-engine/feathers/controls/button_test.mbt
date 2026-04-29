@@ -21,3 +21,14 @@ test "feathers controls button: props mirror Bevy defaults" {
     content="true",
   )
 }
+
+///|
+test "feathers controls selection templates keep state in components" {
+  let checkbox0 = checkbox("enabled")
+  let radio0 = radio("choice")
+  let switch0 = toggle_switch()
+  debug_inspect(checkbox0.label, content="\"enabled\"")
+  debug_inspect(radio0.label, content="\"choice\"")
+  ignore(switch0)
+  debug_inspect("ok", content="\"ok\"")
+}
