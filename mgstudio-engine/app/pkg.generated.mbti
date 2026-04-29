@@ -808,6 +808,12 @@ pub fn[S] NextState::set(Self[S], S) -> Self[S]
 pub fn[S : Eq] NextState::set_if_neq(Self[S], S) -> Self[S]
 pub impl[S] Resource for NextState[S]
 
+pub struct NoopPluginGroup {
+}
+pub fn NoopPluginGroup::default() -> Self
+pub impl Plugin for NoopPluginGroup
+pub impl PluginGroup for NoopPluginGroup
+
 pub struct OnEnter[S] {
   state : S
 } derive(Eq, @debug.Debug)

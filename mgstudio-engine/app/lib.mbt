@@ -86,6 +86,9 @@ pub(open) trait PluginGroup {
 }
 
 ///|
+pub struct NoopPluginGroup {}
+
+///|
 impl PluginGroup with name(self) {
   @any.of(self).type_name()
 }
@@ -464,6 +467,34 @@ pub impl Plugin for PluginGroupBuilder[@ecs.World] with is_unique(_self) {
 ///|
 pub impl Plugin for PluginGroupBuilder[@ecs.World] with build(self, app) {
   app.add_plugin_entries(self.build_entries())
+}
+
+///|
+pub fn NoopPluginGroup::default() -> NoopPluginGroup {
+  NoopPluginGroup::{  }
+}
+
+///|
+pub impl PluginGroup for NoopPluginGroup with name(_self) {
+  "mgstudio.app.NoopPluginGroup"
+}
+
+///|
+pub impl PluginGroup for NoopPluginGroup with build(_self) {
+  let builder : PluginGroupBuilder[@ecs.World] = PluginGroupBuilder::start_named(
+    "mgstudio.app.NoopPluginGroup",
+  )
+  builder
+}
+
+///|
+pub impl Plugin for NoopPluginGroup with name(_self) {
+  "mgstudio.app.NoopPluginGroup"
+}
+
+///|
+pub impl Plugin for NoopPluginGroup with build(_self, app) {
+  app
 }
 
 ///|

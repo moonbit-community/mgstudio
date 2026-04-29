@@ -85,6 +85,13 @@ let plugin_ready_count_ref : Ref[Int] = Ref::new(0)
 let deferred_finish_probe_log_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
+fn[G : PluginGroup] test_build_plugin_group(
+  group : G,
+) -> PluginGroupBuilder[@ecs.World] {
+  G::build(group)
+}
+
+///|
 fn plugin_group_test_reset_log() -> Unit {
   plugin_group_test_log_ref.val = []
 }
@@ -613,6 +620,18 @@ test "app: plugin group add_group deduplicates by final ordering" {
   debug_inspect(entries[0].id, content="\"mgstudio.app.test_plugin_1\"")
   debug_inspect(entries[1].id, content="\"mgstudio.app.test_plugin_2\"")
   debug_inspect(entries[2].id, content="\"mgstudio.app.test_plugin_3\"")
+}
+
+///|
+test "app: noop plugin group adds no plugins" {
+  let group = test_build_plugin_group(NoopPluginGroup::default())
+  debug_inspect(group.build_entries().length(), content="0")
+  let app = App::new(@ecs.World::new()).add_plugins(NoopPluginGroup::default())
+  debug_inspect(app.plugin_names().length(), content="1")
+  debug_inspect(
+    app.plugin_names()[0],
+    content="\"mgstudio.app.NoopPluginGroup\"",
+  )
 }
 
 ///|
