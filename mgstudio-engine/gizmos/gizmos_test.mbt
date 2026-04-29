@@ -180,3 +180,12 @@ test "retained gizmo asset delegates Bevy rect and cube helpers" {
   )
   debug_inspect(asset.buffer().list_positions().length(), content="10")
 }
+
+///|
+test "retained gizmo asset delegates Bevy cross helpers" {
+  let asset = @gizmos.GizmoAsset::default()
+  asset.cross(@math.Isometry3d::identity(), 0.5F, @color.Color::white())
+  debug_inspect(asset.buffer().list_positions().length(), content="6")
+  asset.cross_2d(@sprite.Isometry2d::identity(), 0.5F, @color.Color::white())
+  debug_inspect(asset.buffer().list_positions().length(), content="10")
+}

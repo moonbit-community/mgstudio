@@ -177,6 +177,8 @@ pub struct GizmoAsset {
 pub fn GizmoAsset::buffer(Self) -> GizmoBuffer
 pub fn GizmoAsset::clear(Self) -> Unit
 pub fn GizmoAsset::config_type_name(Self) -> String
+pub fn GizmoAsset::cross(Self, @math.Isometry3d, Float, @color.Color) -> Unit
+pub fn GizmoAsset::cross_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> Unit
 pub fn GizmoAsset::cube(Self, @transform.Transform, @color.Color) -> Unit
 pub fn GizmoAsset::line(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn GizmoAsset::line_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
@@ -206,6 +208,8 @@ pub struct GizmoBuffer {
 }
 pub fn GizmoBuffer::buffer(Self) -> GizmoBufferView
 pub fn GizmoBuffer::clear(Self) -> Unit
+pub fn GizmoBuffer::cross(Self, @math.Isometry3d, Float, @color.Color) -> Unit
+pub fn GizmoBuffer::cross_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> Unit
 pub fn GizmoBuffer::cube(Self, @transform.Transform, @color.Color) -> Unit
 pub fn GizmoBuffer::line(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn GizmoBuffer::line_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit

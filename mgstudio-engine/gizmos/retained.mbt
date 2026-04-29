@@ -196,6 +196,16 @@ fn gizmo_buffer_isometry3d_points_from_2d(
 }
 
 ///|
+fn gizmo_buffer_vec3_neg(value : @math.Vec3) -> @math.Vec3 {
+  @math.Vec3::new(-value.x, -value.y, -value.z)
+}
+
+///|
+fn gizmo_buffer_vec2_neg(value : @math.Vec2) -> @math.Vec2 {
+  @math.Vec2::new(-value.x, -value.y)
+}
+
+///|
 pub fn GizmoBuffer::linestrip(
   self : GizmoBuffer,
   positions : Array[@math.Vec3],
@@ -421,6 +431,47 @@ pub fn GizmoBuffer::cube(
 }
 
 ///|
+pub fn GizmoBuffer::cross(
+  self : GizmoBuffer,
+  isometry : @math.Isometry3d,
+  half_size : Float,
+  color : @color.Color,
+) -> Unit {
+  let axes = [
+    @math.Vec3::new(half_size, 0.0F, 0.0F),
+    @math.Vec3::new(0.0F, half_size, 0.0F),
+    @math.Vec3::new(0.0F, 0.0F, half_size),
+  ]
+  for axis in axes {
+    self.line(
+      isometry.transform_point3(axis),
+      isometry.transform_point3(gizmo_buffer_vec3_neg(axis)),
+      color,
+    )
+  }
+}
+
+///|
+pub fn GizmoBuffer::cross_2d(
+  self : GizmoBuffer,
+  isometry : @sprite.Isometry2d,
+  half_size : Float,
+  color : @color.Color,
+) -> Unit {
+  let axes = [
+    @math.Vec2::new(half_size, 0.0F),
+    @math.Vec2::new(0.0F, half_size),
+  ]
+  for axis in axes {
+    self.line_2d(
+      isometry.transform_point(axis),
+      isometry.transform_point(gizmo_buffer_vec2_neg(axis)),
+      color,
+    )
+  }
+}
+
+///|
 pub fn GizmoBuffer::list_positions(self : GizmoBuffer) -> Array[@math.Vec3] {
   self.list_positions
 }
@@ -629,6 +680,26 @@ pub fn GizmoAsset::cube(
   color : @color.Color,
 ) -> Unit {
   self.buffer.cube(transform, color)
+}
+
+///|
+pub fn GizmoAsset::cross(
+  self : GizmoAsset,
+  isometry : @math.Isometry3d,
+  half_size : Float,
+  color : @color.Color,
+) -> Unit {
+  self.buffer.cross(isometry, half_size, color)
+}
+
+///|
+pub fn GizmoAsset::cross_2d(
+  self : GizmoAsset,
+  isometry : @sprite.Isometry2d,
+  half_size : Float,
+  color : @color.Color,
+) -> Unit {
+  self.buffer.cross_2d(isometry, half_size, color)
 }
 
 ///|
