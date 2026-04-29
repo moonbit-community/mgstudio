@@ -1175,6 +1175,88 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   binding_arrays_bind_group : @wgpu_mbt.BindGroup
 }
 
+pub struct PendingCommandBuffers {
+  inner : WgpuWrapper[PendingCommandBuffersInner]
+}
+pub fn PendingCommandBuffers::default() -> Self
+pub fn PendingCommandBuffers::is_empty(Self) -> Bool
+pub fn PendingCommandBuffers::len(Self) -> Int
+pub fn PendingCommandBuffers::length(Self) -> Int
+pub fn PendingCommandBuffers::new() -> Self
+pub fn PendingCommandBuffers::push(Self, Array[@wgpu_mbt.CommandBuffer]) -> Unit
+pub fn PendingCommandBuffers::push_encoder(Self, @wgpu_mbt.CommandEncoder) -> Unit
+pub fn PendingCommandBuffers::push_one(Self, @wgpu_mbt.CommandBuffer) -> Unit
+pub fn PendingCommandBuffers::take(Self) -> Array[@wgpu_mbt.CommandBuffer]
+
+pub(all) struct PendingCommandBuffersInner {
+  mut buffers : Array[@wgpu_mbt.CommandBuffer]
+  mut encoders : Array[@wgpu_mbt.CommandEncoder]
+}
+
+pub struct RenderAdapter {
+  adapter : WgpuWrapper[@wgpu_mbt.Adapter]
+}
+pub fn RenderAdapter::from_backend(GpuBackend) -> Self
+pub fn RenderAdapter::from_wgpu(@wgpu_mbt.Adapter) -> Self
+pub fn RenderAdapter::new(WgpuWrapper[@wgpu_mbt.Adapter]) -> Self
+pub fn RenderAdapter::supported_rust_features_u64(Self) -> UInt64
+pub fn RenderAdapter::supports_rust_features_u64(Self, UInt64) -> Bool
+pub fn RenderAdapter::wgpu_adapter(Self) -> @wgpu_mbt.Adapter
+
+pub struct RenderAdapterInfo {
+  name : String
+  vendor : String
+  device : String
+  device_id : UInt
+  vendor_id : UInt
+  device_type : UInt
+  backend : UInt
+}
+pub fn RenderAdapterInfo::backend(Self) -> UInt
+pub fn RenderAdapterInfo::device(Self) -> String
+pub fn RenderAdapterInfo::device_id(Self) -> UInt
+pub fn RenderAdapterInfo::device_type(Self) -> UInt
+pub fn RenderAdapterInfo::from_adapter(RenderAdapter) -> Self
+pub fn RenderAdapterInfo::from_backend(GpuBackend) -> Self
+pub fn RenderAdapterInfo::name(Self) -> String
+pub fn RenderAdapterInfo::vendor(Self) -> String
+pub fn RenderAdapterInfo::vendor_id(Self) -> UInt
+
+pub struct RenderContextState {
+  inner : WgpuWrapper[RenderContextStateInner]
+}
+pub fn RenderContextState::add_command_buffer(Self, @wgpu_mbt.CommandBuffer) -> Unit
+pub fn RenderContextState::command_encoder(Self) -> @wgpu_mbt.CommandEncoder
+pub fn RenderContextState::default() -> Self
+pub fn RenderContextState::finish(Self) -> Array[@wgpu_mbt.CommandBuffer]
+pub fn RenderContextState::is_empty(Self) -> Bool
+pub fn RenderContextState::new() -> Self
+pub fn RenderContextState::set_render_device(Self, RenderDevice) -> Unit
+
+pub(all) struct RenderContextStateInner {
+  mut command_encoder : @wgpu_mbt.CommandEncoder?
+  mut command_buffers : Array[@wgpu_mbt.CommandBuffer]
+  mut render_device : RenderDevice?
+}
+
+pub struct RenderDevice {
+  device : WgpuWrapper[@wgpu_mbt.Device]
+}
+pub fn RenderDevice::create_command_encoder(Self) -> @wgpu_mbt.CommandEncoder
+pub fn RenderDevice::create_shader_module_wgsl(Self, String) -> @wgpu_mbt.ShaderModule
+pub fn RenderDevice::from_backend(GpuBackend) -> Self
+pub fn RenderDevice::from_wgpu(@wgpu_mbt.Device) -> Self
+pub fn RenderDevice::limits_max_bind_groups_u32(Self) -> UInt
+pub fn RenderDevice::limits_max_push_constant_size_u32(Self) -> UInt
+pub fn RenderDevice::new(WgpuWrapper[@wgpu_mbt.Device]) -> Self
+pub fn RenderDevice::poll(Self, wait? : Bool) -> Bool
+pub fn RenderDevice::queue(Self) -> RenderQueue
+pub fn RenderDevice::supported_feature_u32_at(Self, UInt64) -> UInt
+pub fn RenderDevice::supported_features_count_u64(Self) -> UInt64
+pub fn RenderDevice::supported_rust_features_u64(Self) -> UInt64
+pub fn RenderDevice::supports_rust_features_u64(Self, UInt64) -> Bool
+pub fn RenderDevice::wgpu_device(Self) -> @wgpu_mbt.Device
+
 pub struct RenderDiagnosticsSnapshot {
   mesh2d_draw_calls : Int
   mesh2d_executed_draw_calls : Int
@@ -1194,10 +1276,29 @@ pub struct RenderDiagnosticsSnapshot {
 pub fn RenderDiagnosticsSnapshot::default() -> Self
 pub fn RenderDiagnosticsSnapshot::new(Int, Int, Int, Int) -> Self
 
+pub struct RenderInstance {
+  instance : WgpuWrapper[@wgpu_mbt.Instance]
+}
+pub fn RenderInstance::from_backend(GpuBackend) -> Self
+pub fn RenderInstance::from_wgpu(@wgpu_mbt.Instance) -> Self
+pub fn RenderInstance::new(WgpuWrapper[@wgpu_mbt.Instance]) -> Self
+pub fn RenderInstance::wgpu_instance(Self) -> @wgpu_mbt.Instance
+
 pub(all) enum RenderPipelineCacheState {
   RenderPipelineOk(@wgpu_mbt.RenderPipeline)
   RenderPipelineErr(String)
 }
+
+pub struct RenderQueue {
+  queue : WgpuWrapper[@wgpu_mbt.Queue]
+}
+pub fn RenderQueue::from_backend(GpuBackend) -> Self
+pub fn RenderQueue::from_wgpu(@wgpu_mbt.Queue) -> Self
+pub fn RenderQueue::get_timestamp_period(Self) -> Float
+pub fn RenderQueue::new(WgpuWrapper[@wgpu_mbt.Queue]) -> Self
+pub fn RenderQueue::submit(Self, Array[@wgpu_mbt.CommandBuffer]) -> Unit
+pub fn RenderQueue::submit_for_index(Self, Array[@wgpu_mbt.CommandBuffer]) -> UInt64
+pub fn RenderQueue::wgpu_queue(Self) -> @wgpu_mbt.Queue
 
 pub struct ScreenshotCaptureResult {
   id : Int
@@ -1241,6 +1342,14 @@ pub struct UiShadowPipelineCacheEntry {
   samples : Int
   pipeline : @wgpu_mbt.RenderPipeline
 }
+
+pub struct WgpuWrapper[T] {
+  mut value : T
+}
+pub fn[T] WgpuWrapper::get(Self[T]) -> T
+pub fn[T] WgpuWrapper::into_inner(Self[T]) -> T
+pub fn[T] WgpuWrapper::new(T) -> Self[T]
+pub fn[T] WgpuWrapper::set(Self[T], T) -> Unit
 
 // Type aliases
 pub type NativeGpuDevice = Int

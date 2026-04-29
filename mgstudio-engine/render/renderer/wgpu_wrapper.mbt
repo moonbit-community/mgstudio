@@ -13,6 +13,37 @@
 // limitations under the License.
 
 ///|
+/// Bevy source: `bevy/crates/bevy_render/src/renderer/wgpu_wrapper.rs`.
+///
+/// Native MoonBit builds do not need the wasm atomics `SendWrapper` branch,
+/// so this is a direct transparent wrapper. Keeping the wrapper in the public
+/// renderer model lets `RenderDevice`, `RenderQueue`, and render-context state
+/// follow the same ownership shape as Bevy.
+pub struct WgpuWrapper[T] {
+  mut value : T
+}
+
+///|
+pub fn[T] WgpuWrapper::new(value : T) -> WgpuWrapper[T] {
+  { value, }
+}
+
+///|
+pub fn[T] WgpuWrapper::get(self : WgpuWrapper[T]) -> T {
+  self.value
+}
+
+///|
+pub fn[T] WgpuWrapper::set(self : WgpuWrapper[T], value : T) -> Unit {
+  self.value = value
+}
+
+///|
+pub fn[T] WgpuWrapper::into_inner(self : WgpuWrapper[T]) -> T {
+  self.value
+}
+
+///|
 pub extern "C" fn pipeline_layout_descriptor_3_new(
   bind_group_layout0 : @wgpu_c.WGPUBindGroupLayout,
   bind_group_layout1 : @wgpu_c.WGPUBindGroupLayout,

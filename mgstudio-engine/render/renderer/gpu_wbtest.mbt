@@ -30,6 +30,32 @@ test "gpu: 2d clip matrix maps logical viewport coordinates to clip space" {
 }
 
 ///|
+test "renderer: wgpu wrapper is a transparent native wrapper" {
+  let wrapper = WgpuWrapper::new(7)
+  debug_inspect(wrapper.get(), content="7")
+  wrapper.set(9)
+  debug_inspect(wrapper.into_inner(), content="9")
+}
+
+///|
+test "renderer: pending command buffers default to empty bevy resource state" {
+  let pending = PendingCommandBuffers::default()
+  debug_inspect(pending.is_empty(), content="true")
+  debug_inspect(pending.len(), content="0")
+  pending.push([])
+  debug_inspect(pending.take().length(), content="0")
+  debug_inspect(pending.is_empty(), content="true")
+}
+
+///|
+test "renderer: render context state starts empty and finish clears state" {
+  let state = RenderContextState::default()
+  debug_inspect(state.is_empty(), content="true")
+  debug_inspect(state.finish().length(), content="0")
+  debug_inspect(state.is_empty(), content="true")
+}
+
+///|
 fn wbtest_mesh3d_preprocess_payload() -> HostMesh3dPreprocessCameraPayload {
   HostMesh3dPreprocessCameraPayload::{
     view: HostMesh3dPreprocessView::{

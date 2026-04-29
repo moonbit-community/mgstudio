@@ -30,6 +30,186 @@ pub type NativeGpuSurface = Int
 pub type NativeGpuFrame = Int
 
 ///|
+pub(all) struct PendingCommandBuffersInner {
+  mut buffers : Array[@wgpu.CommandBuffer]
+  mut encoders : Array[@wgpu.CommandEncoder]
+}
+
+///|
+fn pending_command_buffers_inner_default() -> PendingCommandBuffersInner {
+  { buffers: [], encoders: [] }
+}
+
+///|
+/// A resource-shaped container for command buffers and command encoders pending
+/// submission to the render queue.
+///
+/// This mirrors Bevy's `PendingCommandBuffers`: encoders are finished during
+/// `take`, preserving the order in which render systems queued their work.
+pub struct PendingCommandBuffers {
+  inner : WgpuWrapper[PendingCommandBuffersInner]
+}
+
+///|
+pub fn PendingCommandBuffers::default() -> PendingCommandBuffers {
+  { inner: WgpuWrapper::new(pending_command_buffers_inner_default()) }
+}
+
+///|
+pub fn PendingCommandBuffers::new() -> PendingCommandBuffers {
+  PendingCommandBuffers::default()
+}
+
+///|
+pub fn PendingCommandBuffers::push(
+  self : PendingCommandBuffers,
+  buffers : Array[@wgpu.CommandBuffer],
+) -> Unit {
+  let inner = self.inner.get()
+  for buffer in buffers {
+    inner.buffers.push(buffer)
+  }
+}
+
+///|
+pub fn PendingCommandBuffers::push_one(
+  self : PendingCommandBuffers,
+  buffer : @wgpu.CommandBuffer,
+) -> Unit {
+  self.inner.get().buffers.push(buffer)
+}
+
+///|
+pub fn PendingCommandBuffers::push_encoder(
+  self : PendingCommandBuffers,
+  encoder : @wgpu.CommandEncoder,
+) -> Unit {
+  self.inner.get().encoders.push(encoder)
+}
+
+///|
+pub fn PendingCommandBuffers::take(
+  self : PendingCommandBuffers,
+) -> Array[@wgpu.CommandBuffer] {
+  let inner = self.inner.get()
+  for encoder in inner.encoders {
+    inner.buffers.push(encoder.finish())
+  }
+  inner.encoders = []
+  let buffers = inner.buffers
+  inner.buffers = []
+  buffers
+}
+
+///|
+pub fn PendingCommandBuffers::is_empty(self : PendingCommandBuffers) -> Bool {
+  let inner = self.inner.get()
+  inner.buffers.length() == 0 && inner.encoders.length() == 0
+}
+
+///|
+pub fn PendingCommandBuffers::length(self : PendingCommandBuffers) -> Int {
+  let inner = self.inner.get()
+  inner.buffers.length() + inner.encoders.length()
+}
+
+///|
+pub fn PendingCommandBuffers::len(self : PendingCommandBuffers) -> Int {
+  self.length()
+}
+
+///|
+pub(all) struct RenderContextStateInner {
+  mut command_encoder : @wgpu.CommandEncoder?
+  mut command_buffers : Array[@wgpu.CommandBuffer]
+  mut render_device : RenderDevice?
+}
+
+///|
+fn render_context_state_inner_default() -> RenderContextStateInner {
+  { command_encoder: None, command_buffers: [], render_device: None }
+}
+
+///|
+/// Render-context state used to accumulate one system's command encoder and
+/// finished command buffers before they are moved into `PendingCommandBuffers`.
+pub struct RenderContextState {
+  inner : WgpuWrapper[RenderContextStateInner]
+}
+
+///|
+pub fn RenderContextState::default() -> RenderContextState {
+  { inner: WgpuWrapper::new(render_context_state_inner_default()) }
+}
+
+///|
+pub fn RenderContextState::new() -> RenderContextState {
+  RenderContextState::default()
+}
+
+///|
+pub fn RenderContextState::set_render_device(
+  self : RenderContextState,
+  render_device : RenderDevice,
+) -> Unit {
+  self.inner.get().render_device = Some(render_device)
+}
+
+///|
+fn RenderContextState::flush_encoder(self : RenderContextState) -> Unit {
+  let inner = self.inner.get()
+  if inner.command_encoder is Some(encoder) {
+    inner.command_buffers.push(encoder.finish())
+    inner.command_encoder = None
+  }
+}
+
+///|
+pub fn RenderContextState::command_encoder(
+  self : RenderContextState,
+) -> @wgpu.CommandEncoder {
+  let inner = self.inner.get()
+  match inner.command_encoder {
+    Some(encoder) => encoder
+    None => {
+      guard inner.render_device is Some(render_device) else {
+        abort("RenderDevice must be set before accessing command_encoder")
+      }
+      let encoder = render_device.create_command_encoder()
+      inner.command_encoder = Some(encoder)
+      encoder
+    }
+  }
+}
+
+///|
+pub fn RenderContextState::add_command_buffer(
+  self : RenderContextState,
+  command_buffer : @wgpu.CommandBuffer,
+) -> Unit {
+  self.flush_encoder()
+  self.inner.get().command_buffers.push(command_buffer)
+}
+
+///|
+pub fn RenderContextState::finish(
+  self : RenderContextState,
+) -> Array[@wgpu.CommandBuffer] {
+  self.flush_encoder()
+  let inner = self.inner.get()
+  let buffers = inner.command_buffers
+  inner.command_buffers = []
+  inner.render_device = None
+  buffers
+}
+
+///|
+pub fn RenderContextState::is_empty(self : RenderContextState) -> Bool {
+  let inner = self.inner.get()
+  inner.command_encoder is None && inner.command_buffers.length() == 0
+}
+
+///|
 pub const SURFACE_PRESENT_MODE_AUTO_VSYNC : Int = 0
 
 ///|
