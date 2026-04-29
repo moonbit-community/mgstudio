@@ -139,6 +139,12 @@ pub struct GpuBackend {
   mut mesh3d_bgl_skin : @wgpu.BindGroupLayout?
   mut mesh3d_binding_arrays_bg : @wgpu.BindGroup?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
+  mut mesh3d_shadow_bgl_view : @wgpu.BindGroupLayout?
+  mut mesh3d_shadow_bgl_empty : @wgpu.BindGroupLayout?
+  mut mesh3d_shadow_pipeline_layout_depth_only : @wgpu.PipelineLayout?
+  mut mesh3d_shadow_pipeline_layout_material : @wgpu.PipelineLayout?
+  mut mesh3d_shadow_view_bg : @wgpu.BindGroup?
+  mut mesh3d_shadow_empty_bg : @wgpu.BindGroup?
   mesh3d_pipeline_cache : Array[Mesh3dPipelineCacheEntry]
   mesh3d_custom_pipeline_cache : Map[String, RenderPipelineCacheState]
   mesh3d_shadow_pipeline_cache : Array[Mesh3dShadowPipelineCacheEntry]
@@ -338,10 +344,6 @@ pub struct GpuBackend {
   mut point_shadow_fallback_texture_id : Int
   mut directional_shadow_fallback_texture_id : Int
   mut environment_map_fallback_texture_id : Int
-  mut shadow_color_texture : @wgpu.Texture?
-  mut shadow_color_view : @wgpu.TextureView?
-  mut shadow_color_width : Int
-  mut shadow_color_height : Int
   surfaces : Array[GpuSurfaceState]
   mut active_surface_target_id : Int
   textures : Array[GpuTextureInfo]

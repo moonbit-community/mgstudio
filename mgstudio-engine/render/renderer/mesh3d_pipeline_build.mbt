@@ -193,6 +193,47 @@ fn mesh3d_forward_value_defines() -> @hashmap.HashMap[String, Int] {
 }
 
 ///|
+fn mesh3d_shadow_shader_defines(
+  skinned : Bool,
+  material_path : Bool,
+) -> @hashmap.HashMap[String, Bool] {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("PREPASS_PIPELINE", true)
+  defines.set("DEPTH_PREPASS", true)
+  defines.set("VERTEX_POSITIONS", true)
+  defines.set("VERTEX_UVS", true)
+  defines.set("VERTEX_UVS_A", true)
+  defines.set("VERTEX_COLORS", true)
+  defines.set("VERTEX_OUTPUT_INSTANCE_INDEX", true)
+  if skinned {
+    defines.set("SKINNED", true)
+  }
+  if material_path {
+    defines.set("MAY_DISCARD", true)
+  }
+  defines
+}
+
+///|
+fn load_wgsl_required_mesh3d_shadow_pipeline(
+  assets_base : String,
+  skinned : Bool,
+  material_path : Bool,
+  shader_path : String,
+) -> String raise GpuBackendError {
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base,
+    shader_path,
+    mesh3d_shadow_shader_defines(skinned, material_path),
+    mesh3d_forward_value_defines(),
+    visited,
+    modules,
+  )
+}
+
+///|
 fn load_wgsl_required_mesh3d_forward_pipeline(
   assets_base : String,
   skinned : Bool,
@@ -929,6 +970,129 @@ fn ensure_mesh3d_pipeline_layout_resources(
 }
 
 ///|
+fn mesh3d_create_empty_bind_group_layout(
+  backend : GpuBackend,
+  label : String,
+) -> @wgpu.BindGroupLayout {
+  let layout = backend.device.create_bind_group_layout_empty()
+  layout.set_label(label)
+  layout
+}
+
+///|
+fn mesh3d_create_empty_bind_group(
+  backend : GpuBackend,
+  layout : @wgpu.BindGroupLayout,
+  label : String,
+) -> @wgpu.BindGroup {
+  let bind_group = create_empty_bind_group(backend.device, layout)
+  bind_group.set_label(label)
+  bind_group
+}
+
+///|
+fn ensure_mesh3d_shadow_pipeline_layout_resources(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_mesh3d_pipeline_layout_resources(backend)
+  if backend.mesh3d_shadow_pipeline_layout_depth_only is None ||
+    backend.mesh3d_shadow_pipeline_layout_material is None {
+    let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
+    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=3UL)
+    let view_ok = view_builder.add_buffer(
+        0U,
+        view_stage,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_VIEW_BUFFER_SIZE,
+      ) &&
+      view_builder.add_buffer(
+        1U,
+        view_stage,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_GLOBALS_BUFFER_SIZE,
+      ) &&
+      view_builder.add_buffer(
+        14U,
+        ss(@wgpu.SHADER_STAGE_VERTEX),
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+        min_binding_size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
+      )
+    if !view_ok {
+      view_builder.free()
+      fatal("wgpu: failed to build mesh3d shadow view bind group layout")
+    }
+    let view_bgl = view_builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_shadow_view_bgl",
+    )
+    let empty_bgl = mesh3d_create_empty_bind_group_layout(
+      backend, "mgstudio_mesh3d_shadow_empty_bgl",
+    )
+    guard backend.mesh3d_bgl_draw is Some(mesh_bgl) else {
+      fatal("wgpu: missing mesh3d draw bind group layout for shadows")
+    }
+    guard backend.mesh3d_bgl_material is Some(material_bgl) else {
+      fatal("wgpu: missing mesh3d material bind group layout for shadows")
+    }
+    let depth_only_layout = create_pipeline_layout_4(
+      backend.device,
+      view_bgl,
+      empty_bgl,
+      mesh_bgl,
+      empty_bgl,
+    )
+    let material_layout = create_pipeline_layout_4(
+      backend.device,
+      view_bgl,
+      empty_bgl,
+      mesh_bgl,
+      material_bgl,
+    )
+    backend.mesh3d_shadow_bgl_view = Some(view_bgl)
+    backend.mesh3d_shadow_bgl_empty = Some(empty_bgl)
+    backend.mesh3d_shadow_pipeline_layout_depth_only = Some(depth_only_layout)
+    backend.mesh3d_shadow_pipeline_layout_material = Some(material_layout)
+    backend.mesh3d_shadow_view_bg = None
+    backend.mesh3d_shadow_empty_bg = None
+  }
+  if backend.mesh3d_shadow_view_bg is None ||
+    backend.mesh3d_shadow_empty_bg is None {
+    ensure_mesh3d_view_binding_buffers(backend)
+    guard backend.mesh3d_shadow_bgl_view is Some(view_bgl) else { return }
+    guard backend.mesh3d_shadow_bgl_empty is Some(empty_bgl) else { return }
+    guard backend.mesh3d_view_buf is Some(view_buf) else { return }
+    guard backend.mesh3d_globals_buf is Some(globals_buf) else { return }
+    guard backend.mesh3d_visibility_ranges_buf is Some(visibility_ranges_buf) else {
+      return
+    }
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+    let ok = builder.add_buffer(0U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
+      builder.add_buffer(1U, globals_buf, size=MESH3D_GLOBALS_BUFFER_SIZE) &&
+      builder.add_buffer(
+        14U,
+        visibility_ranges_buf,
+        size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
+      )
+    if !ok {
+      builder.free()
+      return
+    }
+    backend.mesh3d_shadow_view_bg = Some(
+      builder.finish(
+        backend.device,
+        view_bgl,
+        label="mgstudio_mesh3d_shadow_view_bg",
+      ),
+    )
+    backend.mesh3d_shadow_empty_bg = Some(
+      mesh3d_create_empty_bind_group(
+        backend, empty_bgl, "mgstudio_mesh3d_shadow_empty_bg",
+      ),
+    )
+  }
+}
+
+///|
 fn ensure_mesh3d_pipeline_rgba8(
   backend : GpuBackend,
   topology : UInt,
@@ -1190,50 +1354,80 @@ fn mesh3d_build_shadow_depth_pipeline(
   topology : UInt,
   cull_mode : Int,
   material_path : Bool,
+  skinned : Bool,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
-  ensure_mesh3d_pipeline_layout_resources(backend)
-  guard backend.mesh3d_pipeline_layout is Some(pl) else {
+  ensure_mesh3d_shadow_pipeline_layout_resources(backend)
+  let pipeline_layout = if material_path {
+    backend.mesh3d_shadow_pipeline_layout_material
+  } else {
+    backend.mesh3d_shadow_pipeline_layout_depth_only
+  }
+  guard pipeline_layout is Some(pl) else {
     fatal("wgpu: missing mesh3d pipeline layout for shadow depth pipeline")
   }
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
-  let wgsl_source = if material_path {
-    registered_wgsl_source_required(MESH3D_SHADOW_DEPTH_SHADER_PATH)
+  let vertex_wgsl = load_wgsl_required_mesh3d_shadow_pipeline(
+    backend.assets_base,
+    skinned,
+    material_path,
+    MESH3D_PREPASS_VERTEX_SHADER_PATH,
+  )
+  let vertex_sm = backend.device.create_shader_module_wgsl(vertex_wgsl)
+  let fragment_sm = if material_path {
+    Some(
+      backend.device.create_shader_module_wgsl(
+        load_wgsl_required_mesh3d_shadow_pipeline(
+          backend.assets_base,
+          skinned,
+          material_path,
+          MESH3D_PREPASS_MATERIAL_FRAGMENT_SHADER_PATH,
+        ),
+      ),
+    )
   } else {
-    registered_wgsl_source_required(MESH3D_SHADOW_DEPTH_ONLY_SHADER_PATH)
+    None
   }
-  let sm = backend.device.create_shader_module_wgsl(wgsl_source)
   let pipeline = try {
-    let builder = @wgpu.RenderPipelineDescBuilder::new(sm, layout=pl)
+    let builder = @wgpu.RenderPipelineDescBuilder::new(vertex_sm, layout=pl)
     builder.set_entry_points("vertex", "fragment")
-    builder.set_color_target_count(1U)
-    builder.set_color_target_format_at(0U, tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM))
-    builder.set_color_target_write_mask_at(0U, @wgpu.COLOR_WRITE_MASK_NONE)
-    builder.disable_blend()
     builder.set_vertex_buffer_layout(
       MESH3D_VERTEX_STRIDE_BYTES,
       @wgpu.VERTEX_STEP_MODE_VERTEX,
     )
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 12UL, 1U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 2U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 5U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_UINT32X4, 48UL, 6U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 7U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 1U)
+    if skinned {
+      builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_UINT32X4, 48UL, 5U)
+      builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 6U)
+    }
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 7U)
     builder.set_topology_u32(topology)
     builder.set_depth_stencil(
       tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
       depth_write_enabled=true,
       depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
     )
-    render_pipeline_desc_builder_create_pipeline_with_cull_mode(
-      builder,
-      backend.device,
-      cull_mode_wgpu,
-    )
+    let desc = builder.finish_descriptor_ptr()
+    render_pipeline_descriptor_set_cull_mode(desc, cull_mode_wgpu)
+    match fragment_sm {
+      Some(fragment_module) => {
+        render_pipeline_descriptor_set_fragment_module(desc, fragment_module)
+        render_pipeline_descriptor_set_fragment_target_count_zero(desc)
+      }
+      None => render_pipeline_descriptor_clear_fragment(desc)
+    }
+    let pipeline = backend.device.create_render_pipeline_ptr(desc)
+    @wgpu_c.render_pipeline_descriptor_free(desc)
+    builder.free()
+    pipeline
   } catch {
     err => {
-      sm.release()
+      vertex_sm.release()
+      match fragment_sm {
+        Some(fragment_module) => fragment_module.release()
+        None => ()
+      }
       fatal(
         "wgpu: failed to build canonical mesh3d shadow depth pipeline: \{err.message()}",
       )
@@ -1244,14 +1438,20 @@ fn mesh3d_build_shadow_depth_pipeline(
   } else {
     "depth_only_"
   }
+  let skinned_suffix = if skinned { "_skinned" } else { "_unskinned" }
   pipeline.set_label(
     "mgstudio_mesh3d_shadow_" +
     shadow_pipeline_suffix +
     mesh3d_topology_suffix(topology) +
     "_cull_" +
-    mesh3d_cull_mode_suffix(safe_cull_mode),
+    mesh3d_cull_mode_suffix(safe_cull_mode) +
+    skinned_suffix,
   )
-  sm.release()
+  vertex_sm.release()
+  match fragment_sm {
+    Some(fragment_module) => fragment_module.release()
+    None => ()
+  }
   pipeline
 }
 
@@ -1261,16 +1461,20 @@ fn mesh3d_shadow_depth_pipeline_for_current_pass(
   topology : UInt,
   cull_mode : Int,
   material_path : Bool,
+  skinned : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  if mesh3d_shadow_pipeline_get(backend, topology, cull_mode, material_path)
+  ensure_mesh3d_shadow_pipeline_layout_resources(backend)
+  if mesh3d_shadow_pipeline_get(
+      backend, topology, cull_mode, material_path, skinned,
+    )
     is Some(pipeline) {
     return Some(pipeline)
   }
   let pipeline = mesh3d_build_shadow_depth_pipeline(
-    backend, topology, cull_mode, material_path,
+    backend, topology, cull_mode, material_path, skinned,
   )
   mesh3d_shadow_pipeline_set(
-    backend, topology, cull_mode, material_path, pipeline,
+    backend, topology, cull_mode, material_path, skinned, pipeline,
   )
   Some(pipeline)
 }

@@ -102,11 +102,13 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   skinning_key_lo : Int,
 ) -> Unit raise GpuBackendError {
   let material_path = mesh3d_shadow_material_path_from_flags(material_flags)
+  let skinned = skinning_key_hi >= 0
   guard mesh3d_shadow_depth_pipeline_for_current_pass(
       self,
       mesh.primitive_topology,
       cull_mode,
       material_path,
+      skinned,
     )
     is Some(pipeline) else {
     return
@@ -252,52 +254,39 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }
-  let transmission_source_texture = ensure_default_texture(self)
-  let point_shadow_texture = ensure_point_shadow_fallback_texture(self)
-  let directional_shadow_texture = ensure_directional_shadow_fallback_texture(
-    self,
-  )
-  let environment_diffuse_texture = ensure_default_texture(self)
-  let environment_specular_texture = ensure_default_texture(self)
-  let (view_bg, binding_arrays_bg) = mesh3d_view_bg_cache_get_or_create(
-    self, transmission_source_texture, point_shadow_texture, directional_shadow_texture,
-    environment_diffuse_texture, environment_specular_texture,
-  )
-  let default_texture = ensure_default_texture(self)
-  guard resolve_mesh3d_texture(
+  guard self.mesh3d_shadow_view_bg is Some(view_bg) else { return }
+  guard self.mesh3d_shadow_empty_bg is Some(empty_bg) else { return }
+  let material_bg = if material_path {
+    let default_texture = ensure_default_texture(self)
+    guard resolve_mesh3d_texture(self, texture_id) is Some(base_color_texture) else {
+      return
+    }
+    let normal_texture = ensure_normal_map_fallback_texture(self)
+    mesh3d_material_cache_get_or_create(
       self,
-      if material_path {
-        texture_id
-      } else {
-        -1
-      },
+      base_color_texture,
+      normal_texture,
+      default_texture,
+      default_texture,
+      default_texture,
+      default_texture,
+      default_texture,
+      default_texture,
+      mesh3d_standard_material_uniform_bytes(
+        color_r, color_g, color_b, color_a, uv_transform_a, uv_transform_b, uv_transform_c,
+        uv_transform_d, uv_transform_tx, uv_transform_ty, emissive_r, emissive_g,
+        emissive_b, metallic, roughness, reflectance, parallax_depth_scale, max_parallax_layer_count,
+        max_relief_mapping_search_steps, anisotropy_strength, anisotropy_rotation,
+        specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission,
+        specular_transmission, thickness, ior, alpha_cutoff, material_flags,
+      ),
     )
-    is Some(base_color_texture) else {
-    return
+  } else {
+    empty_bg
   }
-  let normal_texture = ensure_normal_map_fallback_texture(self)
-  let material_bg = mesh3d_material_cache_get_or_create(
-    self,
-    base_color_texture,
-    normal_texture,
-    default_texture,
-    default_texture,
-    default_texture,
-    default_texture,
-    default_texture,
-    default_texture,
-    mesh3d_standard_material_uniform_bytes(
-      color_r, color_g, color_b, color_a, uv_transform_a, uv_transform_b, uv_transform_c,
-      uv_transform_d, uv_transform_tx, uv_transform_ty, emissive_r, emissive_g, emissive_b,
-      metallic, roughness, reflectance, parallax_depth_scale, max_parallax_layer_count,
-      max_relief_mapping_search_steps, anisotropy_strength, anisotropy_rotation,
-      specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
-      thickness, ior, alpha_cutoff, material_flags,
-    ),
-  )
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, view_bg, [])
-  pass.set_bind_group(1U, binding_arrays_bg, [])
+  pass.set_bind_group(1U, empty_bg, [])
   pass.set_bind_group(2U, active_draw_bg, [])
   pass.set_bind_group(3U, material_bg, [])
   let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *

@@ -1,5 +1,5 @@
 ///|
-test "pbr render: item-imported entrypoints with Bevy-style signatures are emitted" {
+test "pbr render: item-imported entrypoints are tree-shaken when unused" {
   let composer = @wgsl.Composer::default()
   let mesh_source =
     #|#define_import_path demo::mesh
@@ -34,17 +34,13 @@ test "pbr render: item-imported entrypoints with Bevy-style signatures are emitt
     value_defines: @wgsl.default_wgsl_value_defines(),
     redirects: [],
     additional_imports: [],
-    preserve_imported_entry_points: true,
   }) catch {
     err =>
       abort(
         "expected item-imported entrypoint compose success: \{err.message()}",
       )
   }
-  debug_inspect(source.contains("@vertex"), content="true")
-  debug_inspect(source.contains("fn vertex"), content="true")
-  debug_inspect(source.contains("@fragment"), content="true")
-  debug_inspect(source.contains("fn fragment"), content="true")
+  debug_inspect(source.trim().length(), content="0")
 }
 
 ///|
@@ -78,7 +74,6 @@ test "pbr render: module alias global binding access composes" {
     value_defines: @wgsl.default_wgsl_value_defines(),
     redirects: [],
     additional_imports: [],
-    preserve_imported_entry_points: true,
   }) catch {
     err =>
       abort(

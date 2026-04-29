@@ -93,13 +93,4 @@ fn register_embedded_mesh2d_wgsl_sources_generated() -> Unit {
     "sprite_render/tilemap_chunk/tilemap_chunk_material.wgsl",
     @asset.asset_text_to_bytes(sprite_render_tilemap_chunk_material_wgsl_source),
   )
-  @wgsl.register_wgsl_source(
-    "sprite_render/mesh2d/checker_material.wgsl", shaders_custom_mesh2d_checker_material_wgsl_source,
-  )
-  @asset.register_embedded_asset_virtual_bytes(
-    "sprite_render/mesh2d/checker_material.wgsl",
-    @asset.asset_text_to_bytes(
-      shaders_custom_mesh2d_checker_material_wgsl_source,
-    ),
-  )
 }

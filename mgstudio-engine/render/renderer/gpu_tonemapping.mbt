@@ -734,141 +734,31 @@ fn tonemapping_pipeline_cache_key(
 }
 
 ///|
-fn tonemapping_shader_text(lines : Array[String]) -> String {
-  let mut out = ""
-  for i in 0..<lines.length() {
-    out = out + lines[i]
-    if i + 1 < lines.length() {
-      out = "\{out}\n"
-    }
-  }
-  "\{out}\n"
-}
-
-///|
-fn strip_tonemapping_main_imports(source : String) -> String {
-  let render_import = tonemapping_shader_text([
-    "#import bevy_render::{", "    view::View,", "    maths::powsafe,", "}",
-  ])
-  let pipeline_import = tonemapping_shader_text([
-    "#import bevy_core_pipeline::{", "    fullscreen_vertex_shader::FullscreenVertexOutput,",
-    "    tonemapping::{tone_mapping, screen_space_dither},", "}",
-  ])
-  replace_shader_substring_all(
-    replace_shader_substring_all(
-      replace_shader_substring_all(source, "#define TONEMAPPING_PASS\n", ""),
-      render_import,
-      "",
-    ),
-    pipeline_import,
-    "",
-  )
-}
-
-///|
-fn rewrite_tonemapping_shared_branches(source : String) -> String {
-  let sample_current_lut_original = tonemapping_shader_text([
-    "#ifdef TONEMAP_METHOD_AGX", "    return textureSampleLevel(dt_lut_texture, dt_lut_sampler, p, 0.0).rgb;",
-    "#else ifdef TONEMAP_METHOD_TONY_MC_MAPFACE", "    return textureSampleLevel(dt_lut_texture, dt_lut_sampler, p, 0.0).rgb;",
-    "#else ifdef TONEMAP_METHOD_BLENDER_FILMIC", "    return textureSampleLevel(dt_lut_texture, dt_lut_sampler, p, 0.0).rgb;",
-    "#else", "    return vec3(1.0, 0.0, 1.0);", " #endif",
-  ])
-  let sample_current_lut_rewritten = tonemapping_shader_text([
-    "#ifdef TONEMAP_METHOD_AGX", "    return textureSampleLevel(dt_lut_texture, dt_lut_sampler, p, 0.0).rgb;",
-    "#else", "#ifdef TONEMAP_METHOD_TONY_MC_MAPFACE", "    return textureSampleLevel(dt_lut_texture, dt_lut_sampler, p, 0.0).rgb;",
-    "#else", "#ifdef TONEMAP_METHOD_BLENDER_FILMIC", "    return textureSampleLevel(dt_lut_texture, dt_lut_sampler, p, 0.0).rgb;",
-    "#else", "    return vec3(1.0, 0.0, 1.0);", "#endif", "#endif", "#endif",
-  ])
-  let tone_mapping_original = tonemapping_shader_text([
-    "#ifdef TONEMAP_METHOD_NONE", "    color = color;", "#else ifdef TONEMAP_METHOD_REINHARD",
-    "    color = tonemapping_reinhard(color.rgb);", "#else ifdef TONEMAP_METHOD_REINHARD_LUMINANCE",
-    "    color = tonemapping_reinhard_luminance(color.rgb);", "#else ifdef TONEMAP_METHOD_ACES_FITTED",
-    "    color = ACESFitted(color.rgb);", "#else ifdef TONEMAP_METHOD_AGX", "    color = applyAgXLog(color);",
-    "    color = applyLUT3D(color, 32.0);", "#else ifdef TONEMAP_METHOD_SOMEWHAT_BORING_DISPLAY_TRANSFORM",
-    "    color = somewhat_boring_display_transform(color.rgb);", "#else ifdef TONEMAP_METHOD_TONY_MC_MAPFACE",
-    "    color = sample_tony_mc_mapface_lut(color);", "#else ifdef TONEMAP_METHOD_BLENDER_FILMIC",
-    "    color = sample_blender_filmic_lut(color.rgb);", "#endif",
-  ])
-  let tone_mapping_rewritten = tonemapping_shader_text([
-    "#ifdef TONEMAP_METHOD_NONE", "    color = color;", "#else", "#ifdef TONEMAP_METHOD_REINHARD",
-    "    color = tonemapping_reinhard(color.rgb);", "#else", "#ifdef TONEMAP_METHOD_REINHARD_LUMINANCE",
-    "    color = tonemapping_reinhard_luminance(color.rgb);", "#else", "#ifdef TONEMAP_METHOD_ACES_FITTED",
-    "    color = ACESFitted(color.rgb);", "#else", "#ifdef TONEMAP_METHOD_AGX", "    color = applyAgXLog(color);",
-    "    color = applyLUT3D(color, 32.0);", "#else", "#ifdef TONEMAP_METHOD_SOMEWHAT_BORING_DISPLAY_TRANSFORM",
-    "    color = somewhat_boring_display_transform(color.rgb);", "#else", "#ifdef TONEMAP_METHOD_TONY_MC_MAPFACE",
-    "    color = sample_tony_mc_mapface_lut(color);", "#else", "#ifdef TONEMAP_METHOD_BLENDER_FILMIC",
-    "    color = sample_blender_filmic_lut(color.rgb);", "#endif", "#endif", "#endif",
-    "#endif", "#endif", "#endif", "#endif",
-  ])
-  replace_shader_substring_all(
-    replace_shader_substring_all(
-      source, sample_current_lut_original, sample_current_lut_rewritten,
-    ),
-    tone_mapping_original,
-    tone_mapping_rewritten,
-  )
-}
-
-///|
-fn strip_tonemapping_shared_imports(source : String) -> String {
-  let render_import = tonemapping_shader_text([
-    "#import bevy_render::{", "    view::ColorGrading,", "    color_operations::{hsv_to_rgb, rgb_to_hsv},",
-    "    maths::{PI_2, powsafe},", "}",
-  ])
-  let lut_import = tonemapping_shader_text([
-    "#import bevy_core_pipeline::tonemapping_lut_bindings::{", "    dt_lut_texture,",
-    "    dt_lut_sampler,", "}",
-  ])
-  let stripped = replace_shader_substring_all(
-    replace_shader_substring_all(source, render_import, ""),
-    lut_import,
-    "",
-  )
-  rewrite_tonemapping_shared_branches(stripped)
-}
-
-///|
-fn strip_tonemapping_color_operations_imports(source : String) -> String {
-  replace_shader_substring_all(
-    source, "#import bevy_render::maths::FRAC_PI_3\n", "",
-  )
-}
-
-///|
 fn load_fullscreen_tonemapping_wgsl_with_defines_required(
   backend : GpuBackend,
   define_keys : Array[String],
-) -> String raise GpuBackendError {
-  let fullscreen_source = load_wgsl_asset_source_required(
+) -> (String, String) raise GpuBackendError {
+  let vertex_source = load_wgsl_from_assets_required(
     backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
   )
-  let view_source = load_wgsl_asset_source_required(
-    backend, "render/view/view.wgsl",
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  for key in define_keys {
+    defines.set(key, true)
+  }
+  let value_defines = default_wgsl_value_defines()
+  value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", 3)
+  value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", 4)
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(backend.assets_base)
+  let composed_source = load_wgsl_preprocessed(
+    backend.assets_base,
+    "core_pipeline/tonemapping/tonemapping.wgsl",
+    defines,
+    value_defines,
+    visited,
+    modules,
   )
-  let maths_source = load_wgsl_asset_source_required(
-    backend, "render/maths.wgsl",
-  )
-  let color_operations_source = load_wgsl_asset_source_required(
-    backend, "render/color_operations.wgsl",
-  )
-  let tonemapping_shared_source = strip_tonemapping_shared_imports(
-    load_wgsl_asset_source_required(
-      backend, "core_pipeline/tonemapping/tonemapping_shared.wgsl",
-    ),
-  )
-  let main_source = strip_tonemapping_main_imports(
-    load_wgsl_asset_source_required(
-      backend, "core_pipeline/tonemapping/tonemapping.wgsl",
-    ),
-  )
-  let merged_source = merge_fullscreen_postprocess_source(
-    "\{maths_source}\n\{strip_tonemapping_color_operations_imports(color_operations_source)}\n\{view_source}\n\{tonemapping_shared_source}\n\{main_source}",
-    fullscreen_source,
-  )
-  preprocess_manual_wgsl_source(backend, merged_source, define_keys, [
-    ("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", 3),
-    ("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", 4),
-  ])
+  (vertex_source, composed_source)
 }
 
 ///|
@@ -953,7 +843,7 @@ fn tonemapping_pipeline_for_format(
   guard backend.tonemapping_pipeline_layout is Some(pipeline_layout) else {
     return None
   }
-  let source = load_fullscreen_tonemapping_wgsl_with_defines_required(
+  let (vertex_source, fragment_source) = load_fullscreen_tonemapping_wgsl_with_defines_required(
     backend,
     tonemapping_pipeline_define_keys(tonemapping_mode, deband_dither),
   ) catch {
@@ -966,10 +856,11 @@ fn tonemapping_pipeline_for_format(
       return None
     }
   }
-  let pipeline = create_postprocess_pipeline(
+  let pipeline = create_postprocess_pipeline_split_modules(
     backend,
     pipeline_layout,
-    source,
+    vertex_source,
+    fragment_source,
     format,
     "fragment",
     POSTPROCESS_BLEND_MODE_NONE,

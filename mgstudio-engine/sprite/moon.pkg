@@ -94,10 +94,5 @@ options(
       "input": "../sprite_render/tilemap_chunk/tilemap_chunk_material.wgsl",
       "output": "sprite_render_tilemap_chunk_material_wgsl.mbt",
     },
-    {
-      "command": ":embed --input $input --output $output --name shaders_custom_mesh2d_checker_material_wgsl_source",
-      "input": "mesh2d_checker_material.wgsl",
-      "output": "shaders_custom_mesh2d_checker_material_wgsl.mbt",
-    },
   ],
 )

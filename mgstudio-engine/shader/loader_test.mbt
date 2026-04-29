@@ -33,6 +33,29 @@ test "shader loader exposes wesl extension through the shared shader loader" {
 
 ///|
 test "shader loader stores typed shader assets and direct file dependencies" {
+  let dep_source =
+    #|#define_import_path tests::shader_loader::dep
+    #|const DEP_VALUE : f32 = 1.0;
+    #|
+    #|
+  let root_source =
+    #|#define_import_path tests::shader_loader::root
+    #|
+    #|#import "shader/tests/shader_loader/dep.wgsl"::DEP_VALUE
+    #|
+    #|fn root_value() -> f32 {
+    #|  return DEP_VALUE;
+    #|}
+    #|
+    #|
+  @asset.register_embedded_asset_virtual_bytes(
+    "shader/tests/shader_loader/dep.wgsl",
+    @asset.asset_text_to_bytes(dep_source),
+  )
+  @asset.register_embedded_asset_virtual_bytes(
+    "shader/tests/shader_loader/root.wgsl",
+    @asset.asset_text_to_bytes(root_source),
+  )
   let loaded_handle_ids : Array[Int] = []
   let root_dependency_lengths : Array[Int] = []
   let dep_dependency_lengths : Array[Int] = []

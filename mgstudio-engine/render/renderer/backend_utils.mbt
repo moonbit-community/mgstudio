@@ -22,10 +22,10 @@ const MESH3D_FORWARD_SHADER_PATH : String = "pbr/render/pbr.wgsl"
 const MESH3D_FORWARD_VERTEX_SHADER_PATH : String = "pbr/render/mesh.wgsl"
 
 ///|
-const MESH3D_SHADOW_DEPTH_SHADER_PATH : String = "render/renderer/mesh3d_shadow_depth.wgsl"
+const MESH3D_PREPASS_VERTEX_SHADER_PATH : String = "pbr/prepass/prepass.wgsl"
 
 ///|
-const MESH3D_SHADOW_DEPTH_ONLY_SHADER_PATH : String = "render/renderer/mesh3d_shadow_depth_only.wgsl"
+const MESH3D_PREPASS_MATERIAL_FRAGMENT_SHADER_PATH : String = "pbr/render/pbr_prepass.wgsl"
 
 ///|
 fn cosf(x : Float) -> Float {

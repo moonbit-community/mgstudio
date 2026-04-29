@@ -13,40 +13,33 @@
 // limitations under the License.
 
 ///|
-struct CheckerMaterialAsset {
+struct CustomMaterialAsset {
   color : @sprite.Color
+  color_texture : @asset.Handle[@asset.Image]?
   alpha_mode : @sprite.AlphaMode2d
-  checker_frequency : Float
-  checker_low_value : Float
 }
 
 ///|
-fn checker_material_asset(
+fn custom_material_asset(
   color : @sprite.Color,
+  color_texture? : @asset.Handle[@asset.Image]? = None,
   alpha_mode? : @sprite.AlphaMode2d = @sprite.AlphaMode2d::Blend,
-  checker_frequency? : Float = 8.0F,
-  checker_low_value? : Float = 0.35F,
-) -> CheckerMaterialAsset {
-  CheckerMaterialAsset::{
-    color,
-    alpha_mode,
-    checker_frequency,
-    checker_low_value,
-  }
+) -> CustomMaterialAsset {
+  CustomMaterialAsset::{ color, color_texture, alpha_mode }
 }
 
 ///|
-fn checker_f32_bits(x : Float) -> UInt {
+fn custom_material_f32_bits(x : Float) -> UInt {
   x.reinterpret_as_uint()
 }
 
 ///|
-fn checker_material_uniform_bytes(color : @sprite.Color) -> Bytes {
+fn custom_material_uniform_bytes(color : @sprite.Color) -> Bytes {
   let words : Array[UInt] = [
-    checker_f32_bits(color.r),
-    checker_f32_bits(color.g),
-    checker_f32_bits(color.b),
-    checker_f32_bits(color.a),
+    custom_material_f32_bits(color.r),
+    custom_material_f32_bits(color.g),
+    custom_material_f32_bits(color.b),
+    custom_material_f32_bits(color.a),
   ]
   Bytes::makei(words.length() * 4, i => {
     let word = words[i / 4]
@@ -56,51 +49,32 @@ fn checker_material_uniform_bytes(color : @sprite.Color) -> Bytes {
 }
 
 ///|
-fn checker_settings_uniform_bytes(
-  checker_frequency : Float,
-  checker_low_value : Float,
-) -> Bytes {
-  let words : Array[UInt] = [
-    checker_f32_bits(checker_frequency),
-    checker_f32_bits(checker_low_value),
-    checker_f32_bits(0.0F),
-    checker_f32_bits(0.0F),
-  ]
-  Bytes::makei(words.length() * 4, i => {
-    let word = words[i / 4]
-    let shift = i % 4 * 8
-    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
-  })
-}
-
-///|
-pub impl @sprite.Material2d for CheckerMaterialAsset with alpha_mode(self) {
+pub impl @sprite.Material2d for CustomMaterialAsset with alpha_mode(self) {
   self.alpha_mode
 }
 
 ///|
-pub impl @sprite.Material2d for CheckerMaterialAsset with bind_group(self) {
+pub impl @sprite.Material2d for CustomMaterialAsset with bind_group(self) {
+  let texture = match self.color_texture {
+    Some(texture) => texture
+    None => @asset.asset_white_texture()
+  }
   @sprite.Material2dBindGroup::new([
     @sprite.Material2dBinding::uniform(
       0,
-      checker_material_uniform_bytes(self.color),
+      custom_material_uniform_bytes(self.color),
     ),
-    @sprite.Material2dBinding::uniform(
-      3,
-      checker_settings_uniform_bytes(
-        self.checker_frequency,
-        self.checker_low_value,
-      ),
-    ),
+    @sprite.Material2dBinding::texture(1, Some(texture)),
+    @sprite.Material2dBinding::sampler(2, Some(texture)),
   ])
 }
 
 ///|
-fn checker_material_plugin() -> @sprite.Material2dPlugin[CheckerMaterialAsset] {
-  let plugin : @sprite.Material2dPlugin[CheckerMaterialAsset] = @sprite.Material2dPlugin::default()
-    .with_asset_init(fn() { checker_material_asset(@sprite.Color::white()) })
+fn custom_material_plugin() -> @sprite.Material2dPlugin[CustomMaterialAsset] {
+  let plugin : @sprite.Material2dPlugin[CustomMaterialAsset] = @sprite.Material2dPlugin::default()
+    .with_asset_init(fn() { custom_material_asset(@sprite.Color::white()) })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
-    .with_fragment_shader("sprite_render/mesh2d/checker_material.wgsl")
+    .with_fragment_shader("shaders/custom_material_2d.wgsl")
   @sprite.material2d_plugin(plugin)
 }
 
@@ -108,21 +82,21 @@ fn checker_material_plugin() -> @sprite.Material2dPlugin[CheckerMaterialAsset] {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(checker_material_plugin())
+  .add_plugins(custom_material_plugin())
   .add_systems(@app.Startup, @app.system(mesh2d_custom_material_setup))
   .run()
 }
 
 ///|
 fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
-  let handle : @asset.Handle[CheckerMaterialAsset] = @asset.Handle::new(1)
-  let assets_key : @ecs.ResourceKey[@asset.Assets[CheckerMaterialAsset]] = @asset.assets_resource_key()
+  let handle : @asset.Handle[CustomMaterialAsset] = @asset.Handle::new(1)
+  let assets_key : @ecs.ResourceKey[@asset.Assets[CustomMaterialAsset]] = @asset.assets_resource_key()
   guard (try! world.get_resource_ref_mut(assets_key)) is Some(assets_ref) else {
-    abort("missing CheckerMaterialAsset store")
+    abort("missing CustomMaterialAsset store")
   }
   assets_ref.val.insert(
     handle,
-    checker_material_asset(@sprite.Color::srgb(0.15F, 0.8F, 1.0F)),
+    custom_material_asset(@sprite.Color::srgb(0.15F, 0.8F, 1.0F)),
   )
   |> ignore
 
@@ -135,7 +109,7 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   )
   let entity = world.spawn_empty()
   let material_key : @ecs.ComponentKey[
-    @sprite.MeshMaterial2d[CheckerMaterialAsset],
+    @sprite.MeshMaterial2d[CustomMaterialAsset],
   ] = @sprite.MeshMaterial2d::component()
   let transform = @transform.Transform::identity()
   try! (world.set_by_key(entity, @sprite.ecs_key_mesh2d, mesh) |> ignore)

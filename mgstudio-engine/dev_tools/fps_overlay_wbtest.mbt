@@ -112,7 +112,9 @@ test "dev_tools: frame time graph plugin registers embedded wgsl shader" {
     .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
     .add_plugins(FrameTimeGraphPlugin::default()),
   )
-  let source = @wgsl.registered_wgsl_source("dev_tools/frame_time_graph.wgsl")
+  let source = @wgsl.registered_wgsl_source(
+    "dev_tools/frame_time_graph/frame_time_graph.wgsl",
+  )
   debug_inspect(source is Some(_), content="true")
 }
 

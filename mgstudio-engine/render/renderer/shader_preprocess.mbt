@@ -221,7 +221,6 @@ fn wgsl_compose_options(
     value_defines,
     redirects: [],
     additional_imports: [],
-    preserve_imported_entry_points: true,
   }
 }
 

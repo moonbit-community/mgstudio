@@ -10,8 +10,8 @@ import {
 // Errors
 
 // Types and methods
-type CheckerMaterialAsset
-pub impl @sprite.Material2d for CheckerMaterialAsset
+type CustomMaterialAsset
+pub impl @sprite.Material2d for CustomMaterialAsset
 
 // Type aliases
 

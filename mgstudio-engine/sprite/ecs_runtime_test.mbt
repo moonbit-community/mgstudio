@@ -59,17 +59,15 @@ test "sprite: default trait mirrors bevy component defaults" {
 ///|
 struct DummyMaterialAsset {
   color : Color
-  checker_frequency : Float
-  checker_low_value : Float
+  color_texture : @asset.Handle[@asset.Image]?
 }
 
 ///|
 fn dummy_material_asset(
   color? : Color = Color::white(),
-  checker_frequency? : Float = 8.0F,
-  checker_low_value? : Float = 0.35F,
+  color_texture? : @asset.Handle[@asset.Image]? = None,
 ) -> DummyMaterialAsset {
-  DummyMaterialAsset::{ color, checker_frequency, checker_low_value }
+  DummyMaterialAsset::{ color, color_texture }
 }
 
 ///|
@@ -79,24 +77,6 @@ fn dummy_material_uniform_bytes(color : Color) -> Bytes {
     dummy_f32_bits(color.g),
     dummy_f32_bits(color.b),
     dummy_f32_bits(color.a),
-  ]
-  Bytes::makei(words.length() * 4, i => {
-    let word = words[i / 4]
-    let shift = i % 4 * 8
-    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
-  })
-}
-
-///|
-fn dummy_checker_settings_bytes(
-  checker_frequency : Float,
-  checker_low_value : Float,
-) -> Bytes {
-  let words : Array[UInt] = [
-    dummy_f32_bits(checker_frequency),
-    dummy_f32_bits(checker_low_value),
-    dummy_f32_bits(0.0F),
-    dummy_f32_bits(0.0F),
   ]
   Bytes::makei(words.length() * 4, i => {
     let word = words[i / 4]
@@ -125,15 +105,14 @@ pub impl Material2d for DummyMaterialAsset with alpha_mode(self) {
 
 ///|
 pub impl Material2d for DummyMaterialAsset with bind_group(self) {
+  let texture = match self.color_texture {
+    Some(texture) => texture
+    None => @asset.asset_white_texture()
+  }
   Material2dBindGroup::new([
     Material2dBinding::uniform(0, dummy_material_uniform_bytes(self.color)),
-    Material2dBinding::uniform(
-      3,
-      dummy_checker_settings_bytes(
-        self.checker_frequency,
-        self.checker_low_value,
-      ),
-    ),
+    Material2dBinding::texture(1, Some(texture)),
+    Material2dBinding::sampler(2, Some(texture)),
   ])
 }
 
@@ -918,7 +897,7 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
     .with_asset_init(fn() { dummy_material_asset() })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
-    .with_fragment_shader("sprite_render/mesh2d/checker_material.wgsl")
+    .with_fragment_shader("shaders/custom_material_2d.wgsl")
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@render.RenderPlugin::default())
     .add_plugins(plugin)
@@ -959,7 +938,7 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   )
   debug_inspect(
     pipeline.fragment_shader,
-    content="Some(\"sprite_render/mesh2d/checker_material.wgsl\")",
+    content="Some(\"shaders/custom_material_2d.wgsl\")",
   )
   debug_inspect(registry.entry_count(), content="1")
   debug_inspect(
@@ -972,16 +951,12 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
 test "render2d: generic Material2d runtime extracts and prepares custom assets" {
   let entity_ref : Ref[@core.Entity?] = Ref::new(None)
   let handle_ref : Ref[@asset.Handle[DummyMaterialAsset]?] = Ref::new(None)
-  let expected = dummy_material_asset(
-    color=Color::new(0.3F, 0.6F, 0.9F, 1.0F),
-    checker_frequency=5.0F,
-    checker_low_value=0.2F,
-  )
+  let expected = dummy_material_asset(color=Color::new(0.3F, 0.6F, 0.9F, 1.0F))
 
   let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
     .with_asset_init(fn() { dummy_material_asset() })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
-    .with_fragment_shader("sprite_render/mesh2d/checker_material.wgsl")
+    .with_fragment_shader("shaders/custom_material_2d.wgsl")
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
     .add_plugins(@render.RenderPlugin::default())
@@ -1024,7 +999,7 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   debug_inspect(prepared.source.id() == handle.id(), content="true")
   debug_inspect(
     prepared.bind_group.layout_key(),
-    content="\"0:uniform;3:uniform\"",
+    content="\"0:uniform;1:texture;2:sampler\"",
   )
   debug_inspect(
     prepared.key.bind_group_layout_key == prepared.bind_group.layout_key(),

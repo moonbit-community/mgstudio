@@ -25,7 +25,7 @@ options(
   "pre-build": [
     {
       "command": ":embed --input $input --output $output --name frame_time_graph_wgsl_source",
-      "input": "frame_time_graph.wgsl",
+      "input": "frame_time_graph/frame_time_graph.wgsl",
       "output": "frame_time_graph_wgsl.mbt",
     },
   ],

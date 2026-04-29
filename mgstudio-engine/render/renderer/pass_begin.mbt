@@ -585,15 +585,7 @@ pub fn GpuBackend::begin_pass_3d(
     guard target_view(self, target_id, target_layer) is Some(shadow_depth_view) else {
       return
     }
-    guard target_size_for_pass(self, target_id)
-      is Some((target_width, target_height)) else {
-      return
-    }
-    (
-      ensure_shadow_color_view(self, target_width, target_height),
-      None,
-      shadow_depth_view,
-    )
+    (None, None, shadow_depth_view)
   } else if base_kind == PASS_KIND_BASE_MOTION_VECTOR &&
     secondary_target_id >= 0 {
     guard target_view(self, target_id, target_layer) is Some(primary_view) else {
@@ -617,7 +609,7 @@ pub fn GpuBackend::begin_pass_3d(
       is Some(scene_depth_view) else {
       return
     }
-    (primary_view, Some(velocity_view), scene_depth_view)
+    (Some(primary_view), Some(velocity_view), scene_depth_view)
   } else {
     guard target_view(self, target_id, target_layer) is Some(view) else {
       return
@@ -626,7 +618,7 @@ pub fn GpuBackend::begin_pass_3d(
       is Some(scene_depth_view) else {
       return
     }
-    (view, None, scene_depth_view)
+    (Some(view), None, scene_depth_view)
   }
   let effective_clear_enabled = if target_id < 0 &&
     clear_enabled != 0 &&
@@ -650,54 +642,70 @@ pub fn GpuBackend::begin_pass_3d(
   } else {
     @wgpu.LOAD_OP_CLEAR
   }
-  let pass = match secondary_color_view {
-    Some(color1_view) =>
-      frame.encoder.begin_render_pass_color2_depth_u32(
-        color_view,
-        color1_view,
-        depth_view,
-        color0_load_op_u32=color_load_op_u32,
-        color0_store_op_u32=@wgpu.STORE_OP_STORE,
-        color0_clear_r_f32=clear_r,
-        color0_clear_g_f32=clear_g,
-        color0_clear_b_f32=clear_b,
-        color0_clear_a_f32=clear_a,
-        color1_load_op_u32=color_load_op_u32,
-        color1_store_op_u32=@wgpu.STORE_OP_STORE,
-        color1_clear_r_f32=0.0F,
-        color1_clear_g_f32=0.0F,
-        color1_clear_b_f32=0.0F,
-        color1_clear_a_f32=0.0F,
-        depth_load_op_u32~,
-        depth_store_op_u32=@wgpu.STORE_OP_STORE,
-        depth_clear_value_f32=0.0F,
-        depth_read_only=false,
-        // Bevy-aligned reverse-Z: clear depth to far plane.
-        stencil_load_op_u32~,
-        stencil_store_op_u32=@wgpu.STORE_OP_STORE,
-        stencil_clear_value_u32=0U,
-        stencil_read_only=true,
-      )
+  let pass = match color_view {
     None =>
-      frame.encoder.begin_render_pass_color_depth_u32(
-        color_view,
+      command_encoder_begin_render_pass_depth_u32(
+        frame.encoder,
         depth_view,
-        color_load_op_u32~,
-        color_store_op_u32=@wgpu.STORE_OP_STORE,
-        color_clear_r_f32=clear_r,
-        color_clear_g_f32=clear_g,
-        color_clear_b_f32=clear_b,
-        color_clear_a_f32=clear_a,
         depth_load_op_u32~,
         depth_store_op_u32=@wgpu.STORE_OP_STORE,
         depth_clear_value_f32=0.0F,
         depth_read_only=false,
-        // Bevy-aligned reverse-Z: clear depth to far plane.
         stencil_load_op_u32~,
         stencil_store_op_u32=@wgpu.STORE_OP_STORE,
         stencil_clear_value_u32=0U,
         stencil_read_only=true,
       )
+    Some(color0_view) =>
+      match secondary_color_view {
+        Some(color1_view) =>
+          frame.encoder.begin_render_pass_color2_depth_u32(
+            color0_view,
+            color1_view,
+            depth_view,
+            color0_load_op_u32=color_load_op_u32,
+            color0_store_op_u32=@wgpu.STORE_OP_STORE,
+            color0_clear_r_f32=clear_r,
+            color0_clear_g_f32=clear_g,
+            color0_clear_b_f32=clear_b,
+            color0_clear_a_f32=clear_a,
+            color1_load_op_u32=color_load_op_u32,
+            color1_store_op_u32=@wgpu.STORE_OP_STORE,
+            color1_clear_r_f32=0.0F,
+            color1_clear_g_f32=0.0F,
+            color1_clear_b_f32=0.0F,
+            color1_clear_a_f32=0.0F,
+            depth_load_op_u32~,
+            depth_store_op_u32=@wgpu.STORE_OP_STORE,
+            depth_clear_value_f32=0.0F,
+            depth_read_only=false,
+            // Bevy-aligned reverse-Z: clear depth to far plane.
+            stencil_load_op_u32~,
+            stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+            stencil_clear_value_u32=0U,
+            stencil_read_only=true,
+          )
+        None =>
+          frame.encoder.begin_render_pass_color_depth_u32(
+            color0_view,
+            depth_view,
+            color_load_op_u32~,
+            color_store_op_u32=@wgpu.STORE_OP_STORE,
+            color_clear_r_f32=clear_r,
+            color_clear_g_f32=clear_g,
+            color_clear_b_f32=clear_b,
+            color_clear_a_f32=clear_a,
+            depth_load_op_u32~,
+            depth_store_op_u32=@wgpu.STORE_OP_STORE,
+            depth_clear_value_f32=0.0F,
+            depth_read_only=false,
+            // Bevy-aligned reverse-Z: clear depth to far plane.
+            stencil_load_op_u32~,
+            stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+            stencil_clear_value_u32=0U,
+            stencil_read_only=true,
+          )
+      }
   }
   let vx = if viewport_x < 0 { 0U } else { viewport_x.reinterpret_as_uint() }
   let vy = if viewport_y < 0 { 0U } else { viewport_y.reinterpret_as_uint() }

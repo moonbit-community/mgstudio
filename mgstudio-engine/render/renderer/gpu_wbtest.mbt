@@ -328,18 +328,21 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
     false,
     false,
     false,
-    "0:uniform;3:uniform",
+    "0:uniform;1:texture;2:sampler",
     Some("sprite_render/mesh2d/mesh2d.wgsl"),
-    Some("sprite_render/mesh2d/checker_material.wgsl"),
+    Some("shaders/custom_material_2d.wgsl"),
   )
-  debug_inspect(key.material_layout_key, content="\"0:uniform;3:uniform\"")
+  debug_inspect(
+    key.material_layout_key,
+    content="\"0:uniform;1:texture;2:sampler\"",
+  )
   debug_inspect(
     key.vertex_shader_path,
     content="\"sprite_render/mesh2d/mesh2d.wgsl\"",
   )
   debug_inspect(
     key.fragment_shader_path,
-    content="\"sprite_render/mesh2d/checker_material.wgsl\"",
+    content="\"shaders/custom_material_2d.wgsl\"",
   )
 }
 

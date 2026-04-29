@@ -1557,42 +1557,6 @@ fn ensure_depth_view_for_target(
 }
 
 ///|
-fn ensure_shadow_color_view(
-  backend : GpuBackend,
-  width : Int,
-  height : Int,
-) -> @wgpu.TextureView {
-  let safe_width = if width <= 0 { 1 } else { width }
-  let safe_height = if height <= 0 { 1 } else { height }
-  if backend.shadow_color_width == safe_width &&
-    backend.shadow_color_height == safe_height {
-    if backend.shadow_color_view is Some(view) {
-      return view
-    }
-  }
-  if backend.shadow_color_view is Some(old_view) {
-    old_view.release()
-  }
-  if backend.shadow_color_texture is Some(old_tex) {
-    old_tex.release()
-  }
-  let tex = backend.device.create_texture_u32(
-    safe_width.reinterpret_as_uint(),
-    safe_height.reinterpret_as_uint(),
-    1U,
-    @wgpu.TextureUsage::from_u64(@wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT),
-    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
-    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
-  )
-  let view = tex.create_view()
-  backend.shadow_color_texture = Some(tex)
-  backend.shadow_color_view = Some(view)
-  backend.shadow_color_width = safe_width
-  backend.shadow_color_height = safe_height
-  view
-}
-
-///|
 fn mip_dim(base : Int, level : Int) -> Int {
   let shifted = base >> level
   if shifted <= 0 {
