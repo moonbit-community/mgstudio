@@ -124,6 +124,39 @@ pub fn GizmoBuffer::line_gradient(
 }
 
 ///|
+pub fn GizmoBuffer::ray(
+  self : GizmoBuffer,
+  start : @math.Vec3,
+  vector : @math.Vec3,
+  color : @color.Color,
+) -> Unit {
+  self.line(start, start.add(vector), color)
+}
+
+///|
+pub fn GizmoBuffer::ray_gradient(
+  self : GizmoBuffer,
+  start : @math.Vec3,
+  vector : @math.Vec3,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  self.line_gradient(start, start.add(vector), start_color, end_color)
+}
+
+///|
+fn gizmo_buffer_nan_vec3() -> @math.Vec3 {
+  let nan = 0.0F / 0.0F
+  @math.Vec3::new(nan, nan, nan)
+}
+
+///|
+fn gizmo_buffer_nan_color() -> @color.LinearRgba {
+  let nan = 0.0F / 0.0F
+  @color.Color::new(nan, nan, nan, nan)
+}
+
+///|
 pub fn GizmoBuffer::linestrip(
   self : GizmoBuffer,
   positions : Array[@math.Vec3],
@@ -136,9 +169,120 @@ pub fn GizmoBuffer::linestrip(
     self.strip_positions.push(position)
   }
   self.add_strip_color(color, positions.length())
-  let nan = 0.0F / 0.0F
-  self.strip_positions.push(@math.Vec3::new(nan, nan, nan))
-  self.strip_colors.push(color.as_linear_rgba())
+  self.strip_positions.push(gizmo_buffer_nan_vec3())
+  self.strip_colors.push(gizmo_buffer_nan_color())
+}
+
+///|
+pub fn GizmoBuffer::lineloop(
+  self : GizmoBuffer,
+  positions : Array[@math.Vec3],
+  color : @color.Color,
+) -> Unit {
+  if !self.enabled || positions.length() == 0 {
+    return
+  }
+  let strip : Array[@math.Vec3] = []
+  let first = positions[0]
+  strip.push(first)
+  if positions.length() > 1 {
+    let second = positions[1]
+    strip.push(second)
+    for i in 2..<positions.length() {
+      strip.push(positions[i])
+    }
+    strip.push(first)
+    strip.push(second)
+  } else {
+    strip.push(first)
+  }
+  self.linestrip(strip, color)
+}
+
+///|
+pub fn GizmoBuffer::linestrip_gradient(
+  self : GizmoBuffer,
+  points : Array[(@math.Vec3, @color.Color)],
+) -> Unit {
+  if !self.enabled || points.length() == 0 {
+    return
+  }
+  for point in points {
+    let (position, color) = point
+    self.strip_positions.push(position)
+    self.strip_colors.push(color.as_linear_rgba())
+  }
+  self.strip_positions.push(gizmo_buffer_nan_vec3())
+  self.strip_colors.push(gizmo_buffer_nan_color())
+}
+
+///|
+pub fn GizmoBuffer::line_2d(
+  self : GizmoBuffer,
+  start : @math.Vec2,
+  end : @math.Vec2,
+  color : @color.Color,
+) -> Unit {
+  self.line(
+    @math.Vec3::new(start.x, start.y, 0.0F),
+    @math.Vec3::new(end.x, end.y, 0.0F),
+    color,
+  )
+}
+
+///|
+pub fn GizmoBuffer::line_gradient_2d(
+  self : GizmoBuffer,
+  start : @math.Vec2,
+  end : @math.Vec2,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  self.line_gradient(
+    @math.Vec3::new(start.x, start.y, 0.0F),
+    @math.Vec3::new(end.x, end.y, 0.0F),
+    start_color,
+    end_color,
+  )
+}
+
+///|
+pub fn GizmoBuffer::linestrip_2d(
+  self : GizmoBuffer,
+  positions : Array[@math.Vec2],
+  color : @color.Color,
+) -> Unit {
+  let converted : Array[@math.Vec3] = []
+  for position in positions {
+    converted.push(@math.Vec3::new(position.x, position.y, 0.0F))
+  }
+  self.linestrip(converted, color)
+}
+
+///|
+pub fn GizmoBuffer::lineloop_2d(
+  self : GizmoBuffer,
+  positions : Array[@math.Vec2],
+  color : @color.Color,
+) -> Unit {
+  let converted : Array[@math.Vec3] = []
+  for position in positions {
+    converted.push(@math.Vec3::new(position.x, position.y, 0.0F))
+  }
+  self.lineloop(converted, color)
+}
+
+///|
+pub fn GizmoBuffer::linestrip_gradient_2d(
+  self : GizmoBuffer,
+  points : Array[(@math.Vec2, @color.Color)],
+) -> Unit {
+  let converted : Array[(@math.Vec3, @color.Color)] = []
+  for point in points {
+    let (position, color) = point
+    converted.push((@math.Vec3::new(position.x, position.y, 0.0F), color))
+  }
+  self.linestrip_gradient(converted)
 }
 
 ///|
@@ -190,6 +334,116 @@ pub fn GizmoAsset::line(
   color : @color.Color,
 ) -> Unit {
   self.buffer.line(start, end, color)
+}
+
+///|
+pub fn GizmoAsset::clear(self : GizmoAsset) -> Unit {
+  self.buffer.clear()
+}
+
+///|
+pub fn GizmoAsset::line_gradient(
+  self : GizmoAsset,
+  start : @math.Vec3,
+  end : @math.Vec3,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  self.buffer.line_gradient(start, end, start_color, end_color)
+}
+
+///|
+pub fn GizmoAsset::ray(
+  self : GizmoAsset,
+  start : @math.Vec3,
+  vector : @math.Vec3,
+  color : @color.Color,
+) -> Unit {
+  self.buffer.ray(start, vector, color)
+}
+
+///|
+pub fn GizmoAsset::ray_gradient(
+  self : GizmoAsset,
+  start : @math.Vec3,
+  vector : @math.Vec3,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  self.buffer.ray_gradient(start, vector, start_color, end_color)
+}
+
+///|
+pub fn GizmoAsset::linestrip(
+  self : GizmoAsset,
+  positions : Array[@math.Vec3],
+  color : @color.Color,
+) -> Unit {
+  self.buffer.linestrip(positions, color)
+}
+
+///|
+pub fn GizmoAsset::lineloop(
+  self : GizmoAsset,
+  positions : Array[@math.Vec3],
+  color : @color.Color,
+) -> Unit {
+  self.buffer.lineloop(positions, color)
+}
+
+///|
+pub fn GizmoAsset::linestrip_gradient(
+  self : GizmoAsset,
+  points : Array[(@math.Vec3, @color.Color)],
+) -> Unit {
+  self.buffer.linestrip_gradient(points)
+}
+
+///|
+pub fn GizmoAsset::line_2d(
+  self : GizmoAsset,
+  start : @math.Vec2,
+  end : @math.Vec2,
+  color : @color.Color,
+) -> Unit {
+  self.buffer.line_2d(start, end, color)
+}
+
+///|
+pub fn GizmoAsset::line_gradient_2d(
+  self : GizmoAsset,
+  start : @math.Vec2,
+  end : @math.Vec2,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  self.buffer.line_gradient_2d(start, end, start_color, end_color)
+}
+
+///|
+pub fn GizmoAsset::linestrip_2d(
+  self : GizmoAsset,
+  positions : Array[@math.Vec2],
+  color : @color.Color,
+) -> Unit {
+  self.buffer.linestrip_2d(positions, color)
+}
+
+///|
+pub fn GizmoAsset::lineloop_2d(
+  self : GizmoAsset,
+  positions : Array[@math.Vec2],
+  color : @color.Color,
+) -> Unit {
+  self.buffer.lineloop_2d(positions, color)
+}
+
+///|
+pub fn GizmoAsset::linestrip_gradient_2d(
+  self : GizmoAsset,
+  points : Array[(@math.Vec2, @color.Color)],
+) -> Unit {
+  self.buffer.linestrip_gradient_2d(points)
 }
 
 ///|

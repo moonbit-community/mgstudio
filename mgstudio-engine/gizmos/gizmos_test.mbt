@@ -112,3 +112,37 @@ test "retained gizmo asset stores Bevy line-list and line-strip buffers" {
   debug_inspect(asset.buffer().list_positions().length(), content="0")
   debug_inspect(asset.buffer().strip_positions().length(), content="0")
 }
+
+///|
+test "retained gizmo asset delegates Bevy buffer helpers" {
+  let asset = @gizmos.GizmoAsset::default()
+  asset.ray(
+    @math.Vec3::zero(),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @color.Color::white(),
+  )
+  asset.line_gradient_2d(
+    @math.Vec2::zero(),
+    @math.Vec2::new(1.0F, 1.0F),
+    @color.Color::white(),
+    @color.Color::black(),
+  )
+  debug_inspect(asset.buffer().list_positions().length(), content="4")
+  debug_inspect(asset.buffer().list_colors().length(), content="4")
+  asset.linestrip_gradient([
+    (@math.Vec3::zero(), @color.Color::white()),
+    (@math.Vec3::new(0.0F, 1.0F, 0.0F), @color.Color::black()),
+  ])
+  debug_inspect(asset.buffer().strip_positions().length(), content="3")
+  debug_inspect(asset.buffer().strip_colors().length(), content="3")
+  asset.clear()
+  asset.lineloop_2d(
+    [
+      @math.Vec2::zero(),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+    ],
+    @color.Color::white(),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="6")
+}
