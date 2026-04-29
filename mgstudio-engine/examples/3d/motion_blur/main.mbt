@@ -139,7 +139,7 @@ fn transform_forward(transform : @transform.Transform) -> @math.Vec3 {
 
 ///|
 fn help_text_content() -> String {
-  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\nSamples: \{motion_blur_state.val.samples}\nCamera mode: \{camera_mode_text(motion_blur_state.val.camera_mode)}\nMSAA: Off (Bevy web compatibility path)\nMotion blur backend: temporarily disabled on native (pipeline guard)\n1/2: -/+ shutter angle (blur amount)\n3/4: -/+ sample count (blur quality)\nSpacebar: cycle camera\n"
+  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\nSamples: \{motion_blur_state.val.samples}\nCamera mode: \{camera_mode_text(motion_blur_state.val.camera_mode)}\nMSAA: Off (Bevy web compatibility path)\n1/2: -/+ shutter angle (blur amount)\n3/4: -/+ sample count (blur quality)\nSpacebar: cycle camera\n"
 }
 
 ///|
@@ -179,9 +179,15 @@ fn set_camera_fov(
 
 ///|
 fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
-  // Keep the public controls and UI, but avoid attaching MotionBlur on native
-  // while the runtime post-process pipeline remains unstable for this example.
-  world |> ignore
+  guard motion_blur_state.val.camera is Some(camera) else { return }
+  try! world.set_by_key(
+    camera,
+    @pbr.ecs_key_motion_blur,
+    @pbr.MotionBlur::new(
+      motion_blur_state.val.shutter_angle,
+      motion_blur_state.val.samples,
+    ),
+  )
 }
 
 ///|

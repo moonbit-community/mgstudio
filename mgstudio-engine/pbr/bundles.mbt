@@ -518,6 +518,16 @@ pub fn register_render3d_required_components(
   world.register_required_components_with(ecs_key_camera3d, ecs_key_frustum, fn() {
     Projection::default().compute_frustum(@transform.Transform::identity())
   })
+  world.register_required_components_with(
+    ecs_key_motion_blur,
+    ecs_key_depth_prepass,
+    fn() { DepthPrepass::default() },
+  )
+  world.register_required_components_with(
+    ecs_key_motion_blur,
+    ecs_key_motion_vector_prepass,
+    fn() { MotionVectorPrepass::default() },
+  )
 }
 
 ///|
