@@ -2708,59 +2708,6 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
   let fallback_ctx = res.get()
   let roots = ui_collect_root_entities(world)
-  fn clamp_nonneg(v : Float) -> Float {
-    if v < 0.0F {
-      0.0F
-    } else {
-      v
-    }
-  }
-
-  fn resolve_axis(
-    val : Val,
-    node_axis : Float,
-    viewport_size : @math.Vec2,
-  ) -> Float {
-    match val {
-      Val::Auto => 0.0F
-      Val::Px(px) => px
-      Val::Percent(p) => node_axis * (p / 100.0F)
-      Val::Vw(p) => viewport_size.x * (p / 100.0F)
-      Val::Vh(p) => viewport_size.y * (p / 100.0F)
-      Val::VMin(p) => {
-        let m = if viewport_size.x < viewport_size.y {
-          viewport_size.x
-        } else {
-          viewport_size.y
-        }
-        m * (p / 100.0F)
-      }
-      Val::VMax(p) => {
-        let m = if viewport_size.x > viewport_size.y {
-          viewport_size.x
-        } else {
-          viewport_size.y
-        }
-        m * (p / 100.0F)
-      }
-    }
-  }
-
-  fn resolve_uirect_px(
-    rect : UiRect,
-    node_size : @math.Vec2,
-    viewport_size : @math.Vec2,
-  ) -> (Float, Float, Float, Float) {
-    let left = clamp_nonneg(resolve_axis(rect.left, node_size.x, viewport_size))
-    let right = clamp_nonneg(
-      resolve_axis(rect.right, node_size.x, viewport_size),
-    )
-    let top = clamp_nonneg(resolve_axis(rect.top, node_size.y, viewport_size))
-    let bottom = clamp_nonneg(
-      resolve_axis(rect.bottom, node_size.y, viewport_size),
-    )
-    (left, top, right, bottom)
-  }
 
   fn rect_intersect(a : @math.Rect, b : @math.Rect) -> @math.Rect {
     let min_x = if a.min.x > b.min.x { a.min.x } else { b.min.x }
@@ -2795,7 +2742,6 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     inherited_clip : @math.Rect,
     clipped_by_parent : Bool,
     viewport_rect : @math.Rect,
-    viewport_size : @math.Vec2,
   ) -> Unit {
     if ui_is_ghost_node(world, entity) {
       if (try! world.contains_by_key(entity, ecs_key_calculated_clip)) {
@@ -2805,9 +2751,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
         try! (world.take(entity, @sprite.ecs_key_scissor_rect) |> ignore)
       }
       for child in ui_collect_effective_children(world, entity) {
-        walk(
-          child, inherited_clip, clipped_by_parent, viewport_rect, viewport_size,
-        )
+        walk(child, inherited_clip, clipped_by_parent, viewport_rect)
       }
       return
     }
@@ -2849,58 +2793,27 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
       let overflow_clips = node.overflow.x != OverflowAxis::Visible ||
         node.overflow.y != OverflowAxis::Visible
       if overflow_clips {
-        let size = layout.rect.size()
-        let (border_l, border_t, border_r, border_b) = resolve_uirect_px(
-          node.border,
-          size,
-          viewport_size,
+        let local_clip = layout.resolve_clip_rect(
+          node.overflow,
+          node.overflow_clip_margin,
         )
-        let (padding_l, padding_t, padding_r, padding_b) = resolve_uirect_px(
-          node.padding,
-          size,
-          viewport_size,
+        let center = layout.rect.center()
+        let clip_rect = @math.Rect::new(
+          @math.Vec2::new(
+            center.x + local_clip.min.x,
+            center.y + local_clip.min.y,
+          ),
+          @math.Vec2::new(
+            center.x + local_clip.max.x,
+            center.y + local_clip.max.y,
+          ),
         )
-        let (inset_l, inset_t, inset_r, inset_b) = match
-          node.overflow_clip_margin.visual_box {
-          OverflowClipBox::BorderBox => (0.0F, 0.0F, 0.0F, 0.0F)
-          OverflowClipBox::PaddingBox =>
-            (border_l, border_t, border_r, border_b)
-          OverflowClipBox::ContentBox =>
-            (
-              border_l + padding_l,
-              border_t + padding_t,
-              border_r + padding_r,
-              border_b + padding_b,
-            )
-        }
-        let margin = clamp_nonneg(node.overflow_clip_margin.margin)
-        let min = @math.Vec2::new(
-          layout.rect.min.x + inset_l - margin,
-          layout.rect.min.y + inset_t - margin,
-        )
-        let max = @math.Vec2::new(
-          layout.rect.max.x - inset_r + margin,
-          layout.rect.max.y - inset_b + margin,
-        )
-        let mut clip_rect = @math.Rect::new(min, max)
-        if node.overflow.x == OverflowAxis::Visible {
-          clip_rect = @math.Rect::new(
-            @math.Vec2::new(self_clip.min.x, clip_rect.min.y),
-            @math.Vec2::new(self_clip.max.x, clip_rect.max.y),
-          )
-        }
-        if node.overflow.y == OverflowAxis::Visible {
-          clip_rect = @math.Rect::new(
-            @math.Vec2::new(clip_rect.min.x, self_clip.min.y),
-            @math.Vec2::new(clip_rect.max.x, self_clip.max.y),
-          )
-        }
         child_clip = rect_intersect(self_clip, clip_rect)
         child_clipped = true
       }
     }
     for child in ui_collect_effective_children(world, entity) {
-      walk(child, child_clip, child_clipped, viewport_rect, viewport_size)
+      walk(child, child_clip, child_clipped, viewport_rect)
     }
   }
 
@@ -2910,7 +2823,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
     )
-    walk(root, viewport_rect, false, viewport_rect, root_ctx.viewport_size)
+    walk(root, viewport_rect, false, viewport_rect)
   }
 }
 

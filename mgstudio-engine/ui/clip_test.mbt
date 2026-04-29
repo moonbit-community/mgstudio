@@ -71,11 +71,16 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
   try! world.set_by_key(
     container,
     ecs_key_ui_layout,
-    UiLayout::new(
+    UiLayout::from_computed(
       @math.Rect::new(
         @math.Vec2::new(10.0F, 20.0F),
         @math.Vec2::new(110.0F, 120.0F),
       ),
+      @sprite.UiBorderRect::new(5.0F, 5.0F, 5.0F, 5.0F),
+      @sprite.UiBorderRect::new(10.0F, 10.0F, 10.0F, 10.0F),
+      ResolvedBorderRadius::default(),
+      0.0F,
+      0.0F,
     ),
   )
   try! world.set_by_key(

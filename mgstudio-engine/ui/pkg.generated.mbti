@@ -718,14 +718,21 @@ pub struct UiLayout {
   outline_offset : Float
 } derive(ToJson, @json.FromJson)
 pub fn UiLayout::border(Self) -> @sprite.UiBorderRect
+pub fn UiLayout::border_box(Self) -> @math.Rect
 pub fn UiLayout::border_radius(Self) -> ResolvedBorderRadius
+pub fn UiLayout::content_box(Self) -> @math.Rect
+pub fn UiLayout::content_inset(Self) -> @sprite.UiBorderRect
 pub fn UiLayout::from_computed(@math.Rect, @sprite.UiBorderRect, @sprite.UiBorderRect, ResolvedBorderRadius, Float, Float) -> Self
+pub fn UiLayout::is_empty(Self) -> Bool
 pub fn UiLayout::new(@math.Rect) -> Self
 pub fn UiLayout::outline_offset(Self) -> Float
 pub fn UiLayout::outline_radius(Self) -> ResolvedBorderRadius
 pub fn UiLayout::outline_width(Self) -> Float
+pub fn UiLayout::outlined_node_size(Self) -> @math.Vec2
 pub fn UiLayout::padding(Self) -> @sprite.UiBorderRect
+pub fn UiLayout::padding_box(Self) -> @math.Rect
 pub fn UiLayout::rect(Self) -> @math.Rect
+pub fn UiLayout::resolve_clip_rect(Self, Overflow, OverflowClipMargin) -> @math.Rect
 pub fn UiLayout::size(Self) -> @math.Vec2
 pub impl @ecs.Component for UiLayout
 
