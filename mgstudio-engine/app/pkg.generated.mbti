@@ -546,6 +546,7 @@ pub fn[T] App::insert_world_resource(Self[@ecs.World], @ecs.ResourceKey[T], T) -
 pub fn[T : @ecs.Component] App::is_ambiguous_component_allowed(Self[@ecs.World], key? : @ecs.ComponentKey[T]) -> Bool
 pub fn[T : Resource] App::is_ambiguous_resource_allowed(Self[@ecs.World], key? : @ecs.ResourceKey[T]) -> Bool
 pub fn[W] App::is_building_plugins(Self[W]) -> Bool
+pub fn[P : Plugin] App::is_plugin_added(Self[@ecs.World], P) -> Bool
 pub fn App::new(@ecs.World) -> Self[@ecs.World]
 pub fn[W] App::plugin_names(Self[W]) -> Array[String]
 pub fn[W] App::plugins_state(Self[W]) -> PluginsState

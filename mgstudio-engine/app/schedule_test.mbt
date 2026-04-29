@@ -46,6 +46,9 @@ struct PluginBuildDepthProbePlugin {}
 struct FinishAddsPluginPlugin {}
 
 ///|
+struct PluginAddedProbePlugin {}
+
+///|
 let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
@@ -61,6 +64,12 @@ let plugin_lifecycle_ready_ref : Ref[Bool] = Ref::new(true)
 let plugin_build_depth_probe_ref : Ref[Bool] = Ref::new(false)
 
 ///|
+let plugin_added_probe_finish_ref : Ref[Bool] = Ref::new(false)
+
+///|
+let plugin_added_probe_cleanup_ref : Ref[Bool] = Ref::new(false)
+
+///|
 fn plugin_group_test_reset_log() -> Unit {
   plugin_group_test_log_ref.val = []
 }
@@ -71,6 +80,8 @@ fn plugin_lifecycle_test_reset_log() -> Unit {
   nested_plugin_lifecycle_log_ref.val = []
   plugin_lifecycle_ready_ref.val = true
   plugin_build_depth_probe_ref.val = false
+  plugin_added_probe_finish_ref.val = false
+  plugin_added_probe_cleanup_ref.val = false
 }
 
 ///|
@@ -268,6 +279,32 @@ pub impl Plugin for FinishAddsPluginPlugin with build(_self, app) {
 ///|
 pub impl Plugin for FinishAddsPluginPlugin with finish(_self, app) {
   app.add_plugins(PluginGroupTestPlugin2::{  })
+}
+
+///|
+pub impl Plugin for PluginAddedProbePlugin with name(_self) {
+  "mgstudio.app.plugin_added_probe"
+}
+
+///|
+pub impl Plugin for PluginAddedProbePlugin with build(_self, app) {
+  app
+}
+
+///|
+pub impl Plugin for PluginAddedProbePlugin with finish(_self, app) {
+  plugin_added_probe_finish_ref.val = app.is_plugin_added(PluginGroupTestPlugin1::{
+
+  })
+  app
+}
+
+///|
+pub impl Plugin for PluginAddedProbePlugin with cleanup(_self, app) {
+  plugin_added_probe_cleanup_ref.val = app.is_plugin_added(PluginGroupTestPlugin1::{
+
+  })
+  app
 }
 
 ///|
@@ -596,6 +633,27 @@ test "app: plugin can add another plugin during finish" {
   )
   debug_inspect(app.plugin_names()[2], content="\"mgstudio.app.test_plugin_2\"")
   debug_inspect(app.plugins_state() == Finished, content="true")
+}
+
+///|
+test "app: is_plugin_added is available during finish and cleanup" {
+  plugin_lifecycle_test_reset_log()
+  let app = App::new(@ecs.World::new())
+    .add_plugins(PluginGroupTestPlugin1::{  })
+    .add_plugins(PluginAddedProbePlugin::{  })
+  debug_inspect(
+    app.is_plugin_added(PluginGroupTestPlugin1::{  }),
+    content="true",
+  )
+  debug_inspect(
+    app.is_plugin_added(PluginGroupTestPlugin2::{  }),
+    content="false",
+  )
+
+  let app = app.finish()
+  debug_inspect(plugin_added_probe_finish_ref.val, content="true")
+  app.cleanup() |> ignore
+  debug_inspect(plugin_added_probe_cleanup_ref.val, content="true")
 }
 
 ///|

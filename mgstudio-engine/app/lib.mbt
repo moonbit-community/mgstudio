@@ -2452,6 +2452,14 @@ pub fn[P : Plugin] App::add_plugins(
 }
 
 ///|
+pub fn[P : Plugin] App::is_plugin_added(
+  self : App[@ecs.World],
+  plugin : P,
+) -> Bool {
+  self.plugin_name_registered(plugin.name())
+}
+
+///|
 pub fn[W] App::plugin_names(self : App[W]) -> Array[String] {
   self.plugin_names
 }
