@@ -5,10 +5,13 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
   "moonbitlang/core/debug",
 }
 
 // Values
+pub let ecs_key_line_gizmo_uniform : @ecs.ComponentKey[LineGizmoUniform]
+
 pub fn extract_line_gizmos(@ecs.World) -> Unit
 
 pub fn gizmo_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -55,6 +58,22 @@ pub struct LineGizmo3dPlugin {
 }
 pub fn LineGizmo3dPlugin::default() -> Self
 pub impl @app.Plugin for LineGizmo3dPlugin
+
+pub struct LineGizmoUniform {
+  world_from_local : @math.Affine3
+  line_width : Float
+  depth_bias : Float
+  joints_resolution : Int
+  gap_scale : Float
+  line_scale : Float
+}
+pub fn LineGizmoUniform::depth_bias(Self) -> Float
+pub fn LineGizmoUniform::gap_scale(Self) -> Float
+pub fn LineGizmoUniform::joints_resolution(Self) -> Int
+pub fn LineGizmoUniform::line_scale(Self) -> Float
+pub fn LineGizmoUniform::line_width(Self) -> Float
+pub fn LineGizmoUniform::world_from_local(Self) -> @math.Affine3
+pub impl @ecs.Component for LineGizmoUniform
 
 pub struct RetainedLineGizmo {
   entity : @core.Entity

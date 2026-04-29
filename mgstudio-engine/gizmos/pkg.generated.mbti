@@ -40,6 +40,8 @@ pub fn draw_all_frustum_gizmos(@ecs.Query[@ecs.Comp[@render.Frustum], @ecs.Witho
 
 pub fn draw_frustum_gizmos(@ecs.Query[(@ecs.Comp[@render.Frustum], @ecs.Comp[ShowFrustumGizmo]), @ecs.All], @sprite.Gizmos[FrustumGizmoConfigGroup]) -> Unit
 
+pub let ecs_key_gizmo_mesh_config : @ecs.ComponentKey[GizmoMeshConfig]
+
 pub fn frustum_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gizmo() -> @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup]
@@ -197,6 +199,21 @@ pub struct GizmoBufferView {
   strip_positions : Array[@math.Vec3]
   strip_colors : Array[@color.Color]
 }
+
+pub struct GizmoMeshConfig {
+  line_perspective : Bool
+  line_style : @sprite.GizmoLineStyle
+  line_joints : @sprite.GizmoLineJoint
+  render_layers : @sprite.RenderLayers
+  handle : @asset.Handle[GizmoAsset]
+}
+pub fn GizmoMeshConfig::handle(Self) -> @asset.Handle[GizmoAsset]
+pub fn GizmoMeshConfig::line_joints(Self) -> @sprite.GizmoLineJoint
+pub fn GizmoMeshConfig::line_perspective(Self) -> Bool
+pub fn GizmoMeshConfig::line_style(Self) -> @sprite.GizmoLineStyle
+pub fn GizmoMeshConfig::new(line_perspective~ : Bool, line_style~ : @sprite.GizmoLineStyle, line_joints~ : @sprite.GizmoLineJoint, render_layers~ : @sprite.RenderLayers, handle~ : @asset.Handle[GizmoAsset]) -> Self
+pub fn GizmoMeshConfig::render_layers(Self) -> @sprite.RenderLayers
+pub impl @ecs.Component for GizmoMeshConfig
 
 pub struct GizmoPlugin {
 }

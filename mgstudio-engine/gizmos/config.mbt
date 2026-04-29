@@ -61,3 +61,72 @@ pub fn[G : @sprite.GizmoConfigGroup] gizmo_config_store_get_config_mut(
 ) -> (Ref[@sprite.GizmoConfig], Ref[G])? {
   store.get_config_mut(group)
 }
+
+///|
+pub struct GizmoMeshConfig {
+  line_perspective : Bool
+  line_style : @sprite.GizmoLineStyle
+  line_joints : @sprite.GizmoLineJoint
+  render_layers : @sprite.RenderLayers
+  handle : @asset.Handle[GizmoAsset]
+}
+
+///|
+pub fn GizmoMeshConfig::new(
+  line_perspective~ : Bool,
+  line_style~ : @sprite.GizmoLineStyle,
+  line_joints~ : @sprite.GizmoLineJoint,
+  render_layers~ : @sprite.RenderLayers,
+  handle~ : @asset.Handle[GizmoAsset],
+) -> GizmoMeshConfig {
+  GizmoMeshConfig::{
+    line_perspective,
+    line_style,
+    line_joints,
+    render_layers,
+    handle,
+  }
+}
+
+///|
+pub fn GizmoMeshConfig::line_perspective(self : GizmoMeshConfig) -> Bool {
+  self.line_perspective
+}
+
+///|
+pub fn GizmoMeshConfig::line_style(
+  self : GizmoMeshConfig,
+) -> @sprite.GizmoLineStyle {
+  self.line_style
+}
+
+///|
+pub fn GizmoMeshConfig::line_joints(
+  self : GizmoMeshConfig,
+) -> @sprite.GizmoLineJoint {
+  self.line_joints
+}
+
+///|
+pub fn GizmoMeshConfig::render_layers(
+  self : GizmoMeshConfig,
+) -> @sprite.RenderLayers {
+  self.render_layers
+}
+
+///|
+pub fn GizmoMeshConfig::handle(
+  self : GizmoMeshConfig,
+) -> @asset.Handle[GizmoAsset] {
+  self.handle
+}
+
+///|
+pub let ecs_key_gizmo_mesh_config : @ecs.ComponentKey[GizmoMeshConfig] = @ecs.register_component(
+  debug_name="mgstudio_gizmos::GizmoMeshConfig",
+)
+
+///|
+pub impl @ecs.Component for GizmoMeshConfig with component() {
+  ecs_key_gizmo_mesh_config
+}

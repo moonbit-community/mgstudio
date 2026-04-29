@@ -25,3 +25,39 @@ test "gizmos_render boundary exposes render systems and plugin entry" {
   ignore(_set2d)
   ignore(_set3d)
 }
+
+///|
+test "extract_line_gizmos spawns Bevy-shaped temporary render entities" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set(entity, @gizmos.Gizmo::default())
+  try! world.set(entity, @transform.GlobalTransform::identity())
+  @gizmos_render.extract_line_gizmos(world)
+  let query : @ecs.Query[
+    (
+      @ecs.Comp[@gizmos_render.LineGizmoUniform],
+      @ecs.Comp[@gizmos.GizmoMeshConfig],
+      @ecs.Comp[@render.MainEntity],
+      @ecs.Comp[@render.TemporaryRenderEntity],
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  let count = Ref::new(0)
+  let line_width = Ref::new(0.0F)
+  let depth_bias = Ref::new(1.0F)
+  let line_perspective = Ref::new(true)
+  let main_entity_matches = Ref::new(false)
+  try! query.view(fn(_render_entity, data) {
+    let (uniform, mesh_config, main_entity, _temporary) = data
+    count.val = count.val + 1
+    line_width.val = uniform.value().line_width()
+    depth_bias.val = uniform.value().depth_bias()
+    line_perspective.val = mesh_config.value().line_perspective()
+    main_entity_matches.val = main_entity.value().id() == entity
+  })
+  debug_inspect(line_width.val, content="2")
+  debug_inspect(depth_bias.val, content="0")
+  debug_inspect(line_perspective.val, content="false")
+  debug_inspect(main_entity_matches.val, content="true")
+  debug_inspect(count.val, content="1")
+}
