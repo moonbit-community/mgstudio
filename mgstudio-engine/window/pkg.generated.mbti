@@ -641,14 +641,21 @@ pub(all) struct Window {
   mut minimize_request : Bool?
   mut drag_move_request : Bool
   mut drag_resize_request : @math.CompassOctant?
+  mut physical_cursor_position : @math.Vec2?
 }
+pub fn Window::cursor_position(Self) -> @math.Vec2?
 pub fn Window::default() -> Self
 pub fn Window::height(Self) -> Float
+pub fn Window::physical_cursor_position(Self) -> @math.Vec2?
 pub fn Window::physical_height(Self) -> Int
+pub fn Window::physical_size(Self) -> @math.UVec2
 pub fn Window::physical_width(Self) -> Int
 pub fn Window::scale_factor(Self) -> Float
+pub fn Window::set_cursor_position(Self, @math.Vec2?) -> Unit
 pub fn Window::set_maximized(Self, Bool) -> Unit
 pub fn Window::set_minimized(Self, Bool) -> Unit
+pub fn Window::set_physical_cursor_position(Self, @math.Vec2?) -> Unit
+pub fn Window::size(Self) -> @math.Vec2
 pub fn Window::start_drag_move(Self) -> Unit
 pub fn Window::start_drag_resize(Self, @math.CompassOctant) -> Unit
 pub fn Window::width(Self) -> Float
@@ -804,6 +811,7 @@ pub fn WindowResolution::default() -> Self
 pub fn WindowResolution::height(Self) -> Float
 pub fn WindowResolution::new(Int, Int) -> Self
 pub fn WindowResolution::physical_height(Self) -> Int
+pub fn WindowResolution::physical_size(Self) -> @math.UVec2
 pub fn WindowResolution::physical_width(Self) -> Int
 pub fn WindowResolution::scale_factor(Self) -> Float
 pub fn WindowResolution::scale_factor_override(Self) -> Float?
@@ -811,6 +819,7 @@ pub fn WindowResolution::set(Self, Float, Float) -> Unit
 pub fn WindowResolution::set_physical_resolution(Self, Int, Int) -> Unit
 pub fn WindowResolution::set_scale_factor(Self, Float) -> Unit
 pub fn WindowResolution::set_scale_factor_override(Self, Float?) -> Unit
+pub fn WindowResolution::size(Self) -> @math.Vec2
 pub fn WindowResolution::width(Self) -> Float
 pub fn WindowResolution::with_scale_factor_override(Self, Float) -> Self
 

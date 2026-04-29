@@ -1491,6 +1491,12 @@ pub fn window_emit_cursor_moved(
   world : @ecs.World,
   event : CursorMoved,
 ) -> Unit {
+  window_update_component(world, event.window, fn(window) {
+    let physical_position = event.position.mul_scalar(window.scale_factor())
+    window.set_physical_cursor_position(Some(physical_position))
+    window
+  })
+  |> ignore
   if world.contains_message(ecs_key_cursor_moved) {
     ignore(world.send_message(ecs_key_cursor_moved, event))
   }
@@ -1510,6 +1516,11 @@ pub fn window_emit_cursor_entered(
 
 ///|
 pub fn window_emit_cursor_left(world : @ecs.World, event : CursorLeft) -> Unit {
+  window_update_component(world, event.window, fn(window) {
+    window.set_physical_cursor_position(None)
+    window
+  })
+  |> ignore
   if world.contains_message(ecs_key_cursor_left) {
     ignore(world.send_message(ecs_key_cursor_left, event))
   }

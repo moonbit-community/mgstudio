@@ -726,6 +726,61 @@ test "window: app lifecycle active states align with bevy semantics" {
 }
 
 ///|
+test "window: cursor position follows bevy physical bounds semantics" {
+  let window = Window::default()
+  window.resolution = WindowResolution::new(800, 600)
+
+  window.set_physical_cursor_position(Some(@math.Vec2::new(0.0F, 300.0F)))
+  let position0 = window.physical_cursor_position().unwrap()
+  debug_inspect(position0.x, content="0")
+  debug_inspect(position0.y, content="300")
+
+  window.set_physical_cursor_position(Some(@math.Vec2::new(799.999F, 300.0F)))
+  let position1 = window.physical_cursor_position().unwrap()
+  debug_inspect(position1.x, content="799.9990234375")
+  debug_inspect(position1.y, content="300")
+
+  window.set_physical_cursor_position(Some(@math.Vec2::new(-0.001F, 300.0F)))
+  debug_inspect(window.physical_cursor_position() is None, content="true")
+
+  window.set_physical_cursor_position(Some(@math.Vec2::new(800.0F, 300.0F)))
+  debug_inspect(window.physical_cursor_position() is None, content="true")
+
+  window.resolution.set_scale_factor(2.0F)
+  window.set_cursor_position(Some(@math.Vec2::new(10.0F, 20.0F)))
+  let physical = window.physical_cursor_position().unwrap()
+  let logical = window.cursor_position().unwrap()
+  debug_inspect(physical.x, content="20")
+  debug_inspect(physical.y, content="40")
+  debug_inspect(logical.x, content="10")
+  debug_inspect(logical.y, content="20")
+}
+
+///|
+test "window: cursor events write back window cursor state like bevy winit" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let window = Window::default()
+  window.resolution = WindowResolution::new(800, 600)
+  window.resolution.set_scale_factor(2.0F)
+  try! (world.entity_mut(entity).insert_component(window) |> ignore)
+
+  window_emit_cursor_moved(world, CursorMoved::{
+    window: entity,
+    position: @math.Vec2::new(12.0F, 24.0F),
+    delta: None,
+  })
+  let moved = window_component_value(world, entity).unwrap()
+  let physical = moved.physical_cursor_position().unwrap()
+  debug_inspect(physical.x, content="24")
+  debug_inspect(physical.y, content="48")
+
+  window_emit_cursor_left(world, CursorLeft::{ window: entity })
+  let left = window_component_value(world, entity).unwrap()
+  debug_inspect(left.physical_cursor_position() is None, content="true")
+}
+
+///|
 test "window: aggregate event bus mirrors window-owned emit helpers" {
   let world = @ecs.World::new()
   let entity = world.spawn()

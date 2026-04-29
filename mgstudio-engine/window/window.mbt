@@ -229,6 +229,11 @@ pub fn WindowResolution::height(self : WindowResolution) -> Float {
 }
 
 ///|
+pub fn WindowResolution::size(self : WindowResolution) -> @math.Vec2 {
+  @math.Vec2::new(self.width(), self.height())
+}
+
+///|
 pub fn WindowResolution::physical_width(self : WindowResolution) -> Int {
   self.physical_width
 }
@@ -236,6 +241,11 @@ pub fn WindowResolution::physical_width(self : WindowResolution) -> Int {
 ///|
 pub fn WindowResolution::physical_height(self : WindowResolution) -> Int {
   self.physical_height
+}
+
+///|
+pub fn WindowResolution::physical_size(self : WindowResolution) -> @math.UVec2 {
+  @math.UVec2::new(self.physical_width(), self.physical_height())
 }
 
 ///|
@@ -350,6 +360,7 @@ pub(all) struct Window {
   mut minimize_request : Bool?
   mut drag_move_request : Bool
   mut drag_resize_request : @math.CompassOctant?
+  mut physical_cursor_position : @math.Vec2?
 }
 
 ///|
@@ -398,6 +409,7 @@ pub fn Window::default() -> Window {
     minimize_request: None,
     drag_move_request: false,
     drag_resize_request: None,
+    physical_cursor_position: None,
   }
 }
 
@@ -412,6 +424,11 @@ pub fn Window::height(self : Window) -> Float {
 }
 
 ///|
+pub fn Window::size(self : Window) -> @math.Vec2 {
+  self.resolution.size()
+}
+
+///|
 pub fn Window::physical_width(self : Window) -> Int {
   self.resolution.physical_width()
 }
@@ -422,8 +439,55 @@ pub fn Window::physical_height(self : Window) -> Int {
 }
 
 ///|
+pub fn Window::physical_size(self : Window) -> @math.UVec2 {
+  self.resolution.physical_size()
+}
+
+///|
 pub fn Window::scale_factor(self : Window) -> Float {
   self.resolution.scale_factor()
+}
+
+///|
+pub fn Window::cursor_position(self : Window) -> @math.Vec2? {
+  match self.physical_cursor_position() {
+    Some(position) => Some(position.div_scalar(self.scale_factor()))
+    None => None
+  }
+}
+
+///|
+pub fn Window::physical_cursor_position(self : Window) -> @math.Vec2? {
+  match self.physical_cursor_position {
+    Some(position) =>
+      if position.x >= 0.0F &&
+        position.y >= 0.0F &&
+        position.x < Float::from_int(self.physical_width()) &&
+        position.y < Float::from_int(self.physical_height()) {
+        Some(position)
+      } else {
+        None
+      }
+    None => None
+  }
+}
+
+///|
+pub fn Window::set_cursor_position(
+  self : Window,
+  position : @math.Vec2?,
+) -> Unit {
+  self.physical_cursor_position = position.map(fn(p) {
+    p.mul_scalar(self.scale_factor())
+  })
+}
+
+///|
+pub fn Window::set_physical_cursor_position(
+  self : Window,
+  position : @math.Vec2?,
+) -> Unit {
+  self.physical_cursor_position = position
 }
 
 ///|
