@@ -106,6 +106,18 @@ fn[W] plugin_group_cleanup_default(app : App[W]) -> App[W] {
 }
 
 ///|
+fn[W] plugin_group_placeholder_entry() -> PluginGroupEntry[W] {
+  plugin_group_entry_new(
+    "mgstudio.app.PlaceholderPlugin",
+    fn(app) { app },
+    is_unique=false,
+    ready=plugin_group_ready_default,
+    finish=plugin_group_finish_default,
+    cleanup=plugin_group_cleanup_default,
+  )
+}
+
+///|
 fn[W] plugin_group_entry_new(
   id : String,
   plugin : PluginFn[W],
@@ -2322,9 +2334,11 @@ fn[W] App::add_plugin_entry(
   if entry.is_unique && self.plugin_name_registered(entry.id) {
     abort("Duplicate unique plugin: \{entry.id}")
   }
-  self.plugin_names.push(entry.id)
+  let index = self.plugin_registry.length()
+  self.plugin_registry.push(plugin_group_placeholder_entry())
   let app = (entry.plugin)(self)
-  app.plugin_registry.push(entry)
+  app.plugin_names.push(entry.id)
+  app.plugin_registry[index] = entry
   app.plugins_state = Adding
   app
 }

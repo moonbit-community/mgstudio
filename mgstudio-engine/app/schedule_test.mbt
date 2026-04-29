@@ -34,10 +34,19 @@ struct MissingPluginTest {}
 struct PluginLifecycleTestPlugin {}
 
 ///|
+struct NestedParentPlugin {}
+
+///|
+struct NestedChildPlugin {}
+
+///|
 let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
 let plugin_lifecycle_log_ref : Ref[Array[Int]] = Ref::new([])
+
+///|
+let nested_plugin_lifecycle_log_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
 let plugin_lifecycle_ready_ref : Ref[Bool] = Ref::new(true)
@@ -50,6 +59,7 @@ fn plugin_group_test_reset_log() -> Unit {
 ///|
 fn plugin_lifecycle_test_reset_log() -> Unit {
   plugin_lifecycle_log_ref.val = []
+  nested_plugin_lifecycle_log_ref.val = []
   plugin_lifecycle_ready_ref.val = true
 }
 
@@ -175,6 +185,52 @@ pub impl Plugin for PluginLifecycleTestPlugin with finish(_self, app) {
 ///|
 pub impl Plugin for PluginLifecycleTestPlugin with cleanup(_self, app) {
   plugin_lifecycle_log_ref.val.push(3)
+  app
+}
+
+///|
+pub impl Plugin for NestedParentPlugin with name(_self) {
+  "mgstudio.app.nested_parent_plugin"
+}
+
+///|
+pub impl Plugin for NestedParentPlugin with build(_self, app) {
+  nested_plugin_lifecycle_log_ref.val.push(1)
+  app.add_plugins(NestedChildPlugin::{  })
+}
+
+///|
+pub impl Plugin for NestedParentPlugin with finish(_self, app) {
+  nested_plugin_lifecycle_log_ref.val.push(10)
+  app
+}
+
+///|
+pub impl Plugin for NestedParentPlugin with cleanup(_self, app) {
+  nested_plugin_lifecycle_log_ref.val.push(100)
+  app
+}
+
+///|
+pub impl Plugin for NestedChildPlugin with name(_self) {
+  "mgstudio.app.nested_child_plugin"
+}
+
+///|
+pub impl Plugin for NestedChildPlugin with build(_self, app) {
+  nested_plugin_lifecycle_log_ref.val.push(2)
+  app
+}
+
+///|
+pub impl Plugin for NestedChildPlugin with finish(_self, app) {
+  nested_plugin_lifecycle_log_ref.val.push(20)
+  app
+}
+
+///|
+pub impl Plugin for NestedChildPlugin with cleanup(_self, app) {
+  nested_plugin_lifecycle_log_ref.val.push(200)
   app
 }
 
@@ -463,6 +519,21 @@ test "app: explicit finish/cleanup follow bevy lifecycle ordering" {
   let app = app.cleanup()
   debug_inspect(app.plugins_state() == Cleaned, content="true")
   debug_inspect(plugin_lifecycle_log_ref.val, content="[1, 2, 3]")
+}
+
+///|
+test "app: nested plugin registry preserves parent before child lifecycle" {
+  plugin_lifecycle_test_reset_log()
+  let app = App::new(@ecs.World::new()).add_plugins(NestedParentPlugin::{  })
+  debug_inspect(nested_plugin_lifecycle_log_ref.val, content="[1, 2]")
+  debug_inspect(app.plugin_names().length(), content="2")
+  let app = app.finish()
+  debug_inspect(nested_plugin_lifecycle_log_ref.val, content="[1, 2, 10, 20]")
+  app.cleanup() |> ignore
+  debug_inspect(
+    nested_plugin_lifecycle_log_ref.val,
+    content="[1, 2, 10, 20, 100, 200]",
+  )
 }
 
 ///|
