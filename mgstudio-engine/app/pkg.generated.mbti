@@ -365,6 +365,7 @@ pub fn[S : States] world_state(@ecs.World, S) -> State[S]?
 // Errors
 pub(all) suberror PluginGroupError {
   MissingPlugin(String)
+  DuplicatePlugin(String)
 }
 
 pub(all) suberror RegisteredSystemError {
@@ -883,6 +884,9 @@ pub struct PluginGroupBuilder[W] {
   plugins : Array[PluginGroupEntry[W]]
 }
 pub fn[P : Plugin] PluginGroupBuilder::add(Self[@ecs.World], P) -> Self[@ecs.World]
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::add_after(Self[@ecs.World], Target, Insert) -> Self[@ecs.World]
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::add_before(Self[@ecs.World], Target, Insert) -> Self[@ecs.World]
+pub fn[G : PluginGroup] PluginGroupBuilder::add_group(Self[@ecs.World], G) -> Self[@ecs.World]
 pub fn[W] PluginGroupBuilder::build_entries(Self[W]) -> Array[PluginGroupEntry[W]]
 pub fn[P : Plugin] PluginGroupBuilder::contains(Self[@ecs.World], P) -> Bool
 pub fn[P : Plugin] PluginGroupBuilder::disable(Self[@ecs.World], P) -> Self[@ecs.World]
@@ -891,7 +895,13 @@ pub fn[P : Plugin] PluginGroupBuilder::enabled(Self[@ecs.World], P) -> Bool
 pub fn[P : Plugin] PluginGroupBuilder::set(Self[@ecs.World], P) -> Self[@ecs.World]
 pub fn[W] PluginGroupBuilder::start() -> Self[W]
 pub fn[W] PluginGroupBuilder::start_named(String) -> Self[W]
+pub fn[P : Plugin] PluginGroupBuilder::try_add(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::try_add_after(Self[@ecs.World], Target, Insert) -> Self[@ecs.World] raise PluginGroupError
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::try_add_after_overwrite(Self[@ecs.World], Target, Insert) -> Self[@ecs.World] raise PluginGroupError
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::try_add_before(Self[@ecs.World], Target, Insert) -> Self[@ecs.World] raise PluginGroupError
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::try_add_before_overwrite(Self[@ecs.World], Target, Insert) -> Self[@ecs.World] raise PluginGroupError
 pub fn[P : Plugin] PluginGroupBuilder::try_disable(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
+pub fn[P : Plugin] PluginGroupBuilder::try_enable(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
 pub fn[P : Plugin] PluginGroupBuilder::try_set(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
 pub impl Plugin for PluginGroupBuilder[@ecs.World]
 pub impl PluginGroup for PluginGroupBuilder[@ecs.World]

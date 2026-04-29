@@ -24,6 +24,7 @@ type PluginFn[W] = (App[W]) -> App[W]
 ///|
 pub(all) suberror PluginGroupError {
   MissingPlugin(String)
+  DuplicatePlugin(String)
 }
 
 ///|
@@ -177,7 +178,29 @@ fn[W] PluginGroupBuilder::plugin_group_add_entry(
   self : PluginGroupBuilder[W],
   entry : PluginGroupEntry[W],
 ) -> PluginGroupBuilder[W] {
-  self.plugins.push(entry)
+  self.plugin_group_insert_entry_at(entry, self.plugins.length())
+}
+
+///|
+fn[W] PluginGroupBuilder::plugin_group_insert_entry_at(
+  self : PluginGroupBuilder[W],
+  entry : PluginGroupEntry[W],
+  index : Int,
+) -> PluginGroupBuilder[W] {
+  let mut target_index = index
+  if target_index < 0 {
+    target_index = 0
+  }
+  if target_index > self.plugins.length() {
+    target_index = self.plugins.length()
+  }
+  if self.plugin_group_find_index(entry.id) is Some(old_index) {
+    self.plugins.remove(old_index) |> ignore
+    if old_index < target_index {
+      target_index = target_index - 1
+    }
+  }
+  self.plugins.insert(target_index, entry)
   self
 }
 
@@ -190,8 +213,9 @@ fn[W] PluginGroupBuilder::plugin_group_try_set_entry(
   guard self.plugin_group_find_index(id) is Some(index) else {
     raise MissingPlugin(id)
   }
+  let enabled = self.plugins[index].enabled
   self.plugins[index] = entry
-  self.plugins[index].enabled = true
+  self.plugins[index].enabled = enabled
   self
 }
 
@@ -201,6 +225,110 @@ pub fn[P : Plugin] PluginGroupBuilder::add(
   plugin : P,
 ) -> PluginGroupBuilder[@ecs.World] {
   self.plugin_group_add_entry(plugin_group_entry_from_plugin(plugin))
+}
+
+///|
+pub fn[P : Plugin] PluginGroupBuilder::try_add(
+  self : PluginGroupBuilder[@ecs.World],
+  plugin : P,
+) -> PluginGroupBuilder[@ecs.World] raise PluginGroupError {
+  let id = P::name(plugin)
+  if self.plugin_group_contains_id(id) {
+    raise DuplicatePlugin(id)
+  }
+  self.plugin_group_add_entry(plugin_group_entry_from_plugin(plugin))
+}
+
+///|
+pub fn[G : PluginGroup] PluginGroupBuilder::add_group(
+  self : PluginGroupBuilder[@ecs.World],
+  group : G,
+) -> PluginGroupBuilder[@ecs.World] {
+  let mut builder = self
+  let group_builder = G::build(group)
+  for entry in group_builder.plugins {
+    builder = builder.plugin_group_insert_entry_at(
+      entry,
+      builder.plugins.length(),
+    )
+  }
+  builder
+}
+
+///|
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::add_before(
+  self : PluginGroupBuilder[@ecs.World],
+  target : Target,
+  plugin : Insert,
+) -> PluginGroupBuilder[@ecs.World] {
+  try! self.try_add_before_overwrite(target, plugin)
+}
+
+///|
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::try_add_before(
+  self : PluginGroupBuilder[@ecs.World],
+  target : Target,
+  plugin : Insert,
+) -> PluginGroupBuilder[@ecs.World] raise PluginGroupError {
+  let plugin_id = Insert::name(plugin)
+  if self.plugin_group_contains_id(plugin_id) {
+    raise DuplicatePlugin(plugin_id)
+  }
+  self.try_add_before_overwrite(target, plugin)
+}
+
+///|
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::try_add_before_overwrite(
+  self : PluginGroupBuilder[@ecs.World],
+  target : Target,
+  plugin : Insert,
+) -> PluginGroupBuilder[@ecs.World] raise PluginGroupError {
+  let target_id = Target::name(target)
+  guard self.plugin_group_find_index(target_id) is Some(target_index) else {
+    raise MissingPlugin(target_id)
+  }
+  self.plugin_group_insert_entry_at(
+    plugin_group_entry_from_plugin(plugin),
+    target_index,
+  )
+}
+
+///|
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::add_after(
+  self : PluginGroupBuilder[@ecs.World],
+  target : Target,
+  plugin : Insert,
+) -> PluginGroupBuilder[@ecs.World] {
+  try! self.try_add_after_overwrite(target, plugin)
+}
+
+///|
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::try_add_after(
+  self : PluginGroupBuilder[@ecs.World],
+  target : Target,
+  plugin : Insert,
+) -> PluginGroupBuilder[@ecs.World] raise PluginGroupError {
+  let plugin_id = Insert::name(plugin)
+  if self.plugin_group_contains_id(plugin_id) {
+    raise DuplicatePlugin(plugin_id)
+  }
+  self.try_add_after_overwrite(target, plugin)
+}
+
+///|
+pub fn[Target : Plugin, Insert : Plugin] PluginGroupBuilder::try_add_after_overwrite(
+  self : PluginGroupBuilder[@ecs.World],
+  target : Target,
+  plugin : Insert,
+) -> PluginGroupBuilder[@ecs.World] raise PluginGroupError {
+  let target_id = Target::name(target)
+  guard self.plugin_group_find_index(target_id) is Some(target_index) else {
+    raise MissingPlugin(target_id)
+  }
+  self.plugin_group_insert_entry_at(
+    plugin_group_entry_from_plugin(plugin),
+    target_index + 1,
+  )
 }
 
 ///|
@@ -254,11 +382,13 @@ fn[W] PluginGroupBuilder::plugin_group_try_disable_id(
 }
 
 ///|
-fn[W] PluginGroupBuilder::plugin_group_enable_id(
+fn[W] PluginGroupBuilder::plugin_group_try_enable_id(
   self : PluginGroupBuilder[W],
   id : String,
-) -> PluginGroupBuilder[W] {
-  guard self.plugin_group_find_index(id) is Some(index) else { return self }
+) -> PluginGroupBuilder[W] raise PluginGroupError {
+  guard self.plugin_group_find_index(id) is Some(index) else {
+    raise MissingPlugin(id)
+  }
   self.plugins[index].enabled = true
   self
 }
@@ -284,7 +414,15 @@ pub fn[P : Plugin] PluginGroupBuilder::enable(
   self : PluginGroupBuilder[@ecs.World],
   plugin : P,
 ) -> PluginGroupBuilder[@ecs.World] {
-  self.plugin_group_enable_id(P::name(plugin))
+  try! self.plugin_group_try_enable_id(P::name(plugin))
+}
+
+///|
+pub fn[P : Plugin] PluginGroupBuilder::try_enable(
+  self : PluginGroupBuilder[@ecs.World],
+  plugin : P,
+) -> PluginGroupBuilder[@ecs.World] raise PluginGroupError {
+  self.plugin_group_try_enable_id(P::name(plugin))
 }
 
 ///|

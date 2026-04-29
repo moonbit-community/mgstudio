@@ -316,12 +316,108 @@ test "app: plugin group try_set_plugin raises when id is missing" {
     "ok"
   } catch {
     MissingPlugin(id) => id
+    DuplicatePlugin(id) => "duplicate:\{id}"
   }
 
   debug_inspect(
     missing_plugin_id,
     content="\"mgstudio.app.missing_plugin_test\"",
   )
+}
+
+///|
+test "app: plugin group add reorders existing plugin like Bevy" {
+  let group = PluginGroupBuilder::start_named("TestPlugins")
+    .add(PluginGroupTestPlugin1::{  })
+    .add(PluginGroupTestPlugin2::{  })
+    .add(PluginGroupTestPlugin1Override::{  })
+  let entries = group.build_entries()
+  debug_inspect(entries.length(), content="2")
+  debug_inspect(entries[0].id, content="\"mgstudio.app.test_plugin_2\"")
+  debug_inspect(entries[1].id, content="\"mgstudio.app.test_plugin_1\"")
+}
+
+///|
+test "app: plugin group add_before and add_after overwrite existing position" {
+  let before_group = PluginGroupBuilder::start_named("TestPlugins")
+    .add(PluginGroupTestPlugin1::{  })
+    .add(PluginGroupTestPlugin2::{  })
+    .add(PluginGroupTestPlugin3::{  })
+    .add_before(PluginGroupTestPlugin2::{  }, PluginGroupTestPlugin3::{  })
+  let before_entries = before_group.build_entries()
+  debug_inspect(before_entries[0].id, content="\"mgstudio.app.test_plugin_1\"")
+  debug_inspect(before_entries[1].id, content="\"mgstudio.app.test_plugin_3\"")
+  debug_inspect(before_entries[2].id, content="\"mgstudio.app.test_plugin_2\"")
+
+  let after_group = PluginGroupBuilder::start_named("TestPlugins")
+    .add(PluginGroupTestPlugin1::{  })
+    .add(PluginGroupTestPlugin2::{  })
+    .add(PluginGroupTestPlugin3::{  })
+    .add_after(PluginGroupTestPlugin1::{  }, PluginGroupTestPlugin3::{  })
+  let after_entries = after_group.build_entries()
+  debug_inspect(after_entries[0].id, content="\"mgstudio.app.test_plugin_1\"")
+  debug_inspect(after_entries[1].id, content="\"mgstudio.app.test_plugin_3\"")
+  debug_inspect(after_entries[2].id, content="\"mgstudio.app.test_plugin_2\"")
+}
+
+///|
+test "app: plugin group try_add variants preserve Bevy errors" {
+  let duplicate_id = try {
+    ignore(
+      PluginGroupBuilder::start_named("TestPlugins")
+      .add(PluginGroupTestPlugin1::{  })
+      .try_add(PluginGroupTestPlugin1Override::{  }),
+    )
+    "ok"
+  } catch {
+    DuplicatePlugin(id) => id
+    MissingPlugin(id) => "missing:\{id}"
+  }
+  debug_inspect(duplicate_id, content="\"mgstudio.app.test_plugin_1\"")
+
+  let missing_target_id = try {
+    ignore(
+      PluginGroupBuilder::start_named("TestPlugins")
+      .add(PluginGroupTestPlugin1::{  })
+      .try_add_before(MissingPluginTest::{  }, PluginGroupTestPlugin2::{  }),
+    )
+    "ok"
+  } catch {
+    DuplicatePlugin(id) => "duplicate:\{id}"
+    MissingPlugin(id) => id
+  }
+  debug_inspect(
+    missing_target_id,
+    content="\"mgstudio.app.missing_plugin_test\"",
+  )
+}
+
+///|
+test "app: plugin group set preserves disabled state" {
+  let group = PluginGroupBuilder::start_named("TestPlugins")
+    .add(PluginGroupTestPlugin1::{  })
+    .disable(PluginGroupTestPlugin1::{  })
+    .set(PluginGroupTestPlugin1Override::{  })
+  debug_inspect(group.enabled(PluginGroupTestPlugin1::{  }), content="false")
+  debug_inspect(group.build_entries().length(), content="0")
+}
+
+///|
+test "app: plugin group add_group deduplicates by final ordering" {
+  let group_a = PluginGroupBuilder::start_named("GroupA")
+    .add(PluginGroupTestPlugin1::{  })
+    .add(PluginGroupTestPlugin3::{  })
+  let group_b = PluginGroupBuilder::start_named("GroupB")
+    .add(PluginGroupTestPlugin2::{  })
+    .add(PluginGroupTestPlugin3::{  })
+  let group = PluginGroupBuilder::start_named("Root")
+    .add_group(group_a)
+    .add_group(group_b)
+  let entries = group.build_entries()
+  debug_inspect(entries.length(), content="3")
+  debug_inspect(entries[0].id, content="\"mgstudio.app.test_plugin_1\"")
+  debug_inspect(entries[1].id, content="\"mgstudio.app.test_plugin_2\"")
+  debug_inspect(entries[2].id, content="\"mgstudio.app.test_plugin_3\"")
 }
 
 ///|
