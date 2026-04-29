@@ -338,7 +338,7 @@ fn scene_gltf_parse_prefixed_index(label : String, prefix : String) -> Int? {
   if !label.has_prefix(prefix) {
     return None
   }
-  let suffix = label[prefix.length():label.length()].to_string()
+  let suffix = label[prefix.length():label.length()].to_owned()
   if suffix.length() == 0 {
     None
   } else {
@@ -358,8 +358,8 @@ fn scene_gltf_parse_mesh_primitive_label(label : String) -> (Int, Int)? {
   let mesh_start = SCENE_GLTF_ASSET_LABEL_MESH_PREFIX.length()
   let primitive_start = split_index +
     SCENE_GLTF_ASSET_LABEL_PRIMITIVE_SEGMENT.length()
-  let mesh_text = label[mesh_start:split_index].to_string()
-  let primitive_text = label[primitive_start:label.length()].to_string()
+  let mesh_text = label[mesh_start:split_index].to_owned()
+  let primitive_text = label[primitive_start:label.length()].to_owned()
   if mesh_text.length() == 0 || primitive_text.length() == 0 {
     return None
   }
@@ -378,7 +378,7 @@ fn scene_gltf_parse_material_label(label : String) -> (Int, Bool)? {
   if !label.has_prefix(SCENE_GLTF_ASSET_LABEL_MATERIAL_PREFIX) {
     return None
   }
-  let payload = label[SCENE_GLTF_ASSET_LABEL_MATERIAL_PREFIX.length():label.length()].to_string()
+  let payload = label[SCENE_GLTF_ASSET_LABEL_MATERIAL_PREFIX.length():label.length()].to_owned()
   if payload.length() == 0 {
     return None
   }
@@ -390,7 +390,7 @@ fn scene_gltf_parse_material_label(label : String) -> (Int, Bool)? {
     if end <= 0 {
       return None
     }
-    index_payload = payload[0:end].to_string()
+    index_payload = payload[0:end].to_owned()
     is_scale_inverted = true
   }
   guard scene_gltf_parse_non_negative_int(index_payload) is Some(index) else {
@@ -410,7 +410,7 @@ fn scene_parse_gltf_asset_label(label : String) -> GltfAssetLabel? {
     if end <= 0 {
       return None
     }
-    let primitive_label = label[0:end].to_string()
+    let primitive_label = label[0:end].to_owned()
     if scene_gltf_parse_mesh_primitive_label(primitive_label)
       is Some((mesh, primitive)) {
       return Some(GltfAssetLabel::MorphTarget(mesh, primitive))
@@ -427,7 +427,7 @@ fn scene_parse_gltf_asset_label(label : String) -> GltfAssetLabel? {
     if end <= SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX.length() {
       return None
     }
-    let index_payload = label[SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX.length():end].to_string()
+    let index_payload = label[SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX.length():end].to_owned()
     if scene_gltf_parse_non_negative_int(index_payload) is Some(index) {
       return Some(GltfAssetLabel::InverseBindMatrices(index))
     }
@@ -489,12 +489,12 @@ fn scene_split_gltf_asset_path(
   asset_path : String,
 ) -> (String, GltfAssetLabel?) {
   if asset_path.rev_find("#") is Some(index) {
-    let base_path = asset_path[0:index].to_string()
+    let base_path = asset_path[0:index].to_owned()
     let label_start = index + 1
     if label_start >= asset_path.length() {
       return (base_path, None)
     }
-    let label = asset_path[label_start:asset_path.length()].to_string()
+    let label = asset_path[label_start:asset_path.length()].to_owned()
     let parsed_label = scene_parse_gltf_asset_label(label)
     scene_touch_gltf_asset_label(parsed_label)
     (base_path, parsed_label)
@@ -1862,8 +1862,8 @@ fn uri_percent_decode_bytes(payload : String) -> Bytes? {
 fn data_uri_decode_bytes(uri : String) -> Bytes? {
   guard uri.has_prefix("data:") else { return None }
   guard uri.find(",") is Some(split) else { return None }
-  let head = uri[0:split].to_string()
-  let payload = uri[split + 1:uri.length()].to_string()
+  let head = uri[0:split].to_owned()
+  let payload = uri[split + 1:uri.length()].to_owned()
   if head.contains(";base64") {
     let decoded = @base64.decode(payload[:], ignore_whitespace=true) catch {
       _ => @base64.decode_lossy(payload[:], ignore_whitespace=true)
@@ -2466,7 +2466,7 @@ fn gltf_collect_animation_root_indices(doc : ParsedGltfDocument) -> Array[Int] {
 ///|
 fn path_dirname(path : String) -> String {
   if path.rev_find("/") is Some(split) {
-    return path[0:split].to_string()
+    return path[0:split].to_owned()
   }
   ""
 }
@@ -2479,7 +2479,7 @@ fn path_join(base_dir : String, relative : String) -> String {
     return relative
   }
   let normalized = if relative.has_prefix("./") {
-    relative[2:relative.length()].to_string()
+    relative[2:relative.length()].to_owned()
   } else {
     relative
   }

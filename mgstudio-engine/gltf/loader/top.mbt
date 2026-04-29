@@ -396,7 +396,7 @@ fn gltf_attribute_name_matches(
   }
   if attribute_name.length() > 0 && attribute_name.code_unit_at(0) == 95 {
     return registered_name ==
-      attribute_name[1:attribute_name.length()].to_string()
+      attribute_name[1:attribute_name.length()].to_owned()
   }
   false
 }

@@ -149,7 +149,7 @@ fn sysinfo_cpu_name(system : @sysinfo.System) -> String {
   if cpus.length() == 0 {
     system_info_not_available()
   } else {
-    let brand = cpus[0].brand().trim().to_string()
+    let brand = cpus[0].brand().trim().to_owned()
     if brand == "" {
       system_info_not_available()
     } else {

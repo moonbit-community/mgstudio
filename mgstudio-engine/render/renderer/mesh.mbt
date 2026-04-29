@@ -53,13 +53,13 @@ fn gpu_mesh_bind_index_buffer(
 
 ///|
 fn parse_f32_csv(csv : String) -> Array[Float]? {
-  let trimmed = csv.trim().to_string()
+  let trimmed = csv.trim().to_owned()
   if trimmed == "" {
     return Some([])
   }
   let values : Array[Float] = []
   for part in csv.split(",") {
-    let token = part.to_string().trim().to_string()
+    let token = part.trim().to_owned()
     if token == "" {
       continue
     }

@@ -110,8 +110,8 @@ pub fn asset_try_parse_path(
     if hash_index + 1 >= path.length() {
       raise ParseAssetPathError::MissingLabel
     }
-    let base = if hash_index > 0 { path[0:hash_index].to_string() } else { "" }
-    let parsed_label = path[hash_index + 1:path.length()].to_string()
+    let base = if hash_index > 0 { path[0:hash_index].to_owned() } else { "" }
+    let parsed_label = path[hash_index + 1:path.length()].to_owned()
     if string_find_substring(parsed_label, "://") >= 0 {
       raise ParseAssetPathError::InvalidLabelSyntax
     }
@@ -134,9 +134,9 @@ pub fn asset_try_parse_path(
   }
 
   if source_scheme_index > 0 {
-    let source_name = without_label[0:source_scheme_index].to_string()
+    let source_name = without_label[0:source_scheme_index].to_owned()
     let relative_path = if source_scheme_index + 3 < without_label.length() {
-      without_label[source_scheme_index + 3:without_label.length()].to_string()
+      without_label[source_scheme_index + 3:without_label.length()].to_owned()
     } else {
       ""
     }

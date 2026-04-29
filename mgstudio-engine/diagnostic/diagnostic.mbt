@@ -59,7 +59,7 @@ pub fn DiagnosticPath::as_str(self : DiagnosticPath) -> String {
 pub fn DiagnosticPath::components(self : DiagnosticPath) -> Array[String] {
   let components : Array[String] = []
   for component in self.path.split("/") {
-    components.push(component.to_string())
+    components.push(component.to_owned())
   }
   components
 }

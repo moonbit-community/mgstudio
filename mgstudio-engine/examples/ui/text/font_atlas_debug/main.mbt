@@ -55,7 +55,7 @@ fn yellow() -> @sprite.Color {
 fn glyph_at(index : Int) -> String {
   let count = ATLAS_DEBUG_GLYPHS.length()
   let wrapped = if count == 0 { 0 } else { index % count }
-  ATLAS_DEBUG_GLYPHS[wrapped:wrapped + 1].to_string()
+  ATLAS_DEBUG_GLYPHS[wrapped:wrapped + 1].to_owned()
 }
 
 ///|

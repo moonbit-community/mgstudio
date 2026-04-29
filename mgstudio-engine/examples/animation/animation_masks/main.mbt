@@ -197,7 +197,7 @@ fn push_unique_target_id(
 fn split_path(path : String) -> Array[String] {
   let parts : Array[String] = []
   for item in path.split("/") {
-    parts.push(item.to_string())
+    parts.push(item.to_owned())
   }
   parts
 }

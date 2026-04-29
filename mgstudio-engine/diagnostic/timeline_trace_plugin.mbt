@@ -195,7 +195,7 @@ impl @app.Resource for StressMetricsState with resource() {
 fn stress_diagnostics_use_generic_stack() -> Bool {
   match @sys.get_env_var(STRESS_DIAGNOSTICS_ENV_GENERIC) {
     Some(raw) => {
-      let token = raw.trim().to_string()
+      let token = raw.trim().to_owned()
       token == "1" ||
       token == "true" ||
       token == "TRUE" ||
@@ -274,7 +274,7 @@ let timeline_trace_state_resource_key : @ecs.ResourceKey[TimelineTraceState] = @
 fn timeline_trace_env_enabled(default_value : Bool) -> Bool {
   match @sys.get_env_var(TIMELINE_TRACE_ENV_ENABLED) {
     Some(raw) => {
-      let token = raw.trim().to_string()
+      let token = raw.trim().to_owned()
       token == "1" ||
       token == "true" ||
       token == "TRUE" ||
@@ -291,7 +291,7 @@ fn timeline_trace_env_enabled(default_value : Bool) -> Bool {
 fn timeline_trace_env_string(default_value : String, key : String) -> String {
   match @sys.get_env_var(key) {
     Some(raw) => {
-      let token = raw.trim().to_string()
+      let token = raw.trim().to_owned()
       if token == "" {
         default_value
       } else {
@@ -306,7 +306,7 @@ fn timeline_trace_env_string(default_value : String, key : String) -> String {
 fn timeline_trace_env_int(default_value : Int, key : String) -> Int {
   match @sys.get_env_var(key) {
     Some(raw) => {
-      let token = raw.trim().to_string()
+      let token = raw.trim().to_owned()
       if token == "" {
         default_value
       } else {
@@ -321,7 +321,7 @@ fn timeline_trace_env_int(default_value : Int, key : String) -> Int {
 
 ///|
 fn timeline_trace_parse_category(token : String) -> @app.TimelineTraceCategory? {
-  match token.trim().to_string() {
+  match token.trim().to_owned() {
     "schedule_stage" | "ScheduleStage" | "stage" =>
       Some(@app.TimelineTraceCategory::ScheduleStage)
     "system" | "System" => Some(@app.TimelineTraceCategory::System)
@@ -341,7 +341,7 @@ fn timeline_trace_env_categories(
     Some(raw) => {
       let categories : Array[@app.TimelineTraceCategory] = []
       for part in raw.split(",") {
-        let token = part.trim().to_string()
+        let token = part.trim().to_owned()
         if token == "" {
           continue
         }

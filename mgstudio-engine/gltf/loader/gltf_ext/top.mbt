@@ -82,7 +82,7 @@ pub fn GltfAssetLabel::from_asset(
   asset_path : String,
 ) -> String {
   let base_path = if asset_path.rev_find("#") is Some(index) {
-    asset_path[0:index].to_string()
+    asset_path[0:index].to_owned()
   } else {
     asset_path
   }

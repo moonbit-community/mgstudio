@@ -3077,7 +3077,7 @@ pub fn ui_build_a11y_tree_update(
   fn push_nonempty(parts : Ref[Array[String]], text : String) -> Unit {
     let trimmed = text.trim()
     if trimmed != "" {
-      parts.val.push(trimmed.to_string())
+      parts.val.push(trimmed.to_owned())
     }
   }
 

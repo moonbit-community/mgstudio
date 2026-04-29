@@ -327,7 +327,7 @@ fn mesh3d_error_scope_message(
   result : @wgpu.ErrorScopeResult,
   fallback : String,
 ) -> String {
-  let message = result.message.trim().to_string()
+  let message = result.message.trim().to_owned()
   if message == "" {
     fallback
   } else {

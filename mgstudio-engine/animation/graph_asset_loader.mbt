@@ -184,7 +184,7 @@ fn animation_graph_parse_nodes_ron(
   guard open >= 0 else { return None }
   let close = animation_graph_find_matching(source, open, 91, 93)
   guard close > open else { return None }
-  let block = source[open + 1:close].to_string()
+  let block = source[open + 1:close].to_owned()
 
   let nodes : Array[SerializedAnimationGraphNode] = []
   let mut cursor = 0
@@ -241,7 +241,7 @@ fn animation_graph_parse_edges_ron(source : String) -> Array[(Int, Int)]? {
   guard open >= 0 else { return None }
   let close = animation_graph_find_matching(source, open, 91, 93)
   guard close > open else { return None }
-  let block = source[open + 1:close].to_string()
+  let block = source[open + 1:close].to_owned()
 
   let edges : Array[(Int, Int)] = []
   let mut cursor = 0
@@ -285,7 +285,7 @@ fn animation_graph_parse_mask_groups_ron(
 
   let close = animation_graph_find_matching(source, value_index, 123, 125)
   guard close > value_index else { return None }
-  let body = source[value_index + 1:close].to_string().trim().to_string()
+  let body = source[value_index + 1:close].to_owned().trim().to_owned()
   if body == "" {
     return Some([])
   }
@@ -341,7 +341,7 @@ fn animation_graph_parse_mask_group_key(
   if source.code_unit_at(i).to_int() == 40 {
     let close = animation_graph_find_matching(source, i, 40, 41)
     guard close > i else { return None }
-    let pair = source[i + 1:close].to_string()
+    let pair = source[i + 1:close].to_owned()
     guard animation_graph_parse_int_at(pair, 0) is Some(parsed_high) else {
       return None
     }
@@ -403,7 +403,7 @@ fn animation_graph_parse_quoted_string_ron(
       continue
     }
     if code == 34 {
-      return Some((source[start + 1:i].to_string(), i + 1))
+      return Some((source[start + 1:i].to_owned(), i + 1))
     }
     i = i + 1
   }
@@ -460,7 +460,7 @@ fn animation_graph_parse_float_at(
     return None
   }
 
-  let token = source[begin:i].to_string()
+  let token = source[begin:i].to_owned()
   let parsed = @json.parse(token[:]) catch { _ => return None }
   let value_opt : Float? = Some(@json.from_json(parsed)) catch { _ => None }
   match value_opt {

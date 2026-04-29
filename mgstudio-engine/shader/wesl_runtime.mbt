@@ -49,7 +49,7 @@ pub impl @app.Resource for ShaderRuntimeCache with resource() {
 
 ///|
 pub fn shader_path_is_wesl(path : String) -> Bool {
-  path.trim().to_string().has_suffix(".wesl")
+  path.trim().to_owned().has_suffix(".wesl")
 }
 
 ///|

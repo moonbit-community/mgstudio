@@ -156,7 +156,7 @@ fn asset_processor_registry_register_name_in_state(
   processor_name : String,
   entry_ref : (String, Int),
 ) -> Unit {
-  let normalized_name = processor_name.trim().to_string()
+  let normalized_name = processor_name.trim().to_owned()
   if normalized_name == "" {
     return
   }
@@ -331,7 +331,7 @@ pub fn set_default_asset_processor_by_name(
   if normalized_extension == "" {
     return app
   }
-  let normalized_name = processor_name.trim().to_string()
+  let normalized_name = processor_name.trim().to_owned()
   if normalized_name == "" {
     return app
   }
@@ -359,12 +359,12 @@ pub fn set_default_asset_processor_by_name(
 
 ///|
 fn asset_processor_normalize_extension(extension : String) -> String {
-  let trimmed = extension.trim().to_string()
+  let trimmed = extension.trim().to_owned()
   if trimmed == "" {
     return ""
   }
   if trimmed.code_unit_at(0) == 46 {
-    return trimmed[1:trimmed.length()].to_string()
+    return trimmed[1:trimmed.length()].to_owned()
   }
   trimmed
 }
@@ -383,7 +383,7 @@ fn asset_processor_path_matches_extension(
     return false
   }
   let start = formatted.length() - normalized.length()
-  if formatted[start:formatted.length()].to_string() != normalized {
+  if formatted[start:formatted.length()].to_owned() != normalized {
     return false
   }
   formatted.code_unit_at(start - 1) == 46

@@ -196,7 +196,7 @@ fn build_wgsl_import_module_paths(
 fn split_once_text(text : String, sep : String) -> (String, String)? {
   let parts : Array[String] = []
   for piece in text.split(sep) {
-    parts.push(piece.to_string())
+    parts.push(piece.to_owned())
   }
   if parts.length() != 2 {
     return None

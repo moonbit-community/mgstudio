@@ -357,13 +357,13 @@ pub fn image_extension_from_path(path : String) -> String? {
   let slash = image_string_last_index_of_char(path, 47)
   let file_name = match slash {
     -1 => path
-    index => path[index + 1:path.length()].to_string()
+    index => path[index + 1:path.length()].to_owned()
   }
   let dot = image_string_last_index_of_char(file_name, 46)
   if dot >= 0 && dot + 1 < file_name.length() {
     Some(
       image_extension_normalize(
-        file_name[dot + 1:file_name.length()].to_string(),
+        file_name[dot + 1:file_name.length()].to_owned(),
       ),
     )
   } else {

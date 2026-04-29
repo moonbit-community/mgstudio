@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/feathers"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/feathers/rounded_corners",
   "moonbitlang/core/debug",
 }
 
@@ -238,16 +239,6 @@ pub struct OverrideCursor {
 }
 pub fn OverrideCursor::default() -> Self
 
-pub(all) enum RoundedCorners {
-  None
-  All
-  Top
-  Bottom
-  Left
-  Right
-} derive(Eq, @debug.Debug)
-pub fn RoundedCorners::to_radius4(Self, Float) -> (Float, Float, Float, Float)
-
 pub struct ThemeBackgroundColor {
   token : ThemeToken
 } derive(@debug.Debug)
@@ -296,6 +287,7 @@ pub fn UiTheme::set_color(Self, String, String) -> Unit
 pub impl @app.Resource for UiTheme
 
 // Type aliases
+pub using @rounded_corners {type RoundedCorners}
 
 // Traits
 

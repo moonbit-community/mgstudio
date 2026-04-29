@@ -221,7 +221,10 @@ test "winit: windows resource mirrors host window runtime mapping" {
 
   assert_eq(windows.windows.length(), host_entries.length())
   for entry in host_entries {
-    assert_eq(windows.get_window(entry.entity), Some(entry.host_window))
+    debug_inspect(
+      windows.get_window(entry.entity) == Some(entry.host_window),
+      content="true",
+    )
     debug_inspect(
       windows.get_window_entity(entry.host_window) is Some(entity) &&
       entity == entry.entity,
@@ -239,10 +242,10 @@ test "winit: windows resource supports remove by entity" {
   windows.windows.push(WinitWindowEntry::new(entity_a, 101))
   windows.windows.push(WinitWindowEntry::new(entity_b, 202))
 
-  assert_eq(windows.remove_window(entity_a), Some(101))
-  assert_eq(windows.get_window(entity_a), None)
+  debug_inspect(windows.remove_window(entity_a) == Some(101), content="true")
+  debug_inspect(windows.get_window(entity_a) is None, content="true")
   debug_inspect(windows.get_window_entity(101) is None, content="true")
-  assert_eq(windows.get_window(entity_b), Some(202))
+  debug_inspect(windows.get_window(entity_b) == Some(202), content="true")
   assert_eq(windows.windows.length(), 1)
 }
 
@@ -279,41 +282,45 @@ test "winit: select_monitor aligns with bevy monitor selection semantics" {
   monitors.monitors.push(WinitMonitorEntry::new(monitor_b, entity_b))
   let primary_monitor = @windowing.primary_monitor()
 
-  assert_eq(
+  debug_inspect(
     select_monitor(
       monitors,
       primary_monitor,
       Some(monitor_b),
       @window.MonitorSelection::Current,
-    ),
+    ) ==
     Some(monitor_b),
+    content="true",
   )
-  assert_eq(
+  debug_inspect(
     select_monitor(
       monitors,
       primary_monitor,
       Some(monitor_b),
       @window.MonitorSelection::Primary,
-    ),
+    ) ==
     primary_monitor,
+    content="true",
   )
-  assert_eq(
+  debug_inspect(
     select_monitor(
       monitors,
       primary_monitor,
       Some(monitor_b),
       @window.MonitorSelection::Index(1),
-    ),
+    ) ==
     Some(monitor_b),
+    content="true",
   )
-  assert_eq(
+  debug_inspect(
     select_monitor(
       monitors,
       primary_monitor,
       Some(monitor_b),
       @window.MonitorSelection::Entity(entity_a),
-    ),
+    ) ==
     Some(monitor_a),
+    content="true",
   )
   debug_inspect(
     select_monitor(
@@ -358,9 +365,10 @@ test "winit: get_selected_videomode aligns with bevy fullscreen selection" {
   let monitor = native_monitors[0]
   match monitor.current_video_mode() {
     Some(current_mode) =>
-      assert_eq(
-        get_selected_videomode(monitor, @window.VideoModeSelection::Current),
+      debug_inspect(
+        get_selected_videomode(monitor, @window.VideoModeSelection::Current) ==
         Some(current_mode),
+        content="true",
       )
     None =>
       debug_inspect(
@@ -372,12 +380,13 @@ test "winit: get_selected_videomode aligns with bevy fullscreen selection" {
   let modes = monitor.video_modes()
   if modes.length() > 0 {
     let mode = modes[0]
-    assert_eq(
+    debug_inspect(
       get_selected_videomode(
         monitor,
         @window.VideoModeSelection::Specific(mode),
-      ),
+      ) ==
       Some(mode),
+      content="true",
     )
   }
 }

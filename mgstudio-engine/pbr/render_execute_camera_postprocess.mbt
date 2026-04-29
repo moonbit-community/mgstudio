@@ -1072,7 +1072,7 @@ fn render3d_draw_camera_custom_post_process_stage(
     return
   }
   guard custom_post_process3d is Some(custom_post_process) else { return }
-  let shader_path = custom_post_process.shader_path.trim().to_string()
+  let shader_path = custom_post_process.shader_path.trim().to_owned()
   if @shader.shader_path_is_wesl(shader_path) {
     @shader.shader_register_wesl_runtime_source(source_world, shader_path, []) catch {
       err =>
@@ -1086,11 +1086,10 @@ fn render3d_draw_camera_custom_post_process_stage(
   @render.host_gpu_draw_custom_postprocess3d(
     scene_texture_id~,
     shader_path~,
-    fragment_entry=if custom_post_process.fragment_entry.trim().to_string() ==
-      "" {
+    fragment_entry=if custom_post_process.fragment_entry.trim().to_owned() == "" {
       "fragment_main"
     } else {
-      custom_post_process.fragment_entry.trim().to_string()
+      custom_post_process.fragment_entry.trim().to_owned()
     },
     uniform_x=custom_post_process.uniform_x,
     uniform_y=custom_post_process.uniform_y,

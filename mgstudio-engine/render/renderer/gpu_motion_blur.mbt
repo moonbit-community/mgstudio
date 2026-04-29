@@ -15,7 +15,7 @@
 ///|
 fn motion_blur_debug_enabled() -> Bool {
   match @sys.get_env_var("MGSTUDIO_MOTION_BLUR_DEBUG") {
-    Some(flag) => flag.trim().to_string() == "1"
+    Some(flag) => flag.trim().to_owned() == "1"
     _ => false
   }
 }

@@ -160,7 +160,7 @@ fn read_balanced_block(
     } else if code == close_code {
       depth = depth - 1
       if depth == 0 {
-        return Some((content[start + 1:index].to_string(), index + 1))
+        return Some((content[start + 1:index].to_owned(), index + 1))
       }
     }
     index = index + 1
@@ -356,14 +356,14 @@ fn processed_text_from_path(
   settings : TextSettings,
 ) -> Text {
   if path.length() >= 4 &&
-    path[path.length() - 4:path.length()].to_string() == ".txt" {
+    path[path.length() - 4:path.length()].to_owned() == ".txt" {
     return load_text_with_settings(
       @asset.load_asset_source_bytes(path),
       settings,
     )
   }
   if path.length() >= 9 &&
-    path[path.length() - 9:path.length()].to_string() == ".cool.ron" {
+    path[path.length() - 9:path.length()].to_owned() == ".cool.ron" {
     let asset_path = @asset.asset_parse_path(path)
     let bytes = @asset.load_asset_source_bytes(asset_path)
     let processed = process_cool_text(asset_server, asset_path, bytes) catch {

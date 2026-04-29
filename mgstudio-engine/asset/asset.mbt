@@ -401,8 +401,8 @@ pub fn asset_text_to_bytes(text : String) -> Bytes {
 ///|
 fn load_optional_asset_text(path : String) -> String? {
   if path.length() >= 5 &&
-    path[path.length() - 5:path.length()].to_string() == ".meta" {
-    let base_path = path[0:path.length() - 5].to_string()
+    path[path.length() - 5:path.length()].to_owned() == ".meta" {
+    let base_path = path[0:path.length() - 5].to_owned()
     if load_asset_meta_bytes(base_path) is Some(bytes) {
       return Some(bytes_to_text(bytes))
     }

@@ -283,8 +283,8 @@ test "window: plugin spawns configured primary window entity and messages" {
     content="\"AlwaysOnTop\"",
   )
   debug_inspect(
-    stored_window.window_theme.to_string(),
-    content="\"Some(Dark)\"",
+    stored_window.window_theme == Some(@window.WindowTheme::Dark),
+    content="true",
   )
   debug_inspect(stored_window.visible, content="false")
 
@@ -390,8 +390,8 @@ test "window: compatibility helpers read and write ECS primary window state" {
     content="\"AlwaysOnTop\"",
   )
   debug_inspect(
-    stored_window.window_theme.to_string(),
-    content="\"Some(Dark)\"",
+    stored_window.window_theme == Some(@window.WindowTheme::Dark),
+    content="true",
   )
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {

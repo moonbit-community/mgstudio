@@ -30,9 +30,9 @@ pub(all) struct Shader {
 
 ///|
 fn trim_trailing_semicolons(text : String) -> String {
-  let mut out = text.trim().to_string()
+  let mut out = text.trim().to_owned()
   while out.length() > 0 && out.code_unit_at(out.length() - 1).to_int() == 59 { // ';'
-    out = out[:out.length() - 1].to_string().trim().to_string()
+    out = out[:out.length() - 1].to_owned().trim().to_owned()
   }
   out
 }
@@ -43,7 +43,7 @@ fn shader_import_from_raw(raw_import : String) -> ShaderImport {
   if trimmed.length() >= 2 &&
     trimmed.code_unit_at(0).to_int() == 34 && // '"'
     trimmed.code_unit_at(trimmed.length() - 1).to_int() == 34 { // '"'
-    return ShaderImport::AssetPath(trimmed[1:trimmed.length() - 1].to_string())
+    return ShaderImport::AssetPath(trimmed[1:trimmed.length() - 1].to_owned())
   }
   ShaderImport::Custom(trimmed)
 }
@@ -79,7 +79,7 @@ fn shader_drop_extension(path : String) -> String {
     }
   }
   if last_dot > last_slash {
-    path[:last_dot].to_string()
+    path[:last_dot].to_owned()
   } else {
     path
   }

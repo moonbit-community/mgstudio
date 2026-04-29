@@ -304,7 +304,7 @@ fn path_join(lhs : String, rhs : String) -> String {
 fn set_runtime_assets_dir_override(path : String?) -> Unit {
   let state = asset_io_runtime_state_active()
   match path {
-    Some(value) if value.trim().to_string() != "" =>
+    Some(value) if value.trim().to_owned() != "" =>
       state.assets_dir_override.val = Some(
         @path.Path::normalize(value).to_string(),
       )
@@ -410,8 +410,8 @@ fn asset_source_reader_for_path(path : String) -> AssetReader? {
 ///|
 fn resolve_assets_dir_override(path : String?) -> String? {
   match path {
-    Some(value) if value.trim().to_string() != "" => {
-      let trimmed = value.trim().to_string()
+    Some(value) if value.trim().to_owned() != "" => {
+      let trimmed = value.trim().to_owned()
       Some(@path.Path::normalize(trimmed).to_string())
     }
     _ => None
@@ -442,16 +442,16 @@ priv struct ParsedVirtualAssetPath {
 fn parse_virtual_asset_path(path : String) -> ParsedVirtualAssetPath {
   let hash_index = string_last_index_of_char(path, 35)
   let without_label = if hash_index >= 0 {
-    let base = if hash_index > 0 { path[0:hash_index].to_string() } else { "" }
+    let base = if hash_index > 0 { path[0:hash_index].to_owned() } else { "" }
     base
   } else {
     path
   }
   let scheme_index = string_find_substring(without_label, "://")
   if scheme_index > 0 {
-    let source_name = without_label[0:scheme_index].to_string()
+    let source_name = without_label[0:scheme_index].to_owned()
     let relative_path = if scheme_index + 3 < without_label.length() {
-      without_label[scheme_index + 3:without_label.length()].to_string()
+      without_label[scheme_index + 3:without_label.length()].to_owned()
     } else {
       ""
     }
@@ -2876,7 +2876,7 @@ fn path_extension(path : String) -> String? {
     None
   } else {
     Some(
-      extension_normalize(relative[last_dot + 1:relative.length()].to_string()),
+      extension_normalize(relative[last_dot + 1:relative.length()].to_owned()),
     )
   }
 }

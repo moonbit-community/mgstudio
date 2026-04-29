@@ -60,7 +60,7 @@ pub fn TracyGpuContext::enabled(self : TracyGpuContext) -> Bool {
 pub fn tracy_gpu_context_enabled() -> Bool {
   match @sys.get_env_var(TRACY_GPU_ENV_ENABLED) {
     Some(raw) => {
-      let normalized = raw.trim().to_string()
+      let normalized = raw.trim().to_owned()
       match normalized {
         "1"
         | "true"
@@ -83,7 +83,7 @@ pub fn tracy_gpu_context_enabled() -> Bool {
 pub fn tracy_gpu_context_backend() -> String {
   match @sys.get_env_var(TRACY_GPU_ENV_BACKEND) {
     Some(raw) => {
-      let normalized = raw.trim().to_string()
+      let normalized = raw.trim().to_owned()
       if normalized.is_empty() {
         "unknown"
       } else {

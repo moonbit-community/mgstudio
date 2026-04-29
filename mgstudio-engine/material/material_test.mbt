@@ -199,9 +199,10 @@ test "material boundary includes material layout and bindless property builders"
   let properties = @material.MaterialProperties::default()
     .with_material_layout(Some(layout))
     .with_bindless(true)
-  inspect(
-    properties.material_layout.map(fn(layout0) { layout0.label }),
-    content="Some(\"material.layout\")",
+  debug_inspect(
+    properties.material_layout.map(fn(layout0) { layout0.label }) ==
+    Some("material.layout"),
+    content="true",
   )
   inspect(properties.bindless, content="true")
 }
@@ -245,13 +246,14 @@ test "material boundary exposes bevy-shaped erased key + properties helpers" {
   inspect(pipeline_key.mesh_key() == mesh_key, content="true")
   inspect(pipeline_key.material_key() == material_key, content="true")
   inspect(material_key.type_tag(), content="MaterialKey")
-  inspect(
-    properties.get_shader("main.fragment"),
-    content="Some(\"shaders/pbr.wgsl\")",
+  debug_inspect(
+    properties.get_shader("main.fragment") == Some("shaders/pbr.wgsl"),
+    content="true",
   )
-  inspect(
-    properties.get_draw_function("main.opaque").map(fn(draw) { draw.id() }),
-    content="Some(3)",
+  debug_inspect(
+    properties.get_draw_function("main.opaque").map(fn(draw) { draw.id() }) ==
+    Some(3U),
+    content="true",
   )
 }
 

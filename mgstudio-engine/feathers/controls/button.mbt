@@ -17,19 +17,22 @@
 
 ///|
 pub(all) enum ButtonVariant {
-  Default
+  Normal
   Primary
 } derive(Eq, Debug)
 
 ///|
-pub struct ButtonProps {
+pub(all) struct ButtonProps {
   variant : ButtonVariant
-  disabled : Bool
+  corners : @rounded_corners.RoundedCorners
 }
 
 ///|
 pub fn ButtonProps::default() -> ButtonProps {
-  ButtonProps::{ variant: Default, disabled: false }
+  ButtonProps::{
+    variant: Normal,
+    corners: @rounded_corners.RoundedCorners::default(),
+  }
 }
 
 ///|

@@ -38,11 +38,11 @@ fn path_without_gzip_suffix(path : String) -> String {
   guard path.length() > 3 else {
     abort("Compressed asset path is missing the .gz suffix")
   }
-  let suffix = path[path.length() - 3:path.length()].to_string()
+  let suffix = path[path.length() - 3:path.length()].to_owned()
   if suffix != ".gz" {
     abort("Compressed asset path is missing the .gz suffix")
   }
-  path[0:path.length() - 3].to_string()
+  path[0:path.length() - 3].to_owned()
 }
 
 ///|

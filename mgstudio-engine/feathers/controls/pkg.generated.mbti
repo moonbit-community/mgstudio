@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/feathers/controls"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/feathers/rounded_corners",
   "moonbitlang/core/debug",
 }
 
@@ -56,14 +57,14 @@ pub struct ButtonPlugin {
 }
 pub fn ButtonPlugin::default() -> Self
 
-pub struct ButtonProps {
+pub(all) struct ButtonProps {
   variant : ButtonVariant
-  disabled : Bool
+  corners : @rounded_corners.RoundedCorners
 }
 pub fn ButtonProps::default() -> Self
 
 pub(all) enum ButtonVariant {
-  Default
+  Normal
   Primary
 } derive(Eq, @debug.Debug)
 

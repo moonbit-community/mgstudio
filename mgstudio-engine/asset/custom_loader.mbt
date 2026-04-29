@@ -149,12 +149,12 @@ fn typed_asset_loader_path_key(type_name : String, path : AssetPath) -> String {
 
 ///|
 fn typed_asset_loader_normalize_extension(extension : String) -> String {
-  let trimmed = extension.trim().to_string()
+  let trimmed = extension.trim().to_owned()
   if trimmed == "" {
     return ""
   }
   if trimmed.code_unit_at(0) == 46 {
-    return trimmed[1:trimmed.length()].to_string()
+    return trimmed[1:trimmed.length()].to_owned()
   }
   trimmed
 }
@@ -188,7 +188,7 @@ fn typed_asset_loader_filename(path : String) -> String {
   if split < 0 {
     path
   } else if split + 1 < path.length() {
-    path[split + 1:path.length()].to_string()
+    path[split + 1:path.length()].to_owned()
   } else {
     ""
   }
@@ -207,7 +207,7 @@ fn typed_asset_loader_full_extension(path : AssetPath) -> String? {
   if split < 0 || split + 1 >= file_name.length() {
     None
   } else {
-    Some(file_name[split + 1:file_name.length()].to_string())
+    Some(file_name[split + 1:file_name.length()].to_owned())
   }
 }
 
@@ -219,7 +219,7 @@ fn typed_asset_loader_secondary_extensions(
   for i in 0..<full_extension.length() {
     if full_extension.code_unit_at(i).to_int() == 46 &&
       i + 1 < full_extension.length() {
-      secondary.push(full_extension[i + 1:full_extension.length()].to_string())
+      secondary.push(full_extension[i + 1:full_extension.length()].to_owned())
     }
   }
   secondary

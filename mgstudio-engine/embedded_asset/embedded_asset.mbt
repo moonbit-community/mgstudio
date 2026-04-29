@@ -53,16 +53,16 @@ fn string_find_substring(input : String, pattern : String) -> Int {
 fn parse_virtual_asset_path(path : String) -> ParsedVirtualAssetPath {
   let hash_index = string_last_index_of_char(path, 35)
   let without_label = if hash_index >= 0 {
-    let base = if hash_index > 0 { path[0:hash_index].to_string() } else { "" }
+    let base = if hash_index > 0 { path[0:hash_index].to_owned() } else { "" }
     base
   } else {
     path
   }
   let scheme_index = string_find_substring(without_label, "://")
   if scheme_index > 0 {
-    let source_name = without_label[0:scheme_index].to_string()
+    let source_name = without_label[0:scheme_index].to_owned()
     let relative_path = if scheme_index + 3 < without_label.length() {
-      without_label[scheme_index + 3:without_label.length()].to_string()
+      without_label[scheme_index + 3:without_label.length()].to_owned()
     } else {
       ""
     }

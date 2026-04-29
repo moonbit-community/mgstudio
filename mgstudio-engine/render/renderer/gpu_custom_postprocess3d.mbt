@@ -167,15 +167,15 @@ pub fn GpuBackend::draw_custom_postprocess3d(
     return
   }
   let resolved_shader_path = normalize_shader_rel_path(
-    shader_path.trim().to_string(),
+    shader_path.trim().to_owned(),
   )
   if resolved_shader_path == "" {
     return
   }
-  let resolved_fragment_entry = if fragment_entry.trim().to_string() == "" {
+  let resolved_fragment_entry = if fragment_entry.trim().to_owned() == "" {
     "fragment_main"
   } else {
-    fragment_entry.trim().to_string()
+    fragment_entry.trim().to_owned()
   }
   guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
     return

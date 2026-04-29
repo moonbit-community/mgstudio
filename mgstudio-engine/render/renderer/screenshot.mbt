@@ -65,7 +65,7 @@ const PARITY_CAPTURE_DEFAULT_DELAY_FRAMES : Int = 120
 ///|
 fn screenshot_debug_enabled() -> Bool {
   match @sys.get_env_var("MGSTUDIO_SCREENSHOT_DEBUG") {
-    Some(flag) => flag.trim().to_string() == "1"
+    Some(flag) => flag.trim().to_owned() == "1"
     _ => false
   }
 }
@@ -81,7 +81,7 @@ fn screenshot_debug_log(message : String) -> Unit {
 fn screenshot_env_trimmed(key : String) -> String? {
   match @sys.get_env_var(key) {
     Some(raw) => {
-      let trimmed = raw.trim().to_string()
+      let trimmed = raw.trim().to_owned()
       if trimmed == "" {
         None
       } else {

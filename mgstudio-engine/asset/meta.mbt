@@ -276,7 +276,7 @@ fn meta_extract_render_asset_usage_value(
   if value_end < value_start {
     return None
   }
-  Some(content[value_start:value_end].to_string())
+  Some(content[value_start:value_end].to_owned())
 }
 
 ///|

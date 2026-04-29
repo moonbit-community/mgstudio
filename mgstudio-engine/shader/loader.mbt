@@ -120,7 +120,7 @@ fn shader_path_extension(path : String) -> String {
   if found < 0 || found + 1 >= path.length() {
     return ""
   }
-  path[found + 1:path.length()].to_string()
+  path[found + 1:path.length()].to_owned()
 }
 
 ///|

@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,9 +13,11 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_feathers/src/rounded_corners.rs`.
-// This public boundary mirrors the in-crate Bevy module while the implementation
-// lives in a leaf package so controls can depend on it without a package cycle.
-
-///|
-pub type RoundedCorners = @feathers_rounded_corners.RoundedCorners
+test "feathers controls button: props mirror Bevy defaults" {
+  let props = ButtonProps::default()
+  debug_inspect(props.variant is ButtonVariant::Normal, content="true")
+  debug_inspect(
+    props.corners is @rounded_corners.RoundedCorners::All,
+    content="true",
+  )
+}

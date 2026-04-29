@@ -115,29 +115,32 @@ test "anti_alias/smaa: pipeline descriptors mirror Bevy pass layout" {
     texture_format: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
     preset: SmaaPreset::Ultra,
   })
-  inspect(edge.label, content="Some(\"SMAA edge detection\")")
+  debug_inspect(edge.label == Some("SMAA edge detection"), content="true")
   inspect(edge.layout.length(), content="2")
   inspect(edge.layout[0].label, content="SMAA postprocess bind group layout")
   inspect(edge.layout[0].entries.length(), content="2")
   inspect(edge.layout[1].entries.length(), content="1")
-  inspect(
-    edge.vertex.entry_point,
-    content="Some(\"edge_detection_vertex_main\")",
+  debug_inspect(
+    edge.vertex.entry_point == Some("edge_detection_vertex_main"),
+    content="true",
   )
-  inspect(
-    edge.fragment.unwrap().entry_point,
-    content="Some(\"luma_edge_detection_fragment_main\")",
+  debug_inspect(
+    edge.fragment.unwrap().entry_point ==
+    Some("luma_edge_detection_fragment_main"),
+    content="true",
   )
   inspect(edge.fragment.unwrap().targets[0].unwrap().format, content="8")
   inspect(edge.depth_stencil.unwrap().format, content="38")
-  inspect(
-    blend.fragment.unwrap().entry_point,
-    content="Some(\"blending_weight_calculation_fragment_main\")",
+  debug_inspect(
+    blend.fragment.unwrap().entry_point ==
+    Some("blending_weight_calculation_fragment_main"),
+    content="true",
   )
   inspect(blend.layout[1].entries.length(), content="4")
-  inspect(
-    neighborhood.fragment.unwrap().entry_point,
-    content="Some(\"neighborhood_blending_fragment_main\")",
+  debug_inspect(
+    neighborhood.fragment.unwrap().entry_point ==
+    Some("neighborhood_blending_fragment_main"),
+    content="true",
   )
   inspect(
     neighborhood.fragment.unwrap().targets[0].unwrap().format,

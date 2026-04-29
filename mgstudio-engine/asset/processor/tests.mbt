@@ -17,7 +17,7 @@
 // Test-oriented helpers for processor matching.
 fn asset_processor_normalize_extension(extension : String) -> String {
   if extension.length() > 0 && extension.code_unit_at(0) == 46 {
-    extension[1:extension.length()].to_string()
+    extension[1:extension.length()].to_owned()
   } else {
     extension
   }

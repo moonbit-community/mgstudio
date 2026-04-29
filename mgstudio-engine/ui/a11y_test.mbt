@@ -82,7 +82,7 @@ test "ui: a11y button role/label/actions are synced into AccessibilityNode" {
   ui_a11y_update_system(world)
   let node = ui_a11y_test_read_node(world, button)
   assert_eq(node.role(), @moon_accesskit.Role::Button)
-  assert_eq(node.label(), Some("OK"))
+  debug_inspect(node.label() == Some("OK"), content="true")
   assert_true(node.supports_action(@moon_accesskit.Action::Click))
 }
 
@@ -114,7 +114,7 @@ test "ui: a11y label role/value are synced into AccessibilityNode" {
   ui_a11y_update_system(world)
   let node = ui_a11y_test_read_node(world, entity)
   assert_eq(node.role(), @moon_accesskit.Role::Label)
-  assert_eq(node.value(), Some("Hello"))
+  debug_inspect(node.value() == Some("Hello"), content="true")
 }
 
 ///|
@@ -232,8 +232,8 @@ test "ui: editable label exports text input role and SetValue action" {
   ui_a11y_update_system(world)
   let node = ui_a11y_test_read_node(world, editable)
   assert_eq(node.role(), @moon_accesskit.Role::TextInput)
-  assert_eq(node.label(), Some("Status input"))
-  assert_eq(node.value(), Some("Editable status"))
+  debug_inspect(node.label() == Some("Status input"), content="true")
+  debug_inspect(node.value() == Some("Editable status"), content="true")
   assert_true(node.supports_action(@moon_accesskit.Action::SetValue))
   assert_true(node.supports_action(@moon_accesskit.Action::Focus))
 }

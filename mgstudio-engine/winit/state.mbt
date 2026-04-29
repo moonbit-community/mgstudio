@@ -154,7 +154,7 @@ fn env_flag_enabled(key : String) -> Bool {
 fn env_int_or_default(key : String, default_value : Int) -> Int {
   match @sys.get_env_var(key) {
     Some(value) => {
-      let token = value.trim().to_string()
+      let token = value.trim().to_owned()
       if token == "" {
         default_value
       } else {
@@ -492,8 +492,7 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
     let debug_screenshot_path = match
       @sys.get_env_var("MGSTUDIO_SCREENSHOT_PATH") {
-      Some(path) if path.trim().to_string() != "" =>
-        Some(path.trim().to_string())
+      Some(path) if path.trim().to_owned() != "" => Some(path.trim().to_owned())
       _ => None
     }
     let debug_screenshot_exit_on_save = env_flag_enabled(

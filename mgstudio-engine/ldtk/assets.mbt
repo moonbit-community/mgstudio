@@ -278,13 +278,13 @@ fn ldtk_resolve_relative_asset_path(
   let base_path = ldtk_path.path
   let slash_index = ldtk_string_last_index_of_char(base_path, 47)
   let base_dir = if slash_index >= 0 {
-    base_path[0:slash_index + 1].to_string()
+    base_path[0:slash_index + 1].to_owned()
   } else {
     ""
   }
   let rel_without_prefix = if rel_path.length() > 0 &&
     rel_path.code_unit_at(0).to_int() == 47 {
-    rel_path[1:rel_path.length()].to_string()
+    rel_path[1:rel_path.length()].to_owned()
   } else {
     rel_path
   }

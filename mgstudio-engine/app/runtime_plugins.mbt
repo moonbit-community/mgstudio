@@ -401,7 +401,7 @@ fn log_level_label(level : LogLevel) -> String {
 
 ///|
 fn log_level_from_filter_value(value : String) -> LogLevel? {
-  match value.trim().to_string().to_lower() {
+  match value.trim().to_owned().to_lower() {
     "error" => Some(LogLevel::Error)
     "warn" => Some(LogLevel::Warn)
     "warning" => Some(LogLevel::Warn)
@@ -426,21 +426,21 @@ fn log_effective_level(config : LogPlugin, target : String) -> LogLevel {
   let mut effective = config.level
   let mut best_target_len = -1
   for raw_directive in config.filter.split(",") {
-    let directive = raw_directive.trim().to_string()
+    let directive = raw_directive.trim().to_owned()
     if directive == "" {
       continue
     }
     let parts : Array[String] = []
     for part in directive.split("=") {
-      parts.push(part.to_string())
+      parts.push(part.to_owned())
     }
     if parts.length() == 1 {
       if log_level_from_filter_value(parts[0].to_string()) is Some(level) {
         effective = level
       }
     } else {
-      let filter_target = parts[0].trim().to_string()
-      let level_value = parts[1].trim().to_string()
+      let filter_target = parts[0].trim().to_owned()
+      let level_value = parts[1].trim().to_owned()
       if log_filter_target_matches(target, filter_target) &&
         filter_target.length() > best_target_len &&
         log_level_from_filter_value(level_value) is Some(level) {

@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/feathers/rounded_corners"
+
+import {
+  "Milky2018/mgstudio/ui",
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum RoundedCorners {
+  None
+  All
+  TopLeft
+  TopRight
+  BottomRight
+  BottomLeft
+  Top
+  Right
+  Bottom
+  Left
+} derive(Eq, @debug.Debug)
+pub fn RoundedCorners::default() -> Self
+pub fn RoundedCorners::to_border_radius(Self, Float) -> @ui.BorderRadius
+
+// Type aliases
+
+// Traits
+
