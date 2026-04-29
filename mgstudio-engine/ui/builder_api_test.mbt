@@ -19,6 +19,44 @@ test "ui: node builder stores explicit column gap" {
 }
 
 ///|
+test "ui: node default includes Bevy-owned box and radius fields" {
+  let node = Node::default()
+  debug_inspect(node.box_sizing == BoxSizing::BorderBox, content="true")
+  debug_inspect(node.scrollbar_width == 0.0F, content="true")
+  debug_inspect(node.border_radius.top_left == Val::Px(0.0F), content="true")
+  debug_inspect(node.border_radius.top_right == Val::Px(0.0F), content="true")
+  debug_inspect(
+    node.border_radius.bottom_right == Val::Px(0.0F),
+    content="true",
+  )
+  debug_inspect(node.border_radius.bottom_left == Val::Px(0.0F), content="true")
+}
+
+///|
+test "ui: node builders update Bevy-owned box and radius fields" {
+  let radius = BorderRadius::all(Val::Px(6.0F))
+  let node = Node::default()
+    .with_box_sizing(BoxSizing::ContentBox)
+    .with_scrollbar_width(12.0F)
+    .with_border_radius(radius)
+  debug_inspect(node.box_sizing == BoxSizing::ContentBox, content="true")
+  debug_inspect(node.scrollbar_width == 12.0F, content="true")
+  debug_inspect(node.border_radius.top_left == radius.top_left, content="true")
+  debug_inspect(
+    node.border_radius.top_right == radius.top_right,
+    content="true",
+  )
+  debug_inspect(
+    node.border_radius.bottom_right == radius.bottom_right,
+    content="true",
+  )
+  debug_inspect(
+    node.border_radius.bottom_left == radius.bottom_left,
+    content="true",
+  )
+}
+
+///|
 test "ui: atlas image builder keeps image and atlas together" {
   let image = @asset.Handle::new(7)
   let texture_atlas = @asset.TextureAtlas::new(@asset.Handle::new(9), 3)

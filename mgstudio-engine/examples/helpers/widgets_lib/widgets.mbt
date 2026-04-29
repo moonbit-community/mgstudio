@@ -263,8 +263,10 @@ pub fn[T] spawn_action_button(
       .with_border(@ui.UiRect::all(@ui.Val::Px(BUTTON_BORDER_WIDTH)))
       .with_justify_content(@ui.JustifyContent::Center)
       .with_align_items(@ui.AlignItems::Center)
-      .with_padding(button_padding()),
-      @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
+      .with_padding(button_padding())
+      .with_border_radius(
+        @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
+      ),
       @ui.BorderColor::new(white()),
       @ui.BackgroundColor::new(black()),
       WidgetClickSender::new(value),
@@ -300,8 +302,8 @@ pub fn[T] spawn_option_button(
       )
       .with_justify_content(@ui.JustifyContent::Center)
       .with_align_items(@ui.AlignItems::Center)
-      .with_padding(button_padding()),
-      option_button_border_radius(is_first, is_last),
+      .with_padding(button_padding())
+      .with_border_radius(option_button_border_radius(is_first, is_last)),
       @ui.BorderColor::new(white()),
       @ui.BackgroundColor::new(radio_button_background_color(is_selected)),
       RadioButton::{  },

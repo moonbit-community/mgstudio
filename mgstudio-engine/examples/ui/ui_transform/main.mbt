@@ -139,6 +139,7 @@ fn button_node() -> @ui.Node {
   .with_height(@ui.Val::Px(80.0F))
   .with_align_items(@ui.AlignItems::Center)
   .with_justify_content(@ui.JustifyContent::Center)
+  .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F)))
 }
 
 ///|
@@ -200,7 +201,6 @@ fn spawn_control_button(
       button_node(),
       @ui.BackgroundColor::new(normal_button_color()),
       @ui.BorderColor::new(@sprite.Color::black()),
-      @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
     ),
   )
   if rotate_step != 0.0F {

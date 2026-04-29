@@ -610,7 +610,7 @@ fn update_shadow_controls(
 fn update_shadow_node(
   settings : @app.Res[ShadowSettings],
   shadow_nodes : @ecs.Query[
-    (@ecs.Mut[@ui.Node], @ecs.Mut[@ui.BorderRadius], @ecs.Mut[@ui.BoxShadow]),
+    (@ecs.Mut[@ui.Node], @ecs.Mut[@ui.BoxShadow]),
     @ecs.With[ShadowNode],
   ],
 ) -> Unit {
@@ -618,11 +618,9 @@ fn update_shadow_node(
   let (width, height, border_radius) = shape_dimensions(current.shape_index)
   try! shadow_nodes.view(fn(_entity, data) {
     let node_mut = data.0
-    let radius_mut = data.1
-    let shadow_mut = data.2
+    let shadow_mut = data.1
     let node = node_mut.value()
-    node_mut.set(@ui.Node::{ ..node, width, height })
-    radius_mut.set(border_radius)
+    node_mut.set(@ui.Node::{ ..node, width, height, border_radius })
     shadow_mut.set(
       @ui.BoxShadow::new(
         @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.8F),

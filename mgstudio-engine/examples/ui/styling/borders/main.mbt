@@ -237,13 +237,18 @@ fn spawn_border_example(
     .with_margin(@ui.UiRect::all(@ui.Val::Px(6.0F))),
     None,
   )
-  let box_node = @ui.Node::default()
+  let base_box_node = @ui.Node::default()
     .with_width(@ui.Val::Px(56.0F))
     .with_height(@ui.Val::Px(56.0F))
     .with_border(border)
     .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F)))
     .with_align_items(@ui.AlignItems::Center)
     .with_justify_content(@ui.JustifyContent::Center)
+  let box_node = if rounded {
+    base_box_node.with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(22.0F)))
+  } else {
+    base_box_node
+  }
   let border_box = spawn_node(
     world,
     Some(cell),
@@ -264,13 +269,6 @@ fn spawn_border_example(
       @sprite.Color::white(),
     ),
   )
-  if rounded {
-    try! world.set_by_key(
-      border_box,
-      @ui.ecs_key_border_radius,
-      @ui.BorderRadius::all(@ui.Val::Px(22.0F)),
-    )
-  }
   ignore(
     spawn_node(
       world,

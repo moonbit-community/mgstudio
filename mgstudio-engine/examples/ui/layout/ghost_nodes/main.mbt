@@ -112,8 +112,8 @@ fn spawn_button(
       .with_height(@ui.Val::Px(65.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
       .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
-      @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
+      .with_align_items(@ui.AlignItems::Center)
+      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
       @ui.BorderColor::new(@sprite.Color::black()),
       @ui.BackgroundColor::new(normal_button_color()),
     ),

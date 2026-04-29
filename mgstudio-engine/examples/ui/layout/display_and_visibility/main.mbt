@@ -329,7 +329,8 @@ fn spawn_button(
     .with_border(@ui.UiRect::all(@ui.Val::Px(3.0F)))
     .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F)))
     .with_align_items(@ui.AlignItems::Center)
-    .with_justify_content(@ui.JustifyContent::Center),
+    .with_justify_content(@ui.JustifyContent::Center)
+    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
     Some(@ui.BackgroundColor::new(normal_button_color())),
   )
   try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
@@ -337,11 +338,6 @@ fn spawn_button(
     button,
     @ui.ecs_key_border_color,
     @ui.BorderColor::new(@sprite.Color::black()),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_border_radius,
-    @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
   )
   try! world.set_by_key(button, toggle_button_action_key, action)
   try! world.set_by_key(button, button_press_state_key, ButtonPressState::{

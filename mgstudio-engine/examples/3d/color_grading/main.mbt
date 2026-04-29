@@ -459,12 +459,8 @@ fn spawn_option_button(
         @ui.Val::Px(12.0F),
         @ui.Val::Px(0.0F),
       ),
-    ),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_border_radius,
-    @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
+    )
+    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
   )
   try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
   try! world.set_by_key(
@@ -490,12 +486,8 @@ fn spawn_option_button(
         @ui.Val::Px(12.0F),
         @ui.Val::Px(0.0F),
       ),
-    ),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_border_radius,
-    @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
+    )
+    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
   )
   try! world.set_by_key(
     button,
@@ -526,12 +518,8 @@ fn spawn_option_button(
         @ui.Val::Px(12.0F),
         @ui.Val::Px(0.0F),
       ),
-    ),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_border_radius,
-    @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
+    )
+    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
   )
   try! world.set_by_key(
     button,
@@ -567,12 +555,8 @@ fn spawn_option_button(
         @ui.Val::Px(12.0F),
         @ui.Val::Px(0.0F),
       ),
-    ),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_border_radius,
-    @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
+    )
+    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
   )
   try! world.set_by_key(
     button,

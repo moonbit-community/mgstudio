@@ -189,12 +189,10 @@ fn spawn_button(
       ),
     )
     .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_border_radius,
-    @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
+    .with_align_items(@ui.AlignItems::Center)
+    .with_border_radius(
+      @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
+    ),
   )
   try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
   try! world.set_by_key(
@@ -211,12 +209,10 @@ fn spawn_button(
       ),
     )
     .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center),
-  )
-  try! world.set_by_key(
-    button,
-    @ui.ecs_key_border_radius,
-    @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
+    .with_align_items(@ui.AlignItems::Center)
+    .with_border_radius(
+      @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
+    ),
   )
   try! world.set_by_key(
     button,

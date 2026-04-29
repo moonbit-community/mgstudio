@@ -55,9 +55,9 @@ fn setup(
       .with_height(@ui.Val::Px(190.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(12.0F)))
       .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_align_items(@ui.AlignItems::Center)
+      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(18.0F))),
       @ui.BorderColor::new(@sprite.Color::srgb(0.92F, 0.95F, 1.0F)),
-      @ui.BorderRadius::all(@ui.Val::Px(18.0F)),
       @ui.ImageNode::new(image).with_color(@sprite.Color::white()),
     ),
   )

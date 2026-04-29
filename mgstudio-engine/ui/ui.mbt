@@ -15,7 +15,7 @@
 ///|
 /// Bevy-aligned UI (in progress).
 ///
-/// Baseline: Bevy v0.15.3 (see docs/BEVY_BASELINE.md).
+/// Baseline: Bevy 0.19-dev (see local ./bevy).
 
 ///|
 /// Bevy-aligned display (matches Taffy).
@@ -25,6 +25,18 @@ pub(all) enum Display {
   Grid
   None
 } derive(Eq, Debug, ToJson, FromJson)
+
+///|
+/// Which part of a Node's box length styles like width and height control.
+pub(all) enum BoxSizing {
+  BorderBox
+  ContentBox
+} derive(Eq, Debug, ToJson, FromJson)
+
+///|
+pub fn BoxSizing::default() -> BoxSizing {
+  BoxSizing::BorderBox
+}
 
 ///|
 /// Bevy-aligned position type (subset).
@@ -320,11 +332,13 @@ pub fn GridPlacement::end_span(end : Int, span : Int) -> GridPlacement {
 }
 
 ///|
-/// The style of a UI node (Bevy v0.15.3-aligned surface).
+/// The style of a UI node (Bevy 0.19-dev aligned surface).
 pub(all) struct Node {
   display : Display
+  box_sizing : BoxSizing
   position_type : PositionType
   overflow : Overflow
+  scrollbar_width : Float
   overflow_clip_margin : OverflowClipMargin
   left : Val
   right : Val
@@ -346,6 +360,7 @@ pub(all) struct Node {
   margin : UiRect
   padding : UiRect
   border : UiRect
+  border_radius : BorderRadius
   flex_direction : FlexDirection
   flex_wrap : FlexWrap
   flex_grow : Float
@@ -366,8 +381,10 @@ pub(all) struct Node {
 pub fn Node::default() -> Node {
   Node::{
     display: Display::Flex,
+    box_sizing: BoxSizing::default(),
     position_type: PositionType::Relative,
     overflow: Overflow::default(),
+    scrollbar_width: 0.0F,
     overflow_clip_margin: OverflowClipMargin::default(),
     left: Val::Auto,
     right: Val::Auto,
@@ -389,6 +406,7 @@ pub fn Node::default() -> Node {
     margin: UiRect::default(),
     padding: UiRect::default(),
     border: UiRect::default(),
+    border_radius: BorderRadius::default(),
     flex_direction: FlexDirection::Row,
     flex_wrap: FlexWrap::NoWrap,
     flex_grow: 0.0F,
@@ -420,8 +438,18 @@ pub fn Node::with_display(self : Node, display : Display) -> Node {
 }
 
 ///|
+pub fn Node::with_box_sizing(self : Node, box_sizing : BoxSizing) -> Node {
+  Node::{ ..self, box_sizing, }
+}
+
+///|
 pub fn Node::with_overflow(self : Node, overflow : Overflow) -> Node {
   Node::{ ..self, overflow, }
+}
+
+///|
+pub fn Node::with_scrollbar_width(self : Node, scrollbar_width : Float) -> Node {
+  Node::{ ..self, scrollbar_width, }
 }
 
 ///|
@@ -445,6 +473,14 @@ pub fn Node::with_margin(self : Node, margin : UiRect) -> Node {
 ///|
 pub fn Node::with_border(self : Node, border : UiRect) -> Node {
   Node::{ ..self, border, }
+}
+
+///|
+pub fn Node::with_border_radius(
+  self : Node,
+  border_radius : BorderRadius,
+) -> Node {
+  Node::{ ..self, border_radius, }
 }
 
 ///|
@@ -2066,6 +2102,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
         ),
       )
       .with_overflow(overflow_to_taffy(node.overflow))
+      .with_scrollbar_width(node.scrollbar_width.to_double())
     if node.aspect_ratio is Some(r) {
       style = style.with_aspect_ratio(r.to_double())
     }

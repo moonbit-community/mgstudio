@@ -28,8 +28,6 @@ pub let ecs_key_background_color : @ecs.ComponentKey[BackgroundColor]
 
 pub let ecs_key_border_color : @ecs.ComponentKey[BorderColor]
 
-pub let ecs_key_border_radius : @ecs.ComponentKey[BorderRadius]
-
 pub let ecs_key_box_shadow : @ecs.ComponentKey[BoxShadow]
 
 pub let ecs_key_button : @ecs.ComponentKey[Button]
@@ -269,7 +267,6 @@ pub fn BorderRadius::with_right(Self, Val) -> Self
 pub fn BorderRadius::with_top(Self, Val) -> Self
 pub fn BorderRadius::with_top_left(Self, Val) -> Self
 pub fn BorderRadius::with_top_right(Self, Val) -> Self
-pub impl @ecs.Component for BorderRadius
 
 pub struct BorderRect {
   left : Float
@@ -292,6 +289,12 @@ pub struct BoxShadow {
 pub fn BoxShadow::default() -> Self
 pub fn BoxShadow::new(@color.Color, Val, Val, Val, Val) -> Self
 pub impl @ecs.Component for BoxShadow
+
+pub(all) enum BoxSizing {
+  BorderBox
+  ContentBox
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn BoxSizing::default() -> Self
 
 pub struct Button {
 } derive(ToJson, @json.FromJson)
@@ -489,8 +492,10 @@ pub impl @ecs.Component for Label
 
 pub(all) struct Node {
   display : Display
+  box_sizing : BoxSizing
   position_type : PositionType
   overflow : Overflow
+  scrollbar_width : Float
   overflow_clip_margin : OverflowClipMargin
   left : Val
   right : Val
@@ -512,6 +517,7 @@ pub(all) struct Node {
   margin : UiRect
   padding : UiRect
   border : UiRect
+  border_radius : BorderRadius
   flex_direction : FlexDirection
   flex_wrap : FlexWrap
   flex_grow : Float
@@ -530,7 +536,9 @@ pub(all) struct Node {
 pub fn Node::default() -> Self
 pub fn Node::with_align_items(Self, AlignItems) -> Self
 pub fn Node::with_border(Self, UiRect) -> Self
+pub fn Node::with_border_radius(Self, BorderRadius) -> Self
 pub fn Node::with_bottom(Self, Val) -> Self
+pub fn Node::with_box_sizing(Self, BoxSizing) -> Self
 pub fn Node::with_column_gap(Self, Val) -> Self
 pub fn Node::with_display(Self, Display) -> Self
 pub fn Node::with_flex_basis(Self, Val) -> Self
@@ -549,6 +557,7 @@ pub fn Node::with_padding(Self, UiRect) -> Self
 pub fn Node::with_position_type(Self, PositionType) -> Self
 pub fn Node::with_right(Self, Val) -> Self
 pub fn Node::with_row_gap(Self, Val) -> Self
+pub fn Node::with_scrollbar_width(Self, Float) -> Self
 pub fn Node::with_top(Self, Val) -> Self
 pub fn Node::with_width(Self, Val) -> Self
 pub impl @ecs.Component for Node

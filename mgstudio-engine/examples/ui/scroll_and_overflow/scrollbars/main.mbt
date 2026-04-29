@@ -104,9 +104,9 @@ fn setup(
       @hierarchy.Parent::new(content_row),
       @ui.Node::default()
       .with_width(@ui.Val::Px(12.0F))
-      .with_height(@ui.Val::Px(210.0F)),
+      .with_height(@ui.Val::Px(210.0F))
+      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
       @ui.BackgroundColor::new(@sprite.Color::srgb(0.3F, 0.3F, 0.36F)),
-      @ui.BorderRadius::all(@ui.Val::Px(6.0F)),
     ),
   )
   |> ignore
@@ -116,9 +116,9 @@ fn setup(
       @hierarchy.Parent::new(panel),
       @ui.Node::default()
       .with_width(@ui.Val::Px(320.0F))
-      .with_height(@ui.Val::Px(12.0F)),
+      .with_height(@ui.Val::Px(12.0F))
+      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
       @ui.BackgroundColor::new(@sprite.Color::srgb(0.3F, 0.3F, 0.36F)),
-      @ui.BorderRadius::all(@ui.Val::Px(6.0F)),
     ),
   )
   |> ignore

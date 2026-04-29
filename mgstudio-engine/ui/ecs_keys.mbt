@@ -108,11 +108,6 @@ pub let ecs_key_interaction : @ecs.ComponentKey[Interaction] = @ecs.register_com
 )
 
 ///|
-pub let ecs_key_border_radius : @ecs.ComponentKey[BorderRadius] = @ecs.register_component(
-  debug_name="ui.border_radius",
-)
-
-///|
 pub let ecs_key_button_colors : @ecs.ComponentKey[ButtonColors] = @ecs.register_component(
   debug_name="ui.button_colors",
 )
@@ -248,11 +243,6 @@ pub impl @ecs.Component for Interaction with component() {
 }
 
 ///|
-pub impl @ecs.Component for BorderRadius with component() {
-  ecs_key_border_radius
-}
-
-///|
 pub impl @ecs.Component for ButtonColors with component() {
   ecs_key_button_colors
 }
@@ -311,9 +301,9 @@ pub let ecs_key_ui_context : @ecs.ResourceKey[UiContext] = @ecs.register_resourc
 pub let ecs_components : Array[String] = [
   "Node", "Label", "Button", "UiRoot", "IsDefaultUiCamera", "UiTargetCamera", "ComputedUiTargetCamera",
   "ComputedUiRenderTargetInfo", "ZIndex", "Outline", "UiImage", "UiLayout", "BoxShadow",
-  "ImageNode", "BorderColor", "ContentSize", "FocusPolicy", "Interaction", "BorderRadius",
-  "ButtonColors", "GlobalZIndex", "ImageNodeSize", "CalculatedClip", "ScrollPosition",
-  "BackgroundColor", "AccessibilityLabel", "RelativeCursorPosition",
+  "ImageNode", "BorderColor", "ContentSize", "FocusPolicy", "Interaction", "ButtonColors",
+  "GlobalZIndex", "ImageNodeSize", "CalculatedClip", "ScrollPosition", "BackgroundColor",
+  "AccessibilityLabel", "RelativeCursorPosition",
 ]
 
 ///|

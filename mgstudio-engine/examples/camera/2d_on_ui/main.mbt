@@ -56,9 +56,9 @@ fn setup(
           min_width: @ui.Val::Px(150.0F),
           min_height: @ui.Val::Px(150.0F),
           border: @ui.UiRect::all(@ui.Val::Px(2.0F)),
+          border_radius: @ui.BorderRadius::all(@ui.Val::Percent(25.0F)),
         },
         @ui.BorderColor::new(@sprite.Color::white()),
-        @ui.BorderRadius::all(@ui.Val::Percent(25.0F)),
       ),
     ),
   )
