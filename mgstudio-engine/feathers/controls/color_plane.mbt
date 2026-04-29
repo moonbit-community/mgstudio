@@ -17,38 +17,36 @@
 
 ///|
 pub(all) enum ColorPlane {
-  Rg
-  Rb
-  Gb
-  HueSat
-  HueValue
-  SatValue
+  RedGreen
+  RedBlue
+  GreenBlue
+  HueSaturation
+  HueLightness
 } derive(Eq, Debug)
 
 ///|
-pub struct ColorPlaneValue {
-  x : Float
-  y : Float
-  z : Float
+pub fn ColorPlane::default() -> ColorPlane {
+  HueLightness
 }
 
 ///|
-pub fn ColorPlaneValue::new(x : Float, y : Float, z : Float) -> ColorPlaneValue {
-  ColorPlaneValue::{ x, y, z }
+pub(all) struct ColorPlaneValue {
+  value : @math.Vec3
 }
 
 ///|
-pub struct ColorPlaneWidget {
-  plane : ColorPlane
-  value : ColorPlaneValue
+pub fn ColorPlaneValue::new(value : @math.Vec3) -> ColorPlaneValue {
+  ColorPlaneValue::{ value, }
 }
 
 ///|
-pub fn color_plane(
-  plane : ColorPlane,
-  value : ColorPlaneValue,
-) -> ColorPlaneWidget {
-  ColorPlaneWidget::{ plane, value }
+pub fn ColorPlaneValue::default() -> ColorPlaneValue {
+  ColorPlaneValue::new(@math.Vec3::zero())
+}
+
+///|
+pub fn color_plane(plane : ColorPlane) -> (ColorPlane, ColorPlaneValue) {
+  (plane, ColorPlaneValue::default())
 }
 
 ///|

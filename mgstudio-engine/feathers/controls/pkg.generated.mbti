@@ -3,8 +3,11 @@ package "Milky2018/mgstudio/feathers/controls"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/feathers/rounded_corners",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/ui_widgets",
   "moonbitlang/core/debug",
 }
 
@@ -17,15 +20,15 @@ pub fn checkbox(String) -> Checkbox
 
 pub fn checkbox_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn color_plane(ColorPlane, ColorPlaneValue) -> ColorPlaneWidget
+pub fn color_plane(ColorPlane) -> (ColorPlane, ColorPlaneValue)
 
 pub fn color_plane_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn color_slider(ColorSliderProps) -> ColorSlider
+pub fn color_slider(ColorSliderProps) -> (ColorSlider, @ui_widgets.SliderValue, @ui_widgets.SliderRange)
 
 pub fn color_slider_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn color_swatch(String) -> (ColorSwatch, ColorSwatchValue, ColorSwatchFg)
+pub fn color_swatch() -> (ColorSwatch, ColorSwatchValue, ColorSwatchFg)
 
 pub fn color_swatch_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -80,49 +83,46 @@ pub(all) enum ColorChannel {
   Red
   Green
   Blue
+  HslHue
+  HslSaturation
+  HslLightness
   Alpha
-  Hue
-  Saturation
-  Value
 } derive(Eq, @debug.Debug)
+pub fn ColorChannel::default() -> Self
+pub fn ColorChannel::gradient_ends(Self, @color.Color) -> (@color.Color, @color.Color, @color.Color)
+pub fn ColorChannel::range(Self) -> @ui_widgets.SliderRange
 
 pub(all) enum ColorPlane {
-  Rg
-  Rb
-  Gb
-  HueSat
-  HueValue
-  SatValue
+  RedGreen
+  RedBlue
+  GreenBlue
+  HueSaturation
+  HueLightness
 } derive(Eq, @debug.Debug)
+pub fn ColorPlane::default() -> Self
 
 pub struct ColorPlanePlugin {
 }
 pub fn ColorPlanePlugin::default() -> Self
 
-pub struct ColorPlaneValue {
-  x : Float
-  y : Float
-  z : Float
+pub(all) struct ColorPlaneValue {
+  value : @math.Vec3
 }
-pub fn ColorPlaneValue::new(Float, Float, Float) -> Self
+pub fn ColorPlaneValue::default() -> Self
+pub fn ColorPlaneValue::new(@math.Vec3) -> Self
 
-pub struct ColorPlaneWidget {
-  plane : ColorPlane
-  value : ColorPlaneValue
+pub(all) struct ColorSlider {
+  channel : ColorChannel
 }
-
-pub struct ColorSlider {
-  props : ColorSliderProps
-}
+pub fn ColorSlider::default() -> Self
 
 pub struct ColorSliderPlugin {
 }
 pub fn ColorSliderPlugin::default() -> Self
 
-pub struct ColorSliderProps {
-  channel : ColorChannel
+pub(all) struct ColorSliderProps {
   value : Float
-  base_color : SliderBaseColor
+  channel : ColorChannel
 }
 pub fn ColorSliderProps::default() -> Self
 
@@ -136,10 +136,11 @@ pub struct ColorSwatchPlugin {
 }
 pub fn ColorSwatchPlugin::default() -> Self
 
-pub struct ColorSwatchValue {
-  color_hex : String
+pub(all) struct ColorSwatchValue {
+  color : @color.Color
 }
-pub fn ColorSwatchValue::new(String) -> Self
+pub fn ColorSwatchValue::default() -> Self
+pub fn ColorSwatchValue::new(@color.Color) -> Self
 
 pub struct ControlsPlugin {
 }
@@ -158,10 +159,11 @@ pub struct Slider {
   props : SliderProps
 }
 
-pub struct SliderBaseColor {
-  color_hex : String
+pub(all) struct SliderBaseColor {
+  color : @color.Color
 }
-pub fn SliderBaseColor::new(String) -> Self
+pub fn SliderBaseColor::default() -> Self
+pub fn SliderBaseColor::new(@color.Color) -> Self
 
 pub struct SliderPlugin {
 }

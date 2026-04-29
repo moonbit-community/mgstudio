@@ -20,46 +20,132 @@ pub(all) enum ColorChannel {
   Red
   Green
   Blue
+  HslHue
+  HslSaturation
+  HslLightness
   Alpha
-  Hue
-  Saturation
-  Value
 } derive(Eq, Debug)
 
 ///|
-pub struct SliderBaseColor {
-  color_hex : String
+pub fn ColorChannel::default() -> ColorChannel {
+  Red
 }
 
 ///|
-pub fn SliderBaseColor::new(color_hex : String) -> SliderBaseColor {
-  SliderBaseColor::{ color_hex, }
-}
-
-///|
-pub struct ColorSliderProps {
-  channel : ColorChannel
-  value : Float
-  base_color : SliderBaseColor
-}
-
-///|
-pub fn ColorSliderProps::default() -> ColorSliderProps {
-  ColorSliderProps::{
-    channel: Red,
-    value: 0.0,
-    base_color: SliderBaseColor::new("#000000"),
+pub fn ColorChannel::range(self : ColorChannel) -> @ui_widgets.SliderRange {
+  match self {
+    Red | Green | Blue | Alpha | HslSaturation | HslLightness =>
+      @ui_widgets.SliderRange::new(0.0, 1.0)
+    HslHue => @ui_widgets.SliderRange::new(0.0, 360.0)
   }
 }
 
 ///|
-pub struct ColorSlider {
-  props : ColorSliderProps
+pub fn ColorChannel::gradient_ends(
+  self : ColorChannel,
+  base_color : @color.Color,
+) -> (@color.Color, @color.Color, @color.Color) {
+  match self {
+    Red => {
+      let (_, green, blue, _) = base_color.to_srgba_tuple()
+      (
+        @color.Color::srgb(0.0, green, blue),
+        @color.Color::srgb(0.5, green, blue),
+        @color.Color::srgb(1.0, green, blue),
+      )
+    }
+    Green => {
+      let (red, _, blue, _) = base_color.to_srgba_tuple()
+      (
+        @color.Color::srgb(red, 0.0, blue),
+        @color.Color::srgb(red, 0.5, blue),
+        @color.Color::srgb(red, 1.0, blue),
+      )
+    }
+    Blue => {
+      let (red, green, _, _) = base_color.to_srgba_tuple()
+      (
+        @color.Color::srgb(red, green, 0.0),
+        @color.Color::srgb(red, green, 0.5),
+        @color.Color::srgb(red, green, 1.0),
+      )
+    }
+    HslHue =>
+      (
+        @color.Color::hsl(0.0001, 1.0, 0.5),
+        @color.Color::hsl(180.0, 1.0, 0.5),
+        @color.Color::hsl(359.9999, 1.0, 0.5),
+      )
+    HslSaturation => {
+      let base_hsla = base_color.to_hsla()
+      (
+        @color.Color::hsl(base_hsla.hue, 0.0, base_hsla.lightness),
+        @color.Color::hsl(base_hsla.hue, 0.5, base_hsla.lightness),
+        @color.Color::hsl(base_hsla.hue, 1.0, base_hsla.lightness),
+      )
+    }
+    HslLightness => {
+      let base_hsla = base_color.to_hsla()
+      (
+        @color.Color::hsl(base_hsla.hue, base_hsla.saturation, 0.0),
+        @color.Color::hsl(base_hsla.hue, base_hsla.saturation, 0.5),
+        @color.Color::hsl(base_hsla.hue, base_hsla.saturation, 1.0),
+      )
+    }
+    Alpha =>
+      (
+        base_color.with_alpha(0.0),
+        base_color.with_alpha(0.5),
+        base_color.with_alpha(1.0),
+      )
+  }
 }
 
 ///|
-pub fn color_slider(props : ColorSliderProps) -> ColorSlider {
-  ColorSlider::{ props, }
+pub(all) struct SliderBaseColor {
+  color : @color.Color
+}
+
+///|
+pub fn SliderBaseColor::new(color : @color.Color) -> SliderBaseColor {
+  SliderBaseColor::{ color, }
+}
+
+///|
+pub fn SliderBaseColor::default() -> SliderBaseColor {
+  SliderBaseColor::new(@color.Color::white())
+}
+
+///|
+pub(all) struct ColorSliderProps {
+  value : Float
+  channel : ColorChannel
+}
+
+///|
+pub fn ColorSliderProps::default() -> ColorSliderProps {
+  ColorSliderProps::{ value: 0.0, channel: Alpha }
+}
+
+///|
+pub(all) struct ColorSlider {
+  channel : ColorChannel
+}
+
+///|
+pub fn ColorSlider::default() -> ColorSlider {
+  ColorSlider::{ channel: ColorChannel::default() }
+}
+
+///|
+pub fn color_slider(
+  props : ColorSliderProps,
+) -> (ColorSlider, @ui_widgets.SliderValue, @ui_widgets.SliderRange) {
+  (
+    ColorSlider::{ channel: props.channel },
+    @ui_widgets.SliderValue::new(props.value),
+    props.channel.range(),
+  )
 }
 
 ///|

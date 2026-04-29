@@ -19,23 +19,26 @@
 pub struct ColorSwatch {} derive(Default, Debug)
 
 ///|
-pub struct ColorSwatchValue {
-  color_hex : String
+pub(all) struct ColorSwatchValue {
+  color : @color.Color
 }
 
 ///|
 pub struct ColorSwatchFg {} derive(Default, Debug)
 
 ///|
-pub fn ColorSwatchValue::new(color_hex : String) -> ColorSwatchValue {
-  ColorSwatchValue::{ color_hex, }
+pub fn ColorSwatchValue::new(color : @color.Color) -> ColorSwatchValue {
+  ColorSwatchValue::{ color, }
 }
 
 ///|
-pub fn color_swatch(
-  color_hex : String,
-) -> (ColorSwatch, ColorSwatchValue, ColorSwatchFg) {
-  (ColorSwatch::{  }, ColorSwatchValue::new(color_hex), ColorSwatchFg::{  })
+pub fn ColorSwatchValue::default() -> ColorSwatchValue {
+  ColorSwatchValue::new(@color.Color::white())
+}
+
+///|
+pub fn color_swatch() -> (ColorSwatch, ColorSwatchValue, ColorSwatchFg) {
+  (ColorSwatch::{  }, ColorSwatchValue::default(), ColorSwatchFg::{  })
 }
 
 ///|
