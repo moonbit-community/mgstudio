@@ -157,6 +157,45 @@ fn gizmo_buffer_nan_color() -> @color.LinearRgba {
 }
 
 ///|
+fn gizmo_buffer_rect_inner(size : @math.Vec2) -> Array[@math.Vec2] {
+  let half_size = size.div_scalar(2.0F)
+  let tl = @math.Vec2::new(-half_size.x, half_size.y)
+  let tr = @math.Vec2::new(half_size.x, half_size.y)
+  let bl = @math.Vec2::new(-half_size.x, -half_size.y)
+  let br = @math.Vec2::new(half_size.x, -half_size.y)
+  [tl, tr, br, bl]
+}
+
+///|
+fn gizmo_buffer_vec2_to_vec3(value : @math.Vec2) -> @math.Vec3 {
+  @math.Vec3::new(value.x, value.y, 0.0F)
+}
+
+///|
+fn gizmo_buffer_isometry2d_points(
+  isometry : @sprite.Isometry2d,
+  points : Array[@math.Vec2],
+) -> Array[@math.Vec2] {
+  let out : Array[@math.Vec2] = []
+  for point in points {
+    out.push(isometry.transform_point(point))
+  }
+  out
+}
+
+///|
+fn gizmo_buffer_isometry3d_points_from_2d(
+  isometry : @math.Isometry3d,
+  points : Array[@math.Vec2],
+) -> Array[@math.Vec3] {
+  let out : Array[@math.Vec3] = []
+  for point in points {
+    out.push(isometry.transform_point3(gizmo_buffer_vec2_to_vec3(point)))
+  }
+  out
+}
+
+///|
 pub fn GizmoBuffer::linestrip(
   self : GizmoBuffer,
   positions : Array[@math.Vec3],
@@ -283,6 +322,102 @@ pub fn GizmoBuffer::linestrip_gradient_2d(
     converted.push((@math.Vec3::new(position.x, position.y, 0.0F), color))
   }
   self.linestrip_gradient(converted)
+}
+
+///|
+pub fn GizmoBuffer::ray_2d(
+  self : GizmoBuffer,
+  start : @math.Vec2,
+  vector : @math.Vec2,
+  color : @color.Color,
+) -> Unit {
+  self.line_2d(start, start.add(vector), color)
+}
+
+///|
+pub fn GizmoBuffer::ray_gradient_2d(
+  self : GizmoBuffer,
+  start : @math.Vec2,
+  vector : @math.Vec2,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  self.line_gradient_2d(start, start.add(vector), start_color, end_color)
+}
+
+///|
+pub fn GizmoBuffer::rect(
+  self : GizmoBuffer,
+  isometry : @math.Isometry3d,
+  size : @math.Vec2,
+  color : @color.Color,
+) -> Unit {
+  if !self.enabled {
+    return
+  }
+  self.lineloop(
+    gizmo_buffer_isometry3d_points_from_2d(
+      isometry,
+      gizmo_buffer_rect_inner(size),
+    ),
+    color,
+  )
+}
+
+///|
+pub fn GizmoBuffer::rect_2d(
+  self : GizmoBuffer,
+  isometry : @sprite.Isometry2d,
+  size : @math.Vec2,
+  color : @color.Color,
+) -> Unit {
+  if !self.enabled {
+    return
+  }
+  self.lineloop_2d(
+    gizmo_buffer_isometry2d_points(isometry, gizmo_buffer_rect_inner(size)),
+    color,
+  )
+}
+
+///|
+pub fn GizmoBuffer::cube(
+  self : GizmoBuffer,
+  transform : @transform.Transform,
+  color : @color.Color,
+) -> Unit {
+  if !self.enabled {
+    return
+  }
+  let rect = gizmo_buffer_rect_inner(@math.Vec2::new(1.0F, 1.0F))
+  let tlf = transform.transform_point(
+    @math.Vec3::new(rect[0].x, rect[0].y, 0.5F),
+  )
+  let trf = transform.transform_point(
+    @math.Vec3::new(rect[1].x, rect[1].y, 0.5F),
+  )
+  let brf = transform.transform_point(
+    @math.Vec3::new(rect[2].x, rect[2].y, 0.5F),
+  )
+  let blf = transform.transform_point(
+    @math.Vec3::new(rect[3].x, rect[3].y, 0.5F),
+  )
+  let tlb = transform.transform_point(
+    @math.Vec3::new(rect[0].x, rect[0].y, -0.5F),
+  )
+  let trb = transform.transform_point(
+    @math.Vec3::new(rect[1].x, rect[1].y, -0.5F),
+  )
+  let brb = transform.transform_point(
+    @math.Vec3::new(rect[2].x, rect[2].y, -0.5F),
+  )
+  let blb = transform.transform_point(
+    @math.Vec3::new(rect[3].x, rect[3].y, -0.5F),
+  )
+  self.linestrip([tlf, trf, brf, blf, tlf, tlb, trb, brb, blb, tlb], color)
+  self.line(trf, trb, color)
+  self.line(brf, brb, color)
+  self.line(blf, blb, color)
 }
 
 ///|
@@ -444,6 +579,56 @@ pub fn GizmoAsset::linestrip_gradient_2d(
   points : Array[(@math.Vec2, @color.Color)],
 ) -> Unit {
   self.buffer.linestrip_gradient_2d(points)
+}
+
+///|
+pub fn GizmoAsset::ray_2d(
+  self : GizmoAsset,
+  start : @math.Vec2,
+  vector : @math.Vec2,
+  color : @color.Color,
+) -> Unit {
+  self.buffer.ray_2d(start, vector, color)
+}
+
+///|
+pub fn GizmoAsset::ray_gradient_2d(
+  self : GizmoAsset,
+  start : @math.Vec2,
+  vector : @math.Vec2,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  self.buffer.ray_gradient_2d(start, vector, start_color, end_color)
+}
+
+///|
+pub fn GizmoAsset::rect(
+  self : GizmoAsset,
+  isometry : @math.Isometry3d,
+  size : @math.Vec2,
+  color : @color.Color,
+) -> Unit {
+  self.buffer.rect(isometry, size, color)
+}
+
+///|
+pub fn GizmoAsset::rect_2d(
+  self : GizmoAsset,
+  isometry : @sprite.Isometry2d,
+  size : @math.Vec2,
+  color : @color.Color,
+) -> Unit {
+  self.buffer.rect_2d(isometry, size, color)
+}
+
+///|
+pub fn GizmoAsset::cube(
+  self : GizmoAsset,
+  transform : @transform.Transform,
+  color : @color.Color,
+) -> Unit {
+  self.buffer.cube(transform, color)
 }
 
 ///|

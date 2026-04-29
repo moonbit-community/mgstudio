@@ -146,3 +146,37 @@ test "retained gizmo asset delegates Bevy buffer helpers" {
   )
   debug_inspect(asset.buffer().strip_positions().length(), content="6")
 }
+
+///|
+test "retained gizmo asset delegates Bevy rect and cube helpers" {
+  let asset = @gizmos.GizmoAsset::default()
+  asset.rect_2d(
+    @sprite.Isometry2d::identity(),
+    @math.Vec2::new(2.0F, 2.0F),
+    @color.Color::white(),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="7")
+  asset.clear()
+  asset.rect(
+    @math.Isometry3d::identity(),
+    @math.Vec2::new(2.0F, 2.0F),
+    @color.Color::white(),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="7")
+  asset.clear()
+  asset.cube(@transform.Transform::identity(), @color.Color::white())
+  debug_inspect(asset.buffer().strip_positions().length(), content="11")
+  debug_inspect(asset.buffer().list_positions().length(), content="6")
+  asset.ray_2d(
+    @math.Vec2::zero(),
+    @math.Vec2::new(1.0F, 0.0F),
+    @color.Color::white(),
+  )
+  asset.ray_gradient_2d(
+    @math.Vec2::zero(),
+    @math.Vec2::new(0.0F, 1.0F),
+    @color.Color::white(),
+    @color.Color::black(),
+  )
+  debug_inspect(asset.buffer().list_positions().length(), content="10")
+}

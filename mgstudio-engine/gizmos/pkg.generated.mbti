@@ -177,6 +177,7 @@ pub struct GizmoAsset {
 pub fn GizmoAsset::buffer(Self) -> GizmoBuffer
 pub fn GizmoAsset::clear(Self) -> Unit
 pub fn GizmoAsset::config_type_name(Self) -> String
+pub fn GizmoAsset::cube(Self, @transform.Transform, @color.Color) -> Unit
 pub fn GizmoAsset::line(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn GizmoAsset::line_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
 pub fn GizmoAsset::line_gradient(Self, @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
@@ -189,7 +190,11 @@ pub fn GizmoAsset::linestrip_gradient(Self, Array[(@math.Vec3, @color.Color)]) -
 pub fn GizmoAsset::linestrip_gradient_2d(Self, Array[(@math.Vec2, @color.Color)]) -> Unit
 pub fn GizmoAsset::new() -> Self
 pub fn GizmoAsset::ray(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
+pub fn GizmoAsset::ray_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
 pub fn GizmoAsset::ray_gradient(Self, @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
+pub fn GizmoAsset::ray_gradient_2d(Self, @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
+pub fn GizmoAsset::rect(Self, @math.Isometry3d, @math.Vec2, @color.Color) -> Unit
+pub fn GizmoAsset::rect_2d(Self, @sprite.Isometry2d, @math.Vec2, @color.Color) -> Unit
 pub impl Default for GizmoAsset
 
 pub struct GizmoBuffer {
@@ -201,6 +206,7 @@ pub struct GizmoBuffer {
 }
 pub fn GizmoBuffer::buffer(Self) -> GizmoBufferView
 pub fn GizmoBuffer::clear(Self) -> Unit
+pub fn GizmoBuffer::cube(Self, @transform.Transform, @color.Color) -> Unit
 pub fn GizmoBuffer::line(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn GizmoBuffer::line_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
 pub fn GizmoBuffer::line_gradient(Self, @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
@@ -215,7 +221,11 @@ pub fn GizmoBuffer::list_colors(Self) -> Array[@color.Color]
 pub fn GizmoBuffer::list_positions(Self) -> Array[@math.Vec3]
 pub fn GizmoBuffer::new() -> Self
 pub fn GizmoBuffer::ray(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
+pub fn GizmoBuffer::ray_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
 pub fn GizmoBuffer::ray_gradient(Self, @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
+pub fn GizmoBuffer::ray_gradient_2d(Self, @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
+pub fn GizmoBuffer::rect(Self, @math.Isometry3d, @math.Vec2, @color.Color) -> Unit
+pub fn GizmoBuffer::rect_2d(Self, @sprite.Isometry2d, @math.Vec2, @color.Color) -> Unit
 pub fn GizmoBuffer::strip_colors(Self) -> Array[@color.Color]
 pub fn GizmoBuffer::strip_positions(Self) -> Array[@math.Vec3]
 pub impl Default for GizmoBuffer
