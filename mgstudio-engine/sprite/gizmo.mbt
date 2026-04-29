@@ -260,8 +260,19 @@ fn gizmo_line_style_parts(style : GizmoLineStyle) -> (Int, Float, Float) {
   match style {
     Solid => (0, 1.0F, 1.0F)
     Dotted => (1, 1.0F, 1.0F)
-    Dashed(gap_scale~, line_scale~) =>
-      (2, positive_or(gap_scale, 1.0F), positive_or(line_scale, 1.0F))
+    Dashed(gap_scale~, line_scale~) => {
+      if gap_scale <= 0.0F {
+        @app.log_warn_once(
+          "gizmos.dashed_gap_scale", "When using gizmos with the line style `GizmoLineStyle::Dashed{..}` the gap scale should be greater than zero.",
+        )
+      }
+      if line_scale <= 0.0F {
+        @app.log_warn_once(
+          "gizmos.dashed_line_scale", "When using gizmos with the line style `GizmoLineStyle::Dashed{..}` the line scale should be greater than zero.",
+        )
+      }
+      (2, gap_scale, line_scale)
+    }
   }
 }
 

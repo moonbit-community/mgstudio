@@ -161,6 +161,12 @@ pub struct Gizmo {
   depth_bias : Float
 }
 pub fn Gizmo::default() -> Self
+pub fn Gizmo::depth_bias(Self) -> Float
+pub fn Gizmo::handle(Self) -> @asset.Handle[GizmoAsset]
+pub fn Gizmo::line_config(Self) -> @sprite.GizmoLineConfig
+pub fn Gizmo::with_depth_bias(Self, Float) -> Self
+pub fn Gizmo::with_handle(Self, @asset.Handle[GizmoAsset]) -> Self
+pub fn Gizmo::with_line_config(Self, @sprite.GizmoLineConfig) -> Self
 pub impl @ecs.Component for Gizmo
 pub impl Default for Gizmo
 

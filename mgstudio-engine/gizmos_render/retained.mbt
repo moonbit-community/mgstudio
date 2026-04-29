@@ -96,9 +96,17 @@ fn retained_line_joints_resolution(joints : @sprite.GizmoLineJoint) -> Int {
 fn retained_line_style_parts(style : @sprite.GizmoLineStyle) -> (Float, Float) {
   match style {
     Dashed(gap_scale~, line_scale~) => {
-      let gap = if gap_scale > 0.0F { gap_scale } else { 1.0F }
-      let line = if line_scale > 0.0F { line_scale } else { 1.0F }
-      (gap, line)
+      if gap_scale <= 0.0F {
+        @app.log_warn_once(
+          "gizmos_render.retained.dashed_gap_scale", "When using gizmos with the line style `GizmoLineStyle::Dashed{..}` the gap scale should be greater than zero.",
+        )
+      }
+      if line_scale <= 0.0F {
+        @app.log_warn_once(
+          "gizmos_render.retained.dashed_line_scale", "When using gizmos with the line style `GizmoLineStyle::Dashed{..}` the line scale should be greater than zero.",
+        )
+      }
+      (gap_scale, line_scale)
     }
     _ => (1.0F, 1.0F)
   }

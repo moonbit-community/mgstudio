@@ -224,6 +224,42 @@ pub fn Gizmo::default() -> Gizmo {
 }
 
 ///|
+pub fn Gizmo::handle(self : Gizmo) -> @asset.Handle[GizmoAsset] {
+  self.handle
+}
+
+///|
+pub fn Gizmo::line_config(self : Gizmo) -> GizmoLineConfig {
+  self.line_config
+}
+
+///|
+pub fn Gizmo::depth_bias(self : Gizmo) -> Float {
+  self.depth_bias
+}
+
+///|
+pub fn Gizmo::with_handle(
+  self : Gizmo,
+  handle : @asset.Handle[GizmoAsset],
+) -> Gizmo {
+  Gizmo::{ handle, line_config: self.line_config, depth_bias: self.depth_bias }
+}
+
+///|
+pub fn Gizmo::with_line_config(
+  self : Gizmo,
+  line_config : GizmoLineConfig,
+) -> Gizmo {
+  Gizmo::{ handle: self.handle, line_config, depth_bias: self.depth_bias }
+}
+
+///|
+pub fn Gizmo::with_depth_bias(self : Gizmo, depth_bias : Float) -> Gizmo {
+  Gizmo::{ handle: self.handle, line_config: self.line_config, depth_bias }
+}
+
+///|
 pub impl Default for Gizmo with default() {
   Gizmo::default()
 }
