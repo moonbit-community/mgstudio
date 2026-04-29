@@ -115,6 +115,8 @@ pub fn extract_resource_source_world(@ecs.World) -> @ecs.World
 
 pub fn[EI] extract_visible(Array[EI], Array[Bool]) -> ExtractedInstances[EI]
 
+pub fn flush_pending_command_buffers(@ecs.World) -> Unit
+
 pub fn[C] gpu_component_array_buffer_plugin(@app.App[@ecs.World], _plugin? : GpuComponentArrayBufferPlugin[C]) -> @app.App[@ecs.World]
 
 pub fn[C] gpu_component_array_buffer_state_key(debug_name? : String) -> @ecs.ResourceKey[GpuComponentArrayBufferState[C]]
@@ -256,6 +258,10 @@ pub fn host_gpu_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : 
 pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : @renderer.HostMesh3dPreprocessCameraPayload) -> Unit
 
 pub fn host_mesh3d_main_pass_draw_entry(draw_storage_index~ : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, alpha_cutoff~ : Float, material_flags~ : UInt, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, skinning_key_hi~ : Int) -> @renderer.HostMesh3dMainPassDrawEntry
+
+pub fn init_renderer_context_resources(@ecs.World) -> Unit
+
+pub fn pending_command_buffers_resource_key() -> @ecs.ResourceKey[@renderer.PendingCommandBuffers]
 
 pub fn pipeline_cache_resource_key() -> @ecs.ResourceKey[@render_resource.PipelineCache]
 

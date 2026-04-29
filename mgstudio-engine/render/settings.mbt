@@ -194,6 +194,11 @@ let ecs_key_pipeline_cache_resource : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="mgstudio_render::PipelineCache")
 
 ///|
+let ecs_key_pending_command_buffers_resource : @ecs.ResourceKey[
+  @renderer.PendingCommandBuffers,
+] = @ecs.register_resource(debug_name="mgstudio_render::PendingCommandBuffers")
+
+///|
 pub fn render_device_resource_key() -> @ecs.ResourceKey[@renderer.RenderDevice] {
   ecs_key_render_device_resource
 }
@@ -232,6 +237,69 @@ pub fn pipeline_cache_resource_key() -> @ecs.ResourceKey[
 }
 
 ///|
+pub fn pending_command_buffers_resource_key() -> @ecs.ResourceKey[
+  @renderer.PendingCommandBuffers,
+] {
+  ecs_key_pending_command_buffers_resource
+}
+
+///|
+fn[T] render_world_resource_present(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[T],
+) -> Bool {
+  match
+    (try world.get_resource(key) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(_) => true
+    None => false
+  }
+}
+
+///|
+pub fn init_renderer_context_resources(world : @ecs.World) -> Unit {
+  if !render_world_resource_present(
+      world,
+      pending_command_buffers_resource_key(),
+    ) {
+    world.insert_resource(
+      pending_command_buffers_resource_key(),
+      @renderer.PendingCommandBuffers::default(),
+    )
+  }
+}
+
+///|
+pub fn flush_pending_command_buffers(world : @ecs.World) -> Unit {
+  let pending = match
+    (try world.get_resource(pending_command_buffers_resource_key()) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(value) => value
+    None => return
+  }
+  let queue = match
+    (try world.get_resource(render_queue_resource_key()) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(value) => value
+    None => return
+  }
+  let buffers = pending.take()
+  if buffers.length() > 0 {
+    queue.submit(buffers)
+  }
+  world.insert_resource(pending_command_buffers_resource_key(), pending)
+}
+
+///|
 pub fn RenderResources::unpack_into(
   self : RenderResources,
   main_world : @ecs.World,
@@ -250,6 +318,7 @@ pub fn RenderResources::unpack_into(
     pipeline_cache_resource_key(),
     @render_resource.PipelineCache::new(),
   )
+  init_renderer_context_resources(render_world)
   render_world.insert_resource(render_device_resource_key(), self.device)
   render_world.insert_resource(render_queue_resource_key(), self.queue)
   render_world.insert_resource(

@@ -39,3 +39,16 @@ test "render settings: bevy renderer resources use distinct world keys" {
   debug_inspect(adapter_key.id() != adapter_info_key.id(), content="true")
   debug_inspect(instance_key.id() != pipeline_cache_key.id(), content="true")
 }
+
+///|
+test "render plugin: initializes pending command buffers in render app" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    RenderPlugin::default(),
+  )
+  let render_sub_app = app.get_sub_app(@app.RenderApp).unwrap()
+  let render_world = render_sub_app.world()
+  let pending = (try! render_world.get_resource(
+    pending_command_buffers_resource_key(),
+  )).unwrap()
+  debug_inspect(pending.is_empty(), content="true")
+}
