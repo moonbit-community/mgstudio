@@ -70,3 +70,18 @@ test "custom gizmo groups expose config through store and system param" {
   ignore(app.update())
   debug_inspect(seen_width.val, content="7")
 }
+
+///|
+test "retained gizmo component installs Bevy required Transform and asset store" {
+  let app = @gizmos.gizmo_plugin(@app.App::new(@ecs.World::new()))
+  let world = app.world()
+  let entity = world.spawn()
+  try! (world.entity_mut(entity).insert_component(@gizmos.Gizmo::default())
+  |> ignore)
+  debug_inspect(
+    try! world.contains_by_key(entity, @transform.Transform::component()),
+    content="true",
+  )
+  let assets_key : @ecs.ResourceKey[@asset.Assets[@gizmos.GizmoAsset]] = @asset.assets_resource_key()
+  debug_inspect(world.get_resource(assets_key) is Some(_), content="true")
+}

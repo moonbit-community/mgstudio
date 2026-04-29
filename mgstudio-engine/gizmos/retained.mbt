@@ -16,27 +16,85 @@
 // Bevy source: `bevy/crates/bevy_gizmos/src/retained.rs`.
 
 ///|
-pub struct GizmoAssetHandle {
-  id : Int
-} derive(Eq, Debug)
-
-///|
-pub fn GizmoAssetHandle::new(id~ : Int) -> GizmoAssetHandle {
-  GizmoAssetHandle::{ id, }
+pub struct GizmoAsset {
+  buffer : @sprite.GizmoState
+  config_type_name : String
 }
 
 ///|
-pub struct RetainedGizmo {
-  handle : GizmoAssetHandle
+fn empty_gizmo_state() -> @sprite.GizmoState {
+  @sprite.GizmoState::{
+    lines: [],
+    lines_3d: [],
+    pending_ellipses: [],
+    pending_arcs: [],
+    pending_rounded_rects: [],
+    pending_arrows: [],
+    pending_grids: [],
+    mesh_handle_3d: None,
+  }
+}
+
+///|
+pub fn GizmoAsset::new() -> GizmoAsset {
+  GizmoAsset::{
+    buffer: empty_gizmo_state(),
+    config_type_name: @any.of(@sprite.DefaultGizmoConfigGroup::default()).type_name(),
+  }
+}
+
+///|
+pub fn GizmoAsset::buffer(self : GizmoAsset) -> @sprite.GizmoState {
+  self.buffer
+}
+
+///|
+pub fn GizmoAsset::config_type_name(self : GizmoAsset) -> String {
+  self.config_type_name
+}
+
+///|
+pub impl Default for GizmoAsset with default() {
+  GizmoAsset::new()
+}
+
+///|
+let ecs_key_gizmo : @ecs.ComponentKey[Gizmo] = @ecs.register_component(
+  debug_name="mgstudio_gizmos::Gizmo",
+)
+
+///|
+pub struct Gizmo {
+  handle : @asset.Handle[GizmoAsset]
   line_config : GizmoLineConfig
   depth_bias : Float
 }
 
 ///|
-pub fn RetainedGizmo::default() -> RetainedGizmo {
-  RetainedGizmo::{
-    handle: GizmoAssetHandle::new(id=0),
+pub fn Gizmo::default() -> Gizmo {
+  Gizmo::{
+    handle: @asset.Handle::new(0),
     line_config: GizmoLineConfig::default(),
     depth_bias: 0.0F,
+  }
+}
+
+///|
+pub impl Default for Gizmo with default() {
+  Gizmo::default()
+}
+
+///|
+pub impl @ecs.Component for Gizmo with component() {
+  ecs_key_gizmo
+}
+
+///|
+pub fn install_retained_gizmo_required_components(world : @ecs.World) -> Unit {
+  world.register_required_components(
+    ecs_key_gizmo,
+    @transform.Transform::component(),
+  ) catch {
+    _ => ()
   }
 }

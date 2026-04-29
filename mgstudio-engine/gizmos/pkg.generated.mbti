@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/gizmos"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
@@ -11,7 +12,6 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
-  "moonbitlang/core/debug",
   "moonbitlang/core/ref",
 }
 
@@ -122,6 +122,8 @@ pub fn global_gizmos_plugin_with(@app.App[@ecs.World], GlobalGizmosPlugin) -> @a
 
 pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], G) -> @app.App[@ecs.World]
 
+pub fn install_retained_gizmo_required_components(@ecs.World) -> Unit
+
 pub fn simplex_stroke_font_cap_height() -> Float
 
 pub fn simplex_stroke_font_height() -> Float
@@ -151,10 +153,23 @@ pub fn FrustumGizmoConfigGroup::default() -> Self
 pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup
 pub impl Default for FrustumGizmoConfigGroup
 
-pub struct GizmoAssetHandle {
-  id : Int
-} derive(Eq, @debug.Debug)
-pub fn GizmoAssetHandle::new(id~ : Int) -> Self
+pub struct Gizmo {
+  handle : @asset.Handle[GizmoAsset]
+  line_config : @sprite.GizmoLineConfig
+  depth_bias : Float
+}
+pub fn Gizmo::default() -> Self
+pub impl @ecs.Component for Gizmo
+pub impl Default for Gizmo
+
+pub struct GizmoAsset {
+  buffer : @sprite.GizmoState
+  config_type_name : String
+}
+pub fn GizmoAsset::buffer(Self) -> @sprite.GizmoState
+pub fn GizmoAsset::config_type_name(Self) -> String
+pub fn GizmoAsset::new() -> Self
+pub impl Default for GizmoAsset
 
 pub struct GizmoPlugin {
 }
@@ -165,13 +180,6 @@ pub struct GlobalGizmosPlugin {
 }
 pub fn GlobalGizmosPlugin::default() -> Self
 pub impl @app.Plugin for GlobalGizmosPlugin
-
-pub struct RetainedGizmo {
-  handle : GizmoAssetHandle
-  line_config : @sprite.GizmoLineConfig
-  depth_bias : Float
-}
-pub fn RetainedGizmo::default() -> Self
 
 pub struct ShowAabbGizmo {
   color : @color.Color?

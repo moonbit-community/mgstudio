@@ -109,6 +109,8 @@ pub fn gizmo_plugin_with(
   if next.contains_resource(ecs_res_key_gizmo_plugin_marker) {
     return next
   }
+  install_retained_gizmo_required_components(next.world())
+  next = @asset.init_asset(next, fn() { GizmoAsset::default() })
   next = next.insert_world_resource(ecs_res_key_gizmo_plugin_marker, GizmoPluginMarker::{
 
   })
