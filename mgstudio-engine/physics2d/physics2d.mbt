@@ -665,16 +665,115 @@ pub fn Physics2dContext::query(
 }
 
 ///|
+pub let physics2d_set_clear_events : @app.SystemSet = @app.system_set(
+  "mgstudio.physics2d.clear_events",
+)
+
+///|
+pub let physics2d_set_cleanup : @app.SystemSet = @app.system_set(
+  "mgstudio.physics2d.cleanup",
+)
+
+///|
+pub let physics2d_set_sync_insertions : @app.SystemSet = @app.system_set(
+  "mgstudio.physics2d.sync_insertions",
+)
+
+///|
+pub let physics2d_set_sync_joints : @app.SystemSet = @app.system_set(
+  "mgstudio.physics2d.sync_joints",
+)
+
+///|
+pub let physics2d_set_sync_world_to_rapier : @app.SystemSet = @app.system_set(
+  "mgstudio.physics2d.sync_world_to_rapier",
+)
+
+///|
+pub let physics2d_set_character_controller : @app.SystemSet = @app.system_set(
+  "mgstudio.physics2d.character_controller",
+)
+
+///|
+pub let physics2d_set_step : @app.SystemSet = @app.system_set(
+  "mgstudio.physics2d.step",
+)
+
+///|
+pub let physics2d_set_writeback : @app.SystemSet = @app.system_set(
+  "mgstudio.physics2d.writeback",
+)
+
+///|
+pub let physics2d_set_debug_render : @app.SystemSet = @app.system_set(
+  "mgstudio.physics2d.debug_render",
+)
+
+///|
 pub fn physics2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_startup_system(physics2d_init_resources_system)
-  .add_pre_update_system(physics2d_clear_events_system)
-  .add_pre_update_system(physics2d_cleanup_despawned_system)
-  .add_fixed_update_system(physics2d_sync_insertions_system)
-  .add_fixed_update_system(physics2d_sync_joints_system)
-  .add_fixed_update_system(physics2d_sync_world_to_rapier_system)
-  .add_fixed_update_system(physics2d_character_controller_system)
-  .add_fixed_update_system(physics2d_step_system)
-  .add_fixed_update_system(physics2d_writeback_system)
-  .add_post_update_system_param(physics2d_debug_render_system)
+  .add_pre_update_system_config(
+    @app.system(physics2d_clear_events_system)
+    .named("mgstudio.physics2d.clear_events")
+    .in_set(physics2d_set_clear_events),
+  )
+  .add_pre_update_system_config(
+    @app.system(physics2d_cleanup_despawned_system)
+    .named("mgstudio.physics2d.cleanup")
+    .in_set(physics2d_set_cleanup),
+  )
+  .configure_set(@app.PreUpdate, physics2d_set_clear_events, before=[
+    physics2d_set_cleanup,
+  ])
+  .add_fixed_update_system_config(
+    @app.system(physics2d_sync_insertions_system)
+    .named("mgstudio.physics2d.sync_insertions")
+    .in_set(physics2d_set_sync_insertions),
+  )
+  .add_fixed_update_system_config(
+    @app.system(physics2d_sync_joints_system)
+    .named("mgstudio.physics2d.sync_joints")
+    .in_set(physics2d_set_sync_joints),
+  )
+  .add_fixed_update_system_config(
+    @app.system(physics2d_sync_world_to_rapier_system)
+    .named("mgstudio.physics2d.sync_world_to_rapier")
+    .in_set(physics2d_set_sync_world_to_rapier),
+  )
+  .add_fixed_update_system_config(
+    @app.system(physics2d_character_controller_system)
+    .named("mgstudio.physics2d.character_controller")
+    .in_set(physics2d_set_character_controller),
+  )
+  .add_fixed_update_system_config(
+    @app.system(physics2d_step_system)
+    .named("mgstudio.physics2d.step")
+    .in_set(physics2d_set_step),
+  )
+  .add_fixed_update_system_config(
+    @app.system(physics2d_writeback_system)
+    .named("mgstudio.physics2d.writeback")
+    .in_set(physics2d_set_writeback),
+  )
+  .configure_set(@app.FixedUpdate, physics2d_set_sync_insertions, before=[
+    physics2d_set_sync_joints,
+  ])
+  .configure_set(@app.FixedUpdate, physics2d_set_sync_joints, before=[
+    physics2d_set_sync_world_to_rapier,
+  ])
+  .configure_set(@app.FixedUpdate, physics2d_set_sync_world_to_rapier, before=[
+    physics2d_set_character_controller,
+  ])
+  .configure_set(@app.FixedUpdate, physics2d_set_character_controller, before=[
+    physics2d_set_step,
+  ])
+  .configure_set(@app.FixedUpdate, physics2d_set_step, before=[
+    physics2d_set_writeback,
+  ])
+  .add_post_update_system_config(
+    @app.system(@app.system_param(physics2d_debug_render_system))
+    .named("mgstudio.physics2d.debug_render")
+    .in_set(physics2d_set_debug_render),
+  )
 }

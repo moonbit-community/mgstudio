@@ -761,41 +761,47 @@ pub fn physics3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_startup_system(physics3d_init_resources_system)
   .add_pre_update_system_config(
-    @app.system(physics3d_clear_events_system).in_set(
-      physics3d_set_clear_events,
-    ),
+    @app.system(physics3d_clear_events_system)
+    .named("mgstudio.physics3d.clear_events")
+    .in_set(physics3d_set_clear_events),
   )
   .add_pre_update_system_config(
-    @app.system(physics3d_cleanup_despawned_system).in_set(
-      physics3d_set_cleanup,
-    ),
+    @app.system(physics3d_cleanup_despawned_system)
+    .named("mgstudio.physics3d.cleanup")
+    .in_set(physics3d_set_cleanup),
   )
   .configure_set(@app.PreUpdate, physics3d_set_clear_events, before=[
     physics3d_set_cleanup,
   ])
   .add_fixed_update_system_config(
-    @app.system(physics3d_sync_insertions_system).in_set(
-      physics3d_set_sync_insertions,
-    ),
+    @app.system(physics3d_sync_insertions_system)
+    .named("mgstudio.physics3d.sync_insertions")
+    .in_set(physics3d_set_sync_insertions),
   )
   .add_fixed_update_system_config(
-    @app.system(physics3d_sync_joints_system).in_set(physics3d_set_sync_joints),
+    @app.system(physics3d_sync_joints_system)
+    .named("mgstudio.physics3d.sync_joints")
+    .in_set(physics3d_set_sync_joints),
   )
   .add_fixed_update_system_config(
-    @app.system(physics3d_sync_world_to_rapier_system).in_set(
-      physics3d_set_sync_world_to_rapier,
-    ),
+    @app.system(physics3d_sync_world_to_rapier_system)
+    .named("mgstudio.physics3d.sync_world_to_rapier")
+    .in_set(physics3d_set_sync_world_to_rapier),
   )
   .add_fixed_update_system_config(
-    @app.system(physics3d_character_controller_system).in_set(
-      physics3d_set_character_controller,
-    ),
+    @app.system(physics3d_character_controller_system)
+    .named("mgstudio.physics3d.character_controller")
+    .in_set(physics3d_set_character_controller),
   )
   .add_fixed_update_system_config(
-    @app.system(physics3d_step_system).in_set(physics3d_set_step),
+    @app.system(physics3d_step_system)
+    .named("mgstudio.physics3d.step")
+    .in_set(physics3d_set_step),
   )
   .add_fixed_update_system_config(
-    @app.system(physics3d_writeback_system).in_set(physics3d_set_writeback),
+    @app.system(physics3d_writeback_system)
+    .named("mgstudio.physics3d.writeback")
+    .in_set(physics3d_set_writeback),
   )
   .configure_set(@app.FixedUpdate, physics3d_set_sync_insertions, before=[
     physics3d_set_sync_joints,

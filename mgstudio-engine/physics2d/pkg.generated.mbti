@@ -168,6 +168,14 @@ pub fn physics2d_init_resources_system(@ecs.World) -> Unit
 
 pub fn physics2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub let physics2d_set_character_controller : String
+
+pub let physics2d_set_cleanup : String
+
+pub let physics2d_set_clear_events : String
+
+pub let physics2d_set_debug_render : String
+
 pub fn physics2d_set_filter_contact_pair(@ecs.World, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Unit
 
 pub fn physics2d_set_filter_intersection_pair(@ecs.World, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Unit
@@ -175,6 +183,16 @@ pub fn physics2d_set_filter_intersection_pair(@ecs.World, (@dynamics.RigidBodySe
 pub fn physics2d_set_modify_solver_contacts(@ecs.World, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @Milky2018/moon_rapier/core.Vec2)) -> Unit
 
 pub fn physics2d_set_modify_solver_contacts_with_solver_contacts(@ecs.World, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags) -> Unit
+
+pub let physics2d_set_step : String
+
+pub let physics2d_set_sync_insertions : String
+
+pub let physics2d_set_sync_joints : String
+
+pub let physics2d_set_sync_world_to_rapier : String
+
+pub let physics2d_set_writeback : String
 
 pub fn physics2d_step_system(@ecs.World) -> Unit
 
