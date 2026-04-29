@@ -19,3 +19,29 @@ test "feathers boundary exposes plugin and plugin-group entries" {
   let _group = @feathers.feathers_plugins()
   debug_inspect("ok", content="\"ok\"")
 }
+
+///|
+test "feathers dark theme covers Bevy token state matrix" {
+  let props = create_dark_theme()
+  let tok = fn(name : String) { ThemeToken::new_static(name) }
+  debug_inspect(
+    props.get_color(tok(BUTTON_BG_HOVER)).unwrap(),
+    content="\"#54555B\"",
+  )
+  debug_inspect(
+    props.get_color(tok(BUTTON_PRIMARY_BG_PRESSED)).unwrap(),
+    content="\"#428DEB\"",
+  )
+  debug_inspect(
+    props.get_color(tok(CHECKBOX_BG_CHECKED_DISABLED)).unwrap(),
+    content="\"#46474D80\"",
+  )
+  debug_inspect(
+    props.get_color(tok(RADIO_MARK_DISABLED)).unwrap(),
+    content="\"#206EC980\"",
+  )
+  debug_inspect(
+    props.get_color(tok(SWITCH_SLIDE_DISABLED)).unwrap(),
+    content="\"#8383854C\"",
+  )
+}
