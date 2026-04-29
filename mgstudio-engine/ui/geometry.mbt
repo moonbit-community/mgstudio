@@ -25,16 +25,16 @@ pub(all) enum Val {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub struct UiRect {
+pub(all) struct UiRect {
   left : Val
-  top : Val
   right : Val
+  top : Val
   bottom : Val
 } derive(ToJson, FromJson)
 
 ///|
-pub fn UiRect::new(left : Val, top : Val, right : Val, bottom : Val) -> UiRect {
-  UiRect::{ left, top, right, bottom }
+pub fn UiRect::new(left : Val, right : Val, top : Val, bottom : Val) -> UiRect {
+  UiRect::{ left, right, top, bottom }
 }
 
 ///|
@@ -45,6 +45,71 @@ pub fn UiRect::default() -> UiRect {
 ///|
 pub fn UiRect::all(value : Val) -> UiRect {
   UiRect::new(value, value, value, value)
+}
+
+///|
+pub fn UiRect::px(
+  left : Float,
+  right : Float,
+  top : Float,
+  bottom : Float,
+) -> UiRect {
+  UiRect::new(Val::Px(left), Val::Px(right), Val::Px(top), Val::Px(bottom))
+}
+
+///|
+pub fn UiRect::percent(
+  left : Float,
+  right : Float,
+  top : Float,
+  bottom : Float,
+) -> UiRect {
+  UiRect::new(
+    Val::Percent(left),
+    Val::Percent(right),
+    Val::Percent(top),
+    Val::Percent(bottom),
+  )
+}
+
+///|
+pub fn UiRect::horizontal(value : Val) -> UiRect {
+  UiRect::{ ..UiRect::default(), left: value, right: value }
+}
+
+///|
+pub fn UiRect::vertical(value : Val) -> UiRect {
+  UiRect::{ ..UiRect::default(), top: value, bottom: value }
+}
+
+///|
+pub fn UiRect::axes(horizontal : Val, vertical : Val) -> UiRect {
+  UiRect::{
+    left: horizontal,
+    right: horizontal,
+    top: vertical,
+    bottom: vertical,
+  }
+}
+
+///|
+pub fn UiRect::left(value : Val) -> UiRect {
+  UiRect::{ ..UiRect::default(), left: value }
+}
+
+///|
+pub fn UiRect::right(value : Val) -> UiRect {
+  UiRect::{ ..UiRect::default(), right: value }
+}
+
+///|
+pub fn UiRect::top(value : Val) -> UiRect {
+  UiRect::{ ..UiRect::default(), top: value }
+}
+
+///|
+pub fn UiRect::bottom(value : Val) -> UiRect {
+  UiRect::{ ..UiRect::default(), bottom: value }
 }
 
 ///|

@@ -659,15 +659,24 @@ pub struct UiPlugin {
 pub fn UiPlugin::default() -> Self
 pub impl @app.Plugin for UiPlugin
 
-pub struct UiRect {
+pub(all) struct UiRect {
   left : Val
-  top : Val
   right : Val
+  top : Val
   bottom : Val
 } derive(ToJson, @json.FromJson)
 pub fn UiRect::all(Val) -> Self
+pub fn UiRect::axes(Val, Val) -> Self
+pub fn UiRect::bottom(Val) -> Self
 pub fn UiRect::default() -> Self
+pub fn UiRect::horizontal(Val) -> Self
+pub fn UiRect::left(Val) -> Self
 pub fn UiRect::new(Val, Val, Val, Val) -> Self
+pub fn UiRect::percent(Float, Float, Float, Float) -> Self
+pub fn UiRect::px(Float, Float, Float, Float) -> Self
+pub fn UiRect::right(Val) -> Self
+pub fn UiRect::top(Val) -> Self
+pub fn UiRect::vertical(Val) -> Self
 
 pub struct UiRoot {
 } derive(ToJson, @json.FromJson)

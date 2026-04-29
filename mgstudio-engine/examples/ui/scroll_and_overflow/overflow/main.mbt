@@ -14,7 +14,7 @@
 
 ///|
 fn margin_x(value : @ui.Val) -> @ui.UiRect {
-  @ui.UiRect::new(value, @ui.Val::Px(0.0F), value, @ui.Val::Px(0.0F))
+  @ui.UiRect::new(value, value, @ui.Val::Px(0.0F), @ui.Val::Px(0.0F))
 }
 
 ///|
@@ -29,7 +29,7 @@ fn margin_bottom(value : @ui.Val) -> @ui.UiRect {
 
 ///|
 fn padding_left_top(left : @ui.Val, top : @ui.Val) -> @ui.UiRect {
-  @ui.UiRect::new(left, top, @ui.Val::Px(0.0F), @ui.Val::Px(0.0F))
+  @ui.UiRect::new(left, @ui.Val::Px(0.0F), top, @ui.Val::Px(0.0F))
 }
 
 ///|
