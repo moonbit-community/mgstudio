@@ -337,3 +337,47 @@ test "retained gizmo sphere builder draws three Bevy great circles" {
   debug_inspect(strip[0].x, content="1")
   debug_inspect(strip[0].y > -0.0001F && strip[0].y < 0.0001F, content="true")
 }
+
+///|
+test "retained gizmo arrow builders mirror Bevy tips and axes helpers" {
+  let asset = @gizmos.GizmoAsset::default()
+  ignore(
+    asset.arrow(
+      @math.Vec3::zero(),
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      @color.Color::white(),
+    ),
+  )
+  debug_inspect(asset.buffer().list_positions().length(), content="10")
+
+  asset.clear()
+  ignore(
+    asset
+    .arrow(
+      @math.Vec3::zero(),
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      @color.Color::white(),
+    )
+    .with_tip_length(0.25F)
+    .with_double_end(),
+  )
+  debug_inspect(asset.buffer().list_positions().length(), content="18")
+
+  asset.clear()
+  ignore(
+    asset.arrow_2d(
+      @math.Vec2::zero(),
+      @math.Vec2::new(1.0F, 0.0F),
+      @color.Color::white(),
+    ),
+  )
+  debug_inspect(asset.buffer().list_positions().length(), content="10")
+
+  asset.clear()
+  asset.axes(@math.Isometry3d::identity(), 1.0F)
+  debug_inspect(asset.buffer().list_positions().length(), content="30")
+
+  asset.clear()
+  asset.axes_2d(@math.Isometry3d::identity(), 1.0F)
+  debug_inspect(asset.buffer().list_positions().length(), content="20")
+}

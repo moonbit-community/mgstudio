@@ -1260,6 +1260,7 @@ pub fn Vec3::mul(Self, Self) -> Self
 pub fn Vec3::mul_scalar(Self, Float) -> Self
 pub fn Vec3::neg(Self) -> Self
 pub fn Vec3::new(Float, Float, Float) -> Self
+pub fn Vec3::normalize(Self) -> Self
 pub fn Vec3::normalize_or_zero(Self) -> Self
 pub fn Vec3::smooth_nudge(Self, Self, Float, Float) -> Unit
 pub fn Vec3::splat(Float) -> Self

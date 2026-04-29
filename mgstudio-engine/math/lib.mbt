@@ -169,6 +169,11 @@ pub fn Vec3::normalize_or_zero(self : Vec3) -> Vec3 {
 }
 
 ///|
+pub fn Vec3::normalize(self : Vec3) -> Vec3 {
+  self.mul_scalar(1.0F / self.length())
+}
+
+///|
 /// Returns any vector orthonormal to this unit vector, following glam's
 /// Pixar orthonormal-basis implementation used by Bevy.
 pub fn Vec3::any_orthonormal_vector(self : Vec3) -> Vec3 {

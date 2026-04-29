@@ -176,6 +176,10 @@ pub struct GizmoAsset {
 }
 pub fn GizmoAsset::arc_2d(Self, @sprite.Isometry2d, Float, Float, @color.Color) -> RetainedArcBuilder
 pub fn GizmoAsset::arc_3d(Self, Float, Float, @math.Isometry3d, @color.Color) -> RetainedArcBuilder
+pub fn GizmoAsset::arrow(Self, @math.Vec3, @math.Vec3, @color.Color) -> RetainedArrowBuilder
+pub fn GizmoAsset::arrow_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> RetainedArrowBuilder
+pub fn[T : @transform.TransformPoint] GizmoAsset::axes(Self, T, Float) -> Unit
+pub fn[T : @transform.TransformPoint] GizmoAsset::axes_2d(Self, T, Float) -> Unit
 pub fn GizmoAsset::buffer(Self) -> GizmoBuffer
 pub fn GizmoAsset::circle(Self, @math.Isometry3d, Float, @color.Color) -> RetainedEllipseBuilder
 pub fn GizmoAsset::circle_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> RetainedEllipseBuilder
@@ -219,10 +223,15 @@ pub struct GizmoBuffer {
   pending_ellipses : Array[RetainedPendingEllipse]
   pending_arcs : Array[RetainedPendingArc]
   pending_spheres : Array[RetainedPendingSphere]
+  pending_arrows : Array[RetainedPendingArrow]
   mut pending_order_next : Int
 }
 pub fn GizmoBuffer::arc_2d(Self, @sprite.Isometry2d, Float, Float, @color.Color) -> RetainedArcBuilder
 pub fn GizmoBuffer::arc_3d(Self, Float, Float, @math.Isometry3d, @color.Color) -> RetainedArcBuilder
+pub fn GizmoBuffer::arrow(Self, @math.Vec3, @math.Vec3, @color.Color) -> RetainedArrowBuilder
+pub fn GizmoBuffer::arrow_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> RetainedArrowBuilder
+pub fn[T : @transform.TransformPoint] GizmoBuffer::axes(Self, T, Float) -> Unit
+pub fn[T : @transform.TransformPoint] GizmoBuffer::axes_2d(Self, T, Float) -> Unit
 pub fn GizmoBuffer::buffer(Self) -> GizmoBufferView
 pub fn GizmoBuffer::circle(Self, @math.Isometry3d, Float, @color.Color) -> RetainedEllipseBuilder
 pub fn GizmoBuffer::circle_2d(Self, @sprite.Isometry2d, Float, @color.Color) -> RetainedEllipseBuilder
@@ -298,6 +307,13 @@ pub struct RetainedArcBuilder {
 }
 pub fn RetainedArcBuilder::resolution(Self, Int) -> Self
 
+pub struct RetainedArrowBuilder {
+  id : Int
+  buffer : GizmoBuffer
+}
+pub fn RetainedArrowBuilder::with_double_end(Self) -> Self
+pub fn RetainedArrowBuilder::with_tip_length(Self, Float) -> Self
+
 pub struct RetainedEllipseBuilder {
   id : Int
   buffer : GizmoBuffer
@@ -305,6 +321,8 @@ pub struct RetainedEllipseBuilder {
 pub fn RetainedEllipseBuilder::resolution(Self, Int) -> Self
 
 type RetainedPendingArc
+
+type RetainedPendingArrow
 
 type RetainedPendingEllipse
 

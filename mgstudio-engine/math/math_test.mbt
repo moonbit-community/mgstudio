@@ -149,6 +149,15 @@ test "math: vec3 element helpers follow bevy-style scale helpers" {
 }
 
 ///|
+test "math: vec3 normalize matches Bevy raw normalize" {
+  let normalized = Vec3::new(0.0F, 3.0F, 4.0F).normalize()
+  debug_inspect(
+    approx_vec3(normalized, Vec3::new(0.0F, 0.6F, 0.8F)),
+    content="true",
+  )
+}
+
+///|
 test "math: vec2 normalize_or_zero normalizes nonzero vectors" {
   let value = Vec2::new(3.0F, 4.0F).normalize_or_zero()
   debug_inspect(value.x == 0.6F, content="true")
