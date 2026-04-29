@@ -41,7 +41,8 @@ pub fn post_process_effect_count(
     count = count + 1
   }
   match msaa_writeback {
-    Some(writeback) => if writeback.enabled { count = count + 1 }
+    Some(Off) => ()
+    Some(Auto) | Some(Always) => count = count + 1
     None => ()
   }
   count

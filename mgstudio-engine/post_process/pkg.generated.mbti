@@ -43,7 +43,7 @@ pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping]
 
 pub let ecs_key_vignette : @ecs.ComponentKey[@effect_stack.Vignette]
 
-pub fn msaa_writeback_required(MsaaWriteback?, Int) -> Bool
+pub fn msaa_writeback_required(MsaaWriteback?, Int, sorted_camera_index_for_target? : Int) -> Bool
 
 pub fn post_process_effect_count(Bloom?, @effect_stack.Vignette?, @motion_blur.MotionBlur?, @effect_stack.ChromaticAberration?, MsaaWriteback?) -> Int
 
@@ -191,11 +191,15 @@ pub fn MipBias::value(Self) -> Float
 pub fn MipBias::with_bias(Self, Float) -> Self
 pub impl @ecs.Component for MipBias
 
-pub struct MsaaWriteback {
-  enabled : Bool
-} derive(ToJson, @json.FromJson)
+pub(all) enum MsaaWriteback {
+  Off
+  Auto
+  Always
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MsaaWriteback::always() -> Self
+pub fn MsaaWriteback::auto() -> Self
 pub fn MsaaWriteback::default() -> Self
-pub fn MsaaWriteback::new(Bool) -> Self
+pub fn MsaaWriteback::off() -> Self
 pub impl @ecs.Component for MsaaWriteback
 
 pub struct ScreenSpaceAmbientOcclusion {

@@ -50,6 +50,51 @@ test "post_process mip bias mirrors Bevy default" {
 }
 
 ///|
+test "post_process msaa writeback mirrors Bevy Off Auto Always semantics" {
+  debug_inspect(@post_process.MsaaWriteback::default(), content="Auto")
+  debug_inspect(
+    @post_process.msaa_writeback_required(
+      Some(@post_process.MsaaWriteback::Off),
+      4,
+      sorted_camera_index_for_target=1,
+    ),
+    content="false",
+  )
+  debug_inspect(
+    @post_process.msaa_writeback_required(
+      Some(@post_process.MsaaWriteback::Auto),
+      4,
+      sorted_camera_index_for_target=0,
+    ),
+    content="false",
+  )
+  debug_inspect(
+    @post_process.msaa_writeback_required(
+      Some(@post_process.MsaaWriteback::Auto),
+      4,
+      sorted_camera_index_for_target=1,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    @post_process.msaa_writeback_required(
+      Some(@post_process.MsaaWriteback::Always),
+      1,
+      sorted_camera_index_for_target=0,
+    ),
+    content="false",
+  )
+  debug_inspect(
+    @post_process.msaa_writeback_required(
+      Some(@post_process.MsaaWriteback::Always),
+      4,
+      sorted_camera_index_for_target=0,
+    ),
+    content="true",
+  )
+}
+
+///|
 test "post_process registers Bevy root gaussian blur shader library" {
   @post_process.register_embedded_wgsl_sources()
   let source = match

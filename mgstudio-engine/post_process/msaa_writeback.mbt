@@ -13,34 +13,50 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_post_process/src/msaa_writeback.rs`.
-// Host-side marker for explicit post-process MSAA resolve/writeback.
+// Bevy source: `bevy/crates/bevy_camera/src/clear_color.rs` and
+// `bevy/crates/bevy_post_process/src/msaa_writeback.rs`.
+// Controls when MSAA writeback occurs for a camera.
 
 ///|
-pub struct MsaaWriteback {
-  enabled : Bool
-} derive(ToJson, FromJson)
+pub(all) enum MsaaWriteback {
+  Off
+  Auto
+  Always
+} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
 pub fn MsaaWriteback::default() -> MsaaWriteback {
-  MsaaWriteback::{ enabled: true }
+  Auto
 }
 
 ///|
-pub fn MsaaWriteback::new(enabled : Bool) -> MsaaWriteback {
-  MsaaWriteback::{ enabled, }
+pub fn MsaaWriteback::off() -> MsaaWriteback {
+  Off
+}
+
+///|
+pub fn MsaaWriteback::auto() -> MsaaWriteback {
+  Auto
+}
+
+///|
+pub fn MsaaWriteback::always() -> MsaaWriteback {
+  Always
 }
 
 ///|
 pub fn msaa_writeback_required(
   writeback : MsaaWriteback?,
   sample_count : Int,
+  sorted_camera_index_for_target? : Int = 0,
 ) -> Bool {
   if sample_count <= 1 {
     return false
   }
   match writeback {
-    Some(value) => value.enabled
+    Some(Off) => false
+    Some(Auto) => sorted_camera_index_for_target > 0
+    Some(Always) => true
     None => false
   }
 }

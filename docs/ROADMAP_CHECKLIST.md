@@ -74,6 +74,7 @@ This file must not exceed 200 lines.
 - 2026-04-29 fullscreen postprocess cleanup：Blit/FXAA/CAS/Bloom/MotionBlur/EffectStack/CustomPostprocess3d 均改为 Bevy 同构的 `FullscreenShader` vertex module + fragment shader module，不再把 fullscreen WGSL 手工拼进 fragment source；EffectStack 也改回 `post_process.wgsl` 原始 import graph。Blit layout/sampler 修正为 Bevy 的 unfilterable texture + non-filtering nearest sampler，MotionBlur 改为显式 bind-group layout + pipeline-owned sampler，不再依赖 pipeline 反射 layout 或 scene texture sampler。
 - 2026-04-29 MotionBlur component parity：对照 `bevy_post_process/src/motion_blur/mod.rs` 的 `#[require(DepthPrepass, MotionVectorPrepass)]`，mgstudio 在 `register_render3d_required_components` 中为 `MotionBlur` 补齐 required-components；`examples/3d/motion_blur` 已恢复通过 `pbr` public API 插入真实 `MotionBlur` 组件，不再保持 native no-op guard。
 - 2026-04-29 PostProcess root shader library：对照 `bevy_post_process/src/lib.rs` 的 `load_shader_library!(..., "gaussian_blur.wgsl")`，mgstudio `post_process` 根包已注册原版 `post_process/gaussian_blur.wgsl`，render plugin startup 会统一加载，供 DOF/custom postprocess import graph 使用。
+- 2026-04-29 MsaaWriteback data model：对照 `bevy_camera/src/clear_color.rs` + `bevy_post_process/src/msaa_writeback.rs`，`MsaaWriteback` 已从本地 `enabled: Bool` 结构体改为 `Off/Auto/Always` 枚举，默认 `Auto`，`msaa_writeback_required` 使用 Bevy 的 `samples > 1 && (Always || Auto && sorted_camera_index > 0)` 判定。
 
 ### WESL 对齐 (2026-04-15)
 - `.wesl` 现已走 Bevy 语义链路：`Shader::from_wesl` + `Source::Wesl` + shader asset loader + `ShaderCache` resolver-backed compile-to-WGSL。
