@@ -114,11 +114,42 @@ pub fn ComputedUiRenderTargetInfo::logical_size(
 ///|
 pub struct UiLayout {
   rect : @math.Rect
+  border : @sprite.UiBorderRect
+  padding : @sprite.UiBorderRect
+  border_radius : ResolvedBorderRadius
+  outline_width : Float
+  outline_offset : Float
 } derive(ToJson, FromJson)
 
 ///|
 pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
-  UiLayout::{ rect, }
+  UiLayout::{
+    rect,
+    border: @sprite.UiBorderRect::zero(),
+    padding: @sprite.UiBorderRect::zero(),
+    border_radius: ResolvedBorderRadius::default(),
+    outline_width: 0.0F,
+    outline_offset: 0.0F,
+  }
+}
+
+///|
+pub fn UiLayout::from_computed(
+  rect : @math.Rect,
+  border : @sprite.UiBorderRect,
+  padding : @sprite.UiBorderRect,
+  border_radius : ResolvedBorderRadius,
+  outline_width : Float,
+  outline_offset : Float,
+) -> UiLayout {
+  UiLayout::{
+    rect,
+    border,
+    padding,
+    border_radius,
+    outline_width,
+    outline_offset,
+  }
 }
 
 ///|
@@ -129,6 +160,36 @@ pub fn UiLayout::rect(self : UiLayout) -> @math.Rect {
 ///|
 pub fn UiLayout::size(self : UiLayout) -> @math.Vec2 {
   self.rect.size()
+}
+
+///|
+pub fn UiLayout::border(self : UiLayout) -> @sprite.UiBorderRect {
+  self.border
+}
+
+///|
+pub fn UiLayout::padding(self : UiLayout) -> @sprite.UiBorderRect {
+  self.padding
+}
+
+///|
+pub fn UiLayout::border_radius(self : UiLayout) -> ResolvedBorderRadius {
+  self.border_radius
+}
+
+///|
+pub fn UiLayout::outline_width(self : UiLayout) -> Float {
+  self.outline_width
+}
+
+///|
+pub fn UiLayout::outline_offset(self : UiLayout) -> Float {
+  self.outline_offset
+}
+
+///|
+pub fn UiLayout::outline_radius(self : UiLayout) -> ResolvedBorderRadius {
+  self.border_radius.outline_radius(self.outline_width + self.outline_offset)
 }
 
 ///|

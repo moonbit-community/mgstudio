@@ -583,6 +583,90 @@ pub fn BorderRadius::resolve_single_corner(
 }
 
 ///|
+pub fn BorderRadius::resolve(
+  self : BorderRadius,
+  scale_factor : Float,
+  node_size : @math.Vec2,
+  viewport_size : @math.Vec2,
+) -> ResolvedBorderRadius {
+  let length = if node_size.x < node_size.y { node_size.x } else { node_size.y }
+  ResolvedBorderRadius::{
+    top_left: BorderRadius::resolve_single_corner(
+      self.top_left,
+      scale_factor,
+      length,
+      viewport_size,
+    ),
+    top_right: BorderRadius::resolve_single_corner(
+      self.top_right,
+      scale_factor,
+      length,
+      viewport_size,
+    ),
+    bottom_right: BorderRadius::resolve_single_corner(
+      self.bottom_right,
+      scale_factor,
+      length,
+      viewport_size,
+    ),
+    bottom_left: BorderRadius::resolve_single_corner(
+      self.bottom_left,
+      scale_factor,
+      length,
+      viewport_size,
+    ),
+  }
+}
+
+///|
+pub struct ResolvedBorderRadius {
+  top_left : Float
+  top_right : Float
+  bottom_right : Float
+  bottom_left : Float
+} derive(ToJson, FromJson)
+
+///|
+pub fn ResolvedBorderRadius::new(
+  top_left : Float,
+  top_right : Float,
+  bottom_right : Float,
+  bottom_left : Float,
+) -> ResolvedBorderRadius {
+  ResolvedBorderRadius::{ top_left, top_right, bottom_right, bottom_left }
+}
+
+///|
+pub fn ResolvedBorderRadius::zero() -> ResolvedBorderRadius {
+  ResolvedBorderRadius::new(0.0F, 0.0F, 0.0F, 0.0F)
+}
+
+///|
+pub fn ResolvedBorderRadius::default() -> ResolvedBorderRadius {
+  ResolvedBorderRadius::zero()
+}
+
+///|
+pub fn ResolvedBorderRadius::outline_radius(
+  self : ResolvedBorderRadius,
+  outer_distance : Float,
+) -> ResolvedBorderRadius {
+  fn compute_radius(radius : Float, distance : Float) -> Float {
+    if radius > 0.0F {
+      radius + distance
+    } else {
+      0.0F
+    }
+  }
+  ResolvedBorderRadius::{
+    top_left: compute_radius(self.top_left, outer_distance),
+    top_right: compute_radius(self.top_right, outer_distance),
+    bottom_right: compute_radius(self.bottom_right, outer_distance),
+    bottom_left: compute_radius(self.bottom_left, outer_distance),
+  }
+}
+
+///|
 pub struct Outline {
   width : Val
   offset : Val

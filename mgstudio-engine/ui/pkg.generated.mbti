@@ -10,6 +10,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input_focus",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_accesskit",
   "moonbitlang/core/debug",
@@ -254,6 +255,7 @@ pub fn BorderRadius::left(Val) -> Self
 pub fn BorderRadius::new(Val, Val, Val, Val) -> Self
 pub fn BorderRadius::percent(Float, Float, Float, Float) -> Self
 pub fn BorderRadius::px(Float, Float, Float, Float) -> Self
+pub fn BorderRadius::resolve(Self, Float, @math.Vec2, @math.Vec2) -> ResolvedBorderRadius
 pub fn BorderRadius::resolve_single_corner(Val, Float, Float, @math.Vec2) -> Float
 pub fn BorderRadius::right(Val) -> Self
 pub fn BorderRadius::top(Val) -> Self
@@ -631,6 +633,17 @@ pub struct RepeatedGridTrack {
 pub fn RepeatedGridTrack::default() -> Self
 pub fn RepeatedGridTrack::new(GridTrackRepetition, Array[GridTrack]) -> Self
 
+pub struct ResolvedBorderRadius {
+  top_left : Float
+  top_right : Float
+  bottom_right : Float
+  bottom_left : Float
+} derive(ToJson, @json.FromJson)
+pub fn ResolvedBorderRadius::default() -> Self
+pub fn ResolvedBorderRadius::new(Float, Float, Float, Float) -> Self
+pub fn ResolvedBorderRadius::outline_radius(Self, Float) -> Self
+pub fn ResolvedBorderRadius::zero() -> Self
+
 pub struct ScrollPosition {
   offset_x : Float
   offset_y : Float
@@ -698,8 +711,20 @@ pub impl @ecs.Component for UiImage
 
 pub struct UiLayout {
   rect : @math.Rect
+  border : @sprite.UiBorderRect
+  padding : @sprite.UiBorderRect
+  border_radius : ResolvedBorderRadius
+  outline_width : Float
+  outline_offset : Float
 } derive(ToJson, @json.FromJson)
+pub fn UiLayout::border(Self) -> @sprite.UiBorderRect
+pub fn UiLayout::border_radius(Self) -> ResolvedBorderRadius
+pub fn UiLayout::from_computed(@math.Rect, @sprite.UiBorderRect, @sprite.UiBorderRect, ResolvedBorderRadius, Float, Float) -> Self
 pub fn UiLayout::new(@math.Rect) -> Self
+pub fn UiLayout::outline_offset(Self) -> Float
+pub fn UiLayout::outline_radius(Self) -> ResolvedBorderRadius
+pub fn UiLayout::outline_width(Self) -> Float
+pub fn UiLayout::padding(Self) -> @sprite.UiBorderRect
 pub fn UiLayout::rect(Self) -> @math.Rect
 pub fn UiLayout::size(Self) -> @math.Vec2
 pub impl @ecs.Component for UiLayout

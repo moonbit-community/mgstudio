@@ -2336,7 +2336,94 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       )
       let max = @math.Vec2::new(min.x + size.x, min.y + size.y)
       let rect = @math.Rect::new(min, max)
-      let layout = UiLayout::new(rect)
+      let node_for_layout = match
+        (try! world.get_by_key(entity, ecs_key_node)) {
+        Some(v) => v
+        None => Node::default()
+      }
+      let border_l = clamp_nonneg(
+        resolve_axis(
+          node_for_layout.border.left,
+          size.x,
+          root_ctx.viewport_size,
+        ),
+      )
+      let border_r = clamp_nonneg(
+        resolve_axis(
+          node_for_layout.border.right,
+          size.x,
+          root_ctx.viewport_size,
+        ),
+      )
+      let border_t = clamp_nonneg(
+        resolve_axis(node_for_layout.border.top, size.y, root_ctx.viewport_size),
+      )
+      let border_b = clamp_nonneg(
+        resolve_axis(
+          node_for_layout.border.bottom,
+          size.y,
+          root_ctx.viewport_size,
+        ),
+      )
+      let padding_l = clamp_nonneg(
+        resolve_axis(
+          node_for_layout.padding.left,
+          size.x,
+          root_ctx.viewport_size,
+        ),
+      )
+      let padding_r = clamp_nonneg(
+        resolve_axis(
+          node_for_layout.padding.right,
+          size.x,
+          root_ctx.viewport_size,
+        ),
+      )
+      let padding_t = clamp_nonneg(
+        resolve_axis(
+          node_for_layout.padding.top,
+          size.y,
+          root_ctx.viewport_size,
+        ),
+      )
+      let padding_b = clamp_nonneg(
+        resolve_axis(
+          node_for_layout.padding.bottom,
+          size.y,
+          root_ctx.viewport_size,
+        ),
+      )
+      let mut outline_width = 0.0F
+      let mut outline_offset = 0.0F
+      match (try! world.get_by_key(entity, ecs_key_outline)) {
+        Some(outline) => {
+          if node_for_layout.display != Display::None {
+            outline_width = clamp_nonneg(
+              outline.width.resolve(1.0F, size.x, root_ctx.viewport_size) catch {
+                _ => 0.0F
+              },
+            )
+          }
+          outline_offset = clamp_nonneg(
+            outline.offset.resolve(1.0F, size.x, root_ctx.viewport_size) catch {
+              _ => 0.0F
+            },
+          )
+        }
+        None => ()
+      }
+      let layout = UiLayout::from_computed(
+        rect,
+        @sprite.UiBorderRect::new(border_l, border_t, border_r, border_b),
+        @sprite.UiBorderRect::new(padding_l, padding_t, padding_r, padding_b),
+        node_for_layout.border_radius.resolve(
+          1.0F,
+          size,
+          root_ctx.viewport_size,
+        ),
+        outline_width,
+        outline_offset,
+      )
       if (try! world.contains_by_key(entity, ecs_key_ui_layout)) {
         try! (world.replace(entity, ecs_key_ui_layout, layout) |> ignore)
       } else {
@@ -2367,34 +2454,10 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
             text_handle,
             Some(root_ctx.viewport_size),
           )
-          let node = match (try! world.get_by_key(entity, ecs_key_node)) {
-            Some(v) => v
-            None => Node::default()
-          }
-          let border_l = clamp_nonneg(
-            resolve_axis(node.border.left, size.x, root_ctx.viewport_size),
-          )
-          let border_r = clamp_nonneg(
-            resolve_axis(node.border.right, size.x, root_ctx.viewport_size),
-          )
-          let border_t = clamp_nonneg(
-            resolve_axis(node.border.top, size.y, root_ctx.viewport_size),
-          )
-          let border_b = clamp_nonneg(
-            resolve_axis(node.border.bottom, size.y, root_ctx.viewport_size),
-          )
-          let pad_l = clamp_nonneg(
-            resolve_axis(node.padding.left, size.x, root_ctx.viewport_size),
-          )
-          let pad_r = clamp_nonneg(
-            resolve_axis(node.padding.right, size.x, root_ctx.viewport_size),
-          )
-          let pad_t = clamp_nonneg(
-            resolve_axis(node.padding.top, size.y, root_ctx.viewport_size),
-          )
-          let pad_b = clamp_nonneg(
-            resolve_axis(node.padding.bottom, size.y, root_ctx.viewport_size),
-          )
+          let pad_l = layout.padding.left
+          let pad_r = layout.padding.right
+          let pad_t = layout.padding.top
+          let pad_b = layout.padding.bottom
           let inset_l = border_l + pad_l
           let inset_r = border_r + pad_r
           let inset_t = border_t + pad_t

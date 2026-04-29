@@ -99,6 +99,79 @@ test "ui: layout computes rect and camera-compensated transform" {
 }
 
 ///|
+test "ui: layout stores Bevy-style resolved node geometry" {
+  let world = @ecs.World::new()
+  let tick = world.advance_sequence()
+  ignore(tick)
+  get_ui_context_resource(world).insert(
+    UiContext::new(
+      @asset.Handle::new(1),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(800.0F, 600.0F),
+      Some(@core.Entity::new(0, 0)),
+      @transform.Transform::identity(),
+      1.0F,
+      None,
+      false,
+    ),
+  )
+  let root = world.spawn_empty()
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  let node = world.spawn_empty()
+  try! world.set_by_key(
+    node,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    node,
+    ecs_key_node,
+    Node::default()
+    .with_position_type(PositionType::Absolute)
+    .with_left(Val::Px(40.0F))
+    .with_top(Val::Px(50.0F))
+    .with_width(Val::Px(200.0F))
+    .with_height(Val::Px(60.0F))
+    .with_border(UiRect::px(2.0F, 4.0F, 6.0F, 8.0F))
+    .with_padding(UiRect::px(10.0F, 12.0F, 14.0F, 16.0F))
+    .with_border_radius(
+      BorderRadius::new(
+        Val::Px(12.0F),
+        Val::Percent(50.0F),
+        Val::Px(200.0F),
+        Val::Auto,
+      ),
+    ),
+  )
+  try! world.set_by_key(
+    node,
+    ecs_key_outline,
+    Outline::new(Val::Px(3.0F), Val::Px(5.0F), @sprite.Color::white()),
+  )
+  ui_layout_system(world)
+  let layout = try! world.get_by_key(node, ecs_key_ui_layout).unwrap()
+  debug_inspect(layout.border.left == 2.0F, content="true")
+  debug_inspect(layout.border.right == 4.0F, content="true")
+  debug_inspect(layout.border.top == 6.0F, content="true")
+  debug_inspect(layout.border.bottom == 8.0F, content="true")
+  debug_inspect(layout.padding.left == 10.0F, content="true")
+  debug_inspect(layout.padding.right == 12.0F, content="true")
+  debug_inspect(layout.padding.top == 14.0F, content="true")
+  debug_inspect(layout.padding.bottom == 16.0F, content="true")
+  debug_inspect(layout.border_radius.top_left == 12.0F, content="true")
+  debug_inspect(layout.border_radius.top_right == 30.0F, content="true")
+  debug_inspect(layout.border_radius.bottom_right == 30.0F, content="true")
+  debug_inspect(layout.border_radius.bottom_left == 0.0F, content="true")
+  debug_inspect(layout.outline_width() == 3.0F, content="true")
+  debug_inspect(layout.outline_offset() == 5.0F, content="true")
+  let outline_radius = layout.outline_radius()
+  debug_inspect(outline_radius.top_left == 20.0F, content="true")
+  debug_inspect(outline_radius.top_right == 38.0F, content="true")
+  debug_inspect(outline_radius.bottom_right == 38.0F, content="true")
+  debug_inspect(outline_radius.bottom_left == 0.0F, content="true")
+}
+
+///|
 test "ui: pointer conversion to viewport space" {
   let pos = @math.Vec2::new(20.0F, 40.0F)
   let origin = @math.Vec2::new(10.0F, 15.0F)

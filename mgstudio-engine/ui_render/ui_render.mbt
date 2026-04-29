@@ -76,7 +76,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       is Some(layout) else {
       continue
     }
-    guard (try! source_world.get_by_key(entity, @ui.ecs_key_node)) is Some(node) else {
+    guard (try! source_world.get_by_key(entity, @ui.ecs_key_node)) is Some(_) else {
       continue
     }
     guard (try! source_world.get_by_key(entity, @transform.ecs_key_transform))
@@ -86,7 +86,6 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     let entity_ctx = ui_entity_resolved_camera_state(
       source_world, entity, fallback_ctx,
     )
-    let viewport_size = entity_ctx.viewport_size
     let shadow_samples = match entity_ctx.camera_entity {
       Some(camera_entity) =>
         match
@@ -118,31 +117,21 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     let scale_y = t0.scale.y
     let draw_scale = @math.Vec2::new(scale_x * size.x, scale_y * size.y)
     let scale_min = if scale_x < scale_y { scale_x } else { scale_y }
-    let border_left = clamp_nonneg(
-        resolve_axis(node.border.left, size.x, viewport_size),
-      ) *
-      scale_x
-    let border_right = clamp_nonneg(
-        resolve_axis(node.border.right, size.x, viewport_size),
-      ) *
-      scale_x
-    let border_top = clamp_nonneg(
-        resolve_axis(node.border.top, size.y, viewport_size),
-      ) *
-      scale_y
-    let border_bottom = clamp_nonneg(
-        resolve_axis(node.border.bottom, size.y, viewport_size),
-      ) *
-      scale_y
+    let viewport_size = entity_ctx.viewport_size
+    let layout_border = layout.border()
+    let border_left = layout_border.left * scale_x
+    let border_right = layout_border.right * scale_x
+    let border_top = layout_border.top * scale_y
+    let border_bottom = layout_border.bottom * scale_y
     let border = @sprite.UiBorderRect::new(
       border_left, border_top, border_right, border_bottom,
     )
-    let r = node.border_radius
+    let r = layout.border_radius()
     let radius = @sprite.UiCornerRadii::new(
-      resolve_radius_single(r.top_left, size, viewport_size) * scale_min,
-      resolve_radius_single(r.top_right, size, viewport_size) * scale_min,
-      resolve_radius_single(r.bottom_right, size, viewport_size) * scale_min,
-      resolve_radius_single(r.bottom_left, size, viewport_size) * scale_min,
+      r.top_left * scale_min,
+      r.top_right * scale_min,
+      r.bottom_right * scale_min,
+      r.bottom_left * scale_min,
     )
     let mut flags = 0
     let aa_enabled = match
@@ -210,18 +199,10 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 z=z_base + UI_STACK_Z_SHADOW,
               )
               let radius_shadow = @sprite.UiCornerRadii::new(
-                resolve_radius_single(r.top_left, size, viewport_size) *
-                spread_ratio *
-                scale_min,
-                resolve_radius_single(r.top_right, size, viewport_size) *
-                spread_ratio *
-                scale_min,
-                resolve_radius_single(r.bottom_right, size, viewport_size) *
-                spread_ratio *
-                scale_min,
-                resolve_radius_single(r.bottom_left, size, viewport_size) *
-                spread_ratio *
-                scale_min,
+                r.top_left * spread_ratio * scale_min,
+                r.top_right * spread_ratio * scale_min,
+                r.bottom_right * spread_ratio * scale_min,
+                r.bottom_left * spread_ratio * scale_min,
               )
               let draw_scale_shadow = @math.Vec2::new(
                 scale_x * bounds.x,
@@ -463,15 +444,9 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     match (try! source_world.get_by_key(entity, @ui.ecs_key_outline)) {
       Some(outline) =>
         if outline.color.a > 0.0F {
-          let outline_width = clamp_nonneg(
-            resolve_axis(outline.width, size.x, viewport_size),
-          )
+          let outline_width = layout.outline_width()
           if outline_width > 0.0F {
-            let outline_offset = resolve_axis(
-              outline.offset,
-              size.x,
-              viewport_size,
-            )
+            let outline_offset = layout.outline_offset()
             let outer = outline_offset + outline_width
             let outline_size = @math.Vec2::new(
               size.x + 2.0F * outer,
@@ -483,6 +458,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 scale_x * outline_size.x,
                 scale_y * outline_size.y,
               )
+              let outline_r = layout.outline_radius()
               let outline_border = @sprite.UiBorderRect::new(
                 outline_width * scale_x,
                 outline_width * scale_y,
@@ -490,28 +466,13 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 outline_width * scale_y,
               )
               let outline_radius = @sprite.UiCornerRadii::new(
-                clamp_radius_nonneg(
-                  resolve_radius_single(r.top_left, size, viewport_size) + outer,
-                  outline_size,
-                ) *
+                clamp_radius_nonneg(outline_r.top_left, outline_size) *
                 scale_min,
-                clamp_radius_nonneg(
-                  resolve_radius_single(r.top_right, size, viewport_size) +
-                  outer,
-                  outline_size,
-                ) *
+                clamp_radius_nonneg(outline_r.top_right, outline_size) *
                 scale_min,
-                clamp_radius_nonneg(
-                  resolve_radius_single(r.bottom_right, size, viewport_size) +
-                  outer,
-                  outline_size,
-                ) *
+                clamp_radius_nonneg(outline_r.bottom_right, outline_size) *
                 scale_min,
-                clamp_radius_nonneg(
-                  resolve_radius_single(r.bottom_left, size, viewport_size) +
-                  outer,
-                  outline_size,
-                ) *
+                clamp_radius_nonneg(outline_r.bottom_left, outline_size) *
                 scale_min,
               )
               @sprite_render.render2d_push_ui_rect_uv_scissor(
