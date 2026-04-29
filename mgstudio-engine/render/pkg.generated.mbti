@@ -303,11 +303,15 @@ pub fn render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render_queue_resource_key() -> @ecs.ResourceKey[@renderer.RenderQueue]
 
+pub fn render_recovery_schedule_stage() -> @app.ScheduleStage
+
 pub fn render_runtime_error() -> @app.RenderRuntimeError?
 
 pub fn render_schedule_stage() -> @app.ScheduleStage
 
 pub fn render_source_world(@ecs.World) -> @ecs.World
+
+pub fn render_startup_schedule_stage() -> @app.ScheduleStage
 
 pub fn render_state_resource_key() -> @ecs.ResourceKey[RenderState]
 

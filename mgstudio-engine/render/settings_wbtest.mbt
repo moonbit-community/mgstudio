@@ -55,6 +55,22 @@ test "render schedule: render graph aliases canonical render schedule" {
 }
 
 ///|
+test "render schedule: startup and recovery labels are distinct" {
+  debug_inspect(
+    render_startup_schedule_stage() != render_schedule_stage(),
+    content="true",
+  )
+  debug_inspect(
+    render_recovery_schedule_stage() != render_schedule_stage(),
+    content="true",
+  )
+  debug_inspect(
+    render_startup_schedule_stage() != render_recovery_schedule_stage(),
+    content="true",
+  )
+}
+
+///|
 test "render settings: current view stores the render entity" {
   let entity = @core.Entity::new(42, 7)
   let current = CurrentView::new(entity)

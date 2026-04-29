@@ -35,6 +35,18 @@ pub fn RenderGraph::base_schedule() -> @app.Schedule {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/lib.rs` (`RenderStartup`).
+pub fn render_startup_schedule_stage() -> @app.ScheduleStage {
+  @app.schedule_label("mgstudio.render.startup")
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/lib.rs` (`RenderRecovery`).
+pub fn render_recovery_schedule_stage() -> @app.ScheduleStage {
+  @app.schedule_label("mgstudio.render.recovery")
+}
+
+///|
 pub let render_system_set_extract_commands : @app.SystemSet = @app.system_set(
   "mgstudio.render.extract_commands",
 )

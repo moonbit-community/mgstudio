@@ -65,6 +65,12 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       Some(render_schedule_stage()),
     )
     let render_sub_app = configure_base_render_sets(render_sub_app)
+    let render_sub_app = render_sub_app.add_schedule(
+      @app.Schedule::new(render_startup_schedule_stage()),
+    )
+    let render_sub_app = render_sub_app.add_schedule(
+      @app.Schedule::new(render_recovery_schedule_stage()),
+    )
     next = next.insert_sub_app(@app.RenderApp, render_sub_app)
   }
   next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
