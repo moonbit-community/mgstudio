@@ -770,8 +770,10 @@ pub struct Isometry3d {
   translation : Vec3
   rotation : Quat
 }
+pub fn Isometry3d::from_rotation(Quat) -> Self
 pub fn Isometry3d::identity() -> Self
 pub fn Isometry3d::inverse(Self) -> Self
+pub fn Isometry3d::mul(Self, Self) -> Self
 pub fn Isometry3d::new(Vec3, Quat) -> Self
 pub fn Isometry3d::transform_point3(Self, Vec3) -> Vec3
 
@@ -880,14 +882,18 @@ pub(all) struct Quat {
 }
 pub fn Quat::from_axis_angle(Vec3, Float) -> Self
 pub fn Quat::from_euler(EulerRot, Float, Float, Float) -> Self
+pub fn Quat::from_rotation_arc(Vec3, Vec3) -> Self
 pub fn Quat::from_rotation_x(Float) -> Self
 pub fn Quat::from_rotation_y(Float) -> Self
 pub fn Quat::from_rotation_z(Float) -> Self
 pub fn Quat::identity() -> Self
+pub fn Quat::inverse(Self) -> Self
 pub fn Quat::lerp(Self, Self, Float) -> Self
 pub fn Quat::mul(Self, Self) -> Self
+pub fn Quat::mul_vec3(Self, Vec3) -> Vec3
 pub fn Quat::new(Float, Float, Float, Float) -> Self
 pub fn Quat::normalize(Self) -> Self
+pub fn Quat::to_axis_angle(Self) -> (Vec3, Float)
 pub fn Quat::to_euler(Self, EulerRot) -> (Float, Float, Float)
 pub fn Quat::to_rotation_z_angle(Self) -> Float
 pub impl Ease for Quat
@@ -1214,6 +1220,8 @@ pub(all) struct Vec2 {
   mut y : Float
 }
 pub fn Vec2::add(Self, Self) -> Self
+pub fn Vec2::angle_to(Self, Self) -> Float
+pub fn Vec2::distance(Self, Self) -> Float
 pub fn Vec2::dot(Self, Self) -> Float
 pub fn Vec2::from_angle(Float) -> Self
 pub fn Vec2::length(Self) -> Float
@@ -1221,6 +1229,7 @@ pub fn Vec2::length_squared(Self) -> Float
 pub fn Vec2::mul_scalar(Self, Float) -> Self
 pub fn Vec2::new(Float, Float) -> Self
 pub fn Vec2::normalize_or_zero(Self) -> Self
+pub fn Vec2::perp_dot(Self, Self) -> Float
 pub fn Vec2::sub(Self, Self) -> Self
 pub fn Vec2::to_angle(Self) -> Float
 pub fn Vec2::zero() -> Self
@@ -1237,8 +1246,10 @@ pub(all) struct Vec3 {
   mut z : Float
 }
 pub fn Vec3::add(Self, Self) -> Self
+pub fn Vec3::any_orthonormal_vector(Self) -> Self
 pub fn Vec3::ceil(Self) -> Self
 pub fn Vec3::cross(Self, Self) -> Self
+pub fn Vec3::distance(Self, Self) -> Float
 pub fn Vec3::dot(Self, Self) -> Float
 pub fn Vec3::floor(Self) -> Self
 pub fn Vec3::length(Self) -> Float

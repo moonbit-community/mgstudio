@@ -196,6 +196,8 @@ pub fn GizmoAsset::linestrip(Self, Array[@math.Vec3], @color.Color) -> Unit
 pub fn GizmoAsset::linestrip_2d(Self, Array[@math.Vec2], @color.Color) -> Unit
 pub fn GizmoAsset::linestrip_gradient(Self, Array[(@math.Vec3, @color.Color)]) -> Unit
 pub fn GizmoAsset::linestrip_gradient_2d(Self, Array[(@math.Vec2, @color.Color)]) -> Unit
+pub fn GizmoAsset::long_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> RetainedArcBuilder
+pub fn GizmoAsset::long_arc_3d_between(Self, @math.Vec3, @math.Vec3, @math.Vec3, @color.Color) -> RetainedArcBuilder
 pub fn GizmoAsset::new() -> Self
 pub fn GizmoAsset::ray(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn GizmoAsset::ray_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
@@ -203,6 +205,9 @@ pub fn GizmoAsset::ray_gradient(Self, @math.Vec3, @math.Vec3, @color.Color, @col
 pub fn GizmoAsset::ray_gradient_2d(Self, @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
 pub fn GizmoAsset::rect(Self, @math.Isometry3d, @math.Vec2, @color.Color) -> Unit
 pub fn GizmoAsset::rect_2d(Self, @sprite.Isometry2d, @math.Vec2, @color.Color) -> Unit
+pub fn GizmoAsset::short_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> RetainedArcBuilder
+pub fn GizmoAsset::short_arc_3d_between(Self, @math.Vec3, @math.Vec3, @math.Vec3, @color.Color) -> RetainedArcBuilder
+pub fn GizmoAsset::sphere(Self, @math.Isometry3d, Float, @color.Color) -> RetainedSphereBuilder
 pub impl Default for GizmoAsset
 
 pub struct GizmoBuffer {
@@ -213,6 +218,7 @@ pub struct GizmoBuffer {
   strip_colors : Array[@color.Color]
   pending_ellipses : Array[RetainedPendingEllipse]
   pending_arcs : Array[RetainedPendingArc]
+  pending_spheres : Array[RetainedPendingSphere]
   mut pending_order_next : Int
 }
 pub fn GizmoBuffer::arc_2d(Self, @sprite.Isometry2d, Float, Float, @color.Color) -> RetainedArcBuilder
@@ -238,6 +244,8 @@ pub fn GizmoBuffer::linestrip_gradient(Self, Array[(@math.Vec3, @color.Color)]) 
 pub fn GizmoBuffer::linestrip_gradient_2d(Self, Array[(@math.Vec2, @color.Color)]) -> Unit
 pub fn GizmoBuffer::list_colors(Self) -> Array[@color.Color]
 pub fn GizmoBuffer::list_positions(Self) -> Array[@math.Vec3]
+pub fn GizmoBuffer::long_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> RetainedArcBuilder
+pub fn GizmoBuffer::long_arc_3d_between(Self, @math.Vec3, @math.Vec3, @math.Vec3, @color.Color) -> RetainedArcBuilder
 pub fn GizmoBuffer::new() -> Self
 pub fn GizmoBuffer::ray(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn GizmoBuffer::ray_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
@@ -245,6 +253,9 @@ pub fn GizmoBuffer::ray_gradient(Self, @math.Vec3, @math.Vec3, @color.Color, @co
 pub fn GizmoBuffer::ray_gradient_2d(Self, @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
 pub fn GizmoBuffer::rect(Self, @math.Isometry3d, @math.Vec2, @color.Color) -> Unit
 pub fn GizmoBuffer::rect_2d(Self, @sprite.Isometry2d, @math.Vec2, @color.Color) -> Unit
+pub fn GizmoBuffer::short_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> RetainedArcBuilder
+pub fn GizmoBuffer::short_arc_3d_between(Self, @math.Vec3, @math.Vec3, @math.Vec3, @color.Color) -> RetainedArcBuilder
+pub fn GizmoBuffer::sphere(Self, @math.Isometry3d, Float, @color.Color) -> RetainedSphereBuilder
 pub fn GizmoBuffer::strip_colors(Self) -> Array[@color.Color]
 pub fn GizmoBuffer::strip_positions(Self) -> Array[@math.Vec3]
 pub impl Default for GizmoBuffer
@@ -296,6 +307,14 @@ pub fn RetainedEllipseBuilder::resolution(Self, Int) -> Self
 type RetainedPendingArc
 
 type RetainedPendingEllipse
+
+type RetainedPendingSphere
+
+pub struct RetainedSphereBuilder {
+  id : Int
+  buffer : GizmoBuffer
+}
+pub fn RetainedSphereBuilder::resolution(Self, Int) -> Self
 
 pub struct ShowAabbGizmo {
   color : @color.Color?

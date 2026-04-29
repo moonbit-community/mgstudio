@@ -54,6 +54,11 @@ pub fn Vec2::length(self : Vec2) -> Float {
 }
 
 ///|
+pub fn Vec2::distance(self : Vec2, other : Vec2) -> Float {
+  self.sub(other).length()
+}
+
+///|
 pub fn Vec2::normalize_or_zero(self : Vec2) -> Vec2 {
   let len_sq = self.length_squared()
   if len_sq <= 1.0e-12F {
@@ -61,6 +66,20 @@ pub fn Vec2::normalize_or_zero(self : Vec2) -> Vec2 {
   }
   let inv_len = 1.0F / sqrt(len_sq)
   self.mul_scalar(inv_len)
+}
+
+///|
+pub fn Vec2::perp_dot(self : Vec2, other : Vec2) -> Float {
+  self.x * other.y - self.y * other.x
+}
+
+///|
+/// Returns the signed angle in radians for the minimal rotation from `self` to
+/// `rhs`, matching glam/Bevy `Vec2::angle_to`.
+pub fn Vec2::angle_to(self : Vec2, rhs : Vec2) -> Float {
+  let denom = sqrt(self.length_squared() * rhs.length_squared())
+  let cos_angle = if denom <= 0.0F { 0.0F } else { self.dot(rhs) / denom }
+  math_acos_approx(cos_angle) * math_signum(self.perp_dot(rhs))
 }
 
 ///|
@@ -135,6 +154,11 @@ pub fn Vec3::length(self : Vec3) -> Float {
 }
 
 ///|
+pub fn Vec3::distance(self : Vec3, other : Vec3) -> Float {
+  self.sub(other).length()
+}
+
+///|
 pub fn Vec3::normalize_or_zero(self : Vec3) -> Vec3 {
   let len_sq = self.length_squared()
   if len_sq <= 1.0e-12F {
@@ -142,6 +166,16 @@ pub fn Vec3::normalize_or_zero(self : Vec3) -> Vec3 {
   }
   let inv_len = 1.0F / sqrt(len_sq)
   self.mul_scalar(inv_len)
+}
+
+///|
+/// Returns any vector orthonormal to this unit vector, following glam's
+/// Pixar orthonormal-basis implementation used by Bevy.
+pub fn Vec3::any_orthonormal_vector(self : Vec3) -> Vec3 {
+  let sign = math_signum(self.z)
+  let a = -1.0F / (sign + self.z)
+  let b = self.x * self.y * a
+  Vec3::new(b, sign + self.y * self.y * a, -self.y)
 }
 
 ///|
@@ -313,6 +347,49 @@ pub fn Vec2::sub(self : Vec2, other : Vec2) -> Vec2 {
 ///|
 pub fn Vec2::to_angle(self : Vec2) -> Float {
   atan2(self.y, self.x)
+}
+
+///|
+fn math_signum(value : Float) -> Float {
+  if value != value {
+    value
+  } else if value < 0.0F {
+    -1.0F
+  } else {
+    1.0F
+  }
+}
+
+///|
+fn math_acos_approx(value : Float) -> Float {
+  let nonnegative = value >= 0.0F
+  let x = abs(value)
+  let omx = if 1.0F - x < 0.0F { 0.0F } else { 1.0F - x }
+  let root = sqrt(omx)
+  let mut result = (
+      (
+        (
+          (
+            ((-0.0012624911F * x + 0.00667009F) * x - 0.017088126F) * x +
+            0.03089188F
+          ) *
+          x -
+          0.050174303F
+        ) *
+        x +
+        0.08897899F
+      ) *
+      x -
+      0.2145988F
+    ) *
+    x +
+    1.5707963F
+  result = result * root
+  if nonnegative {
+    result
+  } else {
+    pi() - result
+  }
 }
 
 ///|
@@ -503,6 +580,22 @@ pub fn Quat::from_axis_angle(axis : Vec3, angle : Float) -> Quat {
 }
 
 ///|
+/// Gets the minimal rotation for transforming normalized vector `from` to
+/// normalized vector `to`, matching glam/Bevy `Quat::from_rotation_arc`.
+pub fn Quat::from_rotation_arc(from : Vec3, to : Vec3) -> Quat {
+  let one_minus_eps = 1.0F - 2.0F * 1.1920929e-7F
+  let dot = from.dot(to)
+  if dot > one_minus_eps {
+    Quat::identity()
+  } else if dot < -one_minus_eps {
+    Quat::from_axis_angle(from.any_orthonormal_vector(), pi())
+  } else {
+    let c = from.cross(to)
+    Quat::new(c.x, c.y, c.z, 1.0F + dot).normalize()
+  }
+}
+
+///|
 pub fn Quat::mul(self : Quat, other : Quat) -> Quat {
   // Hamilton product.
   let x = self.w * other.x +
@@ -522,6 +615,29 @@ pub fn Quat::mul(self : Quat, other : Quat) -> Quat {
     self.y * other.y -
     self.z * other.z
   Quat::{ x, y, z, w }
+}
+
+///|
+pub fn Quat::inverse(self : Quat) -> Quat {
+  Quat::{ x: -self.x, y: -self.y, z: -self.z, w: self.w }
+}
+
+///|
+pub fn Quat::mul_vec3(self : Quat, value : Vec3) -> Vec3 {
+  let qv = Vec3::new(self.x, self.y, self.z)
+  let t = qv.cross(value).mul_scalar(2.0F)
+  value.add(t.mul_scalar(self.w)).add(qv.cross(t))
+}
+
+///|
+pub fn Quat::to_axis_angle(self : Quat) -> (Vec3, Float) {
+  let v = Vec3::new(self.x, self.y, self.z)
+  let length = v.length()
+  if length >= 1.0e-8F {
+    (v.div_scalar(length), 2.0F * atan2(length, self.w))
+  } else {
+    (Vec3::new(1.0F, 0.0F, 0.0F), 0.0F)
+  }
 }
 
 ///|

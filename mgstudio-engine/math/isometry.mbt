@@ -52,8 +52,21 @@ pub fn Isometry3d::new(translation : Vec3, rotation : Quat) -> Isometry3d {
 }
 
 ///|
+pub fn Isometry3d::from_rotation(rotation : Quat) -> Isometry3d {
+  Isometry3d::{ translation: Vec3::zero(), rotation }
+}
+
+///|
 pub fn Isometry3d::identity() -> Isometry3d {
   Isometry3d::{ translation: Vec3::zero(), rotation: Quat::identity() }
+}
+
+///|
+pub fn Isometry3d::mul(self : Isometry3d, other : Isometry3d) -> Isometry3d {
+  Isometry3d::{
+    translation: self.transform_point3(other.translation),
+    rotation: self.rotation.mul(other.rotation).normalize(),
+  }
 }
 
 ///|

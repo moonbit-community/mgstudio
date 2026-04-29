@@ -159,6 +159,15 @@ test "math: vec2 normalize_or_zero normalizes nonzero vectors" {
 }
 
 ///|
+test "math: vec2 angle_to and distance match Bevy glam semantics" {
+  let x = Vec2::new(1.0F, 0.0F)
+  let y = Vec2::new(0.0F, 1.0F)
+  debug_inspect(approx_eq(x.angle_to(y), pi_half()), content="true")
+  debug_inspect(approx_eq(y.angle_to(x), -pi_half()), content="true")
+  debug_inspect(approx_eq(x.distance(y), sqrt(2.0F)), content="true")
+}
+
+///|
 test "math: pi matches two half turns" {
   debug_inspect(pi() > 3.1415F && pi() < 3.1416F, content="true")
   debug_inspect(pi_half() * 2.0F == pi(), content="true")
@@ -212,6 +221,44 @@ test "math: quat lerp normalizes and takes the shortest path" {
   }
   debug_inspect(
     quat_same_rotation(start.lerp(negated, 1.0F), end_180),
+    content="true",
+  )
+}
+
+///|
+test "math: quat rotation arc and axis-angle match Bevy glam semantics" {
+  let x = Vec3::new(1.0F, 0.0F, 0.0F)
+  let y = Vec3::new(0.0F, 1.0F, 0.0F)
+  let rotation = Quat::from_rotation_arc(x, y)
+  debug_inspect(approx_vec3(rotation.mul_vec3(x), y), content="true")
+  let (axis, angle) = rotation.to_axis_angle()
+  debug_inspect(approx_vec3(axis, Vec3::new(0.0F, 0.0F, 1.0F)), content="true")
+  debug_inspect(approx_eq(angle, pi_half()), content="true")
+  debug_inspect(approx_eq(x.distance(y), sqrt(2.0F)), content="true")
+}
+
+///|
+test "math: isometry rotation constructor and composition mirror Bevy shape" {
+  let parent = Isometry3d::new(
+    Vec3::new(1.0F, 0.0F, 0.0F),
+    Quat::from_rotation_z(pi_half()),
+  )
+  let child = Isometry3d::from_rotation(Quat::from_rotation_y(pi_half()))
+  let composed = parent.mul(child)
+  debug_inspect(
+    approx_vec3(
+      composed.transform_point3(Vec3::zero()),
+      Vec3::new(1.0F, 0.0F, 0.0F),
+    ),
+    content="true",
+  )
+  debug_inspect(
+    approx_vec3(
+      composed.transform_point3(Vec3::new(1.0F, 0.0F, 0.0F)),
+      parent.transform_point3(
+        child.transform_point3(Vec3::new(1.0F, 0.0F, 0.0F)),
+      ),
+    ),
     content="true",
   )
 }

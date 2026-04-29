@@ -70,6 +70,17 @@ fn retained_resolution_from_angle(angle : Float) -> Int {
 }
 
 ///|
+fn retained_long_arc_3d_angle(angle : Float) -> Float {
+  if angle > 0.0F {
+    RETAINED_TAU - angle
+  } else if angle < 0.0F {
+    -RETAINED_TAU - angle
+  } else {
+    0.0F
+  }
+}
+
+///|
 struct RetainedPendingEllipse {
   order : Int
   is_2d : Bool
@@ -95,6 +106,15 @@ struct RetainedPendingArc {
 }
 
 ///|
+struct RetainedPendingSphere {
+  order : Int
+  isometry : @math.Isometry3d
+  radius : Float
+  color : @color.Color
+  mut resolution : Int
+}
+
+///|
 pub struct GizmoBuffer {
   enabled : Bool
   list_positions : Array[@math.Vec3]
@@ -103,6 +123,7 @@ pub struct GizmoBuffer {
   strip_colors : Array[@color.LinearRgba]
   pending_ellipses : Array[RetainedPendingEllipse]
   pending_arcs : Array[RetainedPendingArc]
+  pending_spheres : Array[RetainedPendingSphere]
   mut pending_order_next : Int
 }
 
@@ -116,6 +137,7 @@ pub fn GizmoBuffer::new() -> GizmoBuffer {
     strip_colors: [],
     pending_ellipses: [],
     pending_arcs: [],
+    pending_spheres: [],
     pending_order_next: 0,
   }
 }
@@ -141,6 +163,7 @@ pub fn GizmoBuffer::clear(self : GizmoBuffer) -> Unit {
   self.strip_colors.clear()
   self.pending_ellipses.clear()
   self.pending_arcs.clear()
+  self.pending_spheres.clear()
   self.pending_order_next = 0
 }
 
@@ -467,22 +490,35 @@ fn GizmoBuffer::linestrip_gradient_raw(
 
 ///|
 fn GizmoBuffer::flush_pending(self : GizmoBuffer) -> Unit {
-  if self.pending_ellipses.length() == 0 && self.pending_arcs.length() == 0 {
+  if self.pending_ellipses.length() == 0 &&
+    self.pending_arcs.length() == 0 &&
+    self.pending_spheres.length() == 0 {
     return
   }
   let mut ellipse_index = 0
   let mut arc_index = 0
+  let mut sphere_index = 0
   while ellipse_index < self.pending_ellipses.length() ||
-        arc_index < self.pending_arcs.length() {
-    let use_ellipse = if ellipse_index >= self.pending_ellipses.length() {
-      false
-    } else if arc_index >= self.pending_arcs.length() {
-      true
-    } else {
-      self.pending_ellipses[ellipse_index].order <=
-      self.pending_arcs[arc_index].order
+        arc_index < self.pending_arcs.length() ||
+        sphere_index < self.pending_spheres.length() {
+    let mut next_kind = 0
+    let mut next_order = self.pending_order_next + 1
+    if ellipse_index < self.pending_ellipses.length() &&
+      self.pending_ellipses[ellipse_index].order < next_order {
+      next_kind = 1
+      next_order = self.pending_ellipses[ellipse_index].order
     }
-    if use_ellipse {
+    if arc_index < self.pending_arcs.length() &&
+      self.pending_arcs[arc_index].order < next_order {
+      next_kind = 2
+      next_order = self.pending_arcs[arc_index].order
+    }
+    if sphere_index < self.pending_spheres.length() &&
+      self.pending_spheres[sphere_index].order < next_order {
+      next_kind = 3
+      next_order = self.pending_spheres[sphere_index].order
+    }
+    if next_kind == 1 {
       let ellipse = self.pending_ellipses[ellipse_index]
       if ellipse.is_2d {
         self.linestrip_2d_raw(
@@ -502,7 +538,7 @@ fn GizmoBuffer::flush_pending(self : GizmoBuffer) -> Unit {
         )
       }
       ellipse_index += 1
-    } else {
+    } else if next_kind == 2 {
       let arc = self.pending_arcs[arc_index]
       let resolution = if arc.has_resolution {
         arc.resolution
@@ -530,10 +566,32 @@ fn GizmoBuffer::flush_pending(self : GizmoBuffer) -> Unit {
         )
       }
       arc_index += 1
+    } else {
+      let sphere = self.pending_spheres[sphere_index]
+      let half_size = @math.Vec2::new(sphere.radius, sphere.radius)
+      let axes = [
+        @math.Vec3::new(1.0F, 0.0F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        @math.Vec3::new(0.0F, 0.0F, 1.0F),
+      ]
+      for axis in axes {
+        let axis_rotation = @math.Isometry3d::from_rotation(
+          @math.Quat::from_rotation_arc(@math.Vec3::new(0.0F, 0.0F, 1.0F), axis),
+        )
+        self.linestrip_raw(
+          gizmo_buffer_isometry3d_points_from_2d(
+            sphere.isometry.mul(axis_rotation),
+            retained_ellipse_points(half_size, sphere.resolution),
+          ),
+          sphere.color,
+        )
+      }
+      sphere_index += 1
     }
   }
   self.pending_ellipses.clear()
   self.pending_arcs.clear()
+  self.pending_spheres.clear()
   self.pending_order_next = 0
 }
 
@@ -802,6 +860,25 @@ pub fn RetainedArcBuilder::resolution(
 }
 
 ///|
+pub struct RetainedSphereBuilder {
+  id : Int
+  buffer : GizmoBuffer
+}
+
+///|
+pub fn RetainedSphereBuilder::resolution(
+  self : RetainedSphereBuilder,
+  resolution : Int,
+) -> RetainedSphereBuilder {
+  if self.id >= 0 && self.id < self.buffer.pending_spheres.length() {
+    self.buffer.pending_spheres[self.id].resolution = retained_max_int(
+      resolution, 3,
+    )
+  }
+  self
+}
+
+///|
 pub fn GizmoBuffer::ellipse(
   self : GizmoBuffer,
   isometry : @math.Isometry3d,
@@ -866,6 +943,26 @@ pub fn GizmoBuffer::circle_2d(
 }
 
 ///|
+pub fn GizmoBuffer::sphere(
+  self : GizmoBuffer,
+  isometry : @math.Isometry3d,
+  radius : Float,
+  color : @color.Color,
+) -> RetainedSphereBuilder {
+  let id = self.pending_spheres.length()
+  let order = self.pending_order_next
+  self.pending_order_next = order + 1
+  self.pending_spheres.push(RetainedPendingSphere::{
+    order,
+    isometry,
+    radius,
+    color,
+    resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
+  })
+  RetainedSphereBuilder::{ id, buffer: self }
+}
+
+///|
 pub fn GizmoBuffer::arc_2d(
   self : GizmoBuffer,
   isometry : @sprite.Isometry2d,
@@ -915,6 +1012,117 @@ pub fn GizmoBuffer::arc_3d(
     has_resolution: false,
   })
   RetainedArcBuilder::{ id, buffer: self }
+}
+
+///|
+fn GizmoBuffer::arc_2d_from_to(
+  self : GizmoBuffer,
+  center : @math.Vec2,
+  from : @math.Vec2,
+  to : @math.Vec2,
+  color : @color.Color,
+  long : Bool,
+) -> RetainedArcBuilder {
+  let from_axis = from.sub(center).normalize_or_zero()
+  let to_axis = to.sub(center).normalize_or_zero()
+  let rotation = @math.Vec2::new(0.0F, 1.0F).angle_to(from_axis)
+  let arc_angle_raw = from_axis.angle_to(to_axis)
+  let arc_angle = if long {
+    arc_angle_raw - RETAINED_TAU
+  } else {
+    arc_angle_raw
+  }
+  self.arc_2d(
+    @sprite.Isometry2d::new(center, rotation),
+    arc_angle,
+    center.distance(from),
+    color,
+  )
+}
+
+///|
+pub fn GizmoBuffer::short_arc_2d_between(
+  self : GizmoBuffer,
+  center : @math.Vec2,
+  from : @math.Vec2,
+  to : @math.Vec2,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  self.arc_2d_from_to(center, from, to, color, false)
+}
+
+///|
+pub fn GizmoBuffer::long_arc_2d_between(
+  self : GizmoBuffer,
+  center : @math.Vec2,
+  from : @math.Vec2,
+  to : @math.Vec2,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  self.arc_2d_from_to(center, from, to, color, true)
+}
+
+///|
+fn GizmoBuffer::arc_3d_from_to(
+  self : GizmoBuffer,
+  center : @math.Vec3,
+  from : @math.Vec3,
+  to : @math.Vec3,
+  color : @color.Color,
+  long : Bool,
+) -> RetainedArcBuilder {
+  let from_axis = from.sub(center).normalize_or_zero()
+  let to_axis = to.sub(center).normalize_or_zero()
+  let (up, angle_raw) = @math.Quat::from_rotation_arc(from_axis, to_axis).to_axis_angle()
+  let angle = if long {
+    retained_long_arc_3d_angle(angle_raw)
+  } else {
+    angle_raw
+  }
+  let radius = center.distance(from)
+  let rotation = @math.Quat::from_rotation_arc(
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    up,
+  )
+  let start_vertex = rotation.inverse().mul_vec3(from_axis)
+  let id = self.pending_arcs.length()
+  let order = self.pending_order_next
+  self.pending_order_next = order + 1
+  self.pending_arcs.push(RetainedPendingArc::{
+    order,
+    is_2d: false,
+    start_vertex,
+    isometry2d: @sprite.Isometry2d::identity(),
+    isometry3d: @math.Isometry3d::new(center, rotation),
+    angle,
+    radius,
+    color,
+    resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
+    has_resolution: false,
+  })
+  RetainedArcBuilder::{ id, buffer: self }
+}
+
+///|
+pub fn GizmoBuffer::short_arc_3d_between(
+  self : GizmoBuffer,
+  center : @math.Vec3,
+  from : @math.Vec3,
+  to : @math.Vec3,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  self.arc_3d_from_to(center, from, to, color, false)
+}
+
+///|
+pub fn GizmoBuffer::long_arc_3d_between(
+  self : GizmoBuffer,
+  center : @math.Vec3,
+  from : @math.Vec3,
+  to : @math.Vec3,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  self.arc_3d_from_to(center, from, to, color, true)
 }
 
 ///|
@@ -1193,6 +1401,16 @@ pub fn GizmoAsset::circle_2d(
 }
 
 ///|
+pub fn GizmoAsset::sphere(
+  self : GizmoAsset,
+  isometry : @math.Isometry3d,
+  radius : Float,
+  color : @color.Color,
+) -> RetainedSphereBuilder {
+  self.buffer.sphere(isometry, radius, color)
+}
+
+///|
 pub fn GizmoAsset::arc_2d(
   self : GizmoAsset,
   isometry : @sprite.Isometry2d,
@@ -1212,6 +1430,50 @@ pub fn GizmoAsset::arc_3d(
   color : @color.Color,
 ) -> RetainedArcBuilder {
   self.buffer.arc_3d(angle, radius, isometry, color)
+}
+
+///|
+pub fn GizmoAsset::short_arc_2d_between(
+  self : GizmoAsset,
+  center : @math.Vec2,
+  from : @math.Vec2,
+  to : @math.Vec2,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  self.buffer.short_arc_2d_between(center, from, to, color)
+}
+
+///|
+pub fn GizmoAsset::long_arc_2d_between(
+  self : GizmoAsset,
+  center : @math.Vec2,
+  from : @math.Vec2,
+  to : @math.Vec2,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  self.buffer.long_arc_2d_between(center, from, to, color)
+}
+
+///|
+pub fn GizmoAsset::short_arc_3d_between(
+  self : GizmoAsset,
+  center : @math.Vec3,
+  from : @math.Vec3,
+  to : @math.Vec3,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  self.buffer.short_arc_3d_between(center, from, to, color)
+}
+
+///|
+pub fn GizmoAsset::long_arc_3d_between(
+  self : GizmoAsset,
+  center : @math.Vec3,
+  from : @math.Vec3,
+  to : @math.Vec3,
+  color : @color.Color,
+) -> RetainedArcBuilder {
+  self.buffer.long_arc_3d_between(center, from, to, color)
 }
 
 ///|

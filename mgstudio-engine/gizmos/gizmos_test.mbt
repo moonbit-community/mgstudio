@@ -250,3 +250,90 @@ test "retained gizmo arc builders flush in Bevy call order" {
   )
   debug_inspect(asset.buffer().strip_positions().length(), content="6")
 }
+
+///|
+test "retained gizmo short and long arc helpers mirror Bevy builders" {
+  let asset = @gizmos.GizmoAsset::default()
+  ignore(
+    asset
+    .short_arc_2d_between(
+      @math.Vec2::zero(),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+      @color.Color::white(),
+    )
+    .resolution(4),
+  )
+  let short_2d = asset.buffer().strip_positions()
+  debug_inspect(short_2d.length(), content="6")
+  debug_inspect(short_2d[0].x, content="1")
+  debug_inspect(
+    short_2d[0].y > -0.0001F && short_2d[0].y < 0.0001F,
+    content="true",
+  )
+
+  asset.clear()
+  ignore(
+    asset
+    .long_arc_2d_between(
+      @math.Vec2::zero(),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+      @color.Color::white(),
+    )
+    .resolution(4),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="6")
+
+  asset.clear()
+  ignore(
+    asset
+    .short_arc_3d_between(
+      @math.Vec3::zero(),
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      @color.Color::white(),
+    )
+    .resolution(4),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="6")
+
+  asset.clear()
+  ignore(
+    asset
+    .long_arc_3d_between(
+      @math.Vec3::zero(),
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      @color.Color::white(),
+    )
+    .resolution(4),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="6")
+}
+
+///|
+test "retained gizmo sphere builder draws three Bevy great circles" {
+  let asset = @gizmos.GizmoAsset::default()
+  ignore(
+    asset
+    .sphere(@math.Isometry3d::identity(), 1.0F, @color.Color::white())
+    .resolution(4),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="18")
+  asset.clear()
+  ignore(
+    asset
+    .circle(@math.Isometry3d::identity(), 1.0F, @color.Color::white())
+    .resolution(4),
+  )
+  ignore(
+    asset
+    .sphere(@math.Isometry3d::identity(), 1.0F, @color.Color::white())
+    .resolution(3),
+  )
+  let strip = asset.buffer().strip_positions()
+  debug_inspect(strip.length(), content="21")
+  debug_inspect(strip[0].x, content="1")
+  debug_inspect(strip[0].y > -0.0001F && strip[0].y < 0.0001F, content="true")
+}
