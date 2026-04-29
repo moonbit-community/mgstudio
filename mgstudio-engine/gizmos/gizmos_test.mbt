@@ -85,3 +85,30 @@ test "retained gizmo component installs Bevy required Transform and asset store"
   let assets_key : @ecs.ResourceKey[@asset.Assets[@gizmos.GizmoAsset]] = @asset.assets_resource_key()
   debug_inspect(world.get_resource(assets_key) is Some(_), content="true")
 }
+
+///|
+test "retained gizmo asset stores Bevy line-list and line-strip buffers" {
+  let asset = @gizmos.GizmoAsset::default()
+  asset.line(
+    @math.Vec3::zero(),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @color.Color::white(),
+  )
+  debug_inspect(asset.buffer().list_positions().length(), content="2")
+  debug_inspect(asset.buffer().list_colors().length(), content="2")
+  asset
+  .buffer()
+  .linestrip(
+    [
+      @math.Vec3::zero(),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      @math.Vec3::new(0.0F, 2.0F, 0.0F),
+    ],
+    @color.Color::white(),
+  )
+  debug_inspect(asset.buffer().strip_positions().length(), content="4")
+  debug_inspect(asset.buffer().strip_colors().length(), content="4")
+  asset.buffer().clear()
+  debug_inspect(asset.buffer().list_positions().length(), content="0")
+  debug_inspect(asset.buffer().strip_positions().length(), content="0")
+}

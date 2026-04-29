@@ -13,39 +13,183 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_gizmos/src/retained.rs`.
+// Bevy source: `bevy/crates/bevy_gizmos/src/lib.rs` and
+// `bevy/crates/bevy_gizmos/src/retained.rs`.
 
 ///|
-pub struct GizmoAsset {
-  buffer : @sprite.GizmoState
-  config_type_name : String
+pub struct GizmoBuffer {
+  enabled : Bool
+  list_positions : Array[@math.Vec3]
+  list_colors : Array[@color.LinearRgba]
+  strip_positions : Array[@math.Vec3]
+  strip_colors : Array[@color.LinearRgba]
 }
 
 ///|
-fn empty_gizmo_state() -> @sprite.GizmoState {
-  @sprite.GizmoState::{
-    lines: [],
-    lines_3d: [],
-    pending_ellipses: [],
-    pending_arcs: [],
-    pending_rounded_rects: [],
-    pending_arrows: [],
-    pending_grids: [],
-    mesh_handle_3d: None,
+pub fn GizmoBuffer::new() -> GizmoBuffer {
+  GizmoBuffer::{
+    enabled: true,
+    list_positions: [],
+    list_colors: [],
+    strip_positions: [],
+    strip_colors: [],
   }
+}
+
+///|
+pub impl Default for GizmoBuffer with default() {
+  GizmoBuffer::new()
+}
+
+///|
+pub struct GizmoBufferView {
+  list_positions : Array[@math.Vec3]
+  list_colors : Array[@color.LinearRgba]
+  strip_positions : Array[@math.Vec3]
+  strip_colors : Array[@color.LinearRgba]
+}
+
+///|
+pub fn GizmoBuffer::clear(self : GizmoBuffer) -> Unit {
+  self.list_positions.clear()
+  self.list_colors.clear()
+  self.strip_positions.clear()
+  self.strip_colors.clear()
+}
+
+///|
+pub fn GizmoBuffer::buffer(self : GizmoBuffer) -> GizmoBufferView {
+  GizmoBufferView::{
+    list_positions: self.list_positions,
+    list_colors: self.list_colors,
+    strip_positions: self.strip_positions,
+    strip_colors: self.strip_colors,
+  }
+}
+
+///|
+fn GizmoBuffer::add_list_color(
+  self : GizmoBuffer,
+  color : @color.Color,
+  count : Int,
+) -> Unit {
+  let linear = color.as_linear_rgba()
+  for _ in 0..<count {
+    self.list_colors.push(linear)
+  }
+}
+
+///|
+fn GizmoBuffer::add_strip_color(
+  self : GizmoBuffer,
+  color : @color.Color,
+  count : Int,
+) -> Unit {
+  let linear = color.as_linear_rgba()
+  for _ in 0..<count {
+    self.strip_colors.push(linear)
+  }
+}
+
+///|
+pub fn GizmoBuffer::line(
+  self : GizmoBuffer,
+  start : @math.Vec3,
+  end : @math.Vec3,
+  color : @color.Color,
+) -> Unit {
+  if !self.enabled {
+    return
+  }
+  self.list_positions.push(start)
+  self.list_positions.push(end)
+  self.add_list_color(color, 2)
+}
+
+///|
+pub fn GizmoBuffer::line_gradient(
+  self : GizmoBuffer,
+  start : @math.Vec3,
+  end : @math.Vec3,
+  start_color : @color.Color,
+  end_color : @color.Color,
+) -> Unit {
+  if !self.enabled {
+    return
+  }
+  self.list_positions.push(start)
+  self.list_positions.push(end)
+  self.list_colors.push(start_color.as_linear_rgba())
+  self.list_colors.push(end_color.as_linear_rgba())
+}
+
+///|
+pub fn GizmoBuffer::linestrip(
+  self : GizmoBuffer,
+  positions : Array[@math.Vec3],
+  color : @color.Color,
+) -> Unit {
+  if !self.enabled || positions.length() == 0 {
+    return
+  }
+  for position in positions {
+    self.strip_positions.push(position)
+  }
+  self.add_strip_color(color, positions.length())
+  let nan = 0.0F / 0.0F
+  self.strip_positions.push(@math.Vec3::new(nan, nan, nan))
+  self.strip_colors.push(color.as_linear_rgba())
+}
+
+///|
+pub fn GizmoBuffer::list_positions(self : GizmoBuffer) -> Array[@math.Vec3] {
+  self.list_positions
+}
+
+///|
+pub fn GizmoBuffer::list_colors(self : GizmoBuffer) -> Array[@color.LinearRgba] {
+  self.list_colors
+}
+
+///|
+pub fn GizmoBuffer::strip_positions(self : GizmoBuffer) -> Array[@math.Vec3] {
+  self.strip_positions
+}
+
+///|
+pub fn GizmoBuffer::strip_colors(
+  self : GizmoBuffer,
+) -> Array[@color.LinearRgba] {
+  self.strip_colors
+}
+
+///|
+pub struct GizmoAsset {
+  buffer : GizmoBuffer
+  config_type_name : String
 }
 
 ///|
 pub fn GizmoAsset::new() -> GizmoAsset {
   GizmoAsset::{
-    buffer: empty_gizmo_state(),
+    buffer: GizmoBuffer::default(),
     config_type_name: @any.of(@sprite.DefaultGizmoConfigGroup::default()).type_name(),
   }
 }
 
 ///|
-pub fn GizmoAsset::buffer(self : GizmoAsset) -> @sprite.GizmoState {
+pub fn GizmoAsset::buffer(self : GizmoAsset) -> GizmoBuffer {
   self.buffer
+}
+
+///|
+pub fn GizmoAsset::line(
+  self : GizmoAsset,
+  start : @math.Vec3,
+  end : @math.Vec3,
+  color : @color.Color,
+) -> Unit {
+  self.buffer.line(start, end, color)
 }
 
 ///|

@@ -163,13 +163,40 @@ pub impl @ecs.Component for Gizmo
 pub impl Default for Gizmo
 
 pub struct GizmoAsset {
-  buffer : @sprite.GizmoState
+  buffer : GizmoBuffer
   config_type_name : String
 }
-pub fn GizmoAsset::buffer(Self) -> @sprite.GizmoState
+pub fn GizmoAsset::buffer(Self) -> GizmoBuffer
 pub fn GizmoAsset::config_type_name(Self) -> String
+pub fn GizmoAsset::line(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn GizmoAsset::new() -> Self
 pub impl Default for GizmoAsset
+
+pub struct GizmoBuffer {
+  enabled : Bool
+  list_positions : Array[@math.Vec3]
+  list_colors : Array[@color.Color]
+  strip_positions : Array[@math.Vec3]
+  strip_colors : Array[@color.Color]
+}
+pub fn GizmoBuffer::buffer(Self) -> GizmoBufferView
+pub fn GizmoBuffer::clear(Self) -> Unit
+pub fn GizmoBuffer::line(Self, @math.Vec3, @math.Vec3, @color.Color) -> Unit
+pub fn GizmoBuffer::line_gradient(Self, @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
+pub fn GizmoBuffer::linestrip(Self, Array[@math.Vec3], @color.Color) -> Unit
+pub fn GizmoBuffer::list_colors(Self) -> Array[@color.Color]
+pub fn GizmoBuffer::list_positions(Self) -> Array[@math.Vec3]
+pub fn GizmoBuffer::new() -> Self
+pub fn GizmoBuffer::strip_colors(Self) -> Array[@color.Color]
+pub fn GizmoBuffer::strip_positions(Self) -> Array[@math.Vec3]
+pub impl Default for GizmoBuffer
+
+pub struct GizmoBufferView {
+  list_positions : Array[@math.Vec3]
+  list_colors : Array[@color.Color]
+  strip_positions : Array[@math.Vec3]
+  strip_colors : Array[@color.Color]
+}
 
 pub struct GizmoPlugin {
 }
