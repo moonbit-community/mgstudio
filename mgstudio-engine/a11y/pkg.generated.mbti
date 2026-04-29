@@ -51,9 +51,12 @@ pub fn AccessibilityNode::add_action(Self, @moon_accesskit.Action) -> Unit
 pub fn AccessibilityNode::bounds(Self) -> @moon_accesskit.Rect?
 pub fn AccessibilityNode::children(Self) -> Array[@moon_accesskit.NodeId]
 pub fn AccessibilityNode::clear_actions(Self) -> Unit
+pub fn AccessibilityNode::clear_disabled(Self) -> Unit
 pub fn AccessibilityNode::clear_hidden(Self) -> Unit
 pub fn AccessibilityNode::clear_label(Self) -> Unit
+pub fn AccessibilityNode::clear_toggled(Self) -> Unit
 pub fn AccessibilityNode::clear_value(Self) -> Unit
+pub fn AccessibilityNode::is_disabled(Self) -> Bool
 pub fn AccessibilityNode::is_hidden(Self) -> Bool
 pub fn AccessibilityNode::label(Self) -> String?
 pub fn AccessibilityNode::new(@moon_accesskit.Node) -> Self
@@ -62,12 +65,15 @@ pub fn AccessibilityNode::push_child(Self, @moon_accesskit.NodeId) -> Unit
 pub fn AccessibilityNode::role(Self) -> @moon_accesskit.Role
 pub fn AccessibilityNode::set_bounds(Self, @moon_accesskit.Rect) -> Unit
 pub fn AccessibilityNode::set_children(Self, Array[@moon_accesskit.NodeId]) -> Unit
+pub fn AccessibilityNode::set_disabled(Self) -> Unit
 pub fn AccessibilityNode::set_hidden(Self) -> Unit
 pub fn AccessibilityNode::set_label(Self, String) -> Unit
 pub fn AccessibilityNode::set_node(Self, @moon_accesskit.Node) -> Unit
 pub fn AccessibilityNode::set_role(Self, @moon_accesskit.Role) -> Unit
+pub fn AccessibilityNode::set_toggled(Self, @moon_accesskit.Toggled) -> Unit
 pub fn AccessibilityNode::set_value(Self, String) -> Unit
 pub fn AccessibilityNode::supports_action(Self, @moon_accesskit.Action) -> Bool
+pub fn AccessibilityNode::toggled(Self) -> @moon_accesskit.Toggled?
 pub fn AccessibilityNode::value(Self) -> String?
 pub impl @ecs.Component for AccessibilityNode
 

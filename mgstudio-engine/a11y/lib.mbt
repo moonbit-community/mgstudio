@@ -270,6 +270,41 @@ pub fn AccessibilityNode::clear_hidden(self : AccessibilityNode) -> Unit {
 }
 
 ///|
+pub fn AccessibilityNode::is_disabled(self : AccessibilityNode) -> Bool {
+  self.node.is_disabled()
+}
+
+///|
+pub fn AccessibilityNode::set_disabled(self : AccessibilityNode) -> Unit {
+  self.node.set_disabled()
+}
+
+///|
+pub fn AccessibilityNode::clear_disabled(self : AccessibilityNode) -> Unit {
+  self.node.clear_disabled()
+}
+
+///|
+pub fn AccessibilityNode::toggled(
+  self : AccessibilityNode,
+) -> @moon_accesskit.Toggled? {
+  self.node.toggled()
+}
+
+///|
+pub fn AccessibilityNode::set_toggled(
+  self : AccessibilityNode,
+  value : @moon_accesskit.Toggled,
+) -> Unit {
+  self.node.set_toggled(value)
+}
+
+///|
+pub fn AccessibilityNode::clear_toggled(self : AccessibilityNode) -> Unit {
+  self.node.clear_toggled()
+}
+
+///|
 /// Convert an entity into a stable `NodeId`.
 pub fn node_id_for_entity(entity : @core.Entity) -> @moon_accesskit.NodeId {
   @moon_accesskit.NodeId::from_u64(entity.to_bits())

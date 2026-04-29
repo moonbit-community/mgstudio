@@ -116,4 +116,14 @@ test "a11y: AccessibilityNode mutators forward to accesskit node" {
   let bounds = wrapped.bounds()
   assert_true(bounds is Some(_))
   assert_true(wrapped.supports_action(@moon_accesskit.Action::Focus))
+
+  wrapped.set_disabled()
+  assert_true(wrapped.is_disabled())
+  wrapped.clear_disabled()
+  assert_false(wrapped.is_disabled())
+
+  wrapped.set_toggled(@moon_accesskit.Toggled::True)
+  assert_true(wrapped.toggled() is Some(@moon_accesskit.Toggled::True))
+  wrapped.clear_toggled()
+  assert_true(wrapped.toggled() is None)
 }

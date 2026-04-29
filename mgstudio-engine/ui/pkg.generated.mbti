@@ -37,6 +37,10 @@ pub let ecs_key_button_colors : @ecs.ComponentKey[ButtonColors]
 
 pub let ecs_key_calculated_clip : @ecs.ComponentKey[CalculatedClip]
 
+pub let ecs_key_checkable : @ecs.ComponentKey[Checkable]
+
+pub let ecs_key_checked : @ecs.ComponentKey[Checked]
+
 pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[ComputedUiRenderTargetInfo]
 
 pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[ComputedUiTargetCamera]
@@ -55,6 +59,8 @@ pub let ecs_key_image_node_size : @ecs.ComponentKey[ImageNodeSize]
 
 pub let ecs_key_interaction : @ecs.ComponentKey[Interaction]
 
+pub let ecs_key_interaction_disabled : @ecs.ComponentKey[InteractionDisabled]
+
 pub let ecs_key_is_default_ui_camera : @ecs.ComponentKey[IsDefaultUiCamera]
 
 pub let ecs_key_label : @ecs.ComponentKey[Label]
@@ -62,6 +68,8 @@ pub let ecs_key_label : @ecs.ComponentKey[Label]
 pub let ecs_key_node : @ecs.ComponentKey[Node]
 
 pub let ecs_key_outline : @ecs.ComponentKey[Outline]
+
+pub let ecs_key_pressed : @ecs.ComponentKey[Pressed]
 
 pub let ecs_key_relative_cursor_position : @ecs.ComponentKey[RelativeCursorPosition]
 
@@ -90,6 +98,18 @@ pub fn get_ui_context_resource(@ecs.World) -> @ecs.ResourceAccess[UiContext]
 pub fn get_ui_scale_resource(@ecs.World) -> @ecs.ResourceAccess[UiScale]
 
 pub fn get_ui_stack_resource(@ecs.World) -> @ecs.ResourceAccess[UiStack]
+
+pub fn on_add_checkable(@ecs.ComponentOn[@ecs.Add, Checked]) -> Unit
+
+pub fn on_add_checked(@ecs.ComponentOn[@ecs.Add, Checked]) -> Unit
+
+pub fn on_add_disabled(@ecs.ComponentOn[@ecs.Add, InteractionDisabled]) -> Unit
+
+pub fn on_remove_checkable(@ecs.ComponentOn[@ecs.Add, Checked]) -> Unit
+
+pub fn on_remove_checked(@ecs.ComponentOn[@ecs.Remove, Checked]) -> Unit
+
+pub fn on_remove_disabled(@ecs.ComponentOn[@ecs.Remove, InteractionDisabled]) -> Unit
 
 pub fn percent(Float) -> Val
 
@@ -317,6 +337,16 @@ pub struct CalculatedClip {
 pub fn CalculatedClip::new(@math.Rect) -> Self
 pub impl @ecs.Component for CalculatedClip
 
+pub struct Checkable {
+} derive(ToJson, @json.FromJson)
+pub fn Checkable::default() -> Self
+pub impl @ecs.Component for Checkable
+
+pub struct Checked {
+} derive(ToJson, @json.FromJson)
+pub fn Checked::default() -> Self
+pub impl @ecs.Component for Checked
+
 pub struct ComputedUiRenderTargetInfo {
   scale_factor : Float
   physical_size : @math.IVec2
@@ -450,6 +480,11 @@ pub(all) enum Interaction {
   Pressed
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for Interaction
+
+pub struct InteractionDisabled {
+} derive(ToJson, @json.FromJson)
+pub fn InteractionDisabled::default() -> Self
+pub impl @ecs.Component for InteractionDisabled
 
 pub struct IsDefaultUiCamera {
 } derive(ToJson, @json.FromJson)
@@ -617,6 +652,11 @@ pub(all) enum PositionType {
   Relative
   Absolute
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub struct Pressed {
+} derive(ToJson, @json.FromJson)
+pub fn Pressed::default() -> Self
+pub impl @ecs.Component for Pressed
 
 pub struct RelativeCursorPosition {
   normalized_visible_node_rect : @math.Rect

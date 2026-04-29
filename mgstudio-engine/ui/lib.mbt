@@ -63,6 +63,12 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_ui_text_required_components(app.world())
   try! register_ui_ghost_required_components(app.world())
   app
+  .add_component_observer(on_add_disabled)
+  .add_component_observer(on_remove_disabled)
+  .add_component_observer(on_add_checkable)
+  .add_component_observer(on_remove_checkable)
+  .add_component_observer(on_add_checked)
+  .add_component_observer(on_remove_checked)
   .add_pre_update_system_config(
     @app.system(ui_update_context_system).in_set(ui_set_focus),
   )

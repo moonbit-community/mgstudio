@@ -158,6 +158,45 @@ test "ui: a11y visibility and clip metadata are synced into AccessibilityNode" {
 }
 
 ///|
+test "ui: interaction state observers update AccessibilityNode like Bevy" {
+  let app = ui_plugin(@app.App::new(@ecs.World::new()))
+  let world = app.world()
+
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    @a11y.ecs_key_accessibility_node,
+    @a11y.AccessibilityNode::new(
+      @moon_accesskit.Node::new(@moon_accesskit.Role::Button),
+    ),
+  )
+
+  try! world.set_by_key(
+    entity,
+    ecs_key_interaction_disabled,
+    InteractionDisabled::default(),
+  )
+  assert_true(ui_a11y_test_read_node(world, entity).is_disabled())
+
+  ignore(try! world.remove_by_key(entity, ecs_key_interaction_disabled))
+  assert_false(ui_a11y_test_read_node(world, entity).is_disabled())
+
+  try! world.set_by_key(entity, ecs_key_checked, Checked::default())
+  debug_inspect(
+    ui_a11y_test_read_node(world, entity).toggled()
+    is Some(@moon_accesskit.Toggled::True),
+    content="true",
+  )
+
+  ignore(try! world.remove_by_key(entity, ecs_key_checked))
+  debug_inspect(
+    ui_a11y_test_read_node(world, entity).toggled()
+    is Some(@moon_accesskit.Toggled::False),
+    content="true",
+  )
+}
+
+///|
 test "ui: a11y focus in tree update follows InputFocus resource" {
   let world = @ecs.World::new()
   ui_a11y_test_setup_context(world)

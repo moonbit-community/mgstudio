@@ -148,6 +148,26 @@ pub let ecs_key_relative_cursor_position : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="ui.relative_cursor_position")
 
 ///|
+pub let ecs_key_interaction_disabled : @ecs.ComponentKey[InteractionDisabled] = @ecs.register_component(
+  debug_name="ui.interaction_disabled",
+)
+
+///|
+pub let ecs_key_pressed : @ecs.ComponentKey[Pressed] = @ecs.register_component(
+  debug_name="ui.pressed",
+)
+
+///|
+pub let ecs_key_checkable : @ecs.ComponentKey[Checkable] = @ecs.register_component(
+  debug_name="ui.checkable",
+)
+
+///|
+pub let ecs_key_checked : @ecs.ComponentKey[Checked] = @ecs.register_component(
+  debug_name="ui.checked",
+)
+
+///|
 pub impl @ecs.Component for Node with component() {
   ecs_key_node
 }
@@ -283,6 +303,26 @@ pub impl @ecs.Component for RelativeCursorPosition with component() {
 }
 
 ///|
+pub impl @ecs.Component for InteractionDisabled with component() {
+  ecs_key_interaction_disabled
+}
+
+///|
+pub impl @ecs.Component for Pressed with component() {
+  ecs_key_pressed
+}
+
+///|
+pub impl @ecs.Component for Checkable with component() {
+  ecs_key_checkable
+}
+
+///|
+pub impl @ecs.Component for Checked with component() {
+  ecs_key_checked
+}
+
+///|
 pub let ecs_key_ui_scale : @ecs.ResourceKey[UiScale] = @ecs.register_resource(
   debug_name="ui.ui_scale",
 )
@@ -303,7 +343,8 @@ pub let ecs_components : Array[String] = [
   "ComputedUiRenderTargetInfo", "ZIndex", "Outline", "UiImage", "UiLayout", "BoxShadow",
   "ImageNode", "BorderColor", "ContentSize", "FocusPolicy", "Interaction", "ButtonColors",
   "GlobalZIndex", "ImageNodeSize", "CalculatedClip", "ScrollPosition", "BackgroundColor",
-  "AccessibilityLabel", "RelativeCursorPosition",
+  "AccessibilityLabel", "RelativeCursorPosition", "InteractionDisabled", "Pressed",
+  "Checkable", "Checked",
 ]
 
 ///|
