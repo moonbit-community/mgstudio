@@ -70,6 +70,7 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
   if next.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
     init_renderer_context_resources(render_sub_app_ref.val.world())
+    init_render_state(render_sub_app_ref.val.world())
     render_sub_app_ref.val = render_sub_app_ref.val.add_systems(
       render_schedule_stage(),
       @app.system(despawn_temporary_render_entities).in_set(

@@ -16,6 +16,86 @@
 // Bevy source: `bevy/crates/bevy_render/src/error_handler.rs`.
 
 ///|
+pub(all) enum RenderState {
+  Initializing
+  Ready
+  Errored(@app.RenderRuntimeError)
+  Reinitializing
+}
+
+///|
+let ecs_key_render_state_resource : @ecs.ResourceKey[RenderState] = @ecs.register_resource(
+  debug_name="mgstudio_render::RenderState",
+)
+
+///|
+pub fn render_state_resource_key() -> @ecs.ResourceKey[RenderState] {
+  ecs_key_render_state_resource
+}
+
+///|
+pub fn RenderState::initializing() -> RenderState {
+  Initializing
+}
+
+///|
+pub fn RenderState::ready() -> RenderState {
+  Ready
+}
+
+///|
+pub fn RenderState::reinitializing() -> RenderState {
+  Reinitializing
+}
+
+///|
+pub fn RenderState::errored(error : @app.RenderRuntimeError) -> RenderState {
+  Errored(error)
+}
+
+///|
+pub fn RenderState::is_ready(self : RenderState) -> Bool {
+  self is Ready
+}
+
+///|
+pub fn init_render_state(world : @ecs.World) -> Unit {
+  let state = match
+    (try world.get_resource(render_state_resource_key()) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(value) => Some(value)
+    None => None
+  }
+  if state is None {
+    world.insert_resource(
+      render_state_resource_key(),
+      RenderState::initializing(),
+    )
+  }
+}
+
+///|
+pub fn renderer_is_ready(world : @ecs.World) -> Bool {
+  match
+    (try world.get_resource(render_state_resource_key()) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(state) => state.is_ready()
+    None => false
+  }
+}
+
+///|
+pub fn mark_renderer_ready(world : @ecs.World) -> Unit {
+  world.insert_resource(render_state_resource_key(), RenderState::ready())
+}
+
+///|
 pub fn render_runtime_error() -> @app.RenderRuntimeError? {
   @app.render_runtime_error()
 }

@@ -77,3 +77,16 @@ test "render plugin: initializes pending command buffers in render app" {
   )).unwrap()
   debug_inspect(pending.is_empty(), content="true")
 }
+
+///|
+test "render plugin: initializes render state as not ready" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    RenderPlugin::default(),
+  )
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let state = (try! render_world.get_resource(render_state_resource_key())).unwrap()
+  debug_inspect(state.is_ready(), content="false")
+  debug_inspect(renderer_is_ready(render_world), content="false")
+  mark_renderer_ready(render_world)
+  debug_inspect(renderer_is_ready(render_world), content="true")
+}
