@@ -16,6 +16,7 @@
 pub struct FontAtlasKey {
   font_id : Int
   font_size_bits : Int
+  hinting : FontHinting
   font_smoothing : FontSmoothing
 }
 
@@ -23,17 +24,27 @@ pub struct FontAtlasKey {
 pub fn FontAtlasKey::new(
   font_id : Int,
   font_size : Float,
+  hinting : FontHinting,
   font_smoothing : FontSmoothing,
 ) -> FontAtlasKey {
   let bits = font_size.reinterpret_as_uint().reinterpret_as_int()
-  FontAtlasKey::{ font_id, font_size_bits: bits, font_smoothing }
+  FontAtlasKey::{ font_id, font_size_bits: bits, hinting, font_smoothing }
 }
 
 ///|
 fn font_atlas_key_equals(a : FontAtlasKey, b : FontAtlasKey) -> Bool {
   a.font_id == b.font_id &&
   a.font_size_bits == b.font_size_bits &&
+  font_hinting_equals(a.hinting, b.hinting) &&
   font_smoothing_equals(a.font_smoothing, b.font_smoothing)
+}
+
+///|
+fn font_hinting_equals(a : FontHinting, b : FontHinting) -> Bool {
+  match a {
+    FontHinting::Disabled => b is FontHinting::Disabled
+    FontHinting::Enabled => b is FontHinting::Enabled
+  }
 }
 
 ///|

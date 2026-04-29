@@ -103,6 +103,25 @@ pub fn FontSmoothing::default() -> FontSmoothing {
 }
 
 ///|
+pub(all) enum FontHinting {
+  Disabled
+  Enabled
+}
+
+///|
+pub fn FontHinting::default() -> FontHinting {
+  FontHinting::Disabled
+}
+
+///|
+pub fn FontHinting::should_hint(self : FontHinting) -> Bool {
+  match self {
+    Disabled => false
+    Enabled => true
+  }
+}
+
+///|
 pub(open) trait IntoFontSource {
   into_font_source(self : Self) -> FontSource
 }

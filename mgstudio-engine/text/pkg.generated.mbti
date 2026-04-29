@@ -32,6 +32,8 @@ pub let ecs_key_text_color : @ecs.ComponentKey[TextColor]
 
 pub let ecs_key_text_font : @ecs.ComponentKey[TextFont]
 
+pub let ecs_key_text_font_hinting : @ecs.ComponentKey[FontHinting]
+
 pub let ecs_key_text_layout : @ecs.ComponentKey[TextLayout]
 
 pub let ecs_key_text_line_height : @ecs.ComponentKey[LineHeight]
@@ -172,6 +174,8 @@ pub fn text_set_content(TextHandle, String) -> Unit
 
 pub fn text_set_font(TextHandle, TextFont) -> Unit
 
+pub fn text_set_font_hinting(TextHandle, FontHinting) -> Unit
+
 pub fn text_set_layers(TextHandle, @sprite.RenderLayers) -> Unit
 
 pub fn text_set_layout(TextHandle, TextLayout) -> Unit
@@ -238,6 +242,7 @@ pub struct ComputedTextBlock {
   needs_rerender : Bool
   uses_viewport_sizes : Bool
   uses_rem_sizes : Bool
+  font_hinting : FontHinting
   logical_viewport_size : @math.Vec2?
   rem_size : Float
   entities : Array[TextEntity]
@@ -276,9 +281,10 @@ pub fn FontAtlas::new(@math.UVec2, FontSmoothing) -> Self
 pub struct FontAtlasKey {
   font_id : Int
   font_size_bits : Int
+  hinting : FontHinting
   font_smoothing : FontSmoothing
 }
-pub fn FontAtlasKey::new(Int, Float, FontSmoothing) -> Self
+pub fn FontAtlasKey::new(Int, Float, FontHinting, FontSmoothing) -> Self
 
 pub struct FontAtlasSet {
   entries : Array[FontAtlasSetEntry]
@@ -345,6 +351,14 @@ pub fn FontFeaturesBuilder::default() -> Self
 pub fn FontFeaturesBuilder::disable(Self, FontFeatureTag) -> Self
 pub fn FontFeaturesBuilder::enable(Self, FontFeatureTag) -> Self
 pub fn FontFeaturesBuilder::set(Self, FontFeatureTag, UInt) -> Self
+
+pub(all) enum FontHinting {
+  Disabled
+  Enabled
+}
+pub fn FontHinting::default() -> Self
+pub fn FontHinting::should_hint(Self) -> Bool
+pub impl @ecs.Component for FontHinting
 
 pub struct FontLoader {
 }
@@ -556,6 +570,7 @@ pub struct Text2dBundle {
   layout : TextLayout
   bounds : TextBounds
   line_height : LineHeight
+  font_hinting : FontHinting
   shadow : Text2dShadow?
   transform : @transform.Transform
   layers : @sprite.RenderLayers
@@ -571,6 +586,7 @@ pub fn Text2dBundle::with_anchor(Self, @sprite.Anchor) -> Self
 pub fn Text2dBundle::with_background_color(Self, TextBackgroundColor?) -> Self
 pub fn Text2dBundle::with_bounds(Self, TextBounds) -> Self
 pub fn Text2dBundle::with_color(Self, TextColor) -> Self
+pub fn Text2dBundle::with_font_hinting(Self, FontHinting) -> Self
 pub fn Text2dBundle::with_layout(Self, TextLayout) -> Self
 pub fn Text2dBundle::with_line_height(Self, LineHeight) -> Self
 pub fn Text2dBundle::with_shadow(Self, Text2dShadow?) -> Self

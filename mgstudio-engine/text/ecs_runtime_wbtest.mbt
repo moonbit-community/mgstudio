@@ -121,6 +121,7 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
     layout: TextLayout::new_with_justify(Justify::Center),
     bounds: TextBounds::new_horizontal(200.0F),
     line_height: LineHeight::default(),
+    font_hinting: FontHinting::default(),
     shadow: None,
     transform: global_transform,
     layers: @sprite.RenderLayers::default(),
@@ -255,6 +256,10 @@ test "text ecs registers required components for Text2d" {
   )
   debug_inspect(
     (try! world.entity(entity).get() : LineHeight?) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! world.entity(entity).get() : FontHinting?) is Some(_),
     content="true",
   )
   debug_inspect(
@@ -410,6 +415,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
     layout: TextLayout::default(),
     bounds: TextBounds::default(),
     line_height: LineHeight::default(),
+    font_hinting: FontHinting::default(),
     shadow: None,
     transform: @transform.Transform::identity(),
     layers: @sprite.RenderLayers::default(),

@@ -25,6 +25,7 @@ pub struct Text2dBundle {
   layout : TextLayout
   bounds : TextBounds
   line_height : LineHeight
+  font_hinting : FontHinting
   shadow : Text2dShadow?
   transform : @transform.Transform
   layers : @sprite.RenderLayers
@@ -52,6 +53,7 @@ pub fn Text2dBundle::new(
     layout: TextLayout::default(),
     bounds: TextBounds::default(),
     line_height: LineHeight::default(),
+    font_hinting: FontHinting::default(),
     shadow: None,
     transform,
     layers: @sprite.RenderLayers::default(),
@@ -81,6 +83,7 @@ pub fn Text2dBundle::new_with_layers(
     layout: TextLayout::default(),
     bounds: TextBounds::default(),
     line_height: LineHeight::default(),
+    font_hinting: FontHinting::default(),
     shadow: None,
     transform,
     layers,
@@ -161,6 +164,14 @@ pub fn Text2dBundle::with_line_height(
   line_height : LineHeight,
 ) -> Text2dBundle {
   Text2dBundle::{ ..self, line_height, }
+}
+
+///|
+pub fn Text2dBundle::with_font_hinting(
+  self : Text2dBundle,
+  font_hinting : FontHinting,
+) -> Text2dBundle {
+  Text2dBundle::{ ..self, font_hinting, }
 }
 
 ///|
@@ -306,6 +317,7 @@ priv struct TextInstance {
   layout : TextLayout
   bounds : TextBounds
   line_height : LineHeight
+  font_hinting : FontHinting
   shadow : Text2dShadow?
   transform : @transform.Transform
   layers : @sprite.RenderLayers
@@ -656,6 +668,7 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     layout: bundle.layout,
     bounds: bundle.bounds,
     line_height: bundle.line_height,
+    font_hinting: bundle.font_hinting,
     shadow: bundle.shadow,
     transform: bundle.transform,
     layers: bundle.layers,
@@ -915,6 +928,20 @@ pub fn text_set_line_height(
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     line_height,
+    layout_dirty: true,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
+pub fn text_set_font_hinting(
+  handle : TextHandle,
+  font_hinting : FontHinting,
+) -> Unit {
+  text_runtime_mark_layout_dirty()
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    font_hinting,
     layout_dirty: true,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })

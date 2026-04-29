@@ -40,6 +40,11 @@ fn register_ui_text_required_components(
     @text.ecs_key_text_line_height,
     fn() { @text.LineHeight::default() },
   )
+  world.register_required_components_with(
+    @text.ecs_key_text,
+    @text.ecs_key_text_font_hinting,
+    fn() { @text.FontHinting::default() },
+  )
 }
 
 ///|

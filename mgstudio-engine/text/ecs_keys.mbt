@@ -78,6 +78,11 @@ pub let ecs_key_text_line_height : @ecs.ComponentKey[LineHeight] = @ecs.register
 )
 
 ///|
+pub let ecs_key_text_font_hinting : @ecs.ComponentKey[FontHinting] = @ecs.register_component(
+  debug_name="text.text_font_hinting",
+)
+
+///|
 pub let ecs_key_text2d_shadow : @ecs.ComponentKey[Text2dShadow] = @ecs.register_component(
   debug_name="text.text_2d_shadow",
 )
@@ -170,6 +175,11 @@ pub impl @ecs.Component for TextBounds with component() {
 ///|
 pub impl @ecs.Component for LineHeight with component() {
   ecs_key_text_line_height
+}
+
+///|
+pub impl @ecs.Component for FontHinting with component() {
+  ecs_key_text_font_hinting
 }
 
 ///|
@@ -301,6 +311,11 @@ fn register_text_required_components(
     ecs_key_text2d,
     ecs_key_text_line_height,
     fn() { LineHeight::default() },
+  )
+  world.register_required_components_with(
+    ecs_key_text2d,
+    ecs_key_text_font_hinting,
+    fn() { FontHinting::default() },
   )
   world.register_required_components_with(ecs_key_text2d, ecs_key_text_bounds, fn() {
     TextBounds::default()
@@ -583,6 +598,15 @@ fn line_height_eq(lhs : LineHeight, rhs : LineHeight) -> Bool {
 }
 
 ///|
+fn font_hinting_eq(lhs : FontHinting, rhs : FontHinting) -> Bool {
+  match (lhs, rhs) {
+    (FontHinting::Disabled, FontHinting::Disabled) => true
+    (FontHinting::Enabled, FontHinting::Enabled) => true
+    _ => false
+  }
+}
+
+///|
 fn text_bounds_eq(lhs : TextBounds, rhs : TextBounds) -> Bool {
   float_opt_eq(lhs.width, rhs.width) && float_opt_eq(lhs.height, rhs.height)
 }
@@ -656,6 +680,7 @@ fn text_bundle_rerender_eq(lhs : Text2dBundle, rhs : Text2dBundle) -> Bool {
   text_layout_eq(lhs.layout, rhs.layout) &&
   text_bounds_eq(lhs.bounds, rhs.bounds) &&
   line_height_eq(lhs.line_height, rhs.line_height) &&
+  font_hinting_eq(lhs.font_hinting, rhs.font_hinting) &&
   text_shadow_eq(lhs.shadow, rhs.shadow) &&
   y_axis_eq(lhs.y_axis, rhs.y_axis) &&
   vec2_opt_eq(lhs.logical_viewport_size, rhs.logical_viewport_size)
@@ -810,6 +835,7 @@ fn text_ecs_bundle_from_entity(
         layout: TextLayout::default(),
         bounds: TextBounds::default(),
         line_height: LineHeight::default(),
+        font_hinting: FontHinting::default(),
         shadow: None,
         transform: local_transform,
         layers: @sprite.RenderLayers::default(),
@@ -851,6 +877,11 @@ fn text_ecs_bundle_from_entity(
     Some(line_height) => line_height
     None => LineHeight::default()
   }
+  let font_hinting = match
+    (text_ecs_entity_ref_get(entity_ref) : FontHinting?) {
+    Some(font_hinting) => font_hinting
+    None => FontHinting::default()
+  }
   let shadow : Text2dShadow? = text_ecs_entity_ref_get(entity_ref)
   let layers = match
     (text_ecs_entity_ref_get(entity_ref) : @sprite.RenderLayers?) {
@@ -886,6 +917,7 @@ fn text_ecs_bundle_from_entity(
       layout,
       bounds,
       line_height,
+      font_hinting,
       shadow,
       transform,
       layers,
@@ -1086,6 +1118,12 @@ fn text_ecs_cleanup_removed_entries(
   }
   for
     entity in world
+    .removed_components(ecs_key_text_font_hinting, sequence)
+    .read() {
+    text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
+  }
+  for
+    entity in world
     .removed_components(@transform.ecs_key_transform, sequence)
     .read() {
     text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
@@ -1174,6 +1212,9 @@ fn text_ecs_sync_existing_entry(
   }
   if !line_height_eq(entry.bundle.line_height, bundle.line_height) {
     text_set_line_height(handle, bundle.line_height)
+  }
+  if !font_hinting_eq(entry.bundle.font_hinting, bundle.font_hinting) {
+    text_set_font_hinting(handle, bundle.font_hinting)
   }
   if !text_shadow_eq(entry.bundle.shadow, bundle.shadow) {
     text_set_shadow(handle, bundle.shadow)
@@ -1281,6 +1322,11 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
   ignore(
     text_ecs_union_changed_entities_into(
       world, ecs_key_text_line_height, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_font_hinting, sequence, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
@@ -1468,6 +1514,7 @@ fn ui_text_ecs_bundle_from_entity(
       layout: TextLayout::default(),
       bounds: TextBounds::default(),
       line_height: LineHeight::default(),
+      font_hinting: FontHinting::default(),
       shadow: None,
       transform: @transform.Transform::identity(),
       layers: @sprite.RenderLayers::default(),
@@ -1502,6 +1549,11 @@ fn ui_text_ecs_bundle_from_entity(
     Some(line_height) => line_height
     None => LineHeight::default()
   }
+  let font_hinting = match
+    (text_ecs_entity_ref_get(entity_ref) : FontHinting?) {
+    Some(font_hinting) => font_hinting
+    None => FontHinting::default()
+  }
   let shadow_component : TextShadow? = text_ecs_entity_ref_get(entity_ref)
   Text2dBundle::{
     text: Text2d::new(text.content),
@@ -1515,6 +1567,7 @@ fn ui_text_ecs_bundle_from_entity(
     layout,
     bounds: TextBounds::default(),
     line_height,
+    font_hinting,
     shadow: text_shadow_component_to_2d(shadow_component),
     transform: @transform.Transform::identity(),
     layers: @sprite.RenderLayers::default(),
@@ -1660,6 +1713,9 @@ fn ui_text_ecs_sync_existing_entry(
   if !line_height_eq(entry.bundle.line_height, bundle.line_height) {
     text_set_line_height(handle, bundle.line_height)
   }
+  if !font_hinting_eq(entry.bundle.font_hinting, bundle.font_hinting) {
+    text_set_font_hinting(handle, bundle.font_hinting)
+  }
   if !text_shadow_eq(entry.bundle.shadow, bundle.shadow) {
     text_set_shadow(handle, bundle.shadow)
   }
@@ -1745,6 +1801,11 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
   ignore(
     text_ecs_union_changed_entities_into(
       world, ecs_key_text_line_height, sequence, dirty_entities, has_text_dirty_entities,
+    ),
+  )
+  ignore(
+    text_ecs_union_changed_entities_into(
+      world, ecs_key_text_font_hinting, sequence, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(

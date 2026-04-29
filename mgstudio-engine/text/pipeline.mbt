@@ -61,6 +61,7 @@ pub struct ComputedTextBlock {
   needs_rerender : Bool
   uses_viewport_sizes : Bool
   uses_rem_sizes : Bool
+  font_hinting : FontHinting
   logical_viewport_size : @math.Vec2?
   rem_size : Float
   entities : Array[TextEntity]
@@ -73,6 +74,7 @@ pub fn ComputedTextBlock::default() -> ComputedTextBlock {
     needs_rerender: true,
     uses_viewport_sizes: false,
     uses_rem_sizes: false,
+    font_hinting: FontHinting::default(),
     logical_viewport_size: None,
     rem_size: 20.0F,
     entities: [],
@@ -780,6 +782,14 @@ fn justify_is_left(justify : Justify) -> Bool {
 }
 
 ///|
+fn font_hinting_to_cosmic(hinting : FontHinting) -> @cosmic.Hinting {
+  match hinting {
+    Disabled => @cosmic.Hinting::Disabled
+    Enabled => @cosmic.Hinting::Enabled
+  }
+}
+
+///|
 fn cosmic_physical_xy(
   glyph : @cosmic.LayoutGlyph,
   font_smoothing : FontSmoothing,
@@ -888,6 +898,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         needs_rerender: false,
         uses_viewport_sizes: buffer.uses_viewport_sizes,
         uses_rem_sizes: buffer.uses_rem_sizes,
+        font_hinting: instance.font_hinting,
         logical_viewport_size: instance.logical_viewport_size,
         rem_size,
       },
@@ -926,6 +937,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         needs_rerender: true,
         uses_viewport_sizes: buffer.uses_viewport_sizes,
         uses_rem_sizes: buffer.uses_rem_sizes,
+        font_hinting: instance.font_hinting,
         logical_viewport_size: instance.logical_viewport_size,
         rem_size,
       },
@@ -983,7 +995,9 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     Justify::Right => @cosmic.Align::Right
     Justify::Justified => @cosmic.Align::Justified
   }
-  let mut cosmic_buffer = @cosmic.Buffer::new_empty(base_metrics)
+  let mut cosmic_buffer = @cosmic.Buffer::new_empty(base_metrics).set_hinting(
+    font_hinting_to_cosmic(instance.font_hinting),
+  )
   cosmic_buffer = cosmic_buffer.set_wrap(wrap)
   cosmic_buffer = cosmic_buffer.set_size(buffer.max_width, buffer.max_height)
   cosmic_buffer = cosmic_buffer.set_rich_text(
@@ -1107,6 +1121,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let font_key = FontAtlasKey::new(
         physical_key.font_id,
         Float::reinterpret_from_uint(physical_key.font_size_bits),
+        instance.font_hinting,
         font_smoothing,
       )
       let atlases = font_atlas_set_state.val.get_or_insert(font_key)
@@ -1218,6 +1233,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       needs_rerender: needs_retry,
       uses_viewport_sizes: buffer.uses_viewport_sizes,
       uses_rem_sizes: buffer.uses_rem_sizes,
+      font_hinting: instance.font_hinting,
       logical_viewport_size: instance.logical_viewport_size,
       rem_size,
     },

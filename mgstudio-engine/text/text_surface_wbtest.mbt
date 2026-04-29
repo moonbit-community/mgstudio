@@ -83,6 +83,50 @@ test "text: font features and family mapping cover the Bevy-facing selectors" {
 }
 
 ///|
+test "text: font hinting follows Bevy component and atlas-key semantics" {
+  debug_inspect(FontHinting::default() is FontHinting::Disabled, content="true")
+  debug_inspect(FontHinting::Disabled.should_hint(), content="false")
+  debug_inspect(FontHinting::Enabled.should_hint(), content="true")
+
+  let disabled_key = FontAtlasKey::new(
+    1,
+    12.0F,
+    FontHinting::Disabled,
+    FontSmoothing::AntiAliased,
+  )
+  let enabled_key = FontAtlasKey::new(
+    1,
+    12.0F,
+    FontHinting::Enabled,
+    FontSmoothing::AntiAliased,
+  )
+  debug_inspect(
+    font_atlas_key_equals(disabled_key, enabled_key),
+    content="false",
+  )
+
+  reset_text_ecs_test_state()
+  let handle = text_spawn(
+    Text2dBundle::new(
+      Text2d::new("Hinted"),
+      TextFont::from_font_size(0.0F),
+      @transform.Transform::identity(),
+    ).with_font_hinting(FontHinting::Enabled),
+  )
+  text_state.val.texts[0] = text_update_layout(text_state.val.texts[0])
+  debug_inspect(
+    text_state.val.texts[0].computed.font_hinting is FontHinting::Enabled,
+    content="true",
+  )
+  text_set_font_hinting(handle, FontHinting::Disabled)
+  text_state.val.texts[0] = text_update_layout(text_state.val.texts[0])
+  debug_inspect(
+    text_state.val.texts[0].computed.font_hinting is FontHinting::Disabled,
+    content="true",
+  )
+}
+
+///|
 test "text: layout tracks viewport and rem dependencies for UI text" {
   reset_text_ecs_test_state()
   let viewport_font = TextFont::{
