@@ -13,12 +13,26 @@
 // limitations under the License.
 
 ///|
-pub let ecs_components : Array[String] = ["Pickable"]
+pub let ecs_components : Array[String] = [
+  "Pickable", "PointerId", "PointerInteraction", "PointerLocation", "PointerPress",
+  "SpritePickingCamera",
+]
 
 ///|
 pub let ecs_resources : Array[String] = [
-  "PickingHits", "PickingSettings", "PickingState", "PointerInputSettings", "PointerInputs",
+  "HoverMap", "PickingSettings", "PickingState", "PointerInputSettings", "PointerMap",
+  "PreviousHoverMap", "SpritePickingSettings",
 ]
+
+///|
+pub let ecs_msg_key_pointer_input : @ecs.MessageKey[PointerInput] = @ecs.register_message(
+  debug_name="mgstudio_picking::PointerInput",
+)
+
+///|
+pub let ecs_msg_key_pointer_hits : @ecs.MessageKey[PointerHits] = @ecs.register_message(
+  debug_name="mgstudio_picking::PointerHits",
+)
 
 ///|
 pub let ecs_key_pickable : @ecs.ComponentKey[Pickable] = @ecs.register_component(
@@ -26,8 +40,43 @@ pub let ecs_key_pickable : @ecs.ComponentKey[Pickable] = @ecs.register_component
 )
 
 ///|
-pub let ecs_res_key_picking_hits : @ecs.ResourceKey[PickingHits] = @ecs.register_resource(
-  debug_name="picking.picking_hits",
+pub let ecs_key_pointer_id : @ecs.ComponentKey[PointerId] = @ecs.register_component(
+  debug_name="mgstudio_picking::PointerId",
+)
+
+///|
+pub let ecs_key_pointer_location : @ecs.ComponentKey[PointerLocation] = @ecs.register_component(
+  debug_name="mgstudio_picking::PointerLocation",
+)
+
+///|
+pub let ecs_key_pointer_press : @ecs.ComponentKey[PointerPress] = @ecs.register_component(
+  debug_name="mgstudio_picking::PointerPress",
+)
+
+///|
+pub let ecs_key_pointer_interaction : @ecs.ComponentKey[PointerInteraction] = @ecs.register_component(
+  debug_name="mgstudio_picking::PointerInteraction",
+)
+
+///|
+pub let ecs_key_sprite_picking_camera : @ecs.ComponentKey[SpritePickingCamera] = @ecs.register_component(
+  debug_name="mgstudio_picking::SpritePickingCamera",
+)
+
+///|
+pub let ecs_res_key_hover_map : @ecs.ResourceKey[HoverMap] = @ecs.register_resource(
+  debug_name="picking.hover_map",
+)
+
+///|
+pub let ecs_res_key_previous_hover_map : @ecs.ResourceKey[PreviousHoverMap] = @ecs.register_resource(
+  debug_name="picking.previous_hover_map",
+)
+
+///|
+pub let ecs_res_key_pointer_map : @ecs.ResourceKey[PointerMap] = @ecs.register_resource(
+  debug_name="mgstudio_picking::PointerMap",
 )
 
 ///|
@@ -41,20 +90,27 @@ pub let ecs_res_key_picking_state : @ecs.ResourceKey[PickingState] = @ecs.regist
 )
 
 ///|
-pub let ecs_res_key_pointer_inputs : @ecs.ResourceKey[PointerInputs] = @ecs.register_resource(
-  debug_name="picking.pointer_inputs",
-)
-
-///|
 pub let ecs_res_key_pointer_input_settings : @ecs.ResourceKey[
   PointerInputSettings,
 ] = @ecs.register_resource(debug_name="picking.pointer_input_settings")
 
 ///|
-pub fn get_picking_hits_resource(
+pub let ecs_res_key_sprite_picking_settings : @ecs.ResourceKey[
+  SpritePickingSettings,
+] = @ecs.register_resource(debug_name="mgstudio_picking::SpritePickingSettings")
+
+///|
+pub fn get_hover_map_resource(
   world : @ecs.World,
-) -> @ecs.ResourceAccess[PickingHits] {
-  world.resource(ecs_res_key_picking_hits)
+) -> @ecs.ResourceAccess[HoverMap] {
+  world.resource(ecs_res_key_hover_map)
+}
+
+///|
+pub fn get_previous_hover_map_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[PreviousHoverMap] {
+  world.resource(ecs_res_key_previous_hover_map)
 }
 
 ///|
@@ -65,6 +121,13 @@ pub fn get_picking_settings_resource(
 }
 
 ///|
+pub fn get_pointer_map_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[PointerMap] {
+  world.resource(ecs_res_key_pointer_map)
+}
+
+///|
 pub fn get_picking_state_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[PickingState] {
@@ -72,15 +135,15 @@ pub fn get_picking_state_resource(
 }
 
 ///|
-pub fn get_pointer_inputs_resource(
-  world : @ecs.World,
-) -> @ecs.ResourceAccess[PointerInputs] {
-  world.resource(ecs_res_key_pointer_inputs)
-}
-
-///|
 pub fn get_pointer_input_settings_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[PointerInputSettings] {
   world.resource(ecs_res_key_pointer_input_settings)
+}
+
+///|
+pub fn get_sprite_picking_settings_resource(
+  world : @ecs.World,
+) -> @ecs.ResourceAccess[SpritePickingSettings] {
+  world.resource(ecs_res_key_sprite_picking_settings)
 }

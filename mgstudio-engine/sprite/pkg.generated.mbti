@@ -17,6 +17,7 @@ import {
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
+  "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
@@ -74,6 +75,8 @@ pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget]
 pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect]
 
 pub let ecs_key_sprite : @ecs.ComponentKey[Sprite]
+
+pub let ecs_key_sprite_mesh : @ecs.ComponentKey[SpriteMesh]
 
 pub let ecs_key_tilemap_chunk : @ecs.ComponentKey[TilemapChunk]
 
@@ -298,6 +301,7 @@ pub fn Anchor::top_center() -> Self
 pub fn Anchor::top_left() -> Self
 pub fn Anchor::top_right() -> Self
 pub impl @ecs.Component for Anchor
+pub impl Default for Anchor
 pub impl ToJson for Anchor
 pub impl @json.FromJson for Anchor
 
@@ -399,6 +403,7 @@ pub struct ClearColor {
 pub fn ClearColor::default() -> Self
 pub fn ClearColor::new(@color.Color) -> Self
 pub impl @app.Resource for ClearColor
+pub impl Default for ClearColor
 
 pub(all) enum ClearColorConfig {
   Default
@@ -573,6 +578,7 @@ pub fn Material2dBindGroup::color_material(@color.Color, AlphaMode2d, texture? :
 pub fn Material2dBindGroup::default() -> Self
 pub fn Material2dBindGroup::layout_key(Self) -> String
 pub fn Material2dBindGroup::new(Array[Material2dBinding]) -> Self
+pub fn Material2dBindGroup::sprite_material(SpriteMaterial) -> Self
 
 pub struct Material2dBinding {
   binding : Int
@@ -832,7 +838,10 @@ pub(all) struct Sprite {
   mut rect : @math.Rect?
   mut image_mode : SpriteImageMode
 }
+pub fn Sprite::compute_pixel_space_point(Self, @math.Vec2, Anchor, @asset.Assets[@image.Image], @asset.Assets[@asset.TextureAtlasLayout]) -> Result[@math.Vec2, @math.Vec2]
+pub fn Sprite::default() -> Self
 pub fn Sprite::from_atlas_image(@asset.Handle[@image.Image], @asset.TextureAtlas) -> Self
+pub fn Sprite::from_color(@color.Color, @math.Vec2) -> Self
 pub fn Sprite::from_image(@asset.Handle[@image.Image]) -> Self
 pub fn Sprite::sized(@math.Vec2) -> Self
 pub fn Sprite::with_color(Self, @color.Color) -> Self
@@ -843,8 +852,16 @@ pub fn Sprite::with_image_mode(Self, SpriteImageMode) -> Self
 pub fn Sprite::with_rect(Self, @math.Rect?) -> Self
 pub fn Sprite::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 pub impl @ecs.Component for Sprite
+pub impl Default for Sprite
 pub impl ToJson for Sprite
 pub impl @json.FromJson for Sprite
+
+pub(all) enum SpriteAlphaMode {
+  Opaque
+  Mask(Float)
+  Blend
+} derive(Eq, @debug.Debug)
+pub fn SpriteAlphaMode::default() -> Self
 
 pub struct SpriteBundle {
   sprite : Sprite
@@ -872,6 +889,64 @@ pub fn SpriteImageMode::default() -> Self
 pub fn SpriteImageMode::scale(scaling_mode? : SpriteScalingMode) -> Self
 pub fn SpriteImageMode::tiled(tile_x? : Bool, tile_y? : Bool, stretch_value? : Float) -> Self
 pub fn SpriteImageMode::uses_slices(Self) -> Bool
+pub impl Default for SpriteImageMode
+
+pub struct SpriteMaterial {
+  image : @asset.Handle[@image.Image]
+  texture_atlas : @asset.TextureAtlas?
+  color : @color.Color
+  flip_x : Bool
+  flip_y : Bool
+  custom_size : @math.Vec2?
+  rect : @math.Rect?
+  image_mode : SpriteImageMode
+  alpha_mode : AlphaMode2d
+  anchor : @math.Vec2
+  texture_atlas_layout : @asset.TextureAtlasLayout?
+  texture_atlas_index : Int
+}
+pub fn SpriteMaterial::default() -> Self
+pub fn SpriteMaterial::from_sprite_mesh(SpriteMesh) -> Self
+pub fn SpriteMaterial::with_anchor(Self, @math.Vec2) -> Self
+pub fn SpriteMaterial::with_texture_atlas_layout(Self, @asset.TextureAtlasLayout?, Int) -> Self
+pub impl Material2d for SpriteMaterial
+
+pub struct SpriteMaterialPlugin {
+}
+pub fn SpriteMaterialPlugin::default() -> Self
+pub impl @app.Plugin for SpriteMaterialPlugin
+
+pub(all) struct SpriteMesh {
+  mut image : @asset.Handle[@image.Image]
+  mut texture_atlas : @asset.TextureAtlas?
+  mut color : @color.Color
+  mut flip_x : Bool
+  mut flip_y : Bool
+  mut custom_size : @math.Vec2?
+  mut rect : @math.Rect?
+  mut image_mode : SpriteImageMode
+  mut alpha_mode : SpriteAlphaMode
+}
+pub fn SpriteMesh::compute_pixel_space_point(Self, @math.Vec2, Anchor, @asset.Assets[@image.Image], @asset.Assets[@asset.TextureAtlasLayout]) -> Result[@math.Vec2, @math.Vec2]
+pub fn SpriteMesh::default() -> Self
+pub fn SpriteMesh::from_atlas_image(@asset.Handle[@image.Image], @asset.TextureAtlas) -> Self
+pub fn SpriteMesh::from_color(@color.Color, @math.Vec2) -> Self
+pub fn SpriteMesh::from_image(@asset.Handle[@image.Image]) -> Self
+pub fn SpriteMesh::sized(@math.Vec2) -> Self
+pub fn SpriteMesh::with_alpha_mode(Self, SpriteAlphaMode) -> Self
+pub fn SpriteMesh::with_color(Self, @color.Color) -> Self
+pub fn SpriteMesh::with_custom_size(Self, @math.Vec2?) -> Self
+pub fn SpriteMesh::with_flip_x(Self, Bool) -> Self
+pub fn SpriteMesh::with_flip_y(Self, Bool) -> Self
+pub fn SpriteMesh::with_image_mode(Self, SpriteImageMode) -> Self
+pub fn SpriteMesh::with_rect(Self, @math.Rect?) -> Self
+pub fn SpriteMesh::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
+pub impl @ecs.Component for SpriteMesh
+
+pub struct SpriteMeshPlugin {
+}
+pub fn SpriteMeshPlugin::default() -> Self
+pub impl @app.Plugin for SpriteMeshPlugin
 
 pub struct SpritePlugin {
 }
@@ -887,6 +962,7 @@ pub(all) enum SpriteScalingMode {
   FitEnd
 }
 pub fn SpriteScalingMode::default() -> Self
+pub impl Default for SpriteScalingMode
 
 pub struct SpriteTiling {
   tile_x : Bool
@@ -898,6 +974,7 @@ pub fn SpriteTiling::new(Bool, Bool, Float) -> Self
 pub fn SpriteTiling::with_stretch_value(Self, Float) -> Self
 pub fn SpriteTiling::with_tile_x(Self, Bool) -> Self
 pub fn SpriteTiling::with_tile_y(Self, Bool) -> Self
+pub impl Default for SpriteTiling
 
 pub struct TextureSlice {
   texture_rect : @math.Rect

@@ -8,23 +8,27 @@ import {
 }
 
 // Values
-pub let ecs_res_key_picking_hits : @ecs.ResourceKey[@picking.PickingHits]
+pub let ecs_key_pointer_id : @ecs.ComponentKey[@picking.PointerId]
+
+pub let ecs_key_pointer_interaction : @ecs.ComponentKey[@picking.PointerInteraction]
+
+pub let ecs_key_pointer_location : @ecs.ComponentKey[@picking.PointerLocation]
+
+pub let ecs_key_pointer_press : @ecs.ComponentKey[@picking.PointerPress]
+
+pub let ecs_msg_key_pointer_hits : @ecs.MessageKey[@picking.PointerHits]
+
+pub let ecs_msg_key_pointer_input : @ecs.MessageKey[@picking.PointerInput]
 
 pub let ecs_res_key_picking_state : @ecs.ResourceKey[@picking.PickingState]
 
-pub let ecs_res_key_pointer_inputs : @ecs.ResourceKey[@picking.PointerInputs]
-
-pub fn ensure_picking_hits_system(@ecs.World) -> Unit
+pub let ecs_res_key_pointer_map : @ecs.ResourceKey[@picking.PointerMap]
 
 pub fn ensure_picking_state_system(@ecs.World) -> Unit
 
-pub fn ensure_pointer_inputs_system(@ecs.World) -> Unit
-
-pub fn get_picking_hits_resource(@ecs.World) -> @ecs.ResourceAccess[@picking.PickingHits]
-
 pub fn get_picking_state_resource(@ecs.World) -> @ecs.ResourceAccess[@picking.PickingState]
 
-pub fn get_pointer_inputs_resource(@ecs.World) -> @ecs.ResourceAccess[@picking.PointerInputs]
+pub fn get_pointer_map_resource(@ecs.World) -> @ecs.ResourceAccess[@picking.PointerMap]
 
 pub fn picking_apply_a11y_actions_system(@ecs.World) -> Unit
 
@@ -34,9 +38,13 @@ pub fn picking_collect_mouse_system(@ecs.World) -> Unit
 
 pub fn picking_generate_events_system(@ecs.World) -> Unit
 
+pub fn picking_hover_pipeline_system(@ecs.World) -> Unit
+
 pub fn picking_mesh3d_hit_test_system(@ecs.World) -> Unit
 
 pub fn picking_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn picking_process_pointer_inputs_system(@ecs.World) -> Unit
 
 pub let picking_set : String
 
@@ -50,20 +58,36 @@ pub fn picking_sprite2d_hit_test_system(@ecs.World) -> Unit
 
 pub fn picking_ui_hit_test_system(@ecs.World) -> Unit
 
+pub fn picking_update_pointer_interactions_system(@ecs.World) -> Unit
+
+pub fn pointer_hits_message_key() -> @ecs.MessageKey[@picking.PointerHits]
+
+pub fn pointer_input_message_key() -> @ecs.MessageKey[@picking.PointerInput]
+
 // Errors
 
 // Types and methods
 
 // Type aliases
-pub using @picking {type PickingHits}
+pub using @picking {type HitData}
 
 pub using @picking {type PickingState}
 
 pub using @picking {type PointerButton}
 
+pub using @picking {type PointerHits}
+
+pub using @picking {type PointerId}
+
 pub using @picking {type PointerInput}
 
-pub using @picking {type PointerInputs}
+pub using @picking {type PointerInteraction}
+
+pub using @picking {type PointerLocation}
+
+pub using @picking {type PointerMap}
+
+pub using @picking {type PointerPress}
 
 // Traits
 

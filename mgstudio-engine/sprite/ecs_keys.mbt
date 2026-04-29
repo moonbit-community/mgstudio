@@ -18,6 +18,11 @@ pub let ecs_key_sprite : @ecs.ComponentKey[Sprite] = @ecs.register_component(
 )
 
 ///|
+pub let ecs_key_sprite_mesh : @ecs.ComponentKey[SpriteMesh] = @ecs.register_component(
+  debug_name="render2d.sprite_mesh",
+)
+
+///|
 pub let ecs_key_anchor : @ecs.ComponentKey[Anchor] = @ecs.register_component(
   debug_name="render2d.anchor",
 )
@@ -151,6 +156,11 @@ pub impl @ecs.Component for Sprite with component() {
 }
 
 ///|
+pub impl @ecs.Component for SpriteMesh with component() {
+  ecs_key_sprite_mesh
+}
+
+///|
 pub impl @ecs.Component for Anchor with component() {
   ecs_key_anchor
 }
@@ -234,6 +244,37 @@ pub impl @ecs.Component for TilemapChunkTileData with component() {
 pub fn register_render2d_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(ecs_key_sprite, ecs_key_anchor, fn() {
+    Anchor::default()
+  })
+  world.register_required_components_with(
+    ecs_key_sprite,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_sprite,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
+  world.register_required_components_with(
+    ecs_key_sprite,
+    @render.ecs_key_sync_to_render_world,
+    fn() { @render.SyncToRenderWorld::default() },
+  )
+  world.register_required_components_with(ecs_key_sprite_mesh, ecs_key_anchor, fn() {
+    Anchor::default()
+  })
+  world.register_required_components_with(
+    ecs_key_sprite_mesh,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_sprite_mesh,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
   world.register_required_components_with(
     ecs_key_camera,
     @render.ecs_key_sync_to_render_world,

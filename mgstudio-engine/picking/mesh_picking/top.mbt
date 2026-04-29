@@ -14,49 +14,66 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_picking/src/mesh_picking/mod.rs`.
-pub using @picking {type PickingHits}
 
 ///|
 pub using @picking {type PickingState}
 
 ///|
+pub using @picking {type HitData}
+
+///|
 pub using @picking {type PointerButton}
+
+///|
+pub using @picking {type PointerHits}
 
 ///|
 pub using @picking {type PointerInput}
 
 ///|
-pub using @picking {type PointerInputs}
+pub using @picking {type PointerId}
 
 ///|
-pub let ecs_res_key_picking_hits : @ecs.ResourceKey[@picking.PickingHits] = @picking.ecs_res_key_picking_hits
+pub using @picking {type PointerInteraction}
+
+///|
+pub using @picking {type PointerLocation}
+
+///|
+pub using @picking {type PointerMap}
+
+///|
+pub using @picking {type PointerPress}
 
 ///|
 pub let ecs_res_key_picking_state : @ecs.ResourceKey[@picking.PickingState] = @picking.ecs_res_key_picking_state
 
 ///|
-pub let ecs_res_key_pointer_inputs : @ecs.ResourceKey[@picking.PointerInputs] = @picking.ecs_res_key_pointer_inputs
+pub let ecs_res_key_pointer_map : @ecs.ResourceKey[@picking.PointerMap] = @picking.ecs_res_key_pointer_map
 
 ///|
-pub fn ensure_picking_hits_system(world : @ecs.World) -> Unit {
-  @picking.ensure_picking_hits_system(world)
-}
+pub let ecs_key_pointer_id : @ecs.ComponentKey[@picking.PointerId] = @picking.ecs_key_pointer_id
+
+///|
+pub let ecs_key_pointer_interaction : @ecs.ComponentKey[
+  @picking.PointerInteraction,
+] = @picking.ecs_key_pointer_interaction
+
+///|
+pub let ecs_key_pointer_location : @ecs.ComponentKey[@picking.PointerLocation] = @picking.ecs_key_pointer_location
+
+///|
+pub let ecs_key_pointer_press : @ecs.ComponentKey[@picking.PointerPress] = @picking.ecs_key_pointer_press
+
+///|
+pub let ecs_msg_key_pointer_hits : @ecs.MessageKey[@picking.PointerHits] = @picking.ecs_msg_key_pointer_hits
+
+///|
+pub let ecs_msg_key_pointer_input : @ecs.MessageKey[@picking.PointerInput] = @picking.ecs_msg_key_pointer_input
 
 ///|
 pub fn ensure_picking_state_system(world : @ecs.World) -> Unit {
   @picking.ensure_picking_state_system(world)
-}
-
-///|
-pub fn ensure_pointer_inputs_system(world : @ecs.World) -> Unit {
-  @picking.ensure_pointer_inputs_system(world)
-}
-
-///|
-pub fn get_picking_hits_resource(
-  world : @ecs.World,
-) -> @ecs.ResourceAccess[@picking.PickingHits] {
-  @picking.get_picking_hits_resource(world)
 }
 
 ///|
@@ -67,10 +84,20 @@ pub fn get_picking_state_resource(
 }
 
 ///|
-pub fn get_pointer_inputs_resource(
+pub fn get_pointer_map_resource(
   world : @ecs.World,
-) -> @ecs.ResourceAccess[@picking.PointerInputs] {
-  @picking.get_pointer_inputs_resource(world)
+) -> @ecs.ResourceAccess[@picking.PointerMap] {
+  @picking.get_pointer_map_resource(world)
+}
+
+///|
+pub fn pointer_hits_message_key() -> @ecs.MessageKey[@picking.PointerHits] {
+  @picking.pointer_hits_message_key()
+}
+
+///|
+pub fn pointer_input_message_key() -> @ecs.MessageKey[@picking.PointerInput] {
+  @picking.pointer_input_message_key()
 }
 
 ///|
@@ -103,6 +130,21 @@ pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
 ///|
 pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
   @picking.picking_generate_events_system(world)
+}
+
+///|
+pub fn picking_hover_pipeline_system(world : @ecs.World) -> Unit {
+  @picking.picking_hover_pipeline_system(world)
+}
+
+///|
+pub fn picking_process_pointer_inputs_system(world : @ecs.World) -> Unit {
+  @picking.picking_process_pointer_inputs_system(world)
+}
+
+///|
+pub fn picking_update_pointer_interactions_system(world : @ecs.World) -> Unit {
+  @picking.picking_update_pointer_interactions_system(world)
 }
 
 ///|

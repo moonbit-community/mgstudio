@@ -363,13 +363,15 @@ pub fn host_gpu_downsample_mesh3d_depth_pyramid(
 pub fn host_gpu_prewarm_mesh3d_pipeline_variants(
   mesh_topology_kind~ : Int,
   cull_mode~ : Int,
-  shader_path~ : String?,
+  vertex_shader_path~ : String?,
+  fragment_shader_path~ : String?,
   forward_decal~ : Bool,
 ) -> Unit {
   @renderer.host_gpu_prewarm_mesh3d_pipeline_variants(
     mesh_topology_kind~,
     cull_mode~,
-    shader_path~,
+    vertex_shader_path~,
+    fragment_shader_path~,
     forward_decal~,
   )
 }
@@ -1195,7 +1197,8 @@ pub fn host_gpu_draw_mesh3d(
   environment_map_rotation_z? : Float = 0.0F,
   environment_map_rotation_w? : Float = 1.0F,
   cull_mode~ : Int,
-  shader_path? : String? = None,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
@@ -1280,7 +1283,8 @@ pub fn host_gpu_draw_mesh3d(
     environment_map_rotation_z~,
     environment_map_rotation_w~,
     cull_mode~,
-    shader_path~,
+    vertex_shader_path~,
+    fragment_shader_path~,
     skinning_key_hi~,
     skinning_key_lo~,
     skinning_matrices~,

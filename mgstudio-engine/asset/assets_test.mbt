@@ -54,6 +54,25 @@ test "assets: insert/get/set/remove and events" {
 }
 
 ///|
+test "asset event: Bevy-shaped event id helpers" {
+  let h0 : Handle[Int] = Handle::new(1)
+  let h1 : Handle[Int] = Handle::new(2)
+  let added : AssetEvent[Int] = AssetEvent::Added(h0)
+  let modified : AssetEvent[Int] = AssetEvent::Modified(h0)
+  let removed : AssetEvent[Int] = AssetEvent::Removed(h0)
+  let unused : AssetEvent[Int] = AssetEvent::Unused(h0)
+  let loaded : AssetEvent[Int] = AssetEvent::LoadedWithDependencies(h0)
+
+  debug_inspect(added.is_added(h0), content="true")
+  debug_inspect(added.is_added(h1), content="false")
+  debug_inspect(modified.is_modified(h0), content="true")
+  debug_inspect(removed.is_removed(h0), content="true")
+  debug_inspect(unused.is_unused(h0), content="true")
+  debug_inspect(loaded.is_loaded_with_dependencies(h0), content="true")
+  debug_inspect(loaded.is_modified(h0), content="false")
+}
+
+///|
 test "assets: insert with explicit handle id grows storage" {
   let assets : Assets[Int] = Assets::new()
   let h = Handle::new(10)

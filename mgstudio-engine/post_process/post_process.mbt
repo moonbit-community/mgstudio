@@ -215,6 +215,39 @@ pub fn TemporalAntiAliasing::with_reset(
 }
 
 ///|
+/// Camera mip bias applied when sampling material textures.
+///
+/// This mirrors Bevy's `bevy_render::camera::MipBias` and is commonly
+/// required by temporal antialiasing to reduce texture blur.
+pub struct MipBias {
+  bias : Float
+} derive(Eq, ToJson, FromJson)
+
+///|
+pub fn MipBias::default() -> MipBias {
+  MipBias::{ bias: -1.0F }
+}
+
+///|
+pub fn MipBias::new(bias : Float) -> MipBias {
+  MipBias::{ bias, }
+}
+
+///|
+pub fn MipBias::value(self : MipBias) -> Float {
+  self.bias
+}
+
+///|
+pub fn MipBias::with_bias(self : MipBias, bias : Float) -> MipBias {
+  if self.bias == bias {
+    self
+  } else {
+    MipBias::{ bias, }
+  }
+}
+
+///|
 /// Camera jitter settings aligned with Bevy's `TemporalJitter`.
 pub struct TemporalJitter {
   offset : @math.Vec2
@@ -980,6 +1013,11 @@ pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @ecs.regis
 )
 
 ///|
+pub let ecs_key_mip_bias : @ecs.ComponentKey[MipBias] = @ecs.register_component(
+  debug_name="render3d.mip_bias",
+)
+
+///|
 pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = @post_process_effect_stack.ecs_key_chromatic_aberration
 
 ///|
@@ -1032,6 +1070,11 @@ pub impl @ecs.Component for DebandDither with component() {
 ///|
 pub impl @ecs.Component for TemporalJitter with component() {
   ecs_key_temporal_jitter
+}
+
+///|
+pub impl @ecs.Component for MipBias with component() {
+  ecs_key_mip_bias
 }
 
 ///|

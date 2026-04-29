@@ -78,3 +78,16 @@ uint32_t mgstudio_render_pipeline_descriptor_set_cull_mode(
   descriptor->primitive.cullMode = (WGPUCullMode)cull_mode;
   return 0u;
 }
+
+uint32_t mgstudio_render_pipeline_descriptor_set_fragment_module(
+    WGPURenderPipelineDescriptor *descriptor, WGPUShaderModule fragment_module) {
+  if (!descriptor || !descriptor->fragment || !fragment_module) {
+    return 1u;
+  }
+  // `fragment` is const in the WebGPU descriptor ABI, but the wgpu_mbt
+  // descriptor builder stores it in the same mutable arena as the descriptor.
+  // This setter is only used before wgpuDeviceCreateRenderPipeline consumes it.
+  WGPUFragmentState *fragment = (WGPUFragmentState *)descriptor->fragment;
+  fragment->module = fragment_module;
+  return 0u;
+}

@@ -211,4 +211,5 @@ pub(all) enum MeshGeometry {
 ///|
 pub struct Mesh {
   geometry : MeshGeometry
+  mut skinned_mesh_bounds : SkinnedMeshBounds?
 }

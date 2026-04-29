@@ -40,6 +40,11 @@ pub fn DlssPerfQualityMode::default() -> DlssPerfQualityMode {
 }
 
 ///|
+pub impl Default for DlssPerfQualityMode with default() {
+  DlssPerfQualityMode::default()
+}
+
+///|
 pub struct DlssProjectId {
   value : String
 }
@@ -79,6 +84,11 @@ pub struct Dlss {
 ///|
 pub fn Dlss::default() -> Dlss {
   Dlss::{ perf_quality_mode: DlssPerfQualityMode::default(), reset: false }
+}
+
+///|
+pub impl Default for Dlss with default() {
+  Dlss::default()
 }
 
 ///|
@@ -202,7 +212,37 @@ pub impl @app.Plugin for DlssPlugin with name(_self) {
 }
 
 ///|
+let dlss_required_components_installed : Ref[Bool] = Ref::new(false)
+
+///|
+pub fn install_dlss_required_components() -> Unit {
+  if dlss_required_components_installed.val {
+    return
+  }
+  ignore(
+    @ecs.component_metadata_builder(ecs_key_dlss)
+    .require_with(@post_process.ecs_key_temporal_jitter, fn() {
+      @post_process.TemporalJitter::default()
+    })
+    .require_with(@post_process.ecs_key_mip_bias, fn() {
+      @post_process.MipBias::default()
+    })
+    .require_with(@core_pipeline.ecs_key_depth_prepass, fn() {
+      @core_pipeline.DepthPrepass::default()
+    })
+    .require_with(@core_pipeline.ecs_key_motion_vector_prepass, fn() {
+      @core_pipeline.MotionVectorPrepass::default()
+    })
+    .require_with(@core_pipeline.ecs_key_hdr, fn() {
+      @core_pipeline.Hdr::default()
+    }),
+  )
+  dlss_required_components_installed.val = true
+}
+
+///|
 pub impl @app.Plugin for DlssPlugin with build(self, app) {
+  install_dlss_required_components()
   dlss_plugin_with(app, self)
 }
 
@@ -273,14 +313,19 @@ fn dlss_camera_component_present(
 pub fn dlss_update_runtime_state(world : @ecs.World) -> Unit {
   let mut enabled_camera_count = 0
   let mut reset_requested_count = 0
+  let reset_entities : Array[(@core.Entity, Dlss)] = []
   world.for_each_component(ecs_key_dlss, fn(entity, dlss : Dlss) {
     if dlss_camera_component_present(world, entity) {
       enabled_camera_count = enabled_camera_count + 1
       if dlss.reset {
         reset_requested_count = reset_requested_count + 1
+        reset_entities.push((entity, dlss))
       }
     }
   })
+  for entry in reset_entities {
+    try! world.set_by_key(entry.0, ecs_key_dlss, entry.1.with_reset(false))
+  }
   let next = DlssRuntimeState::{
     enabled_camera_count,
     reset_requested_count,

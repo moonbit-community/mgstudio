@@ -203,7 +203,8 @@ pub(all) struct MeshGpuDrawPayload3d {
   anisotropy_strength : Float
   max_relief_mapping_search_steps : Float
   cull_mode : Int
-  shader_path : String?
+  vertex_shader_path : String?
+  fragment_shader_path : String?
   skinning_key_hi : Int
   skinning_key_lo : Int
 }
@@ -252,7 +253,8 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   max_relief_mapping_search_steps : Float,
   draw_flags : Int,
   forward_decal? : Bool = false,
-  shader_path? : String? = None,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
 ) -> MeshGpuDrawPayload3d {
@@ -317,7 +319,8 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     anisotropy_strength,
     max_relief_mapping_search_steps,
     cull_mode: render3d_cull_mode_value(material, draw_flags),
-    shader_path,
+    vertex_shader_path,
+    fragment_shader_path,
     skinning_key_hi,
     skinning_key_lo,
   }
@@ -467,7 +470,8 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     environment_map_rotation_z=payload.environment_map_rotation.z,
     environment_map_rotation_w=payload.environment_map_rotation.w,
     cull_mode=payload.cull_mode,
-    shader_path=payload.shader_path,
+    vertex_shader_path=payload.vertex_shader_path,
+    fragment_shader_path=payload.fragment_shader_path,
     skinning_key_hi=payload.skinning_key_hi,
     skinning_key_lo=payload.skinning_key_lo,
   )

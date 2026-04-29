@@ -258,6 +258,7 @@ pub fn AnimationGraph::add_blend_with_mask(Self, UInt, Float, AnimationNodeIndex
 pub fn AnimationGraph::add_clip(Self, @asset.Handle[AnimationClip], Float, AnimationNodeIndex) -> AnimationNodeIndex
 pub fn AnimationGraph::add_clip_with_mask(Self, @asset.Handle[AnimationClip], UInt, Float, AnimationNodeIndex) -> AnimationNodeIndex
 pub fn AnimationGraph::add_clips(Self, Array[@asset.Handle[AnimationClip]], Float, AnimationNodeIndex) -> Array[AnimationNodeIndex]
+pub fn AnimationGraph::add_edge(Self, AnimationNodeIndex, AnimationNodeIndex) -> Unit
 pub fn AnimationGraph::add_node_mask(Self, AnimationNodeIndex, UInt) -> Bool
 pub fn AnimationGraph::add_node_mask_group(Self, AnimationNodeIndex, Int) -> Bool
 pub fn AnimationGraph::add_target_to_mask_group(Self, AnimationTargetId, Int) -> Self
@@ -270,6 +271,7 @@ pub fn AnimationGraph::get(Self, AnimationNodeIndex) -> AnimationGraphNode?
 pub fn AnimationGraph::get_mut(Self, AnimationNodeIndex) -> AnimationGraphNode?
 pub fn AnimationGraph::new() -> Self
 pub fn AnimationGraph::nodes(Self) -> Array[AnimationNodeIndex]
+pub fn AnimationGraph::remove_edge(Self, AnimationNodeIndex, AnimationNodeIndex) -> Bool
 pub fn AnimationGraph::remove_node_mask(Self, AnimationNodeIndex, UInt) -> Bool
 pub fn AnimationGraph::remove_node_mask_group(Self, AnimationNodeIndex, Int) -> Bool
 pub fn AnimationGraph::root(Self) -> AnimationNodeIndex
@@ -289,7 +291,7 @@ pub struct AnimationGraphNode {
   node_type : AnimationNodeType
   mut mask : UInt
   mut weight : Float
-  parent : AnimationNodeIndex?
+  parents : Array[AnimationNodeIndex]
   children : Array[AnimationNodeIndex]
 }
 pub fn AnimationGraphNode::add_mask(Self, UInt) -> Self
@@ -392,8 +394,8 @@ pub struct AnimationTargetCurves {
 }
 
 pub struct AnimationTargetId {
-  high : Int
-  low : Int
+  high : UInt64
+  low : UInt64
 } derive(Eq, @debug.Debug)
 pub fn AnimationTargetId::from_iter(Array[String]) -> Self
 pub fn AnimationTargetId::from_name(String) -> Self

@@ -626,6 +626,7 @@ fn text_sync_font_assets_from_events(world : @ecs.World) -> Bool {
         has_event = true
         requires_reset = true
       }
+      @asset.AssetEvent::Unused(_handle) => ()
     }
   }
   if !has_event {

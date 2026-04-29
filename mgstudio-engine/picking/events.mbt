@@ -61,6 +61,52 @@ fn read_pending_a11y_actions(world : @ecs.World) -> Array[@a11y.ActionRequest] {
 }
 
 ///|
+priv struct PickingPointerInputEventReaderState {
+  mut cursor : Int
+}
+
+///|
+fn PickingPointerInputEventReaderState::default() -> PickingPointerInputEventReaderState {
+  { cursor: 0 }
+}
+
+///|
+let picking_pointer_input_event_reader_state_resource_key : @ecs.ResourceKey[
+  PickingPointerInputEventReaderState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_picking::PickingPointerInputEventReaderState",
+)
+
+///|
+fn ensure_picking_pointer_input_event_reader_state(world : @ecs.World) -> Unit {
+  let res = world.resource(
+    picking_pointer_input_event_reader_state_resource_key,
+  )
+  if !res.is_present() {
+    res.insert(PickingPointerInputEventReaderState::default())
+  }
+}
+
+///|
+fn read_pending_pointer_event_inputs(world : @ecs.World) -> Array[PointerInput] {
+  if !world.contains_message(pointer_input_message_key()) {
+    return []
+  }
+  ensure_picking_pointer_input_event_reader_state(world)
+  let state_res = world.resource(
+    picking_pointer_input_event_reader_state_resource_key,
+  )
+  guard state_res.get() is Some(state_value) else { return [] }
+  let state_ref = Ref::new(state_value)
+  let cursor = Ref::new(state_ref.val.cursor)
+  let reader = world.message_reader(pointer_input_message_key(), cursor)
+  let inputs = try! reader.read()
+  state_ref.val.cursor = cursor.val
+  state_res.insert(state_ref.val)
+  inputs
+}
+
+///|
 fn picking_set_input_focus(world : @ecs.World, entity : @core.Entity) -> Unit {
   let focus_ref = try
     world.get_resource_ref_mut(@input_focus.InputFocus::resource())
@@ -279,20 +325,24 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
 ///|
 /// Generate pointer enter/leave/down/up/click events from hit-test results.
 pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
-  let inputs_res = get_pointer_inputs_resource(world)
-  let hits_res = get_picking_hits_resource(world)
-  guard inputs_res.get() is Some(inputs0) else { return }
-  guard hits_res.get() is Some(hits0) else { return }
+  let inputs = read_pending_pointer_event_inputs(world)
+  if inputs.length() == 0 {
+    return
+  }
+  let hover_map = get_hover_map_resource(world).get()
   let events_res = @app.get_picking_events_resource(world)
   guard events_res.get() is Some(events_value) else { return }
   let events = Ref::new(events_value)
   let state_res = get_picking_state_resource(world)
   guard state_res.get() is Some(state_value) else { return }
   let picking_state = Ref::new(state_value)
-  for input in inputs0.pointers {
+  for input in inputs {
     let pointer_id = input.pointer
     let pos_opt = input.window_position
-    let hit_top = picking_primary_hit(world, hits0, pointer_id)
+    let hit_top = match hover_map {
+      Some(map) => map.nearest_entity(pointer_id)
+      None => None
+    }
 
     // Move.
     match pos_opt {

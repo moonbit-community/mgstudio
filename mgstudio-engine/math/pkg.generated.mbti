@@ -941,8 +941,11 @@ pub struct Rect {
 }
 pub fn Rect::center(Self) -> Vec2
 pub fn Rect::contains(Self, Vec2) -> Bool
+pub fn Rect::max(Self) -> Vec2
+pub fn Rect::min(Self) -> Vec2
 pub fn Rect::new(Vec2, Vec2) -> Self
 pub fn Rect::size(Self) -> Vec2
+pub fn Rect::translate(Self, Vec2) -> Self
 pub impl ToJson for Rect
 pub impl @json.FromJson for Rect
 

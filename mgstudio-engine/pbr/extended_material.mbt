@@ -88,7 +88,12 @@ pub fn[E] MaterialExtensionKey::bind_group_data(
 ///|
 pub(open) trait MaterialExtension {
   extension_tag(Self) -> Int
-  shader_path(Self) -> String?
+  vertex_shader(Self) -> String?
+  fragment_shader(Self) -> String?
+  prepass_vertex_shader(Self) -> String?
+  prepass_fragment_shader(Self) -> String?
+  deferred_vertex_shader(Self) -> String?
+  deferred_fragment_shader(Self) -> String?
   alpha_mode(Self) -> @material.AlphaMode3d?
   opaque_render_method(Self) -> @material.OpaqueRendererMethod?
   enable_prepass(Self) -> Bool
@@ -101,7 +106,12 @@ pub fn[T : MaterialExtension] material_extension_metadata_from_extension(
 ) -> ExtendedMaterialMetadata3d {
   ExtendedMaterialMetadata3d::default()
   .with_extension_tag(extension.extension_tag())
-  .with_shader_path(extension.shader_path())
+  .with_vertex_shader_path(extension.vertex_shader())
+  .with_fragment_shader_path(extension.fragment_shader())
+  .with_prepass_vertex_shader_path(extension.prepass_vertex_shader())
+  .with_prepass_fragment_shader_path(extension.prepass_fragment_shader())
+  .with_deferred_vertex_shader_path(extension.deferred_vertex_shader())
+  .with_deferred_fragment_shader_path(extension.deferred_fragment_shader())
   .with_alpha_mode_override(extension.alpha_mode())
   .with_opaque_render_method_override(extension.opaque_render_method())
   .with_requires_depth_prepass(extension.enable_prepass())
@@ -221,7 +231,42 @@ pub impl MaterialExtension for ForwardDecalMaterialExtension with extension_tag(
 }
 
 ///|
-pub impl MaterialExtension for ForwardDecalMaterialExtension with shader_path(
+pub impl MaterialExtension for ForwardDecalMaterialExtension with vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl MaterialExtension for ForwardDecalMaterialExtension with fragment_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl MaterialExtension for ForwardDecalMaterialExtension with prepass_vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl MaterialExtension for ForwardDecalMaterialExtension with prepass_fragment_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl MaterialExtension for ForwardDecalMaterialExtension with deferred_vertex_shader(
+  _self,
+) {
+  None
+}
+
+///|
+pub impl MaterialExtension for ForwardDecalMaterialExtension with deferred_fragment_shader(
   _self,
 ) {
   None

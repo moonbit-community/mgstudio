@@ -142,7 +142,8 @@ priv struct Mesh3dExtractedPayload {
   material : StandardMaterial
   material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
-  material_shader_path : String?
+  material_vertex_shader_path : String?
+  material_fragment_shader_path : String?
   lightmap : Lightmap?
   is_forward_decal : Bool
   forward_decal_material_ext : ForwardDecalMaterialExt?

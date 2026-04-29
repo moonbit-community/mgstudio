@@ -19,6 +19,11 @@
 const VISIBILITY_PLUGIN_NAME : String = "mgstudio.camera.visibility.VisibilityPlugin"
 
 ///|
+let visibility_set_update_skinned_mesh_bounds : @app.SystemSet = @app.system_set(
+  "mgstudio.camera.visibility.update_skinned_mesh_bounds",
+)
+
+///|
 pub struct VisibilityPlugin {}
 
 ///|
@@ -38,6 +43,24 @@ pub fn visibility_plugin_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   @root_visibility.visibility_plugin(app)
+  .configure_set(
+    @app.PostUpdate,
+    @root_visibility.visibility_set_calculate_bounds,
+    after=[@transform.transform_set_propagate, @asset.asset_event_system_set()],
+  )
+  .configure_set(@app.PostUpdate, visibility_set_update_skinned_mesh_bounds, after=[
+    @root_visibility.visibility_set_calculate_bounds,
+  ])
+  .add_post_update_system_config(
+    @app.system(@camera_primitives.calculate_bounds_system)
+    .named("mgstudio.visibility.calculate_bounds")
+    .in_set(@root_visibility.visibility_set_calculate_bounds),
+  )
+  .add_post_update_system_config(
+    @app.system(@camera_primitives.update_skinned_mesh_bounds_system)
+    .named("mgstudio.visibility.update_skinned_mesh_bounds")
+    .in_set(visibility_set_update_skinned_mesh_bounds),
+  )
 }
 
 ///|

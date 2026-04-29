@@ -38,15 +38,33 @@ pub struct ErasedRenderAssets[A] {
 }
 
 ///|
-fn erased_render_assets_debug_name() -> String {
-  "mgstudio.render.ErasedRenderAssets"
-}
+let erased_render_assets_resource_registry : Ref[
+  @hashmap.HashMap[String, @any.Any],
+] = Ref::new(@hashmap.HashMap::new())
 
 ///|
 pub fn[A] ErasedRenderAssets::resource() -> @ecs.ResourceKey[
   ErasedRenderAssets[A],
 ] {
-  @ecs.register_resource(debug_name=erased_render_assets_debug_name())
+  let probe : ErasedRenderAssets[A] = ErasedRenderAssets::new()
+  let type_name = @any.of(probe).type_name()
+  match erased_render_assets_resource_registry.val.get(type_name) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "erased render assets resource registry contained a mismatched key for \{type_name}",
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[ErasedRenderAssets[A]] = @ecs.register_resource(
+        debug_name="mgstudio_render::ErasedRenderAssets<\{type_name}>",
+      )
+      erased_render_assets_resource_registry.val.set(type_name, @any.of(key))
+      key
+    }
+  }
 }
 
 ///|

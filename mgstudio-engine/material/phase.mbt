@@ -29,6 +29,11 @@ pub fn RenderPhaseType::default() -> RenderPhaseType {
 }
 
 ///|
+pub impl Default for RenderPhaseType with default() {
+  RenderPhaseType::default()
+}
+
+///|
 pub type MaterialRenderPhaseType = RenderPhaseType
 
 ///|

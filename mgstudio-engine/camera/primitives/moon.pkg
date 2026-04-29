@@ -1,7 +1,12 @@
 import {
+  "Milky2018/mgstudio/asset" @asset,
+  "Milky2018/mgstudio/core" @core,
   "Milky2018/mgstudio/ecs" @ecs,
   "Milky2018/mgstudio/math" @math,
   "Milky2018/mgstudio/mesh" @mesh,
+  "Milky2018/mgstudio/transform" @transform,
+  "Milky2018/mgstudio/utils" @utils,
+  "Milky2018/mgstudio/visibility" @visibility,
 }
 
 supported_targets = "native"

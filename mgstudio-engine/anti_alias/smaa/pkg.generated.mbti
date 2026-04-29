@@ -3,12 +3,24 @@ package "Milky2018/mgstudio/anti_alias/smaa"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/math",
   "moonbitlang/core/debug",
 }
 
 // Values
 pub const SMAA_RUNTIME_SUPPORTED : Bool = false
+
+pub let ecs_key_smaa_luts : @ecs.ResourceKey[SmaaLuts]
+
+pub fn init_smaa_pipelines(shader? : String) -> SmaaPipelines
+
+pub fn register_embedded_wgsl_sources() -> Unit
+
+pub fn smaa_embedded_lut_registered(String) -> Bool
 
 pub fn smaa_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -25,6 +37,56 @@ pub struct Smaa {
 pub fn Smaa::default() -> Self
 pub impl @ecs.Component for Smaa
 
+pub struct SmaaBlendingWeightCalculationPipeline {
+  postprocess_bind_group_layout : @material.BindGroupLayoutDescriptor
+  blending_weight_calculation_bind_group_layout : @material.BindGroupLayoutDescriptor
+  shader : String
+}
+pub fn SmaaBlendingWeightCalculationPipeline::specialize(Self, SmaaPreset) -> @material.RenderPipelineDescriptor
+
+pub struct SmaaEdgeDetectionPipeline {
+  postprocess_bind_group_layout : @material.BindGroupLayoutDescriptor
+  edge_detection_bind_group_layout : @material.BindGroupLayoutDescriptor
+  shader : String
+}
+pub fn SmaaEdgeDetectionPipeline::specialize(Self, SmaaPreset) -> @material.RenderPipelineDescriptor
+
+pub struct SmaaInfoUniform {
+  rt_metrics : @math.Vec4
+} derive(ToJson)
+pub fn SmaaInfoUniform::from_viewport_size(Float, Float) -> Self
+
+pub struct SmaaInfoUniformOffset {
+  offset : UInt
+} derive(Eq, @debug.Debug)
+pub fn SmaaInfoUniformOffset::new(UInt) -> Self
+
+pub struct SmaaLuts {
+  area_lut : @asset.Handle[@image.Image]
+  search_lut : @asset.Handle[@image.Image]
+}
+pub fn SmaaLuts::from_asset_server(@asset.AssetServer) -> Self
+pub impl @app.Resource for SmaaLuts
+
+pub struct SmaaNeighborhoodBlendingPipeline {
+  postprocess_bind_group_layout : @material.BindGroupLayoutDescriptor
+  neighborhood_blending_bind_group_layout : @material.BindGroupLayoutDescriptor
+  shader : String
+}
+pub fn SmaaNeighborhoodBlendingPipeline::specialize(Self, SmaaNeighborhoodBlendingPipelineKey) -> @material.RenderPipelineDescriptor
+
+pub struct SmaaNeighborhoodBlendingPipelineKey {
+  texture_format : UInt
+  preset : SmaaPreset
+} derive(Eq, @debug.Debug)
+pub fn SmaaNeighborhoodBlendingPipelineKey::new(UInt, SmaaPreset) -> Self
+
+pub struct SmaaPipelines {
+  edge_detection : SmaaEdgeDetectionPipeline
+  blending_weight_calculation : SmaaBlendingWeightCalculationPipeline
+  neighborhood_blending : SmaaNeighborhoodBlendingPipeline
+}
+
 pub struct SmaaPlugin {
 }
 pub fn SmaaPlugin::default() -> Self
@@ -37,6 +99,7 @@ pub(all) enum SmaaPreset {
   Ultra
 } derive(Eq, @debug.Debug)
 pub fn SmaaPreset::default() -> Self
+pub fn SmaaPreset::shader_def(Self) -> String
 
 pub struct SmaaRuntimeState {
   enabled_camera_count : Int
@@ -44,6 +107,13 @@ pub struct SmaaRuntimeState {
 } derive(Eq, @debug.Debug)
 pub fn SmaaRuntimeState::default() -> Self
 pub impl @app.Resource for SmaaRuntimeState
+
+pub struct ViewSmaaPipelines {
+  edge_detection_pipeline_id : @material.CachedRenderPipelineId
+  blending_weight_calculation_pipeline_id : @material.CachedRenderPipelineId
+  neighborhood_blending_pipeline_id : @material.CachedRenderPipelineId
+}
+pub fn ViewSmaaPipelines::new(@material.CachedRenderPipelineId, @material.CachedRenderPipelineId, @material.CachedRenderPipelineId) -> Self
 
 // Type aliases
 

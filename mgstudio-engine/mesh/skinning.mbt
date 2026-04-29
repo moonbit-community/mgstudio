@@ -31,6 +31,502 @@ pub fn MeshJointIndices::new(
 }
 
 ///|
+pub fn MeshJointIndices::get(self : MeshJointIndices, index : Int) -> Int? {
+  match index {
+    0 => Some(self.x)
+    1 => Some(self.y)
+    2 => Some(self.z)
+    3 => Some(self.w)
+    _ => None
+  }
+}
+
+///|
+pub fn MeshJointIndices::values(self : MeshJointIndices) -> Array[Int] {
+  [self.x, self.y, self.z, self.w]
+}
+
+///|
+pub struct JointIndex {
+  value : Int
+} derive(Eq, Debug)
+
+///|
+pub fn JointIndex::new(value : Int) -> JointIndex {
+  JointIndex::{ value, }
+}
+
+///|
+pub fn JointIndex::value(self : JointIndex) -> Int {
+  self.value
+}
+
+///|
+pub struct Influence {
+  vertex_index : Int
+  joint_index : JointIndex
+  joint_weight : Float
+} derive(Eq, Debug)
+
+///|
+pub fn Influence::new(
+  vertex_index : Int,
+  joint_index : JointIndex,
+  joint_weight : Float,
+) -> Influence {
+  Influence::{ vertex_index, joint_index, joint_weight }
+}
+
+///|
+pub fn Influence::vertex_index(self : Influence) -> Int {
+  self.vertex_index
+}
+
+///|
+pub fn Influence::joint_index(self : Influence) -> JointIndex {
+  self.joint_index
+}
+
+///|
+pub fn Influence::joint_weight(self : Influence) -> Float {
+  self.joint_weight
+}
+
+///|
+pub(all) enum MeshAttributeError {
+  MissingAttribute(String)
+  UnexpectedFormat(String, String)
+} derive(Eq, Debug)
+
+///|
+pub struct InfluenceIterator {
+  influences : Array[Influence]
+  mut cursor : Int
+} derive(Debug)
+
+///|
+fn mesh_joint_weight_at(weights : @math.Vec4, index : Int) -> Float? {
+  match index {
+    0 => Some(weights.x)
+    1 => Some(weights.y)
+    2 => Some(weights.z)
+    3 => Some(weights.w)
+    _ => None
+  }
+}
+
+///|
+pub fn InfluenceIterator::new(
+  mesh : Mesh,
+) -> Result[InfluenceIterator, MeshAttributeError] {
+  let geometry = match mesh.as_3d_geometry() {
+    Some(geometry) => geometry
+    None => return Err(MeshAttributeError::MissingAttribute("Vertex_Position"))
+  }
+  let joint_indices = match geometry.joint_indices {
+    Some(joint_indices) => joint_indices
+    None =>
+      return Err(MeshAttributeError::MissingAttribute("Vertex_JointIndex"))
+  }
+  let joint_weights = match geometry.joint_weights {
+    Some(joint_weights) => joint_weights
+    None =>
+      return Err(MeshAttributeError::MissingAttribute("Vertex_JointWeight"))
+  }
+  let vertex_count = if joint_indices.length() < joint_weights.length() {
+    joint_indices.length()
+  } else {
+    joint_weights.length()
+  }
+  let influences : Array[Influence] = []
+  for vertex_index in 0..<vertex_count {
+    for influence_index in 0..<4 {
+      let joint_weight = mesh_joint_weight_at(
+        joint_weights[vertex_index],
+        influence_index,
+      ).unwrap()
+      if joint_weight > 0.0F {
+        let joint_index = joint_indices[vertex_index]
+          .get(influence_index)
+          .unwrap()
+        influences.push(
+          Influence::new(
+            vertex_index,
+            JointIndex::new(joint_index),
+            joint_weight,
+          ),
+        )
+      }
+    }
+  }
+  Ok(InfluenceIterator::{ influences, cursor: 0 })
+}
+
+///|
+pub fn InfluenceIterator::next(self : InfluenceIterator) -> Influence? {
+  if self.cursor >= self.influences.length() {
+    None
+  } else {
+    let influence = self.influences[self.cursor]
+    self.cursor = self.cursor + 1
+    Some(influence)
+  }
+}
+
+///|
+pub fn InfluenceIterator::collect(self : InfluenceIterator) -> Array[Influence] {
+  self.influences
+}
+
+///|
+pub struct JointAabb {
+  center : @math.Vec3
+  half_size : @math.Vec3
+} derive(ToJson)
+
+///|
+pub fn JointAabb::new(center : @math.Vec3, half_size : @math.Vec3) -> JointAabb {
+  JointAabb::{ center, half_size }
+}
+
+///|
+pub fn JointAabb::center(self : JointAabb) -> @math.Vec3 {
+  self.center
+}
+
+///|
+pub fn JointAabb::half_size(self : JointAabb) -> @math.Vec3 {
+  self.half_size
+}
+
+///|
+pub fn JointAabb::min(self : JointAabb) -> @math.Vec3 {
+  self.center.sub(self.half_size)
+}
+
+///|
+pub fn JointAabb::max(self : JointAabb) -> @math.Vec3 {
+  self.center.add(self.half_size)
+}
+
+///|
+pub fn JointAabb::to_aabb3d(self : JointAabb) -> @math.Aabb3d {
+  @math.Aabb3d::from_min_max(self.min(), self.max())
+}
+
+///|
+pub fn JointAabb::from_aabb3d(aabb : @math.Aabb3d) -> JointAabb {
+  JointAabb::new(aabb.center(), aabb.half_size())
+}
+
+///|
+priv struct AabbAccumulator {
+  mut has_value : Bool
+  mut min : @math.Vec3
+  mut max : @math.Vec3
+}
+
+///|
+fn AabbAccumulator::new() -> AabbAccumulator {
+  AabbAccumulator::{
+    has_value: false,
+    min: @math.Vec3::zero(),
+    max: @math.Vec3::zero(),
+  }
+}
+
+///|
+fn min_float(a : Float, b : Float) -> Float {
+  if a < b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn max_float(a : Float, b : Float) -> Float {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn vec3_min(a : @math.Vec3, b : @math.Vec3) -> @math.Vec3 {
+  @math.Vec3::new(min_float(a.x, b.x), min_float(a.y, b.y), min_float(a.z, b.z))
+}
+
+///|
+fn vec3_max(a : @math.Vec3, b : @math.Vec3) -> @math.Vec3 {
+  @math.Vec3::new(max_float(a.x, b.x), max_float(a.y, b.y), max_float(a.z, b.z))
+}
+
+///|
+fn AabbAccumulator::add_point(
+  self : AabbAccumulator,
+  position : @math.Vec3,
+) -> Unit {
+  if self.has_value {
+    self.min = vec3_min(self.min, position)
+    self.max = vec3_max(self.max, position)
+  } else {
+    self.has_value = true
+    self.min = position
+    self.max = position
+  }
+}
+
+///|
+fn AabbAccumulator::add_aabb(
+  self : AabbAccumulator,
+  aabb : @math.Aabb3d,
+) -> Unit {
+  self.add_point(aabb.min)
+  self.add_point(aabb.max)
+}
+
+///|
+fn AabbAccumulator::finish(self : AabbAccumulator) -> JointAabb? {
+  if self.has_value {
+    Some(JointAabb::from_aabb3d(@math.Aabb3d::from_min_max(self.min, self.max)))
+  } else {
+    None
+  }
+}
+
+///|
+pub struct SkinnedMeshBounds {
+  aabbs : Array[JointAabb]
+  aabb_index_to_joint_index : Array[JointIndex]
+}
+
+///|
+pub fn SkinnedMeshBounds::default() -> SkinnedMeshBounds {
+  SkinnedMeshBounds::{ aabbs: [], aabb_index_to_joint_index: [] }
+}
+
+///|
+pub fn SkinnedMeshBounds::new(
+  aabbs : Array[JointAabb],
+  aabb_index_to_joint_index : Array[JointIndex],
+) -> SkinnedMeshBounds {
+  SkinnedMeshBounds::{ aabbs, aabb_index_to_joint_index }
+}
+
+///|
+pub fn SkinnedMeshBounds::aabbs(self : SkinnedMeshBounds) -> Array[JointAabb] {
+  self.aabbs
+}
+
+///|
+pub fn SkinnedMeshBounds::aabb_index_to_joint_index(
+  self : SkinnedMeshBounds,
+) -> Array[JointIndex] {
+  self.aabb_index_to_joint_index
+}
+
+///|
+pub fn SkinnedMeshBounds::iter(
+  self : SkinnedMeshBounds,
+) -> Array[(JointIndex, JointAabb)] {
+  let len = if self.aabbs.length() < self.aabb_index_to_joint_index.length() {
+    self.aabbs.length()
+  } else {
+    self.aabb_index_to_joint_index.length()
+  }
+  let out : Array[(JointIndex, JointAabb)] = []
+  for i in 0..<len {
+    out.push((self.aabb_index_to_joint_index[i], self.aabbs[i]))
+  }
+  out
+}
+
+///|
+pub(all) enum SkinnedMeshBoundsError {
+  NoSkinnedJoints
+  MeshAttributeError(MeshAttributeError)
+} derive(Eq, Debug)
+
+///|
+pub(all) enum EntityAabbFromSkinnedMeshBoundsError {
+  OutOfRangeJointIndex(JointIndex)
+  MissingJointEntity
+  MissingSkinnedMeshBounds
+} derive(Eq, Debug)
+
+///|
+fn abs_float(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn vec3_abs(value : @math.Vec3) -> @math.Vec3 {
+  @math.Vec3::new(abs_float(value.x), abs_float(value.y), abs_float(value.z))
+}
+
+///|
+fn skinning_mat4_to_affine3(matrix : SkinningMat4) -> @math.Affine3 {
+  @math.Affine3::from_mat3_translation(
+    @math.Mat3::from_cols(
+      @math.Vec3::new(matrix.m00, matrix.m10, matrix.m20),
+      @math.Vec3::new(matrix.m01, matrix.m11, matrix.m21),
+      @math.Vec3::new(matrix.m02, matrix.m12, matrix.m22),
+    ),
+    @math.Vec3::new(matrix.m03, matrix.m13, matrix.m23),
+  )
+}
+
+///|
+fn transform_joint_aabb(
+  input : JointAabb,
+  transform : @math.Affine3,
+) -> @math.Aabb3d {
+  let mx = transform.matrix3.x_axis
+  let my = transform.matrix3.y_axis
+  let mz = transform.matrix3.z_axis
+  let mt = transform.translation
+  let center = input.center()
+  let half_size = input.half_size()
+
+  let tc = mx
+    .mul_scalar(center.x)
+    .add(my.mul_scalar(center.y))
+    .add(mz.mul_scalar(center.z))
+    .add(mt)
+  let ts = vec3_abs(mx)
+    .mul_scalar(half_size.x)
+    .add(vec3_abs(my).mul_scalar(half_size.y))
+    .add(vec3_abs(mz).mul_scalar(half_size.z))
+  @math.Aabb3d::from_min_max(tc.sub(ts), tc.add(ts))
+}
+
+///|
+pub fn entity_aabb_from_skinned_mesh_bounds(
+  world : @ecs.World,
+  mesh : Mesh,
+  skinned_mesh : SkinnedMesh,
+  skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
+  world_from_entity : @transform.GlobalTransform?,
+) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError] {
+  let skinned_mesh_bounds = match mesh.skinned_mesh_bounds() {
+    Some(bounds) => bounds
+    None =>
+      return Err(EntityAabbFromSkinnedMeshBoundsError::MissingSkinnedMeshBounds)
+  }
+  let accumulator = AabbAccumulator::new()
+  let joints = skinned_mesh.joints()
+  for entry in skinned_mesh_bounds.iter() {
+    let (joint_index, modelspace_joint_aabb) = entry
+    let joint_index_value = joint_index.value()
+    let joint_from_model = match
+      skinned_mesh_inverse_bindposes.get(joint_index_value) {
+      Some(inverse_bindpose) => skinning_mat4_to_affine3(inverse_bindpose)
+      None =>
+        return Err(
+          EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
+            joint_index,
+          ),
+        )
+    }
+    if joint_index_value < 0 || joint_index_value >= joints.length() {
+      return Err(
+        EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(joint_index),
+      )
+    }
+    let joint_entity = joints[joint_index_value]
+    let world_from_joint = match
+      (try! world.get_by_key(joint_entity, @transform.ecs_key_global_transform)) {
+      Some(global_transform) => global_transform
+      None =>
+        return Err(EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity)
+    }
+    let world_from_model = world_from_joint.affine().mul(joint_from_model)
+    accumulator.add_aabb(
+      transform_joint_aabb(modelspace_joint_aabb, world_from_model),
+    )
+  }
+  let worldspace_entity_aabb = match accumulator.finish() {
+    Some(aabb) => aabb.to_aabb3d()
+    None => return Err(EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity)
+  }
+  match world_from_entity {
+    Some(global_transform) =>
+      Ok(
+        transform_joint_aabb(
+          JointAabb::from_aabb3d(worldspace_entity_aabb),
+          global_transform.affine().inverse(),
+        ),
+      )
+    None => Ok(worldspace_entity_aabb)
+  }
+}
+
+///|
+pub fn SkinnedMeshBounds::from_mesh(
+  mesh : Mesh,
+) -> Result[SkinnedMeshBounds, SkinnedMeshBoundsError] {
+  let geometry = match mesh.as_3d_geometry() {
+    Some(geometry) => geometry
+    None =>
+      return Err(
+        SkinnedMeshBoundsError::MeshAttributeError(
+          MeshAttributeError::MissingAttribute("Vertex_Position"),
+        ),
+      )
+  }
+  let influences = match InfluenceIterator::new(mesh) {
+    Ok(iterator) => iterator.collect()
+    Err(error) => return Err(SkinnedMeshBoundsError::MeshAttributeError(error))
+  }
+  if influences.is_empty() {
+    return Ok(SkinnedMeshBounds::default())
+  }
+  let mut max_joint_index = -1
+  for influence in influences {
+    let joint_index = influence.joint_index().value()
+    if joint_index > max_joint_index {
+      max_joint_index = joint_index
+    }
+  }
+  let accumulators : Array[AabbAccumulator] = []
+  for _ in 0..<(max_joint_index + 1) {
+    accumulators.push(AabbAccumulator::new())
+  }
+  for influence in influences {
+    let vertex_index = influence.vertex_index()
+    let joint_index = influence.joint_index().value()
+    if vertex_index >= 0 &&
+      vertex_index < geometry.positions.length() &&
+      joint_index >= 0 &&
+      joint_index < accumulators.length() {
+      accumulators[joint_index].add_point(geometry.positions[vertex_index])
+    }
+  }
+  let aabbs : Array[JointAabb] = []
+  let aabb_index_to_joint_index : Array[JointIndex] = []
+  for joint_index, accumulator in accumulators {
+    match accumulator.finish() {
+      Some(aabb) => {
+        aabbs.push(aabb)
+        aabb_index_to_joint_index.push(JointIndex::new(joint_index))
+      }
+      None => ()
+    }
+  }
+  if aabbs.is_empty() {
+    Err(SkinnedMeshBoundsError::NoSkinnedJoints)
+  } else {
+    Ok(SkinnedMeshBounds::new(aabbs, aabb_index_to_joint_index))
+  }
+}
+
+///|
 pub struct MeshCustomAttributeVec3 {
   name : String
   values : Array[@math.Vec3]

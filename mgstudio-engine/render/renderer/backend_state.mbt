@@ -140,7 +140,7 @@ pub struct GpuBackend {
   mut mesh3d_binding_arrays_bg : @wgpu.BindGroup?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
   mesh3d_pipeline_cache : Array[Mesh3dPipelineCacheEntry]
-  mesh3d_custom_pipeline_cache : Array[Mesh3dCustomPipelineCacheEntry]
+  mesh3d_custom_pipeline_cache : Map[String, RenderPipelineCacheState]
   mesh3d_shadow_pipeline_cache : Array[Mesh3dShadowPipelineCacheEntry]
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
   mut mesh3d_view_buf : @wgpu.Buffer?

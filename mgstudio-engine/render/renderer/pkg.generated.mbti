@@ -143,7 +143,7 @@ pub fn draw_gizmo_line(start_x~ : Float, start_y~ : Float, start_r~ : Float, sta
 
 pub fn draw_mesh(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, alpha_mode_kind~ : Int, alpha_cutoff~ : Float, texture_id~ : Int, uv_offset_x~ : Float, uv_offset_y~ : Float, uv_scale_x~ : Float, uv_scale_y~ : Float, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit
 
-pub fn draw_mesh3d(mesh_id~ : Int, preprocess_camera_key_hi? : Int, preprocess_camera_key_lo? : Int, draw_storage_index? : Int, indirect_kind? : Int, indirect_parameters_index? : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, previous_x~ : Float, previous_y~ : Float, previous_z~ : Float, previous_rotation_x~ : Float, previous_rotation_y~ : Float, previous_rotation_z~ : Float, previous_rotation_w~ : Float, previous_scale_x~ : Float, previous_scale_y~ : Float, previous_scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, alpha_cutoff~ : Float, material_flags~ : UInt, transmission_source_texture_id~ : Int, transmission_blur_taps~ : Float, transmission_steps~ : Float, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, cull_mode~ : Int, shader_path? : String?, skinning_key_hi? : Int, skinning_key_lo? : Int, skinning_matrices? : Array[Float]?) -> Unit
+pub fn draw_mesh3d(mesh_id~ : Int, preprocess_camera_key_hi? : Int, preprocess_camera_key_lo? : Int, draw_storage_index? : Int, indirect_kind? : Int, indirect_parameters_index? : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, previous_x~ : Float, previous_y~ : Float, previous_z~ : Float, previous_rotation_x~ : Float, previous_rotation_y~ : Float, previous_rotation_z~ : Float, previous_rotation_w~ : Float, previous_scale_x~ : Float, previous_scale_y~ : Float, previous_scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, alpha_cutoff~ : Float, material_flags~ : UInt, transmission_source_texture_id~ : Int, transmission_blur_taps~ : Float, transmission_steps~ : Float, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, cull_mode~ : Int, vertex_shader_path? : String?, fragment_shader_path? : String?, skinning_key_hi? : Int, skinning_key_lo? : Int, skinning_matrices? : Array[Float]?) -> Unit
 
 pub fn draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, alpha_mode_kind~ : Int, material_bind_group~ : HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit
 
@@ -191,7 +191,7 @@ pub fn host_gpu_get_queue(Int) -> Int
 
 pub fn host_gpu_preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
-pub fn host_gpu_prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull_mode~ : Int, shader_path~ : String?, forward_decal~ : Bool) -> Unit
+pub fn host_gpu_prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull_mode~ : Int, vertex_shader_path~ : String?, fragment_shader_path~ : String?, forward_decal~ : Bool) -> Unit
 
 pub fn host_gpu_register_wgsl_source(String, String) -> Unit
 
@@ -237,7 +237,7 @@ pub fn prepare_mesh3d_view_bind_group(transmission_source_texture_id~ : Int, poi
 
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
-pub fn prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull_mode~ : Int, shader_path~ : String?, forward_decal~ : Bool) -> Unit
+pub fn prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull_mode~ : Int, vertex_shader_path~ : String?, fragment_shader_path~ : String?, forward_decal~ : Bool) -> Unit
 
 pub fn raw_vulkan_backend_new(assets_base? : String) -> GpuBackend raise GpuBackendError
 
@@ -460,7 +460,7 @@ pub struct GpuBackend {
   mut mesh3d_binding_arrays_bg : @wgpu_mbt.BindGroup?
   mut mesh3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mesh3d_pipeline_cache : Array[Mesh3dPipelineCacheEntry]
-  mesh3d_custom_pipeline_cache : Array[Mesh3dCustomPipelineCacheEntry]
+  mesh3d_custom_pipeline_cache : Map[String, RenderPipelineCacheState]
   mesh3d_shadow_pipeline_cache : Array[Mesh3dShadowPipelineCacheEntry]
   mut mesh3d_point_shadow_compare_sampler : @wgpu_mbt.Sampler?
   mut mesh3d_view_buf : @wgpu_mbt.Buffer?
@@ -703,8 +703,8 @@ pub fn GpuBackend::draw_custom_postprocess3d(Self, Int, String, String, Float, F
 pub fn GpuBackend::draw_effect_stack(Self, Int, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_fxaa(Self, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Int, Float, Float, Float, Float, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_mesh3d(Self, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Int, Float, Float, Int, Float, Float, Int, Int, Float, Float, Float, Float, Float, Int, String?, Int, Int, skinning_matrices? : Array[Float]?) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_mesh3d_main_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Float, Int, String?, Int, Int, Bool) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d(Self, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Int, Float, Float, Int, Float, Float, Int, Int, Float, Float, Float, Float, Float, Int, String?, String?, Int, Int, skinning_matrices? : Array[Float]?) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d_main_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Float, Int, String?, String?, Int, Int, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d_motion_vector_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh_material(Self, Int, Float, Float, Float, Float, Float, Int, HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
@@ -1143,8 +1143,6 @@ pub struct Mesh2dPipelineCacheEntry {
   pipeline : @wgpu_mbt.RenderPipeline
 }
 
-type Mesh3dCustomPipelineCacheEntry
-
 pub struct Mesh3dMaterialBindGroupCacheEntry {
   base_texture_id : Int
   normal_texture_id : Int
@@ -1192,6 +1190,11 @@ pub struct RenderDiagnosticsSnapshot {
 pub fn RenderDiagnosticsSnapshot::default() -> Self
 pub fn RenderDiagnosticsSnapshot::new(Int, Int, Int, Int) -> Self
 
+pub(all) enum RenderPipelineCacheState {
+  RenderPipelineOk(@wgpu_mbt.RenderPipeline)
+  RenderPipelineErr(String)
+}
+
 pub struct ScreenshotCaptureResult {
   id : Int
   width : Int
@@ -1213,7 +1216,7 @@ pub struct SpriteBatch {
 
 pub struct TonemappingPipelineCacheEntry {
   key : String
-  pipeline : @wgpu_mbt.RenderPipeline
+  state : RenderPipelineCacheState
 }
 
 pub struct UiBatch {

@@ -13,7 +13,20 @@
 // limitations under the License.
 
 ///|
-fn mesh3d_shader_path_or_default(shader_path : String?) -> String {
+fn mesh3d_vertex_shader_path_or_default(shader_path : String?) -> String {
+  match shader_path {
+    Some(path) =>
+      if path == "" {
+        MESH3D_FORWARD_VERTEX_SHADER_PATH
+      } else {
+        path
+      }
+    None => MESH3D_FORWARD_VERTEX_SHADER_PATH
+  }
+}
+
+///|
+fn mesh3d_fragment_shader_path_or_default(shader_path : String?) -> String {
   match shader_path {
     Some(path) => if path == "" { MESH3D_FORWARD_SHADER_PATH } else { path }
     None => MESH3D_FORWARD_SHADER_PATH
@@ -21,9 +34,30 @@ fn mesh3d_shader_path_or_default(shader_path : String?) -> String {
 }
 
 ///|
+fn mesh3d_custom_pipeline_cache_key(
+  vertex_shader_path : String,
+  fragment_shader_path : String,
+  surface_format : @wgpu.TextureFormat?,
+  topology : UInt,
+  transparent : Bool,
+  blend_kind : Int,
+  forward_decal : Bool,
+  cull_mode : Int,
+) -> String {
+  let surface_bits = match surface_format {
+    Some(format) => format.raw.to_string()
+    None => "-1"
+  }
+  let transparent_bits = if transparent { "1" } else { "0" }
+  let forward_decal_bits = if forward_decal { "1" } else { "0" }
+  "\{surface_bits}|\{topology}|\{transparent_bits}|\{blend_kind}|\{forward_decal_bits}|\{mesh3d_cull_mode_sanitize(cull_mode)}|\{vertex_shader_path}|\{fragment_shader_path}"
+}
+
+///|
 fn mesh3d_custom_pipeline_cache_get(
   backend : GpuBackend,
-  shader_path : String,
+  vertex_shader_path : String,
+  fragment_shader_path : String,
   surface_format : @wgpu.TextureFormat?,
   topology : UInt,
   transparent : Bool,
@@ -31,23 +65,83 @@ fn mesh3d_custom_pipeline_cache_get(
   forward_decal : Bool,
   cull_mode : Int,
 ) -> @wgpu.RenderPipeline? {
-  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
-  for entry in backend.mesh3d_custom_pipeline_cache {
-    if entry.shader_path != shader_path {
-      continue
-    }
-    if entry.topology != topology ||
-      entry.transparent != transparent ||
-      entry.blend_kind != blend_kind ||
-      entry.forward_decal != forward_decal ||
-      entry.cull_mode != safe_cull_mode {
-      continue
-    }
-    if entry.surface_format == surface_format {
-      return Some(entry.pipeline)
-    }
+  let cache_key = mesh3d_custom_pipeline_cache_key(
+    vertex_shader_path, fragment_shader_path, surface_format, topology, transparent,
+    blend_kind, forward_decal, cull_mode,
+  )
+  match backend.mesh3d_custom_pipeline_cache.get(cache_key) {
+    Some(state) =>
+      match state {
+        RenderPipelineOk(pipeline) => Some(pipeline)
+        RenderPipelineErr(message) => {
+          ignore(message)
+          None
+        }
+      }
+    None => None
   }
-  None
+}
+
+///|
+fn mesh3d_custom_pipeline_cache_failed(
+  backend : GpuBackend,
+  vertex_shader_path : String,
+  fragment_shader_path : String,
+  surface_format : @wgpu.TextureFormat?,
+  topology : UInt,
+  transparent : Bool,
+  blend_kind : Int,
+  forward_decal : Bool,
+  cull_mode : Int,
+) -> Bool {
+  let cache_key = mesh3d_custom_pipeline_cache_key(
+    vertex_shader_path, fragment_shader_path, surface_format, topology, transparent,
+    blend_kind, forward_decal, cull_mode,
+  )
+  match backend.mesh3d_custom_pipeline_cache.get(cache_key) {
+    Some(state) =>
+      match state {
+        RenderPipelineOk(_) => false
+        RenderPipelineErr(message) => {
+          ignore(message)
+          true
+        }
+      }
+    None => false
+  }
+}
+
+///|
+fn mesh3d_custom_pipeline_cache_set_failed(
+  backend : GpuBackend,
+  vertex_shader_path : String,
+  fragment_shader_path : String,
+  surface_format : @wgpu.TextureFormat?,
+  topology : UInt,
+  transparent : Bool,
+  blend_kind : Int,
+  forward_decal : Bool,
+  cull_mode : Int,
+  message : String,
+) -> Unit {
+  if mesh3d_custom_pipeline_cache_get(
+      backend, vertex_shader_path, fragment_shader_path, surface_format, topology,
+      transparent, blend_kind, forward_decal, cull_mode,
+    )
+    is Some(_) {
+    return
+  }
+  if mesh3d_custom_pipeline_cache_failed(
+      backend, vertex_shader_path, fragment_shader_path, surface_format, topology,
+      transparent, blend_kind, forward_decal, cull_mode,
+    ) {
+    return
+  }
+  let cache_key = mesh3d_custom_pipeline_cache_key(
+    vertex_shader_path, fragment_shader_path, surface_format, topology, transparent,
+    blend_kind, forward_decal, cull_mode,
+  )
+  backend.mesh3d_custom_pipeline_cache[cache_key] = RenderPipelineErr(message)
 }
 
 ///|
@@ -70,8 +164,9 @@ fn load_wgsl_required_mesh3d_forward_decal_pipeline(
 }
 
 ///|
-fn mesh3d_bevy_forward_shader_defines(
+fn mesh3d_forward_shader_defines(
   skinned : Bool,
+  forward_decal : Bool,
 ) -> @hashmap.HashMap[String, Bool] {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   defines.set("VERTEX_POSITIONS", true)
@@ -84,31 +179,119 @@ fn mesh3d_bevy_forward_shader_defines(
   if skinned {
     defines.set("SKINNED", true)
   }
+  if forward_decal {
+    defines.set("FORWARD_DECAL", true)
+  }
   defines
 }
 
 ///|
-fn mesh3d_bevy_forward_value_defines() -> @hashmap.HashMap[String, Int] {
+fn mesh3d_forward_value_defines() -> @hashmap.HashMap[String, Int] {
   let value_defines = default_wgsl_value_defines()
   value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
   value_defines
 }
 
 ///|
-fn load_wgsl_required_mesh3d_bevy_forward_pipeline(
+fn load_wgsl_required_mesh3d_forward_pipeline(
   assets_base : String,
   skinned : Bool,
+  forward_decal : Bool,
+  shader_path : String,
 ) -> String raise GpuBackendError {
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base,
-    MESH3D_FORWARD_SHADER_PATH,
-    mesh3d_bevy_forward_shader_defines(skinned),
-    mesh3d_bevy_forward_value_defines(),
+    shader_path,
+    mesh3d_forward_shader_defines(skinned, forward_decal),
+    mesh3d_forward_value_defines(),
     visited,
     modules,
   )
+}
+
+///|
+priv struct Mesh3dForwardShaderModules {
+  vertex : @wgpu.ShaderModule
+  fragment : @wgpu.ShaderModule
+}
+
+///|
+fn Mesh3dForwardShaderModules::release(
+  self : Mesh3dForwardShaderModules,
+) -> Unit {
+  self.vertex.release()
+  self.fragment.release()
+}
+
+///|
+fn mesh3d_create_forward_shader_module(
+  backend : GpuBackend,
+  wgsl : String,
+  failure_label : String,
+) -> @wgpu.ShaderModule raise GpuBackendError {
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
+  let shader = backend.device.create_shader_module_wgsl(wgsl)
+  let shader_result = backend.device.pop_error_scope_sync_result(
+    backend.instance,
+  )
+  if shader_result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+    let message = mesh3d_error_scope_message(shader_result, failure_label)
+    shader.release()
+    fatal(message)
+  }
+  shader
+}
+
+///|
+fn mesh3d_create_forward_shader_modules(
+  backend : GpuBackend,
+  skinned : Bool,
+  forward_decal : Bool,
+  label_prefix : String,
+) -> Mesh3dForwardShaderModules raise GpuBackendError {
+  let vertex_wgsl = load_wgsl_required_mesh3d_forward_pipeline(
+    backend.assets_base,
+    skinned,
+    forward_decal,
+    MESH3D_FORWARD_VERTEX_SHADER_PATH,
+  )
+  let fragment_wgsl = load_wgsl_required_mesh3d_forward_pipeline(
+    backend.assets_base,
+    skinned,
+    forward_decal,
+    MESH3D_FORWARD_SHADER_PATH,
+  )
+  let vertex = mesh3d_create_forward_shader_module(
+    backend,
+    vertex_wgsl,
+    "wgpu: failed to create \{label_prefix} vertex shader module",
+  )
+  let fragment = mesh3d_create_forward_shader_module(
+    backend,
+    fragment_wgsl,
+    "wgpu: failed to create \{label_prefix} fragment shader module",
+  ) catch {
+    err => {
+      vertex.release()
+      raise err
+    }
+  }
+  Mesh3dForwardShaderModules::{ vertex, fragment }
+}
+
+///|
+fn mesh3d_error_scope_message(
+  result : @wgpu.ErrorScopeResult,
+  fallback : String,
+) -> String {
+  let message = result.message.trim().to_string()
+  if message == "" {
+    fallback
+  } else {
+    "\{fallback}: \{message}"
+  }
 }
 
 ///|
@@ -267,7 +450,8 @@ fn ensure_mesh3d_view_binding_buffers(backend : GpuBackend) -> Unit {
 ///|
 fn mesh3d_custom_pipeline_get_or_create(
   backend : GpuBackend,
-  shader_path : String,
+  vertex_shader_path : String,
+  fragment_shader_path : String,
   surface_format : @wgpu.TextureFormat?,
   topology : UInt,
   transparent : Bool,
@@ -275,35 +459,110 @@ fn mesh3d_custom_pipeline_get_or_create(
   forward_decal : Bool,
   cull_mode : Int,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let resolved_shader_path = mesh3d_shader_path_or_default(Some(shader_path))
-  if resolved_shader_path == MESH3D_FORWARD_SHADER_PATH && !forward_decal {
+  let resolved_vertex_shader_path = mesh3d_vertex_shader_path_or_default(
+    Some(vertex_shader_path),
+  )
+  let resolved_fragment_shader_path = mesh3d_fragment_shader_path_or_default(
+    Some(fragment_shader_path),
+  )
+  if resolved_vertex_shader_path == MESH3D_FORWARD_VERTEX_SHADER_PATH &&
+    resolved_fragment_shader_path == MESH3D_FORWARD_SHADER_PATH &&
+    !forward_decal {
     return None
   }
   if mesh3d_custom_pipeline_cache_get(
-      backend, resolved_shader_path, surface_format, topology, transparent, blend_kind,
-      forward_decal, cull_mode,
+      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
+      topology, transparent, blend_kind, forward_decal, cull_mode,
     )
     is Some(pipeline) {
     return Some(pipeline)
   }
-  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode, blend_kind, false)
+  if mesh3d_custom_pipeline_cache_failed(
+      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
+      topology, transparent, blend_kind, forward_decal, cull_mode,
+    ) {
+    return None
+  }
+  ensure_mesh3d_pipeline_layout_resources(backend)
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return None }
-  let shader_source = load_wgsl_required_mesh3d_forward_decal_pipeline(
+  let vertex_shader_source = load_wgsl_required_mesh3d_forward_decal_pipeline(
     backend.assets_base,
-    resolved_shader_path,
+    resolved_vertex_shader_path,
     forward_decal,
+  ) catch {
+    Fatal(message) => {
+      mesh3d_custom_pipeline_cache_set_failed(
+        backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
+        topology, transparent, blend_kind, forward_decal, safe_cull_mode, message,
+      )
+      debug("[renderer] mesh3d custom pipeline failed: \{message}")
+      return None
+    }
+  }
+  let fragment_shader_source = load_wgsl_required_mesh3d_forward_decal_pipeline(
+    backend.assets_base,
+    resolved_fragment_shader_path,
+    forward_decal,
+  ) catch {
+    Fatal(message) => {
+      mesh3d_custom_pipeline_cache_set_failed(
+        backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
+        topology, transparent, blend_kind, forward_decal, safe_cull_mode, message,
+      )
+      debug("[renderer] mesh3d custom pipeline failed: \{message}")
+      return None
+    }
+  }
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
+  let vertex_shader_module = backend.device.create_shader_module_wgsl(
+    vertex_shader_source,
   )
-  let shader_module = backend.device.create_shader_module_wgsl(shader_source)
+  let vertex_shader_result = backend.device.pop_error_scope_sync_result(
+    backend.instance,
+  )
+  if vertex_shader_result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+    let message = mesh3d_error_scope_message(
+      vertex_shader_result, "wgpu: failed to create mesh3d custom vertex shader module",
+    )
+    vertex_shader_module.release()
+    mesh3d_custom_pipeline_cache_set_failed(
+      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
+      topology, transparent, blend_kind, forward_decal, safe_cull_mode, message,
+    )
+    debug("[renderer] mesh3d custom pipeline failed: \{message}")
+    return None
+  }
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
+  let fragment_shader_module = backend.device.create_shader_module_wgsl(
+    fragment_shader_source,
+  )
+  let fragment_shader_result = backend.device.pop_error_scope_sync_result(
+    backend.instance,
+  )
+  if fragment_shader_result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+    let message = mesh3d_error_scope_message(
+      fragment_shader_result, "wgpu: failed to create mesh3d custom fragment shader module",
+    )
+    vertex_shader_module.release()
+    fragment_shader_module.release()
+    mesh3d_custom_pipeline_cache_set_failed(
+      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
+      topology, transparent, blend_kind, forward_decal, safe_cull_mode, message,
+    )
+    debug("[renderer] mesh3d custom pipeline failed: \{message}")
+    return None
+  }
   let color_format = match surface_format {
     Some(format) => format.to_u32()
     None => @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
   }
   let descriptor = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
-    shader_module,
+    vertex_shader_module,
     color_format,
+    fragment_shader=fragment_shader_module,
     with_depth=true,
     depth_write_enabled=!transparent,
     position3d=true,
@@ -317,8 +576,26 @@ fn mesh3d_custom_pipeline_get_or_create(
       @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
     },
   )
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let pipeline = backend.device.create_render_pipeline_ptr(descriptor)
+  let pipeline_result = backend.device.pop_error_scope_sync_result(
+    backend.instance,
+  )
   @wgpu_c.render_pipeline_descriptor_free(descriptor)
+  if pipeline_result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+    let message = mesh3d_error_scope_message(
+      pipeline_result, "wgpu: failed to create mesh3d custom pipeline",
+    )
+    pipeline.release()
+    vertex_shader_module.release()
+    fragment_shader_module.release()
+    mesh3d_custom_pipeline_cache_set_failed(
+      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format,
+      topology, transparent, blend_kind, forward_decal, safe_cull_mode, message,
+    )
+    debug("[renderer] mesh3d custom pipeline failed: \{message}")
+    return None
+  }
   let label_prefix = if surface_format is Some(_) {
     "mgstudio_mesh3d_custom_surface_"
   } else {
@@ -335,33 +612,26 @@ fn mesh3d_custom_pipeline_get_or_create(
     transparent_suffix +
     "_forward_decal_" +
     forward_decal_suffix +
-    "_shader_" +
-    resolved_shader_path,
+    "_vertex_" +
+    resolved_vertex_shader_path +
+    "_fragment_" +
+    resolved_fragment_shader_path,
   )
-  backend.mesh3d_custom_pipeline_cache.push(Mesh3dCustomPipelineCacheEntry::{
-    shader_path: resolved_shader_path,
-    surface_format,
-    topology,
-    transparent,
-    blend_kind,
-    forward_decal,
-    cull_mode: safe_cull_mode,
-    pipeline,
-  })
-  shader_module.release()
+  let cache_key = mesh3d_custom_pipeline_cache_key(
+    resolved_vertex_shader_path, resolved_fragment_shader_path, surface_format, topology,
+    transparent, blend_kind, forward_decal, safe_cull_mode,
+  )
+  backend.mesh3d_custom_pipeline_cache[cache_key] = RenderPipelineOk(pipeline)
+  vertex_shader_module.release()
+  fragment_shader_module.release()
   Some(pipeline)
 }
 
 ///|
-fn ensure_mesh3d_pipeline_rgba8(
+fn ensure_mesh3d_pipeline_layout_resources(
   backend : GpuBackend,
-  topology : UInt,
-  cull_mode : Int,
-  blend_kind : Int,
-  skinned : Bool,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
-  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   if backend.mesh3d_pipeline_layout is None {
     let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
     let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=19UL)
@@ -656,25 +926,51 @@ fn ensure_mesh3d_pipeline_rgba8(
     |> ignore
   }
   ensure_mesh3d_view_binding_buffers(backend)
+}
+
+///|
+fn ensure_mesh3d_pipeline_rgba8(
+  backend : GpuBackend,
+  topology : UInt,
+  cull_mode : Int,
+  blend_kind : Int,
+  skinned : Bool,
+  forward_decal : Bool,
+) -> Unit raise GpuBackendError {
+  ensure_mesh3d_pipeline_layout_resources(backend)
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let color_format = tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32()
   if mesh3d_pipeline_get(
-      backend, color_format, topology, safe_cull_mode, blend_kind, skinned,
+      backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
     )
     is Some(_) {
+    return
+  }
+  if mesh3d_pipeline_failed(
+      backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+    ) {
     return
   }
   let transparent = blend_kind != MESH3D_PIPELINE_BLEND_OPAQUE
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_required_mesh3d_bevy_forward_pipeline(
-    backend.assets_base,
-    skinned,
-  )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let modules = mesh3d_create_forward_shader_modules(
+    backend, skinned, forward_decal, "mesh3d rgba8",
+  ) catch {
+    Fatal(message) => {
+      mesh3d_pipeline_set_failed(
+        backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+        message,
+      )
+      debug("[renderer] mesh3d pipeline failed: \{message}")
+      return
+    }
+  }
   let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
-    sm,
+    modules.vertex,
     color_format,
+    fragment_shader=modules.fragment,
     with_depth=true,
     depth_write_enabled=!transparent,
     position3d=true,
@@ -685,10 +981,30 @@ fn ensure_mesh3d_pipeline_rgba8(
     vertex_entry="vertex",
     fragment_entry="fragment",
   )
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  let pipeline_result = backend.device.pop_error_scope_sync_result(
+    backend.instance,
+  )
   @wgpu_c.render_pipeline_descriptor_free(desc)
   let blend_suffix = mesh3d_pipeline_blend_suffix(blend_kind)
   let skinned_suffix = if skinned { "_skinned" } else { "_unskinned" }
+  if pipeline_result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+    let message = mesh3d_error_scope_message(
+      pipeline_result,
+      "wgpu: failed to create mesh3d rgba8 pipeline: " +
+      blend_suffix +
+      skinned_suffix,
+    )
+    pipeline.release()
+    modules.release()
+    mesh3d_pipeline_set_failed(
+      backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+      message,
+    )
+    debug("[renderer] mesh3d pipeline failed: \{message}")
+    return
+  }
   pipeline.set_label(
     "mgstudio_mesh3d_rgba8_" +
     blend_suffix +
@@ -699,9 +1015,10 @@ fn ensure_mesh3d_pipeline_rgba8(
     skinned_suffix,
   )
   mesh3d_pipeline_set(
-    backend, color_format, topology, safe_cull_mode, blend_kind, skinned, pipeline,
+    backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+    pipeline,
   )
-  sm.release()
+  modules.release()
 }
 
 ///|
@@ -712,36 +1029,47 @@ fn ensure_mesh3d_pipeline_surface(
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
+  forward_decal : Bool,
 ) -> Unit raise GpuBackendError {
   // Ensure shared mesh3d pipeline resources/layout exist before creating
   // surface-format specializations.
-  ensure_mesh3d_pipeline_rgba8(
-    backend, topology, cull_mode, blend_kind, skinned,
-  )
-  ensure_sprite_resources(backend)
+  ensure_mesh3d_pipeline_layout_resources(backend)
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let color_format = format.to_u32()
   if mesh3d_pipeline_get(
-      backend, color_format, topology, safe_cull_mode, blend_kind, skinned,
+      backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
     )
     is Some(_) {
+    return
+  }
+  if mesh3d_pipeline_failed(
+      backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+    ) {
     return
   }
   let transparent = blend_kind != MESH3D_PIPELINE_BLEND_OPAQUE
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_required_mesh3d_bevy_forward_pipeline(
-    backend.assets_base,
-    skinned,
-  )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let modules = mesh3d_create_forward_shader_modules(
+    backend, skinned, forward_decal, "mesh3d surface",
+  ) catch {
+    Fatal(message) => {
+      mesh3d_pipeline_set_failed(
+        backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+        message,
+      )
+      debug("[renderer] mesh3d pipeline failed: \{message}")
+      return
+    }
+  }
   let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
-    sm,
+    modules.vertex,
     color_format,
+    fragment_shader=modules.fragment,
     with_depth=true,
     depth_write_enabled=!transparent,
     position3d=true,
@@ -752,10 +1080,30 @@ fn ensure_mesh3d_pipeline_surface(
     vertex_entry="vertex",
     fragment_entry="fragment",
   )
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  let pipeline_result = backend.device.pop_error_scope_sync_result(
+    backend.instance,
+  )
   @wgpu_c.render_pipeline_descriptor_free(desc)
   let blend_suffix = mesh3d_pipeline_blend_suffix(blend_kind)
   let skinned_suffix = if skinned { "_skinned" } else { "_unskinned" }
+  if pipeline_result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+    let message = mesh3d_error_scope_message(
+      pipeline_result,
+      "wgpu: failed to create mesh3d surface pipeline: " +
+      blend_suffix +
+      skinned_suffix,
+    )
+    pipeline.release()
+    modules.release()
+    mesh3d_pipeline_set_failed(
+      backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+      message,
+    )
+    debug("[renderer] mesh3d pipeline failed: \{message}")
+    return
+  }
   pipeline.set_label(
     "mgstudio_mesh3d_surface_" +
     blend_suffix +
@@ -766,9 +1114,10 @@ fn ensure_mesh3d_pipeline_surface(
     skinned_suffix,
   )
   mesh3d_pipeline_set(
-    backend, color_format, topology, safe_cull_mode, blend_kind, skinned, pipeline,
+    backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+    pipeline,
   )
-  sm.release()
+  modules.release()
 }
 
 ///|
@@ -779,28 +1128,35 @@ fn mesh3d_pipeline_for_current_pass(
   forward_decal : Bool,
   topology : UInt,
   cull_mode : Int,
-  shader_path : String?,
+  vertex_shader_path : String?,
+  fragment_shader_path : String?,
   skinned : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let resolved_shader_path = mesh3d_shader_path_or_default(shader_path)
+  let resolved_vertex_shader_path = mesh3d_vertex_shader_path_or_default(
+    vertex_shader_path,
+  )
+  let resolved_fragment_shader_path = mesh3d_fragment_shader_path_or_default(
+    fragment_shader_path,
+  )
   let blend_kind = mesh3d_blend_kind_from_material_flags(
     material_flags, transparent,
   )
-  if resolved_shader_path != MESH3D_FORWARD_SHADER_PATH || forward_decal {
+  if resolved_vertex_shader_path != MESH3D_FORWARD_VERTEX_SHADER_PATH ||
+    resolved_fragment_shader_path != MESH3D_FORWARD_SHADER_PATH {
     let custom_surface_format = match current_pass_color_format(backend) {
       Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) =>
         Some(format)
       _ => None
     }
     return mesh3d_custom_pipeline_get_or_create(
-      backend, resolved_shader_path, custom_surface_format, topology, transparent,
-      blend_kind, forward_decal, cull_mode,
+      backend, resolved_vertex_shader_path, resolved_fragment_shader_path, custom_surface_format,
+      topology, transparent, blend_kind, forward_decal, cull_mode,
     )
   }
   match current_pass_color_format(backend) {
     Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
       ensure_mesh3d_pipeline_surface(
-        backend, format, topology, cull_mode, blend_kind, skinned,
+        backend, format, topology, cull_mode, blend_kind, skinned, forward_decal,
       )
       return mesh3d_pipeline_get(
         backend,
@@ -809,12 +1165,13 @@ fn mesh3d_pipeline_for_current_pass(
         cull_mode,
         blend_kind,
         skinned,
+        forward_decal,
       )
     }
     _ => ()
   }
   ensure_mesh3d_pipeline_rgba8(
-    backend, topology, cull_mode, blend_kind, skinned,
+    backend, topology, cull_mode, blend_kind, skinned, forward_decal,
   )
   mesh3d_pipeline_get(
     backend,
@@ -823,6 +1180,7 @@ fn mesh3d_pipeline_for_current_pass(
     cull_mode,
     blend_kind,
     skinned,
+    forward_decal,
   )
 }
 
@@ -833,13 +1191,7 @@ fn mesh3d_build_shadow_depth_pipeline(
   cull_mode : Int,
   material_path : Bool,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
-  ensure_mesh3d_pipeline_rgba8(
-    backend,
-    topology,
-    cull_mode,
-    MESH3D_PIPELINE_BLEND_OPAQUE,
-    false,
-  )
+  ensure_mesh3d_pipeline_layout_resources(backend)
   guard backend.mesh3d_pipeline_layout is Some(pl) else {
     fatal("wgpu: missing mesh3d pipeline layout for shadow depth pipeline")
   }

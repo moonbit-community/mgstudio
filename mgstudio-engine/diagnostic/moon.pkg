@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/time",
   "Milky2018/sysinfo" @sysinfo,
   "moonbitlang/core/hashmap",
+  "moonbitlang/core/deque",
   "moonbitlang/core/int",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",

@@ -58,14 +58,6 @@ fn picking_pointer_from_touch_id(touch_id : Int) -> @pointer_events.PointerId {
 }
 
 ///|
-pub fn ensure_pointer_inputs_system(world : @ecs.World) -> Unit {
-  let res = get_pointer_inputs_resource(world)
-  if res.get() is None {
-    res.insert(PointerInputs::default())
-  }
-}
-
-///|
 pub fn ensure_pointer_input_settings_system(world : @ecs.World) -> Unit {
   let res = get_pointer_input_settings_resource(world)
   if res.get() is None {
@@ -75,10 +67,10 @@ pub fn ensure_pointer_input_settings_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
-  let res = get_pointer_inputs_resource(world)
-  guard res.get() is Some(inputs_value) else { return }
-  let inputs = Ref::new(inputs_value)
-  PointerInputs::clear(inputs)
+  if !world.contains_message(pointer_input_message_key()) {
+    return
+  }
+  let writer = world.message_writer(pointer_input_message_key())
   let settings = picking_pointer_input_settings(world)
   if settings.is_mouse_enabled {
     let pointer : @pointer_events.PointerId = 0
@@ -90,10 +82,11 @@ pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
     let just_released = @input.mouse_button_just_released(
       @window.MouseButton::Left,
     )
-    PointerInputs::set(
-      inputs,
-      PointerInput::new(
-        pointer, window_position, down, just_pressed, just_released,
+    ignore(
+      writer.write(
+        PointerInput::new(
+          pointer, window_position, down, just_pressed, just_released,
+        ),
       ),
     )
   }
@@ -107,59 +100,50 @@ pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
       Some(touches) => {
         for touch in touches.iter() {
           let pointer = picking_pointer_from_touch_id(touch.id())
-          PointerInputs::set(
-            inputs,
-            PointerInput::new(
-              pointer,
-              Some(touch.position()),
-              true,
-              false,
-              false,
-            ),
+          let input = PointerInput::new(
+            pointer,
+            Some(touch.position()),
+            true,
+            false,
+            false,
           )
+          ignore(writer.write(input))
         }
         for touch in touches.iter_just_pressed() {
           let pointer = picking_pointer_from_touch_id(touch.id())
-          PointerInputs::set(
-            inputs,
-            PointerInput::new(
-              pointer,
-              Some(touch.position()),
-              true,
-              true,
-              false,
-            ),
+          let input = PointerInput::new(
+            pointer,
+            Some(touch.position()),
+            true,
+            true,
+            false,
           )
+          ignore(writer.write(input))
         }
         for touch in touches.iter_just_released() {
           let pointer = picking_pointer_from_touch_id(touch.id())
-          PointerInputs::set(
-            inputs,
-            PointerInput::new(
-              pointer,
-              Some(touch.position()),
-              false,
-              false,
-              true,
-            ),
+          let input = PointerInput::new(
+            pointer,
+            Some(touch.position()),
+            false,
+            false,
+            true,
           )
+          ignore(writer.write(input))
         }
         for touch in touches.iter_just_canceled() {
           let pointer = picking_pointer_from_touch_id(touch.id())
-          PointerInputs::set(
-            inputs,
-            PointerInput::new(
-              pointer,
-              Some(touch.position()),
-              false,
-              false,
-              true,
-            ),
+          let input = PointerInput::new(
+            pointer,
+            Some(touch.position()),
+            false,
+            false,
+            true,
           )
+          ignore(writer.write(input))
         }
       }
       None => ()
     }
   }
-  res.insert(inputs.val)
 }

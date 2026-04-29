@@ -941,7 +941,13 @@ fn tonemapping_pipeline_for_format(
   )
   for entry in backend.tonemapping_pipeline_cache {
     if entry.key == key {
-      return Some(entry.pipeline)
+      match entry.state {
+        RenderPipelineOk(pipeline) => return Some(pipeline)
+        RenderPipelineErr(message) => {
+          ignore(message)
+          return None
+        }
+      }
     }
   }
   guard backend.tonemapping_pipeline_layout is Some(pipeline_layout) else {
@@ -950,7 +956,16 @@ fn tonemapping_pipeline_for_format(
   let source = load_fullscreen_tonemapping_wgsl_with_defines_required(
     backend,
     tonemapping_pipeline_define_keys(tonemapping_mode, deband_dither),
-  )
+  ) catch {
+    Fatal(message) => {
+      backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
+        key,
+        state: RenderPipelineErr(message),
+      })
+      debug("[renderer] tonemapping pipeline failed: \{message}")
+      return None
+    }
+  }
   let pipeline = create_postprocess_pipeline(
     backend,
     pipeline_layout,
@@ -959,10 +974,19 @@ fn tonemapping_pipeline_for_format(
     "fragment",
     POSTPROCESS_BLEND_MODE_NONE,
     "mgstudio_tonemapping_\{key}",
-  )
+  ) catch {
+    Fatal(message) => {
+      backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
+        key,
+        state: RenderPipelineErr(message),
+      })
+      debug("[renderer] tonemapping pipeline failed: \{message}")
+      return None
+    }
+  }
   backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
     key,
-    pipeline,
+    state: RenderPipelineOk(pipeline),
   })
   Some(pipeline)
 }

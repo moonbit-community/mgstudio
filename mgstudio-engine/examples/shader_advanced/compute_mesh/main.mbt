@@ -86,7 +86,7 @@ fn setup(
     (
       ComputeMeshTarget::{  },
       @pbr.Mesh3d::new(mesh_handle),
-      @pbr.MeshMaterial3d::new(material).with_extension_shader_path(
+      @pbr.MeshMaterial3d::new(material).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),
       @transform.Transform::identity(),

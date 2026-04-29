@@ -29,5 +29,5 @@ pub fn picking_pre_update_sets() -> (
   @app.SystemSet,
   @app.SystemSet,
 ) {
-  (picking_set_input, picking_set_hits, picking_set_events)
+  (picking_set_process_input, picking_set_backend, picking_set_hover)
 }

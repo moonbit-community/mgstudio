@@ -371,11 +371,19 @@ pub fn pbr_mesh_material3d_with_extension_tag(
 }
 
 ///|
-pub fn pbr_mesh_material3d_with_extension_shader_path(
+pub fn pbr_mesh_material3d_with_extension_vertex_shader_path(
   mesh_material : @material.MeshMaterial3d,
   shader_path : String?,
 ) -> @material.MeshMaterial3d {
-  mesh_material.with_extension_shader_path(shader_path)
+  mesh_material.with_extension_vertex_shader_path(shader_path)
+}
+
+///|
+pub fn pbr_mesh_material3d_with_extension_fragment_shader_path(
+  mesh_material : @material.MeshMaterial3d,
+  shader_path : String?,
+) -> @material.MeshMaterial3d {
+  mesh_material.with_extension_fragment_shader_path(shader_path)
 }
 
 ///|

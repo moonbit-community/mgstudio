@@ -272,10 +272,13 @@ fn render3d_prepare_extracted_camera_view_bind_group(
 }
 
 ///|
-fn render3d_material_shader_path_for_extracted_mesh(
+fn render3d_material_shader_paths_for_extracted_mesh(
   extracted_mesh : ExtractedMesh3d,
-) -> String? {
-  extracted_mesh.payload.material_shader_path
+) -> (String?, String?) {
+  (
+    extracted_mesh.payload.material_vertex_shader_path,
+    extracted_mesh.payload.material_fragment_shader_path,
+  )
 }
 
 ///|
@@ -283,15 +286,19 @@ fn render3d_prewarm_mesh_pipelines(meshes : Array[ExtractedMesh3d]) -> Unit {
   let prewarmed_keys : Map[String, Bool] = {}
   for extracted_mesh in meshes {
     let mesh = extracted_mesh.payload
-    let shader_path = render3d_material_shader_path_for_extracted_mesh(
+    let (vertex_shader_path, fragment_shader_path) = render3d_material_shader_paths_for_extracted_mesh(
       extracted_mesh,
     )
-    let shader_key = match shader_path {
+    let vertex_shader_key = match vertex_shader_path {
+      Some(path) => path
+      None => ""
+    }
+    let fragment_shader_key = match fragment_shader_path {
       Some(path) => path
       None => ""
     }
     let cull_mode = @pbr_render.render3d_cull_mode_value(mesh.material, 0)
-    let prewarm_key = "\{mesh.mesh_topology_kind}|\{cull_mode}|\{mesh.is_forward_decal}|\{shader_key}"
+    let prewarm_key = "\{mesh.mesh_topology_kind}|\{cull_mode}|\{mesh.is_forward_decal}|\{vertex_shader_key}|\{fragment_shader_key}"
     if prewarmed_keys.contains(prewarm_key) {
       continue
     }
@@ -299,7 +306,8 @@ fn render3d_prewarm_mesh_pipelines(meshes : Array[ExtractedMesh3d]) -> Unit {
     @render.host_gpu_prewarm_mesh3d_pipeline_variants(
       mesh_topology_kind=mesh.mesh_topology_kind,
       cull_mode~,
-      shader_path~,
+      vertex_shader_path~,
+      fragment_shader_path~,
       forward_decal=mesh.is_forward_decal,
     )
   }
@@ -312,23 +320,26 @@ fn render3d_prepare_shader_asset_paths(
 ) -> Unit {
   let prepared_paths : Map[String, Bool] = {}
   for extracted_mesh in meshes {
-    let shader_path = render3d_material_shader_path_for_extracted_mesh(
+    let (vertex_shader_path, fragment_shader_path) = render3d_material_shader_paths_for_extracted_mesh(
       extracted_mesh,
     )
-    guard shader_path is Some(path) else { continue }
-    if prepared_paths.contains(path) {
-      continue
-    }
-    prepared_paths.set(path, true)
-    if @shader.shader_path_is_wesl(path) {
-      @shader.shader_register_wesl_runtime_source(source_world, path, []) catch {
-        err =>
-          abort(
-            "failed to compile render3d wesl material shader: \{path}: \{err.message()}",
-          )
+    let paths = [vertex_shader_path, fragment_shader_path]
+    for shader_path in paths {
+      guard shader_path is Some(path) else { continue }
+      if prepared_paths.contains(path) {
+        continue
       }
-    } else {
-      @shader.shader_register_wgsl_runtime_source(source_world, path)
+      prepared_paths.set(path, true)
+      if @shader.shader_path_is_wesl(path) {
+        @shader.shader_register_wesl_runtime_source(source_world, path, []) catch {
+          err =>
+            abort(
+              "failed to compile render3d wesl material shader: \{path}: \{err.message()}",
+            )
+        }
+      } else {
+        @shader.shader_register_wgsl_runtime_source(source_world, path)
+      }
     }
   }
 }

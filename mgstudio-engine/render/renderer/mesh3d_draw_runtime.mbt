@@ -94,7 +94,8 @@ pub fn GpuBackend::draw_mesh3d(
   environment_map_rotation_z : Float,
   environment_map_rotation_w : Float,
   cull_mode : Int,
-  shader_path : String?,
+  vertex_shader_path : String?,
+  fragment_shader_path : String?,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
   skinning_matrices? : Array[Float]? = None,
@@ -177,6 +178,7 @@ pub fn GpuBackend::draw_mesh3d(
     anisotropy_strength, anisotropy_rotation, specular_tint_texture_id, specular_tint_r,
     specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
     thickness, ior, alpha_cutoff, material_flags, point_shadow_enabled, point_shadow_depth_bias,
-    cull_mode, shader_path, skinning_key_hi, skinning_key_lo, transparent,
+    cull_mode, vertex_shader_path, fragment_shader_path, skinning_key_hi, skinning_key_lo,
+    transparent,
   )
 }

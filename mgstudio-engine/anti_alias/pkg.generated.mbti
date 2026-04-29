@@ -32,6 +32,8 @@ pub let ecs_key_denoise_cas : @ecs.ComponentKey[@contrast_adaptive_sharpening.De
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 
+pub let ecs_key_mip_bias : @ecs.ComponentKey[@post_process.MipBias]
+
 pub let ecs_key_msaa : @ecs.ComponentKey[@core_3d.Msaa]
 
 pub let ecs_key_smaa : @ecs.ComponentKey[@smaa.Smaa]
@@ -70,6 +72,8 @@ pub using @post_process {type Fxaa}
 pub using @fxaa {type FxaaPlugin}
 
 pub using @post_process {type FxaaSensitivity}
+
+pub using @post_process {type MipBias}
 
 pub using @core_3d {type Msaa}
 

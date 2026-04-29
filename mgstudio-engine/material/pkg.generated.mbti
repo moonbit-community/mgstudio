@@ -13,6 +13,18 @@ import {
 }
 
 // Values
+pub const DEFERRED_FRAGMENT_SHADER_LABEL : String = "DeferredFragmentShader"
+
+pub const DEFERRED_VERTEX_SHADER_LABEL : String = "DeferredVertexShader"
+
+pub const MATERIAL_FRAGMENT_SHADER_LABEL : String = "MaterialFragmentShader"
+
+pub const MATERIAL_VERTEX_SHADER_LABEL : String = "MaterialVertexShader"
+
+pub const PREPASS_FRAGMENT_SHADER_LABEL : String = "PrepassFragmentShader"
+
+pub const PREPASS_VERTEX_SHADER_LABEL : String = "PrepassVertexShader"
+
 pub fn[S : IntoStandardMaterialAsset] add(@asset.Assets[StandardMaterial], S) -> @asset.Handle[StandardMaterial]
 
 pub fn bind_group_layout_entries_sequential(UInt, Array[BindGroupLayoutEntryBuilder]) -> BindGroupLayoutEntries
@@ -24,6 +36,10 @@ pub fn bind_group_layout_entries_with_indices(UInt, Array[(Int, BindGroupLayoutE
 pub fn bind_group_layout_entry_builder(@render_resource.BindingType) -> BindGroupLayoutEntryBuilder
 
 pub fn draw_function_label(String) -> String
+
+pub fn dynamic_bind_group_layout_entries_sequential(UInt, Array[BindGroupLayoutEntryBuilder]) -> DynamicBindGroupLayoutEntries
+
+pub fn dynamic_bind_group_layout_entries_with_indices(UInt, Array[(Int, BindGroupLayoutEntryBuilder)]) -> DynamicBindGroupLayoutEntries
 
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[DefaultOpaqueRendererMethod]
 
@@ -76,10 +92,12 @@ pub(all) enum AlphaMode3d {
   Mask(Float)
   Blend
   Premultiplied
+  AlphaToCoverage
   Add
   Multiply
-  AlphaToCoverage
 }
+pub fn AlphaMode3d::default() -> Self
+pub impl Default for AlphaMode3d
 
 pub struct BindGroupLayoutDescriptor {
   label : String
@@ -87,6 +105,7 @@ pub struct BindGroupLayoutDescriptor {
 }
 pub fn BindGroupLayoutDescriptor::default() -> Self
 pub fn BindGroupLayoutDescriptor::new(String, Array[@render_resource.BindGroupLayoutEntry]) -> Self
+pub impl Default for BindGroupLayoutDescriptor
 
 pub struct BindGroupLayoutEntries {
   entries : Array[@render_resource.BindGroupLayoutEntry]
@@ -132,6 +151,7 @@ pub struct ComputePipelineDescriptor {
   zero_initialize_workgroup_memory : Bool
 }
 pub fn ComputePipelineDescriptor::default() -> Self
+pub impl Default for ComputePipelineDescriptor
 
 #alias(MaterialDefaultOpaqueMethod)
 pub struct DefaultOpaqueRendererMethod {
@@ -145,6 +165,7 @@ pub fn DefaultOpaqueRendererMethod::renderer_method(Self) -> OpaqueRendererMetho
 pub fn DefaultOpaqueRendererMethod::set_to_deferred(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::set_to_forward(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::with_method(Self, OpaqueRendererMethod) -> Self
+pub impl Default for DefaultOpaqueRendererMethod
 
 pub struct DepthStencilState {
   format : UInt
@@ -152,6 +173,8 @@ pub struct DepthStencilState {
   depth_compare : UInt
 }
 pub fn DepthStencilState::default() -> Self
+pub fn DepthStencilState::new(UInt, Bool, UInt) -> Self
+pub impl Default for DepthStencilState
 
 pub struct DrawFunctionId {
   id : UInt
@@ -159,11 +182,20 @@ pub struct DrawFunctionId {
 pub fn DrawFunctionId::id(Self) -> UInt
 pub fn DrawFunctionId::new(UInt) -> Self
 
+pub struct DynamicBindGroupLayoutEntries {
+  default_visibility : UInt
+  entries : Array[@render_resource.BindGroupLayoutEntry]
+}
+pub fn DynamicBindGroupLayoutEntries::entries(Self) -> Array[@render_resource.BindGroupLayoutEntry]
+pub fn DynamicBindGroupLayoutEntries::extend_sequential(Self, Array[BindGroupLayoutEntryBuilder]) -> Self
+pub fn DynamicBindGroupLayoutEntries::extend_with_indices(Self, Array[(Int, BindGroupLayoutEntryBuilder)]) -> Self
+pub fn DynamicBindGroupLayoutEntries::new(UInt) -> Self
+
 pub struct ErasedMaterialKey {
   type_tag : String
   hash : UInt64
   value_json : String
-}
+} derive(Eq, @debug.Debug)
 pub fn ErasedMaterialKey::default() -> Self
 pub fn ErasedMaterialKey::hash(Self) -> UInt64
 pub fn[T : ToJson] ErasedMaterialKey::new(T, String) -> Self
@@ -176,14 +208,17 @@ pub struct ErasedMaterialPipelineKey {
   mesh_key : ErasedMeshPipelineKey
   material_key : ErasedMaterialKey
   type_tag : String
-}
+} derive(Eq, @debug.Debug)
+pub fn ErasedMaterialPipelineKey::material_key(Self) -> ErasedMaterialKey
+pub fn ErasedMaterialPipelineKey::mesh_key(Self) -> ErasedMeshPipelineKey
 pub fn ErasedMaterialPipelineKey::new(ErasedMeshPipelineKey, ErasedMaterialKey, String) -> Self
 pub fn ErasedMaterialPipelineKey::new_untyped(ErasedMeshPipelineKey, ErasedMaterialKey) -> Self
+pub fn ErasedMaterialPipelineKey::type_tag(Self) -> String
 
 pub struct ErasedMeshPipelineKey {
   bits : UInt64
   type_tag : String
-}
+} derive(Eq, @debug.Debug)
 pub fn ErasedMeshPipelineKey::bits(Self) -> UInt64
 pub fn ErasedMeshPipelineKey::default() -> Self
 pub fn ErasedMeshPipelineKey::downcast_u64(Self, String) -> UInt64
@@ -193,7 +228,12 @@ pub fn ErasedMeshPipelineKey::type_tag(Self) -> String
 
 pub struct ExtendedMaterialMetadata3d {
   extension_tag : Int
-  shader_path : String?
+  vertex_shader_path : String?
+  fragment_shader_path : String?
+  prepass_vertex_shader_path : String?
+  prepass_fragment_shader_path : String?
+  deferred_vertex_shader_path : String?
+  deferred_fragment_shader_path : String?
   alpha_mode_override : AlphaMode3d?
   opaque_render_method_override : OpaqueRendererMethod?
   requires_depth_prepass : Bool
@@ -203,12 +243,17 @@ pub struct ExtendedMaterialMetadata3d {
 pub fn ExtendedMaterialMetadata3d::default() -> Self
 pub fn ExtendedMaterialMetadata3d::new(Int) -> Self
 pub fn ExtendedMaterialMetadata3d::with_alpha_mode_override(Self, AlphaMode3d?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_deferred_fragment_shader_path(Self, String?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_deferred_vertex_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_disable_shadows(Self, Bool) -> Self
 pub fn ExtendedMaterialMetadata3d::with_extension_tag(Self, Int) -> Self
+pub fn ExtendedMaterialMetadata3d::with_fragment_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_opaque_render_method_override(Self, OpaqueRendererMethod?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_prepass_fragment_shader_path(Self, String?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_prepass_vertex_shader_path(Self, String?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_requires_deferred_prepass(Self, Bool) -> Self
 pub fn ExtendedMaterialMetadata3d::with_requires_depth_prepass(Self, Bool) -> Self
-pub fn ExtendedMaterialMetadata3d::with_shader_path(Self, String?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_vertex_shader_path(Self, String?) -> Self
 
 pub(all) enum Face3d {
   Front
@@ -231,7 +276,9 @@ pub struct FragmentState {
   targets : Array[ColorTargetState?]
 }
 pub fn FragmentState::default() -> Self
+pub fn FragmentState::new(String?, Array[ShaderDefVal], String?, Array[ColorTargetState?]) -> Self
 pub fn FragmentState::set_target(Self, Int, ColorTargetState) -> Self
+pub impl Default for FragmentState
 
 pub struct MaterialProperties {
   render_method : OpaqueRendererMethod
@@ -270,6 +317,7 @@ pub fn MaterialProperties::with_render_method(Self, OpaqueRendererMethod) -> Sel
 pub fn MaterialProperties::with_render_phase_type(Self, RenderPhaseType) -> Self
 pub fn MaterialProperties::with_shadows_enabled(Self, Bool) -> Self
 pub fn MaterialProperties::with_user_specialize(Self, ((String, RenderPipelineDescriptor, Int, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError)?) -> Self
+pub impl Default for MaterialProperties
 
 #alias(MaterialMesh3dComponent)
 pub struct MeshMaterial3d {
@@ -280,11 +328,12 @@ pub fn MeshMaterial3d::new(@asset.Handle[StandardMaterial]) -> Self
 pub fn MeshMaterial3d::with_extended_material(Self, ExtendedMaterialMetadata3d?) -> Self
 pub fn MeshMaterial3d::with_extension_alpha_mode(Self, AlphaMode3d?) -> Self
 pub fn MeshMaterial3d::with_extension_disable_shadows(Self, Bool) -> Self
+pub fn MeshMaterial3d::with_extension_fragment_shader_path(Self, String?) -> Self
 pub fn MeshMaterial3d::with_extension_opaque_renderer_method(Self, OpaqueRendererMethod?) -> Self
 pub fn MeshMaterial3d::with_extension_requires_deferred_prepass(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_requires_depth_prepass(Self, Bool) -> Self
-pub fn MeshMaterial3d::with_extension_shader_path(Self, String?) -> Self
 pub fn MeshMaterial3d::with_extension_tag(Self, Int) -> Self
+pub fn MeshMaterial3d::with_extension_vertex_shader_path(Self, String?) -> Self
 pub impl @ecs.Component for MeshMaterial3d
 pub impl ToJson for MeshMaterial3d
 pub impl @json.FromJson for MeshMaterial3d
@@ -295,6 +344,7 @@ pub struct MultisampleState {
   alpha_to_coverage_enabled : Bool
 }
 pub fn MultisampleState::default() -> Self
+pub impl Default for MultisampleState
 
 pub(all) enum OpaqueRendererMethod {
   Forward
@@ -303,6 +353,7 @@ pub(all) enum OpaqueRendererMethod {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn OpaqueRendererMethod::default() -> Self
 pub fn OpaqueRendererMethod::resolve_runtime(Self, Self) -> Self
+pub impl Default for OpaqueRendererMethod
 
 pub(all) enum ParallaxMappingMethod {
   Occlusion
@@ -323,6 +374,7 @@ pub struct PrimitiveState {
   cull_mode : UInt?
 }
 pub fn PrimitiveState::default() -> Self
+pub impl Default for PrimitiveState
 
 #alias(MaterialRenderPhaseType)
 pub(all) enum RenderPhaseType {
@@ -332,6 +384,7 @@ pub(all) enum RenderPhaseType {
   Transparent
 }
 pub fn RenderPhaseType::default() -> Self
+pub impl Default for RenderPhaseType
 
 pub struct RenderPipelineDescriptor {
   label : String?
@@ -347,6 +400,12 @@ pub struct RenderPipelineDescriptor {
 pub fn RenderPipelineDescriptor::default() -> Self
 pub fn RenderPipelineDescriptor::fragment_or_error(Self) -> FragmentState raise NoFragmentStateError
 pub fn RenderPipelineDescriptor::set_layout(Self, Int, BindGroupLayoutDescriptor) -> Self
+pub fn RenderPipelineDescriptor::with_depth_stencil(Self, DepthStencilState?) -> Self
+pub fn RenderPipelineDescriptor::with_fragment(Self, FragmentState?) -> Self
+pub fn RenderPipelineDescriptor::with_label(Self, String?) -> Self
+pub fn RenderPipelineDescriptor::with_layout(Self, Array[BindGroupLayoutDescriptor]) -> Self
+pub fn RenderPipelineDescriptor::with_vertex(Self, VertexState) -> Self
+pub impl Default for RenderPipelineDescriptor
 
 pub(all) enum ShaderDefVal {
   Flag(String)
@@ -441,6 +500,8 @@ pub struct VertexState {
   buffers : Array[Int]
 }
 pub fn VertexState::default() -> Self
+pub fn VertexState::new(String?, Array[ShaderDefVal], String?, Array[Int]) -> Self
+pub impl Default for VertexState
 
 // Type aliases
 pub type BaseSpecializeFn = (@ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError

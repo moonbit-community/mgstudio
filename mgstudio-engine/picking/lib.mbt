@@ -47,6 +47,50 @@ pub impl @ecs.Component for Pickable with component() {
 }
 
 ///|
+/// Optional marker for cameras that may be used by sprite picking when
+/// `SpritePickingSettings.require_markers` is enabled.
+pub struct SpritePickingCamera {} derive(Eq, Debug, ToJson, FromJson)
+
+///|
+pub impl @ecs.Component for SpritePickingCamera with component() {
+  ecs_key_sprite_picking_camera
+}
+
+///|
+/// How sprite picking should treat transparent pixels.
+pub(all) enum SpritePickingMode {
+  BoundingBox
+  AlphaThreshold(Float)
+} derive(Debug)
+
+///|
+pub struct SpritePickingSettings {
+  require_markers : Bool
+  picking_mode : SpritePickingMode
+} derive(Debug)
+
+///|
+pub fn SpritePickingSettings::default() -> SpritePickingSettings {
+  SpritePickingSettings::{
+    require_markers: false,
+    picking_mode: AlphaThreshold(0.1F),
+  }
+}
+
+///|
+pub fn SpritePickingSettings::new(
+  require_markers : Bool,
+  picking_mode : SpritePickingMode,
+) -> SpritePickingSettings {
+  SpritePickingSettings::{ require_markers, picking_mode }
+}
+
+///|
+pub impl @app.Resource for SpritePickingSettings with resource() {
+  ecs_res_key_sprite_picking_settings
+}
+
+///|
 pub struct PickingSettings {
   is_enabled : Bool
   is_input_enabled : Bool
@@ -99,19 +143,48 @@ pub fn picking_window_picking_should_run(world : @ecs.World) -> Bool {
 pub let picking_set : @app.SystemSet = @app.system_set("mgstudio.picking")
 
 ///|
-pub let picking_set_input : @app.SystemSet = @app.system_set(
+pub let picking_set_input_stage : @app.SystemSet = @app.system_set(
   "mgstudio.picking.input",
 )
 
 ///|
-pub let picking_set_hits : @app.SystemSet = @app.system_set(
-  "mgstudio.picking.hits",
+pub let picking_set_post_input : @app.SystemSet = @app.system_set(
+  "mgstudio.picking.post_input",
 )
 
 ///|
-pub let picking_set_events : @app.SystemSet = @app.system_set(
-  "mgstudio.picking.events",
+pub let picking_set_process_input : @app.SystemSet = @app.system_set(
+  "mgstudio.picking.process_input",
 )
+
+///|
+pub let picking_set_backend : @app.SystemSet = @app.system_set(
+  "mgstudio.picking.backend",
+)
+
+///|
+pub let picking_set_hover : @app.SystemSet = @app.system_set(
+  "mgstudio.picking.hover",
+)
+
+///|
+pub let picking_set_post_hover : @app.SystemSet = @app.system_set(
+  "mgstudio.picking.post_hover",
+)
+
+///|
+pub let picking_set_last : @app.SystemSet = @app.system_set(
+  "mgstudio.picking.last",
+)
+
+///|
+pub let picking_set_input : @app.SystemSet = picking_set_process_input
+
+///|
+pub let picking_set_hits : @app.SystemSet = picking_set_backend
+
+///|
+pub let picking_set_events : @app.SystemSet = picking_set_hover
 
 ///|
 pub fn picking_clear_system(world : @ecs.World) -> Unit {
@@ -121,60 +194,86 @@ pub fn picking_clear_system(world : @ecs.World) -> Unit {
 ///|
 pub fn picking_input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_pre_update_system_config(
-    @app.system(ensure_pointer_inputs_system).in_set(picking_set_input),
+  .add_startup_system_config(@app.system(spawn_mouse_pointer_system))
+  .add_first_system_config(
+    @app.system(ensure_pointer_input_settings_system).in_set(
+      picking_set_input_stage,
+    ),
   )
-  .add_pre_update_system_config(
-    @app.system(ensure_pointer_input_settings_system).in_set(picking_set_input),
-  )
-  .add_pre_update_system_config(
+  .add_first_system_config(
     @app.system(picking_collect_mouse_system)
     .run_if(picking_input_should_run)
-    .in_set(picking_set_input),
+    .in_set(picking_set_input_stage),
   )
+  .configure_set(@app.First, picking_set_input_stage, before=[
+    picking_set_post_input,
+  ])
+  .configure_set(@app.First, picking_set_post_input, after=[
+    picking_set_input_stage,
+  ])
 }
 
 ///|
 pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .init_resource(() => PickingSettings::default())
+  .init_resource(() => SpritePickingSettings::default())
+  .add_message(pointer_input_message_key())
+  .add_message(pointer_hits_message_key())
   .add_pre_update_system_config(
-    @app.system(picking_clear_system).in_set(picking_set_input),
+    @app.system(picking_clear_system).in_set(picking_set_process_input),
   )
   .add_pre_update_system_config(
-    @app.system(ensure_picking_hits_system).in_set(picking_set_input),
+    @app.system(picking_process_pointer_inputs_system).in_set(
+      picking_set_process_input,
+    ),
   )
   .add_pre_update_system_config(
-    @app.system(picking_ui_hit_test_system).in_set(picking_set_hits),
+    @app.system(picking_ui_hit_test_system).in_set(picking_set_backend),
   )
   .add_pre_update_system_config(
-    @app.system(picking_sprite2d_hit_test_system).in_set(picking_set_hits),
+    @app.system(picking_sprite2d_hit_test_system).in_set(picking_set_backend),
   )
   .add_pre_update_system_config(
-    @app.system(picking_mesh3d_hit_test_system).in_set(picking_set_hits),
+    @app.system(picking_mesh3d_hit_test_system).in_set(picking_set_backend),
   )
   .add_pre_update_system_config(
     @app.system(picking_window_hit_test_system)
     .run_if(picking_window_picking_should_run)
-    .in_set(picking_set_hits),
+    .in_set(picking_set_backend),
   )
   .add_pre_update_system_config(
-    @app.system(ensure_picking_state_system).in_set(picking_set_events),
+    @app.system(ensure_picking_state_system).in_set(picking_set_hover),
+  )
+  .add_pre_update_system_config(
+    @app.system(ensure_hover_maps_system).in_set(picking_set_hover),
   )
   .configure_set(
     @app.PreUpdate,
-    picking_set_input,
+    picking_set_process_input,
     after=[@input.input_systems_set],
-    before=[picking_set_hits],
+    before=[picking_set_backend],
   )
   .configure_set(
     @app.PreUpdate,
-    picking_set_hits,
-    after=[picking_set_input, @transform.transform_set_propagate],
-    before=[picking_set_events],
+    picking_set_backend,
+    after=[picking_set_process_input, @transform.transform_set_propagate],
+    before=[picking_set_hover],
   )
-  .configure_set(@app.PreUpdate, picking_set_events, after=[
-    picking_set_hits, @a11y.a11y_set, @ui.ui_set_focus,
+  .configure_set(
+    @app.PreUpdate,
+    picking_set_hover,
+    after=[picking_set_backend],
+    before=[picking_set_post_hover],
+  )
+  .configure_set(
+    @app.PreUpdate,
+    picking_set_post_hover,
+    after=[picking_set_hover, @a11y.a11y_set, @ui.ui_set_focus],
+    before=[picking_set_last],
+  )
+  .configure_set(@app.PreUpdate, picking_set_last, after=[
+    picking_set_post_hover,
   ])
 }
 
@@ -186,16 +285,19 @@ pub fn picking_interaction_plugin(
   .add_pre_update_system_config(
     @app.system(picking_apply_a11y_actions_system)
     .run_if(picking_hover_should_run)
-    .in_set(picking_set_events),
+    .in_set(picking_set_hover),
+  )
+  .add_pre_update_system_config(
+    @app.system(picking_hover_pipeline_system)
+    .run_if(picking_hover_should_run)
+    .in_set(picking_set_hover),
   )
   .add_pre_update_system_config(
     @app.system(picking_generate_events_system)
     .run_if(picking_hover_should_run)
-    .in_set(picking_set_events),
+    .in_set(picking_set_post_hover),
   )
   .add_pre_update_system_config(
-    @app.system(@app.dispatch_pointer_observers_system).after(
-      picking_set_events,
-    ),
+    @app.system(@app.dispatch_pointer_observers_system).in_set(picking_set_last),
   )
 }

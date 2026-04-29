@@ -98,6 +98,18 @@ fn normalize_shader_rel_path(rel : String) -> String {
 let wgsl_runtime_source_tree_registered : Ref[Bool] = Ref::new(false)
 
 ///|
+let wgsl_renderer_embedded_sources_registered : Ref[Bool] = Ref::new(false)
+
+///|
+fn wgsl_register_renderer_embedded_sources_once() -> Unit {
+  if wgsl_renderer_embedded_sources_registered.val {
+    return
+  }
+  register_embedded_wgsl_sources()
+  wgsl_renderer_embedded_sources_registered.val = true
+}
+
+///|
 fn wgsl_source_scan_options() -> @wgsl.WgslSourceScanOptions {
   @wgsl.WgslSourceScanOptions::{
     recursive: true,
@@ -122,6 +134,7 @@ fn wgsl_register_runtime_source_tree_once() -> Unit {
 
 ///|
 fn wgsl_runtime_composer(assets_base : String) -> @wgsl.Composer {
+  wgsl_register_renderer_embedded_sources_once()
   if assets_base.trim() != "" {
     wgsl_register_runtime_source_tree_once()
   }
@@ -131,6 +144,7 @@ fn wgsl_runtime_composer(assets_base : String) -> @wgsl.Composer {
 
 ///|
 fn wgsl_runtime_composer_with_source_tree() -> @wgsl.Composer {
+  wgsl_register_renderer_embedded_sources_once()
   wgsl_register_runtime_source_tree_once()
   @wgsl.Composer::from_registered_wgsl_source_registry()
 }
@@ -145,6 +159,7 @@ fn[T] raise_composer_error(
 ///|
 pub fn clear_registered_wgsl_source_registry() -> Unit {
   @wgsl.clear_registered_wgsl_source_registry()
+  wgsl_renderer_embedded_sources_registered.val = false
   wgsl_runtime_source_tree_registered.val = false
 }
 
@@ -205,6 +220,8 @@ fn wgsl_compose_options(
     defines,
     value_defines,
     redirects: [],
+    additional_imports: [],
+    preserve_imported_entry_points: true,
   }
 }
 

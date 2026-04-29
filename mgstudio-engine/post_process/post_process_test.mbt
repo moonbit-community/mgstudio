@@ -19,7 +19,9 @@ test "post_process boundary re-exports bloom and tonemapping APIs" {
   let tonemapping = @post_process.Tonemapping::default()
   debug_inspect(
     tonemapping.to_json().to_string(),
-    content="String(\"TonyMcMapface\")",
+    content=(
+      #|"String(\"TonyMcMapface\")"
+    ),
   )
   debug_inspect(
     @post_process.DebandDither::default() == Disabled,
@@ -33,4 +35,16 @@ test "post_process boundary re-exports fxaa and ssao APIs" {
   debug_inspect(fxaa.enabled, content="true")
   let ssao = @post_process.ScreenSpaceAmbientOcclusion::default()
   debug_inspect(ssao.constant_object_thickness.to_double(), content="0.25")
+}
+
+///|
+test "post_process mip bias mirrors Bevy default" {
+  debug_inspect(
+    @post_process.MipBias::default().value().to_double(),
+    content="-1",
+  )
+  debug_inspect(
+    @post_process.MipBias::new(-0.5F).value().to_double(),
+    content="-0.5",
+  )
 }

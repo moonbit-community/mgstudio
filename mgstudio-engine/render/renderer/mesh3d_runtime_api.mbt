@@ -577,14 +577,21 @@ pub fn downsample_mesh3d_depth_pyramid(
 pub fn prewarm_mesh3d_pipeline_variants(
   mesh_topology_kind~ : Int,
   cull_mode~ : Int,
-  shader_path~ : String?,
+  vertex_shader_path~ : String?,
+  fragment_shader_path~ : String?,
   forward_decal~ : Bool,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     let topology = mesh3d_topology_from_kind(mesh_topology_kind)
+    let opaque_blend_kind = MESH3D_PIPELINE_BLEND_OPAQUE
+    let transparent_flags = MESH3D_SHADOW_ALPHA_MODE_BLEND
+    let transparent_blend_kind = mesh3d_blend_kind_from_material_flags(
+      transparent_flags, true,
+    )
     ignore(
       mesh3d_pipeline_for_current_pass(
-        backend, false, 0U, forward_decal, topology, cull_mode, shader_path, false,
+        backend, false, 0U, forward_decal, topology, cull_mode, vertex_shader_path,
+        fragment_shader_path, false,
       ),
     ) catch {
       Fatal(message) =>
@@ -600,7 +607,8 @@ pub fn prewarm_mesh3d_pipeline_variants(
         forward_decal,
         topology,
         cull_mode,
-        shader_path,
+        vertex_shader_path,
+        fragment_shader_path,
         false,
       ),
     ) catch {
@@ -608,6 +616,74 @@ pub fn prewarm_mesh3d_pipeline_variants(
         debug(
           "[renderer] prewarm_mesh3d_pipeline_variants(transparent): Fatal(\{message})",
         )
+    }
+    match backend.surface_format {
+      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+        let resolved_vertex_shader_path = mesh3d_vertex_shader_path_or_default(
+          vertex_shader_path,
+        )
+        let resolved_fragment_shader_path = mesh3d_fragment_shader_path_or_default(
+          fragment_shader_path,
+        )
+        if resolved_vertex_shader_path != MESH3D_FORWARD_VERTEX_SHADER_PATH ||
+          resolved_fragment_shader_path != MESH3D_FORWARD_SHADER_PATH {
+          ignore(
+            mesh3d_custom_pipeline_get_or_create(
+              backend,
+              resolved_vertex_shader_path,
+              resolved_fragment_shader_path,
+              Some(format),
+              topology,
+              false,
+              opaque_blend_kind,
+              forward_decal,
+              cull_mode,
+            ),
+          ) catch {
+            Fatal(message) =>
+              debug(
+                "[renderer] prewarm_mesh3d_pipeline_variants(surface opaque): Fatal(\{message})",
+              )
+          }
+          ignore(
+            mesh3d_custom_pipeline_get_or_create(
+              backend,
+              resolved_vertex_shader_path,
+              resolved_fragment_shader_path,
+              Some(format),
+              topology,
+              true,
+              transparent_blend_kind,
+              forward_decal,
+              cull_mode,
+            ),
+          ) catch {
+            Fatal(message) =>
+              debug(
+                "[renderer] prewarm_mesh3d_pipeline_variants(surface transparent): Fatal(\{message})",
+              )
+          }
+        } else {
+          ensure_mesh3d_pipeline_surface(
+            backend, format, topology, cull_mode, opaque_blend_kind, false, forward_decal,
+          ) catch {
+            Fatal(message) =>
+              debug(
+                "[renderer] prewarm_mesh3d_pipeline_variants(surface opaque): Fatal(\{message})",
+              )
+          }
+          ensure_mesh3d_pipeline_surface(
+            backend, format, topology, cull_mode, transparent_blend_kind, false,
+            forward_decal,
+          ) catch {
+            Fatal(message) =>
+              debug(
+                "[renderer] prewarm_mesh3d_pipeline_variants(surface transparent): Fatal(\{message})",
+              )
+          }
+        }
+      }
+      _ => ()
     }
   }
 }
@@ -732,7 +808,8 @@ pub fn draw_mesh3d(
   environment_map_rotation_z? : Float = 0.0F,
   environment_map_rotation_w? : Float = 1.0F,
   cull_mode~ : Int,
-  shader_path? : String? = None,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
@@ -819,7 +896,8 @@ pub fn draw_mesh3d(
       environment_map_rotation_z,
       environment_map_rotation_w,
       cull_mode,
-      shader_path,
+      vertex_shader_path,
+      fragment_shader_path,
       skinning_key_hi,
       skinning_key_lo,
       skinning_matrices~,

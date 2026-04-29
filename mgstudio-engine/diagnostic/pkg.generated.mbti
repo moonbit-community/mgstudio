@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/time",
   "moonbitlang/core/debug",
+  "moonbitlang/core/deque",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
@@ -121,7 +122,7 @@ pub fn update_frame_count(@app.ResMut[FrameCount]) -> Unit
 pub struct Diagnostic {
   path : DiagnosticPath
   suffix : String
-  history : Array[DiagnosticMeasurement]
+  history : @deque.Deque[DiagnosticMeasurement]
   mut sum : Float
   mut ema : Float
   ema_smoothing_factor : Float

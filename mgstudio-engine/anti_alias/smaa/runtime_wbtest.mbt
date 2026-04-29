@@ -40,3 +40,107 @@ test "anti_alias/smaa: runtime state counts only camera entities with Smaa" {
   debug_inspect(runtime.enabled_camera_count, content="1")
   debug_inspect(runtime.runtime_supported, content="false")
 }
+
+///|
+test "anti_alias/smaa: plugin registers embedded wgsl source" {
+  let _app = @app.App::new(@ecs.World::new()).add_plugins(SmaaPlugin::default())
+  let source = match @wgsl.registered_wgsl_source("anti_alias/smaa/smaa.wgsl") {
+    Some(source) => source
+    None => ""
+  }
+  debug_inspect(
+    source.contains("fn edge_detection_vertex_main"),
+    content="true",
+  )
+}
+
+///|
+test "anti_alias/smaa: plugin registers Bevy lookup table assets" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(SmaaPlugin::default())
+  debug_inspect(
+    try! (app.world().get_resource(ecs_key_smaa_luts) is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    smaa_embedded_lut_registered("anti_alias/smaa/SMAAAreaLUT.ktx2"),
+    content="true",
+  )
+  debug_inspect(
+    smaa_embedded_lut_registered("anti_alias/smaa/SMAASearchLUT.ktx2"),
+    content="true",
+  )
+}
+
+///|
+test "anti_alias/smaa: preset shader defs and uniform metrics mirror Bevy" {
+  debug_inspect(
+    SmaaPreset::Low.shader_def(),
+    content=(
+      #|"SMAA_PRESET_LOW"
+    ),
+  )
+  debug_inspect(
+    SmaaPreset::Medium.shader_def(),
+    content=(
+      #|"SMAA_PRESET_MEDIUM"
+    ),
+  )
+  debug_inspect(
+    SmaaPreset::High.shader_def(),
+    content=(
+      #|"SMAA_PRESET_HIGH"
+    ),
+  )
+  debug_inspect(
+    SmaaPreset::Ultra.shader_def(),
+    content=(
+      #|"SMAA_PRESET_ULTRA"
+    ),
+  )
+  let uniform = SmaaInfoUniform::from_viewport_size(200.0F, 100.0F)
+  debug_inspect(
+    uniform.rt_metrics.equal(@math.Vec4::new(0.005F, 0.01F, 200.0F, 100.0F)),
+    content="true",
+  )
+}
+
+///|
+test "anti_alias/smaa: pipeline descriptors mirror Bevy pass layout" {
+  let pipelines = init_smaa_pipelines()
+  let edge = pipelines.edge_detection.specialize(SmaaPreset::High)
+  let blend = pipelines.blending_weight_calculation.specialize(
+    SmaaPreset::Medium,
+  )
+  let neighborhood = pipelines.neighborhood_blending.specialize(SmaaNeighborhoodBlendingPipelineKey::{
+    texture_format: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    preset: SmaaPreset::Ultra,
+  })
+  inspect(edge.label, content="Some(\"SMAA edge detection\")")
+  inspect(edge.layout.length(), content="2")
+  inspect(edge.layout[0].label, content="SMAA postprocess bind group layout")
+  inspect(edge.layout[0].entries.length(), content="2")
+  inspect(edge.layout[1].entries.length(), content="1")
+  inspect(
+    edge.vertex.entry_point,
+    content="Some(\"edge_detection_vertex_main\")",
+  )
+  inspect(
+    edge.fragment.unwrap().entry_point,
+    content="Some(\"luma_edge_detection_fragment_main\")",
+  )
+  inspect(edge.fragment.unwrap().targets[0].unwrap().format, content="8")
+  inspect(edge.depth_stencil.unwrap().format, content="38")
+  inspect(
+    blend.fragment.unwrap().entry_point,
+    content="Some(\"blending_weight_calculation_fragment_main\")",
+  )
+  inspect(blend.layout[1].entries.length(), content="4")
+  inspect(
+    neighborhood.fragment.unwrap().entry_point,
+    content="Some(\"neighborhood_blending_fragment_main\")",
+  )
+  inspect(
+    neighborhood.fragment.unwrap().targets[0].unwrap().format,
+    content="18",
+  )
+}

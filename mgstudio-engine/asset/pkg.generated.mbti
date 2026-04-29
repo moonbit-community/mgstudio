@@ -301,8 +301,14 @@ pub(all) enum AssetEvent[T] {
   Added(Handle[T])
   Modified(Handle[T])
   Removed(Handle[T])
+  Unused(Handle[T])
   LoadedWithDependencies(Handle[T])
 }
+pub fn[T] AssetEvent::is_added(Self[T], Handle[T]) -> Bool
+pub fn[T] AssetEvent::is_loaded_with_dependencies(Self[T], Handle[T]) -> Bool
+pub fn[T] AssetEvent::is_modified(Self[T], Handle[T]) -> Bool
+pub fn[T] AssetEvent::is_removed(Self[T], Handle[T]) -> Bool
+pub fn[T] AssetEvent::is_unused(Self[T], Handle[T]) -> Bool
 pub impl[T] @ecs.Message for AssetEvent[T]
 
 pub struct AssetId[_] {
@@ -607,6 +613,8 @@ pub struct TextureAtlas {
   layout : Handle[TextureAtlasLayout]
   index : Int
 }
+pub fn TextureAtlas::index(Self) -> Int
+pub fn TextureAtlas::layout(Self) -> Handle[TextureAtlasLayout]
 pub fn TextureAtlas::new(Handle[TextureAtlasLayout], Int) -> Self
 pub fn TextureAtlas::texture_rect(Self, Assets[TextureAtlasLayout]) -> @math.URect?
 pub fn TextureAtlas::with_index(Self, Int) -> Self
@@ -639,6 +647,7 @@ pub fn TextureAtlasLayout::from_grid(@math.UVec2, Int, Int, padding? : @math.UVe
 pub fn TextureAtlasLayout::is_empty(Self) -> Bool
 pub fn TextureAtlasLayout::len(Self) -> Int
 pub fn TextureAtlasLayout::new_empty(@math.UVec2) -> Self
+pub fn TextureAtlasLayout::texture(Self, Int) -> @math.URect?
 
 pub struct TextureAtlasSources {
   texture_ids : Array[(Handle[@image.Image], Int)]

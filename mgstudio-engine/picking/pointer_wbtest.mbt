@@ -13,46 +13,71 @@
 // limitations under the License.
 
 ///|
-test "picking wb: PointerInputs::set replaces existing pointer entry" {
-  let inputs = Ref::new(PointerInputs::default())
-  PointerInputs::set(
-    inputs,
-    PointerInput::new(0, Some(@math.Vec2::new(1.0F, 2.0F)), true, true, false),
-  )
-  PointerInputs::set(
-    inputs,
-    PointerInput::new(0, Some(@math.Vec2::new(3.0F, 4.0F)), false, false, true),
-  )
-  inspect(inputs.val.pointers.length(), content="1")
-  inspect(inputs.val.pointers[0].pointer, content="0")
-  inspect(
-    inputs.val.pointers[0].window_position.unwrap().x.to_double(),
-    content="3",
-  )
-  inspect(inputs.val.pointers[0].just_released, content="true")
-}
-
-///|
 test "picking wb: collect input honors PointerInputSettings mouse toggle" {
   let world = @ecs.World::new()
   ignore(world.advance_sequence())
-  get_pointer_inputs_resource(world).insert(PointerInputs::default())
+  world.init_message(pointer_input_message_key())
   get_pointer_input_settings_resource(world).insert(
     PointerInputSettings::new(false, false),
   )
   picking_collect_mouse_system(world)
-  let inputs = get_pointer_inputs_resource(world)
-    .get()
-    .unwrap_or(PointerInputs::default())
-  inspect(inputs.pointers.length(), content="0")
+  let cursor = Ref::new(0)
+  let disabled_inputs = try! world
+    .message_reader(pointer_input_message_key(), cursor)
+    .read()
+  inspect(disabled_inputs.length(), content="0")
 
   get_pointer_input_settings_resource(world).insert(
     PointerInputSettings::new(false, true),
   )
   picking_collect_mouse_system(world)
-  let with_mouse = get_pointer_inputs_resource(world)
+  let with_mouse = try! world
+    .message_reader(pointer_input_message_key(), cursor)
+    .read()
+  inspect(with_mouse.length(), content="1")
+  inspect(with_mouse[0].pointer, content="0")
+}
+
+///|
+test "picking wb: PointerInput messages update pointer entity components" {
+  let world = @ecs.World::new()
+  ignore(world.advance_sequence())
+  world.init_message(pointer_input_message_key())
+  world.send_message(
+    pointer_input_message_key(),
+    PointerInput::new(0, Some(@math.Vec2::new(12.0F, 34.0F)), true, true, false),
+  )
+  |> ignore
+  picking_process_pointer_inputs_system(world)
+  let map = get_pointer_map_resource(world)
     .get()
-    .unwrap_or(PointerInputs::default())
-  inspect(with_mouse.pointers.length(), content="1")
-  inspect(with_mouse.pointers[0].pointer, content="0")
+    .unwrap_or(PointerMap::default())
+  let entity = map.get_entity(0).unwrap()
+  let id = (try! world.get_by_key(entity, ecs_key_pointer_id)).unwrap()
+  inspect(id.value(), content="0")
+  let location = (try! world.get_by_key(entity, ecs_key_pointer_location)).unwrap()
+  inspect(location.location().unwrap().x.to_double(), content="12")
+  let press = (try! world.get_by_key(entity, ecs_key_pointer_press)).unwrap()
+  inspect(press.is_primary_pressed(), content="true")
+
+  world.send_message(
+    pointer_input_message_key(),
+    PointerInput::new(
+      0,
+      Some(@math.Vec2::new(12.0F, 35.0F)),
+      false,
+      false,
+      true,
+    ),
+  )
+  |> ignore
+  picking_process_pointer_inputs_system(world)
+  let entity_after = get_pointer_map_resource(world)
+    .get()
+    .unwrap_or(PointerMap::default())
+    .get_entity(0)
+    .unwrap()
+  inspect(entity_after.id == entity.id, content="true")
+  let press_after = (try! world.get_by_key(entity_after, ecs_key_pointer_press)).unwrap()
+  inspect(press_after.is_primary_pressed(), content="false")
 }

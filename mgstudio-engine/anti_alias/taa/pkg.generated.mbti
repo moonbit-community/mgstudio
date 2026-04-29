@@ -4,16 +4,27 @@ package "Milky2018/mgstudio/anti_alias/taa"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/post_process",
   "moonbitlang/core/debug",
 }
 
 // Values
+pub let ecs_key_mip_bias : @ecs.ComponentKey[@post_process.MipBias]
+
 pub let ecs_key_temporal_anti_alias_runtime_state : @ecs.ResourceKey[TemporalAntiAliasRuntimeState]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
 
 pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter]
+
+pub fn install_temporal_anti_alias_required_components() -> Unit
+
+pub fn prepare_taa_jitter(@ecs.World) -> Unit
+
+pub fn register_embedded_wgsl_sources() -> Unit
+
+pub fn temporal_anti_alias_halton_offset(Int) -> @math.Vec2
 
 pub fn temporal_anti_alias_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -37,6 +48,8 @@ pub fn TemporalAntiAliasRuntimeState::default() -> Self
 pub impl @app.Resource for TemporalAntiAliasRuntimeState
 
 // Type aliases
+pub using @post_process {type MipBias}
+
 pub using @post_process {type TemporalAntiAliasing}
 
 pub using @post_process {type TemporalJitter}

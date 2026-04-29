@@ -42,49 +42,6 @@ pub fn AnimationWeights::values(self : AnimationWeights) -> Array[Float] {
 }
 
 ///|
-fn animation_weights_accumulate(
-  accum : Array[Float],
-  values : Array[Float],
-  weight : Float,
-) -> Unit {
-  let mut i = 0
-  while i < values.length() {
-    if i >= accum.length() {
-      accum.push(0.0F)
-    }
-    accum[i] = accum[i] + values[i] * weight
-    i = i + 1
-  }
-}
-
-///|
-fn animation_weights_blend(
-  base : Array[Float],
-  accum : Array[Float],
-  total_weight : Float,
-) -> Array[Float] {
-  let base_weight = animation_saturate(1.0F - total_weight)
-  let len = if base.length() > accum.length() {
-    base.length()
-  } else {
-    accum.length()
-  }
-  let out : Array[Float] = []
-  for i in 0..<len {
-    let base_value = match base.get(i) {
-      Some(value) => value * base_weight
-      None => 0.0F
-    }
-    let accum_value = match accum.get(i) {
-      Some(value) => value
-      None => 0.0F
-    }
-    out.push(base_value + accum_value)
-  }
-  out
-}
-
-///|
 pub fn animation_weights(values : Array[Float]) -> AnimationWeights {
   AnimationWeights::new(values)
 }

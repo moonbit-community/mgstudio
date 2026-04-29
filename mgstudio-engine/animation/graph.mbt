@@ -52,7 +52,7 @@ pub struct AnimationGraphNode {
   node_type : AnimationNodeType
   mut mask : AnimationMask
   mut weight : Float
-  parent : AnimationNodeIndex?
+  parents : Array[AnimationNodeIndex]
   children : Array[AnimationNodeIndex]
 }
 
@@ -121,9 +121,9 @@ fn animation_graph_node_new(
   node_type : AnimationNodeType,
   mask : AnimationMask,
   weight : Float,
-  parent : AnimationNodeIndex?,
+  parents : Array[AnimationNodeIndex],
 ) -> AnimationGraphNode {
-  AnimationGraphNode::{ node_type, mask, weight, parent, children: [] }
+  AnimationGraphNode::{ node_type, mask, weight, parents, children: [] }
 }
 
 ///|
@@ -139,7 +139,7 @@ pub fn AnimationGraph::new() -> AnimationGraph {
   let root = AnimationNodeIndex::new(0)
   AnimationGraph::{
     root,
-    nodes: [animation_graph_node_new(AnimationNodeType::Blend, 0U, 1.0F, None)],
+    nodes: [animation_graph_node_new(AnimationNodeType::Blend, 0U, 1.0F, [])],
     mask_groups: [],
     target_mask_index_by_key: {},
   }
@@ -278,6 +278,44 @@ fn animation_graph_resolve_parent(
 }
 
 ///|
+fn animation_graph_node_contains(
+  nodes : Array[AnimationNodeIndex],
+  node : AnimationNodeIndex,
+) -> Bool {
+  for current in nodes {
+    if current == node {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn animation_graph_remove_node_ref(
+  nodes : Array[AnimationNodeIndex],
+  node : AnimationNodeIndex,
+) -> Bool {
+  let mut i = 0
+  while i < nodes.length() {
+    if nodes[i] == node {
+      ignore(nodes.remove(i))
+      return true
+    }
+    i = i + 1
+  }
+  false
+}
+
+///|
+fn animation_graph_valid_node(
+  graph : AnimationGraph,
+  node : AnimationNodeIndex,
+) -> Bool {
+  let index = node.index()
+  index >= 0 && index < graph.nodes.length()
+}
+
+///|
 pub fn AnimationGraph::add(
   self : AnimationGraph,
   node_type : AnimationNodeType,
@@ -298,10 +336,52 @@ pub fn AnimationGraph::add_with_mask(
   let resolved_parent = animation_graph_resolve_parent(self, parent)
   let node_index = AnimationNodeIndex::new(self.nodes.length())
   self.nodes.push(
-    animation_graph_node_new(node_type, mask, weight, Some(resolved_parent)),
+    animation_graph_node_new(node_type, mask, weight, [resolved_parent]),
   )
   self.nodes[resolved_parent.index()].children.push(node_index)
   node_index
+}
+
+///|
+pub fn AnimationGraph::add_edge(
+  self : AnimationGraph,
+  from : AnimationNodeIndex,
+  to : AnimationNodeIndex,
+) -> Unit {
+  if !animation_graph_valid_node(self, from) ||
+    !animation_graph_valid_node(self, to) ||
+    from == to {
+    return
+  }
+  let from_index = from.index()
+  let to_index = to.index()
+  if !animation_graph_node_contains(self.nodes[from_index].children, to) {
+    self.nodes[from_index].children.push(to)
+  }
+  if !animation_graph_node_contains(self.nodes[to_index].parents, from) {
+    self.nodes[to_index].parents.push(from)
+  }
+}
+
+///|
+pub fn AnimationGraph::remove_edge(
+  self : AnimationGraph,
+  from : AnimationNodeIndex,
+  to : AnimationNodeIndex,
+) -> Bool {
+  if !animation_graph_valid_node(self, from) ||
+    !animation_graph_valid_node(self, to) {
+    return false
+  }
+  let removed_child = animation_graph_remove_node_ref(
+    self.nodes[from.index()].children,
+    to,
+  )
+  let removed_parent = animation_graph_remove_node_ref(
+    self.nodes[to.index()].parents,
+    from,
+  )
+  removed_child || removed_parent
 }
 
 ///|
@@ -466,13 +546,29 @@ pub fn AnimationGraph::computed_mask(
   self : AnimationGraph,
   node : AnimationNodeIndex,
 ) -> AnimationMask {
-  let mut mask : AnimationMask = 0U
-  let mut cursor = Some(node)
-  while cursor is Some(index) {
-    let i = index.index()
-    guard self.nodes.get(i) is Some(current) else { break }
-    mask = mask | current.mask
-    cursor = current.parent
+  self.computed_mask_from(node, [])
+}
+
+///|
+fn AnimationGraph::computed_mask_from(
+  self : AnimationGraph,
+  node : AnimationNodeIndex,
+  visited : Array[Int],
+) -> AnimationMask {
+  let node_i = node.index()
+  if node_i < 0 || node_i >= self.nodes.length() {
+    return 0U
+  }
+  for seen in visited {
+    if seen == node_i {
+      return 0U
+    }
+  }
+  visited.push(node_i)
+  let current = self.nodes[node_i]
+  let mut mask = current.mask
+  for parent in current.parents {
+    mask = mask | self.computed_mask_from(parent, visited.copy())
   }
   mask
 }
@@ -506,29 +602,49 @@ pub fn AnimationGraph::effective_weight(
   self : AnimationGraph,
   node : AnimationNodeIndex,
 ) -> Float {
-  guard self.get(node) is Some(current_node) else { return 0.0F }
-  let mut result = animation_graph_positive_weight(current_node.weight)
-  let mut cursor = Some(node)
-  while cursor is Some(index) {
-    guard self.get(index) is Some(current) else { break }
-    guard current.parent is Some(parent_index) else { break }
-    guard self.get(parent_index) is Some(parent) else { break }
+  self.effective_weight_from(node, [])
+}
 
-    let parent_weight = animation_graph_positive_weight(parent.weight)
-    match parent.node_type {
+///|
+fn AnimationGraph::effective_weight_from(
+  self : AnimationGraph,
+  node : AnimationNodeIndex,
+  visited : Array[Int],
+) -> Float {
+  let node_i = node.index()
+  if node_i < 0 || node_i >= self.nodes.length() {
+    return 0.0F
+  }
+  for seen in visited {
+    if seen == node_i {
+      return 0.0F
+    }
+  }
+  visited.push(node_i)
+  let current_node = self.nodes[node_i]
+  let node_weight = animation_graph_positive_weight(current_node.weight)
+  if current_node.parents.length() == 0 {
+    return node_weight
+  }
+  let mut result = 0.0F
+  for parent_index in current_node.parents {
+    guard self.get(parent_index) is Some(parent) else { continue }
+    let parent_weight = self.effective_weight_from(parent_index, visited.copy())
+    let contribution = match parent.node_type {
       Blend => {
         let child_weight_sum = animation_graph_child_weight_sum(
           self, parent_index,
         )
         if child_weight_sum <= 0.0F {
-          return 0.0F
+          0.0F
+        } else {
+          node_weight * parent_weight / child_weight_sum
         }
-        result = result * parent_weight / child_weight_sum
       }
-      Add => result = result * parent_weight
-      Clip(_) => result = result * parent_weight
+      Add => node_weight * parent_weight
+      Clip(_) => node_weight * parent_weight
     }
-    cursor = Some(parent_index)
+    result = result + contribution
   }
   result
 }
@@ -539,7 +655,6 @@ priv struct ThreadedAnimationGraph {
   sorted_edge_ranges : Array[(Int, Int)]
   sorted_edges : Array[AnimationNodeIndex]
   computed_masks : Array[AnimationMask]
-  effective_weights : Array[Float]
 }
 
 ///|
@@ -561,18 +676,15 @@ impl @app.Resource for ThreadedAnimationGraphs with resource() {
 fn threaded_animation_graph_new(node_count : Int) -> ThreadedAnimationGraph {
   let sorted_edge_ranges : Array[(Int, Int)] = []
   let computed_masks : Array[AnimationMask] = []
-  let effective_weights : Array[Float] = []
   for _ in 0..<node_count {
     sorted_edge_ranges.push((0, 0))
     computed_masks.push(0U)
-    effective_weights.push(0.0F)
   }
   ThreadedAnimationGraph::{
     threaded_graph: [],
     sorted_edge_ranges,
     sorted_edges: [],
     computed_masks,
-    effective_weights,
   }
 }
 
@@ -582,7 +694,6 @@ fn threaded_animation_graph_clear(threaded : ThreadedAnimationGraph) -> Unit {
   threaded.sorted_edge_ranges.clear()
   threaded.sorted_edges.clear()
   threaded.computed_masks.clear()
-  threaded.effective_weights.clear()
 }
 
 ///|
@@ -594,7 +705,6 @@ fn threaded_animation_graph_init(
   while i < node_count {
     threaded.sorted_edge_ranges.push((0, 0))
     threaded.computed_masks.push(0U)
-    threaded.effective_weights.push(0.0F)
     i = i + 1
   }
 }
@@ -628,7 +738,6 @@ fn threaded_animation_graph_build_from(
   graph : AnimationGraph,
   node_index : AnimationNodeIndex,
   inherited_mask : AnimationMask,
-  parent_multiplier : Float,
 ) -> Unit {
   guard graph.get(node_index) is Some(node) else { return }
   let node_i = node_index.index()
@@ -639,9 +748,6 @@ fn threaded_animation_graph_build_from(
   let node_mask = inherited_mask | node.mask
   threaded.computed_masks[node_i] = node_mask
 
-  let node_weight = animation_graph_positive_weight(node.weight)
-  threaded.effective_weights[node_i] = node_weight * parent_multiplier
-
   let sorted_children = animation_graph_sorted_children(node.children)
   let edge_start = threaded.sorted_edges.length()
   for child in sorted_children {
@@ -649,19 +755,6 @@ fn threaded_animation_graph_build_from(
   }
   let edge_end = threaded.sorted_edges.length()
   threaded.sorted_edge_ranges[node_i] = (edge_start, edge_end)
-
-  let child_multiplier = match node.node_type {
-    Blend => {
-      let child_weight_sum = animation_graph_child_weight_sum(graph, node_index)
-      if child_weight_sum <= 0.0F {
-        0.0F
-      } else {
-        parent_multiplier * node_weight / child_weight_sum
-      }
-    }
-    Add => parent_multiplier * node_weight
-    Clip(_) => parent_multiplier * node_weight
-  }
 
   let mut child_i = sorted_children.length()
   while child_i > 0 {
@@ -671,7 +764,6 @@ fn threaded_animation_graph_build_from(
       graph,
       sorted_children[child_i],
       node_mask,
-      child_multiplier,
     )
   }
   threaded.threaded_graph.push(node_index)
@@ -684,7 +776,7 @@ fn animation_thread_graph_build(
   let threaded = threaded_animation_graph_new(0)
   threaded_animation_graph_clear(threaded)
   threaded_animation_graph_init(threaded, graph.nodes.length())
-  threaded_animation_graph_build_from(threaded, graph, graph.root, 0U, 1.0F)
+  threaded_animation_graph_build_from(threaded, graph, graph.root, 0U)
   threaded
 }
 
@@ -700,7 +792,7 @@ fn thread_animation_graph_rebuild(
   }
   threaded_animation_graph_clear(threaded)
   threaded_animation_graph_init(threaded, graph.nodes.length())
-  threaded_animation_graph_build_from(threaded, graph, graph.root, 0U, 1.0F)
+  threaded_animation_graph_build_from(threaded, graph, graph.root, 0U)
   threaded_graphs.graphs.set(graph_id, threaded)
 }
 
@@ -798,6 +890,7 @@ fn thread_animation_graphs(
         }
       @asset.AssetEvent::Removed(handle) =>
         ignore(threaded_graphs_value.graphs.remove(handle.id()))
+      @asset.AssetEvent::Unused(_) => ()
     }
   }
 }

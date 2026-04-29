@@ -29,6 +29,8 @@ pub fn visibility_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn visibility_propagate_system(@ecs.World) -> Unit
 
+pub let visibility_set_calculate_bounds : String
+
 pub let visibility_set_check_visibility : String
 
 pub let visibility_set_mark_newly_hidden_entities_invisible : String

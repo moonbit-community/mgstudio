@@ -45,7 +45,7 @@ test "render3d: extended material metadata is reflected into extracted propertie
   let material = StandardMaterial::default()
   let extension = @material.ExtendedMaterialMetadata3d::default()
     .with_disable_shadows(true)
-    .with_shader_path(Some("shaders/extended_material.wgsl"))
+    .with_fragment_shader_path(Some("shaders/extended_material.wgsl"))
   let props = render3d_material_properties_for_standard_material(
     material,
     Some(extension),
@@ -54,7 +54,7 @@ test "render3d: extended material metadata is reflected into extracted propertie
   )
   debug_inspect(!props.shadows_enabled, content="true")
   debug_inspect(
-    props.get_shader("material.fragment"),
+    props.get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
     content="Some(\"shaders/extended_material.wgsl\")",
   )
 }

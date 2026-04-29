@@ -639,6 +639,34 @@ test "animation graph: blend/add weights and mask groups" {
 }
 
 ///|
+test "animation graph: Bevy-shaped edge add/remove updates DAG parents" {
+  let clips : @asset.Assets[AnimationClip] = @asset.Assets::new()
+  let clip = clips.add(AnimationClip::new())
+  let graph = AnimationGraph::new()
+  let blend = graph.add_blend(1.0F, graph.root())
+  let leaf = graph.add_clip(clip, 1.0F, blend)
+  let target = AnimationTargetId::from_name("Shared")
+  graph.add_target_to_mask_group(target, 1) |> ignore
+  debug_inspect(graph.add_node_mask_group(blend, 1), content="true")
+  debug_inspect(
+    (graph.computed_mask(leaf) & graph.target_mask(target)) != 0U,
+    content="true",
+  )
+
+  graph.add_edge(graph.root(), leaf)
+  debug_inspect(
+    (graph.computed_mask(leaf) & graph.target_mask(target)) != 0U,
+    content="true",
+  )
+  debug_inspect(graph.remove_edge(blend, leaf), content="true")
+  debug_inspect(graph.remove_edge(blend, leaf), content="false")
+  debug_inspect(
+    (graph.computed_mask(leaf) & graph.target_mask(target)) == 0U,
+    content="true",
+  )
+}
+
+///|
 test "animation clip events: forward and looping intervals" {
   let clip = AnimationClip::new()
     .set_duration(1.0F)
@@ -906,6 +934,63 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
   .world()
   .get_by_key(target_entity, ecs_key_animation_weights)).unwrap()
   debug_inspect(weights.values(), content="[0.5, 0.5]")
+}
+
+///|
+test "animation runtime: evaluator stack overwrites animated fields like Bevy" {
+  let default_time : @time.Time[Unit] = @time.Time::default()
+  let mut app = @app.App::new(@ecs.World::new())
+    .insert_resource(default_time)
+    .add_plugins(AnimationPlugin::default())
+  let world = app.world()
+  let player_entity = world.spawn()
+  let target_entity = world.spawn()
+  let target_id = AnimationTargetId::from_name("Hip")
+  let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
+  let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
+  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
+  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+
+  let clip = AnimationClip::new().add_translation_curve(target_id, [
+    KeyframeVec3::new(0.0F, @math.Vec3::new(2.0F, 0.0F, 0.0F)),
+  ])
+  let clip_handle = clip_assets.add(clip)
+  let (graph, node) = AnimationGraph::from_clip(clip_handle)
+  let graph_handle = graph_assets.add(graph)
+  let player = AnimationPlayer::default()
+  player.play(node).set_weight(0.25F) |> ignore
+
+  try! world.set_by_key(player_entity, ecs_key_animation_player, player)
+  try! world.set_by_key(
+    player_entity,
+    ecs_key_animation_graph_handle,
+    AnimationGraphHandle::new(graph_handle),
+  )
+  try! world.set_by_key(target_entity, ecs_key_animation_target_id, target_id)
+  try! world.set_by_key(
+    target_entity,
+    ecs_key_animated_by,
+    AnimatedBy::new(player_entity),
+  )
+  try! world.set_by_key(
+    target_entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::new(
+      @math.Vec3::new(10.0F, 0.0F, 0.0F),
+      @math.Quat::identity(),
+      @math.Vec3::splat(1.0F),
+    ),
+  )
+
+  app = app.run_once()
+
+  let transform = (try! app
+  .world()
+  .get_by_key(target_entity, @transform.ecs_key_transform)).unwrap()
+  debug_inspect(
+    approx_eq_animation(transform.translation.x, 2.0F),
+    content="true",
+  )
 }
 
 ///|

@@ -72,6 +72,9 @@ pub type TemporalAntiAliasing = @post_process.TemporalAntiAliasing
 pub type TemporalJitter = @post_process.TemporalJitter
 
 ///|
+pub type MipBias = @post_process.MipBias
+
+///|
 pub type Smaa = @smaa.Smaa
 
 ///|
@@ -130,6 +133,9 @@ pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
 
 ///|
 pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @post_process.ecs_key_temporal_jitter
+
+///|
+pub let ecs_key_mip_bias : @ecs.ComponentKey[MipBias] = @post_process.ecs_key_mip_bias
 
 ///|
 pub let ecs_key_smaa : @ecs.ComponentKey[Smaa] = @smaa.Smaa::component()

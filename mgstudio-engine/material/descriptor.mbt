@@ -27,6 +27,11 @@ pub fn BindGroupLayoutDescriptor::default() -> BindGroupLayoutDescriptor {
 }
 
 ///|
+pub impl Default for BindGroupLayoutDescriptor with default() {
+  BindGroupLayoutDescriptor::default()
+}
+
+///|
 pub fn BindGroupLayoutDescriptor::new(
   label : String,
   entries : Array[@render_resource.BindGroupLayoutEntry],
@@ -57,6 +62,21 @@ pub struct VertexState {
 ///|
 pub fn VertexState::default() -> VertexState {
   VertexState::{ shader: None, shader_defs: [], entry_point: None, buffers: [] }
+}
+
+///|
+pub fn VertexState::new(
+  shader : String?,
+  shader_defs : Array[ShaderDefVal],
+  entry_point : String?,
+  buffers : Array[VertexBufferLayout],
+) -> VertexState {
+  VertexState::{ shader, shader_defs, entry_point, buffers }
+}
+
+///|
+pub impl Default for VertexState with default() {
+  VertexState::default()
 }
 
 ///|
@@ -92,6 +112,21 @@ pub fn FragmentState::default() -> FragmentState {
 }
 
 ///|
+pub fn FragmentState::new(
+  shader : String?,
+  shader_defs : Array[ShaderDefVal],
+  entry_point : String?,
+  targets : Array[ColorTargetState?],
+) -> FragmentState {
+  FragmentState::{ shader, shader_defs, entry_point, targets }
+}
+
+///|
+pub impl Default for FragmentState with default() {
+  FragmentState::default()
+}
+
+///|
 pub struct PrimitiveState {
   topology : UInt
   front_face : UInt
@@ -105,6 +140,11 @@ pub fn PrimitiveState::default() -> PrimitiveState {
     front_face: @wgpu.FRONT_FACE_CCW,
     cull_mode: Some(@wgpu.CULL_MODE_BACK),
   }
+}
+
+///|
+pub impl Default for PrimitiveState with default() {
+  PrimitiveState::default()
 }
 
 ///|
@@ -124,6 +164,20 @@ pub fn DepthStencilState::default() -> DepthStencilState {
 }
 
 ///|
+pub fn DepthStencilState::new(
+  format : UInt,
+  depth_write_enabled : Bool,
+  depth_compare : UInt,
+) -> DepthStencilState {
+  DepthStencilState::{ format, depth_write_enabled, depth_compare }
+}
+
+///|
+pub impl Default for DepthStencilState with default() {
+  DepthStencilState::default()
+}
+
+///|
 pub struct MultisampleState {
   count : UInt
   mask : UInt64
@@ -137,6 +191,11 @@ pub fn MultisampleState::default() -> MultisampleState {
     mask: 0xffffffffffffffffUL,
     alpha_to_coverage_enabled: false,
   }
+}
+
+///|
+pub impl Default for MultisampleState with default() {
+  MultisampleState::default()
 }
 
 ///|
@@ -165,6 +224,51 @@ pub fn RenderPipelineDescriptor::default() -> RenderPipelineDescriptor {
     fragment: None,
     zero_initialize_workgroup_memory: true,
   }
+}
+
+///|
+pub impl Default for RenderPipelineDescriptor with default() {
+  RenderPipelineDescriptor::default()
+}
+
+///|
+pub fn RenderPipelineDescriptor::with_label(
+  self : RenderPipelineDescriptor,
+  label : String?,
+) -> RenderPipelineDescriptor {
+  RenderPipelineDescriptor::{ ..self, label, }
+}
+
+///|
+pub fn RenderPipelineDescriptor::with_layout(
+  self : RenderPipelineDescriptor,
+  layout : Array[BindGroupLayoutDescriptor],
+) -> RenderPipelineDescriptor {
+  RenderPipelineDescriptor::{ ..self, layout, }
+}
+
+///|
+pub fn RenderPipelineDescriptor::with_vertex(
+  self : RenderPipelineDescriptor,
+  vertex : VertexState,
+) -> RenderPipelineDescriptor {
+  RenderPipelineDescriptor::{ ..self, vertex, }
+}
+
+///|
+pub fn RenderPipelineDescriptor::with_fragment(
+  self : RenderPipelineDescriptor,
+  fragment : FragmentState?,
+) -> RenderPipelineDescriptor {
+  RenderPipelineDescriptor::{ ..self, fragment, }
+}
+
+///|
+pub fn RenderPipelineDescriptor::with_depth_stencil(
+  self : RenderPipelineDescriptor,
+  depth_stencil : DepthStencilState?,
+) -> RenderPipelineDescriptor {
+  RenderPipelineDescriptor::{ ..self, depth_stencil, }
 }
 
 ///|
@@ -204,6 +308,11 @@ pub fn ComputePipelineDescriptor::default() -> ComputePipelineDescriptor {
     entry_point: None,
     zero_initialize_workgroup_memory: true,
   }
+}
+
+///|
+pub impl Default for ComputePipelineDescriptor with default() {
+  ComputePipelineDescriptor::default()
 }
 
 ///|

@@ -53,13 +53,31 @@ pub struct RenderAssets[A] {
 }
 
 ///|
-fn render_assets_debug_name() -> String {
-  "mgstudio.render.RenderAssets"
-}
+let render_assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
 
 ///|
 pub fn[A] RenderAssets::resource() -> @ecs.ResourceKey[RenderAssets[A]] {
-  @ecs.register_resource(debug_name=render_assets_debug_name())
+  let probe : RenderAssets[A] = RenderAssets::new()
+  let type_name = @any.of(probe).type_name()
+  match render_assets_resource_registry.val.get(type_name) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "render assets resource registry contained a mismatched key for \{type_name}",
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[RenderAssets[A]] = @ecs.register_resource(
+        debug_name="mgstudio_render::RenderAssets<\{type_name}>",
+      )
+      render_assets_resource_registry.val.set(type_name, @any.of(key))
+      key
+    }
+  }
 }
 
 ///|

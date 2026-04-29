@@ -49,7 +49,7 @@ fn setup(
     (
       @pbr.Mesh3d::new(sphere_mesh),
       @pbr.MeshMaterial3d::new(material)
-      .with_extension_shader_path(Some(SHADER_PATH))
+      .with_extension_fragment_shader_path(Some(SHADER_PATH))
       .with_extension_tag(1),
       @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
     ),

@@ -1,5 +1,6 @@
 // Canonical native GPU backend owned by the render package.
 import {
+  "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader/source" @fullscreen_vertex_shader_source,
   "Milky2018/mgstudio/embedded_asset" @embedded_asset,
   "Milky2018/moon_wgsl" @wgsl,
   "Milky2018/mgstudio/time",
@@ -22,16 +23,6 @@ supported_targets = "native"
 options(
   "native-stub": [ "pipeline_layout_stub.c" ],
   "pre-build": [
-    {
-      "command": ":embed --input $input --output $output --name mesh3d_bevy_forward_wgsl_source",
-      "input": "mesh3d_bevy_forward.wgsl",
-      "output": "mesh3d_bevy_forward_wgsl.mbt",
-    },
-    {
-      "command": ":embed --input $input --output $output --name mesh3d_forward_wgsl_source",
-      "input": "mesh3d_forward.wgsl",
-      "output": "mesh3d_forward_wgsl.mbt",
-    },
     {
       "command": ":embed --input $input --output $output --name mesh3d_shadow_depth_wgsl_source",
       "input": "mesh3d_shadow_depth.wgsl",

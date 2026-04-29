@@ -125,7 +125,7 @@ struct Mesh2dMaterialBindGroupCacheEntry {
 ///|
 pub struct TonemappingPipelineCacheEntry {
   key : String
-  pipeline : @wgpu.RenderPipeline
+  state : RenderPipelineCacheState
 }
 
 ///|
@@ -208,18 +208,6 @@ struct GpuMesh3dPreprocessCameraUploadState {
   mut depth_pyramid_width : Int
   mut depth_pyramid_height : Int
   mut depth_pyramid_mip_count : Int
-}
-
-///|
-struct Mesh3dCustomPipelineCacheEntry {
-  shader_path : String
-  surface_format : @wgpu.TextureFormat?
-  topology : UInt
-  transparent : Bool
-  blend_kind : Int
-  forward_decal : Bool
-  cull_mode : Int
-  pipeline : @wgpu.RenderPipeline
 }
 
 ///|

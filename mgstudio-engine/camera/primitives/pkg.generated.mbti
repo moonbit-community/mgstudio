@@ -8,9 +8,13 @@ import {
 }
 
 // Values
+pub fn calculate_bounds_system(@ecs.World) -> Unit
+
 pub let ecs_key_aabb : @ecs.ComponentKey[Aabb]
 
 pub fn mesh_compute_aabb(@mesh.Mesh) -> Aabb?
+
+pub fn update_skinned_mesh_bounds_system(@ecs.World) -> Unit
 
 // Errors
 

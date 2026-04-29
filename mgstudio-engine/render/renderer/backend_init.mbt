@@ -207,7 +207,7 @@ pub fn GpuBackend::new(
     mesh3d_binding_arrays_bg: None,
     mesh3d_pipeline_layout: None,
     mesh3d_pipeline_cache: [],
-    mesh3d_custom_pipeline_cache: [],
+    mesh3d_custom_pipeline_cache: Map::new(),
     mesh3d_shadow_pipeline_cache: [],
     mesh3d_point_shadow_compare_sampler: None,
     mesh3d_view_buf: None,

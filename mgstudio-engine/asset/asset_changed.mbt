@@ -26,7 +26,7 @@ pub fn[T] asset_events_include_change(
         if changed.id() == handle.id() {
           return true
         }
-      AssetEvent::Removed(_) => ()
+      AssetEvent::Removed(_) | AssetEvent::Unused(_) => ()
     }
   }
   false

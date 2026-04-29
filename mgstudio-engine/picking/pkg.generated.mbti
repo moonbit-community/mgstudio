@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -16,7 +17,21 @@ pub let ecs_components : Array[String]
 
 pub let ecs_key_pickable : @ecs.ComponentKey[Pickable]
 
-pub let ecs_res_key_picking_hits : @ecs.ResourceKey[PickingHits]
+pub let ecs_key_pointer_id : @ecs.ComponentKey[PointerId]
+
+pub let ecs_key_pointer_interaction : @ecs.ComponentKey[PointerInteraction]
+
+pub let ecs_key_pointer_location : @ecs.ComponentKey[PointerLocation]
+
+pub let ecs_key_pointer_press : @ecs.ComponentKey[PointerPress]
+
+pub let ecs_key_sprite_picking_camera : @ecs.ComponentKey[SpritePickingCamera]
+
+pub let ecs_msg_key_pointer_hits : @ecs.MessageKey[PointerHits]
+
+pub let ecs_msg_key_pointer_input : @ecs.MessageKey[PointerInput]
+
+pub let ecs_res_key_hover_map : @ecs.ResourceKey[HoverMap]
 
 pub let ecs_res_key_picking_settings : @ecs.ResourceKey[PickingSettings]
 
@@ -24,19 +39,23 @@ pub let ecs_res_key_picking_state : @ecs.ResourceKey[PickingState]
 
 pub let ecs_res_key_pointer_input_settings : @ecs.ResourceKey[PointerInputSettings]
 
-pub let ecs_res_key_pointer_inputs : @ecs.ResourceKey[PointerInputs]
+pub let ecs_res_key_pointer_map : @ecs.ResourceKey[PointerMap]
+
+pub let ecs_res_key_previous_hover_map : @ecs.ResourceKey[PreviousHoverMap]
+
+pub let ecs_res_key_sprite_picking_settings : @ecs.ResourceKey[SpritePickingSettings]
 
 pub let ecs_resources : Array[String]
 
-pub fn ensure_picking_hits_system(@ecs.World) -> Unit
+pub fn ensure_hover_maps_system(@ecs.World) -> Unit
 
 pub fn ensure_picking_state_system(@ecs.World) -> Unit
 
 pub fn ensure_pointer_input_settings_system(@ecs.World) -> Unit
 
-pub fn ensure_pointer_inputs_system(@ecs.World) -> Unit
+pub fn ensure_pointer_map_system(@ecs.World) -> Unit
 
-pub fn get_picking_hits_resource(@ecs.World) -> @ecs.ResourceAccess[PickingHits]
+pub fn get_hover_map_resource(@ecs.World) -> @ecs.ResourceAccess[HoverMap]
 
 pub fn get_picking_settings_resource(@ecs.World) -> @ecs.ResourceAccess[PickingSettings]
 
@@ -44,7 +63,11 @@ pub fn get_picking_state_resource(@ecs.World) -> @ecs.ResourceAccess[PickingStat
 
 pub fn get_pointer_input_settings_resource(@ecs.World) -> @ecs.ResourceAccess[PointerInputSettings]
 
-pub fn get_pointer_inputs_resource(@ecs.World) -> @ecs.ResourceAccess[PointerInputs]
+pub fn get_pointer_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointerMap]
+
+pub fn get_previous_hover_map_resource(@ecs.World) -> @ecs.ResourceAccess[PreviousHoverMap]
+
+pub fn get_sprite_picking_settings_resource(@ecs.World) -> @ecs.ResourceAccess[SpritePickingSettings]
 
 pub let pickable_ignore : Pickable
 
@@ -55,6 +78,10 @@ pub fn picking_clear_system(@ecs.World) -> Unit
 pub fn picking_collect_mouse_system(@ecs.World) -> Unit
 
 pub fn picking_generate_events_system(@ecs.World) -> Unit
+
+pub fn picking_generate_hovermap_system(@ecs.World) -> Unit
+
+pub fn picking_hover_pipeline_system(@ecs.World) -> Unit
 
 pub fn picking_hover_should_run(@ecs.World) -> Bool
 
@@ -72,21 +99,53 @@ pub fn picking_plugin_entry(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn picking_pre_update_sets() -> (String, String, String)
 
+pub fn picking_process_pointer_inputs_system(@ecs.World) -> Unit
+
 pub let picking_set : String
+
+pub let picking_set_backend : String
 
 pub let picking_set_events : String
 
 pub let picking_set_hits : String
 
+pub let picking_set_hover : String
+
 pub let picking_set_input : String
+
+pub let picking_set_input_stage : String
+
+pub let picking_set_last : String
+
+pub let picking_set_post_hover : String
+
+pub let picking_set_post_input : String
+
+pub let picking_set_process_input : String
 
 pub fn picking_sprite2d_hit_test_system(@ecs.World) -> Unit
 
 pub fn picking_ui_hit_test_system(@ecs.World) -> Unit
 
+pub fn picking_update_pointer_interactions_system(@ecs.World) -> Unit
+
 pub fn picking_window_hit_test_system(@ecs.World) -> Unit
 
 pub fn picking_window_picking_should_run(@ecs.World) -> Bool
+
+pub fn pointer_hits_message_key() -> @ecs.MessageKey[PointerHits]
+
+pub fn pointer_input_message_key() -> @ecs.MessageKey[PointerInput]
+
+pub fn pointer_input_receive_system(@ecs.World) -> Unit
+
+pub fn pointer_inputs_for_backend(@ecs.World) -> Array[PointerInput]
+
+pub fn pointer_inputs_from_entities(@ecs.World) -> Array[PointerInput]
+
+pub fn spawn_mouse_pointer_system(@ecs.World) -> Unit
+
+pub fn update_pointer_map_system(@ecs.World) -> Unit
 
 // Errors
 
@@ -95,6 +154,23 @@ pub struct DefaultPickingPlugins {
 }
 pub fn DefaultPickingPlugins::default() -> Self
 pub impl @app.PluginGroup for DefaultPickingPlugins
+
+pub struct HitData {
+  camera : @core.Entity
+  depth : Float
+  position : @math.Vec3?
+  normal : @math.Vec3?
+} derive(ToJson, @json.FromJson)
+pub fn HitData::new(@core.Entity, Float, @math.Vec3?, @math.Vec3?) -> Self
+
+pub struct HoverMap {
+  inner : @hashmap.HashMap[Int, Array[(@core.Entity, HitData)]]
+}
+pub fn HoverMap::default() -> Self
+pub fn HoverMap::from_array(Array[(Int, Array[(@core.Entity, HitData)])]) -> Self
+pub fn HoverMap::get(Self, Int) -> Array[(@core.Entity, HitData)]
+pub fn HoverMap::is_hovering(Self, Int, @core.Entity) -> Bool
+pub impl @app.Resource for HoverMap
 
 pub struct InteractionPlugin {
 }
@@ -108,24 +184,6 @@ pub struct Pickable {
 pub fn Pickable::default() -> Self
 pub fn Pickable::new(Bool, Bool) -> Self
 pub impl @ecs.Component for Pickable
-
-pub struct PickingHits {
-  ui : Array[@core.Entity?]
-  sprite2d : Array[@core.Entity?]
-  mesh3d : Array[@core.Entity?]
-  window : Array[@core.Entity?]
-} derive(ToJson, @json.FromJson)
-pub fn PickingHits::default() -> Self
-pub fn PickingHits::from_arrays(Array[@core.Entity?], Array[@core.Entity?], mesh3d? : Array[@core.Entity?], window? : Array[@core.Entity?]) -> Self
-pub fn PickingHits::mesh3d(Self, Int) -> @core.Entity?
-pub fn PickingHits::set_mesh3d(@ref.Ref[Self], Int, @core.Entity?) -> Unit
-pub fn PickingHits::set_sprite2d(@ref.Ref[Self], Int, @core.Entity?) -> Unit
-pub fn PickingHits::set_ui(@ref.Ref[Self], Int, @core.Entity?) -> Unit
-pub fn PickingHits::set_window(@ref.Ref[Self], Int, @core.Entity?) -> Unit
-pub fn PickingHits::sprite2d(Self, Int) -> @core.Entity?
-pub fn PickingHits::ui(Self, Int) -> @core.Entity?
-pub fn PickingHits::window(Self, Int) -> @core.Entity?
-pub impl @app.Resource for PickingHits
 
 pub struct PickingPlugin {
 }
@@ -161,6 +219,26 @@ pub(all) enum PointerButton {
   Middle
 } derive(Eq, @debug.Debug)
 
+pub struct PointerHits {
+  pointer : Int
+  picks : Array[(@core.Entity, HitData)]
+  order : Float
+} derive(ToJson, @json.FromJson)
+pub fn PointerHits::new(Int, Array[(@core.Entity, HitData)], Float) -> Self
+pub impl @ecs.Message for PointerHits
+
+pub struct PointerId {
+  value : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PointerId::get_touch_id(Self) -> Int?
+pub fn PointerId::is_mouse(Self) -> Bool
+pub fn PointerId::is_touch(Self) -> Bool
+pub fn PointerId::mouse() -> Self
+pub fn PointerId::new(Int) -> Self
+pub fn PointerId::touch(Int) -> Self
+pub fn PointerId::value(Self) -> Int
+pub impl @ecs.Component for PointerId
+
 pub struct PointerInput {
   pointer : Int
   window_position : @math.Vec2?
@@ -169,6 +247,7 @@ pub struct PointerInput {
   just_released : Bool
 } derive(ToJson, @json.FromJson)
 pub fn PointerInput::new(Int, @math.Vec2?, Bool, Bool, Bool) -> Self
+pub impl @ecs.Message for PointerInput
 
 pub struct PointerInputPlugin {
 }
@@ -183,15 +262,62 @@ pub fn PointerInputSettings::default() -> Self
 pub fn PointerInputSettings::new(Bool, Bool) -> Self
 pub impl @app.Resource for PointerInputSettings
 
-pub struct PointerInputs {
-  mut pointers : Array[PointerInput]
+pub struct PointerInteraction {
+  sorted_entities : Array[(@core.Entity, HitData)]
 } derive(ToJson, @json.FromJson)
-pub fn PointerInputs::clear(@ref.Ref[Self]) -> Unit
-pub fn PointerInputs::default() -> Self
-pub fn PointerInputs::from_array(Array[PointerInput]) -> Self
-pub fn PointerInputs::push(@ref.Ref[Self], PointerInput) -> Unit
-pub fn PointerInputs::set(@ref.Ref[Self], PointerInput) -> Unit
-pub impl @app.Resource for PointerInputs
+pub fn PointerInteraction::default() -> Self
+pub fn PointerInteraction::get_nearest_hit(Self) -> (@core.Entity, HitData)?
+pub impl @ecs.Component for PointerInteraction
+
+pub struct PointerLocation {
+  location : @math.Vec2?
+} derive(ToJson, @json.FromJson)
+pub fn PointerLocation::default() -> Self
+pub fn PointerLocation::location(Self) -> @math.Vec2?
+pub fn PointerLocation::new(@math.Vec2) -> Self
+pub impl @ecs.Component for PointerLocation
+
+pub struct PointerMap {
+  inner : @hashmap.HashMap[Int, @core.Entity]
+}
+pub fn PointerMap::default() -> Self
+pub fn PointerMap::get_entity(Self, Int) -> @core.Entity?
+pub impl @app.Resource for PointerMap
+
+pub struct PointerPress {
+  primary : Bool
+  secondary : Bool
+  middle : Bool
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PointerPress::default() -> Self
+pub fn PointerPress::is_any_pressed(Self) -> Bool
+pub fn PointerPress::is_middle_pressed(Self) -> Bool
+pub fn PointerPress::is_primary_pressed(Self) -> Bool
+pub fn PointerPress::is_secondary_pressed(Self) -> Bool
+pub impl @ecs.Component for PointerPress
+
+pub struct PreviousHoverMap {
+  inner : @hashmap.HashMap[Int, Array[(@core.Entity, HitData)]]
+}
+pub fn PreviousHoverMap::default() -> Self
+pub impl @app.Resource for PreviousHoverMap
+
+pub struct SpritePickingCamera {
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub impl @ecs.Component for SpritePickingCamera
+
+pub(all) enum SpritePickingMode {
+  BoundingBox
+  AlphaThreshold(Float)
+} derive(@debug.Debug)
+
+pub struct SpritePickingSettings {
+  require_markers : Bool
+  picking_mode : SpritePickingMode
+} derive(@debug.Debug)
+pub fn SpritePickingSettings::default() -> Self
+pub fn SpritePickingSettings::new(Bool, SpritePickingMode) -> Self
+pub impl @app.Resource for SpritePickingSettings
 
 // Type aliases
 

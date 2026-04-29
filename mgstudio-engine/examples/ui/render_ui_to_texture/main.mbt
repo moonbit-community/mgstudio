@@ -362,9 +362,6 @@ fn rotate_cube(
 
 ///|
 fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
-  let inputs_res = @picking.get_pointer_inputs_resource(world)
-  guard inputs_res.get() is Some(inputs_value) else { return }
-
   let camera_query : @ecs.Query[
     (
       @ecs.Comp[@sprite.Camera],
@@ -412,18 +409,21 @@ fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
     }
   }
 
-  let inputs = Ref::new(inputs_value)
-  @picking.PointerInputs::push(
-    inputs,
-    @picking.PointerInput::new(
-      DIEGETIC_POINTER_ID,
-      pointer_position,
-      down,
-      just_pressed,
-      just_released,
-    ),
-  )
-  inputs_res.insert(inputs.val)
+  if world.contains_message(@picking.pointer_input_message_key()) {
+    ignore(
+      world
+      .message_writer(@picking.pointer_input_message_key())
+      .write(
+        @picking.PointerInput::new(
+          DIEGETIC_POINTER_ID,
+          pointer_position,
+          down,
+          just_pressed,
+          just_released,
+        ),
+      ),
+    )
+  }
 }
 
 ///|
@@ -462,7 +462,7 @@ fn main {
   .add_systems(
     @app.PreUpdate,
     @app.system(drive_diegetic_pointer)
-    .after(@picking.picking_set_input)
+    .before(@picking.picking_set_input)
     .after(@transform.transform_set_propagate)
     .before(@picking.picking_set_hits),
   )

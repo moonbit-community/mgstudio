@@ -114,3 +114,78 @@ pub fn BindGroupLayoutEntries::entries(
 ) -> Array[MaterialBindGroupLayoutEntry] {
   self.entries
 }
+
+///|
+pub struct DynamicBindGroupLayoutEntries {
+  default_visibility : UInt
+  entries : Array[MaterialBindGroupLayoutEntry]
+}
+
+///|
+pub fn dynamic_bind_group_layout_entries_sequential(
+  default_visibility : UInt,
+  entries : Array[BindGroupLayoutEntryBuilder],
+) -> DynamicBindGroupLayoutEntries {
+  let output : Array[MaterialBindGroupLayoutEntry] = []
+  let mut binding = 0
+  for entry in entries {
+    output.push(entry.build(binding, default_visibility))
+    binding = binding + 1
+  }
+  DynamicBindGroupLayoutEntries::{ default_visibility, entries: output }
+}
+
+///|
+pub fn dynamic_bind_group_layout_entries_with_indices(
+  default_visibility : UInt,
+  entries : Array[(Int, BindGroupLayoutEntryBuilder)],
+) -> DynamicBindGroupLayoutEntries {
+  let output : Array[MaterialBindGroupLayoutEntry] = []
+  for entry in entries {
+    output.push(entry.1.build(entry.0, default_visibility))
+  }
+  DynamicBindGroupLayoutEntries::{ default_visibility, entries: output }
+}
+
+///|
+pub fn DynamicBindGroupLayoutEntries::new(
+  default_visibility : UInt,
+) -> DynamicBindGroupLayoutEntries {
+  DynamicBindGroupLayoutEntries::{ default_visibility, entries: [] }
+}
+
+///|
+pub fn DynamicBindGroupLayoutEntries::extend_sequential(
+  self : DynamicBindGroupLayoutEntries,
+  entries : Array[BindGroupLayoutEntryBuilder],
+) -> DynamicBindGroupLayoutEntries {
+  let output = self.entries
+  let mut binding = match output.last() {
+    Some(entry) => entry.binding() + 1
+    None => 0
+  }
+  for entry in entries {
+    output.push(entry.build(binding, self.default_visibility))
+    binding = binding + 1
+  }
+  DynamicBindGroupLayoutEntries::{ ..self, entries: output }
+}
+
+///|
+pub fn DynamicBindGroupLayoutEntries::extend_with_indices(
+  self : DynamicBindGroupLayoutEntries,
+  entries : Array[(Int, BindGroupLayoutEntryBuilder)],
+) -> DynamicBindGroupLayoutEntries {
+  let output = self.entries
+  for entry in entries {
+    output.push(entry.1.build(entry.0, self.default_visibility))
+  }
+  DynamicBindGroupLayoutEntries::{ ..self, entries: output }
+}
+
+///|
+pub fn DynamicBindGroupLayoutEntries::entries(
+  self : DynamicBindGroupLayoutEntries,
+) -> Array[MaterialBindGroupLayoutEntry] {
+  self.entries
+}

@@ -133,12 +133,54 @@ fn sprite_size_from_sprite(
 }
 
 ///|
+fn sprite_size_from_sprite_mesh(
+  sprite : SpriteMesh,
+  atlas_layout_assets : @asset.Assets[@asset.TextureAtlasLayout],
+) -> @math.Vec2? {
+  if sprite.custom_size is Some(size) {
+    return Some(size)
+  }
+  if sprite.rect is Some(rect) {
+    return Some(rect.size())
+  }
+  match sprite.texture_atlas {
+    None => sprite_size_from_image_handle(sprite.image)
+    Some(texture_atlas) =>
+      texture_atlas
+      .texture_rect(atlas_layout_assets)
+      .map(fn(texture_rect) { texture_rect.size().to_vec2() })
+  }
+}
+
+///|
 fn sprite_sprite_aabb(
   sprite : Sprite,
   anchor : Anchor,
   atlas_layout_assets : @asset.Assets[@asset.TextureAtlasLayout],
 ) -> @camera_primitives.Aabb? {
   guard sprite_size_from_sprite(sprite, atlas_layout_assets) is Some(size) else {
+    return None
+  }
+  let anchor_vec = anchor.as_vec()
+  let center_x = -anchor_vec.x * size.x
+  let center_y = -anchor_vec.y * size.y
+  let half_x = size.x * 0.5F
+  let half_y = size.y * 0.5F
+  Some(
+    @camera_primitives.Aabb::from_min_max(
+      @math.Vec3::new(center_x - half_x, center_y - half_y, 0.0F),
+      @math.Vec3::new(center_x + half_x, center_y + half_y, 0.0F),
+    ),
+  )
+}
+
+///|
+fn sprite_mesh_aabb(
+  sprite : SpriteMesh,
+  anchor : Anchor,
+  atlas_layout_assets : @asset.Assets[@asset.TextureAtlasLayout],
+) -> @camera_primitives.Aabb? {
+  guard sprite_size_from_sprite_mesh(sprite, atlas_layout_assets) is Some(size) else {
     return None
   }
   let anchor_vec = anchor.as_vec()
@@ -171,7 +213,8 @@ fn sprite_set_or_replace_aabb(
 fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
   let has_mesh2d = world.component_count(@mesh.ecs_key_mesh2d) > 0
   let has_sprite = world.component_count(ecs_key_sprite) > 0
-  if !has_mesh2d && !has_sprite {
+  let has_sprite_mesh = world.component_count(ecs_key_sprite_mesh) > 0
+  if !has_mesh2d && !has_sprite && !has_sprite_mesh {
     return
   }
   let world_id = world.world_id()
@@ -182,6 +225,7 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
   let pending_aabbs : Array[(@core.Entity, @camera_primitives.Aabb)] = []
   let changed_mesh2d_entities : @hashset.HashSet[UInt64] = @hashset.HashSet::new()
   let changed_sprite_or_anchor_entities : @hashset.HashSet[UInt64] = @hashset.HashSet::new()
+  let changed_sprite_mesh_or_anchor_entities : @hashset.HashSet[UInt64] = @hashset.HashSet::new()
   if !first_run {
     let sequence = world.get_sequence_context().sequence()
     for entity in world.added_components(@mesh.ecs_key_mesh2d, sequence).read() {
@@ -199,9 +243,17 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
     }
     for entity in world.added_components(ecs_key_anchor, sequence).read() {
       sprite_insert_entity_key(changed_sprite_or_anchor_entities, entity)
+      sprite_insert_entity_key(changed_sprite_mesh_or_anchor_entities, entity)
     }
     for entity in world.changed_components(ecs_key_anchor, sequence).read() {
       sprite_insert_entity_key(changed_sprite_or_anchor_entities, entity)
+      sprite_insert_entity_key(changed_sprite_mesh_or_anchor_entities, entity)
+    }
+    for entity in world.added_components(ecs_key_sprite_mesh, sequence).read() {
+      sprite_insert_entity_key(changed_sprite_mesh_or_anchor_entities, entity)
+    }
+    for entity in world.changed_components(ecs_key_sprite_mesh, sequence).read() {
+      sprite_insert_entity_key(changed_sprite_mesh_or_anchor_entities, entity)
     }
   }
 
@@ -261,6 +313,42 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
       let (sprite_comp, anchor_comp) = data
       if sprite_sprite_aabb(
           sprite_comp.value(),
+          anchor_comp.value(),
+          atlas_layout_assets,
+        )
+        is Some(aabb) {
+        pending_aabbs.push((entity, aabb))
+      }
+    })
+  }
+  if has_sprite_mesh {
+    let atlas_layout_assets : @asset.Assets[@asset.TextureAtlasLayout] = @asset.asset_assets_or_abort()
+    let sprite_mesh_query : @ecs.Query[
+      (@ecs.Comp[SpriteMesh], @ecs.Comp[Anchor]),
+      @ecs.All,
+    ] = @ecs.query(world)
+    try! sprite_mesh_query.view(fn(entity, data) {
+      if (try! world.contains_by_key(
+          entity, @visibility.ecs_key_no_frustum_culling,
+        )) {
+        return
+      }
+      if (try! world.contains_by_key(entity, @visibility.ecs_key_no_auto_aabb)) {
+        return
+      }
+      let has_aabb = try! world.contains_by_key(
+        entity, @camera_primitives.ecs_key_aabb,
+      )
+      if !first_run &&
+        has_aabb &&
+        !changed_sprite_mesh_or_anchor_entities.contains(
+          sprite_entity_key(entity),
+        ) {
+        return
+      }
+      let (sprite_mesh_comp, anchor_comp) = data
+      if sprite_mesh_aabb(
+          sprite_mesh_comp.value(),
           anchor_comp.value(),
           atlas_layout_assets,
         )

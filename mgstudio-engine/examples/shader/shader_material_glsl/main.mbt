@@ -54,7 +54,7 @@ fn setup(
   commands.spawn(
     (
       @pbr.Mesh3d::new(torus_mesh),
-      @pbr.MeshMaterial3d::new(torus_material).with_extension_shader_path(
+      @pbr.MeshMaterial3d::new(torus_material).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),
       @transform.Transform::from_xyz(0.0F, 1.2F, 0.0F),

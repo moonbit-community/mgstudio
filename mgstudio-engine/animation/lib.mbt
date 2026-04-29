@@ -864,18 +864,11 @@ fn animation_player_tick(
 }
 
 ///|
-priv struct AnimationPreparedTargetSample {
-  clip : AnimationClip
-  seek_time : Float
-  combined_weight : Float
-  computed_mask : AnimationMask
-}
-
-///|
 priv struct AnimationPreparedPlayer {
   graph_id : Int
   graph : AnimationGraph
-  samples : Array[AnimationPreparedTargetSample]
+  player : AnimationPlayer
+  threaded_graph : ThreadedAnimationGraph
 }
 
 ///|
@@ -901,80 +894,8 @@ fn animation_clip_cached_or_load(
 }
 
 ///|
-fn animation_prepare_player_target_samples_into(
-  player : AnimationPlayer,
-  graph : AnimationGraph,
-  threaded_graph : ThreadedAnimationGraph,
-  clip_cache : Map[Int, AnimationClip],
-  samples : Array[AnimationPreparedTargetSample],
-) -> Unit {
-  samples.clear()
-  if player.active_animations.length() == 1 {
-    player.active_animations.each(fn(node_key, active) {
-      animation_prepare_target_sample_for_node(
-        AnimationNodeIndex::new(node_key),
-        active,
-        graph,
-        threaded_graph,
-        clip_cache,
-        samples,
-      )
-    })
-  } else {
-    for pair in player.playing_animations() {
-      animation_prepare_target_sample_for_node(
-        pair.0,
-        pair.1,
-        graph,
-        threaded_graph,
-        clip_cache,
-        samples,
-      )
-    }
-  }
-}
-
-///|
-fn animation_prepare_target_sample_for_node(
-  node_index : AnimationNodeIndex,
-  active : ActiveAnimation,
-  graph : AnimationGraph,
-  threaded_graph : ThreadedAnimationGraph,
-  clip_cache : Map[Int, AnimationClip],
-  samples : Array[AnimationPreparedTargetSample],
-) -> Unit {
-  guard graph.get(node_index) is Some(node) else { return }
-  guard node.node_type is Clip(clip_handle) else { return }
-  guard animation_clip_cached_or_load(clip_handle, clip_cache) is Some(clip) else {
-    return
-  }
-  let node_i = node_index.index()
-  let effective_weight = if node_i >= 0 &&
-    node_i < threaded_graph.effective_weights.length() {
-    threaded_graph.effective_weights[node_i]
-  } else {
-    graph.effective_weight(node_index)
-  }
-  let combined_weight = active.weight() * effective_weight
-  if combined_weight <= 0.0F {
-    return
-  }
-  let computed_mask = if node_i >= 0 &&
-    node_i < threaded_graph.computed_masks.length() {
-    threaded_graph.computed_masks[node_i]
-  } else {
-    graph.computed_mask(node_index)
-  }
-  samples.push({
-    clip,
-    seek_time: active.seek_time(),
-    combined_weight,
-    computed_mask,
-  })
-}
-
-///|
-priv struct AnimationEvaluationState {
+priv struct AnimationStackElement {
+  mut graph_node : AnimationNodeIndex
   mut has_translation : Bool
   mut has_rotation : Bool
   mut has_scale : Bool
@@ -985,22 +906,25 @@ priv struct AnimationEvaluationState {
   mut scale_weight : Float
   mut weights_weight : Float
   mut text_color_weight : Float
-  mut translation_acc : @math.Vec3
-  mut scale_acc : @math.Vec3
-  mut rotation_acc_x : Float
-  mut rotation_acc_y : Float
-  mut rotation_acc_z : Float
-  mut rotation_acc_w : Float
-  weights_acc : Array[Float]
-  mut text_color_acc_r : Float
-  mut text_color_acc_g : Float
-  mut text_color_acc_b : Float
-  mut text_color_acc_a : Float
+  mut translation : @math.Vec3
+  mut rotation : @math.Quat
+  mut scale : @math.Vec3
+  weights : Array[Float]
+  mut text_color : @sprite.Color
 }
 
 ///|
-fn animation_evaluation_state_new() -> AnimationEvaluationState {
-  AnimationEvaluationState::{
+priv struct AnimationEvaluationState {
+  stack : Array[AnimationStackElement]
+  register : AnimationStackElement
+}
+
+///|
+fn animation_stack_element_empty(
+  graph_node : AnimationNodeIndex,
+) -> AnimationStackElement {
+  AnimationStackElement::{
+    graph_node,
     has_translation: false,
     has_rotation: false,
     has_scale: false,
@@ -1011,206 +935,584 @@ fn animation_evaluation_state_new() -> AnimationEvaluationState {
     scale_weight: 0.0F,
     weights_weight: 0.0F,
     text_color_weight: 0.0F,
-    translation_acc: @math.Vec3::zero(),
-    scale_acc: @math.Vec3::zero(),
-    rotation_acc_x: 0.0F,
-    rotation_acc_y: 0.0F,
-    rotation_acc_z: 0.0F,
-    rotation_acc_w: 0.0F,
-    weights_acc: [],
-    text_color_acc_r: 0.0F,
-    text_color_acc_g: 0.0F,
-    text_color_acc_b: 0.0F,
-    text_color_acc_a: 0.0F,
+    translation: @math.Vec3::zero(),
+    rotation: @math.Quat::identity(),
+    scale: @math.Vec3::zero(),
+    weights: [],
+    text_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+  }
+}
+
+///|
+fn animation_stack_element_clear(
+  element : AnimationStackElement,
+  graph_node : AnimationNodeIndex,
+) -> Unit {
+  element.graph_node = graph_node
+  element.has_translation = false
+  element.has_rotation = false
+  element.has_scale = false
+  element.has_weights = false
+  element.has_text_color = false
+  element.translation_weight = 0.0F
+  element.rotation_weight = 0.0F
+  element.scale_weight = 0.0F
+  element.weights_weight = 0.0F
+  element.text_color_weight = 0.0F
+  element.translation = @math.Vec3::zero()
+  element.rotation = @math.Quat::identity()
+  element.scale = @math.Vec3::zero()
+  element.weights.clear()
+  element.text_color = @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F)
+}
+
+///|
+fn animation_stack_element_has_value(element : AnimationStackElement) -> Bool {
+  element.has_translation ||
+  element.has_rotation ||
+  element.has_scale ||
+  element.has_weights ||
+  element.has_text_color
+}
+
+///|
+fn animation_weights_copy(values : Array[Float]) -> Array[Float] {
+  let copied : Array[Float] = []
+  for value in values {
+    copied.push(value)
+  }
+  copied
+}
+
+///|
+fn animation_weights_scaled(
+  values : Array[Float],
+  weight : Float,
+) -> Array[Float] {
+  let out : Array[Float] = []
+  for value in values {
+    out.push(value * weight)
+  }
+  out
+}
+
+///|
+fn animation_weights_add_scaled(
+  current : Array[Float],
+  incoming : Array[Float],
+  weight : Float,
+) -> Array[Float] {
+  let len = if current.length() > incoming.length() {
+    current.length()
+  } else {
+    incoming.length()
+  }
+  let out : Array[Float] = []
+  for i in 0..<len {
+    let current_value = match current.get(i) {
+      Some(value) => value
+      None => 0.0F
+    }
+    let incoming_value = match incoming.get(i) {
+      Some(value) => value * weight
+      None => 0.0F
+    }
+    out.push(current_value + incoming_value)
+  }
+  out
+}
+
+///|
+fn animation_color_add_scaled(
+  current : @sprite.Color,
+  incoming : @sprite.Color,
+  weight : Float,
+) -> @sprite.Color {
+  @sprite.Color::new(
+    current.r + incoming.r * weight,
+    current.g + incoming.g * weight,
+    current.b + incoming.b * weight,
+    current.a + incoming.a * weight,
+  )
+}
+
+///|
+fn animation_stack_element_from_sample(
+  graph_node : AnimationNodeIndex,
+  sample : AnimationSample,
+  weight : Float,
+) -> AnimationStackElement {
+  let element = animation_stack_element_empty(graph_node)
+  if sample.translation is Some(translation) {
+    element.has_translation = true
+    element.translation = translation
+    element.translation_weight = weight
+  }
+  if sample.rotation is Some(rotation) {
+    element.has_rotation = true
+    element.rotation = rotation
+    element.rotation_weight = weight
+  }
+  if sample.scale is Some(scale) {
+    element.has_scale = true
+    element.scale = scale
+    element.scale_weight = weight
+  }
+  if sample.weights is Some(weights) {
+    element.has_weights = true
+    element.weights_weight = weight
+    element.weights.clear()
+    for value in weights {
+      element.weights.push(value)
+    }
+  }
+  if sample.text_color is Some(text_color) {
+    element.has_text_color = true
+    element.text_color = text_color
+    element.text_color_weight = weight
+  }
+  element
+}
+
+///|
+fn animation_evaluation_state_new() -> AnimationEvaluationState {
+  AnimationEvaluationState::{
+    stack: [],
+    register: animation_stack_element_empty(AnimationNodeIndex::new(-1)),
   }
 }
 
 ///|
 fn animation_evaluation_state_reset(state : AnimationEvaluationState) -> Unit {
-  state.has_translation = false
-  state.has_rotation = false
-  state.has_scale = false
-  state.has_weights = false
-  state.has_text_color = false
-  state.translation_weight = 0.0F
-  state.rotation_weight = 0.0F
-  state.scale_weight = 0.0F
-  state.weights_weight = 0.0F
-  state.text_color_weight = 0.0F
-  state.translation_acc = @math.Vec3::zero()
-  state.scale_acc = @math.Vec3::zero()
-  state.rotation_acc_x = 0.0F
-  state.rotation_acc_y = 0.0F
-  state.rotation_acc_z = 0.0F
-  state.rotation_acc_w = 0.0F
-  state.weights_acc.clear()
-  state.text_color_acc_r = 0.0F
-  state.text_color_acc_g = 0.0F
-  state.text_color_acc_b = 0.0F
-  state.text_color_acc_a = 0.0F
+  state.stack.clear()
+  animation_stack_element_clear(state.register, AnimationNodeIndex::new(-1))
 }
 
 ///|
-fn animation_evaluation_state_apply_sample(
+fn animation_evaluation_state_push_sample(
   state : AnimationEvaluationState,
-  clip_sample : AnimationSample,
-  combined_weight : Float,
+  graph_node : AnimationNodeIndex,
+  sample : AnimationSample,
+  weight : Float,
 ) -> Unit {
-  if clip_sample.translation is Some(translation) {
-    state.has_translation = true
-    state.translation_weight = state.translation_weight + combined_weight
-    state.translation_acc = state.translation_acc.add(
-      translation.mul_scalar(combined_weight),
+  let element = animation_stack_element_from_sample(graph_node, sample, weight)
+  if animation_stack_element_has_value(element) {
+    state.stack.push(element)
+  }
+}
+
+///|
+fn animation_register_merge_translation(
+  register : AnimationStackElement,
+  incoming : AnimationStackElement,
+  additive : Bool,
+) -> Unit {
+  if !incoming.has_translation {
+    return
+  }
+  if !register.has_translation {
+    register.has_translation = true
+    register.translation_weight = incoming.translation_weight
+    register.translation = if additive {
+      incoming.translation.mul_scalar(incoming.translation_weight)
+    } else {
+      incoming.translation
+    }
+    return
+  }
+  register.translation_weight = register.translation_weight +
+    incoming.translation_weight
+  if additive {
+    register.translation = register.translation.add(
+      incoming.translation.mul_scalar(incoming.translation_weight),
+    )
+  } else {
+    register.translation = animation_interpolate_vec3_unclamped(
+      register.translation,
+      incoming.translation,
+      incoming.translation_weight / register.translation_weight,
     )
   }
+}
 
-  if clip_sample.rotation is Some(rotation) {
-    state.has_rotation = true
-    state.rotation_weight = state.rotation_weight + combined_weight
-    state.rotation_acc_x = state.rotation_acc_x + rotation.x * combined_weight
-    state.rotation_acc_y = state.rotation_acc_y + rotation.y * combined_weight
-    state.rotation_acc_z = state.rotation_acc_z + rotation.z * combined_weight
-    state.rotation_acc_w = state.rotation_acc_w + rotation.w * combined_weight
+///|
+fn animation_register_merge_rotation(
+  register : AnimationStackElement,
+  incoming : AnimationStackElement,
+  additive : Bool,
+) -> Unit {
+  if !incoming.has_rotation {
+    return
   }
+  if !register.has_rotation {
+    register.has_rotation = true
+    register.rotation_weight = incoming.rotation_weight
+    register.rotation = if additive {
+      animation_interpolate_quat_unclamped(
+        @math.Quat::identity(),
+        incoming.rotation,
+        incoming.rotation_weight,
+      )
+    } else {
+      incoming.rotation
+    }
+    return
+  }
+  register.rotation_weight = register.rotation_weight + incoming.rotation_weight
+  if additive {
+    register.rotation = animation_interpolate_quat_unclamped(
+      @math.Quat::identity(),
+      incoming.rotation,
+      incoming.rotation_weight,
+    ).mul(register.rotation)
+  } else {
+    register.rotation = animation_interpolate_quat_unclamped(
+      register.rotation,
+      incoming.rotation,
+      incoming.rotation_weight / register.rotation_weight,
+    )
+  }
+}
 
-  if clip_sample.scale is Some(scale) {
-    state.has_scale = true
-    state.scale_weight = state.scale_weight + combined_weight
-    state.scale_acc = state.scale_acc.add(scale.mul_scalar(combined_weight))
+///|
+fn animation_register_merge_scale(
+  register : AnimationStackElement,
+  incoming : AnimationStackElement,
+  additive : Bool,
+) -> Unit {
+  if !incoming.has_scale {
+    return
   }
+  if !register.has_scale {
+    register.has_scale = true
+    register.scale_weight = incoming.scale_weight
+    register.scale = if additive {
+      incoming.scale.mul_scalar(incoming.scale_weight)
+    } else {
+      incoming.scale
+    }
+    return
+  }
+  register.scale_weight = register.scale_weight + incoming.scale_weight
+  if additive {
+    register.scale = register.scale.add(
+      incoming.scale.mul_scalar(incoming.scale_weight),
+    )
+  } else {
+    register.scale = animation_interpolate_vec3_unclamped(
+      register.scale,
+      incoming.scale,
+      incoming.scale_weight / register.scale_weight,
+    )
+  }
+}
 
-  if clip_sample.weights is Some(weights) {
-    state.has_weights = true
-    state.weights_weight = state.weights_weight + combined_weight
-    animation_weights_accumulate(state.weights_acc, weights, combined_weight)
+///|
+fn animation_register_merge_weights(
+  register : AnimationStackElement,
+  incoming : AnimationStackElement,
+  additive : Bool,
+) -> Unit {
+  if !incoming.has_weights {
+    return
   }
+  if !register.has_weights {
+    register.has_weights = true
+    register.weights_weight = incoming.weights_weight
+    register.weights.clear()
+    let values = if additive {
+      animation_weights_scaled(incoming.weights, incoming.weights_weight)
+    } else {
+      animation_weights_copy(incoming.weights)
+    }
+    for value in values {
+      register.weights.push(value)
+    }
+    return
+  }
+  register.weights_weight = register.weights_weight + incoming.weights_weight
+  let values = if additive {
+    animation_weights_add_scaled(
+      register.weights,
+      incoming.weights,
+      incoming.weights_weight,
+    )
+  } else {
+    animation_interpolate_weights_unclamped(
+      register.weights,
+      incoming.weights,
+      incoming.weights_weight / register.weights_weight,
+    )
+  }
+  register.weights.clear()
+  for value in values {
+    register.weights.push(value)
+  }
+}
 
-  if clip_sample.text_color is Some(text_color) {
-    state.has_text_color = true
-    state.text_color_weight = state.text_color_weight + combined_weight
-    state.text_color_acc_r = state.text_color_acc_r +
-      text_color.r * combined_weight
-    state.text_color_acc_g = state.text_color_acc_g +
-      text_color.g * combined_weight
-    state.text_color_acc_b = state.text_color_acc_b +
-      text_color.b * combined_weight
-    state.text_color_acc_a = state.text_color_acc_a +
-      text_color.a * combined_weight
+///|
+fn animation_register_merge_text_color(
+  register : AnimationStackElement,
+  incoming : AnimationStackElement,
+  additive : Bool,
+) -> Unit {
+  if !incoming.has_text_color {
+    return
   }
+  if !register.has_text_color {
+    register.has_text_color = true
+    register.text_color_weight = incoming.text_color_weight
+    register.text_color = if additive {
+      animation_color_add_scaled(
+        @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+        incoming.text_color,
+        incoming.text_color_weight,
+      )
+    } else {
+      incoming.text_color
+    }
+    return
+  }
+  register.text_color_weight = register.text_color_weight +
+    incoming.text_color_weight
+  if additive {
+    register.text_color = animation_color_add_scaled(
+      register.text_color,
+      incoming.text_color,
+      incoming.text_color_weight,
+    )
+  } else {
+    register.text_color = animation_interpolate_color_unclamped(
+      register.text_color,
+      incoming.text_color,
+      incoming.text_color_weight / register.text_color_weight,
+    )
+  }
+}
+
+///|
+fn animation_evaluation_state_combine_top(
+  state : AnimationEvaluationState,
+  graph_node : AnimationNodeIndex,
+  additive : Bool,
+) -> Unit {
+  if state.stack.length() == 0 {
+    return
+  }
+  let top_index = state.stack.length() - 1
+  let incoming = state.stack[top_index]
+  if incoming.graph_node != graph_node {
+    return
+  }
+  ignore(state.stack.pop())
+  animation_register_merge_translation(state.register, incoming, additive)
+  animation_register_merge_rotation(state.register, incoming, additive)
+  animation_register_merge_scale(state.register, incoming, additive)
+  animation_register_merge_weights(state.register, incoming, additive)
+  animation_register_merge_text_color(state.register, incoming, additive)
+}
+
+///|
+fn animation_evaluation_state_push_blend_register(
+  state : AnimationEvaluationState,
+  weight : Float,
+  graph_node : AnimationNodeIndex,
+) -> Unit {
+  if !animation_stack_element_has_value(state.register) {
+    return
+  }
+  let element = animation_stack_element_empty(graph_node)
+  if state.register.has_translation {
+    element.has_translation = true
+    element.translation = state.register.translation
+    element.translation_weight = weight
+  }
+  if state.register.has_rotation {
+    element.has_rotation = true
+    element.rotation = state.register.rotation
+    element.rotation_weight = weight
+  }
+  if state.register.has_scale {
+    element.has_scale = true
+    element.scale = state.register.scale
+    element.scale_weight = weight
+  }
+  if state.register.has_weights {
+    element.has_weights = true
+    element.weights_weight = weight
+    for value in state.register.weights {
+      element.weights.push(value)
+    }
+  }
+  if state.register.has_text_color {
+    element.has_text_color = true
+    element.text_color = state.register.text_color
+    element.text_color_weight = weight
+  }
+  state.stack.push(element)
+  animation_stack_element_clear(state.register, AnimationNodeIndex::new(-1))
 }
 
 ///|
 fn animation_evaluation_state_commit(
   state : AnimationEvaluationState,
   base_transform : @transform.Transform?,
-  base_weights : AnimationWeights?,
-  base_text_color : @text.TextColor?,
 ) -> (@transform.Transform?, AnimationWeights?, @text.TextColor?) {
-  let transform_out = if state.has_translation ||
-    state.has_rotation ||
-    state.has_scale {
+  if state.stack.length() == 0 {
+    return (None, None, None)
+  }
+  let result = state.stack[state.stack.length() - 1]
+  let transform_out = if result.has_translation ||
+    result.has_rotation ||
+    result.has_scale {
     let base = match base_transform {
       Some(transform) => transform
       None => @transform.Transform::identity()
     }
-    let translation = if state.has_translation {
-      let base_weight = animation_saturate(1.0F - state.translation_weight)
-      base.translation.mul_scalar(base_weight).add(state.translation_acc)
-    } else {
-      base.translation
-    }
-    let scale = if state.has_scale {
-      let base_weight = animation_saturate(1.0F - state.scale_weight)
-      base.scale.mul_scalar(base_weight).add(state.scale_acc)
-    } else {
-      base.scale
-    }
-    let rotation = if state.has_rotation {
-      let base_weight = animation_saturate(1.0F - state.rotation_weight)
-      let x = base.rotation.x * base_weight + state.rotation_acc_x
-      let y = base.rotation.y * base_weight + state.rotation_acc_y
-      let z = base.rotation.z * base_weight + state.rotation_acc_z
-      let w = base.rotation.w * base_weight + state.rotation_acc_w
-      animation_quat_normalized(x, y, z, w)
-    } else {
-      base.rotation
-    }
-    Some(@transform.Transform::new(translation, rotation, scale))
-  } else {
-    None
-  }
-
-  let weights_out = if state.has_weights {
-    let base_values = match base_weights {
-      Some(weights) => weights.values
-      None => []
-    }
     Some(
-      AnimationWeights::new(
-        animation_weights_blend(
-          base_values,
-          state.weights_acc,
-          state.weights_weight,
-        ),
+      @transform.Transform::new(
+        if result.has_translation {
+          result.translation
+        } else {
+          base.translation
+        },
+        if result.has_rotation {
+          result.rotation
+        } else {
+          base.rotation
+        },
+        if result.has_scale {
+          result.scale
+        } else {
+          base.scale
+        },
       ),
     )
   } else {
     None
   }
-
-  let text_color_out = if state.has_text_color {
-    let base = match base_text_color {
-      Some(color) => color.color
-      None => @sprite.Color::white()
-    }
-    let base_weight = animation_saturate(1.0F - state.text_color_weight)
-    Some(
-      @text.TextColor::new(
-        @sprite.Color::new(
-          base.r * base_weight + state.text_color_acc_r,
-          base.g * base_weight + state.text_color_acc_g,
-          base.b * base_weight + state.text_color_acc_b,
-          base.a * base_weight + state.text_color_acc_a,
-        ),
-      ),
-    )
+  let weights_out = if result.has_weights {
+    Some(AnimationWeights::new(animation_weights_copy(result.weights)))
   } else {
     None
   }
-
+  let text_color_out = if result.has_text_color {
+    Some(@text.TextColor::new(result.text_color))
+  } else {
+    None
+  }
   (transform_out, weights_out, text_color_out)
 }
 
 ///|
-fn animation_apply_prepared_player_to_target(
+fn animation_apply_threaded_player_to_target(
+  world : @ecs.World,
+  writer : @core.MessageWriter[AnimationTriggeredEvent],
+  player_entity : @core.Entity,
+  target_entity : @core.Entity,
   target_id : AnimationTargetId,
   target_mask : AnimationMask,
-  prepared_samples : Array[AnimationPreparedTargetSample],
+  player : AnimationPlayer,
+  graph : AnimationGraph,
+  threaded_graph : ThreadedAnimationGraph,
+  clip_cache : Map[Int, AnimationClip],
   evaluation_state : AnimationEvaluationState,
   base_transform : @transform.Transform?,
-  base_weights : AnimationWeights?,
-  base_text_color : @text.TextColor?,
 ) -> (@transform.Transform?, AnimationWeights?, @text.TextColor?) {
   animation_evaluation_state_reset(evaluation_state)
 
-  for sample in prepared_samples {
-    if (target_mask & sample.computed_mask) != 0U {
-      continue
+  for node_index in threaded_graph.threaded_graph {
+    guard graph.get(node_index) is Some(node) else { continue }
+    match node.node_type {
+      Blend => {
+        let (edge_start, edge_end) = if node_index.index() >= 0 &&
+          node_index.index() < threaded_graph.sorted_edge_ranges.length() {
+          threaded_graph.sorted_edge_ranges[node_index.index()]
+        } else {
+          (0, 0)
+        }
+        for edge_i in edge_start..<edge_end {
+          animation_evaluation_state_combine_top(
+            evaluation_state,
+            threaded_graph.sorted_edges[edge_i],
+            false,
+          )
+        }
+        animation_evaluation_state_push_blend_register(
+          evaluation_state,
+          node.weight,
+          node_index,
+        )
+      }
+      Add => {
+        let (edge_start, edge_end) = if node_index.index() >= 0 &&
+          node_index.index() < threaded_graph.sorted_edge_ranges.length() {
+          threaded_graph.sorted_edge_ranges[node_index.index()]
+        } else {
+          (0, 0)
+        }
+        for edge_i in edge_start..<edge_end {
+          animation_evaluation_state_combine_top(
+            evaluation_state,
+            threaded_graph.sorted_edges[edge_i],
+            true,
+          )
+        }
+        animation_evaluation_state_push_blend_register(
+          evaluation_state,
+          node.weight,
+          node_index,
+        )
+      }
+      Clip(clip_handle) => {
+        guard player.animation(node_index) is Some(active) else { continue }
+        let node_i = node_index.index()
+        let computed_mask = if node_i >= 0 &&
+          node_i < threaded_graph.computed_masks.length() {
+          threaded_graph.computed_masks[node_i]
+        } else {
+          graph.computed_mask(node_index)
+        }
+        if active.weight() == 0.0F || (target_mask & computed_mask) != 0U {
+          continue
+        }
+        guard animation_clip_cached_or_load(clip_handle, clip_cache)
+          is Some(clip) else {
+          continue
+        }
+        if !active.is_paused() {
+          if animation_clip_events_for_target(clip, target_id) is Some(events) {
+            let triggered = animation_clip_collect_triggered_events(
+              events, active,
+            )
+            if triggered.length() > 0 {
+              animation_emit_triggered_events(
+                world,
+                writer,
+                player_entity,
+                target_entity,
+                Some(target_id),
+                active,
+                triggered,
+              )
+            }
+          }
+        }
+        guard clip.sample_target(target_id, active.seek_time())
+          is Some(clip_sample) else {
+          continue
+        }
+        animation_evaluation_state_push_sample(
+          evaluation_state,
+          node_index,
+          clip_sample,
+          active.weight() * node.weight,
+        )
+      }
     }
-    guard sample.clip.sample_target(target_id, sample.seek_time)
-      is Some(clip_sample) else {
-      continue
-    }
-    animation_evaluation_state_apply_sample(
-      evaluation_state,
-      clip_sample,
-      sample.combined_weight,
-    )
   }
 
-  animation_evaluation_state_commit(
-    evaluation_state, base_transform, base_weights, base_text_color,
-  )
+  animation_evaluation_state_commit(evaluation_state, base_transform)
 }
 
 ///|
@@ -1249,7 +1551,6 @@ priv struct AnimationRuntimeScratch {
   weights_updates : Array[(@core.Entity, AnimationWeights)]
   text_color_updates : Array[(@core.Entity, @text.TextColor)]
   prepared_player_cache : Map[Int, AnimationPreparedPlayer]
-  prepared_samples_cache : Map[Int, Array[AnimationPreparedTargetSample]]
   target_mask_cache : Map[(Int, UInt64), AnimationMask]
   graph_cache : Map[Int, AnimationGraph]
   clip_cache : Map[Int, AnimationClip]
@@ -1263,7 +1564,6 @@ fn AnimationRuntimeScratch::default() -> AnimationRuntimeScratch {
     weights_updates: [],
     text_color_updates: [],
     prepared_player_cache: {},
-    prepared_samples_cache: {},
     target_mask_cache: {},
     graph_cache: {},
     clip_cache: {},
@@ -1410,7 +1710,6 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let weights_updates = runtime_scratch.weights_updates
   let text_color_updates = runtime_scratch.text_color_updates
   let prepared_player_cache = runtime_scratch.prepared_player_cache
-  let prepared_samples_cache = runtime_scratch.prepared_samples_cache
   let target_mask_cache = runtime_scratch.target_mask_cache
   let threaded_graphs = try! world.get_resource(threaded_animation_graphs_key)
   let graph_cache = runtime_scratch.graph_cache
@@ -1464,23 +1763,12 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           }
         }
     }
-    let samples = match prepared_samples_cache.get(player_id) {
-      Some(cached_samples) => cached_samples
-      None => []
-    }
-    animation_prepare_player_target_samples_into(
-      player_comp.value(),
-      graph,
-      threaded_graph,
-      clip_cache,
-      samples,
-    )
     prepared_player_cache.set(player_id, AnimationPreparedPlayer::{
       graph_id: graph_handle_id,
       graph,
-      samples,
+      player: player_comp.value(),
+      threaded_graph,
     })
-    prepared_samples_cache.set(player_id, samples)
   })
 
   let target_id_column = world.component_column(ecs_key_animation_target_id)
@@ -1489,6 +1777,9 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let weights_column = world.component_column(ecs_key_animation_weights)
   let text_color_column = world.component_column(@text.ecs_key_text_color)
   let evaluation_state = animation_evaluation_state_new()
+  let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
+    @app.current_system_sequence().this_run,
+  )
   if target_id_column is Some(target_id_column) &&
     animated_by_column is Some(animated_by_column) {
     animated_by_column.for_each_with_fast(target_id_column, fn(
@@ -1505,30 +1796,25 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         Some(cached) => cached
         None => return
       }
-      let prepared_samples = prepared_player.samples
-      if prepared_samples.length() == 0 {
-        return
-      }
       let target_mask = animation_target_mask_cached(
         target_mask_cache,
         prepared_player.graph_id,
         prepared_player.graph,
         target_id,
       )
-      let (next_transform, next_weights, next_text_color) = animation_apply_prepared_player_to_target(
+      let (next_transform, next_weights, next_text_color) = animation_apply_threaded_player_to_target(
+        world,
+        writer,
+        player_entity,
+        entity,
         target_id,
         target_mask,
-        prepared_samples,
+        prepared_player.player,
+        prepared_player.graph,
+        prepared_player.threaded_graph,
+        clip_cache,
         evaluation_state,
         match transform_column {
-          Some(column) => column.get_fast(entity)
-          None => None
-        },
-        match weights_column {
-          Some(column) => column.get_fast(entity)
-          None => None
-        },
-        match text_color_column {
           Some(column) => column.get_fast(entity)
           None => None
         },
@@ -1564,11 +1850,6 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     })
   }
 
-  let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
-    @app.current_system_sequence().this_run,
-  )
-  trigger_targeted_events_in_animate_targets(world, writer)
-
   for update in transform_updates {
     try! world.set_by_key(update.0, @transform.ecs_key_transform, update.1)
   }
@@ -1580,58 +1861,6 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   for update in text_color_updates {
     try! world.set_by_key(update.0, @text.ecs_key_text_color, update.1)
   }
-}
-
-///|
-fn animation_collect_players_with_target_events(
-  world : @ecs.World,
-) -> (Map[Int, (AnimationPlayer, AnimationGraph, ThreadedAnimationGraph)], Bool) {
-  let players_with_target_events : Map[
-    Int,
-    (AnimationPlayer, AnimationGraph, ThreadedAnimationGraph),
-  ] = {}
-  let mut has_any_target_events = false
-  let threaded_graphs = try! world.get_resource(threaded_animation_graphs_key)
-  let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
-    world,
-  )
-  try! player_query.view(fn(player_entity, player) {
-    guard (try! world.get_by_key(player_entity, ecs_key_animation_graph_handle))
-      is Some(graph_handle) else {
-      return
-    }
-    let player = player.value()
-    guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
-      return
-    }
-    let graph_id = graph_handle.graph().id()
-    let threaded_graph = match threaded_graphs {
-      Some(threaded_graphs) =>
-        match threaded_graphs.graphs.get(graph_id) {
-          Some(cached_threaded) => cached_threaded
-          None => animation_thread_graph_build(graph)
-        }
-      None => animation_thread_graph_build(graph)
-    }
-    let mut player_has_target_events = false
-    for pair in player.playing_animations() {
-      let node_index = pair.0
-      guard graph.get(node_index) is Some(node) else { continue }
-      guard node.node_type is Clip(clip_handle) else { continue }
-      guard animation_clip_get(clip_handle) is Some(clip) else { continue }
-      if animation_clip_has_target_events(clip) {
-        player_has_target_events = true
-      }
-    }
-    if player_has_target_events {
-      players_with_target_events.set(
-        player_entity.id,
-        (player, graph, threaded_graph),
-      )
-      has_any_target_events = true
-    }
-  })
-  (players_with_target_events, has_any_target_events)
 }
 
 ///|
@@ -1673,87 +1902,6 @@ pub fn trigger_untargeted_animation_events(world : @ecs.World) -> Unit {
         player_entity,
         player_entity,
         None,
-        active,
-        triggered,
-      )
-    }
-  })
-}
-
-///|
-fn trigger_targeted_events_in_animate_targets(
-  world : @ecs.World,
-  writer : @core.MessageWriter[AnimationTriggeredEvent],
-) -> Unit {
-  let (players_with_target_events, has_any_target_events) = animation_collect_players_with_target_events(
-    world,
-  )
-  if !has_any_target_events {
-    return
-  }
-  let target_mask_cache : Map[(Int, UInt64), AnimationMask] = {}
-  let target_query : @ecs.Query[@ecs.Comp[AnimationTargetId], @ecs.All] = @ecs.query(
-    world,
-  )
-  try! target_query.view(fn(target_entity, target_id) {
-    guard (try! world.get_by_key(target_entity, ecs_key_animated_by))
-      is Some(animated_by) else {
-      return
-    }
-    let player_entity = animated_by.player()
-    guard players_with_target_events.get(player_entity.id)
-      is Some((player, graph, threaded_graph)) else {
-      return
-    }
-    let target_id = target_id.value()
-    let target_mask = animation_target_mask_cached(
-      target_mask_cache,
-      player_entity.id,
-      graph,
-      target_id,
-    )
-    for pair in player.playing_animations() {
-      let node_index = pair.0
-      let active = pair.1
-      if active.is_paused() {
-        continue
-      }
-      guard graph.get(node_index) is Some(node) else { continue }
-      guard node.node_type is Clip(clip_handle) else { continue }
-      let node_i = node_index.index()
-      let computed_mask = if node_i >= 0 &&
-        node_i < threaded_graph.computed_masks.length() {
-        threaded_graph.computed_masks[node_i]
-      } else {
-        graph.computed_mask(node_index)
-      }
-      if (target_mask & computed_mask) != 0U {
-        continue
-      }
-      let effective_weight = if node_i >= 0 &&
-        node_i < threaded_graph.effective_weights.length() {
-        threaded_graph.effective_weights[node_i]
-      } else {
-        graph.effective_weight(node_index)
-      }
-      let combined_weight = active.weight() * effective_weight
-      if combined_weight <= 0.0F {
-        continue
-      }
-      guard animation_clip_get(clip_handle) is Some(clip) else { continue }
-      guard animation_clip_events_for_target(clip, target_id) is Some(events) else {
-        continue
-      }
-      let triggered = animation_clip_collect_triggered_events(events, active)
-      if triggered.length() == 0 {
-        continue
-      }
-      animation_emit_triggered_events(
-        world,
-        writer,
-        player_entity,
-        target_entity,
-        Some(target_id),
         active,
         triggered,
       )

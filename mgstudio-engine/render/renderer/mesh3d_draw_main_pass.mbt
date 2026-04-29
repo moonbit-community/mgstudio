@@ -76,12 +76,22 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
   cull_mode : Int,
-  shader_path : String?,
+  vertex_shader_path : String?,
+  fragment_shader_path : String?,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
   transparent : Bool,
 ) -> Unit raise GpuBackendError {
-  let draw_shader_path = if pass_kind == 0 { shader_path } else { None }
+  let draw_vertex_shader_path = if pass_kind == 0 {
+    vertex_shader_path
+  } else {
+    None
+  }
+  let draw_fragment_shader_path = if pass_kind == 0 {
+    fragment_shader_path
+  } else {
+    None
+  }
   let forward_decal = (material_flags & (1U << 20)) != 0U
   guard mesh3d_pipeline_for_current_pass(
       self,
@@ -90,7 +100,8 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       forward_decal,
       mesh.primitive_topology,
       cull_mode,
-      draw_shader_path,
+      draw_vertex_shader_path,
+      draw_fragment_shader_path,
       skinning_key_hi >= 0,
     )
     is Some(pipeline) else {

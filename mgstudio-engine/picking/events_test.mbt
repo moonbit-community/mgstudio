@@ -13,6 +13,71 @@
 // limitations under the License.
 
 ///|
+struct PointerInputs {
+  pointers : Array[PointerInput]
+}
+
+///|
+fn PointerInputs::from_array(pointers : Array[PointerInput]) -> PointerInputs {
+  PointerInputs::{ pointers, }
+}
+
+///|
+fn PointerInputs::to_array(self : PointerInputs) -> Array[PointerInput] {
+  self.pointers
+}
+
+///|
+struct PickingHits {
+  ui : Array[@core.Entity?]
+  sprite2d : Array[@core.Entity?]
+  mesh3d : Array[@core.Entity?]
+  window : Array[@core.Entity?]
+}
+
+///|
+fn PickingHits::from_arrays(
+  ui : Array[@core.Entity?],
+  sprite2d : Array[@core.Entity?],
+  mesh3d? : Array[@core.Entity?] = [],
+  window? : Array[@core.Entity?] = [],
+) -> PickingHits {
+  PickingHits::{ ui, sprite2d, mesh3d, window }
+}
+
+///|
+fn picking_hits_push_layer(
+  out : Array[PointerHits],
+  layer : Array[@core.Entity?],
+  order : Float,
+  depth : Float,
+) -> Unit {
+  for pointer, entity_opt in layer {
+    match entity_opt {
+      Some(entity) =>
+        out.push(
+          PointerHits::new(
+            pointer,
+            [(entity, HitData::new(entity, depth, None, None))],
+            order,
+          ),
+        )
+      None => ()
+    }
+  }
+}
+
+///|
+fn PickingHits::to_pointer_hits(self : PickingHits) -> Array[PointerHits] {
+  let out : Array[PointerHits] = []
+  picking_hits_push_layer(out, self.ui, 3.0F, 0.0F)
+  picking_hits_push_layer(out, self.sprite2d, 2.0F, 0.0F)
+  picking_hits_push_layer(out, self.mesh3d, 2.0F, 0.0F)
+  picking_hits_push_layer(out, self.window, 0.0F, 0.0F)
+  out
+}
+
+///|
 fn drain_events(world : @ecs.World) -> Array[@pointer_events.PointerEvent] {
   let events_res = @app.get_picking_events_resource(world)
   guard events_res.get() is Some(events_value) else { return [] }
@@ -23,15 +88,49 @@ fn drain_events(world : @ecs.World) -> Array[@pointer_events.PointerEvent] {
 }
 
 ///|
+fn ensure_test_messages(world : @ecs.World) -> Unit {
+  if !world.contains_message(pointer_input_message_key()) {
+    world.init_message(pointer_input_message_key())
+  }
+  if !world.contains_message(pointer_hits_message_key()) {
+    world.init_message(pointer_hits_message_key())
+  }
+}
+
+///|
 fn set_frame(
   world : @ecs.World,
   inputs : PointerInputs,
   hits : PickingHits,
 ) -> Unit {
-  get_pointer_inputs_resource(world).insert(inputs)
-  get_picking_hits_resource(world).insert(hits)
+  ensure_test_messages(world)
+  for input in inputs.to_array() {
+    ignore(world.send_message(pointer_input_message_key(), input))
+  }
+  for hit in hits.to_pointer_hits() {
+    ignore(world.send_message(pointer_hits_message_key(), hit))
+  }
   picking_clear_system(world)
+  picking_process_pointer_inputs_system(world)
+  picking_hover_pipeline_system(world)
   picking_generate_events_system(world)
+}
+
+///|
+fn send_test_pointer_inputs(world : @ecs.World, inputs : PointerInputs) -> Unit {
+  ensure_test_messages(world)
+  for input in inputs.to_array() {
+    ignore(world.send_message(pointer_input_message_key(), input))
+  }
+  picking_process_pointer_inputs_system(world)
+}
+
+///|
+fn read_test_pointer_hits(
+  world : @ecs.World,
+  cursor : Ref[Int],
+) -> Array[PointerHits] {
+  try! world.message_reader(pointer_hits_message_key(), cursor).read()
 }
 
 ///|
@@ -57,8 +156,7 @@ test "picking: generates enter/leave and click events (single pointer)" {
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
-  get_pointer_inputs_resource(world).insert(PointerInputs::default())
-  get_picking_hits_resource(world).insert(PickingHits::default())
+  ensure_test_messages(world)
   let e1 = @core.Entity::new(1, 0)
   let e2 = @core.Entity::new(2, 0)
   let pos0 = @math.Vec2::new(10.0F, 20.0F)
@@ -163,8 +261,7 @@ test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
-  get_pointer_inputs_resource(world).insert(PointerInputs::default())
-  get_picking_hits_resource(world).insert(PickingHits::default())
+  ensure_test_messages(world)
   let ui_entity = @core.Entity::new(11, 0)
   let sprite_entity = @core.Entity::new(12, 0)
   let mesh_entity = @core.Entity::new(13, 0)
@@ -269,8 +366,7 @@ test "picking: non-hoverable non-blocking Pickable allows lower hit" {
   ignore(world.advance_sequence())
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
-  get_pointer_inputs_resource(world).insert(PointerInputs::default())
-  get_picking_hits_resource(world).insert(PickingHits::default())
+  ensure_test_messages(world)
   let top = world.spawn_empty()
   try! world.set_by_key(top, ecs_key_pickable, pickable_ignore)
   let lower = world.spawn_empty()
@@ -297,8 +393,7 @@ test "picking: non-hoverable blocking Pickable suppresses lower hits" {
   ignore(world.advance_sequence())
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
-  get_pointer_inputs_resource(world).insert(PointerInputs::default())
-  get_picking_hits_resource(world).insert(PickingHits::default())
+  ensure_test_messages(world)
   let top = world.spawn_empty()
   try! world.set_by_key(top, ecs_key_pickable, Pickable::new(true, false))
   let lower = world.spawn_empty()
@@ -323,7 +418,8 @@ test "picking: non-hoverable blocking Pickable suppresses lower hits" {
 test "picking: window backend populates fallback hit for active pointers" {
   let world = @ecs.World::new()
   ignore(world.advance_sequence())
-  get_pointer_inputs_resource(world).insert(
+  send_test_pointer_inputs(
+    world,
     PointerInputs::from_array([
       PointerInput::new(
         0,
@@ -335,7 +431,6 @@ test "picking: window backend populates fallback hit for active pointers" {
       PointerInput::new(1, None, false, false, false),
     ]),
   )
-  get_picking_hits_resource(world).insert(PickingHits::default())
   let window_entity = world.spawn_empty()
   try! world.set_by_key(
     window_entity,
@@ -346,14 +441,45 @@ test "picking: window backend populates fallback hit for active pointers" {
 
   })
   picking_window_hit_test_system(world)
-  let hits = get_picking_hits_resource(world)
-    .get()
-    .unwrap_or(PickingHits::default())
+  let pointer_hits = read_test_pointer_hits(world, Ref::new(0))
+  debug_inspect(pointer_hits.length(), content="2")
+  debug_inspect(pointer_hits[0].picks.length(), content="1")
   debug_inspect(
-    hits.window(0) is Some(hit) && hit.id == window_entity.id,
+    pointer_hits[0].picks[0].0.id == window_entity.id,
     content="true",
   )
-  debug_inspect(hits.window(1) is None, content="true")
+  debug_inspect(pointer_hits[1].picks.length(), content="0")
+}
+
+///|
+test "picking: window backend reads PointerLocation components" {
+  let world = @ecs.World::new()
+  ignore(world.advance_sequence())
+  ensure_test_messages(world)
+  let pointer = world.spawn_empty()
+  try! world.set_by_key(pointer, ecs_key_pointer_id, PointerId::mouse())
+  try! world.set_by_key(
+    pointer,
+    ecs_key_pointer_location,
+    PointerLocation::new(@math.Vec2::new(2.0F, 3.0F)),
+  )
+  try! world.set_by_key(pointer, ecs_key_pointer_press, PointerPress::default())
+  let window_entity = world.spawn_empty()
+  try! world.set_by_key(
+    window_entity,
+    @window.ecs_key_window,
+    @window.Window::default(),
+  )
+  try! world.set_by_key(window_entity, @window.ecs_key_primary_window, @window.PrimaryWindow::{
+
+  })
+  picking_window_hit_test_system(world)
+  let pointer_hits = read_test_pointer_hits(world, Ref::new(0))
+  debug_inspect(pointer_hits.length(), content="1")
+  debug_inspect(
+    pointer_hits[0].picks[0].0.id == window_entity.id,
+    content="true",
+  )
 }
 
 ///|
@@ -363,8 +489,7 @@ test "picking: handles multiple pointers independently" {
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
-  get_pointer_inputs_resource(world).insert(PointerInputs::default())
-  get_picking_hits_resource(world).insert(PickingHits::default())
+  ensure_test_messages(world)
   let e1 = @core.Entity::new(1, 0)
   let e2 = @core.Entity::new(2, 0)
   let p0 = @math.Vec2::new(5.0F, 5.0F)
@@ -397,7 +522,8 @@ test "picking: handles multiple pointers independently" {
 test "picking: ui hit test respects transformed ui node" {
   let world = @ecs.World::new()
   ignore(world.advance_sequence())
-  get_pointer_inputs_resource(world).insert(
+  send_test_pointer_inputs(
+    world,
     PointerInputs::from_array([
       PointerInput::new(
         0,
@@ -408,7 +534,6 @@ test "picking: ui hit test respects transformed ui node" {
       ),
     ]),
   )
-  get_picking_hits_resource(world).insert(PickingHits::default())
   @ui.get_ui_context_resource(world).insert(
     @ui.UiContext::new(
       @asset.Handle::new(1),
@@ -446,13 +571,12 @@ test "picking: ui hit test respects transformed ui node" {
   @ui.get_ui_stack_resource(world).insert(@ui.UiStack::default())
   @ui.ui_stack_system(world)
   picking_ui_hit_test_system(world)
-  let hits = get_picking_hits_resource(world)
-    .get()
-    .unwrap_or(PickingHits::default())
+  let pointer_hits = read_test_pointer_hits(world, Ref::new(0))
   debug_inspect(
-    hits.ui(0) is Some(hit) &&
-    hit.id == entity.id &&
-    hit.generation == entity.generation,
+    pointer_hits.length() == 1 &&
+    pointer_hits[0].picks.length() == 1 &&
+    pointer_hits[0].picks[0].0.id == entity.id &&
+    pointer_hits[0].picks[0].0.generation == entity.generation,
     content="true",
   )
 }
@@ -461,8 +585,7 @@ test "picking: ui hit test respects transformed ui node" {
 test "picking: ui hit test keeps top and bottom rows distinct" {
   let world = @ecs.World::new()
   ignore(world.advance_sequence())
-  get_pointer_inputs_resource(world).insert(PointerInputs::default())
-  get_picking_hits_resource(world).insert(PickingHits::default())
+  ensure_test_messages(world)
   @ui.get_ui_context_resource(world).insert(
     @ui.UiContext::new(
       @asset.Handle::new(1),
@@ -504,28 +627,34 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
   let top_center = @math.Vec2::new(220.0F, 130.0F)
   let bottom_center = @math.Vec2::new(220.0F, 310.0F)
 
-  get_pointer_inputs_resource(world).insert(
+  let cursor = Ref::new(0)
+  send_test_pointer_inputs(
+    world,
     PointerInputs::from_array([
       PointerInput::new(0, Some(top_center), false, false, false),
     ]),
   )
   picking_ui_hit_test_system(world)
-  let hits_top = get_picking_hits_resource(world)
-    .get()
-    .unwrap_or(PickingHits::default())
-  debug_inspect(hits_top.ui(0) is Some(hit) && hit.id == top.id, content="true")
+  let hits_top = read_test_pointer_hits(world, cursor)
+  debug_inspect(
+    hits_top.length() == 1 &&
+    hits_top[0].picks.length() == 1 &&
+    hits_top[0].picks[0].0.id == top.id,
+    content="true",
+  )
 
-  get_pointer_inputs_resource(world).insert(
+  send_test_pointer_inputs(
+    world,
     PointerInputs::from_array([
       PointerInput::new(0, Some(bottom_center), false, false, false),
     ]),
   )
   picking_ui_hit_test_system(world)
-  let hits_bottom = get_picking_hits_resource(world)
-    .get()
-    .unwrap_or(PickingHits::default())
+  let hits_bottom = read_test_pointer_hits(world, cursor)
   debug_inspect(
-    hits_bottom.ui(0) is Some(hit) && hit.id == bottom.id,
+    hits_bottom.length() == 1 &&
+    hits_bottom[0].picks.length() == 1 &&
+    hits_bottom[0].picks[0].0.id == bottom.id,
     content="true",
   )
 }
@@ -534,7 +663,8 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
 test "picking: ui hit test still matches button with Interaction component" {
   let world = @ecs.World::new()
   ignore(world.advance_sequence())
-  get_pointer_inputs_resource(world).insert(
+  send_test_pointer_inputs(
+    world,
     PointerInputs::from_array([
       PointerInput::new(
         0,
@@ -545,7 +675,6 @@ test "picking: ui hit test still matches button with Interaction component" {
       ),
     ]),
   )
-  get_picking_hits_resource(world).insert(PickingHits::default())
   @ui.get_ui_context_resource(world).insert(
     @ui.UiContext::new(
       @asset.Handle::new(1),
@@ -578,13 +707,12 @@ test "picking: ui hit test still matches button with Interaction component" {
   @ui.get_ui_stack_resource(world).insert(@ui.UiStack::default())
   @ui.ui_stack_system(world)
   picking_ui_hit_test_system(world)
-  let hits = get_picking_hits_resource(world)
-    .get()
-    .unwrap_or(PickingHits::default())
+  let pointer_hits = read_test_pointer_hits(world, Ref::new(0))
   debug_inspect(
-    hits.ui(0) is Some(hit) &&
-    hit.id == entity.id &&
-    hit.generation == entity.generation,
+    pointer_hits.length() == 1 &&
+    pointer_hits[0].picks.length() == 1 &&
+    pointer_hits[0].picks[0].0.id == entity.id &&
+    pointer_hits[0].picks[0].0.generation == entity.generation,
     content="true",
   )
 }
@@ -760,8 +888,7 @@ test "picking: pointer observers dispatch generated move enter and leave events"
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
-  get_pointer_inputs_resource(world).insert(PointerInputs::default())
-  get_picking_hits_resource(world).insert(PickingHits::default())
+  ensure_test_messages(world)
 
   let e1 = @core.Entity::new(1, 0)
   let e2 = @core.Entity::new(2, 0)

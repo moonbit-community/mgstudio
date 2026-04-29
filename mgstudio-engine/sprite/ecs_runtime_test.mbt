@@ -42,6 +42,21 @@ fn dummy_f32_bits(x : Float) -> UInt {
 }
 
 ///|
+test "sprite: default trait mirrors bevy component defaults" {
+  let sprite : Sprite = Default::default()
+  let image_mode : SpriteImageMode = Default::default()
+  let scaling_mode : SpriteScalingMode = Default::default()
+  let anchor : Anchor = Default::default()
+  let clear_color : ClearColor = Default::default()
+  debug_inspect(sprite.image.id(), content="0")
+  debug_inspect(image_mode is SpriteImageMode::Auto, content="true")
+  debug_inspect(scaling_mode is SpriteScalingMode::FillCenter, content="true")
+  debug_inspect(anchor.as_vec().x.to_double(), content="0")
+  debug_inspect(anchor.as_vec().y.to_double(), content="0")
+  debug_inspect(clear_color.color.r.to_double(), content="0.024157630279660225")
+}
+
+///|
 struct DummyMaterialAsset {
   color : Color
   checker_frequency : Float
@@ -679,6 +694,157 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Sprite" {
     debug_inspect(half_size.x.to_double(), content="20")
     debug_inspect(half_size.y.to_double(), content="10")
     debug_inspect(half_size.z.to_double(), content="0")
+  }
+}
+
+///|
+test "sprite: Sprite and SpriteMesh install Bevy required components" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(SpritePlugin::default())
+  let world = app.world()
+  let sprite_entity = world.spawn()
+  let sprite_mesh_entity = world.spawn()
+  try! world.set_by_key(
+    sprite_entity,
+    ecs_key_sprite,
+    Sprite::from_color(Color::white(), @math.Vec2::new(8.0F, 4.0F)),
+  )
+  try! world.set_by_key(
+    sprite_mesh_entity,
+    ecs_key_sprite_mesh,
+    SpriteMesh::from_color(Color::white(), @math.Vec2::new(12.0F, 6.0F)),
+  )
+  app = app.update()
+  let world = app.world()
+  for entity in [sprite_entity, sprite_mesh_entity] {
+    debug_inspect(
+      try! world.contains_by_key(entity, @transform.ecs_key_transform),
+      content="true",
+    )
+    debug_inspect(
+      try! world.contains_by_key(entity, @visibility.ecs_key_visibility),
+      content="true",
+    )
+    debug_inspect(
+      try! world.contains_by_key(entity, ecs_key_anchor),
+      content="true",
+    )
+    debug_inspect(
+      try! world.contains_by_key(entity, @camera_primitives.ecs_key_aabb),
+      content="true",
+    )
+  }
+}
+
+///|
+test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for SpriteMesh" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(SpritePlugin::default())
+  let world = app.world()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    ecs_key_sprite_mesh,
+    SpriteMesh::from_color(Color::white(), @math.Vec2::new(12.0F, 6.0F)),
+  )
+
+  app = app.update()
+
+  let aabb = try! app
+    .world()
+    .get_by_key(entity, @camera_primitives.ecs_key_aabb)
+  debug_inspect(aabb is Some(_), content="true")
+  if aabb is Some(value) {
+    let center = value.center()
+    let half_size = value.half_size()
+    debug_inspect(center.x.to_double(), content="0")
+    debug_inspect(center.y.to_double(), content="0")
+    debug_inspect(half_size.x.to_double(), content="6")
+    debug_inspect(half_size.y.to_double(), content="3")
+  }
+}
+
+///|
+test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::default())
+    .add_plugins(@mesh.MeshPlugin::default())
+    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(Render2dPlugin::default())
+  let world = app.world()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    ecs_key_sprite_mesh,
+    SpriteMesh::from_color(
+      Color::new(0.25F, 0.5F, 0.75F, 1.0F),
+      @math.Vec2::new(12.0F, 6.0F),
+    ),
+  )
+  try! world.set_by_key(entity, ecs_key_anchor, Anchor::center())
+
+  app = app.update()
+
+  let world = app.world()
+  let material_key : @ecs.ComponentKey[MeshMaterial2d[SpriteMaterial]] = MeshMaterial2d::component()
+  let mesh2d = try! world.get_by_key(entity, @mesh.ecs_key_mesh2d)
+  let material = try! world.get_by_key(entity, material_key)
+  let material_assets_key : @ecs.ResourceKey[@asset.Assets[SpriteMaterial]] = @asset.assets_resource_key()
+  let material_assets = try! world.get_resource(material_assets_key).unwrap()
+
+  debug_inspect(mesh2d is Some(_), content="true")
+  debug_inspect(material is Some(_), content="true")
+  if material is Some(value) {
+    debug_inspect(material_assets.contains(value.handle), content="true")
+  }
+}
+
+///|
+test "sprite: compute_pixel_space_point follows Bevy texture-coordinate convention" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @asset.AssetPlugin::default(),
+  )
+  let world = app.world()
+  let image = @asset.asset_create_dynamic_texture(
+    @math.UVec2::new(10, 20),
+    true,
+  )
+  let image_assets_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
+  let atlas_assets_key : @ecs.ResourceKey[
+    @asset.Assets[@asset.TextureAtlasLayout],
+  ] = @asset.assets_resource_key()
+  let image_assets = (try! world.get_resource(image_assets_key)).unwrap()
+  let atlas_assets = (try! world.get_resource(atlas_assets_key)).unwrap()
+  let sprite = Sprite::from_image(image)
+  let inside = sprite.compute_pixel_space_point(
+    @math.Vec2::new(4.0F, 9.0F),
+    Anchor::center(),
+    image_assets,
+    atlas_assets,
+  )
+  let outside = sprite.compute_pixel_space_point(
+    @math.Vec2::new(6.0F, 0.0F),
+    Anchor::center(),
+    image_assets,
+    atlas_assets,
+  )
+  match inside {
+    Ok(point) => {
+      debug_inspect(point.x.to_double(), content="9")
+      debug_inspect(point.y.to_double(), content="1")
+    }
+    Err(_) => abort("expected inside point")
+  }
+  match outside {
+    Err(point) => {
+      debug_inspect(point.x.to_double(), content="11")
+      debug_inspect(point.y.to_double(), content="10")
+    }
+    Ok(_) => abort("expected outside point")
   }
 }
 

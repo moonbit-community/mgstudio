@@ -64,7 +64,7 @@ fn setup(
           PhaseA::{  },
           @pbr.Mesh3d::new(mesh),
           @pbr.MeshMaterial3d::new(material)
-          .with_extension_shader_path(Some(SHADER_PATH))
+          .with_extension_fragment_shader_path(Some(SHADER_PATH))
           .with_extension_tag(0),
           @transform.Transform::from_xyz(x * 1.4F, 0.6F, z * 1.4F),
         ),
@@ -76,7 +76,7 @@ fn setup(
           PhaseB::{  },
           @pbr.Mesh3d::new(mesh),
           @pbr.MeshMaterial3d::new(material)
-          .with_extension_shader_path(Some(SHADER_PATH))
+          .with_extension_fragment_shader_path(Some(SHADER_PATH))
           .with_extension_tag(1),
           @transform.Transform::from_xyz(x * 1.4F, 0.6F, z * 1.4F),
         ),

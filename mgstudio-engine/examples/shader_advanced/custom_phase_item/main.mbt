@@ -53,7 +53,7 @@ fn setup(
         CustomPhase::{ phase, },
         @pbr.Mesh3d::new(mesh),
         @pbr.MeshMaterial3d::new(material)
-        .with_extension_shader_path(Some(SHADER_PATH))
+        .with_extension_fragment_shader_path(Some(SHADER_PATH))
         .with_extension_tag(i % 3),
         @transform.Transform::from_xyz(
           @math.cos(angle) * radius,

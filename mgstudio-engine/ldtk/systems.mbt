@@ -251,6 +251,7 @@ pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
       @asset.AssetEvent::LoadedWithDependencies(handle) =>
         changed_handles.insert(handle.id())
       @asset.AssetEvent::Removed(handle) => changed_handles.remove(handle.id())
+      @asset.AssetEvent::Unused(handle) => changed_handles.remove(handle.id())
     }
   }
   if changed_handles.is_empty() {

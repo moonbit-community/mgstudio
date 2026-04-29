@@ -25,6 +25,11 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::VisibilitySystems::VisibilityPropagate`.
+pub let visibility_set_calculate_bounds : @app.SystemSet = @app.system_set(
+  "mgstudio.visibility.calculate_bounds",
+)
+
+///|
 pub let visibility_set_visibility_propagate : @app.SystemSet = @app.system_set(
   "mgstudio.visibility.visibility_propagate",
 )

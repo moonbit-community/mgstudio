@@ -40,7 +40,7 @@ fn setup(
     commands.spawn(
       (
         @pbr.Mesh3d::new(mesh),
-        @pbr.MeshMaterial3d::new(material).with_extension_shader_path(
+        @pbr.MeshMaterial3d::new(material).with_extension_fragment_shader_path(
           Some(SHADER_PATH),
         ),
         @transform.Transform::from_xyz(

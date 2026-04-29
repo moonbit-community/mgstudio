@@ -1,0 +1,15 @@
+import {
+  "Milky2018/moon_wgsl" @wgsl,
+}
+
+supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name fullscreen_wgsl_source",
+      "input": "../fullscreen.wgsl",
+      "output": "fullscreen_wgsl.mbt",
+    },
+  ],
+)

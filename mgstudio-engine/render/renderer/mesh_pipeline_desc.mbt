@@ -50,6 +50,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   layout : @wgpu.PipelineLayout,
   shader : @wgpu.ShaderModule,
   format : UInt,
+  fragment_shader? : @wgpu.ShaderModule,
   with_depth? : Bool = false,
   depth_write_enabled? : Bool = true,
   position3d? : Bool = false,
@@ -197,5 +198,10 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     )
   }
   render_pipeline_descriptor_set_cull_mode(desc, cull_mode)
+  match fragment_shader {
+    Some(fragment_module) =>
+      render_pipeline_descriptor_set_fragment_module(desc, fragment_module)
+    None => ()
+  }
   desc
 }

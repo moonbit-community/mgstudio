@@ -18,7 +18,63 @@ pub(all) enum AssetEvent[T] {
   Added(Handle[T])
   Modified(Handle[T])
   Removed(Handle[T])
+  Unused(Handle[T])
   LoadedWithDependencies(Handle[T])
+}
+
+///|
+pub fn[T] AssetEvent::is_loaded_with_dependencies(
+  self : AssetEvent[T],
+  handle : Handle[T],
+) -> Bool {
+  match self {
+    LoadedWithDependencies(changed) => changed.id() == handle.id()
+    _ => false
+  }
+}
+
+///|
+pub fn[T] AssetEvent::is_added(
+  self : AssetEvent[T],
+  handle : Handle[T],
+) -> Bool {
+  match self {
+    Added(changed) => changed.id() == handle.id()
+    _ => false
+  }
+}
+
+///|
+pub fn[T] AssetEvent::is_modified(
+  self : AssetEvent[T],
+  handle : Handle[T],
+) -> Bool {
+  match self {
+    Modified(changed) => changed.id() == handle.id()
+    _ => false
+  }
+}
+
+///|
+pub fn[T] AssetEvent::is_removed(
+  self : AssetEvent[T],
+  handle : Handle[T],
+) -> Bool {
+  match self {
+    Removed(changed) => changed.id() == handle.id()
+    _ => false
+  }
+}
+
+///|
+pub fn[T] AssetEvent::is_unused(
+  self : AssetEvent[T],
+  handle : Handle[T],
+) -> Bool {
+  match self {
+    Unused(changed) => changed.id() == handle.id()
+    _ => false
+  }
 }
 
 ///|

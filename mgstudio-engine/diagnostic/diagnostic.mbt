@@ -82,7 +82,7 @@ pub fn DiagnosticMeasurement::new(
 pub struct Diagnostic {
   path : DiagnosticPath
   suffix : String
-  history : Array[DiagnosticMeasurement]
+  history : @deque.Deque[DiagnosticMeasurement]
   mut sum : Float
   mut ema : Float
   ema_smoothing_factor : Float
@@ -111,7 +111,7 @@ pub fn Diagnostic::new(path : DiagnosticPath) -> Diagnostic {
   Diagnostic::{
     path,
     suffix: "",
-    history: [],
+    history: @deque.Deque::new(capacity=DEFAULT_MAX_HISTORY_LENGTH),
     sum: 0.0F,
     ema: 0.0F,
     ema_smoothing_factor: 2.0F / 21.0F,
@@ -161,7 +161,7 @@ pub fn Diagnostic::set_enabled(self : Diagnostic, enabled : Bool) -> Unit {
 
 ///|
 pub fn Diagnostic::measurement(self : Diagnostic) -> DiagnosticMeasurement? {
-  self.history.last()
+  self.history.back()
 }
 
 ///|
@@ -197,9 +197,11 @@ pub fn Diagnostic::duration(self : Diagnostic) -> @core.Duration? {
   if self.history.length() < 2 {
     return None
   }
-  let newest = self.history[self.history.length() - 1]
-  let oldest = self.history[0]
-  Some(newest.time.saturating_duration_since(oldest.time))
+  match (self.history.back(), self.history.front()) {
+    (Some(newest), Some(oldest)) =>
+      Some(newest.time.saturating_duration_since(oldest.time))
+    _ => None
+  }
 }
 
 ///|
@@ -210,7 +212,7 @@ pub fn Diagnostic::get_max_history_length(self : Diagnostic) -> Int {
 ///|
 pub fn Diagnostic::values(self : Diagnostic) -> Array[Float] {
   let values : Array[Float] = []
-  for measurement in self.history {
+  for measurement in self.history.iter() {
     values.push(measurement.value)
   }
   values
@@ -220,7 +222,7 @@ pub fn Diagnostic::values(self : Diagnostic) -> Array[Float] {
 pub fn Diagnostic::measurements(
   self : Diagnostic,
 ) -> Array[DiagnosticMeasurement] {
-  self.history.copy()
+  self.history.to_array()
 }
 
 ///|
@@ -253,17 +255,12 @@ pub fn Diagnostic::add_measurement(
 
   if self.max_history_length > 1 {
     while self.history.length() >= self.max_history_length {
-      let removed = self.history[0]
-      if diagnostic_value_is_finite(removed.value) {
-        self.sum = self.sum - removed.value
-      }
-      let retained : Array[DiagnosticMeasurement] = []
-      for i in 1..<self.history.length() {
-        retained.push(self.history[i])
-      }
-      self.history.clear()
-      for item in retained {
-        self.history.push(item)
+      match self.history.pop_front() {
+        Some(removed) =>
+          if diagnostic_value_is_finite(removed.value) {
+            self.sum = self.sum - removed.value
+          }
+        None => ()
       }
     }
 
@@ -274,7 +271,7 @@ pub fn Diagnostic::add_measurement(
     self.history.clear()
     self.sum = if measurement.value.is_nan() { 0.0F } else { measurement.value }
   }
-  self.history.push(measurement)
+  self.history.push_back(measurement)
 }
 
 ///|

@@ -33,6 +33,8 @@ pub fn dlss_prepare_enabled_for_entity(@ecs.World, @core.Entity) -> Bool
 
 pub fn dlss_update_runtime_state(@ecs.World) -> Unit
 
+pub fn install_dlss_required_components() -> Unit
+
 // Errors
 
 // Types and methods
@@ -45,6 +47,7 @@ pub fn Dlss::new(perf_quality_mode? : DlssPerfQualityMode, reset? : Bool) -> Sel
 pub fn Dlss::with_perf_quality_mode(Self, DlssPerfQualityMode) -> Self
 pub fn Dlss::with_reset(Self, Bool) -> Self
 pub impl @ecs.Component for Dlss
+pub impl Default for Dlss
 
 pub struct DlssInitPlugin {
 }
@@ -60,6 +63,7 @@ pub(all) enum DlssPerfQualityMode {
   UltraPerformance
 } derive(Eq, @debug.Debug)
 pub fn DlssPerfQualityMode::default() -> Self
+pub impl Default for DlssPerfQualityMode
 
 pub struct DlssPlugin {
 }

@@ -94,6 +94,18 @@ pub fn TextureAtlasLayout::is_empty(self : TextureAtlasLayout) -> Bool {
 }
 
 ///|
+pub fn TextureAtlasLayout::texture(
+  self : TextureAtlasLayout,
+  index : Int,
+) -> @math.URect? {
+  if index >= 0 && index < self.textures.length() {
+    Some(self.textures[index])
+  } else {
+    None
+  }
+}
+
+///|
 pub struct TextureAtlas {
   layout : Handle[TextureAtlasLayout]
   index : Int
@@ -135,6 +147,16 @@ pub fn TextureAtlas::with_layout(
   layout : Handle[TextureAtlasLayout],
 ) -> TextureAtlas {
   TextureAtlas::{ ..self, layout, }
+}
+
+///|
+pub fn TextureAtlas::layout(self : TextureAtlas) -> Handle[TextureAtlasLayout] {
+  self.layout
+}
+
+///|
+pub fn TextureAtlas::index(self : TextureAtlas) -> Int {
+  self.index
 }
 
 ///|

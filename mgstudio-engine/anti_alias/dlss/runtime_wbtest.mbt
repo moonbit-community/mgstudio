@@ -47,9 +47,14 @@ test "anti_alias/dlss: runtime state counts camera-only DLSS components" {
     .world()
     .get_resource(DlssRuntimeState::resource())
     .unwrap()
+  let camera_dlss = try! app
+    .world()
+    .get_by_key(camera_entity, Dlss::component())
+    .unwrap()
   debug_inspect(runtime.enabled_camera_count, content="1")
   debug_inspect(runtime.reset_requested_count, content="1")
   debug_inspect(runtime.runtime_supported, content="false")
+  debug_inspect(camera_dlss.reset, content="false")
   debug_inspect(
     dlss_node_enabled_for_entity(app.world(), camera_entity),
     content="false",
@@ -61,5 +66,43 @@ test "anti_alias/dlss: runtime state counts camera-only DLSS components" {
   debug_inspect(
     dlss_prepare_enabled_for_entity(app.world(), camera_entity),
     content="false",
+  )
+}
+
+///|
+test "anti_alias/dlss: required camera components mirror Bevy" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(DlssPlugin::default())
+  let entity = app.world().spawn_empty()
+  try! app.world().set_by_key(entity, Dlss::component(), Dlss::default())
+  debug_inspect(
+    try! app
+    .world()
+    .contains_by_key(entity, @post_process.ecs_key_temporal_jitter),
+    content="true",
+  )
+  debug_inspect(
+    try! app.world().contains_by_key(entity, @post_process.ecs_key_mip_bias),
+    content="true",
+  )
+  debug_inspect(
+    try! app
+    .world()
+    .contains_by_key(entity, @core_pipeline.ecs_key_depth_prepass),
+    content="true",
+  )
+  debug_inspect(
+    try! app
+    .world()
+    .contains_by_key(entity, @core_pipeline.ecs_key_motion_vector_prepass),
+    content="true",
+  )
+  debug_inspect(
+    try! app.world().contains_by_key(entity, @core_pipeline.ecs_key_hdr),
+    content="true",
+  )
+  debug_inspect(Default::default() is DlssPerfQualityMode::Auto, content="true")
+  debug_inspect(
+    (Default::default() : Dlss).perf_quality_mode is DlssPerfQualityMode::Auto,
+    content="true",
   )
 }

@@ -25,6 +25,8 @@ pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither]
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa]
 
+pub let ecs_key_mip_bias : @ecs.ComponentKey[MipBias]
+
 pub let ecs_key_motion_blur : @ecs.ComponentKey[@motion_blur.MotionBlur]
 
 pub let ecs_key_msaa_writeback : @ecs.ComponentKey[MsaaWriteback]
@@ -177,6 +179,15 @@ pub(all) enum FxaaSensitivity {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn FxaaSensitivity::default() -> Self
 pub fn FxaaSensitivity::get_str(Self) -> String
+
+pub struct MipBias {
+  bias : Float
+} derive(Eq, ToJson, @json.FromJson)
+pub fn MipBias::default() -> Self
+pub fn MipBias::new(Float) -> Self
+pub fn MipBias::value(Self) -> Float
+pub fn MipBias::with_bias(Self, Float) -> Self
+pub impl @ecs.Component for MipBias
 
 pub struct MsaaWriteback {
   enabled : Bool

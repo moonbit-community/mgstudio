@@ -95,16 +95,16 @@ test "standard material flip helpers keep bevy uv left-multiply semantics" {
 test "material boundary re-exports material metadata APIs" {
   let metadata = @material.ExtendedMaterialMetadata3d::new(7)
     .with_disable_shadows(true)
-    .with_shader_path(Some("shaders/manual_material.wgsl"))
+    .with_fragment_shader_path(Some("shaders/manual_material.wgsl"))
   let forward_ext = @material.ForwardDecalMaterialExt::new(0.5)
   let renderer_method = @material.DefaultOpaqueRendererMethod::forward()
-  let mesh_material = @material.MeshMaterial3d::new(@asset.Handle::new(42)).with_extension_shader_path(
+  let mesh_material = @material.MeshMaterial3d::new(@asset.Handle::new(42)).with_extension_fragment_shader_path(
     Some("shaders/manual_material.wgsl"),
   )
   debug_inspect(metadata.extension_tag, content="7")
   debug_inspect(metadata.disable_shadows, content="true")
   debug_inspect(
-    metadata.shader_path,
+    metadata.fragment_shader_path,
     content="Some(\"shaders/manual_material.wgsl\")",
   )
   debug_inspect(forward_ext.depth_fade_factor.to_double(), content="0.5")
@@ -113,7 +113,7 @@ test "material boundary re-exports material metadata APIs" {
     content="true",
   )
   debug_inspect(
-    mesh_material.extended_material.map(fn(ext) { ext.shader_path }),
+    mesh_material.extended_material.map(fn(ext) { ext.fragment_shader_path }),
     content="Some(Some(\"shaders/manual_material.wgsl\"))",
   )
 }
@@ -180,6 +180,10 @@ test "material boundary descriptor helpers match bevy layout/target behavior" {
     ),
   )
   inspect(fragment.targets.length(), content="2")
+  let default_descriptor : @material.RenderPipelineDescriptor = Default::default()
+  let default_fragment : @material.FragmentState = Default::default()
+  inspect(default_descriptor.zero_initialize_workgroup_memory, content="true")
+  inspect(default_fragment.targets.length(), content="0")
 }
 
 ///|
@@ -203,6 +207,27 @@ test "material boundary includes material layout and bindless property builders"
 }
 
 ///|
+test "material boundary defaults mirror bevy derived MaterialProperties default" {
+  let properties = @material.MaterialProperties::default()
+  inspect(properties.shadows_enabled, content="false")
+  inspect(properties.prepass_enabled, content="false")
+  inspect(
+    properties.render_method is @material.OpaqueRendererMethod::Forward,
+    content="true",
+  )
+  inspect(properties.alpha_mode is @material.AlphaMode::Opaque, content="true")
+  inspect(Default::default() is @material.AlphaMode::Opaque, content="true")
+  inspect(
+    Default::default() is @material.OpaqueRendererMethod::Forward,
+    content="true",
+  )
+  inspect(
+    Default::default() is @material.RenderPhaseType::Opaque,
+    content="true",
+  )
+}
+
+///|
 test "material boundary exposes bevy-shaped erased key + properties helpers" {
   let mesh_key = @material.ErasedMeshPipelineKey::new(7UL, "MeshKey")
   let material_key = @material.ErasedMaterialKey::new(
@@ -216,7 +241,9 @@ test "material boundary exposes bevy-shaped erased key + properties helpers" {
     .add_shader("main.fragment", "shaders/pbr.wgsl")
     .add_draw_function("main.opaque", @material.DrawFunctionId::new(3U))
   inspect(mesh_key.downcast_u64("MeshKey"), content="7")
-  inspect(pipeline_key.type_tag, content="PipelineKey")
+  inspect(pipeline_key.type_tag(), content="PipelineKey")
+  inspect(pipeline_key.mesh_key() == mesh_key, content="true")
+  inspect(pipeline_key.material_key() == material_key, content="true")
   inspect(material_key.type_tag(), content="MaterialKey")
   inspect(
     properties.get_shader("main.fragment"),
@@ -226,6 +253,30 @@ test "material boundary exposes bevy-shaped erased key + properties helpers" {
     properties.get_draw_function("main.opaque").map(fn(draw) { draw.id() }),
     content="Some(3)",
   )
+}
+
+///|
+test "material boundary dynamic bind group layout entries mirror bevy builder flow" {
+  let texture = @material.bind_group_layout_entry_builder(
+    @render_resource.BindingType::Texture,
+  )
+  let sampler = @material.bind_group_layout_entry_builder(
+    @render_resource.BindingType::Sampler,
+  )
+  let dynamic = @material.dynamic_bind_group_layout_entries_sequential(
+      @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
+      [texture],
+    )
+    .extend_sequential([sampler])
+    .extend_with_indices([
+      (7, texture.visibility(@wgpu.SHADER_STAGE_VERTEX.to_uint())),
+    ])
+  let entries = dynamic.entries()
+  inspect(entries.length(), content="3")
+  inspect(entries[0].binding(), content="0")
+  inspect(entries[1].binding(), content="1")
+  inspect(entries[2].binding(), content="7")
+  inspect(entries[2].visibility(), content="1")
 }
 
 ///|

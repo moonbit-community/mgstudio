@@ -55,7 +55,7 @@ fn setup(
     (
       @pbr.Mesh3d::new(cube),
       @pbr.MeshMaterial3d::new(matte)
-      .with_extension_shader_path(Some(SHADER_PATH))
+      .with_extension_fragment_shader_path(Some(SHADER_PATH))
       .with_extension_tag(10)
       .with_extension_disable_shadows(true),
       Spin::{  },
@@ -67,7 +67,7 @@ fn setup(
     (
       @pbr.Mesh3d::new(sphere),
       @pbr.MeshMaterial3d::new(glossy)
-      .with_extension_shader_path(Some(SHADER_PATH))
+      .with_extension_fragment_shader_path(Some(SHADER_PATH))
       .with_extension_tag(20)
       .with_extension_disable_shadows(false),
       Spin::{  },

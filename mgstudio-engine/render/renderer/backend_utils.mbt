@@ -16,7 +16,10 @@
 const PI : Float = 3.141592653589793F
 
 ///|
-const MESH3D_FORWARD_SHADER_PATH : String = "render/renderer/mesh3d_bevy_forward.wgsl"
+const MESH3D_FORWARD_SHADER_PATH : String = "pbr/render/pbr.wgsl"
+
+///|
+const MESH3D_FORWARD_VERTEX_SHADER_PATH : String = "pbr/render/mesh.wgsl"
 
 ///|
 const MESH3D_SHADOW_DEPTH_SHADER_PATH : String = "render/renderer/mesh3d_shadow_depth.wgsl"

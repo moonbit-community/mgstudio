@@ -91,7 +91,7 @@ fn setup(
   commands.spawn(
     (
       @pbr.Mesh3d::new(preview_mesh),
-      @pbr.MeshMaterial3d::new(preview_material).with_extension_shader_path(
+      @pbr.MeshMaterial3d::new(preview_material).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),
       @transform.Transform::from_xyz(0.0F, 1.5F, 0.0F),

@@ -22,13 +22,23 @@ pub(all) enum AlphaMode3d {
   Mask(Float)
   Blend
   Premultiplied
+  AlphaToCoverage
   Add
   Multiply
-  AlphaToCoverage
 }
 
 ///|
 pub type AlphaMode = AlphaMode3d
+
+///|
+pub fn AlphaMode3d::default() -> AlphaMode3d {
+  AlphaMode3d::Opaque
+}
+
+///|
+pub impl Default for AlphaMode3d with default() {
+  AlphaMode3d::default()
+}
 
 ///|
 pub(all) enum Face3d {
@@ -74,6 +84,29 @@ pub fn OpaqueRendererMethod::default() -> OpaqueRendererMethod {
 }
 
 ///|
+pub impl Default for OpaqueRendererMethod with default() {
+  OpaqueRendererMethod::default()
+}
+
+///|
+pub const MATERIAL_VERTEX_SHADER_LABEL : ShaderLabel = "MaterialVertexShader"
+
+///|
+pub const MATERIAL_FRAGMENT_SHADER_LABEL : ShaderLabel = "MaterialFragmentShader"
+
+///|
+pub const PREPASS_VERTEX_SHADER_LABEL : ShaderLabel = "PrepassVertexShader"
+
+///|
+pub const PREPASS_FRAGMENT_SHADER_LABEL : ShaderLabel = "PrepassFragmentShader"
+
+///|
+pub const DEFERRED_VERTEX_SHADER_LABEL : ShaderLabel = "DeferredVertexShader"
+
+///|
+pub const DEFERRED_FRAGMENT_SHADER_LABEL : ShaderLabel = "DeferredFragmentShader"
+
+///|
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
 } derive(ToJson, FromJson)
@@ -83,6 +116,11 @@ pub fn DefaultOpaqueRendererMethod::default() -> DefaultOpaqueRendererMethod {
   DefaultOpaqueRendererMethod::{
     renderer_method: OpaqueRendererMethod::Forward,
   }
+}
+
+///|
+pub impl Default for DefaultOpaqueRendererMethod with default() {
+  DefaultOpaqueRendererMethod::default()
 }
 
 ///|
@@ -184,9 +222,14 @@ pub fn MaterialProperties::default() -> MaterialProperties {
     prepass_specialize: None,
     user_specialize: None,
     material_key: ErasedMaterialKey::default(),
-    shadows_enabled: true,
-    prepass_enabled: true,
+    shadows_enabled: false,
+    prepass_enabled: false,
   }
+}
+
+///|
+pub impl Default for MaterialProperties with default() {
+  MaterialProperties::default()
 }
 
 ///|
@@ -982,7 +1025,12 @@ pub fn standard_material_set(
 /// path while keeping the same draw contract.
 pub struct ExtendedMaterialMetadata3d {
   extension_tag : Int
-  shader_path : String?
+  vertex_shader_path : String?
+  fragment_shader_path : String?
+  prepass_vertex_shader_path : String?
+  prepass_fragment_shader_path : String?
+  deferred_vertex_shader_path : String?
+  deferred_fragment_shader_path : String?
   alpha_mode_override : AlphaMode3d?
   opaque_render_method_override : OpaqueRendererMethod?
   requires_depth_prepass : Bool
@@ -994,7 +1042,12 @@ pub struct ExtendedMaterialMetadata3d {
 pub fn ExtendedMaterialMetadata3d::default() -> ExtendedMaterialMetadata3d {
   ExtendedMaterialMetadata3d::{
     extension_tag: 0,
-    shader_path: None,
+    vertex_shader_path: None,
+    fragment_shader_path: None,
+    prepass_vertex_shader_path: None,
+    prepass_fragment_shader_path: None,
+    deferred_vertex_shader_path: None,
+    deferred_fragment_shader_path: None,
     alpha_mode_override: None,
     opaque_render_method_override: None,
     requires_depth_prepass: false,
@@ -1020,15 +1073,77 @@ pub fn ExtendedMaterialMetadata3d::with_extension_tag(
 }
 
 ///|
-pub fn ExtendedMaterialMetadata3d::with_shader_path(
-  self : ExtendedMaterialMetadata3d,
-  shader_path : String?,
-) -> ExtendedMaterialMetadata3d {
-  let safe_shader_path = match shader_path {
+fn normalize_material_shader_path(shader_path : String?) -> String? {
+  match shader_path {
     Some(path) => if path == "" { None } else { Some(path) }
     None => None
   }
-  ExtendedMaterialMetadata3d::{ ..self, shader_path: safe_shader_path }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_vertex_shader_path(
+  self : ExtendedMaterialMetadata3d,
+  shader_path : String?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{
+    ..self,
+    vertex_shader_path: normalize_material_shader_path(shader_path),
+  }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_fragment_shader_path(
+  self : ExtendedMaterialMetadata3d,
+  shader_path : String?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{
+    ..self,
+    fragment_shader_path: normalize_material_shader_path(shader_path),
+  }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_prepass_vertex_shader_path(
+  self : ExtendedMaterialMetadata3d,
+  shader_path : String?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{
+    ..self,
+    prepass_vertex_shader_path: normalize_material_shader_path(shader_path),
+  }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_prepass_fragment_shader_path(
+  self : ExtendedMaterialMetadata3d,
+  shader_path : String?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{
+    ..self,
+    prepass_fragment_shader_path: normalize_material_shader_path(shader_path),
+  }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_deferred_vertex_shader_path(
+  self : ExtendedMaterialMetadata3d,
+  shader_path : String?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{
+    ..self,
+    deferred_vertex_shader_path: normalize_material_shader_path(shader_path),
+  }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_deferred_fragment_shader_path(
+  self : ExtendedMaterialMetadata3d,
+  shader_path : String?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{
+    ..self,
+    deferred_fragment_shader_path: normalize_material_shader_path(shader_path),
+  }
 }
 
 ///|
@@ -1119,7 +1234,7 @@ pub fn MeshMaterial3d::with_extension_tag(
 }
 
 ///|
-pub fn MeshMaterial3d::with_extension_shader_path(
+pub fn MeshMaterial3d::with_extension_vertex_shader_path(
   self : MeshMaterial3d,
   shader_path : String?,
 ) -> MeshMaterial3d {
@@ -1129,7 +1244,22 @@ pub fn MeshMaterial3d::with_extension_shader_path(
   }
   MeshMaterial3d::{
     ..self,
-    extended_material: Some(extension.with_shader_path(shader_path)),
+    extended_material: Some(extension.with_vertex_shader_path(shader_path)),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_fragment_shader_path(
+  self : MeshMaterial3d,
+  shader_path : String?,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::default()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(extension.with_fragment_shader_path(shader_path)),
   }
 }
 

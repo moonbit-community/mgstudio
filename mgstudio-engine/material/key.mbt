@@ -19,7 +19,7 @@
 pub struct ErasedMeshPipelineKey {
   bits : UInt64
   type_tag : String
-}
+} derive(Eq, Debug)
 
 ///|
 pub fn ErasedMeshPipelineKey::new(
@@ -72,7 +72,7 @@ pub struct ErasedMaterialKey {
   type_tag : String
   hash : UInt64
   value_json : String
-}
+} derive(Eq, Debug)
 
 ///|
 pub fn[T : ToJson] ErasedMaterialKey::new(
@@ -124,7 +124,7 @@ pub struct ErasedMaterialPipelineKey {
   mesh_key : ErasedMeshPipelineKey
   material_key : ErasedMaterialKey
   type_tag : String
-}
+} derive(Eq, Debug)
 
 ///|
 pub fn ErasedMaterialPipelineKey::new(
@@ -141,4 +141,25 @@ pub fn ErasedMaterialPipelineKey::new_untyped(
   material_key : ErasedMaterialKey,
 ) -> ErasedMaterialPipelineKey {
   ErasedMaterialPipelineKey::new(mesh_key, material_key, "<unknown>")
+}
+
+///|
+pub fn ErasedMaterialPipelineKey::mesh_key(
+  self : ErasedMaterialPipelineKey,
+) -> ErasedMeshPipelineKey {
+  self.mesh_key
+}
+
+///|
+pub fn ErasedMaterialPipelineKey::material_key(
+  self : ErasedMaterialPipelineKey,
+) -> ErasedMaterialKey {
+  self.material_key
+}
+
+///|
+pub fn ErasedMaterialPipelineKey::type_tag(
+  self : ErasedMaterialPipelineKey,
+) -> String {
+  self.type_tag
 }

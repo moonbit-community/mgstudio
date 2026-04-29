@@ -29,6 +29,21 @@ pub fn Rect::size(self : Rect) -> Vec2 {
 }
 
 ///|
+pub fn Rect::min(self : Rect) -> Vec2 {
+  self.min
+}
+
+///|
+pub fn Rect::max(self : Rect) -> Vec2 {
+  self.max
+}
+
+///|
+pub fn Rect::translate(self : Rect, offset : Vec2) -> Rect {
+  Rect::new(self.min.add(offset), self.max.add(offset))
+}
+
+///|
 pub fn Rect::center(self : Rect) -> Vec2 {
   Vec2::new((self.min.x + self.max.x) / 2.0F, (self.min.y + self.max.y) / 2.0F)
 }

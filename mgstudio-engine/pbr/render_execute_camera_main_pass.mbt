@@ -379,12 +379,15 @@ fn render3d_execute_camera_main_pass(
     } else {
       non_indexed_indirect_parameter_indices[draw_item_index]
     }
-    let draw_shader_path = match
-      material_properties.get_shader("material.fragment") {
+    let draw_vertex_shader_path = material_properties.get_shader(
+      @material.MATERIAL_VERTEX_SHADER_LABEL,
+    )
+    let draw_fragment_shader_path = match
+      material_properties.get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL) {
       Some(shader_path) => Some(shader_path)
       None =>
         match mesh.material_extension {
-          Some(extension) => extension.shader_path
+          Some(extension) => extension.fragment_shader_path
           None => None
         }
     }
@@ -439,7 +442,8 @@ fn render3d_execute_camera_main_pass(
       max_relief_mapping_search_steps,
       draw_flags,
       forward_decal=mesh.is_forward_decal,
-      shader_path=draw_shader_path,
+      vertex_shader_path=draw_vertex_shader_path,
+      fragment_shader_path=draw_fragment_shader_path,
       skinning_key_hi=mesh.skinning_key_hi,
       skinning_key_lo=if mesh.skinning_key_hi >= 0 { 0 } else { -1 },
     )

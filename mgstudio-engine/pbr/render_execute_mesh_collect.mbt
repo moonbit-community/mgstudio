@@ -42,7 +42,8 @@ fn render3d_resolve_standard_material(
 priv struct Render3dResolvedMeshMaterial {
   material : StandardMaterial
   material_properties : @material.MaterialProperties
-  material_shader_path : String?
+  material_vertex_shader_path : String?
+  material_fragment_shader_path : String?
 }
 
 ///|
@@ -79,19 +80,23 @@ fn render3d_resolve_mesh_material(
     default_opaque_renderer_method,
     material_prepass_enabled,
   )
-  let material_shader_path = match
-    material_properties.get_shader("material.fragment") {
+  let material_vertex_shader_path = material_properties.get_shader(
+    @material.MATERIAL_VERTEX_SHADER_LABEL,
+  )
+  let material_fragment_shader_path = match
+    material_properties.get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL) {
     Some(path) => Some(path)
     None =>
       match material_handle.extended_material {
-        Some(extension) => extension.shader_path
+        Some(extension) => extension.fragment_shader_path
         None => None
       }
   }
   let resolved = Render3dResolvedMeshMaterial::{
     material,
     material_properties,
-    material_shader_path,
+    material_vertex_shader_path,
+    material_fragment_shader_path,
   }
   if material_handle.extended_material is None {
     resolved_material_frame_cache.set(material_handle_id, resolved)
@@ -292,7 +297,8 @@ fn render3d_extract_mesh_for_entity(
   }
   let material = resolved_material.material
   let material_properties = resolved_material.material_properties
-  let material_shader_path = resolved_material.material_shader_path
+  let material_vertex_shader_path = resolved_material.material_vertex_shader_path
+  let material_fragment_shader_path = resolved_material.material_fragment_shader_path
   let layers = match prefetched_layers {
     Some(v) => v
     None => @sprite.RenderLayers::default()
@@ -385,7 +391,8 @@ fn render3d_extract_mesh_for_entity(
         material,
         material_extension: material_handle.extended_material,
         material_properties,
-        material_shader_path,
+        material_vertex_shader_path,
+        material_fragment_shader_path,
         lightmap,
         is_forward_decal,
         forward_decal_material_ext,

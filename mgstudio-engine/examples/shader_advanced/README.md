@@ -6,7 +6,7 @@ This folder tracks parity status for Bevy shader_advanced examples.
 
 | Bevy Example | mgstudio Example | Status | Notes |
 | --- | --- | --- | --- |
-| `manual_material.rs` | `examples/shader_advanced/manual_material` | Done | Mesh3d draw path now supports explicit extension shader override via `MeshMaterial3d::with_extension_shader_path(...)`. |
+| `manual_material.rs` | `examples/shader_advanced/manual_material` | Done | Mesh3d draw path now supports explicit extension fragment shader override via `MeshMaterial3d::with_extension_fragment_shader_path(...)`. |
 | `custom_vertex_attribute.rs` | `examples/shader_advanced/custom_vertex_attribute` | Done | Custom mesh vertex attributes can be authored and consumed from custom mesh3d shader source. |
 | `custom_post_processing.rs` | `examples/shader_advanced/custom_post_processing` | Done | Added `CustomPostProcess3d` camera component and generic fullscreen shader stage (`shader_path` + `fragment_entry`) on the 3D post-process chain. |
 | `compute_mesh.rs` | N/A | Blocked | Requires compute-driven mesh pipeline integration not exposed on current public runtime path. |

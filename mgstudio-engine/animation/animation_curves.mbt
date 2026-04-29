@@ -681,16 +681,6 @@ fn animation_clip_events_get(
 }
 
 ///|
-fn animation_clip_has_target_events(clip : AnimationClip) -> Bool {
-  for entry in clip.events {
-    if entry.0 is Node(_) {
-      return true
-    }
-  }
-  false
-}
-
-///|
 fn animation_clip_events_for_root(
   clip : AnimationClip,
 ) -> Array[AnimationClipEvent] {

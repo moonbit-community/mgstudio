@@ -420,6 +420,11 @@ pub fn Anchor::default() -> Anchor {
 }
 
 ///|
+pub impl Default for Anchor with default() {
+  Anchor::default()
+}
+
+///|
 pub struct ClearColor {
   color : Color
 }
@@ -436,6 +441,11 @@ pub fn ClearColor::default() -> ClearColor {
   ClearColor::{
     color: Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
   }
+}
+
+///|
+pub impl Default for ClearColor with default() {
+  ClearColor::default()
 }
 
 ///|
@@ -8703,6 +8713,7 @@ fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       DefaultGizmoConfigGroup::default(),
     )
     .add_plugins(ColorMaterialPlugin::default())
+    .add_plugins(SpriteMeshPlugin::default())
     .add_startup_system(register_render2d_shader_sources)
     .add_post_update_system_config(
       @app.system(render2d_camera_system).in_set(camera_update_systems),
@@ -8726,6 +8737,7 @@ fn render2d_plugin_ecs_install(
       DefaultGizmoConfigGroup::default(),
     )
     .add_plugins(ColorMaterialPlugin::default())
+    .add_plugins(SpriteMeshPlugin::default())
     .add_startup_system(register_render2d_shader_sources)
     .add_post_update_system_config(
       @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),

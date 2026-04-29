@@ -53,7 +53,7 @@ fn setup(
     commands.spawn(
       (
         @pbr.Mesh3d::new(mesh_handle),
-        @pbr.MeshMaterial3d::new(material_handle).with_extension_shader_path(
+        @pbr.MeshMaterial3d::new(material_handle).with_extension_fragment_shader_path(
           Some(SHADER_PATH),
         ),
         InstancePhase::{ index: i },

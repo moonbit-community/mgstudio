@@ -67,10 +67,10 @@ fn animation_graph_from_serialized(
   guard serialized.nodes.length() > 0 else { return AnimationGraph::new() }
 
   let node_count = serialized.nodes.length()
-  let parent_by_index : Array[AnimationNodeIndex?] = []
+  let parents_by_index : Array[Array[AnimationNodeIndex]] = []
   let children_by_index : Array[Array[AnimationNodeIndex]] = []
   for _ in 0..<node_count {
-    parent_by_index.push(None)
+    parents_by_index.push([])
     children_by_index.push([])
   }
 
@@ -96,7 +96,17 @@ fn animation_graph_from_serialized(
     if !already_exists {
       children_by_index[parent].push(child_index)
     }
-    parent_by_index[child] = Some(AnimationNodeIndex::new(parent))
+    let parent_index = AnimationNodeIndex::new(parent)
+    let mut parent_exists = false
+    for existing_parent in parents_by_index[child] {
+      if existing_parent == parent_index {
+        parent_exists = true
+        break
+      }
+    }
+    if !parent_exists {
+      parents_by_index[child].push(parent_index)
+    }
   }
 
   let nodes : Array[AnimationGraphNode] = []
@@ -112,7 +122,7 @@ fn animation_graph_from_serialized(
       node_type,
       serialized_node.mask,
       serialized_node.weight,
-      parent_by_index[i],
+      parents_by_index[i],
     )
     for child in children_by_index[i] {
       node.children.push(child)

@@ -47,7 +47,7 @@ fn setup(
   commands.spawn(
     (
       @pbr.Mesh3d::new(mesh),
-      @pbr.MeshMaterial3d::new(valid_material).with_extension_shader_path(
+      @pbr.MeshMaterial3d::new(valid_material).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),
       @transform.Transform::from_xyz(-1.2F, 0.9F, 0.0F),
@@ -57,7 +57,7 @@ fn setup(
   commands.spawn(
     (
       @pbr.Mesh3d::new(mesh),
-      @pbr.MeshMaterial3d::new(fallback_material).with_extension_shader_path(
+      @pbr.MeshMaterial3d::new(fallback_material).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),
       @transform.Transform::from_xyz(1.2F, 0.9F, 0.0F),

@@ -151,8 +151,41 @@ fn render3d_material_properties_for_standard_material(
     .with_shadows_enabled(shadows_enabled)
     .with_prepass_enabled(prepass_enabled)
   if extension is Some(metadata) {
-    if metadata.shader_path is Some(shader_path) {
-      properties = properties.add_shader("material.fragment", shader_path)
+    if metadata.vertex_shader_path is Some(shader_path) {
+      properties = properties.add_shader(
+        @material.MATERIAL_VERTEX_SHADER_LABEL,
+        shader_path,
+      )
+    }
+    if metadata.fragment_shader_path is Some(shader_path) {
+      properties = properties.add_shader(
+        @material.MATERIAL_FRAGMENT_SHADER_LABEL,
+        shader_path,
+      )
+    }
+    if metadata.prepass_vertex_shader_path is Some(shader_path) {
+      properties = properties.add_shader(
+        @material.PREPASS_VERTEX_SHADER_LABEL,
+        shader_path,
+      )
+    }
+    if metadata.prepass_fragment_shader_path is Some(shader_path) {
+      properties = properties.add_shader(
+        @material.PREPASS_FRAGMENT_SHADER_LABEL,
+        shader_path,
+      )
+    }
+    if metadata.deferred_vertex_shader_path is Some(shader_path) {
+      properties = properties.add_shader(
+        @material.DEFERRED_VERTEX_SHADER_LABEL,
+        shader_path,
+      )
+    }
+    if metadata.deferred_fragment_shader_path is Some(shader_path) {
+      properties = properties.add_shader(
+        @material.DEFERRED_FRAGMENT_SHADER_LABEL,
+        shader_path,
+      )
     }
   }
   properties

@@ -47,7 +47,7 @@ fn setup(
       (
         @pbr.Mesh3d::new(mesh),
         @pbr.MeshMaterial3d::new(material)
-        .with_extension_shader_path(Some(SHADER_PATH))
+        .with_extension_fragment_shader_path(Some(SHADER_PATH))
         .with_extension_tag(i % textures.length()),
         @transform.Transform::from_xyz(x * 1.4F, 0.6F, z * 1.4F),
       ),

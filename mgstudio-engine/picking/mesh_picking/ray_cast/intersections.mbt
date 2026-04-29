@@ -110,8 +110,21 @@ fn mesh_ray_cast_entity_in_list(
 }
 
 ///|
-fn mesh_ray_cast_local_aabb(mesh3d : @pbr.Mesh3d) -> (@math.Vec3, @math.Vec3)? {
-  guard @sprite.render_mesh_asset_get(mesh3d.mesh()) is Some(mesh_asset) else {
+fn mesh_ray_cast_mesh_asset(
+  world : @ecs.World,
+  handle : @asset.Handle[@mesh.Mesh],
+) -> @mesh.Mesh? {
+  let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  guard (try! world.get_resource(key)) is Some(meshes) else { return None }
+  meshes.get(handle)
+}
+
+///|
+fn mesh_ray_cast_local_aabb(
+  world : @ecs.World,
+  mesh3d : @pbr.Mesh3d,
+) -> (@math.Vec3, @math.Vec3)? {
+  guard mesh_ray_cast_mesh_asset(world, mesh3d.mesh()) is Some(mesh_asset) else {
     return None
   }
   guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry3d(geometry3d) else {
@@ -135,6 +148,34 @@ fn mesh_ray_cast_local_aabb(mesh3d : @pbr.Mesh3d) -> (@math.Vec3, @math.Vec3)? {
   }
   Some(
     (@math.Vec3::new(min_x, min_y, min_z), @math.Vec3::new(max_x, max_y, max_z)),
+  )
+}
+
+///|
+fn mesh_ray_cast_local_aabb_2d(
+  world : @ecs.World,
+  mesh2d : @mesh.Mesh2d,
+) -> (@math.Vec3, @math.Vec3)? {
+  guard mesh_ray_cast_mesh_asset(world, mesh2d.mesh()) is Some(mesh_asset) else {
+    return None
+  }
+  guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry2d(geometry2d) else {
+    return None
+  }
+  guard geometry2d.positions.length() > 0 else { return None }
+  let mut min_x = geometry2d.positions[0].x
+  let mut min_y = geometry2d.positions[0].y
+  let mut max_x = geometry2d.positions[0].x
+  let mut max_y = geometry2d.positions[0].y
+  for i in 1..<geometry2d.positions.length() {
+    let p = geometry2d.positions[i]
+    min_x = @pbr_render.minf(min_x, p.x)
+    min_y = @pbr_render.minf(min_y, p.y)
+    max_x = @pbr_render.maxf(max_x, p.x)
+    max_y = @pbr_render.maxf(max_y, p.y)
+  }
+  Some(
+    (@math.Vec3::new(min_x, min_y, 0.0F), @math.Vec3::new(max_x, max_y, 0.0F)),
   )
 }
 
@@ -226,6 +267,72 @@ fn mesh_ray_cast_local_aabb_hit(
 }
 
 ///|
+fn mesh_ray_cast_sign_2d(
+  p1 : @math.Vec2,
+  p2 : @math.Vec2,
+  p3 : @math.Vec2,
+) -> Float {
+  (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
+}
+
+///|
+fn mesh_ray_cast_point_in_triangle_2d(
+  point : @math.Vec2,
+  a : @math.Vec2,
+  b : @math.Vec2,
+  c : @math.Vec2,
+) -> Bool {
+  let d1 = mesh_ray_cast_sign_2d(point, a, b)
+  let d2 = mesh_ray_cast_sign_2d(point, b, c)
+  let d3 = mesh_ray_cast_sign_2d(point, c, a)
+  let has_negative = d1 < -1.0e-6F || d2 < -1.0e-6F || d3 < -1.0e-6F
+  let has_positive = d1 > 1.0e-6F || d2 > 1.0e-6F || d3 > 1.0e-6F
+  !(has_negative && has_positive)
+}
+
+///|
+fn mesh_ray_cast_2d_hit_local(
+  world : @ecs.World,
+  mesh2d : @mesh.Mesh2d,
+  local_origin : @math.Vec3,
+  local_direction : @math.Vec3,
+  ray_epsilon : Float,
+  max_distance : Float,
+) -> (Float, @math.Vec3)? {
+  if @pbr_render.absf(local_direction.z) <= 1.0e-9F {
+    return None
+  }
+  let distance = -local_origin.z / local_direction.z
+  if distance < ray_epsilon || distance > max_distance {
+    return None
+  }
+  guard mesh_ray_cast_mesh_asset(world, mesh2d.mesh()) is Some(mesh_asset) else {
+    return None
+  }
+  guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry2d(geometry2d) else {
+    return None
+  }
+  let local_hit = local_origin.add(local_direction.mul_scalar(distance))
+  let hit_2d = @math.Vec2::new(local_hit.x, local_hit.y)
+  let indices = geometry2d.indices_or_sequential()
+  let triangle_count = indices.length() / 3
+  for triangle_index in 0..<triangle_count {
+    let i0 = indices[triangle_index * 3]
+    let i1 = indices[triangle_index * 3 + 1]
+    let i2 = indices[triangle_index * 3 + 2]
+    guard geometry2d.vertex_position(i0) is Some(a) else { continue }
+    guard geometry2d.vertex_position(i1) is Some(b) else { continue }
+    guard geometry2d.vertex_position(i2) is Some(c) else { continue }
+    if mesh_ray_cast_point_in_triangle_2d(hit_2d, a, b, c) {
+      let winding = mesh_ray_cast_sign_2d(a, b, c)
+      let normal_z = if winding < 0.0F { -1.0F } else { 1.0F }
+      return Some((distance, @math.Vec3::new(0.0F, 0.0F, normal_z)))
+    }
+  }
+  None
+}
+
+///|
 pub fn mesh_ray_cast_intersections(
   world : @ecs.World,
   origin : @math.Vec3,
@@ -259,7 +366,8 @@ pub fn mesh_ray_cast_intersections(
       !view_visibility.is_visible() {
       return
     }
-    guard mesh_ray_cast_local_aabb(mesh3d) is Some((min_corner, max_corner)) else {
+    guard mesh_ray_cast_local_aabb(world, mesh3d)
+      is Some((min_corner, max_corner)) else {
       return
     }
     let transform = match
@@ -279,6 +387,68 @@ pub fn mesh_ray_cast_intersections(
     }
     guard mesh_ray_cast_local_aabb_hit(
         local_origin, local_direction, min_corner, max_corner, ray_epsilon, max_distance,
+      )
+      is Some((distance, local_normal)) else {
+      return
+    }
+    let normal = @pbr_render.render3d_transform_local_normal(
+      transform, local_normal,
+    )
+    if normal.length_squared() <= 1.0e-12F {
+      return
+    }
+    hits.push(
+      (
+        entity,
+        {
+          point: origin.add(ray_direction.mul_scalar(distance)),
+          normal,
+          distance,
+        },
+      ),
+    )
+  })
+  world.for_each_component(@mesh.ecs_key_mesh2d, fn(entity, mesh2d) {
+    if (try! world.contains_by_key(entity, @pbr.ecs_key_mesh3d)) {
+      return
+    }
+    if settings.only_entities is Some(only_entities) &&
+      !mesh_ray_cast_entity_in_list(entity, only_entities) {
+      return
+    }
+    if !settings.include_invisible &&
+      (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility))
+      is Some(view_visibility) &&
+      !view_visibility.is_visible() {
+      return
+    }
+    guard mesh_ray_cast_local_aabb_2d(world, mesh2d)
+      is Some((min_corner, max_corner)) else {
+      return
+    }
+    let transform = match
+      (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+      Some(value) => value
+      None => @transform.Transform::identity()
+    }
+    guard @pbr_render.render3d_inverse_transform_point(transform, origin)
+      is Some(local_origin) else {
+      return
+    }
+    guard @pbr_render.render3d_inverse_transform_direction(
+        transform, ray_direction,
+      )
+      is Some(local_direction) else {
+      return
+    }
+    guard mesh_ray_cast_local_aabb_hit(
+        local_origin, local_direction, min_corner, max_corner, ray_epsilon, max_distance,
+      )
+      is Some(_) else {
+      return
+    }
+    guard mesh_ray_cast_2d_hit_local(
+        world, mesh2d, local_origin, local_direction, ray_epsilon, max_distance,
       )
       is Some((distance, local_normal)) else {
       return

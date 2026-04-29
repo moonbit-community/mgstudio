@@ -53,7 +53,7 @@ fn setup(
   commands.spawn(
     (
       @pbr.Mesh3d::new(cube),
-      @pbr.MeshMaterial3d::new(low_steps).with_extension_shader_path(
+      @pbr.MeshMaterial3d::new(low_steps).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),
       Rotates::{  },
@@ -64,7 +64,7 @@ fn setup(
   commands.spawn(
     (
       @pbr.Mesh3d::new(cube),
-      @pbr.MeshMaterial3d::new(high_steps).with_extension_shader_path(
+      @pbr.MeshMaterial3d::new(high_steps).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),
       Rotates::{  },

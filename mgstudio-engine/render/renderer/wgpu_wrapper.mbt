@@ -35,6 +35,13 @@ extern "C" fn render_pipeline_descriptor_set_cull_mode_native(
 ) -> UInt = "mgstudio_render_pipeline_descriptor_set_cull_mode"
 
 ///|
+#borrow(descriptor, fragment_module)
+extern "C" fn render_pipeline_descriptor_set_fragment_module_native(
+  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
+  fragment_module : @wgpu_c.WGPUShaderModule,
+) -> UInt = "mgstudio_render_pipeline_descriptor_set_fragment_module"
+
+///|
 fn render_pipeline_descriptor_set_cull_mode(
   descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
   cull_mode : UInt,
@@ -44,6 +51,20 @@ fn render_pipeline_descriptor_set_cull_mode(
   )
   if err != 0U {
     abort("wgpu: failed to configure mesh pipeline cull mode")
+  }
+}
+
+///|
+fn render_pipeline_descriptor_set_fragment_module(
+  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
+  fragment_module : @wgpu.ShaderModule,
+) -> Unit {
+  let err = render_pipeline_descriptor_set_fragment_module_native(
+    descriptor,
+    fragment_module.raw_handle(),
+  )
+  if err != 0U {
+    abort("wgpu: failed to configure mesh pipeline fragment shader module")
   }
 }
 
