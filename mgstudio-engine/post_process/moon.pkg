@@ -4,6 +4,17 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/post_process/effect_stack" @post_process_effect_stack,
   "Milky2018/mgstudio/post_process/motion_blur" @post_process_motion_blur,
+  "Milky2018/moon_wgsl" @wgsl,
 }
 
 supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name gaussian_blur_wgsl_source",
+      "input": "gaussian_blur.wgsl",
+      "output": "gaussian_blur_wgsl.mbt",
+    },
+  ],
+)

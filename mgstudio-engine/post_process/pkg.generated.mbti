@@ -47,6 +47,8 @@ pub fn msaa_writeback_required(MsaaWriteback?, Int) -> Bool
 
 pub fn post_process_effect_count(Bloom?, @effect_stack.Vignette?, @motion_blur.MotionBlur?, @effect_stack.ChromaticAberration?, MsaaWriteback?) -> Int
 
+pub fn register_embedded_wgsl_sources() -> Unit
+
 // Errors
 
 // Types and methods

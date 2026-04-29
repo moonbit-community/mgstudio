@@ -48,3 +48,14 @@ test "post_process mip bias mirrors Bevy default" {
     content="-0.5",
   )
 }
+
+///|
+test "post_process registers Bevy root gaussian blur shader library" {
+  @post_process.register_embedded_wgsl_sources()
+  let source = match
+    @wgsl.registered_wgsl_source("post_process/gaussian_blur.wgsl") {
+    Some(source) => source
+    None => ""
+  }
+  debug_inspect(source.contains("fn gaussian_blur("), content="true")
+}
