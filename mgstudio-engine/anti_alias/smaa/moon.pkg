@@ -9,7 +9,7 @@ import {
   "Milky2018/mgstudio/render/render_resource" @render_resource,
   "Milky2018/mgstudio/sprite",
   "Milky2018/wgpu_mbt" @wgpu,
-  "Milky2018/moon_wgsl" @wgsl,
+  "Milky2018/mgstudio/shader/wgsl_registry" @wgsl,
 }
 
 supported_targets = "native"

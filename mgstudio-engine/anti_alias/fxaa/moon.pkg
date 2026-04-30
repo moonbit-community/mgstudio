@@ -5,7 +5,7 @@ import {
   "Milky2018/mgstudio/asset" @asset,
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite",
-  "Milky2018/moon_wgsl" @wgsl,
+  "Milky2018/mgstudio/shader/wgsl_registry" @wgsl,
 }
 
 supported_targets = "native"

@@ -26,7 +26,7 @@ fn wesl_runtime_try_register(
 
 ///|
 test "shader runtime wesl registration fails until imported module is explicitly loaded" {
-  @wgsl.clear_registered_wgsl_source_registry()
+  @wgsl_registry.clear_registered_wgsl_source_registry()
   let failures : Array[String] = []
   let mut app = shader_plugin(
     @asset.asset_plugin(@app.App::new(@ecs.World::new())),
@@ -56,7 +56,7 @@ test "shader runtime wesl registration fails until imported module is explicitly
 
 ///|
 test "shader runtime wesl registration compiles after imported module is loaded as shader asset" {
-  @wgsl.clear_registered_wgsl_source_registry()
+  @wgsl_registry.clear_registered_wgsl_source_registry()
   let registered_sources : Array[String] = []
   let mut app = shader_plugin(
     @asset.asset_plugin(@app.App::new(@ecs.World::new())),
@@ -80,7 +80,7 @@ test "shader runtime wesl registration compiles after imported module is loaded 
       ) catch {
         err => abort(err.message())
       }
-      let compiled = @wgsl.registered_wgsl_source_required(
+      let compiled = @wgsl_registry.registered_wgsl_source_required(
         "shaders/custom_material.wesl",
       ) catch {
         err => abort(err.message())

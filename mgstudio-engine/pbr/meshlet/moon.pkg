@@ -11,7 +11,7 @@ import {
   "Milky2018/mgstudio/render" @render,
   "Milky2018/mgstudio/render/renderer" @renderer,
   "Milky2018/mgstudio/utils" @utils,
-  "Milky2018/moon_wgsl" @wgsl,
+  "Milky2018/mgstudio/shader/wgsl_registry" @wgsl,
 }
 
 supported_targets = "native"

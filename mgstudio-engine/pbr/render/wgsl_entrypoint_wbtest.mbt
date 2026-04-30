@@ -1,6 +1,6 @@
 ///|
 test "pbr render: item-imported entrypoints are tree-shaken when unused" {
-  let composer = @wgsl.Composer::default()
+  let composer = @wgsl_compose.Composer::default()
   let mesh_source =
     #|#define_import_path demo::mesh
     #|struct Vertex {
@@ -16,7 +16,7 @@ test "pbr render: item-imported entrypoints are tree-shaken when unused" {
     #|  return out;
     #|}
     #|
-  composer.register_wgsl_source("mesh.wgsl", mesh_source)
+  composer.register_source("mesh.wgsl", mesh_source)
   let pbr_source =
     #|#define_import_path demo::pbr
     #|@fragment
@@ -24,14 +24,13 @@ test "pbr render: item-imported entrypoints are tree-shaken when unused" {
     #|  return vec4<f32>(vertex_output.clip_position.xyz, 1.0);
     #|}
     #|
-  composer.register_wgsl_source("pbr.wgsl", pbr_source)
-  composer.register_wgsl_source(
+  composer.register_source("pbr.wgsl", pbr_source)
+  composer.register_source(
     "entry.wgsl", "#import demo::{ mesh::vertex, pbr::fragment }\n",
   )
-  let source = composer.compose_wgsl("entry.wgsl", @wgsl.WgslComposeOptions::{
-    assets_base: "",
+  let source = composer.compose_wgsl("entry.wgsl", @wgsl_common.WgslComposeOptions::{
     defines: @hashmap.HashMap::new(),
-    value_defines: @wgsl.default_wgsl_value_defines(),
+    value_defines: @wgsl_common.default_wgsl_value_defines(),
     redirects: [],
     additional_imports: [],
   }) catch {
@@ -45,7 +44,7 @@ test "pbr render: item-imported entrypoints are tree-shaken when unused" {
 
 ///|
 test "pbr render: module alias global binding access composes" {
-  let composer = @wgsl.Composer::default()
+  let composer = @wgsl_compose.Composer::default()
   let mesh_view_bindings_source =
     #|#define_import_path demo::mesh_view_bindings
     #|struct View {
@@ -53,9 +52,7 @@ test "pbr render: module alias global binding access composes" {
     #|}
     #|@group(0) @binding(0) var<uniform> view: View;
     #|
-  composer.register_wgsl_source(
-    "mesh_view_bindings.wgsl", mesh_view_bindings_source,
-  )
+  composer.register_source("mesh_view_bindings.wgsl", mesh_view_bindings_source)
   let view_transformations_source =
     #|#define_import_path demo::view_transformations
     #|#import demo::mesh_view_bindings as view_bindings
@@ -65,13 +62,12 @@ test "pbr render: module alias global binding access composes" {
     #|  return world_pos.xyz;
     #|}
     #|
-  composer.register_wgsl_source(
+  composer.register_source(
     "view_transformations.wgsl", view_transformations_source,
   )
-  let source = composer.compose_wgsl("view_transformations.wgsl", @wgsl.WgslComposeOptions::{
-    assets_base: "",
+  let source = composer.compose_wgsl("view_transformations.wgsl", @wgsl_common.WgslComposeOptions::{
     defines: @hashmap.HashMap::new(),
-    value_defines: @wgsl.default_wgsl_value_defines(),
+    value_defines: @wgsl_common.default_wgsl_value_defines(),
     redirects: [],
     additional_imports: [],
   }) catch {

@@ -31,22 +31,54 @@ pub fn Source::as_str(self : Source) -> String {
 }
 
 ///|
-pub fn Source::language(self : Source) -> @wgsl.ShaderLanguage {
+pub(all) enum ShaderLanguage {
+  Wgsl
+  Glsl
+} derive(Eq, Debug)
+
+///|
+pub(all) enum ShaderType {
+  Wgsl
+  GlslVertex
+  GlslFragment
+} derive(Eq, Debug)
+
+///|
+pub(all) struct ComposableModuleDescriptor {
+  source : String
+  file_path : String
+  language : ShaderLanguage
+  as_name : String?
+  additional_imports : Array[@wgsl_common.ImportDefinition]
+  shader_defs : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue]
+} derive(Eq)
+
+///|
+pub(all) struct NagaModuleDescriptor {
+  source : String
+  file_path : String
+  shader_type : ShaderType
+  shader_defs : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue]
+  additional_imports : Array[@wgsl_common.ImportDefinition]
+} derive(Eq)
+
+///|
+pub fn Source::language(self : Source) -> ShaderLanguage {
   match self {
-    Wgsl(_) => @wgsl.ShaderLanguage::Wgsl
+    Wgsl(_) => ShaderLanguage::Wgsl
     Wesl(_) => abort("wesl source does not have a naga_oil language")
-    Glsl(_, _) => @wgsl.ShaderLanguage::Glsl
+    Glsl(_, _) => ShaderLanguage::Glsl
     SpirV(_) => abort("spirv source does not have a composable source language")
   }
 }
 
 ///|
-pub fn Source::shader_type(self : Source) -> @wgsl.ShaderType {
+pub fn Source::shader_type(self : Source) -> ShaderType {
   match self {
-    Wgsl(_) => @wgsl.ShaderType::Wgsl
+    Wgsl(_) => ShaderType::Wgsl
     Wesl(_) => abort("wesl source does not have a naga_oil shader type")
-    Glsl(_, ShaderStage::Vertex) => @wgsl.ShaderType::GlslVertex
-    Glsl(_, ShaderStage::Fragment) => @wgsl.ShaderType::GlslFragment
+    Glsl(_, ShaderStage::Vertex) => ShaderType::GlslVertex
+    Glsl(_, ShaderStage::Fragment) => ShaderType::GlslFragment
     Glsl(_, ShaderStage::Compute) =>
       abort("GLSL compute shader type is not yet supported in naga_oil")
     SpirV(_) => abort("spirv source does not have a composable shader type")

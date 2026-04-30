@@ -22,7 +22,7 @@ pub(all) struct Shader {
   source : Source
   import_path : ShaderImport
   imports : Array[ShaderImport]
-  additional_imports : Array[@wgsl.ImportDefinition]
+  additional_imports : Array[@wgsl_common.ImportDefinition]
   shader_defs : Array[ShaderDefVal]
   file_dependencies : Array[@asset.Handle[Shader]]
   validate_shader : ValidateShader
@@ -53,7 +53,7 @@ fn preprocess_shader_imports(
   source : String,
   path : String,
 ) -> (ShaderImport, Array[ShaderImport]) {
-  let (import_path, imports, _) = @wgsl.get_preprocessor_data(source)
+  let (import_path, imports, _) = @wgsl_metadata.get_preprocessor_data(source)
   let shader_import_path = match import_path {
     Some(module_path) => ShaderImport::Custom(module_path)
     None => ShaderImport::AssetPath(path)

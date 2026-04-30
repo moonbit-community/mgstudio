@@ -4,7 +4,7 @@ import {
   "Milky2018/mgstudio/core_pipeline/oit/resolve" @resolve,
   "moonbitlang/core/json",
   "Milky2018/mgstudio/asset" @asset,
-  "Milky2018/moon_wgsl" @wgsl,
+  "Milky2018/mgstudio/shader/wgsl_registry" @wgsl,
 }
 
 supported_targets = "native"

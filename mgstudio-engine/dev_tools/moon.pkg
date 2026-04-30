@@ -16,7 +16,7 @@ import {
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/window",
-  "Milky2018/moon_wgsl" @wgsl,
+  "Milky2018/mgstudio/shader/wgsl_registry" @wgsl,
 }
 
 supported_targets = "native"

@@ -6,7 +6,10 @@ import {
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
-  "Milky2018/moon_wgsl" @wgsl,
+  "Milky2018/mgstudio/shader/wgsl_registry" @wgsl_registry,
+  "Milky2018/moon_wgsl/common" @wgsl_common,
+  "Milky2018/moon_wgsl/compose" @wgsl_compose,
+  "Milky2018/moon_wgsl/metadata" @wgsl_metadata,
   "Milky2018/moon_wesl" @wesl,
 }
 

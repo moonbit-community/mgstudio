@@ -21,7 +21,7 @@ test "shader: composable descriptor keeps asset-path as_name and shader defs" {
       [@shader.shader_def("HDR"), @shader.ShaderDefVal::UInt("MODE", 2U)],
     ),
     additional_imports: [
-      @wgsl.ImportDefinition::{
+      @wgsl_common.ImportDefinition::{
         import_path: "bevy_pbr::mesh_functions",
         items: ["mesh_position_local_to_world"],
       },
@@ -64,7 +64,7 @@ test "shader: naga descriptor keeps source and shader type but defaults defs" {
       "shaders/demo.frag",
     ),
     additional_imports: [
-      @wgsl.ImportDefinition::{
+      @wgsl_common.ImportDefinition::{
         import_path: "bevy_pbr::mesh_functions",
         items: ["mesh_position_local_to_world"],
       },

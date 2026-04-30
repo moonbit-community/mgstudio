@@ -16,6 +16,8 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
+  "Milky2018/moon_wgsl/common",
+  "Milky2018/moon_wgsl/compose",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashset",
   "moonbitlang/core/json",
@@ -1198,6 +1200,10 @@ pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
 
 // Type aliases
 pub using @math {type HalfSpace}
+
+pub using @common {type WgslComposeOptions as PbrRenderWgslComposeOptions}
+
+pub using @compose {type Composer as PbrRenderWgslComposer}
 
 // Traits
 pub(open) trait CameraProjection3d {

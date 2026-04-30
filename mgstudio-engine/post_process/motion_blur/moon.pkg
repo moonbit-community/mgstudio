@@ -1,7 +1,7 @@
 import {
   "Milky2018/mgstudio/ecs" @ecs,
   "moonbitlang/core/json",
-  "Milky2018/moon_wgsl" @wgsl,
+  "Milky2018/mgstudio/shader/wgsl_registry" @wgsl,
 }
 
 supported_targets = "native"

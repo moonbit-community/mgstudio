@@ -1,0 +1,10 @@
+import {
+  "Milky2018/moon_wgsl/common" @common,
+  "Milky2018/moon_wgsl/compose" @compose,
+  "Milky2018/moon_wgsl/resolver" @resolver,
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/ref",
+  "moonbitlang/x/fs",
+}
+
+supported_targets = "native"

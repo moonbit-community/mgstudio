@@ -91,7 +91,7 @@ fn f32le_write_into_fixed(
 
 ///|
 fn normalize_shader_rel_path(rel : String) -> String {
-  @wgsl.normalize_shader_rel_path(rel)
+  @wgsl_resolver.normalize_shader_rel_path(rel)
 }
 
 ///|
@@ -110,8 +110,8 @@ fn wgsl_register_renderer_embedded_sources_once() -> Unit {
 }
 
 ///|
-fn wgsl_source_scan_options() -> @wgsl.WgslSourceScanOptions {
-  @wgsl.WgslSourceScanOptions::{
+fn wgsl_source_scan_options() -> @wgsl_common.WgslSourceScanOptions {
+  @wgsl_common.WgslSourceScanOptions::{
     recursive: true,
     extensions: [".wgsl"],
     exclude_prefixes: [".mooncakes", "_build", ".private"],
@@ -124,8 +124,11 @@ fn wgsl_register_runtime_source_tree_once() -> Unit {
     return
   }
   try {
-    let files = @wgsl.scan_wgsl_source_files(".", wgsl_source_scan_options())
-    @wgsl.register_wgsl_source_files(files)
+    let files = @wgsl_registry.scan_wgsl_source_files(
+      ".",
+      wgsl_source_scan_options(),
+    )
+    @wgsl_registry.register_wgsl_source_files(files)
     wgsl_runtime_source_tree_registered.val = true
   } catch {
     _ => ()
@@ -133,46 +136,49 @@ fn wgsl_register_runtime_source_tree_once() -> Unit {
 }
 
 ///|
-fn wgsl_runtime_composer(assets_base : String) -> @wgsl.Composer {
+fn wgsl_runtime_composer(assets_base : String) -> @wgsl_compose.Composer {
   wgsl_register_renderer_embedded_sources_once()
   if assets_base.trim() != "" {
     wgsl_register_runtime_source_tree_once()
   }
-  let composer = @wgsl.Composer::from_registered_wgsl_source_registry()
+  let composer = @wgsl_compose.Composer::default()
+  composer.register_source_files(@wgsl_registry.registered_wgsl_source_files())
   composer
 }
 
 ///|
-fn wgsl_runtime_composer_with_source_tree() -> @wgsl.Composer {
+fn wgsl_runtime_composer_with_source_tree() -> @wgsl_compose.Composer {
   wgsl_register_renderer_embedded_sources_once()
   wgsl_register_runtime_source_tree_once()
-  @wgsl.Composer::from_registered_wgsl_source_registry()
+  let composer = @wgsl_compose.Composer::default()
+  composer.register_source_files(@wgsl_registry.registered_wgsl_source_files())
+  composer
 }
 
 ///|
 fn[T] raise_composer_error(
-  err : @wgsl.ComposerError,
+  err : @wgsl_compose.ComposerError,
 ) -> T raise GpuBackendError {
   fatal("wgpu: \{err.message()}")
 }
 
 ///|
 pub fn clear_registered_wgsl_source_registry() -> Unit {
-  @wgsl.clear_registered_wgsl_source_registry()
+  @wgsl_registry.clear_registered_wgsl_source_registry()
   wgsl_renderer_embedded_sources_registered.val = false
   wgsl_runtime_source_tree_registered.val = false
 }
 
 ///|
 pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
-  @wgsl.register_wgsl_source(rel_path, source)
+  @wgsl_registry.register_wgsl_source(rel_path, source)
 }
 
 ///|
 fn registered_wgsl_source_required(
   rel_path : String,
 ) -> String raise GpuBackendError {
-  @wgsl.registered_wgsl_source_required(rel_path) catch {
+  @wgsl_registry.registered_wgsl_source_required(rel_path) catch {
     err => raise_composer_error(err)
   }
 }
@@ -182,14 +188,15 @@ fn copy_registered_wgsl_import_module_paths() -> @hashmap.HashMap[
   String,
   String,
 ] {
-  @wgsl.copy_registered_wgsl_import_module_paths()
+  @wgsl_registry.copy_registered_wgsl_import_module_paths()
 }
 
 ///|
 fn build_wgsl_import_module_paths(
   assets_base : String,
 ) -> @hashmap.HashMap[String, String] {
-  @wgsl.build_wgsl_import_module_paths(assets_base)
+  ignore(assets_base)
+  @wgsl_registry.copy_registered_wgsl_import_module_paths()
 }
 
 ///|
@@ -206,7 +213,7 @@ fn split_once_text(text : String, sep : String) -> (String, String)? {
 
 ///|
 fn default_wgsl_value_defines() -> @hashmap.HashMap[String, Int] {
-  @wgsl.default_wgsl_value_defines()
+  @wgsl_common.default_wgsl_value_defines()
 }
 
 ///|
@@ -214,9 +221,9 @@ fn wgsl_compose_options(
   assets_base : String,
   defines : @hashmap.HashMap[String, Bool],
   value_defines : @hashmap.HashMap[String, Int],
-) -> @wgsl.WgslComposeOptions {
-  @wgsl.WgslComposeOptions::{
-    assets_base,
+) -> @wgsl_common.WgslComposeOptions {
+  ignore(assets_base)
+  @wgsl_common.WgslComposeOptions::{
     defines,
     value_defines,
     redirects: [],
@@ -237,7 +244,7 @@ fn preprocess_wgsl_source(
   ignore(modules)
   let options = wgsl_compose_options(assets_base, defines, value_defines)
   wgsl_runtime_composer(assets_base).compose_wgsl_source(source, options) catch {
-    @wgsl.ComposerError::MissingStartupRegisteredSource(_) =>
+    @wgsl_compose.ComposerError::MissingStartupRegisteredSource(_) =>
       wgsl_runtime_composer_with_source_tree().compose_wgsl_source(
         source, options,
       ) catch {
@@ -260,7 +267,7 @@ fn load_wgsl_preprocessed(
   ignore(modules)
   let options = wgsl_compose_options(assets_base, defines, value_defines)
   wgsl_runtime_composer(assets_base).compose_wgsl(rel, options) catch {
-    @wgsl.ComposerError::MissingStartupRegisteredSource(_) =>
+    @wgsl_compose.ComposerError::MissingStartupRegisteredSource(_) =>
       wgsl_runtime_composer_with_source_tree().compose_wgsl(rel, options) catch {
         err => raise_composer_error(err)
       }

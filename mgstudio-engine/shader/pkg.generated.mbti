@@ -43,6 +43,23 @@ pub(all) suberror ShaderLoaderError {
 pub fn ShaderLoaderError::message(Self) -> String
 
 // Types and methods
+pub(all) struct ComposableModuleDescriptor {
+  source : String
+  file_path : String
+  language : ShaderLanguage
+  as_name : String?
+  additional_imports : Array[@common.ImportDefinition]
+  shader_defs : @hashmap.HashMap[String, @common.ShaderDefValue]
+} derive(Eq)
+
+pub(all) struct NagaModuleDescriptor {
+  source : String
+  file_path : String
+  shader_type : ShaderType
+  shader_defs : @hashmap.HashMap[String, @common.ShaderDefValue]
+  additional_imports : Array[@common.ImportDefinition]
+} derive(Eq)
+
 pub(all) struct Shader {
   path : String
   source : Source
@@ -53,13 +70,13 @@ pub(all) struct Shader {
   file_dependencies : Array[@asset.Handle[Shader]]
   validate_shader : ValidateShader
 }
-pub fn Shader::composable_module_descriptor(Self) -> @common.ComposableModuleDescriptor
+pub fn Shader::composable_module_descriptor(Self) -> ComposableModuleDescriptor
 pub fn Shader::from_glsl(String, ShaderStage, String) -> Self
 pub fn Shader::from_spirv(Bytes, String) -> Self
 pub fn Shader::from_wesl(String, String) -> Self
 pub fn Shader::from_wgsl(String, String) -> Self
 pub fn Shader::from_wgsl_with_defs(String, String, Array[ShaderDefVal]) -> Self
-pub fn Shader::naga_module_descriptor(Self) -> @common.NagaModuleDescriptor
+pub fn Shader::naga_module_descriptor(Self) -> NagaModuleDescriptor
 pub fn Shader::new(String) -> Self
 
 type ShaderAssetPaths
@@ -112,6 +129,11 @@ pub(all) enum ShaderImport {
 } derive(Eq, Hash, @debug.Debug)
 pub fn ShaderImport::module_name(Self) -> String
 
+pub(all) enum ShaderLanguage {
+  Wgsl
+  Glsl
+} derive(Eq, @debug.Debug)
+
 pub struct ShaderLoader {
 }
 pub fn ShaderLoader::default() -> Self
@@ -152,6 +174,12 @@ pub(all) enum ShaderStage {
   Compute
 } derive(Eq, @debug.Debug)
 
+pub(all) enum ShaderType {
+  Wgsl
+  GlslVertex
+  GlslFragment
+} derive(Eq, @debug.Debug)
+
 pub(all) enum Source {
   Wgsl(String)
   Wesl(String)
@@ -159,8 +187,8 @@ pub(all) enum Source {
   SpirV(Bytes)
 }
 pub fn Source::as_str(Self) -> String
-pub fn Source::language(Self) -> @common.ShaderLanguage
-pub fn Source::shader_type(Self) -> @common.ShaderType
+pub fn Source::language(Self) -> ShaderLanguage
+pub fn Source::shader_type(Self) -> ShaderType
 
 pub(all) enum ValidateShader {
   Disabled
@@ -170,6 +198,8 @@ pub fn ValidateShader::default() -> Self
 
 // Type aliases
 pub type CachedPipelineId = Int
+
+pub using @common {type WgslSourceFile as ShaderWgslRegistrySourceFile}
 
 // Traits
 
