@@ -91,95 +91,40 @@ fn f32le_write_into_fixed(
 
 ///|
 fn normalize_shader_rel_path(rel : String) -> String {
-  @wgsl_resolver.normalize_shader_rel_path(rel)
+  @shader_compile.normalize_shader_rel_path(rel)
 }
 
 ///|
-let wgsl_runtime_source_tree_registered : Ref[Bool] = Ref::new(false)
-
-///|
-let wgsl_renderer_embedded_sources_registered : Ref[Bool] = Ref::new(false)
-
-///|
-fn wgsl_register_renderer_embedded_sources_once() -> Unit {
-  if wgsl_renderer_embedded_sources_registered.val {
-    return
-  }
-  register_embedded_wgsl_sources()
-  wgsl_renderer_embedded_sources_registered.val = true
+fn ensure_renderer_shader_sources_registered() -> Unit {
+  @shader_compile.ensure_startup_shader_sources_once(fn() {
+    register_embedded_wgsl_sources()
+  })
 }
 
 ///|
-fn wgsl_source_scan_options() -> @wgsl_common.WgslSourceScanOptions {
-  @wgsl_common.WgslSourceScanOptions::{
-    recursive: true,
-    extensions: [".wgsl"],
-    exclude_prefixes: [".mooncakes", "_build", ".private"],
-  }
-}
-
-///|
-fn wgsl_register_runtime_source_tree_once() -> Unit {
-  if wgsl_runtime_source_tree_registered.val {
-    return
-  }
-  try {
-    let files = @shader_source.scan_shader_source_files(
-      ".",
-      wgsl_source_scan_options(),
-    )
-    @shader_source.load_embedded_shader_source_files(files)
-    wgsl_runtime_source_tree_registered.val = true
-  } catch {
-    _ => ()
-  }
-}
-
-///|
-fn wgsl_runtime_composer(assets_base : String) -> @wgsl_compose.Composer {
-  wgsl_register_renderer_embedded_sources_once()
-  if assets_base.trim() != "" {
-    wgsl_register_runtime_source_tree_once()
-  }
-  let composer = @wgsl_compose.Composer::default()
-  composer.register_source_files(@shader_source.embedded_shader_source_files())
-  composer
-}
-
-///|
-fn wgsl_runtime_composer_with_source_tree() -> @wgsl_compose.Composer {
-  wgsl_register_renderer_embedded_sources_once()
-  wgsl_register_runtime_source_tree_once()
-  let composer = @wgsl_compose.Composer::default()
-  composer.register_source_files(@shader_source.embedded_shader_source_files())
-  composer
-}
-
-///|
-fn[T] raise_composer_error(
-  err : @wgsl_compose.ComposerError,
+fn[T] raise_shader_compile_error(
+  err : @shader_compile.ShaderCompileError,
 ) -> T raise GpuBackendError {
   fatal("wgpu: \{err.message()}")
 }
 
 ///|
 pub fn clear_registered_wgsl_source_registry() -> Unit {
-  @shader_source.clear_embedded_shader_sources()
-  wgsl_renderer_embedded_sources_registered.val = false
-  wgsl_runtime_source_tree_registered.val = false
+  @shader_compile.clear_registered_shader_sources()
 }
 
 ///|
 pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
-  @shader_source.load_embedded_shader_source(rel_path, source)
+  @shader_compile.register_shader_source(rel_path, source)
 }
 
 ///|
 fn registered_wgsl_source_required(
   rel_path : String,
 ) -> String raise GpuBackendError {
-  @shader_source.embedded_shader_source_required(rel_path) catch {
-    err => raise_composer_error(err)
+  ensure_renderer_shader_sources_registered()
+  @shader_compile.registered_shader_source_required(rel_path) catch {
+    err => raise_shader_compile_error(err)
   }
 }
 
@@ -188,15 +133,16 @@ fn copy_registered_wgsl_import_module_paths() -> @hashmap.HashMap[
   String,
   String,
 ] {
-  @shader_source.copy_embedded_shader_import_module_paths()
+  ensure_renderer_shader_sources_registered()
+  @shader_compile.copy_registered_shader_import_module_paths()
 }
 
 ///|
 fn build_wgsl_import_module_paths(
   assets_base : String,
 ) -> @hashmap.HashMap[String, String] {
-  ignore(assets_base)
-  @shader_source.copy_embedded_shader_import_module_paths()
+  ensure_renderer_shader_sources_registered()
+  @shader_compile.build_shader_import_module_paths(assets_base)
 }
 
 ///|
@@ -213,22 +159,7 @@ fn split_once_text(text : String, sep : String) -> (String, String)? {
 
 ///|
 fn default_wgsl_value_defines() -> @hashmap.HashMap[String, Int] {
-  @wgsl_common.default_wgsl_value_defines()
-}
-
-///|
-fn wgsl_compose_options(
-  assets_base : String,
-  defines : @hashmap.HashMap[String, Bool],
-  value_defines : @hashmap.HashMap[String, Int],
-) -> @wgsl_common.WgslComposeOptions {
-  ignore(assets_base)
-  @wgsl_common.WgslComposeOptions::{
-    defines,
-    value_defines,
-    redirects: [],
-    additional_imports: [],
-  }
+  @shader_compile.default_shader_value_defines()
 }
 
 ///|
@@ -242,15 +173,11 @@ fn preprocess_wgsl_source(
 ) -> String raise GpuBackendError {
   ignore(visited)
   ignore(modules)
-  let options = wgsl_compose_options(assets_base, defines, value_defines)
-  wgsl_runtime_composer(assets_base).compose_wgsl_source(source, options) catch {
-    @wgsl_compose.ComposerError::MissingStartupRegisteredSource(_) =>
-      wgsl_runtime_composer_with_source_tree().compose_wgsl_source(
-        source, options,
-      ) catch {
-        err => raise_composer_error(err)
-      }
-    err => raise_composer_error(err)
+  ensure_renderer_shader_sources_registered()
+  @shader_compile.preprocess_shader_source(
+    assets_base, source, defines, value_defines,
+  ) catch {
+    err => raise_shader_compile_error(err)
   }
 }
 
@@ -265,13 +192,11 @@ fn load_wgsl_preprocessed(
 ) -> String raise GpuBackendError {
   ignore(visited)
   ignore(modules)
-  let options = wgsl_compose_options(assets_base, defines, value_defines)
-  wgsl_runtime_composer(assets_base).compose_wgsl(rel, options) catch {
-    @wgsl_compose.ComposerError::MissingStartupRegisteredSource(_) =>
-      wgsl_runtime_composer_with_source_tree().compose_wgsl(rel, options) catch {
-        err => raise_composer_error(err)
-      }
-    err => raise_composer_error(err)
+  ensure_renderer_shader_sources_registered()
+  @shader_compile.load_preprocessed_wgsl(
+    assets_base, rel, defines, value_defines,
+  ) catch {
+    err => raise_shader_compile_error(err)
   }
 }
 

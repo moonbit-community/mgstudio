@@ -1,0 +1,46 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/shader/compile"
+
+import {
+  "moonbitlang/core/hashmap",
+}
+
+// Values
+pub fn build_shader_import_module_paths(String) -> @hashmap.HashMap[String, String]
+
+pub fn clear_registered_shader_sources() -> Unit
+
+pub fn copy_registered_shader_import_module_paths() -> @hashmap.HashMap[String, String]
+
+pub fn default_shader_value_defines() -> @hashmap.HashMap[String, Int]
+
+pub fn ensure_startup_shader_sources_once(() -> Unit) -> Unit
+
+pub fn load_preprocessed_wgsl(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int]) -> String raise ShaderCompileError
+
+pub fn load_wgsl_from_sources_required(String, String) -> String raise ShaderCompileError
+
+pub fn normalize_shader_rel_path(String) -> String
+
+pub fn preprocess_shader_source(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int]) -> String raise ShaderCompileError
+
+pub fn register_shader_source(String, String) -> Unit
+
+pub fn registered_shader_source_required(String) -> String raise ShaderCompileError
+
+// Errors
+pub(all) suberror ShaderCompileError {
+  UnresolvedImport(String)
+  MissingRegisteredSource(String)
+  MissingPreparedSourceDefs(String)
+  MissingStartupRegisteredSource(String)
+  Composer(String)
+}
+pub fn ShaderCompileError::message(Self) -> String
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+
