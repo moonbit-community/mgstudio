@@ -2,7 +2,7 @@
 
 ///|
 fn register_embedded_wgsl_sources_generated() -> Unit {
-  @wgsl.register_wgsl_source(
+  @shader_source.load_embedded_shader_source(
     "core_pipeline/oit/resolve/oit_resolve.wgsl", oit_resolve_wgsl_source,
   )
   @asset.register_embedded_asset_virtual_bytes(

@@ -16,7 +16,7 @@
 test "bloom: embedded wgsl source is registered by bloom owner" {
   register_embedded_wgsl_sources()
   let source = match
-    @wgsl.registered_wgsl_source("post_process/bloom/bloom.wgsl") {
+    @shader_source.embedded_shader_source("post_process/bloom/bloom.wgsl") {
     Some(source) => source
     None => ""
   }

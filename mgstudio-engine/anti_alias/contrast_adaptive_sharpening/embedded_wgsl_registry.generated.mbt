@@ -2,7 +2,7 @@
 
 ///|
 fn register_embedded_wgsl_sources_generated() -> Unit {
-  @wgsl.register_wgsl_source(
+  @shader_source.load_embedded_shader_source(
     "anti_alias/contrast_adaptive_sharpening/robust_contrast_adaptive_sharpening.wgsl",
     robust_contrast_adaptive_sharpening_wgsl_source,
   )

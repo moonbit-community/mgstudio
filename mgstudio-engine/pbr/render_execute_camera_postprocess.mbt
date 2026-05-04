@@ -1074,14 +1074,20 @@ fn render3d_draw_camera_custom_post_process_stage(
   guard custom_post_process3d is Some(custom_post_process) else { return }
   let shader_path = custom_post_process.shader_path.trim().to_owned()
   if @shader.shader_path_is_wesl(shader_path) {
-    @shader.shader_register_wesl_runtime_source(source_world, shader_path, []) catch {
+    @shader_runtime_render.shader_register_wesl_runtime_source(
+      source_world,
+      shader_path,
+      [],
+    ) catch {
       err =>
         abort(
           "failed to compile render3d wesl postprocess shader: \{shader_path}: \{err.message()}",
         )
     }
   } else {
-    @shader.shader_register_wgsl_runtime_source(source_world, shader_path)
+    @shader_runtime_render.shader_register_wgsl_runtime_source(
+      source_world, shader_path,
+    )
   }
   @render.host_gpu_draw_custom_postprocess3d(
     scene_texture_id~,

@@ -5,7 +5,7 @@ import {
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/shader/wgsl_registry" @wgsl,
+  "Milky2018/mgstudio/shader/source" @shader_source,
 }
 
 supported_targets = "native"

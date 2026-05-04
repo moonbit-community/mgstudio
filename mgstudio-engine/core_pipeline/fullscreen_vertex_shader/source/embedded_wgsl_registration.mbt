@@ -6,7 +6,7 @@
 
 ///|
 pub fn register_embedded_wgsl_sources() -> Unit {
-  @wgsl.register_wgsl_source(
+  @shader_source.load_embedded_shader_source(
     "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl", fullscreen_wgsl_source,
   )
 }

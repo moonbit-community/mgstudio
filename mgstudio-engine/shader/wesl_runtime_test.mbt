@@ -18,7 +18,7 @@ fn wesl_runtime_try_register(
   path : String,
   shader_defs : Array[@shader.ShaderDefVal],
 ) -> String? {
-  @shader.shader_register_wesl_runtime_source(world, path, shader_defs) catch {
+  ignore(@shader.shader_runtime_compile_wesl_source(world, path, shader_defs)) catch {
     err => return Some(err.message())
   }
   None
@@ -26,7 +26,6 @@ fn wesl_runtime_try_register(
 
 ///|
 test "shader runtime wesl registration fails until imported module is explicitly loaded" {
-  @wgsl_registry.clear_registered_wgsl_source_registry()
   let failures : Array[String] = []
   let mut app = shader_plugin(
     @asset.asset_plugin(@app.App::new(@ecs.World::new())),
@@ -56,7 +55,6 @@ test "shader runtime wesl registration fails until imported module is explicitly
 
 ///|
 test "shader runtime wesl registration compiles after imported module is loaded as shader asset" {
-  @wgsl_registry.clear_registered_wgsl_source_registry()
   let registered_sources : Array[String] = []
   let mut app = shader_plugin(
     @asset.asset_plugin(@app.App::new(@ecs.World::new())),
@@ -73,19 +71,17 @@ test "shader runtime wesl registration compiles after imported module is loaded 
         "shaders/util.wesl",
       )
       ignore(utility_handle)
-      @shader.shader_register_wesl_runtime_source(
+      let compiled = @shader.shader_runtime_compile_wesl_source(
         world,
         "shaders/custom_material.wesl",
         [@shader.shader_def("PARTY_MODE")],
       ) catch {
         err => abort(err.message())
       }
-      let compiled = @wgsl_registry.registered_wgsl_source_required(
-        "shaders/custom_material.wesl",
-      ) catch {
-        err => abort(err.message())
+      match compiled {
+        Some(source) => registered_sources.push(source)
+        None => abort("expected compiled WESL shader source")
       }
-      registered_sources.push(compiled)
     }),
   )
 

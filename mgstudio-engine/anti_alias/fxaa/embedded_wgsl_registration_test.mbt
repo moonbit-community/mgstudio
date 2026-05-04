@@ -15,7 +15,8 @@
 ///|
 test "fxaa: embedded wgsl source is registered by fxaa owner" {
   register_embedded_wgsl_sources()
-  let source = match @wgsl.registered_wgsl_source("anti_alias/fxaa/fxaa.wgsl") {
+  let source = match
+    @shader_source.embedded_shader_source("anti_alias/fxaa/fxaa.wgsl") {
     Some(source) => source
     None => ""
   }

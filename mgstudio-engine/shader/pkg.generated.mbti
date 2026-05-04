@@ -21,11 +21,13 @@ pub fn shader_path_is_wesl(String) -> Bool
 
 pub fn shader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn shader_register_runtime_source(@ecs.World, String, Array[ShaderDefVal]) -> Unit raise ShaderCacheError
+pub fn shader_runtime_compile_source(@ecs.World, String, Array[ShaderDefVal]) -> String? raise ShaderCacheError
 
-pub fn shader_register_wesl_runtime_source(@ecs.World, String, Array[ShaderDefVal]) -> Unit raise ShaderCacheError
+pub fn shader_runtime_compile_wesl_source(@ecs.World, String, Array[ShaderDefVal]) -> String? raise ShaderCacheError
 
-pub fn shader_register_wgsl_runtime_source(@ecs.World, String) -> Unit
+pub fn shader_runtime_load_wgsl_sources(@ecs.World, String) -> Array[(String, String)]
+
+pub fn shader_runtime_loaded_wgsl_sources(@ecs.World) -> Array[(String, String)]
 
 // Errors
 pub(all) suberror ShaderCacheError {
@@ -198,8 +200,6 @@ pub fn ValidateShader::default() -> Self
 
 // Type aliases
 pub type CachedPipelineId = Int
-
-pub using @common {type WgslSourceFile as ShaderWgslRegistrySourceFile}
 
 // Traits
 

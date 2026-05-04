@@ -2,7 +2,7 @@
 
 ///|
 fn register_embedded_wgsl_sources_generated() -> Unit {
-  @wgsl.register_wgsl_source(
+  @shader_source.load_embedded_shader_source(
     "core_pipeline/mip_generation/experimental/downsample_depth.wgsl", downsample_depth_wgsl_source,
   )
   @asset.register_embedded_asset_virtual_bytes(

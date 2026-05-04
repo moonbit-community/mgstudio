@@ -63,7 +63,8 @@ test "anti_alias/taa: plugin registers embedded wgsl source" {
   let _app = @app.App::new(@ecs.World::new()).add_plugins(
     TemporalAntiAliasPlugin::default(),
   )
-  let source = match @wgsl.registered_wgsl_source("anti_alias/taa/taa.wgsl") {
+  let source = match
+    @shader_source.embedded_shader_source("anti_alias/taa/taa.wgsl") {
     Some(source) => source
     None => ""
   }

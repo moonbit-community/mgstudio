@@ -1,0 +1,12 @@
+import {
+  "Milky2018/mgstudio/embedded_asset",
+  "Milky2018/moon_wgsl/common" @wgsl_common,
+  "Milky2018/moon_wgsl/compose" @wgsl_compose,
+  "Milky2018/moon_wgsl/resolver" @wgsl_resolver,
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/ref",
+  "moonbitlang/x/fs",
+}
+
+supported_targets = "native"

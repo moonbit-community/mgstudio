@@ -36,6 +36,7 @@ import {
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
+  "Milky2018/mgstudio/shader/runtime_render" @shader_runtime_render,
 }
 
 supported_targets = "native"

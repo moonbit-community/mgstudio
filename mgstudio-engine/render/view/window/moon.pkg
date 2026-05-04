@@ -1,6 +1,6 @@
 import {
   "Milky2018/mgstudio/render/renderer" @renderer,
-  "Milky2018/mgstudio/shader/wgsl_registry" @wgsl,
+  "Milky2018/mgstudio/shader/source" @shader_source,
 }
 
 supported_targets = "native"

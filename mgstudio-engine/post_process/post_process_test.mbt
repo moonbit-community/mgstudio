@@ -98,7 +98,7 @@ test "post_process msaa writeback mirrors Bevy Off Auto Always semantics" {
 test "post_process registers Bevy root gaussian blur shader library" {
   @post_process.register_embedded_wgsl_sources()
   let source = match
-    @wgsl.registered_wgsl_source("post_process/gaussian_blur.wgsl") {
+    @shader_source.embedded_shader_source("post_process/gaussian_blur.wgsl") {
     Some(source) => source
     None => ""
   }

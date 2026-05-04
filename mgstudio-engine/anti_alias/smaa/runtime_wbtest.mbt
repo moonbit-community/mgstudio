@@ -44,7 +44,8 @@ test "anti_alias/smaa: runtime state counts only camera entities with Smaa" {
 ///|
 test "anti_alias/smaa: plugin registers embedded wgsl source" {
   let _app = @app.App::new(@ecs.World::new()).add_plugins(SmaaPlugin::default())
-  let source = match @wgsl.registered_wgsl_source("anti_alias/smaa/smaa.wgsl") {
+  let source = match
+    @shader_source.embedded_shader_source("anti_alias/smaa/smaa.wgsl") {
     Some(source) => source
     None => ""
   }

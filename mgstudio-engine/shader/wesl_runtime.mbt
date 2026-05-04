@@ -122,22 +122,25 @@ fn shader_runtime_cache_sync_loaded_assets(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn shader_runtime_register_loaded_wgsl_sources(world : @ecs.World) -> Unit {
+pub fn shader_runtime_loaded_wgsl_sources(
+  world : @ecs.World,
+) -> Array[(String, String)] {
   let shader_assets = shader_assets_or_abort(world)
   let shader_paths = shader_asset_paths_or_abort(world)
+  let sources : Array[(String, String)] = []
   for entry in shader_paths.entries {
     let canonical_path = entry.0
     let handle = entry.1
     match shader_assets.get(handle) {
       Some(shader) =>
         match shader.source {
-          Source::Wgsl(source) =>
-            @renderer.register_wgsl_source(canonical_path, source)
+          Source::Wgsl(source) => sources.push((canonical_path, source))
           _ => ()
         }
       None => ()
     }
   }
+  sources
 }
 
 ///|
@@ -152,13 +155,13 @@ fn shader_load_runtime_asset(world : @ecs.World, path : String) -> Shader? {
 }
 
 ///|
-pub fn shader_register_wgsl_runtime_source(
+pub fn shader_runtime_load_wgsl_sources(
   world : @ecs.World,
   path : String,
-) -> Unit {
+) -> Array[(String, String)] {
   if shader_path_is_wesl(path) {
     abort(
-      "shader_register_wgsl_runtime_source only supports .wgsl assets: \{path}",
+      "shader_runtime_load_wgsl_sources only supports .wgsl assets: \{path}",
     )
   }
   let shader = match shader_load_runtime_asset(world, path) {
@@ -167,34 +170,32 @@ pub fn shader_register_wgsl_runtime_source(
       @app.log_warn(
         "shader runtime registration deferred because asset is unavailable: \{path}",
       )
-      return
+      return []
     }
   }
   match shader.source {
-    Source::Wgsl(_) => shader_runtime_register_loaded_wgsl_sources(world)
+    Source::Wgsl(_) => shader_runtime_loaded_wgsl_sources(world)
     Source::Wesl(_) =>
-      abort(
-        "shader_register_wgsl_runtime_source received a WESL asset: \{path}",
-      )
+      abort("shader_runtime_load_wgsl_sources received a WESL asset: \{path}")
     Source::Glsl(_, _) =>
       abort(
-        "shader_register_wgsl_runtime_source only supports WGSL assets: \{path}",
+        "shader_runtime_load_wgsl_sources only supports WGSL assets: \{path}",
       )
     Source::SpirV(_) =>
       abort(
-        "shader_register_wgsl_runtime_source only supports WGSL assets: \{path}",
+        "shader_runtime_load_wgsl_sources only supports WGSL assets: \{path}",
       )
   }
 }
 
 ///|
-pub fn shader_register_wesl_runtime_source(
+pub fn shader_runtime_compile_wesl_source(
   world : @ecs.World,
   path : String,
   shader_defs : Array[ShaderDefVal],
-) -> Unit raise ShaderCacheError {
+) -> String? raise ShaderCacheError {
   if !shader_path_is_wesl(path) {
-    return
+    return None
   }
   let asset_server = shader_asset_server_or_abort(world)
   let handle : @asset.Handle[Shader] = asset_server.load(path)
@@ -204,21 +205,25 @@ pub fn shader_register_wesl_runtime_source(
     @app.log_warn(
       "WESL shader runtime registration deferred because asset is unavailable: \{path}",
     )
-    return
+    return None
   }
-  let compiled = cache.peek().cache.get(0, handle.asset_id(), shader_defs)
-  @renderer.register_wgsl_source(path, compiled)
+  Some(cache.peek().cache.get(0, handle.asset_id(), shader_defs))
 }
 
 ///|
-pub fn shader_register_runtime_source(
+pub fn shader_runtime_compile_source(
   world : @ecs.World,
   path : String,
   shader_defs : Array[ShaderDefVal],
-) -> Unit raise ShaderCacheError {
+) -> String? raise ShaderCacheError {
   if shader_path_is_wesl(path) {
-    shader_register_wesl_runtime_source(world, path, shader_defs)
-    return
+    return shader_runtime_compile_wesl_source(world, path, shader_defs)
   }
-  shader_register_wgsl_runtime_source(world, path)
+  let sources = shader_runtime_load_wgsl_sources(world, path)
+  for source in sources {
+    if source.0 == @asset.asset_canonical_path(path) {
+      return Some(source.1)
+    }
+  }
+  None
 }

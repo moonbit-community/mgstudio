@@ -331,14 +331,20 @@ fn render3d_prepare_shader_asset_paths(
       }
       prepared_paths.set(path, true)
       if @shader.shader_path_is_wesl(path) {
-        @shader.shader_register_wesl_runtime_source(source_world, path, []) catch {
+        @shader_runtime_render.shader_register_wesl_runtime_source(
+          source_world,
+          path,
+          [],
+        ) catch {
           err =>
             abort(
               "failed to compile render3d wesl material shader: \{path}: \{err.message()}",
             )
         }
       } else {
-        @shader.shader_register_wgsl_runtime_source(source_world, path)
+        @shader_runtime_render.shader_register_wgsl_runtime_source(
+          source_world, path,
+        )
       }
     }
   }

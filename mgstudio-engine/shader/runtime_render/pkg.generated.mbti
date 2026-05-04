@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/shader/runtime_render"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/shader",
+}
+
+// Values
+pub fn shader_register_runtime_source(@ecs.World, String, Array[@shader.ShaderDefVal]) -> Unit raise @shader.ShaderCacheError
+
+pub fn shader_register_wesl_runtime_source(@ecs.World, String, Array[@shader.ShaderDefVal]) -> Unit raise @shader.ShaderCacheError
+
+pub fn shader_register_wgsl_runtime_source(@ecs.World, String) -> Unit
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

@@ -2,7 +2,7 @@
 import {
   "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader/source" @fullscreen_vertex_shader_source,
   "Milky2018/mgstudio/embedded_asset" @embedded_asset,
-  "Milky2018/mgstudio/shader/wgsl_registry" @wgsl_registry,
+  "Milky2018/mgstudio/shader/source" @shader_source,
   "Milky2018/moon_wgsl/common" @wgsl_common,
   "Milky2018/moon_wgsl/compose" @wgsl_compose,
   "Milky2018/moon_wgsl/resolver" @wgsl_resolver,

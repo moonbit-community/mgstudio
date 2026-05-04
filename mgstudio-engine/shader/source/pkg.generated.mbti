@@ -1,0 +1,38 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/shader/source"
+
+import {
+  "Milky2018/moon_wgsl/common",
+  "Milky2018/moon_wgsl/compose",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/x/fs",
+}
+
+// Values
+pub fn clear_embedded_shader_sources() -> Unit
+
+pub fn copy_embedded_shader_import_module_paths() -> @hashmap.HashMap[String, String]
+
+pub fn embedded_shader_source(String) -> String?
+
+pub fn embedded_shader_source_files() -> Array[@common.WgslSourceFile]
+
+pub fn embedded_shader_source_required(String) -> String raise @compose.ComposerError
+
+pub fn load_embedded_shader_source(String, String) -> Unit
+
+pub fn load_embedded_shader_source_files(Array[@common.WgslSourceFile]) -> Unit
+
+pub fn scan_shader_source_files(String, @common.WgslSourceScanOptions) -> Array[@common.WgslSourceFile] raise @fs.IOError
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @common {type WgslSourceFile as ShaderSourceFile}
+
+pub using @common {type WgslSourceScanOptions as ShaderSourceScanOptions}
+
+// Traits
+

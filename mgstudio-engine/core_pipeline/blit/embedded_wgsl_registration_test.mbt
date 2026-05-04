@@ -16,7 +16,7 @@
 test "blit: embedded wgsl source is registered by blit owner" {
   register_embedded_wgsl_sources()
   let source = match
-    @wgsl.registered_wgsl_source("core_pipeline/blit/blit.wgsl") {
+    @shader_source.embedded_shader_source("core_pipeline/blit/blit.wgsl") {
     Some(source) => source
     None => ""
   }

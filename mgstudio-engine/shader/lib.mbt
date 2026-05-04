@@ -53,14 +53,26 @@ fn preprocess_shader_imports(
   source : String,
   path : String,
 ) -> (ShaderImport, Array[ShaderImport]) {
-  let (import_path, imports, _) = @wgsl_metadata.get_preprocessor_data(source)
-  let shader_import_path = match import_path {
+  let metadata = @wgsl_metadata.get_preprocessor_metadata(source) catch {
+    _ =>
+      @wgsl_common.PreprocessorMetaData::{
+        name: None,
+        imports: [],
+        defines: @hashmap.HashMap::new(),
+        effective_defs: @hashset.HashSet::new(),
+        wgsl_directives: @wgsl_common.WgslDirectives::default(),
+        cleaned_source: source,
+      }
+  }
+  let shader_import_path = match metadata.name {
     Some(module_path) => ShaderImport::Custom(module_path)
     None => ShaderImport::AssetPath(path)
   }
   let shader_imports : Array[ShaderImport] = []
-  for import_definition in imports {
-    shader_imports.push(shader_import_from_raw(import_definition.import_path))
+  for import_definition in metadata.imports {
+    shader_imports.push(
+      shader_import_from_raw(import_definition.definition.import_path),
+    )
   }
   (shader_import_path, shader_imports)
 }

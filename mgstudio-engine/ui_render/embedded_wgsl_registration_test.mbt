@@ -14,12 +14,12 @@
 
 ///|
 fn ui_render_wgsl_registered(path : String) -> Bool {
-  @wgsl.registered_wgsl_source(path) is Some(_)
+  @shader_source.embedded_shader_source(path) is Some(_)
 }
 
 ///|
 fn ui_render_wgsl_source(path : String) -> String {
-  match @wgsl.registered_wgsl_source(path) {
+  match @shader_source.embedded_shader_source(path) {
     Some(source) => source
     None => ""
   }

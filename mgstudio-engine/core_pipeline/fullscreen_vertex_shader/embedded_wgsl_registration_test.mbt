@@ -16,7 +16,7 @@
 test "fullscreen_vertex_shader: embedded wgsl source is registered by owner" {
   register_embedded_wgsl_sources()
   let source = match
-    @wgsl.registered_wgsl_source(
+    @shader_source.embedded_shader_source(
       "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
     ) {
     Some(source) => source

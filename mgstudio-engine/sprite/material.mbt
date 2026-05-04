@@ -486,7 +486,7 @@ fn render2d_register_shader_source_asset(
   path : String,
 ) -> Unit {
   if @shader.shader_path_is_wesl(path) {
-    @shader.shader_register_wesl_runtime_source(world, path, []) catch {
+    @shader_runtime_render.shader_register_wesl_runtime_source(world, path, []) catch {
       err =>
         abort(
           "failed to compile render2d wesl shader asset: \{path}: \{err.message()}",
@@ -494,7 +494,7 @@ fn render2d_register_shader_source_asset(
     }
     return
   }
-  @shader.shader_register_wgsl_runtime_source(world, path)
+  @shader_runtime_render.shader_register_wgsl_runtime_source(world, path)
 }
 
 ///|
