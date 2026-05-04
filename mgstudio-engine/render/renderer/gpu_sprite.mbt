@@ -209,12 +209,10 @@ fn create_sprite_render_pipeline(
   guard backend.sprite_render_pipeline_layout is Some(layout) else {
     fatal("wgpu: sprite pipeline layout is None")
   }
-  let modules = copy_registered_wgsl_import_module_paths()
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let wgsl = load_wgsl_preprocessed(
-    "", "sprite_render/render/sprite.wgsl", defines, value_defines, visited, modules,
+    "", "sprite_render/render/sprite.wgsl", defines, value_defines,
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = try {

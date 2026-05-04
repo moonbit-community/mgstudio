@@ -39,6 +39,20 @@ pub(all) suberror ShaderCompileError {
 pub fn ShaderCompileError::message(Self) -> String
 
 // Types and methods
+pub(all) struct ShaderCompileRequest {
+  assets_base : String
+  target : ShaderCompileTarget
+  defines : @hashmap.HashMap[String, Bool]
+  value_defines : @hashmap.HashMap[String, Int]
+}
+pub fn ShaderCompileRequest::compile(Self) -> String raise ShaderCompileError
+pub fn ShaderCompileRequest::for_path(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int]) -> Self
+pub fn ShaderCompileRequest::for_source(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int]) -> Self
+
+pub(all) enum ShaderCompileTarget {
+  Path(String)
+  Source(String)
+}
 
 // Type aliases
 

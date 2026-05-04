@@ -50,11 +50,8 @@ fn load_wgsl_required_mesh3d_preprocess_direct(
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   defines.set("WRITE_INDIRECT_PARAMETERS_METADATA", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
-    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines, visited,
-    modules,
+    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines,
   )
 }
 
@@ -67,11 +64,8 @@ fn load_wgsl_required_mesh3d_preprocess_indirect(
   defines.set("INDIRECT", true)
   defines.set("FRUSTUM_CULLING", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
-    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines, visited,
-    modules,
+    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines,
   )
 }
 
@@ -86,11 +80,8 @@ fn load_wgsl_required_mesh3d_preprocess_indirect_early_occlusion(
   defines.set("OCCLUSION_CULLING", true)
   defines.set("EARLY_PHASE", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   let source = load_wgsl_preprocessed(
-    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines, visited,
-    modules,
+    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines,
   )
   mesh3d_preprocess_specialize_late_phase_immediate(source)
 }
@@ -106,11 +97,8 @@ fn load_wgsl_required_mesh3d_preprocess_indirect_late_occlusion(
   defines.set("OCCLUSION_CULLING", true)
   defines.set("LATE_PHASE", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   let source = load_wgsl_preprocessed(
-    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines, visited,
-    modules,
+    assets_base, "pbr/render/mesh_preprocess.wgsl", defines, value_defines,
   )
   mesh3d_preprocess_specialize_late_phase_immediate(source)
 }
@@ -122,11 +110,8 @@ fn load_wgsl_required_mesh3d_build_indexed_indirect_params(
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   defines.set("INDEXED", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
-    visited, modules,
   )
 }
 
@@ -139,11 +124,8 @@ fn load_wgsl_required_mesh3d_build_indexed_indirect_params_early(
   defines.set("OCCLUSION_CULLING", true)
   defines.set("EARLY_PHASE", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
-    visited, modules,
   )
 }
 
@@ -156,11 +138,8 @@ fn load_wgsl_required_mesh3d_build_indexed_indirect_params_late(
   defines.set("OCCLUSION_CULLING", true)
   defines.set("LATE_PHASE", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
-    visited, modules,
   )
 }
 
@@ -173,11 +152,8 @@ fn load_wgsl_required_mesh3d_build_indexed_indirect_params_main(
   defines.set("OCCLUSION_CULLING", true)
   defines.set("MAIN_PHASE", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
-    visited, modules,
   )
 }
 
@@ -187,11 +163,8 @@ fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params(
 ) -> String raise GpuBackendError {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
-    visited, modules,
   )
 }
 
@@ -203,11 +176,8 @@ fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params_early(
   defines.set("OCCLUSION_CULLING", true)
   defines.set("EARLY_PHASE", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
-    visited, modules,
   )
 }
 
@@ -219,11 +189,8 @@ fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params_late(
   defines.set("OCCLUSION_CULLING", true)
   defines.set("LATE_PHASE", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
-    visited, modules,
   )
 }
 
@@ -235,11 +202,8 @@ fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params_main(
   defines.set("OCCLUSION_CULLING", true)
   defines.set("MAIN_PHASE", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base, "pbr/render/build_indirect_params.wgsl", defines, value_defines,
-    visited, modules,
   )
 }
 

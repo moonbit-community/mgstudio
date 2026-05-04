@@ -156,11 +156,7 @@ fn load_wgsl_required_mesh3d_forward_decal_pipeline(
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   defines.set("FORWARD_DECAL", true)
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
-  load_wgsl_preprocessed(
-    assets_base, shader_path, defines, value_defines, visited, modules,
-  )
+  load_wgsl_preprocessed(assets_base, shader_path, defines, value_defines)
 }
 
 ///|
@@ -221,15 +217,11 @@ fn load_wgsl_required_mesh3d_shadow_pipeline(
   material_path : Bool,
   shader_path : String,
 ) -> String raise GpuBackendError {
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base,
     shader_path,
     mesh3d_shadow_shader_defines(skinned, material_path),
     mesh3d_forward_value_defines(),
-    visited,
-    modules,
   )
 }
 
@@ -240,15 +232,11 @@ fn load_wgsl_required_mesh3d_forward_pipeline(
   forward_decal : Bool,
   shader_path : String,
 ) -> String raise GpuBackendError {
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
     assets_base,
     shader_path,
     mesh3d_forward_shader_defines(skinned, forward_decal),
     mesh3d_forward_value_defines(),
-    visited,
-    modules,
   )
 }
 

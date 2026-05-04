@@ -22,6 +22,20 @@ pub(all) suberror ShaderCompileError {
 }
 
 ///|
+pub(all) enum ShaderCompileTarget {
+  Path(String)
+  Source(String)
+}
+
+///|
+pub(all) struct ShaderCompileRequest {
+  assets_base : String
+  target : ShaderCompileTarget
+  defines : @hashmap.HashMap[String, Bool]
+  value_defines : @hashmap.HashMap[String, Int]
+}
+
+///|
 pub fn ShaderCompileError::message(self : ShaderCompileError) -> String {
   match self {
     UnresolvedImport(import_path) =>
@@ -32,6 +46,36 @@ pub fn ShaderCompileError::message(self : ShaderCompileError) -> String {
     MissingStartupRegisteredSource(rel) =>
       "shader source was not startup-registered: \{rel}"
     Composer(message) => message
+  }
+}
+
+///|
+pub fn ShaderCompileRequest::for_path(
+  assets_base : String,
+  rel : String,
+  defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, Int],
+) -> ShaderCompileRequest {
+  ShaderCompileRequest::{
+    assets_base,
+    target: ShaderCompileTarget::Path(rel),
+    defines,
+    value_defines,
+  }
+}
+
+///|
+pub fn ShaderCompileRequest::for_source(
+  assets_base : String,
+  source : String,
+  defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, Int],
+) -> ShaderCompileRequest {
+  ShaderCompileRequest::{
+    assets_base,
+    target: ShaderCompileTarget::Source(source),
+    defines,
+    value_defines,
   }
 }
 
@@ -217,4 +261,26 @@ pub fn load_wgsl_from_sources_required(
     @hashmap.HashMap::new(),
     default_shader_value_defines(),
   )
+}
+
+///|
+pub fn ShaderCompileRequest::compile(
+  self : ShaderCompileRequest,
+) -> String raise ShaderCompileError {
+  match self.target {
+    Path(rel) =>
+      load_preprocessed_wgsl(
+        self.assets_base,
+        rel,
+        self.defines,
+        self.value_defines,
+      )
+    Source(source) =>
+      preprocess_shader_source(
+        self.assets_base,
+        source,
+        self.defines,
+        self.value_defines,
+      )
+  }
 }

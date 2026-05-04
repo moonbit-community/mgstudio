@@ -129,23 +129,6 @@ fn registered_wgsl_source_required(
 }
 
 ///|
-fn copy_registered_wgsl_import_module_paths() -> @hashmap.HashMap[
-  String,
-  String,
-] {
-  ensure_renderer_shader_sources_registered()
-  @shader_compile.copy_registered_shader_import_module_paths()
-}
-
-///|
-fn build_wgsl_import_module_paths(
-  assets_base : String,
-) -> @hashmap.HashMap[String, String] {
-  ensure_renderer_shader_sources_registered()
-  @shader_compile.build_shader_import_module_paths(assets_base)
-}
-
-///|
 fn split_once_text(text : String, sep : String) -> (String, String)? {
   let parts : Array[String] = []
   for piece in text.split(sep) {
@@ -168,15 +151,11 @@ fn preprocess_wgsl_source(
   source : String,
   defines : @hashmap.HashMap[String, Bool],
   value_defines : @hashmap.HashMap[String, Int],
-  visited : @hashmap.HashMap[String, Bool],
-  modules : @hashmap.HashMap[String, String],
 ) -> String raise GpuBackendError {
-  ignore(visited)
-  ignore(modules)
   ensure_renderer_shader_sources_registered()
-  @shader_compile.preprocess_shader_source(
+  @shader_compile.ShaderCompileRequest::for_source(
     assets_base, source, defines, value_defines,
-  ) catch {
+  ).compile() catch {
     err => raise_shader_compile_error(err)
   }
 }
@@ -187,15 +166,11 @@ fn load_wgsl_preprocessed(
   rel : String,
   defines : @hashmap.HashMap[String, Bool],
   value_defines : @hashmap.HashMap[String, Int],
-  visited : @hashmap.HashMap[String, Bool],
-  modules : @hashmap.HashMap[String, String],
 ) -> String raise GpuBackendError {
-  ignore(visited)
-  ignore(modules)
   ensure_renderer_shader_sources_registered()
-  @shader_compile.load_preprocessed_wgsl(
+  @shader_compile.ShaderCompileRequest::for_path(
     assets_base, rel, defines, value_defines,
-  ) catch {
+  ).compile() catch {
     err => raise_shader_compile_error(err)
   }
 }
@@ -218,7 +193,5 @@ fn load_wgsl_from_assets_base_required(
     rel,
     @hashmap.HashMap::new(),
     default_wgsl_value_defines(),
-    @hashmap.HashMap::new(),
-    @hashmap.HashMap::new(),
   )
 }

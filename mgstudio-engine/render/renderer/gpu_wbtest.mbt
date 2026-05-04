@@ -755,10 +755,8 @@ test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   )
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = copy_registered_wgsl_import_module_paths()
   let preprocessed = load_wgsl_preprocessed(
-    "", "sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines, visited, modules,
+    "", "sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines,
   )
   debug_inspect(
     preprocessed.contains("const mesh_functions__PI_2"),
@@ -786,10 +784,8 @@ test "renderer: registered wgsl sources resolve nested alias imports" {
   )
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = copy_registered_wgsl_import_module_paths()
   let preprocessed = load_wgsl_preprocessed(
-    "", "test/main.wgsl", defines, value_defines, visited, modules,
+    "", "test/main.wgsl", defines, value_defines,
   )
   debug_inspect(preprocessed.contains("types::Lights"), content="false")
   debug_inspect(preprocessed.contains("struct types__Lights"), content="true")
@@ -810,10 +806,8 @@ test "renderer: registered wgsl sources resolve nested alias imports through mod
   )
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = copy_registered_wgsl_import_module_paths()
   let preprocessed = load_wgsl_preprocessed(
-    "", "test/main.wgsl", defines, value_defines, visited, modules,
+    "", "test/main.wgsl", defines, value_defines,
   )
   debug_inspect(preprocessed.contains("types::Lights"), content="false")
   debug_inspect(
@@ -846,10 +840,8 @@ test "renderer: registered wgsl sources resolve nested alias imports through gro
   )
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = copy_registered_wgsl_import_module_paths()
   let preprocessed = load_wgsl_preprocessed(
-    "", "test/main.wgsl", defines, value_defines, visited, modules,
+    "", "test/main.wgsl", defines, value_defines,
   )
   debug_inspect(preprocessed.contains("types::Lights"), content="false")
   debug_inspect(

@@ -748,15 +748,11 @@ fn load_fullscreen_tonemapping_wgsl_with_defines_required(
   let value_defines = default_wgsl_value_defines()
   value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", 3)
   value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", 4)
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(backend.assets_base)
   let composed_source = load_wgsl_preprocessed(
     backend.assets_base,
     "core_pipeline/tonemapping/tonemapping.wgsl",
     defines,
     value_defines,
-    visited,
-    modules,
   )
   (vertex_source, composed_source)
 }

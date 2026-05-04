@@ -520,8 +520,6 @@ fn load_wgsl_with_defines_required_mesh2d_material(
     "PER_OBJECT_BUFFER_BATCH_SIZE",
     MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE,
   )
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = copy_registered_wgsl_import_module_paths()
   let mesh_source = registered_wgsl_source_required(
     mesh2d_vertex_shader_path_or_default(vertex_shader_path),
   )
@@ -529,9 +527,7 @@ fn load_wgsl_with_defines_required_mesh2d_material(
     mesh2d_fragment_shader_path_or_default(fragment_shader_path),
   )
   let combined_source = "\{mesh2d_strip_fragment_entry(mesh_source)}\n\{material_source}"
-  preprocess_wgsl_source(
-    "", combined_source, defines, value_defines, visited, modules,
-  )
+  preprocess_wgsl_source("", combined_source, defines, value_defines)
 }
 
 ///|

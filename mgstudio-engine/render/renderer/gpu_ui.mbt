@@ -64,16 +64,12 @@ fn ui_globals_uniform_bytes() -> Bytes {
 
 ///|
 fn load_ui_node_wgsl(anti_alias : Bool) -> String raise GpuBackendError {
-  let modules = copy_registered_wgsl_import_module_paths()
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   if anti_alias {
     defines.set("ANTI_ALIAS", true)
   }
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  load_wgsl_preprocessed(
-    "", "ui_render/ui.wgsl", defines, value_defines, visited, modules,
-  )
+  load_wgsl_preprocessed("", "ui_render/ui.wgsl", defines, value_defines)
 }
 
 ///|
@@ -131,13 +127,11 @@ fn ui_box_shadow_sample_count(samples : Int) -> Int {
 
 ///|
 fn load_ui_box_shadow_wgsl(samples : Int) -> String raise GpuBackendError {
-  let modules = copy_registered_wgsl_import_module_paths()
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let value_defines = default_wgsl_value_defines()
   value_defines.set("SHADOW_SAMPLES", ui_box_shadow_sample_count(samples))
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   load_wgsl_preprocessed(
-    "", "ui_render/box_shadow.wgsl", defines, value_defines, visited, modules,
+    "", "ui_render/box_shadow.wgsl", defines, value_defines,
   )
 }
 
@@ -184,12 +178,10 @@ fn create_ui_shadow_pipeline(
 
 ///|
 fn load_ui_texture_slice_wgsl() -> String raise GpuBackendError {
-  let modules = copy_registered_wgsl_import_module_paths()
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   load_wgsl_preprocessed(
-    "", "ui_render/ui_texture_slice.wgsl", defines, value_defines, visited, modules,
+    "", "ui_render/ui_texture_slice.wgsl", defines, value_defines,
   )
 }
 

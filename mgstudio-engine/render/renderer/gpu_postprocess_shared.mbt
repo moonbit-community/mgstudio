@@ -58,8 +58,6 @@ fn load_postprocess_fragment_wgsl_with_defines_required(
     rel,
     postprocess_define_keys_map(define_keys),
     default_wgsl_value_defines(),
-    @hashmap.HashMap::new(),
-    @hashmap.HashMap::new(),
   )
 }
 
