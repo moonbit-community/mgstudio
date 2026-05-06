@@ -23,6 +23,37 @@ fn approx_eq(a : Float, b : Float, eps : Float) -> Bool {
 }
 
 ///|
+fn test_u8_at(bytes : Bytes, index : Int) -> Int {
+  match bytes.get(index) {
+    Some(value) => value.to_int() & 0xFF
+    None => 0
+  }
+}
+
+///|
+fn test_u32le_at(bytes : Bytes, index : Int) -> UInt {
+  (test_u8_at(bytes, index) & 0xFF).reinterpret_as_uint() |
+  ((test_u8_at(bytes, index + 1) & 0xFF).reinterpret_as_uint() << 8) |
+  ((test_u8_at(bytes, index + 2) & 0xFF).reinterpret_as_uint() << 16) |
+  ((test_u8_at(bytes, index + 3) & 0xFF).reinterpret_as_uint() << 24)
+}
+
+///|
+fn test_cluster_offsets_has_point_light(
+  bytes : Bytes,
+  cluster_count : Int,
+) -> Bool {
+  let mut cluster_index = 0
+  while cluster_index < cluster_count {
+    if test_u32le_at(bytes, cluster_index * 32 + 4) > 0U {
+      return true
+    }
+    cluster_index += 1
+  }
+  false
+}
+
+///|
 test "pbr render light: point extraction follows bevy intensity and normal-bias scaling" {
   let world = @ecs.World::new()
   world.insert_resource(
@@ -666,6 +697,60 @@ test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
     approx_eq(gpu_lights.cluster_factors.w, expected_factors_zw.y, 1.0e-5F),
     content="true",
   )
+}
+
+///|
+test "pbr render light: storage cluster buffers fit bevy default clusters" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  try! (world.set_by_key(
+    camera,
+    @sprite.ecs_key_camera,
+    @sprite.Camera::default(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 7.0F, 14.0F).looking_at(
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+  )
+  |> ignore)
+  let point = world.spawn()
+  try! (world.set_by_key(
+    point,
+    @light.ecs_key_point_light,
+    @light.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, true),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    point,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F),
+  )
+  |> ignore)
+
+  @light_cluster.cluster_assign_lights_system(world)
+  let lighting = render3d_collect_lighting(world)
+  guard lighting.gpu_clustered_lights_bytes is Some(clustered) else {
+    inspect("missing", content="clustered")
+    return
+  }
+  guard lighting.gpu_clusterable_object_index_lists_bytes is Some(indices) else {
+    inspect("missing", content="indices")
+    return
+  }
+  guard lighting.gpu_cluster_offsets_and_counts_bytes is Some(offsets) else {
+    inspect("missing", content="offsets")
+    return
+  }
+
+  inspect(clustered.length(), content="16320")
+  inspect(indices.length(), content="65536")
+  inspect(offsets.length(), content="131072")
+  inspect(test_cluster_offsets_has_point_light(offsets, 3456), content="true")
 }
 
 ///|

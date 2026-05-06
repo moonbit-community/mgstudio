@@ -38,6 +38,9 @@ struct Mesh3dPipelineCacheEntry {
   blend_kind : Int
   skinned : Bool
   forward_decal : Bool
+  tonemap_in_shader : Bool
+  tonemapping_mode : Int
+  deband_dither_enabled : Bool
   state : RenderPipelineCacheState
 }
 
@@ -50,6 +53,9 @@ fn mesh3d_pipeline_get(
   blend_kind : Int,
   skinned : Bool,
   forward_decal : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
 ) -> @wgpu.RenderPipeline? {
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   for entry in backend.mesh3d_pipeline_cache {
@@ -58,7 +64,10 @@ fn mesh3d_pipeline_get(
       entry.cull_mode == safe_cull_mode &&
       entry.blend_kind == blend_kind &&
       entry.skinned == skinned &&
-      entry.forward_decal == forward_decal {
+      entry.forward_decal == forward_decal &&
+      entry.tonemap_in_shader == tonemap_in_shader &&
+      entry.tonemapping_mode == tonemapping_mode &&
+      entry.deband_dither_enabled == deband_dither_enabled {
       match entry.state {
         RenderPipelineOk(pipeline) => return Some(pipeline)
         RenderPipelineErr(message) => {
@@ -80,6 +89,9 @@ fn mesh3d_pipeline_failed(
   blend_kind : Int,
   skinned : Bool,
   forward_decal : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
 ) -> Bool {
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   for entry in backend.mesh3d_pipeline_cache {
@@ -88,7 +100,10 @@ fn mesh3d_pipeline_failed(
       entry.cull_mode == safe_cull_mode &&
       entry.blend_kind == blend_kind &&
       entry.skinned == skinned &&
-      entry.forward_decal == forward_decal {
+      entry.forward_decal == forward_decal &&
+      entry.tonemap_in_shader == tonemap_in_shader &&
+      entry.tonemapping_mode == tonemapping_mode &&
+      entry.deband_dither_enabled == deband_dither_enabled {
       match entry.state {
         RenderPipelineOk(_) => return false
         RenderPipelineErr(message) => {
@@ -110,6 +125,9 @@ fn mesh3d_pipeline_set(
   blend_kind : Int,
   skinned : Bool,
   forward_decal : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
   pipeline : @wgpu.RenderPipeline,
 ) -> Unit {
   backend.mesh3d_pipeline_cache.push({
@@ -119,6 +137,9 @@ fn mesh3d_pipeline_set(
     blend_kind,
     skinned,
     forward_decal,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
     state: RenderPipelineOk(pipeline),
   })
 }
@@ -132,16 +153,21 @@ fn mesh3d_pipeline_set_failed(
   blend_kind : Int,
   skinned : Bool,
   forward_decal : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
   message : String,
 ) -> Unit {
   if mesh3d_pipeline_get(
       backend, color_format, topology, cull_mode, blend_kind, skinned, forward_decal,
+      tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     )
     is Some(_) {
     return
   }
   if mesh3d_pipeline_failed(
       backend, color_format, topology, cull_mode, blend_kind, skinned, forward_decal,
+      tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     ) {
     return
   }
@@ -152,6 +178,9 @@ fn mesh3d_pipeline_set_failed(
     blend_kind,
     skinned,
     forward_decal,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
     state: RenderPipelineErr(message),
   })
 }

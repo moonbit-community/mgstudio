@@ -175,6 +175,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   occlusion_texture_id : Int
   depth_texture_id : Int
   emissive : @sprite.Color
+  emissive_exposure_weight : Float
   metallic : Float
   anisotropy_texture_id : Int
   anisotropy_rotation : Float
@@ -187,8 +188,14 @@ pub(all) struct MeshGpuDrawPayload3d {
   specular_transmission : Float
   thickness : Float
   ior : Float
+  attenuation_color : @sprite.Color
+  attenuation_distance : Float
+  clearcoat : Float
+  clearcoat_perceptual_roughness : Float
   alpha_cutoff : Float
   material_flags : UInt
+  lightmap_exposure : Float
+  deferred_lighting_pass_id : Int
   transmission_source_texture_id : Int
   transmission_blur_taps : Float
   transmission_steps : Float
@@ -291,6 +298,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     occlusion_texture_id,
     depth_texture_id,
     emissive: material.emissive,
+    emissive_exposure_weight: material.emissive_exposure_weight,
     metallic: material.metallic,
     anisotropy_texture_id,
     anisotropy_rotation: material.anisotropy_rotation,
@@ -303,8 +311,14 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     specular_transmission: draw_specular_transmission,
     thickness: draw_thickness,
     ior: draw_ior,
+    attenuation_color: material.attenuation_color,
+    attenuation_distance: material.attenuation_distance,
+    clearcoat: material.clearcoat,
+    clearcoat_perceptual_roughness: material.clearcoat_perceptual_roughness,
     alpha_cutoff: render3d_standard_material_alpha_cutoff(material.alpha_mode),
     material_flags,
+    lightmap_exposure: material.lightmap_exposure,
+    deferred_lighting_pass_id: material.deferred_lighting_pass_id,
     transmission_source_texture_id,
     transmission_blur_taps,
     transmission_steps,
@@ -362,6 +376,7 @@ pub fn render3d_host_main_pass_draw_entry(
     emissive_r=payload.emissive.r,
     emissive_g=payload.emissive.g,
     emissive_b=payload.emissive.b,
+    emissive_exposure_weight=payload.emissive_exposure_weight,
     metallic=payload.metallic,
     roughness=payload.surface_roughness,
     reflectance=payload.reflectance,
@@ -379,8 +394,16 @@ pub fn render3d_host_main_pass_draw_entry(
     specular_transmission=payload.specular_transmission,
     thickness=payload.thickness,
     ior=payload.ior,
+    attenuation_color_r=payload.attenuation_color.r,
+    attenuation_color_g=payload.attenuation_color.g,
+    attenuation_color_b=payload.attenuation_color.b,
+    attenuation_distance=payload.attenuation_distance,
+    clearcoat=payload.clearcoat,
+    clearcoat_perceptual_roughness=payload.clearcoat_perceptual_roughness,
     alpha_cutoff=payload.alpha_cutoff,
     material_flags=payload.material_flags,
+    lightmap_exposure=payload.lightmap_exposure,
+    deferred_lighting_pass_id=payload.deferred_lighting_pass_id,
     point_shadow_texture_id=payload.point_shadow_texture_id,
     point_shadow_enabled=payload.point_shadow_enabled,
     point_shadow_depth_bias=payload.point_shadow_depth_bias,
@@ -454,8 +477,16 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     specular_transmission=payload.specular_transmission,
     thickness=payload.thickness,
     ior=payload.ior,
+    attenuation_color_r=payload.attenuation_color.r,
+    attenuation_color_g=payload.attenuation_color.g,
+    attenuation_color_b=payload.attenuation_color.b,
+    attenuation_distance=payload.attenuation_distance,
+    clearcoat=payload.clearcoat,
+    clearcoat_perceptual_roughness=payload.clearcoat_perceptual_roughness,
     alpha_cutoff=payload.alpha_cutoff,
     material_flags=payload.material_flags,
+    lightmap_exposure=payload.lightmap_exposure,
+    deferred_lighting_pass_id=payload.deferred_lighting_pass_id,
     transmission_source_texture_id=payload.transmission_source_texture_id,
     transmission_blur_taps=payload.transmission_blur_taps,
     transmission_steps=payload.transmission_steps,

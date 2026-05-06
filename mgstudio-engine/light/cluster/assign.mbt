@@ -122,39 +122,6 @@ fn cluster_assign_is_view_visible(
 }
 
 ///|
-fn cluster_assign_max_clusterable_object_range(world : @ecs.World) -> Float {
-  let max_range_ref : Ref[Float] = Ref::new(0.0F)
-  world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
-    if !cluster_assign_is_view_visible(world, entity) {
-      return
-    }
-    if light.range > max_range_ref.val {
-      max_range_ref.val = light.range
-    }
-  })
-  world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
-    if !cluster_assign_is_view_visible(world, entity) {
-      return
-    }
-    if light.range > max_range_ref.val {
-      max_range_ref.val = light.range
-    }
-  })
-  max_range_ref.val
-}
-
-///|
-fn cluster_assign_cluster_far(
-  config : ClusterConfig,
-  max_clusterable_object_range : Float,
-) -> Float {
-  match cluster_config_far_z_mode(config) {
-    ClusterFarZMode::MaxClusterableObjectRange => max_clusterable_object_range
-    ClusterFarZMode::Constant(value) => value
-  }
-}
-
-///|
 fn cluster_assign_cluster_objects(
   cluster_count : Int,
 ) -> Array[ObjectsInCluster] {
@@ -169,21 +136,63 @@ fn cluster_assign_cluster_objects(
 }
 
 ///|
-pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
-  let point_and_spot_lights : Array[@core.Entity] = []
-  world.for_each_component(@light.ecs_key_point_light, fn(entity, _light) {
+priv struct ClusterableObjectAssignmentData {
+  entity : @core.Entity
+  transform : @transform.Transform
+  range : Float
+  object_type : ClusterableObjectType
+}
+
+///|
+fn cluster_assign_entity_transform(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @transform.Transform {
+  match
+    (try! world.get_by_key(entity, @transform.GlobalTransform::component())) {
+    Some(global_transform) => global_transform.compute_transform()
+    None =>
+      match (try! world.get_by_key(entity, @transform.Transform::component())) {
+        Some(transform) => transform
+        None => @transform.Transform::identity()
+      }
+  }
+}
+
+///|
+fn cluster_assign_collect_objects(
+  world : @ecs.World,
+) -> Array[ClusterableObjectAssignmentData] {
+  let objects : Array[ClusterableObjectAssignmentData] = []
+  world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
     if !cluster_assign_is_view_visible(world, entity) {
       return
     }
-    point_and_spot_lights.push(entity)
+    objects.push(ClusterableObjectAssignmentData::{
+      entity,
+      transform: cluster_assign_entity_transform(world, entity),
+      range: light.range,
+      object_type: ClusterableObjectType::PointLight(
+        light.shadow_maps_enabled,
+        false,
+      ),
+    })
   })
-  world.for_each_component(@light.ecs_key_spot_light, fn(entity, _light) {
+  world.for_each_component(@light.ecs_key_spot_light, fn(entity, light) {
     if !cluster_assign_is_view_visible(world, entity) {
       return
     }
-    point_and_spot_lights.push(entity)
+    objects.push(ClusterableObjectAssignmentData::{
+      entity,
+      transform: cluster_assign_entity_transform(world, entity),
+      range: light.range,
+      object_type: ClusterableObjectType::SpotLight(
+        light.shadow_maps_enabled,
+        false,
+        light.outer_angle,
+      ),
+    })
   })
-  let reflection_probes : Array[@core.Entity] = []
   world.for_each_component(@light.ecs_key_environment_map_light, fn(
     entity,
     _probe,
@@ -191,9 +200,13 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     if !cluster_assign_is_view_visible(world, entity) {
       return
     }
-    reflection_probes.push(entity)
+    objects.push(ClusterableObjectAssignmentData::{
+      entity,
+      transform: cluster_assign_entity_transform(world, entity),
+      range: 1.0F,
+      object_type: ClusterableObjectType::ReflectionProbe,
+    })
   })
-  let irradiance_volumes : Array[@core.Entity] = []
   world.for_each_component(@light.ecs_key_irradiance_volume, fn(
     entity,
     _probe,
@@ -201,11 +214,348 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     if !cluster_assign_is_view_visible(world, entity) {
       return
     }
-    irradiance_volumes.push(entity)
+    objects.push(ClusterableObjectAssignmentData::{
+      entity,
+      transform: cluster_assign_entity_transform(world, entity),
+      range: 1.0F,
+      object_type: ClusterableObjectType::IrradianceVolume,
+    })
   })
-  let max_clusterable_object_range = cluster_assign_max_clusterable_object_range(
-    world,
+  objects
+}
+
+///|
+fn cluster_assign_float_from_int(value : Int) -> Float {
+  Float::from_double(value.to_double())
+}
+
+///|
+fn cluster_assign_default_clip_from_view(
+  screen_width : Int,
+  screen_height : Int,
+) -> ClusterProjectionMatrix3d {
+  let width = cluster_assign_float_from_int(
+    if screen_width <= 0 {
+      1
+    } else {
+      screen_width
+    },
   )
+  let height = cluster_assign_float_from_int(
+    if screen_height <= 0 {
+      1
+    } else {
+      screen_height
+    },
+  )
+  let aspect = width / height
+  let half_fov = @math.pi_half() * 0.25F
+  let sin_half_fov = @math.sin(half_fov)
+  let cos_half_fov = @math.cos(half_fov)
+  let tan_half_fov = if cos_half_fov.abs() <= 1.0e-6F {
+    1.0F
+  } else {
+    sin_half_fov / cos_half_fov
+  }
+  let y = 1.0F / tan_half_fov
+  let x = y / aspect
+  ClusterProjectionMatrix3d::from_cols(
+    @math.Vec4::new(x, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, -1.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.1F, 0.0F),
+  )
+}
+
+///|
+fn cluster_assign_camera_projection(
+  world : @ecs.World,
+  entity : @core.Entity,
+  screen_width : Int,
+  screen_height : Int,
+) -> ClusterCameraProjection {
+  match (try! world.get_by_key(entity, ClusterCameraProjection::component())) {
+    Some(projection) => projection
+    None =>
+      ClusterCameraProjection::new(
+        cluster_assign_default_clip_from_view(screen_width, screen_height),
+        false,
+        1000.0F,
+        0.0F,
+      )
+  }
+}
+
+///|
+fn cluster_assign_view_from_world_matrix(
+  transform : @transform.Transform,
+) -> ClusterProjectionMatrix3d {
+  let inverse_rotation = transform.rotation.normalize().inverse()
+  let x_axis = inverse_rotation.mul_vec3(@math.Vec3::new(1.0F, 0.0F, 0.0F))
+  let y_axis = inverse_rotation.mul_vec3(@math.Vec3::new(0.0F, 1.0F, 0.0F))
+  let z_axis = inverse_rotation.mul_vec3(@math.Vec3::new(0.0F, 0.0F, 1.0F))
+  let translation = transform.translation
+  let offset_x = -(x_axis.x * translation.x +
+    y_axis.x * translation.y +
+    z_axis.x * translation.z)
+  let offset_y = -(x_axis.y * translation.x +
+    y_axis.y * translation.y +
+    z_axis.y * translation.z)
+  let offset_z = -(x_axis.z * translation.x +
+    y_axis.z * translation.y +
+    z_axis.z * translation.z)
+  ClusterProjectionMatrix3d::from_cols(
+    @math.Vec4::new(x_axis.x, x_axis.y, x_axis.z, 0.0F),
+    @math.Vec4::new(y_axis.x, y_axis.y, y_axis.z, 0.0F),
+    @math.Vec4::new(z_axis.x, z_axis.y, z_axis.z, 0.0F),
+    @math.Vec4::new(offset_x, offset_y, offset_z, 1.0F),
+  )
+}
+
+///|
+fn cluster_assign_project_aabb_corners(
+  clip_from_view : ClusterProjectionMatrix3d,
+  center_view : @math.Vec3,
+  radius : Float,
+) -> (@math.Vec3, @math.Vec3)? {
+  let mut min_x = 1.0F
+  let mut min_y = 1.0F
+  let mut min_z = center_view.z - radius
+  let mut max_x = -1.0F
+  let mut max_y = -1.0F
+  let mut max_z = center_view.z + radius
+  let mut projected_any = false
+  for xi in 0..<2 {
+    for yi in 0..<2 {
+      for zi in 0..<2 {
+        let x_offset = if xi == 0 { -radius } else { radius }
+        let y_offset = if yi == 0 { -radius } else { radius }
+        let z_offset = if zi == 0 { -radius } else { radius }
+        let x = center_view.x + x_offset
+        let y = center_view.y + y_offset
+        let z = center_view.z + z_offset
+        let view_z = if z >= 0.0F { -1.0e-6F } else { z }
+        let view_point = @math.Vec3::new(x, y, view_z)
+        match clip_from_view.project_point3(view_point) {
+          Some(ndc) => {
+            projected_any = true
+            if ndc.x < min_x {
+              min_x = ndc.x
+            }
+            if ndc.y < min_y {
+              min_y = ndc.y
+            }
+            if ndc.x > max_x {
+              max_x = ndc.x
+            }
+            if ndc.y > max_y {
+              max_y = ndc.y
+            }
+          }
+          None => ()
+        }
+      }
+    }
+  }
+  if !projected_any {
+    return None
+  }
+  if min_x < -1.0F {
+    min_x = -1.0F
+  }
+  if min_y < -1.0F {
+    min_y = -1.0F
+  }
+  if max_x > 1.0F {
+    max_x = 1.0F
+  }
+  if max_y > 1.0F {
+    max_y = 1.0F
+  }
+  if max_x < -1.0F || min_x > 1.0F || max_y < -1.0F || min_y > 1.0F {
+    return None
+  }
+  if min_z >= 0.0F {
+    min_z = -1.0e-6F
+  }
+  if max_z >= 0.0F {
+    max_z = -1.0e-6F
+  }
+  Some(
+    (@math.Vec3::new(min_x, min_y, min_z), @math.Vec3::new(max_x, max_y, max_z)),
+  )
+}
+
+///|
+fn cluster_assign_view_z_to_z_slice(
+  cluster_factors : @math.Vec2,
+  z_slices : Int,
+  view_z : Float,
+  is_orthographic : Bool,
+) -> Int {
+  let safe_z_slices = if z_slices <= 0 { 1 } else { z_slices }
+  let z_slice = if is_orthographic {
+    ((view_z - cluster_factors.x) * cluster_factors.y).floor().to_int()
+  } else {
+    let positive_z = if -view_z <= 1.0e-6F { 1.0e-6F } else { -view_z }
+    (Float::from_double(@math_core.ln(positive_z.to_double())) *
+    cluster_factors.x -
+    cluster_factors.y +
+    1.0F).to_int()
+  }
+  if z_slice < 0 {
+    0
+  } else if z_slice >= safe_z_slices {
+    safe_z_slices - 1
+  } else {
+    z_slice
+  }
+}
+
+///|
+fn cluster_assign_ndc_to_cluster(
+  dimensions_x : Int,
+  dimensions_y : Int,
+  dimensions_z : Int,
+  cluster_factors : @math.Vec2,
+  is_orthographic : Bool,
+  ndc : @math.Vec3,
+) -> (Int, Int, Int) {
+  let safe_x = if dimensions_x <= 0 { 1 } else { dimensions_x }
+  let safe_y = if dimensions_y <= 0 { 1 } else { dimensions_y }
+  let safe_z = if dimensions_z <= 0 { 1 } else { dimensions_z }
+  let frag_x = (ndc.x * 0.5F + 0.5F).clamp(min=0.0F, max=1.0F)
+  let frag_y = (ndc.y * -0.5F + 0.5F).clamp(min=0.0F, max=1.0F)
+  let mut x = (frag_x * cluster_assign_float_from_int(safe_x)).floor().to_int()
+  let mut y = (frag_y * cluster_assign_float_from_int(safe_y)).floor().to_int()
+  let z = cluster_assign_view_z_to_z_slice(
+    cluster_factors,
+    safe_z,
+    ndc.z,
+    is_orthographic,
+  )
+  if x >= safe_x {
+    x = safe_x - 1
+  }
+  if y >= safe_y {
+    y = safe_y - 1
+  }
+  (x, y, z)
+}
+
+///|
+fn cluster_assign_add_object_to_cluster(
+  cluster : ObjectsInCluster,
+  object : ClusterableObjectAssignmentData,
+) -> Unit {
+  match object.object_type {
+    PointLight(_, _) => cluster.add_point_light(object.entity)
+    SpotLight(_, _, _) => cluster.add_spot_light(object.entity)
+    ReflectionProbe => cluster.add_reflection_probe(object.entity)
+    IrradianceVolume => cluster.add_irradiance_volume(object.entity)
+    Decal => cluster.add_decal(object.entity)
+  }
+}
+
+///|
+fn cluster_assign_fill_object_clusters(
+  clusters : Clusters,
+  visible : VisibleClusterableObjects,
+  object : ClusterableObjectAssignmentData,
+  clip_from_view : ClusterProjectionMatrix3d,
+  view_from_world : ClusterProjectionMatrix3d,
+  cluster_factors : @math.Vec2,
+  is_orthographic : Bool,
+) -> Unit {
+  let center_view4 = view_from_world.mul_vec4(
+    @math.Vec4::new(
+      object.transform.translation.x,
+      object.transform.translation.y,
+      object.transform.translation.z,
+      1.0F,
+    ),
+  )
+  let center_view = @math.Vec3::new(
+    center_view4.x,
+    center_view4.y,
+    center_view4.z,
+  )
+  guard cluster_assign_project_aabb_corners(
+      clip_from_view,
+      center_view,
+      object.range,
+    )
+    is Some((aabb_min, aabb_max)) else {
+    return
+  }
+  visible.add(object.entity, object.object_type)
+  let min_cluster = cluster_assign_ndc_to_cluster(
+    clusters.dimensions_x,
+    clusters.dimensions_y,
+    clusters.dimensions_z,
+    cluster_factors,
+    is_orthographic,
+    aabb_min,
+  )
+  let max_cluster = cluster_assign_ndc_to_cluster(
+    clusters.dimensions_x,
+    clusters.dimensions_y,
+    clusters.dimensions_z,
+    cluster_factors,
+    is_orthographic,
+    aabb_max,
+  )
+  let min_x = if min_cluster.0 < max_cluster.0 {
+    min_cluster.0
+  } else {
+    max_cluster.0
+  }
+  let max_x = if min_cluster.0 > max_cluster.0 {
+    min_cluster.0
+  } else {
+    max_cluster.0
+  }
+  let min_y = if min_cluster.1 < max_cluster.1 {
+    min_cluster.1
+  } else {
+    max_cluster.1
+  }
+  let max_y = if min_cluster.1 > max_cluster.1 {
+    min_cluster.1
+  } else {
+    max_cluster.1
+  }
+  let min_z = if min_cluster.2 < max_cluster.2 {
+    min_cluster.2
+  } else {
+    max_cluster.2
+  }
+  let max_z = if min_cluster.2 > max_cluster.2 {
+    min_cluster.2
+  } else {
+    max_cluster.2
+  }
+  for y in min_y..<=max_y {
+    for x in min_x..<=max_x {
+      for z in min_z..<=max_z {
+        let cluster_index = (y * clusters.dimensions_x + x) *
+          clusters.dimensions_z +
+          z
+        if cluster_index >= 0 &&
+          cluster_index < clusters.clusterable_objects.length() {
+          cluster_assign_add_object_to_cluster(
+            clusters.clusterable_objects[cluster_index],
+            object,
+          )
+        }
+      }
+    }
+  }
+}
+
+///|
+pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
+  let clusterable_objects = cluster_assign_collect_objects(world)
   let camera_entities = []
   world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
     camera_entities.push(entity)
@@ -221,26 +571,73 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       None => continue
     }
     let (screen_width, screen_height) = cluster_assign_viewport_size(camera)
+    let projection = cluster_assign_camera_projection(
+      world, entity, screen_width, screen_height,
+    )
+    let camera_transform = cluster_assign_entity_transform(world, entity)
+    let view_from_world = cluster_assign_view_from_world_matrix(
+      camera_transform,
+    )
+    let clip_from_view = projection.clip_from_view()
+    let is_orthographic = projection.is_orthographic()
     let (dimensions_x, dimensions_y, dimensions_z) = cluster_config_dimensions_for_screen_size(
       config, screen_width, screen_height,
     )
     let tile_size_x = cluster_assign_tile_size(screen_width, dimensions_x)
     let tile_size_y = cluster_assign_tile_size(screen_height, dimensions_y)
     let cluster_count = dimensions_x * dimensions_y * dimensions_z
+    let mut far = match cluster_config_far_z_mode(config) {
+      ClusterFarZMode::MaxClusterableObjectRange => 0.0F
+      ClusterFarZMode::Constant(value) => value
+    }
+    if cluster_config_far_z_mode(config)
+      is ClusterFarZMode::MaxClusterableObjectRange {
+      for object in clusterable_objects {
+        let view_position = view_from_world.mul_vec4(
+          @math.Vec4::new(
+            object.transform.translation.x,
+            object.transform.translation.y,
+            object.transform.translation.z,
+            1.0F,
+          ),
+        )
+        let object_far = -view_position.z + object.range
+        if object_far > far {
+          far = object_far
+        }
+      }
+    }
+    let mut near = cluster_config_first_slice_depth(config)
+    if is_orthographic {
+      near = projection.orthographic_first_slice_depth()
+    } else if dimensions_z == 1 && far > near {
+      near = far
+    }
+    if far < near {
+      far = near
+    }
     let clusters = Clusters::{
       tile_size_x,
       tile_size_y,
       dimensions_x,
       dimensions_y,
       dimensions_z,
-      near: cluster_config_first_slice_depth(config),
-      far: cluster_assign_cluster_far(config, max_clusterable_object_range),
+      near,
+      far,
       clusterable_objects: cluster_assign_cluster_objects(cluster_count),
     }
-    let visible = VisibleClusterableObjects::{
-      point_and_spot_lights: point_and_spot_lights.copy(),
-      reflection_probes: reflection_probes.copy(),
-      irradiance_volumes: irradiance_volumes.copy(),
+    let visible = VisibleClusterableObjects::new()
+    let cluster_factors = calculate_cluster_factors(
+      near,
+      far,
+      cluster_assign_float_from_int(dimensions_z),
+      is_orthographic,
+    )
+    for object in clusterable_objects {
+      cluster_assign_fill_object_clusters(
+        clusters, visible, object, clip_from_view, view_from_world, cluster_factors,
+        is_orthographic,
+      )
     }
     try! world.set_by_key(entity, Clusters::component(), clusters)
     try! world.set_by_key(
@@ -258,10 +655,9 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     if (try! world.contains_by_key(entity, @sprite.ecs_key_camera)) {
       return
     }
-    let next = VisibleClusterableObjects::{
-      point_and_spot_lights: point_and_spot_lights.copy(),
-      reflection_probes: reflection_probes.copy(),
-      irradiance_volumes: irradiance_volumes.copy(),
+    let next = VisibleClusterableObjects::new()
+    for object in clusterable_objects {
+      next.add(object.entity, object.object_type)
     }
     if next != existing {
       try! world.set_by_key(

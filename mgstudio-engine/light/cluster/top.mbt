@@ -48,8 +48,8 @@ pub fn GlobalClusterSettings::default() -> GlobalClusterSettings {
   GlobalClusterSettings::{
     supports_storage_buffers: true,
     clustered_decals_are_usable: true,
-    max_uniform_buffer_clusterable_objects: 2048,
-    view_cluster_bindings_max_indices: 4096,
+    max_uniform_buffer_clusterable_objects: 204,
+    view_cluster_bindings_max_indices: 16384,
   }
 }
 
@@ -455,6 +455,18 @@ pub fn Clusters::update(
   self.dimensions_x = safe_dimensions_x
   self.dimensions_y = safe_dimensions_y
   self.dimensions_z = safe_requested_z
+}
+
+///|
+pub fn Clusters::dimensions(self : Clusters) -> (Int, Int, Int) {
+  (self.dimensions_x, self.dimensions_y, self.dimensions_z)
+}
+
+///|
+pub fn Clusters::clusterable_objects(
+  self : Clusters,
+) -> Array[ObjectsInCluster] {
+  self.clusterable_objects.copy()
 }
 
 ///|

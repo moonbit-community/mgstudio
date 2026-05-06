@@ -154,6 +154,12 @@ pub fn render3d_begin_pass_3d(
   directional_shadow_cascade_overlap? : Float = 0.0F,
   directional_shadow_cascade_data? : Array[Float] = [],
   clip_from_world_override? : ProjectionMatrix3d? = None,
+  tonemap_in_shader? : Bool = false,
+  tonemapping_mode? : Int = 0,
+  tonemapping_agx_lut_texture_id? : Int = -1,
+  tonemapping_tony_lut_texture_id? : Int = -1,
+  tonemapping_blender_lut_texture_id? : Int = -1,
+  deband_dither_enabled? : Bool = false,
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
@@ -174,6 +180,20 @@ pub fn render3d_begin_pass_3d(
   let resolved_previous_clip_from_world = match previous_clip_from_world {
     Some(value) => value
     None => clip_from_world
+  }
+  match
+    (
+      lighting.gpu_clustered_lights_bytes,
+      lighting.gpu_clusterable_object_index_lists_bytes,
+      lighting.gpu_cluster_offsets_and_counts_bytes,
+    ) {
+    (Some(clustered), Some(index_lists), Some(offsets_and_counts)) =>
+      @render_gpu.host_gpu_prepare_mesh3d_cluster_buffers(
+        clustered_lights_bytes=clustered,
+        clusterable_object_index_lists_bytes=index_lists,
+        cluster_offsets_and_counts_bytes=offsets_and_counts,
+      )
+    _ => ()
   }
   @render_gpu.host_gpu_begin_pass_3d(
     target_id~,
@@ -299,6 +319,13 @@ pub fn render3d_begin_pass_3d(
     directional_shadow_cascade_count~,
     directional_shadow_cascade_overlap~,
     directional_shadow_cascade_data~,
+    mesh3d_lights_uniform_bytes=lighting.gpu_lights_uniform_bytes,
+    tonemap_in_shader~,
+    tonemapping_mode~,
+    tonemapping_agx_lut_texture_id~,
+    tonemapping_tony_lut_texture_id~,
+    tonemapping_blender_lut_texture_id~,
+    deband_dither_enabled~,
     pass_kind~,
     clear_enabled~,
   )

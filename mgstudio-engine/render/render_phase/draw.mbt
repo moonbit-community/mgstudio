@@ -218,6 +218,7 @@ pub fn render_phase_begin_pass_3d(
   environment_map_rotation_z? : Float = 0.0F,
   environment_map_rotation_w? : Float = 1.0F,
   point_shadow_near~ : Float,
+  mesh3d_lights_uniform_bytes? : Bytes? = None,
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
@@ -337,6 +338,7 @@ pub fn render_phase_begin_pass_3d(
     environment_map_rotation_z~,
     environment_map_rotation_w~,
     point_shadow_near~,
+    mesh3d_lights_uniform_bytes~,
     pass_kind~,
     clear_enabled~,
   )

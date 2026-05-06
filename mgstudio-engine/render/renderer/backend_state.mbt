@@ -149,9 +149,6 @@ pub struct GpuBackend {
   mesh3d_custom_pipeline_cache : Map[String, RenderPipelineCacheState]
   mesh3d_shadow_pipeline_cache : Array[Mesh3dShadowPipelineCacheEntry]
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
-  mut mesh3d_dt_lut_texture : @wgpu.Texture?
-  mut mesh3d_dt_lut_view : @wgpu.TextureView?
-  mut mesh3d_dt_lut_sampler : @wgpu.Sampler?
   mut mesh3d_view_buf : @wgpu.Buffer?
   mut mesh3d_lights_buf : @wgpu.Buffer?
   mut mesh3d_clustered_lights_buf : @wgpu.Buffer?

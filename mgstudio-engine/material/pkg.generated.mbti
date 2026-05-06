@@ -434,6 +434,7 @@ pub struct StandardMaterial {
   anisotropy_rotation : Float
   anisotropy_texture : @asset.Handle[@image.Image]?
   emissive : @color.Color
+  emissive_exposure_weight : Float
   emissive_texture : @asset.Handle[@image.Image]?
   metallic : Float
   metallic_roughness_texture : @asset.Handle[@image.Image]?
@@ -443,11 +444,16 @@ pub struct StandardMaterial {
   specular_transmission : Float
   thickness : Float
   ior : Float
+  attenuation_color : @color.Color
+  attenuation_distance : Float
   specular_tint : @color.Color
   specular_tint_texture : @asset.Handle[@image.Image]?
   occlusion_texture : @asset.Handle[@image.Image]?
   alpha_mode : AlphaMode3d
   depth_bias : Float
+  fog_enabled : Bool
+  lightmap_exposure : Float
+  deferred_lighting_pass_id : Int
   opaque_render_method : OpaqueRendererMethod
   unlit : Bool
   cull_mode : Face3d?

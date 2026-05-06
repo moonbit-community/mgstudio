@@ -54,6 +54,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   emissive_r : Float,
   emissive_g : Float,
   emissive_b : Float,
+  emissive_exposure_weight : Float,
   metallic : Float,
   roughness : Float,
   reflectance : Float,
@@ -71,8 +72,16 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   specular_transmission : Float,
   thickness : Float,
   ior : Float,
+  attenuation_color_r : Float,
+  attenuation_color_g : Float,
+  attenuation_color_b : Float,
+  attenuation_distance : Float,
+  clearcoat : Float,
+  clearcoat_perceptual_roughness : Float,
   alpha_cutoff : Float,
   material_flags : UInt,
+  lightmap_exposure : Float,
+  deferred_lighting_pass_id : Int,
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
   cull_mode : Int,
@@ -103,6 +112,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       draw_vertex_shader_path,
       draw_fragment_shader_path,
       skinning_key_hi >= 0,
+      ps.tonemap_in_shader,
+      ps.tonemapping_mode,
+      ps.deband_dither_enabled,
     )
     is Some(pipeline) else {
     return
@@ -417,8 +429,16 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }
   let (view_bg, binding_arrays_bg) = mesh3d_view_bg_cache_get_or_create(
-    self, transmission_source_texture, point_shadow_texture, directional_shadow_texture,
-    environment_diffuse_texture, environment_specular_texture,
+    self,
+    transmission_source_texture,
+    point_shadow_texture,
+    directional_shadow_texture,
+    environment_diffuse_texture,
+    environment_specular_texture,
+    ps.tonemapping_mode,
+    ps.tonemapping_agx_lut_texture_id,
+    ps.tonemapping_tony_lut_texture_id,
+    ps.tonemapping_blender_lut_texture_id,
   )
   let material_bg = mesh3d_material_cache_get_or_create(
     self,
@@ -433,10 +453,13 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     mesh3d_standard_material_uniform_bytes(
       color_r, color_g, color_b, color_a, uv_transform_a_value, uv_transform_b_value,
       uv_transform_c_value, uv_transform_d_value, uv_transform_tx_value, uv_transform_ty_value,
-      emissive_r, emissive_g, emissive_b, metallic, roughness, reflectance, parallax_depth_scale,
+      emissive_r, emissive_g, emissive_b, emissive_exposure_weight, metallic, roughness,
+      reflectance, attenuation_color_r, attenuation_color_g, attenuation_color_b,
+      attenuation_distance, clearcoat, clearcoat_perceptual_roughness, parallax_depth_scale,
       max_parallax_layer_count, max_relief_mapping_search_steps, anisotropy_strength,
       anisotropy_rotation, specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission,
       specular_transmission, thickness, ior, alpha_cutoff, runtime_material_flags,
+      lightmap_exposure, deferred_lighting_pass_id,
     ),
   )
   pass.set_pipeline(pipeline)

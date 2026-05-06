@@ -414,6 +414,7 @@ pub struct StandardMaterial {
   anisotropy_rotation : Float
   anisotropy_texture : @asset.Handle[@asset.Image]?
   emissive : @sprite.Color
+  emissive_exposure_weight : Float
   emissive_texture : @asset.Handle[@asset.Image]?
   metallic : Float
   metallic_roughness_texture : @asset.Handle[@asset.Image]?
@@ -423,11 +424,16 @@ pub struct StandardMaterial {
   specular_transmission : Float
   thickness : Float
   ior : Float
+  attenuation_color : @sprite.Color
+  attenuation_distance : Float
   specular_tint : @sprite.Color
   specular_tint_texture : @asset.Handle[@asset.Image]?
   occlusion_texture : @asset.Handle[@asset.Image]?
   alpha_mode : AlphaMode3d
   depth_bias : Float
+  fog_enabled : Bool
+  lightmap_exposure : Float
+  deferred_lighting_pass_id : Int
   opaque_render_method : OpaqueRendererMethod
   unlit : Bool
   cull_mode : Face3d?
@@ -459,6 +465,7 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     anisotropy_rotation: 0.0F,
     anisotropy_texture: None,
     emissive: @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+    emissive_exposure_weight: 0.0F,
     emissive_texture: None,
     metallic: 0.0F,
     metallic_roughness_texture: None,
@@ -468,11 +475,16 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     specular_transmission: 0.0F,
     thickness: 0.0F,
     ior: 1.5F,
+    attenuation_color: @sprite.Color::white(),
+    attenuation_distance: 1.0F / 0.0F,
     specular_tint: @sprite.Color::white(),
     specular_tint_texture: None,
     occlusion_texture: None,
     alpha_mode: AlphaMode3d::Opaque,
     depth_bias: 0.0F,
+    fog_enabled: true,
+    lightmap_exposure: 1.0F,
+    deferred_lighting_pass_id: 1,
     opaque_render_method: OpaqueRendererMethod::Auto,
     unlit: false,
     cull_mode: Some(Face3d::Back),
@@ -506,6 +518,7 @@ pub fn StandardMaterial::from_color(color : @sprite.Color) -> StandardMaterial {
     anisotropy_rotation: default_value.anisotropy_rotation,
     anisotropy_texture: default_value.anisotropy_texture,
     emissive: default_value.emissive,
+    emissive_exposure_weight: default_value.emissive_exposure_weight,
     emissive_texture: default_value.emissive_texture,
     metallic: default_value.metallic,
     metallic_roughness_texture: default_value.metallic_roughness_texture,
@@ -515,11 +528,16 @@ pub fn StandardMaterial::from_color(color : @sprite.Color) -> StandardMaterial {
     specular_transmission: default_value.specular_transmission,
     thickness: default_value.thickness,
     ior: default_value.ior,
+    attenuation_color: default_value.attenuation_color,
+    attenuation_distance: default_value.attenuation_distance,
     specular_tint: default_value.specular_tint,
     specular_tint_texture: default_value.specular_tint_texture,
     occlusion_texture: default_value.occlusion_texture,
     alpha_mode,
     depth_bias: default_value.depth_bias,
+    fog_enabled: default_value.fog_enabled,
+    lightmap_exposure: default_value.lightmap_exposure,
+    deferred_lighting_pass_id: default_value.deferred_lighting_pass_id,
     opaque_render_method: default_value.opaque_render_method,
     unlit: default_value.unlit,
     cull_mode: default_value.cull_mode,

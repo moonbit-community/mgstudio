@@ -163,6 +163,9 @@ fn load_wgsl_required_mesh3d_forward_decal_pipeline(
 fn mesh3d_forward_shader_defines(
   skinned : Bool,
   forward_decal : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
 ) -> @hashmap.HashMap[String, Bool] {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   defines.set("VERTEX_POSITIONS", true)
@@ -178,6 +181,13 @@ fn mesh3d_forward_shader_defines(
   if forward_decal {
     defines.set("FORWARD_DECAL", true)
   }
+  if tonemap_in_shader {
+    defines.set("TONEMAP_IN_SHADER", true)
+    defines.set(tonemapping_method_define(tonemapping_mode), true)
+    if deband_dither_enabled {
+      defines.set("DEBAND_DITHER", true)
+    }
+  }
   defines
 }
 
@@ -185,6 +195,8 @@ fn mesh3d_forward_shader_defines(
 fn mesh3d_forward_value_defines() -> @hashmap.HashMap[String, Int] {
   let value_defines = default_wgsl_value_defines()
   value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
+  value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", 19)
+  value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", 20)
   value_defines
 }
 
@@ -230,12 +242,17 @@ fn load_wgsl_required_mesh3d_forward_pipeline(
   assets_base : String,
   skinned : Bool,
   forward_decal : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
   shader_path : String,
 ) -> String raise GpuBackendError {
   load_wgsl_preprocessed(
     assets_base,
     shader_path,
-    mesh3d_forward_shader_defines(skinned, forward_decal),
+    mesh3d_forward_shader_defines(
+      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    ),
     mesh3d_forward_value_defines(),
   )
 }
@@ -278,18 +295,27 @@ fn mesh3d_create_forward_shader_modules(
   backend : GpuBackend,
   skinned : Bool,
   forward_decal : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
   label_prefix : String,
 ) -> Mesh3dForwardShaderModules raise GpuBackendError {
   let vertex_wgsl = load_wgsl_required_mesh3d_forward_pipeline(
     backend.assets_base,
     skinned,
     forward_decal,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
     MESH3D_FORWARD_VERTEX_SHADER_PATH,
   )
   let fragment_wgsl = load_wgsl_required_mesh3d_forward_pipeline(
     backend.assets_base,
     skinned,
     forward_decal,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
     MESH3D_FORWARD_SHADER_PATH,
   )
   let vertex = mesh3d_create_forward_shader_module(
@@ -976,18 +1002,23 @@ fn ensure_mesh3d_pipeline_rgba8(
   blend_kind : Int,
   skinned : Bool,
   forward_decal : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
 ) -> Unit raise GpuBackendError {
   ensure_mesh3d_pipeline_layout_resources(backend)
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let color_format = tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32()
   if mesh3d_pipeline_get(
       backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+      tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     )
     is Some(_) {
     return
   }
   if mesh3d_pipeline_failed(
       backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+      tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     ) {
     return
   }
@@ -995,12 +1026,13 @@ fn ensure_mesh3d_pipeline_rgba8(
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
   let modules = mesh3d_create_forward_shader_modules(
-    backend, skinned, forward_decal, "mesh3d rgba8",
+    backend, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    "mesh3d rgba8",
   ) catch {
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
         backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
-        message,
+        tonemap_in_shader, tonemapping_mode, deband_dither_enabled, message,
       )
       debug("[renderer] mesh3d pipeline failed: \{message}")
       return
@@ -1040,7 +1072,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     modules.release()
     mesh3d_pipeline_set_failed(
       backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
-      message,
+      tonemap_in_shader, tonemapping_mode, deband_dither_enabled, message,
     )
     debug("[renderer] mesh3d pipeline failed: \{message}")
     return
@@ -1056,7 +1088,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   )
   mesh3d_pipeline_set(
     backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
-    pipeline,
+    tonemap_in_shader, tonemapping_mode, deband_dither_enabled, pipeline,
   )
   modules.release()
 }
@@ -1070,6 +1102,9 @@ fn ensure_mesh3d_pipeline_surface(
   blend_kind : Int,
   skinned : Bool,
   forward_decal : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
 ) -> Unit raise GpuBackendError {
   // Ensure shared mesh3d pipeline resources/layout exist before creating
   // surface-format specializations.
@@ -1081,12 +1116,14 @@ fn ensure_mesh3d_pipeline_surface(
   let color_format = format.to_u32()
   if mesh3d_pipeline_get(
       backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+      tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     )
     is Some(_) {
     return
   }
   if mesh3d_pipeline_failed(
       backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
+      tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
     ) {
     return
   }
@@ -1094,12 +1131,13 @@ fn ensure_mesh3d_pipeline_surface(
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
   let modules = mesh3d_create_forward_shader_modules(
-    backend, skinned, forward_decal, "mesh3d surface",
+    backend, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    "mesh3d surface",
   ) catch {
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
         backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
-        message,
+        tonemap_in_shader, tonemapping_mode, deband_dither_enabled, message,
       )
       debug("[renderer] mesh3d pipeline failed: \{message}")
       return
@@ -1139,7 +1177,7 @@ fn ensure_mesh3d_pipeline_surface(
     modules.release()
     mesh3d_pipeline_set_failed(
       backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
-      message,
+      tonemap_in_shader, tonemapping_mode, deband_dither_enabled, message,
     )
     debug("[renderer] mesh3d pipeline failed: \{message}")
     return
@@ -1155,7 +1193,7 @@ fn ensure_mesh3d_pipeline_surface(
   )
   mesh3d_pipeline_set(
     backend, color_format, topology, safe_cull_mode, blend_kind, skinned, forward_decal,
-    pipeline,
+    tonemap_in_shader, tonemapping_mode, deband_dither_enabled, pipeline,
   )
   modules.release()
 }
@@ -1171,6 +1209,9 @@ fn mesh3d_pipeline_for_current_pass(
   vertex_shader_path : String?,
   fragment_shader_path : String?,
   skinned : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let resolved_vertex_shader_path = mesh3d_vertex_shader_path_or_default(
     vertex_shader_path,
@@ -1197,6 +1238,7 @@ fn mesh3d_pipeline_for_current_pass(
     Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
       ensure_mesh3d_pipeline_surface(
         backend, format, topology, cull_mode, blend_kind, skinned, forward_decal,
+        tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       )
       return mesh3d_pipeline_get(
         backend,
@@ -1206,12 +1248,16 @@ fn mesh3d_pipeline_for_current_pass(
         blend_kind,
         skinned,
         forward_decal,
+        tonemap_in_shader,
+        tonemapping_mode,
+        deband_dither_enabled,
       )
     }
     _ => ()
   }
   ensure_mesh3d_pipeline_rgba8(
-    backend, topology, cull_mode, blend_kind, skinned, forward_decal,
+    backend, topology, cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader,
+    tonemapping_mode, deband_dither_enabled,
   )
   mesh3d_pipeline_get(
     backend,
@@ -1221,6 +1267,9 @@ fn mesh3d_pipeline_for_current_pass(
     blend_kind,
     skinned,
     forward_decal,
+    tonemap_in_shader,
+    tonemapping_mode,
+    deband_dither_enabled,
   )
 }
 

@@ -27,6 +27,47 @@ pub fn prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit {
 }
 
 ///|
+pub fn GpuBackend::prepare_mesh3d_cluster_buffers(
+  self : GpuBackend,
+  clustered_lights_bytes : Bytes,
+  clusterable_object_index_lists_bytes : Bytes,
+  cluster_offsets_and_counts_bytes : Bytes,
+) -> Unit {
+  ensure_mesh3d_view_binding_buffers(self)
+  guard self.mesh3d_clustered_lights_buf is Some(clustered_lights_buf) else {
+    return
+  }
+  guard self.mesh3d_clusterable_object_index_lists_buf
+    is Some(clusterable_object_index_lists_buf) else {
+    return
+  }
+  guard self.mesh3d_cluster_offsets_and_counts_buf
+    is Some(cluster_offsets_and_counts_buf) else {
+    return
+  }
+  self.queue.write_buffer(clustered_lights_buf, 0UL, clustered_lights_bytes)
+  self.queue.write_buffer(
+    clusterable_object_index_lists_buf, 0UL, clusterable_object_index_lists_bytes,
+  )
+  self.queue.write_buffer(
+    cluster_offsets_and_counts_buf, 0UL, cluster_offsets_and_counts_bytes,
+  )
+}
+
+///|
+pub fn prepare_mesh3d_cluster_buffers(
+  clustered_lights_bytes~ : Bytes,
+  clusterable_object_index_lists_bytes~ : Bytes,
+  cluster_offsets_and_counts_bytes~ : Bytes,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_cluster_buffers(
+      clustered_lights_bytes, clusterable_object_index_lists_bytes, cluster_offsets_and_counts_bytes,
+    )
+  }
+}
+
+///|
 pub struct HostMesh3dMainPassDrawEntry {
   draw_storage_index : Int
   x : Float
@@ -59,6 +100,7 @@ pub struct HostMesh3dMainPassDrawEntry {
   emissive_r : Float
   emissive_g : Float
   emissive_b : Float
+  emissive_exposure_weight : Float
   metallic : Float
   roughness : Float
   reflectance : Float
@@ -76,8 +118,16 @@ pub struct HostMesh3dMainPassDrawEntry {
   specular_transmission : Float
   thickness : Float
   ior : Float
+  attenuation_color_r : Float
+  attenuation_color_g : Float
+  attenuation_color_b : Float
+  attenuation_distance : Float
+  clearcoat : Float
+  clearcoat_perceptual_roughness : Float
   alpha_cutoff : Float
   material_flags : UInt
+  lightmap_exposure : Float
+  deferred_lighting_pass_id : Int
   point_shadow_texture_id : Int
   point_shadow_enabled : Float
   point_shadow_depth_bias : Float
@@ -117,6 +167,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
   emissive_r~ : Float,
   emissive_g~ : Float,
   emissive_b~ : Float,
+  emissive_exposure_weight? : Float = 0.0F,
   metallic~ : Float,
   roughness~ : Float,
   reflectance~ : Float,
@@ -134,8 +185,16 @@ pub fn host_mesh3d_main_pass_draw_entry(
   specular_transmission~ : Float,
   thickness~ : Float,
   ior~ : Float,
+  attenuation_color_r? : Float = 1.0F,
+  attenuation_color_g? : Float = 1.0F,
+  attenuation_color_b? : Float = 1.0F,
+  attenuation_distance? : Float = 1.0F / 0.0F,
+  clearcoat? : Float = 0.0F,
+  clearcoat_perceptual_roughness? : Float = 0.5F,
   alpha_cutoff~ : Float,
   material_flags~ : UInt,
+  lightmap_exposure? : Float = 1.0F,
+  deferred_lighting_pass_id? : Int = 1,
   point_shadow_texture_id~ : Int,
   point_shadow_enabled~ : Float,
   point_shadow_depth_bias~ : Float,
@@ -173,6 +232,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
     emissive_r,
     emissive_g,
     emissive_b,
+    emissive_exposure_weight,
     metallic,
     roughness,
     reflectance,
@@ -190,8 +250,16 @@ pub fn host_mesh3d_main_pass_draw_entry(
     specular_transmission,
     thickness,
     ior,
+    attenuation_color_r,
+    attenuation_color_g,
+    attenuation_color_b,
+    attenuation_distance,
+    clearcoat,
+    clearcoat_perceptual_roughness,
     alpha_cutoff,
     material_flags,
+    lightmap_exposure,
+    deferred_lighting_pass_id,
     point_shadow_texture_id,
     point_shadow_enabled,
     point_shadow_depth_bias,
@@ -591,7 +659,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
     ignore(
       mesh3d_pipeline_for_current_pass(
         backend, false, 0U, forward_decal, topology, cull_mode, vertex_shader_path,
-        fragment_shader_path, false,
+        fragment_shader_path, false, false, 0, false,
       ),
     ) catch {
       Fatal(message) =>
@@ -609,6 +677,9 @@ pub fn prewarm_mesh3d_pipeline_variants(
         cull_mode,
         vertex_shader_path,
         fragment_shader_path,
+        false,
+        false,
+        0,
         false,
       ),
     ) catch {
@@ -666,6 +737,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
         } else {
           ensure_mesh3d_pipeline_surface(
             backend, format, topology, cull_mode, opaque_blend_kind, false, forward_decal,
+            false, 0, false,
           ) catch {
             Fatal(message) =>
               debug(
@@ -674,7 +746,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
           }
           ensure_mesh3d_pipeline_surface(
             backend, format, topology, cull_mode, transparent_blend_kind, false,
-            forward_decal,
+            forward_decal, false, 0, false,
           ) catch {
             Fatal(message) =>
               debug(
@@ -775,6 +847,7 @@ pub fn draw_mesh3d(
   emissive_r~ : Float,
   emissive_g~ : Float,
   emissive_b~ : Float,
+  emissive_exposure_weight? : Float = 0.0F,
   metallic~ : Float,
   roughness~ : Float,
   reflectance~ : Float,
@@ -792,8 +865,16 @@ pub fn draw_mesh3d(
   specular_transmission~ : Float,
   thickness~ : Float,
   ior~ : Float,
+  attenuation_color_r? : Float = 1.0F,
+  attenuation_color_g? : Float = 1.0F,
+  attenuation_color_b? : Float = 1.0F,
+  attenuation_distance? : Float = 1.0F / 0.0F,
+  clearcoat? : Float = 0.0F,
+  clearcoat_perceptual_roughness? : Float = 0.5F,
   alpha_cutoff~ : Float,
   material_flags~ : UInt,
+  lightmap_exposure? : Float = 1.0F,
+  deferred_lighting_pass_id? : Int = 1,
   transmission_source_texture_id~ : Int,
   transmission_blur_taps~ : Float,
   transmission_steps~ : Float,
@@ -863,6 +944,7 @@ pub fn draw_mesh3d(
       emissive_r,
       emissive_g,
       emissive_b,
+      emissive_exposure_weight,
       metallic,
       roughness,
       reflectance,
@@ -880,8 +962,16 @@ pub fn draw_mesh3d(
       specular_transmission,
       thickness,
       ior,
+      attenuation_color_r,
+      attenuation_color_g,
+      attenuation_color_b,
+      attenuation_distance,
+      clearcoat,
+      clearcoat_perceptual_roughness,
       alpha_cutoff,
       material_flags,
+      lightmap_exposure,
+      deferred_lighting_pass_id,
       transmission_source_texture_id,
       transmission_blur_taps,
       transmission_steps,

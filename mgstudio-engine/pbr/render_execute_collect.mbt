@@ -41,6 +41,9 @@ fn render3d_execute_collect_cameras(
   let projection_updates : Array[
     (@core.Entity, Projection, ProjectionRuntime3d),
   ] = []
+  let cluster_projection_updates : Array[
+    (@core.Entity, @light_cluster.ClusterCameraProjection),
+  ] = []
   let projection_runtime_removals : Array[@core.Entity] = []
   let camera_query : @ecs.Query[
     (
@@ -229,6 +232,9 @@ fn render3d_execute_collect_cameras(
               target_info.scale_factor,
             )
         }
+        cluster_projection_updates.push(
+          (entity, render3d_cluster_camera_projection(projection)),
+        )
         cameras.push(ExtractedCamera3d::{
           entity: phase_entity_ref3d_for_world_main(source_world, entity),
           payload: Camera3dViewPayload::{
@@ -298,6 +304,13 @@ fn render3d_execute_collect_cameras(
       update.2,
     )
   }
+  for update in cluster_projection_updates {
+    try! source_world.set_by_key(
+      update.0,
+      @light_cluster.ClusterCameraProjection::component(),
+      update.1,
+    )
+  }
   for entity in projection_runtime_removals {
     try! (source_world.take(entity, ecs_key_projection_runtime3d) |> ignore)
   }
@@ -307,6 +320,36 @@ fn render3d_execute_collect_cameras(
     trace_collect_cameras_start_us,
   )
   cameras
+}
+
+///|
+fn render3d_cluster_camera_projection(
+  projection : Projection,
+) -> @light_cluster.ClusterCameraProjection {
+  let clip_from_view = projection.get_clip_from_view()
+  let row_two = clip_from_view.row(2)
+  let safe_row_two_z = if row_two.z.abs() <= 1.0e-6F {
+    1.0e-6F
+  } else {
+    row_two.z
+  }
+  let is_orthographic = !projection.is_perspective()
+  let orthographic_first_slice_depth = if is_orthographic {
+    (row_two.w - 1.0F) / safe_row_two_z
+  } else {
+    0.0F
+  }
+  @light_cluster.ClusterCameraProjection::new(
+    @light_cluster.ClusterProjectionMatrix3d::from_rows(
+      clip_from_view.row(0),
+      clip_from_view.row(1),
+      row_two,
+      clip_from_view.row(3),
+    ),
+    is_orthographic,
+    projection.far(),
+    orthographic_first_slice_depth,
+  )
 }
 
 ///|

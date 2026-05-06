@@ -245,6 +245,10 @@ test "render3d: required components align Camera3d with Bevy camera authoring" {
     (try! world.get_by_key(entity, ecs_key_frustum)) is Some(_),
     content="true",
   )
+  debug_inspect(
+    (try! world.get_by_key(entity, ecs_key_hdr)) is None,
+    content="true",
+  )
 
   let tonemapping_ok = match
     (try! world.get_by_key(entity, ecs_key_tonemapping)) {
@@ -296,6 +300,10 @@ test "render3d: spawn_component(Camera3d) uses required component defaults" {
   debug_inspect(
     (try! app.world().get_by_key(entity, @transform.ecs_key_transform))
     is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! app.world().get_by_key(entity, ecs_key_hdr)) is None,
     content="true",
   )
 }

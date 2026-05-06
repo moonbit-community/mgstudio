@@ -224,13 +224,16 @@ pub fn preprocess_shader_source(
   value_defines : @hashmap.HashMap[String, Int],
 ) -> String raise ShaderCompileError {
   let options = compose_options(assets_base, defines, value_defines)
-  runtime_composer(assets_base).compose_wgsl_source(source, options) catch {
+  let composed = runtime_composer(assets_base).compose_wgsl_source(
+    source, options,
+  ) catch {
     @wgsl_compose.ComposerError::MissingStartupRegisteredSource(_) =>
       runtime_composer_with_source_tree().compose_wgsl_source(source, options) catch {
         err => raise shader_compile_error_from_composer(err)
       }
     err => raise shader_compile_error_from_composer(err)
   }
+  composed
 }
 
 ///|
@@ -241,13 +244,14 @@ pub fn load_preprocessed_wgsl(
   value_defines : @hashmap.HashMap[String, Int],
 ) -> String raise ShaderCompileError {
   let options = compose_options(assets_base, defines, value_defines)
-  runtime_composer(assets_base).compose_wgsl(rel, options) catch {
+  let composed = runtime_composer(assets_base).compose_wgsl(rel, options) catch {
     @wgsl_compose.ComposerError::MissingStartupRegisteredSource(_) =>
       runtime_composer_with_source_tree().compose_wgsl(rel, options) catch {
         err => raise shader_compile_error_from_composer(err)
       }
     err => raise shader_compile_error_from_composer(err)
   }
+  composed
 }
 
 ///|

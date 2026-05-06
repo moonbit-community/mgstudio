@@ -115,7 +115,7 @@ test "light cluster: assign system populates camera cluster payload with default
   inspect(clusters_value.dimensions_z, content="24")
   inspect(clusters_value.clusterable_objects.length(), content="3456")
   inspect(clusters_value.near, content="5")
-  inspect(clusters_value.far, content="0")
+  inspect(clusters_value.far, content="5")
   inspect(visible_value.point_and_spot_lights.length(), content="0")
 }
 
@@ -159,6 +159,47 @@ test "light cluster: assign system uses max light range for default far z mode" 
   )).unwrap()
   inspect(clusters.far, content="55")
   inspect(visible.point_and_spot_lights.length(), content="2")
+}
+
+///|
+test "light cluster: assign system writes visible point lights into cluster lists" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  try! (world.set_by_key(
+    camera_entity,
+    @sprite.ecs_key_camera,
+    @sprite.Camera::default(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera_entity,
+    @transform.Transform::component(),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 5.0F).looking_at(
+      @math.Vec3::zero(),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+  )
+  |> ignore)
+  let point = world.spawn()
+  try! (world.set_by_key(
+    point,
+    @light.ecs_key_point_light,
+    @light.PointLight::default().with_range(10.0F),
+  )
+  |> ignore)
+
+  cluster_assign_lights_system(world)
+  let clusters = (try! world.get_by_key(camera_entity, Clusters::component())).unwrap()
+  let visible = (try! world.get_by_key(
+    camera_entity,
+    VisibleClusterableObjects::component(),
+  )).unwrap()
+  let mut assigned_count = 0
+  for cluster in clusters.clusterable_objects {
+    assigned_count += cluster.counts.point_lights
+  }
+  inspect(visible.point_and_spot_light_count(), content="1")
+  inspect(assigned_count > 0, content="true")
 }
 
 ///|

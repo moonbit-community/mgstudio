@@ -42,6 +42,10 @@ pub(all) struct Render3dLightingState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
+  gpu_lights_uniform_bytes : Bytes?
+  gpu_clustered_lights_bytes : Bytes?
+  gpu_clusterable_object_index_lists_bytes : Bytes?
+  gpu_cluster_offsets_and_counts_bytes : Bytes?
 }
 
 ///|
@@ -280,6 +284,352 @@ pub struct GpuLights3d {
   n_directional_lights : Int
   spot_light_shadowmap_offset : Int
   ambient_light_affects_lightmapped_meshes : Int
+}
+
+///|
+const MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS : Int = 204
+
+///|
+const MAX_STORAGE_BUFFER_CLUSTERABLE_OBJECT_INDICES : Int = 16384
+
+///|
+const MAX_STORAGE_BUFFER_CLUSTERS : Int = 4096
+
+///|
+fn render3d_lights_push_f32(words : Array[UInt], value : Float) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn render3d_lights_push_u32(words : Array[UInt], value : UInt) -> Unit {
+  words.push(value)
+}
+
+///|
+fn render3d_lights_push_i32(words : Array[UInt], value : Int) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn render3d_lights_push_matrix(
+  words : Array[UInt],
+  matrix : ProjectionMatrix3d,
+) -> Unit {
+  render3d_lights_push_f32(words, matrix.x_axis.x)
+  render3d_lights_push_f32(words, matrix.x_axis.y)
+  render3d_lights_push_f32(words, matrix.x_axis.z)
+  render3d_lights_push_f32(words, matrix.x_axis.w)
+  render3d_lights_push_f32(words, matrix.y_axis.x)
+  render3d_lights_push_f32(words, matrix.y_axis.y)
+  render3d_lights_push_f32(words, matrix.y_axis.z)
+  render3d_lights_push_f32(words, matrix.y_axis.w)
+  render3d_lights_push_f32(words, matrix.z_axis.x)
+  render3d_lights_push_f32(words, matrix.z_axis.y)
+  render3d_lights_push_f32(words, matrix.z_axis.z)
+  render3d_lights_push_f32(words, matrix.z_axis.w)
+  render3d_lights_push_f32(words, matrix.w_axis.x)
+  render3d_lights_push_f32(words, matrix.w_axis.y)
+  render3d_lights_push_f32(words, matrix.w_axis.z)
+  render3d_lights_push_f32(words, matrix.w_axis.w)
+}
+
+///|
+fn render3d_lights_push_directional_cascade(
+  words : Array[UInt],
+  cascade : GpuDirectionalCascade3d,
+) -> Unit {
+  render3d_lights_push_matrix(words, cascade.clip_from_world)
+  render3d_lights_push_f32(words, cascade.texel_size)
+  render3d_lights_push_f32(words, cascade.far_bound)
+  render3d_lights_push_f32(words, 0.0F)
+  render3d_lights_push_f32(words, 0.0F)
+}
+
+///|
+fn render3d_lights_push_directional_light(
+  words : Array[UInt],
+  light : GpuDirectionalLight3d,
+) -> Unit {
+  for cascade_index in 0..<MAX_CASCADES_PER_LIGHT {
+    let cascade = if cascade_index < light.cascades.length() {
+      light.cascades[cascade_index]
+    } else {
+      render3d_gpu_directional_cascade_default()
+    }
+    render3d_lights_push_directional_cascade(words, cascade)
+  }
+  render3d_lights_push_f32(words, light.color.r)
+  render3d_lights_push_f32(words, light.color.g)
+  render3d_lights_push_f32(words, light.color.b)
+  render3d_lights_push_f32(words, light.color.a)
+  render3d_lights_push_f32(words, light.dir_to_light.x)
+  render3d_lights_push_f32(words, light.dir_to_light.y)
+  render3d_lights_push_f32(words, light.dir_to_light.z)
+  render3d_lights_push_u32(words, light.flags)
+  render3d_lights_push_f32(words, light.soft_shadow_size)
+  render3d_lights_push_f32(words, light.shadow_depth_bias)
+  render3d_lights_push_f32(words, light.shadow_normal_bias)
+  render3d_lights_push_u32(words, light.num_cascades.reinterpret_as_uint())
+  render3d_lights_push_f32(words, light.cascades_overlap_proportion)
+  render3d_lights_push_u32(
+    words,
+    light.depth_texture_base_index.reinterpret_as_uint(),
+  )
+  render3d_lights_push_i32(words, light.decal_index)
+  render3d_lights_push_f32(words, light.sun_disk_angular_size)
+  render3d_lights_push_f32(words, light.sun_disk_intensity)
+  render3d_lights_push_f32(words, 0.0F)
+  render3d_lights_push_f32(words, 0.0F)
+  render3d_lights_push_f32(words, 0.0F)
+}
+
+///|
+fn render3d_lights_u32le_pack(words : Array[UInt]) -> Bytes {
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+pub fn render3d_gpu_lights_uniform_bytes(lights : GpuLights3d) -> Bytes {
+  let words : Array[UInt] = []
+  for light_index in 0..<MAX_DIRECTIONAL_LIGHTS {
+    let light = if light_index < lights.directional_lights.length() {
+      lights.directional_lights[light_index]
+    } else {
+      render3d_gpu_directional_light_default()
+    }
+    render3d_lights_push_directional_light(words, light)
+  }
+  render3d_lights_push_f32(words, lights.ambient_color.r)
+  render3d_lights_push_f32(words, lights.ambient_color.g)
+  render3d_lights_push_f32(words, lights.ambient_color.b)
+  render3d_lights_push_f32(words, lights.ambient_color.a)
+  render3d_lights_push_u32(
+    words,
+    lights.cluster_dimensions.0.reinterpret_as_uint(),
+  )
+  render3d_lights_push_u32(
+    words,
+    lights.cluster_dimensions.1.reinterpret_as_uint(),
+  )
+  render3d_lights_push_u32(
+    words,
+    lights.cluster_dimensions.2.reinterpret_as_uint(),
+  )
+  render3d_lights_push_u32(
+    words,
+    lights.cluster_dimensions.3.reinterpret_as_uint(),
+  )
+  render3d_lights_push_f32(words, lights.cluster_factors.x)
+  render3d_lights_push_f32(words, lights.cluster_factors.y)
+  render3d_lights_push_f32(words, lights.cluster_factors.z)
+  render3d_lights_push_f32(words, lights.cluster_factors.w)
+  render3d_lights_push_u32(
+    words,
+    lights.n_directional_lights.reinterpret_as_uint(),
+  )
+  render3d_lights_push_i32(words, lights.spot_light_shadowmap_offset)
+  render3d_lights_push_u32(
+    words,
+    lights.ambient_light_affects_lightmapped_meshes.reinterpret_as_uint(),
+  )
+  render3d_lights_push_u32(words, 0U)
+  render3d_lights_u32le_pack(words)
+}
+
+///|
+fn render3d_clustered_light_index(
+  lights : Array[ExtractedClusterablePointLight3d],
+  entity : @core.Entity,
+) -> Int {
+  for i in 0..<lights.length() {
+    if lights[i].light.entity == entity {
+      return i
+    }
+  }
+  -1
+}
+
+///|
+fn render3d_lights_push_clustered_light(
+  words : Array[UInt],
+  item : ExtractedClusterablePointLight3d?,
+) -> Unit {
+  match item {
+    None =>
+      for _ in 0..<20 {
+        render3d_lights_push_u32(words, 0U)
+      }
+    Some(clustered) => {
+      let extracted = clustered.light()
+      match extracted.spot_light_angles {
+        Some((inner, outer)) if clustered.is_spot_light() => {
+          let direction = render3d_transform_forward(extracted.transform)
+          let cos_outer = @math.cos(outer)
+          let raw_denom = @math.cos(inner) - cos_outer
+          let denom = if raw_denom < 0.0001F { 0.0001F } else { raw_denom }
+          let spot_scale = 1.0F / denom
+          let spot_offset = 0.0F - cos_outer * spot_scale
+          render3d_lights_push_f32(words, direction.x)
+          render3d_lights_push_f32(words, direction.z)
+          render3d_lights_push_f32(words, spot_scale)
+          render3d_lights_push_f32(words, spot_offset)
+          render3d_lights_push_f32(
+            words,
+            extracted.color.r * extracted.intensity,
+          )
+          render3d_lights_push_f32(
+            words,
+            extracted.color.g * extracted.intensity,
+          )
+          render3d_lights_push_f32(
+            words,
+            extracted.color.b * extracted.intensity,
+          )
+          render3d_lights_push_f32(
+            words,
+            1.0F / (extracted.range * extracted.range),
+          )
+          render3d_lights_push_f32(words, extracted.transform.translation.x)
+          render3d_lights_push_f32(words, extracted.transform.translation.y)
+          render3d_lights_push_f32(words, extracted.transform.translation.z)
+          render3d_lights_push_f32(words, extracted.radius)
+          render3d_lights_push_u32(words, render3d_point_light_flags(extracted))
+          render3d_lights_push_f32(words, extracted.shadow_depth_bias)
+          render3d_lights_push_f32(words, extracted.shadow_normal_bias)
+          render3d_lights_push_f32(words, render3d_tan(outer))
+          render3d_lights_push_f32(
+            words,
+            if extracted.soft_shadows_enabled {
+              extracted.radius
+            } else {
+              0.0F
+            },
+          )
+          render3d_lights_push_f32(words, extracted.shadow_map_near_z)
+          render3d_lights_push_u32(words, 0xFFFF_FFFFU)
+          render3d_lights_push_f32(words, 0.0F)
+        }
+        _ => {
+          for _ in 0..<4 {
+            render3d_lights_push_f32(words, 0.0F)
+          }
+          render3d_lights_push_f32(
+            words,
+            extracted.color.r * extracted.intensity,
+          )
+          render3d_lights_push_f32(
+            words,
+            extracted.color.g * extracted.intensity,
+          )
+          render3d_lights_push_f32(
+            words,
+            extracted.color.b * extracted.intensity,
+          )
+          render3d_lights_push_f32(
+            words,
+            1.0F / (extracted.range * extracted.range),
+          )
+          render3d_lights_push_f32(words, extracted.transform.translation.x)
+          render3d_lights_push_f32(words, extracted.transform.translation.y)
+          render3d_lights_push_f32(words, extracted.transform.translation.z)
+          render3d_lights_push_f32(words, extracted.radius)
+          render3d_lights_push_u32(words, render3d_point_light_flags(extracted))
+          render3d_lights_push_f32(words, extracted.shadow_depth_bias)
+          render3d_lights_push_f32(words, extracted.shadow_normal_bias)
+          render3d_lights_push_f32(words, 0.0F)
+          render3d_lights_push_f32(
+            words,
+            if extracted.soft_shadows_enabled {
+              extracted.radius
+            } else {
+              0.0F
+            },
+          )
+          render3d_lights_push_f32(words, extracted.shadow_map_near_z)
+          render3d_lights_push_u32(words, 0xFFFF_FFFFU)
+          render3d_lights_push_f32(words, 0.0F)
+        }
+      }
+    }
+  }
+}
+
+///|
+fn render3d_gpu_cluster_buffers(
+  world : @ecs.World,
+  clusterable_lights : Array[ExtractedClusterablePointLight3d],
+) -> (Bytes, Bytes, Bytes) {
+  let clustered_words : Array[UInt] = []
+  for i in 0..<MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS {
+    let item = if i < clusterable_lights.length() {
+      Some(clusterable_lights[i])
+    } else {
+      None
+    }
+    render3d_lights_push_clustered_light(clustered_words, item)
+  }
+  let index_words : Array[UInt] = []
+  let offset_words : Array[UInt] = []
+  let clusters = match render3d_cluster_camera_entity(world) {
+    Some(entity) =>
+      try! world.get_by_key(entity, @light_cluster.Clusters::component())
+    None => None
+  }
+  let cluster_objects = match clusters {
+    Some(value) => value.clusterable_objects()
+    None => []
+  }
+  let mut next_index_offset = 0
+  for cluster_index in 0..<MAX_STORAGE_BUFFER_CLUSTERS {
+    let point_indices : Array[UInt] = []
+    let spot_indices : Array[UInt] = []
+    if cluster_index < cluster_objects.length() {
+      for entity in cluster_objects[cluster_index].iter() {
+        let light_index = render3d_clustered_light_index(
+          clusterable_lights, entity,
+        )
+        if light_index >= 0 {
+          if (try! world.contains_by_key(entity, @light.ecs_key_spot_light)) {
+            spot_indices.push(light_index.reinterpret_as_uint())
+          } else {
+            point_indices.push(light_index.reinterpret_as_uint())
+          }
+        }
+      }
+    }
+    offset_words.push(next_index_offset.reinterpret_as_uint())
+    offset_words.push(point_indices.length().reinterpret_as_uint())
+    offset_words.push(spot_indices.length().reinterpret_as_uint())
+    offset_words.push(0U)
+    offset_words.push(0U)
+    offset_words.push(0U)
+    offset_words.push(0U)
+    offset_words.push(0U)
+    for index in point_indices {
+      if index_words.length() < MAX_STORAGE_BUFFER_CLUSTERABLE_OBJECT_INDICES {
+        index_words.push(index)
+        next_index_offset += 1
+      }
+    }
+    for index in spot_indices {
+      if index_words.length() < MAX_STORAGE_BUFFER_CLUSTERABLE_OBJECT_INDICES {
+        index_words.push(index)
+        next_index_offset += 1
+      }
+    }
+  }
+  while index_words.length() < MAX_STORAGE_BUFFER_CLUSTERABLE_OBJECT_INDICES {
+    index_words.push(0U)
+  }
+  (
+    render3d_lights_u32le_pack(clustered_words),
+    render3d_lights_u32le_pack(index_words),
+    render3d_lights_u32le_pack(offset_words),
+  )
 }
 
 ///|
@@ -1229,6 +1579,10 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     spot_range: 1.0F,
     spot_inner_angle: 0.6F,
     spot_outer_angle: 0.8F,
+    gpu_lights_uniform_bytes: None,
+    gpu_clustered_lights_bytes: None,
+    gpu_clusterable_object_index_lists_bytes: None,
+    gpu_cluster_offsets_and_counts_bytes: None,
   }
 }
 
@@ -1307,8 +1661,27 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     }
   }
   let gpu_lights = render3d_collect_gpu_lights(world)
-  gpu_lights.n_directional_lights |> ignore
-  lighting
+  let (
+    gpu_clustered_lights_bytes,
+    gpu_clusterable_object_index_lists_bytes,
+    gpu_cluster_offsets_and_counts_bytes,
+  ) = render3d_gpu_cluster_buffers(
+    world,
+    render3d_collect_extracted_clusterable_point_lights(world),
+  )
+  Render3dLightingState::{
+    ..lighting,
+    gpu_lights_uniform_bytes: Some(
+      render3d_gpu_lights_uniform_bytes(gpu_lights),
+    ),
+    gpu_clustered_lights_bytes: Some(gpu_clustered_lights_bytes),
+    gpu_clusterable_object_index_lists_bytes: Some(
+      gpu_clusterable_object_index_lists_bytes,
+    ),
+    gpu_cluster_offsets_and_counts_bytes: Some(
+      gpu_cluster_offsets_and_counts_bytes,
+    ),
+  }
 }
 
 ///|

@@ -504,9 +504,6 @@ pub fn register_render3d_required_components(
     ecs_key_tonemapping,
     fn() { Tonemapping::default() },
   )
-  world.register_required_components_with(ecs_key_camera3d, ecs_key_hdr, fn() {
-    Hdr::default()
-  })
   world.register_required_components_with(
     ecs_key_camera3d,
     ecs_key_deband_dither,

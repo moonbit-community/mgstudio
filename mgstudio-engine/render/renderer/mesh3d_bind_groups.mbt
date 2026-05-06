@@ -48,40 +48,6 @@ fn ensure_mesh3d_point_shadow_compare_sampler(
 }
 
 ///|
-fn ensure_mesh3d_dt_lut(
-  backend : GpuBackend,
-) -> (@wgpu.TextureView, @wgpu.Sampler) {
-  if backend.mesh3d_dt_lut_texture is None ||
-    backend.mesh3d_dt_lut_view is None ||
-    backend.mesh3d_dt_lut_sampler is None {
-    let texture = backend.device.create_texture_u32(
-      1U,
-      1U,
-      1U,
-      @wgpu.TextureUsage::from_u64(
-        @wgpu.TEXTURE_USAGE_TEXTURE_BINDING | @wgpu.TEXTURE_USAGE_COPY_DST,
-      ),
-      @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_3D),
-      tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
-    )
-    let view = texture.create_view_u32(
-      tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
-      @wgpu.TEXTURE_VIEW_DIMENSION_3D,
-      @wgpu.TEXTURE_ASPECT_ALL,
-      0U,
-      1U,
-      0U,
-      1U,
-    )
-    let sampler = backend.device.create_sampler_linear_clamp()
-    backend.mesh3d_dt_lut_texture = Some(texture)
-    backend.mesh3d_dt_lut_view = Some(view)
-    backend.mesh3d_dt_lut_sampler = Some(sampler)
-  }
-  (backend.mesh3d_dt_lut_view.unwrap(), backend.mesh3d_dt_lut_sampler.unwrap())
-}
-
-///|
 fn mesh3d_view_bg_cache_get_or_create(
   backend : GpuBackend,
   transmission_source_texture : GpuTextureInfo,
@@ -89,13 +55,21 @@ fn mesh3d_view_bg_cache_get_or_create(
   directional_shadow_texture : GpuTextureInfo,
   environment_diffuse_texture : GpuTextureInfo,
   environment_specular_texture : GpuTextureInfo,
+  tonemapping_mode : Int,
+  agx_lut_texture_id : Int,
+  tony_lut_texture_id : Int,
+  blender_lut_texture_id : Int,
 ) -> (@wgpu.BindGroup, @wgpu.BindGroup) raise GpuBackendError {
+  let dt_lut_texture = tonemapping_selected_lut_texture(
+    backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
+  )
   for entry in backend.mesh3d_view_bg_cache {
     if entry.transmission_source_texture_id == transmission_source_texture.id &&
       entry.point_shadow_texture_id == point_shadow_texture.id &&
       entry.directional_shadow_texture_id == directional_shadow_texture.id &&
       entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
-      entry.environment_specular_texture_id == environment_specular_texture.id {
+      entry.environment_specular_texture_id == environment_specular_texture.id &&
+      entry.tonemapping_lut_texture_id == dt_lut_texture.id {
       return (entry.bind_group, entry.binding_arrays_bind_group)
     }
   }
@@ -166,7 +140,10 @@ fn mesh3d_view_bg_cache_get_or_create(
   let point_shadow_compare_sampler = ensure_mesh3d_point_shadow_compare_sampler(
     backend,
   )
-  let (dt_lut_view, dt_lut_sampler) = ensure_mesh3d_dt_lut(backend)
+  let dt_lut_sample_view = match dt_lut_texture.sample_view {
+    Some(view) => view
+    None => dt_lut_texture.view
+  }
   let directional_shadow_sample_view = match
     directional_shadow_texture.sample_view {
     Some(view) => view
@@ -236,8 +213,8 @@ fn mesh3d_view_bg_cache_get_or_create(
       environment_map_uniform_buf,
       size=MESH3D_ENVIRONMENT_MAP_UNIFORM_BUFFER_SIZE,
     ) &&
-    builder.add_texture_view(19U, dt_lut_view) &&
-    builder.add_sampler(20U, dt_lut_sampler) &&
+    builder.add_texture_view(19U, dt_lut_sample_view) &&
+    builder.add_sampler(20U, dt_lut_texture.sampler) &&
     builder.add_texture_view(2U, point_shadow_sample_view) &&
     builder.add_sampler(3U, point_shadow_compare_sampler) &&
     builder.add_texture_view(5U, directional_shadow_sample_view) &&
@@ -276,6 +253,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     directional_shadow_texture_id: directional_shadow_texture.id,
     environment_diffuse_texture_id: environment_diffuse_texture.id,
     environment_specular_texture_id: environment_specular_texture.id,
+    tonemapping_lut_texture_id: dt_lut_texture.id,
     bind_group,
     binding_arrays_bind_group,
   })
@@ -573,7 +551,7 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
   ignore(
     mesh3d_view_bg_cache_get_or_create(
       self, transmission_source_texture, point_shadow_texture, directional_shadow_texture,
-      environment_diffuse_texture, environment_specular_texture,
+      environment_diffuse_texture, environment_specular_texture, 0, -1, -1, -1,
     ),
   )
 }

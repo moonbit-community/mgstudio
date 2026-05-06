@@ -32,6 +32,19 @@ pub fn cluster_light_plugin_with(@app.App[@ecs.World], ClusterLightPlugin) -> @a
 // Errors
 
 // Types and methods
+pub struct ClusterCameraProjection {
+  clip_from_view : ClusterProjectionMatrix3d
+  is_orthographic : Bool
+  far : Float
+  orthographic_first_slice_depth : Float
+}
+pub fn ClusterCameraProjection::clip_from_view(Self) -> ClusterProjectionMatrix3d
+pub fn ClusterCameraProjection::far(Self) -> Float
+pub fn ClusterCameraProjection::is_orthographic(Self) -> Bool
+pub fn ClusterCameraProjection::new(ClusterProjectionMatrix3d, Bool, Float, Float) -> Self
+pub fn ClusterCameraProjection::orthographic_first_slice_depth(Self) -> Float
+pub impl @ecs.Component for ClusterCameraProjection
+
 pub(all) enum ClusterConfig {
   None
   Single
@@ -51,6 +64,20 @@ pub struct ClusterLightPlugin {
 }
 pub fn ClusterLightPlugin::default() -> Self
 pub impl @app.Plugin for ClusterLightPlugin
+
+pub(all) struct ClusterProjectionMatrix3d {
+  x_axis : @math.Vec4
+  y_axis : @math.Vec4
+  z_axis : @math.Vec4
+  w_axis : @math.Vec4
+}
+pub fn ClusterProjectionMatrix3d::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
+pub fn ClusterProjectionMatrix3d::from_rows(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
+pub fn ClusterProjectionMatrix3d::inverse(Self) -> Self?
+pub fn ClusterProjectionMatrix3d::mul(Self, Self) -> Self
+pub fn ClusterProjectionMatrix3d::mul_vec4(Self, @math.Vec4) -> @math.Vec4
+pub fn ClusterProjectionMatrix3d::project_point3(Self, @math.Vec3) -> @math.Vec3?
+pub fn ClusterProjectionMatrix3d::row(Self, Int) -> @math.Vec4
 
 pub struct ClusterZConfig {
   first_slice_depth : Float
@@ -87,7 +114,9 @@ pub struct Clusters {
   clusterable_objects : Array[ObjectsInCluster]
 } derive(Eq, @debug.Debug)
 pub fn Clusters::clear(Self) -> Unit
+pub fn Clusters::clusterable_objects(Self) -> Array[ObjectsInCluster]
 pub fn Clusters::default() -> Self
+pub fn Clusters::dimensions(Self) -> (Int, Int, Int)
 pub fn Clusters::new(Int, Int, Int, Int, Int, Float, Float) -> Self
 pub fn Clusters::update(Self, Int, Int, Int, Int, Int) -> Unit
 pub impl @ecs.Component for Clusters

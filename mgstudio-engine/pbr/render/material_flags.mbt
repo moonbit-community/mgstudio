@@ -53,10 +53,29 @@ pub const STANDARD_MATERIAL_FLAGS_UNLIT_BIT : UInt = 1U << 5
 pub const STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y : UInt = 1U << 7
 
 ///|
+pub const STANDARD_MATERIAL_FLAGS_FOG_ENABLED_BIT : UInt = 1U << 8
+
+///|
 pub const STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT : UInt = 1U << 9
 
 ///|
+pub const STANDARD_MATERIAL_FLAGS_ATTENUATION_ENABLED_BIT : UInt = 1U << 13
+
+///|
+pub const STANDARD_MATERIAL_FLAGS_CLEARCOAT_TEXTURE_BIT : UInt = 1U << 14
+
+///|
+pub const STANDARD_MATERIAL_FLAGS_CLEARCOAT_ROUGHNESS_TEXTURE_BIT : UInt = 1U <<
+  15
+
+///|
+pub const STANDARD_MATERIAL_FLAGS_CLEARCOAT_NORMAL_TEXTURE_BIT : UInt = 1U << 16
+
+///|
 pub const STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT : UInt = 1U << 17
+
+///|
+pub const STANDARD_MATERIAL_FLAGS_SPECULAR_TEXTURE_BIT : UInt = 1U << 18
 
 ///|
 pub const STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT : UInt = 1U << 19
@@ -164,11 +183,28 @@ pub fn render3d_standard_material_flags(
   if material.unlit {
     flags = flags | STANDARD_MATERIAL_FLAGS_UNLIT_BIT
   }
+  if material.fog_enabled {
+    flags = flags | STANDARD_MATERIAL_FLAGS_FOG_ENABLED_BIT
+  }
   if normal_texture_id >= 0 && material.flip_normal_map_y {
     flags = flags | STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y
   }
   if depth_texture_id >= 0 {
     flags = flags | STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT
+  }
+  if material.attenuation_distance == material.attenuation_distance &&
+    material.attenuation_distance != 1.0F / 0.0F &&
+    material.attenuation_distance != -1.0F / 0.0F {
+    flags = flags | STANDARD_MATERIAL_FLAGS_ATTENUATION_ENABLED_BIT
+  }
+  if material.clearcoat_texture is Some(_) {
+    flags = flags | STANDARD_MATERIAL_FLAGS_CLEARCOAT_TEXTURE_BIT
+  }
+  if material.clearcoat_roughness_texture is Some(_) {
+    flags = flags | STANDARD_MATERIAL_FLAGS_CLEARCOAT_ROUGHNESS_TEXTURE_BIT
+  }
+  if material.clearcoat_normal_texture is Some(_) {
+    flags = flags | STANDARD_MATERIAL_FLAGS_CLEARCOAT_NORMAL_TEXTURE_BIT
   }
   if anisotropy_texture_id >= 0 {
     flags = flags | STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT

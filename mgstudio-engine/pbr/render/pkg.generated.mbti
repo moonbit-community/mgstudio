@@ -95,7 +95,15 @@ pub const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED : UInt = 1610612736
 
 pub const STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT : UInt = 131072
 
+pub const STANDARD_MATERIAL_FLAGS_ATTENUATION_ENABLED_BIT : UInt = 8192
+
 pub const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT : UInt = 1
+
+pub const STANDARD_MATERIAL_FLAGS_CLEARCOAT_NORMAL_TEXTURE_BIT : UInt = 65536
+
+pub const STANDARD_MATERIAL_FLAGS_CLEARCOAT_ROUGHNESS_TEXTURE_BIT : UInt = 32768
+
+pub const STANDARD_MATERIAL_FLAGS_CLEARCOAT_TEXTURE_BIT : UInt = 16384
 
 pub const STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT : UInt = 512
 
@@ -105,11 +113,15 @@ pub const STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT : UInt = 2
 
 pub const STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y : UInt = 128
 
+pub const STANDARD_MATERIAL_FLAGS_FOG_ENABLED_BIT : UInt = 256
+
 pub const STANDARD_MATERIAL_FLAGS_FORWARD_DECAL_BIT : UInt = 1048576
 
 pub const STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT : UInt = 4
 
 pub const STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT : UInt = 8
+
+pub const STANDARD_MATERIAL_FLAGS_SPECULAR_TEXTURE_BIT : UInt = 262144
 
 pub const STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT : UInt = 524288
 
@@ -193,7 +205,7 @@ pub fn render3d_apply_extended_material_metadata(@material.StandardMaterial, @ma
 
 pub fn render3d_apply_view_fog_uniform_offsets(@ecs.World, Array[(@core.Entity, ViewFogUniformOffset)]) -> Unit
 
-pub fn render3d_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, @transform.Transform, Render3dPassProjection, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, Render3dLightingState, camera_exposure? : Float, previous_clip_from_world~ : ProjectionMatrix3d?, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation? : @math.Quat, point_shadow_near~ : Float, directional_shadow_texture_id? : Int, directional_shadow_enabled? : Float, directional_shadow_depth_bias? : Float, directional_shadow_normal_bias? : Float, directional_shadow_soft_size? : Float, directional_shadow_cascade_count? : Int, directional_shadow_cascade_overlap? : Float, directional_shadow_cascade_data? : Array[Float], clip_from_world_override? : ProjectionMatrix3d?, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
+pub fn render3d_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, @transform.Transform, Render3dPassProjection, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, Render3dLightingState, camera_exposure? : Float, previous_clip_from_world~ : ProjectionMatrix3d?, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation? : @math.Quat, point_shadow_near~ : Float, directional_shadow_texture_id? : Int, directional_shadow_enabled? : Float, directional_shadow_depth_bias? : Float, directional_shadow_normal_bias? : Float, directional_shadow_soft_size? : Float, directional_shadow_cascade_count? : Int, directional_shadow_cascade_overlap? : Float, directional_shadow_cascade_data? : Array[Float], clip_from_world_override? : ProjectionMatrix3d?, tonemap_in_shader? : Bool, tonemapping_mode? : Int, tonemapping_agx_lut_texture_id? : Int, tonemapping_tony_lut_texture_id? : Int, tonemapping_blender_lut_texture_id? : Int, deband_dither_enabled? : Bool, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
 
 pub fn render3d_build_mesh_gpu_draw_payload(Int, Int, Int, Int, Int, Int, @material.StandardMaterial, @transform.Transform, @transform.Transform, Float, Float, Float, Float, Int, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Int, Int, Float, @math.Quat, @color.Color, Float, Float, Int, forward_decal? : Bool, vertex_shader_path? : String?, fragment_shader_path? : String?, skinning_key_hi? : Int, skinning_key_lo? : Int) -> MeshGpuDrawPayload3d
 
@@ -284,6 +296,8 @@ pub fn render3d_fog_pow_e(Float) -> Float
 pub fn render3d_gpu_culling_supported() -> Bool
 
 pub fn render3d_gpu_fog_from_view_fog(Render3dViewFogData) -> GpuFog
+
+pub fn render3d_gpu_lights_uniform_bytes(GpuLights3d) -> Bytes
 
 pub fn render3d_gpu_preprocess_builder_enabled(Bool) -> Bool
 
@@ -710,6 +724,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   occlusion_texture_id : Int
   depth_texture_id : Int
   emissive : @color.Color
+  emissive_exposure_weight : Float
   metallic : Float
   anisotropy_texture_id : Int
   anisotropy_rotation : Float
@@ -722,8 +737,14 @@ pub(all) struct MeshGpuDrawPayload3d {
   specular_transmission : Float
   thickness : Float
   ior : Float
+  attenuation_color : @color.Color
+  attenuation_distance : Float
+  clearcoat : Float
+  clearcoat_perceptual_roughness : Float
   alpha_cutoff : Float
   material_flags : UInt
+  lightmap_exposure : Float
+  deferred_lighting_pass_id : Int
   transmission_source_texture_id : Int
   transmission_blur_taps : Float
   transmission_steps : Float
@@ -992,6 +1013,10 @@ pub(all) struct Render3dLightingState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
+  gpu_lights_uniform_bytes : Bytes?
+  gpu_clustered_lights_bytes : Bytes?
+  gpu_clusterable_object_index_lists_bytes : Bytes?
+  gpu_cluster_offsets_and_counts_bytes : Bytes?
 }
 
 pub struct Render3dMeshRuntimeState {

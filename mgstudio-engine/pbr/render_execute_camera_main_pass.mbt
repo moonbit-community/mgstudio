@@ -13,6 +13,53 @@
 // limitations under the License.
 
 ///|
+fn render3d_main_pass_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
+  match mode {
+    None => 0
+    Reinhard => 1
+    ReinhardLuminance => 2
+    AcesFitted => 3
+    AgX => 4
+    SomewhatBoringDisplayTransform => 5
+    TonyMcMapface => 6
+    BlenderFilmic => 7
+  }
+}
+
+///|
+fn render3d_main_pass_tonemap_in_shader(camera : Camera3dViewPayload) -> Bool {
+  !camera.hdr_enabled && camera.tonemapping is Some(_)
+}
+
+///|
+fn render3d_main_pass_tonemapping_mode(camera : Camera3dViewPayload) -> Int {
+  match camera.tonemapping {
+    Some(mode) => render3d_main_pass_tonemapping_mode_to_int(mode)
+    None => 0
+  }
+}
+
+///|
+fn render3d_main_pass_tonemapping_lut_ids(
+  world : @ecs.World,
+  camera : Camera3dViewPayload,
+) -> (Int, Int, Int) {
+  if !render3d_main_pass_tonemap_in_shader(camera) {
+    return (-1, -1, -1)
+  }
+  let luts = render3d_tonemapping_lut_handles(world)
+  (luts.agx.id(), luts.tony_mc_mapface.id(), luts.blender_filmic.id())
+}
+
+///|
+fn render3d_main_pass_deband_dither_enabled(
+  camera : Camera3dViewPayload,
+) -> Bool {
+  render3d_main_pass_tonemap_in_shader(camera) &&
+  camera.deband_dither is Some(Enabled)
+}
+
+///|
 fn render3d_draw_gizmo_lines_3d(
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
@@ -144,6 +191,9 @@ fn render3d_execute_camera_main_pass(
     scene_viewport_width,
     scene_viewport_height,
   ) = pass_viewport(scene_target_id)
+  let (agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id) = render3d_main_pass_tonemapping_lut_ids(
+    world, camera,
+  )
   @pbr_render.render3d_begin_pass_3d(
     target_id=scene_target_id,
     width=view_width_logical,
@@ -176,6 +226,12 @@ fn render3d_execute_camera_main_pass(
     environment_specular_texture_id=environment_map_state.specular_texture_id,
     environment_map_intensity=environment_map_state.intensity,
     environment_map_rotation=environment_map_state.rotation,
+    tonemap_in_shader=render3d_main_pass_tonemap_in_shader(camera),
+    tonemapping_mode=render3d_main_pass_tonemapping_mode(camera),
+    tonemapping_agx_lut_texture_id=agx_lut_texture_id,
+    tonemapping_tony_lut_texture_id=tony_lut_texture_id,
+    tonemapping_blender_lut_texture_id=blender_lut_texture_id,
+    deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
     point_shadow_near~,
     pass_kind=scene_pass_kind,
     clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
@@ -649,6 +705,12 @@ fn render3d_execute_camera_main_pass(
         environment_specular_texture_id=environment_map_state.specular_texture_id,
         environment_map_intensity=environment_map_state.intensity,
         environment_map_rotation=environment_map_state.rotation,
+        tonemap_in_shader=render3d_main_pass_tonemap_in_shader(camera),
+        tonemapping_mode=render3d_main_pass_tonemapping_mode(camera),
+        tonemapping_agx_lut_texture_id=agx_lut_texture_id,
+        tonemapping_tony_lut_texture_id=tony_lut_texture_id,
+        tonemapping_blender_lut_texture_id=blender_lut_texture_id,
+        deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
         point_shadow_near~,
         pass_kind=scene_pass_kind,
         clear_enabled=0,
@@ -710,6 +772,12 @@ fn render3d_execute_camera_main_pass(
       environment_specular_texture_id=environment_map_state.specular_texture_id,
       environment_map_intensity=environment_map_state.intensity,
       environment_map_rotation=environment_map_state.rotation,
+      tonemap_in_shader=render3d_main_pass_tonemap_in_shader(camera),
+      tonemapping_mode=render3d_main_pass_tonemapping_mode(camera),
+      tonemapping_agx_lut_texture_id=agx_lut_texture_id,
+      tonemapping_tony_lut_texture_id=tony_lut_texture_id,
+      tonemapping_blender_lut_texture_id=blender_lut_texture_id,
+      deband_dither_enabled=render3d_main_pass_deband_dither_enabled(camera),
       point_shadow_near~,
       pass_kind=scene_pass_kind,
       clear_enabled=0,

@@ -148,6 +148,13 @@ fn reopen_saved_pass(
       pass_state.directional_shadow_cascade_count,
       pass_state.directional_shadow_cascade_overlap,
       pass_state.directional_shadow_cascade_data,
+      pass_state.mesh3d_lights_uniform_bytes,
+      pass_state.tonemap_in_shader,
+      pass_state.tonemapping_mode,
+      pass_state.tonemapping_agx_lut_texture_id,
+      pass_state.tonemapping_tony_lut_texture_id,
+      pass_state.tonemapping_blender_lut_texture_id,
+      pass_state.deband_dither_enabled,
       pass_state.pass_kind,
       0,
     )

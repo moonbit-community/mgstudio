@@ -13,6 +13,7 @@ import {
   "Milky2018/mgstudio/gltf/loader" @gltf_loader,
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/light/cluster" @light_cluster,
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/mesh",

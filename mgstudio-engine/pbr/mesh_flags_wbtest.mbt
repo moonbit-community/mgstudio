@@ -90,7 +90,11 @@ test "render3d: standard material flags keep opaque default when maps are absent
     -1,
   )
   debug_inspect(
-    flags == @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE,
+    flags ==
+    (
+      @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE |
+      @pbr_render.STANDARD_MATERIAL_FLAGS_FOG_ENABLED_BIT
+    ),
     content="true",
   )
 }

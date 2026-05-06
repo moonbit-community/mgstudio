@@ -173,6 +173,10 @@ fn mesh3d_lights_push_directional_light(
 
 ///|
 fn mesh3d_lights_uniform_bytes(pass_state : GpuPassState) -> Bytes {
+  match pass_state.mesh3d_lights_uniform_bytes {
+    Some(bytes) => return bytes
+    None => ()
+  }
   let transmission_source_enabled = pass_state.transmission_source_texture_id >=
     0
   let transmission_blur_taps = if transmission_source_enabled {
@@ -620,9 +624,16 @@ fn mesh3d_standard_material_uniform_bytes(
   emissive_r : Float,
   emissive_g : Float,
   emissive_b : Float,
+  emissive_exposure_weight : Float,
   metallic : Float,
   roughness : Float,
   reflectance : Float,
+  attenuation_color_r : Float,
+  attenuation_color_g : Float,
+  attenuation_color_b : Float,
+  attenuation_distance : Float,
+  clearcoat : Float,
+  clearcoat_perceptual_roughness : Float,
   parallax_depth_scale : Float,
   max_parallax_layer_count : Float,
   max_relief_mapping_search_steps : Float,
@@ -637,6 +648,8 @@ fn mesh3d_standard_material_uniform_bytes(
   ior : Float,
   alpha_cutoff : Float,
   material_flags : UInt,
+  lightmap_exposure : Float,
+  deferred_lighting_pass_id : Int,
 ) -> Bytes {
   let reflectance_tint_r = reflectance * specular_tint_r
   let reflectance_tint_g = reflectance * specular_tint_g
@@ -649,10 +662,10 @@ fn mesh3d_standard_material_uniform_bytes(
     f32_bits(emissive_r),
     f32_bits(emissive_g),
     f32_bits(emissive_b),
-    f32_bits(0.0F),
-    f32_bits(1.0F),
-    f32_bits(1.0F),
-    f32_bits(1.0F),
+    f32_bits(emissive_exposure_weight),
+    f32_bits(attenuation_color_r),
+    f32_bits(attenuation_color_g),
+    f32_bits(attenuation_color_b),
     f32_bits(1.0F),
     f32_bits(uv_transform_a),
     f32_bits(uv_transform_b),
@@ -675,9 +688,9 @@ fn mesh3d_standard_material_uniform_bytes(
     f32_bits(specular_transmission),
     f32_bits(thickness),
     f32_bits(ior),
-    f32_bits(1.0F),
-    f32_bits(0.0F),
-    f32_bits(0.0F),
+    f32_bits(attenuation_distance),
+    f32_bits(clearcoat),
+    f32_bits(clearcoat_perceptual_roughness),
     f32_bits(anisotropy_strength),
     0U,
     f32_bits(cosf(anisotropy_rotation)),
@@ -686,9 +699,9 @@ fn mesh3d_standard_material_uniform_bytes(
     f32_bits(alpha_cutoff),
     f32_bits(parallax_depth_scale),
     f32_bits(max_parallax_layer_count),
-    f32_bits(1.0F),
+    f32_bits(lightmap_exposure),
     max_relief_mapping_search_steps.to_int().reinterpret_as_uint(),
-    1U,
+    deferred_lighting_pass_id.reinterpret_as_uint(),
     0U,
   ]
   u32le_pack(words)
@@ -697,9 +710,45 @@ fn mesh3d_standard_material_uniform_bytes(
 ///|
 fn mesh3d_standard_material_default_uniform_bytes() -> Bytes {
   mesh3d_standard_material_uniform_bytes(
-    1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.5F, 0.5F, 0.1F, 16.0F, 5.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F,
-    0.0F, 1.5F, 0.5F, 0U,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    0.0F,
+    0.0F,
+    1.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    0.5F,
+    0.5F,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F / 0.0F,
+    0.0F,
+    0.5F,
+    0.1F,
+    16.0F,
+    5.0F,
+    0.0F,
+    0.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    1.5F,
+    0.5F,
+    0U,
+    1.0F,
+    1,
   )
 }
 

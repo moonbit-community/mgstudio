@@ -32,6 +32,11 @@ pub struct GpuPassState {
   camera_rot_w : Float
   clip_from_world : GpuClipMatrix
   unjittered_clip_from_world : GpuClipMatrix
+  world_from_clip : GpuClipMatrix
+  world_from_view : GpuClipMatrix
+  view_from_world : GpuClipMatrix
+  clip_from_view : GpuClipMatrix
+  view_from_clip : GpuClipMatrix
   previous_clip_from_world : GpuClipMatrix
   pass_kind : Int
   viewport_x : UInt
@@ -94,6 +99,13 @@ pub struct GpuPassState {
   directional_shadow_cascade_count : Int
   directional_shadow_cascade_overlap : Float
   directional_shadow_cascade_data : Array[Float]
+  mesh3d_lights_uniform_bytes : Bytes?
+  tonemap_in_shader : Bool
+  tonemapping_mode : Int
+  tonemapping_agx_lut_texture_id : Int
+  tonemapping_tony_lut_texture_id : Int
+  tonemapping_blender_lut_texture_id : Int
+  deband_dither_enabled : Bool
 }
 
 ///|

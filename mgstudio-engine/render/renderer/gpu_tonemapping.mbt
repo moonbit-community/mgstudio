@@ -525,7 +525,6 @@ fn tonemapping_view_uniform_bytes_full(
   let viewport_y = Float::from_double(pass_state.viewport_y.to_double())
   let viewport_w = Float::from_double(pass_state.viewport_w.to_double())
   let viewport_h = Float::from_double(pass_state.viewport_h.to_double())
-  let identity = gpu_clip_matrix_identity()
   let words : Array[UInt] = []
   for word in gpu_clip_matrix_words(pass_state.clip_from_world) {
     words.push(word)
@@ -533,19 +532,19 @@ fn tonemapping_view_uniform_bytes_full(
   for word in gpu_clip_matrix_words(pass_state.unjittered_clip_from_world) {
     words.push(word)
   }
-  for word in gpu_clip_matrix_words(identity) {
+  for word in gpu_clip_matrix_words(pass_state.world_from_clip) {
     words.push(word)
   }
-  for word in gpu_clip_matrix_words(identity) {
+  for word in gpu_clip_matrix_words(pass_state.world_from_view) {
     words.push(word)
   }
-  for word in gpu_clip_matrix_words(identity) {
+  for word in gpu_clip_matrix_words(pass_state.view_from_world) {
     words.push(word)
   }
-  for word in gpu_clip_matrix_words(pass_state.clip_from_world) {
+  for word in gpu_clip_matrix_words(pass_state.clip_from_view) {
     words.push(word)
   }
-  for word in gpu_clip_matrix_words(identity) {
+  for word in gpu_clip_matrix_words(pass_state.view_from_clip) {
     words.push(word)
   }
   words.push(f32_bits(pass_state.camera_x))
