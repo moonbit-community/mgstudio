@@ -14,7 +14,7 @@
 
 ///|
 fn has_binding(
-  entries : Array[MeshViewBindGroupLayoutEntry],
+  entries : Array[@mesh_view_layout.MeshViewBindGroupLayoutEntry],
   binding : Int,
 ) -> Bool {
   for entry in entries {
@@ -27,10 +27,10 @@ fn has_binding(
 
 ///|
 test "pbr/render: mesh_view layout base bindings follow bevy slots" {
-  let key = mesh_view_layout_key(
+  let key = @mesh_view_layout.mesh_view_layout_key(
     false, false, false, false, false, false, false, false,
   )
-  let (main_entries, binding_array_entries) = render3d_mesh_view_layout_entries(
+  let (main_entries, binding_array_entries) = @mesh_view_layout.render3d_mesh_view_layout_entries(
     true, true, key,
   )
 
@@ -48,8 +48,10 @@ test "pbr/render: mesh_view layout base bindings follow bevy slots" {
 
 ///|
 test "pbr/render: mesh_view layout optional bindings gated by key flags" {
-  let key = mesh_view_layout_key(true, true, true, true, true, true, true, true)
-  let (main_entries, binding_array_entries) = render3d_mesh_view_layout_entries(
+  let key = @mesh_view_layout.mesh_view_layout_key(
+    true, true, true, true, true, true, true, true,
+  )
+  let (main_entries, binding_array_entries) = @mesh_view_layout.render3d_mesh_view_layout_entries(
     true, true, key,
   )
 
@@ -67,10 +69,10 @@ test "pbr/render: mesh_view layout optional bindings gated by key flags" {
 
 ///|
 test "pbr/render: mesh_view layout disables optional bind arrays when unusable" {
-  let key = mesh_view_layout_key(
+  let key = @mesh_view_layout.mesh_view_layout_key(
     false, false, false, false, false, true, false, false,
   )
-  let (main_entries, binding_array_entries) = render3d_mesh_view_layout_entries(
+  let (main_entries, binding_array_entries) = @mesh_view_layout.render3d_mesh_view_layout_entries(
     true,
     true,
     key,
@@ -86,11 +88,13 @@ test "pbr/render: mesh_view layout disables optional bind arrays when unusable" 
 
 ///|
 test "pbr/render: mesh_view layout table builds all key variants" {
-  let layouts = render3d_mesh_pipeline_view_layouts(true, true)
+  let layouts = @mesh_view_layout.render3d_mesh_pipeline_view_layouts(
+    true, true,
+  )
   debug_inspect(layouts.layouts.length(), content="256")
 
   let default_layout = layouts.get_view_layout(
-    MeshPipelineViewLayoutKey::default(),
+    @mesh_view_layout.MeshPipelineViewLayoutKey::default(),
   )
   debug_inspect(
     default_layout.main_layout_label,
@@ -101,7 +105,7 @@ test "pbr/render: mesh_view layout table builds all key variants" {
     content="\"mesh_view_layout_empty\"",
   )
 
-  let flagged_key = mesh_view_layout_key(
+  let flagged_key = @mesh_view_layout.mesh_view_layout_key(
     true, false, false, false, false, false, true, false,
   )
   let flagged_layout = layouts.get_view_layout(flagged_key)

@@ -1060,10 +1060,10 @@ pub fn GpuBackend::create_point_light_shadow_target(
       ),
     )
   }
-  // Sampling uses cubemap semantics aligned with Bevy face selection order.
-  let cube_view = tex.create_view_u32(
+  // Bevy binds point light shadow maps as a cube-array texture, even for one cube.
+  let cube_array_view = tex.create_view_u32(
     tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
-    @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
+    @wgpu.TEXTURE_VIEW_DIMENSION_CUBE_ARRAY,
     @wgpu.TEXTURE_ASPECT_DEPTH_ONLY,
     0U,
     6U,
@@ -1079,7 +1079,7 @@ pub fn GpuBackend::create_point_light_shadow_target(
     format_raw: @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
     texture: tex,
     view: face0_view,
-    sample_view: Some(cube_view),
+    sample_view: Some(cube_array_view),
     layer_views,
     sampler: default_texture.sampler,
     bind_group: default_texture.bind_group,

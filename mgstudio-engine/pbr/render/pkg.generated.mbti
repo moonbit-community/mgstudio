@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render/mesh_view_layout",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
@@ -39,8 +40,6 @@ pub const GPU_FOG_MODE_OFF : UInt = 0
 pub const MAX_CASCADES_PER_LIGHT : Int = 4
 
 pub const MAX_DIRECTIONAL_LIGHTS : Int = 10
-
-pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 256
 
 pub const RENDER3D_GPU_FOG_MODE_ATMOSPHERIC : UInt = 4
 
@@ -157,12 +156,6 @@ pub fn gpu_mesh_preprocess_plugin_install_with(@app.App[@ecs.World], GpuMeshPrep
 pub fn maxf(Float, Float) -> Float
 
 pub fn mesh_binding_slot_index(MeshBindingSlot3d) -> Int
-
-pub fn mesh_view_layout_key(Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool) -> MeshPipelineViewLayoutKey
-
-pub fn mesh_view_layout_key_from_bits_truncate(UInt) -> MeshPipelineViewLayoutKey
-
-pub fn mesh_view_layout_key_from_msaa(Int) -> MeshPipelineViewLayoutKey
 
 pub fn minf(Float, Float) -> Float
 
@@ -314,10 +307,6 @@ pub fn render3d_lightmap_uv_transform(@math.Rect) -> @transform.Affine2
 
 pub fn render3d_mesh_layouts() -> MeshLayouts3d
 
-pub fn render3d_mesh_pipeline_view_layout(Bool, Bool, MeshPipelineViewLayoutKey, clustered_decals_usable? : Bool, irradiance_volumes_usable? : Bool, oit_supported? : Bool) -> MeshPipelineViewLayout
-
-pub fn render3d_mesh_pipeline_view_layouts(Bool, Bool, clustered_decals_usable? : Bool, irradiance_volumes_usable? : Bool, oit_supported? : Bool) -> MeshPipelineViewLayouts
-
 pub fn render3d_mesh_position_view_depth(@math.Vec3, @transform.Transform) -> Float
 
 pub let render3d_mesh_runtime_state_key : @ecs.ResourceKey[Render3dMeshRuntimeState]
@@ -329,8 +318,6 @@ pub fn render3d_mesh_upload_cache_state_after_clear(Render3dMeshUploadCacheState
 pub fn render3d_mesh_view_bindings(RenderTargetComputed3d, @transform.Transform) -> MeshViewBindings3d
 
 pub fn render3d_mesh_view_depth(@transform.Transform, @transform.Transform) -> Float
-
-pub fn render3d_mesh_view_layout_entries(Bool, Bool, MeshPipelineViewLayoutKey, clustered_decals_usable? : Bool, irradiance_volumes_usable? : Bool, oit_supported? : Bool) -> (Array[MeshViewBindGroupLayoutEntry], Array[MeshViewBindGroupLayoutEntry])
 
 pub fn render3d_morph_non_zero_weight_count(Array[Float]) -> Int
 
@@ -768,28 +755,6 @@ pub struct MeshLayouts3d {
   morphed_skinned_motion : MeshBindingLayout3d
 }
 
-pub struct MeshPipelineViewLayout {
-  main_layout_label : String
-  binding_array_layout_label : String
-  empty_layout_label : String
-  main_entries : Array[MeshViewBindGroupLayoutEntry]
-  binding_array_entries : Array[MeshViewBindGroupLayoutEntry]
-  texture_count : Int
-}
-
-pub struct MeshPipelineViewLayoutKey {
-  bits : UInt
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn MeshPipelineViewLayoutKey::bits(Self) -> UInt
-pub fn MeshPipelineViewLayoutKey::contains(Self, UInt) -> Bool
-pub fn MeshPipelineViewLayoutKey::default() -> Self
-pub fn MeshPipelineViewLayoutKey::label(Self) -> String
-
-pub struct MeshPipelineViewLayouts {
-  layouts : Array[MeshPipelineViewLayout]
-}
-pub fn MeshPipelineViewLayouts::get_view_layout(Self, MeshPipelineViewLayoutKey) -> MeshPipelineViewLayout
-
 pub(all) struct MeshPreprocessStatic3d {
   topology_kind : Int
   is_indexed : Bool
@@ -801,55 +766,14 @@ pub(all) struct MeshPreprocessStatic3d {
   aabb_half_extents : @math.Vec3
 }
 
-pub struct MeshViewBindGroupLayoutEntry {
-  binding : Int
-  name : String
-  entry_type : MeshViewBindGroupLayoutEntryType
-  stage : MeshViewBindGroupLayoutEntryStage
-  has_dynamic_offset : Bool
-}
-
-pub enum MeshViewBindGroupLayoutEntryStage {
-  Vertex
-  Fragment
-  VertexFragment
-}
-
-pub enum MeshViewBindGroupLayoutEntryType {
-  UniformBuffer
-  StorageBuffer(Bool)
-  Texture(MeshViewTextureSampleType, MeshViewTextureDimension, Bool, Int)
-  Sampler(MeshViewSamplerBindingType)
-}
-
 pub struct MeshViewBindings3d {
   viewport : (Int, Int, Int, Int)?
   clear_enabled : Bool
   logical_rect : (Float, Float, Float, Float)
   view_matrix : ProjectionMatrix3d
-  layout_key : MeshPipelineViewLayoutKey
+  layout_key : @mesh_view_layout.MeshPipelineViewLayoutKey
 }
 pub fn MeshViewBindings3d::default() -> Self
-
-pub enum MeshViewSamplerBindingType {
-  Filtering
-  Comparison
-}
-
-pub enum MeshViewTextureDimension {
-  D2
-  D2Array
-  D3
-  Cube
-  CubeArray
-}
-
-pub enum MeshViewTextureSampleType {
-  FloatFilterable
-  FloatNonFilterable
-  Depth
-  UInt
-}
 
 pub struct MorphIndices {
   mut current : Map[UInt64, UInt]

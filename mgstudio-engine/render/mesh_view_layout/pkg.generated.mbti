@@ -1,0 +1,93 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/render/mesh_view_layout"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 256
+
+pub fn mesh_view_layout_key(Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool) -> MeshPipelineViewLayoutKey
+
+pub fn mesh_view_layout_key_from_bits_truncate(UInt) -> MeshPipelineViewLayoutKey
+
+pub fn mesh_view_layout_key_from_msaa(Int) -> MeshPipelineViewLayoutKey
+
+pub fn render3d_mesh_pipeline_view_layout(Bool, Bool, MeshPipelineViewLayoutKey, multiple_light_probes_in_array? : Bool, clustered_decals_usable? : Bool, irradiance_volumes_usable? : Bool, oit_supported? : Bool) -> MeshPipelineViewLayout
+
+pub fn render3d_mesh_pipeline_view_layouts(Bool, Bool, multiple_light_probes_in_array? : Bool, clustered_decals_usable? : Bool, irradiance_volumes_usable? : Bool, oit_supported? : Bool) -> MeshPipelineViewLayouts
+
+pub fn render3d_mesh_view_layout_entries(Bool, Bool, MeshPipelineViewLayoutKey, multiple_light_probes_in_array? : Bool, clustered_decals_usable? : Bool, irradiance_volumes_usable? : Bool, oit_supported? : Bool) -> (Array[MeshViewBindGroupLayoutEntry], Array[MeshViewBindGroupLayoutEntry])
+
+// Errors
+
+// Types and methods
+pub struct MeshPipelineViewLayout {
+  main_layout_label : String
+  binding_array_layout_label : String
+  empty_layout_label : String
+  main_entries : Array[MeshViewBindGroupLayoutEntry]
+  binding_array_entries : Array[MeshViewBindGroupLayoutEntry]
+  texture_count : Int
+}
+
+pub struct MeshPipelineViewLayoutKey {
+  bits : UInt
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MeshPipelineViewLayoutKey::bits(Self) -> UInt
+pub fn MeshPipelineViewLayoutKey::contains(Self, UInt) -> Bool
+pub fn MeshPipelineViewLayoutKey::default() -> Self
+pub fn MeshPipelineViewLayoutKey::label(Self) -> String
+
+pub struct MeshPipelineViewLayouts {
+  layouts : Array[MeshPipelineViewLayout]
+}
+pub fn MeshPipelineViewLayouts::get_view_layout(Self, MeshPipelineViewLayoutKey) -> MeshPipelineViewLayout
+
+pub struct MeshViewBindGroupLayoutEntry {
+  binding : Int
+  name : String
+  entry_type : MeshViewBindGroupLayoutEntryType
+  stage : MeshViewBindGroupLayoutEntryStage
+  has_dynamic_offset : Bool
+}
+
+pub enum MeshViewBindGroupLayoutEntryStage {
+  Vertex
+  Fragment
+  VertexFragment
+}
+
+pub enum MeshViewBindGroupLayoutEntryType {
+  UniformBuffer
+  StorageBuffer(Bool)
+  Texture(MeshViewTextureSampleType, MeshViewTextureDimension, Bool, Int)
+  Sampler(MeshViewSamplerBindingType)
+}
+
+pub enum MeshViewSamplerBindingType {
+  Filtering
+  Comparison
+}
+
+pub enum MeshViewTextureDimension {
+  D2
+  D2Array
+  D3
+  Cube
+  CubeArray
+}
+
+pub enum MeshViewTextureSampleType {
+  FloatFilterable
+  FloatNonFilterable
+  Depth
+  UInt
+}
+
+// Type aliases
+
+// Traits
+

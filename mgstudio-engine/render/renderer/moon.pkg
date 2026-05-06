@@ -2,6 +2,7 @@
 import {
   "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader/source" @fullscreen_vertex_shader_source,
   "Milky2018/mgstudio/embedded_asset" @embedded_asset,
+  "Milky2018/mgstudio/render/mesh_view_layout" @mesh_view_layout,
   "Milky2018/mgstudio/shader/compile" @shader_compile,
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/window/windowing_native" @windowing,

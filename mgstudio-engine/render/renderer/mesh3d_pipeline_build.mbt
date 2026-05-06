@@ -663,112 +663,14 @@ fn ensure_mesh3d_pipeline_layout_resources(
   ensure_sprite_resources(backend)
   if backend.mesh3d_pipeline_layout is None {
     let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
-    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=19UL)
-    let view_ok = view_builder.add_buffer(
-        0U,
-        view_stage,
-        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-      ) &&
-      view_builder.add_buffer(1U, view_stage, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
-      view_builder.add_buffer(
-        8U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-        min_binding_size=MESH3D_CLUSTERED_LIGHTS_BUFFER_SIZE,
-      ) &&
-      view_builder.add_buffer(
-        9U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-        min_binding_size=MESH3D_CLUSTERABLE_OBJECT_INDEX_LISTS_BUFFER_SIZE,
-      ) &&
-      view_builder.add_buffer(
-        10U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-        min_binding_size=MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE,
-      ) &&
-      view_builder.add_buffer(
-        11U,
-        view_stage,
-        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        min_binding_size=MESH3D_GLOBALS_BUFFER_SIZE,
-      ) &&
-      view_builder.add_buffer(
-        12U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        min_binding_size=MESH3D_FOG_BUFFER_SIZE,
-      ) &&
-      view_builder.add_buffer(
-        13U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        min_binding_size=MESH3D_LIGHT_PROBES_BUFFER_SIZE,
-      ) &&
-      view_builder.add_buffer(
-        14U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-        min_binding_size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
-      ) &&
-      view_builder.add_buffer(
-        15U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        min_binding_size=MESH3D_SSR_SETTINGS_BUFFER_SIZE,
-      ) &&
-      view_builder.add_buffer(
-        16U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        min_binding_size=MESH3D_CONTACT_SHADOWS_SETTINGS_BUFFER_SIZE,
-      ) &&
-      view_builder.add_texture(
-        17U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      view_builder.add_buffer(
-        18U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        min_binding_size=MESH3D_ENVIRONMENT_MAP_UNIFORM_BUFFER_SIZE,
-      ) &&
-      view_builder.add_texture(
-        2U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
-        @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
-      ) &&
-      view_builder.add_sampler(
-        3U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.SAMPLER_BINDING_TYPE_COMPARISON,
-      ) &&
-      view_builder.add_texture(
-        5U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D_ARRAY,
-      ) &&
-      view_builder.add_sampler(
-        6U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.SAMPLER_BINDING_TYPE_COMPARISON,
-      ) &&
-      view_builder.add_texture(
-        25U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      view_builder.add_sampler(
-        26U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
-      )
+    let mesh_view_layout = mesh3d_default_mesh_view_layout()
+    let view_builder = @wgpu.BindGroupLayoutBuilder::new(
+      max_entries=mesh_view_layout.main_entries.length().to_uint64(),
+    )
+    let view_ok = mesh3d_add_mesh_view_layout_entries(
+      view_builder,
+      mesh_view_layout.main_entries,
+    )
     if !view_ok {
       view_builder.free()
       fatal("wgpu: failed to build mesh3d view bind group layout")
@@ -885,25 +787,12 @@ fn ensure_mesh3d_pipeline_layout_resources(
       label="mgstudio_mesh3d_material_bgl",
     )
     let binding_arrays_builder = @wgpu.BindGroupLayoutBuilder::new(
-      max_entries=3UL,
+      max_entries=mesh_view_layout.binding_array_entries.length().to_uint64(),
     )
-    let binding_arrays_ok = binding_arrays_builder.add_texture(
-        0U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
-      ) &&
-      binding_arrays_builder.add_texture(
-        1U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
-      ) &&
-      binding_arrays_builder.add_sampler(
-        2U,
-        ss(@wgpu.SHADER_STAGE_FRAGMENT),
-        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
-      )
+    let binding_arrays_ok = mesh3d_add_mesh_view_layout_entries(
+      binding_arrays_builder,
+      mesh_view_layout.binding_array_entries,
+    )
     if !binding_arrays_ok {
       binding_arrays_builder.free()
       fatal("wgpu: failed to build mesh3d binding-array bind group layout")
