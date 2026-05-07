@@ -55,7 +55,7 @@ fn preprocess_shader_imports(
 ) -> (ShaderImport, Array[ShaderImport]) {
   let metadata = @wgsl_metadata.get_preprocessor_metadata(source) catch {
     _ =>
-      @wgsl_common.PreprocessorMetaData::new(
+      @wgsl_common.PreprocessorMetaData::PreprocessorMetaData(
         None,
         [],
         @hashmap.HashMap([]),
