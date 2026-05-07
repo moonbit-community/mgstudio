@@ -89,7 +89,7 @@ priv struct SsrState {
 }
 
 ///|
-let ssr_state : Ref[SsrState] = Ref::new({
+let ssr_state : Ref[SsrState] = Ref({
   ssr_on: true,
   displayed_model: DisplayedModel::Cube,
   displayed_base: DisplayedBase::Water,

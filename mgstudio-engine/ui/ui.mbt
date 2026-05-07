@@ -1483,7 +1483,7 @@ fn ui_propagate_target_camera_subtree(
 
 ///|
 pub fn ui_update_context_system(world : @ecs.World) -> Unit {
-  let ctx = Ref::new(ensure_ui_context_resource(world))
+  let ctx = Ref(ensure_ui_context_resource(world))
   create_white_texture_if_needed(ctx)
   let win_w = @window.window_width()
   let win_h = @window.window_height()
@@ -1721,7 +1721,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     Float::from_double(v)
   }
 
-  let root_viewport_size = Ref::new(@math.Vec2::new(0.0F, 0.0F))
+  let root_viewport_size = Ref(@math.Vec2::new(0.0F, 0.0F))
 
   fn dim_for_val(val : Val) -> @moon_taffy.Dimension {
     match val {
@@ -2152,7 +2152,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
     )
     let taffy = @moon_taffy.TaffyTree::new()
-    let entity_to_node : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap::new()
+    let entity_to_node : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap([])
     fn build(entity : @core.Entity, is_root : Bool) -> Array[Int] {
       let child_ids : Array[Int] = []
       for child in ui_collect_effective_children(world, entity) {
@@ -2839,7 +2839,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
 /// while preserving insertion order for ties.
 pub fn ui_stack_system(world : @ecs.World) -> Unit {
   let res = get_ui_stack_resource(world)
-  let stack = Ref::new(res.get().unwrap_or(UiStack::default()))
+  let stack = Ref(res.get().unwrap_or(UiStack::default()))
   UiStack::clear(stack)
   fn cmp_int(a : Int, b : Int) -> Int {
     if a < b {
@@ -2865,7 +2865,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
     }
   }
 
-  let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+  let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
   let roots : Array[(@core.Entity, Int, Int, Int)] = []
 
   // Root candidates: unparented UI layout nodes.
@@ -3040,7 +3040,7 @@ pub fn ui_build_a11y_tree_update(
   }
   // Build the set of required nodes (focusables + their ancestor chain), so
   // every node's parent always exists in this update.
-  let required : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+  let required : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
   fn key(entity : @core.Entity) -> (Int, Int) {
     (entity.id, entity.generation)
   }
@@ -3123,7 +3123,7 @@ pub fn ui_build_a11y_tree_update(
     let mut name : String? = None
     for child in children {
       let parts : Array[String] = []
-      let out = Ref::new(parts)
+      let out = Ref(parts)
       collect_subtree_text(child, out)
       if out.val.length() > 0 {
         name = Some(join_with_space(out.val))
@@ -3134,7 +3134,7 @@ pub fn ui_build_a11y_tree_update(
 
   fn calc_value_from_self(entity : @core.Entity) -> String {
     let parts : Array[String] = []
-    let out = Ref::new(parts)
+    let out = Ref(parts)
     collect_subtree_text(entity, out)
     join_with_space(out.val)
   }

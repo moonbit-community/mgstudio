@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-let cube_spawn_counter : Ref[Int] = Ref::new(0)
+let cube_spawn_counter : Ref[Int] = Ref(0)
 
 ///|
 struct PickableCube {

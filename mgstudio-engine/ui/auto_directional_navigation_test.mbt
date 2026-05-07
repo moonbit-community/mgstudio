@@ -61,7 +61,7 @@ fn navigate_auto(
   world : @ecs.World,
   direction : @math.CompassOctant,
 ) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! @app.run_system_once_param(world, fn(nav : AutoDirectionalNavigator) {
     result.val = try nav.navigate(direction) catch {
       _ => None

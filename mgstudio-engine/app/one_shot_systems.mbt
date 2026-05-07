@@ -132,7 +132,7 @@ pub fn register_system(
 ) -> SystemId {
   let configs_ref = registered_systems_ref(world)
   let system_id = SystemId::{ index: configs_ref.peek().configs.length() }
-  configs_ref.modify(fn(value) { value.configs.push(Ref::new(system)) })
+  configs_ref.modify(fn(value) { value.configs.push(Ref(system)) })
   system_id
 }
 
@@ -151,7 +151,7 @@ pub fn run_system_once(
   world : @ecs.World,
   system : SystemConfig[@ecs.World],
 ) -> Unit raise Error {
-  run_registered_system_config(world, Ref::new(system))
+  run_registered_system_config(world, Ref(system))
 }
 
 ///|

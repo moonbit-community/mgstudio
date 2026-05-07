@@ -71,7 +71,7 @@ priv struct ReflectionProbesState {
 }
 
 ///|
-let reflection_probes_state : Ref[ReflectionProbesState] = Ref::new({
+let reflection_probes_state : Ref[ReflectionProbesState] = Ref({
   reflection_mode: ReflectionMode::ReflectionProbe,
   rotating: false,
   sphere_roughness: 0.2F,

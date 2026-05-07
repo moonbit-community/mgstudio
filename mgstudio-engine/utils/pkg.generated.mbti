@@ -21,7 +21,7 @@ pub fn[T : Default] default_of() -> T
 
 pub fn[K : Hash + Eq, V] map_from_entries(Array[(K, V)]) -> Map[K, V]
 
-pub fn[K, V] map_new() -> Map[K, V]
+pub fn[K : Hash + Eq, V] map_new() -> Map[K, V]
 
 pub fn[T] parallel_queue_values_empty() -> Array[T]
 

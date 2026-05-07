@@ -46,7 +46,7 @@ test "app hierarchy: validate-parent plugin queues a check when parent lacks com
 
   let reader = world.message_reader(
     check_parent_has_component_message_key(hierarchy_validation_marker_key),
-    Ref::new(0),
+    Ref(0),
   )
   debug_inspect(reader.len(), content="1")
   let pending = try! reader.read()
@@ -78,7 +78,7 @@ test "app hierarchy: validate-parent plugin skips checks when parent already has
 
   let reader = world.message_reader(
     check_parent_has_component_message_key(hierarchy_validation_marker_key),
-    Ref::new(0),
+    Ref(0),
   )
   debug_inspect(reader.len(), content="0")
 }
@@ -107,7 +107,7 @@ test "app hierarchy: validate-parent plugin rechecks on component replace" {
 
   let reader = world.message_reader(
     check_parent_has_component_message_key(hierarchy_validation_marker_key),
-    Ref::new(0),
+    Ref(0),
   )
   debug_inspect(reader.len(), content="2")
 }

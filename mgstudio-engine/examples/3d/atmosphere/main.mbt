@@ -48,7 +48,7 @@ priv struct AtmosphereState {
 }
 
 ///|
-let atmosphere_state : Ref[AtmosphereState] = Ref::new({
+let atmosphere_state : Ref[AtmosphereState] = Ref({
   paused: false,
   mode: 0,
   exposure_ev100: BASE_EXPOSURE_EV100,

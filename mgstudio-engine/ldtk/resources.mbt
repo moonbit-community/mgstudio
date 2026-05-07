@@ -202,7 +202,7 @@ pub struct LdtkRuntimeState {
 
 ///|
 pub fn LdtkRuntimeState::default() -> LdtkRuntimeState {
-  LdtkRuntimeState::{ spawned_levels_by_world: @hashmap.HashMap::new() }
+  LdtkRuntimeState::{ spawned_levels_by_world: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -233,7 +233,7 @@ pub fn LdtkRuntimeState::world_spawned_levels(
   world_entity : @core.Entity,
 ) -> @hashmap.HashMap[String, @core.Entity] {
   self.spawned_levels_by_world.get_or_init(ldtk_entity_key(world_entity), fn() {
-    @hashmap.HashMap::new()
+    @hashmap.HashMap([])
   })
 }
 

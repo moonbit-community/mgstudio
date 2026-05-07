@@ -28,8 +28,8 @@ const SEGMENT_Y : Float = -50.0F
 const ARC_RADIUS : Float = 40.0F
 
 ///|
-let draw_bounds_component_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let draw_bounds_component_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|

@@ -45,7 +45,7 @@ priv struct ParallaxState {
 }
 
 ///|
-let parallax_state : Ref[ParallaxState] = Ref::new({
+let parallax_state : Ref[ParallaxState] = Ref({
   camera: None,
   help_text: None,
   spin_targets: [],

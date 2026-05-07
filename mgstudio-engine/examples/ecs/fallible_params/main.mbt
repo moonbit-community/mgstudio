@@ -217,7 +217,7 @@ fn spawn_enemy(
 fn first_enemy_entity(
   enemies : @ecs.Query[@core.Entity, @ecs.With[Enemy]],
 ) -> @core.Entity? {
-  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
+  let entity_ref : Ref[@core.Entity?] = Ref(None)
   try! enemies.view(fn(_query_entity, entity) {
     if entity_ref.val is None {
       entity_ref.val = Some(entity)

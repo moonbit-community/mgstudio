@@ -41,9 +41,9 @@ pub struct ExtractedAssets[A] {
 pub fn[A] ExtractedAssets::new() -> ExtractedAssets[A] {
   ExtractedAssets::{
     extracted: [],
-    removed: @hashset.HashSet::new(),
-    modified: @hashset.HashSet::new(),
-    added: @hashset.HashSet::new(),
+    removed: @hashset.HashSet([]),
+    modified: @hashset.HashSet([]),
+    added: @hashset.HashSet([]),
   }
 }
 
@@ -53,8 +53,8 @@ pub struct RenderAssets[A] {
 }
 
 ///|
-let render_assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let render_assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
@@ -87,7 +87,7 @@ pub impl[A] @app.Resource for RenderAssets[A] with resource() {
 
 ///|
 pub fn[A] RenderAssets::new() -> RenderAssets[A] {
-  RenderAssets::{ items: @hashmap.HashMap::new() }
+  RenderAssets::{ items: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -124,7 +124,7 @@ pub fn[A] RenderAssets::insert(
   id : Int,
   value : A,
 ) -> Unit {
-  self.items.set(id, Ref::new(value))
+  self.items.set(id, Ref(value))
 }
 
 ///|

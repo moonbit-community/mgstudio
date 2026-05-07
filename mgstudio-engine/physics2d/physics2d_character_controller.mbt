@@ -194,7 +194,7 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref::new(current_ctx)
+  let ctx_ref = Ref(current_ctx)
   let ctx = ctx_ref.val
 
   // Ensure queries see the latest collider positions (e.g. standalone colliders synced from Transform).

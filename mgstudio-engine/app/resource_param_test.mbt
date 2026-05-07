@@ -50,7 +50,7 @@ test "app: insert_resource and ResMut parameter updates value" {
 
 ///|
 test "app: Res parameter reads inserted resource value" {
-  let observed : Ref[Int] = Ref::new(-1)
+  let observed : Ref[Int] = Ref(-1)
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 7 })
     .add_system_param(fn(resource : Res[CounterResource]) {
@@ -339,7 +339,7 @@ test "app: Res exposes stable resource values across runs" {
 
 ///|
 test "app: Res can read inserted State resource" {
-  let observed : Ref[String] = Ref::new("unset")
+  let observed : Ref[String] = Ref("unset")
   let app = App::new(@ecs.World::new())
     .add_plugins(StatesPlugin::default())
     .insert_state(TestState::A)
@@ -373,10 +373,10 @@ test "app: ResMut can update NextState resource" {
 
 ///|
 test "app: run condition combinators short-circuit and compose" {
-  let or_runs = Ref::new(0)
-  let or_rhs_calls = Ref::new(0)
-  let and_runs = Ref::new(0)
-  let and_rhs_calls = Ref::new(0)
+  let or_runs = Ref(0)
+  let or_rhs_calls = Ref(0)
+  let and_runs = Ref(0)
+  let and_rhs_calls = Ref(0)
   let not_log : Array[Int] = []
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 1 })

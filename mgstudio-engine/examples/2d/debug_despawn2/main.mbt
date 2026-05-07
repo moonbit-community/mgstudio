@@ -18,7 +18,7 @@ priv struct DebugDespawnState {
 }
 
 ///|
-let debug_despawn_state : Ref[DebugDespawnState] = Ref::new(DebugDespawnState::{
+let debug_despawn_state : Ref[DebugDespawnState] = Ref(DebugDespawnState::{
   spawned: [],
 })
 

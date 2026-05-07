@@ -180,7 +180,7 @@ fn list_all_named_entities(
   try! query.view(fn(_entity, name) { names.push(name.value().as_str()) })
   sort_names(names)
 
-  let text_string = Ref::new("Named entities found:\n")
+  let text_string = Ref("Named entities found:\n")
   for name in names {
     text_string.val = "\{text_string.val}\{name}\n"
   }

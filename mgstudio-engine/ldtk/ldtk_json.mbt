@@ -912,7 +912,7 @@ fn ldtk_decode_world(json : Json) -> World {
 ///|
 fn ldtk_decode_tileset_definition(json : Json) -> TilesetDefinition {
   let object = ldtk_json_object(json)
-  let custom_data_by_tile : @hashmap.HashMap[Int, String] = @hashmap.HashMap::new()
+  let custom_data_by_tile : @hashmap.HashMap[Int, String] = @hashmap.HashMap([])
   for
     custom_json in ldtk_json_array(
       ldtk_object_get_or(object, "customData", ldtk_empty_json_array()),
@@ -925,7 +925,8 @@ fn ldtk_decode_tileset_definition(json : Json) -> TilesetDefinition {
     }
   }
 
-  let enum_tags_by_tile : @hashmap.HashMap[Int, LdtkTileEnumTags] = @hashmap.HashMap::new()
+  let enum_tags_by_tile : @hashmap.HashMap[Int, LdtkTileEnumTags] = @hashmap.HashMap([],
+  )
   for
     tag_json in ldtk_json_array(
       ldtk_object_get_or(object, "enumTags", ldtk_empty_json_array()),

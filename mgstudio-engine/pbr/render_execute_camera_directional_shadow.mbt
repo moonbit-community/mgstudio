@@ -425,7 +425,7 @@ fn render3d_directional_light_shadow_targets_ref_or_init(
     (try! world.get_resource_mut(
       Render3dDirectionalLightShadowTargets::resource(),
     )) {
-    Some(state) => Ref::new(state.peek())
+    Some(state) => Ref(state.peek())
     None => abort("Missing Render3dDirectionalLightShadowTargets resource")
   }
 }

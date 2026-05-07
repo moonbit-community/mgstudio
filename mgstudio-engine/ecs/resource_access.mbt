@@ -49,7 +49,7 @@ pub fn[T] World::get_resource_ref_mut(
   key : ResourceKey[T],
 ) -> Ref[T]? raise EcsError {
   match self.get_resource_mut(key) {
-    Some(resource) => Some(Ref::new(resource.peek()))
+    Some(resource) => Some(Ref(resource.peek()))
     None => None
   }
 }
@@ -60,7 +60,7 @@ pub fn[T] World::get_resource_ref(
   key : ResourceKey[T],
 ) -> Ref[T]? raise EcsError {
   match self.get_resource(key) {
-    Some(resource) => Some(Ref::new(resource))
+    Some(resource) => Some(Ref(resource))
     None => None
   }
 }

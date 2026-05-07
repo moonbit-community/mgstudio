@@ -68,7 +68,7 @@ impl @app.Resource for Foxes with resource() {
 }
 
 ///|
-let scene_ready_counter_ref : Ref[Int] = Ref::new(0)
+let scene_ready_counter_ref : Ref[Int] = Ref(0)
 
 ///|
 fn Foxes::default() -> Foxes {

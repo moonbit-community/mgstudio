@@ -18,7 +18,7 @@ pub struct Instant {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-let instant_start_timestamp_ref : Ref[@bench.Timestamp?] = Ref::new(None)
+let instant_start_timestamp_ref : Ref[@bench.Timestamp?] = Ref(None)
 
 ///|
 fn instant_clamp_positive(value : Int64) -> Int64 {

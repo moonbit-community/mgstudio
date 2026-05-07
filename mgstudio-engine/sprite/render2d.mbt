@@ -973,13 +973,13 @@ pub type CircularSegmentRing = @math.CircularSegmentRing
 pub type Mesh2d = @mesh.Mesh2d
 
 ///|
-let mesh_upload_cache : Ref[@hashmap.HashMap[Int, Int]] = Ref::new(
-  @hashmap.HashMap::new(),
+let mesh_upload_cache : Ref[@hashmap.HashMap[Int, Int]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
-let mesh_upload_radius_cache : Ref[@hashmap.HashMap[Int, Float]] = Ref::new(
-  @hashmap.HashMap::new(),
+let mesh_upload_radius_cache : Ref[@hashmap.HashMap[Int, Float]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
@@ -3200,16 +3200,16 @@ struct RenderState {
 }
 
 ///|
-let render2d_diagnostic_queued_draw_item_count_ref : Ref[Int] = Ref::new(0)
+let render2d_diagnostic_queued_draw_item_count_ref : Ref[Int] = Ref(0)
 
 ///|
-let render2d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
+let render2d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref(0)
 
 ///|
-let render2d_diagnostic_queue_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+let render2d_diagnostic_queue_cpu_ms_ref : Ref[Float] = Ref(0.0F)
 
 ///|
-let render2d_diagnostic_execute_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+let render2d_diagnostic_execute_cpu_ms_ref : Ref[Float] = Ref(0.0F)
 
 ///|
 fn RenderState::new() -> RenderState {
@@ -3235,7 +3235,7 @@ fn RenderState::new() -> RenderState {
 }
 
 ///|
-let render_state_serde_next_id : Ref[Int] = Ref::new(1)
+let render_state_serde_next_id : Ref[Int] = Ref(1)
 
 ///|
 let render_state_serde_values : Map[Int, RenderState] = {}
@@ -3266,7 +3266,7 @@ fn render_state_update(
 ) -> Bool {
   let res = get_render_state_resource(world)
   guard res.get() is Some(state_value) else { return false }
-  let state = Ref::new(state_value)
+  let state = Ref(state_value)
   update(state)
   res.insert(state.val)
   true
@@ -3755,7 +3755,7 @@ pub fn render2d_create_render_target(
   ensure_render_state_resource(world)
   let res = get_render_state_resource(world)
   if res.get() is Some(state_value) {
-    let rs = Ref::new(state_value)
+    let rs = Ref(state_value)
     rs.val.render_targets.push(RenderTargetInfo::{ id, width, height })
     res.insert(rs.val)
   }
@@ -7177,11 +7177,11 @@ test "render2d: shape geometry builders validate" {
 ///|
 test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra sprites" {
   let tileset = @asset.Handle::new(41)
-  let extracted_count : Ref[Int] = Ref::new(0)
-  let first_uv_min_y : Ref[Double] = Ref::new(-1.0)
-  let first_uv_max_y : Ref[Double] = Ref::new(-1.0)
-  let second_uv_min_y : Ref[Double] = Ref::new(-1.0)
-  let second_uv_max_y : Ref[Double] = Ref::new(-1.0)
+  let extracted_count : Ref[Int] = Ref(0)
+  let first_uv_min_y : Ref[Double] = Ref(-1.0)
+  let first_uv_max_y : Ref[Double] = Ref(-1.0)
+  let second_uv_min_y : Ref[Double] = Ref(-1.0)
+  let second_uv_max_y : Ref[Double] = Ref(-1.0)
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
     .add_plugins(@render.RenderPlugin::default())

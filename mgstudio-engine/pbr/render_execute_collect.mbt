@@ -29,7 +29,7 @@ fn render3d_execute_collect_cameras(
     let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
     (hi << 32) | lo
   }
-  let projection_changed_entities = @hashset.HashSet::new()
+  let projection_changed_entities = @hashset.HashSet([])
   let sequence = source_world.get_sequence_context().sequence()
   for
     entity in source_world

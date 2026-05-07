@@ -5,8 +5,8 @@ priv struct ParsedVirtualAssetPath {
 }
 
 ///|
-let embedded_assets_ref : Ref[@hashmap.HashMap[String, Bytes]] = Ref::new(
-  @hashmap.HashMap::new(),
+let embedded_assets_ref : Ref[@hashmap.HashMap[String, Bytes]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|

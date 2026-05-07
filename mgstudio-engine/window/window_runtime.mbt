@@ -238,7 +238,7 @@ fn window_update_component(
 
 ///|
 fn window_primary_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(
     (@ecs.With::new(ecs_key_window), @ecs.With::new(ecs_key_primary_window)),
@@ -272,7 +272,7 @@ pub fn window_entity_for_host(
   world : @ecs.World,
   host_window : HostWindow,
 ) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(@ecs.With::new(ecs_key_window_runtime))
   .view(fn(_query_entity, entity) {
@@ -1778,7 +1778,7 @@ pub fn window_backend_prepare_system(world : @ecs.World) -> Unit {
     ignore(
       if (runtime_query.get(entity) catch { _ => None }) is Some(runtime_mut) {
         runtime_mut.modify(fn(runtime) {
-          let runtime_ref = Ref::new(runtime)
+          let runtime_ref = Ref(runtime)
           window_sync_observed_state(world, entity, runtime_ref)
         })
       },
@@ -1801,7 +1801,7 @@ pub fn window_backend_apply_changed_windows_system(world : @ecs.World) -> Unit {
     ignore(
       if (runtime_query.get(entity) catch { _ => None }) is Some(runtime_mut) {
         runtime_mut.modify(fn(runtime) {
-          let runtime_ref = Ref::new(runtime)
+          let runtime_ref = Ref(runtime)
           window_sync_requested_window_state(world, entity, runtime_ref)
         })
       },
@@ -1821,7 +1821,7 @@ pub fn window_take_changed_mode_requests(
     ignore(
       if (runtime_query.get(entity) catch { _ => None }) is Some(runtime_mut) {
         runtime_mut.modify(fn(runtime) {
-          let runtime_ref = Ref::new(runtime)
+          let runtime_ref = Ref(runtime)
           if window_component(world, entity) is Some(window) {
             if window.mode != runtime_ref.val.last_applied_mode {
               requests.push(
@@ -1852,7 +1852,7 @@ pub fn window_backend_apply_changed_cursor_options_system(
     ignore(
       if (runtime_query.get(entity) catch { _ => None }) is Some(runtime_mut) {
         runtime_mut.modify(fn(runtime) {
-          let runtime_ref = Ref::new(runtime)
+          let runtime_ref = Ref(runtime)
           window_sync_requested_cursor_state(world, entity, runtime_ref)
         })
       },

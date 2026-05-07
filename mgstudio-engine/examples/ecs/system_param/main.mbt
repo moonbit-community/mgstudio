@@ -82,8 +82,8 @@ impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCo
   P1,
 ] with get(state) {
   let (players_state, count_state) = player_counter_decode_state(state)
-  let players_state_ref = Ref::new(players_state)
-  let count_state_ref = Ref::new(count_state)
+  let players_state_ref = Ref(players_state)
+  let count_state_ref = Ref(count_state)
   PlayerCounter::{
     players: P0::get(players_state_ref),
     count: P1::get(count_state_ref),

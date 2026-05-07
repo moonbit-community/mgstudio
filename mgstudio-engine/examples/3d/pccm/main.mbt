@@ -35,7 +35,7 @@ priv struct PccmState {
 }
 
 ///|
-let pccm_state : Ref[PccmState] = Ref::new({
+let pccm_state : Ref[PccmState] = Ref({
   pccm_enabled: PccmEnableStatus::Enabled,
   light_probe: None,
   help_text: None,

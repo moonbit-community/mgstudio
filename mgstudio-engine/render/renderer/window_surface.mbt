@@ -49,7 +49,7 @@ fn window_surface_runtime_state_default() -> WindowSurfaceRuntimeState {
 }
 
 ///|
-let window_surface_runtime_state_ref : Ref[WindowSurfaceRuntimeState] = Ref::new(
+let window_surface_runtime_state_ref : Ref[WindowSurfaceRuntimeState] = Ref(
   window_surface_runtime_state_default(),
 )
 
@@ -100,7 +100,7 @@ fn find_surface_binding_by_window(window : Int) -> SurfaceBinding? {
 fn remove_frame_binding(frame_id : NativeGpuFrame) -> NativeGpuSurface? {
   let state = window_surface_runtime_state_ref.val
   let next : Array[FrameBinding] = []
-  let found : Ref[NativeGpuSurface?] = Ref::new(None)
+  let found : Ref[NativeGpuSurface?] = Ref(None)
   for binding in state.frames {
     if binding.frame_id == frame_id {
       found.val = Some(binding.surface_id)

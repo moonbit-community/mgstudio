@@ -77,7 +77,7 @@ test "app error handling: default handler captures fallible system body errors" 
 ///|
 test "app error handling: missing Res routes invalid validation through default handler" {
   let kinds : Array[ErrorContextKind] = []
-  let ran = Ref::new(false)
+  let ran = Ref(false)
   let mut app = App::new(@ecs.World::new())
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_systems(
@@ -99,7 +99,7 @@ test "app error handling: missing Res routes invalid validation through default 
 ///|
 test "app error handling: skipped validated params do not invoke error handlers" {
   let errors : Array[String] = []
-  let ran = Ref::new(false)
+  let ran = Ref(false)
   let mut app = App::new(@ecs.World::new())
     .set_error_handler(fn(error, _context) { errors.push(error.to_string()) })
     .add_systems(
@@ -121,8 +121,8 @@ test "app error handling: skipped validated params do not invoke error handlers"
 
 ///|
 test "app error handling: per-system handler captures body errors" {
-  let default_count = Ref::new(0)
-  let local_count = Ref::new(0)
+  let default_count = Ref(0)
+  let local_count = Ref(0)
   let local_kinds : Array[ErrorContextKind] = []
   let mut app = App::new(@ecs.World::new())
     .set_error_handler(fn(_error, _context) {

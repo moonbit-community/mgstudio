@@ -54,7 +54,7 @@ pub fn render3d_mesh_runtime_state_ref_or_abort(
 ) -> Ref[Render3dMeshRuntimeState] {
   ensure_render3d_mesh_runtime_state_resource(world)
   match (try! world.get_resource_mut(Render3dMeshRuntimeState::resource())) {
-    Some(state) => Ref::new(state.peek())
+    Some(state) => Ref(state.peek())
     None => abort("Missing Render3dMeshRuntimeState resource in render world")
   }
 }

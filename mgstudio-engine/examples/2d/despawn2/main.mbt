@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-let despawn2_state : Ref[(Int, @core.Entity?)] = Ref::new((0, None))
+let despawn2_state : Ref[(Int, @core.Entity?)] = Ref((0, None))
 
 ///|
 fn main {

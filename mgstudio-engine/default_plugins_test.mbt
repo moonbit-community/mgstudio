@@ -226,7 +226,7 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
     }),
   )
 
-  let primary_window_entity = Ref::new(None)
+  let primary_window_entity = Ref(None)
   try! app
   .world()
   .query_entities_filtered(
@@ -333,10 +333,10 @@ test "default plugins: register_asset_source adds a named Bevy-style extra sourc
 
 ///|
 test "default plugins: register_asset_source can wrap source reader callbacks" {
-  let reads : Ref[Array[String]] = Ref::new([])
-  let metas : Ref[Array[String]] = Ref::new([])
-  let directories : Ref[Array[String]] = Ref::new([])
-  let dir_checks : Ref[Array[String]] = Ref::new([])
+  let reads : Ref[Array[String]] = Ref([])
+  let metas : Ref[Array[String]] = Ref([])
+  let directories : Ref[Array[String]] = Ref([])
+  let dir_checks : Ref[Array[String]] = Ref([])
 
   let app = @asset.register_asset_source(
     @app.App::new(@ecs.World::new()),
@@ -411,7 +411,7 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
 
 ///|
 test "default plugins: register_asset_source can wrap the default source reader" {
-  let reads : Ref[Array[String]] = Ref::new([])
+  let reads : Ref[Array[String]] = Ref([])
 
   let app = @asset.register_asset_source(
     @app.App::new(@ecs.World::new()),

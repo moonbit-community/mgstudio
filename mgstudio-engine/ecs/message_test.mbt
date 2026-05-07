@@ -47,7 +47,7 @@ test "ecs message: mutator reads unread messages as in-place refs" {
   ignore(writer.write({ value: 1 }))
   ignore(writer.write({ value: 2 }))
 
-  let cursor = Ref::new(0)
+  let cursor = Ref(0)
   let mutator = world.message_mutator(key, cursor)
   let unread = try! mutator.read()
   debug_inspect(unread.length(), content="2")
@@ -55,7 +55,7 @@ test "ecs message: mutator reads unread messages as in-place refs" {
   unread[1].value = unread[1].value + 18
   debug_inspect(mutator.is_empty(), content="true")
 
-  let reader = world.message_reader(key, Ref::new(0))
+  let reader = world.message_reader(key, Ref(0))
   let messages = try! reader.read()
   debug_inspect(messages[0].value, content="10")
   debug_inspect(messages[1].value, content="20")
@@ -70,7 +70,7 @@ test "ecs message: writer write_default sends default message" {
   let writer = world.message_writer(key)
   ignore(writer.write_default())
 
-  let reader = world.message_reader(key, Ref::new(0))
+  let reader = world.message_reader(key, Ref(0))
   let messages = try! reader.read()
   debug_inspect(messages.length(), content="1")
   debug_inspect(messages[0].value, content="42")

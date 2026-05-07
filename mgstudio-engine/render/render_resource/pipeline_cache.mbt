@@ -23,7 +23,7 @@ pub struct PipelineCache {
 
 ///|
 pub fn PipelineCache::new() -> PipelineCache {
-  PipelineCache::{ render_pipelines: Map::new(), compute_pipelines: Map::new() }
+  PipelineCache::{ render_pipelines: Map([]), compute_pipelines: Map([]) }
 }
 
 ///|

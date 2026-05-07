@@ -32,7 +32,7 @@ priv struct SpotlightState {
 }
 
 ///|
-let spotlight_state : Ref[SpotlightState] = Ref::new({
+let spotlight_state : Ref[SpotlightState] = Ref({
   movables: [],
   spotlights: [],
   camera: None,

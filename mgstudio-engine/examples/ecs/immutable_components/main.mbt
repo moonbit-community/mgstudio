@@ -66,7 +66,7 @@ fn rename_one_entity(world : @ecs.World) -> Unit {
   let query : @ecs.Query[(@core.Entity, @ecs.Comp[Name]), @ecs.All] = @ecs.query(
     world,
   )
-  let renamed : Ref[Bool] = Ref::new(false)
+  let renamed : Ref[Bool] = Ref(false)
   try! query.view(fn(_query_entity, data) {
     if renamed.val {
       return

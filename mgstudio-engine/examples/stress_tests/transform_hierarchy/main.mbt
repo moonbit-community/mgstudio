@@ -80,7 +80,7 @@ fn spawn_tree(
     ),
   )
 
-  let added_nodes = Ref::new(1)
+  let added_nodes = Ref(1)
   let mut visible_count = 1
   let mut parents = [root]
   for depth in 1..<(TREE_DEPTH + 1) {

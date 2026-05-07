@@ -193,7 +193,7 @@ priv enum SystemExecutionOutcome {
 }
 
 ///|
-let current_system_execution_outcome_ref : Ref[SystemExecutionOutcome] = Ref::new(
+let current_system_execution_outcome_ref : Ref[SystemExecutionOutcome] = Ref(
   Success,
 )
 

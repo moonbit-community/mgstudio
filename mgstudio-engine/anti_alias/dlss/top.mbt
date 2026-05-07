@@ -212,7 +212,7 @@ pub impl @app.Plugin for DlssPlugin with name(_self) {
 }
 
 ///|
-let dlss_required_components_installed : Ref[Bool] = Ref::new(false)
+let dlss_required_components_installed : Ref[Bool] = Ref(false)
 
 ///|
 pub fn install_dlss_required_components() -> Unit {

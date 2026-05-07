@@ -130,8 +130,8 @@ fn asset_source_builder_registry_for_world(
   let key = asset_source_builder_registry_resource_key()
   if (try! world.get_resource(key)) is None {
     world.insert_resource(key, AssetSourceBuilderRegistryState::{
-      named_builders: Ref::new(@hashmap.HashMap::new()),
-      default_builder: Ref::new(None),
+      named_builders: Ref(@hashmap.HashMap([])),
+      default_builder: Ref(None),
     })
   }
   match (try! world.get_resource(key)) {

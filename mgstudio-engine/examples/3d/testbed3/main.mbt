@@ -18,7 +18,7 @@ priv struct Testbed3State {
 }
 
 ///|
-let testbed3_state : Ref[Testbed3State] = Ref::new({ spawned: [] })
+let testbed3_state : Ref[Testbed3State] = Ref({ spawned: [] })
 
 ///|
 fn main {

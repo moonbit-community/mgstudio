@@ -22,7 +22,7 @@ pub struct TerminalCtrlCHandlerPlugin {}
 const TERMINAL_CTRL_C_EXIT_CODE : Int = 130
 
 ///|
-let terminal_ctrl_c_close_count_ref : Ref[Int] = Ref::new(0)
+let terminal_ctrl_c_close_count_ref : Ref[Int] = Ref(0)
 
 ///|
 pub fn TerminalCtrlCHandlerPlugin::default() -> TerminalCtrlCHandlerPlugin {

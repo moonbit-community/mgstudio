@@ -41,7 +41,7 @@ priv struct SpatialAudio2dState {
 }
 
 ///|
-let spatial_audio_2d_state : Ref[SpatialAudio2dState] = Ref::new({
+let spatial_audio_2d_state : Ref[SpatialAudio2dState] = Ref({
   emitter: @core.Entity::placeholder(),
   listener: @core.Entity::placeholder(),
   emitter_stopwatch: @time.Stopwatch::new(),

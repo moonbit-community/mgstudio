@@ -21,7 +21,7 @@ priv struct WireframeState {
 }
 
 ///|
-let wireframe_state : Ref[WireframeState] = Ref::new({ controls_text: None })
+let wireframe_state : Ref[WireframeState] = Ref({ controls_text: None })
 
 ///|
 fn color_white() -> @sprite.Color {

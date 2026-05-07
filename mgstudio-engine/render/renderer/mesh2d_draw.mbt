@@ -510,7 +510,7 @@ fn load_wgsl_with_defines_required_mesh2d_material(
   fragment_shader_path : String?,
   define_keys : Array[String],
 ) -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   for key in define_keys {
     defines.set(key, true)
   }

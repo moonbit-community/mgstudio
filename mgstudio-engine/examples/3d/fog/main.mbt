@@ -29,7 +29,7 @@ priv struct FogExampleState {
 }
 
 ///|
-let fog_example_state : Ref[FogExampleState] = Ref::new({
+let fog_example_state : Ref[FogExampleState] = Ref({
   camera: None,
   help_text: None,
   fog: @pbr.DistanceFog::default(),

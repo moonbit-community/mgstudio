@@ -258,124 +258,117 @@ fn contains_int(items : Array[Int], value : Int) -> Bool {
 }
 
 ///|
-let open_window_ids_ref : Ref[Array[Int]] = Ref::new([])
+let open_window_ids_ref : Ref[Array[Int]] = Ref([])
 
 ///|
-let closed_window_ids_ref : Ref[Array[Int]] = Ref::new([])
+let closed_window_ids_ref : Ref[Array[Int]] = Ref([])
 
 ///|
-let key_down_ref : Ref[Array[Bool]] = Ref::new(new_bool_state(KEY_COUNT))
+let key_down_ref : Ref[Array[Bool]] = Ref(new_bool_state(KEY_COUNT))
 
 ///|
-let key_just_pressed_ref : Ref[Array[Bool]] = Ref::new(
-  new_bool_state(KEY_COUNT),
-)
+let key_just_pressed_ref : Ref[Array[Bool]] = Ref(new_bool_state(KEY_COUNT))
 
 ///|
-let key_just_released_ref : Ref[Array[Bool]] = Ref::new(
-  new_bool_state(KEY_COUNT),
-)
+let key_just_released_ref : Ref[Array[Bool]] = Ref(new_bool_state(KEY_COUNT))
 
 ///|
-let key_repeated_ref : Ref[Array[Bool]] = Ref::new(new_bool_state(KEY_COUNT))
+let key_repeated_ref : Ref[Array[Bool]] = Ref(new_bool_state(KEY_COUNT))
 
 ///|
-let mouse_down_ref : Ref[Array[Bool]] = Ref::new(
+let mouse_down_ref : Ref[Array[Bool]] = Ref(new_bool_state(MOUSE_BUTTON_COUNT))
+
+///|
+let mouse_just_pressed_ref : Ref[Array[Bool]] = Ref(
   new_bool_state(MOUSE_BUTTON_COUNT),
 )
 
 ///|
-let mouse_just_pressed_ref : Ref[Array[Bool]] = Ref::new(
+let mouse_just_released_ref : Ref[Array[Bool]] = Ref(
   new_bool_state(MOUSE_BUTTON_COUNT),
 )
 
 ///|
-let mouse_just_released_ref : Ref[Array[Bool]] = Ref::new(
-  new_bool_state(MOUSE_BUTTON_COUNT),
+let has_cursor_ref : Ref[Bool] = Ref(false)
+
+///|
+let cursor_window_ref : Ref[Int] = Ref(-1)
+
+///|
+let cursor_entered_window_ref : Ref[Int] = Ref(-1)
+
+///|
+let cursor_left_window_ref : Ref[Int] = Ref(-1)
+
+///|
+let mouse_x_ref : Ref[Float] = Ref(0.0)
+
+///|
+let mouse_y_ref : Ref[Float] = Ref(0.0)
+
+///|
+let wheel_x_ref : Ref[Float] = Ref(0.0)
+
+///|
+let wheel_y_ref : Ref[Float] = Ref(0.0)
+
+///|
+let text_events_ref : Ref[Array[Bytes]] = Ref([])
+
+///|
+let keyboard_events_ref : Ref[Array[KeyboardEvent]] = Ref([])
+
+///|
+let ime_events_ref : Ref[Array[ImeEvent]] = Ref([])
+
+///|
+let drag_events_ref : Ref[Array[DragEvent]] = Ref([])
+
+///|
+let drag_hovered_path_ref : Ref[Bytes?] = Ref(None)
+
+///|
+let drag_hovered_window_ref : Ref[Int] = Ref(-1)
+
+///|
+let window_theme_events_ref : Ref[Array[WindowThemeEvent]] = Ref([])
+
+///|
+let window_occluded_events_ref : Ref[Array[WindowOccludedEvent]] = Ref([])
+
+///|
+let app_lifecycle_events_ref : Ref[Array[Int]] = Ref([])
+
+///|
+let pinch_gesture_events_ref : Ref[Array[ScalarGestureEvent]] = Ref([])
+
+///|
+let rotation_gesture_events_ref : Ref[Array[ScalarGestureEvent]] = Ref([])
+
+///|
+let pan_gesture_events_ref : Ref[Array[PanGestureEvent]] = Ref([])
+
+///|
+let double_tap_gesture_events_ref : Ref[Array[DoubleTapGestureEvent]] = Ref([])
+
+///|
+let raw_winit_window_events_ref : Ref[Array[RawWinitWindowEventSnapshot]] = Ref([],
 )
 
 ///|
-let has_cursor_ref : Ref[Bool] = Ref::new(false)
+let detached_accessibility_requested_ref : Ref[Bool] = Ref(false)
 
 ///|
-let cursor_window_ref : Ref[Int] = Ref::new(-1)
+let bound_accessibility_requested_ref : Ref[Ref[Bool]?] = Ref(None)
 
 ///|
-let cursor_entered_window_ref : Ref[Int] = Ref::new(-1)
+let pending_update_payload_ref : Ref[String?] = Ref(None)
 
 ///|
-let cursor_left_window_ref : Ref[Int] = Ref::new(-1)
+let last_update_payload_ref : Ref[String] = Ref("")
 
 ///|
-let mouse_x_ref : Ref[Float] = Ref::new(0.0)
-
-///|
-let mouse_y_ref : Ref[Float] = Ref::new(0.0)
-
-///|
-let wheel_x_ref : Ref[Float] = Ref::new(0.0)
-
-///|
-let wheel_y_ref : Ref[Float] = Ref::new(0.0)
-
-///|
-let text_events_ref : Ref[Array[Bytes]] = Ref::new([])
-
-///|
-let keyboard_events_ref : Ref[Array[KeyboardEvent]] = Ref::new([])
-
-///|
-let ime_events_ref : Ref[Array[ImeEvent]] = Ref::new([])
-
-///|
-let drag_events_ref : Ref[Array[DragEvent]] = Ref::new([])
-
-///|
-let drag_hovered_path_ref : Ref[Bytes?] = Ref::new(None)
-
-///|
-let drag_hovered_window_ref : Ref[Int] = Ref::new(-1)
-
-///|
-let window_theme_events_ref : Ref[Array[WindowThemeEvent]] = Ref::new([])
-
-///|
-let window_occluded_events_ref : Ref[Array[WindowOccludedEvent]] = Ref::new([])
-
-///|
-let app_lifecycle_events_ref : Ref[Array[Int]] = Ref::new([])
-
-///|
-let pinch_gesture_events_ref : Ref[Array[ScalarGestureEvent]] = Ref::new([])
-
-///|
-let rotation_gesture_events_ref : Ref[Array[ScalarGestureEvent]] = Ref::new([])
-
-///|
-let pan_gesture_events_ref : Ref[Array[PanGestureEvent]] = Ref::new([])
-
-///|
-let double_tap_gesture_events_ref : Ref[Array[DoubleTapGestureEvent]] = Ref::new([],
-)
-
-///|
-let raw_winit_window_events_ref : Ref[Array[RawWinitWindowEventSnapshot]] = Ref::new([],
-)
-
-///|
-let detached_accessibility_requested_ref : Ref[Bool] = Ref::new(false)
-
-///|
-let bound_accessibility_requested_ref : Ref[Ref[Bool]?] = Ref::new(None)
-
-///|
-let pending_update_payload_ref : Ref[String?] = Ref::new(None)
-
-///|
-let last_update_payload_ref : Ref[String] = Ref::new("")
-
-///|
-let pending_actions_ref : Ref[Array[@moon_accesskit.ActionRequest]] = Ref::new([])
+let pending_actions_ref : Ref[Array[@moon_accesskit.ActionRequest]] = Ref([])
 
 ///|
 priv struct NativeWindowEntry {
@@ -387,21 +380,21 @@ priv struct NativeWindowEntry {
 priv struct NativePumpHandler {}
 
 ///|
-let native_event_loop_ref : Ref[@window_macos.EventLoop?] = Ref::new(None)
+let native_event_loop_ref : Ref[@window_macos.EventLoop?] = Ref(None)
 
 ///|
-let event_loop_any_thread_ref : Ref[Bool] = Ref::new(false)
+let event_loop_any_thread_ref : Ref[Bool] = Ref(false)
 
 ///|
-let event_loop_any_thread_applied_ref : Ref[Bool] = Ref::new(false)
+let event_loop_any_thread_applied_ref : Ref[Bool] = Ref(false)
 
 ///|
-let native_pump_handler_ref : Ref[NativePumpHandler] = Ref::new(NativePumpHandler::{
+let native_pump_handler_ref : Ref[NativePumpHandler] = Ref(NativePumpHandler::{
 
 })
 
 ///|
-let native_windows_ref : Ref[Array[NativeWindowEntry]] = Ref::new([])
+let native_windows_ref : Ref[Array[NativeWindowEntry]] = Ref([])
 
 ///|
 fn remove_int(items : Array[Int], value : Int) -> Unit {
@@ -1332,7 +1325,7 @@ pub fn create_utf8(
   let window = native_window.id().into_raw()
   native_windows_ref.val.push(NativeWindowEntry::{
     id: window,
-    window_ref: Ref::new(native_window),
+    window_ref: Ref(native_window),
   })
   mark_window_open(window)
   window

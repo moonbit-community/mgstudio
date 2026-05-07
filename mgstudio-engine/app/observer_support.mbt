@@ -79,7 +79,7 @@ fn register_observer_system_in_sub_app(
   system : SystemFn[@ecs.World],
 ) -> SubApp[@ecs.World] {
   let observer_system = system
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
   register(sub_app, fn(world : @ecs.World) {
     run_registered_observer_system(
       world,
@@ -102,7 +102,7 @@ fn register_entity_observer_command(
     run: fn(world : @ecs.World, _sequence : @core.Sequence) {
       guard world.is_alive(entity) else { return }
       let observer_system = system
-      let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+      let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
       register(world, entity, fn(observer_world : @ecs.World) {
         run_registered_observer_system(
           observer_world,
@@ -423,7 +423,7 @@ pub fn[E : @ecs.TriggerEvent] observe_entity(
   observer : (@ecs.On[E]) -> Unit,
 ) -> Unit {
   let observer_system = system_param(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
@@ -443,7 +443,7 @@ pub fn[E : @ecs.TriggerEvent] observe_entity_fallible(
   observer : (@ecs.On[E]) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
@@ -463,7 +463,7 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] observe_entity2(
   observer : (@ecs.On[E], P2) -> Unit,
 ) -> Unit {
   let observer_system = system_param2(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
@@ -483,7 +483,7 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] observe_entity2_fallible(
   observer : (@ecs.On[E], P2) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param2(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
@@ -503,7 +503,7 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] observe_entity
   observer : (@ecs.On[E], P2, P3) -> Unit,
 ) -> Unit {
   let observer_system = system_param3(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
@@ -523,7 +523,7 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] observe_entity
   observer : (@ecs.On[E], P2, P3) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param3(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
@@ -548,7 +548,7 @@ pub fn[
   observer : (@ecs.On[E], P2, P3, P4) -> Unit,
 ) -> Unit {
   let observer_system = system_param4(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
@@ -573,7 +573,7 @@ pub fn[
   observer : (@ecs.On[E], P2, P3, P4) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param4(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(

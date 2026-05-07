@@ -47,7 +47,7 @@ fn spawn_system(
   |> ignore
 
   let texture = asset_server.get().load_image("branding/icon.png")
-  let rng_seed : Ref[Int] = Ref::new(1258831081)
+  let rng_seed : Ref[Int] = Ref(1258831081)
   for z in 0..<128 {
     let velocity = @math.Vec2::new(
       deterministic_random_unit(rng_seed) - 0.5F,

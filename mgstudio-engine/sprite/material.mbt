@@ -32,11 +32,11 @@ pub struct RenderMaterial2dInstances[M] {
 ///|
 let render_material2d_instances_resource_registry : Ref[
   @hashmap.HashMap[String, @any.Any],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 pub fn[M] RenderMaterial2dInstances::new() -> RenderMaterial2dInstances[M] {
-  RenderMaterial2dInstances::{ instances: @hashmap.HashMap::new() }
+  RenderMaterial2dInstances::{ instances: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -420,7 +420,7 @@ pub fn[M] PreparedMaterial2d::prepared_handle(
 ///|
 let material2d_pipeline_resource_registry : Ref[
   @hashmap.HashMap[String, @any.Any],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 fn[M] registered_material2d_pipeline_resource_key() -> @ecs.ResourceKey[
@@ -1072,7 +1072,7 @@ fn[M : Material2d] prepare_material2d_assets_system(
     is Some(prepared_assets) else {
     return
   }
-  let prepared_ids : @hashset.HashSet[Int] = @hashset.HashSet::new()
+  let prepared_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
   for _, material_handle in instances.instances {
     let material_id = material_handle.id()
     if prepared_ids.contains(material_id) {

@@ -14,7 +14,7 @@
 
 ///|
 test "app: timeline trace captures schedule stage and system spans" {
-  let spans : Ref[Array[TimelineTraceSpan]] = Ref::new([])
+  let spans : Ref[Array[TimelineTraceSpan]] = Ref([])
   set_timeline_trace_span_sink(Some(fn(span) { spans.val.push(span) }))
 
   let mut app = App::new(@ecs.World::new())

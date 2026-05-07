@@ -57,7 +57,7 @@ fn finish_off_first(
   commands : @app.Commands,
   query : @ecs.Query[@ecs.Mut[Health], @ecs.All],
 ) -> Unit {
-  let finished = Ref::new(false)
+  let finished = Ref(false)
   try! query.view(fn(entity, health) {
     if finished.val {
       return

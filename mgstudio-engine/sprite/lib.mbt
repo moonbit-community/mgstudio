@@ -29,8 +29,8 @@ let ecs_res_key_sprite_plugin_marker : @ecs.ResourceKey[SpritePluginMarker] = @e
 )
 
 ///|
-let sprite_bounds_initialized_worlds_ref : Ref[@hashset.HashSet[Int]] = Ref::new(
-  @hashset.HashSet::new(),
+let sprite_bounds_initialized_worlds_ref : Ref[@hashset.HashSet[Int]] = Ref(
+  @hashset.HashSet([]),
 )
 
 ///|
@@ -223,9 +223,11 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
     sprite_bounds_initialized_worlds_ref.val.add(world_id)
   }
   let pending_aabbs : Array[(@core.Entity, @camera_primitives.Aabb)] = []
-  let changed_mesh2d_entities : @hashset.HashSet[UInt64] = @hashset.HashSet::new()
-  let changed_sprite_or_anchor_entities : @hashset.HashSet[UInt64] = @hashset.HashSet::new()
-  let changed_sprite_mesh_or_anchor_entities : @hashset.HashSet[UInt64] = @hashset.HashSet::new()
+  let changed_mesh2d_entities : @hashset.HashSet[UInt64] = @hashset.HashSet([])
+  let changed_sprite_or_anchor_entities : @hashset.HashSet[UInt64] = @hashset.HashSet([],
+  )
+  let changed_sprite_mesh_or_anchor_entities : @hashset.HashSet[UInt64] = @hashset.HashSet([],
+  )
   if !first_run {
     let sequence = world.get_sequence_context().sequence()
     for entity in world.added_components(@mesh.ecs_key_mesh2d, sequence).read() {

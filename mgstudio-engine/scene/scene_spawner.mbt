@@ -846,7 +846,7 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
   }
 
   if modified_scene_ids.length() > 0 {
-    let modified_scene_id_set : @hashset.HashSet[Int] = @hashset.HashSet::new()
+    let modified_scene_id_set : @hashset.HashSet[Int] = @hashset.HashSet([])
     for scene_id in modified_scene_ids {
       modified_scene_id_set.add(scene_id)
     }

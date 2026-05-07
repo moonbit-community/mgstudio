@@ -22,7 +22,7 @@ fn main {
 
 ///|
 fn primary_window_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(
     (

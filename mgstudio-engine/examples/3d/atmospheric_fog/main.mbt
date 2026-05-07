@@ -73,7 +73,7 @@ priv struct AtmosphericFogState {
 }
 
 ///|
-let atmospheric_fog_state : Ref[AtmosphericFogState] = Ref::new({
+let atmospheric_fog_state : Ref[AtmosphericFogState] = Ref({
   camera: None,
   fog_enabled: true,
   directional_influence_enabled: true,

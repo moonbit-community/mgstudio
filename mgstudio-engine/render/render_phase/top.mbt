@@ -38,7 +38,7 @@ let ecs_key_render_pass_trace_runtime_state : @ecs.ResourceKey[
 )
 
 ///|
-let render_pass_trace_fallback_state_ref : Ref[RenderPassTraceRuntimeState] = Ref::new(
+let render_pass_trace_fallback_state_ref : Ref[RenderPassTraceRuntimeState] = Ref(
   render_pass_trace_runtime_state_default(),
 )
 

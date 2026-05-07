@@ -54,7 +54,7 @@ pub struct LevelSet {
 
 ///|
 pub fn LevelSet::new(iids : Array[LevelIid]) -> LevelSet {
-  let seen : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let seen : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   let deduped : Array[LevelIid] = []
   for iid in iids {
     if !seen.contains(iid.get()) {

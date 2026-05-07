@@ -20,7 +20,7 @@ priv struct BallState {
 }
 
 ///|
-let ball_state : Ref[BallState] = Ref::new({
+let ball_state : Ref[BallState] = Ref({
   balls_spawned: 0,
   max_balls: 10,
   timer: 2.0F,

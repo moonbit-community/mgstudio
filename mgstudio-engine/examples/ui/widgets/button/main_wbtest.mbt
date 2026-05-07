@@ -70,7 +70,7 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
   setup(world)
   seed_ui_context(world)
 
-  let camera_count = Ref::new(0)
+  let camera_count = Ref(0)
   world.for_each_component(@sprite.ecs_key_camera2d, fn(_entity, _camera) {
     camera_count.val = camera_count.val + 1
   })

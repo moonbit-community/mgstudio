@@ -21,7 +21,7 @@
 /// Expected:
 /// - When the parent is Hidden, the child sprite is not drawn.
 /// - When the parent is Visible, the child sprite is drawn.
-let parent_entity_state : Ref[@core.Entity?] = Ref::new(None)
+let parent_entity_state : Ref[@core.Entity?] = Ref(None)
 
 ///|
 fn main {

@@ -688,7 +688,7 @@ pub fn[K : Hash + Eq, V] RenderStorage::get(Self[K, V], K) -> V?
 pub fn[K : Hash + Eq, V] RenderStorage::insert(Self[K, V], K, V) -> Unit
 pub fn[K, V] RenderStorage::is_empty(Self[K, V]) -> Bool
 pub fn[K, V] RenderStorage::len(Self[K, V]) -> Int
-pub fn[K, V] RenderStorage::new() -> Self[K, V]
+pub fn[K : Hash + Eq, V] RenderStorage::new() -> Self[K, V]
 pub fn[K : Hash + Eq, V] RenderStorage::remove(Self[K, V], K) -> V?
 
 pub struct SortedCameras {

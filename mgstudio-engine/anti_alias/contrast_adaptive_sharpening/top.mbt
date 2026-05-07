@@ -119,9 +119,7 @@ pub let ecs_key_cas_runtime_state : @ecs.ResourceKey[CasRuntimeState] = @ecs.reg
 )
 
 ///|
-let cas_camera_component_key_ref : Ref[@ecs.ComponentKey[Unit]?] = Ref::new(
-  None,
-)
+let cas_camera_component_key_ref : Ref[@ecs.ComponentKey[Unit]?] = Ref(None)
 
 ///|
 pub fn[T] cas_register_camera_component_key(key : @ecs.ComponentKey[T]) -> Unit {

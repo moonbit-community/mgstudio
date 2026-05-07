@@ -13,10 +13,10 @@
 // limitations under the License.
 
 ///|
-let gilrs_ref : Ref[@gamepad.Gil?] = Ref::new(None)
+let gilrs_ref : Ref[@gamepad.Gil?] = Ref(None)
 
 ///|
-let connected_gamepad_ids_ref : Ref[Array[Int]] = Ref::new([])
+let connected_gamepad_ids_ref : Ref[Array[Int]] = Ref([])
 
 ///|
 fn ensure_gilrs() -> @gamepad.Gil {
@@ -69,13 +69,13 @@ pub struct GamepadRumbleCommand {
 }
 
 ///|
-let record_gamepad_rumble_commands_ref : Ref[Bool] = Ref::new(false)
+let record_gamepad_rumble_commands_ref : Ref[Bool] = Ref(false)
 
 ///|
-let gamepad_test_ff_supported_override_ref : Ref[Bool?] = Ref::new(None)
+let gamepad_test_ff_supported_override_ref : Ref[Bool?] = Ref(None)
 
 ///|
-let recorded_gamepad_rumble_commands_ref : Ref[Array[GamepadRumbleCommand]] = Ref::new([],
+let recorded_gamepad_rumble_commands_ref : Ref[Array[GamepadRumbleCommand]] = Ref([],
 )
 
 ///|

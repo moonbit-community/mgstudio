@@ -16,8 +16,8 @@
 test "app: current_world is only available during system execution" {
   debug_inspect(current_world() is None, content="true")
 
-  let observed_world_id : Ref[Int] = Ref::new(-1)
-  let observed_stage : Ref[String] = Ref::new("missing")
+  let observed_world_id : Ref[Int] = Ref(-1)
+  let observed_stage : Ref[String] = Ref("missing")
   let world = @ecs.World::new()
   let world_id = world.world_id()
   let app = App::new(world).add_system(fn(_world : @ecs.World) {

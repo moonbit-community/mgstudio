@@ -26,12 +26,12 @@ pub fn SceneFilter::default() -> SceneFilter {
 
 ///|
 pub fn SceneFilter::allow_all() -> SceneFilter {
-  SceneFilter::Denylist(@hashmap.HashMap::new())
+  SceneFilter::Denylist(@hashmap.HashMap([]))
 }
 
 ///|
 pub fn SceneFilter::deny_all() -> SceneFilter {
-  SceneFilter::Allowlist(@hashmap.HashMap::new())
+  SceneFilter::Allowlist(@hashmap.HashMap([]))
 }
 
 ///|
@@ -51,7 +51,7 @@ fn scene_filter_allow_token(
 ) -> SceneFilter {
   match filter {
     SceneFilter::Unset => {
-      let entries : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+      let entries : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
       entries.set(token, true)
       SceneFilter::Allowlist(entries)
     }
@@ -70,7 +70,7 @@ fn scene_filter_allow_token(
 fn scene_filter_deny_token(filter : SceneFilter, token : String) -> SceneFilter {
   match filter {
     SceneFilter::Unset => {
-      let entries : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+      let entries : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
       entries.set(token, true)
       SceneFilter::Denylist(entries)
     }

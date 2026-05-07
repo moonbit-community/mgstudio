@@ -474,7 +474,7 @@ fn query_sparse_anchor_count_matching(
     return 0
   }
   let store = store_ref.val
-  let count = Ref::new(0)
+  let count = Ref(0)
   for index in 0..<store.len() {
     let entity = store.entity_at(index)
     guard world.entity_archetype_id(entity) is Some(archetype_id) else {
@@ -498,7 +498,7 @@ fn[D : QueryData] query_sparse_anchor_single_matching(
     return None
   }
   let store = store_ref.val
-  let found_index = Ref::new(-1)
+  let found_index = Ref(-1)
   for index in 0..<store.len() {
     let entity = store.entity_at(index)
     guard world.entity_archetype_id(entity) is Some(archetype_id) else {
@@ -680,7 +680,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
     !filter_requires_entity_check {
     let dense_table_groups = self.matching_dense_table_groups()
     if dense_table_groups.length() > 0 {
-      let count = Ref::new(0)
+      let count = Ref(0)
       for table_group in dense_table_groups {
         for archetype_id in table_group {
           count.val = count.val +
@@ -705,7 +705,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
         )
       _ => ()
     }
-    let count = Ref::new(0)
+    let count = Ref(0)
     for archetype_id in matched_archetypes {
       count.val = count.val + self.world.archetype_entity_count(archetype_id)
     }
@@ -732,9 +732,9 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
     !filter_requires_entity_check {
     let dense_table_groups = self.matching_dense_table_groups()
     if dense_table_groups.length() > 0 {
-      let found : Ref[@core.Entity?] = Ref::new(None)
-      let found_table_id = Ref::new(-1)
-      let found_row_index = Ref::new(-1)
+      let found : Ref[@core.Entity?] = Ref(None)
+      let found_table_id = Ref(-1)
+      let found_row_index = Ref(-1)
       for table_group in dense_table_groups {
         for archetype_id in table_group {
           guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
@@ -792,7 +792,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
           )
         _ => ()
       }
-      let found : Ref[@core.Entity?] = Ref::new(None)
+      let found : Ref[@core.Entity?] = Ref(None)
       for archetype_id in matched_archetypes {
         match self.world.archetype_entities_view(archetype_id) {
           Some(entities) =>
@@ -1231,7 +1231,7 @@ fn[F : QueryFilter] QueryCache::query_matching_archetypes(
     world,
   )
   let matched_archetypes_added : Array[Int] = []
-  let matched_archetypes_reset = Ref::new(false)
+  let matched_archetypes_reset = Ref(false)
   if matching_metadata_changed {
     let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
     let (matched_archetypes, matched_archetype_bits) = query_collect_matching_archetypes(
@@ -1417,9 +1417,9 @@ fn query_archetype_delta(
   current : Array[Int],
   added : Array[Int],
 ) -> Bool {
-  let previous_index = Ref::new(0)
-  let current_index = Ref::new(0)
-  let removed = Ref::new(false)
+  let previous_index = Ref(0)
+  let current_index = Ref(0)
+  let removed = Ref(false)
   while previous_index.val < previous.length() &&
         current_index.val < current.length() {
     let previous_id = previous[previous_index.val]
@@ -1779,9 +1779,9 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
     !filter_requires_entity_check {
     let dense_table_groups = self.query_matching_table_groups(world)
     if dense_table_groups.length() > 0 {
-      let found : Ref[@core.Entity?] = Ref::new(None)
-      let found_table_id = Ref::new(-1)
-      let found_row_index = Ref::new(-1)
+      let found : Ref[@core.Entity?] = Ref(None)
+      let found_table_id = Ref(-1)
+      let found_row_index = Ref(-1)
       for table_group in dense_table_groups {
         for archetype_id in table_group {
           guard world.archetype_table_id(archetype_id) is Some(table_id) else {
@@ -1836,7 +1836,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
           )
         _ => ()
       }
-      let found : Ref[@core.Entity?] = Ref::new(None)
+      let found : Ref[@core.Entity?] = Ref(None)
       for archetype_id in matched_archetypes {
         match world.archetype_entities_view(archetype_id) {
           Some(entities) =>
@@ -1891,7 +1891,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::count(
     !filter_requires_entity_check {
     let dense_table_groups = self.query_matching_table_groups(world)
     if dense_table_groups.length() > 0 {
-      let count = Ref::new(0)
+      let count = Ref(0)
       for table_group in dense_table_groups {
         for archetype_id in table_group {
           count.val = count.val + world.archetype_entity_count(archetype_id)
@@ -1912,7 +1912,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::count(
         )
       _ => ()
     }
-    let count = Ref::new(0)
+    let count = Ref(0)
     for archetype_id in matched_archetypes {
       count.val = count.val + world.archetype_entity_count(archetype_id)
     }
@@ -2082,7 +2082,7 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_archetypes(
     world,
   )
   let matched_archetypes_added : Array[Int] = []
-  let matched_archetypes_reset = Ref::new(false)
+  let matched_archetypes_reset = Ref(false)
   if matching_metadata_changed {
     let default_filter_local_component_ids = self.cached_default_filter_local_component_ids
     let (matched_archetypes, matched_archetype_bits) = query_collect_matching_archetypes(
@@ -2547,7 +2547,7 @@ fn[F : QueryFilter] query_default_filter_component_ids_for_query(
 fn query_require_unique_entities(
   entities : Array[@core.Entity],
 ) -> Unit raise EcsError {
-  let seen : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+  let seen : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
   for entity in entities {
     let key = (entity.id, entity.generation)
     if seen.contains(key) {

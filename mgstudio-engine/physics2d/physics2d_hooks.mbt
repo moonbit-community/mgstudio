@@ -68,7 +68,7 @@ pub fn Physics2dHooksConfig::default() -> Physics2dHooksConfig {
 ///|
 let physics2d_hook_collider_to_entity : Ref[
   @hashmap.HashMap[(Int, Int), @core.Entity],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 pub fn physics2d_hooks_config(world : @ecs.World) -> Physics2dHooksConfig {
@@ -215,7 +215,7 @@ pub fn physics2d_hooks_set_current_collider_map(
 
 ///|
 pub fn physics2d_hooks_clear_current_collider_map() -> Unit {
-  physics2d_hook_collider_to_entity.val = @hashmap.HashMap::new()
+  physics2d_hook_collider_to_entity.val = @hashmap.HashMap([])
 }
 
 ///|

@@ -37,15 +37,15 @@ struct ShaderData[ShaderModule, ShaderId] {
 }
 
 ///|
-pub fn[ShaderModule, ShaderId] ShaderData::default() -> ShaderData[
+pub fn[ShaderModule, ShaderId : Hash + Eq] ShaderData::default() -> ShaderData[
   ShaderModule,
   ShaderId,
 ] {
   {
-    pipelines: @hashset.HashSet::new(),
-    processed_shaders: @hashmap.HashMap::new(),
-    resolved_imports: @hashmap.HashMap::new(),
-    dependents: @hashset.HashSet::new(),
+    pipelines: @hashset.HashSet([]),
+    processed_shaders: @hashmap.HashMap([]),
+    resolved_imports: @hashmap.HashMap([]),
+    dependents: @hashset.HashSet([]),
   }
 }
 
@@ -314,12 +314,12 @@ pub fn[ShaderModule, RenderDevice] ShaderCache::new(
   {
     device,
     load_module,
-    data: @hashmap.HashMap::new(),
-    shaders: @hashmap.HashMap::new(),
-    import_path_shaders: @hashmap.HashMap::new(),
-    waiting_on_import: @hashmap.HashMap::new(),
+    data: @hashmap.HashMap([]),
+    shaders: @hashmap.HashMap([]),
+    import_path_shaders: @hashmap.HashMap([]),
+    waiting_on_import: @hashmap.HashMap([]),
     composer: @wgsl_compose.Composer::default(),
-    module_path_to_asset_id: @hashmap.HashMap::new(),
+    module_path_to_asset_id: @hashmap.HashMap([]),
   }
 }
 

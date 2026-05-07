@@ -37,7 +37,7 @@ fn winit_should_update_accessibility_nodes(world : @ecs.World) -> Bool {
 ///|
 fn winit_primary_window(world : @ecs.World) -> (@core.Entity, @window.Window)? {
   let out : (@core.Entity, @window.Window)? = None
-  let out_ref = Ref::new(out)
+  let out_ref = Ref(out)
   world.for_each_component(@window.ecs_key_primary_window, fn(
     entity,
     _primary,

@@ -120,7 +120,7 @@ priv struct LightProbeBlendingState {
 }
 
 ///|
-let light_probe_blending_state : Ref[LightProbeBlendingState] = Ref::new({
+let light_probe_blending_state : Ref[LightProbeBlendingState] = Ref({
   camera: None,
   sphere: None,
   prism: None,

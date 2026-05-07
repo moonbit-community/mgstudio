@@ -136,7 +136,7 @@ pub fn render3d_world_transform_cache_ref(
     )
   }
   match (try! world.get_resource_mut(Render3dWorldTransformCache::resource())) {
-    Some(cache_ref) => Ref::new(cache_ref.peek())
+    Some(cache_ref) => Ref(cache_ref.peek())
     None => abort("Missing Render3dWorldTransformCache resource")
   }
 }

@@ -52,13 +52,14 @@ pub struct ComponentMetadataBuilder[T] {
 }
 
 ///|
-let component_metadata_registry : @hashmap.HashMap[Int, Ref[ComponentMetadata]] = @hashmap.HashMap::new()
+let component_metadata_registry : @hashmap.HashMap[Int, Ref[ComponentMetadata]] = @hashmap.HashMap([],
+)
 
 ///|
-let component_relationship_metadata_generation_ref : Ref[Int] = Ref::new(0)
+let component_relationship_metadata_generation_ref : Ref[Int] = Ref(0)
 
 ///|
-let component_metadata_bootstrap_ref : Ref[Bool] = Ref::new(false)
+let component_metadata_bootstrap_ref : Ref[Bool] = Ref(false)
 
 ///|
 fn component_relationship_metadata_generation() -> Int {
@@ -133,7 +134,7 @@ fn component_metadata_ref(
   debug_name? : String = "",
 ) -> Ref[ComponentMetadata] {
   component_metadata_registry.get_or_init(component_id, fn() {
-    Ref::new(component_metadata_default(debug_name))
+    Ref(component_metadata_default(debug_name))
   })
 }
 

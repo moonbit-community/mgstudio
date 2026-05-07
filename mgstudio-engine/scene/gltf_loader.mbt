@@ -3416,7 +3416,7 @@ fn scene_build_from_gltf(
   let should_load_materials = gltf_loader_should_load_materials(
     request.loader_settings,
   )
-  let active_camera_found_ref : Ref[Bool] = Ref::new(false)
+  let active_camera_found_ref : Ref[Bool] = Ref(false)
 
   fn node_is_animation_root(node_index : Int) -> Bool {
     for root in animation_roots {
@@ -3466,7 +3466,7 @@ fn scene_build_from_gltf(
         }
         let inverse_bindposes_assets_ref : Ref[
           @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
-        ] = Ref::new(@asset.asset_assets_ref_mut_or_abort().peek())
+        ] = Ref(@asset.asset_assets_ref_mut_or_abort().peek())
         Some(
           inverse_bindposes_assets_ref.val.add(
             @mesh.SkinnedMeshInverseBindposes::new(normalized_values),

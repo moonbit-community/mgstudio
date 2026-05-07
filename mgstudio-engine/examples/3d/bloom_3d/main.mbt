@@ -86,7 +86,7 @@ fn bloom_text(bloom : @post_process.Bloom?) -> String {
 fn bloom_camera_entity(
   camera_query : @ecs.Query[@ecs.Comp[BloomCamera], @ecs.All],
 ) -> @core.Entity? {
-  let entity_ref = Ref::new(None)
+  let entity_ref = Ref(None)
   try! camera_query.view(fn(entity, _camera) {
     if entity_ref.val is None {
       entity_ref.val = Some(entity)

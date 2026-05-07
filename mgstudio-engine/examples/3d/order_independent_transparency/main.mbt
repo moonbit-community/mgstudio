@@ -43,7 +43,7 @@ priv struct OitExampleState {
 }
 
 ///|
-let oit_state : Ref[OitExampleState] = Ref::new({
+let oit_state : Ref[OitExampleState] = Ref({
   camera: None,
   help_text: None,
   scene_index: 0,

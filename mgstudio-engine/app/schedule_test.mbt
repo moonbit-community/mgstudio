@@ -58,31 +58,31 @@ struct FinishAddsDeferredFinishPlugin {}
 struct DeferredFinishProbePlugin {}
 
 ///|
-let plugin_group_test_log_ref : Ref[Array[Int]] = Ref::new([])
+let plugin_group_test_log_ref : Ref[Array[Int]] = Ref([])
 
 ///|
-let plugin_lifecycle_log_ref : Ref[Array[Int]] = Ref::new([])
+let plugin_lifecycle_log_ref : Ref[Array[Int]] = Ref([])
 
 ///|
-let nested_plugin_lifecycle_log_ref : Ref[Array[Int]] = Ref::new([])
+let nested_plugin_lifecycle_log_ref : Ref[Array[Int]] = Ref([])
 
 ///|
-let plugin_lifecycle_ready_ref : Ref[Bool] = Ref::new(true)
+let plugin_lifecycle_ready_ref : Ref[Bool] = Ref(true)
 
 ///|
-let plugin_build_depth_probe_ref : Ref[Bool] = Ref::new(false)
+let plugin_build_depth_probe_ref : Ref[Bool] = Ref(false)
 
 ///|
-let plugin_added_probe_finish_ref : Ref[Bool] = Ref::new(false)
+let plugin_added_probe_finish_ref : Ref[Bool] = Ref(false)
 
 ///|
-let plugin_added_probe_cleanup_ref : Ref[Bool] = Ref::new(false)
+let plugin_added_probe_cleanup_ref : Ref[Bool] = Ref(false)
 
 ///|
-let plugin_ready_count_ref : Ref[Int] = Ref::new(0)
+let plugin_ready_count_ref : Ref[Int] = Ref(0)
 
 ///|
-let deferred_finish_probe_log_ref : Ref[Array[Int]] = Ref::new([])
+let deferred_finish_probe_log_ref : Ref[Array[Int]] = Ref([])
 
 ///|
 fn[G : PluginGroup] test_build_plugin_group(
@@ -397,7 +397,7 @@ test "app: run_if skips system execution" {
 ///|
 test "app: run_if evaluates with condition system sequence" {
   let observed : Array[(Int, Int)] = []
-  let system_ran = Ref::new(false)
+  let system_ran = Ref(false)
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { system_ran.val = true }).run_if(fn(
       _world : @ecs.World,
@@ -441,7 +441,7 @@ test "app: repeated run_if composes without short-circuiting" {
 test "app: repeated run_if_stateful keeps independent condition state" {
   let first_seen : Array[Int] = []
   let second_seen : Array[Int] = []
-  let system_runs = Ref::new(0)
+  let system_runs = Ref(0)
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { system_runs.val = system_runs.val + 1 })
     .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
@@ -1301,7 +1301,7 @@ test "app: system param can read current system sequence" {
 
 ///|
 test "app: MessageWriter system param writes messages for MessageReader" {
-  let observed : Ref[Int] = Ref::new(-1)
+  let observed : Ref[Int] = Ref(-1)
   let app = App::new(@ecs.World::new())
     .add_message(test_message_key)
     .add_system_param(fn(writer : @ecs.MessageWriter[TestMessage]) {
@@ -1376,7 +1376,7 @@ test "app: SystemParam Query2 injects typed query into update system" {
     .run_once()
 
   let query_world = app.world()
-  let value_ref : Ref[Int] = Ref::new(0)
+  let value_ref : Ref[Int] = Ref(0)
   let query : @ecs.Query[@ecs.Comp[EcsPosition], @ecs.All] = @ecs.query(
     query_world,
   )
@@ -1387,7 +1387,7 @@ test "app: SystemParam Query2 injects typed query into update system" {
 ///|
 test "app: schedule reports conflicting query params during execution validation" {
   let kinds : Array[ErrorContextKind] = []
-  let ran = Ref::new(false)
+  let ran = Ref(false)
   let app = App::new(@ecs.World::new())
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_system_param2(fn(

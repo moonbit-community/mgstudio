@@ -99,7 +99,7 @@ pub fn[S : States] in_state(state : S) -> RunConditionFn[@ecs.World] {
 ///|
 pub fn[S : States] state_changed(state : S) -> RunConditionFn[@ecs.World] {
   let key = state_resource_key(state)
-  let previous = Ref::new(None)
+  let previous = Ref(None)
   fn(world : @ecs.World) {
     match world_state(world, state) {
       Some(current) => {

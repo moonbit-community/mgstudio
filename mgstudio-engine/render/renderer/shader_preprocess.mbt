@@ -191,7 +191,7 @@ fn load_wgsl_from_assets_base_required(
   load_wgsl_preprocessed(
     assets_base,
     rel,
-    @hashmap.HashMap::new(),
+    @hashmap.HashMap([]),
     default_wgsl_value_defines(),
   )
 }

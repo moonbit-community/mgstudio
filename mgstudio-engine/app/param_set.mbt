@@ -51,8 +51,8 @@ pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] w
   state,
 ) {
   let (state0, state1) = param_set2_decode_state(state)
-  let state0_ref = Ref::new(state0)
-  let state1_ref = Ref::new(state1)
+  let state0_ref = Ref(state0)
+  let state1_ref = Ref(state1)
   ParamSet2::{
     param0: P0::get(state0_ref),
     param1: P1::get(state1_ref),

@@ -926,8 +926,8 @@ pub fn[W, O] system_output(system : (W) -> O) -> OutputSystemConfig[W, O] {
 pub fn[W, P : SystemParam, O] system_param_output(
   system : (P) -> O,
 ) -> OutputSystemConfig[W, O] {
-  let state = Ref::new(Json::null())
-  let state_initialized = Ref::new(false)
+  let state = Ref(Json::null())
+  let state_initialized = Ref(false)
   OutputSystemConfig::{
     system: fn(_world : W) {
       if !state_initialized.val {
@@ -982,8 +982,8 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::pipe_param(
   self : OutputSystemConfig[W, O],
   handler : (In[O], P) -> Unit,
 ) -> SystemConfig[W] {
-  let state = Ref::new(Json::null())
-  let state_initialized = Ref::new(false)
+  let state = Ref(Json::null())
+  let state_initialized = Ref(false)
   system_config_with_access(
     fn(world : W) {
       guard (self.system)(world) is Some(output) else { return }
@@ -1028,8 +1028,8 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::map_param(
   self : OutputSystemConfig[W, O],
   handler : (O, P) -> Unit,
 ) -> SystemConfig[W] {
-  let state = Ref::new(Json::null())
-  let state_initialized = Ref::new(false)
+  let state = Ref(Json::null())
+  let state_initialized = Ref(false)
   system_config_with_access(
     fn(world : W) {
       guard (self.system)(world) is Some(output) else { return }
@@ -1355,8 +1355,8 @@ pub fn[W] fallible_system(
 
 ///|
 pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
-  let state = Ref::new(Json::null())
-  let state_initialized = Ref::new(false)
+  let state = Ref(Json::null())
+  let state_initialized = Ref(false)
   fn(_world : W) {
     if !state_initialized.val {
       state.val = P::init_state(system_param_abort_missing_world())
@@ -1373,8 +1373,8 @@ pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
 pub fn[W, P : SystemParam] fallible_system_param(
   system : (P) -> Unit raise,
 ) -> SystemFn[W] {
-  let state = Ref::new(Json::null())
-  let state_initialized = Ref::new(false)
+  let state = Ref(Json::null())
+  let state_initialized = Ref(false)
   fn(_world : W) {
     if !state_initialized.val {
       state.val = P::init_state(system_param_abort_missing_world())
@@ -1391,10 +1391,10 @@ pub fn[W, P : SystemParam] fallible_system_param(
 pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
   system : (P1, P2) -> Unit,
 ) -> SystemFn[W] {
-  let state1 = Ref::new(Json::null())
-  let state2 = Ref::new(Json::null())
-  let state1_initialized = Ref::new(false)
-  let state2_initialized = Ref::new(false)
+  let state1 = Ref(Json::null())
+  let state2 = Ref(Json::null())
+  let state1_initialized = Ref(false)
+  let state2_initialized = Ref(false)
   fn(_world : W) {
     let world = system_param_abort_missing_world()
     if !state1_initialized.val {
@@ -1419,10 +1419,10 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
 pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2(
   system : (P1, P2) -> Unit raise,
 ) -> SystemFn[W] {
-  let state1 = Ref::new(Json::null())
-  let state2 = Ref::new(Json::null())
-  let state1_initialized = Ref::new(false)
-  let state2_initialized = Ref::new(false)
+  let state1 = Ref(Json::null())
+  let state2 = Ref(Json::null())
+  let state1_initialized = Ref(false)
+  let state2_initialized = Ref(false)
   fn(_world : W) {
     let world = system_param_abort_missing_world()
     if !state1_initialized.val {
@@ -1447,12 +1447,12 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2(
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3(
   system : (P1, P2, P3) -> Unit,
 ) -> SystemFn[W] {
-  let state1 = Ref::new(Json::null())
-  let state2 = Ref::new(Json::null())
-  let state3 = Ref::new(Json::null())
-  let state1_initialized = Ref::new(false)
-  let state2_initialized = Ref::new(false)
-  let state3_initialized = Ref::new(false)
+  let state1 = Ref(Json::null())
+  let state2 = Ref(Json::null())
+  let state3 = Ref(Json::null())
+  let state1_initialized = Ref(false)
+  let state2_initialized = Ref(false)
+  let state3_initialized = Ref(false)
   fn(_world : W) {
     let world = system_param_abort_missing_world()
     if !state1_initialized.val {
@@ -1484,12 +1484,12 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3(
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_param3(
   system : (P1, P2, P3) -> Unit raise,
 ) -> SystemFn[W] {
-  let state1 = Ref::new(Json::null())
-  let state2 = Ref::new(Json::null())
-  let state3 = Ref::new(Json::null())
-  let state1_initialized = Ref::new(false)
-  let state2_initialized = Ref::new(false)
-  let state3_initialized = Ref::new(false)
+  let state1 = Ref(Json::null())
+  let state2 = Ref(Json::null())
+  let state3 = Ref(Json::null())
+  let state1_initialized = Ref(false)
+  let state2_initialized = Ref(false)
+  let state3_initialized = Ref(false)
   fn(_world : W) {
     let world = system_param_abort_missing_world()
     if !state1_initialized.val {
@@ -1527,14 +1527,14 @@ pub fn[
 ] system_param4(
   system : (P1, P2, P3, P4) -> Unit,
 ) -> SystemFn[W] {
-  let state1 = Ref::new(Json::null())
-  let state2 = Ref::new(Json::null())
-  let state3 = Ref::new(Json::null())
-  let state4 = Ref::new(Json::null())
-  let state1_initialized = Ref::new(false)
-  let state2_initialized = Ref::new(false)
-  let state3_initialized = Ref::new(false)
-  let state4_initialized = Ref::new(false)
+  let state1 = Ref(Json::null())
+  let state2 = Ref(Json::null())
+  let state3 = Ref(Json::null())
+  let state4 = Ref(Json::null())
+  let state1_initialized = Ref(false)
+  let state2_initialized = Ref(false)
+  let state3_initialized = Ref(false)
+  let state4_initialized = Ref(false)
   fn(_world : W) {
     let world = system_param_abort_missing_world()
     if !state1_initialized.val {
@@ -1579,14 +1579,14 @@ pub fn[
 ] fallible_system_param4(
   system : (P1, P2, P3, P4) -> Unit raise,
 ) -> SystemFn[W] {
-  let state1 = Ref::new(Json::null())
-  let state2 = Ref::new(Json::null())
-  let state3 = Ref::new(Json::null())
-  let state4 = Ref::new(Json::null())
-  let state1_initialized = Ref::new(false)
-  let state2_initialized = Ref::new(false)
-  let state3_initialized = Ref::new(false)
-  let state4_initialized = Ref::new(false)
+  let state1 = Ref(Json::null())
+  let state2 = Ref(Json::null())
+  let state3 = Ref(Json::null())
+  let state4 = Ref(Json::null())
+  let state1_initialized = Ref(false)
+  let state2_initialized = Ref(false)
+  let state3_initialized = Ref(false)
+  let state4_initialized = Ref(false)
   fn(_world : W) {
     let world = system_param_abort_missing_world()
     if !state1_initialized.val {
@@ -1632,16 +1632,16 @@ pub fn[
 ] system_param5(
   system : (P1, P2, P3, P4, P5) -> Unit,
 ) -> SystemFn[W] {
-  let state1 = Ref::new(Json::null())
-  let state2 = Ref::new(Json::null())
-  let state3 = Ref::new(Json::null())
-  let state4 = Ref::new(Json::null())
-  let state5 = Ref::new(Json::null())
-  let state1_initialized = Ref::new(false)
-  let state2_initialized = Ref::new(false)
-  let state3_initialized = Ref::new(false)
-  let state4_initialized = Ref::new(false)
-  let state5_initialized = Ref::new(false)
+  let state1 = Ref(Json::null())
+  let state2 = Ref(Json::null())
+  let state3 = Ref(Json::null())
+  let state4 = Ref(Json::null())
+  let state5 = Ref(Json::null())
+  let state1_initialized = Ref(false)
+  let state2_initialized = Ref(false)
+  let state3_initialized = Ref(false)
+  let state4_initialized = Ref(false)
+  let state5_initialized = Ref(false)
   fn(_world : W) {
     let world = system_param_abort_missing_world()
     if !state1_initialized.val {
@@ -1694,16 +1694,16 @@ pub fn[
 ] fallible_system_param5(
   system : (P1, P2, P3, P4, P5) -> Unit raise,
 ) -> SystemFn[W] {
-  let state1 = Ref::new(Json::null())
-  let state2 = Ref::new(Json::null())
-  let state3 = Ref::new(Json::null())
-  let state4 = Ref::new(Json::null())
-  let state5 = Ref::new(Json::null())
-  let state1_initialized = Ref::new(false)
-  let state2_initialized = Ref::new(false)
-  let state3_initialized = Ref::new(false)
-  let state4_initialized = Ref::new(false)
-  let state5_initialized = Ref::new(false)
+  let state1 = Ref(Json::null())
+  let state2 = Ref(Json::null())
+  let state3 = Ref(Json::null())
+  let state4 = Ref(Json::null())
+  let state5 = Ref(Json::null())
+  let state1_initialized = Ref(false)
+  let state2_initialized = Ref(false)
+  let state3_initialized = Ref(false)
+  let state4_initialized = Ref(false)
+  let state5_initialized = Ref(false)
   fn(_world : W) {
     let world = system_param_abort_missing_world()
     if !state1_initialized.val {
@@ -1757,18 +1757,18 @@ pub fn[
 ] system_param6(
   system : (P1, P2, P3, P4, P5, P6) -> Unit,
 ) -> SystemFn[W] {
-  let state1 = Ref::new(Json::null())
-  let state2 = Ref::new(Json::null())
-  let state3 = Ref::new(Json::null())
-  let state4 = Ref::new(Json::null())
-  let state5 = Ref::new(Json::null())
-  let state6 = Ref::new(Json::null())
-  let state1_initialized = Ref::new(false)
-  let state2_initialized = Ref::new(false)
-  let state3_initialized = Ref::new(false)
-  let state4_initialized = Ref::new(false)
-  let state5_initialized = Ref::new(false)
-  let state6_initialized = Ref::new(false)
+  let state1 = Ref(Json::null())
+  let state2 = Ref(Json::null())
+  let state3 = Ref(Json::null())
+  let state4 = Ref(Json::null())
+  let state5 = Ref(Json::null())
+  let state6 = Ref(Json::null())
+  let state1_initialized = Ref(false)
+  let state2_initialized = Ref(false)
+  let state3_initialized = Ref(false)
+  let state4_initialized = Ref(false)
+  let state5_initialized = Ref(false)
+  let state6_initialized = Ref(false)
   fn(_world : W) {
     let world = system_param_abort_missing_world()
     if !state1_initialized.val {
@@ -1829,18 +1829,18 @@ pub fn[
 ] fallible_system_param6(
   system : (P1, P2, P3, P4, P5, P6) -> Unit raise,
 ) -> SystemFn[W] {
-  let state1 = Ref::new(Json::null())
-  let state2 = Ref::new(Json::null())
-  let state3 = Ref::new(Json::null())
-  let state4 = Ref::new(Json::null())
-  let state5 = Ref::new(Json::null())
-  let state6 = Ref::new(Json::null())
-  let state1_initialized = Ref::new(false)
-  let state2_initialized = Ref::new(false)
-  let state3_initialized = Ref::new(false)
-  let state4_initialized = Ref::new(false)
-  let state5_initialized = Ref::new(false)
-  let state6_initialized = Ref::new(false)
+  let state1 = Ref(Json::null())
+  let state2 = Ref(Json::null())
+  let state3 = Ref(Json::null())
+  let state4 = Ref(Json::null())
+  let state5 = Ref(Json::null())
+  let state6 = Ref(Json::null())
+  let state1_initialized = Ref(false)
+  let state2_initialized = Ref(false)
+  let state3_initialized = Ref(false)
+  let state4_initialized = Ref(false)
+  let state5_initialized = Ref(false)
+  let state6_initialized = Ref(false)
   fn(_world : W) {
     let world = system_param_abort_missing_world()
     if !state1_initialized.val {
@@ -1890,7 +1890,7 @@ pub fn[
 }
 
 ///|
-let current_system_sequence_ref : Ref[@core.SystemSequence?] = Ref::new(None)
+let current_system_sequence_ref : Ref[@core.SystemSequence?] = Ref(None)
 
 ///|
 pub fn current_system_sequence() -> @core.SystemSequence {
@@ -1901,7 +1901,7 @@ pub fn current_system_sequence() -> @core.SystemSequence {
 }
 
 ///|
-let current_schedule_stage_ref : Ref[ScheduleStage?] = Ref::new(None)
+let current_schedule_stage_ref : Ref[ScheduleStage?] = Ref(None)
 
 ///|
 pub fn current_schedule_stage() -> ScheduleStage? {
@@ -1909,22 +1909,18 @@ pub fn current_schedule_stage() -> ScheduleStage? {
 }
 
 ///|
-let current_world_ref : Ref[@ecs.World?] = Ref::new(None)
+let current_world_ref : Ref[@ecs.World?] = Ref(None)
 
 ///|
-let current_app_schedule_ref : Ref[ScheduleRegistry[@ecs.World]?] = Ref::new(
+let current_app_schedule_ref : Ref[ScheduleRegistry[@ecs.World]?] = Ref(None)
+
+///|
+let current_allowed_ambiguous_components_ref : Ref[@utils.IntBitSet?] = Ref(
   None,
 )
 
 ///|
-let current_allowed_ambiguous_components_ref : Ref[@utils.IntBitSet?] = Ref::new(
-  None,
-)
-
-///|
-let current_allowed_ambiguous_resources_ref : Ref[@utils.IntBitSet?] = Ref::new(
-  None,
-)
+let current_allowed_ambiguous_resources_ref : Ref[@utils.IntBitSet?] = Ref(None)
 
 ///|
 pub fn current_world() -> @ecs.World? {
@@ -2136,7 +2132,7 @@ pub fn[W] SystemConfig::run_if_stateful(
   cond : StatefulRunConditionFn[W],
 ) -> SystemConfig[W] {
   self.run_ifs.push(cond)
-  self.run_if_states.push(Ref::new(init_state))
+  self.run_if_states.push(Ref(init_state))
   self.run_if_last_run_sequences.push(0)
   self
 }

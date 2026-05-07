@@ -65,7 +65,7 @@ let ease_function_plot_key : @ecs.ComponentKey[EaseFunctionPlot] = @ecs.register
 )
 
 ///|
-let progress_text_entity : Ref[@core.Entity?] = Ref::new(None)
+let progress_text_entity : Ref[@core.Entity?] = Ref(None)
 
 ///|
 fn main {

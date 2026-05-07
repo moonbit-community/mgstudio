@@ -242,7 +242,7 @@ impl Default for PerMethodSettings with default() {
   let settings : @hashmap.HashMap[
     @post_process.Tonemapping,
     @post_process.ColorGrading,
-  ] = @hashmap.HashMap::new()
+  ] = @hashmap.HashMap([])
   for tonemapper in tonemapping_methods() {
     settings.set(
       tonemapper,
@@ -256,7 +256,7 @@ impl Default for PerMethodSettings with default() {
 fn[D : @ecs.QueryData, F : @ecs.QueryFilter] first_entity(
   query : @ecs.Query[D, F],
 ) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! query.view(fn(entity, _component) {
     if result.val is None {
       result.val = Some(entity)
@@ -269,7 +269,7 @@ fn[D : @ecs.QueryData, F : @ecs.QueryFilter] first_entity(
 fn[A : @ecs.Component, B : @ecs.Component] first2(
   query : @ecs.Query[(@ecs.Comp[A], @ecs.Comp[B]), @ecs.All],
 ) -> (@core.Entity, A, B)? {
-  let result : Ref[(@core.Entity, A, B)?] = Ref::new(None)
+  let result : Ref[(@core.Entity, A, B)?] = Ref(None)
   try! query.view(fn(entity, data) {
     let (first, second) = data
     if result.val is None {
@@ -283,7 +283,7 @@ fn[A : @ecs.Component, B : @ecs.Component] first2(
 fn[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] first3(
   query : @ecs.Query[(@ecs.Comp[A], @ecs.Comp[B], @ecs.Comp[C]), @ecs.All],
 ) -> (@core.Entity, A, B, C)? {
-  let result : Ref[(@core.Entity, A, B, C)?] = Ref::new(None)
+  let result : Ref[(@core.Entity, A, B, C)?] = Ref(None)
   try! query.view(fn(entity, data) {
     let (first, second, third) = data
     if result.val is None {

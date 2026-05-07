@@ -38,7 +38,7 @@ pub struct LdtkEntityMap {
 
 ///|
 pub fn LdtkEntityMap::default() -> LdtkEntityMap {
-  LdtkEntityMap::{ entries: @hashmap.HashMap::new() }
+  LdtkEntityMap::{ entries: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -48,7 +48,7 @@ pub struct LdtkIntCellMap {
 
 ///|
 pub fn LdtkIntCellMap::default() -> LdtkIntCellMap {
-  LdtkIntCellMap::{ entries: @hashmap.HashMap::new() }
+  LdtkIntCellMap::{ entries: @hashmap.HashMap([]) }
 }
 
 ///|

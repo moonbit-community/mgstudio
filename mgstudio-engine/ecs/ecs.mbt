@@ -111,21 +111,22 @@ pub let ecs_builtin_component_definition_is_resource : Int = 6
 pub let ecs_builtin_component_definition_count : Int = 6
 
 ///|
-let next_component_id_ref : Ref[Int] = Ref::new(
+let next_component_id_ref : Ref[Int] = Ref(
   ecs_builtin_component_definition_count + 1,
 )
 
 ///|
-let next_resource_id_ref : Ref[Int] = Ref::new(1)
+let next_resource_id_ref : Ref[Int] = Ref(1)
 
 ///|
-let next_event_id_ref : Ref[Int] = Ref::new(1)
+let next_event_id_ref : Ref[Int] = Ref(1)
 
 ///|
-let next_world_id_ref : Ref[Int] = Ref::new(1)
+let next_world_id_ref : Ref[Int] = Ref(1)
 
 ///|
-let resource_ids_by_debug_name : @hashmap.HashMap[String, Int] = @hashmap.HashMap::new()
+let resource_ids_by_debug_name : @hashmap.HashMap[String, Int] = @hashmap.HashMap([],
+)
 
 ///|
 pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
@@ -347,7 +348,7 @@ pub fn World::new() -> World {
     components: world_components_new(),
     component_relationship_sources: {},
     observer_parent_lookup_component_ids: [],
-    observer_registry: Ref::new(world_observer_registry_new()),
+    observer_registry: Ref(world_observer_registry_new()),
     current_component_observer_context: None,
     current_trigger_observer_context: None,
     entities: @core.Entities::new(),
@@ -711,7 +712,7 @@ fn World::ensure_component_store_for_local_id(
       )
     SparseSet =>
       self.sparse_component_columns.get_or_init(local_id, fn() {
-        Ref::new(@core.ComponentStore::new())
+        Ref(@core.ComponentStore::new())
       })
   }
 }
@@ -725,7 +726,7 @@ fn World::ensure_removed_component_messages(
   match self.removed_components.get(local_id) {
     Some(messages_ref) => messages_ref
     None => {
-      let messages_ref = Ref::new(@core.Messages::new())
+      let messages_ref = Ref(@core.Messages::new())
       self.removed_components.set(local_id, messages_ref)
       messages_ref
     }
@@ -741,7 +742,7 @@ fn World::ensure_added_component_messages(
   match self.added_components.get(local_id) {
     Some(messages_ref) => messages_ref
     None => {
-      let messages_ref = Ref::new(@core.Messages::new())
+      let messages_ref = Ref(@core.Messages::new())
       self.added_components.set(local_id, messages_ref)
       messages_ref
     }
@@ -757,7 +758,7 @@ fn World::ensure_changed_component_messages(
   match self.changed_components.get(local_id) {
     Some(messages_ref) => messages_ref
     None => {
-      let messages_ref = Ref::new(@core.Messages::new())
+      let messages_ref = Ref(@core.Messages::new())
       self.changed_components.set(local_id, messages_ref)
       messages_ref
     }
@@ -775,7 +776,7 @@ fn World::ensure_sparse_component_metadata_store_for_local_id(
     )
   }
   self.sparse_component_metadata.get_or_init(local_id, fn() {
-    Ref::new(@core.ComponentStore::new())
+    Ref(@core.ComponentStore::new())
   })
 }
 

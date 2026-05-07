@@ -69,7 +69,7 @@ pub fn GltfExtensionHandlers::handlers(
 let gltf_extension_handlers_registry_bootstrap : Array[GltfExtensionHandler] = []
 
 ///|
-let gltf_pbr_material_handler_enabled_bootstrap_ref : Ref[Bool] = Ref::new(true)
+let gltf_pbr_material_handler_enabled_bootstrap_ref : Ref[Bool] = Ref(true)
 
 ///|
 pub struct GltfExtensionRuntimeState {
@@ -129,7 +129,7 @@ fn gltf_extension_runtime_state_ref_if_present() -> Ref[
     value => value
   }
   match state {
-    Some(state_ref) => Some(Ref::new(state_ref.peek()))
+    Some(state_ref) => Some(Ref(state_ref.peek()))
     None => None
   }
 }

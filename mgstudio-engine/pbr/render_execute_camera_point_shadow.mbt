@@ -129,7 +129,7 @@ fn render3d_point_light_shadow_targets_ref_or_init(
   }
   match
     (try! world.get_resource_mut(Render3dPointLightShadowTargets::resource())) {
-    Some(state) => Ref::new(state.peek())
+    Some(state) => Ref(state.peek())
     None => abort("Missing Render3dPointLightShadowTargets resource")
   }
 }

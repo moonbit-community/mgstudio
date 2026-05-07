@@ -21,9 +21,9 @@ fn stroke_text_measure(text : String, font_size : Float) -> @math.Vec2 {
   let line_height = SIMPLEX_LINE_HEIGHT * glyph_height
   let space_advance = float_from_int(simplex_space_advance()) * scale
 
-  let layout_width = Ref::new(0.0F)
-  let line_width = Ref::new(0.0F)
-  let layout_height = Ref::new(line_height)
+  let layout_width = Ref(0.0F)
+  let line_width = Ref(0.0F)
+  let layout_height = Ref(line_height)
   for c in text {
     if c == '\n' {
       if line_width.val > layout_width.val {
@@ -71,8 +71,8 @@ fn stroke_text_emit_2d(
     layout_size.y * layout_anchor.y,
   )
 
-  let cursor_x = Ref::new(0.0F)
-  let cursor_y = Ref::new(-margin_top)
+  let cursor_x = Ref(0.0F)
+  let cursor_y = Ref(-margin_top)
   for c in text {
     if c == '\n' {
       cursor_x.val = 0.0F
@@ -133,8 +133,8 @@ fn stroke_text_emit_3d(
     layout_size.y * layout_anchor.y,
   )
 
-  let cursor_x = Ref::new(0.0F)
-  let cursor_y = Ref::new(-margin_top)
+  let cursor_x = Ref(0.0F)
+  let cursor_y = Ref(-margin_top)
   for c in text {
     if c == '\n' {
       cursor_x.val = 0.0F

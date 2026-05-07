@@ -50,7 +50,7 @@ pub fn close_when_requested(
 }
 
 ///|
-let window_app_exit_event_cursor_ref : Ref[Int] = Ref::new(0)
+let window_app_exit_event_cursor_ref : Ref[Int] = Ref(0)
 
 ///|
 fn window_has_app_exit_message(world : @ecs.World) -> Bool {

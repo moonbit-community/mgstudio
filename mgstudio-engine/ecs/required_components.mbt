@@ -86,7 +86,7 @@ fn World::ensure_required_components_state(
   component_local_id : Int,
 ) -> Ref[RequiredComponentsState] {
   self.required_components.get_or_init(component_local_id, fn() {
-    Ref::new(required_components_state_new())
+    Ref(required_components_state_new())
   })
 }
 
@@ -453,7 +453,7 @@ fn World::insert_component_payloads_with_requirements(
     }
   }
   let outermost = self.begin_deferred_hook_command_scope()
-  let structural_changed_ref = Ref::new(false)
+  let structural_changed_ref = Ref(false)
   let bundle_info = self.ensure_bundle_info_for_payloads(payloads)
   let has_existing_pending_context = match
     self.pending_component_payload_context {

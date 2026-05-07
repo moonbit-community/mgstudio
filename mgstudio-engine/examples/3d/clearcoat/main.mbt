@@ -37,7 +37,7 @@ priv struct ClearcoatState {
 }
 
 ///|
-let clearcoat_state : Ref[ClearcoatState] = Ref::new({
+let clearcoat_state : Ref[ClearcoatState] = Ref({
   sphere_entities: [],
   sphere_positions: [],
   light_mode: LIGHT_MODE_POINT,

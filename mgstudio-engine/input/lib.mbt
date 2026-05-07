@@ -931,27 +931,27 @@ let touches_resource_key : @ecs.ResourceKey[Touches] = @ecs.register_resource(
 )
 
 ///|
-let input_last_mouse_position_ref : Ref[@math.Vec2?] = Ref::new(None)
+let input_last_mouse_position_ref : Ref[@math.Vec2?] = Ref(None)
 
 ///|
-let input_active_touches_ref : Ref[Array[Touch]] = Ref::new([])
+let input_active_touches_ref : Ref[Array[Touch]] = Ref([])
 
 ///|
-let input_primary_pointer_position_ref : Ref[@math.Vec2?] = Ref::new(None)
+let input_primary_pointer_position_ref : Ref[@math.Vec2?] = Ref(None)
 
 ///|
-let input_primary_pointer_delta_ref : Ref[@math.Vec2] = Ref::new(
+let input_primary_pointer_delta_ref : Ref[@math.Vec2] = Ref(
   @math.Vec2::new(0.0F, 0.0F),
 )
 
 ///|
-let input_mouse_motion_event_cursor_ref : Ref[Int] = Ref::new(0)
+let input_mouse_motion_event_cursor_ref : Ref[Int] = Ref(0)
 
 ///|
-let input_mouse_wheel_event_cursor_ref : Ref[Int] = Ref::new(0)
+let input_mouse_wheel_event_cursor_ref : Ref[Int] = Ref(0)
 
 ///|
-let input_window_focused_event_cursor_ref : Ref[Int] = Ref::new(0)
+let input_window_focused_event_cursor_ref : Ref[Int] = Ref(0)
 
 ///|
 fn host_input_is_key_down(code : String) -> Bool {

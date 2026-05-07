@@ -68,7 +68,7 @@ priv struct RaycastState {
 }
 
 ///|
-let raycast_state : Ref[RaycastState] = Ref::new({
+let raycast_state : Ref[RaycastState] = Ref({
   camera: @sprite.Camera::default(),
   camera_projection: @camera.Projection::default(),
   camera_transform: @transform.Transform::identity(),

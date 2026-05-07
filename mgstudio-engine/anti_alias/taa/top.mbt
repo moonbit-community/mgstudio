@@ -74,9 +74,7 @@ pub impl @app.Plugin for TemporalAntiAliasPlugin with name(_self) {
 }
 
 ///|
-let temporal_anti_alias_required_components_installed : Ref[Bool] = Ref::new(
-  false,
-)
+let temporal_anti_alias_required_components_installed : Ref[Bool] = Ref(false)
 
 ///|
 pub fn install_temporal_anti_alias_required_components() -> Unit {

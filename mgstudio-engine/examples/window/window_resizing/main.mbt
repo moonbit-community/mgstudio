@@ -114,7 +114,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
 
 ///|
 fn resolution_text_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(@ecs.With::new(resolution_text_key))
   .view(fn(_query_entity, entity) {

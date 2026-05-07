@@ -153,7 +153,7 @@ fn load_wgsl_required_mesh3d_forward_decal_pipeline(
   if !forward_decal {
     return load_wgsl_from_assets_base_required(assets_base, shader_path)
   }
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   defines.set("FORWARD_DECAL", true)
   let value_defines = default_wgsl_value_defines()
   load_wgsl_preprocessed(assets_base, shader_path, defines, value_defines)
@@ -167,7 +167,7 @@ fn mesh3d_forward_shader_defines(
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   defines.set("VERTEX_POSITIONS", true)
   defines.set("VERTEX_NORMALS", true)
   defines.set("VERTEX_UVS", true)
@@ -205,7 +205,7 @@ fn mesh3d_shadow_shader_defines(
   skinned : Bool,
   material_path : Bool,
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   defines.set("PREPASS_PIPELINE", true)
   defines.set("DEPTH_PREPASS", true)
   defines.set("VERTEX_POSITIONS", true)

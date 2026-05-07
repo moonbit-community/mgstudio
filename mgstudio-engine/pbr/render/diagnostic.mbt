@@ -53,7 +53,7 @@ fn render3d_diagnostics_state_ref_or_init(
     )
   }
   match (try! world.get_resource_mut(Render3dDiagnosticsState::resource())) {
-    Some(state) => Ref::new(state.peek())
+    Some(state) => Ref(state.peek())
     None => abort("Missing Render3dDiagnosticsState resource")
   }
 }

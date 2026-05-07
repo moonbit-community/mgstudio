@@ -22,7 +22,7 @@ fn main {
 }
 
 ///|
-let player_entity : Ref[@core.Entity?] = Ref::new(None)
+let player_entity : Ref[@core.Entity?] = Ref(None)
 
 ///|
 fn setup(world : @ecs.World) -> Unit {

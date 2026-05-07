@@ -63,7 +63,7 @@ pub struct AccessibilityRequested {
 
 ///|
 pub fn AccessibilityRequested::default() -> AccessibilityRequested {
-  { requested: Ref::new(false) }
+  { requested: Ref(false) }
 }
 
 ///|

@@ -33,7 +33,7 @@ pub impl @ecs.Component for Children with component() {
 }
 
 ///|
-let hierarchy_component_metadata_installed : Ref[Bool] = Ref::new(false)
+let hierarchy_component_metadata_installed : Ref[Bool] = Ref(false)
 
 ///|
 pub fn hierarchy_install_component_metadata() -> Unit {

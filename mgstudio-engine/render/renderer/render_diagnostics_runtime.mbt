@@ -164,7 +164,7 @@ fn render_diagnostics_runtime_state_default() -> RenderDiagnosticsRuntimeState {
 }
 
 ///|
-let render_diagnostics_runtime_state_ref : Ref[RenderDiagnosticsRuntimeState] = Ref::new(
+let render_diagnostics_runtime_state_ref : Ref[RenderDiagnosticsRuntimeState] = Ref(
   render_diagnostics_runtime_state_default(),
 )
 

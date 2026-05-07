@@ -43,12 +43,12 @@ priv struct Physics3dDebugRenderState {
 }
 
 ///|
-let physics3d_debug_render_context : Ref[Physics3dDebugRenderContext] = Ref::new(
+let physics3d_debug_render_context : Ref[Physics3dDebugRenderContext] = Ref(
   Physics3dDebugRenderContext::default(),
 )
 
 ///|
-let physics3d_debug_render_state : Ref[Physics3dDebugRenderState] = Ref::new({
+let physics3d_debug_render_state : Ref[Physics3dDebugRenderState] = Ref({
   line_mesh: None,
   dynamic_material: None,
   fixed_material: None,

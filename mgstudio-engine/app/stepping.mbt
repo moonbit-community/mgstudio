@@ -69,7 +69,7 @@ pub fn Stepping::new() -> Stepping {
   Stepping::{
     action: RunAll,
     schedules: [],
-    schedule_states: @hashmap.HashMap::new(),
+    schedule_states: @hashmap.HashMap([]),
     cursor_schedule: 0,
     cursor_system: 0,
     continue_started: false,
@@ -215,7 +215,7 @@ fn ensure_schedule_state(
   match stepping.schedule_states.get(key) {
     Some(state_ref) => state_ref
     None => {
-      let state_ref = Ref::new({ behaviors: @hashmap.HashMap::new() })
+      let state_ref = Ref({ behaviors: @hashmap.HashMap([]) })
       stepping.schedule_states.set(key, state_ref)
       state_ref
     }

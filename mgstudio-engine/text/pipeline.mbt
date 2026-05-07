@@ -346,12 +346,10 @@ fn text_instance_has_run_overlays(instance : TextInstance) -> Bool {
 }
 
 ///|
-let font_atlas_set_state : Ref[FontAtlasSet] = Ref::new(FontAtlasSet::default())
+let font_atlas_set_state : Ref[FontAtlasSet] = Ref(FontAtlasSet::default())
 
 ///|
-let default_text_font_handle_ref : Ref[@asset.Handle[@asset.Font]?] = Ref::new(
-  None,
-)
+let default_text_font_handle_ref : Ref[@asset.Handle[@asset.Font]?] = Ref(None)
 
 ///|
 /// Global font system state for `moon_cosmic` (engine-side shaping/wrap/BiDi).
@@ -366,7 +364,7 @@ priv struct CosmicFontSystemState {
 }
 
 ///|
-let cosmic_font_system_state : Ref[CosmicFontSystemState] = Ref::new(CosmicFontSystemState::{
+let cosmic_font_system_state : Ref[CosmicFontSystemState] = Ref(CosmicFontSystemState::{
   font_system: @cosmic.FontSystem::new(),
   handle_to_font_id: [],
   font_id_to_handle_id: [],
@@ -374,55 +372,55 @@ let cosmic_font_system_state : Ref[CosmicFontSystemState] = Ref::new(CosmicFontS
 })
 
 ///|
-let text_font_asset_events_cursor_ref : Ref[Int] = Ref::new(0)
+let text_font_asset_events_cursor_ref : Ref[Int] = Ref(0)
 
 ///|
-let text_diagnostic_update_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+let text_diagnostic_update_cpu_ms_ref : Ref[Float] = Ref(0.0F)
 
 ///|
-let text_diagnostic_update_pending_layout_count_ref : Ref[Int] = Ref::new(0)
+let text_diagnostic_update_pending_layout_count_ref : Ref[Int] = Ref(0)
 
 ///|
-let text_diagnostic_render_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+let text_diagnostic_render_cpu_ms_ref : Ref[Float] = Ref(0.0F)
 
 ///|
-let text_diagnostic_render_visible_text_count_ref : Ref[Int] = Ref::new(0)
+let text_diagnostic_render_visible_text_count_ref : Ref[Int] = Ref(0)
 
 ///|
-let text_diagnostic_render_culled_text_count_ref : Ref[Int] = Ref::new(0)
+let text_diagnostic_render_culled_text_count_ref : Ref[Int] = Ref(0)
 
 ///|
-let text_diagnostic_render_submitted_item_count_ref : Ref[Int] = Ref::new(0)
+let text_diagnostic_render_submitted_item_count_ref : Ref[Int] = Ref(0)
 
 ///|
 let text_render_overlay_sprites_cache_ref : Ref[
   Array[@sprite.OverlaySpriteUvScissor],
-] = Ref::new([])
+] = Ref([])
 
 ///|
 let text_render_overlay_sprite_slices_batches_cache_ref : Ref[
   Array[@sprite.OverlaySpriteUvScissorSlices],
-] = Ref::new([])
+] = Ref([])
 
 ///|
 let text_render_prepared_scene_overlay_sprites_ref : Ref[
   Array[@sprite.OverlaySpriteUvScissor],
-] = Ref::new([])
+] = Ref([])
 
 ///|
 let text_render_prepared_ui_overlay_sprites_ref : Ref[
   Array[@sprite.OverlaySpriteUvScissor],
-] = Ref::new([])
+] = Ref([])
 
 ///|
 let text_render_prepared_scene_overlay_sprite_slices_batches_ref : Ref[
   Array[@sprite.OverlaySpriteUvScissorSlices],
-] = Ref::new([])
+] = Ref([])
 
 ///|
 let text_render_prepared_ui_overlay_sprite_slices_batches_ref : Ref[
   Array[@sprite.OverlaySpriteUvScissorSlices],
-] = Ref::new([])
+] = Ref([])
 
 ///|
 priv struct OverlaySpriteSliceBatchBounds {
@@ -768,10 +766,7 @@ fn justify_to_cosmic_align(justify : Justify) -> @cosmic.Align {
     Justify::Center => @cosmic.Align::Center
     Justify::Right => @cosmic.Align::Right
     Justify::Justified => @cosmic.Align::Justified
-    // Bevy maps this to parley::Alignment::Start. moon_cosmic@0.3.0
-    // does not expose Align::Start yet, so this is the LTR-compatible
-    // bridge tracked by moonbit-community/moon_cosmic#4.
-    Justify::Start => @cosmic.Align::Left
+    Justify::Start => @cosmic.Align::Start
     Justify::End => @cosmic.Align::End
   }
 }
@@ -1550,7 +1545,7 @@ pub fn text_update_system(world : @ecs.World) -> Unit {
   if text_runtime_layout_dirty() {
     text_runtime_clear_layout_dirty()
     let count = text_state.val.texts.length()
-    let pending_layout_count = Ref::new(0)
+    let pending_layout_count = Ref(0)
     for i in 0..<count {
       let current = text_state.val.texts[i]
       if !current.layout_dirty {
@@ -1592,8 +1587,8 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     None => None
   }
   let text_count = text_state.val.texts.length()
-  let visible_text_count = Ref::new(0)
-  let culled_text_count = Ref::new(0)
+  let visible_text_count = Ref(0)
+  let culled_text_count = Ref(0)
   for i in 0..<text_count {
     let instance = text_state.val.texts[i]
     if !instance.view_visible {

@@ -52,34 +52,34 @@ pub struct StateTransitionEvent[S] {
 } derive(Eq, Debug)
 
 ///|
-let state_type_debug_name_registry : Ref[@hashmap.HashMap[String, String]] = Ref::new(
-  @hashmap.HashMap::new(),
+let state_type_debug_name_registry : Ref[@hashmap.HashMap[String, String]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
-let state_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let state_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
-let previous_state_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let previous_state_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
-let next_state_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let next_state_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
 let state_transition_event_resource_registry : Ref[
   @hashmap.HashMap[String, @any.Any],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 let pending_state_transition_event_resource_registry : Ref[
   @hashmap.HashMap[String, @any.Any],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 fn[S] state_type_registry_key(probe : NextState[S]) -> String {

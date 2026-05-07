@@ -80,7 +80,7 @@ priv struct ClusteredDecalMapsState {
 }
 
 ///|
-let clustered_decal_maps_state : Ref[ClusteredDecalMapsState] = Ref::new({
+let clustered_decal_maps_state : Ref[ClusteredDecalMapsState] = Ref({
   spawn_accumulator: 0.0F,
   random_seed: 1_987_836_747,
   emissive_decals: true,

@@ -72,7 +72,7 @@ fn render_resource_id_state_default() -> RenderResourceIdState {
 }
 
 ///|
-let render_resource_id_state_ref : Ref[RenderResourceIdState] = Ref::new(
+let render_resource_id_state_ref : Ref[RenderResourceIdState] = Ref(
   render_resource_id_state_default(),
 )
 

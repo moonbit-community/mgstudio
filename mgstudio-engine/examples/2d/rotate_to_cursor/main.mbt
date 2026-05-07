@@ -72,7 +72,7 @@ fn setup(
 fn main_camera_entity(
   main_camera_query : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
 ) -> @core.Entity? {
-  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
+  let entity_ref : Ref[@core.Entity?] = Ref(None)
   try! main_camera_query.view(fn(entity, _camera) {
     if entity_ref.val is None {
       entity_ref.val = Some(entity)

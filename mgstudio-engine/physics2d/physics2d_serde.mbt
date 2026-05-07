@@ -795,7 +795,7 @@ fn shape_from_json(
         path~,
       )
       @collision.Shape::Round(
-        Ref::new(shape_from_json(inner_json, path)),
+        Ref(shape_from_json(inner_json, path)),
         border_radius,
       )
     }
@@ -1540,7 +1540,7 @@ pub impl @json.FromJson for RapierMultibodyJointHandle2d with from_json(
 }
 
 ///|
-let physics2d_config_serde_next_id : Ref[Int] = Ref::new(1)
+let physics2d_config_serde_next_id : Ref[Int] = Ref(1)
 
 ///|
 let physics2d_config_serde_values : Map[Int, Physics2dConfig] = {}
@@ -1560,7 +1560,7 @@ pub impl @json.FromJson for Physics2dConfig with from_json(json, path) {
 }
 
 ///|
-let physics2d_events_serde_next_id : Ref[Int] = Ref::new(1)
+let physics2d_events_serde_next_id : Ref[Int] = Ref(1)
 
 ///|
 let physics2d_events_serde_values : Map[Int, Physics2dEvents] = {}
@@ -1580,7 +1580,7 @@ pub impl @json.FromJson for Physics2dEvents with from_json(json, path) {
 }
 
 ///|
-let physics2d_context_serde_next_id : Ref[Int] = Ref::new(1)
+let physics2d_context_serde_next_id : Ref[Int] = Ref(1)
 
 ///|
 let physics2d_context_serde_values : Map[Int, Physics2dContext] = {}

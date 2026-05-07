@@ -16,7 +16,7 @@
 fn ldtk_find_tileset_definition_map(
   project : LdtkProject,
 ) -> @hashmap.HashMap[Int, TilesetDefinition] {
-  let map : @hashmap.HashMap[Int, TilesetDefinition] = @hashmap.HashMap::new()
+  let map : @hashmap.HashMap[Int, TilesetDefinition] = @hashmap.HashMap([])
   for tileset_definition in project.json_data().defs.tilesets {
     map.set(tileset_definition.uid, tileset_definition)
   }
@@ -191,7 +191,7 @@ fn ldtk_apply_level_set_for_world(
   runtime_ref.set_changed()
   let spawned = runtime_ref.peek().world_spawned_levels(world_entity)
   let mut spawned_any = false
-  let desired_iid_lookup : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let desired_iid_lookup : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   for level_iid in level_set.iids() {
     desired_iid_lookup.set(level_iid.get(), true)
   }

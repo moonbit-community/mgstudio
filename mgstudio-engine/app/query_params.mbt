@@ -78,10 +78,11 @@ pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C) wi
 }
 
 ///|
-let query_param_next_slot_ref : Ref[Int] = Ref::new(1)
+let query_param_next_slot_ref : Ref[Int] = Ref(1)
 
 ///|
-let query_param_cache_by_slot : @hashmap.HashMap[Int, @ecs.QueryCache] = @hashmap.HashMap::new()
+let query_param_cache_by_slot : @hashmap.HashMap[Int, @ecs.QueryCache] = @hashmap.HashMap([],
+)
 
 ///|
 fn query_param_allocate_slot() -> Int {

@@ -101,13 +101,13 @@ let hook_event_log : Array[String] = []
 let hook_entity_ids : Array[Int] = []
 
 ///|
-let hook_component_id_matches_ref : Ref[Bool] = Ref::new(true)
+let hook_component_id_matches_ref : Ref[Bool] = Ref(true)
 
 ///|
-let hook_callers_present_ref : Ref[Bool] = Ref::new(true)
+let hook_callers_present_ref : Ref[Bool] = Ref(true)
 
 ///|
-let hook_callers_match_test_file_ref : Ref[Bool] = Ref::new(true)
+let hook_callers_match_test_file_ref : Ref[Bool] = Ref(true)
 
 ///|
 fn hook_test_reset() -> Unit {

@@ -78,7 +78,7 @@ priv struct LightTexturesState {
 }
 
 ///|
-let light_textures_state : Ref[LightTexturesState] = Ref::new({
+let light_textures_state : Ref[LightTexturesState] = Ref({
   camera: None,
   rotating_cube: None,
   directional_light: None,

@@ -97,7 +97,7 @@ test "text: justify start end expose Bevy text alignment variants" {
     content="true",
   )
   debug_inspect(
-    justify_to_cosmic_align(Justify::Start) is @cosmic.Align::Left,
+    justify_to_cosmic_align(Justify::Start) is @cosmic.Align::Start,
     content="true",
   )
 }

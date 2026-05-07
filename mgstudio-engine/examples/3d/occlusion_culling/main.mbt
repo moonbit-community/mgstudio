@@ -71,7 +71,7 @@ fn default_state() -> OcclusionState {
 }
 
 ///|
-let occlusion_state : Ref[OcclusionState] = Ref::new(default_state())
+let occlusion_state : Ref[OcclusionState] = Ref(default_state())
 
 ///|
 fn float_from_int(value : Int) -> Float {

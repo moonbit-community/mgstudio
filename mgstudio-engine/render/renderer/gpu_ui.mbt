@@ -64,7 +64,7 @@ fn ui_globals_uniform_bytes() -> Bytes {
 
 ///|
 fn load_ui_node_wgsl(anti_alias : Bool) -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   if anti_alias {
     defines.set("ANTI_ALIAS", true)
   }
@@ -127,7 +127,7 @@ fn ui_box_shadow_sample_count(samples : Int) -> Int {
 
 ///|
 fn load_ui_box_shadow_wgsl(samples : Int) -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   let value_defines = default_wgsl_value_defines()
   value_defines.set("SHADOW_SAMPLES", ui_box_shadow_sample_count(samples))
   load_wgsl_preprocessed(
@@ -178,7 +178,7 @@ fn create_ui_shadow_pipeline(
 
 ///|
 fn load_ui_texture_slice_wgsl() -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   let value_defines = default_wgsl_value_defines()
   load_wgsl_preprocessed(
     "", "ui_render/ui_texture_slice.wgsl", defines, value_defines,

@@ -83,19 +83,19 @@ let observer_parent_lookup_probe_key : ComponentKey[ObserverParentLookupProbe] =
 )
 
 ///|
-let observer_parent_lookup_probe_calls_ref : Ref[Int] = Ref::new(0)
+let observer_parent_lookup_probe_calls_ref : Ref[Int] = Ref(0)
 
 ///|
-let observer_parent_lookup_probe_world0_id_ref : Ref[Int] = Ref::new(-1)
+let observer_parent_lookup_probe_world0_id_ref : Ref[Int] = Ref(-1)
 
 ///|
-let observer_parent_lookup_probe_world1_id_ref : Ref[Int] = Ref::new(-1)
+let observer_parent_lookup_probe_world1_id_ref : Ref[Int] = Ref(-1)
 
 ///|
-let observer_parent_lookup_probe_world0_calls_ref : Ref[Int] = Ref::new(0)
+let observer_parent_lookup_probe_world0_calls_ref : Ref[Int] = Ref(0)
 
 ///|
-let observer_parent_lookup_probe_world1_calls_ref : Ref[Int] = Ref::new(0)
+let observer_parent_lookup_probe_world1_calls_ref : Ref[Int] = Ref(0)
 
 ///|
 fn reset_observer_parent_lookup_probe_counters(
@@ -281,9 +281,9 @@ test "ecs observer: world add_component_observer is world-scoped and fires on re
   let world0 = World::new()
   let world1 = World::new()
   let seen_entities : Array[Int] = []
-  let first_hits : Ref[Int] = Ref::new(0)
-  let second_hits : Ref[Int] = Ref::new(0)
-  let captured_world_id : Ref[Int] = Ref::new(-1)
+  let first_hits : Ref[Int] = Ref(0)
+  let second_hits : Ref[Int] = Ref(0)
+  let captured_world_id : Ref[Int] = Ref(-1)
 
   let first_handle = world0.add_component_observer(fn(
     event : ComponentOn[Insert, ObserverMarker],
@@ -327,7 +327,7 @@ test "ecs observer: add_entity_component_observer only fires for the bound entit
   let entity0 = world.spawn()
   let entity1 = world.spawn()
   let seen_entities : Array[Int] = []
-  let hits : Ref[Int] = Ref::new(0)
+  let hits : Ref[Int] = Ref(0)
 
   ignore(
     world.add_entity_component_observer(entity0, fn(
@@ -357,7 +357,7 @@ test "ecs observer: world add_component_observer fires on remove" {
   let world = World::new()
   let entity = world.spawn()
   let seen_entities : Array[Int] = []
-  let hits : Ref[Int] = Ref::new(0)
+  let hits : Ref[Int] = Ref(0)
 
   ignore(
     world.add_component_observer(fn(
@@ -388,7 +388,7 @@ test "ecs observer: world add_component_observer fires on remove" {
 test "ecs observer: add observers only fire on first insertion" {
   let world = World::new()
   let entity = world.spawn()
-  let hits : Ref[Int] = Ref::new(0)
+  let hits : Ref[Int] = Ref(0)
 
   ignore(
     world.add_add_component_observer(fn(
@@ -411,7 +411,7 @@ test "ecs observer: add observers only fire on first insertion" {
 test "ecs observer: replace observers fire on replace and remove paths" {
   let world = World::new()
   let entity = world.spawn()
-  let hits : Ref[Int] = Ref::new(0)
+  let hits : Ref[Int] = Ref(0)
 
   ignore(
     world.add_replace_component_observer(fn(
@@ -442,7 +442,7 @@ test "ecs observer: despawn observers fire only during despawn" {
   let world = World::new()
   let keep_entity = world.spawn()
   let despawn_entity = world.spawn()
-  let hits : Ref[Int] = Ref::new(0)
+  let hits : Ref[Int] = Ref(0)
 
   ignore(
     world.add_despawn_component_observer(fn(
@@ -590,8 +590,8 @@ test "ecs observer: world add_observer and add_entity_observer handle custom eve
   let entity1 = world.spawn()
   let global_entities : Array[Int] = []
   let bound_entities : Array[Int] = []
-  let global_hits : Ref[Int] = Ref::new(0)
-  let bound_hits : Ref[Int] = Ref::new(0)
+  let global_hits : Ref[Int] = Ref(0)
+  let bound_hits : Ref[Int] = Ref(0)
 
   ignore(
     world.add_observer(fn(event : On[ObserverDetonate]) {
@@ -679,7 +679,7 @@ test "ecs observer: parent lookup cache refreshes after late relationship regist
   let world = World::new()
   let parent = world.spawn()
   let child = world.spawn()
-  let parent_hits : Ref[Int] = Ref::new(0)
+  let parent_hits : Ref[Int] = Ref(0)
 
   ignore(
     world.add_entity_observer(parent, fn(_event : On[ObserverAttack]) {
@@ -702,7 +702,7 @@ test "ecs observer: parent lookup accessor is captured per-world registration" {
   let world0 = World::new()
   let parent0 = world0.spawn()
   let child0 = world0.spawn()
-  let world0_hits : Ref[Int] = Ref::new(0)
+  let world0_hits : Ref[Int] = Ref(0)
 
   ignore(
     component_metadata_builder(observer_parent_link_stable_key).relationship_source(
@@ -726,7 +726,7 @@ test "ecs observer: parent lookup accessor is captured per-world registration" {
   let world1 = World::new()
   let parent1 = world1.spawn()
   let child1 = world1.spawn()
-  let world1_hits : Ref[Int] = Ref::new(0)
+  let world1_hits : Ref[Int] = Ref(0)
   try! world1.set_by_key(child1, observer_parent_link_stable_key, ObserverParentLinkStable::{
     parent: parent1,
   })
@@ -762,7 +762,7 @@ test "ecs observer: parent lookup cache tracks archetype register and unregister
   let world = World::new()
   let parent = world.spawn()
   let child = world.spawn()
-  let parent_hits : Ref[Int] = Ref::new(0)
+  let parent_hits : Ref[Int] = Ref(0)
   reset_observer_parent_lookup_probe_counters(world.world_id(), -1)
 
   ignore(
@@ -820,8 +820,8 @@ test "ecs observer: parent lookup cache isolates archetype activity per world" {
   let child0 = world0.spawn()
   let parent1 = world1.spawn()
   let child1 = world1.spawn()
-  let world0_hits : Ref[Int] = Ref::new(0)
-  let world1_hits : Ref[Int] = Ref::new(0)
+  let world0_hits : Ref[Int] = Ref(0)
+  let world1_hits : Ref[Int] = Ref(0)
 
   try! world0.set_by_key(child0, observer_parent_lookup_probe_key, ObserverParentLookupProbe::{
     parent: parent0,
@@ -854,7 +854,7 @@ test "ecs observer: add_remove_entity_component_observer only fires for the boun
   let entity0 = world.spawn()
   let entity1 = world.spawn()
   let seen_entities : Array[Int] = []
-  let hits : Ref[Int] = Ref::new(0)
+  let hits : Ref[Int] = Ref(0)
 
   ignore(
     world.add_remove_entity_component_observer(entity0, fn(

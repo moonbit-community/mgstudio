@@ -19,7 +19,7 @@ pub type ShaderSourceFile = @wgsl_common.WgslSourceFile
 pub type ShaderSourceScanOptions = @wgsl_common.WgslSourceScanOptions
 
 ///|
-let embedded_shader_source_paths : Ref[Array[String]] = Ref::new([])
+let embedded_shader_source_paths : Ref[Array[String]] = Ref([])
 
 ///|
 pub fn clear_embedded_shader_sources() -> Unit {

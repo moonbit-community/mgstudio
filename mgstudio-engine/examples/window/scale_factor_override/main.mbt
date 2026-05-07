@@ -121,7 +121,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn primary_window_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(
     (
@@ -139,7 +139,7 @@ fn primary_window_entity(world : @ecs.World) -> @core.Entity? {
 
 ///|
 fn custom_text_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(@ecs.With::new(custom_text_key))
   .view(fn(_query_entity, entity) {

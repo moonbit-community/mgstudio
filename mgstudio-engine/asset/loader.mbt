@@ -62,10 +62,10 @@ fn asset_loader_registry_state_for_world(
   let key = asset_loader_registry_state_resource_key()
   if (try! world.get_resource(key)) is None {
     world.insert_resource(key, AssetLoaderRegistryState::{
-      loaders: Ref::new(@hashmap.HashMap::new()),
-      ready_checkers: Ref::new(@hashmap.HashMap::new()),
-      reload_hooks: Ref::new([]),
-      builtin_registered: Ref::new(false),
+      loaders: Ref(@hashmap.HashMap([])),
+      ready_checkers: Ref(@hashmap.HashMap([])),
+      reload_hooks: Ref([]),
+      builtin_registered: Ref(false),
     })
   }
   match (try! world.get_resource(key)) {

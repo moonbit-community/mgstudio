@@ -61,7 +61,7 @@ priv struct PcssState {
 }
 
 ///|
-let pcss_state : Ref[PcssState] = Ref::new({
+let pcss_state : Ref[PcssState] = Ref({
   camera: None,
   light: None,
   help_text: None,

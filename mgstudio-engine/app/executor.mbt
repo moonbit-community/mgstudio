@@ -326,7 +326,7 @@ fn run_systems(
       }
     }
   }
-  let execution_i_ref = Ref::new(0)
+  let execution_i_ref = Ref(0)
   match executor_kind {
     SingleThreaded =>
       for system_i in 0..<systems.length() {

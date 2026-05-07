@@ -126,7 +126,7 @@ fn move_scene_entities(world : @ecs.World) -> Unit {
     @ecs.With::new(MovedScene::component()),
   )
   try! moved_scenes.view(fn(_entity, moved_scene_entity) {
-    let offset = Ref::new(0.0F)
+    let offset = Ref(0.0F)
     visit_descendants(world, moved_scene_entity, fn(descendant) {
       match (try! world.get_by_key(descendant, @transform.ecs_key_transform)) {
         Some(transform) => {

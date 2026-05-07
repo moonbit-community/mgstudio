@@ -45,7 +45,7 @@ priv struct VolumetricFogState {
 }
 
 ///|
-let volumetric_fog_state : Ref[VolumetricFogState] = Ref::new({
+let volumetric_fog_state : Ref[VolumetricFogState] = Ref({
   volumetric_spotlight: true,
   volumetric_pointlight: true,
   camera: None,

@@ -80,7 +80,7 @@ priv struct ContactShadowsExampleState {
 }
 
 ///|
-let contact_shadows_state : Ref[ContactShadowsExampleState] = Ref::new({
+let contact_shadows_state : Ref[ContactShadowsExampleState] = Ref({
   camera: None,
   directional_light: None,
   point_light: None,

@@ -30,13 +30,13 @@ pub struct IoTaskPool {
 }
 
 ///|
-let compute_task_pool_ref : Ref[ComputeTaskPool?] = Ref::new(None)
+let compute_task_pool_ref : Ref[ComputeTaskPool?] = Ref(None)
 
 ///|
-let async_compute_task_pool_ref : Ref[AsyncComputeTaskPool?] = Ref::new(None)
+let async_compute_task_pool_ref : Ref[AsyncComputeTaskPool?] = Ref(None)
 
 ///|
-let io_task_pool_ref : Ref[IoTaskPool?] = Ref::new(None)
+let io_task_pool_ref : Ref[IoTaskPool?] = Ref(None)
 
 ///|
 pub fn ComputeTaskPool::get_or_init(init : () -> TaskPool) -> ComputeTaskPool {

@@ -18,7 +18,7 @@ priv struct DespawnResource {
 }
 
 ///|
-let despawn_state : Ref[DespawnResource] = Ref::new({ timer: 5.0F })
+let despawn_state : Ref[DespawnResource] = Ref({ timer: 5.0F })
 
 ///|
 pub struct DespawnMarker {

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-let player_entity : Ref[@core.Entity?] = Ref::new(None)
+let player_entity : Ref[@core.Entity?] = Ref(None)
 
 ///|
 fn main {

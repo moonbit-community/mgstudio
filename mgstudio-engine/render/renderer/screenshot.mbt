@@ -336,7 +336,7 @@ fn screenshot_runtime_state_default() -> ScreenshotRuntimeState {
 }
 
 ///|
-let screenshot_runtime_state_ref : Ref[ScreenshotRuntimeState] = Ref::new(
+let screenshot_runtime_state_ref : Ref[ScreenshotRuntimeState] = Ref(
   screenshot_runtime_state_default(),
 )
 

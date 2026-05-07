@@ -489,7 +489,7 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
       return
     }
     let device = @render.host_gpu_request_device()
-    let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
+    let app_ref : Ref[@app.App[@ecs.World]] = Ref(app.run_startup())
     let debug_screenshot_path = match
       @sys.get_env_var("MGSTUDIO_SCREENSHOT_PATH") {
       Some(path) if path.trim().to_owned() != "" => Some(path.trim().to_owned())
@@ -524,15 +524,15 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
         value
       }
     }
-    let debug_screenshot_requested_ref : Ref[Bool] = Ref::new(false)
-    let debug_screenshot_saved_ref : Ref[Bool] = Ref::new(false)
-    let debug_screenshot_capture_id_ref : Ref[Int] = Ref::new(0)
-    let debug_screenshot_render_frame_ref : Ref[Int] = Ref::new(0)
+    let debug_screenshot_requested_ref : Ref[Bool] = Ref(false)
+    let debug_screenshot_saved_ref : Ref[Bool] = Ref(false)
+    let debug_screenshot_capture_id_ref : Ref[Int] = Ref(0)
+    let debug_screenshot_render_frame_ref : Ref[Int] = Ref(0)
     let runner_state = WinitAppRunnerState::{
       device,
       primary_window,
       app_ref,
-      runner_surfaces_ref: Ref::new([]),
+      runner_surfaces_ref: Ref([]),
       debug_screenshot_path,
       debug_screenshot_exit_on_save,
       debug_screenshot_texture_id,
@@ -543,7 +543,7 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
       debug_screenshot_capture_id_ref,
       debug_screenshot_render_frame_ref,
       frame_limit: runner_frame_limit(),
-      frame_count_ref: Ref::new(0),
+      frame_count_ref: Ref(0),
     }
     @windowing.native_event_loop().run_app(runner_state)
   }

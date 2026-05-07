@@ -159,7 +159,7 @@ pub fn AnimationTriggeredEvent::payload(
 }
 
 ///|
-let animation_triggered_events : Ref[@core.Messages[AnimationTriggeredEvent]] = Ref::new(
+let animation_triggered_events : Ref[@core.Messages[AnimationTriggeredEvent]] = Ref(
   @core.Messages::new(),
 )
 

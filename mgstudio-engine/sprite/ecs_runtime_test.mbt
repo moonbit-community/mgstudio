@@ -205,7 +205,7 @@ test "render2d: Sprite::sized uses the white texture handle" {
 
 ///|
 test "render2d: Commands can spawn SpriteBundle" {
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let bundle = SpriteBundle::new_with_layers(
     Sprite::from_image(@asset.Handle::new(7)),
     @transform.Transform::identity(),
@@ -297,7 +297,7 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
 ///|
 test "render2d: Commands::spawn accepts Camera2dBundle" {
   let world = @ecs.World::new()
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
 
   let mut app = @app.App::new(world).add_system_param(fn(
     commands : @app.Commands,
@@ -458,7 +458,7 @@ test "render2d: Camera2dBundle::new_with_target stores window render target" {
 ///|
 test "render2d: Mesh2dBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
-  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
+  let entity_ref : Ref[@core.Entity?] = Ref(None)
   let expected_transform = @transform.Transform::identity()
 
   @app.App::new(world)
@@ -829,10 +829,10 @@ test "sprite: compute_pixel_space_point follows Bevy texture-coordinate conventi
 
 ///|
 test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
-  let wrapped_material_handle : Ref[Int?] = Ref::new(None)
-  let preserved_material_handle : Ref[Int?] = Ref::new(None)
-  let color_material_handle : Ref[Int?] = Ref::new(None)
-  let explicit_mesh_material_handle : Ref[Int?] = Ref::new(None)
+  let wrapped_material_handle : Ref[Int?] = Ref(None)
+  let preserved_material_handle : Ref[Int?] = Ref(None)
+  let color_material_handle : Ref[Int?] = Ref(None)
+  let explicit_mesh_material_handle : Ref[Int?] = Ref(None)
 
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::default())
@@ -949,8 +949,8 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
 
 ///|
 test "render2d: generic Material2d runtime extracts and prepares custom assets" {
-  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
-  let handle_ref : Ref[@asset.Handle[DummyMaterialAsset]?] = Ref::new(None)
+  let entity_ref : Ref[@core.Entity?] = Ref(None)
+  let handle_ref : Ref[@asset.Handle[DummyMaterialAsset]?] = Ref(None)
   let expected = dummy_material_asset(color=Color::new(0.3F, 0.6F, 0.9F, 1.0F))
 
   let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
@@ -1013,8 +1013,8 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
 
 ///|
 test "render2d: extract_color_material_mesh_instances_system populates resource" {
-  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
-  let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref::new(None)
+  let entity_ref : Ref[@core.Entity?] = Ref(None)
+  let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
@@ -1051,7 +1051,7 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
 
 ///|
 test "render2d: prepare_color_material2d_assets_system populates prepared assets" {
-  let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref::new(None)
+  let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
@@ -1126,8 +1126,8 @@ test "render2d: MeshMaterial2d component keys are registered per material type" 
 
 ///|
 test "render2d: ColorMaterialAsset::from_color matches Bevy alpha inference" {
-  let opaque_alpha_mode : Ref[AlphaMode2d?] = Ref::new(None)
-  let blend_alpha_mode : Ref[AlphaMode2d?] = Ref::new(None)
+  let opaque_alpha_mode : Ref[AlphaMode2d?] = Ref(None)
+  let blend_alpha_mode : Ref[AlphaMode2d?] = Ref(None)
 
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::default())

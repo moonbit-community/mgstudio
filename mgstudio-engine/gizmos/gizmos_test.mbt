@@ -43,7 +43,7 @@ impl @sprite.GizmoConfigGroup for TestRoundGizmos with gizmo_config_group_marker
 
 ///|
 test "custom gizmo groups expose config through store and system param" {
-  let seen_width = Ref::new(-1.0F)
+  let seen_width = Ref(-1.0F)
   let app = @gizmos.init_gizmo_group(
     @app.App::new(@ecs.World::new()),
     TestRoundGizmos::default(),

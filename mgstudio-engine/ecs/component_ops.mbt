@@ -31,7 +31,8 @@ pub(all) struct ComponentOps {
 }
 
 ///|
-let component_ops_registry : @hashmap.HashMap[Int, ComponentOps] = @hashmap.HashMap::new()
+let component_ops_registry : @hashmap.HashMap[Int, ComponentOps] = @hashmap.HashMap([],
+)
 
 ///|
 fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {

@@ -47,7 +47,7 @@ priv struct ShowcaseEntities {
 }
 
 ///|
-let showcase_entities : Ref[ShowcaseEntities] = Ref::new(ShowcaseEntities::{
+let showcase_entities : Ref[ShowcaseEntities] = Ref(ShowcaseEntities::{
   player: None,
   sensor_zone: None,
   ghost_a: None,
@@ -55,7 +55,7 @@ let showcase_entities : Ref[ShowcaseEntities] = Ref::new(ShowcaseEntities::{
 })
 
 ///|
-let showcase_ghost_nocollide_enabled : Ref[Bool] = Ref::new(true)
+let showcase_ghost_nocollide_enabled : Ref[Bool] = Ref(true)
 
 ///|
 fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
@@ -98,7 +98,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
   match cfg_res.get() {
     Some(current_cfg) => {
-      let cfg = Ref::new(current_cfg)
+      let cfg = Ref(current_cfg)
       cfg.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -800.0F))
       cfg_res.insert(cfg.val)
     }

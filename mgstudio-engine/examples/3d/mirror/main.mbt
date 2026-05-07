@@ -67,7 +67,7 @@ priv struct MirrorState {
 }
 
 ///|
-let mirror_state : Ref[MirrorState] = Ref::new({
+let mirror_state : Ref[MirrorState] = Ref({
   main_camera: @core.Entity::placeholder(),
   mirror_camera: @core.Entity::placeholder(),
   mirror_plane: @core.Entity::placeholder(),

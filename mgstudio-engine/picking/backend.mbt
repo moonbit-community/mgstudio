@@ -274,7 +274,7 @@ fn picking_sprite_cameras(
         Bool,
       ),
     ],
-  ] = Ref::new([])
+  ] = Ref([])
   world.for_each_component(@sprite.ecs_key_camera2d, fn(entity, _camera2d) {
     guard (try! world.get_by_key(entity, @sprite.ecs_key_camera))
       is Some(camera) else {
@@ -451,7 +451,7 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
   let scale_factor = @window.window_scale_factor()
   let window_width = @window.window_width()
   let window_height = @window.window_height()
-  let cameras : Ref[Array[(@core.Entity, @sprite.Camera, @camera.Projection)]] = Ref::new([],
+  let cameras : Ref[Array[(@core.Entity, @sprite.Camera, @camera.Projection)]] = Ref([],
   )
   world.for_each_component(@camera.ecs_key_camera3d, fn(entity, _camera3d) {
     guard (try! world.get_by_key(entity, @sprite.ecs_key_camera))
@@ -648,7 +648,7 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
 /// Window hit backend (`bevy_picking::window::update_window_hits` shape).
 pub fn picking_window_hit_test_system(world : @ecs.World) -> Unit {
   let inputs = pointer_inputs_for_backend(world)
-  let primary_window_entity : Ref[@core.Entity?] = Ref::new(None)
+  let primary_window_entity : Ref[@core.Entity?] = Ref(None)
   world.for_each_component(@window.ecs_key_primary_window, fn(
     entity,
     _primary,

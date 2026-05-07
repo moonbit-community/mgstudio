@@ -55,7 +55,7 @@ fn default_state() -> DeferredState {
 }
 
 ///|
-let deferred_state : Ref[DeferredState] = Ref::new(default_state())
+let deferred_state : Ref[DeferredState] = Ref(default_state())
 
 ///|
 fn float_from_int(value : Int) -> Float {

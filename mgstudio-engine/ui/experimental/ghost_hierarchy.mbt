@@ -153,7 +153,7 @@ pub fn UiRootNodes::new(world : @ecs.World) -> UiRootNodes {
 
 ///|
 pub fn UiRootNodes::iter(self : UiRootNodes) -> Array[@core.Entity] {
-  let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+  let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
   let roots : Array[@core.Entity] = []
   self.world.for_each_component(@ui.ecs_key_node, fn(entity, _node) {
     if (try! self.world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {

@@ -82,7 +82,7 @@ pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T] with 
 pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T] with get(
   state,
 ) {
-  Local::{ value_ref: Ref::new(local_param_decode_state(state)) }
+  Local::{ value_ref: Ref(local_param_decode_state(state)) }
 }
 
 ///|

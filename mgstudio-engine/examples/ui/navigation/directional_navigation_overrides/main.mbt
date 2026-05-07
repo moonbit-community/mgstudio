@@ -307,7 +307,7 @@ fn setup_override_ui(
 fn override_direction_from_gamepads(
   gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
 ) -> @math.CompassOctant? {
-  let result : Ref[@math.CompassOctant?] = Ref::new(None)
+  let result : Ref[@math.CompassOctant?] = Ref(None)
   try! gamepads.view(fn(_entity, gamepad) {
     if result.val is Some(_) {
       return
@@ -376,7 +376,7 @@ fn navigate_override_ui(
 fn override_activate_from_gamepads(
   gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
 ) -> Bool {
-  let pressed = Ref::new(false)
+  let pressed = Ref(false)
   try! gamepads.view(fn(_entity, gamepad) {
     if pressed.val {
       return

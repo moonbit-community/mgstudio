@@ -135,7 +135,7 @@ fn relative_cursor_position_system(
     @ecs.All,
   ],
 ) -> Unit {
-  let current : Ref[@ui.RelativeCursorPosition?] = Ref::new(None)
+  let current : Ref[@ui.RelativeCursorPosition?] = Ref(None)
   try! relative_cursor_positions.view(fn(_entity, data) {
     let (_cursor_area, relative_cursor_position) = data
     if current.val is None {

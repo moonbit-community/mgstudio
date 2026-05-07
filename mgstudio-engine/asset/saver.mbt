@@ -168,7 +168,7 @@ pub fn[T, Settings, P : IntoAssetPath] save_using_saver(
   let bytes = writer.finish()
   host_asset_save_bytes(path=formatted_path, bytes~)
   let canonical_path = asset_canonical_path(formatted_path)
-  let seen = Ref::new(false)
+  let seen = Ref(false)
   for existing_path in asset_server.paths.val {
     if existing_path == canonical_path {
       seen.val = true

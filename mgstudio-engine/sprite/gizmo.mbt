@@ -138,7 +138,7 @@ fn[Config : GizmoConfigGroup + Default] gizmos_from_world(
       Gizmos::{
         config,
         config_group,
-        state: Ref::new(GizmoState::new()),
+        state: Ref(GizmoState::new()),
         world: Some(world),
       }
     None => raise @ecs.Invalid(gizmo_group_missing_message(group))
@@ -631,14 +631,14 @@ pub impl[Config] Default for GizmoStorage[Config] with default() {
 }
 
 ///|
-let gizmo_storage_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let gizmo_storage_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
 let gizmo_storage_drain_registry : Ref[
   @hashmap.HashMap[String, (@ecs.World) -> Unit],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 fn[Config] gizmo_storage_type_name_of(_probe : GizmoStorage[Config]) -> String {
@@ -715,10 +715,10 @@ fn[Config] Gizmos::flush(self : Gizmos[Config]) -> Unit {
 }
 
 ///|
-let gizmo_state : Ref[GizmoState] = Ref::new(GizmoState::new())
+let gizmo_state : Ref[GizmoState] = Ref(GizmoState::new())
 
 ///|
-let global_gizmo_state : Ref[GizmoState] = Ref::new(GizmoState::new())
+let global_gizmo_state : Ref[GizmoState] = Ref(GizmoState::new())
 
 ///|
 pub fn gizmo() -> Gizmos[DefaultGizmoConfigGroup] {

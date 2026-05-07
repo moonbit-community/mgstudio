@@ -32,7 +32,7 @@ pub fn[T] Resource::is_present(self : Resource[T]) -> Bool {
 
 ///|
 pub fn[T] Resource::insert(self : Resource[T], value : T) -> Unit {
-  self.cell = Some(Ref::new(value))
+  self.cell = Some(Ref(value))
 }
 
 ///|

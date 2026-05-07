@@ -27,14 +27,14 @@ priv struct SanityState {
 }
 
 ///|
-let state : Ref[SanityState] = Ref::new({ ball: None })
+let state : Ref[SanityState] = Ref({ ball: None })
 
 ///|
 fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   let cfg_res = @physics3d.get_physics3d_config_resource(world)
   match cfg_res.get() {
     Some(cfg) => {
-      let cfg_ref = Ref::new(cfg)
+      let cfg_ref = Ref(cfg)
       cfg_ref.val = @physics3d.Physics3dConfig::new(
         @math.Vec3::new(0.0F, -500.0F, 0.0F),
       )

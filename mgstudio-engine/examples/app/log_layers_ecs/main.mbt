@@ -24,7 +24,7 @@ let log_message_key : @ecs.MessageKey[LogMessage] = @ecs.register_message(
 )
 
 ///|
-let captured_log_queue_ref : Ref[Array[LogMessage]] = Ref::new([])
+let captured_log_queue_ref : Ref[Array[LogMessage]] = Ref([])
 
 ///|
 pub impl @ecs.Message for LogMessage with message() {

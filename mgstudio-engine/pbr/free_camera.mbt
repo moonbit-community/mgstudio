@@ -106,7 +106,7 @@ fn free_camera_system_state_ref_or_init(
     })
   }
   match (try! world.get_resource_mut(FreeCameraSystemState::resource())) {
-    Some(state_ref) => Ref::new(state_ref.peek())
+    Some(state_ref) => Ref(state_ref.peek())
     None => abort("Missing FreeCameraSystemState resource")
   }
 }

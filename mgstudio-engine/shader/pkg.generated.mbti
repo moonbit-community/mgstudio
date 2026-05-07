@@ -107,7 +107,7 @@ pub(all) enum ShaderCacheSource {
 
 type ShaderData[ShaderModule, ShaderId]
 pub fn[ShaderModule, ShaderId] ShaderData::cache_processed_shader(Self[ShaderModule, ShaderId], Array[ShaderDefVal], ShaderModule) -> Unit
-pub fn[ShaderModule, ShaderId] ShaderData::default() -> Self[ShaderModule, ShaderId]
+pub fn[ShaderModule, ShaderId : Hash + Eq] ShaderData::default() -> Self[ShaderModule, ShaderId]
 pub fn[ShaderModule, ShaderId] ShaderData::dependent_count(Self[ShaderModule, ShaderId]) -> Int
 pub fn[ShaderModule, ShaderId] ShaderData::get_processed_shader(Self[ShaderModule, ShaderId], Array[ShaderDefVal]) -> ShaderModule?
 pub fn[ShaderModule, ShaderId] ShaderData::pipeline_count(Self[ShaderModule, ShaderId]) -> Int

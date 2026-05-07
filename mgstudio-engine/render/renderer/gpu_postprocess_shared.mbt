@@ -25,7 +25,7 @@ fn clamp_non_negative(value : Float) -> Float {
 fn postprocess_define_keys_map(
   define_keys : Array[String],
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   for key in define_keys {
     defines.set(key, true)
   }

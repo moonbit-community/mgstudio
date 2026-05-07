@@ -68,14 +68,14 @@ fn[T : GizmoConfigGroup + Default] gizmo_config_store_entry(
 ) -> GizmoConfigStoreEntry {
   group.gizmo_config_group_marker()
   GizmoConfigStoreEntry::{
-    config: Ref::new(GizmoConfig::default()),
-    ext_config: @any.of(Ref::new(T::default())),
+    config: Ref(GizmoConfig::default()),
+    ext_config: @any.of(Ref(T::default())),
   }
 }
 
 ///|
 pub impl Default for GizmoConfigStore with default() {
-  let store = GizmoConfigStore::{ entries: @hashmap.HashMap::new() }
+  let store = GizmoConfigStore::{ entries: @hashmap.HashMap([]) }
   store.register(DefaultGizmoConfigGroup::default())
   store
 }

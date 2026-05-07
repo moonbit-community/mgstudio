@@ -50,7 +50,7 @@ pub fn Physics3dHooksConfig::default() -> Physics3dHooksConfig {
 ///|
 let physics3d_hook_collider_to_entity : Ref[
   @hashmap.HashMap[(Int, Int), @core.Entity],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 pub fn physics3d_hooks_config(world : @ecs.World) -> Physics3dHooksConfig {
@@ -163,7 +163,7 @@ pub fn physics3d_hooks_set_current_collider_map(
 
 ///|
 pub fn physics3d_hooks_clear_current_collider_map() -> Unit {
-  physics3d_hook_collider_to_entity.val = @hashmap.HashMap::new()
+  physics3d_hook_collider_to_entity.val = @hashmap.HashMap([])
 }
 
 ///|

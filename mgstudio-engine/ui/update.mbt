@@ -75,7 +75,7 @@ pub fn UiContext::new(
 }
 
 ///|
-let ui_context_serde_next_id : Ref[Int] = Ref::new(1)
+let ui_context_serde_next_id : Ref[Int] = Ref(1)
 
 ///|
 let ui_context_serde_values : Map[Int, UiContext] = {}

@@ -20,7 +20,7 @@ priv struct RayState {
 }
 
 ///|
-let ray_state : Ref[RayState] = Ref::new({
+let ray_state : Ref[RayState] = Ref({
   camera: @sprite.Camera::default(),
   projection: @camera.Projection::default(),
   transform: @transform.Transform::identity(),

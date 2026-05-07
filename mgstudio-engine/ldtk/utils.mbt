@@ -38,7 +38,7 @@ pub fn int_grid_index_to_grid_coords(
 pub fn create_entity_definition_map(
   entity_definitions : Array[EntityDefinition],
 ) -> @hashmap.HashMap[Int, EntityDefinition] {
-  let map : @hashmap.HashMap[Int, EntityDefinition] = @hashmap.HashMap::new()
+  let map : @hashmap.HashMap[Int, EntityDefinition] = @hashmap.HashMap([])
   for definition in entity_definitions {
     map.set(definition.uid, definition)
   }
@@ -49,7 +49,7 @@ pub fn create_entity_definition_map(
 pub fn create_layer_definition_map(
   layer_definitions : Array[LayerDefinition],
 ) -> @hashmap.HashMap[Int, LayerDefinition] {
-  let map : @hashmap.HashMap[Int, LayerDefinition] = @hashmap.HashMap::new()
+  let map : @hashmap.HashMap[Int, LayerDefinition] = @hashmap.HashMap([])
   for definition in layer_definitions {
     map.set(definition.uid, definition)
   }
@@ -220,7 +220,7 @@ pub fn calculate_transform_from_entity_instance(
 ) -> @transform.Transform {
   calculate_transform_from_entity_instance_with_entity_definition_map(
     entity_instance,
-    @hashmap.HashMap::new(),
+    @hashmap.HashMap([]),
     level_height,
   )
 }

@@ -43,7 +43,7 @@ pub impl @ecs.Component for TransformTreeChanged with component() {
 }
 
 ///|
-let transform_component_metadata_installed : Ref[Bool] = Ref::new(false)
+let transform_component_metadata_installed : Ref[Bool] = Ref(false)
 
 ///|
 pub fn transform_install_component_metadata() -> Unit {

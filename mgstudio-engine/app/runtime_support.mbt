@@ -19,7 +19,7 @@ priv struct RuntimeState {
 }
 
 ///|
-let runtime_state_ref : Ref[RuntimeState] = Ref::new(RuntimeState::{
+let runtime_state_ref : Ref[RuntimeState] = Ref(RuntimeState::{
   close_requested: false,
   stdin_line: None,
 })

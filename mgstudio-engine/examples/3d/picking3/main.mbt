@@ -20,7 +20,7 @@ priv struct PickState {
 }
 
 ///|
-let pick_state : Ref[PickState] = Ref::new({
+let pick_state : Ref[PickState] = Ref({
   camera: @sprite.Camera::default(),
   projection: @camera.Projection::default(),
   transform: @transform.Transform::identity(),

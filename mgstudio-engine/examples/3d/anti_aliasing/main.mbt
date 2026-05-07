@@ -94,7 +94,7 @@ priv struct AntiAliasingState {
 }
 
 ///|
-let anti_aliasing_state : Ref[AntiAliasingState] = Ref::new({
+let anti_aliasing_state : Ref[AntiAliasingState] = Ref({
   aa_method: AAMethod::NoAA,
   msaa_samples: MSAASamples::Sample4,
   fxaa_sensitivity: FXAASensitivity::Medium,

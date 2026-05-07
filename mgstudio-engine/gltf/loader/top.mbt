@@ -292,12 +292,12 @@ fn GltfLoaderRuntimeState::from_bootstrap() -> GltfLoaderRuntimeState {
 }
 
 ///|
-let gltf_loader_registration_bootstrap_ref : Ref[GltfLoaderRegistration?] = Ref::new(
+let gltf_loader_registration_bootstrap_ref : Ref[GltfLoaderRegistration?] = Ref(
   None,
 )
 
 ///|
-let gltf_loader_registered_bootstrap_ref : Ref[Bool] = Ref::new(false)
+let gltf_loader_registered_bootstrap_ref : Ref[Bool] = Ref(false)
 
 ///|
 let gltf_custom_vertex_attributes_bootstrap : Array[GltfCustomVertexAttribute] = []
@@ -305,17 +305,17 @@ let gltf_custom_vertex_attributes_bootstrap : Array[GltfCustomVertexAttribute] =
 ///|
 let gltf_default_image_sampler_bootstrap_ref : Ref[
   @image.ImageSamplerDescriptor,
-] = Ref::new(@image.ImageSamplerDescriptor::linear())
+] = Ref(@image.ImageSamplerDescriptor::linear())
 
 ///|
-let gltf_default_convert_coordinates_bootstrap_ref : Ref[GltfConvertCoordinates] = Ref::new(
+let gltf_default_convert_coordinates_bootstrap_ref : Ref[GltfConvertCoordinates] = Ref(
   GltfConvertCoordinates::default(),
 )
 
 ///|
 let gltf_default_skinned_mesh_bounds_policy_bootstrap_ref : Ref[
   GltfSkinnedMeshBoundsPolicy,
-] = Ref::new(GltfSkinnedMeshBoundsPolicy::default())
+] = Ref(GltfSkinnedMeshBoundsPolicy::default())
 
 ///|
 let ecs_res_key_gltf_loader_plugin_runtime_state : @ecs.ResourceKey[
@@ -353,7 +353,7 @@ fn gltf_loader_plugin_runtime_state_ref_if_present() -> Ref[
   guard @app.current_world() is Some(world) else { return None }
   match
     (try! world.get_resource_mut(ecs_res_key_gltf_loader_plugin_runtime_state)) {
-    Some(state_ref) => Some(Ref::new(state_ref.peek()))
+    Some(state_ref) => Some(Ref(state_ref.peek()))
     None => None
   }
 }
@@ -381,7 +381,7 @@ pub fn gltf_loader_runtime_plugin(
 fn gltf_loader_runtime_state_ref_if_present() -> Ref[GltfLoaderRuntimeState]? {
   guard @app.current_world() is Some(world) else { return None }
   match (try! world.get_resource_mut(ecs_res_key_gltf_loader_runtime_state)) {
-    Some(state_ref) => Some(Ref::new(state_ref.peek()))
+    Some(state_ref) => Some(Ref(state_ref.peek()))
     None => None
   }
 }

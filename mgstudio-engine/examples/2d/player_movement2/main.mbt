@@ -18,7 +18,7 @@ priv struct PlayerMovementState {
 }
 
 ///|
-let player_movement_state : Ref[PlayerMovementState] = Ref::new(PlayerMovementState::{
+let player_movement_state : Ref[PlayerMovementState] = Ref(PlayerMovementState::{
   player: None,
 })
 

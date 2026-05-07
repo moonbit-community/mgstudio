@@ -209,7 +209,7 @@ fn create_sprite_render_pipeline(
   guard backend.sprite_render_pipeline_layout is Some(layout) else {
     fatal("wgpu: sprite pipeline layout is None")
   }
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   let value_defines = default_wgsl_value_defines()
   let wgsl = load_wgsl_preprocessed(
     "", "sprite_render/render/sprite.wgsl", defines, value_defines,

@@ -38,10 +38,10 @@ pub fn[T] World::component_column(
             key,
             local_component_id,
             storage_type,
-            table_column_cache: Ref::new([]),
-            table_column_cache_ready: Ref::new([]),
-            table_values_cache: Ref::new([]),
-            table_values_cache_ready: Ref::new([]),
+            table_column_cache: Ref([]),
+            table_column_cache_ready: Ref([]),
+            table_values_cache: Ref([]),
+            table_values_cache_ready: Ref([]),
           })
         None => None
       }

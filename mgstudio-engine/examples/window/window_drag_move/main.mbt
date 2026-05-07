@@ -85,7 +85,7 @@ fn instruction_text(
 
 ///|
 fn find_instruction_text_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(@ecs.With::new(example_text_key))
   .view(fn(_query_entity, entity) {

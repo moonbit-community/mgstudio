@@ -160,7 +160,7 @@ impl @ecs.QueryData for VolumeIntersectionData with contiguous_compatible() {
 }
 
 ///|
-let overlay_text_entity : Ref[@core.Entity?] = Ref::new(None)
+let overlay_text_entity : Ref[@core.Entity?] = Ref(None)
 
 ///|
 fn main {

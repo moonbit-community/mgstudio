@@ -318,7 +318,7 @@ fn[W] ScheduleGraph::new() -> ScheduleGraph[W] {
     set_edges: [],
     set_edges_ignore_deferred: [],
     set_hierarchy_edges: [],
-    set_run_conditions: @hashmap.HashMap::new(),
+    set_run_conditions: @hashmap.HashMap([]),
     changed: false,
     generation: 0,
     settings,
@@ -361,7 +361,7 @@ fn[W] ScheduleEntry::new() -> ScheduleEntry[W] {
     executor_initialized: false,
     last_reported_build_error_generation: None,
     last_reported_invalid_access_key: None,
-    executor_state: Ref::new(single_threaded_executor_state_new(0, 0, true)),
+    executor_state: Ref(single_threaded_executor_state_new(0, 0, true)),
   }
 }
 
@@ -428,7 +428,7 @@ fn[W] schedule_entry_ref(
   match schedule_registry.entries.get(key) {
     Some(entry_ref) => entry_ref
     None => {
-      let entry_ref = Ref::new(ScheduleEntry::new())
+      let entry_ref = Ref(ScheduleEntry::new())
       schedule_registry.entries.set(key, entry_ref)
       entry_ref
     }
@@ -437,7 +437,7 @@ fn[W] schedule_entry_ref(
 
 ///|
 fn[W] ScheduleRegistry::new() -> ScheduleRegistry[W] {
-  let schedule = ScheduleRegistry::{ entries: @hashmap.HashMap::new() }
+  let schedule = ScheduleRegistry::{ entries: @hashmap.HashMap([]) }
   for stage in default_schedule_labels() {
     ignore(schedule_entry_ref(schedule, stage))
   }
@@ -871,7 +871,7 @@ fn[W] schedule_build_graph_plan(
   schedule_entry : ScheduleEntry[W],
   stage : ScheduleStage,
 ) -> ScheduleGraphPlan {
-  let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
+  let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap([])
   let set_order : Array[SystemSet] = []
   fn push_unique(
     seen : @hashmap.HashMap[SystemSet, Bool],
@@ -886,7 +886,8 @@ fn[W] schedule_build_graph_plan(
 
   let system_count = schedule_entry.graph.systems.length()
   let groups : Array[SystemSet] = []
-  let membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]] = @hashmap.HashMap::new()
+  let membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]] = @hashmap.HashMap([],
+  )
   fn add_membership_group(
     membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]],
     member_set : SystemSet,
@@ -937,7 +938,7 @@ fn[W] schedule_build_graph_plan(
     push_unique(seen, set_order, edge.0)
     push_unique(seen, set_order, edge.1)
   }
-  let hierarchy_changed = Ref::new(true)
+  let hierarchy_changed = Ref(true)
   while hierarchy_changed.val {
     hierarchy_changed.val = false
     for edge in schedule_entry.graph.set_hierarchy_edges {
@@ -993,7 +994,7 @@ fn[W] schedule_build_graph_plan(
     }
   }
   let set_count = set_order.length()
-  let set_index : @hashmap.HashMap[SystemSet, Int] = @hashmap.HashMap::new()
+  let set_index : @hashmap.HashMap[SystemSet, Int] = @hashmap.HashMap([])
   for i in 0..<set_count {
     set_index.set(set_order[i], i)
   }
@@ -1971,8 +1972,8 @@ fn[W] schedule_build_access_plan(
     single_threaded_batches.push([node])
   }
   let multi_threaded_batches : Array[Array[ScheduleExecutionNode]] = []
-  let current_batch_ref : Ref[Array[ScheduleExecutionNode]] = Ref::new([])
-  let current_batch_layer_ref : Ref[Int?] = Ref::new(None)
+  let current_batch_ref : Ref[Array[ScheduleExecutionNode]] = Ref([])
+  let current_batch_layer_ref : Ref[Int?] = Ref(None)
   fn flush_current_batch() -> Unit {
     if current_batch_ref.val.length() > 0 {
       multi_threaded_batches.push(current_batch_ref.val)
@@ -1990,7 +1991,7 @@ fn[W] schedule_build_access_plan(
         }
         let system_layer = execution_system_layers[system_i]
         let access = execution_system_accesses[system_i]
-        let can_join_current_batch = Ref::new(
+        let can_join_current_batch = Ref(
           current_batch_ref.val.length() > 0 &&
           current_batch_layer_ref.val == Some(system_layer),
         )
@@ -2095,7 +2096,7 @@ fn[W] schedule_execution_plan(
 ) -> ScheduleExecutionPlan[W] {
   let schedule_entry = schedule_entry_ref(schedule_registry, stage).val
   let graph_plan = schedule_resolve_graph_plan(schedule_entry, stage)
-  let report_build_error = Ref::new(false)
+  let report_build_error = Ref(false)
   if graph_plan.build_error is Some(_) &&
     schedule_entry.last_reported_build_error_generation !=
     Some(graph_plan.graph_generation) {
@@ -2136,7 +2137,7 @@ fn[W] schedule_execution_plan(
     )
     schedule_entry.executor_initialized = true
   }
-  let report_invalid_system_errors = Ref::new(false)
+  let report_invalid_system_errors = Ref(false)
   if access_plan.invalid_system_errors.length() > 0 {
     let access_key = (
       access_plan.graph_generation,
@@ -2209,7 +2210,7 @@ fn[W] schedule_chain_inherit_config(
     run_if_states.push(state)
   }
   for state in wrapper.run_if_states {
-    run_if_states.push(Ref::new(state.val))
+    run_if_states.push(Ref(state.val))
   }
   let before : Array[SystemSet] = []
   for set in child.before {
@@ -2282,7 +2283,7 @@ fn[W] schedule_push_config(
   config : SystemConfig[W],
 ) -> Unit {
   let entry_ref = schedule_entry_ref(schedule_registry, stage)
-  let graph_changed_ref = Ref::new(false)
+  let graph_changed_ref = Ref(false)
   match config.chain_members {
     Some(_) => {
       let expanded_members : Array[SystemConfig[W]] = []
@@ -2427,7 +2428,7 @@ fn[W] schedule_replace_entry(
   schedule : Schedule,
 ) -> Unit {
   let key = schedule_stage_storage_key(schedule.label())
-  let entry_ref = Ref::new(ScheduleEntry::new())
+  let entry_ref = Ref(ScheduleEntry::new())
   entry_ref.val.executor_kind = schedule.get_executor_kind()
   entry_ref.val.graph.settings = schedule.get_build_settings()
   entry_ref.val.graph.build_passes = schedule_build_passes_for_settings(
@@ -2468,7 +2469,7 @@ fn[W] schedule_configure_set_run_conditions(
     schedule_entry.graph.set_run_conditions.get(set) {
     Some(existing_ref) => existing_ref
     None => {
-      let created_ref = Ref::new(ScheduleSetRunConditions::{
+      let created_ref = Ref(ScheduleSetRunConditions::{
         run_ifs: [],
         run_if_states: [],
         run_if_last_run_sequences: [],
@@ -2481,13 +2482,13 @@ fn[W] schedule_configure_set_run_conditions(
     run_conditions_ref.val.run_ifs.push(fn(world : W, _state : Ref[Json]) {
       cond(world)
     })
-    run_conditions_ref.val.run_if_states.push(Ref::new(Json::null()))
+    run_conditions_ref.val.run_if_states.push(Ref(Json::null()))
     run_conditions_ref.val.run_if_last_run_sequences.push(0)
   }
   for entry in set_run_if_statefuls {
     let (init_state, cond) = entry
     run_conditions_ref.val.run_ifs.push(cond)
-    run_conditions_ref.val.run_if_states.push(Ref::new(init_state))
+    run_conditions_ref.val.run_if_states.push(Ref(init_state))
     run_conditions_ref.val.run_if_last_run_sequences.push(0)
   }
   true
@@ -2506,7 +2507,7 @@ fn[W] schedule_configure_set_run_conditions_from_refs(
     schedule_entry.graph.set_run_conditions.get(set) {
     Some(existing_ref) => existing_ref
     None => {
-      let created_ref = Ref::new(ScheduleSetRunConditions::{
+      let created_ref = Ref(ScheduleSetRunConditions::{
         run_ifs: [],
         run_if_states: [],
         run_if_last_run_sequences: [],

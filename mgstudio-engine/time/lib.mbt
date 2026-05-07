@@ -59,8 +59,8 @@ fn current_time_world_abort_missing() -> @ecs.World {
 }
 
 ///|
-let time_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let time_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|

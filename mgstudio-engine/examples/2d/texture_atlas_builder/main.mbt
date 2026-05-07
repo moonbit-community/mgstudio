@@ -29,7 +29,7 @@ priv struct TextureAtlasBuilderState {
 }
 
 ///|
-let builder_state : Ref[TextureAtlasBuilderState] = Ref::new(TextureAtlasBuilderState::{
+let builder_state : Ref[TextureAtlasBuilderState] = Ref(TextureAtlasBuilderState::{
   built: false,
   texture_a: None,
   texture_b: None,

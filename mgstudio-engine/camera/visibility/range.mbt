@@ -70,8 +70,8 @@ pub struct VisibleEntityRanges {
 ///|
 pub fn VisibleEntityRanges::default() -> VisibleEntityRanges {
   VisibleEntityRanges::{
-    views: @hashmap.HashMap::new(),
-    entities: @hashmap.HashMap::new(),
+    views: @hashmap.HashMap([]),
+    entities: @hashmap.HashMap([]),
   }
 }
 

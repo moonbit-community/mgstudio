@@ -135,7 +135,7 @@ fn default_state() -> IrradianceVolumesState {
 }
 
 ///|
-let irradiance_volumes_state : Ref[IrradianceVolumesState] = Ref::new(
+let irradiance_volumes_state : Ref[IrradianceVolumesState] = Ref(
   default_state(),
 )
 

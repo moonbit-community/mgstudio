@@ -198,7 +198,7 @@ test "asset system forwards asset events to ECS messages" {
 
   asset_update_event_messages(world)
 
-  let cursor_ref : Ref[Int] = Ref::new(0)
+  let cursor_ref : Ref[Int] = Ref(0)
   let key : @ecs.MessageKey[AssetEvent[Int]] = @ecs.Message::message()
   let reader = world.message_reader(key, cursor_ref)
   let events = try! reader.read()
@@ -320,7 +320,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
     Some(server) => server
     None => abort("expected AssetServer resource for world A")
   }
-  let reload_calls_a : Ref[Array[String]] = Ref::new([])
+  let reload_calls_a : Ref[Array[String]] = Ref([])
   asset_with_world(world_a, fn() {
     asset_register_loader(registry_scoped_legacy_loader)
     asset_register_ready_checker(registry_scoped_legacy_ready_checker)
@@ -329,7 +329,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
     })
   })
 
-  let releases_a : Ref[Int] = Ref::new(0)
+  let releases_a : Ref[Int] = Ref(0)
   let handle_a : Handle[RegistryScopedLegacyAsset] = asset_with_world(world_a, fn() {
     server_a.load_acquire("scoped_registry.asset", CountingLoadGuard::{
       releases: releases_a,
@@ -364,7 +364,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
     Some(server) => server
     None => abort("expected AssetServer resource for world B")
   }
-  let releases_b : Ref[Int] = Ref::new(0)
+  let releases_b : Ref[Int] = Ref(0)
   let handle_b : Handle[RegistryScopedLegacyAsset] = asset_with_world(world_b, fn() {
     server_b.load_acquire("scoped_registry.asset", CountingLoadGuard::{
       releases: releases_b,
@@ -374,7 +374,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
   asset_with_world(world_b, fn() { asset_system(world_b) })
   debug_inspect(releases_b.val, content="1")
 
-  let cursor : Ref[Int] = Ref::new(0)
+  let cursor : Ref[Int] = Ref(0)
   let key : @ecs.MessageKey[AssetLoadFailedEvent[RegistryScopedLegacyAsset]] = @ecs.Message::message()
   let reader = world_b.message_reader(key, cursor)
   let failures = try! reader.read()
@@ -739,7 +739,7 @@ test "asset server load without registered loader emits typed/untyped AssetLoadF
 
   asset_with_world(world, fn() { asset_system(world) })
 
-  let untyped_cursor : Ref[Int] = Ref::new(0)
+  let untyped_cursor : Ref[Int] = Ref(0)
   let untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent] = @ecs.Message::message()
   let untyped_reader = world.message_reader(untyped_key, untyped_cursor)
   let failures = try! untyped_reader.read()
@@ -756,7 +756,7 @@ test "asset server load without registered loader emits typed/untyped AssetLoadF
     content="true",
   )
 
-  let typed_cursor : Ref[Int] = Ref::new(0)
+  let typed_cursor : Ref[Int] = Ref(0)
   let typed_key : @ecs.MessageKey[AssetLoadFailedEvent[MissingLoaderAsset]] = @ecs.Message::message()
   let typed_reader = world.message_reader(typed_key, typed_cursor)
   let typed_failures = try! typed_reader.read()
@@ -807,7 +807,7 @@ test "asset server retries failed typed loads with the same handle after loader 
   )
   asset_with_world(world, fn() { asset_system(world) })
 
-  let untyped_cursor : Ref[Int] = Ref::new(0)
+  let untyped_cursor : Ref[Int] = Ref(0)
   let untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent] = @ecs.Message::message()
   let untyped_reader = world.message_reader(untyped_key, untyped_cursor)
   let failures = try! untyped_reader.read()
@@ -881,12 +881,12 @@ test "asset server retries failed typed loads with the same handle after loader 
   )
 
   asset_update_event_messages(world)
-  let event_cursor : Ref[Int] = Ref::new(0)
+  let event_cursor : Ref[Int] = Ref(0)
   let event_key : @ecs.MessageKey[AssetEvent[MissingLoaderAsset]] = @ecs.Message::message()
   let event_reader = world.message_reader(event_key, event_cursor)
   let events = try! event_reader.read()
-  let loaded_count = Ref::new(0)
-  let added_count = Ref::new(0)
+  let loaded_count = Ref(0)
+  let added_count = Ref(0)
   for event in events {
     match event {
       AssetEvent::LoadedWithDependencies(handle) =>
@@ -959,7 +959,7 @@ test "typed asset loaders are world-scoped per app world" {
     },
     content="false",
   )
-  let cursor : Ref[Int] = Ref::new(0)
+  let cursor : Ref[Int] = Ref(0)
   let key : @ecs.MessageKey[AssetLoadFailedEvent[MissingLoaderAsset]] = @ecs.Message::message()
   let reader = world_b.message_reader(key, cursor)
   let failures = try! reader.read()
@@ -1042,14 +1042,14 @@ test "asset system forwards image load completion to ECS messages" {
   asset_with_world(world, fn() { asset_system(world) })
   asset_update_event_messages(world)
 
-  let cursor_ref : Ref[Int] = Ref::new(0)
+  let cursor_ref : Ref[Int] = Ref(0)
   let message_key : @ecs.MessageKey[AssetEvent[Image]] = @ecs.Message::message()
   let reader = world.message_reader(message_key, cursor_ref)
   let events = try! reader.read()
 
-  let found = Ref::new(false)
-  let loaded_count = Ref::new(0)
-  let added_count = Ref::new(0)
+  let found = Ref(false)
+  let loaded_count = Ref(0)
+  let added_count = Ref(0)
   for event in events {
     match event {
       AssetEvent::LoadedWithDependencies(handle) =>
@@ -1137,7 +1137,7 @@ test "asset system releases load_acquire guard after asset becomes ready" {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
-  let release_count = Ref::new(0)
+  let release_count = Ref(0)
   let handle : Handle[Image] = asset_with_world(world, fn() {
     asset_server.load_acquire("branding/bevy_logo_dark_big.png", CountingLoadGuard::{
       releases: release_count,
@@ -1175,7 +1175,7 @@ test "asset system releases load_acquire guard when load fails" {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
-  let release_count = Ref::new(0)
+  let release_count = Ref(0)
   let handle : Handle[MissingLoaderAsset] = asset_with_world(world, fn() {
     asset_server.load_acquire("asset/tests/missing_loader_for_acquire.test", CountingLoadGuard::{
       releases: release_count,
@@ -1203,7 +1203,7 @@ test "asset load_acquire releases guard for Blob loads without Assets<Blob> stor
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
-  let release_count = Ref::new(0)
+  let release_count = Ref(0)
   let handle : Handle[Blob] = asset_with_world(world, fn() {
     asset_server.load_acquire("branding/bevy_bird_dark.png", CountingLoadGuard::{
       releases: release_count,

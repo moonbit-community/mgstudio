@@ -58,17 +58,15 @@ priv struct SwashFontCache {
 }
 
 ///|
-let swash_font_cache : Ref[SwashFontCache] = Ref::new(SwashFontCache::{
-  entries: [],
-})
+let swash_font_cache : Ref[SwashFontCache] = Ref(SwashFontCache::{ entries: [] })
 
 ///|
-let swash_scale_context : Ref[@swash_scale.ScaleContext] = Ref::new(
-  @swash_scale.ScaleContext::new(),
+let swash_scale_context : Ref[@swash_scale.ScaleContext] = Ref(
+  @swash_scale.ScaleContext::ScaleContext(),
 )
 
 ///|
-let cosmic_swash_cache : Ref[@cosmic.SwashCache] = Ref::new(
+let cosmic_swash_cache : Ref[@cosmic.SwashCache] = Ref(
   @cosmic.SwashCache::new(),
 )
 
@@ -88,7 +86,7 @@ fn swash_get_font(
     return None
   }
   let bytes = if bytes_opt is Some(b) { b } else { return None }
-  let data_ref_opt = @swash.FontDataRef::new(bytes)
+  let data_ref_opt = @swash.FontDataRef::from_data(bytes)
   if data_ref_opt is None {
     return None
   }
@@ -199,8 +197,8 @@ pub fn font_rasterize_glyph_id_subpixel(
     .size(font_size.to_double())
     .hint(hint)
     .build()
-  let render = @swash_scale.Render::new([@swash_scale.Source::Outline]).offset(
-    @moon_zeno.Vector::new(
+  let render = @swash_scale.Render::Render([@swash_scale.Source::Outline]).offset(
+    @moon_zeno.Vector(
       subpixel_bin_as_double(subpixel_x),
       subpixel_bin_as_double(subpixel_y),
     ),

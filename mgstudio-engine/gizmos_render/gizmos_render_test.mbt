@@ -42,11 +42,11 @@ test "extract_line_gizmos spawns Bevy-shaped temporary render entities" {
     ),
     @ecs.All,
   ] = @ecs.query(world)
-  let count = Ref::new(0)
-  let line_width = Ref::new(0.0F)
-  let depth_bias = Ref::new(1.0F)
-  let line_perspective = Ref::new(true)
-  let main_entity_matches = Ref::new(false)
+  let count = Ref(0)
+  let line_width = Ref(0.0F)
+  let depth_bias = Ref(1.0F)
+  let line_perspective = Ref(true)
+  let main_entity_matches = Ref(false)
   try! query.view(fn(_render_entity, data) {
     let (uniform, mesh_config, main_entity, _temporary) = data
     count.val = count.val + 1
@@ -80,8 +80,8 @@ test "extract_line_gizmos preserves dashed scale values" {
   let query : @ecs.Query[@ecs.Comp[@gizmos_render.LineGizmoUniform], @ecs.All] = @ecs.query(
     world,
   )
-  let gap_scale = Ref::new(1.0F)
-  let line_scale = Ref::new(1.0F)
+  let gap_scale = Ref(1.0F)
+  let line_scale = Ref(1.0F)
   try! query.view(fn(_render_entity, uniform) {
     gap_scale.val = uniform.value().gap_scale()
     line_scale.val = uniform.value().line_scale()

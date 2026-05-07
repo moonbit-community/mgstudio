@@ -701,11 +701,11 @@ pub fn Physics3dContext::new() -> Physics3dContext {
     hooks: @pipeline.PhysicsHooks3D::new(),
     event_handler: @pipeline.EventHandler3D::new(),
     query_pipeline,
-    entity_to_body: @hashmap.HashMap::new(),
-    entity_to_collider: @hashmap.HashMap::new(),
-    entity_to_impulse_joint: @hashmap.HashMap::new(),
-    entity_to_multibody_joint: @hashmap.HashMap::new(),
-    collider_to_entity: @hashmap.HashMap::new(),
+    entity_to_body: @hashmap.HashMap([]),
+    entity_to_collider: @hashmap.HashMap([]),
+    entity_to_impulse_joint: @hashmap.HashMap([]),
+    entity_to_multibody_joint: @hashmap.HashMap([]),
+    collider_to_entity: @hashmap.HashMap([]),
   }
 }
 

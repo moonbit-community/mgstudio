@@ -39,12 +39,12 @@ let asset_load_failed_untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent]
 ///|
 let asset_load_failed_typed_message_registry : Ref[
   @hashmap.HashMap[String, @any.Any],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 let asset_load_failed_dispatch_registry : Ref[
   @hashmap.HashMap[String, AssetLoadFailedDispatch],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 fn[T] registered_asset_load_failed_message_key_with_type_name(

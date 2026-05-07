@@ -42,8 +42,8 @@ pub struct PlaybackDespawnMarker {} derive(ToJson, FromJson)
 pub struct PlaybackRemoveMarker {} derive(ToJson, FromJson)
 
 ///|
-let audio_player_component_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let audio_player_component_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|

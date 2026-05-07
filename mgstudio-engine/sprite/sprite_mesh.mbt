@@ -154,7 +154,7 @@ priv struct SpriteMeshMaterialCache {
 
 ///|
 fn SpriteMeshMaterialCache::default() -> SpriteMeshMaterialCache {
-  SpriteMeshMaterialCache::{ handles: @hashmap.HashMap::new() }
+  SpriteMeshMaterialCache::{ handles: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -832,7 +832,7 @@ fn sprite_mesh_add_material_system(world : @ecs.World) -> Unit {
     return
   }
   let sequence = world.get_sequence_context().sequence()
-  let changed : @hashset.HashSet[UInt64] = @hashset.HashSet::new()
+  let changed : @hashset.HashSet[UInt64] = @hashset.HashSet([])
   for entity in world.added_components(ecs_key_sprite_mesh, sequence).read() {
     sprite_insert_entity_key(changed, entity)
   }

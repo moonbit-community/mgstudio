@@ -24,7 +24,7 @@ test "compile package composes registered embedded shader graph" {
   let source = load_preprocessed_wgsl(
     "",
     "shader/compile/root.wgsl",
-    @hashmap.HashMap::new(),
+    @hashmap.HashMap([]),
     default_shader_value_defines(),
   ) catch {
     err => abort(err.message())
@@ -42,7 +42,7 @@ test "compile package keeps unresolved imports structured" {
   let message = load_preprocessed_wgsl(
     "",
     "shader/compile/missing_root.wgsl",
-    @hashmap.HashMap::new(),
+    @hashmap.HashMap([]),
     default_shader_value_defines(),
   ) catch {
     UnresolvedImport(path) => path

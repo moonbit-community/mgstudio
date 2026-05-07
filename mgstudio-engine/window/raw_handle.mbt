@@ -44,7 +44,7 @@ pub(all) struct RawHandleWrapperHolder {
 
 ///|
 pub fn RawHandleWrapperHolder::new() -> RawHandleWrapperHolder {
-  RawHandleWrapperHolder::{ handle: Ref::new(None) }
+  RawHandleWrapperHolder::{ handle: Ref(None) }
 }
 
 ///|

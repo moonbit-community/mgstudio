@@ -174,7 +174,7 @@ fn render3d_wireframe_mesh_cache_ref_or_init(
     })
   }
   match (try! world.get_resource_mut(Render3dWireframeMeshCache::resource())) {
-    Some(cache) => Ref::new(cache.peek())
+    Some(cache) => Ref(cache.peek())
     None => abort("Missing Render3dWireframeMeshCache resource")
   }
 }

@@ -27,7 +27,7 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
   match cfg_res.get() {
     Some(current_cfg) => {
-      let cfg = Ref::new(current_cfg)
+      let cfg = Ref(current_cfg)
       cfg.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
       cfg_res.insert(cfg.val)
     }

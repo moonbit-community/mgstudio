@@ -63,7 +63,7 @@ fn[T] value_change_debug_name(_sample : T?) -> String {
 }
 
 ///|
-let value_change_event_id_by_debug_name_ref : Ref[Map[String, Int]] = Ref::new({})
+let value_change_event_id_by_debug_name_ref : Ref[Map[String, Int]] = Ref({})
 
 ///|
 fn[T] value_change_event_key() -> @ecs.EventKey[ValueChange[T]] {

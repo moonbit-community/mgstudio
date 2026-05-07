@@ -51,7 +51,7 @@ priv struct LightmapsState {
 }
 
 ///|
-let lightmaps_state : Ref[LightmapsState] = Ref::new({
+let lightmaps_state : Ref[LightmapsState] = Ref({
   args: default_args(),
   scene_root: None,
   lightmaps_applied: false,

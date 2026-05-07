@@ -44,7 +44,7 @@ pub fn Physics2dDebugRenderConfig::default() -> Physics2dDebugRenderConfig {
 }
 
 ///|
-let physics2d_debug_render_state : Ref[Physics2dDebugRenderConfig] = Ref::new(
+let physics2d_debug_render_state : Ref[Physics2dDebugRenderConfig] = Ref(
   Physics2dDebugRenderConfig::default(),
 )
 

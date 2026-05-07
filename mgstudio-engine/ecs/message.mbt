@@ -36,7 +36,7 @@ fn[T] MessageKey::queue_key(self : MessageKey[T]) -> ResourceKey[Messages[T]] {
 let named_message_queue_registry : @hashmap.HashMap[
   String,
   ResourceKey[Messages[Unit]],
-] = @hashmap.HashMap::new()
+] = @hashmap.HashMap([])
 
 ///|
 pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {

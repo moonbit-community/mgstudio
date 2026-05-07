@@ -312,7 +312,7 @@ fn[T] first_marked_entity(
   world : @ecs.World,
   component_key : @ecs.ComponentKey[T],
 ) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(@ecs.With::new(component_key))
   .view(fn(_query_entity, entity) {

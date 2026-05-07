@@ -16,7 +16,8 @@
 fn shader_defs_to_naga_oil_shader_defs(
   shader_defs : Array[ShaderDefVal],
 ) -> @hashmap.HashMap[String, @wgsl_common.ShaderDefValue] {
-  let mapped : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue] = @hashmap.HashMap::new()
+  let mapped : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue] = @hashmap.HashMap([],
+  )
   for shader_def in shader_defs {
     match shader_def {
       Bool(name, value) =>
@@ -54,7 +55,7 @@ pub fn Shader::naga_module_descriptor(self : Shader) -> NagaModuleDescriptor {
     source: self.source.as_str(),
     file_path: self.path,
     shader_type: self.source.shader_type(),
-    shader_defs: @hashmap.HashMap::new(),
+    shader_defs: @hashmap.HashMap([]),
     additional_imports: [],
   }
 }

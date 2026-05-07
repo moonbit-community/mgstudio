@@ -56,7 +56,7 @@ priv struct VisibilityRangeState {
 }
 
 ///|
-let visibility_range_state : Ref[VisibilityRangeState] = Ref::new({
+let visibility_range_state : Ref[VisibilityRangeState] = Ref({
   camera: None,
   high_scene_root: None,
   low_scene_root: None,

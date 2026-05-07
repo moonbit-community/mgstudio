@@ -21,7 +21,7 @@ test "picking wb: collect input honors PointerInputSettings mouse toggle" {
     PointerInputSettings::new(false, false),
   )
   picking_collect_mouse_system(world)
-  let cursor = Ref::new(0)
+  let cursor = Ref(0)
   let disabled_inputs = try! world
     .message_reader(pointer_input_message_key(), cursor)
     .read()

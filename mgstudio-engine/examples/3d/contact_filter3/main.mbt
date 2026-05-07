@@ -19,8 +19,8 @@ const CUSTOM_FILTER_TAG_GROUP_A : Int = 0
 const CUSTOM_FILTER_TAG_GROUP_B : Int = 1
 
 ///|
-let custom_filter_tags : Ref[@hashmap.HashMap[Int, Int]] = Ref::new(
-  @hashmap.HashMap::new(),
+let custom_filter_tags : Ref[@hashmap.HashMap[Int, Int]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|

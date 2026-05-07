@@ -143,8 +143,8 @@ let input_focus_visible_resource_key : @ecs.ResourceKey[InputFocusVisible] = @ec
 )
 
 ///|
-let focused_input_message_registry : Ref[@hashmap.HashMap[Int, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let focused_input_message_registry : Ref[@hashmap.HashMap[Int, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|

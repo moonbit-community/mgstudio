@@ -16,7 +16,7 @@
 // Bevy source: `bevy/crates/bevy_utils/src/atomic_id.rs`.
 
 ///|
-let atomic_id_counter : Ref[UInt] = Ref::new(1U)
+let atomic_id_counter : Ref[UInt] = Ref(1U)
 
 ///|
 pub fn atomic_id_next() -> Int {

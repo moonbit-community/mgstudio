@@ -391,7 +391,7 @@ fn load_cool_text_asset(
   for dependency_path in parsed.dependencies {
     dependencies.push(asset_server.load(dependency_path))
   }
-  let base_text = Ref::new(parsed.text)
+  let base_text = Ref(parsed.text)
   for embedded in parsed.embedded_dependencies {
     base_text.val = base_text.val +
       processed_text_from_path(asset_server, embedded, TextSettings::default()).value

@@ -181,9 +181,7 @@ pub fn[K] OnPointer::target(self : OnPointer[K]) -> @core.Entity? {
 }
 
 ///|
-let current_pointer_event_ref : Ref[@pointer_events.PointerEvent?] = Ref::new(
-  None,
-)
+let current_pointer_event_ref : Ref[@pointer_events.PointerEvent?] = Ref(None)
 
 ///|
 fn current_pointer_event_abort_missing() -> @pointer_events.PointerEvent {
@@ -249,15 +247,15 @@ fn register_pointer_observer_entry_in_world(
 ) -> Unit {
   let registry_res = get_pointer_observer_registry_resource(world)
   let registry = match registry_res.get() {
-    Some(value) => Ref::new(value)
-    None => Ref::new(PointerObserverRegistry::default())
+    Some(value) => Ref(value)
+    None => Ref(PointerObserverRegistry::default())
   }
   registry.val.entries.push({
     kind,
     source,
     target,
     system,
-    last_run_sequence_ref: Ref::new(0),
+    last_run_sequence_ref: Ref(0),
   })
   registry_res.insert(registry.val)
 }

@@ -1373,13 +1373,13 @@ fn host_input_gamepad_set_rumble(
 }
 
 ///|
-let current_gamepads_ref : Ref[Array[GamepadSnapshot]] = Ref::new([])
+let current_gamepads_ref : Ref[Array[GamepadSnapshot]] = Ref([])
 
 ///|
-let previous_gamepads_ref : Ref[Array[GamepadSnapshot]] = Ref::new([])
+let previous_gamepads_ref : Ref[Array[GamepadSnapshot]] = Ref([])
 
 ///|
-let host_gamepad_entities_ref : Ref[Array[(Int, @core.Entity)]] = Ref::new([])
+let host_gamepad_entities_ref : Ref[Array[(Int, @core.Entity)]] = Ref([])
 
 ///|
 let gamepad_event_message_key : @ecs.MessageKey[GamepadEvent] = @ecs.register_message(

@@ -362,7 +362,7 @@ pub fn render3d_fog_meta_ref_or_init(world : @ecs.World) -> Ref[FogMeta] {
     world.insert_resource(FogMeta::resource(), FogMeta::default())
   }
   match (try! world.get_resource_mut(FogMeta::resource())) {
-    Some(value) => Ref::new(value.peek())
+    Some(value) => Ref(value.peek())
     None => abort("missing FogMeta resource")
   }
 }

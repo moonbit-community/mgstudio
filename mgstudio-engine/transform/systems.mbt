@@ -572,7 +572,7 @@ fn propagate_parent_transforms_dense(
   let system_sequence = world.get_sequence_context().sequence()
   let scratch_ref = transform_propagation_scratch_ref_or_init(world)
   let scratch = scratch_ref.peek()
-  let cache = Ref::new(scratch.dense_table_cache)
+  let cache = Ref(scratch.dense_table_cache)
   transform_dense_table_cache_reset(cache)
   let trace_enabled = @app.timeline_trace_enabled()
   let trace_start_us = @app.timeline_trace_begin_span(

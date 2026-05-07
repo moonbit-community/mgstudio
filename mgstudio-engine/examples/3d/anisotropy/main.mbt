@@ -75,7 +75,7 @@ priv struct AnisotropyState {
 }
 
 ///|
-let anisotropy_state : Ref[AnisotropyState] = Ref::new({
+let anisotropy_state : Ref[AnisotropyState] = Ref({
   light_mode: LightMode::Directional,
   anisotropy_enabled: true,
   visible_scene: SceneKind::BarnLamp,

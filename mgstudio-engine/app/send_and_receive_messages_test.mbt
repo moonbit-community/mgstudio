@@ -68,7 +68,7 @@ let param_observe_set : SystemSet = system_set(
 
 ///|
 test "app: Local MessageCursor with ResMut Messages reads unread messages and can resend" {
-  let frame = Ref::new(0)
+  let frame = Ref(0)
   let observed : Array[(Bool, Int)] = []
   let key : @ecs.MessageKey[TestCursorMessage] = @ecs.Message::message()
 
@@ -132,7 +132,7 @@ test "app: Local MessageCursor with ResMut Messages reads unread messages and ca
 
 ///|
 test "app: ParamSet2 can read and write the same message type in one system" {
-  let sent = Ref::new(false)
+  let sent = Ref(false)
   let observed : Array[Int] = []
   let key : @ecs.MessageKey[TestParamSetMessage] = @ecs.Message::message()
 

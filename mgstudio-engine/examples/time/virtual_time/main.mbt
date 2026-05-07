@@ -35,7 +35,7 @@ priv struct VirtualTimeState {
 }
 
 ///|
-let virtual_time_state : Ref[VirtualTimeState] = Ref::new({
+let virtual_time_state : Ref[VirtualTimeState] = Ref({
   real_text: None,
   virtual_text: None,
 })

@@ -186,7 +186,7 @@ fn relationship_find_entity_by_name(
   target_name : String,
 ) -> @core.Entity {
   let query : @ecs.Query[@ecs.Comp[@ecs.Name], @ecs.All] = @ecs.query(world)
-  let found : Ref[@core.Entity?] = Ref::new(None)
+  let found : Ref[@core.Entity?] = Ref(None)
   try! query.view(fn(entity, name_comp) {
     if name_comp.value().as_str() == target_name {
       found.val = Some(entity)

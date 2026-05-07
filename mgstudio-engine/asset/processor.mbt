@@ -176,10 +176,10 @@ fn asset_processor_registry_state_for_world(
   let key = asset_processor_registry_state_resource_key()
   if (try! world.get_resource(key)) is None {
     world.insert_resource(key, AssetProcessorRegistryState::{
-      processors: Ref::new(@hashmap.HashMap::new()),
-      default_processor_by_extension: Ref::new(@hashmap.HashMap::new()),
-      named_processors: Ref::new(@hashmap.HashMap::new()),
-      last_registered_entry: Ref::new(None),
+      processors: Ref(@hashmap.HashMap([])),
+      default_processor_by_extension: Ref(@hashmap.HashMap([])),
+      named_processors: Ref(@hashmap.HashMap([])),
+      last_registered_entry: Ref(None),
     })
   }
   match (try! world.get_resource(key)) {
@@ -398,10 +398,10 @@ fn asset_processor_entry_for_path(
   guard state.processors.val.get(type_name) is Some(entries) else {
     return None
   }
-  let default_candidate : Ref[AssetProcessorEntry?] = Ref::new(None)
-  let default_length = Ref::new(-1)
-  let matched_entry : Ref[AssetProcessorEntry?] = Ref::new(None)
-  let matched_length = Ref::new(-1)
+  let default_candidate : Ref[AssetProcessorEntry?] = Ref(None)
+  let default_length = Ref(-1)
+  let matched_entry : Ref[AssetProcessorEntry?] = Ref(None)
+  let matched_length = Ref(-1)
   for entry_index in 0..<entries.length() {
     let entry = entries[entry_index]
     for extension in entry.extensions {

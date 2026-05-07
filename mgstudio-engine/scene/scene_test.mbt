@@ -64,7 +64,7 @@ fn scene_test_add_inverse_bindposes_asset(
 
 ///|
 test "scene: load gltf animation keeps stable handle" {
-  let same_handle = Ref::new(false)
+  let same_handle = Ref(false)
   run_scene_test_app(fn(_world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
     let path = @gltf.GltfAssetLabel::Animation(1).from_asset(
@@ -79,7 +79,7 @@ test "scene: load gltf animation keeps stable handle" {
 
 ///|
 test "scene: load gltf primitive mesh keeps stable handle" {
-  let same_handle = Ref::new(false)
+  let same_handle = Ref(false)
   run_scene_test_app(fn(_world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
     let path = @gltf.GltfAssetLabel::Primitive(0, 0).from_asset(
@@ -94,7 +94,7 @@ test "scene: load gltf primitive mesh keeps stable handle" {
 
 ///|
 test "scene: load gltf primitive mesh stays pending in the issuing frame" {
-  let asset_missing = Ref::new(false)
+  let asset_missing = Ref(false)
   run_scene_test_app(fn(world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
     let path = @gltf.GltfAssetLabel::Primitive(0, 0).from_asset(
@@ -110,14 +110,14 @@ test "scene: load gltf primitive mesh stays pending in the issuing frame" {
 
 ///|
 test "scene: root gltf asset loads default scene through Assets<Gltf>" {
-  let root_loaded = Ref::new(false)
-  let scene_count = Ref::new(0)
-  let named_scene_count = Ref::new(0)
-  let named_scene_contains_scene = Ref::new(false)
-  let has_default_scene = Ref::new(false)
-  let first_scene_ready = Ref::new(false)
-  let source_is_none = Ref::new(false)
-  let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref::new(None)
+  let root_loaded = Ref(false)
+  let scene_count = Ref(0)
+  let named_scene_count = Ref(0)
+  let named_scene_contains_scene = Ref(false)
+  let has_default_scene = Ref(false)
+  let first_scene_ready = Ref(false)
+  let source_is_none = Ref(false)
+  let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
@@ -186,9 +186,9 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
 
 ///|
 test "scene: root gltf include_source keeps source payload" {
-  let root_loaded = Ref::new(false)
-  let source_included = Ref::new(false)
-  let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref::new(None)
+  let root_loaded = Ref(false)
+  let source_included = Ref(false)
+  let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
@@ -238,13 +238,13 @@ test "scene: root gltf include_source keeps source payload" {
 
 ///|
 test "scene: root gltf asset collects materials and named_materials" {
-  let root_loaded = Ref::new(false)
-  let material_count = Ref::new(0)
-  let named_material_count = Ref::new(0)
-  let has_named_trunk = Ref::new(false)
-  let trunk_material_loaded = Ref::new(false)
-  let trunk_material_cull_none = Ref::new(false)
-  let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref::new(None)
+  let root_loaded = Ref(false)
+  let material_count = Ref(0)
+  let named_material_count = Ref(0)
+  let has_named_trunk = Ref(false)
+  let trunk_material_loaded = Ref(false)
+  let trunk_material_cull_none = Ref(false)
+  let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::default())
@@ -313,8 +313,8 @@ test "scene: root gltf asset collects materials and named_materials" {
 
 ///|
 test "scene: register keeps stable handle" {
-  let same_handle = Ref::new(false)
-  let ready_scene = Ref::new(false)
+  let same_handle = Ref(false)
+  let ready_scene = Ref(false)
   run_scene_test_app(fn(_world : @ecs.World) {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let first_handle = @scene.scene_register_gltf_scene(
@@ -334,12 +334,12 @@ test "scene: register keeps stable handle" {
 
 ///|
 test "scene: spawn applies camera and light components from scene node payload" {
-  let camera_count = Ref::new(0)
-  let camera3d_count = Ref::new(0)
-  let projection_count = Ref::new(0)
-  let directional_count = Ref::new(0)
-  let point_count = Ref::new(0)
-  let spot_count = Ref::new(0)
+  let camera_count = Ref(0)
+  let camera3d_count = Ref(0)
+  let projection_count = Ref(0)
+  let directional_count = Ref(0)
+  let point_count = Ref(0)
+  let spot_count = Ref(0)
 
   run_scene_test_app(fn(world : @ecs.World) {
     let scene_handle = @scene.scene_register_gltf_scene(
@@ -429,13 +429,13 @@ test "scene: spawn applies camera and light components from scene node payload" 
 
 ///|
 test "scene: skinned mesh joints map by gltf node index" {
-  let skinned_present = Ref::new(false)
-  let joint_count = Ref::new(0)
-  let first_joint_ok = Ref::new(false)
-  let second_joint_ok = Ref::new(false)
-  let inverse_bindposes_count = Ref::new(0)
-  let has_dynamic_bounds = Ref::new(false)
-  let has_no_frustum_culling = Ref::new(false)
+  let skinned_present = Ref(false)
+  let joint_count = Ref(0)
+  let first_joint_ok = Ref(false)
+  let second_joint_ok = Ref(false)
+  let inverse_bindposes_count = Ref(0)
+  let has_dynamic_bounds = Ref(false)
+  let has_no_frustum_culling = Ref(false)
 
   run_scene_test_app(fn(world : @ecs.World) {
     let mesh = @pbr.Mesh3d::new(
@@ -489,9 +489,9 @@ test "scene: skinned mesh joints map by gltf node index" {
     )
     @scene.scene_spawn_roots_system(world)
 
-    let mesh_entity : Ref[@core.Entity?] = Ref::new(None)
-    let node7_entity : Ref[@core.Entity?] = Ref::new(None)
-    let node42_entity : Ref[@core.Entity?] = Ref::new(None)
+    let mesh_entity : Ref[@core.Entity?] = Ref(None)
+    let node7_entity : Ref[@core.Entity?] = Ref(None)
+    let node42_entity : Ref[@core.Entity?] = Ref(None)
     world.for_each_component(@gltf.GltfNodeIndex::component(), fn(
       entity,
       node_index,
@@ -549,7 +549,7 @@ test "scene: skinned mesh joints map by gltf node index" {
 
 ///|
 test "scene: skinned mesh skips when any gltf joint node is unresolved" {
-  let skinned_present = Ref::new(false)
+  let skinned_present = Ref(false)
 
   run_scene_test_app(fn(world : @ecs.World) {
     let mesh = @pbr.Mesh3d::new(
@@ -613,8 +613,8 @@ test "scene: skinned mesh skips when any gltf joint node is unresolved" {
 
 ///|
 test "scene: skinned mesh policy NoFrustumCulling inserts no-frustum component" {
-  let has_dynamic_bounds = Ref::new(false)
-  let has_no_frustum_culling = Ref::new(false)
+  let has_dynamic_bounds = Ref(false)
+  let has_no_frustum_culling = Ref(false)
 
   run_scene_test_app_with_gltf_plugin(
     @gltf.GltfPlugin::default().with_skinned_mesh_bounds_policy(
@@ -695,8 +695,8 @@ test "scene: skinned mesh policy NoFrustumCulling inserts no-frustum component" 
 
 ///|
 test "scene: skinned mesh policy BindPose keeps static bounds components unset" {
-  let has_dynamic_bounds = Ref::new(false)
-  let has_no_frustum_culling = Ref::new(false)
+  let has_dynamic_bounds = Ref(false)
+  let has_no_frustum_culling = Ref(false)
 
   run_scene_test_app_with_gltf_plugin(
     @gltf.GltfPlugin::default().with_skinned_mesh_bounds_policy(
@@ -777,16 +777,16 @@ test "scene: skinned mesh policy BindPose keeps static bounds components unset" 
 
 ///|
 test "scene: SceneRoot propagates gltf extras metadata" {
-  let root_scene_extras = Ref::new("")
-  let child_name = Ref::new("")
-  let child_scene_index = Ref::new(-1)
-  let child_node_index = Ref::new(-1)
-  let child_mesh_index = Ref::new(-1)
-  let child_primitive_mesh_index = Ref::new(-1)
-  let child_primitive_index = Ref::new(-1)
-  let primitive_extras = Ref::new("")
-  let mesh_extras = Ref::new("")
-  let material_extras = Ref::new("")
+  let root_scene_extras = Ref("")
+  let child_name = Ref("")
+  let child_scene_index = Ref(-1)
+  let child_node_index = Ref(-1)
+  let child_mesh_index = Ref(-1)
+  let child_primitive_mesh_index = Ref(-1)
+  let child_primitive_index = Ref(-1)
+  let primitive_extras = Ref("")
+  let mesh_extras = Ref("")
+  let material_extras = Ref("")
 
   run_scene_test_app(fn(world : @ecs.World) {
     let scene_handle = @scene.scene_register_gltf_scene(
@@ -898,15 +898,15 @@ test "scene: SceneRoot propagates gltf extras metadata" {
 
 ///|
 test "scene: gltf lod visibility policy set/get/reset" {
-  let default_enabled = Ref::new(false)
-  let default_step = Ref::new(0.0)
-  let customized_enabled = Ref::new(true)
-  let customized_start = Ref::new(0.0)
-  let customized_end = Ref::new(0.0)
-  let customized_step = Ref::new(0.0)
-  let restored_enabled = Ref::new(false)
-  let restored_end = Ref::new(0.0)
-  let restored_step = Ref::new(0.0)
+  let default_enabled = Ref(false)
+  let default_step = Ref(0.0)
+  let customized_enabled = Ref(true)
+  let customized_start = Ref(0.0)
+  let customized_end = Ref(0.0)
+  let customized_step = Ref(0.0)
+  let restored_enabled = Ref(false)
+  let restored_end = Ref(0.0)
+  let restored_step = Ref(0.0)
   run_scene_test_app(fn(_world : @ecs.World) {
     @scene.scene_reset_gltf_lod_visibility_policy()
     let default_policy = @scene.scene_get_gltf_lod_visibility_policy()
@@ -944,9 +944,9 @@ test "scene: gltf lod visibility policy set/get/reset" {
 
 ///|
 test "scene: SceneRoot inserts default transform and visibility" {
-  let has_transform = Ref::new(false)
-  let has_visibility = Ref::new(false)
-  let inherited_visibility = Ref::new(false)
+  let has_transform = Ref(false)
+  let has_visibility = Ref(false)
+  let inherited_visibility = Ref(false)
   run_scene_test_app(fn(world : @ecs.World) {
     let scene_handle = @scene.scene_register_gltf_scene(
       "models/Foo/Foo.gltf#scene-root-default-components",
@@ -977,9 +977,9 @@ test "scene: SceneRoot inserts default transform and visibility" {
 
 ///|
 test "scene: removing SceneRoot despawns spawned children" {
-  let child_alive_after_remove = Ref::new(true)
-  let has_instance_after_remove = Ref::new(true)
-  let has_ready_after_remove = Ref::new(true)
+  let child_alive_after_remove = Ref(true)
+  let has_instance_after_remove = Ref(true)
+  let has_ready_after_remove = Ref(true)
   run_scene_test_app(fn(world : @ecs.World) {
     let scene_handle = @scene.scene_register_gltf_scene(
       "models/Foo/Foo.gltf#scene-root-remove-despawn",
@@ -1009,7 +1009,7 @@ test "scene: removing SceneRoot despawns spawned children" {
     )
     @scene.scene_spawn_roots_system(world)
 
-    let child_entity : Ref[@core.Entity?] = Ref::new(None)
+    let child_entity : Ref[@core.Entity?] = Ref(None)
     world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
       if parent.entity().id == root.id {
         child_entity.val = Some(entity)
@@ -1033,24 +1033,24 @@ test "scene: removing SceneRoot despawns spawned children" {
 
 ///|
 test "scene: SceneRoot spawns children and marks ready" {
-  let instance_id = Ref::new(0)
-  let ready_instance_id = Ref::new(0)
-  let spawned_entities = Ref::new(0)
-  let child_count = Ref::new(0)
-  let child_count_after_second_tick = Ref::new(0)
+  let instance_id = Ref(0)
+  let ready_instance_id = Ref(0)
+  let spawned_entities = Ref(0)
+  let child_count = Ref(0)
+  let child_count_after_second_tick = Ref(0)
   ignore(child_count_after_second_tick)
-  let has_mesh = Ref::new(false)
-  let has_material = Ref::new(false)
-  let has_transform = Ref::new(false)
-  let has_visibility = Ref::new(false)
-  let has_player = Ref::new(false)
-  let root_has_player = Ref::new(true)
-  let animated_by_points_to_player = Ref::new(false)
-  let has_target = Ref::new(false)
-  let has_animated_by = Ref::new(false)
-  let instance_after_second_tick = Ref::new(0)
+  let has_mesh = Ref(false)
+  let has_material = Ref(false)
+  let has_transform = Ref(false)
+  let has_visibility = Ref(false)
+  let has_player = Ref(false)
+  let root_has_player = Ref(true)
+  let animated_by_points_to_player = Ref(false)
+  let has_target = Ref(false)
+  let has_animated_by = Ref(false)
+  let instance_after_second_tick = Ref(0)
   ignore(instance_after_second_tick)
-  let ready_after_second_tick = Ref::new(0)
+  let ready_after_second_tick = Ref(0)
   ignore(ready_after_second_tick)
   run_scene_test_app(fn(world : @ecs.World) {
     let tick = world.advance_sequence()
@@ -1179,10 +1179,10 @@ test "scene: SceneRoot spawns children and marks ready" {
 
 ///|
 test "scene: pending SceneInstance retries spawn after scene becomes ready" {
-  let has_instance_before_register = Ref::new(false)
-  let has_ready_before_register = Ref::new(false)
-  let ready_after_register = Ref::new(false)
-  let child_count_after_register = Ref::new(0)
+  let has_instance_before_register = Ref(false)
+  let has_ready_before_register = Ref(false)
+  let ready_after_register = Ref(false)
+  let child_count_after_register = Ref(0)
   run_scene_test_app(fn(world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset(
@@ -1233,7 +1233,7 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
       world, root,
     )
 
-    let child_count = Ref::new(0)
+    let child_count = Ref(0)
     world.for_each_component(@hierarchy.ecs_key_parent, fn(_entity, parent) {
       if parent.entity().id == root.id {
         child_count.val = child_count.val + 1
@@ -1249,11 +1249,11 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
 
 ///|
 test "scene: instance readiness and entity iteration follow Bevy semantics" {
-  let ready_before_register = Ref::new(false)
-  let iter_count_before_register = Ref::new(0)
-  let ready_after_register = Ref::new(false)
-  let iter_count_after_register = Ref::new(0)
-  let iterated_entity_alive = Ref::new(false)
+  let ready_before_register = Ref(false)
+  let iter_count_before_register = Ref(0)
+  let ready_after_register = Ref(false)
+  let iter_count_after_register = Ref(0)
+  let iterated_entity_alive = Ref(false)
   run_scene_test_app(fn(world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset(
@@ -1329,8 +1329,8 @@ test "scene: instance readiness and entity iteration follow Bevy semantics" {
 
 ///|
 test "scene: unknown scene instance id reports not ready and empty entities" {
-  let ready = Ref::new(true)
-  let iter_count = Ref::new(-1)
+  let ready = Ref(true)
+  let iter_count = Ref(-1)
   run_scene_test_app(fn(world : @ecs.World) {
     ready.val = @scene.scene_instance_is_ready(world, 999999)
     iter_count.val = @scene.scene_iter_instance_entities(world, 999999).length()
@@ -1341,7 +1341,7 @@ test "scene: unknown scene instance id reports not ready and empty entities" {
 
 ///|
 test "scene: SceneRoot propagates gltf material name" {
-  let material_name = Ref::new("")
+  let material_name = Ref("")
   run_scene_test_app(fn(world : @ecs.World) {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let material = @pbr.MeshMaterial3d::new(
@@ -1393,13 +1393,13 @@ test "scene: SceneRoot propagates gltf material name" {
 
 ///|
 test "scene: SceneRoot change respawns children and updates SceneInstance" {
-  let old_instance_id = Ref::new(0)
-  let new_instance_id = Ref::new(0)
-  let ready_instance_id = Ref::new(0)
-  let spawned_entities = Ref::new(0)
-  let old_child_alive = Ref::new(true)
-  let new_child_count = Ref::new(0)
-  let new_child_x = Ref::new(0.0)
+  let old_instance_id = Ref(0)
+  let new_instance_id = Ref(0)
+  let ready_instance_id = Ref(0)
+  let spawned_entities = Ref(0)
+  let old_child_alive = Ref(true)
+  let new_child_count = Ref(0)
+  let new_child_x = Ref(0.0)
   run_scene_test_app(fn(world : @ecs.World) {
     let first_tick = world.advance_sequence()
     ignore(first_tick)
@@ -1522,10 +1522,10 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
 
 ///|
 test "scene: changed SceneRoot with same handle still respawns instance" {
-  let old_instance_id = Ref::new(0)
-  let new_instance_id = Ref::new(0)
-  let old_child_alive = Ref::new(true)
-  let new_child_count = Ref::new(0)
+  let old_instance_id = Ref(0)
+  let new_instance_id = Ref(0)
+  let old_child_alive = Ref(true)
+  let new_child_count = Ref(0)
   run_scene_test_app(fn(world : @ecs.World) {
     let scene_path = @gltf.GltfAssetLabel::Scene(3).from_asset(
       "models/Foo/Foo.gltf",
@@ -1600,10 +1600,10 @@ test "scene: changed SceneRoot with same handle still respawns instance" {
 
 ///|
 test "scene: modified scene asset respawns SceneRoot children" {
-  let handle_stable = Ref::new(false)
-  let old_child_alive = Ref::new(true)
-  let new_child_count = Ref::new(0)
-  let new_child_x = Ref::new(0.0)
+  let handle_stable = Ref(false)
+  let old_child_alive = Ref(true)
+  let new_child_count = Ref(0)
+  let new_child_x = Ref(0.0)
   run_scene_test_app(fn(world : @ecs.World) {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let material = @pbr.MeshMaterial3d::new(
@@ -1692,14 +1692,14 @@ test "scene: modified scene asset respawns SceneRoot children" {
 
 ///|
 test "scene: modified scene asset debounce suppresses rapid respawns" {
-  let handle_stable = Ref::new(false)
-  let child_count_after_first_reload = Ref::new(0)
-  let child_alive_after_debounced_update = Ref::new(false)
-  let child_count_after_debounced_update = Ref::new(0)
-  let child_x_after_debounced_update = Ref::new(0.0)
-  let child_alive_after_rearmed_update = Ref::new(true)
-  let child_count_after_rearmed_update = Ref::new(0)
-  let child_x_after_rearmed_update = Ref::new(0.0)
+  let handle_stable = Ref(false)
+  let child_count_after_first_reload = Ref(0)
+  let child_alive_after_debounced_update = Ref(false)
+  let child_count_after_debounced_update = Ref(0)
+  let child_x_after_debounced_update = Ref(0.0)
+  let child_alive_after_rearmed_update = Ref(true)
+  let child_count_after_rearmed_update = Ref(0)
+  let child_x_after_rearmed_update = Ref(0.0)
   run_scene_test_app(fn(world : @ecs.World) {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset(
       "models/Foo/Foo.gltf#debounced-reload",

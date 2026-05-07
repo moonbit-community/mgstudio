@@ -78,7 +78,7 @@ pub fn[BD, BDI] BatchedInstanceBuffers::new() -> BatchedInstanceBuffers[BD, BDI]
   BatchedInstanceBuffers::{
     current_input_buffer: @render_resource.GpuArrayBuffer::new(),
     previous_input_buffer: @render_resource.GpuArrayBuffer::new(),
-    phase_instance_buffers: @hashmap.HashMap::new(),
+    phase_instance_buffers: @hashmap.HashMap([]),
   }
 }
 

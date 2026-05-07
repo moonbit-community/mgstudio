@@ -740,7 +740,7 @@ fn load_fullscreen_tonemapping_wgsl_with_defines_required(
   let vertex_source = load_wgsl_from_assets_required(
     backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   for key in define_keys {
     defines.set(key, true)
   }

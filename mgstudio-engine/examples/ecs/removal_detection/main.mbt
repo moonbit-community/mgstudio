@@ -59,7 +59,7 @@ fn remove_component(
   if time.get().elapsed_seconds() <= 2.0F {
     return
   }
-  let target_ref : Ref[@core.Entity?] = Ref::new(None)
+  let target_ref : Ref[@core.Entity?] = Ref(None)
   try! query.view(fn(_query_entity, entity) {
     if target_ref.val is None {
       target_ref.val = Some(entity)

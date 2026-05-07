@@ -81,8 +81,8 @@ pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial] = @ecs.registe
 )
 
 ///|
-let mesh_material2d_component_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let mesh_material2d_component_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|

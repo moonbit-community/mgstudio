@@ -23,22 +23,22 @@ let input_probe_after_set : @app.SystemSet = @app.system_set(
 )
 
 ///|
-let input_probe_before_ran_ref : Ref[Bool] = Ref::new(false)
+let input_probe_before_ran_ref : Ref[Bool] = Ref(false)
 
 ///|
-let input_probe_before_stage_ref : Ref[String] = Ref::new("none")
+let input_probe_before_stage_ref : Ref[String] = Ref("none")
 
 ///|
-let input_probe_after_stage_ref : Ref[String] = Ref::new("none")
+let input_probe_after_stage_ref : Ref[String] = Ref("none")
 
 ///|
-let input_probe_after_raw_event_count_ref : Ref[Int] = Ref::new(-1)
+let input_probe_after_raw_event_count_ref : Ref[Int] = Ref(-1)
 
 ///|
-let input_probe_update_stage_ref : Ref[String] = Ref::new("none")
+let input_probe_update_stage_ref : Ref[String] = Ref("none")
 
 ///|
-let input_probe_update_previous_snapshot_count_ref : Ref[Int] = Ref::new(-1)
+let input_probe_update_previous_snapshot_count_ref : Ref[Int] = Ref(-1)
 
 ///|
 fn current_stage_label() -> String {
@@ -82,7 +82,7 @@ fn input_probe_before_system(world : @ecs.World) -> Unit {
 fn input_probe_after_system(world : @ecs.World) -> Unit {
   input_probe_after_stage_ref.val = current_stage_label()
   input_probe_after_raw_event_count_ref.val = (try! world
-  .message_reader(raw_gamepad_event_message_key, Ref::new(0))
+  .message_reader(raw_gamepad_event_message_key, Ref(0))
   .read()).length()
 }
 
@@ -122,7 +122,7 @@ pub(all) enum TestButton {
 }
 
 ///|
-let test_button_input_snapshot_ref : Ref[ButtonInput[TestButton]] = Ref::new(
+let test_button_input_snapshot_ref : Ref[ButtonInput[TestButton]] = Ref(
   ButtonInput::new(),
 )
 
@@ -242,16 +242,16 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
 
   let focus_lost_reader = app
     .world()
-    .message_reader(keyboard_focus_lost_message_key(), Ref::new(0))
+    .message_reader(keyboard_focus_lost_message_key(), Ref(0))
   debug_inspect((try! focus_lost_reader.read()).length(), content="1")
   let keyboard_input_reader = app
     .world()
-    .message_reader(keyboard_input_message_key(), Ref::new(0))
+    .message_reader(keyboard_input_message_key(), Ref(0))
   debug_inspect((try! keyboard_input_reader.read()).length(), content="0")
 
   let window_event_reader = app
     .world()
-    .message_reader(@window.WindowEvent::message(), Ref::new(0))
+    .message_reader(@window.WindowEvent::message(), Ref(0))
   let mut aggregate_focus_lost_count = 0
   let window_events = try! window_event_reader.read()
   for event in window_events {
@@ -298,16 +298,16 @@ test "input: keyboard focus-loss helper ignores loss when focus is regained in s
 
   let focus_lost_reader = app
     .world()
-    .message_reader(keyboard_focus_lost_message_key(), Ref::new(0))
+    .message_reader(keyboard_focus_lost_message_key(), Ref(0))
   debug_inspect((try! focus_lost_reader.read()).length(), content="0")
   let keyboard_input_reader = app
     .world()
-    .message_reader(keyboard_input_message_key(), Ref::new(0))
+    .message_reader(keyboard_input_message_key(), Ref(0))
   debug_inspect((try! keyboard_input_reader.read()).length(), content="0")
 
   let window_event_reader = app
     .world()
-    .message_reader(@window.WindowEvent::message(), Ref::new(0))
+    .message_reader(@window.WindowEvent::message(), Ref(0))
   let mut aggregate_focus_lost_count = 0
   let window_events = try! window_event_reader.read()
   for event in window_events {

@@ -80,7 +80,7 @@ fn picking_debug_log_system(
     return
   }
   events.modify(fn(value) {
-    let events_ref = Ref::new(value)
+    let events_ref = Ref(value)
     let captured_events = @app.PickingEvents::drain(events_ref)
     for event in captured_events {
       if picking_debug_should_log(debug_mode, event) {

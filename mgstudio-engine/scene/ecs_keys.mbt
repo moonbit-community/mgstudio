@@ -66,7 +66,7 @@ pub impl @ecs.TriggerEvent for SceneInstanceReady with debug_name() {
 }
 
 ///|
-let scene_component_metadata_installed : Ref[Bool] = Ref::new(false)
+let scene_component_metadata_installed : Ref[Bool] = Ref(false)
 
 ///|
 pub fn scene_install_component_metadata() -> Unit {

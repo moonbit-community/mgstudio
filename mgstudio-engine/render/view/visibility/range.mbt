@@ -96,8 +96,8 @@ pub struct RenderVisibilityRanges {
 ///|
 pub fn RenderVisibilityRanges::default() -> RenderVisibilityRanges {
   RenderVisibilityRanges::{
-    entities: @hashmap.HashMap::new(),
-    range_to_index: @hashmap.HashMap::new(),
+    entities: @hashmap.HashMap([]),
+    range_to_index: @hashmap.HashMap([]),
     buffer: [],
     entity_count: 0,
     range_count: 0,

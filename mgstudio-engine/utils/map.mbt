@@ -20,15 +20,15 @@
 pub type HashMap[K, V] = Map[K, V]
 
 ///|
-pub fn[K, V] map_new() -> HashMap[K, V] {
-  Map::new()
+pub fn[K : Hash + Eq, V] map_new() -> HashMap[K, V] {
+  Map([])
 }
 
 ///|
 pub fn[K : Hash + Eq, V] map_from_entries(
   entries : Array[(K, V)],
 ) -> HashMap[K, V] {
-  let map : HashMap[K, V] = Map::new()
+  let map : HashMap[K, V] = Map([])
   for entry in entries {
     map[entry.0] = entry.1
   }

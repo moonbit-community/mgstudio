@@ -286,7 +286,7 @@ fn first_tilemap(
     @ecs.All,
   ],
 ) -> (@sprite.TilemapChunk, @sprite.TilemapChunkTileData)? {
-  let result : Ref[(@sprite.TilemapChunk, @sprite.TilemapChunkTileData)?] = Ref::new(
+  let result : Ref[(@sprite.TilemapChunk, @sprite.TilemapChunkTileData)?] = Ref(
     None,
   )
   try! tilemaps.view(fn(_entity, data) {

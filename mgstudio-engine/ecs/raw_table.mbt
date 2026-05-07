@@ -35,10 +35,11 @@ fn raw_table_load_sequence(sequence : @core.Sequence) -> @core.Sequence? {
 }
 
 ///|
-let raw_table_changed_caller_ids : @hashmap.HashMap[String, Int] = @hashmap.HashMap::new()
+let raw_table_changed_caller_ids : @hashmap.HashMap[String, Int] = @hashmap.HashMap([],
+)
 
 ///|
-let raw_table_changed_callers_ref : Ref[Array[String?]] = Ref::new([None])
+let raw_table_changed_callers_ref : Ref[Array[String?]] = Ref([None])
 
 ///|
 fn raw_table_store_changed_caller(caller : String?) -> Int {
@@ -393,7 +394,7 @@ fn raw_table_new(world : World, component_local_ids : Array[Int]) -> RawTable {
         )
     }
     let ops = component_ops(definition_id)
-    columns.push(Ref::new(raw_table_column_new(ops)))
+    columns.push(Ref(raw_table_column_new(ops)))
   }
   {
     component_local_ids: component_local_ids.copy(),
@@ -719,7 +720,7 @@ fn World::ensure_table_storage(self : World, table_id : Int) -> Ref[RawTable] {
     .get(table_id)
     .unwrap_or([])
   self.tables.get_or_init(table_id, fn() {
-    Ref::new(raw_table_new(self, component_local_ids))
+    Ref(raw_table_new(self, component_local_ids))
   })
 }
 

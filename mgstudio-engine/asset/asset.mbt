@@ -133,30 +133,28 @@ priv struct AssetLoaderEntry {
 ///|
 fn asset_server_standalone() -> AssetServer {
   AssetServer::{
-    paths: Ref::new([]),
-    path_fingerprints: Ref::new(@hashmap.HashMap::new()),
-    typed_asset_paths: Ref::new(@hashmap.HashMap::new()),
-    typed_asset_next_ids: Ref::new(@hashmap.HashMap::new()),
-    typed_asset_load_states: Ref::new(@hashmap.HashMap::new()),
-    typed_asset_dependency_load_states: Ref::new(@hashmap.HashMap::new()),
-    typed_asset_recursive_dependency_load_states: Ref::new(
-      @hashmap.HashMap::new(),
-    ),
-    pending_load_failures: Ref::new([]),
-    pending_processed_asset_loads: Ref::new([]),
-    pending_typed_asset_loads: Ref::new([]),
-    pending_acquired_loads: Ref::new([]),
-    image_paths: Ref::new([]),
-    pending_image_assets: Ref::new(@hashmap.HashMap::new()),
-    image_array_layouts: Ref::new([]),
-    image_render_asset_usages: Ref::new([]),
-    image_srgb_settings: Ref::new([]),
-    image_usage_settings: Ref::new([]),
-    gltf_loader_settings: Ref::new([]),
-    default_sampler_nearest: Ref::new(false),
-    mode: Ref::new(AssetMode::Unprocessed),
-    processed_file_path: Ref::new(None),
-    owner_world: Ref::new(None),
+    paths: Ref([]),
+    path_fingerprints: Ref(@hashmap.HashMap([])),
+    typed_asset_paths: Ref(@hashmap.HashMap([])),
+    typed_asset_next_ids: Ref(@hashmap.HashMap([])),
+    typed_asset_load_states: Ref(@hashmap.HashMap([])),
+    typed_asset_dependency_load_states: Ref(@hashmap.HashMap([])),
+    typed_asset_recursive_dependency_load_states: Ref(@hashmap.HashMap([])),
+    pending_load_failures: Ref([]),
+    pending_processed_asset_loads: Ref([]),
+    pending_typed_asset_loads: Ref([]),
+    pending_acquired_loads: Ref([]),
+    image_paths: Ref([]),
+    pending_image_assets: Ref(@hashmap.HashMap([])),
+    image_array_layouts: Ref([]),
+    image_render_asset_usages: Ref([]),
+    image_srgb_settings: Ref([]),
+    image_usage_settings: Ref([]),
+    gltf_loader_settings: Ref([]),
+    default_sampler_nearest: Ref(false),
+    mode: Ref(AssetMode::Unprocessed),
+    processed_file_path: Ref(None),
+    owner_world: Ref(None),
   }
 }
 
@@ -207,7 +205,7 @@ pub impl @app.Resource for AssetServer with resource() {
 }
 
 ///|
-let asset_world_override_ref : Ref[@ecs.World?] = Ref::new(None)
+let asset_world_override_ref : Ref[@ecs.World?] = Ref(None)
 
 ///|
 fn asset_current_world() -> @ecs.World? {
@@ -797,7 +795,7 @@ pub fn[P : IntoAssetPath] AssetServer::get_handle(
 }
 
 ///|
-let asset_transparent_texture_handle : Ref[Handle[Image]?] = Ref::new(None)
+let asset_transparent_texture_handle : Ref[Handle[Image]?] = Ref(None)
 
 ///|
 /// Returns a lazily-created 1x1 fully transparent texture handle.
@@ -826,7 +824,7 @@ pub fn asset_transparent_texture() -> Handle[Image] {
 }
 
 ///|
-let asset_white_texture_handle : Ref[Handle[Image]?] = Ref::new(None)
+let asset_white_texture_handle : Ref[Handle[Image]?] = Ref(None)
 
 ///|
 /// Returns a lazily-created 1x1 opaque white texture handle.

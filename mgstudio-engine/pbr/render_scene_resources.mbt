@@ -56,7 +56,7 @@ fn render3d_scene_targets_state_ref_or_init(
     })
   }
   match (try! world.get_resource_mut(Render3dSceneTargetsState::resource())) {
-    Some(state) => Ref::new(state.peek())
+    Some(state) => Ref(state.peek())
     None => abort("Missing Render3dSceneTargetsState resource")
   }
 }

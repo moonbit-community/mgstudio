@@ -209,7 +209,7 @@ fn next_visibility(
 
 ///|
 fn find_target_entity(world : @ecs.World, target_index : Int) -> @core.Entity? {
-  let found : Ref[@core.Entity?] = Ref::new(None)
+  let found : Ref[@core.Entity?] = Ref(None)
   let query : @ecs.Query[(@core.Entity, @ecs.Comp[TargetPanel]), @ecs.All] = @ecs.query(
     world,
   )

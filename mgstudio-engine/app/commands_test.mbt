@@ -192,7 +192,7 @@ fn commands_install_hook_test_hooks(world : @ecs.World) -> Unit {
 ///|
 test "app: Commands spawn defers component tuple insertion until after system" {
   let counts : Array[Int] = []
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
     commands : Commands,
     query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
@@ -232,7 +232,7 @@ test "app: Commands spawn defers component tuple insertion until after system" {
 
 ///|
 test "app: Commands spawn_empty reserves an entity without queued components" {
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     commands : Commands,
   ) {
@@ -270,7 +270,7 @@ test "app: Commands insert_resource defers resource writes until after the syste
 ///|
 test "app: Commands spawn_component defers single component insertion until after system" {
   let counts : Array[Int] = []
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
     commands : Commands,
     query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
@@ -296,7 +296,7 @@ test "app: Commands spawn_component defers single component insertion until afte
 
 ///|
 test "app: Commands spawn supports eight-component tuples" {
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     commands : Commands,
   ) {
@@ -357,8 +357,8 @@ test "app: Commands spawn supports eight-component tuples" {
 
 ///|
 test "app: Commands spawn_bundle accepts ecs bundle tuples and unit bundles" {
-  let nested_spawned : Ref[@core.Entity?] = Ref::new(None)
-  let empty_spawned : Ref[@core.Entity?] = Ref::new(None)
+  let nested_spawned : Ref[@core.Entity?] = Ref(None)
+  let empty_spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     commands : Commands,
   ) {
@@ -404,7 +404,7 @@ test "app: Commands spawn_bundle accepts ecs bundle tuples and unit bundles" {
 ///|
 test "app: Commands spawn_batch defers all batch insertions until flush" {
   let counts : Array[Int] = []
-  let spawned : Ref[Array[@core.Entity]] = Ref::new([])
+  let spawned : Ref[Array[@core.Entity]] = Ref([])
   let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
     commands : Commands,
     query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
@@ -450,7 +450,7 @@ test "app: Commands spawn_batch defers all batch insertions until flush" {
 
 ///|
 test "app: Commands entity insert defers component insertion until flush" {
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let counts : Array[Int] = []
   let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
     commands : Commands,
@@ -485,7 +485,7 @@ test "app: Commands entity insert defers component insertion until flush" {
 
 ///|
 test "app: Commands entity insert_component queues a single component" {
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     commands : Commands,
   ) {
@@ -511,7 +511,7 @@ test "app: Commands entity insert_component queues a single component" {
 
 ///|
 test "app: Commands entity despawn defers entity removal until flush" {
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let alive_counts : Array[Int] = []
   let mut app = App::new(@ecs.World::new())
     .add_system_param(fn(commands : Commands) {
@@ -542,7 +542,7 @@ test "app: Commands entity despawn defers entity removal until flush" {
 
 ///|
 test "app: Commands entity remove and remove_component defer component removal until flush" {
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     commands : Commands,
   ) {
@@ -580,7 +580,7 @@ test "app: Commands entity remove and remove_component defer component removal u
 ///|
 test "app: Commands preserve hook caller provenance across deferred spawn and remove" {
   commands_hook_test_reset()
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new())
   commands_install_hook_test_hooks(app.world())
   app = app.add_system_param(fn(commands : Commands) {
@@ -636,8 +636,8 @@ test "app: failing built-in queued commands route through the default error hand
 
 ///|
 test "app: Commands::queue_handled uses the command-local handler" {
-  let default_count = Ref::new(0)
-  let local_count = Ref::new(0)
+  let default_count = Ref(0)
+  let local_count = Ref(0)
   let local_sources : Array[String] = []
   let mut app = App::new(@ecs.World::new())
     .set_error_handler(fn(_error, _context) {
@@ -663,8 +663,8 @@ test "app: Commands::queue_handled uses the command-local handler" {
 ///|
 test "app: EntityCommands::observe_pointer scopes pointer observers to the target entity and supports chaining" {
   let hits : Array[String] = []
-  let target_ref : Ref[@core.Entity?] = Ref::new(None)
-  let other_ref : Ref[@core.Entity?] = Ref::new(None)
+  let target_ref : Ref[@core.Entity?] = Ref(None)
+  let other_ref : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     commands : Commands,
   ) {
@@ -699,7 +699,7 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
   guard target_ref.val is Some(target) else { abort("expected target entity") }
   guard other_ref.val is Some(other) else { abort("expected other entity") }
 
-  let first_events = Ref::new(PickingEvents::default())
+  let first_events = Ref(PickingEvents::default())
   PickingEvents::push(
     first_events,
     @pointer_events.PointerEvent::new(
@@ -712,7 +712,7 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
   get_picking_events_resource(app.world()).insert(first_events.val)
   dispatch_pointer_observers_system(app.world())
 
-  let second_events = Ref::new(PickingEvents::default())
+  let second_events = Ref(PickingEvents::default())
   PickingEvents::push(
     second_events,
     @pointer_events.PointerEvent::new(
@@ -731,7 +731,7 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
 ///|
 test "app: EntityCommands::observe_pointer4 accepts normal system params" {
   let hits : Array[String] = []
-  let target_ref : Ref[@core.Entity?] = Ref::new(None)
+  let target_ref : Ref[@core.Entity?] = Ref(None)
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     commands : Commands,
   ) {
@@ -761,7 +761,7 @@ test "app: EntityCommands::observe_pointer4 accepts normal system params" {
   app = app.run_once()
 
   guard target_ref.val is Some(target) else { abort("expected target entity") }
-  let click_events = Ref::new(PickingEvents::default())
+  let click_events = Ref(PickingEvents::default())
   PickingEvents::push(
     click_events,
     @pointer_events.PointerEvent::new(

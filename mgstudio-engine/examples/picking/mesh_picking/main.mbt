@@ -30,10 +30,10 @@ impl @ecs.Component for PickableMesh with component() {
 }
 
 ///|
-let dragging_entity : Ref[@core.Entity?] = Ref::new(None)
+let dragging_entity : Ref[@core.Entity?] = Ref(None)
 
 ///|
-let last_drag_position : Ref[@math.Vec2?] = Ref::new(None)
+let last_drag_position : Ref[@math.Vec2?] = Ref(None)
 
 ///|
 fn spawn_pickable_shape(

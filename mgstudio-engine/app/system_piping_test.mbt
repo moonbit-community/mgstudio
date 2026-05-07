@@ -133,7 +133,7 @@ test "app system piping: map and pipe_param can use additional system params" {
 ///|
 test "app system piping: source validation skip prevents downstream handler" {
   touch_system_piping_types()
-  let ran = Ref::new(false)
+  let ran = Ref(false)
   let errors : Array[String] = []
   let mut app = App::new(@ecs.World::new())
     .set_error_handler(fn(error, _context) { errors.push(error.to_string()) })

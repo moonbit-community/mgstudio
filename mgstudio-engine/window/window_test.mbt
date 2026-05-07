@@ -14,7 +14,7 @@
 
 ///|
 fn primary_window_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(
     (@ecs.With::new(ecs_key_window), @ecs.With::new(ecs_key_primary_window)),
@@ -79,25 +79,25 @@ fn has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
 
 ///|
 fn read_window_closing(world : @ecs.World) -> Array[WindowClosing] {
-  let reader = world.message_reader(ecs_key_window_closing, Ref::new(0))
+  let reader = world.message_reader(ecs_key_window_closing, Ref(0))
   try! reader.read()
 }
 
 ///|
 fn read_window_created(world : @ecs.World) -> Array[WindowCreated] {
-  let reader = world.message_reader(ecs_key_window_created, Ref::new(0))
+  let reader = world.message_reader(ecs_key_window_created, Ref(0))
   try! reader.read()
 }
 
 ///|
 fn read_window_destroyed(world : @ecs.World) -> Array[WindowDestroyed] {
-  let reader = world.message_reader(ecs_key_window_destroyed, Ref::new(0))
+  let reader = world.message_reader(ecs_key_window_destroyed, Ref(0))
   try! reader.read()
 }
 
 ///|
 fn read_window_events(world : @ecs.World) -> Array[WindowEvent] {
-  let reader = world.message_reader(ecs_key_window_event, Ref::new(0))
+  let reader = world.message_reader(ecs_key_window_event, Ref(0))
   try! reader.read()
 }
 
@@ -314,11 +314,11 @@ test "window: compatibility helpers read and write ECS primary window state" {
   try! (world.entity_mut(entity).insert_component(configured_window) |> ignore)
   try! (world.entity_mut(entity).insert_component(PrimaryWindow::{  }) |> ignore)
 
-  let seen_width : Ref[Int] = Ref::new(0)
-  let seen_height : Ref[Int] = Ref::new(0)
-  let seen_position_x : Ref[Int] = Ref::new(0)
-  let seen_position_y : Ref[Int] = Ref::new(0)
-  let seen_scale_factor : Ref[Float] = Ref::new(0.0F)
+  let seen_width : Ref[Int] = Ref(0)
+  let seen_height : Ref[Int] = Ref(0)
+  let seen_position_x : Ref[Int] = Ref(0)
+  let seen_position_y : Ref[Int] = Ref(0)
+  let seen_scale_factor : Ref[Float] = Ref(0.0F)
 
   let app = @app.App::new(world).add_systems(
     @app.Update,
@@ -499,11 +499,11 @@ test "window: singleton helpers no-op when no primary window exists" {
   secondary_window.title = "Secondary"
   secondary_window.resolution.set_physical_resolution(640, 360)
   try! (world.entity_mut(secondary).insert_component(secondary_window) |> ignore)
-  let width = Ref::new(-1)
-  let height = Ref::new(-1)
-  let scale_factor = Ref::new(-1.0F)
-  let position_x = Ref::new(-1)
-  let position_y = Ref::new(-1)
+  let width = Ref(-1)
+  let height = Ref(-1)
+  let scale_factor = Ref(-1.0F)
+  let position_x = Ref(-1)
+  let position_y = Ref(-1)
 
   let app = @app.App::new(world).add_systems(
     @app.Update,
@@ -560,7 +560,7 @@ test "window: scale-factor helper prefers override over observed host scale" {
   let configured_window = Window::default()
   configured_window.resolution.set_physical_resolution(500, 300)
   configured_window.resolution.set_scale_factor_override(Some(1.0F))
-  let seen_scale_factor : Ref[Float] = Ref::new(0.0F)
+  let seen_scale_factor : Ref[Float] = Ref(0.0F)
 
   let app = window_plugin_with(@app.App::new(@ecs.World::new()), WindowPlugin::{
     primary_window: Some(configured_window),
@@ -663,7 +663,7 @@ test "window: exit_on_primary_closed only exits after primary window disappears"
 
 ///|
 test "window: keycode supports Eq/Hash/Show for map-backed indexing" {
-  let key_index : @hashmap.HashMap[KeyCode, Int] = @hashmap.HashMap::new()
+  let key_index : @hashmap.HashMap[KeyCode, Int] = @hashmap.HashMap([])
   key_index.set(KeyCode::KeyA, 1)
   key_index.set(KeyCode::Space, 2)
 

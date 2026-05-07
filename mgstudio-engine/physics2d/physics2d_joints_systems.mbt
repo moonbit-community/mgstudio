@@ -25,7 +25,7 @@ pub fn physics2d_sync_joints_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref::new(current_ctx)
+  let ctx_ref = Ref(current_ctx)
   let ctx = ctx_ref.val
 
   // Drop stale handles (e.g. when Rapier removed the joint because a body was removed).

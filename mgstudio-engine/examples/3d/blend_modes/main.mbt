@@ -56,7 +56,7 @@ priv struct BlendModesState {
 }
 
 ///|
-let blend_modes_state : Ref[BlendModesState] = Ref::new({
+let blend_modes_state : Ref[BlendModesState] = Ref({
   alpha: 0.9F,
   camera: None,
   camera_angle: 0.0F,

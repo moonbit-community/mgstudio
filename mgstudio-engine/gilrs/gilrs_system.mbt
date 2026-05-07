@@ -23,7 +23,7 @@ priv struct GilrsEventRuntimeState {
 }
 
 ///|
-let gilrs_event_runtime_state_ref : Ref[GilrsEventRuntimeState] = Ref::new(GilrsEventRuntimeState::{
+let gilrs_event_runtime_state_ref : Ref[GilrsEventRuntimeState] = Ref(GilrsEventRuntimeState::{
   startup_polled: false,
   poll_count: 0,
 })

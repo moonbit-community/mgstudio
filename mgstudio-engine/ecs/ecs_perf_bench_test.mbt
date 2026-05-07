@@ -90,7 +90,7 @@ pub impl Component for BenchSparseTag with component() {
 }
 
 ///|
-let bench_sparse_tag_metadata_initialized : Ref[Bool] = Ref::new(false)
+let bench_sparse_tag_metadata_initialized : Ref[Bool] = Ref(false)
 
 ///|
 fn ecs_bench_ensure_sparse_tag_metadata_registered() -> Unit {
@@ -196,7 +196,7 @@ fn ecs_bench_dense_query_sum(
     ),
     All,
   ] = query_filtered_with_cache(world, All::new(), cache)
-  let total = Ref::new(0)
+  let total = Ref(0)
   query.for_each(fn(_entity, data) {
     let (position, velocity, health, mass) = data
     total.val = total.val +
@@ -223,7 +223,7 @@ fn ecs_bench_dense_query_state_iter_sum(
     All,
   ],
 ) -> Int {
-  let total = Ref::new(0)
+  let total = Ref(0)
   let iter = state.iter(world)
   while (try! iter.fetch_next()) is Some((_entity, data)) {
     let (position, velocity, health, mass) = data
@@ -247,7 +247,7 @@ fn ecs_bench_sparse_query_sum(
     (Comp[BenchPosition], Comp[BenchSparseTag]),
     With[BenchSparseTag],
   ] = query_filtered_with_cache(world, With::new(bench_sparse_tag_key), cache)
-  let total = Ref::new(0)
+  let total = Ref(0)
   query.for_each(fn(_entity, data) {
     let (position, sparse_tag) = data
     total.val = total.val +

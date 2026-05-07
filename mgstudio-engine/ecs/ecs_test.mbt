@@ -153,10 +153,10 @@ let parity_required_c_key : ComponentKey[ParityRequiredC] = register_component(
 )
 
 ///|
-let queued_require_metadata_initialized : Ref[Bool] = Ref::new(false)
+let queued_require_metadata_initialized : Ref[Bool] = Ref(false)
 
 ///|
-let sparse_storage_metadata_initialized : Ref[Bool] = Ref::new(false)
+let sparse_storage_metadata_initialized : Ref[Bool] = Ref(false)
 
 ///|
 fn ensure_queued_require_metadata_registered() -> Unit {

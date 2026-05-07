@@ -26,7 +26,8 @@ priv struct StateTransitionRegistration {
 let state_transition_registrations : Array[StateTransitionRegistration] = []
 
 ///|
-let state_transition_registration_indices : @hashmap.HashMap[String, Int] = @hashmap.HashMap::new()
+let state_transition_registration_indices : @hashmap.HashMap[String, Int] = @hashmap.HashMap([],
+)
 
 ///|
 priv struct StateTransitionHookRegistration {
@@ -236,7 +237,7 @@ fn register_state_transition_hook(
   config : SystemConfig[@ecs.World],
   matches : (@ecs.World) -> Bool,
 ) -> Unit {
-  hooks.push({ key, config_ref: Ref::new(config), matches })
+  hooks.push({ key, config_ref: Ref(config), matches })
 }
 
 ///|

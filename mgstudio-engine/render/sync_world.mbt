@@ -139,7 +139,7 @@ pub struct PendingSyncEntity {
 
 ///|
 pub fn PendingSyncEntity::default() -> PendingSyncEntity {
-  PendingSyncEntity::{ records: Ref::new([]) }
+  PendingSyncEntity::{ records: Ref([]) }
 }
 
 ///|

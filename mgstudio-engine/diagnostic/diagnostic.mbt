@@ -111,7 +111,7 @@ pub fn Diagnostic::new(path : DiagnosticPath) -> Diagnostic {
   Diagnostic::{
     path,
     suffix: "",
-    history: @deque.Deque::new(capacity=DEFAULT_MAX_HISTORY_LENGTH),
+    history: @deque.Deque([], capacity=DEFAULT_MAX_HISTORY_LENGTH),
     sum: 0.0F,
     ema: 0.0F,
     ema_smoothing_factor: 2.0F / 21.0F,
@@ -281,7 +281,7 @@ pub struct DiagnosticsStore {
 
 ///|
 pub fn DiagnosticsStore::default() -> DiagnosticsStore {
-  DiagnosticsStore::{ diagnostics: @hashmap.HashMap::new() }
+  DiagnosticsStore::{ diagnostics: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -299,7 +299,7 @@ pub fn DiagnosticsStore::add(
   self : DiagnosticsStore,
   diagnostic : Diagnostic,
 ) -> Unit {
-  self.diagnostics.set(diagnostic.path().as_str(), Ref::new(diagnostic))
+  self.diagnostics.set(diagnostic.path().as_str(), Ref(diagnostic))
 }
 
 ///|
@@ -398,8 +398,7 @@ fn diagnostics_store_ref(world : @ecs.World) -> Ref[DiagnosticsStore]? {
 pub impl @app.SystemParam for Diagnostics with get(_state) {
   let world = @app.current_world().unwrap()
   match diagnostics_store_ref(world) {
-    Some(store_ref) =>
-      Diagnostics::{ store_ref, buffer: @hashmap.HashMap::new() }
+    Some(store_ref) => Diagnostics::{ store_ref, buffer: @hashmap.HashMap([]) }
     None => abort("Missing DiagnosticsStore resource")
   }
 }

@@ -171,7 +171,7 @@ priv struct FixedFrameState {
 }
 
 ///|
-let fixed_frame_state : Ref[FixedFrameState] = Ref::new(FixedFrameState::{
+let fixed_frame_state : Ref[FixedFrameState] = Ref(FixedFrameState::{
   did_run_this_frame: false,
   steps_ran_this_frame: 0,
 })

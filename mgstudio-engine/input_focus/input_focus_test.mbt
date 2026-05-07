@@ -71,7 +71,7 @@ fn read_focused_mock_inputs(
   world : @ecs.World,
 ) -> Array[@input_focus.FocusedInput[MockInput]] {
   let key : @ecs.MessageKey[@input_focus.FocusedInput[MockInput]] = @input_focus.focused_input_message_key()
-  let reader = world.message_reader(key, Ref::new(0))
+  let reader = world.message_reader(key, Ref(0))
   try! reader.read()
 }
 
@@ -85,7 +85,7 @@ fn dispatch_mock_input(
 
 ///|
 fn primary_window_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(
     (
@@ -216,9 +216,9 @@ test "input_focus runtime IsFocusedHelper follows hierarchy and visibility" {
   try! (world.entity_mut(child).insert_component(@hierarchy.Parent::new(parent))
   |> ignore)
 
-  let helper_focus_within_parent : Ref[Bool] = Ref::new(false)
-  let helper_focus_visible_parent : Ref[Bool] = Ref::new(false)
-  let helper_focus_visible_child : Ref[Bool] = Ref::new(false)
+  let helper_focus_within_parent : Ref[Bool] = Ref(false)
+  let helper_focus_visible_parent : Ref[Bool] = Ref(false)
+  let helper_focus_visible_child : Ref[Bool] = Ref(false)
 
   let app = @app.App::new(world)
     .add_plugins(@input_focus.InputDispatchPlugin::default())

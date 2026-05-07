@@ -1094,8 +1094,8 @@ fn render3d_gpu_directional_light_default() -> GpuDirectionalLight3d {
 
 ///|
 fn render3d_cluster_camera_entity(world : @ecs.World) -> @core.Entity? {
-  let preferred_ref : Ref[@core.Entity?] = Ref::new(None)
-  let fallback_ref : Ref[@core.Entity?] = Ref::new(None)
+  let preferred_ref : Ref[@core.Entity?] = Ref(None)
+  let fallback_ref : Ref[@core.Entity?] = Ref(None)
   world.for_each_component(@sprite.ecs_key_camera, fn(entity, _camera) {
     if fallback_ref.val is None {
       fallback_ref.val = Some(entity)
@@ -1132,7 +1132,7 @@ fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
       return (width, height)
     }
   }
-  let fallback_view_ref : Ref[(Int, Int)?] = Ref::new(None)
+  let fallback_view_ref : Ref[(Int, Int)?] = Ref(None)
   world.for_each_component(@sprite.ecs_key_camera, fn(_entity, camera) {
     if fallback_view_ref.val is Some(_) {
       return
@@ -1172,7 +1172,7 @@ fn render3d_cluster_projection_runtime(
     is Some(runtime) {
     return Some(runtime)
   }
-  let fallback_ref : Ref[ProjectionRuntime3d?] = Ref::new(None)
+  let fallback_ref : Ref[ProjectionRuntime3d?] = Ref(None)
   world.for_each_component(ecs_key_projection_runtime3d, fn(entity, runtime) {
     if fallback_ref.val is Some(_) {
       return
@@ -1254,7 +1254,7 @@ fn render3d_clusterable_light_range(
 fn render3d_clusterable_object_max_range(world : @ecs.World) -> Float {
   let depth_context = render3d_cluster_camera_depth_context(world)
   if render3d_visible_clusterable_objects(world) is Some(visible) {
-    let max_range_ref : Ref[Float] = Ref::new(0.0F)
+    let max_range_ref : Ref[Float] = Ref(0.0F)
     for entity in visible.point_and_spot_entities() {
       if render3d_clusterable_light_range(world, entity) is Some(light_range) {
         let view_range = render3d_clusterable_object_view_range(
@@ -1269,7 +1269,7 @@ fn render3d_clusterable_object_max_range(world : @ecs.World) -> Float {
       return max_range_ref.val
     }
   }
-  let max_range_ref : Ref[Float] = Ref::new(0.0F)
+  let max_range_ref : Ref[Float] = Ref(0.0F)
   world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
     if !render3d_light_is_view_visible(world, entity) {
       return
@@ -1318,7 +1318,7 @@ fn render3d_cluster_runtime(
       ),
     )
   }
-  let fallback_ref : Ref[(Int, Int, Int, Float, Float)?] = Ref::new(None)
+  let fallback_ref : Ref[(Int, Int, Int, Float, Float)?] = Ref(None)
   world.for_each_component(@light_cluster.Clusters::component(), fn(
     entity,
     clusters,
@@ -1353,10 +1353,10 @@ fn render3d_visible_clusterable_objects(
     is Some(visible) {
     return Some(visible)
   }
-  let camera_fallback_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(
+  let camera_fallback_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref(
     None,
   )
-  let any_fallback_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref::new(
+  let any_fallback_ref : Ref[@light_cluster.VisibleClusterableObjects?] = Ref(
     None,
   )
   world.for_each_component(

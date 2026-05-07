@@ -49,7 +49,7 @@ pub impl @app.Resource for MineWorldState with resource() {
 
 ///|
 pub impl Default for MineWorldState with default() {
-  { explosions_enabled: true, map: @hashmap.HashMap::new() }
+  { explosions_enabled: true, map: @hashmap.HashMap([]) }
 }
 
 ///|

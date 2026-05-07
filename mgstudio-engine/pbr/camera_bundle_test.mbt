@@ -147,7 +147,7 @@ test "render3d: Camera3dBundle stores custom projection payload" {
 ///|
 test "render3d: Commands::spawn accepts Camera3dBundle" {
   let world = @ecs.World::new()
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = @app.App::new(world).add_system_param(fn(
     commands : @app.Commands,
   ) {
@@ -271,7 +271,7 @@ test "render3d: required components align Camera3d with Bevy camera authoring" {
 
 ///|
 test "render3d: spawn_component(Camera3d) uses required component defaults" {
-  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let spawned : Ref[@core.Entity?] = Ref(None)
   let world = @ecs.World::new()
   try! register_render3d_required_components(world)
   let mut app = @app.App::new(world).add_system_param(fn(

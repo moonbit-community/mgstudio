@@ -106,7 +106,7 @@ struct ObservedTypedAnimationEvent {
 ///|
 let observed_typed_animation_events : Ref[
   @core.Messages[ObservedTypedAnimationEvent],
-] = Ref::new(@core.Messages::new())
+] = Ref(@core.Messages::new())
 
 ///|
 pub impl @core.Message for ObservedTypedAnimationEvent with reader(sequence) {

@@ -40,7 +40,7 @@ pub struct ErasedRenderAssets[A] {
 ///|
 let erased_render_assets_resource_registry : Ref[
   @hashmap.HashMap[String, @any.Any],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 pub fn[A] ErasedRenderAssets::resource() -> @ecs.ResourceKey[
@@ -74,7 +74,7 @@ pub impl[A] @app.Resource for ErasedRenderAssets[A] with resource() {
 
 ///|
 pub fn[A] ErasedRenderAssets::new() -> ErasedRenderAssets[A] {
-  ErasedRenderAssets::{ items: @hashmap.HashMap::new() }
+  ErasedRenderAssets::{ items: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -120,7 +120,7 @@ pub fn[A] ErasedRenderAssets::insert(
   id : UntypedRenderAssetId,
   value : A,
 ) -> Unit {
-  self.items.set(id, Ref::new(value))
+  self.items.set(id, Ref(value))
 }
 
 ///|

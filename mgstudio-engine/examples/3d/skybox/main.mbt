@@ -39,7 +39,7 @@ priv struct CubemapState {
 }
 
 ///|
-let cubemap_state : Ref[CubemapState] = Ref::new({
+let cubemap_state : Ref[CubemapState] = Ref({
   is_loaded: false,
   index: 0,
   image_handle: None,

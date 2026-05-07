@@ -24,7 +24,7 @@ priv struct TransparencyState {
 }
 
 ///|
-let transparency_state : Ref[TransparencyState] = Ref::new({ materials: [] })
+let transparency_state : Ref[TransparencyState] = Ref({ materials: [] })
 
 ///|
 fn main {

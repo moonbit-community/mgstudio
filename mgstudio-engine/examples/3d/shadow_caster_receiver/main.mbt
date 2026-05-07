@@ -29,7 +29,7 @@ priv struct ShadowCasterReceiverState {
 }
 
 ///|
-let shadow_caster_receiver_state : Ref[ShadowCasterReceiverState] = Ref::new({
+let shadow_caster_receiver_state : Ref[ShadowCasterReceiverState] = Ref({
   directional_light: None,
   point_light: None,
   point_light_enabled: false,

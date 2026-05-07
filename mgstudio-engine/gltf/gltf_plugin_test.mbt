@@ -82,7 +82,7 @@ test "gltf: plugin surface can configure default image sampler" {
 
 ///|
 test "gltf: loader registration runs in finish lifecycle and only once" {
-  let registration_count = Ref::new(0)
+  let registration_count = Ref(0)
   @gltf_loader.gltf_install_loader_registration(fn() {
     registration_count.val = registration_count.val + 1
   })

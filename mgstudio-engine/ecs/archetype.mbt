@@ -1430,7 +1430,7 @@ fn World::archetype_definition_component_presence_view(
 
 ///|
 pub fn World::archetype_count(self : World) -> Int {
-  let count = Ref::new(0)
+  let count = Ref(0)
   for _ in self.archetype_component_local_ids.iter() {
     count.val = count.val + 1
   }

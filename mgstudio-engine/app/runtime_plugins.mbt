@@ -85,15 +85,15 @@ fn default_render_error_handler(
 }
 
 ///|
-let render_error_handler_ref : Ref[RenderErrorHandler] = Ref::new(
+let render_error_handler_ref : Ref[RenderErrorHandler] = Ref(
   default_render_error_handler,
 )
 
 ///|
-let render_runtime_error_ref : Ref[RenderRuntimeError?] = Ref::new(None)
+let render_runtime_error_ref : Ref[RenderRuntimeError?] = Ref(None)
 
 ///|
-let render_runtime_stopped_ref : Ref[Bool] = Ref::new(false)
+let render_runtime_stopped_ref : Ref[Bool] = Ref(false)
 
 ///|
 pub fn render_runtime_error() -> RenderRuntimeError? {
@@ -161,7 +161,7 @@ pub fn App::should_exit(self : App[@ecs.World]) -> AppExit? {
   if !self.world().contains_message(key) {
     return None
   }
-  let reader = self.world().message_reader(key, Ref::new(0))
+  let reader = self.world().message_reader(key, Ref(0))
   let exits = reader.read() catch { _ => return None }
   if exits.length() == 0 {
     None
@@ -205,7 +205,7 @@ priv struct ScheduleRunnerState {
 }
 
 ///|
-let schedule_runner_state_ref : Ref[ScheduleRunnerState] = Ref::new(ScheduleRunnerState::{
+let schedule_runner_state_ref : Ref[ScheduleRunnerState] = Ref(ScheduleRunnerState::{
   tick: None,
 })
 
@@ -222,7 +222,7 @@ fn schedule_runner_build(
   mode : ScheduleRunnerMode,
 ) -> RunnerFn {
   fn() {
-    let app_ref : Ref[App[@ecs.World]] = Ref::new(app.run_startup())
+    let app_ref : Ref[App[@ecs.World]] = Ref(app.run_startup())
     match mode {
       RunOnce => app_ref.val = app_ref.val.run_once()
       RunLoop(interval_seconds) => {
@@ -372,9 +372,9 @@ priv struct LogState {
 }
 
 ///|
-let log_state_ref : Ref[LogState] = Ref::new(LogState::{
+let log_state_ref : Ref[LogState] = Ref(LogState::{
   config: LogPlugin::default(),
-  once_keys: @hashmap.HashMap::new(),
+  once_keys: @hashmap.HashMap([]),
 })
 
 ///|
@@ -571,6 +571,6 @@ pub impl Plugin for LogPlugin with name(_self) {
 ///|
 pub impl Plugin for LogPlugin with build(self, app) {
   log_state_ref.val.config = self
-  log_state_ref.val.once_keys = @hashmap.HashMap::new()
+  log_state_ref.val.once_keys = @hashmap.HashMap([])
   app
 }

@@ -245,7 +245,7 @@ fn setup(
 fn bloom_camera_entity(
   camera_query : @ecs.Query[@ecs.Comp[BloomCamera], @ecs.All],
 ) -> @core.Entity? {
-  let camera_ref : Ref[@core.Entity?] = Ref::new(None)
+  let camera_ref : Ref[@core.Entity?] = Ref(None)
   try! camera_query.view(fn(entity, _camera) {
     if camera_ref.val is None {
       camera_ref.val = Some(entity)

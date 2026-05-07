@@ -14,7 +14,7 @@
 
 ///|
 test "fixed update: app does not run fixed loop without time plugin runner" {
-  let counter : Ref[Int] = Ref::new(0)
+  let counter : Ref[Int] = Ref(0)
   let app = App::new(@ecs.World::new()).add_fixed_update_system(fn(
     _world : @ecs.World,
   ) {

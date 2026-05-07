@@ -916,7 +916,7 @@ fn load_wgsl_required_mesh3d_motion_vector_prepass(
   skinned : Bool,
   has_previous_skin : Bool,
 ) -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   defines.set("PREPASS_FRAGMENT", true)
   defines.set("MOTION_VECTOR_PREPASS", true)
   if skinned {

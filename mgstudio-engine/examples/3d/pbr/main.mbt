@@ -24,7 +24,7 @@ priv struct PbrState {
 }
 
 ///|
-let pbr_state : Ref[PbrState] = Ref::new({
+let pbr_state : Ref[PbrState] = Ref({
   loading_label: None,
   diffuse_env_map: None,
   specular_env_map: None,

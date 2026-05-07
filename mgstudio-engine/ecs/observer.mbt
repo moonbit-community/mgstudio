@@ -210,12 +210,12 @@ struct WorldObserverRegistry {
 fn world_observer_registry_new() -> WorldObserverRegistry {
   {
     next_observer_id: 1,
-    add_observers: @hashmap.HashMap::new(),
-    insert_observers: @hashmap.HashMap::new(),
-    replace_observers: @hashmap.HashMap::new(),
-    remove_observers: @hashmap.HashMap::new(),
-    despawn_observers: @hashmap.HashMap::new(),
-    trigger_observers: @hashmap.HashMap::new(),
+    add_observers: @hashmap.HashMap([]),
+    insert_observers: @hashmap.HashMap([]),
+    replace_observers: @hashmap.HashMap([]),
+    remove_observers: @hashmap.HashMap([]),
+    despawn_observers: @hashmap.HashMap([]),
+    trigger_observers: @hashmap.HashMap([]),
     observer_parent_lookup_accessors: [],
     observer_parent_lookup_component_registration_generation: -1,
     observer_parent_lookup_archetype_generation: -1,
@@ -224,7 +224,7 @@ fn world_observer_registry_new() -> WorldObserverRegistry {
 }
 
 ///|
-let current_observer_world_ref : Ref[World?] = Ref::new(None)
+let current_observer_world_ref : Ref[World?] = Ref(None)
 
 ///|
 fn observer_registry_ref(world : World) -> Ref[WorldObserverRegistry] {
@@ -872,7 +872,7 @@ pub fn[E : TriggerEvent] World::trigger(
 ) -> Unit {
   let event_key : EventKey[E] = E::observer_event()
   let mut current_event = event
-  let propagate_ref : Ref[Bool] = Ref::new(E::auto_propagate(current_event))
+  let propagate_ref : Ref[Bool] = Ref(E::auto_propagate(current_event))
   let previous_context = self.current_trigger_observer_context
   let previous_world = current_observer_world_ref.val
   current_observer_world_ref.val = Some(self)

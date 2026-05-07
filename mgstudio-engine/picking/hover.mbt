@@ -26,7 +26,7 @@ pub struct HoverMap {
 
 ///|
 pub fn HoverMap::default() -> HoverMap {
-  HoverMap::{ inner: @hashmap.HashMap::new() }
+  HoverMap::{ inner: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -84,7 +84,7 @@ pub struct PreviousHoverMap {
 
 ///|
 pub fn PreviousHoverMap::default() -> PreviousHoverMap {
-  PreviousHoverMap::{ inner: @hashmap.HashMap::new() }
+  PreviousHoverMap::{ inner: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -142,8 +142,8 @@ fn read_pending_pointer_hits(world : @ecs.World) -> Array[PointerHits] {
   ensure_picking_pointer_hits_reader_state(world)
   let state_res = world.resource(picking_pointer_hits_reader_state_resource_key)
   guard state_res.get() is Some(state_value) else { return [] }
-  let state_ref = Ref::new(state_value)
-  let cursor = Ref::new(state_ref.val.cursor)
+  let state_ref = Ref(state_value)
+  let cursor = Ref(state_ref.val.cursor)
   let reader = world.message_reader(pointer_hits_message_key(), cursor)
   let messages = try! reader.read()
   state_ref.val.cursor = cursor.val
@@ -220,8 +220,9 @@ pub fn picking_generate_hovermap_system(world : @ecs.World) -> Unit {
     }
   }
   flat_hits.sort_by(picking_pointer_hit_cmp)
-  let next = @hashmap.HashMap::new()
-  let blocked_pointers : @hashset.HashSet[@pointer_events.PointerId] = @hashset.HashSet::new()
+  let next = @hashmap.HashMap([])
+  let blocked_pointers : @hashset.HashSet[@pointer_events.PointerId] = @hashset.HashSet([],
+  )
   for entry in flat_hits {
     let pointer = entry.0
     if blocked_pointers.contains(pointer) {

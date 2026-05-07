@@ -86,7 +86,7 @@ priv struct ClusteredDecalsState {
 }
 
 ///|
-let clustered_decals_state : Ref[ClusteredDecalsState] = Ref::new({
+let clustered_decals_state : Ref[ClusteredDecalsState] = Ref({
   camera: None,
   rotating_cube: None,
   selection: Selection::Camera,

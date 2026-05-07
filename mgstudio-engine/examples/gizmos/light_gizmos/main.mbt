@@ -25,7 +25,7 @@ priv struct LightGizmosState {
 }
 
 ///|
-let light_gizmos_state : Ref[LightGizmosState] = Ref::new({
+let light_gizmos_state : Ref[LightGizmosState] = Ref({
   camera: None,
   color_text: None,
 })

@@ -203,7 +203,7 @@ test "app: Query1 system param exposes plain mutable query" {
 ///|
 test "app: Query system param refreshes after initially empty match" {
   let world = @ecs.World::new()
-  let inserted : Ref[@core.Entity?] = Ref::new(None)
+  let inserted : Ref[@core.Entity?] = Ref(None)
   let counts : Array[Int] = []
   let mut app = App::new(world).add_system_param2(fn(
     commands : Commands,

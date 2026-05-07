@@ -165,8 +165,8 @@ pub struct SubApps[W] {
 pub fn[W] SubApps::new(main : SubApp[W]) -> SubApps[W] {
   SubApps::{
     main,
-    sub_apps: @hashmap.HashMap::new(),
-    sub_app_labels: @hashmap.HashMap::new(),
+    sub_apps: @hashmap.HashMap([]),
+    sub_app_labels: @hashmap.HashMap([]),
   }
 }
 
@@ -177,7 +177,7 @@ pub fn[W] SubApps::insert(
   sub_app : SubApp[W],
 ) -> SubApps[W] {
   let key = app_label_storage_key(label)
-  self.sub_apps.set(key, Ref::new(sub_app))
+  self.sub_apps.set(key, Ref(sub_app))
   self.sub_app_labels.set(key, label)
   self
 }

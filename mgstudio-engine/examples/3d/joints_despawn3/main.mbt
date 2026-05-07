@@ -38,7 +38,7 @@ priv struct DespawnState {
 }
 
 ///|
-let despawn_state : Ref[DespawnState] = Ref::new({ timer: 5.0F })
+let despawn_state : Ref[DespawnState] = Ref({ timer: 5.0F })
 
 ///|
 fn main {

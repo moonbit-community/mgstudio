@@ -209,7 +209,7 @@ pub struct EntityCommands {
 ///|
 let deferred_command_batch_queue_ref : Ref[
   Array[(@core.Sequence, DeferredCommandEntry)]?,
-] = Ref::new(None)
+] = Ref(None)
 
 ///|
 fn begin_deferred_command_batch() -> Unit {

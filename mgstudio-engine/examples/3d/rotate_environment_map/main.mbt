@@ -29,7 +29,7 @@ priv struct RotateEnvState {
 }
 
 ///|
-let rotate_env_state : Ref[RotateEnvState] = Ref::new({ camera: None })
+let rotate_env_state : Ref[RotateEnvState] = Ref({ camera: None })
 
 ///|
 fn float_from_int(value : Int) -> Float {

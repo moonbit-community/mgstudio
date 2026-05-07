@@ -51,8 +51,8 @@ fn read_pending_a11y_actions(world : @ecs.World) -> Array[@a11y.ActionRequest] {
   ensure_picking_a11y_action_reader_state(world)
   let state_res = world.resource(picking_a11y_action_reader_state_resource_key)
   guard state_res.get() is Some(state_value) else { return [] }
-  let state_ref = Ref::new(state_value)
-  let cursor = Ref::new(state_ref.val.cursor)
+  let state_ref = Ref(state_value)
+  let cursor = Ref(state_ref.val.cursor)
   let reader = world.message_reader(@a11y.ecs_msg_key_action_request, cursor)
   let actions = try! reader.read()
   state_ref.val.cursor = cursor.val
@@ -97,8 +97,8 @@ fn read_pending_pointer_event_inputs(world : @ecs.World) -> Array[PointerInput] 
     picking_pointer_input_event_reader_state_resource_key,
   )
   guard state_res.get() is Some(state_value) else { return [] }
-  let state_ref = Ref::new(state_value)
-  let cursor = Ref::new(state_ref.val.cursor)
+  let state_ref = Ref(state_value)
+  let cursor = Ref(state_ref.val.cursor)
   let reader = world.message_reader(pointer_input_message_key(), cursor)
   let inputs = try! reader.read()
   state_ref.val.cursor = cursor.val
@@ -128,7 +128,7 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
   }
   let events_res = @app.get_picking_events_resource(world)
   guard events_res.get() is Some(events_value) else { return }
-  let events = Ref::new(events_value)
+  let events = Ref(events_value)
   let scroll_step = 24.0F
   fn apply_scroll_delta(entity : @core.Entity, dx : Float, dy : Float) -> Unit {
     guard (try! world.get_by_key(entity, @ui.ecs_key_node)) is Some(target_node) else {
@@ -332,10 +332,10 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
   let hover_map = get_hover_map_resource(world).get()
   let events_res = @app.get_picking_events_resource(world)
   guard events_res.get() is Some(events_value) else { return }
-  let events = Ref::new(events_value)
+  let events = Ref(events_value)
   let state_res = get_picking_state_resource(world)
   guard state_res.get() is Some(state_value) else { return }
-  let picking_state = Ref::new(state_value)
+  let picking_state = Ref(state_value)
   for input in inputs {
     let pointer_id = input.pointer
     let pos_opt = input.window_position

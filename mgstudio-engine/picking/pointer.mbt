@@ -160,7 +160,7 @@ pub struct PointerMap {
 
 ///|
 pub fn PointerMap::default() -> PointerMap {
-  PointerMap::{ inner: @hashmap.HashMap::new() }
+  PointerMap::{ inner: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -186,7 +186,7 @@ pub fn ensure_pointer_map_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn update_pointer_map_system(world : @ecs.World) -> Unit {
-  let map = @hashmap.HashMap::new()
+  let map = @hashmap.HashMap([])
   world.for_each_component(ecs_key_pointer_id, fn(entity, id) {
     map.set(id.value(), entity)
   })
@@ -203,7 +203,7 @@ fn pointer_entity_for_id(
       match map.get_entity(pointer_id) {
         Some(entity) => Some(entity)
         None => {
-          let found : Ref[@core.Entity?] = Ref::new(None)
+          let found : Ref[@core.Entity?] = Ref(None)
           world.for_each_component(ecs_key_pointer_id, fn(entity, id) {
             if found.val is None && id.value() == pointer_id {
               found.val = Some(entity)
@@ -213,7 +213,7 @@ fn pointer_entity_for_id(
         }
       }
     None => {
-      let found : Ref[@core.Entity?] = Ref::new(None)
+      let found : Ref[@core.Entity?] = Ref(None)
       world.for_each_component(ecs_key_pointer_id, fn(entity, id) {
         if found.val is None && id.value() == pointer_id {
           found.val = Some(entity)
@@ -302,8 +302,8 @@ fn read_pending_pointer_inputs(world : @ecs.World) -> Array[PointerInput] {
   ensure_pointer_input_reader_state(world)
   let state_res = world.resource(pointer_input_reader_state_resource_key)
   guard state_res.get() is Some(state_value) else { return [] }
-  let state_ref = Ref::new(state_value)
-  let cursor = Ref::new(state_ref.val.cursor)
+  let state_ref = Ref(state_value)
+  let cursor = Ref(state_ref.val.cursor)
   let reader = world.message_reader(pointer_input_message_key(), cursor)
   let messages = try! reader.read()
   state_ref.val.cursor = cursor.val

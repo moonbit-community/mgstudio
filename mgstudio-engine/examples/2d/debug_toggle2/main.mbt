@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-let debug_toggle_state : Ref[Bool] = Ref::new(true)
+let debug_toggle_state : Ref[Bool] = Ref(true)
 
 ///|
 fn main {

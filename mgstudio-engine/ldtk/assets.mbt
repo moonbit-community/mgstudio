@@ -321,12 +321,13 @@ fn ldtk_load_project_asset(
   let data = ldtk_parse_json(bytes)
   let ldtk_root_path = context.path().with_label(None)
   let asset_server = context.asset_server()
-  let level_map : @hashmap.HashMap[String, LevelMetadata] = @hashmap.HashMap::new()
-  let tileset_map : @hashmap.HashMap[Int, @asset.Handle[@asset.Image]] = @hashmap.HashMap::new()
+  let level_map : @hashmap.HashMap[String, LevelMetadata] = @hashmap.HashMap([])
+  let tileset_map : @hashmap.HashMap[Int, @asset.Handle[@asset.Image]] = @hashmap.HashMap([],
+  )
   let external_level_blob_handles : @hashmap.HashMap[
     String,
     @asset.Handle[@asset.Blob],
-  ] = @hashmap.HashMap::new()
+  ] = @hashmap.HashMap([])
 
   for level_index, level in data.levels {
     ldtk_level_map_insert(
@@ -401,10 +402,10 @@ fn ldtk_project_asset_default() -> LdtkProject {
       worlds: [],
       defs: Definitions::{ entities: [], layers: [], tilesets: [] },
     },
-    @hashmap.HashMap::new(),
-    @hashmap.HashMap::new(),
+    @hashmap.HashMap([]),
+    @hashmap.HashMap([]),
     None,
-    @hashmap.HashMap::new(),
+    @hashmap.HashMap([]),
   )
 }
 

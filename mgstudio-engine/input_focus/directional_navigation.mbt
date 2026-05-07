@@ -147,7 +147,7 @@ pub struct DirectionalNavigationMap {
 
 ///|
 pub fn DirectionalNavigationMap::default() -> DirectionalNavigationMap {
-  { neighbors: @hashmap.HashMap::new() }
+  { neighbors: @hashmap.HashMap([]) }
 }
 
 ///|

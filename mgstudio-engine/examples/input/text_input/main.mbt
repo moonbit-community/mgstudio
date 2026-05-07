@@ -38,13 +38,13 @@ struct BubbleLine {
 }
 
 ///|
-let status_text_handles_ref : Ref[StatusTextHandles?] = Ref::new(None)
+let status_text_handles_ref : Ref[StatusTextHandles?] = Ref(None)
 
 ///|
-let edit_text_state_ref : Ref[EditTextState?] = Ref::new(None)
+let edit_text_state_ref : Ref[EditTextState?] = Ref(None)
 
 ///|
-let bubble_lines_ref : Ref[Array[BubbleLine]] = Ref::new([])
+let bubble_lines_ref : Ref[Array[BubbleLine]] = Ref([])
 
 ///|
 fn main {
@@ -230,7 +230,7 @@ fn toggle_ime_system(mouse : @input.ButtonInput[@window.MouseButton]) -> Unit {
   }
   guard @app.current_world() is Some(world) else { return }
   guard @input.mouse_position() is Some(cursor_position) else { return }
-  let ime_enabled : Ref[Bool?] = Ref::new(None)
+  let ime_enabled : Ref[Bool?] = Ref(None)
   update_primary_window(world, fn(window) {
     window.ime_position = cursor_position
     window.ime_enabled = !window.ime_enabled

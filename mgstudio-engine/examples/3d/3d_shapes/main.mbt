@@ -50,7 +50,7 @@ priv struct ShapesState {
 }
 
 ///|
-let shapes_state : Ref[ShapesState] = Ref::new({ rotating: true, entries: [] })
+let shapes_state : Ref[ShapesState] = Ref({ rotating: true, entries: [] })
 
 ///|
 fn float_from_int(value : Int) -> Float {

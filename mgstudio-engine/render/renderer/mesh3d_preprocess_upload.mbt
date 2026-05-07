@@ -192,7 +192,7 @@ pub fn GpuBackend::delete_old_mesh3d_preprocess_work_item_buffers(
   self : GpuBackend,
   retained_camera_keys : Array[UInt64],
 ) -> Unit {
-  let retained = @hashset.HashSet::new()
+  let retained = @hashset.HashSet([])
   for key in retained_camera_keys {
     retained.add(key)
   }

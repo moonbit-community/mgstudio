@@ -128,7 +128,7 @@ fn ssao_ui_text(
 fn ssao_camera_entity(
   camera_query : @ecs.Query[@ecs.Comp[SsaoCamera], @ecs.All],
 ) -> @core.Entity? {
-  let entity_ref = Ref::new(None)
+  let entity_ref = Ref(None)
   try! camera_query.view(fn(entity, _camera) {
     if entity_ref.val is None {
       entity_ref.val = Some(entity)

@@ -553,7 +553,7 @@ test "app: conditional explicit sync point in child set is not reused as auto sy
 test "app: set run_if evaluates once per run and gates all systems in the set" {
   let stage = schedule_label("SetRunIfOncePerFrame")
   let gated_set = system_set("SetRunIf.Once")
-  let condition_eval_count = Ref::new(0)
+  let condition_eval_count = Ref(0)
   let executed : Array[String] = []
   let mut sub_app = SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(stage))
@@ -652,7 +652,7 @@ test "app: add_schedule reinserts and replaces previous schedule content" {
 ///|
 test "app: system run_if evaluates all conditions without short-circuiting" {
   let second_condition_seen : Array[Int] = []
-  let system_runs = Ref::new(0)
+  let system_runs = Ref(0)
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { system_runs.val = system_runs.val + 1 })
     .run_if(fn(_world : @ecs.World) { false })
@@ -815,9 +815,9 @@ test "app: failed set run_if marks remaining set systems completed" {
 test "app: runtime-invalid system is still scheduled and validated during execution" {
   ignore(MissingRunIfParityResource::{  })
   let validation_kinds : Array[ErrorContextKind] = []
-  let run_if_hits = Ref::new(0)
-  let body_runs = Ref::new(0)
-  let follower_runs = Ref::new(0)
+  let run_if_hits = Ref(0)
+  let body_runs = Ref(0)
+  let follower_runs = Ref(0)
   let app = App::new(@ecs.World::new())
     .set_error_handler(fn(_error, context) {
       validation_kinds.push(context.kind())
@@ -851,9 +851,9 @@ test "app: runtime-invalid system is still scheduled and validated during execut
 ///|
 test "app: statically invalid system stays in order and evaluates conditions before validation" {
   let validation_kinds : Array[ErrorContextKind] = []
-  let run_if_hits = Ref::new(0)
-  let body_runs = Ref::new(0)
-  let follower_runs = Ref::new(0)
+  let run_if_hits = Ref(0)
+  let body_runs = Ref(0)
+  let follower_runs = Ref(0)
   let app = App::new(@ecs.World::new())
     .set_error_handler(fn(_error, context) {
       validation_kinds.push(context.kind())
@@ -927,7 +927,7 @@ test "app: consecutive deferred chain inserts one sync point per deferred edge" 
 ///|
 test "app: chain run_if is a collective set condition evaluated once" {
   let stage = schedule_label("ChainCollectiveRunIf")
-  let condition_hits = Ref::new(0)
+  let condition_hits = Ref(0)
   let system_runs : Array[String] = []
   let mut sub_app = SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(stage))

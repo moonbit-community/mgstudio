@@ -74,7 +74,7 @@ pub impl Component for SparseTag with component() {
 }
 
 ///|
-let sparse_tag_metadata_initialized : Ref[Bool] = Ref::new(false)
+let sparse_tag_metadata_initialized : Ref[Bool] = Ref(false)
 
 ///|
 fn ensure_sparse_tag_metadata_registered() -> Unit {
@@ -354,7 +354,7 @@ test "ecs query: query1 view and for_each" {
   try! world.set_by_key(e1, comp_position, Position::{ x: 1, y: 2 })
   try! world.set_by_key(e2, comp_position, Position::{ x: 4, y: 6 })
 
-  let sum_ref : Ref[Int] = Ref::new(0)
+  let sum_ref : Ref[Int] = Ref(0)
   let read_query : Query[Comp[Position], All] = query(world)
   try! read_query.view(fn(_entity, position) {
     let position = position.value()
@@ -446,8 +446,8 @@ test "ecs query: query2 view intersection and for_each" {
     dy: 10,
   })
 
-  let hits_ref : Ref[Int] = Ref::new(0)
-  let sum_ref : Ref[Int] = Ref::new(0)
+  let hits_ref : Ref[Int] = Ref(0)
+  let sum_ref : Ref[Int] = Ref(0)
   let read_query : Query[(Comp[Position], Comp[Velocity]), All] = query(world)
   try! read_query.view(fn(_entity, data) {
     let (p, v) = data
@@ -513,8 +513,8 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
 
   try! world.set_by_key(e2, comp_accel, Acceleration::{ ax: 8, ay: 9 })
 
-  let hits_ref : Ref[Int] = Ref::new(0)
-  let score_ref : Ref[Int] = Ref::new(0)
+  let hits_ref : Ref[Int] = Ref(0)
+  let score_ref : Ref[Int] = Ref(0)
   let read_query : Query[
     (Comp[Position], Comp[Velocity], Comp[Acceleration]),
     All,

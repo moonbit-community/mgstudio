@@ -70,7 +70,7 @@ fn default_settings() -> AppSettings {
 }
 
 ///|
-let post_processing_state : Ref[PostProcessingState] = Ref::new({
+let post_processing_state : Ref[PostProcessingState] = Ref({
   settings: default_settings(),
   camera: None,
   help_text: None,

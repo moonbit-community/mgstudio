@@ -48,7 +48,7 @@ priv struct AppStatus {
 }
 
 ///|
-let app_status : Ref[AppStatus] = Ref::new({
+let app_status : Ref[AppStatus] = Ref({
   lighting_mode: LightingMode::MixedIndirect,
   camera: None,
   sphere: None,

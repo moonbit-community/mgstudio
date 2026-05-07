@@ -35,7 +35,7 @@ priv struct LightingState {
 }
 
 ///|
-let lighting_state : Ref[LightingState] = Ref::new({
+let lighting_state : Ref[LightingState] = Ref({
   parameters: {
     aperture_f_stops: 1.0F,
     shutter_speed_s: 1.0F / 125.0F,

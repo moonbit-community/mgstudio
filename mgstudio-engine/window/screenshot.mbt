@@ -48,7 +48,7 @@ priv struct PendingScreenshotEntityCapture {
 ///|
 let pending_screenshot_entity_captures : Ref[
   Array[PendingScreenshotEntityCapture],
-] = Ref::new([])
+] = Ref([])
 
 ///|
 pub fn Screenshot::window(window : @core.Entity) -> Screenshot {

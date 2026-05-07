@@ -350,7 +350,7 @@ priv struct TextState {
 }
 
 ///|
-let text_state : Ref[TextState] = Ref::new(TextState::{
+let text_state : Ref[TextState] = Ref(TextState::{
   next_text_id: 0,
   next_span_id: 0,
   texts: [],
@@ -416,10 +416,10 @@ pub fn text_compute_cull_margin(
 }
 
 ///|
-let text_runtime_rem_size_ref : Ref[Float] = Ref::new(20.0F)
+let text_runtime_rem_size_ref : Ref[Float] = Ref(20.0F)
 
 ///|
-let text_layout_dirty_ref : Ref[Bool] = Ref::new(true)
+let text_layout_dirty_ref : Ref[Bool] = Ref(true)
 
 ///|
 pub fn text_runtime_mark_layout_dirty() -> Unit {
@@ -458,12 +458,12 @@ priv struct TextDebugFrameState {
 }
 
 ///|
-let text_debug_frame_state : Ref[TextDebugFrameState] = Ref::new(TextDebugFrameState::{
+let text_debug_frame_state : Ref[TextDebugFrameState] = Ref(TextDebugFrameState::{
   draws: [],
 })
 
 ///|
-let text_debug_capture_enabled_state : Ref[Bool] = Ref::new(false)
+let text_debug_capture_enabled_state : Ref[Bool] = Ref(false)
 
 ///|
 pub fn text_debug_capture_enabled() -> Bool {
@@ -1266,11 +1266,11 @@ pub fn text_get_visual_bounds(handle : TextHandle) -> @math.Rect? {
       }
     }
 
-    let min_x_ref = Ref::new(0.0F)
-    let min_y_ref = Ref::new(0.0F)
-    let max_x_ref = Ref::new(0.0F)
-    let max_y_ref = Ref::new(0.0F)
-    let initialized_ref = Ref::new(false)
+    let min_x_ref = Ref(0.0F)
+    let min_y_ref = Ref(0.0F)
+    let max_x_ref = Ref(0.0F)
+    let max_y_ref = Ref(0.0F)
+    let initialized_ref = Ref(false)
     for glyph in glyphs {
       let glyph_pos = to_y_up(instance.y_axis, glyph.position)
       let local_pos = @math.Vec2::new(

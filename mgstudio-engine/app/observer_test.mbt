@@ -140,7 +140,7 @@ test "app observer: add_observer2 exposes On<E> with MessageWriter" {
 
   world.trigger(ObserverPulse::{ amount: 13 })
 
-  let reader = world.message_reader(message_key, Ref::new(0))
+  let reader = world.message_reader(message_key, Ref(0))
   let messages = try! reader.read()
   debug_inspect(messages.length(), content="1")
   debug_inspect(messages[0].amount, content="13")
@@ -159,7 +159,7 @@ test "app observer: add_component_observer2 exposes ComponentOn<Insert, C> with 
     value: 7,
   })
 
-  let reader = world.message_reader(message_key, Ref::new(0))
+  let reader = world.message_reader(message_key, Ref(0))
   let messages = try! reader.read()
   debug_inspect(messages.length(), content="1")
   debug_inspect(messages[0].entity_id, content="0")
@@ -180,7 +180,7 @@ test "app observer: add_component_observer2 exposes ComponentOn<Remove, C> with 
   })
   ignore(try! world.remove_by_key(entity, observer_marker_key))
 
-  let reader = world.message_reader(message_key, Ref::new(0))
+  let reader = world.message_reader(message_key, Ref(0))
   let messages = try! reader.read()
   debug_inspect(messages.length(), content="1")
   debug_inspect(messages[0].entity_id, content="0")

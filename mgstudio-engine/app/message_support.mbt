@@ -79,7 +79,7 @@ pub fn[M] on_message(
   key : @ecs.MessageKey[M],
   state : Ref[Json],
 ) -> Bool {
-  let reader = world.message_reader(key, Ref::new(message_cursor_state(state)))
+  let reader = world.message_reader(key, Ref(message_cursor_state(state)))
   let has_messages = reader.len() > 0
   reader.clear()
   state.val = reader.cursor().to_json()
@@ -170,7 +170,7 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with init_state
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with get(state) {
   let world = system_param_abort_missing_world()
   let key : @ecs.MessageKey[T] = @ecs.Message::message()
-  world.message_reader(key, Ref::new(message_cursor_state(state)))
+  world.message_reader(key, Ref(message_cursor_state(state)))
 }
 
 ///|
@@ -203,7 +203,7 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with get(
 ) {
   let world = system_param_abort_missing_world()
   let key : @ecs.MessageKey[T] = @ecs.Message::message()
-  world.message_mutator(key, Ref::new(message_cursor_state(state)))
+  world.message_mutator(key, Ref(message_cursor_state(state)))
 }
 
 ///|

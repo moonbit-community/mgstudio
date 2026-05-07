@@ -19,13 +19,13 @@ priv struct ContactFilterState {
 }
 
 ///|
-let contact_filter_state : Ref[ContactFilterState] = Ref::new(ContactFilterState::{
+let contact_filter_state : Ref[ContactFilterState] = Ref(ContactFilterState::{
   left: None,
   right: None,
 })
 
 ///|
-let contact_filter_enabled : Ref[Bool] = Ref::new(true)
+let contact_filter_enabled : Ref[Bool] = Ref(true)
 
 ///|
 fn main {

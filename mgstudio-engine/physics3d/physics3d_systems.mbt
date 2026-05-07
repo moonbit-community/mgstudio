@@ -233,7 +233,7 @@ pub fn physics3d_clear_events_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ev_res = get_physics3d_events_resource(ecs_world)
   guard ev_res.get() is Some(events) else { return }
-  let events_ref = Ref::new(events)
+  let events_ref = Ref(events)
   events_ref.val.clear()
   ev_res.insert(events_ref.val)
 }
@@ -243,7 +243,7 @@ pub fn physics3d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx_value) else { return }
-  let ctx_ref = Ref::new(ctx_value)
+  let ctx_ref = Ref(ctx_value)
   let ctx = ctx_ref.val
 
   // 1) Remove handles/rapier state when authoring components are removed.
@@ -335,7 +335,7 @@ pub fn physics3d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   }
 
   // 2) Remove rapier state when entities are despawned (handle components gone).
-  let alive : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+  let alive : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
   ecs_world.for_each_component(ecs_key_rapier_body_handle3d, fn(e, _h) {
     alive.set(entity_key(e), true)
   })
@@ -417,7 +417,7 @@ pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx_value) else { return }
-  let ctx_ref = Ref::new(ctx_value)
+  let ctx_ref = Ref(ctx_value)
   let ctx = ctx_ref.val
 
   // Insert rigid bodies.
@@ -639,7 +639,7 @@ pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard cfg_res.get() is Some(cfg) else { return }
   guard ctx_res.get() is Some(ctx_value) else { return }
-  let ctx_ref = Ref::new(ctx_value)
+  let ctx_ref = Ref(ctx_value)
   let ctx = ctx_ref.val
   let dt = match (try! world.get_resource(@time.fixed_time_resource_key())) {
     Some(fixed_time) => fixed_time.timestep_seconds()
@@ -832,8 +832,8 @@ pub fn physics3d_step_system(world : @ecs.World) -> Unit {
   guard cfg_res.get() is Some(cfg) else { return }
   guard ctx_res.get() is Some(ctx_value) else { return }
   guard ev_res.get() is Some(events_value) else { return }
-  let ctx_ref = Ref::new(ctx_value)
-  let ev_ref = Ref::new(events_value)
+  let ctx_ref = Ref(ctx_value)
+  let ev_ref = Ref(events_value)
   let ctx = ctx_ref.val
   let events = ev_ref.val
   let gravity = mg_vec3_to_rapier(cfg.gravity)

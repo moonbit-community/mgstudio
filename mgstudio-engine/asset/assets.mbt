@@ -21,22 +21,22 @@ pub struct Assets[T] {
 }
 
 ///|
-let assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
 type AssetEventDispatch = (@ecs.World) -> Unit
 
 ///|
-let asset_event_message_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let asset_event_message_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
 let asset_event_dispatch_registry : Ref[
   @hashmap.HashMap[String, AssetEventDispatch],
-] = Ref::new(@hashmap.HashMap::new())
+] = Ref(@hashmap.HashMap([]))
 
 ///|
 fn[T] registered_asset_event_message_key_with_type_name(

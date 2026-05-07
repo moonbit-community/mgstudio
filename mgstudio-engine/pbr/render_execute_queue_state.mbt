@@ -101,7 +101,7 @@ fn render3d_execute_queue_state_ref_or_abort(
 ) -> Ref[Render3dExecuteQueueState] {
   ensure_render3d_execute_queue_state(world)
   match (try! world.get_resource_mut(Render3dExecuteQueueState::resource())) {
-    Some(state) => Ref::new(state.peek())
+    Some(state) => Ref(state.peek())
     None => abort("Missing Render3dExecuteQueueState resource in render world")
   }
 }

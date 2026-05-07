@@ -765,7 +765,7 @@ test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   register_wgsl_source(
     "sprite_render/mesh2d/mesh2d.wgsl", "#import bevy_sprite::mesh2d_functions as mesh_functions\nfn demo() -> f32 {\n  return mesh_functions::twice_pi();\n}\n",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   let value_defines = default_wgsl_value_defines()
   let preprocessed = load_wgsl_preprocessed(
     "", "sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines,
@@ -794,7 +794,7 @@ test "renderer: registered wgsl sources resolve nested alias imports" {
   register_wgsl_source(
     "test/main.wgsl", "#import test::bindings::lights\nfn demo() -> f32 {\n  return lights.value;\n}\n",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   let value_defines = default_wgsl_value_defines()
   let preprocessed = load_wgsl_preprocessed(
     "", "test/main.wgsl", defines, value_defines,
@@ -816,7 +816,7 @@ test "renderer: registered wgsl sources resolve nested alias imports through mod
   register_wgsl_source(
     "test/main.wgsl", "#import test::bindings\nfn demo() -> f32 {\n  return bindings::lights.value;\n}\n",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   let value_defines = default_wgsl_value_defines()
   let preprocessed = load_wgsl_preprocessed(
     "", "test/main.wgsl", defines, value_defines,
@@ -850,7 +850,7 @@ test "renderer: registered wgsl sources resolve nested alias imports through gro
   register_wgsl_source(
     "test/main.wgsl", "#import test::{ bindings as view_bindings, types }\n#import test::bindings::globals\nfn demo() -> f32 {\n  return view_bindings::lights.value + globals.value;\n}\n",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   let value_defines = default_wgsl_value_defines()
   let preprocessed = load_wgsl_preprocessed(
     "", "test/main.wgsl", defines, value_defines,

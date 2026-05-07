@@ -190,7 +190,7 @@ fn scale_down_sphere_proportional_to_cube_travel_distance(
     @ecs.All,
   ],
 ) -> Unit {
-  let distances = Ref::new(0.0F)
+  let distances = Ref(0.0F)
   try! cubes.view(fn(_entity, data) {
     let (cube_transform, cube_state) = data
     distances.val = distances.val +

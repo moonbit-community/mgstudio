@@ -66,7 +66,7 @@ impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with init_state
 
 ///|
 impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with get(state) {
-  let query_state = Ref::new(state.val)
+  let query_state = Ref(state.val)
   { query: P::get(query_state), state: query_state }
 }
 
@@ -81,7 +81,7 @@ impl[P : @app.SystemParam] @app.SystemParam for MovementParam[P] with store(
 
 ///|
 fn MovementSystemParam::integrate(self : MovementSystemParam) -> Int {
-  let moved : Ref[Int] = Ref::new(0)
+  let moved : Ref[Int] = Ref(0)
   try! self.query.view(fn(_entity, data) {
     let (position, velocity) = data
     position.modify(fn(value) { value.x = value.x + velocity.value().dx })

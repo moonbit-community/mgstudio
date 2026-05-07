@@ -258,7 +258,7 @@ test "time: pause and relative speed follow bevy virtual semantics" {
 
 ///|
 test "time: fixed timesteps strategy drives fixed update loop" {
-  let counter : Ref[Int] = Ref::new(0)
+  let counter : Ref[Int] = Ref(0)
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(TimePlugin::default())
     .insert_resource(Time::from_seconds(0.125F))
@@ -326,7 +326,7 @@ test "time: generic time switches to fixed during fixed update and restores afte
 
 ///|
 test "time: fixed resource timestep changes affect later steps in the same frame" {
-  let steps : Ref[Int] = Ref::new(0)
+  let steps : Ref[Int] = Ref(0)
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(TimePlugin::default())
     .insert_resource(Time::from_seconds(0.2F))

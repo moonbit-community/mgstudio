@@ -31,13 +31,13 @@ const BUTTON_LABEL_FONT_SIZE : Float = 18.0F
 const OPTION_TITLE_WIDTH : Float = 150.0F
 
 ///|
-let widget_click_event_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let widget_click_event_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|
-let widget_click_sender_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
-  @hashmap.HashMap::new(),
+let widget_click_sender_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+  @hashmap.HashMap([]),
 )
 
 ///|

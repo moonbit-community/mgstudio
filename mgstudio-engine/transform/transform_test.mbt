@@ -535,7 +535,7 @@ test "transform plugin: queues parent validation for missing parent GlobalTransf
 
   let reader = world.message_reader(
     @app.check_parent_has_component_message_key(ecs_key_global_transform),
-    Ref::new(0),
+    Ref(0),
   )
   debug_inspect(reader.len(), content="1")
 }
@@ -553,7 +553,7 @@ test "transform plugin: keeps preinserted static optimization resource" {
 
 ///|
 test "transform plugin: post update reflects update stage transform writes" {
-  let entity_ref = Ref::new(@core.Entity::new(0, 0))
+  let entity_ref = Ref(@core.Entity::new(0, 0))
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     TransformPlugin::default(),
   )

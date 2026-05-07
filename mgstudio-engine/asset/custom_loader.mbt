@@ -64,7 +64,7 @@ fn typed_asset_loader_registry_for_world(
   let key = typed_asset_loader_registry_resource_key()
   if (try! world.get_resource(key)) is None {
     world.insert_resource(key, TypedAssetLoaderRegistryState::{
-      loaders: Ref::new(@hashmap.HashMap::new()),
+      loaders: Ref(@hashmap.HashMap([])),
     })
   }
   match (try! world.get_resource(key)) {

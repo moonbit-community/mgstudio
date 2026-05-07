@@ -22,7 +22,7 @@ fn main {
 
   // Create a closure with an "input" value.
   let complex_closure = fn(value : String) -> @app.SystemFn[@ecs.World] {
-    let stored_value : Ref[String] = Ref::new(value)
+    let stored_value : Ref[String] = Ref(value)
     fn(_world : @ecs.World) {
       @app.log_info("Hello from a complex closure! \{stored_value.val}")
 

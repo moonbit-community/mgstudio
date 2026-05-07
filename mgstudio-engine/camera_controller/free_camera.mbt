@@ -103,7 +103,7 @@ priv struct FreeCameraSystemState {
 }
 
 ///|
-let free_camera_system_state : Ref[FreeCameraSystemState] = Ref::new(FreeCameraSystemState::{
+let free_camera_system_state : Ref[FreeCameraSystemState] = Ref(FreeCameraSystemState::{
   toggle_cursor_grab: false,
   mouse_cursor_grab: false,
   last_mouse_position: None,

@@ -74,7 +74,7 @@ let test_message_cursor_set : SystemSet = system_set(
 
 ///|
 test "app: add_message wires MessageWriter and MessageReader through world queues" {
-  let sent = Ref::new(false)
+  let sent = Ref(false)
   let seen : Array[Int] = []
   let key : @ecs.MessageKey[TestAppMessage] = @ecs.Message::message()
 
@@ -113,8 +113,8 @@ test "app: add_message wires MessageWriter and MessageReader through world queue
 
 ///|
 test "app: on_message consumes unread messages once per condition state" {
-  let sent = Ref::new(false)
-  let triggered = Ref::new(0)
+  let sent = Ref(false)
+  let triggered = Ref(0)
   let key : @ecs.MessageKey[TestAppMessage] = @ecs.Message::message()
 
   let mut app = App::new(@ecs.World::new())
@@ -149,7 +149,7 @@ test "app: on_message consumes unread messages once per condition state" {
 
 ///|
 test "app: MessageMutator mutates unread messages and MessageWriter write_default works" {
-  let sent = Ref::new(false)
+  let sent = Ref(false)
   let seen : Array[Int] = []
   let key : @ecs.MessageKey[TestDefaultAppMessage] = @ecs.Message::message()
 
@@ -201,7 +201,7 @@ test "app: MessageMutator mutates unread messages and MessageWriter write_defaul
 
 ///|
 test "app: Messages resource and Local MessageCursor resend unread messages in Bevy order" {
-  let frame = Ref::new(0)
+  let frame = Ref(0)
   let seen : Array[Int] = []
   let key : @ecs.MessageKey[TestCursorAppMessage] = @ecs.Message::message()
 

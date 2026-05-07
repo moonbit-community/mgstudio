@@ -39,7 +39,7 @@ fn configured_window() -> @window.Window {
 
 ///|
 fn primary_window_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
+  let result : Ref[@core.Entity?] = Ref(None)
   try! world
   .query_entities_filtered(
     (
@@ -121,7 +121,7 @@ fn toggle_vsync(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
     return
   }
   guard @app.current_world() is Some(world) else { return }
-  let present_mode_ref : Ref[@window.PresentMode] = Ref::new(
+  let present_mode_ref : Ref[@window.PresentMode] = Ref(
     @window.PresentMode::AutoVsync,
   )
   update_primary_window(world, fn(window) {
@@ -142,9 +142,7 @@ fn switch_level(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
     return
   }
   guard @app.current_world() is Some(world) else { return }
-  let level_ref : Ref[@window.WindowLevel] = Ref::new(
-    @window.WindowLevel::Normal,
-  )
+  let level_ref : Ref[@window.WindowLevel] = Ref(@window.WindowLevel::Normal)
   update_primary_window(world, fn(window) {
     window.window_level = match window.window_level {
       @window.WindowLevel::AlwaysOnBottom => @window.WindowLevel::Normal

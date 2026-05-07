@@ -20,7 +20,7 @@ priv struct ViewportToWorld3dState {
 }
 
 ///|
-let viewport_to_world_3d_state : Ref[ViewportToWorld3dState] = Ref::new({
+let viewport_to_world_3d_state : Ref[ViewportToWorld3dState] = Ref({
   camera: None,
   ground: None,
   cursor_marker: None,

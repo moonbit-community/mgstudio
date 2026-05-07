@@ -45,7 +45,7 @@ priv struct FogVolumesState {
 }
 
 ///|
-let fog_volumes_state : Ref[FogVolumesState] = Ref::new({
+let fog_volumes_state : Ref[FogVolumesState] = Ref({
   camera: None,
   light: None,
   volumetric_fog: @pbr.VolumetricFog::default(),

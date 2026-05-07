@@ -266,7 +266,7 @@ fn update_text(
     @ecs.All,
   ],
 ) -> Unit {
-  let content_ref : Ref[String?] = Ref::new(None)
+  let content_ref : Ref[String?] = Ref(None)
   try! camera_query.for_each(fn(_entity, data) {
     let (free_camera, free_camera_state) = data
     let free_camera = free_camera.value()

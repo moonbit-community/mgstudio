@@ -42,25 +42,25 @@ priv struct FolderEvent {
 }
 
 ///|
-let next_id_ref : Ref[Int] = Ref::new(1)
+let next_id_ref : Ref[Int] = Ref(1)
 
 ///|
-let blobs_ref : Ref[Array[BlobRecord]] = Ref::new([])
+let blobs_ref : Ref[Array[BlobRecord]] = Ref([])
 
 ///|
-let texture_pixels_ref : Ref[Array[BlobRecord]] = Ref::new([])
+let texture_pixels_ref : Ref[Array[BlobRecord]] = Ref([])
 
 ///|
-let fonts_ref : Ref[Array[BlobRecord]] = Ref::new([])
+let fonts_ref : Ref[Array[BlobRecord]] = Ref([])
 
 ///|
-let folders_ref : Ref[Array[FolderRecord]] = Ref::new([])
+let folders_ref : Ref[Array[FolderRecord]] = Ref([])
 
 ///|
-let folder_events_ref : Ref[Array[FolderEvent]] = Ref::new([])
+let folder_events_ref : Ref[Array[FolderEvent]] = Ref([])
 
 ///|
-let pending_folder_event_ref : Ref[FolderEvent?] = Ref::new(None)
+let pending_folder_event_ref : Ref[FolderEvent?] = Ref(None)
 
 ///|
 const DEFAULT_ASSETS_DIR : String = "./assets"
@@ -84,9 +84,9 @@ fn asset_io_runtime_state_for_world(world : @ecs.World) -> AssetIoRuntimeState {
   let key = asset_io_runtime_state_resource_key()
   if (try! world.get_resource(key)) is None {
     world.insert_resource(key, AssetIoRuntimeState::{
-      assets_dir_override: Ref::new(None),
-      source_dir_overrides: Ref::new(@hashmap.HashMap::new()),
-      source_readers: Ref::new(@hashmap.HashMap::new()),
+      assets_dir_override: Ref(None),
+      source_dir_overrides: Ref(@hashmap.HashMap([])),
+      source_readers: Ref(@hashmap.HashMap([])),
     })
   }
   match (try! world.get_resource(key)) {
@@ -255,7 +255,7 @@ fn loader_default_extensions() -> Array[(String, Int)] {
 }
 
 ///|
-let loader_extensions_ref : Ref[Array[(String, Int)]] = Ref::new(
+let loader_extensions_ref : Ref[Array[(String, Int)]] = Ref(
   loader_default_extensions(),
 )
 
@@ -317,7 +317,7 @@ fn set_runtime_asset_source_dir_overrides(
   entries : Array[(String, String)],
 ) -> Unit {
   let state = asset_io_runtime_state_active()
-  let next = @hashmap.HashMap::new()
+  let next = @hashmap.HashMap([])
   for entry in entries {
     next.set(entry.0, entry.1)
   }
@@ -387,7 +387,7 @@ fn set_runtime_asset_source_readers(
   entries : Array[(AssetSourceId, AssetSourceBuilder)],
 ) -> Unit {
   let state = asset_io_runtime_state_active()
-  let next = @hashmap.HashMap::new()
+  let next = @hashmap.HashMap([])
   for entry in entries {
     guard entry.1.reader_builder is Some(reader_builder) else { continue }
     let source_id = entry.0

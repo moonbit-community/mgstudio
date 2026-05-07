@@ -54,7 +54,7 @@ priv struct ShadowBiasesState {
 }
 
 ///|
-let shadow_biases_state : Ref[ShadowBiasesState] = Ref::new({
+let shadow_biases_state : Ref[ShadowBiasesState] = Ref({
   camera: None,
   point_light: None,
   directional_light: None,

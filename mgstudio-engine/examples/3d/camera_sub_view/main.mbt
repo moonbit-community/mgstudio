@@ -32,7 +32,7 @@ priv struct CameraSubViewState {
 }
 
 ///|
-let camera_sub_view_state : Ref[CameraSubViewState] = Ref::new({
+let camera_sub_view_state : Ref[CameraSubViewState] = Ref({
   cameras: [],
   moving_cameras: [],
   base_transform: @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(

@@ -350,7 +350,7 @@ pub impl @json.FromJson for RapierColliderHandle3d with from_json(json, path) {
 }
 
 ///|
-let physics3d_config_serde_next_id : Ref[Int] = Ref::new(1)
+let physics3d_config_serde_next_id : Ref[Int] = Ref(1)
 
 ///|
 let physics3d_config_serde_values : Map[Int, Physics3dConfig] = {}
@@ -370,7 +370,7 @@ pub impl @json.FromJson for Physics3dConfig with from_json(json, path) {
 }
 
 ///|
-let physics3d_events_serde_next_id : Ref[Int] = Ref::new(1)
+let physics3d_events_serde_next_id : Ref[Int] = Ref(1)
 
 ///|
 let physics3d_events_serde_values : Map[Int, Physics3dEvents] = {}
@@ -390,7 +390,7 @@ pub impl @json.FromJson for Physics3dEvents with from_json(json, path) {
 }
 
 ///|
-let physics3d_context_serde_next_id : Ref[Int] = Ref::new(1)
+let physics3d_context_serde_next_id : Ref[Int] = Ref(1)
 
 ///|
 let physics3d_context_serde_values : Map[Int, Physics3dContext] = {}

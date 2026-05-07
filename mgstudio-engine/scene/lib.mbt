@@ -260,8 +260,8 @@ priv struct SceneModifiedEventsCursorState {
 ///|
 fn SceneModifiedEventsCursorState::default() -> SceneModifiedEventsCursorState {
   SceneModifiedEventsCursorState::{
-    modified_event_cursor: Ref::new(0),
-    debounced_scene_asset_ages: Ref::new({}),
+    modified_event_cursor: Ref(0),
+    debounced_scene_asset_ages: Ref({}),
   }
 }
 

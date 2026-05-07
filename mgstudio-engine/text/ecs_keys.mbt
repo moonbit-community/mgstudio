@@ -226,7 +226,7 @@ priv struct EcsTextEntry {
 let text_ecs_entries : Array[EcsTextEntry] = []
 
 ///|
-let text_ecs_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref::new({})
+let text_ecs_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref({})
 
 ///|
 priv struct UiEcsTextEntry {
@@ -241,20 +241,19 @@ priv struct UiEcsTextEntry {
 let ui_text_ecs_entries : Array[UiEcsTextEntry] = []
 
 ///|
-let ui_text_ecs_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref::new({},
-)
+let ui_text_ecs_index_by_world_id_ref : Ref[Map[Int, Map[Int, Int]]] = Ref({})
 
 ///|
-let text_runtime_world_id_ref : Ref[Int?] = Ref::new(None)
+let text_runtime_world_id_ref : Ref[Int?] = Ref(None)
 
 ///|
-let text_diagnostic_sync_ecs_cpu_ms_ref : Ref[Float] = Ref::new(0.0F)
+let text_diagnostic_sync_ecs_cpu_ms_ref : Ref[Float] = Ref(0.0F)
 
 ///|
-let text_diagnostic_sync_ecs_dirty_entity_count_ref : Ref[Int] = Ref::new(0)
+let text_diagnostic_sync_ecs_dirty_entity_count_ref : Ref[Int] = Ref(0)
 
 ///|
-let text_diagnostic_sync_ecs_early_return_ref : Ref[Bool] = Ref::new(false)
+let text_diagnostic_sync_ecs_early_return_ref : Ref[Bool] = Ref(false)
 
 ///|
 fn reset_text_runtime_state() -> Unit {
@@ -1259,8 +1258,8 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
   )
   let span_edges = text_ecs_collect_span_edges(world)
   let has_any_spans = span_edges.length() > 0
-  let dirty_entities : @hashset.HashSet[Int] = @hashset.HashSet::new()
-  let has_text_dirty_entities = Ref::new(false)
+  let dirty_entities : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let has_text_dirty_entities = Ref(false)
   ignore(
     text_ecs_union_changed_entities_into(
       world, ecs_key_text2d, sequence, dirty_entities, has_text_dirty_entities,
@@ -1753,8 +1752,8 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
   )
   let span_edges = text_ecs_collect_span_edges(world)
   let has_any_spans = span_edges.length() > 0
-  let dirty_entities : @hashset.HashSet[Int] = @hashset.HashSet::new()
-  let has_text_dirty_entities = Ref::new(false)
+  let dirty_entities : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let has_text_dirty_entities = Ref(false)
   ignore(
     text_ecs_union_changed_entities_into(
       world, ecs_key_text, sequence, dirty_entities, has_text_dirty_entities,

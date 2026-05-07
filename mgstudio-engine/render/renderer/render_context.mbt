@@ -259,7 +259,7 @@ fn render_context_runtime_state_default() -> RenderContextRuntimeState {
 }
 
 ///|
-let render_context_runtime_state_ref : Ref[RenderContextRuntimeState] = Ref::new(
+let render_context_runtime_state_ref : Ref[RenderContextRuntimeState] = Ref(
   render_context_runtime_state_default(),
 )
 

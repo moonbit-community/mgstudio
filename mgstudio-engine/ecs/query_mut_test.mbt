@@ -173,7 +173,7 @@ test "ecs query: view permits non-structural replacement but rejects structural 
     y: 2,
   })
   let query : Query[Comp[MutQueryPosition], All] = query(world)
-  let replace_result : Ref[Result[Unit, EcsError]?] = Ref::new(None)
+  let replace_result : Ref[Result[Unit, EcsError]?] = Ref(None)
   try! query.view(fn(entity, _position) {
     replace_result.val = Some(
       try? world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
@@ -190,7 +190,7 @@ test "ecs query: view permits non-structural replacement but rejects structural 
     content="Some({ x: 3, y: 4 })",
   )
 
-  let insert_result : Ref[Result[Unit, EcsError]?] = Ref::new(None)
+  let insert_result : Ref[Result[Unit, EcsError]?] = Ref(None)
   try! query.view(fn(entity, _position) {
     insert_result.val = Some(
       try? world.set_by_key(entity, mut_query_velocity_key, MutQueryVelocity::{
@@ -214,7 +214,7 @@ test "ecs query: view rejects structural removal" {
     y: 2,
   })
   let query : Query[Comp[MutQueryPosition], All] = query(world)
-  let remove_result : Ref[Result[Bool, EcsError]?] = Ref::new(None)
+  let remove_result : Ref[Result[Bool, EcsError]?] = Ref(None)
   try! query.view(fn(entity, _position) {
     remove_result.val = Some(
       try? world.remove_by_key(entity, mut_query_position_key),

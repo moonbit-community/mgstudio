@@ -48,7 +48,7 @@ priv struct DofState {
 }
 
 ///|
-let dof_state : Ref[DofState] = Ref::new({
+let dof_state : Ref[DofState] = Ref({
   focal_distance: 7.0F,
   aperture_f_stops: 0.125F,
   mode: DofMode::Bokeh,

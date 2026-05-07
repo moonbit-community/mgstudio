@@ -63,7 +63,7 @@ priv struct MotionBlurExampleState {
 }
 
 ///|
-let motion_blur_state : Ref[MotionBlurExampleState] = Ref::new({
+let motion_blur_state : Ref[MotionBlurExampleState] = Ref({
   camera: None,
   tracked_car: None,
   help_text: None,

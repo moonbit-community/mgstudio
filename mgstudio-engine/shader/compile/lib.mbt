@@ -96,10 +96,10 @@ fn shader_compile_error_from_composer(
 }
 
 ///|
-let runtime_source_tree_registered : Ref[Bool] = Ref::new(false)
+let runtime_source_tree_registered : Ref[Bool] = Ref(false)
 
 ///|
-let startup_sources_registered : Ref[Bool] = Ref::new(false)
+let startup_sources_registered : Ref[Bool] = Ref(false)
 
 ///|
 pub fn normalize_shader_rel_path(rel : String) -> String {
@@ -262,7 +262,7 @@ pub fn load_wgsl_from_sources_required(
   load_preprocessed_wgsl(
     assets_base,
     rel,
-    @hashmap.HashMap::new(),
+    @hashmap.HashMap([]),
     default_shader_value_defines(),
   )
 }

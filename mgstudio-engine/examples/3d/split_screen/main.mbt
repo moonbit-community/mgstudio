@@ -27,7 +27,7 @@ priv struct SplitScreenState {
 }
 
 ///|
-let split_screen_state : Ref[SplitScreenState] = Ref::new({
+let split_screen_state : Ref[SplitScreenState] = Ref({
   cameras: [],
   active_camera: 0,
   last_window_size: @math.IVec2::new(0, 0),

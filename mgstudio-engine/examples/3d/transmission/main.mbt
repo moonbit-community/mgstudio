@@ -60,7 +60,7 @@ priv struct TransmissionState {
 }
 
 ///|
-let transmission_state : Ref[TransmissionState] = Ref::new({
+let transmission_state : Ref[TransmissionState] = Ref({
   diffuse_transmission: 0.5F,
   specular_transmission: 0.9F,
   thickness: 1.8F,

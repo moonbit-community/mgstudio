@@ -62,7 +62,7 @@ pub impl @ecs.Message for MyMessage with message() {
 
 ///|
 pub impl Default for MyComponentIndex with default() {
-  { entities: @hashmap.HashMap::new() }
+  { entities: @hashmap.HashMap([]) }
 }
 
 ///|

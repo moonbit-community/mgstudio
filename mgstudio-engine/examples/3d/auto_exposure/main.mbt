@@ -40,7 +40,7 @@ priv struct AutoExposureState {
 }
 
 ///|
-let auto_exposure_state : Ref[AutoExposureState] = Ref::new({
+let auto_exposure_state : Ref[AutoExposureState] = Ref({
   camera: None,
   camera_angle: 0.0F,
   mask_overlay: None,

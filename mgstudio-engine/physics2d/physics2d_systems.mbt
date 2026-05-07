@@ -176,7 +176,7 @@ pub fn physics2d_clear_events_system(world : @ecs.World) -> Unit {
   let ev_res = get_physics2d_events_resource(ecs_world)
   match ev_res.get() {
     Some(current_events) => {
-      let events = Ref::new(current_events)
+      let events = Ref(current_events)
       events.val.clear()
       ev_res.insert(events.val)
     }
@@ -189,7 +189,7 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref::new(current_ctx)
+  let ctx_ref = Ref(current_ctx)
   let ctx = ctx_ref.val
 
   // 1) Remove handles/rapier state when the authoring component is removed.
@@ -311,7 +311,7 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   }
 
   // 2) Remove rapier state when entities are despawned (handle components gone).
-  let alive : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+  let alive : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
   ecs_world.for_each_component(ecs_key_rapier_body_handle2d, fn(e, _h) {
     alive.set(entity_key(e), true)
   })
@@ -417,9 +417,9 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref::new(current_ctx)
+  let ctx_ref = Ref(current_ctx)
   let ctx = ctx_ref.val
-  let touched_bodies : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+  let touched_bodies : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
 
   // Insert rigid bodies.
   ecs_world.for_each_component(ecs_key_rigid_body2d, fn(entity, rb2d) {
@@ -675,7 +675,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard cfg_res.get() is Some(cfg) else { return }
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref::new(current_ctx)
+  let ctx_ref = Ref(current_ctx)
   let ctx = ctx_ref.val
   let dt = match (try! world.get_resource(@time.fixed_time_resource_key())) {
     Some(fixed_time) => fixed_time.timestep_seconds()
@@ -924,8 +924,8 @@ pub fn physics2d_step_system(world : @ecs.World) -> Unit {
   guard cfg_res.get() is Some(cfg) else { return }
   guard ctx_res.get() is Some(current_ctx) else { return }
   guard ev_res.get() is Some(current_events) else { return }
-  let ctx_ref = Ref::new(current_ctx)
-  let ev_ref = Ref::new(current_events)
+  let ctx_ref = Ref(current_ctx)
+  let ev_ref = Ref(current_events)
   let ctx = ctx_ref.val
   let events = ev_ref.val
   let gravity = mg_vec2_to_rapier(cfg.gravity)

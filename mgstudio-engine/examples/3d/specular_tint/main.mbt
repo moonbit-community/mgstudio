@@ -47,7 +47,7 @@ priv struct SpecularTintState {
 }
 
 ///|
-let specular_tint_state : Ref[SpecularTintState] = Ref::new({
+let specular_tint_state : Ref[SpecularTintState] = Ref({
   tint_type: TintType::Solid,
   hue_deg: 0.0F,
   camera: None,

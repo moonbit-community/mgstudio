@@ -191,7 +191,7 @@ pub fn physics3d_character_controller_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
-  let ctx_ref = Ref::new(current_ctx)
+  let ctx_ref = Ref(current_ctx)
   let ctx = ctx_ref.val
 
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
