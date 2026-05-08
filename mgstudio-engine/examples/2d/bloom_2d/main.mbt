@@ -13,39 +13,13 @@
 // limitations under the License.
 
 ///|
-struct BloomCamera {}
-
-///|
-let bloom_camera_key : @ecs.ComponentKey[BloomCamera] = @ecs.register_component(
-  debug_name="examples.2d.bloom_2d.BloomCamera",
-)
-
-///|
-pub impl @ecs.Component for BloomCamera with component() {
-  bloom_camera_key
-}
-
-///|
-struct BloomHelpText {}
-
-///|
-let bloom_help_text_key : @ecs.ComponentKey[BloomHelpText] = @ecs.register_component(
-  debug_name="examples.2d.bloom_2d.BloomHelpText",
-)
-
-///|
-pub impl @ecs.Component for BloomHelpText with component() {
-  bloom_help_text_key
-}
-
-///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param6(update_bloom_settings)),
+    @app.system(@app.system_param4(update_bloom_settings)),
   )
   .run()
 }
@@ -136,7 +110,6 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
-        BloomHelpText::{  },
       ),
     ),
   )
@@ -157,7 +130,6 @@ fn setup(
         @sprite.Tonemapping::TonyMcMapface,
         @sprite.Bloom::default(),
         @sprite.DebandDither::Enabled,
-        BloomCamera::{  },
       ),
     ),
   )
@@ -225,48 +197,23 @@ fn setup(
 }
 
 ///|
-fn bloom_camera_entity(
-  camera_query : @ecs.Query[@ecs.Comp[BloomCamera], @ecs.All],
-) -> @core.Entity? {
-  let camera_ref : Ref[@core.Entity?] = Ref(None)
-  try! camera_query.view(fn(entity, _camera) {
-    if camera_ref.val is None {
-      camera_ref.val = Some(entity)
-    }
-  })
-  camera_ref.val
-}
-
-///|
 fn update_bloom_settings(
   commands : @app.Commands,
   time : @app.Res[@time.Time[Unit]],
-  camera_query : @ecs.Query[@ecs.Comp[BloomCamera], @ecs.All],
-  tonemapping_query : @ecs.Query[@ecs.Comp[@sprite.Tonemapping], @ecs.All],
-  bloom_query : @ecs.Query[@ecs.Comp[@sprite.Bloom], @ecs.All],
-  help_query : @ecs.Query[
-    (@ecs.Comp[BloomHelpText], @ecs.Mut[@text.Text]),
-    @ecs.All,
+  camera : @app.Single[
+    (@core.Entity, @ecs.Comp[@sprite.Tonemapping], @ecs.Optional[@sprite.Bloom]),
+    @ecs.With[@sprite.Camera],
   ],
+  text : @app.Single[@ecs.Mut[@text.Text], @ecs.All],
 ) -> Unit {
-  guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
+  let (camera_entity, tonemapping_comp, bloom_comp) = camera.get()
+  let tonemapping = tonemapping_comp.value()
+  let current_bloom = bloom_comp.value()
 
-  let tonemapping = match
-    (tonemapping_query.get(camera_entity) catch { _ => None }) {
-    Some(mode) => mode.value()
-    None => @sprite.Tonemapping::TonyMcMapface
-  }
-  let current_bloom = match
-    (bloom_query.get(camera_entity) catch { _ => None }) {
-    Some(value) => Some(value.value())
-    None => None
-  }
-
-  try! help_query.for_each(fn(_entity, data) {
-    let (_help_text, help_text) = data
-    help_text.modify(fn(value) {
-      value.content = bloom_help_text(current_bloom, tonemapping)
-    })
+  text
+  .get()
+  .modify(fn(value) {
+    value.content = bloom_help_text(current_bloom, tonemapping)
   })
 
   let dt = time.get().delta_seconds()

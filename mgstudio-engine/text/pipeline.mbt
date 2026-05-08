@@ -362,26 +362,6 @@ fn text_instance_has_run_overlays(instance : TextInstance) -> Bool {
 }
 
 ///|
-fn text_scale_rect(rect : @math.Rect, scale : Float) -> @math.Rect {
-  @math.Rect::new(
-    @math.Vec2::new(rect.min.x * scale, rect.min.y * scale),
-    @math.Vec2::new(rect.max.x * scale, rect.max.y * scale),
-  )
-}
-
-///|
-fn text_scale_run_geometry(run : RunGeometry, scale : Float) -> RunGeometry {
-  RunGeometry::{
-    span_index: run.span_index,
-    bounds: text_scale_rect(run.bounds, scale),
-    strikethrough_y: run.strikethrough_y * scale,
-    strikethrough_thickness: run.strikethrough_thickness * scale,
-    underline_y: run.underline_y * scale,
-    underline_thickness: run.underline_thickness * scale,
-  }
-}
-
-///|
 let font_atlas_set_state : Ref[FontAtlasSet] = Ref(FontAtlasSet::default())
 
 ///|
@@ -1035,9 +1015,10 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     Some(align),
   )
 
-  // Layout pass (best-effort).
+  // Layout pass.
   cosmic_buffer = cosmic_buffer.layout_all_with_font_system(font_system)
-  // Workaround for alignment not working for unbounded text (bevy parity).
+  // Bevy `layout_with_bounds`: if width is unbounded and alignment is not
+  // left, align against the measured layout width.
   if buffer.max_width is None && !justify_is_left(buffer.justify) {
     let mut w = 0.0F
     for run in cosmic_buffer.layout_runs() {
@@ -1080,7 +1061,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let font_smoothing = entities[span_index].font_smoothing
       let layout_glyph = layout_glyph0
       if maybe_run_geom is Some(rg) && rg.span_index != span_index {
-        run_geometry.push(text_scale_run_geometry(rg, inverse_scale_factor))
+        run_geometry.push(rg)
         maybe_run_geom = None
       }
       if maybe_run_geom is None {
@@ -1225,14 +1206,8 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         YAxisOrientation::BottomToTop => box_h - y_raw
       }
       glyphs.push(PositionedGlyph::{
-        position: @math.Vec2::new(
-          x * inverse_scale_factor,
-          y * inverse_scale_factor,
-        ),
-        size: @math.Vec2::new(
-          glyph_size_x * inverse_scale_factor,
-          glyph_size_y * inverse_scale_factor,
-        ),
+        position: @math.Vec2::new(x, y),
+        size: @math.Vec2::new(glyph_size_x, glyph_size_y),
         atlas_info,
         uv_min,
         uv_max,
@@ -1243,7 +1218,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       })
     }
     if maybe_run_geom is Some(rg) {
-      run_geometry.push(text_scale_run_geometry(rg, inverse_scale_factor))
+      run_geometry.push(rg)
     }
   }
   let updated = TextLayoutInfo::{
@@ -1746,14 +1721,20 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     )
 
     if text_instance_has_run_overlays(instance) {
+      let run_inverse_scale_factor = 1.0F /
+        text_pipeline_safe_scale_factor(layout_info.scale_factor)
+      let run_position_scale = @math.Vec2::new(
+        scale.x * run_inverse_scale_factor,
+        scale.y * run_inverse_scale_factor,
+      )
       for run in layout_info.run_geometry {
         let run_center_layout = text_to_y_up(
           instance.y_axis,
           run.bounds.center(),
         )
         let run_center_scaled = @math.Vec2::new(
-          run_center_layout.x * scale.x,
-          run_center_layout.y * scale.y,
+          run_center_layout.x * run_position_scale.x,
+          run_center_layout.y * run_position_scale.y,
         )
         let run_center_offset = text_rotate_vec2(
           run_center_scaled, rot_cos, rot_sin,
@@ -1764,8 +1745,8 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         )
         let run_size = run.bounds.size()
         let run_draw_scale = @math.Vec2::new(
-          run_size.x * text_absf(scale.x),
-          run_size.y * text_absf(scale.y),
+          run_size.x * text_absf(run_position_scale.x),
+          run_size.y * text_absf(run_position_scale.y),
         )
         if text_span_background_color(instance, run.span_index)
           is Some(background) &&
@@ -1806,8 +1787,8 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             run.underline_position(),
           )
           let underline_scaled = @math.Vec2::new(
-            underline_position_layout.x * scale.x,
-            underline_position_layout.y * scale.y,
+            underline_position_layout.x * run_position_scale.x,
+            underline_position_layout.y * run_position_scale.y,
           )
           let underline_offset = text_rotate_vec2(
             underline_scaled, rot_cos, rot_sin,
@@ -1818,8 +1799,8 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           )
           let underline_size = run.underline_size()
           let underline_draw_scale = @math.Vec2::new(
-            underline_size.x * text_absf(scale.x),
-            underline_size.y * text_absf(scale.y),
+            underline_size.x * text_absf(run_position_scale.x),
+            underline_size.y * text_absf(run_position_scale.y),
           )
           if underline_draw_scale.x > 0.0F && underline_draw_scale.y > 0.0F {
             let underline_transform = @transform.Transform::from_xy_rotation_scale(
@@ -1847,8 +1828,8 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             run.strikethrough_position(),
           )
           let strike_scaled = @math.Vec2::new(
-            strike_position_layout.x * scale.x,
-            strike_position_layout.y * scale.y,
+            strike_position_layout.x * run_position_scale.x,
+            strike_position_layout.y * run_position_scale.y,
           )
           let strike_offset = text_rotate_vec2(strike_scaled, rot_cos, rot_sin)
           let strike_translation = @math.Vec2::new(
@@ -1857,8 +1838,8 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           )
           let strike_size = run.strikethrough_size()
           let strike_draw_scale = @math.Vec2::new(
-            strike_size.x * text_absf(scale.x),
-            strike_size.y * text_absf(scale.y),
+            strike_size.x * text_absf(run_position_scale.x),
+            strike_size.y * text_absf(run_position_scale.y),
           )
           if strike_draw_scale.x > 0.0F && strike_draw_scale.y > 0.0F {
             let strike_transform = @transform.Transform::from_xy_rotation_scale(
@@ -1931,7 +1912,8 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       let uv_min = glyph.uv_min
       let uv_max = glyph.uv_max
       let translation = text_glyph_world_translation(
-        glyph, top_to_bottom_y_axis, no_rotation, scale, text_origin, rot_cos, rot_sin,
+        glyph, top_to_bottom_y_axis, no_rotation, glyph_draw_scale, text_origin,
+        rot_cos, rot_sin,
       )
 
       let color = if glyph.span_index == cached_span_index {
