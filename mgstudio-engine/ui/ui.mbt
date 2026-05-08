@@ -1792,7 +1792,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   }
 
   fn rect_for_uirect(r : UiRect) -> @moon_taffy.Rect[@moon_taffy.Dimension] {
-    @moon_taffy.Rect::new(
+    @moon_taffy.Rect(
       left=dim_for_val(r.left),
       right=dim_for_val(r.right),
       top=dim_for_val(r.top),
@@ -1804,7 +1804,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     w : Val,
     h : Val,
   ) -> @moon_taffy.Size[@moon_taffy.Dimension] {
-    @moon_taffy.Size::new(width=dim_for_val(w), height=dim_for_val(h))
+    @moon_taffy.Size(width=dim_for_val(w), height=dim_for_val(h))
   }
 
   fn grid_track_to_taffy(track : GridTrack) -> @moon_taffy.Dimension {
@@ -1885,7 +1885,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   fn overflow_to_taffy(
     overflow : Overflow,
   ) -> @moon_taffy.Point[@moon_taffy.Overflow] {
-    @moon_taffy.Point::new(
+    @moon_taffy.Point(
       x=overflow_axis_to_taffy(overflow.x),
       y=overflow_axis_to_taffy(overflow.y),
     )
@@ -2034,22 +2034,22 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     }
     match (value.start, value.end) {
       (Some(start), Some(end)) =>
-        @moon_taffy.Line::new(
+        @moon_taffy.Line(
           start=@moon_taffy.line(start),
           end=@moon_taffy.line(end),
         )
       (Some(start), None) =>
-        @moon_taffy.Line::new(
+        @moon_taffy.Line(
           start=@moon_taffy.line(start),
           end=@moon_taffy.span(span),
         )
       (None, Some(end)) =>
-        @moon_taffy.Line::new(
+        @moon_taffy.Line(
           start=@moon_taffy.span(span),
           end=@moon_taffy.line(end),
         )
       (None, None) =>
-        @moon_taffy.Line::new(
+        @moon_taffy.Line(
           start=@moon_taffy.span(span),
           end=@moon_taffy.place_auto(),
         )
@@ -2072,7 +2072,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       .with_display(display_to_taffy(node.display))
       .with_position(position_to_taffy(node.position_type))
       .with_inset(
-        @moon_taffy.Rect::new(
+        @moon_taffy.Rect(
           left=dim_for_val(node.left),
           right=dim_for_val(node.right),
           top=dim_for_val(node.top),
@@ -2100,7 +2100,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       .with_grid_row(grid_placement_to_taffy(node.grid_row))
       .with_grid_column(grid_placement_to_taffy(node.grid_column))
       .with_gap(
-        @moon_taffy.Size::new(
+        @moon_taffy.Size(
           width=dim_for_val(node.column_gap),
           height=dim_for_val(node.row_gap),
         ),
@@ -2138,7 +2138,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       style = style
         .with_position(@moon_taffy.position_relative())
         .with_size(
-          @moon_taffy.Size::new(
+          @moon_taffy.Size(
             width=@moon_taffy.length(f2d(root_viewport_size.val.x)),
             height=@moon_taffy.length(f2d(root_viewport_size.val.y)),
           ),
@@ -2155,7 +2155,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
     )
-    let taffy = @moon_taffy.TaffyTree::new()
+    let taffy = @moon_taffy.TaffyTree()
     let entity_to_node : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap([])
     fn build(entity : @core.Entity, is_root : Bool) -> Array[Int] {
       let child_ids : Array[Int] = []
@@ -2193,14 +2193,14 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       let viewport_root_style = @moon_taffy.Style::default()
         .with_position(@moon_taffy.position_relative())
         .with_size(
-          @moon_taffy.Size::new(
+          @moon_taffy.Size(
             width=@moon_taffy.length(f2d(root_ctx.viewport_size.x)),
             height=@moon_taffy.length(f2d(root_ctx.viewport_size.y)),
           ),
         )
       taffy.new_with_children(viewport_root_style, root_children)
     }
-    let avail = @moon_taffy.Size::new(
+    let avail = @moon_taffy.Size(
       width=@moon_taffy.available_space_definite(f2d(root_ctx.viewport_size.x)),
       height=@moon_taffy.available_space_definite(f2d(root_ctx.viewport_size.y)),
     )
@@ -2308,7 +2308,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
           }
           let out_w = clamp_f64(width.unwrap_or(intrinsic_w), s_min_w, s_max_w)
           let out_h = clamp_f64(height.unwrap_or(intrinsic_h), s_min_h, s_max_h)
-          @moon_taffy.Size::new(width=out_w, height=out_h)
+          @moon_taffy.Size(width=out_w, height=out_h)
         }
         None => @moon_taffy.Size::zero()
       }

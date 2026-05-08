@@ -900,7 +900,7 @@ fn ensure_native_event_loop() -> @window_macos.EventLoop {
   match native_event_loop_ref.val {
     Some(event_loop) => event_loop
     None => {
-      let event_loop = @window_macos.EventLoopBuilder::new()
+      let event_loop = @window_macos.EventLoopBuilder()
         .with_any_thread(event_loop_any_thread_ref.val)
         .build()
       event_loop.set_control_flow(@window_core.ControlFlow::Poll)
@@ -1288,7 +1288,7 @@ pub fn create_utf8(
     attributes = attributes.with_name(decode_utf8_lossy(window_name))
   }
   attributes = attributes.with_min_inner_size(
-    @window_dpi.LogicalSize::new(
+    @window_dpi.LogicalSize(
       min_inner_width.to_double(),
       min_inner_height.to_double(),
     ).into_size(),
@@ -1296,10 +1296,7 @@ pub fn create_utf8(
   match (max_inner_width, max_inner_height) {
     (Some(max_width), Some(max_height)) =>
       attributes = attributes.with_max_inner_size(
-        @window_dpi.LogicalSize::new(
-          max_width.to_double(),
-          max_height.to_double(),
-        ).into_size(),
+        @window_dpi.LogicalSize(max_width.to_double(), max_height.to_double()).into_size(),
       )
     _ => ()
   }
@@ -1311,11 +1308,11 @@ pub fn create_utf8(
       logical_height
     }
     attributes = attributes.with_inner_size(
-      @window_dpi.PhysicalSize::new(width, height).into_size(),
+      @window_dpi.PhysicalSize(width, height).into_size(),
     )
   } else {
     attributes = attributes.with_inner_size(
-      @window_dpi.LogicalSize::new(
+      @window_dpi.LogicalSize(
         logical_width.to_double(),
         logical_height.to_double(),
       ).into_size(),
@@ -1488,7 +1485,7 @@ pub fn set_size(window : Int, width~ : Int, height~ : Int) -> Unit {
   match native_window_ref(window) {
     Some(window_ref) =>
       window_ref.val.request_surface_size(
-        @window_dpi.PhysicalSize::new(width, height).into_size(),
+        @window_dpi.PhysicalSize(width, height).into_size(),
       )
       |> ignore
     None => ()
@@ -1513,7 +1510,7 @@ pub fn set_min_inner_size(
     Some(window_ref) =>
       window_ref.val.set_min_inner_size(
         Some(
-          @window_dpi.LogicalSize::new(width.to_double(), height.to_double()).into_size(),
+          @window_dpi.LogicalSize(width.to_double(), height.to_double()).into_size(),
         ),
       )
     None => ()
@@ -1532,10 +1529,7 @@ pub fn set_max_inner_size(
         (Some(width0), Some(height0)) =>
           window_ref.val.set_max_inner_size(
             Some(
-              @window_dpi.LogicalSize::new(
-                width0.to_double(),
-                height0.to_double(),
-              ).into_size(),
+              @window_dpi.LogicalSize(width0.to_double(), height0.to_double()).into_size(),
             ),
           )
         _ => window_ref.val.set_max_inner_size(None)
@@ -1677,8 +1671,8 @@ pub fn set_ime_cursor_area(
   match native_window_ref(window) {
     Some(window_ref) =>
       window_ref.val.set_ime_cursor_area(
-        @window_dpi.PhysicalPosition::new(x, y).into_position(),
-        @window_dpi.PhysicalSize::new(width, height).into_size(),
+        @window_dpi.PhysicalPosition(x, y).into_position(),
+        @window_dpi.PhysicalSize(width, height).into_size(),
       )
     None => ()
   }
@@ -1804,7 +1798,7 @@ pub fn set_position(window : Int, x~ : Int, y~ : Int) -> Unit {
   match native_window_ref(window) {
     Some(window_ref) =>
       window_ref.val.set_outer_position(
-        @window_dpi.PhysicalPosition::new(x, y).into_position(),
+        @window_dpi.PhysicalPosition(x, y).into_position(),
       )
     None => ()
   }
@@ -1846,7 +1840,7 @@ pub fn position_x(window : Int) -> Int {
   match native_window_ref(window) {
     Some(window_ref) =>
       (window_ref.val.outer_position() catch {
-        _ => @window_dpi.PhysicalPosition::new(0, 0)
+        _ => @window_dpi.PhysicalPosition(0, 0)
       }).x()
     None => 0
   }
@@ -1857,7 +1851,7 @@ pub fn position_y(window : Int) -> Int {
   match native_window_ref(window) {
     Some(window_ref) =>
       (window_ref.val.outer_position() catch {
-        _ => @window_dpi.PhysicalPosition::new(0, 0)
+        _ => @window_dpi.PhysicalPosition(0, 0)
       }).y()
     None => 0
   }
@@ -1881,7 +1875,7 @@ pub fn attach_surface_metal_layer(
 
 ///|
 pub fn native_backend_available() -> Bool {
-  @window_macos.EventLoopBuilder::new() |> ignore
+  @window_macos.EventLoopBuilder() |> ignore
   true
 }
 

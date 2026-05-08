@@ -541,7 +541,7 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
     Some(host_window) => host_window
     None => abort("missing host window for keyboard focus-loss test")
   }
-  let key_event = @window_core.KeyEvent::new(
+  let key_event = @window_core.KeyEvent(
     @window_core.PhysicalKey::from_key_code(@window_core.KeyCode::KeyA),
     @window_core.Key::Character("a"),
     @window_core.Key::Character("a"),

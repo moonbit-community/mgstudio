@@ -65,21 +65,19 @@ test "windowing_native wbtest: raw winit event snapshots preserve typed payloads
     7,
     ScaleFactorChanged(
       2.0,
-      @window_core.SurfaceSizeWriter::new(
-        @window_dpi.PhysicalSize::new(640, 360),
-      ),
+      @window_core.SurfaceSizeWriter(@window_dpi.PhysicalSize(640, 360)),
     ),
   )
   process_window_event(
     9,
     DragEntered(
       ["/tmp/winit_a.txt", "/tmp/winit_b.txt"],
-      @window_dpi.PhysicalPositionF64::new(10.0, 20.0),
+      @window_dpi.PhysicalPositionF64(10.0, 20.0),
     ),
   )
   process_window_event(
     9,
-    DragMoved(@window_dpi.PhysicalPositionF64::new(12.0, 22.0)),
+    DragMoved(@window_dpi.PhysicalPositionF64(12.0, 22.0)),
   )
 
   let events = take_raw_winit_window_events()
@@ -88,7 +86,7 @@ test "windowing_native wbtest: raw winit event snapshots preserve typed payloads
   match events[0].event {
     ScaleFactorChanged(scale_factor, surface_size) => {
       assert_eq(scale_factor, 2.0)
-      assert_eq(surface_size, @window_dpi.PhysicalSize::new(640, 360))
+      assert_eq(surface_size, @window_dpi.PhysicalSize(640, 360))
     }
     _ => abort("expected ScaleFactorChanged snapshot")
   }
