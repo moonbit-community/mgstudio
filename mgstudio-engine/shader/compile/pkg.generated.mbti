@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/shader/compile"
 
 import {
+  "Milky2018/moon_wgsl/common",
   "moonbitlang/core/hashmap",
 }
 
@@ -12,17 +13,17 @@ pub fn clear_registered_shader_sources() -> Unit
 
 pub fn copy_registered_shader_import_module_paths() -> @hashmap.HashMap[String, String]
 
-pub fn default_shader_value_defines() -> @hashmap.HashMap[String, Int]
+pub fn default_shader_value_defines() -> @hashmap.HashMap[String, @common.ShaderDefValue]
 
 pub fn ensure_startup_shader_sources_once(() -> Unit) -> Unit
 
-pub fn load_preprocessed_wgsl(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int]) -> String raise ShaderCompileError
+pub fn load_preprocessed_wgsl(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, @common.ShaderDefValue]) -> String raise ShaderCompileError
 
 pub fn load_wgsl_from_sources_required(String, String) -> String raise ShaderCompileError
 
 pub fn normalize_shader_rel_path(String) -> String
 
-pub fn preprocess_shader_source(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int]) -> String raise ShaderCompileError
+pub fn preprocess_shader_source(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, @common.ShaderDefValue]) -> String raise ShaderCompileError
 
 pub fn register_shader_source(String, String) -> Unit
 
@@ -43,11 +44,11 @@ pub(all) struct ShaderCompileRequest {
   assets_base : String
   target : ShaderCompileTarget
   defines : @hashmap.HashMap[String, Bool]
-  value_defines : @hashmap.HashMap[String, Int]
+  value_defines : @hashmap.HashMap[String, @common.ShaderDefValue]
 }
 pub fn ShaderCompileRequest::compile(Self) -> String raise ShaderCompileError
-pub fn ShaderCompileRequest::for_path(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int]) -> Self
-pub fn ShaderCompileRequest::for_source(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int]) -> Self
+pub fn ShaderCompileRequest::for_path(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, @common.ShaderDefValue]) -> Self
+pub fn ShaderCompileRequest::for_source(String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, @common.ShaderDefValue]) -> Self
 
 pub(all) enum ShaderCompileTarget {
   Path(String)

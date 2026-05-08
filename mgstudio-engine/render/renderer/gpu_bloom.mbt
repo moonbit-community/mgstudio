@@ -46,7 +46,14 @@ pub fn GpuBackend::apply_bloom(
   }
   guard bloom_prepare_runtime_resources(self, scene_texture_id, composite_mode)
     is Some(
-      (intermediate_bind_layout, settings_buf, bloom_sampler, final_pipeline)
+      (
+        intermediate_bind_layout,
+        settings_buf,
+        bloom_sampler,
+        final_bind_layout,
+        final_uniform_buf,
+        final_pipeline,
+      )
     ) else {
     return
   }
@@ -366,60 +373,48 @@ pub fn GpuBackend::apply_bloom(
   }
 
   if bloom_ready &&
-    create_bloom_intermediate_bind_group(
+    create_bloom_final_composite_bind_group(
       self,
-      intermediate_bind_layout,
+      final_bind_layout,
+      scene_texture.view,
       self.bloom_mip_views[0],
       bloom_sampler,
-      settings_buf,
-      "mgstudio_bloom_upsampling_final_bind_group",
+      final_uniform_buf,
+      "mgstudio_bloom_final_composite_bind_group",
     )
     is Some(final_bg) {
     let final_blend = bloom_compute_blend_factor(
       intensity_value, low_frequency_boost_value, low_frequency_boost_curvature_value,
       high_pass_frequency_value, composite_mode, 0.0F, max_mip_f,
     )
-    let final_uniform = bloom_uniform_bytes(
-      Float::from_double(safe_scene_width.to_double()),
-      Float::from_double(safe_scene_height.to_double()),
-      source_viewport_x,
-      source_viewport_y,
-      source_viewport_width,
-      source_viewport_height,
-      0.0F,
-      0.0F,
-      1.0F,
-      1.0F,
+    self.queue.write_buffer(
+      final_uniform_buf,
+      0UL,
+      bloom_final_composite_uniform_bytes(final_blend, composite_mode),
     )
-    self.queue.write_buffer(settings_buf, 0UL, final_uniform)
-    let final_pass = frame.encoder.begin_render_pass_color_load(
-      scene_texture.view,
-    )
-    final_pass.set_viewport(
-      Float::from_double(pass_state.viewport_x.to_double()),
-      Float::from_double(pass_state.viewport_y.to_double()),
-      Float::from_double(pass_state.viewport_w.to_double()),
-      Float::from_double(pass_state.viewport_h.to_double()),
-      pass_state.viewport_depth_min,
-      pass_state.viewport_depth_max,
-    )
-    final_pass.set_scissor_rect(
-      pass_state.viewport_x,
-      pass_state.viewport_y,
-      pass_state.viewport_w,
-      pass_state.viewport_h,
-    )
-    final_pass.set_pipeline(final_pipeline)
-    final_pass.set_bind_group(0U, final_bg, [])
-    final_pass.set_blend_constant_rgba(
-      final_blend.to_double(),
-      final_blend.to_double(),
-      final_blend.to_double(),
-      1.0,
-    )
-    final_pass.draw(3U, 1U, 0U, 0U)
-    final_pass.end()
-    final_pass.release()
+    if target_view(self, pass_state.target_id, pass_state.target_layer)
+      is Some(dst_view) {
+      let final_pass = frame.encoder.begin_render_pass_color_load(dst_view)
+      final_pass.set_viewport(
+        Float::from_double(pass_state.viewport_x.to_double()),
+        Float::from_double(pass_state.viewport_y.to_double()),
+        Float::from_double(pass_state.viewport_w.to_double()),
+        Float::from_double(pass_state.viewport_h.to_double()),
+        pass_state.viewport_depth_min,
+        pass_state.viewport_depth_max,
+      )
+      final_pass.set_scissor_rect(
+        pass_state.viewport_x,
+        pass_state.viewport_y,
+        pass_state.viewport_w,
+        pass_state.viewport_h,
+      )
+      final_pass.set_pipeline(final_pipeline)
+      final_pass.set_bind_group(0U, final_bg, [])
+      final_pass.draw(3U, 1U, 0U, 0U)
+      final_pass.end()
+      final_pass.release()
+    }
     final_bg.release()
   }
   reopen_saved_pass(self, pass_state)
@@ -430,7 +425,14 @@ fn bloom_prepare_runtime_resources(
   backend : GpuBackend,
   scene_texture_id : Int,
   composite_mode : Int,
-) -> (@wgpu.BindGroupLayout, @wgpu.Buffer, @wgpu.Sampler, @wgpu.RenderPipeline)? raise GpuBackendError {
+) -> (
+  @wgpu.BindGroupLayout,
+  @wgpu.Buffer,
+  @wgpu.Sampler,
+  @wgpu.BindGroupLayout,
+  @wgpu.Buffer,
+  @wgpu.RenderPipeline,
+)? raise GpuBackendError {
   guard bloom_final_composite_pipeline_for_scene_texture(
       backend, scene_texture_id, composite_mode,
     )
@@ -442,7 +444,18 @@ fn bloom_prepare_runtime_resources(
   }
   guard backend.bloom_settings_buf is Some(settings_buf) else { return None }
   guard backend.bloom_sampler is Some(bloom_sampler) else { return None }
-  Some((intermediate_bind_layout, settings_buf, bloom_sampler, final_pipeline))
+  guard backend.bloom_final_composite_bgl is Some(final_bind_layout) else {
+    return None
+  }
+  guard backend.bloom_final_composite_uniform_buf is Some(final_uniform_buf) else {
+    return None
+  }
+  Some(
+    (
+      intermediate_bind_layout, settings_buf, bloom_sampler, final_bind_layout, final_uniform_buf,
+      final_pipeline,
+    ),
+  )
 }
 
 ///|
@@ -611,6 +624,41 @@ fn bloom_uniform_bytes(
 }
 
 ///|
+let bloom_final_composite_fragment_wgsl_source : String =
+  #|struct BloomFinalCompositeUniforms {
+  #|    params: vec4<f32>,
+  #|};
+  #|
+  #|@group(0) @binding(0) var source_texture: texture_2d<f32>;
+  #|@group(0) @binding(1) var bloom_texture: texture_2d<f32>;
+  #|@group(0) @binding(2) var s: sampler;
+  #|@group(0) @binding(3) var<uniform> uniforms: BloomFinalCompositeUniforms;
+  #|
+  #|@fragment
+  #|fn bloom_final_composite(
+  #|    @location(0) uv: vec2<f32>,
+  #|) -> @location(0) vec4<f32> {
+  #|    let source = textureSample(source_texture, s, uv);
+  #|    let bloom = textureSample(bloom_texture, s, uv);
+  #|    let blend = uniforms.params.x;
+  #|    let additive = uniforms.params.y > 0.5;
+  #|    var rgb = source.rgb * (1.0 - blend) + bloom.rgb * blend;
+  #|    if additive {
+  #|        rgb = source.rgb + bloom.rgb * blend;
+  #|    }
+  #|    return vec4<f32>(rgb, source.a);
+  #|}
+  #|
+
+///|
+fn bloom_final_composite_uniform_bytes(
+  blend : Float,
+  composite_mode : Int,
+) -> Bytes {
+  f32le_pack([blend, if composite_mode == 0 { 0.0F } else { 1.0F }, 0.0F, 0.0F])
+}
+
+///|
 fn ensure_bloom_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
   let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
   if backend.bloom_intermediate_bgl is None {
@@ -635,6 +683,35 @@ fn ensure_bloom_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
     pl.set_label("mgstudio_bloom_intermediate_pipeline_layout")
     backend.bloom_intermediate_bgl = Some(bgl)
     backend.bloom_intermediate_pipeline_layout = Some(pl)
+  }
+  if backend.bloom_final_composite_bgl is None {
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=4UL)
+    let ok = builder.add_texture(
+        0U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_texture(
+        1U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_sampler(2U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING) &&
+      builder.add_buffer(3U, frag, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+    if !ok {
+      builder.free()
+      fatal("wgpu: failed to build bloom final composite bind group layout")
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_bloom_final_composite_bind_group_layout",
+    )
+    let pl = backend.device.create_pipeline_layout_1(bgl)
+    pl.set_label("mgstudio_bloom_final_composite_pipeline_layout")
+    backend.bloom_final_composite_bgl = Some(bgl)
+    backend.bloom_final_composite_pipeline_layout = Some(pl)
   }
 }
 
@@ -729,6 +806,28 @@ fn create_bloom_intermediate_bind_group(
 }
 
 ///|
+fn create_bloom_final_composite_bind_group(
+  backend : GpuBackend,
+  bind_layout : @wgpu.BindGroupLayout,
+  source_view : @wgpu.TextureView,
+  bloom_view : @wgpu.TextureView,
+  sampler : @wgpu.Sampler,
+  uniform_buf : @wgpu.Buffer,
+  label : String,
+) -> @wgpu.BindGroup? {
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=4UL)
+  let ok = builder.add_texture_view(0U, source_view) &&
+    builder.add_texture_view(1U, bloom_view) &&
+    builder.add_sampler(2U, sampler) &&
+    builder.add_buffer(3U, uniform_buf)
+  if !ok {
+    builder.free()
+    return None
+  }
+  Some(builder.finish(backend.device, bind_layout, label~))
+}
+
+///|
 fn ensure_bloom_pipeline_rgba8(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -740,6 +839,12 @@ fn ensure_bloom_pipeline_rgba8(
   }
   if backend.bloom_sampler is None {
     backend.bloom_sampler = Some(backend.device.create_sampler_linear_clamp())
+  }
+  if backend.bloom_final_composite_uniform_buf is None {
+    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+    backend.bloom_final_composite_uniform_buf = Some(
+      backend.device.create_buffer(size=16UL, usage~),
+    )
   }
   ensure_bloom_layouts(backend)
   let mip_format = bloom_intermediate_texture_format(backend)
@@ -896,51 +1001,31 @@ fn ensure_bloom_final_composite_pipeline(
   format : @wgpu.TextureFormat,
 ) -> Unit raise GpuBackendError {
   ensure_bloom_pipeline_rgba8(backend)
-  if backend.bloom_upsample_final_pipeline_format is Some(prev) &&
+  if backend.bloom_final_composite_pipeline_format is Some(prev) &&
     prev == format &&
-    backend.bloom_upsample_final_pipeline_energy is Some(_) &&
-    backend.bloom_upsample_final_pipeline_additive is Some(_) {
+    backend.bloom_final_composite_pipeline is Some(_) {
     return
   }
-  if backend.bloom_upsample_final_pipeline_energy is Some(old) {
+  if backend.bloom_final_composite_pipeline is Some(old) {
     old.release()
   }
-  if backend.bloom_upsample_final_pipeline_additive is Some(old) {
-    old.release()
-  }
-  guard backend.bloom_intermediate_pipeline_layout
-    is Some(intermediate_pipeline_layout) else {
+  guard backend.bloom_final_composite_pipeline_layout
+    is Some(final_pipeline_layout) else {
     return
   }
   let vertex_source = load_fullscreen_vertex_wgsl_required(backend)
-  let upsample_source = load_postprocess_fragment_wgsl_with_defines_required(
+  let pipeline = create_postprocess_pipeline_split_modules(
     backend,
-    "post_process/bloom/bloom.wgsl",
-    [],
-  )
-  let energy_pipeline = create_postprocess_pipeline_split_modules(
-    backend,
-    intermediate_pipeline_layout,
+    final_pipeline_layout,
     vertex_source,
-    upsample_source,
+    bloom_final_composite_fragment_wgsl_source,
     format,
-    "upsample",
-    POSTPROCESS_BLEND_MODE_CONSTANT_ENERGY,
-    "mgstudio_bloom_upsampling_final_pipeline_energy",
+    "bloom_final_composite",
+    POSTPROCESS_BLEND_MODE_NONE,
+    "mgstudio_bloom_final_composite_pipeline",
   )
-  let additive_pipeline = create_postprocess_pipeline_split_modules(
-    backend,
-    intermediate_pipeline_layout,
-    vertex_source,
-    upsample_source,
-    format,
-    "upsample",
-    POSTPROCESS_BLEND_MODE_CONSTANT_ADDITIVE,
-    "mgstudio_bloom_upsampling_final_pipeline_additive",
-  )
-  backend.bloom_upsample_final_pipeline_energy = Some(energy_pipeline)
-  backend.bloom_upsample_final_pipeline_additive = Some(additive_pipeline)
-  backend.bloom_upsample_final_pipeline_format = Some(format)
+  backend.bloom_final_composite_pipeline = Some(pipeline)
+  backend.bloom_final_composite_pipeline_format = Some(format)
 }
 
 ///|
@@ -965,10 +1050,7 @@ fn bloom_final_composite_pipeline_for_format(
   composite_mode : Int,
   format : @wgpu.TextureFormat,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  composite_mode |> ignore
   ensure_bloom_final_composite_pipeline(backend, format)
-  if composite_mode == 0 {
-    backend.bloom_upsample_final_pipeline_energy
-  } else {
-    backend.bloom_upsample_final_pipeline_additive
-  }
+  backend.bloom_final_composite_pipeline
 }

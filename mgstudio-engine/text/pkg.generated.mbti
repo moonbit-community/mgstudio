@@ -198,6 +198,8 @@ pub let text_set_render_transparent_ui : String
 
 pub fn text_set_runtime_rem_size(Float) -> Unit
 
+pub fn text_set_scale_factor(TextHandle, Float) -> Unit
+
 pub fn text_set_shadow(TextHandle, Text2dShadow?) -> Unit
 
 pub fn text_set_strikethrough(TextHandle, Strikethrough?) -> Unit
@@ -239,6 +241,7 @@ pub fn ui_text_sync_ecs_system(@ecs.World) -> Unit
 // Types and methods
 pub struct ComputedTextBlock {
   buffer : CosmicBuffer
+  scale_factor : Float
   needs_rerender : Bool
   uses_viewport_sizes : Bool
   uses_rem_sizes : Bool

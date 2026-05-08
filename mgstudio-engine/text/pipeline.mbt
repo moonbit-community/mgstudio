@@ -58,6 +58,7 @@ pub fn CosmicBuffer::default() -> CosmicBuffer {
 ///|
 pub struct ComputedTextBlock {
   buffer : CosmicBuffer
+  scale_factor : Float
   needs_rerender : Bool
   uses_viewport_sizes : Bool
   uses_rem_sizes : Bool
@@ -71,6 +72,7 @@ pub struct ComputedTextBlock {
 pub fn ComputedTextBlock::default() -> ComputedTextBlock {
   ComputedTextBlock::{
     buffer: CosmicBuffer::default(),
+    scale_factor: 1.0F,
     needs_rerender: true,
     uses_viewport_sizes: false,
     uses_rem_sizes: false,
@@ -183,10 +185,20 @@ fn text_evaluated_font_size(
 }
 
 ///|
+fn text_pipeline_safe_scale_factor(scale_factor : Float) -> Float {
+  if scale_factor <= 0.0F {
+    1.0F
+  } else {
+    scale_factor
+  }
+}
+
+///|
 fn build_text_buffer(
   instance : TextInstance,
   logical_viewport_size : @math.Vec2,
   rem_size : Float,
+  scale_factor : Float,
 ) -> CosmicBuffer {
   let mut text = instance.text.content
   let spans : Array[TextSpanRange] = []
@@ -206,27 +218,31 @@ fn build_text_buffer(
   )
   let line_height = instance.line_height.eval(font_size)
   let max_width = match instance.bounds.width {
-    Some(width) => Some(width)
+    Some(width) => Some(width * scale_factor)
     None =>
       match instance.ui_node_size {
         Some(node_size) =>
           if node_size.x > 0.0F {
-            Some(node_size.x)
+            Some(node_size.x * scale_factor)
           } else {
             None
           }
         None => None
       }
   }
+  let max_height = match instance.bounds.height {
+    Some(height) => Some(height * scale_factor)
+    None => None
+  }
   CosmicBuffer::{
     text,
     spans,
-    font_size,
-    line_height,
+    font_size: font_size * scale_factor,
+    line_height: line_height * scale_factor,
     justify: instance.layout.justify,
     linebreak: instance.layout.linebreak,
     max_width,
-    max_height: instance.bounds.height,
+    max_height,
     uses_viewport_sizes: text_font_supports_viewport_size(instance),
     uses_rem_sizes: text_font_uses_rem_size(instance),
   }
@@ -343,6 +359,26 @@ fn text_instance_has_run_overlays(instance : TextInstance) -> Bool {
     }
   }
   false
+}
+
+///|
+fn text_scale_rect(rect : @math.Rect, scale : Float) -> @math.Rect {
+  @math.Rect::new(
+    @math.Vec2::new(rect.min.x * scale, rect.min.y * scale),
+    @math.Vec2::new(rect.max.x * scale, rect.max.y * scale),
+  )
+}
+
+///|
+fn text_scale_run_geometry(run : RunGeometry, scale : Float) -> RunGeometry {
+  RunGeometry::{
+    span_index: run.span_index,
+    bounds: text_scale_rect(run.bounds, scale),
+    strikethrough_y: run.strikethrough_y * scale,
+    strikethrough_thickness: run.strikethrough_thickness * scale,
+    underline_y: run.underline_y * scale,
+    underline_thickness: run.underline_thickness * scale,
+  }
 }
 
 ///|
@@ -847,9 +883,15 @@ fn text_layout_needs_update(instance : TextInstance) -> Bool {
   )
   let is_rem_size_changed = instance.computed.rem_size !=
     text_runtime_rem_size_ref.val
+  let is_scale_factor_changed = text_absf(
+      instance.computed.scale_factor -
+      text_pipeline_safe_scale_factor(instance.scale_factor),
+    ) >
+    0.00001F
   instance.computed.needs_rerender(
     is_viewport_size_changed, is_rem_size_changed,
-  )
+  ) ||
+  is_scale_factor_changed
 }
 
 ///|
@@ -859,13 +901,17 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   }
   let logical_viewport_size = text_current_logical_viewport_size(instance)
   let rem_size = text_runtime_rem_size_ref.val
-  let buffer = build_text_buffer(instance, logical_viewport_size, rem_size)
+  let scale_factor = text_pipeline_safe_scale_factor(instance.scale_factor)
+  let inverse_scale_factor = 1.0F / scale_factor
+  let buffer = build_text_buffer(
+    instance, logical_viewport_size, rem_size, scale_factor,
+  )
   let entities = build_text_entities(instance)
   if buffer.font_size <= 0.0F || buffer.line_height <= 0.0F {
     return TextInstance::{
       ..instance,
       layout_info: TextLayoutInfo::{
-        scale_factor: 1.0F,
+        scale_factor,
         glyphs: [],
         run_geometry: [],
         size: @math.Vec2::new(0.0F, 0.0F),
@@ -878,6 +924,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       layout_dirty: false,
       computed: ComputedTextBlock::{
         buffer,
+        scale_factor,
         entities,
         needs_rerender: false,
         uses_viewport_sizes: buffer.uses_viewport_sizes,
@@ -917,6 +964,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       layout_dirty: true,
       computed: ComputedTextBlock::{
         buffer,
+        scale_factor,
         entities,
         needs_rerender: true,
         uses_viewport_sizes: buffer.uses_viewport_sizes,
@@ -951,10 +999,11 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       logical_viewport_size,
       rem_size,
     )
+    let span_physical_font_size = span_font_size * scale_factor
     let fam = text_font_source_family(sp.font.font)
     let metrics = @cosmic.Metrics::new(
-      span_font_size,
-      sp.line_height.eval(span_font_size),
+      span_physical_font_size,
+      sp.line_height.eval(span_font_size) * scale_factor,
     )
     let mut attrs = @cosmic.Attrs::with_metadata(idx)
       .metrics(metrics)
@@ -1031,7 +1080,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let font_smoothing = entities[span_index].font_smoothing
       let layout_glyph = layout_glyph0
       if maybe_run_geom is Some(rg) && rg.span_index != span_index {
-        run_geometry.push(rg)
+        run_geometry.push(text_scale_run_geometry(rg, inverse_scale_factor))
         maybe_run_geom = None
       }
       if maybe_run_geom is None {
@@ -1176,8 +1225,14 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         YAxisOrientation::BottomToTop => box_h - y_raw
       }
       glyphs.push(PositionedGlyph::{
-        position: @math.Vec2::new(x, y),
-        size: @math.Vec2::new(glyph_size_x, glyph_size_y),
+        position: @math.Vec2::new(
+          x * inverse_scale_factor,
+          y * inverse_scale_factor,
+        ),
+        size: @math.Vec2::new(
+          glyph_size_x * inverse_scale_factor,
+          glyph_size_y * inverse_scale_factor,
+        ),
         atlas_info,
         uv_min,
         uv_max,
@@ -1188,14 +1243,17 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       })
     }
     if maybe_run_geom is Some(rg) {
-      run_geometry.push(rg)
+      run_geometry.push(text_scale_run_geometry(rg, inverse_scale_factor))
     }
   }
   let updated = TextLayoutInfo::{
-    scale_factor: 1.0F,
+    scale_factor,
     glyphs,
     run_geometry,
-    size: @math.Vec2::new(box_w, box_h),
+    size: @math.Vec2::new(
+      box_w * inverse_scale_factor,
+      box_h * inverse_scale_factor,
+    ),
   }
   TextInstance::{
     ..instance,
@@ -1208,6 +1266,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     layout_dirty: needs_retry,
     computed: ComputedTextBlock::{
       buffer,
+      scale_factor,
       entities,
       needs_rerender: needs_retry,
       uses_viewport_sizes: buffer.uses_viewport_sizes,
@@ -1831,7 +1890,12 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     // group consecutive glyphs into slice batches instead of submitting one
     // sprite item per glyph.
     let glyph_rotation = rot
-    let glyph_draw_scale = @math.Vec2::new(scale.x, scale.y)
+    let glyph_inverse_scale_factor = 1.0F /
+      text_pipeline_safe_scale_factor(layout_info.scale_factor)
+    let glyph_draw_scale = @math.Vec2::new(
+      scale.x * glyph_inverse_scale_factor,
+      scale.y * glyph_inverse_scale_factor,
+    )
     let glyph_z = instance.transform.translation.z
     let shadow_opt = instance.shadow
     let top_to_bottom_y_axis = match instance.y_axis {

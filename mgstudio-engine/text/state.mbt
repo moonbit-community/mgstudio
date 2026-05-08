@@ -329,6 +329,7 @@ priv struct TextInstance {
   /// relative to a UI node's top-left corner (Bevy UI extraction semantics).
   ui_node_size : @math.Vec2?
   logical_viewport_size : @math.Vec2?
+  scale_factor : Float
   /// Optional UI target camera for overlay extraction.
   ui_camera_entity : @core.Entity?
   /// Optional UI clip rect (logical UI space) propagated from `ui_clip_system`.
@@ -678,6 +679,7 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     y_axis: bundle.y_axis,
     ui_node_size: None,
     logical_viewport_size: bundle.logical_viewport_size,
+    scale_factor: 1.0F,
     ui_camera_entity: None,
     ui_scissor: None,
     cull_margin: text_compute_cull_margin(
@@ -1063,7 +1065,16 @@ pub fn text_set_ui_node_size(handle : TextHandle, size : @math.Vec2?) -> Unit {
     if text_state_vec2_opt_eq(instance.ui_node_size, size) {
       instance
     } else {
-      TextInstance::{ ..instance, ui_node_size: size }
+      text_runtime_mark_layout_dirty()
+      TextInstance::{
+        ..instance,
+        ui_node_size: size,
+        layout_dirty: true,
+        computed: ComputedTextBlock::{
+          ..instance.computed,
+          needs_rerender: true,
+        },
+      }
     }
   })
 }
@@ -1074,6 +1085,15 @@ fn text_state_vec2_opt_eq(lhs : @math.Vec2?, rhs : @math.Vec2?) -> Bool {
     (Some(lhs), Some(rhs)) => lhs.x == rhs.x && lhs.y == rhs.y
     (None, None) => true
     _ => false
+  }
+}
+
+///|
+fn text_state_safe_scale_factor(scale_factor : Float) -> Float {
+  if scale_factor <= 0.0F {
+    1.0F
+  } else {
+    scale_factor
   }
 }
 
@@ -1093,6 +1113,27 @@ pub fn text_set_logical_viewport_size(
       TextInstance::{
         ..instance,
         logical_viewport_size,
+        layout_dirty: true,
+        computed: ComputedTextBlock::{
+          ..instance.computed,
+          needs_rerender: true,
+        },
+      }
+    }
+  })
+}
+
+///|
+pub fn text_set_scale_factor(handle : TextHandle, scale_factor : Float) -> Unit {
+  let safe_scale_factor = text_state_safe_scale_factor(scale_factor)
+  text_update_instance(handle, instance => {
+    if text_absf(instance.scale_factor - safe_scale_factor) <= 0.00001F {
+      instance
+    } else {
+      text_runtime_mark_layout_dirty()
+      TextInstance::{
+        ..instance,
+        scale_factor: safe_scale_factor,
         layout_dirty: true,
         computed: ComputedTextBlock::{
           ..instance.computed,

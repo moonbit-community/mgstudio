@@ -192,11 +192,14 @@ fn mesh3d_forward_shader_defines(
 }
 
 ///|
-fn mesh3d_forward_value_defines() -> @hashmap.HashMap[String, Int] {
+fn mesh3d_forward_value_defines() -> @hashmap.HashMap[
+  String,
+  @wgsl_common.ShaderDefValue,
+] {
   let value_defines = default_wgsl_value_defines()
   value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
-  value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", 19)
-  value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", 20)
+  value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", wgsl_def_int(19))
+  value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", wgsl_def_int(20))
   value_defines
 }
 

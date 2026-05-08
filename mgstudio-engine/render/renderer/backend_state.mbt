@@ -28,6 +28,8 @@ pub struct GpuBackend {
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
   mut pass_has_depth : Bool
+  frame_retired_buffers : Array[@wgpu.Buffer]
+  frame_retired_bind_groups : Array[@wgpu.BindGroup]
   mut frame_count : UInt
   mut depth_texture : @wgpu.Texture?
   mut depth_view : @wgpu.TextureView?
@@ -59,6 +61,7 @@ pub struct GpuBackend {
   sprite_instance_data : Array[Float]
   sprite_batches : Array[SpriteBatch]
   mut sprite_instance_count : UInt
+  mut sprite_flush_count_this_frame : Int
   mut ui_view_bgl : @wgpu.BindGroupLayout?
   mut ui_pipeline_layout : @wgpu.PipelineLayout?
   mut ui_pipeline : @wgpu.RenderPipeline?
@@ -302,6 +305,9 @@ pub struct GpuBackend {
   mut fxaa_sampler : @wgpu.Sampler?
   mut bloom_intermediate_bgl : @wgpu.BindGroupLayout?
   mut bloom_intermediate_pipeline_layout : @wgpu.PipelineLayout?
+  mut bloom_final_composite_bgl : @wgpu.BindGroupLayout?
+  mut bloom_final_composite_pipeline_layout : @wgpu.PipelineLayout?
+  mut bloom_final_composite_uniform_buf : @wgpu.Buffer?
   mut tonemapping_bgl : @wgpu.BindGroupLayout?
   mut tonemapping_pipeline_layout : @wgpu.PipelineLayout?
   mut tonemapping_view_buf : @wgpu.Buffer?
@@ -315,9 +321,8 @@ pub struct GpuBackend {
   mut bloom_downsample_uniform_pipeline : @wgpu.RenderPipeline?
   mut bloom_upsample_pipeline_energy : @wgpu.RenderPipeline?
   mut bloom_upsample_pipeline_additive : @wgpu.RenderPipeline?
-  mut bloom_upsample_final_pipeline_energy : @wgpu.RenderPipeline?
-  mut bloom_upsample_final_pipeline_additive : @wgpu.RenderPipeline?
-  mut bloom_upsample_final_pipeline_format : @wgpu.TextureFormat?
+  mut bloom_final_composite_pipeline : @wgpu.RenderPipeline?
+  mut bloom_final_composite_pipeline_format : @wgpu.TextureFormat?
   mut bloom_settings_buf : @wgpu.Buffer?
   mut bloom_sampler : @wgpu.Sampler?
   mut bloom_mip_texture : @wgpu.Texture?

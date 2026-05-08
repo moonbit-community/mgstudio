@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/window/windowing_native" @windowing,
   "Milky2018/wgpu_mbt" @wgpu,
   "Milky2018/wgpu_mbt/c" @wgpu_c,
+  "Milky2018/moon_wgsl/common" @wgsl_common,
   "moonbitlang/core/ref",
   "moonbitlang/core/math" @coremath,
   "moonbitlang/core/string",

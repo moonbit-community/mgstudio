@@ -772,11 +772,6 @@ fn window_create_runtime_for_entity(
     WindowWrapper::new(host_window),
   )
   host_window_set_visible(host_window, visible=window.visible)
-  host_window_set_size(
-    host_window,
-    width=window.physical_width(),
-    height=window.physical_height(),
-  )
   window_apply_position(world, host_window, window.position, window.resolution)
   host_window_set_resizable(host_window, resizable=window.resizable)
   host_window_set_resize_constraints(host_window, window.resize_constraints)
@@ -834,8 +829,8 @@ fn window_create_runtime_for_entity(
     close_requested_sent: false,
     last_applied_title: window.title,
     last_applied_name: window.name,
-    last_applied_width: window.physical_width(),
-    last_applied_height: window.physical_height(),
+    last_applied_width: observed_width,
+    last_applied_height: observed_height,
     last_applied_position: window.position,
     last_applied_mode: WindowMode::Windowed,
     last_applied_visible: window.visible,

@@ -390,8 +390,11 @@ pub fn GpuBackend::create_surface_binding(
   if surface_state_index_by_surface_id(self, surface_id) is Some(_) {
     return
   }
-  let surface = self.instance.create_surface_metal_layer()
-  @windowing.attach_surface_metal_layer(window, surface)
+  let layer = @wgpu_c.cametallayer_new()
+  @windowing.attach_metal_layer(window, layer)
+  let surface_descriptor = @wgpu.surface_descriptor_metal_layer_new(layer)
+  let surface = self.instance.create_surface(surface_descriptor)
+  @wgpu.surface_descriptor_free(surface_descriptor)
   self.surfaces.push(GpuSurfaceState::{
     surface_id,
     target_id,
@@ -491,9 +494,6 @@ pub fn GpuBackend::configure_surface_binding(
     self.active_surface_target_id = state.target_id
   }
   sync_active_surface_state(self)
-  debug(
-    "wgpu: surface_format_u32(surface_id=\{surface_id.to_string()})=\{configured_format.to_u32().to_string()}",
-  )
 }
 
 ///|
@@ -574,6 +574,14 @@ pub fn GpuBackend::begin_frame_binding(
   guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
     return
   }
+  for bind_group in self.frame_retired_bind_groups {
+    bind_group.release()
+  }
+  self.frame_retired_bind_groups.clear()
+  for buffer in self.frame_retired_buffers {
+    buffer.release()
+  }
+  self.frame_retired_buffers.clear()
   if self.frame_count == 4294967295U {
     self.frame_count = 0U
   } else {
@@ -585,6 +593,7 @@ pub fn GpuBackend::begin_frame_binding(
   sync_active_surface_state(self)
 
   self.mesh2d_instance_used = 0
+  self.sprite_flush_count_this_frame = 0
   mesh2d_reset_pending_batch(self)
   self.mesh3d_draw_slot_used = 0
   self.mesh3d_instance_draw_used = 0
@@ -608,6 +617,8 @@ pub fn GpuBackend::begin_frame_binding(
     screenshot_capture_format_raw: 0U,
     encoder,
     pass: None,
+    transient_buffers: [],
+    transient_bind_groups: [],
   })
   prepare_surface_capture_frame(self)
 }
@@ -654,6 +665,14 @@ pub fn GpuBackend::end_frame_binding(
   cmd.release()
   self.surfaces[index].surface.present() |> ignore
   self.instance.process_events()
+  for bind_group in frame.transient_bind_groups {
+    self.frame_retired_bind_groups.push(bind_group)
+  }
+  frame.transient_bind_groups.clear()
+  for buffer in frame.transient_buffers {
+    self.frame_retired_buffers.push(buffer)
+  }
+  frame.transient_buffers.clear()
   frame.encoder.release()
   if frame.present_view is Some(present_view) {
     present_view.release()

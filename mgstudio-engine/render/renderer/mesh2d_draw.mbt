@@ -515,10 +515,10 @@ fn load_wgsl_with_defines_required_mesh2d_material(
     defines.set(key, true)
   }
   let value_defines = default_wgsl_value_defines()
-  value_defines.set("MATERIAL_BIND_GROUP", 2)
+  value_defines.set("MATERIAL_BIND_GROUP", wgsl_def_int(2))
   value_defines.set(
     "PER_OBJECT_BUFFER_BATCH_SIZE",
-    MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE,
+    wgsl_def_int(MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE),
   )
   let mesh_source = registered_wgsl_source_required(
     mesh2d_vertex_shader_path_or_default(vertex_shader_path),

@@ -127,31 +127,15 @@ fn bloom_help_text(
 }
 
 ///|
-fn spawn_help_overlay(
-  commands : @app.Commands,
-  asset_server : @app.Res[@asset.AssetServer],
-) -> Unit {
-  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let root = commands.spawn(
-    (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
-    ),
-  )
+fn spawn_help_overlay(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @hierarchy.Parent::new(root),
+        @text.Text::default(),
         @ui.Node::default()
         .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(12.0F))
-        .with_top(@ui.Val::Px(12.0F)),
-        @text.Text::new(""),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
-        @text.TextColor::new(@sprite.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        .with_top(@ui.Val::Px(12.0F))
+        .with_left(@ui.Val::Px(12.0F)),
         BloomHelpText::{  },
       ),
     ),
@@ -187,7 +171,6 @@ fn setup(
       .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F))),
     ),
   )
-
   ignore(
     commands.spawn(
       (
@@ -238,7 +221,7 @@ fn setup(
     ),
   )
 
-  spawn_help_overlay(commands, asset_server)
+  spawn_help_overlay(commands)
 }
 
 ///|

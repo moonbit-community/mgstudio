@@ -229,6 +229,7 @@ priv struct WinitAppRunnerState {
 ///|
 fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
   let world = self.app_ref.val.world()
+  winit_window_backend_sync_system(world)
   let host_entries = @window.window_host_entries(world)
   let next_surfaces : Array[RunnerSurfaceBinding] = []
   let previous_surfaces = self.runner_surfaces_ref.val

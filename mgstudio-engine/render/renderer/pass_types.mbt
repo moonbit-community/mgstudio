@@ -118,6 +118,8 @@ pub struct GpuFrameState {
   mut screenshot_capture_format_raw : UInt
   encoder : @wgpu.CommandEncoder
   mut pass : @wgpu.RenderPass?
+  transient_buffers : Array[@wgpu.Buffer]
+  transient_bind_groups : Array[@wgpu.BindGroup]
 }
 
 ///|

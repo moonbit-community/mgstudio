@@ -129,7 +129,10 @@ fn ui_box_shadow_sample_count(samples : Int) -> Int {
 fn load_ui_box_shadow_wgsl(samples : Int) -> String raise GpuBackendError {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   let value_defines = default_wgsl_value_defines()
-  value_defines.set("SHADOW_SAMPLES", ui_box_shadow_sample_count(samples))
+  value_defines.set(
+    "SHADOW_SAMPLES",
+    wgsl_def_int(ui_box_shadow_sample_count(samples)),
+  )
   load_wgsl_preprocessed(
     "", "ui_render/box_shadow.wgsl", defines, value_defines,
   )

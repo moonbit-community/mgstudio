@@ -141,8 +141,16 @@ fn split_once_text(text : String, sep : String) -> (String, String)? {
 }
 
 ///|
-fn default_wgsl_value_defines() -> @hashmap.HashMap[String, Int] {
+fn default_wgsl_value_defines() -> @hashmap.HashMap[
+  String,
+  @wgsl_common.ShaderDefValue,
+] {
   @shader_compile.default_shader_value_defines()
+}
+
+///|
+fn wgsl_def_int(value : Int) -> @wgsl_common.ShaderDefValue {
+  @wgsl_common.ShaderDefValue::Int(value)
 }
 
 ///|
@@ -150,7 +158,7 @@ fn preprocess_wgsl_source(
   assets_base : String,
   source : String,
   defines : @hashmap.HashMap[String, Bool],
-  value_defines : @hashmap.HashMap[String, Int],
+  value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> String raise GpuBackendError {
   ensure_renderer_shader_sources_registered()
   @shader_compile.ShaderCompileRequest::for_source(
@@ -165,7 +173,7 @@ fn load_wgsl_preprocessed(
   assets_base : String,
   rel : String,
   defines : @hashmap.HashMap[String, Bool],
-  value_defines : @hashmap.HashMap[String, Int],
+  value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> String raise GpuBackendError {
   ensure_renderer_shader_sources_registered()
   @shader_compile.ShaderCompileRequest::for_path(

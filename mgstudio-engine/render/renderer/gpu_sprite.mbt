@@ -214,7 +214,19 @@ fn create_sprite_render_pipeline(
   let wgsl = load_wgsl_preprocessed(
     "", "sprite_render/render/sprite.wgsl", defines, value_defines,
   )
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let shader_result = backend.device.pop_error_scope_sync_result(
+    backend.instance,
+  )
+  if shader_result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+    let message = mesh3d_error_scope_message(
+      shader_result,
+      "wgpu: failed to create \{label} sprite shader module",
+    )
+    sm.release()
+    fatal(message)
+  }
   let pipeline = try {
     let builder = @wgpu.RenderPipelineDescBuilder::new(sm, layout~)
     builder.set_entry_points("vertex", "fragment")
@@ -236,7 +248,20 @@ fn create_sprite_render_pipeline(
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 2U)
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 48UL, 3U)
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 4U)
-    builder.create_pipeline(backend.device)
+    backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
+    let pipeline = builder.create_pipeline(backend.device)
+    let pipeline_result = backend.device.pop_error_scope_sync_result(
+      backend.instance,
+    )
+    if pipeline_result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+      let message = mesh3d_error_scope_message(
+        pipeline_result,
+        "wgpu: failed to create \{label} sprite render pipeline",
+      )
+      pipeline.release()
+      fatal(message)
+    }
+    pipeline
   } catch {
     err => {
       err |> ignore
@@ -414,6 +439,31 @@ fn create_sprite_texture_bind_group(
 }
 
 ///|
+fn create_sprite_view_bind_group(
+  backend : GpuBackend,
+  view_buf : @wgpu.Buffer,
+) -> @wgpu.BindGroup? {
+  guard backend.sprite_view_bgl is Some(layout) else { return None }
+  guard backend.sprite_lut_view is Some(lut_view) else { return None }
+  guard backend.sprite_lut_sampler is Some(lut_sampler) else { return None }
+  let b = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+  let ok = b.add_buffer(0U, view_buf) &&
+    b.add_texture_view(1U, lut_view) &&
+    b.add_sampler(2U, lut_sampler)
+  if !ok {
+    b.free()
+    return None
+  }
+  Some(
+    b.finish(
+      backend.device,
+      layout,
+      label="mgstudio_sprite_transient_view_bind_group",
+    ),
+  )
+}
+
+///|
 fn flush_sprite_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
   guard backend.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
@@ -431,32 +481,62 @@ fn flush_sprite_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
     return
   }
   let required_bytes = (float_count * 4).to_uint64()
-  if required_bytes > backend.sprite_instance_capacity {
-    let new_cap = if required_bytes < 256UL { 256UL } else { required_bytes }
-    let usage = bu(
+  guard backend.pass_state is Some(pass_state) else { return }
+  guard backend.sprite_index_buf is Some(index_buf) else { return }
+  let view_bytes = sprite_view_uniform_bytes(pass_state)
+  let bytes = f32le_pack(backend.sprite_instance_data)
+  let use_persistent_buffers = backend.sprite_flush_count_this_frame == 0
+  let (view_bg, instance_buf) = if use_persistent_buffers {
+    if required_bytes > backend.sprite_instance_capacity {
+      let new_cap = if required_bytes < 256UL { 256UL } else { required_bytes }
+      let usage = bu(
+        @wgpu.BUFFER_USAGE_STORAGE |
+        @wgpu.BUFFER_USAGE_VERTEX |
+        @wgpu.BUFFER_USAGE_COPY_DST,
+      )
+      let new_buf = backend.device.create_buffer(size=new_cap, usage~)
+      if backend.sprite_instance_buf is Some(old) {
+        old.release()
+      }
+      backend.sprite_instance_buf = Some(new_buf)
+      backend.sprite_instance_capacity = new_cap
+    }
+    guard backend.sprite_view_buf is Some(view_buf) else { return }
+    guard backend.sprite_view_bg is Some(view_bg) else { return }
+    guard backend.sprite_instance_buf is Some(instance_buf) else { return }
+    backend.queue.write_buffer(view_buf, 0UL, view_bytes)
+    backend.queue.write_buffer(instance_buf, 0UL, bytes)
+    (view_bg, instance_buf)
+  } else {
+    let view_usage = bu(
+      @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+    )
+    let instance_usage = bu(
       @wgpu.BUFFER_USAGE_STORAGE |
       @wgpu.BUFFER_USAGE_VERTEX |
       @wgpu.BUFFER_USAGE_COPY_DST,
     )
-    let new_buf = backend.device.create_buffer(size=new_cap, usage~)
-    if backend.sprite_instance_buf is Some(old) {
-      old.release()
+    let transient_view_buf = backend.device.create_buffer_init(
+      usage=view_usage,
+      view_bytes,
+    )
+    let transient_instance_buf = backend.device.create_buffer_init(
+      usage=instance_usage,
+      bytes,
+    )
+    guard create_sprite_view_bind_group(backend, transient_view_buf)
+      is Some(transient_view_bg) else {
+      transient_view_buf.release()
+      transient_instance_buf.release()
+      return
     }
-    backend.sprite_instance_buf = Some(new_buf)
-    backend.sprite_instance_capacity = new_cap
+    frame.transient_buffers.push(transient_view_buf)
+    frame.transient_buffers.push(transient_instance_buf)
+    frame.transient_bind_groups.push(transient_view_bg)
+    (transient_view_bg, transient_instance_buf)
   }
-  guard backend.pass_state is Some(pass_state) else { return }
-  guard backend.sprite_view_buf is Some(view_buf) else { return }
-  guard backend.sprite_view_bg is Some(view_bg) else { return }
-  guard backend.sprite_instance_buf is Some(instance_buf) else { return }
-  guard backend.sprite_index_buf is Some(index_buf) else { return }
-  backend.queue.write_buffer(
-    view_buf,
-    0UL,
-    sprite_view_uniform_bytes(pass_state),
-  )
-  let bytes = f32le_pack(backend.sprite_instance_data)
-  backend.queue.write_buffer(instance_buf, 0UL, bytes)
+  backend.sprite_flush_count_this_frame = backend.sprite_flush_count_this_frame +
+    1
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, view_bg, [])
   pass.set_index_buffer_u32(index_buf, 0UL, 24UL)

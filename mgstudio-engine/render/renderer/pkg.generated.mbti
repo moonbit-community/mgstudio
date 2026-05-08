@@ -350,6 +350,8 @@ pub struct GpuBackend {
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
   mut pass_has_depth : Bool
+  frame_retired_buffers : Array[@wgpu_mbt.Buffer]
+  frame_retired_bind_groups : Array[@wgpu_mbt.BindGroup]
   mut frame_count : UInt
   mut depth_texture : @wgpu_mbt.Texture?
   mut depth_view : @wgpu_mbt.TextureView?
@@ -381,6 +383,7 @@ pub struct GpuBackend {
   sprite_instance_data : Array[Float]
   sprite_batches : Array[SpriteBatch]
   mut sprite_instance_count : UInt
+  mut sprite_flush_count_this_frame : Int
   mut ui_view_bgl : @wgpu_mbt.BindGroupLayout?
   mut ui_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut ui_pipeline : @wgpu_mbt.RenderPipeline?
@@ -620,6 +623,9 @@ pub struct GpuBackend {
   mut fxaa_sampler : @wgpu_mbt.Sampler?
   mut bloom_intermediate_bgl : @wgpu_mbt.BindGroupLayout?
   mut bloom_intermediate_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut bloom_final_composite_bgl : @wgpu_mbt.BindGroupLayout?
+  mut bloom_final_composite_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut bloom_final_composite_uniform_buf : @wgpu_mbt.Buffer?
   mut tonemapping_bgl : @wgpu_mbt.BindGroupLayout?
   mut tonemapping_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut tonemapping_view_buf : @wgpu_mbt.Buffer?
@@ -633,9 +639,8 @@ pub struct GpuBackend {
   mut bloom_downsample_uniform_pipeline : @wgpu_mbt.RenderPipeline?
   mut bloom_upsample_pipeline_energy : @wgpu_mbt.RenderPipeline?
   mut bloom_upsample_pipeline_additive : @wgpu_mbt.RenderPipeline?
-  mut bloom_upsample_final_pipeline_energy : @wgpu_mbt.RenderPipeline?
-  mut bloom_upsample_final_pipeline_additive : @wgpu_mbt.RenderPipeline?
-  mut bloom_upsample_final_pipeline_format : @wgpu_mbt.TextureFormat?
+  mut bloom_final_composite_pipeline : @wgpu_mbt.RenderPipeline?
+  mut bloom_final_composite_pipeline_format : @wgpu_mbt.TextureFormat?
   mut bloom_settings_buf : @wgpu_mbt.Buffer?
   mut bloom_sampler : @wgpu_mbt.Sampler?
   mut bloom_mip_texture : @wgpu_mbt.Texture?
@@ -775,6 +780,8 @@ pub struct GpuFrameState {
   mut screenshot_capture_format_raw : UInt
   encoder : @wgpu_mbt.CommandEncoder
   mut pass : @wgpu_mbt.RenderPass?
+  transient_buffers : Array[@wgpu_mbt.Buffer]
+  transient_bind_groups : Array[@wgpu_mbt.BindGroup]
 }
 
 type GpuMesh3dPreprocessCameraUploadState

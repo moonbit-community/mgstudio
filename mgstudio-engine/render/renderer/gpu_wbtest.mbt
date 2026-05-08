@@ -770,15 +770,10 @@ test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   let preprocessed = load_wgsl_preprocessed(
     "", "sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines,
   )
-  debug_inspect(
-    preprocessed.contains("const mesh_functions__PI_2"),
-    content="true",
-  )
-  debug_inspect(
-    preprocessed.contains("return mesh_functions__twice_pi();"),
-    content="true",
-  )
+  debug_inspect(preprocessed.contains("const PI_2"), content="true")
+  debug_inspect(preprocessed.contains("fn twice_pi"), content="true")
   debug_inspect(preprocessed.contains("mesh_functions::"), content="false")
+  debug_inspect(preprocessed.contains("#import"), content="false")
   clear_registered_wgsl_source_registry()
 }
 
@@ -800,7 +795,8 @@ test "renderer: registered wgsl sources resolve nested alias imports" {
     "", "test/main.wgsl", defines, value_defines,
   )
   debug_inspect(preprocessed.contains("types::Lights"), content="false")
-  debug_inspect(preprocessed.contains("struct types__Lights"), content="true")
+  debug_inspect(preprocessed.contains("struct Lights"), content="true")
+  debug_inspect(preprocessed.contains("var<private> lights"), content="true")
   clear_registered_wgsl_source_registry()
 }
 
@@ -822,10 +818,8 @@ test "renderer: registered wgsl sources resolve nested alias imports through mod
     "", "test/main.wgsl", defines, value_defines,
   )
   debug_inspect(preprocessed.contains("types::Lights"), content="false")
-  debug_inspect(
-    preprocessed.contains("struct bindings__types__Lights"),
-    content="true",
-  )
+  debug_inspect(preprocessed.contains("struct Lights"), content="true")
+  debug_inspect(preprocessed.contains("var<private> lights"), content="true")
   clear_registered_wgsl_source_registry()
 }
 
@@ -856,10 +850,10 @@ test "renderer: registered wgsl sources resolve nested alias imports through gro
     "", "test/main.wgsl", defines, value_defines,
   )
   debug_inspect(preprocessed.contains("types::Lights"), content="false")
-  debug_inspect(
-    preprocessed.contains("struct view_bindings__types__Lights"),
-    content="true",
-  )
+  debug_inspect(preprocessed.contains("struct Lights"), content="true")
+  debug_inspect(preprocessed.contains("struct Globals"), content="true")
+  debug_inspect(preprocessed.contains("var<uniform> lights"), content="true")
+  debug_inspect(preprocessed.contains("var<uniform> globals"), content="true")
   clear_registered_wgsl_source_registry()
 }
 

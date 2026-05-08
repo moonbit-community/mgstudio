@@ -32,7 +32,7 @@ pub(all) struct ShaderCompileRequest {
   assets_base : String
   target : ShaderCompileTarget
   defines : @hashmap.HashMap[String, Bool]
-  value_defines : @hashmap.HashMap[String, Int]
+  value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue]
 }
 
 ///|
@@ -54,7 +54,7 @@ pub fn ShaderCompileRequest::for_path(
   assets_base : String,
   rel : String,
   defines : @hashmap.HashMap[String, Bool],
-  value_defines : @hashmap.HashMap[String, Int],
+  value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> ShaderCompileRequest {
   ShaderCompileRequest::{
     assets_base,
@@ -69,7 +69,7 @@ pub fn ShaderCompileRequest::for_source(
   assets_base : String,
   source : String,
   defines : @hashmap.HashMap[String, Bool],
-  value_defines : @hashmap.HashMap[String, Int],
+  value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> ShaderCompileRequest {
   ShaderCompileRequest::{
     assets_base,
@@ -197,7 +197,10 @@ pub fn build_shader_import_module_paths(
 }
 
 ///|
-pub fn default_shader_value_defines() -> @hashmap.HashMap[String, Int] {
+pub fn default_shader_value_defines() -> @hashmap.HashMap[
+  String,
+  @wgsl_common.ShaderDefValue,
+] {
   @wgsl_common.default_wgsl_value_defines()
 }
 
@@ -205,7 +208,7 @@ pub fn default_shader_value_defines() -> @hashmap.HashMap[String, Int] {
 fn compose_options(
   assets_base : String,
   defines : @hashmap.HashMap[String, Bool],
-  value_defines : @hashmap.HashMap[String, Int],
+  value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> @wgsl_common.WgslComposeOptions {
   ignore(assets_base)
   @wgsl_common.WgslComposeOptions::{
@@ -221,7 +224,7 @@ pub fn preprocess_shader_source(
   assets_base : String,
   source : String,
   defines : @hashmap.HashMap[String, Bool],
-  value_defines : @hashmap.HashMap[String, Int],
+  value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> String raise ShaderCompileError {
   let options = compose_options(assets_base, defines, value_defines)
   let composed = runtime_composer(assets_base).compose_wgsl_source(
@@ -241,7 +244,7 @@ pub fn load_preprocessed_wgsl(
   assets_base : String,
   rel : String,
   defines : @hashmap.HashMap[String, Bool],
-  value_defines : @hashmap.HashMap[String, Int],
+  value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> String raise ShaderCompileError {
   let options = compose_options(assets_base, defines, value_defines)
   let composed = runtime_composer(assets_base).compose_wgsl(rel, options) catch {

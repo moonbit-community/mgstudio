@@ -6143,6 +6143,19 @@ fn draw_wireframe_meshes_for_layers(
 }
 
 ///|
+fn has_wireframe_meshes_for_layers(
+  meshes : Array[ExtractedMesh2d],
+  layers : RenderLayers,
+) -> Bool {
+  for mesh in meshes {
+    if mesh.payload.layers.matches(layers) && mesh.payload.wireframe {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn build_camera_draw_items(
   world : @ecs.World,
   registry : Material2dRuntimeRegistry,
@@ -8159,6 +8172,130 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       let scene_needs_depth = scene_draw_items_need_depth(
         draw_opaque_items, draw_transparent_items,
       )
+      fn begin_scene_pass(
+        scene_target_id : Int,
+        draw_viewport_x : Int,
+        draw_viewport_y : Int,
+        draw_viewport_width : Int,
+        draw_viewport_height : Int,
+        clear_stage : Bool,
+      ) -> Unit {
+        if scene_needs_depth {
+          @render.host_gpu_begin_pass_with_depth(
+            target_id=scene_target_id,
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear.r,
+            clear_g=clear.g,
+            clear_b=clear.b,
+            clear_a=clear.a,
+            camera_x=camera.transform.translation.x,
+            camera_y=camera.transform.translation.y,
+            camera_rotation~,
+            camera_scale=camera_uniform_scale,
+            viewport_x=draw_viewport_x,
+            viewport_y=draw_viewport_y,
+            viewport_width=draw_viewport_width,
+            viewport_height=draw_viewport_height,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if clear_stage { 1 } else { 0 },
+          )
+        } else {
+          @render.host_gpu_begin_pass(
+            target_id=scene_target_id,
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear.r,
+            clear_g=clear.g,
+            clear_b=clear.b,
+            clear_a=clear.a,
+            camera_x=camera.transform.translation.x,
+            camera_y=camera.transform.translation.y,
+            camera_rotation~,
+            camera_scale=camera_uniform_scale,
+            viewport_x=draw_viewport_x,
+            viewport_y=draw_viewport_y,
+            viewport_width=draw_viewport_width,
+            viewport_height=draw_viewport_height,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if clear_stage { 1 } else { 0 },
+          )
+        }
+      }
+
+      fn draw_scene_passes(
+        scene_target_id : Int,
+        draw_viewport_x : Int,
+        draw_viewport_y : Int,
+        draw_viewport_width : Int,
+        draw_viewport_height : Int,
+        draw_scale_factor : Float,
+        draw_gizmos : Bool,
+      ) -> Unit {
+        let has_opaque = draw_opaque_items.length() > 0
+        let has_transparent = draw_transparent_items.length() > 0
+        let has_wireframe = has_wireframe_meshes_for_layers(
+          meshes,
+          camera.layers,
+        )
+        if has_opaque {
+          begin_scene_pass(
+            scene_target_id, draw_viewport_x, draw_viewport_y, draw_viewport_width,
+            draw_viewport_height, clear_enabled,
+          )
+          draw_camera_items(
+            draw_opaque_items,
+            draw_viewport_x,
+            draw_viewport_y,
+            draw_viewport_width,
+            draw_viewport_height,
+            draw_scale_factor,
+            [],
+          )
+          @render.host_gpu_end_pass()
+          if has_transparent || has_wireframe || draw_gizmos {
+            begin_scene_pass(
+              scene_target_id, draw_viewport_x, draw_viewport_y, draw_viewport_width,
+              draw_viewport_height, false,
+            )
+            draw_camera_items(
+              draw_transparent_items,
+              draw_viewport_x,
+              draw_viewport_y,
+              draw_viewport_width,
+              draw_viewport_height,
+              draw_scale_factor,
+              [],
+            )
+            draw_wireframe_meshes_for_layers(meshes, camera.layers)
+            if draw_gizmos {
+              gizmos_draw_lines(camera.layers)
+            }
+            @render.host_gpu_end_pass()
+          }
+        } else {
+          begin_scene_pass(
+            scene_target_id, draw_viewport_x, draw_viewport_y, draw_viewport_width,
+            draw_viewport_height, clear_enabled,
+          )
+          draw_camera_items(
+            draw_transparent_items,
+            draw_viewport_x,
+            draw_viewport_y,
+            draw_viewport_width,
+            draw_viewport_height,
+            draw_scale_factor,
+            [],
+          )
+          draw_wireframe_meshes_for_layers(meshes, camera.layers)
+          if draw_gizmos {
+            gizmos_draw_lines(camera.layers)
+          }
+          @render.host_gpu_end_pass()
+        }
+      }
       let mut auto_postprocess_source : @asset.Handle[@asset.Image]? = None
       if camera_postprocess_plan.uses_intermediate_source {
         auto_postprocess_source = Some(
@@ -8173,151 +8310,120 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
 
       if auto_postprocess_source is Some(source) {
         let cas_postprocess_enabled = camera_postprocess_plan.cas_postprocess_enabled
-        let cas_pre_stage_enabled = cas_postprocess_enabled &&
-          (
-            camera_postprocess_plan.apply_bloom_before_tonemapping ||
-            camera_postprocess_plan.tonemapping_stage_enabled
-          )
-        let postprocess_output_target = if cas_pre_stage_enabled {
-          render2d_get_or_create_postprocess_intermediate_target(
+        let final_target : @asset.Handle[@asset.Image] = @asset.Handle::new(
+          target_id,
+        )
+        let mut next_postprocess_slot = 1
+        fn allocate_postprocess_target() -> @asset.Handle[@asset.Image] {
+          let target = render2d_get_or_create_postprocess_intermediate_target(
             rs.val,
             camera.entity,
             viewport_width,
             viewport_height,
-            slot=1,
+            slot=next_postprocess_slot,
           )
-        } else {
-          @asset.Handle::new(target_id)
+          next_postprocess_slot = next_postprocess_slot + 1
+          target
         }
-        let (
-          postprocess_output_viewport_x,
-          postprocess_output_viewport_y,
-          postprocess_output_viewport_width,
-          postprocess_output_viewport_height,
-        ) = if cas_pre_stage_enabled {
-          (0, 0, viewport_width, viewport_height)
-        } else {
-          (viewport_x, viewport_y, viewport_width, viewport_height)
-        }
-        if scene_needs_depth {
-          @render.host_gpu_begin_pass_with_depth(
-            target_id=@asset.Handle::id(source),
-            width=view_width_logical,
-            height=view_height_logical,
-            clear_r=clear.r,
-            clear_g=clear.g,
-            clear_b=clear.b,
-            clear_a=clear.a,
-            camera_x=camera.transform.translation.x,
-            camera_y=camera.transform.translation.y,
-            camera_rotation~,
-            camera_scale=camera_uniform_scale,
-            viewport_x=0,
-            viewport_y=0,
-            viewport_width~,
-            viewport_height~,
-            viewport_depth_min~,
-            viewport_depth_max~,
-            clear_enabled=if clear_enabled { 1 } else { 0 },
-          )
-        } else {
-          @render.host_gpu_begin_pass(
-            target_id=@asset.Handle::id(source),
-            width=view_width_logical,
-            height=view_height_logical,
-            clear_r=clear.r,
-            clear_g=clear.g,
-            clear_b=clear.b,
-            clear_a=clear.a,
-            camera_x=camera.transform.translation.x,
-            camera_y=camera.transform.translation.y,
-            camera_rotation~,
-            camera_scale=camera_uniform_scale,
-            viewport_x=0,
-            viewport_y=0,
-            viewport_width~,
-            viewport_height~,
-            viewport_depth_min~,
-            viewport_depth_max~,
-            clear_enabled=if clear_enabled { 1 } else { 0 },
-          )
-        }
-        draw_camera_items(
-          draw_opaque_items, 0, 0, viewport_width, viewport_height, scale_factor,
-          draw_transparent_items,
-        )
-        draw_wireframe_meshes_for_layers(meshes, camera.layers)
-        @render.host_gpu_end_pass()
 
-        @render.host_gpu_begin_pass(
-          target_id=postprocess_output_target.id(),
-          width=view_width_logical,
-          height=view_height_logical,
-          clear_r=clear.r,
-          clear_g=clear.g,
-          clear_b=clear.b,
-          clear_a=clear.a,
-          camera_x=camera.transform.translation.x,
-          camera_y=camera.transform.translation.y,
-          camera_rotation~,
-          camera_scale=camera_uniform_scale,
-          viewport_x=postprocess_output_viewport_x,
-          viewport_y=postprocess_output_viewport_y,
-          viewport_width=postprocess_output_viewport_width,
-          viewport_height=postprocess_output_viewport_height,
-          viewport_depth_min~,
-          viewport_depth_max~,
-          clear_enabled=if clear_enabled { 1 } else { 0 },
-        )
-        if camera_postprocess_plan.apply_bloom_before_tonemapping {
-          render2d_apply_camera_bloom_from_source(
-            camera, source, viewport_width, viewport_height,
+        fn begin_postprocess_pass(
+          target : @asset.Handle[@asset.Image],
+          full_viewport : Bool,
+          clear_stage : Bool,
+        ) -> Unit {
+          let (
+            pass_viewport_x,
+            pass_viewport_y,
+            pass_viewport_width,
+            pass_viewport_height,
+          ) = if full_viewport {
+            (0, 0, viewport_width, viewport_height)
+          } else {
+            (viewport_x, viewport_y, viewport_width, viewport_height)
+          }
+          @render.host_gpu_begin_pass(
+            target_id=target.id(),
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear.r,
+            clear_g=clear.g,
+            clear_b=clear.b,
+            clear_a=clear.a,
+            camera_x=camera.transform.translation.x,
+            camera_y=camera.transform.translation.y,
+            camera_rotation~,
+            camera_scale=camera_uniform_scale,
+            viewport_x=pass_viewport_x,
+            viewport_y=pass_viewport_y,
+            viewport_width=pass_viewport_width,
+            viewport_height=pass_viewport_height,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if clear_stage { 1 } else { 0 },
           )
+        }
+        draw_scene_passes(
+          @asset.Handle::id(source),
+          0,
+          0,
+          viewport_width,
+          viewport_height,
+          scale_factor,
+          false,
+        )
+
+        let mut postprocess_source = source
+        let mut rendered_to_final_target = false
+        if camera_postprocess_plan.apply_bloom_before_tonemapping {
+          let bloom_target = allocate_postprocess_target()
+          begin_postprocess_pass(bloom_target, true, true)
+          render2d_apply_camera_bloom_from_source(
+            camera, postprocess_source, viewport_width, viewport_height,
+          )
+          @render.host_gpu_end_pass()
+          postprocess_source = bloom_target
         }
         if camera_postprocess_plan.tonemapping_stage_enabled {
+          let tonemapping_target = if cas_postprocess_enabled {
+            allocate_postprocess_target()
+          } else {
+            final_target
+          }
+          begin_postprocess_pass(
+            tonemapping_target, cas_postprocess_enabled, true,
+          )
           render2d_draw_camera_tonemapping(
-            world, source, tonemapping_mode, deband_dither_enabled, color_grading,
+            world, postprocess_source, tonemapping_mode, deband_dither_enabled, color_grading,
             viewport_width, viewport_height,
           )
-        } else if !cas_postprocess_enabled || cas_pre_stage_enabled {
-          render2d_draw_camera_blit(source)
-        }
-        if !cas_postprocess_enabled {
-          gizmos_draw_lines(camera.layers)
-        }
-        @render.host_gpu_end_pass()
-        if cas_postprocess_enabled {
-          @render.host_gpu_begin_pass(
-            target_id~,
-            width=view_width_logical,
-            height=view_height_logical,
-            clear_r=clear.r,
-            clear_g=clear.g,
-            clear_b=clear.b,
-            clear_a=clear.a,
-            camera_x=camera.transform.translation.x,
-            camera_y=camera.transform.translation.y,
-            camera_rotation~,
-            camera_scale=camera_uniform_scale,
-            viewport_x~,
-            viewport_y~,
-            viewport_width~,
-            viewport_height~,
-            viewport_depth_min~,
-            viewport_depth_max~,
-            clear_enabled=if cas_pre_stage_enabled { 1 } else { 0 },
-          )
-          let cas_source = if cas_pre_stage_enabled {
-            postprocess_output_target
-          } else {
-            source
+          if !cas_postprocess_enabled {
+            gizmos_draw_lines(camera.layers)
+            rendered_to_final_target = true
           }
+          @render.host_gpu_end_pass()
+          postprocess_source = tonemapping_target
+        } else if !cas_postprocess_enabled {
+          begin_postprocess_pass(final_target, false, true)
+          render2d_draw_camera_blit(postprocess_source)
+          gizmos_draw_lines(camera.layers)
+          @render.host_gpu_end_pass()
+          rendered_to_final_target = true
+        }
+        if cas_postprocess_enabled {
+          begin_postprocess_pass(final_target, false, true)
           render2d_draw_camera_cas(
-            cas_source,
+            postprocess_source,
             camera.contrast_adaptive_sharpening,
             viewport_width,
             viewport_height,
           )
+          gizmos_draw_lines(camera.layers)
+          @render.host_gpu_end_pass()
+          rendered_to_final_target = true
+        }
+        if !rendered_to_final_target {
+          begin_postprocess_pass(final_target, false, true)
+          render2d_draw_camera_blit(postprocess_source)
           gizmos_draw_lines(camera.layers)
           @render.host_gpu_end_pass()
         }
@@ -8328,111 +8434,19 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       }
 
       if camera.bloom is None {
-        if scene_needs_depth {
-          @render.host_gpu_begin_pass_with_depth(
-            target_id~,
-            width=view_width_logical,
-            height=view_height_logical,
-            clear_r=clear.r,
-            clear_g=clear.g,
-            clear_b=clear.b,
-            clear_a=clear.a,
-            camera_x=camera.transform.translation.x,
-            camera_y=camera.transform.translation.y,
-            camera_rotation~,
-            camera_scale=camera_uniform_scale,
-            viewport_x~,
-            viewport_y~,
-            viewport_width~,
-            viewport_height~,
-            viewport_depth_min~,
-            viewport_depth_max~,
-            clear_enabled=if clear_enabled { 1 } else { 0 },
-          )
-        } else {
-          @render.host_gpu_begin_pass(
-            target_id~,
-            width=view_width_logical,
-            height=view_height_logical,
-            clear_r=clear.r,
-            clear_g=clear.g,
-            clear_b=clear.b,
-            clear_a=clear.a,
-            camera_x=camera.transform.translation.x,
-            camera_y=camera.transform.translation.y,
-            camera_rotation~,
-            camera_scale=camera_uniform_scale,
-            viewport_x~,
-            viewport_y~,
-            viewport_width~,
-            viewport_height~,
-            viewport_depth_min~,
-            viewport_depth_max~,
-            clear_enabled=if clear_enabled { 1 } else { 0 },
-          )
-        }
-        draw_camera_items(
-          draw_opaque_items, viewport_x, viewport_y, viewport_width, viewport_height,
-          scale_factor, draw_transparent_items,
+        draw_scene_passes(
+          target_id, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
+          true,
         )
-        draw_wireframe_meshes_for_layers(meshes, camera.layers)
-        gizmos_draw_lines(camera.layers)
-        @render.host_gpu_end_pass()
         if ui_overlay_draw_items.length() > 0 {
           draw_ui_overlay_passes(ui_overlay_draw_items)
         }
         continue
       }
-      if scene_needs_depth {
-        @render.host_gpu_begin_pass_with_depth(
-          target_id~,
-          width=view_width_logical,
-          height=view_height_logical,
-          clear_r=clear.r,
-          clear_g=clear.g,
-          clear_b=clear.b,
-          clear_a=clear.a,
-          camera_x=camera.transform.translation.x,
-          camera_y=camera.transform.translation.y,
-          camera_rotation~,
-          camera_scale=camera_uniform_scale,
-          viewport_x~,
-          viewport_y~,
-          viewport_width~,
-          viewport_height~,
-          viewport_depth_min~,
-          viewport_depth_max~,
-          clear_enabled=if clear_enabled { 1 } else { 0 },
-        )
-      } else {
-        @render.host_gpu_begin_pass(
-          target_id~,
-          width=view_width_logical,
-          height=view_height_logical,
-          clear_r=clear.r,
-          clear_g=clear.g,
-          clear_b=clear.b,
-          clear_a=clear.a,
-          camera_x=camera.transform.translation.x,
-          camera_y=camera.transform.translation.y,
-          camera_rotation~,
-          camera_scale=camera_uniform_scale,
-          viewport_x~,
-          viewport_y~,
-          viewport_width~,
-          viewport_height~,
-          viewport_depth_min~,
-          viewport_depth_max~,
-          clear_enabled=if clear_enabled { 1 } else { 0 },
-        )
-      }
-      draw_camera_items(
-        draw_opaque_items, viewport_x, viewport_y, viewport_width, viewport_height,
-        scale_factor, draw_transparent_items,
+      draw_scene_passes(
+        target_id, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
+        true,
       )
-      draw_wireframe_meshes_for_layers(meshes, camera.layers)
-      gizmos_draw_lines(camera.layers)
-      @render.host_gpu_end_pass()
     }
     gizmos_clear()
     rs.val.prepared_camera_indices.clear()

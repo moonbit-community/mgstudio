@@ -281,7 +281,10 @@ pub fn mesh3d_preprocess_disabled() -> Bool {
 
 ///|
 fn debug_runtime_error(context : String, err : Error) -> Unit {
-  debug("[renderer] \{context}: \{err.to_string()}")
+  match err {
+    Fatal(message) => debug("[renderer] \{context}: Fatal(\{message})")
+    _ => debug("[renderer] \{context}: \{err.to_string()}")
+  }
 }
 
 ///|

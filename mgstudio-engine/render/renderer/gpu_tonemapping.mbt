@@ -745,8 +745,8 @@ fn load_fullscreen_tonemapping_wgsl_with_defines_required(
     defines.set(key, true)
   }
   let value_defines = default_wgsl_value_defines()
-  value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", 3)
-  value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", 4)
+  value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", wgsl_def_int(3))
+  value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", wgsl_def_int(4))
   let composed_source = load_wgsl_preprocessed(
     backend.assets_base,
     "core_pipeline/tonemapping/tonemapping.wgsl",

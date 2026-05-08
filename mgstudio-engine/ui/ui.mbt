@@ -937,6 +937,7 @@ priv struct UiResolvedCameraState {
   camera_entity : @core.Entity?
   camera_transform : @transform.Transform
   camera_scale : Float
+  scale_factor : Float
 }
 
 ///|
@@ -947,6 +948,7 @@ fn ui_resolved_camera_state_default() -> UiResolvedCameraState {
     camera_entity: None,
     camera_transform: @transform.Transform::identity(),
     camera_scale: 1.0F,
+    scale_factor: 1.0F,
   }
 }
 
@@ -1380,6 +1382,7 @@ fn ui_resolved_camera_state_from_fallback_ctx(
     camera_entity: ctx.camera_entity,
     camera_transform: ctx.camera_transform,
     camera_scale: ctx.camera_scale,
+    scale_factor: 1.0F,
   }
 }
 
@@ -1405,6 +1408,7 @@ fn ui_resolved_camera_state_from_computed(
     camera_entity,
     camera_transform,
     camera_scale,
+    scale_factor: render_target_info.scale_factor(),
   }
 }
 
@@ -2454,6 +2458,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
             text_handle,
             Some(root_ctx.viewport_size),
           )
+          @text.text_set_scale_factor(text_handle, root_ctx.scale_factor)
           let pad_l = layout.padding.left
           let pad_r = layout.padding.right
           let pad_t = layout.padding.top
