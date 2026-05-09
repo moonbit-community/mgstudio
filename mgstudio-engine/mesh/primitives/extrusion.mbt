@@ -637,13 +637,10 @@ fn extrusion_ring_build(
   inner_perimeter : Array[PerimeterSegment],
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  let base_mesh = ring_mesh(outer_mesh, inner_mesh)
-  let perimeter = ring_perimeter(
-    outer_perimeter,
-    inner_perimeter,
-    outer_mesh.vertex_count(),
+  let builder = RingMeshBuilder::new(
+    outer_mesh, inner_mesh, outer_perimeter, inner_perimeter,
   )
-  extrusion_build(base_mesh, perimeter, depth, 1)
+  ExtrusionBuilder::new(builder.build(), builder.perimeter(), depth).build()
 }
 
 ///|

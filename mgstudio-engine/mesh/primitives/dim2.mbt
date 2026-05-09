@@ -1162,3 +1162,40 @@ pub impl MeshBuilder for Capsule2dMeshBuilder with build(self) {
 pub impl Extrudable for Capsule2dMeshBuilder with perimeter(self) {
   capsule2d_perimeter(self.resolution)
 }
+
+///|
+pub(all) struct RingMeshBuilder {
+  outer_shape_builder : @mesh.Mesh3dGeometry
+  inner_shape_builder : @mesh.Mesh3dGeometry
+  outer_perimeter : Array[PerimeterSegment]
+  inner_perimeter : Array[PerimeterSegment]
+}
+
+///|
+pub fn RingMeshBuilder::new(
+  outer_shape_builder : @mesh.Mesh3dGeometry,
+  inner_shape_builder : @mesh.Mesh3dGeometry,
+  outer_perimeter : Array[PerimeterSegment],
+  inner_perimeter : Array[PerimeterSegment],
+) -> RingMeshBuilder {
+  { outer_shape_builder, inner_shape_builder, outer_perimeter, inner_perimeter }
+}
+
+///|
+pub fn RingMeshBuilder::build(self : RingMeshBuilder) -> @mesh.Mesh3dGeometry {
+  ring_mesh(self.outer_shape_builder, self.inner_shape_builder)
+}
+
+///|
+pub impl MeshBuilder for RingMeshBuilder with build(self) {
+  ring_mesh(self.outer_shape_builder, self.inner_shape_builder)
+}
+
+///|
+pub impl Extrudable for RingMeshBuilder with perimeter(self) {
+  ring_perimeter(
+    self.outer_perimeter,
+    self.inner_perimeter,
+    self.outer_shape_builder.vertex_count(),
+  )
+}

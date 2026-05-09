@@ -218,6 +218,17 @@ pub fn RhombusMeshBuilder::new(Float, Float) -> Self
 pub impl Extrudable for RhombusMeshBuilder
 pub impl MeshBuilder for RhombusMeshBuilder
 
+pub(all) struct RingMeshBuilder {
+  outer_shape_builder : @mesh.Mesh3dGeometry
+  inner_shape_builder : @mesh.Mesh3dGeometry
+  outer_perimeter : Array[PerimeterSegment]
+  inner_perimeter : Array[PerimeterSegment]
+}
+pub fn RingMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
+pub fn RingMeshBuilder::new(@mesh.Mesh3dGeometry, @mesh.Mesh3dGeometry, Array[PerimeterSegment], Array[PerimeterSegment]) -> Self
+pub impl Extrudable for RingMeshBuilder
+pub impl MeshBuilder for RingMeshBuilder
+
 pub(all) struct Segment2dMeshBuilder {
   segment : @math.Segment2d
 }

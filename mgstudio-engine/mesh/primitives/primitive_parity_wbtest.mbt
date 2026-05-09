@@ -360,3 +360,35 @@ test "dim2 primitive builders expose extrusion perimeters" {
     content="4",
   )
 }
+
+///|
+test "dim2 primitives: ring builder matches ring mesh path" {
+  let outer_builder = CircleMeshBuilder::new(0.5F, 8)
+  let inner_builder = CircleMeshBuilder::new(0.25F, 8)
+  let ring_builder = RingMeshBuilder::new(
+    outer_builder.build(),
+    inner_builder.build(),
+    outer_builder.perimeter(),
+    inner_builder.perimeter(),
+  )
+  primitive_parity_assert_same_mesh_shape(
+    "ring_builder",
+    ring_mesh(outer_builder.build(), inner_builder.build()),
+    ring_builder.build(),
+  )
+  debug_inspect(
+    primitive_parity_perimeter_index_count(ring_builder.perimeter()),
+    content="18",
+  )
+  primitive_parity_assert_same_mesh_shape(
+    "extrusion_ring_builder",
+    extrusion_ring_build(
+      outer_builder.build(),
+      outer_builder.perimeter(),
+      inner_builder.build(),
+      inner_builder.perimeter(),
+      1.0F,
+    ),
+    ExtrusionBuilder::new(ring_builder.build(), ring_builder.perimeter(), 1.0F).build(),
+  )
+}
