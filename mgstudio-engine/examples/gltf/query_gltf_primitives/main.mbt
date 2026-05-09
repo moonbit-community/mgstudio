@@ -67,7 +67,7 @@ fn find_top_material_and_mesh(
   query : @ecs.Query[
     (
       @ecs.Comp[@pbr.MeshMaterial3d],
-      @ecs.Comp[@pbr.Mesh3d],
+      @ecs.Comp[@mesh.Mesh3d],
       @ecs.Comp[@gltf.GltfPrimitiveIndex],
       @ecs.Comp[@gltf.GltfMaterialName],
     ),

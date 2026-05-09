@@ -106,7 +106,7 @@ fn render3d_resolve_mesh_material(
 
 ///|
 priv struct Render3dExtractMeshRequiredComponents {
-  mesh3d : Mesh3d
+  mesh3d : @mesh.Mesh3d
   material_handle : MeshMaterial3d
   view_visibility : @visibility.ViewVisibility
   global_transform : @transform.GlobalTransform
@@ -440,7 +440,7 @@ fn render3d_execute_collect_meshes(
     (
       @core.Entity,
       (
-        @ecs.Comp[Mesh3d],
+        @ecs.Comp[@mesh.Mesh3d],
         @ecs.Comp[MeshMaterial3d],
         @ecs.Comp[@visibility.ViewVisibility],
         @ecs.Comp[@transform.GlobalTransform],

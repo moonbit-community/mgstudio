@@ -69,7 +69,7 @@ fn mapped_point_light_intensity(radius : Float) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -115,9 +115,9 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
+      @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
       ),
     ),
@@ -148,9 +148,11 @@ fn setup(world : @ecs.World) -> Unit {
   camera |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(

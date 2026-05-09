@@ -205,9 +205,11 @@ fn setup(world : @ecs.World) -> Unit {
     .with_metallic(0.0F),
   )
 
-  let sphere_proxy_mesh = @pbr.Mesh3d::new(
+  let sphere_proxy_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.5F, 0.5F, 0.5F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F)),
+      ),
     ),
   )
 
@@ -224,9 +226,11 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(600.0F, 600.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(600.0F, 600.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(white_material),

@@ -285,7 +285,7 @@ fn setup_ui_overlay(
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -333,9 +333,9 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   }
 
   let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
-  @pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(geometry),
+      @mesh.Mesh::from_3d_geometry(geometry),
     ),
   )
 }
@@ -352,7 +352,7 @@ fn register_material(
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @pbr.Mesh3d,
+  mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
   transform : @transform.Transform,
 ) -> @core.Entity {
@@ -518,9 +518,11 @@ fn setup(world : @ecs.World) -> Unit {
   register_material(black_material, false, true)
   register_material(white_material, false, true)
 
-  let plane_mesh = @pbr.Mesh3d::new(
+  let plane_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(2.0F, 2.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.plane3d_mesh_from_size(2.0F, 2.0F, 0),
+      ),
     ),
   )
   for x in -3..<4 {

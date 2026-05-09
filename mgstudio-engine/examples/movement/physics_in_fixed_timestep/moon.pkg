@@ -8,12 +8,14 @@ import {
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/window",
+  "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
 }
 
 supported_targets = "native"

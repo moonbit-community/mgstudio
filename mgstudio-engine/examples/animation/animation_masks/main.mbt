@@ -481,7 +481,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let ground = world.spawn_empty()
-  let ground_mesh = @pbr.Mesh3d::new(
+  let ground_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val
     |> @pbr.add_mesh(@math.Cylinder::new(7.0F, 0.05F)),
   )

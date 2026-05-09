@@ -27,7 +27,11 @@ fn setup(
 ) -> Unit {
   let plane_mesh = mesh_assets
     .peek()
-    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)))
+    .add(
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.plane3d_mesh_from_size(8.0F, 8.0F, 0),
+      ),
+    )
   let cube_mesh = mesh_assets.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F))
 
@@ -51,7 +55,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(plane_mesh),
+        @mesh.Mesh3d::new(plane_mesh),
         @pbr.MeshMaterial3d::new(plane_material),
         @transform.Transform::identity(),
       ),
@@ -60,7 +64,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(cube_mesh),
+        @mesh.Mesh3d::new(cube_mesh),
         @pbr.MeshMaterial3d::new(custom_material).with_extension_fragment_shader_path(
           Some(SHADER_ASSET_PATH),
         ),

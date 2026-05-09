@@ -180,10 +180,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
   setup_wireframe_config(world)
 
   let red_cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
       ),
     ),
@@ -199,10 +199,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
       ),
     ),
@@ -216,10 +216,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
   |> ignore
 
   let green_cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
       ),
     ),
@@ -242,9 +242,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let plane = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(5.0F, 5.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(

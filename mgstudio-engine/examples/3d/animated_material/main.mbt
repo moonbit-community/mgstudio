@@ -126,7 +126,7 @@ fn setup(
       ignore(
         commands.spawn(
           (
-            @pbr.Mesh3d::new(cube),
+            @mesh.Mesh3d::new(cube),
             @pbr.MeshMaterial3d::new(
               material_assets |> @pbr.add_material(color_from_hue_deg(hue)),
             ),

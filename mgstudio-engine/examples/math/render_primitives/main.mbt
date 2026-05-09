@@ -35,7 +35,7 @@ fn spawn_primitive(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(mesh),
+        @mesh.Mesh3d::new(mesh),
         @pbr.MeshMaterial3d::new(material),
         Spin::{  },
         @transform.Transform::from_xyz(x, 1.0F, 0.0F),
@@ -54,14 +54,16 @@ fn setup(
   let material_assets = materials.peek()
 
   let plane_mesh = mesh_assets
-    |> @pbr.add_mesh(@pbr.mesh3d_geometry_plane(26.0F, 10.0F))
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.plane3d_mesh_from_size(26.0F, 10.0F, 0),
+    )
   let plane_material = material_assets
     |> @pbr.add_material(@sprite.Color::srgb(0.09F, 0.10F, 0.13F))
 
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(plane_mesh),
+        @mesh.Mesh3d::new(plane_mesh),
         @pbr.MeshMaterial3d::new(plane_material),
         @transform.Transform::identity(),
       ),
@@ -85,7 +87,7 @@ fn setup(
       ),
     )
   let icosphere_mesh = mesh_assets
-    |> @pbr.add_mesh(@pbr.mesh3d_geometry_icosphere(0.75F, 3))
+    |> @pbr.add_mesh(@mesh_primitives_dim3.icosphere_mesh(0.75F, 3))
 
   let mat_red = material_assets
     |> @pbr.add_material(@sprite.Color::srgb(0.88F, 0.32F, 0.35F))

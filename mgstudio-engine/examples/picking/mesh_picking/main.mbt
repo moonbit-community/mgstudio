@@ -47,7 +47,7 @@ fn spawn_pickable_shape(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(mesh),
+        @mesh.Mesh3d::new(mesh),
         @pbr.MeshMaterial3d::new(normal),
         @transform.Transform::from_xyz(position.x, position.y, position.z),
         PickableMesh::{ normal, hover, pressed },
@@ -75,8 +75,8 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
-          mesh_assets |> @pbr.add_mesh(@mesh.Mesh3dGeometry::circle(8.0F, 64)),
+        @mesh.Mesh3d::new(
+          mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(8.0F, 64)),
         ),
         @pbr.MeshMaterial3d::new(ground),
         @transform.Transform::identity().with_rotation(

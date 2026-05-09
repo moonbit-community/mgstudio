@@ -61,7 +61,7 @@ fn setup(
       let y = (Float::from_int(row) - half) / -8.0F
       commands.spawn(
         (
-          @pbr.Mesh3d::new(mesh_handle),
+          @mesh.Mesh3d::new(mesh_handle),
           @pbr.MeshMaterial3d::new(material_handle).with_extension_fragment_shader_path(
             Some(SHADER_PATH),
           ),

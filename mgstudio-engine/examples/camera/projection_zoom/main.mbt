@@ -51,7 +51,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   camera_settings : @app.Res[CameraSettings],
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let settings = camera_settings.get()
@@ -80,11 +80,13 @@ fn setup(
     commands.spawn(
       (
         @ecs.Name::new("Plane"),
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           meshes
           .peek()
           .add(
-            @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.plane3d_mesh_from_size(5.0F, 5.0F, 0),
+            ),
           ),
         ),
         @pbr.MeshMaterial3d::new(

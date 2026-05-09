@@ -42,8 +42,8 @@ test "render3d morph runtime: extract writes 256-byte aligned morph weight slab 
   let entity = world.spawn()
   try! world.set_by_key(
     entity,
-    Mesh3d::component(),
-    Mesh3d::new(@asset.Handle::new(11)),
+    @mesh.Mesh3d::component(),
+    @mesh.Mesh3d::new(@asset.Handle::new(11)),
   )
   try! world.set_by_key(
     entity,

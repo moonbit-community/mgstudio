@@ -149,10 +149,10 @@ fn uv_debug_texture() -> @asset.Handle[@asset.Image] {
 }
 
 ///|
-fn mesh3d_from_geometry(geometry : @pbr.Mesh3dGeometry) -> @pbr.Mesh3d {
-  @pbr.Mesh3d::new(
+fn mesh3d_from_geometry(geometry : @mesh.Mesh3dGeometry) -> @mesh.Mesh3d {
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(geometry),
+      @mesh.Mesh::from_3d_geometry(geometry),
     ),
   )
 }
@@ -160,7 +160,7 @@ fn mesh3d_from_geometry(geometry : @pbr.Mesh3dGeometry) -> @pbr.Mesh3d {
 ///|
 fn spawn_shape(
   world : @ecs.World,
-  mesh : @pbr.Mesh3d,
+  mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
   x : Float,
   row : Row,
@@ -187,25 +187,31 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let shapes = [
-    mesh3d_from_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_tetrahedron_shape(@math.Tetrahedron::default()),
+      @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_capsule(@math.Capsule3d::default()),
+      @mesh_primitives_dim3.tetrahedron_mesh(@math.Tetrahedron::default()),
     ),
-    mesh3d_from_geometry(@pbr.mesh3d_geometry_torus(@math.Torus::default())),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_cylinder(@math.Cylinder::default()),
+      @mesh_primitives_dim3.capsule3d_mesh(@math.Capsule3d::default()),
     ),
-    mesh3d_from_geometry(@pbr.mesh3d_geometry_cone(@math.Cone::default())),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_conical_frustum(@math.ConicalFrustum::default()),
+      @mesh_primitives_dim3.torus_mesh(@math.Torus::default()),
     ),
-    mesh3d_from_geometry(@pbr.mesh3d_geometry_icosphere(0.5F, 5)),
-    mesh3d_from_geometry(@pbr.mesh3d_geometry_uv_sphere(0.5F, 32, 18)),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_segment3d(
+      @mesh_primitives_dim3.cylinder_mesh(@math.Cylinder::default()),
+    ),
+    mesh3d_from_geometry(@mesh_primitives_dim3.cone_mesh(@math.Cone::default())),
+    mesh3d_from_geometry(
+      @mesh_primitives_dim3.conical_frustum_mesh(
+        @math.ConicalFrustum::default(),
+      ),
+    ),
+    mesh3d_from_geometry(@mesh_primitives_dim3.icosphere_mesh(0.5F, 5)),
+    mesh3d_from_geometry(@mesh_primitives_dim3.uv_sphere_mesh(0.5F, 32, 18)),
+    mesh3d_from_geometry(
+      @mesh_primitives_dim3.segment3d_line_list(
         @math.Segment3d::new(
           @math.Vec3::new(-0.5F, 0.0F, 0.0F),
           @math.Vec3::new(0.5F, 0.0F, 0.0F),
@@ -213,7 +219,7 @@ fn setup(world : @ecs.World) -> Unit {
       ),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_polyline3d(
+      @mesh_primitives_dim3.polyline3d_line_list(
         @math.Polyline3d::new([
           @math.Vec3::new(-0.5F, 0.0F, 0.0F),
           @math.Vec3::new(0.5F, 0.0F, 0.0F),
@@ -236,28 +242,34 @@ fn setup(world : @ecs.World) -> Unit {
 
   let extrusions = [
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_rectangle(@math.Rectangle::default(), 1.0F),
+      @mesh_primitives.extrusion_rectangle_mesh(
+        @math.Rectangle::default(),
+        1.0F,
+      ),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_capsule2d(@math.Capsule2d::default(), 1.0F),
+      @mesh_primitives.extrusion_capsule2d_mesh(
+        @math.Capsule2d::default(),
+        1.0F,
+      ),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_annulus(@math.Annulus::default(), 1.0F),
+      @mesh_primitives.extrusion_annulus_mesh(@math.Annulus::default(), 1.0F),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_circle(@math.Circle::default(), 1.0F),
+      @mesh_primitives.extrusion_circle_mesh(@math.Circle::default(), 1.0F),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_ellipse(@math.Ellipse::default(), 1.0F),
+      @mesh_primitives.extrusion_ellipse_mesh(@math.Ellipse::default(), 1.0F),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_regular_polygon(
+      @mesh_primitives.extrusion_regular_polygon_mesh(
         @math.RegularPolygon::default(),
         1.0F,
       ),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_triangle2d(
+      @mesh_primitives.extrusion_triangle2d_mesh(
         @math.Triangle2d::default(),
         1.0F,
       ),
@@ -277,45 +289,48 @@ fn setup(world : @ecs.World) -> Unit {
 
   let ring_extrusions = [
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_rectangle_ring(
+      @mesh_primitives.extrusion_rectangle_ring_mesh(
         @math.Rectangle::default(),
         THICKNESS,
         1.0F,
       ),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_capsule2d_ring(
+      @mesh_primitives.extrusion_capsule2d_ring_mesh(
         @math.Capsule2d::default(),
         THICKNESS,
         1.0F,
       ),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_ring2d(@math.Ring2d::new(1.0F, 0.5F), 1.0F),
+      @mesh_primitives.extrusion_ring2d_mesh(
+        @math.Ring2d::new(1.0F, 0.5F),
+        1.0F,
+      ),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_circle_ring(
+      @mesh_primitives.extrusion_circle_ring_mesh(
         @math.Circle::default(),
         THICKNESS,
         1.0F,
       ),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_ellipse_ring(
+      @mesh_primitives.extrusion_ellipse_ring_mesh(
         @math.Ellipse::default(),
         THICKNESS,
         1.0F,
       ),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_regular_polygon_ring(
+      @mesh_primitives.extrusion_regular_polygon_ring_mesh(
         @math.RegularPolygon::default(),
         THICKNESS,
         1.0F,
       ),
     ),
     mesh3d_from_geometry(
-      @pbr.mesh3d_geometry_extrusion_triangle2d_ring(
+      @mesh_primitives.extrusion_triangle2d_ring_mesh(
         @math.Triangle2d::default(),
         1.0F,
       ),
@@ -348,10 +363,10 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_plane_subdivisions(50.0F, 50.0F, 10),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(50.0F, 50.0F, 10),
         ),
       ),
     ),

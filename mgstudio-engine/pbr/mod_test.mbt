@@ -82,10 +82,10 @@ fn pbr_app_with_mesh3d_entity() -> (
     .add_plugins(PbrPlugin::default())
   let world = app.world()
   let mesh_handle = mesh_assets_mut_or_abort(world).val.add(
-    @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(1.0F, 1.0F)),
+    @mesh.Mesh::from_3d_geometry(@mesh_primitives.rectangle_mesh(1.0F, 1.0F)),
   )
   let entity = world.spawn()
-  try! world.set(entity, Mesh3d::new(mesh_handle))
+  try! world.set(entity, @mesh.Mesh3d::new(mesh_handle))
   world.advance_sequence() |> ignore
   world.advance_sequence() |> ignore
   (app, entity, mesh_handle)
@@ -106,7 +106,7 @@ test "render3d: modified Mesh asset marks Mesh3d as changed (bevy semantics)" {
   debug_inspect(
     mesh_assets_mut_or_abort(app.world()).val.set(
       mesh_handle,
-      @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(2.0F, 2.0F)),
+      @mesh.Mesh::from_3d_geometry(@mesh_primitives.rectangle_mesh(2.0F, 2.0F)),
     ),
     content="true",
   )

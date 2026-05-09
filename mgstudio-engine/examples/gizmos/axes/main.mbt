@@ -69,7 +69,7 @@ fn spawn_axes_cube(
     .entity_mut(entity)
     .insert(
       (
-        @pbr.Mesh3d::new(mesh),
+        @mesh.Mesh3d::new(mesh),
         @pbr.MeshMaterial3d::new(material),
         initial_transform,
         ShowAxes::{ length_scale: 0.8F },
@@ -123,7 +123,7 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(plane)
     .insert(
       (
-        @pbr.Mesh3d::new(plane_mesh),
+        @mesh.Mesh3d::new(plane_mesh),
         @pbr.MeshMaterial3d::new(plane_material),
         @transform.Transform::from_xyz(0.0F, -2.0F, 0.0F),
       ),

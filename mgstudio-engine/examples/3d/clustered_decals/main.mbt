@@ -564,10 +564,10 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(3.0F, 3.0F, 3.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(3.0F, 3.0F, 3.0F)),
         ),
       ),
     ),
@@ -621,10 +621,10 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let decal_a = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
       ),
     ),
@@ -645,10 +645,10 @@ fn setup(world : @ecs.World) -> Unit {
   clustered_decals_state.val.decal_a = Some(decal_a)
 
   let decal_b = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
       ),
     ),

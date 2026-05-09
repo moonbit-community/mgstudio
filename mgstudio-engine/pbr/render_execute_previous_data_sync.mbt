@@ -112,7 +112,7 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
         @ecs.Mut[@pbr_prepass.PreviousGlobalTransform],
       ),
     ),
-    (@ecs.With[Mesh3d], @ecs.Allow[@ecs.Disabled]),
+    (@ecs.With[@mesh.Mesh3d], @ecs.Allow[@ecs.Disabled]),
   ] = @ecs.query_filtered(
     world,
     (@ecs.With::new(ecs_key_mesh3d), @ecs.Allow::new(@ecs.ecs_key_disabled)),
@@ -134,9 +134,12 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
 
   let missing : Array[(@core.Entity, @pbr_prepass.PreviousGlobalTransform)] = []
   let missing_query : @ecs.Query[
-    (@core.Entity, (@ecs.Comp[Mesh3d], @ecs.Comp[@transform.GlobalTransform])),
     (
-      @ecs.With[Mesh3d],
+      @core.Entity,
+      (@ecs.Comp[@mesh.Mesh3d], @ecs.Comp[@transform.GlobalTransform]),
+    ),
+    (
+      @ecs.With[@mesh.Mesh3d],
       @ecs.Without[@pbr_prepass.PreviousGlobalTransform],
       @ecs.Allow[@ecs.Disabled],
     ),

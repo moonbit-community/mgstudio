@@ -25,6 +25,7 @@ import {
 }
 
 import {
+  "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/shader",
   "Milky2018/mgstudio/sprite_render",

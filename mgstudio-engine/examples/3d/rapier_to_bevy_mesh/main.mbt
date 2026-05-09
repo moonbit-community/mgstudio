@@ -65,7 +65,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
 
-  let cylinder = @pbr.mesh3d_geometry_cylinder(@math.Cylinder::new(0.6F, 2.0F))
+  let cylinder = @mesh_primitives_dim3.cylinder_mesh(
+    @math.Cylinder::new(0.6F, 2.0F),
+  )
   ignore(
     @rapier_examples.rapier3d_spawn_body_mesh(
       world,

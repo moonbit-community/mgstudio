@@ -13,10 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/cuboid.rs`.
-// `Milky2018/mgstudio/mesh` runtime owners.
-
-///|
 pub fn cuboid(
   x_length : Float,
   y_length : Float,
@@ -27,5 +23,217 @@ pub fn cuboid(
 
 ///|
 pub fn cuboid_mesh(shape : @math.Cuboid) -> @mesh.Mesh3dGeometry {
-  @mesh.Mesh3dGeometry::cuboid(shape)
+  let min = shape.half_size.mul_scalar(-1.0F)
+  let max = shape.half_size
+  let positions : Array[@math.Vec3] = []
+  let normals : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, min.y, max.z),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, min.y, max.z),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, max.y, max.z),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, max.y, max.z),
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+  )
+
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, max.y, min.z),
+    @math.Vec3::new(0.0F, 0.0F, -1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, max.y, min.z),
+    @math.Vec3::new(0.0F, 0.0F, -1.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, min.y, min.z),
+    @math.Vec3::new(0.0F, 0.0F, -1.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, min.y, min.z),
+    @math.Vec3::new(0.0F, 0.0F, -1.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+  )
+
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, min.y, min.z),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, max.y, min.z),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, max.y, max.z),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, min.y, max.z),
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+  )
+
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, min.y, max.z),
+    @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, max.y, max.z),
+    @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, max.y, min.z),
+    @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, min.y, min.z),
+    @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+  )
+
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, max.y, min.z),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, max.y, min.z),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, max.y, max.z),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, max.y, max.z),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+  )
+
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, min.y, max.z),
+    @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, min.y, max.z),
+    @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(min.x, min.y, min.z),
+    @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+  )
+  primitive_push_vertex(
+    positions,
+    normals,
+    uvs,
+    @math.Vec3::new(max.x, min.y, min.z),
+    @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+  )
+
+  primitive_geometry_with_normals(
+    positions,
+    normals,
+    uvs,
+    Some([
+      0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4, 8, 9, 10, 10, 11, 8, 12, 13, 14, 14, 15,
+      12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20,
+    ]),
+  )
 }

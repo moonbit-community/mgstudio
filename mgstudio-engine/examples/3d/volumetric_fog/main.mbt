@@ -114,7 +114,7 @@ fn create_text() -> String {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @pbr.Mesh3d,
+  mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
   transform : @transform.Transform,
 ) -> Unit {
@@ -154,10 +154,12 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(7.0F, 0.2F, 11.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(7.0F, 0.2F, 11.0F),
+          ),
         ),
       ),
     ),
@@ -167,10 +169,12 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(7.0F, 0.2F, 11.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(7.0F, 0.2F, 11.0F),
+          ),
         ),
       ),
     ),
@@ -180,10 +184,12 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(0.2F, 4.0F, 11.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(0.2F, 4.0F, 11.0F),
+          ),
         ),
       ),
     ),
@@ -193,10 +199,12 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(0.2F, 4.0F, 11.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(0.2F, 4.0F, 11.0F),
+          ),
         ),
       ),
     ),
@@ -208,10 +216,12 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
     let z = -0.5F + float_from_int(i) * 1.2F
     spawn_mesh(
       world,
-      @pbr.Mesh3d::new(
+      @mesh.Mesh3d::new(
         @pbr.mesh_assets_mut_or_abort().val.add(
-          @pbr.Mesh::from_3d_geometry(
-            @pbr.mesh3d_geometry_cuboid(0.45F, 1.6F, 0.45F),
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives_dim3.cuboid_mesh(
+              @math.Cuboid::new(0.45F, 1.6F, 0.45F),
+            ),
           ),
         ),
       ),
@@ -220,10 +230,12 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
     )
     spawn_mesh(
       world,
-      @pbr.Mesh3d::new(
+      @mesh.Mesh3d::new(
         @pbr.mesh_assets_mut_or_abort().val.add(
-          @pbr.Mesh::from_3d_geometry(
-            @pbr.mesh3d_geometry_cuboid(0.45F, 1.6F, 0.45F),
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives_dim3.cuboid_mesh(
+              @math.Cuboid::new(0.45F, 1.6F, 0.45F),
+            ),
           ),
         ),
       ),
@@ -244,10 +256,12 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(5.0F, 3.8F, 10.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(5.0F, 3.8F, 10.0F),
+          ),
         ),
       ),
     ),

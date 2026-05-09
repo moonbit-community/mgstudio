@@ -40,7 +40,7 @@ fn setup(
     let x = Float::from_int(i) * 1.6F - 2.4F
     commands.spawn(
       (
-        @pbr.Mesh3d::new(mesh),
+        @mesh.Mesh3d::new(mesh),
         @pbr.MeshMaterial3d::new(material)
         .with_extension_fragment_shader_path(Some(SHADER_PATH))
         .with_extension_tag(i),

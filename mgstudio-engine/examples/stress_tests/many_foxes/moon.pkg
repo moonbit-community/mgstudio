@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/input/events" @input_events,
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/scene",
   "Milky2018/mgstudio/sprite",

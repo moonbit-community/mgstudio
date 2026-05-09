@@ -95,16 +95,16 @@ pub fn rapier3d_unlit_material(color : @sprite.Color) -> @pbr.MeshMaterial3d {
 ///|
 pub fn rapier3d_spawn_body_mesh(
   world : @ecs.World,
-  geometry : @pbr.Mesh3dGeometry,
+  geometry : @mesh.Mesh3dGeometry,
   color : @sprite.Color,
   transform : @transform.Transform,
   rigid_body : @physics3d.RigidBody3d?,
   collider : @physics3d.Collider3d?,
 ) -> @core.Entity {
   let entity = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(geometry),
+        @mesh.Mesh::from_3d_geometry(geometry),
       ),
     ),
     rapier3d_unlit_material(color),
@@ -129,7 +129,9 @@ pub fn rapier3d_spawn_cuboid(
 ) -> @core.Entity {
   rapier3d_spawn_body_mesh(
     world,
-    @pbr.mesh3d_geometry_cuboid(half_extents.x, half_extents.y, half_extents.z),
+    @mesh_primitives_dim3.cuboid_mesh(
+      @math.Cuboid::new(half_extents.x, half_extents.y, half_extents.z),
+    ),
     color,
     @transform.Transform::from_xyz(position.x, position.y, position.z),
     rigid_body,
@@ -155,7 +157,7 @@ pub fn rapier3d_spawn_ball(
 ) -> @core.Entity {
   rapier3d_spawn_body_mesh(
     world,
-    @pbr.mesh3d_geometry_sphere(radius),
+    @mesh_primitives_dim3.icosphere_mesh(radius, 5),
     color,
     @transform.Transform::from_xyz(position.x, position.y, position.z),
     rigid_body,
@@ -174,7 +176,7 @@ pub fn rapier3d_spawn_capsule_y(
 ) -> @core.Entity {
   rapier3d_spawn_body_mesh(
     world,
-    @pbr.mesh3d_geometry_capsule(
+    @mesh_primitives_dim3.capsule3d_mesh(
       @math.Capsule3d::new(radius, half_length * 2.0F),
     ),
     color,

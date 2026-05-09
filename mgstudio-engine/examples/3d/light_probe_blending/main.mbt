@@ -270,7 +270,7 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -316,9 +316,9 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
+      @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
       ),
     ),
@@ -333,10 +333,10 @@ fn spawn_probe_gizmo_box(
   center_z : Float,
 ) -> @core.Entity {
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(side, side, side),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(side, side, side)),
         ),
       ),
     ),
@@ -498,10 +498,12 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   light_probe_blending_state.val.sphere = Some(sphere)
 
   let prism = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(4.0F, 2.0F, 20.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(4.0F, 2.0F, 20.0F),
+          ),
         ),
       ),
     ),

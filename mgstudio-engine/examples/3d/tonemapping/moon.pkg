@@ -21,6 +21,7 @@ import {
   "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
+  "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
 }
 
 supported_targets = "native"

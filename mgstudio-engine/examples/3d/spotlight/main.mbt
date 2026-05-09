@@ -58,7 +58,7 @@ fn lcg_unit(seed : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -104,9 +104,9 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
+      @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
       ),
     ),
@@ -158,9 +158,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let ground = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(ground_material),
@@ -168,9 +170,11 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   spotlight_state.val.movables.push(ground)
 
-  let cube_mesh = @pbr.Mesh3d::new(
+  let cube_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.5F, 0.5F, 0.5F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F)),
+      ),
     ),
   )
   let mut seed = 1987836746 % LCG_MOD

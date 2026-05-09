@@ -151,9 +151,13 @@ fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
   let handle = match internal_assets.val.skybox_proxy_mesh {
     Some(handle) => handle
     None => {
-      let mesh = Mesh3d::new(
+      let mesh = @mesh.Mesh3d::new(
         mesh_assets_mut_or_abort().val.add(
-          Mesh::from_3d_geometry(mesh3d_geometry_cuboid(2.0F, 2.0F, 2.0F)),
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives_dim3.cuboid_mesh(
+              @math.Cuboid::new(2.0F, 2.0F, 2.0F),
+            ),
+          ),
         ),
       )
       internal_assets.val.skybox_proxy_mesh = Some(mesh.mesh())
@@ -381,7 +385,7 @@ fn render3d_ray_local_aabb_hit(
 }
 
 ///|
-fn render3d_mesh_local_aabb(mesh3d : Mesh3d) -> (@math.Vec3, @math.Vec3)? {
+fn render3d_mesh_local_aabb(mesh3d : @mesh.Mesh3d) -> (@math.Vec3, @math.Vec3)? {
   guard @sprite.render_mesh_asset_get(mesh3d.mesh()) is Some(mesh_asset) else {
     return None
   }
@@ -410,7 +414,7 @@ fn render3d_mesh_local_aabb(mesh3d : Mesh3d) -> (@math.Vec3, @math.Vec3)? {
 }
 
 ///|
-fn render3d_mesh_local_aabb_center(mesh3d : Mesh3d) -> @math.Vec3? {
+fn render3d_mesh_local_aabb_center(mesh3d : @mesh.Mesh3d) -> @math.Vec3? {
   if render3d_mesh_local_aabb(mesh3d) is Some((min_corner, max_corner)) {
     Some(
       @math.Vec3::new(
@@ -682,7 +686,7 @@ pub fn render3d_extract_morphs(
   @pbr_render.morph_indices_swap_and_reset(morph_indices_ref)
   @pbr_render.morph_uniforms_swap_and_reset(morph_uniforms_ref)
   let mesh_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
+    (@core.Entity, @ecs.Comp[@mesh.Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
     @ecs.All,
   ] = @ecs.query(source_world)
   let morph_weight_updates : Array[(@core.Entity, @mesh.MorphWeights)] = []
@@ -723,7 +727,7 @@ pub fn render3d_prepare_morphs(
   morph_uniforms_ref : Ref[@pbr_render.MorphUniforms],
 ) -> Unit {
   let mesh_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
+    (@core.Entity, @ecs.Comp[@mesh.Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
     @ecs.All,
   ] = @ecs.query(source_world)
   let mesh_assets_ref = mesh_assets_mut_or_abort()

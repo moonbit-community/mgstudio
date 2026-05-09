@@ -55,13 +55,15 @@ fn max_int(a : Int, b : Int) -> Int {
 ///|
 fn setup(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let plane_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(9.0F, 0.1F, 9.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(9.0F, 0.1F, 9.0F)),
+      ),
     )
   let white_material = materials
     .peek()
@@ -69,7 +71,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(plane_mesh),
+        @mesh.Mesh3d::new(plane_mesh),
         @pbr.MeshMaterial3d::new(white_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
@@ -79,12 +81,14 @@ fn setup(
   let cube_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      ),
     )
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(cube_mesh),
+        @mesh.Mesh3d::new(cube_mesh),
         @pbr.MeshMaterial3d::new(white_material),
         @transform.Transform::from_xyz(0.0F, 0.55F, 0.0F),
       ),

@@ -44,7 +44,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.Mesh3d::new(cube_mesh),
+      @mesh.Mesh3d::new(cube_mesh),
       @pbr.MeshMaterial3d::new(material_handle).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),

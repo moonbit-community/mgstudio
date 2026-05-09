@@ -122,7 +122,7 @@ fn mesh_ray_cast_mesh_asset(
 ///|
 fn mesh_ray_cast_local_aabb(
   world : @ecs.World,
-  mesh3d : @pbr.Mesh3d,
+  mesh3d : @mesh.Mesh3d,
 ) -> (@math.Vec3, @math.Vec3)? {
   guard mesh_ray_cast_mesh_asset(world, mesh3d.mesh()) is Some(mesh_asset) else {
     return None

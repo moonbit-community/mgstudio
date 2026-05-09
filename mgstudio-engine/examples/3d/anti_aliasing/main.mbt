@@ -614,9 +614,11 @@ fn setup(world : @ecs.World) -> Unit {
   anti_aliasing_state.val.help_text = None
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(20.0F, 20.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(20.0F, 20.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(
@@ -640,10 +642,12 @@ fn setup(world : @ecs.World) -> Unit {
   for i in 0..<5 {
     let i_f = Float::from_double(i.to_double())
     @pbr.MeshMaterial3dBundle::new(
-      @pbr.Mesh3d::new(
+      @mesh.Mesh3d::new(
         @pbr.mesh_assets_mut_or_abort().val.add(
-          @pbr.Mesh::from_3d_geometry(
-            @pbr.mesh3d_geometry_cuboid(0.25F, 0.25F, 0.25F),
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives_dim3.cuboid_mesh(
+              @math.Cuboid::new(0.25F, 0.25F, 0.25F),
+            ),
           ),
         ),
       ),

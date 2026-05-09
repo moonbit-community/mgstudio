@@ -344,7 +344,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val
           |> @pbr.add_mesh(
             @math.Plane3d::new(

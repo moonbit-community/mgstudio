@@ -7,9 +7,11 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/time",
+  "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
 }
 
 supported_targets = "native"

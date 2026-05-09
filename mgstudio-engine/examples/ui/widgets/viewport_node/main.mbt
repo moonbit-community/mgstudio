@@ -66,7 +66,7 @@ fn setup(
   commands.spawn(
     (
       ViewportMesh::{  },
-      @pbr.Mesh3d::new(viewport_mesh),
+      @mesh.Mesh3d::new(viewport_mesh),
       @pbr.MeshMaterial3d::new(viewport_material),
       @transform.Transform::identity(),
     ),

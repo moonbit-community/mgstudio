@@ -144,13 +144,11 @@ fn spawn_small_cubes(
   world : @ecs.World,
   material : @asset.Handle[@pbr.StandardMaterial],
 ) -> Unit {
-  let mesh = @pbr.Mesh3d::new(
+  let mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @pbr.mesh3d_geometry_cuboid(
-          SMALL_CUBE_SIZE,
-          SMALL_CUBE_SIZE,
-          SMALL_CUBE_SIZE,
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(
+          @math.Cuboid::new(SMALL_CUBE_SIZE, SMALL_CUBE_SIZE, SMALL_CUBE_SIZE),
         ),
       ),
     ),
@@ -205,13 +203,11 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
   let large_cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(
-            LARGE_CUBE_SIZE,
-            LARGE_CUBE_SIZE,
-            LARGE_CUBE_SIZE,
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(LARGE_CUBE_SIZE, LARGE_CUBE_SIZE, LARGE_CUBE_SIZE),
           ),
         ),
       ),

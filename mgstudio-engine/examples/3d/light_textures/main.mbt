@@ -293,10 +293,10 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(3.0F, 3.0F, 3.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(3.0F, 3.0F, 3.0F)),
         ),
       ),
     ),
@@ -405,10 +405,12 @@ fn setup(world : @ecs.World) -> Unit {
     .with_unlit(true),
   )
   let spot_proxy = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(0.35F, 0.35F, 0.35F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(0.35F, 0.35F, 0.35F),
+          ),
         ),
       ),
     ),
@@ -416,10 +418,12 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(6.0F, 1.0F, 2.0F),
   ).spawn(world)
   let point_proxy = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(0.25F, 0.25F, 0.25F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(0.25F, 0.25F, 0.25F),
+          ),
         ),
       ),
     ),

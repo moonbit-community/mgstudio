@@ -17,6 +17,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
   "Milky2018/mgstudio/pbr/atmosphere" @pbr_atmosphere,
   "Milky2018/mgstudio/pbr/decal" @pbr_decal,
   "Milky2018/mgstudio/pbr/deferred" @pbr_deferred,
@@ -39,5 +40,9 @@ import {
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/shader/runtime_render" @shader_runtime_render,
 }
+
+import {
+  "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
+} for "test"
 
 supported_targets = "native"

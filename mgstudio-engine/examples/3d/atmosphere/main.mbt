@@ -164,7 +164,7 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @pbr.Mesh3d,
+  mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
   transform : @transform.Transform,
 ) -> Unit {
@@ -266,9 +266,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_rotation(@math.Quat::from_rotation_y(PI / 2.0F)),
   )
 
-  let probe_mesh = @pbr.Mesh3d::new(
+  let probe_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.icosphere_mesh(1.0F, 5),
+      ),
     ),
   )
   let probe_metal = @pbr.standard_material_add(
@@ -338,9 +340,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
   atmosphere_state.val.water_material = Some(water_material)
   spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
+        ),
       ),
     ),
     water_material,

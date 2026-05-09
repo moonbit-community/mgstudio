@@ -90,10 +90,10 @@ fn camera_transform_for_angle(angle : Float) -> @transform.Transform {
 fn auto_exposure_wall_geometry(
   width : Float,
   height : Float,
-) -> @pbr.Mesh3dGeometry {
+) -> @mesh.Mesh3dGeometry {
   let half_width = width * 0.5F
   let half_height = height * 0.5F
-  @pbr.Mesh3dGeometry::new(
+  @mesh.Mesh3dGeometry::new(
     [
       @math.Vec3::new(-half_width, half_height, 0.0F),
       @math.Vec3::new(half_width, -half_height, 0.0F),
@@ -117,7 +117,7 @@ fn auto_exposure_wall_geometry(
 ///|
 fn spawn_wall_panel(
   world : @ecs.World,
-  wall_mesh : @asset.Handle[@pbr.Mesh],
+  wall_mesh : @asset.Handle[@mesh.Mesh],
   side : @math.Vec3,
   level : Int,
 ) -> Unit {
@@ -137,7 +137,7 @@ fn spawn_wall_panel(
   )
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(wall_mesh),
+    @mesh.Mesh3d::new(wall_mesh),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(position.x, position.y, position.z).looking_at(
       target,
@@ -277,7 +277,7 @@ fn setup(world : @ecs.World) -> Unit {
   auto_exposure_state.val.camera = Some(camera)
 
   let wall_mesh = @pbr.mesh_assets_mut_or_abort().val.add(
-    @pbr.Mesh::from_3d_geometry(auto_exposure_wall_geometry(4.0F, 1.0F)),
+    @mesh.Mesh::from_3d_geometry(auto_exposure_wall_geometry(4.0F, 1.0F)),
   )
 
   for level in [-1, 0, 1] {

@@ -3657,7 +3657,7 @@ fn scene_build_from_gltf(
 
         nodes.push(
           SceneNode3d::new(
-            @pbr.Mesh3d::new(
+            @mesh.Mesh3d::new(
               @pbr.mesh_assets_mut_or_abort().val.add(mesh_asset),
             ),
             material_component,

@@ -44,7 +44,7 @@ pub impl @ecs.Component for CubeVelocity with component() {
 
 ///|
 struct CubeAssets {
-  mesh : @asset.Handle[@pbr.Mesh]
+  mesh : @asset.Handle[@mesh.Mesh]
   material : @asset.Handle[@pbr.StandardMaterial]
 }
 
@@ -104,7 +104,7 @@ fn spawn_cubes(
     ignore(
       commands.spawn(
         (
-          @pbr.Mesh3d::new(assets.mesh),
+          @mesh.Mesh3d::new(assets.mesh),
           @pbr.MeshMaterial3d::new(assets.material),
           @transform.Transform::from_xyz(x, y, z),
           CubeVelocity::{ value: @math.Vec3::new(vx, vy, vz) },
@@ -119,15 +119,17 @@ fn spawn_cubes(
 ///|
 fn setup(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   counter : @app.ResMut[CubeCounter],
 ) -> Unit {
   let floor_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(
-        @pbr.mesh3d_geometry_cuboid(120.0F, 1.0F, 120.0F),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(
+          @math.Cuboid::new(120.0F, 1.0F, 120.0F),
+        ),
       ),
     )
   let floor_material = materials
@@ -140,7 +142,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(floor_mesh),
+        @mesh.Mesh3d::new(floor_mesh),
         @pbr.MeshMaterial3d::new(floor_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
@@ -150,7 +152,9 @@ fn setup(
   let cube_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F)),
+      ),
     )
   let cube_material = materials
     .peek()

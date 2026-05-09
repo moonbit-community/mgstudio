@@ -37,11 +37,7 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @engine_pbr.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -87,9 +83,9 @@ fn uv_sphere_mesh(
     }
   }
 
-  @engine_pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @engine_pbr.mesh_assets_mut_or_abort().val.add(
-      @engine_pbr.Mesh::from_3d_geometry(
+      @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
       ),
     ),
@@ -99,7 +95,7 @@ fn uv_sphere_mesh(
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @engine_pbr.Mesh3d,
+  mesh : @mesh.Mesh3d,
   material : @asset.Handle[@engine_pbr.StandardMaterial],
   transform : @transform.Transform,
 ) -> Unit {

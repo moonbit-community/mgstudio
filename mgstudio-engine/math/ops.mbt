@@ -27,6 +27,11 @@ pub fn atan2(y : Float, x : Float) -> Float {
 }
 
 ///|
+pub fn acos(value : Float) -> Float {
+  Float::from_double(@coremath.acos(value.to_double()))
+}
+
+///|
 pub fn cos(value : Float) -> Float {
   Float::from_double(@coremath.cos(value.to_double()))
 }

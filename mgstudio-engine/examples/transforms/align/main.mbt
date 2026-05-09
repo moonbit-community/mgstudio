@@ -87,7 +87,9 @@ fn setup(
   let plane_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
+      ),
     )
   let ship_mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(0.8F, 0.4F, 2.0F))
@@ -107,7 +109,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(plane_mesh),
+        @mesh.Mesh3d::new(plane_mesh),
         @pbr.MeshMaterial3d::new(plane_material),
         @transform.Transform::from_xyz(0.0F, -2.0F, 0.0F),
       ),
@@ -117,7 +119,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(ship_mesh),
+        @mesh.Mesh3d::new(ship_mesh),
         @pbr.MeshMaterial3d::new(ship_material),
         Ship::{ target_index: 0, in_motion: false },
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),

@@ -102,7 +102,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
   )
 
   let plane = world.spawn_empty()
-  let plane_mesh = @pbr.Mesh3d::new(
+  let plane_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val
     |> @pbr.add_mesh(@math.Cuboid::new(500000.0F, 0.1F, 500000.0F)),
   )

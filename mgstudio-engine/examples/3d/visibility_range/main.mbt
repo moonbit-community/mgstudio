@@ -189,9 +189,11 @@ fn setup(world : @ecs.World) -> Unit {
   visibility_range_state.val.help_text = None
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(50.0F, 50.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(50.0F, 50.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(

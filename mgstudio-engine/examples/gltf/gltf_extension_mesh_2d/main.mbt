@@ -64,7 +64,7 @@ fn convert_mesh_to_2d(
   entity : @core.Entity,
   world : @ecs.World,
 ) -> Unit {
-  guard (world.entity(entity).get() catch { _ => None } : @pbr.Mesh3d?)
+  guard (world.entity(entity).get() catch { _ => None } : @mesh.Mesh3d?)
     is Some(mesh3d) else {
     return
   }
@@ -85,7 +85,7 @@ fn convert_mesh_to_2d(
   }
   let material_handle = color_materials_ref.val
     |> @sprite.add_material(@sprite.Color::white())
-  ignore(try! world.remove(entity, key=@pbr.Mesh3d::component()))
+  ignore(try! world.remove(entity, key=@mesh.Mesh3d::component()))
   ignore(try! world.remove(entity, key=@pbr.MeshMaterial3d::component()))
   ignore(
     try! world

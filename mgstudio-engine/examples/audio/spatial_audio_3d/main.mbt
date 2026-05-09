@@ -104,7 +104,7 @@ fn toggle_stopwatch(stopwatch : @time.Stopwatch) -> @time.Stopwatch {
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -150,9 +150,9 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
+      @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
       ),
     ),
@@ -264,7 +264,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @pbr.Mesh3d,
+  mesh : @mesh.Mesh3d,
   color : @sprite.Color,
   transform : @transform.Transform,
 ) -> @core.Entity {
@@ -287,10 +287,12 @@ fn spawn_listener_ear(
 ) -> Unit {
   let ear = spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(EAR_SIZE, EAR_SIZE, EAR_SIZE),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(EAR_SIZE, EAR_SIZE, EAR_SIZE),
+          ),
         ),
       ),
     ),

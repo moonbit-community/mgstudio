@@ -18,6 +18,8 @@ pub fn[T : Bounded3d] aabb_3d_of(T, Isometry3d) -> Aabb3d
 
 pub fn abs(Float) -> Float
 
+pub fn acos(Float) -> Float
+
 pub fn aspect_ratio_try_from_vec2(Vec2) -> AspectRatio raise AspectRatioError
 
 pub fn atan2(Float, Float) -> Float

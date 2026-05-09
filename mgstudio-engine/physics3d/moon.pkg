@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
   "moonbitlang/core/json",
   "Milky2018/moon_rapier/core" @rapier_core,
@@ -14,6 +15,7 @@ import {
   "Milky2018/moon_rapier/pipeline",
   "moonbitlang/core/hashmap",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
 }
 
 supported_targets = "native"

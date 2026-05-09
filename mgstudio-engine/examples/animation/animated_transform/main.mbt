@@ -152,7 +152,7 @@ fn setup(world : @ecs.World) -> Unit {
   let player = @animation.AnimationPlayer::default()
   player.play(animation_node).repeat() |> ignore
 
-  let planet_mesh = @pbr.Mesh3d::new(
+  let planet_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val
     |> @pbr.add_mesh(@math.Sphere::new(0.5F)),
   )
@@ -193,7 +193,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
 
-  let satellite_mesh = @pbr.Mesh3d::new(
+  let satellite_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val
     |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F)),
   )

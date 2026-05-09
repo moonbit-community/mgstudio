@@ -85,7 +85,7 @@ fn setup(
   commands.spawn(
     (
       ComputeMeshTarget::{  },
-      @pbr.Mesh3d::new(mesh_handle),
+      @mesh.Mesh3d::new(mesh_handle),
       @pbr.MeshMaterial3d::new(material).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),
@@ -115,7 +115,7 @@ fn setup(
 ///|
 fn compute_mesh_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query[@ecs.Comp[@pbr.Mesh3d], @ecs.With[ComputeMeshTarget]],
+  query : @ecs.Query[@ecs.Comp[@mesh.Mesh3d], @ecs.With[ComputeMeshTarget]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
   let t = time.get().elapsed_seconds()

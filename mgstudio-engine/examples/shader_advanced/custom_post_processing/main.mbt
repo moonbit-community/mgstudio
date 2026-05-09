@@ -36,7 +36,11 @@ fn setup(
 ) -> Unit {
   let plane_mesh = mesh_assets
     .peek()
-    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)))
+    .add(
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.plane3d_mesh_from_size(8.0F, 8.0F, 0),
+      ),
+    )
   let cube_mesh = mesh_assets.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(1.8F, 1.8F, 1.8F))
   let plane_material = material_assets
@@ -55,7 +59,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(plane_mesh),
+        @mesh.Mesh3d::new(plane_mesh),
         @pbr.MeshMaterial3d::new(plane_material),
         @transform.Transform::identity(),
       ),
@@ -64,7 +68,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(cube_mesh),
+        @mesh.Mesh3d::new(cube_mesh),
         @pbr.MeshMaterial3d::new(cube_material),
         Rotates::{  },
         @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F),

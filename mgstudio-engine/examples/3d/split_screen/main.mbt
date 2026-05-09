@@ -62,9 +62,11 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Plane
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(

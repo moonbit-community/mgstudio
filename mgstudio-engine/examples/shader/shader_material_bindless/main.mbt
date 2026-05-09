@@ -41,7 +41,7 @@ fn setup(
     let x = Float::from_int(i) - Float::from_int(textures.length() - 1) * 0.5F
     commands.spawn(
       (
-        @pbr.Mesh3d::new(mesh),
+        @mesh.Mesh3d::new(mesh),
         @pbr.MeshMaterial3d::new(material)
         .with_extension_fragment_shader_path(Some(SHADER_PATH))
         .with_extension_tag(i),

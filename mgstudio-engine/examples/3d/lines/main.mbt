@@ -85,7 +85,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           mesh_assets
           |> @pbr.add_mesh(
             line_mesh_from_line_list(LineList::{
@@ -110,7 +110,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           mesh_assets
           |> @pbr.add_mesh(
             line_mesh_from_line_strip(LineStrip::{

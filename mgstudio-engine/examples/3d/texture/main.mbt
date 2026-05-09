@@ -29,7 +29,7 @@ fn setup(
   let material_assets = materials.peek()
   let quad_handle = mesh_assets
     |> @pbr.add_mesh(
-      @mesh.Mesh3dGeometry::rectangle(quad_width, quad_width * aspect),
+      @mesh_primitives.rectangle_mesh(quad_width, quad_width * aspect),
     )
 
   let base_material = material_assets
@@ -65,7 +65,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(quad_handle),
+        @mesh.Mesh3d::new(quad_handle),
         @pbr.MeshMaterial3d::new(base_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 1.5F).with_rotation(rotation),
       ),
@@ -75,7 +75,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(quad_handle),
+        @mesh.Mesh3d::new(quad_handle),
         @pbr.MeshMaterial3d::new(red_material),
         @transform.Transform::identity().with_rotation(rotation),
       ),
@@ -85,7 +85,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(quad_handle),
+        @mesh.Mesh3d::new(quad_handle),
         @pbr.MeshMaterial3d::new(blue_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, -1.5F).with_rotation(
           rotation,

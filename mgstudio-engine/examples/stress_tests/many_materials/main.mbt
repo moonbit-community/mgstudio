@@ -38,7 +38,7 @@ fn float_from_int(value : Int) -> Float {
 ///|
 fn setup(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let grid = GRID_SIZE
@@ -75,7 +75,9 @@ fn setup(
   let cube_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F)),
+      ),
     )
   for x in 0..<grid {
     for z in 0..<grid {
@@ -86,7 +88,7 @@ fn setup(
       ignore(
         commands.spawn(
           (
-            @pbr.Mesh3d::new(cube_mesh),
+            @mesh.Mesh3d::new(cube_mesh),
             @pbr.MeshMaterial3d::new(mat_handle),
             @transform.Transform::from_xyz(
               float_from_int(x),

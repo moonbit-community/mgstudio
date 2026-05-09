@@ -77,7 +77,7 @@ fn setup(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(floor_mesh),
+        @mesh.Mesh3d::new(floor_mesh),
         @pbr.MeshMaterial3d::new(floor_material),
         @transform.Transform::from_xyz(0.0F, -0.05F, 0.0F),
       ),
@@ -99,7 +99,7 @@ fn setup(commands : @app.Commands) -> Unit {
       ignore(
         commands.spawn(
           (
-            @pbr.Mesh3d::new(cube_mesh),
+            @mesh.Mesh3d::new(cube_mesh),
             @pbr.MeshMaterial3d::new(material),
             @transform.Transform::from_xyz(
               (float_from_int(x) - float_from_int(GRID_SIDE) * 0.5F) * 1.4F,

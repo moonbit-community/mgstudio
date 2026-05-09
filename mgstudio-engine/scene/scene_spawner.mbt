@@ -642,7 +642,7 @@ fn scene_spawn_instance_when_ready(
             let cloned_handle = mesh_assets_ref.val.add(
               scene_clone_mesh_asset(mesh_asset),
             )
-            @pbr.Mesh3d::new(cloned_handle)
+            @mesh.Mesh3d::new(cloned_handle)
           }
           None => mesh_component
         }

@@ -97,7 +97,7 @@ fn setup(
       let py = (Float::from_int(y) - Float::from_int(GRID_H - 1) * 0.5F) * 0.3F
       commands.spawn(
         (
-          @pbr.Mesh3d::new(cell_mesh),
+          @mesh.Mesh3d::new(cell_mesh),
           @pbr.MeshMaterial3d::new(material).with_extension_fragment_shader_path(
             Some(SHADER_PATH),
           ),

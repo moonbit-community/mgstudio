@@ -98,12 +98,12 @@ fn setup(
 ) -> Unit {
   let ground_mesh = meshes
     .peek()
-    .add(@mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::circle(4.0F, 32)))
+    .add(@mesh.Mesh::from_3d_geometry(@mesh_primitives.circle_mesh(4.0F, 32)))
   let cube_mesh = meshes
     .peek()
     .add(
       @mesh.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::cuboid(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
       ),
     )
   let white_material = materials
@@ -135,7 +135,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.Mesh3d::new(ground_mesh),
+      @mesh.Mesh3d::new(ground_mesh),
       @pbr.MeshMaterial3d::new(white_material),
       @transform.Transform::from_rotation(
         @math.Quat::from_rotation_x(-@math.pi() / 2.0F),
@@ -146,7 +146,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.Mesh3d::new(cube_mesh),
+      @mesh.Mesh3d::new(cube_mesh),
       @pbr.MeshMaterial3d::new(cube_material),
       @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
     ),

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d] = @mesh.ecs_key_mesh3d
+pub let ecs_key_mesh3d : @ecs.ComponentKey[@mesh.Mesh3d] = @mesh.ecs_key_mesh3d
 
 ///|
 pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap] = @lightmap.ecs_key_lightmap

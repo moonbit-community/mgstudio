@@ -37,14 +37,14 @@ fn Movable::new(spawn : @math.Vec3) -> Movable {
 ///|
 fn setup(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let entity_spawn = @math.Vec3::zero()
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
         @pbr.MeshMaterial3d::new(

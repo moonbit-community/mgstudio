@@ -33,7 +33,7 @@ pub fn Physics3dDebugRenderContext::default() -> Physics3dDebugRenderContext {
 
 ///|
 priv struct Physics3dDebugRenderState {
-  mut line_mesh : @pbr.Mesh3d?
+  mut line_mesh : @mesh.Mesh3d?
   mut dynamic_material : @pbr.MeshMaterial3d?
   mut fixed_material : @pbr.MeshMaterial3d?
   mut kinematic_material : @pbr.MeshMaterial3d?
@@ -108,10 +108,10 @@ fn physics3d_debug_ensure_assets() -> Unit {
     return
   }
   state.line_mesh = Some(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
       ),
     ),

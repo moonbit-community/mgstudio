@@ -57,7 +57,7 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -103,9 +103,9 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
+      @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
       ),
     ),
@@ -139,7 +139,7 @@ fn create_transparent_material(
 ///|
 fn spawn_mesh_with_layer(
   world : @ecs.World,
-  mesh : @pbr.Mesh3d,
+  mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
   transform : @transform.Transform,
   layers : @sprite.RenderLayers,
@@ -206,10 +206,10 @@ fn spawn_scene_quads(
   layers : @sprite.RenderLayers,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
-  let quad = @pbr.Mesh3d::new(
+  let quad = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @pbr.mesh3d_geometry_cuboid(3.0F, 3.0F, 0.05F),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(3.0F, 3.0F, 0.05F)),
       ),
     ),
   )
@@ -283,9 +283,11 @@ fn spawn_scene_occlusion(
   layers : @sprite.RenderLayers,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
-  let cube = @pbr.Mesh3d::new(
+  let cube = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      ),
     ),
   )
   let sphere = uv_sphere_mesh(1.0F, 16, 24)
@@ -369,9 +371,11 @@ fn spawn_scene_instancing(
   asset_server : @asset.AssetServer,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
-  let cube = @pbr.Mesh3d::new(
+  let cube = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      ),
     ),
   )
   let material = @pbr.standard_material_add(

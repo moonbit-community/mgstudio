@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
-// Bevy source: `bevy/crates/bevy_mesh/src/primitives/mod.rs`.
 // `Milky2018/mgstudio/mesh` runtime owners.
 
 ///|

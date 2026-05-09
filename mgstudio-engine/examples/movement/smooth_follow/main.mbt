@@ -110,18 +110,18 @@ fn min_float(a : Float, b : Float) -> Float {
 ///|
 fn setup(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           meshes
           .peek()
           .add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_plane(12.0F, 12.0F),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.plane3d_mesh_from_size(12.0F, 12.0F, 0),
             ),
           ),
         ),
@@ -141,11 +141,15 @@ fn setup(
 
   let sphere_mesh = meshes
     .peek()
-    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)))
+    .add(
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.icosphere_mesh(0.3F, 5),
+      ),
+    )
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(sphere_mesh),
+        @mesh.Mesh3d::new(sphere_mesh),
         @pbr.MeshMaterial3d::new(
           materials
           .peek()
@@ -163,7 +167,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(sphere_mesh),
+        @mesh.Mesh3d::new(sphere_mesh),
         @pbr.MeshMaterial3d::new(
           materials
           .peek()

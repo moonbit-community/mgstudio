@@ -91,7 +91,7 @@ fn setup(
       (
         Left::{  },
         @ecs.Name::new("Left Shape"),
-        @pbr.Mesh3d::new(left_shape_model),
+        @mesh.Mesh3d::new(left_shape_model),
         @pbr.MeshMaterial3d::new(material_handle),
         @transform.Transform::from_xyz(-3.0F, 0.0F, 0.0F),
         left_shape,
@@ -103,7 +103,7 @@ fn setup(
     commands.spawn(
       (
         @ecs.Name::new("Right Shape"),
-        @pbr.Mesh3d::new(right_shape_model),
+        @mesh.Mesh3d::new(right_shape_model),
         @pbr.MeshMaterial3d::new(material_handle),
         @transform.Transform::from_xyz(3.0F, 0.0F, 0.0F),
         right_shape,
@@ -160,7 +160,7 @@ fn alter_handle(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   right_shape : @ecs.Query[
-    (@ecs.Comp[Shape], @ecs.Comp[@pbr.Mesh3d]),
+    (@ecs.Comp[Shape], @ecs.Comp[@mesh.Mesh3d]),
     @ecs.Without[Left],
   ],
 ) -> Unit {
@@ -172,7 +172,7 @@ fn alter_handle(
     .insert(
       (
         next_shape,
-        @pbr.Mesh3d::new(asset_server.get().load(next_shape.mesh_asset_path())),
+        @mesh.Mesh3d::new(asset_server.get().load(next_shape.mesh_asset_path())),
       ),
     )
   })
@@ -181,7 +181,7 @@ fn alter_handle(
 ///|
 fn alter_mesh(
   is_mesh_scaled : @app.Local[Bool],
-  left_shape : @ecs.Query[@ecs.Comp[@pbr.Mesh3d], @ecs.With[Left]],
+  left_shape : @ecs.Query[@ecs.Comp[@mesh.Mesh3d], @ecs.With[Left]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
   guard (left_shape.single() catch { _ => None }) is Some(mesh3d_comp) else {

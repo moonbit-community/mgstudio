@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///|
-// Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/mod.rs`.
 // `Milky2018/mgstudio/mesh` runtime owners.
 
 ///|
@@ -57,3 +55,58 @@ pub using @mesh {type Mesh3dGeometry}
 
 ///|
 pub using @mesh {type Mesh3dPrimitiveTopology}
+
+///|
+fn primitive_f32(value : Int) -> Float {
+  Float::from_int(value)
+}
+
+///|
+fn primitive_geometry_with_normals(
+  positions : Array[@math.Vec3],
+  normals : Array[@math.Vec3],
+  uvs : Array[@math.Vec2],
+  indices : Array[Int]?,
+) -> @mesh.Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::new(positions, uvs, indices).with_custom_attribute_vec3(
+    @mesh.MESH3D_ATTRIBUTE_NORMAL_NAME,
+    normals,
+  )
+}
+
+///|
+fn primitive_geometry_with_normals_and_topology(
+  positions : Array[@math.Vec3],
+  normals : Array[@math.Vec3],
+  uvs : Array[@math.Vec2],
+  indices : Array[Int]?,
+  topology : @mesh.Mesh3dPrimitiveTopology,
+) -> @mesh.Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::new_with_topology(positions, uvs, indices, topology).with_custom_attribute_vec3(
+    @mesh.MESH3D_ATTRIBUTE_NORMAL_NAME,
+    normals,
+  )
+}
+
+///|
+fn primitive_zero_uvs(count : Int) -> Array[@math.Vec2] {
+  let uvs : Array[@math.Vec2] = []
+  for _ in 0..<count {
+    uvs.push(@math.Vec2::new(0.0F, 0.0F))
+  }
+  uvs
+}
+
+///|
+fn primitive_push_vertex(
+  positions : Array[@math.Vec3],
+  normals : Array[@math.Vec3],
+  uvs : Array[@math.Vec2],
+  position : @math.Vec3,
+  normal : @math.Vec3,
+  uv : @math.Vec2,
+) -> Unit {
+  positions.push(position)
+  normals.push(normal)
+  uvs.push(uv)
+}

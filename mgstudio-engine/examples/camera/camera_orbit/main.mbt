@@ -48,7 +48,7 @@ fn CameraSettings::default() -> CameraSettings {
 ///|
 fn setup(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   ignore(
@@ -68,11 +68,13 @@ fn setup(
     commands.spawn(
       (
         @ecs.Name::new("Plane"),
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           meshes
           .peek()
           .add(
-            @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.plane3d_mesh_from_size(5.0F, 5.0F, 0),
+            ),
           ),
         ),
         @pbr.MeshMaterial3d::new(
@@ -92,12 +94,14 @@ fn setup(
     commands.spawn(
       (
         @ecs.Name::new("Cube"),
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           meshes
           .peek()
           .add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+              ),
             ),
           ),
         ),

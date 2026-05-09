@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/plane.rs`.
-
-///|
 pub fn plane3d(normal : @math.Vec3, half_size : @math.Vec2) -> @math.Plane3d {
   @math.Plane3d::new(normal, half_size)
 }
@@ -23,4 +20,67 @@ pub fn plane3d(normal : @math.Vec3, half_size : @math.Vec2) -> @math.Plane3d {
 ///|
 pub fn plane3d_unit() -> @math.Plane3d {
   plane3d(@math.Vec3::new(0.0, 1.0, 0.0), @math.Vec2::new(0.5, 0.5))
+}
+
+///|
+pub fn plane3d_mesh(
+  plane : @math.Plane3d,
+  subdivisions : Int,
+) -> @mesh.Mesh3dGeometry {
+  let safe_subdivisions = if subdivisions < 0 { 0 } else { subdivisions }
+  let z_vertex_count = safe_subdivisions + 2
+  let x_vertex_count = safe_subdivisions + 2
+  let positions : Array[@math.Vec3] = []
+  let normals : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  let indices : Array[Int] = []
+  let normal = plane.normal().as_vec3()
+  let rotation = @math.Quat::from_rotation_arc(
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    normal,
+  )
+  let half_size = plane.half_size()
+  let size_x = half_size.x * 2.0F
+  let size_y = half_size.y * 2.0F
+
+  for z in 0..<z_vertex_count {
+    for x in 0..<x_vertex_count {
+      let tx = primitive_f32(x) / primitive_f32(x_vertex_count - 1)
+      let tz = primitive_f32(z) / primitive_f32(z_vertex_count - 1)
+      positions.push(
+        rotation.mul_vec3(
+          @math.Vec3::new((-0.5F + tx) * size_x, 0.0F, (-0.5F + tz) * size_y),
+        ),
+      )
+      normals.push(normal)
+      uvs.push(@math.Vec2::new(tx, tz))
+    }
+  }
+
+  for z in 0..<(z_vertex_count - 1) {
+    for x in 0..<(x_vertex_count - 1) {
+      let quad = z * x_vertex_count + x
+      indices.push(quad + x_vertex_count + 1)
+      indices.push(quad + 1)
+      indices.push(quad + x_vertex_count)
+      indices.push(quad)
+      indices.push(quad + x_vertex_count)
+      indices.push(quad + 1)
+    }
+  }
+
+  primitive_geometry_with_normals(positions, normals, uvs, Some(indices))
+}
+
+///|
+pub fn plane3d_mesh_from_size(
+  width : Float,
+  depth : Float,
+  subdivisions : Int,
+) -> @mesh.Mesh3dGeometry {
+  let plane = @math.Plane3d::new(
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Vec2::new(width * 0.5F, depth * 0.5F),
+  )
+  plane3d_mesh(plane, subdivisions)
 }

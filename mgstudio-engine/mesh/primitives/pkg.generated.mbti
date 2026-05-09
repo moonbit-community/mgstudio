@@ -13,6 +13,34 @@ pub fn circle_line_strip_mesh(Float, Int) -> @mesh.Mesh3dGeometry
 
 pub fn circle_mesh(Float, Int) -> @mesh.Mesh3dGeometry
 
+pub fn extrusion_annulus_mesh(@math.Annulus, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_capsule2d_mesh(@math.Capsule2d, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_capsule2d_ring_mesh(@math.Capsule2d, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_circle_mesh(@math.Circle, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_circle_ring_mesh(@math.Circle, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_ellipse_mesh(@math.Ellipse, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_ellipse_ring_mesh(@math.Ellipse, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_rectangle_mesh(@math.Rectangle, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_rectangle_ring_mesh(@math.Rectangle, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_regular_polygon_mesh(@math.RegularPolygon, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_regular_polygon_ring_mesh(@math.RegularPolygon, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_ring2d_mesh(@math.Ring2d, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_triangle2d_mesh(@math.Triangle2d, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_triangle2d_ring_mesh(@math.Triangle2d, Float) -> @mesh.Mesh3dGeometry
+
 pub fn extrusion_wireframe_mesh(@mesh.Mesh3dGeometry) -> @mesh.Mesh3dGeometry?
 
 pub fn rectangle(Float, Float) -> @math.Rectangle
@@ -22,6 +50,10 @@ pub fn rectangle_mesh(Float, Float) -> @mesh.Mesh3dGeometry
 // Errors
 
 // Types and methods
+pub enum PerimeterSegment {
+  Smooth(@math.Vec2, @math.Vec2, Array[Int])
+  Flat(Array[Int])
+}
 
 // Type aliases
 pub using @math {type Circle}

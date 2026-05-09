@@ -61,14 +61,14 @@ fn max_float(a : Float, b : Float) -> Float {
 ///|
 fn setup(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let room_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(
-        @pbr.mesh3d_geometry_cuboid(90.0F, 0.2F, 90.0F),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(90.0F, 0.2F, 90.0F)),
       ),
     )
   let room_material = materials
@@ -79,7 +79,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(room_mesh),
+        @mesh.Mesh3d::new(room_mesh),
         @pbr.MeshMaterial3d::new(room_material),
         @transform.Transform::from_xyz(0.0F, -12.0F, 0.0F),
       ),
@@ -89,7 +89,9 @@ fn setup(
   let marker_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(8.0F, 8.0F, 8.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(8.0F, 8.0F, 8.0F)),
+      ),
     )
   let marker_material = materials
     .peek()
@@ -99,7 +101,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(marker_mesh),
+        @mesh.Mesh3d::new(marker_mesh),
         @pbr.MeshMaterial3d::new(marker_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),

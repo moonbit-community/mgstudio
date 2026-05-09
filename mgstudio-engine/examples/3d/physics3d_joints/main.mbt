@@ -47,10 +47,12 @@ fn setup(world : @ecs.World) -> Unit {
     ).with_unlit(true),
   )
   let ground = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(16.0F, 1.0F, 16.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(16.0F, 1.0F, 16.0F),
+          ),
         ),
       ),
     ),
@@ -81,10 +83,10 @@ fn setup(world : @ecs.World) -> Unit {
     ).with_unlit(true),
   )
   let a = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_uv_sphere(0.4F, 16, 12),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.uv_sphere_mesh(0.4F, 16, 12),
         ),
       ),
     ),
@@ -103,10 +105,10 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let b = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_uv_sphere(0.4F, 16, 12),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.uv_sphere_mesh(0.4F, 16, 12),
         ),
       ),
     ),

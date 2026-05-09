@@ -490,7 +490,7 @@ fn setup_image_viewer_scene(
   let mesh_handle = mesh_assets
     .peek()
     .add(
-      @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(@mesh_primitives.rectangle_mesh(1.0F, 1.0F)),
     )
   let material_handle = material_assets
     .peek()
@@ -504,7 +504,7 @@ fn setup_image_viewer_scene(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(mesh_handle),
+        @mesh.Mesh3d::new(mesh_handle),
         @pbr.MeshMaterial3d::new(material_handle),
         transform,
         @visibility.Visibility::Hidden,
@@ -744,7 +744,7 @@ fn resize_image(
     (
       @ecs.Comp[HDRViewer],
       @ecs.Comp[@pbr.MeshMaterial3d],
-      @ecs.Comp[@pbr.Mesh3d],
+      @ecs.Comp[@mesh.Mesh3d],
     ),
     @ecs.All,
   ],
@@ -795,7 +795,7 @@ fn resize_image(
     .insert(
       viewer_mesh.mesh,
       @mesh.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::rectangle(size.x, size.y),
+        @mesh_primitives.rectangle_mesh(size.x, size.y),
       ),
     ),
   )

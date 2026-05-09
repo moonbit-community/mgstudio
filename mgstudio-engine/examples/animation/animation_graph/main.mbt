@@ -319,7 +319,7 @@ fn setup_scene(
   |> ignore
   commands.spawn(
     (
-      @pbr.Mesh3d::new(
+      @mesh.Mesh3d::new(
         mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(14.0F, 0.1F, 14.0F)),
       ),
       @pbr.MeshMaterial3d::new(

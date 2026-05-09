@@ -139,7 +139,7 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(mesh_entity)
     .insert(
       (
-        @pbr.Mesh3d::new(instance_handle),
+        @mesh.Mesh3d::new(instance_handle),
         @pbr.MeshMaterial3d::new(material_handle),
         @transform.Transform::identity(),
         @hierarchy.Parent::new(root),

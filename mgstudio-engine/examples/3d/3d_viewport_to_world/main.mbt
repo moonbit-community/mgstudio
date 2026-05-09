@@ -59,7 +59,7 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
-fn circle_line_mesh(radius : Float, segments : Int) -> @pbr.Mesh3d {
+fn circle_line_mesh(radius : Float, segments : Int) -> @mesh.Mesh3d {
   let safe_segments = if segments < 3 { 3 } else { segments }
   let points : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
@@ -74,9 +74,9 @@ fn circle_line_mesh(radius : Float, segments : Int) -> @pbr.Mesh3d {
     )
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  @pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
+      @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::new_with_topology(
           points,
           uvs,
@@ -174,9 +174,11 @@ fn ray_plane_intersection(
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let ground = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(20.0F, 20.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(20.0F, 20.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(

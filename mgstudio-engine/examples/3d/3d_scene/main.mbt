@@ -24,8 +24,8 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
-          mesh_assets |> @pbr.add_mesh(@mesh.Mesh3dGeometry::circle(4.0F, 32)),
+        @mesh.Mesh3d::new(
+          mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(4.0F, 32)),
         ),
         @pbr.MeshMaterial3d::new(
           material_assets |> @pbr.add_material(@sprite.Color::white()),
@@ -40,7 +40,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
         @pbr.MeshMaterial3d::new(

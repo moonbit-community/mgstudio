@@ -73,7 +73,7 @@ fn setup(
     commands.spawn(
       (
         InstanceSlot::{ index: i },
-        @pbr.Mesh3d::new(mesh),
+        @mesh.Mesh3d::new(mesh),
         @pbr.MeshMaterial3d::new(material).with_extension_fragment_shader_path(
           Some(SHADER_PATH),
         ),

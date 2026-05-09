@@ -57,7 +57,9 @@ fn setup(
   let material_assets = materials.peek()
 
   let plane_mesh = mesh_assets
-    |> @pbr.add_mesh(@pbr.mesh3d_geometry_plane(16.0F, 16.0F))
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.plane3d_mesh_from_size(16.0F, 16.0F, 0),
+    )
   let pyramid_mesh = mesh_assets |> @pbr.add_mesh(custom_pyramid_mesh())
 
   let plane_material = material_assets
@@ -74,7 +76,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(plane_mesh),
+        @mesh.Mesh3d::new(plane_mesh),
         @pbr.MeshMaterial3d::new(plane_material),
         @transform.Transform::identity(),
       ),
@@ -84,7 +86,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(pyramid_mesh),
+        @mesh.Mesh3d::new(pyramid_mesh),
         @pbr.MeshMaterial3d::new(pyramid_material),
         Rotates::{  },
         @transform.Transform::from_xyz(0.0F, 0.7F, 0.0F),

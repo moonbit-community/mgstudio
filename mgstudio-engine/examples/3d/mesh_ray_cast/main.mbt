@@ -197,7 +197,7 @@ fn reflect_direction(direction : @math.Vec3, normal : @math.Vec3) -> @math.Vec3 
 ///|
 fn spawn_box_plane(
   world : @ecs.World,
-  plane_mesh : @pbr.Mesh3d,
+  plane_mesh : @mesh.Mesh3d,
   plane_material : @asset.Handle[@pbr.StandardMaterial],
   translation : @math.Vec3,
   rotation : @math.Quat,
@@ -214,8 +214,8 @@ fn spawn_box_plane(
 ///|
 fn spawn_beam_pool(
   world : @ecs.World,
-  line_mesh : @pbr.Mesh3d,
-  marker_mesh : @pbr.Mesh3d,
+  line_mesh : @mesh.Mesh3d,
+  marker_mesh : @mesh.Mesh3d,
   base_color : @sprite.Color,
 ) -> BeamPool {
   let segments : Array[BeamPrimitive] = []
@@ -262,9 +262,11 @@ fn setup(world : @ecs.World) -> Unit {
   raycast_state.val.green_pool = None
   raycast_state.val.origin_marker = None
 
-  let plane_mesh = @pbr.Mesh3d::new(
+  let plane_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.plane3d_mesh_from_size(1.0F, 1.0F, 0),
+      ),
     ),
   )
   let plane_material = @pbr.standard_material_add(
@@ -350,14 +352,18 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let line_mesh = @pbr.Mesh3d::new(
+  let line_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      ),
     ),
   )
-  let marker_mesh = @pbr.Mesh3d::new(
+  let marker_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      ),
     ),
   )
 

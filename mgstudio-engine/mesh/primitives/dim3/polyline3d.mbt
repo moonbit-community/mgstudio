@@ -13,11 +13,32 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_mesh/src/primitives/dim3/polyline3d.rs`.
-
-///|
 pub fn polyline3d(vertices : Array[@math.Vec3]) -> @math.Polyline3d {
   @math.Polyline3d::new(vertices)
 }
 
 ///|
+pub fn polyline3d_line_list(shape : @math.Polyline3d) -> @mesh.Mesh3dGeometry {
+  let positions : Array[@math.Vec3] = []
+  for vertex in shape.vertices {
+    positions.push(vertex)
+  }
+  let indices : Array[Int] = []
+  if positions.length() >= 2 {
+    for index in 0..<(positions.length() - 1) {
+      indices.push(index)
+      indices.push(index + 1)
+    }
+  }
+  let normals : Array[@math.Vec3] = []
+  for _ in 0..<positions.length() {
+    normals.push(@math.Vec3::new(0.0F, 1.0F, 0.0F))
+  }
+  primitive_geometry_with_normals_and_topology(
+    positions,
+    normals,
+    primitive_zero_uvs(positions.length()),
+    Some(indices),
+    @mesh.Mesh3dPrimitiveTopology::LineList,
+  )
+}

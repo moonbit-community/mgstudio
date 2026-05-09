@@ -231,8 +231,8 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
 ///|
 fn spawn_car(
   world : @ecs.World,
-  body_mesh : @pbr.Mesh3d,
-  wheel_mesh : @pbr.Mesh3d,
+  body_mesh : @mesh.Mesh3d,
+  wheel_mesh : @mesh.Mesh3d,
   car_material : @asset.Handle[@pbr.StandardMaterial],
   wheel_material : @asset.Handle[@pbr.StandardMaterial],
   phase : Float,
@@ -296,7 +296,7 @@ fn spawn_car(
 ///|
 fn spawn_barriers(
   world : @ecs.World,
-  mesh : @pbr.Mesh3d,
+  mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
 ) -> Unit {
   for side in [0, 1] {
@@ -321,8 +321,8 @@ fn spawn_barriers(
 ///|
 fn spawn_trees(
   world : @ecs.World,
-  leaves_mesh : @pbr.Mesh3d,
-  trunk_mesh : @pbr.Mesh3d,
+  leaves_mesh : @mesh.Mesh3d,
+  trunk_mesh : @mesh.Mesh3d,
   leaves_material : @asset.Handle[@pbr.StandardMaterial],
   trunk_material : @asset.Handle[@pbr.StandardMaterial],
 ) -> Unit {
@@ -372,9 +372,11 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
   )
 
-  let cube_mesh = @pbr.Mesh3d::new(
+  let cube_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      ),
     ),
   )
   let sky_material = @pbr.standard_material_add(
@@ -401,9 +403,11 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(1.0F, 1.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(1.0F, 1.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(ground_material),
@@ -435,16 +439,18 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
   )
 
-  let car_body_mesh = @pbr.Mesh3d::new(
+  let car_body_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @pbr.mesh3d_geometry_cuboid(0.3F, 0.15F, 0.55F),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.3F, 0.15F, 0.55F)),
       ),
     ),
   )
-  let wheel_mesh = @pbr.Mesh3d::new(
+  let wheel_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      ),
     ),
   )
   for i in 0..<N_CARS {
@@ -467,10 +473,10 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   spawn_barriers(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
       ),
     ),
@@ -487,9 +493,11 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       @sprite.Color::new(0.4F, 0.2F, 0.2F, 1.0F),
     ),
   )
-  let tree_mesh = @pbr.Mesh3d::new(
+  let tree_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      ),
     ),
   )
   spawn_trees(world, tree_mesh, tree_mesh, leaves_material, trunk_material)

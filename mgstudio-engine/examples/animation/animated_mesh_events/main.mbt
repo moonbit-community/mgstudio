@@ -38,7 +38,7 @@ struct AnimationSetup {
 
 ///|
 struct ParticleAssets {
-  mesh : @asset.Handle[@pbr.Mesh]
+  mesh : @asset.Handle[@mesh.Mesh]
   material : @asset.Handle[@pbr.StandardMaterial]
 }
 
@@ -222,7 +222,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let plane = world.spawn_empty()
-  let plane_mesh = @pbr.Mesh3d::new(
+  let plane_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val
     |> @pbr.add_mesh(@math.Cuboid::new(500000.0F, 0.1F, 500000.0F)),
   )
@@ -347,7 +347,7 @@ fn observe_on_step(
               @math.sin(angle) * speed,
             ),
           },
-          @pbr.Mesh3d::new(particle_assets.get().mesh),
+          @mesh.Mesh3d::new(particle_assets.get().mesh),
           @pbr.MeshMaterial3d::new(particle_assets.get().material),
           @transform.Transform::from_translation(translation).with_scale(
             @math.Vec3::splat(size),

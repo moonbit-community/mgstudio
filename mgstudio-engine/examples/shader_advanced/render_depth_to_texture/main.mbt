@@ -70,7 +70,7 @@ fn setup(
   commands.spawn(
     (
       OffscreenObject::{  },
-      @pbr.Mesh3d::new(offscreen_mesh),
+      @mesh.Mesh3d::new(offscreen_mesh),
       @pbr.MeshMaterial3d::new(offscreen_material),
       @transform.Transform::identity(),
       offscreen_layer,
@@ -80,7 +80,11 @@ fn setup(
 
   let preview_mesh = meshes
     .peek()
-    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)))
+    .add(
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.plane3d_mesh_from_size(5.0F, 5.0F, 0),
+      ),
+    )
   let preview_material = materials
     .peek()
     .add(
@@ -90,7 +94,7 @@ fn setup(
     )
   commands.spawn(
     (
-      @pbr.Mesh3d::new(preview_mesh),
+      @mesh.Mesh3d::new(preview_mesh),
       @pbr.MeshMaterial3d::new(preview_material).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),

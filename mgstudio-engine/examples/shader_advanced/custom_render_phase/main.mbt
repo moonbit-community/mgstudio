@@ -62,7 +62,7 @@ fn setup(
       commands.spawn(
         (
           PhaseA::{  },
-          @pbr.Mesh3d::new(mesh),
+          @mesh.Mesh3d::new(mesh),
           @pbr.MeshMaterial3d::new(material)
           .with_extension_fragment_shader_path(Some(SHADER_PATH))
           .with_extension_tag(0),
@@ -74,7 +74,7 @@ fn setup(
       commands.spawn(
         (
           PhaseB::{  },
-          @pbr.Mesh3d::new(mesh),
+          @mesh.Mesh3d::new(mesh),
           @pbr.MeshMaterial3d::new(material)
           .with_extension_fragment_shader_path(Some(SHADER_PATH))
           .with_extension_tag(1),

@@ -73,9 +73,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_circle(4.0F)),
+        @mesh.Mesh::from_3d_geometry(@mesh_primitives.circle_mesh(4.0F, 32)),
       ),
     ),
     @pbr.MeshMaterial3d::new(base_material),
@@ -83,9 +83,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let cube_mesh = @pbr.Mesh3d::new(
+  let cube_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      ),
     ),
   )
   for x in [-2.0F, 0.0F, 2.0F] {

@@ -53,7 +53,7 @@ test "render3d preupdate sync: writes previous view and global transform" {
   try! (world.set_by_key(
     mesh_entity,
     ecs_key_mesh3d,
-    Mesh3d::new(@asset.Handle::new(1)),
+    @mesh.Mesh3d::new(@asset.Handle::new(1)),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -163,7 +163,7 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
   try! (world.set_by_key(
     mesh_entity,
     ecs_key_mesh3d,
-    Mesh3d::new(@asset.Handle::new(2)),
+    @mesh.Mesh3d::new(@asset.Handle::new(2)),
   )
   |> ignore)
   try! (world.set_by_key(

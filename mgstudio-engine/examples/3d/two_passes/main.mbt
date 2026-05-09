@@ -24,8 +24,11 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
-          mesh_assets |> @pbr.add_mesh(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
+        @mesh.Mesh3d::new(
+          mesh_assets
+          |> @pbr.add_mesh(
+            @mesh_primitives_dim3.plane3d_mesh_from_size(5.0F, 5.0F, 0),
+          ),
         ),
         @pbr.MeshMaterial3d::new(
           material_assets
@@ -38,7 +41,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
         @pbr.MeshMaterial3d::new(

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn colorful_cube_mesh() -> @pbr.Mesh3d {
+fn colorful_cube_mesh() -> @mesh.Mesh3d {
   let positions = [
     // Top (+y)
     @math.Vec3::new(-0.5F, 0.5F, -0.5F),
@@ -87,9 +87,9 @@ fn colorful_cube_mesh() -> @pbr.Mesh3d {
       ),
     )
   }
-  @pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
+      @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::new_with_colors(
           positions,
           uvs,
@@ -104,9 +104,11 @@ fn colorful_cube_mesh() -> @pbr.Mesh3d {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(5.0F, 5.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(

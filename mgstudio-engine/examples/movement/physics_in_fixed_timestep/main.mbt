@@ -254,12 +254,16 @@ fn spawn_player(commands : @app.Commands) -> Unit {
 ///|
 fn spawn_environment(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let sphere_mesh = meshes
     .peek()
-    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)))
+    .add(
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.icosphere_mesh(0.3F, 5),
+      ),
+    )
   let sphere_material = materials
     .peek()
     .add(
@@ -284,7 +288,7 @@ fn spawn_environment(
             (
               @ecs.Name::new("Sphere"),
               @transform.Transform::from_translation(translation),
-              @pbr.Mesh3d::new(sphere_mesh),
+              @mesh.Mesh3d::new(sphere_mesh),
               @pbr.MeshMaterial3d::new(sphere_material),
             ),
           ),

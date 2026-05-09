@@ -45,8 +45,8 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(
-          mesh_assets |> @pbr.add_mesh(@mesh.Mesh3dGeometry::circle(4.0F, 32)),
+        @mesh.Mesh3d::new(
+          mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(4.0F, 32)),
         ),
         @pbr.MeshMaterial3d::new(plane_material),
         @transform.Transform::identity().with_rotation(
@@ -109,7 +109,7 @@ fn setup(
         |> @pbr.add_material(@sprite.Color::srgb(1.0F, 0.85F, 0.2F))
       let cube = commands.spawn(
         (
-          @pbr.Mesh3d::new(
+          @mesh.Mesh3d::new(
             mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F)),
           ),
           @pbr.MeshMaterial3d::new(normal),

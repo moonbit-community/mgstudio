@@ -52,7 +52,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.Mesh3d::new(cube),
+      @mesh.Mesh3d::new(cube),
       @pbr.MeshMaterial3d::new(low_steps).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),
@@ -63,7 +63,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @pbr.Mesh3d::new(cube),
+      @mesh.Mesh3d::new(cube),
       @pbr.MeshMaterial3d::new(high_steps).with_extension_fragment_shader_path(
         Some(SHADER_PATH),
       ),

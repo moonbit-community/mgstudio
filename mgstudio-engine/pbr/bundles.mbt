@@ -291,7 +291,7 @@ pub fn Camera3dBundle::with_depth_of_field(
 
 ///|
 pub struct MeshMaterial3dBundle {
-  mesh : Mesh3d
+  mesh : @mesh.Mesh3d
   material : MeshMaterial3d
   transform : @transform.Transform
   layers : @sprite.RenderLayers
@@ -302,7 +302,7 @@ pub struct MeshMaterial3dBundle {
 
 ///|
 pub fn MeshMaterial3dBundle::new(
-  mesh : Mesh3d,
+  mesh : @mesh.Mesh3d,
   material : MeshMaterial3d,
   transform : @transform.Transform,
 ) -> MeshMaterial3dBundle {

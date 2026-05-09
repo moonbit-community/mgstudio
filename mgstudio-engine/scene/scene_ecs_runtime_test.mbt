@@ -52,10 +52,12 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
       ),
     )
     let node = @scene.SceneNode3d::new(
-      @pbr.Mesh3d::new(
+      @mesh.Mesh3d::new(
         @pbr.mesh_assets_mut_or_abort().val.add(
-          @pbr.Mesh::from_3d_geometry(
-            @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 3.0F),
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives_dim3.cuboid_mesh(
+              @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+            ),
           ),
         ),
       ),
@@ -208,10 +210,12 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
       first_path,
       @scene.Scene::new([
         @scene.SceneNode3d::new(
-          @pbr.Mesh3d::new(
+          @mesh.Mesh3d::new(
             @pbr.mesh_assets_mut_or_abort().val.add(
-              @pbr.Mesh::from_3d_geometry(
-                @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 3.0F),
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+                ),
               ),
             ),
           ),
@@ -226,10 +230,12 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
       second_path,
       @scene.Scene::new([
         @scene.SceneNode3d::new(
-          @pbr.Mesh3d::new(
+          @mesh.Mesh3d::new(
             @pbr.mesh_assets_mut_or_abort().val.add(
-              @pbr.Mesh::from_3d_geometry(
-                @pbr.mesh3d_geometry_cuboid(4.0F, 5.0F, 6.0F),
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(4.0F, 5.0F, 6.0F),
+                ),
               ),
             ),
           ),

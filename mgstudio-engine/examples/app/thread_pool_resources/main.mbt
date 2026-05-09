@@ -70,14 +70,14 @@ fn max_int(a : Int, b : Int) -> Int {
 ///|
 fn setup(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let floor_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(
-        @pbr.mesh3d_geometry_cuboid(90.0F, 0.1F, 90.0F),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(90.0F, 0.1F, 90.0F)),
       ),
     )
   let floor_material = materials
@@ -89,13 +89,15 @@ fn setup(
     )
   ignore(
     commands.spawn(
-      (@pbr.Mesh3d::new(floor_mesh), @pbr.MeshMaterial3d::new(floor_material)),
+      (@mesh.Mesh3d::new(floor_mesh), @pbr.MeshMaterial3d::new(floor_material)),
     ),
   )
   let cube_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F)),
+      ),
     )
   let cube_material = materials
     .peek()
@@ -110,7 +112,7 @@ fn setup(
     ignore(
       commands.spawn(
         (
-          @pbr.Mesh3d::new(cube_mesh),
+          @mesh.Mesh3d::new(cube_mesh),
           @pbr.MeshMaterial3d::new(cube_material),
           @transform.Transform::from_xyz(
             (float_from_int(x) - half) * 2.1F,

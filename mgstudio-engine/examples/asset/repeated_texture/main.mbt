@@ -16,7 +16,7 @@
 fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let image_with_default_sampler = asset_server
@@ -74,7 +74,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(center_mesh),
+        @mesh.Mesh3d::new(center_mesh),
         @pbr.MeshMaterial3d::new(center_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
@@ -83,7 +83,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(left_mesh),
+        @mesh.Mesh3d::new(left_mesh),
         @pbr.MeshMaterial3d::new(left_material),
         @transform.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
       ),
@@ -92,7 +92,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(right_mesh),
+        @mesh.Mesh3d::new(right_mesh),
         @pbr.MeshMaterial3d::new(right_material),
         @transform.Transform::from_xyz(1.5F, 0.0F, 0.0F),
       ),

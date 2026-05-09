@@ -9,13 +9,25 @@ import {
 // Values
 pub fn capsule3d(Float, Float) -> @math.Capsule3d
 
+pub fn capsule3d_mesh(@math.Capsule3d) -> @mesh.Mesh3dGeometry
+
+pub fn capsule3d_mesh_with_options(@math.Capsule3d, Int, Int, Int) -> @mesh.Mesh3dGeometry
+
 pub fn capsule3d_unit() -> @math.Capsule3d
 
 pub fn cone(Float, Float) -> @math.Cone
 
+pub fn cone_mesh(@math.Cone) -> @mesh.Mesh3dGeometry
+
+pub fn cone_mesh_with_resolution(@math.Cone, Int) -> @mesh.Mesh3dGeometry
+
 pub fn cone_unit() -> @math.Cone
 
 pub fn conical_frustum(Float, Float, Float) -> @math.ConicalFrustum
+
+pub fn conical_frustum_mesh(@math.ConicalFrustum) -> @mesh.Mesh3dGeometry
+
+pub fn conical_frustum_mesh_with_options(@math.ConicalFrustum, Int, Int) -> @mesh.Mesh3dGeometry
 
 pub fn cuboid(Float, Float, Float) -> @math.Cuboid
 
@@ -23,13 +35,25 @@ pub fn cuboid_mesh(@math.Cuboid) -> @mesh.Mesh3dGeometry
 
 pub fn cylinder(Float, Float) -> @math.Cylinder
 
+pub fn cylinder_mesh(@math.Cylinder) -> @mesh.Mesh3dGeometry
+
+pub fn cylinder_mesh_with_options(@math.Cylinder, Int, Int, Bool) -> @mesh.Mesh3dGeometry
+
 pub fn cylinder_unit() -> @math.Cylinder
 
+pub fn icosphere_mesh(Float, Int) -> @mesh.Mesh3dGeometry
+
 pub fn plane3d(@math.Vec3, @math.Vec2) -> @math.Plane3d
+
+pub fn plane3d_mesh(@math.Plane3d, Int) -> @mesh.Mesh3dGeometry
+
+pub fn plane3d_mesh_from_size(Float, Float, Int) -> @mesh.Mesh3dGeometry
 
 pub fn plane3d_unit() -> @math.Plane3d
 
 pub fn polyline3d(Array[@math.Vec3]) -> @math.Polyline3d
+
+pub fn polyline3d_line_list(@math.Polyline3d) -> @mesh.Mesh3dGeometry
 
 pub fn segment3d(@math.Vec3, @math.Vec3) -> @math.Segment3d
 
@@ -41,11 +65,21 @@ pub fn sphere_mesh(Float, Int) -> @mesh.Mesh3dGeometry
 
 pub fn tetrahedron(@math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> @math.Tetrahedron
 
+pub fn tetrahedron_mesh(@math.Tetrahedron) -> @mesh.Mesh3dGeometry
+
 pub fn torus(Float, Float) -> @math.Torus
+
+pub fn torus_mesh(@math.Torus) -> @mesh.Mesh3dGeometry
+
+pub fn torus_mesh_with_resolution(@math.Torus, Int, Int) -> @mesh.Mesh3dGeometry
 
 pub fn torus_unit() -> @math.Torus
 
 pub fn triangle3d(@math.Vec3, @math.Vec3, @math.Vec3) -> @math.Triangle3d
+
+pub fn triangle3d_mesh(@math.Triangle3d) -> @mesh.Mesh3dGeometry
+
+pub fn uv_sphere_mesh(Float, Int, Int) -> @mesh.Mesh3dGeometry
 
 // Errors
 

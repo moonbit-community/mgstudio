@@ -138,9 +138,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @pbr.StandardMaterial::from_color(@sprite.Color::black()),
   )
 
-  let sphere_mesh = @pbr.Mesh3d::new(
+  let sphere_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.4F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.icosphere_mesh(0.4F, 5),
+      ),
     ),
   )
   for xi in 0..<10 {

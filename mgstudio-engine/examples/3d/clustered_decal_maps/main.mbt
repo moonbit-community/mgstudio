@@ -161,12 +161,13 @@ fn spawn_plane(
     .with_perceptual_roughness(0.35F),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_plane(
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(
             PLANE_HALF_SIZE * 2.0F,
             PLANE_HALF_SIZE * 2.0F,
+            0,
           ),
         ),
       ),
@@ -298,10 +299,12 @@ fn spawn_decal(world : @ecs.World) -> Unit {
     )
   }
   let entity = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 0.02F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(1.0F, 1.0F, 0.02F),
+          ),
         ),
       ),
     ),

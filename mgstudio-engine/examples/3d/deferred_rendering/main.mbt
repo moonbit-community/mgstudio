@@ -169,7 +169,7 @@ fn apply_render_mode(world : @ecs.World) -> Unit {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @pbr.Mesh3d,
+  mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
   transform : @transform.Transform,
 ) -> @core.Entity {
@@ -283,9 +283,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let plane = spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(50.0F, 50.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(50.0F, 50.0F, 0),
+        ),
       ),
     ),
     forward_material,
@@ -293,9 +295,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   plane |> ignore
 
-  let cube_mesh = @pbr.Mesh3d::new(
+  let cube_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.1F, 0.1F, 0.1F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.1F, 0.1F, 0.1F)),
+      ),
     ),
   )
   spawn_mesh(
@@ -319,10 +323,12 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let emissive_cube = spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(0.125F, 0.125F, 0.125F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(0.125F, 0.125F, 0.125F),
+          ),
         ),
       ),
     ),
@@ -367,10 +373,12 @@ fn setup(world : @ecs.World) -> Unit {
     let z = -jf * 0.25F + (if i < 3 { -0.15F } else { 0.15F }) + 0.4F
     let entity = spawn_mesh(
       world,
-      @pbr.Mesh3d::new(
+      @mesh.Mesh3d::new(
         @pbr.mesh_assets_mut_or_abort().val.add(
-          @pbr.Mesh::from_3d_geometry(
-            @pbr.mesh3d_geometry_cuboid(0.125F, 0.125F, 0.125F),
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives_dim3.cuboid_mesh(
+              @math.Cuboid::new(0.125F, 0.125F, 0.125F),
+            ),
           ),
         ),
       ),
@@ -394,10 +402,10 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let sky = spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(2.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(2.0F, 1.0F, 1.0F)),
         ),
       ),
     ),
@@ -440,10 +448,12 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let parallax_cube = spawn_mesh(
     world,
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(0.15F, 0.15F, 0.15F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(
+            @math.Cuboid::new(0.15F, 0.15F, 0.15F),
+          ),
         ),
       ),
     ),

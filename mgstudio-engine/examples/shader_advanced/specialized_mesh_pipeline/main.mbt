@@ -53,7 +53,7 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.Mesh3d::new(cube),
+      @mesh.Mesh3d::new(cube),
       @pbr.MeshMaterial3d::new(matte)
       .with_extension_fragment_shader_path(Some(SHADER_PATH))
       .with_extension_tag(10)
@@ -65,7 +65,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @pbr.Mesh3d::new(sphere),
+      @mesh.Mesh3d::new(sphere),
       @pbr.MeshMaterial3d::new(glossy)
       .with_extension_fragment_shader_path(Some(SHADER_PATH))
       .with_extension_tag(20)
@@ -77,7 +77,11 @@ fn setup(
   |> ignore
   let floor = meshes
     .peek()
-    .add(@pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(8.0F, 8.0F)))
+    .add(
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.plane3d_mesh_from_size(8.0F, 8.0F, 0),
+      ),
+    )
   let floor_mat = materials
     .peek()
     .add(
@@ -85,7 +89,7 @@ fn setup(
     )
   commands.spawn(
     (
-      @pbr.Mesh3d::new(floor),
+      @mesh.Mesh3d::new(floor),
       @pbr.MeshMaterial3d::new(floor_mat),
       @transform.Transform::identity(),
     ),

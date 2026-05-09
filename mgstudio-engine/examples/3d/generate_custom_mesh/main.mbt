@@ -188,7 +188,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(cube_mesh_handle),
+        @mesh.Mesh3d::new(cube_mesh_handle),
         @pbr.MeshMaterial3d::new(material),
         CustomUV::{  },
       ),
@@ -228,7 +228,7 @@ fn setup(
 ///|
 fn input_handler(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
-  mesh_query : @ecs.Query[@ecs.Comp[@pbr.Mesh3d], @ecs.With[CustomUV]],
+  mesh_query : @ecs.Query[@ecs.Comp[@mesh.Mesh3d], @ecs.With[CustomUV]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[CustomUV]],
   time : @app.Res[@time.Time[Unit]],

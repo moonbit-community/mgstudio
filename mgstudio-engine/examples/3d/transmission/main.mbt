@@ -308,7 +308,7 @@ fn register_material(
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -354,9 +354,9 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
+      @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
       ),
     ),
@@ -368,7 +368,7 @@ fn cylinder_mesh(
   radius : Float,
   height : Float,
   resolution : Int,
-) -> @pbr.Mesh3d {
+) -> @mesh.Mesh3d {
   let safe_radius = if radius <= 0.0F { 0.5F } else { radius }
   let safe_height = if height <= 0.0F { 1.0F } else { height }
   let safe_resolution = if resolution < 3 { 3 } else { resolution }
@@ -428,9 +428,9 @@ fn cylinder_mesh(
     )
   }
 
-  @pbr.Mesh3d::new(
+  @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
+      @mesh.Mesh::from_3d_geometry(
         @mesh.Mesh3dGeometry::new(positions, uvs, None),
       ),
     ),
@@ -440,7 +440,7 @@ fn cylinder_mesh(
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @pbr.Mesh3d,
+  mesh : @mesh.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
   transform : @transform.Transform,
 ) -> Unit {
@@ -463,15 +463,19 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
-  let cube_mesh = @pbr.Mesh3d::new(
+  let cube_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.7F, 0.7F, 0.7F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.7F, 0.7F, 0.7F)),
+      ),
     ),
   )
   let sphere_mesh = uv_sphere_mesh(0.9F, 24, 40)
-  let plane_mesh = @pbr.Mesh3d::new(
+  let plane_mesh = @mesh.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(2.0F, 2.0F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.plane3d_mesh_from_size(2.0F, 2.0F, 0),
+      ),
     ),
   )
   let candle_mesh = cylinder_mesh(0.5F, 2.0F, 50)

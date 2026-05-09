@@ -39,14 +39,14 @@ fn float_from_int(value : Int) -> Float {
 ///|
 fn setup(
   commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let floor_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(
-        @pbr.mesh3d_geometry_cuboid(70.0F, 0.1F, 70.0F),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(70.0F, 0.1F, 70.0F)),
       ),
     )
   let floor_material = materials
@@ -57,7 +57,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(floor_mesh),
+        @mesh.Mesh3d::new(floor_mesh),
         @pbr.MeshMaterial3d::new(floor_material),
         @transform.Transform::from_xyz(0.0F, -0.05F, 0.0F),
       ),
@@ -67,7 +67,9 @@ fn setup(
   let cube_mesh = meshes
     .peek()
     .add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.9F, 0.9F, 0.9F)),
+      @mesh.Mesh::from_3d_geometry(
+        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F)),
+      ),
     )
   let cube_material = materials
     .peek()
@@ -81,7 +83,7 @@ fn setup(
       ignore(
         commands.spawn(
           (
-            @pbr.Mesh3d::new(cube_mesh),
+            @mesh.Mesh3d::new(cube_mesh),
             @pbr.MeshMaterial3d::new(cube_material),
             @transform.Transform::from_xyz(px, 0.45F, pz),
             RotatingCube::{  },

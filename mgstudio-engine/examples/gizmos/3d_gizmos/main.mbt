@@ -179,7 +179,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(plane_mesh),
+        @mesh.Mesh3d::new(plane_mesh),
         @pbr.MeshMaterial3d::new(plane_material),
         @transform.Transform::from_xyz(0.0F, -0.05F, 0.0F),
       ),
@@ -196,7 +196,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.Mesh3d::new(cube_mesh),
+        @mesh.Mesh3d::new(cube_mesh),
         @pbr.MeshMaterial3d::new(cube_material),
         @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
       ),

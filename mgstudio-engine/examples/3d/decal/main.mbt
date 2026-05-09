@@ -57,10 +57,10 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
   let decal = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
       ),
     ),
@@ -107,9 +107,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
+    @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.plane3d_mesh_from_size(10.0F, 10.0F, 0),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(white_material),
@@ -126,10 +128,12 @@ fn setup(world : @ecs.World) -> Unit {
         obstacle_rotation(i, j),
       )
       @pbr.MeshMaterial3dBundle::new(
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val.add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE),
+              ),
             ),
           ),
         ),

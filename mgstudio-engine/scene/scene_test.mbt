@@ -438,10 +438,10 @@ test "scene: skinned mesh joints map by gltf node index" {
   let has_no_frustum_culling = Ref(false)
 
   run_scene_test_app(fn(world : @ecs.World) {
-    let mesh = @pbr.Mesh3d::new(
+    let mesh = @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
       ),
     )
@@ -552,10 +552,10 @@ test "scene: skinned mesh skips when any gltf joint node is unresolved" {
   let skinned_present = Ref(false)
 
   run_scene_test_app(fn(world : @ecs.World) {
-    let mesh = @pbr.Mesh3d::new(
+    let mesh = @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        @mesh.Mesh::from_3d_geometry(
+          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
       ),
     )
@@ -621,10 +621,12 @@ test "scene: skinned mesh policy NoFrustumCulling inserts no-frustum component" 
       @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
     ),
     fn(world : @ecs.World) {
-      let mesh = @pbr.Mesh3d::new(
+      let mesh = @mesh.Mesh3d::new(
         @pbr.mesh_assets_mut_or_abort().val.add(
-          @pbr.Mesh::from_3d_geometry(
-            @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives_dim3.cuboid_mesh(
+              @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+            ),
           ),
         ),
       )
@@ -703,10 +705,12 @@ test "scene: skinned mesh policy BindPose keeps static bounds components unset" 
       @gltf.GltfSkinnedMeshBoundsPolicy::BindPose,
     ),
     fn(world : @ecs.World) {
-      let mesh = @pbr.Mesh3d::new(
+      let mesh = @mesh.Mesh3d::new(
         @pbr.mesh_assets_mut_or_abort().val.add(
-          @pbr.Mesh::from_3d_geometry(
-            @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives_dim3.cuboid_mesh(
+              @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+            ),
           ),
         ),
       )
@@ -793,10 +797,10 @@ test "scene: SceneRoot propagates gltf extras metadata" {
       "models/Foo/Foo.gltf#extras",
       @scene.Scene::new([
         SceneNode3d::new(
-          @pbr.Mesh3d::new(
+          @mesh.Mesh3d::new(
             @pbr.mesh_assets_mut_or_abort().val.add(
-              @pbr.Mesh::from_3d_geometry(
-                @pbr.mesh3d_geometry_triangle(
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.triangle3d_mesh(
                   @math.Triangle3d::new(
                     @math.Vec3::new(0.0F, 0.0F, 0.0F),
                     @math.Vec3::new(1.0F, 0.0F, 0.0F),
@@ -985,10 +989,12 @@ test "scene: removing SceneRoot despawns spawned children" {
       "models/Foo/Foo.gltf#scene-root-remove-despawn",
       @scene.Scene::new([
         @scene.SceneNode3d::new(
-          @pbr.Mesh3d::new(
+          @mesh.Mesh3d::new(
             @pbr.mesh_assets_mut_or_abort().val.add(
-              @pbr.Mesh::from_3d_geometry(
-                @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+                ),
               ),
             ),
           ),
@@ -1062,10 +1068,12 @@ test "scene: SceneRoot spawns children and marks ready" {
       ),
     )
     let node = @scene.SceneNode3d::new(
-      @pbr.Mesh3d::new(
+      @mesh.Mesh3d::new(
         @pbr.mesh_assets_mut_or_abort().val.add(
-          @pbr.Mesh::from_3d_geometry(
-            @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 3.0F),
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives_dim3.cuboid_mesh(
+              @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+            ),
           ),
         ),
       ),
@@ -1210,10 +1218,12 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
         path,
         @scene.Scene::new([
           @scene.SceneNode3d::new(
-            @pbr.Mesh3d::new(
+            @mesh.Mesh3d::new(
               @pbr.mesh_assets_mut_or_abort().val.add(
-                @pbr.Mesh::from_3d_geometry(
-                  @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+                @mesh.Mesh::from_3d_geometry(
+                  @mesh_primitives_dim3.cuboid_mesh(
+                    @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+                  ),
                 ),
               ),
             ),
@@ -1285,10 +1295,12 @@ test "scene: instance readiness and entity iteration follow Bevy semantics" {
         path,
         @scene.Scene::new([
           @scene.SceneNode3d::new(
-            @pbr.Mesh3d::new(
+            @mesh.Mesh3d::new(
               @pbr.mesh_assets_mut_or_abort().val.add(
-                @pbr.Mesh::from_3d_geometry(
-                  @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+                @mesh.Mesh::from_3d_geometry(
+                  @mesh_primitives_dim3.cuboid_mesh(
+                    @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+                  ),
                 ),
               ),
             ),
@@ -1353,10 +1365,12 @@ test "scene: SceneRoot propagates gltf material name" {
       path,
       @scene.Scene::new([
         @scene.SceneNode3d::new(
-          @pbr.Mesh3d::new(
+          @mesh.Mesh3d::new(
             @pbr.mesh_assets_mut_or_abort().val.add(
-              @pbr.Mesh::from_3d_geometry(
-                @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+                ),
               ),
             ),
           ),
@@ -1416,10 +1430,12 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     )
     let first_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val.add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 3.0F),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+              ),
             ),
           ),
         ),
@@ -1431,10 +1447,12 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     ])
     let second_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val.add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(4.0F, 5.0F, 6.0F),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(4.0F, 5.0F, 6.0F),
+              ),
             ),
           ),
         ),
@@ -1534,10 +1552,12 @@ test "scene: changed SceneRoot with same handle still respawns instance" {
       scene_path,
       @scene.Scene::new([
         @scene.SceneNode3d::new(
-          @pbr.Mesh3d::new(
+          @mesh.Mesh3d::new(
             @pbr.mesh_assets_mut_or_abort().val.add(
-              @pbr.Mesh::from_3d_geometry(
-                @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+              @mesh.Mesh::from_3d_geometry(
+                @mesh_primitives_dim3.cuboid_mesh(
+                  @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+                ),
               ),
             ),
           ),
@@ -1613,10 +1633,12 @@ test "scene: modified scene asset respawns SceneRoot children" {
     )
     let first_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val.add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 3.0F),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+              ),
             ),
           ),
         ),
@@ -1628,10 +1650,12 @@ test "scene: modified scene asset respawns SceneRoot children" {
     ])
     let second_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val.add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(4.0F, 5.0F, 6.0F),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(4.0F, 5.0F, 6.0F),
+              ),
             ),
           ),
         ),
@@ -1711,10 +1735,12 @@ test "scene: modified scene asset debounce suppresses rapid respawns" {
     )
     let first_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val.add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 3.0F),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(1.0F, 2.0F, 3.0F),
+              ),
             ),
           ),
         ),
@@ -1726,10 +1752,12 @@ test "scene: modified scene asset debounce suppresses rapid respawns" {
     ])
     let second_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val.add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(4.0F, 5.0F, 6.0F),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(4.0F, 5.0F, 6.0F),
+              ),
             ),
           ),
         ),
@@ -1741,10 +1769,12 @@ test "scene: modified scene asset debounce suppresses rapid respawns" {
     ])
     let third_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val.add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(7.0F, 8.0F, 9.0F),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(7.0F, 8.0F, 9.0F),
+              ),
             ),
           ),
         ),
@@ -1756,10 +1786,12 @@ test "scene: modified scene asset debounce suppresses rapid respawns" {
     ])
     let fourth_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @pbr.Mesh3d::new(
+        @mesh.Mesh3d::new(
           @pbr.mesh_assets_mut_or_abort().val.add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(10.0F, 11.0F, 12.0F),
+            @mesh.Mesh::from_3d_geometry(
+              @mesh_primitives_dim3.cuboid_mesh(
+                @math.Cuboid::new(10.0F, 11.0F, 12.0F),
+              ),
             ),
           ),
         ),
