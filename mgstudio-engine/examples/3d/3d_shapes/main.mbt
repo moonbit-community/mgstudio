@@ -214,60 +214,59 @@ fn setup(
   let shapes = [
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+      @mesh_primitives_dim3.CuboidMeshBuilder::new(1.0F, 1.0F, 1.0F).build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.tetrahedron_mesh(@math.Tetrahedron::default()),
+      @mesh_primitives_dim3.TetrahedronMeshBuilder::default().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.capsule3d_mesh(@math.Capsule3d::default()),
+      @mesh_primitives_dim3.Capsule3dMeshBuilder::default().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.torus_mesh(@math.Torus::default()),
+      @mesh_primitives_dim3.TorusMeshBuilder::default().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.cylinder_mesh(@math.Cylinder::default()),
+      @mesh_primitives_dim3.CylinderMeshBuilder::default().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.cone_mesh(@math.Cone::default()),
+      @mesh_primitives_dim3.ConeMeshBuilder::default().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.conical_frustum_mesh(
-        @math.ConicalFrustum::default(),
-      ),
+      @mesh_primitives_dim3.ConicalFrustumMeshBuilder::default().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.icosphere_mesh(0.5F, 5),
+      @mesh_primitives_dim3.SphereMeshBuilder::new(
+        0.5F,
+        @mesh_primitives_dim3.SphereKind::ico(5),
+      ).build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.uv_sphere_mesh(0.5F, 32, 18),
+      @mesh_primitives_dim3.SphereMeshBuilder::new(
+        0.5F,
+        @mesh_primitives_dim3.SphereKind::uv(32, 18),
+      ).build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.segment3d_line_list(
-        @math.Segment3d::new(
-          @math.Vec3::new(-0.5F, 0.0F, 0.0F),
-          @math.Vec3::new(0.5F, 0.0F, 0.0F),
-        ),
-      ),
+      @mesh_primitives_dim3.Segment3dMeshBuilder::default().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.polyline3d_line_list(
+      @mesh_primitives_dim3.Polyline3dMeshBuilder::new(
         @math.Polyline3d::new([
           @math.Vec3::new(-0.5F, 0.0F, 0.0F),
           @math.Vec3::new(0.5F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 0.5F, 0.0F),
         ]),
-      ),
+      ).build(),
     ),
   ]
 
