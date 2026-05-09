@@ -62,6 +62,11 @@ pub(open) trait MeshBuilder {
 }
 
 ///|
+pub(open) trait Meshable {
+  mesh(Self) -> @mesh.Mesh3dGeometry
+}
+
+///|
 fn primitive_f32(value : Int) -> Float {
   Float::from_int(value)
 }

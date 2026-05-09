@@ -712,6 +712,11 @@ pub impl MeshBuilder for SphereMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.Sphere with mesh(self) {
+  SphereMeshBuilder::from_sphere(self).build()
+}
+
+///|
 pub fn sphere_mesh(radius : Float, subdivisions : Int) -> @mesh.Mesh3dGeometry {
   icosphere_mesh(radius, subdivisions)
 }

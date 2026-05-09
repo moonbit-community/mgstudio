@@ -174,6 +174,11 @@ pub impl MeshBuilder for Capsule3dMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.Capsule3d with mesh(self) {
+  Capsule3dMeshBuilder::from_capsule(self).build()
+}
+
+///|
 pub fn capsule3d_mesh(shape : @math.Capsule3d) -> @mesh.Mesh3dGeometry {
   capsule3d_mesh_with_options(shape, 0, 32, 16)
 }

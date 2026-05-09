@@ -34,62 +34,62 @@ pub impl IntoPbrMeshAsset for @mesh.Mesh3dGeometry with into_pbr_mesh_asset(
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Cuboid with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.cuboid_mesh(self).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Plane3d with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.plane3d_mesh(self, 0).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Sphere with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.icosphere_mesh(self.diameter() * 0.5F, 5).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Cylinder with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.cylinder_mesh(self).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Capsule3d with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.capsule3d_mesh(self).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Triangle3d with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.triangle3d_mesh(self).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Tetrahedron with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.tetrahedron_mesh(self).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Cone with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.cone_mesh(self).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.ConicalFrustum with into_pbr_mesh_asset(
   self,
 ) {
-  @mesh_primitives_dim3.conical_frustum_mesh(self).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Torus with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.torus_mesh(self).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Segment3d with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.segment3d_line_list(self).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Polyline3d with into_pbr_mesh_asset(self) {
-  @mesh_primitives_dim3.polyline3d_line_list(self).to_mesh()
+  @mesh_primitives_dim3.Meshable::mesh(self).to_mesh()
 }

@@ -162,6 +162,11 @@ pub impl MeshBuilder for CylinderMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.Cylinder with mesh(self) {
+  CylinderMeshBuilder::from_cylinder(self).build()
+}
+
+///|
 pub fn cylinder_mesh(shape : @math.Cylinder) -> @mesh.Mesh3dGeometry {
   cylinder_mesh_with_options(shape, 32, 1, true)
 }

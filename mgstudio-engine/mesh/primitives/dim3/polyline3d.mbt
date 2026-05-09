@@ -47,6 +47,11 @@ pub impl MeshBuilder for Polyline3dMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.Polyline3d with mesh(self) {
+  Polyline3dMeshBuilder::new(self).build()
+}
+
+///|
 pub fn polyline3d_line_list(shape : @math.Polyline3d) -> @mesh.Mesh3dGeometry {
   let positions : Array[@math.Vec3] = []
   for vertex in shape.vertices {

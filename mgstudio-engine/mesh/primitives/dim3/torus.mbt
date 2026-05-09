@@ -133,6 +133,11 @@ pub impl MeshBuilder for TorusMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.Torus with mesh(self) {
+  TorusMeshBuilder::from_torus(self).build()
+}
+
+///|
 pub fn torus_mesh(shape : @math.Torus) -> @mesh.Mesh3dGeometry {
   torus_mesh_with_resolution(shape, 24, 32)
 }

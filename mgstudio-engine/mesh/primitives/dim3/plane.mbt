@@ -105,6 +105,11 @@ pub impl MeshBuilder for PlaneMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.Plane3d with mesh(self) {
+  PlaneMeshBuilder::{ plane: self, subdivisions: 0 }.build()
+}
+
+///|
 pub fn plane3d_mesh(
   plane : @math.Plane3d,
   subdivisions : Int,

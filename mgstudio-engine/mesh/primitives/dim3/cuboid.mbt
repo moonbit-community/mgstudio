@@ -67,6 +67,11 @@ pub impl MeshBuilder for CuboidMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.Cuboid with mesh(self) {
+  CuboidMeshBuilder::from_cuboid(self).build()
+}
+
+///|
 pub fn cuboid_mesh(shape : @math.Cuboid) -> @mesh.Mesh3dGeometry {
   let min = shape.half_size.mul_scalar(-1.0F)
   let max = shape.half_size

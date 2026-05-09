@@ -51,6 +51,11 @@ pub impl MeshBuilder for Triangle3dMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.Triangle3d with mesh(self) {
+  Triangle3dMeshBuilder::new(self).build()
+}
+
+///|
 pub fn triangle3d_mesh(shape : @math.Triangle3d) -> @mesh.Mesh3dGeometry {
   if shape.vertices.length() < 3 {
     return @mesh.Mesh3dGeometry::new([], [], None)

@@ -52,6 +52,11 @@ pub impl MeshBuilder for TetrahedronMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.Tetrahedron with mesh(self) {
+  TetrahedronMeshBuilder::new(self).build()
+}
+
+///|
 pub fn tetrahedron_mesh(shape : @math.Tetrahedron) -> @mesh.Mesh3dGeometry {
   let reverse_faces = tetrahedron_signed_volume(shape) < 0.0F
   let positions : Array[@math.Vec3] = []

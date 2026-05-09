@@ -317,3 +317,19 @@ pub(open) trait MeshBuilder {
   build(Self) -> @mesh.Mesh3dGeometry
 }
 
+pub(open) trait Meshable {
+  mesh(Self) -> @mesh.Mesh3dGeometry
+}
+pub impl Meshable for @math.Capsule3d
+pub impl Meshable for @math.Cone
+pub impl Meshable for @math.ConicalFrustum
+pub impl Meshable for @math.Cuboid
+pub impl Meshable for @math.Cylinder
+pub impl Meshable for @math.Plane3d
+pub impl Meshable for @math.Polyline3d
+pub impl Meshable for @math.Segment3d
+pub impl Meshable for @math.Sphere
+pub impl Meshable for @math.Tetrahedron
+pub impl Meshable for @math.Torus
+pub impl Meshable for @math.Triangle3d
+

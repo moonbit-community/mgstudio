@@ -91,6 +91,11 @@ pub impl MeshBuilder for ConicalFrustumMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.ConicalFrustum with mesh(self) {
+  ConicalFrustumMeshBuilder::from_frustum(self).build()
+}
+
+///|
 pub fn conical_frustum_mesh(
   shape : @math.ConicalFrustum,
 ) -> @mesh.Mesh3dGeometry {

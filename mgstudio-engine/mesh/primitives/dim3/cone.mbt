@@ -87,6 +87,11 @@ pub impl MeshBuilder for ConeMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Meshable for @math.Cone with mesh(self) {
+  ConeMeshBuilder::from_cone(self).build()
+}
+
+///|
 pub fn cone_mesh(shape : @math.Cone) -> @mesh.Mesh3dGeometry {
   cone_mesh_with_resolution(shape, 32)
 }
