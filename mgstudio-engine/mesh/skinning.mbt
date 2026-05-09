@@ -528,7 +528,7 @@ pub fn SkinnedMeshBounds::from_mesh(
 
 ///|
 pub struct MeshCustomAttributeVec3 {
-  name : String
+  attribute : MeshVertexAttribute
   values : Array[@math.Vec3]
 }
 
@@ -537,12 +537,41 @@ pub fn MeshCustomAttributeVec3::new(
   name : String,
   values : Array[@math.Vec3],
 ) -> MeshCustomAttributeVec3 {
-  { name, values }
+  MeshCustomAttributeVec3::new_with_attribute(
+    MeshVertexAttribute::new(
+      name,
+      first_available_custom_mesh_attribute() | name.hash().to_uint64(),
+      MeshVertexFormat::Float32x3,
+    ),
+    values,
+  )
+}
+
+///|
+pub fn MeshCustomAttributeVec3::new_with_attribute(
+  attribute : MeshVertexAttribute,
+  values : Array[@math.Vec3],
+) -> MeshCustomAttributeVec3 {
+  { attribute, values }
+}
+
+///|
+pub fn MeshCustomAttributeVec3::attribute(
+  self : MeshCustomAttributeVec3,
+) -> MeshVertexAttribute {
+  self.attribute
 }
 
 ///|
 pub fn MeshCustomAttributeVec3::name(self : MeshCustomAttributeVec3) -> String {
-  self.name
+  self.attribute.name()
+}
+
+///|
+pub fn MeshCustomAttributeVec3::id(
+  self : MeshCustomAttributeVec3,
+) -> MeshVertexAttributeId {
+  self.attribute.id()
 }
 
 ///|

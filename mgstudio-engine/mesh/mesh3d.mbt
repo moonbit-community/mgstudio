@@ -17,12 +17,12 @@ pub struct Mesh3dGeometry {
   positions : Array[@math.Vec3]
   mut normals : Array[@math.Vec3]?
   mut uvs : Array[@math.Vec2]?
-  colors : Array[@math.Vec4]?
-  joint_indices : Array[MeshJointIndices]?
-  joint_weights : Array[@math.Vec4]?
+  mut colors : Array[@math.Vec4]?
+  mut joint_indices : Array[MeshJointIndices]?
+  mut joint_weights : Array[@math.Vec4]?
   morph_target_positions : Array[Array[@math.Vec3]]?
   morph_target_names : Array[String]?
-  custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
+  mut custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
   mut tangents : Array[@math.Vec4]?
   indices : Array[Int]?
   topology : Mesh3dPrimitiveTopology

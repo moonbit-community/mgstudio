@@ -83,3 +83,40 @@ test "mesh: Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba gives default
     None => abort("expected line-strip normal-aware flatten data")
   }
 }
+
+///|
+test "mesh: Mesh3dGeometry standard attributes use vertex attribute ids" {
+  let geometry = Mesh3dGeometry::new_with_positions(
+    [@math.Vec3::new(1.0F, 2.0F, 3.0F)],
+    None,
+  )
+  ignore(
+    geometry.insert_attribute(
+      MeshVertexAttribute::normal(),
+      VertexAttributeValues::Float32x3([@math.Vec3::new(0.0F, 1.0F, 0.0F)]),
+    ),
+  )
+  ignore(
+    geometry.insert_attribute(
+      MeshVertexAttribute::uv_0(),
+      VertexAttributeValues::Float32x2([@math.Vec2::new(0.25F, 0.75F)]),
+    ),
+  )
+  debug_inspect(
+    geometry.contains_attribute(MeshVertexAttribute::position().id()),
+    content="true",
+  )
+  debug_inspect(
+    geometry.contains_attribute(MeshVertexAttribute::normal().id()),
+    content="true",
+  )
+  debug_inspect(
+    geometry.contains_attribute(MeshVertexAttribute::uv_0().id()),
+    content="true",
+  )
+  guard geometry.attribute(MeshVertexAttribute::normal().id())
+    is Some(VertexAttributeValues::Float32x3(normals)) else {
+    abort("missing normal attribute")
+  }
+  debug_inspect(normals[0].y.to_double(), content="1")
+}

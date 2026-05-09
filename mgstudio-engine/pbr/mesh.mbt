@@ -647,7 +647,10 @@ fn render3d_clone_mesh3d_geometry(
     for value in attribute.values() {
       values.push(value)
     }
-    cloned = cloned.with_custom_attribute_vec3(attribute.name(), values)
+    cloned = cloned.with_inserted_attribute(
+      attribute.attribute(),
+      @mesh.VertexAttributeValues::Float32x3(values),
+    )
   }
   if geometry.tangents is Some(existing) {
     let copied : Array[@math.Vec4] = []

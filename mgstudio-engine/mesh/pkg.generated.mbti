@@ -31,6 +31,8 @@ pub let ecs_key_skinned_mesh : @ecs.ComponentKey[SkinnedMesh]
 
 pub fn entity_aabb_from_skinned_mesh_bounds(@ecs.World, Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError]
 
+pub fn first_available_custom_mesh_attribute() -> UInt64
+
 pub fn mesh_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let mesh_set_inherit_weight : String
@@ -180,19 +182,22 @@ pub struct Mesh3dGeometry {
   positions : Array[@math.Vec3]
   mut normals : Array[@math.Vec3]?
   mut uvs : Array[@math.Vec2]?
-  colors : Array[@math.Vec4]?
-  joint_indices : Array[MeshJointIndices]?
-  joint_weights : Array[@math.Vec4]?
+  mut colors : Array[@math.Vec4]?
+  mut joint_indices : Array[MeshJointIndices]?
+  mut joint_weights : Array[@math.Vec4]?
   morph_target_positions : Array[Array[@math.Vec3]]?
   morph_target_names : Array[String]?
-  custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
+  mut custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
   mut tangents : Array[@math.Vec4]?
   indices : Array[Int]?
   topology : Mesh3dPrimitiveTopology
 }
+pub fn Mesh3dGeometry::attribute(Self, MeshVertexAttributeId) -> VertexAttributeValues?
+pub fn Mesh3dGeometry::attribute_data(Self, MeshVertexAttributeId) -> MeshAttributeData?
 pub fn Mesh3dGeometry::clear_indices(Self) -> Unit
 pub fn Mesh3dGeometry::clear_tangents(Self) -> Unit
 pub fn Mesh3dGeometry::clear_vertices(Self) -> Unit
+pub fn Mesh3dGeometry::contains_attribute(Self, MeshVertexAttributeId) -> Bool
 pub fn Mesh3dGeometry::custom_attribute_vec3(Self, String) -> Array[@math.Vec3]?
 pub fn Mesh3dGeometry::custom_attributes_vec3(Self) -> Array[MeshCustomAttributeVec3]
 pub fn Mesh3dGeometry::encode_interleaved_xyz_normal_uv_rgba_csv(Self) -> String?
@@ -208,6 +213,7 @@ pub fn Mesh3dGeometry::has_normals(Self) -> Bool
 pub fn Mesh3dGeometry::has_tangents(Self) -> Bool
 pub fn Mesh3dGeometry::has_uvs(Self) -> Bool
 pub fn Mesh3dGeometry::indices_or_sequential(Self) -> Array[Int]
+pub fn Mesh3dGeometry::insert_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Bool
 pub fn Mesh3dGeometry::joint_indices(Self) -> Array[MeshJointIndices]?
 pub fn Mesh3dGeometry::joint_weights(Self) -> Array[@math.Vec4]?
 pub fn Mesh3dGeometry::morph_target_names(Self) -> Array[String]?
@@ -225,6 +231,7 @@ pub fn Mesh3dGeometry::push_index(Self, Int) -> Bool
 pub fn Mesh3dGeometry::push_triangle_indices(Self, Int, Int, Int) -> Bool
 pub fn Mesh3dGeometry::push_vertex(Self, @math.Vec3, @math.Vec2) -> Int
 pub fn Mesh3dGeometry::push_vertex_with_color(Self, @math.Vec3, @math.Vec2, @math.Vec4) -> Bool
+pub fn Mesh3dGeometry::remove_attribute(Self, MeshVertexAttributeId) -> VertexAttributeValues?
 pub fn Mesh3dGeometry::replace_normals(Self, Array[@math.Vec3]?) -> Bool
 pub fn Mesh3dGeometry::replace_positions(Self, Array[@math.Vec3]) -> Bool
 pub fn Mesh3dGeometry::replace_tangents(Self, Array[@math.Vec4]?) -> Bool
@@ -246,9 +253,11 @@ pub fn Mesh3dGeometry::vertex_uv(Self, Int) -> @math.Vec2?
 pub fn Mesh3dGeometry::with_colors(Self, Array[@math.Vec4]?) -> Self
 pub fn Mesh3dGeometry::with_custom_attribute_vec3(Self, String, Array[@math.Vec3]) -> Self
 pub fn Mesh3dGeometry::with_indices(Self, Array[Int]?) -> Self
+pub fn Mesh3dGeometry::with_inserted_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Self
 pub fn Mesh3dGeometry::with_joint_data(Self, Array[MeshJointIndices]?, Array[@math.Vec4]?) -> Self
 pub fn Mesh3dGeometry::with_morph_targets(Self, Array[Array[@math.Vec3]]?, morph_target_names? : Array[String]?) -> Self
 pub fn Mesh3dGeometry::with_normals(Self, Array[@math.Vec3]?) -> Self
+pub fn Mesh3dGeometry::with_removed_attribute(Self, MeshVertexAttributeId) -> Self
 pub fn Mesh3dGeometry::with_topology(Self, Mesh3dPrimitiveTopology) -> Self
 pub fn Mesh3dGeometry::with_uvs(Self, Array[@math.Vec2]?) -> Self
 pub impl IntoMeshAsset for Mesh3dGeometry
@@ -274,17 +283,28 @@ pub(all) enum Mesh3dValidationError {
   IndexOutOfBounds(Int, Int)
 } derive(Eq, @debug.Debug)
 
+pub struct MeshAttributeData {
+  attribute : MeshVertexAttribute
+  values : VertexAttributeValues
+}
+pub fn MeshAttributeData::attribute(Self) -> MeshVertexAttribute
+pub fn MeshAttributeData::new(MeshVertexAttribute, VertexAttributeValues) -> Self
+pub fn MeshAttributeData::values(Self) -> VertexAttributeValues
+
 pub(all) enum MeshAttributeError {
   MissingAttribute(String)
   UnexpectedFormat(String, String)
 } derive(Eq, @debug.Debug)
 
 pub struct MeshCustomAttributeVec3 {
-  name : String
+  attribute : MeshVertexAttribute
   values : Array[@math.Vec3]
 }
+pub fn MeshCustomAttributeVec3::attribute(Self) -> MeshVertexAttribute
+pub fn MeshCustomAttributeVec3::id(Self) -> MeshVertexAttributeId
 pub fn MeshCustomAttributeVec3::name(Self) -> String
 pub fn MeshCustomAttributeVec3::new(String, Array[@math.Vec3]) -> Self
+pub fn MeshCustomAttributeVec3::new_with_attribute(MeshVertexAttribute, Array[@math.Vec3]) -> Self
 pub fn MeshCustomAttributeVec3::values(Self) -> Array[@math.Vec3]
 
 pub(all) enum MeshGenerateTangentsError {
@@ -321,6 +341,46 @@ pub fn MeshTag::value(Self) -> UInt
 pub impl @ecs.Component for MeshTag
 pub impl ToJson for MeshTag
 pub impl @json.FromJson for MeshTag
+
+pub struct MeshVertexAttribute {
+  name : String
+  id : MeshVertexAttributeId
+  format : MeshVertexFormat
+} derive(@debug.Debug)
+pub fn MeshVertexAttribute::color() -> Self
+pub fn MeshVertexAttribute::format(Self) -> MeshVertexFormat
+pub fn MeshVertexAttribute::id(Self) -> MeshVertexAttributeId
+pub fn MeshVertexAttribute::joint_index() -> Self
+pub fn MeshVertexAttribute::joint_weight() -> Self
+pub fn MeshVertexAttribute::name(Self) -> String
+pub fn MeshVertexAttribute::new(String, UInt64, MeshVertexFormat) -> Self
+pub fn MeshVertexAttribute::normal() -> Self
+pub fn MeshVertexAttribute::position() -> Self
+pub fn MeshVertexAttribute::tangent() -> Self
+pub fn MeshVertexAttribute::uv_0() -> Self
+pub fn MeshVertexAttribute::uv_1() -> Self
+
+pub struct MeshVertexAttributeId {
+  value : UInt64
+} derive(Eq, @debug.Debug)
+pub fn MeshVertexAttributeId::new(UInt64) -> Self
+pub fn MeshVertexAttributeId::value(Self) -> UInt64
+
+pub(all) enum MeshVertexFormat {
+  Float32
+  Sint32
+  Uint32
+  Float32x2
+  Sint32x2
+  Uint32x2
+  Float32x3
+  Sint32x3
+  Uint32x3
+  Float32x4
+  Sint32x4
+  Uint32x4
+  Uint16x4
+} derive(Eq, @debug.Debug)
 
 pub struct MorphTargetMesh {
   source_mesh : @asset.Handle[Mesh]
@@ -399,6 +459,29 @@ pub fn SkinningMat4::to_row_major_f32(Self) -> Array[Float]
 pub fn SkinningMat4::transform_point3(Self, @math.Vec3) -> @math.Vec3
 pub fn SkinningMat4::write_affine3_mul_row_major_f32(Self, @math.Affine3, Array[Float], Int) -> Unit
 pub fn SkinningMat4::write_row_major_f32(Self, Array[Float], Int) -> Unit
+
+pub(all) enum VertexAttributeValues {
+  Float32(Array[Float])
+  Sint32(Array[Int])
+  Uint32(Array[UInt])
+  Float32x2(Array[@math.Vec2])
+  Sint32x2(Array[@math.IVec2])
+  Uint32x2(Array[@math.UVec2])
+  Float32x3(Array[@math.Vec3])
+  Sint32x3(Array[(Int, Int, Int)])
+  Uint32x3(Array[(UInt, UInt, UInt)])
+  Float32x4(Array[@math.Vec4])
+  Sint32x4(Array[(Int, Int, Int, Int)])
+  Uint32x4(Array[(UInt, UInt, UInt, UInt)])
+  Uint16x4(Array[MeshJointIndices])
+}
+pub fn VertexAttributeValues::as_float32x2(Self) -> Array[@math.Vec2]?
+pub fn VertexAttributeValues::as_float32x3(Self) -> Array[@math.Vec3]?
+pub fn VertexAttributeValues::as_float32x4(Self) -> Array[@math.Vec4]?
+pub fn VertexAttributeValues::as_uint16x4(Self) -> Array[MeshJointIndices]?
+pub fn VertexAttributeValues::format(Self) -> MeshVertexFormat
+pub fn VertexAttributeValues::is_empty(Self) -> Bool
+pub fn VertexAttributeValues::len(Self) -> Int
 
 // Type aliases
 
