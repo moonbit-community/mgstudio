@@ -672,6 +672,12 @@ pub fn[T] EvenCore::new(Interval, Array[T]) -> Self[T] raise EvenCoreError
 pub fn[T] EvenCore::sample_interp(Self[T], Float) -> InterpolationDatum[T]
 pub fn[T] EvenCore::sample_with(Self[T], Float, (T, T, Float) -> T) -> T
 
+pub(all) struct Extrusion[T] {
+  base_shape : T
+  half_depth : Float
+}
+pub fn[T] Extrusion::new(T, Float) -> Self[T]
+
 pub struct FloatOrd {
   value : Float
 } derive(Eq, @debug.Debug)

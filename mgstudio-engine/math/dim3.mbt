@@ -77,6 +77,17 @@ pub impl @json.FromJson for Cuboid with from_json(json, path) {
 }
 
 ///|
+pub(all) struct Extrusion[T] {
+  base_shape : T
+  half_depth : Float
+}
+
+///|
+pub fn[T] Extrusion::new(base_shape : T, depth : Float) -> Extrusion[T] {
+  Extrusion::{ base_shape, half_depth: depth / 2.0F }
+}
+
+///|
 pub(all) struct Sphere {
   radius : Float
 } derive(ToJson, FromJson)

@@ -101,6 +101,19 @@ test "math: 3d primitive defaults match Bevy sampling primitives" {
 }
 
 ///|
+test "math: extrusion stores base shape and half depth" {
+  let extrusion = Extrusion::new(Circle::new(0.5F), 2.0F)
+  debug_inspect(
+    sampling_test_approx_eq(extrusion.base_shape.radius, 0.5F),
+    content="true",
+  )
+  debug_inspect(
+    sampling_test_approx_eq(extrusion.half_depth, 1.0F),
+    content="true",
+  )
+}
+
+///|
 test "math: cuboid boundary and distribution surface are deterministic" {
   let cuboid = Cuboid::new(3.0F, 7.0F, 2.0F)
   let rng0 = @random.Rand::chacha8(seed=b"cuboid-boundary-seed-00000000001")
