@@ -68,7 +68,9 @@ fn mesh3d_push_face_vertex(
 }
 
 ///|
-fn mesh3d_geometry_bevy_cuboid(cuboid : @math.Cuboid) -> @mesh.Mesh3dGeometry {
+fn mesh3d_geometry_primitive_cuboid(
+  cuboid : @math.Cuboid,
+) -> @mesh.Mesh3dGeometry {
   let x = cuboid.half_size.x
   let y = cuboid.half_size.y
   let z = cuboid.half_size.z
@@ -345,7 +347,7 @@ pub fn mesh3d_geometry_plane_subdivisions(
 }
 
 ///|
-fn mesh3d_geometry_bevy_uv_sphere(
+fn mesh3d_geometry_primitive_uv_sphere(
   radius : Float,
   sectors : Int,
   stacks : Int,
@@ -401,7 +403,7 @@ fn mesh3d_geometry_bevy_uv_sphere(
 }
 
 ///|
-fn mesh3d_geometry_bevy_icosphere(
+fn mesh3d_geometry_primitive_icosphere(
   radius : Float,
   subdivisions : Int,
 ) -> @mesh.Mesh3dGeometry {
@@ -420,7 +422,7 @@ fn mesh3d_geometry_bevy_icosphere(
 }
 
 ///|
-fn mesh3d_geometry_bevy_cylinder(
+fn mesh3d_geometry_primitive_cylinder(
   cylinder : @math.Cylinder,
 ) -> @mesh.Mesh3dGeometry {
   let radius = if cylinder.radius <= 0.0F { 0.5F } else { cylinder.radius }
@@ -504,7 +506,7 @@ fn mesh3d_geometry_bevy_cylinder(
 }
 
 ///|
-fn mesh3d_geometry_bevy_capsule(
+fn mesh3d_geometry_primitive_capsule(
   capsule : @math.Capsule3d,
 ) -> @mesh.Mesh3dGeometry {
   let radius = if capsule.radius <= 0.0F { 0.5F } else { capsule.radius }

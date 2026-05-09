@@ -43,7 +43,7 @@ pub fn mesh3d_geometry_cuboid(
   height : Float,
   depth : Float,
 ) -> Mesh3dGeometry {
-  mesh3d_geometry_bevy_cuboid(@math.Cuboid::new(width, height, depth))
+  mesh3d_geometry_primitive_cuboid(@math.Cuboid::new(width, height, depth))
 }
 
 ///|
@@ -190,17 +190,17 @@ pub fn mesh3d_geometry_uv_sphere(
   sectors : Int,
   stacks : Int,
 ) -> @mesh.Mesh3dGeometry {
-  mesh3d_geometry_bevy_uv_sphere(radius, sectors, stacks)
+  mesh3d_geometry_primitive_uv_sphere(radius, sectors, stacks)
 }
 
 ///|
 pub fn mesh3d_geometry_cylinder(cylinder : @math.Cylinder) -> Mesh3dGeometry {
-  mesh3d_geometry_bevy_cylinder(cylinder)
+  mesh3d_geometry_primitive_cylinder(cylinder)
 }
 
 ///|
 pub fn mesh3d_geometry_capsule(capsule : @math.Capsule3d) -> Mesh3dGeometry {
-  mesh3d_geometry_bevy_capsule(capsule)
+  mesh3d_geometry_primitive_capsule(capsule)
 }
 
 ///|
@@ -226,7 +226,7 @@ pub fn mesh3d_geometry_icosphere(
   radius : Float,
   subdivisions : Int,
 ) -> Mesh3dGeometry {
-  mesh3d_geometry_bevy_icosphere(radius, subdivisions)
+  mesh3d_geometry_primitive_icosphere(radius, subdivisions)
 }
 
 ///|
@@ -249,7 +249,7 @@ pub impl IntoPbrMeshAsset for Mesh3dGeometry with into_pbr_mesh_asset(self) {
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Cuboid with into_pbr_mesh_asset(self) {
-  mesh3d_geometry_bevy_cuboid(self).to_mesh()
+  mesh3d_geometry_primitive_cuboid(self).to_mesh()
 }
 
 ///|

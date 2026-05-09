@@ -55,7 +55,7 @@ test "render3d: capsule helper builds valid geometry" {
 }
 
 ///|
-test "render3d: plane helper winds upward like Bevy Plane3d" {
+test "render3d: plane helper winds upward" {
   let geometry = mesh3d_geometry_plane(2.0F, 2.0F)
   let indices = geometry.indices_or_sequential()
   guard geometry.vertex_position(indices[0]) is Some(a) else {
