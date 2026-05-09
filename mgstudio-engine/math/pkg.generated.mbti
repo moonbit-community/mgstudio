@@ -875,6 +875,7 @@ pub struct Polyline3d {
 pub fn Polyline3d::new(Array[Vec3]) -> Self
 pub impl Bounded3d for Polyline3d
 pub impl Primitive3d for Polyline3d
+pub impl Default for Polyline3d
 
 pub(all) struct Quat {
   mut x : Float
@@ -1091,6 +1092,7 @@ pub fn Segment3d::point1(Self) -> Vec3
 pub fn Segment3d::point2(Self) -> Vec3
 pub impl Bounded3d for Segment3d
 pub impl Primitive3d for Segment3d
+pub impl Default for Segment3d
 
 pub(all) struct Sphere {
   radius : Float

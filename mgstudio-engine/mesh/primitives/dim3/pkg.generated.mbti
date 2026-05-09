@@ -134,6 +134,22 @@ pub enum CylinderAnchor {
   Bottom
 } derive(Eq, @debug.Debug)
 
+pub struct Polyline3dMeshBuilder {
+  polyline : @math.Polyline3d
+}
+pub fn Polyline3dMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
+pub fn Polyline3dMeshBuilder::default() -> Self
+pub fn Polyline3dMeshBuilder::new(@math.Polyline3d) -> Self
+pub impl MeshBuilder for Polyline3dMeshBuilder
+
+pub struct Segment3dMeshBuilder {
+  segment : @math.Segment3d
+}
+pub fn Segment3dMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
+pub fn Segment3dMeshBuilder::default() -> Self
+pub fn Segment3dMeshBuilder::new(@math.Segment3d) -> Self
+pub impl MeshBuilder for Segment3dMeshBuilder
+
 pub enum SphereKind {
   Ico(Int)
   Uv(Int, Int)
@@ -141,6 +157,22 @@ pub enum SphereKind {
 pub fn SphereKind::default() -> Self
 pub fn SphereKind::ico(Int) -> Self
 pub fn SphereKind::uv(Int, Int) -> Self
+
+pub struct TetrahedronMeshBuilder {
+  tetrahedron : @math.Tetrahedron
+}
+pub fn TetrahedronMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
+pub fn TetrahedronMeshBuilder::default() -> Self
+pub fn TetrahedronMeshBuilder::new(@math.Tetrahedron) -> Self
+pub impl MeshBuilder for TetrahedronMeshBuilder
+
+pub struct Triangle3dMeshBuilder {
+  triangle : @math.Triangle3d
+}
+pub fn Triangle3dMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
+pub fn Triangle3dMeshBuilder::default() -> Self
+pub fn Triangle3dMeshBuilder::new(@math.Triangle3d) -> Self
+pub impl MeshBuilder for Triangle3dMeshBuilder
 
 // Type aliases
 pub using @math {type Capsule3d}

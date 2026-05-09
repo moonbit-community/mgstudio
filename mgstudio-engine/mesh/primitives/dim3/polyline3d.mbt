@@ -18,6 +18,35 @@ pub fn polyline3d(vertices : Array[@math.Vec3]) -> @math.Polyline3d {
 }
 
 ///|
+pub struct Polyline3dMeshBuilder {
+  polyline : @math.Polyline3d
+}
+
+///|
+pub fn Polyline3dMeshBuilder::default() -> Polyline3dMeshBuilder {
+  { polyline: @math.Polyline3d::default() }
+}
+
+///|
+pub fn Polyline3dMeshBuilder::new(
+  polyline : @math.Polyline3d,
+) -> Polyline3dMeshBuilder {
+  { polyline, }
+}
+
+///|
+pub fn Polyline3dMeshBuilder::build(
+  self : Polyline3dMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  polyline3d_line_list(self.polyline)
+}
+
+///|
+pub impl MeshBuilder for Polyline3dMeshBuilder with build(self) {
+  polyline3d_line_list(self.polyline)
+}
+
+///|
 pub fn polyline3d_line_list(shape : @math.Polyline3d) -> @mesh.Mesh3dGeometry {
   let positions : Array[@math.Vec3] = []
   for vertex in shape.vertices {

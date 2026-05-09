@@ -23,6 +23,35 @@ pub fn tetrahedron(
 }
 
 ///|
+pub struct TetrahedronMeshBuilder {
+  tetrahedron : @math.Tetrahedron
+}
+
+///|
+pub fn TetrahedronMeshBuilder::default() -> TetrahedronMeshBuilder {
+  { tetrahedron: @math.Tetrahedron::default() }
+}
+
+///|
+pub fn TetrahedronMeshBuilder::new(
+  tetrahedron : @math.Tetrahedron,
+) -> TetrahedronMeshBuilder {
+  { tetrahedron, }
+}
+
+///|
+pub fn TetrahedronMeshBuilder::build(
+  self : TetrahedronMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  tetrahedron_mesh(self.tetrahedron)
+}
+
+///|
+pub impl MeshBuilder for TetrahedronMeshBuilder with build(self) {
+  tetrahedron_mesh(self.tetrahedron)
+}
+
+///|
 pub fn tetrahedron_mesh(shape : @math.Tetrahedron) -> @mesh.Mesh3dGeometry {
   let reverse_faces = tetrahedron_signed_volume(shape) < 0.0F
   let positions : Array[@math.Vec3] = []

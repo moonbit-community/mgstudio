@@ -18,6 +18,35 @@ pub fn segment3d(point_a : @math.Vec3, point_b : @math.Vec3) -> @math.Segment3d 
 }
 
 ///|
+pub struct Segment3dMeshBuilder {
+  segment : @math.Segment3d
+}
+
+///|
+pub fn Segment3dMeshBuilder::default() -> Segment3dMeshBuilder {
+  { segment: @math.Segment3d::default() }
+}
+
+///|
+pub fn Segment3dMeshBuilder::new(
+  segment : @math.Segment3d,
+) -> Segment3dMeshBuilder {
+  { segment, }
+}
+
+///|
+pub fn Segment3dMeshBuilder::build(
+  self : Segment3dMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  segment3d_line_list(self.segment)
+}
+
+///|
+pub impl MeshBuilder for Segment3dMeshBuilder with build(self) {
+  segment3d_line_list(self.segment)
+}
+
+///|
 pub fn segment3d_line_list(shape : @math.Segment3d) -> @mesh.Mesh3dGeometry {
   @mesh.Mesh3dGeometry::new_with_positions_and_topology(
     [shape.point1(), shape.point2()],

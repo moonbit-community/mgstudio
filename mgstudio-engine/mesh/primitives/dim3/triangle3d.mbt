@@ -22,6 +22,35 @@ pub fn triangle3d(
 }
 
 ///|
+pub struct Triangle3dMeshBuilder {
+  triangle : @math.Triangle3d
+}
+
+///|
+pub fn Triangle3dMeshBuilder::default() -> Triangle3dMeshBuilder {
+  { triangle: @math.Triangle3d::default() }
+}
+
+///|
+pub fn Triangle3dMeshBuilder::new(
+  triangle : @math.Triangle3d,
+) -> Triangle3dMeshBuilder {
+  { triangle, }
+}
+
+///|
+pub fn Triangle3dMeshBuilder::build(
+  self : Triangle3dMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  triangle3d_mesh(self.triangle)
+}
+
+///|
+pub impl MeshBuilder for Triangle3dMeshBuilder with build(self) {
+  triangle3d_mesh(self.triangle)
+}
+
+///|
 pub fn triangle3d_mesh(shape : @math.Triangle3d) -> @mesh.Mesh3dGeometry {
   if shape.vertices.length() < 3 {
     return @mesh.Mesh3dGeometry::new([], [], None)

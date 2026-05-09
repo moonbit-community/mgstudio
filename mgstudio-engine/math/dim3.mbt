@@ -199,6 +199,14 @@ pub struct Segment3d {
 } derive(ToJson, FromJson)
 
 ///|
+pub impl Default for Segment3d with default() {
+  Segment3d::{
+    point_a: Vec3::new(-0.5F, 0.0F, 0.0F),
+    point_b: Vec3::new(0.5F, 0.0F, 0.0F),
+  }
+}
+
+///|
 pub fn Segment3d::new(point_a : Vec3, point_b : Vec3) -> Segment3d {
   Segment3d::{ point_a, point_b }
 }
@@ -227,6 +235,11 @@ pub fn Segment3d::length(self : Segment3d) -> Float {
 pub struct Polyline3d {
   vertices : Array[Vec3]
 } derive(ToJson, FromJson)
+
+///|
+pub impl Default for Polyline3d with default() {
+  Polyline3d::new([Vec3::new(-0.5F, 0.0F, 0.0F), Vec3::new(0.5F, 0.0F, 0.0F)])
+}
 
 ///|
 pub fn Polyline3d::new(vertices : Array[Vec3]) -> Polyline3d {

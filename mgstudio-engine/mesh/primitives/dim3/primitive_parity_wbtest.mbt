@@ -159,6 +159,36 @@ test "dim3 primitives: cuboid mesh builder builds the cuboid mesh" {
 }
 
 ///|
+test "dim3 primitives: simple mesh builders match direct mesh functions" {
+  let triangle = @math.Triangle3d::default()
+  let triangle_direct = triangle3d_mesh(triangle)
+  let triangle_built = Triangle3dMeshBuilder::new(triangle).build()
+  debug_inspect(triangle_built.vertex_count(), content="3")
+  debug_inspect(
+    triangle_built.indices_or_sequential().length() ==
+    triangle_direct.indices_or_sequential().length(),
+    content="true",
+  )
+  let tetrahedron = @math.Tetrahedron::default()
+  let tetrahedron_direct = tetrahedron_mesh(tetrahedron)
+  let tetrahedron_built = TetrahedronMeshBuilder::new(tetrahedron).build()
+  debug_inspect(tetrahedron_built.vertex_count(), content="12")
+  debug_inspect(
+    tetrahedron_built.indices_or_sequential().length() ==
+    tetrahedron_direct.indices_or_sequential().length(),
+    content="true",
+  )
+  let segment = @math.Segment3d::default()
+  let segment_built = Segment3dMeshBuilder::new(segment).build()
+  debug_inspect(segment_built.vertex_count(), content="2")
+  debug_inspect(segment_built.indices_or_sequential().length(), content="2")
+  let polyline = @math.Polyline3d::default()
+  let polyline_built = Polyline3dMeshBuilder::new(polyline).build()
+  debug_inspect(polyline_built.vertex_count(), content="2")
+  debug_inspect(polyline_built.indices_or_sequential().length(), content="2")
+}
+
+///|
 test "dim3 primitives: cone and cylinder anchors match builder offsets" {
   primitive_parity_assert_y_bounds(
     "cone_tip_anchor",
