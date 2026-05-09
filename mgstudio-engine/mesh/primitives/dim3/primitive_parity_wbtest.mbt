@@ -290,6 +290,15 @@ test "dim3 primitives: remaining mesh builders match direct mesh functions" {
     sphere_direct.indices_or_sequential().length(),
     content="true",
   )
+  let ico_result = SphereMeshBuilder::new(0.5F, SphereKind::default()).ico(1)
+  guard ico_result is Ok(ico_mesh) else {
+    abort("sphere ico builder should succeed")
+  }
+  debug_inspect(ico_mesh.vertex_count() > 0, content="true")
+  let too_large = SphereMeshBuilder::new(0.5F, SphereKind::default()).ico(80)
+  guard too_large is Err(TooManyVertices(80, 65612)) else {
+    abort("sphere ico builder should return TooManyVertices")
+  }
 }
 
 ///|

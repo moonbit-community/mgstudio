@@ -196,6 +196,10 @@ pub fn CylinderMeshBuilder::segments(Self, Int) -> Self
 pub fn CylinderMeshBuilder::without_caps(Self) -> Self
 pub impl MeshBuilder for CylinderMeshBuilder
 
+pub(all) enum IcosphereError {
+  TooManyVertices(Int, Int)
+} derive(Eq, @debug.Debug)
+
 pub(all) struct PlaneMeshBuilder {
   plane : @math.Plane3d
   subdivisions : Int
@@ -241,7 +245,7 @@ pub(all) struct SphereMeshBuilder {
 pub fn SphereMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
 pub fn SphereMeshBuilder::default() -> Self
 pub fn SphereMeshBuilder::from_sphere(@math.Sphere) -> Self
-pub fn SphereMeshBuilder::ico(Self, Int) -> @mesh.Mesh3dGeometry
+pub fn SphereMeshBuilder::ico(Self, Int) -> Result[@mesh.Mesh3dGeometry, IcosphereError]
 pub fn SphereMeshBuilder::kind(Self, SphereKind) -> Self
 pub fn SphereMeshBuilder::new(Float, SphereKind) -> Self
 pub fn SphereMeshBuilder::uv(Self, Int, Int) -> @mesh.Mesh3dGeometry
