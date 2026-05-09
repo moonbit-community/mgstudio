@@ -28,7 +28,7 @@ test "render3d: triangle helper builds valid geometry" {
 
 ///|
 test "render3d: cylinder helper builds valid geometry" {
-  let geometry = mesh3d_geometry_cylinder_shape(@math.Cylinder::new(0.5F, 1.0F))
+  let geometry = mesh3d_geometry_cylinder(@math.Cylinder::new(0.5F, 1.0F))
   debug_inspect(geometry.validate(), content="None")
   debug_inspect(geometry.vertex_count() > 0, content="true")
   debug_inspect(
@@ -42,7 +42,7 @@ test "render3d: cylinder helper builds valid geometry" {
 
 ///|
 test "render3d: capsule helper builds valid geometry" {
-  let geometry = mesh3d_geometry_capsule_shape(@math.Capsule3d::new(0.5F, 1.0F))
+  let geometry = mesh3d_geometry_capsule(@math.Capsule3d::new(0.5F, 1.0F))
   debug_inspect(geometry.validate(), content="None")
   debug_inspect(geometry.vertex_count() > 0, content="true")
   debug_inspect(
@@ -57,14 +57,15 @@ test "render3d: capsule helper builds valid geometry" {
 ///|
 test "render3d: plane helper winds upward like Bevy Plane3d" {
   let geometry = mesh3d_geometry_plane(2.0F, 2.0F)
-  guard geometry.vertex_position(0) is Some(a) else {
-    abort("missing plane vertex 0")
+  let indices = geometry.indices_or_sequential()
+  guard geometry.vertex_position(indices[0]) is Some(a) else {
+    abort("missing plane triangle vertex 0")
   }
-  guard geometry.vertex_position(1) is Some(b) else {
-    abort("missing plane vertex 1")
+  guard geometry.vertex_position(indices[1]) is Some(b) else {
+    abort("missing plane triangle vertex 1")
   }
-  guard geometry.vertex_position(2) is Some(c) else {
-    abort("missing plane vertex 2")
+  guard geometry.vertex_position(indices[2]) is Some(c) else {
+    abort("missing plane triangle vertex 2")
   }
   let ab = b.sub(a)
   let ac = c.sub(a)
@@ -110,7 +111,7 @@ test "render3d: Assets::add accepts common primitive authoring values" {
           cuboid_geometry.validate() is None &&
           plane_mesh.as_3d_geometry() is Some(plane_geometry) &&
           plane_geometry.validate() is None &&
-          plane_geometry.vertex_count() == 6 &&
+          plane_geometry.vertex_count() == 4 &&
           sphere_mesh.as_3d_geometry() is Some(sphere_geometry) &&
           sphere_geometry.validate() is None &&
           tetrahedron_mesh.as_3d_geometry() is Some(tetrahedron_geometry) &&

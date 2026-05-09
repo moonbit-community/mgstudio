@@ -22,29 +22,6 @@ pub type Mesh = @mesh.Mesh
 pub type Mesh3dGeometry = @mesh.Mesh3dGeometry
 
 ///|
-fn mesh3d_append_quad(
-  positions : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-  a : @math.Vec3,
-  b : @math.Vec3,
-  c : @math.Vec3,
-  d : @math.Vec3,
-) -> Unit {
-  positions.push(a)
-  positions.push(b)
-  positions.push(c)
-  positions.push(a)
-  positions.push(c)
-  positions.push(d)
-  uvs.push(@math.Vec2::new(0.0F, 0.0F))
-  uvs.push(@math.Vec2::new(1.0F, 0.0F))
-  uvs.push(@math.Vec2::new(1.0F, 1.0F))
-  uvs.push(@math.Vec2::new(0.0F, 0.0F))
-  uvs.push(@math.Vec2::new(1.0F, 1.0F))
-  uvs.push(@math.Vec2::new(0.0F, 1.0F))
-}
-
-///|
 fn mesh3d_append_triangle(
   positions : Array[@math.Vec3],
   uvs : Array[@math.Vec2],
@@ -66,7 +43,7 @@ pub fn mesh3d_geometry_cuboid(
   height : Float,
   depth : Float,
 ) -> Mesh3dGeometry {
-  @mesh.Mesh3dGeometry::cuboid(@math.Cuboid::new(width, height, depth))
+  mesh3d_geometry_bevy_cuboid(@math.Cuboid::new(width, height, depth))
 }
 
 ///|
@@ -74,21 +51,7 @@ pub fn mesh3d_geometry_plane(
   width : Float,
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  let safe_width = if width <= 0.0F { 1.0F } else { width }
-  let safe_depth = if depth <= 0.0F { 1.0F } else { depth }
-  let hx = safe_width * 0.5F
-  let hz = safe_depth * 0.5F
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  mesh3d_append_quad(
-    positions,
-    uvs,
-    @math.Vec3::new(-hx, 0.0F, -hz),
-    @math.Vec3::new(-hx, 0.0F, hz),
-    @math.Vec3::new(hx, 0.0F, hz),
-    @math.Vec3::new(hx, 0.0F, -hz),
-  )
-  @mesh.Mesh3dGeometry::new(positions, uvs, None)
+  mesh3d_geometry_plane_subdivisions(width, depth, 0)
 }
 
 ///|
@@ -106,56 +69,6 @@ pub fn mesh3d_geometry_tetrahedron(edge : Float) -> @mesh.Mesh3dGeometry {
   mesh3d_append_triangle(positions, uvs, v0, v3, v1)
   mesh3d_append_triangle(positions, uvs, v1, v3, v2)
   @mesh.Mesh3dGeometry::new(positions, uvs, None)
-}
-
-///|
-fn mesh3d_revolve_geometry(
-  profile : Array[(Float, Float)],
-  segments : Int,
-) -> @mesh.Mesh3dGeometry {
-  let safe_segments = if segments < 3 { 3 } else { segments }
-  let segment_count = Float::from_int(safe_segments)
-  let count = profile.length()
-  let profile_denominator = if count > 1 {
-    Float::from_int(count - 1)
-  } else {
-    1.0F
-  }
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-
-  for i in 0..<count {
-    let p = profile[i]
-    let y = p.0
-    let r = if p.1 < 0.0F { 0.0F } else { p.1 }
-    let v = Float::from_int(i) / profile_denominator
-    for s in 0..<(safe_segments + 1) {
-      let u = Float::from_int(s) / segment_count
-      let angle = 2.0F * @math.pi() * u
-      positions.push(
-        @math.Vec3::new(r * @math.cos(angle), y, r * @math.sin(angle)),
-      )
-      uvs.push(@math.Vec2::new(u, 1.0F - v))
-    }
-  }
-
-  let indices : Array[Int] = []
-  let row = safe_segments + 1
-  for i in 0..<(count - 1) {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<safe_segments {
-      indices.push(k1 + j)
-      indices.push(k2 + j)
-      indices.push(k1 + j + 1)
-
-      indices.push(k1 + j + 1)
-      indices.push(k2 + j)
-      indices.push(k2 + j + 1)
-    }
-  }
-
-  @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
 }
 
 ///|
@@ -272,173 +185,27 @@ pub fn mesh3d_geometry_tetrahedron_shape(
 }
 
 ///|
-fn mesh3d_geometry_cylinder_shape(
-  cylinder : @math.Cylinder,
-) -> @mesh.Mesh3dGeometry {
-  let safe_radius = if cylinder.radius <= 0.0F { 0.5F } else { cylinder.radius }
-  let safe_half_height = if cylinder.half_height <= 0.0F {
-    0.5F
-  } else {
-    cylinder.half_height
-  }
-  mesh3d_revolve_geometry(
-    [
-      (safe_half_height, 0.0F),
-      (safe_half_height, safe_radius),
-      (-safe_half_height, safe_radius),
-      (-safe_half_height, 0.0F),
-    ],
-    32,
-  )
-}
-
-///|
-fn mesh3d_geometry_capsule_shape(
-  capsule : @math.Capsule3d,
-) -> @mesh.Mesh3dGeometry {
-  let safe_radius = if capsule.radius <= 0.0F { 0.5F } else { capsule.radius }
-  let safe_half_length = if capsule.half_length < 0.0F {
-    0.0F
-  } else {
-    capsule.half_length
-  }
-  let lat_segments = 16
-  let lat_f = Float::from_int(lat_segments)
-  let profile : Array[(Float, Float)] = []
-  profile.push((safe_half_length + safe_radius, 0.0F))
-  for i in 1..<(lat_segments + 1) {
-    let t = Float::from_int(i) / lat_f
-    let angle = @math.pi() / 2.0F - t * (@math.pi() / 2.0F)
-    profile.push(
-      (
-        safe_half_length + safe_radius * @math.sin(angle),
-        safe_radius * @math.cos(angle),
-      ),
-    )
-  }
-  profile.push((-safe_half_length, safe_radius))
-  for i in 1..<(lat_segments + 1) {
-    let t = Float::from_int(i) / lat_f
-    let angle = -t * (@math.pi() / 2.0F)
-    profile.push(
-      (
-        -safe_half_length + safe_radius * @math.sin(angle),
-        safe_radius * @math.cos(angle),
-      ),
-    )
-  }
-  mesh3d_revolve_geometry(profile, 32)
-}
-
-///|
-fn mesh3d_append_uv_sphere_triangle(
-  positions : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-  a : @math.Vec3,
-  b : @math.Vec3,
-  c : @math.Vec3,
-  uv_a : @math.Vec2,
-  uv_b : @math.Vec2,
-  uv_c : @math.Vec2,
-) -> Unit {
-  positions.push(a)
-  positions.push(b)
-  positions.push(c)
-  uvs.push(uv_a)
-  uvs.push(uv_b)
-  uvs.push(uv_c)
-}
-
-///|
 pub fn mesh3d_geometry_uv_sphere(
   radius : Float,
   sectors : Int,
   stacks : Int,
 ) -> @mesh.Mesh3dGeometry {
-  let safe_radius = if radius <= 0.0F { 0.5F } else { radius }
-  let safe_sectors = if sectors < 3 { 3 } else { sectors }
-  let safe_stacks = if stacks < 2 { 2 } else { stacks }
-  let stack_count = Float::from_int(safe_stacks)
-  let sector_count = Float::from_int(safe_sectors)
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-
-  fn sphere_point(
-    radius : Float,
-    stack : Int,
-    sector : Int,
-    stack_count : Float,
-    sector_count : Float,
-  ) -> (@math.Vec3, @math.Vec2) {
-    let v = Float::from_int(stack) / stack_count
-    let u = Float::from_int(sector) / sector_count
-    let theta = v * @math.pi()
-    let phi = u * @math.pi() * 2.0F
-    let sin_theta = @math.sin(theta)
-    let x = radius * sin_theta * @math.cos(phi)
-    let y = radius * @math.cos(theta)
-    let z = radius * sin_theta * @math.sin(phi)
-    (@math.Vec3::new(x, y, z), @math.Vec2::new(u, 1.0F - v))
-  }
-
-  for stack in 0..<safe_stacks {
-    for sector in 0..<safe_sectors {
-      let next_sector = sector + 1
-      let (p00, uv00) = sphere_point(
-        safe_radius, stack, sector, stack_count, sector_count,
-      )
-      let (p01, uv01) = sphere_point(
-        safe_radius, stack, next_sector, stack_count, sector_count,
-      )
-      let (p10, uv10) = sphere_point(
-        safe_radius,
-        stack + 1,
-        sector,
-        stack_count,
-        sector_count,
-      )
-      let (p11, uv11) = sphere_point(
-        safe_radius,
-        stack + 1,
-        next_sector,
-        stack_count,
-        sector_count,
-      )
-
-      if stack == 0 {
-        mesh3d_append_uv_sphere_triangle(
-          positions, uvs, p00, p10, p11, uv00, uv10, uv11,
-        )
-      } else if stack + 1 == safe_stacks {
-        mesh3d_append_uv_sphere_triangle(
-          positions, uvs, p00, p10, p01, uv00, uv10, uv01,
-        )
-      } else {
-        mesh3d_append_uv_sphere_triangle(
-          positions, uvs, p00, p10, p11, uv00, uv10, uv11,
-        )
-        mesh3d_append_uv_sphere_triangle(
-          positions, uvs, p00, p11, p01, uv00, uv11, uv01,
-        )
-      }
-    }
-  }
-  @mesh.Mesh3dGeometry::new(positions, uvs, None)
+  mesh3d_geometry_bevy_uv_sphere(radius, sectors, stacks)
 }
 
 ///|
 pub fn mesh3d_geometry_cylinder(cylinder : @math.Cylinder) -> Mesh3dGeometry {
-  mesh3d_geometry_cylinder_shape(cylinder)
+  mesh3d_geometry_bevy_cylinder(cylinder)
 }
 
 ///|
 pub fn mesh3d_geometry_capsule(capsule : @math.Capsule3d) -> Mesh3dGeometry {
-  mesh3d_geometry_capsule_shape(capsule)
+  mesh3d_geometry_bevy_capsule(capsule)
 }
 
 ///|
 pub fn mesh3d_geometry_sphere(radius : Float) -> Mesh3dGeometry {
-  mesh3d_geometry_uv_sphere(radius, 32, 16)
+  mesh3d_geometry_icosphere(radius, 5)
 }
 
 ///|
@@ -459,7 +226,7 @@ pub fn mesh3d_geometry_icosphere(
   radius : Float,
   subdivisions : Int,
 ) -> Mesh3dGeometry {
-  @mesh.Mesh3dGeometry::icosphere(radius, subdivisions)
+  mesh3d_geometry_bevy_icosphere(radius, subdivisions)
 }
 
 ///|
@@ -482,12 +249,13 @@ pub impl IntoPbrMeshAsset for Mesh3dGeometry with into_pbr_mesh_asset(self) {
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Cuboid with into_pbr_mesh_asset(self) {
-  @mesh.Mesh3dGeometry::cuboid(self).to_mesh()
+  mesh3d_geometry_bevy_cuboid(self).to_mesh()
 }
 
 ///|
 pub impl IntoPbrMeshAsset for @math.Plane3d with into_pbr_mesh_asset(self) {
-  @mesh.Mesh3dGeometry::plane(self).to_mesh()
+  let half_size = self.half_size()
+  mesh3d_geometry_plane(half_size.x * 2.0F, half_size.y * 2.0F).to_mesh()
 }
 
 ///|
@@ -513,4 +281,31 @@ pub impl IntoPbrMeshAsset for @math.Triangle3d with into_pbr_mesh_asset(self) {
 ///|
 pub impl IntoPbrMeshAsset for @math.Tetrahedron with into_pbr_mesh_asset(self) {
   mesh3d_geometry_tetrahedron_shape(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Cone with into_pbr_mesh_asset(self) {
+  mesh3d_geometry_cone(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.ConicalFrustum with into_pbr_mesh_asset(
+  self,
+) {
+  mesh3d_geometry_conical_frustum(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Torus with into_pbr_mesh_asset(self) {
+  mesh3d_geometry_torus(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Segment3d with into_pbr_mesh_asset(self) {
+  mesh3d_geometry_segment3d(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Polyline3d with into_pbr_mesh_asset(self) {
+  mesh3d_geometry_polyline3d(self).to_mesh()
 }

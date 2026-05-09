@@ -296,21 +296,61 @@ pub fn mesh3d_geometry_capsule(@math.Capsule3d) -> @mesh.Mesh3dGeometry
 
 pub fn mesh3d_geometry_circle(Float) -> @mesh.Mesh3dGeometry
 
+pub fn mesh3d_geometry_cone(@math.Cone) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_conical_frustum(@math.ConicalFrustum) -> @mesh.Mesh3dGeometry
+
 pub fn mesh3d_geometry_cuboid(Float, Float, Float) -> @mesh.Mesh3dGeometry
 
 pub fn mesh3d_geometry_cylinder(@math.Cylinder) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_annulus(@math.Annulus, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_capsule2d(@math.Capsule2d, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_capsule2d_ring(@math.Capsule2d, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_circle(@math.Circle, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_circle_ring(@math.Circle, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_ellipse(@math.Ellipse, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_ellipse_ring(@math.Ellipse, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_rectangle(@math.Rectangle, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_rectangle_ring(@math.Rectangle, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_regular_polygon(@math.RegularPolygon, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_regular_polygon_ring(@math.RegularPolygon, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_ring2d(@math.Ring2d, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_triangle2d(@math.Triangle2d, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_extrusion_triangle2d_ring(@math.Triangle2d, Float) -> @mesh.Mesh3dGeometry
 
 pub fn mesh3d_geometry_icosphere(Float, Int) -> @mesh.Mesh3dGeometry
 
 pub fn mesh3d_geometry_plane(Float, Float) -> @mesh.Mesh3dGeometry
 
+pub fn mesh3d_geometry_plane_subdivisions(Float, Float, Int) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_polyline3d(@math.Polyline3d) -> @mesh.Mesh3dGeometry
+
 pub fn mesh3d_geometry_rectangle(Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_segment3d(@math.Segment3d) -> @mesh.Mesh3dGeometry
 
 pub fn mesh3d_geometry_sphere(Float) -> @mesh.Mesh3dGeometry
 
 pub fn mesh3d_geometry_tetrahedron(Float) -> @mesh.Mesh3dGeometry
 
 pub fn mesh3d_geometry_tetrahedron_shape(@math.Tetrahedron) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_torus(@math.Torus) -> @mesh.Mesh3dGeometry
 
 pub fn mesh3d_geometry_triangle(@math.Triangle3d) -> @mesh.Mesh3dGeometry
 
@@ -1565,11 +1605,16 @@ pub(open) trait IntoPbrMeshAsset {
   into_pbr_mesh_asset(Self) -> @mesh.Mesh
 }
 pub impl IntoPbrMeshAsset for @math.Capsule3d
+pub impl IntoPbrMeshAsset for @math.Cone
+pub impl IntoPbrMeshAsset for @math.ConicalFrustum
 pub impl IntoPbrMeshAsset for @math.Cuboid
 pub impl IntoPbrMeshAsset for @math.Cylinder
 pub impl IntoPbrMeshAsset for @math.Plane3d
+pub impl IntoPbrMeshAsset for @math.Polyline3d
+pub impl IntoPbrMeshAsset for @math.Segment3d
 pub impl IntoPbrMeshAsset for @math.Sphere
 pub impl IntoPbrMeshAsset for @math.Tetrahedron
+pub impl IntoPbrMeshAsset for @math.Torus
 pub impl IntoPbrMeshAsset for @math.Triangle3d
 pub impl IntoPbrMeshAsset for @mesh.Mesh3dGeometry
 

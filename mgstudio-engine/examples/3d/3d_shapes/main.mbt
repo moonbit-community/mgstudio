@@ -63,24 +63,6 @@ fn byte_from_int(value : Int) -> Byte {
 }
 
 ///|
-fn max_float(a : Float, b : Float) -> Float {
-  if a > b {
-    a
-  } else {
-    b
-  }
-}
-
-///|
-fn min_float(a : Float, b : Float) -> Float {
-  if a < b {
-    a
-  } else {
-    b
-  }
-}
-
-///|
 fn row_z(row : Row) -> Float {
   match row {
     Front => Z_EXTENT / 2.0F
@@ -105,38 +87,6 @@ fn spacing_at(index : Int, count : Int, extent : Float) -> Float {
   } else {
     -extent / 2.0F + float_from_int(index) / float_from_int(count - 1) * extent
   }
-}
-
-///|
-fn vec3_add(lhs : @math.Vec3, rhs : @math.Vec3) -> @math.Vec3 {
-  @math.Vec3::new(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z)
-}
-
-///|
-fn vec3_scale(value : @math.Vec3, s : Float) -> @math.Vec3 {
-  @math.Vec3::new(value.x * s, value.y * s, value.z * s)
-}
-
-///|
-fn vec3_length(value : @math.Vec3) -> Float {
-  @math.sqrt(value.x * value.x + value.y * value.y + value.z * value.z)
-}
-
-///|
-fn vec3_normalize_or_zero(value : @math.Vec3) -> @math.Vec3 {
-  let len = vec3_length(value)
-  if len <= 0.000001F {
-    @math.Vec3::new(0.0F, 0.0F, 0.0F)
-  } else {
-    vec3_scale(value, 1.0F / len)
-  }
-}
-
-///|
-fn vec2_distance(a : @math.Vec2, b : @math.Vec2) -> Float {
-  let dx = b.x - a.x
-  let dy = b.y - a.y
-  @math.sqrt(dx * dx + dy * dy)
 }
 
 ///|
@@ -199,706 +149,12 @@ fn uv_debug_texture() -> @asset.Handle[@asset.Image] {
 }
 
 ///|
-fn mesh_from_soup(
-  positions : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-) -> @pbr.Mesh3d {
+fn mesh3d_from_geometry(geometry : @pbr.Mesh3dGeometry) -> @pbr.Mesh3d {
   @pbr.Mesh3d::new(
     @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, None),
-      ),
+      @pbr.Mesh::from_3d_geometry(geometry),
     ),
   )
-}
-
-///|
-fn soup_push_triangle(
-  positions : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-  a : @math.Vec3,
-  b : @math.Vec3,
-  c : @math.Vec3,
-  ua : @math.Vec2,
-  ub : @math.Vec2,
-  uc : @math.Vec2,
-) -> Unit {
-  positions.push(a)
-  positions.push(b)
-  positions.push(c)
-  uvs.push(ua)
-  uvs.push(ub)
-  uvs.push(uc)
-}
-
-///|
-fn soup_push_quad(
-  positions : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-  a : @math.Vec3,
-  b : @math.Vec3,
-  c : @math.Vec3,
-  d : @math.Vec3,
-  ua : @math.Vec2,
-  ub : @math.Vec2,
-  uc : @math.Vec2,
-  ud : @math.Vec2,
-) -> Unit {
-  soup_push_triangle(positions, uvs, a, b, c, ua, ub, uc)
-  soup_push_triangle(positions, uvs, a, c, d, ua, uc, ud)
-}
-
-///|
-fn revolve_mesh(profile : Array[(Float, Float)], segments : Int) -> @pbr.Mesh3d {
-  let safe_segments = if segments < 3 { 3 } else { segments }
-  let segf = float_from_int(safe_segments)
-  let count = profile.length()
-  let den = if count > 1 { float_from_int(count - 1) } else { 1.0F }
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-
-  for i in 0..<count {
-    let p = profile[i]
-    let y = p.0
-    let r = max_float(p.1, 0.0F)
-    let v = float_from_int(i) / den
-    for s in 0..<(safe_segments + 1) {
-      let u = float_from_int(s) / segf
-      let angle = 2.0F * PI * u
-      positions.push(
-        @math.Vec3::new(r * @math.cos(angle), y, r * @math.sin(angle)),
-      )
-      uvs.push(@math.Vec2::new(u, 1.0F - v))
-    }
-  }
-
-  let indices : Array[Int] = []
-  let row = safe_segments + 1
-  for i in 0..<(count - 1) {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<safe_segments {
-      indices.push(k1 + j)
-      indices.push(k1 + j + 1)
-      indices.push(k2 + j)
-
-      indices.push(k1 + j + 1)
-      indices.push(k2 + j + 1)
-      indices.push(k2 + j)
-    }
-  }
-
-  @pbr.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-      ),
-    ),
-  )
-}
-
-///|
-fn sphere_uv_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
-  let safe_stacks = if stacks < 3 { 3 } else { stacks }
-  let safe_sectors = if sectors < 3 { 3 } else { sectors }
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(safe_stacks)
-  let sectors_f = float_from_int(safe_sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = 2.0F * PI / sectors_f
-
-  for i in 0..<(safe_stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(safe_sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
-    }
-  }
-
-  let row = safe_sectors + 1
-  for i in 0..<safe_stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<safe_sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-      }
-      if i != safe_stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j + 1)
-        indices.push(k2 + j)
-      }
-    }
-  }
-
-  @pbr.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-      ),
-    ),
-  )
-}
-
-///|
-fn icosphere_mesh(radius : Float, subdivisions : Int) -> @pbr.Mesh3d {
-  let t = (1.0F + @math.sqrt(5.0F)) / 2.0F
-  let base_vertices = [
-    vec3_normalize_or_zero(@math.Vec3::new(-1.0F, t, 0.0F)),
-    vec3_normalize_or_zero(@math.Vec3::new(1.0F, t, 0.0F)),
-    vec3_normalize_or_zero(@math.Vec3::new(-1.0F, -t, 0.0F)),
-    vec3_normalize_or_zero(@math.Vec3::new(1.0F, -t, 0.0F)),
-    vec3_normalize_or_zero(@math.Vec3::new(0.0F, -1.0F, t)),
-    vec3_normalize_or_zero(@math.Vec3::new(0.0F, 1.0F, t)),
-    vec3_normalize_or_zero(@math.Vec3::new(0.0F, -1.0F, -t)),
-    vec3_normalize_or_zero(@math.Vec3::new(0.0F, 1.0F, -t)),
-    vec3_normalize_or_zero(@math.Vec3::new(t, 0.0F, -1.0F)),
-    vec3_normalize_or_zero(@math.Vec3::new(t, 0.0F, 1.0F)),
-    vec3_normalize_or_zero(@math.Vec3::new(-t, 0.0F, -1.0F)),
-    vec3_normalize_or_zero(@math.Vec3::new(-t, 0.0F, 1.0F)),
-  ]
-  let faces = [
-    (0, 11, 5),
-    (0, 5, 1),
-    (0, 1, 7),
-    (0, 7, 10),
-    (0, 10, 11),
-    (1, 5, 9),
-    (5, 11, 4),
-    (11, 10, 2),
-    (10, 7, 6),
-    (7, 1, 8),
-    (3, 9, 4),
-    (3, 4, 2),
-    (3, 2, 6),
-    (3, 6, 8),
-    (3, 8, 9),
-    (4, 9, 5),
-    (2, 4, 11),
-    (6, 2, 10),
-    (8, 6, 7),
-    (9, 8, 1),
-  ]
-
-  let mut tris : Array[(@math.Vec3, @math.Vec3, @math.Vec3)] = []
-  for face in faces {
-    tris.push(
-      (base_vertices[face.0], base_vertices[face.1], base_vertices[face.2]),
-    )
-  }
-
-  let safe_subdivisions = if subdivisions < 0 { 0 } else { subdivisions }
-  for _ in 0..<safe_subdivisions {
-    let next : Array[(@math.Vec3, @math.Vec3, @math.Vec3)] = []
-    for tri in tris {
-      let a = tri.0
-      let b = tri.1
-      let c = tri.2
-      let ab = vec3_normalize_or_zero(vec3_scale(vec3_add(a, b), 0.5F))
-      let bc = vec3_normalize_or_zero(vec3_scale(vec3_add(b, c), 0.5F))
-      let ca = vec3_normalize_or_zero(vec3_scale(vec3_add(c, a), 0.5F))
-      next.push((a, ab, ca))
-      next.push((b, bc, ab))
-      next.push((c, ca, bc))
-      next.push((ab, bc, ca))
-    }
-    tris = next
-  }
-
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  for tri in tris {
-    let a = vec3_scale(tri.0, radius)
-    let b = vec3_scale(tri.1, radius)
-    let c = vec3_scale(tri.2, radius)
-    soup_push_triangle(
-      positions,
-      uvs,
-      a,
-      b,
-      c,
-      @math.Vec2::new((tri.0.x + 1.0F) * 0.5F, (tri.0.z + 1.0F) * 0.5F),
-      @math.Vec2::new((tri.1.x + 1.0F) * 0.5F, (tri.1.z + 1.0F) * 0.5F),
-      @math.Vec2::new((tri.2.x + 1.0F) * 0.5F, (tri.2.z + 1.0F) * 0.5F),
-    )
-  }
-  mesh_from_soup(positions, uvs)
-}
-
-///|
-fn torus_mesh(
-  major_radius : Float,
-  minor_radius : Float,
-  major_segments : Int,
-  minor_segments : Int,
-) -> @pbr.Mesh3d {
-  let safe_major = if major_segments < 3 { 3 } else { major_segments }
-  let safe_minor = if minor_segments < 3 { 3 } else { minor_segments }
-  let major_f = float_from_int(safe_major)
-  let minor_f = float_from_int(safe_minor)
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  for i in 0..<(safe_major + 1) {
-    let u = float_from_int(i) / major_f
-    let theta = 2.0F * PI * u
-    let ct = @math.cos(theta)
-    let st = @math.sin(theta)
-    for j in 0..<(safe_minor + 1) {
-      let v = float_from_int(j) / minor_f
-      let phi = 2.0F * PI * v
-      let cp = @math.cos(phi)
-      let sp = @math.sin(phi)
-      let ring_radius = major_radius + minor_radius * cp
-      positions.push(
-        @math.Vec3::new(ring_radius * ct, minor_radius * sp, ring_radius * st),
-      )
-      uvs.push(@math.Vec2::new(u, v))
-    }
-  }
-
-  let row = safe_minor + 1
-  for i in 0..<safe_major {
-    let base = i * row
-    let next = (i + 1) * row
-    for j in 0..<safe_minor {
-      indices.push(base + j)
-      indices.push(base + j + 1)
-      indices.push(next + j)
-
-      indices.push(base + j + 1)
-      indices.push(next + j + 1)
-      indices.push(next + j)
-    }
-  }
-
-  @pbr.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-      ),
-    ),
-  )
-}
-
-///|
-fn cylinder_mesh(radius : Float, height : Float, segments : Int) -> @pbr.Mesh3d {
-  let half = height / 2.0F
-  revolve_mesh(
-    [(half, 0.0F), (half, radius), (-half, radius), (-half, 0.0F)],
-    segments,
-  )
-}
-
-///|
-fn cone_mesh(radius : Float, height : Float, segments : Int) -> @pbr.Mesh3d {
-  let half = height / 2.0F
-  revolve_mesh([(-half, 0.0F), (-half, radius), (half, 0.0F)], segments)
-}
-
-///|
-fn frustum_mesh(
-  radius_bottom : Float,
-  radius_top : Float,
-  height : Float,
-  segments : Int,
-) -> @pbr.Mesh3d {
-  let half = height / 2.0F
-  revolve_mesh(
-    [(-half, 0.0F), (-half, radius_bottom), (half, radius_top), (half, 0.0F)],
-    segments,
-  )
-}
-
-///|
-fn capsule_mesh(
-  radius : Float,
-  half_length : Float,
-  lat_segments : Int,
-  long_segments : Int,
-) -> @pbr.Mesh3d {
-  let safe_lat = if lat_segments < 4 { 4 } else { lat_segments }
-  let lat_f = float_from_int(safe_lat)
-  let profile : Array[(Float, Float)] = []
-  profile.push((half_length + radius, 0.0F))
-  for i in 1..<(safe_lat + 1) {
-    let t = float_from_int(i) / lat_f
-    let angle = PI / 2.0F - t * (PI / 2.0F)
-    profile.push(
-      (half_length + radius * @math.sin(angle), radius * @math.cos(angle)),
-    )
-  }
-  profile.push((-half_length, radius))
-  for i in 1..<(safe_lat + 1) {
-    let t = float_from_int(i) / lat_f
-    let angle = -t * (PI / 2.0F)
-    profile.push(
-      (-half_length + radius * @math.sin(angle), radius * @math.cos(angle)),
-    )
-  }
-  revolve_mesh(profile, long_segments)
-}
-
-///|
-fn rectangle_points(
-  half_width : Float,
-  half_height : Float,
-) -> Array[@math.Vec2] {
-  [
-    @math.Vec2::new(-half_width, -half_height),
-    @math.Vec2::new(half_width, -half_height),
-    @math.Vec2::new(half_width, half_height),
-    @math.Vec2::new(-half_width, half_height),
-  ]
-}
-
-///|
-fn circle_points(radius : Float, segments : Int) -> Array[@math.Vec2] {
-  let safe_segments = if segments < 3 { 3 } else { segments }
-  let out : Array[@math.Vec2] = []
-  let den = float_from_int(safe_segments)
-  for i in 0..<safe_segments {
-    let angle = 2.0F * PI * float_from_int(i) / den
-    out.push(
-      @math.Vec2::new(radius * @math.cos(angle), radius * @math.sin(angle)),
-    )
-  }
-  out
-}
-
-///|
-fn ellipse_points(
-  half_x : Float,
-  half_y : Float,
-  segments : Int,
-) -> Array[@math.Vec2] {
-  let safe_segments = if segments < 3 { 3 } else { segments }
-  let out : Array[@math.Vec2] = []
-  let den = float_from_int(safe_segments)
-  for i in 0..<safe_segments {
-    let angle = 2.0F * PI * float_from_int(i) / den
-    out.push(
-      @math.Vec2::new(half_x * @math.cos(angle), half_y * @math.sin(angle)),
-    )
-  }
-  out
-}
-
-///|
-fn regular_polygon_points(radius : Float, sides : Int) -> Array[@math.Vec2] {
-  let safe_sides = if sides < 3 { 3 } else { sides }
-  let out : Array[@math.Vec2] = []
-  let den = float_from_int(safe_sides)
-  for i in 0..<safe_sides {
-    let angle = 2.0F * PI * float_from_int(i) / den + PI / 2.0F
-    out.push(
-      @math.Vec2::new(radius * @math.cos(angle), radius * @math.sin(angle)),
-    )
-  }
-  out
-}
-
-///|
-fn triangle_points() -> Array[@math.Vec2] {
-  [
-    @math.Vec2::new(-0.5F, -0.35F),
-    @math.Vec2::new(0.5F, -0.35F),
-    @math.Vec2::new(0.0F, 0.55F),
-  ]
-}
-
-///|
-fn scale_points(
-  points : Array[@math.Vec2],
-  factor : Float,
-) -> Array[@math.Vec2] {
-  let out : Array[@math.Vec2] = []
-  for point in points {
-    out.push(@math.Vec2::new(point.x * factor, point.y * factor))
-  }
-  out
-}
-
-///|
-fn capsule_points(
-  radius : Float,
-  half_length : Float,
-  segments : Int,
-) -> Array[@math.Vec2] {
-  let safe_segments = if segments < 4 { 4 } else { segments }
-  let den = float_from_int(safe_segments)
-  let out : Array[@math.Vec2] = []
-
-  for i in 0..<(safe_segments + 1) {
-    let angle = -PI / 2.0F + PI * float_from_int(i) / den
-    out.push(
-      @math.Vec2::new(
-        half_length + radius * @math.cos(angle),
-        radius * @math.sin(angle),
-      ),
-    )
-  }
-
-  for i in 1..<safe_segments {
-    let angle = PI / 2.0F + PI * float_from_int(i) / den
-    out.push(
-      @math.Vec2::new(
-        -half_length + radius * @math.cos(angle),
-        radius * @math.sin(angle),
-      ),
-    )
-  }
-
-  out
-}
-
-///|
-fn line_strip_mesh(points : Array[@math.Vec3]) -> @pbr.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  for point in points {
-    positions.push(point)
-    uvs.push(@math.Vec2::new(0.0F, 0.0F))
-  }
-  @pbr.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new_with_topology(
-          positions,
-          uvs,
-          None,
-          @mesh.Mesh3dPrimitiveTopology::LineStrip,
-        ),
-      ),
-    ),
-  )
-}
-
-///|
-fn segment_mesh() -> @pbr.Mesh3d {
-  line_strip_mesh([
-    @math.Vec3::new(-0.5F, 0.0F, 0.0F),
-    @math.Vec3::new(0.5F, 0.0F, 0.0F),
-  ])
-}
-
-///|
-fn append_extruded_polygon(
-  positions : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-  points : Array[@math.Vec2],
-  depth : Float,
-) -> Unit {
-  let count = points.length()
-  if count < 3 {
-    return
-  }
-
-  let mut min_x = points[0].x
-  let mut max_x = points[0].x
-  let mut min_y = points[0].y
-  let mut max_y = points[0].y
-  for point in points {
-    min_x = min_float(min_x, point.x)
-    max_x = max_float(max_x, point.x)
-    min_y = min_float(min_y, point.y)
-    max_y = max_float(max_y, point.y)
-  }
-  let span_x = max_float(max_x - min_x, 0.000001F)
-  let span_y = max_float(max_y - min_y, 0.000001F)
-
-  let half = depth / 2.0F
-  let p0 = points[0]
-  let uv0 = @math.Vec2::new((p0.x - min_x) / span_x, (p0.y - min_y) / span_y)
-
-  for i in 1..<(count - 1) {
-    let p1 = points[i]
-    let p2 = points[i + 1]
-    let uv1 = @math.Vec2::new((p1.x - min_x) / span_x, (p1.y - min_y) / span_y)
-    let uv2 = @math.Vec2::new((p2.x - min_x) / span_x, (p2.y - min_y) / span_y)
-
-    soup_push_triangle(
-      positions,
-      uvs,
-      @math.Vec3::new(p0.x, p0.y, half),
-      @math.Vec3::new(p1.x, p1.y, half),
-      @math.Vec3::new(p2.x, p2.y, half),
-      uv0,
-      uv1,
-      uv2,
-    )
-
-    soup_push_triangle(
-      positions,
-      uvs,
-      @math.Vec3::new(p0.x, p0.y, -half),
-      @math.Vec3::new(p2.x, p2.y, -half),
-      @math.Vec3::new(p1.x, p1.y, -half),
-      uv0,
-      uv2,
-      uv1,
-    )
-  }
-
-  let mut perimeter = 0.0F
-  for i in 0..<count {
-    let next = if i + 1 < count { i + 1 } else { 0 }
-    perimeter = perimeter + vec2_distance(points[i], points[next])
-  }
-  if perimeter <= 0.000001F {
-    perimeter = 1.0F
-  }
-
-  let mut progressed = 0.0F
-  for i in 0..<count {
-    let next = if i + 1 < count { i + 1 } else { 0 }
-    let p1 = points[i]
-    let p2 = points[next]
-    let edge_len = vec2_distance(p1, p2)
-    let u0 = progressed / perimeter
-    let u1 = (progressed + edge_len) / perimeter
-
-    soup_push_quad(
-      positions,
-      uvs,
-      @math.Vec3::new(p1.x, p1.y, half),
-      @math.Vec3::new(p1.x, p1.y, -half),
-      @math.Vec3::new(p2.x, p2.y, -half),
-      @math.Vec3::new(p2.x, p2.y, half),
-      @math.Vec2::new(u0, 0.0F),
-      @math.Vec2::new(u0, 1.0F),
-      @math.Vec2::new(u1, 1.0F),
-      @math.Vec2::new(u1, 0.0F),
-    )
-
-    progressed = progressed + edge_len
-  }
-}
-
-///|
-fn extruded_polygon_mesh(
-  points : Array[@math.Vec2],
-  depth : Float,
-) -> @pbr.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  append_extruded_polygon(positions, uvs, points, depth)
-  mesh_from_soup(positions, uvs)
-}
-
-///|
-fn append_extruded_ring(
-  positions : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-  outer : Array[@math.Vec2],
-  inner : Array[@math.Vec2],
-  depth : Float,
-) -> Unit {
-  let count = outer.length()
-  if count < 3 || inner.length() != count {
-    return
-  }
-
-  let half = depth / 2.0F
-  for i in 0..<count {
-    let next = if i + 1 < count { i + 1 } else { 0 }
-    let o1 = outer[i]
-    let o2 = outer[next]
-    let i1 = inner[i]
-    let i2 = inner[next]
-
-    let u0 = float_from_int(i) / float_from_int(count)
-    let u1 = float_from_int(i + 1) / float_from_int(count)
-
-    soup_push_quad(
-      positions,
-      uvs,
-      @math.Vec3::new(o1.x, o1.y, half),
-      @math.Vec3::new(o2.x, o2.y, half),
-      @math.Vec3::new(i2.x, i2.y, half),
-      @math.Vec3::new(i1.x, i1.y, half),
-      @math.Vec2::new(u0, 0.0F),
-      @math.Vec2::new(u1, 0.0F),
-      @math.Vec2::new(u1, 1.0F),
-      @math.Vec2::new(u0, 1.0F),
-    )
-
-    soup_push_quad(
-      positions,
-      uvs,
-      @math.Vec3::new(o1.x, o1.y, -half),
-      @math.Vec3::new(i1.x, i1.y, -half),
-      @math.Vec3::new(i2.x, i2.y, -half),
-      @math.Vec3::new(o2.x, o2.y, -half),
-      @math.Vec2::new(u0, 0.0F),
-      @math.Vec2::new(u0, 1.0F),
-      @math.Vec2::new(u1, 1.0F),
-      @math.Vec2::new(u1, 0.0F),
-    )
-
-    soup_push_quad(
-      positions,
-      uvs,
-      @math.Vec3::new(o1.x, o1.y, half),
-      @math.Vec3::new(o1.x, o1.y, -half),
-      @math.Vec3::new(o2.x, o2.y, -half),
-      @math.Vec3::new(o2.x, o2.y, half),
-      @math.Vec2::new(u0, 0.0F),
-      @math.Vec2::new(u0, 1.0F),
-      @math.Vec2::new(u1, 1.0F),
-      @math.Vec2::new(u1, 0.0F),
-    )
-
-    soup_push_quad(
-      positions,
-      uvs,
-      @math.Vec3::new(i2.x, i2.y, half),
-      @math.Vec3::new(i2.x, i2.y, -half),
-      @math.Vec3::new(i1.x, i1.y, -half),
-      @math.Vec3::new(i1.x, i1.y, half),
-      @math.Vec2::new(u0, 0.0F),
-      @math.Vec2::new(u0, 1.0F),
-      @math.Vec2::new(u1, 1.0F),
-      @math.Vec2::new(u1, 0.0F),
-    )
-  }
-}
-
-///|
-fn extruded_ring_mesh(
-  outer : Array[@math.Vec2],
-  inner : Array[@math.Vec2],
-  depth : Float,
-) -> @pbr.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  append_extruded_ring(positions, uvs, outer, inner, depth)
-  mesh_from_soup(positions, uvs)
-}
-
-///|
-fn polyline_mesh() -> @pbr.Mesh3d {
-  line_strip_mesh([
-    @math.Vec3::new(-0.5F, 0.0F, 0.0F),
-    @math.Vec3::new(0.5F, 0.0F, 0.0F),
-    @math.Vec3::new(0.0F, 0.5F, 0.0F),
-  ])
 }
 
 ///|
@@ -931,27 +187,40 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let shapes = [
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+    mesh3d_from_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_tetrahedron_shape(@math.Tetrahedron::default()),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_capsule(@math.Capsule3d::default()),
+    ),
+    mesh3d_from_geometry(@pbr.mesh3d_geometry_torus(@math.Torus::default())),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_cylinder(@math.Cylinder::default()),
+    ),
+    mesh3d_from_geometry(@pbr.mesh3d_geometry_cone(@math.Cone::default())),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_conical_frustum(@math.ConicalFrustum::default()),
+    ),
+    mesh3d_from_geometry(@pbr.mesh3d_geometry_icosphere(0.5F, 5)),
+    mesh3d_from_geometry(@pbr.mesh3d_geometry_uv_sphere(0.5F, 32, 18)),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_segment3d(
+        @math.Segment3d::new(
+          @math.Vec3::new(-0.5F, 0.0F, 0.0F),
+          @math.Vec3::new(0.5F, 0.0F, 0.0F),
         ),
       ),
     ),
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_tetrahedron(1.0F)),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_polyline3d(
+        @math.Polyline3d::new([
+          @math.Vec3::new(-0.5F, 0.0F, 0.0F),
+          @math.Vec3::new(0.5F, 0.0F, 0.0F),
+          @math.Vec3::new(0.0F, 0.5F, 0.0F),
+        ]),
       ),
     ),
-    capsule_mesh(0.5F, 0.5F, 8, 24),
-    torus_mesh(0.65F, 0.25F, 36, 20),
-    cylinder_mesh(0.5F, 1.0F, 28),
-    cone_mesh(0.5F, 1.0F, 28),
-    frustum_mesh(0.5F, 0.25F, 1.0F, 28),
-    icosphere_mesh(0.5F, 2),
-    sphere_uv_mesh(0.5F, 18, 32),
-    segment_mesh(),
-    polyline_mesh(),
   ]
 
   let shape_count = shapes.length()
@@ -965,27 +234,34 @@ fn setup(world : @ecs.World) -> Unit {
     )
   }
 
-  let capsule_outer = capsule_points(0.5F, 0.5F, 20)
-  let capsule_inner = capsule_points(0.5F - THICKNESS, 0.5F - THICKNESS, 20)
-  let circle_outer = circle_points(1.0F, 36)
-  let circle_inner = circle_points(0.5F, 36)
-  let small_circle_outer = circle_points(0.5F, 36)
-  let small_circle_inner = circle_points(0.5F - THICKNESS, 36)
-  let ellipse_outer = ellipse_points(0.5F, 0.3F, 36)
-  let ellipse_inner = ellipse_points(0.5F - THICKNESS, 0.3F - THICKNESS, 36)
-  let polygon_outer = regular_polygon_points(0.5F, 6)
-  let polygon_inner = regular_polygon_points(0.5F - THICKNESS, 6)
-  let triangle_outer = triangle_points()
-  let triangle_inner = scale_points(triangle_outer, 0.75F)
-
   let extrusions = [
-    extruded_polygon_mesh(rectangle_points(0.5F, 0.5F), 1.0F),
-    extruded_polygon_mesh(capsule_outer, 1.0F),
-    extruded_ring_mesh(circle_outer, circle_inner, 1.0F),
-    extruded_polygon_mesh(small_circle_outer, 1.0F),
-    extruded_polygon_mesh(ellipse_outer, 1.0F),
-    extruded_polygon_mesh(polygon_outer, 1.0F),
-    extruded_polygon_mesh(triangle_outer, 1.0F),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_rectangle(@math.Rectangle::default(), 1.0F),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_capsule2d(@math.Capsule2d::default(), 1.0F),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_annulus(@math.Annulus::default(), 1.0F),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_circle(@math.Circle::default(), 1.0F),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_ellipse(@math.Ellipse::default(), 1.0F),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_regular_polygon(
+        @math.RegularPolygon::default(),
+        1.0F,
+      ),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_triangle2d(
+        @math.Triangle2d::default(),
+        1.0F,
+      ),
+    ),
   ]
 
   let extrusion_count = extrusions.length()
@@ -1000,17 +276,50 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let ring_extrusions = [
-    extruded_ring_mesh(
-      rectangle_points(0.5F, 0.5F),
-      rectangle_points(0.5F - THICKNESS, 0.5F - THICKNESS),
-      1.0F,
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_rectangle_ring(
+        @math.Rectangle::default(),
+        THICKNESS,
+        1.0F,
+      ),
     ),
-    extruded_ring_mesh(capsule_outer, capsule_inner, 1.0F),
-    extruded_ring_mesh(circle_outer, circle_inner, 1.0F),
-    extruded_ring_mesh(small_circle_outer, small_circle_inner, 1.0F),
-    extruded_ring_mesh(ellipse_outer, ellipse_inner, 1.0F),
-    extruded_ring_mesh(polygon_outer, polygon_inner, 1.0F),
-    extruded_ring_mesh(triangle_outer, triangle_inner, 1.0F),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_capsule2d_ring(
+        @math.Capsule2d::default(),
+        THICKNESS,
+        1.0F,
+      ),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_ring2d(@math.Ring2d::new(1.0F, 0.5F), 1.0F),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_circle_ring(
+        @math.Circle::default(),
+        THICKNESS,
+        1.0F,
+      ),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_ellipse_ring(
+        @math.Ellipse::default(),
+        THICKNESS,
+        1.0F,
+      ),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_regular_polygon_ring(
+        @math.RegularPolygon::default(),
+        THICKNESS,
+        1.0F,
+      ),
+    ),
+    mesh3d_from_geometry(
+      @pbr.mesh3d_geometry_extrusion_triangle2d_ring(
+        @math.Triangle2d::default(),
+        1.0F,
+      ),
+    ),
   ]
 
   let ring_count = ring_extrusions.length()
@@ -1041,7 +350,9 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(50.0F, 50.0F)),
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_plane_subdivisions(50.0F, 50.0F, 10),
+        ),
       ),
     ),
     @pbr.MeshMaterial3d::new(
