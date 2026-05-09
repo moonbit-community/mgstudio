@@ -237,19 +237,6 @@ pub fn extrusion_triangle2d_mesh(
 }
 
 ///|
-pub fn extrusion_ring2d_mesh(
-  ring : @math.Ring2d,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  extrusion_annulus_mesh(
-    @math.Annulus::new(ring.inner_radius, ring.outer_radius).with_vertices(
-      ring.vertices,
-    ),
-    depth,
-  )
-}
-
-///|
 pub fn extrusion_rectangle_ring_mesh(
   rectangle : @math.Rectangle,
   thickness : Float,

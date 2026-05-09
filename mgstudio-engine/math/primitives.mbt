@@ -92,33 +92,6 @@ pub impl Primitive2d for CircularSegment
 pub impl[P : Primitive2d] Primitive2d for Ring[P]
 
 ///|
-pub impl Primitive2d for Capsule2dRing
-
-///|
-pub impl Primitive2d for RectangleRing
-
-///|
-pub impl Primitive2d for EllipseRing
-
-///|
-pub impl Primitive2d for Ring2d
-
-///|
-pub impl Primitive2d for RhombusRing
-
-///|
-pub impl Primitive2d for RegularPolygonRing
-
-///|
-pub impl Primitive2d for Triangle2dRing
-
-///|
-pub impl Primitive2d for CircularSectorRing
-
-///|
-pub impl Primitive2d for CircularSegmentRing
-
-///|
 pub impl Primitive3d for Sphere
 
 ///|
@@ -292,20 +265,6 @@ pub impl Measured2d for CircularSegment with perimeter(self) {
 pub impl Measured2d for CircularSegment with area(self) {
   let angle = self.half_angle()
   self.radius * self.radius * (angle - sin(angle) * cos(angle))
-}
-
-///|
-pub impl Measured2d for Ring2d with perimeter(self) {
-  2.0F * pi() * (self.outer_radius + self.inner_radius)
-}
-
-///|
-pub impl Measured2d for Ring2d with area(self) {
-  pi() *
-  (
-    self.outer_radius * self.outer_radius -
-    self.inner_radius * self.inner_radius
-  )
 }
 
 ///|

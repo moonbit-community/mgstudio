@@ -29,6 +29,11 @@ pub fn Vec2::zero() -> Vec2 {
 }
 
 ///|
+pub fn Vec2::splat(v : Float) -> Vec2 {
+  Vec2::new(v, v)
+}
+
+///|
 pub fn Vec2::add(self : Vec2, other : Vec2) -> Vec2 {
   Vec2::new(self.x + other.x, self.y + other.y)
 }
@@ -51,6 +56,11 @@ pub fn Vec2::length_squared(self : Vec2) -> Float {
 ///|
 pub fn Vec2::length(self : Vec2) -> Float {
   sqrt(self.length_squared())
+}
+
+///|
+pub fn Vec2::normalize(self : Vec2) -> Vec2 {
+  self.mul_scalar(1.0F / self.length())
 }
 
 ///|

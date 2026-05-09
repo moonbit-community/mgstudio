@@ -277,17 +277,11 @@ pub struct Capsule2d {
 }
 pub fn Capsule2d::default() -> Self
 pub fn Capsule2d::new(Float, Float) -> Self
-pub fn Capsule2d::to_ring(Self, Float) -> Capsule2dRing
 pub fn Capsule2d::with_segments(Self, Int) -> Self
 pub impl Bounded2d for Capsule2d
+pub impl Inset for Capsule2d
 pub impl Primitive2d for Capsule2d
-
-pub struct Capsule2dRing {
-  outer_shape : Capsule2d
-  inner_shape : Capsule2d
-}
-pub fn Capsule2dRing::new(Capsule2d, Capsule2d) -> Self
-pub impl Primitive2d for Capsule2dRing
+pub impl ToRing for Capsule2d
 
 pub(all) struct Capsule3d {
   radius : Float
@@ -311,11 +305,12 @@ pub struct Circle {
 pub fn Circle::default() -> Self
 pub fn Circle::diameter(Self) -> Float
 pub fn Circle::new(Float) -> Self
-pub fn Circle::to_ring(Self, Float) -> Ring2d
 pub fn Circle::with_vertices(Self, Int) -> Self
 pub impl Bounded2d for Circle
+pub impl Inset for Circle
 pub impl Measured2d for Circle
 pub impl Primitive2d for Circle
+pub impl ToRing for Circle
 
 pub(all) enum CircularMeshUvMode {
   Mask(Float)
@@ -339,13 +334,6 @@ pub impl Bounded2d for CircularSector
 pub impl Measured2d for CircularSector
 pub impl Primitive2d for CircularSector
 
-pub struct CircularSectorRing {
-  outer_shape : CircularSector
-  inner_shape : CircularSector
-}
-pub fn CircularSectorRing::new(CircularSector, CircularSector) -> Self
-pub impl Primitive2d for CircularSectorRing
-
 pub struct CircularSegment {
   radius : Float
   half_angle : Float
@@ -357,20 +345,14 @@ pub fn CircularSegment::default() -> Self
 pub fn CircularSegment::from_turns(Float, Float) -> Self
 pub fn CircularSegment::half_angle(Self) -> Float
 pub fn CircularSegment::new(Float, Float) -> Self
-pub fn CircularSegment::to_ring(Self, Float) -> CircularSegmentRing
 pub fn CircularSegment::with_uv_mask_angle(Self, Float) -> Self
 pub fn CircularSegment::with_uv_mode(Self, CircularMeshUvMode) -> Self
 pub fn CircularSegment::with_vertices(Self, Int) -> Self
 pub impl Bounded2d for CircularSegment
+pub impl Inset for CircularSegment
 pub impl Measured2d for CircularSegment
 pub impl Primitive2d for CircularSegment
-
-pub struct CircularSegmentRing {
-  outer_shape : CircularSegment
-  inner_shape : CircularSegment
-}
-pub fn CircularSegmentRing::new(CircularSegment, CircularSegment) -> Self
-pub impl Primitive2d for CircularSegmentRing
+pub impl ToRing for CircularSegment
 
 pub(all) enum CompassOctant {
   North
@@ -640,13 +622,6 @@ pub fn Ellipse::with_vertices(Self, Int) -> Self
 pub impl Bounded2d for Ellipse
 pub impl Measured2d for Ellipse
 pub impl Primitive2d for Ellipse
-
-pub struct EllipseRing {
-  outer_shape : Ellipse
-  inner_shape : Ellipse
-}
-pub fn EllipseRing::new(Ellipse, Ellipse) -> Self
-pub impl Primitive2d for EllipseRing
 
 pub(all) enum EulerRot {
   ZYX
@@ -972,17 +947,11 @@ pub struct Rectangle {
 pub fn Rectangle::default() -> Self
 pub fn Rectangle::from_size(Vec2) -> Self
 pub fn Rectangle::new(Float, Float) -> Self
-pub fn Rectangle::to_ring(Self, Float) -> RectangleRing
 pub impl Bounded2d for Rectangle
+pub impl Inset for Rectangle
 pub impl Measured2d for Rectangle
 pub impl Primitive2d for Rectangle
-
-pub struct RectangleRing {
-  outer_shape : Rectangle
-  inner_shape : Rectangle
-}
-pub fn RectangleRing::new(Rectangle, Rectangle) -> Self
-pub impl Primitive2d for RectangleRing
+pub impl ToRing for Rectangle
 
 pub struct RegularPolygon {
   radius : Float
@@ -990,53 +959,31 @@ pub struct RegularPolygon {
 }
 pub fn RegularPolygon::default() -> Self
 pub fn RegularPolygon::new(Float, Int) -> Self
-pub fn RegularPolygon::to_ring(Self, Float) -> RegularPolygonRing
 pub impl Bounded2d for RegularPolygon
+pub impl Inset for RegularPolygon
 pub impl Measured2d for RegularPolygon
 pub impl Primitive2d for RegularPolygon
-
-pub struct RegularPolygonRing {
-  outer_shape : RegularPolygon
-  inner_shape : RegularPolygon
-}
-pub fn RegularPolygonRing::new(RegularPolygon, RegularPolygon) -> Self
-pub impl Primitive2d for RegularPolygonRing
+pub impl ToRing for RegularPolygon
 
 pub struct Rhombus {
   half_diagonal : Vec2
 }
 pub fn Rhombus::default() -> Self
 pub fn Rhombus::new(Float, Float) -> Self
-pub fn Rhombus::to_ring(Self, Float) -> RhombusRing
 pub impl Bounded2d for Rhombus
+pub impl Inset for Rhombus
 pub impl Measured2d for Rhombus
 pub impl Primitive2d for Rhombus
-
-pub struct RhombusRing {
-  outer_shape : Rhombus
-  inner_shape : Rhombus
-}
-pub fn RhombusRing::new(Rhombus, Rhombus) -> Self
-pub impl Primitive2d for RhombusRing
+pub impl ToRing for Rhombus
 
 pub struct Ring[P] {
   outer_shape : P
   inner_shape : P
 }
+pub fn[P : Inset] Ring::from_primitive_and_thickness(P, Float) -> Self[P]
 pub fn[P] Ring::new(P, P) -> Self[P]
 pub impl[P : Measured2d] Measured2d for Ring[P]
 pub impl[P : Primitive2d] Primitive2d for Ring[P]
-
-pub struct Ring2d {
-  outer_radius : Float
-  inner_radius : Float
-  vertices : Int
-}
-pub fn Ring2d::default() -> Self
-pub fn Ring2d::new(Float, Float) -> Self
-pub fn Ring2d::with_vertices(Self, Int) -> Self
-pub impl Measured2d for Ring2d
-pub impl Primitive2d for Ring2d
 
 pub struct Rot2 {
   sin : Float
@@ -1150,17 +1097,11 @@ pub struct Triangle2d {
 }
 pub fn Triangle2d::default() -> Self
 pub fn Triangle2d::new(Vec2, Vec2, Vec2) -> Self
-pub fn Triangle2d::to_ring(Self, Float) -> Triangle2dRing
 pub impl Bounded2d for Triangle2d
+pub impl Inset for Triangle2d
 pub impl Measured2d for Triangle2d
 pub impl Primitive2d for Triangle2d
-
-pub struct Triangle2dRing {
-  outer_shape : Triangle2d
-  inner_shape : Triangle2d
-}
-pub fn Triangle2dRing::new(Triangle2d, Triangle2d) -> Self
-pub impl Primitive2d for Triangle2dRing
+pub impl ToRing for Triangle2d
 
 pub(all) struct Triangle3d {
   vertices : Array[Vec3]
@@ -1240,8 +1181,10 @@ pub fn Vec2::length(Self) -> Float
 pub fn Vec2::length_squared(Self) -> Float
 pub fn Vec2::mul_scalar(Self, Float) -> Self
 pub fn Vec2::new(Float, Float) -> Self
+pub fn Vec2::normalize(Self) -> Self
 pub fn Vec2::normalize_or_zero(Self) -> Self
 pub fn Vec2::perp_dot(Self, Self) -> Float
+pub fn Vec2::splat(Float) -> Self
 pub fn Vec2::sub(Self, Self) -> Self
 pub fn Vec2::to_angle(Self) -> Float
 pub fn Vec2::zero() -> Self
@@ -1346,6 +1289,10 @@ pub(open) trait FromRng {
   from_rng(@random.Rand) -> Self
 }
 
+pub(open) trait Inset : Primitive2d {
+  inset(Self, Float) -> Self
+}
+
 pub(open) trait Measured2d {
   perimeter(Self) -> Float
   area(Self) -> Float
@@ -1377,6 +1324,10 @@ pub(open) trait StableInterpolate {
   stable_interpolate(Self, Self, Float) -> Self
 }
 pub impl StableInterpolate for Float
+
+pub(open) trait ToRing : Primitive2d + Inset {
+  to_ring(Self, Float) -> Ring[Self]
+}
 
 pub(open) trait VectorSpace {
   zero() -> Self

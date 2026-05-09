@@ -1008,57 +1008,6 @@ pub fn mesh2d_geometry_annulus(annulus : Annulus) -> Mesh2dGeometry {
 }
 
 ///|
-pub fn mesh2d_geometry_ring(ring : Ring2d) -> Mesh2dGeometry {
-  ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_circular_sector_ring(
-  ring : CircularSectorRing,
-) -> Mesh2dGeometry {
-  circular_sector_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_circular_segment_ring(
-  ring : CircularSegmentRing,
-) -> Mesh2dGeometry {
-  circular_segment_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_ellipse_ring(ring : EllipseRing) -> Mesh2dGeometry {
-  ellipse_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_capsule_ring(ring : Capsule2dRing) -> Mesh2dGeometry {
-  capsule_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_rhombus_ring(ring : RhombusRing) -> Mesh2dGeometry {
-  rhombus_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_rectangle_ring(ring : RectangleRing) -> Mesh2dGeometry {
-  rectangle_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_regular_polygon_ring(
-  ring : RegularPolygonRing,
-) -> Mesh2dGeometry {
-  regular_polygon_ring_to_mesh2d_geometry(ring)
-}
-
-///|
-pub fn mesh2d_geometry_triangle_ring(ring : Triangle2dRing) -> Mesh2dGeometry {
-  triangle_ring_to_mesh2d_geometry(ring)
-}
-
-///|
 pub fn mesh2d_geometry_rhombus(rhombus : Rhombus) -> Mesh2dGeometry {
   rhombus_to_mesh2d_geometry(rhombus)
 }
@@ -1221,59 +1170,6 @@ pub impl[P : IntoSpriteRingMeshGeometry] IntoSpriteMeshAsset for Ring[P] with in
   self,
 ) {
   self.outer_shape.into_sprite_ring_mesh_geometry(self.inner_shape).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Ring2d with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for CircularSectorRing with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_circular_sector_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for CircularSegmentRing with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_circular_segment_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for EllipseRing with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_ellipse_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Capsule2dRing with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_capsule_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for RhombusRing with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_rhombus_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for RectangleRing with into_sprite_mesh_asset(self) {
-  mesh2d_geometry_rectangle_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for RegularPolygonRing with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_regular_polygon_ring(self).to_mesh()
-}
-
-///|
-pub impl IntoSpriteMeshAsset for Triangle2dRing with into_sprite_mesh_asset(
-  self,
-) {
-  mesh2d_geometry_triangle_ring(self).to_mesh()
 }
 
 ///|

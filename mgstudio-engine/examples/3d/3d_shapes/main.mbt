@@ -354,8 +354,9 @@ fn setup(
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_ring2d_mesh(
-        @math.Ring2d::new(1.0F, 0.5F),
+      @mesh_primitives.extrusion_circle_ring_mesh(
+        @math.Circle::new(1.0F).with_vertices(48),
+        0.5F,
         1.0F,
       ),
     ),

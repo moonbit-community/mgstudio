@@ -118,43 +118,25 @@ pub fn mesh2d_geometry_annulus(@math.Annulus) -> @mesh.Mesh2dGeometry
 
 pub fn mesh2d_geometry_capsule(@math.Capsule2d) -> @mesh.Mesh2dGeometry
 
-pub fn mesh2d_geometry_capsule_ring(@math.Capsule2dRing) -> @mesh.Mesh2dGeometry
-
 pub fn mesh2d_geometry_circle(@math.Circle) -> @mesh.Mesh2dGeometry
 
 pub fn mesh2d_geometry_circular_sector(@math.CircularSector) -> @mesh.Mesh2dGeometry
 
-pub fn mesh2d_geometry_circular_sector_ring(@math.CircularSectorRing) -> @mesh.Mesh2dGeometry
-
 pub fn mesh2d_geometry_circular_segment(@math.CircularSegment) -> @mesh.Mesh2dGeometry
 
-pub fn mesh2d_geometry_circular_segment_ring(@math.CircularSegmentRing) -> @mesh.Mesh2dGeometry
-
 pub fn mesh2d_geometry_ellipse(@math.Ellipse) -> @mesh.Mesh2dGeometry
-
-pub fn mesh2d_geometry_ellipse_ring(@math.EllipseRing) -> @mesh.Mesh2dGeometry
 
 pub fn mesh2d_geometry_polyline(@math.Polyline2d) -> @mesh.Mesh2dGeometry
 
 pub fn mesh2d_geometry_rectangle(@math.Rectangle) -> @mesh.Mesh2dGeometry
 
-pub fn mesh2d_geometry_rectangle_ring(@math.RectangleRing) -> @mesh.Mesh2dGeometry
-
 pub fn mesh2d_geometry_regular_polygon(@math.RegularPolygon) -> @mesh.Mesh2dGeometry
 
-pub fn mesh2d_geometry_regular_polygon_ring(@math.RegularPolygonRing) -> @mesh.Mesh2dGeometry
-
 pub fn mesh2d_geometry_rhombus(@math.Rhombus) -> @mesh.Mesh2dGeometry
-
-pub fn mesh2d_geometry_rhombus_ring(@math.RhombusRing) -> @mesh.Mesh2dGeometry
-
-pub fn mesh2d_geometry_ring(@math.Ring2d) -> @mesh.Mesh2dGeometry
 
 pub fn mesh2d_geometry_segment(@math.Segment2d) -> @mesh.Mesh2dGeometry
 
 pub fn mesh2d_geometry_triangle(@math.Triangle2d) -> @mesh.Mesh2dGeometry
-
-pub fn mesh2d_geometry_triangle_ring(@math.Triangle2dRing) -> @mesh.Mesh2dGeometry
 
 pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]]
 
@@ -1191,19 +1173,13 @@ pub using @post_process {type BloomPrefilter}
 
 pub using @math {type Capsule2d}
 
-pub using @math {type Capsule2dRing}
-
 pub using @math {type Circle}
 
 pub using @math {type CircularMeshUvMode}
 
 pub using @math {type CircularSector}
 
-pub using @math {type CircularSectorRing}
-
 pub using @math {type CircularSegment}
-
-pub using @math {type CircularSegmentRing}
 
 pub using @color {type Color}
 
@@ -1220,8 +1196,6 @@ pub using @math {type ConvexPolygon}
 pub using @post_process {type DebandDither}
 
 pub using @math {type Ellipse}
-
-pub using @math {type EllipseRing}
 
 pub using @core_3d {type Hdr}
 
@@ -1241,27 +1215,17 @@ pub using @math {type Polyline2d}
 
 pub using @math {type Rectangle}
 
-pub using @math {type RectangleRing}
-
 pub using @math {type RegularPolygon}
-
-pub using @math {type RegularPolygonRing}
 
 pub using @math {type Rhombus}
 
-pub using @math {type RhombusRing}
-
 pub using @math {type Ring}
-
-pub using @math {type Ring2d}
 
 pub using @math {type Segment2d}
 
 pub using @post_process {type Tonemapping}
 
 pub using @math {type Triangle2d}
-
-pub using @math {type Triangle2dRing}
 
 // Traits
 pub(open) trait GizmoConfigGroup {
@@ -1279,26 +1243,17 @@ pub(open) trait IntoSpriteMeshAsset {
 }
 pub impl IntoSpriteMeshAsset for @math.Annulus
 pub impl IntoSpriteMeshAsset for @math.Capsule2d
-pub impl IntoSpriteMeshAsset for @math.Capsule2dRing
 pub impl IntoSpriteMeshAsset for @math.Circle
 pub impl IntoSpriteMeshAsset for @math.CircularSector
-pub impl IntoSpriteMeshAsset for @math.CircularSectorRing
 pub impl IntoSpriteMeshAsset for @math.CircularSegment
-pub impl IntoSpriteMeshAsset for @math.CircularSegmentRing
 pub impl IntoSpriteMeshAsset for @math.Ellipse
-pub impl IntoSpriteMeshAsset for @math.EllipseRing
 pub impl IntoSpriteMeshAsset for @math.Polyline2d
 pub impl IntoSpriteMeshAsset for @math.Rectangle
-pub impl IntoSpriteMeshAsset for @math.RectangleRing
 pub impl IntoSpriteMeshAsset for @math.RegularPolygon
-pub impl IntoSpriteMeshAsset for @math.RegularPolygonRing
 pub impl IntoSpriteMeshAsset for @math.Rhombus
-pub impl IntoSpriteMeshAsset for @math.RhombusRing
 pub impl[P : IntoSpriteRingMeshGeometry] IntoSpriteMeshAsset for @math.Ring[P]
-pub impl IntoSpriteMeshAsset for @math.Ring2d
 pub impl IntoSpriteMeshAsset for @math.Segment2d
 pub impl IntoSpriteMeshAsset for @math.Triangle2d
-pub impl IntoSpriteMeshAsset for @math.Triangle2dRing
 pub impl IntoSpriteMeshAsset for @mesh.Mesh2dGeometry
 
 pub(open) trait IntoSpriteRingMeshGeometry {

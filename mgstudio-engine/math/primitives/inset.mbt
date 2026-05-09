@@ -17,8 +17,7 @@
 
 ///|
 pub fn inset_circle(shape : Circle, distance : Float) -> Circle {
-  let ring = shape.to_ring(distance)
-  Circle::new(ring.inner_radius).with_vertices(ring.vertices)
+  shape.to_ring(distance).inner_shape
 }
 
 ///|

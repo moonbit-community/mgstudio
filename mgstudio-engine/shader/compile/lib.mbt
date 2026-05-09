@@ -96,9 +96,6 @@ fn shader_compile_error_from_composer(
 }
 
 ///|
-let runtime_source_tree_registered : Ref[Bool] = Ref(false)
-
-///|
 let startup_sources_registered : Ref[Bool] = Ref(false)
 
 ///|
@@ -116,44 +113,8 @@ pub fn ensure_startup_shader_sources_once(register : () -> Unit) -> Unit {
 }
 
 ///|
-fn source_scan_options() -> @wgsl_common.WgslSourceScanOptions {
-  @wgsl_common.WgslSourceScanOptions::{
-    recursive: true,
-    extensions: [".wgsl"],
-    exclude_prefixes: [".mooncakes", "_build", ".private"],
-  }
-}
-
-///|
-fn register_runtime_source_tree_once() -> Unit {
-  if runtime_source_tree_registered.val {
-    return
-  }
-  try {
-    let files = @shader_source.scan_shader_source_files(
-      ".",
-      source_scan_options(),
-    )
-    @shader_source.load_embedded_shader_source_files(files)
-    runtime_source_tree_registered.val = true
-  } catch {
-    _ => ()
-  }
-}
-
-///|
 fn runtime_composer(assets_base : String) -> @wgsl_compose.Composer {
-  if assets_base.trim() != "" {
-    register_runtime_source_tree_once()
-  }
-  let composer = @wgsl_compose.Composer::default()
-  composer.register_source_files(@shader_source.embedded_shader_source_files())
-  composer
-}
-
-///|
-fn runtime_composer_with_source_tree() -> @wgsl_compose.Composer {
-  register_runtime_source_tree_once()
+  ignore(assets_base)
   let composer = @wgsl_compose.Composer::default()
   composer.register_source_files(@shader_source.embedded_shader_source_files())
   composer
@@ -163,7 +124,6 @@ fn runtime_composer_with_source_tree() -> @wgsl_compose.Composer {
 pub fn clear_registered_shader_sources() -> Unit {
   @shader_source.clear_embedded_shader_sources()
   startup_sources_registered.val = false
-  runtime_source_tree_registered.val = false
 }
 
 ///|
@@ -230,10 +190,6 @@ pub fn preprocess_shader_source(
   let composed = runtime_composer(assets_base).compose_wgsl_source(
     source, options,
   ) catch {
-    @wgsl_compose.ComposerError::MissingStartupRegisteredSource(_) =>
-      runtime_composer_with_source_tree().compose_wgsl_source(source, options) catch {
-        err => raise shader_compile_error_from_composer(err)
-      }
     err => raise shader_compile_error_from_composer(err)
   }
   composed
@@ -248,10 +204,6 @@ pub fn load_preprocessed_wgsl(
 ) -> String raise ShaderCompileError {
   let options = compose_options(assets_base, defines, value_defines)
   let composed = runtime_composer(assets_base).compose_wgsl(rel, options) catch {
-    @wgsl_compose.ComposerError::MissingStartupRegisteredSource(_) =>
-      runtime_composer_with_source_tree().compose_wgsl(rel, options) catch {
-        err => raise shader_compile_error_from_composer(err)
-      }
     err => raise shader_compile_error_from_composer(err)
   }
   composed

@@ -73,33 +73,6 @@ pub type CircularSegment = @math.CircularSegment
 pub type Ring[P] = @math.Ring[P]
 
 ///|
-pub type Capsule2dRing = @math.Capsule2dRing
-
-///|
-pub type RectangleRing = @math.RectangleRing
-
-///|
-pub type EllipseRing = @math.EllipseRing
-
-///|
-pub type Ring2d = @math.Ring2d
-
-///|
-pub type RhombusRing = @math.RhombusRing
-
-///|
-pub type RegularPolygonRing = @math.RegularPolygonRing
-
-///|
-pub type Triangle2dRing = @math.Triangle2dRing
-
-///|
-pub type CircularSectorRing = @math.CircularSectorRing
-
-///|
-pub type CircularSegmentRing = @math.CircularSegmentRing
-
-///|
 pub type Sphere = @math.Sphere
 
 ///|

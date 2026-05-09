@@ -55,8 +55,6 @@ pub fn extrusion_rhombus_mesh(@math.Rhombus, Float) -> @mesh.Mesh3dGeometry
 
 pub fn extrusion_rhombus_ring_mesh(@math.Rhombus, Float, Float) -> @mesh.Mesh3dGeometry
 
-pub fn extrusion_ring2d_mesh(@math.Ring2d, Float) -> @mesh.Mesh3dGeometry
-
 pub fn extrusion_triangle2d_mesh(@math.Triangle2d, Float) -> @mesh.Mesh3dGeometry
 
 pub fn extrusion_triangle2d_ring_mesh(@math.Triangle2d, Float) -> @mesh.Mesh3dGeometry
@@ -251,25 +249,17 @@ pub using @math {type Annulus}
 
 pub using @math {type Capsule2d}
 
-pub using @math {type Capsule2dRing}
-
 pub using @math {type Circle}
 
 pub using @math {type CircularMeshUvMode}
 
 pub using @math {type CircularSector}
 
-pub using @math {type CircularSectorRing}
-
 pub using @math {type CircularSegment}
-
-pub using @math {type CircularSegmentRing}
 
 pub using @math {type ConvexPolygon}
 
 pub using @math {type Ellipse}
-
-pub using @math {type EllipseRing}
 
 pub using @mesh {type Mesh2dGeometry}
 
@@ -281,25 +271,15 @@ pub using @math {type Polyline2d}
 
 pub using @math {type Rectangle}
 
-pub using @math {type RectangleRing}
-
 pub using @math {type RegularPolygon}
-
-pub using @math {type RegularPolygonRing}
 
 pub using @math {type Rhombus}
 
-pub using @math {type RhombusRing}
-
 pub using @math {type Ring}
-
-pub using @math {type Ring2d}
 
 pub using @math {type Segment2d}
 
 pub using @math {type Triangle2d}
-
-pub using @math {type Triangle2dRing}
 
 // Traits
 pub(open) trait Extrudable : MeshBuilder {

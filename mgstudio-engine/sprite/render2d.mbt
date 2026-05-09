@@ -943,33 +943,6 @@ pub type CircularSegment = @math.CircularSegment
 pub type Ring[P] = @math.Ring[P]
 
 ///|
-pub type Capsule2dRing = @math.Capsule2dRing
-
-///|
-pub type RectangleRing = @math.RectangleRing
-
-///|
-pub type EllipseRing = @math.EllipseRing
-
-///|
-pub type Ring2d = @math.Ring2d
-
-///|
-pub type RhombusRing = @math.RhombusRing
-
-///|
-pub type RegularPolygonRing = @math.RegularPolygonRing
-
-///|
-pub type Triangle2dRing = @math.Triangle2dRing
-
-///|
-pub type CircularSectorRing = @math.CircularSectorRing
-
-///|
-pub type CircularSegmentRing = @math.CircularSegmentRing
-
-///|
 pub type Mesh2d = @mesh.Mesh2d
 
 ///|
@@ -1102,7 +1075,7 @@ fn rectangle_to_mesh2d_geometry(rectangle : Rectangle) -> @mesh.Mesh2dGeometry {
 
 ///|
 fn rectangle_ring_to_mesh2d_geometry(
-  ring : RectangleRing,
+  ring : Ring[Rectangle],
 ) -> @mesh.Mesh2dGeometry {
   let outer_hx = shape_safe_positive(
     shape_abs_float(ring.outer_shape.half_size.x),
@@ -1140,8 +1113,8 @@ fn generic_circle_ring_to_mesh2d_geometry(
   } else {
     ring.inner_shape.vertices
   }
-  ring_to_mesh2d_geometry(
-    Ring2d::new(ring.outer_shape.radius, ring.inner_shape.radius).with_vertices(
+  annulus_to_mesh2d_geometry(
+    Annulus::new(ring.inner_shape.radius, ring.outer_shape.radius).with_vertices(
       vertices,
     ),
   )
@@ -1151,72 +1124,56 @@ fn generic_circle_ring_to_mesh2d_geometry(
 fn generic_circular_sector_ring_to_mesh2d_geometry(
   ring : Ring[CircularSector],
 ) -> @mesh.Mesh2dGeometry {
-  circular_sector_ring_to_mesh2d_geometry(
-    CircularSectorRing::new(ring.outer_shape, ring.inner_shape),
-  )
+  circular_sector_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
 fn generic_circular_segment_ring_to_mesh2d_geometry(
   ring : Ring[CircularSegment],
 ) -> @mesh.Mesh2dGeometry {
-  circular_segment_ring_to_mesh2d_geometry(
-    CircularSegmentRing::new(ring.outer_shape, ring.inner_shape),
-  )
+  circular_segment_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
 fn generic_ellipse_ring_to_mesh2d_geometry(
   ring : Ring[Ellipse],
 ) -> @mesh.Mesh2dGeometry {
-  ellipse_ring_to_mesh2d_geometry(
-    EllipseRing::new(ring.outer_shape, ring.inner_shape),
-  )
+  ellipse_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
 fn generic_capsule_ring_to_mesh2d_geometry(
   ring : Ring[Capsule2d],
 ) -> @mesh.Mesh2dGeometry {
-  capsule_ring_to_mesh2d_geometry(
-    Capsule2dRing::new(ring.outer_shape, ring.inner_shape),
-  )
+  capsule_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
 fn generic_rhombus_ring_to_mesh2d_geometry(
   ring : Ring[Rhombus],
 ) -> @mesh.Mesh2dGeometry {
-  rhombus_ring_to_mesh2d_geometry(
-    RhombusRing::new(ring.outer_shape, ring.inner_shape),
-  )
+  rhombus_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
 fn generic_rectangle_ring_to_mesh2d_geometry(
   ring : Ring[Rectangle],
 ) -> @mesh.Mesh2dGeometry {
-  rectangle_ring_to_mesh2d_geometry(
-    RectangleRing::new(ring.outer_shape, ring.inner_shape),
-  )
+  rectangle_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
 fn generic_regular_polygon_ring_to_mesh2d_geometry(
   ring : Ring[RegularPolygon],
 ) -> @mesh.Mesh2dGeometry {
-  regular_polygon_ring_to_mesh2d_geometry(
-    RegularPolygonRing::new(ring.outer_shape, ring.inner_shape),
-  )
+  regular_polygon_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
 fn generic_triangle_ring_to_mesh2d_geometry(
   ring : Ring[Triangle2d],
 ) -> @mesh.Mesh2dGeometry {
-  triangle_ring_to_mesh2d_geometry(
-    Triangle2dRing::new(ring.outer_shape, ring.inner_shape),
-  )
+  triangle_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
@@ -1561,17 +1518,8 @@ fn annulus_to_mesh2d_geometry(annulus : Annulus) -> @mesh.Mesh2dGeometry {
 }
 
 ///|
-fn ring_to_mesh2d_geometry(ring : Ring2d) -> @mesh.Mesh2dGeometry {
-  annulus_to_mesh2d_geometry(
-    Annulus::new(ring.inner_radius, ring.outer_radius).with_vertices(
-      ring.vertices,
-    ),
-  )
-}
-
-///|
 fn circular_sector_ring_to_mesh2d_geometry(
-  ring : CircularSectorRing,
+  ring : Ring[CircularSector],
 ) -> @mesh.Mesh2dGeometry {
   let outer_radius = shape_safe_positive(
     shape_abs_float(ring.outer_shape.radius),
@@ -1600,7 +1548,7 @@ fn circular_sector_ring_to_mesh2d_geometry(
 
 ///|
 fn circular_segment_ring_to_mesh2d_geometry(
-  ring : CircularSegmentRing,
+  ring : Ring[CircularSegment],
 ) -> @mesh.Mesh2dGeometry {
   let outer_radius = shape_safe_positive(
     shape_abs_float(ring.outer_shape.radius),
@@ -1628,7 +1576,9 @@ fn circular_segment_ring_to_mesh2d_geometry(
 }
 
 ///|
-fn ellipse_ring_to_mesh2d_geometry(ring : EllipseRing) -> @mesh.Mesh2dGeometry {
+fn ellipse_ring_to_mesh2d_geometry(
+  ring : Ring[Ellipse],
+) -> @mesh.Mesh2dGeometry {
   let outer_hx = shape_safe_positive(
     shape_abs_float(ring.outer_shape.half_size.x),
     0.5F,
@@ -1669,7 +1619,9 @@ fn rhombus_to_mesh2d_geometry(rhombus : Rhombus) -> @mesh.Mesh2dGeometry {
 }
 
 ///|
-fn rhombus_ring_to_mesh2d_geometry(ring : RhombusRing) -> @mesh.Mesh2dGeometry {
+fn rhombus_ring_to_mesh2d_geometry(
+  ring : Ring[Rhombus],
+) -> @mesh.Mesh2dGeometry {
   let outer_hx = shape_safe_positive(
     shape_abs_float(ring.outer_shape.half_diagonal.x),
     0.5F,
@@ -1728,7 +1680,7 @@ fn regular_polygon_to_mesh2d_geometry(
 
 ///|
 fn regular_polygon_ring_to_mesh2d_geometry(
-  ring : RegularPolygonRing,
+  ring : Ring[RegularPolygon],
 ) -> @mesh.Mesh2dGeometry {
   let outer_radius = shape_safe_positive(
     shape_abs_float(ring.outer_shape.radius),
@@ -1759,7 +1711,7 @@ fn triangle_to_mesh2d_geometry(triangle : Triangle2d) -> @mesh.Mesh2dGeometry {
 
 ///|
 fn triangle_ring_to_mesh2d_geometry(
-  ring : Triangle2dRing,
+  ring : Ring[Triangle2d],
 ) -> @mesh.Mesh2dGeometry {
   shape_ring_geometry_from_closed_loops(
     shape_perimeter_triangle(ring.outer_shape),
@@ -1999,7 +1951,7 @@ fn capsule_to_mesh2d_geometry(capsule : Capsule2d) -> @mesh.Mesh2dGeometry {
 
 ///|
 fn capsule_ring_to_mesh2d_geometry(
-  ring : Capsule2dRing,
+  ring : Ring[Capsule2d],
 ) -> @mesh.Mesh2dGeometry {
   let outer_radius = shape_safe_positive(
     shape_abs_float(ring.outer_shape.radius),
