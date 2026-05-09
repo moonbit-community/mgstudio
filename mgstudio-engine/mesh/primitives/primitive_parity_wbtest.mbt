@@ -288,7 +288,7 @@ test "dim2 primitives: mesh builders match direct mesh functions" {
 }
 
 ///|
-test "extrusion primitives: builder matches direct extrusion helper" {
+test "extrusion primitives: builder matches generic extrusion path" {
   let rectangle = @math.Rectangle::default()
   let rectangle_builder = RectangleMeshBuilder::from_rectangle(rectangle)
   primitive_parity_assert_same_mesh_shape(
