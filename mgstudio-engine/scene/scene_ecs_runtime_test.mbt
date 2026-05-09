@@ -13,6 +13,13 @@
 // limitations under the License.
 
 ///|
+fn[P : @pbr.IntoPbrMeshAsset] scene_test_mesh3d_from_mesh_asset(
+  value : P,
+) -> @mesh.Mesh3d {
+  @mesh.Mesh3d::new(@pbr.mesh_assets_mut_or_abort().val |> @pbr.add_mesh(value))
+}
+
+///|
 test "scene ecs: SceneRoot spawns children and marks ready" {
   let instance_id = Ref(0)
   let ready_instance_id = Ref(0)
@@ -52,15 +59,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
       ),
     )
     let node = @scene.SceneNode3d::new(
-      @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.cuboid_mesh(
-              @math.Cuboid::new(1.0F, 2.0F, 3.0F),
-            ),
-          ),
-        ),
-      ),
+      scene_test_mesh3d_from_mesh_asset(@math.Cuboid::new(1.0F, 2.0F, 3.0F)),
       material,
       @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
       Some(@visibility.VisibilityRange::new(0.0F, 0.0F, 4.0F, 5.0F, false)),
@@ -210,15 +209,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
       first_path,
       @scene.Scene::new([
         @scene.SceneNode3d::new(
-          @mesh.Mesh3d::new(
-            @pbr.mesh_assets_mut_or_abort().val.add(
-              @mesh.Mesh::from_3d_geometry(
-                @mesh_primitives_dim3.cuboid_mesh(
-                  @math.Cuboid::new(1.0F, 2.0F, 3.0F),
-                ),
-              ),
-            ),
-          ),
+          scene_test_mesh3d_from_mesh_asset(@math.Cuboid::new(1.0F, 2.0F, 3.0F)),
           material,
           @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
           None,
@@ -230,15 +221,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
       second_path,
       @scene.Scene::new([
         @scene.SceneNode3d::new(
-          @mesh.Mesh3d::new(
-            @pbr.mesh_assets_mut_or_abort().val.add(
-              @mesh.Mesh::from_3d_geometry(
-                @mesh_primitives_dim3.cuboid_mesh(
-                  @math.Cuboid::new(4.0F, 5.0F, 6.0F),
-                ),
-              ),
-            ),
-          ),
+          scene_test_mesh3d_from_mesh_asset(@math.Cuboid::new(4.0F, 5.0F, 6.0F)),
           material,
           @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
           None,

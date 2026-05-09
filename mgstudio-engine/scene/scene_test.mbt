@@ -438,12 +438,8 @@ test "scene: skinned mesh joints map by gltf node index" {
   let has_no_frustum_culling = Ref(false)
 
   run_scene_test_app(fn(world : @ecs.World) {
-    let mesh = @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-        ),
-      ),
+    let mesh = scene_test_mesh3d_from_mesh_asset(
+      @math.Cuboid::new(1.0F, 1.0F, 1.0F),
     )
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(@pbr.StandardMaterial::default()),
@@ -552,12 +548,8 @@ test "scene: skinned mesh skips when any gltf joint node is unresolved" {
   let skinned_present = Ref(false)
 
   run_scene_test_app(fn(world : @ecs.World) {
-    let mesh = @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-        ),
-      ),
+    let mesh = scene_test_mesh3d_from_mesh_asset(
+      @math.Cuboid::new(1.0F, 1.0F, 1.0F),
     )
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(@pbr.StandardMaterial::default()),
