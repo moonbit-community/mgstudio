@@ -94,3 +94,8 @@ pub using @mesh {type Mesh3dGeometry}
 
 ///|
 pub using @mesh {type Mesh3dPrimitiveTopology}
+
+///|
+pub(open) trait MeshBuilder {
+  build(Self) -> @mesh.Mesh3dGeometry
+}

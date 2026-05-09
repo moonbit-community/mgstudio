@@ -82,6 +82,52 @@ fn primitive2d_normal_z(count : Int, z : Float) -> Array[@math.Vec3] {
 }
 
 ///|
+pub(all) struct CircleMeshBuilder {
+  circle : @math.Circle
+  resolution : Int
+}
+
+///|
+pub fn CircleMeshBuilder::default() -> CircleMeshBuilder {
+  { circle: @math.Circle::default(), resolution: 32 }
+}
+
+///|
+pub fn CircleMeshBuilder::new(
+  radius : Float,
+  resolution : Int,
+) -> CircleMeshBuilder {
+  { circle: @math.Circle::new(radius), resolution }
+}
+
+///|
+pub fn CircleMeshBuilder::from_circle(
+  circle : @math.Circle,
+) -> CircleMeshBuilder {
+  { circle, resolution: 32 }
+}
+
+///|
+pub fn CircleMeshBuilder::resolution(
+  self : CircleMeshBuilder,
+  resolution : Int,
+) -> CircleMeshBuilder {
+  { circle: self.circle, resolution }
+}
+
+///|
+pub fn CircleMeshBuilder::build(
+  self : CircleMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  circle_mesh(self.circle.radius, self.resolution)
+}
+
+///|
+pub impl MeshBuilder for CircleMeshBuilder with build(self) {
+  circle_mesh(self.circle.radius, self.resolution)
+}
+
+///|
 pub fn circle(radius : Float) -> @math.Circle {
   @math.Circle::new(radius)
 }
@@ -131,6 +177,47 @@ pub fn rectangle_mesh(width : Float, height : Float) -> @mesh.Mesh3dGeometry {
 }
 
 ///|
+pub struct RectangleMeshBuilder {
+  half_size : @math.Vec2
+}
+
+///|
+pub fn RectangleMeshBuilder::default() -> RectangleMeshBuilder {
+  { half_size: @math.Vec2::new(0.5F, 0.5F) }
+}
+
+///|
+pub fn RectangleMeshBuilder::new(
+  width : Float,
+  height : Float,
+) -> RectangleMeshBuilder {
+  { half_size: @math.Vec2::new(width * 0.5F, height * 0.5F) }
+}
+
+///|
+pub fn RectangleMeshBuilder::from_rectangle(
+  rectangle : @math.Rectangle,
+) -> RectangleMeshBuilder {
+  { half_size: rectangle.half_size }
+}
+
+///|
+pub fn RectangleMeshBuilder::build(
+  self : RectangleMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  rectangle_shape_mesh(
+    @math.Rectangle::from_size(self.half_size.mul_scalar(2.0F)),
+  )
+}
+
+///|
+pub impl MeshBuilder for RectangleMeshBuilder with build(self) {
+  rectangle_shape_mesh(
+    @math.Rectangle::from_size(self.half_size.mul_scalar(2.0F)),
+  )
+}
+
+///|
 fn rectangle_shape_mesh(shape : @math.Rectangle) -> @mesh.Mesh3dGeometry {
   let hw = shape.half_size.x
   let hh = shape.half_size.y
@@ -149,6 +236,61 @@ fn rectangle_shape_mesh(shape : @math.Rectangle) -> @mesh.Mesh3dGeometry {
       @math.Vec2::new(1.0F, 1.0F),
     ],
     Some([0, 1, 2, 0, 2, 3]),
+  )
+}
+
+///|
+pub(all) struct CircularSectorMeshBuilder {
+  sector : @math.CircularSector
+  resolution : Int
+  uv_mode : @math.CircularMeshUvMode
+}
+
+///|
+pub fn CircularSectorMeshBuilder::default() -> CircularSectorMeshBuilder {
+  {
+    sector: @math.CircularSector::default(),
+    resolution: 32,
+    uv_mode: Mask(0.0F),
+  }
+}
+
+///|
+pub fn CircularSectorMeshBuilder::new(
+  sector : @math.CircularSector,
+) -> CircularSectorMeshBuilder {
+  { sector, resolution: 32, uv_mode: Mask(0.0F) }
+}
+
+///|
+pub fn CircularSectorMeshBuilder::resolution(
+  self : CircularSectorMeshBuilder,
+  resolution : Int,
+) -> CircularSectorMeshBuilder {
+  { sector: self.sector, resolution, uv_mode: self.uv_mode }
+}
+
+///|
+pub fn CircularSectorMeshBuilder::uv_mode(
+  self : CircularSectorMeshBuilder,
+  uv_mode : @math.CircularMeshUvMode,
+) -> CircularSectorMeshBuilder {
+  { sector: self.sector, resolution: self.resolution, uv_mode }
+}
+
+///|
+pub fn CircularSectorMeshBuilder::build(
+  self : CircularSectorMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  circular_sector_mesh(
+    self.sector.with_vertices(self.resolution).with_uv_mode(self.uv_mode),
+  )
+}
+
+///|
+pub impl MeshBuilder for CircularSectorMeshBuilder with build(self) {
+  circular_sector_mesh(
+    self.sector.with_vertices(self.resolution).with_uv_mode(self.uv_mode),
   )
 }
 
@@ -190,6 +332,61 @@ pub fn circular_sector_mesh(
     primitive2d_normal_z(resolution + 1, 1.0F),
     uvs,
     Some(indices),
+  )
+}
+
+///|
+pub(all) struct CircularSegmentMeshBuilder {
+  segment : @math.CircularSegment
+  resolution : Int
+  uv_mode : @math.CircularMeshUvMode
+}
+
+///|
+pub fn CircularSegmentMeshBuilder::default() -> CircularSegmentMeshBuilder {
+  {
+    segment: @math.CircularSegment::default(),
+    resolution: 32,
+    uv_mode: Mask(0.0F),
+  }
+}
+
+///|
+pub fn CircularSegmentMeshBuilder::new(
+  segment : @math.CircularSegment,
+) -> CircularSegmentMeshBuilder {
+  { segment, resolution: 32, uv_mode: Mask(0.0F) }
+}
+
+///|
+pub fn CircularSegmentMeshBuilder::resolution(
+  self : CircularSegmentMeshBuilder,
+  resolution : Int,
+) -> CircularSegmentMeshBuilder {
+  { segment: self.segment, resolution, uv_mode: self.uv_mode }
+}
+
+///|
+pub fn CircularSegmentMeshBuilder::uv_mode(
+  self : CircularSegmentMeshBuilder,
+  uv_mode : @math.CircularMeshUvMode,
+) -> CircularSegmentMeshBuilder {
+  { segment: self.segment, resolution: self.resolution, uv_mode }
+}
+
+///|
+pub fn CircularSegmentMeshBuilder::build(
+  self : CircularSegmentMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  circular_segment_mesh(
+    self.segment.with_vertices(self.resolution).with_uv_mode(self.uv_mode),
+  )
+}
+
+///|
+pub impl MeshBuilder for CircularSegmentMeshBuilder with build(self) {
+  circular_segment_mesh(
+    self.segment.with_vertices(self.resolution).with_uv_mode(self.uv_mode),
   )
 }
 
@@ -260,6 +457,84 @@ pub fn convex_polygon_mesh(
 }
 
 ///|
+pub(all) struct ConvexPolygonMeshBuilder {
+  vertices : Array[@math.Vec2]
+}
+
+///|
+pub fn ConvexPolygonMeshBuilder::new(
+  vertices : Array[@math.Vec2],
+) -> ConvexPolygonMeshBuilder {
+  { vertices, }
+}
+
+///|
+pub fn ConvexPolygonMeshBuilder::from_polygon(
+  polygon : @math.ConvexPolygon,
+) -> ConvexPolygonMeshBuilder {
+  { vertices: polygon.vertices }
+}
+
+///|
+pub fn ConvexPolygonMeshBuilder::build(
+  self : ConvexPolygonMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  convex_polygon_mesh(@math.ConvexPolygon::new(self.vertices))
+}
+
+///|
+pub impl MeshBuilder for ConvexPolygonMeshBuilder with build(self) {
+  convex_polygon_mesh(@math.ConvexPolygon::new(self.vertices))
+}
+
+///|
+pub(all) struct EllipseMeshBuilder {
+  ellipse : @math.Ellipse
+  resolution : Int
+}
+
+///|
+pub fn EllipseMeshBuilder::default() -> EllipseMeshBuilder {
+  { ellipse: @math.Ellipse::default(), resolution: 32 }
+}
+
+///|
+pub fn EllipseMeshBuilder::new(
+  half_width : Float,
+  half_height : Float,
+  resolution : Int,
+) -> EllipseMeshBuilder {
+  { ellipse: @math.Ellipse::new(half_width, half_height), resolution }
+}
+
+///|
+pub fn EllipseMeshBuilder::from_ellipse(
+  ellipse : @math.Ellipse,
+) -> EllipseMeshBuilder {
+  { ellipse, resolution: 32 }
+}
+
+///|
+pub fn EllipseMeshBuilder::resolution(
+  self : EllipseMeshBuilder,
+  resolution : Int,
+) -> EllipseMeshBuilder {
+  { ellipse: self.ellipse, resolution }
+}
+
+///|
+pub fn EllipseMeshBuilder::build(
+  self : EllipseMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  ellipse_mesh_with_resolution(self.ellipse, self.resolution)
+}
+
+///|
+pub impl MeshBuilder for EllipseMeshBuilder with build(self) {
+  ellipse_mesh_with_resolution(self.ellipse, self.resolution)
+}
+
+///|
 pub fn ellipse_mesh(shape : @math.Ellipse) -> @mesh.Mesh3dGeometry {
   let resolution = primitive2d_resolution(shape.vertices, 32)
   ellipse_mesh_with_resolution(shape, resolution)
@@ -307,6 +582,59 @@ pub fn segment2d_mesh(segment : @math.Segment2d) -> @mesh.Mesh3dGeometry {
     Some([0, 1]),
     @mesh.Mesh3dPrimitiveTopology::LineList,
   )
+}
+
+///|
+pub(all) struct Segment2dMeshBuilder {
+  segment : @math.Segment2d
+}
+
+///|
+pub fn Segment2dMeshBuilder::new(
+  segment : @math.Segment2d,
+) -> Segment2dMeshBuilder {
+  { segment, }
+}
+
+///|
+pub fn Segment2dMeshBuilder::build(
+  self : Segment2dMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  segment2d_mesh(self.segment)
+}
+
+///|
+pub impl MeshBuilder for Segment2dMeshBuilder with build(self) {
+  segment2d_mesh(self.segment)
+}
+
+///|
+pub struct Polyline2dMeshBuilder {
+  polyline : @math.Polyline2d
+}
+
+///|
+pub fn Polyline2dMeshBuilder::default() -> Polyline2dMeshBuilder {
+  { polyline: @math.Polyline2d::new([]) }
+}
+
+///|
+pub fn Polyline2dMeshBuilder::new(
+  polyline : @math.Polyline2d,
+) -> Polyline2dMeshBuilder {
+  { polyline, }
+}
+
+///|
+pub fn Polyline2dMeshBuilder::build(
+  self : Polyline2dMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  polyline2d_mesh(self.polyline)
+}
+
+///|
+pub impl MeshBuilder for Polyline2dMeshBuilder with build(self) {
+  polyline2d_mesh(self.polyline)
 }
 
 ///|
@@ -376,6 +704,53 @@ pub fn annulus_mesh(shape : @math.Annulus) -> @mesh.Mesh3dGeometry {
 }
 
 ///|
+pub(all) struct AnnulusMeshBuilder {
+  annulus : @math.Annulus
+  resolution : Int
+}
+
+///|
+pub fn AnnulusMeshBuilder::default() -> AnnulusMeshBuilder {
+  { annulus: @math.Annulus::default(), resolution: 32 }
+}
+
+///|
+pub fn AnnulusMeshBuilder::new(
+  inner_radius : Float,
+  outer_radius : Float,
+  resolution : Int,
+) -> AnnulusMeshBuilder {
+  { annulus: @math.Annulus::new(inner_radius, outer_radius), resolution }
+}
+
+///|
+pub fn AnnulusMeshBuilder::from_annulus(
+  annulus : @math.Annulus,
+) -> AnnulusMeshBuilder {
+  { annulus, resolution: 32 }
+}
+
+///|
+pub fn AnnulusMeshBuilder::resolution(
+  self : AnnulusMeshBuilder,
+  resolution : Int,
+) -> AnnulusMeshBuilder {
+  { annulus: self.annulus, resolution }
+}
+
+///|
+pub fn AnnulusMeshBuilder::build(
+  self : AnnulusMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  annulus_mesh(self.annulus.with_vertices(self.resolution))
+}
+
+///|
+pub impl MeshBuilder for AnnulusMeshBuilder with build(self) {
+  annulus_mesh(self.annulus.with_vertices(self.resolution))
+}
+
+///|
 pub fn rhombus_mesh(shape : @math.Rhombus) -> @mesh.Mesh3dGeometry {
   let hhd = shape.half_diagonal.x
   let vhd = shape.half_diagonal.y
@@ -398,12 +773,102 @@ pub fn rhombus_mesh(shape : @math.Rhombus) -> @mesh.Mesh3dGeometry {
 }
 
 ///|
+pub struct RhombusMeshBuilder {
+  half_diagonals : @math.Vec2
+}
+
+///|
+pub fn RhombusMeshBuilder::default() -> RhombusMeshBuilder {
+  { half_diagonals: @math.Vec2::new(0.5F, 0.5F) }
+}
+
+///|
+pub fn RhombusMeshBuilder::new(
+  horizontal_diagonal : Float,
+  vertical_diagonal : Float,
+) -> RhombusMeshBuilder {
+  {
+    half_diagonals: @math.Vec2::new(
+      horizontal_diagonal * 0.5F,
+      vertical_diagonal * 0.5F,
+    ),
+  }
+}
+
+///|
+pub fn RhombusMeshBuilder::from_rhombus(
+  rhombus : @math.Rhombus,
+) -> RhombusMeshBuilder {
+  { half_diagonals: rhombus.half_diagonal }
+}
+
+///|
+pub fn RhombusMeshBuilder::build(
+  self : RhombusMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  rhombus_mesh(
+    @math.Rhombus::new(
+      self.half_diagonals.x * 2.0F,
+      self.half_diagonals.y * 2.0F,
+    ),
+  )
+}
+
+///|
+pub impl MeshBuilder for RhombusMeshBuilder with build(self) {
+  rhombus_mesh(
+    @math.Rhombus::new(
+      self.half_diagonals.x * 2.0F,
+      self.half_diagonals.y * 2.0F,
+    ),
+  )
+}
+
+///|
 pub fn regular_polygon_mesh(
   shape : @math.RegularPolygon,
 ) -> @mesh.Mesh3dGeometry {
   ellipse_mesh(
     @math.Ellipse::new(shape.radius, shape.radius).with_vertices(shape.sides),
   )
+}
+
+///|
+pub struct RegularPolygonMeshBuilder {
+  circumradius : Float
+  sides : Int
+}
+
+///|
+pub fn RegularPolygonMeshBuilder::default() -> RegularPolygonMeshBuilder {
+  { circumradius: 0.5F, sides: 6 }
+}
+
+///|
+pub fn RegularPolygonMeshBuilder::new(
+  circumradius : Float,
+  sides : Int,
+) -> RegularPolygonMeshBuilder {
+  { circumradius, sides }
+}
+
+///|
+pub fn RegularPolygonMeshBuilder::from_regular_polygon(
+  polygon : @math.RegularPolygon,
+) -> RegularPolygonMeshBuilder {
+  { circumradius: polygon.radius, sides: polygon.sides }
+}
+
+///|
+pub fn RegularPolygonMeshBuilder::build(
+  self : RegularPolygonMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  regular_polygon_mesh(@math.RegularPolygon::new(self.circumradius, self.sides))
+}
+
+///|
+pub impl MeshBuilder for RegularPolygonMeshBuilder with build(self) {
+  regular_polygon_mesh(@math.RegularPolygon::new(self.circumradius, self.sides))
 }
 
 ///|
@@ -432,6 +897,44 @@ pub fn triangle2d_mesh(shape : @math.Triangle2d) -> @mesh.Mesh3dGeometry {
     uvs,
     Some(indices),
   )
+}
+
+///|
+pub struct Triangle2dMeshBuilder {
+  triangle : @math.Triangle2d
+}
+
+///|
+pub fn Triangle2dMeshBuilder::default() -> Triangle2dMeshBuilder {
+  { triangle: @math.Triangle2d::default() }
+}
+
+///|
+pub fn Triangle2dMeshBuilder::new(
+  a : @math.Vec2,
+  b : @math.Vec2,
+  c : @math.Vec2,
+) -> Triangle2dMeshBuilder {
+  { triangle: @math.Triangle2d::new(a, b, c) }
+}
+
+///|
+pub fn Triangle2dMeshBuilder::from_triangle(
+  triangle : @math.Triangle2d,
+) -> Triangle2dMeshBuilder {
+  { triangle, }
+}
+
+///|
+pub fn Triangle2dMeshBuilder::build(
+  self : Triangle2dMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  triangle2d_mesh(self.triangle)
+}
+
+///|
+pub impl MeshBuilder for Triangle2dMeshBuilder with build(self) {
+  triangle2d_mesh(self.triangle)
 }
 
 ///|
@@ -540,4 +1043,51 @@ fn capsule2d_mesh_with_resolution(
     uvs,
     Some(indices),
   )
+}
+
+///|
+pub(all) struct Capsule2dMeshBuilder {
+  capsule : @math.Capsule2d
+  resolution : Int
+}
+
+///|
+pub fn Capsule2dMeshBuilder::default() -> Capsule2dMeshBuilder {
+  { capsule: @math.Capsule2d::default(), resolution: 16 }
+}
+
+///|
+pub fn Capsule2dMeshBuilder::new(
+  radius : Float,
+  length : Float,
+  resolution : Int,
+) -> Capsule2dMeshBuilder {
+  { capsule: @math.Capsule2d::new(radius, length), resolution }
+}
+
+///|
+pub fn Capsule2dMeshBuilder::from_capsule(
+  capsule : @math.Capsule2d,
+) -> Capsule2dMeshBuilder {
+  { capsule, resolution: 16 }
+}
+
+///|
+pub fn Capsule2dMeshBuilder::resolution(
+  self : Capsule2dMeshBuilder,
+  resolution : Int,
+) -> Capsule2dMeshBuilder {
+  { capsule: self.capsule, resolution }
+}
+
+///|
+pub fn Capsule2dMeshBuilder::build(
+  self : Capsule2dMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  capsule2d_mesh_with_resolution(self.capsule, self.resolution)
+}
+
+///|
+pub impl MeshBuilder for Capsule2dMeshBuilder with build(self) {
+  capsule2d_mesh_with_resolution(self.capsule, self.resolution)
 }

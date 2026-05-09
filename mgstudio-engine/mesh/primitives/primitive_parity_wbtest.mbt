@@ -74,6 +74,24 @@ fn primitive_parity_assert_triangle_winding_matches_normals(
 }
 
 ///|
+fn primitive_parity_assert_same_mesh_shape(
+  name : String,
+  direct : @mesh.Mesh3dGeometry,
+  built : @mesh.Mesh3dGeometry,
+) -> Unit {
+  if direct.vertex_count() != built.vertex_count() {
+    abort("\{name}: vertex count mismatch")
+  }
+  if direct.indices_or_sequential().length() !=
+    built.indices_or_sequential().length() {
+    abort("\{name}: index count mismatch")
+  }
+  if direct.primitive_topology() != built.primitive_topology() {
+    abort("\{name}: primitive topology mismatch")
+  }
+}
+
+///|
 test "dim2 and extrusion primitives: triangle winding matches generated normals" {
   primitive_parity_assert_triangle_winding_matches_normals(
     "rectangle",
@@ -158,5 +176,91 @@ test "dim2 and extrusion primitives: triangle winding matches generated normals"
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_triangle2d_ring",
     extrusion_triangle2d_ring_mesh(@math.Triangle2d::default(), 1.0F),
+  )
+}
+
+///|
+test "dim2 primitives: mesh builders match direct mesh functions" {
+  primitive_parity_assert_same_mesh_shape(
+    "circle",
+    circle_mesh(0.5F, 8),
+    CircleMeshBuilder::new(0.5F, 8).build(),
+  )
+  primitive_parity_assert_same_mesh_shape(
+    "rectangle",
+    rectangle_mesh(1.0F, 2.0F),
+    RectangleMeshBuilder::new(1.0F, 2.0F).build(),
+  )
+  let sector = @math.CircularSector::default()
+  primitive_parity_assert_same_mesh_shape(
+    "circular_sector",
+    circular_sector_mesh(sector.with_vertices(8)),
+    CircularSectorMeshBuilder::new(sector).resolution(8).build(),
+  )
+  let segment = @math.CircularSegment::default()
+  primitive_parity_assert_same_mesh_shape(
+    "circular_segment",
+    circular_segment_mesh(segment.with_vertices(8)),
+    CircularSegmentMeshBuilder::new(segment).resolution(8).build(),
+  )
+  let convex = @math.ConvexPolygon::new([
+    @math.Vec2::new(-0.5F, -0.5F),
+    @math.Vec2::new(0.5F, -0.5F),
+    @math.Vec2::new(0.0F, 0.5F),
+  ])
+  primitive_parity_assert_same_mesh_shape(
+    "convex_polygon",
+    convex_polygon_mesh(convex),
+    ConvexPolygonMeshBuilder::from_polygon(convex).build(),
+  )
+  primitive_parity_assert_same_mesh_shape(
+    "ellipse",
+    ellipse_mesh(@math.Ellipse::new(0.5F, 0.25F).with_vertices(8)),
+    EllipseMeshBuilder::new(0.5F, 0.25F, 8).build(),
+  )
+  let segment2d = @math.Segment2d::new(
+    @math.Vec2::new(-0.5F, 0.0F),
+    @math.Vec2::new(0.5F, 0.0F),
+  )
+  primitive_parity_assert_same_mesh_shape(
+    "segment2d",
+    segment2d_mesh(segment2d),
+    Segment2dMeshBuilder::new(segment2d).build(),
+  )
+  let polyline = @math.Polyline2d::new([
+    @math.Vec2::new(-0.5F, 0.0F),
+    @math.Vec2::new(0.5F, 0.0F),
+    @math.Vec2::new(0.0F, 0.5F),
+  ])
+  primitive_parity_assert_same_mesh_shape(
+    "polyline2d",
+    polyline2d_mesh(polyline),
+    Polyline2dMeshBuilder::new(polyline).build(),
+  )
+  primitive_parity_assert_same_mesh_shape(
+    "annulus",
+    annulus_mesh(@math.Annulus::new(0.25F, 0.5F).with_vertices(8)),
+    AnnulusMeshBuilder::new(0.25F, 0.5F, 8).build(),
+  )
+  primitive_parity_assert_same_mesh_shape(
+    "rhombus",
+    rhombus_mesh(@math.Rhombus::new(1.0F, 2.0F)),
+    RhombusMeshBuilder::new(1.0F, 2.0F).build(),
+  )
+  primitive_parity_assert_same_mesh_shape(
+    "regular_polygon",
+    regular_polygon_mesh(@math.RegularPolygon::new(0.5F, 6)),
+    RegularPolygonMeshBuilder::new(0.5F, 6).build(),
+  )
+  let triangle = @math.Triangle2d::default()
+  primitive_parity_assert_same_mesh_shape(
+    "triangle2d",
+    triangle2d_mesh(triangle),
+    Triangle2dMeshBuilder::from_triangle(triangle).build(),
+  )
+  primitive_parity_assert_same_mesh_shape(
+    "capsule2d",
+    capsule2d_mesh_with_resolution(@math.Capsule2d::new(0.5F, 1.0F), 8),
+    Capsule2dMeshBuilder::new(0.5F, 1.0F, 8).build(),
   )
 }
