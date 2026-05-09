@@ -223,6 +223,76 @@ test "dim3 primitives: cone and cylinder mesh builders expose source options" {
 }
 
 ///|
+test "dim3 primitives: remaining mesh builders match direct mesh functions" {
+  let frustum = @math.ConicalFrustum::new(0.25F, 0.5F, 1.0F)
+  let frustum_direct = conical_frustum_mesh_with_options(frustum, 4, 1)
+  let frustum_built = ConicalFrustumMeshBuilder::new(0.25F, 0.5F, 1.0F, 4)
+    .segments(1)
+    .build()
+  debug_inspect(frustum_built.vertex_count(), content="18")
+  debug_inspect(frustum_built.indices_or_sequential().length(), content="36")
+  debug_inspect(
+    frustum_built.indices_or_sequential().length() ==
+    frustum_direct.indices_or_sequential().length(),
+    content="true",
+  )
+  let capsule = @math.Capsule3d::new(0.5F, 1.0F)
+  let capsule_direct = capsule3d_mesh_with_uv_profile(
+    capsule,
+    1,
+    8,
+    8,
+    CapsuleUvProfile::fixed(),
+  )
+  let capsule_built = Capsule3dMeshBuilder::new(0.5F, 1.0F, 8, 8)
+    .rings(1)
+    .uv_profile(CapsuleUvProfile::fixed())
+    .build()
+  debug_inspect(
+    capsule_built.vertex_count() == capsule_direct.vertex_count(),
+    content="true",
+  )
+  debug_inspect(
+    capsule_built.indices_or_sequential().length() ==
+    capsule_direct.indices_or_sequential().length(),
+    content="true",
+  )
+  let torus = @math.Torus::new(0.75F, 0.25F)
+  let torus_direct = torus_mesh_with_resolution(torus, 4, 4)
+  let torus_built = TorusMeshBuilder::from_torus(torus)
+    .minor_resolution(4)
+    .major_resolution(4)
+    .build()
+  debug_inspect(torus_built.vertex_count(), content="25")
+  debug_inspect(torus_built.indices_or_sequential().length(), content="96")
+  debug_inspect(
+    torus_built.indices_or_sequential().length() ==
+    torus_direct.indices_or_sequential().length(),
+    content="true",
+  )
+  let plane_direct = plane3d_mesh_from_size(2.0F, 2.0F, 1)
+  let plane_built = PlaneMeshBuilder::from_length(2.0F).subdivisions(1).build()
+  debug_inspect(plane_built.vertex_count(), content="9")
+  debug_inspect(plane_built.indices_or_sequential().length(), content="24")
+  debug_inspect(
+    plane_built.indices_or_sequential().length() ==
+    plane_direct.indices_or_sequential().length(),
+    content="true",
+  )
+  let sphere_direct = sphere_mesh_with_kind(0.5F, SphereKind::uv(8, 4))
+  let sphere_built = SphereMeshBuilder::new(0.5F, SphereKind::uv(8, 4)).build()
+  debug_inspect(
+    sphere_built.vertex_count() == sphere_direct.vertex_count(),
+    content="true",
+  )
+  debug_inspect(
+    sphere_built.indices_or_sequential().length() ==
+    sphere_direct.indices_or_sequential().length(),
+    content="true",
+  )
+}
+
+///|
 test "dim3 primitives: cone and cylinder anchors match builder offsets" {
   primitive_parity_assert_y_bounds(
     "cone_tip_anchor",

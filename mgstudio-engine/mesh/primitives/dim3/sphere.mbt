@@ -638,6 +638,69 @@ pub fn SphereKind::uv(sectors : Int, stacks : Int) -> SphereKind {
 }
 
 ///|
+pub(all) struct SphereMeshBuilder {
+  sphere : @math.Sphere
+  kind : SphereKind
+}
+
+///|
+pub fn SphereMeshBuilder::default() -> SphereMeshBuilder {
+  { sphere: @math.Sphere::default(), kind: SphereKind::default() }
+}
+
+///|
+pub fn SphereMeshBuilder::new(
+  radius : Float,
+  kind : SphereKind,
+) -> SphereMeshBuilder {
+  { sphere: @math.Sphere::{ radius, }, kind }
+}
+
+///|
+pub fn SphereMeshBuilder::from_sphere(
+  sphere : @math.Sphere,
+) -> SphereMeshBuilder {
+  { sphere, kind: SphereKind::default() }
+}
+
+///|
+pub fn SphereMeshBuilder::kind(
+  self : SphereMeshBuilder,
+  kind : SphereKind,
+) -> SphereMeshBuilder {
+  { sphere: self.sphere, kind }
+}
+
+///|
+pub fn SphereMeshBuilder::ico(
+  self : SphereMeshBuilder,
+  subdivisions : Int,
+) -> @mesh.Mesh3dGeometry {
+  icosphere_mesh(self.sphere.radius, subdivisions)
+}
+
+///|
+pub fn SphereMeshBuilder::uv(
+  self : SphereMeshBuilder,
+  sectors : Int,
+  stacks : Int,
+) -> @mesh.Mesh3dGeometry {
+  uv_sphere_mesh(self.sphere.radius, sectors, stacks)
+}
+
+///|
+pub fn SphereMeshBuilder::build(
+  self : SphereMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  sphere_mesh_with_kind(self.sphere.radius, self.kind)
+}
+
+///|
+pub impl MeshBuilder for SphereMeshBuilder with build(self) {
+  sphere_mesh_with_kind(self.sphere.radius, self.kind)
+}
+
+///|
 pub fn sphere_mesh(radius : Float, subdivisions : Int) -> @mesh.Mesh3dGeometry {
   icosphere_mesh(radius, subdivisions)
 }

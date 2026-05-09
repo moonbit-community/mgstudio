@@ -23,6 +23,116 @@ pub fn torus_unit() -> @math.Torus {
 }
 
 ///|
+pub(all) struct TorusMeshBuilder {
+  torus : @math.Torus
+  minor_resolution : Int
+  major_resolution : Int
+  start_angle : Float
+  end_angle : Float
+}
+
+///|
+pub fn TorusMeshBuilder::default() -> TorusMeshBuilder {
+  {
+    torus: @math.Torus::default(),
+    minor_resolution: 24,
+    major_resolution: 32,
+    start_angle: 0.0F,
+    end_angle: 2.0F * @math.pi(),
+  }
+}
+
+///|
+pub fn TorusMeshBuilder::new(
+  inner_radius : Float,
+  outer_radius : Float,
+) -> TorusMeshBuilder {
+  {
+    torus: @math.Torus::new(inner_radius, outer_radius),
+    minor_resolution: 24,
+    major_resolution: 32,
+    start_angle: 0.0F,
+    end_angle: 2.0F * @math.pi(),
+  }
+}
+
+///|
+pub fn TorusMeshBuilder::from_torus(torus : @math.Torus) -> TorusMeshBuilder {
+  {
+    torus,
+    minor_resolution: 24,
+    major_resolution: 32,
+    start_angle: 0.0F,
+    end_angle: 2.0F * @math.pi(),
+  }
+}
+
+///|
+pub fn TorusMeshBuilder::minor_resolution(
+  self : TorusMeshBuilder,
+  resolution : Int,
+) -> TorusMeshBuilder {
+  {
+    torus: self.torus,
+    minor_resolution: resolution,
+    major_resolution: self.major_resolution,
+    start_angle: self.start_angle,
+    end_angle: self.end_angle,
+  }
+}
+
+///|
+pub fn TorusMeshBuilder::major_resolution(
+  self : TorusMeshBuilder,
+  resolution : Int,
+) -> TorusMeshBuilder {
+  {
+    torus: self.torus,
+    minor_resolution: self.minor_resolution,
+    major_resolution: resolution,
+    start_angle: self.start_angle,
+    end_angle: self.end_angle,
+  }
+}
+
+///|
+pub fn TorusMeshBuilder::angle_range(
+  self : TorusMeshBuilder,
+  start_angle : Float,
+  end_angle : Float,
+) -> TorusMeshBuilder {
+  {
+    torus: self.torus,
+    minor_resolution: self.minor_resolution,
+    major_resolution: self.major_resolution,
+    start_angle,
+    end_angle,
+  }
+}
+
+///|
+pub fn TorusMeshBuilder::build(self : TorusMeshBuilder) -> @mesh.Mesh3dGeometry {
+  torus_mesh_with_angle_range(
+    self.torus,
+    self.minor_resolution,
+    self.major_resolution,
+    self.start_angle,
+    self.end_angle,
+  )
+}
+
+///|
+pub impl MeshBuilder for TorusMeshBuilder with build(self) {
+  torus_mesh_with_angle_range(
+    self.torus,
+    self.minor_resolution,
+    self.major_resolution,
+    self.start_angle,
+    self.end_angle,
+  )
+}
+
+///|
 pub fn torus_mesh(shape : @math.Torus) -> @mesh.Mesh3dGeometry {
   torus_mesh_with_resolution(shape, 24, 32)
 }

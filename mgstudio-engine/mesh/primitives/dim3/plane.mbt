@@ -23,6 +23,88 @@ pub fn plane3d_unit() -> @math.Plane3d {
 }
 
 ///|
+pub(all) struct PlaneMeshBuilder {
+  plane : @math.Plane3d
+  subdivisions : Int
+}
+
+///|
+pub fn PlaneMeshBuilder::default() -> PlaneMeshBuilder {
+  { plane: @math.Plane3d::default(), subdivisions: 0 }
+}
+
+///|
+pub fn PlaneMeshBuilder::new(
+  normal : @math.Dir3,
+  size : @math.Vec2,
+) -> PlaneMeshBuilder {
+  {
+    plane: @math.Plane3d::new(normal.as_vec3(), size.mul_scalar(0.5F)),
+    subdivisions: 0,
+  }
+}
+
+///|
+pub fn PlaneMeshBuilder::from_size(size : @math.Vec2) -> PlaneMeshBuilder {
+  {
+    plane: @math.Plane3d::new(
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      size.mul_scalar(0.5F),
+    ),
+    subdivisions: 0,
+  }
+}
+
+///|
+pub fn PlaneMeshBuilder::from_length(length : Float) -> PlaneMeshBuilder {
+  PlaneMeshBuilder::from_size(@math.Vec2::new(length, length))
+}
+
+///|
+pub fn PlaneMeshBuilder::normal(
+  self : PlaneMeshBuilder,
+  normal : @math.Dir3,
+) -> PlaneMeshBuilder {
+  {
+    plane: @math.Plane3d::new(normal.as_vec3(), self.plane.half_size()),
+    subdivisions: self.subdivisions,
+  }
+}
+
+///|
+pub fn PlaneMeshBuilder::size(
+  self : PlaneMeshBuilder,
+  width : Float,
+  height : Float,
+) -> PlaneMeshBuilder {
+  {
+    plane: @math.Plane3d::new(
+      self.plane.normal().as_vec3(),
+      @math.Vec2::new(width * 0.5F, height * 0.5F),
+    ),
+    subdivisions: self.subdivisions,
+  }
+}
+
+///|
+pub fn PlaneMeshBuilder::subdivisions(
+  self : PlaneMeshBuilder,
+  subdivisions : Int,
+) -> PlaneMeshBuilder {
+  { plane: self.plane, subdivisions }
+}
+
+///|
+pub fn PlaneMeshBuilder::build(self : PlaneMeshBuilder) -> @mesh.Mesh3dGeometry {
+  plane3d_mesh(self.plane, self.subdivisions)
+}
+
+///|
+pub impl MeshBuilder for PlaneMeshBuilder with build(self) {
+  plane3d_mesh(self.plane, self.subdivisions)
+}
+
+///|
 pub fn plane3d_mesh(
   plane : @math.Plane3d,
   subdivisions : Int,

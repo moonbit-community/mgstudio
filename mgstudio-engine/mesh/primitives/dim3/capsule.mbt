@@ -45,6 +45,135 @@ pub fn CapsuleUvProfile::fixed() -> CapsuleUvProfile {
 }
 
 ///|
+pub(all) struct Capsule3dMeshBuilder {
+  capsule : @math.Capsule3d
+  rings : Int
+  longitudes : Int
+  latitudes : Int
+  uv_profile : CapsuleUvProfile
+}
+
+///|
+pub fn Capsule3dMeshBuilder::default() -> Capsule3dMeshBuilder {
+  {
+    capsule: @math.Capsule3d::default(),
+    rings: 0,
+    longitudes: 32,
+    latitudes: 16,
+    uv_profile: CapsuleUvProfile::default(),
+  }
+}
+
+///|
+pub fn Capsule3dMeshBuilder::new(
+  radius : Float,
+  height : Float,
+  longitudes : Int,
+  latitudes : Int,
+) -> Capsule3dMeshBuilder {
+  {
+    capsule: @math.Capsule3d::new(radius, height),
+    rings: 0,
+    longitudes,
+    latitudes,
+    uv_profile: CapsuleUvProfile::default(),
+  }
+}
+
+///|
+pub fn Capsule3dMeshBuilder::from_capsule(
+  capsule : @math.Capsule3d,
+) -> Capsule3dMeshBuilder {
+  {
+    capsule,
+    rings: 0,
+    longitudes: 32,
+    latitudes: 16,
+    uv_profile: CapsuleUvProfile::default(),
+  }
+}
+
+///|
+pub fn Capsule3dMeshBuilder::rings(
+  self : Capsule3dMeshBuilder,
+  rings : Int,
+) -> Capsule3dMeshBuilder {
+  {
+    capsule: self.capsule,
+    rings,
+    longitudes: self.longitudes,
+    latitudes: self.latitudes,
+    uv_profile: self.uv_profile,
+  }
+}
+
+///|
+pub fn Capsule3dMeshBuilder::longitudes(
+  self : Capsule3dMeshBuilder,
+  longitudes : Int,
+) -> Capsule3dMeshBuilder {
+  {
+    capsule: self.capsule,
+    rings: self.rings,
+    longitudes,
+    latitudes: self.latitudes,
+    uv_profile: self.uv_profile,
+  }
+}
+
+///|
+pub fn Capsule3dMeshBuilder::latitudes(
+  self : Capsule3dMeshBuilder,
+  latitudes : Int,
+) -> Capsule3dMeshBuilder {
+  {
+    capsule: self.capsule,
+    rings: self.rings,
+    longitudes: self.longitudes,
+    latitudes,
+    uv_profile: self.uv_profile,
+  }
+}
+
+///|
+pub fn Capsule3dMeshBuilder::uv_profile(
+  self : Capsule3dMeshBuilder,
+  uv_profile : CapsuleUvProfile,
+) -> Capsule3dMeshBuilder {
+  {
+    capsule: self.capsule,
+    rings: self.rings,
+    longitudes: self.longitudes,
+    latitudes: self.latitudes,
+    uv_profile,
+  }
+}
+
+///|
+pub fn Capsule3dMeshBuilder::build(
+  self : Capsule3dMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  capsule3d_mesh_with_uv_profile(
+    self.capsule,
+    self.rings,
+    self.longitudes,
+    self.latitudes,
+    self.uv_profile,
+  )
+}
+
+///|
+pub impl MeshBuilder for Capsule3dMeshBuilder with build(self) {
+  capsule3d_mesh_with_uv_profile(
+    self.capsule,
+    self.rings,
+    self.longitudes,
+    self.latitudes,
+    self.uv_profile,
+  )
+}
+
+///|
 pub fn capsule3d_mesh(shape : @math.Capsule3d) -> @mesh.Mesh3dGeometry {
   capsule3d_mesh_with_options(shape, 0, 32, 16)
 }

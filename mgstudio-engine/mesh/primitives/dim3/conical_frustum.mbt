@@ -22,6 +22,75 @@ pub fn conical_frustum(
 }
 
 ///|
+pub(all) struct ConicalFrustumMeshBuilder {
+  frustum : @math.ConicalFrustum
+  resolution : Int
+  segments : Int
+}
+
+///|
+pub fn ConicalFrustumMeshBuilder::default() -> ConicalFrustumMeshBuilder {
+  { frustum: @math.ConicalFrustum::default(), resolution: 32, segments: 1 }
+}
+
+///|
+pub fn ConicalFrustumMeshBuilder::new(
+  radius_top : Float,
+  radius_bottom : Float,
+  height : Float,
+  resolution : Int,
+) -> ConicalFrustumMeshBuilder {
+  {
+    frustum: @math.ConicalFrustum::new(radius_top, radius_bottom, height),
+    resolution,
+    segments: 1,
+  }
+}
+
+///|
+pub fn ConicalFrustumMeshBuilder::from_frustum(
+  frustum : @math.ConicalFrustum,
+) -> ConicalFrustumMeshBuilder {
+  { frustum, resolution: 32, segments: 1 }
+}
+
+///|
+pub fn ConicalFrustumMeshBuilder::resolution(
+  self : ConicalFrustumMeshBuilder,
+  resolution : Int,
+) -> ConicalFrustumMeshBuilder {
+  { frustum: self.frustum, resolution, segments: self.segments }
+}
+
+///|
+pub fn ConicalFrustumMeshBuilder::segments(
+  self : ConicalFrustumMeshBuilder,
+  segments : Int,
+) -> ConicalFrustumMeshBuilder {
+  { frustum: self.frustum, resolution: self.resolution, segments }
+}
+
+///|
+pub fn ConicalFrustumMeshBuilder::build(
+  self : ConicalFrustumMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  conical_frustum_mesh_with_options(
+    self.frustum,
+    self.resolution,
+    self.segments,
+  )
+}
+
+///|
+pub impl MeshBuilder for ConicalFrustumMeshBuilder with build(self) {
+  conical_frustum_mesh_with_options(
+    self.frustum,
+    self.resolution,
+    self.segments,
+  )
+}
+
+///|
 pub fn conical_frustum_mesh(
   shape : @math.ConicalFrustum,
 ) -> @mesh.Mesh3dGeometry {
