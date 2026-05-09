@@ -284,42 +284,44 @@ fn setup(
   let extrusions = [
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_rectangle_mesh(
-        @math.Rectangle::default(),
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(@math.Rectangle::default(), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_capsule2d_mesh(
-        @math.Capsule2d::default(),
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(@math.Capsule2d::default(), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_annulus_mesh(@math.Annulus::default(), 1.0F),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_circle_mesh(@math.Circle::default(), 1.0F),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_ellipse_mesh(@math.Ellipse::default(), 1.0F),
-    ),
-    mesh3d_from_geometry(
-      mesh_assets,
-      @mesh_primitives.extrusion_regular_polygon_mesh(
-        @math.RegularPolygon::default(),
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(@math.Annulus::default(), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_triangle2d_mesh(
-        @math.Triangle2d::default(),
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(@math.Circle::default(), 1.0F),
+      ),
+    ),
+    mesh3d_from_geometry(
+      mesh_assets,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(@math.Ellipse::default(), 1.0F),
+      ),
+    ),
+    mesh3d_from_geometry(
+      mesh_assets,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(@math.RegularPolygon::default(), 1.0F),
+      ),
+    ),
+    mesh3d_from_geometry(
+      mesh_assets,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(@math.Triangle2d::default(), 1.0F),
       ),
     ),
   ]
@@ -338,57 +340,69 @@ fn setup(
   let ring_extrusions = [
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_rectangle_ring_mesh(
-        @math.Rectangle::default(),
-        THICKNESS,
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(
+          @math.Rectangle::default().to_ring(THICKNESS),
+          1.0F,
+        ),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_capsule2d_ring_mesh(
-        @math.Capsule2d::default(),
-        THICKNESS,
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(
+          @math.Capsule2d::default().to_ring(THICKNESS),
+          1.0F,
+        ),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_circle_ring_mesh(
-        @math.Circle::new(1.0F).with_vertices(48),
-        0.5F,
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(
+          @math.Ring::new(@math.Circle::new(1.0F), @math.Circle::new(0.5F)),
+          1.0F,
+        ),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_circle_ring_mesh(
-        @math.Circle::default(),
-        THICKNESS,
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(@math.Circle::default().to_ring(THICKNESS), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_ellipse_ring_mesh(
-        @math.Ellipse::default(),
-        THICKNESS,
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(
+          {
+            let outer = @math.Ellipse::default()
+            let inner = @math.Ellipse::new(
+              outer.half_size.x - THICKNESS,
+              outer.half_size.y - THICKNESS,
+            )
+            @math.Ring::new(outer, inner)
+          },
+          1.0F,
+        ),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_regular_polygon_ring_mesh(
-        @math.RegularPolygon::default(),
-        THICKNESS,
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(
+          @math.RegularPolygon::default().to_ring(THICKNESS),
+          1.0F,
+        ),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives.extrusion_triangle2d_ring_mesh(
-        @math.Triangle2d::default(),
-        1.0F,
+      @mesh_primitives.extrusion_mesh(
+        @math.Extrusion::new(
+          @math.Triangle2d::default().to_ring(THICKNESS),
+          1.0F,
+        ),
       ),
     ),
   ]

@@ -24,6 +24,16 @@ pub(open) trait Extrudable: MeshBuilder {
 }
 
 ///|
+pub(open) trait Meshable {
+  mesh(Self) -> @mesh.Mesh3dGeometry
+}
+
+///|
+pub(open) trait ExtrudablePrimitive: Meshable {
+  mesh_perimeter(Self) -> Array[PerimeterSegment]
+}
+
+///|
 pub(all) struct ExtrusionBuilder {
   base_mesh : @mesh.Mesh3dGeometry
   perimeter : Array[PerimeterSegment]
@@ -81,311 +91,15 @@ pub fn extrusion_wireframe_mesh(
 }
 
 ///|
-fn extrusion_non_negative(value : Float) -> Float {
-  if value < 0.0F {
-    0.0F
-  } else {
-    value
-  }
-}
-
-///|
-pub fn extrusion_rectangle_mesh(
-  rectangle : @math.Rectangle,
-  depth : Float,
+pub fn[P : ExtrudablePrimitive] extrusion_mesh(
+  extrusion : @math.Extrusion[P],
 ) -> @mesh.Mesh3dGeometry {
+  let shape = extrusion.base_shape
   ExtrusionBuilder::new(
-    rectangle_shape_mesh(rectangle),
-    [Flat([0, 1, 2, 3, 0])],
-    depth,
+    shape.mesh(),
+    shape.mesh_perimeter(),
+    extrusion.half_depth * 2.0F,
   ).build()
-}
-
-///|
-pub fn extrusion_capsule2d_mesh(
-  capsule : @math.Capsule2d,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let resolution = if capsule.segments < 2 { 16 } else { capsule.segments / 2 }
-  ExtrusionBuilder::new(
-    capsule2d_mesh_with_resolution(capsule, resolution),
-    capsule2d_perimeter(resolution),
-    depth,
-  ).build()
-}
-
-///|
-pub fn extrusion_annulus_mesh(
-  annulus : @math.Annulus,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let resolution = primitive2d_resolution(annulus.vertices, 32)
-  ExtrusionBuilder::new(
-    annulus_mesh(annulus.with_vertices(resolution)),
-    annulus_perimeter(resolution),
-    depth,
-  ).build()
-}
-
-///|
-pub fn extrusion_circle_mesh(
-  circle : @math.Circle,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let resolution = primitive2d_resolution(circle.vertices, 32)
-  ExtrusionBuilder::new(
-    circle_mesh(circle.radius, resolution),
-    [
-      Smooth(
-        @math.Vec2::new(0.0F, 1.0F),
-        @math.Vec2::new(0.0F, 1.0F),
-        closed_range_indices(0, resolution, 0),
-      ),
-    ],
-    depth,
-  ).build()
-}
-
-///|
-pub fn extrusion_circular_sector_mesh(
-  sector : @math.CircularSector,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let resolution = primitive2d_resolution(sector.vertices, 32)
-  ExtrusionBuilder::new(
-    circular_sector_mesh(sector.with_vertices(resolution)),
-    circular_arc_perimeter(resolution, sector.half_angle),
-    depth,
-  ).build()
-}
-
-///|
-pub fn extrusion_circular_segment_mesh(
-  segment : @math.CircularSegment,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let resolution = primitive2d_resolution(segment.vertices, 32)
-  ExtrusionBuilder::new(
-    circular_segment_mesh(segment.with_vertices(resolution)),
-    circular_arc_perimeter(resolution, segment.half_angle),
-    depth,
-  ).build()
-}
-
-///|
-pub fn extrusion_convex_polygon_mesh(
-  polygon : @math.ConvexPolygon,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  ExtrusionBuilder::new(
-    convex_polygon_mesh(polygon),
-    [Flat(closed_range_indices(0, polygon.vertices.length(), 0))],
-    depth,
-  ).build()
-}
-
-///|
-pub fn extrusion_ellipse_mesh(
-  ellipse : @math.Ellipse,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let resolution = primitive2d_resolution(ellipse.vertices, 32)
-  ExtrusionBuilder::new(
-    ellipse_mesh(ellipse.with_vertices(resolution)),
-    [
-      Smooth(
-        @math.Vec2::new(0.0F, 1.0F),
-        @math.Vec2::new(0.0F, 1.0F),
-        closed_range_indices(0, resolution, 0),
-      ),
-    ],
-    depth,
-  ).build()
-}
-
-///|
-pub fn extrusion_rhombus_mesh(
-  rhombus : @math.Rhombus,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  ExtrusionBuilder::new(rhombus_mesh(rhombus), [Flat([0, 1, 2, 3, 0])], depth).build()
-}
-
-///|
-pub fn extrusion_regular_polygon_mesh(
-  polygon : @math.RegularPolygon,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  ExtrusionBuilder::new(
-    regular_polygon_mesh(polygon),
-    [Flat(closed_range_indices(0, polygon.sides, 0))],
-    depth,
-  ).build()
-}
-
-///|
-pub fn extrusion_triangle2d_mesh(
-  triangle : @math.Triangle2d,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let perimeter = if triangle2d_signed_area(triangle) >= 0.0F {
-    [Flat([0, 1, 2, 0])]
-  } else {
-    [Flat([2, 1, 0, 2])]
-  }
-  ExtrusionBuilder::new(triangle2d_mesh(triangle), perimeter, depth).build()
-}
-
-///|
-pub fn extrusion_rectangle_ring_mesh(
-  rectangle : @math.Rectangle,
-  thickness : Float,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let inner = @math.Rectangle::new(
-    extrusion_non_negative(rectangle.half_size.x * 2.0F - thickness * 2.0F),
-    extrusion_non_negative(rectangle.half_size.y * 2.0F - thickness * 2.0F),
-  )
-  extrusion_ring_build(
-    rectangle_shape_mesh(rectangle),
-    [Flat([0, 1, 2, 3, 0])],
-    rectangle_shape_mesh(inner),
-    [Flat([0, 1, 2, 3, 0])],
-    depth,
-  )
-}
-
-///|
-pub fn extrusion_capsule2d_ring_mesh(
-  capsule : @math.Capsule2d,
-  thickness : Float,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let resolution = if capsule.segments < 2 { 16 } else { capsule.segments / 2 }
-  let inner = @math.Capsule2d::new(
-    extrusion_non_negative(capsule.radius - thickness),
-    extrusion_non_negative(capsule.half_length - thickness) * 2.0F,
-  )
-  extrusion_ring_build(
-    capsule2d_mesh_with_resolution(capsule, resolution),
-    capsule2d_perimeter(resolution),
-    capsule2d_mesh_with_resolution(inner, resolution),
-    capsule2d_perimeter(resolution),
-    depth,
-  )
-}
-
-///|
-pub fn extrusion_circle_ring_mesh(
-  circle : @math.Circle,
-  thickness : Float,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let resolution = primitive2d_resolution(circle.vertices, 32)
-  let inner_radius = extrusion_non_negative(circle.radius - thickness)
-  extrusion_annulus_mesh(
-    @math.Annulus::new(inner_radius, circle.radius).with_vertices(resolution),
-    depth,
-  )
-}
-
-///|
-pub fn extrusion_ellipse_ring_mesh(
-  ellipse : @math.Ellipse,
-  thickness : Float,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let resolution = primitive2d_resolution(ellipse.vertices, 32)
-  let inner = @math.Ellipse::new(
-    extrusion_non_negative(ellipse.half_size.x - thickness),
-    extrusion_non_negative(ellipse.half_size.y - thickness),
-  ).with_vertices(resolution)
-  extrusion_ring_build(
-    ellipse_mesh(ellipse.with_vertices(resolution)),
-    [
-      Smooth(
-        @math.Vec2::new(0.0F, 1.0F),
-        @math.Vec2::new(0.0F, 1.0F),
-        closed_range_indices(0, resolution, 0),
-      ),
-    ],
-    ellipse_mesh(inner),
-    [
-      Smooth(
-        @math.Vec2::new(0.0F, 1.0F),
-        @math.Vec2::new(0.0F, 1.0F),
-        closed_range_indices(0, resolution, 0),
-      ),
-    ],
-    depth,
-  )
-}
-
-///|
-pub fn extrusion_rhombus_ring_mesh(
-  rhombus : @math.Rhombus,
-  thickness : Float,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let inner = @math.Rhombus::new(
-    extrusion_non_negative(rhombus.half_diagonal.x * 2.0F - thickness * 2.0F),
-    extrusion_non_negative(rhombus.half_diagonal.y * 2.0F - thickness * 2.0F),
-  )
-  extrusion_ring_build(
-    rhombus_mesh(rhombus),
-    [Flat([0, 1, 2, 3, 0])],
-    rhombus_mesh(inner),
-    [Flat([0, 1, 2, 3, 0])],
-    depth,
-  )
-}
-
-///|
-pub fn extrusion_regular_polygon_ring_mesh(
-  polygon : @math.RegularPolygon,
-  thickness : Float,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let inner = @math.RegularPolygon::new(
-    extrusion_non_negative(polygon.radius - thickness),
-    polygon.sides,
-  )
-  extrusion_ring_build(
-    regular_polygon_mesh(polygon),
-    [Flat(closed_range_indices(0, polygon.sides, 0))],
-    regular_polygon_mesh(inner),
-    [Flat(closed_range_indices(0, inner.sides, 0))],
-    depth,
-  )
-}
-
-///|
-pub fn extrusion_triangle2d_ring_mesh(
-  triangle : @math.Triangle2d,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let inner = @math.Triangle2d::new(
-    triangle.a.mul_scalar(0.75F),
-    triangle.b.mul_scalar(0.75F),
-    triangle.c.mul_scalar(0.75F),
-  )
-  let outer_perimeter = if triangle2d_signed_area(triangle) >= 0.0F {
-    [Flat([0, 1, 2, 0])]
-  } else {
-    [Flat([2, 1, 0, 2])]
-  }
-  let inner_perimeter = if triangle2d_signed_area(inner) >= 0.0F {
-    [Flat([0, 1, 2, 0])]
-  } else {
-    [Flat([2, 1, 0, 2])]
-  }
-  extrusion_ring_build(
-    triangle2d_mesh(triangle),
-    outer_perimeter,
-    triangle2d_mesh(inner),
-    inner_perimeter,
-    depth,
-  )
 }
 
 ///|
@@ -614,20 +328,6 @@ fn extrusion_append_smooth_mantel(
       indices.push(index + layers + 1)
     }
   }
-}
-
-///|
-fn extrusion_ring_build(
-  outer_mesh : @mesh.Mesh3dGeometry,
-  outer_perimeter : Array[PerimeterSegment],
-  inner_mesh : @mesh.Mesh3dGeometry,
-  inner_perimeter : Array[PerimeterSegment],
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let builder = RingMeshBuilder::new(
-    outer_mesh, inner_mesh, outer_perimeter, inner_perimeter,
-  )
-  ExtrusionBuilder::new(builder.build(), builder.perimeter(), depth).build()
 }
 
 ///|

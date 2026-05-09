@@ -106,6 +106,14 @@ fn primitive_parity_perimeter_index_count(
 }
 
 ///|
+fn[P : ExtrudablePrimitive] primitive_parity_extrusion(
+  shape : P,
+  depth : Float,
+) -> @mesh.Mesh3dGeometry {
+  extrusion_mesh(@math.Extrusion::new(shape, depth))
+}
+
+///|
 test "dim2 and extrusion primitives: triangle winding matches generated normals" {
   primitive_parity_assert_triangle_winding_matches_normals(
     "rectangle",
@@ -137,59 +145,59 @@ test "dim2 and extrusion primitives: triangle winding matches generated normals"
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_rectangle",
-    extrusion_rectangle_mesh(@math.Rectangle::default(), 1.0F),
+    primitive_parity_extrusion(@math.Rectangle::default(), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_capsule2d",
-    extrusion_capsule2d_mesh(@math.Capsule2d::default(), 1.0F),
+    primitive_parity_extrusion(@math.Capsule2d::default(), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_annulus",
-    extrusion_annulus_mesh(@math.Annulus::default(), 1.0F),
+    primitive_parity_extrusion(@math.Annulus::default(), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_circular_sector",
-    extrusion_circular_sector_mesh(@math.CircularSector::default(), 1.0F),
+    primitive_parity_extrusion(@math.CircularSector::default(), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_circular_segment",
-    extrusion_circular_segment_mesh(@math.CircularSegment::default(), 1.0F),
+    primitive_parity_extrusion(@math.CircularSegment::default(), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_circle",
-    extrusion_circle_mesh(@math.Circle::default(), 1.0F),
+    primitive_parity_extrusion(@math.Circle::default(), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_ellipse",
-    extrusion_ellipse_mesh(@math.Ellipse::default(), 1.0F),
+    primitive_parity_extrusion(@math.Ellipse::default(), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_regular_polygon",
-    extrusion_regular_polygon_mesh(@math.RegularPolygon::default(), 1.0F),
+    primitive_parity_extrusion(@math.RegularPolygon::default(), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_rhombus",
-    extrusion_rhombus_mesh(@math.Rhombus::default(), 1.0F),
+    primitive_parity_extrusion(@math.Rhombus::default(), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_triangle2d",
-    extrusion_triangle2d_mesh(@math.Triangle2d::default(), 1.0F),
+    primitive_parity_extrusion(@math.Triangle2d::default(), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_rectangle_ring",
-    extrusion_rectangle_ring_mesh(@math.Rectangle::default(), 0.1F, 1.0F),
+    primitive_parity_extrusion(@math.Rectangle::default().to_ring(0.1F), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_circle_ring",
-    extrusion_circle_ring_mesh(@math.Circle::default(), 0.1F, 1.0F),
+    primitive_parity_extrusion(@math.Circle::default().to_ring(0.1F), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_rhombus_ring",
-    extrusion_rhombus_ring_mesh(@math.Rhombus::default(), 0.1F, 1.0F),
+    primitive_parity_extrusion(@math.Rhombus::default().to_ring(0.1F), 1.0F),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_triangle2d_ring",
-    extrusion_triangle2d_ring_mesh(@math.Triangle2d::default(), 1.0F),
+    primitive_parity_extrusion(@math.Triangle2d::default().to_ring(0.1F), 1.0F),
   )
 }
 
@@ -285,7 +293,7 @@ test "extrusion primitives: builder matches direct extrusion helper" {
   let rectangle_builder = RectangleMeshBuilder::from_rectangle(rectangle)
   primitive_parity_assert_same_mesh_shape(
     "extrusion_rectangle_builder",
-    extrusion_rectangle_mesh(rectangle, 1.0F),
+    primitive_parity_extrusion(rectangle, 1.0F),
     ExtrusionBuilder::new(
       rectangle_builder.build(),
       rectangle_builder.perimeter(),
@@ -296,7 +304,7 @@ test "extrusion primitives: builder matches direct extrusion helper" {
   let circle_builder = CircleMeshBuilder::from_circle(circle).resolution(8)
   primitive_parity_assert_same_mesh_shape(
     "extrusion_circle_builder",
-    extrusion_circle_mesh(circle, 1.0F),
+    primitive_parity_extrusion(circle, 1.0F),
     ExtrusionBuilder::new(
       circle_builder.build(),
       circle_builder.perimeter(),
@@ -312,7 +320,7 @@ test "extrusion primitives: builder matches direct extrusion helper" {
     .build()
   debug_inspect(
     segmented.indices_or_sequential().length() >
-    extrusion_rectangle_mesh(rectangle, 1.0F).indices_or_sequential().length(),
+    primitive_parity_extrusion(rectangle, 1.0F).indices_or_sequential().length(),
     content="true",
   )
 }
@@ -382,11 +390,11 @@ test "dim2 primitives: ring builder matches ring mesh path" {
   )
   primitive_parity_assert_same_mesh_shape(
     "extrusion_ring_builder",
-    extrusion_ring_build(
-      outer_builder.build(),
-      outer_builder.perimeter(),
-      inner_builder.build(),
-      inner_builder.perimeter(),
+    primitive_parity_extrusion(
+      @math.Ring::new(
+        @math.Circle::new(0.5F).with_vertices(8),
+        @math.Circle::new(0.25F).with_vertices(8),
+      ),
       1.0F,
     ),
     ExtrusionBuilder::new(ring_builder.build(), ring_builder.perimeter(), 1.0F).build(),

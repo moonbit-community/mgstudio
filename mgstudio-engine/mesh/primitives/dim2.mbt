@@ -139,6 +139,24 @@ pub impl Extrudable for CircleMeshBuilder with perimeter(self) {
 }
 
 ///|
+pub impl Meshable for @math.Circle with mesh(self) {
+  let resolution = primitive2d_resolution(self.vertices, 32)
+  circle_mesh(self.radius, resolution)
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.Circle with mesh_perimeter(self) {
+  let resolution = primitive2d_resolution(self.vertices, 32)
+  [
+    Smooth(
+      @math.Vec2::new(0.0F, 1.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+      closed_range_indices(0, resolution, 0),
+    ),
+  ]
+}
+
+///|
 pub fn circle(radius : Float) -> @math.Circle {
   @math.Circle::new(radius)
 }
@@ -234,6 +252,16 @@ pub impl Extrudable for RectangleMeshBuilder with perimeter(_self) {
 }
 
 ///|
+pub impl Meshable for @math.Rectangle with mesh(self) {
+  rectangle_shape_mesh(self)
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.Rectangle with mesh_perimeter(_self) {
+  [Flat([0, 1, 2, 3, 0])]
+}
+
+///|
 fn rectangle_shape_mesh(shape : @math.Rectangle) -> @mesh.Mesh3dGeometry {
   let hw = shape.half_size.x
   let hh = shape.half_size.y
@@ -313,6 +341,18 @@ pub impl MeshBuilder for CircularSectorMeshBuilder with build(self) {
 ///|
 pub impl Extrudable for CircularSectorMeshBuilder with perimeter(self) {
   circular_arc_perimeter(self.resolution, self.sector.half_angle)
+}
+
+///|
+pub impl Meshable for @math.CircularSector with mesh(self) {
+  let resolution = primitive2d_resolution(self.vertices, 32)
+  circular_sector_mesh(self.with_vertices(resolution))
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.CircularSector with mesh_perimeter(self) {
+  let resolution = primitive2d_resolution(self.vertices, 32)
+  circular_arc_perimeter(resolution, self.half_angle)
 }
 
 ///|
@@ -414,6 +454,18 @@ pub impl MeshBuilder for CircularSegmentMeshBuilder with build(self) {
 ///|
 pub impl Extrudable for CircularSegmentMeshBuilder with perimeter(self) {
   circular_arc_perimeter(self.resolution, self.segment.half_angle)
+}
+
+///|
+pub impl Meshable for @math.CircularSegment with mesh(self) {
+  let resolution = primitive2d_resolution(self.vertices, 32)
+  circular_segment_mesh(self.with_vertices(resolution))
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.CircularSegment with mesh_perimeter(self) {
+  let resolution = primitive2d_resolution(self.vertices, 32)
+  circular_arc_perimeter(resolution, self.half_angle)
 }
 
 ///|
@@ -519,6 +571,16 @@ pub impl Extrudable for ConvexPolygonMeshBuilder with perimeter(self) {
 }
 
 ///|
+pub impl Meshable for @math.ConvexPolygon with mesh(self) {
+  convex_polygon_mesh(self)
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.ConvexPolygon with mesh_perimeter(self) {
+  [Flat(closed_range_indices(0, self.vertices.length(), 0))]
+}
+
+///|
 pub(all) struct EllipseMeshBuilder {
   ellipse : @math.Ellipse
   resolution : Int
@@ -572,6 +634,24 @@ pub impl Extrudable for EllipseMeshBuilder with perimeter(self) {
       @math.Vec2::new(0.0F, 1.0F),
       @math.Vec2::new(0.0F, 1.0F),
       closed_range_indices(0, self.resolution, 0),
+    ),
+  ]
+}
+
+///|
+pub impl Meshable for @math.Ellipse with mesh(self) {
+  let resolution = primitive2d_resolution(self.vertices, 32)
+  ellipse_mesh(self.with_vertices(resolution))
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.Ellipse with mesh_perimeter(self) {
+  let resolution = primitive2d_resolution(self.vertices, 32)
+  [
+    Smooth(
+      @math.Vec2::new(0.0F, 1.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+      closed_range_indices(0, resolution, 0),
     ),
   ]
 }
@@ -798,6 +878,18 @@ pub impl Extrudable for AnnulusMeshBuilder with perimeter(self) {
 }
 
 ///|
+pub impl Meshable for @math.Annulus with mesh(self) {
+  let resolution = primitive2d_resolution(self.vertices, 32)
+  annulus_mesh(self.with_vertices(resolution))
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.Annulus with mesh_perimeter(self) {
+  let resolution = primitive2d_resolution(self.vertices, 32)
+  annulus_perimeter(resolution)
+}
+
+///|
 pub fn rhombus_mesh(shape : @math.Rhombus) -> @mesh.Mesh3dGeometry {
   let hhd = shape.half_diagonal.x
   let vhd = shape.half_diagonal.y
@@ -877,6 +969,16 @@ pub impl Extrudable for RhombusMeshBuilder with perimeter(_self) {
 }
 
 ///|
+pub impl Meshable for @math.Rhombus with mesh(self) {
+  rhombus_mesh(self)
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.Rhombus with mesh_perimeter(_self) {
+  [Flat([0, 1, 2, 3, 0])]
+}
+
+///|
 pub fn regular_polygon_mesh(
   shape : @math.RegularPolygon,
 ) -> @mesh.Mesh3dGeometry {
@@ -925,6 +1027,16 @@ pub impl MeshBuilder for RegularPolygonMeshBuilder with build(self) {
 
 ///|
 pub impl Extrudable for RegularPolygonMeshBuilder with perimeter(self) {
+  [Flat(closed_range_indices(0, self.sides, 0))]
+}
+
+///|
+pub impl Meshable for @math.RegularPolygon with mesh(self) {
+  regular_polygon_mesh(self)
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.RegularPolygon with mesh_perimeter(self) {
   [Flat(closed_range_indices(0, self.sides, 0))]
 }
 
@@ -996,7 +1108,22 @@ pub impl MeshBuilder for Triangle2dMeshBuilder with build(self) {
 
 ///|
 pub impl Extrudable for Triangle2dMeshBuilder with perimeter(self) {
-  if triangle2d_signed_area(self.triangle) >= 0.0F {
+  triangle2d_perimeter(self.triangle)
+}
+
+///|
+pub impl Meshable for @math.Triangle2d with mesh(self) {
+  triangle2d_mesh(self)
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.Triangle2d with mesh_perimeter(self) {
+  triangle2d_perimeter(self)
+}
+
+///|
+fn triangle2d_perimeter(triangle : @math.Triangle2d) -> Array[PerimeterSegment] {
+  if triangle2d_signed_area(triangle) >= 0.0F {
     [Flat([0, 1, 2, 0])]
   } else {
     [Flat([2, 1, 0, 2])]
@@ -1164,6 +1291,18 @@ pub impl Extrudable for Capsule2dMeshBuilder with perimeter(self) {
 }
 
 ///|
+pub impl Meshable for @math.Capsule2d with mesh(self) {
+  let resolution = if self.segments < 2 { 16 } else { self.segments / 2 }
+  capsule2d_mesh_with_resolution(self, resolution)
+}
+
+///|
+pub impl ExtrudablePrimitive for @math.Capsule2d with mesh_perimeter(self) {
+  let resolution = if self.segments < 2 { 16 } else { self.segments / 2 }
+  capsule2d_perimeter(resolution)
+}
+
+///|
 pub(all) struct RingMeshBuilder {
   outer_shape_builder : @mesh.Mesh3dGeometry
   inner_shape_builder : @mesh.Mesh3dGeometry
@@ -1197,5 +1336,21 @@ pub impl Extrudable for RingMeshBuilder with perimeter(self) {
     self.outer_perimeter,
     self.inner_perimeter,
     self.outer_shape_builder.vertex_count(),
+  )
+}
+
+///|
+pub impl[P : ExtrudablePrimitive] Meshable for @math.Ring[P] with mesh(self) {
+  ring_mesh(self.outer_shape.mesh(), self.inner_shape.mesh())
+}
+
+///|
+pub impl[P : ExtrudablePrimitive] ExtrudablePrimitive for @math.Ring[P] with mesh_perimeter(
+  self,
+) {
+  ring_perimeter(
+    self.outer_shape.mesh_perimeter(),
+    self.inner_shape.mesh_perimeter(),
+    self.outer_shape.mesh().vertex_count(),
   )
 }
