@@ -13,6 +13,13 @@
 // limitations under the License.
 
 ///|
+pub enum ConeAnchor {
+  MidPoint
+  Tip
+  Base
+} derive(Eq, Debug)
+
+///|
 pub fn cone(radius : Float, height : Float) -> @math.Cone {
   @math.Cone::new(radius, height)
 }
@@ -31,6 +38,15 @@ pub fn cone_mesh(shape : @math.Cone) -> @mesh.Mesh3dGeometry {
 pub fn cone_mesh_with_resolution(
   shape : @math.Cone,
   resolution : Int,
+) -> @mesh.Mesh3dGeometry {
+  cone_mesh_with_anchor(shape, resolution, MidPoint)
+}
+
+///|
+pub fn cone_mesh_with_anchor(
+  shape : @math.Cone,
+  resolution : Int,
+  anchor : ConeAnchor,
 ) -> @mesh.Mesh3dGeometry {
   let resolution = if resolution < 3 { 3 } else { resolution }
   let half_height = shape.height / 2.0F
@@ -89,5 +105,33 @@ pub fn cone_mesh_with_resolution(
     indices.push(index_offset + i + 1)
   }
 
+  match anchor {
+    Tip =>
+      for position in positions {
+        position.y = position.y - half_height
+      }
+    Base =>
+      for position in positions {
+        position.y = position.y + half_height
+      }
+    MidPoint => ()
+  }
+
   primitive_geometry_with_normals(positions, normals, uvs, Some(indices))
+}
+
+///|
+pub fn cone_mesh_with_tip_anchor(
+  shape : @math.Cone,
+  resolution : Int,
+) -> @mesh.Mesh3dGeometry {
+  cone_mesh_with_anchor(shape, resolution, Tip)
+}
+
+///|
+pub fn cone_mesh_with_base_anchor(
+  shape : @math.Cone,
+  resolution : Int,
+) -> @mesh.Mesh3dGeometry {
+  cone_mesh_with_anchor(shape, resolution, Base)
 }

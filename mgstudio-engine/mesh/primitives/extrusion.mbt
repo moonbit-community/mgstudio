@@ -66,7 +66,7 @@ pub fn extrusion_annulus_mesh(
   annulus : @math.Annulus,
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  let resolution = if annulus.vertices < 3 { 32 } else { annulus.vertices }
+  let resolution = primitive2d_resolution(annulus.vertices, 32)
   extrusion_build(
     annulus_mesh(annulus.with_vertices(resolution)),
     annulus_perimeter(resolution),
@@ -80,7 +80,7 @@ pub fn extrusion_circle_mesh(
   circle : @math.Circle,
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  let resolution = if circle.vertices < 3 { 32 } else { circle.vertices }
+  let resolution = primitive2d_resolution(circle.vertices, 32)
   extrusion_build(
     circle_mesh(circle.radius, resolution),
     [
@@ -96,11 +96,52 @@ pub fn extrusion_circle_mesh(
 }
 
 ///|
+pub fn extrusion_circular_sector_mesh(
+  sector : @math.CircularSector,
+  depth : Float,
+) -> @mesh.Mesh3dGeometry {
+  let resolution = primitive2d_resolution(sector.vertices, 32)
+  extrusion_build(
+    circular_sector_mesh(sector.with_vertices(resolution)),
+    circular_arc_perimeter(resolution, sector.half_angle),
+    depth,
+    1,
+  )
+}
+
+///|
+pub fn extrusion_circular_segment_mesh(
+  segment : @math.CircularSegment,
+  depth : Float,
+) -> @mesh.Mesh3dGeometry {
+  let resolution = primitive2d_resolution(segment.vertices, 32)
+  extrusion_build(
+    circular_segment_mesh(segment.with_vertices(resolution)),
+    circular_arc_perimeter(resolution, segment.half_angle),
+    depth,
+    1,
+  )
+}
+
+///|
+pub fn extrusion_convex_polygon_mesh(
+  polygon : @math.ConvexPolygon,
+  depth : Float,
+) -> @mesh.Mesh3dGeometry {
+  extrusion_build(
+    convex_polygon_mesh(polygon),
+    [Flat(closed_range_indices(0, polygon.vertices.length(), 0))],
+    depth,
+    1,
+  )
+}
+
+///|
 pub fn extrusion_ellipse_mesh(
   ellipse : @math.Ellipse,
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  let resolution = if ellipse.vertices < 3 { 32 } else { ellipse.vertices }
+  let resolution = primitive2d_resolution(ellipse.vertices, 32)
   extrusion_build(
     ellipse_mesh(ellipse.with_vertices(resolution)),
     [
@@ -113,6 +154,14 @@ pub fn extrusion_ellipse_mesh(
     depth,
     1,
   )
+}
+
+///|
+pub fn extrusion_rhombus_mesh(
+  rhombus : @math.Rhombus,
+  depth : Float,
+) -> @mesh.Mesh3dGeometry {
+  extrusion_build(rhombus_mesh(rhombus), [Flat([0, 1, 2, 3, 0])], depth, 1)
 }
 
 ///|
@@ -199,7 +248,7 @@ pub fn extrusion_circle_ring_mesh(
   thickness : Float,
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  let resolution = if circle.vertices < 3 { 32 } else { circle.vertices }
+  let resolution = primitive2d_resolution(circle.vertices, 32)
   let inner_radius = extrusion_non_negative(circle.radius - thickness)
   extrusion_annulus_mesh(
     @math.Annulus::new(inner_radius, circle.radius).with_vertices(resolution),
@@ -213,7 +262,7 @@ pub fn extrusion_ellipse_ring_mesh(
   thickness : Float,
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  let resolution = if ellipse.vertices < 3 { 32 } else { ellipse.vertices }
+  let resolution = primitive2d_resolution(ellipse.vertices, 32)
   let inner = @math.Ellipse::new(
     extrusion_non_negative(ellipse.half_size.x - thickness),
     extrusion_non_negative(ellipse.half_size.y - thickness),
@@ -235,6 +284,25 @@ pub fn extrusion_ellipse_ring_mesh(
         closed_range_indices(0, resolution, 0),
       ),
     ],
+    depth,
+  )
+}
+
+///|
+pub fn extrusion_rhombus_ring_mesh(
+  rhombus : @math.Rhombus,
+  thickness : Float,
+  depth : Float,
+) -> @mesh.Mesh3dGeometry {
+  let inner = @math.Rhombus::new(
+    extrusion_non_negative(rhombus.half_diagonal.x * 2.0F - thickness * 2.0F),
+    extrusion_non_negative(rhombus.half_diagonal.y * 2.0F - thickness * 2.0F),
+  )
+  extrusion_ring_build(
+    rhombus_mesh(rhombus),
+    [Flat([0, 1, 2, 3, 0])],
+    rhombus_mesh(inner),
+    [Flat([0, 1, 2, 3, 0])],
     depth,
   )
 }
@@ -663,6 +731,23 @@ fn annulus_perimeter(resolution : Int) -> Array[PerimeterSegment] {
       reversed_indices_with_offset(inner, 0),
     ),
     Smooth(@math.Vec2::new(0.0F, 1.0F), @math.Vec2::new(0.0F, 1.0F), outer),
+  ]
+}
+
+///|
+fn circular_arc_perimeter(
+  resolution : Int,
+  half_angle : Float,
+) -> Array[PerimeterSegment] {
+  let sin = @math.sin(half_angle)
+  let cos = @math.cos(half_angle)
+  [
+    Flat([resolution, 0, 1]),
+    Smooth(
+      @math.Vec2::new(sin, cos),
+      @math.Vec2::new(-sin, cos),
+      range_indices(1, resolution + 1),
+    ),
   ]
 }
 

@@ -13,6 +13,13 @@
 // limitations under the License.
 
 ///|
+pub enum CylinderAnchor {
+  MidPoint
+  Top
+  Bottom
+} derive(Eq, Debug)
+
+///|
 pub fn cylinder(radius : Float, height : Float) -> @math.Cylinder {
   @math.Cylinder::new(radius, height)
 }
@@ -33,6 +40,17 @@ pub fn cylinder_mesh_with_options(
   resolution : Int,
   segments : Int,
   caps : Bool,
+) -> @mesh.Mesh3dGeometry {
+  cylinder_mesh_with_anchor(shape, resolution, segments, caps, MidPoint)
+}
+
+///|
+pub fn cylinder_mesh_with_anchor(
+  shape : @math.Cylinder,
+  resolution : Int,
+  segments : Int,
+  caps : Bool,
+  anchor : CylinderAnchor,
 ) -> @mesh.Mesh3dGeometry {
   let resolution = if resolution < 3 { 3 } else { resolution }
   let segments = if segments < 1 { 1 } else { segments }
@@ -85,7 +103,39 @@ pub fn cylinder_mesh_with_options(
     )
   }
 
+  match anchor {
+    Top =>
+      for position in positions {
+        position.y = position.y - shape.half_height
+      }
+    Bottom =>
+      for position in positions {
+        position.y = position.y + shape.half_height
+      }
+    MidPoint => ()
+  }
+
   primitive_geometry_with_normals(positions, normals, uvs, Some(indices))
+}
+
+///|
+pub fn cylinder_mesh_with_top_anchor(
+  shape : @math.Cylinder,
+  resolution : Int,
+  segments : Int,
+  caps : Bool,
+) -> @mesh.Mesh3dGeometry {
+  cylinder_mesh_with_anchor(shape, resolution, segments, caps, Top)
+}
+
+///|
+pub fn cylinder_mesh_with_bottom_anchor(
+  shape : @math.Cylinder,
+  resolution : Int,
+  segments : Int,
+  caps : Bool,
+) -> @mesh.Mesh3dGeometry {
+  cylinder_mesh_with_anchor(shape, resolution, segments, caps, Bottom)
 }
 
 ///|

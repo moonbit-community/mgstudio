@@ -7,11 +7,21 @@ import {
 }
 
 // Values
+pub fn annulus_mesh(@math.Annulus) -> @mesh.Mesh3dGeometry
+
 pub fn circle(Float) -> @math.Circle
 
 pub fn circle_line_strip_mesh(Float, Int) -> @mesh.Mesh3dGeometry
 
 pub fn circle_mesh(Float, Int) -> @mesh.Mesh3dGeometry
+
+pub fn circular_sector_mesh(@math.CircularSector) -> @mesh.Mesh3dGeometry
+
+pub fn circular_segment_mesh(@math.CircularSegment) -> @mesh.Mesh3dGeometry
+
+pub fn convex_polygon_mesh(@math.ConvexPolygon) -> @mesh.Mesh3dGeometry
+
+pub fn ellipse_mesh(@math.Ellipse) -> @mesh.Mesh3dGeometry
 
 pub fn extrusion_annulus_mesh(@math.Annulus, Float) -> @mesh.Mesh3dGeometry
 
@@ -22,6 +32,12 @@ pub fn extrusion_capsule2d_ring_mesh(@math.Capsule2d, Float, Float) -> @mesh.Mes
 pub fn extrusion_circle_mesh(@math.Circle, Float) -> @mesh.Mesh3dGeometry
 
 pub fn extrusion_circle_ring_mesh(@math.Circle, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_circular_sector_mesh(@math.CircularSector, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_circular_segment_mesh(@math.CircularSegment, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_convex_polygon_mesh(@math.ConvexPolygon, Float) -> @mesh.Mesh3dGeometry
 
 pub fn extrusion_ellipse_mesh(@math.Ellipse, Float) -> @mesh.Mesh3dGeometry
 
@@ -35,6 +51,10 @@ pub fn extrusion_regular_polygon_mesh(@math.RegularPolygon, Float) -> @mesh.Mesh
 
 pub fn extrusion_regular_polygon_ring_mesh(@math.RegularPolygon, Float, Float) -> @mesh.Mesh3dGeometry
 
+pub fn extrusion_rhombus_mesh(@math.Rhombus, Float) -> @mesh.Mesh3dGeometry
+
+pub fn extrusion_rhombus_ring_mesh(@math.Rhombus, Float, Float) -> @mesh.Mesh3dGeometry
+
 pub fn extrusion_ring2d_mesh(@math.Ring2d, Float) -> @mesh.Mesh3dGeometry
 
 pub fn extrusion_triangle2d_mesh(@math.Triangle2d, Float) -> @mesh.Mesh3dGeometry
@@ -43,9 +63,19 @@ pub fn extrusion_triangle2d_ring_mesh(@math.Triangle2d, Float) -> @mesh.Mesh3dGe
 
 pub fn extrusion_wireframe_mesh(@mesh.Mesh3dGeometry) -> @mesh.Mesh3dGeometry?
 
+pub fn polyline2d_mesh(@math.Polyline2d) -> @mesh.Mesh3dGeometry
+
 pub fn rectangle(Float, Float) -> @math.Rectangle
 
 pub fn rectangle_mesh(Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn regular_polygon_mesh(@math.RegularPolygon) -> @mesh.Mesh3dGeometry
+
+pub fn rhombus_mesh(@math.Rhombus) -> @mesh.Mesh3dGeometry
+
+pub fn segment2d_mesh(@math.Segment2d) -> @mesh.Mesh3dGeometry
+
+pub fn triangle2d_mesh(@math.Triangle2d) -> @mesh.Mesh3dGeometry
 
 // Errors
 
@@ -56,7 +86,29 @@ pub enum PerimeterSegment {
 }
 
 // Type aliases
+pub using @math {type Annulus}
+
+pub using @math {type Capsule2d}
+
+pub using @math {type Capsule2dRing}
+
 pub using @math {type Circle}
+
+pub using @math {type CircularMeshUvMode}
+
+pub using @math {type CircularSector}
+
+pub using @math {type CircularSectorRing}
+
+pub using @math {type CircularSegment}
+
+pub using @math {type CircularSegmentRing}
+
+pub using @math {type ConvexPolygon}
+
+pub using @math {type Ellipse}
+
+pub using @math {type EllipseRing}
 
 pub using @mesh {type Mesh2dGeometry}
 
@@ -64,7 +116,29 @@ pub using @mesh {type Mesh3dGeometry}
 
 pub using @mesh {type Mesh3dPrimitiveTopology}
 
+pub using @math {type Polyline2d}
+
 pub using @math {type Rectangle}
+
+pub using @math {type RectangleRing}
+
+pub using @math {type RegularPolygon}
+
+pub using @math {type RegularPolygonRing}
+
+pub using @math {type Rhombus}
+
+pub using @math {type RhombusRing}
+
+pub using @math {type Ring}
+
+pub using @math {type Ring2d}
+
+pub using @math {type Segment2d}
+
+pub using @math {type Triangle2d}
+
+pub using @math {type Triangle2dRing}
 
 // Traits
 

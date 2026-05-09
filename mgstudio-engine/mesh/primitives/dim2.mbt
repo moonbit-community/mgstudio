@@ -18,6 +18,38 @@ fn primitive2d_f32(value : Int) -> Float {
 }
 
 ///|
+fn primitive2d_resolution(vertices : Int, default_resolution : Int) -> Int {
+  if vertices < 3 {
+    default_resolution
+  } else {
+    vertices
+  }
+}
+
+///|
+fn primitive2d_lerp(a : Float, b : Float, t : Float) -> Float {
+  a + (b - a) * t
+}
+
+///|
+fn primitive2d_vec2_from_angle(angle : Float) -> @math.Vec2 {
+  @math.Vec2::new(@math.cos(angle), @math.sin(angle))
+}
+
+///|
+fn primitive2d_circular_uv(
+  angle : Float,
+  uv_mode : @math.CircularMeshUvMode,
+) -> @math.Vec2 {
+  match uv_mode {
+    Mask(uv_angle) => {
+      let uv = primitive2d_vec2_from_angle(-(angle + uv_angle))
+      uv.mul_scalar(0.5F).add(@math.Vec2::new(0.5F, 0.5F))
+    }
+  }
+}
+
+///|
 fn primitive2d_geometry_with_normals(
   positions : Array[@math.Vec3],
   normals : Array[@math.Vec3],
@@ -46,7 +78,8 @@ pub fn circle(radius : Float) -> @math.Circle {
 
 ///|
 pub fn circle_mesh(radius : Float, segments : Int) -> @mesh.Mesh3dGeometry {
-  ellipse_mesh(@math.Ellipse::new(radius, radius).with_vertices(segments))
+  let resolution = if segments < 3 { 3 } else { segments }
+  ellipse_mesh_with_resolution(@math.Ellipse::new(radius, radius), resolution)
 }
 
 ///|
@@ -110,8 +143,125 @@ fn rectangle_shape_mesh(shape : @math.Rectangle) -> @mesh.Mesh3dGeometry {
 }
 
 ///|
-fn ellipse_mesh(shape : @math.Ellipse) -> @mesh.Mesh3dGeometry {
-  let resolution = if shape.vertices < 3 { 3 } else { shape.vertices }
+pub fn circular_sector_mesh(
+  sector : @math.CircularSector,
+) -> @mesh.Mesh3dGeometry {
+  let resolution = primitive2d_resolution(sector.vertices, 32)
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  let indices : Array[Int] = []
+
+  positions.push(@math.Vec3::zero())
+  uvs.push(@math.Vec2::new(0.5F, 0.5F))
+
+  let first_angle = @math.pi() / 2.0F - sector.half_angle
+  let last_angle = @math.pi() / 2.0F + sector.half_angle
+  let last_i = primitive2d_f32(resolution - 1)
+  for i in 0..<resolution {
+    let angle = primitive2d_lerp(
+      first_angle,
+      last_angle,
+      primitive2d_f32(i) / last_i,
+    )
+    let vertex = primitive2d_vec2_from_angle(angle).mul_scalar(sector.radius)
+    let uv = primitive2d_circular_uv(angle, sector.uv_mode)
+    positions.push(@math.Vec3::new(vertex.x, vertex.y, 0.0F))
+    uvs.push(uv)
+  }
+
+  for i in 1..<resolution {
+    indices.push(0)
+    indices.push(i)
+    indices.push(i + 1)
+  }
+
+  primitive2d_geometry_with_normals(
+    positions,
+    primitive2d_normal_z(resolution + 1, 1.0F),
+    uvs,
+    Some(indices),
+  )
+}
+
+///|
+pub fn circular_segment_mesh(
+  segment : @math.CircularSegment,
+) -> @mesh.Mesh3dGeometry {
+  let resolution = primitive2d_resolution(segment.vertices, 32)
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  let indices : Array[Int] = []
+  let apothem = segment.radius * @math.cos(segment.half_angle)
+
+  positions.push(@math.Vec3::new(0.0F, apothem, 0.0F))
+  let midpoint_scale = 0.5F * apothem / segment.radius
+  let midpoint_uv = match segment.uv_mode {
+    Mask(uv_angle) =>
+      primitive2d_vec2_from_angle(-uv_angle - @math.pi() / 2.0F)
+      .mul_scalar(midpoint_scale)
+      .add(@math.Vec2::new(0.5F, 0.5F))
+  }
+  uvs.push(midpoint_uv)
+
+  let first_angle = @math.pi() / 2.0F - segment.half_angle
+  let last_angle = @math.pi() / 2.0F + segment.half_angle
+  let last_i = primitive2d_f32(resolution - 1)
+  for i in 0..<resolution {
+    let angle = primitive2d_lerp(
+      first_angle,
+      last_angle,
+      primitive2d_f32(i) / last_i,
+    )
+    let vertex = primitive2d_vec2_from_angle(angle).mul_scalar(segment.radius)
+    let uv = primitive2d_circular_uv(angle, segment.uv_mode)
+    positions.push(@math.Vec3::new(vertex.x, vertex.y, 0.0F))
+    uvs.push(uv)
+  }
+
+  for i in 1..<resolution {
+    indices.push(0)
+    indices.push(i)
+    indices.push(i + 1)
+  }
+
+  primitive2d_geometry_with_normals(
+    positions,
+    primitive2d_normal_z(resolution + 1, 1.0F),
+    uvs,
+    Some(indices),
+  )
+}
+
+///|
+pub fn convex_polygon_mesh(
+  polygon : @math.ConvexPolygon,
+) -> @mesh.Mesh3dGeometry {
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  let indices : Array[Int] = []
+  for vertex in polygon.vertices {
+    positions.push(@math.Vec3::new(vertex.x, vertex.y, 0.0F))
+    uvs.push(@math.Vec2::new(0.0F, 0.0F))
+  }
+  for i in 2..<polygon.vertices.length() {
+    indices.push(0)
+    indices.push(i - 1)
+    indices.push(i)
+  }
+  @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
+}
+
+///|
+pub fn ellipse_mesh(shape : @math.Ellipse) -> @mesh.Mesh3dGeometry {
+  let resolution = primitive2d_resolution(shape.vertices, 32)
+  ellipse_mesh_with_resolution(shape, resolution)
+}
+
+///|
+fn ellipse_mesh_with_resolution(
+  shape : @math.Ellipse,
+  resolution : Int,
+) -> @mesh.Mesh3dGeometry {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -140,8 +290,44 @@ fn ellipse_mesh(shape : @math.Ellipse) -> @mesh.Mesh3dGeometry {
 }
 
 ///|
-fn annulus_mesh(shape : @math.Annulus) -> @mesh.Mesh3dGeometry {
-  let resolution = if shape.vertices < 3 { 3 } else { shape.vertices }
+pub fn segment2d_mesh(segment : @math.Segment2d) -> @mesh.Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::new_with_topology(
+    [
+      @math.Vec3::new(segment.start.x, segment.start.y, 0.0F),
+      @math.Vec3::new(segment.end.x, segment.end.y, 0.0F),
+    ],
+    [@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(0.0F, 0.0F)],
+    Some([0, 1]),
+    @mesh.Mesh3dPrimitiveTopology::LineList,
+  )
+}
+
+///|
+pub fn polyline2d_mesh(polyline : @math.Polyline2d) -> @mesh.Mesh3dGeometry {
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  let indices : Array[Int] = []
+  for vertex in polyline.points {
+    positions.push(@math.Vec3::new(vertex.x, vertex.y, 0.0F))
+    uvs.push(@math.Vec2::new(0.0F, 0.0F))
+  }
+  if polyline.points.length() >= 2 {
+    for i in 0..<(polyline.points.length() - 1) {
+      indices.push(i)
+      indices.push(i + 1)
+    }
+  }
+  @mesh.Mesh3dGeometry::new_with_topology(
+    positions,
+    uvs,
+    Some(indices),
+    @mesh.Mesh3dPrimitiveTopology::LineList,
+  )
+}
+
+///|
+pub fn annulus_mesh(shape : @math.Annulus) -> @mesh.Mesh3dGeometry {
+  let resolution = primitive2d_resolution(shape.vertices, 32)
   let vertex_count = (resolution + 1) * 2
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
@@ -186,7 +372,31 @@ fn annulus_mesh(shape : @math.Annulus) -> @mesh.Mesh3dGeometry {
 }
 
 ///|
-fn regular_polygon_mesh(shape : @math.RegularPolygon) -> @mesh.Mesh3dGeometry {
+pub fn rhombus_mesh(shape : @math.Rhombus) -> @mesh.Mesh3dGeometry {
+  let hhd = shape.half_diagonal.x
+  let vhd = shape.half_diagonal.y
+  primitive2d_geometry_with_normals(
+    [
+      @math.Vec3::new(hhd, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, vhd, 0.0F),
+      @math.Vec3::new(-hhd, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, -vhd, 0.0F),
+    ],
+    primitive2d_normal_z(4, 1.0F),
+    [
+      @math.Vec2::new(1.0F, 0.5F),
+      @math.Vec2::new(0.5F, 0.0F),
+      @math.Vec2::new(0.0F, 0.5F),
+      @math.Vec2::new(0.5F, 1.0F),
+    ],
+    Some([2, 0, 1, 2, 3, 0]),
+  )
+}
+
+///|
+pub fn regular_polygon_mesh(
+  shape : @math.RegularPolygon,
+) -> @mesh.Mesh3dGeometry {
   ellipse_mesh(
     @math.Ellipse::new(shape.radius, shape.radius).with_vertices(shape.sides),
   )
@@ -200,7 +410,7 @@ fn triangle2d_signed_area(shape : @math.Triangle2d) -> Float {
 }
 
 ///|
-fn triangle2d_mesh(shape : @math.Triangle2d) -> @mesh.Mesh3dGeometry {
+pub fn triangle2d_mesh(shape : @math.Triangle2d) -> @mesh.Mesh3dGeometry {
   let vertices_3d = [
     @math.Vec3::new(shape.a.x, shape.a.y, 0.0F),
     @math.Vec3::new(shape.b.x, shape.b.y, 0.0F),
