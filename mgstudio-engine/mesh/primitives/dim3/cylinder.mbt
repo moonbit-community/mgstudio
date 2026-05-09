@@ -184,8 +184,6 @@ pub fn cylinder_mesh_with_anchor(
   caps : Bool,
   anchor : CylinderAnchor,
 ) -> @mesh.Mesh3dGeometry {
-  let resolution = if resolution < 3 { 3 } else { resolution }
-  let segments = if segments < 1 { 1 } else { segments }
   let num_rings = segments + 1
   let positions : Array[@math.Vec3] = []
   let normals : Array[@math.Vec3] = []

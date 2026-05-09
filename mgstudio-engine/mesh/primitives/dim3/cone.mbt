@@ -105,7 +105,6 @@ pub fn cone_mesh_with_anchor(
   resolution : Int,
   anchor : ConeAnchor,
 ) -> @mesh.Mesh3dGeometry {
-  let resolution = if resolution < 3 { 3 } else { resolution }
   let half_height = shape.height / 2.0F
   let positions : Array[@math.Vec3] = []
   let normals : Array[@math.Vec3] = []

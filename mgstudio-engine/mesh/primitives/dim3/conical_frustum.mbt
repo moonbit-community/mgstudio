@@ -103,8 +103,6 @@ pub fn conical_frustum_mesh_with_options(
   resolution : Int,
   segments : Int,
 ) -> @mesh.Mesh3dGeometry {
-  let resolution = if resolution < 3 { 3 } else { resolution }
-  let segments = if segments < 1 { 1 } else { segments }
   let half_height = shape.height / 2.0F
   let num_rings = segments + 1
   let positions : Array[@math.Vec3] = []
