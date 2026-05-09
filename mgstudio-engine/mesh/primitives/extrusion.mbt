@@ -19,6 +19,11 @@ pub enum PerimeterSegment {
 }
 
 ///|
+pub(open) trait Extrudable: MeshBuilder {
+  perimeter(Self) -> Array[PerimeterSegment]
+}
+
+///|
 pub(all) struct ExtrusionBuilder {
   base_mesh : @mesh.Mesh3dGeometry
   perimeter : Array[PerimeterSegment]

@@ -92,6 +92,20 @@ fn primitive_parity_assert_same_mesh_shape(
 }
 
 ///|
+fn primitive_parity_perimeter_index_count(
+  perimeter : Array[PerimeterSegment],
+) -> Int {
+  let mut count = 0
+  for segment in perimeter {
+    match segment {
+      Smooth(_, _, indices) => count = count + indices.length()
+      Flat(indices) => count = count + indices.length()
+    }
+  }
+  count
+}
+
+///|
 test "dim2 and extrusion primitives: triangle winding matches generated normals" {
   primitive_parity_assert_triangle_winding_matches_normals(
     "rectangle",
@@ -268,28 +282,24 @@ test "dim2 primitives: mesh builders match direct mesh functions" {
 ///|
 test "extrusion primitives: builder matches direct extrusion helper" {
   let rectangle = @math.Rectangle::default()
+  let rectangle_builder = RectangleMeshBuilder::from_rectangle(rectangle)
   primitive_parity_assert_same_mesh_shape(
     "extrusion_rectangle_builder",
     extrusion_rectangle_mesh(rectangle, 1.0F),
     ExtrusionBuilder::new(
-      rectangle_mesh(1.0F, 1.0F),
-      [Flat([0, 1, 2, 3, 0])],
+      rectangle_builder.build(),
+      rectangle_builder.perimeter(),
       1.0F,
     ).build(),
   )
   let circle = @math.Circle::default().with_vertices(8)
+  let circle_builder = CircleMeshBuilder::from_circle(circle).resolution(8)
   primitive_parity_assert_same_mesh_shape(
     "extrusion_circle_builder",
     extrusion_circle_mesh(circle, 1.0F),
     ExtrusionBuilder::new(
-      circle_mesh(circle.radius, 8),
-      [
-        Smooth(
-          @math.Vec2::new(0.0F, 1.0F),
-          @math.Vec2::new(0.0F, 1.0F),
-          closed_range_indices(0, 8, 0),
-        ),
-      ],
+      circle_builder.build(),
+      circle_builder.perimeter(),
       1.0F,
     ).build(),
   )
@@ -304,5 +314,49 @@ test "extrusion primitives: builder matches direct extrusion helper" {
     segmented.indices_or_sequential().length() >
     extrusion_rectangle_mesh(rectangle, 1.0F).indices_or_sequential().length(),
     content="true",
+  )
+}
+
+///|
+test "dim2 primitive builders expose extrusion perimeters" {
+  debug_inspect(
+    primitive_parity_perimeter_index_count(
+      CircleMeshBuilder::new(0.5F, 8).perimeter(),
+    ),
+    content="9",
+  )
+  debug_inspect(
+    primitive_parity_perimeter_index_count(
+      CircularSectorMeshBuilder::new(@math.CircularSector::default())
+      .resolution(8)
+      .perimeter(),
+    ),
+    content="11",
+  )
+  debug_inspect(
+    primitive_parity_perimeter_index_count(
+      CircularSegmentMeshBuilder::new(@math.CircularSegment::default())
+      .resolution(8)
+      .perimeter(),
+    ),
+    content="11",
+  )
+  debug_inspect(
+    primitive_parity_perimeter_index_count(
+      AnnulusMeshBuilder::new(0.25F, 0.5F, 8).perimeter(),
+    ),
+    content="18",
+  )
+  debug_inspect(
+    primitive_parity_perimeter_index_count(
+      Capsule2dMeshBuilder::new(0.25F, 0.5F, 8).perimeter(),
+    ),
+    content="20",
+  )
+  debug_inspect(
+    primitive_parity_perimeter_index_count(
+      Triangle2dMeshBuilder::default().perimeter(),
+    ),
+    content="4",
   )
 }

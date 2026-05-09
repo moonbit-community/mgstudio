@@ -128,6 +128,17 @@ pub impl MeshBuilder for CircleMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Extrudable for CircleMeshBuilder with perimeter(self) {
+  [
+    Smooth(
+      @math.Vec2::new(0.0F, 1.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+      closed_range_indices(0, self.resolution, 0),
+    ),
+  ]
+}
+
+///|
 pub fn circle(radius : Float) -> @math.Circle {
   @math.Circle::new(radius)
 }
@@ -218,6 +229,11 @@ pub impl MeshBuilder for RectangleMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Extrudable for RectangleMeshBuilder with perimeter(_self) {
+  [Flat([0, 1, 2, 3, 0])]
+}
+
+///|
 fn rectangle_shape_mesh(shape : @math.Rectangle) -> @mesh.Mesh3dGeometry {
   let hw = shape.half_size.x
   let hh = shape.half_size.y
@@ -292,6 +308,11 @@ pub impl MeshBuilder for CircularSectorMeshBuilder with build(self) {
   circular_sector_mesh(
     self.sector.with_vertices(self.resolution).with_uv_mode(self.uv_mode),
   )
+}
+
+///|
+pub impl Extrudable for CircularSectorMeshBuilder with perimeter(self) {
+  circular_arc_perimeter(self.resolution, self.sector.half_angle)
 }
 
 ///|
@@ -388,6 +409,11 @@ pub impl MeshBuilder for CircularSegmentMeshBuilder with build(self) {
   circular_segment_mesh(
     self.segment.with_vertices(self.resolution).with_uv_mode(self.uv_mode),
   )
+}
+
+///|
+pub impl Extrudable for CircularSegmentMeshBuilder with perimeter(self) {
+  circular_arc_perimeter(self.resolution, self.segment.half_angle)
 }
 
 ///|
@@ -488,6 +514,11 @@ pub impl MeshBuilder for ConvexPolygonMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Extrudable for ConvexPolygonMeshBuilder with perimeter(self) {
+  [Flat(closed_range_indices(0, self.vertices.length(), 0))]
+}
+
+///|
 pub(all) struct EllipseMeshBuilder {
   ellipse : @math.Ellipse
   resolution : Int
@@ -532,6 +563,17 @@ pub fn EllipseMeshBuilder::build(
 ///|
 pub impl MeshBuilder for EllipseMeshBuilder with build(self) {
   ellipse_mesh_with_resolution(self.ellipse, self.resolution)
+}
+
+///|
+pub impl Extrudable for EllipseMeshBuilder with perimeter(self) {
+  [
+    Smooth(
+      @math.Vec2::new(0.0F, 1.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+      closed_range_indices(0, self.resolution, 0),
+    ),
+  ]
 }
 
 ///|
@@ -751,6 +793,11 @@ pub impl MeshBuilder for AnnulusMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Extrudable for AnnulusMeshBuilder with perimeter(self) {
+  annulus_perimeter(self.resolution)
+}
+
+///|
 pub fn rhombus_mesh(shape : @math.Rhombus) -> @mesh.Mesh3dGeometry {
   let hhd = shape.half_diagonal.x
   let vhd = shape.half_diagonal.y
@@ -825,6 +872,11 @@ pub impl MeshBuilder for RhombusMeshBuilder with build(self) {
 }
 
 ///|
+pub impl Extrudable for RhombusMeshBuilder with perimeter(_self) {
+  [Flat([0, 1, 2, 3, 0])]
+}
+
+///|
 pub fn regular_polygon_mesh(
   shape : @math.RegularPolygon,
 ) -> @mesh.Mesh3dGeometry {
@@ -869,6 +921,11 @@ pub fn RegularPolygonMeshBuilder::build(
 ///|
 pub impl MeshBuilder for RegularPolygonMeshBuilder with build(self) {
   regular_polygon_mesh(@math.RegularPolygon::new(self.circumradius, self.sides))
+}
+
+///|
+pub impl Extrudable for RegularPolygonMeshBuilder with perimeter(self) {
+  [Flat(closed_range_indices(0, self.sides, 0))]
 }
 
 ///|
@@ -935,6 +992,15 @@ pub fn Triangle2dMeshBuilder::build(
 ///|
 pub impl MeshBuilder for Triangle2dMeshBuilder with build(self) {
   triangle2d_mesh(self.triangle)
+}
+
+///|
+pub impl Extrudable for Triangle2dMeshBuilder with perimeter(self) {
+  if triangle2d_signed_area(self.triangle) >= 0.0F {
+    [Flat([0, 1, 2, 0])]
+  } else {
+    [Flat([2, 1, 0, 2])]
+  }
 }
 
 ///|
@@ -1090,4 +1156,9 @@ pub fn Capsule2dMeshBuilder::build(
 ///|
 pub impl MeshBuilder for Capsule2dMeshBuilder with build(self) {
   capsule2d_mesh_with_resolution(self.capsule, self.resolution)
+}
+
+///|
+pub impl Extrudable for Capsule2dMeshBuilder with perimeter(self) {
+  capsule2d_perimeter(self.resolution)
 }
