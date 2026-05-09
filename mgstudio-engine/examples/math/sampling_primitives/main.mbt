@@ -404,58 +404,19 @@ fn shape_sample_boundary(shape : Shape, rng : @random.Rand) -> @math.Vec3 {
 }
 
 ///|
+fn[P : @pbr.IntoPbrMeshAsset] mesh3d_from_mesh_asset(value : P) -> @mesh.Mesh3d {
+  @mesh.Mesh3d::new(@pbr.mesh_assets_mut_or_abort().val |> @pbr.add_mesh(value))
+}
+
+///|
 fn shape_mesh(shape : Shape) -> @mesh.Mesh3d {
   match shape {
-    Cuboid =>
-      @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.cuboid_mesh(
-              @math.Cuboid::new(1.0F, 2.0F, 1.0F),
-            ),
-          ),
-        ),
-      )
-    Sphere =>
-      @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.icosphere_mesh(1.5F * SMALL_3D, 5),
-          ),
-        ),
-      )
-    Capsule =>
-      @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.capsule3d_mesh(capsule_shape()),
-          ),
-        ),
-      )
-    Cylinder =>
-      @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.cylinder_mesh(cylinder_shape()),
-          ),
-        ),
-      )
-    Tetrahedron =>
-      @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.tetrahedron_mesh(tetrahedron_shape()),
-          ),
-        ),
-      )
-    Triangle =>
-      @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.triangle3d_mesh(triangle_shape()),
-          ),
-        ),
-      )
+    Cuboid => mesh3d_from_mesh_asset(@math.Cuboid::new(1.0F, 2.0F, 1.0F))
+    Sphere => mesh3d_from_mesh_asset(sphere_shape())
+    Capsule => mesh3d_from_mesh_asset(capsule_shape())
+    Cylinder => mesh3d_from_mesh_asset(cylinder_shape())
+    Tetrahedron => mesh3d_from_mesh_asset(tetrahedron_shape())
+    Triangle => mesh3d_from_mesh_asset(triangle_shape())
   }
 }
 
@@ -643,10 +604,11 @@ fn setup(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(20.0F, 20.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(20.0F, 20.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(
@@ -740,10 +702,12 @@ fn setup(
 
   world.insert_resource(PointMesh::resource(), PointMesh::{
     mesh: @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.icosphere_mesh(0.03F, 1),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.SphereMeshBuilder::new(
+          0.03F,
+          @mesh_primitives_dim3.SphereKind::ico(1),
+        ).build(),
       ),
     ),
   })

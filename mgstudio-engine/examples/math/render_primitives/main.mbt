@@ -55,7 +55,9 @@ fn setup(
 
   let plane_mesh = mesh_assets
     |> @pbr.add_mesh(
-      @mesh_primitives_dim3.plane3d_mesh_from_size(26.0F, 10.0F, 0),
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(26.0F, 10.0F),
+      ).build(),
     )
   let plane_material = material_assets
     |> @pbr.add_material(@sprite.Color::srgb(0.09F, 0.10F, 0.13F))
@@ -87,7 +89,12 @@ fn setup(
       ),
     )
   let icosphere_mesh = mesh_assets
-    |> @pbr.add_mesh(@mesh_primitives_dim3.icosphere_mesh(0.75F, 3))
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.SphereMeshBuilder::new(
+        0.75F,
+        @mesh_primitives_dim3.SphereKind::ico(3),
+      ).build(),
+    )
 
   let mat_red = material_assets
     |> @pbr.add_material(@sprite.Color::srgb(0.88F, 0.32F, 0.35F))
