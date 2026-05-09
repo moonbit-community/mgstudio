@@ -58,13 +58,8 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let plane_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(9.0F, 0.1F, 9.0F)),
-      ),
-    )
+  let plane_mesh = meshes.peek()
+    |> @pbr.add_mesh(@math.Cuboid::new(9.0F, 0.1F, 9.0F))
   let white_material = materials
     .peek()
     .add(@pbr.StandardMaterial::from_color(@sprite.Color::white()))
@@ -78,13 +73,8 @@ fn setup(
     ),
   )
 
-  let cube_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    )
+  let cube_mesh = meshes.peek()
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
   ignore(
     commands.spawn(
       (

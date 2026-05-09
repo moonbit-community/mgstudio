@@ -42,13 +42,8 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let floor_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(70.0F, 0.1F, 70.0F)),
-      ),
-    )
+  let floor_mesh = meshes.peek()
+    |> @pbr.add_mesh(@math.Cuboid::new(70.0F, 0.1F, 70.0F))
   let floor_material = materials
     .peek()
     .add(
@@ -64,13 +59,8 @@ fn setup(
     ),
   )
 
-  let cube_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F)),
-      ),
-    )
+  let cube_mesh = meshes.peek()
+    |> @pbr.add_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F))
   let cube_material = materials
     .peek()
     .add(

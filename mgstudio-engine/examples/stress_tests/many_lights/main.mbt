@@ -64,13 +64,8 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let room_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(90.0F, 0.2F, 90.0F)),
-      ),
-    )
+  let room_mesh = meshes.peek()
+    |> @pbr.add_mesh(@math.Cuboid::new(90.0F, 0.2F, 90.0F))
   let room_material = materials
     .peek()
     .add(
@@ -86,13 +81,8 @@ fn setup(
     ),
   )
 
-  let marker_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(8.0F, 8.0F, 8.0F)),
-      ),
-    )
+  let marker_mesh = meshes.peek()
+    |> @pbr.add_mesh(@math.Cuboid::new(8.0F, 8.0F, 8.0F))
   let marker_material = materials
     .peek()
     .add(

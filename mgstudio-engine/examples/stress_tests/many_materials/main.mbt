@@ -72,13 +72,8 @@ fn setup(
     ),
   )
 
-  let cube_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F)),
-      ),
-    )
+  let cube_mesh = meshes.peek()
+    |> @pbr.add_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F))
   for x in 0..<grid {
     for z in 0..<grid {
       let mat_handle = materials
