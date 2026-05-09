@@ -13,24 +13,24 @@
 // limitations under the License.
 
 ///|
-test "render3d: triangle helper builds valid geometry" {
-  let geometry = @mesh_primitives_dim3.triangle3d_mesh(
+test "render3d: triangle builder builds valid geometry" {
+  let geometry = @mesh_primitives_dim3.Triangle3dMeshBuilder::new(
     @math.Triangle3d::new(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(2.0F, 0.0F, 0.0F),
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),
     ),
-  )
+  ).build()
   debug_inspect(geometry.validate(), content="None")
   debug_inspect(geometry.vertex_count(), content="3")
   debug_inspect(geometry.triangle_count(), content="Some(1)")
 }
 
 ///|
-test "render3d: cylinder helper builds valid geometry" {
-  let geometry = @mesh_primitives_dim3.cylinder_mesh(
+test "render3d: cylinder builder builds valid geometry" {
+  let geometry = @mesh_primitives_dim3.CylinderMeshBuilder::from_cylinder(
     @math.Cylinder::new(0.5F, 1.0F),
-  )
+  ).build()
   debug_inspect(geometry.validate(), content="None")
   debug_inspect(geometry.vertex_count() > 0, content="true")
   debug_inspect(
@@ -43,10 +43,10 @@ test "render3d: cylinder helper builds valid geometry" {
 }
 
 ///|
-test "render3d: capsule helper builds valid geometry" {
-  let geometry = @mesh_primitives_dim3.capsule3d_mesh(
+test "render3d: capsule builder builds valid geometry" {
+  let geometry = @mesh_primitives_dim3.Capsule3dMeshBuilder::from_capsule(
     @math.Capsule3d::new(0.5F, 1.0F),
-  )
+  ).build()
   debug_inspect(geometry.validate(), content="None")
   debug_inspect(geometry.vertex_count() > 0, content="true")
   debug_inspect(
@@ -59,8 +59,10 @@ test "render3d: capsule helper builds valid geometry" {
 }
 
 ///|
-test "render3d: plane helper winds upward" {
-  let geometry = @mesh_primitives_dim3.plane3d_mesh_from_size(2.0F, 2.0F, 0)
+test "render3d: plane builder winds upward" {
+  let geometry = @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+    @math.Vec2::new(2.0F, 2.0F),
+  ).build()
   let indices = geometry.indices_or_sequential()
   guard geometry.vertex_position(indices[0]) is Some(a) else {
     abort("missing plane triangle vertex 0")
@@ -78,15 +80,15 @@ test "render3d: plane helper winds upward" {
 }
 
 ///|
-test "render3d: tetrahedron-shape helper builds valid geometry" {
-  let geometry = @mesh_primitives_dim3.tetrahedron_mesh(
+test "render3d: tetrahedron-shape builder builds valid geometry" {
+  let geometry = @mesh_primitives_dim3.TetrahedronMeshBuilder::new(
     @math.Tetrahedron::new(
       @math.Vec3::new(-1.0F, -0.67F, 0.5F),
       @math.Vec3::new(1.0F, -0.67F, 0.5F),
       @math.Vec3::new(0.0F, -0.67F, -1.17F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-  )
+  ).build()
   debug_inspect(geometry.validate(), content="None")
   debug_inspect(geometry.vertex_count(), content="12")
   debug_inspect(geometry.triangle_count(), content="Some(4)")

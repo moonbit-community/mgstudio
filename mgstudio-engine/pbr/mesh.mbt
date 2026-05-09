@@ -152,13 +152,8 @@ fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
     Some(handle) => handle
     None => {
       let mesh = @mesh.Mesh3d::new(
-        mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.cuboid_mesh(
-              @math.Cuboid::new(2.0F, 2.0F, 2.0F),
-            ),
-          ),
-        ),
+        mesh_assets_mut_or_abort().val
+        |> add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F)),
       )
       internal_assets.val.skybox_proxy_mesh = Some(mesh.mesh())
       mesh.mesh()
