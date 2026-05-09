@@ -73,6 +73,12 @@ pub type CircularSegment = @math.CircularSegment
 pub type Ring[P] = @math.Ring[P]
 
 ///|
+pub using @math {trait Inset}
+
+///|
+pub using @math {trait ToRing}
+
+///|
 pub type Sphere = @math.Sphere
 
 ///|

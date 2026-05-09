@@ -30,20 +30,6 @@ pub fn half_space_normal(@math.HalfSpace) -> @math.Vec3
 
 pub fn half_space_normal_d(@math.HalfSpace) -> @math.Vec4
 
-pub fn inset_capsule2d(@math.Capsule2d, Float) -> @math.Capsule2d
-
-pub fn inset_circle(@math.Circle, Float) -> @math.Circle
-
-pub fn inset_circular_segment(@math.CircularSegment, Float) -> @math.CircularSegment
-
-pub fn inset_rectangle(@math.Rectangle, Float) -> @math.Rectangle
-
-pub fn inset_regular_polygon(@math.RegularPolygon, Float) -> @math.RegularPolygon
-
-pub fn inset_rhombus(@math.Rhombus, Float) -> @math.Rhombus
-
-pub fn inset_triangle2d(@math.Triangle2d, Float) -> @math.Triangle2d
-
 pub fn is_polygon_simple(Array[@math.Vec2]) -> Bool
 
 pub fn[T : @math.Measured2d] perimeter_2d_of(T) -> Float
@@ -142,6 +128,10 @@ pub using @math {type Triangle3d}
 pub using @math {type ViewFrustum}
 
 pub using @math {type WindingOrder}
+
+pub using @math {trait Inset}
+
+pub using @math {trait ToRing}
 
 // Traits
 
