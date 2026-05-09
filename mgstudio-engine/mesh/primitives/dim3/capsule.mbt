@@ -23,6 +23,28 @@ pub fn capsule3d_unit() -> @math.Capsule3d {
 }
 
 ///|
+pub enum CapsuleUvProfile {
+  Aspect
+  Uniform
+  Fixed
+} derive(Eq, Debug)
+
+///|
+pub fn CapsuleUvProfile::default() -> CapsuleUvProfile {
+  Aspect
+}
+
+///|
+pub fn CapsuleUvProfile::uniform() -> CapsuleUvProfile {
+  Uniform
+}
+
+///|
+pub fn CapsuleUvProfile::fixed() -> CapsuleUvProfile {
+  Fixed
+}
+
+///|
 pub fn capsule3d_mesh(shape : @math.Capsule3d) -> @mesh.Mesh3dGeometry {
   capsule3d_mesh_with_options(shape, 0, 32, 16)
 }
@@ -33,6 +55,17 @@ pub fn capsule3d_mesh_with_options(
   rings : Int,
   longitudes : Int,
   latitudes : Int,
+) -> @mesh.Mesh3dGeometry {
+  capsule3d_mesh_with_uv_profile(shape, rings, longitudes, latitudes, Aspect)
+}
+
+///|
+pub fn capsule3d_mesh_with_uv_profile(
+  shape : @math.Capsule3d,
+  rings : Int,
+  longitudes : Int,
+  latitudes : Int,
+  uv_profile : CapsuleUvProfile,
 ) -> @mesh.Mesh3dGeometry {
   let rings = if rings < 0 { 0 } else { rings }
   let longitudes = if longitudes < 3 { 3 } else { longitudes }
@@ -65,7 +98,11 @@ pub fn capsule3d_mesh_with_options(
   let to_phi = @math.pi() / primitive_f32(latitudes)
   let to_tex_horizontal = 1.0F / primitive_f32(longitudes)
   let to_tex_vertical = 1.0F / primitive_f32(half_lats)
-  let vt_aspect_ratio = radius / (2.0F * half_length + radius + radius)
+  let vt_aspect_ratio = match uv_profile {
+    Aspect => radius / (2.0F * half_length + radius + radius)
+    Uniform => primitive_f32(half_lats) / primitive_f32(ringsp1 + latitudes)
+    Fixed => 1.0F / 3.0F
+  }
   let vt_aspect_north = 1.0F - vt_aspect_ratio
   let vt_aspect_south = vt_aspect_ratio
   let theta_cartesian = Array::make(longitudes, @math.Vec2::new(0.0F, 0.0F))

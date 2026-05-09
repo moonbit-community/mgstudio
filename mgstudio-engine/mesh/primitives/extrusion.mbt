@@ -780,7 +780,7 @@ fn mesh_normals_or_default(
   mesh : @mesh.Mesh3dGeometry,
   z : Float,
 ) -> Array[@math.Vec3] {
-  match mesh.custom_attribute_vec3(@mesh.MESH3D_ATTRIBUTE_NORMAL_NAME) {
+  match mesh.normals() {
     Some(normals) =>
       if normals.length() == mesh.vertex_count() {
         normals

@@ -118,6 +118,7 @@ priv struct GltfAccessorDef {
 priv struct GltfPrimitiveDef {
   primitive_index : Int
   position : Int?
+  normal : Int?
   uv0 : Int?
   joint_indices : Int?
   joint_weights : Int?
@@ -1393,6 +1394,10 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                 Some(attr_obj) => json_get_int(attr_obj, "TEXCOORD_0")
                 None => None
               }
+              let normal = match attributes {
+                Some(attr_obj) => json_get_int(attr_obj, "NORMAL")
+                None => None
+              }
               let joint_indices = match attributes {
                 Some(attr_obj) => json_get_int(attr_obj, "JOINTS_0")
                 None => None
@@ -1432,6 +1437,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
               primitives.push({
                 primitive_index,
                 position,
+                normal,
                 uv0,
                 joint_indices,
                 joint_weights,
@@ -1445,6 +1451,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
               primitives.push({
                 primitive_index,
                 position: None,
+                normal: None,
                 uv0: None,
                 joint_indices: None,
                 joint_weights: None,
@@ -3274,16 +3281,11 @@ fn scene_build_mesh_primitive_from_gltf(
     return None
   }
 
-  let mut uvs : Array[@math.Vec2] = []
+  let mut uvs : Array[@math.Vec2]? = None
   if primitive.uv0 is Some(uv_accessor) {
-    if gltf_read_accessor_vec2(doc, buffer_bytes, uv_accessor) is Some(decoded) {
-      uvs = decoded
-    }
-  }
-  if uvs.length() != positions.length() {
-    uvs.clear()
-    for _ in positions {
-      uvs.push(@math.Vec2::new(0.0F, 0.0F))
+    if gltf_read_accessor_vec2(doc, buffer_bytes, uv_accessor) is Some(decoded) &&
+      decoded.length() == positions.length() {
+      uvs = Some(decoded)
     }
   }
 
@@ -3297,9 +3299,18 @@ fn scene_build_mesh_primitive_from_gltf(
   } else {
     positions
   }
-  let mut geometry = @mesh.Mesh3dGeometry::new(
-    converted_positions, uvs, indices,
-  )
+  let mut geometry = @mesh.Mesh3dGeometry::new_with_positions(
+    converted_positions, indices,
+  ).with_uvs(uvs)
+  if primitive.normal is Some(normal_accessor) &&
+    gltf_read_accessor_vec3(doc, buffer_bytes, normal_accessor) is Some(normals) {
+    let converted_normals = if convert_coordinates.rotate_meshes {
+      normals.map(@gltf.gltf_convert_coordinates_vec3)
+    } else {
+      normals
+    }
+    geometry = geometry.with_normals(Some(converted_normals))
+  }
   if primitive.joint_indices is Some(joint_indices_accessor) &&
     primitive.joint_weights is Some(joint_weights_accessor) &&
     gltf_read_accessor_joint_indices(doc, buffer_bytes, joint_indices_accessor)

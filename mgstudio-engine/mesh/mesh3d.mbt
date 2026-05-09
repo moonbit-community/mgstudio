@@ -15,7 +15,8 @@
 ///|
 pub struct Mesh3dGeometry {
   positions : Array[@math.Vec3]
-  uvs : Array[@math.Vec2]
+  mut normals : Array[@math.Vec3]?
+  mut uvs : Array[@math.Vec2]?
   colors : Array[@math.Vec4]?
   joint_indices : Array[MeshJointIndices]?
   joint_weights : Array[@math.Vec4]?
@@ -73,7 +74,8 @@ pub fn Mesh3dGeometry::new(
 ) -> Mesh3dGeometry {
   Mesh3dGeometry::{
     positions,
-    uvs,
+    normals: None,
+    uvs: Some(uvs),
     colors: None,
     joint_indices: None,
     joint_weights: None,
@@ -95,7 +97,8 @@ pub fn Mesh3dGeometry::new_with_colors(
 ) -> Mesh3dGeometry {
   Mesh3dGeometry::{
     positions,
-    uvs,
+    normals: None,
+    uvs: Some(uvs),
     colors: Some(colors),
     joint_indices: None,
     joint_weights: None,
@@ -117,7 +120,8 @@ pub fn Mesh3dGeometry::new_with_topology(
 ) -> Mesh3dGeometry {
   Mesh3dGeometry::{
     positions,
-    uvs,
+    normals: None,
+    uvs: Some(uvs),
     colors: None,
     joint_indices: None,
     joint_weights: None,
@@ -140,7 +144,8 @@ pub fn Mesh3dGeometry::new_with_colors_and_topology(
 ) -> Mesh3dGeometry {
   Mesh3dGeometry::{
     positions,
-    uvs,
+    normals: None,
+    uvs: Some(uvs),
     colors: Some(colors),
     joint_indices: None,
     joint_weights: None,
@@ -160,6 +165,7 @@ pub fn Mesh3dGeometry::with_topology(
 ) -> Mesh3dGeometry {
   Mesh3dGeometry::{
     positions: self.positions,
+    normals: self.normals,
     uvs: self.uvs,
     colors: self.colors,
     joint_indices: self.joint_indices,
@@ -184,15 +190,79 @@ pub fn Mesh3dGeometry::primitive_topology(
 const MESH3D_TANGENT_EPSILON : Float = 1.0e-8F
 
 ///|
-pub const MESH3D_ATTRIBUTE_NORMAL_NAME : String = "Vertex_Normal"
+pub fn Mesh3dGeometry::new_with_positions(
+  positions : Array[@math.Vec3],
+  indices : Array[Int]?,
+) -> Mesh3dGeometry {
+  Mesh3dGeometry::{
+    positions,
+    normals: None,
+    uvs: None,
+    colors: None,
+    joint_indices: None,
+    joint_weights: None,
+    morph_target_positions: None,
+    morph_target_names: None,
+    custom_attributes_vec3: [],
+    tangents: None,
+    indices,
+    topology: Mesh3dPrimitiveTopology::TriangleList,
+  }
+}
+
+///|
+pub fn Mesh3dGeometry::new_with_positions_and_topology(
+  positions : Array[@math.Vec3],
+  indices : Array[Int]?,
+  topology : Mesh3dPrimitiveTopology,
+) -> Mesh3dGeometry {
+  Mesh3dGeometry::{
+    positions,
+    normals: None,
+    uvs: None,
+    colors: None,
+    joint_indices: None,
+    joint_weights: None,
+    morph_target_positions: None,
+    morph_target_names: None,
+    custom_attributes_vec3: [],
+    tangents: None,
+    indices,
+    topology,
+  }
+}
 
 ///|
 pub fn Mesh3dGeometry::uv(self : Mesh3dGeometry, index : Int) -> @math.Vec2? {
-  if index < 0 || index >= self.uvs.length() {
+  guard self.uvs is Some(uvs) else { return None }
+  if index < 0 || index >= uvs.length() {
     None
   } else {
-    Some(self.uvs[index])
+    Some(uvs[index])
   }
+}
+
+///|
+pub fn Mesh3dGeometry::normal(
+  self : Mesh3dGeometry,
+  index : Int,
+) -> @math.Vec3? {
+  guard self.normals is Some(normals) else { return None }
+  if index < 0 || index >= normals.length() {
+    None
+  } else {
+    Some(normals[index])
+  }
+}
+
+///|
+pub fn Mesh3dGeometry::normals(self : Mesh3dGeometry) -> Array[@math.Vec3]? {
+  self.normals
+}
+
+///|
+pub fn Mesh3dGeometry::uvs(self : Mesh3dGeometry) -> Array[@math.Vec2]? {
+  self.uvs
 }
 
 ///|
@@ -201,10 +271,11 @@ pub fn Mesh3dGeometry::set_uv(
   index : Int,
   uv : @math.Vec2,
 ) -> Bool {
-  if index < 0 || index >= self.uvs.length() {
+  guard self.uvs is Some(uvs) else { return false }
+  if index < 0 || index >= uvs.length() {
     return false
   }
-  self.uvs[index] = uv
+  uvs[index] = uv
   self.tangents = None
   true
 }
@@ -217,10 +288,96 @@ pub fn Mesh3dGeometry::replace_uvs(
   if uvs.length() != self.positions.length() {
     return false
   }
-  self.uvs.clear()
-  for uv in uvs {
-    self.uvs.push(uv)
+  self.uvs = Some(uvs)
+  self.tangents = None
+  true
+}
+
+///|
+pub fn Mesh3dGeometry::with_uvs(
+  self : Mesh3dGeometry,
+  uvs : Array[@math.Vec2]?,
+) -> Mesh3dGeometry {
+  Mesh3dGeometry::{
+    positions: self.positions,
+    normals: self.normals,
+    uvs,
+    colors: self.colors,
+    joint_indices: self.joint_indices,
+    joint_weights: self.joint_weights,
+    morph_target_positions: self.morph_target_positions,
+    morph_target_names: self.morph_target_names,
+    custom_attributes_vec3: self.custom_attributes_vec3,
+    tangents: None,
+    indices: self.indices,
+    topology: self.topology,
   }
+}
+
+///|
+pub fn Mesh3dGeometry::with_normals(
+  self : Mesh3dGeometry,
+  normals : Array[@math.Vec3]?,
+) -> Mesh3dGeometry {
+  Mesh3dGeometry::{
+    positions: self.positions,
+    normals,
+    uvs: self.uvs,
+    colors: self.colors,
+    joint_indices: self.joint_indices,
+    joint_weights: self.joint_weights,
+    morph_target_positions: self.morph_target_positions,
+    morph_target_names: self.morph_target_names,
+    custom_attributes_vec3: self.custom_attributes_vec3,
+    tangents: None,
+    indices: self.indices,
+    topology: self.topology,
+  }
+}
+
+///|
+pub fn Mesh3dGeometry::replace_normals(
+  self : Mesh3dGeometry,
+  normals : Array[@math.Vec3]?,
+) -> Bool {
+  match normals {
+    None => {
+      self.normals = None
+      self.tangents = None
+      true
+    }
+    Some(values) =>
+      if values.length() != self.positions.length() {
+        false
+      } else {
+        self.normals = Some(values)
+        self.tangents = None
+        true
+      }
+  }
+}
+
+///|
+pub fn Mesh3dGeometry::has_normals(self : Mesh3dGeometry) -> Bool {
+  self.normals is Some(_)
+}
+
+///|
+pub fn Mesh3dGeometry::has_uvs(self : Mesh3dGeometry) -> Bool {
+  self.uvs is Some(_)
+}
+
+///|
+pub fn Mesh3dGeometry::set_normal(
+  self : Mesh3dGeometry,
+  index : Int,
+  normal : @math.Vec3,
+) -> Bool {
+  guard self.normals is Some(normals) else { return false }
+  if index < 0 || index >= normals.length() {
+    return false
+  }
+  normals[index] = normal
   self.tangents = None
   true
 }
@@ -261,8 +418,22 @@ pub fn Mesh3dGeometry::push_vertex(
   position : @math.Vec3,
   uv : @math.Vec2,
 ) -> Int {
+  let old_vertex_count = self.positions.length()
   self.positions.push(position)
-  self.uvs.push(uv)
+  match self.uvs {
+    Some(uvs) => uvs.push(uv)
+    None => {
+      let next_uvs : Array[@math.Vec2] = []
+      for _ in 0..<old_vertex_count {
+        next_uvs.push(@math.Vec2::zero())
+      }
+      next_uvs.push(uv)
+      self.uvs = Some(next_uvs)
+    }
+  }
+  if self.normals is Some(normals) {
+    normals.push(@math.Vec3::zero())
+  }
   if self.colors is Some(colors) {
     colors.push(@math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F))
   }
@@ -295,9 +466,23 @@ pub fn Mesh3dGeometry::push_vertex_with_color(
   color : @math.Vec4,
 ) -> Bool {
   guard self.colors is Some(colors) else { return false }
+  let old_vertex_count = self.positions.length()
   self.positions.push(position)
-  self.uvs.push(uv)
+  match self.uvs {
+    Some(uvs) => uvs.push(uv)
+    None => {
+      let next_uvs : Array[@math.Vec2] = []
+      for _ in 0..<old_vertex_count {
+        next_uvs.push(@math.Vec2::zero())
+      }
+      next_uvs.push(uv)
+      self.uvs = Some(next_uvs)
+    }
+  }
   colors.push(color)
+  if self.normals is Some(normals) {
+    normals.push(@math.Vec3::zero())
+  }
   if self.joint_indices is Some(joint_indices) {
     joint_indices.push(MeshJointIndices::new(0, 0, 0, 0))
   }
@@ -322,7 +507,12 @@ pub fn Mesh3dGeometry::push_vertex_with_color(
 ///|
 pub fn Mesh3dGeometry::clear_vertices(self : Mesh3dGeometry) -> Unit {
   self.positions.clear()
-  self.uvs.clear()
+  if self.normals is Some(normals) {
+    normals.clear()
+  }
+  if self.uvs is Some(uvs) {
+    uvs.clear()
+  }
   if self.colors is Some(colors) {
     colors.clear()
   }
@@ -398,6 +588,7 @@ pub fn Mesh3dGeometry::with_indices(
 ) -> Mesh3dGeometry {
   Mesh3dGeometry::{
     positions: self.positions,
+    normals: self.normals,
     uvs: self.uvs,
     colors: self.colors,
     joint_indices: self.joint_indices,
@@ -418,6 +609,7 @@ pub fn Mesh3dGeometry::with_colors(
 ) -> Mesh3dGeometry {
   Mesh3dGeometry::{
     positions: self.positions,
+    normals: self.normals,
     uvs: self.uvs,
     colors,
     joint_indices: self.joint_indices,
@@ -439,6 +631,7 @@ pub fn Mesh3dGeometry::with_joint_data(
 ) -> Mesh3dGeometry {
   Mesh3dGeometry::{
     positions: self.positions,
+    normals: self.normals,
     uvs: self.uvs,
     colors: self.colors,
     joint_indices,
@@ -474,6 +667,7 @@ pub fn Mesh3dGeometry::with_morph_targets(
 ) -> Mesh3dGeometry {
   Mesh3dGeometry::{
     positions: self.positions,
+    normals: self.normals,
     uvs: self.uvs,
     colors: self.colors,
     joint_indices: self.joint_indices,
@@ -522,6 +716,7 @@ pub fn Mesh3dGeometry::with_custom_attribute_vec3(
   }
   Mesh3dGeometry::{
     positions: self.positions,
+    normals: self.normals,
     uvs: self.uvs,
     colors: self.colors,
     joint_indices: self.joint_indices,
@@ -609,11 +804,23 @@ pub fn Mesh3dGeometry::validate(
   if vertex_count == 0 {
     return Some(Mesh3dValidationError::EmptyGeometry)
   }
-  let uv_count = self.uvs.length()
-  if uv_count != vertex_count {
-    return Some(
-      Mesh3dValidationError::AttributeLengthMismatch(vertex_count, uv_count),
-    )
+  if self.normals is Some(normals) {
+    let normal_count = normals.length()
+    if normal_count != vertex_count {
+      return Some(
+        Mesh3dValidationError::AttributeLengthMismatch(
+          vertex_count, normal_count,
+        ),
+      )
+    }
+  }
+  if self.uvs is Some(uvs) {
+    let uv_count = uvs.length()
+    if uv_count != vertex_count {
+      return Some(
+        Mesh3dValidationError::AttributeLengthMismatch(vertex_count, uv_count),
+      )
+    }
   }
   if self.colors is Some(colors) {
     let color_count = colors.length()
@@ -741,6 +948,16 @@ pub fn Mesh3dGeometry::generate_tangents(
   if self.validate() is Some(err) {
     return Some(Mesh3dGenerateTangentsError::InvalidGeometry(err))
   }
+  guard self.uvs is Some(uvs) else {
+    return Some(
+      Mesh3dGenerateTangentsError::InvalidGeometry(
+        Mesh3dValidationError::AttributeLengthMismatch(
+          self.positions.length(),
+          0,
+        ),
+      ),
+    )
+  }
 
   let vertex_count = self.positions.length()
   let tangent_x : Array[Float] = []
@@ -766,9 +983,9 @@ pub fn Mesh3dGeometry::generate_tangents(
     let p0 = self.positions[i0]
     let p1 = self.positions[i1]
     let p2 = self.positions[i2]
-    let uv0 = self.uvs[i0]
-    let uv1 = self.uvs[i1]
-    let uv2 = self.uvs[i2]
+    let uv0 = uvs[i0]
+    let uv1 = uvs[i1]
+    let uv2 = uvs[i2]
     let edge1 = p1.sub(p0)
     let edge2 = p2.sub(p0)
     let du1 = uv1.x - uv0.x
@@ -881,7 +1098,7 @@ pub fn Mesh3dGeometry::triangle_count(self : Mesh3dGeometry) -> Int? {
 ///|
 fn mesh3d_wireframe_push_vertex(
   src_positions : Array[@math.Vec3],
-  src_uvs : Array[@math.Vec2],
+  src_uvs : Array[@math.Vec2]?,
   src_colors : Array[@math.Vec4]?,
   dst_positions : Array[@math.Vec3],
   dst_uvs : Array[@math.Vec2],
@@ -889,7 +1106,7 @@ fn mesh3d_wireframe_push_vertex(
   src_index : Int,
 ) -> Unit {
   dst_positions.push(src_positions[src_index])
-  dst_uvs.push(src_uvs[src_index])
+  dst_uvs.push(mesh3d_uv_at_or_zero(src_uvs, src_index))
   if src_colors is Some(colors) {
     guard dst_colors is Some(out_colors) else { return }
     out_colors.push(colors[src_index])
@@ -899,7 +1116,7 @@ fn mesh3d_wireframe_push_vertex(
 ///|
 fn mesh3d_wireframe_append_edge(
   src_positions : Array[@math.Vec3],
-  src_uvs : Array[@math.Vec2],
+  src_uvs : Array[@math.Vec2]?,
   src_colors : Array[@math.Vec4]?,
   dst_positions : Array[@math.Vec3],
   dst_uvs : Array[@math.Vec2],
@@ -1045,6 +1262,19 @@ fn mesh3d_vertex_color_or_white(
 }
 
 ///|
+fn mesh3d_uv_at_or_zero(uvs : Array[@math.Vec2]?, index : Int) -> @math.Vec2 {
+  match uvs {
+    Some(values) =>
+      if index >= 0 && index < values.length() {
+        values[index]
+      } else {
+        @math.Vec2::zero()
+      }
+    None => @math.Vec2::zero()
+  }
+}
+
+///|
 fn mesh3d_runtime_default_normal() -> @math.Vec3 {
   @math.Vec3::new(0.0F, 0.0F, 1.0F)
 }
@@ -1084,7 +1314,7 @@ fn mesh3d_normal_at_or(
 fn Mesh3dGeometry::mesh3d_valid_normals(
   self : Mesh3dGeometry,
 ) -> Array[@math.Vec3]? {
-  match self.custom_attribute_vec3(MESH3D_ATTRIBUTE_NORMAL_NAME) {
+  match self.normals {
     Some(values) =>
       if values.length() == self.positions.length() {
         Some(values)
@@ -1181,7 +1411,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(
       let n = self.positions.length()
       for i in 0..<n {
         let p = self.positions[i]
-        let uv = self.uvs[i]
+        let uv = mesh3d_uv_at_or_zero(self.uvs, i)
         let c = mesh3d_vertex_color_or_white(self.colors, i)
         out.push(p.x.to_double())
         out.push(p.y.to_double())
@@ -1198,7 +1428,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(
       for i in 0..<indices.length() {
         let idx = indices[i]
         let p = self.positions[idx]
-        let uv = self.uvs[idx]
+        let uv = mesh3d_uv_at_or_zero(self.uvs, idx)
         let c = mesh3d_vertex_color_or_white(self.colors, idx)
         out.push(p.x.to_double())
         out.push(p.y.to_double())
@@ -1239,7 +1469,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
                 out,
                 self.positions[i],
                 mesh3d_normal_at_or(explicit_normals, i, normal),
-                self.uvs[i],
+                mesh3d_uv_at_or_zero(self.uvs, i),
                 mesh3d_vertex_color_or_white(self.colors, i),
               )
             }
@@ -1261,21 +1491,21 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ia],
               mesh3d_normal_at_or(explicit_normals, ia, normal),
-              self.uvs[ia],
+              mesh3d_uv_at_or_zero(self.uvs, ia),
               mesh3d_vertex_color_or_white(self.colors, ia),
             )
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ib],
               mesh3d_normal_at_or(explicit_normals, ib, normal),
-              self.uvs[ib],
+              mesh3d_uv_at_or_zero(self.uvs, ib),
               mesh3d_vertex_color_or_white(self.colors, ib),
             )
             mesh3d_push_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[ic],
               mesh3d_normal_at_or(explicit_normals, ic, normal),
-              self.uvs[ic],
+              mesh3d_uv_at_or_zero(self.uvs, ic),
               mesh3d_vertex_color_or_white(self.colors, ic),
             )
           }
@@ -1291,7 +1521,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[i],
               mesh3d_normal_at_or(explicit_normals, i, normal),
-              self.uvs[i],
+              mesh3d_uv_at_or_zero(self.uvs, i),
               mesh3d_vertex_color_or_white(self.colors, i),
             )
           }
@@ -1303,7 +1533,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[idx],
               mesh3d_normal_at_or(explicit_normals, idx, normal),
-              self.uvs[idx],
+              mesh3d_uv_at_or_zero(self.uvs, idx),
               mesh3d_vertex_color_or_white(self.colors, idx),
             )
           }
@@ -1319,7 +1549,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[i],
               mesh3d_normal_at_or(explicit_normals, i, normal),
-              self.uvs[i],
+              mesh3d_uv_at_or_zero(self.uvs, i),
               mesh3d_vertex_color_or_white(self.colors, i),
             )
           }
@@ -1331,7 +1561,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
               out,
               self.positions[idx],
               mesh3d_normal_at_or(explicit_normals, idx, normal),
-              self.uvs[idx],
+              mesh3d_uv_at_or_zero(self.uvs, idx),
               mesh3d_vertex_color_or_white(self.colors, idx),
             )
           }
@@ -1368,7 +1598,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
                 out,
                 self.positions[i],
                 mesh3d_normal_at_or(explicit_normals, i, normal),
-                self.uvs[i],
+                mesh3d_uv_at_or_zero(self.uvs, i),
                 mesh3d_vertex_color_or_white(self.colors, i),
               )
               mesh3d_push_skinning_joint_data(
@@ -1393,7 +1623,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               out,
               self.positions[ia],
               mesh3d_normal_at_or(explicit_normals, ia, normal),
-              self.uvs[ia],
+              mesh3d_uv_at_or_zero(self.uvs, ia),
               mesh3d_vertex_color_or_white(self.colors, ia),
             )
             mesh3d_push_skinning_joint_data(
@@ -1403,7 +1633,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               out,
               self.positions[ib],
               mesh3d_normal_at_or(explicit_normals, ib, normal),
-              self.uvs[ib],
+              mesh3d_uv_at_or_zero(self.uvs, ib),
               mesh3d_vertex_color_or_white(self.colors, ib),
             )
             mesh3d_push_skinning_joint_data(
@@ -1413,7 +1643,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               out,
               self.positions[ic],
               mesh3d_normal_at_or(explicit_normals, ic, normal),
-              self.uvs[ic],
+              mesh3d_uv_at_or_zero(self.uvs, ic),
               mesh3d_vertex_color_or_white(self.colors, ic),
             )
             mesh3d_push_skinning_joint_data(
@@ -1432,7 +1662,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               out,
               self.positions[i],
               mesh3d_normal_at_or(explicit_normals, i, normal),
-              self.uvs[i],
+              mesh3d_uv_at_or_zero(self.uvs, i),
               mesh3d_vertex_color_or_white(self.colors, i),
             )
             mesh3d_push_skinning_joint_data(
@@ -1447,7 +1677,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               out,
               self.positions[idx],
               mesh3d_normal_at_or(explicit_normals, idx, normal),
-              self.uvs[idx],
+              mesh3d_uv_at_or_zero(self.uvs, idx),
               mesh3d_vertex_color_or_white(self.colors, idx),
             )
             mesh3d_push_skinning_joint_data(
@@ -1466,7 +1696,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               out,
               self.positions[i],
               mesh3d_normal_at_or(explicit_normals, i, normal),
-              self.uvs[i],
+              mesh3d_uv_at_or_zero(self.uvs, i),
               mesh3d_vertex_color_or_white(self.colors, i),
             )
             mesh3d_push_skinning_joint_data(
@@ -1481,7 +1711,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
               out,
               self.positions[idx],
               mesh3d_normal_at_or(explicit_normals, idx, normal),
-              self.uvs[idx],
+              mesh3d_uv_at_or_zero(self.uvs, idx),
               mesh3d_vertex_color_or_white(self.colors, idx),
             )
             mesh3d_push_skinning_joint_data(

@@ -31,6 +31,13 @@ fn mesh3d_to_mesh2d(mesh_asset : @mesh.Mesh) -> @mesh.Mesh? {
   for position in geometry.positions {
     positions2d.push(@math.Vec2::new(position.x, position.y))
   }
+  let uvs2d : Array[@math.Vec2] = []
+  for index in 0..<geometry.vertex_count() {
+    match geometry.vertex_uv(index) {
+      Some(uv) => uvs2d.push(uv)
+      None => uvs2d.push(@math.Vec2::zero())
+    }
+  }
   let colors = match geometry.custom_attribute_vec3("Barycentric") {
     Some(values) => barycentric_colors(values)
     None =>
@@ -48,7 +55,7 @@ fn mesh3d_to_mesh2d(mesh_asset : @mesh.Mesh) -> @mesh.Mesh? {
     @mesh.Mesh::from_2d_geometry(
       @mesh.Mesh2dGeometry::new_with_colors(
         positions2d,
-        geometry.uvs,
+        uvs2d,
         colors,
         geometry.indices,
       ),

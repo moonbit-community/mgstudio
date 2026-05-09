@@ -111,9 +111,25 @@ fn scene_clone_mesh3d_geometry(
   for position in geometry.positions {
     positions.push(position)
   }
-  let uvs : Array[@math.Vec2] = []
-  for uv in geometry.uvs {
-    uvs.push(uv)
+  let normals = match geometry.normals() {
+    Some(existing) => {
+      let next : Array[@math.Vec3] = []
+      for normal in existing {
+        next.push(normal)
+      }
+      Some(next)
+    }
+    None => None
+  }
+  let uvs = match geometry.uvs() {
+    Some(existing) => {
+      let next : Array[@math.Vec2] = []
+      for uv in existing {
+        next.push(uv)
+      }
+      Some(next)
+    }
+    None => None
   }
   let indices = match geometry.indices {
     Some(existing) => {
@@ -135,12 +151,14 @@ fn scene_clone_mesh3d_geometry(
     }
     None => None
   }
-  let mut cloned = @mesh.Mesh3dGeometry::new_with_topology(
-    positions,
-    uvs,
-    indices,
-    geometry.topology,
-  ).with_colors(colors)
+  let mut cloned = @mesh.Mesh3dGeometry::new_with_positions_and_topology(
+      positions,
+      indices,
+      geometry.topology,
+    )
+    .with_normals(normals)
+    .with_uvs(uvs)
+    .with_colors(colors)
   if geometry.joint_indices is Some(joint_indices) {
     let copied_indices : Array[@mesh.MeshJointIndices] = []
     for joint_index in joint_indices {

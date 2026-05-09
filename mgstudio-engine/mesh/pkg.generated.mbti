@@ -13,8 +13,6 @@ import {
 }
 
 // Values
-pub const MESH3D_ATTRIBUTE_NORMAL_NAME : String = "Vertex_Normal"
-
 pub fn[S : IntoMeshAsset] add(@asset.Assets[Mesh], S) -> @asset.Handle[Mesh]
 
 pub let ecs_key_dynamic_skinned_mesh_bounds : @ecs.ComponentKey[DynamicSkinnedMeshBounds]
@@ -180,7 +178,8 @@ pub(all) enum Mesh3dGenerateTangentsError {
 
 pub struct Mesh3dGeometry {
   positions : Array[@math.Vec3]
-  uvs : Array[@math.Vec2]
+  mut normals : Array[@math.Vec3]?
+  mut uvs : Array[@math.Vec2]?
   colors : Array[@math.Vec4]?
   joint_indices : Array[MeshJointIndices]?
   joint_weights : Array[@math.Vec4]?
@@ -205,7 +204,9 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::flatten_triangle_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::generate_tangents(Self) -> Mesh3dGenerateTangentsError?
 pub fn Mesh3dGeometry::has_indices(Self) -> Bool
+pub fn Mesh3dGeometry::has_normals(Self) -> Bool
 pub fn Mesh3dGeometry::has_tangents(Self) -> Bool
+pub fn Mesh3dGeometry::has_uvs(Self) -> Bool
 pub fn Mesh3dGeometry::indices_or_sequential(Self) -> Array[Int]
 pub fn Mesh3dGeometry::joint_indices(Self) -> Array[MeshJointIndices]?
 pub fn Mesh3dGeometry::joint_weights(Self) -> Array[@math.Vec4]?
@@ -214,15 +215,21 @@ pub fn Mesh3dGeometry::morph_target_positions(Self) -> Array[Array[@math.Vec3]]?
 pub fn Mesh3dGeometry::new(Array[@math.Vec3], Array[@math.Vec2], Array[Int]?) -> Self
 pub fn Mesh3dGeometry::new_with_colors(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?) -> Self
 pub fn Mesh3dGeometry::new_with_colors_and_topology(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?, Mesh3dPrimitiveTopology) -> Self
+pub fn Mesh3dGeometry::new_with_positions(Array[@math.Vec3], Array[Int]?) -> Self
+pub fn Mesh3dGeometry::new_with_positions_and_topology(Array[@math.Vec3], Array[Int]?, Mesh3dPrimitiveTopology) -> Self
 pub fn Mesh3dGeometry::new_with_topology(Array[@math.Vec3], Array[@math.Vec2], Array[Int]?, Mesh3dPrimitiveTopology) -> Self
+pub fn Mesh3dGeometry::normal(Self, Int) -> @math.Vec3?
+pub fn Mesh3dGeometry::normals(Self) -> Array[@math.Vec3]?
 pub fn Mesh3dGeometry::primitive_topology(Self) -> Mesh3dPrimitiveTopology
 pub fn Mesh3dGeometry::push_index(Self, Int) -> Bool
 pub fn Mesh3dGeometry::push_triangle_indices(Self, Int, Int, Int) -> Bool
 pub fn Mesh3dGeometry::push_vertex(Self, @math.Vec3, @math.Vec2) -> Int
 pub fn Mesh3dGeometry::push_vertex_with_color(Self, @math.Vec3, @math.Vec2, @math.Vec4) -> Bool
+pub fn Mesh3dGeometry::replace_normals(Self, Array[@math.Vec3]?) -> Bool
 pub fn Mesh3dGeometry::replace_positions(Self, Array[@math.Vec3]) -> Bool
 pub fn Mesh3dGeometry::replace_tangents(Self, Array[@math.Vec4]?) -> Bool
 pub fn Mesh3dGeometry::replace_uvs(Self, Array[@math.Vec2]) -> Bool
+pub fn Mesh3dGeometry::set_normal(Self, Int, @math.Vec3) -> Bool
 pub fn Mesh3dGeometry::set_position(Self, Int, @math.Vec3) -> Bool
 pub fn Mesh3dGeometry::set_uv(Self, Int, @math.Vec2) -> Bool
 pub fn Mesh3dGeometry::tangent(Self, Int) -> @math.Vec4?
@@ -230,6 +237,7 @@ pub fn Mesh3dGeometry::to_mesh(Self) -> Mesh
 pub fn Mesh3dGeometry::to_wireframe_line_list(Self) -> Self?
 pub fn Mesh3dGeometry::triangle_count(Self) -> Int?
 pub fn Mesh3dGeometry::uv(Self, Int) -> @math.Vec2?
+pub fn Mesh3dGeometry::uvs(Self) -> Array[@math.Vec2]?
 pub fn Mesh3dGeometry::validate(Self) -> Mesh3dValidationError?
 pub fn Mesh3dGeometry::vertex_color(Self, Int) -> @math.Vec4?
 pub fn Mesh3dGeometry::vertex_count(Self) -> Int
@@ -240,7 +248,9 @@ pub fn Mesh3dGeometry::with_custom_attribute_vec3(Self, String, Array[@math.Vec3
 pub fn Mesh3dGeometry::with_indices(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_joint_data(Self, Array[MeshJointIndices]?, Array[@math.Vec4]?) -> Self
 pub fn Mesh3dGeometry::with_morph_targets(Self, Array[Array[@math.Vec3]]?, morph_target_names? : Array[String]?) -> Self
+pub fn Mesh3dGeometry::with_normals(Self, Array[@math.Vec3]?) -> Self
 pub fn Mesh3dGeometry::with_topology(Self, Mesh3dPrimitiveTopology) -> Self
+pub fn Mesh3dGeometry::with_uvs(Self, Array[@math.Vec2]?) -> Self
 pub impl IntoMeshAsset for Mesh3dGeometry
 
 pub(all) enum Mesh3dPrimitiveTopology {

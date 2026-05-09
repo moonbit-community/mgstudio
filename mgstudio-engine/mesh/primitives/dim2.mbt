@@ -56,10 +56,7 @@ fn primitive2d_geometry_with_normals(
   uvs : Array[@math.Vec2],
   indices : Array[Int]?,
 ) -> @mesh.Mesh3dGeometry {
-  @mesh.Mesh3dGeometry::new(positions, uvs, indices).with_custom_attribute_vec3(
-    @mesh.MESH3D_ATTRIBUTE_NORMAL_NAME,
-    normals,
-  )
+  @mesh.Mesh3dGeometry::new(positions, uvs, indices).with_normals(Some(normals))
 }
 
 ///|
@@ -237,18 +234,16 @@ pub fn convex_polygon_mesh(
   polygon : @math.ConvexPolygon,
 ) -> @mesh.Mesh3dGeometry {
   let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
   for vertex in polygon.vertices {
     positions.push(@math.Vec3::new(vertex.x, vertex.y, 0.0F))
-    uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
   for i in 2..<polygon.vertices.length() {
     indices.push(0)
     indices.push(i - 1)
     indices.push(i)
   }
-  @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
+  @mesh.Mesh3dGeometry::new_with_positions(positions, Some(indices))
 }
 
 ///|
@@ -291,12 +286,11 @@ fn ellipse_mesh_with_resolution(
 
 ///|
 pub fn segment2d_mesh(segment : @math.Segment2d) -> @mesh.Mesh3dGeometry {
-  @mesh.Mesh3dGeometry::new_with_topology(
+  @mesh.Mesh3dGeometry::new_with_positions_and_topology(
     [
       @math.Vec3::new(segment.start.x, segment.start.y, 0.0F),
       @math.Vec3::new(segment.end.x, segment.end.y, 0.0F),
     ],
-    [@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(0.0F, 0.0F)],
     Some([0, 1]),
     @mesh.Mesh3dPrimitiveTopology::LineList,
   )
@@ -305,11 +299,9 @@ pub fn segment2d_mesh(segment : @math.Segment2d) -> @mesh.Mesh3dGeometry {
 ///|
 pub fn polyline2d_mesh(polyline : @math.Polyline2d) -> @mesh.Mesh3dGeometry {
   let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
   for vertex in polyline.points {
     positions.push(@math.Vec3::new(vertex.x, vertex.y, 0.0F))
-    uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
   if polyline.points.length() >= 2 {
     for i in 0..<(polyline.points.length() - 1) {
@@ -317,9 +309,8 @@ pub fn polyline2d_mesh(polyline : @math.Polyline2d) -> @mesh.Mesh3dGeometry {
       indices.push(i + 1)
     }
   }
-  @mesh.Mesh3dGeometry::new_with_topology(
+  @mesh.Mesh3dGeometry::new_with_positions_and_topology(
     positions,
-    uvs,
     Some(indices),
     @mesh.Mesh3dPrimitiveTopology::LineList,
   )

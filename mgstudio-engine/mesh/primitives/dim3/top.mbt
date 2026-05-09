@@ -68,33 +68,7 @@ fn primitive_geometry_with_normals(
   uvs : Array[@math.Vec2],
   indices : Array[Int]?,
 ) -> @mesh.Mesh3dGeometry {
-  @mesh.Mesh3dGeometry::new(positions, uvs, indices).with_custom_attribute_vec3(
-    @mesh.MESH3D_ATTRIBUTE_NORMAL_NAME,
-    normals,
-  )
-}
-
-///|
-fn primitive_geometry_with_normals_and_topology(
-  positions : Array[@math.Vec3],
-  normals : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-  indices : Array[Int]?,
-  topology : @mesh.Mesh3dPrimitiveTopology,
-) -> @mesh.Mesh3dGeometry {
-  @mesh.Mesh3dGeometry::new_with_topology(positions, uvs, indices, topology).with_custom_attribute_vec3(
-    @mesh.MESH3D_ATTRIBUTE_NORMAL_NAME,
-    normals,
-  )
-}
-
-///|
-fn primitive_zero_uvs(count : Int) -> Array[@math.Vec2] {
-  let uvs : Array[@math.Vec2] = []
-  for _ in 0..<count {
-    uvs.push(@math.Vec2::new(0.0F, 0.0F))
-  }
-  uvs
+  @mesh.Mesh3dGeometry::new(positions, uvs, indices).with_normals(Some(normals))
 }
 
 ///|

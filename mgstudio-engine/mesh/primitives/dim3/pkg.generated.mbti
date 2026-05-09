@@ -14,6 +14,8 @@ pub fn capsule3d_mesh(@math.Capsule3d) -> @mesh.Mesh3dGeometry
 
 pub fn capsule3d_mesh_with_options(@math.Capsule3d, Int, Int, Int) -> @mesh.Mesh3dGeometry
 
+pub fn capsule3d_mesh_with_uv_profile(@math.Capsule3d, Int, Int, Int, CapsuleUvProfile) -> @mesh.Mesh3dGeometry
+
 pub fn capsule3d_unit() -> @math.Capsule3d
 
 pub fn cone(Float, Float) -> @math.Cone
@@ -84,6 +86,8 @@ pub fn torus(Float, Float) -> @math.Torus
 
 pub fn torus_mesh(@math.Torus) -> @mesh.Mesh3dGeometry
 
+pub fn torus_mesh_with_angle_range(@math.Torus, Int, Int, Float, Float) -> @mesh.Mesh3dGeometry
+
 pub fn torus_mesh_with_resolution(@math.Torus, Int, Int) -> @mesh.Mesh3dGeometry
 
 pub fn torus_unit() -> @math.Torus
@@ -97,6 +101,15 @@ pub fn uv_sphere_mesh(Float, Int, Int) -> @mesh.Mesh3dGeometry
 // Errors
 
 // Types and methods
+pub enum CapsuleUvProfile {
+  Aspect
+  Uniform
+  Fixed
+} derive(Eq, @debug.Debug)
+pub fn CapsuleUvProfile::default() -> Self
+pub fn CapsuleUvProfile::fixed() -> Self
+pub fn CapsuleUvProfile::uniform() -> Self
+
 pub enum ConeAnchor {
   MidPoint
   Tip

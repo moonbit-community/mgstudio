@@ -19,10 +19,8 @@ pub fn segment3d(point_a : @math.Vec3, point_b : @math.Vec3) -> @math.Segment3d 
 
 ///|
 pub fn segment3d_line_list(shape : @math.Segment3d) -> @mesh.Mesh3dGeometry {
-  primitive_geometry_with_normals_and_topology(
+  @mesh.Mesh3dGeometry::new_with_positions_and_topology(
     [shape.point1(), shape.point2()],
-    [@math.Vec3::new(0.0F, 1.0F, 0.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F)],
-    primitive_zero_uvs(2),
     Some([0, 1]),
     @mesh.Mesh3dPrimitiveTopology::LineList,
   )

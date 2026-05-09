@@ -30,14 +30,8 @@ pub fn polyline3d_line_list(shape : @math.Polyline3d) -> @mesh.Mesh3dGeometry {
       indices.push(index + 1)
     }
   }
-  let normals : Array[@math.Vec3] = []
-  for _ in 0..<positions.length() {
-    normals.push(@math.Vec3::new(0.0F, 1.0F, 0.0F))
-  }
-  primitive_geometry_with_normals_and_topology(
+  @mesh.Mesh3dGeometry::new_with_positions_and_topology(
     positions,
-    normals,
-    primitive_zero_uvs(positions.length()),
     Some(indices),
     @mesh.Mesh3dPrimitiveTopology::LineList,
   )

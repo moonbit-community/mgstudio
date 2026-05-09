@@ -33,6 +33,23 @@ pub fn torus_mesh_with_resolution(
   minor_resolution : Int,
   major_resolution : Int,
 ) -> @mesh.Mesh3dGeometry {
+  torus_mesh_with_angle_range(
+    shape,
+    minor_resolution,
+    major_resolution,
+    0.0F,
+    2.0F * @math.pi(),
+  )
+}
+
+///|
+pub fn torus_mesh_with_angle_range(
+  shape : @math.Torus,
+  minor_resolution : Int,
+  major_resolution : Int,
+  start_angle : Float,
+  end_angle : Float,
+) -> @mesh.Mesh3dGeometry {
   let minor_resolution = if minor_resolution < 3 { 3 } else { minor_resolution }
   let major_resolution = if major_resolution < 3 { 3 } else { major_resolution }
   let positions : Array[@math.Vec3] = []
@@ -40,11 +57,12 @@ pub fn torus_mesh_with_resolution(
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
 
-  let segment_stride = 2.0F * @math.pi() / primitive_f32(major_resolution)
+  let segment_stride = (end_angle - start_angle) /
+    primitive_f32(major_resolution)
   let side_stride = 2.0F * @math.pi() / primitive_f32(minor_resolution)
 
   for segment in 0..<=major_resolution {
-    let theta = segment_stride * primitive_f32(segment)
+    let theta = start_angle + segment_stride * primitive_f32(segment)
     let sin_theta = @math.sin(theta)
     let cos_theta = @math.cos(theta)
     for side in 0..<=minor_resolution {

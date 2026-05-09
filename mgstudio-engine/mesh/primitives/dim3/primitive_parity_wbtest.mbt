@@ -33,8 +33,7 @@ fn primitive_parity_assert_triangle_winding_matches_normals(
     @mesh.Mesh3dPrimitiveTopology::TriangleList else {
     return
   }
-  let normals = match
-    geometry.custom_attribute_vec3(@mesh.MESH3D_ATTRIBUTE_NORMAL_NAME) {
+  let normals = match geometry.normals() {
     Some(values) => values
     None => abort("\{name}: missing normal attribute")
   }

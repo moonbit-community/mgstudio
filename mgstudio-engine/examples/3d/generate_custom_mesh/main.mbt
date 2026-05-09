@@ -149,18 +149,16 @@ fn create_cube_mesh(upper_uv : Bool) -> @mesh.Mesh {
       create_cube_positions(),
       create_cube_uvs(upper_uv),
       Some(create_cube_indices()),
-    ).with_custom_attribute_vec3(
-      @mesh.MESH3D_ATTRIBUTE_NORMAL_NAME,
-      create_cube_normals(),
-    ),
+    ).with_normals(Some(create_cube_normals())),
   )
 }
 
 ///|
 fn toggle_texture(mesh : @mesh.Mesh) -> @mesh.Mesh {
   guard mesh.as_3d_geometry() is Some(geometry) else { return mesh }
+  guard geometry.uvs() is Some(uvs) else { return mesh }
   let next_uvs : Array[@math.Vec2] = []
-  for uv in geometry.uvs {
+  for uv in uvs {
     let next_y = if uv.y + 0.5F < 1.0F { uv.y + 0.5F } else { uv.y - 0.5F }
     next_uvs.push(@math.Vec2::new(uv.x, next_y))
   }
