@@ -111,6 +111,14 @@ test "math: extrusion stores base shape and half depth" {
     sampling_test_approx_eq(extrusion.half_depth, 1.0F),
     content="true",
   )
+  debug_inspect(
+    sampling_test_approx_eq(extrusion.area(), 2.0F * (0.25F * pi() + pi())),
+    content="true",
+  )
+  debug_inspect(
+    sampling_test_approx_eq(extrusion.volume(), 0.5F * pi()),
+    content="true",
+  )
 }
 
 ///|

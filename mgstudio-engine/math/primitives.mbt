@@ -161,6 +161,9 @@ pub impl Primitive3d for ConicalFrustum
 pub impl Primitive3d for Torus
 
 ///|
+pub impl[P] Primitive3d for Extrusion[P]
+
+///|
 pub impl Measured2d for Circle with perimeter(self) {
   2.0F * pi() * self.radius
 }
@@ -463,6 +466,17 @@ pub impl Measured3d for Torus with area(self) {
 ///|
 pub impl Measured3d for Torus with volume(self) {
   2.0F * pi() * pi() * self.major_radius * self.minor_radius * self.minor_radius
+}
+
+///|
+pub impl[P : Measured2d] Measured3d for Extrusion[P] with area(self) {
+  2.0F *
+  (self.base_shape.area() + self.half_depth * self.base_shape.perimeter())
+}
+
+///|
+pub impl[P : Measured2d] Measured3d for Extrusion[P] with volume(self) {
+  2.0F * self.base_shape.area() * self.half_depth
 }
 
 ///|

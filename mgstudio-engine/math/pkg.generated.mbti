@@ -677,6 +677,8 @@ pub(all) struct Extrusion[T] {
   half_depth : Float
 }
 pub fn[T] Extrusion::new(T, Float) -> Self[T]
+pub impl[P : Measured2d] Measured3d for Extrusion[P]
+pub impl[P] Primitive3d for Extrusion[P]
 
 pub struct FloatOrd {
   value : Float
