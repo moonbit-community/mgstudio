@@ -1727,20 +1727,22 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
   let root_viewport_size = Ref(@math.Vec2::new(0.0F, 0.0F))
 
-  fn dim_for_val(val : Val) -> @moon_taffy.Dimension {
+  fn dim_for_val(val : Val) -> @taffy_style.Dimension {
     match val {
-      Auto => @moon_taffy.auto()
-      Px(px) => @moon_taffy.length(f2d(px))
-      Percent(p) => @moon_taffy.percent(f2d(p / 100.0F))
-      Vw(p) => @moon_taffy.length(f2d(root_viewport_size.val.x * (p / 100.0F)))
-      Vh(p) => @moon_taffy.length(f2d(root_viewport_size.val.y * (p / 100.0F)))
+      Auto => @taffy_helpers.auto()
+      Px(px) => @taffy_helpers.length(f2d(px))
+      Percent(p) => @taffy_helpers.percent(f2d(p / 100.0F))
+      Vw(p) =>
+        @taffy_helpers.length(f2d(root_viewport_size.val.x * (p / 100.0F)))
+      Vh(p) =>
+        @taffy_helpers.length(f2d(root_viewport_size.val.y * (p / 100.0F)))
       VMin(p) => {
         let m = if root_viewport_size.val.x < root_viewport_size.val.y {
           root_viewport_size.val.x
         } else {
           root_viewport_size.val.y
         }
-        @moon_taffy.length(f2d(m * (p / 100.0F)))
+        @taffy_helpers.length(f2d(m * (p / 100.0F)))
       }
       VMax(p) => {
         let m = if root_viewport_size.val.x > root_viewport_size.val.y {
@@ -1748,7 +1750,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
         } else {
           root_viewport_size.val.y
         }
-        @moon_taffy.length(f2d(m * (p / 100.0F)))
+        @taffy_helpers.length(f2d(m * (p / 100.0F)))
       }
     }
   }
@@ -1791,8 +1793,10 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     }
   }
 
-  fn rect_for_uirect(r : UiRect) -> @moon_taffy.Rect[@moon_taffy.Dimension] {
-    @moon_taffy.Rect(
+  fn rect_for_uirect(
+    r : UiRect,
+  ) -> @taffy_geometry.Rect[@taffy_style.Dimension] {
+    @taffy_geometry.Rect(
       left=dim_for_val(r.left),
       right=dim_for_val(r.right),
       top=dim_for_val(r.top),
@@ -1803,35 +1807,35 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   fn size_for_vals(
     w : Val,
     h : Val,
-  ) -> @moon_taffy.Size[@moon_taffy.Dimension] {
-    @moon_taffy.Size(width=dim_for_val(w), height=dim_for_val(h))
+  ) -> @taffy_geometry.Size[@taffy_style.Dimension] {
+    @taffy_geometry.Size(width=dim_for_val(w), height=dim_for_val(h))
   }
 
-  fn grid_track_to_taffy(track : GridTrack) -> @moon_taffy.Dimension {
+  fn grid_track_to_taffy(track : GridTrack) -> @taffy_style.Dimension {
     match track {
-      GridTrack::Auto => @moon_taffy.auto()
-      GridTrack::Px(px) => @moon_taffy.length(f2d(px))
-      GridTrack::Percent(p) => @moon_taffy.percent(f2d(p))
-      GridTrack::Fr(w) => @moon_taffy.fr(f2d(w))
-      GridTrack::MinContent => @moon_taffy.grid_min_content()
-      GridTrack::MaxContent => @moon_taffy.grid_max_content()
+      GridTrack::Auto => @taffy_helpers.auto()
+      GridTrack::Px(px) => @taffy_helpers.length(f2d(px))
+      GridTrack::Percent(p) => @taffy_helpers.percent(f2d(p))
+      GridTrack::Fr(w) => @taffy_helpers.fr(f2d(w))
+      GridTrack::MinContent => @taffy_helpers.grid_min_content()
+      GridTrack::MaxContent => @taffy_helpers.grid_max_content()
     }
   }
 
   fn grid_track_repetition_to_taffy(
     repetition : GridTrackRepetition,
-  ) -> @moon_taffy.GridTrackRepetition {
+  ) -> @taffy_style.GridTrackRepetition {
     match repetition {
-      GridTrackRepetition::Count(n) => @moon_taffy.repeat_count(n)
-      GridTrackRepetition::AutoFill => @moon_taffy.repeat_auto_fill()
-      GridTrackRepetition::AutoFit => @moon_taffy.repeat_auto_fit()
+      GridTrackRepetition::Count(n) => @taffy_helpers.repeat_count(n)
+      GridTrackRepetition::AutoFill => @taffy_helpers.repeat_auto_fill()
+      GridTrackRepetition::AutoFit => @taffy_helpers.repeat_auto_fit()
     }
   }
 
   fn repeated_grid_track_to_taffy(
     rep : RepeatedGridTrack,
-  ) -> @moon_taffy.Dimension {
-    let tracks : Array[@moon_taffy.Dimension] = []
+  ) -> @taffy_style.Dimension {
+    let tracks : Array[@taffy_style.Dimension] = []
     for track in rep.tracks {
       tracks.push(grid_track_to_taffy(track))
     }
@@ -1840,13 +1844,13 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
         if tracks.length() == 1 {
           tracks[0]
         } else {
-          @moon_taffy.repeat(
+          @taffy_helpers.repeat(
             grid_track_repetition_to_taffy(rep.repetition),
             tracks,
           )
         }
       _ =>
-        @moon_taffy.repeat(
+        @taffy_helpers.repeat(
           grid_track_repetition_to_taffy(rep.repetition),
           tracks,
         )
@@ -1855,8 +1859,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
   fn grid_template_to_taffy(
     template : Array[RepeatedGridTrack],
-  ) -> Array[@moon_taffy.Dimension] {
-    let dims : Array[@moon_taffy.Dimension] = []
+  ) -> Array[@taffy_style.Dimension] {
+    let dims : Array[@taffy_style.Dimension] = []
     for rep in template {
       dims.push(repeated_grid_track_to_taffy(rep))
     }
@@ -1865,193 +1869,197 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
   fn grid_tracks_to_taffy(
     tracks : Array[GridTrack],
-  ) -> Array[@moon_taffy.Dimension] {
-    let dims : Array[@moon_taffy.Dimension] = []
+  ) -> Array[@taffy_style.Dimension] {
+    let dims : Array[@taffy_style.Dimension] = []
     for track in tracks {
       dims.push(grid_track_to_taffy(track))
     }
     dims
   }
 
-  fn overflow_axis_to_taffy(axis : OverflowAxis) -> @moon_taffy.Overflow {
+  fn overflow_axis_to_taffy(axis : OverflowAxis) -> @taffy_style.Overflow {
     match axis {
-      OverflowAxis::Visible => @moon_taffy.overflow_visible()
-      OverflowAxis::Hidden => @moon_taffy.overflow_hidden()
-      OverflowAxis::Scroll => @moon_taffy.overflow_scroll()
-      OverflowAxis::Clip => @moon_taffy.overflow_clip()
+      OverflowAxis::Visible => @taffy_helpers.overflow_visible()
+      OverflowAxis::Hidden => @taffy_helpers.overflow_hidden()
+      OverflowAxis::Scroll => @taffy_helpers.overflow_scroll()
+      OverflowAxis::Clip => @taffy_helpers.overflow_clip()
     }
   }
 
   fn overflow_to_taffy(
     overflow : Overflow,
-  ) -> @moon_taffy.Point[@moon_taffy.Overflow] {
-    @moon_taffy.Point(
+  ) -> @taffy_geometry.Point[@taffy_style.Overflow] {
+    @taffy_geometry.Point(
       x=overflow_axis_to_taffy(overflow.x),
       y=overflow_axis_to_taffy(overflow.y),
     )
   }
 
-  fn display_to_taffy(display : Display) -> @moon_taffy.Display {
+  fn display_to_taffy(display : Display) -> @taffy_style.Display {
     match display {
-      Display::Block => @moon_taffy.display_block()
-      Display::Flex => @moon_taffy.display_flex()
-      Display::Grid => @moon_taffy.display_grid()
-      Display::None => @moon_taffy.display_none()
+      Display::Block => @taffy_helpers.display_block()
+      Display::Flex => @taffy_helpers.display_flex()
+      Display::Grid => @taffy_helpers.display_grid()
+      Display::None => @taffy_helpers.display_none()
     }
   }
 
-  fn position_to_taffy(position_type : PositionType) -> @moon_taffy.Position {
+  fn position_to_taffy(position_type : PositionType) -> @taffy_style.Position {
     match position_type {
-      PositionType::Relative => @moon_taffy.position_relative()
-      PositionType::Absolute => @moon_taffy.position_absolute()
+      PositionType::Relative => @taffy_helpers.position_relative()
+      PositionType::Absolute => @taffy_helpers.position_absolute()
     }
   }
 
-  fn flex_direction_to_taffy(dir : FlexDirection) -> @moon_taffy.FlexDirection {
+  fn flex_direction_to_taffy(
+    dir : FlexDirection,
+  ) -> @taffy_style.FlexDirection {
     match dir {
-      FlexDirection::Row => @moon_taffy.flex_direction_row()
-      FlexDirection::RowReverse => @moon_taffy.flex_direction_row_reverse()
-      FlexDirection::Column => @moon_taffy.flex_direction_column()
+      FlexDirection::Row => @taffy_helpers.flex_direction_row()
+      FlexDirection::RowReverse => @taffy_helpers.flex_direction_row_reverse()
+      FlexDirection::Column => @taffy_helpers.flex_direction_column()
       FlexDirection::ColumnReverse =>
-        @moon_taffy.flex_direction_column_reverse()
+        @taffy_helpers.flex_direction_column_reverse()
     }
   }
 
-  fn flex_wrap_to_taffy(wrap : FlexWrap) -> @moon_taffy.FlexWrap {
+  fn flex_wrap_to_taffy(wrap : FlexWrap) -> @taffy_style.FlexWrap {
     match wrap {
-      FlexWrap::NoWrap => @moon_taffy.flex_wrap_no_wrap()
-      FlexWrap::Wrap => @moon_taffy.flex_wrap_wrap()
-      FlexWrap::WrapReverse => @moon_taffy.flex_wrap_wrap_reverse()
+      FlexWrap::NoWrap => @taffy_helpers.flex_wrap_no_wrap()
+      FlexWrap::Wrap => @taffy_helpers.flex_wrap_wrap()
+      FlexWrap::WrapReverse => @taffy_helpers.flex_wrap_wrap_reverse()
     }
   }
 
-  fn align_items_to_taffy(items : AlignItems) -> @moon_taffy.AlignItems? {
+  fn align_items_to_taffy(items : AlignItems) -> @taffy_style.AlignItems? {
     match items {
       AlignItems::Default => None
-      AlignItems::Baseline => Some(@moon_taffy.align_items_baseline())
-      AlignItems::Center => Some(@moon_taffy.align_items_center())
-      AlignItems::End => Some(@moon_taffy.align_items_end())
-      AlignItems::FlexEnd => Some(@moon_taffy.align_items_flex_end())
-      AlignItems::FlexStart => Some(@moon_taffy.align_items_flex_start())
-      AlignItems::Start => Some(@moon_taffy.align_items_start())
-      AlignItems::Stretch => Some(@moon_taffy.align_items_stretch())
+      AlignItems::Baseline => Some(@taffy_helpers.align_items_baseline())
+      AlignItems::Center => Some(@taffy_helpers.align_items_center())
+      AlignItems::End => Some(@taffy_helpers.align_items_end())
+      AlignItems::FlexEnd => Some(@taffy_helpers.align_items_flex_end())
+      AlignItems::FlexStart => Some(@taffy_helpers.align_items_flex_start())
+      AlignItems::Start => Some(@taffy_helpers.align_items_start())
+      AlignItems::Stretch => Some(@taffy_helpers.align_items_stretch())
     }
   }
 
-  fn justify_items_to_taffy(items : JustifyItems) -> @moon_taffy.JustifyItems? {
+  fn justify_items_to_taffy(
+    items : JustifyItems,
+  ) -> @taffy_style.JustifyItems? {
     match items {
       JustifyItems::Default => None
-      JustifyItems::Baseline => Some(@moon_taffy.align_items_baseline())
-      JustifyItems::Center => Some(@moon_taffy.align_items_center())
-      JustifyItems::End => Some(@moon_taffy.align_items_end())
-      JustifyItems::Start => Some(@moon_taffy.align_items_start())
-      JustifyItems::Stretch => Some(@moon_taffy.align_items_stretch())
+      JustifyItems::Baseline => Some(@taffy_helpers.align_items_baseline())
+      JustifyItems::Center => Some(@taffy_helpers.align_items_center())
+      JustifyItems::End => Some(@taffy_helpers.align_items_end())
+      JustifyItems::Start => Some(@taffy_helpers.align_items_start())
+      JustifyItems::Stretch => Some(@taffy_helpers.align_items_stretch())
     }
   }
 
-  fn align_self_to_taffy(align_self : AlignSelf) -> @moon_taffy.AlignSelf? {
+  fn align_self_to_taffy(align_self : AlignSelf) -> @taffy_style.AlignSelf? {
     match align_self {
       AlignSelf::Auto => None
-      AlignSelf::Baseline => Some(@moon_taffy.align_items_baseline())
-      AlignSelf::Center => Some(@moon_taffy.align_items_center())
-      AlignSelf::End => Some(@moon_taffy.align_items_end())
-      AlignSelf::FlexEnd => Some(@moon_taffy.align_items_flex_end())
-      AlignSelf::FlexStart => Some(@moon_taffy.align_items_flex_start())
-      AlignSelf::Start => Some(@moon_taffy.align_items_start())
-      AlignSelf::Stretch => Some(@moon_taffy.align_items_stretch())
+      AlignSelf::Baseline => Some(@taffy_helpers.align_items_baseline())
+      AlignSelf::Center => Some(@taffy_helpers.align_items_center())
+      AlignSelf::End => Some(@taffy_helpers.align_items_end())
+      AlignSelf::FlexEnd => Some(@taffy_helpers.align_items_flex_end())
+      AlignSelf::FlexStart => Some(@taffy_helpers.align_items_flex_start())
+      AlignSelf::Start => Some(@taffy_helpers.align_items_start())
+      AlignSelf::Stretch => Some(@taffy_helpers.align_items_stretch())
     }
   }
 
   fn justify_self_to_taffy(
     justify_self : JustifySelf,
-  ) -> @moon_taffy.JustifySelf? {
+  ) -> @taffy_style.JustifySelf? {
     match justify_self {
       JustifySelf::Auto => None
-      JustifySelf::Baseline => Some(@moon_taffy.align_items_baseline())
-      JustifySelf::Center => Some(@moon_taffy.align_items_center())
-      JustifySelf::End => Some(@moon_taffy.align_items_end())
-      JustifySelf::Start => Some(@moon_taffy.align_items_start())
-      JustifySelf::Stretch => Some(@moon_taffy.align_items_stretch())
+      JustifySelf::Baseline => Some(@taffy_helpers.align_items_baseline())
+      JustifySelf::Center => Some(@taffy_helpers.align_items_center())
+      JustifySelf::End => Some(@taffy_helpers.align_items_end())
+      JustifySelf::Start => Some(@taffy_helpers.align_items_start())
+      JustifySelf::Stretch => Some(@taffy_helpers.align_items_stretch())
     }
   }
 
   fn align_content_to_taffy(
     content : AlignContent,
-  ) -> @moon_taffy.AlignContent? {
+  ) -> @taffy_style.AlignContent? {
     match content {
       AlignContent::Default => None
-      AlignContent::Center => Some(@moon_taffy.align_content_center())
-      AlignContent::End => Some(@moon_taffy.align_content_end())
-      AlignContent::FlexEnd => Some(@moon_taffy.align_content_flex_end())
-      AlignContent::FlexStart => Some(@moon_taffy.align_content_flex_start())
+      AlignContent::Center => Some(@taffy_helpers.align_content_center())
+      AlignContent::End => Some(@taffy_helpers.align_content_end())
+      AlignContent::FlexEnd => Some(@taffy_helpers.align_content_flex_end())
+      AlignContent::FlexStart => Some(@taffy_helpers.align_content_flex_start())
       AlignContent::SpaceAround =>
-        Some(@moon_taffy.align_content_space_around())
+        Some(@taffy_helpers.align_content_space_around())
       AlignContent::SpaceBetween =>
-        Some(@moon_taffy.align_content_space_between())
+        Some(@taffy_helpers.align_content_space_between())
       AlignContent::SpaceEvenly =>
-        Some(@moon_taffy.align_content_space_evenly())
-      AlignContent::Start => Some(@moon_taffy.align_content_start())
-      AlignContent::Stretch => Some(@moon_taffy.align_content_stretch())
+        Some(@taffy_helpers.align_content_space_evenly())
+      AlignContent::Start => Some(@taffy_helpers.align_content_start())
+      AlignContent::Stretch => Some(@taffy_helpers.align_content_stretch())
     }
   }
 
   fn justify_content_to_taffy(
     content : JustifyContent,
-  ) -> @moon_taffy.JustifyContent? {
+  ) -> @taffy_style.JustifyContent? {
     match content {
       JustifyContent::Default => None
-      JustifyContent::Center => Some(@moon_taffy.justify_content_center())
-      JustifyContent::End => Some(@moon_taffy.justify_content_end())
-      JustifyContent::FlexEnd => Some(@moon_taffy.justify_content_flex_end())
+      JustifyContent::Center => Some(@taffy_helpers.justify_content_center())
+      JustifyContent::End => Some(@taffy_helpers.justify_content_end())
+      JustifyContent::FlexEnd => Some(@taffy_helpers.justify_content_flex_end())
       JustifyContent::FlexStart =>
-        Some(@moon_taffy.justify_content_flex_start())
+        Some(@taffy_helpers.justify_content_flex_start())
       JustifyContent::SpaceAround =>
-        Some(@moon_taffy.justify_content_space_around())
+        Some(@taffy_helpers.justify_content_space_around())
       JustifyContent::SpaceBetween =>
-        Some(@moon_taffy.justify_content_space_between())
+        Some(@taffy_helpers.justify_content_space_between())
       JustifyContent::SpaceEvenly =>
-        Some(@moon_taffy.justify_content_space_evenly())
-      JustifyContent::Start => Some(@moon_taffy.justify_content_start())
-      JustifyContent::Stretch => Some(@moon_taffy.justify_content_stretch())
+        Some(@taffy_helpers.justify_content_space_evenly())
+      JustifyContent::Start => Some(@taffy_helpers.justify_content_start())
+      JustifyContent::Stretch => Some(@taffy_helpers.justify_content_stretch())
     }
   }
 
-  fn grid_auto_flow_to_taffy(flow : GridAutoFlow) -> @moon_taffy.GridAutoFlow {
+  fn grid_auto_flow_to_taffy(flow : GridAutoFlow) -> @taffy_style.GridAutoFlow {
     match flow {
-      GridAutoFlow::Row => @moon_taffy.grid_auto_flow_row()
-      GridAutoFlow::RowDense => @moon_taffy.grid_auto_flow_row_dense()
-      GridAutoFlow::Column => @moon_taffy.grid_auto_flow_column()
-      GridAutoFlow::ColumnDense => @moon_taffy.grid_auto_flow_column_dense()
+      GridAutoFlow::Row => @taffy_helpers.grid_auto_flow_row()
+      GridAutoFlow::RowDense => @taffy_helpers.grid_auto_flow_row_dense()
+      GridAutoFlow::Column => @taffy_helpers.grid_auto_flow_column()
+      GridAutoFlow::ColumnDense => @taffy_helpers.grid_auto_flow_column_dense()
     }
   }
 
   fn grid_placement_to_taffy(
     value : GridPlacement,
-  ) -> @moon_taffy.Line[@moon_taffy.GridPlacement] {
+  ) -> @taffy_geometry.Line[@taffy_style.GridPlacement] {
     let span = match value.span {
       Some(v) => if v == 0 { 1 } else { v }
       None => 1
     }
     match (value.start, value.end) {
       (Some(start), Some(end)) =>
-        @moon_taffy.Line(
-          start=@moon_taffy.line(start),
-          end=@moon_taffy.line(end),
+        @taffy_geometry.Line(
+          start=@taffy_helpers.line(start),
+          end=@taffy_helpers.line(end),
         )
       (Some(start), None) =>
-        @moon_taffy.Line(
-          start=@moon_taffy.line(start),
-          end=@moon_taffy.span(span),
+        @taffy_geometry.Line(
+          start=@taffy_helpers.line(start),
+          end=@taffy_helpers.span(span),
         )
       (None, Some(end)) =>
-        @moon_taffy.Line(
-          start=@moon_taffy.span(span),
-          end=@moon_taffy.line(end),
+        @taffy_geometry.Line(
+          start=@taffy_helpers.span(span),
+          end=@taffy_helpers.line(end),
         )
       (None, None) =>
-        @moon_taffy.Line(
-          start=@moon_taffy.span(span),
-          end=@moon_taffy.place_auto(),
+        @taffy_geometry.Line(
+          start=@taffy_helpers.span(span),
+          end=@taffy_helpers.place_auto(),
         )
     }
   }
@@ -2063,16 +2071,16 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   fn style_for_entity(
     entity : @core.Entity,
     is_root : Bool,
-  ) -> @moon_taffy.Style {
+  ) -> @taffy_style.Style {
     let node = match (try! world.get_by_key(entity, ecs_key_node)) {
       Some(v) => v
       None => Node::default()
     }
-    let mut style = @moon_taffy.Style::default()
+    let mut style = @taffy_style.Style::default()
       .with_display(display_to_taffy(node.display))
       .with_position(position_to_taffy(node.position_type))
       .with_inset(
-        @moon_taffy.Rect(
+        @taffy_geometry.Rect(
           left=dim_for_val(node.left),
           right=dim_for_val(node.right),
           top=dim_for_val(node.top),
@@ -2100,7 +2108,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       .with_grid_row(grid_placement_to_taffy(node.grid_row))
       .with_grid_column(grid_placement_to_taffy(node.grid_column))
       .with_gap(
-        @moon_taffy.Size(
+        @taffy_geometry.Size(
           width=dim_for_val(node.column_gap),
           height=dim_for_val(node.row_gap),
         ),
@@ -2136,11 +2144,11 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     }
     if is_root {
       style = style
-        .with_position(@moon_taffy.position_relative())
+        .with_position(@taffy_helpers.position_relative())
         .with_size(
-          @moon_taffy.Size(
-            width=@moon_taffy.length(f2d(root_viewport_size.val.x)),
-            height=@moon_taffy.length(f2d(root_viewport_size.val.y)),
+          @taffy_geometry.Size(
+            width=@taffy_helpers.length(f2d(root_viewport_size.val.x)),
+            height=@taffy_helpers.length(f2d(root_viewport_size.val.y)),
           ),
         )
     }
@@ -2155,7 +2163,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
     )
-    let taffy = @moon_taffy.TaffyTree()
+    let taffy = @taffy_tree.TaffyTree()
     let entity_to_node : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap([])
     fn build(entity : @core.Entity, is_root : Bool) -> Array[Int] {
       let child_ids : Array[Int] = []
@@ -2190,34 +2198,38 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       root_children.length() == 1 {
       root_children[0]
     } else {
-      let viewport_root_style = @moon_taffy.Style::default()
-        .with_position(@moon_taffy.position_relative())
+      let viewport_root_style = @taffy_style.Style::default()
+        .with_position(@taffy_helpers.position_relative())
         .with_size(
-          @moon_taffy.Size(
-            width=@moon_taffy.length(f2d(root_ctx.viewport_size.x)),
-            height=@moon_taffy.length(f2d(root_ctx.viewport_size.y)),
+          @taffy_geometry.Size(
+            width=@taffy_helpers.length(f2d(root_ctx.viewport_size.x)),
+            height=@taffy_helpers.length(f2d(root_ctx.viewport_size.y)),
           ),
         )
       taffy.new_with_children(viewport_root_style, root_children)
     }
-    let avail = @moon_taffy.Size(
-      width=@moon_taffy.available_space_definite(f2d(root_ctx.viewport_size.x)),
-      height=@moon_taffy.available_space_definite(f2d(root_ctx.viewport_size.y)),
+    let avail = @taffy_geometry.Size(
+      width=@taffy_helpers.available_space_definite(
+        f2d(root_ctx.viewport_size.x),
+      ),
+      height=@taffy_helpers.available_space_definite(
+        f2d(root_ctx.viewport_size.y),
+      ),
     )
-    fn available_to_option(v : @moon_taffy.AvailableSpace) -> Double? {
+    fn available_to_option(v : @taffy_geometry.AvailableSpace) -> Double? {
       match v {
-        @moon_taffy.AvailDefinite(x) => Some(x)
+        @taffy_geometry.AvailDefinite(x) => Some(x)
         _ => None
       }
     }
 
     fn resolve_dimension(
-      dim : @moon_taffy.Dimension,
+      dim : @taffy_style.Dimension,
       parent : Double?,
     ) -> Double? {
       match dim {
-        @moon_taffy.DimLength(x) => Some(x)
-        @moon_taffy.DimPercent(p) =>
+        @taffy_style.DimLength(x) => Some(x)
+        @taffy_style.DimPercent(p) =>
           match parent {
             Some(base) => Some(base * p)
             None => None
@@ -2251,12 +2263,12 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     }
 
     fn measure(
-      known : @moon_taffy.Size[Double?],
-      available : @moon_taffy.Size[@moon_taffy.AvailableSpace],
+      known : @taffy_geometry.Size[Double?],
+      available : @taffy_geometry.Size[@taffy_geometry.AvailableSpace],
       _node_id : Int,
       ctx : @core.Entity?,
-      style : @moon_taffy.Style,
-    ) -> @moon_taffy.Size[Double] {
+      style : @taffy_style.Style,
+    ) -> @taffy_geometry.Size[Double] {
       match ctx {
         Some(entity) => {
           let intrinsic = auto_size_for_entity(entity)
@@ -2308,9 +2320,9 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
           }
           let out_w = clamp_f64(width.unwrap_or(intrinsic_w), s_min_w, s_max_w)
           let out_h = clamp_f64(height.unwrap_or(intrinsic_h), s_min_h, s_max_h)
-          @moon_taffy.Size(width=out_w, height=out_h)
+          @taffy_geometry.Size(width=out_w, height=out_h)
         }
-        None => @moon_taffy.Size::zero()
+        None => @taffy_geometry.Size::zero()
       }
     }
 
