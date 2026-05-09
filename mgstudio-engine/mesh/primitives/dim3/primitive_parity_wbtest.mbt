@@ -150,6 +150,15 @@ test "dim3 primitives: triangle winding matches generated normals" {
 }
 
 ///|
+test "dim3 primitives: cuboid mesh builder builds the cuboid mesh" {
+  let direct = cuboid_mesh(@math.Cuboid::new(1.0F, 2.0F, 3.0F))
+  let built = CuboidMeshBuilder::new(1.0F, 2.0F, 3.0F).build()
+  debug_inspect(built.vertex_count(), content="24")
+  debug_inspect(built.indices_or_sequential().length(), content="36")
+  debug_inspect(built.vertex_count() == direct.vertex_count(), content="true")
+}
+
+///|
 test "dim3 primitives: cone and cylinder anchors match builder offsets" {
   primitive_parity_assert_y_bounds(
     "cone_tip_anchor",

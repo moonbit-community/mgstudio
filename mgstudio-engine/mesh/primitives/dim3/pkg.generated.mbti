@@ -118,6 +118,16 @@ pub enum ConeAnchor {
   Base
 } derive(Eq, @debug.Debug)
 
+pub struct CuboidMeshBuilder {
+  half_size : @math.Vec3
+}
+pub fn CuboidMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
+pub fn CuboidMeshBuilder::default() -> Self
+pub fn CuboidMeshBuilder::from_cuboid(@math.Cuboid) -> Self
+pub fn CuboidMeshBuilder::half_size(Self) -> @math.Vec3
+pub fn CuboidMeshBuilder::new(Float, Float, Float) -> Self
+pub impl MeshBuilder for CuboidMeshBuilder
+
 pub enum CylinderAnchor {
   MidPoint
   Top
@@ -162,4 +172,7 @@ pub using @math {type Torus}
 pub using @math {type Triangle3d}
 
 // Traits
+pub(open) trait MeshBuilder {
+  build(Self) -> @mesh.Mesh3dGeometry
+}
 

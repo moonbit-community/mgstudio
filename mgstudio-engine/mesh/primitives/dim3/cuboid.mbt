@@ -22,6 +22,51 @@ pub fn cuboid(
 }
 
 ///|
+pub struct CuboidMeshBuilder {
+  half_size : @math.Vec3
+}
+
+///|
+pub fn CuboidMeshBuilder::default() -> CuboidMeshBuilder {
+  { half_size: @math.Vec3::splat(0.5F) }
+}
+
+///|
+pub fn CuboidMeshBuilder::new(
+  x_length : Float,
+  y_length : Float,
+  z_length : Float,
+) -> CuboidMeshBuilder {
+  CuboidMeshBuilder::from_cuboid(
+    @math.Cuboid::new(x_length, y_length, z_length),
+  )
+}
+
+///|
+pub fn CuboidMeshBuilder::from_cuboid(
+  cuboid : @math.Cuboid,
+) -> CuboidMeshBuilder {
+  { half_size: cuboid.half_size }
+}
+
+///|
+pub fn CuboidMeshBuilder::half_size(self : CuboidMeshBuilder) -> @math.Vec3 {
+  self.half_size
+}
+
+///|
+pub fn CuboidMeshBuilder::build(
+  self : CuboidMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  cuboid_mesh(@math.Cuboid::{ half_size: self.half_size })
+}
+
+///|
+pub impl MeshBuilder for CuboidMeshBuilder with build(self) {
+  cuboid_mesh(@math.Cuboid::{ half_size: self.half_size })
+}
+
+///|
 pub fn cuboid_mesh(shape : @math.Cuboid) -> @mesh.Mesh3dGeometry {
   let min = shape.half_size.mul_scalar(-1.0F)
   let max = shape.half_size
