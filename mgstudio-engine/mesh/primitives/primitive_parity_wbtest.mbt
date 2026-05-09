@@ -264,3 +264,45 @@ test "dim2 primitives: mesh builders match direct mesh functions" {
     Capsule2dMeshBuilder::new(0.5F, 1.0F, 8).build(),
   )
 }
+
+///|
+test "extrusion primitives: builder matches direct extrusion helper" {
+  let rectangle = @math.Rectangle::default()
+  primitive_parity_assert_same_mesh_shape(
+    "extrusion_rectangle_builder",
+    extrusion_rectangle_mesh(rectangle, 1.0F),
+    ExtrusionBuilder::new(
+      rectangle_mesh(1.0F, 1.0F),
+      [Flat([0, 1, 2, 3, 0])],
+      1.0F,
+    ).build(),
+  )
+  let circle = @math.Circle::default().with_vertices(8)
+  primitive_parity_assert_same_mesh_shape(
+    "extrusion_circle_builder",
+    extrusion_circle_mesh(circle, 1.0F),
+    ExtrusionBuilder::new(
+      circle_mesh(circle.radius, 8),
+      [
+        Smooth(
+          @math.Vec2::new(0.0F, 1.0F),
+          @math.Vec2::new(0.0F, 1.0F),
+          closed_range_indices(0, 8, 0),
+        ),
+      ],
+      1.0F,
+    ).build(),
+  )
+  let segmented = ExtrusionBuilder::new(
+      rectangle_mesh(1.0F, 1.0F),
+      [Flat([0, 1, 2, 3, 0])],
+      1.0F,
+    )
+    .segments(2)
+    .build()
+  debug_inspect(
+    segmented.indices_or_sequential().length() >
+    extrusion_rectangle_mesh(rectangle, 1.0F).indices_or_sequential().length(),
+    content="true",
+  )
+}

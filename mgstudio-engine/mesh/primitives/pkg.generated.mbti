@@ -156,6 +156,17 @@ pub fn EllipseMeshBuilder::new(Float, Float, Int) -> Self
 pub fn EllipseMeshBuilder::resolution(Self, Int) -> Self
 pub impl MeshBuilder for EllipseMeshBuilder
 
+pub(all) struct ExtrusionBuilder {
+  base_mesh : @mesh.Mesh3dGeometry
+  perimeter : Array[PerimeterSegment]
+  half_depth : Float
+  segments : Int
+}
+pub fn ExtrusionBuilder::build(Self) -> @mesh.Mesh3dGeometry
+pub fn ExtrusionBuilder::new(@mesh.Mesh3dGeometry, Array[PerimeterSegment], Float) -> Self
+pub fn ExtrusionBuilder::segments(Self, Int) -> Self
+pub impl MeshBuilder for ExtrusionBuilder
+
 pub enum PerimeterSegment {
   Smooth(@math.Vec2, @math.Vec2, Array[Int])
   Flat(Array[Int])

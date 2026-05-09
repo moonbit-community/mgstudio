@@ -19,6 +19,56 @@ pub enum PerimeterSegment {
 }
 
 ///|
+pub(all) struct ExtrusionBuilder {
+  base_mesh : @mesh.Mesh3dGeometry
+  perimeter : Array[PerimeterSegment]
+  half_depth : Float
+  segments : Int
+}
+
+///|
+pub fn ExtrusionBuilder::new(
+  base_mesh : @mesh.Mesh3dGeometry,
+  perimeter : Array[PerimeterSegment],
+  depth : Float,
+) -> ExtrusionBuilder {
+  { base_mesh, perimeter, half_depth: depth / 2.0F, segments: 1 }
+}
+
+///|
+pub fn ExtrusionBuilder::segments(
+  self : ExtrusionBuilder,
+  segments : Int,
+) -> ExtrusionBuilder {
+  {
+    base_mesh: self.base_mesh,
+    perimeter: self.perimeter,
+    half_depth: self.half_depth,
+    segments,
+  }
+}
+
+///|
+pub fn ExtrusionBuilder::build(self : ExtrusionBuilder) -> @mesh.Mesh3dGeometry {
+  extrusion_build(
+    self.base_mesh,
+    self.perimeter,
+    self.half_depth * 2.0F,
+    self.segments,
+  )
+}
+
+///|
+pub impl MeshBuilder for ExtrusionBuilder with build(self) {
+  extrusion_build(
+    self.base_mesh,
+    self.perimeter,
+    self.half_depth * 2.0F,
+    self.segments,
+  )
+}
+
+///|
 pub fn extrusion_wireframe_mesh(
   geometry : @mesh.Mesh3dGeometry,
 ) -> @mesh.Mesh3dGeometry? {
@@ -39,12 +89,11 @@ pub fn extrusion_rectangle_mesh(
   rectangle : @math.Rectangle,
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  extrusion_build(
+  ExtrusionBuilder::new(
     rectangle_shape_mesh(rectangle),
     [Flat([0, 1, 2, 3, 0])],
     depth,
-    1,
-  )
+  ).build()
 }
 
 ///|
@@ -53,12 +102,11 @@ pub fn extrusion_capsule2d_mesh(
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
   let resolution = if capsule.segments < 2 { 16 } else { capsule.segments / 2 }
-  extrusion_build(
+  ExtrusionBuilder::new(
     capsule2d_mesh_with_resolution(capsule, resolution),
     capsule2d_perimeter(resolution),
     depth,
-    1,
-  )
+  ).build()
 }
 
 ///|
@@ -67,12 +115,11 @@ pub fn extrusion_annulus_mesh(
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
   let resolution = primitive2d_resolution(annulus.vertices, 32)
-  extrusion_build(
+  ExtrusionBuilder::new(
     annulus_mesh(annulus.with_vertices(resolution)),
     annulus_perimeter(resolution),
     depth,
-    1,
-  )
+  ).build()
 }
 
 ///|
@@ -81,7 +128,7 @@ pub fn extrusion_circle_mesh(
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
   let resolution = primitive2d_resolution(circle.vertices, 32)
-  extrusion_build(
+  ExtrusionBuilder::new(
     circle_mesh(circle.radius, resolution),
     [
       Smooth(
@@ -91,8 +138,7 @@ pub fn extrusion_circle_mesh(
       ),
     ],
     depth,
-    1,
-  )
+  ).build()
 }
 
 ///|
@@ -101,12 +147,11 @@ pub fn extrusion_circular_sector_mesh(
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
   let resolution = primitive2d_resolution(sector.vertices, 32)
-  extrusion_build(
+  ExtrusionBuilder::new(
     circular_sector_mesh(sector.with_vertices(resolution)),
     circular_arc_perimeter(resolution, sector.half_angle),
     depth,
-    1,
-  )
+  ).build()
 }
 
 ///|
@@ -115,12 +160,11 @@ pub fn extrusion_circular_segment_mesh(
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
   let resolution = primitive2d_resolution(segment.vertices, 32)
-  extrusion_build(
+  ExtrusionBuilder::new(
     circular_segment_mesh(segment.with_vertices(resolution)),
     circular_arc_perimeter(resolution, segment.half_angle),
     depth,
-    1,
-  )
+  ).build()
 }
 
 ///|
@@ -128,12 +172,11 @@ pub fn extrusion_convex_polygon_mesh(
   polygon : @math.ConvexPolygon,
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  extrusion_build(
+  ExtrusionBuilder::new(
     convex_polygon_mesh(polygon),
     [Flat(closed_range_indices(0, polygon.vertices.length(), 0))],
     depth,
-    1,
-  )
+  ).build()
 }
 
 ///|
@@ -142,7 +185,7 @@ pub fn extrusion_ellipse_mesh(
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
   let resolution = primitive2d_resolution(ellipse.vertices, 32)
-  extrusion_build(
+  ExtrusionBuilder::new(
     ellipse_mesh(ellipse.with_vertices(resolution)),
     [
       Smooth(
@@ -152,8 +195,7 @@ pub fn extrusion_ellipse_mesh(
       ),
     ],
     depth,
-    1,
-  )
+  ).build()
 }
 
 ///|
@@ -161,7 +203,7 @@ pub fn extrusion_rhombus_mesh(
   rhombus : @math.Rhombus,
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  extrusion_build(rhombus_mesh(rhombus), [Flat([0, 1, 2, 3, 0])], depth, 1)
+  ExtrusionBuilder::new(rhombus_mesh(rhombus), [Flat([0, 1, 2, 3, 0])], depth).build()
 }
 
 ///|
@@ -169,12 +211,11 @@ pub fn extrusion_regular_polygon_mesh(
   polygon : @math.RegularPolygon,
   depth : Float,
 ) -> @mesh.Mesh3dGeometry {
-  extrusion_build(
+  ExtrusionBuilder::new(
     regular_polygon_mesh(polygon),
     [Flat(closed_range_indices(0, polygon.sides, 0))],
     depth,
-    1,
-  )
+  ).build()
 }
 
 ///|
@@ -187,7 +228,7 @@ pub fn extrusion_triangle2d_mesh(
   } else {
     [Flat([2, 1, 0, 2])]
   }
-  extrusion_build(triangle2d_mesh(triangle), perimeter, depth, 1)
+  ExtrusionBuilder::new(triangle2d_mesh(triangle), perimeter, depth).build()
 }
 
 ///|
