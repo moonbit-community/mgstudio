@@ -68,7 +68,11 @@ fn primitive_geometry_with_normals(
   uvs : Array[@math.Vec2],
   indices : Array[Int]?,
 ) -> @mesh.Mesh3dGeometry {
-  @mesh.Mesh3dGeometry::new_with_positions(positions, indices)
+  @mesh.Mesh3dGeometry::new_empty(@mesh.Mesh3dPrimitiveTopology::TriangleList)
+  .with_inserted_attribute(
+    @mesh.MeshVertexAttribute::position(),
+    @mesh.VertexAttributeValues::Float32x3(positions),
+  )
   .with_inserted_attribute(
     @mesh.MeshVertexAttribute::normal(),
     @mesh.VertexAttributeValues::Float32x3(normals),
@@ -77,6 +81,7 @@ fn primitive_geometry_with_normals(
     @mesh.MeshVertexAttribute::uv_0(),
     @mesh.VertexAttributeValues::Float32x2(uvs),
   )
+  .with_inserted_indices(indices)
 }
 
 ///|

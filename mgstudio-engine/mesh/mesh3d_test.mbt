@@ -90,6 +90,7 @@ test "mesh: Mesh3dGeometry standard attributes use vertex attribute ids" {
     [@math.Vec3::new(1.0F, 2.0F, 3.0F)],
     None,
   )
+  geometry.insert_indices(Some([0]))
   ignore(
     geometry.insert_attribute(
       MeshVertexAttribute::normal(),
@@ -119,4 +120,5 @@ test "mesh: Mesh3dGeometry standard attributes use vertex attribute ids" {
     abort("missing normal attribute")
   }
   debug_inspect(normals[0].y.to_double(), content="1")
+  debug_inspect(geometry.has_indices(), content="true")
 }

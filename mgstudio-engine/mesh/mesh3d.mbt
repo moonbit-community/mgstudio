@@ -24,7 +24,7 @@ pub struct Mesh3dGeometry {
   morph_target_names : Array[String]?
   mut custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
   mut tangents : Array[@math.Vec4]?
-  indices : Array[Int]?
+  mut indices : Array[Int]?
   topology : Mesh3dPrimitiveTopology
 }
 
@@ -230,6 +230,13 @@ pub fn Mesh3dGeometry::new_with_positions_and_topology(
     indices,
     topology,
   }
+}
+
+///|
+pub fn Mesh3dGeometry::new_empty(
+  topology : Mesh3dPrimitiveTopology,
+) -> Mesh3dGeometry {
+  Mesh3dGeometry::new_with_positions_and_topology([], None, topology)
 }
 
 ///|
@@ -600,6 +607,24 @@ pub fn Mesh3dGeometry::with_indices(
     indices,
     topology: self.topology,
   }
+}
+
+///|
+pub fn Mesh3dGeometry::insert_indices(
+  self : Mesh3dGeometry,
+  indices : Array[Int]?,
+) -> Unit {
+  self.indices = indices
+  self.tangents = None
+}
+
+///|
+pub fn Mesh3dGeometry::with_inserted_indices(
+  self : Mesh3dGeometry,
+  indices : Array[Int]?,
+) -> Mesh3dGeometry {
+  self.insert_indices(indices)
+  self
 }
 
 ///|
