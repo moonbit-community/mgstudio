@@ -78,6 +78,8 @@ pub fn sphere(Float) -> @math.Sphere
 
 pub fn sphere_mesh(Float, Int) -> @mesh.Mesh3dGeometry
 
+pub fn sphere_mesh_with_kind(Float, SphereKind) -> @mesh.Mesh3dGeometry
+
 pub fn tetrahedron(@math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> @math.Tetrahedron
 
 pub fn tetrahedron_mesh(@math.Tetrahedron) -> @mesh.Mesh3dGeometry
@@ -121,6 +123,14 @@ pub enum CylinderAnchor {
   Top
   Bottom
 } derive(Eq, @debug.Debug)
+
+pub enum SphereKind {
+  Ico(Int)
+  Uv(Int, Int)
+} derive(Eq, @debug.Debug)
+pub fn SphereKind::default() -> Self
+pub fn SphereKind::ico(Int) -> Self
+pub fn SphereKind::uv(Int, Int) -> Self
 
 // Type aliases
 pub using @math {type Capsule3d}

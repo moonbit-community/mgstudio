@@ -617,8 +617,40 @@ pub fn sphere(radius : Float) -> @math.Sphere {
 }
 
 ///|
+pub enum SphereKind {
+  Ico(Int)
+  Uv(Int, Int)
+} derive(Eq, Debug)
+
+///|
+pub fn SphereKind::default() -> SphereKind {
+  Ico(5)
+}
+
+///|
+pub fn SphereKind::ico(subdivisions : Int) -> SphereKind {
+  Ico(subdivisions)
+}
+
+///|
+pub fn SphereKind::uv(sectors : Int, stacks : Int) -> SphereKind {
+  Uv(sectors, stacks)
+}
+
+///|
 pub fn sphere_mesh(radius : Float, subdivisions : Int) -> @mesh.Mesh3dGeometry {
   icosphere_mesh(radius, subdivisions)
+}
+
+///|
+pub fn sphere_mesh_with_kind(
+  radius : Float,
+  kind : SphereKind,
+) -> @mesh.Mesh3dGeometry {
+  match kind {
+    Ico(subdivisions) => icosphere_mesh(radius, subdivisions)
+    Uv(sectors, stacks) => uv_sphere_mesh(radius, sectors, stacks)
+  }
 }
 
 ///|
