@@ -20,6 +20,11 @@ pub enum CylinderAnchor {
 } derive(Eq, Debug)
 
 ///|
+pub impl Default for CylinderAnchor with default() {
+  MidPoint
+}
+
+///|
 pub fn cylinder(radius : Float, height : Float) -> @math.Cylinder {
   @math.Cylinder::new(radius, height)
 }
@@ -27,6 +32,133 @@ pub fn cylinder(radius : Float, height : Float) -> @math.Cylinder {
 ///|
 pub fn cylinder_unit() -> @math.Cylinder {
   cylinder(0.5, 1.0)
+}
+
+///|
+pub(all) struct CylinderMeshBuilder {
+  cylinder : @math.Cylinder
+  resolution : Int
+  segments : Int
+  caps : Bool
+  anchor : CylinderAnchor
+}
+
+///|
+pub fn CylinderMeshBuilder::default() -> CylinderMeshBuilder {
+  {
+    cylinder: @math.Cylinder::default(),
+    resolution: 32,
+    segments: 1,
+    caps: true,
+    anchor: CylinderAnchor::default(),
+  }
+}
+
+///|
+pub fn CylinderMeshBuilder::new(
+  radius : Float,
+  height : Float,
+  resolution : Int,
+) -> CylinderMeshBuilder {
+  {
+    cylinder: @math.Cylinder::new(radius, height),
+    resolution,
+    segments: 1,
+    caps: true,
+    anchor: CylinderAnchor::default(),
+  }
+}
+
+///|
+pub fn CylinderMeshBuilder::from_cylinder(
+  cylinder : @math.Cylinder,
+) -> CylinderMeshBuilder {
+  {
+    cylinder,
+    resolution: 32,
+    segments: 1,
+    caps: true,
+    anchor: CylinderAnchor::default(),
+  }
+}
+
+///|
+pub fn CylinderMeshBuilder::resolution(
+  self : CylinderMeshBuilder,
+  resolution : Int,
+) -> CylinderMeshBuilder {
+  {
+    cylinder: self.cylinder,
+    resolution,
+    segments: self.segments,
+    caps: self.caps,
+    anchor: self.anchor,
+  }
+}
+
+///|
+pub fn CylinderMeshBuilder::segments(
+  self : CylinderMeshBuilder,
+  segments : Int,
+) -> CylinderMeshBuilder {
+  {
+    cylinder: self.cylinder,
+    resolution: self.resolution,
+    segments,
+    caps: self.caps,
+    anchor: self.anchor,
+  }
+}
+
+///|
+pub fn CylinderMeshBuilder::without_caps(
+  self : CylinderMeshBuilder,
+) -> CylinderMeshBuilder {
+  {
+    cylinder: self.cylinder,
+    resolution: self.resolution,
+    segments: self.segments,
+    caps: false,
+    anchor: self.anchor,
+  }
+}
+
+///|
+pub fn CylinderMeshBuilder::anchor(
+  self : CylinderMeshBuilder,
+  anchor : CylinderAnchor,
+) -> CylinderMeshBuilder {
+  {
+    cylinder: self.cylinder,
+    resolution: self.resolution,
+    segments: self.segments,
+    caps: self.caps,
+    anchor,
+  }
+}
+
+///|
+pub fn CylinderMeshBuilder::build(
+  self : CylinderMeshBuilder,
+) -> @mesh.Mesh3dGeometry {
+  cylinder_mesh_with_anchor(
+    self.cylinder,
+    self.resolution,
+    self.segments,
+    self.caps,
+    self.anchor,
+  )
+}
+
+///|
+pub impl MeshBuilder for CylinderMeshBuilder with build(self) {
+  cylinder_mesh_with_anchor(
+    self.cylinder,
+    self.resolution,
+    self.segments,
+    self.caps,
+    self.anchor,
+  )
 }
 
 ///|

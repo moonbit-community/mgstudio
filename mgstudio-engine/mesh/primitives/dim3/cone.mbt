@@ -20,6 +20,11 @@ pub enum ConeAnchor {
 } derive(Eq, Debug)
 
 ///|
+pub impl Default for ConeAnchor with default() {
+  MidPoint
+}
+
+///|
 pub fn cone(radius : Float, height : Float) -> @math.Cone {
   @math.Cone::new(radius, height)
 }
@@ -27,6 +32,58 @@ pub fn cone(radius : Float, height : Float) -> @math.Cone {
 ///|
 pub fn cone_unit() -> @math.Cone {
   cone(0.5, 1.0)
+}
+
+///|
+pub(all) struct ConeMeshBuilder {
+  cone : @math.Cone
+  resolution : Int
+  anchor : ConeAnchor
+}
+
+///|
+pub fn ConeMeshBuilder::default() -> ConeMeshBuilder {
+  { cone: @math.Cone::default(), resolution: 32, anchor: ConeAnchor::default() }
+}
+
+///|
+pub fn ConeMeshBuilder::new(
+  radius : Float,
+  height : Float,
+  resolution : Int,
+) -> ConeMeshBuilder {
+  { cone: @math.Cone::new(radius, height), resolution, anchor: MidPoint }
+}
+
+///|
+pub fn ConeMeshBuilder::from_cone(cone : @math.Cone) -> ConeMeshBuilder {
+  { cone, resolution: 32, anchor: ConeAnchor::default() }
+}
+
+///|
+pub fn ConeMeshBuilder::resolution(
+  self : ConeMeshBuilder,
+  resolution : Int,
+) -> ConeMeshBuilder {
+  { cone: self.cone, resolution, anchor: self.anchor }
+}
+
+///|
+pub fn ConeMeshBuilder::anchor(
+  self : ConeMeshBuilder,
+  anchor : ConeAnchor,
+) -> ConeMeshBuilder {
+  { cone: self.cone, resolution: self.resolution, anchor }
+}
+
+///|
+pub fn ConeMeshBuilder::build(self : ConeMeshBuilder) -> @mesh.Mesh3dGeometry {
+  cone_mesh_with_anchor(self.cone, self.resolution, self.anchor)
+}
+
+///|
+pub impl MeshBuilder for ConeMeshBuilder with build(self) {
+  cone_mesh_with_anchor(self.cone, self.resolution, self.anchor)
 }
 
 ///|

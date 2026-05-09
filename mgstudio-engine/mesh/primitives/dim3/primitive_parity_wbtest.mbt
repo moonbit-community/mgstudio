@@ -189,6 +189,40 @@ test "dim3 primitives: simple mesh builders match direct mesh functions" {
 }
 
 ///|
+test "dim3 primitives: cone and cylinder mesh builders expose source options" {
+  let cone_direct = cone_mesh_with_anchor(@math.Cone::new(0.5F, 1.0F), 4, Tip)
+  let cone_built = ConeMeshBuilder::new(0.5F, 1.0F, 4).anchor(Tip).build()
+  debug_inspect(cone_built.vertex_count(), content="9")
+  debug_inspect(cone_built.indices_or_sequential().length(), content="18")
+  debug_inspect(
+    cone_built.indices_or_sequential().length() ==
+    cone_direct.indices_or_sequential().length(),
+    content="true",
+  )
+  let cylinder_direct = cylinder_mesh_with_anchor(
+    @math.Cylinder::new(0.5F, 1.0F),
+    4,
+    1,
+    true,
+    Top,
+  )
+  let cylinder_built = CylinderMeshBuilder::new(0.5F, 1.0F, 4)
+    .segments(1)
+    .anchor(Top)
+    .build()
+  debug_inspect(cylinder_built.vertex_count(), content="18")
+  debug_inspect(cylinder_built.indices_or_sequential().length(), content="36")
+  debug_inspect(
+    cylinder_built.indices_or_sequential().length() ==
+    cylinder_direct.indices_or_sequential().length(),
+    content="true",
+  )
+  let uncapped = CylinderMeshBuilder::new(0.5F, 1.0F, 4).without_caps().build()
+  debug_inspect(uncapped.vertex_count(), content="10")
+  debug_inspect(uncapped.indices_or_sequential().length(), content="24")
+}
+
+///|
 test "dim3 primitives: cone and cylinder anchors match builder offsets" {
   primitive_parity_assert_y_bounds(
     "cone_tip_anchor",

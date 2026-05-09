@@ -117,6 +117,20 @@ pub enum ConeAnchor {
   Tip
   Base
 } derive(Eq, @debug.Debug)
+pub impl Default for ConeAnchor
+
+pub(all) struct ConeMeshBuilder {
+  cone : @math.Cone
+  resolution : Int
+  anchor : ConeAnchor
+}
+pub fn ConeMeshBuilder::anchor(Self, ConeAnchor) -> Self
+pub fn ConeMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
+pub fn ConeMeshBuilder::default() -> Self
+pub fn ConeMeshBuilder::from_cone(@math.Cone) -> Self
+pub fn ConeMeshBuilder::new(Float, Float, Int) -> Self
+pub fn ConeMeshBuilder::resolution(Self, Int) -> Self
+pub impl MeshBuilder for ConeMeshBuilder
 
 pub struct CuboidMeshBuilder {
   half_size : @math.Vec3
@@ -133,6 +147,24 @@ pub enum CylinderAnchor {
   Top
   Bottom
 } derive(Eq, @debug.Debug)
+pub impl Default for CylinderAnchor
+
+pub(all) struct CylinderMeshBuilder {
+  cylinder : @math.Cylinder
+  resolution : Int
+  segments : Int
+  caps : Bool
+  anchor : CylinderAnchor
+}
+pub fn CylinderMeshBuilder::anchor(Self, CylinderAnchor) -> Self
+pub fn CylinderMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
+pub fn CylinderMeshBuilder::default() -> Self
+pub fn CylinderMeshBuilder::from_cylinder(@math.Cylinder) -> Self
+pub fn CylinderMeshBuilder::new(Float, Float, Int) -> Self
+pub fn CylinderMeshBuilder::resolution(Self, Int) -> Self
+pub fn CylinderMeshBuilder::segments(Self, Int) -> Self
+pub fn CylinderMeshBuilder::without_caps(Self) -> Self
+pub impl MeshBuilder for CylinderMeshBuilder
 
 pub struct Polyline3dMeshBuilder {
   polyline : @math.Polyline3d
