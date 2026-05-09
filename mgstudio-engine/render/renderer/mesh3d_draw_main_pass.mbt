@@ -115,6 +115,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       ps.tonemap_in_shader,
       ps.tonemapping_mode,
       ps.deband_dither_enabled,
+      pass_kind_shadow_filter_method(ps.pass_kind),
     )
     is Some(pipeline) else {
     return

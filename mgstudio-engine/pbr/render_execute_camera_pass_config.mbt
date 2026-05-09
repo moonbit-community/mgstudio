@@ -43,6 +43,23 @@ priv struct Render3dExecuteCameraPassConfig {
 }
 
 ///|
+fn render3d_shadow_filter_method_key(
+  shadow_filtering : ShadowFilteringMethod?,
+) -> Int {
+  match shadow_filtering {
+    Some(Hardware2x2) => 0
+    Some(Gaussian) => 1
+    Some(Temporal) => 2
+    None =>
+      match ShadowFilteringMethod::default() {
+        Hardware2x2 => 0
+        Gaussian => 1
+        Temporal => 2
+      }
+  }
+}
+
+///|
 fn render3d_execute_camera_pass_config(
   camera : Camera3dViewPayload,
   camera_deferred_mode : OpaqueRendererMethod,
@@ -168,6 +185,9 @@ fn render3d_execute_camera_pass_config(
     postprocess_enabled,
     fog_enabled,
     decal_enabled,
+    shadow_filter_method=render3d_shadow_filter_method_key(
+      camera.shadow_filtering_method,
+    ),
   )
   let motion_vector_pass_kind = @pbr_render.render3d_pass_kind_encode(
     @pbr_render.RENDER3D_PASS_KIND_BASE_MOTION_VECTOR,

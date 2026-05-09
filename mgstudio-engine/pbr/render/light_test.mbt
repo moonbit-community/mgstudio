@@ -39,6 +39,11 @@ fn test_u32le_at(bytes : Bytes, index : Int) -> UInt {
 }
 
 ///|
+fn test_f32_bits(value : Float) -> UInt {
+  value.reinterpret_as_uint()
+}
+
+///|
 fn test_cluster_offsets_has_point_light(
   bytes : Bytes,
   cluster_count : Int,
@@ -751,6 +756,60 @@ test "pbr render light: storage cluster buffers fit bevy default clusters" {
   inspect(indices.length(), content="65536")
   inspect(offsets.length(), content="131072")
   inspect(test_cluster_offsets_has_point_light(offsets, 3456), content="true")
+}
+
+///|
+test "pbr render light: point shadow clustered custom data matches Bevy projection" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  try! (world.set_by_key(
+    camera,
+    @sprite.ecs_key_camera,
+    @sprite.Camera::default(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @light_cluster.ClusterConfig::component(),
+    @light_cluster.ClusterConfig::default(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::identity(),
+  )
+  |> ignore)
+  let point = world.spawn()
+  try! (world.set_by_key(
+    point,
+    @light.ecs_key_point_light,
+    @light.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, true),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    point,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F),
+  )
+  |> ignore)
+  @light_cluster.cluster_assign_lights_system(world)
+  let lighting = render3d_collect_lighting(world)
+  guard lighting.gpu_clustered_lights_bytes is Some(clustered) else {
+    inspect("missing", content="clustered")
+    return
+  }
+  let projection = render3d_point_shadow_pass_projection(0.1F, 100.0F).clip_from_view
+  inspect(test_u32le_at(clustered, 0), content="0")
+  inspect(
+    test_u32le_at(clustered, 4),
+    content="\{test_f32_bits(projection.z_axis.w)}",
+  )
+  inspect(
+    test_u32le_at(clustered, 8),
+    content="\{test_f32_bits(projection.w_axis.z)}",
+  )
+  inspect(test_u32le_at(clustered, 12), content="0")
 }
 
 ///|

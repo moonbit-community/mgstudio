@@ -176,6 +176,9 @@ fn render3d_execute_collect_cameras(
     let temporal_anti_aliasing = try! source_world.get_by_key(
       entity, ecs_key_temporal_anti_aliasing,
     )
+    let shadow_filtering_method = try! source_world.get_by_key(
+      entity, ecs_key_shadow_filtering_method,
+    )
     let msaa = try! source_world.get_by_key(entity, ecs_key_msaa)
     let target = match target_opt.value() {
       Some(v) => v
@@ -272,6 +275,7 @@ fn render3d_execute_collect_cameras(
             fxaa,
             temporal_jitter,
             temporal_anti_aliasing,
+            shadow_filtering_method,
             motion_vector_prepass_enabled,
             msaa,
             transform,

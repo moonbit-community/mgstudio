@@ -86,6 +86,24 @@ fn render3d_shadow_light_entity_debug_key(entity : Render3dLightEntity) -> Int {
 }
 
 ///|
+fn render3d_shadow_view_cache_key(
+  camera_entity : @core.Entity,
+  entity : Render3dLightEntity,
+) -> (Int, Int) {
+  // Bevy uses a distinct retained view entity for every shadow view. The draw
+  // path caches view uniforms by this key, so every point-light cubemap face and
+  // directional cascade must be distinct from the main camera and each other.
+  let camera_key = camera_entity.id * 31 + camera_entity.generation
+  let shadow_key = match entity {
+    Directional(light_entity~, cascade_index~) =>
+      1 + light_entity.id * 257 + light_entity.generation * 17 + cascade_index
+    Point(light_entity~, face_index~) =>
+      2 + light_entity.id * 257 + light_entity.generation * 17 + face_index
+  }
+  (camera_key, shadow_key)
+}
+
+///|
 fn render3d_shadow_view_begin_pass(
   shadow_view : Render3dShadowView,
   lighting : Render3dLightingState,

@@ -63,6 +63,16 @@ const PASS_KIND_DISABLE_FOG_FLAG : Int = 1 << 9
 const PASS_KIND_DISABLE_DECAL_FLAG : Int = 1 << 10
 
 ///|
+const PASS_KIND_SHADOW_FILTER_METHOD_SHIFT_BITS : Int = 11
+
+///|
+const PASS_KIND_SHADOW_FILTER_METHOD_MASK_BITS : Int = 3
+
+///|
+const PASS_KIND_SHADOW_FILTER_METHOD_MASK : Int = PASS_KIND_SHADOW_FILTER_METHOD_MASK_BITS <<
+  PASS_KIND_SHADOW_FILTER_METHOD_SHIFT_BITS
+
+///|
 const PASS_KIND_BASE_MOTION_VECTOR : Int = 1
 
 ///|
@@ -98,6 +108,12 @@ fn pass_kind_fog_enabled(pass_kind : Int) -> Bool {
 ///|
 fn pass_kind_decal_enabled(pass_kind : Int) -> Bool {
   (pass_kind & PASS_KIND_DISABLE_DECAL_FLAG) == 0
+}
+
+///|
+fn pass_kind_shadow_filter_method(pass_kind : Int) -> Int {
+  (pass_kind & PASS_KIND_SHADOW_FILTER_METHOD_MASK) >>
+  PASS_KIND_SHADOW_FILTER_METHOD_SHIFT_BITS
 }
 
 ///|

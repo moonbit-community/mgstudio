@@ -514,9 +514,14 @@ fn render3d_lights_push_clustered_light(
           render3d_lights_push_f32(words, 0.0F)
         }
         _ => {
-          for _ in 0..<4 {
-            render3d_lights_push_f32(words, 0.0F)
-          }
+          let cube_face_projection = render3d_point_shadow_pass_projection(
+              extracted.shadow_map_near_z,
+              extracted.range,
+            ).clip_from_view
+          render3d_lights_push_f32(words, cube_face_projection.z_axis.z)
+          render3d_lights_push_f32(words, cube_face_projection.z_axis.w)
+          render3d_lights_push_f32(words, cube_face_projection.w_axis.z)
+          render3d_lights_push_f32(words, cube_face_projection.w_axis.w)
           render3d_lights_push_f32(
             words,
             extracted.color.r * extracted.intensity,

@@ -108,6 +108,7 @@ priv struct Camera3dViewPayload {
   fxaa : Fxaa?
   temporal_jitter : TemporalJitter?
   temporal_anti_aliasing : TemporalAntiAliasing?
+  shadow_filtering_method : ShadowFilteringMethod?
   motion_vector_prepass_enabled : Bool
   msaa : Msaa?
   transform : @transform.Transform

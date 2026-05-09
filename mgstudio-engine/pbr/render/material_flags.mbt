@@ -31,6 +31,16 @@ pub const RENDER3D_PASS_KIND_DISABLE_FOG_FLAG : Int = 1 << 9
 pub const RENDER3D_PASS_KIND_DISABLE_DECAL_FLAG : Int = 1 << 10
 
 ///|
+pub const RENDER3D_PASS_KIND_SHADOW_FILTER_METHOD_SHIFT_BITS : Int = 11
+
+///|
+pub const RENDER3D_PASS_KIND_SHADOW_FILTER_METHOD_MASK_BITS : Int = 3
+
+///|
+pub const RENDER3D_PASS_KIND_SHADOW_FILTER_METHOD_MASK : Int = RENDER3D_PASS_KIND_SHADOW_FILTER_METHOD_MASK_BITS <<
+  RENDER3D_PASS_KIND_SHADOW_FILTER_METHOD_SHIFT_BITS
+
+///|
 pub const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT : UInt = 1U << 0
 
 ///|
@@ -110,6 +120,7 @@ pub fn render3d_pass_kind_encode(
   postprocess_enabled : Bool,
   fog_enabled : Bool,
   decal_enabled : Bool,
+  shadow_filter_method? : Int = 1,
 ) -> Int {
   let mut value = base_kind
   if !postprocess_enabled {
@@ -121,6 +132,18 @@ pub fn render3d_pass_kind_encode(
   if !decal_enabled {
     value = value | RENDER3D_PASS_KIND_DISABLE_DECAL_FLAG
   }
+  let safe_shadow_filter_method = if shadow_filter_method < 0 {
+    0
+  } else if shadow_filter_method > 2 {
+    2
+  } else {
+    shadow_filter_method
+  }
+  value = value |
+    (
+      safe_shadow_filter_method <<
+      RENDER3D_PASS_KIND_SHADOW_FILTER_METHOD_SHIFT_BITS
+    )
   value
 }
 

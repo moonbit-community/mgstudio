@@ -237,6 +237,10 @@ fn render3d_execute_shadow_phase_view(
     pass_kind,
     point_shadow_near,
   )
+  let (shadow_view_key_hi, shadow_view_key_lo) = render3d_shadow_view_cache_key(
+    camera_entity,
+    phase_view.shadow_view.light_entity,
+  )
   for shadow_phase_item in phase_view.items {
     ignore(render3d_shadow_phase_item_debug_key(shadow_phase_item))
     let extracted_shadow_mesh = meshes[shadow_phase_item.extracted_index]
@@ -244,8 +248,8 @@ fn render3d_execute_shadow_phase_view(
     @pbr_render.render3d_draw_mesh_gpu_payload(
       @pbr_render.render3d_build_mesh_gpu_draw_payload(
         shadow_mesh.mesh_id,
-        camera_entity.id,
-        camera_entity.generation,
+        shadow_view_key_hi,
+        shadow_view_key_lo,
         shadow_phase_item.draw_item_index,
         MESH3D_DRAW_INDIRECT_KIND_NONE,
         -1,

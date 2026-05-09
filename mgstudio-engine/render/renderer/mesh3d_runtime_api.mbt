@@ -659,7 +659,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
     ignore(
       mesh3d_pipeline_for_current_pass(
         backend, false, 0U, forward_decal, topology, cull_mode, vertex_shader_path,
-        fragment_shader_path, false, false, 0, false,
+        fragment_shader_path, false, false, 0, false, 1,
       ),
     ) catch {
       Fatal(message) =>
@@ -681,6 +681,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
         false,
         0,
         false,
+        1,
       ),
     ) catch {
       Fatal(message) =>
@@ -737,7 +738,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
         } else {
           ensure_mesh3d_pipeline_surface(
             backend, format, topology, cull_mode, opaque_blend_kind, false, forward_decal,
-            false, 0, false,
+            false, 0, false, 1,
           ) catch {
             Fatal(message) =>
               debug(
@@ -746,7 +747,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
           }
           ensure_mesh3d_pipeline_surface(
             backend, format, topology, cull_mode, transparent_blend_kind, false,
-            forward_decal, false, 0, false,
+            forward_decal, false, 0, false, 1,
           ) catch {
             Fatal(message) =>
               debug(
