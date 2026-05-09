@@ -189,14 +189,13 @@ fn uv_debug_texture() -> @asset.Handle[@asset.Image] {
     palette = rotated
   }
 
-  let size = @math.UVec2::new(TEXTURE_SIZE, TEXTURE_SIZE)
-  let texture = @asset.asset_create_dynamic_texture(size, true)
-  @asset.asset_update_texture_region_rgba8(
-    texture,
-    @math.URect::new(@math.UVec2::new(0, 0), size),
+  let image = @asset.Image::new(
+    TEXTURE_SIZE,
+    TEXTURE_SIZE,
     Bytes::from_array(texture_data),
-  )
-  texture
+  ).with_format(Rgba8UnormSrgb)
+  let images : @ecs.ResourceMut[@asset.Assets[@asset.Image]] = @asset.asset_assets_ref_mut_or_abort()
+  images.peek().add(image)
 }
 
 ///|
@@ -1048,7 +1047,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+          @sprite.Color::srgb(0.7529412F, 0.7529412F, 0.7529412F),
         ),
       ),
     ),
@@ -1056,38 +1055,51 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @camera.Camera3dBundle::new(
+  let _camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(0.0F, 7.0F, 14.0F).looking_at(
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  |> ignore
 
-  let asset_server = @asset.AssetServer::new()
-  let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  @text.Text2dBundle::new(
-    @text.Text2d::new(
-      "Press 'R' to pause/resume rotation\nPress 'Tab' to cycle through rows\nPress 'Space' to toggle wireframes",
-    ),
-    @text.TextFont::default().with_font(overlay_font).with_font_size(20.0F),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(-390.0F, 300.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-      z=50.0F,
+  let ui_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
+    @transform.Transform::identity(),
+  ).spawn(world)
+  try! world.set_by_key(
+    ui_camera,
+    @ui.ecs_key_is_default_ui_camera,
+    @ui.IsDefaultUiCamera::default(),
+  )
+
+  let root = try! world.spawn_bundle(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F)),
+      @ui.UiTargetCamera::new(ui_camera),
     ),
   )
-  .with_anchor(@sprite.Anchor::top_left())
-  .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .with_color(
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+  try! (world.spawn_bundle(
+    (
+      @hierarchy.Parent::new(root),
+      @ui.Node::default()
+      .with_position_type(Absolute)
+      .with_top(Px(12.0F))
+      .with_left(Px(12.0F)),
+      @text.Text::new(
+        "Press 'R' to pause/resume rotation\nPress 'Tab' to cycle through rows\nPress 'Space' to toggle wireframes",
+      ),
+      @text.TextFont::default(),
+      @text.TextColor::default(),
+      @text.TextLayout::default(),
+      @text.LineHeight::default(),
+      @text.FontHinting::default(),
+    ),
   )
-  .with_shadow(Some(@text.Text2dShadow::default()))
-  .spawn()
-  |> ignore
+  |> ignore)
 }
 
 ///|
@@ -1166,7 +1178,9 @@ fn toggle_wireframe(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
+  )
   .add_plugins(@pbr.WireframePlugin::default())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(toggle_rotation))

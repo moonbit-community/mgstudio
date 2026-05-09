@@ -686,6 +686,10 @@ fn render3d_extract_light_transform(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @transform.Transform {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(global_transform) => return global_transform.to_transform_approx()
+    None => ()
+  }
   match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
     Some(v) => v
     None => @transform.Transform::identity()
