@@ -159,10 +159,11 @@ fn setup(world : @ecs.World) -> Unit {
 
   let ground = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(100.0F, 100.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(ground_material),
@@ -171,11 +172,8 @@ fn setup(world : @ecs.World) -> Unit {
   spotlight_state.val.movables.push(ground)
 
   let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F)),
   )
   let mut seed = 1987836746 % LCG_MOD
   for _ in 0..<40 {

@@ -198,11 +198,8 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
   )
   let sky = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(2.0F, 1.0F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 1.0F, 1.0F)),
     ),
     @pbr.MeshMaterial3d::new(sky_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(20.0F)),
