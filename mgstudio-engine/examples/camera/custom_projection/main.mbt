@@ -99,13 +99,8 @@ fn setup(
   let ground_mesh = meshes
     .peek()
     .add(@mesh.Mesh::from_3d_geometry(@mesh_primitives.circle_mesh(4.0F, 32)))
-  let cube_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    )
+  let cube_mesh = meshes.peek()
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
   let white_material = materials
     .peek()
     .add(@pbr.StandardMaterial::from_color(@sprite.Color::white()))

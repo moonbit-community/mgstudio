@@ -123,15 +123,8 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   counter : @app.ResMut[CubeCounter],
 ) -> Unit {
-  let floor_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(
-          @math.Cuboid::new(120.0F, 1.0F, 120.0F),
-        ),
-      ),
-    )
+  let floor_mesh = meshes.peek()
+    |> @pbr.add_mesh(@math.Cuboid::new(120.0F, 1.0F, 120.0F))
   let floor_material = materials
     .peek()
     .add(
@@ -149,13 +142,8 @@ fn setup(
     ),
   )
 
-  let cube_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F)),
-      ),
-    )
+  let cube_mesh = meshes.peek()
+    |> @pbr.add_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F))
   let cube_material = materials
     .peek()
     .add(

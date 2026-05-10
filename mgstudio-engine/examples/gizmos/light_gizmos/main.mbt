@@ -84,11 +84,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
   |> ignore
 
   let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
   )
   for x in [-2.0F, 0.0F, 2.0F] {
     @pbr.MeshMaterial3dBundle::new(
