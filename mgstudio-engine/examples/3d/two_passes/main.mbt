@@ -27,7 +27,9 @@ fn setup(
         @mesh.Mesh3d::new(
           mesh_assets
           |> @pbr.add_mesh(
-            @mesh_primitives_dim3.plane3d_mesh_from_size(5.0F, 5.0F, 0),
+            @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+              @math.Vec2::new(5.0F, 5.0F),
+            ).build(),
           ),
         ),
         @pbr.MeshMaterial3d::new(
