@@ -25,12 +25,11 @@ fn setup(
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let plane_mesh = mesh_assets
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.plane3d_mesh_from_size(8.0F, 8.0F, 0),
-      ),
+  let plane_mesh = mesh_assets.peek()
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(8.0F, 8.0F),
+      ).build(),
     )
   let cube_mesh = mesh_assets.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F))

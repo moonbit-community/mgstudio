@@ -33,7 +33,7 @@ pub impl @ecs.Component for Rotates with component() {
 
 ///|
 fn custom_attribute_cube_geometry() -> @mesh.Mesh3dGeometry {
-  let base = @mesh_primitives_dim3.cuboid_mesh(
+  let base = @mesh_primitives_dim3.Meshable::mesh(
     @math.Cuboid::new(1.0F, 1.0F, 1.0F),
   )
   let blend_colors : Array[@math.Vec3] = []
@@ -58,12 +58,11 @@ fn setup(
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let plane_mesh = mesh_assets
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.plane3d_mesh_from_size(5.0F, 5.0F, 0),
-      ),
+  let plane_mesh = mesh_assets.peek()
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(5.0F, 5.0F),
+      ).build(),
     )
   let cube_mesh = mesh_assets
     .peek()

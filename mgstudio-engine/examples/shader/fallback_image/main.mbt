@@ -65,12 +65,11 @@ fn setup(
   )
   |> ignore
 
-  let floor_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.plane3d_mesh_from_size(7.0F, 7.0F, 0),
-      ),
+  let floor_mesh = meshes.peek()
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(7.0F, 7.0F),
+      ).build(),
     )
   let floor_mat = materials
     .peek()
