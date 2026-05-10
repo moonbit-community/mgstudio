@@ -26,7 +26,7 @@ if (platform === 'darwin' || platform === 'linux') {
 
 if (platform === 'darwin') {
   const darwinWindowLinkFlags =
-    '-framework AppKit -framework QuartzCore -framework Foundation -lobjc -Wl,-undefined,dynamic_lookup';
+    '-framework AppKit -framework QuartzCore -framework Foundation -lobjc';
 
   addLinkConfig(pkg('window/windowing_native'), darwinWindowLinkFlags);
 }
