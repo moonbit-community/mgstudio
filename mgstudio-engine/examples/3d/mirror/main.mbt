@@ -17,7 +17,7 @@
 /// Parity note:
 /// - Mirror camera transform/projection updates, mirror render target resizing,
 ///   drag-to-orbit camera, and drag-to-move-fox controls are mapped.
-/// - Bevy-only features like `ExtendedMaterial` and `Camera::invert_culling`
+/// - Upstream-only features like `ExtendedMaterial` and `Camera::invert_culling`
 ///   are represented by the closest runtime behavior currently available in
 ///   mgstudio.
 
@@ -318,13 +318,14 @@ fn setup(world : @ecs.World) -> Unit {
     target_width, target_height,
   )
 
-  // Ground (Bevy uses a circle mesh; mgstudio currently uses a large plane).
+  // Ground: current mgstudio render APIs use a large plane for this sample.
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(400.0F, 400.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(400.0F, 400.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(
@@ -374,10 +375,11 @@ fn setup(world : @ecs.World) -> Unit {
   mirror_state.val.mirror_material = Some(mirror_material)
   let mirror_entity = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(300.0F, 150.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(300.0F, 150.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(mirror_material),

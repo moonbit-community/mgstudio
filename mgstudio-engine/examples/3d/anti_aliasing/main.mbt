@@ -14,7 +14,7 @@
 
 ///|
 ///
-/// Parity target: keep Bevy's AA control surface and component semantics on the
+/// Parity target: keep upstream AA control surface and component semantics on the
 /// camera (`Msaa`, `Fxaa`, `TemporalAntiAliasing` + prepass markers).
 
 ///|
@@ -615,10 +615,11 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(20.0F, 20.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(20.0F, 20.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(
@@ -643,13 +644,8 @@ fn setup(world : @ecs.World) -> Unit {
     let i_f = Float::from_double(i.to_double())
     @pbr.MeshMaterial3dBundle::new(
       @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.cuboid_mesh(
-              @math.Cuboid::new(0.25F, 0.25F, 0.25F),
-            ),
-          ),
-        ),
+        @pbr.mesh_assets_mut_or_abort().val
+        |> @pbr.add_mesh(@math.Cuboid::new(0.25F, 0.25F, 0.25F)),
       ),
       @pbr.MeshMaterial3d::new(cube_material),
       @transform.Transform::from_xyz(i_f * 0.25F - 1.0F, 0.125F, -i_f * 0.5F),

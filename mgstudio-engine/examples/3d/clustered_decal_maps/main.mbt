@@ -15,7 +15,7 @@
 ///|
 ///
 /// Baseline parity:
-/// - This example now attaches `ClusteredDecal` components directly with Bevy-
+/// - This example now attaches `ClusteredDecal` components directly with upstream-
 ///   aligned map channels.
 /// - This port keeps the same runtime behavior model (continuous spawn,
 ///   animated in/out lifetime, emissive toggle) using textured translucent
@@ -135,7 +135,7 @@ fn help_text_content() -> String {
   } else {
     "Off"
   }
-  "Clustered Decal Maps (Bevy-aligned behavior)\nE: Emissive On, R: Emissive Off (\{emissive_text})\nActive decals: \{clustered_decal_maps_state.val.decals.length().to_string()}\n"
+  "Clustered Decal Maps (upstream-aligned behavior)\nE: Emissive On, R: Emissive Off (\{emissive_text})\nActive decals: \{clustered_decal_maps_state.val.decals.length().to_string()}\n"
 }
 
 ///|
@@ -162,14 +162,11 @@ fn spawn_plane(
   )
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(
-            PLANE_HALF_SIZE * 2.0F,
-            PLANE_HALF_SIZE * 2.0F,
-            0,
-          ),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(PLANE_HALF_SIZE * 2.0F, PLANE_HALF_SIZE * 2.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(material),
@@ -218,7 +215,7 @@ fn setup(world : @ecs.World) -> Unit {
   clustered_decal_maps_state.val.help_text = None
 
   let textures : AppTextures = {
-    decal_base_color_texture: asset_server.load("branding/bevy_bird_dark.png"),
+    decal_base_color_texture: asset_server.load("branding/icon.png"),
     decal_normal_map_texture: asset_server.load_with_settings(
       "textures/ScratchedGold-Normal.png",
       fn(settings) { settings.is_srgb = false },
@@ -300,13 +297,8 @@ fn spawn_decal(world : @ecs.World) -> Unit {
   }
   let entity = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(
-            @math.Cuboid::new(1.0F, 1.0F, 0.02F),
-          ),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 0.02F)),
     ),
     @pbr.MeshMaterial3d::new(@pbr.standard_material_add(material)),
     @transform.Transform::from_xyz(x, y, -0.01F)

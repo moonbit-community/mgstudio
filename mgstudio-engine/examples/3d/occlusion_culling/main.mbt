@@ -14,7 +14,7 @@
 
 ///|
 ///
-/// Baseline parity: Bevy reads indirect draw parameters back from GPU to
+/// Baseline parity: upstream reads indirect draw parameters back from GPU to
 /// display exact culled counts. Current mgstudio runtime exposes an adapted
 /// approximation based on scene-space heuristics while preserving Space toggle,
 /// camera-side `DepthPrepass`/`OcclusionCulling` API surfaces, and scene motion.
@@ -145,12 +145,9 @@ fn spawn_small_cubes(
   material : @asset.Handle[@pbr.StandardMaterial],
 ) -> Unit {
   let mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(
-          @math.Cuboid::new(SMALL_CUBE_SIZE, SMALL_CUBE_SIZE, SMALL_CUBE_SIZE),
-        ),
-      ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(
+      @math.Cuboid::new(SMALL_CUBE_SIZE, SMALL_CUBE_SIZE, SMALL_CUBE_SIZE),
     ),
   )
   let lat_steps = OUTER_SUBDIVISION_COUNT * 2
@@ -204,12 +201,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let large_cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(
-            @math.Cuboid::new(LARGE_CUBE_SIZE, LARGE_CUBE_SIZE, LARGE_CUBE_SIZE),
-          ),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @math.Cuboid::new(LARGE_CUBE_SIZE, LARGE_CUBE_SIZE, LARGE_CUBE_SIZE),
       ),
     ),
     @pbr.MeshMaterial3d::new(large_cube_material),

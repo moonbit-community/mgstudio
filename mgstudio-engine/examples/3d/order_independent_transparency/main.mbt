@@ -15,8 +15,8 @@
 ///|
 ///
 /// Parity target:
-/// - Keep Bevy's camera OIT component flow and scene controls.
-/// - Keep transparent materials in `Blend` mode to match Bevy's comparison
+/// - Keep upstream camera OIT component flow and scene controls.
+/// - Keep transparent materials in `Blend` mode to match upstream comparison
 ///   between OIT and regular alpha blending.
 
 ///|
@@ -207,11 +207,8 @@ fn spawn_scene_quads(
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let quad = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(3.0F, 3.0F, 0.05F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(3.0F, 3.0F, 0.05F)),
   )
   let rotation = @math.Quat::from_rotation_y(0.5F)
   let mat0 = create_transparent_material(
@@ -284,11 +281,8 @@ fn spawn_scene_occlusion(
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let cube = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
   )
   let sphere = uv_sphere_mesh(1.0F, 16, 24)
 
@@ -372,11 +366,8 @@ fn spawn_scene_instancing(
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let cube = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
   )
   let material = @pbr.standard_material_add(
     @pbr.StandardMaterial::default()
