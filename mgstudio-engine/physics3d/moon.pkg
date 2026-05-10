@@ -15,7 +15,6 @@ import {
   "Milky2018/moon_rapier/pipeline",
   "moonbitlang/core/hashmap",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
 }
 
 supported_targets = "native"

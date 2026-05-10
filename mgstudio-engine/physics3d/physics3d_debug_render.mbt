@@ -109,11 +109,8 @@ fn physics3d_debug_ensure_assets() -> Unit {
   }
   state.line_mesh = Some(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
     ),
   )
   state.dynamic_material = Some(
