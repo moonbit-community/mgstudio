@@ -54,7 +54,7 @@ fn setup(world : @ecs.World) -> Unit {
 
         let body = @rapier_examples.rapier3d_spawn_body_mesh(
           world,
-          @mesh_primitives_dim3.cuboid_mesh(
+          @mesh_primitives_dim3.Meshable::mesh(
             @math.Cuboid::new(rad * 10.0F, rad * 20.0F, rad * 20.0F),
           ),
           @rapier_examples.rapier3d_color(color),

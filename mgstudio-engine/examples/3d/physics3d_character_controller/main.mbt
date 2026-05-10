@@ -52,13 +52,8 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let ground = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(
-            @math.Cuboid::new(24.0F, 1.0F, 24.0F),
-          ),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(24.0F, 1.0F, 24.0F)),
     ),
     @pbr.MeshMaterial3d::new(ground_material),
     @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
@@ -83,13 +78,8 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let player = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.capsule3d_mesh(
-            @math.Capsule3d::new(0.35F, 0.75F),
-          ),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Capsule3d::new(0.35F, 0.75F)),
     ),
     @pbr.MeshMaterial3d::new(player_material),
     @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F),

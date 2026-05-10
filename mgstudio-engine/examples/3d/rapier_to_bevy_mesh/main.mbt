@@ -65,7 +65,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
 
-  let cylinder = @mesh_primitives_dim3.cylinder_mesh(
+  let cylinder = @mesh_primitives_dim3.Meshable::mesh(
     @math.Cylinder::new(0.6F, 2.0F),
   )
   ignore(

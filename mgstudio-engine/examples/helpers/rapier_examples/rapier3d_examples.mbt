@@ -129,7 +129,7 @@ pub fn rapier3d_spawn_cuboid(
 ) -> @core.Entity {
   rapier3d_spawn_body_mesh(
     world,
-    @mesh_primitives_dim3.cuboid_mesh(
+    @mesh_primitives_dim3.Meshable::mesh(
       @math.Cuboid::new(half_extents.x, half_extents.y, half_extents.z),
     ),
     color,
@@ -157,7 +157,7 @@ pub fn rapier3d_spawn_ball(
 ) -> @core.Entity {
   rapier3d_spawn_body_mesh(
     world,
-    @mesh_primitives_dim3.icosphere_mesh(radius, 5),
+    @mesh_primitives_dim3.Meshable::mesh(@math.Sphere::new(radius)),
     color,
     @transform.Transform::from_xyz(position.x, position.y, position.z),
     rigid_body,
@@ -176,7 +176,7 @@ pub fn rapier3d_spawn_capsule_y(
 ) -> @core.Entity {
   rapier3d_spawn_body_mesh(
     world,
-    @mesh_primitives_dim3.capsule3d_mesh(
+    @mesh_primitives_dim3.Meshable::mesh(
       @math.Capsule3d::new(radius, half_length * 2.0F),
     ),
     color,
