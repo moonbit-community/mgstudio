@@ -305,6 +305,8 @@ pub fn render3d_gpu_fog_from_view_fog(Render3dViewFogData) -> GpuFog
 
 pub fn render3d_gpu_lights_uniform_bytes(GpuLights3d) -> Bytes
 
+pub fn render3d_gpu_lights_with_directional_shadow_cascades(GpuLights3d, Int, Float, Int, Float, Array[Float]) -> GpuLights3d
+
 pub fn render3d_gpu_preprocess_builder_enabled(Bool) -> Bool
 
 pub fn render3d_gpu_preprocess_camera_indirect_enabled(Bool, Bool) -> Bool
@@ -1020,7 +1022,7 @@ pub(all) struct Render3dLightingState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
-  gpu_lights_uniform_bytes : Bytes?
+  gpu_lights : GpuLights3d?
   gpu_clustered_lights_bytes : Bytes?
   gpu_clusterable_object_index_lists_bytes : Bytes?
   gpu_cluster_offsets_and_counts_bytes : Bytes?

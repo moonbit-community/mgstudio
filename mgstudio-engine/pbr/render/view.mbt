@@ -195,6 +195,19 @@ pub fn render3d_begin_pass_3d(
       )
     _ => ()
   }
+  let mesh3d_lights_uniform_bytes = match lighting.gpu_lights {
+    Some(gpu_lights) =>
+      Some(
+        render3d_gpu_lights_uniform_bytes(
+          render3d_gpu_lights_with_directional_shadow_cascades(
+            gpu_lights, directional_shadow_texture_id, directional_shadow_enabled,
+            directional_shadow_cascade_count, directional_shadow_cascade_overlap,
+            directional_shadow_cascade_data,
+          ),
+        ),
+      )
+    None => None
+  }
   @render_gpu.host_gpu_begin_pass_3d(
     target_id~,
     target_layer~,
@@ -319,7 +332,7 @@ pub fn render3d_begin_pass_3d(
     directional_shadow_cascade_count~,
     directional_shadow_cascade_overlap~,
     directional_shadow_cascade_data~,
-    mesh3d_lights_uniform_bytes=lighting.gpu_lights_uniform_bytes,
+    mesh3d_lights_uniform_bytes~,
     tonemap_in_shader~,
     tonemapping_mode~,
     tonemapping_agx_lut_texture_id~,

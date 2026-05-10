@@ -379,6 +379,62 @@ test "pbr render light: directional with shadows uses default cascade config" {
 }
 
 ///|
+test "pbr render light: directional gpu lights resolve view cascade data" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! (world.set_by_key(
+    entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::default().with_shadow_maps_enabled(true),
+  )
+  |> ignore)
+
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  let cascade_data = [
+    1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F, 10.0F, 11.0F, 12.0F, 13.0F,
+    14.0F, 15.0F, 16.0F, 0.25F, 42.0F, 0.0F, 0.0F,
+  ]
+  let resolved = render3d_gpu_lights_with_directional_shadow_cascades(
+    gpu_lights, 7, 1.0F, 1, 0.21F, cascade_data,
+  )
+
+  inspect(resolved.directional_lights[0].num_cascades, content="1")
+  inspect(
+    approx_eq(
+      resolved.directional_lights[0].cascades_overlap_proportion,
+      0.21F,
+      1.0e-6F,
+    ),
+    content="true",
+  )
+  inspect((resolved.directional_lights[0].flags & 1U) == 1U, content="true")
+  inspect(
+    approx_eq(
+      resolved.directional_lights[0].cascades[0].clip_from_world.x_axis.x,
+      1.0F,
+      1.0e-6F,
+    ),
+    content="true",
+  )
+  inspect(
+    approx_eq(
+      resolved.directional_lights[0].cascades[0].texel_size,
+      0.25F,
+      1.0e-6F,
+    ),
+    content="true",
+  )
+  inspect(
+    approx_eq(
+      resolved.directional_lights[0].cascades[0].far_bound,
+      42.0F,
+      1.0e-6F,
+    ),
+    content="true",
+  )
+}
+
+///|
 test "pbr render light: directional extraction order follows bevy key" {
   let world = @ecs.World::new()
   let shadow_and_volumetric = world.spawn()

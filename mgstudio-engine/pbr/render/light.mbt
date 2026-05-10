@@ -42,7 +42,7 @@ pub(all) struct Render3dLightingState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
-  gpu_lights_uniform_bytes : Bytes?
+  gpu_lights : GpuLights3d?
   gpu_clustered_lights_bytes : Bytes?
   gpu_clusterable_object_index_lists_bytes : Bytes?
   gpu_cluster_offsets_and_counts_bytes : Bytes?
@@ -438,6 +438,107 @@ pub fn render3d_gpu_lights_uniform_bytes(lights : GpuLights3d) -> Bytes {
   )
   render3d_lights_push_u32(words, 0U)
   render3d_lights_u32le_pack(words)
+}
+
+///|
+fn render3d_gpu_directional_cascade_from_flat_data(
+  data : Array[Float],
+  cascade_index : Int,
+) -> GpuDirectionalCascade3d {
+  let base = cascade_index * 20
+  if cascade_index < 0 || base + 17 >= data.length() {
+    return render3d_gpu_directional_cascade_default()
+  }
+  GpuDirectionalCascade3d::{
+    clip_from_world: ProjectionMatrix3d::from_cols(
+      @math.Vec4::new(
+        data[base],
+        data[base + 1],
+        data[base + 2],
+        data[base + 3],
+      ),
+      @math.Vec4::new(
+        data[base + 4],
+        data[base + 5],
+        data[base + 6],
+        data[base + 7],
+      ),
+      @math.Vec4::new(
+        data[base + 8],
+        data[base + 9],
+        data[base + 10],
+        data[base + 11],
+      ),
+      @math.Vec4::new(
+        data[base + 12],
+        data[base + 13],
+        data[base + 14],
+        data[base + 15],
+      ),
+    ),
+    texel_size: data[base + 16],
+    far_bound: data[base + 17],
+  }
+}
+
+///|
+fn render3d_clamp_directional_cascade_count(value : Int) -> Int {
+  if value < 0 {
+    0
+  } else if value > MAX_CASCADES_PER_LIGHT {
+    MAX_CASCADES_PER_LIGHT
+  } else {
+    value
+  }
+}
+
+///|
+pub fn render3d_gpu_lights_with_directional_shadow_cascades(
+  lights : GpuLights3d,
+  directional_shadow_texture_id : Int,
+  directional_shadow_enabled : Float,
+  directional_shadow_cascade_count : Int,
+  directional_shadow_cascade_overlap : Float,
+  directional_shadow_cascade_data : Array[Float],
+) -> GpuLights3d {
+  let cascades_enabled = directional_shadow_texture_id >= 0 &&
+    directional_shadow_enabled > 0.5F
+  let resolved_cascade_count = if cascades_enabled {
+    render3d_clamp_directional_cascade_count(directional_shadow_cascade_count)
+  } else {
+    0
+  }
+  if resolved_cascade_count == 0 {
+    return lights
+  }
+  let resolved_cascades : Array[GpuDirectionalCascade3d] = []
+  for cascade_index in 0..<MAX_CASCADES_PER_LIGHT {
+    if cascade_index < resolved_cascade_count {
+      resolved_cascades.push(
+        render3d_gpu_directional_cascade_from_flat_data(
+          directional_shadow_cascade_data, cascade_index,
+        ),
+      )
+    } else {
+      resolved_cascades.push(render3d_gpu_directional_cascade_default())
+    }
+  }
+  let directional_lights : Array[GpuDirectionalLight3d] = []
+  for light_index in 0..<lights.directional_lights.length() {
+    let light = lights.directional_lights[light_index]
+    if light_index == 0 {
+      directional_lights.push(GpuDirectionalLight3d::{
+        ..light,
+        cascades: resolved_cascades,
+        flags: light.flags | DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED,
+        num_cascades: resolved_cascade_count,
+        cascades_overlap_proportion: directional_shadow_cascade_overlap,
+      })
+    } else {
+      directional_lights.push(light)
+    }
+  }
+  GpuLights3d::{ ..lights, directional_lights, }
 }
 
 ///|
@@ -1588,7 +1689,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     spot_range: 1.0F,
     spot_inner_angle: 0.6F,
     spot_outer_angle: 0.8F,
-    gpu_lights_uniform_bytes: None,
+    gpu_lights: None,
     gpu_clustered_lights_bytes: None,
     gpu_clusterable_object_index_lists_bytes: None,
     gpu_cluster_offsets_and_counts_bytes: None,
@@ -1680,9 +1781,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
   )
   Render3dLightingState::{
     ..lighting,
-    gpu_lights_uniform_bytes: Some(
-      render3d_gpu_lights_uniform_bytes(gpu_lights),
-    ),
+    gpu_lights: Some(gpu_lights),
     gpu_clustered_lights_bytes: Some(gpu_clustered_lights_bytes),
     gpu_clusterable_object_index_lists_bytes: Some(
       gpu_clusterable_object_index_lists_bytes,
