@@ -131,6 +131,7 @@ pub struct HostMesh3dMainPassDrawEntry {
   point_shadow_texture_id : Int
   point_shadow_enabled : Float
   point_shadow_depth_bias : Float
+  mesh_flags : UInt
   skinning_key_hi : Int
 }
 
@@ -198,6 +199,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
   point_shadow_texture_id~ : Int,
   point_shadow_enabled~ : Float,
   point_shadow_depth_bias~ : Float,
+  mesh_flags~ : UInt,
   skinning_key_hi~ : Int,
 ) -> HostMesh3dMainPassDrawEntry {
   HostMesh3dMainPassDrawEntry::{
@@ -263,6 +265,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
     point_shadow_texture_id,
     point_shadow_enabled,
     point_shadow_depth_bias,
+    mesh_flags,
     skinning_key_hi,
   }
 }
@@ -311,12 +314,6 @@ fn GpuBackend::write_mesh3d_main_pass_draw_entry(
     0.0F
   }
   let point_shadow_textured = entry.point_shadow_texture_id >= 0
-  let draw_point_shadow_enabled = if point_shadow_textured &&
-    entry.point_shadow_enabled > 0.5F {
-    1.0F
-  } else {
-    0.0F
-  }
   let draw_point_shadow_depth_bias = if point_shadow_textured {
     entry.point_shadow_depth_bias
   } else {
@@ -376,7 +373,7 @@ fn GpuBackend::write_mesh3d_main_pass_draw_entry(
     } else {
       0xFFFFFFFFU
     },
-    draw_point_shadow_enabled,
+    entry.mesh_flags,
     draw_point_shadow_depth_bias,
   )
   true
@@ -882,6 +879,7 @@ pub fn draw_mesh3d(
   point_shadow_texture_id~ : Int,
   point_shadow_enabled~ : Float,
   point_shadow_depth_bias~ : Float,
+  mesh_flags~ : UInt,
   environment_diffuse_texture_id? : Int = -1,
   environment_specular_texture_id? : Int = -1,
   environment_map_intensity? : Float = 0.0F,
@@ -979,6 +977,7 @@ pub fn draw_mesh3d(
       point_shadow_texture_id,
       point_shadow_enabled,
       point_shadow_depth_bias,
+      mesh_flags,
       environment_diffuse_texture_id,
       environment_specular_texture_id,
       environment_map_intensity,

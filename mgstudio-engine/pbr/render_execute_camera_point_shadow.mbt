@@ -15,19 +15,13 @@
 ///|
 fn render3d_execute_camera_point_shadow_pass(
   world : @ecs.World,
+  camera : Camera3dViewPayload,
   pass_lighting : Render3dLightingState,
   point_light_shadow_map_size : Int,
   camera_entity : @core.Entity,
-  draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
   meshes : Array[ExtractedMesh3d],
-  opaque_alpha_draw_item_indices : Array[Int],
-  indexed_indirect_parameter_indices : Array[Int],
-  non_indexed_indirect_parameter_indices : Array[Int],
   point_shadow_pass_kind : Int,
 ) -> Render3dPointShadowBinding {
-  let draw_items = draw_queue_entry.draw_items
-  ignore(indexed_indirect_parameter_indices)
-  ignore(non_indexed_indirect_parameter_indices)
   if !pass_lighting.point_shadow_maps_enabled ||
     pass_lighting.point_entity is None ||
     pass_lighting.point_range <= 0.0F ||
@@ -56,12 +50,27 @@ fn render3d_execute_camera_point_shadow_pass(
     shadow_camera_near,
     pass_lighting.point_range,
   )
-  ignore(opaque_alpha_draw_item_indices)
-  let shadow_phase_items = render3d_queue_shadow_phase_items(draw_items, meshes)
+  let mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d] = {}
   for face_index in 0..<6 {
     let shadow_camera_transform = @pbr_render.render3d_point_shadow_face_transform(
       pass_lighting.point_pos,
       face_index,
+    )
+    let shadow_frustum = @pbr_render.render3d_compute_frustum(
+      point_shadow_pass_projection.clip_from_view,
+      shadow_camera_transform,
+      pass_lighting.point_range,
+    )
+    let shadow_phase_items = render3d_queue_shadow_phase_items(
+      meshes,
+      render3d_shadow_visible_extracted_indices(
+        meshes,
+        camera.layers,
+        render3d_host_preprocess_frustum_planes_from_half_spaces(
+          shadow_frustum.half_spaces,
+        ),
+        mesh_preprocess_static_cache,
+      ),
     )
     let shadow_view = Render3dShadowView::{
       target_id: shadow_target_id,

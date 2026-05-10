@@ -123,6 +123,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
   point_shadow_texture_id~ : Int,
   point_shadow_enabled~ : Float,
   point_shadow_depth_bias~ : Float,
+  mesh_flags~ : UInt,
   skinning_key_hi~ : Int,
 ) -> HostMesh3dMainPassDrawEntry {
   @renderer.host_mesh3d_main_pass_draw_entry(
@@ -188,6 +189,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
     point_shadow_texture_id~,
     point_shadow_enabled~,
     point_shadow_depth_bias~,
+    mesh_flags~,
     skinning_key_hi~,
   )
 }
@@ -1243,6 +1245,7 @@ pub fn host_gpu_draw_mesh3d(
   point_shadow_texture_id~ : Int,
   point_shadow_enabled~ : Float,
   point_shadow_depth_bias~ : Float,
+  mesh_flags~ : UInt,
   environment_diffuse_texture_id? : Int = -1,
   environment_specular_texture_id? : Int = -1,
   environment_map_intensity? : Float = 0.0F,
@@ -1338,6 +1341,7 @@ pub fn host_gpu_draw_mesh3d(
     point_shadow_texture_id~,
     point_shadow_enabled~,
     point_shadow_depth_bias~,
+    mesh_flags~,
     environment_diffuse_texture_id~,
     environment_specular_texture_id~,
     environment_map_intensity~,

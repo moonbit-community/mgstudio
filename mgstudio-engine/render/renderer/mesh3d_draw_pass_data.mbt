@@ -462,16 +462,8 @@ fn mesh3d_mesh_uniform_words(
   previous_scale_y : Float,
   previous_scale_z : Float,
   current_skin_index : UInt,
-  point_shadow_enabled : Float,
+  mesh_flags : UInt,
 ) -> Array[UInt] {
-  let determinant = scale_x * scale_y * scale_z
-  let mut flags = 0xFFFFU
-  if point_shadow_enabled > 0.5F {
-    flags = flags | (1U << 29)
-  }
-  if determinant >= 0.0F {
-    flags = flags | (1U << 31)
-  }
   let inverse_transpose = mesh3d_inverse_transpose_words(
     rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
   )
@@ -495,7 +487,7 @@ fn mesh3d_mesh_uniform_words(
     words.push(inverse_transpose[i])
   }
   words.push(inverse_transpose[8])
-  words.push(flags)
+  words.push(mesh_flags)
   words.push(0U)
   words.push(0U)
   words.push(0U)
@@ -566,7 +558,7 @@ fn mesh3d_draw_uniform_bytes(
   alpha_cutoff : Float,
   material_flags : UInt,
   current_skin_index : UInt,
-  point_shadow_enabled : Float,
+  mesh_flags : UInt,
   point_shadow_depth_bias : Float,
 ) -> Bytes {
   ignore(color_r)
@@ -604,7 +596,7 @@ fn mesh3d_draw_uniform_bytes(
   let words = mesh3d_mesh_uniform_words(
     x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
     x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
-    current_skin_index, point_shadow_enabled,
+    current_skin_index, mesh_flags,
   )
   u32le_pack(words)
 }
@@ -798,7 +790,7 @@ fn mesh3d_draw_uniform_write(
   alpha_cutoff : Float,
   material_flags : UInt,
   current_skin_index : UInt,
-  point_shadow_enabled : Float,
+  mesh_flags : UInt,
   point_shadow_depth_bias : Float,
 ) -> Unit {
   ignore(color_r)
@@ -839,7 +831,7 @@ fn mesh3d_draw_uniform_write(
     mesh3d_mesh_uniform_words(
       x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
       scale_z, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x,
-      scale_y, scale_z, current_skin_index, point_shadow_enabled,
+      scale_y, scale_z, current_skin_index, mesh_flags,
     ),
   )
 }

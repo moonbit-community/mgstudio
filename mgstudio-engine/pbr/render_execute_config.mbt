@@ -26,10 +26,44 @@ fn render3d_runtime_config_or_default(
 const RENDER3D_MESH3D_DRAW_FLAG_DECAL : Int = 1 << 8
 
 ///|
+const RENDER3D_MESH_FLAGS_LOD_INDEX_NONE : UInt = 0xFFFFU
+
+///|
+const RENDER3D_MESH_FLAGS_NO_FRUSTUM_CULLING : UInt = 1U << 28
+
+///|
+const RENDER3D_MESH_FLAGS_SHADOW_RECEIVER : UInt = 1U << 29
+
+///|
+const RENDER3D_MESH_FLAGS_TRANSMITTED_SHADOW_RECEIVER : UInt = 1U << 30
+
+///|
+const RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3 : UInt = 1U << 31
+
+///|
 fn render3d_mesh_draw_flags(mesh : ExtractedMesh3d) -> Int {
   let mut flags = 0
   if mesh.payload.is_forward_decal || mesh.payload.clustered_decal is Some(_) {
     flags = flags | RENDER3D_MESH3D_DRAW_FLAG_DECAL
+  }
+  flags
+}
+
+///|
+fn render3d_mesh_flags(mesh : ExtractedMesh3d) -> UInt {
+  let payload = mesh.payload
+  let mut flags = RENDER3D_MESH_FLAGS_LOD_INDEX_NONE
+  if payload.has_no_frustum_culling {
+    flags = flags | RENDER3D_MESH_FLAGS_NO_FRUSTUM_CULLING
+  }
+  if !payload.has_not_shadow_receiver {
+    flags = flags | RENDER3D_MESH_FLAGS_SHADOW_RECEIVER
+  }
+  if payload.has_transmitted_shadow_receiver {
+    flags = flags | RENDER3D_MESH_FLAGS_TRANSMITTED_SHADOW_RECEIVER
+  }
+  if payload.world_from_local.matrix3.determinant() >= 0.0F {
+    flags = flags | RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3
   }
   flags
 }

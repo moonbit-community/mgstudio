@@ -209,6 +209,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   specular_tint : @sprite.Color
   anisotropy_strength : Float
   max_relief_mapping_search_steps : Float
+  mesh_flags : UInt
   cull_mode : Int
   vertex_shader_path : String?
   fragment_shader_path : String?
@@ -258,6 +259,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   specular_tint : @sprite.Color,
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
+  mesh_flags : UInt,
   draw_flags : Int,
   forward_decal? : Bool = false,
   vertex_shader_path? : String? = None,
@@ -332,6 +334,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     specular_tint,
     anisotropy_strength,
     max_relief_mapping_search_steps,
+    mesh_flags,
     cull_mode: render3d_cull_mode_value(material, draw_flags),
     vertex_shader_path,
     fragment_shader_path,
@@ -407,6 +410,7 @@ pub fn render3d_host_main_pass_draw_entry(
     point_shadow_texture_id=payload.point_shadow_texture_id,
     point_shadow_enabled=payload.point_shadow_enabled,
     point_shadow_depth_bias=payload.point_shadow_depth_bias,
+    mesh_flags=payload.mesh_flags,
     skinning_key_hi=payload.skinning_key_hi,
   )
 }
@@ -493,6 +497,7 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     point_shadow_texture_id=payload.point_shadow_texture_id,
     point_shadow_enabled=payload.point_shadow_enabled,
     point_shadow_depth_bias=payload.point_shadow_depth_bias,
+    mesh_flags=payload.mesh_flags,
     environment_diffuse_texture_id=payload.environment_diffuse_texture_id,
     environment_specular_texture_id=payload.environment_specular_texture_id,
     environment_map_intensity=payload.environment_map_intensity,

@@ -84,6 +84,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   deferred_lighting_pass_id : Int,
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
+  mesh_flags : UInt,
   cull_mode : Int,
   vertex_shader_path : String?,
   fragment_shader_path : String?,
@@ -300,12 +301,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   let anisotropy_textured = anisotropy_texture_id >= 0
   let specular_tint_textured = specular_tint_texture_id >= 0
   let point_shadow_textured = ps.point_shadow_texture_id >= 0
-  let draw_point_shadow_enabled = if point_shadow_textured &&
-    point_shadow_enabled > 0.5F {
-    1.0F
-  } else {
-    0.0F
-  }
+  ignore(point_shadow_enabled)
   let draw_point_shadow_depth_bias = if point_shadow_textured {
     point_shadow_depth_bias
   } else {
@@ -424,7 +420,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       } else {
         0xFFFFFFFFU
       },
-      draw_point_shadow_enabled,
+      mesh_flags,
       draw_point_shadow_depth_bias,
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)

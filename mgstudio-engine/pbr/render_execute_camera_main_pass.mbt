@@ -112,6 +112,8 @@ fn render3d_draw_gizmo_lines_3d(
       @sprite.Color::white(),
       0.0F,
       0.0F,
+      RENDER3D_MESH_FLAGS_LOD_INDEX_NONE |
+      RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3,
       0,
     ),
   )
@@ -428,6 +430,7 @@ fn render3d_execute_camera_main_pass(
       !mesh.has_transmitted_shadow_receiver {
       draw_point_shadow_enabled = 0.0F
     }
+    let mesh_flags = render3d_mesh_flags(extracted_mesh)
     let draw_flags = render3d_mesh_draw_flags(extracted_mesh)
     let draw_indexed = mesh.mesh_is_indexed
     let draw_indirect_parameters_index = if draw_indexed {
@@ -496,6 +499,7 @@ fn render3d_execute_camera_main_pass(
       draw_material.specular_tint,
       anisotropy_strength,
       max_relief_mapping_search_steps,
+      mesh_flags,
       draw_flags,
       forward_decal=mesh.is_forward_decal,
       vertex_shader_path=draw_vertex_shader_path,
@@ -585,6 +589,7 @@ fn render3d_execute_camera_main_pass(
         @sprite.Color::white(),
         0.0F,
         0.0F,
+        render3d_mesh_flags(extracted_mesh),
         render3d_mesh_draw_flags(extracted_mesh),
       ),
     )

@@ -188,6 +188,100 @@ test "render3d: camera indirect path requires feature support and no marker" {
 }
 
 ///|
+fn render3d_test_extracted_mesh_for_flags(
+  has_no_frustum_culling : Bool,
+  has_not_shadow_receiver : Bool,
+  has_transmitted_shadow_receiver : Bool,
+  scale : @math.Vec3,
+) -> ExtractedMesh3d {
+  let transform = @transform.Transform::identity().with_scale(scale)
+  let world_from_local = @math.Affine3::from_scale_rotation_translation(
+    scale,
+    @math.Quat::identity(),
+    @math.Vec3::zero(),
+  )
+  ExtractedMesh3d::{
+    entity: phase_entity_ref3d_for_main(@core.Entity::new(1, 0)),
+    payload: Mesh3dExtractedPayload::{
+      mesh_handle: @asset.Handle::new(1),
+      mesh_id: 1,
+      mesh_topology_kind: 0,
+      mesh_is_indexed: true,
+      mesh_preprocess_static: None,
+      world_from_local,
+      previous_world_from_local: world_from_local,
+      transform,
+      previous_transform: transform,
+      visibility_range: None,
+      aabb_center_world: None,
+      material: StandardMaterial::default(),
+      material_extension: None,
+      material_properties: @material.MaterialProperties::default(),
+      material_vertex_shader_path: None,
+      material_fragment_shader_path: None,
+      lightmap: None,
+      is_forward_decal: false,
+      forward_decal_material_ext: None,
+      clustered_decal: None,
+      has_not_shadow_caster: false,
+      has_not_shadow_receiver,
+      has_transmitted_shadow_receiver,
+      has_no_frustum_culling,
+      has_no_cpu_culling: false,
+      layers: @sprite.RenderLayers::default(),
+      has_wireframe: false,
+      has_no_wireframe: false,
+      wireframe_color: None,
+      skinning_key_hi: -1,
+      has_previous_skin: false,
+      motion_vector_enabled: false,
+    },
+  }
+}
+
+///|
+test "render3d: mesh flags default to shadow receiver and positive determinant" {
+  let flags = render3d_mesh_flags(
+    render3d_test_extracted_mesh_for_flags(
+      false,
+      false,
+      false,
+      @math.Vec3::splat(1.0F),
+    ),
+  )
+  debug_inspect(
+    flags ==
+    (
+      RENDER3D_MESH_FLAGS_LOD_INDEX_NONE |
+      RENDER3D_MESH_FLAGS_SHADOW_RECEIVER |
+      RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3
+    ),
+    content="true",
+  )
+}
+
+///|
+test "render3d: mesh flags honor culling, receiver, transmission, and determinant bits" {
+  let flags = render3d_mesh_flags(
+    render3d_test_extracted_mesh_for_flags(
+      true,
+      true,
+      true,
+      @math.Vec3::new(-1.0F, 1.0F, 1.0F),
+    ),
+  )
+  debug_inspect(
+    flags ==
+    (
+      RENDER3D_MESH_FLAGS_LOD_INDEX_NONE |
+      RENDER3D_MESH_FLAGS_NO_FRUSTUM_CULLING |
+      RENDER3D_MESH_FLAGS_TRANSMITTED_SHADOW_RECEIVER
+    ),
+    content="true",
+  )
+}
+
+///|
 test "render3d: indirect metadata starts visible counts at zero" {
   let metadata = render3d_build_gpu_preprocess_indirect_mesh_class_metadata([
     GpuPreprocessShaderWorkItem3d::{

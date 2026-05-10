@@ -155,6 +155,7 @@ fn render3d_execute_camera_motion_vector_pass(
         @sprite.Color::white(),
         0.0F,
         0.0F,
+        render3d_mesh_flags(extracted_mesh),
         render3d_mesh_draw_flags(extracted_mesh),
         skinning_key_hi=mesh.skinning_key_hi,
         skinning_key_lo=if mesh.skinning_key_hi < 0 {

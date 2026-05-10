@@ -35,7 +35,11 @@ fn render3d_mesh_preprocess_static_for_payload(
   }
   match mesh_preprocess_static_cache.get(mesh_handle_id) {
     Some(metadata) => Some(metadata)
-    None => Some(render3d_mesh_preprocess_static(payload.mesh_handle))
+    None => {
+      let metadata = render3d_mesh_preprocess_static(payload.mesh_handle)
+      mesh_preprocess_static_cache.set(mesh_handle_id, metadata)
+      Some(metadata)
+    }
   }
 }
 
@@ -645,13 +649,12 @@ fn render3d_host_preprocess_batch_set(
 }
 
 ///|
-fn render3d_host_preprocess_view_frustum_planes(
-  projection : Projection,
-  camera_transform : @transform.Transform,
+fn render3d_host_preprocess_frustum_planes_from_half_spaces(
+  half_spaces : Array[HalfSpace],
 ) -> Array[@render.HostMesh3dPreprocessFrustumPlane] {
   let planes : Array[@render.HostMesh3dPreprocessFrustumPlane] = []
-  for half_space in projection.compute_frustum(camera_transform).half_spaces {
-    let normal_d = half_space.normal_d
+  for half_space in half_spaces {
+    let normal_d = half_space.normal_d()
     planes.push(@render.HostMesh3dPreprocessFrustumPlane::{
       normal_x: normal_d.x,
       normal_y: normal_d.y,
@@ -660,6 +663,26 @@ fn render3d_host_preprocess_view_frustum_planes(
     })
   }
   planes
+}
+
+///|
+fn render3d_host_preprocess_view_frustum_planes_from_clip_from_world(
+  clip_from_world : @pbr_render.ProjectionMatrix3d,
+) -> Array[@render.HostMesh3dPreprocessFrustumPlane] {
+  let frustum = @pbr_render.Frustum::new(
+    @pbr_render.ViewFrustum::from_clip_from_world(clip_from_world),
+  )
+  render3d_host_preprocess_frustum_planes_from_half_spaces(frustum.half_spaces)
+}
+
+///|
+fn render3d_host_preprocess_view_frustum_planes(
+  projection : Projection,
+  camera_transform : @transform.Transform,
+) -> Array[@render.HostMesh3dPreprocessFrustumPlane] {
+  render3d_host_preprocess_frustum_planes_from_half_spaces(
+    projection.compute_frustum(camera_transform).half_spaces,
+  )
 }
 
 ///|
@@ -801,7 +824,17 @@ fn render3d_host_preprocess_mesh_culling_data(
     render3d_mesh_preprocess_static_for_draw_item(
       draw_item, meshes, mesh_preprocess_static_cache,
     ) {
-    Some(metadata) =>
+    Some(metadata) => {
+      if !metadata.has_local_aabb {
+        return @render.HostMesh3dPreprocessMeshCullingData::{
+          aabb_center_x: 0.0F,
+          aabb_center_y: 0.0F,
+          aabb_center_z: 0.0F,
+          aabb_half_extents_x: 1.0F / 0.0F,
+          aabb_half_extents_y: 1.0F / 0.0F,
+          aabb_half_extents_z: 1.0F / 0.0F,
+        }
+      }
       @render.HostMesh3dPreprocessMeshCullingData::{
         aabb_center_x: metadata.aabb_center.x,
         aabb_center_y: metadata.aabb_center.y,
@@ -810,14 +843,15 @@ fn render3d_host_preprocess_mesh_culling_data(
         aabb_half_extents_y: metadata.aabb_half_extents.y,
         aabb_half_extents_z: metadata.aabb_half_extents.z,
       }
+    }
     None =>
       @render.HostMesh3dPreprocessMeshCullingData::{
         aabb_center_x: 0.0F,
         aabb_center_y: 0.0F,
         aabb_center_z: 0.0F,
-        aabb_half_extents_x: 0.0F,
-        aabb_half_extents_y: 0.0F,
-        aabb_half_extents_z: 0.0F,
+        aabb_half_extents_x: 1.0F / 0.0F,
+        aabb_half_extents_y: 1.0F / 0.0F,
+        aabb_half_extents_z: 1.0F / 0.0F,
       }
   }
 }
@@ -1113,7 +1147,8 @@ fn render3d_host_preprocess_mesh_input(
       tag: 0,
     }
   }
-  let mesh = meshes[draw_item.extracted_index].payload
+  let extracted_mesh = meshes[draw_item.extracted_index]
+  let mesh = extracted_mesh.payload
   let metadata = match
     render3d_mesh_preprocess_static_for_draw_item(
       draw_item, meshes, mesh_preprocess_static_cache,
@@ -1131,11 +1166,8 @@ fn render3d_host_preprocess_mesh_input(
         aabb_half_extents: @math.Vec3::new(0.0F, 0.0F, 0.0F),
       }
   }
-  let flags = if metadata.has_local_aabb {
-    0U
-  } else {
-    @render.MESH3D_PREPROCESS_INPUT_FLAG_NO_FRUSTUM_CULLING
-  }
+  ignore(metadata.has_local_aabb)
+  let flags = render3d_mesh_flags(extracted_mesh)
   @render.HostMesh3dPreprocessMeshInput::{
     translation_x: mesh.transform.translation.x,
     translation_y: mesh.transform.translation.y,

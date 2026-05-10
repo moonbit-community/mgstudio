@@ -418,6 +418,8 @@ fn render3d_draw_camera_skybox(
     point_shadow_texture_id~,
     point_shadow_enabled~,
     point_shadow_depth_bias~,
+    mesh_flags=RENDER3D_MESH_FLAGS_LOD_INDEX_NONE |
+      RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3,
     environment_diffuse_texture_id=environment_map_state.diffuse_texture_id,
     environment_specular_texture_id=environment_map_state.specular_texture_id,
     environment_map_intensity=environment_map_state.intensity,

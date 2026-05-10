@@ -706,6 +706,16 @@ test "renderer: mesh3d runtime flags infer two-component normal map format" {
 }
 
 ///|
+test "renderer: mesh uniform stores caller supplied mesh flags" {
+  let flags = 0xA000_FFFFU
+  let words = mesh3d_mesh_uniform_words(
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0xFFFF_FFFFU, flags,
+  )
+  debug_inspect(words[33], content="2684420095")
+}
+
+///|
 test "renderer: present mode fallbacks align with bevy auto-vsync policy" {
   let candidates = surface_present_mode_candidates(
     SURFACE_PRESENT_MODE_AUTO_VSYNC,

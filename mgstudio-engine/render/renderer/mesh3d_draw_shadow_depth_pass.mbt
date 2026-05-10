@@ -106,6 +106,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   material_flags : UInt,
   lightmap_exposure : Float,
   deferred_lighting_pass_id : Int,
+  mesh_flags : UInt,
   cull_mode : Int,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
@@ -258,7 +259,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
       } else {
         0xFFFFFFFFU
       },
-      0.0F,
+      mesh_flags,
       0.0F,
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)

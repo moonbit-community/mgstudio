@@ -279,40 +279,12 @@ fn render3d_directional_shadow_cascade_data(
 }
 
 ///|
-fn render3d_directional_shadow_mesh_visible(
-  cascade : Render3dDirectionalCascadePass,
-  mesh : Mesh3dExtractedPayload,
-) -> Bool {
-  if mesh.has_no_frustum_culling {
-    return true
-  }
-  let center = match mesh.aabb_center_world {
-    Some(value) => value
-    None => mesh.transform.translation
-  }
-  match cascade.clip_from_world.project_point3(center) {
-    Some(ndc) =>
-      ndc.x >= -1.05F &&
-      ndc.x <= 1.05F &&
-      ndc.y >= -1.05F &&
-      ndc.y <= 1.05F &&
-      ndc.z >= -0.05F &&
-      ndc.z <= 1.05F
-    None => false
-  }
-}
-
-///|
 fn render3d_execute_camera_directional_shadow_pass(
   world : @ecs.World,
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
   pass_lighting : Render3dLightingState,
-  draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
   meshes : Array[ExtractedMesh3d],
-  opaque_alpha_draw_item_indices : Array[Int],
-  indexed_indirect_parameter_indices : Array[Int],
-  non_indexed_indirect_parameter_indices : Array[Int],
   shadow_pass_kind : Int,
 ) -> Render3dDirectionalShadowBinding {
   if !pass_lighting.directional_shadow_maps_enabled ||
@@ -340,20 +312,20 @@ fn render3d_execute_camera_directional_shadow_pass(
     shadow_map_size,
     cascades.length(),
   )
-  let draw_items = draw_queue_entry.draw_items
-  ignore(opaque_alpha_draw_item_indices)
-  let shadow_phase_items = render3d_queue_shadow_phase_items(draw_items, meshes)
-  ignore(indexed_indirect_parameter_indices)
-  ignore(non_indexed_indirect_parameter_indices)
+  let mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d] = {}
   for cascade_index in 0..<cascades.length() {
     let cascade = cascades[cascade_index]
-    let cascade_phase_items : Array[ShadowPhaseItem3d] = []
-    for shadow_phase_item in shadow_phase_items {
-      let shadow_mesh = meshes[shadow_phase_item.extracted_index].payload
-      if render3d_directional_shadow_mesh_visible(cascade, shadow_mesh) {
-        cascade_phase_items.push(shadow_phase_item)
-      }
-    }
+    let cascade_phase_items = render3d_queue_shadow_phase_items(
+      meshes,
+      render3d_shadow_visible_extracted_indices(
+        meshes,
+        camera.layers,
+        render3d_host_preprocess_view_frustum_planes_from_clip_from_world(
+          cascade.clip_from_world,
+        ),
+        mesh_preprocess_static_cache,
+      ),
+    )
     let shadow_view = Render3dShadowView::{
       target_id,
       target_layer: cascade_index,

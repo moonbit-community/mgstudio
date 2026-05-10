@@ -110,13 +110,11 @@ fn render3d_execute_camera(
   scene_target_id = scene_target_id_next
   velocity_target_id = velocity_target_id_next
   let point_shadow_binding = render3d_execute_camera_point_shadow_pass(
-    world, pass_lighting, point_light_shadow_map_size, camera_entity, draw_queue_entry,
-    meshes, opaque_alpha_draw_item_indices, indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices,
+    world, camera, pass_lighting, point_light_shadow_map_size, camera_entity, meshes,
     point_shadow_pass_kind,
   )
   let directional_shadow_binding = render3d_execute_camera_directional_shadow_pass(
-    world, camera_entity, camera, pass_lighting, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
-    indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices, point_shadow_pass_kind,
+    world, camera_entity, camera, pass_lighting, meshes, point_shadow_pass_kind,
   )
   shadow_bindings = Render3dViewShadowBindings::{
     point: point_shadow_binding,

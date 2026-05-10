@@ -95,6 +95,7 @@ pub fn GpuBackend::draw_mesh3d(
   point_shadow_texture_id : Int,
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
+  mesh_flags : UInt,
   environment_diffuse_texture_id : Int,
   environment_specular_texture_id : Int,
   environment_map_intensity : Float,
@@ -173,7 +174,7 @@ pub fn GpuBackend::draw_mesh3d(
       max_relief_mapping_search_steps, anisotropy_strength, anisotropy_rotation,
       specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
       thickness, ior, alpha_cutoff, material_flags, lightmap_exposure, deferred_lighting_pass_id,
-      cull_mode, skinning_key_hi, skinning_key_lo,
+      mesh_flags, cull_mode, skinning_key_hi, skinning_key_lo,
     )
     return
   }
@@ -191,7 +192,7 @@ pub fn GpuBackend::draw_mesh3d(
     thickness, ior, attenuation_color_r, attenuation_color_g, attenuation_color_b,
     attenuation_distance, clearcoat, clearcoat_perceptual_roughness, alpha_cutoff,
     material_flags, lightmap_exposure, deferred_lighting_pass_id, point_shadow_enabled,
-    point_shadow_depth_bias, cull_mode, vertex_shader_path, fragment_shader_path,
+    point_shadow_depth_bias, mesh_flags, cull_mode, vertex_shader_path, fragment_shader_path,
     skinning_key_hi, skinning_key_lo, transparent,
   )
 }

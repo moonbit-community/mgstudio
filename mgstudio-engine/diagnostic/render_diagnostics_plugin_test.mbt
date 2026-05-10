@@ -118,6 +118,7 @@ test "diagnostics: render diagnostics plugin records native gpu frame counters" 
     point_shadow_texture_id=0,
     point_shadow_enabled=0.0F,
     point_shadow_depth_bias=0.0F,
+    mesh_flags=0xA000_FFFFU,
     cull_mode=1,
   )
   @render.render_diagnostics_commit_current_frame_snapshot()

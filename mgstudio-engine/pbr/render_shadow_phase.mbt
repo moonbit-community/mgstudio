@@ -199,13 +199,16 @@ fn render3d_mesh_can_cast_shadow(mesh : Mesh3dExtractedPayload) -> Bool {
 
 ///|
 fn render3d_queue_shadow_phase_items(
-  draw_items : Array[MeshPhaseItem3d],
   meshes : Array[ExtractedMesh3d],
+  visible_extracted_indices : Array[Int],
 ) -> Array[ShadowPhaseItem3d] {
   let shadow_items : Array[ShadowPhaseItem3d] = []
-  for draw_item_index in 0..<draw_items.length() {
-    let draw_item = draw_items[draw_item_index]
-    let extracted_mesh = meshes[draw_item.extracted_index]
+  let mut draw_item_index = 0
+  for extracted_index in visible_extracted_indices {
+    if extracted_index < 0 || extracted_index >= meshes.length() {
+      continue
+    }
+    let extracted_mesh = meshes[extracted_index]
     if !render3d_mesh_can_cast_shadow(extracted_mesh.payload) {
       continue
     }
@@ -214,12 +217,46 @@ fn render3d_queue_shadow_phase_items(
       batch_set_key,
       bin_key: { mesh_id: extracted_mesh.payload.mesh_id },
       entity: extracted_mesh.entity,
-      extracted_index: draw_item.extracted_index,
+      extracted_index,
       draw_item_index,
     })
+    draw_item_index += 1
   }
   shadow_items.sort_by(render3d_shadow_phase_item_cmp)
   shadow_items
+}
+
+///|
+fn render3d_shadow_visible_extracted_indices(
+  meshes : Array[ExtractedMesh3d],
+  camera_layers : @sprite.RenderLayers,
+  shadow_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
+  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+) -> Array[Int] {
+  let visible : Array[Int] = []
+  for extracted_index in 0..<meshes.length() {
+    let mesh = meshes[extracted_index].payload
+    if mesh.mesh_id <= 0 {
+      continue
+    }
+    if !camera_layers.matches(mesh.layers) {
+      continue
+    }
+    if !render3d_should_apply_cpu_frustum_culling_flags(
+        mesh.has_no_frustum_culling,
+        false,
+        mesh.has_no_cpu_culling,
+      ) {
+      visible.push(extracted_index)
+      continue
+    }
+    if render3d_mesh_frustum_visible(
+        mesh, shadow_frustum_planes, mesh_preprocess_static_cache,
+      ) {
+      visible.push(extracted_index)
+    }
+  }
+  visible
 }
 
 ///|
@@ -287,6 +324,7 @@ fn render3d_execute_shadow_phase_view(
         @sprite.Color::white(),
         0.0F,
         0.0F,
+        render3d_mesh_flags(extracted_shadow_mesh),
         0,
         skinning_key_hi=shadow_mesh.skinning_key_hi,
         skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
