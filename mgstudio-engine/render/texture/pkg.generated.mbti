@@ -48,6 +48,8 @@ pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, neares
 
 pub fn manual_texture_view_handle(texture_id~ : Int, mip_level~ : Int) -> Int
 
+pub fn register_asset_texture_backend() -> Unit
+
 // Errors
 
 // Types and methods

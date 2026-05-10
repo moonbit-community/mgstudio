@@ -371,7 +371,33 @@ pub fn asset_set_texture_sampler(
   texture : Handle[Image],
   sampler : ImageSampler,
 ) -> Unit {
-  @image.set_texture_sampler(texture, sampler)
+  let (
+    address_mode_u,
+    address_mode_v,
+    address_mode_w,
+    mag_filter,
+    min_filter,
+    mipmap_filter,
+    lod_min_clamp,
+    lod_max_clamp,
+    compare,
+    anisotropy_clamp,
+    border_color,
+  ) = @image.image_sampler_runtime_args(sampler, false)
+  host_asset_set_texture_sampler(
+    texture_id=texture.id(),
+    address_mode_u~,
+    address_mode_v~,
+    address_mode_w~,
+    mag_filter~,
+    min_filter~,
+    mipmap_filter~,
+    lod_min_clamp~,
+    lod_max_clamp~,
+    compare~,
+    anisotropy_clamp~,
+    border_color~,
+  )
 }
 
 ///|

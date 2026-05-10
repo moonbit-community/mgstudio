@@ -52,15 +52,13 @@ pub fn image_loader_supported_formats() -> Array[ImageContainerFormat]
 
 pub fn image_sampler_is_nearest(ImageSampler) -> Bool
 
+pub fn image_sampler_runtime_args(ImageSampler, Bool) -> (Int, Int, Int, Int, Int, Int, Float, Float, Int, Int, Int)
+
 pub fn image_to_target_texture(Image) -> Image
 
 pub fn image_with_srgb_view(Image) -> Image
 
 pub fn ktx2_default_texture_format() -> TextureFormat
-
-pub fn[T : TextureHandle] set_texture_sampler(T, ImageSampler, default_nearest? : Bool) -> Unit
-
-pub fn set_texture_sampler_with_id(Int, ImageSampler, default_nearest? : Bool) -> Unit
 
 pub fn texture_format_raw(TextureFormat) -> Int
 
@@ -286,7 +284,4 @@ pub fn TextureFormat::default() -> Self
 // Type aliases
 
 // Traits
-pub(open) trait TextureHandle {
-  texture_id(Self) -> Int
-}
 

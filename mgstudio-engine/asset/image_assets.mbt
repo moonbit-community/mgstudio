@@ -80,7 +80,7 @@ fn image_asset_create_gpu_texture(image : Image, nearest : Bool) -> Int {
   if image.is_target_texture() {
     return 0
   }
-  let id = @render_texture.asset_create_texture_stacked_2d_with_format(
+  let id = asset_texture_backend_create_texture_stacked_2d_with_format(
     width=image.width,
     height_per_slice=image.height,
     slice_count=1,

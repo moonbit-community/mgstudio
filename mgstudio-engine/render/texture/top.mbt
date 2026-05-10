@@ -250,3 +250,178 @@ pub fn asset_set_texture_sampler(
     border_color~,
   )
 }
+
+///|
+pub fn register_asset_texture_backend() -> Unit {
+  @asset.register_asset_texture_backend(
+    @asset.AssetTextureBackend::new(
+      create_render_target_with_formats_fn=fn(
+        width,
+        height,
+        nearest,
+        format_raw,
+        sample_format_raw,
+      ) {
+        asset_create_render_target_with_formats(
+          width~,
+          height~,
+          nearest~,
+          format_raw~,
+          sample_format_raw~,
+        )
+      },
+      create_texture_empty_fn=fn(width, height, mip_level_count, nearest) {
+        asset_create_texture_empty(width~, height~, mip_level_count~, nearest~)
+      },
+      create_texture_3d_with_format_fn=fn(
+        width,
+        height,
+        depth,
+        format_raw,
+        pixels,
+      ) {
+        asset_create_texture_3d_with_format(
+          width~,
+          height~,
+          depth~,
+          format_raw~,
+          pixels~,
+        )
+      },
+      create_texture_stacked_2d_with_format_fn=fn(
+        width,
+        height_per_slice,
+        slice_count,
+        format_raw,
+        levels,
+        nearest,
+      ) {
+        asset_create_texture_stacked_2d_with_format(
+          width~,
+          height_per_slice~,
+          slice_count~,
+          format_raw~,
+          levels~,
+          nearest~,
+        )
+      },
+      create_texture_cube_with_format_fn=fn(
+        width,
+        height,
+        format_raw,
+        levels,
+        nearest,
+      ) {
+        asset_create_texture_cube_with_format(
+          width~,
+          height~,
+          format_raw~,
+          levels~,
+          nearest~,
+        )
+      },
+      write_texture_region_rgba8_fn=fn(
+        texture_id,
+        x,
+        y,
+        width,
+        height,
+        pixels_rgba8,
+      ) {
+        asset_write_texture_region_rgba8(
+          texture_id~,
+          x~,
+          y~,
+          width~,
+          height~,
+          pixels_rgba8~,
+        )
+      },
+      write_texture_region_rgba8_mip_fn=fn(
+        texture_id,
+        x,
+        y,
+        width,
+        height,
+        mip_level,
+        pixels_rgba8,
+      ) {
+        asset_write_texture_region_rgba8_mip(
+          texture_id~,
+          x~,
+          y~,
+          width~,
+          height~,
+          mip_level~,
+          pixels_rgba8~,
+        )
+      },
+      create_texture_mip_view_fn=fn(texture_id, mip_level) {
+        asset_create_texture_mip_view(texture_id~, mip_level~)
+      },
+      texture_width_fn=fn(texture_id) { asset_texture_width(texture_id~) },
+      texture_height_fn=fn(texture_id) { asset_texture_height(texture_id~) },
+      is_texture_loaded_fn=fn(texture_id) {
+        asset_is_texture_loaded(texture_id~)
+      },
+      supported_compressed_image_formats_fn=fn() {
+        asset_supported_compressed_image_formats()
+      },
+      copy_texture_to_texture_fn=fn(
+        dst_texture_id,
+        dst_x,
+        dst_y,
+        src_texture_id,
+      ) {
+        asset_copy_texture_to_texture(
+          dst_texture_id~,
+          dst_x~,
+          dst_y~,
+          src_texture_id~,
+        )
+      },
+      set_texture_sampler_fn=fn(
+        texture_id,
+        address_mode_u,
+        address_mode_v,
+        address_mode_w,
+        mag_filter,
+        min_filter,
+        mipmap_filter,
+        lod_min_clamp,
+        lod_max_clamp,
+        compare,
+        anisotropy_clamp,
+        border_color,
+      ) {
+        asset_set_texture_sampler(
+          texture_id~,
+          address_mode_u~,
+          address_mode_v~,
+          address_mode_w~,
+          mag_filter~,
+          min_filter~,
+          mipmap_filter~,
+          lod_min_clamp~,
+          lod_max_clamp~,
+          compare~,
+          anisotropy_clamp~,
+          border_color~,
+        )
+      },
+      capture_texture_rgba8_fn=fn(texture_id) {
+        match @renderer.screenshot_capture_texture_sync(texture_id~) {
+          Some(capture) =>
+            Some(
+              @asset.AssetTextureCapture::new(
+                width=capture.width,
+                height=capture.height,
+                pixels=capture.pixels,
+              ),
+            )
+          None => None
+        }
+      },
+    ),
+  )
+}

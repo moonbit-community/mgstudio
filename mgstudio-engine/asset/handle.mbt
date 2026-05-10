@@ -49,8 +49,3 @@ pub fn[T] Handle::asset_id(self : Handle[T]) -> AssetId[T] {
 pub fn[T] Handle::from_asset_id(asset_id : AssetId[T]) -> Handle[T] {
   Handle::new(asset_id.index())
 }
-
-///|
-pub impl @image.TextureHandle for Handle[Image] with texture_id(self) {
-  self.id()
-}

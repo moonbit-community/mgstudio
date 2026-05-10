@@ -74,6 +74,7 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     next = next.insert_sub_app(@app.RenderApp, render_sub_app)
   }
   next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
+  @render_texture.register_asset_texture_backend()
   if next.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
     init_renderer_context_resources(render_sub_app_ref.val.world())
     init_render_state(render_sub_app_ref.val.world())

@@ -93,14 +93,10 @@ pub fn Image::is_target_texture(self : Image) -> Bool {
 ///|
 pub fn texture_format_raw(format : TextureFormat) -> Int {
   match format {
-    TextureFormat::Rgba8Unorm =>
-      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM.reinterpret_as_int()
-    TextureFormat::Rgba8UnormSrgb =>
-      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB.reinterpret_as_int()
-    TextureFormat::Rgba16Float =>
-      @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT.reinterpret_as_int()
-    TextureFormat::Rg16Float =>
-      @wgpu.TEXTURE_FORMAT_RG16_FLOAT.reinterpret_as_int()
+    TextureFormat::Rgba8Unorm => 0x12
+    TextureFormat::Rgba8UnormSrgb => 0x13
+    TextureFormat::Rgba16Float => 0x22
+    TextureFormat::Rg16Float => 0x11
   }
 }
 
@@ -389,7 +385,7 @@ fn image_sampler_descriptor_runtime_args(
 }
 
 ///|
-fn image_sampler_runtime_args(
+pub fn image_sampler_runtime_args(
   sampler : ImageSampler,
   default_nearest : Bool,
 ) -> (Int, Int, Int, Int, Int, Int, Float, Float, Int, Int, Int) {
@@ -412,53 +408,4 @@ pub fn image_sampler_is_nearest(sampler : ImageSampler) -> Bool {
       descriptor.mag_filter == ImageFilterMode::Nearest &&
       descriptor.min_filter == ImageFilterMode::Nearest
   }
-}
-
-///|
-pub(open) trait TextureHandle {
-  texture_id(self : Self) -> Int
-}
-
-///|
-pub fn set_texture_sampler_with_id(
-  texture_id : Int,
-  sampler : ImageSampler,
-  default_nearest? : Bool = false,
-) -> Unit {
-  let (
-    address_mode_u,
-    address_mode_v,
-    address_mode_w,
-    mag_filter,
-    min_filter,
-    mipmap_filter,
-    lod_min_clamp,
-    lod_max_clamp,
-    compare,
-    anisotropy_clamp,
-    border_color,
-  ) = image_sampler_runtime_args(sampler, default_nearest)
-  @render.asset_set_texture_sampler(
-    texture_id~,
-    address_mode_u~,
-    address_mode_v~,
-    address_mode_w~,
-    mag_filter~,
-    min_filter~,
-    mipmap_filter~,
-    lod_min_clamp~,
-    lod_max_clamp~,
-    compare~,
-    anisotropy_clamp~,
-    border_color~,
-  )
-}
-
-///|
-pub fn[T : TextureHandle] set_texture_sampler(
-  texture : T,
-  sampler : ImageSampler,
-  default_nearest? : Bool = false,
-) -> Unit {
-  set_texture_sampler_with_id(texture.texture_id(), sampler, default_nearest~)
 }

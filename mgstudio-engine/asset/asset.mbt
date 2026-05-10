@@ -1021,7 +1021,7 @@ pub fn host_asset_set_texture_sampler(
   anisotropy_clamp~ : Int,
   border_color~ : Int,
 ) -> Unit {
-  @render_texture.asset_set_texture_sampler(
+  asset_texture_backend_set_texture_sampler(
     texture_id~,
     address_mode_u~,
     address_mode_v~,
