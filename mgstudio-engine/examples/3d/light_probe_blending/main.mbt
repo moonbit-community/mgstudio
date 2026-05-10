@@ -334,11 +334,8 @@ fn spawn_probe_gizmo_box(
 ) -> @core.Entity {
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(side, side, side)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(side, side, side)),
     ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.0F, center_z),
@@ -499,13 +496,8 @@ fn spawn_scene(world : @ecs.World) -> Unit {
 
   let prism = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(
-            @math.Cuboid::new(4.0F, 2.0F, 20.0F),
-          ),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 2.0F, 20.0F)),
     ),
     @pbr.MeshMaterial3d::new(reflective_material),
     @transform.Transform::from_xyz(0.0F, -4.0F, -5.5F),

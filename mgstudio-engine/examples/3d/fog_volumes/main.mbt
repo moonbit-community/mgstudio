@@ -198,13 +198,8 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
   // Two elongated cubes approximate bunny ears for a fog-volume silhouette.
   let ear_left = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(
-            @math.Cuboid::new(0.16F, 0.8F, 0.16F),
-          ),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(0.16F, 0.8F, 0.16F)),
     ),
     @pbr.MeshMaterial3d::new(fog_material),
     @transform.Transform::from_xyz(
@@ -221,13 +216,8 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
 
   let ear_right = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(
-            @math.Cuboid::new(0.16F, 0.8F, 0.16F),
-          ),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(0.16F, 0.8F, 0.16F)),
     ),
     @pbr.MeshMaterial3d::new(fog_material),
     @transform.Transform::from_xyz(

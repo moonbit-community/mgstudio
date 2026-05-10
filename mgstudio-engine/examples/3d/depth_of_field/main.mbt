@@ -190,10 +190,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(50.0F, 50.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(50.0F, 50.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(floor_material),
@@ -220,13 +221,8 @@ fn setup(world : @ecs.World) -> Unit {
     )
     @pbr.MeshMaterial3dBundle::new(
       @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.cuboid_mesh(
-              @math.Cuboid::new(0.9F, 0.9F, 0.9F),
-            ),
-          ),
-        ),
+        @pbr.mesh_assets_mut_or_abort().val
+        |> @pbr.add_mesh(@math.Cuboid::new(0.9F, 0.9F, 0.9F)),
       ),
       @pbr.MeshMaterial3d::new(material),
       @transform.Transform::from_xyz(x, 0.0F, z),
