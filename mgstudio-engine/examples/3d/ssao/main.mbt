@@ -232,11 +232,8 @@ fn setup(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
     ),
     @pbr.MeshMaterial3d::new(base_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
@@ -245,11 +242,8 @@ fn setup(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
     ),
     @pbr.MeshMaterial3d::new(base_material),
     @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
@@ -258,11 +252,8 @@ fn setup(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
     ),
     @pbr.MeshMaterial3d::new(base_material),
     @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
@@ -271,10 +262,13 @@ fn setup(
 
   let sphere = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.uv_sphere_mesh(0.4F, 72, 36),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+          @math.Sphere::new(0.4F),
+        )
+        .kind(@mesh_primitives_dim3.SphereKind::uv(72, 36))
+        .build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(

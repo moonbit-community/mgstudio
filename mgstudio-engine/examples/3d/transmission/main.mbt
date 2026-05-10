@@ -14,7 +14,7 @@
 
 ///|
 ///
-/// Baseline parity: control flow and material field updates follow Bevy's
+/// Baseline parity: control flow and material field updates follow the upstream
 /// transmission example. Runtime resolve quality is tracked separately in the
 /// parity matrix.
 
@@ -464,18 +464,16 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.7F, 0.7F, 0.7F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(0.7F, 0.7F, 0.7F)),
   )
   let sphere_mesh = uv_sphere_mesh(0.9F, 24, 40)
   let plane_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.plane3d_mesh_from_size(2.0F, 2.0F, 0),
-      ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(2.0F, 2.0F),
+      ).build(),
     ),
   )
   let candle_mesh = cylinder_mesh(0.5F, 2.0F, 50)

@@ -14,7 +14,7 @@
 
 ///|
 ///
-/// Baseline parity: Bevy's experimental meshlet pipeline (`MeshletPlugin`,
+/// Baseline parity: the upstream experimental meshlet pipeline (`MeshletPlugin`,
 /// `MeshletMesh3d`, `MeshletDebugMaterial`, meshlet-processed asset format) is
 /// not exposed in current mgstudio render APIs. This port preserves the scene
 /// topology (camera/light/5+5 model rows + floor) and maps meshlet rows to a
@@ -214,10 +214,11 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(5.0F, 5.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(5.0F, 5.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(
