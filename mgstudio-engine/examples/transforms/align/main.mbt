@@ -84,12 +84,11 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let plane_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
-      ),
+  let plane_mesh = meshes.peek()
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(100.0F, 100.0F),
+      ).build(),
     )
   let ship_mesh = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(0.8F, 0.4F, 2.0F))

@@ -257,13 +257,7 @@ fn spawn_environment(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let sphere_mesh = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.icosphere_mesh(0.3F, 5),
-      ),
-    )
+  let sphere_mesh = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(0.3F))
   let sphere_material = materials
     .peek()
     .add(

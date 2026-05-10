@@ -141,10 +141,11 @@ fn setup(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(12.0F, 12.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(12.0F, 12.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(
@@ -167,11 +168,8 @@ fn setup(
     )
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(2.9F, 2.9F, 2.9F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(2.9F, 2.9F, 2.9F)),
     ),
     @pbr.MeshMaterial3d::new(shape_material),
     @transform.Transform::identity(),
@@ -206,10 +204,13 @@ fn setup(
 
   world.insert_resource(PointMesh::resource(), PointMesh::{
     mesh: @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.icosphere_mesh(0.03F, 3),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+          @math.Sphere::new(0.03F),
+        )
+        .kind(@mesh_primitives_dim3.SphereKind::ico(3))
+        .build(),
       ),
     ),
   })

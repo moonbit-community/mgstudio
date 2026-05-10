@@ -288,13 +288,8 @@ fn spawn_listener_ear(
   let ear = spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(
-            @math.Cuboid::new(EAR_SIZE, EAR_SIZE, EAR_SIZE),
-          ),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(EAR_SIZE, EAR_SIZE, EAR_SIZE)),
     ),
     color,
     @transform.Transform::from_xyz(offset.x, offset.y, offset.z),

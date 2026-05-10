@@ -58,7 +58,9 @@ fn setup(
 
   let plane_mesh = mesh_assets
     |> @pbr.add_mesh(
-      @mesh_primitives_dim3.plane3d_mesh_from_size(16.0F, 16.0F, 0),
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(16.0F, 16.0F),
+      ).build(),
     )
   let pyramid_mesh = mesh_assets |> @pbr.add_mesh(custom_pyramid_mesh())
 
