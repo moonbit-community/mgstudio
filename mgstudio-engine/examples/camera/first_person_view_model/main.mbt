@@ -140,11 +140,8 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
 
   let arm = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.1F, 0.1F, 0.5F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(0.1F, 0.1F, 0.5F)),
     ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
@@ -181,10 +178,11 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
   )
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(10.0F, 10.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(10.0F, 10.0F),
+        ).build(),
       ),
     ),
     floor_material,
@@ -199,11 +197,8 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
   )
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(2.0F, 0.5F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 0.5F, 1.0F)),
     ),
     cube_material,
     @transform.Transform::from_xyz(0.0F, 0.25F, -3.0F),
@@ -212,11 +207,8 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(2.0F, 0.5F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 0.5F, 1.0F)),
     ),
     cube_material,
     @transform.Transform::from_xyz(0.75F, 1.75F, 0.0F),

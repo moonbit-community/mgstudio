@@ -81,12 +81,11 @@ fn setup(
       (
         @ecs.Name::new("Plane"),
         @mesh.Mesh3d::new(
-          meshes
-          .peek()
-          .add(
-            @mesh.Mesh::from_3d_geometry(
-              @mesh_primitives_dim3.plane3d_mesh_from_size(5.0F, 5.0F, 0),
-            ),
+          meshes.peek()
+          |> @pbr.add_mesh(
+            @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+              @math.Vec2::new(5.0F, 5.0F),
+            ).build(),
           ),
         ),
         @pbr.MeshMaterial3d::new(

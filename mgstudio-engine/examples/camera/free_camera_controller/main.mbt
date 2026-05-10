@@ -334,34 +334,15 @@ fn spawn_world(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
-  let cube = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
+  let cube = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+  let floor = meshes.peek()
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(10.0F, 10.0F),
+      ).build(),
     )
-  let floor = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.plane3d_mesh_from_size(10.0F, 10.0F, 0),
-      ),
-    )
-  let sphere = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.icosphere_mesh(0.5F, 5),
-      ),
-    )
-  let wall = meshes
-    .peek()
-    .add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.2F, 4.0F, 3.0F)),
-      ),
-    )
+  let sphere = meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(0.5F))
+  let wall = meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(0.2F, 4.0F, 3.0F))
 
   let blue_material = materials
     .peek()
