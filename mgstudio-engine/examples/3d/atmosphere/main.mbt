@@ -267,11 +267,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let probe_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.icosphere_mesh(1.0F, 5),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Sphere::new(1.0F)),
   )
   let probe_metal = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::white())
@@ -341,10 +338,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
   spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(100.0F, 100.0F),
+        ).build(),
       ),
     ),
     water_material,

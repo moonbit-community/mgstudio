@@ -15,7 +15,7 @@
 ///|
 ///
 /// Baseline parity:
-/// - Bevy's voxel irradiance transfer and shader-based voxel visualization are
+/// - Upstream voxel irradiance transfer and shader-based voxel visualization are
 ///   represented as runtime proxies in current mgstudio backend.
 /// - Fox animation playback and gizmo line rendering are not exposed yet.
 /// - Control model and scene interaction flow are aligned (`Space/Enter/Tab`,
@@ -418,11 +418,8 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
     .with_unlit(true),
   )
   let mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
   )
   for z in 0..<VOXEL_COUNT_Z {
     for y in 0..<VOXEL_COUNT_Y {

@@ -16,7 +16,7 @@
 ///
 /// Parity notes:
 /// - Uses `@picking_mesh_ray_cast.MeshRayCastSettings` +
-///   `@picking_mesh_ray_cast.mesh_ray_cast_first` for Bevy-like ray hit queries.
+///   `@picking_mesh_ray_cast.mesh_ray_cast_first` for upstream-like ray hit queries.
 /// - 3D `Gizmos` still use mesh-primitive fallback visualization in this
 ///   runtime (line segments + hit markers).
 
@@ -263,10 +263,11 @@ fn setup(world : @ecs.World) -> Unit {
   raycast_state.val.origin_marker = None
 
   let plane_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.plane3d_mesh_from_size(1.0F, 1.0F, 0),
-      ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+        @math.Vec2::new(1.0F, 1.0F),
+      ).build(),
     ),
   )
   let plane_material = @pbr.standard_material_add(
@@ -275,7 +276,7 @@ fn setup(world : @ecs.World) -> Unit {
     ).with_alpha_mode(@pbr.AlphaMode3d::Blend),
   )
 
-  // Inward-facing box planes (same topology as Bevy example).
+  // Inward-facing box planes with upstream sample topology.
   raycast_state.val.collider_entities.push(
     spawn_box_plane(
       world,
@@ -353,18 +354,12 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let line_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
   )
   let marker_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
   )
 
   raycast_state.val.red_pool = Some(

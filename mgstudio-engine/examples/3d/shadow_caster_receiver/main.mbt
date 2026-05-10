@@ -246,10 +246,11 @@ fn setup(world : @ecs.World) -> Unit {
 
   let floating_plane = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(20.0F, 20.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(20.0F, 20.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(lime_material),
@@ -268,10 +269,11 @@ fn setup(world : @ecs.World) -> Unit {
 
   let ground_plane = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(20.0F, 20.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(20.0F, 20.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(white_material),

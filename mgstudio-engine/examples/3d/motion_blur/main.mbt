@@ -14,9 +14,9 @@
 
 ///|
 ///
-/// Parity target: keep Bevy camera controls (`shutter_angle`, `samples`,
+/// Parity target: keep upstream camera controls (`shutter_angle`, `samples`,
 /// camera-mode switching) and enforce the same MSAA-off compatibility path used
-/// by Bevy for web constraints.
+/// by upstream for web constraints.
 
 ///|
 const TWO_PI : Float = 6.283185307179586F
@@ -139,7 +139,7 @@ fn transform_forward(transform : @transform.Transform) -> @math.Vec3 {
 
 ///|
 fn help_text_content() -> String {
-  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\nSamples: \{motion_blur_state.val.samples}\nCamera mode: \{camera_mode_text(motion_blur_state.val.camera_mode)}\nMSAA: Off (Bevy web compatibility path)\n1/2: -/+ shutter angle (blur amount)\n3/4: -/+ sample count (blur quality)\nSpacebar: cycle camera\n"
+  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\nSamples: \{motion_blur_state.val.samples}\nCamera mode: \{camera_mode_text(motion_blur_state.val.camera_mode)}\nMSAA: Off (upstream web compatibility path)\n1/2: -/+ shutter angle (blur amount)\n3/4: -/+ sample count (blur quality)\nSpacebar: cycle camera\n"
 }
 
 ///|
@@ -373,11 +373,8 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
 
   let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
   )
   let sky_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -404,10 +401,11 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(1.0F, 1.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(1.0F, 1.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(ground_material),
@@ -440,18 +438,12 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
 
   let car_body_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.3F, 0.15F, 0.55F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(0.3F, 0.15F, 0.55F)),
   )
   let wheel_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
   )
   for i in 0..<N_CARS {
     let material = car_materials[i % car_materials.length()]
@@ -474,11 +466,8 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   spawn_barriers(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
     ),
     barrier_material,
   )
@@ -494,11 +483,8 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
   )
   let tree_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
   )
   spawn_trees(world, tree_mesh, tree_mesh, leaves_material, trunk_material)
 }

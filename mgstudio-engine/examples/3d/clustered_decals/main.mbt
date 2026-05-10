@@ -15,9 +15,9 @@
 ///|
 ///
 /// Baseline parity:
-/// - This example now attaches `ClusteredDecal` components directly with Bevy-
+/// - This example now attaches `ClusteredDecal` components directly with upstream-
 ///   aligned texture/tag data.
-/// - This port preserves Bevy's control model (selection + drag mode) and
+/// - This port preserves upstream control model (selection + drag mode) and
 ///   scene layout, mapping decals onto textured translucent proxy meshes.
 
 ///|
@@ -565,11 +565,8 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(3.0F, 3.0F, 3.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(3.0F, 3.0F, 3.0F)),
     ),
     @pbr.MeshMaterial3d::new(cube_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
@@ -622,11 +619,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let decal_a = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
     ),
     @pbr.MeshMaterial3d::new(decal_a_material),
     calculate_initial_decal_transform(
@@ -646,11 +640,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let decal_b = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
     ),
     @pbr.MeshMaterial3d::new(decal_b_material),
     calculate_initial_decal_transform(

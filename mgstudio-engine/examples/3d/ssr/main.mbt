@@ -14,8 +14,8 @@
 
 ///|
 ///
-/// Baseline parity: deferred SSR controls and Bevy scene interaction flow are
-/// mapped to mgstudio APIs. Bevy's custom deferred water material extension is
+/// Baseline parity: deferred SSR controls and upstream scene interaction flow are
+/// mapped to mgstudio APIs. Upstream custom deferred water material extension is
 /// still represented with closest available standard-material behavior.
 
 ///|
@@ -179,7 +179,7 @@ fn on_off_label(value : Bool) -> String {
 ///|
 fn ssr_ui_text() -> String {
   let state = ssr_state.val
-  "SSR Example (Bevy-aligned scene flow, adapted render path)\n\nSSR: 1=On 2=Off | Current: \{on_off_label(state.ssr_on)}\nModel: 3=Cube 4=FlightHelmet 5=Capsules | Current: \{model_name(state.displayed_model)}\nBase: 6=Water Q=Metallic E=RedPlane | Current: \{base_name(state.displayed_base)}\n\nCamera: W/S zoom, A/D orbit, Mouse Wheel zoom\n\nMin Roughness Start: J-/U+ = \{state.min_roughness_start}\nMin Roughness End:   K-/I+ = \{state.min_roughness_end}\nMax Roughness Start: N-/M+ = \{state.max_roughness_start}\nMax Roughness End: ,-/ .+ = \{state.max_roughness_end}\nEdge Fadeout Start: R-/T+ = \{state.edge_fadeout_start}\nEdge Fadeout End:   F-/G+ = \{state.edge_fadeout_end}\n"
+  "SSR Example (upstream-aligned scene flow, adapted render path)\n\nSSR: 1=On 2=Off | Current: \{on_off_label(state.ssr_on)}\nModel: 3=Cube 4=FlightHelmet 5=Capsules | Current: \{model_name(state.displayed_model)}\nBase: 6=Water Q=Metallic E=RedPlane | Current: \{base_name(state.displayed_base)}\n\nCamera: W/S zoom, A/D orbit, Mouse Wheel zoom\n\nMin Roughness Start: J-/U+ = \{state.min_roughness_start}\nMin Roughness End:   K-/I+ = \{state.min_roughness_end}\nMax Roughness Start: N-/M+ = \{state.max_roughness_start}\nMax Roughness End: ,-/ .+ = \{state.max_roughness_end}\nEdge Fadeout Start: R-/T+ = \{state.edge_fadeout_start}\nEdge Fadeout End:   F-/G+ = \{state.edge_fadeout_end}\n"
 }
 
 ///|
@@ -398,11 +398,8 @@ fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
     ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
@@ -482,10 +479,11 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let metallic = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(100.0F, 100.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(metallic_material),
@@ -508,10 +506,11 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let red = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(100.0F, 100.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(red_material),
@@ -547,10 +546,11 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let water = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(100.0F, 100.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(100.0F, 100.0F),
+        ).build(),
       ),
     ),
     @pbr.MeshMaterial3d::new(water_material),
