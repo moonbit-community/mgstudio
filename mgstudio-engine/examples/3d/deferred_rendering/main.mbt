@@ -284,10 +284,11 @@ fn setup(world : @ecs.World) -> Unit {
   let plane = spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.plane3d_mesh_from_size(50.0F, 50.0F, 0),
-        ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(
+        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+          @math.Vec2::new(50.0F, 50.0F),
+        ).build(),
       ),
     ),
     forward_material,
@@ -296,11 +297,8 @@ fn setup(world : @ecs.World) -> Unit {
   plane |> ignore
 
   let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(0.1F, 0.1F, 0.1F)),
-      ),
-    ),
+    @pbr.mesh_assets_mut_or_abort().val
+    |> @pbr.add_mesh(@math.Cuboid::new(0.1F, 0.1F, 0.1F)),
   )
   spawn_mesh(
     world,
@@ -324,13 +322,8 @@ fn setup(world : @ecs.World) -> Unit {
   let emissive_cube = spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(
-            @math.Cuboid::new(0.125F, 0.125F, 0.125F),
-          ),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(0.125F, 0.125F, 0.125F)),
     ),
     emissive_material,
     @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F),
@@ -374,13 +367,8 @@ fn setup(world : @ecs.World) -> Unit {
     let entity = spawn_mesh(
       world,
       @mesh.Mesh3d::new(
-        @pbr.mesh_assets_mut_or_abort().val.add(
-          @mesh.Mesh::from_3d_geometry(
-            @mesh_primitives_dim3.cuboid_mesh(
-              @math.Cuboid::new(0.125F, 0.125F, 0.125F),
-            ),
-          ),
-        ),
+        @pbr.mesh_assets_mut_or_abort().val
+        |> @pbr.add_mesh(@math.Cuboid::new(0.125F, 0.125F, 0.125F)),
       ),
       material,
       @transform.Transform::from_xyz(x, 0.125F, z),
@@ -403,11 +391,8 @@ fn setup(world : @ecs.World) -> Unit {
   let sky = spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(@math.Cuboid::new(2.0F, 1.0F, 1.0F)),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 1.0F, 1.0F)),
     ),
     sky_material,
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
@@ -449,13 +434,8 @@ fn setup(world : @ecs.World) -> Unit {
   let parallax_cube = spawn_mesh(
     world,
     @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh_primitives_dim3.cuboid_mesh(
-            @math.Cuboid::new(0.15F, 0.15F, 0.15F),
-          ),
-        ),
-      ),
+      @pbr.mesh_assets_mut_or_abort().val
+      |> @pbr.add_mesh(@math.Cuboid::new(0.15F, 0.15F, 0.15F)),
     ),
     parallax_material,
     @transform.Transform::from_xyz(0.4F, 0.2F, -0.8F),
