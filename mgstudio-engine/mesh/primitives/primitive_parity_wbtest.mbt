@@ -106,6 +106,34 @@ fn primitive_parity_perimeter_index_count(
 }
 
 ///|
+fn primitive_parity_assert_z_bounds(
+  name : String,
+  geometry : @mesh.Mesh3dGeometry,
+  expected_min : Float,
+  expected_max : Float,
+) -> Unit {
+  let mut min_z = 1000000.0F
+  let mut max_z = -1000000.0F
+  for index in 0..<geometry.vertex_count() {
+    match geometry.vertex_position(index) {
+      Some(position) => {
+        if position.z < min_z {
+          min_z = position.z
+        }
+        if position.z > max_z {
+          max_z = position.z
+        }
+      }
+      None => abort("\{name}: missing vertex position")
+    }
+  }
+  if (min_z - expected_min).abs() > 0.0001F ||
+    (max_z - expected_max).abs() > 0.0001F {
+    abort("\{name}: unexpected z bounds")
+  }
+}
+
+///|
 fn[P : ExtrudablePrimitive] primitive_parity_extrusion(
   shape : P,
   depth : Float,
@@ -322,6 +350,28 @@ test "extrusion primitives: builder matches generic extrusion path" {
     segmented.indices_or_sequential().length() >
     primitive_parity_extrusion(rectangle, 1.0F).indices_or_sequential().length(),
     content="true",
+  )
+}
+
+///|
+test "dim2 extrusion primitives: mantel vertices span translated front cap to back cap" {
+  primitive_parity_assert_z_bounds(
+    "extrusion_rectangle",
+    primitive_parity_extrusion(@math.Rectangle::default(), 1.0F),
+    -0.5F,
+    0.5F,
+  )
+  primitive_parity_assert_z_bounds(
+    "extrusion_ring",
+    primitive_parity_extrusion(
+      @math.Ring::new(
+        @math.Circle::new(0.5F).with_vertices(8),
+        @math.Circle::new(0.25F).with_vertices(8),
+      ),
+      1.0F,
+    ),
+    -0.5F,
+    0.5F,
   )
 }
 

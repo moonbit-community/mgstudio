@@ -120,11 +120,14 @@ fn extrusion_build(
   let normals : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
+  let front_cap_positions : Array[@math.Vec3] = []
 
   for i in 0..<base_count {
     let p = base_positions[i]
     let uv = base_uvs[i]
-    positions.push(@math.Vec3::new(p.x, p.y, half_depth))
+    let front_position = @math.Vec3::new(p.x, p.y, half_depth)
+    front_cap_positions.push(front_position)
+    positions.push(front_position)
     normals.push(base_normals[i])
     uvs.push(@math.Vec2::new(uv.x * 0.5F, uv.y * 0.5F))
   }
@@ -151,7 +154,8 @@ fn extrusion_build(
 
   if half_depth != 0.0F {
     extrusion_append_mantel(
-      positions, normals, uvs, indices, base_positions, perimeter, half_depth, segments,
+      positions, normals, uvs, indices, front_cap_positions, perimeter, half_depth,
+      segments,
     )
   }
 

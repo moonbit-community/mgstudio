@@ -1,5 +1,49 @@
 This file must not exceed 200 lines.
-| Bevy Side | mgstudio Side | Structure | Runtime | Overall | Status | Main Gaps |
+
+Strict reassessment date: 2026-05-10. The table below is the current authoritative score. Criteria are now source-level 1:1 parity: directory/API topology, runtime semantics, upstream test/example coverage, and visual/performance parity. Historical detailed rows below keep implementation notes, but their old high percentages are deprecated until rewritten package-by-package. Bands: 95%+ near source-level parity; 80-94% strong but incomplete; 60-79% substantial partial port; 40-59% partial; <40% major gap.
+
+| Scope | Structure | Runtime | Overall | Status | Strict Reassessment |
+|---|---:|---:|---:|---|---|
+| `app` | 75% | 70% | 70% | 🟡 In Progress | Plugin/schedule surface is useful, but full Bevy scheduler/build-pass/source topology parity is not proven. |
+| `ecs` | 72% | 72% | 72% | 🟡 In Progress | Core concepts exist, but storage/query/system internals remain MoonBit-specific and not source-equivalent. |
+| `transform` | 78% | 74% | 74% | 🟡 In Progress | Bevy-shaped propagation exists, but dirty-tree/performance/edge-case parity is not complete. |
+| `hierarchy` | 76% | 75% | 75% | 🟡 In Progress | Relationship semantics are close enough for main paths, but source/test parity remains incomplete. |
+| `render` | 55% | 45% | 45% | 🔴 Major Gap | Render graph/stage names align in places, but renderer ownership, pass layout, and visual parity still diverge substantially. |
+| `render/renderer` | 45% | 40% | 40% | 🔴 Major Gap | Too much local renderer architecture remains; cannot be considered mostly done under source-level criteria. |
+| `core_pipeline` | 55% | 50% | 50% | 🟠 Partial | Shader assets are closer, but postprocess/pass scheduling/runtime behavior are only partially aligned. |
+| `pbr` | 50% | 42% | 42% | 🔴 Major Gap | Many components exist, but lighting/shadows/material pass behavior and examples still show visible divergence. |
+| `pbr/render` | 50% | 42% | 42% | 🔴 Major Gap | Bind layouts and extracted data improved, but advanced pass specialization and visual output are not 1:1. |
+| `pbr/prepass` | 55% | 50% | 50% | 🟠 Partial | Surface exists, but validation is not broad enough for mostly-done status. |
+| `pbr/meshlet` | 35% | 25% | 25% | 🔴 Major Gap | Mostly scaffold/slot parity; real meshlet backend behavior is far from Bevy. |
+| `material` | 65% | 55% | 55% | 🟠 Partial | Data models are closer, but forward/deferred/decal integration is not source-equivalent. |
+| `camera` | 65% | 60% | 60% | 🟠 Partial | Camera components/plugins align in parts, but view/projection/render integration is incomplete. |
+| `sprite` + `sprite_render` | 60% | 55% | 55% | 🟠 Partial | Basic 2D render path exists; batching/extraction/render parity needs a dedicated audit. |
+| `ui` + `ui_render` + `ui_widgets` | 60% | 50% | 50% | 🟠 Partial | Data model is improving, but layout/render/interaction parity is blocked by incomplete deeper taffy/render integration. |
+| `feathers` | 45% | 40% | 40% | 🔴 Major Gap | Only a subset of controls/tokens is ported; source-level widget ecosystem parity is not close. |
+| `text` | 55% | 45% | 45% | 🔴 Major Gap | Font/layout surfaces exist, but text shaping/visual parity depends on incomplete upstream and local integration. |
+| `gltf` + scene import path | 55% | 45% | 45% | 🔴 Major Gap | Loader path works for selected cases, but full asset/animation/material scene parity is not established. |
+| `animation` | 60% | 50% | 50% | 🟠 Partial | Graph/runtime work exists, but example behavior and full Bevy test parity are not complete. |
+| `scene` static path | 65% | 55% | 55% | 🟠 Partial | Static scene spawning is useful, but dynamic/runtime corner cases and reload parity remain open. |
+| `gizmos` + `gizmos_render` | 55% | 45% | 45% | 🔴 Major Gap | API subset exists; real render asset/pipeline and builder coverage are incomplete. |
+| `picking` | 60% | 50% | 50% | 🟠 Partial | Main components exist, but pointer-state/event-generation/backend ordering still diverge. |
+| `input` | 75% | 70% | 70% | 🟡 In Progress | Event resources are close for common paths; platform/event-order long tail still needs upstream-test parity. |
+| `window` + `winit` | 65% | 55% | 55% | 🟠 Partial | Window lifecycle/cursor work progressed, but backend/platform parity is not broad enough for high score. |
+| `asset` | 55% | 45% | 45% | 🔴 Major Gap | Asset events and loader slices exist, but source/processor/reload/ready-checker parity remains shallow. |
+| `log` + `diagnostic` + `dev_tools` | 60% | 55% | 55% | 🟠 Partial | Useful diagnostics exist; generic deferred diagnostics/material UI paths are not Bevy-equivalent. |
+| `anti_alias` | 55% | 40% | 40% | 🔴 Major Gap | Shader assets and components are present, but SMAA/TAA/DLSS runtime pass parity is incomplete. |
+| `light` | 55% | 45% | 45% | 🔴 Major Gap | Component ownership moved closer, but clustering/shadow/probe behavior is still materially divergent. |
+| `mesh` | 70% | 60% | 60% | 🟠 Partial | Primitive/attribute surfaces improved, but GPU upload/layout and full attribute-map semantics remain incomplete. |
+| `image` | 65% | 55% | 55% | 🟠 Partial | Codec table is broader, but exact loader/settings/error behavior parity is not complete. |
+| `color` | 75% | 65% | 65% | 🟡 In Progress | Conversion math is comparatively close; remaining work is upstream vector/test coverage breadth. |
+| `math` | 80% | 75% | 75% | 🟡 In Progress | Core math and primitives are one of the stronger areas, but generic trait limits still create source-shape gaps. |
+| `a11y` | 55% | 45% | 45% | 🔴 Major Gap | Basic forwarding exists; full Bevy/accesskit behavior parity is not established. |
+| Rapier integration | 0% | 0% | 0% | ⏸ Out of Bevy Scope | Not present in pinned local `./bevy`; should not count as Bevy parity without a separate third-party reference. |
+| stress tests | 45% | 35% | 35% | 🔴 Major Gap | Tooling exists, but heavy examples are not source/behavior/performance equivalent. |
+| visual screenshot parity | 45% | 30% | 30% | 🔴 Major Gap | Captures exist, but broad screenshot equivalence is still poor. |
+| workspace native validation | 65% | 60% | 60% | 🟠 Partial | `moon check` is stable, but full native test/runtime parity is not yet a reliable gate. |
+
+### Historical Detailed Notes
+| Bevy Side | mgstudio Side | Legacy Structure | Legacy Runtime | Legacy Overall | Legacy Status | Historical Notes |
 |---|---|---:|---:|---:|---|---|
 | `bevy_app` | `mgstudio-engine/app` | 98% | 97% | 97% | 🟡 In Progress | Plugin API is unified to Bevy-style single `add_plugins` entry with typed plugin/group lifecycle semantics (`build/ready/finish/cleanup/name/is_unique`); `PluginGroupBuilder` now mirrors Bevy's add/readd, try-add, add-before/after, add-group, disabled-set, and missing/duplicate error semantics within MoonBit's explicit target-plugin call shape, nested plugin registration now uses Bevy's placeholder-registry ordering so parent finish/cleanup run before child, plugin build-depth guards prevent `run_startup/update/run` reentry while a plugin is building, post-`finish/cleanup` plugin insertion now follows Bevy's hard failure while `finish` callbacks can still append plugins, `is_plugin_added` is now available during finish/cleanup, `plugins_state()` now reports readiness without transitioning stored state like Bevy, finish/cleanup iterate over a fixed registry length so plugins appended during finish are not finished in the same pass, and `NoopPluginGroup` is now present as Bevy's no-op group surface. Remaining gaps are scheduling ergonomics tails. |
 | `bevy_ecs` (core surface) | `mgstudio-engine/ecs` | 99% | 99% | 99% | 🟡 In Progress | ECS now converges on Bevy-shaped runtime semantics end-to-end: static metadata + world-local component ids, deterministic builtin bootstrap registration (`ADD/INSERT/REPLACE/REMOVE/DESPAWN/IS_RESOURCE`), queued registration/flush stability, pre-use-only hook/required mutation gates, required-components reverse graph (`required_by`) with deterministic cycle checks, relationship parent accessors frozen in world-local registration state, observer parent-lookup cache tied to component/archetype/relationship generations, and lifecycle observers covering `Add/Insert/Replace/Remove/Despawn`. Storage now has Table/SparseSet split routing with world-local storage-type authority, table-row/swap-remove/move-to-superset helper semantics, archetype↔table topology with add/remove edge caching, bundle migration path classification (`SameArchetype/NewArchetypeSameTable/NewArchetypeNewTable`), and deterministic archetype membership updates across `spawn/set/remove/despawn`. Query now has multi-anchor candidate selection by membership cardinality, matched-entity/table/archetype cache tracking with dependency-signature invalidation, sequence-dependent filter invalidation, archetype-set prefiltering by component-set metadata, and app-side persistent query cache slots (no per-run JSON cache roundtrip). Remaining gap is deep storage backend internals still not byte-for-byte equivalent to Bevy's Rust memory/unsafe primitives implementation. |
@@ -44,10 +88,10 @@ This file must not exceed 200 lines.
 
 | Rollup | Value |
 |---|---:|
-| Bevy→mgstudio path parity (considered scope) | 100% (`1028/1028`, `missing=0`, 2026-04-13) |
-| Migration completion scoring rule | `Overall = min(Structure, Runtime)` |
-| Current weighted migration completion (included scope) | 95% |
-| Last updated | 2026-04-30 |
+| Bevy→mgstudio path inventory coverage (not completion) | 100% (`1028/1028`, `missing=0`, 2026-04-13) |
+| Migration completion scoring rule | strict source-level `Overall = min(Structure, Runtime)` |
+| Current strict weighted migration completion (included scope) | 52% |
+| Last updated | 2026-05-10 |
 
 ### WGSL naga_oil 过渡层清理 (2026-04-15)
 | 已删除过渡文件 | 对齐后的 Bevy 路径 |
