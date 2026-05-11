@@ -185,34 +185,52 @@ pub fn update_skinned_mesh_bounds_system(world : @ecs.World) -> Unit {
     Some(assets) => assets
     None => return
   }
+  let aabb_column = world.component_column(ecs_key_aabb)
+  let mesh3d_column = world.component_column(@mesh.ecs_key_mesh3d)
+  let skinned_mesh_column = world.component_column(@mesh.ecs_key_skinned_mesh)
+  let global_transform_column = world.component_column(
+    @transform.ecs_key_global_transform,
+  )
+  guard global_transform_column is Some(global_transforms) else { return }
   world.for_each_component(@mesh.ecs_key_dynamic_skinned_mesh_bounds, fn(
     entity,
     _,
   ) {
-    guard (try! world.get_by_key(entity, ecs_key_aabb)) is Some(_) else {
-      return
+    let has_aabb = match aabb_column {
+      Some(column) => column.contains(entity)
+      None => false
     }
-    guard (try! world.get_by_key(entity, @mesh.ecs_key_mesh3d)) is Some(mesh3d) else {
-      return
+    guard has_aabb else { return }
+    let mesh3d = match mesh3d_column {
+      Some(column) => column.get_fast(entity)
+      None => None
     }
-    guard (try! world.get_by_key(entity, @mesh.ecs_key_skinned_mesh))
-      is Some(skinned_mesh) else {
-      return
+    guard mesh3d is Some(mesh3d) else { return }
+    let skinned_mesh = match skinned_mesh_column {
+      Some(column) => column.get_fast(entity)
+      None => None
     }
+    guard skinned_mesh is Some(skinned_mesh) else { return }
     guard mesh_assets.get(mesh3d.mesh()) is Some(mesh_asset) else { return }
     guard inverse_bindposes_assets.get(skinned_mesh.inverse_bindposes())
       is Some(inverse_bindposes_asset) else {
       return
     }
-    let world_from_entity = try! world.get_by_key(
-      entity, @transform.ecs_key_global_transform,
-    )
+    let world_from_entity = global_transforms.get_fast(entity)
     match
       @mesh.entity_aabb_from_skinned_mesh_bounds(
-        world, mesh_asset, skinned_mesh, inverse_bindposes_asset, world_from_entity,
+        global_transforms, mesh_asset, skinned_mesh, inverse_bindposes_asset, world_from_entity,
       ) {
-      Ok(skinned_aabb) =>
-        visibility_write_aabb(world, entity, Aabb::from_math(skinned_aabb))
+      Ok(skinned_aabb) => {
+        let aabb = Aabb::from_math(skinned_aabb)
+        let wrote = match aabb_column {
+          Some(column) => column.set_sequence_only_hot(entity, aabb)
+          None => false
+        }
+        if !wrote {
+          visibility_write_aabb(world, entity, aabb)
+        }
+      }
       Err(_) => ()
     }
   })

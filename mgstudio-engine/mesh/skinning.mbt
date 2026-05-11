@@ -408,7 +408,7 @@ fn transform_joint_aabb(
 
 ///|
 pub fn entity_aabb_from_skinned_mesh_bounds(
-  world : @ecs.World,
+  joint_transforms : @ecs.ComponentColumn[@transform.GlobalTransform],
   mesh : Mesh,
   skinned_mesh : SkinnedMesh,
   skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
@@ -440,8 +440,7 @@ pub fn entity_aabb_from_skinned_mesh_bounds(
       )
     }
     let joint_entity = joints[joint_index_value]
-    let world_from_joint = match
-      (try! world.get_by_key(joint_entity, @transform.ecs_key_global_transform)) {
+    let world_from_joint = match joint_transforms.get_fast(joint_entity) {
       Some(global_transform) => global_transform
       None =>
         return Err(EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity)
