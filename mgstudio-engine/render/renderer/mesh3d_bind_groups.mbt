@@ -632,6 +632,7 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
   anisotropy_texture_id : Int,
   specular_tint_texture_id : Int,
 ) -> Unit raise GpuBackendError {
+  ensure_mesh3d_pipeline_layout_resources(self)
   let resolved_base_texture_id = if texture_id < 0 { -1 } else { texture_id }
   let resolved_normal_texture_id = if normal_texture_id < 0 {
     ensure_normal_map_fallback_texture(self).id
@@ -726,6 +727,7 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
   environment_diffuse_texture_id : Int,
   environment_specular_texture_id : Int,
 ) -> Unit raise GpuBackendError {
+  ensure_mesh3d_pipeline_layout_resources(self)
   let resolved_transmission_source_texture_id = if transmission_source_texture_id <
     0 {
     -1
