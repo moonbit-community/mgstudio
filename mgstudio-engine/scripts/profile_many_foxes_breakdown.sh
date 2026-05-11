@@ -22,7 +22,7 @@ OUT_DIR_DEFAULT="/tmp/mgstudio_many_foxes_profile_$(date +%Y%m%d_%H%M%S)"
 OUT_DIR="${1:-${MGSTUDIO_MANY_FOXES_PROFILE_OUT_DIR:-${OUT_DIR_DEFAULT}}}"
 RUN_SECONDS="${MGSTUDIO_MANY_FOXES_PROFILE_SECONDS:-35}"
 START_TIMEOUT_SECONDS="${MGSTUDIO_MANY_FOXES_START_TIMEOUT_SECONDS:-180}"
-TRACE_FLUSH_FRAMES="${MGSTUDIO_MANY_FOXES_TRACE_FLUSH_FRAMES:-120}"
+TRACE_FLUSH_FRAMES="${MGSTUDIO_MANY_FOXES_TRACE_FLUSH_FRAMES:-30}"
 TRACE_CATEGORIES="${MGSTUDIO_MANY_FOXES_TRACE_CATEGORIES:-stage,system,render_queue,render_pass}"
 STARTUP_FRAMES="${MGSTUDIO_MANY_FOXES_STARTUP_FRAMES:-10}"
 SPIKE_MS="${MGSTUDIO_MANY_FOXES_SPIKE_MS:-200}"
@@ -84,7 +84,39 @@ if [[ -z "${example_pid}" ]]; then
   exit 1
 fi
 
-echo "[many-foxes-profile] example pid: ${example_pid}; sampling for ${RUN_SECONDS}s"
+echo "[many-foxes-profile] example pid: ${example_pid}; waiting for frame trace"
+trace_deadline=$((SECONDS + START_TIMEOUT_SECONDS))
+while [[ "${SECONDS}" -lt "${trace_deadline}" ]]; do
+  if [[ -f "${TRACE}" ]] && python3 - "${TRACE}" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+try:
+    with open(path, "r", encoding="utf-8") as fp:
+        events = json.load(fp).get("traceEvents", [])
+except Exception:
+    raise SystemExit(1)
+names = [
+    event.get("name")
+    for event in events
+    if event.get("cat") == "schedule_stage"
+]
+for marker in ("Main", "First", "Update"):
+    if names.count(marker) >= 2:
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+  then
+    break
+  fi
+  if ! kill -0 "${runner_pid}" 2>/dev/null; then
+    break
+  fi
+  sleep 0.5
+done
+
+echo "[many-foxes-profile] sampling for ${RUN_SECONDS}s"
 sleep "${RUN_SECONDS}"
 while read -r pid; do
   if [[ -n "${pid}" ]]; then

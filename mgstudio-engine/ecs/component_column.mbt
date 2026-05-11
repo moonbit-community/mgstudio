@@ -159,12 +159,10 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::get(
       let table_id = self.world.entity_table_ids[entity_id]
       let row_index = self.world.entity_table_rows[entity_id]
       guard table_id >= 0 && row_index >= 0 else { return None }
-      guard self.table_values_ref(table_id) is Some(values) else { return None }
-      if row_index < 0 || row_index >= values.length() {
-        None
-      } else {
-        Some(values[row_index])
+      guard self.table_column_ref(table_id) is Some(column_ref) else {
+        return None
       }
+      column_ref.val.value_at_row(row_index)
     }
   }
 }
@@ -194,12 +192,10 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::get_fast(
       let table_id = self.world.entity_table_ids[entity_id]
       let row_index = self.world.entity_table_rows[entity_id]
       guard table_id >= 0 && row_index >= 0 else { return None }
-      guard self.table_values_ref(table_id) is Some(values) else { return None }
-      if row_index >= values.length() {
-        None
-      } else {
-        Some(values[row_index])
+      guard self.table_column_ref(table_id) is Some(column_ref) else {
+        return None
       }
+      column_ref.val.value_at_row(row_index)
     }
   }
 }
@@ -220,16 +216,13 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_row(
   row_index : Int,
 ) -> T? {
   guard self.storage_type == Table else { return None }
-  guard self.table_values_ref(table_id) is Some(values) else { return None }
-  if row_index < 0 || row_index >= values.length() {
-    None
-  } else {
-    Some(values[row_index])
-  }
+  guard row_index >= 0 else { return None }
+  guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
+  column_ref.val.value_at_row(row_index)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::table_row_location(
+pub fn[T] ComponentColumn::table_row_location(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> (Int, Int)? {
@@ -243,8 +236,10 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::table_row_location(
   let table_id = self.world.entity_table_ids[entity_id]
   let row_index = self.world.entity_table_rows[entity_id]
   guard table_id >= 0 && row_index >= 0 else { return None }
-  guard self.table_values_ref(table_id) is Some(values) else { return None }
-  guard row_index < values.length() else { return None }
+  guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
+  guard row_index < raw_table_value_column_kernel_len(column_ref.val.storage) else {
+    return None
+  }
   Some((table_id, row_index))
 }
 
@@ -264,12 +259,8 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_entity_row(
     return None
   }
   guard row_entity.to_bits() == entity.to_bits() else { return None }
-  guard self.table_values_ref(table_id) is Some(values) else { return None }
-  if row_index < 0 || row_index >= values.length() {
-    None
-  } else {
-    Some(values[row_index])
-  }
+  guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
+  column_ref.val.value_at_row(row_index)
 }
 
 ///|
@@ -280,15 +271,17 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_cached_entity_row(
   row_index : Int,
 ) -> T? {
   guard self.storage_type == Table else { return None }
-  self.table_value_in_cached_values_at_entity_row(
-    entity,
-    table_id,
-    row_index,
-    match self.table_values_ref(table_id) {
-      Some(values) => values
-      None => return None
-    },
-  )
+  let entity_id = entity.id
+  guard entity_id >= 0 &&
+    entity_id < self.world.entity_table_ids.length() &&
+    entity_id < self.world.entity_table_rows.length() else {
+    return None
+  }
+  guard self.world.entity_table_ids[entity_id] == table_id &&
+    self.world.entity_table_rows[entity_id] == row_index else {
+    return None
+  }
+  self.table_value_at_row(table_id, row_index)
 }
 
 ///|
@@ -440,18 +433,23 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::for_each(
         guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
           continue
         }
+        guard self.table_column_ref(table_id) is Some(column_ref) else {
+          continue
+        }
         let entity_snapshot = entities.copy()
-        guard self.table_values_ref(table_id) is Some(values) else { continue }
         for entity in entity_snapshot {
           let entity_id = entity.id
           if entity_id < 0 || entity_id >= self.world.entity_table_rows.length() {
             continue
           }
           let row_index = self.world.entity_table_rows[entity_id]
-          if row_index < 0 || row_index >= values.length() {
+          if row_index < 0 {
             continue
           }
-          visit(entity, values[row_index])
+          guard column_ref.val.value_at_row(row_index) is Some(value) else {
+            continue
+          }
+          visit(entity, value)
         }
       }
     }
@@ -499,14 +497,16 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without(
     }
     guard self.table_column_ref(table_id) is Some(column_ref) else { continue }
     let entity_snapshot = entities.copy()
-    guard column_ref.val.values_cached() is Some(values) else { continue }
     for entity in entity_snapshot {
       guard self.world.entity_table_row(entity) is Some(row) else { continue }
       let row_index = row.index()
-      if row_index < 0 || row_index >= values.length() {
+      if row_index < 0 {
         continue
       }
-      visit(entity, values[row_index])
+      guard column_ref.val.value_at_row(row_index) is Some(value) else {
+        continue
+      }
+      visit(entity, value)
     }
   }
 }
@@ -555,21 +555,19 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with(
       continue
     }
     let entity_snapshot = entities.copy()
-    guard left_column_ref.val.values_cached() is Some(left_values) else {
-      continue
-    }
-    guard right_column_ref.val.values_cached() is Some(right_values) else {
-      continue
-    }
     for entity in entity_snapshot {
       guard self.world.entity_table_row(entity) is Some(row) else { continue }
       let row_index = row.index()
-      if row_index < 0 ||
-        row_index >= left_values.length() ||
-        row_index >= right_values.length() {
+      if row_index < 0 {
         continue
       }
-      visit(entity, left_values[row_index], right_values[row_index])
+      guard left_column_ref.val.value_at_row(row_index) is Some(left_value) else {
+        continue
+      }
+      guard right_column_ref.val.value_at_row(row_index) is Some(right_value) else {
+        continue
+      }
+      visit(entity, left_value, right_value)
     }
   }
 }
@@ -606,17 +604,19 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
       continue
     }
     guard self.table_column_ref(table_id) is Some(column_ref) else { continue }
-    guard column_ref.val.values_cached() is Some(values) else { continue }
     for entity in entities {
       let entity_id = entity.id
       if entity_id < 0 || entity_id >= self.world.entity_table_rows.length() {
         continue
       }
       let row_index = self.world.entity_table_rows[entity_id]
-      if row_index < 0 || row_index >= values.length() {
+      if row_index < 0 {
         continue
       }
-      visit(entity, values[row_index])
+      guard column_ref.val.value_at_row(row_index) is Some(value) else {
+        continue
+      }
+      visit(entity, value)
     }
   }
 }
@@ -658,24 +658,22 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
     guard other.table_column_ref(table_id) is Some(right_column_ref) else {
       continue
     }
-    guard left_column_ref.val.values_cached() is Some(left_values) else {
-      continue
-    }
-    guard right_column_ref.val.values_cached() is Some(right_values) else {
-      continue
-    }
     for entity in entities {
       let entity_id = entity.id
       if entity_id < 0 || entity_id >= self.world.entity_table_rows.length() {
         continue
       }
       let row_index = self.world.entity_table_rows[entity_id]
-      if row_index < 0 ||
-        row_index >= left_values.length() ||
-        row_index >= right_values.length() {
+      if row_index < 0 {
         continue
       }
-      visit(entity, left_values[row_index], right_values[row_index])
+      guard left_column_ref.val.value_at_row(row_index) is Some(left_value) else {
+        continue
+      }
+      guard right_column_ref.val.value_at_row(row_index) is Some(right_value) else {
+        continue
+      }
+      visit(entity, left_value, right_value)
     }
   }
 }

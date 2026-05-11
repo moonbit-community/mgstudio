@@ -85,11 +85,19 @@ def parse_diagnostic_log(path):
     return result
 
 
+def frame_markers(stages):
+    for name in ["Main", "First", "Update"]:
+        markers = sorted(
+            [e for e in stages if e.get("name") == name],
+            key=lambda e: e["ts"],
+        )
+        if len(markers) >= 2:
+            return name, markers
+    return None, []
+
+
 def build_frames(stages, startup_frames, spike_ms):
-    mains = sorted(
-        [e for e in stages if e.get("name") == "Main"],
-        key=lambda e: e["ts"],
-    )
+    marker_name, mains = frame_markers(stages)
     frames = []
     for i, main in enumerate(mains[:-1]):
         start = main["ts"]
@@ -123,7 +131,21 @@ def build_frames(stages, startup_frames, spike_ms):
         or f["interval_ms"] >= spike_ms
         or f["max_stage_ms"] >= spike_ms
     ]
-    return mains, frames, steady, excluded
+    if not steady and frames:
+        steady = [
+            f
+            for f in frames
+            if f["interval_ms"] < spike_ms and f["max_stage_ms"] < spike_ms
+        ]
+        excluded = [
+            f
+            for f in frames
+            if f["interval_ms"] >= spike_ms or f["max_stage_ms"] >= spike_ms
+        ]
+    if not steady and frames:
+        steady = list(frames)
+        excluded = []
+    return marker_name, mains, frames, steady, excluded
 
 
 def aggregate_events(events, steady_frames):
@@ -228,11 +250,15 @@ def main():
         ],
         key=lambda e: e["ts"],
     )
-    mains, frames, steady_frames, excluded_frames = build_frames(
+    frame_marker_name, mains, frames, steady_frames, excluded_frames = build_frames(
         stages, args.startup_frames, args.spike_ms
     )
     if not mains:
-        raise SystemExit("trace does not contain any Main schedule_stage events")
+        stage_names = sorted({str(e.get("name", "")) for e in stages})
+        raise SystemExit(
+            "trace does not contain enough frame marker schedule_stage events "
+            f"(tried Main, First, Update; found: {stage_names})"
+        )
 
     duration_by_category, count_by_category, duration_by_name, count_by_name = (
         aggregate_events(events, steady_frames)
@@ -276,6 +302,7 @@ def main():
         [
             f"- trace_events: `{len(events)}`",
             f"- event_categories: `{dict(event_categories)}`",
+            f"- frame_marker: `{frame_marker_name}`",
             f"- main_frames: `{len(mains)}`",
             f"- steady_frames: `{steady_count}`",
             f"- excluded_frames: `{len(excluded_frames)}`",

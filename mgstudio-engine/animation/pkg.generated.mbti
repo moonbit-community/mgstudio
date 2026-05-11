@@ -194,7 +194,7 @@ pub impl @json.FromJson for AnimatedBy
 pub struct AnimationClip {
   mut duration_seconds : Float
   targets : Array[AnimationTargetBinding]
-  target_index_by_key : Map[UInt64, Int]
+  target_index_by_key : Map[(UInt64, UInt64), Int]
   events : Array[(AnimationEventTarget, Array[AnimationClipEvent])]
 }
 pub fn AnimationClip::add_curve_to_target(Self, AnimationTargetId, AnimatableCurve, sample_count? : Int) -> Self
@@ -248,7 +248,7 @@ pub struct AnimationGraph {
   root : AnimationNodeIndex
   nodes : Array[AnimationGraphNode]
   mask_groups : Array[(AnimationTargetId, UInt)]
-  target_mask_index_by_key : Map[UInt64, Int]
+  target_mask_index_by_key : Map[(UInt64, UInt64), Int]
 }
 pub fn AnimationGraph::add(Self, AnimationNodeType, Float, AnimationNodeIndex) -> AnimationNodeIndex
 pub fn AnimationGraph::add_add(Self, Float, AnimationNodeIndex) -> AnimationNodeIndex

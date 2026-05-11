@@ -131,7 +131,7 @@ pub struct AnimationGraph {
   root : AnimationNodeIndex
   nodes : Array[AnimationGraphNode]
   mask_groups : Array[(AnimationTargetId, AnimationMask)]
-  target_mask_index_by_key : Map[UInt64, Int]
+  target_mask_index_by_key : Map[(UInt64, UInt64), Int]
 }
 
 ///|

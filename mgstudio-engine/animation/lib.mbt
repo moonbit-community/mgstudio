@@ -1553,7 +1553,7 @@ priv struct AnimationRuntimeScratch {
   weights_updates : Array[(@core.Entity, AnimationWeights)]
   text_color_updates : Array[(@core.Entity, @text.TextColor)]
   prepared_player_cache : Map[Int, AnimationPreparedPlayer]
-  target_mask_cache : Map[(Int, UInt64), AnimationMask]
+  target_mask_cache : Map[(Int, UInt64, UInt64), AnimationMask]
   graph_cache : Map[Int, AnimationGraph]
   clip_cache : Map[Int, AnimationClip]
   threaded_graph_cache : Map[Int, ThreadedAnimationGraph]
@@ -1611,7 +1611,7 @@ fn animation_runtime_scratch_clear(state : AnimationRuntimeScratch) -> Unit {
 
 ///|
 fn animation_target_mask_cached(
-  target_mask_cache : Map[(Int, UInt64), AnimationMask],
+  target_mask_cache : Map[(Int, UInt64, UInt64), AnimationMask],
   graph_id : Int,
   graph : AnimationGraph,
   target_id : AnimationTargetId,
@@ -1620,7 +1620,7 @@ fn animation_target_mask_cached(
     return 0U
   }
   let target_key = animation_target_id_lookup_key(target_id)
-  let cache_key = (graph_id, target_key)
+  let cache_key = (graph_id, target_key.0, target_key.1)
   match target_mask_cache.get(cache_key) {
     Some(mask) => mask
     None => {

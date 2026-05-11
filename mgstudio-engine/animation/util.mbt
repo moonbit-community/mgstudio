@@ -462,8 +462,10 @@ pub fn AnimationTargetId::from_name(name : String) -> AnimationTargetId {
 }
 
 ///|
-fn animation_target_id_lookup_key(target_id : AnimationTargetId) -> UInt64 {
-  target_id.high ^ target_id.low
+fn animation_target_id_lookup_key(
+  target_id : AnimationTargetId,
+) -> (UInt64, UInt64) {
+  (target_id.high, target_id.low)
 }
 
 ///|

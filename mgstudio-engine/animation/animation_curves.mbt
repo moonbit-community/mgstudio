@@ -227,7 +227,7 @@ fn animation_target_binding_new(
 pub struct AnimationClip {
   mut duration_seconds : Float
   targets : Array[AnimationTargetBinding]
-  target_index_by_key : Map[UInt64, Int]
+  target_index_by_key : Map[(UInt64, UInt64), Int]
   events : Array[(AnimationEventTarget, Array[AnimationClipEvent])]
 }
 
