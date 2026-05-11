@@ -53,6 +53,14 @@ pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {
 }
 
 ///|
+pub fn[T] message_key_from_id(
+  id : Int,
+  debug_name? : String = "",
+) -> MessageKey[T] {
+  MessageKey::{ queue_key: resource_key_from_id(id, debug_name~) }
+}
+
+///|
 pub(open) trait Message: EcsPayloadCodec {
   message() -> MessageKey[Self]
 }

@@ -51,6 +51,11 @@ priv enum AppSetting {
 }
 
 ///|
+impl @widgets_lib.WidgetValue for AppSetting with widget_debug_name() {
+  "examples.2d.dynamic_mip_generation.AppSetting"
+}
+
+///|
 priv struct AppStatus {
   mut enable_mip_generation : EnableMipGeneration
   mut image_width : ImageSize

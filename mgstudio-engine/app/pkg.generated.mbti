@@ -819,7 +819,7 @@ pub(all) enum NextState[S] {
 pub fn[S] NextState::reset(Self[S]) -> Self[S]
 pub fn[S] NextState::set(Self[S], S) -> Self[S]
 pub fn[S : Eq] NextState::set_if_neq(Self[S], S) -> Self[S]
-pub impl[S : @ecs.EcsPayloadCodec] Resource for NextState[S]
+pub impl[S : States] Resource for NextState[S]
 pub impl[S : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for NextState[S]
 
 pub(all) struct NextStatePayload {
@@ -986,7 +986,7 @@ pub struct PreviousState[S] {
   value : S
 } derive(Eq, @debug.Debug)
 pub fn[S] PreviousState::get(Self[S]) -> S
-pub impl[S : @ecs.EcsPayloadCodec] Resource for PreviousState[S]
+pub impl[S : States] Resource for PreviousState[S]
 pub impl[S : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for PreviousState[S]
 
 type QuerySystemAccess
@@ -1148,7 +1148,7 @@ pub struct State[S] {
 } derive(Eq, @debug.Debug)
 pub fn[S] State::get(Self[S]) -> S
 pub fn[S] State::new(S) -> Self[S]
-pub impl[S : @ecs.EcsPayloadCodec] Resource for State[S]
+pub impl[S : States] Resource for State[S]
 pub impl[S : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for State[S]
 
 pub(all) struct StatePayload {
@@ -1160,7 +1160,7 @@ pub struct StateTransitionEvent[S] {
   entered : S?
   allow_same_state_transitions : Bool
 } derive(Eq, @debug.Debug)
-pub impl[S : @ecs.EcsPayloadCodec] Resource for StateTransitionEvent[S]
+pub impl[S : States] Resource for StateTransitionEvent[S]
 pub impl[S : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for StateTransitionEvent[S]
 
 pub(all) struct StateTransitionEventPayload {
@@ -1481,6 +1481,7 @@ pub(open) trait Resource : @ecs.EcsPayloadCodec {
 pub impl[T : @ecs.Message] Resource for @ecs.Messages[T]
 
 pub(open) trait States : Eq + @debug.Debug + @ecs.EcsPayloadCodec {
+  type_debug_name() -> String
   debug_name(Self) -> String
   dependency_depth(Self) -> Int = _
 }

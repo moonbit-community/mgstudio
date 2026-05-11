@@ -31,14 +31,19 @@ const BUTTON_LABEL_FONT_SIZE : Float = 18.0F
 const OPTION_TITLE_WIDTH : Float = 150.0F
 
 ///|
-let widget_click_event_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+let widget_click_event_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
   @hashmap.HashMap([]),
 )
 
 ///|
-let widget_click_sender_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+let widget_click_sender_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
   @hashmap.HashMap([]),
 )
+
+///|
+pub(open) trait WidgetValue: @ecs.EcsPayloadCodec {
+  widget_debug_name() -> String
+}
 
 ///|
 pub struct WidgetClickEvent[T] {
@@ -97,52 +102,46 @@ pub impl @ecs.Component for RadioButtonText with component() {
 }
 
 ///|
-pub fn[T] widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[T]] {
-  let probe : T? = None
-  let type_name = "examples.helpers.widgets_lib.WidgetClickEvent<\{@any.of(probe).type_name()}>"
+pub fn[T : WidgetValue] widget_click_event_key() -> @ecs.MessageKey[
+  WidgetClickEvent[T],
+] {
+  let type_name = "examples.helpers.widgets_lib.WidgetClickEvent<\{T::widget_debug_name()}>"
   match widget_click_event_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None => abort("widget click event registry mismatch for \{type_name}")
-      }
+    Some(id) => @ecs.message_key_from_id(id, debug_name=type_name)
     None => {
       let key : @ecs.MessageKey[WidgetClickEvent[T]] = @ecs.register_message(
         debug_name=type_name,
       )
-      widget_click_event_registry.val.set(type_name, @any.of(key))
+      widget_click_event_registry.val.set(type_name, key.id())
       key
     }
   }
 }
 
 ///|
-pub fn[T] widget_click_sender_key() -> @ecs.ComponentKey[WidgetClickSender[T]] {
-  let probe : T? = None
-  let type_name = "examples.helpers.widgets_lib.WidgetClickSender<\{@any.of(probe).type_name()}>"
+pub fn[T : WidgetValue] widget_click_sender_key() -> @ecs.ComponentKey[
+  WidgetClickSender[T],
+] {
+  let type_name = "examples.helpers.widgets_lib.WidgetClickSender<\{T::widget_debug_name()}>"
   match widget_click_sender_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None => abort("widget click sender registry mismatch for \{type_name}")
-      }
+    Some(id) => @ecs.component_key_from_id(id, debug_name=type_name)
     None => {
       let key : @ecs.ComponentKey[WidgetClickSender[T]] = @ecs.register_component(
         debug_name=type_name,
       )
-      widget_click_sender_registry.val.set(type_name, @any.of(key))
+      widget_click_sender_registry.val.set(type_name, key.id())
       key
     }
   }
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.Message for WidgetClickEvent[T] with message() {
+pub impl[T : WidgetValue] @ecs.Message for WidgetClickEvent[T] with message() {
   widget_click_event_key()
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.Component for WidgetClickSender[T] with component() {
+pub impl[T : WidgetValue] @ecs.Component for WidgetClickSender[T] with component() {
   widget_click_sender_key()
 }
 
@@ -248,7 +247,7 @@ pub fn ui_text(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] spawn_action_button(
+pub fn[T : WidgetValue] spawn_action_button(
   commands : @app.Commands,
   parent : @core.Entity,
   value : T,
@@ -281,7 +280,7 @@ pub fn[T : @ecs.EcsPayloadCodec] spawn_action_button(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] spawn_option_button(
+pub fn[T : WidgetValue] spawn_option_button(
   commands : @app.Commands,
   parent : @core.Entity,
   option_value : T,
@@ -326,7 +325,7 @@ pub fn[T : @ecs.EcsPayloadCodec] spawn_option_button(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] spawn_option_buttons(
+pub fn[T : WidgetValue] spawn_option_buttons(
   commands : @app.Commands,
   parent : @core.Entity,
   title : String,
@@ -370,7 +369,7 @@ pub fn[T : @ecs.EcsPayloadCodec] spawn_option_buttons(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] handle_ui_interactions(
+pub fn[T : WidgetValue] handle_ui_interactions(
   interactions : @ecs.Query[
     (@ecs.Comp[@ui.Interaction], @ecs.Comp[WidgetClickSender[T]]),
     @ecs.With[@ui.Button],

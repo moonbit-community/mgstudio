@@ -28,6 +28,31 @@ impl @sprite.GizmoConfigGroup for MyRoundGizmos with gizmo_config_group_marker(
 }
 
 ///|
+impl @sprite.GizmoConfigGroup for MyRoundGizmos with gizmo_config_group_debug_name() {
+  "examples.gizmos.2d_gizmos.MyRoundGizmos"
+}
+
+///|
+extenum @sprite.GizmoConfigGroupCell += {
+  MyRoundGizmosCell(Ref[MyRoundGizmos])
+}
+
+///|
+impl @sprite.GizmoConfigGroup for MyRoundGizmos with new_gizmo_config_group_cell() {
+  MyRoundGizmosCell(Ref(MyRoundGizmos::default()))
+}
+
+///|
+impl @sprite.GizmoConfigGroup for MyRoundGizmos with gizmo_config_group_cell_ref(
+  cell,
+) {
+  match cell {
+    MyRoundGizmosCell(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 fn clamp_float(value : Float, min : Float, max : Float) -> Float {
   if value < min {
     min

@@ -1360,7 +1360,7 @@ pub struct GizmoAsset {
 pub fn GizmoAsset::new() -> GizmoAsset {
   GizmoAsset::{
     buffer: GizmoBuffer::default(),
-    config_type_name: @any.of(@sprite.DefaultGizmoConfigGroup::default()).type_name(),
+    config_type_name: @sprite.DefaultGizmoConfigGroup::gizmo_config_group_debug_name(),
   }
 }
 

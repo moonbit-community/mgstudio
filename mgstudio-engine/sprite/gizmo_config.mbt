@@ -14,8 +14,14 @@
 
 ///|
 pub(open) trait GizmoConfigGroup {
+  gizmo_config_group_debug_name() -> String
+  new_gizmo_config_group_cell() -> GizmoConfigGroupCell
+  gizmo_config_group_cell_ref(GizmoConfigGroupCell) -> Ref[Self]?
   gizmo_config_group_marker(self : Self) -> Unit
 }
+
+///|
+pub extenum GizmoConfigGroupCell {}
 
 ///|
 pub struct DefaultGizmoConfigGroup {}
@@ -33,9 +39,34 @@ pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with gizmo_config_group_ma
 }
 
 ///|
+pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with gizmo_config_group_debug_name() {
+  "mgstudio_gizmos::DefaultGizmoConfigGroup"
+}
+
+///|
+extenum GizmoConfigGroupCell += {
+  DefaultGizmoConfigGroupCell(Ref[DefaultGizmoConfigGroup])
+}
+
+///|
+pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with new_gizmo_config_group_cell() {
+  DefaultGizmoConfigGroupCell(Ref(DefaultGizmoConfigGroup::default()))
+}
+
+///|
+pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with gizmo_config_group_cell_ref(
+  cell,
+) {
+  match cell {
+    DefaultGizmoConfigGroupCell(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 priv struct GizmoConfigStoreEntry {
   config : Ref[GizmoConfig]
-  ext_config : @any.Any
+  ext_config : GizmoConfigGroupCell
 }
 
 ///|
@@ -46,7 +77,7 @@ struct GizmoConfigStore {
 ///|
 fn[T : GizmoConfigGroup] gizmo_group_type_key(group : T) -> String {
   group.gizmo_config_group_marker()
-  @any.of(group).type_name()
+  T::gizmo_config_group_debug_name()
 }
 
 ///|
@@ -55,21 +86,23 @@ fn[T : GizmoConfigGroup] gizmo_group_missing_message(group : T) -> String {
 }
 
 ///|
-fn[T] gizmo_group_ref_or_abort(value : @any.Any) -> Ref[T] {
-  match value.try_to() {
+fn[T : GizmoConfigGroup] gizmo_group_ref_or_abort(
+  value : GizmoConfigGroupCell,
+) -> Ref[T] {
+  match T::gizmo_config_group_cell_ref(value) {
     Some(value_ref) => value_ref
     None => abort("gizmo config store contained a mismatched extension payload")
   }
 }
 
 ///|
-fn[T : GizmoConfigGroup + Default] gizmo_config_store_entry(
+fn[T : GizmoConfigGroup] gizmo_config_store_entry(
   group : T,
 ) -> GizmoConfigStoreEntry {
   group.gizmo_config_group_marker()
   GizmoConfigStoreEntry::{
     config: Ref(GizmoConfig::default()),
-    ext_config: @any.of(Ref(T::default())),
+    ext_config: T::new_gizmo_config_group_cell(),
   }
 }
 
@@ -89,7 +122,7 @@ pub fn[T : GizmoConfigGroup] GizmoConfigStore::contains(
 }
 
 ///|
-pub fn[T : GizmoConfigGroup + Default] GizmoConfigStore::register(
+pub fn[T : GizmoConfigGroup] GizmoConfigStore::register(
   self : GizmoConfigStore,
   group : T,
 ) -> Unit {
@@ -158,7 +191,7 @@ pub impl @app.Resource for GizmoConfigStore with resource() {
 }
 
 ///|
-pub fn[T : GizmoConfigGroup + Default] init_gizmo_group(
+pub fn[T : GizmoConfigGroup] init_gizmo_group(
   app : @app.App[@ecs.World],
   group : T,
 ) -> @app.App[@ecs.World] {

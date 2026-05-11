@@ -44,6 +44,31 @@ pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with gizmo_config_gro
 }
 
 ///|
+pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with gizmo_config_group_debug_name() {
+  "mgstudio_gizmos::AabbGizmoConfigGroup"
+}
+
+///|
+extenum @sprite.GizmoConfigGroupCell += {
+  AabbGizmoConfigGroupCell(Ref[AabbGizmoConfigGroup])
+}
+
+///|
+pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with new_gizmo_config_group_cell() {
+  AabbGizmoConfigGroupCell(Ref(AabbGizmoConfigGroup::default()))
+}
+
+///|
+pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with gizmo_config_group_cell_ref(
+  cell,
+) {
+  match cell {
+    AabbGizmoConfigGroupCell(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 pub struct ShowAabbGizmo {
   color : @sprite.Color?
 }

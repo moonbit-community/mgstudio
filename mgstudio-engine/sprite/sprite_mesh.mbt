@@ -717,6 +717,11 @@ pub impl Material2d for SpriteMaterial with alpha_mode(self) {
 }
 
 ///|
+pub impl Material2d for SpriteMaterial with material2d_debug_name() {
+  "mgstudio_sprite::SpriteMaterial"
+}
+
+///|
 pub impl Material2d for SpriteMaterial with bind_group(self) {
   Material2dBindGroup::sprite_material(self)
 }

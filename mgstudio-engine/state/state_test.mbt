@@ -25,6 +25,11 @@ pub impl @app.States for TestState with dependency_depth(self) {
 }
 
 ///|
+pub impl @app.States for TestState with type_debug_name() {
+  "TestState"
+}
+
+///|
 pub impl @app.States for TestState with debug_name(self) {
   ignore(self)
   "TestState"

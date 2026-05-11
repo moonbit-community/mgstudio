@@ -37,6 +37,11 @@ pub(all) enum Test {
 } derive(Eq, Debug)
 
 ///|
+impl @app.States for Test with type_debug_name() {
+  "examples.math.bounding_2d.Test"
+}
+
+///|
 impl @app.States for Test with debug_name(self) {
   ignore(self)
   "examples.math.bounding_2d.Test"

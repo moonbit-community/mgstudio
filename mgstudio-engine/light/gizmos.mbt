@@ -78,6 +78,31 @@ pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with gizmo_config_gr
 }
 
 ///|
+pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with gizmo_config_group_debug_name() {
+  "mgstudio_light::LightGizmoConfigGroup"
+}
+
+///|
+extenum @sprite.GizmoConfigGroupCell += {
+  LightGizmoConfigGroupCell(Ref[LightGizmoConfigGroup])
+}
+
+///|
+pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with new_gizmo_config_group_cell() {
+  LightGizmoConfigGroupCell(Ref(LightGizmoConfigGroup::default()))
+}
+
+///|
+pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with gizmo_config_group_cell_ref(
+  cell,
+) {
+  match cell {
+    LightGizmoConfigGroupCell(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 pub struct ShowLightGizmo {
   color : LightGizmoColor?
 } derive(ToJson, FromJson)

@@ -46,9 +46,19 @@ pub(all) enum OptionalDerivedState {
 } derive(Eq, Debug)
 
 ///|
+impl States for DerivedState with type_debug_name() {
+  "DerivedState"
+}
+
+///|
 impl States for DerivedState with debug_name(self) {
   ignore(self)
   "DerivedState"
+}
+
+///|
+impl States for PairState with type_debug_name() {
+  "PairState"
 }
 
 ///|
@@ -58,9 +68,19 @@ impl States for PairState with debug_name(self) {
 }
 
 ///|
+impl States for OptionalParentState with type_debug_name() {
+  "OptionalParentState"
+}
+
+///|
 impl States for OptionalParentState with debug_name(self) {
   ignore(self)
   "OptionalParentState"
+}
+
+///|
+impl States for OptionalChildState with type_debug_name() {
+  "OptionalChildState"
 }
 
 ///|
@@ -76,9 +96,19 @@ impl FreelyMutableState for OptionalChildState
 impl SubStates for OptionalChildState
 
 ///|
+impl States for MultiSourceDerivedState with type_debug_name() {
+  "MultiSourceDerivedState"
+}
+
+///|
 impl States for MultiSourceDerivedState with debug_name(self) {
   ignore(self)
   "MultiSourceDerivedState"
+}
+
+///|
+impl States for OptionalDerivedState with type_debug_name() {
+  "OptionalDerivedState"
 }
 
 ///|

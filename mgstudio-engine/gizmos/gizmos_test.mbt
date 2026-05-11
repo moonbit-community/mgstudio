@@ -42,6 +42,31 @@ impl @sprite.GizmoConfigGroup for TestRoundGizmos with gizmo_config_group_marker
 }
 
 ///|
+impl @sprite.GizmoConfigGroup for TestRoundGizmos with gizmo_config_group_debug_name() {
+  "mgstudio_gizmos_test::TestRoundGizmos"
+}
+
+///|
+extenum @sprite.GizmoConfigGroupCell += {
+  TestRoundGizmosCell(Ref[TestRoundGizmos])
+}
+
+///|
+impl @sprite.GizmoConfigGroup for TestRoundGizmos with new_gizmo_config_group_cell() {
+  TestRoundGizmosCell(Ref(TestRoundGizmos::default()))
+}
+
+///|
+impl @sprite.GizmoConfigGroup for TestRoundGizmos with gizmo_config_group_cell_ref(
+  cell,
+) {
+  match cell {
+    TestRoundGizmosCell(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 test "custom gizmo groups expose config through store and system param" {
   let seen_width = Ref(-1.0F)
   let app = @gizmos.init_gizmo_group(

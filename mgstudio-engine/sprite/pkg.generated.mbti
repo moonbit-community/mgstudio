@@ -106,13 +106,13 @@ pub fn gizmos_clear_3d() -> Unit
 
 pub fn gizmos_mesh_id_3d(RenderLayers) -> Int?
 
-pub fn[T : GizmoConfigGroup + Default] init_gizmo_group(@app.App[@ecs.World], T) -> @app.App[@ecs.World]
+pub fn[T : GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], T) -> @app.App[@ecs.World]
 
 pub fn init_render_state_system(@ecs.World) -> Unit
 
 pub fn[M] material2d_plugin(Material2dPlugin[M]) -> Material2dPlugin[M]
 
-pub fn[M] material2d_runtime_type_name(@asset.Handle[M]) -> String
+pub fn[M : Material2d] material2d_runtime_type_name(@asset.Handle[M]) -> String
 
 pub fn mesh2d_geometry_annulus(@math.Annulus) -> @mesh.Mesh2dGeometry
 
@@ -234,7 +234,7 @@ pub fn render_extract_system(@ecs.World) -> Unit
 
 pub fn render_extract_system_ecs(@ecs.World) -> Unit
 
-pub fn[M] render_material2d_instances_resource_key_of(@asset.Handle[M]) -> @ecs.ResourceKey[RenderMaterial2dInstances[M]]
+pub fn[M : Material2d] render_material2d_instances_resource_key_of(@asset.Handle[M]) -> @ecs.ResourceKey[RenderMaterial2dInstances[M]]
 
 pub fn render_mesh_asset_add(@mesh.Mesh) -> @asset.Handle[@mesh.Mesh]
 
@@ -469,13 +469,16 @@ pub(all) struct GizmoConfig {
 }
 pub fn GizmoConfig::default() -> Self
 
+pub extenum GizmoConfigGroupCell {
+}
+
 type GizmoConfigStore
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::config(Self, T) -> (GizmoConfig, T)
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::config_mut(Self, T) -> (@ref.Ref[GizmoConfig], @ref.Ref[T])
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::contains(Self, T) -> Bool
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::get_config(Self, T) -> (GizmoConfig, T)?
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::get_config_mut(Self, T) -> (@ref.Ref[GizmoConfig], @ref.Ref[T])?
-pub fn[T : GizmoConfigGroup + Default] GizmoConfigStore::register(Self, T) -> Unit
+pub fn[T : GizmoConfigGroup] GizmoConfigStore::register(Self, T) -> Unit
 pub impl @app.Resource for GizmoConfigStore
 pub impl @ecs.EcsPayloadCodec for GizmoConfigStore
 pub impl Default for GizmoConfigStore
@@ -535,7 +538,7 @@ pub struct GizmoStorage[Config] {
   phantom : Config?
 }
 pub fn[Config] GizmoStorage::new() -> Self[Config]
-pub impl[Config] @app.Resource for GizmoStorage[Config]
+pub impl[Config : GizmoConfigGroup] @app.Resource for GizmoStorage[Config]
 pub impl[Config] @ecs.EcsPayloadCodec for GizmoStorage[Config]
 pub impl[Config] Default for GizmoStorage[Config]
 
@@ -650,7 +653,7 @@ pub struct Material2dPipeline[_] {
 pub fn[M] Material2dPipeline::default() -> Self[M]
 pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M, Material2dBindGroup) -> Material2dKey[M]
 pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
-pub impl[M] @app.Resource for Material2dPipeline[M]
+pub impl[M : Material2d] @app.Resource for Material2dPipeline[M]
 pub impl[M] @ecs.EcsPayloadCodec for Material2dPipeline[M]
 
 pub(all) struct Material2dPipelinePayload {
@@ -708,7 +711,7 @@ pub fn MeshMaterial2d::with_alpha_mode(Self[ColorMaterialAsset], AlphaMode2d) ->
 pub fn MeshMaterial2d::with_texture(Self[ColorMaterialAsset], @asset.Handle[@image.Image]) -> Self[ColorMaterialAsset]
 pub fn MeshMaterial2d::with_uv_offset(Self[ColorMaterialAsset], @math.Vec2) -> Self[ColorMaterialAsset]
 pub fn MeshMaterial2d::with_uv_scale(Self[ColorMaterialAsset], @math.Vec2) -> Self[ColorMaterialAsset]
-pub impl[M] @ecs.Component for MeshMaterial2d[M]
+pub impl[M : Material2d] @ecs.Component for MeshMaterial2d[M]
 pub impl[M] @ecs.EcsPayloadCodec for MeshMaterial2d[M]
 pub impl Material2d for MeshMaterial2d[ColorMaterialAsset]
 pub impl[M] ToJson for MeshMaterial2d[M]
@@ -898,7 +901,7 @@ pub fn[M] RenderMaterial2dInstances::get(Self[M], @core.Entity) -> @asset.Handle
 pub fn[M] RenderMaterial2dInstances::new() -> Self[M]
 pub fn[M] RenderMaterial2dInstances::remove(Self[M], @core.Entity) -> Unit
 pub fn[M] RenderMaterial2dInstances::set(Self[M], @core.Entity, @asset.Handle[M]) -> Unit
-pub impl[M] @app.Resource for RenderMaterial2dInstances[M]
+pub impl[M : Material2d] @app.Resource for RenderMaterial2dInstances[M]
 pub impl[M] @ecs.EcsPayloadCodec for RenderMaterial2dInstances[M]
 
 pub(all) struct RenderMaterial2dInstancesPayload {
@@ -1285,6 +1288,9 @@ pub using @math {type Triangle2d}
 
 // Traits
 pub(open) trait GizmoConfigGroup {
+  gizmo_config_group_debug_name() -> String
+  new_gizmo_config_group_cell() -> GizmoConfigGroupCell
+  gizmo_config_group_cell_ref(GizmoConfigGroupCell) -> @ref.Ref[Self]?
   gizmo_config_group_marker(Self) -> Unit
 }
 
@@ -1326,6 +1332,7 @@ pub impl IntoSpriteRingMeshGeometry for @math.Rhombus
 pub impl IntoSpriteRingMeshGeometry for @math.Triangle2d
 
 pub(open) trait Material2d {
+  material2d_debug_name() -> String
   alpha_mode(Self) -> AlphaMode2d
   bind_group(Self) -> Material2dBindGroup
 }

@@ -352,7 +352,7 @@ pub struct ValueChange[T] {
   value : T
 } derive(ToJson, @json.FromJson)
 pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for ValueChange[T]
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T]
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T]
 
 pub(all) struct ValueChangePayload {
   source : @core.Entity
@@ -367,4 +367,7 @@ pub using @ui {type ButtonColors}
 pub using @ui {type Interaction}
 
 // Traits
+pub(open) trait ValueChangeValue : @ecs.EcsPayloadCodec {
+  value_change_value_debug_name() -> String
+}
 

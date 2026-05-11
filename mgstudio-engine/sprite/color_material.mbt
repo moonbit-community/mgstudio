@@ -353,6 +353,11 @@ pub impl Material2d for ColorMaterial with alpha_mode(self) {
 }
 
 ///|
+pub impl Material2d for ColorMaterial with material2d_debug_name() {
+  "mgstudio_sprite::ColorMaterial"
+}
+
+///|
 pub impl Material2d for ColorMaterial with bind_group(self) {
   Material2dBindGroup::color_material(
     ColorMaterial::color(self),
@@ -366,6 +371,11 @@ pub impl Material2d for ColorMaterial with bind_group(self) {
 ///|
 pub impl Material2d for ColorMaterialAsset with alpha_mode(self) {
   self.alpha_mode
+}
+
+///|
+pub impl Material2d for ColorMaterialAsset with material2d_debug_name() {
+  "mgstudio_sprite::ColorMaterialAsset"
 }
 
 ///|
@@ -492,6 +502,11 @@ pub fn MeshMaterial2d::with_uv_scale(
 ///|
 pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with alpha_mode(self) {
   self.to_color_material().alpha_mode()
+}
+
+///|
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with material2d_debug_name() {
+  "mgstudio_sprite::MeshMaterial2d<mgstudio_sprite::ColorMaterialAsset>"
 }
 
 ///|

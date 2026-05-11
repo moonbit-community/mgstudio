@@ -60,6 +60,33 @@ pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with giz
 }
 
 ///|
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with gizmo_config_group_debug_name() {
+  "mgstudio_gizmos::SkinnedMeshBoundsGizmoConfigGroup"
+}
+
+///|
+extenum @sprite.GizmoConfigGroupCell += {
+  SkinnedMeshBoundsGizmoConfigGroupCell(Ref[SkinnedMeshBoundsGizmoConfigGroup])
+}
+
+///|
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with new_gizmo_config_group_cell() {
+  SkinnedMeshBoundsGizmoConfigGroupCell(
+    Ref(SkinnedMeshBoundsGizmoConfigGroup::default()),
+  )
+}
+
+///|
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with gizmo_config_group_cell_ref(
+  cell,
+) {
+  match cell {
+    SkinnedMeshBoundsGizmoConfigGroupCell(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 pub struct ShowSkinnedMeshBoundsGizmo {
   color : @sprite.Color?
 }

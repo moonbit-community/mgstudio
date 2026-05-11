@@ -56,6 +56,8 @@ pub let ecs_key_name : ComponentKey[Name]
 
 pub fn[T] event_key_from_id(Int, debug_name? : String) -> EventKey[T]
 
+pub fn[T] message_key_from_id(Int, debug_name? : String) -> MessageKey[T]
+
 pub fn[D] query(World) -> Query[D, All]
 
 pub fn[F : QueryFilter] query_access_descriptor(F, (QueryDataAccess) -> Unit) -> (QueryDataAccess, QueryFilterAccess)

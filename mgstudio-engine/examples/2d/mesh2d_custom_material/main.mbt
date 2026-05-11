@@ -54,6 +54,11 @@ pub impl @sprite.Material2d for CustomMaterialAsset with alpha_mode(self) {
 }
 
 ///|
+pub impl @sprite.Material2d for CustomMaterialAsset with material2d_debug_name() {
+  "examples.2d.mesh2d_custom_material.CustomMaterialAsset"
+}
+
+///|
 pub impl @sprite.Material2d for CustomMaterialAsset with bind_group(self) {
   let texture = match self.color_texture {
     Some(texture) => texture

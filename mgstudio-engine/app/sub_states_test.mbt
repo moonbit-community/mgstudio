@@ -19,6 +19,11 @@ pub(all) enum TestSubState {
 } derive(Eq, Debug)
 
 ///|
+impl States for TestSubState with type_debug_name() {
+  "TestSubState"
+}
+
+///|
 impl States for TestSubState with debug_name(self) {
   ignore(self)
   "TestSubState"

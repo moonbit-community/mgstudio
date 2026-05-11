@@ -24,6 +24,11 @@ impl Default for AppState with default() {
 }
 
 ///|
+impl @app.States for AppState with type_debug_name() {
+  "examples.2d.texture_atlas.AppState"
+}
+
+///|
 impl @app.States for AppState with debug_name(self) {
   ignore(self)
   "examples.2d.texture_atlas.AppState"

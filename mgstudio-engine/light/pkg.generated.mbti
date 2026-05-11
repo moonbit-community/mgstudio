@@ -13,6 +13,7 @@ import {
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values

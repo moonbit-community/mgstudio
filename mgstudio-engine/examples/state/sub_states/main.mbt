@@ -40,9 +40,19 @@ impl Default for AppState with default() {
 }
 
 ///|
+impl @app.States for AppState with type_debug_name() {
+  "AppState"
+}
+
+///|
 impl @app.States for AppState with debug_name(self) {
   ignore(self)
   "AppState"
+}
+
+///|
+impl @app.States for IsPaused with type_debug_name() {
+  "IsPaused"
 }
 
 ///|

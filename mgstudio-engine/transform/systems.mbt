@@ -463,10 +463,7 @@ fn transform_set_global_hot_at_row(
   }
   global_values[row_index] = next_global
   columns.global.set_sequence_only_hot_at_table_row_value(
-    table_id,
-    row_index,
-    next_global,
-    sequence,
+    table_id, row_index, next_global, sequence,
   )
 }
 

@@ -56,7 +56,7 @@ pub type DefaultGizmoConfigGroup = @sprite.DefaultGizmoConfigGroup
 pub type GizmoConfigStore = @sprite.GizmoConfigStore
 
 ///|
-pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(
+pub fn[G : @sprite.GizmoConfigGroup] init_gizmo_group(
   app : @app.App[@ecs.World],
   group : G,
 ) -> @app.App[@ecs.World] {

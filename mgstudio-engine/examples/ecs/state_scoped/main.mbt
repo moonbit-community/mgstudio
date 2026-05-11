@@ -34,6 +34,11 @@ impl Default for GameState with default() {
 }
 
 ///|
+impl @app.States for GameState with type_debug_name() {
+  "GameState"
+}
+
+///|
 impl @app.States for GameState with debug_name(self) {
   ignore(self)
   "GameState"

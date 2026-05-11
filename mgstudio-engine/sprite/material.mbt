@@ -31,7 +31,7 @@ pub struct RenderMaterial2dInstances[M] {
 
 ///|
 let render_material2d_instances_resource_registry : Ref[
-  @hashmap.HashMap[String, @any.Any],
+  @hashmap.HashMap[String, Int],
 ] = Ref(@hashmap.HashMap([]))
 
 ///|
@@ -80,42 +80,36 @@ pub fn[M] RenderMaterial2dInstances::clear(
 }
 
 ///|
-fn[M] registered_render_material2d_instances_resource_key() -> @ecs.ResourceKey[
+fn[M : Material2d] registered_render_material2d_instances_resource_key() -> @ecs.ResourceKey[
   RenderMaterial2dInstances[M],
 ] {
-  let probe : RenderMaterial2dInstances[M] = RenderMaterial2dInstances::new()
-  let type_name = @any.of(probe).type_name()
+  let type_name = render_material2d_instances_type_name((None : M?))
   match render_material2d_instances_resource_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None =>
-          abort(
-            "render material2d instances resource registry contained a mismatched key for \{type_name}",
-          )
-      }
+    Some(id) =>
+      @ecs.resource_key_from_id(
+        id,
+        debug_name="mgstudio_sprite_render::\{type_name}",
+      )
     None => {
       let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = @ecs.register_resource(
         debug_name="mgstudio_sprite_render::\{type_name}",
       )
-      render_material2d_instances_resource_registry.val.set(
-        type_name,
-        @any.of(key),
-      )
+      render_material2d_instances_resource_registry.val.set(type_name, key.id())
       key
     }
   }
 }
 
 ///|
-pub fn[M] render_material2d_instances_resource_key_of(
+pub fn[M : Material2d] render_material2d_instances_resource_key_of(
   _probe : @asset.Handle[M],
 ) -> @ecs.ResourceKey[RenderMaterial2dInstances[M]] {
+  ignore(_probe)
   registered_render_material2d_instances_resource_key()
 }
 
 ///|
-pub impl[M] @app.Resource for RenderMaterial2dInstances[M] with resource() {
+pub impl[M : Material2d] @app.Resource for RenderMaterial2dInstances[M] with resource() {
   registered_render_material2d_instances_resource_key()
 }
 
@@ -317,6 +311,7 @@ pub fn Material2dBindGroup::bind_group_data(
 
 ///|
 pub(open) trait Material2d {
+  material2d_debug_name() -> String
   alpha_mode(self : Self) -> AlphaMode2d
   bind_group(self : Self) -> Material2dBindGroup
 }
@@ -418,47 +413,60 @@ pub fn[M] PreparedMaterial2d::prepared_handle(
 }
 
 ///|
-let material2d_pipeline_resource_registry : Ref[
-  @hashmap.HashMap[String, @any.Any],
-] = Ref(@hashmap.HashMap([]))
+let material2d_pipeline_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
+  @hashmap.HashMap([]),
+)
 
 ///|
-fn[M] registered_material2d_pipeline_resource_key() -> @ecs.ResourceKey[
+fn[M : Material2d] registered_material2d_pipeline_resource_key() -> @ecs.ResourceKey[
   Material2dPipeline[M],
 ] {
-  let probe : Material2dPipeline[M] = Material2dPipeline::default()
-  let type_name = @any.of(probe).type_name()
+  let type_name = material2d_pipeline_type_name((None : M?))
   match material2d_pipeline_resource_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None =>
-          abort(
-            "material2d pipeline resource registry contained a mismatched key for \{type_name}",
-          )
-      }
+    Some(id) =>
+      @ecs.resource_key_from_id(
+        id,
+        debug_name="mgstudio_sprite_render::\{type_name}",
+      )
     None => {
       let key : @ecs.ResourceKey[Material2dPipeline[M]] = @ecs.register_resource(
         debug_name="mgstudio_sprite_render::\{type_name}",
       )
-      material2d_pipeline_resource_registry.val.set(type_name, @any.of(key))
+      material2d_pipeline_resource_registry.val.set(type_name, key.id())
       key
     }
   }
 }
 
 ///|
-pub impl[M] @app.Resource for Material2dPipeline[M] with resource() {
+pub impl[M : Material2d] @app.Resource for Material2dPipeline[M] with resource() {
   registered_material2d_pipeline_resource_key()
 }
 
 ///|
-fn[M] material2d_type_name(_probe : @asset.Handle[M]) -> String {
-  @any.of(_probe).type_name()
+fn[M : Material2d] material2d_type_name(_probe : @asset.Handle[M]) -> String {
+  ignore(_probe)
+  "Material2d<\{M::material2d_debug_name()}>"
 }
 
 ///|
-pub fn[M] material2d_runtime_type_name(_probe : @asset.Handle[M]) -> String {
+fn[M : Material2d] render_material2d_instances_type_name(
+  _sample : M?,
+) -> String {
+  ignore(_sample)
+  "RenderMaterial2dInstances<\{M::material2d_debug_name()}>"
+}
+
+///|
+fn[M : Material2d] material2d_pipeline_type_name(_sample : M?) -> String {
+  ignore(_sample)
+  "Material2dPipeline<\{M::material2d_debug_name()}>"
+}
+
+///|
+pub fn[M : Material2d] material2d_runtime_type_name(
+  _probe : @asset.Handle[M],
+) -> String {
   material2d_type_name(_probe)
 }
 
@@ -575,7 +583,7 @@ fn[M] ensure_prepared_material2d_assets_resource_in_world(
 }
 
 ///|
-fn[M] ensure_material2d_pipeline_resource_in_world(
+fn[M : Material2d] ensure_material2d_pipeline_resource_in_world(
   world : @ecs.World,
   pipeline : Material2dPipeline[M],
 ) -> Unit {
@@ -586,7 +594,7 @@ fn[M] ensure_material2d_pipeline_resource_in_world(
 }
 
 ///|
-fn[M] ensure_render_material2d_instances_resource_in_world(
+fn[M : Material2d] ensure_render_material2d_instances_resource_in_world(
   world : @ecs.World,
   _probe : @asset.Handle[M],
 ) -> Unit {
@@ -804,7 +812,7 @@ fn[M] prepared_material2d_assets_or_empty(
 }
 
 ///|
-fn[M] render_material2d_instances_or_empty(
+fn[M : Material2d] render_material2d_instances_or_empty(
   world : @ecs.World,
   _probe : @asset.Handle[M],
 ) -> RenderMaterial2dInstances[M] {
@@ -819,7 +827,7 @@ fn[M] render_material2d_instances_or_empty(
 }
 
 ///|
-fn[M] material2d_pipeline_or_default(
+fn[M : Material2d] material2d_pipeline_or_default(
   world : @ecs.World,
   _probe : @asset.Handle[M],
 ) -> Material2dPipeline[M] {
@@ -942,7 +950,7 @@ fn material2d_runtime_registry_or_empty(
 }
 
 ///|
-fn[M] material2d_runtime_entry(
+fn[M : Material2d] material2d_runtime_entry(
   probe : @asset.Handle[M],
 ) -> Material2dRuntimeEntry {
   let type_name = material2d_type_name(probe)
@@ -985,7 +993,7 @@ fn[M] material2d_runtime_entry(
 }
 
 ///|
-fn[M] register_material2d_runtime_world(
+fn[M : Material2d] register_material2d_runtime_world(
   world : @ecs.World,
   probe : @asset.Handle[M],
 ) -> Unit {
@@ -1027,7 +1035,7 @@ fn draw_registered_material2d_mesh_item(
 }
 
 ///|
-fn[M] extract_material2d_mesh_instances_system(
+fn[M : Material2d] extract_material2d_mesh_instances_system(
   world : @ecs.World,
   _probe : @asset.Handle[M],
 ) -> Unit {

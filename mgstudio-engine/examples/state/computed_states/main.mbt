@@ -74,9 +74,19 @@ impl Default for TutorialState with default() {
 }
 
 ///|
+impl @app.States for AppState with type_debug_name() {
+  "AppState"
+}
+
+///|
 impl @app.States for AppState with debug_name(self) {
   ignore(self)
   "AppState"
+}
+
+///|
+impl @app.States for TutorialState with type_debug_name() {
+  "TutorialState"
 }
 
 ///|
@@ -86,9 +96,19 @@ impl @app.States for TutorialState with debug_name(self) {
 }
 
 ///|
+impl @app.States for InGame with type_debug_name() {
+  "InGame"
+}
+
+///|
 impl @app.States for InGame with debug_name(self) {
   ignore(self)
   "InGame"
+}
+
+///|
+impl @app.States for TurboMode with type_debug_name() {
+  "TurboMode"
 }
 
 ///|
@@ -98,9 +118,19 @@ impl @app.States for TurboMode with debug_name(self) {
 }
 
 ///|
+impl @app.States for IsPaused with type_debug_name() {
+  "IsPaused"
+}
+
+///|
 impl @app.States for IsPaused with debug_name(self) {
   ignore(self)
   "IsPaused"
+}
+
+///|
+impl @app.States for Tutorial with type_debug_name() {
+  "Tutorial"
 }
 
 ///|

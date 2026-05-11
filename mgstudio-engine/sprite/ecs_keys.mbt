@@ -81,30 +81,26 @@ pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial] = @ecs.registe
 )
 
 ///|
-let mesh_material2d_component_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+let mesh_material2d_component_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
   @hashmap.HashMap([]),
 )
 
 ///|
-fn[M] registered_mesh_material2d_component_key() -> @ecs.ComponentKey[
+fn[M : Material2d] registered_mesh_material2d_component_key() -> @ecs.ComponentKey[
   MeshMaterial2d[M],
 ] {
-  let probe : MeshMaterial2d[M] = MeshMaterial2d::new(@asset.Handle::new(0))
-  let type_name = @any.of(probe).type_name()
+  let type_name = "MeshMaterial2d<\{M::material2d_debug_name()}>"
   match mesh_material2d_component_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None =>
-          abort(
-            "mesh material2d component registry contained a mismatched key for \{type_name}",
-          )
-      }
+    Some(id) =>
+      @ecs.component_key_from_id(
+        id,
+        debug_name="mgstudio_sprite_render::\{type_name}",
+      )
     None => {
       let key : @ecs.ComponentKey[MeshMaterial2d[M]] = @ecs.register_component(
         debug_name="mgstudio_sprite_render::\{type_name}",
       )
-      mesh_material2d_component_registry.val.set(type_name, @any.of(key))
+      mesh_material2d_component_registry.val.set(type_name, key.id())
       key
     }
   }
@@ -201,7 +197,7 @@ pub impl @ecs.Component for ColorMaterial with component() {
 }
 
 ///|
-pub impl[M] @ecs.Component for MeshMaterial2d[M] with component() {
+pub impl[M : Material2d] @ecs.Component for MeshMaterial2d[M] with component() {
   registered_mesh_material2d_component_key()
 }
 

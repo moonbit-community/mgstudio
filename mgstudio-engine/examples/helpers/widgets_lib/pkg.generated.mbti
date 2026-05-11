@@ -11,15 +11,15 @@ import {
 }
 
 // Values
-pub fn[T : @ecs.EcsPayloadCodec] handle_ui_interactions(@ecs.Query[(@ecs.Comp[@ui.Interaction], @ecs.Comp[WidgetClickSender[T]]), @ecs.With[@ui.Button]], @ecs.MessageWriter[WidgetClickEvent[T]]) -> Unit
+pub fn[T : WidgetValue] handle_ui_interactions(@ecs.Query[(@ecs.Comp[@ui.Interaction], @ecs.Comp[WidgetClickSender[T]]), @ecs.With[@ui.Button]], @ecs.MessageWriter[WidgetClickEvent[T]]) -> Unit
 
 pub fn main_ui_node() -> @ui.Node
 
-pub fn[T : @ecs.EcsPayloadCodec] spawn_action_button(@app.Commands, @core.Entity, T, String) -> @core.Entity
+pub fn[T : WidgetValue] spawn_action_button(@app.Commands, @core.Entity, T, String) -> @core.Entity
 
-pub fn[T : @ecs.EcsPayloadCodec] spawn_option_button(@app.Commands, @core.Entity, T, String, Bool, Bool, Bool) -> @core.Entity
+pub fn[T : WidgetValue] spawn_option_button(@app.Commands, @core.Entity, T, String, Bool, Bool, Bool) -> @core.Entity
 
-pub fn[T : @ecs.EcsPayloadCodec] spawn_option_buttons(@app.Commands, @core.Entity, String, Array[(T, String)], Int) -> @core.Entity
+pub fn[T : WidgetValue] spawn_option_buttons(@app.Commands, @core.Entity, String, Array[(T, String)], Int) -> @core.Entity
 
 pub fn ui_text(String, @color.Color) -> (@text.Text, @text.TextFont, @text.TextColor)
 
@@ -27,9 +27,9 @@ pub fn update_ui_radio_button(@ecs.Mut[@ui.BackgroundColor], Bool) -> Unit
 
 pub fn update_ui_radio_button_text(@ecs.Mut[@text.TextColor], Bool) -> Unit
 
-pub fn[T] widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[T]]
+pub fn[T : WidgetValue] widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[T]]
 
-pub fn[T] widget_click_sender_key() -> @ecs.ComponentKey[WidgetClickSender[T]]
+pub fn[T : WidgetValue] widget_click_sender_key() -> @ecs.ComponentKey[WidgetClickSender[T]]
 
 // Errors
 
@@ -50,7 +50,7 @@ pub struct WidgetClickEvent[T] {
 pub fn[T] WidgetClickEvent::get(Self[T]) -> T
 pub fn[T] WidgetClickEvent::new(T) -> Self[T]
 pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for WidgetClickEvent[T]
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.Message for WidgetClickEvent[T]
+pub impl[T : WidgetValue] @ecs.Message for WidgetClickEvent[T]
 
 pub(all) struct WidgetClickEventPayload {
   value : @ecs.EcsPayload
@@ -61,7 +61,7 @@ pub struct WidgetClickSender[T] {
 }
 pub fn[T] WidgetClickSender::get(Self[T]) -> T
 pub fn[T] WidgetClickSender::new(T) -> Self[T]
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.Component for WidgetClickSender[T]
+pub impl[T : WidgetValue] @ecs.Component for WidgetClickSender[T]
 pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for WidgetClickSender[T]
 
 pub(all) struct WidgetClickSenderPayload {
@@ -71,4 +71,7 @@ pub(all) struct WidgetClickSenderPayload {
 // Type aliases
 
 // Traits
+pub(open) trait WidgetValue : @ecs.EcsPayloadCodec {
+  widget_debug_name() -> String
+}
 

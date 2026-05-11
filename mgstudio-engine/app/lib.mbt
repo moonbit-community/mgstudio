@@ -39,7 +39,8 @@ pub(open) trait Plugin {
 
 ///|
 impl Plugin with name(self) {
-  @any.of(self).type_name()
+  ignore(self)
+  "mgstudio.app.Plugin"
 }
 
 ///|
@@ -90,7 +91,8 @@ pub struct NoopPluginGroup {}
 
 ///|
 impl PluginGroup with name(self) {
-  @any.of(self).type_name()
+  ignore(self)
+  "mgstudio.app.PluginGroup"
 }
 
 ///|

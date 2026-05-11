@@ -122,6 +122,11 @@ pub impl Material2d for DummyMaterialAsset with alpha_mode(self) {
 }
 
 ///|
+pub impl Material2d for DummyMaterialAsset with material2d_debug_name() {
+  "mgstudio_sprite_test::DummyMaterialAsset"
+}
+
+///|
 pub impl Material2d for DummyMaterialAsset with bind_group(self) {
   let texture = match self.color_texture {
     Some(texture) => texture

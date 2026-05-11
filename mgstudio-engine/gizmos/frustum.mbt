@@ -44,6 +44,31 @@ pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with gizmo_config_
 }
 
 ///|
+pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with gizmo_config_group_debug_name() {
+  "mgstudio_gizmos::FrustumGizmoConfigGroup"
+}
+
+///|
+extenum @sprite.GizmoConfigGroupCell += {
+  FrustumGizmoConfigGroupCell(Ref[FrustumGizmoConfigGroup])
+}
+
+///|
+pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with new_gizmo_config_group_cell() {
+  FrustumGizmoConfigGroupCell(Ref(FrustumGizmoConfigGroup::default()))
+}
+
+///|
+pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with gizmo_config_group_cell_ref(
+  cell,
+) {
+  match cell {
+    FrustumGizmoConfigGroupCell(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 pub struct ShowFrustumGizmo {
   color : @sprite.Color?
 }

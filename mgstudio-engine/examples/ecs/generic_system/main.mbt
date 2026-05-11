@@ -55,6 +55,11 @@ let level_unload_key : @ecs.ComponentKey[LevelUnload] = @ecs.register_component(
 )
 
 ///|
+impl @app.States for AppState with type_debug_name() {
+  "AppState"
+}
+
+///|
 impl @app.States for AppState with debug_name(self) {
   ignore(self)
   "AppState"

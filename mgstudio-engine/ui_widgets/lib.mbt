@@ -57,16 +57,38 @@ pub struct ValueChange[T] {
 } derive(ToJson, FromJson)
 
 ///|
-fn[T] value_change_debug_name(_sample : T?) -> String {
-  let type_name = @any.of(_sample).type_name()
-  "mgstudio_ui_widgets::ValueChange<\{type_name}>"
+pub(open) trait ValueChangeValue: @ecs.EcsPayloadCodec {
+  value_change_value_debug_name() -> String
+}
+
+///|
+impl ValueChangeValue for Bool with value_change_value_debug_name() {
+  "Bool"
+}
+
+///|
+impl ValueChangeValue for Float with value_change_value_debug_name() {
+  "Float"
+}
+
+///|
+impl ValueChangeValue for @core.Entity with value_change_value_debug_name() {
+  "mgstudio_core::Entity"
+}
+
+///|
+fn[T : ValueChangeValue] value_change_debug_name(_sample : T?) -> String {
+  ignore(_sample)
+  "mgstudio_ui_widgets::ValueChange<\{T::value_change_value_debug_name()}>"
 }
 
 ///|
 let value_change_event_id_by_debug_name_ref : Ref[Map[String, Int]] = Ref({})
 
 ///|
-fn[T] value_change_event_key() -> @ecs.EventKey[ValueChange[T]] {
+fn[T : ValueChangeValue] value_change_event_key() -> @ecs.EventKey[
+  ValueChange[T],
+] {
   let debug_name = value_change_debug_name((None : T?))
   match value_change_event_id_by_debug_name_ref.val.get(debug_name) {
     Some(id) => @ecs.event_key_from_id(id, debug_name~)
@@ -79,19 +101,19 @@ fn[T] value_change_event_key() -> @ecs.EventKey[ValueChange[T]] {
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with observer_event() {
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with observer_event() {
   value_change_event_key()
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with observer_entity(
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with observer_entity(
   self,
 ) {
   Some(self.source)
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with set_observer_entity(
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with set_observer_entity(
   self,
   entity,
 ) {
@@ -99,14 +121,14 @@ pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with set
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with auto_propagate(
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with auto_propagate(
   _self,
 ) {
   false
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with debug_name() {
+pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with debug_name() {
   "ValueChange"
 }
 

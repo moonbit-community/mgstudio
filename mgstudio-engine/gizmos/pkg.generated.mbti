@@ -122,7 +122,7 @@ pub fn global_gizmos_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn global_gizmos_plugin_with(@app.App[@ecs.World], GlobalGizmosPlugin) -> @app.App[@ecs.World]
 
-pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], G) -> @app.App[@ecs.World]
+pub fn[G : @sprite.GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], G) -> @app.App[@ecs.World]
 
 pub fn install_retained_gizmo_required_components(@ecs.World) -> Unit
 
