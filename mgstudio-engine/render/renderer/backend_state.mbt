@@ -164,14 +164,10 @@ pub struct GpuBackend {
   mut mesh3d_ssr_settings_buf : @wgpu.Buffer?
   mut mesh3d_contact_shadows_settings_buf : @wgpu.Buffer?
   mut mesh3d_environment_map_uniform_buf : @wgpu.Buffer?
-  mut mesh3d_pass_view_uniform_bytes : Bytes?
-  mut mesh3d_pass_lights_uniform_bytes : Bytes?
-  mut mesh3d_pass_view_uniform_frame_count : UInt
-  mut mesh3d_pass_view_uniform_camera_key_hi : Int
-  mut mesh3d_pass_view_uniform_camera_key_lo : Int
-  mut mesh3d_pass_view_uniform_pass_kind : Int
   mut mesh3d_motion_vector_pass_view_uniform_bytes : Bytes?
   mut mesh3d_motion_vector_pass_previous_view_uniform_bytes : Bytes?
+  mesh3d_pass_uniform_states : Array[Mesh3dPassUniformState]
+  mesh3d_frame_view_bg_cache : Array[Mesh3dFrameViewBindGroupCacheEntry]
   mesh3d_draw_slots : Array[GpuStorageSlot]
   mesh3d_draw_slot_skin_revisions : Array[Int]
   mut mesh3d_draw_slot_used : Int

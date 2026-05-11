@@ -3417,6 +3417,18 @@ fn scene_build_from_gltf(
   for _ in doc.nodes {
     visited_nodes.push(false)
   }
+  let meshes_on_skinned_nodes : Array[Bool] = []
+  for _ in doc.meshes {
+    meshes_on_skinned_nodes.push(false)
+  }
+  for node in doc.nodes {
+    if node.skin is Some(_) &&
+      node.mesh is Some(mesh_index) &&
+      mesh_index >= 0 &&
+      mesh_index < meshes_on_skinned_nodes.length() {
+      meshes_on_skinned_nodes[mesh_index] = true
+    }
+  }
 
   let default_material_component = @pbr.MeshMaterial3d::new(
     @pbr.standard_material_add(@pbr.StandardMaterial::default()),
@@ -3597,6 +3609,16 @@ fn scene_build_from_gltf(
           )
           is Some(mesh_asset) else {
           continue
+        }
+        if skinned_mesh_bounds_policy ==
+          @gltf.GltfSkinnedMeshBoundsPolicy::Dynamic &&
+          mesh_index >= 0 &&
+          mesh_index < meshes_on_skinned_nodes.length() &&
+          meshes_on_skinned_nodes[mesh_index] {
+          match mesh_asset.generate_skinned_mesh_bounds() {
+            Ok(_) => ()
+            Err(_) => ()
+          }
         }
         let material_component = if should_load_materials {
           match primitive.material {

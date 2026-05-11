@@ -486,14 +486,10 @@ pub struct GpuBackend {
   mut mesh3d_ssr_settings_buf : @wgpu_mbt.Buffer?
   mut mesh3d_contact_shadows_settings_buf : @wgpu_mbt.Buffer?
   mut mesh3d_environment_map_uniform_buf : @wgpu_mbt.Buffer?
-  mut mesh3d_pass_view_uniform_bytes : Bytes?
-  mut mesh3d_pass_lights_uniform_bytes : Bytes?
-  mut mesh3d_pass_view_uniform_frame_count : UInt
-  mut mesh3d_pass_view_uniform_camera_key_hi : Int
-  mut mesh3d_pass_view_uniform_camera_key_lo : Int
-  mut mesh3d_pass_view_uniform_pass_kind : Int
   mut mesh3d_motion_vector_pass_view_uniform_bytes : Bytes?
   mut mesh3d_motion_vector_pass_previous_view_uniform_bytes : Bytes?
+  mesh3d_pass_uniform_states : Array[Mesh3dPassUniformState]
+  mesh3d_frame_view_bg_cache : Array[Mesh3dFrameViewBindGroupCacheEntry]
   mesh3d_draw_slots : Array[GpuStorageSlot]
   mesh3d_draw_slot_skin_revisions : Array[Int]
   mut mesh3d_draw_slot_used : Int
@@ -717,7 +713,7 @@ pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float
 pub fn GpuBackend::draw_mesh3d(Self, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Int, Int, Float, Float, Int, Float, Float, UInt, Int, Int, Float, Float, Float, Float, Float, Int, String?, String?, Int, Int, skinning_matrices? : Array[Float]?) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d_main_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Int, Float, Float, UInt, Int, String?, String?, Int, Int, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d_motion_vector_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Bool) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Int, UInt, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Bool, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Int, UInt, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh_material(Self, Int, Float, Float, Float, Float, Float, Int, HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
@@ -1179,6 +1175,8 @@ pub struct Mesh2dPipelineCacheEntry {
   pipeline : @wgpu_mbt.RenderPipeline
 }
 
+type Mesh3dFrameViewBindGroupCacheEntry
+
 pub struct Mesh3dMaterialBindGroupCacheEntry {
   base_texture_id : Int
   normal_texture_id : Int
@@ -1192,6 +1190,8 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   material_uniform_buffer : @wgpu_mbt.Buffer
   bind_group : @wgpu_mbt.BindGroup
 }
+
+type Mesh3dPassUniformState
 
 type Mesh3dPipelineCacheEntry
 

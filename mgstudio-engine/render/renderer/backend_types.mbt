@@ -104,6 +104,33 @@ pub struct Mesh3dViewBindGroupCacheEntry {
 }
 
 ///|
+struct Mesh3dPassUniformState {
+  frame_count : UInt
+  camera_key_hi : Int
+  camera_key_lo : Int
+  pass_kind : Int
+  view_buffer : @wgpu.Buffer
+  lights_buffer : @wgpu.Buffer
+  mut shadow_view_bind_group : @wgpu.BindGroup?
+}
+
+///|
+struct Mesh3dFrameViewBindGroupCacheEntry {
+  frame_count : UInt
+  camera_key_hi : Int
+  camera_key_lo : Int
+  pass_kind : Int
+  transmission_source_texture_id : Int
+  point_shadow_texture_id : Int
+  directional_shadow_texture_id : Int
+  environment_diffuse_texture_id : Int
+  environment_specular_texture_id : Int
+  tonemapping_lut_texture_id : Int
+  bind_group : @wgpu.BindGroup
+  binding_arrays_bind_group : @wgpu.BindGroup
+}
+
+///|
 pub struct Mesh2dPipelineCacheEntry {
   key : String
   pipeline : @wgpu.RenderPipeline

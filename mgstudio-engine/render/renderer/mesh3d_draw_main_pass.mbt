@@ -330,40 +330,15 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   } else {
     0.0F
   }
-  guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
-  guard self.mesh3d_lights_buf is Some(active_lights_buffer) else { return }
+  guard mesh3d_pass_uniform_state_get_or_create(
+      self, ps, preprocess_camera_key_hi, preprocess_camera_key_lo, pass_kind,
+    )
+    is Some(pass_uniforms) else {
+    return
+  }
   guard draw_buffer is Some(active_draw_buffer) else { return }
   guard draw_bind_group is Some(active_draw_bg) else { return }
   ignore(skinning_key_lo)
-  let view_cache_hit = self.mesh3d_pass_view_uniform_bytes is Some(_) &&
-    self.mesh3d_pass_view_uniform_frame_count == self.frame_count &&
-    self.mesh3d_pass_view_uniform_camera_key_hi == preprocess_camera_key_hi &&
-    self.mesh3d_pass_view_uniform_camera_key_lo == preprocess_camera_key_lo &&
-    self.mesh3d_pass_view_uniform_pass_kind == pass_kind
-  if !view_cache_hit {
-    let view_bytes = mesh3d_view_uniform_bytes(ps)
-    let lights_bytes = mesh3d_lights_uniform_bytes(ps)
-    let view_needs_upload = match self.mesh3d_pass_view_uniform_bytes {
-      Some(cached) => cached != view_bytes
-      None => true
-    }
-    let lights_needs_upload = match self.mesh3d_pass_lights_uniform_bytes {
-      Some(cached) => cached != lights_bytes
-      None => true
-    }
-    if view_needs_upload {
-      self.queue.write_buffer(active_view_buffer, 0UL, view_bytes)
-      self.mesh3d_pass_view_uniform_bytes = Some(view_bytes)
-    }
-    if lights_needs_upload {
-      self.queue.write_buffer(active_lights_buffer, 0UL, lights_bytes)
-      self.mesh3d_pass_lights_uniform_bytes = Some(lights_bytes)
-    }
-    self.mesh3d_pass_view_uniform_frame_count = self.frame_count
-    self.mesh3d_pass_view_uniform_camera_key_hi = preprocess_camera_key_hi
-    self.mesh3d_pass_view_uniform_camera_key_lo = preprocess_camera_key_lo
-    self.mesh3d_pass_view_uniform_pass_kind = pass_kind
-  }
   let draw_preuploaded = (
       self.mesh3d_gpu_instance_builder_enabled || use_indirect
     ) &&
@@ -425,8 +400,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }
-  let (view_bg, binding_arrays_bg) = mesh3d_view_bg_cache_get_or_create(
+  let (view_bg, binding_arrays_bg) = mesh3d_frame_view_bg_cache_get_or_create(
     self,
+    pass_uniforms,
     transmission_source_texture,
     point_shadow_texture,
     directional_shadow_texture,

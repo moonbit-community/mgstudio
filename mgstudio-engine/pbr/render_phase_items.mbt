@@ -139,6 +139,7 @@ priv struct Mesh3dExtractedPayload {
   transform : @transform.Transform
   previous_transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?
+  aabb : @camera_primitives.Aabb?
   aabb_center_world : @math.Vec3?
   material : StandardMaterial
   material_extension : ExtendedMaterialMetadata3d?

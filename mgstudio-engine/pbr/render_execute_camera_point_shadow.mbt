@@ -50,7 +50,6 @@ fn render3d_execute_camera_point_shadow_pass(
     shadow_camera_near,
     pass_lighting.point_range,
   )
-  let mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d] = {}
   for face_index in 0..<6 {
     let shadow_camera_transform = @pbr_render.render3d_point_shadow_face_transform(
       pass_lighting.point_pos,
@@ -69,7 +68,6 @@ fn render3d_execute_camera_point_shadow_pass(
         render3d_host_preprocess_frustum_planes_from_half_spaces(
           shadow_frustum.half_spaces,
         ),
-        mesh_preprocess_static_cache,
       ),
     )
     let shadow_view = Render3dShadowView::{

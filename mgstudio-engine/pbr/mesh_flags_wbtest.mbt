@@ -213,6 +213,7 @@ fn render3d_test_extracted_mesh_for_flags(
       transform,
       previous_transform: transform,
       visibility_range: None,
+      aabb: None,
       aabb_center_world: None,
       material: StandardMaterial::default(),
       material_extension: None,

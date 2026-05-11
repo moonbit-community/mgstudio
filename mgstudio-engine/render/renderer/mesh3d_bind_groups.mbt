@@ -261,6 +261,233 @@ fn mesh3d_view_bg_cache_get_or_create(
 }
 
 ///|
+fn mesh3d_frame_view_bg_cache_get_or_create(
+  backend : GpuBackend,
+  uniforms : Mesh3dPassUniformState,
+  transmission_source_texture : GpuTextureInfo,
+  point_shadow_texture : GpuTextureInfo,
+  directional_shadow_texture : GpuTextureInfo,
+  environment_diffuse_texture : GpuTextureInfo,
+  environment_specular_texture : GpuTextureInfo,
+  tonemapping_mode : Int,
+  agx_lut_texture_id : Int,
+  tony_lut_texture_id : Int,
+  blender_lut_texture_id : Int,
+) -> (@wgpu.BindGroup, @wgpu.BindGroup) raise GpuBackendError {
+  let dt_lut_texture = tonemapping_selected_lut_texture(
+    backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
+  )
+  for entry in backend.mesh3d_frame_view_bg_cache {
+    if entry.frame_count == uniforms.frame_count &&
+      entry.camera_key_hi == uniforms.camera_key_hi &&
+      entry.camera_key_lo == uniforms.camera_key_lo &&
+      entry.pass_kind == uniforms.pass_kind &&
+      entry.transmission_source_texture_id == transmission_source_texture.id &&
+      entry.point_shadow_texture_id == point_shadow_texture.id &&
+      entry.directional_shadow_texture_id == directional_shadow_texture.id &&
+      entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
+      entry.environment_specular_texture_id == environment_specular_texture.id &&
+      entry.tonemapping_lut_texture_id == dt_lut_texture.id {
+      return (entry.bind_group, entry.binding_arrays_bind_group)
+    }
+  }
+  guard backend.frame is Some(frame) else {
+    fatal("wgpu: missing active frame for mesh3d view bind group")
+  }
+  let layout = match backend.mesh3d_bgl_view {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d view bind group layout")
+  }
+  let binding_arrays_layout = match backend.mesh3d_bgl_binding_arrays {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d binding-array bind group layout")
+  }
+  let clustered_lights_buf = match backend.mesh3d_clustered_lights_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d clustered lights buffer")
+  }
+  let clusterable_object_index_lists_buf = match
+    backend.mesh3d_clusterable_object_index_lists_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d clusterable object index lists buffer")
+  }
+  let cluster_offsets_and_counts_buf = match
+    backend.mesh3d_cluster_offsets_and_counts_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d cluster offsets and counts buffer")
+  }
+  let globals_buf = match backend.mesh3d_globals_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d globals buffer")
+  }
+  let fog_buf = match backend.mesh3d_fog_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d fog buffer")
+  }
+  let light_probes_buf = match backend.mesh3d_light_probes_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d light probes buffer")
+  }
+  let visibility_ranges_buf = match backend.mesh3d_visibility_ranges_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d visibility ranges buffer")
+  }
+  let ssr_settings_buf = match backend.mesh3d_ssr_settings_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d ssr settings buffer")
+  }
+  let contact_shadows_settings_buf = match
+    backend.mesh3d_contact_shadows_settings_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d contact shadows settings buffer")
+  }
+  let environment_map_uniform_buf = match
+    backend.mesh3d_environment_map_uniform_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d environment map uniform buffer")
+  }
+  let point_shadow_sample_view = match point_shadow_texture.sample_view {
+    Some(view) => view
+    None => point_shadow_texture.view
+  }
+  let point_shadow_compare_sampler = ensure_mesh3d_point_shadow_compare_sampler(
+    backend,
+  )
+  let dt_lut_sample_view = match dt_lut_texture.sample_view {
+    Some(view) => view
+    None => dt_lut_texture.view
+  }
+  let directional_shadow_sample_view = match
+    directional_shadow_texture.sample_view {
+    Some(view) => view
+    None => directional_shadow_texture.view
+  }
+  let fallback_environment_texture = ensure_environment_map_fallback_texture(
+    backend,
+  )
+  let fallback_environment_sample_view = match
+    fallback_environment_texture.sample_view {
+    Some(view) => view
+    None => fallback_environment_texture.view
+  }
+  let environment_diffuse_sample_view = match
+    environment_diffuse_texture.sample_view {
+    Some(view) => view
+    None => fallback_environment_sample_view
+  }
+  let environment_specular_sample_view = match
+    environment_specular_texture.sample_view {
+    Some(view) => view
+    None => fallback_environment_sample_view
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=21UL)
+  let ok = builder.add_buffer(
+      0U,
+      uniforms.view_buffer,
+      size=MESH3D_VIEW_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      1U,
+      uniforms.lights_buffer,
+      size=MESH3D_LIGHTS_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      8U,
+      clustered_lights_buf,
+      size=MESH3D_CLUSTERED_LIGHTS_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      9U,
+      clusterable_object_index_lists_buf,
+      size=MESH3D_CLUSTERABLE_OBJECT_INDEX_LISTS_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      10U,
+      cluster_offsets_and_counts_buf,
+      size=MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(11U, globals_buf, size=MESH3D_GLOBALS_BUFFER_SIZE) &&
+    builder.add_buffer(12U, fog_buf, size=MESH3D_FOG_BUFFER_SIZE) &&
+    builder.add_buffer(
+      13U,
+      light_probes_buf,
+      size=MESH3D_LIGHT_PROBES_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      14U,
+      visibility_ranges_buf,
+      size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      15U,
+      ssr_settings_buf,
+      size=MESH3D_SSR_SETTINGS_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      16U,
+      contact_shadows_settings_buf,
+      size=MESH3D_CONTACT_SHADOWS_SETTINGS_BUFFER_SIZE,
+    ) &&
+    builder.add_texture_view(17U, transmission_source_texture.view) &&
+    builder.add_buffer(
+      18U,
+      environment_map_uniform_buf,
+      size=MESH3D_ENVIRONMENT_MAP_UNIFORM_BUFFER_SIZE,
+    ) &&
+    builder.add_texture_view(19U, dt_lut_sample_view) &&
+    builder.add_sampler(20U, dt_lut_texture.sampler) &&
+    builder.add_texture_view(2U, point_shadow_sample_view) &&
+    builder.add_sampler(3U, point_shadow_compare_sampler) &&
+    builder.add_texture_view(5U, directional_shadow_sample_view) &&
+    builder.add_sampler(6U, point_shadow_compare_sampler) &&
+    builder.add_texture_view(25U, transmission_source_texture.view) &&
+    builder.add_sampler(26U, transmission_source_texture.sampler)
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build mesh3d frame view bind group")
+  }
+  let bind_group = builder.finish(
+    backend.device,
+    layout,
+    label="mgstudio_mesh3d_view_bg",
+  )
+  let binding_arrays_builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+  let binding_arrays_ok = binding_arrays_builder.add_texture_view(
+      0U, environment_diffuse_sample_view,
+    ) &&
+    binding_arrays_builder.add_texture_view(
+      1U, environment_specular_sample_view,
+    ) &&
+    binding_arrays_builder.add_sampler(2U, environment_diffuse_texture.sampler)
+  if !binding_arrays_ok {
+    binding_arrays_builder.free()
+    fatal("wgpu: failed to build mesh3d frame binding-array bind group")
+  }
+  let binding_arrays_bind_group = binding_arrays_builder.finish(
+    backend.device,
+    binding_arrays_layout,
+    label="mgstudio_mesh3d_binding_arrays_bg",
+  )
+  frame.transient_bind_groups.push(bind_group)
+  frame.transient_bind_groups.push(binding_arrays_bind_group)
+  backend.mesh3d_frame_view_bg_cache.push(Mesh3dFrameViewBindGroupCacheEntry::{
+    frame_count: uniforms.frame_count,
+    camera_key_hi: uniforms.camera_key_hi,
+    camera_key_lo: uniforms.camera_key_lo,
+    pass_kind: uniforms.pass_kind,
+    transmission_source_texture_id: transmission_source_texture.id,
+    point_shadow_texture_id: point_shadow_texture.id,
+    directional_shadow_texture_id: directional_shadow_texture.id,
+    environment_diffuse_texture_id: environment_diffuse_texture.id,
+    environment_specular_texture_id: environment_specular_texture.id,
+    tonemapping_lut_texture_id: dt_lut_texture.id,
+    bind_group,
+    binding_arrays_bind_group,
+  })
+  (bind_group, binding_arrays_bind_group)
+}
+
+///|
 fn mesh3d_material_cache_get_or_create(
   backend : GpuBackend,
   base_texture : GpuTextureInfo,

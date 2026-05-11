@@ -91,6 +91,7 @@ fn render3d_execute_camera(
   let scene_pass_kind = pass_config.scene_pass_kind
   let motion_vector_pass_kind = pass_config.motion_vector_pass_kind
   let point_shadow_pass_kind = pass_config.point_shadow_pass_kind
+  let directional_shadow_pass_kind = pass_config.directional_shadow_pass_kind
   let mut scene_target_id = camera.target_id
   let mut velocity_target_id = -1
   let mut shadow_bindings = render3d_view_shadow_bindings_none()
@@ -114,7 +115,7 @@ fn render3d_execute_camera(
     point_shadow_pass_kind,
   )
   let directional_shadow_binding = render3d_execute_camera_directional_shadow_pass(
-    world, camera_entity, camera, pass_lighting, meshes, point_shadow_pass_kind,
+    world, camera_entity, camera, pass_lighting, meshes, directional_shadow_pass_kind,
   )
   shadow_bindings = Render3dViewShadowBindings::{
     point: point_shadow_binding,

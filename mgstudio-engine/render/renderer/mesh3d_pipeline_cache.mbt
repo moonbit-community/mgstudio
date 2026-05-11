@@ -223,6 +223,7 @@ struct Mesh3dShadowPipelineCacheEntry {
   cull_mode : Int
   material_path : Bool
   skinned : Bool
+  directional_light : Bool
   pipeline : @wgpu.RenderPipeline
 }
 
@@ -233,13 +234,15 @@ fn mesh3d_shadow_pipeline_get(
   cull_mode : Int,
   material_path : Bool,
   skinned : Bool,
+  directional_light : Bool,
 ) -> @wgpu.RenderPipeline? {
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   for entry in backend.mesh3d_shadow_pipeline_cache {
     if entry.topology == topology &&
       entry.cull_mode == safe_cull_mode &&
       entry.material_path == material_path &&
-      entry.skinned == skinned {
+      entry.skinned == skinned &&
+      entry.directional_light == directional_light {
       return Some(entry.pipeline)
     }
   }
@@ -253,6 +256,7 @@ fn mesh3d_shadow_pipeline_set(
   cull_mode : Int,
   material_path : Bool,
   skinned : Bool,
+  directional_light : Bool,
   pipeline : @wgpu.RenderPipeline,
 ) -> Unit {
   backend.mesh3d_shadow_pipeline_cache.push({
@@ -260,6 +264,7 @@ fn mesh3d_shadow_pipeline_set(
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
     material_path,
     skinned,
+    directional_light,
     pipeline,
   })
 }

@@ -67,6 +67,8 @@ pub const RENDER3D_MORPH_BUFFER_SIZE_BYTES : Int = 256
 
 pub const RENDER3D_MORPH_WEIGHT_SIZE_BYTES : Int = 4
 
+pub const RENDER3D_PASS_KIND_BASE_DIRECTIONAL_SHADOW : Int = 3
+
 pub const RENDER3D_PASS_KIND_BASE_MOTION_VECTOR : Int = 1
 
 pub const RENDER3D_PASS_KIND_BASE_POINT_SHADOW : Int = 2
@@ -538,6 +540,7 @@ pub struct ExtractedDirectionalLight3d {
   cascade_count : Int
   cascade_bounds : Array[Float]
   cascade_overlap_proportion : Float
+  cascade_minimum_distance : Float
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
 }
@@ -1007,6 +1010,7 @@ pub(all) struct Render3dLightingState {
   directional_shadow_soft_size : Float
   directional_cascade_bounds : Array[Float]
   directional_cascade_overlap_proportion : Float
+  directional_cascade_minimum_distance : Float
   point_entity : @core.Entity?
   point_pos : @math.Vec3
   point_color : @color.Color

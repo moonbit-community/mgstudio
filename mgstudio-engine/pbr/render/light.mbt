@@ -27,6 +27,7 @@ pub(all) struct Render3dLightingState {
   directional_shadow_soft_size : Float
   directional_cascade_bounds : Array[Float]
   directional_cascade_overlap_proportion : Float
+  directional_cascade_minimum_distance : Float
   point_entity : @core.Entity?
   point_pos : @math.Vec3
   point_color : @sprite.Color
@@ -247,6 +248,7 @@ pub struct ExtractedDirectionalLight3d {
   cascade_count : Int
   cascade_bounds : Array[Float]
   cascade_overlap_proportion : Float
+  cascade_minimum_distance : Float
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
 }
@@ -933,6 +935,7 @@ fn render3d_extract_directional_light(
     },
     cascade_bounds: cascade_config.bounds,
     cascade_overlap_proportion,
+    cascade_minimum_distance: cascade_config.minimum_distance,
     sun_disk_angular_size: sun_disk.angular_size,
     sun_disk_intensity: sun_disk.intensity,
   }
@@ -1674,6 +1677,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     directional_shadow_soft_size: 0.0F,
     directional_cascade_bounds: [],
     directional_cascade_overlap_proportion: 0.0F,
+    directional_cascade_minimum_distance: 0.1F,
     point_entity: None,
     point_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     point_color: @sprite.Color::white(),
@@ -1723,6 +1727,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       directional_shadow_soft_size: directional.soft_shadow_size.unwrap_or(0.0F),
       directional_cascade_bounds: directional.cascade_bounds,
       directional_cascade_overlap_proportion: directional.cascade_overlap_proportion,
+      directional_cascade_minimum_distance: directional.cascade_minimum_distance,
     }
   }
   let point_lights = render3d_collect_extracted_point_lights(world)

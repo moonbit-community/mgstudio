@@ -66,6 +66,13 @@ extern "C" fn render_pipeline_descriptor_set_cull_mode_native(
 ) -> UInt = "mgstudio_render_pipeline_descriptor_set_cull_mode"
 
 ///|
+#borrow(descriptor)
+extern "C" fn render_pipeline_descriptor_set_unclipped_depth_native(
+  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
+  unclipped_depth : Bool,
+) -> UInt = "mgstudio_render_pipeline_descriptor_set_unclipped_depth"
+
+///|
 #borrow(descriptor, fragment_module)
 extern "C" fn render_pipeline_descriptor_set_fragment_module_native(
   descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
@@ -115,6 +122,19 @@ fn render_pipeline_descriptor_set_cull_mode(
   )
   if err != 0U {
     abort("wgpu: failed to configure mesh pipeline cull mode")
+  }
+}
+
+///|
+fn render_pipeline_descriptor_set_unclipped_depth(
+  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
+  unclipped_depth : Bool,
+) -> Unit {
+  let err = render_pipeline_descriptor_set_unclipped_depth_native(
+    descriptor, unclipped_depth,
+  )
+  if err != 0U {
+    abort("wgpu: failed to configure mesh pipeline unclipped depth")
   }
 }
 

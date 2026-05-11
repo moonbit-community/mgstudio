@@ -213,10 +213,17 @@ fn mesh3d_forward_value_defines() -> @hashmap.HashMap[
 fn mesh3d_shadow_shader_defines(
   skinned : Bool,
   material_path : Bool,
+  directional_light : Bool,
+  emulate_unclipped_depth : Bool,
 ) -> @hashmap.HashMap[String, Bool] {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   defines.set("PREPASS_PIPELINE", true)
   defines.set("DEPTH_PREPASS", true)
+  if directional_light {
+    defines.set("VIEW_PROJECTION_ORTHOGRAPHIC", true)
+  } else {
+    defines.set("VIEW_PROJECTION_PERSPECTIVE", true)
+  }
   defines.set("VERTEX_POSITIONS", true)
   defines.set("VERTEX_UVS", true)
   defines.set("VERTEX_UVS_A", true)
@@ -225,6 +232,10 @@ fn mesh3d_shadow_shader_defines(
   if skinned {
     defines.set("SKINNED", true)
   }
+  if emulate_unclipped_depth {
+    defines.set("UNCLIPPED_DEPTH_ORTHO_EMULATION", true)
+    defines.set("PREPASS_FRAGMENT", true)
+  }
   if material_path {
     defines.set("MAY_DISCARD", true)
   }
@@ -232,16 +243,42 @@ fn mesh3d_shadow_shader_defines(
 }
 
 ///|
+fn mesh3d_shadow_depth_supports_native_unclipped_depth(
+  backend : GpuBackend,
+  directional_light : Bool,
+) -> Bool {
+  directional_light &&
+  backend.device.supported_features_contains_u32(
+    @wgpu.FEATURE_NAME_DEPTH_CLIP_CONTROL,
+  )
+}
+
+///|
+fn mesh3d_shadow_depth_should_emulate_unclipped_depth(
+  backend : GpuBackend,
+  directional_light : Bool,
+) -> Bool {
+  directional_light &&
+  !mesh3d_shadow_depth_supports_native_unclipped_depth(
+    backend, directional_light,
+  )
+}
+
+///|
 fn load_wgsl_required_mesh3d_shadow_pipeline(
   assets_base : String,
   skinned : Bool,
   material_path : Bool,
+  directional_light : Bool,
+  emulate_unclipped_depth : Bool,
   shader_path : String,
 ) -> String raise GpuBackendError {
   load_wgsl_preprocessed(
     assets_base,
     shader_path,
-    mesh3d_shadow_shader_defines(skinned, material_path),
+    mesh3d_shadow_shader_defines(
+      skinned, material_path, directional_light, emulate_unclipped_depth,
+    ),
     mesh3d_forward_value_defines(),
   )
 }
@@ -1305,9 +1342,17 @@ fn mesh3d_build_shadow_depth_pipeline(
   cull_mode : Int,
   material_path : Bool,
   skinned : Bool,
+  directional_light : Bool,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
   ensure_mesh3d_shadow_pipeline_layout_resources(backend)
-  let pipeline_layout = if material_path {
+  let native_unclipped_depth = mesh3d_shadow_depth_supports_native_unclipped_depth(
+    backend, directional_light,
+  )
+  let emulate_unclipped_depth = mesh3d_shadow_depth_should_emulate_unclipped_depth(
+    backend, directional_light,
+  )
+  let effective_material_path = material_path || emulate_unclipped_depth
+  let pipeline_layout = if effective_material_path {
     backend.mesh3d_shadow_pipeline_layout_material
   } else {
     backend.mesh3d_shadow_pipeline_layout_depth_only
@@ -1321,16 +1366,20 @@ fn mesh3d_build_shadow_depth_pipeline(
     backend.assets_base,
     skinned,
     material_path,
+    directional_light,
+    emulate_unclipped_depth,
     MESH3D_PREPASS_VERTEX_SHADER_PATH,
   )
   let vertex_sm = backend.device.create_shader_module_wgsl(vertex_wgsl)
-  let fragment_sm = if material_path {
+  let fragment_sm = if effective_material_path {
     Some(
       backend.device.create_shader_module_wgsl(
         load_wgsl_required_mesh3d_shadow_pipeline(
           backend.assets_base,
           skinned,
           material_path,
+          directional_light,
+          emulate_unclipped_depth,
           MESH3D_PREPASS_MATERIAL_FRAGMENT_SHADER_PATH,
         ),
       ),
@@ -1360,6 +1409,9 @@ fn mesh3d_build_shadow_depth_pipeline(
     )
     let desc = builder.finish_descriptor_ptr()
     render_pipeline_descriptor_set_cull_mode(desc, cull_mode_wgpu)
+    if native_unclipped_depth {
+      render_pipeline_descriptor_set_unclipped_depth(desc, true)
+    }
     match fragment_sm {
       Some(fragment_module) => {
         render_pipeline_descriptor_set_fragment_module(desc, fragment_module)
@@ -1389,13 +1441,15 @@ fn mesh3d_build_shadow_depth_pipeline(
     "depth_only_"
   }
   let skinned_suffix = if skinned { "_skinned" } else { "_unskinned" }
+  let light_suffix = if directional_light { "_directional" } else { "_point" }
   pipeline.set_label(
     "mgstudio_mesh3d_shadow_" +
     shadow_pipeline_suffix +
     mesh3d_topology_suffix(topology) +
     "_cull_" +
     mesh3d_cull_mode_suffix(safe_cull_mode) +
-    skinned_suffix,
+    skinned_suffix +
+    light_suffix,
   )
   vertex_sm.release()
   match fragment_sm {
@@ -1412,19 +1466,20 @@ fn mesh3d_shadow_depth_pipeline_for_current_pass(
   cull_mode : Int,
   material_path : Bool,
   skinned : Bool,
+  directional_light : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   ensure_mesh3d_shadow_pipeline_layout_resources(backend)
   if mesh3d_shadow_pipeline_get(
-      backend, topology, cull_mode, material_path, skinned,
+      backend, topology, cull_mode, material_path, skinned, directional_light,
     )
     is Some(pipeline) {
     return Some(pipeline)
   }
   let pipeline = mesh3d_build_shadow_depth_pipeline(
-    backend, topology, cull_mode, material_path, skinned,
+    backend, topology, cull_mode, material_path, skinned, directional_light,
   )
   mesh3d_shadow_pipeline_set(
-    backend, topology, cull_mode, material_path, skinned, pipeline,
+    backend, topology, cull_mode, material_path, skinned, directional_light, pipeline,
   )
   Some(pipeline)
 }

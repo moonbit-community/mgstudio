@@ -79,6 +79,9 @@ const PASS_KIND_BASE_MOTION_VECTOR : Int = 1
 const PASS_KIND_BASE_POINT_SHADOW : Int = 2
 
 ///|
+const PASS_KIND_BASE_DIRECTIONAL_SHADOW : Int = 3
+
+///|
 const MESH3D_CULL_MODE_MASK : Int = 3
 
 ///|

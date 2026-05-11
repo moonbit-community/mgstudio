@@ -224,7 +224,11 @@ fn render3d_directional_shadow_cascades(
   let overlap_factor = 1.0F -
     pass_lighting.directional_cascade_overlap_proportion
   for i in 0..<count {
-    let near_bound = if i == 0 { 0.1F } else { overlap_factor * bounds[i - 1] }
+    let near_bound = if i == 0 {
+      pass_lighting.directional_cascade_minimum_distance
+    } else {
+      overlap_factor * bounds[i - 1]
+    }
     let far_bound = bounds[i]
     let corners = camera.projection.get_frustum_corners(-near_bound, -far_bound)
     cascades.push(
@@ -279,6 +283,25 @@ fn render3d_directional_shadow_cascade_data(
 }
 
 ///|
+fn render3d_directional_shadow_frustum_planes(
+  clip_from_world : @pbr_render.ProjectionMatrix3d,
+) -> Array[@render.HostMesh3dPreprocessFrustumPlane] {
+  let planes = render3d_host_preprocess_view_frustum_planes_from_clip_from_world(
+    clip_from_world,
+  )
+  if @pbr_render.VIEW_FRUSTUM_NEAR_PLANE_IDX < planes.length() {
+    let near = planes[@pbr_render.VIEW_FRUSTUM_NEAR_PLANE_IDX]
+    planes[@pbr_render.VIEW_FRUSTUM_NEAR_PLANE_IDX] = @render.HostMesh3dPreprocessFrustumPlane::{
+      normal_x: near.normal_x,
+      normal_y: near.normal_y,
+      normal_z: near.normal_z,
+      distance: @float.infinity,
+    }
+  }
+  planes
+}
+
+///|
 fn render3d_execute_camera_directional_shadow_pass(
   world : @ecs.World,
   camera_entity : @core.Entity,
@@ -312,19 +335,15 @@ fn render3d_execute_camera_directional_shadow_pass(
     shadow_map_size,
     cascades.length(),
   )
-  let mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d] = {}
   for cascade_index in 0..<cascades.length() {
     let cascade = cascades[cascade_index]
-    let cascade_phase_items = render3d_queue_shadow_phase_items(
+    let visible_indices = render3d_shadow_visible_extracted_indices(
       meshes,
-      render3d_shadow_visible_extracted_indices(
-        meshes,
-        camera.layers,
-        render3d_host_preprocess_view_frustum_planes_from_clip_from_world(
-          cascade.clip_from_world,
-        ),
-        mesh_preprocess_static_cache,
-      ),
+      camera.layers,
+      render3d_directional_shadow_frustum_planes(cascade.clip_from_world),
+    )
+    let cascade_phase_items = render3d_queue_shadow_phase_items(
+      meshes, visible_indices,
     )
     let shadow_view = Render3dShadowView::{
       target_id,

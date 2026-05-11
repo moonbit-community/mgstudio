@@ -561,7 +561,7 @@ fn main {
   .add_systems(
     @app.Update,
     @app.system(@app.system_param2(rotate)).run_if(
-      @input.input_toggle_active(false, @window.KeyCode::KeyR),
+      @input.input_toggle_active(true, @window.KeyCode::KeyR),
     ),
   )
   .add_systems(

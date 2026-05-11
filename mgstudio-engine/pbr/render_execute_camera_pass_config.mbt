@@ -39,6 +39,7 @@ priv struct Render3dExecuteCameraPassConfig {
   scene_pass_kind : Int
   motion_vector_pass_kind : Int
   point_shadow_pass_kind : Int
+  directional_shadow_pass_kind : Int
   point_shadow_near : Float
 }
 
@@ -201,6 +202,12 @@ fn render3d_execute_camera_pass_config(
     false,
     false,
   )
+  let directional_shadow_pass_kind = @pbr_render.render3d_pass_kind_encode(
+    @pbr_render.RENDER3D_PASS_KIND_BASE_DIRECTIONAL_SHADOW,
+    false,
+    false,
+    false,
+  )
   let point_shadow_near = if pass_lighting.point_shadow_map_near_z > 0.0001F {
     pass_lighting.point_shadow_map_near_z
   } else {
@@ -232,6 +239,7 @@ fn render3d_execute_camera_pass_config(
     scene_pass_kind,
     motion_vector_pass_kind,
     point_shadow_pass_kind,
+    directional_shadow_pass_kind,
     point_shadow_near,
   }
 }

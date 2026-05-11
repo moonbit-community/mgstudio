@@ -201,8 +201,6 @@ pub fn GpuBackend::begin_pass(
   self.ui_slice_vertex_data.clear()
   self.ui_slice_batches.clear()
   self.ui_slice_vertex_count = 0U
-  self.mesh3d_pass_view_uniform_bytes = None
-  self.mesh3d_pass_lights_uniform_bytes = None
   self.mesh3d_motion_vector_pass_view_uniform_bytes = None
   self.mesh3d_motion_vector_pass_previous_view_uniform_bytes = None
   ensure_sprite_resources(self)
@@ -439,8 +437,6 @@ pub fn GpuBackend::begin_pass_with_depth(
   self.ui_slice_vertex_data.clear()
   self.ui_slice_batches.clear()
   self.ui_slice_vertex_count = 0U
-  self.mesh3d_pass_view_uniform_bytes = None
-  self.mesh3d_pass_lights_uniform_bytes = None
   self.mesh3d_motion_vector_pass_view_uniform_bytes = None
   self.mesh3d_motion_vector_pass_previous_view_uniform_bytes = None
   ensure_sprite_resources(self)
@@ -611,8 +607,9 @@ pub fn GpuBackend::begin_pass_3d(
     frame.pass = None
   }
   let base_kind = pass_kind_base_kind(pass_kind)
-  let (color_view, secondary_color_view, depth_view) = if base_kind ==
-    PASS_KIND_BASE_POINT_SHADOW {
+  let is_shadow_depth_pass = base_kind == PASS_KIND_BASE_POINT_SHADOW ||
+    base_kind == PASS_KIND_BASE_DIRECTIONAL_SHADOW
+  let (color_view, secondary_color_view, depth_view) = if is_shadow_depth_pass {
     guard target_view(self, target_id, target_layer) is Some(shadow_depth_view) else {
       return
     }
@@ -923,8 +920,6 @@ pub fn GpuBackend::begin_pass_3d(
   self.ui_slice_vertex_data.clear()
   self.ui_slice_batches.clear()
   self.ui_slice_vertex_count = 0U
-  self.mesh3d_pass_view_uniform_bytes = None
-  self.mesh3d_pass_lights_uniform_bytes = None
   self.mesh3d_motion_vector_pass_view_uniform_bytes = None
   self.mesh3d_motion_vector_pass_previous_view_uniform_bytes = None
   ensure_sprite_resources(self)

@@ -22,46 +22,14 @@ fn render3d_absf(value : Float) -> Float {
 }
 
 ///|
-fn render3d_mesh_preprocess_static_for_payload(
-  payload : Mesh3dExtractedPayload,
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
-) -> MeshPreprocessStatic3d? {
-  if payload.mesh_preprocess_static is Some(metadata) {
-    return Some(metadata)
-  }
-  let mesh_handle_id = payload.mesh_handle.id()
-  if mesh_handle_id < 0 {
-    return None
-  }
-  match mesh_preprocess_static_cache.get(mesh_handle_id) {
-    Some(metadata) => Some(metadata)
-    None => {
-      let metadata = render3d_mesh_preprocess_static(payload.mesh_handle)
-      mesh_preprocess_static_cache.set(mesh_handle_id, metadata)
-      Some(metadata)
-    }
-  }
-}
-
-///|
 fn render3d_mesh_frustum_visible(
   payload : Mesh3dExtractedPayload,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
 ) -> Bool {
-  guard render3d_mesh_preprocess_static_for_payload(
-      payload, mesh_preprocess_static_cache,
-    )
-    is Some(mesh_static) else {
-    return true
-  }
-  if !mesh_static.has_local_aabb {
-    return true
-  }
-  let center_world = payload.world_from_local.transform_point3(
-    mesh_static.aabb_center,
-  )
+  guard payload.aabb is Some(aabb) else { return true }
+  let center_world = payload.world_from_local.transform_point3(aabb.center())
   let matrix3 = payload.world_from_local.matrix3
+  let half_size = aabb.half_size()
   for plane in camera_frustum_planes {
     let signed_distance = plane.normal_x * center_world.x +
       plane.normal_y * center_world.y +
@@ -74,19 +42,19 @@ fn render3d_mesh_frustum_visible(
         plane.normal_y * matrix3.x_axis.y +
         plane.normal_z * matrix3.x_axis.z,
       ) *
-      mesh_static.aabb_half_extents.x +
+      half_size.x +
       render3d_absf(
         plane.normal_x * matrix3.y_axis.x +
         plane.normal_y * matrix3.y_axis.y +
         plane.normal_z * matrix3.y_axis.z,
       ) *
-      mesh_static.aabb_half_extents.y +
+      half_size.y +
       render3d_absf(
         plane.normal_x * matrix3.z_axis.x +
         plane.normal_y * matrix3.z_axis.y +
         plane.normal_z * matrix3.z_axis.z,
       ) *
-      mesh_static.aabb_half_extents.z
+      half_size.z
     if signed_distance < 0.0F - relative_radius {
       return false
     }
@@ -115,7 +83,6 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
   layers : @sprite.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
   camera_has_no_cpu_culling : Bool,
 ) -> Array[MeshPhaseItem3d] {
   let items : Array[MeshPhaseItem3d] = []
@@ -143,9 +110,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       payload.has_no_cpu_culling,
     )
     if should_apply_cpu_frustum_culling &&
-      !render3d_mesh_frustum_visible(
-        payload, camera_frustum_planes, mesh_preprocess_static_cache,
-      ) {
+      !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
       continue
     }
     let alpha = payload.material.base_color.a
@@ -198,7 +163,6 @@ fn render3d_collect_meshes_for_gpu_building(
   layers : @sprite.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
   camera_has_no_cpu_culling : Bool,
 ) -> Array[GpuPreprocessWorkItem3d] {
   let work_items : Array[GpuPreprocessWorkItem3d] = []
@@ -226,9 +190,7 @@ fn render3d_collect_meshes_for_gpu_building(
       payload.has_no_cpu_culling,
     )
     if should_apply_cpu_frustum_culling &&
-      !render3d_mesh_frustum_visible(
-        payload, camera_frustum_planes, mesh_preprocess_static_cache,
-      ) {
+      !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
       continue
     }
     let alpha = payload.material.base_color.a
@@ -1452,14 +1414,12 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   layers : @sprite.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
   camera_has_no_cpu_culling : Bool,
 ) -> Array[MeshPhaseItem3d] {
   // Keep the same high-level architecture as Bevy's GPU preprocessing path:
   // collect mesh work items, then write batched instance work payloads.
   let work_items = render3d_collect_meshes_for_gpu_building(
-    meshes, layers, camera_transform, camera_frustum_planes, mesh_preprocess_static_cache,
-    camera_has_no_cpu_culling,
+    meshes, layers, camera_transform, camera_frustum_planes, camera_has_no_cpu_culling,
   )
   render3d_write_batched_instance_buffers(work_items)
 }
@@ -1470,18 +1430,15 @@ fn render3d_queue_mesh_phase_items(
   layers : @sprite.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
   camera_has_no_cpu_culling : Bool,
   use_gpu_instance_buffer_builder : Bool,
 ) -> Array[MeshPhaseItem3d] {
   if use_gpu_instance_buffer_builder {
     return render3d_queue_mesh_phase_items_gpu_builder(
-      meshes, layers, camera_transform, camera_frustum_planes, mesh_preprocess_static_cache,
-      camera_has_no_cpu_culling,
+      meshes, layers, camera_transform, camera_frustum_planes, camera_has_no_cpu_culling,
     )
   }
   render3d_queue_mesh_phase_items_cpu_builder(
-    meshes, layers, camera_transform, camera_frustum_planes, mesh_preprocess_static_cache,
-    camera_has_no_cpu_culling,
+    meshes, layers, camera_transform, camera_frustum_planes, camera_has_no_cpu_culling,
   )
 }

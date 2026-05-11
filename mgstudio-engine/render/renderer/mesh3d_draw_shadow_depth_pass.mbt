@@ -50,6 +50,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   ps : GpuPassState,
   mesh : GpuMeshInfo,
   pass_kind : Int,
+  directional_light : Bool,
   preprocess_camera_key_hi : Int,
   preprocess_camera_key_lo : Int,
   draw_storage_index : Int,
@@ -113,12 +114,16 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
 ) -> Unit raise GpuBackendError {
   let material_path = mesh3d_shadow_material_path_from_flags(material_flags)
   let skinned = skinning_key_hi >= 0
+  let emulate_unclipped_depth = mesh3d_shadow_depth_should_emulate_unclipped_depth(
+    self, directional_light,
+  )
   guard mesh3d_shadow_depth_pipeline_for_current_pass(
       self,
       mesh.primitive_topology,
       cull_mode,
       material_path,
       skinned,
+      directional_light,
     )
     is Some(pipeline) else {
     return
@@ -169,40 +174,15 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     draw_write_offset = 0UL
     draw_index = 0U
   }
-  guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
-  guard self.mesh3d_lights_buf is Some(active_lights_buffer) else { return }
+  guard mesh3d_pass_uniform_state_get_or_create(
+      self, ps, preprocess_camera_key_hi, preprocess_camera_key_lo, pass_kind,
+    )
+    is Some(pass_uniforms) else {
+    return
+  }
   guard draw_buffer is Some(active_draw_buffer) else { return }
   guard draw_bind_group is Some(active_draw_bg) else { return }
   ignore(skinning_key_lo)
-  let view_cache_hit = self.mesh3d_pass_view_uniform_bytes is Some(_) &&
-    self.mesh3d_pass_view_uniform_frame_count == self.frame_count &&
-    self.mesh3d_pass_view_uniform_camera_key_hi == preprocess_camera_key_hi &&
-    self.mesh3d_pass_view_uniform_camera_key_lo == preprocess_camera_key_lo &&
-    self.mesh3d_pass_view_uniform_pass_kind == pass_kind
-  if !view_cache_hit {
-    let view_bytes = mesh3d_view_uniform_bytes(ps)
-    let lights_bytes = mesh3d_lights_uniform_bytes(ps)
-    let view_needs_upload = match self.mesh3d_pass_view_uniform_bytes {
-      Some(cached) => cached != view_bytes
-      None => true
-    }
-    let lights_needs_upload = match self.mesh3d_pass_lights_uniform_bytes {
-      Some(cached) => cached != lights_bytes
-      None => true
-    }
-    if view_needs_upload {
-      self.queue.write_buffer(active_view_buffer, 0UL, view_bytes)
-      self.mesh3d_pass_view_uniform_bytes = Some(view_bytes)
-    }
-    if lights_needs_upload {
-      self.queue.write_buffer(active_lights_buffer, 0UL, lights_bytes)
-      self.mesh3d_pass_lights_uniform_bytes = Some(lights_bytes)
-    }
-    self.mesh3d_pass_view_uniform_frame_count = self.frame_count
-    self.mesh3d_pass_view_uniform_camera_key_hi = preprocess_camera_key_hi
-    self.mesh3d_pass_view_uniform_camera_key_lo = preprocess_camera_key_lo
-    self.mesh3d_pass_view_uniform_pass_kind = pass_kind
-  }
   let draw_preuploaded = (
       self.mesh3d_gpu_instance_builder_enabled || use_indirect
     ) &&
@@ -264,9 +244,12 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }
-  guard self.mesh3d_shadow_view_bg is Some(view_bg) else { return }
+  guard mesh3d_shadow_view_bind_group_for_pass_uniforms(self, pass_uniforms)
+    is Some(view_bg) else {
+    return
+  }
   guard self.mesh3d_shadow_empty_bg is Some(empty_bg) else { return }
-  let material_bg = if material_path {
+  let material_bg = if material_path || emulate_unclipped_depth {
     let default_texture = ensure_default_texture(self)
     guard resolve_mesh3d_texture(self, texture_id) is Some(base_color_texture) else {
       return

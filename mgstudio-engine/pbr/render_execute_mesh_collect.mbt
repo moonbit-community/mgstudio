@@ -111,6 +111,7 @@ priv struct Render3dExtractMeshRequiredComponents {
   view_visibility : @visibility.ViewVisibility
   global_transform : @transform.GlobalTransform
   previous_global_transform : @pbr_prepass.PreviousGlobalTransform?
+  aabb : @camera_primitives.Aabb?
   layers : @sprite.RenderLayers?
   visibility_range : @visibility.VisibilityRange?
   lightmap : Lightmap?
@@ -149,6 +150,7 @@ fn render3d_extract_mesh_for_entity(
     view_visibility,
     global_transform,
     prefetched_previous_global_transform,
+    prefetched_aabb,
     prefetched_layers,
     prefetched_visibility_range,
     prefetched_lightmap,
@@ -171,6 +173,7 @@ fn render3d_extract_mesh_for_entity(
         components.view_visibility,
         components.global_transform,
         components.previous_global_transform,
+        components.aabb,
         components.layers,
         components.visibility_range,
         components.lightmap,
@@ -227,6 +230,9 @@ fn render3d_extract_mesh_for_entity(
       } else {
         None
       }
+      let aabb = try! source_world.get_by_key(
+        entity, @camera_primitives.ecs_key_aabb,
+      )
       let layers = try! source_world.get_by_key(
         entity, @sprite.ecs_key_render_layers,
       )
@@ -277,7 +283,7 @@ fn render3d_extract_mesh_for_entity(
       )
       (
         mesh3d, material_handle, view_visibility, global_transform, previous_global_transform,
-        layers, visibility_range, lightmap, is_forward_decal, forward_decal_material_ext,
+        aabb, layers, visibility_range, lightmap, is_forward_decal, forward_decal_material_ext,
         clustered_decal, has_not_shadow_caster, has_no_frustum_culling, has_no_cpu_culling,
         has_not_shadow_receiver, has_transmitted_shadow_receiver, has_wireframe,
         has_no_wireframe, wireframe_color,
@@ -312,6 +318,7 @@ fn render3d_extract_mesh_for_entity(
   } else {
     None
   }
+  let aabb = prefetched_aabb
   let entity_key = render3d_mesh_entity_key(entity)
   let has_previous_skin = skin_uniforms_ref.val.previous_skins.contains(
     entity_key,
@@ -387,6 +394,7 @@ fn render3d_extract_mesh_for_entity(
         transform,
         previous_transform,
         visibility_range,
+        aabb,
         aabb_center_world,
         material,
         material_extension: material_handle.extended_material,
@@ -446,9 +454,14 @@ fn render3d_execute_collect_meshes(
         @ecs.Comp[@transform.GlobalTransform],
       ),
       (
-        @ecs.Optional[@pbr_prepass.PreviousGlobalTransform],
-        @ecs.Optional[@sprite.RenderLayers],
-        @ecs.Optional[@visibility.VisibilityRange],
+        (
+          @ecs.Optional[@pbr_prepass.PreviousGlobalTransform],
+          @ecs.Optional[@camera_primitives.Aabb],
+        ),
+        (
+          @ecs.Optional[@sprite.RenderLayers],
+          @ecs.Optional[@visibility.VisibilityRange],
+        ),
         @ecs.Optional[Lightmap],
       ),
       (
@@ -477,7 +490,11 @@ fn render3d_execute_collect_meshes(
     let (
       entity,
       (mesh3d, material, view_visibility, global_transform),
-      (previous_global_transform, render_layers, visibility_range, lightmap),
+      (
+        (previous_global_transform, aabb),
+        (render_layers, visibility_range),
+        lightmap,
+      ),
       (
         (
           forward_decal,
@@ -512,6 +529,7 @@ fn render3d_execute_collect_meshes(
         view_visibility: view_visibility.value(),
         global_transform: global_transform.value(),
         previous_global_transform: previous_global_transform.value(),
+        aabb: aabb.value(),
         layers: render_layers.value(),
         visibility_range: visibility_range.value(),
         lightmap: lightmap.value(),

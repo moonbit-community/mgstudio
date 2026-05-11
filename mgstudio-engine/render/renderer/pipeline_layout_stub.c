@@ -84,6 +84,15 @@ uint32_t mgstudio_render_pipeline_descriptor_set_cull_mode(
   return 0u;
 }
 
+uint32_t mgstudio_render_pipeline_descriptor_set_unclipped_depth(
+    WGPURenderPipelineDescriptor *descriptor, bool unclipped_depth) {
+  if (!descriptor) {
+    return 1u;
+  }
+  descriptor->primitive.unclippedDepth = unclipped_depth ? 1u : 0u;
+  return 0u;
+}
+
 uint32_t mgstudio_render_pipeline_descriptor_set_vertex_module(
     WGPURenderPipelineDescriptor *descriptor, WGPUShaderModule vertex_module) {
   if (!descriptor || !vertex_module) {

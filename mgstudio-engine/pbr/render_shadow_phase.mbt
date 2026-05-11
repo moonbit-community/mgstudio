@@ -30,7 +30,6 @@ priv struct ShadowPhaseItem3d {
   bin_key : ShadowBinKey3d
   entity : PhaseEntityRef3d
   extracted_index : Int
-  draw_item_index : Int
 }
 
 ///|
@@ -203,7 +202,6 @@ fn render3d_queue_shadow_phase_items(
   visible_extracted_indices : Array[Int],
 ) -> Array[ShadowPhaseItem3d] {
   let shadow_items : Array[ShadowPhaseItem3d] = []
-  let mut draw_item_index = 0
   for extracted_index in visible_extracted_indices {
     if extracted_index < 0 || extracted_index >= meshes.length() {
       continue
@@ -218,9 +216,7 @@ fn render3d_queue_shadow_phase_items(
       bin_key: { mesh_id: extracted_mesh.payload.mesh_id },
       entity: extracted_mesh.entity,
       extracted_index,
-      draw_item_index,
     })
-    draw_item_index += 1
   }
   shadow_items.sort_by(render3d_shadow_phase_item_cmp)
   shadow_items
@@ -231,7 +227,6 @@ fn render3d_shadow_visible_extracted_indices(
   meshes : Array[ExtractedMesh3d],
   camera_layers : @sprite.RenderLayers,
   shadow_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
 ) -> Array[Int] {
   let visible : Array[Int] = []
   for extracted_index in 0..<meshes.length() {
@@ -250,9 +245,7 @@ fn render3d_shadow_visible_extracted_indices(
       visible.push(extracted_index)
       continue
     }
-    if render3d_mesh_frustum_visible(
-        mesh, shadow_frustum_planes, mesh_preprocess_static_cache,
-      ) {
+    if render3d_mesh_frustum_visible(mesh, shadow_frustum_planes) {
       visible.push(extracted_index)
     }
   }
@@ -287,7 +280,10 @@ fn render3d_execute_shadow_phase_view(
         shadow_mesh.mesh_id,
         shadow_view_key_hi,
         shadow_view_key_lo,
-        shadow_phase_item.draw_item_index,
+        // Shadow views are encoded before queue submission, so reusing a
+        // phase-local slot across cascades lets later writes overwrite earlier
+        // passes. Append a fresh draw slot for each shadow draw.
+        -1,
         MESH3D_DRAW_INDIRECT_KIND_NONE,
         -1,
         shadow_mesh.material,
