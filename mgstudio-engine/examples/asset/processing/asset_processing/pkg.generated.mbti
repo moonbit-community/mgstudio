@@ -11,10 +11,6 @@ import {
 // Errors
 
 // Types and methods
-type CoolText
-
-type CoolTextSaver
-
 type CoolTextSource
 
 type Text
@@ -23,8 +19,6 @@ type TextAssets
 pub impl @app.Resource for TextAssets
 
 type TextPlugin
-
-type TextSettings
 
 // Type aliases
 

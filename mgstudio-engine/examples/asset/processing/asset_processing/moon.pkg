@@ -3,7 +3,6 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
-  "moonbitlang/core/encoding/utf8" @utf8,
 }
 
 supported_targets = "native"

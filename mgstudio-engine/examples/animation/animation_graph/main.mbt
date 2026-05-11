@@ -16,14 +16,6 @@
 const FOX_PATH : String = "models/animated/Fox.glb"
 
 ///|
-const ANIMATION_GRAPH_PATH : String = "animation_graphs/Fox.animgraph.ron"
-
-///|
-fn clip_node_indices() -> Array[Int] {
-  [2, 3, 4]
-}
-
-///|
 const NODE_WIDTH : Float = 112.0F
 
 ///|
@@ -266,13 +258,23 @@ fn setup_assets(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   let server = asset_server.get()
-  let graph_handle : @asset.Handle[@animation.AnimationGraph] = server.load(
-    ANIMATION_GRAPH_PATH,
+  let graph = @animation.AnimationGraph::new()
+  let blend_node = graph.add_blend(0.5F, graph.root())
+  let idle_clip : @asset.Handle[@animation.AnimationClip] = server.load(
+    "models/animated/Fox.glb#Animation0",
   )
-  let clip_nodes : Array[@animation.AnimationNodeIndex] = []
-  for node_index in clip_node_indices() {
-    clip_nodes.push(@animation.AnimationNodeIndex::new(node_index))
-  }
+  let walk_clip : @asset.Handle[@animation.AnimationClip] = server.load(
+    "models/animated/Fox.glb#Animation1",
+  )
+  let run_clip : @asset.Handle[@animation.AnimationClip] = server.load(
+    "models/animated/Fox.glb#Animation2",
+  )
+  let clip_nodes = [
+    graph.add_clip(idle_clip, 1.0F, graph.root()),
+    graph.add_clip(walk_clip, 1.0F, blend_node),
+    graph.add_clip(run_clip, 1.0F, blend_node),
+  ]
+  let graph_handle = @animation.animation_graph_add(graph)
   commands.insert_resource(ExampleAnimationGraph::{ clip_nodes, graph_handle })
 }
 

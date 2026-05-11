@@ -1938,12 +1938,10 @@ pub fn animation_plugin_with(
   plugin : AnimationPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  @asset.init_asset_loader(
-    @asset.init_asset(@asset.init_asset(app, fn() { AnimationClip::new() }), fn() {
-      AnimationGraph::new()
-    }).init_resource(fn() { ThreadedAnimationGraphs::{ graphs: {} } }),
-    animation_graph_asset_loader(),
-  )
+  @asset.init_asset(@asset.init_asset(app, fn() { AnimationClip::new() }), fn() {
+    AnimationGraph::new()
+  })
+  .init_resource(fn() { ThreadedAnimationGraphs::{ graphs: {} } })
   .add_post_update_system_config(
     @app.system(@app.system_param3(thread_animation_graphs)).in_set(
       animation_set_thread,
