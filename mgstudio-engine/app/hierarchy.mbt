@@ -222,6 +222,14 @@ pub impl[C : @ecs.Component] Plugin for ValidateParentHasComponentPlugin[C] with
 }
 
 ///|
+pub impl[C : @ecs.Component] Plugin for ValidateParentHasComponentPlugin[C] with name(
+  _self,
+) {
+  let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
+  "mgstudio.app.ValidateParentHasComponentPlugin<\{component_key.debug_name()}>"
+}
+
+///|
 pub fn[C] validate_parent_has_component_plugin(
   plugin : ValidateParentHasComponentPlugin[C],
 ) -> ValidateParentHasComponentPlugin[C] {

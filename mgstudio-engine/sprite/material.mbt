@@ -569,6 +569,13 @@ pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M] with
 }
 
 ///|
+pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M] with name(
+  _self,
+) {
+  "mgstudio.sprite.Material2dPlugin<\{M::asset_debug_name()}>"
+}
+
+///|
 fn[M] material2d_pipeline_resource_from_plugin(
   plugin : Material2dPlugin[M],
 ) -> Material2dPipeline[M] {
