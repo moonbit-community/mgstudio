@@ -74,6 +74,7 @@ pub fn LineGizmoUniform::line_scale(Self) -> Float
 pub fn LineGizmoUniform::line_width(Self) -> Float
 pub fn LineGizmoUniform::world_from_local(Self) -> @math.Affine3
 pub impl @ecs.Component for LineGizmoUniform
+pub impl @ecs.EcsPayloadCodec for LineGizmoUniform
 
 pub struct RetainedLineGizmo {
   entity : @core.Entity

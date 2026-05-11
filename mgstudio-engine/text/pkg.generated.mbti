@@ -297,6 +297,7 @@ pub fn FontAtlasSet::get(Self, FontAtlasKey) -> Array[FontAtlas]?
 pub fn FontAtlasSet::get_or_insert(Self, FontAtlasKey) -> Array[FontAtlas]
 pub fn FontAtlasSet::has_glyph(Self, GlyphCacheKey, FontAtlasKey) -> Bool
 pub impl @app.Resource for FontAtlasSet
+pub impl @ecs.EcsPayloadCodec for FontAtlasSet
 
 pub struct FontAtlasSetEntry {
   key : FontAtlasKey
@@ -310,6 +311,7 @@ pub fn FontCx::default() -> Self
 pub fn FontCx::family_names(Self) -> Array[String]
 pub fn FontCx::new() -> Self
 pub impl @app.Resource for FontCx
+pub impl @ecs.EcsPayloadCodec for FontCx
 
 pub(all) enum FontFeatureTag {
   STANDARD_LIGATURES
@@ -362,6 +364,7 @@ pub(all) enum FontHinting {
 pub fn FontHinting::default() -> Self
 pub fn FontHinting::should_hint(Self) -> Bool
 pub impl @ecs.Component for FontHinting
+pub impl @ecs.EcsPayloadCodec for FontHinting
 
 pub struct FontLoader {
 }
@@ -503,6 +506,7 @@ pub(all) enum LineHeight {
 pub fn LineHeight::default() -> Self
 pub fn LineHeight::eval(Self, Float) -> Float
 pub impl @ecs.Component for LineHeight
+pub impl @ecs.EcsPayloadCodec for LineHeight
 
 pub struct PositionedGlyph {
   position : @math.Vec2
@@ -523,6 +527,7 @@ pub fn RemSize::default() -> Self
 pub fn RemSize::new(Float) -> Self
 pub fn RemSize::value(Self) -> Float
 pub impl @app.Resource for RemSize
+pub impl @ecs.EcsPayloadCodec for RemSize
 
 pub struct RunGeometry {
   span_index : Int
@@ -541,6 +546,7 @@ pub struct Strikethrough {
 }
 pub fn Strikethrough::default() -> Self
 pub impl @ecs.Component for Strikethrough
+pub impl @ecs.EcsPayloadCodec for Strikethrough
 
 pub(all) struct StrikethroughColor {
   mut color : @color.Color
@@ -548,6 +554,7 @@ pub(all) struct StrikethroughColor {
 pub fn StrikethroughColor::default() -> Self
 pub fn StrikethroughColor::new(@color.Color) -> Self
 pub impl @ecs.Component for StrikethroughColor
+pub impl @ecs.EcsPayloadCodec for StrikethroughColor
 
 pub(all) struct Text {
   mut content : String
@@ -555,6 +562,7 @@ pub(all) struct Text {
 pub fn Text::default() -> Self
 pub fn Text::new(String) -> Self
 pub impl @ecs.Component for Text
+pub impl @ecs.EcsPayloadCodec for Text
 
 pub(all) struct Text2d {
   mut content : String
@@ -562,6 +570,7 @@ pub(all) struct Text2d {
 pub fn Text2d::default() -> Self
 pub fn Text2d::new(String) -> Self
 pub impl @ecs.Component for Text2d
+pub impl @ecs.EcsPayloadCodec for Text2d
 
 pub struct Text2dBundle {
   text : Text2d
@@ -610,6 +619,7 @@ pub fn Text2dShadow::new(@math.Vec2, @color.Color) -> Self
 pub fn Text2dShadow::with_color(Self, @color.Color) -> Self
 pub fn Text2dShadow::with_offset(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for Text2dShadow
+pub impl @ecs.EcsPayloadCodec for Text2dShadow
 
 pub(all) struct TextBackgroundColor {
   mut color : @color.Color
@@ -619,6 +629,7 @@ pub fn TextBackgroundColor::default() -> Self
 pub fn TextBackgroundColor::new(@color.Color) -> Self
 pub fn TextBackgroundColor::white() -> Self
 pub impl @ecs.Component for TextBackgroundColor
+pub impl @ecs.EcsPayloadCodec for TextBackgroundColor
 
 pub struct TextBounds {
   width : Float?
@@ -629,6 +640,7 @@ pub fn TextBounds::new(Float, Float) -> Self
 pub fn TextBounds::new_horizontal(Float) -> Self
 pub fn TextBounds::new_vertical(Float) -> Self
 pub impl @ecs.Component for TextBounds
+pub impl @ecs.EcsPayloadCodec for TextBounds
 
 pub(all) struct TextColor {
   mut color : @color.Color
@@ -638,6 +650,7 @@ pub fn TextColor::default() -> Self
 pub fn TextColor::new(@color.Color) -> Self
 pub fn TextColor::white() -> Self
 pub impl @ecs.Component for TextColor
+pub impl @ecs.EcsPayloadCodec for TextColor
 
 pub struct TextDebugGlyphDraw {
   text_id : Int
@@ -690,6 +703,7 @@ pub fn TextFont::with_style(Self, FontStyle) -> Self
 pub fn TextFont::with_weight(Self, FontWeight) -> Self
 pub fn TextFont::with_width(Self, FontWidth) -> Self
 pub impl @ecs.Component for TextFont
+pub impl @ecs.EcsPayloadCodec for TextFont
 
 pub struct TextHandle {
   id : Int
@@ -710,6 +724,7 @@ pub fn TextLayout::with_justify(Self, Justify) -> Self
 pub fn TextLayout::with_linebreak(Self, LineBreak) -> Self
 pub fn TextLayout::with_no_wrap(Self) -> Self
 pub impl @ecs.Component for TextLayout
+pub impl @ecs.EcsPayloadCodec for TextLayout
 
 pub struct TextLayoutInfo {
   scale_factor : Float
@@ -738,6 +753,7 @@ pub fn TextShadow::new(@math.Vec2, @color.Color) -> Self
 pub fn TextShadow::with_color(Self, @color.Color) -> Self
 pub fn TextShadow::with_offset(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for TextShadow
+pub impl @ecs.EcsPayloadCodec for TextShadow
 
 pub(all) struct TextSpan {
   mut content : String
@@ -745,6 +761,7 @@ pub(all) struct TextSpan {
 pub fn TextSpan::default() -> Self
 pub fn TextSpan::new(String) -> Self
 pub impl @ecs.Component for TextSpan
+pub impl @ecs.EcsPayloadCodec for TextSpan
 
 pub struct TextSpanBundle {
   span : TextSpan
@@ -780,6 +797,7 @@ pub struct Underline {
 }
 pub fn Underline::default() -> Self
 pub impl @ecs.Component for Underline
+pub impl @ecs.EcsPayloadCodec for Underline
 
 pub(all) struct UnderlineColor {
   mut color : @color.Color
@@ -787,12 +805,14 @@ pub(all) struct UnderlineColor {
 pub fn UnderlineColor::default() -> Self
 pub fn UnderlineColor::new(@color.Color) -> Self
 pub impl @ecs.Component for UnderlineColor
+pub impl @ecs.EcsPayloadCodec for UnderlineColor
 
 pub(all) enum YAxisOrientation {
   TopToBottom
   BottomToTop
 } derive(Eq, @debug.Debug)
 pub impl @ecs.Component for YAxisOrientation
+pub impl @ecs.EcsPayloadCodec for YAxisOrientation
 
 // Type aliases
 

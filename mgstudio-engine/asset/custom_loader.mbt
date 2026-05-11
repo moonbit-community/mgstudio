@@ -312,12 +312,14 @@ fn typed_asset_loader_entry_for_path(
 }
 
 ///|
-fn[T] asset_assets_mut_or_abort() -> @ecs.ResourceMut[Assets[T]] {
+fn[T : @ecs.EcsPayloadCodec] asset_assets_mut_or_abort() -> @ecs.ResourceMut[
+  Assets[T],
+] {
   asset_assets_mut_or_abort_in_world(asset_world_or_abort())
 }
 
 ///|
-fn[T] asset_assets_mut_or_abort_in_world(
+fn[T : @ecs.EcsPayloadCodec] asset_assets_mut_or_abort_in_world(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Assets[T]] {
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
@@ -331,7 +333,7 @@ fn[T] asset_assets_mut_or_abort_in_world(
 }
 
 ///|
-pub fn[T] LoadContext::add_labeled_asset(
+pub fn[T : @ecs.EcsPayloadCodec] LoadContext::add_labeled_asset(
   self : LoadContext,
   label : String,
   asset : T,
@@ -355,7 +357,7 @@ pub fn[T] LoadContext::add_labeled_asset(
 }
 
 ///|
-fn[T, P : IntoAssetPath] AssetServer::load_registered_asset(
+fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load_registered_asset(
   self : AssetServer,
   path : P,
 ) -> Handle[T] {
@@ -446,7 +448,7 @@ fn[T, P : IntoAssetPath] AssetServer::load_registered_asset(
 }
 
 ///|
-pub fn[T] init_asset(
+pub fn[T : @ecs.EcsPayloadCodec] init_asset(
   app : @app.App[@ecs.World],
   asset_init : () -> T,
 ) -> @app.App[@ecs.World] {
@@ -463,7 +465,7 @@ pub fn[T] init_asset(
 }
 
 ///|
-pub fn[T] register_asset_loader(
+pub fn[T : @ecs.EcsPayloadCodec] register_asset_loader(
   app : @app.App[@ecs.World],
   loader : AssetLoader[T],
 ) -> @app.App[@ecs.World] {
@@ -514,7 +516,7 @@ pub fn[T] register_asset_loader(
 }
 
 ///|
-pub fn[T] init_asset_loader(
+pub fn[T : @ecs.EcsPayloadCodec] init_asset_loader(
   app : @app.App[@ecs.World],
   loader : AssetLoader[T],
 ) -> @app.App[@ecs.World] {
@@ -522,7 +524,10 @@ pub fn[T] init_asset_loader(
 }
 
 ///|
-pub fn[T] AssetServer::add(self : AssetServer, asset : T) -> Handle[T] {
+pub fn[T : @ecs.EcsPayloadCodec] AssetServer::add(
+  self : AssetServer,
+  asset : T,
+) -> Handle[T] {
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
   let handle : Handle[T] = Handle::new(

@@ -17,7 +17,7 @@ pub(open) trait QueryData {
   matches(World, @core.Entity) -> Bool
   fetch(World, @core.Entity) -> Self raise EcsError
   fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
-  fetch_sparse_anchor(World, @core.Entity, Int, ErasedValue, Int, Int) -> Self raise EcsError = _
+  fetch_sparse_anchor(World, @core.Entity, Int, EcsPayload, Int, Int) -> Self raise EcsError = _
   mentions_component(Int) -> Bool
   matches_component_set((Int) -> Bool) -> Bool
   collect_access(QueryDataAccess) -> Unit = _
@@ -283,7 +283,7 @@ pub fn[T] query_data_component_matches(
 }
 
 ///|
-fn[T] query_data_require_component(
+fn[T : EcsPayloadCodec] query_data_require_component(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -298,7 +298,7 @@ fn[T] query_data_require_component(
 }
 
 ///|
-pub fn[T] query_data_component_fetch(
+pub fn[T : EcsPayloadCodec] query_data_component_fetch(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -307,7 +307,7 @@ pub fn[T] query_data_component_fetch(
 }
 
 ///|
-pub fn[T] query_data_component_optional(
+pub fn[T : EcsPayloadCodec] query_data_component_optional(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -473,10 +473,9 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor(
   let key = T::component()
   match world.local_component_id(key.id()) {
     Some(local_component_id) if local_component_id == anchor_local_component_id => {
-      let result : Result[T, @any.TypeMismatch] = try? anchor_payload.to_value()
-      let value = match result {
-        Ok(value) => value
-        Err(_) =>
+      let value = match T::from_ecs_payload(anchor_payload) {
+        Some(value) => value
+        None =>
           abort(
             "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
           )
@@ -976,10 +975,9 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor(
 ) {
   match world.local_component_id(T::component().id()) {
     Some(local_component_id) if local_component_id == anchor_local_component_id => {
-      let result : Result[T, @any.TypeMismatch] = try? anchor_payload.to_value()
-      let value = match result {
-        Ok(value) => value
-        Err(_) =>
+      let value = match T::from_ecs_payload(anchor_payload) {
+        Some(value) => value
+        None =>
           abort(
             "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
           )

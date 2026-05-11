@@ -47,7 +47,7 @@ fn help() -> Unit {
 }
 
 ///|
-fn[T] read_time_resource(
+fn[T : @ecs.EcsPayloadCodec] read_time_resource(
   world : @ecs.World,
   key : @ecs.ResourceKey[@my_time.Time[T]],
   debug_name : String,

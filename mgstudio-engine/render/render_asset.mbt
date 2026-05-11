@@ -81,7 +81,7 @@ pub fn[A] RenderAssets::resource() -> @ecs.ResourceKey[RenderAssets[A]] {
 }
 
 ///|
-pub impl[A] @app.Resource for RenderAssets[A] with resource() {
+pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for RenderAssets[A] with resource() {
   RenderAssets::resource()
 }
 
@@ -164,7 +164,7 @@ pub fn[A] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
 }
 
 ///|
-pub impl[A] @app.Resource for PrepareNextFrameAssets[A] with resource() {
+pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for PrepareNextFrameAssets[A] with resource() {
   PrepareNextFrameAssets::resource()
 }
 

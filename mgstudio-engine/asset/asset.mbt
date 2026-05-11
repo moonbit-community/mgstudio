@@ -305,17 +305,19 @@ pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> @ecs.ResourceMut[
 }
 
 ///|
-pub fn[T] asset_assets_or_abort() -> Assets[T] {
+pub fn[T : @ecs.EcsPayloadCodec] asset_assets_or_abort() -> Assets[T] {
   asset_resource_or_abort()
 }
 
 ///|
-pub fn[T] asset_assets_ref_or_abort() -> Assets[T] {
+pub fn[T : @ecs.EcsPayloadCodec] asset_assets_ref_or_abort() -> Assets[T] {
   asset_resource_ref_or_abort()
 }
 
 ///|
-pub fn[T] asset_assets_ref_mut_or_abort() -> @ecs.ResourceMut[Assets[T]] {
+pub fn[T : @ecs.EcsPayloadCodec] asset_assets_ref_mut_or_abort() -> @ecs.ResourceMut[
+  Assets[T],
+] {
   asset_resource_ref_mut_or_abort()
 }
 
@@ -1418,7 +1420,7 @@ fn[T] AssetServer::reserve_missing_loader_handle(
 }
 
 ///|
-pub fn[T, P : IntoAssetPath] AssetServer::load(
+pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load(
   self : AssetServer,
   path : P,
 ) -> Handle[T] {
@@ -1455,7 +1457,7 @@ pub fn[T, P : IntoAssetPath] AssetServer::load(
 }
 
 ///|
-pub fn[T, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(
+pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(
   self : AssetServer,
   path : P,
   load_guard : G,
@@ -1503,7 +1505,7 @@ pub fn[T, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(
 }
 
 ///|
-pub fn[T, P : IntoAssetPath] AssetServer::load_with_settings(
+pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load_with_settings(
   self : AssetServer,
   path : P,
   configure : (ImageLoaderSettings) -> Unit,

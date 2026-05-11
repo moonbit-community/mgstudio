@@ -30,12 +30,14 @@ pub fn CiTestingConfig::default() -> Self
 pub fn CiTestingConfig::with_event(Self, Int, CiTestingEvent) -> Self
 pub fn CiTestingConfig::with_setup(Self, CiTestingSetup) -> Self
 pub impl @app.Resource for CiTestingConfig
+pub impl @ecs.EcsPayloadCodec for CiTestingConfig
 
 pub struct CiTestingCustomEvent {
   value : String
 }
 pub fn CiTestingCustomEvent::new(String) -> Self
 pub fn CiTestingCustomEvent::value(Self) -> String
+pub impl @ecs.EcsPayloadCodec for CiTestingCustomEvent
 pub impl @ecs.Message for CiTestingCustomEvent
 
 pub(all) enum CiTestingEvent {
@@ -64,6 +66,7 @@ pub(all) struct CiTestingRuntimeState {
 }
 pub fn CiTestingRuntimeState::default() -> Self
 pub impl @app.Resource for CiTestingRuntimeState
+pub impl @ecs.EcsPayloadCodec for CiTestingRuntimeState
 
 pub struct CiTestingSetup {
   fixed_frame_time : @core.Duration?

@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/image"
 
 import {
+  "Milky2018/mgstudio/ecs",
   "moonbitlang/core/debug",
 }
 
@@ -122,6 +123,7 @@ pub fn Image::is_target_texture(Self) -> Bool
 pub fn Image::new(Int, Int, Bytes) -> Self
 pub fn Image::new_target_texture(Int, Int, TextureFormat, TextureFormat?) -> Self
 pub fn Image::with_format(Self, TextureFormat) -> Self
+pub impl @ecs.EcsPayloadCodec for Image
 
 pub(all) enum ImageAddressMode {
   ClampToEdge

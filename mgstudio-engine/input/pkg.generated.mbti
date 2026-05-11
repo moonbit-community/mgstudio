@@ -230,6 +230,7 @@ pub struct AccumulatedMouseMotion {
 }
 pub fn AccumulatedMouseMotion::new() -> Self
 pub impl @app.Resource for AccumulatedMouseMotion
+pub impl @ecs.EcsPayloadCodec for AccumulatedMouseMotion
 
 pub struct AccumulatedMouseScroll {
   unit : @events.MouseScrollUnit
@@ -238,6 +239,7 @@ pub struct AccumulatedMouseScroll {
 pub fn AccumulatedMouseScroll::new() -> Self
 pub fn AccumulatedMouseScroll::new_with_unit(@events.MouseScrollUnit, @math.Vec2) -> Self
 pub impl @app.Resource for AccumulatedMouseScroll
+pub impl @ecs.EcsPayloadCodec for AccumulatedMouseScroll
 
 pub struct Axis[T] {
   axis_data : Array[(T, Float)]
@@ -365,6 +367,7 @@ pub fn Gamepad::product_id(Self) -> Int?
 pub fn Gamepad::right_stick(Self) -> @math.Vec2
 pub fn Gamepad::vendor_id(Self) -> Int?
 pub impl @ecs.Component for Gamepad
+pub impl @ecs.EcsPayloadCodec for Gamepad
 pub impl Default for Gamepad
 
 pub(all) enum GamepadAxis {
@@ -386,6 +389,7 @@ pub struct GamepadAxisChangedEvent {
   value : Float
 } derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadAxisChangedEvent::new(@core.Entity, GamepadAxis, Float) -> Self
+pub impl @ecs.EcsPayloadCodec for GamepadAxisChangedEvent
 pub impl @ecs.Message for GamepadAxisChangedEvent
 
 pub(all) enum GamepadButton {
@@ -422,6 +426,7 @@ pub struct GamepadButtonChangedEvent {
   value : Float
 } derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadButtonChangedEvent::new(@core.Entity, GamepadButton, @events.ButtonState, Float) -> Self
+pub impl @ecs.EcsPayloadCodec for GamepadButtonChangedEvent
 pub impl @ecs.Message for GamepadButtonChangedEvent
 
 pub struct GamepadButtonStateChangedEvent {
@@ -430,6 +435,7 @@ pub struct GamepadButtonStateChangedEvent {
   state : @events.ButtonState
 } derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadButtonStateChangedEvent::new(@core.Entity, GamepadButton, @events.ButtonState) -> Self
+pub impl @ecs.EcsPayloadCodec for GamepadButtonStateChangedEvent
 pub impl @ecs.Message for GamepadButtonStateChangedEvent
 
 pub(all) enum GamepadConnection {
@@ -444,6 +450,7 @@ pub struct GamepadConnectionEvent {
 pub fn GamepadConnectionEvent::connected(Self) -> Bool
 pub fn GamepadConnectionEvent::disconnected(Self) -> Bool
 pub fn GamepadConnectionEvent::new(@core.Entity, GamepadConnection) -> Self
+pub impl @ecs.EcsPayloadCodec for GamepadConnectionEvent
 pub impl @ecs.Message for GamepadConnectionEvent
 
 pub struct GamepadConnectionInfo {
@@ -458,6 +465,7 @@ pub(all) enum GamepadEvent {
   Button(GamepadButtonChangedEvent)
   Axis(GamepadAxisChangedEvent)
 } derive(Eq, ToJson, @json.FromJson)
+pub impl @ecs.EcsPayloadCodec for GamepadEvent
 pub impl @ecs.Message for GamepadEvent
 
 pub(all) enum GamepadInput {
@@ -481,6 +489,7 @@ pub(all) enum GamepadRumbleRequest {
   Stop(gamepad~ : @core.Entity)
 } derive(Eq, ToJson, @json.FromJson)
 pub fn GamepadRumbleRequest::gamepad(Self) -> @core.Entity
+pub impl @ecs.EcsPayloadCodec for GamepadRumbleRequest
 pub impl @ecs.Message for GamepadRumbleRequest
 
 pub struct GamepadSettings {
@@ -495,6 +504,7 @@ pub fn GamepadSettings::get_axis_settings(Self, GamepadAxis) -> AxisSettings
 pub fn GamepadSettings::get_button_axis_settings(Self, GamepadButton) -> ButtonAxisSettings
 pub fn GamepadSettings::get_button_settings(Self, GamepadButton) -> ButtonSettings
 pub impl @ecs.Component for GamepadSettings
+pub impl @ecs.EcsPayloadCodec for GamepadSettings
 pub impl Default for GamepadSettings
 
 pub(all) struct InputPlugin {
@@ -508,6 +518,7 @@ pub struct RawGamepadAxisChangedEvent {
   value : Float
 } derive(Eq, ToJson, @json.FromJson)
 pub fn RawGamepadAxisChangedEvent::new(@core.Entity, GamepadAxis, Float) -> Self
+pub impl @ecs.EcsPayloadCodec for RawGamepadAxisChangedEvent
 pub impl @ecs.Message for RawGamepadAxisChangedEvent
 
 pub struct RawGamepadButtonChangedEvent {
@@ -516,6 +527,7 @@ pub struct RawGamepadButtonChangedEvent {
   value : Float
 } derive(Eq, ToJson, @json.FromJson)
 pub fn RawGamepadButtonChangedEvent::new(@core.Entity, GamepadButton, Float) -> Self
+pub impl @ecs.EcsPayloadCodec for RawGamepadButtonChangedEvent
 pub impl @ecs.Message for RawGamepadButtonChangedEvent
 
 pub(all) enum RawGamepadEvent {
@@ -523,10 +535,12 @@ pub(all) enum RawGamepadEvent {
   Button(RawGamepadButtonChangedEvent)
   Axis(RawGamepadAxisChangedEvent)
 } derive(Eq, ToJson, @json.FromJson)
+pub impl @ecs.EcsPayloadCodec for RawGamepadEvent
 pub impl @ecs.Message for RawGamepadEvent
 
 type RunningRumbleEffects derive(Eq, ToJson, @json.FromJson)
 pub impl @app.Resource for RunningRumbleEffects
+pub impl @ecs.EcsPayloadCodec for RunningRumbleEffects
 
 pub struct Touch {
   id : Int
@@ -569,6 +583,7 @@ pub fn Touches::release(Self, Int) -> Unit
 pub fn Touches::release_all(Self) -> Unit
 pub fn Touches::reset_all(Self) -> Unit
 pub impl @app.Resource for Touches
+pub impl @ecs.EcsPayloadCodec for Touches
 
 // Type aliases
 pub using @events {type ButtonState}

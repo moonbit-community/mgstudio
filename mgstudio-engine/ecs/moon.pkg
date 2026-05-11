@@ -4,7 +4,6 @@ import {
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
-  "tonyfettes/any",
 }
 
 import {
@@ -12,9 +11,13 @@ import {
 } for "test"
 
 options(
-  "native-stub": [ "raw_table_stub.c" ],
   targets: {
-    "raw_table_kernel_native.mbt": [ "native", "llvm" ],
-    "raw_table_kernel_portable.mbt": [ "js", "wasm", "wasm-gc" ],
+    "raw_table_kernel_portable.mbt": [
+      "js",
+      "wasm",
+      "wasm-gc",
+      "native",
+      "llvm",
+    ],
   },
 )

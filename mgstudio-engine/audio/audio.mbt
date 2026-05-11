@@ -182,7 +182,10 @@ pub fn DefaultSpatialScale::default() -> DefaultSpatialScale {
 }
 
 ///|
-fn[T] audio_resource_get(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
+fn[T : @ecs.EcsPayloadCodec] audio_resource_get(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[T],
+) -> T? {
   try world.get_resource(key) catch {
     _ => None
   } noraise {
@@ -191,7 +194,7 @@ fn[T] audio_resource_get(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
 }
 
 ///|
-fn[T] audio_resource_mut(
+fn[T : @ecs.EcsPayloadCodec] audio_resource_mut(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
 ) -> @ecs.ResourceMut[T]? {
@@ -203,7 +206,7 @@ fn[T] audio_resource_mut(
 }
 
 ///|
-fn[T] audio_resource_ensure_mut(
+fn[T : @ecs.EcsPayloadCodec] audio_resource_ensure_mut(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
   init : () -> T,

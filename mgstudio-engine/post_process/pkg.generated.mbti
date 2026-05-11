@@ -80,6 +80,7 @@ pub fn Bloom::with_scale(Self, @math.Vec2) -> Self
 pub fn Bloom::with_scale_x(Self, Float) -> Self
 pub fn Bloom::with_scale_y(Self, Float) -> Self
 pub impl @ecs.Component for Bloom
+pub impl @ecs.EcsPayloadCodec for Bloom
 
 pub(all) enum BloomCompositeMode {
   EnergyConserving
@@ -107,6 +108,7 @@ pub fn ColorGrading::all_sections_mut(Self) -> Iter[ColorGradingSection]
 pub fn ColorGrading::default() -> Self
 pub fn ColorGrading::with_identical_sections(ColorGradingGlobal, ColorGradingSection) -> Self
 pub impl @ecs.Component for ColorGrading
+pub impl @ecs.EcsPayloadCodec for ColorGrading
 
 pub(all) struct ColorGradingGlobal {
   mut exposure : Float
@@ -150,6 +152,7 @@ pub fn CustomPostProcess3d::with_intensity(Self, Float) -> Self
 pub fn CustomPostProcess3d::with_shader_path(Self, String) -> Self
 pub fn CustomPostProcess3d::with_uniform(Self, Float, Float, Float, Float) -> Self
 pub impl @ecs.Component for CustomPostProcess3d
+pub impl @ecs.EcsPayloadCodec for CustomPostProcess3d
 
 pub(all) enum DebandDither {
   Disabled
@@ -157,6 +160,7 @@ pub(all) enum DebandDither {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DebandDither::default() -> Self
 pub impl @ecs.Component for DebandDither
+pub impl @ecs.EcsPayloadCodec for DebandDither
 
 pub struct Fxaa {
   enabled : Bool
@@ -171,6 +175,7 @@ pub fn Fxaa::with_edge_threshold_min(Self, FxaaSensitivity) -> Self
 pub fn Fxaa::with_enabled(Self, Bool) -> Self
 pub fn Fxaa::with_sensitivity(Self, FxaaSensitivity) -> Self
 pub impl @ecs.Component for Fxaa
+pub impl @ecs.EcsPayloadCodec for Fxaa
 
 pub(all) enum FxaaSensitivity {
   Low
@@ -190,6 +195,7 @@ pub fn MipBias::new(Float) -> Self
 pub fn MipBias::value(Self) -> Float
 pub fn MipBias::with_bias(Self, Float) -> Self
 pub impl @ecs.Component for MipBias
+pub impl @ecs.EcsPayloadCodec for MipBias
 
 pub(all) enum MsaaWriteback {
   Off
@@ -201,6 +207,7 @@ pub fn MsaaWriteback::auto() -> Self
 pub fn MsaaWriteback::default() -> Self
 pub fn MsaaWriteback::off() -> Self
 pub impl @ecs.Component for MsaaWriteback
+pub impl @ecs.EcsPayloadCodec for MsaaWriteback
 
 pub struct ScreenSpaceAmbientOcclusion {
   quality_level : ScreenSpaceAmbientOcclusionQualityLevel
@@ -210,6 +217,7 @@ pub fn ScreenSpaceAmbientOcclusion::default() -> Self
 pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(Self, Float) -> Self
 pub fn ScreenSpaceAmbientOcclusion::with_quality_level(Self, ScreenSpaceAmbientOcclusionQualityLevel) -> Self
 pub impl @ecs.Component for ScreenSpaceAmbientOcclusion
+pub impl @ecs.EcsPayloadCodec for ScreenSpaceAmbientOcclusion
 
 pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
   Low
@@ -242,6 +250,7 @@ pub fn ScreenSpaceReflections::with_min_perceptual_roughness(Self, Float, Float)
 pub fn ScreenSpaceReflections::with_thickness(Self, Float) -> Self
 pub fn ScreenSpaceReflections::with_use_secant(Self, Bool) -> Self
 pub impl @ecs.Component for ScreenSpaceReflections
+pub impl @ecs.EcsPayloadCodec for ScreenSpaceReflections
 
 pub struct TemporalAntiAliasing {
   reset : Bool
@@ -250,6 +259,7 @@ pub fn TemporalAntiAliasing::default() -> Self
 pub fn TemporalAntiAliasing::new(Bool) -> Self
 pub fn TemporalAntiAliasing::with_reset(Self, Bool) -> Self
 pub impl @ecs.Component for TemporalAntiAliasing
+pub impl @ecs.EcsPayloadCodec for TemporalAntiAliasing
 
 pub struct TemporalJitter {
   offset : @math.Vec2
@@ -258,6 +268,7 @@ pub fn TemporalJitter::default() -> Self
 pub fn TemporalJitter::new(@math.Vec2) -> Self
 pub fn TemporalJitter::with_offset(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for TemporalJitter
+pub impl @ecs.EcsPayloadCodec for TemporalJitter
 
 pub(all) enum Tonemapping {
   None
@@ -271,6 +282,7 @@ pub(all) enum Tonemapping {
 } derive(Eq, Hash, ToJson, @debug.Debug, @json.FromJson)
 pub fn Tonemapping::default() -> Self
 pub impl @ecs.Component for Tonemapping
+pub impl @ecs.EcsPayloadCodec for Tonemapping
 
 // Type aliases
 pub using @effect_stack {type ChromaticAberration}

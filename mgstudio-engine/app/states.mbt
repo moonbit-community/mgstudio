@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub(open) trait States: Eq + Debug {
+pub(open) trait States: Eq + Debug + @ecs.EcsPayloadCodec {
   debug_name(Self) -> String
   dependency_depth(Self) -> Int = _
 }

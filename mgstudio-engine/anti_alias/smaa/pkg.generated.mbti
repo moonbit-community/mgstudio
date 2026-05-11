@@ -36,6 +36,7 @@ pub struct Smaa {
 } derive(Eq, @debug.Debug)
 pub fn Smaa::default() -> Self
 pub impl @ecs.Component for Smaa
+pub impl @ecs.EcsPayloadCodec for Smaa
 
 pub struct SmaaBlendingWeightCalculationPipeline {
   postprocess_bind_group_layout : @material.BindGroupLayoutDescriptor
@@ -67,6 +68,7 @@ pub struct SmaaLuts {
 }
 pub fn SmaaLuts::from_asset_server(@asset.AssetServer) -> Self
 pub impl @app.Resource for SmaaLuts
+pub impl @ecs.EcsPayloadCodec for SmaaLuts
 
 pub struct SmaaNeighborhoodBlendingPipeline {
   postprocess_bind_group_layout : @material.BindGroupLayoutDescriptor
@@ -107,6 +109,7 @@ pub struct SmaaRuntimeState {
 } derive(Eq, @debug.Debug)
 pub fn SmaaRuntimeState::default() -> Self
 pub impl @app.Resource for SmaaRuntimeState
+pub impl @ecs.EcsPayloadCodec for SmaaRuntimeState
 
 pub struct ViewSmaaPipelines {
   edge_detection_pipeline_id : @material.CachedRenderPipelineId

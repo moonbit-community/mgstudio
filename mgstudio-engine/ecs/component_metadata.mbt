@@ -15,7 +15,7 @@
 ///|
 priv struct ComponentRequiredMetadata {
   required_component_id : Int
-  init_value : () -> ErasedWriter
+  init_value : () -> EcsPayloadWriter
 }
 
 ///|
@@ -265,7 +265,7 @@ pub fn[T] ComponentMetadataBuilder::on_despawn(
 }
 
 ///|
-pub fn[T, R : Default] ComponentMetadataBuilder::require_default(
+pub fn[T, R : Default + EcsPayloadCodec] ComponentMetadataBuilder::require_default(
   self : ComponentMetadataBuilder[T],
   required_key : ComponentKey[R],
 ) -> ComponentMetadataBuilder[T] {
@@ -273,7 +273,7 @@ pub fn[T, R : Default] ComponentMetadataBuilder::require_default(
 }
 
 ///|
-pub fn[T, R] ComponentMetadataBuilder::require_with(
+pub fn[T, R : EcsPayloadCodec] ComponentMetadataBuilder::require_with(
   self : ComponentMetadataBuilder[T],
   required_key : ComponentKey[R],
   init : () -> R,
@@ -294,7 +294,7 @@ pub fn[T, R] ComponentMetadataBuilder::require_with(
   let entries = metadata_ref.val.required_components
   entries.push({
     required_component_id: required_key.id(),
-    init_value: fn() { erased_writer(required_key, init()) },
+    init_value: fn() { ecs_payload_writer(required_key, init()) },
   })
   metadata_ref.val = ComponentMetadata::{
     ..metadata_ref.val,
@@ -322,7 +322,7 @@ pub fn[T] ComponentMetadataBuilder::relationship_source(
 }
 
 ///|
-pub fn[T] ComponentMetadataBuilder::relationship_target(
+pub fn[T : EcsPayloadCodec] ComponentMetadataBuilder::relationship_target(
   self : ComponentMetadataBuilder[T],
   linked_spawn? : Bool = false,
   linked_entities? : ((T) -> Array[@core.Entity])? = None,

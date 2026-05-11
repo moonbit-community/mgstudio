@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/ecs",
   "Milky2018/wgpu_mbt" @wgpu,
   "moonbitlang/core/ref",
 }

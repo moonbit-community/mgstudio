@@ -51,7 +51,7 @@ fn maxf(a : Float, b : Float) -> Float {
 }
 
 ///|
-fn[T] first_marked_entity(
+fn[T : @ecs.EcsPayloadCodec] first_marked_entity(
   world : @ecs.World,
   key : @ecs.ComponentKey[T],
 ) -> @core.Entity? {

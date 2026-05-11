@@ -57,6 +57,7 @@ pub fn ScreenSpaceTransmission::new(ScreenSpaceTransmissionQuality, Int) -> Self
 pub fn ScreenSpaceTransmission::with_quality(Self, ScreenSpaceTransmissionQuality) -> Self
 pub fn ScreenSpaceTransmission::with_steps(Self, Int) -> Self
 pub impl @ecs.Component for ScreenSpaceTransmission
+pub impl @ecs.EcsPayloadCodec for ScreenSpaceTransmission
 
 pub(all) enum ScreenSpaceTransmissionQuality {
   Low
@@ -93,6 +94,7 @@ pub struct TransmittedShadowReceiver {
 } derive(ToJson, @json.FromJson)
 pub fn TransmittedShadowReceiver::default() -> Self
 pub impl @ecs.Component for TransmittedShadowReceiver
+pub impl @ecs.EcsPayloadCodec for TransmittedShadowReceiver
 
 pub struct ViewTransmissionTexture {
   texture_id : Int

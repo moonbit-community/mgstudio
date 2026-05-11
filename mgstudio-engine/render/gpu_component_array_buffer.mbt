@@ -86,7 +86,7 @@ pub fn[C] gpu_component_array_buffer_state_key(
 }
 
 ///|
-fn[C] gpu_component_array_buffer_state_ref(
+fn[C : @ecs.EcsPayloadCodec] gpu_component_array_buffer_state_ref(
   world : @ecs.World,
   state_key : @ecs.ResourceKey[GpuComponentArrayBufferState[C]],
 ) -> @ecs.ResourceMut[GpuComponentArrayBufferState[C]] {
@@ -107,7 +107,7 @@ fn gpu_component_array_buffer_entity_key(entity : @core.Entity) -> UInt64 {
 }
 
 ///|
-pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(
+pub fn[C : @ecs.Component + @ecs.EcsPayloadCodec] prepare_gpu_component_array_buffers(
   world : @ecs.World,
   state_key : @ecs.ResourceKey[GpuComponentArrayBufferState[C]],
   component_key? : @ecs.ComponentKey[C] = C::component(),

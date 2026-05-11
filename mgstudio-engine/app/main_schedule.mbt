@@ -103,7 +103,7 @@ fn main_schedule_runtime_state_resource_key() -> @ecs.ResourceKey[
 }
 
 ///|
-fn[T] world_schedule_resource(
+fn[T : @ecs.EcsPayloadCodec] world_schedule_resource(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
 ) -> T? {

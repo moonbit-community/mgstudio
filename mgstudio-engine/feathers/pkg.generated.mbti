@@ -179,12 +179,14 @@ pub fn AlphaPatternPlugin::default() -> Self
 
 pub(all) struct AlphaPatternPluginMarker {
 }
+pub impl @ecs.EcsPayloadCodec for AlphaPatternPluginMarker
 
 pub struct AlphaPatternResource {
   material_id : Int
 }
 pub fn AlphaPatternResource::default() -> Self
 pub impl @app.Resource for AlphaPatternResource
+pub impl @ecs.EcsPayloadCodec for AlphaPatternResource
 
 pub struct CursorIconPlugin {
 }
@@ -192,12 +194,14 @@ pub fn CursorIconPlugin::default() -> Self
 
 pub(all) struct CursorIconPluginMarker {
 }
+pub impl @ecs.EcsPayloadCodec for CursorIconPluginMarker
 
 pub struct DefaultCursor {
   cursor : EntityCursor
 }
 pub fn DefaultCursor::default() -> Self
 pub impl @app.Resource for DefaultCursor
+pub impl @ecs.EcsPayloadCodec for DefaultCursor
 
 pub(all) enum EntityCursor {
   System(String)
@@ -211,6 +215,7 @@ pub impl @app.Plugin for FeathersPlugin
 
 pub(all) struct FeathersPluginMarker {
 }
+pub impl @ecs.EcsPayloadCodec for FeathersPluginMarker
 
 pub struct FeathersPlugins {
 }
@@ -233,6 +238,7 @@ pub fn InheritableFont::default() -> Self
 pub fn InheritableFont::from_handle(String) -> Self
 pub fn InheritableFont::from_path(String) -> Self
 pub impl @ecs.Component for InheritableFont
+pub impl @ecs.EcsPayloadCodec for InheritableFont
 
 pub struct OverrideCursor {
   cursor : EntityCursor?
@@ -245,6 +251,7 @@ pub struct ThemeBackgroundColor {
 pub fn ThemeBackgroundColor::new(ThemeToken) -> Self
 pub fn ThemeBackgroundColor::token(Self) -> ThemeToken
 pub impl @ecs.Component for ThemeBackgroundColor
+pub impl @ecs.EcsPayloadCodec for ThemeBackgroundColor
 
 pub struct ThemeBorderColor {
   token : ThemeToken
@@ -252,6 +259,7 @@ pub struct ThemeBorderColor {
 pub fn ThemeBorderColor::new(ThemeToken) -> Self
 pub fn ThemeBorderColor::token(Self) -> ThemeToken
 pub impl @ecs.Component for ThemeBorderColor
+pub impl @ecs.EcsPayloadCodec for ThemeBorderColor
 
 pub struct ThemeFontColor {
   token : ThemeToken
@@ -259,6 +267,7 @@ pub struct ThemeFontColor {
 pub fn ThemeFontColor::new(ThemeToken) -> Self
 pub fn ThemeFontColor::token(Self) -> ThemeToken
 pub impl @ecs.Component for ThemeFontColor
+pub impl @ecs.EcsPayloadCodec for ThemeFontColor
 
 pub struct ThemeProps {
   color : Array[(ThemeToken, String)]
@@ -277,6 +286,7 @@ pub fn ThemeToken::new_static(String) -> Self
 pub struct ThemedText {
 } derive(Default, @debug.Debug)
 pub impl @ecs.Component for ThemedText
+pub impl @ecs.EcsPayloadCodec for ThemedText
 
 pub struct UiTheme {
   props : ThemeProps
@@ -285,6 +295,7 @@ pub fn UiTheme::color(Self, ThemeToken) -> String
 pub fn UiTheme::default() -> Self
 pub fn UiTheme::set_color(Self, String, String) -> Unit
 pub impl @app.Resource for UiTheme
+pub impl @ecs.EcsPayloadCodec for UiTheme
 
 // Type aliases
 pub using @rounded_corners {type RoundedCorners}

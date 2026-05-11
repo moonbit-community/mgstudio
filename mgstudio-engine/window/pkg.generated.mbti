@@ -331,19 +331,23 @@ pub(all) enum AppLifecycle {
   WillResume
 } derive(Eq, @debug.Debug)
 pub fn AppLifecycle::is_active(Self) -> Bool
+pub impl @ecs.EcsPayloadCodec for AppLifecycle
 pub impl @ecs.Message for AppLifecycle
 
 pub struct Captured {
 }
 pub impl @ecs.Component for Captured
+pub impl @ecs.EcsPayloadCodec for Captured
 
 pub struct Capturing {
 }
 pub impl @ecs.Component for Capturing
+pub impl @ecs.EcsPayloadCodec for Capturing
 
 pub(all) struct ClosingWindow {
 } derive(Eq, @debug.Debug)
 pub impl @ecs.Component for ClosingWindow
+pub impl @ecs.EcsPayloadCodec for ClosingWindow
 
 pub(all) enum CompositeAlphaMode {
   Auto
@@ -357,6 +361,7 @@ pub fn CompositeAlphaMode::default() -> Self
 pub(all) struct CursorEntered {
   window : @Milky2018/mgstudio/core.Entity
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for CursorEntered
 pub impl @ecs.Message for CursorEntered
 
 pub(all) enum CursorGrabMode {
@@ -373,11 +378,13 @@ pub fn CursorIcon::as_system(Self) -> SystemCursorIcon?
 pub fn CursorIcon::from(SystemCursorIcon) -> Self
 pub fn CursorIcon::from_custom(CustomCursor) -> Self
 pub impl @ecs.Component for CursorIcon
+pub impl @ecs.EcsPayloadCodec for CursorIcon
 pub impl Default for CursorIcon
 
 pub(all) struct CursorLeft {
   window : @Milky2018/mgstudio/core.Entity
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for CursorLeft
 pub impl @ecs.Message for CursorLeft
 
 pub(all) struct CursorMoved {
@@ -385,6 +392,7 @@ pub(all) struct CursorMoved {
   position : @math.Vec2
   delta : @math.Vec2?
 }
+pub impl @ecs.EcsPayloadCodec for CursorMoved
 pub impl @ecs.Message for CursorMoved
 
 pub(all) struct CursorOptions {
@@ -394,6 +402,7 @@ pub(all) struct CursorOptions {
 } derive(Eq, @debug.Debug)
 pub fn CursorOptions::default() -> Self
 pub impl @ecs.Component for CursorOptions
+pub impl @ecs.EcsPayloadCodec for CursorOptions
 
 pub(all) enum CustomCursor {
   Image(CustomCursorImage)
@@ -434,6 +443,7 @@ pub(all) enum FileDragAndDrop {
   HoveredFile(@Milky2018/mgstudio/core.Entity, String)
   HoveredFileCanceled(@Milky2018/mgstudio/core.Entity)
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for FileDragAndDrop
 pub impl @ecs.Message for FileDragAndDrop
 
 pub(all) enum HostEvent {
@@ -454,6 +464,7 @@ pub(all) enum Ime {
   Disabled(@Milky2018/mgstudio/core.Entity)
   DeleteSurrounding(@Milky2018/mgstudio/core.Entity, Int, Int)
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for Ime
 pub impl @ecs.Message for Ime
 
 pub(all) struct ImeCursorRange {
@@ -473,6 +484,7 @@ pub(all) struct Monitor {
 }
 pub fn Monitor::physical_size(Self) -> @math.UVec2
 pub impl @ecs.Component for Monitor
+pub impl @ecs.EcsPayloadCodec for Monitor
 
 pub(all) enum MonitorSelection {
   Current
@@ -493,10 +505,12 @@ pub(all) enum PresentMode {
 pub(all) struct PrimaryMonitor {
 } derive(Eq, @debug.Debug)
 pub impl @ecs.Component for PrimaryMonitor
+pub impl @ecs.EcsPayloadCodec for PrimaryMonitor
 
 pub(all) struct PrimaryWindow {
 } derive(Eq, @debug.Debug)
 pub impl @ecs.Component for PrimaryWindow
+pub impl @ecs.EcsPayloadCodec for PrimaryWindow
 
 pub(all) struct RawHandleWrapper {
   window : Int
@@ -504,15 +518,18 @@ pub(all) struct RawHandleWrapper {
 pub fn RawHandleWrapper::new(WindowWrapper) -> Self
 pub fn RawHandleWrapper::window(Self) -> Int
 pub impl @ecs.Component for RawHandleWrapper
+pub impl @ecs.EcsPayloadCodec for RawHandleWrapper
 
 pub(all) struct RawHandleWrapperHolder {
   handle : @ref.Ref[RawHandleWrapper?]
 }
 pub fn RawHandleWrapperHolder::new() -> Self
 pub impl @ecs.Component for RawHandleWrapperHolder
+pub impl @ecs.EcsPayloadCodec for RawHandleWrapperHolder
 
 pub(all) struct RequestRedraw {
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for RequestRedraw
 pub impl @ecs.Message for RequestRedraw
 
 pub(all) enum ScreenEdge {
@@ -533,12 +550,14 @@ pub fn Screenshot::primary_window() -> Self
 pub fn Screenshot::texture_view(Int) -> Self
 pub fn Screenshot::window(@Milky2018/mgstudio/core.Entity) -> Self
 pub impl @ecs.Component for Screenshot
+pub impl @ecs.EcsPayloadCodec for Screenshot
 
 pub struct ScreenshotCaptured {
   entity : @Milky2018/mgstudio/core.Entity
   image : @image.Image
 }
 pub impl @ecs.Component for ScreenshotCaptured
+pub impl @ecs.EcsPayloadCodec for ScreenshotCaptured
 
 pub(all) enum ScreenshotTarget {
   Window(WindowRef)
@@ -660,36 +679,43 @@ pub fn Window::start_drag_move(Self) -> Unit
 pub fn Window::start_drag_resize(Self, @math.CompassOctant) -> Unit
 pub fn Window::width(Self) -> Float
 pub impl @ecs.Component for Window
+pub impl @ecs.EcsPayloadCodec for Window
 
 pub(all) struct WindowBackendScaleFactorChanged {
   window : @Milky2018/mgstudio/core.Entity
   scale_factor : Float
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowBackendScaleFactorChanged
 pub impl @ecs.Message for WindowBackendScaleFactorChanged
 
 pub(all) struct WindowCloseRequested {
   window : @Milky2018/mgstudio/core.Entity
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowCloseRequested
 pub impl @ecs.Message for WindowCloseRequested
 
 pub(all) struct WindowClosed {
   window : @Milky2018/mgstudio/core.Entity
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowClosed
 pub impl @ecs.Message for WindowClosed
 
 pub(all) struct WindowClosing {
   window : @Milky2018/mgstudio/core.Entity
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowClosing
 pub impl @ecs.Message for WindowClosing
 
 pub(all) struct WindowCreated {
   window : @Milky2018/mgstudio/core.Entity
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowCreated
 pub impl @ecs.Message for WindowCreated
 
 pub(all) struct WindowDestroyed {
   window : @Milky2018/mgstudio/core.Entity
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowDestroyed
 pub impl @ecs.Message for WindowDestroyed
 
 pub(all) enum WindowEvent {
@@ -721,12 +747,14 @@ pub(all) enum WindowEvent {
   KeyboardInput(@events.KeyboardInput)
   KeyboardFocusLost(@events.KeyboardFocusLost)
 }
+pub impl @ecs.EcsPayloadCodec for WindowEvent
 pub impl @ecs.Message for WindowEvent
 
 pub(all) struct WindowFocused {
   window : @Milky2018/mgstudio/core.Entity
   focused : Bool
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowFocused
 pub impl @ecs.Message for WindowFocused
 
 pub struct WindowHostEntry {
@@ -753,12 +781,14 @@ pub(all) struct WindowMoved {
   x : Int
   y : Int
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowMoved
 pub impl @ecs.Message for WindowMoved
 
 pub(all) struct WindowOccluded {
   window : @Milky2018/mgstudio/core.Entity
   occluded : Bool
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowOccluded
 pub impl @ecs.Message for WindowOccluded
 
 pub(all) struct WindowPlugin {
@@ -798,6 +828,7 @@ pub(all) struct WindowResized {
   width : Float
   height : Float
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowResized
 pub impl @ecs.Message for WindowResized
 
 pub(all) struct WindowResolution {
@@ -828,12 +859,14 @@ pub(all) struct WindowScaleFactorChanged {
   window : @Milky2018/mgstudio/core.Entity
   scale_factor : Float
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowScaleFactorChanged
 pub impl @ecs.Message for WindowScaleFactorChanged
 
 pub(all) struct WindowThemeChanged {
   window : @Milky2018/mgstudio/core.Entity
   theme : @Milky2018/window/core.Theme
 } derive(Eq)
+pub impl @ecs.EcsPayloadCodec for WindowThemeChanged
 pub impl @ecs.Message for WindowThemeChanged
 
 pub(all) struct WindowWrapper {

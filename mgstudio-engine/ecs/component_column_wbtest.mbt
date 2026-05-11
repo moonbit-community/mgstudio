@@ -72,8 +72,9 @@ test "ecs component column: cached table values write through raw column" {
     is Some(raw_value) else {
     fail("expected raw column value")
   }
-  let result : Result[ComponentColumnCacheValue, @any.TypeMismatch] = try? raw_value.to()
-  guard result is Ok(value) else { fail("expected raw value type") }
+  guard ComponentColumnCacheValue::from_ecs_payload(raw_value) is Some(value) else {
+    fail("expected raw value type")
+  }
   debug_inspect(value, content="{ x: 2 }")
 }
 
@@ -121,7 +122,8 @@ test "ecs mut query: cached table values write through raw column" {
     is Some(raw_value) else {
     fail("expected raw column value")
   }
-  let result : Result[ComponentColumnCacheValue, @any.TypeMismatch] = try? raw_value.to()
-  guard result is Ok(value) else { fail("expected raw value type") }
+  guard ComponentColumnCacheValue::from_ecs_payload(raw_value) is Some(value) else {
+    fail("expected raw value type")
+  }
   debug_inspect(value, content="{ x: 4 }")
 }

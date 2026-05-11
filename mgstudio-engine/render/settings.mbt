@@ -269,7 +269,7 @@ pub fn current_view_resource_key() -> @ecs.ResourceKey[CurrentView] {
 }
 
 ///|
-fn[T] render_world_resource_present(
+fn[T : @ecs.EcsPayloadCodec] render_world_resource_present(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
 ) -> Bool {

@@ -89,6 +89,7 @@ pub struct Gltf {
   source : String?
 }
 pub fn Gltf::new(Array[@asset.Handle[Scene]], named_scenes? : Array[(String, @asset.Handle[Scene])], materials? : Array[@asset.Handle[@material.StandardMaterial]], named_materials? : Array[(String, @asset.Handle[@material.StandardMaterial])], @asset.Handle[Scene]?, animations? : Array[@asset.Handle[@animation.AnimationClip]], named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])], source? : String?) -> Self
+pub impl @ecs.EcsPayloadCodec for Gltf
 
 pub struct GltfLodVisibilityPolicy {
   enabled : Bool
@@ -110,6 +111,7 @@ pub struct Scene {
 }
 pub fn Scene::new(Array[SceneNode3d]) -> Self
 pub fn Scene::with_gltf_scene_extras(Self, @gltf_ext.GltfSceneExtras?) -> Self
+pub impl @ecs.EcsPayloadCodec for Scene
 
 pub enum SceneFilter {
   Unset
@@ -136,6 +138,7 @@ pub struct SceneInstance {
 }
 pub fn SceneInstance::new(Int) -> Self
 pub impl @ecs.Component for SceneInstance
+pub impl @ecs.EcsPayloadCodec for SceneInstance
 pub impl ToJson for SceneInstance
 pub impl @json.FromJson for SceneInstance
 
@@ -144,6 +147,7 @@ pub struct SceneInstanceReady {
   instance_id : Int
 }
 pub fn SceneInstanceReady::new(@core.Entity?, Int) -> Self
+pub impl @ecs.EcsPayloadCodec for SceneInstanceReady
 pub impl @ecs.TriggerEvent for SceneInstanceReady
 pub impl ToJson for SceneInstanceReady
 pub impl @json.FromJson for SceneInstanceReady
@@ -193,6 +197,7 @@ pub struct SceneRoot {
 }
 pub fn SceneRoot::new(@asset.Handle[Scene]) -> Self
 pub impl @ecs.Component for SceneRoot
+pub impl @ecs.EcsPayloadCodec for SceneRoot
 pub impl ToJson for SceneRoot
 pub impl @json.FromJson for SceneRoot
 

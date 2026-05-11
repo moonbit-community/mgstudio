@@ -1,0 +1,78 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+extenum @ecs.EcsPayload += {
+  EcsPayload_examples_ui_widgets_virtual_keyboard_KeyCap(KeyCap)
+  EcsPayload_examples_ui_widgets_virtual_keyboard_WasPressed(WasPressed)
+  EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardDisplay(
+    KeyboardDisplay
+  )
+  EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardBuffer(KeyboardBuffer)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for KeyCap with to_ecs_payload(self) {
+  EcsPayload_examples_ui_widgets_virtual_keyboard_KeyCap(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for KeyCap with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_examples_ui_widgets_virtual_keyboard_KeyCap(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for WasPressed with to_ecs_payload(self) {
+  EcsPayload_examples_ui_widgets_virtual_keyboard_WasPressed(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for WasPressed with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_examples_ui_widgets_virtual_keyboard_WasPressed(value) =>
+      Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for KeyboardDisplay with to_ecs_payload(self) {
+  EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardDisplay(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for KeyboardDisplay with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardDisplay(value) =>
+      Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for KeyboardBuffer with to_ecs_payload(self) {
+  EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardBuffer(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for KeyboardBuffer with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardBuffer(value) =>
+      Some(value)
+    _ => None
+  }
+}

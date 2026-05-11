@@ -62,7 +62,7 @@ fn[T] registered_asset_event_message_key_with_type_name(
 }
 
 ///|
-fn[T] register_asset_event_dispatch(
+fn[T : @ecs.EcsPayloadCodec] register_asset_event_dispatch(
   type_name : String,
   key : @ecs.ResourceKey[Assets[T]],
 ) -> Unit {
@@ -91,7 +91,9 @@ fn[T] register_asset_event_dispatch(
 }
 
 ///|
-fn[T] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
+fn[T : @ecs.EcsPayloadCodec] registered_assets_resource_key() -> @ecs.ResourceKey[
+  Assets[T],
+] {
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
   let key = match assets_resource_registry.val.get(type_name) {
@@ -117,17 +119,21 @@ fn[T] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
 }
 
 ///|
-pub fn[T] assets_resource_key_of(_probe : T) -> @ecs.ResourceKey[Assets[T]] {
+pub fn[T : @ecs.EcsPayloadCodec] assets_resource_key_of(
+  _probe : T,
+) -> @ecs.ResourceKey[Assets[T]] {
   registered_assets_resource_key()
 }
 
 ///|
-pub fn[T] assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
+pub fn[T : @ecs.EcsPayloadCodec] assets_resource_key() -> @ecs.ResourceKey[
+  Assets[T],
+] {
   registered_assets_resource_key()
 }
 
 ///|
-pub impl[T] @app.Resource for Assets[T] with resource() {
+pub impl[T : @ecs.EcsPayloadCodec] @app.Resource for Assets[T] with resource() {
   registered_assets_resource_key()
 }
 

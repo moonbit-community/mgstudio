@@ -1,0 +1,102 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+extenum @ecs.EcsPayload += {
+  EcsPayload_examples_audio_soundtrack_GameState(GameState)
+  EcsPayload_examples_audio_soundtrack_GameStateTimer(GameStateTimer)
+  EcsPayload_examples_audio_soundtrack_SoundtrackPlayer(SoundtrackPlayer)
+  EcsPayload_examples_audio_soundtrack_TrackChangePending(TrackChangePending)
+  EcsPayload_examples_audio_soundtrack_FadeIn(FadeIn)
+  EcsPayload_examples_audio_soundtrack_FadeOut(FadeOut)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for GameState with to_ecs_payload(self) {
+  EcsPayload_examples_audio_soundtrack_GameState(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for GameState with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_examples_audio_soundtrack_GameState(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for GameStateTimer with to_ecs_payload(self) {
+  EcsPayload_examples_audio_soundtrack_GameStateTimer(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for GameStateTimer with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_examples_audio_soundtrack_GameStateTimer(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for SoundtrackPlayer with to_ecs_payload(self) {
+  EcsPayload_examples_audio_soundtrack_SoundtrackPlayer(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for SoundtrackPlayer with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_examples_audio_soundtrack_SoundtrackPlayer(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for TrackChangePending with to_ecs_payload(self) {
+  EcsPayload_examples_audio_soundtrack_TrackChangePending(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for TrackChangePending with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_examples_audio_soundtrack_TrackChangePending(value) =>
+      Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for FadeIn with to_ecs_payload(self) {
+  EcsPayload_examples_audio_soundtrack_FadeIn(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for FadeIn with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_examples_audio_soundtrack_FadeIn(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for FadeOut with to_ecs_payload(self) {
+  EcsPayload_examples_audio_soundtrack_FadeOut(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for FadeOut with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_examples_audio_soundtrack_FadeOut(value) => Some(value)
+    _ => None
+  }
+}

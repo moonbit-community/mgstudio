@@ -47,13 +47,14 @@ pub fn[E] On::entity(self : On[E]) -> @core.Entity? {
 }
 
 ///|
-pub fn[E] On::event(self : On[E]) -> E {
+pub fn[E : EcsPayloadCodec] On::event(self : On[E]) -> E {
   let context = current_trigger_observer_context_abort_missing()
   if context.event_key_id != self.event_key.id() {
     abort("Current observer event payload is no longer available")
   }
-  context.payload.to_value() catch {
-    _ => abort("Current observer event payload type mismatch")
+  match E::from_ecs_payload(context.payload) {
+    Some(event) => event
+    None => abort("Current observer event payload type mismatch")
   }
 }
 
@@ -68,19 +69,20 @@ pub fn[E] On::is_propagating(self : On[E]) -> Bool {
 }
 
 ///|
-pub fn[E, R] On::modify(self : On[E], f : (E) -> R) -> R {
+pub fn[E : EcsPayloadCodec, R] On::modify(self : On[E], f : (E) -> R) -> R {
   let context = current_trigger_observer_context_abort_missing()
   if context.event_key_id != self.event_key.id() {
     abort("Current observer event payload is no longer available")
   }
-  let event : E = context.payload.to_value() catch {
-    _ => abort("Current observer event payload type mismatch")
+  let event = match E::from_ecs_payload(context.payload) {
+    Some(event) => event
+    None => abort("Current observer event payload type mismatch")
   }
   let result = f(event)
   self.world.current_trigger_observer_context = Some({
     event_key_id: context.event_key_id,
     entity: context.entity,
-    payload: erased_value(event),
+    payload: E::to_ecs_payload(event),
     caller: context.caller,
     propagate_ref: context.propagate_ref,
   })
@@ -110,7 +112,7 @@ pub(open) trait ComponentObserverEvent {
 }
 
 ///|
-pub(open) trait TriggerEvent {
+pub(open) trait TriggerEvent: EcsPayloadCodec {
   observer_event() -> EventKey[Self]
   observer_entity(Self) -> @core.Entity?
   set_observer_entity(Self, @core.Entity) -> Self
@@ -144,7 +146,7 @@ struct ComponentObserverContext {
 struct TriggerObserverContext {
   event_key_id : Int
   entity : @core.Entity?
-  payload : ErasedValue
+  payload : EcsPayload
   caller : String?
   propagate_ref : Ref[Bool]
 }
@@ -881,14 +883,15 @@ pub fn[E : TriggerEvent] World::trigger(
     self.current_trigger_observer_context = Some({
       event_key_id: event_key.id(),
       entity,
-      payload: erased_value(current_event),
+      payload: E::to_ecs_payload(current_event),
       caller,
       propagate_ref,
     })
     self.run_trigger_observers(event_key.id())
     let context = current_trigger_observer_context_abort_missing()
-    current_event = context.payload.to_value() catch {
-      _ =>
+    current_event = match E::from_ecs_payload(context.payload) {
+      Some(event) => event
+      None =>
         abort(
           "Current trigger observer payload type mismatch for `\{E::debug_name()}`",
         )

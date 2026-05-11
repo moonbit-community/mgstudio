@@ -93,7 +93,7 @@ pub fn DeferredWorld::spawn_empty(self : DeferredWorld) -> @core.Entity {
 }
 
 ///|
-pub fn[T] DeferredWorld::get(
+pub fn[T : EcsPayloadCodec] DeferredWorld::get(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -102,7 +102,7 @@ pub fn[T] DeferredWorld::get(
 }
 
 ///|
-pub fn[T] DeferredWorld::get_by_key(
+pub fn[T : EcsPayloadCodec] DeferredWorld::get_by_key(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -141,7 +141,7 @@ pub fn[T] DeferredWorld::resource(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] DeferredWorld::set(
+pub fn[T : EcsPayloadCodec] DeferredWorld::set(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -153,7 +153,7 @@ pub fn[T] DeferredWorld::set(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] DeferredWorld::set_by_key(
+pub fn[T : EcsPayloadCodec] DeferredWorld::set_by_key(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -165,7 +165,7 @@ pub fn[T] DeferredWorld::set_by_key(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] DeferredWorld::replace(
+pub fn[T : EcsPayloadCodec] DeferredWorld::replace(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -177,7 +177,7 @@ pub fn[T] DeferredWorld::replace(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] DeferredWorld::replace_by_key(
+pub fn[T : EcsPayloadCodec] DeferredWorld::replace_by_key(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -189,7 +189,7 @@ pub fn[T] DeferredWorld::replace_by_key(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] DeferredWorld::take(
+pub fn[T : EcsPayloadCodec] DeferredWorld::take(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -200,7 +200,7 @@ pub fn[T] DeferredWorld::take(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] DeferredWorld::take_by_key(
+pub fn[T : EcsPayloadCodec] DeferredWorld::take_by_key(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],

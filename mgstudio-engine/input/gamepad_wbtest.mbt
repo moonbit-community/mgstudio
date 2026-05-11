@@ -75,7 +75,10 @@ fn clear_gamepad_messages(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn[T] read_messages(world : @ecs.World, key : @ecs.MessageKey[T]) -> Array[T] {
+fn[T : @ecs.EcsPayloadCodec] read_messages(
+  world : @ecs.World,
+  key : @ecs.MessageKey[T],
+) -> Array[T] {
   try! world.message_reader(key, Ref(0)).read()
 }
 

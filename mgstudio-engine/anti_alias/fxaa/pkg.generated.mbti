@@ -37,6 +37,7 @@ pub struct FxaaRuntimeState {
 } derive(Eq, @debug.Debug)
 pub fn FxaaRuntimeState::default() -> Self
 pub impl @app.Resource for FxaaRuntimeState
+pub impl @ecs.EcsPayloadCodec for FxaaRuntimeState
 
 // Type aliases
 pub using @post_process {type Fxaa}

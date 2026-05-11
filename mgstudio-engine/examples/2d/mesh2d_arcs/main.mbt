@@ -28,39 +28,33 @@ const SEGMENT_Y : Float = -50.0F
 const ARC_RADIUS : Float = 40.0F
 
 ///|
-let draw_bounds_component_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
-  @hashmap.HashMap([]),
+struct SectorBounds {
+  shape : @sprite.CircularSector
+}
+
+///|
+struct SegmentBounds {
+  shape : @sprite.CircularSegment
+}
+
+///|
+let sector_bounds_component_key : @ecs.ComponentKey[SectorBounds] = @ecs.register_component(
+  debug_name="examples.2d.mesh2d_arcs.SectorBounds",
 )
 
 ///|
-struct DrawBounds[T] {
-  shape : T
+let segment_bounds_component_key : @ecs.ComponentKey[SegmentBounds] = @ecs.register_component(
+  debug_name="examples.2d.mesh2d_arcs.SegmentBounds",
+)
+
+///|
+impl @ecs.Component for SectorBounds with component() {
+  sector_bounds_component_key
 }
 
 ///|
-fn[T] draw_bounds_component_key() -> @ecs.ComponentKey[DrawBounds[T]] {
-  let probe : T? = None
-  let type_name = @any.of(probe).type_name()
-  match draw_bounds_component_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None =>
-          abort("draw bounds component registry mismatch for \{type_name}")
-      }
-    None => {
-      let key : @ecs.ComponentKey[DrawBounds[T]] = @ecs.register_component(
-        debug_name="examples.2d.mesh2d_arcs.\{type_name}",
-      )
-      draw_bounds_component_registry.val.set(type_name, @any.of(key))
-      key
-    }
-  }
-}
-
-///|
-pub impl[T] @ecs.Component for DrawBounds[T] with component() {
-  draw_bounds_component_key()
+impl @ecs.Component for SegmentBounds with component() {
+  segment_bounds_component_key
 }
 
 ///|
@@ -143,7 +137,7 @@ fn setup(
             sector_angle,
             @math.Vec2::new(1.0F, 1.0F),
           ),
-          DrawBounds::{ shape: sector },
+          SectorBounds::{ shape: sector },
         ),
       ),
     )
@@ -168,7 +162,7 @@ fn setup(
             segment_angle,
             @math.Vec2::new(1.0F, 1.0F),
           ),
-          DrawBounds::{ shape: segment },
+          SegmentBounds::{ shape: segment },
         ),
       ),
     )
@@ -176,68 +170,60 @@ fn setup(
 }
 
 ///|
-fn[T : @math.Bounded2d] draw_bounds(
-  query : @ecs.Query[
-    (@ecs.Comp[DrawBounds[T]], @ecs.Comp[@transform.GlobalTransform]),
-    @ecs.All,
-  ],
+fn[T : @math.Bounded2d] draw_bounds_for_shape(
+  shape : T,
+  transform : @transform.GlobalTransform,
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
   let red = @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
   let blue = @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
-
-  try! query.for_each(fn(_entity, data) {
-    let (shape, transform) = data
-    let world_transform = transform.value().to_transform_approx()
-    let translation = @math.Vec2::new(
-      world_transform.translation.x,
-      world_transform.translation.y,
-    )
-    let rotation = @math.Rot2::radians(world_transform.rotation_z())
-    let isometry = @math.Isometry2d::new(translation, rotation)
-
-    let aabb = shape.value().shape.aabb_2d(isometry)
-    gizmos.rect_2d(
-      @sprite.Isometry2d::new(aabb.center(), 0.0F),
-      aabb.half_size().mul_scalar(2.0F),
-      red,
-    )
-
-    let bounding_circle = shape.value().shape.bounding_circle(isometry)
-    ignore(
-      gizmos.circle_2d(
-        @sprite.Isometry2d::new(bounding_circle.center, 0.0F),
-        bounding_circle.radius(),
-        blue,
-      ),
-    )
-  })
+  let world_transform = transform.to_transform_approx()
+  let translation = @math.Vec2::new(
+    world_transform.translation.x,
+    world_transform.translation.y,
+  )
+  let rotation = @math.Rot2::radians(world_transform.rotation_z())
+  let isometry = @math.Isometry2d::new(translation, rotation)
+  let aabb = shape.aabb_2d(isometry)
+  gizmos.rect_2d(
+    @sprite.Isometry2d::new(aabb.center(), 0.0F),
+    aabb.half_size().mul_scalar(2.0F),
+    red,
+  )
+  let bounding_circle = shape.bounding_circle(isometry)
+  ignore(
+    gizmos.circle_2d(
+      @sprite.Isometry2d::new(bounding_circle.center, 0.0F),
+      bounding_circle.radius(),
+      blue,
+    ),
+  )
 }
 
 ///|
 fn draw_sector_bounds(
   query : @ecs.Query[
-    (
-      @ecs.Comp[DrawBounds[@sprite.CircularSector]],
-      @ecs.Comp[@transform.GlobalTransform],
-    ),
+    (@ecs.Comp[SectorBounds], @ecs.Comp[@transform.GlobalTransform]),
     @ecs.All,
   ],
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
-  draw_bounds(query, gizmos)
+  try! query.for_each(fn(_entity, data) {
+    let (shape, transform) = data
+    draw_bounds_for_shape(shape.value().shape, transform.value(), gizmos)
+  })
 }
 
 ///|
 fn draw_segment_bounds(
   query : @ecs.Query[
-    (
-      @ecs.Comp[DrawBounds[@sprite.CircularSegment]],
-      @ecs.Comp[@transform.GlobalTransform],
-    ),
+    (@ecs.Comp[SegmentBounds], @ecs.Comp[@transform.GlobalTransform]),
     @ecs.All,
   ],
   gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
-  draw_bounds(query, gizmos)
+  try! query.for_each(fn(_entity, data) {
+    let (shape, transform) = data
+    draw_bounds_for_shape(shape.value().shape, transform.value(), gizmos)
+  })
 }

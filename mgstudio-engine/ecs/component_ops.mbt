@@ -13,21 +13,9 @@
 // limitations under the License.
 
 ///|
-pub(all) struct ComponentColumnOps {
-  payload_at_row : (@any.Any, Int) -> ErasedValue?
-  writer_from_payload : (ErasedValue) -> ErasedWriter?
-  append_writer : (@any.Any, ErasedWriter) -> Bool
-  replace_writer_at_row : (@any.Any, Int, ErasedWriter) -> Bool
-  append_from_row : (@any.Any, Int, @any.Any) -> Bool
-  swap_remove_row : (@any.Any, Int) -> Bool
-}
-
-///|
 pub(all) struct ComponentOps {
   definition_id : Int
   debug_name : String
-  new_values : () -> @any.Any
-  column_ops : ComponentColumnOps
 }
 
 ///|
@@ -38,64 +26,7 @@ let component_ops_registry : @hashmap.HashMap[Int, ComponentOps] = @hashmap.Hash
 fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {
   let definition_id = key.id()
   let debug_name = key.debug_name()
-  let column_ops : ComponentColumnOps = {
-    payload_at_row: fn(values_any, row_index) {
-      let values : Array[T] = values_any.unsafe_coerce()
-      if row_index < 0 || row_index >= values.length() {
-        return None
-      }
-      Some(erased_value(values[row_index]))
-    },
-    writer_from_payload: fn(payload) {
-      let result : Result[T, @any.TypeMismatch] = try? payload.to_value()
-      match result {
-        Ok(value) => Some(erased_writer(key, value))
-        Err(_) => None
-      }
-    },
-    append_writer: fn(values_any, writer) {
-      if writer.component_definition_id != definition_id {
-        return false
-      }
-      (writer.append_to_values)(values_any)
-    },
-    replace_writer_at_row: fn(values_any, row_index, writer) {
-      if writer.component_definition_id != definition_id {
-        return false
-      }
-      (writer.replace_in_values)(values_any, row_index)
-    },
-    append_from_row: fn(source_any, row_index, values_any) {
-      let source : Array[T] = source_any.unsafe_coerce()
-      if row_index < 0 || row_index >= source.length() {
-        return false
-      }
-      let values : Array[T] = values_any.unsafe_coerce()
-      values.push(source[row_index])
-      true
-    },
-    swap_remove_row: fn(values_any, row_index) {
-      let values : Array[T] = values_any.unsafe_coerce()
-      if row_index < 0 || row_index >= values.length() {
-        return false
-      }
-      let last_index = values.length() - 1
-      if row_index != last_index {
-        values[row_index] = values[last_index]
-      }
-      ignore(values.pop())
-      true
-    },
-  }
-  {
-    definition_id,
-    debug_name,
-    new_values: fn() {
-      let values : Array[T] = []
-      @any.of(values)
-    },
-    column_ops,
-  }
+  { definition_id, debug_name }
 }
 
 ///|

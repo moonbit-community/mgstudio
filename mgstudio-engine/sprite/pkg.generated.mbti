@@ -287,6 +287,7 @@ pub fn Anchor::top_center() -> Self
 pub fn Anchor::top_left() -> Self
 pub fn Anchor::top_right() -> Self
 pub impl @ecs.Component for Anchor
+pub impl @ecs.EcsPayloadCodec for Anchor
 pub impl Default for Anchor
 pub impl ToJson for Anchor
 pub impl @json.FromJson for Anchor
@@ -337,6 +338,7 @@ pub fn Camera::with_is_active(Self, Bool) -> Self
 pub fn Camera::with_order(Self, Int) -> Self
 pub fn Camera::with_viewport(Self, Viewport) -> Self
 pub impl @ecs.Component for Camera
+pub impl @ecs.EcsPayloadCodec for Camera
 pub impl ToJson for Camera
 pub impl @json.FromJson for Camera
 
@@ -344,6 +346,7 @@ pub struct Camera2d {
 }
 pub fn Camera2d::default() -> Self
 pub impl @ecs.Component for Camera2d
+pub impl @ecs.EcsPayloadCodec for Camera2d
 pub impl ToJson for Camera2d
 pub impl @json.FromJson for Camera2d
 
@@ -391,6 +394,7 @@ pub struct ClearColor {
 pub fn ClearColor::default() -> Self
 pub fn ClearColor::new(@color.Color) -> Self
 pub impl @app.Resource for ClearColor
+pub impl @ecs.EcsPayloadCodec for ClearColor
 pub impl Default for ClearColor
 
 pub(all) enum ClearColorConfig {
@@ -401,6 +405,7 @@ pub(all) enum ClearColorConfig {
 pub fn ClearColorConfig::default() -> Self
 pub fn ClearColorConfig::resolve(Self) -> (Bool, @color.Color)
 pub impl @ecs.Component for ClearColorConfig
+pub impl @ecs.EcsPayloadCodec for ClearColorConfig
 pub impl ToJson for ClearColorConfig
 pub impl @json.FromJson for ClearColorConfig
 
@@ -417,6 +422,7 @@ pub fn ColorMaterial::with_texture(Self, @asset.Handle[@image.Image]) -> Self
 pub fn ColorMaterial::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn ColorMaterial::with_uv_scale(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for ColorMaterial
+pub impl @ecs.EcsPayloadCodec for ColorMaterial
 pub impl Material2d for ColorMaterial
 pub impl Default for ColorMaterial
 pub impl ToJson for ColorMaterial
@@ -436,6 +442,7 @@ pub fn ColorMaterialAsset::with_alpha_mode(Self, AlphaMode2d) -> Self
 pub fn ColorMaterialAsset::with_texture(Self, @asset.Handle[@image.Image]) -> Self
 pub fn ColorMaterialAsset::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn ColorMaterialAsset::with_uv_scale(Self, @math.Vec2) -> Self
+pub impl @ecs.EcsPayloadCodec for ColorMaterialAsset
 pub impl Material2d for ColorMaterialAsset
 
 pub struct ColorMaterialPlugin {
@@ -470,6 +477,7 @@ pub fn[T : GizmoConfigGroup] GizmoConfigStore::get_config(Self, T) -> (GizmoConf
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::get_config_mut(Self, T) -> (@ref.Ref[GizmoConfig], @ref.Ref[T])?
 pub fn[T : GizmoConfigGroup + Default] GizmoConfigStore::register(Self, T) -> Unit
 pub impl @app.Resource for GizmoConfigStore
+pub impl @ecs.EcsPayloadCodec for GizmoConfigStore
 pub impl Default for GizmoConfigStore
 
 pub(all) struct GizmoLine {
@@ -528,7 +536,12 @@ pub struct GizmoStorage[Config] {
 }
 pub fn[Config] GizmoStorage::new() -> Self[Config]
 pub impl[Config] @app.Resource for GizmoStorage[Config]
+pub impl[Config] @ecs.EcsPayloadCodec for GizmoStorage[Config]
 pub impl[Config] Default for GizmoStorage[Config]
+
+pub(all) struct GizmoStoragePayload {
+  state : GizmoState
+}
 
 pub struct Gizmos[Config] {
   config : GizmoConfig
@@ -638,6 +651,12 @@ pub fn[M] Material2dPipeline::default() -> Self[M]
 pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M, Material2dBindGroup) -> Material2dKey[M]
 pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
 pub impl[M] @app.Resource for Material2dPipeline[M]
+pub impl[M] @ecs.EcsPayloadCodec for Material2dPipeline[M]
+
+pub(all) struct Material2dPipelinePayload {
+  vertex_shader : String?
+  fragment_shader : String?
+}
 
 pub struct Material2dPlugin[M] {
   vertex_shader : String?
@@ -648,7 +667,7 @@ pub fn[M] Material2dPlugin::default() -> Self[M]
 pub fn[M] Material2dPlugin::with_asset_init(Self[M], () -> M) -> Self[M]
 pub fn[M] Material2dPlugin::with_fragment_shader(Self[M], String) -> Self[M]
 pub fn[M] Material2dPlugin::with_vertex_shader(Self[M], String) -> Self[M]
-pub impl[M : Material2d] @app.Plugin for Material2dPlugin[M]
+pub impl[M : Material2d + @ecs.EcsPayloadCodec] @app.Plugin for Material2dPlugin[M]
 
 pub struct Material2dProperties {
   alpha_mode : AlphaMode2d
@@ -661,6 +680,7 @@ pub fn Material2dRuntimeRegistry::contains_type_name(Self, String) -> Bool
 pub fn Material2dRuntimeRegistry::entry_count(Self) -> Int
 pub fn Material2dRuntimeRegistry::new() -> Self
 pub impl @app.Resource for Material2dRuntimeRegistry
+pub impl @ecs.EcsPayloadCodec for Material2dRuntimeRegistry
 
 pub struct Mesh2dBundle {
   mesh : @mesh.Mesh2d
@@ -689,14 +709,20 @@ pub fn MeshMaterial2d::with_texture(Self[ColorMaterialAsset], @asset.Handle[@ima
 pub fn MeshMaterial2d::with_uv_offset(Self[ColorMaterialAsset], @math.Vec2) -> Self[ColorMaterialAsset]
 pub fn MeshMaterial2d::with_uv_scale(Self[ColorMaterialAsset], @math.Vec2) -> Self[ColorMaterialAsset]
 pub impl[M] @ecs.Component for MeshMaterial2d[M]
+pub impl[M] @ecs.EcsPayloadCodec for MeshMaterial2d[M]
 pub impl Material2d for MeshMaterial2d[ColorMaterialAsset]
 pub impl[M] ToJson for MeshMaterial2d[M]
 pub impl[M] @json.FromJson for MeshMaterial2d[M]
+
+pub(all) struct MeshMaterial2dPayload {
+  handle : Int
+}
 
 pub struct NoWireframe2d {
 }
 pub fn NoWireframe2d::default() -> Self
 pub impl @ecs.Component for NoWireframe2d
+pub impl @ecs.EcsPayloadCodec for NoWireframe2d
 pub impl ToJson for NoWireframe2d
 pub impl @json.FromJson for NoWireframe2d
 
@@ -751,6 +777,7 @@ pub(all) struct PanCamera {
 } derive(ToJson, @json.FromJson)
 pub fn PanCamera::default() -> Self
 pub impl @ecs.Component for PanCamera
+pub impl @ecs.EcsPayloadCodec for PanCamera
 pub impl Show for PanCamera
 
 pub(all) struct PendingArc {
@@ -809,12 +836,24 @@ pub struct PreparedMaterial2d[M] {
 }
 pub fn[M : Material2d] PreparedMaterial2d::from_material(@asset.Handle[M], M, Material2dPipeline[M]) -> Self[M]
 pub fn[M] PreparedMaterial2d::prepared_handle(@asset.Handle[M]) -> @asset.Handle[Self[M]]
+pub impl[M] @ecs.EcsPayloadCodec for PreparedMaterial2d[M]
+
+pub(all) struct PreparedMaterial2dPayload {
+  source : Int
+  bind_group : Material2dBindGroup
+  host_bind_group : @renderer.HostMaterial2dBindGroup
+  key_mesh : Int
+  key_layout : String
+  key_data : String
+  properties : Material2dProperties
+}
 
 pub(all) enum Projection {
   Orthographic(OrthographicProjection)
 }
 pub fn Projection::orthographic_2d() -> Self
 pub impl @ecs.Component for Projection
+pub impl @ecs.EcsPayloadCodec for Projection
 pub impl ToJson for Projection
 pub impl @json.FromJson for Projection
 
@@ -846,6 +885,7 @@ pub fn RenderLayers::union(Self, Self) -> Self
 pub fn RenderLayers::with_layer(Self, Int) -> Self
 pub fn RenderLayers::without_layer(Self, Int) -> Self
 pub impl @ecs.Component for RenderLayers
+pub impl @ecs.EcsPayloadCodec for RenderLayers
 pub impl ToJson for RenderLayers
 pub impl @json.FromJson for RenderLayers
 
@@ -859,8 +899,14 @@ pub fn[M] RenderMaterial2dInstances::new() -> Self[M]
 pub fn[M] RenderMaterial2dInstances::remove(Self[M], @core.Entity) -> Unit
 pub fn[M] RenderMaterial2dInstances::set(Self[M], @core.Entity, @asset.Handle[M]) -> Unit
 pub impl[M] @app.Resource for RenderMaterial2dInstances[M]
+pub impl[M] @ecs.EcsPayloadCodec for RenderMaterial2dInstances[M]
+
+pub(all) struct RenderMaterial2dInstancesPayload {
+  instances : Array[((Int, Int), Int)]
+}
 
 type RenderState
+pub impl @ecs.EcsPayloadCodec for RenderState
 pub impl ToJson for RenderState
 pub impl @json.FromJson for RenderState
 
@@ -870,6 +916,7 @@ pub(all) enum RenderTarget {
   Image(@asset.Handle[@image.Image])
 }
 pub impl @ecs.Component for RenderTarget
+pub impl @ecs.EcsPayloadCodec for RenderTarget
 pub impl ToJson for RenderTarget
 pub impl @json.FromJson for RenderTarget
 
@@ -896,6 +943,7 @@ pub struct ScissorRect {
 }
 pub fn ScissorRect::new(@math.Rect) -> Self
 pub impl @ecs.Component for ScissorRect
+pub impl @ecs.EcsPayloadCodec for ScissorRect
 pub impl ToJson for ScissorRect
 pub impl @json.FromJson for ScissorRect
 
@@ -929,6 +977,7 @@ pub fn Sprite::with_image_mode(Self, SpriteImageMode) -> Self
 pub fn Sprite::with_rect(Self, @math.Rect?) -> Self
 pub fn Sprite::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 pub impl @ecs.Component for Sprite
+pub impl @ecs.EcsPayloadCodec for Sprite
 pub impl Default for Sprite
 pub impl ToJson for Sprite
 pub impl @json.FromJson for Sprite
@@ -986,6 +1035,7 @@ pub fn SpriteMaterial::default() -> Self
 pub fn SpriteMaterial::from_sprite_mesh(SpriteMesh) -> Self
 pub fn SpriteMaterial::with_anchor(Self, @math.Vec2) -> Self
 pub fn SpriteMaterial::with_texture_atlas_layout(Self, @asset.TextureAtlasLayout?, Int) -> Self
+pub impl @ecs.EcsPayloadCodec for SpriteMaterial
 pub impl Material2d for SpriteMaterial
 
 pub struct SpriteMaterialPlugin {
@@ -1019,6 +1069,7 @@ pub fn SpriteMesh::with_image_mode(Self, SpriteImageMode) -> Self
 pub fn SpriteMesh::with_rect(Self, @math.Rect?) -> Self
 pub fn SpriteMesh::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 pub impl @ecs.Component for SpriteMesh
+pub impl @ecs.EcsPayloadCodec for SpriteMesh
 
 pub struct SpriteMeshPlugin {
 }
@@ -1090,6 +1141,7 @@ pub fn TilemapChunk::calculate_tile_transform(Self, @math.UVec2) -> @transform.T
 pub fn TilemapChunk::new(@math.UVec2, @math.UVec2, @asset.Handle[@image.Image], @math.UVec2) -> Self
 pub fn TilemapChunk::tile_capacity(Self) -> Int
 pub impl @ecs.Component for TilemapChunk
+pub impl @ecs.EcsPayloadCodec for TilemapChunk
 pub impl ToJson for TilemapChunk
 pub impl @json.FromJson for TilemapChunk
 
@@ -1100,6 +1152,7 @@ pub fn TilemapChunkTileData::new(Array[TileData?]) -> Self
 pub fn TilemapChunkTileData::set_tile_data_from_tile_pos(Self, @math.UVec2, @math.UVec2, TileData?) -> Self
 pub fn TilemapChunkTileData::tile_data_from_tile_pos(Self, @math.UVec2, @math.UVec2) -> TileData?
 pub impl @ecs.Component for TilemapChunkTileData
+pub impl @ecs.EcsPayloadCodec for TilemapChunkTileData
 pub impl ToJson for TilemapChunkTileData
 pub impl @json.FromJson for TilemapChunkTileData
 
@@ -1137,6 +1190,7 @@ pub struct Wireframe2d {
 }
 pub fn Wireframe2d::default() -> Self
 pub impl @ecs.Component for Wireframe2d
+pub impl @ecs.EcsPayloadCodec for Wireframe2d
 pub impl ToJson for Wireframe2d
 pub impl @json.FromJson for Wireframe2d
 
@@ -1147,6 +1201,7 @@ pub fn Wireframe2dColor::default() -> Self
 pub fn Wireframe2dColor::new(@color.Color) -> Self
 pub fn Wireframe2dColor::with_color(Self, @color.Color) -> Self
 pub impl @ecs.Component for Wireframe2dColor
+pub impl @ecs.EcsPayloadCodec for Wireframe2dColor
 pub impl ToJson for Wireframe2dColor
 pub impl @json.FromJson for Wireframe2dColor
 
@@ -1159,6 +1214,7 @@ pub fn Wireframe2dConfig::new(Bool, @color.Color) -> Self
 pub fn Wireframe2dConfig::with_default_color(Self, @color.Color) -> Self
 pub fn Wireframe2dConfig::with_global(Self, Bool) -> Self
 pub impl @app.Resource for Wireframe2dConfig
+pub impl @ecs.EcsPayloadCodec for Wireframe2dConfig
 
 // Type aliases
 pub using @math {type Annulus}

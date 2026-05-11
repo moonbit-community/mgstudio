@@ -903,7 +903,9 @@ pub let input_systems_set : @app.SystemSet = @app.system_set(
 )
 
 ///|
-fn[T] input_resource_get(key : @ecs.ResourceKey[T]) -> T? {
+fn[T : @ecs.EcsPayloadCodec] input_resource_get(
+  key : @ecs.ResourceKey[T],
+) -> T? {
   match @app.current_world() {
     Some(world) =>
       try world.get_resource(key) catch {

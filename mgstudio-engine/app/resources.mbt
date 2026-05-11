@@ -267,27 +267,30 @@ fn[S : States] pending_state_transition_event_resource_key(
 }
 
 ///|
-pub impl[S] Resource for State[S] with resource() {
+pub impl[S : @ecs.EcsPayloadCodec] Resource for State[S] with resource() {
   registered_state_resource_key()
 }
 
 ///|
-pub impl[S] Resource for PreviousState[S] with resource() {
+pub impl[S : @ecs.EcsPayloadCodec] Resource for PreviousState[S] with resource() {
   registered_previous_state_resource_key()
 }
 
 ///|
-pub impl[S] Resource for NextState[S] with resource() {
+pub impl[S : @ecs.EcsPayloadCodec] Resource for NextState[S] with resource() {
   registered_next_state_resource_key()
 }
 
 ///|
-pub impl[S] Resource for StateTransitionEvent[S] with resource() {
+pub impl[S : @ecs.EcsPayloadCodec] Resource for StateTransitionEvent[S] with resource() {
   registered_state_transition_event_resource_key()
 }
 
 ///|
-fn[T] read_world_resource(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
+fn[T : @ecs.EcsPayloadCodec] read_world_resource(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[T],
+) -> T? {
   try world.get_resource(key) catch {
     _ => None
   } noraise {

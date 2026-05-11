@@ -79,17 +79,19 @@ fn[T] value_change_event_key() -> @ecs.EventKey[ValueChange[T]] {
 }
 
 ///|
-pub impl[T] @ecs.TriggerEvent for ValueChange[T] with observer_event() {
+pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with observer_event() {
   value_change_event_key()
 }
 
 ///|
-pub impl[T] @ecs.TriggerEvent for ValueChange[T] with observer_entity(self) {
+pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with observer_entity(
+  self,
+) {
   Some(self.source)
 }
 
 ///|
-pub impl[T] @ecs.TriggerEvent for ValueChange[T] with set_observer_entity(
+pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with set_observer_entity(
   self,
   entity,
 ) {
@@ -97,12 +99,14 @@ pub impl[T] @ecs.TriggerEvent for ValueChange[T] with set_observer_entity(
 }
 
 ///|
-pub impl[T] @ecs.TriggerEvent for ValueChange[T] with auto_propagate(_self) {
+pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with auto_propagate(
+  _self,
+) {
   false
 }
 
 ///|
-pub impl[T] @ecs.TriggerEvent for ValueChange[T] with debug_name() {
+pub impl[T : @ecs.EcsPayloadCodec] @ecs.TriggerEvent for ValueChange[T] with debug_name() {
   "ValueChange"
 }
 

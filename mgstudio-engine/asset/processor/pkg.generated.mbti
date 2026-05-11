@@ -18,11 +18,11 @@ pub fn[T] asset_processor_process(@asset.LoadTransformAndSave[T], @asset.AssetSe
 
 pub fn[T] asset_processor_supports_extension(@asset.LoadTransformAndSave[T], String) -> Bool
 
-pub fn[T] init_asset_processor(@app.App[@ecs.World], @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+pub fn[T : @ecs.EcsPayloadCodec] init_asset_processor(@app.App[@ecs.World], @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
 
-pub fn[T] register_asset_processor(@app.App[@ecs.World], @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor(@app.App[@ecs.World], @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
 
-pub fn[T] register_asset_processor_named(@app.App[@ecs.World], String, @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor_named(@app.App[@ecs.World], String, @asset.LoadTransformAndSave[T]) -> @app.App[@ecs.World]
 
 pub fn set_default_asset_processor(@app.App[@ecs.World], String) -> @app.App[@ecs.World]
 

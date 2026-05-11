@@ -47,6 +47,7 @@ pub fn Dlss::new(perf_quality_mode? : DlssPerfQualityMode, reset? : Bool) -> Sel
 pub fn Dlss::with_perf_quality_mode(Self, DlssPerfQualityMode) -> Self
 pub fn Dlss::with_reset(Self, Bool) -> Self
 pub impl @ecs.Component for Dlss
+pub impl @ecs.EcsPayloadCodec for Dlss
 pub impl Default for Dlss
 
 pub struct DlssInitPlugin {
@@ -76,10 +77,12 @@ pub struct DlssProjectId {
 pub fn DlssProjectId::new(String) -> Self
 pub fn DlssProjectId::value(Self) -> String
 pub impl @app.Resource for DlssProjectId
+pub impl @ecs.EcsPayloadCodec for DlssProjectId
 
 pub struct DlssRayReconstructionSupported {
 } derive(Default, Eq, @debug.Debug)
 pub impl @app.Resource for DlssRayReconstructionSupported
+pub impl @ecs.EcsPayloadCodec for DlssRayReconstructionSupported
 
 pub struct DlssRuntimeState {
   enabled_camera_count : Int
@@ -88,10 +91,12 @@ pub struct DlssRuntimeState {
 } derive(Eq, @debug.Debug)
 pub fn DlssRuntimeState::default() -> Self
 pub impl @app.Resource for DlssRuntimeState
+pub impl @ecs.EcsPayloadCodec for DlssRuntimeState
 
 pub struct DlssSuperResolutionSupported {
 } derive(Default, Eq, @debug.Debug)
 pub impl @app.Resource for DlssSuperResolutionSupported
+pub impl @ecs.EcsPayloadCodec for DlssSuperResolutionSupported
 
 // Type aliases
 

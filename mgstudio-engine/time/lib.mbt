@@ -112,7 +112,7 @@ pub fn fixed_time_resource_key() -> @ecs.ResourceKey[Time[Fixed]] {
 }
 
 ///|
-pub impl[T : Default] @app.Resource for Time[T] with resource() {
+pub impl[T : Default + @ecs.EcsPayloadCodec] @app.Resource for Time[T] with resource() {
   registered_time_resource_key()
 }
 
@@ -132,7 +132,10 @@ pub fn host_time_now_instant() -> @core.Instant {
 }
 
 ///|
-fn[T] world_time_resource(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
+fn[T : @ecs.EcsPayloadCodec] world_time_resource(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[T],
+) -> T? {
   try world.get_resource(key) catch {
     _ => None
   } noraise {
@@ -141,7 +144,7 @@ fn[T] world_time_resource(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
 }
 
 ///|
-fn[T] world_time_resource_or_default(
+fn[T : @ecs.EcsPayloadCodec] world_time_resource_or_default(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
   default_value : () -> T,
@@ -153,7 +156,7 @@ fn[T] world_time_resource_or_default(
 }
 
 ///|
-fn[T] sync_world_time_resource(
+fn[T : @ecs.EcsPayloadCodec] sync_world_time_resource(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
   value : T,

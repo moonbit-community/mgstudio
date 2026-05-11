@@ -72,7 +72,7 @@ pub fn[R, S] extract_resource_once(source : S, extract : (S) -> R) -> R {
 }
 
 ///|
-fn[R] extract_resource_system(
+fn[R : @ecs.EcsPayloadCodec] extract_resource_system(
   render_world : @ecs.World,
   resource_key : @ecs.ResourceKey[R],
 ) -> Unit {

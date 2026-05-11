@@ -111,6 +111,31 @@ priv struct CameraDriverScheduleProbe {
 }
 
 ///|
+extenum @ecs.EcsPayload += {
+  EcsPayload_core_pipeline_test_CameraDriverScheduleProbe(
+    CameraDriverScheduleProbe
+  )
+}
+
+///|
+impl @ecs.EcsPayloadCodec for CameraDriverScheduleProbe with to_ecs_payload(
+  self,
+) {
+  EcsPayload_core_pipeline_test_CameraDriverScheduleProbe(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for CameraDriverScheduleProbe with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_core_pipeline_test_CameraDriverScheduleProbe(value) =>
+      Some(value)
+    _ => None
+  }
+}
+
+///|
 let camera_driver_schedule_probe_key : @ecs.ResourceKey[
   CameraDriverScheduleProbe,
 ] = @ecs.register_resource(

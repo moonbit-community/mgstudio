@@ -149,7 +149,7 @@ fn archetype_union_sorted_unique_local_component_ids(
 ///|
 fn World::ensure_bundle_info_for_payloads(
   self : World,
-  payloads : Array[(Int, ErasedWriter)],
+  payloads : Array[(Int, EcsPayloadWriter)],
 ) -> BundleInfo? {
   if payloads.length() == 0 {
     return None
@@ -208,7 +208,7 @@ fn World::ensure_bundle_info_for_payloads(
 
 ///|
 fn archetype_bundle_info_covers_pending_payloads(
-  pending_payloads : Map[Int, ErasedWriter],
+  pending_payloads : Map[Int, EcsPayloadWriter],
   bundle_info : BundleInfo,
 ) -> Bool {
   for entry in pending_payloads.iter() {
@@ -874,7 +874,7 @@ fn World::bundle_migrate_new_archetype_same_table(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : Map[Int, ErasedWriter],
+  pending_payloads : Map[Int, EcsPayloadWriter],
   pending_metadata : Map[Int, ComponentTickMetadata],
 ) -> Unit {
   self.bundle_migrate_new_archetype(entity, from_archetype_id, to_archetype_id)
@@ -889,7 +889,7 @@ fn World::bundle_migrate_new_archetype_new_table(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : Map[Int, ErasedWriter],
+  pending_payloads : Map[Int, EcsPayloadWriter],
   pending_metadata : Map[Int, ComponentTickMetadata],
 ) -> Unit {
   let from_table_id = self.archetype_table_id_or_invalid(from_archetype_id)
@@ -956,7 +956,7 @@ fn World::execute_bundle_migration_plan(
   self : World,
   entity : @core.Entity,
   plan : ArchetypeBundleMigrationPlan,
-  pending_payloads : Map[Int, ErasedWriter],
+  pending_payloads : Map[Int, EcsPayloadWriter],
   pending_metadata : Map[Int, ComponentTickMetadata],
 ) -> ArchetypeBundleMigrationPath {
   self.ensure_entity_archetype_capacity(entity.id)
@@ -1009,7 +1009,7 @@ fn World::migrate_entity_bundle(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : Map[Int, ErasedWriter],
+  pending_payloads : Map[Int, EcsPayloadWriter],
   pending_metadata : Map[Int, ComponentTickMetadata],
 ) -> ArchetypeBundleMigrationPath {
   let plan = self.bundle_migration_plan(from_archetype_id, to_archetype_id)
@@ -1138,7 +1138,7 @@ fn World::refresh_entity_archetype_with_bundle_info(
   self : World,
   entity : @core.Entity,
   bundle_info : BundleInfo?,
-  pending_payloads : Map[Int, ErasedWriter],
+  pending_payloads : Map[Int, EcsPayloadWriter],
   pending_metadata : Map[Int, ComponentTickMetadata],
 ) -> Unit {
   if !self.is_alive(entity) {
@@ -1270,7 +1270,7 @@ fn World::refresh_entity_archetype_with_bundle_info(
 fn World::refresh_entity_archetype_with_pending_payloads(
   self : World,
   entity : @core.Entity,
-  pending_payloads : Map[Int, ErasedWriter],
+  pending_payloads : Map[Int, EcsPayloadWriter],
   pending_metadata : Map[Int, ComponentTickMetadata],
 ) -> Unit {
   self.refresh_entity_archetype_with_bundle_info(

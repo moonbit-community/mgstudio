@@ -13,13 +13,17 @@
 // limitations under the License.
 
 ///|
-pub fn[T] World::send_event(self : World, key : EventKey[T], event : T) -> Unit {
+pub fn[T : EcsPayloadCodec] World::send_event(
+  self : World,
+  key : EventKey[T],
+  event : T,
+) -> Unit {
   let queue = self.current_events.get_or_init(key.id(), fn() { [] })
-  queue.push(erased_value(event))
+  queue.push(T::to_ecs_payload(event))
 }
 
 ///|
-pub fn[T] World::read_events(
+pub fn[T : EcsPayloadCodec] World::read_events(
   self : World,
   key : EventKey[T],
 ) -> Array[T] raise EcsError {
@@ -54,19 +58,20 @@ pub fn World::advance_event_frame(self : World) -> Unit {
 }
 
 ///|
-fn[T] World::decode_event_payload(
+fn[T : EcsPayloadCodec] World::decode_event_payload(
   _self : World,
   key : EventKey[T],
   index : Int,
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> T raise EcsError {
-  payload.to_value() catch {
-    _ =>
+  match T::from_ecs_payload(payload) {
+    Some(value) => value
+    None =>
       raise EventTypeMismatch(
         key.id(),
         key.debug_name(),
         index,
-        payload.type_name(),
+        "payload mismatch",
       )
   }
 }

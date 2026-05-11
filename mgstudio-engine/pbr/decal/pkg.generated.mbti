@@ -94,11 +94,13 @@ pub fn DecalsBuffer::default() -> Self
 pub fn DecalsBuffer::is_empty(Self) -> Bool
 pub fn DecalsBuffer::push(Self, RenderClusteredDecal) -> Unit
 pub impl @app.Resource for DecalsBuffer
+pub impl @ecs.EcsPayloadCodec for DecalsBuffer
 
 pub struct ForwardDecal {
 } derive(ToJson, @json.FromJson)
 pub fn ForwardDecal::default() -> Self
 pub impl @ecs.Component for ForwardDecal
+pub impl @ecs.EcsPayloadCodec for ForwardDecal
 
 pub struct ForwardDecalMaterialExtUniform {
   inv_depth_fade_factor : Float
@@ -143,6 +145,7 @@ pub fn RenderClusteredDecals::get_or_insert_texture(Self, Int) -> Int
 pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, @light.ClusteredDecal) -> Int
 pub fn RenderClusteredDecals::insert_decal_with_local_from_world(Self, @core.Entity, @light.ClusteredDecal, @math.Affine3) -> Int
 pub impl @app.Resource for RenderClusteredDecals
+pub impl @ecs.EcsPayloadCodec for RenderClusteredDecals
 
 pub struct RenderViewClusteredDecalBindGroupEntries {
   decals : Array[RenderClusteredDecal]

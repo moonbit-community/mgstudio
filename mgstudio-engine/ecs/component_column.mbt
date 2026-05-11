@@ -18,10 +18,8 @@ pub struct ComponentColumn[T] {
   key : ComponentKey[T]
   local_component_id : Int
   storage_type : ComponentStorageType
-  table_column_cache : Ref[Array[@any.Any?]]
+  table_column_cache : Ref[Array[Ref[RawTableColumn]?]]
   table_column_cache_ready : Ref[Array[Bool]]
-  table_values_cache : Ref[Array[@any.Any?]]
-  table_values_cache_ready : Ref[Array[Bool]]
 }
 
 ///|
@@ -40,8 +38,6 @@ pub fn[T] World::component_column(
             storage_type,
             table_column_cache: Ref([]),
             table_column_cache_ready: Ref([]),
-            table_values_cache: Ref([]),
-            table_values_cache_ready: Ref([]),
           })
         None => None
       }
@@ -64,17 +60,14 @@ fn[T] ComponentColumn::table_column_ref(
     self.table_column_cache_ready.val.push(false)
   }
   if self.table_column_cache_ready.val[table_id] {
-    return match self.table_column_cache.val[table_id] {
-      Some(column_any) => Some(column_any.unsafe_coerce())
-      None => None
-    }
+    return self.table_column_cache.val[table_id]
   }
   self.table_column_cache_ready.val[table_id] = true
   match self.world.table_storage(table_id) {
     Some(table_ref) =>
       match table_ref.val.column(self.local_component_id) {
         Some(column_ref) => {
-          self.table_column_cache.val[table_id] = Some(@any.of(column_ref))
+          self.table_column_cache.val[table_id] = Some(column_ref)
           Some(column_ref)
         }
         None => None
@@ -84,34 +77,15 @@ fn[T] ComponentColumn::table_column_ref(
 }
 
 ///|
-fn[T] ComponentColumn::table_values_ref(
+fn[T : EcsPayloadCodec] ComponentColumn::table_values_ref(
   self : ComponentColumn[T],
   table_id : Int,
 ) -> Array[T]? {
   if table_id < 0 {
     return None
   }
-  while self.table_values_cache.val.length() <= table_id {
-    self.table_values_cache.val.push(None)
-  }
-  while self.table_values_cache_ready.val.length() <= table_id {
-    self.table_values_cache_ready.val.push(false)
-  }
-  if self.table_values_cache_ready.val[table_id] {
-    return match self.table_values_cache.val[table_id] {
-      Some(values_any) => Some(values_any.unsafe_coerce())
-      None => None
-    }
-  }
-  self.table_values_cache_ready.val[table_id] = true
   guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
-  match column_ref.val.values_cached() {
-    Some(values) => {
-      self.table_values_cache.val[table_id] = Some(@any.of(values))
-      Some(values)
-    }
-    None => None
-  }
+  column_ref.val.values_cached()
 }
 
 ///|
@@ -143,8 +117,9 @@ pub fn[T] ComponentColumn::contains(
       let table_id = self.world.entity_table_ids[entity_id]
       let row_index = self.world.entity_table_rows[entity_id]
       guard table_id >= 0 && row_index >= 0 else { return false }
-      match self.table_values_ref(table_id) {
-        Some(values) => row_index < values.length()
+      match self.table_column_ref(table_id) {
+        Some(column_ref) =>
+          row_index < raw_table_value_column_kernel_len(column_ref.val.storage)
         None => false
       }
     }
@@ -152,7 +127,7 @@ pub fn[T] ComponentColumn::contains(
 }
 
 ///|
-pub fn[T] ComponentColumn::get(
+pub fn[T : EcsPayloadCodec] ComponentColumn::get(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> T? {
@@ -160,11 +135,7 @@ pub fn[T] ComponentColumn::get(
     Some(_) =>
       if self.world.pending_component_payload(entity, self.local_component_id)
         is Some(payload) {
-        let result : Result[T, @any.TypeMismatch] = try? payload.to_value()
-        return match result {
-          Ok(value) => Some(value)
-          Err(_) => None
-        }
+        return T::from_ecs_payload(payload)
       }
     None => ()
   }
@@ -173,13 +144,7 @@ pub fn[T] ComponentColumn::get(
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) =>
           match store_ref.val.get(entity) {
-            Some(payload) => {
-              let result : Result[T, @any.TypeMismatch] = try? payload.to_value()
-              match result {
-                Ok(value) => Some(value)
-                Err(_) => None
-              }
-            }
+            Some(payload) => T::from_ecs_payload(payload)
             None => None
           }
         None => None
@@ -205,7 +170,7 @@ pub fn[T] ComponentColumn::get(
 }
 
 ///|
-pub fn[T] ComponentColumn::get_fast(
+pub fn[T : EcsPayloadCodec] ComponentColumn::get_fast(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> T? {
@@ -214,13 +179,7 @@ pub fn[T] ComponentColumn::get_fast(
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) =>
           match store_ref.val.get(entity) {
-            Some(payload) => {
-              let result : Result[T, @any.TypeMismatch] = try? payload.to_value()
-              match result {
-                Ok(value) => Some(value)
-                Err(_) => None
-              }
-            }
+            Some(payload) => T::from_ecs_payload(payload)
             None => None
           }
         None => None
@@ -246,7 +205,7 @@ pub fn[T] ComponentColumn::get_fast(
 }
 
 ///|
-pub fn[T] ComponentColumn::table_values(
+pub fn[T : EcsPayloadCodec] ComponentColumn::table_values(
   self : ComponentColumn[T],
   table_id : Int,
 ) -> Array[T]? {
@@ -255,7 +214,7 @@ pub fn[T] ComponentColumn::table_values(
 }
 
 ///|
-pub fn[T] ComponentColumn::table_value_at_row(
+pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_row(
   self : ComponentColumn[T],
   table_id : Int,
   row_index : Int,
@@ -270,7 +229,7 @@ pub fn[T] ComponentColumn::table_value_at_row(
 }
 
 ///|
-pub fn[T] ComponentColumn::table_row_location(
+pub fn[T : EcsPayloadCodec] ComponentColumn::table_row_location(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> (Int, Int)? {
@@ -290,7 +249,7 @@ pub fn[T] ComponentColumn::table_row_location(
 }
 
 ///|
-pub fn[T] ComponentColumn::table_value_at_entity_row(
+pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_entity_row(
   self : ComponentColumn[T],
   entity : @core.Entity,
   table_id : Int,
@@ -314,7 +273,7 @@ pub fn[T] ComponentColumn::table_value_at_entity_row(
 }
 
 ///|
-pub fn[T] ComponentColumn::table_value_at_cached_entity_row(
+pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_cached_entity_row(
   self : ComponentColumn[T],
   entity : @core.Entity,
   table_id : Int,
@@ -454,7 +413,7 @@ pub fn[T] ComponentColumn::get_mut(
 }
 
 ///|
-pub fn[T] ComponentColumn::for_each(
+pub fn[T : EcsPayloadCodec] ComponentColumn::for_each(
   self : ComponentColumn[T],
   visit : (@core.Entity, T) -> Unit,
 ) -> Unit {
@@ -463,10 +422,9 @@ pub fn[T] ComponentColumn::for_each(
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) =>
           store_ref.val.for_each(fn(entity, payload) {
-            let result : Result[T, @any.TypeMismatch] = try? payload.to_value()
-            match result {
-              Ok(value) => visit(entity, value)
-              Err(_) => ()
+            match T::from_ecs_payload(payload) {
+              Some(value) => visit(entity, value)
+              None => ()
             }
           })
         None => ()
@@ -501,7 +459,7 @@ pub fn[T] ComponentColumn::for_each(
 }
 
 ///|
-pub fn[T, U] ComponentColumn::for_each_without(
+pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, T) -> Unit,
@@ -554,7 +512,7 @@ pub fn[T, U] ComponentColumn::for_each_without(
 }
 
 ///|
-pub fn[T, U] ComponentColumn::for_each_with(
+pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, T, U) -> Unit,
@@ -617,7 +575,7 @@ pub fn[T, U] ComponentColumn::for_each_with(
 }
 
 ///|
-pub fn[T, U] ComponentColumn::for_each_without_fast(
+pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, T) -> Unit,
@@ -664,7 +622,7 @@ pub fn[T, U] ComponentColumn::for_each_without_fast(
 }
 
 ///|
-pub fn[T, U] ComponentColumn::for_each_with_fast(
+pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, T, U) -> Unit,
@@ -723,7 +681,7 @@ pub fn[T, U] ComponentColumn::for_each_with_fast(
 }
 
 ///|
-pub fn[T] ComponentColumn::set(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
@@ -739,7 +697,7 @@ pub fn[T] ComponentColumn::set(
 }
 
 ///|
-pub fn[T] ComponentColumn::set_sequence_only(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
@@ -751,7 +709,7 @@ pub fn[T] ComponentColumn::set_sequence_only(
         context.payloads.get(self.local_component_id) is Some(_) {
         context.payloads.set(
           self.local_component_id,
-          erased_writer(self.key, value),
+          ecs_payload_writer(self.key, value),
         )
         ignore(
           self.world.record_pending_component_changed_metadata(
@@ -769,7 +727,7 @@ pub fn[T] ComponentColumn::set_sequence_only(
     SparseSet =>
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) => {
-          guard store_ref.val.set(entity, erased_value(value)) else {
+          guard store_ref.val.set(entity, T::to_ecs_payload(value)) else {
             return false
           }
           ignore(
@@ -797,7 +755,7 @@ pub fn[T] ComponentColumn::set_sequence_only(
       let row_index = row.index()
       guard column_ref.val.replace_writer_at_row(
         row_index,
-        erased_writer(self.key, value),
+        ecs_payload_writer(self.key, value),
       ) else {
         return false
       }
@@ -818,7 +776,7 @@ pub fn[T] ComponentColumn::set_sequence_only(
 }
 
 ///|
-pub fn[T] ComponentColumn::set_sequence_only_fast(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_fast(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
@@ -828,7 +786,7 @@ pub fn[T] ComponentColumn::set_sequence_only_fast(
     SparseSet =>
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) => {
-          guard store_ref.val.set(entity, erased_value(value)) else {
+          guard store_ref.val.set(entity, T::to_ecs_payload(value)) else {
             return false
           }
           ignore(
@@ -858,7 +816,7 @@ pub fn[T] ComponentColumn::set_sequence_only_fast(
       }
       guard column_ref.val.replace_writer_at_row(
         row_index,
-        erased_writer(self.key, value),
+        ecs_payload_writer(self.key, value),
       ) else {
         return false
       }
@@ -869,7 +827,7 @@ pub fn[T] ComponentColumn::set_sequence_only_fast(
 }
 
 ///|
-pub fn[T] ComponentColumn::set_sequence_only_hot(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
@@ -879,7 +837,7 @@ pub fn[T] ComponentColumn::set_sequence_only_hot(
     SparseSet =>
       match self.world.sparse_component_columns.get(self.local_component_id) {
         Some(store_ref) => {
-          guard store_ref.val.set(entity, erased_value(value)) else {
+          guard store_ref.val.set(entity, T::to_ecs_payload(value)) else {
             return false
           }
           ignore(
@@ -909,7 +867,7 @@ pub fn[T] ComponentColumn::set_sequence_only_hot(
       }
       guard column_ref.val.replace_writer_at_row(
         row_index,
-        erased_writer(self.key, value),
+        ecs_payload_writer(self.key, value),
       ) else {
         return false
       }
@@ -920,7 +878,7 @@ pub fn[T] ComponentColumn::set_sequence_only_hot(
 }
 
 ///|
-pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_row(
   self : ComponentColumn[T],
   entity : @core.Entity,
   values : Array[T],
@@ -944,7 +902,7 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(
   }
   guard column_ref.val.replace_writer_at_row(
     row_index,
-    erased_writer(self.key, value),
+    ecs_payload_writer(self.key, value),
   ) else {
     return false
   }
@@ -953,7 +911,7 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_row(
 }
 
 ///|
-pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row(
   self : ComponentColumn[T],
   table_id : Int,
   values : Array[T],
@@ -972,7 +930,7 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row(
   }
   guard column_ref.val.replace_writer_at_row(
     row_index,
-    erased_writer(self.key, value),
+    ecs_payload_writer(self.key, value),
   ) else {
     return false
   }
@@ -981,7 +939,7 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row(
 }
 
 ///|
-pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row_value(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row_value(
   self : ComponentColumn[T],
   table_id : Int,
   row_index : Int,
@@ -995,7 +953,7 @@ pub fn[T] ComponentColumn::set_sequence_only_hot_at_table_row_value(
   }
   guard column_ref.val.replace_writer_at_row(
     row_index,
-    erased_writer(self.key, value),
+    ecs_payload_writer(self.key, value),
   ) else {
     return false
   }

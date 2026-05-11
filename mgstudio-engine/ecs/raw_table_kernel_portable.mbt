@@ -65,108 +65,8 @@ fn raw_table_row_kernel_swap_remove(
 }
 
 ///|
-priv struct RawTableMetadataKernel {
-  mut added_sequences : Array[@core.Sequence]
-  mut changed_sequences : Array[@core.Sequence]
-  mut changed_caller_ids : Array[Int]
-}
-
-///|
-fn raw_table_metadata_kernel_new() -> RawTableMetadataKernel {
-  { added_sequences: [], changed_sequences: [], changed_caller_ids: [] }
-}
-
-///|
-fn raw_table_metadata_kernel_len(kernel : RawTableMetadataKernel) -> Int {
-  kernel.added_sequences.length()
-}
-
-///|
-fn raw_table_metadata_kernel_push(
-  kernel : RawTableMetadataKernel,
-  added_sequence : @core.Sequence,
-  changed_sequence : @core.Sequence,
-  changed_caller_id : Int,
-) -> Bool {
-  kernel.added_sequences.push(added_sequence)
-  kernel.changed_sequences.push(changed_sequence)
-  kernel.changed_caller_ids.push(changed_caller_id)
-  true
-}
-
-///|
-fn raw_table_metadata_kernel_set(
-  kernel : RawTableMetadataKernel,
-  row : Int,
-  added_sequence : @core.Sequence,
-  changed_sequence : @core.Sequence,
-  changed_caller_id : Int,
-) -> Bool {
-  if row < 0 || row >= kernel.added_sequences.length() {
-    return false
-  }
-  kernel.added_sequences[row] = added_sequence
-  kernel.changed_sequences[row] = changed_sequence
-  kernel.changed_caller_ids[row] = changed_caller_id
-  true
-}
-
-///|
-fn raw_table_metadata_kernel_added(
-  kernel : RawTableMetadataKernel,
-  row : Int,
-) -> @core.Sequence {
-  if row < 0 || row >= kernel.added_sequences.length() {
-    return -1
-  }
-  kernel.added_sequences[row]
-}
-
-///|
-fn raw_table_metadata_kernel_changed(
-  kernel : RawTableMetadataKernel,
-  row : Int,
-) -> @core.Sequence {
-  if row < 0 || row >= kernel.changed_sequences.length() {
-    return -1
-  }
-  kernel.changed_sequences[row]
-}
-
-///|
-fn raw_table_metadata_kernel_changed_caller_id(
-  kernel : RawTableMetadataKernel,
-  row : Int,
-) -> Int {
-  if row < 0 || row >= kernel.changed_caller_ids.length() {
-    return 0
-  }
-  kernel.changed_caller_ids[row]
-}
-
-///|
-fn raw_table_metadata_kernel_swap_remove(
-  kernel : RawTableMetadataKernel,
-  row : Int,
-) -> Bool {
-  if row < 0 || row >= kernel.added_sequences.length() {
-    return false
-  }
-  let last_index = kernel.added_sequences.length() - 1
-  if row != last_index {
-    kernel.added_sequences[row] = kernel.added_sequences[last_index]
-    kernel.changed_sequences[row] = kernel.changed_sequences[last_index]
-    kernel.changed_caller_ids[row] = kernel.changed_caller_ids[last_index]
-  }
-  ignore(kernel.added_sequences.pop())
-  ignore(kernel.changed_sequences.pop())
-  ignore(kernel.changed_caller_ids.pop())
-  true
-}
-
-///|
-priv struct RawTableValueColumnKernel {
-  mut values : Array[@any.Any]
+pub(all) struct RawTableValueColumnKernel {
+  mut values : Array[EcsPayload]
   mut added_sequences : Array[@core.Sequence]
   mut changed_sequences : Array[@core.Sequence]
   mut changed_caller_ids : Array[Int]
@@ -190,7 +90,7 @@ fn raw_table_value_column_kernel_len(kernel : RawTableValueColumnKernel) -> Int 
 ///|
 fn raw_table_value_column_kernel_push(
   kernel : RawTableValueColumnKernel,
-  value : @any.Any,
+  value : EcsPayload,
   added_sequence : @core.Sequence,
   changed_sequence : @core.Sequence,
   changed_caller_id : Int,
@@ -206,7 +106,7 @@ fn raw_table_value_column_kernel_push(
 fn raw_table_value_column_kernel_replace(
   kernel : RawTableValueColumnKernel,
   row : Int,
-  value : @any.Any,
+  value : EcsPayload,
 ) -> Bool {
   if row < 0 || row >= kernel.values.length() {
     return false
@@ -219,7 +119,7 @@ fn raw_table_value_column_kernel_replace(
 fn raw_table_value_column_kernel_value(
   kernel : RawTableValueColumnKernel,
   row : Int,
-) -> @any.Any? {
+) -> EcsPayload? {
   if row < 0 || row >= kernel.values.length() {
     return None
   }

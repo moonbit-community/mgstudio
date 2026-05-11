@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn[T] read_time_test_resource(
+fn[T : @ecs.EcsPayloadCodec] read_time_test_resource(
   app : @app.App[@ecs.World],
   key : @ecs.ResourceKey[T],
 ) -> T {

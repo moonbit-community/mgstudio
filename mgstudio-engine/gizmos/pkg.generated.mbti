@@ -168,6 +168,7 @@ pub fn Gizmo::with_depth_bias(Self, Float) -> Self
 pub fn Gizmo::with_handle(Self, @asset.Handle[GizmoAsset]) -> Self
 pub fn Gizmo::with_line_config(Self, @sprite.GizmoLineConfig) -> Self
 pub impl @ecs.Component for Gizmo
+pub impl @ecs.EcsPayloadCodec for Gizmo
 pub impl Default for Gizmo
 
 pub struct GizmoAsset {
@@ -212,6 +213,7 @@ pub fn GizmoAsset::rect_2d(Self, @sprite.Isometry2d, @math.Vec2, @color.Color) -
 pub fn GizmoAsset::short_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> RetainedArcBuilder
 pub fn GizmoAsset::short_arc_3d_between(Self, @math.Vec3, @math.Vec3, @math.Vec3, @color.Color) -> RetainedArcBuilder
 pub fn GizmoAsset::sphere(Self, @math.Isometry3d, Float, @color.Color) -> RetainedSphereBuilder
+pub impl @ecs.EcsPayloadCodec for GizmoAsset
 pub impl Default for GizmoAsset
 
 pub struct GizmoBuffer {
@@ -290,6 +292,7 @@ pub fn GizmoMeshConfig::line_style(Self) -> @sprite.GizmoLineStyle
 pub fn GizmoMeshConfig::new(line_perspective~ : Bool, line_style~ : @sprite.GizmoLineStyle, line_joints~ : @sprite.GizmoLineJoint, render_layers~ : @sprite.RenderLayers, handle~ : @asset.Handle[GizmoAsset]) -> Self
 pub fn GizmoMeshConfig::render_layers(Self) -> @sprite.RenderLayers
 pub impl @ecs.Component for GizmoMeshConfig
+pub impl @ecs.EcsPayloadCodec for GizmoMeshConfig
 
 pub struct GizmoPlugin {
 }
@@ -340,6 +343,7 @@ pub struct ShowAabbGizmo {
 pub fn ShowAabbGizmo::default() -> Self
 pub fn ShowAabbGizmo::with_color(Self, @color.Color?) -> Self
 pub impl @ecs.Component for ShowAabbGizmo
+pub impl @ecs.EcsPayloadCodec for ShowAabbGizmo
 
 pub struct ShowFrustumGizmo {
   color : @color.Color?
@@ -347,12 +351,14 @@ pub struct ShowFrustumGizmo {
 pub fn ShowFrustumGizmo::default() -> Self
 pub fn ShowFrustumGizmo::with_color(Self, @color.Color?) -> Self
 pub impl @ecs.Component for ShowFrustumGizmo
+pub impl @ecs.EcsPayloadCodec for ShowFrustumGizmo
 
 pub struct ShowSkinnedMeshBoundsGizmo {
   color : @color.Color?
 }
 pub fn ShowSkinnedMeshBoundsGizmo::default() -> Self
 pub impl @ecs.Component for ShowSkinnedMeshBoundsGizmo
+pub impl @ecs.EcsPayloadCodec for ShowSkinnedMeshBoundsGizmo
 
 pub struct SkinnedMeshBoundsGizmoConfigGroup {
   draw_all : Bool

@@ -443,7 +443,7 @@ pub fn[T : Resource] Commands::insert_resource(
 }
 
 ///|
-pub fn[T] Commands::insert_world_resource(
+pub fn[T : @ecs.EcsPayloadCodec] Commands::insert_world_resource(
   self : Commands,
   key : @ecs.ResourceKey[T],
   resource : T,
@@ -470,7 +470,7 @@ pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
 }
 
 ///|
-pub fn[T] Commands::remove_world_resource(
+pub fn[T : @ecs.EcsPayloadCodec] Commands::remove_world_resource(
   self : Commands,
   key : @ecs.ResourceKey[T],
 ) -> Unit {

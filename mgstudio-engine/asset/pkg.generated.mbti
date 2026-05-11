@@ -32,11 +32,11 @@ pub const IMAGE_USAGE_TEXTURE_BINDING : Int = 1
 
 pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlasLayout]
 
-pub fn[T] asset_assets_or_abort() -> Assets[T]
+pub fn[T : @ecs.EcsPayloadCodec] asset_assets_or_abort() -> Assets[T]
 
-pub fn[T] asset_assets_ref_mut_or_abort() -> @ecs.ResourceMut[Assets[T]]
+pub fn[T : @ecs.EcsPayloadCodec] asset_assets_ref_mut_or_abort() -> @ecs.ResourceMut[Assets[T]]
 
-pub fn[T] asset_assets_ref_or_abort() -> Assets[T]
+pub fn[T : @ecs.EcsPayloadCodec] asset_assets_ref_or_abort() -> Assets[T]
 
 pub fn asset_blob_read_bytes(Handle[Blob]) -> Bytes?
 
@@ -166,15 +166,15 @@ pub fn asset_white_texture() -> Handle[@image.Image]
 
 pub fn[T] asset_with_world(@ecs.World, () -> T) -> T
 
-pub fn[T] asset_world_add(@ecs.World, T) -> Handle[T]
+pub fn[T : @ecs.EcsPayloadCodec] asset_world_add(@ecs.World, T) -> Handle[T]
 
-pub fn[T, P : IntoAssetPath] asset_world_load(@ecs.World, P) -> Handle[T]
+pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] asset_world_load(@ecs.World, P) -> Handle[T]
 
-pub fn[T, P : IntoAssetPath] asset_world_load_with_settings(@ecs.World, P, (ImageLoaderSettings) -> Unit) -> Handle[T]
+pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] asset_world_load_with_settings(@ecs.World, P, (ImageLoaderSettings) -> Unit) -> Handle[T]
 
-pub fn[T] assets_resource_key() -> @ecs.ResourceKey[Assets[T]]
+pub fn[T : @ecs.EcsPayloadCodec] assets_resource_key() -> @ecs.ResourceKey[Assets[T]]
 
-pub fn[T] assets_resource_key_of(T) -> @ecs.ResourceKey[Assets[T]]
+pub fn[T : @ecs.EcsPayloadCodec] assets_resource_key_of(T) -> @ecs.ResourceKey[Assets[T]]
 
 pub fn[P : IntoAssetPath] embedded_asset(@app.App[@ecs.World], P, String) -> @app.App[@ecs.World]
 
@@ -246,11 +246,11 @@ pub fn host_asset_update_texture_region_bytes(texture_id~ : Int, x~ : Int, y~ : 
 
 pub fn host_asset_update_texture_region_mip_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, bytes~ : Bytes) -> Unit
 
-pub fn[T] init_asset(@app.App[@ecs.World], () -> T) -> @app.App[@ecs.World]
+pub fn[T : @ecs.EcsPayloadCodec] init_asset(@app.App[@ecs.World], () -> T) -> @app.App[@ecs.World]
 
-pub fn[T] init_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.App[@ecs.World]
+pub fn[T : @ecs.EcsPayloadCodec] init_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.App[@ecs.World]
 
-pub fn[T] init_asset_processor(@app.App[@ecs.World], LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+pub fn[T : @ecs.EcsPayloadCodec] init_asset_processor(@app.App[@ecs.World], LoadTransformAndSave[T]) -> @app.App[@ecs.World]
 
 pub fn[P : IntoAssetPath] load_asset_source_bytes(P) -> Bytes
 
@@ -258,11 +258,11 @@ pub fn[P : IntoAssetPath] load_optional_asset_source_text(P) -> String?
 
 pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[Assets[LoadedFolder]]
 
-pub fn[T] register_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.App[@ecs.World]
+pub fn[T : @ecs.EcsPayloadCodec] register_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.App[@ecs.World]
 
-pub fn[T] register_asset_processor(@app.App[@ecs.World], LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor(@app.App[@ecs.World], LoadTransformAndSave[T]) -> @app.App[@ecs.World]
 
-pub fn[T] register_asset_processor_named(@app.App[@ecs.World], String, LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor_named(@app.App[@ecs.World], String, LoadTransformAndSave[T]) -> @app.App[@ecs.World]
 
 pub fn register_asset_source(@app.App[@ecs.World], AssetSourceId, AssetSourceBuilder) -> @app.App[@ecs.World]
 
@@ -311,7 +311,13 @@ pub fn[T] AssetEvent::is_loaded_with_dependencies(Self[T], Handle[T]) -> Bool
 pub fn[T] AssetEvent::is_modified(Self[T], Handle[T]) -> Bool
 pub fn[T] AssetEvent::is_removed(Self[T], Handle[T]) -> Bool
 pub fn[T] AssetEvent::is_unused(Self[T], Handle[T]) -> Bool
+pub impl[T] @ecs.EcsPayloadCodec for AssetEvent[T]
 pub impl[T] @ecs.Message for AssetEvent[T]
+
+pub(all) struct AssetEventPayload {
+  tag : Int
+  id : Int
+}
 
 pub struct AssetId[_] {
   id : Int
@@ -325,7 +331,14 @@ pub struct AssetLoadFailedEvent[T] {
   error : String
 }
 pub fn[T] AssetLoadFailedEvent::untyped(Self[T]) -> UntypedAssetLoadFailedEvent
+pub impl[T] @ecs.EcsPayloadCodec for AssetLoadFailedEvent[T]
 pub impl[T] @ecs.Message for AssetLoadFailedEvent[T]
+
+pub(all) struct AssetLoadFailedEventPayload {
+  id : Int
+  path : AssetPath
+  error : String
+}
 
 pub struct AssetLoader[T] {
   extensions : Array[String]
@@ -413,13 +426,13 @@ pub struct AssetServer {
   processed_file_path : @ref.Ref[String?]
   owner_world : @ref.Ref[@ecs.World?]
 }
-pub fn[T] AssetServer::add(Self, T) -> Handle[T]
+pub fn[T : @ecs.EcsPayloadCodec] AssetServer::add(Self, T) -> Handle[T]
 pub fn[T] AssetServer::dependency_load_state(Self, Handle[T]) -> DependencyLoadState
 pub fn[P : IntoAssetPath] AssetServer::get_handle(Self, P) -> Handle[@image.Image]?
 pub fn AssetServer::gltf_loader_settings_for_asset_path(Self, String) -> ImageLoaderSettings
 pub fn[T] AssetServer::is_loaded_with_dependencies(Self, Handle[T]) -> Bool
-pub fn[T, P : IntoAssetPath] AssetServer::load(Self, P) -> Handle[T]
-pub fn[T, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(Self, P, G) -> Handle[T]
+pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load(Self, P) -> Handle[T]
+pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(Self, P, G) -> Handle[T]
 pub fn AssetServer::load_bytes(Self, String) -> Handle[Blob]
 pub fn[T, P : IntoAssetPath] AssetServer::load_direct(Self, P, Bytes) -> T
 pub fn AssetServer::load_folder(Self, String) -> Handle[LoadedFolder]
@@ -430,7 +443,7 @@ pub fn[P : IntoAssetPath] AssetServer::load_nearest(Self, P) -> Handle[@image.Im
 pub fn[T] AssetServer::load_state(Self, Handle[T]) -> LoadState
 pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[@image.Image]
 pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int
-pub fn[T, P : IntoAssetPath] AssetServer::load_with_settings(Self, P, (ImageLoaderSettings) -> Unit) -> Handle[T]
+pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load_with_settings(Self, P, (ImageLoaderSettings) -> Unit) -> Handle[T]
 pub fn AssetServer::new() -> Self
 pub fn[T] AssetServer::recursive_dependency_load_state(Self, Handle[T]) -> RecursiveDependencyLoadState
 pub fn AssetServer::set_typed_dependency_load_state(Self, String, Int, DependencyLoadState) -> Unit
@@ -440,6 +453,7 @@ pub fn AssetServer::set_typed_loaded_states(Self, String, Int) -> Unit
 pub fn AssetServer::set_typed_loading_states(Self, String, Int) -> Unit
 pub fn AssetServer::set_typed_recursive_dependency_load_state(Self, String, Int, RecursiveDependencyLoadState) -> Unit
 pub impl @app.Resource for AssetServer
+pub impl @ecs.EcsPayloadCodec for AssetServer
 
 pub struct AssetSourceBuilder {
   path : String
@@ -504,10 +518,19 @@ pub fn[T] Assets::push_event(Self[T], AssetEvent[T]) -> Unit
 pub fn[T] Assets::remove(Self[T], Handle[T]) -> T?
 pub fn[T] Assets::reserve_handle(Self[T]) -> Handle[T]
 pub fn[T] Assets::set(Self[T], Handle[T], T) -> Bool
-pub impl[T] @app.Resource for Assets[T]
+pub impl[T : @ecs.EcsPayloadCodec] @app.Resource for Assets[T]
+pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for Assets[T]
+
+pub(all) struct AssetsPayload {
+  items : Array[@ecs.EcsPayload?]
+  alive : Int
+  events : Array[AssetEventPayload]
+  dirty : Array[Int]
+}
 
 pub struct Blob {
 }
+pub impl @ecs.EcsPayloadCodec for Blob
 
 pub(all) enum DependencyLoadState {
   NotLoaded
@@ -539,8 +562,13 @@ pub fn[T] Handle::asset_id(Self[T]) -> AssetId[T]
 pub fn[T] Handle::from_asset_id(AssetId[T]) -> Self[T]
 pub fn[T] Handle::id(Self[T]) -> Int
 pub fn[T] Handle::new(Int) -> Self[T]
+pub impl[T] @ecs.EcsPayloadCodec for Handle[T]
 pub impl[T] ToJson for Handle[T]
 pub impl[T] @json.FromJson for Handle[T]
+
+pub(all) struct HandlePayload {
+  id : Int
+}
 
 pub(all) struct ImageLoaderSettings {
   mut format : @image.ImageFormatSetting
@@ -567,7 +595,7 @@ pub struct LoadContext {
   asset_server : AssetServer
   path : AssetPath
 }
-pub fn[T] LoadContext::add_labeled_asset(Self, String, T) -> Handle[T]
+pub fn[T : @ecs.EcsPayloadCodec] LoadContext::add_labeled_asset(Self, String, T) -> Handle[T]
 pub fn LoadContext::asset_server(Self) -> AssetServer
 pub fn LoadContext::path(Self) -> AssetPath
 
@@ -587,6 +615,7 @@ pub fn[T] LoadTransformAndSave::new(Array[String], (AssetServer, AssetPath, Byte
 pub struct LoadedFolder {
   handles : Array[Handle[@image.Image]]
 }
+pub impl @ecs.EcsPayloadCodec for LoadedFolder
 
 type PendingAcquiredLoad
 
@@ -678,6 +707,7 @@ pub fn TextureAtlasLayout::is_empty(Self) -> Bool
 pub fn TextureAtlasLayout::len(Self) -> Int
 pub fn TextureAtlasLayout::new_empty(@math.UVec2) -> Self
 pub fn TextureAtlasLayout::texture(Self, Int) -> @math.URect?
+pub impl @ecs.EcsPayloadCodec for TextureAtlasLayout
 
 pub struct TextureAtlasSources {
   texture_ids : Array[(Handle[@image.Image], Int)]
@@ -692,6 +722,7 @@ pub struct UntypedAssetLoadFailedEvent {
   error : String
 }
 pub fn UntypedAssetLoadFailedEvent::new(String, Int, AssetPath, String) -> Self
+pub impl @ecs.EcsPayloadCodec for UntypedAssetLoadFailedEvent
 pub impl @ecs.Message for UntypedAssetLoadFailedEvent
 
 pub(all) struct WebAssetPlugin {

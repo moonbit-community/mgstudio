@@ -42,12 +42,14 @@ pub struct CasRuntimeState {
 } derive(Eq, @debug.Debug)
 pub fn CasRuntimeState::default() -> Self
 pub impl @app.Resource for CasRuntimeState
+pub impl @ecs.EcsPayloadCodec for CasRuntimeState
 
 pub struct CasUniform {
   sharpness : Float
 } derive(Eq, @debug.Debug)
 pub fn CasUniform::default() -> Self
 pub impl @ecs.Component for CasUniform
+pub impl @ecs.EcsPayloadCodec for CasUniform
 
 pub struct ContrastAdaptiveSharpening {
   enabled : Bool
@@ -56,12 +58,14 @@ pub struct ContrastAdaptiveSharpening {
 } derive(Eq, @debug.Debug)
 pub fn ContrastAdaptiveSharpening::default() -> Self
 pub impl @ecs.Component for ContrastAdaptiveSharpening
+pub impl @ecs.EcsPayloadCodec for ContrastAdaptiveSharpening
 
 pub struct DenoiseCas {
   enabled : Bool
 } derive(Eq, @debug.Debug)
 pub fn DenoiseCas::default() -> Self
 pub impl @ecs.Component for DenoiseCas
+pub impl @ecs.EcsPayloadCodec for DenoiseCas
 
 // Type aliases
 

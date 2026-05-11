@@ -17,7 +17,7 @@
 pub using @asset {type ProcessedAsset}
 
 ///|
-pub fn[T] init_asset_processor(
+pub fn[T : @ecs.EcsPayloadCodec] init_asset_processor(
   app : @app.App[@ecs.World],
   processor : LoadTransformAndSave[T],
 ) -> @app.App[@ecs.World] {
@@ -25,7 +25,7 @@ pub fn[T] init_asset_processor(
 }
 
 ///|
-pub fn[T] register_asset_processor(
+pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor(
   app : @app.App[@ecs.World],
   processor : LoadTransformAndSave[T],
 ) -> @app.App[@ecs.World] {

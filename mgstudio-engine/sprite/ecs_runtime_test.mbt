@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn[T] ecs_has_non_null_payload(
+fn[T : @ecs.EcsPayloadCodec] ecs_has_non_null_payload(
   world : @ecs.World,
   entity : @core.Entity,
   key : @ecs.ComponentKey[T],
@@ -60,6 +60,24 @@ test "sprite: default trait mirrors bevy component defaults" {
 struct DummyMaterialAsset {
   color : Color
   color_texture : @asset.Handle[@asset.Image]?
+}
+
+///|
+extenum @ecs.EcsPayload += {
+  EcsPayload_sprite_test_DummyMaterialAsset(DummyMaterialAsset)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for DummyMaterialAsset with to_ecs_payload(self) {
+  EcsPayload_sprite_test_DummyMaterialAsset(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for DummyMaterialAsset with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_sprite_test_DummyMaterialAsset(value) => Some(value)
+    _ => None
+  }
 }
 
 ///|

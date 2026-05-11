@@ -548,10 +548,9 @@ pub fn[M] Material2dPlugin::with_asset_init(
 }
 
 ///|
-pub impl[M : Material2d] @app.Plugin for Material2dPlugin[M] with build(
-  self,
-  app,
-) {
+pub impl[M : Material2d + @ecs.EcsPayloadCodec] @app.Plugin for Material2dPlugin[
+  M,
+] with build(self, app) {
   material2d_plugin_build(app, self)
 }
 
@@ -610,7 +609,7 @@ fn ensure_material2d_runtime_registry_resource_in_world(
 }
 
 ///|
-fn[M : Material2d] material2d_plugin_build(
+fn[M : Material2d + @ecs.EcsPayloadCodec] material2d_plugin_build(
   app : @app.App[@ecs.World],
   plugin : Material2dPlugin[M],
 ) -> @app.App[@ecs.World] {
@@ -1046,7 +1045,7 @@ fn[M] extract_material2d_mesh_instances_system(
 }
 
 ///|
-fn[M : Material2d] prepare_material2d_assets_system(
+fn[M : Material2d + @ecs.EcsPayloadCodec] prepare_material2d_assets_system(
   world : @ecs.World,
   _probe : @asset.Handle[M],
 ) -> Unit {

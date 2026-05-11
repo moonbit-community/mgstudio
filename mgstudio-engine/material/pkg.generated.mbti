@@ -165,6 +165,7 @@ pub fn DefaultOpaqueRendererMethod::renderer_method(Self) -> OpaqueRendererMetho
 pub fn DefaultOpaqueRendererMethod::set_to_deferred(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::set_to_forward(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::with_method(Self, OpaqueRendererMethod) -> Self
+pub impl @ecs.EcsPayloadCodec for DefaultOpaqueRendererMethod
 pub impl Default for DefaultOpaqueRendererMethod
 
 pub struct DepthStencilState {
@@ -268,6 +269,7 @@ pub fn ForwardDecalMaterialExt::default() -> Self
 pub fn ForwardDecalMaterialExt::new(Float) -> Self
 pub fn ForwardDecalMaterialExt::with_depth_fade_factor(Self, Float) -> Self
 pub impl @ecs.Component for ForwardDecalMaterialExt
+pub impl @ecs.EcsPayloadCodec for ForwardDecalMaterialExt
 
 pub struct FragmentState {
   shader : String?
@@ -335,6 +337,7 @@ pub fn MeshMaterial3d::with_extension_requires_depth_prepass(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_tag(Self, Int) -> Self
 pub fn MeshMaterial3d::with_extension_vertex_shader_path(Self, String?) -> Self
 pub impl @ecs.Component for MeshMaterial3d
+pub impl @ecs.EcsPayloadCodec for MeshMaterial3d
 pub impl ToJson for MeshMaterial3d
 pub impl @json.FromJson for MeshMaterial3d
 
@@ -498,6 +501,7 @@ pub fn StandardMaterial::with_specular_transmission(Self, Float) -> Self
 pub fn StandardMaterial::with_thickness(Self, Float) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 pub fn StandardMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
+pub impl @ecs.EcsPayloadCodec for StandardMaterial
 
 pub struct VertexState {
   shader : String?

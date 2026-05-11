@@ -70,10 +70,9 @@ fn raw_table_load_changed_caller(caller_id : Int) -> String? {
 }
 
 ///|
-priv struct RawTableColumn {
+pub(all) struct RawTableColumn {
   component_ops : ComponentOps
   storage : RawTableValueColumnKernel
-  mut values_cache : @any.Any?
 }
 
 ///|
@@ -93,88 +92,60 @@ priv struct RawTableSwapRemoveResult {
 
 ///|
 fn raw_table_column_new(component_ops : ComponentOps) -> RawTableColumn {
-  {
-    component_ops,
-    storage: raw_table_value_column_kernel_new(),
-    values_cache: Some((component_ops.new_values)()),
-  }
+  { component_ops, storage: raw_table_value_column_kernel_new() }
 }
 
 ///|
 fn RawTableColumn::payload_at_row(
   self : RawTableColumn,
   row_index : Int,
-) -> ErasedValue? {
-  match self.values_cache {
-    Some(values) =>
-      return (self.component_ops.column_ops.payload_at_row)(values, row_index)
-    None => ()
-  }
-  match raw_table_value_column_kernel_value(self.storage, row_index) {
-    Some(value) => Some({ value, })
-    None => None
-  }
+) -> EcsPayload? {
+  raw_table_value_column_kernel_value(self.storage, row_index)
 }
 
 ///|
 fn RawTableColumn::replace_payload_at_row(
   self : RawTableColumn,
   row_index : Int,
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> Bool {
-  match (self.component_ops.column_ops.writer_from_payload)(payload) {
-    Some(writer) => self.replace_writer_at_row(row_index, writer)
-    None => false
-  }
+  raw_table_value_column_kernel_replace(self.storage, row_index, payload)
 }
 
 ///|
 fn RawTableColumn::replace_writer_at_row(
   self : RawTableColumn,
   row_index : Int,
-  writer : ErasedWriter,
+  writer : EcsPayloadWriter,
 ) -> Bool {
   if writer.component_definition_id != self.component_ops.definition_id {
     return false
   }
-  guard raw_table_value_column_kernel_replace(
+  raw_table_value_column_kernel_replace(
     self.storage,
     row_index,
-    writer.to_any(),
-  ) else {
-    return false
-  }
-  match self.values_cache {
-    Some(values) =>
-      (self.component_ops.column_ops.replace_writer_at_row)(
-        values, row_index, writer,
-      )
-    None => true
-  }
+    writer.to_ecs_payload(),
+  )
 }
 
 ///|
 fn RawTableColumn::append_writer(
   self : RawTableColumn,
-  writer : ErasedWriter,
+  writer : EcsPayloadWriter,
 ) -> Bool {
   if writer.component_definition_id != self.component_ops.definition_id {
     return false
   }
   guard raw_table_value_column_kernel_push(
     self.storage,
-    writer.to_any(),
+    writer.to_ecs_payload(),
     raw_table_invalid_sequence(),
     raw_table_invalid_sequence(),
     0,
   ) else {
     return false
   }
-  match self.values_cache {
-    Some(values) =>
-      (self.component_ops.column_ops.append_writer)(values, writer)
-    None => true
-  }
+  true
 }
 
 ///|
@@ -185,10 +156,13 @@ fn RawTableColumn::append_from_row(
 ) -> Bool {
   match source.payload_at_row(row_index) {
     Some(payload) =>
-      match (self.component_ops.column_ops.writer_from_payload)(payload) {
-        Some(writer) => self.append_writer(writer)
-        None => false
-      }
+      raw_table_value_column_kernel_push(
+        self.storage,
+        payload,
+        raw_table_invalid_sequence(),
+        raw_table_invalid_sequence(),
+        0,
+      )
     None => false
   }
 }
@@ -291,67 +265,40 @@ fn RawTableColumn::record_changed_at_row(
 }
 
 ///|
-fn[T] RawTableColumn::value_at_row(
+fn[T : EcsPayloadCodec] RawTableColumn::value_at_row(
   self : RawTableColumn,
   row_index : Int,
-) -> T? raise @any.TypeMismatch {
-  match self.values_cache {
-    Some(values_any) => {
-      let values : Array[T] = values_any.unsafe_coerce()
-      if row_index < 0 || row_index >= values.length() {
-        return None
-      }
-      return Some(values[row_index])
-    }
-    None =>
-      match self.values_snapshot() {
-        Some(values) => {
-          self.values_cache = Some(@any.of(values))
-          if row_index < 0 || row_index >= values.length() {
-            return None
-          }
-          return Some(values[row_index])
-        }
-        None => ()
-      }
-  }
+) -> T? {
   match raw_table_value_column_kernel_value(self.storage, row_index) {
-    Some(value) => Some(value.to())
+    Some(value) => T::from_ecs_payload(value)
     None => None
   }
 }
 
 ///|
-fn[T] RawTableColumn::values_snapshot(self : RawTableColumn) -> Array[T]? {
+fn[T : EcsPayloadCodec] RawTableColumn::values_snapshot(
+  self : RawTableColumn,
+) -> Array[T]? {
   let values : Array[T] = []
   let len = raw_table_value_column_kernel_len(self.storage)
   for row_index in 0..<len {
     guard raw_table_value_column_kernel_value(self.storage, row_index)
-      is Some(value_any) else {
+      is Some(payload) else {
       return None
     }
-    let result : Result[T, @any.TypeMismatch] = try? value_any.to()
-    match result {
-      Ok(value) => values.push(value)
-      Err(_) => return None
+    match T::from_ecs_payload(payload) {
+      Some(value) => values.push(value)
+      None => return None
     }
   }
   Some(values)
 }
 
 ///|
-fn[T] RawTableColumn::values_cached(self : RawTableColumn) -> Array[T]? {
-  match self.values_cache {
-    Some(values) => Some(values.unsafe_coerce())
-    None =>
-      match self.values_snapshot() {
-        Some(values) => {
-          self.values_cache = Some(@any.of(values))
-          Some(values)
-        }
-        None => None
-      }
-  }
+fn[T : EcsPayloadCodec] RawTableColumn::values_cached(
+  self : RawTableColumn,
+) -> Array[T]? {
+  self.values_snapshot()
 }
 
 ///|
@@ -365,17 +312,7 @@ fn raw_table_column_swap_remove(
   row_index : Int,
 ) -> Bool {
   let column = column_ref.val
-  if !raw_table_value_column_kernel_swap_remove(column.storage, row_index) {
-    return false
-  }
-  match column.values_cache {
-    Some(values) =>
-      if !(column.component_ops.column_ops.swap_remove_row)(values, row_index) {
-        return false
-      }
-    None => ()
-  }
-  true
+  raw_table_value_column_kernel_swap_remove(column.storage, row_index)
 }
 
 ///|
@@ -446,7 +383,7 @@ fn RawTable::payload_at_row(
   self : RawTable,
   row : TableRow,
   component_local_id : Int,
-) -> ErasedValue? {
+) -> EcsPayload? {
   guard self.column(component_local_id) is Some(column_ref) else { return None }
   column_ref.val.payload_at_row(row.index())
 }
@@ -454,11 +391,11 @@ fn RawTable::payload_at_row(
 ///|
 
 ///|
-fn[T] RawTable::value_at_row_index(
+fn[T : EcsPayloadCodec] RawTable::value_at_row_index(
   self : RawTable,
   row_index : Int,
   component_local_id : Int,
-) -> T? raise @any.TypeMismatch {
+) -> T? {
   guard self.column(component_local_id) is Some(column_ref) else { return None }
   column_ref.val.value_at_row(row_index)
 }
@@ -468,7 +405,7 @@ fn RawTable::replace_payload_at_row(
   self : RawTable,
   row : TableRow,
   component_local_id : Int,
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> Bool {
   guard self.column(component_local_id) is Some(column_ref) else {
     return false
@@ -481,7 +418,7 @@ fn RawTable::replace_writer_at_row(
   self : RawTable,
   row : TableRow,
   component_local_id : Int,
-  writer : ErasedWriter,
+  writer : EcsPayloadWriter,
 ) -> Bool {
   guard self.column(component_local_id) is Some(column_ref) else {
     return false
@@ -490,7 +427,7 @@ fn RawTable::replace_writer_at_row(
 }
 
 ///|
-fn[T] RawTable::replace_value_at_row_index(
+fn[T : EcsPayloadCodec] RawTable::replace_value_at_row_index(
   self : RawTable,
   row_index : Int,
   component_local_id : Int,
@@ -500,7 +437,10 @@ fn[T] RawTable::replace_value_at_row_index(
   guard self.column(component_local_id) is Some(column_ref) else {
     return false
   }
-  column_ref.val.replace_writer_at_row(row_index, erased_writer(key, value))
+  column_ref.val.replace_writer_at_row(
+    row_index,
+    ecs_payload_writer(key, value),
+  )
 }
 
 ///|
@@ -567,7 +507,7 @@ fn RawTable::append_row_from_source_table(
   entity : @core.Entity,
   source_table : Ref[RawTable]?,
   source_row : TableRow?,
-  pending_payloads : Map[Int, ErasedWriter],
+  pending_payloads : Map[Int, EcsPayloadWriter],
   pending_metadata : Map[Int, ComponentTickMetadata],
 ) -> TableRow? {
   let row = raw_table_row_kernel_push(self.rows, entity)
@@ -734,12 +674,12 @@ fn World::pending_component_payload(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-) -> ErasedValue? {
+) -> EcsPayload? {
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id {
         match context.payloads.get(local_component_id) {
-          Some(writer) => Some(writer.to_erased_value())
+          Some(writer) => Some(writer.to_ecs_payload())
           None => None
         }
       } else {
@@ -753,7 +693,7 @@ fn World::pending_component_payload(
 fn World::push_pending_component_payload_context(
   self : World,
   entity : @core.Entity,
-  payloads : Map[Int, ErasedWriter],
+  payloads : Map[Int, EcsPayloadWriter],
   metadata : Map[Int, ComponentTickMetadata],
 ) -> PendingComponentPayloadContext? {
   let previous = self.pending_component_payload_context
@@ -778,7 +718,7 @@ fn World::set_query_sparse_anchor_payload_context(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> Unit {
   self.current_query_sparse_anchor_payload_context = Some({
     entity_id: entity.id,
@@ -797,7 +737,7 @@ fn World::query_sparse_anchor_payload(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-) -> ErasedValue? {
+) -> EcsPayload? {
   match self.current_query_sparse_anchor_payload_context {
     Some(context) =>
       if context.entity_id == entity.id &&
@@ -868,7 +808,7 @@ fn World::alive_entity_by_id(self : World, entity_id : Int) -> @core.Entity? {
 }
 
 ///|
-fn[T] World::component_value_by_local_id(
+fn[T : EcsPayloadCodec] World::component_value_by_local_id(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -924,7 +864,7 @@ fn[T] World::component_value_by_local_id(
 }
 
 ///|
-fn[T] World::component_value_by_key(
+fn[T : EcsPayloadCodec] World::component_value_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -937,7 +877,7 @@ fn[T] World::component_value_by_key(
 }
 
 ///|
-fn[T] World::replace_component_value_by_local_id(
+fn[T : EcsPayloadCodec] World::replace_component_value_by_local_id(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -948,7 +888,7 @@ fn[T] World::replace_component_value_by_local_id(
     Some(context) =>
       if context.entity_id == entity.id &&
         context.payloads.get(local_component_id) is Some(_) {
-        context.payloads.set(local_component_id, erased_writer(key, value))
+        context.payloads.set(local_component_id, ecs_payload_writer(key, value))
         return true
       }
     None => ()
@@ -959,7 +899,7 @@ fn[T] World::replace_component_value_by_local_id(
         local_component_id,
         SparseSet,
       )
-      store_ref.val.set(entity, erased_value(value))
+      store_ref.val.set(entity, T::to_ecs_payload(value))
     }
     Some(Table) => {
       guard self.table_id_for_entity(entity) is Some(table_id) else {
@@ -972,7 +912,7 @@ fn[T] World::replace_component_value_by_local_id(
       table_ref.val.replace_writer_at_row(
         row,
         local_component_id,
-        erased_writer(key, value),
+        ecs_payload_writer(key, value),
       )
     }
     None => false
@@ -980,7 +920,7 @@ fn[T] World::replace_component_value_by_local_id(
 }
 
 ///|
-fn[T] World::replace_component_value_by_key(
+fn[T : EcsPayloadCodec] World::replace_component_value_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -996,7 +936,7 @@ fn[T] World::replace_component_value_by_key(
 }
 
 ///|
-fn[T] World::replace_component_value_at_table_row(
+fn[T : EcsPayloadCodec] World::replace_component_value_at_table_row(
   self : World,
   key : ComponentKey[T],
   local_component_id : Int,
@@ -1078,7 +1018,7 @@ fn World::table_has_component_local_id(
 }
 
 ///|
-fn[T] World::component_value_by_key_at_table_row(
+fn[T : EcsPayloadCodec] World::component_value_by_key_at_table_row(
   self : World,
   key : ComponentKey[T],
   table_id : Int,
@@ -1091,18 +1031,23 @@ fn[T] World::component_value_by_key_at_table_row(
     return None
   }
   guard self.table_storage(table_id) is Some(table_ref) else { return None }
-  let result : Result[T?, @any.TypeMismatch] = try? table_ref.val.value_at_row_index(
-    row_index, local_component_id,
-  )
-  match result {
-    Ok(value) => value
-    Err(_) =>
+  match table_ref.val.value_at_row_index(row_index, local_component_id) {
+    Some(value) => Some(value)
+    None => {
+      guard table_ref.val.payload_at_row(
+          TableRow::from_index(row_index).unwrap(),
+          local_component_id,
+        )
+        is Some(_) else {
+        return None
+      }
       raise ComponentTypeMismatch(
         key.id(),
         key.debug_name(),
         @core.Entity::placeholder(),
         table_ref.val.column_type_name(local_component_id).unwrap_or("unknown"),
       )
+    }
   }
 }
 
@@ -1254,7 +1199,7 @@ fn World::component_payload_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-) -> ErasedValue? {
+) -> EcsPayload? {
   if self.pending_component_payload(entity, local_component_id) is Some(payload) {
     return Some(payload)
   }
@@ -1285,7 +1230,7 @@ fn World::component_payload(
   self : World,
   component_definition_id : Int,
   entity : @core.Entity,
-) -> ErasedValue? {
+) -> EcsPayload? {
   match self.local_component_id(component_definition_id) {
     Some(local_component_id) =>
       self.component_payload_by_local_id(entity, local_component_id)
@@ -1298,7 +1243,7 @@ fn World::replace_component_payload_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> Bool {
   match self.pending_component_payload_context {
     Some(context) =>
@@ -1309,13 +1254,15 @@ fn World::replace_component_payload_by_local_id(
           return false
         }
         let ops = component_ops(definition_id)
-        match (ops.column_ops.writer_from_payload)(payload) {
-          Some(writer) => {
-            context.payloads.set(local_component_id, writer)
-            return true
-          }
-          None => return false
-        }
+        context.payloads.set(
+          local_component_id,
+          ecs_payload_writer_from_payload(
+            definition_id,
+            ops.debug_name,
+            payload,
+          ),
+        )
+        return true
       }
     None => ()
   }
@@ -1346,7 +1293,7 @@ fn World::replace_component_writer_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  writer : ErasedWriter,
+  writer : EcsPayloadWriter,
 ) -> Bool {
   match self.pending_component_payload_context {
     Some(context) =>
@@ -1363,7 +1310,7 @@ fn World::replace_component_writer_by_local_id(
         local_component_id,
         SparseSet,
       )
-      store_ref.val.set(entity, writer.to_erased_value())
+      store_ref.val.set(entity, writer.to_ecs_payload())
     }
     Some(Table) => {
       guard self.table_id_for_entity(entity) is Some(table_id) else {
@@ -1384,7 +1331,7 @@ fn World::replace_component_writer(
   self : World,
   component_definition_id : Int,
   entity : @core.Entity,
-  writer : ErasedWriter,
+  writer : EcsPayloadWriter,
 ) -> Bool {
   match self.local_component_id(component_definition_id) {
     Some(local_component_id) =>
@@ -1400,7 +1347,7 @@ fn World::remove_sparse_component_payload_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-) -> ErasedValue? {
+) -> EcsPayload? {
   guard self.local_component_storage_type(local_component_id) == Some(SparseSet) else {
     return None
   }
@@ -1416,12 +1363,12 @@ fn World::remove_sparse_component_payload_by_local_id(
 fn World::write_pending_sparse_component_payloads(
   self : World,
   entity : @core.Entity,
-  pending_payloads : Map[Int, ErasedWriter],
+  pending_payloads : Map[Int, EcsPayloadWriter],
   pending_metadata : Map[Int, ComponentTickMetadata],
 ) -> Unit {
   for entry in pending_payloads.iter() {
     let component_local_id = entry.0
-    let payload = entry.1.to_erased_value()
+    let payload = entry.1.to_ecs_payload()
     if self.local_component_storage_type(component_local_id) == Some(SparseSet) {
       let store_ref = self.ensure_component_store_for_local_id(
         component_local_id,

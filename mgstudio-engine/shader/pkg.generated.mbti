@@ -80,9 +80,11 @@ pub fn Shader::from_wgsl(String, String) -> Self
 pub fn Shader::from_wgsl_with_defs(String, String, Array[ShaderDefVal]) -> Self
 pub fn Shader::naga_module_descriptor(Self) -> NagaModuleDescriptor
 pub fn Shader::new(String) -> Self
+pub impl @ecs.EcsPayloadCodec for Shader
 
 type ShaderAssetPaths
 pub impl @app.Resource for ShaderAssetPaths
+pub impl @ecs.EcsPayloadCodec for ShaderAssetPaths
 
 pub struct ShaderCache[ShaderModule, RenderDevice] {
   device : RenderDevice
@@ -164,6 +166,7 @@ pub(all) struct ShaderRuntimeCache {
   cache : ShaderCache[String, Unit]
 }
 pub impl @app.Resource for ShaderRuntimeCache
+pub impl @ecs.EcsPayloadCodec for ShaderRuntimeCache
 
 pub(all) struct ShaderSettings {
   shader_defs : Array[ShaderDefVal]

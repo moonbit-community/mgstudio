@@ -487,7 +487,7 @@ fn render2d_current_world_or_abort() -> @ecs.World {
 }
 
 ///|
-fn[T] render2d_asset_store_or_abort() -> @asset.Assets[T] {
+fn[T : @ecs.EcsPayloadCodec] render2d_asset_store_or_abort() -> @asset.Assets[T] {
   let world = @render.render_source_world(render2d_current_world_or_abort())
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
   match (try! world.get_resource(key)) {
@@ -500,7 +500,9 @@ fn[T] render2d_asset_store_or_abort() -> @asset.Assets[T] {
 }
 
 ///|
-fn[T] render2d_asset_store_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[T]] {
+fn[T : @ecs.EcsPayloadCodec] render2d_asset_store_mut_or_abort() -> @ecs.ResourceMut[
+  @asset.Assets[T],
+] {
   let world = @render.render_source_world(render2d_current_world_or_abort())
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
   match (try! world.get_resource_mut(key)) {

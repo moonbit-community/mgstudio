@@ -14,7 +14,7 @@
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] World::replace(
+pub fn[T : EcsPayloadCodec] World::replace(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -27,7 +27,7 @@ pub fn[T] World::replace(
     is Some(_) else {
     return false
   }
-  let payload = erased_value(value)
+  let payload = T::to_ecs_payload(value)
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
@@ -44,7 +44,7 @@ pub fn[T] World::replace(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] World::take(
+pub fn[T : EcsPayloadCodec] World::take(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -66,7 +66,7 @@ pub fn[T] World::component_count(self : World, key : ComponentKey[T]) -> Int {
 }
 
 ///|
-pub fn[T] World::for_each_component(
+pub fn[T : EcsPayloadCodec] World::for_each_component(
   self : World,
   key : ComponentKey[T],
   visit : (@core.Entity, T) -> Unit,

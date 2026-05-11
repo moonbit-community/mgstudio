@@ -221,7 +221,7 @@ fn asset_processor_registry_register_entry(
 }
 
 ///|
-fn[T] register_asset_processor_with_name(
+fn[T : @ecs.EcsPayloadCodec] register_asset_processor_with_name(
   app : @app.App[@ecs.World],
   processor_name : String?,
   processor : LoadTransformAndSave[T],
@@ -271,7 +271,7 @@ fn[T] register_asset_processor_with_name(
 }
 
 ///|
-pub fn[T] register_asset_processor(
+pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor(
   app : @app.App[@ecs.World],
   processor : LoadTransformAndSave[T],
 ) -> @app.App[@ecs.World] {
@@ -279,7 +279,7 @@ pub fn[T] register_asset_processor(
 }
 
 ///|
-pub fn[T] register_asset_processor_named(
+pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor_named(
   app : @app.App[@ecs.World],
   processor_name : String,
   processor : LoadTransformAndSave[T],
@@ -288,7 +288,7 @@ pub fn[T] register_asset_processor_named(
 }
 
 ///|
-pub fn[T] init_asset_processor(
+pub fn[T : @ecs.EcsPayloadCodec] init_asset_processor(
   app : @app.App[@ecs.World],
   processor : LoadTransformAndSave[T],
 ) -> @app.App[@ecs.World] {

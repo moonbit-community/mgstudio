@@ -159,7 +159,7 @@ fn current_input_focus_world_abort_missing() -> @ecs.World {
 }
 
 ///|
-fn[T] input_focus_world_resource(
+fn[T : @ecs.EcsPayloadCodec] input_focus_world_resource(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
 ) -> T? {

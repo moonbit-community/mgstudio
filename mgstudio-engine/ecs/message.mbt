@@ -53,7 +53,7 @@ pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {
 }
 
 ///|
-pub(open) trait Message {
+pub(open) trait Message: EcsPayloadCodec {
   message() -> MessageKey[Self]
 }
 
@@ -65,9 +65,9 @@ pub struct MessageCursor[_] {
 ///|
 pub struct MessageQueueState {
   mut messages_a_start : Int
-  mut messages_a : Array[ErasedValue]
+  mut messages_a : Array[EcsPayload]
   mut messages_b_start : Int
-  mut messages_b : Array[ErasedValue]
+  mut messages_b : Array[EcsPayload]
   mut message_count : Int
 }
 
@@ -100,7 +100,7 @@ pub fn MessageQueueState::oldest_message_count(self : MessageQueueState) -> Int 
 ///|
 pub fn MessageQueueState::write(
   self : MessageQueueState,
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> Int {
   let message_id = self.message_count
   self.messages_b.push(payload)
@@ -111,7 +111,7 @@ pub fn MessageQueueState::write(
 ///|
 pub fn MessageQueueState::write_batch(
   self : MessageQueueState,
-  payloads : Array[ErasedValue],
+  payloads : Array[EcsPayload],
 ) -> Unit {
   for payload in payloads {
     ignore(self.write(payload))
@@ -152,24 +152,29 @@ pub fn[T] Messages::oldest_message_count(self : Messages[T]) -> Int {
 }
 
 ///|
-pub fn[T] Messages::write(self : Messages[T], message : T) -> Int {
-  self.state.write(erased_value(message))
+pub fn[T : EcsPayloadCodec] Messages::write(
+  self : Messages[T],
+  message : T,
+) -> Int {
+  self.state.write(T::to_ecs_payload(message))
 }
 
 ///|
-pub fn[T] Messages::write_batch(
+pub fn[T : EcsPayloadCodec] Messages::write_batch(
   self : Messages[T],
   messages : Array[T],
 ) -> Unit {
-  let payloads : Array[ErasedValue] = []
+  let payloads : Array[EcsPayload] = []
   for message in messages {
-    payloads.push(erased_value(message))
+    payloads.push(T::to_ecs_payload(message))
   }
   self.state.write_batch(payloads)
 }
 
 ///|
-pub fn[T : Default] Messages::write_default(self : Messages[T]) -> Int {
+pub fn[T : Default + EcsPayloadCodec] Messages::write_default(
+  self : Messages[T],
+) -> Int {
   self.write(T::default())
 }
 
@@ -211,7 +216,7 @@ fn queue_start_offset(start : Int, last_message_count : Int) -> Int {
 ///|
 fn queue_unread_len_for_segment(
   start : Int,
-  values : Array[ErasedValue],
+  values : Array[EcsPayload],
   last_message_count : Int,
 ) -> Int {
   if last_message_count >= start + values.length() {
@@ -239,8 +244,8 @@ fn[T] Messages::unread_len(self : Messages[T], last_message_count : Int) -> Int 
 fn[T] Messages::unread(
   self : Messages[T],
   last_message_count : Int,
-) -> Array[(Int, ErasedValue)] {
-  let unread : Array[(Int, ErasedValue)] = []
+) -> Array[(Int, EcsPayload)] {
+  let unread : Array[(Int, EcsPayload)] = []
   if last_message_count <
     self.state.messages_a_start + self.state.messages_a.length() {
     let offset = queue_start_offset(
@@ -265,7 +270,7 @@ fn[T] Messages::unread(
 }
 
 ///|
-priv struct MessageRegistryState {
+pub(all) struct MessageRegistryState {
   ids : Array[Int]
 }
 
@@ -325,7 +330,7 @@ pub fn[T] World::init_message(self : World, key : MessageKey[T]) -> Unit {
 }
 
 ///|
-pub fn[T] World::send_message(
+pub fn[T : EcsPayloadCodec] World::send_message(
   self : World,
   key : MessageKey[T],
   message : T,
@@ -341,7 +346,7 @@ pub fn[T] World::send_message(
 }
 
 ///|
-pub fn[T] World::send_message_batch(
+pub fn[T : EcsPayloadCodec] World::send_message_batch(
   self : World,
   key : MessageKey[T],
   messages : Array[T],
@@ -398,35 +403,37 @@ pub struct MessageWriter[T] {
 }
 
 ///|
-fn[T] decode_message_payload(
+fn[T : EcsPayloadCodec] decode_message_payload(
   key : MessageKey[T],
   index : Int,
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> T raise EcsError {
-  payload.to_value() catch {
-    _ =>
+  match T::from_ecs_payload(payload) {
+    Some(value) => value
+    None =>
       raise MessageTypeMismatch(
         key.id(),
         key.debug_name(),
         index,
-        payload.type_name(),
+        "payload mismatch",
       )
   }
 }
 
 ///|
-fn[T] decode_message_mut_payload(
+fn[T : EcsPayloadCodec] decode_message_mut_payload(
   key : MessageKey[T],
   index : Int,
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> T raise EcsError {
-  payload.to_value() catch {
-    _ =>
+  match T::from_ecs_payload(payload) {
+    Some(value) => value
+    None =>
       raise MessageTypeMismatch(
         key.id(),
         key.debug_name(),
         index,
-        payload.type_name(),
+        "payload mismatch",
       )
   }
 }
@@ -443,7 +450,7 @@ pub fn[T] Messages::get_cursor_current(self : Messages[T]) -> MessageCursor[T] {
 }
 
 ///|
-pub fn[T] Messages::write_message(
+pub fn[T : EcsPayloadCodec] Messages::write_message(
   self : Messages[T],
   key : MessageKey[T],
   message : T,
@@ -453,7 +460,7 @@ pub fn[T] Messages::write_message(
 }
 
 ///|
-pub fn[T] Messages::write_message_batch(
+pub fn[T : EcsPayloadCodec] Messages::write_message_batch(
   self : Messages[T],
   key : MessageKey[T],
   messages : Array[T],
@@ -463,7 +470,7 @@ pub fn[T] Messages::write_message_batch(
 }
 
 ///|
-pub fn[T : Default] Messages::write_message_default(
+pub fn[T : Default + EcsPayloadCodec] Messages::write_message_default(
   self : Messages[T],
   key : MessageKey[T],
 ) -> Int {
@@ -629,7 +636,7 @@ pub fn[T] MessageMutator::cursor(self : MessageMutator[T]) -> Int {
 }
 
 ///|
-pub fn[T] MessageReader::read(
+pub fn[T : EcsPayloadCodec] MessageReader::read(
   self : MessageReader[T],
 ) -> Array[T] raise EcsError {
   let queue_access = self.world.resource(self.key.queue_key())
@@ -644,7 +651,7 @@ pub fn[T] MessageReader::read(
 }
 
 ///|
-pub fn[T] MessageMutator::read(
+pub fn[T : EcsPayloadCodec] MessageMutator::read(
   self : MessageMutator[T],
 ) -> Array[T] raise EcsError {
   let queue_access = self.world.resource(self.key.queue_key())
@@ -659,12 +666,15 @@ pub fn[T] MessageMutator::read(
 }
 
 ///|
-pub fn[T] MessageWriter::write(self : MessageWriter[T], message : T) -> Int {
+pub fn[T : EcsPayloadCodec] MessageWriter::write(
+  self : MessageWriter[T],
+  message : T,
+) -> Int {
   self.world.send_message(self.key, message)
 }
 
 ///|
-pub fn[T] MessageWriter::write_batch(
+pub fn[T : EcsPayloadCodec] MessageWriter::write_batch(
   self : MessageWriter[T],
   messages : Array[T],
 ) -> Unit {
@@ -672,7 +682,7 @@ pub fn[T] MessageWriter::write_batch(
 }
 
 ///|
-pub fn[T : Default] MessageWriter::write_default(
+pub fn[T : Default + EcsPayloadCodec] MessageWriter::write_default(
   self : MessageWriter[T],
 ) -> Int {
   self.write(T::default())

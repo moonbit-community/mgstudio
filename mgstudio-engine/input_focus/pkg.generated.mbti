@@ -52,6 +52,7 @@ pub(all) suberror DirectionalNavigationError {
 pub struct AutoFocus {
 } derive(Default, @debug.Debug)
 pub impl @ecs.Component for AutoFocus
+pub impl @ecs.EcsPayloadCodec for AutoFocus
 
 pub struct AutoNavigationConfig {
   min_alignment_factor : Float
@@ -64,6 +65,7 @@ pub fn AutoNavigationConfig::min_alignment_factor(Self) -> Float
 pub fn AutoNavigationConfig::new(Float, Float?, Bool) -> Self
 pub fn AutoNavigationConfig::prefer_aligned(Self) -> Bool
 pub impl @app.Resource for AutoNavigationConfig
+pub impl @ecs.EcsPayloadCodec for AutoNavigationConfig
 
 pub struct DirectionalNavigation {
   world : @ecs.World
@@ -85,6 +87,7 @@ pub fn DirectionalNavigationMap::get_neighbor(Self, @core.Entity, @math.CompassO
 pub fn DirectionalNavigationMap::get_neighbors(Self, @core.Entity) -> NavNeighbors?
 pub fn DirectionalNavigationMap::remove(Self, @core.Entity) -> Unit
 pub impl @app.Resource for DirectionalNavigationMap
+pub impl @ecs.EcsPayloadCodec for DirectionalNavigationMap
 
 pub struct DirectionalNavigationPlugin {
 }
@@ -107,7 +110,14 @@ pub struct FocusedInput[M] {
   window : @core.Entity
 }
 pub fn[M] FocusedInput::new(@core.Entity, M, @core.Entity) -> Self[M]
+pub impl[M : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for FocusedInput[M]
 pub impl[M : @ecs.Message] @ecs.Message for FocusedInput[M]
+
+pub(all) struct FocusedInputPayload {
+  focused_entity : @core.Entity
+  input : @ecs.EcsPayload
+  window : @core.Entity
+}
 
 pub struct InputDispatchPlugin {
 }
@@ -123,6 +133,7 @@ pub fn InputFocus::from_entity(@core.Entity) -> Self
 pub fn InputFocus::get(Self) -> @core.Entity?
 pub fn InputFocus::set(Self, @core.Entity) -> Unit
 pub impl @app.Resource for InputFocus
+pub impl @ecs.EcsPayloadCodec for InputFocus
 
 pub(all) enum InputFocusSystems {
   Dispatch
@@ -136,6 +147,7 @@ pub fn InputFocusVisible::new(Bool) -> Self
 pub fn InputFocusVisible::set_visible(Self, Bool) -> Unit
 pub fn InputFocusVisible::visible(Self) -> Bool
 pub impl @app.Resource for InputFocusVisible
+pub impl @ecs.EcsPayloadCodec for InputFocusVisible
 
 pub struct IsFocusedHelper {
   world : @ecs.World
@@ -166,6 +178,7 @@ pub fn TabGroup::modal() -> Self
 pub fn TabGroup::new(Int) -> Self
 pub fn TabGroup::order(Self) -> Int
 pub impl @ecs.Component for TabGroup
+pub impl @ecs.EcsPayloadCodec for TabGroup
 
 pub struct TabIndex {
   value : Int
@@ -173,6 +186,7 @@ pub struct TabIndex {
 pub fn TabIndex::new(Int) -> Self
 pub fn TabIndex::value(Self) -> Int
 pub impl @ecs.Component for TabIndex
+pub impl @ecs.EcsPayloadCodec for TabIndex
 
 pub struct TabNavigationPlugin {
 }

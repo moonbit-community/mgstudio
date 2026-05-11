@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-pub fn[T] World::insert_resource(
+pub fn[T : EcsPayloadCodec] World::insert_resource(
   self : World,
   key : ResourceKey[T],
   value : T,
 ) -> Unit {
   let existed = self.resources.contains(key.id())
-  let payload = erased_value(value)
+  let payload = T::to_ecs_payload(value)
   if existed {
     guard self.resources.get(key.id()) is Some(slot) else { return }
     slot.payload = payload
@@ -38,7 +38,7 @@ pub fn[T] World::insert_resource(
 }
 
 ///|
-pub fn[T] World::get_resource(
+pub fn[T : EcsPayloadCodec] World::get_resource(
   self : World,
   key : ResourceKey[T],
 ) -> T? raise EcsError {
@@ -49,7 +49,7 @@ pub fn[T] World::get_resource(
 }
 
 ///|
-pub fn[T] World::remove_resource(
+pub fn[T : EcsPayloadCodec] World::remove_resource(
   self : World,
   key : ResourceKey[T],
 ) -> T? raise EcsError {
@@ -59,7 +59,7 @@ pub fn[T] World::remove_resource(
 }
 
 ///|
-pub fn[T] World::update_resource(
+pub fn[T : EcsPayloadCodec] World::update_resource(
   self : World,
   key : ResourceKey[T],
   update : (T) -> T,
@@ -71,18 +71,15 @@ pub fn[T] World::update_resource(
 }
 
 ///|
-fn[T] World::resource_value(
+fn[T : EcsPayloadCodec] World::resource_value(
   _self : World,
   key : ResourceKey[T],
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> T raise EcsError {
-  payload.to_value() catch {
-    _ =>
-      raise ResourceTypeMismatch(
-        key.id(),
-        key.debug_name(),
-        payload.type_name(),
-      )
+  match T::from_ecs_payload(payload) {
+    Some(value) => value
+    None =>
+      raise ResourceTypeMismatch(key.id(), key.debug_name(), "payload mismatch")
   }
 }
 

@@ -57,6 +57,7 @@ pub(all) struct FreeCamera {
 } derive(ToJson, @json.FromJson)
 pub fn FreeCamera::default() -> Self
 pub impl @ecs.Component for FreeCamera
+pub impl @ecs.EcsPayloadCodec for FreeCamera
 
 pub struct FreeCameraPlugin {
 }
@@ -73,6 +74,7 @@ pub(all) struct FreeCameraState {
 } derive(ToJson, @json.FromJson)
 pub fn FreeCameraState::default() -> Self
 pub impl @ecs.Component for FreeCameraState
+pub impl @ecs.EcsPayloadCodec for FreeCameraState
 
 pub struct PanCamera {
   enabled : Bool
@@ -93,6 +95,7 @@ pub struct PanCamera {
 } derive(ToJson, @json.FromJson)
 pub fn PanCamera::default() -> Self
 pub impl @ecs.Component for PanCamera
+pub impl @ecs.EcsPayloadCodec for PanCamera
 pub impl Show for PanCamera
 
 pub struct PanCameraPlugin {

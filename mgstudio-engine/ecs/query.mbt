@@ -353,7 +353,7 @@ fn[D : QueryData] query_fetch_with_sparse_anchor(
   world : World,
   entity : @core.Entity,
   anchor_info : QuerySparseAnchorInfo,
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> D raise EcsError {
   world.set_query_sparse_anchor_payload_context(
     entity,

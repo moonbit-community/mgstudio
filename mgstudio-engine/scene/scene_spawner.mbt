@@ -452,7 +452,7 @@ fn scene_spawn_instance_when_ready(
     return
   }
 
-  let root_writers : Array[@ecs.ErasedWriter] = []
+  let root_writers : Array[@ecs.EcsPayloadWriter] = []
   if scene.gltf_scene_extras is Some(scene_extras) &&
     (try! world.get_by_key(root_entity, @gltf.GltfSceneExtras::component()))
     is None {
@@ -522,7 +522,7 @@ fn scene_spawn_instance_when_ready(
         }
       None => root_entity
     }
-    let child_writers : Array[@ecs.ErasedWriter] = [
+    let child_writers : Array[@ecs.EcsPayloadWriter] = [
       @ecs.component_writer(
         @hierarchy.ecs_key_parent,
         @hierarchy.Parent::new(parent_entity),

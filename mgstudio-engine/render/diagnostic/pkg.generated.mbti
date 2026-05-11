@@ -58,6 +58,7 @@ pub struct ErasedRenderAssetDiagnosticState {
 }
 pub fn ErasedRenderAssetDiagnosticState::new(String) -> Self
 pub impl @app.Resource for ErasedRenderAssetDiagnosticState
+pub impl @ecs.EcsPayloadCodec for ErasedRenderAssetDiagnosticState
 
 pub struct MeshAllocatorDiagnosticPlugin {
   suffix : String
@@ -74,6 +75,7 @@ pub struct MeshAllocatorDiagnosticState {
 }
 pub fn MeshAllocatorDiagnosticState::new(String) -> Self
 pub impl @app.Resource for MeshAllocatorDiagnosticState
+pub impl @ecs.EcsPayloadCodec for MeshAllocatorDiagnosticState
 
 pub struct RenderAssetDiagnosticPlugin {
   suffix : String
@@ -90,6 +92,7 @@ pub struct RenderAssetDiagnosticState {
 }
 pub fn RenderAssetDiagnosticState::new(String) -> Self
 pub impl @app.Resource for RenderAssetDiagnosticState
+pub impl @ecs.EcsPayloadCodec for RenderAssetDiagnosticState
 
 pub struct RenderDiagnosticsModuleState {
   mut last_snapshot : @renderer.RenderDiagnosticsSnapshot
@@ -98,6 +101,7 @@ pub struct RenderDiagnosticsModuleState {
 }
 pub fn RenderDiagnosticsModuleState::default() -> Self
 pub impl @app.Resource for RenderDiagnosticsModuleState
+pub impl @ecs.EcsPayloadCodec for RenderDiagnosticsModuleState
 
 pub struct TracyGpuContext {
   backend : String

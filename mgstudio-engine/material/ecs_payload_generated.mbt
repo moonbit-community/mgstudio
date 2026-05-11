@@ -1,0 +1,83 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+extenum @ecs.EcsPayload += {
+  EcsPayload_material_MeshMaterial3d(MeshMaterial3d)
+  EcsPayload_material_StandardMaterial(StandardMaterial)
+  EcsPayload_material_DefaultOpaqueRendererMethod(DefaultOpaqueRendererMethod)
+  EcsPayload_material_ForwardDecalMaterialExt(ForwardDecalMaterialExt)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for MeshMaterial3d with to_ecs_payload(self) {
+  EcsPayload_material_MeshMaterial3d(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for MeshMaterial3d with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_material_MeshMaterial3d(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for StandardMaterial with to_ecs_payload(self) {
+  EcsPayload_material_StandardMaterial(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for StandardMaterial with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_material_StandardMaterial(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for DefaultOpaqueRendererMethod with to_ecs_payload(
+  self,
+) {
+  EcsPayload_material_DefaultOpaqueRendererMethod(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for DefaultOpaqueRendererMethod with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_material_DefaultOpaqueRendererMethod(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for ForwardDecalMaterialExt with to_ecs_payload(
+  self,
+) {
+  EcsPayload_material_ForwardDecalMaterialExt(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for ForwardDecalMaterialExt with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_material_ForwardDecalMaterialExt(value) => Some(value)
+    _ => None
+  }
+}

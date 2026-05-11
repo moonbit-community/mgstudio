@@ -120,6 +120,7 @@ pub struct FullscreenMaterialPipelineState {
 pub fn FullscreenMaterialPipelineState::default() -> Self
 pub fn FullscreenMaterialPipelineState::new(has_bind_group_layout? : Bool, has_sampler? : Bool, ldr_pipeline_id? : Int, hdr_pipeline_id? : Int) -> Self
 pub impl @app.Resource for FullscreenMaterialPipelineState
+pub impl @ecs.EcsPayloadCodec for FullscreenMaterialPipelineState
 
 pub struct FullscreenMaterialPlugin {
 }

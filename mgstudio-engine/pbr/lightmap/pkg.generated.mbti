@@ -42,6 +42,7 @@ pub fn Lightmap::new(@asset.Handle[@image.Image]) -> Self
 pub fn Lightmap::with_bicubic_sampling(Self, Bool) -> Self
 pub fn Lightmap::with_uv_rect(Self, @math.Rect) -> Self
 pub impl @ecs.Component for Lightmap
+pub impl @ecs.EcsPayloadCodec for Lightmap
 
 pub struct LightmapPlugin {
 }
@@ -53,6 +54,7 @@ pub struct LightmapPluginState {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn LightmapPluginState::default() -> Self
 pub impl @app.Resource for LightmapPluginState
+pub impl @ecs.EcsPayloadCodec for LightmapPluginState
 
 pub struct LightmapSlab {
   capacity : Int
@@ -95,6 +97,7 @@ pub fn RenderLightmaps::insert_lightmap(Self, @core.Entity, Lightmap) -> RenderL
 pub fn RenderLightmaps::remove(Self, @core.Entity) -> RenderLightmap?
 pub fn RenderLightmaps::set_bindless_supported(Self, Bool) -> Unit
 pub impl @app.Resource for RenderLightmaps
+pub impl @ecs.EcsPayloadCodec for RenderLightmaps
 
 // Type aliases
 

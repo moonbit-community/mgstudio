@@ -46,6 +46,7 @@ pub struct ScreenSpaceReflectionsPluginState {
 }
 pub fn ScreenSpaceReflectionsPluginState::default() -> Self
 pub impl @app.Resource for ScreenSpaceReflectionsPluginState
+pub impl @ecs.EcsPayloadCodec for ScreenSpaceReflectionsPluginState
 
 pub struct ScreenSpaceReflectionsUniform {
   min_perceptual_roughness_start : Float

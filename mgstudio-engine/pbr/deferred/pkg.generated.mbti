@@ -32,6 +32,7 @@ pub struct DeferredPbrLightingState {
 }
 pub fn DeferredPbrLightingState::disabled() -> Self
 pub fn DeferredPbrLightingState::enabled() -> Self
+pub impl @ecs.EcsPayloadCodec for DeferredPbrLightingState
 
 pub struct PbrDeferredLightingDepthId {
   mut depth_id : Int
@@ -41,6 +42,7 @@ pub fn PbrDeferredLightingDepthId::get(Self) -> Int
 pub fn PbrDeferredLightingDepthId::new(Int) -> Self
 pub fn PbrDeferredLightingDepthId::set(Self, Int) -> Unit
 pub impl @ecs.Component for PbrDeferredLightingDepthId
+pub impl @ecs.EcsPayloadCodec for PbrDeferredLightingDepthId
 
 // Type aliases
 

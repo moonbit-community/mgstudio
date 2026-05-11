@@ -57,6 +57,7 @@ pub struct CopyDeferredLightingIdState {
 pub fn CopyDeferredLightingIdState::default() -> Self
 pub fn CopyDeferredLightingIdState::new(has_copy_pipeline? : Bool, has_deferred_lighting_pass_id_texture? : Bool) -> Self
 pub impl @app.Resource for CopyDeferredLightingIdState
+pub impl @ecs.EcsPayloadCodec for CopyDeferredLightingIdState
 
 pub struct DeferredLightingIdDepthTexture {
   texture_id : Int
@@ -72,6 +73,7 @@ pub struct DeferredPrepass {
 } derive(ToJson, @json.FromJson)
 pub fn DeferredPrepass::default() -> Self
 pub impl @ecs.Component for DeferredPrepass
+pub impl @ecs.EcsPayloadCodec for DeferredPrepass
 
 pub struct DeferredPrepassNode {
   label : String

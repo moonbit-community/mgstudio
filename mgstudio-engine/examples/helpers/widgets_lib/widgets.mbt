@@ -137,12 +137,12 @@ pub fn[T] widget_click_sender_key() -> @ecs.ComponentKey[WidgetClickSender[T]] {
 }
 
 ///|
-pub impl[T] @ecs.Message for WidgetClickEvent[T] with message() {
+pub impl[T : @ecs.EcsPayloadCodec] @ecs.Message for WidgetClickEvent[T] with message() {
   widget_click_event_key()
 }
 
 ///|
-pub impl[T] @ecs.Component for WidgetClickSender[T] with component() {
+pub impl[T : @ecs.EcsPayloadCodec] @ecs.Component for WidgetClickSender[T] with component() {
   widget_click_sender_key()
 }
 
@@ -248,7 +248,7 @@ pub fn ui_text(
 }
 
 ///|
-pub fn[T] spawn_action_button(
+pub fn[T : @ecs.EcsPayloadCodec] spawn_action_button(
   commands : @app.Commands,
   parent : @core.Entity,
   value : T,
@@ -281,7 +281,7 @@ pub fn[T] spawn_action_button(
 }
 
 ///|
-pub fn[T] spawn_option_button(
+pub fn[T : @ecs.EcsPayloadCodec] spawn_option_button(
   commands : @app.Commands,
   parent : @core.Entity,
   option_value : T,
@@ -326,7 +326,7 @@ pub fn[T] spawn_option_button(
 }
 
 ///|
-pub fn[T] spawn_option_buttons(
+pub fn[T : @ecs.EcsPayloadCodec] spawn_option_buttons(
   commands : @app.Commands,
   parent : @core.Entity,
   title : String,
@@ -370,7 +370,7 @@ pub fn[T] spawn_option_buttons(
 }
 
 ///|
-pub fn[T] handle_ui_interactions(
+pub fn[T : @ecs.EcsPayloadCodec] handle_ui_interactions(
   interactions : @ecs.Query[
     (@ecs.Comp[@ui.Interaction], @ecs.Comp[WidgetClickSender[T]]),
     @ecs.With[@ui.Button],

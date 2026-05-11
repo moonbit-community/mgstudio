@@ -275,7 +275,7 @@ pub fn pipeline_cache_resource_key() -> @ecs.ResourceKey[@render_resource.Pipeli
 
 pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
+pub fn[C : @ecs.Component + @ecs.EcsPayloadCodec] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
 
 pub fn[A] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[A]]
 
@@ -423,6 +423,7 @@ pub struct CurrentView {
 } derive(Eq, @debug.Debug)
 pub fn CurrentView::entity(Self) -> @core.Entity
 pub fn CurrentView::new(@core.Entity) -> Self
+pub impl @ecs.EcsPayloadCodec for CurrentView
 
 pub struct DynamicUniformIndex[_] {
   index : UInt
@@ -446,7 +447,12 @@ pub fn[A] ErasedPrepareNextFrameAssets::len(Self[A]) -> Int
 pub fn[A] ErasedPrepareNextFrameAssets::new() -> Self[A]
 pub fn[A] ErasedPrepareNextFrameAssets::push(Self[A], Int, A) -> Unit
 pub fn[A] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[Self[A]]
-pub impl[A] @app.Resource for ErasedPrepareNextFrameAssets[A]
+pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for ErasedPrepareNextFrameAssets[A]
+pub impl[A : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for ErasedPrepareNextFrameAssets[A]
+
+pub(all) struct ErasedPrepareNextFrameAssetsPayload {
+  values : Array[(Int, @ecs.EcsPayload)]
+}
 
 pub struct ErasedRenderAssets[A] {
   items : @hashmap.HashMap[Int, @ref.Ref[A]]
@@ -462,7 +468,12 @@ pub fn[A] ErasedRenderAssets::new() -> Self[A]
 pub fn[A] ErasedRenderAssets::remove(Self[A], Int) -> A?
 pub fn[A] ErasedRenderAssets::resource() -> @ecs.ResourceKey[Self[A]]
 pub fn[A] ErasedRenderAssets::to_array(Self[A]) -> Array[(Int, @ref.Ref[A])]
-pub impl[A] @app.Resource for ErasedRenderAssets[A]
+pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for ErasedRenderAssets[A]
+pub impl[A : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for ErasedRenderAssets[A]
+
+pub(all) struct ErasedRenderAssetsPayload {
+  items : Array[(Int, @ecs.EcsPayload)]
+}
 
 pub struct Extract[T] {
   item : T
@@ -521,6 +532,12 @@ pub fn[C] GpuComponentArrayBufferState::buffer(Self[C]) -> @render_resource.GpuA
 pub fn[C] GpuComponentArrayBufferState::clear(Self[C]) -> Unit
 pub fn[C] GpuComponentArrayBufferState::index(Self[C], @core.Entity) -> UInt?
 pub fn[C] GpuComponentArrayBufferState::new() -> Self[C]
+pub impl[C : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for GpuComponentArrayBufferState[C]
+
+pub(all) struct GpuComponentArrayBufferStatePayload {
+  buffer : @ecs.EcsPayload
+  indices : Map[UInt64, UInt]
+}
 
 pub(all) struct HostColorGrading {
   balance_x_axis_x : Float
@@ -580,6 +597,7 @@ pub struct MainEntity {
 pub fn MainEntity::id(Self) -> @core.Entity
 pub fn MainEntity::new(@core.Entity) -> Self
 pub impl @ecs.Component for MainEntity
+pub impl @ecs.EcsPayloadCodec for MainEntity
 
 pub struct PendingSyncEntity {
   records : @ref.Ref[Array[EntityRecord]]
@@ -588,6 +606,7 @@ pub fn PendingSyncEntity::default() -> Self
 pub fn PendingSyncEntity::drain(Self) -> Array[EntityRecord]
 pub fn PendingSyncEntity::push(Self, EntityRecord) -> Unit
 pub impl @app.Resource for PendingSyncEntity
+pub impl @ecs.EcsPayloadCodec for PendingSyncEntity
 
 pub struct PrepareNextFrameAssets[A] {
   values : Array[(Int, A)]
@@ -597,7 +616,12 @@ pub fn[A] PrepareNextFrameAssets::len(Self[A]) -> Int
 pub fn[A] PrepareNextFrameAssets::new() -> Self[A]
 pub fn[A] PrepareNextFrameAssets::push(Self[A], Int, A) -> Unit
 pub fn[A] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[Self[A]]
-pub impl[A] @app.Resource for PrepareNextFrameAssets[A]
+pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for PrepareNextFrameAssets[A]
+pub impl[A : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for PrepareNextFrameAssets[A]
+
+pub(all) struct PrepareNextFrameAssetsPayload {
+  values : Array[(Int, @ecs.EcsPayload)]
+}
 
 pub struct RenderAppChannels {
   mut render_app_in_render_thread : Bool
@@ -607,6 +631,7 @@ pub fn RenderAppChannels::recv(Self, @app.SubApp[@ecs.World]) -> (Self, @app.Sub
 pub fn RenderAppChannels::render_app_in_render_thread(Self) -> Bool
 pub fn RenderAppChannels::send_blocking(Self, @app.SubApp[@ecs.World]) -> Self
 pub impl @app.Resource for RenderAppChannels
+pub impl @ecs.EcsPayloadCodec for RenderAppChannels
 
 pub struct RenderAssets[A] {
   items : @hashmap.HashMap[Int, @ref.Ref[A]]
@@ -622,7 +647,12 @@ pub fn[A] RenderAssets::new() -> Self[A]
 pub fn[A] RenderAssets::remove(Self[A], Int) -> A?
 pub fn[A] RenderAssets::resource() -> @ecs.ResourceKey[Self[A]]
 pub fn[A] RenderAssets::to_array(Self[A]) -> Array[(Int, @ref.Ref[A])]
-pub impl[A] @app.Resource for RenderAssets[A]
+pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for RenderAssets[A]
+pub impl[A : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for RenderAssets[A]
+
+pub(all) struct RenderAssetsPayload {
+  items : Array[(Int, @ecs.EcsPayload)]
+}
 
 pub(all) enum RenderCreation {
   Manual(RenderResources)
@@ -639,6 +669,7 @@ pub struct RenderEntity {
 pub fn RenderEntity::id(Self) -> @core.Entity
 pub fn RenderEntity::new(@core.Entity) -> Self
 pub impl @ecs.Component for RenderEntity
+pub impl @ecs.EcsPayloadCodec for RenderEntity
 
 pub struct RenderGraph {
 }
@@ -678,6 +709,7 @@ pub fn RenderState::initializing() -> Self
 pub fn RenderState::is_ready(Self) -> Bool
 pub fn RenderState::ready() -> Self
 pub fn RenderState::reinitializing() -> Self
+pub impl @ecs.EcsPayloadCodec for RenderState
 
 pub struct RenderStorage[K, V] {
   values : @hashmap.HashMap[K, V]
@@ -696,6 +728,7 @@ pub struct SortedCameras {
 }
 pub fn SortedCameras::new() -> Self
 pub impl @app.Resource for SortedCameras
+pub impl @ecs.EcsPayloadCodec for SortedCameras
 
 pub struct SyncComponentPlugin[_, _] {
 }
@@ -706,6 +739,7 @@ pub struct SyncToRenderWorld {
 }
 pub fn SyncToRenderWorld::default() -> Self
 pub impl @ecs.Component for SyncToRenderWorld
+pub impl @ecs.EcsPayloadCodec for SyncToRenderWorld
 pub impl Default for SyncToRenderWorld
 
 pub struct SyncWorldPlugin {
@@ -717,6 +751,7 @@ pub struct TemporaryRenderEntity {
 }
 pub fn TemporaryRenderEntity::default() -> Self
 pub impl @ecs.Component for TemporaryRenderEntity
+pub impl @ecs.EcsPayloadCodec for TemporaryRenderEntity
 
 pub struct WgpuSettings {
   device_label : String?

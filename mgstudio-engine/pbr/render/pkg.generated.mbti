@@ -459,7 +459,7 @@ pub fn render3d_transform_local_normal(@transform.Transform, @math.Vec3) -> @mat
 
 pub fn render3d_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3
 
-pub fn[T] render3d_update_frusta_system_by_projection_key(@ecs.World, @ecs.ComponentKey[T], (T, @transform.Transform) -> Frustum) -> Unit
+pub fn[T : @ecs.EcsPayloadCodec] render3d_update_frusta_system_by_projection_key(@ecs.World, @ecs.ComponentKey[T], (T, @transform.Transform) -> Frustum) -> Unit
 
 pub fn render3d_upload_mesh_handle_cached(@ref.Ref[Render3dMeshRuntimeState], @asset.Handle[@mesh.Mesh]) -> Int
 
@@ -572,6 +572,7 @@ pub fn FogMeta::fog_at(Self, UInt) -> GpuFog?
 pub fn FogMeta::len(Self) -> Int
 pub fn FogMeta::push(Self, GpuFog) -> UInt
 pub impl @app.Resource for FogMeta
+pub impl @ecs.EcsPayloadCodec for FogMeta
 
 pub struct FogPlugin {
 }
@@ -585,6 +586,7 @@ pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
 pub fn Frustum::new(ViewFrustum) -> Self
 pub fn Frustum::view_frustum(Self) -> ViewFrustum
 pub impl @ecs.Component for Frustum
+pub impl @ecs.EcsPayloadCodec for Frustum
 
 pub struct GpuDirectionalCascade3d {
   far_bound : Float
@@ -814,6 +816,7 @@ pub struct MorphIndices {
 }
 pub fn MorphIndices::new() -> Self
 pub impl @app.Resource for MorphIndices
+pub impl @ecs.EcsPayloadCodec for MorphIndices
 
 pub struct MorphUniforms {
   mut current_buffer : Array[Float]
@@ -821,6 +824,7 @@ pub struct MorphUniforms {
 }
 pub fn MorphUniforms::new() -> Self
 pub impl @app.Resource for MorphUniforms
+pub impl @ecs.EcsPayloadCodec for MorphUniforms
 
 pub(all) struct OrthographicProjection3d {
   mut near : Float
@@ -964,6 +968,7 @@ pub(all) struct ProjectionRuntime3d {
   orthographic_first_slice_depth : Float
 }
 pub impl @ecs.Component for ProjectionRuntime3d
+pub impl @ecs.EcsPayloadCodec for ProjectionRuntime3d
 
 pub struct Render3dDiagnosticsState {
   mut runtime_initialized : Bool
@@ -972,6 +977,7 @@ pub struct Render3dDiagnosticsState {
   mut queue_cpu_ms : Float
   mut execute_cpu_ms : Float
 }
+pub impl @ecs.EcsPayloadCodec for Render3dDiagnosticsState
 
 pub enum Render3dFogFalloff {
   Linear(Float, Float)
@@ -995,6 +1001,7 @@ pub fn Render3dGpuPreprocessState::dispatch_count(Self) -> Int
 pub fn Render3dGpuPreprocessState::enabled(Self) -> Bool
 pub fn Render3dGpuPreprocessState::indirect_enabled(Self) -> Bool
 pub impl @app.Resource for Render3dGpuPreprocessState
+pub impl @ecs.EcsPayloadCodec for Render3dGpuPreprocessState
 
 pub(all) struct Render3dLightingState {
   ambient_color : @color.Color
@@ -1038,6 +1045,7 @@ pub struct Render3dMeshRuntimeState {
 }
 pub fn Render3dMeshRuntimeState::new() -> Self
 pub impl @app.Resource for Render3dMeshRuntimeState
+pub impl @ecs.EcsPayloadCodec for Render3dMeshRuntimeState
 
 pub struct Render3dMeshUploadCacheState {
   clear_count : Int
@@ -1088,6 +1096,7 @@ pub struct Render3dWorldTransformCache {
   skinning_generations : Array[Int]
   skinning_stamps : Array[Int]
 }
+pub impl @ecs.EcsPayloadCodec for Render3dWorldTransformCache
 
 pub struct RenderTargetComputed3d {
   target_id : Int
@@ -1135,6 +1144,7 @@ pub struct SkinUniforms {
 }
 pub fn SkinUniforms::new() -> Self
 pub impl @app.Resource for SkinUniforms
+pub impl @ecs.EcsPayloadCodec for SkinUniforms
 
 pub struct SubCameraView3d {
   full_size : @math.IVec2
@@ -1144,6 +1154,7 @@ pub struct SubCameraView3d {
 pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
 pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for SubCameraView3d
+pub impl @ecs.EcsPayloadCodec for SubCameraView3d
 
 pub struct ViewFogUniformOffset {
   offset : UInt
@@ -1151,6 +1162,7 @@ pub struct ViewFogUniformOffset {
 pub fn ViewFogUniformOffset::new(UInt) -> Self
 pub fn ViewFogUniformOffset::offset(Self) -> UInt
 pub impl @ecs.Component for ViewFogUniformOffset
+pub impl @ecs.EcsPayloadCodec for ViewFogUniformOffset
 
 pub struct ViewFrustum {
   inner : @math.ViewFrustum

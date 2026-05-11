@@ -108,6 +108,7 @@ pub struct VolumetricFogPluginState {
 }
 pub fn VolumetricFogPluginState::default() -> Self
 pub impl @app.Resource for VolumetricFogPluginState
+pub impl @ecs.EcsPayloadCodec for VolumetricFogPluginState
 
 pub struct VolumetricFogUniform {
   clip_from_local_row_major : Array[Float]

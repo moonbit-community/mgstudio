@@ -65,6 +65,7 @@ pub fn RenderVisibilityRanges::lod_index_for_entity(Self, Int) -> Int?
 pub fn RenderVisibilityRanges::mark_flushed(Self) -> Unit
 pub fn RenderVisibilityRanges::range_count(Self) -> Int
 pub impl @app.Resource for RenderVisibilityRanges
+pub impl @ecs.EcsPayloadCodec for RenderVisibilityRanges
 
 pub struct RenderVisibleEntities {
   entities : @hashmap.HashMap[String, Array[(Int, Int)]]
@@ -76,6 +77,7 @@ pub fn RenderVisibleEntities::is_empty(Self, String) -> Bool
 pub fn RenderVisibleEntities::len(Self, String) -> Int
 pub fn RenderVisibleEntities::set(Self, String, Array[(Int, Int)]) -> Unit
 pub impl @ecs.Component for RenderVisibleEntities
+pub impl @ecs.EcsPayloadCodec for RenderVisibleEntities
 
 // Type aliases
 pub using @Milky2018/mgstudio/visibility {type InheritedVisibility}

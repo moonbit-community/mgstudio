@@ -76,6 +76,7 @@ pub fn AccessibilityNode::supports_action(Self, @moon_accesskit.Action) -> Bool
 pub fn AccessibilityNode::toggled(Self) -> @moon_accesskit.Toggled?
 pub fn AccessibilityNode::value(Self) -> String?
 pub impl @ecs.Component for AccessibilityNode
+pub impl @ecs.EcsPayloadCodec for AccessibilityNode
 
 pub(all) struct AccessibilityPlugin {
 }
@@ -91,6 +92,7 @@ pub fn AccessibilityRequested::get(Self) -> Bool
 pub fn AccessibilityRequested::handle(Self) -> @ref.Ref[Bool]
 pub fn AccessibilityRequested::set(Self, Bool) -> Unit
 pub impl @app.Resource for AccessibilityRequested
+pub impl @ecs.EcsPayloadCodec for AccessibilityRequested
 
 pub(all) enum AccessibilitySystems {
   Update
@@ -105,6 +107,7 @@ pub fn ActionRequest::data(Self) -> @moon_accesskit.ActionData?
 pub fn ActionRequest::new(@moon_accesskit.ActionRequest) -> Self
 pub fn ActionRequest::target_node(Self) -> @moon_accesskit.NodeId
 pub fn ActionRequest::target_tree(Self) -> @moon_accesskit.TreeId
+pub impl @ecs.EcsPayloadCodec for ActionRequest
 pub impl @ecs.Message for ActionRequest
 
 pub struct ManageAccessibilityUpdates {
@@ -114,6 +117,7 @@ pub fn ManageAccessibilityUpdates::default() -> Self
 pub fn ManageAccessibilityUpdates::get(Self) -> Bool
 pub fn ManageAccessibilityUpdates::set(Self, Bool) -> Unit
 pub impl @app.Resource for ManageAccessibilityUpdates
+pub impl @ecs.EcsPayloadCodec for ManageAccessibilityUpdates
 
 // Type aliases
 

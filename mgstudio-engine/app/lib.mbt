@@ -595,7 +595,7 @@ impl SystemParam with access(_world) {
 }
 
 ///|
-pub(open) trait Resource {
+pub(open) trait Resource: @ecs.EcsPayloadCodec {
   resource() -> @ecs.ResourceKey[Self]
 }
 
@@ -2606,7 +2606,7 @@ pub fn[T : Resource] App::insert_resource(
 }
 
 ///|
-pub fn[T] App::insert_world_resource(
+pub fn[T : @ecs.EcsPayloadCodec] App::insert_world_resource(
   self : App[@ecs.World],
   key : @ecs.ResourceKey[T],
   value : T,
@@ -2638,7 +2638,7 @@ pub fn[T : Resource] App::init_resource(
 }
 
 ///|
-pub fn[T] App::contains_resource(
+pub fn[T : @ecs.EcsPayloadCodec] App::contains_resource(
   self : App[@ecs.World],
   key : @ecs.ResourceKey[T],
 ) -> Bool {
@@ -2688,7 +2688,7 @@ pub fn[T : Resource] App::is_ambiguous_resource_allowed(
 }
 
 ///|
-pub fn[T] App::remove_resource(
+pub fn[T : @ecs.EcsPayloadCodec] App::remove_resource(
   self : App[@ecs.World],
   key : @ecs.ResourceKey[T],
 ) -> T? {

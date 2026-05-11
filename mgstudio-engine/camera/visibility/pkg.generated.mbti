@@ -86,6 +86,7 @@ pub fn VisibleEntityRanges::default() -> Self
 pub fn VisibleEntityRanges::entity_is_in_range_of_any_view(Self, @core.Entity) -> Bool
 pub fn VisibleEntityRanges::entity_is_in_range_of_view(Self, @core.Entity, @core.Entity) -> Bool
 pub impl @app.Resource for VisibleEntityRanges
+pub impl @ecs.EcsPayloadCodec for VisibleEntityRanges
 
 // Type aliases
 pub type Layer = Int

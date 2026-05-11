@@ -63,6 +63,7 @@ pub struct TonemappingLuts {
 }
 pub fn TonemappingLuts::from_asset_server(@asset.AssetServer) -> Self
 pub impl @app.Resource for TonemappingLuts
+pub impl @ecs.EcsPayloadCodec for TonemappingLuts
 
 pub struct TonemappingNode {
   label : String
@@ -87,6 +88,7 @@ pub struct TonemappingPipelineKey {
 pub fn TonemappingPipelineKey::default() -> Self
 pub fn TonemappingPipelineKey::new(deband_dither? : @post_process.DebandDither, tonemapping? : @post_process.Tonemapping, flags? : TonemappingPipelineKeyFlags) -> Self
 pub impl @app.Resource for TonemappingPipelineKey
+pub impl @ecs.EcsPayloadCodec for TonemappingPipelineKey
 
 pub struct TonemappingPipelineKeyFlags {
   hue_rotate : Bool

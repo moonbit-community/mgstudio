@@ -581,6 +581,7 @@ pub fn AutoExposure::with_range(Self, Float, Float) -> Self
 pub fn AutoExposure::with_speed_brighten(Self, Float) -> Self
 pub fn AutoExposure::with_speed_darken(Self, Float) -> Self
 pub impl @ecs.Component for AutoExposure
+pub impl @ecs.EcsPayloadCodec for AutoExposure
 
 pub struct AutoExposureCompensationCurve {
   min_log_lum : Float
@@ -591,6 +592,7 @@ pub struct AutoExposureCompensationCurve {
 }
 pub fn AutoExposureCompensationCurve::default() -> Self
 pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Self raise AutoExposureCompensationCurveError
+pub impl @ecs.EcsPayloadCodec for AutoExposureCompensationCurve
 
 pub struct Camera3d {
   depth_load_op : Camera3dDepthLoadOp
@@ -598,6 +600,7 @@ pub struct Camera3d {
 } derive(ToJson, @json.FromJson)
 pub fn Camera3d::default() -> Self
 pub impl @ecs.Component for Camera3d
+pub impl @ecs.EcsPayloadCodec for Camera3d
 
 pub struct Camera3dBundle {
   camera : @sprite.Camera
@@ -677,6 +680,7 @@ pub fn CameraDecalConfig3d::with_clustered_requires_deferred_prepass(Self, Bool)
 pub fn CameraDecalConfig3d::with_mode(Self, DecalRenderMode3d) -> Self
 pub fn CameraDecalConfig3d::with_requires_depth_prepass(Self, Bool) -> Self
 pub impl @ecs.Component for CameraDecalConfig3d
+pub impl @ecs.EcsPayloadCodec for CameraDecalConfig3d
 
 pub struct CameraDeferredConfig3d {
   mode : CameraDeferredMode3d
@@ -686,6 +690,7 @@ pub fn CameraDeferredConfig3d::default() -> Self
 pub fn CameraDeferredConfig3d::with_mode(Self, CameraDeferredMode3d) -> Self
 pub fn CameraDeferredConfig3d::with_requires_deferred_prepass(Self, Bool) -> Self
 pub impl @ecs.Component for CameraDeferredConfig3d
+pub impl @ecs.EcsPayloadCodec for CameraDeferredConfig3d
 
 pub(all) enum CameraDeferredMode3d {
   Auto
@@ -738,6 +743,7 @@ pub fn ContactShadows::with_length(Self, Float) -> Self
 pub fn ContactShadows::with_linear_steps(Self, Int) -> Self
 pub fn ContactShadows::with_thickness(Self, Float) -> Self
 pub impl @ecs.Component for ContactShadows
+pub impl @ecs.EcsPayloadCodec for ContactShadows
 
 pub struct ContactShadowsBuffer {
   uniforms : Array[ContactShadowsUniform]
@@ -748,6 +754,7 @@ pub fn ContactShadowsBuffer::len(Self) -> Int
 pub fn ContactShadowsBuffer::push(Self, ContactShadowsUniform) -> UInt
 pub fn ContactShadowsBuffer::uniform_at(Self, UInt) -> ContactShadowsUniform?
 pub impl @app.Resource for ContactShadowsBuffer
+pub impl @ecs.EcsPayloadCodec for ContactShadowsBuffer
 
 pub struct ContactShadowsPlugin {
 }
@@ -798,6 +805,7 @@ pub(all) struct DepthOfField {
 pub fn DepthOfField::default() -> Self
 pub fn DepthOfField::from_physical_camera(PhysicalCameraParameters) -> Self
 pub impl @ecs.Component for DepthOfField
+pub impl @ecs.EcsPayloadCodec for DepthOfField
 
 pub(all) enum DepthOfFieldMode {
   Bokeh
@@ -818,6 +826,7 @@ pub fn DistanceFog::with_directional_light_color(Self, @color.Color) -> Self
 pub fn DistanceFog::with_directional_light_exponent(Self, Float) -> Self
 pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
 pub impl @ecs.Component for DistanceFog
+pub impl @ecs.EcsPayloadCodec for DistanceFog
 
 pub struct Exposure {
   ev100 : Float
@@ -832,6 +841,7 @@ pub fn Exposure::overcast() -> Self
 pub fn Exposure::sunlight() -> Self
 pub fn Exposure::with_ev100(Self, Float) -> Self
 pub impl @ecs.Component for Exposure
+pub impl @ecs.EcsPayloadCodec for Exposure
 
 #alias(ExtendedMaterial3d)
 pub struct ExtendedMaterial[B, E] {
@@ -895,6 +905,7 @@ pub(all) struct FreeCamera {
 } derive(ToJson, @json.FromJson)
 pub fn FreeCamera::default() -> Self
 pub impl @ecs.Component for FreeCamera
+pub impl @ecs.EcsPayloadCodec for FreeCamera
 
 pub struct FreeCameraPlugin {
 }
@@ -911,6 +922,7 @@ pub(all) struct FreeCameraState {
 } derive(ToJson, @json.FromJson)
 pub fn FreeCameraState::default() -> Self
 pub impl @ecs.Component for FreeCameraState
+pub impl @ecs.EcsPayloadCodec for FreeCameraState
 
 pub struct GpuScatteringMedium {
   runtime : ScatteringMediumRuntime
@@ -1047,6 +1059,7 @@ pub struct MaterialsPluginState {
 }
 pub fn MaterialsPluginState::default() -> Self
 pub fn MaterialsPluginState::new() -> Self
+pub impl @ecs.EcsPayloadCodec for MaterialsPluginState
 
 pub struct MeshMaterial3dBundle {
   mesh : @mesh.Mesh3d
@@ -1093,31 +1106,37 @@ pub struct MeshRenderPluginState {
   use_gpu_instance_buffer_builder : Bool
 }
 pub fn MeshRenderPluginState::from_plugin(MeshRenderPlugin) -> Self
+pub impl @ecs.EcsPayloadCodec for MeshRenderPluginState
 
 pub struct NoIndirectDrawing {
 } derive(ToJson, @json.FromJson)
 pub fn NoIndirectDrawing::default() -> Self
 pub impl @ecs.Component for NoIndirectDrawing
+pub impl @ecs.EcsPayloadCodec for NoIndirectDrawing
 
 pub struct NoWireframe {
 } derive(ToJson, @json.FromJson)
 pub fn NoWireframe::default() -> Self
 pub impl @ecs.Component for NoWireframe
+pub impl @ecs.EcsPayloadCodec for NoWireframe
 
 pub struct NotShadowCaster {
 } derive(ToJson, @json.FromJson)
 pub fn NotShadowCaster::default() -> Self
 pub impl @ecs.Component for NotShadowCaster
+pub impl @ecs.EcsPayloadCodec for NotShadowCaster
 
 pub struct NotShadowReceiver {
 } derive(ToJson, @json.FromJson)
 pub fn NotShadowReceiver::default() -> Self
 pub impl @ecs.Component for NotShadowReceiver
+pub impl @ecs.EcsPayloadCodec for NotShadowReceiver
 
 pub struct OcclusionCulling {
 } derive(ToJson, @json.FromJson)
 pub fn OcclusionCulling::default() -> Self
 pub impl @ecs.Component for OcclusionCulling
+pub impl @ecs.EcsPayloadCodec for OcclusionCulling
 
 pub struct OrderIndependentTransparencySettings {
   sorted_fragment_max_count : Int
@@ -1130,6 +1149,7 @@ pub fn OrderIndependentTransparencySettings::with_alpha_threshold(Self, Float) -
 pub fn OrderIndependentTransparencySettings::with_fragments_per_pixel_average(Self, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_sorted_fragment_max_count(Self, Int) -> Self
 pub impl @ecs.Component for OrderIndependentTransparencySettings
+pub impl @ecs.EcsPayloadCodec for OrderIndependentTransparencySettings
 
 pub struct PbrGlobalClusterSettings {
   supports_storage_buffers : Bool
@@ -1154,6 +1174,7 @@ pub struct PbrPluginRuntimeConfig {
   gltf_render_enabled : Bool
 }
 pub fn PbrPluginRuntimeConfig::from_plugin(PbrPlugin) -> Self
+pub impl @ecs.EcsPayloadCodec for PbrPluginRuntimeConfig
 
 pub(all) struct PhysicalCameraParameters {
   mut aperture_f_stops : Float
@@ -1179,6 +1200,7 @@ pub fn Projection::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn Projection::is_perspective(Self) -> Bool
 pub fn Projection::update(Self, Float, Float) -> Self
 pub impl @ecs.Component for Projection
+pub impl @ecs.EcsPayloadCodec for Projection
 pub impl CameraProjection3d for Projection
 
 pub struct Render3dDiagnosticsSnapshot {
@@ -1190,6 +1212,7 @@ pub struct Render3dDiagnosticsSnapshot {
 pub fn Render3dDiagnosticsSnapshot::default() -> Self
 
 type Render3dInternalAssetsState
+pub impl @ecs.EcsPayloadCodec for Render3dInternalAssetsState
 
 pub struct ScatteringMediumLutConfig {
   falloff_resolution : Int
@@ -1216,6 +1239,7 @@ pub struct ScatteringMediumPluginState {
   sampler : ScatteringMediumSampler
   default_gpu_medium : GpuScatteringMedium
 }
+pub impl @ecs.EcsPayloadCodec for ScatteringMediumPluginState
 
 pub struct ScatteringMediumRuntime {
   medium : @light.ScatteringMedium
@@ -1241,6 +1265,7 @@ pub fn ScatteringMediumSampler::is_linear_clamp(Self) -> Bool
 pub fn ScatteringMediumSampler::linear_clamp() -> Self
 pub fn ScatteringMediumSampler::with_address_mode(Self, @image.ImageAddressMode) -> Self
 pub fn ScatteringMediumSampler::with_filter(Self, @image.ImageFilterMode) -> Self
+pub impl @ecs.EcsPayloadCodec for ScatteringMediumSampler
 
 pub(all) enum ShadowFilteringMethod {
   Hardware2x2
@@ -1249,6 +1274,7 @@ pub(all) enum ShadowFilteringMethod {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn ShadowFilteringMethod::default() -> Self
 pub impl @ecs.Component for ShadowFilteringMethod
+pub impl @ecs.EcsPayloadCodec for ShadowFilteringMethod
 
 pub struct Skybox {
   image : @asset.Handle[@image.Image]?
@@ -1261,6 +1287,7 @@ pub fn Skybox::with_brightness(Self, Float) -> Self
 pub fn Skybox::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
 pub impl @ecs.Component for Skybox
+pub impl @ecs.EcsPayloadCodec for Skybox
 
 pub struct StandardMaterialKey {
   bits : UInt64
@@ -1285,11 +1312,13 @@ pub struct StandardMaterialPluginState {
   prepass_enabled : Bool
 }
 pub fn StandardMaterialPluginState::from_plugin(StandardMaterialPlugin) -> Self
+pub impl @ecs.EcsPayloadCodec for StandardMaterialPluginState
 
 pub struct TransmittedShadowReceiver {
 } derive(ToJson, @json.FromJson)
 pub fn TransmittedShadowReceiver::default() -> Self
 pub impl @ecs.Component for TransmittedShadowReceiver
+pub impl @ecs.EcsPayloadCodec for TransmittedShadowReceiver
 
 pub struct ViewClusterBindings3d {
   indices : Array[UInt]
@@ -1314,11 +1343,13 @@ pub struct ViewContactShadowsUniformOffset {
 pub fn ViewContactShadowsUniformOffset::new(UInt) -> Self
 pub fn ViewContactShadowsUniformOffset::offset(Self) -> UInt
 pub impl @ecs.Component for ViewContactShadowsUniformOffset
+pub impl @ecs.EcsPayloadCodec for ViewContactShadowsUniformOffset
 
 pub struct Wireframe {
 } derive(ToJson, @json.FromJson)
 pub fn Wireframe::default() -> Self
 pub impl @ecs.Component for Wireframe
+pub impl @ecs.EcsPayloadCodec for Wireframe
 
 pub struct WireframeColor {
   color : @color.Color
@@ -1327,6 +1358,7 @@ pub fn WireframeColor::default() -> Self
 pub fn WireframeColor::new(@color.Color) -> Self
 pub fn WireframeColor::with_color(Self, @color.Color) -> Self
 pub impl @ecs.Component for WireframeColor
+pub impl @ecs.EcsPayloadCodec for WireframeColor
 
 pub struct WireframeConfig {
   global : Bool
@@ -1337,6 +1369,7 @@ pub fn WireframeConfig::new(Bool, @color.Color) -> Self
 pub fn WireframeConfig::with_default_color(Self, @color.Color) -> Self
 pub fn WireframeConfig::with_global(Self, Bool) -> Self
 pub impl @app.Resource for WireframeConfig
+pub impl @ecs.EcsPayloadCodec for WireframeConfig
 
 pub struct WireframePlugin {
 }

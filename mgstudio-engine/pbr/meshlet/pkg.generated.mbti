@@ -234,6 +234,7 @@ pub fn InstanceManager::set_instance_count(Self, Int) -> Unit
 pub fn InstanceManager::set_max_bvh_depth(Self, Int) -> Unit
 pub fn InstanceManager::set_view_instance_visibility(Self, @core.Entity, Array[Int]) -> Unit
 pub fn InstanceManager::view_visibility_count(Self) -> Int
+pub impl @ecs.EcsPayloadCodec for InstanceManager
 
 pub struct MeshToMeshletInputMeshSummary {
   primitive_topology : String
@@ -345,6 +346,7 @@ pub struct MeshletMesh3d {
 pub fn MeshletMesh3d::id(Self) -> Int
 pub fn MeshletMesh3d::new(Int) -> Self
 pub impl @ecs.Component for MeshletMesh3d
+pub impl @ecs.EcsPayloadCodec for MeshletMesh3d
 
 pub struct MeshletMeshLoader {
 }
@@ -371,6 +373,7 @@ pub fn MeshletMeshManager::perform_pending_mesh_writes(Self) -> Int
 pub fn MeshletMeshManager::queue_mesh_write(Self) -> Unit
 pub fn MeshletMeshManager::queue_upload_if_needed(Self, Int, MeshletMesh) -> (Int, MeshletAabb, Int)
 pub fn MeshletMeshManager::remove(Self, Int) -> Unit
+pub impl @ecs.EcsPayloadCodec for MeshletMeshManager
 
 pub(all) enum MeshletMeshSaveOrLoadError {
   WrongFileType
@@ -434,6 +437,7 @@ pub struct MeshletPipelines {
 pub fn MeshletPipelines::default() -> Self
 pub fn MeshletPipelines::get(Self) -> (Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int?, Int)?
 pub fn MeshletPipelines::meshlet_mesh_material_shader(Self) -> String
+pub impl @ecs.EcsPayloadCodec for MeshletPipelines
 
 pub struct MeshletPlugin {
   cluster_buffer_slots : Int
@@ -453,6 +457,7 @@ pub struct MeshletPluginState {
 }
 pub fn MeshletPluginState::default() -> Self
 pub fn MeshletPluginState::from_plugin(MeshletPlugin) -> Self
+pub impl @ecs.EcsPayloadCodec for MeshletPluginState
 
 pub struct MeshletPreparedMaterialInput {
   material_id : Int
@@ -511,6 +516,7 @@ pub fn MeshletViewMaterialsDeferredGBufferPrepass::default() -> Self
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::len(Self) -> Int
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::push(Self, (Int, Int, Int)) -> Unit
 pub impl @ecs.Component for MeshletViewMaterialsDeferredGBufferPrepass
+pub impl @ecs.EcsPayloadCodec for MeshletViewMaterialsDeferredGBufferPrepass
 
 pub struct MeshletViewMaterialsMainOpaquePass {
   mut entries : Array[(Int, Int, Int)]
@@ -520,6 +526,7 @@ pub fn MeshletViewMaterialsMainOpaquePass::default() -> Self
 pub fn MeshletViewMaterialsMainOpaquePass::len(Self) -> Int
 pub fn MeshletViewMaterialsMainOpaquePass::push(Self, (Int, Int, Int)) -> Unit
 pub impl @ecs.Component for MeshletViewMaterialsMainOpaquePass
+pub impl @ecs.EcsPayloadCodec for MeshletViewMaterialsMainOpaquePass
 
 pub struct MeshletViewMaterialsPrepass {
   mut entries : Array[(Int, Int, Int)]
@@ -529,6 +536,7 @@ pub fn MeshletViewMaterialsPrepass::default() -> Self
 pub fn MeshletViewMaterialsPrepass::len(Self) -> Int
 pub fn MeshletViewMaterialsPrepass::push(Self, (Int, Int, Int)) -> Unit
 pub impl @ecs.Component for MeshletViewMaterialsPrepass
+pub impl @ecs.EcsPayloadCodec for MeshletViewMaterialsPrepass
 
 pub struct MeshletViewResources {
   view_entity : @core.Entity
@@ -559,6 +567,7 @@ pub fn MeshletVisibilityBufferRasterState::last_view_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::resolve_depth_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::resolve_material_depth_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::second_pass_draw_count(Self) -> Int
+pub impl @ecs.EcsPayloadCodec for MeshletVisibilityBufferRasterState
 
 pub struct PersistentBufferSliceRange {
   start : Int
@@ -636,6 +645,7 @@ pub fn ResourceManager::set_meshlet_buffer_count(Self, Int) -> Unit
 pub fn ResourceManager::set_prepared_view_bind_groups(Self, MeshletViewBindGroups) -> Unit
 pub fn ResourceManager::set_prepared_view_resources(Self, MeshletViewResources) -> Unit
 pub fn ResourceManager::set_previous_depth_pyramid(Self, Int, Int) -> Unit
+pub impl @ecs.EcsPayloadCodec for ResourceManager
 
 // Type aliases
 

@@ -1473,6 +1473,100 @@ struct MultiLoaderAsset {
 }
 
 ///|
+extenum @ecs.EcsPayload += {
+  EcsPayload_asset_test_MissingLoaderAsset(MissingLoaderAsset)
+  EcsPayload_asset_test_RegistryScopedLegacyAsset(RegistryScopedLegacyAsset)
+  EcsPayload_asset_test_ProcessorScopeAsset(ProcessorScopeAsset)
+  EcsPayload_asset_test_NamedProcessorScopeAsset(NamedProcessorScopeAsset)
+  EcsPayload_asset_test_TestCustomAsset(TestCustomAsset)
+  EcsPayload_asset_test_MultiLoaderAsset(MultiLoaderAsset)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for MissingLoaderAsset with to_ecs_payload(self) {
+  EcsPayload_asset_test_MissingLoaderAsset(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for MissingLoaderAsset with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_asset_test_MissingLoaderAsset(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for RegistryScopedLegacyAsset with to_ecs_payload(
+  self,
+) {
+  EcsPayload_asset_test_RegistryScopedLegacyAsset(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for RegistryScopedLegacyAsset with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_asset_test_RegistryScopedLegacyAsset(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for ProcessorScopeAsset with to_ecs_payload(self) {
+  EcsPayload_asset_test_ProcessorScopeAsset(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for ProcessorScopeAsset with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_asset_test_ProcessorScopeAsset(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for NamedProcessorScopeAsset with to_ecs_payload(self) {
+  EcsPayload_asset_test_NamedProcessorScopeAsset(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for NamedProcessorScopeAsset with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_asset_test_NamedProcessorScopeAsset(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for TestCustomAsset with to_ecs_payload(self) {
+  EcsPayload_asset_test_TestCustomAsset(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for TestCustomAsset with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_asset_test_TestCustomAsset(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @ecs.EcsPayloadCodec for MultiLoaderAsset with to_ecs_payload(self) {
+  EcsPayload_asset_test_MultiLoaderAsset(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for MultiLoaderAsset with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_asset_test_MultiLoaderAsset(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 fn multi_loader_full_extension_loader(
   _asset_server : AssetServer,
   _path : AssetPath,

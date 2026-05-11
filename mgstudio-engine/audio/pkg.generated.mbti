@@ -57,6 +57,7 @@ pub fn pitch_set(@ecs.World, @asset.Handle[Pitch], Pitch) -> Bool
 type AudioOutput
 pub fn AudioOutput::default() -> Self
 pub impl @app.Resource for AudioOutput
+pub impl @ecs.EcsPayloadCodec for AudioOutput
 
 pub struct AudioPlayer[Source] {
   source : @asset.Handle[Source]
@@ -64,8 +65,13 @@ pub struct AudioPlayer[Source] {
 pub fn[Source] AudioPlayer::handle(Self[Source]) -> @asset.Handle[Source]
 pub fn[Source] AudioPlayer::new(@asset.Handle[Source]) -> Self[Source]
 pub impl[Source] @ecs.Component for AudioPlayer[Source]
+pub impl[Source] @ecs.EcsPayloadCodec for AudioPlayer[Source]
 pub impl[Source] ToJson for AudioPlayer[Source]
 pub impl[Source] @json.FromJson for AudioPlayer[Source]
+
+pub(all) struct AudioPlayerPayload {
+  source_id : Int
+}
 
 pub struct AudioPlugin {
   global_volume : GlobalVolume
@@ -84,12 +90,14 @@ pub fn AudioSink::toggle_playback(Self) -> Unit
 pub fn AudioSink::try_seek_seconds(Self, Float) -> Bool
 pub impl AudioSinkPlayback for AudioSink
 pub impl @ecs.Component for AudioSink
+pub impl @ecs.EcsPayloadCodec for AudioSink
 
 pub struct AudioSource {
   bytes : Bytes
 } derive(ToJson, @json.FromJson)
 pub fn AudioSource::bytes(Self) -> Bytes
 pub fn AudioSource::new(Bytes) -> Self
+pub impl @ecs.EcsPayloadCodec for AudioSource
 
 pub struct DefaultSpatialScale {
   scale : SpatialScale
@@ -97,6 +105,7 @@ pub struct DefaultSpatialScale {
 pub fn DefaultSpatialScale::default() -> Self
 pub fn DefaultSpatialScale::new(SpatialScale) -> Self
 pub impl @app.Resource for DefaultSpatialScale
+pub impl @ecs.EcsPayloadCodec for DefaultSpatialScale
 
 pub struct GlobalVolume {
   volume : Volume
@@ -104,6 +113,7 @@ pub struct GlobalVolume {
 pub fn GlobalVolume::default() -> Self
 pub fn GlobalVolume::new(Volume) -> Self
 pub impl @app.Resource for GlobalVolume
+pub impl @ecs.EcsPayloadCodec for GlobalVolume
 pub impl ToJson for GlobalVolume
 pub impl @json.FromJson for GlobalVolume
 
@@ -112,10 +122,12 @@ pub struct Pitch {
   duration_seconds : Float
 } derive(ToJson, @json.FromJson)
 pub fn Pitch::new(Float, Float) -> Self
+pub impl @ecs.EcsPayloadCodec for Pitch
 
 pub struct PlaybackDespawnMarker {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for PlaybackDespawnMarker
+pub impl @ecs.EcsPayloadCodec for PlaybackDespawnMarker
 
 pub(all) enum PlaybackMode {
   Once
@@ -127,6 +139,7 @@ pub(all) enum PlaybackMode {
 pub struct PlaybackRemoveMarker {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for PlaybackRemoveMarker
+pub impl @ecs.EcsPayloadCodec for PlaybackRemoveMarker
 
 pub struct PlaybackSettings {
   mode : PlaybackMode
@@ -153,6 +166,7 @@ pub fn PlaybackSettings::with_speed(Self, Float) -> Self
 pub fn PlaybackSettings::with_start_position(Self, @core.Duration) -> Self
 pub fn PlaybackSettings::with_volume(Self, Volume) -> Self
 pub impl @ecs.Component for PlaybackSettings
+pub impl @ecs.EcsPayloadCodec for PlaybackSettings
 
 pub struct SpatialAudioSink {
   sink_id : Int
@@ -167,6 +181,7 @@ pub fn SpatialAudioSink::toggle_playback(Self) -> Unit
 pub fn SpatialAudioSink::try_seek_seconds(Self, Float) -> Bool
 pub impl AudioSinkPlayback for SpatialAudioSink
 pub impl @ecs.Component for SpatialAudioSink
+pub impl @ecs.EcsPayloadCodec for SpatialAudioSink
 
 pub struct SpatialListener {
   left_ear_offset : @math.Vec3
@@ -175,6 +190,7 @@ pub struct SpatialListener {
 pub fn SpatialListener::default() -> Self
 pub fn SpatialListener::new(Float) -> Self
 pub impl @ecs.Component for SpatialListener
+pub impl @ecs.EcsPayloadCodec for SpatialListener
 
 pub struct SpatialScale {
   scale : @math.Vec3

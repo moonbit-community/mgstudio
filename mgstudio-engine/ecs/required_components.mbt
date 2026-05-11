@@ -22,7 +22,7 @@ pub(all) suberror RequiredComponentsError {
 ///|
 priv struct RequiredComponentRegistration {
   component_id : Int
-  init : () -> ErasedWriter
+  init : () -> EcsPayloadWriter
   depth : Int
 }
 
@@ -271,7 +271,7 @@ fn World::register_required_components_by_keys(
   self : World,
   requiree : Int,
   required : Int,
-  init_value : () -> ErasedWriter,
+  init_value : () -> EcsPayloadWriter,
 ) -> Unit raise RequiredComponentsError {
   let requiree_local_id = self.ensure_component_registered(requiree)
   if self.component_has_been_used(requiree_local_id) {
@@ -305,7 +305,7 @@ fn World::register_required_components_by_keys(
 }
 
 ///|
-pub fn[T, R : Default] World::register_required_components(
+pub fn[T, R : Default + EcsPayloadCodec] World::register_required_components(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -313,12 +313,12 @@ pub fn[T, R : Default] World::register_required_components(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { erased_writer(required_key, R::default()) },
+    fn() { ecs_payload_writer(required_key, R::default()) },
   )
 }
 
 ///|
-pub fn[T, R] World::register_required_components_with(
+pub fn[T, R : EcsPayloadCodec] World::register_required_components_with(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -327,12 +327,12 @@ pub fn[T, R] World::register_required_components_with(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { erased_writer(required_key, init()) },
+    fn() { ecs_payload_writer(required_key, init()) },
   )
 }
 
 ///|
-pub fn[T, R : Default] World::try_register_required_components(
+pub fn[T, R : Default + EcsPayloadCodec] World::try_register_required_components(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -340,12 +340,12 @@ pub fn[T, R : Default] World::try_register_required_components(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { erased_writer(required_key, R::default()) },
+    fn() { ecs_payload_writer(required_key, R::default()) },
   )
 }
 
 ///|
-pub fn[T, R] World::try_register_required_components_with(
+pub fn[T, R : EcsPayloadCodec] World::try_register_required_components_with(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -354,7 +354,7 @@ pub fn[T, R] World::try_register_required_components_with(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { erased_writer(required_key, init()) },
+    fn() { ecs_payload_writer(required_key, init()) },
   )
 }
 
@@ -427,7 +427,7 @@ fn World::insert_component_with_requirements(
   self : World,
   entity : @core.Entity,
   component_id : Int,
-  writer : ErasedWriter,
+  writer : EcsPayloadWriter,
   caller? : String? = None,
 ) -> Unit raise EcsError {
   self.insert_component_payloads_with_requirements(
@@ -441,7 +441,7 @@ fn World::insert_component_with_requirements(
 fn World::insert_component_payloads_with_requirements(
   self : World,
   entity : @core.Entity,
-  payloads : Array[(Int, ErasedWriter)],
+  payloads : Array[(Int, EcsPayloadWriter)],
   caller? : String? = None,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
@@ -467,7 +467,7 @@ fn World::insert_component_payloads_with_requirements(
     entity.id < self.entity_component_local_ids.length() &&
     self.entity_component_local_ids[entity.id].length() == 0
   let (pending_payloads, pending_metadata) : (
-    Map[Int, ErasedWriter],
+    Map[Int, EcsPayloadWriter],
     Map[Int, ComponentTickMetadata],
   ) = match self.pending_component_payload_context {
     Some(context) if context.entity_id == entity.id =>
@@ -502,13 +502,13 @@ fn World::insert_component_payloads_with_requirements(
 pub fn World::insert_component_writers(
   self : World,
   entity : @core.Entity,
-  writers : Array[ErasedWriter],
+  writers : Array[EcsPayloadWriter],
   caller? : String? = None,
 ) -> Unit raise EcsError {
   if writers.is_empty() {
     return
   }
-  let payloads : Array[(Int, ErasedWriter)] = []
+  let payloads : Array[(Int, EcsPayloadWriter)] = []
   for writer in writers {
     payloads.push((writer.component_definition_id, writer))
   }
@@ -520,9 +520,9 @@ fn World::insert_component_with_requirements_unchecked(
   self : World,
   entity : @core.Entity,
   component_definition_id : Int,
-  writer : ErasedWriter,
+  writer : EcsPayloadWriter,
   structural_changed_ref : Ref[Bool],
-  pending_payloads : Map[Int, ErasedWriter],
+  pending_payloads : Map[Int, EcsPayloadWriter],
   assume_no_existing_components : Bool,
   caller? : String? = None,
 ) -> Unit {

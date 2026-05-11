@@ -14,17 +14,17 @@
 
 ///|
 /// ECS component value constraint.
-pub(open) trait Component {
+pub(open) trait Component: EcsPayloadCodec {
   component() -> ComponentKey[Self]
 }
 
 ///|
 /// ECS resource value constraint.
-pub(open) trait ResourceData {}
+pub(open) trait ResourceData: EcsPayloadCodec {}
 
 ///|
 /// ECS event value constraint.
-pub(open) trait EventData {}
+pub(open) trait EventData: EcsPayloadCodec {}
 
 ///|
 pub struct ComponentKey[_] {
@@ -194,11 +194,12 @@ pub(all) suberror EcsError {
   ResourceTypeMismatch(Int, String, String)
   EventTypeMismatch(Int, String, Int, String)
   MessageTypeMismatch(Int, String, Int, String)
+  PayloadTypeMismatch(Int, String)
 }
 
 ///|
 struct ResourceSlot {
-  mut payload : ErasedValue
+  mut payload : EcsPayload
   mut added_sequence : @core.Sequence?
   mut changed_sequence : @core.Sequence?
   mut changed_caller : String?
@@ -247,7 +248,7 @@ fn component_tick_metadata_with_changed(
 ///|
 struct PendingComponentPayloadContext {
   entity_id : Int
-  payloads : Map[Int, ErasedWriter]
+  payloads : Map[Int, EcsPayloadWriter]
   metadata : Map[Int, ComponentTickMetadata]
 }
 
@@ -255,7 +256,7 @@ struct PendingComponentPayloadContext {
 struct QuerySparseAnchorPayloadContext {
   entity_id : Int
   local_component_id : Int
-  payload : ErasedValue
+  payload : EcsPayload
 }
 
 ///|
@@ -284,14 +285,14 @@ pub struct World {
   mut current_query_sparse_anchor_payload_context : QuerySparseAnchorPayloadContext?
   mut active_query_iteration_count : Int
   tables : Map[Int, Ref[RawTable]]
-  sparse_component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
+  sparse_component_columns : Map[Int, Ref[@core.ComponentStore[EcsPayload]]]
   sparse_component_metadata : Map[
     Int,
     Ref[@core.ComponentStore[ComponentTickMetadata]],
   ]
   component_store_cache_by_definition_id : Map[
     Int,
-    Ref[@core.ComponentStore[ErasedValue]],
+    Ref[@core.ComponentStore[EcsPayload]],
   ]
   mut next_archetype_id : Int
   mut next_table_id : Int
@@ -329,8 +330,8 @@ pub struct World {
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   component_hooks_registry : Map[Int, ComponentHooks]
   resources : Map[Int, ResourceSlot]
-  mut previous_events : Map[Int, Array[ErasedValue]]
-  current_events : Map[Int, Array[ErasedValue]]
+  mut previous_events : Map[Int, Array[EcsPayload]]
+  current_events : Map[Int, Array[EcsPayload]]
   mut deferred_hook_command_depth : Int
   deferred_hook_commands : Array[DeferredHookCommand]
 }
@@ -451,7 +452,7 @@ pub fn World::despawn(
   self.ensure_query_iteration_can_change_structure("despawn entity")
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
-  let removed_components : Array[(Int, ErasedValue)] = []
+  let removed_components : Array[(Int, EcsPayload)] = []
   let component_local_ids = self.entity_local_components(entity).copy()
   for local_id in component_local_ids {
     guard self.definition_component_id(local_id) is Some(key_id) else {
@@ -494,7 +495,7 @@ pub fn World::despawn(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] World::set_by_key(
+pub fn[T : EcsPayloadCodec] World::set_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -504,13 +505,13 @@ pub fn[T] World::set_by_key(
   self.insert_component_with_requirements(
     entity,
     key.id(),
-    erased_writer(key, value),
+    ecs_payload_writer(key, value),
     caller=hook_caller_from_loc(loc),
   )
 }
 
 ///|
-pub fn[T] World::get_by_key(
+pub fn[T : EcsPayloadCodec] World::get_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -521,7 +522,7 @@ pub fn[T] World::get_by_key(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T] World::update_by_key(
+pub fn[T : EcsPayloadCodec] World::update_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -704,7 +705,7 @@ fn World::ensure_component_store_for_local_id(
   self : World,
   local_id : Int,
   storage_type : ComponentStorageType,
-) -> Ref[@core.ComponentStore[ErasedValue]] {
+) -> Ref[@core.ComponentStore[EcsPayload]] {
   match storage_type {
     Table =>
       abort(
@@ -1126,19 +1127,20 @@ fn World::removed_component_messages(
 }
 
 ///|
-fn[T] World::component_value(
+fn[T : EcsPayloadCodec] World::component_value(
   _self : World,
   key : ComponentKey[T],
   entity : @core.Entity,
-  payload : ErasedValue,
+  payload : EcsPayload,
 ) -> T raise EcsError {
-  payload.to_value() catch {
-    _ =>
+  match T::from_ecs_payload(payload) {
+    Some(value) => value
+    None =>
       raise ComponentTypeMismatch(
         key.id(),
         key.debug_name(),
         entity,
-        payload.type_name(),
+        "payload mismatch",
       )
   }
 }

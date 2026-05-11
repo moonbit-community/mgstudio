@@ -68,7 +68,7 @@ pub fn[A] ErasedRenderAssets::resource() -> @ecs.ResourceKey[
 }
 
 ///|
-pub impl[A] @app.Resource for ErasedRenderAssets[A] with resource() {
+pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for ErasedRenderAssets[A] with resource() {
   ErasedRenderAssets::resource()
 }
 
@@ -165,7 +165,9 @@ pub fn[A] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
 }
 
 ///|
-pub impl[A] @app.Resource for ErasedPrepareNextFrameAssets[A] with resource() {
+pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for ErasedPrepareNextFrameAssets[
+  A,
+] with resource() {
   ErasedPrepareNextFrameAssets::resource()
 }
 
