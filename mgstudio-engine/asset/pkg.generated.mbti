@@ -497,28 +497,29 @@ pub fn AssetTextureCapture::pixels(Self) -> Bytes
 pub fn AssetTextureCapture::width(Self) -> Int
 
 pub struct Assets[T] {
-  items : Array[T?]
+  items : Array[@ecs.EcsPayload?]
   mut alive : Int
-  events : Array[AssetEvent[T]]
-  dirty : Array[Handle[T]]
+  events : Array[AssetEventPayload]
+  dirty : Array[Int]
+  marker : T?
 }
 pub fn[T : Asset] Assets::add(Self[T], T) -> Handle[T]
-pub fn[T] Assets::contains(Self[T], Handle[T]) -> Bool
+pub fn[T : @ecs.EcsPayloadCodec] Assets::contains(Self[T], Handle[T]) -> Bool
 pub fn[T] Assets::drain_events(Self[T]) -> Array[AssetEvent[T]]
-pub fn[T] Assets::get(Self[T], Handle[T]) -> T?
-pub fn[T] Assets::get_mut(Self[T], Handle[T]) -> T?
-pub fn[T] Assets::insert(Self[T], Handle[T], T) -> Bool
+pub fn[T : @ecs.EcsPayloadCodec] Assets::get(Self[T], Handle[T]) -> T?
+pub fn[T : @ecs.EcsPayloadCodec] Assets::get_mut(Self[T], Handle[T]) -> T?
+pub fn[T : @ecs.EcsPayloadCodec] Assets::insert(Self[T], Handle[T], T) -> Bool
 pub fn[T] Assets::is_empty(Self[T]) -> Bool
-pub fn[T] Assets::iter(Self[T]) -> Array[(Handle[T], T)]
-pub fn[T] Assets::iter_mut(Self[T]) -> Array[(Handle[T], T)]
+pub fn[T : @ecs.EcsPayloadCodec] Assets::iter(Self[T]) -> Array[(Handle[T], T)]
+pub fn[T : @ecs.EcsPayloadCodec] Assets::iter_mut(Self[T]) -> Array[(Handle[T], T)]
 pub fn[T] Assets::len(Self[T]) -> Int
 pub fn[T] Assets::new() -> Self[T]
 pub fn[T] Assets::push_event(Self[T], AssetEvent[T]) -> Unit
-pub fn[T] Assets::remove(Self[T], Handle[T]) -> T?
+pub fn[T : @ecs.EcsPayloadCodec] Assets::remove(Self[T], Handle[T]) -> T?
 pub fn[T] Assets::reserve_handle(Self[T]) -> Handle[T]
 pub fn[T : Asset] Assets::set(Self[T], Handle[T], T) -> Bool
 pub impl[T : Asset] @app.Resource for Assets[T]
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for Assets[T]
+pub impl[T] @ecs.EcsPayloadCodec for Assets[T]
 
 pub(all) struct AssetsPayload {
   items : Array[@ecs.EcsPayload?]

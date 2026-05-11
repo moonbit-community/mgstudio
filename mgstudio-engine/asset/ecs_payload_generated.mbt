@@ -143,62 +143,26 @@ pub impl[T] @ecs.EcsPayloadCodec for AssetEvent[T] with from_ecs_payload(
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for Assets[T] with to_ecs_payload(
-  self,
-) {
-  let items : Array[@ecs.EcsPayload?] = []
-  for item in self.items {
-    match item {
-      Some(value) => items.push(Some(T::to_ecs_payload(value)))
-      None => items.push(None)
-    }
-  }
-  let events : Array[AssetEventPayload] = []
-  for event in self.events {
-    events.push(asset_event_to_payload(event))
-  }
-  let dirty : Array[Int] = []
-  for handle in self.dirty {
-    dirty.push(handle.id())
-  }
+pub impl[T] @ecs.EcsPayloadCodec for Assets[T] with to_ecs_payload(self) {
   EcsPayload_asset_Assets(AssetsPayload::{
-    items,
+    items: self.items,
     alive: self.alive,
-    events,
-    dirty,
+    events: self.events,
+    dirty: self.dirty,
   })
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for Assets[T] with from_ecs_payload(
-  payload,
-) {
+pub impl[T] @ecs.EcsPayloadCodec for Assets[T] with from_ecs_payload(payload) {
   match payload {
-    EcsPayload_asset_Assets(value) => {
-      let items : Array[T?] = []
-      for item in value.items {
-        match item {
-          Some(payload) =>
-            match T::from_ecs_payload(payload) {
-              Some(decoded) => items.push(Some(decoded))
-              None => return None
-            }
-          None => items.push(None)
-        }
-      }
-      let events : Array[AssetEvent[T]] = []
-      for event in value.events {
-        match asset_event_from_payload(event) {
-          Some(decoded) => events.push(decoded)
-          None => return None
-        }
-      }
-      let dirty : Array[Handle[T]] = []
-      for id in value.dirty {
-        dirty.push(Handle::new(id))
-      }
-      Some(Assets::{ items, alive: value.alive, events, dirty })
-    }
+    EcsPayload_asset_Assets(value) =>
+      Some(Assets::{
+        items: value.items,
+        alive: value.alive,
+        events: value.events,
+        dirty: value.dirty,
+        marker: None,
+      })
     _ => None
   }
 }

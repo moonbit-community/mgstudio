@@ -14,10 +14,11 @@
 
 ///|
 pub struct Assets[T] {
-  items : Array[T?]
+  items : Array[@ecs.EcsPayload?]
   mut alive : Int
-  events : Array[AssetEvent[T]]
-  dirty : Array[Handle[T]]
+  events : Array[AssetEventPayload]
+  dirty : Array[Int]
+  marker : T?
 }
 
 ///|
@@ -71,7 +72,7 @@ fn[T] registered_asset_event_message_key_with_type_name(
 }
 
 ///|
-fn[T : Asset] register_asset_event_dispatch(
+fn[T] register_asset_event_dispatch(
   type_name : String,
   key : @ecs.ResourceKey[Assets[T]],
 ) -> Unit {
@@ -144,7 +145,7 @@ pub impl[T : Asset] @ecs.Message for AssetEvent[T] with message() {
 
 ///|
 pub fn[T] Assets::new() -> Assets[T] {
-  Assets::{ items: [], alive: 0, events: [], dirty: [] }
+  Assets::{ items: [], alive: 0, events: [], dirty: [], marker: None }
 }
 
 ///|
@@ -175,12 +176,18 @@ pub fn[T] Assets::reserve_handle(self : Assets[T]) -> Handle[T] {
 }
 
 ///|
-pub fn[T] Assets::get(self : Assets[T], handle : Handle[T]) -> T? {
+pub fn[T : @ecs.EcsPayloadCodec] Assets::get(
+  self : Assets[T],
+  handle : Handle[T],
+) -> T? {
   let id = handle.id()
   if id < 0 || id >= self.items.length() {
     None
   } else {
-    self.items[id]
+    match self.items[id] {
+      Some(payload) => T::from_ecs_payload(payload)
+      None => None
+    }
   }
 }
 
@@ -189,52 +196,63 @@ fn[T] assets_remove_dirty_handle(
   assets : Assets[T],
   handle : Handle[T],
 ) -> Unit {
-  let next : Array[Handle[T]] = []
-  for dirty_handle in assets.dirty {
-    if dirty_handle.id() != handle.id() {
-      next.push(dirty_handle)
+  let next : Array[Int] = []
+  let id = handle.id()
+  for dirty_id in assets.dirty {
+    if dirty_id != id {
+      next.push(dirty_id)
     }
   }
   assets.dirty.clear()
-  for dirty_handle in next {
-    assets.dirty.push(dirty_handle)
+  for dirty_id in next {
+    assets.dirty.push(dirty_id)
   }
 }
 
 ///|
 fn[T] assets_mark_dirty(assets : Assets[T], handle : Handle[T]) -> Unit {
-  for dirty_handle in assets.dirty {
-    if dirty_handle.id() == handle.id() {
+  let id = handle.id()
+  for dirty_id in assets.dirty {
+    if dirty_id == id {
       return
     }
   }
-  assets.dirty.push(handle)
-  assets.events.push(AssetEvent::Modified(handle))
+  assets.dirty.push(id)
+  assets.events.push(asset_event_to_payload(AssetEvent::Modified(handle)))
 }
 
 ///|
 fn[T] assets_drain_dirty(assets : Assets[T]) -> Array[Handle[T]] {
   let handles : Array[Handle[T]] = []
-  for handle in assets.dirty {
-    handles.push(handle)
+  for id in assets.dirty {
+    handles.push(Handle::new(id))
   }
   assets.dirty.clear()
   handles
 }
 
 ///|
-pub fn[T] Assets::get_mut(self : Assets[T], handle : Handle[T]) -> T? {
+pub fn[T : @ecs.EcsPayloadCodec] Assets::get_mut(
+  self : Assets[T],
+  handle : Handle[T],
+) -> T? {
   guard self.get(handle) is Some(value) else { return None }
   assets_mark_dirty(self, handle)
   Some(value)
 }
 
 ///|
-pub fn[T] Assets::iter(self : Assets[T]) -> Array[(Handle[T], T)] {
+pub fn[T : @ecs.EcsPayloadCodec] Assets::iter(
+  self : Assets[T],
+) -> Array[(Handle[T], T)] {
   let entries : Array[(Handle[T], T)] = []
   for i in 0..<self.items.length() {
     match self.items[i] {
-      Some(value) => entries.push((Handle::new(i), value))
+      Some(payload) =>
+        match T::from_ecs_payload(payload) {
+          Some(value) => entries.push((Handle::new(i), value))
+          None => ()
+        }
       None => ()
     }
   }
@@ -242,7 +260,9 @@ pub fn[T] Assets::iter(self : Assets[T]) -> Array[(Handle[T], T)] {
 }
 
 ///|
-pub fn[T] Assets::iter_mut(self : Assets[T]) -> Array[(Handle[T], T)] {
+pub fn[T : @ecs.EcsPayloadCodec] Assets::iter_mut(
+  self : Assets[T],
+) -> Array[(Handle[T], T)] {
   let entries = self.iter()
   for entry in entries {
     let (handle, _) = entry
@@ -264,10 +284,14 @@ pub fn[T : Asset] Assets::set(
     let existed = self.items[id] is Some(_)
     if existed {
       match self.items[id] {
-        Some(previous) =>
-          match image_asset_sync_on_set(handle, previous, value) {
-            Some(ok) => if !ok { return false }
-            None => ()
+        Some(previous_payload) =>
+          match T::from_ecs_payload(previous_payload) {
+            Some(previous) =>
+              match image_asset_sync_on_set(handle, previous, value) {
+                Some(ok) => if !ok { return false }
+                None => ()
+              }
+            None => return false
           }
         None => ()
       }
@@ -284,7 +308,7 @@ pub fn[T : Asset] Assets::set(
 /// Inserts or updates the asset at the given handle id.
 ///
 /// This grows the internal storage if `handle.id()` exceeds the current length.
-pub fn[T] Assets::insert(
+pub fn[T : @ecs.EcsPayloadCodec] Assets::insert(
   self : Assets[T],
   handle : Handle[T],
   value : T,
@@ -297,38 +321,50 @@ pub fn[T] Assets::insert(
     self.items.push(None)
   }
   let existed = self.items[id] is Some(_)
-  self.items[id] = Some(value)
+  self.items[id] = Some(T::to_ecs_payload(value))
   assets_remove_dirty_handle(self, handle)
   if existed {
-    self.events.push(AssetEvent::Modified(handle))
+    self.events.push(asset_event_to_payload(AssetEvent::Modified(handle)))
   } else {
     self.alive = self.alive + 1
-    self.events.push(AssetEvent::Added(handle))
+    self.events.push(asset_event_to_payload(AssetEvent::Added(handle)))
   }
   true
 }
 
 ///|
-pub fn[T] Assets::remove(self : Assets[T], handle : Handle[T]) -> T? {
+pub fn[T : @ecs.EcsPayloadCodec] Assets::remove(
+  self : Assets[T],
+  handle : Handle[T],
+) -> T? {
   let id = handle.id()
   if id < 0 || id >= self.items.length() {
     None
   } else {
-    let value = self.items[id]
-    if value is Some(v) {
-      self.items[id] = None
-      self.alive = self.alive - 1
-      assets_remove_dirty_handle(self, handle)
-      self.events.push(AssetEvent::Removed(handle))
-      Some(v)
-    } else {
-      None
+    match self.items[id] {
+      Some(payload) =>
+        match T::from_ecs_payload(payload) {
+          Some(value) => {
+            self.items[id] = None
+            self.alive = self.alive - 1
+            assets_remove_dirty_handle(self, handle)
+            self.events.push(
+              asset_event_to_payload(AssetEvent::Removed(handle)),
+            )
+            Some(value)
+          }
+          None => None
+        }
+      None => None
     }
   }
 }
 
 ///|
-pub fn[T] Assets::contains(self : Assets[T], handle : Handle[T]) -> Bool {
+pub fn[T : @ecs.EcsPayloadCodec] Assets::contains(
+  self : Assets[T],
+  handle : Handle[T],
+) -> Bool {
   self.get(handle) is Some(_)
 }
 
@@ -341,7 +377,10 @@ pub fn[T] Assets::is_empty(self : Assets[T]) -> Bool {
 pub fn[T] Assets::drain_events(self : Assets[T]) -> Array[AssetEvent[T]] {
   let out : Array[AssetEvent[T]] = []
   for ev in self.events {
-    out.push(ev)
+    match asset_event_from_payload(ev) {
+      Some(event) => out.push(event)
+      None => ()
+    }
   }
   self.events.clear()
   out
@@ -349,5 +388,5 @@ pub fn[T] Assets::drain_events(self : Assets[T]) -> Array[AssetEvent[T]] {
 
 ///|
 pub fn[T] Assets::push_event(self : Assets[T], event : AssetEvent[T]) -> Unit {
-  self.events.push(event)
+  self.events.push(asset_event_to_payload(event))
 }

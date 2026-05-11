@@ -156,7 +156,7 @@ fn[T : Asset] image_asset_sync_on_set(
 }
 
 ///|
-fn[T] assets_store_insert(
+fn[T : @ecs.EcsPayloadCodec] assets_store_insert(
   assets : Assets[T],
   handle : Handle[T],
   value : T,
@@ -169,12 +169,12 @@ fn[T] assets_store_insert(
   while assets.items.length() <= id {
     assets.items.push(None)
   }
-  assets.items[id] = Some(value)
+  assets.items[id] = Some(T::to_ecs_payload(value))
   if existed {
-    assets.events.push(AssetEvent::Modified(handle))
+    assets.events.push(asset_event_to_payload(AssetEvent::Modified(handle)))
   } else {
     assets.alive = assets.alive + 1
-    assets.events.push(AssetEvent::Added(handle))
+    assets.events.push(asset_event_to_payload(AssetEvent::Added(handle)))
   }
   true
 }
