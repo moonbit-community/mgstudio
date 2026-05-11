@@ -18,6 +18,16 @@ struct Text {
 }
 
 ///|
+impl @asset.Asset for Text with asset_debug_name() {
+  "examples.asset.processing.asset_processing.Text"
+}
+
+///|
+impl @asset.Asset for Text with asset_as_image(_self) {
+  None
+}
+
+///|
 fn Text::new(value : String) -> Text {
   Text::{ value, }
 }

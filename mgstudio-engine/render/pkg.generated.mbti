@@ -277,7 +277,7 @@ pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[C : @ecs.Component + @ecs.EcsPayloadCodec] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
 
-pub fn[A] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[A]]
+pub fn[A : RenderAssetResource] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[A]]
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
@@ -466,9 +466,9 @@ pub fn[A] ErasedRenderAssets::is_empty(Self[A]) -> Bool
 pub fn[A] ErasedRenderAssets::len(Self[A]) -> Int
 pub fn[A] ErasedRenderAssets::new() -> Self[A]
 pub fn[A] ErasedRenderAssets::remove(Self[A], Int) -> A?
-pub fn[A] ErasedRenderAssets::resource() -> @ecs.ResourceKey[Self[A]]
+pub fn[A : RenderAssetResource] ErasedRenderAssets::resource() -> @ecs.ResourceKey[Self[A]]
 pub fn[A] ErasedRenderAssets::to_array(Self[A]) -> Array[(Int, @ref.Ref[A])]
-pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for ErasedRenderAssets[A]
+pub impl[A : RenderAssetResource] @app.Resource for ErasedRenderAssets[A]
 pub impl[A : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for ErasedRenderAssets[A]
 
 pub(all) struct ErasedRenderAssetsPayload {
@@ -645,9 +645,9 @@ pub fn[A] RenderAssets::is_empty(Self[A]) -> Bool
 pub fn[A] RenderAssets::len(Self[A]) -> Int
 pub fn[A] RenderAssets::new() -> Self[A]
 pub fn[A] RenderAssets::remove(Self[A], Int) -> A?
-pub fn[A] RenderAssets::resource() -> @ecs.ResourceKey[Self[A]]
+pub fn[A : RenderAssetResource] RenderAssets::resource() -> @ecs.ResourceKey[Self[A]]
 pub fn[A] RenderAssets::to_array(Self[A]) -> Array[(Int, @ref.Ref[A])]
-pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for RenderAssets[A]
+pub impl[A : RenderAssetResource] @app.Resource for RenderAssets[A]
 pub impl[A : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for RenderAssets[A]
 
 pub(all) struct RenderAssetsPayload {
@@ -823,4 +823,7 @@ pub using @renderer {type HostMesh3dPreprocessView}
 pub type UntypedRenderAssetId = Int
 
 // Traits
+pub(open) trait RenderAssetResource : @ecs.EcsPayloadCodec {
+  render_asset_resource_debug_name() -> String
+}
 

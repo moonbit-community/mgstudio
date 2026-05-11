@@ -29,6 +29,11 @@ pub impl Default for Real with default() {
 }
 
 ///|
+pub impl TimeContext for Real with time_context_debug_name() {
+  "mgstudio_time::Real"
+}
+
+///|
 pub fn Time::new(startup : @core.Instant) -> Time[Real] {
   Time::new_with({ ..Real::default(), startup, })
 }

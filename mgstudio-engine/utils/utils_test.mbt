@@ -14,10 +14,8 @@
 
 ///|
 test "utils boundary exports default helper and type-id helpers" {
-  let value = @any.Any::of(7)
   let zero : Int = @utils.default()
   debug_inspect(zero, content="0")
-  debug_inspect(@utils.type_name(value), content="\"Int\"")
 }
 
 ///|

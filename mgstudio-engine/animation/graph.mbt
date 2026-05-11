@@ -135,6 +135,16 @@ pub struct AnimationGraph {
 }
 
 ///|
+pub impl @asset.Asset for AnimationGraph with asset_debug_name() {
+  "mgstudio_animation::AnimationGraph"
+}
+
+///|
+pub impl @asset.Asset for AnimationGraph with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn AnimationGraph::new() -> AnimationGraph {
   let root = AnimationNodeIndex::new(0)
   AnimationGraph::{

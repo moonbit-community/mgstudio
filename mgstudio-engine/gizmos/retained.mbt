@@ -1357,6 +1357,16 @@ pub struct GizmoAsset {
 }
 
 ///|
+pub impl @asset.Asset for GizmoAsset with asset_debug_name() {
+  "mgstudio_gizmos::GizmoAsset"
+}
+
+///|
+pub impl @asset.Asset for GizmoAsset with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn GizmoAsset::new() -> GizmoAsset {
   GizmoAsset::{
     buffer: GizmoBuffer::default(),

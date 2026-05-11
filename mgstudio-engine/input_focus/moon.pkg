@@ -7,7 +7,6 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/hashmap",
-  "tonyfettes/any",
 }
 
 supported_targets = "native"

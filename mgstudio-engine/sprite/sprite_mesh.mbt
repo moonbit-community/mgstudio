@@ -58,6 +58,16 @@ pub struct SpriteMaterial {
 }
 
 ///|
+pub impl @asset.Asset for SpriteMaterial with asset_debug_name() {
+  "mgstudio_sprite::SpriteMaterial"
+}
+
+///|
+pub impl @asset.Asset for SpriteMaterial with asset_as_image(_self) {
+  None
+}
+
+///|
 fn sprite_alpha_mode_to_alpha_mode2d(
   alpha_mode : SpriteAlphaMode,
 ) -> AlphaMode2d {

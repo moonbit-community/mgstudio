@@ -177,6 +177,26 @@ struct TestCustomProjection3d {
 }
 
 ///|
+extenum @ecs.EcsPayload += {
+  EcsPayload_pbr_projection_test_TestCustomProjection3d(TestCustomProjection3d)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for TestCustomProjection3d with to_ecs_payload(self) {
+  EcsPayload_pbr_projection_test_TestCustomProjection3d(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for TestCustomProjection3d with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_pbr_projection_test_TestCustomProjection3d(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 fn test_custom_projection_matrix(
   view_width : Float,
   view_height : Float,

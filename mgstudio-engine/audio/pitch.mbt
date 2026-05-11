@@ -24,6 +24,21 @@ pub fn Pitch::new(frequency : Float, duration_seconds : Float) -> Pitch {
 }
 
 ///|
+pub impl AudioPlayerSource for Pitch with audio_player_source_debug_name() {
+  "mgstudio_audio::Pitch"
+}
+
+///|
+pub impl @asset.Asset for Pitch with asset_debug_name() {
+  "mgstudio_audio::Pitch"
+}
+
+///|
+pub impl @asset.Asset for Pitch with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn pitch_add(world : @ecs.World, pitch : Pitch) -> @asset.Handle[Pitch] {
   let key : @ecs.ResourceKey[@asset.Assets[Pitch]] = @asset.assets_resource_key()
   guard audio_resource_mut(world, key) is Some(assets) else {

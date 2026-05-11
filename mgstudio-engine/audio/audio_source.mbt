@@ -28,6 +28,21 @@ pub fn AudioSource::bytes(self : AudioSource) -> Bytes {
 }
 
 ///|
+pub impl AudioPlayerSource for AudioSource with audio_player_source_debug_name() {
+  "mgstudio_audio::AudioSource"
+}
+
+///|
+pub impl @asset.Asset for AudioSource with asset_debug_name() {
+  "mgstudio_audio::AudioSource"
+}
+
+///|
+pub impl @asset.Asset for AudioSource with asset_as_image(_self) {
+  None
+}
+
+///|
 priv struct AudioSourceAssetPaths {
   paths : Array[(String, @asset.Handle[AudioSource])]
 }

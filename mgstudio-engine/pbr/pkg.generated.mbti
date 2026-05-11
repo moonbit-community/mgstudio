@@ -592,6 +592,7 @@ pub struct AutoExposureCompensationCurve {
 }
 pub fn AutoExposureCompensationCurve::default() -> Self
 pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Self raise AutoExposureCompensationCurveError
+pub impl @asset.Asset for AutoExposureCompensationCurve
 pub impl @ecs.EcsPayloadCodec for AutoExposureCompensationCurve
 
 pub struct Camera3d {
@@ -777,11 +778,11 @@ type CustomProjection3d
 pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> @render.Frustum
 pub fn CustomProjection3d::default() -> Self
 pub fn CustomProjection3d::far(Self) -> Float
-pub fn[T] CustomProjection3d::get(Self) -> T?
+pub fn[T : @ecs.EcsPayloadCodec] CustomProjection3d::get(Self) -> T?
 pub fn CustomProjection3d::get_clip_from_view(Self) -> @render.ProjectionMatrix3d
 pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, @render.SubCameraView3d) -> @render.ProjectionMatrix3d
 pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
-pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
+pub fn[T : CameraProjection3d + @ecs.EcsPayloadCodec] CustomProjection3d::new(T) -> Self
 pub fn CustomProjection3d::type_name(Self) -> String
 pub fn CustomProjection3d::update(Self, Float, Float) -> Self
 pub impl CameraProjection3d for CustomProjection3d
@@ -1191,7 +1192,7 @@ pub(all) enum Projection {
   Custom(CustomProjection3d)
 }
 pub fn Projection::compute_frustum(Self, @transform.Transform) -> @render.Frustum
-pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
+pub fn[T : CameraProjection3d + @ecs.EcsPayloadCodec] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
 pub fn Projection::get_clip_from_view(Self) -> @render.ProjectionMatrix3d

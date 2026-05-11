@@ -29,6 +29,16 @@ pub(all) struct Shader {
 }
 
 ///|
+pub impl @asset.Asset for Shader with asset_debug_name() {
+  "mgstudio_shader::Shader"
+}
+
+///|
+pub impl @asset.Asset for Shader with asset_as_image(_self) {
+  None
+}
+
+///|
 fn trim_trailing_semicolons(text : String) -> String {
   let mut out = text.trim().to_owned()
   while out.length() > 0 && out.code_unit_at(out.length() - 1).to_int() == 59 { // ';'

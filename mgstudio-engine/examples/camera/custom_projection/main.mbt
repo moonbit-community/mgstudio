@@ -20,6 +20,34 @@ priv struct ObliquePerspectiveProjection {
 }
 
 ///|
+extenum @ecs.EcsPayload += {
+  EcsPayload_examples_camera_custom_projection_ObliquePerspectiveProjection(
+    ObliquePerspectiveProjection
+  )
+}
+
+///|
+impl @ecs.EcsPayloadCodec for ObliquePerspectiveProjection with to_ecs_payload(
+  self,
+) {
+  EcsPayload_examples_camera_custom_projection_ObliquePerspectiveProjection(
+    self,
+  )
+}
+
+///|
+impl @ecs.EcsPayloadCodec for ObliquePerspectiveProjection with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_examples_camera_custom_projection_ObliquePerspectiveProjection(
+      value
+    ) => Some(value)
+    _ => None
+  }
+}
+
+///|
 fn oblique_clip_from_view(
   base : @camera.ProjectionMatrix3d,
   horizontal_obliqueness : Float,

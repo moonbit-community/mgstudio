@@ -440,6 +440,16 @@ pub struct StandardMaterial {
 }
 
 ///|
+pub impl @asset.Asset for StandardMaterial with asset_debug_name() {
+  "mgstudio_material::StandardMaterial"
+}
+
+///|
+pub impl @asset.Asset for StandardMaterial with asset_as_image(_self) {
+  None
+}
+
+///|
 pub(open) trait IntoStandardMaterialAsset {
   into_standard_material_asset(Self) -> StandardMaterial
 }
@@ -985,7 +995,7 @@ fn material_current_world_or_abort() -> @ecs.World {
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] material_asset_store_or_abort() -> @asset.Assets[T] {
+fn[T : @asset.Asset] material_asset_store_or_abort() -> @asset.Assets[T] {
   let world = material_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
   match (try! world.get_resource(key)) {
@@ -998,7 +1008,7 @@ fn[T : @ecs.EcsPayloadCodec] material_asset_store_or_abort() -> @asset.Assets[T]
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] material_asset_store_mut_or_abort() -> @ecs.ResourceMut[
+fn[T : @asset.Asset] material_asset_store_mut_or_abort() -> @ecs.ResourceMut[
   @asset.Assets[T],
 ] {
   let world = material_current_world_or_abort()

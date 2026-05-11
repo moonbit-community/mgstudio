@@ -14,10 +14,7 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_asset/src/direct_access_ext.rs`.
-pub fn[T : @ecs.EcsPayloadCodec] asset_world_add(
-  world : @ecs.World,
-  asset : T,
-) -> Handle[T] {
+pub fn[T : Asset] asset_world_add(world : @ecs.World, asset : T) -> Handle[T] {
   match (try! world.get_resource_mut(assets_resource_key())) {
     Some(assets) => assets.modify(fn(value) { value.add(asset) })
     None =>
@@ -28,7 +25,7 @@ pub fn[T : @ecs.EcsPayloadCodec] asset_world_add(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] asset_world_load(
+pub fn[T : Asset, P : IntoAssetPath] asset_world_load(
   world : @ecs.World,
   path : P,
 ) -> Handle[T] {
@@ -36,7 +33,7 @@ pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] asset_world_load(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] asset_world_load_with_settings(
+pub fn[T : Asset, P : IntoAssetPath] asset_world_load_with_settings(
   world : @ecs.World,
   path : P,
   configure : (ImageLoaderSettings) -> Unit,

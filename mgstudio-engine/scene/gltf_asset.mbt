@@ -25,6 +25,16 @@ pub struct Gltf {
 }
 
 ///|
+pub impl @asset.Asset for Gltf with asset_debug_name() {
+  "mgstudio_scene::Gltf"
+}
+
+///|
+pub impl @asset.Asset for Gltf with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn Gltf::new(
   scenes : Array[@asset.Handle[Scene]],
   named_scenes? : Array[(String, @asset.Handle[Scene])] = [],

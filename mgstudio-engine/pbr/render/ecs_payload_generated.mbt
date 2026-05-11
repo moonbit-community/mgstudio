@@ -14,6 +14,8 @@
 
 ///|
 extenum @ecs.EcsPayload += {
+  EcsPayload_pbr_render_PerspectiveProjection3d(PerspectiveProjection3d)
+  EcsPayload_pbr_render_OrthographicProjection3d(OrthographicProjection3d)
   EcsPayload_pbr_render_SubCameraView3d(SubCameraView3d)
   EcsPayload_pbr_render_Render3dGpuPreprocessState(Render3dGpuPreprocessState)
   EcsPayload_pbr_render_Render3dDiagnosticsState(Render3dDiagnosticsState)
@@ -26,6 +28,40 @@ extenum @ecs.EcsPayload += {
   EcsPayload_pbr_render_SkinUniforms(SkinUniforms)
   EcsPayload_pbr_render_ProjectionRuntime3d(ProjectionRuntime3d)
   EcsPayload_pbr_render_Frustum(Frustum)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for PerspectiveProjection3d with to_ecs_payload(
+  self,
+) {
+  EcsPayload_pbr_render_PerspectiveProjection3d(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for PerspectiveProjection3d with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_pbr_render_PerspectiveProjection3d(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for OrthographicProjection3d with to_ecs_payload(
+  self,
+) {
+  EcsPayload_pbr_render_OrthographicProjection3d(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for OrthographicProjection3d with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_pbr_render_OrthographicProjection3d(value) => Some(value)
+    _ => None
+  }
 }
 
 ///|

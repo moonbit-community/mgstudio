@@ -10,7 +10,6 @@ import {
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
-  "tonyfettes/any",
 }
 
 supported_targets = "native"

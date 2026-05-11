@@ -105,6 +105,16 @@ pub struct SkinnedMeshInverseBindposes {
 }
 
 ///|
+pub impl @asset.Asset for SkinnedMeshInverseBindposes with asset_debug_name() {
+  "mgstudio_mesh::SkinnedMeshInverseBindposes"
+}
+
+///|
+pub impl @asset.Asset for SkinnedMeshInverseBindposes with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn SkinnedMeshInverseBindposes::new(
   values : Array[SkinningMat4],
 ) -> SkinnedMeshInverseBindposes {

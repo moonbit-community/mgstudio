@@ -33,6 +33,11 @@ pub impl Default for Fixed with default() {
 }
 
 ///|
+pub impl TimeContext for Fixed with time_context_debug_name() {
+  "mgstudio_time::Fixed"
+}
+
+///|
 pub fn Time::from_duration(timestep : @core.Duration) -> Time[Fixed] {
   let fixed_time : Time[Fixed] = Time::default()
   fixed_time.set_timestep(timestep)

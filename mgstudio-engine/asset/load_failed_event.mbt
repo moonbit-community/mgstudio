@@ -38,7 +38,7 @@ let asset_load_failed_untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent]
 
 ///|
 let asset_load_failed_typed_message_registry : Ref[
-  @hashmap.HashMap[String, @any.Any],
+  @hashmap.HashMap[String, Int],
 ] = Ref(@hashmap.HashMap([]))
 
 ///|
@@ -51,19 +51,16 @@ fn[T] registered_asset_load_failed_message_key_with_type_name(
   type_name : String,
 ) -> @ecs.MessageKey[AssetLoadFailedEvent[T]] {
   match asset_load_failed_typed_message_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None =>
-          abort(
-            "asset load failed message registry contained a mismatched key for \{type_name}",
-          )
-      }
+    Some(id) =>
+      @ecs.message_key_from_id(
+        id,
+        debug_name="mgstudio_asset::AssetLoadFailedEvent<\{type_name}>",
+      )
     None => {
       let key : @ecs.MessageKey[AssetLoadFailedEvent[T]] = @ecs.register_message(
         debug_name="mgstudio_asset::AssetLoadFailedEvent<\{type_name}>",
       )
-      asset_load_failed_typed_message_registry.val.set(type_name, @any.of(key))
+      asset_load_failed_typed_message_registry.val.set(type_name, key.id())
       key
     }
   }
@@ -96,10 +93,12 @@ fn[T] register_asset_load_failed_dispatch_for_type_name(
 }
 
 ///|
-pub fn[T] asset_register_load_failed_event_for_asset_type(
-  probe : Assets[T],
+pub fn[T : Asset] asset_register_load_failed_event_for_asset_type(
+  _sample : T?,
 ) -> Unit {
-  let type_name = @any.of(probe).type_name()
+  ignore(_sample)
+  let type_name = assets_type_name(_sample)
+  let probe : Assets[T] = Assets::new()
   register_asset_load_failed_dispatch_for_type_name(type_name, probe)
 }
 
@@ -120,9 +119,9 @@ pub fn asset_dispatch_load_failed_event(
 }
 
 ///|
-pub impl[T] @ecs.Message for AssetLoadFailedEvent[T] with message() {
+pub impl[T : Asset] @ecs.Message for AssetLoadFailedEvent[T] with message() {
+  let type_name = assets_type_name((None : T?))
   let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
   register_asset_load_failed_dispatch_for_type_name(type_name, probe)
   registered_asset_load_failed_message_key_with_type_name(type_name)
 }
@@ -143,12 +142,11 @@ pub fn UntypedAssetLoadFailedEvent::new(
 }
 
 ///|
-pub fn[T] AssetLoadFailedEvent::untyped(
+pub fn[T : Asset] AssetLoadFailedEvent::untyped(
   self : AssetLoadFailedEvent[T],
 ) -> UntypedAssetLoadFailedEvent {
-  let probe : Assets[T] = Assets::new()
   UntypedAssetLoadFailedEvent::{
-    type_name: @any.of(probe).type_name(),
+    type_name: assets_type_name((None : T?)),
     id: self.id.index(),
     path: self.path,
     error: self.error,

@@ -16,6 +16,16 @@
 pub struct Font {}
 
 ///|
+pub impl Asset for Font with asset_debug_name() {
+  "mgstudio_asset::Font"
+}
+
+///|
+pub impl Asset for Font with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn host_asset_load_font(path~ : String) -> Int {
   load_font(path~)
 }

@@ -20,6 +20,16 @@ struct CustomMaterialAsset {
 }
 
 ///|
+impl @asset.Asset for CustomMaterialAsset with asset_debug_name() {
+  "examples.2d.mesh2d_custom_material.CustomMaterialAsset"
+}
+
+///|
+impl @asset.Asset for CustomMaterialAsset with asset_as_image(_self) {
+  None
+}
+
+///|
 fn custom_material_asset(
   color : @sprite.Color,
   color_texture? : @asset.Handle[@asset.Image]? = None,

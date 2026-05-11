@@ -81,6 +81,16 @@ impl @ecs.EcsPayloadCodec for DummyMaterialAsset with from_ecs_payload(payload) 
 }
 
 ///|
+impl @asset.Asset for DummyMaterialAsset with asset_debug_name() {
+  "mgstudio_sprite_test::DummyMaterialAsset"
+}
+
+///|
+impl @asset.Asset for DummyMaterialAsset with asset_as_image(_self) {
+  None
+}
+
+///|
 fn dummy_material_asset(
   color? : Color = Color::white(),
   color_texture? : @asset.Handle[@asset.Image]? = None,

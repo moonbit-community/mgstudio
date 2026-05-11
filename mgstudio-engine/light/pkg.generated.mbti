@@ -463,6 +463,7 @@ pub struct ScatteringMedium {
 pub fn ScatteringMedium::default() -> Self
 pub fn ScatteringMedium::earthlike() -> Self
 pub fn ScatteringMedium::with_density_multiplier(Self, Float) -> Self
+pub impl @asset.Asset for ScatteringMedium
 pub impl @ecs.EcsPayloadCodec for ScatteringMedium
 
 pub struct ShowLightGizmo {

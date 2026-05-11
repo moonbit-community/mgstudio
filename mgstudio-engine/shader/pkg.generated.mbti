@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/moon_wesl",
   "Milky2018/moon_wgsl/common",
   "Milky2018/moon_wgsl/compose",
@@ -80,6 +81,7 @@ pub fn Shader::from_wgsl(String, String) -> Self
 pub fn Shader::from_wgsl_with_defs(String, String, Array[ShaderDefVal]) -> Self
 pub fn Shader::naga_module_descriptor(Self) -> NagaModuleDescriptor
 pub fn Shader::new(String) -> Self
+pub impl @asset.Asset for Shader
 pub impl @ecs.EcsPayloadCodec for Shader
 
 type ShaderAssetPaths

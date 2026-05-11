@@ -14,9 +14,3 @@
 
 ///|
 /// Utilities boundary aligned with Bevy's `bevy_utils` crate.
-/// Current runtime maps type-id helpers to `tonyfettes/any`.
-
-///|
-pub fn type_id_of(value : @any.Any) -> @any.TypeId {
-  value.type_id()
-}

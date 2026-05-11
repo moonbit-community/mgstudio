@@ -167,6 +167,16 @@ pub struct Scene {
 }
 
 ///|
+pub impl @asset.Asset for Scene with asset_debug_name() {
+  "mgstudio_scene::Scene"
+}
+
+///|
+pub impl @asset.Asset for Scene with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn Scene::new(nodes3d : Array[SceneNode3d]) -> Scene {
   Scene::{ nodes3d, gltf_scene_extras: None, ready: true }
 }

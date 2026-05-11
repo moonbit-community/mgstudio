@@ -72,6 +72,16 @@ pub struct LdtkProject {
 }
 
 ///|
+pub impl @asset.Asset for LdtkProject with asset_debug_name() {
+  "mgstudio_ldtk::LdtkProject"
+}
+
+///|
+pub impl @asset.Asset for LdtkProject with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn LdtkProject::new(
   data : LdtkJson,
   level_map : @hashmap.HashMap[String, LevelMetadata],

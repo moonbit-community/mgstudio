@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/text",
   "moonbitlang/core/debug",
@@ -183,6 +184,7 @@ pub(all) struct FrametimeGraphMaterial {
   config : FrameTimeGraphConfigUniform
 }
 pub fn FrametimeGraphMaterial::new(@asset.Handle[@render_resource.StorageBuffer[Float]], FrameTimeGraphConfigUniform) -> Self
+pub impl @asset.Asset for FrametimeGraphMaterial
 pub impl @ecs.EcsPayloadCodec for FrametimeGraphMaterial
 
 // Type aliases

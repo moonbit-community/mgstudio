@@ -18,6 +18,16 @@ pub struct LoadedFolder {
 }
 
 ///|
+pub impl Asset for LoadedFolder with asset_debug_name() {
+  "mgstudio_asset::LoadedFolder"
+}
+
+///|
+pub impl Asset for LoadedFolder with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[
   Assets[LoadedFolder],
 ] {

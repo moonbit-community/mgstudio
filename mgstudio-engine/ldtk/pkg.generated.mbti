@@ -502,6 +502,7 @@ pub fn LdtkProject::project_data(Self) -> LdtkProjectData
 pub fn LdtkProject::root_levels(Self) -> Array[Level]
 pub fn LdtkProject::tileset_map(Self) -> @hashmap.HashMap[Int, @asset.Handle[@image.Image]]
 pub fn LdtkProject::worlds(Self) -> Array[World]
+pub impl @asset.Asset for LdtkProject
 pub impl @ecs.EcsPayloadCodec for LdtkProject
 pub impl LevelMetadataAccessor for LdtkProject
 pub impl RawLevelAccessor for LdtkProject

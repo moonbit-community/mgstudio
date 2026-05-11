@@ -51,6 +51,18 @@ pub struct AutoExposureCompensationCurve {
 }
 
 ///|
+pub impl @asset.Asset for AutoExposureCompensationCurve with asset_debug_name() {
+  "mgstudio_pbr::AutoExposureCompensationCurve"
+}
+
+///|
+pub impl @asset.Asset for AutoExposureCompensationCurve with asset_as_image(
+  _self,
+) {
+  None
+}
+
+///|
 pub fn AutoExposureCompensationCurve::default() -> AutoExposureCompensationCurve {
   AutoExposureCompensationCurve::{
     min_log_lum: 0.0F,

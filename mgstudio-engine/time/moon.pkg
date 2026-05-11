@@ -4,5 +4,4 @@ import {
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/ref",
-  "tonyfettes/any",
 }

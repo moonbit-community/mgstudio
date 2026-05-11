@@ -143,7 +143,7 @@ let input_focus_visible_resource_key : @ecs.ResourceKey[InputFocusVisible] = @ec
 )
 
 ///|
-let focused_input_message_registry : Ref[@hashmap.HashMap[Int, @any.Any]] = Ref(
+let focused_input_message_registry : Ref[@hashmap.HashMap[Int, Int]] = Ref(
   @hashmap.HashMap([]),
 )
 
@@ -232,19 +232,16 @@ pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[
   let source_key = M::message()
   let source_id = source_key.id()
   match focused_input_message_registry.val.get(source_id) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None =>
-          abort(
-            "focused input registry contained a mismatched key for \{source_key.debug_name()}",
-          )
-      }
+    Some(id) =>
+      @ecs.message_key_from_id(
+        id,
+        debug_name="mgstudio_input_focus::FocusedInput<\{source_key.debug_name()}>",
+      )
     None => {
       let key : @ecs.MessageKey[FocusedInput[M]] = @ecs.register_message(
         debug_name="mgstudio_input_focus::FocusedInput<\{source_key.debug_name()}>",
       )
-      focused_input_message_registry.val.set(source_id, @any.Any::of(key))
+      focused_input_message_registry.val.set(source_id, key.id())
       key
     }
   }

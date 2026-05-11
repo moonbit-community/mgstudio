@@ -115,8 +115,9 @@ fn asset_set_builtin_loaders_registered_active(value : Bool) -> Unit {
 }
 
 ///|
-fn[T] asset_loader_type_name(probe : Handle[T]) -> String {
-  @any.of(probe).type_name()
+fn[T : Asset] asset_loader_type_name(probe : Handle[T]) -> String {
+  ignore(probe)
+  "Handle<\{T::asset_debug_name()}>"
 }
 
 ///|
@@ -127,18 +128,18 @@ pub fn asset_register_reload_hook(
 }
 
 ///|
-pub fn[T] asset_register_loader(
+pub fn[T : Asset] asset_register_loader(
   load : (AssetServer, String) -> Handle[T],
 ) -> Unit {
   let probe : Handle[T] = Handle::new(0)
   let type_name = asset_loader_type_name(probe)
   asset_loader_registry_active().val.set(type_name, AssetLoaderEntry::{
-    load: fn(asset_server, path) { @any.of(load(asset_server, path)) },
+    load: fn(asset_server, path) { load(asset_server, path).id() },
   })
 }
 
 ///|
-pub fn[T] asset_register_ready_checker(
+pub fn[T : Asset] asset_register_ready_checker(
   check_ready : (@ecs.World, Handle[T]) -> Bool,
 ) -> Unit {
   let probe : Handle[T] = Handle::new(0)

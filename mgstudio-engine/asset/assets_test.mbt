@@ -18,24 +18,29 @@ struct CountingLoadGuard {
 }
 
 ///|
+struct StoreTestAsset {
+  value : Int
+}
+
+///|
 pub impl AssetLoadGuard for CountingLoadGuard with release(self) {
   self.releases.val = self.releases.val + 1
 }
 
 ///|
 test "assets: insert/get/set/remove and events" {
-  let assets : Assets[Int] = Assets::new()
+  let assets : Assets[StoreTestAsset] = Assets::new()
   debug_inspect(assets.is_empty(), content="true")
-  let h = assets.add(10)
-  debug_inspect(assets.get(h).unwrap(), content="10")
+  let h = assets.add(StoreTestAsset::{ value: 10 })
+  debug_inspect(assets.get(h).unwrap().value, content="10")
   let ev1 = assets.drain_events()
   debug_inspect(ev1.length(), content="1")
   match ev1[0] {
     AssetEvent::Added(h1) => debug_inspect(h1.id() == h.id(), content="true")
     _ => debug_inspect(false, content="false")
   }
-  debug_inspect(assets.set(h, 11), content="true")
-  debug_inspect(assets.get(h).unwrap(), content="11")
+  debug_inspect(assets.set(h, StoreTestAsset::{ value: 11 }), content="true")
+  debug_inspect(assets.get(h).unwrap().value, content="11")
   let ev2 = assets.drain_events()
   debug_inspect(ev2.length(), content="1")
   match ev2[0] {
@@ -43,7 +48,7 @@ test "assets: insert/get/set/remove and events" {
     _ => debug_inspect(false, content="false")
   }
   let removed = assets.remove(h).unwrap()
-  debug_inspect(removed, content="11")
+  debug_inspect(removed.value, content="11")
   debug_inspect(assets.contains(h), content="false")
   let ev3 = assets.drain_events()
   debug_inspect(ev3.length(), content="1")
@@ -55,13 +60,15 @@ test "assets: insert/get/set/remove and events" {
 
 ///|
 test "asset event: Bevy-shaped event id helpers" {
-  let h0 : Handle[Int] = Handle::new(1)
-  let h1 : Handle[Int] = Handle::new(2)
-  let added : AssetEvent[Int] = AssetEvent::Added(h0)
-  let modified : AssetEvent[Int] = AssetEvent::Modified(h0)
-  let removed : AssetEvent[Int] = AssetEvent::Removed(h0)
-  let unused : AssetEvent[Int] = AssetEvent::Unused(h0)
-  let loaded : AssetEvent[Int] = AssetEvent::LoadedWithDependencies(h0)
+  let h0 : Handle[StoreTestAsset] = Handle::new(1)
+  let h1 : Handle[StoreTestAsset] = Handle::new(2)
+  let added : AssetEvent[StoreTestAsset] = AssetEvent::Added(h0)
+  let modified : AssetEvent[StoreTestAsset] = AssetEvent::Modified(h0)
+  let removed : AssetEvent[StoreTestAsset] = AssetEvent::Removed(h0)
+  let unused : AssetEvent[StoreTestAsset] = AssetEvent::Unused(h0)
+  let loaded : AssetEvent[StoreTestAsset] = AssetEvent::LoadedWithDependencies(
+    h0,
+  )
 
   debug_inspect(added.is_added(h0), content="true")
   debug_inspect(added.is_added(h1), content="false")
@@ -74,18 +81,18 @@ test "asset event: Bevy-shaped event id helpers" {
 
 ///|
 test "assets: insert with explicit handle id grows storage" {
-  let assets : Assets[Int] = Assets::new()
+  let assets : Assets[StoreTestAsset] = Assets::new()
   let h = Handle::new(10)
-  debug_inspect(assets.insert(h, 42), content="true")
-  debug_inspect(assets.get(h).unwrap(), content="42")
+  debug_inspect(assets.insert(h, StoreTestAsset::{ value: 42 }), content="true")
+  debug_inspect(assets.get(h).unwrap().value, content="42")
   let ev = assets.drain_events()
   debug_inspect(ev.length(), content="1")
   match ev[0] {
     AssetEvent::Added(h1) => debug_inspect(h1.id() == 10, content="true")
     _ => debug_inspect(false, content="false")
   }
-  debug_inspect(assets.insert(h, 43), content="true")
-  debug_inspect(assets.get(h).unwrap(), content="43")
+  debug_inspect(assets.insert(h, StoreTestAsset::{ value: 43 }), content="true")
+  debug_inspect(assets.get(h).unwrap().value, content="43")
   let ev2 = assets.drain_events()
   debug_inspect(ev2.length(), content="1")
   match ev2[0] {
@@ -96,11 +103,14 @@ test "assets: insert with explicit handle id grows storage" {
 
 ///|
 test "assets: reserve handle stays empty until a later insert" {
-  let assets : Assets[Int] = Assets::new()
+  let assets : Assets[StoreTestAsset] = Assets::new()
   let reserved = assets.reserve_handle()
   debug_inspect(assets.get(reserved) is None, content="true")
-  debug_inspect(assets.insert(reserved, 7), content="true")
-  debug_inspect(assets.get(reserved).unwrap(), content="7")
+  debug_inspect(
+    assets.insert(reserved, StoreTestAsset::{ value: 7 }),
+    content="true",
+  )
+  debug_inspect(assets.get(reserved).unwrap().value, content="7")
   let events = assets.drain_events()
   debug_inspect(events.length(), content="1")
   match events[0] {
@@ -112,17 +122,17 @@ test "assets: reserve handle stays empty until a later insert" {
 
 ///|
 test "assets: iter_mut returns live assets and marks them modified" {
-  let assets : Assets[Int] = Assets::new()
-  let first = assets.add(10)
+  let assets : Assets[StoreTestAsset] = Assets::new()
+  let first = assets.add(StoreTestAsset::{ value: 10 })
   ignore(assets.reserve_handle())
-  let third = assets.add(30)
+  let third = assets.add(StoreTestAsset::{ value: 30 })
   ignore(assets.drain_events())
   let entries = assets.iter_mut()
   debug_inspect(entries.length(), content="2")
   debug_inspect(entries[0].0.id(), content="0")
-  debug_inspect(entries[0].1, content="10")
+  debug_inspect(entries[0].1.value, content="10")
   debug_inspect(entries[1].0.id(), content="2")
-  debug_inspect(entries[1].1, content="30")
+  debug_inspect(entries[1].1.value, content="30")
   let events = assets.drain_events()
   debug_inspect(events.length(), content="2")
   debug_inspect(assets.contains(first), content="true")
@@ -185,13 +195,17 @@ test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
 ///|
 test "asset system forwards asset events to ECS messages" {
   let world = @ecs.World::new()
-  let key : @ecs.ResourceKey[Assets[Int]] = assets_resource_key()
+  let key : @ecs.ResourceKey[Assets[StoreTestAsset]] = assets_resource_key()
   world.insert_resource(key, Assets::new())
 
   match (try! world.get_resource_mut(key)) {
     Some(assets) => {
-      ignore(assets.modify(fn(value) { value.add(42) }))
-      ignore(assets.modify(fn(value) { value.add(43) }))
+      ignore(
+        assets.modify(fn(value) { value.add(StoreTestAsset::{ value: 42 }) }),
+      )
+      ignore(
+        assets.modify(fn(value) { value.add(StoreTestAsset::{ value: 43 }) }),
+      )
     }
     None => abort("expected Assets<Int> resource")
   }
@@ -199,7 +213,7 @@ test "asset system forwards asset events to ECS messages" {
   asset_update_event_messages(world)
 
   let cursor_ref : Ref[Int] = Ref(0)
-  let key : @ecs.MessageKey[AssetEvent[Int]] = @ecs.Message::message()
+  let key : @ecs.MessageKey[AssetEvent[StoreTestAsset]] = @ecs.Message::message()
   let reader = world.message_reader(key, cursor_ref)
   let events = try! reader.read()
   debug_inspect(events.length(), content="2")
@@ -1474,12 +1488,36 @@ struct MultiLoaderAsset {
 
 ///|
 extenum @ecs.EcsPayload += {
+  EcsPayload_asset_test_StoreTestAsset(StoreTestAsset)
   EcsPayload_asset_test_MissingLoaderAsset(MissingLoaderAsset)
   EcsPayload_asset_test_RegistryScopedLegacyAsset(RegistryScopedLegacyAsset)
   EcsPayload_asset_test_ProcessorScopeAsset(ProcessorScopeAsset)
   EcsPayload_asset_test_NamedProcessorScopeAsset(NamedProcessorScopeAsset)
   EcsPayload_asset_test_TestCustomAsset(TestCustomAsset)
   EcsPayload_asset_test_MultiLoaderAsset(MultiLoaderAsset)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for StoreTestAsset with to_ecs_payload(self) {
+  EcsPayload_asset_test_StoreTestAsset(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for StoreTestAsset with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_asset_test_StoreTestAsset(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl Asset for StoreTestAsset with asset_debug_name() {
+  "mgstudio_asset_test::StoreTestAsset"
+}
+
+///|
+impl Asset for StoreTestAsset with asset_as_image(_self) {
+  None
 }
 
 ///|
@@ -1493,6 +1531,16 @@ impl @ecs.EcsPayloadCodec for MissingLoaderAsset with from_ecs_payload(payload) 
     EcsPayload_asset_test_MissingLoaderAsset(value) => Some(value)
     _ => None
   }
+}
+
+///|
+impl Asset for MissingLoaderAsset with asset_debug_name() {
+  "mgstudio_asset_test::MissingLoaderAsset"
+}
+
+///|
+impl Asset for MissingLoaderAsset with asset_as_image(_self) {
+  None
 }
 
 ///|
@@ -1513,6 +1561,16 @@ impl @ecs.EcsPayloadCodec for RegistryScopedLegacyAsset with from_ecs_payload(
 }
 
 ///|
+impl Asset for RegistryScopedLegacyAsset with asset_debug_name() {
+  "mgstudio_asset_test::RegistryScopedLegacyAsset"
+}
+
+///|
+impl Asset for RegistryScopedLegacyAsset with asset_as_image(_self) {
+  None
+}
+
+///|
 impl @ecs.EcsPayloadCodec for ProcessorScopeAsset with to_ecs_payload(self) {
   EcsPayload_asset_test_ProcessorScopeAsset(self)
 }
@@ -1523,6 +1581,16 @@ impl @ecs.EcsPayloadCodec for ProcessorScopeAsset with from_ecs_payload(payload)
     EcsPayload_asset_test_ProcessorScopeAsset(value) => Some(value)
     _ => None
   }
+}
+
+///|
+impl Asset for ProcessorScopeAsset with asset_debug_name() {
+  "mgstudio_asset_test::ProcessorScopeAsset"
+}
+
+///|
+impl Asset for ProcessorScopeAsset with asset_as_image(_self) {
+  None
 }
 
 ///|
@@ -1541,6 +1609,16 @@ impl @ecs.EcsPayloadCodec for NamedProcessorScopeAsset with from_ecs_payload(
 }
 
 ///|
+impl Asset for NamedProcessorScopeAsset with asset_debug_name() {
+  "mgstudio_asset_test::NamedProcessorScopeAsset"
+}
+
+///|
+impl Asset for NamedProcessorScopeAsset with asset_as_image(_self) {
+  None
+}
+
+///|
 impl @ecs.EcsPayloadCodec for TestCustomAsset with to_ecs_payload(self) {
   EcsPayload_asset_test_TestCustomAsset(self)
 }
@@ -1554,6 +1632,16 @@ impl @ecs.EcsPayloadCodec for TestCustomAsset with from_ecs_payload(payload) {
 }
 
 ///|
+impl Asset for TestCustomAsset with asset_debug_name() {
+  "mgstudio_asset_test::TestCustomAsset"
+}
+
+///|
+impl Asset for TestCustomAsset with asset_as_image(_self) {
+  None
+}
+
+///|
 impl @ecs.EcsPayloadCodec for MultiLoaderAsset with to_ecs_payload(self) {
   EcsPayload_asset_test_MultiLoaderAsset(self)
 }
@@ -1564,6 +1652,16 @@ impl @ecs.EcsPayloadCodec for MultiLoaderAsset with from_ecs_payload(payload) {
     EcsPayload_asset_test_MultiLoaderAsset(value) => Some(value)
     _ => None
   }
+}
+
+///|
+impl Asset for MultiLoaderAsset with asset_debug_name() {
+  "mgstudio_asset_test::MultiLoaderAsset"
+}
+
+///|
+impl Asset for MultiLoaderAsset with asset_as_image(_self) {
+  None
 }
 
 ///|

@@ -24,7 +24,7 @@ pub fn set_default_asset_processor(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor_named(
+pub fn[T : @asset.Asset] register_asset_processor_named(
   app : @app.App[@ecs.World],
   processor_name : String,
   processor : LoadTransformAndSave[T],

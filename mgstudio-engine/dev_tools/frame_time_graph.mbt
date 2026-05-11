@@ -82,6 +82,16 @@ fn FrametimeGraphMaterial::asset_init_probe() -> FrametimeGraphMaterial {
 }
 
 ///|
+pub impl @asset.Asset for FrametimeGraphMaterial with asset_debug_name() {
+  "mgstudio_dev_tools::FrametimeGraphMaterial"
+}
+
+///|
+pub impl @asset.Asset for FrametimeGraphMaterial with asset_as_image(_self) {
+  None
+}
+
+///|
 fn frame_time_graph_material_assets_key() -> @ecs.ResourceKey[
   @asset.Assets[FrametimeGraphMaterial],
 ] {

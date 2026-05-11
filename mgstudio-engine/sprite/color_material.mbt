@@ -34,6 +34,16 @@ pub struct ColorMaterialAsset {
 }
 
 ///|
+pub impl @asset.Asset for ColorMaterialAsset with asset_debug_name() {
+  "mgstudio_sprite::ColorMaterialAsset"
+}
+
+///|
+pub impl @asset.Asset for ColorMaterialAsset with asset_as_image(_self) {
+  None
+}
+
+///|
 pub(open) trait IntoColorMaterialAsset {
   into_color_material_asset(Self) -> ColorMaterialAsset
 }

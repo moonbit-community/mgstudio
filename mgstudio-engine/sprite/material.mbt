@@ -388,6 +388,11 @@ pub struct PreparedMaterial2d[M] {
 }
 
 ///|
+pub impl[M : Material2d] @render.RenderAssetResource for PreparedMaterial2d[M] with render_asset_resource_debug_name() {
+  "mgstudio_sprite::PreparedMaterial2d<\{M::material2d_debug_name()}>"
+}
+
+///|
 pub fn[M : Material2d] PreparedMaterial2d::from_material(
   source : @asset.Handle[M],
   material : M,
@@ -556,9 +561,10 @@ pub fn[M] Material2dPlugin::with_asset_init(
 }
 
 ///|
-pub impl[M : Material2d + @ecs.EcsPayloadCodec] @app.Plugin for Material2dPlugin[
-  M,
-] with build(self, app) {
+pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M] with build(
+  self,
+  app,
+) {
   material2d_plugin_build(app, self)
 }
 
@@ -570,7 +576,7 @@ fn[M] material2d_pipeline_resource_from_plugin(
 }
 
 ///|
-fn[M] ensure_prepared_material2d_assets_resource_in_world(
+fn[M : Material2d] ensure_prepared_material2d_assets_resource_in_world(
   world : @ecs.World,
   _probe : @asset.Handle[M],
 ) -> Unit {
@@ -617,7 +623,7 @@ fn ensure_material2d_runtime_registry_resource_in_world(
 }
 
 ///|
-fn[M : Material2d + @ecs.EcsPayloadCodec] material2d_plugin_build(
+fn[M : Material2d + @asset.Asset] material2d_plugin_build(
   app : @app.App[@ecs.World],
   plugin : Material2dPlugin[M],
 ) -> @app.App[@ecs.World] {
@@ -795,7 +801,7 @@ fn material2d_bind_group_to_host(
 }
 
 ///|
-fn[M] prepared_material2d_assets_or_empty(
+fn[M : Material2d] prepared_material2d_assets_or_empty(
   world : @ecs.World,
   _probe : @asset.Handle[M],
 ) -> @render.RenderAssets[PreparedMaterial2d[M]] {
@@ -1053,7 +1059,7 @@ fn[M : Material2d] extract_material2d_mesh_instances_system(
 }
 
 ///|
-fn[M : Material2d + @ecs.EcsPayloadCodec] prepare_material2d_assets_system(
+fn[M : Material2d + @asset.Asset] prepare_material2d_assets_system(
   world : @ecs.World,
   _probe : @asset.Handle[M],
 ) -> Unit {

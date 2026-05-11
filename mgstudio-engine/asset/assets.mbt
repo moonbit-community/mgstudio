@@ -21,7 +21,19 @@ pub struct Assets[T] {
 }
 
 ///|
-let assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+pub(open) trait Asset: @ecs.EcsPayloadCodec {
+  asset_debug_name() -> String
+  asset_as_image(Self) -> Image?
+}
+
+///|
+fn[T : Asset] assets_type_name(_sample : T?) -> String {
+  ignore(_sample)
+  "Assets<\{T::asset_debug_name()}>"
+}
+
+///|
+let assets_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
   @hashmap.HashMap([]),
 )
 
@@ -29,7 +41,7 @@ let assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
 type AssetEventDispatch = (@ecs.World) -> Unit
 
 ///|
-let asset_event_message_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+let asset_event_message_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
   @hashmap.HashMap([]),
 )
 
@@ -43,26 +55,23 @@ fn[T] registered_asset_event_message_key_with_type_name(
   type_name : String,
 ) -> @ecs.MessageKey[AssetEvent[T]] {
   match asset_event_message_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None =>
-          abort(
-            "asset event message registry contained a mismatched key for \{type_name}",
-          )
-      }
+    Some(id) =>
+      @ecs.message_key_from_id(
+        id,
+        debug_name="mgstudio_asset::AssetEvent<\{type_name}>",
+      )
     None => {
       let key : @ecs.MessageKey[AssetEvent[T]] = @ecs.register_message(
         debug_name="mgstudio_asset::AssetEvent<\{type_name}>",
       )
-      asset_event_message_registry.val.set(type_name, @any.of(key))
+      asset_event_message_registry.val.set(type_name, key.id())
       key
     }
   }
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] register_asset_event_dispatch(
+fn[T : Asset] register_asset_event_dispatch(
   type_name : String,
   key : @ecs.ResourceKey[Assets[T]],
 ) -> Unit {
@@ -91,56 +100,45 @@ fn[T : @ecs.EcsPayloadCodec] register_asset_event_dispatch(
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] registered_assets_resource_key() -> @ecs.ResourceKey[
-  Assets[T],
-] {
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+fn[T : Asset] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
+  let type_name = assets_type_name((None : T?))
   let key = match assets_resource_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None =>
-          abort(
-            "asset resource registry contained a mismatched key for \{type_name}",
-          )
-      }
+    Some(id) =>
+      @ecs.resource_key_from_id(id, debug_name="mgstudio_asset::\{type_name}")
     None => {
       let key : @ecs.ResourceKey[Assets[T]] = @ecs.register_resource(
-        debug_name="mgstudio_asset::Assets<\{type_name}>",
+        debug_name="mgstudio_asset::\{type_name}",
       )
-      assets_resource_registry.val.set(type_name, @any.of(key))
+      assets_resource_registry.val.set(type_name, key.id())
       key
     }
   }
   register_asset_event_dispatch(type_name, key)
-  asset_register_load_failed_event_for_asset_type(probe)
+  asset_register_load_failed_event_for_asset_type((None : T?))
   key
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] assets_resource_key_of(
+pub fn[T : Asset] assets_resource_key_of(
   _probe : T,
 ) -> @ecs.ResourceKey[Assets[T]] {
+  ignore(_probe)
   registered_assets_resource_key()
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] assets_resource_key() -> @ecs.ResourceKey[
-  Assets[T],
-] {
+pub fn[T : Asset] assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
   registered_assets_resource_key()
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @app.Resource for Assets[T] with resource() {
+pub impl[T : Asset] @app.Resource for Assets[T] with resource() {
   registered_assets_resource_key()
 }
 
 ///|
-pub impl[T] @ecs.Message for AssetEvent[T] with message() {
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+pub impl[T : Asset] @ecs.Message for AssetEvent[T] with message() {
+  let type_name = assets_type_name((None : T?))
   registered_asset_event_message_key_with_type_name(type_name)
 }
 
@@ -155,7 +153,7 @@ pub fn[T] Assets::len(self : Assets[T]) -> Int {
 }
 
 ///|
-pub fn[T] Assets::add(self : Assets[T], value : T) -> Handle[T] {
+pub fn[T : Asset] Assets::add(self : Assets[T], value : T) -> Handle[T] {
   let handle = match image_asset_try_cast(value) {
     Some(image) => {
       let handle = image_asset_allocate_handle(self, image)
@@ -254,7 +252,11 @@ pub fn[T] Assets::iter_mut(self : Assets[T]) -> Array[(Handle[T], T)] {
 }
 
 ///|
-pub fn[T] Assets::set(self : Assets[T], handle : Handle[T], value : T) -> Bool {
+pub fn[T : Asset] Assets::set(
+  self : Assets[T],
+  handle : Handle[T],
+  value : T,
+) -> Bool {
   let id = handle.id()
   if id < 0 || id >= self.items.length() {
     false

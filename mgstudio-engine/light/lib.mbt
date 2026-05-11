@@ -301,6 +301,16 @@ pub struct ScatteringMedium {
 } derive(ToJson, FromJson)
 
 ///|
+pub impl @asset.Asset for ScatteringMedium with asset_debug_name() {
+  "mgstudio_light::ScatteringMedium"
+}
+
+///|
+pub impl @asset.Asset for ScatteringMedium with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn ScatteringMedium::default() -> ScatteringMedium {
   ScatteringMedium::{ density_multiplier: 1.0F }
 }

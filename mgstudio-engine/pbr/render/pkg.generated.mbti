@@ -23,7 +23,6 @@ import {
   "moonbitlang/core/hashset",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
-  "tonyfettes/any",
 }
 
 // Values
@@ -149,7 +148,7 @@ pub fn cmp_float(Float, Float) -> Int
 
 pub fn cmp_int(Int, Int) -> Int
 
-pub fn custom_projection3d_from_callbacks(String, @any.Any, (@any.Any) -> ProjectionMatrix3d, (@any.Any, SubCameraView3d) -> ProjectionMatrix3d, (@any.Any, Float, Float) -> @any.Any, (@any.Any) -> Float, (@any.Any, Float, Float) -> Array[@math.Vec3]) -> CustomProjection3d
+pub fn custom_projection3d_from_callbacks(String, @ecs.EcsPayload, (@ecs.EcsPayload) -> ProjectionMatrix3d, (@ecs.EcsPayload, SubCameraView3d) -> ProjectionMatrix3d, (@ecs.EcsPayload, Float, Float) -> @ecs.EcsPayload, (@ecs.EcsPayload) -> Float, (@ecs.EcsPayload, Float, Float) -> Array[@math.Vec3]) -> CustomProjection3d
 
 pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
 
@@ -498,21 +497,21 @@ pub fn BuildIndirectParametersPipelineKey::shader_defs(Self) -> Array[String]
 
 pub struct CustomProjection3d {
   type_name : String
-  payload : @any.Any
-  get_clip_from_view_fn : (@any.Any) -> ProjectionMatrix3d
-  get_clip_from_view_for_sub_fn : (@any.Any, SubCameraView3d) -> ProjectionMatrix3d
-  update_fn : (@any.Any, Float, Float) -> @any.Any
-  far_fn : (@any.Any) -> Float
-  get_frustum_corners_fn : (@any.Any, Float, Float) -> Array[@math.Vec3]
+  payload : @ecs.EcsPayload
+  get_clip_from_view_fn : (@ecs.EcsPayload) -> ProjectionMatrix3d
+  get_clip_from_view_for_sub_fn : (@ecs.EcsPayload, SubCameraView3d) -> ProjectionMatrix3d
+  update_fn : (@ecs.EcsPayload, Float, Float) -> @ecs.EcsPayload
+  far_fn : (@ecs.EcsPayload) -> Float
+  get_frustum_corners_fn : (@ecs.EcsPayload, Float, Float) -> Array[@math.Vec3]
 }
 pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
 pub fn CustomProjection3d::default() -> Self
 pub fn CustomProjection3d::far(Self) -> Float
-pub fn[T] CustomProjection3d::get(Self) -> T?
+pub fn[T : @ecs.EcsPayloadCodec] CustomProjection3d::get(Self) -> T?
 pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
 pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
 pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
-pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
+pub fn[T : CameraProjection3d + @ecs.EcsPayloadCodec] CustomProjection3d::new(T) -> Self
 pub fn CustomProjection3d::type_name(Self) -> String
 pub fn CustomProjection3d::update(Self, Float, Float) -> Self
 pub impl CameraProjection3d for CustomProjection3d
@@ -853,6 +852,7 @@ pub fn OrthographicProjection3d::with_near(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
 pub fn OrthographicProjection3d::with_viewport_origin(Self, @math.Vec2) -> Self
+pub impl @ecs.EcsPayloadCodec for OrthographicProjection3d
 pub impl CameraProjection3d for OrthographicProjection3d
 
 pub(all) enum OrthographicScalingMode3d {
@@ -886,6 +886,7 @@ pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
+pub impl @ecs.EcsPayloadCodec for PerspectiveProjection3d
 pub impl CameraProjection3d for PerspectiveProjection3d
 
 pub(all) enum PhasePreprocessBindGroups {
@@ -938,7 +939,7 @@ pub enum Projection {
   Custom(CustomProjection3d)
 }
 pub fn Projection::compute_frustum(Self, @transform.Transform) -> Frustum
-pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
+pub fn[T : CameraProjection3d + @ecs.EcsPayloadCodec] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
 pub fn Projection::get_clip_from_view(Self) -> ProjectionMatrix3d

@@ -39,8 +39,8 @@ fn image_asset_sync_metadata(handle : Handle[Image], image : Image) -> Unit {
 }
 
 ///|
-fn[T] image_asset_try_cast(value : T) -> Image? {
-  @any.of(value).try_to()
+fn[T : Asset] image_asset_try_cast(value : T) -> Image? {
+  value.asset_as_image()
 }
 
 ///|
@@ -125,7 +125,7 @@ fn image_asset_sync_dirty(handle : Handle[Image], image : Image) -> Unit {
 }
 
 ///|
-fn[T] image_asset_sync_on_set(
+fn[T : Asset] image_asset_sync_on_set(
   handle : Handle[T],
   previous : T,
   value : T,

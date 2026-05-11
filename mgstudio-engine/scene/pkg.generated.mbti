@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/gltf/loader",
   "Milky2018/mgstudio/gltf/loader/gltf_ext",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/mesh",
@@ -89,6 +90,7 @@ pub struct Gltf {
   source : String?
 }
 pub fn Gltf::new(Array[@asset.Handle[Scene]], named_scenes? : Array[(String, @asset.Handle[Scene])], materials? : Array[@asset.Handle[@material.StandardMaterial]], named_materials? : Array[(String, @asset.Handle[@material.StandardMaterial])], @asset.Handle[Scene]?, animations? : Array[@asset.Handle[@animation.AnimationClip]], named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])], source? : String?) -> Self
+pub impl @asset.Asset for Gltf
 pub impl @ecs.EcsPayloadCodec for Gltf
 
 pub struct GltfLodVisibilityPolicy {
@@ -111,6 +113,7 @@ pub struct Scene {
 }
 pub fn Scene::new(Array[SceneNode3d]) -> Self
 pub fn Scene::with_gltf_scene_extras(Self, @gltf_ext.GltfSceneExtras?) -> Self
+pub impl @asset.Asset for Scene
 pub impl @ecs.EcsPayloadCodec for Scene
 
 pub enum SceneFilter {

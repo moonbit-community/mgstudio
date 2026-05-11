@@ -501,6 +501,7 @@ pub fn StandardMaterial::with_specular_transmission(Self, Float) -> Self
 pub fn StandardMaterial::with_thickness(Self, Float) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 pub fn StandardMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
+pub impl @asset.Asset for StandardMaterial
 pub impl @ecs.EcsPayloadCodec for StandardMaterial
 
 pub struct VertexState {

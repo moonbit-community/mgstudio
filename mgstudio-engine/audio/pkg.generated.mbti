@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
@@ -64,7 +65,7 @@ pub struct AudioPlayer[Source] {
 }
 pub fn[Source] AudioPlayer::handle(Self[Source]) -> @asset.Handle[Source]
 pub fn[Source] AudioPlayer::new(@asset.Handle[Source]) -> Self[Source]
-pub impl[Source] @ecs.Component for AudioPlayer[Source]
+pub impl[Source : AudioPlayerSource] @ecs.Component for AudioPlayer[Source]
 pub impl[Source] @ecs.EcsPayloadCodec for AudioPlayer[Source]
 pub impl[Source] ToJson for AudioPlayer[Source]
 pub impl[Source] @json.FromJson for AudioPlayer[Source]
@@ -97,6 +98,8 @@ pub struct AudioSource {
 } derive(ToJson, @json.FromJson)
 pub fn AudioSource::bytes(Self) -> Bytes
 pub fn AudioSource::new(Bytes) -> Self
+pub impl @asset.Asset for AudioSource
+pub impl AudioPlayerSource for AudioSource
 pub impl @ecs.EcsPayloadCodec for AudioSource
 
 pub struct DefaultSpatialScale {
@@ -122,6 +125,8 @@ pub struct Pitch {
   duration_seconds : Float
 } derive(ToJson, @json.FromJson)
 pub fn Pitch::new(Float, Float) -> Self
+pub impl @asset.Asset for Pitch
+pub impl AudioPlayerSource for Pitch
 pub impl @ecs.EcsPayloadCodec for Pitch
 
 pub struct PlaybackDespawnMarker {
@@ -218,6 +223,10 @@ pub impl @json.FromJson for Volume
 // Type aliases
 
 // Traits
+pub(open) trait AudioPlayerSource {
+  audio_player_source_debug_name() -> String
+}
+
 pub(open) trait AudioSinkPlayback {
   volume(Self) -> Volume
   set_volume(Self, Volume) -> Self

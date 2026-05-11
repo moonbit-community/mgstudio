@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
@@ -221,6 +222,7 @@ pub fn AnimationClip::sample_target(Self, AnimationTargetId, Float) -> Animation
 pub fn AnimationClip::set_duration(Self, Float) -> Self
 pub fn AnimationClip::triggered_root_events(Self, ActiveAnimation) -> Array[AnimationClipEvent]
 pub fn AnimationClip::triggered_target_events(Self, AnimationTargetId, ActiveAnimation) -> Array[AnimationClipEvent]
+pub impl @asset.Asset for AnimationClip
 pub impl @ecs.EcsPayloadCodec for AnimationClip
 
 pub struct AnimationClipEvent {
@@ -277,6 +279,7 @@ pub fn AnimationGraph::remove_node_mask_group(Self, AnimationNodeIndex, Int) -> 
 pub fn AnimationGraph::root(Self) -> AnimationNodeIndex
 pub fn AnimationGraph::set(Self, AnimationNodeIndex, AnimationGraphNode) -> Bool
 pub fn AnimationGraph::target_mask(Self, AnimationTargetId) -> UInt
+pub impl @asset.Asset for AnimationGraph
 pub impl @ecs.EcsPayloadCodec for AnimationGraph
 
 pub struct AnimationGraphHandle {

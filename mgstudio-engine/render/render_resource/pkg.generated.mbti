@@ -2,7 +2,9 @@
 package "Milky2018/mgstudio/render/render_resource"
 
 import {
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/wgpu_mbt",
 }
 
@@ -240,6 +242,7 @@ pub fn[T] StorageBuffer::new() -> Self[T]
 pub fn[T] StorageBuffer::push(Self[T], T) -> Unit
 pub fn[T] StorageBuffer::values(Self[T]) -> Array[T]
 pub fn[T] StorageBuffer::with_label(String) -> Self[T]
+pub impl[T : @ecs.EcsPayloadCodec] @asset.Asset for StorageBuffer[T]
 pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for StorageBuffer[T]
 
 pub(all) struct StorageBufferPayload {

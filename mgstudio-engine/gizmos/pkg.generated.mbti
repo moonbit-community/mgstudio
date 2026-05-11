@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/sprite",
@@ -213,6 +214,7 @@ pub fn GizmoAsset::rect_2d(Self, @sprite.Isometry2d, @math.Vec2, @color.Color) -
 pub fn GizmoAsset::short_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> RetainedArcBuilder
 pub fn GizmoAsset::short_arc_3d_between(Self, @math.Vec3, @math.Vec3, @math.Vec3, @color.Color) -> RetainedArcBuilder
 pub fn GizmoAsset::sphere(Self, @math.Isometry3d, Float, @color.Color) -> RetainedSphereBuilder
+pub impl @asset.Asset for GizmoAsset
 pub impl @ecs.EcsPayloadCodec for GizmoAsset
 pub impl Default for GizmoAsset
 

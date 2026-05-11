@@ -18,8 +18,28 @@ struct CustomAsset {
 }
 
 ///|
+impl @asset.Asset for CustomAsset with asset_debug_name() {
+  "examples.asset.custom_asset.CustomAsset"
+}
+
+///|
+impl @asset.Asset for CustomAsset with asset_as_image(_self) {
+  None
+}
+
+///|
 struct Blob {
   bytes : Bytes
+}
+
+///|
+impl @asset.Asset for Blob with asset_debug_name() {
+  "examples.asset.custom_asset.Blob"
+}
+
+///|
+impl @asset.Asset for Blob with asset_as_image(_self) {
+  None
 }
 
 ///|

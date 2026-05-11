@@ -52,6 +52,26 @@ pub type ImageSamplerDescriptor = @image.ImageSamplerDescriptor
 pub struct Blob {}
 
 ///|
+pub impl Asset for Image with asset_debug_name() {
+  "mgstudio_asset::Image"
+}
+
+///|
+pub impl Asset for Image with asset_as_image(self) {
+  Some(self)
+}
+
+///|
+pub impl Asset for Blob with asset_debug_name() {
+  "mgstudio_asset::Blob"
+}
+
+///|
+pub impl Asset for Blob with asset_as_image(_self) {
+  None
+}
+
+///|
 pub(all) enum LoadState {
   NotLoaded
   Loading
@@ -127,7 +147,7 @@ struct PendingTypedAssetLoad {
 
 ///|
 priv struct AssetLoaderEntry {
-  load : (AssetServer, String) -> @any.Any
+  load : (AssetServer, String) -> Int
 }
 
 ///|
@@ -159,7 +179,7 @@ fn asset_server_standalone() -> AssetServer {
 }
 
 ///|
-fn[T] asset_registered_ready_check_option(
+fn[T : Asset] asset_registered_ready_check_option(
   _probe : Handle[T],
 ) -> AssetReadyCheck? {
   let probe : Handle[T] = Handle::new(0)
@@ -305,19 +325,17 @@ pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> @ecs.ResourceMut[
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] asset_assets_or_abort() -> Assets[T] {
+pub fn[T : Asset] asset_assets_or_abort() -> Assets[T] {
   asset_resource_or_abort()
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] asset_assets_ref_or_abort() -> Assets[T] {
+pub fn[T : Asset] asset_assets_ref_or_abort() -> Assets[T] {
   asset_resource_ref_or_abort()
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] asset_assets_ref_mut_or_abort() -> @ecs.ResourceMut[
-  Assets[T],
-] {
+pub fn[T : Asset] asset_assets_ref_mut_or_abort() -> @ecs.ResourceMut[Assets[T]] {
   asset_resource_ref_mut_or_abort()
 }
 
@@ -1174,14 +1192,12 @@ fn asset_image_handle_type_name() -> String {
 
 ///|
 fn asset_image_assets_type_name() -> String {
-  let probe : Assets[Image] = Assets::new()
-  @any.of(probe).type_name()
+  assets_type_name((None : Image?))
 }
 
 ///|
 fn asset_blob_assets_type_name() -> String {
-  let probe : Assets[Blob] = Assets::new()
-  @any.of(probe).type_name()
+  assets_type_name((None : Blob?))
 }
 
 ///|
@@ -1332,37 +1348,34 @@ fn AssetServer::typed_recursive_dependency_load_state(
 }
 
 ///|
-pub fn[T] AssetServer::load_state(
+pub fn[T : Asset] AssetServer::load_state(
   self : AssetServer,
   handle : Handle[T],
 ) -> LoadState {
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+  let type_name = assets_type_name((None : T?))
   self.typed_load_state(type_name, handle.id())
 }
 
 ///|
-pub fn[T] AssetServer::dependency_load_state(
+pub fn[T : Asset] AssetServer::dependency_load_state(
   self : AssetServer,
   handle : Handle[T],
 ) -> DependencyLoadState {
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+  let type_name = assets_type_name((None : T?))
   self.typed_dependency_load_state(type_name, handle.id())
 }
 
 ///|
-pub fn[T] AssetServer::recursive_dependency_load_state(
+pub fn[T : Asset] AssetServer::recursive_dependency_load_state(
   self : AssetServer,
   handle : Handle[T],
 ) -> RecursiveDependencyLoadState {
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+  let type_name = assets_type_name((None : T?))
   self.typed_recursive_dependency_load_state(type_name, handle.id())
 }
 
 ///|
-pub fn[T] AssetServer::is_loaded_with_dependencies(
+pub fn[T : Asset] AssetServer::is_loaded_with_dependencies(
   self : AssetServer,
   handle : Handle[T],
 ) -> Bool {
@@ -1420,15 +1433,14 @@ fn[T] AssetServer::reserve_missing_loader_handle(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load(
+pub fn[T : Asset, P : IntoAssetPath] AssetServer::load(
   self : AssetServer,
   path : P,
 ) -> Handle[T] {
   asset_with_server_world(self, fn() {
     asset_register_builtin_loaders()
     let parsed_path = path.into_asset_path()
-    let asset_probe : Assets[T] = Assets::new()
-    let asset_type_name = @any.of(asset_probe).type_name()
+    let asset_type_name = assets_type_name((None : T?))
     if typed_asset_loader_is_registered(asset_type_name) {
       return self.load_registered_asset(parsed_path)
     }
@@ -1436,16 +1448,7 @@ pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load(
     let probe : Handle[T] = Handle::new(0)
     let loader_type_name = asset_loader_type_name(probe)
     match asset_loader_registry_active().val.get(loader_type_name) {
-      Some(entry) =>
-        match (entry.load)(self, formatted_path).try_to() {
-          Some(handle) => handle
-          None =>
-            self.reserve_missing_loader_handle(
-              parsed_path,
-              asset_type_name,
-              "asset loader registry returned a mismatched handle type for \{loader_type_name}",
-            )
-        }
+      Some(entry) => Handle::new((entry.load)(self, formatted_path))
       None =>
         self.reserve_missing_loader_handle(
           parsed_path,
@@ -1457,7 +1460,7 @@ pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(
+pub fn[T : Asset, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(
   self : AssetServer,
   path : P,
   load_guard : G,
@@ -1467,8 +1470,7 @@ pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath, G : AssetLoadGuard] AssetSer
     let custom_ready : AssetReadyCheck? = asset_registered_ready_check_option(
       handle,
     )
-    let assets_probe : Assets[T] = Assets::new()
-    let asset_type_name = @any.of(assets_probe).type_name()
+    let asset_type_name = assets_type_name((None : T?))
     let ready_or_failed : AssetReadyCheck = fn(world, handle_id) {
       match custom_ready {
         Some(ready) =>
@@ -1505,7 +1507,7 @@ pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath, G : AssetLoadGuard] AssetSer
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load_with_settings(
+pub fn[T : Asset, P : IntoAssetPath] AssetServer::load_with_settings(
   self : AssetServer,
   path : P,
   configure : (ImageLoaderSettings) -> Unit,
@@ -1517,13 +1519,13 @@ pub fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load_with_setti
     if type_name == asset_image_handle_type_name() {
       let canonical_path = asset_canonical_path(formatted_path)
       if self.get_handle(canonical_path) is Some(handle) {
-        return @any.of(handle).try_to().unwrap()
+        return Handle::new(handle.id())
       }
       let settings = self.image_loader_settings_for_path(canonical_path)
       configure(settings)
-      return @any.of(self.load_image_with_settings(canonical_path, settings))
-        .try_to()
-        .unwrap()
+      return Handle::new(
+        self.load_image_with_settings(canonical_path, settings).id(),
+      )
     }
     let settings = ImageLoaderSettings::default()
     configure(settings)

@@ -22,6 +22,18 @@ pub struct StorageBuffer[T] {
 }
 
 ///|
+pub impl[T : @ecs.EcsPayloadCodec] @asset.Asset for StorageBuffer[T] with asset_debug_name() {
+  "mgstudio_render_resource::StorageBuffer"
+}
+
+///|
+pub impl[T : @ecs.EcsPayloadCodec] @asset.Asset for StorageBuffer[T] with asset_as_image(
+  _self,
+) {
+  None
+}
+
+///|
 pub fn[T] StorageBuffer::new() -> StorageBuffer[T] {
   StorageBuffer::{ data: BufferVec::new(), label: None }
 }

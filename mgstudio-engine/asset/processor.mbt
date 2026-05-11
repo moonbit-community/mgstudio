@@ -81,16 +81,16 @@ struct PendingProcessedAssetLoad {
 }
 
 ///|
-priv struct ProcessedAssetAny {
-  asset : @any.Any
+priv struct ProcessedAssetPayload {
+  asset : @ecs.EcsPayload
   saved_bytes : Bytes?
 }
 
 ///|
 priv struct AssetProcessorEntry {
   extensions : Array[String]
-  process : (AssetServer, AssetPath, Bytes) -> ProcessedAssetAny raise AssetProcessError
-  insert : (@ecs.World, Int, @any.Any) -> Unit
+  process : (AssetServer, AssetPath, Bytes) -> ProcessedAssetPayload raise AssetProcessError
+  insert : (@ecs.World, Int, @ecs.EcsPayload) -> Unit
 }
 
 ///|
@@ -221,13 +221,12 @@ fn asset_processor_registry_register_entry(
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] register_asset_processor_with_name(
+fn[T : Asset] register_asset_processor_with_name(
   app : @app.App[@ecs.World],
   processor_name : String?,
   processor : LoadTransformAndSave[T],
 ) -> @app.App[@ecs.World] {
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+  let type_name = assets_type_name((None : T?))
   let world = app.world()
   asset_with_world(world, fn() {
     asset_processor_registry_register_entry(
@@ -236,12 +235,12 @@ fn[T : @ecs.EcsPayloadCodec] register_asset_processor_with_name(
         extensions: processor.extensions,
         process: fn(asset_server, path, bytes) raise AssetProcessError {
           let processed = (processor.process)(asset_server, path, bytes)
-          ProcessedAssetAny::{
-            asset: @any.of(processed.asset()),
+          ProcessedAssetPayload::{
+            asset: T::to_ecs_payload(processed.asset()),
             saved_bytes: processed.saved_bytes(),
           }
         },
-        insert: fn(world, handle_id, value_any) {
+        insert: fn(world, handle_id, payload) {
           let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
           let assets = match (try! world.get_resource_mut(key)) {
             Some(value) => value
@@ -250,7 +249,7 @@ fn[T : @ecs.EcsPayloadCodec] register_asset_processor_with_name(
                 "Assets resource is missing for asset processor output; call init_asset before registering or processing this asset type",
               )
           }
-          let value : T = match value_any.try_to() {
+          let value : T = match T::from_ecs_payload(payload) {
             Some(value) => value
             None =>
               abort(
@@ -271,7 +270,7 @@ fn[T : @ecs.EcsPayloadCodec] register_asset_processor_with_name(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor(
+pub fn[T : Asset] register_asset_processor(
   app : @app.App[@ecs.World],
   processor : LoadTransformAndSave[T],
 ) -> @app.App[@ecs.World] {
@@ -279,7 +278,7 @@ pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor_named(
+pub fn[T : Asset] register_asset_processor_named(
   app : @app.App[@ecs.World],
   processor_name : String,
   processor : LoadTransformAndSave[T],
@@ -288,7 +287,7 @@ pub fn[T : @ecs.EcsPayloadCodec] register_asset_processor_named(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] init_asset_processor(
+pub fn[T : Asset] init_asset_processor(
   app : @app.App[@ecs.World],
   processor : LoadTransformAndSave[T],
 ) -> @app.App[@ecs.World] {

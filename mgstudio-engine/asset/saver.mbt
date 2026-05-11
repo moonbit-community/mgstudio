@@ -49,7 +49,13 @@ pub fn Writer::finish(self : Writer) -> Bytes {
 ///|
 pub struct SavedAsset[T] {
   asset : T
-  labeled_assets : Array[(String, @any.Any)]
+  labeled_assets : Array[(String, ErasedSavedAsset)]
+  handle_labels : Array[(Int, String)]
+}
+
+///|
+struct ErasedSavedAsset {
+  asset : @ecs.EcsPayload
   handle_labels : Array[(Int, String)]
 }
 
@@ -64,14 +70,22 @@ pub fn[T] SavedAsset::get(self : SavedAsset[T]) -> T {
 }
 
 ///|
-pub fn[T, U] SavedAsset::get_labeled(
+pub fn[T, U : @ecs.EcsPayloadCodec] SavedAsset::get_labeled(
   self : SavedAsset[T],
   label : String,
 ) -> SavedAsset[U]? {
   for entry in self.labeled_assets {
     let (candidate, asset) = entry
     if candidate == label {
-      return asset.try_to()
+      match U::from_ecs_payload(asset.asset) {
+        Some(value) =>
+          return Some(SavedAsset::{
+            asset: value,
+            labeled_assets: [],
+            handle_labels: asset.handle_labels,
+          })
+        None => return None
+      }
     }
   }
   None
@@ -95,7 +109,7 @@ pub fn[T, U] SavedAsset::label_for(
 pub struct SavedAssetBuilder {
   asset_server : AssetServer
   path : AssetPath
-  labeled_assets : Array[(String, @any.Any)]
+  labeled_assets : Array[(String, ErasedSavedAsset)]
   handle_labels : Array[(Int, String)]
   mut next_handle_id : Int
 }
@@ -115,7 +129,7 @@ pub fn SavedAssetBuilder::new(
 }
 
 ///|
-pub fn[T] SavedAssetBuilder::add_labeled_asset_with_new_handle(
+pub fn[T : @ecs.EcsPayloadCodec] SavedAssetBuilder::add_labeled_asset_with_new_handle(
   self : SavedAssetBuilder,
   label : String,
   asset : SavedAsset[T],
@@ -124,7 +138,15 @@ pub fn[T] SavedAssetBuilder::add_labeled_asset_with_new_handle(
   self.path |> ignore
   let handle = Handle::new(self.next_handle_id)
   self.next_handle_id = self.next_handle_id + 1
-  self.labeled_assets.push((label, @any.of(asset)))
+  self.labeled_assets.push(
+    (
+      label,
+      ErasedSavedAsset::{
+        asset: T::to_ecs_payload(asset.asset),
+        handle_labels: asset.handle_labels,
+      },
+    ),
+  )
   self.handle_labels.push((handle.id(), label))
   handle
 }
@@ -154,7 +176,7 @@ pub fn[T, Settings] AssetSaver::new(
 }
 
 ///|
-pub fn[T, Settings, P : IntoAssetPath] save_using_saver(
+pub fn[T : Asset, Settings, P : IntoAssetPath] save_using_saver(
   asset_server : AssetServer,
   saver : AssetSaver[T, Settings],
   path : P,
@@ -182,8 +204,7 @@ pub fn[T, Settings, P : IntoAssetPath] save_using_saver(
     canonical_path,
     bytes_fingerprint(bytes),
   )
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+  let type_name = assets_type_name((None : T?))
   let cache_key = typed_asset_loader_path_key(type_name, asset_path)
   asset_server.typed_asset_paths.val.remove(cache_key) |> ignore
 }

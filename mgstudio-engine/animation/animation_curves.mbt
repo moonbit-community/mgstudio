@@ -232,6 +232,16 @@ pub struct AnimationClip {
 }
 
 ///|
+pub impl @asset.Asset for AnimationClip with asset_debug_name() {
+  "mgstudio_animation::AnimationClip"
+}
+
+///|
+pub impl @asset.Asset for AnimationClip with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn AnimationClip::new() -> AnimationClip {
   AnimationClip::{
     duration_seconds: 0.0F,

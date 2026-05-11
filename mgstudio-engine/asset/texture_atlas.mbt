@@ -19,6 +19,16 @@ pub struct TextureAtlasLayout {
 }
 
 ///|
+pub impl Asset for TextureAtlasLayout with asset_debug_name() {
+  "mgstudio_asset::TextureAtlasLayout"
+}
+
+///|
+pub impl Asset for TextureAtlasLayout with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn TextureAtlasLayout::new_empty(
   dimensions : @math.UVec2,
 ) -> TextureAtlasLayout {

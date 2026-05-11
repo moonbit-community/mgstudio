@@ -21,6 +21,7 @@ extenum @ecs.EcsPayload += {
   EcsPayload_asset_Assets(AssetsPayload)
   EcsPayload_asset_AssetLoadFailedEvent(AssetLoadFailedEventPayload)
   EcsPayload_asset_Blob(Blob)
+  EcsPayload_asset_Font(Font)
   EcsPayload_asset_LoadedFolder(LoadedFolder)
   EcsPayload_asset_TextureAtlasLayout(TextureAtlasLayout)
   EcsPayload_asset_AssetIoRuntimeState(AssetIoRuntimeState)
@@ -237,6 +238,19 @@ pub impl @ecs.EcsPayloadCodec for Blob with to_ecs_payload(self) {
 pub impl @ecs.EcsPayloadCodec for Blob with from_ecs_payload(payload) {
   match payload {
     EcsPayload_asset_Blob(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for Font with to_ecs_payload(self) {
+  EcsPayload_asset_Font(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for Font with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_asset_Font(value) => Some(value)
     _ => None
   }
 }

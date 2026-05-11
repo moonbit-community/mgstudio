@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
@@ -118,6 +119,7 @@ pub fn Mesh::with_2d_geometry(Self, Mesh2dGeometry) -> Self?
 pub fn Mesh::with_3d_geometry(Self, Mesh3dGeometry) -> Self?
 pub fn Mesh::with_generated_skinned_mesh_bounds(Self) -> Result[Self, SkinnedMeshBoundsError]
 pub fn Mesh::with_skinned_mesh_bounds(Self, SkinnedMeshBounds?) -> Self
+pub impl @asset.Asset for Mesh
 pub impl @ecs.EcsPayloadCodec for Mesh
 
 pub struct Mesh2d {
@@ -439,6 +441,7 @@ pub fn SkinnedMeshInverseBindposes::get(Self, Int) -> SkinningMat4?
 pub fn SkinnedMeshInverseBindposes::len(Self) -> Int
 pub fn SkinnedMeshInverseBindposes::new(Array[SkinningMat4]) -> Self
 pub fn SkinnedMeshInverseBindposes::values(Self) -> Array[SkinningMat4]
+pub impl @asset.Asset for SkinnedMeshInverseBindposes
 pub impl @ecs.EcsPayloadCodec for SkinnedMeshInverseBindposes
 
 pub struct SkinningMat4 {

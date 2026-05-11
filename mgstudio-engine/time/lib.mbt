@@ -59,9 +59,19 @@ fn current_time_world_abort_missing() -> @ecs.World {
 }
 
 ///|
-let time_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+let time_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
   @hashmap.HashMap([]),
 )
+
+///|
+pub(open) trait TimeContext: Default + @ecs.EcsPayloadCodec {
+  time_context_debug_name() -> String
+}
+
+///|
+pub impl TimeContext for Unit with time_context_debug_name() {
+  "Unit"
+}
 
 ///|
 let time_update_strategy_resource_key : @ecs.ResourceKey[TimeUpdateStrategy] = @ecs.register_resource(
@@ -69,23 +79,16 @@ let time_update_strategy_resource_key : @ecs.ResourceKey[TimeUpdateStrategy] = @
 )
 
 ///|
-fn[T : Default] registered_time_resource_key() -> @ecs.ResourceKey[Time[T]] {
-  let probe : Time[T] = Time::default()
-  let type_name = @any.of(probe).type_name()
+fn[T : TimeContext] registered_time_resource_key() -> @ecs.ResourceKey[Time[T]] {
+  let type_name = "Time<\{T::time_context_debug_name()}>"
   match time_resource_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None =>
-          abort(
-            "time resource registry contained a mismatched key for \{type_name}",
-          )
-      }
+    Some(id) =>
+      @ecs.resource_key_from_id(id, debug_name="mgstudio_time::\{type_name}")
     None => {
       let key : @ecs.ResourceKey[Time[T]] = @ecs.register_resource(
         debug_name="mgstudio_time::\{type_name}",
       )
-      time_resource_registry.val.set(type_name, @any.of(key))
+      time_resource_registry.val.set(type_name, key.id())
       key
     }
   }
@@ -112,7 +115,7 @@ pub fn fixed_time_resource_key() -> @ecs.ResourceKey[Time[Fixed]] {
 }
 
 ///|
-pub impl[T : Default + @ecs.EcsPayloadCodec] @app.Resource for Time[T] with resource() {
+pub impl[T : TimeContext] @app.Resource for Time[T] with resource() {
   registered_time_resource_key()
 }
 

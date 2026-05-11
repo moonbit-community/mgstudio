@@ -28,8 +28,8 @@ pub struct LoadContext {
 ///|
 priv struct TypedAssetLoaderEntry {
   extensions : Array[String]
-  load : (LoadContext, Bytes) -> @any.Any
-  insert : (@ecs.World, Int, @any.Any) -> Unit
+  load : (LoadContext, Bytes) -> @ecs.EcsPayload
+  insert : (@ecs.World, Int, @ecs.EcsPayload) -> Unit
 }
 
 ///|
@@ -312,14 +312,12 @@ fn typed_asset_loader_entry_for_path(
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] asset_assets_mut_or_abort() -> @ecs.ResourceMut[
-  Assets[T],
-] {
+fn[T : Asset] asset_assets_mut_or_abort() -> @ecs.ResourceMut[Assets[T]] {
   asset_assets_mut_or_abort_in_world(asset_world_or_abort())
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] asset_assets_mut_or_abort_in_world(
+fn[T : Asset] asset_assets_mut_or_abort_in_world(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Assets[T]] {
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
@@ -333,7 +331,7 @@ fn[T : @ecs.EcsPayloadCodec] asset_assets_mut_or_abort_in_world(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] LoadContext::add_labeled_asset(
+pub fn[T : Asset] LoadContext::add_labeled_asset(
   self : LoadContext,
   label : String,
   asset : T,
@@ -348,8 +346,7 @@ pub fn[T : @ecs.EcsPayloadCodec] LoadContext::add_labeled_asset(
     assets.add(asset)
   })
   self.asset_server.record_path(canonical_path)
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+  let type_name = assets_type_name((None : T?))
   let cache_key = typed_asset_loader_path_key(type_name, labeled_path)
   self.asset_server.typed_asset_paths.val.set(cache_key, handle.id())
   self.asset_server.set_typed_loaded_states(type_name, handle.id())
@@ -357,7 +354,7 @@ pub fn[T : @ecs.EcsPayloadCodec] LoadContext::add_labeled_asset(
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load_registered_asset(
+fn[T : Asset, P : IntoAssetPath] AssetServer::load_registered_asset(
   self : AssetServer,
   path : P,
 ) -> Handle[T] {
@@ -423,8 +420,7 @@ fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load_registered_ass
 
   let parsed_path = path.into_asset_path()
   let formatted_path = asset_format_path(parsed_path)
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+  let type_name = assets_type_name((None : T?))
   let cache_key = typed_asset_loader_path_key(type_name, parsed_path)
   if self.typed_asset_paths.val.get(cache_key) is Some(handle_id) {
     let handle = Handle::new(handle_id)
@@ -448,7 +444,7 @@ fn[T : @ecs.EcsPayloadCodec, P : IntoAssetPath] AssetServer::load_registered_ass
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] init_asset(
+pub fn[T : Asset] init_asset(
   app : @app.App[@ecs.World],
   asset_init : () -> T,
 ) -> @app.App[@ecs.World] {
@@ -465,12 +461,11 @@ pub fn[T : @ecs.EcsPayloadCodec] init_asset(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] register_asset_loader(
+pub fn[T : Asset] register_asset_loader(
   app : @app.App[@ecs.World],
   loader : AssetLoader[T],
 ) -> @app.App[@ecs.World] {
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+  let type_name = assets_type_name((None : T?))
   let registry = typed_asset_loader_registry_for_world(app.world())
   let normalized_extensions = typed_asset_loader_normalize_extensions(
     loader.extensions,
@@ -485,8 +480,10 @@ pub fn[T : @ecs.EcsPayloadCodec] register_asset_loader(
   let next_entries = typed_asset_loader_clone_entries(existing)
   next_entries.push(TypedAssetLoaderEntry::{
     extensions: normalized_extensions,
-    load: fn(context, bytes) { @any.of((loader.load)(context, bytes)) },
-    insert: fn(world, handle_id, value_any) {
+    load: fn(context, bytes) {
+      T::to_ecs_payload((loader.load)(context, bytes))
+    },
+    insert: fn(world, handle_id, payload) {
       let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
       let assets = match (try! world.get_resource_mut(key)) {
         Some(value) => value
@@ -495,7 +492,7 @@ pub fn[T : @ecs.EcsPayloadCodec] register_asset_loader(
             "Assets resource is missing for custom loader insertion; call init_asset before registering or loading this asset type",
           )
       }
-      let value : T = match value_any.try_to() {
+      let value : T = match T::from_ecs_payload(payload) {
         Some(value) => value
         None =>
           abort(
@@ -516,7 +513,7 @@ pub fn[T : @ecs.EcsPayloadCodec] register_asset_loader(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] init_asset_loader(
+pub fn[T : Asset] init_asset_loader(
   app : @app.App[@ecs.World],
   loader : AssetLoader[T],
 ) -> @app.App[@ecs.World] {
@@ -524,12 +521,8 @@ pub fn[T : @ecs.EcsPayloadCodec] init_asset_loader(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] AssetServer::add(
-  self : AssetServer,
-  asset : T,
-) -> Handle[T] {
-  let probe : Assets[T] = Assets::new()
-  let type_name = @any.of(probe).type_name()
+pub fn[T : Asset] AssetServer::add(self : AssetServer, asset : T) -> Handle[T] {
+  let type_name = assets_type_name((None : T?))
   let handle : Handle[T] = Handle::new(
     self.reserve_typed_asset_handle_id(type_name),
   )
@@ -568,15 +561,14 @@ pub fn[P : IntoAssetPath] AssetServer::load_image_direct(
 }
 
 ///|
-pub fn[T, P : IntoAssetPath] AssetServer::load_direct(
+pub fn[T : Asset, P : IntoAssetPath] AssetServer::load_direct(
   self : AssetServer,
   path : P,
   bytes : Bytes,
 ) -> T {
   asset_with_server_world(self, fn() {
     let parsed_path = path.into_asset_path()
-    let probe : Assets[T] = Assets::new()
-    let type_name = @any.of(probe).type_name()
+    let type_name = assets_type_name((None : T?))
     let registry = typed_asset_loader_registry_active()
 
     let context = match asset_current_world() {
@@ -586,7 +578,7 @@ pub fn[T, P : IntoAssetPath] AssetServer::load_direct(
 
     match typed_asset_loader_entry_for_path(registry, type_name, parsed_path) {
       Some(entry) =>
-        match (entry.load)(context, bytes).try_to() {
+        match T::from_ecs_payload((entry.load)(context, bytes)) {
           Some(value) => value
           None =>
             abort(

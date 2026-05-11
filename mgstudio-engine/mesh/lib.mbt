@@ -213,3 +213,13 @@ pub struct Mesh {
   geometry : MeshGeometry
   mut skinned_mesh_bounds : SkinnedMeshBounds?
 }
+
+///|
+pub impl @asset.Asset for Mesh with asset_debug_name() {
+  "mgstudio_mesh::Mesh"
+}
+
+///|
+pub impl @asset.Asset for Mesh with asset_as_image(_self) {
+  None
+}

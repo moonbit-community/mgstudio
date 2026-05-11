@@ -40,6 +40,11 @@ pub impl Default for Virtual with default() {
 }
 
 ///|
+pub impl TimeContext for Virtual with time_context_debug_name() {
+  "mgstudio_time::Virtual"
+}
+
+///|
 pub fn Time::from_max_delta(max_delta : @core.Duration) -> Time[Virtual] {
   let virtual_time : Time[Virtual] = Time::default()
   virtual_time.set_max_delta(max_delta)

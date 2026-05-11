@@ -55,23 +55,14 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClipEvent::new_typed(
   event : T,
 ) -> AnimationClipEvent {
   event.animation_event_marker()
-  let payload = @any.of(event)
   let trigger : AnimationEventTriggerFn = fn(
     world : @ecs.World,
     entity : @core.Entity,
     _time : Float,
     _weight : Float,
   ) {
-    match payload.try_to() {
-      Some(event_value) => {
-        let event_value = T::set_observer_entity(event_value, entity)
-        world.trigger(
-          event_value,
-          caller=Some("mgstudio.animation.trigger_events"),
-        )
-      }
-      None => abort("animation clip typed event payload type mismatch")
-    }
+    let event_value = T::set_observer_entity(event, entity)
+    world.trigger(event_value, caller=Some("mgstudio.animation.trigger_events"))
   }
   AnimationClipEvent::{ time, label: "", payload: "", trigger: Some(trigger) }
 }

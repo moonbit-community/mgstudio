@@ -56,9 +56,7 @@ fn animation_current_world_or_abort() -> @ecs.World {
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] animation_asset_store_or_abort() -> @asset.Assets[
-  T,
-] {
+fn[T : @asset.Asset] animation_asset_store_or_abort() -> @asset.Assets[T] {
   let world = animation_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
   match (try! world.get_resource(key)) {
@@ -71,7 +69,7 @@ fn[T : @ecs.EcsPayloadCodec] animation_asset_store_or_abort() -> @asset.Assets[
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] animation_asset_store_mut_or_abort() -> @ecs.ResourceMut[
+fn[T : @asset.Asset] animation_asset_store_mut_or_abort() -> @ecs.ResourceMut[
   @asset.Assets[T],
 ] {
   let world = animation_current_world_or_abort()

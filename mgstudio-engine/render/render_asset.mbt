@@ -53,35 +53,35 @@ pub struct RenderAssets[A] {
 }
 
 ///|
-let render_assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref(
+pub(open) trait RenderAssetResource: @ecs.EcsPayloadCodec {
+  render_asset_resource_debug_name() -> String
+}
+
+///|
+let render_assets_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
   @hashmap.HashMap([]),
 )
 
 ///|
-pub fn[A] RenderAssets::resource() -> @ecs.ResourceKey[RenderAssets[A]] {
-  let probe : RenderAssets[A] = RenderAssets::new()
-  let type_name = @any.of(probe).type_name()
+pub fn[A : RenderAssetResource] RenderAssets::resource() -> @ecs.ResourceKey[
+  RenderAssets[A],
+] {
+  let type_name = "RenderAssets<\{A::render_asset_resource_debug_name()}>"
   match render_assets_resource_registry.val.get(type_name) {
-    Some(existing_key) =>
-      match existing_key.try_to() {
-        Some(key) => key
-        None =>
-          abort(
-            "render assets resource registry contained a mismatched key for \{type_name}",
-          )
-      }
+    Some(id) =>
+      @ecs.resource_key_from_id(id, debug_name="mgstudio_render::\{type_name}")
     None => {
       let key : @ecs.ResourceKey[RenderAssets[A]] = @ecs.register_resource(
-        debug_name="mgstudio_render::RenderAssets<\{type_name}>",
+        debug_name="mgstudio_render::\{type_name}",
       )
-      render_assets_resource_registry.val.set(type_name, @any.of(key))
+      render_assets_resource_registry.val.set(type_name, key.id())
       key
     }
   }
 }
 
 ///|
-pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for RenderAssets[A] with resource() {
+pub impl[A : RenderAssetResource] @app.Resource for RenderAssets[A] with resource() {
   RenderAssets::resource()
 }
 
@@ -195,7 +195,7 @@ pub fn[A] PrepareNextFrameAssets::push(
 }
 
 ///|
-pub fn[A] prepare_render_assets_resource_key() -> @ecs.ResourceKey[
+pub fn[A : RenderAssetResource] prepare_render_assets_resource_key() -> @ecs.ResourceKey[
   RenderAssets[A],
 ] {
   RenderAssets::resource()

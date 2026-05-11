@@ -28,6 +28,31 @@ struct CameraBundleCustomProjection3d {
 }
 
 ///|
+extenum @ecs.EcsPayload += {
+  EcsPayload_pbr_camera_bundle_test_CameraBundleCustomProjection3d(
+    CameraBundleCustomProjection3d
+  )
+}
+
+///|
+impl @ecs.EcsPayloadCodec for CameraBundleCustomProjection3d with to_ecs_payload(
+  self,
+) {
+  EcsPayload_pbr_camera_bundle_test_CameraBundleCustomProjection3d(self)
+}
+
+///|
+impl @ecs.EcsPayloadCodec for CameraBundleCustomProjection3d with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_pbr_camera_bundle_test_CameraBundleCustomProjection3d(value) =>
+      Some(value)
+    _ => None
+  }
+}
+
+///|
 impl CameraProjection3d for CameraBundleCustomProjection3d with get_clip_from_view(
   self,
 ) {

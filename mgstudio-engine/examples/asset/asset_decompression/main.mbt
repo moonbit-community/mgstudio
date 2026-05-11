@@ -19,6 +19,16 @@ struct GzAsset {
 }
 
 ///|
+impl @asset.Asset for GzAsset with asset_debug_name() {
+  "examples.asset.asset_decompression.GzAsset"
+}
+
+///|
+impl @asset.Asset for GzAsset with asset_as_image(_self) {
+  None
+}
+
+///|
 struct CompressedImage {
   compressed : @asset.Handle[GzAsset]
 }
