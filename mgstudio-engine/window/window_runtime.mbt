@@ -477,6 +477,22 @@ fn window_uses_physical_request_on_create(
 }
 
 ///|
+fn window_should_reapply_physical_size_after_create(
+  window : Window,
+  observed_width : Int,
+  observed_height : Int,
+) -> Bool {
+  if window.resolution.scale_factor_override() is None {
+    return false
+  }
+  let requested_width = window.physical_width()
+  let requested_height = window.physical_height()
+  requested_width > 0 &&
+  requested_height > 0 &&
+  (observed_width != requested_width || observed_height != requested_height)
+}
+
+///|
 fn window_current_cursor_options(
   world : @ecs.World,
   entity : @core.Entity,
@@ -817,6 +833,17 @@ fn window_create_runtime_for_entity(
   }
   if cursor_icon is Some(cursor_icon0) {
     host_window_set_cursor_icon(host_window, icon=cursor_icon0)
+  }
+  let initial_observed_width = host_window_get_width(host_window)
+  let initial_observed_height = host_window_get_height(host_window)
+  if window_should_reapply_physical_size_after_create(
+      window, initial_observed_width, initial_observed_height,
+    ) {
+    host_window_set_size(
+      host_window,
+      width=window.physical_width(),
+      height=window.physical_height(),
+    )
   }
   let observed_width = host_window_get_width(host_window)
   let observed_height = host_window_get_height(host_window)

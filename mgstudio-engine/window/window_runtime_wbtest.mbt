@@ -40,6 +40,30 @@ test "window runtime: create forces physical request only when override exists" 
 }
 
 ///|
+test "window runtime: scale override reapplies requested physical size after create" {
+  let window = Window::default()
+  window.resolution = WindowResolution::new(1920, 1080).with_scale_factor_override(
+    1.0F,
+  )
+
+  debug_inspect(
+    window_should_reapply_physical_size_after_create(window, 3456, 1924),
+    content="true",
+  )
+  debug_inspect(
+    window_should_reapply_physical_size_after_create(window, 1920, 1080),
+    content="false",
+  )
+
+  let logical_window = Window::default()
+  logical_window.resolution = WindowResolution::new(1920, 1080)
+  debug_inspect(
+    window_should_reapply_physical_size_after_create(logical_window, 3456, 1924),
+    content="false",
+  )
+}
+
+///|
 test "window runtime: scale-factor change detection follows relative-epsilon semantics" {
   debug_inspect(
     window_scale_factor_significantly_changed(1.0F, 1.0000005F),
