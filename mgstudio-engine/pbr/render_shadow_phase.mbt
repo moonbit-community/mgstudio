@@ -13,12 +13,6 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::Shadow`.
-// This is intentionally small for the first migration step: it owns shadow
-// caster filtering and item identity before the draw loop is moved to a real
-// binned render phase.
-
-///|
 const SHADOW_PIPELINE_KIND_DEPTH_ONLY : Int = 0
 
 ///|
@@ -119,7 +113,6 @@ fn render3d_shadow_batch_set_key(
 
 ///|
 fn render3d_shadow_material_may_discard(alpha_mode : AlphaMode3d) -> Bool {
-  // Bevy source: `bevy_pbr/src/render/light.rs::specialize_shadows`.
   // `MeshPipelineKey::MAY_DISCARD` selects the material shadow draw function
   // instead of the depth-only draw function for these alpha modes.
   match alpha_mode {
@@ -347,6 +340,6 @@ fn render3d_execute_shadow_phase_view(
     pass_kind~,
     entries=shadow_draw_entries,
   )
-  render3d_draw_mesh_gpu_payloads_batched(shadow_payloads)
+  render3d_draw_mesh_gpu_binned_phase(shadow_payloads)
   @render.host_gpu_end_pass()
 }

@@ -120,115 +120,6 @@ fn render3d_draw_gizmo_lines_3d(
 }
 
 ///|
-fn render3d_multidraw_payloads_compatible(
-  first : @pbr_render.MeshGpuDrawPayload3d,
-  next : @pbr_render.MeshGpuDrawPayload3d,
-) -> Bool {
-  if first.indirect_kind != next.indirect_kind {
-    return false
-  }
-  let indirect_rows_compatible = if first.indirect_kind ==
-    MESH3D_DRAW_INDIRECT_KIND_NONE {
-    true
-  } else {
-    first.indirect_parameters_index + 1 == next.indirect_parameters_index
-  }
-  first.mesh_id == next.mesh_id &&
-  first.preprocess_camera_key_hi == next.preprocess_camera_key_hi &&
-  first.preprocess_camera_key_lo == next.preprocess_camera_key_lo &&
-  first.draw_storage_index + 1 == next.draw_storage_index &&
-  indirect_rows_compatible &&
-  first.texture_id == next.texture_id &&
-  first.normal_texture_id == next.normal_texture_id &&
-  first.emissive_texture_id == next.emissive_texture_id &&
-  first.metallic_roughness_texture_id == next.metallic_roughness_texture_id &&
-  first.occlusion_texture_id == next.occlusion_texture_id &&
-  first.depth_texture_id == next.depth_texture_id &&
-  first.anisotropy_texture_id == next.anisotropy_texture_id &&
-  first.specular_tint_texture_id == next.specular_tint_texture_id &&
-  first.material_flags == next.material_flags &&
-  first.cull_mode == next.cull_mode &&
-  first.vertex_shader_path == next.vertex_shader_path &&
-  first.fragment_shader_path == next.fragment_shader_path &&
-  first.point_shadow_texture_id == next.point_shadow_texture_id &&
-  first.point_shadow_enabled == next.point_shadow_enabled &&
-  first.point_shadow_depth_bias == next.point_shadow_depth_bias &&
-  first.environment_diffuse_texture_id == next.environment_diffuse_texture_id &&
-  first.environment_specular_texture_id == next.environment_specular_texture_id &&
-  first.environment_map_intensity == next.environment_map_intensity &&
-  first.environment_map_rotation.x == next.environment_map_rotation.x &&
-  first.environment_map_rotation.y == next.environment_map_rotation.y &&
-  first.environment_map_rotation.z == next.environment_map_rotation.z &&
-  first.environment_map_rotation.w == next.environment_map_rotation.w &&
-  first.mesh_flags == next.mesh_flags &&
-  (first.skinning_key_hi >= 0) == (next.skinning_key_hi >= 0) &&
-  first.color_r == next.color_r &&
-  first.color_g == next.color_g &&
-  first.color_b == next.color_b &&
-  first.color_a == next.color_a &&
-  first.uv_transform.a == next.uv_transform.a &&
-  first.uv_transform.b == next.uv_transform.b &&
-  first.uv_transform.c == next.uv_transform.c &&
-  first.uv_transform.d == next.uv_transform.d &&
-  first.uv_transform.tx == next.uv_transform.tx &&
-  first.uv_transform.ty == next.uv_transform.ty &&
-  first.emissive.r == next.emissive.r &&
-  first.emissive.g == next.emissive.g &&
-  first.emissive.b == next.emissive.b &&
-  first.emissive_exposure_weight == next.emissive_exposure_weight &&
-  first.metallic == next.metallic &&
-  first.surface_roughness == next.surface_roughness &&
-  first.reflectance == next.reflectance &&
-  first.parallax_depth_scale == next.parallax_depth_scale &&
-  first.max_parallax_layer_count == next.max_parallax_layer_count &&
-  first.max_relief_mapping_search_steps == next.max_relief_mapping_search_steps &&
-  first.anisotropy_strength == next.anisotropy_strength &&
-  first.anisotropy_rotation == next.anisotropy_rotation &&
-  first.specular_tint.r == next.specular_tint.r &&
-  first.specular_tint.g == next.specular_tint.g &&
-  first.specular_tint.b == next.specular_tint.b &&
-  first.diffuse_transmission == next.diffuse_transmission &&
-  first.specular_transmission == next.specular_transmission &&
-  first.thickness == next.thickness &&
-  first.ior == next.ior &&
-  first.attenuation_color.r == next.attenuation_color.r &&
-  first.attenuation_color.g == next.attenuation_color.g &&
-  first.attenuation_color.b == next.attenuation_color.b &&
-  first.attenuation_distance == next.attenuation_distance &&
-  first.clearcoat == next.clearcoat &&
-  first.clearcoat_perceptual_roughness == next.clearcoat_perceptual_roughness &&
-  first.alpha_cutoff == next.alpha_cutoff &&
-  first.lightmap_exposure == next.lightmap_exposure &&
-  first.deferred_lighting_pass_id == next.deferred_lighting_pass_id &&
-  first.transmission_source_texture_id == next.transmission_source_texture_id &&
-  first.transmission_blur_taps == next.transmission_blur_taps &&
-  first.transmission_steps == next.transmission_steps
-}
-
-///|
-fn render3d_draw_mesh_gpu_payloads_batched(
-  payloads : Array[@pbr_render.MeshGpuDrawPayload3d],
-) -> Unit {
-  let mut index = 0
-  while index < payloads.length() {
-    let first = payloads[index]
-    let mut count = 1
-    while index + count < payloads.length() &&
-          render3d_multidraw_payloads_compatible(
-            payloads[index + count - 1],
-            payloads[index + count],
-          ) {
-      count += 1
-    }
-    @pbr_render.render3d_draw_mesh_gpu_payload(@pbr_render.MeshGpuDrawPayload3d::{
-      ..first,
-      indirect_draw_count: count,
-    })
-    index += count
-  }
-}
-
-///|
 fn render3d_execute_camera_main_pass(
   world : @ecs.World,
   camera_entity : @core.Entity,
@@ -732,7 +623,7 @@ fn render3d_execute_camera_main_pass(
     pass_kind=scene_pass_kind,
     entries=batched_draw_entries,
   )
-  render3d_draw_mesh_gpu_payloads_batched(main_pass_draws)
+  render3d_draw_mesh_gpu_binned_phase(main_pass_draws)
   render3d_draw_gizmo_lines_3d(camera_entity, camera)
   render3d_draw_camera_skybox(
     world,
