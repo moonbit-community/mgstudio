@@ -24,6 +24,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   draw_storage_index : Int,
   indirect_kind : Int,
   indirect_parameters_index : Int,
+  indirect_draw_count : Int,
   x : Float,
   y : Float,
   z : Float,
@@ -131,13 +132,20 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   let mut draw_bind_group : @wgpu.BindGroup? = None
   let mut draw_write_offset = 0UL
   let mut draw_index = 0U
-  if self.mesh3d_gpu_instance_builder_enabled || use_indirect {
+  if draw_storage_index >= 0 ||
+    self.mesh3d_gpu_instance_builder_enabled ||
+    use_indirect {
     let desired_draw_index = if draw_storage_index >= 0 {
       draw_storage_index
     } else {
       self.mesh3d_instance_draw_used / MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()
     }
-    let next_used_int = (desired_draw_index + 1) *
+    let draw_count = if indirect_draw_count <= 0 {
+      1
+    } else {
+      indirect_draw_count
+    }
+    let next_used_int = (desired_draw_index + draw_count) *
       MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()
     if next_used_int < 0 {
       return
@@ -339,14 +347,17 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   guard draw_buffer is Some(active_draw_buffer) else { return }
   guard draw_bind_group is Some(active_draw_bg) else { return }
   ignore(skinning_key_lo)
-  let draw_preuploaded = (
-      self.mesh3d_gpu_instance_builder_enabled || use_indirect
-    ) &&
-    draw_storage_index >= 0 &&
-    self.mesh3d_prepared_draw_pass_kind == pass_kind &&
+  let draw_preuploaded = draw_storage_index >= 0 &&
+    self.mesh3d_prepared_draw_pass_kind == ps.pass_kind &&
     self.mesh3d_prepared_draw_camera_key_hi == preprocess_camera_key_hi &&
     self.mesh3d_prepared_draw_camera_key_lo == preprocess_camera_key_lo &&
     draw_storage_index < self.mesh3d_prepared_draw_count
+  if !use_indirect &&
+    draw_storage_index >= 0 &&
+    indirect_draw_count > 1 &&
+    !draw_preuploaded {
+    return
+  }
   if !draw_preuploaded {
     let draw_bytes = mesh3d_draw_uniform_bytes(
       x,
@@ -452,27 +463,54 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     if indirect_kind == MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED &&
       preprocess_state.non_indexed_indirect_parameters_buffer
       is Some(non_indexed_indirect_parameters_buffer) {
-      pass.draw_indirect(
-        non_indexed_indirect_parameters_buffer,
-        mesh3d_non_indexed_indirect_offset(indirect_parameters_index),
-      )
+      if indirect_draw_count > 1 {
+        pass.multi_draw_indirect(
+          non_indexed_indirect_parameters_buffer,
+          mesh3d_non_indexed_indirect_offset(indirect_parameters_index),
+          indirect_draw_count.reinterpret_as_uint(),
+        )
+      } else {
+        pass.draw_indirect(
+          non_indexed_indirect_parameters_buffer,
+          mesh3d_non_indexed_indirect_offset(indirect_parameters_index),
+        )
+      }
       return
     }
     if indirect_kind == MESH3D_DRAW_INDIRECT_KIND_INDEXED &&
       preprocess_state.indexed_indirect_parameters_buffer
       is Some(indexed_indirect_parameters_buffer) {
       gpu_mesh_bind_index_buffer(pass, mesh)
-      pass.draw_indexed_indirect(
-        indexed_indirect_parameters_buffer,
-        mesh3d_indexed_indirect_offset(indirect_parameters_index),
-      )
+      if indirect_draw_count > 1 {
+        pass.multi_draw_indexed_indirect(
+          indexed_indirect_parameters_buffer,
+          mesh3d_indexed_indirect_offset(indirect_parameters_index),
+          indirect_draw_count.reinterpret_as_uint(),
+        )
+      } else {
+        pass.draw_indexed_indirect(
+          indexed_indirect_parameters_buffer,
+          mesh3d_indexed_indirect_offset(indirect_parameters_index),
+        )
+      }
       return
     }
   }
   if mesh.primitive_topology == MESH3D_TOPOLOGY_LINE_STRIP {
-    pass.draw(mesh.vertex_count, 1U, 0U, draw_index)
+    pass.draw(
+      mesh.vertex_count,
+      indirect_draw_count.reinterpret_as_uint(),
+      0U,
+      draw_index,
+    )
   } else {
     gpu_mesh_bind_index_buffer(pass, mesh)
-    pass.draw_indexed(mesh.index_count, 1U, 0U, 0, draw_index)
+    pass.draw_indexed(
+      mesh.index_count,
+      indirect_draw_count.reinterpret_as_uint(),
+      0U,
+      0,
+      draw_index,
+    )
   }
 }

@@ -110,6 +110,11 @@ fn render3d_execute_camera(
   )
   scene_target_id = scene_target_id_next
   velocity_target_id = velocity_target_id_next
+  ignore(
+    @render.host_gpu_reserve_mesh3d_draw_storage(
+      count=draw_queue_entry.draw_items.length(),
+    ),
+  )
   let point_shadow_binding = render3d_execute_camera_point_shadow_pass(
     world, camera, pass_lighting, point_light_shadow_map_size, camera_entity, meshes,
     point_shadow_pass_kind,

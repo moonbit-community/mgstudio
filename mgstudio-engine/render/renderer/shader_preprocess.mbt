@@ -50,13 +50,6 @@ fn bytes_fixed_staging_make(len : Int) -> FixedArray[Byte] {
 }
 
 ///|
-fn bytes_fixed_staging_zero(staging : FixedArray[Byte]) -> Unit {
-  for i in 0..<staging.length() {
-    staging[i] = (0).to_byte()
-  }
-}
-
-///|
 fn u32le_write_into(
   bytes : Array[Byte],
   byte_offset : Int,

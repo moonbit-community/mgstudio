@@ -1164,6 +1164,11 @@ pub fn host_gpu_prepare_mesh3d_main_pass_draw_batch(
 }
 
 ///|
+pub fn host_gpu_reserve_mesh3d_draw_storage(count~ : Int) -> Int {
+  @renderer.reserve_mesh3d_draw_storage(count~)
+}
+
+///|
 pub fn host_gpu_draw_mesh3d(
   mesh_id~ : Int,
   preprocess_camera_key_hi? : Int = 0,
@@ -1171,6 +1176,7 @@ pub fn host_gpu_draw_mesh3d(
   draw_storage_index? : Int = -1,
   indirect_kind? : Int = 0,
   indirect_parameters_index? : Int = -1,
+  indirect_draw_count? : Int = 1,
   x~ : Float,
   y~ : Float,
   z~ : Float,
@@ -1267,6 +1273,7 @@ pub fn host_gpu_draw_mesh3d(
     draw_storage_index~,
     indirect_kind~,
     indirect_parameters_index~,
+    indirect_draw_count~,
     x~,
     y~,
     z~,

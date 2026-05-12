@@ -271,19 +271,26 @@ fn render3d_execute_shadow_phase_view(
     camera_entity,
     phase_view.shadow_view.light_entity,
   )
+  let shadow_payloads : Array[@pbr_render.MeshGpuDrawPayload3d] = []
+  let draw_storage_base = @render.host_gpu_reserve_mesh3d_draw_storage(
+    count=phase_view.items.length(),
+  )
+  if draw_storage_base < 0 && phase_view.items.length() > 0 {
+    @render.host_gpu_end_pass()
+    return
+  }
+  let mut draw_storage_offset = 0
   for shadow_phase_item in phase_view.items {
     ignore(render3d_shadow_phase_item_debug_key(shadow_phase_item))
     let extracted_shadow_mesh = meshes[shadow_phase_item.extracted_index]
     let shadow_mesh = extracted_shadow_mesh.payload
-    @pbr_render.render3d_draw_mesh_gpu_payload(
+    let draw_storage_index = draw_storage_base + draw_storage_offset
+    shadow_payloads.push(
       @pbr_render.render3d_build_mesh_gpu_draw_payload(
         shadow_mesh.mesh_id,
         shadow_view_key_hi,
         shadow_view_key_lo,
-        // Shadow views are encoded before queue submission, so reusing a
-        // phase-local slot across cascades lets later writes overwrite earlier
-        // passes. Append a fresh draw slot for each shadow draw.
-        -1,
+        draw_storage_index,
         MESH3D_DRAW_INDIRECT_KIND_NONE,
         -1,
         shadow_mesh.material,
@@ -326,6 +333,20 @@ fn render3d_execute_shadow_phase_view(
         skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
       ),
     )
+    draw_storage_offset += 1
   }
+  let shadow_draw_entries : Array[@render.HostMesh3dMainPassDrawEntry] = []
+  for payload in shadow_payloads {
+    shadow_draw_entries.push(
+      @pbr_render.render3d_host_main_pass_draw_entry(payload),
+    )
+  }
+  @render.host_gpu_prepare_mesh3d_main_pass_draw_batch(
+    preprocess_camera_key_hi=shadow_view_key_hi,
+    preprocess_camera_key_lo=shadow_view_key_lo,
+    pass_kind~,
+    entries=shadow_draw_entries,
+  )
+  render3d_draw_mesh_gpu_payloads_batched(shadow_payloads)
   @render.host_gpu_end_pass()
 }

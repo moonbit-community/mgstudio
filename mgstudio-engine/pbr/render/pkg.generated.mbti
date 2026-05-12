@@ -722,6 +722,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   draw_storage_index : Int
   indirect_kind : Int
   indirect_parameters_index : Int
+  indirect_draw_count : Int
   transform : @transform.Transform
   previous_transform : @transform.Transform
   color_r : Float

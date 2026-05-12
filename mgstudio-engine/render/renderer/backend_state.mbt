@@ -185,8 +185,6 @@ pub struct GpuBackend {
   mut mesh3d_instance_draw_capacity : UInt64
   mut mesh3d_instance_draw_skin_revision : Int
   mut mesh3d_instance_draw_used : Int
-  mut mesh3d_instance_draw_staging_bytes : FixedArray[Byte]
-  mut mesh3d_instance_draw_staging_view : Bytes
   mut mesh3d_prepared_draw_camera_key_hi : Int
   mut mesh3d_prepared_draw_camera_key_lo : Int
   mut mesh3d_prepared_draw_pass_kind : Int

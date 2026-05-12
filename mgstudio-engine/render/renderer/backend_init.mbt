@@ -252,8 +252,6 @@ pub fn GpuBackend::new(
     mesh3d_instance_draw_capacity: 0UL,
     mesh3d_instance_draw_skin_revision: -1,
     mesh3d_instance_draw_used: 0,
-    mesh3d_instance_draw_staging_bytes: [],
-    mesh3d_instance_draw_staging_view: [],
     mesh3d_prepared_draw_camera_key_hi: -1,
     mesh3d_prepared_draw_camera_key_lo: -1,
     mesh3d_prepared_draw_pass_kind: -1,

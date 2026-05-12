@@ -20,6 +20,37 @@ pub fn set_mesh3d_gpu_instance_builder_enabled(enabled : Bool) -> Unit {
 }
 
 ///|
+pub fn GpuBackend::reserve_mesh3d_draw_storage(
+  self : GpuBackend,
+  count : Int,
+) -> Int {
+  if count <= 0 {
+    return -1
+  }
+  let base = self.mesh3d_instance_draw_used /
+    MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()
+  let next_used_int = (base + count) * MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()
+  if next_used_int < 0 {
+    return -1
+  }
+  guard self.ensure_mesh3d_instance_draw_binding(next_used_int.to_uint64())
+    is Some(_) else {
+    return -1
+  }
+  self.mesh3d_instance_draw_used = next_used_int
+  base
+}
+
+///|
+pub fn reserve_mesh3d_draw_storage(count~ : Int) -> Int {
+  if ensure_backend() is Some(backend) {
+    backend.reserve_mesh3d_draw_storage(count)
+  } else {
+    -1
+  }
+}
+
+///|
 pub fn prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.prepare_mesh3d_skin_bindings(skinning_rows)
@@ -391,13 +422,22 @@ pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(
   self.mesh3d_prepared_draw_camera_key_lo = -1
   self.mesh3d_prepared_draw_pass_kind = -1
   self.mesh3d_prepared_draw_count = 0
+  let mut min_draw_storage_index = -1
   let mut max_draw_storage_index = -1
   for entry in entries {
+    if entry.draw_storage_index >= 0 &&
+      (
+        min_draw_storage_index < 0 ||
+        entry.draw_storage_index < min_draw_storage_index
+      ) {
+      min_draw_storage_index = entry.draw_storage_index
+    }
     if entry.draw_storage_index > max_draw_storage_index {
       max_draw_storage_index = entry.draw_storage_index
     }
   }
-  if max_draw_storage_index < 0 {
+  if min_draw_storage_index < 0 ||
+    max_draw_storage_index < min_draw_storage_index {
     return
   }
   let required_size = (max_draw_storage_index + 1).to_uint64() *
@@ -406,40 +446,36 @@ pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(
     is Some((draw_buffer, _draw_bind_group)) else {
     return
   }
-  let packed_len = required_size.to_int()
+  let packed_len = (max_draw_storage_index - min_draw_storage_index + 1) *
+    MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()
   if packed_len <= 0 {
     return
   }
-  if self.mesh3d_instance_draw_staging_bytes.length() != packed_len {
-    self.mesh3d_instance_draw_staging_bytes = bytes_fixed_staging_make(
-      packed_len,
-    )
-    self.mesh3d_instance_draw_staging_view = self.mesh3d_instance_draw_staging_bytes.unsafe_reinterpret_as_bytes()
-  }
-  bytes_fixed_staging_zero(self.mesh3d_instance_draw_staging_bytes)
+  let staging_bytes = bytes_fixed_staging_make(packed_len)
   for entry in entries {
     if entry.draw_storage_index < 0 {
       continue
     }
-    let base = entry.draw_storage_index *
+    let base = (entry.draw_storage_index - min_draw_storage_index) *
       MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()
-    guard self.write_mesh3d_main_pass_draw_entry(
-      self.mesh3d_instance_draw_staging_bytes,
-      base,
-      entry,
-    ) else {
+    guard self.write_mesh3d_main_pass_draw_entry(staging_bytes, base, entry) else {
       continue
     }
   }
   self.queue.write_buffer(
     draw_buffer,
-    0UL,
-    self.mesh3d_instance_draw_staging_view,
+    min_draw_storage_index.to_uint64() * MESH3D_DRAW_STORAGE_STRIDE_BYTES,
+    staging_bytes.unsafe_reinterpret_as_bytes(),
   )
   self.mesh3d_prepared_draw_camera_key_hi = preprocess_camera_key_hi
   self.mesh3d_prepared_draw_camera_key_lo = preprocess_camera_key_lo
   self.mesh3d_prepared_draw_pass_kind = pass_kind
   self.mesh3d_prepared_draw_count = max_draw_storage_index + 1
+  let next_used_int = (max_draw_storage_index + 1) *
+    MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()
+  if self.mesh3d_instance_draw_used < next_used_int {
+    self.mesh3d_instance_draw_used = next_used_int
+  }
 }
 
 ///|
@@ -805,6 +841,7 @@ pub fn draw_mesh3d(
   draw_storage_index? : Int = -1,
   indirect_kind? : Int = 0,
   indirect_parameters_index? : Int = -1,
+  indirect_draw_count? : Int = 1,
   x~ : Float,
   y~ : Float,
   z~ : Float,
@@ -903,6 +940,7 @@ pub fn draw_mesh3d(
       draw_storage_index,
       indirect_kind,
       indirect_parameters_index,
+      indirect_draw_count,
       x,
       y,
       z,

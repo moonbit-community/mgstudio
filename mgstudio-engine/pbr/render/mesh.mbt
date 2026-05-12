@@ -161,6 +161,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   draw_storage_index : Int
   indirect_kind : Int
   indirect_parameters_index : Int
+  indirect_draw_count : Int
   transform : @transform.Transform
   previous_transform : @transform.Transform
   color_r : Float
@@ -286,6 +287,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     draw_storage_index,
     indirect_kind,
     indirect_parameters_index,
+    indirect_draw_count: 1,
     transform,
     previous_transform,
     color_r: draw_color_r,
@@ -424,6 +426,7 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     draw_storage_index=payload.draw_storage_index,
     indirect_kind=payload.indirect_kind,
     indirect_parameters_index=payload.indirect_parameters_index,
+    indirect_draw_count=payload.indirect_draw_count,
     x=payload.transform.translation.x,
     y=payload.transform.translation.y,
     z=payload.transform.translation.z,
