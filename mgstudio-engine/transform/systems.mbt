@@ -88,13 +88,52 @@ priv struct TransformPropagationStackItem {
 }
 
 ///|
+priv struct TransformPropagationTableColumns {
+  transform : @ecs.ComponentTableColumn[Transform]?
+  global : @ecs.ComponentTableColumn[GlobalTransform]?
+  tree_changed : @ecs.ComponentTableColumn[TransformTreeChanged]?
+  children : @ecs.ComponentTableColumn[@hierarchy.Children]?
+  parent : @ecs.ComponentTableColumn[@hierarchy.Parent]?
+}
+
+///|
 priv struct TransformPropagationScratch {
   dense_stack : Array[TransformPropagationStackItem]
+  table_columns : Array[TransformPropagationTableColumns?]
 }
 
 ///|
 fn transform_propagation_scratch_default() -> TransformPropagationScratch {
-  { dense_stack: [] }
+  { dense_stack: [], table_columns: [] }
+}
+
+///|
+fn transform_propagation_table_columns(
+  columns : TransformPropagationColumns,
+  scratch : TransformPropagationScratch,
+  table_id : Int,
+) -> TransformPropagationTableColumns? {
+  guard table_id >= 0 else { return None }
+  while scratch.table_columns.length() <= table_id {
+    scratch.table_columns.push(None)
+  }
+  match scratch.table_columns[table_id] {
+    Some(table_columns) => Some(table_columns)
+    None => {
+      let table_columns = TransformPropagationTableColumns::{
+        transform: columns.transform.table_column(table_id),
+        global: columns.global.table_column(table_id),
+        tree_changed: columns.tree_changed.table_column(table_id),
+        children: columns.children.table_column(table_id),
+        parent: match columns.parent {
+          Some(parent_column) => parent_column.table_column(table_id)
+          None => None
+        },
+      }
+      scratch.table_columns[table_id] = Some(table_columns)
+      Some(table_columns)
+    }
+  }
 }
 
 ///|
@@ -385,8 +424,7 @@ fn transform_propagation_columns(
 
 ///|
 fn transform_set_global_hot_at_row(
-  columns : TransformPropagationColumns,
-  table_id : Int,
+  global_column : @ecs.ComponentTableColumn[GlobalTransform],
   row_index : Int,
   next_global : GlobalTransform,
   sequence : @core.Sequence,
@@ -394,9 +432,29 @@ fn transform_set_global_hot_at_row(
   if row_index < 0 {
     return false
   }
-  columns.global.set_sequence_only_hot_at_table_row_value(
-    table_id, row_index, next_global, sequence,
-  )
+  match global_column.value_at_row_unchecked(row_index) {
+    Some(current_global) => {
+      current_global.set_from(next_global)
+      global_column.record_changed_at_row(row_index, sequence)
+    }
+    None =>
+      global_column.set_sequence_only_hot_at_row(
+        row_index, next_global, sequence,
+      )
+  }
+}
+
+///|
+fn transform_table_tree_changed_at_row(
+  table_columns : TransformPropagationTableColumns,
+  row_index : Int,
+  system_sequence : @core.SystemSequence,
+) -> Bool {
+  match table_columns.tree_changed {
+    Some(tree_changed_column) =>
+      tree_changed_column.is_changed_at_row(row_index, system_sequence)
+    None => false
+  }
 }
 
 ///|
@@ -441,49 +499,61 @@ fn propagate_descendants_dense(
     if table_id < 0 || row_index < 0 {
       continue
     }
+    guard transform_propagation_table_columns(columns, scratch, table_id)
+      is Some(table_columns) else {
+      continue
+    }
     if static_optimizations_enabled &&
       !stack_item.parent_global_changed &&
-      !columns.tree_changed.table_is_changed_at_row(
-        table_id, row_index, system_sequence,
+      !transform_table_tree_changed_at_row(
+        table_columns, row_index, system_sequence,
       ) {
       continue
     }
-    guard columns.transform.table_value_at_row(table_id, row_index)
+    guard table_columns.transform is Some(transform_column) else { continue }
+    guard transform_column.value_at_row_unchecked(row_index)
       is Some(local_transform) else {
       continue
     }
-    guard columns.parent is Some(parent_column) else { continue }
-    guard parent_column.table_value_at_row(table_id, row_index)
-      is Some(parent_value) else {
+    guard table_columns.parent is Some(parent_column) else { continue }
+    guard parent_column.value_at_row_unchecked(row_index) is Some(parent_value) else {
       continue
     }
     if !entity_eq(parent_value.entity(), stack_item.parent) {
       transform_abort_malformed_hierarchy()
     }
-    let child_global = stack_item.parent_global.mul_transform(local_transform)
-    let child_global_changed = transform_set_global_hot_at_row(
-      columns, table_id, row_index, child_global, sequence,
+    guard table_columns.global is Some(global_column) else { continue }
+    guard global_column.value_at_row_unchecked(row_index) is Some(child_global) else {
+      continue
+    }
+    child_global.set_mul_transform(stack_item.parent_global, local_transform)
+    let child_global_changed = global_column.record_changed_at_row(
+      row_index, sequence,
     )
-    match columns.children.table_value_at_row(table_id, row_index) {
-      Some(grand_children) => {
-        let grandchildren = grand_children.entities()
-        for index in 0..<grandchildren.length() {
-          let reverse_index = grandchildren.length() - 1 - index
-          let (grandchild_table_id, grandchild_row_index) = match
-            grand_children.entity_table_row_cached(_world, reverse_index) {
-            Some(location) => location
-            None => (-1, -1)
+    match table_columns.children {
+      Some(children_column) =>
+        match children_column.value_at_row_unchecked(row_index) {
+          Some(grand_children) => {
+            let grandchildren = grand_children.entities()
+            for index in 0..<grandchildren.length() {
+              let reverse_index = grandchildren.length() - 1 - index
+              let (table_id, row_index) = match
+                grand_children.entity_table_row_cached(_world, reverse_index) {
+                Some(location) => location
+                None => (-1, -1)
+              }
+              scratch.dense_stack.push(TransformPropagationStackItem::{
+                entity: grandchildren[reverse_index],
+                table_id,
+                row_index,
+                parent: child,
+                parent_global: child_global,
+                parent_global_changed: child_global_changed,
+              })
+            }
           }
-          scratch.dense_stack.push(TransformPropagationStackItem::{
-            entity: grandchildren[reverse_index],
-            table_id: grandchild_table_id,
-            row_index: grandchild_row_index,
-            parent: child,
-            parent_global: child_global,
-            parent_global_changed: child_global_changed,
-          })
+          None => ()
         }
-      }
       None => ()
     }
   }
@@ -519,19 +589,25 @@ fn propagate_parent_transforms_dense(
       is Some((table_id, row_index)) else {
       return
     }
+    guard transform_propagation_table_columns(columns, scratch, table_id)
+      is Some(table_columns) else {
+      return
+    }
     if static_optimizations_enabled &&
-      !columns.tree_changed.table_is_changed_at_row(
-        table_id, row_index, system_sequence,
+      !transform_table_tree_changed_at_row(
+        table_columns, row_index, system_sequence,
       ) {
       return
     }
-    guard columns.transform.table_value_at_row(table_id, row_index)
+    guard table_columns.transform is Some(transform_column) else { return }
+    guard transform_column.value_at_row_unchecked(row_index)
       is Some(root_transform) else {
       return
     }
     let root_global = GlobalTransform::from_transform(root_transform)
+    guard table_columns.global is Some(global_column) else { return }
     let root_global_changed = transform_set_global_hot_at_row(
-      columns, table_id, row_index, root_global, sequence,
+      global_column, row_index, root_global, sequence,
     )
     let descendants_start_us = if trace_enabled {
       let now = @app.timeline_trace_now_us()

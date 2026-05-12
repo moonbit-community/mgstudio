@@ -91,7 +91,7 @@ pub fn Affine2::transform_point2(
 
 ///|
 pub struct GlobalTransform {
-  affine : @math.Affine3
+  mut affine : @math.Affine3
 }
 
 ///|
@@ -232,6 +232,163 @@ pub fn GlobalTransform::mul_transform(
       transform.translation,
     ),
   }
+}
+
+///|
+pub fn GlobalTransform::set_from(
+  self : GlobalTransform,
+  other : GlobalTransform,
+) -> Unit {
+  self.affine = other.affine
+}
+
+///|
+fn GlobalTransform::set_affine_values(
+  self : GlobalTransform,
+  x_axis_x : Float,
+  x_axis_y : Float,
+  x_axis_z : Float,
+  y_axis_x : Float,
+  y_axis_y : Float,
+  y_axis_z : Float,
+  z_axis_x : Float,
+  z_axis_y : Float,
+  z_axis_z : Float,
+  translation_x : Float,
+  translation_y : Float,
+  translation_z : Float,
+) -> Unit {
+  self.affine.matrix3.x_axis.x = x_axis_x
+  self.affine.matrix3.x_axis.y = x_axis_y
+  self.affine.matrix3.x_axis.z = x_axis_z
+  self.affine.matrix3.y_axis.x = y_axis_x
+  self.affine.matrix3.y_axis.y = y_axis_y
+  self.affine.matrix3.y_axis.z = y_axis_z
+  self.affine.matrix3.z_axis.x = z_axis_x
+  self.affine.matrix3.z_axis.y = z_axis_y
+  self.affine.matrix3.z_axis.z = z_axis_z
+  self.affine.translation.x = translation_x
+  self.affine.translation.y = translation_y
+  self.affine.translation.z = translation_z
+}
+
+///|
+pub fn GlobalTransform::set_mul_transform(
+  self : GlobalTransform,
+  parent : GlobalTransform,
+  transform : Transform,
+) -> Unit {
+  let scale = transform.scale
+  let rotation = transform.rotation
+  let translation = transform.translation
+  let sx = parent.affine.matrix3.x_axis
+  let sy = parent.affine.matrix3.y_axis
+  let sz = parent.affine.matrix3.z_axis
+  let tx = sx.x * translation.x +
+    sy.x * translation.y +
+    sz.x * translation.z +
+    parent.affine.translation.x
+  let ty = sx.y * translation.x +
+    sy.y * translation.y +
+    sz.y * translation.z +
+    parent.affine.translation.y
+  let tz = sx.z * translation.x +
+    sy.z * translation.y +
+    sz.z * translation.z +
+    parent.affine.translation.z
+  if scale.x == 1.0F && scale.y == 1.0F && scale.z == 1.0F {
+    if rotation.x == 0.0F &&
+      rotation.y == 0.0F &&
+      rotation.z == 0.0F &&
+      rotation.w == 1.0F {
+      self.set_affine_values(
+        sx.x,
+        sx.y,
+        sx.z,
+        sy.x,
+        sy.y,
+        sy.z,
+        sz.x,
+        sz.y,
+        sz.z,
+        tx,
+        ty,
+        tz,
+      )
+      return
+    }
+    let x2 = rotation.x + rotation.x
+    let y2 = rotation.y + rotation.y
+    let z2 = rotation.z + rotation.z
+    let xx = rotation.x * x2
+    let xy = rotation.x * y2
+    let xz = rotation.x * z2
+    let yy = rotation.y * y2
+    let yz = rotation.y * z2
+    let zz = rotation.z * z2
+    let wx = rotation.w * x2
+    let wy = rotation.w * y2
+    let wz = rotation.w * z2
+    let m00 = 1.0F - (yy + zz)
+    let m01 = xy + wz
+    let m02 = xz - wy
+    let m10 = xy - wz
+    let m11 = 1.0F - (xx + zz)
+    let m12 = yz + wx
+    let m20 = xz + wy
+    let m21 = yz - wx
+    let m22 = 1.0F - (xx + yy)
+    self.set_affine_values(
+      sx.x * m00 + sy.x * m01 + sz.x * m02,
+      sx.y * m00 + sy.y * m01 + sz.y * m02,
+      sx.z * m00 + sy.z * m01 + sz.z * m02,
+      sx.x * m10 + sy.x * m11 + sz.x * m12,
+      sx.y * m10 + sy.y * m11 + sz.y * m12,
+      sx.z * m10 + sy.z * m11 + sz.z * m12,
+      sx.x * m20 + sy.x * m21 + sz.x * m22,
+      sx.y * m20 + sy.y * m21 + sz.y * m22,
+      sx.z * m20 + sy.z * m21 + sz.z * m22,
+      tx,
+      ty,
+      tz,
+    )
+    return
+  }
+  let x2 = rotation.x + rotation.x
+  let y2 = rotation.y + rotation.y
+  let z2 = rotation.z + rotation.z
+  let xx = rotation.x * x2
+  let xy = rotation.x * y2
+  let xz = rotation.x * z2
+  let yy = rotation.y * y2
+  let yz = rotation.y * z2
+  let zz = rotation.z * z2
+  let wx = rotation.w * x2
+  let wy = rotation.w * y2
+  let wz = rotation.w * z2
+  let m00 = (1.0F - (yy + zz)) * scale.x
+  let m01 = (xy + wz) * scale.x
+  let m02 = (xz - wy) * scale.x
+  let m10 = (xy - wz) * scale.y
+  let m11 = (1.0F - (xx + zz)) * scale.y
+  let m12 = (yz + wx) * scale.y
+  let m20 = (xz + wy) * scale.z
+  let m21 = (yz - wx) * scale.z
+  let m22 = (1.0F - (xx + yy)) * scale.z
+  self.set_affine_values(
+    sx.x * m00 + sy.x * m01 + sz.x * m02,
+    sx.y * m00 + sy.y * m01 + sz.y * m02,
+    sx.z * m00 + sy.z * m01 + sz.z * m02,
+    sx.x * m10 + sy.x * m11 + sz.x * m12,
+    sx.y * m10 + sy.y * m11 + sz.y * m12,
+    sx.z * m10 + sy.z * m11 + sz.z * m12,
+    sx.x * m20 + sy.x * m21 + sz.x * m22,
+    sx.y * m20 + sy.y * m21 + sz.y * m22,
+    sx.z * m20 + sy.z * m21 + sz.z * m22,
+    tx,
+    ty,
+    tz,
+  )
 }
 
 ///|

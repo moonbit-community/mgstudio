@@ -23,6 +23,12 @@ pub struct ComponentColumn[T] {
 }
 
 ///|
+pub struct ComponentTableColumn[T] {
+  column : Ref[RawTableColumn]
+  key : ComponentKey[T]
+}
+
+///|
 pub fn[T] World::component_column(
   self : World,
   key : ComponentKey[T],
@@ -74,6 +80,84 @@ fn[T] ComponentColumn::table_column_ref(
       }
     None => None
   }
+}
+
+///|
+pub fn[T] ComponentColumn::table_column(
+  self : ComponentColumn[T],
+  table_id : Int,
+) -> ComponentTableColumn[T]? {
+  guard self.storage_type == Table else { return None }
+  match self.table_column_ref(table_id) {
+    Some(column) => Some(ComponentTableColumn::{ column, key: self.key })
+    None => None
+  }
+}
+
+///|
+pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row(
+  self : ComponentTableColumn[T],
+  row_index : Int,
+) -> T? {
+  match
+    raw_table_value_column_kernel_value(self.column.val.storage, row_index) {
+    Some(payload) => T::from_ecs_payload(payload)
+    None => None
+  }
+}
+
+///|
+pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row_unchecked(
+  self : ComponentTableColumn[T],
+  row_index : Int,
+) -> T? {
+  T::from_ecs_payload(
+    raw_table_value_column_kernel_value_unchecked(
+      self.column.val.storage,
+      row_index,
+    ),
+  )
+}
+
+///|
+pub fn[T] ComponentTableColumn::is_changed_at_row(
+  self : ComponentTableColumn[T],
+  row_index : Int,
+  system_sequence : @core.SystemSequence,
+) -> Bool {
+  match self.column.val.changed_sequence_at_row(row_index) {
+    Some(sequence) => system_sequence.contains(sequence)
+    None => false
+  }
+}
+
+///|
+pub fn[T : EcsPayloadCodec] ComponentTableColumn::set_sequence_only_hot_at_row(
+  self : ComponentTableColumn[T],
+  row_index : Int,
+  value : T,
+  sequence : @core.Sequence,
+) -> Bool {
+  guard row_index >= 0 else { return false }
+  guard self.column.val.replace_typed_payload_at_row(
+    row_index,
+    T::to_ecs_payload(value),
+  ) else {
+    return false
+  }
+  ignore(self.column.val.record_changed_at_row(row_index, sequence, None))
+  true
+}
+
+///|
+pub fn[T] ComponentTableColumn::record_changed_at_row(
+  self : ComponentTableColumn[T],
+  row_index : Int,
+  sequence : @core.Sequence,
+) -> Bool {
+  guard row_index >= 0 else { return false }
+  ignore(self.column.val.record_changed_at_row(row_index, sequence, None))
+  true
 }
 
 ///|

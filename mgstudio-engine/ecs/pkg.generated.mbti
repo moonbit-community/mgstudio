@@ -236,6 +236,7 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_row(Self[T
 pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row(Self[T], Int, Array[T], Int, T, Int) -> Bool
 pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row_value(Self[T], Int, Int, T, Int) -> Bool
 pub fn[T] ComponentColumn::table_changed_sequence_at_row(Self[T], Int, Int) -> Int?
+pub fn[T] ComponentColumn::table_column(Self[T], Int) -> ComponentTableColumn[T]?
 pub fn[T] ComponentColumn::table_has_value_at_row(Self[T], Int, Int) -> Bool
 pub fn[T] ComponentColumn::table_is_changed_at_entity_row(Self[T], @core.Entity, Int, Int, @core.SystemSequence) -> Bool?
 pub fn[T] ComponentColumn::table_is_changed_at_row(Self[T], Int, Int, @core.SystemSequence) -> Bool
@@ -325,6 +326,16 @@ pub enum ComponentStorageType {
   Table
   SparseSet
 } derive(Eq)
+
+pub struct ComponentTableColumn[T] {
+  column : @ref.Ref[RawTableColumn]
+  key : ComponentKey[T]
+}
+pub fn[T] ComponentTableColumn::is_changed_at_row(Self[T], Int, @core.SystemSequence) -> Bool
+pub fn[T] ComponentTableColumn::record_changed_at_row(Self[T], Int, Int) -> Bool
+pub fn[T : EcsPayloadCodec] ComponentTableColumn::set_sequence_only_hot_at_row(Self[T], Int, T, Int) -> Bool
+pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row(Self[T], Int) -> T?
+pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row_unchecked(Self[T], Int) -> T?
 
 type ComponentTickMetadata
 
