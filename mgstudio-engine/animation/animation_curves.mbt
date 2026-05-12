@@ -1205,11 +1205,31 @@ pub fn AnimationClip::sample_target(
     return None
   }
   let curves = self.targets[index].curves
-  let translation = animation_sample_vec3(curves.translation, time_seconds)
-  let rotation = animation_sample_quat(curves.rotation, time_seconds)
-  let scale = animation_sample_vec3(curves.scale, time_seconds)
-  let weights = animation_sample_weights(curves.weights, time_seconds)
-  let text_color = animation_sample_color(curves.text_color, time_seconds)
+  let translation = if curves.translation.length() > 0 {
+    animation_sample_vec3(curves.translation, time_seconds)
+  } else {
+    None
+  }
+  let rotation = if curves.rotation.length() > 0 {
+    animation_sample_quat(curves.rotation, time_seconds)
+  } else {
+    None
+  }
+  let scale = if curves.scale.length() > 0 {
+    animation_sample_vec3(curves.scale, time_seconds)
+  } else {
+    None
+  }
+  let weights = if curves.weights.length() > 0 {
+    animation_sample_weights(curves.weights, time_seconds)
+  } else {
+    None
+  }
+  let text_color = if curves.text_color.length() > 0 {
+    animation_sample_color(curves.text_color, time_seconds)
+  } else {
+    None
+  }
   if translation is Some(_) ||
     rotation is Some(_) ||
     scale is Some(_) ||

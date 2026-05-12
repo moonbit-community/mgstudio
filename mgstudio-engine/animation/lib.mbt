@@ -1079,30 +1079,34 @@ fn animation_evaluation_state_push_target_curves(
   weight : Float,
 ) -> Unit {
   let element = animation_evaluation_state_next_stack_element(state, graph_node)
-  if animation_sample_vec3(curves.translation, time_seconds)
-    is Some(translation) {
+  if curves.translation.length() > 0 &&
+    animation_sample_vec3(curves.translation, time_seconds) is Some(translation) {
     element.has_translation = true
     element.translation = translation
     element.translation_weight = weight
   }
-  if animation_sample_quat(curves.rotation, time_seconds) is Some(rotation) {
+  if curves.rotation.length() > 0 &&
+    animation_sample_quat(curves.rotation, time_seconds) is Some(rotation) {
     element.has_rotation = true
     element.rotation = rotation
     element.rotation_weight = weight
   }
-  if animation_sample_vec3(curves.scale, time_seconds) is Some(scale) {
+  if curves.scale.length() > 0 &&
+    animation_sample_vec3(curves.scale, time_seconds) is Some(scale) {
     element.has_scale = true
     element.scale = scale
     element.scale_weight = weight
   }
-  if animation_sample_weights(curves.weights, time_seconds) is Some(weights) {
+  if curves.weights.length() > 0 &&
+    animation_sample_weights(curves.weights, time_seconds) is Some(weights) {
     element.has_weights = true
     element.weights_weight = weight
     for value in weights {
       element.weights.push(value)
     }
   }
-  if animation_sample_color(curves.text_color, time_seconds) is Some(text_color) {
+  if curves.text_color.length() > 0 &&
+    animation_sample_color(curves.text_color, time_seconds) is Some(text_color) {
     element.has_text_color = true
     element.text_color = text_color
     element.text_color_weight = weight
@@ -1482,7 +1486,7 @@ fn animation_apply_threaded_player_to_target(
           is Some(clip) else {
           continue
         }
-        if !active.is_paused() {
+        if !active.is_paused() && clip.events.length() > 0 {
           if animation_clip_events_for_target(clip, target_id) is Some(events) {
             let triggered = animation_clip_collect_triggered_events(
               events, active,
