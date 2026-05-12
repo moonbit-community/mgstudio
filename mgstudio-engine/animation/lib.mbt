@@ -970,43 +970,6 @@ fn animation_stack_element_clear(
 }
 
 ///|
-fn animation_stack_element_set_from_sample(
-  element : AnimationStackElement,
-  graph_node : AnimationNodeIndex,
-  sample : AnimationSample,
-  weight : Float,
-) -> Unit {
-  animation_stack_element_clear(element, graph_node)
-  if sample.translation is Some(translation) {
-    element.has_translation = true
-    element.translation = translation
-    element.translation_weight = weight
-  }
-  if sample.rotation is Some(rotation) {
-    element.has_rotation = true
-    element.rotation = rotation
-    element.rotation_weight = weight
-  }
-  if sample.scale is Some(scale) {
-    element.has_scale = true
-    element.scale = scale
-    element.scale_weight = weight
-  }
-  if sample.weights is Some(weights) {
-    element.has_weights = true
-    element.weights_weight = weight
-    for value in weights {
-      element.weights.push(value)
-    }
-  }
-  if sample.text_color is Some(text_color) {
-    element.has_text_color = true
-    element.text_color = text_color
-    element.text_color_weight = weight
-  }
-}
-
-///|
 fn animation_stack_element_has_value(element : AnimationStackElement) -> Bool {
   element.has_translation ||
   element.has_rotation ||
@@ -1108,14 +1071,42 @@ fn animation_evaluation_state_next_stack_element(
 }
 
 ///|
-fn animation_evaluation_state_push_sample(
+fn animation_evaluation_state_push_target_curves(
   state : AnimationEvaluationState,
   graph_node : AnimationNodeIndex,
-  sample : AnimationSample,
+  curves : AnimationTargetCurves,
+  time_seconds : Float,
   weight : Float,
 ) -> Unit {
   let element = animation_evaluation_state_next_stack_element(state, graph_node)
-  animation_stack_element_set_from_sample(element, graph_node, sample, weight)
+  if animation_sample_vec3(curves.translation, time_seconds)
+    is Some(translation) {
+    element.has_translation = true
+    element.translation = translation
+    element.translation_weight = weight
+  }
+  if animation_sample_quat(curves.rotation, time_seconds) is Some(rotation) {
+    element.has_rotation = true
+    element.rotation = rotation
+    element.rotation_weight = weight
+  }
+  if animation_sample_vec3(curves.scale, time_seconds) is Some(scale) {
+    element.has_scale = true
+    element.scale = scale
+    element.scale_weight = weight
+  }
+  if animation_sample_weights(curves.weights, time_seconds) is Some(weights) {
+    element.has_weights = true
+    element.weights_weight = weight
+    for value in weights {
+      element.weights.push(value)
+    }
+  }
+  if animation_sample_color(curves.text_color, time_seconds) is Some(text_color) {
+    element.has_text_color = true
+    element.text_color = text_color
+    element.text_color_weight = weight
+  }
   if animation_stack_element_has_value(element) {
     state.stack_len = state.stack_len + 1
   }
@@ -1389,25 +1380,16 @@ fn animation_evaluation_state_commit(
       Some(transform) => transform
       None => @transform.Transform::identity()
     }
-    Some(
-      @transform.Transform::new(
-        if result.has_translation {
-          result.translation
-        } else {
-          base.translation
-        },
-        if result.has_rotation {
-          result.rotation
-        } else {
-          base.rotation
-        },
-        if result.has_scale {
-          result.scale
-        } else {
-          base.scale
-        },
-      ),
-    )
+    if result.has_translation {
+      base.translation = result.translation
+    }
+    if result.has_rotation {
+      base.rotation = result.rotation
+    }
+    if result.has_scale {
+      base.scale = result.scale
+    }
+    Some(base)
   } else {
     None
   }
@@ -1518,14 +1500,14 @@ fn animation_apply_threaded_player_to_target(
             }
           }
         }
-        guard clip.sample_target(target_id, active.seek_time())
-          is Some(clip_sample) else {
+        guard clip.curves_for_target(target_id) is Some(curves) else {
           continue
         }
-        animation_evaluation_state_push_sample(
+        animation_evaluation_state_push_target_curves(
           evaluation_state,
           node_index,
-          clip_sample,
+          curves,
+          active.seek_time(),
           active.weight() * node.weight,
         )
       }
@@ -1884,6 +1866,15 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         prepared_player.graph,
         target_id,
       )
+      let base_transform = match transform_column {
+        Some(column) =>
+          if table_id >= 0 && row_index >= 0 {
+            column.table_value_at_cached_entity_row(entity, table_id, row_index)
+          } else {
+            column.get_fast(entity)
+          }
+        None => None
+      }
       let (next_transform, next_weights, next_text_color) = animation_apply_threaded_player_to_target(
         world,
         writer,
@@ -1896,26 +1887,23 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         prepared_player.threaded_graph,
         clip_cache,
         evaluation_state,
-        match transform_column {
-          Some(column) =>
-            if table_id >= 0 && row_index >= 0 {
-              column.table_value_at_cached_entity_row(
-                entity, table_id, row_index,
-              )
-            } else {
-              column.get_fast(entity)
-            }
-          None => None
-        },
+        base_transform,
       )
 
       if next_transform is Some(transform) {
         let wrote = match transform_column {
           Some(column) =>
             if table_id >= 0 && row_index >= 0 {
-              column.set_sequence_only_hot_at_table_row_value(
-                table_id, row_index, transform, write_sequence,
-              )
+              match base_transform {
+                Some(_) =>
+                  column.record_changed_hot_at_table_row(
+                    table_id, row_index, write_sequence,
+                  )
+                None =>
+                  column.set_sequence_only_hot_at_table_row_value(
+                    table_id, row_index, transform, write_sequence,
+                  )
+              }
             } else {
               column.set_sequence_only_hot(entity, transform)
             }
