@@ -436,7 +436,9 @@ pub(all) enum SkinnedMeshBoundsError {
 
 pub struct SkinnedMeshInverseBindposes {
   values : Array[SkinningMat4]
+  affines : Array[@math.Affine3]
 }
+pub fn SkinnedMeshInverseBindposes::affine(Self, Int) -> @math.Affine3?
 pub fn SkinnedMeshInverseBindposes::get(Self, Int) -> SkinningMat4?
 pub fn SkinnedMeshInverseBindposes::len(Self) -> Int
 pub fn SkinnedMeshInverseBindposes::new(Array[SkinningMat4]) -> Self

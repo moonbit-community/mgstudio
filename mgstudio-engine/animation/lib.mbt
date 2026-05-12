@@ -918,6 +918,7 @@ priv struct AnimationStackElement {
 ///|
 priv struct AnimationEvaluationState {
   stack : Array[AnimationStackElement]
+  mut stack_len : Int
   register : AnimationStackElement
 }
 
@@ -966,6 +967,43 @@ fn animation_stack_element_clear(
   element.scale = @math.Vec3::zero()
   element.weights.clear()
   element.text_color = @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F)
+}
+
+///|
+fn animation_stack_element_set_from_sample(
+  element : AnimationStackElement,
+  graph_node : AnimationNodeIndex,
+  sample : AnimationSample,
+  weight : Float,
+) -> Unit {
+  animation_stack_element_clear(element, graph_node)
+  if sample.translation is Some(translation) {
+    element.has_translation = true
+    element.translation = translation
+    element.translation_weight = weight
+  }
+  if sample.rotation is Some(rotation) {
+    element.has_rotation = true
+    element.rotation = rotation
+    element.rotation_weight = weight
+  }
+  if sample.scale is Some(scale) {
+    element.has_scale = true
+    element.scale = scale
+    element.scale_weight = weight
+  }
+  if sample.weights is Some(weights) {
+    element.has_weights = true
+    element.weights_weight = weight
+    for value in weights {
+      element.weights.push(value)
+    }
+  }
+  if sample.text_color is Some(text_color) {
+    element.has_text_color = true
+    element.text_color = text_color
+    element.text_color_weight = weight
+  }
 }
 
 ///|
@@ -1039,55 +1077,34 @@ fn animation_color_add_scaled(
 }
 
 ///|
-fn animation_stack_element_from_sample(
-  graph_node : AnimationNodeIndex,
-  sample : AnimationSample,
-  weight : Float,
-) -> AnimationStackElement {
-  let element = animation_stack_element_empty(graph_node)
-  if sample.translation is Some(translation) {
-    element.has_translation = true
-    element.translation = translation
-    element.translation_weight = weight
-  }
-  if sample.rotation is Some(rotation) {
-    element.has_rotation = true
-    element.rotation = rotation
-    element.rotation_weight = weight
-  }
-  if sample.scale is Some(scale) {
-    element.has_scale = true
-    element.scale = scale
-    element.scale_weight = weight
-  }
-  if sample.weights is Some(weights) {
-    element.has_weights = true
-    element.weights_weight = weight
-    element.weights.clear()
-    for value in weights {
-      element.weights.push(value)
-    }
-  }
-  if sample.text_color is Some(text_color) {
-    element.has_text_color = true
-    element.text_color = text_color
-    element.text_color_weight = weight
-  }
-  element
-}
-
-///|
 fn animation_evaluation_state_new() -> AnimationEvaluationState {
   AnimationEvaluationState::{
     stack: [],
+    stack_len: 0,
     register: animation_stack_element_empty(AnimationNodeIndex::new(-1)),
   }
 }
 
 ///|
 fn animation_evaluation_state_reset(state : AnimationEvaluationState) -> Unit {
-  state.stack.clear()
+  state.stack_len = 0
   animation_stack_element_clear(state.register, AnimationNodeIndex::new(-1))
+}
+
+///|
+fn animation_evaluation_state_next_stack_element(
+  state : AnimationEvaluationState,
+  graph_node : AnimationNodeIndex,
+) -> AnimationStackElement {
+  if state.stack_len < state.stack.length() {
+    let existing = state.stack[state.stack_len]
+    animation_stack_element_clear(existing, graph_node)
+    existing
+  } else {
+    let created = animation_stack_element_empty(graph_node)
+    state.stack.push(created)
+    created
+  }
 }
 
 ///|
@@ -1097,9 +1114,10 @@ fn animation_evaluation_state_push_sample(
   sample : AnimationSample,
   weight : Float,
 ) -> Unit {
-  let element = animation_stack_element_from_sample(graph_node, sample, weight)
+  let element = animation_evaluation_state_next_stack_element(state, graph_node)
+  animation_stack_element_set_from_sample(element, graph_node, sample, weight)
   if animation_stack_element_has_value(element) {
-    state.stack.push(element)
+    state.stack_len = state.stack_len + 1
   }
 }
 
@@ -1298,15 +1316,15 @@ fn animation_evaluation_state_combine_top(
   graph_node : AnimationNodeIndex,
   additive : Bool,
 ) -> Unit {
-  if state.stack.length() == 0 {
+  if state.stack_len == 0 {
     return
   }
-  let top_index = state.stack.length() - 1
+  let top_index = state.stack_len - 1
   let incoming = state.stack[top_index]
   if incoming.graph_node != graph_node {
     return
   }
-  ignore(state.stack.pop())
+  state.stack_len = top_index
   animation_register_merge_translation(state.register, incoming, additive)
   animation_register_merge_rotation(state.register, incoming, additive)
   animation_register_merge_scale(state.register, incoming, additive)
@@ -1323,7 +1341,7 @@ fn animation_evaluation_state_push_blend_register(
   if !animation_stack_element_has_value(state.register) {
     return
   }
-  let element = animation_stack_element_empty(graph_node)
+  let element = animation_evaluation_state_next_stack_element(state, graph_node)
   if state.register.has_translation {
     element.has_translation = true
     element.translation = state.register.translation
@@ -1351,7 +1369,7 @@ fn animation_evaluation_state_push_blend_register(
     element.text_color = state.register.text_color
     element.text_color_weight = weight
   }
-  state.stack.push(element)
+  state.stack_len = state.stack_len + 1
   animation_stack_element_clear(state.register, AnimationNodeIndex::new(-1))
 }
 
@@ -1360,10 +1378,10 @@ fn animation_evaluation_state_commit(
   state : AnimationEvaluationState,
   base_transform : @transform.Transform?,
 ) -> (@transform.Transform?, AnimationWeights?, @text.TextColor?) {
-  if state.stack.length() == 0 {
+  if state.stack_len == 0 {
     return (None, None, None)
   }
-  let result = state.stack[state.stack.length() - 1]
+  let result = state.stack[state.stack_len - 1]
   let transform_out = if result.has_translation ||
     result.has_rotation ||
     result.has_scale {
@@ -1549,10 +1567,13 @@ pub let animation_set_expire_transitions : @app.SystemSet = @app.system_set(
 
 ///|
 priv struct AnimationRuntimeScratch {
+  mut frame_stamp : Int
   transform_updates : Array[(@core.Entity, @transform.Transform)]
   weights_updates : Array[(@core.Entity, AnimationWeights)]
   text_color_updates : Array[(@core.Entity, @text.TextColor)]
-  prepared_player_cache : Map[Int, AnimationPreparedPlayer]
+  prepared_player_values : Array[AnimationPreparedPlayer?]
+  prepared_player_generations : Array[Int]
+  prepared_player_stamps : Array[Int]
   target_mask_cache : Map[(Int, UInt64, UInt64), AnimationMask]
   graph_cache : Map[Int, AnimationGraph]
   clip_cache : Map[Int, AnimationClip]
@@ -1562,10 +1583,13 @@ priv struct AnimationRuntimeScratch {
 ///|
 fn AnimationRuntimeScratch::default() -> AnimationRuntimeScratch {
   AnimationRuntimeScratch::{
+    frame_stamp: 0,
     transform_updates: [],
     weights_updates: [],
     text_color_updates: [],
-    prepared_player_cache: {},
+    prepared_player_values: [],
+    prepared_player_generations: [],
+    prepared_player_stamps: [],
     target_mask_cache: {},
     graph_cache: {},
     clip_cache: {},
@@ -1599,14 +1623,54 @@ fn animation_runtime_scratch_ref_or_init(
 
 ///|
 fn animation_runtime_scratch_clear(state : AnimationRuntimeScratch) -> Unit {
+  state.frame_stamp = state.frame_stamp + 1
   state.transform_updates.clear()
   state.weights_updates.clear()
   state.text_color_updates.clear()
-  state.prepared_player_cache.clear()
   state.target_mask_cache.clear()
   state.graph_cache.clear()
   state.clip_cache.clear()
   state.threaded_graph_cache.clear()
+}
+
+///|
+fn animation_runtime_scratch_store_prepared_player(
+  state : AnimationRuntimeScratch,
+  entity : @core.Entity,
+  prepared : AnimationPreparedPlayer,
+) -> Unit {
+  let entity_id = entity.id
+  if entity_id < 0 {
+    return
+  }
+  while state.prepared_player_values.length() <= entity_id {
+    state.prepared_player_values.push(None)
+    state.prepared_player_generations.push(0)
+    state.prepared_player_stamps.push(0)
+  }
+  state.prepared_player_values[entity_id] = Some(prepared)
+  state.prepared_player_generations[entity_id] = entity.generation
+  state.prepared_player_stamps[entity_id] = state.frame_stamp
+}
+
+///|
+fn animation_runtime_scratch_prepared_player(
+  state : AnimationRuntimeScratch,
+  entity : @core.Entity,
+) -> AnimationPreparedPlayer? {
+  let entity_id = entity.id
+  if entity_id < 0 || entity_id >= state.prepared_player_values.length() {
+    return None
+  }
+  if entity_id >= state.prepared_player_generations.length() ||
+    entity_id >= state.prepared_player_stamps.length() {
+    return None
+  }
+  if state.prepared_player_generations[entity_id] != entity.generation ||
+    state.prepared_player_stamps[entity_id] != state.frame_stamp {
+    return None
+  }
+  state.prepared_player_values[entity_id]
 }
 
 ///|
@@ -1711,7 +1775,6 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let transform_updates = runtime_scratch.transform_updates
   let weights_updates = runtime_scratch.weights_updates
   let text_color_updates = runtime_scratch.text_color_updates
-  let prepared_player_cache = runtime_scratch.prepared_player_cache
   let target_mask_cache = runtime_scratch.target_mask_cache
   let threaded_graphs = try! world.get_resource(threaded_animation_graphs_key)
   let graph_cache = runtime_scratch.graph_cache
@@ -1765,12 +1828,16 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           }
         }
     }
-    prepared_player_cache.set(player_id, AnimationPreparedPlayer::{
-      graph_id: graph_handle_id,
-      graph,
-      player: player_comp.value(),
-      threaded_graph,
-    })
+    animation_runtime_scratch_store_prepared_player(
+      runtime_scratch,
+      player_entity,
+      AnimationPreparedPlayer::{
+        graph_id: graph_handle_id,
+        graph,
+        player: player_comp.value(),
+        threaded_graph,
+      },
+    )
   })
 
   let target_id_column = world.component_column(ecs_key_animation_target_id)
@@ -1804,7 +1871,10 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       if player_id < 0 {
         return
       }
-      let prepared_player = match prepared_player_cache.get(player_id) {
+      let prepared_player = match
+        animation_runtime_scratch_prepared_player(
+          runtime_scratch, player_entity,
+        ) {
         Some(cached) => cached
         None => return
       }

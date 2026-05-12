@@ -102,6 +102,7 @@ pub impl @json.FromJson for MeshTag with from_json(json, path) {
 ///|
 pub struct SkinnedMeshInverseBindposes {
   values : Array[SkinningMat4]
+  affines : Array[@math.Affine3]
 }
 
 ///|
@@ -118,7 +119,11 @@ pub impl @asset.Asset for SkinnedMeshInverseBindposes with asset_as_image(_self)
 pub fn SkinnedMeshInverseBindposes::new(
   values : Array[SkinningMat4],
 ) -> SkinnedMeshInverseBindposes {
-  { values, }
+  let affines : Array[@math.Affine3] = []
+  for value in values {
+    affines.push(skinning_mat4_to_affine3(value))
+  }
+  { values, affines }
 }
 
 ///|
@@ -137,6 +142,18 @@ pub fn SkinnedMeshInverseBindposes::get(
     None
   } else {
     Some(self.values[index])
+  }
+}
+
+///|
+pub fn SkinnedMeshInverseBindposes::affine(
+  self : SkinnedMeshInverseBindposes,
+  index : Int,
+) -> @math.Affine3? {
+  if index < 0 || index >= self.affines.length() {
+    None
+  } else {
+    Some(self.affines[index])
   }
 }
 

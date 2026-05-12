@@ -407,12 +407,12 @@ fn transform_joint_aabb(
 }
 
 ///|
-pub fn entity_aabb_from_skinned_mesh_bounds(
-  joint_transforms : @ecs.ComponentColumn[@transform.GlobalTransform],
+fn entity_aabb_from_skinned_mesh_bounds_with_fetch(
   mesh : Mesh,
   skinned_mesh : SkinnedMesh,
   skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
   world_from_entity : @transform.GlobalTransform?,
+  fetch_joint_transform : (@core.Entity, Int) -> @transform.GlobalTransform?,
 ) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError] {
   let skinned_mesh_bounds = match mesh.skinned_mesh_bounds() {
     Some(bounds) => bounds
@@ -432,8 +432,8 @@ pub fn entity_aabb_from_skinned_mesh_bounds(
     let modelspace_joint_aabb = skinned_mesh_bounds.aabbs[bounds_index]
     let joint_index_value = joint_index.value()
     let joint_from_model = match
-      skinned_mesh_inverse_bindposes.get(joint_index_value) {
-      Some(inverse_bindpose) => skinning_mat4_to_affine3(inverse_bindpose)
+      skinned_mesh_inverse_bindposes.affine(joint_index_value) {
+      Some(inverse_bindpose) => inverse_bindpose
       None =>
         return Err(
           EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
@@ -447,7 +447,8 @@ pub fn entity_aabb_from_skinned_mesh_bounds(
       )
     }
     let joint_entity = joints[joint_index_value]
-    let world_from_joint = match joint_transforms.get_fast(joint_entity) {
+    let world_from_joint = match
+      fetch_joint_transform(joint_entity, joint_index_value) {
       Some(global_transform) => global_transform
       None =>
         return Err(EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity)
@@ -471,6 +472,23 @@ pub fn entity_aabb_from_skinned_mesh_bounds(
       )
     None => Ok(worldspace_entity_aabb)
   }
+}
+
+///|
+pub fn entity_aabb_from_skinned_mesh_bounds(
+  joint_transforms : @ecs.ComponentColumn[@transform.GlobalTransform],
+  mesh : Mesh,
+  skinned_mesh : SkinnedMesh,
+  skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
+  world_from_entity : @transform.GlobalTransform?,
+) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError] {
+  entity_aabb_from_skinned_mesh_bounds_with_fetch(
+    mesh,
+    skinned_mesh,
+    skinned_mesh_inverse_bindposes,
+    world_from_entity,
+    fn(joint_entity, _joint_index) { joint_transforms.get_fast(joint_entity) },
+  )
 }
 
 ///|
