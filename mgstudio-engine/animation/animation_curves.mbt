@@ -1037,15 +1037,23 @@ fn animation_sample_vec3(
   if keyframes.length() == 0 {
     return None
   }
+  Some(animation_sample_vec3_non_empty(keyframes, time_seconds))
+}
+
+///|
+fn animation_sample_vec3_non_empty(
+  keyframes : Array[KeyframeVec3],
+  time_seconds : Float,
+) -> @math.Vec3 {
   if keyframes.length() == 1 {
-    return Some(keyframes[0].value)
+    return keyframes[0].value
   }
   if time_seconds <= keyframes[0].time {
-    return Some(keyframes[0].value)
+    return keyframes[0].value
   }
   let last_index = keyframes.length() - 1
   if time_seconds >= keyframes[last_index].time {
-    return Some(keyframes[last_index].value)
+    return keyframes[last_index].value
   }
   let mut left = 1
   let mut right = last_index
@@ -1063,10 +1071,10 @@ fn animation_sample_vec3(
   let left_keyframe = keyframes[segment_right - 1]
   let span = right_keyframe.time - left_keyframe.time
   if span <= 0.0F {
-    return Some(right_keyframe.value)
+    return right_keyframe.value
   }
   let t = animation_saturate((time_seconds - left_keyframe.time) / span)
-  Some(animation_step_or_linear_vec3(left_keyframe, right_keyframe, t, span))
+  animation_step_or_linear_vec3(left_keyframe, right_keyframe, t, span)
 }
 
 ///|
@@ -1077,15 +1085,23 @@ fn animation_sample_quat(
   if keyframes.length() == 0 {
     return None
   }
+  Some(animation_sample_quat_non_empty(keyframes, time_seconds))
+}
+
+///|
+fn animation_sample_quat_non_empty(
+  keyframes : Array[KeyframeQuat],
+  time_seconds : Float,
+) -> @math.Quat {
   if keyframes.length() == 1 {
-    return Some(keyframes[0].value)
+    return keyframes[0].value
   }
   if time_seconds <= keyframes[0].time {
-    return Some(keyframes[0].value)
+    return keyframes[0].value
   }
   let last_index = keyframes.length() - 1
   if time_seconds >= keyframes[last_index].time {
-    return Some(keyframes[last_index].value)
+    return keyframes[last_index].value
   }
   let mut left = 1
   let mut right = last_index
@@ -1103,10 +1119,10 @@ fn animation_sample_quat(
   let left_keyframe = keyframes[segment_right - 1]
   let span = right_keyframe.time - left_keyframe.time
   if span <= 0.0F {
-    return Some(right_keyframe.value)
+    return right_keyframe.value
   }
   let t = animation_saturate((time_seconds - left_keyframe.time) / span)
-  Some(animation_step_or_linear_quat(left_keyframe, right_keyframe, t, span))
+  animation_step_or_linear_quat(left_keyframe, right_keyframe, t, span)
 }
 
 ///|
@@ -1117,15 +1133,23 @@ fn animation_sample_weights(
   if keyframes.length() == 0 {
     return None
   }
+  Some(animation_sample_weights_non_empty(keyframes, time_seconds))
+}
+
+///|
+fn animation_sample_weights_non_empty(
+  keyframes : Array[KeyframeWeights],
+  time_seconds : Float,
+) -> Array[Float] {
   if keyframes.length() == 1 {
-    return Some(keyframes[0].value)
+    return keyframes[0].value
   }
   if time_seconds <= keyframes[0].time {
-    return Some(keyframes[0].value)
+    return keyframes[0].value
   }
   let last_index = keyframes.length() - 1
   if time_seconds >= keyframes[last_index].time {
-    return Some(keyframes[last_index].value)
+    return keyframes[last_index].value
   }
   let mut left = 1
   let mut right = last_index
@@ -1143,10 +1167,10 @@ fn animation_sample_weights(
   let left_keyframe = keyframes[segment_right - 1]
   let span = right_keyframe.time - left_keyframe.time
   if span <= 0.0F {
-    return Some(right_keyframe.value)
+    return right_keyframe.value
   }
   let t = animation_saturate((time_seconds - left_keyframe.time) / span)
-  Some(animation_step_or_linear_weights(left_keyframe, right_keyframe, t, span))
+  animation_step_or_linear_weights(left_keyframe, right_keyframe, t, span)
 }
 
 ///|
@@ -1157,15 +1181,23 @@ fn animation_sample_color(
   if keyframes.length() == 0 {
     return None
   }
+  Some(animation_sample_color_non_empty(keyframes, time_seconds))
+}
+
+///|
+fn animation_sample_color_non_empty(
+  keyframes : Array[KeyframeColor],
+  time_seconds : Float,
+) -> @sprite.Color {
   if keyframes.length() == 1 {
-    return Some(keyframes[0].value)
+    return keyframes[0].value
   }
   if time_seconds <= keyframes[0].time {
-    return Some(keyframes[0].value)
+    return keyframes[0].value
   }
   let last_index = keyframes.length() - 1
   if time_seconds >= keyframes[last_index].time {
-    return Some(keyframes[last_index].value)
+    return keyframes[last_index].value
   }
   let mut left = 1
   let mut right = last_index
@@ -1183,15 +1215,13 @@ fn animation_sample_color(
   let left_keyframe = keyframes[segment_right - 1]
   let span = right_keyframe.time - left_keyframe.time
   if span <= 0.0F {
-    return Some(right_keyframe.value)
+    return right_keyframe.value
   }
   let t = animation_saturate((time_seconds - left_keyframe.time) / span)
-  Some(
-    animation_interpolate_color_unclamped(
-      left_keyframe.value,
-      right_keyframe.value,
-      t,
-    ),
+  animation_interpolate_color_unclamped(
+    left_keyframe.value,
+    right_keyframe.value,
+    t,
   )
 }
 

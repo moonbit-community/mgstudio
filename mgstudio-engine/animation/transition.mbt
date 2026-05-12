@@ -197,6 +197,46 @@ fn animation_transitions_expire(
 ///|
 pub fn advance_transitions(world : @ecs.World) -> Unit {
   let delta_seconds = animation_default_time_or_default(world).delta_seconds()
+  let transitions_column = world.component_column(ecs_key_animation_transitions)
+  let player_column = world.component_column(ecs_key_animation_player)
+  let write_sequence : @core.Sequence = {
+    let tick = world.read_sequence()
+    if tick > 0 {
+      tick
+    } else {
+      1
+    }
+  }
+  if transitions_column is Some(transitions_column) &&
+    player_column is Some(player_column) {
+    transitions_column.for_each_with_fast_table_row(player_column, fn(
+      entity,
+      table_id,
+      row_index,
+      transitions,
+      player,
+    ) {
+      ignore(animation_transitions_advance(transitions, player, delta_seconds))
+      if table_id >= 0 && row_index >= 0 {
+        ignore(
+          transitions_column.record_changed_hot_at_table_row(
+            table_id, row_index, write_sequence,
+          ),
+        )
+        ignore(
+          player_column.record_changed_hot_at_table_row(
+            table_id, row_index, write_sequence,
+          ),
+        )
+      } else {
+        try! world.set_by_key(
+          entity, ecs_key_animation_transitions, transitions,
+        )
+        try! world.set_by_key(entity, ecs_key_animation_player, player)
+      }
+    })
+    return
+  }
 
   let updates : Array[(@core.Entity, AnimationTransitions, AnimationPlayer)] = []
   let transitions_query : @ecs.Query[@ecs.Comp[AnimationTransitions], @ecs.All] = @ecs.query(
@@ -223,6 +263,47 @@ pub fn advance_transitions(world : @ecs.World) -> Unit {
 
 ///|
 pub fn expire_completed_transitions(world : @ecs.World) -> Unit {
+  let transitions_column = world.component_column(ecs_key_animation_transitions)
+  let player_column = world.component_column(ecs_key_animation_player)
+  let write_sequence : @core.Sequence = {
+    let tick = world.read_sequence()
+    if tick > 0 {
+      tick
+    } else {
+      1
+    }
+  }
+  if transitions_column is Some(transitions_column) &&
+    player_column is Some(player_column) {
+    transitions_column.for_each_with_fast_table_row(player_column, fn(
+      entity,
+      table_id,
+      row_index,
+      transitions,
+      player,
+    ) {
+      ignore(animation_transitions_expire(transitions, player))
+      if table_id >= 0 && row_index >= 0 {
+        ignore(
+          transitions_column.record_changed_hot_at_table_row(
+            table_id, row_index, write_sequence,
+          ),
+        )
+        ignore(
+          player_column.record_changed_hot_at_table_row(
+            table_id, row_index, write_sequence,
+          ),
+        )
+      } else {
+        try! world.set_by_key(
+          entity, ecs_key_animation_transitions, transitions,
+        )
+        try! world.set_by_key(entity, ecs_key_animation_player, player)
+      }
+    })
+    return
+  }
+
   let updates : Array[(@core.Entity, AnimationTransitions, AnimationPlayer)] = []
   let transitions_query : @ecs.Query[@ecs.Comp[AnimationTransitions], @ecs.All] = @ecs.query(
     world,

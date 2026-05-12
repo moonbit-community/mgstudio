@@ -393,11 +393,11 @@ fn animation_player_node_key(node : AnimationNodeIndex) -> Int {
 ///|
 fn animation_player_sorted_node_keys(player : AnimationPlayer) -> Array[Int] {
   let keys : Array[Int] = []
-  for entry in player.active_animations.iter() {
-    let (node_key, _active) = entry
-    keys.push(node_key)
+  for node_key in 0..<player.active_animations.length() {
+    if player.active_animations[node_key] is Some(_) {
+      keys.push(node_key)
+    }
   }
-  keys.sort()
   keys
 }
 
@@ -414,7 +414,7 @@ fn animation_player_sorted_nodes(
 
 ///|
 struct AnimationPlayer {
-  active_animations : Map[Int, ActiveAnimation]
+  active_animations : Array[ActiveAnimation?]
 }
 
 ///|
@@ -455,16 +455,22 @@ pub impl @json.FromJson for AnimationPlayer with from_json(json, path) {
     json,
     path~,
   )
-  let active_animations_map : Map[Int, ActiveAnimation] = {}
+  let active_animations_dense : Array[ActiveAnimation?] = []
   for pair in active_animations {
-    active_animations_map.set(animation_player_node_key(pair.0), pair.1)
+    let node_key = animation_player_node_key(pair.0)
+    if node_key >= 0 {
+      while active_animations_dense.length() <= node_key {
+        active_animations_dense.push(None)
+      }
+      active_animations_dense[node_key] = Some(pair.1)
+    }
   }
-  AnimationPlayer::{ active_animations: active_animations_map }
+  AnimationPlayer::{ active_animations: active_animations_dense }
 }
 
 ///|
 pub fn AnimationPlayer::default() -> AnimationPlayer {
-  AnimationPlayer::{ active_animations: {} }
+  AnimationPlayer::{ active_animations: [] }
 }
 
 ///|
@@ -495,7 +501,12 @@ pub fn AnimationPlayer::animation(
   self : AnimationPlayer,
   node : AnimationNodeIndex,
 ) -> ActiveAnimation? {
-  self.active_animations.get(animation_player_node_key(node))
+  let node_key = animation_player_node_key(node)
+  if node_key >= 0 && node_key < self.active_animations.length() {
+    self.active_animations[node_key]
+  } else {
+    None
+  }
 }
 
 ///|
@@ -554,7 +565,13 @@ pub fn AnimationPlayer::set_animation(
   node : AnimationNodeIndex,
   active : ActiveAnimation,
 ) -> AnimationPlayer {
-  self.active_animations.set(animation_player_node_key(node), active)
+  let node_key = animation_player_node_key(node)
+  if node_key >= 0 {
+    while self.active_animations.length() <= node_key {
+      self.active_animations.push(None)
+    }
+    self.active_animations[node_key] = Some(active)
+  }
   self
 }
 
@@ -630,7 +647,7 @@ pub fn AnimationPlayer::start(
     return existing.replay()
   }
   let active = ActiveAnimation::default()
-  self.active_animations.set(animation_player_node_key(node), active)
+  self.set_animation(node, active) |> ignore
   animation_player_entry_new(self, node)
 }
 
@@ -643,7 +660,7 @@ pub fn AnimationPlayer::play(
     return existing
   }
   let active = ActiveAnimation::default()
-  self.active_animations.set(animation_player_node_key(node), active)
+  self.set_animation(node, active) |> ignore
   animation_player_entry_new(self, node)
 }
 
@@ -652,7 +669,10 @@ pub fn AnimationPlayer::stop(
   self : AnimationPlayer,
   node : AnimationNodeIndex,
 ) -> AnimationPlayer {
-  ignore(self.active_animations.remove(animation_player_node_key(node)))
+  let node_key = animation_player_node_key(node)
+  if node_key >= 0 && node_key < self.active_animations.length() {
+    self.active_animations[node_key] = None
+  }
   self
 }
 
@@ -847,30 +867,199 @@ fn animation_player_tick(
   graph : AnimationGraph,
   delta_seconds : Float,
 ) -> AnimationPlayer {
-  for pair in player.playing_animations() {
-    let node = pair.0
-    let active = pair.1
+  ignore(animation_player_tick_in_place(player, graph, delta_seconds))
+  player
+}
+
+///|
+fn animation_player_tick_in_place(
+  player : AnimationPlayer,
+  graph : AnimationGraph,
+  delta_seconds : Float,
+) -> Bool {
+  let mut changed = false
+  for node_i in 0..<graph.nodes.length() {
+    guard node_i < player.active_animations.length() &&
+      player.active_animations[node_i] is Some(active) else {
+      continue
+    }
     let mut next_active = active
     if active.is_paused() {
       ()
-    } else if graph.get(node) is Some(graph_node) {
-      if graph_node.node_type is Clip(clip_handle) {
-        if animation_clip_get(clip_handle) is Some(clip) {
-          next_active = active.update(delta_seconds, clip.duration())
-        }
+    } else if graph.nodes[node_i].node_type is Clip(clip_handle) {
+      if animation_clip_get(clip_handle) is Some(clip) {
+        next_active = active.update(delta_seconds, clip.duration())
       }
     }
-    player.set_animation(node, next_active) |> ignore
+    player.active_animations[node_i] = Some(next_active)
+    changed = true
   }
-  player
+  changed
 }
 
 ///|
 priv struct AnimationPreparedPlayer {
   graph_id : Int
   graph : AnimationGraph
-  player : AnimationPlayer
+  active_by_node : Array[ActiveAnimation?]
   threaded_graph : ThreadedAnimationGraph
+}
+
+///|
+priv struct AnimationFrameCurveCache {
+  mut len : Int
+  occupied : Array[Bool]
+  clip_ids : Array[Int]
+  target_highs : Array[UInt64]
+  target_lows : Array[UInt64]
+  curves : Array[AnimationTargetCurves?]
+}
+
+///|
+fn animation_frame_curve_cache_new() -> AnimationFrameCurveCache {
+  AnimationFrameCurveCache::{
+    len: 0,
+    occupied: [],
+    clip_ids: [],
+    target_highs: [],
+    target_lows: [],
+    curves: [],
+  }
+}
+
+///|
+fn animation_frame_curve_cache_ensure_capacity(
+  cache : AnimationFrameCurveCache,
+  capacity : Int,
+) -> Unit {
+  while cache.occupied.length() < capacity {
+    cache.occupied.push(false)
+    cache.clip_ids.push(-1)
+    cache.target_highs.push(0UL)
+    cache.target_lows.push(0UL)
+    cache.curves.push(None)
+  }
+}
+
+///|
+fn animation_frame_curve_cache_clear(cache : AnimationFrameCurveCache) -> Unit {
+  cache.len = 0
+  for i in 0..<cache.occupied.length() {
+    cache.occupied[i] = false
+  }
+}
+
+///|
+fn animation_frame_curve_cache_hash(
+  clip_id : Int,
+  target_high : UInt64,
+  target_low : UInt64,
+  capacity : Int,
+) -> Int {
+  if capacity <= 0 {
+    return 0
+  }
+  let mut hash = clip_id * 16777619
+  hash = hash ^ target_high.to_int()
+  hash = hash ^ (target_low.to_int() * 31)
+  let index = hash % capacity
+  if index < 0 {
+    index + capacity
+  } else {
+    index
+  }
+}
+
+///|
+fn animation_frame_curve_cache_insert_known(
+  cache : AnimationFrameCurveCache,
+  clip_id : Int,
+  target_high : UInt64,
+  target_low : UInt64,
+  curves : AnimationTargetCurves?,
+) -> Unit {
+  let capacity = cache.occupied.length()
+  if capacity == 0 {
+    return
+  }
+  let mut index = animation_frame_curve_cache_hash(
+    clip_id, target_high, target_low, capacity,
+  )
+  while cache.occupied[index] {
+    index = (index + 1) % capacity
+  }
+  cache.occupied[index] = true
+  cache.clip_ids[index] = clip_id
+  cache.target_highs[index] = target_high
+  cache.target_lows[index] = target_low
+  cache.curves[index] = curves
+  cache.len = cache.len + 1
+}
+
+///|
+fn animation_frame_curve_cache_grow(cache : AnimationFrameCurveCache) -> Unit {
+  let old_capacity = cache.occupied.length()
+  let new_capacity = if old_capacity <= 0 { 256 } else { old_capacity * 2 }
+  let old_occupied = cache.occupied.copy()
+  let old_clip_ids = cache.clip_ids.copy()
+  let old_target_highs = cache.target_highs.copy()
+  let old_target_lows = cache.target_lows.copy()
+  let old_curves = cache.curves.copy()
+  cache.occupied.clear()
+  cache.clip_ids.clear()
+  cache.target_highs.clear()
+  cache.target_lows.clear()
+  cache.curves.clear()
+  cache.len = 0
+  animation_frame_curve_cache_ensure_capacity(cache, new_capacity)
+  for i in 0..<old_occupied.length() {
+    if old_occupied[i] {
+      animation_frame_curve_cache_insert_known(
+        cache,
+        old_clip_ids[i],
+        old_target_highs[i],
+        old_target_lows[i],
+        old_curves[i],
+      )
+    }
+  }
+}
+
+///|
+fn animation_frame_curves_cached(
+  frame_curve_cache : AnimationFrameCurveCache,
+  clip_id : Int,
+  clip : AnimationClip,
+  target_id : AnimationTargetId,
+) -> AnimationTargetCurves? {
+  let target_key = animation_target_id_lookup_key(target_id)
+  if frame_curve_cache.occupied.length() == 0 ||
+    (frame_curve_cache.len + 1) * 3 >= frame_curve_cache.occupied.length() * 2 {
+    animation_frame_curve_cache_grow(frame_curve_cache)
+  }
+  let capacity = frame_curve_cache.occupied.length()
+  let mut index = animation_frame_curve_cache_hash(
+    clip_id,
+    target_key.0,
+    target_key.1,
+    capacity,
+  )
+  while frame_curve_cache.occupied[index] {
+    if frame_curve_cache.clip_ids[index] == clip_id &&
+      frame_curve_cache.target_highs[index] == target_key.0 &&
+      frame_curve_cache.target_lows[index] == target_key.1 {
+      return frame_curve_cache.curves[index]
+    }
+    index = (index + 1) % capacity
+  }
+  let curves = clip.curves_for_target(target_id)
+  frame_curve_cache.occupied[index] = true
+  frame_curve_cache.clip_ids[index] = clip_id
+  frame_curve_cache.target_highs[index] = target_key.0
+  frame_curve_cache.target_lows[index] = target_key.1
+  frame_curve_cache.curves[index] = curves
+  frame_curve_cache.len = frame_curve_cache.len + 1
+  curves
 }
 
 ///|
@@ -893,6 +1082,31 @@ fn animation_clip_cached_or_load(
         None => None
       }
   }
+}
+
+///|
+fn animation_prepared_active_by_node_into(
+  graph : AnimationGraph,
+  player : AnimationPlayer,
+  active_by_node : Array[ActiveAnimation?],
+) -> Array[ActiveAnimation?] {
+  let node_count = graph.nodes.length()
+  while active_by_node.length() < node_count {
+    active_by_node.push(None)
+  }
+  while active_by_node.length() > node_count {
+    ignore(active_by_node.remove(active_by_node.length() - 1))
+  }
+  for node_i in 0..<node_count {
+    active_by_node[node_i] = None
+  }
+  for node_key in 0..<player.active_animations.length() {
+    if node_key < active_by_node.length() &&
+      player.active_animations[node_key] is Some(active) {
+      active_by_node[node_key] = Some(active)
+    }
+  }
+  active_by_node
 }
 
 ///|
@@ -920,6 +1134,14 @@ priv struct AnimationEvaluationState {
   stack : Array[AnimationStackElement]
   mut stack_len : Int
   register : AnimationStackElement
+}
+
+///|
+priv struct AnimationEvaluationOutput {
+  mut has_transform : Bool
+  mut transform : @transform.Transform
+  mut weights : AnimationWeights?
+  mut text_color : @text.TextColor?
 }
 
 ///|
@@ -1049,6 +1271,25 @@ fn animation_evaluation_state_new() -> AnimationEvaluationState {
 }
 
 ///|
+fn animation_evaluation_output_new() -> AnimationEvaluationOutput {
+  AnimationEvaluationOutput::{
+    has_transform: false,
+    transform: @transform.Transform::identity(),
+    weights: None,
+    text_color: None,
+  }
+}
+
+///|
+fn animation_evaluation_output_clear(
+  output : AnimationEvaluationOutput,
+) -> Unit {
+  output.has_transform = false
+  output.weights = None
+  output.text_color = None
+}
+
+///|
 fn animation_evaluation_state_reset(state : AnimationEvaluationState) -> Unit {
   state.stack_len = 0
   animation_stack_element_clear(state.register, AnimationNodeIndex::new(-1))
@@ -1079,34 +1320,46 @@ fn animation_evaluation_state_push_target_curves(
   weight : Float,
 ) -> Unit {
   let element = animation_evaluation_state_next_stack_element(state, graph_node)
-  if curves.translation.length() > 0 &&
-    animation_sample_vec3(curves.translation, time_seconds) is Some(translation) {
+  if curves.translation.length() > 0 {
+    let translation = animation_sample_vec3_non_empty(
+      curves.translation,
+      time_seconds,
+    )
     element.has_translation = true
     element.translation = translation
     element.translation_weight = weight
   }
-  if curves.rotation.length() > 0 &&
-    animation_sample_quat(curves.rotation, time_seconds) is Some(rotation) {
+  if curves.rotation.length() > 0 {
+    let rotation = animation_sample_quat_non_empty(
+      curves.rotation,
+      time_seconds,
+    )
     element.has_rotation = true
     element.rotation = rotation
     element.rotation_weight = weight
   }
-  if curves.scale.length() > 0 &&
-    animation_sample_vec3(curves.scale, time_seconds) is Some(scale) {
+  if curves.scale.length() > 0 {
+    let scale = animation_sample_vec3_non_empty(curves.scale, time_seconds)
     element.has_scale = true
     element.scale = scale
     element.scale_weight = weight
   }
-  if curves.weights.length() > 0 &&
-    animation_sample_weights(curves.weights, time_seconds) is Some(weights) {
+  if curves.weights.length() > 0 {
+    let weights = animation_sample_weights_non_empty(
+      curves.weights,
+      time_seconds,
+    )
     element.has_weights = true
     element.weights_weight = weight
     for value in weights {
       element.weights.push(value)
     }
   }
-  if curves.text_color.length() > 0 &&
-    animation_sample_color(curves.text_color, time_seconds) is Some(text_color) {
+  if curves.text_color.length() > 0 {
+    let text_color = animation_sample_color_non_empty(
+      curves.text_color,
+      time_seconds,
+    )
     element.has_text_color = true
     element.text_color = text_color
     element.text_color_weight = weight
@@ -1369,17 +1622,17 @@ fn animation_evaluation_state_push_blend_register(
 }
 
 ///|
-fn animation_evaluation_state_commit(
+fn animation_evaluation_state_commit_into(
   state : AnimationEvaluationState,
   base_transform : @transform.Transform?,
-) -> (@transform.Transform?, AnimationWeights?, @text.TextColor?) {
+  output : AnimationEvaluationOutput,
+) -> Unit {
+  animation_evaluation_output_clear(output)
   if state.stack_len == 0 {
-    return (None, None, None)
+    return
   }
   let result = state.stack[state.stack_len - 1]
-  let transform_out = if result.has_translation ||
-    result.has_rotation ||
-    result.has_scale {
+  if result.has_translation || result.has_rotation || result.has_scale {
     let base = match base_transform {
       Some(transform) => transform
       None => @transform.Transform::identity()
@@ -1393,21 +1646,17 @@ fn animation_evaluation_state_commit(
     if result.has_scale {
       base.scale = result.scale
     }
-    Some(base)
-  } else {
-    None
+    output.has_transform = true
+    output.transform = base
   }
-  let weights_out = if result.has_weights {
-    Some(AnimationWeights::new(animation_weights_copy(result.weights)))
-  } else {
-    None
+  if result.has_weights {
+    output.weights = Some(
+      AnimationWeights::new(animation_weights_copy(result.weights)),
+    )
   }
-  let text_color_out = if result.has_text_color {
-    Some(@text.TextColor::new(result.text_color))
-  } else {
-    None
+  if result.has_text_color {
+    output.text_color = Some(@text.TextColor::new(result.text_color))
   }
-  (transform_out, weights_out, text_color_out)
 }
 
 ///|
@@ -1418,25 +1667,24 @@ fn animation_apply_threaded_player_to_target(
   target_entity : @core.Entity,
   target_id : AnimationTargetId,
   target_mask : AnimationMask,
-  player : AnimationPlayer,
+  active_by_node : Array[ActiveAnimation?],
   graph : AnimationGraph,
   threaded_graph : ThreadedAnimationGraph,
   clip_cache : Map[Int, AnimationClip],
+  frame_curve_cache : AnimationFrameCurveCache,
   evaluation_state : AnimationEvaluationState,
   base_transform : @transform.Transform?,
-) -> (@transform.Transform?, AnimationWeights?, @text.TextColor?) {
+  output : AnimationEvaluationOutput,
+) -> Unit {
   animation_evaluation_state_reset(evaluation_state)
 
   for node_index in threaded_graph.threaded_graph {
-    guard graph.get(node_index) is Some(node) else { continue }
+    let node_i = node_index.index()
+    guard node_i >= 0 && node_i < graph.nodes.length() else { continue }
+    let node = graph.nodes[node_i]
     match node.node_type {
       Blend => {
-        let (edge_start, edge_end) = if node_index.index() >= 0 &&
-          node_index.index() < threaded_graph.sorted_edge_ranges.length() {
-          threaded_graph.sorted_edge_ranges[node_index.index()]
-        } else {
-          (0, 0)
-        }
+        let (edge_start, edge_end) = threaded_graph.sorted_edge_ranges[node_i]
         for edge_i in edge_start..<edge_end {
           animation_evaluation_state_combine_top(
             evaluation_state,
@@ -1451,12 +1699,7 @@ fn animation_apply_threaded_player_to_target(
         )
       }
       Add => {
-        let (edge_start, edge_end) = if node_index.index() >= 0 &&
-          node_index.index() < threaded_graph.sorted_edge_ranges.length() {
-          threaded_graph.sorted_edge_ranges[node_index.index()]
-        } else {
-          (0, 0)
-        }
+        let (edge_start, edge_end) = threaded_graph.sorted_edge_ranges[node_i]
         for edge_i in edge_start..<edge_end {
           animation_evaluation_state_combine_top(
             evaluation_state,
@@ -1471,14 +1714,8 @@ fn animation_apply_threaded_player_to_target(
         )
       }
       Clip(clip_handle) => {
-        guard player.animation(node_index) is Some(active) else { continue }
-        let node_i = node_index.index()
-        let computed_mask = if node_i >= 0 &&
-          node_i < threaded_graph.computed_masks.length() {
-          threaded_graph.computed_masks[node_i]
-        } else {
-          graph.computed_mask(node_index)
-        }
+        guard active_by_node[node_i] is Some(active) else { continue }
+        let computed_mask = threaded_graph.computed_masks[node_i]
         if active.weight() == 0.0F || (target_mask & computed_mask) != 0U {
           continue
         }
@@ -1486,6 +1723,7 @@ fn animation_apply_threaded_player_to_target(
           is Some(clip) else {
           continue
         }
+        let clip_id = clip_handle.id()
         if !active.is_paused() && clip.events.length() > 0 {
           if animation_clip_events_for_target(clip, target_id) is Some(events) {
             let triggered = animation_clip_collect_triggered_events(
@@ -1504,7 +1742,10 @@ fn animation_apply_threaded_player_to_target(
             }
           }
         }
-        guard clip.curves_for_target(target_id) is Some(curves) else {
+        guard animation_frame_curves_cached(
+            frame_curve_cache, clip_id, clip, target_id,
+          )
+          is Some(curves) else {
           continue
         }
         animation_evaluation_state_push_target_curves(
@@ -1518,7 +1759,9 @@ fn animation_apply_threaded_player_to_target(
     }
   }
 
-  animation_evaluation_state_commit(evaluation_state, base_transform)
+  animation_evaluation_state_commit_into(
+    evaluation_state, base_transform, output,
+  )
 }
 
 ///|
@@ -1560,6 +1803,7 @@ priv struct AnimationRuntimeScratch {
   prepared_player_values : Array[AnimationPreparedPlayer?]
   prepared_player_generations : Array[Int]
   prepared_player_stamps : Array[Int]
+  frame_curve_cache : AnimationFrameCurveCache
   target_mask_cache : Map[(Int, UInt64, UInt64), AnimationMask]
   graph_cache : Map[Int, AnimationGraph]
   clip_cache : Map[Int, AnimationClip]
@@ -1576,6 +1820,7 @@ fn AnimationRuntimeScratch::default() -> AnimationRuntimeScratch {
     prepared_player_values: [],
     prepared_player_generations: [],
     prepared_player_stamps: [],
+    frame_curve_cache: animation_frame_curve_cache_new(),
     target_mask_cache: {},
     graph_cache: {},
     clip_cache: {},
@@ -1613,6 +1858,7 @@ fn animation_runtime_scratch_clear(state : AnimationRuntimeScratch) -> Unit {
   state.transform_updates.clear()
   state.weights_updates.clear()
   state.text_color_updates.clear()
+  animation_frame_curve_cache_clear(state.frame_curve_cache)
   state.target_mask_cache.clear()
   state.graph_cache.clear()
   state.clip_cache.clear()
@@ -1657,6 +1903,23 @@ fn animation_runtime_scratch_prepared_player(
     return None
   }
   state.prepared_player_values[entity_id]
+}
+
+///|
+fn animation_runtime_scratch_active_by_node_storage(
+  state : AnimationRuntimeScratch,
+  entity : @core.Entity,
+) -> Array[ActiveAnimation?] {
+  let entity_id = entity.id
+  if entity_id >= 0 &&
+    entity_id < state.prepared_player_values.length() &&
+    entity_id < state.prepared_player_generations.length() &&
+    state.prepared_player_generations[entity_id] == entity.generation &&
+    state.prepared_player_values[entity_id] is Some(prepared) {
+    prepared.active_by_node
+  } else {
+    []
+  }
 }
 
 ///|
@@ -1722,8 +1985,44 @@ fn animation_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
 ///|
 pub fn advance_animations(world : @ecs.World) -> Unit {
   let delta_seconds = animation_default_time_or_default(world).delta_seconds()
-
-  let updates : Array[(@core.Entity, AnimationPlayer)] = []
+  let player_column = world.component_column(ecs_key_animation_player)
+  let graph_handle_column = world.component_column(
+    ecs_key_animation_graph_handle,
+  )
+  let write_sequence : @core.Sequence = {
+    let tick = world.read_sequence()
+    if tick > 0 {
+      tick
+    } else {
+      1
+    }
+  }
+  if player_column is Some(player_column) &&
+    graph_handle_column is Some(graph_handle_column) {
+    player_column.for_each_with_fast_table_row(graph_handle_column, fn(
+      entity,
+      table_id,
+      row_index,
+      player,
+      graph_handle,
+    ) {
+      guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
+        return
+      }
+      if animation_player_tick_in_place(player, graph, delta_seconds) {
+        if table_id >= 0 && row_index >= 0 {
+          ignore(
+            player_column.record_changed_hot_at_table_row(
+              table_id, row_index, write_sequence,
+            ),
+          )
+        } else {
+          try! world.set_by_key(entity, ecs_key_animation_player, player)
+        }
+      }
+    })
+    return
+  }
   let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
     world,
   )
@@ -1735,21 +2034,12 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
       return
     }
-    updates.push(
-      (entity, animation_player_tick(player.value(), graph, delta_seconds)),
+    try! world.set_by_key(
+      entity,
+      ecs_key_animation_player,
+      animation_player_tick(player.value(), graph, delta_seconds),
     )
   })
-
-  let player_column = world.component_column(ecs_key_animation_player)
-  for update in updates {
-    let wrote = match player_column {
-      Some(column) => column.set_sequence_only(update.0, update.1)
-      None => false
-    }
-    if !wrote {
-      try! world.set_by_key(update.0, ecs_key_animation_player, update.1)
-    }
-  }
 }
 
 ///|
@@ -1767,17 +2057,15 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let clip_cache = runtime_scratch.clip_cache
   let threaded_graph_cache = runtime_scratch.threaded_graph_cache
 
-  let player_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[AnimationPlayer], @ecs.Comp[AnimationGraphHandle]),
-    @ecs.All,
-  ] = @ecs.query(world)
-  try! player_query.view(fn(_entity, player_data) {
-    let (player_entity, player_comp, graph_handle_comp) = player_data
+  let prepare_player = fn(
+    player_entity : @core.Entity,
+    player : AnimationPlayer,
+    graph_handle : AnimationGraphHandle,
+  ) {
     let player_id = player_entity.id
     if player_id < 0 {
       return
     }
-    let graph_handle = graph_handle_comp.value()
     let graph_handle_id = graph_handle.graph().id()
     let graph = match graph_cache.get(graph_handle_id) {
       Some(cached_graph) => cached_graph
@@ -1814,17 +2102,57 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           }
         }
     }
+    let active_by_node = animation_prepared_active_by_node_into(
+      graph,
+      player,
+      animation_runtime_scratch_active_by_node_storage(
+        runtime_scratch, player_entity,
+      ),
+    )
     animation_runtime_scratch_store_prepared_player(
       runtime_scratch,
       player_entity,
       AnimationPreparedPlayer::{
         graph_id: graph_handle_id,
         graph,
-        player: player_comp.value(),
+        active_by_node,
         threaded_graph,
       },
     )
-  })
+  }
+  let player_column = world.component_column(ecs_key_animation_player)
+  let graph_handle_column = world.component_column(
+    ecs_key_animation_graph_handle,
+  )
+  if player_column is Some(player_column) &&
+    graph_handle_column is Some(graph_handle_column) {
+    player_column.for_each_with_fast_table_row(graph_handle_column, fn(
+      player_entity,
+      _table_id,
+      _row_index,
+      player,
+      graph_handle,
+    ) {
+      prepare_player(player_entity, player, graph_handle)
+    })
+  } else {
+    let player_query : @ecs.Query[
+      (
+        @core.Entity,
+        @ecs.Comp[AnimationPlayer],
+        @ecs.Comp[AnimationGraphHandle],
+      ),
+      @ecs.All,
+    ] = @ecs.query(world)
+    try! player_query.view(fn(_entity, player_data) {
+      let (player_entity, player_comp, graph_handle_comp) = player_data
+      prepare_player(
+        player_entity,
+        player_comp.value(),
+        graph_handle_comp.value(),
+      )
+    })
+  }
 
   let target_id_column = world.component_column(ecs_key_animation_target_id)
   let animated_by_column = world.component_column(ecs_key_animated_by)
@@ -1832,37 +2160,39 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let weights_column = world.component_column(ecs_key_animation_weights)
   let text_color_column = world.component_column(@text.ecs_key_text_color)
   let evaluation_state = animation_evaluation_state_new()
+  let evaluation_output = animation_evaluation_output_new()
   let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
     @app.current_system_sequence().this_run,
   )
+  let write_sequence : @core.Sequence = {
+    let tick = world.read_sequence()
+    if tick > 0 {
+      tick
+    } else {
+      1
+    }
+  }
   if target_id_column is Some(target_id_column) &&
     animated_by_column is Some(animated_by_column) {
-    let write_sequence : @core.Sequence = {
-      let tick = world.read_sequence()
-      if tick > 0 {
-        tick
-      } else {
-        1
-      }
-    }
-    animated_by_column.for_each_with_fast_table_row(target_id_column, fn(
-      entity,
-      table_id,
-      row_index,
-      animated_by,
-      target_id,
-    ) {
+    let process_target = fn(
+      entity : @core.Entity,
+      table_id : Int,
+      row_index : Int,
+      animated_by : AnimatedBy,
+      target_id : AnimationTargetId,
+      base_transform : @transform.Transform?,
+    ) -> Bool {
       let player_entity = animated_by.player()
       let player_id = player_entity.id
       if player_id < 0 {
-        return
+        return false
       }
       let prepared_player = match
         animation_runtime_scratch_prepared_player(
           runtime_scratch, player_entity,
         ) {
         Some(cached) => cached
-        None => return
+        None => return false
       }
       let target_mask = animation_target_mask_cached(
         target_mask_cache,
@@ -1870,39 +2200,34 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         prepared_player.graph,
         target_id,
       )
-      let base_transform = match transform_column {
-        Some(column) =>
-          if table_id >= 0 && row_index >= 0 {
-            column.table_value_at_cached_entity_row(entity, table_id, row_index)
-          } else {
-            column.get_fast(entity)
-          }
-        None => None
-      }
-      let (next_transform, next_weights, next_text_color) = animation_apply_threaded_player_to_target(
+      animation_apply_threaded_player_to_target(
         world,
         writer,
         player_entity,
         entity,
         target_id,
         target_mask,
-        prepared_player.player,
+        prepared_player.active_by_node,
         prepared_player.graph,
         prepared_player.threaded_graph,
         clip_cache,
+        runtime_scratch.frame_curve_cache,
         evaluation_state,
         base_transform,
+        evaluation_output,
       )
 
-      if next_transform is Some(transform) {
+      let mut mark_transform_changed_at_current_row = false
+      if evaluation_output.has_transform {
+        let transform = evaluation_output.transform
         let wrote = match transform_column {
           Some(column) =>
             if table_id >= 0 && row_index >= 0 {
               match base_transform {
-                Some(_) =>
-                  column.record_changed_hot_at_table_row(
-                    table_id, row_index, write_sequence,
-                  )
+                Some(_) => {
+                  mark_transform_changed_at_current_row = true
+                  true
+                }
                 None =>
                   column.set_sequence_only_hot_at_table_row_value(
                     table_id, row_index, transform, write_sequence,
@@ -1917,7 +2242,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           transform_updates.push((entity, transform))
         }
       }
-      if next_weights is Some(weights) {
+      if evaluation_output.weights is Some(weights) {
         let wrote = match weights_column {
           Some(column) =>
             if table_id >= 0 && row_index >= 0 {
@@ -1933,7 +2258,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           weights_updates.push((entity, weights))
         }
       }
-      if next_text_color is Some(text_color) {
+      if evaluation_output.text_color is Some(text_color) {
         let wrote = match text_color_column {
           Some(column) =>
             if table_id >= 0 && row_index >= 0 {
@@ -1949,7 +2274,45 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           text_color_updates.push((entity, text_color))
         }
       }
-    })
+      mark_transform_changed_at_current_row
+    }
+    match transform_column {
+      Some(transform_column) =>
+        target_id_column.for_each3_fast_table_row_mark_third_changed(
+          animated_by_column,
+          transform_column,
+          write_sequence,
+          fn(entity, table_id, row_index, target_id, animated_by, transform) {
+            process_target(
+              entity,
+              table_id,
+              row_index,
+              animated_by,
+              target_id,
+              Some(transform),
+            )
+          },
+        )
+      None =>
+        animated_by_column.for_each_with_fast_table_row(target_id_column, fn(
+          entity,
+          table_id,
+          row_index,
+          animated_by,
+          target_id,
+        ) {
+          ignore(
+            process_target(
+              entity,
+              table_id,
+              row_index,
+              animated_by,
+              target_id,
+              None,
+            ),
+          )
+        })
+    }
   }
 
   for update in transform_updates {
@@ -1982,12 +2345,12 @@ pub fn trigger_untargeted_animation_events(world : @ecs.World) -> Unit {
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
       return
     }
-    for pair in player.playing_animations() {
-      let node_index = pair.0
-      let active = pair.1
+    for node_key in 0..<player.active_animations.length() {
+      guard player.active_animations[node_key] is Some(active) else { continue }
       if active.is_paused() {
         continue
       }
+      let node_index = AnimationNodeIndex::new(node_key)
       guard graph.get(node_index) is Some(node) else { continue }
       guard node.node_type is Clip(clip_handle) else { continue }
       guard animation_clip_get(clip_handle) is Some(clip) else { continue }

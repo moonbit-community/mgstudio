@@ -127,6 +127,14 @@ fn raw_table_value_column_kernel_value(
 }
 
 ///|
+fn raw_table_value_column_kernel_value_unchecked(
+  kernel : RawTableValueColumnKernel,
+  row : Int,
+) -> EcsPayload {
+  kernel.values[row]
+}
+
+///|
 fn raw_table_value_column_kernel_set_metadata(
   kernel : RawTableValueColumnKernel,
   row : Int,

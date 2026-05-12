@@ -628,11 +628,14 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
     guard self.world.table_storage(table_id) is Some(table_ref) else {
       continue
     }
-    let row_count = table_ref.val.row_count()
+    let entities = table_ref.val.rows.entities
+    let row_count = entities.length()
+    if raw_table_value_column_kernel_len(column_ref.val.storage) < row_count {
+      continue
+    }
     for row_index in 0..<row_count {
-      guard TableRow::from_index(row_index) is Some(row) else { continue }
-      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
-      guard column_ref.val.value_at_row(row_index) is Some(value) else {
+      let entity = entities[row_index]
+      guard column_ref.val.value_at_row_unchecked(row_index) is Some(value) else {
         continue
       }
       visit(entity, value)
@@ -702,14 +705,22 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
     guard self.world.table_storage(table_id) is Some(table_ref) else {
       continue
     }
-    let row_count = table_ref.val.row_count()
+    let entities = table_ref.val.rows.entities
+    let row_count = entities.length()
+    if raw_table_value_column_kernel_len(left_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(right_column_ref.val.storage) <
+      row_count {
+      continue
+    }
     for row_index in 0..<row_count {
-      guard TableRow::from_index(row_index) is Some(row) else { continue }
-      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
-      guard left_column_ref.val.value_at_row(row_index) is Some(left_value) else {
+      let entity = entities[row_index]
+      guard left_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(left_value) else {
         continue
       }
-      guard right_column_ref.val.value_at_row(row_index) is Some(right_value) else {
+      guard right_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(right_value) else {
         continue
       }
       visit(entity, table_id, row_index, left_value, right_value)
@@ -792,20 +803,142 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
     guard self.world.table_storage(table_id) is Some(table_ref) else {
       continue
     }
-    let row_count = table_ref.val.row_count()
+    let entities = table_ref.val.rows.entities
+    let row_count = entities.length()
+    if raw_table_value_column_kernel_len(first_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(second_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(third_column_ref.val.storage) <
+      row_count {
+      continue
+    }
     for row_index in 0..<row_count {
-      guard TableRow::from_index(row_index) is Some(row) else { continue }
-      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
-      guard first_column_ref.val.value_at_row(row_index) is Some(first_value) else {
+      let entity = entities[row_index]
+      guard first_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(first_value) else {
         continue
       }
-      guard second_column_ref.val.value_at_row(row_index) is Some(second_value) else {
+      guard second_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(second_value) else {
         continue
       }
-      guard third_column_ref.val.value_at_row(row_index) is Some(third_value) else {
+      guard third_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(third_value) else {
         continue
       }
       visit(entity, table_id, row_index, first_value, second_value, third_value)
+    }
+  }
+}
+
+///|
+pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row_mark_third_changed(
+  self : ComponentColumn[T],
+  second : ComponentColumn[U],
+  third : ComponentColumn[V],
+  sequence : @core.Sequence,
+  visit : (@core.Entity, Int, Int, T, U, V) -> Bool,
+) -> Unit {
+  if self.world.world_id != second.world.world_id ||
+    self.world.world_id != third.world.world_id {
+    self.for_each(fn(entity, first_value) {
+      guard second.get(entity) is Some(second_value) else { return }
+      guard third.get(entity) is Some(third_value) else { return }
+      ignore(visit(entity, -1, -1, first_value, second_value, third_value))
+    })
+    return
+  }
+  if self.storage_type != Table ||
+    second.storage_type != Table ||
+    third.storage_type != Table {
+    self.for_each(fn(entity, first_value) {
+      guard second.get(entity) is Some(second_value) else { return }
+      guard third.get(entity) is Some(third_value) else { return }
+      ignore(visit(entity, -1, -1, first_value, second_value, third_value))
+    })
+    return
+  }
+  let first_count = self.world.component_membership_counts
+    .get(self.local_component_id)
+    .unwrap_or(0)
+  let second_count = self.world.component_membership_counts
+    .get(second.local_component_id)
+    .unwrap_or(0)
+  let third_count = self.world.component_membership_counts
+    .get(third.local_component_id)
+    .unwrap_or(0)
+  let driver_local_component_id = if first_count <= second_count &&
+    first_count <= third_count {
+    self.local_component_id
+  } else if second_count <= third_count {
+    second.local_component_id
+  } else {
+    third.local_component_id
+  }
+  let archetype_ids = self.world
+    .archetype_ids_for_component_local_id(driver_local_component_id)
+    .copy()
+  let visited_tables : Array[Bool] = []
+  for archetype_id in archetype_ids {
+    guard self.world.archetype_local_component_presence_view(archetype_id)
+      is Some(presence) else {
+      continue
+    }
+    if !presence.contains(self.local_component_id) ||
+      !presence.contains(second.local_component_id) ||
+      !presence.contains(third.local_component_id) {
+      continue
+    }
+    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
+      continue
+    }
+    if query_bitset_insert(visited_tables, table_id) == false {
+      continue
+    }
+    guard self.table_column_ref(table_id) is Some(first_column_ref) else {
+      continue
+    }
+    guard second.table_column_ref(table_id) is Some(second_column_ref) else {
+      continue
+    }
+    guard third.table_column_ref(table_id) is Some(third_column_ref) else {
+      continue
+    }
+    guard self.world.table_storage(table_id) is Some(table_ref) else {
+      continue
+    }
+    let entities = table_ref.val.rows.entities
+    let row_count = entities.length()
+    if raw_table_value_column_kernel_len(first_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(second_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(third_column_ref.val.storage) <
+      row_count {
+      continue
+    }
+    for row_index in 0..<row_count {
+      let entity = entities[row_index]
+      guard first_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(first_value) else {
+        continue
+      }
+      guard second_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(second_value) else {
+        continue
+      }
+      guard third_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(third_value) else {
+        continue
+      }
+      if visit(
+          entity, table_id, row_index, first_value, second_value, third_value,
+        ) {
+        ignore(
+          third_column_ref.val.record_changed_at_row(row_index, sequence, None),
+        )
+      }
     }
   }
 }
@@ -898,14 +1031,22 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, M, N] ComponentColumn::for_each
     guard self.world.table_storage(table_id) is Some(table_ref) else {
       continue
     }
-    let row_count = table_ref.val.row_count()
+    let entities = table_ref.val.rows.entities
+    let row_count = entities.length()
+    if raw_table_value_column_kernel_len(first_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(second_column_ref.val.storage) <
+      row_count {
+      continue
+    }
     for row_index in 0..<row_count {
-      guard TableRow::from_index(row_index) is Some(row) else { continue }
-      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
-      guard first_column_ref.val.value_at_row(row_index) is Some(first_value) else {
+      let entity = entities[row_index]
+      guard first_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(first_value) else {
         continue
       }
-      guard second_column_ref.val.value_at_row(row_index) is Some(second_value) else {
+      guard second_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(second_value) else {
         continue
       }
       visit(entity, table_id, row_index, first_value, second_value)
@@ -1012,20 +1153,34 @@ pub fn[
     guard self.world.table_storage(table_id) is Some(table_ref) else {
       continue
     }
-    let row_count = table_ref.val.row_count()
+    let entities = table_ref.val.rows.entities
+    let row_count = entities.length()
+    if raw_table_value_column_kernel_len(first_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(second_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(third_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(fourth_column_ref.val.storage) <
+      row_count {
+      continue
+    }
     for row_index in 0..<row_count {
-      guard TableRow::from_index(row_index) is Some(row) else { continue }
-      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
-      guard first_column_ref.val.value_at_row(row_index) is Some(first_value) else {
+      let entity = entities[row_index]
+      guard first_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(first_value) else {
         continue
       }
-      guard second_column_ref.val.value_at_row(row_index) is Some(second_value) else {
+      guard second_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(second_value) else {
         continue
       }
-      guard third_column_ref.val.value_at_row(row_index) is Some(third_value) else {
+      guard third_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(third_value) else {
         continue
       }
-      guard fourth_column_ref.val.value_at_row(row_index) is Some(fourth_value) else {
+      guard fourth_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(fourth_value) else {
         continue
       }
       visit(
@@ -1152,23 +1307,40 @@ pub fn[
     guard self.world.table_storage(table_id) is Some(table_ref) else {
       continue
     }
-    let row_count = table_ref.val.row_count()
+    let entities = table_ref.val.rows.entities
+    let row_count = entities.length()
+    if raw_table_value_column_kernel_len(first_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(second_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(third_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(fourth_column_ref.val.storage) <
+      row_count ||
+      raw_table_value_column_kernel_len(fifth_column_ref.val.storage) <
+      row_count {
+      continue
+    }
     for row_index in 0..<row_count {
-      guard TableRow::from_index(row_index) is Some(row) else { continue }
-      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
-      guard first_column_ref.val.value_at_row(row_index) is Some(first_value) else {
+      let entity = entities[row_index]
+      guard first_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(first_value) else {
         continue
       }
-      guard second_column_ref.val.value_at_row(row_index) is Some(second_value) else {
+      guard second_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(second_value) else {
         continue
       }
-      guard third_column_ref.val.value_at_row(row_index) is Some(third_value) else {
+      guard third_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(third_value) else {
         continue
       }
-      guard fourth_column_ref.val.value_at_row(row_index) is Some(fourth_value) else {
+      guard fourth_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(fourth_value) else {
         continue
       }
-      guard fifth_column_ref.val.value_at_row(row_index) is Some(fifth_value) else {
+      guard fifth_column_ref.val.value_at_row_unchecked(row_index)
+        is Some(fifth_value) else {
         continue
       }
       visit(

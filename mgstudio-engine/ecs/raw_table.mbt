@@ -285,6 +285,16 @@ fn[T : EcsPayloadCodec] RawTableColumn::value_at_row(
 }
 
 ///|
+fn[T : EcsPayloadCodec] RawTableColumn::value_at_row_unchecked(
+  self : RawTableColumn,
+  row_index : Int,
+) -> T? {
+  T::from_ecs_payload(
+    raw_table_value_column_kernel_value_unchecked(self.storage, row_index),
+  )
+}
+
+///|
 fn[T : EcsPayloadCodec] RawTableColumn::values_snapshot(
   self : RawTableColumn,
 ) -> Array[T]? {
