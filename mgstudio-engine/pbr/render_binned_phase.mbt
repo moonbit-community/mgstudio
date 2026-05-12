@@ -79,8 +79,20 @@ priv struct MeshGpuBinKey3d {
 priv struct MeshGpuBinnedRenderPhaseBatch3d {
   batch_set_key : MeshGpuBatchSetKey3d
   bin_key : MeshGpuBinKey3d
-  representative_payload : @pbr_render.MeshGpuDrawPayload3d
+  representative_payload_index : Int
   instance_count : Int
+}
+
+///|
+priv struct MeshGpuBinnedRenderPhase3d {
+  payloads : Array[@pbr_render.MeshGpuDrawPayload3d]
+  entries : Array[@render.HostMesh3dMainPassDrawEntry]
+  batches : Array[MeshGpuBinnedRenderPhaseBatch3d]
+}
+
+///|
+fn render3d_mesh_gpu_binned_phase_new() -> MeshGpuBinnedRenderPhase3d {
+  { payloads: [], entries: [], batches: [] }
 }
 
 ///|
@@ -250,49 +262,61 @@ fn render3d_mesh_gpu_payload_follows_batch(
 }
 
 ///|
-fn render3d_mesh_gpu_binned_phase_batches(
-  payloads : Array[@pbr_render.MeshGpuDrawPayload3d],
-) -> Array[MeshGpuBinnedRenderPhaseBatch3d] {
-  let batches : Array[MeshGpuBinnedRenderPhaseBatch3d] = []
-  let mut index = 0
-  while index < payloads.length() {
-    let first = payloads[index]
-    let batch_set_key = render3d_mesh_gpu_batch_set_key(first)
-    let bin_key = render3d_mesh_gpu_bin_key(first)
-    let mut count = 1
-    while index + count < payloads.length() {
-      let previous = payloads[index + count - 1]
-      let next = payloads[index + count]
-      if !render3d_mesh_gpu_batch_set_key_eq(
-          batch_set_key,
-          render3d_mesh_gpu_batch_set_key(next),
-        ) ||
-        !render3d_mesh_gpu_bin_key_eq(bin_key, render3d_mesh_gpu_bin_key(next)) ||
-        !render3d_mesh_gpu_payload_follows_batch(previous, next) {
-        break
-      }
-      count += 1
+fn render3d_mesh_gpu_binned_phase_push(
+  phase : MeshGpuBinnedRenderPhase3d,
+  payload : @pbr_render.MeshGpuDrawPayload3d,
+) -> Unit {
+  let batch_set_key = render3d_mesh_gpu_batch_set_key(payload)
+  let bin_key = render3d_mesh_gpu_bin_key(payload)
+  let payload_index = phase.payloads.length()
+  let can_extend = if payload_index == 0 || phase.batches.length() == 0 {
+    false
+  } else {
+    let previous_payload = phase.payloads[payload_index - 1]
+    let previous_batch = phase.batches[phase.batches.length() - 1]
+    render3d_mesh_gpu_batch_set_key_eq(
+      previous_batch.batch_set_key,
+      batch_set_key,
+    ) &&
+    render3d_mesh_gpu_bin_key_eq(previous_batch.bin_key, bin_key) &&
+    render3d_mesh_gpu_payload_follows_batch(previous_payload, payload)
+  }
+  phase.payloads.push(payload)
+  phase.entries.push(@pbr_render.render3d_host_main_pass_draw_entry(payload))
+  if can_extend {
+    let batch_index = phase.batches.length() - 1
+    let batch = phase.batches[batch_index]
+    phase.batches[batch_index] = MeshGpuBinnedRenderPhaseBatch3d::{
+      ..batch,
+      instance_count: batch.instance_count + 1,
     }
-    batches.push({
+  } else {
+    phase.batches.push({
       batch_set_key,
       bin_key,
-      representative_payload: first,
-      instance_count: count,
+      representative_payload_index: payload_index,
+      instance_count: 1,
     })
-    index += count
   }
-  batches
+}
+
+///|
+fn render3d_mesh_gpu_binned_phase_entries(
+  phase : MeshGpuBinnedRenderPhase3d,
+) -> Array[@render.HostMesh3dMainPassDrawEntry] {
+  phase.entries
 }
 
 ///|
 fn render3d_draw_mesh_gpu_binned_phase(
-  payloads : Array[@pbr_render.MeshGpuDrawPayload3d],
+  phase : MeshGpuBinnedRenderPhase3d,
 ) -> Unit {
-  for batch in render3d_mesh_gpu_binned_phase_batches(payloads) {
+  for batch in phase.batches {
     ignore(batch.batch_set_key)
     ignore(batch.bin_key)
+    let representative_payload = phase.payloads[batch.representative_payload_index]
     @pbr_render.render3d_draw_mesh_gpu_payload(@pbr_render.MeshGpuDrawPayload3d::{
-      ..batch.representative_payload,
+      ..representative_payload,
       indirect_draw_count: batch.instance_count,
     })
   }

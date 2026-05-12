@@ -264,7 +264,7 @@ fn render3d_execute_shadow_phase_view(
     camera_entity,
     phase_view.shadow_view.light_entity,
   )
-  let shadow_payloads : Array[@pbr_render.MeshGpuDrawPayload3d] = []
+  let shadow_phase = render3d_mesh_gpu_binned_phase_new()
   let draw_storage_base = @render.host_gpu_reserve_mesh3d_draw_storage(
     count=phase_view.items.length(),
   )
@@ -278,7 +278,8 @@ fn render3d_execute_shadow_phase_view(
     let extracted_shadow_mesh = meshes[shadow_phase_item.extracted_index]
     let shadow_mesh = extracted_shadow_mesh.payload
     let draw_storage_index = draw_storage_base + draw_storage_offset
-    shadow_payloads.push(
+    render3d_mesh_gpu_binned_phase_push(
+      shadow_phase,
       @pbr_render.render3d_build_mesh_gpu_draw_payload(
         shadow_mesh.mesh_id,
         shadow_view_key_hi,
@@ -328,18 +329,12 @@ fn render3d_execute_shadow_phase_view(
     )
     draw_storage_offset += 1
   }
-  let shadow_draw_entries : Array[@render.HostMesh3dMainPassDrawEntry] = []
-  for payload in shadow_payloads {
-    shadow_draw_entries.push(
-      @pbr_render.render3d_host_main_pass_draw_entry(payload),
-    )
-  }
   @render.host_gpu_prepare_mesh3d_main_pass_draw_batch(
     preprocess_camera_key_hi=shadow_view_key_hi,
     preprocess_camera_key_lo=shadow_view_key_lo,
     pass_kind~,
-    entries=shadow_draw_entries,
+    entries=render3d_mesh_gpu_binned_phase_entries(shadow_phase),
   )
-  render3d_draw_mesh_gpu_binned_phase(shadow_payloads)
+  render3d_draw_mesh_gpu_binned_phase(shadow_phase)
   @render.host_gpu_end_pass()
 }

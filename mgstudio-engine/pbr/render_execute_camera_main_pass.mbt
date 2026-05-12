@@ -240,7 +240,7 @@ fn render3d_execute_camera_main_pass(
       cleared_targets_this_frame, scene_target_id, clear_enabled,
     ),
   )
-  let main_pass_draws : Array[MeshGpuDrawPayload3d] = []
+  let main_phase = render3d_mesh_gpu_binned_phase_new()
   let transmissive_phase_items : Array[TransmissivePhaseItem3d] = []
   let transparent_draws : Array[MeshGpuDrawPayload3d] = []
   for draw_item_index in 0..<draw_items.length() {
@@ -520,7 +520,7 @@ fn render3d_execute_camera_main_pass(
       })
       continue
     }
-    main_pass_draws.push(draw_payload)
+    render3d_mesh_gpu_binned_phase_push(main_phase, draw_payload)
   }
   let wireframe_draws : Array[MeshGpuDrawPayload3d] = []
   for draw_item_index in 0..<draw_items.length() {
@@ -594,12 +594,7 @@ fn render3d_execute_camera_main_pass(
       ),
     )
   }
-  let batched_draw_entries : Array[@render.HostMesh3dMainPassDrawEntry] = []
-  for draw_payload in main_pass_draws {
-    batched_draw_entries.push(
-      @pbr_render.render3d_host_main_pass_draw_entry(draw_payload),
-    )
-  }
+  let batched_draw_entries = render3d_mesh_gpu_binned_phase_entries(main_phase)
   for transmissive_phase_item in transmissive_phase_items {
     batched_draw_entries.push(
       @pbr_render.render3d_host_main_pass_draw_entry(
@@ -623,7 +618,7 @@ fn render3d_execute_camera_main_pass(
     pass_kind=scene_pass_kind,
     entries=batched_draw_entries,
   )
-  render3d_draw_mesh_gpu_binned_phase(main_pass_draws)
+  render3d_draw_mesh_gpu_binned_phase(main_phase)
   render3d_draw_gizmo_lines_3d(camera_entity, camera)
   render3d_draw_camera_skybox(
     world,
