@@ -188,50 +188,57 @@ pub fn update_skinned_mesh_bounds_system(world : @ecs.World) -> Unit {
   let aabb_column = world.component_column(ecs_key_aabb)
   let mesh3d_column = world.component_column(@mesh.ecs_key_mesh3d)
   let skinned_mesh_column = world.component_column(@mesh.ecs_key_skinned_mesh)
+  let dynamic_bounds_column = world.component_column(
+    @mesh.ecs_key_dynamic_skinned_mesh_bounds,
+  )
   let global_transform_column = world.component_column(
     @transform.ecs_key_global_transform,
   )
+  guard dynamic_bounds_column is Some(dynamic_bounds_column) else { return }
+  guard mesh3d_column is Some(mesh3d_column) else { return }
+  guard skinned_mesh_column is Some(skinned_mesh_column) else { return }
+  guard aabb_column is Some(aabb_column) else { return }
   guard global_transform_column is Some(global_transforms) else { return }
-  world.for_each_component(@mesh.ecs_key_dynamic_skinned_mesh_bounds, fn(
-    entity,
-    _,
-  ) {
-    let has_aabb = match aabb_column {
-      Some(column) => column.contains(entity)
-      None => false
+  let write_sequence : @core.Sequence = {
+    let tick = world.read_sequence()
+    if tick > 0 {
+      tick
+    } else {
+      1
     }
-    guard has_aabb else { return }
-    let mesh3d = match mesh3d_column {
-      Some(column) => column.get_fast(entity)
-      None => None
-    }
-    guard mesh3d is Some(mesh3d) else { return }
-    let skinned_mesh = match skinned_mesh_column {
-      Some(column) => column.get_fast(entity)
-      None => None
-    }
-    guard skinned_mesh is Some(skinned_mesh) else { return }
-    guard mesh_assets.get(mesh3d.mesh()) is Some(mesh_asset) else { return }
-    guard inverse_bindposes_assets.get(skinned_mesh.inverse_bindposes())
-      is Some(inverse_bindposes_asset) else {
-      return
-    }
-    let world_from_entity = global_transforms.get_fast(entity)
-    match
-      @mesh.entity_aabb_from_skinned_mesh_bounds(
-        global_transforms, mesh_asset, skinned_mesh, inverse_bindposes_asset, world_from_entity,
-      ) {
-      Ok(skinned_aabb) => {
-        let aabb = Aabb::from_math(skinned_aabb)
-        let wrote = match aabb_column {
-          Some(column) => column.set_sequence_only_hot(entity, aabb)
-          None => false
-        }
-        if !wrote {
-          visibility_write_aabb(world, entity, aabb)
-        }
+  }
+  mesh3d_column.for_each2_with2_markers_fast_table_row(
+    skinned_mesh_column,
+    dynamic_bounds_column,
+    aabb_column,
+    fn(entity, table_id, row_index, mesh3d, skinned_mesh) {
+      guard mesh_assets.get(mesh3d.mesh()) is Some(mesh_asset) else { return }
+      guard inverse_bindposes_assets.get(skinned_mesh.inverse_bindposes())
+        is Some(inverse_bindposes_asset) else {
+        return
       }
-      Err(_) => ()
-    }
-  })
+      let world_from_entity = if table_id >= 0 && row_index >= 0 {
+        global_transforms.table_value_at_cached_entity_row(
+          entity, table_id, row_index,
+        )
+      } else {
+        global_transforms.get_fast(entity)
+      }
+      match
+        @mesh.entity_aabb_from_skinned_mesh_bounds(
+          global_transforms, mesh_asset, skinned_mesh, inverse_bindposes_asset, world_from_entity,
+        ) {
+        Ok(skinned_aabb) => {
+          let aabb = Aabb::from_math(skinned_aabb)
+          let wrote = aabb_column.set_sequence_only_hot_at_table_row_value(
+            table_id, row_index, aabb, write_sequence,
+          )
+          if !wrote {
+            visibility_write_aabb(world, entity, aabb)
+          }
+        }
+        Err(_) => ()
+      }
+    },
+  )
 }

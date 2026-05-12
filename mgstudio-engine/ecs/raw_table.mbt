@@ -113,6 +113,15 @@ fn RawTableColumn::replace_payload_at_row(
 }
 
 ///|
+fn RawTableColumn::replace_typed_payload_at_row(
+  self : RawTableColumn,
+  row_index : Int,
+  payload : EcsPayload,
+) -> Bool {
+  raw_table_value_column_kernel_replace(self.storage, row_index, payload)
+}
+
+///|
 fn RawTableColumn::replace_writer_at_row(
   self : RawTableColumn,
   row_index : Int,

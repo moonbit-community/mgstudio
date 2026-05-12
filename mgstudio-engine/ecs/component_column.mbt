@@ -108,6 +108,12 @@ pub fn[T] ComponentColumn::contains(
         None => false
       }
     Table => {
+      if !self.world.entity_has_component_local_id(
+          entity,
+          self.local_component_id,
+        ) {
+        return false
+      }
       let entity_id = entity.id
       guard entity_id >= 0 &&
         entity_id < self.world.entity_table_ids.length() &&
@@ -219,6 +225,20 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_row(
   guard row_index >= 0 else { return None }
   guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
   column_ref.val.value_at_row(row_index)
+}
+
+///|
+pub fn[T] ComponentColumn::table_has_value_at_row(
+  self : ComponentColumn[T],
+  table_id : Int,
+  row_index : Int,
+) -> Bool {
+  guard self.storage_type == Table else { return false }
+  guard row_index >= 0 else { return false }
+  guard self.table_column_ref(table_id) is Some(column_ref) else {
+    return false
+  }
+  row_index < raw_table_value_column_kernel_len(column_ref.val.storage)
 }
 
 ///|
@@ -542,10 +562,10 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with(
       is Some(_) else {
       continue
     }
-    guard self.world.archetype_entities_view(archetype_id) is Some(entities) else {
+    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
+    guard self.world.archetype_entities_view(archetype_id) is Some(entities) else {
       continue
     }
     guard self.table_column_ref(table_id) is Some(left_column_ref) else {
@@ -589,6 +609,7 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
   let archetype_ids = self.world
     .archetype_ids_for_component_local_id(self.local_component_id)
     .copy()
+  let visited_tables : Array[Bool] = []
   for archetype_id in archetype_ids {
     if self.world.archetype_component_local_index(
         archetype_id,
@@ -597,22 +618,20 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
       is Some(_) {
       continue
     }
-    guard self.world.archetype_entities_view(archetype_id) is Some(entities) else {
-      continue
-    }
     guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
+    if query_bitset_insert(visited_tables, table_id) == false {
+      continue
+    }
     guard self.table_column_ref(table_id) is Some(column_ref) else { continue }
-    for entity in entities {
-      let entity_id = entity.id
-      if entity_id < 0 || entity_id >= self.world.entity_table_rows.length() {
-        continue
-      }
-      let row_index = self.world.entity_table_rows[entity_id]
-      if row_index < 0 {
-        continue
-      }
+    guard self.world.table_storage(table_id) is Some(table_ref) else {
+      continue
+    }
+    let row_count = table_ref.val.row_count()
+    for row_index in 0..<row_count {
+      guard TableRow::from_index(row_index) is Some(row) else { continue }
+      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
       guard column_ref.val.value_at_row(row_index) is Some(value) else {
         continue
       }
@@ -627,17 +646,39 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
   other : ComponentColumn[U],
   visit : (@core.Entity, T, U) -> Unit,
 ) -> Unit {
+  self.for_each_with_fast_table_row(other, fn(
+    entity,
+    _table_id,
+    _row_index,
+    left,
+    right,
+  ) {
+    visit(entity, left, right)
+  })
+}
+
+///|
+pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast_table_row(
+  self : ComponentColumn[T],
+  other : ComponentColumn[U],
+  visit : (@core.Entity, Int, Int, T, U) -> Unit,
+) -> Unit {
   if self.world.world_id != other.world.world_id {
-    self.for_each_with(other, visit)
+    self.for_each_with(other, fn(entity, left, right) {
+      visit(entity, -1, -1, left, right)
+    })
     return
   }
   if self.storage_type != Table || other.storage_type != Table {
-    self.for_each_with(other, visit)
+    self.for_each_with(other, fn(entity, left, right) {
+      visit(entity, -1, -1, left, right)
+    })
     return
   }
   let archetype_ids = self.world
     .archetype_ids_for_component_local_id(self.local_component_id)
     .copy()
+  let visited_tables : Array[Bool] = []
   for archetype_id in archetype_ids {
     guard self.world.archetype_component_local_index(
         archetype_id,
@@ -646,10 +687,10 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
       is Some(_) else {
       continue
     }
-    guard self.world.archetype_entities_view(archetype_id) is Some(entities) else {
+    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
+    if query_bitset_insert(visited_tables, table_id) == false {
       continue
     }
     guard self.table_column_ref(table_id) is Some(left_column_ref) else {
@@ -658,22 +699,482 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
     guard other.table_column_ref(table_id) is Some(right_column_ref) else {
       continue
     }
-    for entity in entities {
-      let entity_id = entity.id
-      if entity_id < 0 || entity_id >= self.world.entity_table_rows.length() {
-        continue
-      }
-      let row_index = self.world.entity_table_rows[entity_id]
-      if row_index < 0 {
-        continue
-      }
+    guard self.world.table_storage(table_id) is Some(table_ref) else {
+      continue
+    }
+    let row_count = table_ref.val.row_count()
+    for row_index in 0..<row_count {
+      guard TableRow::from_index(row_index) is Some(row) else { continue }
+      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
       guard left_column_ref.val.value_at_row(row_index) is Some(left_value) else {
         continue
       }
       guard right_column_ref.val.value_at_row(row_index) is Some(right_value) else {
         continue
       }
-      visit(entity, left_value, right_value)
+      visit(entity, table_id, row_index, left_value, right_value)
+    }
+  }
+}
+
+///|
+pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row(
+  self : ComponentColumn[T],
+  second : ComponentColumn[U],
+  third : ComponentColumn[V],
+  visit : (@core.Entity, Int, Int, T, U, V) -> Unit,
+) -> Unit {
+  if self.world.world_id != second.world.world_id ||
+    self.world.world_id != third.world.world_id {
+    self.for_each(fn(entity, first_value) {
+      guard second.get(entity) is Some(second_value) else { return }
+      guard third.get(entity) is Some(third_value) else { return }
+      visit(entity, -1, -1, first_value, second_value, third_value)
+    })
+    return
+  }
+  if self.storage_type != Table ||
+    second.storage_type != Table ||
+    third.storage_type != Table {
+    self.for_each(fn(entity, first_value) {
+      guard second.get(entity) is Some(second_value) else { return }
+      guard third.get(entity) is Some(third_value) else { return }
+      visit(entity, -1, -1, first_value, second_value, third_value)
+    })
+    return
+  }
+  let first_count = self.world.component_membership_counts
+    .get(self.local_component_id)
+    .unwrap_or(0)
+  let second_count = self.world.component_membership_counts
+    .get(second.local_component_id)
+    .unwrap_or(0)
+  let third_count = self.world.component_membership_counts
+    .get(third.local_component_id)
+    .unwrap_or(0)
+  let driver_local_component_id = if first_count <= second_count &&
+    first_count <= third_count {
+    self.local_component_id
+  } else if second_count <= third_count {
+    second.local_component_id
+  } else {
+    third.local_component_id
+  }
+  let archetype_ids = self.world
+    .archetype_ids_for_component_local_id(driver_local_component_id)
+    .copy()
+  let visited_tables : Array[Bool] = []
+  for archetype_id in archetype_ids {
+    guard self.world.archetype_local_component_presence_view(archetype_id)
+      is Some(presence) else {
+      continue
+    }
+    if !presence.contains(self.local_component_id) ||
+      !presence.contains(second.local_component_id) ||
+      !presence.contains(third.local_component_id) {
+      continue
+    }
+    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
+      continue
+    }
+    if query_bitset_insert(visited_tables, table_id) == false {
+      continue
+    }
+    guard self.table_column_ref(table_id) is Some(first_column_ref) else {
+      continue
+    }
+    guard second.table_column_ref(table_id) is Some(second_column_ref) else {
+      continue
+    }
+    guard third.table_column_ref(table_id) is Some(third_column_ref) else {
+      continue
+    }
+    guard self.world.table_storage(table_id) is Some(table_ref) else {
+      continue
+    }
+    let row_count = table_ref.val.row_count()
+    for row_index in 0..<row_count {
+      guard TableRow::from_index(row_index) is Some(row) else { continue }
+      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
+      guard first_column_ref.val.value_at_row(row_index) is Some(first_value) else {
+        continue
+      }
+      guard second_column_ref.val.value_at_row(row_index) is Some(second_value) else {
+        continue
+      }
+      guard third_column_ref.val.value_at_row(row_index) is Some(third_value) else {
+        continue
+      }
+      visit(entity, table_id, row_index, first_value, second_value, third_value)
+    }
+  }
+}
+
+///|
+pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, M, N] ComponentColumn::for_each2_with2_markers_fast_table_row(
+  self : ComponentColumn[T],
+  other : ComponentColumn[U],
+  marker_a : ComponentColumn[M],
+  marker_b : ComponentColumn[N],
+  visit : (@core.Entity, Int, Int, T, U) -> Unit,
+) -> Unit {
+  if self.world.world_id != other.world.world_id ||
+    self.world.world_id != marker_a.world.world_id ||
+    self.world.world_id != marker_b.world.world_id {
+    self.for_each(fn(entity, first_value) {
+      guard other.get(entity) is Some(second_value) else { return }
+      guard marker_a.contains(entity) && marker_b.contains(entity) else {
+        return
+      }
+      visit(entity, -1, -1, first_value, second_value)
+    })
+    return
+  }
+  if self.storage_type != Table ||
+    other.storage_type != Table ||
+    marker_a.storage_type != Table ||
+    marker_b.storage_type != Table {
+    self.for_each(fn(entity, first_value) {
+      guard other.get(entity) is Some(second_value) else { return }
+      guard marker_a.contains(entity) && marker_b.contains(entity) else {
+        return
+      }
+      visit(entity, -1, -1, first_value, second_value)
+    })
+    return
+  }
+  let first_count = self.world.component_membership_counts
+    .get(self.local_component_id)
+    .unwrap_or(0)
+  let second_count = self.world.component_membership_counts
+    .get(other.local_component_id)
+    .unwrap_or(0)
+  let marker_a_count = self.world.component_membership_counts
+    .get(marker_a.local_component_id)
+    .unwrap_or(0)
+  let marker_b_count = self.world.component_membership_counts
+    .get(marker_b.local_component_id)
+    .unwrap_or(0)
+  let driver_local_component_id = if first_count <= second_count &&
+    first_count <= marker_a_count &&
+    first_count <= marker_b_count {
+    self.local_component_id
+  } else if second_count <= marker_a_count && second_count <= marker_b_count {
+    other.local_component_id
+  } else if marker_a_count <= marker_b_count {
+    marker_a.local_component_id
+  } else {
+    marker_b.local_component_id
+  }
+  let archetype_ids = self.world
+    .archetype_ids_for_component_local_id(driver_local_component_id)
+    .copy()
+  let visited_tables : Array[Bool] = []
+  for archetype_id in archetype_ids {
+    guard self.world.archetype_local_component_presence_view(archetype_id)
+      is Some(presence) else {
+      continue
+    }
+    if !presence.contains(self.local_component_id) ||
+      !presence.contains(other.local_component_id) ||
+      !presence.contains(marker_a.local_component_id) ||
+      !presence.contains(marker_b.local_component_id) {
+      continue
+    }
+    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
+      continue
+    }
+    if query_bitset_insert(visited_tables, table_id) == false {
+      continue
+    }
+    guard self.table_column_ref(table_id) is Some(first_column_ref) else {
+      continue
+    }
+    guard other.table_column_ref(table_id) is Some(second_column_ref) else {
+      continue
+    }
+    guard marker_a.table_column_ref(table_id) is Some(_) else { continue }
+    guard marker_b.table_column_ref(table_id) is Some(_) else { continue }
+    guard self.world.table_storage(table_id) is Some(table_ref) else {
+      continue
+    }
+    let row_count = table_ref.val.row_count()
+    for row_index in 0..<row_count {
+      guard TableRow::from_index(row_index) is Some(row) else { continue }
+      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
+      guard first_column_ref.val.value_at_row(row_index) is Some(first_value) else {
+        continue
+      }
+      guard second_column_ref.val.value_at_row(row_index) is Some(second_value) else {
+        continue
+      }
+      visit(entity, table_id, row_index, first_value, second_value)
+    }
+  }
+}
+
+///|
+pub fn[
+  T : EcsPayloadCodec,
+  U : EcsPayloadCodec,
+  V : EcsPayloadCodec,
+  W : EcsPayloadCodec,
+] ComponentColumn::for_each4_fast_table_row(
+  self : ComponentColumn[T],
+  second : ComponentColumn[U],
+  third : ComponentColumn[V],
+  fourth : ComponentColumn[W],
+  visit : (@core.Entity, Int, Int, T, U, V, W) -> Unit,
+) -> Unit {
+  if self.world.world_id != second.world.world_id ||
+    self.world.world_id != third.world.world_id ||
+    self.world.world_id != fourth.world.world_id {
+    self.for_each(fn(entity, first_value) {
+      guard second.get(entity) is Some(second_value) else { return }
+      guard third.get(entity) is Some(third_value) else { return }
+      guard fourth.get(entity) is Some(fourth_value) else { return }
+      visit(
+        entity, -1, -1, first_value, second_value, third_value, fourth_value,
+      )
+    })
+    return
+  }
+  if self.storage_type != Table ||
+    second.storage_type != Table ||
+    third.storage_type != Table ||
+    fourth.storage_type != Table {
+    self.for_each(fn(entity, first_value) {
+      guard second.get(entity) is Some(second_value) else { return }
+      guard third.get(entity) is Some(third_value) else { return }
+      guard fourth.get(entity) is Some(fourth_value) else { return }
+      visit(
+        entity, -1, -1, first_value, second_value, third_value, fourth_value,
+      )
+    })
+    return
+  }
+  let first_count = self.world.component_membership_counts
+    .get(self.local_component_id)
+    .unwrap_or(0)
+  let second_count = self.world.component_membership_counts
+    .get(second.local_component_id)
+    .unwrap_or(0)
+  let third_count = self.world.component_membership_counts
+    .get(third.local_component_id)
+    .unwrap_or(0)
+  let fourth_count = self.world.component_membership_counts
+    .get(fourth.local_component_id)
+    .unwrap_or(0)
+  let driver_local_component_id = if first_count <= second_count &&
+    first_count <= third_count &&
+    first_count <= fourth_count {
+    self.local_component_id
+  } else if second_count <= third_count && second_count <= fourth_count {
+    second.local_component_id
+  } else if third_count <= fourth_count {
+    third.local_component_id
+  } else {
+    fourth.local_component_id
+  }
+  let archetype_ids = self.world
+    .archetype_ids_for_component_local_id(driver_local_component_id)
+    .copy()
+  let visited_tables : Array[Bool] = []
+  for archetype_id in archetype_ids {
+    guard self.world.archetype_local_component_presence_view(archetype_id)
+      is Some(presence) else {
+      continue
+    }
+    if !presence.contains(self.local_component_id) ||
+      !presence.contains(second.local_component_id) ||
+      !presence.contains(third.local_component_id) ||
+      !presence.contains(fourth.local_component_id) {
+      continue
+    }
+    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
+      continue
+    }
+    if query_bitset_insert(visited_tables, table_id) == false {
+      continue
+    }
+    guard self.table_column_ref(table_id) is Some(first_column_ref) else {
+      continue
+    }
+    guard second.table_column_ref(table_id) is Some(second_column_ref) else {
+      continue
+    }
+    guard third.table_column_ref(table_id) is Some(third_column_ref) else {
+      continue
+    }
+    guard fourth.table_column_ref(table_id) is Some(fourth_column_ref) else {
+      continue
+    }
+    guard self.world.table_storage(table_id) is Some(table_ref) else {
+      continue
+    }
+    let row_count = table_ref.val.row_count()
+    for row_index in 0..<row_count {
+      guard TableRow::from_index(row_index) is Some(row) else { continue }
+      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
+      guard first_column_ref.val.value_at_row(row_index) is Some(first_value) else {
+        continue
+      }
+      guard second_column_ref.val.value_at_row(row_index) is Some(second_value) else {
+        continue
+      }
+      guard third_column_ref.val.value_at_row(row_index) is Some(third_value) else {
+        continue
+      }
+      guard fourth_column_ref.val.value_at_row(row_index) is Some(fourth_value) else {
+        continue
+      }
+      visit(
+        entity, table_id, row_index, first_value, second_value, third_value, fourth_value,
+      )
+    }
+  }
+}
+
+///|
+pub fn[
+  T : EcsPayloadCodec,
+  U : EcsPayloadCodec,
+  V : EcsPayloadCodec,
+  W : EcsPayloadCodec,
+  X : EcsPayloadCodec,
+] ComponentColumn::for_each5_fast_table_row(
+  self : ComponentColumn[T],
+  second : ComponentColumn[U],
+  third : ComponentColumn[V],
+  fourth : ComponentColumn[W],
+  fifth : ComponentColumn[X],
+  visit : (@core.Entity, Int, Int, T, U, V, W, X) -> Unit,
+) -> Unit {
+  if self.world.world_id != second.world.world_id ||
+    self.world.world_id != third.world.world_id ||
+    self.world.world_id != fourth.world.world_id ||
+    self.world.world_id != fifth.world.world_id {
+    self.for_each(fn(entity, first_value) {
+      guard second.get(entity) is Some(second_value) else { return }
+      guard third.get(entity) is Some(third_value) else { return }
+      guard fourth.get(entity) is Some(fourth_value) else { return }
+      guard fifth.get(entity) is Some(fifth_value) else { return }
+      visit(
+        entity, -1, -1, first_value, second_value, third_value, fourth_value, fifth_value,
+      )
+    })
+    return
+  }
+  if self.storage_type != Table ||
+    second.storage_type != Table ||
+    third.storage_type != Table ||
+    fourth.storage_type != Table ||
+    fifth.storage_type != Table {
+    self.for_each(fn(entity, first_value) {
+      guard second.get(entity) is Some(second_value) else { return }
+      guard third.get(entity) is Some(third_value) else { return }
+      guard fourth.get(entity) is Some(fourth_value) else { return }
+      guard fifth.get(entity) is Some(fifth_value) else { return }
+      visit(
+        entity, -1, -1, first_value, second_value, third_value, fourth_value, fifth_value,
+      )
+    })
+    return
+  }
+  let first_count = self.world.component_membership_counts
+    .get(self.local_component_id)
+    .unwrap_or(0)
+  let second_count = self.world.component_membership_counts
+    .get(second.local_component_id)
+    .unwrap_or(0)
+  let third_count = self.world.component_membership_counts
+    .get(third.local_component_id)
+    .unwrap_or(0)
+  let fourth_count = self.world.component_membership_counts
+    .get(fourth.local_component_id)
+    .unwrap_or(0)
+  let fifth_count = self.world.component_membership_counts
+    .get(fifth.local_component_id)
+    .unwrap_or(0)
+  let driver_local_component_id = if first_count <= second_count &&
+    first_count <= third_count &&
+    first_count <= fourth_count &&
+    first_count <= fifth_count {
+    self.local_component_id
+  } else if second_count <= third_count &&
+    second_count <= fourth_count &&
+    second_count <= fifth_count {
+    second.local_component_id
+  } else if third_count <= fourth_count && third_count <= fifth_count {
+    third.local_component_id
+  } else if fourth_count <= fifth_count {
+    fourth.local_component_id
+  } else {
+    fifth.local_component_id
+  }
+  let archetype_ids = self.world
+    .archetype_ids_for_component_local_id(driver_local_component_id)
+    .copy()
+  let visited_tables : Array[Bool] = []
+  for archetype_id in archetype_ids {
+    guard self.world.archetype_local_component_presence_view(archetype_id)
+      is Some(presence) else {
+      continue
+    }
+    if !presence.contains(self.local_component_id) ||
+      !presence.contains(second.local_component_id) ||
+      !presence.contains(third.local_component_id) ||
+      !presence.contains(fourth.local_component_id) ||
+      !presence.contains(fifth.local_component_id) {
+      continue
+    }
+    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
+      continue
+    }
+    if query_bitset_insert(visited_tables, table_id) == false {
+      continue
+    }
+    guard self.table_column_ref(table_id) is Some(first_column_ref) else {
+      continue
+    }
+    guard second.table_column_ref(table_id) is Some(second_column_ref) else {
+      continue
+    }
+    guard third.table_column_ref(table_id) is Some(third_column_ref) else {
+      continue
+    }
+    guard fourth.table_column_ref(table_id) is Some(fourth_column_ref) else {
+      continue
+    }
+    guard fifth.table_column_ref(table_id) is Some(fifth_column_ref) else {
+      continue
+    }
+    guard self.world.table_storage(table_id) is Some(table_ref) else {
+      continue
+    }
+    let row_count = table_ref.val.row_count()
+    for row_index in 0..<row_count {
+      guard TableRow::from_index(row_index) is Some(row) else { continue }
+      guard table_ref.val.entity_at_row(row) is Some(entity) else { continue }
+      guard first_column_ref.val.value_at_row(row_index) is Some(first_value) else {
+        continue
+      }
+      guard second_column_ref.val.value_at_row(row_index) is Some(second_value) else {
+        continue
+      }
+      guard third_column_ref.val.value_at_row(row_index) is Some(third_value) else {
+        continue
+      }
+      guard fourth_column_ref.val.value_at_row(row_index) is Some(fourth_value) else {
+        continue
+      }
+      guard fifth_column_ref.val.value_at_row(row_index) is Some(fifth_value) else {
+        continue
+      }
+      visit(
+        entity, table_id, row_index, first_value, second_value, third_value, fourth_value,
+        fifth_value,
+      )
     }
   }
 }
@@ -751,9 +1252,9 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only(
         return false
       }
       let row_index = row.index()
-      guard column_ref.val.replace_writer_at_row(
+      guard column_ref.val.replace_typed_payload_at_row(
         row_index,
-        ecs_payload_writer(self.key, value),
+        T::to_ecs_payload(value),
       ) else {
         return false
       }
@@ -812,9 +1313,9 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_fast(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return false
       }
-      guard column_ref.val.replace_writer_at_row(
+      guard column_ref.val.replace_typed_payload_at_row(
         row_index,
-        ecs_payload_writer(self.key, value),
+        T::to_ecs_payload(value),
       ) else {
         return false
       }
@@ -863,9 +1364,9 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return false
       }
-      guard column_ref.val.replace_writer_at_row(
+      guard column_ref.val.replace_typed_payload_at_row(
         row_index,
-        ecs_payload_writer(self.key, value),
+        T::to_ecs_payload(value),
       ) else {
         return false
       }
@@ -898,9 +1399,9 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_row(
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  guard column_ref.val.replace_writer_at_row(
+  guard column_ref.val.replace_typed_payload_at_row(
     row_index,
-    ecs_payload_writer(self.key, value),
+    T::to_ecs_payload(value),
   ) else {
     return false
   }
@@ -926,9 +1427,9 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row(
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  guard column_ref.val.replace_writer_at_row(
+  guard column_ref.val.replace_typed_payload_at_row(
     row_index,
-    ecs_payload_writer(self.key, value),
+    T::to_ecs_payload(value),
   ) else {
     return false
   }
@@ -949,9 +1450,9 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row_
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  guard column_ref.val.replace_writer_at_row(
+  guard column_ref.val.replace_typed_payload_at_row(
     row_index,
-    ecs_payload_writer(self.key, value),
+    T::to_ecs_payload(value),
   ) else {
     return false
   }

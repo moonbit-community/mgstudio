@@ -421,8 +421,15 @@ pub fn entity_aabb_from_skinned_mesh_bounds(
   }
   let accumulator = AabbAccumulator::new()
   let joints = skinned_mesh.joints()
-  for entry in skinned_mesh_bounds.iter() {
-    let (joint_index, modelspace_joint_aabb) = entry
+  let bounds_len = if skinned_mesh_bounds.aabbs.length() <
+    skinned_mesh_bounds.aabb_index_to_joint_index.length() {
+    skinned_mesh_bounds.aabbs.length()
+  } else {
+    skinned_mesh_bounds.aabb_index_to_joint_index.length()
+  }
+  for bounds_index in 0..<bounds_len {
+    let joint_index = skinned_mesh_bounds.aabb_index_to_joint_index[bounds_index]
+    let modelspace_joint_aabb = skinned_mesh_bounds.aabbs[bounds_index]
     let joint_index_value = joint_index.value()
     let joint_from_model = match
       skinned_mesh_inverse_bindposes.get(joint_index_value) {

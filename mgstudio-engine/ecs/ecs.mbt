@@ -323,6 +323,7 @@ pub struct World {
   entity_table_rows : Array[Int]
   entity_archetype_rows : Array[Int]
   entity_component_local_ids : Array[Array[Int]]
+  entity_component_local_id_presence : Array[@utils.IntBitSet]
   required_components : Map[Int, Ref[RequiredComponentsState]]
   used_components : @utils.IntBitSet
   added_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
@@ -391,6 +392,7 @@ pub fn World::new() -> World {
     entity_table_rows: [],
     entity_archetype_rows: [],
     entity_component_local_ids: [],
+    entity_component_local_id_presence: [],
     required_components: {},
     used_components: @utils.IntBitSet::new(),
     added_components: {},

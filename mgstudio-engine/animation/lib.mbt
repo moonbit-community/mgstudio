@@ -1784,8 +1784,18 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   )
   if target_id_column is Some(target_id_column) &&
     animated_by_column is Some(animated_by_column) {
-    animated_by_column.for_each_with_fast(target_id_column, fn(
+    let write_sequence : @core.Sequence = {
+      let tick = world.read_sequence()
+      if tick > 0 {
+        tick
+      } else {
+        1
+      }
+    }
+    animated_by_column.for_each_with_fast_table_row(target_id_column, fn(
       entity,
+      table_id,
+      row_index,
       animated_by,
       target_id,
     ) {
@@ -1817,14 +1827,28 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         clip_cache,
         evaluation_state,
         match transform_column {
-          Some(column) => column.get_fast(entity)
+          Some(column) =>
+            if table_id >= 0 && row_index >= 0 {
+              column.table_value_at_cached_entity_row(
+                entity, table_id, row_index,
+              )
+            } else {
+              column.get_fast(entity)
+            }
           None => None
         },
       )
 
       if next_transform is Some(transform) {
         let wrote = match transform_column {
-          Some(column) => column.set_sequence_only_hot(entity, transform)
+          Some(column) =>
+            if table_id >= 0 && row_index >= 0 {
+              column.set_sequence_only_hot_at_table_row_value(
+                table_id, row_index, transform, write_sequence,
+              )
+            } else {
+              column.set_sequence_only_hot(entity, transform)
+            }
           None => false
         }
         if !wrote {
@@ -1833,7 +1857,14 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       }
       if next_weights is Some(weights) {
         let wrote = match weights_column {
-          Some(column) => column.set_sequence_only_hot(entity, weights)
+          Some(column) =>
+            if table_id >= 0 && row_index >= 0 {
+              column.set_sequence_only_hot_at_table_row_value(
+                table_id, row_index, weights, write_sequence,
+              )
+            } else {
+              column.set_sequence_only_hot(entity, weights)
+            }
           None => false
         }
         if !wrote {
@@ -1842,7 +1873,14 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       }
       if next_text_color is Some(text_color) {
         let wrote = match text_color_column {
-          Some(column) => column.set_sequence_only_hot(entity, text_color)
+          Some(column) =>
+            if table_id >= 0 && row_index >= 0 {
+              column.set_sequence_only_hot_at_table_row_value(
+                table_id, row_index, text_color, write_sequence,
+              )
+            } else {
+              column.set_sequence_only_hot(entity, text_color)
+            }
           None => false
         }
         if !wrote {
