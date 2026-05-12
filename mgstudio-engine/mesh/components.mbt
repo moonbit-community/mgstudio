@@ -168,6 +168,8 @@ pub fn SkinnedMeshInverseBindposes::len(
 pub struct SkinnedMesh {
   inverse_bindposes : @asset.Handle[SkinnedMeshInverseBindposes]
   joints : Array[@core.Entity]
+  joint_table_ids : Array[Int]
+  joint_row_indices : Array[Int]
 }
 
 ///|
@@ -175,7 +177,12 @@ pub fn SkinnedMesh::new(
   inverse_bindposes : @asset.Handle[SkinnedMeshInverseBindposes],
   joints : Array[@core.Entity],
 ) -> SkinnedMesh {
-  { inverse_bindposes, joints }
+  {
+    inverse_bindposes,
+    joints,
+    joint_table_ids: Array::make(joints.length(), -1),
+    joint_row_indices: Array::make(joints.length(), -1),
+  }
 }
 
 ///|
@@ -188,6 +195,54 @@ pub fn SkinnedMesh::inverse_bindposes(
   self : SkinnedMesh,
 ) -> @asset.Handle[SkinnedMeshInverseBindposes] {
   self.inverse_bindposes
+}
+
+///|
+fn SkinnedMesh::ensure_joint_row_cache(self : SkinnedMesh) -> Unit {
+  while self.joint_table_ids.length() < self.joints.length() {
+    self.joint_table_ids.push(-1)
+  }
+  while self.joint_row_indices.length() < self.joints.length() {
+    self.joint_row_indices.push(-1)
+  }
+}
+
+///|
+pub fn SkinnedMesh::joint_global_transform_cached(
+  self : SkinnedMesh,
+  column : @ecs.ComponentColumn[@transform.GlobalTransform],
+  joint_index : Int,
+) -> @transform.GlobalTransform? {
+  if joint_index < 0 || joint_index >= self.joints.length() {
+    return None
+  }
+  self.ensure_joint_row_cache()
+  let joint = self.joints[joint_index]
+  if joint_index < self.joint_table_ids.length() &&
+    joint_index < self.joint_row_indices.length() {
+    let table_id = self.joint_table_ids[joint_index]
+    let row_index = self.joint_row_indices[joint_index]
+    if table_id >= 0 && row_index >= 0 {
+      match
+        column.table_value_at_cached_entity_row(joint, table_id, row_index) {
+        Some(global_transform) => return Some(global_transform)
+        None => ()
+      }
+    }
+  }
+  match column.get_fast(joint) {
+    Some(global_transform) => {
+      match column.table_row_location(joint) {
+        Some((table_id, row_index)) => {
+          self.joint_table_ids[joint_index] = table_id
+          self.joint_row_indices[joint_index] = row_index
+        }
+        None => ()
+      }
+      Some(global_transform)
+    }
+    None => None
+  }
 }
 
 ///|

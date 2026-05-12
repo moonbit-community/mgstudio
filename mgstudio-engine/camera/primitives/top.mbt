@@ -225,7 +225,7 @@ pub fn update_skinned_mesh_bounds_system(world : @ecs.World) -> Unit {
         global_transforms.get_fast(entity)
       }
       match
-        @mesh.entity_aabb_from_skinned_mesh_bounds(
+        @mesh.entity_aabb_from_skinned_mesh_bounds_cached(
           global_transforms, mesh_asset, skinned_mesh, inverse_bindposes_asset, world_from_entity,
         ) {
         Ok(skinned_aabb) => {

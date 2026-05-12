@@ -32,6 +32,8 @@ pub let ecs_key_skinned_mesh : @ecs.ComponentKey[SkinnedMesh]
 
 pub fn entity_aabb_from_skinned_mesh_bounds(@ecs.ComponentColumn[@transform.GlobalTransform], Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError]
 
+pub fn entity_aabb_from_skinned_mesh_bounds_cached(@ecs.ComponentColumn[@transform.GlobalTransform], Mesh, SkinnedMesh, SkinnedMeshInverseBindposes, @transform.GlobalTransform?) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError]
+
 pub fn first_available_custom_mesh_attribute() -> UInt64
 
 pub fn mesh_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -411,8 +413,11 @@ pub impl @ecs.EcsPayloadCodec for MorphWeights
 pub struct SkinnedMesh {
   inverse_bindposes : @asset.Handle[SkinnedMeshInverseBindposes]
   joints : Array[@core.Entity]
+  joint_table_ids : Array[Int]
+  joint_row_indices : Array[Int]
 }
 pub fn SkinnedMesh::inverse_bindposes(Self) -> @asset.Handle[SkinnedMeshInverseBindposes]
+pub fn SkinnedMesh::joint_global_transform_cached(Self, @ecs.ComponentColumn[@transform.GlobalTransform], Int) -> @transform.GlobalTransform?
 pub fn SkinnedMesh::joints(Self) -> Array[@core.Entity]
 pub fn SkinnedMesh::new(@asset.Handle[SkinnedMeshInverseBindposes], Array[@core.Entity]) -> Self
 pub impl @ecs.Component for SkinnedMesh

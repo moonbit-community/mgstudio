@@ -492,6 +492,25 @@ pub fn entity_aabb_from_skinned_mesh_bounds(
 }
 
 ///|
+pub fn entity_aabb_from_skinned_mesh_bounds_cached(
+  joint_transforms : @ecs.ComponentColumn[@transform.GlobalTransform],
+  mesh : Mesh,
+  skinned_mesh : SkinnedMesh,
+  skinned_mesh_inverse_bindposes : SkinnedMeshInverseBindposes,
+  world_from_entity : @transform.GlobalTransform?,
+) -> Result[@math.Aabb3d, EntityAabbFromSkinnedMeshBoundsError] {
+  entity_aabb_from_skinned_mesh_bounds_with_fetch(
+    mesh,
+    skinned_mesh,
+    skinned_mesh_inverse_bindposes,
+    world_from_entity,
+    fn(_joint_entity, joint_index) {
+      skinned_mesh.joint_global_transform_cached(joint_transforms, joint_index)
+    },
+  )
+}
+
+///|
 pub fn SkinnedMeshBounds::from_mesh(
   mesh : Mesh,
 ) -> Result[SkinnedMeshBounds, SkinnedMeshBoundsError] {

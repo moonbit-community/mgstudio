@@ -44,16 +44,67 @@ pub impl @json.FromJson for Parent with from_json(json, path) {
 ///|
 pub struct Children {
   entities : Array[@core.Entity]
+  entity_table_ids : Array[Int]
+  entity_row_indices : Array[Int]
 }
 
 ///|
 pub fn Children::new(entities : Array[@core.Entity]) -> Children {
-  Children::{ entities, }
+  Children::{
+    entities,
+    entity_table_ids: Array::make(entities.length(), -1),
+    entity_row_indices: Array::make(entities.length(), -1),
+  }
 }
 
 ///|
 pub fn Children::entities(self : Children) -> Array[@core.Entity] {
   self.entities
+}
+
+///|
+fn Children::ensure_entity_row_cache(self : Children) -> Unit {
+  while self.entity_table_ids.length() < self.entities.length() {
+    self.entity_table_ids.push(-1)
+  }
+  while self.entity_row_indices.length() < self.entities.length() {
+    self.entity_row_indices.push(-1)
+  }
+}
+
+///|
+pub fn Children::entity_table_row_cached(
+  self : Children,
+  world : @ecs.World,
+  index : Int,
+) -> (Int, Int)? {
+  guard index >= 0 && index < self.entities.length() else { return None }
+  self.ensure_entity_row_cache()
+  let entity = self.entities[index]
+  let table_id = self.entity_table_ids[index]
+  let row_index = self.entity_row_indices[index]
+  if table_id >= 0 && row_index >= 0 {
+    let entity_id = entity.id
+    if entity_id >= 0 &&
+      entity_id < world.entity_table_ids.length() &&
+      entity_id < world.entity_table_rows.length() &&
+      world.entity_table_ids[entity_id] == table_id &&
+      world.entity_table_rows[entity_id] == row_index {
+      return Some((table_id, row_index))
+    }
+  }
+  let entity_id = entity.id
+  guard entity_id >= 0 &&
+    entity_id < world.entity_table_ids.length() &&
+    entity_id < world.entity_table_rows.length() else {
+    return None
+  }
+  let next_table_id = world.entity_table_ids[entity_id]
+  let next_row_index = world.entity_table_rows[entity_id]
+  guard next_table_id >= 0 && next_row_index >= 0 else { return None }
+  self.entity_table_ids[index] = next_table_id
+  self.entity_row_indices[index] = next_row_index
+  Some((next_table_id, next_row_index))
 }
 
 ///|

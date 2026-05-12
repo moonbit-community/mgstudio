@@ -80,6 +80,8 @@ fn transform_dense_entity_slot(
 ///|
 priv struct TransformPropagationStackItem {
   entity : @core.Entity
+  table_id : Int
+  row_index : Int
   parent : @core.Entity
   parent_global : GlobalTransform
   parent_global_changed : Bool
@@ -414,8 +416,15 @@ fn propagate_descendants_dense(
   let root_children = children.entities()
   for index in 0..<root_children.length() {
     let reverse_index = root_children.length() - 1 - index
+    let (table_id, row_index) = match
+      children.entity_table_row_cached(_world, reverse_index) {
+      Some(location) => location
+      None => (-1, -1)
+    }
     scratch.dense_stack.push(TransformPropagationStackItem::{
       entity: root_children[reverse_index],
+      table_id,
+      row_index,
       parent,
       parent_global,
       parent_global_changed,
@@ -427,8 +436,9 @@ fn propagate_descendants_dense(
       None => break
     }
     let child = stack_item.entity
-    guard transform_dense_entity_slot(_world, child)
-      is Some((table_id, row_index)) else {
+    let table_id = stack_item.table_id
+    let row_index = stack_item.row_index
+    if table_id < 0 || row_index < 0 {
       continue
     }
     if static_optimizations_enabled &&
@@ -459,8 +469,15 @@ fn propagate_descendants_dense(
         let grandchildren = grand_children.entities()
         for index in 0..<grandchildren.length() {
           let reverse_index = grandchildren.length() - 1 - index
+          let (grandchild_table_id, grandchild_row_index) = match
+            grand_children.entity_table_row_cached(_world, reverse_index) {
+            Some(location) => location
+            None => (-1, -1)
+          }
           scratch.dense_stack.push(TransformPropagationStackItem::{
             entity: grandchildren[reverse_index],
+            table_id: grandchild_table_id,
+            row_index: grandchild_row_index,
             parent: child,
             parent_global: child_global,
             parent_global_changed: child_global_changed,

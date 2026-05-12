@@ -19,8 +19,11 @@ pub fn hierarchy_install_component_metadata() -> Unit
 // Types and methods
 pub struct Children {
   entities : Array[@core.Entity]
+  entity_table_ids : Array[Int]
+  entity_row_indices : Array[Int]
 }
 pub fn Children::entities(Self) -> Array[@core.Entity]
+pub fn Children::entity_table_row_cached(Self, @ecs.World, Int) -> (Int, Int)?
 pub fn Children::new(Array[@core.Entity]) -> Self
 pub impl @ecs.Component for Children
 pub impl @ecs.EcsPayloadCodec for Children

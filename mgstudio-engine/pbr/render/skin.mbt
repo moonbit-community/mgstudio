@@ -139,8 +139,6 @@ fn SkinOffsetAllocator::free(
 pub struct SkinUniformInfo {
   allocation : SkinAllocation
   joints : Array[@core.Entity]
-  joint_table_ids : Array[Int]
-  joint_row_indices : Array[Int]
 }
 
 ///|
@@ -382,41 +380,12 @@ fn render3d_write_skin_joint_matrix(
   joint_index : Int,
   joint : @core.Entity,
   inverse_bindpose : @mesh.SkinningMat4,
-  joint_table_ids : Array[Int],
-  joint_row_indices : Array[Int],
+  skinned_mesh : @mesh.SkinnedMesh,
 ) -> Unit {
   match transform_columns.global {
-    Some(column) => {
-      if joint_index >= 0 &&
-        joint_index < joint_table_ids.length() &&
-        joint_index < joint_row_indices.length() {
-        let table_id = joint_table_ids[joint_index]
-        let row_index = joint_row_indices[joint_index]
-        if table_id >= 0 && row_index >= 0 {
-          match
-            column.table_value_at_cached_entity_row(joint, table_id, row_index) {
-            Some(joint_global) => {
-              render3d_write_skin_matrix(
-                skin_uniforms_ref, matrix_index, joint_global, inverse_bindpose,
-              )
-              return
-            }
-            None => ()
-          }
-        }
-      }
-      match column.get_fast(joint) {
+    Some(column) =>
+      match skinned_mesh.joint_global_transform_cached(column, joint_index) {
         Some(joint_global) => {
-          match column.table_row_location(joint) {
-            Some((table_id, row_index)) =>
-              if joint_index >= 0 &&
-                joint_index < joint_table_ids.length() &&
-                joint_index < joint_row_indices.length() {
-                joint_table_ids[joint_index] = table_id
-                joint_row_indices[joint_index] = row_index
-              }
-            None => ()
-          }
           render3d_write_skin_matrix(
             skin_uniforms_ref, matrix_index, joint_global, inverse_bindpose,
           )
@@ -424,7 +393,6 @@ fn render3d_write_skin_joint_matrix(
         }
         None => ()
       }
-    }
     None => ()
   }
   let joint_world = render3d_entity_world_transform_cached_with_columns(
@@ -480,27 +448,7 @@ fn render3d_add_skin(
     Some(allocation) => allocation
     None => return
   }
-  let joint_table_ids = Array::make(joints.length(), -1)
-  let joint_row_indices = Array::make(joints.length(), -1)
-  match transform_columns.global {
-    Some(column) =>
-      for joint_index in 0..<joints.length() {
-        match column.table_row_location(joints[joint_index]) {
-          Some((table_id, row_index)) => {
-            joint_table_ids[joint_index] = table_id
-            joint_row_indices[joint_index] = row_index
-          }
-          None => ()
-        }
-      }
-    None => ()
-  }
-  let info = SkinUniformInfo::{
-    allocation,
-    joints,
-    joint_table_ids,
-    joint_row_indices,
-  }
+  let info = SkinUniformInfo::{ allocation, joints }
   let matrix_offset = info.offset()
   let inverse_bindposes_asset = inverse_bindposes_assets.get(
     skinned_mesh.inverse_bindposes(),
@@ -531,8 +479,7 @@ fn render3d_add_skin(
           joint_index,
           joint,
           inverse_bindpose,
-          joint_table_ids,
-          joint_row_indices,
+          skinned_mesh,
         )
       None =>
         render3d_write_identity_skin_matrix(
@@ -651,35 +598,22 @@ fn render3d_extract_joints_for_skin(
     inverse_bindposes_values.length()
   }
   let matrix_offset = info.offset()
-  let joint_table_ids = info.joint_table_ids
-  let joint_row_indices = info.joint_row_indices
   for joint_index in 0..<joint_count {
     let joint = joints[joint_index]
     let inverse_bindpose = inverse_bindposes_values[joint_index]
     match transform_columns.global {
       Some(column) =>
-        if joint_index >= 0 &&
-          joint_index < joint_table_ids.length() &&
-          joint_index < joint_row_indices.length() {
-          let table_id = joint_table_ids[joint_index]
-          let row_index = joint_row_indices[joint_index]
-          if table_id >= 0 && row_index >= 0 {
-            match
-              column.table_value_at_cached_entity_row(
-                joint, table_id, row_index,
-              ) {
-              Some(joint_global) => {
-                render3d_write_skin_matrix(
-                  skin_uniforms_ref,
-                  matrix_offset + joint_index,
-                  joint_global,
-                  inverse_bindpose,
-                )
-                continue
-              }
-              None => ()
-            }
+        match skinned_mesh.joint_global_transform_cached(column, joint_index) {
+          Some(joint_global) => {
+            render3d_write_skin_matrix(
+              skin_uniforms_ref,
+              matrix_offset + joint_index,
+              joint_global,
+              inverse_bindpose,
+            )
+            continue
           }
+          None => ()
         }
       None => ()
     }
@@ -692,8 +626,7 @@ fn render3d_extract_joints_for_skin(
       joint_index,
       joint,
       inverse_bindpose,
-      joint_table_ids,
-      joint_row_indices,
+      skinned_mesh,
     )
   }
 }

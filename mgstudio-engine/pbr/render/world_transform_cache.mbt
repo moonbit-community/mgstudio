@@ -526,7 +526,7 @@ pub fn render3d_extract_skinning_matrices_with_columns(
     }
     match global_column {
       Some(store) =>
-        match store.get_fast(joint_entity) {
+        match skinned_mesh.joint_global_transform_cached(store, joint_index) {
           Some(joint_global) =>
             @mesh.SkinningMat4::from_global_transform(joint_global).mul_write_row_major_f32(
               inverse_bindpose, out, out_base,

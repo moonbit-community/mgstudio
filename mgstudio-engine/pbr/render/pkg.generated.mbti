@@ -1130,8 +1130,6 @@ pub(all) struct SkinOffsetFreeRange {
 pub struct SkinUniformInfo {
   allocation : SkinAllocation
   joints : Array[@core.Entity]
-  joint_table_ids : Array[Int]
-  joint_row_indices : Array[Int]
 }
 
 pub struct SkinUniforms {
