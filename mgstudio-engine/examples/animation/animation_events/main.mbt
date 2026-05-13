@@ -31,7 +31,7 @@ pub(all) enum MessagePalette {
 
 ///|
 struct MessageFade {
-  palette : MessagePalette
+  mut palette : MessagePalette
 }
 
 ///|
@@ -168,7 +168,7 @@ fn on_set_message(
   let event = set_message.event()
   let (text2d, color, fade) = text.get()
   text2d.set(@text.Text2d::new(event.value))
-  fade.set(MessageFade::{ palette: event.palette })
+  fade.modify(fn(value) { value.palette = event.palette })
   color.set(@text.TextColor::new(message_color(event.palette, 1.0F)))
 }
 

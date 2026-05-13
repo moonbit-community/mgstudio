@@ -38,6 +38,9 @@ priv enum Row {
 }
 
 ///|
+impl @ecs.Mutable for Row
+
+///|
 let row_key : @ecs.ComponentKey[Row] = @ecs.register_component(
   debug_name="examples.3d.3d_shapes.Row",
 )

@@ -154,6 +154,9 @@ pub(all) enum Projection {
 }
 
 ///|
+pub impl @ecs.Mutable for Projection
+
+///|
 pub fn Projection::default() -> Projection {
   Perspective(PerspectiveProjection3d::default())
 }

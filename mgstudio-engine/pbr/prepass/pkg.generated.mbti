@@ -117,6 +117,7 @@ pub fn PreviousGlobalTransform::new(@transform.Transform) -> Self
 pub fn PreviousGlobalTransform::transform(Self) -> @transform.Transform
 pub impl @ecs.Component for PreviousGlobalTransform
 pub impl @ecs.EcsPayloadCodec for PreviousGlobalTransform
+pub impl @ecs.Mutable for PreviousGlobalTransform
 
 pub struct PreviousViewData {
   transform : @transform.Transform

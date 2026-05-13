@@ -14,7 +14,7 @@
 
 ///|
 struct Counter {
-  value : Int
+  mut value : Int
 } derive(ToJson, FromJson)
 
 ///|
@@ -226,8 +226,7 @@ fn counter_value(world : @ecs.World, entity : @core.Entity) -> Int {
 fn increment_counter(world : @ecs.World, entity : @core.Entity) -> Unit {
   let entity_mut = try! world.entity_mut(entity)
   if (try! entity_mut.get_mut(key=counter_key)) is Some(counter) {
-    let current = counter.value()
-    counter.set(Counter::{ value: current.value + 1 })
+    counter.modify(fn(value) { value.value = value.value + 1 })
   }
 }
 

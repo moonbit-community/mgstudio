@@ -29,6 +29,9 @@ pub struct GlobalZIndex {
 } derive(ToJson, FromJson)
 
 ///|
+pub impl @ecs.Mutable for GlobalZIndex
+
+///|
 pub fn GlobalZIndex::new(value : Int) -> GlobalZIndex {
   GlobalZIndex::{ value, }
 }

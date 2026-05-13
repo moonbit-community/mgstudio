@@ -589,6 +589,9 @@ pub struct Camera {
 }
 
 ///|
+pub impl @ecs.Mutable for Camera
+
+///|
 pub fn Camera::new(clear_color : Color) -> Camera {
   Camera::{
     viewport: None,
@@ -732,6 +735,9 @@ pub fn OrthographicProjection::with_scale(
 pub(all) enum Projection {
   Orthographic(OrthographicProjection)
 }
+
+///|
+pub impl @ecs.Mutable for Projection
 
 ///|
 pub fn Projection::orthographic_2d() -> Projection {

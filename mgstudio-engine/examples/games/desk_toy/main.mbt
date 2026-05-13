@@ -23,7 +23,7 @@ const BOUNDS_Y : Float = 320.0F
 
 ///|
 struct ToyBody {
-  velocity : @math.Vec2
+  mut velocity : @math.Vec2
 }
 
 ///|
@@ -92,7 +92,7 @@ fn simulate_bodies(
         vy = -vy
       }
     })
-    body.set(ToyBody::{ velocity: @math.Vec2::new(vx, vy) })
+    body.modify(fn(value) { value.velocity = @math.Vec2::new(vx, vy) })
   })
 }
 

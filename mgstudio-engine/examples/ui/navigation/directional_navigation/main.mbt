@@ -45,7 +45,7 @@ struct NavButton {
 
 ///|
 struct ActivatedButton {
-  active : Bool
+  mut active : Bool
 }
 
 ///|
@@ -197,7 +197,7 @@ fn spawn_directional_button(
         value => value
       }
       if state is Some(state) {
-        state.set(ActivatedButton::{ active: !state.value().active })
+        state.modify(fn(value) { value.active = !value.active })
       }
       status.modify(fn(value) { value.label = "Last Input: Pointer Click" })
     }),
@@ -422,7 +422,7 @@ fn activate_focused_button(world : @ecs.World) -> Unit {
     value => value
   }
   if state is Some(state) {
-    state.set(ActivatedButton::{ active: !state.value().active })
+    state.modify(fn(value) { value.active = !value.active })
     let button_label = match label {
       Some(label) => label.value().label
       None => "Unknown"

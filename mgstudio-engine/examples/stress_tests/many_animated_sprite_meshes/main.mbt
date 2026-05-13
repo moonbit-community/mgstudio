@@ -32,7 +32,7 @@ const ATLAS_FRAME_SECONDS : Float = 0.1F
 
 ///|
 struct AnimationTimer {
-  elapsed : Float
+  mut elapsed : Float
 }
 
 ///|
@@ -47,7 +47,7 @@ pub impl @ecs.Component for AnimationTimer with component() {
 
 ///|
 struct AtlasFrame {
-  index : Int
+  mut index : Int
 }
 
 ///|
@@ -186,7 +186,7 @@ fn animate_meshes(
     let (timer, frame, material) = data
     let mut next_elapsed = timer.value().elapsed + delta_secs
     if next_elapsed < ATLAS_FRAME_SECONDS {
-      timer.set(AnimationTimer::{ elapsed: next_elapsed })
+      timer.modify(fn(value) { value.elapsed = next_elapsed })
       return
     }
     let mut next_index = frame.value().index
@@ -194,8 +194,8 @@ fn animate_meshes(
       next_elapsed -= ATLAS_FRAME_SECONDS
       next_index = (next_index + 1) % frame_count
     }
-    timer.set(AnimationTimer::{ elapsed: next_elapsed })
-    frame.set(AtlasFrame::{ index: next_index })
+    timer.modify(fn(value) { value.elapsed = next_elapsed })
+    frame.modify(fn(value) { value.index = next_index })
     material.set(
       @sprite.MeshMaterial2d::new(materials.get().handles[next_index]),
     )

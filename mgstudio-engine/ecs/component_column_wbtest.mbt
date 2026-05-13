@@ -28,6 +28,9 @@ pub impl Component for ComponentColumnCacheValue with component() {
 }
 
 ///|
+pub impl Mutable for ComponentColumnCacheValue
+
+///|
 test "ecs component column: cached table values write through raw column" {
   let world = World::new()
   let entity = world.spawn()

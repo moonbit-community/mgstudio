@@ -95,6 +95,9 @@ pub fn LevelSet::iids(self : LevelSet) -> Array[LevelIid] {
 }
 
 ///|
+pub impl @ecs.Mutable for LevelSet
+
+///|
 pub struct IntGridCell {
   value : Int
 }

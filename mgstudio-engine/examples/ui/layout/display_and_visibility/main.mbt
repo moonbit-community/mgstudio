@@ -31,7 +31,7 @@ struct ToggleButtonAction {
 
 ///|
 struct ButtonPressState {
-  pressed : Bool
+  mut pressed : Bool
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
@@ -539,7 +539,7 @@ fn display_and_visibility_system(world : @ecs.World) -> Unit {
     if is_pressed && !button_state.value().pressed {
       triggered.push(action.value())
     }
-    button_state.set(ButtonPressState::{ pressed: is_pressed })
+    button_state.modify(fn(value) { value.pressed = is_pressed })
   })
 
   for action in triggered {

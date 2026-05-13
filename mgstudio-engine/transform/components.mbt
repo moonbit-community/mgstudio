@@ -243,6 +243,9 @@ pub fn GlobalTransform::set_from(
 }
 
 ///|
+pub impl @ecs.Mutable for GlobalTransform
+
+///|
 fn GlobalTransform::set_affine_values(
   self : GlobalTransform,
   x_axis_x : Float,

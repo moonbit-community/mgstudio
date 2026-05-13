@@ -425,6 +425,9 @@ pub fn Node::default() -> Node {
 }
 
 ///|
+pub impl @ecs.Mutable for Node
+
+///|
 pub fn Node::with_position_type(
   self : Node,
   position_type : PositionType,
@@ -787,6 +790,9 @@ pub struct ImageNode {
   rect : @math.Rect?
   image_mode : NodeImageMode
 } derive(ToJson, FromJson)
+
+///|
+pub impl @ecs.Mutable for ImageNode
 
 ///|
 pub fn ImageNode::default() -> ImageNode {

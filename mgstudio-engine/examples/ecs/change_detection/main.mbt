@@ -14,7 +14,7 @@
 
 ///|
 struct MyComponent {
-  value : Int
+  mut value : Int
 }
 
 ///|
@@ -55,7 +55,7 @@ fn change_component(
 ) -> Unit {
   try! query.view(fn(_entity, component) {
     if component.value().value != 1 {
-      component.set(MyComponent::{ value: 1 })
+      component.modify(fn(value) { value.value = 1 })
     }
   })
 }

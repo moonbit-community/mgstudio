@@ -20,12 +20,14 @@ pub impl @app.Resource for GameState
 type Player
 pub impl @ecs.Component for Player
 
-pub(all) enum PlayerStreak {
+type PlayerStreak
+pub impl @ecs.Component for PlayerStreak
+
+pub(all) enum PlayerStreakState {
   Hot(Int)
   None
   Cold(Int)
 }
-pub impl @ecs.Component for PlayerStreak
 
 type Score
 pub impl @ecs.Component for Score

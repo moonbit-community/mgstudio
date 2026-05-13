@@ -45,7 +45,7 @@ struct OverrideButton {
 
 ///|
 struct OverrideState {
-  active : Bool
+  mut active : Bool
 }
 
 ///|
@@ -189,7 +189,7 @@ fn spawn_override_button(
         value => value
       }
       if state is Some(state) {
-        state.set(OverrideState::{ active: !state.value().active })
+        state.modify(fn(value) { value.active = !value.active })
       }
       status.modify(fn(value) { value.label = "Last Input: Pointer Click" })
     }),
@@ -426,7 +426,7 @@ fn activate_override_button(world : @ecs.World) -> Unit {
     value => value
   }
   if state is Some(state) {
-    state.set(OverrideState::{ active: !state.value().active })
+    state.modify(fn(value) { value.active = !value.active })
     let button_label = match label {
       Some(label) => label.value().label
       None => "Unknown"

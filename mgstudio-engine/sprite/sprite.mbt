@@ -143,6 +143,9 @@ pub fn Sprite::default() -> Sprite {
 }
 
 ///|
+pub impl @ecs.Mutable for Sprite
+
+///|
 pub impl Default for Sprite with default() {
   Sprite::default()
 }

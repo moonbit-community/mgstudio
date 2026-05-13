@@ -23,6 +23,9 @@ pub(all) enum Visibility {
 } derive(Eq, Debug)
 
 ///|
+pub impl @ecs.Mutable for Visibility
+
+///|
 pub impl ToJson for Visibility with to_json(self) {
   match self {
     Hidden => (0).to_json()

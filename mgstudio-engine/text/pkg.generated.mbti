@@ -563,6 +563,7 @@ pub fn Text::default() -> Self
 pub fn Text::new(String) -> Self
 pub impl @ecs.Component for Text
 pub impl @ecs.EcsPayloadCodec for Text
+pub impl @ecs.Mutable for Text
 
 pub(all) struct Text2d {
   mut content : String
@@ -571,6 +572,7 @@ pub fn Text2d::default() -> Self
 pub fn Text2d::new(String) -> Self
 pub impl @ecs.Component for Text2d
 pub impl @ecs.EcsPayloadCodec for Text2d
+pub impl @ecs.Mutable for Text2d
 
 pub struct Text2dBundle {
   text : Text2d
@@ -630,6 +632,7 @@ pub fn TextBackgroundColor::new(@color.Color) -> Self
 pub fn TextBackgroundColor::white() -> Self
 pub impl @ecs.Component for TextBackgroundColor
 pub impl @ecs.EcsPayloadCodec for TextBackgroundColor
+pub impl @ecs.Mutable for TextBackgroundColor
 
 pub struct TextBounds {
   width : Float?
@@ -641,6 +644,7 @@ pub fn TextBounds::new_horizontal(Float) -> Self
 pub fn TextBounds::new_vertical(Float) -> Self
 pub impl @ecs.Component for TextBounds
 pub impl @ecs.EcsPayloadCodec for TextBounds
+pub impl @ecs.Mutable for TextBounds
 
 pub(all) struct TextColor {
   mut color : @color.Color
@@ -651,6 +655,7 @@ pub fn TextColor::new(@color.Color) -> Self
 pub fn TextColor::white() -> Self
 pub impl @ecs.Component for TextColor
 pub impl @ecs.EcsPayloadCodec for TextColor
+pub impl @ecs.Mutable for TextColor
 
 pub struct TextDebugGlyphDraw {
   text_id : Int
@@ -725,6 +730,7 @@ pub fn TextLayout::with_linebreak(Self, LineBreak) -> Self
 pub fn TextLayout::with_no_wrap(Self) -> Self
 pub impl @ecs.Component for TextLayout
 pub impl @ecs.EcsPayloadCodec for TextLayout
+pub impl @ecs.Mutable for TextLayout
 
 pub struct TextLayoutInfo {
   scale_factor : Float
@@ -762,6 +768,7 @@ pub fn TextSpan::default() -> Self
 pub fn TextSpan::new(String) -> Self
 pub impl @ecs.Component for TextSpan
 pub impl @ecs.EcsPayloadCodec for TextSpan
+pub impl @ecs.Mutable for TextSpan
 
 pub struct TextSpanBundle {
   span : TextSpan

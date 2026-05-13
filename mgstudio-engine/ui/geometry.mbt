@@ -674,6 +674,9 @@ pub struct Outline {
 } derive(ToJson, FromJson)
 
 ///|
+pub impl @ecs.Mutable for Outline
+
+///|
 pub fn Outline::new(
   width : Val,
   offset : Val,
@@ -695,6 +698,9 @@ pub fn Outline::default() -> Outline {
 pub struct BorderColor {
   color : @sprite.Color
 } derive(ToJson, FromJson)
+
+///|
+pub impl @ecs.Mutable for BorderColor
 
 ///|
 pub fn BorderColor::new(color : @sprite.Color) -> BorderColor {

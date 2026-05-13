@@ -20,6 +20,9 @@ pub(all) struct Transform {
 }
 
 ///|
+pub impl @ecs.Mutable for Transform
+
+///|
 pub fn Transform::new(
   translation : @math.Vec3,
   rotation : @math.Quat,

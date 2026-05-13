@@ -109,6 +109,7 @@ pub fn ColorGrading::default() -> Self
 pub fn ColorGrading::with_identical_sections(ColorGradingGlobal, ColorGradingSection) -> Self
 pub impl @ecs.Component for ColorGrading
 pub impl @ecs.EcsPayloadCodec for ColorGrading
+pub impl @ecs.Mutable for ColorGrading
 
 pub(all) struct ColorGradingGlobal {
   mut exposure : Float
@@ -283,6 +284,7 @@ pub(all) enum Tonemapping {
 pub fn Tonemapping::default() -> Self
 pub impl @ecs.Component for Tonemapping
 pub impl @ecs.EcsPayloadCodec for Tonemapping
+pub impl @ecs.Mutable for Tonemapping
 
 // Type aliases
 pub using @effect_stack {type ChromaticAberration}

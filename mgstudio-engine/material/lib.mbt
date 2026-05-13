@@ -1223,6 +1223,9 @@ pub struct MeshMaterial3d {
 }
 
 ///|
+pub impl @ecs.Mutable for MeshMaterial3d
+
+///|
 pub fn MeshMaterial3d::new(
   material : @asset.Handle[StandardMaterial],
 ) -> MeshMaterial3d {

@@ -48,7 +48,7 @@ struct ControlButton {}
 
 ///|
 struct ButtonPressState {
-  pressed : Bool
+  mut pressed : Bool
 } derive(Eq, Debug)
 
 ///|
@@ -420,7 +420,7 @@ fn button_system(world : @ecs.World) -> Unit {
         }
       }
     }
-    button_state.set(ButtonPressState::{ pressed: is_pressed })
+    button_state.modify(fn(value) { value.pressed = is_pressed })
   })
 }
 

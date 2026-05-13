@@ -35,6 +35,23 @@ pub struct Mut[T] {
 }
 
 ///|
+/// Types that opt in to whole-value assignment through `Mut::set`.
+///
+/// ECS mutation should prefer `Mut::modify`, which mutates the stored component
+/// in place. Implement this trait only when a component has a well-defined
+/// assignment from a replacement value. The default implementation replaces the
+/// provided storage reference; types that need custom in-place assignment can
+/// override it.
+pub(open) trait Mutable {
+  set(Self, Ref[Self]) -> Unit = _
+}
+
+///|
+impl Mutable with set(self, value) {
+  value.val = self
+}
+
+///|
 pub(open) trait Bundle {
   insert_into(
     self : Self,
@@ -103,7 +120,7 @@ fn[T : EcsPayloadCodec] mut_value_or_abort(item : Mut[T]) -> T {
 }
 
 ///|
-fn[T : EcsPayloadCodec] mut_replace_value_or_abort(
+fn[T : EcsPayloadCodec] mut_write_value_or_abort(
   item : Mut[T],
   value : T,
 ) -> Unit {
@@ -122,6 +139,16 @@ fn[T : EcsPayloadCodec] mut_replace_value_or_abort(
   if !world.replace_component_value_by_key(entity, key, value) {
     abort("Mut expected a fetched query item")
   }
+}
+
+///|
+fn[T : EcsPayloadCodec + Mutable] mut_assign_value_or_abort(
+  item : Mut[T],
+  value : T,
+) -> Unit {
+  let current = Ref(mut_value_or_abort(item))
+  Mutable::set(value, current)
+  mut_write_value_or_abort(item, current.val)
 }
 
 ///|
@@ -257,13 +284,12 @@ pub fn[T : EcsPayloadCodec, R] Mut::modify(
   let value = self.peek()
   let result = f(value)
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
-  mut_replace_value_or_abort(self, value)
   result
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] Mut::update(
+pub fn[T : EcsPayloadCodec + Mutable] Mut::update(
   self : Mut[T],
   f : (T) -> T,
   loc~ : SourceLoc,
@@ -273,7 +299,7 @@ pub fn[T : EcsPayloadCodec] Mut::update(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Eq + EcsPayloadCodec] Mut::set_if_neq(
+pub fn[T : Eq + EcsPayloadCodec + Mutable] Mut::set_if_neq(
   self : Mut[T],
   value : T,
   loc~ : SourceLoc,
@@ -289,13 +315,13 @@ pub fn[T : Eq + EcsPayloadCodec] Mut::set_if_neq(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] Mut::set(
+pub fn[T : EcsPayloadCodec + Mutable] Mut::set(
   self : Mut[T],
   value : T,
   loc~ : SourceLoc,
 ) -> Unit {
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
-  mut_replace_value_or_abort(self, value)
+  mut_assign_value_or_abort(self, value)
 }
 
 ///|

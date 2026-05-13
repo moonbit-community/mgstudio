@@ -379,6 +379,7 @@ pub fn CursorIcon::from(SystemCursorIcon) -> Self
 pub fn CursorIcon::from_custom(CustomCursor) -> Self
 pub impl @ecs.Component for CursorIcon
 pub impl @ecs.EcsPayloadCodec for CursorIcon
+pub impl @ecs.Mutable for CursorIcon
 pub impl Default for CursorIcon
 
 pub(all) struct CursorLeft {
@@ -403,6 +404,7 @@ pub(all) struct CursorOptions {
 pub fn CursorOptions::default() -> Self
 pub impl @ecs.Component for CursorOptions
 pub impl @ecs.EcsPayloadCodec for CursorOptions
+pub impl @ecs.Mutable for CursorOptions
 
 pub(all) enum CustomCursor {
   Image(CustomCursorImage)

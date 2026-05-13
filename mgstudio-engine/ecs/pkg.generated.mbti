@@ -589,15 +589,15 @@ pub fn[T : EcsPayloadCodec, R] Mut::modify(Self[T], (T) -> R, loc~ : SourceLoc) 
 pub fn[T] Mut::new(ComponentKey[T]) -> Self[T]
 pub fn[T : EcsPayloadCodec] Mut::peek(Self[T]) -> T
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] Mut::set(Self[T], T, loc~ : SourceLoc) -> Unit
+pub fn[T : EcsPayloadCodec + Mutable] Mut::set(Self[T], T, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Component] Mut::set_added(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Component] Mut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
-pub fn[T : Eq + EcsPayloadCodec] Mut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+pub fn[T : Eq + EcsPayloadCodec + Mutable] Mut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] Mut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
+pub fn[T : EcsPayloadCodec + Mutable] Mut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
 pub fn[T : EcsPayloadCodec] Mut::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Mut[T]
 
@@ -1180,6 +1180,10 @@ pub(open) trait EventData : EcsPayloadCodec {
 
 pub(open) trait Message : EcsPayloadCodec {
   message() -> MessageKey[Self]
+}
+
+pub(open) trait Mutable {
+  set(Self, @ref.Ref[Self]) -> Unit = _
 }
 
 pub(open) trait QueryData {

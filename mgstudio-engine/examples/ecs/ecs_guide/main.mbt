@@ -23,10 +23,15 @@ struct Score {
 }
 
 ///|
-pub(all) enum PlayerStreak {
+pub(all) enum PlayerStreakState {
   Hot(Int)
   None
   Cold(Int)
+}
+
+///|
+struct PlayerStreak {
+  mut state : PlayerStreakState
 }
 
 ///|
@@ -114,9 +119,9 @@ impl Default for GameState with default() {
 ///|
 fn streak_text(streak : PlayerStreak) -> String {
   match streak {
-    Hot(rounds) => "\{rounds.to_string()} round hot streak"
-    None => "0 round streak"
-    Cold(rounds) => "\{rounds.to_string()} round cold streak"
+    { state: Hot(rounds) } => "\{rounds.to_string()} round hot streak"
+    { state: None } => "0 round streak"
+    { state: Cold(rounds) } => "\{rounds.to_string()} round cold streak"
   }
 }
 
@@ -161,24 +166,24 @@ fn score_system(
     }
     if scored_a_point {
       score.modify(fn(value) { value.value = value.value + 1 })
-      streak.set(
-        match streak.peek() {
+      streak.modify(fn(value) {
+        value.state = match value.state {
           Hot(count) => Hot(count + 1)
           Cold(_) => Hot(1)
           None => Hot(1)
-        },
-      )
+        }
+      })
       println(
         "\{player_name} scored a point! Their score is: \{score.value().value.to_string()} (\{streak_text(streak.peek())})",
       )
     } else {
-      streak.set(
-        match streak.peek() {
+      streak.modify(fn(value) {
+        value.state = match value.state {
           Hot(_) => Cold(1)
           None => Cold(1)
           Cold(count) => Cold(count + 1)
-        },
-      )
+        }
+      })
       println(
         "\{player_name} did not score a point! Their score is: \{score.value().value.to_string()} (\{streak_text(streak.peek())})",
       )
@@ -231,8 +236,16 @@ fn startup_system(
   })
   ignore(
     commands.spawn_batch([
-      (Player::{ name: "Alice" }, Score::{ value: 0 }, PlayerStreak::None),
-      (Player::{ name: "Bob" }, Score::{ value: 0 }, PlayerStreak::None),
+      (
+        Player::{ name: "Alice" },
+        Score::{ value: 0 },
+        PlayerStreak::{ state: None },
+      ),
+      (
+        Player::{ name: "Bob" },
+        Score::{ value: 0 },
+        PlayerStreak::{ state: None },
+      ),
     ]),
   )
   game_state.modify(fn(value) { value.total_players = 2 })
@@ -252,7 +265,11 @@ fn new_player_system(
     let next_name = player_name(next_total)
     ignore(
       commands.spawn(
-        (Player::{ name: next_name }, Score::{ value: 0 }, PlayerStreak::None),
+        (
+          Player::{ name: next_name },
+          Score::{ value: 0 },
+          PlayerStreak::{ state: None },
+        ),
       ),
     )
     println("Player \{next_total.to_string()} joined the game!")
@@ -278,7 +295,7 @@ fn exclusive_player_system(world : @ecs.World) -> Unit {
         (
           Player::{ name: player_name(next_total) },
           Score::{ value: 0 },
-          PlayerStreak::None,
+          PlayerStreak::{ state: None },
         ),
       ),
     )

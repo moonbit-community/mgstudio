@@ -29,7 +29,7 @@ const FLOOR_Y : Float = 0.5F
 
 ///|
 struct CubeVelocity {
-  value : @math.Vec3
+  mut value : @math.Vec3
 }
 
 ///|
@@ -238,7 +238,7 @@ fn movement(
       next_velocity.z = @math.abs(next_velocity.z)
     }
 
-    velocity.set(CubeVelocity::{ value: next_velocity })
+    velocity.modify(fn(value) { value.value = next_velocity })
     transform.set(next_transform)
   })
 }

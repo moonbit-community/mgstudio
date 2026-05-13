@@ -226,7 +226,7 @@ fn window_update_component(
     let window = entity_mut.get_mut(key=ecs_key_window)
     match window {
       Some(window) => {
-        window.set(update(window.value()))
+        window.modify(fn(current) { ignore(update(current)) })
         true
       }
       None => false

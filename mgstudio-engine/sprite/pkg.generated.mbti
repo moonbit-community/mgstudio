@@ -340,6 +340,7 @@ pub fn Camera::with_order(Self, Int) -> Self
 pub fn Camera::with_viewport(Self, Viewport) -> Self
 pub impl @ecs.Component for Camera
 pub impl @ecs.EcsPayloadCodec for Camera
+pub impl @ecs.Mutable for Camera
 pub impl ToJson for Camera
 pub impl @json.FromJson for Camera
 
@@ -715,6 +716,7 @@ pub fn MeshMaterial2d::with_uv_offset(Self[ColorMaterialAsset], @math.Vec2) -> S
 pub fn MeshMaterial2d::with_uv_scale(Self[ColorMaterialAsset], @math.Vec2) -> Self[ColorMaterialAsset]
 pub impl[M : Material2d] @ecs.Component for MeshMaterial2d[M]
 pub impl[M] @ecs.EcsPayloadCodec for MeshMaterial2d[M]
+pub impl[M] @ecs.Mutable for MeshMaterial2d[M]
 pub impl Material2d for MeshMaterial2d[ColorMaterialAsset]
 pub impl[M] ToJson for MeshMaterial2d[M]
 pub impl[M] @json.FromJson for MeshMaterial2d[M]
@@ -860,6 +862,7 @@ pub(all) enum Projection {
 pub fn Projection::orthographic_2d() -> Self
 pub impl @ecs.Component for Projection
 pub impl @ecs.EcsPayloadCodec for Projection
+pub impl @ecs.Mutable for Projection
 pub impl ToJson for Projection
 pub impl @json.FromJson for Projection
 
@@ -984,6 +987,7 @@ pub fn Sprite::with_rect(Self, @math.Rect?) -> Self
 pub fn Sprite::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 pub impl @ecs.Component for Sprite
 pub impl @ecs.EcsPayloadCodec for Sprite
+pub impl @ecs.Mutable for Sprite
 pub impl Default for Sprite
 pub impl ToJson for Sprite
 pub impl @json.FromJson for Sprite
@@ -1209,6 +1213,7 @@ pub fn Wireframe2dColor::new(@color.Color) -> Self
 pub fn Wireframe2dColor::with_color(Self, @color.Color) -> Self
 pub impl @ecs.Component for Wireframe2dColor
 pub impl @ecs.EcsPayloadCodec for Wireframe2dColor
+pub impl @ecs.Mutable for Wireframe2dColor
 pub impl ToJson for Wireframe2dColor
 pub impl @json.FromJson for Wireframe2dColor
 

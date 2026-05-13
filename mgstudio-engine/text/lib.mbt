@@ -22,6 +22,9 @@ pub(all) struct Text {
 }
 
 ///|
+pub impl @ecs.Mutable for Text
+
+///|
 pub fn Text::default() -> Text {
   Text::new("")
 }
@@ -37,6 +40,9 @@ pub(all) struct Text2d {
 }
 
 ///|
+pub impl @ecs.Mutable for Text2d
+
+///|
 pub fn Text2d::default() -> Text2d {
   Text2d::new("")
 }
@@ -50,6 +56,9 @@ pub fn Text2d::new(content : String) -> Text2d {
 pub(all) struct TextSpan {
   mut content : String
 }
+
+///|
+pub impl @ecs.Mutable for TextSpan
 
 ///|
 pub fn TextSpan::default() -> TextSpan {

@@ -1202,6 +1202,7 @@ pub fn Projection::is_perspective(Self) -> Bool
 pub fn Projection::update(Self, Float, Float) -> Self
 pub impl @ecs.Component for Projection
 pub impl @ecs.EcsPayloadCodec for Projection
+pub impl @ecs.Mutable for Projection
 pub impl CameraProjection3d for Projection
 
 pub struct Render3dDiagnosticsSnapshot {

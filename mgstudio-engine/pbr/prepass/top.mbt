@@ -113,6 +113,9 @@ pub fn PreviousGlobalTransform::from_global_transform(
 }
 
 ///|
+pub impl @ecs.Mutable for PreviousGlobalTransform
+
+///|
 pub fn PreviousGlobalTransform::affine(
   self : PreviousGlobalTransform,
 ) -> @math.Affine3 {

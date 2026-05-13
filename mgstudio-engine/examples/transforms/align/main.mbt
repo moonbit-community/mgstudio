@@ -160,20 +160,23 @@ fn handle_keys(
 
   try! ships.view(fn(_entity, pair) {
     let (ship, transform) = pair
-    let next_ship = ship.value()
     let next_transform = transform.value()
 
     if randomize {
-      next_ship.target_index = next_ship.target_index + 1
-      next_ship.in_motion = false
-      transform.set(apply_alignment(next_transform, next_ship.target_index))
-      ship.set(next_ship)
+      ship.modify(fn(value) {
+        value.target_index = value.target_index + 1
+        value.in_motion = false
+      })
+      let current_ship = ship.value()
+      transform.set(apply_alignment(next_transform, current_ship.target_index))
     }
     if toggle_motion {
-      next_ship.in_motion = !next_ship.in_motion
-      ship.set(next_ship)
-      if next_ship.in_motion {
-        transform.set(apply_alignment(next_transform, next_ship.target_index))
+      ship.modify(fn(value) { value.in_motion = !value.in_motion })
+      let current_ship = ship.value()
+      if current_ship.in_motion {
+        transform.set(
+          apply_alignment(next_transform, current_ship.target_index),
+        )
       }
     }
   })

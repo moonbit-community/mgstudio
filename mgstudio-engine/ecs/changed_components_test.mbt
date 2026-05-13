@@ -28,6 +28,9 @@ pub impl Component for ChangedMarker with component() {
 }
 
 ///|
+pub impl Mutable for ChangedMarker
+
+///|
 test "ecs changed components: insert emits entity in tick range" {
   let world = World::new()
   let entity = world.spawn()

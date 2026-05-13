@@ -668,6 +668,7 @@ pub fn LevelSet::iids(Self) -> Array[LevelIid]
 pub fn LevelSet::new(Array[LevelIid]) -> Self
 pub impl @ecs.Component for LevelSet
 pub impl @ecs.EcsPayloadCodec for LevelSet
+pub impl @ecs.Mutable for LevelSet
 
 pub(all) enum LevelSpawnBehavior {
   UseZeroTranslation

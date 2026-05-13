@@ -256,6 +256,7 @@ pub struct BackgroundColor {
 pub fn BackgroundColor::new(@color.Color) -> Self
 pub impl @ecs.Component for BackgroundColor
 pub impl @ecs.EcsPayloadCodec for BackgroundColor
+pub impl @ecs.Mutable for BackgroundColor
 
 pub struct BorderColor {
   color : @color.Color
@@ -263,6 +264,7 @@ pub struct BorderColor {
 pub fn BorderColor::new(@color.Color) -> Self
 pub impl @ecs.Component for BorderColor
 pub impl @ecs.EcsPayloadCodec for BorderColor
+pub impl @ecs.Mutable for BorderColor
 
 pub struct BorderRadius {
   top_left : Val
@@ -316,6 +318,7 @@ pub fn BoxShadow::default() -> Self
 pub fn BoxShadow::new(@color.Color, Val, Val, Val, Val) -> Self
 pub impl @ecs.Component for BoxShadow
 pub impl @ecs.EcsPayloadCodec for BoxShadow
+pub impl @ecs.Mutable for BoxShadow
 
 pub(all) enum BoxSizing {
   BorderBox
@@ -426,6 +429,7 @@ pub struct GlobalZIndex {
 pub fn GlobalZIndex::new(Int) -> Self
 pub impl @ecs.Component for GlobalZIndex
 pub impl @ecs.EcsPayloadCodec for GlobalZIndex
+pub impl @ecs.Mutable for GlobalZIndex
 
 pub(all) enum GridAutoFlow {
   Column
@@ -483,6 +487,7 @@ pub fn ImageNode::with_rect(Self, @math.Rect?) -> Self
 pub fn ImageNode::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 pub impl @ecs.Component for ImageNode
 pub impl @ecs.EcsPayloadCodec for ImageNode
+pub impl @ecs.Mutable for ImageNode
 
 pub struct ImageNodeSize {
   size : @math.UVec2
@@ -621,6 +626,7 @@ pub fn Node::with_top(Self, Val) -> Self
 pub fn Node::with_width(Self, Val) -> Self
 pub impl @ecs.Component for Node
 pub impl @ecs.EcsPayloadCodec for Node
+pub impl @ecs.Mutable for Node
 
 pub(all) enum NodeImageMode {
   Auto
@@ -640,6 +646,7 @@ pub fn Outline::default() -> Self
 pub fn Outline::new(Val, Val, @color.Color) -> Self
 pub impl @ecs.Component for Outline
 pub impl @ecs.EcsPayloadCodec for Outline
+pub impl @ecs.Mutable for Outline
 
 pub struct Overflow {
   x : OverflowAxis
@@ -723,6 +730,7 @@ pub fn ScrollPosition::x(Self) -> Float
 pub fn ScrollPosition::y(Self) -> Float
 pub impl @ecs.Component for ScrollPosition
 pub impl @ecs.EcsPayloadCodec for ScrollPosition
+pub impl @ecs.Mutable for ScrollPosition
 
 pub(all) enum SliceScaleMode {
   Stretch
