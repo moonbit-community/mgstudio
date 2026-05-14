@@ -101,11 +101,9 @@ fn write_insert_message(
   event : @ecs.ComponentOn[@ecs.Insert, ObserverMarker],
   writer : @ecs.MessageWriter[ObserverTriggered],
 ) -> Unit {
+  let entity = event.entity()
   ignore(
-    writer.write({
-      entity_id: event.entity.id,
-      entity_generation: event.entity.generation,
-    }),
+    writer.write({ entity_id: entity.id, entity_generation: entity.generation }),
   )
 }
 
@@ -114,11 +112,9 @@ fn write_remove_message(
   event : @ecs.ComponentOn[@ecs.Remove, ObserverMarker],
   writer : @ecs.MessageWriter[ObserverTriggered],
 ) -> Unit {
+  let entity = event.entity()
   ignore(
-    writer.write({
-      entity_id: event.entity.id,
-      entity_generation: event.entity.generation,
-    }),
+    writer.write({ entity_id: entity.id, entity_generation: entity.generation }),
   )
 }
 

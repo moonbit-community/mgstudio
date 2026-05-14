@@ -29,11 +29,11 @@ pub struct Despawn {}
 
 ///|
 pub struct On[E] {
-  world : World
-  event_key : EventKey[E]
-  entity : @core.Entity?
-  caller : String?
-  propagate_ref : Ref[Bool]
+  priv world : World
+  priv event_key : EventKey[E]
+  priv entity : @core.Entity?
+  priv caller : String?
+  priv propagate_ref : Ref[Bool]
 }
 
 ///|
@@ -91,15 +91,30 @@ pub fn[E : EcsPayloadCodec, R] On::modify(self : On[E], f : (E) -> R) -> R {
 
 ///|
 pub struct ComponentOn[E, C] {
-  entity : @core.Entity
-  caller : String?
-  marker_event : E?
-  marker_component : C?
+  priv entity : @core.Entity
+  priv caller : String?
+  priv marker_event : E?
+  priv marker_component : C?
 }
 
 ///|
 pub fn[E, C] ComponentOn::caller(self : ComponentOn[E, C]) -> String? {
   self.caller
+}
+
+///|
+pub fn[E, C] ComponentOn::entity(self : ComponentOn[E, C]) -> @core.Entity {
+  self.entity
+}
+
+///|
+pub fn[E, C] ComponentOn::marker_event(self : ComponentOn[E, C]) -> E? {
+  self.marker_event
+}
+
+///|
+pub fn[E, C] ComponentOn::marker_component(self : ComponentOn[E, C]) -> C? {
+  self.marker_component
 }
 
 ///|
@@ -122,8 +137,8 @@ pub(open) trait TriggerEvent: EcsPayloadCodec {
 
 ///|
 pub struct ObserverHandle {
-  id : Int
-  world_id : Int
+  priv id : Int
+  priv world_id : Int
 }
 
 ///|

@@ -138,17 +138,17 @@ fn hook_test_record(
   context : HookContext,
 ) -> Unit {
   hook_event_log.push(
-    "\{kind}:\{hook_test_value_text(world.world(), context.entity)}",
+    "\{kind}:\{hook_test_value_text(world.world(), context.entity())}",
   )
-  hook_entity_ids.push(context.entity.id)
+  hook_entity_ids.push(context.entity().id)
   let expected_component_id = world
     .world()
     .component_id_by_key(hook_test_component_key)
     .unwrap_or(-1)
-  if context.component_id != expected_component_id {
+  if context.component_id() != expected_component_id {
     hook_component_id_matches_ref.val = false
   }
-  match context.caller {
+  match context.caller() {
     Some(caller) =>
       if !caller.contains("component_hooks_test.mbt") {
         hook_callers_match_test_file_ref.val = false
@@ -184,7 +184,7 @@ fn hook_commands_test_install_hooks(world : World) -> Unit {
   )
   ignore(
     try! hooks.on_remove(fn(world, context) {
-      world.commands().entity(context.entity).despawn()
+      world.commands().entity(context.entity()).despawn()
     }),
   )
 }

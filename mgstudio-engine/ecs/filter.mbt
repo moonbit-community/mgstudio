@@ -66,12 +66,12 @@ impl QueryFilterDisjunction with is_dense_any(_self, _world) {
 
 ///|
 pub struct QueryFilterAccess {
-  read_components : Array[Int]
-  with_components : Array[Int]
-  without_components : Array[Int]
-  read_component_set : @utils.IntBitSet
-  with_component_set : @utils.IntBitSet
-  without_component_set : @utils.IntBitSet
+  priv read_components : Array[Int]
+  priv with_components : Array[Int]
+  priv without_components : Array[Int]
+  priv read_component_set : @utils.IntBitSet
+  priv with_component_set : @utils.IntBitSet
+  priv without_component_set : @utils.IntBitSet
 }
 
 ///|
@@ -221,7 +221,7 @@ pub impl QueryFilter for All with depends_on_sequence(self) {
 
 ///|
 pub struct With[T] {
-  key : ComponentKey[T]
+  priv key : ComponentKey[T]
 }
 
 ///|
@@ -276,7 +276,7 @@ pub impl[T] QueryFilter for With[T] with depends_on_sequence(self) {
 
 ///|
 pub struct Without[T] {
-  key : ComponentKey[T]
+  priv key : ComponentKey[T]
 }
 
 ///|
@@ -335,7 +335,7 @@ pub impl[T] QueryFilter for Without[T] with depends_on_sequence(self) {
 
 ///|
 pub struct Allow[T] {
-  key : ComponentKey[T]
+  priv key : ComponentKey[T]
 }
 
 ///|
@@ -394,7 +394,7 @@ pub impl[T] QueryFilter for Allow[T] with depends_on_sequence(self) {
 
 ///|
 pub struct Added[T] {
-  key : ComponentKey[T]
+  priv key : ComponentKey[T]
 }
 
 ///|
@@ -455,7 +455,7 @@ pub impl[T] QueryFilter for Added[T] with depends_on_sequence(self) {
 
 ///|
 pub struct Changed[T] {
-  key : ComponentKey[T]
+  priv key : ComponentKey[T]
 }
 
 ///|
@@ -519,7 +519,7 @@ pub impl[T] QueryFilter for Changed[T] with depends_on_sequence(self) {
 
 ///|
 pub struct Or[F] {
-  filters : F
+  priv filters : F
 }
 
 ///|

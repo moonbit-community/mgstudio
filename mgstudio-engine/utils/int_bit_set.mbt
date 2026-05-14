@@ -24,7 +24,7 @@ let int_bit_set_segment_bits : Int = 32
 pub struct IntBitSet {
   bits : Array[UInt]
   mut bit_len : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn IntBitSet::new() -> IntBitSet {

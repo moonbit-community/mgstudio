@@ -137,7 +137,7 @@ fn[D, F] query_param_store_query_state(
   state : Ref[Json],
 ) -> Unit {
   let slot = query_param_slot_from_state(state)
-  query_param_cache_by_slot.set(slot, query.cache_snapshot())
+  query_param_cache_by_slot.set(slot, query.cache_state())
 }
 
 ///|

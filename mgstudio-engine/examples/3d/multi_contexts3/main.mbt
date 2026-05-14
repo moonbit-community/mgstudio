@@ -62,10 +62,8 @@ fn setup(world : @ecs.World) -> Unit {
           Some(@physics3d.RigidBody3d::dynamic()),
         ),
       )
-      let entity = world.entities.alive_entities()[world.entities
-        .alive_entities()
-        .length() -
-        1]
+      let alive_entities = world.alive_entities()
+      let entity = alive_entities[alive_entities.length() - 1]
       try! world.set_by_key(
         entity,
         @physics3d.ecs_key_collision_groups3d,

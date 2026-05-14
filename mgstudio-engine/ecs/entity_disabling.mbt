@@ -22,7 +22,7 @@ pub fn Disabled::new() -> Disabled {
 
 ///|
 pub struct DefaultQueryFilters {
-  disabling_component_ids : Array[Int]
+  priv disabling_component_ids : Array[Int]
 }
 
 ///|
@@ -92,7 +92,7 @@ fn default_query_filters_contains_component_id(
   filters : DefaultQueryFilters,
   component_id : Int,
 ) -> Bool {
-  for id in filters.disabling_component_ids {
+  for id in filters.disabling_component_ids() {
     if id == component_id {
       return true
     }

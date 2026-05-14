@@ -95,7 +95,8 @@ fn[C : @ecs.Component] validate_parent_has_component(
   let world = current_world_abort_missing()
   let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
   let message_key = check_parent_has_component_message_key(component_key)
-  guard (world.get_by_key(event.entity, @hierarchy.ecs_key_parent) catch {
+  let entity = event.entity()
+  guard (world.get_by_key(entity, @hierarchy.ecs_key_parent) catch {
       _ => None
     })
     is Some(child_of) else {
@@ -107,7 +108,7 @@ fn[C : @ecs.Component] validate_parent_has_component(
   ignore(
     world.send_message(
       message_key,
-      CheckParentHasComponent::new(event.entity, caller=event.caller()),
+      CheckParentHasComponent::new(entity, caller=event.caller()),
     ),
   )
 }

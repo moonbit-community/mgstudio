@@ -78,7 +78,7 @@ fn[C] sync_component_register_remove_hook(
           pending : PendingSyncEntity,
         ) -> PendingSyncEntity {
           pending.push(
-            EntityRecord::ComponentRemoved(context.entity, fn(
+            EntityRecord::ComponentRemoved(context.entity(), fn(
               render_world : @ecs.World,
               render_entity : @core.Entity,
             ) -> @ecs.World {

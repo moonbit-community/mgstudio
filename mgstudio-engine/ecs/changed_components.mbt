@@ -14,7 +14,7 @@
 
 ///|
 pub struct ChangedComponents[_] {
-  reader : @core.MessageReader[@core.Entity]
+  priv reader : @core.MessageReader[@core.Entity]
 }
 
 ///|
@@ -63,6 +63,23 @@ pub fn[T] World::is_changed_by_key(
     return false
   }
   match self.changed_component_sequence(key.id(), entity.id) {
+    Some(sequence) => system.contains(sequence)
+    None => false
+  }
+}
+
+///|
+fn World::is_changed_by_local_id(
+  self : World,
+  entity : @core.Entity,
+  local_component_id : Int,
+  system : @core.SystemSequence,
+) -> Bool {
+  if !self.is_alive(entity) {
+    return false
+  }
+  match
+    self.changed_component_sequence_by_local_id(local_component_id, entity.id) {
     Some(sequence) => system.contains(sequence)
     None => false
   }

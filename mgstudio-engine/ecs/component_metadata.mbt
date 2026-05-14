@@ -48,7 +48,7 @@ priv struct ComponentMetadata {
 
 ///|
 pub struct ComponentMetadataBuilder[T] {
-  key : ComponentKey[T]
+  priv key : ComponentKey[T]
 }
 
 ///|

@@ -20,9 +20,9 @@ const BATCH_SIZE_MAX_DEFAULT : Int = 2147483647
 
 ///|
 pub struct BatchingStrategy {
-  min_batch_size : Int
-  max_batch_size : Int
-  batches_per_thread : Int
+  priv min_batch_size : Int
+  priv max_batch_size : Int
+  priv batches_per_thread : Int
 } derive(Eq, Debug)
 
 ///|
@@ -108,6 +108,23 @@ pub fn BatchingStrategy::calc_batch_size(
     (item_count + batches - 1) / batches
   }
   batching_strategy_clamp(batch_size, self.min_batch_size, self.max_batch_size)
+}
+
+///|
+pub fn BatchingStrategy::min_batch_size_value(self : BatchingStrategy) -> Int {
+  self.min_batch_size
+}
+
+///|
+pub fn BatchingStrategy::max_batch_size_value(self : BatchingStrategy) -> Int {
+  self.max_batch_size
+}
+
+///|
+pub fn BatchingStrategy::batches_per_thread_value(
+  self : BatchingStrategy,
+) -> Int {
+  self.batches_per_thread
 }
 
 ///|

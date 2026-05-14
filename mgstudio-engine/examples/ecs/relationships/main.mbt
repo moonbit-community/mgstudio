@@ -130,11 +130,12 @@ fn relationship_targeting_insert(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  guard (world.get(context.entity, targeting_component_key) catch { _ => None })
+  let entity = context.entity()
+  guard (world.get(entity, targeting_component_key) catch { _ => None })
     is Some(targeting) else {
     return
   }
-  relationship_add_reverse(world, targeting.target, context.entity)
+  relationship_add_reverse(world, targeting.target, entity)
 }
 
 ///|
@@ -142,11 +143,12 @@ fn relationship_targeting_replace(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  guard (world.get(context.entity, targeting_component_key) catch { _ => None })
+  let entity = context.entity()
+  guard (world.get(entity, targeting_component_key) catch { _ => None })
     is Some(targeting) else {
     return
   }
-  relationship_remove_reverse(world, targeting.target, context.entity)
+  relationship_remove_reverse(world, targeting.target, entity)
 }
 
 ///|
@@ -154,11 +156,12 @@ fn relationship_targeting_remove(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  guard (world.get(context.entity, targeting_component_key) catch { _ => None })
+  let entity = context.entity()
+  guard (world.get(entity, targeting_component_key) catch { _ => None })
     is Some(targeting) else {
     return
   }
-  relationship_remove_reverse(world, targeting.target, context.entity)
+  relationship_remove_reverse(world, targeting.target, entity)
 }
 
 ///|

@@ -107,12 +107,12 @@ fn World::bootstrap_component_registrations(self : World) -> Unit {
 
 ///|
 pub struct ComponentsRegistrator {
-  world : World
+  priv world : World
 }
 
 ///|
 pub struct ComponentsQueuedRegistrator {
-  world : World
+  priv world : World
 }
 
 ///|

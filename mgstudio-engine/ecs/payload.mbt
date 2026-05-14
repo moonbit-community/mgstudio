@@ -125,10 +125,10 @@ pub impl EcsPayloadCodec for String with from_ecs_payload(payload) {
 
 ///|
 pub struct EcsPayloadWriter {
-  component_definition_id : Int
-  component_debug_name : String
-  value_type_name : String
-  payload : EcsPayload
+  priv component_definition_id : Int
+  priv component_debug_name : String
+  priv value_type_name : String
+  priv payload : EcsPayload
 }
 
 ///|
@@ -172,4 +172,23 @@ pub fn[T : EcsPayloadCodec] component_writer(
 ///|
 fn EcsPayloadWriter::to_ecs_payload(self : EcsPayloadWriter) -> EcsPayload {
   self.payload
+}
+
+///|
+pub fn EcsPayloadWriter::component_definition_id(
+  self : EcsPayloadWriter,
+) -> Int {
+  self.component_definition_id
+}
+
+///|
+pub fn EcsPayloadWriter::component_debug_name(
+  self : EcsPayloadWriter,
+) -> String {
+  self.component_debug_name
+}
+
+///|
+pub fn EcsPayloadWriter::value_type_name(self : EcsPayloadWriter) -> String {
+  self.value_type_name
 }

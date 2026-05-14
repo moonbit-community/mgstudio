@@ -291,7 +291,7 @@ pub fn save_to_disk(
 ) -> (@ecs.ComponentOn[@ecs.Insert, ScreenshotCaptured]) -> Unit {
   fn(event : @ecs.ComponentOn[@ecs.Insert, ScreenshotCaptured]) {
     let world = @ecs.current_observer_world_abort_missing()
-    guard screenshot_captured_component(world, event.entity) is Some(capture) else {
+    guard screenshot_captured_component(world, event.entity()) is Some(capture) else {
       return
     }
     screenshot_write_capture_to_disk(capture, path)

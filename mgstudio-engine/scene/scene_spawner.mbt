@@ -383,7 +383,7 @@ fn scene_root_on_remove(
 ) -> Unit {
   scene_detach_root_instance(
     world.world(),
-    context.entity,
+    context.entity(),
     despawn_entities=true,
   )
 }
@@ -393,7 +393,7 @@ fn scene_root_on_insert(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  scene_mark_root_respawn_requested(world.world(), context.entity)
+  scene_mark_root_respawn_requested(world.world(), context.entity())
 }
 
 ///|
@@ -401,7 +401,7 @@ fn scene_root_on_replace(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  scene_mark_root_respawn_requested(world.world(), context.entity)
+  scene_mark_root_respawn_requested(world.world(), context.entity())
 }
 
 ///|
@@ -409,7 +409,7 @@ fn scene_instance_on_remove(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  guard (try! world.get_by_key(context.entity, ecs_key_scene_instance))
+  guard (try! world.get_by_key(context.entity(), ecs_key_scene_instance))
     is Some(instance) else {
     return
   }

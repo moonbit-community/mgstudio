@@ -28,20 +28,58 @@ fn archetype_sorted_unique_local_component_ids(
 }
 
 ///|
-fn archetype_signature_from_local_component_ids(
+fn archetype_signature_hash_from_component_ids(
   component_local_ids : Array[Int],
-) -> String {
-  if component_local_ids.length() == 0 {
-    return ""
+) -> Int {
+  let mut hash = 17
+  for component_local_id in component_local_ids {
+    hash = (hash * 131 + component_local_id + 1) % 2147483647
   }
-  let mut signature = ""
-  for index in 0..<component_local_ids.length() {
-    if index > 0 {
-      signature = signature + ","
+  hash
+}
+
+///|
+fn archetype_signature_equals(left : Array[Int], right : Array[Int]) -> Bool {
+  if left.length() != right.length() {
+    return false
+  }
+  for index in 0..<left.length() {
+    if left[index] != right[index] {
+      return false
     }
-    signature = signature + component_local_ids[index].to_string()
   }
-  signature
+  true
+}
+
+///|
+fn archetype_signature_lookup(
+  signatures : Map[Int, Array[ArchetypeSignatureEntry]],
+  component_ids : Array[Int],
+) -> Int? {
+  let hash = archetype_signature_hash_from_component_ids(component_ids)
+  guard signatures.get(hash) is Some(bucket) else { return None }
+  for entry in bucket {
+    if archetype_signature_equals(entry.component_ids, component_ids) {
+      return Some(entry.value)
+    }
+  }
+  None
+}
+
+///|
+fn archetype_signature_insert(
+  signatures : Map[Int, Array[ArchetypeSignatureEntry]],
+  component_ids : Array[Int],
+  value : Int,
+) -> Unit {
+  let hash = archetype_signature_hash_from_component_ids(component_ids)
+  let bucket = signatures.get_or_init(hash, fn() { [] })
+  for entry in bucket {
+    if archetype_signature_equals(entry.component_ids, component_ids) {
+      return
+    }
+  }
+  bucket.push({ component_ids: component_ids.copy(), value })
 }
 
 ///|
@@ -167,11 +205,14 @@ fn World::ensure_bundle_info_for_payloads(
   if component_definition_ids.length() == 0 {
     return None
   }
-  component_definition_ids.sort()
-  let signature = archetype_signature_from_local_component_ids(
+  let bundle_component_definition_ids = archetype_sorted_unique_local_component_ids(
     component_definition_ids,
   )
-  match self.bundle_ids_by_signature.get(signature) {
+  match
+    archetype_signature_lookup(
+      self.bundle_ids_by_signature,
+      bundle_component_definition_ids,
+    ) {
     Some(bundle_id) =>
       match self.bundle_infos.get(bundle_id) {
         Some(info) => return Some(info)
@@ -180,7 +221,7 @@ fn World::ensure_bundle_info_for_payloads(
     None => ()
   }
   let component_local_ids : Array[Int] = []
-  for component_definition_id in component_definition_ids {
+  for component_definition_id in bundle_component_definition_ids {
     let component_local_id = self.ensure_component_registered(
       component_definition_id,
     )
@@ -201,18 +242,22 @@ fn World::ensure_bundle_info_for_payloads(
       component_local_ids,
     ),
   }
-  self.bundle_ids_by_signature.set(signature, bundle_id)
+  archetype_signature_insert(
+    self.bundle_ids_by_signature,
+    bundle_component_definition_ids,
+    bundle_id,
+  )
   self.bundle_infos.set(bundle_id, info)
   Some(info)
 }
 
 ///|
 fn archetype_bundle_info_covers_pending_payloads(
-  pending_payloads : Map[Int, EcsPayloadWriter],
+  pending_payloads : PendingComponentPayloadSet,
   bundle_info : BundleInfo,
 ) -> Bool {
-  for entry in pending_payloads.iter() {
-    let component_local_id = entry.0
+  for entry in pending_payloads.entries {
+    let component_local_id = entry.local_component_id
     if !bundle_info.component_local_ids.contains(component_local_id) {
       return false
     }
@@ -470,15 +515,20 @@ fn World::ensure_table_for_local_components(
   let table_component_local_ids = self.table_local_components_for_archetype_components(
     archetype_component_local_ids,
   )
-  let signature = archetype_signature_from_local_component_ids(
-    table_component_local_ids,
-  )
-  match self.table_ids_by_signature.get(signature) {
+  match
+    archetype_signature_lookup(
+      self.table_ids_by_signature,
+      table_component_local_ids,
+    ) {
     Some(table_id) => table_id
     None => {
       let table_id = self.next_table_id
       self.next_table_id = table_id + 1
-      self.table_ids_by_signature.set(signature, table_id)
+      archetype_signature_insert(
+        self.table_ids_by_signature,
+        table_component_local_ids,
+        table_id,
+      )
       self.table_component_local_ids.set(table_id, table_component_local_ids)
       table_id
     }
@@ -493,14 +543,18 @@ fn World::ensure_archetype_for_local_components(
   let normalized = archetype_sorted_unique_local_component_ids(
     component_local_ids,
   )
-  let signature = archetype_signature_from_local_component_ids(normalized)
-  match self.archetype_ids_by_signature.get(signature) {
+  match
+    archetype_signature_lookup(self.archetype_ids_by_signature, normalized) {
     Some(archetype_id) => archetype_id
     None => {
       let archetype_id = self.next_archetype_id
       self.next_archetype_id = archetype_id + 1
       let table_id = self.ensure_table_for_local_components(normalized)
-      self.archetype_ids_by_signature.set(signature, archetype_id)
+      archetype_signature_insert(
+        self.archetype_ids_by_signature,
+        normalized,
+        archetype_id,
+      )
       self.archetype_table_ids.set(archetype_id, table_id)
       self.archetype_component_local_ids.set(archetype_id, normalized)
       let local_component_indices : Map[Int, Int] = {}
@@ -877,13 +931,10 @@ fn World::bundle_migrate_new_archetype_same_table(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : Map[Int, EcsPayloadWriter],
-  pending_metadata : Map[Int, ComponentTickMetadata],
+  pending_payloads : PendingComponentPayloadSet,
 ) -> Unit {
   self.bundle_migrate_new_archetype(entity, from_archetype_id, to_archetype_id)
-  self.write_pending_sparse_component_payloads(
-    entity, pending_payloads, pending_metadata,
-  )
+  self.write_pending_sparse_component_payloads(entity, pending_payloads)
 }
 
 ///|
@@ -892,8 +943,7 @@ fn World::bundle_migrate_new_archetype_new_table(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : Map[Int, EcsPayloadWriter],
-  pending_metadata : Map[Int, ComponentTickMetadata],
+  pending_payloads : PendingComponentPayloadSet,
 ) -> Unit {
   let from_table_id = self.archetype_table_id_or_invalid(from_archetype_id)
   let to_table_id = self.archetype_table_id_or_invalid(to_archetype_id)
@@ -912,7 +962,7 @@ fn World::bundle_migrate_new_archetype_new_table(
     target_component_local_ids.length() > 0 {
     let appended_row = match
       self.ensure_table_storage(to_table_id).val.append_row_from_source_table(
-        entity, source_table, source_row, pending_payloads, pending_metadata,
+        entity, source_table, source_row, pending_payloads,
       ) {
       Some(row) => Some(row)
       None =>
@@ -949,9 +999,7 @@ fn World::bundle_migrate_new_archetype_new_table(
     Some(row) => row.index()
     None => -1
   }
-  self.write_pending_sparse_component_payloads(
-    entity, pending_payloads, pending_metadata,
-  )
+  self.write_pending_sparse_component_payloads(entity, pending_payloads)
 }
 
 ///|
@@ -959,8 +1007,7 @@ fn World::execute_bundle_migration_plan(
   self : World,
   entity : @core.Entity,
   plan : ArchetypeBundleMigrationPlan,
-  pending_payloads : Map[Int, EcsPayloadWriter],
-  pending_metadata : Map[Int, ComponentTickMetadata],
+  pending_payloads : PendingComponentPayloadSet,
 ) -> ArchetypeBundleMigrationPath {
   self.ensure_entity_archetype_capacity(entity.id)
   match plan.path {
@@ -973,7 +1020,6 @@ fn World::execute_bundle_migration_plan(
           plan.from_archetype_id,
           plan.to_archetype_id,
           pending_payloads,
-          pending_metadata,
         )
       } else {
         self.bundle_migrate_new_archetype_new_table(
@@ -981,7 +1027,6 @@ fn World::execute_bundle_migration_plan(
           plan.from_archetype_id,
           plan.to_archetype_id,
           pending_payloads,
-          pending_metadata,
         )
       }
     NewArchetypeNewTable =>
@@ -991,7 +1036,6 @@ fn World::execute_bundle_migration_plan(
           plan.from_archetype_id,
           plan.to_archetype_id,
           pending_payloads,
-          pending_metadata,
         )
       } else {
         self.bundle_migrate_new_archetype_new_table(
@@ -999,7 +1043,6 @@ fn World::execute_bundle_migration_plan(
           plan.from_archetype_id,
           plan.to_archetype_id,
           pending_payloads,
-          pending_metadata,
         )
       }
   }
@@ -1012,13 +1055,10 @@ fn World::migrate_entity_bundle(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : Map[Int, EcsPayloadWriter],
-  pending_metadata : Map[Int, ComponentTickMetadata],
+  pending_payloads : PendingComponentPayloadSet,
 ) -> ArchetypeBundleMigrationPath {
   let plan = self.bundle_migration_plan(from_archetype_id, to_archetype_id)
-  self.execute_bundle_migration_plan(
-    entity, plan, pending_payloads, pending_metadata,
-  )
+  self.execute_bundle_migration_plan(entity, plan, pending_payloads)
 }
 
 ///|
@@ -1110,7 +1150,14 @@ fn World::initialize_entity_archetype_tracking(
   self.ensure_entity_archetype_capacity(entity.id)
   let previous_archetype_id = self.entity_archetype_ids[entity.id]
   self.entity_replace_component_local_ids_without_membership_update(entity, [])
-  ignore(self.migrate_entity_bundle(entity, previous_archetype_id, 0, {}, {}))
+  ignore(
+    self.migrate_entity_bundle(
+      entity,
+      previous_archetype_id,
+      0,
+      pending_component_payload_set_new(),
+    ),
+  )
 }
 
 ///|
@@ -1127,7 +1174,14 @@ fn World::clear_entity_archetype_tracking(
     self.decrement_component_membership_count_local(component_local_id)
     self.bump_component_membership_generation_local(component_local_id)
   }
-  ignore(self.migrate_entity_bundle(entity, previous_archetype_id, -1, {}, {}))
+  ignore(
+    self.migrate_entity_bundle(
+      entity,
+      previous_archetype_id,
+      -1,
+      pending_component_payload_set_new(),
+    ),
+  )
   self.entity_replace_component_local_ids_without_membership_update(entity, [])
 }
 
@@ -1184,8 +1238,7 @@ fn World::refresh_entity_archetype_with_bundle_info(
   self : World,
   entity : @core.Entity,
   bundle_info : BundleInfo?,
-  pending_payloads : Map[Int, EcsPayloadWriter],
-  pending_metadata : Map[Int, ComponentTickMetadata],
+  pending_payloads : PendingComponentPayloadSet,
 ) -> Unit {
   if !self.is_alive(entity) {
     return
@@ -1311,7 +1364,7 @@ fn World::refresh_entity_archetype_with_bundle_info(
   }
   ignore(
     self.migrate_entity_bundle(
-      entity, previous_archetype_id, next_archetype_id, pending_payloads, pending_metadata,
+      entity, previous_archetype_id, next_archetype_id, pending_payloads,
     ),
   )
 }
@@ -1320,20 +1373,17 @@ fn World::refresh_entity_archetype_with_bundle_info(
 fn World::refresh_entity_archetype_with_pending_payloads(
   self : World,
   entity : @core.Entity,
-  pending_payloads : Map[Int, EcsPayloadWriter],
-  pending_metadata : Map[Int, ComponentTickMetadata],
+  pending_payloads : PendingComponentPayloadSet,
 ) -> Unit {
-  self.refresh_entity_archetype_with_bundle_info(
-    entity,
-    None,
-    pending_payloads,
-    pending_metadata,
-  )
+  self.refresh_entity_archetype_with_bundle_info(entity, None, pending_payloads)
 }
 
 ///|
 fn World::refresh_entity_archetype(self : World, entity : @core.Entity) -> Unit {
-  self.refresh_entity_archetype_with_pending_payloads(entity, {}, {})
+  self.refresh_entity_archetype_with_pending_payloads(
+    entity,
+    pending_component_payload_set_new(),
+  )
 }
 
 ///|
@@ -1372,8 +1422,7 @@ fn World::refresh_entity_archetype_after_component_remove(
       entity,
       previous_archetype_id,
       next_archetype_id,
-      {},
-      {},
+      pending_component_payload_set_new(),
     ),
   )
 }

@@ -128,13 +128,13 @@ pub impl ComponentObserverEvent for Add
 pub impl EcsPayloadCodec for Add
 
 pub struct Added[T] {
-  key : ComponentKey[T]
+  // private fields
 }
 pub fn[T] Added::new(ComponentKey[T]) -> Self[T]
 pub impl[T] QueryFilter for Added[T]
 
 pub struct AddedComponents[_] {
-  reader : @core.MessageReader[@core.Entity]
+  // private fields
 }
 pub fn[T] AddedComponents::clear(Self[T]) -> Unit
 pub fn[T] AddedComponents::is_empty(Self[T]) -> Bool
@@ -147,7 +147,7 @@ pub fn All::new() -> Self
 pub impl QueryFilter for All
 
 pub struct Allow[T] {
-  key : ComponentKey[T]
+  // private fields
 }
 pub fn[T] Allow::new(ComponentKey[T]) -> Self[T]
 pub impl[T] QueryFilter for Allow[T]
@@ -158,29 +158,32 @@ pub enum ArchetypeBundleMigrationPath {
   NewArchetypeNewTable
 } derive(Eq)
 
+type ArchetypeSignatureEntry
+
 pub struct BatchingStrategy {
-  min_batch_size : Int
-  max_batch_size : Int
-  batches_per_thread : Int
+  // private fields
 } derive(Eq, @debug.Debug)
 pub fn BatchingStrategy::batches_per_thread(Self, Int) -> Self
+pub fn BatchingStrategy::batches_per_thread_value(Self) -> Int
 pub fn BatchingStrategy::calc_batch_size(Self, () -> Int, Int) -> Int
 pub fn BatchingStrategy::fixed(Int) -> Self
 pub fn BatchingStrategy::max_batch_size(Self, Int) -> Self
+pub fn BatchingStrategy::max_batch_size_value(Self) -> Int
 pub fn BatchingStrategy::min_batch_size(Self, Int) -> Self
+pub fn BatchingStrategy::min_batch_size_value(Self) -> Int
 pub fn BatchingStrategy::new() -> Self
 pub impl Default for BatchingStrategy
 
 type BundleInfo
 
 pub struct Changed[T] {
-  key : ComponentKey[T]
+  // private fields
 }
 pub fn[T] Changed::new(ComponentKey[T]) -> Self[T]
 pub impl[T] QueryFilter for Changed[T]
 
 pub struct ChangedComponents[_] {
-  reader : @core.MessageReader[@core.Entity]
+  // private fields
 }
 pub fn[T] ChangedComponents::clear(Self[T]) -> Unit
 pub fn[T] ChangedComponents::is_empty(Self[T]) -> Bool
@@ -188,28 +191,20 @@ pub fn[T] ChangedComponents::len(Self[T]) -> Int
 pub fn[T] ChangedComponents::read(Self[T]) -> Array[@core.Entity]
 
 pub struct Comp[T] {
-  value : T?
-  world : World?
-  entity : @core.Entity?
-  key_id : Int?
+  // private fields
 }
-pub fn[T : Component] Comp::added(Self[T]) -> Int
-pub fn[T : Component] Comp::changed_by(Self[T]) -> String?
-pub fn[T : Component] Comp::is_added(Self[T]) -> Bool
-pub fn[T : Component] Comp::is_changed(Self[T]) -> Bool
+pub fn[T] Comp::added(Self[T]) -> Int
+pub fn[T] Comp::changed_by(Self[T]) -> String?
+pub fn[T] Comp::is_added(Self[T]) -> Bool
+pub fn[T] Comp::is_changed(Self[T]) -> Bool
 pub fn[T : Component] Comp::key(Self[T]) -> ComponentKey[T]
-pub fn[T : Component] Comp::last_changed(Self[T]) -> Int
+pub fn[T] Comp::last_changed(Self[T]) -> Int
 pub fn[T] Comp::new(ComponentKey[T]) -> Self[T]
 pub fn[T] Comp::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Comp[T]
 
 pub struct ComponentColumn[T] {
-  world : World
-  key : ComponentKey[T]
-  local_component_id : Int
-  storage_type : ComponentStorageType
-  table_column_cache : @ref.Ref[Array[@ref.Ref[RawTableColumn]?]]
-  table_column_cache_ready : @ref.Ref[Array[Bool]]
+  // private fields
 }
 pub fn[T] ComponentColumn::contains(Self[T], @core.Entity) -> Bool
 pub fn[T : EcsPayloadCodec] ComponentColumn::for_each(Self[T], (@core.Entity, T) -> Unit) -> Unit
@@ -256,17 +251,12 @@ pub(all) enum ComponentHookKind {
 }
 
 pub struct ComponentHooks {
-  on_add : ((DeferredWorld, HookContext) -> Unit)?
-  on_insert : ((DeferredWorld, HookContext) -> Unit)?
-  on_replace : ((DeferredWorld, HookContext) -> Unit)?
-  on_remove : ((DeferredWorld, HookContext) -> Unit)?
-  on_despawn : ((DeferredWorld, HookContext) -> Unit)?
+  // private fields
 }
 pub fn ComponentHooks::new(on_add? : ((DeferredWorld, HookContext) -> Unit)?, on_insert? : ((DeferredWorld, HookContext) -> Unit)?, on_replace? : ((DeferredWorld, HookContext) -> Unit)?, on_remove? : ((DeferredWorld, HookContext) -> Unit)?, on_despawn? : ((DeferredWorld, HookContext) -> Unit)?) -> Self
 
 pub struct ComponentHooksBuilder[T] {
-  world : World
-  key : ComponentKey[T]
+  // private fields
 }
 pub fn[T] ComponentHooksBuilder::on_add(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
 pub fn[T] ComponentHooksBuilder::on_despawn(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
@@ -275,15 +265,14 @@ pub fn[T] ComponentHooksBuilder::on_remove(Self[T], (DeferredWorld, HookContext)
 pub fn[T] ComponentHooksBuilder::on_replace(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
 
 pub struct ComponentKey[_] {
-  id : Int
-  debug_name : String
+  // private fields
 }
 pub fn[U, T] ComponentKey::cast(Self[T]) -> Self[U]
 pub fn[T] ComponentKey::debug_name(Self[T]) -> String
 pub fn[T] ComponentKey::id(Self[T]) -> Int
 
 pub struct ComponentMetadataBuilder[T] {
-  key : ComponentKey[T]
+  // private fields
 }
 pub fn[T] ComponentMetadataBuilder::on_add(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
 pub fn[T] ComponentMetadataBuilder::on_despawn(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
@@ -300,12 +289,12 @@ pub fn[T] ComponentMetadataBuilder::storage_table(Self[T]) -> Self[T]
 type ComponentObserverContext
 
 pub struct ComponentOn[E, C] {
-  entity : @core.Entity
-  caller : String?
-  marker_event : E?
-  marker_component : C?
+  // private fields
 }
 pub fn[E, C] ComponentOn::caller(Self[E, C]) -> String?
+pub fn[E, C] ComponentOn::entity(Self[E, C]) -> @core.Entity
+pub fn[E, C] ComponentOn::marker_component(Self[E, C]) -> C?
+pub fn[E, C] ComponentOn::marker_event(Self[E, C]) -> E?
 
 pub(all) struct ComponentOps {
   definition_id : Int
@@ -328,10 +317,10 @@ pub enum ComponentStorageType {
 } derive(Eq)
 
 pub struct ComponentTableColumn[T] {
-  column : @ref.Ref[RawTableColumn]
-  key : ComponentKey[T]
+  // private fields
 }
 pub fn[T] ComponentTableColumn::is_changed_at_row(Self[T], Int, @core.SystemSequence) -> Bool
+pub fn[T] ComponentTableColumn::key(Self[T]) -> ComponentKey[T]
 pub fn[T] ComponentTableColumn::record_changed_at_row(Self[T], Int, Int) -> Bool
 pub fn[T : EcsPayloadCodec] ComponentTableColumn::set_sequence_only_hot_at_row(Self[T], Int, T, Int) -> Bool
 pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row(Self[T], Int) -> T?
@@ -340,13 +329,13 @@ pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row_unchecked(Self[T]
 type ComponentTickMetadata
 
 pub struct ComponentsQueuedRegistrator {
-  world : World
+  // private fields
 }
 pub fn[T : Component] ComponentsQueuedRegistrator::register_component(Self, key? : ComponentKey[T]) -> Int
 pub fn[T] ComponentsQueuedRegistrator::register_component_by_key(Self, ComponentKey[T]) -> Int
 
 pub struct ComponentsRegistrator {
-  world : World
+  // private fields
 }
 pub fn ComponentsRegistrator::apply_queued_registrations(Self) -> Unit
 pub fn ComponentsRegistrator::as_queued(Self) -> ComponentsQueuedRegistrator
@@ -354,7 +343,7 @@ pub fn[T : Component] ComponentsRegistrator::register_component(Self, key? : Com
 pub fn[T] ComponentsRegistrator::register_component_by_key(Self, ComponentKey[T]) -> Int
 
 pub struct DefaultQueryFilters {
-  disabling_component_ids : Array[Int]
+  // private fields
 }
 pub fn DefaultQueryFilters::disabling_component_ids(Self) -> Array[Int]
 pub fn DefaultQueryFilters::empty() -> Self
@@ -362,14 +351,14 @@ pub fn DefaultQueryFilters::register_disabling_component(Self, Int) -> Self
 pub impl EcsPayloadCodec for DefaultQueryFilters
 
 pub struct DeferredEntityCommands {
-  commands : DeferredWorldCommands
-  entity : @core.Entity
+  // private fields
 }
 #callsite(autofill(loc))
 pub fn DeferredEntityCommands::despawn(Self, loc~ : SourceLoc) -> Unit
+pub fn DeferredEntityCommands::entity(Self) -> @core.Entity
 
 pub struct DeferredWorld {
-  world : World
+  // private fields
 }
 pub fn DeferredWorld::commands(Self) -> DeferredWorldCommands
 pub fn[T] DeferredWorld::contains(Self, @core.Entity, ComponentKey[T]) -> Bool
@@ -401,7 +390,7 @@ pub fn[T : EcsPayloadCodec] DeferredWorld::take_by_key(Self, @core.Entity, Compo
 pub fn DeferredWorld::world(Self) -> World
 
 pub struct DeferredWorldCommands {
-  world : World
+  // private fields
 }
 pub fn DeferredWorldCommands::entity(Self, @core.Entity) -> DeferredEntityCommands
 
@@ -420,15 +409,14 @@ pub extenum EcsPayload {
 }
 
 pub struct EcsPayloadWriter {
-  component_definition_id : Int
-  component_debug_name : String
-  value_type_name : String
-  payload : EcsPayload
+  // private fields
 }
+pub fn EcsPayloadWriter::component_debug_name(Self) -> String
+pub fn EcsPayloadWriter::component_definition_id(Self) -> Int
+pub fn EcsPayloadWriter::value_type_name(Self) -> String
 
 pub struct EntityMut {
-  world : World
-  entity : @core.Entity
+  // private fields
 }
 pub fn[T : Component] EntityMut::contains(Self, key? : ComponentKey[T]) -> Bool raise EcsError
 #callsite(autofill(loc))
@@ -446,8 +434,7 @@ pub fn[T : Component] EntityMut::remove_component(Self, loc~ : SourceLoc) -> T? 
 pub impl QueryData for EntityMut
 
 pub struct EntityRef {
-  world : World
-  entity : @core.Entity
+  // private fields
 }
 pub fn[T : Component] EntityRef::contains(Self, key? : ComponentKey[T]) -> Bool raise EcsError
 pub fn[T : Component] EntityRef::get(Self) -> T? raise EcsError
@@ -456,15 +443,14 @@ pub fn EntityRef::id(Self) -> @core.Entity
 pub impl QueryData for EntityRef
 
 pub struct EventKey[_] {
-  id : Int
-  debug_name : String
+  // private fields
 }
 pub fn[U, T] EventKey::cast(Self[T]) -> Self[U]
 pub fn[T] EventKey::debug_name(Self[T]) -> String
 pub fn[T] EventKey::id(Self[T]) -> Int
 
 pub struct Has[_] {
-  present : Bool
+  // private fields
 }
 pub fn[T : Component] Has::key(Self[T]) -> ComponentKey[T]
 pub fn[T] Has::new(ComponentKey[T]) -> Self[T]
@@ -472,10 +458,11 @@ pub fn[T] Has::present(Self[T]) -> Bool
 pub impl[T : Component] QueryData for Has[T]
 
 pub struct HookContext {
-  entity : @core.Entity
-  component_id : Int
-  caller : String?
+  // private fields
 }
+pub fn HookContext::caller(Self) -> String?
+pub fn HookContext::component_id(Self) -> Int
+pub fn HookContext::entity(Self) -> @core.Entity
 
 pub struct Insert {
 }
@@ -483,7 +470,7 @@ pub impl ComponentObserverEvent for Insert
 pub impl EcsPayloadCodec for Insert
 
 pub struct MessageCursor[_] {
-  mut last_message_count : Int
+  // private fields
 }
 pub fn[T] MessageCursor::clear(Self[T], Messages[T]) -> Unit
 pub fn[T] MessageCursor::is_empty(Self[T], Messages[T]) -> Bool
@@ -496,16 +483,14 @@ pub impl[T] ToJson for MessageCursor[T]
 pub impl[T] @json.FromJson for MessageCursor[T]
 
 pub struct MessageKey[T] {
-  queue_key : ResourceKey[Messages[T]]
+  // private fields
 }
 pub fn[T] MessageKey::debug_name(Self[T]) -> String
 pub fn[T] MessageKey::id(Self[T]) -> Int
 pub fn[T] MessageKey::messages_resource(Self[T]) -> ResourceKey[Messages[T]]
 
 pub struct MessageMutator[T] {
-  world : World
-  key : MessageKey[T]
-  cursor_ref : @ref.Ref[Int]
+  // private fields
 }
 pub fn[T] MessageMutator::clear(Self[T]) -> Unit
 pub fn[T] MessageMutator::cursor(Self[T]) -> Int
@@ -514,11 +499,7 @@ pub fn[T] MessageMutator::len(Self[T]) -> Int
 pub fn[T : EcsPayloadCodec] MessageMutator::read(Self[T]) -> Array[T] raise EcsError
 
 pub struct MessageQueueState {
-  mut messages_a_start : Int
-  mut messages_a : Array[EcsPayload]
-  mut messages_b_start : Int
-  mut messages_b : Array[EcsPayload]
-  mut message_count : Int
+  // private fields
 }
 pub fn MessageQueueState::clear(Self) -> Unit
 pub fn MessageQueueState::len(Self) -> Int
@@ -529,9 +510,7 @@ pub fn MessageQueueState::write(Self, EcsPayload) -> Int
 pub fn MessageQueueState::write_batch(Self, Array[EcsPayload]) -> Unit
 
 pub struct MessageReader[T] {
-  world : World
-  key : MessageKey[T]
-  cursor_ref : @ref.Ref[Int]
+  // private fields
 }
 pub fn[T] MessageReader::clear(Self[T]) -> Unit
 pub fn[T] MessageReader::cursor(Self[T]) -> Int
@@ -545,15 +524,14 @@ pub(all) struct MessageRegistryState {
 pub impl EcsPayloadCodec for MessageRegistryState
 
 pub struct MessageWriter[T] {
-  world : World
-  key : MessageKey[T]
+  // private fields
 }
 pub fn[T : EcsPayloadCodec] MessageWriter::write(Self[T], T) -> Int
 pub fn[T : EcsPayloadCodec] MessageWriter::write_batch(Self[T], Array[T]) -> Unit
 pub fn[T : Default + EcsPayloadCodec] MessageWriter::write_default(Self[T]) -> Int
 
 pub struct Messages[_] {
-  state : MessageQueueState
+  // private fields
 }
 pub fn[T] Messages::clear(Self[T]) -> Unit
 pub fn[T] Messages::get_cursor(Self[T]) -> MessageCursor[T]
@@ -571,19 +549,14 @@ pub fn[T : Default + EcsPayloadCodec] Messages::write_message_default(Self[T], M
 pub impl[T] EcsPayloadCodec for Messages[T]
 
 pub struct Mut[T] {
-  world : World?
-  entity : @core.Entity?
-  key : ComponentKey[T]?
-  table_id : Int?
-  row_index : Int?
-  local_component_id : Int?
+  // private fields
 }
-pub fn[T : Component] Mut::added(Self[T]) -> Int
-pub fn[T : Component] Mut::changed_by(Self[T]) -> String?
-pub fn[T : Component] Mut::is_added(Self[T]) -> Bool
-pub fn[T : Component] Mut::is_changed(Self[T]) -> Bool
+pub fn[T] Mut::added(Self[T]) -> Int
+pub fn[T] Mut::changed_by(Self[T]) -> String?
+pub fn[T] Mut::is_added(Self[T]) -> Bool
+pub fn[T] Mut::is_changed(Self[T]) -> Bool
 pub fn[T : Component] Mut::key(Self[T]) -> ComponentKey[T]
-pub fn[T : Component] Mut::last_changed(Self[T]) -> Int
+pub fn[T] Mut::last_changed(Self[T]) -> Int
 #callsite(autofill(loc))
 pub fn[T : EcsPayloadCodec, R] Mut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
 pub fn[T] Mut::new(ComponentKey[T]) -> Self[T]
@@ -602,7 +575,7 @@ pub fn[T : EcsPayloadCodec] Mut::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Mut[T]
 
 pub struct Name {
-  name : String
+  // private fields
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn Name::as_str(Self) -> String
 pub fn Name::new(String) -> Self
@@ -610,18 +583,13 @@ pub impl Component for Name
 pub impl EcsPayloadCodec for Name
 
 pub struct ObserverHandle {
-  id : Int
-  world_id : Int
+  // private fields
 }
 pub fn ObserverHandle::id(Self) -> Int
 pub fn ObserverHandle::world_id(Self) -> Int
 
 pub struct On[E] {
-  world : World
-  event_key : EventKey[E]
-  entity : @core.Entity?
-  caller : String?
-  propagate_ref : @ref.Ref[Bool]
+  // private fields
 }
 pub fn[E] On::caller(Self[E]) -> String?
 pub fn[E] On::entity(Self[E]) -> @core.Entity?
@@ -631,7 +599,7 @@ pub fn[E : EcsPayloadCodec, R] On::modify(Self[E], (E) -> R) -> R
 pub fn[E] On::propagate(Self[E], Bool) -> Unit
 
 pub struct Optional[T] {
-  value : T?
+  // private fields
 }
 pub fn[T : Component] Optional::key(Self[T]) -> ComponentKey[T]
 pub fn[T] Optional::new(ComponentKey[T]) -> Self[T]
@@ -639,7 +607,7 @@ pub fn[T] Optional::value(Self[T]) -> T?
 pub impl[T : Component] QueryData for Optional[T]
 
 pub struct Or[F] {
-  filters : F
+  // private fields
 }
 pub fn[F] Or::new(F) -> Self[F]
 pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F]
@@ -647,11 +615,10 @@ pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F]
 type PendingComponentPayloadContext
 
 pub struct Query[_, F] {
-  world : World
-  filter : F
-  mut cache : QueryCache?
+  // private fields
 }
-pub fn[D, F] Query::cache_snapshot(Self[D, F]) -> QueryCache
+pub fn[D, F] Query::cache_snapshot(Self[D, F]) -> QueryCacheSnapshot
+pub fn[D, F] Query::cache_state(Self[D, F]) -> QueryCache
 pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(Self[D, F]) -> QueryContiguousIter[D, F]?
 pub fn[D : QueryData, F : QueryFilter] Query::count(Self[D, F]) -> Int
 pub fn[D : QueryData, F : QueryFilter] Query::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
@@ -666,66 +633,40 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(Self[D, F]) -> D? raise Ecs
 pub fn[D : QueryData, F : QueryFilter] Query::view(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 
 pub struct QueryCache {
-  mut cached_candidate_archetypes : Array[Int]
-  mut cached_anchor_component_id : Int?
-  mut cached_filter_anchor_component_id : Int?
-  mut cached_candidate_anchor_component_id : Int?
-  mut cached_candidate_archetype_generation : Int
-  mut cached_candidate_generation : Int
-  mut cached_matching_entities : Array[@core.Entity]
-  mut cached_matching_archetypes : Array[Int]
-  mut cached_matching_archetype_bits : Array[Bool]
-  mut cached_matching_archetype_generation : Int
-  mut cached_matching_entities_generation : Int
-  mut cached_matching_entities_sequence : Int
-  mut cached_matching_anchor_component_id : Int?
-  mut cached_matching_filter_anchor_component_id : Int?
-  mut cached_matching_candidate_anchor_component_id : Int?
-  mut cached_matching_candidate_generation : Int
-  mut cached_matching_generation : Int
-  mut cached_matching_sequence : Int
-  mut cached_matching_entities_valid : Bool
-  mut cached_matching_tables : Array[Int]
-  mut cached_matching_table_archetype_groups : Array[Array[Int]]
-  mut cached_matching_table_bits : Array[Bool]
-  mut cached_matching_tables_generation : Int
-  mut cached_matching_tables_valid : Bool
-  mut cached_is_dense : Bool
-  mut cached_default_filter_component_ids : Array[Int]
-  mut cached_default_filter_local_component_ids : Array[Int]
-  mut cached_default_filters_world_id : Int
-  mut cached_dependency_component_ids : Array[Int]
-  mut cached_dependency_world_id : Int
-  mut cached_dependency_component_registration_generation : Int
+  // private fields
 } derive(ToJson, @json.FromJson)
 pub fn QueryCache::new() -> Self
 
+pub struct QueryCacheSnapshot {
+  // private fields
+} derive(ToJson, @json.FromJson)
+pub fn QueryCacheSnapshot::cached_anchor_component_id(Self) -> Int?
+pub fn QueryCacheSnapshot::cached_candidate_anchor_component_id(Self) -> Int?
+pub fn QueryCacheSnapshot::cached_candidate_archetype_generation(Self) -> Int
+pub fn QueryCacheSnapshot::cached_candidate_archetypes(Self) -> Array[Int]
+pub fn QueryCacheSnapshot::cached_filter_anchor_component_id(Self) -> Int?
+pub fn QueryCacheSnapshot::cached_is_dense(Self) -> Bool
+pub fn QueryCacheSnapshot::cached_matching_archetype_generation(Self) -> Int
+pub fn QueryCacheSnapshot::cached_matching_archetypes(Self) -> Array[Int]
+pub fn QueryCacheSnapshot::cached_matching_entities_generation(Self) -> Int
+pub fn QueryCacheSnapshot::cached_matching_entities_sequence(Self) -> Int
+pub fn QueryCacheSnapshot::cached_matching_entities_valid(Self) -> Bool
+pub fn QueryCacheSnapshot::cached_matching_table_bits(Self) -> @utils.IntBitSet
+pub fn QueryCacheSnapshot::cached_matching_tables(Self) -> Array[Int]
+pub fn QueryCacheSnapshot::cached_matching_tables_generation(Self) -> Int
+
 pub struct QueryCombinations[D, F] {
-  query : Query[D, F]
-  default_filter_component_ids : Array[Int]
-  entities_pre_matched : Bool
-  entities : Array[@core.Entity]
-  mut left_index : Int
-  mut right_index : Int
+  // private fields
 }
 pub fn[D : QueryData, F : QueryFilter] QueryCombinations::fetch_next(Self[D, F]) -> (D, D)? raise EcsError
 
 pub struct QueryContiguousIter[D, F] {
-  query : Query[D, F]
-  default_filter_component_ids : Array[Int]
-  entities_pre_matched : Bool
-  entities : Array[@core.Entity]
-  mut index : Int
+  // private fields
 }
 pub fn[D : QueryData, F : QueryFilter] QueryContiguousIter::fetch_next(Self[D, F]) -> D? raise EcsError
 
 pub struct QueryDataAccess {
-  read_components : Array[Int]
-  write_components : Array[Int]
-  read_component_set : @utils.IntBitSet
-  write_component_set : @utils.IntBitSet
-  mut has_read_write_conflict : Bool
-  mut has_duplicate_write : Bool
+  // private fields
 }
 pub fn QueryDataAccess::accesses_component(Self, Int) -> Bool
 pub fn QueryDataAccess::add_read_component(Self, Int) -> Unit
@@ -736,12 +677,7 @@ pub fn QueryDataAccess::read_components(Self) -> Array[Int]
 pub fn QueryDataAccess::write_components(Self) -> Array[Int]
 
 pub struct QueryFilterAccess {
-  read_components : Array[Int]
-  with_components : Array[Int]
-  without_components : Array[Int]
-  read_component_set : @utils.IntBitSet
-  with_component_set : @utils.IntBitSet
-  without_component_set : @utils.IntBitSet
+  // private fields
 }
 pub fn QueryFilterAccess::add_read_component(Self, Int) -> Unit
 pub fn QueryFilterAccess::add_with_component(Self, Int) -> Unit
@@ -752,67 +688,20 @@ pub fn QueryFilterAccess::with_components(Self) -> Array[Int]
 pub fn QueryFilterAccess::without_components(Self) -> Array[Int]
 
 pub struct QueryMany[D, F] {
-  query : Query[D, F]
-  default_filter_component_ids : Array[Int]
-  entities_pre_matched : Bool
-  archetype_driven : Bool
-  dense_driven : Bool
-  archetypes : Array[Int]
-  mut archetype_index : Int
-  mut archetype_entities : Array[@core.Entity]
-  mut archetype_entity_index : Int
-  mut current_table_id : Int
-  dense_table_groups : Array[Array[Int]]
-  mut dense_table_group_index : Int
-  mut dense_table_group_archetype_index : Int
-  entities : Array[@core.Entity]
-  mut index : Int
+  // private fields
 }
 pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(Self[D, F]) -> (@core.Entity, D)? raise EcsError
 
 pub struct QueryParallel[D, F] {
-  query : Query[D, F]
-  batching_strategy : BatchingStrategy
+  // private fields
 }
 pub fn[D, F] QueryParallel::batching_strategy(Self[D, F], BatchingStrategy) -> Self[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryParallel::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 
-type QuerySparseAnchorPayloadContext
-
 pub struct QueryState[_, F] {
-  filter : F
-  mut cached_candidate_archetypes : Array[Int]
-  mut cached_anchor_component_id : Int?
-  mut cached_filter_anchor_component_id : Int?
-  mut cached_candidate_anchor_component_id : Int?
-  mut cached_candidate_archetype_generation : Int
-  mut cached_candidate_generation : Int
-  mut cached_matching_entities : Array[@core.Entity]
-  mut cached_matching_archetypes : Array[Int]
-  mut cached_matching_archetype_bits : Array[Bool]
-  mut cached_matching_archetype_generation : Int
-  mut cached_matching_entities_generation : Int
-  mut cached_matching_entities_sequence : Int
-  mut cached_matching_anchor_component_id : Int?
-  mut cached_matching_filter_anchor_component_id : Int?
-  mut cached_matching_candidate_anchor_component_id : Int?
-  mut cached_matching_candidate_generation : Int
-  mut cached_matching_generation : Int
-  mut cached_matching_sequence : Int
-  mut cached_matching_entities_valid : Bool
-  mut cached_matching_tables : Array[Int]
-  mut cached_matching_table_archetype_groups : Array[Array[Int]]
-  mut cached_matching_table_bits : Array[Bool]
-  mut cached_matching_tables_generation : Int
-  mut cached_matching_tables_valid : Bool
-  mut cached_is_dense : Bool
-  mut cached_default_filter_component_ids : Array[Int]
-  mut cached_default_filter_local_component_ids : Array[Int]
-  mut cached_default_filters_world_id : Int
-  mut cached_dependency_component_ids : Array[Int]
-  mut cached_dependency_world_id : Int
-  mut cached_dependency_component_registration_generation : Int
+  // private fields
 }
+pub fn[D, F] QueryState::cache_snapshot(Self[D, F]) -> QueryCacheSnapshot
 pub fn[D : QueryData, F : QueryFilter] QueryState::contiguous_iter(Self[D, F], World) -> QueryContiguousIter[D, F]?
 pub fn[D : QueryData, F : QueryFilter] QueryState::count(Self[D, F], World) -> Int
 pub fn[D : QueryData, F : QueryFilter] QueryState::get(Self[D, F], World, @core.Entity) -> D? raise EcsError
@@ -842,7 +731,7 @@ pub impl ComponentObserverEvent for Remove
 pub impl EcsPayloadCodec for Remove
 
 pub struct RemovedComponents[_] {
-  reader : @core.MessageReader[@core.Entity]
+  // private fields
 }
 pub fn[T] RemovedComponents::clear(Self[T]) -> Unit
 pub fn[T] RemovedComponents::is_empty(Self[T]) -> Bool
@@ -855,7 +744,7 @@ pub impl ComponentObserverEvent for Replace
 pub impl EcsPayloadCodec for Replace
 
 pub struct RequiredComponents {
-  component_ids : Array[Int]
+  // private fields
 }
 pub fn RequiredComponents::contains(Self, Int) -> Bool
 pub fn RequiredComponents::is_empty(Self) -> Bool
@@ -865,8 +754,7 @@ pub fn RequiredComponents::len(Self) -> Int
 type RequiredComponentsState
 
 pub struct ResourceAccess[T] {
-  world : World
-  key : ResourceKey[T]
+  // private fields
 }
 pub fn[T : EcsPayloadCodec] ResourceAccess::get(Self[T]) -> T?
 pub fn[T : EcsPayloadCodec] ResourceAccess::get_mut(Self[T]) -> ResourceMut[T]? raise EcsError
@@ -878,16 +766,14 @@ pub fn[T : EcsPayloadCodec] ResourceAccess::update(Self[T], (T) -> T) -> Bool
 pub fn[T : EcsPayloadCodec] ResourceAccess::upsert(Self[T], T) -> Unit
 
 pub struct ResourceKey[_] {
-  id : Int
-  debug_name : String
+  // private fields
 }
 pub fn[U, T] ResourceKey::cast(Self[T]) -> Self[U]
 pub fn[T] ResourceKey::debug_name(Self[T]) -> String
 pub fn[T] ResourceKey::id(Self[T]) -> Int
 
 pub struct ResourceMut[T] {
-  world : World?
-  key : ResourceKey[T]?
+  // private fields
 }
 pub fn[T] ResourceMut::added(Self[T]) -> Int
 pub fn[T] ResourceMut::changed_by(Self[T]) -> String?
@@ -914,80 +800,19 @@ type ResourceSlot
 type TriggerObserverContext
 
 pub struct With[T] {
-  key : ComponentKey[T]
+  // private fields
 }
 pub fn[T] With::new(ComponentKey[T]) -> Self[T]
 pub impl[T] QueryFilter for With[T]
 
 pub struct Without[T] {
-  key : ComponentKey[T]
+  // private fields
 }
 pub fn[T] Without::new(ComponentKey[T]) -> Self[T]
 pub impl[T] QueryFilter for Without[T]
 
 pub struct World {
-  world_id : Int
-  mut structural_generation : Int
-  mut entity_lifecycle_generation : Int
-  mut component_registration_generation : Int
-  component_ids : WorldComponentIds
-  components : WorldComponents
-  component_relationship_sources : Map[Int, ComponentRelationshipSourceMetadata]
-  observer_parent_lookup_component_ids : Array[Int]
-  observer_registry : @ref.Ref[WorldObserverRegistry]
-  mut current_component_observer_context : ComponentObserverContext?
-  mut current_trigger_observer_context : TriggerObserverContext?
-  entities : @core.Entities
-  mut sequence : Int
-  mut system_context : @core.SystemSequenceContext
-  mut pending_component_payload_context : PendingComponentPayloadContext?
-  mut current_query_sparse_anchor_payload_context : QuerySparseAnchorPayloadContext?
-  mut active_query_iteration_count : Int
-  tables : Map[Int, @ref.Ref[RawTable]]
-  sparse_component_columns : Map[Int, @ref.Ref[@core.ComponentStore[EcsPayload]]]
-  sparse_component_metadata : Map[Int, @ref.Ref[@core.ComponentStore[ComponentTickMetadata]]]
-  component_store_cache_by_definition_id : Map[Int, @ref.Ref[@core.ComponentStore[EcsPayload]]]
-  mut next_archetype_id : Int
-  mut next_table_id : Int
-  mut next_bundle_id : Int
-  bundle_ids_by_signature : Map[String, Int]
-  bundle_infos : Map[Int, BundleInfo]
-  archetype_ids_by_signature : Map[String, Int]
-  table_ids_by_signature : Map[String, Int]
-  table_component_local_ids : Map[Int, Array[Int]]
-  archetype_table_ids : Map[Int, Int]
-  archetype_component_local_ids : Map[Int, Array[Int]]
-  archetype_component_local_id_indices : Map[Int, Map[Int, Int]]
-  archetype_component_local_id_presence : Map[Int, @utils.IntBitSet]
-  archetype_component_definition_ids : Map[Int, Array[Int]]
-  archetype_component_definition_id_presence : Map[Int, @utils.IntBitSet]
-  archetype_ids_by_component_local_id : Map[Int, Array[Int]]
-  archetype_add_edges_by_component_local_id : Map[Int, Map[Int, Int]]
-  archetype_remove_edges_by_component_local_id : Map[Int, Map[Int, Int]]
-  archetype_insert_bundle_edges_by_id : Map[Int, Map[Int, Int]]
-  archetype_non_empty_ids_by_component_local_id : Map[Int, Array[Int]]
-  mut non_empty_archetype_ids_sorted : Array[Int]
-  mut non_empty_archetype_generation : Int
-  component_membership_generations : Map[Int, Int]
-  component_membership_counts : Map[Int, Int]
-  archetype_entities : Map[Int, Array[@core.Entity]]
-  entity_archetype_ids : Array[Int]
-  entity_table_ids : Array[Int]
-  entity_table_rows : Array[Int]
-  entity_archetype_rows : Array[Int]
-  entity_component_local_ids : Array[Array[Int]]
-  entity_component_local_id_presence : Array[@utils.IntBitSet]
-  required_components : Map[Int, @ref.Ref[RequiredComponentsState]]
-  used_components : @utils.IntBitSet
-  added_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
-  changed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
-  removed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
-  component_hooks_registry : Map[Int, ComponentHooks]
-  resources : Map[Int, ResourceSlot]
-  mut previous_events : Map[Int, Array[EcsPayload]]
-  current_events : Map[Int, Array[EcsPayload]]
-  mut deferred_hook_command_depth : Int
-  deferred_hook_commands : Array[(World) -> Unit]
+  // private fields
 }
 pub fn[C : Component] World::add_add_component_observer(Self, (ComponentOn[Add, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_add_entity_component_observer(Self, @core.Entity, (ComponentOn[Add, C]) -> Unit) -> ObserverHandle
@@ -1004,6 +829,7 @@ pub fn[C : Component] World::add_replace_entity_component_observer(Self, @core.E
 pub fn[T] World::added_components(Self, ComponentKey[T], @core.SystemSequence) -> AddedComponents[T]
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn World::advance_sequence(Self) -> Int
+pub fn World::alive_entities(Self) -> Array[@core.Entity]
 pub fn World::apply_queued_component_registrations(Self) -> Unit
 pub fn World::archetype_component_ids(Self, Int) -> Array[Int]?
 pub fn World::archetype_component_local_index(Self, Int, Int) -> Int?
@@ -1032,6 +858,8 @@ pub fn World::entity(Self, @core.Entity) -> EntityRef raise EcsError
 pub fn World::entity_archetype_id(Self, @core.Entity) -> Int?
 pub fn World::entity_count(Self) -> Int
 pub fn World::entity_mut(Self, @core.Entity) -> EntityMut raise EcsError
+pub fn World::entity_table_location(Self, @core.Entity) -> (Int, Int)?
+pub fn World::entity_table_location_by_id(Self, Int) -> (Int, Int)?
 pub fn[T : EcsPayloadCodec] World::for_each_component(Self, ComponentKey[T], (@core.Entity, T) -> Unit) -> Unit
 pub fn[T : Component] World::get(Self, @core.Entity, key? : ComponentKey[T]) -> T? raise EcsError
 pub fn[T : EcsPayloadCodec] World::get_by_key(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError

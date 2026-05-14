@@ -28,8 +28,8 @@ pub(open) trait EventData: EcsPayloadCodec {}
 
 ///|
 pub struct ComponentKey[_] {
-  id : Int
-  debug_name : String
+  priv id : Int
+  priv debug_name : String
 }
 
 ///|
@@ -49,8 +49,8 @@ pub fn[U, T] ComponentKey::cast(self : ComponentKey[T]) -> ComponentKey[U] {
 
 ///|
 pub struct ResourceKey[_] {
-  id : Int
-  debug_name : String
+  priv id : Int
+  priv debug_name : String
 }
 
 ///|
@@ -70,8 +70,8 @@ pub fn[U, T] ResourceKey::cast(self : ResourceKey[T]) -> ResourceKey[U] {
 
 ///|
 pub struct EventKey[_] {
-  id : Int
-  debug_name : String
+  priv id : Int
+  priv debug_name : String
 }
 
 ///|
@@ -246,17 +246,98 @@ fn component_tick_metadata_with_changed(
 }
 
 ///|
-struct PendingComponentPayloadContext {
-  entity_id : Int
-  payloads : Map[Int, EcsPayloadWriter]
-  metadata : Map[Int, ComponentTickMetadata]
+priv struct PendingComponentPayloadEntry {
+  local_component_id : Int
+  mut writer : EcsPayloadWriter
+  mut metadata : ComponentTickMetadata
 }
 
 ///|
-struct QuerySparseAnchorPayloadContext {
+priv struct PendingComponentPayloadSet {
+  entries : Array[PendingComponentPayloadEntry]
+}
+
+///|
+fn pending_component_payload_set_new() -> PendingComponentPayloadSet {
+  { entries: [] }
+}
+
+///|
+fn PendingComponentPayloadSet::index_of(
+  self : PendingComponentPayloadSet,
+  local_component_id : Int,
+) -> Int? {
+  for index in 0..<self.entries.length() {
+    if self.entries[index].local_component_id == local_component_id {
+      return Some(index)
+    }
+  }
+  None
+}
+
+///|
+fn PendingComponentPayloadSet::contains(
+  self : PendingComponentPayloadSet,
+  local_component_id : Int,
+) -> Bool {
+  self.index_of(local_component_id) is Some(_)
+}
+
+///|
+fn PendingComponentPayloadSet::writer(
+  self : PendingComponentPayloadSet,
+  local_component_id : Int,
+) -> EcsPayloadWriter? {
+  match self.index_of(local_component_id) {
+    Some(index) => Some(self.entries[index].writer)
+    None => None
+  }
+}
+
+///|
+fn PendingComponentPayloadSet::metadata(
+  self : PendingComponentPayloadSet,
+  local_component_id : Int,
+) -> ComponentTickMetadata? {
+  match self.index_of(local_component_id) {
+    Some(index) => Some(self.entries[index].metadata)
+    None => None
+  }
+}
+
+///|
+fn PendingComponentPayloadSet::set_writer(
+  self : PendingComponentPayloadSet,
+  local_component_id : Int,
+  writer : EcsPayloadWriter,
+) -> Unit {
+  match self.index_of(local_component_id) {
+    Some(index) => self.entries[index].writer = writer
+    None =>
+      self.entries.push({
+        local_component_id,
+        writer,
+        metadata: component_tick_metadata_empty(),
+      })
+  }
+}
+
+///|
+fn PendingComponentPayloadSet::set_metadata(
+  self : PendingComponentPayloadSet,
+  local_component_id : Int,
+  metadata : ComponentTickMetadata,
+) -> Unit {
+  match self.index_of(local_component_id) {
+    Some(index) => self.entries[index].metadata = metadata
+    None => ()
+  }
+}
+
+///|
+struct PendingComponentPayloadContext {
   entity_id : Int
-  local_component_id : Int
-  payload : EcsPayload
+  payloads : PendingComponentPayloadSet
 }
 
 ///|
@@ -266,75 +347,86 @@ struct BundleInfo {
 }
 
 ///|
+struct ArchetypeSignatureEntry {
+  component_ids : Array[Int]
+  value : Int
+}
+
+///|
 pub struct World {
-  world_id : Int
-  mut structural_generation : Int
-  mut entity_lifecycle_generation : Int
-  mut component_registration_generation : Int
-  component_ids : WorldComponentIds
-  components : WorldComponents
-  component_relationship_sources : Map[Int, ComponentRelationshipSourceMetadata]
-  observer_parent_lookup_component_ids : Array[Int]
-  observer_registry : Ref[WorldObserverRegistry]
-  mut current_component_observer_context : ComponentObserverContext?
-  mut current_trigger_observer_context : TriggerObserverContext?
-  entities : @core.Entities
-  mut sequence : @core.Sequence
-  mut system_context : @core.SystemSequenceContext
-  mut pending_component_payload_context : PendingComponentPayloadContext?
-  mut current_query_sparse_anchor_payload_context : QuerySparseAnchorPayloadContext?
-  mut active_query_iteration_count : Int
-  tables : Map[Int, Ref[RawTable]]
-  sparse_component_columns : Map[Int, Ref[@core.ComponentStore[EcsPayload]]]
-  sparse_component_metadata : Map[
+  priv world_id : Int
+  priv mut structural_generation : Int
+  priv mut entity_lifecycle_generation : Int
+  priv mut component_registration_generation : Int
+  priv component_ids : WorldComponentIds
+  priv components : WorldComponents
+  priv component_relationship_sources : Map[
     Int,
-    Ref[@core.ComponentStore[ComponentTickMetadata]],
+    ComponentRelationshipSourceMetadata,
   ]
-  component_store_cache_by_definition_id : Map[
+  priv observer_parent_lookup_component_ids : Array[Int]
+  priv observer_registry : Ref[WorldObserverRegistry]
+  priv mut current_component_observer_context : ComponentObserverContext?
+  priv mut current_trigger_observer_context : TriggerObserverContext?
+  priv entities : @core.Entities
+  priv mut sequence : @core.Sequence
+  priv mut system_context : @core.SystemSequenceContext
+  priv mut pending_component_payload_context : PendingComponentPayloadContext?
+  priv mut active_query_iteration_count : Int
+  priv tables : Map[Int, Ref[RawTable]]
+  priv sparse_component_columns : Map[
     Int,
     Ref[@core.ComponentStore[EcsPayload]],
   ]
-  mut next_archetype_id : Int
-  mut next_table_id : Int
-  mut next_bundle_id : Int
-  bundle_ids_by_signature : Map[String, Int]
-  bundle_infos : Map[Int, BundleInfo]
-  archetype_ids_by_signature : Map[String, Int]
-  table_ids_by_signature : Map[String, Int]
-  table_component_local_ids : Map[Int, Array[Int]]
-  archetype_table_ids : Map[Int, Int]
-  archetype_component_local_ids : Map[Int, Array[Int]]
-  archetype_component_local_id_indices : Map[Int, Map[Int, Int]]
-  archetype_component_local_id_presence : Map[Int, @utils.IntBitSet]
-  archetype_component_definition_ids : Map[Int, Array[Int]]
-  archetype_component_definition_id_presence : Map[Int, @utils.IntBitSet]
-  archetype_ids_by_component_local_id : Map[Int, Array[Int]]
-  archetype_add_edges_by_component_local_id : Map[Int, Map[Int, Int]]
-  archetype_remove_edges_by_component_local_id : Map[Int, Map[Int, Int]]
-  archetype_insert_bundle_edges_by_id : Map[Int, Map[Int, Int]]
-  archetype_non_empty_ids_by_component_local_id : Map[Int, Array[Int]]
-  mut non_empty_archetype_ids_sorted : Array[Int]
-  mut non_empty_archetype_generation : Int
-  component_membership_generations : Map[Int, Int]
-  component_membership_counts : Map[Int, Int]
-  archetype_entities : Map[Int, Array[@core.Entity]]
-  entity_archetype_ids : Array[Int]
-  entity_table_ids : Array[Int]
-  entity_table_rows : Array[Int]
-  entity_archetype_rows : Array[Int]
-  entity_component_local_ids : Array[Array[Int]]
-  entity_component_local_id_presence : Array[@utils.IntBitSet]
-  required_components : Map[Int, Ref[RequiredComponentsState]]
-  used_components : @utils.IntBitSet
-  added_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
-  changed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
-  removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
-  component_hooks_registry : Map[Int, ComponentHooks]
-  resources : Map[Int, ResourceSlot]
-  mut previous_events : Map[Int, Array[EcsPayload]]
-  current_events : Map[Int, Array[EcsPayload]]
-  mut deferred_hook_command_depth : Int
-  deferred_hook_commands : Array[DeferredHookCommand]
+  priv sparse_component_metadata : Map[
+    Int,
+    Ref[@core.ComponentStore[ComponentTickMetadata]],
+  ]
+  priv component_store_cache_by_definition_id : Map[
+    Int,
+    Ref[@core.ComponentStore[EcsPayload]],
+  ]
+  priv mut next_archetype_id : Int
+  priv mut next_table_id : Int
+  priv mut next_bundle_id : Int
+  priv bundle_ids_by_signature : Map[Int, Array[ArchetypeSignatureEntry]]
+  priv bundle_infos : Map[Int, BundleInfo]
+  priv archetype_ids_by_signature : Map[Int, Array[ArchetypeSignatureEntry]]
+  priv table_ids_by_signature : Map[Int, Array[ArchetypeSignatureEntry]]
+  priv table_component_local_ids : Map[Int, Array[Int]]
+  priv archetype_table_ids : Map[Int, Int]
+  priv archetype_component_local_ids : Map[Int, Array[Int]]
+  priv archetype_component_local_id_indices : Map[Int, Map[Int, Int]]
+  priv archetype_component_local_id_presence : Map[Int, @utils.IntBitSet]
+  priv archetype_component_definition_ids : Map[Int, Array[Int]]
+  priv archetype_component_definition_id_presence : Map[Int, @utils.IntBitSet]
+  priv archetype_ids_by_component_local_id : Map[Int, Array[Int]]
+  priv archetype_add_edges_by_component_local_id : Map[Int, Map[Int, Int]]
+  priv archetype_remove_edges_by_component_local_id : Map[Int, Map[Int, Int]]
+  priv archetype_insert_bundle_edges_by_id : Map[Int, Map[Int, Int]]
+  priv archetype_non_empty_ids_by_component_local_id : Map[Int, Array[Int]]
+  priv mut non_empty_archetype_ids_sorted : Array[Int]
+  priv mut non_empty_archetype_generation : Int
+  priv component_membership_generations : Map[Int, Int]
+  priv component_membership_counts : Map[Int, Int]
+  priv archetype_entities : Map[Int, Array[@core.Entity]]
+  priv entity_archetype_ids : Array[Int]
+  priv entity_table_ids : Array[Int]
+  priv entity_table_rows : Array[Int]
+  priv entity_archetype_rows : Array[Int]
+  priv entity_component_local_ids : Array[Array[Int]]
+  priv entity_component_local_id_presence : Array[@utils.IntBitSet]
+  priv required_components : Map[Int, Ref[RequiredComponentsState]]
+  priv used_components : @utils.IntBitSet
+  priv added_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
+  priv changed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
+  priv removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
+  priv component_hooks_registry : Map[Int, ComponentHooks]
+  priv resources : Map[Int, ResourceSlot]
+  priv mut previous_events : Map[Int, Array[EcsPayload]]
+  priv current_events : Map[Int, Array[EcsPayload]]
+  priv mut deferred_hook_command_depth : Int
+  priv deferred_hook_commands : Array[DeferredHookCommand]
 }
 
 ///|
@@ -357,7 +449,6 @@ pub fn World::new() -> World {
     sequence: 0,
     system_context: @core.SystemSequenceContext::new(),
     pending_component_payload_context: None,
-    current_query_sparse_anchor_payload_context: None,
     active_query_iteration_count: 0,
     tables: {},
     sparse_component_columns: {},
@@ -368,8 +459,8 @@ pub fn World::new() -> World {
     next_bundle_id: 1,
     bundle_ids_by_signature: {},
     bundle_infos: {},
-    archetype_ids_by_signature: { "": 0 },
-    table_ids_by_signature: { "": 0 },
+    archetype_ids_by_signature: {},
+    table_ids_by_signature: {},
     table_component_local_ids: { 0: [] },
     archetype_table_ids: { 0: 0 },
     archetype_component_local_ids: { 0: [] },
@@ -405,6 +496,8 @@ pub fn World::new() -> World {
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
   }
+  archetype_signature_insert(world.archetype_ids_by_signature, [], 0)
+  archetype_signature_insert(world.table_ids_by_signature, [], 0)
   world.bootstrap_component_registrations()
   world.insert_resource(
     ecs_key_default_query_filters,
@@ -441,6 +534,11 @@ pub fn World::is_alive(self : World, entity : @core.Entity) -> Bool {
 ///|
 pub fn World::entity_count(self : World) -> Int {
   self.entities.len()
+}
+
+///|
+pub fn World::alive_entities(self : World) -> Array[@core.Entity] {
+  self.entities.alive_entities()
 }
 
 ///|
@@ -807,7 +905,7 @@ fn World::pending_component_tick_metadata(
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity_id {
-        context.metadata.get(local_component_id)
+        context.payloads.metadata(local_component_id)
       } else {
         None
       }
@@ -826,11 +924,11 @@ fn World::record_pending_component_added_metadata(
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.get(local_component_id) is Some(_) {
-        context.metadata.set(
+        context.payloads.contains(local_component_id) {
+        context.payloads.set_metadata(
           local_component_id,
           component_tick_metadata_with_added(
-            context.metadata.get(local_component_id),
+            context.payloads.metadata(local_component_id),
             sequence,
             caller,
           ),
@@ -854,11 +952,11 @@ fn World::record_pending_component_changed_metadata(
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.get(local_component_id) is Some(_) {
-        context.metadata.set(
+        context.payloads.contains(local_component_id) {
+        context.payloads.set_metadata(
           local_component_id,
           component_tick_metadata_with_changed(
-            context.metadata.get(local_component_id),
+            context.payloads.metadata(local_component_id),
             sequence,
             caller,
           ),
@@ -958,7 +1056,7 @@ fn World::clear_component_sequence_records(
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id {
-        context.metadata.remove(local_id)
+        context.payloads.set_metadata(local_id, component_tick_metadata_empty())
       }
     None => ()
   }
@@ -1019,12 +1117,11 @@ fn World::resource_changed_sequence(
 }
 
 ///|
-fn World::changed_component_caller(
+fn World::changed_component_caller_by_local_id(
   self : World,
-  key_id : Int,
+  local_id : Int,
   entity_id : Int,
 ) -> String? {
-  guard self.local_component_id(key_id) is Some(local_id) else { return None }
   if self.table_component_changed_caller_by_local_id(entity_id, local_id)
     is Some(caller) {
     return Some(caller)
@@ -1067,6 +1164,15 @@ fn World::added_component_sequence(
   entity_id : Int,
 ) -> @core.Sequence? {
   guard self.local_component_id(key_id) is Some(local_id) else { return None }
+  self.added_component_sequence_by_local_id(local_id, entity_id)
+}
+
+///|
+fn World::added_component_sequence_by_local_id(
+  self : World,
+  local_id : Int,
+  entity_id : Int,
+) -> @core.Sequence? {
   if self.table_component_added_sequence_by_local_id(entity_id, local_id)
     is Some(sequence) {
     return Some(sequence)
@@ -1101,6 +1207,15 @@ fn World::changed_component_sequence(
   entity_id : Int,
 ) -> @core.Sequence? {
   guard self.local_component_id(key_id) is Some(local_id) else { return None }
+  self.changed_component_sequence_by_local_id(local_id, entity_id)
+}
+
+///|
+fn World::changed_component_sequence_by_local_id(
+  self : World,
+  local_id : Int,
+  entity_id : Int,
+) -> @core.Sequence? {
   if self.table_component_changed_sequence_by_local_id(entity_id, local_id)
     is Some(sequence) {
     return Some(sequence)

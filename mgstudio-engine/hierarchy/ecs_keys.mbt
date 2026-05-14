@@ -47,7 +47,7 @@ pub fn hierarchy_install_component_metadata() -> Unit {
         world,
         ecs_key_parent,
         ecs_key_children,
-        context.entity,
+        context.entity(),
       )
     })
     .on_replace(fn(world, context) {
@@ -55,7 +55,7 @@ pub fn hierarchy_install_component_metadata() -> Unit {
         world,
         ecs_key_parent,
         ecs_key_children,
-        context.entity,
+        context.entity(),
       )
     })
     .on_remove(fn(world, context) {
@@ -63,7 +63,7 @@ pub fn hierarchy_install_component_metadata() -> Unit {
         world,
         ecs_key_parent,
         ecs_key_children,
-        context.entity,
+        context.entity(),
       )
     })
     .relationship_source(

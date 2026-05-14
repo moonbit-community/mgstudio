@@ -14,18 +14,18 @@
 
 ///|
 pub struct ComponentColumn[T] {
-  world : World
-  key : ComponentKey[T]
-  local_component_id : Int
-  storage_type : ComponentStorageType
-  table_column_cache : Ref[Array[Ref[RawTableColumn]?]]
-  table_column_cache_ready : Ref[Array[Bool]]
+  priv world : World
+  priv key : ComponentKey[T]
+  priv local_component_id : Int
+  priv storage_type : ComponentStorageType
+  priv table_column_cache : Ref[Array[Ref[RawTableColumn]?]]
+  priv table_column_cache_ready : @utils.IntBitSet
 }
 
 ///|
 pub struct ComponentTableColumn[T] {
-  column : Ref[RawTableColumn]
-  key : ComponentKey[T]
+  priv column : Ref[RawTableColumn]
+  priv key : ComponentKey[T]
 }
 
 ///|
@@ -43,7 +43,7 @@ pub fn[T] World::component_column(
             local_component_id,
             storage_type,
             table_column_cache: Ref([]),
-            table_column_cache_ready: Ref([]),
+            table_column_cache_ready: @utils.IntBitSet::new(),
           })
         None => None
       }
@@ -62,13 +62,10 @@ fn[T] ComponentColumn::table_column_ref(
   while self.table_column_cache.val.length() <= table_id {
     self.table_column_cache.val.push(None)
   }
-  while self.table_column_cache_ready.val.length() <= table_id {
-    self.table_column_cache_ready.val.push(false)
-  }
-  if self.table_column_cache_ready.val[table_id] {
+  if self.table_column_cache_ready.contains(table_id) {
     return self.table_column_cache.val[table_id]
   }
-  self.table_column_cache_ready.val[table_id] = true
+  self.table_column_cache_ready.insert(table_id)
   match self.world.table_storage(table_id) {
     Some(table_ref) =>
       match table_ref.val.column(self.local_component_id) {
@@ -92,6 +89,13 @@ pub fn[T] ComponentColumn::table_column(
     Some(column) => Some(ComponentTableColumn::{ column, key: self.key })
     None => None
   }
+}
+
+///|
+pub fn[T] ComponentTableColumn::key(
+  self : ComponentTableColumn[T],
+) -> ComponentKey[T] {
+  self.key
 }
 
 ///|
@@ -693,7 +697,7 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
   let archetype_ids = self.world
     .archetype_ids_for_component_local_id(self.local_component_id)
     .copy()
-  let visited_tables : Array[Bool] = []
+  let visited_tables = @utils.IntBitSet::new()
   for archetype_id in archetype_ids {
     if self.world.archetype_component_local_index(
         archetype_id,
@@ -705,9 +709,10 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
     guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    if query_bitset_insert(visited_tables, table_id) == false {
+    if visited_tables.contains(table_id) {
       continue
     }
+    visited_tables.insert(table_id)
     guard self.table_column_ref(table_id) is Some(column_ref) else { continue }
     guard self.world.table_storage(table_id) is Some(table_ref) else {
       continue
@@ -765,7 +770,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
   let archetype_ids = self.world
     .archetype_ids_for_component_local_id(self.local_component_id)
     .copy()
-  let visited_tables : Array[Bool] = []
+  let visited_tables = @utils.IntBitSet::new()
   for archetype_id in archetype_ids {
     guard self.world.archetype_component_local_index(
         archetype_id,
@@ -777,9 +782,10 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
     guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    if query_bitset_insert(visited_tables, table_id) == false {
+    if visited_tables.contains(table_id) {
       continue
     }
+    visited_tables.insert(table_id)
     guard self.table_column_ref(table_id) is Some(left_column_ref) else {
       continue
     }
@@ -858,7 +864,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
   let archetype_ids = self.world
     .archetype_ids_for_component_local_id(driver_local_component_id)
     .copy()
-  let visited_tables : Array[Bool] = []
+  let visited_tables = @utils.IntBitSet::new()
   for archetype_id in archetype_ids {
     guard self.world.archetype_local_component_presence_view(archetype_id)
       is Some(presence) else {
@@ -872,9 +878,10 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
     guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    if query_bitset_insert(visited_tables, table_id) == false {
+    if visited_tables.contains(table_id) {
       continue
     }
+    visited_tables.insert(table_id)
     guard self.table_column_ref(table_id) is Some(first_column_ref) else {
       continue
     }
@@ -963,7 +970,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
   let archetype_ids = self.world
     .archetype_ids_for_component_local_id(driver_local_component_id)
     .copy()
-  let visited_tables : Array[Bool] = []
+  let visited_tables = @utils.IntBitSet::new()
   for archetype_id in archetype_ids {
     guard self.world.archetype_local_component_presence_view(archetype_id)
       is Some(presence) else {
@@ -977,9 +984,10 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
     guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    if query_bitset_insert(visited_tables, table_id) == false {
+    if visited_tables.contains(table_id) {
       continue
     }
+    visited_tables.insert(table_id)
     guard self.table_column_ref(table_id) is Some(first_column_ref) else {
       continue
     }
@@ -1086,7 +1094,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, M, N] ComponentColumn::for_each
   let archetype_ids = self.world
     .archetype_ids_for_component_local_id(driver_local_component_id)
     .copy()
-  let visited_tables : Array[Bool] = []
+  let visited_tables = @utils.IntBitSet::new()
   for archetype_id in archetype_ids {
     guard self.world.archetype_local_component_presence_view(archetype_id)
       is Some(presence) else {
@@ -1101,9 +1109,10 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, M, N] ComponentColumn::for_each
     guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    if query_bitset_insert(visited_tables, table_id) == false {
+    if visited_tables.contains(table_id) {
       continue
     }
+    visited_tables.insert(table_id)
     guard self.table_column_ref(table_id) is Some(first_column_ref) else {
       continue
     }
@@ -1204,7 +1213,7 @@ pub fn[
   let archetype_ids = self.world
     .archetype_ids_for_component_local_id(driver_local_component_id)
     .copy()
-  let visited_tables : Array[Bool] = []
+  let visited_tables = @utils.IntBitSet::new()
   for archetype_id in archetype_ids {
     guard self.world.archetype_local_component_presence_view(archetype_id)
       is Some(presence) else {
@@ -1219,9 +1228,10 @@ pub fn[
     guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    if query_bitset_insert(visited_tables, table_id) == false {
+    if visited_tables.contains(table_id) {
       continue
     }
+    visited_tables.insert(table_id)
     guard self.table_column_ref(table_id) is Some(first_column_ref) else {
       continue
     }
@@ -1354,7 +1364,7 @@ pub fn[
   let archetype_ids = self.world
     .archetype_ids_for_component_local_id(driver_local_component_id)
     .copy()
-  let visited_tables : Array[Bool] = []
+  let visited_tables = @utils.IntBitSet::new()
   for archetype_id in archetype_ids {
     guard self.world.archetype_local_component_presence_view(archetype_id)
       is Some(presence) else {
@@ -1370,9 +1380,10 @@ pub fn[
     guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
       continue
     }
-    if query_bitset_insert(visited_tables, table_id) == false {
+    if visited_tables.contains(table_id) {
       continue
     }
+    visited_tables.insert(table_id)
     guard self.table_column_ref(table_id) is Some(first_column_ref) else {
       continue
     }
@@ -1461,8 +1472,8 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only(
   match self.world.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.get(self.local_component_id) is Some(_) {
-        context.payloads.set(
+        context.payloads.contains(self.local_component_id) {
+        context.payloads.set_writer(
           self.local_component_id,
           ecs_payload_writer(self.key, value),
         )

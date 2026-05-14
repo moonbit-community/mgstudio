@@ -14,7 +14,7 @@
 
 ///|
 pub struct MessageKey[T] {
-  queue_key : ResourceKey[Messages[T]]
+  priv queue_key : ResourceKey[Messages[T]]
 }
 
 ///|
@@ -67,21 +67,21 @@ pub(open) trait Message: EcsPayloadCodec {
 
 ///|
 pub struct MessageCursor[_] {
-  mut last_message_count : Int
+  priv mut last_message_count : Int
 }
 
 ///|
 pub struct MessageQueueState {
-  mut messages_a_start : Int
-  mut messages_a : Array[EcsPayload]
-  mut messages_b_start : Int
-  mut messages_b : Array[EcsPayload]
-  mut message_count : Int
+  priv mut messages_a_start : Int
+  priv mut messages_a : Array[EcsPayload]
+  priv mut messages_b_start : Int
+  priv mut messages_b : Array[EcsPayload]
+  priv mut message_count : Int
 }
 
 ///|
 pub struct Messages[_] {
-  state : MessageQueueState
+  priv state : MessageQueueState
 }
 
 ///|
@@ -392,22 +392,22 @@ pub fn World::update_messages(self : World) -> Unit {
 
 ///|
 pub struct MessageReader[T] {
-  world : World
-  key : MessageKey[T]
-  cursor_ref : Ref[Int]
+  priv world : World
+  priv key : MessageKey[T]
+  priv cursor_ref : Ref[Int]
 }
 
 ///|
 pub struct MessageMutator[T] {
-  world : World
-  key : MessageKey[T]
-  cursor_ref : Ref[Int]
+  priv world : World
+  priv key : MessageKey[T]
+  priv cursor_ref : Ref[Int]
 }
 
 ///|
 pub struct MessageWriter[T] {
-  world : World
-  key : MessageKey[T]
+  priv world : World
+  priv key : MessageKey[T]
 }
 
 ///|

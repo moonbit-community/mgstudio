@@ -14,7 +14,7 @@
 
 ///|
 pub struct RemovedComponents[_] {
-  reader : @core.MessageReader[@core.Entity]
+  priv reader : @core.MessageReader[@core.Entity]
 }
 
 ///|

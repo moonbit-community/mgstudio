@@ -244,9 +244,10 @@ fn on_add_mine(
   state : @app.ResMut[MineWorldState],
   mines : @ecs.Query[@ecs.Comp[Mine], @ecs.All],
 ) -> Unit {
-  let mine_comp = mines.get(event.entity) catch { _ => None }
+  let entity = event.entity()
+  let mine_comp = mines.get(entity) catch { _ => None }
   guard mine_comp is Some(mine_comp) else { return }
-  state.peek().insert(event.entity, mine_comp.value())
+  state.peek().insert(entity, mine_comp.value())
 }
 
 ///|
@@ -254,7 +255,7 @@ fn on_remove_mine(
   event : @ecs.ComponentOn[@ecs.Remove, Mine],
   state : @app.ResMut[MineWorldState],
 ) -> Unit {
-  state.modify(fn(value) { value.remove_entity(event.entity) })
+  state.modify(fn(value) { value.remove_entity(event.entity()) })
 }
 
 ///|

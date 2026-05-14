@@ -63,18 +63,7 @@ fn transform_dense_entity_slot(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> (Int, Int)? {
-  let entity_id = entity.id
-  guard entity_id >= 0 &&
-    entity_id < world.entity_table_ids.length() &&
-    entity_id < world.entity_table_rows.length() else {
-    return None
-  }
-  let table_id = world.entity_table_ids[entity_id]
-  let row_index = world.entity_table_rows[entity_id]
-  if table_id < 0 || row_index < 0 {
-    return None
-  }
-  Some((table_id, row_index))
+  world.entity_table_location(entity)
 }
 
 ///|

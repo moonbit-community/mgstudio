@@ -289,7 +289,7 @@ test "ecs observer: world add_component_observer is world-scoped and fires on re
     event : ComponentOn[Insert, ObserverMarker],
   ) {
     first_hits.val = first_hits.val + 1
-    seen_entities.push(event.entity.id)
+    seen_entities.push(event.entity().id)
     captured_world_id.val = current_observer_world_abort_missing().world_id()
   })
   ignore(
@@ -334,7 +334,7 @@ test "ecs observer: add_entity_component_observer only fires for the bound entit
       event : ComponentOn[Insert, ObserverMarker],
     ) {
       hits.val = hits.val + 1
-      seen_entities.push(event.entity.id)
+      seen_entities.push(event.entity().id)
     }),
   )
 
@@ -364,7 +364,7 @@ test "ecs observer: world add_component_observer fires on remove" {
       event : ComponentOn[Remove, ObserverMarker],
     ) {
       hits.val = hits.val + 1
-      seen_entities.push(event.entity.id)
+      seen_entities.push(event.entity().id)
     }),
   )
 
@@ -861,7 +861,7 @@ test "ecs observer: add_remove_entity_component_observer only fires for the boun
       event : ComponentOn[Remove, ObserverMarker],
     ) {
       hits.val = hits.val + 1
-      seen_entities.push(event.entity.id)
+      seen_entities.push(event.entity().id)
     }),
   )
 

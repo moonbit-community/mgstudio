@@ -14,7 +14,7 @@
 
 ///|
 pub struct Name {
-  name : String
+  priv name : String
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|

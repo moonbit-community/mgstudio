@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/utils"
 
 import {
   "moonbitlang/core/builtin",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -71,7 +72,7 @@ pub fn[T] BufferedSender::send_many(Self[T], Array[T]) -> Unit
 pub struct IntBitSet {
   bits : Array[UInt]
   mut bit_len : Int
-}
+} derive(ToJson, @json.FromJson)
 pub fn IntBitSet::bit_len(Self) -> Int
 pub fn IntBitSet::capacity(Self) -> Int
 pub fn IntBitSet::clear(Self) -> Unit

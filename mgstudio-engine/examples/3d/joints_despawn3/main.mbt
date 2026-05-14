@@ -104,7 +104,7 @@ fn despawn(world : @ecs.World) -> Unit {
   if despawn_state.val.timer > 0.0F {
     return
   }
-  for entity in world.entities.alive_entities() {
+  for entity in world.alive_entities() {
     if (try! world.contains_by_key(entity, DespawnMarker::component())) {
       try! world.despawn(entity)
       println("[joints_despawn3] despawned one tagged joint body")

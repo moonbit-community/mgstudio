@@ -62,20 +62,20 @@ impl QueryData with iteration_anchor_components() {
 
 ///|
 pub struct Comp[T] {
-  value : T?
-  world : World?
-  entity : @core.Entity?
-  key_id : Int?
+  priv value : T?
+  priv world : World?
+  priv entity : @core.Entity?
+  priv local_component_id : Int?
 }
 
 ///|
 pub struct QueryDataAccess {
-  read_components : Array[Int]
-  write_components : Array[Int]
-  read_component_set : @utils.IntBitSet
-  write_component_set : @utils.IntBitSet
-  mut has_read_write_conflict : Bool
-  mut has_duplicate_write : Bool
+  priv read_components : Array[Int]
+  priv write_components : Array[Int]
+  priv read_component_set : @utils.IntBitSet
+  priv write_component_set : @utils.IntBitSet
+  priv mut has_read_write_conflict : Bool
+  priv mut has_duplicate_write : Bool
 }
 
 ///|
@@ -93,7 +93,7 @@ pub fn QueryDataAccess::new() -> QueryDataAccess {
 ///|
 pub fn[T] Comp::new(key : ComponentKey[T]) -> Comp[T] {
   ignore(key)
-  { value: None, world: None, entity: None, key_id: None }
+  { value: None, world: None, entity: None, local_component_id: None }
 }
 
 ///|
@@ -127,42 +127,39 @@ fn[T] comp_entity_or_abort(item : Comp[T]) -> @core.Entity {
 }
 
 ///|
-fn[T] comp_key_id_or_abort(item : Comp[T]) -> Int {
-  match item.key_id {
-    Some(key_id) => key_id
+fn[T] comp_local_component_id_or_abort(item : Comp[T]) -> Int {
+  match item.local_component_id {
+    Some(local_component_id) => local_component_id
     None => abort("Comp expected a fetched query item")
   }
 }
 
 ///|
-pub fn[T : Component] Comp::is_added(self : Comp[T]) -> Bool {
+pub fn[T] Comp::is_added(self : Comp[T]) -> Bool {
   let world = comp_world_or_abort(self)
-  let entity = comp_entity_or_abort(self)
-  world.is_added_by_key(
-    entity,
-    T::component(),
+  world.is_added_by_local_id(
+    comp_entity_or_abort(self),
+    comp_local_component_id_or_abort(self),
     world.get_sequence_context().sequence(),
   )
 }
 
 ///|
-pub fn[T : Component] Comp::is_changed(self : Comp[T]) -> Bool {
+pub fn[T] Comp::is_changed(self : Comp[T]) -> Bool {
   let world = comp_world_or_abort(self)
-  let entity = comp_entity_or_abort(self)
-  world.is_changed_by_key(
-    entity,
-    T::component(),
+  world.is_changed_by_local_id(
+    comp_entity_or_abort(self),
+    comp_local_component_id_or_abort(self),
     world.get_sequence_context().sequence(),
   )
 }
 
 ///|
-pub fn[T : Component] Comp::added(self : Comp[T]) -> @core.Sequence {
-  ignore(T::component())
+pub fn[T] Comp::added(self : Comp[T]) -> @core.Sequence {
   let world = comp_world_or_abort(self)
   match
-    world.added_component_sequence(
-      comp_key_id_or_abort(self),
+    world.added_component_sequence_by_local_id(
+      comp_local_component_id_or_abort(self),
       comp_entity_or_abort(self).id,
     ) {
     Some(sequence) => sequence
@@ -171,12 +168,11 @@ pub fn[T : Component] Comp::added(self : Comp[T]) -> @core.Sequence {
 }
 
 ///|
-pub fn[T : Component] Comp::last_changed(self : Comp[T]) -> @core.Sequence {
-  ignore(T::component())
+pub fn[T] Comp::last_changed(self : Comp[T]) -> @core.Sequence {
   let world = comp_world_or_abort(self)
   match
-    world.changed_component_sequence(
-      comp_key_id_or_abort(self),
+    world.changed_component_sequence_by_local_id(
+      comp_local_component_id_or_abort(self),
       comp_entity_or_abort(self).id,
     ) {
     Some(sequence) => sequence
@@ -185,11 +181,10 @@ pub fn[T : Component] Comp::last_changed(self : Comp[T]) -> @core.Sequence {
 }
 
 ///|
-pub fn[T : Component] Comp::changed_by(self : Comp[T]) -> String? {
-  ignore(T::component())
+pub fn[T] Comp::changed_by(self : Comp[T]) -> String? {
   let world = comp_world_or_abort(self)
-  world.changed_component_caller(
-    comp_key_id_or_abort(self),
+  world.changed_component_caller_by_local_id(
+    comp_local_component_id_or_abort(self),
     comp_entity_or_abort(self).id,
   )
 }
@@ -423,11 +418,12 @@ pub impl[T : Component] QueryData for Comp[T] with matches(world, entity) {
 
 ///|
 pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
+  let key = T::component()
   {
-    value: Some(query_data_require_component(world, entity, T::component())),
+    value: Some(query_data_require_component(world, entity, key)),
     world: Some(world),
     entity: Some(entity),
-    key_id: Some(T::component().id()),
+    local_component_id: world.local_component_id(key.id()),
   }
 }
 
@@ -438,25 +434,29 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
   table_id,
   row_index,
 ) {
-  match
-    world.component_value_by_key_at_table_row(
-      T::component(),
-      table_id,
-      row_index,
-    ) {
+  let key = T::component()
+  let local_component_id = world.local_component_id(key.id())
+  let value_at_row = match local_component_id {
+    Some(local_component_id) =>
+      try! world.component_value_by_local_id_at_table_row(
+        key, local_component_id, table_id, row_index,
+      )
+    None => None
+  }
+  match value_at_row {
     Some(value) =>
       {
         value: Some(value),
         world: Some(world),
         entity: Some(entity),
-        key_id: Some(T::component().id()),
+        local_component_id,
       }
     None =>
       {
-        value: Some(query_data_require_component(world, entity, T::component())),
+        value: Some(query_data_require_component(world, entity, key)),
         world: Some(world),
         entity: Some(entity),
-        key_id: Some(T::component().id()),
+        local_component_id: world.local_component_id(key.id()),
       }
   }
 }
@@ -484,7 +484,7 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor(
         value: Some(value),
         world: Some(world),
         entity: Some(entity),
-        key_id: Some(key.id()),
+        local_component_id: Some(local_component_id),
       }
     }
     _ => Comp::fetch_table_row(world, entity, table_id, row_index)
@@ -552,13 +552,14 @@ pub impl[T : Component] QueryData for Mut[T] with fetch_table_row(
   table_id,
   row_index,
 ) {
+  let key = T::component()
   {
     world: Some(world),
     entity: Some(entity),
-    key: Some(T::component()),
+    key: Some(key),
     table_id: Some(table_id),
     row_index: Some(row_index),
-    local_component_id: world.local_component_id(T::component().id()),
+    local_component_id: world.local_component_id(key.id()),
   }
 }
 
@@ -571,13 +572,14 @@ pub impl[T : Component] QueryData for Mut[T] with fetch_sparse_anchor(
   table_id,
   row_index,
 ) {
+  let key = T::component()
   {
     world: Some(world),
     entity: Some(entity),
-    key: Some(T::component()),
+    key: Some(key),
     table_id: Some(table_id),
     row_index: Some(row_index),
-    local_component_id: world.local_component_id(T::component().id()),
+    local_component_id: world.local_component_id(key.id()),
   }
 }
 
@@ -953,14 +955,17 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
   table_id,
   row_index,
 ) {
-  match
-    world.component_value_by_key_at_table_row(
-      T::component(),
-      table_id,
-      row_index,
-    ) {
+  let key = T::component()
+  let value_at_row = match world.local_component_id(key.id()) {
+    Some(local_component_id) =>
+      try! world.component_value_by_local_id_at_table_row(
+        key, local_component_id, table_id, row_index,
+      )
+    None => None
+  }
+  match value_at_row {
     Some(value) => { value: Some(value) }
-    None => { value: world.get_by_key(entity, T::component()) }
+    None => { value: world.get_by_key(entity, key) }
   }
 }
 

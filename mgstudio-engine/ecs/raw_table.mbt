@@ -526,8 +526,7 @@ fn RawTable::append_row_from_source_table(
   entity : @core.Entity,
   source_table : Ref[RawTable]?,
   source_row : TableRow?,
-  pending_payloads : Map[Int, EcsPayloadWriter],
-  pending_metadata : Map[Int, ComponentTickMetadata],
+  pending_payloads : PendingComponentPayloadSet,
 ) -> TableRow? {
   let row = raw_table_row_kernel_push(self.rows, entity)
   let row_index = row
@@ -558,9 +557,9 @@ fn RawTable::append_row_from_source_table(
                 )
               }
               None =>
-                match pending_payloads.get(component_local_id) {
+                match pending_payloads.writer(component_local_id) {
                   Some(writer) => {
-                    match pending_metadata.get(component_local_id) {
+                    match pending_payloads.metadata(component_local_id) {
                       Some(metadata) => {
                         added_sequence = metadata.added_sequence
                         changed_sequence = metadata.changed_sequence
@@ -574,9 +573,9 @@ fn RawTable::append_row_from_source_table(
                 }
             }
           None =>
-            match pending_payloads.get(component_local_id) {
+            match pending_payloads.writer(component_local_id) {
               Some(writer) => {
-                match pending_metadata.get(component_local_id) {
+                match pending_payloads.metadata(component_local_id) {
                   Some(metadata) => {
                     added_sequence = metadata.added_sequence
                     changed_sequence = metadata.changed_sequence
@@ -590,9 +589,9 @@ fn RawTable::append_row_from_source_table(
             }
         }
       None =>
-        match pending_payloads.get(component_local_id) {
+        match pending_payloads.writer(component_local_id) {
           Some(writer) => {
-            match pending_metadata.get(component_local_id) {
+            match pending_payloads.metadata(component_local_id) {
               Some(metadata) => {
                 added_sequence = metadata.added_sequence
                 changed_sequence = metadata.changed_sequence
@@ -689,6 +688,27 @@ fn World::table_storage(self : World, table_id : Int) -> Ref[RawTable]? {
 }
 
 ///|
+fn World::table_row_count(self : World, table_id : Int) -> Int {
+  match self.table_storage(table_id) {
+    Some(table_ref) => table_ref.val.row_count()
+    None => 0
+  }
+}
+
+///|
+fn World::table_entity_at_row_index(
+  self : World,
+  table_id : Int,
+  row_index : Int,
+) -> @core.Entity? {
+  guard TableRow::from_index(row_index) is Some(row) else { return None }
+  match self.table_storage(table_id) {
+    Some(table_ref) => table_ref.val.entity_at_row(row)
+    None => None
+  }
+}
+
+///|
 fn World::pending_component_payload(
   self : World,
   entity : @core.Entity,
@@ -697,7 +717,7 @@ fn World::pending_component_payload(
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id {
-        match context.payloads.get(local_component_id) {
+        match context.payloads.writer(local_component_id) {
           Some(writer) => Some(writer.to_ecs_payload())
           None => None
         }
@@ -712,14 +732,12 @@ fn World::pending_component_payload(
 fn World::push_pending_component_payload_context(
   self : World,
   entity : @core.Entity,
-  payloads : Map[Int, EcsPayloadWriter],
-  metadata : Map[Int, ComponentTickMetadata],
+  payloads : PendingComponentPayloadSet,
 ) -> PendingComponentPayloadContext? {
   let previous = self.pending_component_payload_context
   self.pending_component_payload_context = Some({
     entity_id: entity.id,
     payloads,
-    metadata,
   })
   previous
 }
@@ -730,43 +748,6 @@ fn World::restore_pending_component_payload_context(
   previous : PendingComponentPayloadContext?,
 ) -> Unit {
   self.pending_component_payload_context = previous
-}
-
-///|
-fn World::set_query_sparse_anchor_payload_context(
-  self : World,
-  entity : @core.Entity,
-  local_component_id : Int,
-  payload : EcsPayload,
-) -> Unit {
-  self.current_query_sparse_anchor_payload_context = Some({
-    entity_id: entity.id,
-    local_component_id,
-    payload,
-  })
-}
-
-///|
-fn World::clear_query_sparse_anchor_payload_context(self : World) -> Unit {
-  self.current_query_sparse_anchor_payload_context = None
-}
-
-///|
-fn World::query_sparse_anchor_payload(
-  self : World,
-  entity : @core.Entity,
-  local_component_id : Int,
-) -> EcsPayload? {
-  match self.current_query_sparse_anchor_payload_context {
-    Some(context) =>
-      if context.entity_id == entity.id &&
-        context.local_component_id == local_component_id {
-        Some(context.payload)
-      } else {
-        None
-      }
-    None => None
-  }
 }
 
 ///|
@@ -797,6 +778,31 @@ fn World::entity_table_row_by_id(self : World, entity_id : Int) -> TableRow? {
     return None
   }
   TableRow::from_index(self.entity_table_rows[entity_id])
+}
+
+///|
+pub fn World::entity_table_location_by_id(
+  self : World,
+  entity_id : Int,
+) -> (Int, Int)? {
+  guard entity_id >= 0 &&
+    entity_id < self.entity_table_ids.length() &&
+    entity_id < self.entity_table_rows.length() else {
+    return None
+  }
+  let table_id = self.entity_table_ids[entity_id]
+  let row_index = self.entity_table_rows[entity_id]
+  guard table_id >= 0 && row_index >= 0 else { return None }
+  Some((table_id, row_index))
+}
+
+///|
+pub fn World::entity_table_location(
+  self : World,
+  entity : @core.Entity,
+) -> (Int, Int)? {
+  guard self.is_alive(entity) else { return None }
+  self.entity_table_location_by_id(entity.id)
 }
 
 ///|
@@ -836,14 +842,6 @@ fn[T : EcsPayloadCodec] World::component_value_by_local_id(
   match self.pending_component_payload_context {
     Some(_) =>
       if self.pending_component_payload(entity, local_component_id)
-        is Some(payload) {
-        return Some(self.component_value(key, entity, payload))
-      }
-    None => ()
-  }
-  match self.current_query_sparse_anchor_payload_context {
-    Some(_) =>
-      if self.query_sparse_anchor_payload(entity, local_component_id)
         is Some(payload) {
         return Some(self.component_value(key, entity, payload))
       }
@@ -906,8 +904,11 @@ fn[T : EcsPayloadCodec] World::replace_component_value_by_local_id(
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.get(local_component_id) is Some(_) {
-        context.payloads.set(local_component_id, ecs_payload_writer(key, value))
+        context.payloads.contains(local_component_id) {
+        context.payloads.set_writer(
+          local_component_id,
+          ecs_payload_writer(key, value),
+        )
         return true
       }
     None => ()
@@ -1037,15 +1038,13 @@ fn World::table_has_component_local_id(
 }
 
 ///|
-fn[T : EcsPayloadCodec] World::component_value_by_key_at_table_row(
+fn[T : EcsPayloadCodec] World::component_value_by_local_id_at_table_row(
   self : World,
   key : ComponentKey[T],
+  local_component_id : Int,
   table_id : Int,
   row_index : Int,
 ) -> T? raise EcsError {
-  guard self.local_component_id(key.id()) is Some(local_component_id) else {
-    return None
-  }
   guard self.local_component_storage_type(local_component_id) == Some(Table) else {
     return None
   }
@@ -1222,10 +1221,6 @@ fn World::component_payload_by_local_id(
   if self.pending_component_payload(entity, local_component_id) is Some(payload) {
     return Some(payload)
   }
-  if self.query_sparse_anchor_payload(entity, local_component_id)
-    is Some(payload) {
-    return Some(payload)
-  }
   match self.local_component_storage_type(local_component_id) {
     Some(SparseSet) =>
       match self.sparse_component_columns.get(local_component_id) {
@@ -1267,13 +1262,13 @@ fn World::replace_component_payload_by_local_id(
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.get(local_component_id) is Some(_) {
+        context.payloads.contains(local_component_id) {
         guard self.definition_component_id(local_component_id)
           is Some(definition_id) else {
           return false
         }
         let ops = component_ops(definition_id)
-        context.payloads.set(
+        context.payloads.set_writer(
           local_component_id,
           ecs_payload_writer_from_payload(
             definition_id,
@@ -1317,8 +1312,8 @@ fn World::replace_component_writer_by_local_id(
   match self.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.get(local_component_id) is Some(_) {
-        context.payloads.set(local_component_id, writer)
+        context.payloads.contains(local_component_id) {
+        context.payloads.set_writer(local_component_id, writer)
         return true
       }
     None => ()
@@ -1382,12 +1377,11 @@ fn World::remove_sparse_component_payload_by_local_id(
 fn World::write_pending_sparse_component_payloads(
   self : World,
   entity : @core.Entity,
-  pending_payloads : Map[Int, EcsPayloadWriter],
-  pending_metadata : Map[Int, ComponentTickMetadata],
+  pending_payloads : PendingComponentPayloadSet,
 ) -> Unit {
-  for entry in pending_payloads.iter() {
-    let component_local_id = entry.0
-    let payload = entry.1.to_ecs_payload()
+  for entry in pending_payloads.entries {
+    let component_local_id = entry.local_component_id
+    let payload = entry.writer.to_ecs_payload()
     if self.local_component_storage_type(component_local_id) == Some(SparseSet) {
       let store_ref = self.ensure_component_store_for_local_id(
         component_local_id,
@@ -1397,10 +1391,7 @@ fn World::write_pending_sparse_component_payloads(
       let metadata_store_ref = self.ensure_sparse_component_metadata_store_for_local_id(
         component_local_id,
       )
-      let metadata = pending_metadata
-        .get(component_local_id)
-        .unwrap_or(component_tick_metadata_empty())
-      metadata_store_ref.val.insert(entity, metadata)
+      metadata_store_ref.val.insert(entity, entry.metadata)
     }
   }
 }

@@ -173,14 +173,14 @@ fn commands_install_hook_test_hooks(world : @ecs.World) -> Unit {
   ignore(
     try! hooks
     .on_add(fn(_world, context) {
-      if context.caller is Some(caller) {
+      if context.caller() is Some(caller) {
         commands_hook_callers.push("add:\{caller}")
       } else {
         commands_hook_callers.push("add:none")
       }
     })
     .on_remove(fn(_world, context) {
-      if context.caller is Some(caller) {
+      if context.caller() is Some(caller) {
         commands_hook_callers.push("remove:\{caller}")
       } else {
         commands_hook_callers.push("remove:none")

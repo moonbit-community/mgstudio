@@ -108,7 +108,7 @@ fn despawn(world : @ecs.World) -> Unit {
     return
   }
   let mut despawned = false
-  for entity in world.entities.alive_entities() {
+  for entity in world.alive_entities() {
     if (try! world.contains_by_key(entity, DespawnMarker::component())) {
       try! world.despawn(entity)
       despawned = true

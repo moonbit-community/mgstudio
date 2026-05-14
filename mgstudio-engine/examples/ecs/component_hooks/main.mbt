@@ -132,12 +132,13 @@ fn setup(world : @ecs.World) -> Unit {
     try! world
     .register_component_hooks_for_key(my_component_key)
     .on_add(fn(world, context) {
-      let component = my_component_or_abort(world, context.entity)
+      let entity = context.entity()
+      let component = my_component_or_abort(world, entity)
       @app.log_info(
-        "\{context.component_id.to_string()} added to entity \{context.entity.id.to_string()} with value \{to_repr(component.key).to_string()}\{caller_suffix(context.caller)}",
+        "\{context.component_id().to_string()} added to entity \{entity.id.to_string()} with value \{to_repr(component.key).to_string()}\{caller_suffix(context.caller())}",
       )
       update_my_component_index(world, fn(index) {
-        index.entities.set(component.key, context.entity)
+        index.entities.set(component.key, entity)
         index
       })
       write_my_message(world)
@@ -148,18 +149,19 @@ fn setup(world : @ecs.World) -> Unit {
       )
     })
     .on_replace(fn(world, context) {
-      let component = my_component_or_abort(world, context.entity)
+      let component = my_component_or_abort(world, context.entity())
       update_my_component_index(world, fn(index) {
         index.entities.remove(component.key)
         index
       })
     })
     .on_remove(fn(world, context) {
-      let component = my_component_or_abort(world, context.entity)
+      let entity = context.entity()
+      let component = my_component_or_abort(world, entity)
       @app.log_info(
-        "\{context.component_id.to_string()} removed from entity \{context.entity.id.to_string()} with value \{to_repr(component.key).to_string()}\{caller_suffix(context.caller)}",
+        "\{context.component_id().to_string()} removed from entity \{entity.id.to_string()} with value \{to_repr(component.key).to_string()}\{caller_suffix(context.caller())}",
       )
-      world.commands().entity(context.entity).despawn()
+      world.commands().entity(entity).despawn()
     }),
   )
 }

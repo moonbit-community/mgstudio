@@ -14,24 +14,24 @@
 
 ///|
 pub struct EntityRef {
-  world : World
-  entity : @core.Entity
+  priv world : World
+  priv entity : @core.Entity
 }
 
 ///|
 pub struct EntityMut {
-  world : World
-  entity : @core.Entity
+  priv world : World
+  priv entity : @core.Entity
 }
 
 ///|
 pub struct Mut[T] {
-  world : World?
-  entity : @core.Entity?
-  key : ComponentKey[T]?
-  table_id : Int?
-  row_index : Int?
-  local_component_id : Int?
+  priv world : World?
+  priv entity : @core.Entity?
+  priv key : ComponentKey[T]?
+  priv table_id : Int?
+  priv row_index : Int?
+  priv local_component_id : Int?
 }
 
 ///|
@@ -86,6 +86,14 @@ fn[T] mut_key_id_or_abort(item : Mut[T]) -> Int {
 }
 
 ///|
+fn[T] mut_local_component_id_or_abort(item : Mut[T]) -> Int {
+  match item.local_component_id {
+    Some(local_component_id) => local_component_id
+    None => abort("Mut expected a fetched query item")
+  }
+}
+
+///|
 fn[T] mut_key_or_abort(item : Mut[T]) -> ComponentKey[T] {
   match item.key {
     Some(key) => key
@@ -97,11 +105,11 @@ fn[T] mut_key_or_abort(item : Mut[T]) -> ComponentKey[T] {
 fn[T : EcsPayloadCodec] mut_value_or_abort(item : Mut[T]) -> T {
   let world = mut_world_or_abort(item)
   let key = mut_key_or_abort(item)
-  match (item.table_id, item.row_index) {
-    (Some(table_id), Some(row_index)) =>
+  match (item.table_id, item.row_index, item.local_component_id) {
+    (Some(table_id), Some(row_index), Some(local_component_id)) =>
       match
-        (try! world.component_value_by_key_at_table_row(
-          key, table_id, row_index,
+        (try! world.component_value_by_local_id_at_table_row(
+          key, local_component_id, table_id, row_index,
         )) {
         Some(value) => return value
         None => ()
@@ -192,32 +200,31 @@ pub fn[T : EcsPayloadCodec] Mut::value(self : Mut[T]) -> T {
 }
 
 ///|
-pub fn[T : Component] Mut::is_added(self : Mut[T]) -> Bool {
+pub fn[T] Mut::is_added(self : Mut[T]) -> Bool {
   let world = mut_world_or_abort(self)
-  world.is_added_by_key(
+  world.is_added_by_local_id(
     mut_entity_or_abort(self),
-    T::component(),
+    mut_local_component_id_or_abort(self),
     world.get_sequence_context().sequence(),
   )
 }
 
 ///|
-pub fn[T : Component] Mut::is_changed(self : Mut[T]) -> Bool {
+pub fn[T] Mut::is_changed(self : Mut[T]) -> Bool {
   let world = mut_world_or_abort(self)
-  world.is_changed_by_key(
+  world.is_changed_by_local_id(
     mut_entity_or_abort(self),
-    T::component(),
+    mut_local_component_id_or_abort(self),
     world.get_sequence_context().sequence(),
   )
 }
 
 ///|
-pub fn[T : Component] Mut::added(self : Mut[T]) -> @core.Sequence {
-  ignore(T::component())
+pub fn[T] Mut::added(self : Mut[T]) -> @core.Sequence {
   let world = mut_world_or_abort(self)
   match
-    world.added_component_sequence(
-      mut_key_id_or_abort(self),
+    world.added_component_sequence_by_local_id(
+      mut_local_component_id_or_abort(self),
       mut_entity_or_abort(self).id,
     ) {
     Some(sequence) => sequence
@@ -226,12 +233,11 @@ pub fn[T : Component] Mut::added(self : Mut[T]) -> @core.Sequence {
 }
 
 ///|
-pub fn[T : Component] Mut::last_changed(self : Mut[T]) -> @core.Sequence {
-  ignore(T::component())
+pub fn[T] Mut::last_changed(self : Mut[T]) -> @core.Sequence {
   let world = mut_world_or_abort(self)
   match
-    world.changed_component_sequence(
-      mut_key_id_or_abort(self),
+    world.changed_component_sequence_by_local_id(
+      mut_local_component_id_or_abort(self),
       mut_entity_or_abort(self).id,
     ) {
     Some(sequence) => sequence
@@ -240,11 +246,10 @@ pub fn[T : Component] Mut::last_changed(self : Mut[T]) -> @core.Sequence {
 }
 
 ///|
-pub fn[T : Component] Mut::changed_by(self : Mut[T]) -> String? {
-  ignore(T::component())
+pub fn[T] Mut::changed_by(self : Mut[T]) -> String? {
   let world = mut_world_or_abort(self)
-  world.changed_component_caller(
-    mut_key_id_or_abort(self),
+  world.changed_component_caller_by_local_id(
+    mut_local_component_id_or_abort(self),
     mut_entity_or_abort(self).id,
   )
 }

@@ -30,9 +30,9 @@ pub(all) enum ComponentHookKind {
 
 ///|
 pub struct HookContext {
-  entity : @core.Entity
-  component_id : Int
-  caller : String?
+  priv entity : @core.Entity
+  priv component_id : Int
+  priv caller : String?
 }
 
 ///|
@@ -40,33 +40,55 @@ type DeferredHookCommand = (World) -> Unit
 
 ///|
 pub struct DeferredWorld {
-  world : World
+  priv world : World
 }
 
 ///|
 pub struct DeferredWorldCommands {
-  world : World
+  priv world : World
 }
 
 ///|
 pub struct DeferredEntityCommands {
-  commands : DeferredWorldCommands
-  entity : @core.Entity
+  priv commands : DeferredWorldCommands
+  priv entity : @core.Entity
 }
 
 ///|
 pub struct ComponentHooks {
-  on_add : ((DeferredWorld, HookContext) -> Unit)?
-  on_insert : ((DeferredWorld, HookContext) -> Unit)?
-  on_replace : ((DeferredWorld, HookContext) -> Unit)?
-  on_remove : ((DeferredWorld, HookContext) -> Unit)?
-  on_despawn : ((DeferredWorld, HookContext) -> Unit)?
+  priv on_add : ((DeferredWorld, HookContext) -> Unit)?
+  priv on_insert : ((DeferredWorld, HookContext) -> Unit)?
+  priv on_replace : ((DeferredWorld, HookContext) -> Unit)?
+  priv on_remove : ((DeferredWorld, HookContext) -> Unit)?
+  priv on_despawn : ((DeferredWorld, HookContext) -> Unit)?
 }
 
 ///|
 pub struct ComponentHooksBuilder[T] {
-  world : World
-  key : ComponentKey[T]
+  priv world : World
+  priv key : ComponentKey[T]
+}
+
+///|
+pub fn HookContext::entity(self : HookContext) -> @core.Entity {
+  self.entity
+}
+
+///|
+pub fn HookContext::component_id(self : HookContext) -> Int {
+  self.component_id
+}
+
+///|
+pub fn HookContext::caller(self : HookContext) -> String? {
+  self.caller
+}
+
+///|
+pub fn DeferredEntityCommands::entity(
+  self : DeferredEntityCommands,
+) -> @core.Entity {
+  self.entity
 }
 
 ///|

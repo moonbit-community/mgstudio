@@ -84,24 +84,14 @@ pub fn Children::entity_table_row_cached(
   let table_id = self.entity_table_ids[index]
   let row_index = self.entity_row_indices[index]
   if table_id >= 0 && row_index >= 0 {
-    let entity_id = entity.id
-    if entity_id >= 0 &&
-      entity_id < world.entity_table_ids.length() &&
-      entity_id < world.entity_table_rows.length() &&
-      world.entity_table_ids[entity_id] == table_id &&
-      world.entity_table_rows[entity_id] == row_index {
+    if world.entity_table_location(entity) == Some((table_id, row_index)) {
       return Some((table_id, row_index))
     }
   }
-  let entity_id = entity.id
-  guard entity_id >= 0 &&
-    entity_id < world.entity_table_ids.length() &&
-    entity_id < world.entity_table_rows.length() else {
+  guard world.entity_table_location(entity)
+    is Some((next_table_id, next_row_index)) else {
     return None
   }
-  let next_table_id = world.entity_table_ids[entity_id]
-  let next_row_index = world.entity_table_rows[entity_id]
-  guard next_table_id >= 0 && next_row_index >= 0 else { return None }
   self.entity_table_ids[index] = next_table_id
   self.entity_row_indices[index] = next_row_index
   Some((next_table_id, next_row_index))

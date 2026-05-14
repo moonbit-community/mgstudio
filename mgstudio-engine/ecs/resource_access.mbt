@@ -14,14 +14,14 @@
 
 ///|
 pub struct ResourceAccess[T] {
-  world : World
-  key : ResourceKey[T]
+  priv world : World
+  priv key : ResourceKey[T]
 }
 
 ///|
 pub struct ResourceMut[T] {
-  world : World?
-  key : ResourceKey[T]?
+  priv world : World?
+  priv key : ResourceKey[T]?
 }
 
 ///|
@@ -260,7 +260,6 @@ pub fn[T : EcsPayloadCodec, R] ResourceMut::modify(
   let value = self.peek()
   let result = f(value)
   self.set_changed(loc~)
-  resource_mut_replace_value_or_abort(self, value)
   result
 }
 
