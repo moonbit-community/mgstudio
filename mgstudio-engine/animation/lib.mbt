@@ -907,8 +907,9 @@ priv struct AnimationPreparedPlayer {
 
 ///|
 priv struct AnimationFrameCurveCache {
+  mut stamp : Int
   mut len : Int
-  occupied : Array[Bool]
+  stamps : Array[Int]
   clip_ids : Array[Int]
   target_highs : Array[UInt64]
   target_lows : Array[UInt64]
@@ -918,8 +919,9 @@ priv struct AnimationFrameCurveCache {
 ///|
 fn animation_frame_curve_cache_new() -> AnimationFrameCurveCache {
   AnimationFrameCurveCache::{
+    stamp: 1,
     len: 0,
-    occupied: [],
+    stamps: [],
     clip_ids: [],
     target_highs: [],
     target_lows: [],
@@ -932,8 +934,8 @@ fn animation_frame_curve_cache_ensure_capacity(
   cache : AnimationFrameCurveCache,
   capacity : Int,
 ) -> Unit {
-  while cache.occupied.length() < capacity {
-    cache.occupied.push(false)
+  while cache.stamps.length() < capacity {
+    cache.stamps.push(0)
     cache.clip_ids.push(-1)
     cache.target_highs.push(0UL)
     cache.target_lows.push(0UL)
@@ -943,9 +945,13 @@ fn animation_frame_curve_cache_ensure_capacity(
 
 ///|
 fn animation_frame_curve_cache_clear(cache : AnimationFrameCurveCache) -> Unit {
+  cache.stamp = cache.stamp + 1
   cache.len = 0
-  for i in 0..<cache.occupied.length() {
-    cache.occupied[i] = false
+  if cache.stamp <= 0 {
+    cache.stamp = 1
+    for i in 0..<cache.stamps.length() {
+      cache.stamps[i] = 0
+    }
   }
 }
 
@@ -978,17 +984,17 @@ fn animation_frame_curve_cache_insert_known(
   target_low : UInt64,
   curves : AnimationTargetCurves?,
 ) -> Unit {
-  let capacity = cache.occupied.length()
+  let capacity = cache.stamps.length()
   if capacity == 0 {
     return
   }
   let mut index = animation_frame_curve_cache_hash(
     clip_id, target_high, target_low, capacity,
   )
-  while cache.occupied[index] {
+  while cache.stamps[index] == cache.stamp {
     index = (index + 1) % capacity
   }
-  cache.occupied[index] = true
+  cache.stamps[index] = cache.stamp
   cache.clip_ids[index] = clip_id
   cache.target_highs[index] = target_high
   cache.target_lows[index] = target_low
@@ -998,22 +1004,23 @@ fn animation_frame_curve_cache_insert_known(
 
 ///|
 fn animation_frame_curve_cache_grow(cache : AnimationFrameCurveCache) -> Unit {
-  let old_capacity = cache.occupied.length()
+  let old_capacity = cache.stamps.length()
   let new_capacity = if old_capacity <= 0 { 256 } else { old_capacity * 2 }
-  let old_occupied = cache.occupied.copy()
+  let old_stamp = cache.stamp
+  let old_stamps = cache.stamps.copy()
   let old_clip_ids = cache.clip_ids.copy()
   let old_target_highs = cache.target_highs.copy()
   let old_target_lows = cache.target_lows.copy()
   let old_curves = cache.curves.copy()
-  cache.occupied.clear()
+  cache.stamps.clear()
   cache.clip_ids.clear()
   cache.target_highs.clear()
   cache.target_lows.clear()
   cache.curves.clear()
   cache.len = 0
   animation_frame_curve_cache_ensure_capacity(cache, new_capacity)
-  for i in 0..<old_occupied.length() {
-    if old_occupied[i] {
+  for i in 0..<old_stamps.length() {
+    if old_stamps[i] == old_stamp {
       animation_frame_curve_cache_insert_known(
         cache,
         old_clip_ids[i],
@@ -1033,18 +1040,18 @@ fn animation_frame_curves_cached(
   target_id : AnimationTargetId,
 ) -> AnimationTargetCurves? {
   let target_key = animation_target_id_lookup_key(target_id)
-  if frame_curve_cache.occupied.length() == 0 ||
-    (frame_curve_cache.len + 1) * 3 >= frame_curve_cache.occupied.length() * 2 {
+  if frame_curve_cache.stamps.length() == 0 ||
+    (frame_curve_cache.len + 1) * 3 >= frame_curve_cache.stamps.length() * 2 {
     animation_frame_curve_cache_grow(frame_curve_cache)
   }
-  let capacity = frame_curve_cache.occupied.length()
+  let capacity = frame_curve_cache.stamps.length()
   let mut index = animation_frame_curve_cache_hash(
     clip_id,
     target_key.0,
     target_key.1,
     capacity,
   )
-  while frame_curve_cache.occupied[index] {
+  while frame_curve_cache.stamps[index] == frame_curve_cache.stamp {
     if frame_curve_cache.clip_ids[index] == clip_id &&
       frame_curve_cache.target_highs[index] == target_key.0 &&
       frame_curve_cache.target_lows[index] == target_key.1 {
@@ -1053,7 +1060,7 @@ fn animation_frame_curves_cached(
     index = (index + 1) % capacity
   }
   let curves = clip.curves_for_target(target_id)
-  frame_curve_cache.occupied[index] = true
+  frame_curve_cache.stamps[index] = frame_curve_cache.stamp
   frame_curve_cache.clip_ids[index] = clip_id
   frame_curve_cache.target_highs[index] = target_key.0
   frame_curve_cache.target_lows[index] = target_key.1

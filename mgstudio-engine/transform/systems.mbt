@@ -512,10 +512,14 @@ fn propagate_descendants_dense(
     guard global_column.value_at_row_unchecked(row_index) is Some(child_global) else {
       continue
     }
-    child_global.set_mul_transform(stack_item.parent_global, local_transform)
-    let child_global_changed = global_column.record_changed_at_row(
-      row_index, tick,
-    )
+    let child_global_changed = if child_global.set_mul_transform_if_neq(
+        stack_item.parent_global,
+        local_transform,
+      ) {
+      global_column.record_changed_at_row(row_index, tick)
+    } else {
+      false
+    }
     match table_columns.children {
       Some(children_column) =>
         match children_column.value_at_row_unchecked(row_index) {
