@@ -262,7 +262,7 @@ fn relationship_has_cycle_from(
 fn main {
   let world = @ecs.World::new()
   relationship_register_hooks(world)
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
 
   let alice = world.spawn_empty()
   try! (world.entity_mut(alice).insert_component(@ecs.Name::new("Alice"))

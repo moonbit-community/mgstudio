@@ -23,7 +23,7 @@ fn current_world_or_abort() -> @ecs.World {
 
 ///|
 pub struct DeferredCommandEntry {
-  run : (@ecs.World, @core.Sequence) -> Unit raise
+  run : (@ecs.World, @core.Tick) -> Unit raise
   error_handler : ErrorHandler?
   source : String
 }
@@ -33,32 +33,26 @@ fn[T : @ecs.Component] insert_spawn_component(
   world : @ecs.World,
   entity : @core.Entity,
   component : T,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   loc~ : SourceLoc,
 ) -> Unit raise @ecs.EcsError {
-  ignore(sequence)
+  ignore(tick)
   world.set_by_key(entity, T::component(), component, loc~)
 }
 
 ///|
 pub(open) trait CommandSpawnComponents {
-  spawn_components(
-    Self,
-    @ecs.World,
-    @core.Entity,
-    @core.Sequence,
-    loc~ : SourceLoc,
-  ) -> Unit raise @ecs.EcsError
+  spawn_components(Self, @ecs.World, @core.Entity, @core.Tick, loc~ : SourceLoc) -> Unit raise @ecs.EcsError
 }
 
 ///|
 pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (
   A,
   B,
-) with spawn_components(self, world, entity, sequence, loc~) {
+) with spawn_components(self, world, entity, tick, loc~) {
   let (a, b) = self
-  insert_spawn_component(world, entity, a, sequence, loc~)
-  insert_spawn_component(world, entity, b, sequence, loc~)
+  insert_spawn_component(world, entity, a, tick, loc~)
+  insert_spawn_component(world, entity, b, tick, loc~)
 }
 
 ///|
@@ -66,11 +60,11 @@ pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpaw
   A,
   B,
   C,
-) with spawn_components(self, world, entity, sequence, loc~) {
+) with spawn_components(self, world, entity, tick, loc~) {
   let (a, b, c) = self
-  insert_spawn_component(world, entity, a, sequence, loc~)
-  insert_spawn_component(world, entity, b, sequence, loc~)
-  insert_spawn_component(world, entity, c, sequence, loc~)
+  insert_spawn_component(world, entity, a, tick, loc~)
+  insert_spawn_component(world, entity, b, tick, loc~)
+  insert_spawn_component(world, entity, c, tick, loc~)
 }
 
 ///|
@@ -83,14 +77,14 @@ pub impl[
   self,
   world,
   entity,
-  sequence,
+  tick,
   loc~,
 ) {
   let (a, b, c, d) = self
-  insert_spawn_component(world, entity, a, sequence, loc~)
-  insert_spawn_component(world, entity, b, sequence, loc~)
-  insert_spawn_component(world, entity, c, sequence, loc~)
-  insert_spawn_component(world, entity, d, sequence, loc~)
+  insert_spawn_component(world, entity, a, tick, loc~)
+  insert_spawn_component(world, entity, b, tick, loc~)
+  insert_spawn_component(world, entity, c, tick, loc~)
+  insert_spawn_component(world, entity, d, tick, loc~)
 }
 
 ///|
@@ -104,15 +98,15 @@ pub impl[
   self,
   world,
   entity,
-  sequence,
+  tick,
   loc~,
 ) {
   let (a, b, c, d, e) = self
-  insert_spawn_component(world, entity, a, sequence, loc~)
-  insert_spawn_component(world, entity, b, sequence, loc~)
-  insert_spawn_component(world, entity, c, sequence, loc~)
-  insert_spawn_component(world, entity, d, sequence, loc~)
-  insert_spawn_component(world, entity, e, sequence, loc~)
+  insert_spawn_component(world, entity, a, tick, loc~)
+  insert_spawn_component(world, entity, b, tick, loc~)
+  insert_spawn_component(world, entity, c, tick, loc~)
+  insert_spawn_component(world, entity, d, tick, loc~)
+  insert_spawn_component(world, entity, e, tick, loc~)
 }
 
 ///|
@@ -127,16 +121,16 @@ pub impl[
   self,
   world,
   entity,
-  sequence,
+  tick,
   loc~,
 ) {
   let (a, b, c, d, e, f) = self
-  insert_spawn_component(world, entity, a, sequence, loc~)
-  insert_spawn_component(world, entity, b, sequence, loc~)
-  insert_spawn_component(world, entity, c, sequence, loc~)
-  insert_spawn_component(world, entity, d, sequence, loc~)
-  insert_spawn_component(world, entity, e, sequence, loc~)
-  insert_spawn_component(world, entity, f, sequence, loc~)
+  insert_spawn_component(world, entity, a, tick, loc~)
+  insert_spawn_component(world, entity, b, tick, loc~)
+  insert_spawn_component(world, entity, c, tick, loc~)
+  insert_spawn_component(world, entity, d, tick, loc~)
+  insert_spawn_component(world, entity, e, tick, loc~)
+  insert_spawn_component(world, entity, f, tick, loc~)
 }
 
 ///|
@@ -152,17 +146,17 @@ pub impl[
   self,
   world,
   entity,
-  sequence,
+  tick,
   loc~,
 ) {
   let (a, b, c, d, e, f, g) = self
-  insert_spawn_component(world, entity, a, sequence, loc~)
-  insert_spawn_component(world, entity, b, sequence, loc~)
-  insert_spawn_component(world, entity, c, sequence, loc~)
-  insert_spawn_component(world, entity, d, sequence, loc~)
-  insert_spawn_component(world, entity, e, sequence, loc~)
-  insert_spawn_component(world, entity, f, sequence, loc~)
-  insert_spawn_component(world, entity, g, sequence, loc~)
+  insert_spawn_component(world, entity, a, tick, loc~)
+  insert_spawn_component(world, entity, b, tick, loc~)
+  insert_spawn_component(world, entity, c, tick, loc~)
+  insert_spawn_component(world, entity, d, tick, loc~)
+  insert_spawn_component(world, entity, e, tick, loc~)
+  insert_spawn_component(world, entity, f, tick, loc~)
+  insert_spawn_component(world, entity, g, tick, loc~)
 }
 
 ///|
@@ -179,24 +173,24 @@ pub impl[
   self,
   world,
   entity,
-  sequence,
+  tick,
   loc~,
 ) {
   let (a, b, c, d, e, f, g, h) = self
-  insert_spawn_component(world, entity, a, sequence, loc~)
-  insert_spawn_component(world, entity, b, sequence, loc~)
-  insert_spawn_component(world, entity, c, sequence, loc~)
-  insert_spawn_component(world, entity, d, sequence, loc~)
-  insert_spawn_component(world, entity, e, sequence, loc~)
-  insert_spawn_component(world, entity, f, sequence, loc~)
-  insert_spawn_component(world, entity, g, sequence, loc~)
-  insert_spawn_component(world, entity, h, sequence, loc~)
+  insert_spawn_component(world, entity, a, tick, loc~)
+  insert_spawn_component(world, entity, b, tick, loc~)
+  insert_spawn_component(world, entity, c, tick, loc~)
+  insert_spawn_component(world, entity, d, tick, loc~)
+  insert_spawn_component(world, entity, e, tick, loc~)
+  insert_spawn_component(world, entity, f, tick, loc~)
+  insert_spawn_component(world, entity, g, tick, loc~)
+  insert_spawn_component(world, entity, h, tick, loc~)
 }
 
 ///|
 pub struct Commands {
   world : @ecs.World
-  sequence : @core.Sequence
+  tick : @core.Tick
   queue : Array[DeferredCommandEntry]
 }
 
@@ -208,7 +202,7 @@ pub struct EntityCommands {
 
 ///|
 let deferred_command_batch_queue_ref : Ref[
-  Array[(@core.Sequence, DeferredCommandEntry)]?,
+  Array[(@core.Tick, DeferredCommandEntry)]?,
 ] = Ref(None)
 
 ///|
@@ -225,15 +219,15 @@ pub fn queue_deferred_world_action(
   source? : String = "app::queue_deferred_world_action",
 ) -> Unit {
   let world = current_world_or_abort()
-  let sequence = current_system_sequence().this_run
+  let tick = current_system_ticks().this_run
   let entry = DeferredCommandEntry::{
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) { action(world) },
+    run: fn(world : @ecs.World, _tick : @core.Tick) { action(world) },
     error_handler: None,
     source,
   }
   match deferred_command_batch_queue_ref.val {
-    Some(entries) => entries.push((sequence, entry))
-    None => flush_deferred_command_entries(world, [(sequence, entry)])
+    Some(entries) => entries.push((tick, entry))
+    None => flush_deferred_command_entries(world, [(tick, entry)])
   }
 }
 
@@ -248,11 +242,11 @@ fn deferred_command_batch_has_entries() -> Bool {
 ///|
 fn flush_deferred_command_entries(
   world : @ecs.World,
-  entries : Array[(@core.Sequence, DeferredCommandEntry)],
+  entries : Array[(@core.Tick, DeferredCommandEntry)],
 ) -> Unit {
   entries.each(fn(entry) {
-    let (sequence, command) = entry
-    (command.run)(world, sequence) catch {
+    let (tick, command) = entry
+    (command.run)(world, tick) catch {
       err => {
         let context = ErrorContext::new(
           ErrorContextKind::Command,
@@ -334,7 +328,7 @@ pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] C
 ///|
 pub fn Commands::run_system(self : Commands, system_id : SystemId) -> Unit {
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       run_system(world, system_id)
     },
     error_handler: None,
@@ -351,8 +345,8 @@ pub fn[T : @ecs.Component] Commands::spawn_component(
 ) -> @core.Entity {
   let entity = self.world.spawn_empty()
   self.queue.push({
-    run: fn(world : @ecs.World, sequence : @core.Sequence) raise {
-      insert_spawn_component(world, entity, component, sequence, loc~)
+    run: fn(world : @ecs.World, tick : @core.Tick) raise {
+      insert_spawn_component(world, entity, component, tick, loc~)
     },
     error_handler: None,
     source: "Commands::spawn_component",
@@ -369,8 +363,8 @@ pub fn[T : CommandSpawnComponents] Commands::spawn(
 ) -> @core.Entity {
   let entity = self.world.spawn_empty()
   self.queue.push({
-    run: fn(world : @ecs.World, sequence : @core.Sequence) raise {
-      components.spawn_components(world, entity, sequence, loc~)
+    run: fn(world : @ecs.World, tick : @core.Tick) raise {
+      components.spawn_components(world, entity, tick, loc~)
     },
     error_handler: None,
     source: "Commands::spawn",
@@ -387,7 +381,7 @@ pub fn[B : @ecs.Bundle] Commands::spawn_bundle(
 ) -> @core.Entity {
   let entity = self.world.spawn_empty()
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       B::insert_into(bundle, world, entity, loc~)
     },
     error_handler: None,
@@ -411,13 +405,13 @@ pub fn[T : CommandSpawnComponents] Commands::spawn_batch(
   let queued_components = component_batch
   let queued_entities = entities
   self.queue.push({
-    run: fn(world : @ecs.World, sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, tick : @core.Tick) raise {
       let count = queued_components.length()
       for i in 0..<count {
         queued_components[i].spawn_components(
           world,
           queued_entities[i],
-          sequence,
+          tick,
           loc~,
         )
       }
@@ -434,7 +428,7 @@ pub fn[T : Resource] Commands::insert_resource(
   resource : T,
 ) -> Unit {
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+    run: fn(world : @ecs.World, _tick : @core.Tick) {
       world.insert_resource(T::resource(), resource)
     },
     error_handler: None,
@@ -449,7 +443,7 @@ pub fn[T : @ecs.EcsPayloadCodec] Commands::insert_world_resource(
   resource : T,
 ) -> Unit {
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+    run: fn(world : @ecs.World, _tick : @core.Tick) {
       world.insert_resource(key, resource)
     },
     error_handler: None,
@@ -461,7 +455,7 @@ pub fn[T : @ecs.EcsPayloadCodec] Commands::insert_world_resource(
 pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
   let key : @ecs.ResourceKey[T] = T::resource()
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+    run: fn(world : @ecs.World, _tick : @core.Tick) {
       ignore(world.remove_resource(key) catch { _ => None })
     },
     error_handler: None,
@@ -475,7 +469,7 @@ pub fn[T : @ecs.EcsPayloadCodec] Commands::remove_world_resource(
   key : @ecs.ResourceKey[T],
 ) -> Unit {
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+    run: fn(world : @ecs.World, _tick : @core.Tick) {
       ignore(world.remove_resource(key) catch { _ => None })
     },
     error_handler: None,
@@ -489,9 +483,7 @@ pub fn Commands::queue(
   command : (@ecs.World) -> Unit raise,
 ) -> Unit {
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
-      command(world)
-    },
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise { command(world) },
     error_handler: None,
     source: "Commands::queue",
   })
@@ -504,9 +496,7 @@ pub fn Commands::queue_handled(
   handler : ErrorHandler,
 ) -> Unit {
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
-      command(world)
-    },
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise { command(world) },
     error_handler: Some(handler),
     source: "Commands::queue_handled",
   })
@@ -519,7 +509,7 @@ pub fn[E : @ecs.TriggerEvent] Commands::trigger(
 ) -> Unit {
   let source = "Commands::trigger(\{E::debug_name()})"
   self.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+    run: fn(world : @ecs.World, _tick : @core.Tick) {
       world.trigger(event, caller=Some(source))
     },
     error_handler: None,
@@ -536,8 +526,8 @@ pub fn[T : CommandSpawnComponents] EntityCommands::insert(
 ) -> Unit {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, sequence : @core.Sequence) raise {
-      components.spawn_components(world, entity, sequence, loc~)
+    run: fn(world : @ecs.World, tick : @core.Tick) raise {
+      components.spawn_components(world, entity, tick, loc~)
     },
     error_handler: None,
     source: "EntityCommands::insert",
@@ -553,7 +543,7 @@ pub fn[B : @ecs.Bundle] EntityCommands::insert_bundle(
 ) -> Unit {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       B::insert_into(bundle, world, entity, loc~)
     },
     error_handler: None,
@@ -570,8 +560,8 @@ pub fn[T : @ecs.Component] EntityCommands::insert_component(
 ) -> Unit {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, sequence : @core.Sequence) raise {
-      insert_spawn_component(world, entity, component, sequence, loc~)
+    run: fn(world : @ecs.World, tick : @core.Tick) raise {
+      insert_spawn_component(world, entity, component, tick, loc~)
     },
     error_handler: None,
     source: "EntityCommands::insert_component",
@@ -583,7 +573,7 @@ pub fn[T : @ecs.Component] EntityCommands::insert_component(
 pub fn EntityCommands::despawn(self : EntityCommands, loc~ : SourceLoc) -> Unit {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       if world.is_alive(entity) {
         world.despawn(entity, loc~)
       }
@@ -602,7 +592,7 @@ pub fn[T] EntityCommands::remove_component(
 ) -> Unit {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       if world.is_alive(entity) {
         ignore(world.remove_by_key(entity, key, loc~))
       }
@@ -629,7 +619,7 @@ pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+    run: fn(world : @ecs.World, _tick : @core.Tick) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
         world,
@@ -652,7 +642,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointe
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+    run: fn(world : @ecs.World, _tick : @core.Tick) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
         world,
@@ -675,7 +665,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityComman
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+    run: fn(world : @ecs.World, _tick : @core.Tick) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
         world,
@@ -703,7 +693,7 @@ pub fn[
 ) -> EntityCommands {
   let entity = self.entity
   self.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+    run: fn(world : @ecs.World, _tick : @core.Tick) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
         world,
@@ -721,9 +711,9 @@ pub fn[
 
 ///|
 fn Commands::flush(self : Commands) -> Unit {
-  let entries : Array[(@core.Sequence, DeferredCommandEntry)] = []
+  let entries : Array[(@core.Tick, DeferredCommandEntry)] = []
   for entry in self.queue {
-    entries.push((self.sequence, entry))
+    entries.push((self.tick, entry))
   }
   flush_deferred_command_entries(self.world, entries)
   self.queue.clear()
@@ -738,7 +728,7 @@ pub impl SystemParam for Commands with init_state(world) {
 pub impl SystemParam for Commands with get(_state) {
   Commands::{
     world: system_param_abort_missing_world(),
-    sequence: current_system_sequence().this_run,
+    tick: current_system_ticks().this_run,
     queue: [],
   }
 }
@@ -748,7 +738,7 @@ pub impl SystemParam for Commands with store(self, state) {
   match deferred_command_batch_queue_ref.val {
     Some(entries) => {
       for entry in self.queue {
-        entries.push((self.sequence, entry))
+        entries.push((self.tick, entry))
       }
       self.queue.clear()
     }

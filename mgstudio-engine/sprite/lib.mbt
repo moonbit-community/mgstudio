@@ -229,32 +229,31 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
   let changed_sprite_mesh_or_anchor_entities : @hashset.HashSet[UInt64] = @hashset.HashSet([],
   )
   if !first_run {
-    let sequence = world.get_sequence_context().sequence()
-    for entity in world.added_components(@mesh.ecs_key_mesh2d, sequence).read() {
+    let tick = world.get_tick_context().ticks()
+    for entity in world.added_components(@mesh.ecs_key_mesh2d, tick).read() {
       sprite_insert_entity_key(changed_mesh2d_entities, entity)
     }
-    for
-      entity in world.changed_components(@mesh.ecs_key_mesh2d, sequence).read() {
+    for entity in world.changed_components(@mesh.ecs_key_mesh2d, tick).read() {
       sprite_insert_entity_key(changed_mesh2d_entities, entity)
     }
-    for entity in world.added_components(ecs_key_sprite, sequence).read() {
+    for entity in world.added_components(ecs_key_sprite, tick).read() {
       sprite_insert_entity_key(changed_sprite_or_anchor_entities, entity)
     }
-    for entity in world.changed_components(ecs_key_sprite, sequence).read() {
+    for entity in world.changed_components(ecs_key_sprite, tick).read() {
       sprite_insert_entity_key(changed_sprite_or_anchor_entities, entity)
     }
-    for entity in world.added_components(ecs_key_anchor, sequence).read() {
-      sprite_insert_entity_key(changed_sprite_or_anchor_entities, entity)
-      sprite_insert_entity_key(changed_sprite_mesh_or_anchor_entities, entity)
-    }
-    for entity in world.changed_components(ecs_key_anchor, sequence).read() {
+    for entity in world.added_components(ecs_key_anchor, tick).read() {
       sprite_insert_entity_key(changed_sprite_or_anchor_entities, entity)
       sprite_insert_entity_key(changed_sprite_mesh_or_anchor_entities, entity)
     }
-    for entity in world.added_components(ecs_key_sprite_mesh, sequence).read() {
+    for entity in world.changed_components(ecs_key_anchor, tick).read() {
+      sprite_insert_entity_key(changed_sprite_or_anchor_entities, entity)
       sprite_insert_entity_key(changed_sprite_mesh_or_anchor_entities, entity)
     }
-    for entity in world.changed_components(ecs_key_sprite_mesh, sequence).read() {
+    for entity in world.added_components(ecs_key_sprite_mesh, tick).read() {
+      sprite_insert_entity_key(changed_sprite_mesh_or_anchor_entities, entity)
+    }
+    for entity in world.changed_components(ecs_key_sprite_mesh, tick).read() {
       sprite_insert_entity_key(changed_sprite_mesh_or_anchor_entities, entity)
     }
   }

@@ -242,7 +242,7 @@ fn sync_simple_transforms_apply(world : @ecs.World) -> Unit {
     world
     .removed_components(
       @hierarchy.ecs_key_parent,
-      world.get_sequence_context().sequence(),
+      world.get_tick_context().ticks(),
     )
     .read(),
   )
@@ -364,7 +364,7 @@ pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
   let orphaned_entities = world
     .removed_components(
       @hierarchy.ecs_key_parent,
-      world.get_sequence_context().sequence(),
+      world.get_tick_context().ticks(),
     )
     .read()
   let transforms : TransformTreeChangedMutQuery = @ecs.query(world)
@@ -416,7 +416,7 @@ fn transform_set_global_hot_at_row(
   global_column : @ecs.ComponentTableColumn[GlobalTransform],
   row_index : Int,
   next_global : GlobalTransform,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
 ) -> Bool {
   if row_index < 0 {
     return false
@@ -424,12 +424,9 @@ fn transform_set_global_hot_at_row(
   match global_column.value_at_row_unchecked(row_index) {
     Some(current_global) => {
       current_global.set_from(next_global)
-      global_column.record_changed_at_row(row_index, sequence)
+      global_column.record_changed_at_row(row_index, tick)
     }
-    None =>
-      global_column.set_sequence_only_hot_at_row(
-        row_index, next_global, sequence,
-      )
+    None => global_column.set_tick_only_hot_at_row(row_index, next_global, tick)
   }
 }
 
@@ -437,11 +434,11 @@ fn transform_set_global_hot_at_row(
 fn transform_table_tree_changed_at_row(
   table_columns : TransformPropagationTableColumns,
   row_index : Int,
-  system_sequence : @core.SystemSequence,
+  system_ticks : @core.SystemTicks,
 ) -> Bool {
   match table_columns.tree_changed {
     Some(tree_changed_column) =>
-      tree_changed_column.is_changed_at_row(row_index, system_sequence)
+      tree_changed_column.is_changed_at_row(row_index, system_ticks)
     None => false
   }
 }
@@ -451,9 +448,9 @@ fn propagate_descendants_dense(
   _world : @ecs.World,
   columns : TransformPropagationColumns,
   scratch : TransformPropagationScratch,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   static_optimizations_enabled : Bool,
-  system_sequence : @core.SystemSequence,
+  system_ticks : @core.SystemTicks,
   parent : @core.Entity,
   parent_global : GlobalTransform,
   parent_global_changed : Bool,
@@ -495,7 +492,7 @@ fn propagate_descendants_dense(
     if static_optimizations_enabled &&
       !stack_item.parent_global_changed &&
       !transform_table_tree_changed_at_row(
-        table_columns, row_index, system_sequence,
+        table_columns, row_index, system_ticks,
       ) {
       continue
     }
@@ -517,7 +514,7 @@ fn propagate_descendants_dense(
     }
     child_global.set_mul_transform(stack_item.parent_global, local_transform)
     let child_global_changed = global_column.record_changed_at_row(
-      row_index, sequence,
+      row_index, tick,
     )
     match table_columns.children {
       Some(children_column) =>
@@ -555,15 +552,15 @@ fn propagate_parent_transforms_dense(
   static_optimizations_enabled : Bool,
 ) -> Unit {
   guard columns.parent is Some(parent_column) else { return }
-  let sequence = {
-    let tick = world.read_sequence()
+  let tick = {
+    let tick = world.read_change_tick()
     if tick > 0 {
       tick
     } else {
       1
     }
   }
-  let system_sequence = world.get_sequence_context().sequence()
+  let system_ticks = world.get_tick_context().ticks()
   let scratch_ref = transform_propagation_scratch_ref_or_init(world)
   let scratch = scratch_ref.peek()
   let trace_enabled = @app.timeline_trace_enabled()
@@ -584,7 +581,7 @@ fn propagate_parent_transforms_dense(
     }
     if static_optimizations_enabled &&
       !transform_table_tree_changed_at_row(
-        table_columns, row_index, system_sequence,
+        table_columns, row_index, system_ticks,
       ) {
       return
     }
@@ -596,7 +593,7 @@ fn propagate_parent_transforms_dense(
     let root_global = GlobalTransform::from_transform(root_transform)
     guard table_columns.global is Some(global_column) else { return }
     let root_global_changed = transform_set_global_hot_at_row(
-      global_column, row_index, root_global, sequence,
+      global_column, row_index, root_global, tick,
     )
     let descendants_start_us = if trace_enabled {
       let now = @app.timeline_trace_now_us()
@@ -608,7 +605,7 @@ fn propagate_parent_transforms_dense(
       -1L
     }
     propagate_descendants_dense(
-      world, columns, scratch, sequence, static_optimizations_enabled, system_sequence,
+      world, columns, scratch, tick, static_optimizations_enabled, system_ticks,
       entity, root_global, root_global_changed, children,
     )
     if descendants_start_us >= 0L {

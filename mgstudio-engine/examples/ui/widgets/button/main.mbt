@@ -47,7 +47,7 @@ fn main {
 
 ///|
 fn button_system(world : @ecs.World) -> Unit {
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let input_focus_ref = try
     world.get_resource_ref_mut(@input_focus.InputFocus::resource())
@@ -132,7 +132,7 @@ fn button_system(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
 
   // UI camera.

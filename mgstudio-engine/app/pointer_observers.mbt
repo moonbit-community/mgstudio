@@ -212,7 +212,7 @@ priv struct PointerObserverEntry {
   source : String
   target : @core.Entity?
   system : SystemFn[@ecs.World]
-  last_run_sequence_ref : Ref[@core.Sequence]
+  last_run_tick_ref : Ref[@core.Tick]
 }
 
 ///|
@@ -255,7 +255,7 @@ fn register_pointer_observer_entry_in_world(
     source,
     target,
     system,
-    last_run_sequence_ref: Ref(0),
+    last_run_tick_ref: Ref(0),
   })
   registry_res.insert(registry.val)
 }
@@ -398,7 +398,7 @@ pub fn dispatch_pointer_observers_system(world : @ecs.World) -> Unit {
         current_pointer_event_ref.val = Some(event)
         run_registered_observer_system(
           world,
-          entry.last_run_sequence_ref,
+          entry.last_run_tick_ref,
           entry.system,
           source=entry.source,
         )

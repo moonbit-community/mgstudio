@@ -124,11 +124,11 @@ test "ecs resource: ResourceMut exposes detect changes metadata" {
   )
 
   world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
 
-  let first_ctx = @core.SystemSequenceContext::new()
-  first_ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(first_ctx)
+  let first_ctx = @core.SystemTickContext::new()
+  first_ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(first_ctx)
 
   let first_config = (try! world.get_resource_mut(res_config)).unwrap()
   debug_inspect(first_config.is_added(), content="true")
@@ -137,10 +137,10 @@ test "ecs resource: ResourceMut exposes detect changes metadata" {
   debug_inspect(first_config.last_changed(), content="1")
   debug_inspect(first_config.changed_by() is None, content="true")
 
-  world.advance_sequence() |> ignore
-  let second_ctx = @core.SystemSequenceContext::new()
-  second_ctx.set(@core.SystemSequence::new(1, 2))
-  world.set_sequence_context(second_ctx)
+  world.increment_change_tick() |> ignore
+  let second_ctx = @core.SystemTickContext::new()
+  second_ctx.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(second_ctx)
 
   let second_config = (try! world.get_resource_mut(res_config)).unwrap()
   debug_inspect(second_config.is_added(), content="false")
@@ -168,11 +168,11 @@ test "ecs resource: ResourceMut::peek is read-only" {
   )
 
   world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
 
-  let read_ctx = @core.SystemSequenceContext::new()
-  read_ctx.set(@core.SystemSequence::new(1, 2))
-  world.set_sequence_context(read_ctx)
+  let read_ctx = @core.SystemTickContext::new()
+  read_ctx.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(read_ctx)
 
   let config = (try! world.get_resource_mut(res_config)).unwrap()
   debug_inspect(config.peek(), content="{ fps: 60 }")

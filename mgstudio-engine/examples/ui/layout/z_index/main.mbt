@@ -56,7 +56,7 @@ fn spawn_box(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
 
   @sprite.Camera2dBundle::new(

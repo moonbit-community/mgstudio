@@ -13,8 +13,8 @@
 // limitations under the License.
 
 ///|
-fn seed_ui_context(world : @ecs.World) -> Int {
-  let tick = world.advance_sequence()
+fn seed_ui_context(world : @ecs.World) -> @core.Tick {
+  let tick = world.increment_change_tick()
   ignore(tick)
   get_ui_context_resource(world).insert(
     UiContext::new(
@@ -168,7 +168,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
 ///|
 test "ui: explicit UiTargetCamera propagates from root and drives logical render target info" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   get_ui_scale_resource(world).insert(UiScale::new(2.0F))
 
@@ -243,7 +243,7 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
 ///|
 test "ui: propagated target info falls back to camera target when computed info is empty" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   get_ui_scale_resource(world).insert(UiScale::new(1.0F))
 
@@ -289,7 +289,7 @@ test "ui: propagated target info falls back to camera target when computed info 
 ///|
 test "ui: perspective target camera keeps overlays in screen space" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
 
   let target_camera = world.spawn_empty()
@@ -328,7 +328,7 @@ test "ui: perspective target camera keeps overlays in screen space" {
 ///|
 test "ui: layout resolves each root against its propagated target viewport" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
 
   let camera_a = world.spawn_empty()

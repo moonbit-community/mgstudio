@@ -764,7 +764,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     for entity in sample_entities {
       try! world.despawn(entity)
     }
-    let tick = world.advance_sequence()
+    let tick = world.increment_change_tick()
     ignore(tick)
     if (try! world.get_resource_ref_mut(PointCounter::resource()))
       is Some(counter) {
@@ -772,7 +772,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     }
   }
 
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   guard (try! world.get_resource_ref_mut(SamplingMode::resource()))
     is Some(mode_ref) else {
@@ -903,7 +903,7 @@ fn handle_mouse(
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
 ) -> Unit {
   let world = current_world_or_abort()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
 
   guard (try! world.get_resource_ref_mut(MousePressed::resource()))
@@ -958,7 +958,7 @@ fn handle_mouse(
 
 ///|
 fn spawn_points(world : @ecs.World) -> Unit {
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   guard (try! world.get_resource_ref_mut(SpawningMode::resource()))
     is Some(spawn_mode_ref) else {
@@ -1029,7 +1029,7 @@ fn despawn_points(world : @ecs.World) -> Unit {
   if spawn_mode is Manual {
     return
   }
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   guard (try! world.get_resource_ref_mut(PointCounter::resource()))
     is Some(point_counter_ref) else {
@@ -1077,7 +1077,7 @@ fn despawn_points(world : @ecs.World) -> Unit {
 ///|
 fn animate_spawning(world : @ecs.World) -> Unit {
   let delta = default_time_or_default(world).delta_secs()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let entities : Array[@core.Entity] = []
   world.for_each_component(SpawningPoint::component(), fn(entity, _spawning) {
@@ -1122,7 +1122,7 @@ fn animate_spawning(world : @ecs.World) -> Unit {
 ///|
 fn animate_despawning(world : @ecs.World) -> Unit {
   let delta = default_time_or_default(world).delta_secs()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let entities : Array[@core.Entity] = []
   world.for_each_component(DespawningPoint::component(), fn(
@@ -1171,7 +1171,7 @@ fn animate_despawning(world : @ecs.World) -> Unit {
 
 ///|
 fn update_camera(world : @ecs.World) -> Unit {
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let camera_entities : Array[@core.Entity] = []
   world.for_each_component(CameraRig::component(), fn(entity, _rig) {
@@ -1207,7 +1207,7 @@ fn update_lights(world : @ecs.World) -> Unit {
     2.0F
   }
   let intensity = 40_000.0F * saturation
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let firefly_entities : Array[@core.Entity] = []
   world.for_each_component(FireflyLights::component(), fn(entity, _marker) {

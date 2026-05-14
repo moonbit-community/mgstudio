@@ -317,7 +317,7 @@ fn spawn_section(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   let font = @asset.AssetServer::new().load_font("fonts/FiraSans-Bold.ttf")
 
   @sprite.Camera2dBundle::new(

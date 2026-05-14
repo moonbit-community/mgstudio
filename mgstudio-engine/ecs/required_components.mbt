@@ -553,7 +553,7 @@ fn World::insert_component_with_requirements_unchecked(
       entity, component_definition_id, caller,
     )
     self.ensure_added_component_messages(component_definition_id).val.send(
-      component_write_sequence(self),
+      component_write_tick(self),
       entity,
     )
     self.run_component_add_hooks(entity, component_definition_id, caller~)

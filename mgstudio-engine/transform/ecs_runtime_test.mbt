@@ -40,13 +40,13 @@ fn global_translation_eq_ecs(
 }
 
 ///|
-fn next_system_sequence_ecs(world : @ecs.World) -> Unit {
-  let this_run = world.advance_sequence()
-  let last_run = world.get_sequence_context().sequence().this_run
-  let sequence = @core.SystemSequence::new(last_run, this_run)
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(sequence)
-  world.set_sequence_context(ctx)
+fn next_system_ticks_ecs(world : @ecs.World) -> Unit {
+  let this_run = world.increment_change_tick()
+  let last_run = world.get_tick_context().ticks().this_run
+  let tick = @core.SystemTicks::new(last_run, this_run)
+  let ctx = @core.SystemTickContext::new()
+  ctx.set(tick)
+  world.set_tick_context(ctx)
 }
 
 ///|
@@ -66,7 +66,7 @@ test "transform ecs world: child global uses parent and local transforms" {
   let child = world.spawn()
 
   prepare_transform_world_ecs(world)
-  next_system_sequence_ecs(world)
+  next_system_ticks_ecs(world)
   try! world.set_by_key(
     parent,
     ecs_key_transform,
@@ -164,7 +164,7 @@ test "transform ecs query: Mut::modify persists rotate_y mutations" {
     ecs_key_global_transform,
     GlobalTransform::identity(),
   )
-  next_system_sequence_ecs(world)
+  next_system_ticks_ecs(world)
   let query : @ecs.Query[@ecs.Mut[Transform], @ecs.All] = @ecs.query(world)
   let transform_mut = try! query.require_single()
   transform_mut.modify(fn(value) { value.rotate_y(@math.pi_half()) })

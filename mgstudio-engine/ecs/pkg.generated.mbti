@@ -191,12 +191,12 @@ pub fn[T] ChangedComponents::read(Self[T]) -> Array[@core.Entity]
 pub struct Comp[T] {
   // private fields
 }
-pub fn[T] Comp::added(Self[T]) -> Int
+pub fn[T] Comp::added(Self[T]) -> Int64
 pub fn[T] Comp::changed_by(Self[T]) -> String?
 pub fn[T] Comp::is_added(Self[T]) -> Bool
 pub fn[T] Comp::is_changed(Self[T]) -> Bool
 pub fn[T : Component] Comp::key(Self[T]) -> ComponentKey[T]
-pub fn[T] Comp::last_changed(Self[T]) -> Int
+pub fn[T] Comp::last_changed(Self[T]) -> Int64
 pub fn[T] Comp::new(ComponentKey[T]) -> Self[T]
 pub fn[T] Comp::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Comp[T]
@@ -208,10 +208,10 @@ pub fn[T] ComponentColumn::contains(Self[T], @core.Entity) -> Bool
 pub fn[T : EcsPayloadCodec] ComponentColumn::for_each(Self[T], (@core.Entity, T) -> Unit) -> Unit
 pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, M, N] ComponentColumn::for_each2_with2_markers_fast_table_row(Self[T], Self[U], Self[M], Self[N], (@core.Entity, Int, Int, T, U) -> Unit) -> Unit
 pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row(Self[T], Self[U], Self[V], (@core.Entity, Int, Int, T, U, V) -> Unit) -> Unit
-pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row_mark_third_changed(Self[T], Self[U], Self[V], Int, (@core.Entity, Int, Int, T, U, V) -> Bool) -> Unit
+pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row_mark_third_changed(Self[T], Self[U], Self[V], Int64, (@core.Entity, Int, Int, T, U, V) -> Bool) -> Unit
 pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec, W : EcsPayloadCodec] ComponentColumn::for_each4_fast_table_row(Self[T], Self[U], Self[V], Self[W], (@core.Entity, Int, Int, T, U, V, W) -> Unit) -> Unit
 pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec, W : EcsPayloadCodec, X : EcsPayloadCodec] ComponentColumn::for_each5_fast_table_row(Self[T], Self[U], Self[V], Self[W], Self[X], (@core.Entity, Int, Int, T, U, V, W, X) -> Unit) -> Unit
-pub fn[T] ComponentColumn::for_each_changed_table_entity(Self[T], @core.SystemSequence, (@core.Entity, Int, Int) -> Bool) -> Bool
+pub fn[T] ComponentColumn::for_each_changed_table_entity(Self[T], @core.SystemTicks, (@core.Entity, Int, Int) -> Bool) -> Bool
 pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with(Self[T], Self[U], (@core.Entity, T, U) -> Unit) -> Unit
 pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast(Self[T], Self[U], (@core.Entity, T, U) -> Unit) -> Unit
 pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast_table_row(Self[T], Self[U], (@core.Entity, Int, Int, T, U) -> Unit) -> Unit
@@ -220,19 +220,19 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(Self[T], S
 pub fn[T : EcsPayloadCodec] ComponentColumn::get(Self[T], @core.Entity) -> T?
 pub fn[T : EcsPayloadCodec] ComponentColumn::get_fast(Self[T], @core.Entity) -> T?
 pub fn[T] ComponentColumn::get_mut(Self[T], @core.Entity) -> Mut[T]?
-pub fn[T] ComponentColumn::record_changed_hot_at_table_row(Self[T], Int, Int, Int) -> Bool
+pub fn[T] ComponentColumn::record_changed_hot_at_table_row(Self[T], Int, Int, Int64) -> Bool
 pub fn[T : EcsPayloadCodec] ComponentColumn::set(Self[T], @core.Entity, T) -> Bool
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only(Self[T], @core.Entity, T) -> Bool
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_fast(Self[T], @core.Entity, T) -> Bool
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot(Self[T], @core.Entity, T) -> Bool
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_row(Self[T], @core.Entity, Array[T], Int, T, Int) -> Bool
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row(Self[T], Int, Array[T], Int, T, Int) -> Bool
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row_value(Self[T], Int, Int, T, Int) -> Bool
-pub fn[T] ComponentColumn::table_changed_sequence_at_row(Self[T], Int, Int) -> Int?
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only(Self[T], @core.Entity, T) -> Bool
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_fast(Self[T], @core.Entity, T) -> Bool
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot(Self[T], @core.Entity, T) -> Bool
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_row(Self[T], @core.Entity, Array[T], Int, T, Int64) -> Bool
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_table_row(Self[T], Int, Array[T], Int, T, Int64) -> Bool
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_table_row_value(Self[T], Int, Int, T, Int64) -> Bool
+pub fn[T] ComponentColumn::table_changed_tick_at_row(Self[T], Int, Int) -> Int64?
 pub fn[T] ComponentColumn::table_column(Self[T], Int) -> ComponentTableColumn[T]?
 pub fn[T] ComponentColumn::table_has_value_at_row(Self[T], Int, Int) -> Bool
-pub fn[T] ComponentColumn::table_is_changed_at_entity_row(Self[T], @core.Entity, Int, Int, @core.SystemSequence) -> Bool?
-pub fn[T] ComponentColumn::table_is_changed_at_row(Self[T], Int, Int, @core.SystemSequence) -> Bool
+pub fn[T] ComponentColumn::table_is_changed_at_entity_row(Self[T], @core.Entity, Int, Int, @core.SystemTicks) -> Bool?
+pub fn[T] ComponentColumn::table_is_changed_at_row(Self[T], Int, Int, @core.SystemTicks) -> Bool
 pub fn[T] ComponentColumn::table_row_location(Self[T], @core.Entity) -> (Int, Int)?
 pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_cached_entity_row(Self[T], @core.Entity, Int, Int) -> T?
 pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_entity_row(Self[T], @core.Entity, Int, Int) -> T?
@@ -317,10 +317,10 @@ pub enum ComponentStorageType {
 pub struct ComponentTableColumn[T] {
   // private fields
 }
-pub fn[T] ComponentTableColumn::is_changed_at_row(Self[T], Int, @core.SystemSequence) -> Bool
+pub fn[T] ComponentTableColumn::is_changed_at_row(Self[T], Int, @core.SystemTicks) -> Bool
 pub fn[T] ComponentTableColumn::key(Self[T]) -> ComponentKey[T]
-pub fn[T] ComponentTableColumn::record_changed_at_row(Self[T], Int, Int) -> Bool
-pub fn[T : EcsPayloadCodec] ComponentTableColumn::set_sequence_only_hot_at_row(Self[T], Int, T, Int) -> Bool
+pub fn[T] ComponentTableColumn::record_changed_at_row(Self[T], Int, Int64) -> Bool
+pub fn[T : EcsPayloadCodec] ComponentTableColumn::set_tick_only_hot_at_row(Self[T], Int, T, Int64) -> Bool
 pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row(Self[T], Int) -> T?
 pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row_unchecked(Self[T], Int) -> T?
 
@@ -366,7 +366,7 @@ pub fn DeferredWorld::despawn(Self, @core.Entity, loc~ : SourceLoc) -> Unit rais
 pub fn[T : EcsPayloadCodec] DeferredWorld::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn[T : EcsPayloadCodec] DeferredWorld::get_by_key(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn DeferredWorld::is_alive(Self, @core.Entity) -> Bool
-pub fn DeferredWorld::read_sequence(Self) -> Int
+pub fn DeferredWorld::read_change_tick(Self) -> Int64
 #callsite(autofill(loc))
 pub fn[T] DeferredWorld::remove(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> Bool raise EcsError
 #callsite(autofill(loc))
@@ -549,12 +549,12 @@ pub impl[T] EcsPayloadCodec for Messages[T]
 pub struct Mut[T] {
   // private fields
 }
-pub fn[T] Mut::added(Self[T]) -> Int
+pub fn[T] Mut::added(Self[T]) -> Int64
 pub fn[T] Mut::changed_by(Self[T]) -> String?
 pub fn[T] Mut::is_added(Self[T]) -> Bool
 pub fn[T] Mut::is_changed(Self[T]) -> Bool
 pub fn[T : Component] Mut::key(Self[T]) -> ComponentKey[T]
-pub fn[T] Mut::last_changed(Self[T]) -> Int
+pub fn[T] Mut::last_changed(Self[T]) -> Int64
 #callsite(autofill(loc))
 pub fn[T : EcsPayloadCodec, R] Mut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
 pub fn[T] Mut::new(ComponentKey[T]) -> Self[T]
@@ -647,7 +647,7 @@ pub fn QueryCacheSnapshot::cached_is_dense(Self) -> Bool
 pub fn QueryCacheSnapshot::cached_matching_archetype_generation(Self) -> Int
 pub fn QueryCacheSnapshot::cached_matching_archetypes(Self) -> Array[Int]
 pub fn QueryCacheSnapshot::cached_matching_entities_generation(Self) -> Int
-pub fn QueryCacheSnapshot::cached_matching_entities_sequence(Self) -> Int
+pub fn QueryCacheSnapshot::cached_matching_entities_tick(Self) -> Int
 pub fn QueryCacheSnapshot::cached_matching_entities_valid(Self) -> Bool
 pub fn QueryCacheSnapshot::cached_matching_table_bits(Self) -> @utils.IntBitSet
 pub fn QueryCacheSnapshot::cached_matching_tables(Self) -> Array[Int]
@@ -718,8 +718,8 @@ pub(all) struct RawTableColumn {
 
 pub(all) struct RawTableValueColumnKernel {
   mut values : Array[EcsPayload]
-  mut added_sequences : Array[Int]
-  mut changed_sequences : Array[Int]
+  mut added_ticks : Array[Int64]
+  mut changed_ticks : Array[Int64]
   mut changed_caller_ids : Array[Int]
 }
 
@@ -773,11 +773,11 @@ pub fn[T] ResourceKey::id(Self[T]) -> Int
 pub struct ResourceMut[T] {
   // private fields
 }
-pub fn[T] ResourceMut::added(Self[T]) -> Int
+pub fn[T] ResourceMut::added(Self[T]) -> Int64
 pub fn[T] ResourceMut::changed_by(Self[T]) -> String?
 pub fn[T] ResourceMut::is_added(Self[T]) -> Bool
 pub fn[T] ResourceMut::is_changed(Self[T]) -> Bool
-pub fn[T] ResourceMut::last_changed(Self[T]) -> Int
+pub fn[T] ResourceMut::last_changed(Self[T]) -> Int64
 #callsite(autofill(loc))
 pub fn[T : EcsPayloadCodec, R] ResourceMut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
 pub fn[T : EcsPayloadCodec] ResourceMut::peek(Self[T]) -> T
@@ -824,9 +824,8 @@ pub fn[C : Component] World::add_remove_component_observer(Self, (ComponentOn[Re
 pub fn[C : Component] World::add_remove_entity_component_observer(Self, @core.Entity, (ComponentOn[Remove, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_replace_component_observer(Self, (ComponentOn[Replace, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_replace_entity_component_observer(Self, @core.Entity, (ComponentOn[Replace, C]) -> Unit) -> ObserverHandle
-pub fn[T] World::added_components(Self, ComponentKey[T], @core.SystemSequence) -> AddedComponents[T]
+pub fn[T] World::added_components(Self, ComponentKey[T], @core.SystemTicks) -> AddedComponents[T]
 pub fn World::advance_event_frame(Self) -> Unit
-pub fn World::advance_sequence(Self) -> Int
 pub fn World::alive_entities(Self) -> Array[@core.Entity]
 pub fn World::apply_queued_component_registrations(Self) -> Unit
 pub fn World::archetype_component_ids(Self, Int) -> Array[Int]?
@@ -838,7 +837,9 @@ pub fn World::archetype_generation(Self) -> Int
 pub fn World::archetype_table_id(Self, Int) -> Int?
 pub fn World::bundle_migration_path_for_archetypes(Self, Int, Int) -> ArchetypeBundleMigrationPath
 pub fn World::bundle_migration_path_label_for_archetypes(Self, Int, Int) -> String
-pub fn[T] World::changed_components(Self, ComponentKey[T], @core.SystemSequence) -> ChangedComponents[T]
+pub fn World::change_tick(Self) -> Int64
+pub fn[T] World::changed_components(Self, ComponentKey[T], @core.SystemTicks) -> ChangedComponents[T]
+pub fn World::check_change_ticks(Self) -> Unit
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
 pub fn[T] World::component_column(Self, ComponentKey[T]) -> ComponentColumn[T]?
@@ -870,15 +871,17 @@ pub fn[T : EcsPayloadCodec] World::get_resource(Self, ResourceKey[T]) -> T? rais
 pub fn[T : EcsPayloadCodec] World::get_resource_mut(Self, ResourceKey[T]) -> ResourceMut[T]? raise EcsError
 pub fn[T : EcsPayloadCodec] World::get_resource_ref(Self, ResourceKey[T]) -> @ref.Ref[T]? raise EcsError
 pub fn[T : EcsPayloadCodec] World::get_resource_ref_mut(Self, ResourceKey[T]) -> @ref.Ref[T]? raise EcsError
-pub fn World::get_sequence_context(Self) -> @core.SystemSequenceContext
+pub fn World::get_tick_context(Self) -> @core.SystemTickContext
+pub fn World::increment_change_tick(Self) -> Int64
 pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
 pub fn World::insert_component_writers(Self, @core.Entity, Array[EcsPayloadWriter], caller? : String?) -> Unit raise EcsError
 pub fn[T : EcsPayloadCodec] World::insert_resource(Self, ResourceKey[T], T) -> Unit
-pub fn[T] World::is_added_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemSequence) -> Bool
+pub fn[T] World::is_added_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemTicks) -> Bool
 pub fn World::is_alive(Self, @core.Entity) -> Bool
-pub fn[T] World::is_changed_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemSequence) -> Bool
-pub fn[T] World::is_resource_added(Self, ResourceKey[T], @core.SystemSequence) -> Bool
-pub fn[T] World::is_resource_changed(Self, ResourceKey[T], @core.SystemSequence) -> Bool
+pub fn[T] World::is_changed_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemTicks) -> Bool
+pub fn[T] World::is_resource_added(Self, ResourceKey[T], @core.SystemTicks) -> Bool
+pub fn[T] World::is_resource_changed(Self, ResourceKey[T], @core.SystemTicks) -> Bool
+pub fn World::last_change_tick(Self) -> Int64
 pub fn[T] World::mark_resource_added(Self, ResourceKey[T], caller? : String?) -> Unit
 pub fn[T] World::mark_resource_changed(Self, ResourceKey[T], caller? : String?) -> Unit
 pub fn[T] World::message_mutator(Self, MessageKey[T], @ref.Ref[Int]) -> MessageMutator[T]
@@ -891,8 +894,8 @@ pub fn[D, F] World::query_filtered(Self, F) -> QueryState[D, F]
 pub fn[T : Component] World::queue_register_component(Self, key? : ComponentKey[T]) -> Int
 pub fn[T] World::queue_register_component_by_key(Self, ComponentKey[T]) -> Int
 pub fn World::queued_component_registration_count(Self) -> Int
+pub fn World::read_change_tick(Self) -> Int64
 pub fn[T : EcsPayloadCodec] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
-pub fn World::read_sequence(Self) -> Int
 pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T]
 pub fn[T] World::register_component_hooks_for_key(Self, ComponentKey[T]) -> ComponentHooksBuilder[T]
 pub fn[T] World::register_component_hooks_with(Self, ComponentKey[T], ComponentHooks) -> Unit raise ComponentHooksError
@@ -904,15 +907,15 @@ pub fn[T : Component] World::remove(Self, @core.Entity, key? : ComponentKey[T], 
 #callsite(autofill(loc))
 pub fn[T] World::remove_by_key(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> Bool raise EcsError
 pub fn[T : EcsPayloadCodec] World::remove_resource(Self, ResourceKey[T]) -> T? raise EcsError
-pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemSequence) -> RemovedComponents[T]
+pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemTicks) -> RemovedComponents[T]
 #callsite(autofill(loc))
 pub fn[T : EcsPayloadCodec] World::replace(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Bool raise EcsError
 pub fn[T] World::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
-pub fn[T] World::resource_added_since(Self, ResourceKey[T], Int) -> Bool
-pub fn[T] World::resource_added_tick(Self, ResourceKey[T]) -> Int?
+pub fn[T] World::resource_added_since(Self, ResourceKey[T], Int64) -> Bool
+pub fn[T] World::resource_added_tick(Self, ResourceKey[T]) -> Int64?
 pub fn[T] World::resource_changed_by(Self, ResourceKey[T]) -> String?
-pub fn[T] World::resource_changed_since(Self, ResourceKey[T], Int) -> Bool
-pub fn[T] World::resource_changed_tick(Self, ResourceKey[T]) -> Int?
+pub fn[T] World::resource_changed_since(Self, ResourceKey[T], Int64) -> Bool
+pub fn[T] World::resource_changed_tick(Self, ResourceKey[T]) -> Int64?
 pub fn[T : EcsPayloadCodec] World::send_event(Self, EventKey[T], T) -> Unit
 pub fn[T : EcsPayloadCodec] World::send_message(Self, MessageKey[T], T) -> Int
 pub fn[T : EcsPayloadCodec] World::send_message_batch(Self, MessageKey[T], Array[T]) -> Unit
@@ -920,7 +923,7 @@ pub fn[T : EcsPayloadCodec] World::send_message_batch(Self, MessageKey[T], Array
 pub fn[T : Component] World::set(Self, @core.Entity, key? : ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
 #callsite(autofill(loc))
 pub fn[T : EcsPayloadCodec] World::set_by_key(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
-pub fn World::set_sequence_context(Self, @core.SystemSequenceContext) -> Unit
+pub fn World::set_tick_context(Self, @core.SystemTickContext) -> Unit
 pub fn World::spawn(Self) -> @core.Entity
 #callsite(autofill(loc))
 pub fn[B : Bundle] World::spawn_bundle(Self, B, loc~ : SourceLoc) -> @core.Entity raise EcsError
@@ -1042,7 +1045,7 @@ pub(open) trait QueryFilter {
   is_dense(Self, World) -> Bool = _
   iteration_anchor_component(Self) -> Int?
   iteration_anchor_components(Self) -> Array[Int] = _
-  depends_on_sequence(Self) -> Bool
+  depends_on_ticks(Self) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (A, B, C)
@@ -1054,7 +1057,7 @@ pub(open) trait QueryFilterDisjunction {
   collect_access_any(Self, QueryFilterAccess) -> Unit = _
   requires_entity_check_any(Self) -> Bool
   is_dense_any(Self, World) -> Bool = _
-  depends_on_sequence_any(Self) -> Bool
+  depends_on_ticks_any(Self) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (A, B, C)

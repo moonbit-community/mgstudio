@@ -455,13 +455,13 @@ fn render_diagnostics_collect_snapshot(
 
 ///|
 fn render_diagnostics_system(world : @ecs.World) -> Unit {
-  let sequence = @app.current_system_sequence().this_run
+  let tick = @app.current_system_ticks().this_run
   guard render_diagnostics_store_ref_mut(world) is Some(store_ref) else {
     return
   }
   render_diagnostics_record_snapshot(
     store_ref.val,
-    sequence,
+    tick.to_int(),
     render_diagnostics_collect_snapshot(world),
   )
 }

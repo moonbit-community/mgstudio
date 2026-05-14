@@ -401,7 +401,7 @@ fn handle_keypress(
     is Some(point_material) else {
     return
   }
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   guard (try! world.get_resource_ref_mut(RandomSource::resource()))
     is Some(random_source_ref) else {
@@ -445,7 +445,7 @@ fn handle_mouse(
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
 ) -> Unit {
   let world = current_world_or_abort()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   guard (try! world.get_resource_ref_mut(MousePressed::resource()))
     is Some(mouse_pressed_ref) else {

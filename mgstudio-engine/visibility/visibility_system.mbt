@@ -152,7 +152,7 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
     })
     return
   }
-  let sequence = world.get_sequence_context().sequence()
+  let tick = world.get_tick_context().ticks()
   let start_entities : Array[(@core.Entity, Bool)] = []
   let start_seen = @utils.IntBitSet::new()
 
@@ -188,13 +188,10 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
     start_entities.push((entity, parent_visible))
   }
 
-  for entity in world.changed_components(ecs_key_visibility, sequence).read() {
+  for entity in world.changed_components(ecs_key_visibility, tick).read() {
     add_start_entity(world, start_entities, start_seen, entity)
   }
-  for
-    entity in world
-    .changed_components(@hierarchy.ecs_key_parent, sequence)
-    .read() {
+  for entity in world.changed_components(@hierarchy.ecs_key_parent, tick).read() {
     add_start_entity(world, start_entities, start_seen, entity)
   }
   if start_entities.length() == 0 {

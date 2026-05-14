@@ -86,8 +86,8 @@ fn pbr_app_with_mesh3d_entity() -> (
   )
   let entity = world.spawn()
   try! world.set(entity, @mesh.Mesh3d::new(mesh_handle))
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
   (app, entity, mesh_handle)
 }
 
@@ -101,7 +101,7 @@ test "render3d: plugin replacement id aligns with bevy_pbr" {
 test "render3d: modified Mesh asset marks Mesh3d as changed (bevy semantics)" {
   let (app0, entity, mesh_handle) = pbr_app_with_mesh3d_entity()
   let mut app = app0
-  let before = app.world().read_sequence()
+  let before = app.world().read_change_tick()
 
   debug_inspect(
     mesh_assets_mut_or_abort(app.world()).val.set(
@@ -112,13 +112,10 @@ test "render3d: modified Mesh asset marks Mesh3d as changed (bevy semantics)" {
   )
 
   app = app.update()
-  let after = app.world().read_sequence()
+  let after = app.world().read_change_tick()
   let changed = app
     .world()
-    .changed_components(
-      ecs_key_mesh3d,
-      @core.SystemSequence::new(before, after),
-    )
+    .changed_components(ecs_key_mesh3d, @core.SystemTicks::new(before, after))
     .read()
   debug_inspect(changed.contains(entity), content="true")
 }
@@ -127,15 +124,12 @@ test "render3d: modified Mesh asset marks Mesh3d as changed (bevy semantics)" {
 test "render3d: non-modified Mesh asset events do not mark Mesh3d as changed" {
   let (app0, entity, _mesh_handle) = pbr_app_with_mesh3d_entity()
   let mut app = app0
-  let before = app.world().read_sequence()
+  let before = app.world().read_change_tick()
   app = app.update()
-  let after = app.world().read_sequence()
+  let after = app.world().read_change_tick()
   let changed = app
     .world()
-    .changed_components(
-      ecs_key_mesh3d,
-      @core.SystemSequence::new(before, after),
-    )
+    .changed_components(ecs_key_mesh3d, @core.SystemTicks::new(before, after))
     .read()
   debug_inspect(changed.contains(entity), content="false")
 }

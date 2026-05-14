@@ -147,9 +147,9 @@ pub fn calculate_bounds_system(world : @ecs.World) -> Unit {
     Some(assets) => assets
     None => return
   }
-  let sequence = world.get_sequence_context().sequence()
+  let tick = world.get_tick_context().ticks()
   let changed_mesh3d = @utils.IntBitSet::new()
-  for entity in world.changed_components(@mesh.ecs_key_mesh3d, sequence).read() {
+  for entity in world.changed_components(@mesh.ecs_key_mesh3d, tick).read() {
     changed_mesh3d.insert(entity.id)
   }
   world.for_each_component(@mesh.ecs_key_mesh3d, fn(entity, mesh3d) {
@@ -199,8 +199,8 @@ pub fn update_skinned_mesh_bounds_system(world : @ecs.World) -> Unit {
   guard skinned_mesh_column is Some(skinned_mesh_column) else { return }
   guard aabb_column is Some(aabb_column) else { return }
   guard global_transform_column is Some(global_transforms) else { return }
-  let write_sequence : @core.Sequence = {
-    let tick = world.read_sequence()
+  let write_tick : @core.Tick = {
+    let tick = world.read_change_tick()
     if tick > 0 {
       tick
     } else {
@@ -230,8 +230,8 @@ pub fn update_skinned_mesh_bounds_system(world : @ecs.World) -> Unit {
         ) {
         Ok(skinned_aabb) => {
           let aabb = Aabb::from_math(skinned_aabb)
-          let wrote = aabb_column.set_sequence_only_hot_at_table_row_value(
-            table_id, row_index, aabb, write_sequence,
+          let wrote = aabb_column.set_tick_only_hot_at_table_row_value(
+            table_id, row_index, aabb, write_tick,
           )
           if !wrote {
             visibility_write_aabb(world, entity, aabb)

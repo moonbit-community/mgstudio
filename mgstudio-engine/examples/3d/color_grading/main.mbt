@@ -954,7 +954,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn handle_button_presses(world : @ecs.World) -> Unit {
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   guard (try! world.get_resource_ref_mut(SelectedColorGradingOption::resource()))
     is Some(selected_option) else {
@@ -1003,7 +1003,7 @@ fn adjust_color_grading_option(world : @ecs.World) -> Unit {
     color_grading,
     selected_option.get(color_grading) + delta,
   )
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   try! (world.replace(
     camera_entity, @post_process.ecs_key_color_grading, next_color_grading,
@@ -1022,7 +1022,7 @@ fn update_ui_state(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   world.for_each_component(ColorGradingOptionWidget::component(), fn(
     entity,

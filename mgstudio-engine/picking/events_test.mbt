@@ -152,7 +152,7 @@ fn enqueue_a11y_action(
 ///|
 test "picking: generates enter/leave and click events (single pointer)" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
@@ -257,7 +257,7 @@ test "picking: generates enter/leave and click events (single pointer)" {
 ///|
 test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
@@ -363,7 +363,7 @@ test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
 ///|
 test "picking: non-hoverable non-blocking Pickable allows lower hit" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   ensure_test_messages(world)
@@ -390,7 +390,7 @@ test "picking: non-hoverable non-blocking Pickable allows lower hit" {
 ///|
 test "picking: non-hoverable blocking Pickable suppresses lower hits" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   ensure_test_messages(world)
@@ -417,7 +417,7 @@ test "picking: non-hoverable blocking Pickable suppresses lower hits" {
 ///|
 test "picking: window backend populates fallback hit for active pointers" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   send_test_pointer_inputs(
     world,
     PointerInputs::from_array([
@@ -454,7 +454,7 @@ test "picking: window backend populates fallback hit for active pointers" {
 ///|
 test "picking: window backend reads PointerLocation components" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   ensure_test_messages(world)
   let pointer = world.spawn_empty()
   try! world.set_by_key(pointer, ecs_key_pointer_id, PointerId::mouse())
@@ -485,7 +485,7 @@ test "picking: window backend reads PointerLocation components" {
 ///|
 test "picking: handles multiple pointers independently" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
@@ -521,7 +521,7 @@ test "picking: handles multiple pointers independently" {
 ///|
 test "picking: ui hit test respects transformed ui node" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   send_test_pointer_inputs(
     world,
     PointerInputs::from_array([
@@ -584,7 +584,7 @@ test "picking: ui hit test respects transformed ui node" {
 ///|
 test "picking: ui hit test keeps top and bottom rows distinct" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   ensure_test_messages(world)
   @ui.get_ui_context_resource(world).insert(
     @ui.UiContext::new(
@@ -662,7 +662,7 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
 ///|
 test "picking: ui hit test still matches button with Interaction component" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   send_test_pointer_inputs(
     world,
     PointerInputs::from_array([
@@ -720,7 +720,7 @@ test "picking: ui hit test still matches button with Interaction component" {
 ///|
 test "picking: a11y focus action maps to hovered interaction" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   world.insert_resource(
     @input_focus.InputFocus::resource(),
@@ -744,7 +744,7 @@ test "picking: a11y focus action maps to hovered interaction" {
 ///|
 test "picking: a11y scroll actions update ScrollPosition without click events" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let entity = world.spawn_empty()
@@ -812,7 +812,7 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
 ///|
 test "picking: a11y set-value action updates Text content" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let entity = world.spawn_empty()
@@ -837,7 +837,7 @@ test "picking: a11y set-value action updates Text content" {
 ///|
 test "picking: ignores a11y actions targeting non-alive entities" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   world.insert_resource(
     @input_focus.InputFocus::resource(),
@@ -884,7 +884,7 @@ test "picking: pointer observers dispatch generated move enter and leave events"
     }
   })
   let world = app.world()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
   @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())

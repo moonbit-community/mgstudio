@@ -38,7 +38,7 @@ test "ecs changed components: insert emits entity in tick range" {
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
 
   let changed = world
-    .changed_components(changed_marker_key, @core.SystemSequence::new(0, 1))
+    .changed_components(changed_marker_key, @core.SystemTicks::new(0, 1))
     .read()
   debug_inspect(changed.length(), content="1")
   debug_inspect(changed[0] == entity, content="true")
@@ -50,8 +50,8 @@ test "ecs changed components: replace and update emit changed events" {
   let entity = world.spawn()
 
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
   debug_inspect(
     try! world.replace(entity, changed_marker_key, ChangedMarker::{ value: 2 }),
     content="true",
@@ -64,7 +64,7 @@ test "ecs changed components: replace and update emit changed events" {
   )
 
   let changed = world
-    .changed_components(changed_marker_key, @core.SystemSequence::new(1, 2))
+    .changed_components(changed_marker_key, @core.SystemTicks::new(1, 2))
     .read()
   debug_inspect(changed.contains(entity), content="true")
 }
@@ -75,8 +75,8 @@ test "ecs changed components: Mut::set emits changed event" {
   let entity = world.spawn()
 
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
   let maybe_mut = try! world.get_mut(entity, key=changed_marker_key)
   let item = match maybe_mut {
     Some(item) => item
@@ -85,7 +85,7 @@ test "ecs changed components: Mut::set emits changed event" {
   item.set(ChangedMarker::{ value: 9 })
 
   let changed = world
-    .changed_components(changed_marker_key, @core.SystemSequence::new(1, 2))
+    .changed_components(changed_marker_key, @core.SystemTicks::new(1, 2))
     .read()
   debug_inspect(changed.contains(entity), content="true")
 }
@@ -96,8 +96,8 @@ test "ecs changed components: Mut::modify marks changed on explicit mutation" {
   let entity = world.spawn()
 
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
   let maybe_mut = try! world.get_mut(entity, key=changed_marker_key)
   let item = match maybe_mut {
     Some(item) => item
@@ -106,7 +106,7 @@ test "ecs changed components: Mut::modify marks changed on explicit mutation" {
   item.modify(fn(value) { value.value = 11 })
 
   let changed = world
-    .changed_components(changed_marker_key, @core.SystemSequence::new(1, 2))
+    .changed_components(changed_marker_key, @core.SystemTicks::new(1, 2))
     .read()
   debug_inspect(changed.contains(entity), content="true")
 }
@@ -117,8 +117,8 @@ test "ecs changed components: Mut::value is read-only" {
   let entity = world.spawn()
 
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
   let maybe_mut = try! world.get_mut(entity, key=changed_marker_key)
   let item = match maybe_mut {
     Some(item) => item
@@ -127,7 +127,7 @@ test "ecs changed components: Mut::value is read-only" {
   debug_inspect(item.value(), content="{ value: 1 }")
 
   let changed = world
-    .changed_components(changed_marker_key, @core.SystemSequence::new(1, 2))
+    .changed_components(changed_marker_key, @core.SystemTicks::new(1, 2))
     .read()
   debug_inspect(changed.contains(entity), content="false")
 }

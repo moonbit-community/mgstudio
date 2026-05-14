@@ -15,7 +15,7 @@
 ///|
 test "ui: ContentSize drives auto measured size" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(
     @asset.Handle::new(1),

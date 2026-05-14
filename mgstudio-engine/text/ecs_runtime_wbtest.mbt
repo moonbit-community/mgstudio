@@ -34,14 +34,14 @@ fn reset_text_ecs_test_state() -> Unit {
 }
 
 ///|
-fn next_system_sequence(world : @ecs.World) -> @core.SystemSequence {
-  let this_run = world.advance_sequence()
-  let last_run = world.get_sequence_context().sequence().this_run
-  let sequence = @core.SystemSequence::new(last_run, this_run)
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(sequence)
-  world.set_sequence_context(ctx)
-  sequence
+fn next_system_ticks(world : @ecs.World) -> @core.SystemTicks {
+  let this_run = world.increment_change_tick()
+  let last_run = world.get_tick_context().ticks().this_run
+  let tick = @core.SystemTicks::new(last_run, this_run)
+  let ctx = @core.SystemTickContext::new()
+  ctx.set(tick)
+  world.set_tick_context(ctx)
+  tick
 }
 
 ///|
@@ -285,11 +285,9 @@ test "ecs text cleanup removes dead entity entries" {
 
   try! world.despawn(entity)
   let world_id = world.world_id()
-  let sequence = @core.SystemSequence::new(0, 1)
+  let tick = @core.SystemTicks::new(0, 1)
   let index_by_entity_id = text_ecs_build_entry_index_by_entity_id(world_id)
-  text_ecs_cleanup_removed_entries(
-    world, world_id, sequence, index_by_entity_id,
-  )
+  text_ecs_cleanup_removed_entries(world, world_id, tick, index_by_entity_id)
 
   debug_inspect(text_ecs_entries.length(), content="0")
 }
@@ -353,7 +351,7 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   .entity_mut(entity)
   .insert_component(@transform.Transform::identity())
   |> ignore)
-  ignore(next_system_sequence(world))
+  ignore(next_system_ticks(world))
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_view_visibility,
@@ -366,7 +364,7 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   text_render_system(world)
   debug_inspect(text_diagnostic_render_visible_text_count(), content="0")
 
-  ignore(next_system_sequence(world))
+  ignore(next_system_ticks(world))
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_view_visibility,

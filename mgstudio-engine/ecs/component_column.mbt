@@ -127,20 +127,20 @@ pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row_unchecked(
 pub fn[T] ComponentTableColumn::is_changed_at_row(
   self : ComponentTableColumn[T],
   row_index : Int,
-  system_sequence : @core.SystemSequence,
+  system_ticks : @core.SystemTicks,
 ) -> Bool {
-  match self.column.val.changed_sequence_at_row(row_index) {
-    Some(sequence) => system_sequence.contains(sequence)
+  match self.column.val.changed_tick_at_row(row_index) {
+    Some(tick) => system_ticks.contains(tick)
     None => false
   }
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentTableColumn::set_sequence_only_hot_at_row(
+pub fn[T : EcsPayloadCodec] ComponentTableColumn::set_tick_only_hot_at_row(
   self : ComponentTableColumn[T],
   row_index : Int,
   value : T,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
 ) -> Bool {
   guard row_index >= 0 else { return false }
   guard self.column.val.replace_typed_payload_at_row(
@@ -149,7 +149,7 @@ pub fn[T : EcsPayloadCodec] ComponentTableColumn::set_sequence_only_hot_at_row(
   ) else {
     return false
   }
-  ignore(self.column.val.record_changed_at_row(row_index, sequence, None))
+  ignore(self.column.val.record_changed_at_row(row_index, tick, None))
   true
 }
 
@@ -157,10 +157,10 @@ pub fn[T : EcsPayloadCodec] ComponentTableColumn::set_sequence_only_hot_at_row(
 pub fn[T] ComponentTableColumn::record_changed_at_row(
   self : ComponentTableColumn[T],
   row_index : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
 ) -> Bool {
   guard row_index >= 0 else { return false }
-  ignore(self.column.val.record_changed_at_row(row_index, sequence, None))
+  ignore(self.column.val.record_changed_at_row(row_index, tick, None))
   true
 }
 
@@ -419,14 +419,14 @@ pub fn[T] ComponentColumn::table_value_in_cached_values_at_entity_row(
 }
 
 ///|
-pub fn[T] ComponentColumn::table_changed_sequence_at_row(
+pub fn[T] ComponentColumn::table_changed_tick_at_row(
   self : ComponentColumn[T],
   table_id : Int,
   row_index : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   guard self.storage_type == Table else { return None }
   guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
-  column_ref.val.changed_sequence_at_row(row_index)
+  column_ref.val.changed_tick_at_row(row_index)
 }
 
 ///|
@@ -434,10 +434,10 @@ pub fn[T] ComponentColumn::table_is_changed_at_row(
   self : ComponentColumn[T],
   table_id : Int,
   row_index : Int,
-  system_sequence : @core.SystemSequence,
+  system_ticks : @core.SystemTicks,
 ) -> Bool {
-  match self.table_changed_sequence_at_row(table_id, row_index) {
-    Some(sequence) => system_sequence.contains(sequence)
+  match self.table_changed_tick_at_row(table_id, row_index) {
+    Some(tick) => system_ticks.contains(tick)
     None => false
   }
 }
@@ -448,7 +448,7 @@ pub fn[T] ComponentColumn::table_is_changed_at_entity_row(
   entity : @core.Entity,
   table_id : Int,
   row_index : Int,
-  system_sequence : @core.SystemSequence,
+  system_ticks : @core.SystemTicks,
 ) -> Bool? {
   guard self.storage_type == Table else { return None }
   guard TableRow::from_index(row_index) is Some(row) else { return None }
@@ -459,13 +459,13 @@ pub fn[T] ComponentColumn::table_is_changed_at_entity_row(
     return None
   }
   guard row_entity.to_bits() == entity.to_bits() else { return None }
-  Some(self.table_is_changed_at_row(table_id, row_index, system_sequence))
+  Some(self.table_is_changed_at_row(table_id, row_index, system_ticks))
 }
 
 ///|
 pub fn[T] ComponentColumn::for_each_changed_table_entity(
   self : ComponentColumn[T],
-  system_sequence : @core.SystemSequence,
+  system_ticks : @core.SystemTicks,
   visit : (@core.Entity, Int, Int) -> Bool,
 ) -> Bool {
   guard self.storage_type == Table else { return true }
@@ -474,8 +474,8 @@ pub fn[T] ComponentColumn::for_each_changed_table_entity(
     guard self.table_column_ref(table_id) is Some(column_ref) else { continue }
     let row_count = table_ref.val.row_count()
     for row_index in 0..<row_count {
-      let changed = match column_ref.val.changed_sequence_at_row(row_index) {
-        Some(sequence) => system_sequence.contains(sequence)
+      let changed = match column_ref.val.changed_tick_at_row(row_index) {
+        Some(tick) => system_ticks.contains(tick)
         None => false
       }
       if !changed {
@@ -928,7 +928,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
   self : ComponentColumn[T],
   second : ComponentColumn[U],
   third : ComponentColumn[V],
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   visit : (@core.Entity, Int, Int, T, U, V) -> Bool,
 ) -> Unit {
   if self.world.world_id != second.world.world_id ||
@@ -1028,7 +1028,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
           entity, table_id, row_index, first_value, second_value, third_value,
         ) {
         ignore(
-          third_column_ref.val.record_changed_at_row(row_index, sequence, None),
+          third_column_ref.val.record_changed_at_row(row_index, tick, None),
         )
       }
     }
@@ -1452,23 +1452,23 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set(
   entity : @core.Entity,
   value : T,
 ) -> Bool {
-  if !self.set_sequence_only(entity, value) {
+  if !self.set_tick_only(entity, value) {
     return false
   }
   self.world.ensure_changed_component_messages(self.key.id()).val.send(
-    component_write_sequence(self.world),
+    component_write_tick(self.world),
     entity,
   )
   true
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
 ) -> Bool {
-  let sequence = component_write_sequence(self.world)
+  let tick = component_write_tick(self.world)
   match self.world.pending_component_payload_context {
     Some(context) =>
       if context.entity_id == entity.id &&
@@ -1481,7 +1481,7 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only(
           self.world.record_pending_component_changed_metadata(
             entity,
             self.local_component_id,
-            sequence,
+            tick,
             None,
           ),
         )
@@ -1500,7 +1500,7 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only(
             self.world.record_sparse_component_changed_by_local_id(
               entity,
               self.local_component_id,
-              sequence,
+              tick,
               None,
             ),
           )
@@ -1532,7 +1532,7 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only(
         table_ref.val.record_changed_at_row(
           row,
           self.local_component_id,
-          sequence,
+          tick,
           None,
         ),
       )
@@ -1542,12 +1542,12 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_fast(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_fast(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
 ) -> Bool {
-  let sequence = component_write_sequence(self.world)
+  let tick = component_write_tick(self.world)
   match self.storage_type {
     SparseSet =>
       match self.world.sparse_component_columns.get(self.local_component_id) {
@@ -1559,7 +1559,7 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_fast(
             self.world.record_sparse_component_changed_by_local_id(
               entity,
               self.local_component_id,
-              sequence,
+              tick,
               None,
             ),
           )
@@ -1586,19 +1586,19 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_fast(
       ) else {
         return false
       }
-      ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
+      ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
       true
     }
   }
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
 ) -> Bool {
-  let sequence = component_write_sequence(self.world)
+  let tick = component_write_tick(self.world)
   match self.storage_type {
     SparseSet =>
       match self.world.sparse_component_columns.get(self.local_component_id) {
@@ -1610,7 +1610,7 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot(
             self.world.record_sparse_component_changed_by_local_id(
               entity,
               self.local_component_id,
-              sequence,
+              tick,
               None,
             ),
           )
@@ -1637,20 +1637,20 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot(
       ) else {
         return false
       }
-      ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
+      ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
       true
     }
   }
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_row(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_row(
   self : ComponentColumn[T],
   entity : @core.Entity,
   values : Array[T],
   row_index : Int,
   value : T,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
 ) -> Bool {
   guard self.storage_type == Table else { return false }
   if row_index < 0 || row_index >= values.length() {
@@ -1672,18 +1672,18 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_row(
   ) else {
     return false
   }
-  ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
+  ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
   true
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_table_row(
   self : ComponentColumn[T],
   table_id : Int,
   values : Array[T],
   row_index : Int,
   value : T,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
 ) -> Bool {
   guard self.storage_type == Table else { return false }
   if row_index < 0 || row_index >= values.length() {
@@ -1700,17 +1700,17 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row(
   ) else {
     return false
   }
-  ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
+  ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
   true
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row_value(
+pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_table_row_value(
   self : ComponentColumn[T],
   table_id : Int,
   row_index : Int,
   value : T,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
 ) -> Bool {
   guard self.storage_type == Table else { return false }
   guard table_id >= 0 && row_index >= 0 else { return false }
@@ -1723,7 +1723,7 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_sequence_only_hot_at_table_row_
   ) else {
     return false
   }
-  ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
+  ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
   true
 }
 
@@ -1732,13 +1732,13 @@ pub fn[T] ComponentColumn::record_changed_hot_at_table_row(
   self : ComponentColumn[T],
   table_id : Int,
   row_index : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
 ) -> Bool {
   guard self.storage_type == Table else { return false }
   guard table_id >= 0 && row_index >= 0 else { return false }
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  ignore(column_ref.val.record_changed_at_row(row_index, sequence, None))
+  ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
   true
 }

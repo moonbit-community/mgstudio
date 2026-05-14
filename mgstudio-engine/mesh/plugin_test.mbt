@@ -86,10 +86,10 @@ test "mesh plugin: modified SkinnedMeshInverseBindposes marks SkinnedMesh change
   )
   let entity = world.spawn()
   try! world.set(entity, SkinnedMesh::new(inverse_bindposes_handle, []))
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
 
-  let before = world.read_sequence()
+  let before = world.read_change_tick()
   debug_inspect(
     inverse_bindposes_assets_mut_or_abort(world).modify(fn(assets) {
       assets.set(
@@ -106,12 +106,12 @@ test "mesh plugin: modified SkinnedMeshInverseBindposes marks SkinnedMesh change
   )
   app = app.update()
 
-  let after = app.world().read_sequence()
+  let after = app.world().read_change_tick()
   let changed = app
     .world()
     .changed_components(
       ecs_key_skinned_mesh,
-      @core.SystemSequence::new(before, after),
+      @core.SystemTicks::new(before, after),
     )
     .read()
   debug_inspect(changed.contains(entity), content="true")
@@ -132,17 +132,17 @@ test "mesh plugin: non-modified SkinnedMeshInverseBindposes does not mark Skinne
   )
   let entity = world.spawn()
   try! world.set(entity, SkinnedMesh::new(inverse_bindposes_handle, []))
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
 
-  let before = world.read_sequence()
+  let before = world.read_change_tick()
   app = app.update()
-  let after = app.world().read_sequence()
+  let after = app.world().read_change_tick()
   let changed = app
     .world()
     .changed_components(
       ecs_key_skinned_mesh,
-      @core.SystemSequence::new(before, after),
+      @core.SystemTicks::new(before, after),
     )
     .read()
   debug_inspect(changed.contains(entity), content="false")
@@ -159,10 +159,10 @@ test "mesh plugin: modified Mesh marks Mesh2d changed" {
   })
   let entity = world.spawn()
   try! world.set(entity, Mesh2d::new(mesh_handle))
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
 
-  let before = world.read_sequence()
+  let before = world.read_change_tick()
   debug_inspect(
     mesh_assets_mut_or_abort(world).modify(fn(assets) {
       assets.set(mesh_handle, test_mesh2d_asset(12.0F, 8.0F))
@@ -171,13 +171,10 @@ test "mesh plugin: modified Mesh marks Mesh2d changed" {
   )
   app = app.update()
 
-  let after = app.world().read_sequence()
+  let after = app.world().read_change_tick()
   let changed = app
     .world()
-    .changed_components(
-      ecs_key_mesh2d,
-      @core.SystemSequence::new(before, after),
-    )
+    .changed_components(ecs_key_mesh2d, @core.SystemTicks::new(before, after))
     .read()
   debug_inspect(changed.contains(entity), content="true")
 }
@@ -193,18 +190,15 @@ test "mesh plugin: non-modified Mesh does not mark Mesh2d changed" {
   })
   let entity = world.spawn()
   try! world.set(entity, Mesh2d::new(mesh_handle))
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
 
-  let before = world.read_sequence()
+  let before = world.read_change_tick()
   app = app.update()
-  let after = app.world().read_sequence()
+  let after = app.world().read_change_tick()
   let changed = app
     .world()
-    .changed_components(
-      ecs_key_mesh2d,
-      @core.SystemSequence::new(before, after),
-    )
+    .changed_components(ecs_key_mesh2d, @core.SystemTicks::new(before, after))
     .read()
   debug_inspect(changed.contains(entity), content="false")
 }

@@ -31,7 +31,7 @@ fn run_systems(
   let sets_with_conditions_of_systems = schedule.sets_with_conditions_of_systems
   let systems_in_sets_with_conditions = schedule.systems_in_sets_with_conditions
   let timeline_enabled = timeline_trace_enabled()
-  current_system_sequence_ref.val = None
+  current_system_ticks_ref.val = None
   current_world_ref.val = None
   let stepping_ref = stepping_resource_mut(world)
   stepping_prepare_stage(stepping_ref, stage, systems, execution_order)
@@ -119,24 +119,24 @@ fn run_systems(
     let mut matches = true
     for cond_i in 0..<run_conditions_ref.val.run_ifs.length() {
       let cond = run_conditions_ref.val.run_ifs[cond_i]
-      let cond_this_run = world.advance_sequence()
-      let cond_ticks = @core.SystemSequence::new(
-        run_conditions_ref.val.run_if_last_run_sequences[cond_i],
+      let cond_this_run = world.increment_change_tick()
+      let cond_ticks = @core.SystemTicks::new(
+        run_conditions_ref.val.run_if_last_run_ticks[cond_i],
         cond_this_run,
       )
-      let cond_ctx = world.get_sequence_context()
+      let cond_ctx = world.get_tick_context()
       cond_ctx.set(cond_ticks)
-      world.set_sequence_context(cond_ctx)
+      world.set_tick_context(cond_ctx)
       let prev_world = current_world_ref.val
       current_world_ref.val = Some(world)
-      current_system_sequence_ref.val = Some(cond_ticks)
+      current_system_ticks_ref.val = Some(cond_ticks)
       let cond_result = cond(
         world,
         run_conditions_ref.val.run_if_states[cond_i],
       )
-      current_system_sequence_ref.val = None
+      current_system_ticks_ref.val = None
       current_world_ref.val = prev_world
-      run_conditions_ref.val.run_if_last_run_sequences[cond_i] = cond_this_run
+      run_conditions_ref.val.run_if_last_run_ticks[cond_i] = cond_this_run
       matches = matches && cond_result
     }
     set_run_if_results[set_i] = matches
@@ -178,21 +178,21 @@ fn run_systems(
           let conditions = system_conditions[system_i]
           for cond_i in 0..<conditions.run_ifs.length() {
             let cond = conditions.run_ifs[cond_i]
-            let cond_this_run = world.advance_sequence()
-            let cond_ticks = @core.SystemSequence::new(
-              conditions.run_if_last_run_sequences[cond_i],
+            let cond_this_run = world.increment_change_tick()
+            let cond_ticks = @core.SystemTicks::new(
+              conditions.run_if_last_run_ticks[cond_i],
               cond_this_run,
             )
-            let cond_ctx = world.get_sequence_context()
+            let cond_ctx = world.get_tick_context()
             cond_ctx.set(cond_ticks)
-            world.set_sequence_context(cond_ctx)
+            world.set_tick_context(cond_ctx)
             let prev_world = current_world_ref.val
             current_world_ref.val = Some(world)
-            current_system_sequence_ref.val = Some(cond_ticks)
+            current_system_ticks_ref.val = Some(cond_ticks)
             let should_run = cond(world, conditions.run_if_states[cond_i])
-            current_system_sequence_ref.val = None
+            current_system_ticks_ref.val = None
             current_world_ref.val = prev_world
-            conditions.run_if_last_run_sequences[cond_i] = cond_this_run
+            conditions.run_if_last_run_ticks[cond_i] = cond_this_run
             should_run_system = should_run_system && should_run
           }
         }
@@ -232,25 +232,22 @@ fn run_systems(
         }
 
         // Align with Bevy: increment global change tick once per executed system
-        // and expose SystemSequence via World-backed context for change detection.
-        let this_run = world.advance_sequence()
-        let sys_ticks = @core.SystemSequence::new(
-          cfg.last_run_sequence,
-          this_run,
-        )
-        let ctx = world.get_sequence_context()
+        // and expose SystemTicks via World-backed context for change detection.
+        let this_run = world.increment_change_tick()
+        let sys_ticks = @core.SystemTicks::new(cfg.last_run_tick, this_run)
+        let ctx = world.get_tick_context()
         ctx.set(sys_ticks)
-        world.set_sequence_context(ctx)
+        world.set_tick_context(ctx)
         let prev_world = current_world_ref.val
         current_world_ref.val = Some(world)
-        let prev_ticks = current_system_sequence_ref.val
-        current_system_sequence_ref.val = Some(sys_ticks)
+        let prev_ticks = current_system_ticks_ref.val
+        current_system_ticks_ref.val = Some(sys_ticks)
         let prev_outcome = current_system_execution_outcome()
         reset_system_execution_outcome()
         (cfg.system)(world)
         let outcome = current_system_execution_outcome()
         current_system_execution_outcome_ref.val = prev_outcome
-        current_system_sequence_ref.val = prev_ticks
+        current_system_ticks_ref.val = prev_ticks
         current_world_ref.val = prev_world
         match outcome {
           Success => {
@@ -261,7 +258,7 @@ fn run_systems(
                 system_trace_start_us,
               )
             }
-            systems[system_i].last_run_sequence = this_run
+            systems[system_i].last_run_tick = this_run
             executor_state.mark_unapplied(system_i)
             stepping_record_system_run(
               stepping_ref, stage, systems, node, execution_i,
@@ -295,7 +292,7 @@ fn run_systems(
                 system_trace_start_us,
               )
             }
-            systems[system_i].last_run_sequence = this_run
+            systems[system_i].last_run_tick = this_run
             executor_state.mark_unapplied(system_i)
             stepping_record_system_run(
               stepping_ref, stage, systems, node, execution_i,

@@ -57,9 +57,7 @@ test "ecs component column: cached table values write through raw column" {
   debug_inspect(values[table_row.index()], content="{ x: 1 }")
 
   ignore(
-    component_column.set_sequence_only(entity, ComponentColumnCacheValue::{
-      x: 2,
-    }),
+    component_column.set_tick_only(entity, ComponentColumnCacheValue::{ x: 2 }),
   )
 
   guard world.table_storage(table_id) is Some(table_ref) else {

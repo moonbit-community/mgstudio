@@ -26,29 +26,29 @@ type EntityObserverRegistrar = (@ecs.World, @core.Entity, ObserverRunner) -> Uni
 ///|
 pub fn run_registered_observer_system(
   world : @ecs.World,
-  last_run_sequence_ref : Ref[@core.Sequence],
+  last_run_tick_ref : Ref[@core.Tick],
   observer_system : SystemFn[@ecs.World],
   context_kind? : ErrorContextKind = ErrorContextKind::Observer,
   source? : String = "<observer>",
 ) -> Unit {
-  let this_run = world.advance_sequence()
-  let sys_ticks = @core.SystemSequence::new(last_run_sequence_ref.val, this_run)
-  let ctx = world.get_sequence_context()
+  let this_run = world.increment_change_tick()
+  let sys_ticks = @core.SystemTicks::new(last_run_tick_ref.val, this_run)
+  let ctx = world.get_tick_context()
   ctx.set(sys_ticks)
-  world.set_sequence_context(ctx)
+  world.set_tick_context(ctx)
   let previous_world = current_world_ref.val
-  let previous_sequence = current_system_sequence_ref.val
+  let previous_tick = current_system_ticks_ref.val
   let previous_outcome = current_system_execution_outcome()
   current_world_ref.val = Some(world)
-  current_system_sequence_ref.val = Some(sys_ticks)
+  current_system_ticks_ref.val = Some(sys_ticks)
   reset_system_execution_outcome()
   observer_system(world)
   let outcome = current_system_execution_outcome()
   current_system_execution_outcome_ref.val = previous_outcome
-  current_system_sequence_ref.val = previous_sequence
+  current_system_ticks_ref.val = previous_tick
   current_world_ref.val = previous_world
   match outcome {
-    Success => last_run_sequence_ref.val = this_run
+    Success => last_run_tick_ref.val = this_run
     Skipped(_) => ()
     Invalid(message) =>
       report_world_error(
@@ -61,7 +61,7 @@ pub fn run_registered_observer_system(
         ),
       )
     Error(err) => {
-      last_run_sequence_ref.val = this_run
+      last_run_tick_ref.val = this_run
       report_world_error(
         world,
         err,
@@ -79,11 +79,11 @@ fn register_observer_system_in_sub_app(
   system : SystemFn[@ecs.World],
 ) -> SubApp[@ecs.World] {
   let observer_system = system
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
+  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
   register(sub_app, fn(world : @ecs.World) {
     run_registered_observer_system(
       world,
-      last_run_sequence_ref,
+      last_run_tick_ref,
       observer_system,
       source~,
     )
@@ -99,14 +99,14 @@ fn register_entity_observer_command(
 ) -> EntityCommands {
   let entity = entity_commands.entity
   entity_commands.commands.queue.push({
-    run: fn(world : @ecs.World, _sequence : @core.Sequence) {
+    run: fn(world : @ecs.World, _tick : @core.Tick) {
       guard world.is_alive(entity) else { return }
       let observer_system = system
-      let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
+      let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
       register(world, entity, fn(observer_world : @ecs.World) {
         run_registered_observer_system(
           observer_world,
-          last_run_sequence_ref,
+          last_run_tick_ref,
           observer_system,
           source~,
         )
@@ -423,12 +423,12 @@ pub fn[E : @ecs.TriggerEvent] observe_entity(
   observer : (@ecs.On[E]) -> Unit,
 ) -> Unit {
   let observer_system = system_param(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
+  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_sequence_ref,
+        last_run_tick_ref,
         observer_system,
         source="observe_entity",
       )
@@ -443,12 +443,12 @@ pub fn[E : @ecs.TriggerEvent] observe_entity_fallible(
   observer : (@ecs.On[E]) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
+  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_sequence_ref,
+        last_run_tick_ref,
         observer_system,
         source="observe_entity_fallible",
       )
@@ -463,12 +463,12 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] observe_entity2(
   observer : (@ecs.On[E], P2) -> Unit,
 ) -> Unit {
   let observer_system = system_param2(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
+  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_sequence_ref,
+        last_run_tick_ref,
         observer_system,
         source="observe_entity2",
       )
@@ -483,12 +483,12 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] observe_entity2_fallible(
   observer : (@ecs.On[E], P2) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param2(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
+  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_sequence_ref,
+        last_run_tick_ref,
         observer_system,
         source="observe_entity2_fallible",
       )
@@ -503,12 +503,12 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] observe_entity
   observer : (@ecs.On[E], P2, P3) -> Unit,
 ) -> Unit {
   let observer_system = system_param3(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
+  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_sequence_ref,
+        last_run_tick_ref,
         observer_system,
         source="observe_entity3",
       )
@@ -523,12 +523,12 @@ pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] observe_entity
   observer : (@ecs.On[E], P2, P3) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param3(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
+  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_sequence_ref,
+        last_run_tick_ref,
         observer_system,
         source="observe_entity3_fallible",
       )
@@ -548,12 +548,12 @@ pub fn[
   observer : (@ecs.On[E], P2, P3, P4) -> Unit,
 ) -> Unit {
   let observer_system = system_param4(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
+  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_sequence_ref,
+        last_run_tick_ref,
         observer_system,
         source="observe_entity4",
       )
@@ -573,12 +573,12 @@ pub fn[
   observer : (@ecs.On[E], P2, P3, P4) -> Unit raise,
 ) -> Unit {
   let observer_system = fallible_system_param4(observer)
-  let last_run_sequence_ref : Ref[@core.Sequence] = Ref(0)
+  let last_run_tick_ref : Ref[@core.Tick] = Ref(0)
   ignore(
     world.add_entity_observer(entity, fn(_event : @ecs.On[E]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_sequence_ref,
+        last_run_tick_ref,
         observer_system,
         source="observe_entity4_fallible",
       )

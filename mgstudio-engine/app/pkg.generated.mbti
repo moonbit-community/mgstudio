@@ -40,7 +40,7 @@ pub fn clear_timeline_trace_span_sink() -> Unit
 
 pub fn current_schedule_stage() -> ScheduleStage?
 
-pub fn current_system_sequence() -> @core.SystemSequence
+pub fn current_system_ticks() -> @core.SystemTicks
 
 pub fn current_world() -> @ecs.World?
 
@@ -229,7 +229,7 @@ pub fn run_fixed_schedules_with_config(@ecs.World, FixedSchedulePropagationConfi
 
 pub fn run_fixed_update_schedule(@ecs.World) -> Unit
 
-pub fn run_registered_observer_system(@ecs.World, @ref.Ref[Int], (@ecs.World) -> Unit, context_kind? : ErrorContextKind, source? : String) -> Unit
+pub fn run_registered_observer_system(@ecs.World, @ref.Ref[Int64], (@ecs.World) -> Unit, context_kind? : ErrorContextKind, source? : String) -> Unit
 
 pub fn run_system(@ecs.World, SystemId) -> Unit raise
 
@@ -604,7 +604,7 @@ pub(all) struct CheckParentHasComponentPayload {
 
 pub struct Commands {
   world : @ecs.World
-  sequence : Int
+  tick : Int64
   queue : Array[DeferredCommandEntry]
 }
 pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
@@ -633,7 +633,7 @@ pub fn[E : @ecs.TriggerEvent] Commands::trigger(Self, E) -> Unit
 pub impl SystemParam for Commands
 
 pub struct DeferredCommandEntry {
-  run : (@ecs.World, Int) -> Unit raise
+  run : (@ecs.World, Int64) -> Unit raise
   error_handler : ((Error, ErrorContext) -> Unit)?
   source : String
 }
@@ -1012,24 +1012,24 @@ pub struct Res[T] {
   world : @ecs.World?
   key_id : Int?
 }
-pub fn[T : Resource] Res::added(Self[T]) -> Int
+pub fn[T : Resource] Res::added(Self[T]) -> Int64
 pub fn[T : Resource] Res::changed_by(Self[T]) -> String?
 pub fn[T] Res::get(Self[T]) -> T
 pub fn[T : Resource] Res::is_added(Self[T]) -> Bool
 pub fn[T : Resource] Res::is_changed(Self[T]) -> Bool
-pub fn[T : Resource] Res::last_changed(Self[T]) -> Int
+pub fn[T : Resource] Res::last_changed(Self[T]) -> Int64
 pub impl[T : Resource] SystemParam for Res[T]
 
 pub struct ResMut[T] {
   world : @ecs.World?
   key : @ecs.ResourceKey[T]?
 }
-pub fn[T : Resource] ResMut::added(Self[T]) -> Int
+pub fn[T : Resource] ResMut::added(Self[T]) -> Int64
 pub fn[T : Resource] ResMut::changed_by(Self[T]) -> String?
 pub fn[T : Resource] ResMut::get(Self[T]) -> T
 pub fn[T : Resource] ResMut::is_added(Self[T]) -> Bool
 pub fn[T : Resource] ResMut::is_changed(Self[T]) -> Bool
-pub fn[T : Resource] ResMut::last_changed(Self[T]) -> Int
+pub fn[T : Resource] ResMut::last_changed(Self[T]) -> Int64
 #callsite(autofill(loc))
 pub fn[T : Resource, R] ResMut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
 pub fn[T : Resource] ResMut::peek(Self[T]) -> T
@@ -1304,8 +1304,8 @@ pub struct SystemConfig[W] {
   before_ignore_deferred : Array[String]
   after_ignore_deferred : Array[String]
   is_apply_deferred_node : Bool
-  run_if_last_run_sequences : Array[Int]
-  mut last_run_sequence : Int
+  run_if_last_run_ticks : Array[Int64]
+  mut last_run_tick : Int64
   mut access_factory : ((@ecs.World) -> SystemAccess)?
 }
 pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]
@@ -1422,7 +1422,7 @@ pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.W
 pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
 
 pub(open) trait CommandSpawnComponents {
-  spawn_components(Self, @ecs.World, @core.Entity, Int, loc~ : SourceLoc) -> Unit raise @ecs.EcsError
+  spawn_components(Self, @ecs.World, @core.Entity, Int64, loc~ : SourceLoc) -> Unit raise @ecs.EcsError
 }
 pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (A, B)
 pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpawnComponents for (A, B, C)

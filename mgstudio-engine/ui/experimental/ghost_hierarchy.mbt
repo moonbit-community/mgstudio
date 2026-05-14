@@ -120,13 +120,13 @@ pub fn UiChildren::iter_ghost_nodes(
 
 ///|
 pub fn UiChildren::is_changed(self : UiChildren, entity : @core.Entity) -> Bool {
-  let sequence = self.world.get_sequence_context().sequence()
-  if self.world.is_changed_by_key(entity, @hierarchy.ecs_key_children, sequence) {
+  let tick = self.world.get_tick_context().ticks()
+  if self.world.is_changed_by_key(entity, @hierarchy.ecs_key_children, tick) {
     return true
   }
   for ghost_entity in self.iter_ghost_nodes(entity) {
     if self.world.is_changed_by_key(
-        ghost_entity, @hierarchy.ecs_key_children, sequence,
+        ghost_entity, @hierarchy.ecs_key_children, tick,
       ) {
       return true
     }

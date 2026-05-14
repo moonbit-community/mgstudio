@@ -395,15 +395,15 @@ test "app: run_if skips system execution" {
 }
 
 ///|
-test "app: run_if evaluates with condition system sequence" {
-  let observed : Array[(Int, Int)] = []
+test "app: run_if evaluates with condition system tick" {
+  let observed : Array[(@core.Tick, @core.Tick)] = []
   let system_ran = Ref(false)
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { system_ran.val = true }).run_if(fn(
       _world : @ecs.World,
     ) {
-      let sequence = current_system_sequence()
-      observed.push((sequence.last_run, sequence.this_run))
+      let tick = current_system_ticks()
+      observed.push((tick.last_run, tick.this_run))
       false
     }),
   )
@@ -1160,7 +1160,7 @@ impl SystemParam for Param6 with store(self, _state) {
 
 ///|
 struct SequenceParam {
-  sequence : @core.SystemSequence
+  tick : @core.SystemTicks
 }
 
 ///|
@@ -1170,7 +1170,7 @@ impl SystemParam for SequenceParam with init_state(_world) {
 
 ///|
 impl SystemParam for SequenceParam with get(_state) {
-  { sequence: current_system_sequence() }
+  { tick: current_system_ticks() }
 }
 
 ///|
@@ -1282,15 +1282,15 @@ test "app: system_param6 injects parameters in order" {
 }
 
 ///|
-test "app: system param can read current system sequence" {
-  let log : Array[(Int, Int)] = []
+test "app: system param can read current system tick" {
+  let log : Array[(@core.Tick, @core.Tick)] = []
   let app = App::new(@ecs.World::new())
   app
   .add_system_param(fn(param : SequenceParam) {
-    log.push((param.sequence.last_run, param.sequence.this_run))
+    log.push((param.tick.last_run, param.tick.this_run))
   })
   .add_system_param(fn(param : SequenceParam) {
-    log.push((param.sequence.last_run, param.sequence.this_run))
+    log.push((param.tick.last_run, param.tick.this_run))
   })
   .run_once()
   |> ignore

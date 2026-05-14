@@ -225,12 +225,12 @@ fn ensure_render_visibility_ranges_resource(world : @ecs.World) -> Unit {
 fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
   ensure_render_visibility_ranges_resource(render_world)
   let main_world = @render.render_source_world(render_world)
-  let system_sequence = @app.current_system_sequence()
+  let system_ticks = @app.current_system_ticks()
   let changed_ranges = main_world.changed_components(
-    @root_visibility.ecs_key_visibility_range, system_sequence,
+    @root_visibility.ecs_key_visibility_range, system_ticks,
   )
   let removed_ranges = main_world.removed_components(
-    @root_visibility.ecs_key_visibility_range, system_sequence,
+    @root_visibility.ecs_key_visibility_range, system_ticks,
   )
   let ranges = match
     (try! render_world.get_resource_mut(ecs_key_render_visibility_ranges)) {

@@ -283,14 +283,14 @@ priv struct ScheduleExecutionPlan[W] {
 priv struct ScheduleSetRunConditions[W] {
   run_ifs : Array[StatefulRunConditionFn[W]]
   run_if_states : Array[Ref[Json]]
-  run_if_last_run_sequences : Array[@core.Sequence]
+  run_if_last_run_ticks : Array[@core.Tick]
 }
 
 ///|
 priv struct ScheduleSystemRunConditions[W] {
   run_ifs : Array[StatefulRunConditionFn[W]]
   run_if_states : Array[Ref[Json]]
-  run_if_last_run_sequences : Array[@core.Sequence]
+  run_if_last_run_ticks : Array[@core.Tick]
 }
 
 ///|
@@ -1639,11 +1639,11 @@ fn[W] schedule_system_run_conditions_from_config(
   for state in config.run_if_states {
     run_if_states.push(state)
   }
-  let run_if_last_run_sequences : Array[@core.Sequence] = []
-  for sequence in config.run_if_last_run_sequences {
-    run_if_last_run_sequences.push(sequence)
+  let run_if_last_run_ticks : Array[@core.Tick] = []
+  for tick in config.run_if_last_run_ticks {
+    run_if_last_run_ticks.push(tick)
   }
-  { run_ifs, run_if_states, run_if_last_run_sequences }
+  { run_ifs, run_if_states, run_if_last_run_ticks }
 }
 
 ///|
@@ -1653,8 +1653,7 @@ fn[W] schedule_system_conditions_compatible(
 ) -> Bool {
   left.run_ifs.length() == right.run_ifs.length() &&
   left.run_if_states.length() == right.run_if_states.length() &&
-  left.run_if_last_run_sequences.length() ==
-  right.run_if_last_run_sequences.length()
+  left.run_if_last_run_ticks.length() == right.run_if_last_run_ticks.length()
 }
 
 ///|
@@ -1955,7 +1954,7 @@ fn[W] schedule_build_access_plan(
     let source_system_i = execution_system_ids[execution_i]
     for previous_i in 0..<previous_schedule.system_ids.length() {
       if previous_schedule.system_ids[previous_i] == source_system_i {
-        execution_systems[execution_i].last_run_sequence = previous_schedule.systems[previous_i].last_run_sequence
+        execution_systems[execution_i].last_run_tick = previous_schedule.systems[previous_i].last_run_tick
         if previous_i < previous_schedule.system_conditions.length() &&
           schedule_system_conditions_compatible(
             execution_system_conditions[execution_i],
@@ -2240,12 +2239,12 @@ fn[W] schedule_chain_inherit_config(
   for set in wrapper.after_ignore_deferred {
     after_ignore_deferred.push(set)
   }
-  let run_if_last_run_sequences : Array[@core.Sequence] = []
-  for sequence in child.run_if_last_run_sequences {
-    run_if_last_run_sequences.push(sequence)
+  let run_if_last_run_ticks : Array[@core.Tick] = []
+  for tick in child.run_if_last_run_ticks {
+    run_if_last_run_ticks.push(tick)
   }
-  for _ in wrapper.run_if_last_run_sequences {
-    run_if_last_run_sequences.push(0)
+  for _ in wrapper.run_if_last_run_ticks {
+    run_if_last_run_ticks.push(0)
   }
   SystemConfig::{
     ..child,
@@ -2257,7 +2256,7 @@ fn[W] schedule_chain_inherit_config(
     after,
     before_ignore_deferred,
     after_ignore_deferred,
-    run_if_last_run_sequences,
+    run_if_last_run_ticks,
   }
 }
 
@@ -2291,7 +2290,7 @@ fn[W] schedule_push_config(
         ..config,
         run_ifs: [],
         run_if_states: [],
-        run_if_last_run_sequences: [],
+        run_if_last_run_ticks: [],
       }
       schedule_collect_expanded_chain_members(
         config_without_collective_conditions, expanded_members,
@@ -2329,15 +2328,15 @@ fn[W] schedule_push_config(
         }
         let run_ifs : Array[StatefulRunConditionFn[W]] = []
         let run_if_states : Array[Ref[Json]] = []
-        let run_if_last_run_sequences : Array[@core.Sequence] = []
+        let run_if_last_run_ticks : Array[@core.Tick] = []
         for cond in child_config.run_ifs {
           run_ifs.push(cond)
         }
         for state in child_config.run_if_states {
           run_if_states.push(state)
         }
-        for sequence in child_config.run_if_last_run_sequences {
-          run_if_last_run_sequences.push(sequence)
+        for tick in child_config.run_if_last_run_ticks {
+          run_if_last_run_ticks.push(tick)
         }
         if expanded_members.length() == 1 {
           for cond in config.run_ifs {
@@ -2346,8 +2345,8 @@ fn[W] schedule_push_config(
           for state in config.run_if_states {
             run_if_states.push(state)
           }
-          for sequence in config.run_if_last_run_sequences {
-            run_if_last_run_sequences.push(sequence)
+          for tick in config.run_if_last_run_ticks {
+            run_if_last_run_ticks.push(tick)
           }
         }
         let normalized_member = SystemConfig::{
@@ -2356,7 +2355,7 @@ fn[W] schedule_push_config(
           member_sets,
           run_ifs,
           run_if_states,
-          run_if_last_run_sequences,
+          run_if_last_run_ticks,
         }
         normalized_members.push(normalized_member)
         entry_ref.val.graph.systems.push(normalized_member)
@@ -2369,7 +2368,7 @@ fn[W] schedule_push_config(
               condition_set,
               config.run_ifs,
               config.run_if_states,
-              config.run_if_last_run_sequences,
+              config.run_if_last_run_ticks,
             ),
           )
           graph_changed_ref.val = true
@@ -2472,7 +2471,7 @@ fn[W] schedule_configure_set_run_conditions(
       let created_ref = Ref(ScheduleSetRunConditions::{
         run_ifs: [],
         run_if_states: [],
-        run_if_last_run_sequences: [],
+        run_if_last_run_ticks: [],
       })
       schedule_entry.graph.set_run_conditions.set(set, created_ref)
       created_ref
@@ -2483,13 +2482,13 @@ fn[W] schedule_configure_set_run_conditions(
       cond(world)
     })
     run_conditions_ref.val.run_if_states.push(Ref(Json::null()))
-    run_conditions_ref.val.run_if_last_run_sequences.push(0)
+    run_conditions_ref.val.run_if_last_run_ticks.push(0)
   }
   for entry in set_run_if_statefuls {
     let (init_state, cond) = entry
     run_conditions_ref.val.run_ifs.push(cond)
     run_conditions_ref.val.run_if_states.push(Ref(init_state))
-    run_conditions_ref.val.run_if_last_run_sequences.push(0)
+    run_conditions_ref.val.run_if_last_run_ticks.push(0)
   }
   true
 }
@@ -2500,7 +2499,7 @@ fn[W] schedule_configure_set_run_conditions_from_refs(
   set : SystemSet,
   run_ifs : Array[StatefulRunConditionFn[W]],
   run_if_states : Array[Ref[Json]],
-  run_if_last_run_sequences : Array[@core.Sequence],
+  run_if_last_run_ticks : Array[@core.Tick],
 ) -> Bool {
   guard run_ifs.length() > 0 else { return false }
   let run_conditions_ref = match
@@ -2510,7 +2509,7 @@ fn[W] schedule_configure_set_run_conditions_from_refs(
       let created_ref = Ref(ScheduleSetRunConditions::{
         run_ifs: [],
         run_if_states: [],
-        run_if_last_run_sequences: [],
+        run_if_last_run_ticks: [],
       })
       schedule_entry.graph.set_run_conditions.set(set, created_ref)
       created_ref
@@ -2522,8 +2521,8 @@ fn[W] schedule_configure_set_run_conditions_from_refs(
   for state in run_if_states {
     run_conditions_ref.val.run_if_states.push(state)
   }
-  for sequence in run_if_last_run_sequences {
-    run_conditions_ref.val.run_if_last_run_sequences.push(sequence)
+  for tick in run_if_last_run_ticks {
+    run_conditions_ref.val.run_if_last_run_ticks.push(tick)
   }
   true
 }

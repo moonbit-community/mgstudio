@@ -25,12 +25,12 @@ pub struct QueryState[_, F] {
   priv mut cached_matching_archetype_bits : @utils.IntBitSet
   priv mut cached_matching_archetype_generation : Int
   priv mut cached_matching_entities_generation : Int
-  priv mut cached_matching_entities_sequence : Int
+  priv mut cached_matching_entities_tick : Int
   priv mut cached_matching_anchor_component_id : Int?
   priv mut cached_matching_filter_anchor_component_id : Int?
   priv mut cached_matching_candidate_anchor_component_id : Int?
   priv mut cached_matching_generation : Int
-  priv mut cached_matching_sequence : Int
+  priv mut cached_matching_tick : Int
   priv mut cached_matching_entities_valid : Bool
   priv mut cached_matching_tables : Array[Int]
   priv mut cached_matching_table_bits : @utils.IntBitSet
@@ -57,12 +57,12 @@ pub struct QueryCache {
   priv mut cached_matching_archetype_bits : @utils.IntBitSet
   priv mut cached_matching_archetype_generation : Int
   priv mut cached_matching_entities_generation : Int
-  priv mut cached_matching_entities_sequence : Int
+  priv mut cached_matching_entities_tick : Int
   priv mut cached_matching_anchor_component_id : Int?
   priv mut cached_matching_filter_anchor_component_id : Int?
   priv mut cached_matching_candidate_anchor_component_id : Int?
   priv mut cached_matching_generation : Int
-  priv mut cached_matching_sequence : Int
+  priv mut cached_matching_tick : Int
   priv mut cached_matching_entities_valid : Bool
   priv mut cached_matching_tables : Array[Int]
   priv mut cached_matching_table_bits : @utils.IntBitSet
@@ -89,12 +89,12 @@ pub struct QueryCacheSnapshot {
   priv cached_matching_archetype_bits : @utils.IntBitSet
   priv cached_matching_archetype_generation : Int
   priv cached_matching_entities_generation : Int
-  priv cached_matching_entities_sequence : Int
+  priv cached_matching_entities_tick : Int
   priv cached_matching_anchor_component_id : Int?
   priv cached_matching_filter_anchor_component_id : Int?
   priv cached_matching_candidate_anchor_component_id : Int?
   priv cached_matching_generation : Int
-  priv cached_matching_sequence : Int
+  priv cached_matching_tick : Int
   priv cached_matching_entities_valid : Bool
   priv cached_matching_tables : Array[Int]
   priv cached_matching_table_bits : @utils.IntBitSet
@@ -159,10 +159,10 @@ pub fn QueryCacheSnapshot::cached_matching_entities_generation(
 }
 
 ///|
-pub fn QueryCacheSnapshot::cached_matching_entities_sequence(
+pub fn QueryCacheSnapshot::cached_matching_entities_tick(
   self : QueryCacheSnapshot,
 ) -> Int {
-  self.cached_matching_entities_sequence
+  self.cached_matching_entities_tick
 }
 
 ///|
@@ -218,12 +218,12 @@ fn QueryCache::snapshot(self : QueryCache) -> QueryCacheSnapshot {
     cached_matching_archetype_bits: self.cached_matching_archetype_bits,
     cached_matching_archetype_generation: self.cached_matching_archetype_generation,
     cached_matching_entities_generation: self.cached_matching_entities_generation,
-    cached_matching_entities_sequence: self.cached_matching_entities_sequence,
+    cached_matching_entities_tick: self.cached_matching_entities_tick,
     cached_matching_anchor_component_id: self.cached_matching_anchor_component_id,
     cached_matching_filter_anchor_component_id: self.cached_matching_filter_anchor_component_id,
     cached_matching_candidate_anchor_component_id: self.cached_matching_candidate_anchor_component_id,
     cached_matching_generation: self.cached_matching_generation,
-    cached_matching_sequence: self.cached_matching_sequence,
+    cached_matching_tick: self.cached_matching_tick,
     cached_matching_entities_valid: self.cached_matching_entities_valid,
     cached_matching_tables: self.cached_matching_tables,
     cached_matching_table_bits: self.cached_matching_table_bits,
@@ -375,12 +375,12 @@ pub fn QueryCache::new() -> QueryCache {
     cached_matching_archetype_bits: @utils.IntBitSet::new(),
     cached_matching_archetype_generation: -1,
     cached_matching_entities_generation: -1,
-    cached_matching_entities_sequence: -1,
+    cached_matching_entities_tick: -1,
     cached_matching_anchor_component_id: None,
     cached_matching_filter_anchor_component_id: None,
     cached_matching_candidate_anchor_component_id: None,
     cached_matching_generation: -1,
-    cached_matching_sequence: -1,
+    cached_matching_tick: -1,
     cached_matching_entities_valid: false,
     cached_matching_tables: [],
     cached_matching_table_bits: @utils.IntBitSet::new(),
@@ -445,12 +445,12 @@ fn[D, F] query_state_new(filter : F) -> QueryState[D, F] {
     cached_matching_archetype_bits: @utils.IntBitSet::new(),
     cached_matching_archetype_generation: -1,
     cached_matching_entities_generation: -1,
-    cached_matching_entities_sequence: -1,
+    cached_matching_entities_tick: -1,
     cached_matching_anchor_component_id: None,
     cached_matching_filter_anchor_component_id: None,
     cached_matching_candidate_anchor_component_id: None,
     cached_matching_generation: -1,
-    cached_matching_sequence: -1,
+    cached_matching_tick: -1,
     cached_matching_entities_valid: false,
     cached_matching_tables: [],
     cached_matching_table_bits: @utils.IntBitSet::new(),
@@ -481,12 +481,12 @@ pub fn[D, F] QueryState::cache_snapshot(
     cached_matching_archetype_bits: self.cached_matching_archetype_bits,
     cached_matching_archetype_generation: self.cached_matching_archetype_generation,
     cached_matching_entities_generation: self.cached_matching_entities_generation,
-    cached_matching_entities_sequence: self.cached_matching_entities_sequence,
+    cached_matching_entities_tick: self.cached_matching_entities_tick,
     cached_matching_anchor_component_id: self.cached_matching_anchor_component_id,
     cached_matching_filter_anchor_component_id: self.cached_matching_filter_anchor_component_id,
     cached_matching_candidate_anchor_component_id: self.cached_matching_candidate_anchor_component_id,
     cached_matching_generation: self.cached_matching_generation,
-    cached_matching_sequence: self.cached_matching_sequence,
+    cached_matching_tick: self.cached_matching_tick,
     cached_matching_entities_valid: self.cached_matching_entities_valid,
     cached_matching_tables: self.cached_matching_tables,
     cached_matching_table_bits: self.cached_matching_table_bits,
@@ -1294,21 +1294,14 @@ fn[F : QueryFilter] QueryCache::query_matching_entities(
   let matching_entities_generation = query_dependency_generation(
     world, dependency_component_ids,
   )
-  let depends_on_sequence = QueryFilter::depends_on_sequence(filter)
-  let sequence_marker = if depends_on_sequence {
-    query_sequence_marker(world)
-  } else {
-    -1
-  }
+  let depends_on_ticks = QueryFilter::depends_on_ticks(filter)
+  let tick_marker = if depends_on_ticks { query_tick_marker(world) } else { -1 }
   let entity_cache_reusable = !data_requires_entity_check &&
     self.cached_matching_entities_valid &&
     self.cached_matching_entities_generation == matching_entities_generation &&
     self.cached_matching_generation == matching_entities_generation &&
-    self.cached_matching_sequence == sequence_marker &&
-    (
-      !depends_on_sequence ||
-      self.cached_matching_entities_sequence == sequence_marker
-    )
+    self.cached_matching_tick == tick_marker &&
+    (!depends_on_ticks || self.cached_matching_entities_tick == tick_marker)
   if entity_cache_reusable {
     return self.cached_matching_entities
   }
@@ -1337,9 +1330,9 @@ fn[F : QueryFilter] QueryCache::query_matching_entities(
   self.cached_matching_entities = matched_entities
   self.cached_matching_entities_valid = true
   self.cached_matching_entities_generation = matching_entities_generation
-  self.cached_matching_entities_sequence = sequence_marker
+  self.cached_matching_entities_tick = tick_marker
   self.cached_matching_generation = matching_entities_generation
-  self.cached_matching_sequence = sequence_marker
+  self.cached_matching_tick = tick_marker
   self.cached_matching_entities
 }
 
@@ -1644,9 +1637,9 @@ fn query_dependency_generation(
 }
 
 ///|
-fn query_sequence_marker(world : World) -> Int {
-  let sequence = world.get_sequence_context().sequence()
-  sequence.last_run * 1_000_003 + sequence.this_run
+fn query_tick_marker(world : World) -> Int {
+  let ticks = world.get_tick_context().ticks()
+  (ticks.last_run * 1_000_003 + ticks.this_run).to_int()
 }
 
 ///|
@@ -2065,21 +2058,14 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_entities(
   let matching_entities_generation = query_dependency_generation(
     world, dependency_component_ids,
   )
-  let depends_on_sequence = QueryFilter::depends_on_sequence(self.filter)
-  let sequence_marker = if depends_on_sequence {
-    query_sequence_marker(world)
-  } else {
-    -1
-  }
+  let depends_on_ticks = QueryFilter::depends_on_ticks(self.filter)
+  let tick_marker = if depends_on_ticks { query_tick_marker(world) } else { -1 }
   let entity_cache_reusable = !data_requires_entity_check &&
     self.cached_matching_entities_valid &&
     self.cached_matching_entities_generation == matching_entities_generation &&
     self.cached_matching_generation == matching_entities_generation &&
-    self.cached_matching_sequence == sequence_marker &&
-    (
-      !depends_on_sequence ||
-      self.cached_matching_entities_sequence == sequence_marker
-    )
+    self.cached_matching_tick == tick_marker &&
+    (!depends_on_ticks || self.cached_matching_entities_tick == tick_marker)
   if entity_cache_reusable {
     return self.cached_matching_entities
   }
@@ -2108,9 +2094,9 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_entities(
   self.cached_matching_entities = matched_entities
   self.cached_matching_entities_valid = true
   self.cached_matching_entities_generation = matching_entities_generation
-  self.cached_matching_entities_sequence = sequence_marker
+  self.cached_matching_entities_tick = tick_marker
   self.cached_matching_generation = matching_entities_generation
-  self.cached_matching_sequence = sequence_marker
+  self.cached_matching_tick = tick_marker
   self.cached_matching_entities
 }
 

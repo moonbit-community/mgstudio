@@ -13,8 +13,8 @@
 // limitations under the License.
 
 ///|
-fn seed_ui_context_for_implicit_root_test(world : @ecs.World) -> Int {
-  let tick = world.advance_sequence()
+fn seed_ui_context_for_implicit_root_test(world : @ecs.World) -> @core.Tick {
+  let tick = world.increment_change_tick()
   ignore(tick)
   get_ui_context_resource(world).insert(
     UiContext::new(

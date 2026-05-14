@@ -71,18 +71,18 @@ fn skin_test_set_local_x(
 }
 
 ///|
-fn skin_test_set_sequence(
+fn skin_test_set_ticks(
   world : @ecs.World,
-  last_run : Int,
-  this_run : Int,
+  last_run : @core.Tick,
+  this_run : @core.Tick,
 ) -> Unit {
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(last_run, this_run))
-  world.set_sequence_context(ctx)
+  let ctx = @core.SystemTickContext::new()
+  ctx.set(@core.SystemTicks::new(last_run, this_run))
+  world.set_tick_context(ctx)
 }
 
 ///|
-fn skin_test_set_global_x_sequence_only(
+fn skin_test_set_global_x_tick_only(
   world : @ecs.World,
   entity : @core.Entity,
   x : Float,
@@ -93,7 +93,7 @@ fn skin_test_set_global_x_sequence_only(
     None => abort("missing GlobalTransform column")
   }
   ignore(
-    column.set_sequence_only_hot(
+    column.set_tick_only_hot(
       entity,
       @transform.GlobalTransform::from_transform(
         @transform.Transform::from_xyz(x, 0.0F, 0.0F),
@@ -263,15 +263,15 @@ test "pbr render skin: invisible changed skin frees allocation" {
   try! world.set(skin_entity, @mesh.SkinnedMesh::new(handle, [joint]))
   let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
   let world_transform_cache_ref = render3d_world_transform_cache_ref(world)
-  skin_test_set_sequence(world, 0, 1)
+  skin_test_set_ticks(world, 0, 1)
   render3d_extract_skin_bindings(
     world, skin_uniforms_ref, world_transform_cache_ref,
   )
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
 
   try! world.set(skin_entity, @visibility.ViewVisibility::new(false))
-  skin_test_set_sequence(world, 1, 2)
+  skin_test_set_ticks(world, 1, 2)
   render3d_extract_skin_bindings(
     world, skin_uniforms_ref, world_transform_cache_ref,
   )
@@ -315,15 +315,15 @@ test "pbr render skin: dirty joint extraction updates only mapped skins" {
   )
   let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
   let world_transform_cache_ref = render3d_world_transform_cache_ref(world)
-  skin_test_set_sequence(world, 0, 1)
+  skin_test_set_ticks(world, 0, 1)
   render3d_extract_skin_bindings(
     world, skin_uniforms_ref, world_transform_cache_ref,
   )
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
 
   skin_test_set_global_x(world, skin_a_joint_0, 4.0F)
-  skin_test_set_sequence(world, 1, 2)
+  skin_test_set_ticks(world, 1, 2)
   render3d_extract_skin_bindings(
     world, skin_uniforms_ref, world_transform_cache_ref,
   )
@@ -346,15 +346,15 @@ test "pbr render skin: dirty joint extraction uses tick metadata without changed
   try! world.set(skin_entity, @mesh.SkinnedMesh::new(handle, [joint]))
   let skin_uniforms_ref = skin_uniforms_ref_or_abort(world)
   let world_transform_cache_ref = render3d_world_transform_cache_ref(world)
-  skin_test_set_sequence(world, 0, 1)
+  skin_test_set_ticks(world, 0, 1)
   render3d_extract_skin_bindings(
     world, skin_uniforms_ref, world_transform_cache_ref,
   )
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
 
-  skin_test_set_global_x_sequence_only(world, joint, 6.0F)
-  skin_test_set_sequence(world, 1, 2)
+  skin_test_set_global_x_tick_only(world, joint, 6.0F)
+  skin_test_set_ticks(world, 1, 2)
   render3d_extract_skin_bindings(
     world, skin_uniforms_ref, world_transform_cache_ref,
   )
@@ -362,7 +362,7 @@ test "pbr render skin: dirty joint extraction uses tick metadata without changed
   let changed_messages = world
     .changed_components(
       @transform.ecs_key_global_transform,
-      @core.SystemSequence::new(1, 2),
+      @core.SystemTicks::new(1, 2),
     )
     .read()
   let rows = skin_uniforms_ref.val.current_staging_buffer

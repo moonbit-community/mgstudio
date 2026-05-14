@@ -115,7 +115,7 @@ fn visit_descendants(
 
 ///|
 fn move_scene_entities(world : @ecs.World) -> Unit {
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   let elapsed = match
     (try! world.get_resource(@time.default_time_resource_key())) {
     Some(time) => time.elapsed_secs()

@@ -158,7 +158,7 @@ pub impl @ecs.QueryFilter for QueryMarkerFilter with iteration_anchor_component(
 }
 
 ///|
-pub impl @ecs.QueryFilter for QueryMarkerFilter with depends_on_sequence(self) {
+pub impl @ecs.QueryFilter for QueryMarkerFilter with depends_on_ticks(self) {
   ignore(self)
   false
 }

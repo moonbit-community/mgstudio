@@ -54,7 +54,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let root = world.spawn_empty()
   try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())

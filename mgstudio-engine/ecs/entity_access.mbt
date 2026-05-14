@@ -205,7 +205,7 @@ pub fn[T] Mut::is_added(self : Mut[T]) -> Bool {
   world.is_added_by_local_id(
     mut_entity_or_abort(self),
     mut_local_component_id_or_abort(self),
-    world.get_sequence_context().sequence(),
+    world.get_tick_context().ticks(),
   )
 }
 
@@ -215,33 +215,33 @@ pub fn[T] Mut::is_changed(self : Mut[T]) -> Bool {
   world.is_changed_by_local_id(
     mut_entity_or_abort(self),
     mut_local_component_id_or_abort(self),
-    world.get_sequence_context().sequence(),
+    world.get_tick_context().ticks(),
   )
 }
 
 ///|
-pub fn[T] Mut::added(self : Mut[T]) -> @core.Sequence {
+pub fn[T] Mut::added(self : Mut[T]) -> @core.Tick {
   let world = mut_world_or_abort(self)
   match
-    world.added_component_sequence_by_local_id(
+    world.added_component_tick_by_local_id(
       mut_local_component_id_or_abort(self),
       mut_entity_or_abort(self).id,
     ) {
-    Some(sequence) => sequence
-    None => abort("Mut::added expected component sequence metadata")
+    Some(tick) => tick
+    None => abort("Mut::added expected component tick metadata")
   }
 }
 
 ///|
-pub fn[T] Mut::last_changed(self : Mut[T]) -> @core.Sequence {
+pub fn[T] Mut::last_changed(self : Mut[T]) -> @core.Tick {
   let world = mut_world_or_abort(self)
   match
-    world.changed_component_sequence_by_local_id(
+    world.changed_component_tick_by_local_id(
       mut_local_component_id_or_abort(self),
       mut_entity_or_abort(self).id,
     ) {
-    Some(sequence) => sequence
-    None => abort("Mut::last_changed expected component sequence metadata")
+    Some(tick) => tick
+    None => abort("Mut::last_changed expected component tick metadata")
   }
 }
 
@@ -271,7 +271,7 @@ pub fn[T : Component] Mut::set_added(self : Mut[T], loc~ : SourceLoc) -> Unit {
   let caller = hook_caller_from_loc(loc)
   world.record_component_added_with_caller(entity, key_id, caller)
   world.ensure_added_component_messages(key_id).val.send(
-    component_write_sequence(world),
+    component_write_tick(world),
     entity,
   )
   world.record_component_changed_with_caller(entity, key_id, caller)

@@ -126,7 +126,7 @@ fn setup(world : @ecs.World) -> Unit {
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
-  let camera_tick = world.read_sequence()
+  let camera_tick = world.read_change_tick()
   ignore(camera_tick)
   try! world.set_by_key(
     overlay_camera,

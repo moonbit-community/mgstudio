@@ -200,33 +200,36 @@ pub(all) suberror EcsError {
 ///|
 struct ResourceSlot {
   mut payload : EcsPayload
-  mut added_sequence : @core.Sequence?
-  mut changed_sequence : @core.Sequence?
+  mut added_tick : @core.Tick?
+  mut changed_tick : @core.Tick?
   mut changed_caller : String?
 }
 
 ///|
 struct ComponentTickMetadata {
-  added_sequence : @core.Sequence?
-  changed_sequence : @core.Sequence?
+  added_tick : @core.Tick?
+  changed_tick : @core.Tick?
   changed_caller : String?
 }
 
 ///|
 fn component_tick_metadata_empty() -> ComponentTickMetadata {
-  { added_sequence: None, changed_sequence: None, changed_caller: None }
+  { added_tick: None, changed_tick: None, changed_caller: None }
 }
 
 ///|
 fn component_tick_metadata_with_added(
   previous : ComponentTickMetadata?,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> ComponentTickMetadata {
   let previous = previous.unwrap_or(component_tick_metadata_empty())
   {
-    added_sequence: Some(sequence),
-    changed_sequence: previous.changed_sequence,
+    added_tick: Some(tick),
+    changed_tick: match previous.changed_tick {
+      Some(changed_tick) => Some(changed_tick)
+      None => Some(tick)
+    },
     changed_caller: caller,
   }
 }
@@ -234,14 +237,32 @@ fn component_tick_metadata_with_added(
 ///|
 fn component_tick_metadata_with_changed(
   previous : ComponentTickMetadata?,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> ComponentTickMetadata {
   let previous = previous.unwrap_or(component_tick_metadata_empty())
   {
-    added_sequence: previous.added_sequence,
-    changed_sequence: Some(sequence),
+    added_tick: previous.added_tick,
+    changed_tick: Some(tick),
     changed_caller: caller,
+  }
+}
+
+///|
+fn component_tick_metadata_check_ticks(
+  metadata : ComponentTickMetadata,
+  present_tick : @core.Tick,
+) -> ComponentTickMetadata {
+  {
+    added_tick: match metadata.added_tick {
+      Some(tick) => Some(@core.tick_check(tick, present_tick))
+      None => None
+    },
+    changed_tick: match metadata.changed_tick {
+      Some(tick) => Some(@core.tick_check(tick, present_tick))
+      None => None
+    },
+    changed_caller: metadata.changed_caller,
   }
 }
 
@@ -380,8 +401,9 @@ pub struct World {
   priv mut current_component_observer_context : ComponentObserverContext?
   priv mut current_trigger_observer_context : TriggerObserverContext?
   priv entities : @core.Entities
-  priv mut sequence : @core.Sequence
-  priv mut system_context : @core.SystemSequenceContext
+  priv mut change_tick : @core.Tick
+  priv mut last_change_tick_check : @core.Tick
+  priv mut system_tick_context : @core.SystemTickContext
   priv mut pending_component_payload_context : PendingComponentPayloadContext?
   priv mut active_query_iteration_count : Int
   priv tables : Map[Int, Ref[RawTable]]
@@ -457,8 +479,9 @@ pub fn World::new() -> World {
     current_component_observer_context: None,
     current_trigger_observer_context: None,
     entities: @core.Entities::new(),
-    sequence: 0,
-    system_context: @core.SystemSequenceContext::new(),
+    change_tick: 0,
+    last_change_tick_check: 0,
+    system_tick_context: @core.SystemTickContext::new(),
     pending_component_payload_context: None,
     active_query_iteration_count: 0,
     tables: {},
@@ -596,10 +619,10 @@ pub fn World::despawn(
     }
     self.run_remove_observers(entity, key_id)
     self.ensure_removed_component_messages(key_id).val.send(
-      component_write_sequence(self),
+      component_write_tick(self),
       entity,
     )
-    self.clear_component_sequence_records(entity, key_id)
+    self.clear_component_tick_records(entity, key_id)
   }
   self.end_deferred_hook_command_scope(outermost)
 }
@@ -692,10 +715,10 @@ pub fn[T] World::remove_by_key(
   self.mark_structure_changed()
   self.run_remove_observers(entity, key.id())
   self.ensure_removed_component_messages(key.id()).val.send(
-    component_write_sequence(self),
+    component_write_tick(self),
     entity,
   )
-  self.clear_component_sequence_records(entity, key.id())
+  self.clear_component_tick_records(entity, key.id())
   self.end_deferred_hook_command_scope(outermost)
   true
 }
@@ -929,7 +952,7 @@ fn World::record_pending_component_added_metadata(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> Bool {
   match self.pending_component_payload_context {
@@ -940,7 +963,7 @@ fn World::record_pending_component_added_metadata(
           local_component_id,
           component_tick_metadata_with_added(
             context.payloads.metadata(local_component_id),
-            sequence,
+            tick,
             caller,
           ),
         )
@@ -957,7 +980,7 @@ fn World::record_pending_component_changed_metadata(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> Bool {
   match self.pending_component_payload_context {
@@ -968,7 +991,7 @@ fn World::record_pending_component_changed_metadata(
           local_component_id,
           component_tick_metadata_with_changed(
             context.payloads.metadata(local_component_id),
-            sequence,
+            tick,
             caller,
           ),
         )
@@ -987,23 +1010,23 @@ fn World::record_component_added_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
-  let sequence = component_write_sequence(self)
+  let tick = component_write_tick(self)
   let local_id = self.ensure_component_registered(key_id)
   let recorded = match self.local_component_storage_type(local_id) {
     Some(Table) =>
       self.record_table_component_added_by_local_id(
-        entity, local_id, sequence, caller,
+        entity, local_id, tick, caller,
       )
     Some(SparseSet) =>
       self.record_sparse_component_added_by_local_id(
-        entity, local_id, sequence, caller,
+        entity, local_id, tick, caller,
       )
     None => false
   }
   if !recorded {
     ignore(
       self.record_pending_component_added_metadata(
-        entity, local_id, sequence, caller,
+        entity, local_id, tick, caller,
       ),
     )
   }
@@ -1016,46 +1039,44 @@ fn World::record_component_changed_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
-  self.record_component_changed_sequence_only_with_caller(
-    entity, key_id, caller,
-  )
+  self.record_component_changed_tick_only_with_caller(entity, key_id, caller)
   self.ensure_changed_component_messages(key_id).val.send(
-    component_write_sequence(self),
+    component_write_tick(self),
     entity,
   )
 }
 
 ///|
-fn World::record_component_changed_sequence_only_with_caller(
+fn World::record_component_changed_tick_only_with_caller(
   self : World,
   entity : @core.Entity,
   key_id : Int,
   caller : String?,
 ) -> Unit {
-  let sequence = component_write_sequence(self)
+  let tick = component_write_tick(self)
   let local_id = self.ensure_component_registered(key_id)
   let recorded = match self.local_component_storage_type(local_id) {
     Some(Table) =>
       self.record_table_component_changed_by_local_id(
-        entity, local_id, sequence, caller,
+        entity, local_id, tick, caller,
       )
     Some(SparseSet) =>
       self.record_sparse_component_changed_by_local_id(
-        entity, local_id, sequence, caller,
+        entity, local_id, tick, caller,
       )
     None => false
   }
   if !recorded {
     ignore(
       self.record_pending_component_changed_metadata(
-        entity, local_id, sequence, caller,
+        entity, local_id, tick, caller,
       ),
     )
   }
 }
 
 ///|
-fn World::clear_component_sequence_records(
+fn World::clear_component_tick_records(
   self : World,
   entity : @core.Entity,
   key_id : Int,
@@ -1090,7 +1111,11 @@ fn World::record_resource_added_with_caller(
   caller : String?,
 ) -> Unit {
   guard self.resources.get(key_id) is Some(slot) else { return }
-  slot.added_sequence = Some(resource_write_sequence(self))
+  let tick = resource_write_tick(self)
+  slot.added_tick = Some(tick)
+  if slot.changed_tick is None {
+    slot.changed_tick = Some(tick)
+  }
   slot.changed_caller = caller
 }
 
@@ -1101,28 +1126,25 @@ fn World::record_resource_changed_with_caller(
   caller : String?,
 ) -> Unit {
   guard self.resources.get(key_id) is Some(slot) else { return }
-  slot.changed_sequence = Some(resource_write_sequence(self))
+  slot.changed_tick = Some(resource_write_tick(self))
   slot.changed_caller = caller
 }
 
 ///|
-fn World::resource_added_sequence(
-  self : World,
-  key_id : Int,
-) -> @core.Sequence? {
+fn World::resource_added_tick_by_id(self : World, key_id : Int) -> @core.Tick? {
   match self.resources.get(key_id) {
-    Some(slot) => slot.added_sequence
+    Some(slot) => slot.added_tick
     None => None
   }
 }
 
 ///|
-fn World::resource_changed_sequence(
+fn World::resource_changed_tick_by_id(
   self : World,
   key_id : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   match self.resources.get(key_id) {
-    Some(slot) => slot.changed_sequence
+    Some(slot) => slot.changed_tick
     None => None
   }
 }
@@ -1169,33 +1191,33 @@ fn World::added_component_messages(
 }
 
 ///|
-fn World::added_component_sequence(
+fn World::added_component_tick(
   self : World,
   key_id : Int,
   entity_id : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   guard self.local_component_id(key_id) is Some(local_id) else { return None }
-  self.added_component_sequence_by_local_id(local_id, entity_id)
+  self.added_component_tick_by_local_id(local_id, entity_id)
 }
 
 ///|
-fn World::added_component_sequence_by_local_id(
+fn World::added_component_tick_by_local_id(
   self : World,
   local_id : Int,
   entity_id : Int,
-) -> @core.Sequence? {
-  if self.table_component_added_sequence_by_local_id(entity_id, local_id)
-    is Some(sequence) {
-    return Some(sequence)
+) -> @core.Tick? {
+  if self.table_component_added_tick_by_local_id(entity_id, local_id)
+    is Some(tick) {
+    return Some(tick)
   }
   if self.alive_entity_by_id(entity_id) is Some(entity) {
-    if self.sparse_component_added_sequence_by_local_id(entity, local_id)
-      is Some(sequence) {
-      return Some(sequence)
+    if self.sparse_component_added_tick_by_local_id(entity, local_id)
+      is Some(tick) {
+      return Some(tick)
     }
   }
   match self.pending_component_tick_metadata(entity_id, local_id) {
-    Some(metadata) => metadata.added_sequence
+    Some(metadata) => metadata.added_tick
     None => None
   }
 }
@@ -1212,33 +1234,33 @@ fn World::changed_component_messages(
 }
 
 ///|
-fn World::changed_component_sequence(
+fn World::changed_component_tick(
   self : World,
   key_id : Int,
   entity_id : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   guard self.local_component_id(key_id) is Some(local_id) else { return None }
-  self.changed_component_sequence_by_local_id(local_id, entity_id)
+  self.changed_component_tick_by_local_id(local_id, entity_id)
 }
 
 ///|
-fn World::changed_component_sequence_by_local_id(
+fn World::changed_component_tick_by_local_id(
   self : World,
   local_id : Int,
   entity_id : Int,
-) -> @core.Sequence? {
-  if self.table_component_changed_sequence_by_local_id(entity_id, local_id)
-    is Some(sequence) {
-    return Some(sequence)
+) -> @core.Tick? {
+  if self.table_component_changed_tick_by_local_id(entity_id, local_id)
+    is Some(tick) {
+    return Some(tick)
   }
   if self.alive_entity_by_id(entity_id) is Some(entity) {
-    if self.sparse_component_changed_sequence_by_local_id(entity, local_id)
-      is Some(sequence) {
-      return Some(sequence)
+    if self.sparse_component_changed_tick_by_local_id(entity, local_id)
+      is Some(tick) {
+      return Some(tick)
     }
   }
   match self.pending_component_tick_metadata(entity_id, local_id) {
-    Some(metadata) => metadata.changed_sequence
+    Some(metadata) => metadata.changed_tick
     None => None
   }
 }
@@ -1274,32 +1296,80 @@ fn[T : EcsPayloadCodec] World::component_value(
 }
 
 ///|
-pub fn World::read_sequence(self : World) -> @core.Sequence {
-  self.sequence
+pub fn World::read_change_tick(self : World) -> @core.Tick {
+  self.change_tick
 }
 
 ///|
-pub fn World::advance_sequence(self : World) -> @core.Sequence {
-  self.sequence = self.sequence + 1
-  self.sequence
+pub fn World::increment_change_tick(self : World) -> @core.Tick {
+  self.change_tick = @core.tick_wrapping_add(self.change_tick, 1)
+  if @core.tick_relative_to(self.change_tick, self.last_change_tick_check) >=
+    @core.check_tick_threshold {
+    self.check_change_ticks()
+    self.last_change_tick_check = self.change_tick
+  }
+  self.change_tick
 }
 
 ///|
-pub fn World::get_sequence_context(self : World) -> @core.SystemSequenceContext {
-  self.system_context
+pub fn World::last_change_tick(self : World) -> @core.Tick {
+  self.system_tick_context.ticks().last_run
 }
 
 ///|
-pub fn World::set_sequence_context(
+pub fn World::change_tick(self : World) -> @core.Tick {
+  self.change_tick
+}
+
+///|
+pub fn World::get_tick_context(self : World) -> @core.SystemTickContext {
+  self.system_tick_context
+}
+
+///|
+pub fn World::set_tick_context(
   self : World,
-  ctx : @core.SystemSequenceContext,
+  ctx : @core.SystemTickContext,
 ) -> Unit {
-  self.system_context = ctx
+  self.system_tick_context = ctx
 }
 
 ///|
-fn component_write_sequence(world : World) -> @core.Sequence {
-  let tick = world.read_sequence()
+pub fn World::check_change_ticks(self : World) -> Unit {
+  let present_tick = self.read_change_tick()
+  for entry in self.resources.iter() {
+    let slot = entry.1
+    slot.added_tick = match slot.added_tick {
+      Some(tick) => Some(@core.tick_check(tick, present_tick))
+      None => None
+    }
+    slot.changed_tick = match slot.changed_tick {
+      Some(tick) => Some(@core.tick_check(tick, present_tick))
+      None => None
+    }
+  }
+  for entry in self.tables.iter() {
+    entry.1.val.check_change_ticks(present_tick)
+  }
+  for entry in self.sparse_component_metadata.iter() {
+    let metadata_store = entry.1.val
+    let len = metadata_store.len()
+    for index in 0..<len {
+      let entity = metadata_store.entity_at(index)
+      let metadata = metadata_store.value_at(index)
+      ignore(
+        metadata_store.set(
+          entity,
+          component_tick_metadata_check_ticks(metadata, present_tick),
+        ),
+      )
+    }
+  }
+}
+
+///|
+fn component_write_tick(world : World) -> @core.Tick {
+  let tick = world.read_change_tick()
   if tick > 0 {
     tick
   } else {
@@ -1308,8 +1378,8 @@ fn component_write_sequence(world : World) -> @core.Sequence {
 }
 
 ///|
-fn resource_write_sequence(world : World) -> @core.Sequence {
-  let tick = world.read_sequence()
+fn resource_write_tick(world : World) -> @core.Tick {
+  let tick = world.read_change_tick()
   if tick > 0 {
     tick
   } else {

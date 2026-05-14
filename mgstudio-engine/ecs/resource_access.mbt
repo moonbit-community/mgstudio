@@ -186,7 +186,7 @@ pub fn[T] ResourceMut::is_added(self : ResourceMut[T]) -> Bool {
   let world = resource_mut_world_or_abort(self)
   world.is_resource_added(
     resource_mut_key_or_abort(self),
-    world.get_sequence_context().sequence(),
+    world.get_tick_context().ticks(),
   )
 }
 
@@ -195,26 +195,25 @@ pub fn[T] ResourceMut::is_changed(self : ResourceMut[T]) -> Bool {
   let world = resource_mut_world_or_abort(self)
   world.is_resource_changed(
     resource_mut_key_or_abort(self),
-    world.get_sequence_context().sequence(),
+    world.get_tick_context().ticks(),
   )
 }
 
 ///|
-pub fn[T] ResourceMut::added(self : ResourceMut[T]) -> @core.Sequence {
+pub fn[T] ResourceMut::added(self : ResourceMut[T]) -> @core.Tick {
   let world = resource_mut_world_or_abort(self)
   match world.resource_added_tick(resource_mut_key_or_abort(self)) {
-    Some(sequence) => sequence
-    None => abort("ResourceMut::added expected resource sequence metadata")
+    Some(tick) => tick
+    None => abort("ResourceMut::added expected resource tick metadata")
   }
 }
 
 ///|
-pub fn[T] ResourceMut::last_changed(self : ResourceMut[T]) -> @core.Sequence {
+pub fn[T] ResourceMut::last_changed(self : ResourceMut[T]) -> @core.Tick {
   let world = resource_mut_world_or_abort(self)
   match world.resource_changed_tick(resource_mut_key_or_abort(self)) {
-    Some(sequence) => sequence
-    None =>
-      abort("ResourceMut::last_changed expected resource sequence metadata")
+    Some(tick) => tick
+    None => abort("ResourceMut::last_changed expected resource tick metadata")
   }
 }
 

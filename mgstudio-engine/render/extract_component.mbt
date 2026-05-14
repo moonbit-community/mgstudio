@@ -152,7 +152,7 @@ fn[C : @ecs.Component] extract_components(
       for entry in extracted_values {
         let render_entity = entry.0
         let component = entry.1
-        let wrote = column.set_sequence_only(render_entity, component)
+        let wrote = column.set_tick_only(render_entity, component)
         if !wrote {
           render_world.set_by_key(render_entity, component_key, component) catch {
             _ =>

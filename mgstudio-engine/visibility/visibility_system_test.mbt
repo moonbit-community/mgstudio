@@ -15,7 +15,7 @@
 ///|
 test "visibility: inherited child is hidden when parent is hidden" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let parent = world.spawn_empty()
   try! world.set_by_key(
@@ -62,7 +62,7 @@ test "visibility: inherited child is hidden when parent is hidden" {
 ///|
 test "visibility: Visible overrides hidden parent (bevy semantics)" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let parent = world.spawn_empty()
   try! world.set_by_key(
@@ -109,7 +109,7 @@ test "visibility: Visible overrides hidden parent (bevy semantics)" {
 ///|
 test "visibility: Inherited falls back to visible when parent lacks components" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let parent = world.spawn_empty()
   // Parent intentionally has no Visibility/InheritedVisibility/ViewVisibility.

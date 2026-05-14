@@ -40,7 +40,7 @@ pub fn[T : @ecs.EcsPayloadCodec] render3d_update_frusta_system_by_projection_key
   projection_key : @ecs.ComponentKey[T],
   compute_frustum : (T, @transform.Transform) -> Frustum,
 ) -> Unit {
-  let sequence = world.get_sequence_context().sequence()
+  let tick = world.get_tick_context().ticks()
   let processed = @hashset.HashSet([])
   fn entity_key(entity : @core.Entity) -> UInt64 {
     let hi = entity.id.reinterpret_as_uint().to_uint64()
@@ -72,7 +72,7 @@ pub fn[T : @ecs.EcsPayloadCodec] render3d_update_frusta_system_by_projection_key
   }
   for
     entity in world
-    .changed_components(@transform.ecs_key_transform, sequence)
+    .changed_components(@transform.ecs_key_transform, tick)
     .read() {
     let key = entity_key(entity)
     if processed.contains(key) {
@@ -81,7 +81,7 @@ pub fn[T : @ecs.EcsPayloadCodec] render3d_update_frusta_system_by_projection_key
     processed.add(key)
     update_entity(world, entity, projection_key, compute_frustum)
   }
-  for entity in world.changed_components(projection_key, sequence).read() {
+  for entity in world.changed_components(projection_key, tick).read() {
     let key = entity_key(entity)
     if processed.contains(key) {
       continue

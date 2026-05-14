@@ -15,7 +15,7 @@
 ///|
 fn pause_virtual_time_for_diagnostics_test(app : @app.App[@ecs.World]) -> Unit {
   let world = app.world()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let virtual_ref = try! world
     .get_resource_ref_mut(@time.virtual_time_resource_key())

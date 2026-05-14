@@ -29,7 +29,7 @@ fn seed_text_assets(world : @ecs.World) -> Unit {
 ///|
 test "ui: layout computes rect and camera-compensated transform" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
 
   // Seed UiContext to avoid any host texture calls in tests.
@@ -101,7 +101,7 @@ test "ui: layout computes rect and camera-compensated transform" {
 ///|
 test "ui: layout stores Bevy-style resolved node geometry" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   get_ui_context_resource(world).insert(
     UiContext::new(
@@ -209,7 +209,7 @@ test "ui: pointer conversion to viewport space" {
 ///|
 test "ui: hidden overflow axis ignores stale scroll offset" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
@@ -269,7 +269,7 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
 ///|
 test "ui: ghost node children layout as direct descendants" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
@@ -346,7 +346,7 @@ test "ui: ghost node children layout as direct descendants" {
 ///|
 test "ui: editable text transform stays in input content box and in front" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   seed_text_assets(world)
   let ctx = UiContext::new(
@@ -421,7 +421,7 @@ test "ui: editable text transform stays in input content box and in front" {
 ///|
 test "ui: editable status text renders in front of editable background (z-order)" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   seed_text_assets(world)
   let ctx = UiContext::new(
@@ -486,7 +486,7 @@ test "ui: editable status text renders in front of editable background (z-order)
 ///|
 test "ui: editable label node is laid out above input box node" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
@@ -560,7 +560,7 @@ test "ui: editable label node is laid out above input box node" {
 ///|
 test "ui: scroll panel text inherits clip rect from overflow parent" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   seed_text_assets(world)
   let ctx = UiContext::new(
@@ -648,7 +648,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
 ///|
 test "ui: panel text scissor stays above editable title block" {
   let world = @ecs.World::new()
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   seed_text_assets(world)
   let ctx = UiContext::new(

@@ -199,8 +199,8 @@ pub fn advance_transitions(world : @ecs.World) -> Unit {
   let delta_seconds = animation_default_time_or_default(world).delta_seconds()
   let transitions_column = world.component_column(ecs_key_animation_transitions)
   let player_column = world.component_column(ecs_key_animation_player)
-  let write_sequence : @core.Sequence = {
-    let tick = world.read_sequence()
+  let write_tick : @core.Tick = {
+    let tick = world.read_change_tick()
     if tick > 0 {
       tick
     } else {
@@ -220,12 +220,12 @@ pub fn advance_transitions(world : @ecs.World) -> Unit {
       if table_id >= 0 && row_index >= 0 {
         ignore(
           transitions_column.record_changed_hot_at_table_row(
-            table_id, row_index, write_sequence,
+            table_id, row_index, write_tick,
           ),
         )
         ignore(
           player_column.record_changed_hot_at_table_row(
-            table_id, row_index, write_sequence,
+            table_id, row_index, write_tick,
           ),
         )
       } else {
@@ -265,8 +265,8 @@ pub fn advance_transitions(world : @ecs.World) -> Unit {
 pub fn expire_completed_transitions(world : @ecs.World) -> Unit {
   let transitions_column = world.component_column(ecs_key_animation_transitions)
   let player_column = world.component_column(ecs_key_animation_player)
-  let write_sequence : @core.Sequence = {
-    let tick = world.read_sequence()
+  let write_tick : @core.Tick = {
+    let tick = world.read_change_tick()
     if tick > 0 {
       tick
     } else {
@@ -286,12 +286,12 @@ pub fn expire_completed_transitions(world : @ecs.World) -> Unit {
       if table_id >= 0 && row_index >= 0 {
         ignore(
           transitions_column.record_changed_hot_at_table_row(
-            table_id, row_index, write_sequence,
+            table_id, row_index, write_tick,
           ),
         )
         ignore(
           player_column.record_changed_hot_at_table_row(
-            table_id, row_index, write_sequence,
+            table_id, row_index, write_tick,
           ),
         )
       } else {

@@ -643,7 +643,7 @@ fn render3d_extract_joints(
   if skin_uniforms_ref.val.total_joints <= 0 {
     return
   }
-  let sequence = source_world.get_sequence_context().sequence()
+  let tick = source_world.get_tick_context().ticks()
   let threshold = skin_uniforms_ref.val.total_joints / 4
   let skinned_mesh_key = @mesh.SkinnedMesh::component()
   let dirty_skins : Map[UInt64, @core.Entity] = {}
@@ -652,7 +652,7 @@ fn render3d_extract_joints(
   match transform_columns.global {
     Some(global_column) =>
       ignore(
-        global_column.for_each_changed_table_entity(sequence, fn(
+        global_column.for_each_changed_table_entity(tick, fn(
           changed_entity,
           _table_id,
           _row_index,
@@ -681,7 +681,7 @@ fn render3d_extract_joints(
         let (joint_key, skins) = entry
         let joint_entity = @core.Entity::from_bits(joint_key)
         if !source_world.is_changed_by_key(
-            joint_entity, @transform.ecs_key_global_transform, sequence,
+            joint_entity, @transform.ecs_key_global_transform, tick,
           ) {
           continue
         }
@@ -755,9 +755,9 @@ pub fn render3d_extract_skin_bindings(
     source_world, skin_uniforms_ref, world_transform_cache_ref, inverse_bindposes_assets,
     transform_columns,
   )
-  let sequence = source_world.get_sequence_context().sequence()
+  let tick = source_world.get_tick_context().ticks()
   let removed_skinned_meshes = source_world.removed_components(
-    skinned_mesh_key, sequence,
+    skinned_mesh_key, tick,
   )
   for entity in removed_skinned_meshes.read() {
     if changed_skin_entities.contains(render3d_skin_entity_key(entity)) {

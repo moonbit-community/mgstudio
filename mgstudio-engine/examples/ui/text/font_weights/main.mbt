@@ -56,7 +56,7 @@ fn spawn_text_line(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   let asset_server = @asset.AssetServer::new()
   let variable_font = asset_server.load_font("fonts/MonaSans-VariableFont.ttf")
 

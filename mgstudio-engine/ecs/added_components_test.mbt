@@ -35,7 +35,7 @@ test "ecs added components: insert emits entity in tick range" {
   try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })
 
   let added = world
-    .added_components(added_marker_key, @core.SystemSequence::new(0, 1))
+    .added_components(added_marker_key, @core.SystemTicks::new(0, 1))
     .read()
   debug_inspect(added.length(), content="1")
   debug_inspect(added[0] == entity, content="true")
@@ -47,8 +47,8 @@ test "ecs added components: replace and update do not emit new add events" {
   let entity = world.spawn()
 
   try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
   debug_inspect(
     try! world.replace(entity, added_marker_key, AddedMarker::{ value: 2 }),
     content="true",
@@ -61,7 +61,7 @@ test "ecs added components: replace and update do not emit new add events" {
   )
 
   let added = world
-    .added_components(added_marker_key, @core.SystemSequence::new(1, 2))
+    .added_components(added_marker_key, @core.SystemTicks::new(1, 2))
     .read()
   debug_inspect(added.length(), content="0")
 }
@@ -72,16 +72,16 @@ test "ecs added components: remove then reinsert emits a fresh add event" {
   let entity = world.spawn()
 
   try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
   debug_inspect(
     try! world.remove_by_key(entity, added_marker_key),
     content="true",
   )
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
   try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 3 })
 
   let added = world
-    .added_components(added_marker_key, @core.SystemSequence::new(1, 2))
+    .added_components(added_marker_key, @core.SystemTicks::new(1, 2))
     .read()
   debug_inspect(added.length(), content="1")
   debug_inspect(added[0] == entity, content="true")

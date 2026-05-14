@@ -26,8 +26,8 @@ pub fn[T : EcsPayloadCodec] World::insert_resource(
   } else {
     self.resources.set(key.id(), ResourceSlot::{
       payload,
-      added_sequence: None,
-      changed_sequence: None,
+      added_tick: None,
+      changed_tick: None,
       changed_caller: None,
     })
   }
@@ -87,10 +87,11 @@ fn[T : EcsPayloadCodec] World::resource_value(
 pub fn[T] World::resource_added_since(
   self : World,
   key : ResourceKey[T],
-  sequence : @core.Sequence,
+  tick : @core.Tick,
 ) -> Bool {
-  match self.resource_added_sequence(key.id()) {
-    Some(recorded) => recorded > sequence
+  match self.resource_added_tick_by_id(key.id()) {
+    Some(recorded) =>
+      @core.tick_is_newer_than(recorded, tick, self.read_change_tick())
     None => false
   }
 }
@@ -99,10 +100,10 @@ pub fn[T] World::resource_added_since(
 pub fn[T] World::is_resource_added(
   self : World,
   key : ResourceKey[T],
-  system : @core.SystemSequence,
+  system : @core.SystemTicks,
 ) -> Bool {
-  match self.resource_added_sequence(key.id()) {
-    Some(sequence) => system.contains(sequence)
+  match self.resource_added_tick_by_id(key.id()) {
+    Some(tick) => system.contains(tick)
     None => false
   }
 }
@@ -111,18 +112,19 @@ pub fn[T] World::is_resource_added(
 pub fn[T] World::resource_added_tick(
   self : World,
   key : ResourceKey[T],
-) -> @core.Sequence? {
-  self.resource_added_sequence(key.id())
+) -> @core.Tick? {
+  self.resource_added_tick_by_id(key.id())
 }
 
 ///|
 pub fn[T] World::resource_changed_since(
   self : World,
   key : ResourceKey[T],
-  sequence : @core.Sequence,
+  tick : @core.Tick,
 ) -> Bool {
-  match self.resource_changed_sequence(key.id()) {
-    Some(recorded) => recorded > sequence
+  match self.resource_changed_tick_by_id(key.id()) {
+    Some(recorded) =>
+      @core.tick_is_newer_than(recorded, tick, self.read_change_tick())
     None => false
   }
 }
@@ -131,10 +133,10 @@ pub fn[T] World::resource_changed_since(
 pub fn[T] World::is_resource_changed(
   self : World,
   key : ResourceKey[T],
-  system : @core.SystemSequence,
+  system : @core.SystemTicks,
 ) -> Bool {
-  match self.resource_changed_sequence(key.id()) {
-    Some(sequence) => system.contains(sequence)
+  match self.resource_changed_tick_by_id(key.id()) {
+    Some(tick) => system.contains(tick)
     None => false
   }
 }
@@ -143,8 +145,8 @@ pub fn[T] World::is_resource_changed(
 pub fn[T] World::resource_changed_tick(
   self : World,
   key : ResourceKey[T],
-) -> @core.Sequence? {
-  self.resource_changed_sequence(key.id())
+) -> @core.Tick? {
+  self.resource_changed_tick_by_id(key.id())
 }
 
 ///|

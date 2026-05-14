@@ -721,12 +721,12 @@ fn text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
 fn[T] text_ecs_union_changed_entities_into(
   world : @ecs.World,
   key : @ecs.ComponentKey[T],
-  sequence : @core.SystemSequence,
+  tick : @core.SystemTicks,
   dirty_entities : @hashset.HashSet[Int],
   has_text_dirty_entities : Ref[Bool],
 ) -> Bool {
   let mut has_any = false
-  for entity in world.changed_components(key, sequence).read() {
+  for entity in world.changed_components(key, tick).read() {
     has_any = true
     dirty_entities.add(entity.id)
     if !has_text_dirty_entities.val {
@@ -1108,24 +1108,21 @@ fn text_ecs_cleanup_removed_entity(
 fn text_ecs_cleanup_removed_entries(
   world : @ecs.World,
   world_id : Int,
-  sequence : @core.SystemSequence,
+  tick : @core.SystemTicks,
   index_by_entity_id : Map[Int, Int],
 ) -> Unit {
-  for entity in world.removed_components(ecs_key_text2d, sequence).read() {
+  for entity in world.removed_components(ecs_key_text2d, tick).read() {
     text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
   }
-  for entity in world.removed_components(ecs_key_text_font, sequence).read() {
+  for entity in world.removed_components(ecs_key_text_font, tick).read() {
     text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
   }
-  for
-    entity in world
-    .removed_components(ecs_key_text_font_hinting, sequence)
-    .read() {
+  for entity in world.removed_components(ecs_key_text_font_hinting, tick).read() {
     text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
   }
   for
     entity in world
-    .removed_components(@transform.ecs_key_transform, sequence)
+    .removed_components(@transform.ecs_key_transform, tick)
     .read() {
     text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
   }
@@ -1252,123 +1249,121 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
   prepare_text_runtime_world(world)
   let world_id = world.world_id()
   let index_by_entity_id = text_ecs_build_entry_index_by_entity_id(world_id)
-  let sequence = world.get_sequence_context().sequence()
-  text_ecs_cleanup_removed_entries(
-    world, world_id, sequence, index_by_entity_id,
-  )
+  let tick = world.get_tick_context().ticks()
+  text_ecs_cleanup_removed_entries(world, world_id, tick, index_by_entity_id)
   let span_edges = text_ecs_collect_span_edges(world)
   let has_any_spans = span_edges.length() > 0
   let dirty_entities : @hashset.HashSet[Int] = @hashset.HashSet([])
   let has_text_dirty_entities = Ref(false)
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text2d, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text2d, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_font, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_font, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, @transform.ecs_key_transform, sequence, dirty_entities, has_text_dirty_entities,
+      world, @transform.ecs_key_transform, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, @transform.ecs_key_global_transform, sequence, dirty_entities, has_text_dirty_entities,
+      world, @transform.ecs_key_global_transform, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_color, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_color, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_background_color, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_background_color, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_underline, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_underline, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_underline_color, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_underline_color, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_strikethrough, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_strikethrough, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_strikethrough_color, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_strikethrough_color, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_layout, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_layout, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_bounds, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_bounds, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_line_height, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_line_height, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_font_hinting, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_font_hinting, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text2d_shadow, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text2d_shadow, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, @sprite.ecs_key_render_layers, sequence, dirty_entities, has_text_dirty_entities,
+      world, @sprite.ecs_key_render_layers, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, @sprite.ecs_key_anchor, sequence, dirty_entities, has_text_dirty_entities,
+      world, @sprite.ecs_key_anchor, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_y_axis, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_y_axis, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, @visibility.ecs_key_view_visibility, sequence, dirty_entities, has_text_dirty_entities,
+      world, @visibility.ecs_key_view_visibility, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   if has_any_spans {
     ignore(
       text_ecs_union_changed_entities_into(
-        world, @hierarchy.ecs_key_children, sequence, dirty_entities, has_text_dirty_entities,
+        world, @hierarchy.ecs_key_children, tick, dirty_entities, has_text_dirty_entities,
       ),
     )
     ignore(
       text_ecs_union_changed_entities_into(
-        world, @hierarchy.ecs_key_parent, sequence, dirty_entities, has_text_dirty_entities,
+        world, @hierarchy.ecs_key_parent, tick, dirty_entities, has_text_dirty_entities,
       ),
     )
     ignore(
       text_ecs_union_changed_entities_into(
-        world, ecs_key_text_span, sequence, dirty_entities, has_text_dirty_entities,
+        world, ecs_key_text_span, tick, dirty_entities, has_text_dirty_entities,
       ),
     )
     text_ecs_mark_span_parents_dirty(
@@ -1644,10 +1639,10 @@ fn ui_text_ecs_cleanup_removed_entity(
 fn ui_text_ecs_cleanup_removed_entries(
   world : @ecs.World,
   world_id : Int,
-  sequence : @core.SystemSequence,
+  tick : @core.SystemTicks,
   index_by_entity_id : Map[Int, Int],
 ) -> Unit {
-  for entity in world.removed_components(ecs_key_text, sequence).read() {
+  for entity in world.removed_components(ecs_key_text, tick).read() {
     ui_text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
   }
 }
@@ -1746,88 +1741,86 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
   prepare_text_runtime_world(world)
   let world_id = world.world_id()
   let index_by_entity_id = ui_text_ecs_build_entry_index_by_entity_id(world_id)
-  let sequence = world.get_sequence_context().sequence()
-  ui_text_ecs_cleanup_removed_entries(
-    world, world_id, sequence, index_by_entity_id,
-  )
+  let tick = world.get_tick_context().ticks()
+  ui_text_ecs_cleanup_removed_entries(world, world_id, tick, index_by_entity_id)
   let span_edges = text_ecs_collect_span_edges(world)
   let has_any_spans = span_edges.length() > 0
   let dirty_entities : @hashset.HashSet[Int] = @hashset.HashSet([])
   let has_text_dirty_entities = Ref(false)
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_font, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_font, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_color, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_color, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_background_color, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_background_color, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_underline, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_underline, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_underline_color, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_underline_color, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_strikethrough, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_strikethrough, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_strikethrough_color, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_strikethrough_color, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_layout, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_layout, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_line_height, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_line_height, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_font_hinting, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_font_hinting, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   ignore(
     text_ecs_union_changed_entities_into(
-      world, ecs_key_text_shadow, sequence, dirty_entities, has_text_dirty_entities,
+      world, ecs_key_text_shadow, tick, dirty_entities, has_text_dirty_entities,
     ),
   )
   if has_any_spans {
     ignore(
       text_ecs_union_changed_entities_into(
-        world, @hierarchy.ecs_key_children, sequence, dirty_entities, has_text_dirty_entities,
+        world, @hierarchy.ecs_key_children, tick, dirty_entities, has_text_dirty_entities,
       ),
     )
     ignore(
       text_ecs_union_changed_entities_into(
-        world, @hierarchy.ecs_key_parent, sequence, dirty_entities, has_text_dirty_entities,
+        world, @hierarchy.ecs_key_parent, tick, dirty_entities, has_text_dirty_entities,
       ),
     )
     ignore(
       text_ecs_union_changed_entities_into(
-        world, ecs_key_text_span, sequence, dirty_entities, has_text_dirty_entities,
+        world, ecs_key_text_span, tick, dirty_entities, has_text_dirty_entities,
       ),
     )
     text_ecs_mark_span_parents_dirty(

@@ -67,19 +67,14 @@ fn raw_table_row_kernel_swap_remove(
 ///|
 pub(all) struct RawTableValueColumnKernel {
   mut values : Array[EcsPayload]
-  mut added_sequences : Array[@core.Sequence]
-  mut changed_sequences : Array[@core.Sequence]
+  mut added_ticks : Array[@core.Tick]
+  mut changed_ticks : Array[@core.Tick]
   mut changed_caller_ids : Array[Int]
 }
 
 ///|
 fn raw_table_value_column_kernel_new() -> RawTableValueColumnKernel {
-  {
-    values: [],
-    added_sequences: [],
-    changed_sequences: [],
-    changed_caller_ids: [],
-  }
+  { values: [], added_ticks: [], changed_ticks: [], changed_caller_ids: [] }
 }
 
 ///|
@@ -91,13 +86,13 @@ fn raw_table_value_column_kernel_len(kernel : RawTableValueColumnKernel) -> Int 
 fn raw_table_value_column_kernel_push(
   kernel : RawTableValueColumnKernel,
   value : EcsPayload,
-  added_sequence : @core.Sequence,
-  changed_sequence : @core.Sequence,
+  added_tick : @core.Tick,
+  changed_tick : @core.Tick,
   changed_caller_id : Int,
 ) -> Bool {
   kernel.values.push(value)
-  kernel.added_sequences.push(added_sequence)
-  kernel.changed_sequences.push(changed_sequence)
+  kernel.added_ticks.push(added_tick)
+  kernel.changed_ticks.push(changed_tick)
   kernel.changed_caller_ids.push(changed_caller_id)
   true
 }
@@ -138,15 +133,15 @@ fn raw_table_value_column_kernel_value_unchecked(
 fn raw_table_value_column_kernel_set_metadata(
   kernel : RawTableValueColumnKernel,
   row : Int,
-  added_sequence : @core.Sequence,
-  changed_sequence : @core.Sequence,
+  added_tick : @core.Tick,
+  changed_tick : @core.Tick,
   changed_caller_id : Int,
 ) -> Bool {
   if row < 0 || row >= kernel.values.length() {
     return false
   }
-  kernel.added_sequences[row] = added_sequence
-  kernel.changed_sequences[row] = changed_sequence
+  kernel.added_ticks[row] = added_tick
+  kernel.changed_ticks[row] = changed_tick
   kernel.changed_caller_ids[row] = changed_caller_id
   true
 }
@@ -155,13 +150,13 @@ fn raw_table_value_column_kernel_set_metadata(
 fn raw_table_value_column_kernel_set_changed(
   kernel : RawTableValueColumnKernel,
   row : Int,
-  changed_sequence : @core.Sequence,
+  changed_tick : @core.Tick,
   changed_caller_id : Int,
 ) -> Bool {
   if row < 0 || row >= kernel.values.length() {
     return false
   }
-  kernel.changed_sequences[row] = changed_sequence
+  kernel.changed_ticks[row] = changed_tick
   kernel.changed_caller_ids[row] = changed_caller_id
   true
 }
@@ -170,22 +165,22 @@ fn raw_table_value_column_kernel_set_changed(
 fn raw_table_value_column_kernel_added(
   kernel : RawTableValueColumnKernel,
   row : Int,
-) -> @core.Sequence {
-  if row < 0 || row >= kernel.added_sequences.length() {
+) -> @core.Tick {
+  if row < 0 || row >= kernel.added_ticks.length() {
     return -1
   }
-  kernel.added_sequences[row]
+  kernel.added_ticks[row]
 }
 
 ///|
 fn raw_table_value_column_kernel_changed(
   kernel : RawTableValueColumnKernel,
   row : Int,
-) -> @core.Sequence {
-  if row < 0 || row >= kernel.changed_sequences.length() {
+) -> @core.Tick {
+  if row < 0 || row >= kernel.changed_ticks.length() {
     return -1
   }
-  kernel.changed_sequences[row]
+  kernel.changed_ticks[row]
 }
 
 ///|
@@ -210,13 +205,13 @@ fn raw_table_value_column_kernel_swap_remove(
   let last_index = kernel.values.length() - 1
   if row != last_index {
     kernel.values[row] = kernel.values[last_index]
-    kernel.added_sequences[row] = kernel.added_sequences[last_index]
-    kernel.changed_sequences[row] = kernel.changed_sequences[last_index]
+    kernel.added_ticks[row] = kernel.added_ticks[last_index]
+    kernel.changed_ticks[row] = kernel.changed_ticks[last_index]
     kernel.changed_caller_ids[row] = kernel.changed_caller_ids[last_index]
   }
   ignore(kernel.values.pop())
-  ignore(kernel.added_sequences.pop())
-  ignore(kernel.changed_sequences.pop())
+  ignore(kernel.added_ticks.pop())
+  ignore(kernel.changed_ticks.pop())
   ignore(kernel.changed_caller_ids.pop())
   true
 }

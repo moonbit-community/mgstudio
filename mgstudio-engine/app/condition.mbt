@@ -56,11 +56,11 @@ pub fn[T] any_with_component(
 pub fn[T] resource_added(
   key : @ecs.ResourceKey[T],
 ) -> RunConditionFn[@ecs.World] {
-  let mut last_seen_sequence = 0
+  let mut last_seen_tick : @core.Tick = 0
   fn(world : @ecs.World) {
     let exists = world.resource(key).is_present()
-    let added = exists && world.resource_added_since(key, last_seen_sequence)
-    last_seen_sequence = world.read_sequence()
+    let added = exists && world.resource_added_since(key, last_seen_tick)
+    last_seen_tick = world.read_change_tick()
     added
   }
 }
@@ -69,12 +69,11 @@ pub fn[T] resource_added(
 pub fn[T] resource_changed(
   key : @ecs.ResourceKey[T],
 ) -> RunConditionFn[@ecs.World] {
-  let mut last_seen_sequence = 0
+  let mut last_seen_tick : @core.Tick = 0
   fn(world : @ecs.World) {
     let exists = world.resource(key).is_present()
-    let changed = exists &&
-      world.resource_changed_since(key, last_seen_sequence)
-    last_seen_sequence = world.read_sequence()
+    let changed = exists && world.resource_changed_since(key, last_seen_tick)
+    last_seen_tick = world.read_change_tick()
     changed
   }
 }

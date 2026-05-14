@@ -446,7 +446,7 @@ fn spawn_control_row(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
 
   let asset_server = @asset.AssetServer::new()

@@ -14,73 +14,60 @@
 
 ///|
 pub struct Messages[T] {
-  mut previous_sequence : Sequence?
+  mut previous_tick : Tick?
   mut previous_messages : Array[T]
-  mut current_sequence : Sequence?
+  mut current_tick : Tick?
   mut current_messages : Array[T]
 }
 
 ///|
 pub struct MessageReader[T] {
-  previous_sequence : Sequence?
+  previous_tick : Tick?
   previous_messages : Array[T]
-  current_sequence : Sequence?
+  current_tick : Tick?
   current_messages : Array[T]
-  system : SystemSequence
+  system : SystemTicks
   mut has_read : Bool
 }
 
 ///|
 pub struct MessageWriter[T] {
   messages : Messages[T]
-  sequence : Sequence
+  tick : Tick
 }
 
 ///|
 pub(open) trait Message {
-  reader(SystemSequence) -> MessageReader[Self]
-  writer(Sequence) -> MessageWriter[Self]
+  reader(SystemTicks) -> MessageReader[Self]
+  writer(Tick) -> MessageWriter[Self]
 }
 
 ///|
 pub fn[T] Messages::new() -> Messages[T] {
   Messages::{
-    previous_sequence: None,
+    previous_tick: None,
     previous_messages: [],
-    current_sequence: None,
+    current_tick: None,
     current_messages: [],
   }
 }
 
 ///|
-fn message_sequence_in_range(
-  sequence : Sequence,
-  system : SystemSequence,
-) -> Bool {
-  let last_run = system.last_run
-  let this_run = system.this_run
-  if this_run >= last_run {
-    sequence > last_run && sequence <= this_run
-  } else {
-    sequence > last_run || sequence <= this_run
-  }
+fn message_tick_in_range(tick : Tick, system : SystemTicks) -> Bool {
+  system.contains(tick)
 }
 
 ///|
-pub fn[T] Messages::send(
-  self : Messages[T],
-  sequence : Sequence,
-  message : T,
-) -> Unit {
-  if self.current_sequence is Some(current_sequence) {
-    if current_sequence != sequence {
-      self.previous_sequence = Some(current_sequence)
+pub fn[T] Messages::send(self : Messages[T], tick : Tick, message : T) -> Unit {
+  if self.current_tick is Some(current_tick) {
+    if current_tick != tick {
+      self.previous_tick = Some(current_tick)
       self.previous_messages = self.current_messages
-      self.current_sequence = Some(sequence)
+      self.current_tick = Some(tick)
       self.current_messages = []
     }
   } else {
-    self.current_sequence = Some(sequence)
+    self.current_tick = Some(tick)
   }
   self.current_messages.push(message)
 }
@@ -88,35 +75,35 @@ pub fn[T] Messages::send(
 ///|
 pub fn[T] Messages::send_batch(
   self : Messages[T],
-  sequence : Sequence,
+  tick : Tick,
   messages : Array[T],
 ) -> Unit {
   for message in messages {
-    self.send(sequence, message)
+    self.send(tick, message)
   }
 }
 
 ///|
 pub fn[T] Messages::reader(
   self : Messages[T],
-  system : SystemSequence,
+  system : SystemTicks,
 ) -> MessageReader[T] {
-  let previous_messages = if self.previous_sequence is Some(sequence) &&
-    message_sequence_in_range(sequence, system) {
+  let previous_messages = if self.previous_tick is Some(tick) &&
+    message_tick_in_range(tick, system) {
     self.previous_messages.copy()
   } else {
     []
   }
-  let current_messages = if self.current_sequence is Some(sequence) &&
-    message_sequence_in_range(sequence, system) {
+  let current_messages = if self.current_tick is Some(tick) &&
+    message_tick_in_range(tick, system) {
     self.current_messages.copy()
   } else {
     []
   }
   MessageReader::{
-    previous_sequence: self.previous_sequence,
+    previous_tick: self.previous_tick,
     previous_messages,
-    current_sequence: self.current_sequence,
+    current_tick: self.current_tick,
     current_messages,
     system,
     has_read: false,
@@ -125,18 +112,15 @@ pub fn[T] Messages::reader(
 
 ///|
 pub fn[T] Messages::clear(self : Messages[T]) -> Unit {
-  self.previous_sequence = None
+  self.previous_tick = None
   self.previous_messages.clear()
-  self.current_sequence = None
+  self.current_tick = None
   self.current_messages.clear()
 }
 
 ///|
-pub fn[T] Messages::writer(
-  self : Messages[T],
-  sequence : Sequence,
-) -> MessageWriter[T] {
-  MessageWriter::{ messages: self, sequence }
+pub fn[T] Messages::writer(self : Messages[T], tick : Tick) -> MessageWriter[T] {
+  MessageWriter::{ messages: self, tick }
 }
 
 ///|
@@ -146,14 +130,13 @@ pub fn[T] MessageReader::read(self : MessageReader[T]) -> Array[T] {
   }
   self.has_read = true
   let out : Array[T] = []
-  if self.previous_sequence is Some(sequence) &&
-    message_sequence_in_range(sequence, self.system) {
+  if self.previous_tick is Some(tick) &&
+    message_tick_in_range(tick, self.system) {
     for message in self.previous_messages {
       out.push(message)
     }
   }
-  if self.current_sequence is Some(sequence) &&
-    message_sequence_in_range(sequence, self.system) {
+  if self.current_tick is Some(tick) && message_tick_in_range(tick, self.system) {
     for message in self.current_messages {
       out.push(message)
     }
@@ -167,12 +150,11 @@ pub fn[T] MessageReader::len(self : MessageReader[T]) -> Int {
     return 0
   }
   let mut total = 0
-  if self.previous_sequence is Some(sequence) &&
-    message_sequence_in_range(sequence, self.system) {
+  if self.previous_tick is Some(tick) &&
+    message_tick_in_range(tick, self.system) {
     total = total + self.previous_messages.length()
   }
-  if self.current_sequence is Some(sequence) &&
-    message_sequence_in_range(sequence, self.system) {
+  if self.current_tick is Some(tick) && message_tick_in_range(tick, self.system) {
     total = total + self.current_messages.length()
   }
   total
@@ -190,7 +172,7 @@ pub fn[T] MessageReader::clear(self : MessageReader[T]) -> Unit {
 
 ///|
 pub fn[T] MessageWriter::write(self : MessageWriter[T], message : T) -> Unit {
-  self.messages.send(self.sequence, message)
+  self.messages.send(self.tick, message)
 }
 
 ///|
@@ -198,5 +180,5 @@ pub fn[T] MessageWriter::write_batch(
   self : MessageWriter[T],
   messages : Array[T],
 ) -> Unit {
-  self.messages.send_batch(self.sequence, messages)
+  self.messages.send_batch(self.tick, messages)
 }

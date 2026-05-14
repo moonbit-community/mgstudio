@@ -777,9 +777,9 @@ fn sprite_mesh_add_mesh_system(world : @ecs.World) -> Unit {
     return
   }
   let quad = sprite_mesh_quad_handle(world)
-  let sequence = world.get_sequence_context().sequence()
+  let tick = world.get_tick_context().ticks()
   let entities : Array[@core.Entity] = []
-  for entity in world.added_components(ecs_key_sprite_mesh, sequence).read() {
+  for entity in world.added_components(ecs_key_sprite_mesh, tick).read() {
     entities.push(entity)
   }
   for entity in entities {
@@ -846,18 +846,18 @@ fn sprite_mesh_add_material_system(world : @ecs.World) -> Unit {
   if world.component_count(ecs_key_sprite_mesh) == 0 {
     return
   }
-  let sequence = world.get_sequence_context().sequence()
+  let tick = world.get_tick_context().ticks()
   let changed : @hashset.HashSet[UInt64] = @hashset.HashSet([])
-  for entity in world.added_components(ecs_key_sprite_mesh, sequence).read() {
+  for entity in world.added_components(ecs_key_sprite_mesh, tick).read() {
     sprite_insert_entity_key(changed, entity)
   }
-  for entity in world.changed_components(ecs_key_sprite_mesh, sequence).read() {
+  for entity in world.changed_components(ecs_key_sprite_mesh, tick).read() {
     sprite_insert_entity_key(changed, entity)
   }
-  for entity in world.changed_components(ecs_key_anchor, sequence).read() {
+  for entity in world.changed_components(ecs_key_anchor, tick).read() {
     sprite_insert_entity_key(changed, entity)
   }
-  for entity in world.added_components(@mesh.ecs_key_mesh2d, sequence).read() {
+  for entity in world.added_components(@mesh.ecs_key_mesh2d, tick).read() {
     sprite_insert_entity_key(changed, entity)
   }
   if changed.is_empty() {

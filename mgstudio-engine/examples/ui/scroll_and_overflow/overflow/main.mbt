@@ -52,7 +52,7 @@ fn overflow_label(overflow : @ui.Overflow) -> String {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let icon = @asset.AssetServer::new().load_image("branding/icon.png")
 

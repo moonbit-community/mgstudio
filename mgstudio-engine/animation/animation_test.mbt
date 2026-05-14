@@ -109,13 +109,13 @@ let observed_typed_animation_events : Ref[
 ] = Ref(@core.Messages::new())
 
 ///|
-pub impl @core.Message for ObservedTypedAnimationEvent with reader(sequence) {
-  observed_typed_animation_events.val.reader(sequence)
+pub impl @core.Message for ObservedTypedAnimationEvent with reader(tick) {
+  observed_typed_animation_events.val.reader(tick)
 }
 
 ///|
-pub impl @core.Message for ObservedTypedAnimationEvent with writer(sequence) {
-  observed_typed_animation_events.val.writer(sequence)
+pub impl @core.Message for ObservedTypedAnimationEvent with writer(tick) {
+  observed_typed_animation_events.val.writer(tick)
 }
 
 ///|
@@ -414,7 +414,7 @@ test "animation transitions: play updates main animation and starts new clip" {
 ///|
 test "animation transitions: zero-duration switch expires via transition systems" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   fn set_delta(delta_seconds : Float) -> Unit {
     let time = @time.Time::new_with(()).advance_by(
       @core.Duration::from_secs_f32(delta_seconds),
@@ -453,7 +453,7 @@ test "animation transitions: zero-duration switch expires via transition systems
 ///|
 test "animation transitions: remaining weight is not clamped like bevy" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   fn set_delta(delta_seconds : Float) -> Unit {
     let time = @time.Time::new_with(()).advance_by(
       @core.Duration::from_secs_f32(delta_seconds),
@@ -499,7 +499,7 @@ test "animation transitions: remaining weight is not clamped like bevy" {
 ///|
 test "animation transitions: advance/expire keep frame-snapshot weight decline semantics" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   fn set_delta(delta_seconds : Float) -> Unit {
     let time = @time.Time::new_with(()).advance_by(
       @core.Duration::from_secs_f32(delta_seconds),
@@ -1188,7 +1188,7 @@ test "animation runtime: trigger_events dispatches typed root and target observe
   app = app.run_once()
 
   let reader = observed_typed_animation_events.val.reader(
-    @core.SystemSequence::new(0, world.read_sequence()),
+    @core.SystemTicks::new(0, world.read_change_tick()),
   )
   let captured = reader.read()
   debug_inspect(captured.length(), content="2")

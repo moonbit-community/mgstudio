@@ -633,33 +633,33 @@ fn[T] res_key_id_or_abort(item : Res[T]) -> Int {
 pub fn[T : Resource] Res::is_added(self : Res[T]) -> Bool {
   let world = res_world_or_abort(self)
   ignore(res_key_id_or_abort(self))
-  world.is_resource_added(T::resource(), current_system_sequence())
+  world.is_resource_added(T::resource(), current_system_ticks())
 }
 
 ///|
 pub fn[T : Resource] Res::is_changed(self : Res[T]) -> Bool {
   let world = res_world_or_abort(self)
   ignore(res_key_id_or_abort(self))
-  world.is_resource_changed(T::resource(), current_system_sequence())
+  world.is_resource_changed(T::resource(), current_system_ticks())
 }
 
 ///|
-pub fn[T : Resource] Res::added(self : Res[T]) -> @core.Sequence {
+pub fn[T : Resource] Res::added(self : Res[T]) -> @core.Tick {
   let world = res_world_or_abort(self)
   ignore(res_key_id_or_abort(self))
   match world.resource_added_tick(T::resource()) {
-    Some(sequence) => sequence
-    None => abort("Res::added expected resource sequence metadata")
+    Some(tick) => tick
+    None => abort("Res::added expected resource tick metadata")
   }
 }
 
 ///|
-pub fn[T : Resource] Res::last_changed(self : Res[T]) -> @core.Sequence {
+pub fn[T : Resource] Res::last_changed(self : Res[T]) -> @core.Tick {
   let world = res_world_or_abort(self)
   ignore(res_key_id_or_abort(self))
   match world.resource_changed_tick(T::resource()) {
-    Some(sequence) => sequence
-    None => abort("Res::last_changed expected resource sequence metadata")
+    Some(tick) => tick
+    None => abort("Res::last_changed expected resource tick metadata")
   }
 }
 
@@ -701,33 +701,33 @@ fn[T] res_mut_key_id_or_abort(item : ResMut[T]) -> Int {
 pub fn[T : Resource] ResMut::is_added(self : ResMut[T]) -> Bool {
   let world = res_mut_world_or_abort(self)
   ignore(res_mut_key_id_or_abort(self))
-  world.is_resource_added(T::resource(), current_system_sequence())
+  world.is_resource_added(T::resource(), current_system_ticks())
 }
 
 ///|
 pub fn[T : Resource] ResMut::is_changed(self : ResMut[T]) -> Bool {
   let world = res_mut_world_or_abort(self)
   ignore(res_mut_key_id_or_abort(self))
-  world.is_resource_changed(T::resource(), current_system_sequence())
+  world.is_resource_changed(T::resource(), current_system_ticks())
 }
 
 ///|
-pub fn[T : Resource] ResMut::added(self : ResMut[T]) -> @core.Sequence {
+pub fn[T : Resource] ResMut::added(self : ResMut[T]) -> @core.Tick {
   let world = res_mut_world_or_abort(self)
   ignore(res_mut_key_id_or_abort(self))
   match world.resource_added_tick(T::resource()) {
-    Some(sequence) => sequence
-    None => abort("ResMut::added expected resource sequence metadata")
+    Some(tick) => tick
+    None => abort("ResMut::added expected resource tick metadata")
   }
 }
 
 ///|
-pub fn[T : Resource] ResMut::last_changed(self : ResMut[T]) -> @core.Sequence {
+pub fn[T : Resource] ResMut::last_changed(self : ResMut[T]) -> @core.Tick {
   let world = res_mut_world_or_abort(self)
   ignore(res_mut_key_id_or_abort(self))
   match world.resource_changed_tick(T::resource()) {
-    Some(sequence) => sequence
-    None => abort("ResMut::last_changed expected resource sequence metadata")
+    Some(tick) => tick
+    None => abort("ResMut::last_changed expected resource tick metadata")
   }
 }
 
@@ -1080,8 +1080,8 @@ fn[W] system_config_with_access(
     before_ignore_deferred: [],
     after_ignore_deferred: [],
     is_apply_deferred_node: false,
-    run_if_last_run_sequences: [],
-    last_run_sequence: 0,
+    run_if_last_run_ticks: [],
+    last_run_tick: 0,
     access_factory: Some(access_factory),
   }
 }
@@ -1349,8 +1349,8 @@ pub fn[W] fallible_system(
     before_ignore_deferred: [],
     after_ignore_deferred: [],
     is_apply_deferred_node: false,
-    run_if_last_run_sequences: [],
-    last_run_sequence: 0,
+    run_if_last_run_ticks: [],
+    last_run_tick: 0,
     access_factory: None,
   }
 }
@@ -1892,13 +1892,13 @@ pub fn[
 }
 
 ///|
-let current_system_sequence_ref : Ref[@core.SystemSequence?] = Ref(None)
+let current_system_ticks_ref : Ref[@core.SystemTicks?] = Ref(None)
 
 ///|
-pub fn current_system_sequence() -> @core.SystemSequence {
-  match current_system_sequence_ref.val {
-    Some(sequence) => sequence
-    None => @core.SystemSequence::new(0, 0)
+pub fn current_system_ticks() -> @core.SystemTicks {
+  match current_system_ticks_ref.val {
+    Some(tick) => tick
+    None => @core.SystemTicks::new(0, 0)
   }
 }
 
@@ -1971,7 +1971,7 @@ pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with init_sta
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with get(
   _state,
 ) {
-  @core.Message::reader(current_system_sequence())
+  @core.Message::reader(current_system_ticks())
 }
 
 ///|
@@ -1993,7 +1993,7 @@ pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with init_sta
 pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with get(
   _state,
 ) {
-  @core.Message::writer(current_system_sequence().this_run)
+  @core.Message::writer(current_system_ticks().this_run)
 }
 
 ///|
@@ -2071,8 +2071,8 @@ pub struct SystemConfig[W] {
   before_ignore_deferred : Array[SystemSet]
   after_ignore_deferred : Array[SystemSet]
   is_apply_deferred_node : Bool
-  run_if_last_run_sequences : Array[@core.Sequence]
-  mut last_run_sequence : @core.Sequence
+  run_if_last_run_ticks : Array[@core.Tick]
+  mut last_run_tick : @core.Tick
   mut access_factory : ((@ecs.World) -> SystemAccess)?
 }
 
@@ -2095,8 +2095,8 @@ pub fn[W] system(system : SystemFn[W], loc~ : SourceLoc) -> SystemConfig[W] {
     before_ignore_deferred: [],
     after_ignore_deferred: [],
     is_apply_deferred_node: false,
-    run_if_last_run_sequences: [],
-    last_run_sequence: 0,
+    run_if_last_run_ticks: [],
+    last_run_tick: 0,
     access_factory: None,
   }
 }
@@ -2135,7 +2135,7 @@ pub fn[W] SystemConfig::run_if_stateful(
 ) -> SystemConfig[W] {
   self.run_ifs.push(cond)
   self.run_if_states.push(Ref(init_state))
-  self.run_if_last_run_sequences.push(0)
+  self.run_if_last_run_ticks.push(0)
   self
 }
 
@@ -2602,7 +2602,7 @@ pub fn[T : Resource] App::insert_resource(
   self : App[@ecs.World],
   value : T,
 ) -> App[@ecs.World] {
-  self.sub_apps.main.world.advance_sequence() |> ignore
+  self.sub_apps.main.world.increment_change_tick() |> ignore
   self.sub_apps.main.world.insert_resource(Resource::resource(), value)
   self
 }
@@ -2613,7 +2613,7 @@ pub fn[T : @ecs.EcsPayloadCodec] App::insert_world_resource(
   key : @ecs.ResourceKey[T],
   value : T,
 ) -> App[@ecs.World] {
-  self.sub_apps.main.world.advance_sequence() |> ignore
+  self.sub_apps.main.world.increment_change_tick() |> ignore
   self.sub_apps.main.world.insert_resource(key, value)
   self
 }

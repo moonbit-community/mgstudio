@@ -14,7 +14,7 @@
 
 ///|
 fn ui_a11y_test_setup_context(world : @ecs.World) -> Unit {
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(
     @asset.Handle::new(1),

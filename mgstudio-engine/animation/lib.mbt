@@ -1989,8 +1989,8 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
   let graph_handle_column = world.component_column(
     ecs_key_animation_graph_handle,
   )
-  let write_sequence : @core.Sequence = {
-    let tick = world.read_sequence()
+  let write_tick : @core.Tick = {
+    let tick = world.read_change_tick()
     if tick > 0 {
       tick
     } else {
@@ -2013,7 +2013,7 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
         if table_id >= 0 && row_index >= 0 {
           ignore(
             player_column.record_changed_hot_at_table_row(
-              table_id, row_index, write_sequence,
+              table_id, row_index, write_tick,
             ),
           )
         } else {
@@ -2162,10 +2162,10 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let evaluation_state = animation_evaluation_state_new()
   let evaluation_output = animation_evaluation_output_new()
   let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
-    @app.current_system_sequence().this_run,
+    @app.current_system_ticks().this_run,
   )
-  let write_sequence : @core.Sequence = {
-    let tick = world.read_sequence()
+  let write_tick : @core.Tick = {
+    let tick = world.read_change_tick()
     if tick > 0 {
       tick
     } else {
@@ -2229,12 +2229,12 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
                   true
                 }
                 None =>
-                  column.set_sequence_only_hot_at_table_row_value(
-                    table_id, row_index, transform, write_sequence,
+                  column.set_tick_only_hot_at_table_row_value(
+                    table_id, row_index, transform, write_tick,
                   )
               }
             } else {
-              column.set_sequence_only_hot(entity, transform)
+              column.set_tick_only_hot(entity, transform)
             }
           None => false
         }
@@ -2246,11 +2246,11 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         let wrote = match weights_column {
           Some(column) =>
             if table_id >= 0 && row_index >= 0 {
-              column.set_sequence_only_hot_at_table_row_value(
-                table_id, row_index, weights, write_sequence,
+              column.set_tick_only_hot_at_table_row_value(
+                table_id, row_index, weights, write_tick,
               )
             } else {
-              column.set_sequence_only_hot(entity, weights)
+              column.set_tick_only_hot(entity, weights)
             }
           None => false
         }
@@ -2262,11 +2262,11 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         let wrote = match text_color_column {
           Some(column) =>
             if table_id >= 0 && row_index >= 0 {
-              column.set_sequence_only_hot_at_table_row_value(
-                table_id, row_index, text_color, write_sequence,
+              column.set_tick_only_hot_at_table_row_value(
+                table_id, row_index, text_color, write_tick,
               )
             } else {
-              column.set_sequence_only_hot(entity, text_color)
+              column.set_tick_only_hot(entity, text_color)
             }
           None => false
         }
@@ -2281,7 +2281,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
         target_id_column.for_each3_fast_table_row_mark_third_changed(
           animated_by_column,
           transform_column,
-          write_sequence,
+          write_tick,
           fn(entity, table_id, row_index, target_id, animated_by, transform) {
             process_target(
               entity,
@@ -2331,7 +2331,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
 ///|
 pub fn trigger_untargeted_animation_events(world : @ecs.World) -> Unit {
   let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
-    @app.current_system_sequence().this_run,
+    @app.current_system_ticks().this_run,
   )
   let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
     world,

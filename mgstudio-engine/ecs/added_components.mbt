@@ -43,7 +43,7 @@ pub fn[T] AddedComponents::clear(self : AddedComponents[T]) -> Unit {
 pub fn[T] World::added_components(
   self : World,
   key : ComponentKey[T],
-  system : @core.SystemSequence,
+  system : @core.SystemTicks,
 ) -> AddedComponents[T] {
   let reader = match self.added_component_messages(key.id()) {
     Some(messages_ref) => messages_ref.val.reader(system)
@@ -57,13 +57,13 @@ pub fn[T] World::is_added_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
-  system : @core.SystemSequence,
+  system : @core.SystemTicks,
 ) -> Bool {
   if !self.is_alive(entity) || !entity_has_component_id(self, key.id(), entity) {
     return false
   }
-  match self.added_component_sequence(key.id(), entity.id) {
-    Some(sequence) => system.contains(sequence)
+  match self.added_component_tick(key.id(), entity.id) {
+    Some(tick) => system.contains(tick)
     None => false
   }
 }
@@ -73,14 +73,13 @@ fn World::is_added_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  system : @core.SystemSequence,
+  system : @core.SystemTicks,
 ) -> Bool {
   if !self.is_alive(entity) {
     return false
   }
-  match
-    self.added_component_sequence_by_local_id(local_component_id, entity.id) {
-    Some(sequence) => system.contains(sequence)
+  match self.added_component_tick_by_local_id(local_component_id, entity.id) {
+    Some(tick) => system.contains(tick)
     None => false
   }
 }

@@ -96,7 +96,7 @@ test "physics2d: falling body collides and writes back transform" {
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    world.advance_sequence() |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
   let final_y = try! world.get_by_key(ball, ecs_key_transform).unwrap().translation.y
@@ -164,7 +164,7 @@ test "physics2d: gravity scale 0 disables gravity" {
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    world.advance_sequence() |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
   // Debug (kept): this test asserts semantics via positions; keep the following
@@ -216,7 +216,7 @@ test "physics2d: damping reduces velocity" {
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    world.advance_sequence() |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
   let v_no = try! world.get_by_key(no_damp, ecs_key_velocity2d).unwrap().linvel.x
@@ -353,7 +353,7 @@ test "physics2d: external force persists" {
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    world.advance_sequence() |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
   let x1 = try! world.get_by_key(e, ecs_key_transform).unwrap().translation.x

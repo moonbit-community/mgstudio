@@ -22,7 +22,7 @@ pub(open) trait QueryFilter {
   is_dense(self : Self, world : World) -> Bool = _
   iteration_anchor_component(self : Self) -> Int?
   iteration_anchor_components(self : Self) -> Array[Int] = _
-  depends_on_sequence(self : Self) -> Bool
+  depends_on_ticks(self : Self) -> Bool
 }
 
 ///|
@@ -33,7 +33,7 @@ pub(open) trait QueryFilterDisjunction {
   collect_access_any(self : Self, access : QueryFilterAccess) -> Unit = _
   requires_entity_check_any(self : Self) -> Bool
   is_dense_any(self : Self, world : World) -> Bool = _
-  depends_on_sequence_any(self : Self) -> Bool
+  depends_on_ticks_any(self : Self) -> Bool
 }
 
 ///|
@@ -214,7 +214,7 @@ pub impl QueryFilter for All with iteration_anchor_component(self) {
 }
 
 ///|
-pub impl QueryFilter for All with depends_on_sequence(self) {
+pub impl QueryFilter for All with depends_on_ticks(self) {
   ignore(self)
   false
 }
@@ -269,7 +269,7 @@ pub impl[T] QueryFilter for With[T] with iteration_anchor_component(self) {
 }
 
 ///|
-pub impl[T] QueryFilter for With[T] with depends_on_sequence(self) {
+pub impl[T] QueryFilter for With[T] with depends_on_ticks(self) {
   ignore(self)
   false
 }
@@ -328,7 +328,7 @@ pub impl[T] QueryFilter for Without[T] with iteration_anchor_component(self) {
 }
 
 ///|
-pub impl[T] QueryFilter for Without[T] with depends_on_sequence(self) {
+pub impl[T] QueryFilter for Without[T] with depends_on_ticks(self) {
   ignore(self)
   false
 }
@@ -387,7 +387,7 @@ pub impl[T] QueryFilter for Allow[T] with iteration_anchor_component(self) {
 }
 
 ///|
-pub impl[T] QueryFilter for Allow[T] with depends_on_sequence(self) {
+pub impl[T] QueryFilter for Allow[T] with depends_on_ticks(self) {
   ignore(self)
   false
 }
@@ -404,11 +404,7 @@ pub fn[T] Added::new(key : ComponentKey[T]) -> Added[T] {
 
 ///|
 pub impl[T] QueryFilter for Added[T] with matches(self, world, entity) {
-  world.is_added_by_key(
-    entity,
-    self.key,
-    world.get_sequence_context().sequence(),
-  )
+  world.is_added_by_key(entity, self.key, world.get_tick_context().ticks())
 }
 
 ///|
@@ -448,7 +444,7 @@ pub impl[T] QueryFilter for Added[T] with iteration_anchor_component(self) {
 }
 
 ///|
-pub impl[T] QueryFilter for Added[T] with depends_on_sequence(self) {
+pub impl[T] QueryFilter for Added[T] with depends_on_ticks(self) {
   ignore(self)
   true
 }
@@ -465,11 +461,7 @@ pub fn[T] Changed::new(key : ComponentKey[T]) -> Changed[T] {
 
 ///|
 pub impl[T] QueryFilter for Changed[T] with matches(self, world, entity) {
-  world.is_changed_by_key(
-    entity,
-    self.key,
-    world.get_sequence_context().sequence(),
-  )
+  world.is_changed_by_key(entity, self.key, world.get_tick_context().ticks())
 }
 
 ///|
@@ -512,7 +504,7 @@ pub impl[T] QueryFilter for Changed[T] with iteration_anchor_component(self) {
 }
 
 ///|
-pub impl[T] QueryFilter for Changed[T] with depends_on_sequence(self) {
+pub impl[T] QueryFilter for Changed[T] with depends_on_ticks(self) {
   ignore(self)
   true
 }
@@ -587,10 +579,10 @@ pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with iteration_anchor
 }
 
 ///|
-pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with depends_on_sequence(
+pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with depends_on_ticks(
   self,
 ) {
-  QueryFilterDisjunction::depends_on_sequence_any(self.filters)
+  QueryFilterDisjunction::depends_on_ticks_any(self.filters)
 }
 
 ///|
@@ -673,11 +665,10 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with iteration
 }
 
 ///|
-pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with depends_on_sequence(
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with depends_on_ticks(
   self,
 ) {
-  QueryFilter::depends_on_sequence(self.0) ||
-  QueryFilter::depends_on_sequence(self.1)
+  QueryFilter::depends_on_ticks(self.0) || QueryFilter::depends_on_ticks(self.1)
 }
 
 ///|
@@ -789,10 +780,10 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
   A,
   B,
   C,
-) with depends_on_sequence(self) {
-  QueryFilter::depends_on_sequence(self.0) ||
-  QueryFilter::depends_on_sequence(self.1) ||
-  QueryFilter::depends_on_sequence(self.2)
+) with depends_on_ticks(self) {
+  QueryFilter::depends_on_ticks(self.0) ||
+  QueryFilter::depends_on_ticks(self.1) ||
+  QueryFilter::depends_on_ticks(self.2)
 }
 
 ///|
@@ -849,11 +840,10 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) wit
 }
 
 ///|
-pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with depends_on_sequence_any(
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with depends_on_ticks_any(
   self,
 ) {
-  QueryFilter::depends_on_sequence(self.0) ||
-  QueryFilter::depends_on_sequence(self.1)
+  QueryFilter::depends_on_ticks(self.0) || QueryFilter::depends_on_ticks(self.1)
 }
 
 ///|
@@ -927,8 +917,8 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjuncti
   A,
   B,
   C,
-) with depends_on_sequence_any(self) {
-  QueryFilter::depends_on_sequence(self.0) ||
-  QueryFilter::depends_on_sequence(self.1) ||
-  QueryFilter::depends_on_sequence(self.2)
+) with depends_on_ticks_any(self) {
+  QueryFilter::depends_on_ticks(self.0) ||
+  QueryFilter::depends_on_ticks(self.1) ||
+  QueryFilter::depends_on_ticks(self.2)
 }

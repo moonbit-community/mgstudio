@@ -433,10 +433,10 @@ pub impl @app.CommandSpawnComponents for Camera3dBundle with spawn_components(
   self,
   world,
   entity,
-  sequence,
+  tick,
   loc~,
 ) {
-  ignore(sequence)
+  ignore(tick)
   camera3d_bundle_insert(self, world, entity, loc~)
 }
 
@@ -563,10 +563,10 @@ pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle with spawn_compone
   self,
   world,
   entity,
-  sequence,
+  tick,
   loc~,
 ) {
-  ignore(sequence)
+  ignore(tick)
   mesh_material3d_bundle_insert(self, world, entity, loc~)
 }
 

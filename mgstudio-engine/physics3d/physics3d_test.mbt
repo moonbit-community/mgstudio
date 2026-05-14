@@ -31,7 +31,7 @@ fn run_fixed_step(world : @ecs.World) -> Unit {
   physics3d_character_controller_system(world)
   physics3d_step_system(world)
   physics3d_writeback_system(world)
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
 }
 
 ///|
@@ -76,7 +76,7 @@ test "physics3d: falling body collides and writes back transform" {
     physics3d_sync_world_to_rapier_system(world)
     physics3d_step_system(world)
     physics3d_writeback_system(world)
-    world.advance_sequence() |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
   let final_y = try! world.get_by_key(ball, ecs_key_transform).unwrap().translation.y
@@ -129,7 +129,7 @@ test "physics3d: sensor collision events are emitted" {
     physics3d_sync_world_to_rapier_system(world)
     physics3d_step_system(world)
     physics3d_writeback_system(world)
-    world.advance_sequence() |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
   let events = get_physics3d_events_resource(world).get().unwrap()
@@ -181,7 +181,7 @@ test "physics3d: contact force events are emitted" {
     physics3d_sync_world_to_rapier_system(world)
     physics3d_step_system(world)
     physics3d_writeback_system(world)
-    world.advance_sequence() |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
   let events = get_physics3d_events_resource(world).get().unwrap()

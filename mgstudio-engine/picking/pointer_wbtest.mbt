@@ -15,7 +15,7 @@
 ///|
 test "picking wb: collect input honors PointerInputSettings mouse toggle" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   world.init_message(pointer_input_message_key())
   get_pointer_input_settings_resource(world).insert(
     PointerInputSettings::new(false, false),
@@ -41,7 +41,7 @@ test "picking wb: collect input honors PointerInputSettings mouse toggle" {
 ///|
 test "picking wb: PointerInput messages update pointer entity components" {
   let world = @ecs.World::new()
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   world.init_message(pointer_input_message_key())
   world.send_message(
     pointer_input_message_key(),

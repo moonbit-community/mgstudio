@@ -13,24 +13,24 @@
 // limitations under the License.
 
 ///|
-fn raw_table_invalid_sequence() -> @core.Sequence {
+fn raw_table_invalid_tick() -> @core.Tick {
   -1
 }
 
 ///|
-fn raw_table_store_sequence(sequence : @core.Sequence?) -> @core.Sequence {
-  match sequence {
-    Some(sequence) => sequence
-    None => raw_table_invalid_sequence()
+fn raw_table_store_tick(tick : @core.Tick?) -> @core.Tick {
+  match tick {
+    Some(tick) => tick
+    None => raw_table_invalid_tick()
   }
 }
 
 ///|
-fn raw_table_load_sequence(sequence : @core.Sequence) -> @core.Sequence? {
-  if sequence < 0 {
+fn raw_table_load_tick(tick : @core.Tick) -> @core.Tick? {
+  if tick < 0 {
     None
   } else {
-    Some(sequence)
+    Some(tick)
   }
 }
 
@@ -148,8 +148,8 @@ fn RawTableColumn::append_writer(
   guard raw_table_value_column_kernel_push(
     self.storage,
     writer.to_ecs_payload(),
-    raw_table_invalid_sequence(),
-    raw_table_invalid_sequence(),
+    raw_table_invalid_tick(),
+    raw_table_invalid_tick(),
     0,
   ) else {
     return false
@@ -168,8 +168,8 @@ fn RawTableColumn::append_from_row(
       raw_table_value_column_kernel_push(
         self.storage,
         payload,
-        raw_table_invalid_sequence(),
-        raw_table_invalid_sequence(),
+        raw_table_invalid_tick(),
+        raw_table_invalid_tick(),
         0,
       )
     None => false
@@ -185,15 +185,15 @@ fn RawTableColumn::append_metadata(self : RawTableColumn) -> Unit {
 fn RawTableColumn::set_metadata_at_row(
   self : RawTableColumn,
   row_index : Int,
-  added_sequence : @core.Sequence?,
-  changed_sequence : @core.Sequence?,
+  added_tick : @core.Tick?,
+  changed_tick : @core.Tick?,
   changed_caller : String?,
 ) -> Bool {
   if !raw_table_value_column_kernel_set_metadata(
       self.storage,
       row_index,
-      raw_table_store_sequence(added_sequence),
-      raw_table_store_sequence(changed_sequence),
+      raw_table_store_tick(added_tick),
+      raw_table_store_tick(changed_tick),
       raw_table_store_changed_caller(changed_caller),
     ) {
     return false
@@ -202,29 +202,29 @@ fn RawTableColumn::set_metadata_at_row(
 }
 
 ///|
-fn RawTableColumn::added_sequence_at_row(
+fn RawTableColumn::added_tick_at_row(
   self : RawTableColumn,
   row_index : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   if row_index < 0 ||
     row_index >= raw_table_value_column_kernel_len(self.storage) {
     return None
   }
-  raw_table_load_sequence(
+  raw_table_load_tick(
     raw_table_value_column_kernel_added(self.storage, row_index),
   )
 }
 
 ///|
-fn RawTableColumn::changed_sequence_at_row(
+fn RawTableColumn::changed_tick_at_row(
   self : RawTableColumn,
   row_index : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   if row_index < 0 ||
     row_index >= raw_table_value_column_kernel_len(self.storage) {
     return None
   }
-  raw_table_load_sequence(
+  raw_table_load_tick(
     raw_table_value_column_kernel_changed(self.storage, row_index),
   )
 }
@@ -247,13 +247,16 @@ fn RawTableColumn::changed_caller_at_row(
 fn RawTableColumn::record_added_at_row(
   self : RawTableColumn,
   row_index : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> Bool {
   self.set_metadata_at_row(
     row_index,
-    Some(sequence),
-    self.changed_sequence_at_row(row_index),
+    Some(tick),
+    match self.changed_tick_at_row(row_index) {
+      Some(changed_tick) => Some(changed_tick)
+      None => Some(tick)
+    },
     caller,
   )
 }
@@ -262,15 +265,41 @@ fn RawTableColumn::record_added_at_row(
 fn RawTableColumn::record_changed_at_row(
   self : RawTableColumn,
   row_index : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> Bool {
   raw_table_value_column_kernel_set_changed(
     self.storage,
     row_index,
-    raw_table_store_sequence(Some(sequence)),
+    raw_table_store_tick(Some(tick)),
     raw_table_store_changed_caller(caller),
   )
+}
+
+///|
+fn RawTableColumn::check_change_ticks(
+  self : RawTableColumn,
+  present_tick : @core.Tick,
+) -> Unit {
+  let len = raw_table_value_column_kernel_len(self.storage)
+  for row_index in 0..<len {
+    let added_tick = match self.added_tick_at_row(row_index) {
+      Some(tick) => Some(@core.tick_check(tick, present_tick))
+      None => None
+    }
+    let changed_tick = match self.changed_tick_at_row(row_index) {
+      Some(tick) => Some(@core.tick_check(tick, present_tick))
+      None => None
+    }
+    ignore(
+      self.set_metadata_at_row(
+        row_index,
+        added_tick,
+        changed_tick,
+        self.changed_caller_at_row(row_index),
+      ),
+    )
+  }
 }
 
 ///|
@@ -463,23 +492,23 @@ fn[T : EcsPayloadCodec] RawTable::replace_value_at_row_index(
 }
 
 ///|
-fn RawTable::added_sequence_at_row(
+fn RawTable::added_tick_at_row(
   self : RawTable,
   row : TableRow,
   component_local_id : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   guard self.column(component_local_id) is Some(column_ref) else { return None }
-  column_ref.val.added_sequence_at_row(row.index())
+  column_ref.val.added_tick_at_row(row.index())
 }
 
 ///|
-fn RawTable::changed_sequence_at_row(
+fn RawTable::changed_tick_at_row(
   self : RawTable,
   row : TableRow,
   component_local_id : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   guard self.column(component_local_id) is Some(column_ref) else { return None }
-  column_ref.val.changed_sequence_at_row(row.index())
+  column_ref.val.changed_tick_at_row(row.index())
 }
 
 ///|
@@ -497,13 +526,13 @@ fn RawTable::record_added_at_row(
   self : RawTable,
   row : TableRow,
   component_local_id : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> Bool {
   guard self.column(component_local_id) is Some(column_ref) else {
     return false
   }
-  column_ref.val.record_added_at_row(row.index(), sequence, caller)
+  column_ref.val.record_added_at_row(row.index(), tick, caller)
 }
 
 ///|
@@ -511,13 +540,23 @@ fn RawTable::record_changed_at_row(
   self : RawTable,
   row : TableRow,
   component_local_id : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> Bool {
   guard self.column(component_local_id) is Some(column_ref) else {
     return false
   }
-  column_ref.val.record_changed_at_row(row.index(), sequence, caller)
+  column_ref.val.record_changed_at_row(row.index(), tick, caller)
+}
+
+///|
+fn RawTable::check_change_ticks(
+  self : RawTable,
+  present_tick : @core.Tick,
+) -> Unit {
+  for column_ref in self.columns {
+    column_ref.val.check_change_ticks(present_tick)
+  }
 }
 
 ///|
@@ -533,8 +572,8 @@ fn RawTable::append_row_from_source_table(
   for column_index in 0..<self.columns.length() {
     let component_local_id = self.component_local_ids[column_index]
     let column = self.columns[column_index].val
-    let mut added_sequence : @core.Sequence? = None
-    let mut changed_sequence : @core.Sequence? = None
+    let mut added_tick : @core.Tick? = None
+    let mut changed_tick : @core.Tick? = None
     let mut changed_caller : String? = None
     let appended = match source_table {
       Some(source_table_ref) =>
@@ -542,10 +581,10 @@ fn RawTable::append_row_from_source_table(
           Some(source_row) =>
             match source_table_ref.val.column(component_local_id) {
               Some(source_column_ref) => {
-                added_sequence = source_column_ref.val.added_sequence_at_row(
+                added_tick = source_column_ref.val.added_tick_at_row(
                   source_row.index(),
                 )
-                changed_sequence = source_column_ref.val.changed_sequence_at_row(
+                changed_tick = source_column_ref.val.changed_tick_at_row(
                   source_row.index(),
                 )
                 changed_caller = source_column_ref.val.changed_caller_at_row(
@@ -561,8 +600,8 @@ fn RawTable::append_row_from_source_table(
                   Some(writer) => {
                     match pending_payloads.metadata(component_local_id) {
                       Some(metadata) => {
-                        added_sequence = metadata.added_sequence
-                        changed_sequence = metadata.changed_sequence
+                        added_tick = metadata.added_tick
+                        changed_tick = metadata.changed_tick
                         changed_caller = metadata.changed_caller
                       }
                       None => ()
@@ -577,8 +616,8 @@ fn RawTable::append_row_from_source_table(
               Some(writer) => {
                 match pending_payloads.metadata(component_local_id) {
                   Some(metadata) => {
-                    added_sequence = metadata.added_sequence
-                    changed_sequence = metadata.changed_sequence
+                    added_tick = metadata.added_tick
+                    changed_tick = metadata.changed_tick
                     changed_caller = metadata.changed_caller
                   }
                   None => ()
@@ -593,8 +632,8 @@ fn RawTable::append_row_from_source_table(
           Some(writer) => {
             match pending_payloads.metadata(component_local_id) {
               Some(metadata) => {
-                added_sequence = metadata.added_sequence
-                changed_sequence = metadata.changed_sequence
+                added_tick = metadata.added_tick
+                changed_tick = metadata.changed_tick
                 changed_caller = metadata.changed_caller
               }
               None => ()
@@ -618,7 +657,7 @@ fn RawTable::append_row_from_source_table(
     }
     column.append_metadata()
     if !column.set_metadata_at_row(
-        row_index, added_sequence, changed_sequence, changed_caller,
+        row_index, added_tick, changed_tick, changed_caller,
       ) {
       for rollback_column_index in 0..<(column_index + 1) {
         ignore(
@@ -974,11 +1013,11 @@ fn[T : EcsPayloadCodec] World::replace_component_value_at_table_row(
 }
 
 ///|
-fn World::table_component_added_sequence_by_local_id(
+fn World::table_component_added_tick_by_local_id(
   self : World,
   entity_id : Int,
   local_component_id : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   guard self.local_component_storage_type(local_component_id) == Some(Table) else {
     return None
   }
@@ -987,15 +1026,15 @@ fn World::table_component_added_sequence_by_local_id(
   }
   guard self.table_storage(table_id) is Some(table_ref) else { return None }
   guard self.entity_table_row_by_id(entity_id) is Some(row) else { return None }
-  table_ref.val.added_sequence_at_row(row, local_component_id)
+  table_ref.val.added_tick_at_row(row, local_component_id)
 }
 
 ///|
-fn World::table_component_changed_sequence_by_local_id(
+fn World::table_component_changed_tick_by_local_id(
   self : World,
   entity_id : Int,
   local_component_id : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   guard self.local_component_storage_type(local_component_id) == Some(Table) else {
     return None
   }
@@ -1004,7 +1043,7 @@ fn World::table_component_changed_sequence_by_local_id(
   }
   guard self.table_storage(table_id) is Some(table_ref) else { return None }
   guard self.entity_table_row_by_id(entity_id) is Some(row) else { return None }
-  table_ref.val.changed_sequence_at_row(row, local_component_id)
+  table_ref.val.changed_tick_at_row(row, local_component_id)
 }
 
 ///|
@@ -1074,7 +1113,7 @@ fn World::record_table_component_added_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> Bool {
   guard self.local_component_storage_type(local_component_id) == Some(Table) else {
@@ -1083,7 +1122,7 @@ fn World::record_table_component_added_by_local_id(
   guard self.table_id_for_entity(entity) is Some(table_id) else { return false }
   guard self.table_storage(table_id) is Some(table_ref) else { return false }
   guard self.entity_table_row(entity) is Some(row) else { return false }
-  table_ref.val.record_added_at_row(row, local_component_id, sequence, caller)
+  table_ref.val.record_added_at_row(row, local_component_id, tick, caller)
 }
 
 ///|
@@ -1091,7 +1130,7 @@ fn World::record_table_component_changed_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> Bool {
   guard self.local_component_storage_type(local_component_id) == Some(Table) else {
@@ -1100,29 +1139,29 @@ fn World::record_table_component_changed_by_local_id(
   guard self.table_id_for_entity(entity) is Some(table_id) else { return false }
   guard self.table_storage(table_id) is Some(table_ref) else { return false }
   guard self.entity_table_row(entity) is Some(row) else { return false }
-  table_ref.val.record_changed_at_row(row, local_component_id, sequence, caller)
+  table_ref.val.record_changed_at_row(row, local_component_id, tick, caller)
 }
 
 ///|
-fn World::sparse_component_added_sequence_by_local_id(
+fn World::sparse_component_added_tick_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   match self.sparse_component_metadata_for_entity(entity, local_component_id) {
-    Some(metadata) => metadata.added_sequence
+    Some(metadata) => metadata.added_tick
     None => None
   }
 }
 
 ///|
-fn World::sparse_component_changed_sequence_by_local_id(
+fn World::sparse_component_changed_tick_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-) -> @core.Sequence? {
+) -> @core.Tick? {
   match self.sparse_component_metadata_for_entity(entity, local_component_id) {
-    Some(metadata) => metadata.changed_sequence
+    Some(metadata) => metadata.changed_tick
     None => None
   }
 }
@@ -1144,7 +1183,7 @@ fn World::record_sparse_component_added_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> Bool {
   guard self.local_component_storage_type(local_component_id) == Some(SparseSet) else {
@@ -1161,7 +1200,7 @@ fn World::record_sparse_component_added_by_local_id(
     entity,
     component_tick_metadata_with_added(
       metadata_store_ref.val.get(entity),
-      sequence,
+      tick,
       caller,
     ),
   )
@@ -1173,7 +1212,7 @@ fn World::record_sparse_component_changed_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  sequence : @core.Sequence,
+  tick : @core.Tick,
   caller : String?,
 ) -> Bool {
   guard self.local_component_storage_type(local_component_id) == Some(SparseSet) else {
@@ -1190,7 +1229,7 @@ fn World::record_sparse_component_changed_by_local_id(
     entity,
     component_tick_metadata_with_changed(
       metadata_store_ref.val.get(entity),
-      sequence,
+      tick,
       caller,
     ),
   )

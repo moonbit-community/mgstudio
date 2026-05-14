@@ -339,7 +339,7 @@ pub impl QueryFilter for GenericTagFilter with iteration_anchor_component(self) 
 }
 
 ///|
-pub impl QueryFilter for GenericTagFilter with depends_on_sequence(self) {
+pub impl QueryFilter for GenericTagFilter with depends_on_ticks(self) {
   ignore(self)
   false
 }
@@ -610,23 +610,23 @@ test "ecs query: component ref exposes live component values" {
   let entity = world.spawn()
 
   try! world.set_by_key(entity, comp_position, Position::{ x: 1, y: 2 })
-  let ctx1 = @core.SystemSequenceContext::new()
-  ctx1.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx1)
+  let ctx1 = @core.SystemTickContext::new()
+  ctx1.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(ctx1)
   let initial_position = (try! world.get_by_key(entity, comp_position)).unwrap()
   debug_inspect(initial_position, content="{ x: 1, y: 2 }")
 
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
   debug_inspect(
     try! world.update_by_key(entity, comp_position, fn(position) {
       Position::{ x: position.x + 10, y: position.y + 20 }
     }),
     content="true",
   )
-  let ctx2 = @core.SystemSequenceContext::new()
-  ctx2.set(@core.SystemSequence::new(1, 2))
-  world.set_sequence_context(ctx2)
+  let ctx2 = @core.SystemTickContext::new()
+  ctx2.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(ctx2)
   let changed_position = (try! world.get_by_key(entity, comp_position)).unwrap()
   debug_inspect(changed_position, content="{ x: 11, y: 22 }")
 }
@@ -657,8 +657,8 @@ test "ecs query: structural filters compose without change detection" {
   )
   debug_inspect(any_position_query.count(), content="2")
 
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
   debug_inspect(
     try! world.update_by_key(e1, comp_position, fn(position) {
       Position::{ x: position.x + 1, y: position.y + 1 }
@@ -676,27 +676,27 @@ test "ecs query: structural filters compose without change detection" {
 }
 
 ///|
-test "ecs query: added filter only matches entities inserted in the current sequence window" {
+test "ecs query: added filter only matches entities inserted in the current tick window" {
   let world = World::new()
   let e0 = world.spawn()
   let e1 = world.spawn()
 
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
-  let ctx0 = @core.SystemSequenceContext::new()
-  ctx0.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx0)
+  let ctx0 = @core.SystemTickContext::new()
+  ctx0.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(ctx0)
   let first_added_query : Query[Comp[Position], Added[Position]] = query_filtered(
     world,
     Added::new(position_key),
   )
   debug_inspect(first_added_query.count(), content="1")
 
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
   try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
-  let ctx1 = @core.SystemSequenceContext::new()
-  ctx1.set(@core.SystemSequence::new(1, 2))
-  world.set_sequence_context(ctx1)
+  let ctx1 = @core.SystemTickContext::new()
+  ctx1.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(ctx1)
   let second_added_query : Query[Comp[Position], Added[Position]] = query_filtered(
     world,
     Added::new(position_key),
@@ -709,9 +709,9 @@ test "ecs query: added filter only matches entities inserted in the current sequ
   })
   debug_inspect(seen, content="[1]")
 
-  let ctx2 = @core.SystemSequenceContext::new()
-  ctx2.set(@core.SystemSequence::new(2, 3))
-  world.set_sequence_context(ctx2)
+  let ctx2 = @core.SystemTickContext::new()
+  ctx2.set(@core.SystemTicks::new(2, 3))
+  world.set_tick_context(ctx2)
   debug_inspect(second_added_query.count(), content="0")
 }
 
@@ -721,11 +721,11 @@ test "ecs query: Comp exposes change detection metadata" {
   let entity = world.spawn()
 
   try! world.set_by_key(entity, position_key, Position::{ x: 1, y: 1 })
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
 
-  let first_ctx = @core.SystemSequenceContext::new()
-  first_ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(first_ctx)
+  let first_ctx = @core.SystemTickContext::new()
+  first_ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(first_ctx)
   let first_query : Query[Comp[Position], All] = query(world)
   let first_position = try! first_query.require_single()
   debug_inspect(first_position.is_added(), content="true")
@@ -737,7 +737,7 @@ test "ecs query: Comp exposes change detection metadata" {
     content="true",
   )
 
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
   debug_inspect(
     try! world.update_by_key(entity, position_key, fn(position) {
       Position::{ x: position.x + 5, y: position.y + 6 }
@@ -745,9 +745,9 @@ test "ecs query: Comp exposes change detection metadata" {
     content="true",
   )
 
-  let second_ctx = @core.SystemSequenceContext::new()
-  second_ctx.set(@core.SystemSequence::new(1, 2))
-  world.set_sequence_context(second_ctx)
+  let second_ctx = @core.SystemTickContext::new()
+  second_ctx.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(second_ctx)
   let second_query : Query[Comp[Position], All] = query(world)
   let second_position = try! second_query.require_single()
   debug_inspect(second_position.is_added(), content="false")
@@ -787,24 +787,24 @@ test "ecs query_state: default query filter cache invalidates on resource update
 }
 
 ///|
-test "ecs query: filter sequence dependency flags match filter semantics" {
-  debug_inspect(QueryFilter::depends_on_sequence(All::new()), content="false")
+test "ecs query: filter tick dependency flags match filter semantics" {
+  debug_inspect(QueryFilter::depends_on_ticks(All::new()), content="false")
   debug_inspect(
-    QueryFilter::depends_on_sequence(With::new(position_key)),
+    QueryFilter::depends_on_ticks(With::new(position_key)),
     content="false",
   )
   debug_inspect(
-    QueryFilter::depends_on_sequence(Added::new(position_key)),
+    QueryFilter::depends_on_ticks(Added::new(position_key)),
     content="true",
   )
   debug_inspect(
-    QueryFilter::depends_on_sequence(
+    QueryFilter::depends_on_ticks(
       (With::new(position_key), Changed::new(position_key)),
     ),
     content="true",
   )
   debug_inspect(
-    QueryFilter::depends_on_sequence(
+    QueryFilter::depends_on_ticks(
       Or::new((With::new(position_key), Without::new(velocity_key))),
     ),
     content="false",
@@ -855,9 +855,9 @@ test "ecs query cache: entity-check path materializes entity cache" {
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
   try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
 
-  let sequence_context = @core.SystemSequenceContext::new()
-  sequence_context.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(sequence_context)
+  let tick_context = @core.SystemTickContext::new()
+  tick_context.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(tick_context)
 
   let added_query : Query[Comp[Position], Added[Position]] = query_filtered_with_cache(
     world,
@@ -905,9 +905,9 @@ test "ecs query cache: non-dense mode keeps matched tables cache empty" {
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
   try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
 
-  let sequence_context = @core.SystemSequenceContext::new()
-  sequence_context.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(sequence_context)
+  let tick_context = @core.SystemTickContext::new()
+  tick_context.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(tick_context)
 
   let query : Query[Comp[Position], Added[Position]] = query_filtered_with_cache(
     world,
@@ -1071,14 +1071,14 @@ test "ecs query_state cache: dependency generation invalidates entity cache with
 }
 
 ///|
-test "ecs query_state cache: sequence-dependent filters invalidate entity cache across runs" {
+test "ecs query_state cache: tick-dependent filters invalidate entity cache across runs" {
   let world = World::new()
   let e0 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
 
-  let ctx0 = @core.SystemSequenceContext::new()
-  ctx0.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx0)
+  let ctx0 = @core.SystemTickContext::new()
+  ctx0.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(ctx0)
 
   let state : QueryState[Comp[Position], Added[Position]] = world.query_filtered(
     Added::new(position_key),
@@ -1089,18 +1089,18 @@ test "ecs query_state cache: sequence-dependent filters invalidate entity cache 
     content="true",
   )
   debug_inspect(
-    state.cache_snapshot().cached_matching_entities_sequence(),
+    state.cache_snapshot().cached_matching_entities_tick(),
     content="1",
   )
   let first_entities_generation = state
     .cache_snapshot()
     .cached_matching_entities_generation()
 
-  world.advance_sequence() |> ignore
-  world.advance_sequence() |> ignore
-  let ctx1 = @core.SystemSequenceContext::new()
-  ctx1.set(@core.SystemSequence::new(1, 2))
-  world.set_sequence_context(ctx1)
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  let ctx1 = @core.SystemTickContext::new()
+  ctx1.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(ctx1)
 
   debug_inspect(state.count(world), content="0")
   debug_inspect(
@@ -1109,7 +1109,7 @@ test "ecs query_state cache: sequence-dependent filters invalidate entity cache 
     content="true",
   )
   debug_inspect(
-    state.cache_snapshot().cached_matching_entities_sequence(),
+    state.cache_snapshot().cached_matching_entities_tick(),
     content="1000005",
   )
 }
@@ -1317,9 +1317,9 @@ test "ecs query: iter_many_ref preserves filter order without change state" {
   try! world.set_by_key(e2, comp_position, Position::{ x: 4, y: 4 })
   try! world.set_by_key(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
 
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
+  let ctx = @core.SystemTickContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(ctx)
 
   let seen : Array[Int] = []
   let query : Query[Comp[Position], With[Velocity]] = query_filtered(
@@ -1353,9 +1353,9 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
   try! world.set_by_key(e2, comp_position, Position::{ x: 4, y: 4 })
   try! world.set_by_key(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
 
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(0, 1))
-  world.set_sequence_context(ctx)
+  let ctx = @core.SystemTickContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(ctx)
 
   let query : Query[Comp[Position], With[Velocity]] = query_filtered(
     world,

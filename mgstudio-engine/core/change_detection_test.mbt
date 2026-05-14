@@ -13,12 +13,23 @@
 // limitations under the License.
 
 ///|
-test "change_detection: system context stores execution sequence window" {
-  let ctx = SystemSequenceContext::new()
-  ctx.set(SystemSequence::new(2, 5))
-  let sequence = ctx.sequence()
-  debug_inspect(
-    sequence.last_run == 2 && sequence.this_run == 5,
-    content="true",
-  )
+test "change_detection: system context stores execution tick window" {
+  let ctx = SystemTickContext::new()
+  ctx.set(SystemTicks::new(2, 5))
+  let tick = ctx.ticks()
+  debug_inspect(tick.last_run == 2 && tick.this_run == 5, content="true")
+}
+
+///|
+test "change_detection: tick newer-than matches Bevy window semantics" {
+  debug_inspect(tick_is_newer_than(5, 2, 5), content="true")
+  debug_inspect(tick_is_newer_than(2, 2, 5), content="false")
+  debug_inspect(tick_is_newer_than(1, 1_999_999_998, 2), content="true")
+}
+
+///|
+test "change_detection: component ticks use added and changed ticks" {
+  let ticks = ComponentTicks::new(5)
+  debug_inspect(ticks.is_added(2, 5), content="true")
+  debug_inspect(ticks.is_changed(5, 6), content="false")
 }

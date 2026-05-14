@@ -311,7 +311,7 @@ fn spawn_button_row(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.advance_sequence()
+  let tick = world.increment_change_tick()
   ignore(tick)
 
   let font = @asset.AssetServer::new().load_font("fonts/FiraSans-Bold.ttf")

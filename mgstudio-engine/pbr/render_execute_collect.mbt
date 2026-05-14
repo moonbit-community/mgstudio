@@ -30,11 +30,8 @@ fn render3d_execute_collect_cameras(
     (hi << 32) | lo
   }
   let projection_changed_entities = @hashset.HashSet([])
-  let sequence = source_world.get_sequence_context().sequence()
-  for
-    entity in source_world
-    .changed_components(ecs_key_projection, sequence)
-    .read() {
+  let tick = source_world.get_tick_context().ticks()
+  for entity in source_world.changed_components(ecs_key_projection, tick).read() {
     projection_changed_entities.add(entity_key(entity))
   }
   let cameras : Array[ExtractedCamera3d] = []

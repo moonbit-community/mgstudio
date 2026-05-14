@@ -400,7 +400,7 @@ fn spawn_target_panel(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
   let font = @asset.AssetServer::new().load_font("fonts/FiraSans-Bold.ttf")
 
   @sprite.Camera2dBundle::new(
@@ -522,7 +522,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn display_and_visibility_system(world : @ecs.World) -> Unit {
-  ignore(world.advance_sequence())
+  ignore(world.increment_change_tick())
 
   let triggered : Array[ToggleButtonAction] = []
   let edge_query : @ecs.Query[

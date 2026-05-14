@@ -8,6 +8,19 @@ import {
 }
 
 // Values
+pub let check_tick_threshold : Int64
+
+pub let max_change_age : Int64
+
+pub fn tick_check(Int64, Int64) -> Int64
+
+pub fn tick_is_newer_than(Int64, Int64, Int64) -> Bool
+
+pub fn tick_normalize(Int64) -> Int64
+
+pub fn tick_relative_to(Int64, Int64) -> Int64
+
+pub fn tick_wrapping_add(Int64, Int64) -> Int64
 
 // Errors
 pub(all) suberror EntityError {
@@ -32,6 +45,15 @@ pub fn[T] ComponentStore::set(Self[T], Entity, T) -> Bool
 pub fn[T] ComponentStore::update(Self[T], Entity, (T) -> T) -> Bool
 pub fn[T] ComponentStore::upsert(Self[T], Entity, T) -> Unit
 pub fn[T] ComponentStore::value_at(Self[T], Int) -> T
+
+pub struct ComponentTicks {
+  added : Int64
+  changed : Int64
+}
+pub fn ComponentTicks::check_ticks(Self, Int64) -> Self
+pub fn ComponentTicks::is_added(Self, Int64, Int64) -> Bool
+pub fn ComponentTicks::is_changed(Self, Int64, Int64) -> Bool
+pub fn ComponentTicks::new(Int64) -> Self
 
 pub struct Duration {
   nanos : Int64
@@ -98,11 +120,11 @@ pub fn Instant::saturating_duration_since(Self, Self) -> Duration
 pub fn Instant::saturating_sub(Self, Duration) -> Self
 
 pub struct MessageReader[T] {
-  previous_sequence : Int?
+  previous_tick : Int64?
   previous_messages : Array[T]
-  current_sequence : Int?
+  current_tick : Int64?
   current_messages : Array[T]
-  system : SystemSequence
+  system : SystemTicks
   mut has_read : Bool
 }
 pub fn[T] MessageReader::clear(Self[T]) -> Unit
@@ -112,23 +134,23 @@ pub fn[T] MessageReader::read(Self[T]) -> Array[T]
 
 pub struct MessageWriter[T] {
   messages : Messages[T]
-  sequence : Int
+  tick : Int64
 }
 pub fn[T] MessageWriter::write(Self[T], T) -> Unit
 pub fn[T] MessageWriter::write_batch(Self[T], Array[T]) -> Unit
 
 pub struct Messages[T] {
-  mut previous_sequence : Int?
+  mut previous_tick : Int64?
   mut previous_messages : Array[T]
-  mut current_sequence : Int?
+  mut current_tick : Int64?
   mut current_messages : Array[T]
 }
 pub fn[T] Messages::clear(Self[T]) -> Unit
 pub fn[T] Messages::new() -> Self[T]
-pub fn[T] Messages::reader(Self[T], SystemSequence) -> MessageReader[T]
-pub fn[T] Messages::send(Self[T], Int, T) -> Unit
-pub fn[T] Messages::send_batch(Self[T], Int, Array[T]) -> Unit
-pub fn[T] Messages::writer(Self[T], Int) -> MessageWriter[T]
+pub fn[T] Messages::reader(Self[T], SystemTicks) -> MessageReader[T]
+pub fn[T] Messages::send(Self[T], Int64, T) -> Unit
+pub fn[T] Messages::send_batch(Self[T], Int64, Array[T]) -> Unit
+pub fn[T] Messages::writer(Self[T], Int64) -> MessageWriter[T]
 
 pub struct Resource[T] {
   mut cell : @ref.Ref[T]?
@@ -154,20 +176,20 @@ pub fn[T] SparseSet::remove(Self[T], Entity) -> T?
 pub fn[T] SparseSet::set(Self[T], Entity, T) -> Bool
 pub fn[T] SparseSet::value_at(Self[T], Int) -> T
 
-pub struct SystemSequence {
-  last_run : Int
-  this_run : Int
+pub struct SystemTickContext {
+  mut last_run : Int64
+  mut this_run : Int64
 }
-pub fn SystemSequence::contains(Self, Int) -> Bool
-pub fn SystemSequence::new(Int, Int) -> Self
+pub fn SystemTickContext::new() -> Self
+pub fn SystemTickContext::set(Self, SystemTicks) -> Unit
+pub fn SystemTickContext::ticks(Self) -> SystemTicks
 
-pub struct SystemSequenceContext {
-  mut last_run : Int
-  mut this_run : Int
+pub struct SystemTicks {
+  last_run : Int64
+  this_run : Int64
 }
-pub fn SystemSequenceContext::new() -> Self
-pub fn SystemSequenceContext::sequence(Self) -> SystemSequence
-pub fn SystemSequenceContext::set(Self, SystemSequence) -> Unit
+pub fn SystemTicks::contains(Self, Int64) -> Bool
+pub fn SystemTicks::new(Int64, Int64) -> Self
 
 type World
 pub fn World::despawn(Self, Entity) -> Unit raise EntityError
@@ -176,11 +198,11 @@ pub fn World::new() -> Self
 pub fn World::spawn_empty(Self) -> Entity
 
 // Type aliases
-pub type Sequence = Int
+pub type Tick = Int64
 
 // Traits
 pub(open) trait Message {
-  reader(SystemSequence) -> MessageReader[Self]
-  writer(Int) -> MessageWriter[Self]
+  reader(SystemTicks) -> MessageReader[Self]
+  writer(Int64) -> MessageWriter[Self]
 }
 

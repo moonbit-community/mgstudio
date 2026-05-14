@@ -182,7 +182,7 @@ fn display_curves(
     }
   }
 
-  world.advance_sequence() |> ignore
+  world.increment_change_tick() |> ignore
   let half_size_x = PLOT_SIZE_X / 2.0F
   let half_size_y = PLOT_SIZE_Y / 2.0F
 

@@ -140,7 +140,7 @@ pub fn[T] Comp::is_added(self : Comp[T]) -> Bool {
   world.is_added_by_local_id(
     comp_entity_or_abort(self),
     comp_local_component_id_or_abort(self),
-    world.get_sequence_context().sequence(),
+    world.get_tick_context().ticks(),
   )
 }
 
@@ -150,33 +150,33 @@ pub fn[T] Comp::is_changed(self : Comp[T]) -> Bool {
   world.is_changed_by_local_id(
     comp_entity_or_abort(self),
     comp_local_component_id_or_abort(self),
-    world.get_sequence_context().sequence(),
+    world.get_tick_context().ticks(),
   )
 }
 
 ///|
-pub fn[T] Comp::added(self : Comp[T]) -> @core.Sequence {
+pub fn[T] Comp::added(self : Comp[T]) -> @core.Tick {
   let world = comp_world_or_abort(self)
   match
-    world.added_component_sequence_by_local_id(
+    world.added_component_tick_by_local_id(
       comp_local_component_id_or_abort(self),
       comp_entity_or_abort(self).id,
     ) {
-    Some(sequence) => sequence
-    None => abort("Comp::added expected component sequence metadata")
+    Some(tick) => tick
+    None => abort("Comp::added expected component tick metadata")
   }
 }
 
 ///|
-pub fn[T] Comp::last_changed(self : Comp[T]) -> @core.Sequence {
+pub fn[T] Comp::last_changed(self : Comp[T]) -> @core.Tick {
   let world = comp_world_or_abort(self)
   match
-    world.changed_component_sequence_by_local_id(
+    world.changed_component_tick_by_local_id(
       comp_local_component_id_or_abort(self),
       comp_entity_or_abort(self).id,
     ) {
-    Some(sequence) => sequence
-    None => abort("Comp::last_changed expected component sequence metadata")
+    Some(tick) => tick
+    None => abort("Comp::last_changed expected component tick metadata")
   }
 }
 

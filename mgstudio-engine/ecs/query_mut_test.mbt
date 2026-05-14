@@ -94,10 +94,14 @@ pub impl Component for MutQueryMethodValue with component() {
 }
 
 ///|
-fn set_test_sequence(world : World, last_run : Int, this_run : Int) -> Unit {
-  let ctx = @core.SystemSequenceContext::new()
-  ctx.set(@core.SystemSequence::new(last_run, this_run))
-  world.set_sequence_context(ctx)
+fn set_test_tick(
+  world : World,
+  last_run : @core.Tick,
+  this_run : @core.Tick,
+) -> Unit {
+  let ctx = @core.SystemTickContext::new()
+  ctx.set(@core.SystemTicks::new(last_run, this_run))
+  world.set_tick_context(ctx)
 }
 
 ///|
@@ -133,7 +137,7 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
   })
   try! world.set_by_key(disabled, ecs_key_disabled, Disabled::new())
 
-  set_test_sequence(world, 0, 1)
+  set_test_tick(world, 0, 1)
 
   let visible_query : Query[Mut[MutQueryPosition], All] = query(world)
   let seen_visible : Array[Int] = []
@@ -239,8 +243,8 @@ test "ecs mut query: detect changes helpers support explicit mutation and markin
     x: 2,
     y: 3,
   })
-  world.advance_sequence() |> ignore
-  set_test_sequence(world, 0, 1)
+  world.increment_change_tick() |> ignore
+  set_test_tick(world, 0, 1)
 
   let first_query : Query[Mut[MutQueryPosition], All] = query(world)
   let first_position = try! first_query.require_single()
@@ -253,8 +257,8 @@ test "ecs mut query: detect changes helpers support explicit mutation and markin
     content="true",
   )
 
-  world.advance_sequence() |> ignore
-  set_test_sequence(world, 1, 2)
+  world.increment_change_tick() |> ignore
+  set_test_tick(world, 1, 2)
 
   let second_query : Query[Mut[MutQueryPosition], All] = query(world)
   let second_position = try! second_query.require_single()
@@ -320,7 +324,7 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
     ay: 1,
   })
 
-  set_test_sequence(world, 0, 1)
+  set_test_tick(world, 0, 1)
 
   let state : QueryState[
     (Comp[MutQueryPosition], Mut[MutQueryVelocity]),
@@ -411,7 +415,7 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Mut query da
     dy: 0,
   })
 
-  set_test_sequence(world, 0, 1)
+  set_test_tick(world, 0, 1)
 
   let state : QueryState[(Comp[MutQueryPosition], Mut[MutQueryVelocity]), All] = world.query()
   guard state.contiguous_iter(world) is Some(iter) else {
@@ -470,7 +474,7 @@ test "ecs mut query: EntityMut query data provides Bevy-style entity access" {
     dy: 10,
   })
 
-  set_test_sequence(world, 0, 1)
+  set_test_tick(world, 0, 1)
 
   let entity_query : Query[EntityMut, With[MutQueryMarker]] = query_filtered(
     world,
