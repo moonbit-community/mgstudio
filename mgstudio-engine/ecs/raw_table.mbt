@@ -725,33 +725,12 @@ fn World::table_storage(self : World, table_id : Int) -> Ref[RawTable]? {
 }
 
 ///|
-fn World::table_row_count(self : World, table_id : Int) -> Int {
-  match self.table_storage(table_id) {
-    Some(table_ref) => table_ref.val.row_count()
-    None => 0
-  }
-}
-
-///|
 fn World::table_entities_view(
   self : World,
   table_id : Int,
 ) -> Array[@core.Entity]? {
   match self.table_storage(table_id) {
     Some(table_ref) => Some(table_ref.val.rows.entities)
-    None => None
-  }
-}
-
-///|
-fn World::table_entity_at_row_index(
-  self : World,
-  table_id : Int,
-  row_index : Int,
-) -> @core.Entity? {
-  guard TableRow::from_index(row_index) is Some(row) else { return None }
-  match self.table_storage(table_id) {
-    Some(table_ref) => table_ref.val.entity_at_row(row)
     None => None
   }
 }

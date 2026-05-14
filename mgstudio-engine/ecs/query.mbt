@@ -856,24 +856,23 @@ fn[D : QueryData, F : QueryFilter] query_dense_tables_single(
   let found_table_id = Ref(-1)
   let found_row_index = Ref(-1)
   for table_id in dense_tables {
-    let row_count = world.table_row_count(table_id)
+    guard world.table_entities_view(table_id) is Some(entities) else {
+      continue
+    }
+    let row_count = entities.length()
     for row_index in 0..<row_count {
-      match world.table_entity_at_row_index(table_id, row_index) {
-        Some(entity) => {
-          guard query_filter_matches_table_row_if_needed(
-            world, filter, table_row_filter_required, entity, table_id, row_index,
-          ) else {
-            continue
-          }
-          if found.val is Some(_) {
-            return None
-          }
-          found.val = Some(entity)
-          found_table_id.val = table_id
-          found_row_index.val = row_index
-        }
-        None => ()
+      let entity = entities[row_index]
+      guard query_filter_matches_table_row_if_needed(
+        world, filter, table_row_filter_required, entity, table_id, row_index,
+      ) else {
+        continue
       }
+      if found.val is Some(_) {
+        return None
+      }
+      found.val = Some(entity)
+      found_table_id.val = table_id
+      found_row_index.val = row_index
     }
   }
   match found.val {
@@ -901,22 +900,25 @@ fn[F : QueryFilter] query_dense_tables_count(
   if !table_row_filter_required {
     let count = Ref(0)
     for table_id in dense_tables {
-      count.val = count.val + world.table_row_count(table_id)
+      match world.table_entities_view(table_id) {
+        Some(entities) => count.val = count.val + entities.length()
+        None => ()
+      }
     }
     return count.val
   }
   let count = Ref(0)
   for table_id in dense_tables {
-    let row_count = world.table_row_count(table_id)
+    guard world.table_entities_view(table_id) is Some(entities) else {
+      continue
+    }
+    let row_count = entities.length()
     for row_index in 0..<row_count {
-      match world.table_entity_at_row_index(table_id, row_index) {
-        Some(entity) =>
-          if QueryFilter::matches_table_row(
-              filter, world, entity, table_id, row_index,
-            ) {
-            count.val = count.val + 1
-          }
-        None => ()
+      let entity = entities[row_index]
+      if QueryFilter::matches_table_row(
+          filter, world, entity, table_id, row_index,
+        ) {
+        count.val = count.val + 1
       }
     }
   }
