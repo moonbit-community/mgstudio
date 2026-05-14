@@ -15,11 +15,19 @@
 ///|
 pub(all) struct QueryDataFetchPlan {
   priv local_component_ids : Array[Int]
+  priv local_component_is_table : Array[Bool]
+  priv table_column_caches : Array[Array[Ref[RawTableColumn]?]]
+  priv table_column_cache_ready : Array[@utils.IntBitSet]
 }
 
 ///|
 fn QueryDataFetchPlan::new() -> QueryDataFetchPlan {
-  { local_component_ids: [] }
+  {
+    local_component_ids: [],
+    local_component_is_table: [],
+    table_column_caches: [],
+    table_column_cache_ready: [],
+  }
 }
 
 ///|
@@ -33,6 +41,12 @@ fn QueryDataFetchPlan::push_component_id(
     None => -1
   }
   self.local_component_ids.push(local_component_id)
+  self.local_component_is_table.push(
+    local_component_id >= 0 &&
+    world.local_component_storage_type(local_component_id) == Some(Table),
+  )
+  self.table_column_caches.push([])
+  self.table_column_cache_ready.push(@utils.IntBitSet::new())
 }
 
 ///|
@@ -48,6 +62,64 @@ fn QueryDataFetchPlan::local_component_id(
     Some(local_component_id)
   } else {
     None
+  }
+}
+
+///|
+fn QueryDataFetchPlan::component_is_table_at_offset(
+  self : QueryDataFetchPlan,
+  offset : Int,
+) -> Bool {
+  offset >= 0 &&
+  offset < self.local_component_is_table.length() &&
+  self.local_component_is_table[offset]
+}
+
+///|
+fn QueryDataFetchPlan::table_column_ref(
+  self : QueryDataFetchPlan,
+  world : World,
+  offset : Int,
+  table_id : Int,
+) -> Ref[RawTableColumn]? {
+  guard table_id >= 0 &&
+    offset >= 0 &&
+    offset < self.local_component_ids.length() &&
+    offset < self.table_column_caches.length() &&
+    offset < self.table_column_cache_ready.length() &&
+    self.component_is_table_at_offset(offset) else {
+    return None
+  }
+  let local_component_id = self.local_component_ids[offset]
+  guard local_component_id >= 0 else { return None }
+  let cache = self.table_column_caches[offset]
+  let ready = self.table_column_cache_ready[offset]
+  while cache.length() <= table_id {
+    cache.push(None)
+  }
+  if ready.contains(table_id) {
+    return cache[table_id]
+  }
+  ready.insert(table_id)
+  let column_ref = match world.table_storage(table_id) {
+    Some(table_ref) => table_ref.val.column(local_component_id)
+    None => None
+  }
+  cache[table_id] = column_ref
+  column_ref
+}
+
+///|
+fn[T : EcsPayloadCodec] QueryDataFetchPlan::value_at_table_row(
+  self : QueryDataFetchPlan,
+  world : World,
+  offset : Int,
+  table_id : Int,
+  row_index : Int,
+) -> T? {
+  match self.table_column_ref(world, offset, table_id) {
+    Some(column_ref) => column_ref.val.value_at_row_unchecked(row_index)
+    None => None
   }
 }
 
@@ -696,13 +768,7 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row_with_plan_off
 ) {
   let key = T::component()
   let local_component_id = query_data_local_component_id_from_plan(plan, offset)
-  let value_at_row = match local_component_id {
-    Some(local_component_id) =>
-      world.component_value_by_table_row_fast(
-        local_component_id, table_id, row_index,
-      )
-    None => None
-  }
+  let value_at_row = plan.value_at_table_row(world, offset, table_id, row_index)
   match value_at_row {
     Some(value) =>
       query_data_comp_from_value(
@@ -1341,9 +1407,9 @@ pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor_with_plan_
   let present = match query_data_local_component_id_from_plan(plan, offset) {
     Some(local_component_id) if local_component_id == anchor_local_component_id =>
       true
-    Some(local_component_id) =>
-      if world.local_component_storage_type(local_component_id) == Some(Table) {
-        world.table_has_component_local_id(table_id, local_component_id)
+    Some(_local_component_id) =>
+      if plan.component_is_table_at_offset(offset) {
+        plan.table_column_ref(world, offset, table_id) is Some(_)
       } else {
         entity_has_component_id(world, T::component().id(), entity)
       }
@@ -1445,14 +1511,7 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_table_row_with_plan
   offset,
 ) {
   let key = T::component()
-  let value_at_row = match
-    query_data_local_component_id_from_plan(plan, offset) {
-    Some(local_component_id) =>
-      world.component_value_by_table_row_fast(
-        local_component_id, table_id, row_index,
-      )
-    None => None
-  }
+  let value_at_row = plan.value_at_table_row(world, offset, table_id, row_index)
   match value_at_row {
     Some(value) => { value: Some(value) }
     None => { value: world.get_by_key(entity, key) }

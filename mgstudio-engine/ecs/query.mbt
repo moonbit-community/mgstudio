@@ -280,6 +280,8 @@ pub struct QueryMany[D, F] {
   priv mut current_table_id : Int
   priv dense_tables : Array[Int]
   priv mut dense_table_index : Int
+  priv mut dense_table_entities : Array[@core.Entity]
+  priv mut dense_table_row_count : Int
   priv mut dense_table_row_index : Int
   priv sparse_anchor_info : QuerySparseAnchorInfo?
   priv sparse_anchor_archetype_bits : @utils.IntBitSet
@@ -577,6 +579,8 @@ fn[D, F] query_many_from_plan(
     current_table_id: -1,
     dense_tables: plan.dense_tables,
     dense_table_index: 0,
+    dense_table_entities: [],
+    dense_table_row_count: 0,
     dense_table_row_index: 0,
     sparse_anchor_info: plan.sparse_anchor_info,
     sparse_anchor_archetype_bits: plan.sparse_anchor_archetype_bits,
@@ -1248,6 +1252,8 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
     current_table_id: -1,
     dense_tables: [],
     dense_table_index: 0,
+    dense_table_entities: [],
+    dense_table_row_count: 0,
     dense_table_row_index: 0,
     sparse_anchor_info: None,
     sparse_anchor_archetype_bits: @utils.IntBitSet::new(),
@@ -2106,6 +2112,8 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
     current_table_id: -1,
     dense_tables: [],
     dense_table_index: 0,
+    dense_table_entities: [],
+    dense_table_row_count: 0,
     dense_table_row_index: 0,
     sparse_anchor_info: None,
     sparse_anchor_archetype_bits: @utils.IntBitSet::new(),
@@ -2599,38 +2607,30 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
   if self.dense_driven {
     while true {
       if self.current_table_id >= 0 {
-        let row_count = self.query.world.table_row_count(self.current_table_id)
-        while self.dense_table_row_index < row_count {
+        while self.dense_table_row_index < self.dense_table_row_count {
           let row_index = self.dense_table_row_index
           self.dense_table_row_index = self.dense_table_row_index + 1
-          match
-            self.query.world.table_entity_at_row_index(
+          let entity = self.dense_table_entities[row_index]
+          if query_filter_matches_table_row_if_needed(
+              self.query.world,
+              self.query.filter,
+              self.table_row_filter_required,
+              entity,
               self.current_table_id,
               row_index,
             ) {
-            Some(entity) =>
-              if query_filter_matches_table_row_if_needed(
+            return Some(
+              (
+                entity,
+                D::fetch_table_row_with_plan(
                   self.query.world,
-                  self.query.filter,
-                  self.table_row_filter_required,
                   entity,
                   self.current_table_id,
                   row_index,
-                ) {
-                return Some(
-                  (
-                    entity,
-                    D::fetch_table_row_with_plan(
-                      self.query.world,
-                      entity,
-                      self.current_table_id,
-                      row_index,
-                      self.data_fetch_plan,
-                    ),
-                  ),
-                )
-              }
-            None => ()
+                  self.data_fetch_plan,
+                ),
+              ),
+            )
           }
         }
       }
@@ -2639,6 +2639,12 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
       }
       self.current_table_id = self.dense_tables[self.dense_table_index]
       self.dense_table_index = self.dense_table_index + 1
+      self.dense_table_entities = match
+        self.query.world.table_entities_view(self.current_table_id) {
+        Some(entities) => entities
+        None => []
+      }
+      self.dense_table_row_count = self.dense_table_entities.length()
       self.dense_table_row_index = 0
     }
   }

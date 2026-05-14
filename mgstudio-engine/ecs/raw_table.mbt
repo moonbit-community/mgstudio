@@ -733,6 +733,17 @@ fn World::table_row_count(self : World, table_id : Int) -> Int {
 }
 
 ///|
+fn World::table_entities_view(
+  self : World,
+  table_id : Int,
+) -> Array[@core.Entity]? {
+  match self.table_storage(table_id) {
+    Some(table_ref) => Some(table_ref.val.rows.entities)
+    None => None
+  }
+}
+
+///|
 fn World::table_entity_at_row_index(
   self : World,
   table_id : Int,
