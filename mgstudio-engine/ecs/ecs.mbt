@@ -255,11 +255,17 @@ priv struct PendingComponentPayloadEntry {
 ///|
 priv struct PendingComponentPayloadSet {
   entries : Array[PendingComponentPayloadEntry]
+  indices_by_local_component_id : Map[Int, Int]
+  presence : @utils.IntBitSet
 }
 
 ///|
 fn pending_component_payload_set_new() -> PendingComponentPayloadSet {
-  { entries: [] }
+  {
+    entries: [],
+    indices_by_local_component_id: {},
+    presence: @utils.IntBitSet::new(),
+  }
 }
 
 ///|
@@ -267,12 +273,7 @@ fn PendingComponentPayloadSet::index_of(
   self : PendingComponentPayloadSet,
   local_component_id : Int,
 ) -> Int? {
-  for index in 0..<self.entries.length() {
-    if self.entries[index].local_component_id == local_component_id {
-      return Some(index)
-    }
-  }
-  None
+  self.indices_by_local_component_id.get(local_component_id)
 }
 
 ///|
@@ -280,7 +281,7 @@ fn PendingComponentPayloadSet::contains(
   self : PendingComponentPayloadSet,
   local_component_id : Int,
 ) -> Bool {
-  self.index_of(local_component_id) is Some(_)
+  self.presence.contains(local_component_id)
 }
 
 ///|
@@ -313,12 +314,16 @@ fn PendingComponentPayloadSet::set_writer(
 ) -> Unit {
   match self.index_of(local_component_id) {
     Some(index) => self.entries[index].writer = writer
-    None =>
+    None => {
+      let index = self.entries.length()
       self.entries.push({
         local_component_id,
         writer,
         metadata: component_tick_metadata_empty(),
       })
+      self.indices_by_local_component_id.set(local_component_id, index)
+      self.presence.insert(local_component_id)
+    }
   }
 }
 
@@ -344,12 +349,18 @@ struct PendingComponentPayloadContext {
 struct BundleInfo {
   id : Int
   component_local_ids : Array[Int]
+  component_local_id_presence : @utils.IntBitSet
 }
 
 ///|
-struct ArchetypeSignatureEntry {
-  component_ids : Array[Int]
-  value : Int
+priv struct ArchetypeSignatureTrieNode {
+  children : Map[Int, Int]
+  mut value : Int?
+}
+
+///|
+priv struct ArchetypeSignatureIndex {
+  nodes : Array[ArchetypeSignatureTrieNode]
 }
 
 ///|
@@ -389,10 +400,10 @@ pub struct World {
   priv mut next_archetype_id : Int
   priv mut next_table_id : Int
   priv mut next_bundle_id : Int
-  priv bundle_ids_by_signature : Map[Int, Array[ArchetypeSignatureEntry]]
+  priv bundle_ids_by_signature : ArchetypeSignatureIndex
   priv bundle_infos : Map[Int, BundleInfo]
-  priv archetype_ids_by_signature : Map[Int, Array[ArchetypeSignatureEntry]]
-  priv table_ids_by_signature : Map[Int, Array[ArchetypeSignatureEntry]]
+  priv archetype_ids_by_signature : ArchetypeSignatureIndex
+  priv table_ids_by_signature : ArchetypeSignatureIndex
   priv table_component_local_ids : Map[Int, Array[Int]]
   priv archetype_table_ids : Map[Int, Int]
   priv archetype_component_local_ids : Map[Int, Array[Int]]
@@ -457,10 +468,10 @@ pub fn World::new() -> World {
     next_archetype_id: 1,
     next_table_id: 1,
     next_bundle_id: 1,
-    bundle_ids_by_signature: {},
+    bundle_ids_by_signature: archetype_signature_index_new(),
     bundle_infos: {},
-    archetype_ids_by_signature: {},
-    table_ids_by_signature: {},
+    archetype_ids_by_signature: archetype_signature_index_new(),
+    table_ids_by_signature: archetype_signature_index_new(),
     table_component_local_ids: { 0: [] },
     archetype_table_ids: { 0: 0 },
     archetype_component_local_ids: { 0: [] },
@@ -496,8 +507,8 @@ pub fn World::new() -> World {
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
   }
-  archetype_signature_insert(world.archetype_ids_by_signature, [], 0)
-  archetype_signature_insert(world.table_ids_by_signature, [], 0)
+  world.archetype_ids_by_signature.insert([], 0)
+  world.table_ids_by_signature.insert([], 0)
   world.bootstrap_component_registrations()
   world.insert_resource(
     ecs_key_default_query_filters,

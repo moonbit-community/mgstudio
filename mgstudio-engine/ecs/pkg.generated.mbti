@@ -158,8 +158,6 @@ pub enum ArchetypeBundleMigrationPath {
   NewArchetypeNewTable
 } derive(Eq)
 
-type ArchetypeSignatureEntry
-
 pub struct BatchingStrategy {
   // private fields
 } derive(Eq, @debug.Debug)

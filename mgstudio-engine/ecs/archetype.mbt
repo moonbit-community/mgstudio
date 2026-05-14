@@ -28,58 +28,60 @@ fn archetype_sorted_unique_local_component_ids(
 }
 
 ///|
-fn archetype_signature_hash_from_component_ids(
-  component_local_ids : Array[Int],
-) -> Int {
-  let mut hash = 17
-  for component_local_id in component_local_ids {
-    hash = (hash * 131 + component_local_id + 1) % 2147483647
-  }
-  hash
+fn archetype_signature_trie_node_new() -> ArchetypeSignatureTrieNode {
+  { children: {}, value: None }
 }
 
 ///|
-fn archetype_signature_equals(left : Array[Int], right : Array[Int]) -> Bool {
-  if left.length() != right.length() {
-    return false
-  }
-  for index in 0..<left.length() {
-    if left[index] != right[index] {
-      return false
-    }
-  }
-  true
+fn archetype_signature_index_new() -> ArchetypeSignatureIndex {
+  { nodes: [archetype_signature_trie_node_new()] }
 }
 
 ///|
-fn archetype_signature_lookup(
-  signatures : Map[Int, Array[ArchetypeSignatureEntry]],
+fn ArchetypeSignatureIndex::lookup(
+  self : ArchetypeSignatureIndex,
   component_ids : Array[Int],
 ) -> Int? {
-  let hash = archetype_signature_hash_from_component_ids(component_ids)
-  guard signatures.get(hash) is Some(bucket) else { return None }
-  for entry in bucket {
-    if archetype_signature_equals(entry.component_ids, component_ids) {
-      return Some(entry.value)
+  let mut node_id = 0
+  for component_id in component_ids {
+    guard self.nodes[node_id].children.get(component_id) is Some(next_node_id) else {
+      return None
     }
+    node_id = next_node_id
   }
-  None
+  self.nodes[node_id].value
 }
 
 ///|
-fn archetype_signature_insert(
-  signatures : Map[Int, Array[ArchetypeSignatureEntry]],
+fn ArchetypeSignatureIndex::insert(
+  self : ArchetypeSignatureIndex,
   component_ids : Array[Int],
   value : Int,
 ) -> Unit {
-  let hash = archetype_signature_hash_from_component_ids(component_ids)
-  let bucket = signatures.get_or_init(hash, fn() { [] })
-  for entry in bucket {
-    if archetype_signature_equals(entry.component_ids, component_ids) {
-      return
+  let mut node_id = 0
+  for component_id in component_ids {
+    let node = self.nodes[node_id]
+    let next_node_id = match node.children.get(component_id) {
+      Some(existing) => existing
+      None => {
+        let created = self.nodes.length()
+        self.nodes.push(archetype_signature_trie_node_new())
+        node.children.set(component_id, created)
+        created
+      }
     }
+    node_id = next_node_id
   }
-  bucket.push({ component_ids: component_ids.copy(), value })
+  self.nodes[node_id].value = Some(value)
+}
+
+///|
+fn archetype_int_bit_set_from_ids(ids : Array[Int]) -> @utils.IntBitSet {
+  let bit_set = @utils.IntBitSet::new()
+  for id in ids {
+    bit_set.insert(id)
+  }
+  bit_set
 }
 
 ///|
@@ -87,9 +89,6 @@ fn archetype_local_components_with_added_component(
   component_local_ids : Array[Int],
   component_local_id : Int,
 ) -> Array[Int] {
-  if component_local_ids.contains(component_local_id) {
-    return component_local_ids.copy()
-  }
   let result : Array[Int] = []
   let mut inserted = false
   for existing_component_local_id in component_local_ids {
@@ -140,13 +139,96 @@ fn archetype_entity_index_by_id(
 }
 
 ///|
-fn archetype_insert_sorted_unique(ids : Array[Int], archetype_id : Int) -> Bool {
-  if ids.contains(archetype_id) {
-    return false
+fn archetype_insert_sorted_unique_by_binary_search(
+  ids : Array[Int],
+  archetype_id : Int,
+) -> Bool {
+  let mut low = 0
+  let mut high = ids.length()
+  while low < high {
+    let mid = (low + high) / 2
+    let current = ids[mid]
+    if current == archetype_id {
+      return false
+    } else if current < archetype_id {
+      low = mid + 1
+    } else {
+      high = mid
+    }
   }
   ids.push(archetype_id)
-  ids.sort()
+  let mut index = ids.length() - 1
+  while index > low {
+    ids[index] = ids[index - 1]
+    index = index - 1
+  }
+  ids[low] = archetype_id
   true
+}
+
+///|
+fn archetype_check_single_add(
+  current_component_local_ids : Array[Int],
+  previous_component_local_ids : Array[Int],
+  previous_presence : @utils.IntBitSet,
+) -> Int? {
+  let mut added_component_local_id : Int? = None
+  for component_local_id in current_component_local_ids {
+    if !previous_presence.contains(component_local_id) {
+      match added_component_local_id {
+        Some(_) => return None
+        None => added_component_local_id = Some(component_local_id)
+      }
+    }
+  }
+  guard added_component_local_id is Some(component_local_id) else {
+    return None
+  }
+  if current_component_local_ids.length() !=
+    previous_component_local_ids.length() + 1 {
+    return None
+  }
+  Some(component_local_id)
+}
+
+///|
+fn archetype_check_single_remove(
+  current_component_local_ids : Array[Int],
+  previous_component_local_ids : Array[Int],
+  previous_presence : @utils.IntBitSet,
+  current_presence : @utils.IntBitSet,
+) -> Int? {
+  if previous_component_local_ids.length() !=
+    current_component_local_ids.length() + 1 {
+    return None
+  }
+  for component_local_id in current_component_local_ids {
+    if !previous_presence.contains(component_local_id) {
+      return None
+    }
+  }
+  let mut removed_component_local_id : Int? = None
+  for component_local_id in previous_component_local_ids {
+    if !current_presence.contains(component_local_id) {
+      match removed_component_local_id {
+        Some(_) => return None
+        None => removed_component_local_id = Some(component_local_id)
+      }
+    }
+  }
+  removed_component_local_id
+}
+
+///|
+fn archetype_insert_sorted_unique(ids : Array[Int], archetype_id : Int) -> Bool {
+  if ids.length() == 0 || ids[ids.length() - 1] < archetype_id {
+    ids.push(archetype_id)
+    return true
+  }
+  if ids[ids.length() - 1] == archetype_id {
+    return false
+  }
+  archetype_insert_sorted_unique_by_binary_search(ids, archetype_id)
 }
 
 ///|
@@ -170,15 +252,22 @@ fn archetype_remove_sorted(ids : Array[Int], archetype_id : Int) -> Bool {
 }
 
 ///|
-fn archetype_union_sorted_unique_local_component_ids(
+fn archetype_union_sorted_unique_local_component_ids_with_presence(
   base_component_local_ids : Array[Int],
+  base_component_presence : @utils.IntBitSet,
   added_component_local_ids : Array[Int],
 ) -> Array[Int] {
+  if added_component_local_ids.length() == 0 {
+    return base_component_local_ids.copy()
+  }
   let result = base_component_local_ids.copy()
   for component_local_id in added_component_local_ids {
-    if !result.contains(component_local_id) {
+    if !base_component_presence.contains(component_local_id) {
       result.push(component_local_id)
     }
+  }
+  if result.length() == base_component_local_ids.length() {
+    return result
   }
   result.sort()
   result
@@ -196,9 +285,11 @@ fn World::ensure_bundle_info_for_payloads(
     return None
   }
   let component_definition_ids : Array[Int] = []
+  let component_definition_presence = @utils.IntBitSet::new()
   for payload in payloads {
     let component_definition_id = payload.0
-    if !component_definition_ids.contains(component_definition_id) {
+    if !component_definition_presence.contains(component_definition_id) {
+      component_definition_presence.insert(component_definition_id)
       component_definition_ids.push(component_definition_id)
     }
   }
@@ -208,11 +299,7 @@ fn World::ensure_bundle_info_for_payloads(
   let bundle_component_definition_ids = archetype_sorted_unique_local_component_ids(
     component_definition_ids,
   )
-  match
-    archetype_signature_lookup(
-      self.bundle_ids_by_signature,
-      bundle_component_definition_ids,
-    ) {
+  match self.bundle_ids_by_signature.lookup(bundle_component_definition_ids) {
     Some(bundle_id) =>
       match self.bundle_infos.get(bundle_id) {
         Some(info) => return Some(info)
@@ -234,18 +321,20 @@ fn World::ensure_bundle_info_for_payloads(
       None => ()
     }
   }
+  let bundle_component_local_ids = archetype_sorted_unique_local_component_ids(
+    component_local_ids,
+  )
   let bundle_id = self.next_bundle_id
   self.next_bundle_id = bundle_id + 1
   let info = BundleInfo::{
     id: bundle_id,
-    component_local_ids: archetype_sorted_unique_local_component_ids(
-      component_local_ids,
+    component_local_ids: bundle_component_local_ids,
+    component_local_id_presence: archetype_int_bit_set_from_ids(
+      bundle_component_local_ids,
     ),
   }
-  archetype_signature_insert(
-    self.bundle_ids_by_signature,
-    bundle_component_definition_ids,
-    bundle_id,
+  self.bundle_ids_by_signature.insert(
+    bundle_component_definition_ids, bundle_id,
   )
   self.bundle_infos.set(bundle_id, info)
   Some(info)
@@ -258,7 +347,7 @@ fn archetype_bundle_info_covers_pending_payloads(
 ) -> Bool {
   for entry in pending_payloads.entries {
     let component_local_id = entry.local_component_id
-    if !bundle_info.component_local_ids.contains(component_local_id) {
+    if !bundle_info.component_local_id_presence.contains(component_local_id) {
       return false
     }
   }
@@ -515,20 +604,12 @@ fn World::ensure_table_for_local_components(
   let table_component_local_ids = self.table_local_components_for_archetype_components(
     archetype_component_local_ids,
   )
-  match
-    archetype_signature_lookup(
-      self.table_ids_by_signature,
-      table_component_local_ids,
-    ) {
+  match self.table_ids_by_signature.lookup(table_component_local_ids) {
     Some(table_id) => table_id
     None => {
       let table_id = self.next_table_id
       self.next_table_id = table_id + 1
-      archetype_signature_insert(
-        self.table_ids_by_signature,
-        table_component_local_ids,
-        table_id,
-      )
+      self.table_ids_by_signature.insert(table_component_local_ids, table_id)
       self.table_component_local_ids.set(table_id, table_component_local_ids)
       table_id
     }
@@ -543,18 +624,13 @@ fn World::ensure_archetype_for_local_components(
   let normalized = archetype_sorted_unique_local_component_ids(
     component_local_ids,
   )
-  match
-    archetype_signature_lookup(self.archetype_ids_by_signature, normalized) {
+  match self.archetype_ids_by_signature.lookup(normalized) {
     Some(archetype_id) => archetype_id
     None => {
       let archetype_id = self.next_archetype_id
       self.next_archetype_id = archetype_id + 1
       let table_id = self.ensure_table_for_local_components(normalized)
-      archetype_signature_insert(
-        self.archetype_ids_by_signature,
-        normalized,
-        archetype_id,
-      )
+      self.archetype_ids_by_signature.insert(normalized, archetype_id)
       self.archetype_table_ids.set(archetype_id, table_id)
       self.archetype_component_local_ids.set(archetype_id, normalized)
       let local_component_indices : Map[Int, Int] = {}
@@ -590,9 +666,7 @@ fn World::ensure_archetype_for_local_components(
           component_local_id,
           fn() { [] },
         )
-        if !archetype_ids.contains(archetype_id) {
-          archetype_ids.push(archetype_id)
-        }
+        archetype_ids.push(archetype_id)
       }
       archetype_id
     }
@@ -679,8 +753,12 @@ fn World::ensure_archetype_insert_bundle_edge_target(
       let from_components = self.archetype_component_local_ids
         .get(from_archetype_id)
         .unwrap_or([])
-      let target_components = archetype_union_sorted_unique_local_component_ids(
+      let from_presence = self.archetype_component_local_id_presence
+        .get(from_archetype_id)
+        .unwrap_or(@utils.IntBitSet::new())
+      let target_components = archetype_union_sorted_unique_local_component_ids_with_presence(
         from_components,
+        from_presence,
         bundle_info.component_local_ids,
       )
       let target_archetype_id = self.ensure_archetype_for_local_components(
@@ -702,20 +780,23 @@ fn World::ensure_archetype_add_edge_target(
   from_archetype_id : Int,
   component_local_id : Int,
 ) -> Int {
+  let from_presence = self.archetype_component_local_id_presence
+    .get(from_archetype_id)
+    .unwrap_or(@utils.IntBitSet::new())
   match self.archetype_add_edges_by_component_local_id.get(from_archetype_id) {
     Some(add_edges) =>
       match add_edges.get(component_local_id) {
         Some(target_archetype_id) => target_archetype_id
-        None => {
-          let from_components = self.archetype_component_local_ids
-            .get(from_archetype_id)
-            .unwrap_or([])
-          if from_components.contains(component_local_id) {
+        None =>
+          if from_presence.contains(component_local_id) {
             self.cache_archetype_add_edge(
               from_archetype_id, component_local_id, from_archetype_id,
             )
             from_archetype_id
           } else {
+            let from_components = self.archetype_component_local_ids
+              .get(from_archetype_id)
+              .unwrap_or([])
             let target_components = archetype_local_components_with_added_component(
               from_components, component_local_id,
             )
@@ -727,18 +808,17 @@ fn World::ensure_archetype_add_edge_target(
             )
             target_archetype_id
           }
-        }
       }
-    None => {
-      let from_components = self.archetype_component_local_ids
-        .get(from_archetype_id)
-        .unwrap_or([])
-      if from_components.contains(component_local_id) {
+    None =>
+      if from_presence.contains(component_local_id) {
         self.cache_archetype_add_edge(
           from_archetype_id, component_local_id, from_archetype_id,
         )
         from_archetype_id
       } else {
+        let from_components = self.archetype_component_local_ids
+          .get(from_archetype_id)
+          .unwrap_or([])
         let target_components = archetype_local_components_with_added_component(
           from_components, component_local_id,
         )
@@ -750,7 +830,6 @@ fn World::ensure_archetype_add_edge_target(
         )
         target_archetype_id
       }
-    }
   }
 }
 
@@ -760,21 +839,24 @@ fn World::ensure_archetype_remove_edge_target(
   from_archetype_id : Int,
   component_local_id : Int,
 ) -> Int {
+  let from_presence = self.archetype_component_local_id_presence
+    .get(from_archetype_id)
+    .unwrap_or(@utils.IntBitSet::new())
   match
     self.archetype_remove_edges_by_component_local_id.get(from_archetype_id) {
     Some(remove_edges) =>
       match remove_edges.get(component_local_id) {
         Some(target_archetype_id) => target_archetype_id
-        None => {
-          let from_components = self.archetype_component_local_ids
-            .get(from_archetype_id)
-            .unwrap_or([])
-          if !from_components.contains(component_local_id) {
+        None =>
+          if !from_presence.contains(component_local_id) {
             self.cache_archetype_remove_edge(
               from_archetype_id, component_local_id, from_archetype_id,
             )
             from_archetype_id
           } else {
+            let from_components = self.archetype_component_local_ids
+              .get(from_archetype_id)
+              .unwrap_or([])
             let target_components = archetype_local_components_with_removed_component(
               from_components, component_local_id,
             )
@@ -786,18 +868,17 @@ fn World::ensure_archetype_remove_edge_target(
             )
             target_archetype_id
           }
-        }
       }
-    None => {
-      let from_components = self.archetype_component_local_ids
-        .get(from_archetype_id)
-        .unwrap_or([])
-      if !from_components.contains(component_local_id) {
+    None =>
+      if !from_presence.contains(component_local_id) {
         self.cache_archetype_remove_edge(
           from_archetype_id, component_local_id, from_archetype_id,
         )
         from_archetype_id
       } else {
+        let from_components = self.archetype_component_local_ids
+          .get(from_archetype_id)
+          .unwrap_or([])
         let target_components = archetype_local_components_with_removed_component(
           from_components, component_local_id,
         )
@@ -809,7 +890,6 @@ fn World::ensure_archetype_remove_edge_target(
         )
         target_archetype_id
       }
-    }
   }
 }
 
@@ -1270,75 +1350,33 @@ fn World::refresh_entity_archetype_with_bundle_info(
     let previous_presence = self.archetype_component_local_id_presence
       .get(previous_archetype_id)
       .unwrap_or(@utils.IntBitSet::new())
+    let current_presence = self.entity_component_local_id_presence[entity.id]
     if current_len == previous_len + 1 {
-      let current_presence = @utils.IntBitSet::new()
-      let mut added_component_local_id : Int? = None
-      let mut valid_single_add = true
-      for component_local_id in current_component_local_ids {
-        current_presence.insert(component_local_id)
-        if !previous_presence.contains(component_local_id) {
-          match added_component_local_id {
-            Some(_) => {
-              valid_single_add = false
-              break
-            }
-            None => added_component_local_id = Some(component_local_id)
-          }
-        }
-      }
-      if valid_single_add {
-        for component_local_id in previous_component_local_ids {
-          if !current_presence.contains(component_local_id) {
-            valid_single_add = false
-            break
-          }
-        }
-      }
-      if valid_single_add {
-        match added_component_local_id {
-          Some(component_local_id) =>
-            next_archetype_id = Some(
-              self.ensure_archetype_add_edge_target(
-                previous_archetype_id, component_local_id,
-              ),
-            )
-          None => ()
-        }
+      match
+        archetype_check_single_add(
+          current_component_local_ids, previous_component_local_ids, previous_presence,
+        ) {
+        Some(component_local_id) =>
+          next_archetype_id = Some(
+            self.ensure_archetype_add_edge_target(
+              previous_archetype_id, component_local_id,
+            ),
+          )
+        None => ()
       }
     } else if previous_len == current_len + 1 {
-      let current_presence = @utils.IntBitSet::new()
-      let mut removed_component_local_id : Int? = None
-      let mut valid_single_remove = true
-      for component_local_id in current_component_local_ids {
-        current_presence.insert(component_local_id)
-        if !previous_presence.contains(component_local_id) {
-          valid_single_remove = false
-          break
-        }
-      }
-      if valid_single_remove {
-        for component_local_id in previous_component_local_ids {
-          if !current_presence.contains(component_local_id) {
-            match removed_component_local_id {
-              Some(_) => {
-                valid_single_remove = false
-                break
-              }
-              None => removed_component_local_id = Some(component_local_id)
-            }
-          }
-        }
-      }
-      if valid_single_remove {
-        match removed_component_local_id {
-          Some(component_local_id) =>
-            next_archetype_id = Some(
-              self.ensure_archetype_remove_edge_target(
-                previous_archetype_id, component_local_id,
-              ),
-            )
-          None => ()
-        }
+      match
+        archetype_check_single_remove(
+          current_component_local_ids, previous_component_local_ids, previous_presence,
+          current_presence,
+        ) {
+        Some(component_local_id) =>
+          next_archetype_id = Some(
+            self.ensure_archetype_remove_edge_target(
+              previous_archetype_id, component_local_id,
+            ),
+          )
+        None => ()
       }
     }
   }
