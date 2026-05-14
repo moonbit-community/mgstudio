@@ -29,6 +29,121 @@ pub struct ComponentTableColumn[T] {
 }
 
 ///|
+priv struct ComponentColumnTablePlan {
+  component_local_ids : Array[Int]
+  mut archetype_generation : Int
+  mut table_ids : Array[Int]
+}
+
+///|
+fn component_column_table_plan_new(
+  component_local_ids : Array[Int],
+) -> ComponentColumnTablePlan {
+  { component_local_ids, archetype_generation: -1, table_ids: [] }
+}
+
+///|
+fn World::component_column_table_plan(
+  self : World,
+  component_local_ids : Array[Int],
+) -> Ref[ComponentColumnTablePlan] {
+  let normalized = archetype_sorted_unique_local_component_ids(
+    component_local_ids,
+  )
+  match self.component_column_table_plan_ids_by_signature.lookup(normalized) {
+    Some(plan_id) =>
+      match self.component_column_table_plans.get(plan_id) {
+        Some(plan_ref) => plan_ref
+        None => {
+          let plan_ref = Ref(component_column_table_plan_new(normalized))
+          self.component_column_table_plans.set(plan_id, plan_ref)
+          plan_ref
+        }
+      }
+    None => {
+      let plan_id = self.next_component_column_table_plan_id
+      self.next_component_column_table_plan_id = plan_id + 1
+      self.component_column_table_plan_ids_by_signature.insert(
+        normalized, plan_id,
+      )
+      let plan_ref = Ref(component_column_table_plan_new(normalized))
+      self.component_column_table_plans.set(plan_id, plan_ref)
+      plan_ref
+    }
+  }
+}
+
+///|
+fn World::rebuild_component_column_table_plan(
+  self : World,
+  plan : ComponentColumnTablePlan,
+) -> Unit {
+  let component_local_ids = plan.component_local_ids
+  if component_local_ids.length() == 0 {
+    plan.table_ids = []
+    plan.archetype_generation = self.archetype_generation()
+    return
+  }
+  let mut driver_local_component_id = component_local_ids[0]
+  let mut driver_count = self.component_membership_counts
+    .get(driver_local_component_id)
+    .unwrap_or(0)
+  for index in 1..<component_local_ids.length() {
+    let component_local_id = component_local_ids[index]
+    let count = self.component_membership_counts
+      .get(component_local_id)
+      .unwrap_or(0)
+    if count < driver_count {
+      driver_local_component_id = component_local_id
+      driver_count = count
+    }
+  }
+  let table_ids : Array[Int] = []
+  let visited_tables = @utils.IntBitSet::new()
+  let archetype_ids = self.archetype_ids_for_component_local_id(
+    driver_local_component_id,
+  )
+  for archetype_id in archetype_ids {
+    guard self.archetype_local_component_presence_view(archetype_id)
+      is Some(presence) else {
+      continue
+    }
+    let mut matches = true
+    for component_local_id in component_local_ids {
+      if !presence.contains(component_local_id) {
+        matches = false
+        break
+      }
+    }
+    if !matches {
+      continue
+    }
+    guard self.archetype_table_id(archetype_id) is Some(table_id) else {
+      continue
+    }
+    if visited_tables.contains(table_id) {
+      continue
+    }
+    visited_tables.insert(table_id)
+    table_ids.push(table_id)
+  }
+  plan.table_ids = table_ids
+  plan.archetype_generation = self.archetype_generation()
+}
+
+///|
+fn World::component_column_matching_table_ids(
+  self : World,
+  component_local_ids : Array[Int],
+) -> Array[Int] {
+  let plan_ref = self.component_column_table_plan(component_local_ids)
+  if plan_ref.val.archetype_generation != self.archetype_generation() {
+    self.rebuild_component_column_table_plan(plan_ref.val)
+  }
+  plan_ref.val.table_ids
+}
+
+///|
 pub fn[T] World::component_column(
   self : World,
   key : ComponentKey[T],
@@ -531,9 +646,9 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::for_each(
         None => ()
       }
     Table => {
-      let archetype_ids = self.world
-        .archetype_ids_for_component_local_id(self.local_component_id)
-        .copy()
+      let archetype_ids = self.world.archetype_ids_for_component_local_id(
+        self.local_component_id,
+      )
       for archetype_id in archetype_ids {
         guard self.world.archetype_entities_view(archetype_id) is Some(entities) else {
           continue
@@ -586,9 +701,9 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without(
     })
     return
   }
-  let archetype_ids = self.world
-    .archetype_ids_for_component_local_id(self.local_component_id)
-    .copy()
+  let archetype_ids = self.world.archetype_ids_for_component_local_id(
+    self.local_component_id,
+  )
   for archetype_id in archetype_ids {
     if self.world.archetype_component_local_index(
         archetype_id,
@@ -639,9 +754,9 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with(
     })
     return
   }
-  let archetype_ids = self.world
-    .archetype_ids_for_component_local_id(self.local_component_id)
-    .copy()
+  let archetype_ids = self.world.archetype_ids_for_component_local_id(
+    self.local_component_id,
+  )
   for archetype_id in archetype_ids {
     guard self.world.archetype_component_local_index(
         archetype_id,
@@ -694,25 +809,16 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
     self.for_each_without(other, visit)
     return
   }
-  let archetype_ids = self.world
-    .archetype_ids_for_component_local_id(self.local_component_id)
-    .copy()
-  let visited_tables = @utils.IntBitSet::new()
-  for archetype_id in archetype_ids {
-    if self.world.archetype_component_local_index(
-        archetype_id,
+  let table_ids = self.world.component_column_matching_table_ids([
+    self.local_component_id,
+  ])
+  for table_id in table_ids {
+    if self.world.table_has_component_local_id(
+        table_id,
         other.local_component_id,
-      )
-      is Some(_) {
+      ) {
       continue
     }
-    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
-      continue
-    }
-    if visited_tables.contains(table_id) {
-      continue
-    }
-    visited_tables.insert(table_id)
     guard self.table_column_ref(table_id) is Some(column_ref) else { continue }
     guard self.world.table_storage(table_id) is Some(table_ref) else {
       continue
@@ -767,25 +873,11 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
     })
     return
   }
-  let archetype_ids = self.world
-    .archetype_ids_for_component_local_id(self.local_component_id)
-    .copy()
-  let visited_tables = @utils.IntBitSet::new()
-  for archetype_id in archetype_ids {
-    guard self.world.archetype_component_local_index(
-        archetype_id,
-        other.local_component_id,
-      )
-      is Some(_) else {
-      continue
-    }
-    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
-      continue
-    }
-    if visited_tables.contains(table_id) {
-      continue
-    }
-    visited_tables.insert(table_id)
+  let table_ids = self.world.component_column_matching_table_ids([
+    self.local_component_id,
+    other.local_component_id,
+  ])
+  for table_id in table_ids {
     guard self.table_column_ref(table_id) is Some(left_column_ref) else {
       continue
     }
@@ -844,44 +936,12 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
     })
     return
   }
-  let first_count = self.world.component_membership_counts
-    .get(self.local_component_id)
-    .unwrap_or(0)
-  let second_count = self.world.component_membership_counts
-    .get(second.local_component_id)
-    .unwrap_or(0)
-  let third_count = self.world.component_membership_counts
-    .get(third.local_component_id)
-    .unwrap_or(0)
-  let driver_local_component_id = if first_count <= second_count &&
-    first_count <= third_count {
-    self.local_component_id
-  } else if second_count <= third_count {
-    second.local_component_id
-  } else {
-    third.local_component_id
-  }
-  let archetype_ids = self.world
-    .archetype_ids_for_component_local_id(driver_local_component_id)
-    .copy()
-  let visited_tables = @utils.IntBitSet::new()
-  for archetype_id in archetype_ids {
-    guard self.world.archetype_local_component_presence_view(archetype_id)
-      is Some(presence) else {
-      continue
-    }
-    if !presence.contains(self.local_component_id) ||
-      !presence.contains(second.local_component_id) ||
-      !presence.contains(third.local_component_id) {
-      continue
-    }
-    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
-      continue
-    }
-    if visited_tables.contains(table_id) {
-      continue
-    }
-    visited_tables.insert(table_id)
+  let table_ids = self.world.component_column_matching_table_ids([
+    self.local_component_id,
+    second.local_component_id,
+    third.local_component_id,
+  ])
+  for table_id in table_ids {
     guard self.table_column_ref(table_id) is Some(first_column_ref) else {
       continue
     }
@@ -950,44 +1010,12 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
     })
     return
   }
-  let first_count = self.world.component_membership_counts
-    .get(self.local_component_id)
-    .unwrap_or(0)
-  let second_count = self.world.component_membership_counts
-    .get(second.local_component_id)
-    .unwrap_or(0)
-  let third_count = self.world.component_membership_counts
-    .get(third.local_component_id)
-    .unwrap_or(0)
-  let driver_local_component_id = if first_count <= second_count &&
-    first_count <= third_count {
-    self.local_component_id
-  } else if second_count <= third_count {
-    second.local_component_id
-  } else {
-    third.local_component_id
-  }
-  let archetype_ids = self.world
-    .archetype_ids_for_component_local_id(driver_local_component_id)
-    .copy()
-  let visited_tables = @utils.IntBitSet::new()
-  for archetype_id in archetype_ids {
-    guard self.world.archetype_local_component_presence_view(archetype_id)
-      is Some(presence) else {
-      continue
-    }
-    if !presence.contains(self.local_component_id) ||
-      !presence.contains(second.local_component_id) ||
-      !presence.contains(third.local_component_id) {
-      continue
-    }
-    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
-      continue
-    }
-    if visited_tables.contains(table_id) {
-      continue
-    }
-    visited_tables.insert(table_id)
+  let table_ids = self.world.component_column_matching_table_ids([
+    self.local_component_id,
+    second.local_component_id,
+    third.local_component_id,
+  ])
+  for table_id in table_ids {
     guard self.table_column_ref(table_id) is Some(first_column_ref) else {
       continue
     }
@@ -1068,51 +1096,13 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, M, N] ComponentColumn::for_each
     })
     return
   }
-  let first_count = self.world.component_membership_counts
-    .get(self.local_component_id)
-    .unwrap_or(0)
-  let second_count = self.world.component_membership_counts
-    .get(other.local_component_id)
-    .unwrap_or(0)
-  let marker_a_count = self.world.component_membership_counts
-    .get(marker_a.local_component_id)
-    .unwrap_or(0)
-  let marker_b_count = self.world.component_membership_counts
-    .get(marker_b.local_component_id)
-    .unwrap_or(0)
-  let driver_local_component_id = if first_count <= second_count &&
-    first_count <= marker_a_count &&
-    first_count <= marker_b_count {
-    self.local_component_id
-  } else if second_count <= marker_a_count && second_count <= marker_b_count {
-    other.local_component_id
-  } else if marker_a_count <= marker_b_count {
-    marker_a.local_component_id
-  } else {
-    marker_b.local_component_id
-  }
-  let archetype_ids = self.world
-    .archetype_ids_for_component_local_id(driver_local_component_id)
-    .copy()
-  let visited_tables = @utils.IntBitSet::new()
-  for archetype_id in archetype_ids {
-    guard self.world.archetype_local_component_presence_view(archetype_id)
-      is Some(presence) else {
-      continue
-    }
-    if !presence.contains(self.local_component_id) ||
-      !presence.contains(other.local_component_id) ||
-      !presence.contains(marker_a.local_component_id) ||
-      !presence.contains(marker_b.local_component_id) {
-      continue
-    }
-    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
-      continue
-    }
-    if visited_tables.contains(table_id) {
-      continue
-    }
-    visited_tables.insert(table_id)
+  let table_ids = self.world.component_column_matching_table_ids([
+    self.local_component_id,
+    other.local_component_id,
+    marker_a.local_component_id,
+    marker_b.local_component_id,
+  ])
+  for table_id in table_ids {
     guard self.table_column_ref(table_id) is Some(first_column_ref) else {
       continue
     }
@@ -1187,51 +1177,13 @@ pub fn[
     })
     return
   }
-  let first_count = self.world.component_membership_counts
-    .get(self.local_component_id)
-    .unwrap_or(0)
-  let second_count = self.world.component_membership_counts
-    .get(second.local_component_id)
-    .unwrap_or(0)
-  let third_count = self.world.component_membership_counts
-    .get(third.local_component_id)
-    .unwrap_or(0)
-  let fourth_count = self.world.component_membership_counts
-    .get(fourth.local_component_id)
-    .unwrap_or(0)
-  let driver_local_component_id = if first_count <= second_count &&
-    first_count <= third_count &&
-    first_count <= fourth_count {
-    self.local_component_id
-  } else if second_count <= third_count && second_count <= fourth_count {
-    second.local_component_id
-  } else if third_count <= fourth_count {
-    third.local_component_id
-  } else {
-    fourth.local_component_id
-  }
-  let archetype_ids = self.world
-    .archetype_ids_for_component_local_id(driver_local_component_id)
-    .copy()
-  let visited_tables = @utils.IntBitSet::new()
-  for archetype_id in archetype_ids {
-    guard self.world.archetype_local_component_presence_view(archetype_id)
-      is Some(presence) else {
-      continue
-    }
-    if !presence.contains(self.local_component_id) ||
-      !presence.contains(second.local_component_id) ||
-      !presence.contains(third.local_component_id) ||
-      !presence.contains(fourth.local_component_id) {
-      continue
-    }
-    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
-      continue
-    }
-    if visited_tables.contains(table_id) {
-      continue
-    }
-    visited_tables.insert(table_id)
+  let table_ids = self.world.component_column_matching_table_ids([
+    self.local_component_id,
+    second.local_component_id,
+    third.local_component_id,
+    fourth.local_component_id,
+  ])
+  for table_id in table_ids {
     guard self.table_column_ref(table_id) is Some(first_column_ref) else {
       continue
     }
@@ -1330,60 +1282,14 @@ pub fn[
     })
     return
   }
-  let first_count = self.world.component_membership_counts
-    .get(self.local_component_id)
-    .unwrap_or(0)
-  let second_count = self.world.component_membership_counts
-    .get(second.local_component_id)
-    .unwrap_or(0)
-  let third_count = self.world.component_membership_counts
-    .get(third.local_component_id)
-    .unwrap_or(0)
-  let fourth_count = self.world.component_membership_counts
-    .get(fourth.local_component_id)
-    .unwrap_or(0)
-  let fifth_count = self.world.component_membership_counts
-    .get(fifth.local_component_id)
-    .unwrap_or(0)
-  let driver_local_component_id = if first_count <= second_count &&
-    first_count <= third_count &&
-    first_count <= fourth_count &&
-    first_count <= fifth_count {
-    self.local_component_id
-  } else if second_count <= third_count &&
-    second_count <= fourth_count &&
-    second_count <= fifth_count {
-    second.local_component_id
-  } else if third_count <= fourth_count && third_count <= fifth_count {
-    third.local_component_id
-  } else if fourth_count <= fifth_count {
-    fourth.local_component_id
-  } else {
-    fifth.local_component_id
-  }
-  let archetype_ids = self.world
-    .archetype_ids_for_component_local_id(driver_local_component_id)
-    .copy()
-  let visited_tables = @utils.IntBitSet::new()
-  for archetype_id in archetype_ids {
-    guard self.world.archetype_local_component_presence_view(archetype_id)
-      is Some(presence) else {
-      continue
-    }
-    if !presence.contains(self.local_component_id) ||
-      !presence.contains(second.local_component_id) ||
-      !presence.contains(third.local_component_id) ||
-      !presence.contains(fourth.local_component_id) ||
-      !presence.contains(fifth.local_component_id) {
-      continue
-    }
-    guard self.world.archetype_table_id(archetype_id) is Some(table_id) else {
-      continue
-    }
-    if visited_tables.contains(table_id) {
-      continue
-    }
-    visited_tables.insert(table_id)
+  let table_ids = self.world.component_column_matching_table_ids([
+    self.local_component_id,
+    second.local_component_id,
+    third.local_component_id,
+    fourth.local_component_id,
+    fifth.local_component_id,
+  ])
+  for table_id in table_ids {
     guard self.table_column_ref(table_id) is Some(first_column_ref) else {
       continue
     }

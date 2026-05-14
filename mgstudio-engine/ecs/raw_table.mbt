@@ -350,11 +350,6 @@ fn[T : EcsPayloadCodec] RawTableColumn::values_cached(
 }
 
 ///|
-fn RawTableColumn::type_name(self : RawTableColumn) -> String {
-  self.component_ops.debug_name
-}
-
-///|
 fn raw_table_column_swap_remove(
   column_ref : Ref[RawTableColumn],
   row_index : Int,
@@ -408,17 +403,6 @@ fn RawTable::column(
     return None
   }
   Some(self.columns[component_index])
-}
-
-///|
-fn RawTable::column_type_name(
-  self : RawTable,
-  component_local_id : Int,
-) -> String? {
-  match self.column(component_local_id) {
-    Some(column_ref) => Some(column_ref.val.type_name())
-    None => None
-  }
 }
 
 ///|
@@ -547,6 +531,20 @@ fn RawTable::record_changed_at_row(
     return false
   }
   column_ref.val.record_changed_at_row(row.index(), tick, caller)
+}
+
+///|
+fn World::record_table_component_changed_at_table_row(
+  self : World,
+  local_component_id : Int,
+  table_id : Int,
+  row_index : Int,
+  tick : @core.Tick,
+  caller : String?,
+) -> Bool {
+  guard self.table_storage(table_id) is Some(table_ref) else { return false }
+  guard TableRow::from_index(row_index) is Some(row) else { return false }
+  table_ref.val.record_changed_at_row(row, local_component_id, tick, caller)
 }
 
 ///|
@@ -1077,35 +1075,14 @@ fn World::table_has_component_local_id(
 }
 
 ///|
-fn[T : EcsPayloadCodec] World::component_value_by_local_id_at_table_row(
+fn[T : EcsPayloadCodec] World::component_value_by_table_row_fast(
   self : World,
-  key : ComponentKey[T],
   local_component_id : Int,
   table_id : Int,
   row_index : Int,
-) -> T? raise EcsError {
-  guard self.local_component_storage_type(local_component_id) == Some(Table) else {
-    return None
-  }
+) -> T? {
   guard self.table_storage(table_id) is Some(table_ref) else { return None }
-  match table_ref.val.value_at_row_index(row_index, local_component_id) {
-    Some(value) => Some(value)
-    None => {
-      guard table_ref.val.payload_at_row(
-          TableRow::from_index(row_index).unwrap(),
-          local_component_id,
-        )
-        is Some(_) else {
-        return None
-      }
-      raise ComponentTypeMismatch(
-        key.id(),
-        key.debug_name(),
-        @core.Entity::placeholder(),
-        table_ref.val.column_type_name(local_component_id).unwrap_or("unknown"),
-      )
-    }
-  }
+  table_ref.val.value_at_row_index(row_index, local_component_id)
 }
 
 ///|

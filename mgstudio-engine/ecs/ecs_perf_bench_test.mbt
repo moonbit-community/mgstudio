@@ -14,8 +14,8 @@
 
 ///|
 struct BenchPosition {
-  x : Int
-  y : Int
+  mut x : Int
+  mut y : Int
 }
 
 ///|
@@ -259,6 +259,26 @@ fn ecs_bench_sparse_query_sum(
 }
 
 ///|
+fn ecs_bench_mut_query_apply(
+  world : World,
+  state : QueryState[(Mut[BenchPosition], Comp[BenchVelocity]), All],
+) -> Int {
+  let total = Ref(0)
+  let iter = state.iter(world)
+  while (try! iter.fetch_next()) is Some((_entity, data)) {
+    let (position, velocity) = data
+    let v = velocity.value()
+    position.modify(fn(p) {
+      p.x = p.x + v.dx
+      p.y = p.y + v.dy
+    })
+    let p = position.value()
+    total.val = total.val + p.x + p.y
+  }
+  total.val
+}
+
+///|
 test "bench ecs: spawn dense bundle" (b : @bench.T) {
   let entity_count = 5_000
   b.bench(name="spawn_bundle dense x5000", count=10U, () => {
@@ -315,5 +335,14 @@ test "bench ecs: query sparse filter cached" (b : @bench.T) {
   let cache = QueryCache::new()
   b.bench(name="query sparse filter cached x20000", count=100U, () => {
     b.keep(try! ecs_bench_sparse_query_sum(world, cache))
+  })
+}
+
+///|
+test "bench ecs: mut query modify cached" (b : @bench.T) {
+  let world = try! ecs_bench_seed_dense_world(20_000)
+  let state : QueryState[(Mut[BenchPosition], Comp[BenchVelocity]), All] = world.query()
+  b.bench(name="query mut modify cached x20000", count=100U, () => {
+    b.keep(ecs_bench_mut_query_apply(world, state))
   })
 }

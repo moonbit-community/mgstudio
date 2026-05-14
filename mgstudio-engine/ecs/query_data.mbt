@@ -663,8 +663,8 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
   let local_component_id = world.local_component_id(key.id())
   let value_at_row = match local_component_id {
     Some(local_component_id) =>
-      try! world.component_value_by_local_id_at_table_row(
-        key, local_component_id, table_id, row_index,
+      world.component_value_by_table_row_fast(
+        local_component_id, table_id, row_index,
       )
     None => None
   }
@@ -698,8 +698,8 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row_with_plan_off
   let local_component_id = query_data_local_component_id_from_plan(plan, offset)
   let value_at_row = match local_component_id {
     Some(local_component_id) =>
-      try! world.component_value_by_local_id_at_table_row(
-        key, local_component_id, table_id, row_index,
+      world.component_value_by_table_row_fast(
+        local_component_id, table_id, row_index,
       )
     None => None
   }
@@ -1424,8 +1424,8 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
   let key = T::component()
   let value_at_row = match world.local_component_id(key.id()) {
     Some(local_component_id) =>
-      try! world.component_value_by_local_id_at_table_row(
-        key, local_component_id, table_id, row_index,
+      world.component_value_by_table_row_fast(
+        local_component_id, table_id, row_index,
       )
     None => None
   }
@@ -1448,8 +1448,8 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_table_row_with_plan
   let value_at_row = match
     query_data_local_component_id_from_plan(plan, offset) {
     Some(local_component_id) =>
-      try! world.component_value_by_local_id_at_table_row(
-        key, local_component_id, table_id, row_index,
+      world.component_value_by_table_row_fast(
+        local_component_id, table_id, row_index,
       )
     None => None
   }

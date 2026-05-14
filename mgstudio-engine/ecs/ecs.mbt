@@ -422,8 +422,11 @@ pub struct World {
   priv mut next_archetype_id : Int
   priv mut next_table_id : Int
   priv mut next_bundle_id : Int
+  priv mut next_component_column_table_plan_id : Int
   priv bundle_ids_by_signature : ArchetypeSignatureIndex
   priv bundle_infos : Map[Int, BundleInfo]
+  priv component_column_table_plan_ids_by_signature : ArchetypeSignatureIndex
+  priv component_column_table_plans : Map[Int, Ref[ComponentColumnTablePlan]]
   priv archetype_ids_by_signature : ArchetypeSignatureIndex
   priv table_ids_by_signature : ArchetypeSignatureIndex
   priv table_component_local_ids : Map[Int, Array[Int]]
@@ -491,8 +494,11 @@ pub fn World::new() -> World {
     next_archetype_id: 1,
     next_table_id: 1,
     next_bundle_id: 1,
+    next_component_column_table_plan_id: 1,
     bundle_ids_by_signature: archetype_signature_index_new(),
     bundle_infos: {},
+    component_column_table_plan_ids_by_signature: archetype_signature_index_new(),
+    component_column_table_plans: {},
     archetype_ids_by_signature: archetype_signature_index_new(),
     table_ids_by_signature: archetype_signature_index_new(),
     table_component_local_ids: { 0: [] },
@@ -890,6 +896,14 @@ fn World::ensure_changed_component_messages(
   key_id : Int,
 ) -> Ref[@core.Messages[@core.Entity]] {
   let local_id = self.ensure_component_registered(key_id)
+  self.ensure_changed_component_messages_by_local_id(local_id)
+}
+
+///|
+fn World::ensure_changed_component_messages_by_local_id(
+  self : World,
+  local_id : Int,
+) -> Ref[@core.Messages[@core.Entity]] {
   match self.changed_components.get(local_id) {
     Some(messages_ref) => messages_ref
     None => {
@@ -1039,22 +1053,24 @@ fn World::record_component_changed_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
-  self.record_component_changed_tick_only_with_caller(entity, key_id, caller)
-  self.ensure_changed_component_messages(key_id).val.send(
-    component_write_tick(self),
-    entity,
+  let tick = component_write_tick(self)
+  let local_id = self.ensure_component_registered(key_id)
+  self.record_component_changed_by_local_id_with_tick(
+    entity, local_id, tick, caller,
+  )
+  self.ensure_changed_component_messages_by_local_id(local_id).val.send(
+    tick, entity,
   )
 }
 
 ///|
-fn World::record_component_changed_tick_only_with_caller(
+fn World::record_component_changed_by_local_id_with_tick(
   self : World,
   entity : @core.Entity,
-  key_id : Int,
+  local_id : Int,
+  tick : @core.Tick,
   caller : String?,
 ) -> Unit {
-  let tick = component_write_tick(self)
-  let local_id = self.ensure_component_registered(key_id)
   let recorded = match self.local_component_storage_type(local_id) {
     Some(Table) =>
       self.record_table_component_changed_by_local_id(

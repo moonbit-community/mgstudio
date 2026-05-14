@@ -46,6 +46,9 @@ pub struct Children {
   entities : Array[@core.Entity]
   entity_table_ids : Array[Int]
   entity_row_indices : Array[Int]
+  priv entity_cache_world_generations : Array[Int]
+  priv entity_cache_ids : Array[Int]
+  priv entity_cache_entity_generations : Array[Int]
 }
 
 ///|
@@ -54,6 +57,9 @@ pub fn Children::new(entities : Array[@core.Entity]) -> Children {
     entities,
     entity_table_ids: Array::make(entities.length(), -1),
     entity_row_indices: Array::make(entities.length(), -1),
+    entity_cache_world_generations: Array::make(entities.length(), -1),
+    entity_cache_ids: Array::make(entities.length(), -1),
+    entity_cache_entity_generations: Array::make(entities.length(), -1),
   }
 }
 
@@ -70,6 +76,15 @@ fn Children::ensure_entity_row_cache(self : Children) -> Unit {
   while self.entity_row_indices.length() < self.entities.length() {
     self.entity_row_indices.push(-1)
   }
+  while self.entity_cache_world_generations.length() < self.entities.length() {
+    self.entity_cache_world_generations.push(-1)
+  }
+  while self.entity_cache_ids.length() < self.entities.length() {
+    self.entity_cache_ids.push(-1)
+  }
+  while self.entity_cache_entity_generations.length() < self.entities.length() {
+    self.entity_cache_entity_generations.push(-1)
+  }
 }
 
 ///|
@@ -81,12 +96,15 @@ pub fn Children::entity_table_row_cached(
   guard index >= 0 && index < self.entities.length() else { return None }
   self.ensure_entity_row_cache()
   let entity = self.entities[index]
+  let world_generation = world.structural_generation()
   let table_id = self.entity_table_ids[index]
   let row_index = self.entity_row_indices[index]
-  if table_id >= 0 && row_index >= 0 {
-    if world.entity_table_location(entity) == Some((table_id, row_index)) {
-      return Some((table_id, row_index))
-    }
+  if table_id >= 0 &&
+    row_index >= 0 &&
+    self.entity_cache_world_generations[index] == world_generation &&
+    self.entity_cache_ids[index] == entity.id &&
+    self.entity_cache_entity_generations[index] == entity.generation {
+    return Some((table_id, row_index))
   }
   guard world.entity_table_location(entity)
     is Some((next_table_id, next_row_index)) else {
@@ -94,6 +112,9 @@ pub fn Children::entity_table_row_cached(
   }
   self.entity_table_ids[index] = next_table_id
   self.entity_row_indices[index] = next_row_index
+  self.entity_cache_world_generations[index] = world_generation
+  self.entity_cache_ids[index] = entity.id
+  self.entity_cache_entity_generations[index] = entity.generation
   Some((next_table_id, next_row_index))
 }
 

@@ -21,6 +21,7 @@ pub struct Children {
   entities : Array[@core.Entity]
   entity_table_ids : Array[Int]
   entity_row_indices : Array[Int]
+  // private fields
 }
 pub fn Children::entities(Self) -> Array[@core.Entity]
 pub fn Children::entity_table_row_cached(Self, @ecs.World, Int) -> (Int, Int)?

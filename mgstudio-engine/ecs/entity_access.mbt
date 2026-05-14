@@ -108,9 +108,9 @@ fn[T : EcsPayloadCodec] mut_value_or_abort(item : Mut[T]) -> T {
   match (item.table_id, item.row_index, item.local_component_id) {
     (Some(table_id), Some(row_index), Some(local_component_id)) =>
       match
-        (try! world.component_value_by_local_id_at_table_row(
-          key, local_component_id, table_id, row_index,
-        )) {
+        world.component_value_by_table_row_fast(
+          local_component_id, table_id, row_index,
+        ) {
         Some(value) => return value
         None => ()
       }
@@ -161,12 +161,31 @@ fn[T : EcsPayloadCodec + Mutable] mut_assign_value_or_abort(
 
 ///|
 fn[T] mut_mark_changed(item : Mut[T], caller? : String? = None) -> Unit {
-  if item.world is Some(world) {
-    if item.entity is Some(entity) {
+  guard item.world is Some(world) else { return }
+  guard item.entity is Some(entity) else { return }
+  match item.local_component_id {
+    Some(local_component_id) => {
+      let tick = component_write_tick(world)
+      let recorded = match (item.table_id, item.row_index) {
+        (Some(table_id), Some(row_index)) =>
+          world.record_table_component_changed_at_table_row(
+            local_component_id, table_id, row_index, tick, caller,
+          )
+        _ => false
+      }
+      if !recorded {
+        world.record_component_changed_by_local_id_with_tick(
+          entity, local_component_id, tick, caller,
+        )
+      }
+      world.ensure_changed_component_messages_by_local_id(local_component_id).val.send(
+        tick, entity,
+      )
+    }
+    None =>
       if item.key is Some(key) {
         world.record_component_changed_with_caller(entity, key.id(), caller)
       }
-    }
   }
 }
 

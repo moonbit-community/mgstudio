@@ -43,6 +43,9 @@ pub struct QueryState[_, F] {
   priv mut cached_dependency_component_ids : Array[Int]
   priv mut cached_dependency_world_id : Int
   priv mut cached_dependency_component_registration_generation : Int
+  priv mut cached_data_fetch_plan : QueryDataFetchPlan
+  priv mut cached_data_fetch_plan_world_id : Int
+  priv mut cached_data_fetch_plan_component_registration_generation : Int
 }
 
 ///|
@@ -483,6 +486,9 @@ fn[D, F] query_state_new(filter : F) -> QueryState[D, F] {
     cached_dependency_component_ids: [],
     cached_dependency_world_id: -1,
     cached_dependency_component_registration_generation: -1,
+    cached_data_fetch_plan: QueryDataFetchPlan::new(),
+    cached_data_fetch_plan_world_id: -1,
+    cached_data_fetch_plan_component_registration_generation: -1,
   }
 }
 
@@ -532,6 +538,23 @@ fn[D, F] Query::ensure_cache(self : Query[D, F]) -> QueryCache {
       cache
     }
   }
+}
+
+///|
+fn[D : QueryData, F] QueryState::data_fetch_plan(
+  self : QueryState[D, F],
+  world : World,
+) -> QueryDataFetchPlan {
+  let world_id = world.world_id()
+  let component_registration_generation = world.component_registration_generation()
+  if self.cached_data_fetch_plan_world_id != world_id ||
+    self.cached_data_fetch_plan_component_registration_generation !=
+    component_registration_generation {
+    self.cached_data_fetch_plan = D::prepare_fetch_plan(world)
+    self.cached_data_fetch_plan_world_id = world_id
+    self.cached_data_fetch_plan_component_registration_generation = component_registration_generation
+  }
+  self.cached_data_fetch_plan
 }
 
 ///|
@@ -677,7 +700,7 @@ fn[D : QueryData, F : QueryFilter] QueryState::iteration_plan(
     None
   }
   {
-    data_fetch_plan: D::prepare_fetch_plan(world),
+    data_fetch_plan: self.data_fetch_plan(world),
     default_filter_component_ids,
     entities_pre_matched: true,
     archetype_driven,
@@ -2070,7 +2093,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
   let query : Query[D, F] = query_filtered(world, self.filter)
   {
     query,
-    data_fetch_plan: D::prepare_fetch_plan(world),
+    data_fetch_plan: self.data_fetch_plan(world),
     default_filter_component_ids: self.default_filter_component_ids(world),
     entities_pre_matched: false,
     archetype_driven: false,
@@ -2127,7 +2150,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(
     self.filter,
     world,
   )
-  let data_fetch_plan = D::prepare_fetch_plan(world)
+  let data_fetch_plan = self.data_fetch_plan(world)
   let access_valid = query_access_valid(self.filter, D::collect_access)
   if access_valid &&
     !data_requires_entity_check &&
