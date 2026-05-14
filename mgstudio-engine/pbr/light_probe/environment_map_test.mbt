@@ -20,5 +20,5 @@ test "pbr light probe env map: array mode pads entries" {
     4,
   )
   let counts = pbr_environment_map_bind_group_entries_counts(entries)
-  inspect(counts, content="(4, 4)")
+  debug_inspect(counts, content="(4, 4)")
 }

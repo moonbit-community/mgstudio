@@ -14,8 +14,8 @@
 
 ///|
 test "pbr ssao: quality sample counts follow bevy presets" {
-  inspect(ssao_quality_sample_counts(Low), content="(1, 2)")
-  inspect(ssao_quality_sample_counts(Medium), content="(2, 2)")
-  inspect(ssao_quality_sample_counts(High), content="(3, 3)")
-  inspect(ssao_quality_sample_counts(Ultra), content="(9, 3)")
+  debug_inspect(ssao_quality_sample_counts(Low), content="(1, 2)")
+  debug_inspect(ssao_quality_sample_counts(Medium), content="(2, 2)")
+  debug_inspect(ssao_quality_sample_counts(High), content="(3, 3)")
+  debug_inspect(ssao_quality_sample_counts(Ultra), content="(9, 3)")
 }

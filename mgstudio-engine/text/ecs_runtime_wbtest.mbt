@@ -224,8 +224,8 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
   debug_inspect(text_bundle_rerender_eq(bundle, expected), content="true")
   debug_inspect(view_visible, content="true")
   debug_inspect(
-    bundle.transform.to_json().to_string(),
-    content="\"Array([Number(250), Number(125), Number(0), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])\"",
+    bundle.transform.to_json(),
+    content="Array([Number(250), Number(125), Number(0), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])",
   )
 }
 
@@ -499,16 +499,13 @@ test "ui text bridge preserves runtime-owned placement during sync" {
   let instance = text_state.val.texts[0]
 
   debug_inspect(
-    text_get_transform(synced.handle).unwrap().to_json().to_string(),
-    content="\"Array([Number(320), Number(-180), Number(7), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])\"",
+    text_get_transform(synced.handle).unwrap().to_json(),
+    content="Array([Number(320), Number(-180), Number(7), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])",
   )
+  debug_inspect(instance.layers.to_json(), content="Number(2048)")
   debug_inspect(
-    instance.layers.to_json().to_string(),
-    content="\"Number(2048)\"",
-  )
-  debug_inspect(
-    instance.anchor.to_json().to_string(),
-    content="\"Array([Number(0), Number(0)])\"",
+    instance.anchor.to_json(),
+    content="Array([Number(0), Number(0)])",
   )
   debug_inspect(
     y_axis_eq(instance.y_axis, YAxisOrientation::BottomToTop),

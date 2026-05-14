@@ -247,6 +247,21 @@ pub struct Query[_, F] {
 }
 
 ///|
+priv struct QueryIterationPlan {
+  data_fetch_plan : QueryDataFetchPlan
+  default_filter_component_ids : Array[Int]
+  entities_pre_matched : Bool
+  archetype_driven : Bool
+  dense_driven : Bool
+  table_row_filter_required : Bool
+  archetypes : Array[Int]
+  dense_tables : Array[Int]
+  sparse_anchor_info : QuerySparseAnchorInfo?
+  sparse_anchor_archetype_bits : @utils.IntBitSet
+  entities : Array[@core.Entity]
+}
+
+///|
 pub struct QueryMany[D, F] {
   priv query : Query[D, F]
   priv data_fetch_plan : QueryDataFetchPlan
@@ -263,6 +278,9 @@ pub struct QueryMany[D, F] {
   priv dense_tables : Array[Int]
   priv mut dense_table_index : Int
   priv mut dense_table_row_index : Int
+  priv sparse_anchor_info : QuerySparseAnchorInfo?
+  priv sparse_anchor_archetype_bits : @utils.IntBitSet
+  priv mut sparse_anchor_index : Int
   priv entities : Array[@core.Entity]
   priv mut index : Int
 }
@@ -517,6 +535,170 @@ fn[D, F] Query::ensure_cache(self : Query[D, F]) -> QueryCache {
 }
 
 ///|
+fn[D, F] query_many_from_plan(
+  query : Query[D, F],
+  plan : QueryIterationPlan,
+) -> QueryMany[D, F] {
+  {
+    query,
+    data_fetch_plan: plan.data_fetch_plan,
+    default_filter_component_ids: plan.default_filter_component_ids,
+    entities_pre_matched: plan.entities_pre_matched,
+    archetype_driven: plan.archetype_driven,
+    dense_driven: plan.dense_driven,
+    table_row_filter_required: plan.table_row_filter_required,
+    archetypes: plan.archetypes,
+    archetype_index: 0,
+    archetype_entities: [],
+    archetype_entity_index: 0,
+    current_table_id: -1,
+    dense_tables: plan.dense_tables,
+    dense_table_index: 0,
+    dense_table_row_index: 0,
+    sparse_anchor_info: plan.sparse_anchor_info,
+    sparse_anchor_archetype_bits: plan.sparse_anchor_archetype_bits,
+    sparse_anchor_index: 0,
+    entities: plan.entities,
+    index: 0,
+  }
+}
+
+///|
+fn[D : QueryData, F : QueryFilter] Query::iteration_plan(
+  self : Query[D, F],
+  default_filter_component_ids : Array[Int],
+) -> QueryIterationPlan {
+  let data_requires_entity_check = D::requires_entity_check()
+  let filter_requires_entity_check = query_filter_requires_entity_check(
+    self.filter,
+    self.world,
+  )
+  let access_valid = query_access_valid(self.filter, D::collect_access)
+  let archetype_driven = access_valid &&
+    !data_requires_entity_check &&
+    !filter_requires_entity_check
+  let archetypes = if archetype_driven {
+    self.matching_archetypes()
+  } else {
+    []
+  }
+  let entities = if archetype_driven { [] } else { self.matching_entities() }
+  let dense_driven = archetype_driven &&
+    query_is_dense_mode(
+      self.world,
+      self.filter,
+      default_filter_component_ids,
+      D::is_dense,
+      D::collect_access,
+    )
+  let table_row_filter_required = query_filter_requires_table_row_check(
+    self.filter,
+    self.world,
+  )
+  let sparse_anchor_info = if archetype_driven &&
+    !dense_driven &&
+    !table_row_filter_required {
+    query_sparse_anchor_info(
+      self.world,
+      D::iteration_anchor_components(),
+      QueryFilter::iteration_anchor_components(self.filter),
+    )
+  } else {
+    None
+  }
+  {
+    data_fetch_plan: D::prepare_fetch_plan(self.world),
+    default_filter_component_ids,
+    entities_pre_matched: true,
+    archetype_driven,
+    dense_driven,
+    table_row_filter_required,
+    archetypes,
+    dense_tables: if dense_driven {
+      self.matching_dense_tables()
+    } else {
+      []
+    },
+    sparse_anchor_info,
+    sparse_anchor_archetype_bits: match sparse_anchor_info {
+      Some(_) => self.ensure_cache().cached_matching_archetype_bits
+      None => @utils.IntBitSet::new()
+    },
+    entities,
+  }
+}
+
+///|
+fn[D : QueryData, F : QueryFilter] QueryState::iteration_plan(
+  self : QueryState[D, F],
+  world : World,
+  default_filter_component_ids : Array[Int],
+) -> QueryIterationPlan {
+  let data_requires_entity_check = D::requires_entity_check()
+  let filter_requires_entity_check = query_filter_requires_entity_check(
+    self.filter,
+    world,
+  )
+  let access_valid = query_access_valid(self.filter, D::collect_access)
+  let archetype_driven = access_valid &&
+    !data_requires_entity_check &&
+    !filter_requires_entity_check
+  let archetypes = if archetype_driven {
+    self.query_matching_archetypes(world)
+  } else {
+    []
+  }
+  let entities = if archetype_driven {
+    []
+  } else {
+    self.query_matching_entities(world)
+  }
+  let dense_driven = archetype_driven &&
+    query_is_dense_mode(
+      world,
+      self.filter,
+      default_filter_component_ids,
+      D::is_dense,
+      D::collect_access,
+    )
+  let table_row_filter_required = query_filter_requires_table_row_check(
+    self.filter,
+    world,
+  )
+  let sparse_anchor_info = if archetype_driven &&
+    !dense_driven &&
+    !table_row_filter_required {
+    query_sparse_anchor_info(
+      world,
+      D::iteration_anchor_components(),
+      QueryFilter::iteration_anchor_components(self.filter),
+    )
+  } else {
+    None
+  }
+  {
+    data_fetch_plan: D::prepare_fetch_plan(world),
+    default_filter_component_ids,
+    entities_pre_matched: true,
+    archetype_driven,
+    dense_driven,
+    table_row_filter_required,
+    archetypes,
+    dense_tables: if dense_driven {
+      self.query_matching_tables(world)
+    } else {
+      []
+    },
+    sparse_anchor_info,
+    sparse_anchor_archetype_bits: match sparse_anchor_info {
+      Some(_) => self.cached_matching_archetype_bits
+      None => @utils.IntBitSet::new()
+    },
+    entities,
+  }
+}
+
+///|
 fn query_sparse_anchor_info(
   world : World,
   data_anchor_component_ids : Array[Int],
@@ -715,38 +897,6 @@ fn[F : QueryFilter] query_dense_tables_count(
 }
 
 ///|
-fn[D : QueryData] query_sparse_anchor_for_each_matching(
-  world : World,
-  anchor_info : QuerySparseAnchorInfo,
-  matched_archetype_bits : @utils.IntBitSet,
-  visit : (@core.Entity, D) -> Unit,
-) -> Unit raise EcsError {
-  guard world.sparse_component_columns.get(anchor_info.local_component_id)
-    is Some(store_ref) else {
-    return
-  }
-  let plan = D::prepare_fetch_plan(world)
-  let store = store_ref.val
-  for index in 0..<store.len() {
-    let entity = store.entity_at(index)
-    guard world.entity_archetype_id(entity) is Some(archetype_id) else {
-      continue
-    }
-    guard matched_archetype_bits.contains(archetype_id) else { continue }
-    visit(
-      entity,
-      query_fetch_with_sparse_anchor(
-        world,
-        entity,
-        anchor_info,
-        store.value_at(index),
-        plan,
-      ),
-    )
-  }
-}
-
-///|
 fn query_sparse_anchor_count_matching(
   world : World,
   anchor_info : QuerySparseAnchorInfo,
@@ -845,128 +995,16 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
   f : (@core.Entity, D) -> Unit,
 ) -> Unit raise EcsError {
   self.world.begin_query_iteration()
-  let result : Result[Unit, EcsError] = try? self.view_unchecked(f)
+  let result : Result[Unit, EcsError] = try? ({
+    let iter = self.iter()
+    while iter.fetch_next() is Some((entity, item)) {
+      f(entity, item)
+    }
+  })
   self.world.end_query_iteration()
   match result {
     Ok(_) => ()
     Err(err) => raise err
-  }
-}
-
-///|
-fn[D : QueryData, F : QueryFilter] Query::view_unchecked(
-  self : Query[D, F],
-  f : (@core.Entity, D) -> Unit,
-) -> Unit raise EcsError {
-  let data_anchor_component_ids = D::iteration_anchor_components()
-  let filter_anchor_component_ids = QueryFilter::iteration_anchor_components(
-    self.filter,
-  )
-  let data_requires_entity_check = D::requires_entity_check()
-  let filter_requires_entity_check = query_filter_requires_entity_check(
-    self.filter,
-    self.world,
-  )
-  let table_row_filter_required = query_filter_requires_table_row_check(
-    self.filter,
-    self.world,
-  )
-  let data_fetch_plan = D::prepare_fetch_plan(self.world)
-  let access_valid = query_access_valid(self.filter, D::collect_access)
-  if access_valid &&
-    !data_requires_entity_check &&
-    !filter_requires_entity_check {
-    let dense_tables = self.matching_dense_tables()
-    if dense_tables.length() > 0 {
-      for table_id in dense_tables {
-        let row_count = self.world.table_row_count(table_id)
-        for row_index in 0..<row_count {
-          match self.world.table_entity_at_row_index(table_id, row_index) {
-            Some(entity) =>
-              if query_filter_matches_table_row_if_needed(
-                  self.world,
-                  self.filter,
-                  table_row_filter_required,
-                  entity,
-                  table_id,
-                  row_index,
-                ) {
-                f(
-                  entity,
-                  D::fetch_table_row_with_plan(
-                    self.world,
-                    entity,
-                    table_id,
-                    row_index,
-                    data_fetch_plan,
-                  ),
-                )
-              }
-            None => ()
-          }
-        }
-      }
-      return
-    }
-    let matched_archetypes = self.matching_archetypes()
-    let cache = self.ensure_cache()
-    match
-      query_sparse_anchor_info(
-        self.world,
-        data_anchor_component_ids,
-        filter_anchor_component_ids,
-      ) {
-      Some(anchor_info) if !cache.cached_is_dense =>
-        if !table_row_filter_required {
-          query_sparse_anchor_for_each_matching(
-            self.world,
-            anchor_info,
-            cache.cached_matching_archetype_bits,
-            f,
-          )
-          return
-        }
-      _ => ()
-    }
-    for archetype_id in matched_archetypes {
-      let table_id = match self.world.archetype_table_id(archetype_id) {
-        Some(table_id) => table_id
-        None => -1
-      }
-      match self.world.archetype_entities_view(archetype_id) {
-        Some(entities) =>
-          for entity in entities {
-            if !table_row_filter_required ||
-              query_filter_matches_entity_table_row(
-                self.world,
-                self.filter,
-                entity,
-              ) {
-              f(
-                entity,
-                query_fetch_known_table_row_with_plan(
-                  self.world,
-                  entity,
-                  table_id,
-                  data_fetch_plan,
-                ),
-              )
-            }
-          }
-        None => ()
-      }
-    }
-    return
-  }
-  for entity in self.matching_entities() {
-    f(
-      entity,
-      query_fetch_entity_table_row_with_plan(
-        self.world,
-        entity,
-        data_fetch_plan,
-      ),
-    )
   }
 }
 
@@ -976,6 +1014,16 @@ pub fn[D : QueryData, F : QueryFilter] Query::for_each(
   f : (@core.Entity, D) -> Unit,
 ) -> Unit raise EcsError {
   self.view(f)
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::iter(
+  self : Query[D, F],
+) -> QueryMany[D, F] {
+  query_many_from_plan(
+    self,
+    self.iteration_plan(self.default_filter_component_ids()),
+  )
 }
 
 ///|
@@ -1178,6 +1226,9 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
     dense_tables: [],
     dense_table_index: 0,
     dense_table_row_index: 0,
+    sparse_anchor_info: None,
+    sparse_anchor_archetype_bits: @utils.IntBitSet::new(),
+    sparse_anchor_index: 0,
     entities,
     index: 0,
   }
@@ -2003,61 +2054,11 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter(
   world : World,
 ) -> QueryMany[D, F] {
   let query : Query[D, F] = query_filtered(world, self.filter)
-  let data_requires_entity_check = D::requires_entity_check()
-  let filter_requires_entity_check = query_filter_requires_entity_check(
-    self.filter,
-    world,
-  )
-  let access_valid = query_access_valid(self.filter, D::collect_access)
-  let archetype_driven = access_valid &&
-    !data_requires_entity_check &&
-    !filter_requires_entity_check
   let default_filter_component_ids = self.default_filter_component_ids(world)
-  let archetypes = if archetype_driven {
-    self.query_matching_archetypes(world)
-  } else {
-    []
-  }
-  let entities = if archetype_driven {
-    []
-  } else {
-    self.query_matching_entities(world)
-  }
-  let dense_driven = archetype_driven &&
-    query_is_dense_mode(
-      world,
-      self.filter,
-      default_filter_component_ids,
-      D::is_dense,
-      D::collect_access,
-    )
-  let table_row_filter_required = query_filter_requires_table_row_check(
-    self.filter,
-    world,
-  )
-  {
+  query_many_from_plan(
     query,
-    data_fetch_plan: D::prepare_fetch_plan(world),
-    default_filter_component_ids,
-    entities_pre_matched: true,
-    archetype_driven,
-    dense_driven,
-    table_row_filter_required,
-    archetypes,
-    archetype_index: 0,
-    archetype_entities: [],
-    archetype_entity_index: 0,
-    current_table_id: -1,
-    dense_tables: if dense_driven {
-      self.query_matching_tables(world)
-    } else {
-      []
-    },
-    dense_table_index: 0,
-    dense_table_row_index: 0,
-    entities,
-    index: 0,
-  }
+    self.iteration_plan(world, default_filter_component_ids),
+  )
 }
 
 ///|
@@ -2083,6 +2084,9 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
     dense_tables: [],
     dense_table_index: 0,
     dense_table_row_index: 0,
+    sparse_anchor_info: None,
+    sparse_anchor_archetype_bits: @utils.IntBitSet::new(),
+    sparse_anchor_index: 0,
     entities,
     index: 0,
   }
@@ -2615,6 +2619,42 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
       self.dense_table_row_index = 0
     }
   }
+  match self.sparse_anchor_info {
+    Some(anchor_info) => {
+      guard self.query.world.sparse_component_columns.get(
+          anchor_info.local_component_id,
+        )
+        is Some(store_ref) else {
+        return None
+      }
+      let store = store_ref.val
+      while self.sparse_anchor_index < store.len() {
+        let index = self.sparse_anchor_index
+        self.sparse_anchor_index = self.sparse_anchor_index + 1
+        let entity = store.entity_at(index)
+        guard self.query.world.entity_archetype_id(entity) is Some(archetype_id) else {
+          continue
+        }
+        guard self.sparse_anchor_archetype_bits.contains(archetype_id) else {
+          continue
+        }
+        return Some(
+          (
+            entity,
+            query_fetch_with_sparse_anchor(
+              self.query.world,
+              entity,
+              anchor_info,
+              store.value_at(index),
+              self.data_fetch_plan,
+            ),
+          ),
+        )
+      }
+      return None
+    }
+    None => ()
+  }
   if self.archetype_driven {
     while true {
       if self.archetype_entity_index < self.archetype_entities.length() {
@@ -2663,7 +2703,14 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
     self.index = self.index + 1
     if self.entities_pre_matched {
       return Some(
-        (entity, query_fetch_entity_table_row(self.query.world, entity)),
+        (
+          entity,
+          query_fetch_entity_table_row_with_plan(
+            self.query.world,
+            entity,
+            self.data_fetch_plan,
+          ),
+        ),
       )
     }
     if query_get_with_default_filter_component_ids(

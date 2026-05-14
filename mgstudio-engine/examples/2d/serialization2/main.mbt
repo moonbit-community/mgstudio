@@ -74,7 +74,7 @@ fn rapier2d_serialization2_setup(world : @ecs.World) -> Unit {
   let ctx_res = @physics2d.get_physics2d_context_resource(world)
   guard ctx_res.get() is Some(ctx) else { return }
   let json_value = ctx.to_json()
-  println(json_value.to_string())
+  println(json_value.stringify())
   let restored : @physics2d.Physics2dContext = try! @json.from_json(json_value)
   restored |> ignore
 }

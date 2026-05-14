@@ -207,9 +207,20 @@ impl QueryData with iteration_anchor_components() {
 ///|
 pub struct Comp[T] {
   priv value : T?
-  priv world : World?
-  priv entity : @core.Entity?
-  priv local_component_id : Int?
+  priv added_tick : @core.Tick?
+  priv changed_tick : @core.Tick?
+  priv changed_by : String?
+  priv is_added : Bool
+  priv is_changed : Bool
+}
+
+///|
+priv struct QueryComponentTickSnapshot {
+  added_tick : @core.Tick?
+  changed_tick : @core.Tick?
+  changed_by : String?
+  is_added : Bool
+  is_changed : Bool
 }
 
 ///|
@@ -237,7 +248,14 @@ pub fn QueryDataAccess::new() -> QueryDataAccess {
 ///|
 pub fn[T] Comp::new(key : ComponentKey[T]) -> Comp[T] {
   ignore(key)
-  { value: None, world: None, entity: None, local_component_id: None }
+  {
+    value: None,
+    added_tick: None,
+    changed_tick: None,
+    changed_by: None,
+    is_added: false,
+    is_changed: false,
+  }
 }
 
 ///|
@@ -255,57 +273,18 @@ pub fn[T] Comp::value(self : Comp[T]) -> T {
 }
 
 ///|
-fn[T] comp_world_or_abort(item : Comp[T]) -> World {
-  match item.world {
-    Some(world) => world
-    None => abort("Comp expected a fetched query item")
-  }
-}
-
-///|
-fn[T] comp_entity_or_abort(item : Comp[T]) -> @core.Entity {
-  match item.entity {
-    Some(entity) => entity
-    None => abort("Comp expected a fetched query item")
-  }
-}
-
-///|
-fn[T] comp_local_component_id_or_abort(item : Comp[T]) -> Int {
-  match item.local_component_id {
-    Some(local_component_id) => local_component_id
-    None => abort("Comp expected a fetched query item")
-  }
-}
-
-///|
 pub fn[T] Comp::is_added(self : Comp[T]) -> Bool {
-  let world = comp_world_or_abort(self)
-  world.is_added_by_local_id(
-    comp_entity_or_abort(self),
-    comp_local_component_id_or_abort(self),
-    world.get_tick_context().ticks(),
-  )
+  self.is_added
 }
 
 ///|
 pub fn[T] Comp::is_changed(self : Comp[T]) -> Bool {
-  let world = comp_world_or_abort(self)
-  world.is_changed_by_local_id(
-    comp_entity_or_abort(self),
-    comp_local_component_id_or_abort(self),
-    world.get_tick_context().ticks(),
-  )
+  self.is_changed
 }
 
 ///|
 pub fn[T] Comp::added(self : Comp[T]) -> @core.Tick {
-  let world = comp_world_or_abort(self)
-  match
-    world.added_component_tick_by_local_id(
-      comp_local_component_id_or_abort(self),
-      comp_entity_or_abort(self).id,
-    ) {
+  match self.added_tick {
     Some(tick) => tick
     None => abort("Comp::added expected component tick metadata")
   }
@@ -313,12 +292,7 @@ pub fn[T] Comp::added(self : Comp[T]) -> @core.Tick {
 
 ///|
 pub fn[T] Comp::last_changed(self : Comp[T]) -> @core.Tick {
-  let world = comp_world_or_abort(self)
-  match
-    world.changed_component_tick_by_local_id(
-      comp_local_component_id_or_abort(self),
-      comp_entity_or_abort(self).id,
-    ) {
+  match self.changed_tick {
     Some(tick) => tick
     None => abort("Comp::last_changed expected component tick metadata")
   }
@@ -326,11 +300,7 @@ pub fn[T] Comp::last_changed(self : Comp[T]) -> @core.Tick {
 
 ///|
 pub fn[T] Comp::changed_by(self : Comp[T]) -> String? {
-  let world = comp_world_or_abort(self)
-  world.changed_component_caller_by_local_id(
-    comp_local_component_id_or_abort(self),
-    comp_entity_or_abort(self).id,
-  )
+  self.changed_by
 }
 
 ///|
@@ -442,6 +412,94 @@ fn query_data_local_component_id_from_plan(
   offset : Int,
 ) -> Int? {
   plan.local_component_id(offset)
+}
+
+///|
+fn query_data_tick_snapshot_from_ticks(
+  world : World,
+  added_tick : @core.Tick?,
+  changed_tick : @core.Tick?,
+  changed_by : String?,
+) -> QueryComponentTickSnapshot {
+  let system_ticks = world.get_tick_context().ticks()
+  {
+    added_tick,
+    changed_tick,
+    changed_by,
+    is_added: match added_tick {
+      Some(tick) => system_ticks.contains(tick)
+      None => false
+    },
+    is_changed: match changed_tick {
+      Some(tick) => system_ticks.contains(tick)
+      None => false
+    },
+  }
+}
+
+///|
+fn query_data_tick_snapshot_for_entity(
+  world : World,
+  entity : @core.Entity,
+  local_component_id : Int,
+) -> QueryComponentTickSnapshot {
+  query_data_tick_snapshot_from_ticks(
+    world,
+    world.added_component_tick_by_local_id(local_component_id, entity.id),
+    world.changed_component_tick_by_local_id(local_component_id, entity.id),
+    world.changed_component_caller_by_local_id(local_component_id, entity.id),
+  )
+}
+
+///|
+fn query_data_tick_snapshot_at_table_row(
+  world : World,
+  entity : @core.Entity,
+  local_component_id : Int,
+  table_id : Int,
+  row_index : Int,
+) -> QueryComponentTickSnapshot {
+  if table_id >= 0 &&
+    row_index >= 0 &&
+    world.local_component_storage_type(local_component_id) == Some(Table) {
+    match (world.table_storage(table_id), TableRow::from_index(row_index)) {
+      (Some(table_ref), Some(row)) =>
+        return query_data_tick_snapshot_from_ticks(
+          world,
+          table_ref.val.added_tick_at_row(row, local_component_id),
+          table_ref.val.changed_tick_at_row(row, local_component_id),
+          table_ref.val.changed_caller_at_row(row, local_component_id),
+        )
+      _ => ()
+    }
+  }
+  query_data_tick_snapshot_for_entity(world, entity, local_component_id)
+}
+
+///|
+fn[T] query_data_comp_from_value(
+  world : World,
+  entity : @core.Entity,
+  local_component_id : Int?,
+  table_id : Int,
+  row_index : Int,
+  value : T,
+) -> Comp[T] {
+  let snapshot = match local_component_id {
+    Some(local_component_id) =>
+      query_data_tick_snapshot_at_table_row(
+        world, entity, local_component_id, table_id, row_index,
+      )
+    None => query_data_tick_snapshot_from_ticks(world, None, None, None)
+  }
+  {
+    value: Some(value),
+    added_tick: snapshot.added_tick,
+    changed_tick: snapshot.changed_tick,
+    changed_by: snapshot.changed_by,
+    is_added: snapshot.is_added,
+    is_changed: snapshot.is_changed,
+  }
 }
 
 ///|
@@ -571,12 +629,14 @@ pub impl[T : Component] QueryData for Comp[T] with matches(world, entity) {
 ///|
 pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
   let key = T::component()
-  {
-    value: Some(query_data_require_component(world, entity, key)),
-    world: Some(world),
-    entity: Some(entity),
-    local_component_id: world.local_component_id(key.id()),
-  }
+  query_data_comp_from_value(
+    world,
+    entity,
+    world.local_component_id(key.id()),
+    -1,
+    -1,
+    query_data_require_component(world, entity, key),
+  )
 }
 
 ///|
@@ -610,19 +670,18 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
   }
   match value_at_row {
     Some(value) =>
-      {
-        value: Some(value),
-        world: Some(world),
-        entity: Some(entity),
-        local_component_id,
-      }
+      query_data_comp_from_value(
+        world, entity, local_component_id, table_id, row_index, value,
+      )
     None =>
-      {
-        value: Some(query_data_require_component(world, entity, key)),
-        world: Some(world),
-        entity: Some(entity),
-        local_component_id: world.local_component_id(key.id()),
-      }
+      query_data_comp_from_value(
+        world,
+        entity,
+        world.local_component_id(key.id()),
+        table_id,
+        row_index,
+        query_data_require_component(world, entity, key),
+      )
   }
 }
 
@@ -646,19 +705,18 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row_with_plan_off
   }
   match value_at_row {
     Some(value) =>
-      {
-        value: Some(value),
-        world: Some(world),
-        entity: Some(entity),
-        local_component_id,
-      }
+      query_data_comp_from_value(
+        world, entity, local_component_id, table_id, row_index, value,
+      )
     None =>
-      {
-        value: Some(query_data_require_component(world, entity, key)),
-        world: Some(world),
-        entity: Some(entity),
-        local_component_id: world.local_component_id(key.id()),
-      }
+      query_data_comp_from_value(
+        world,
+        entity,
+        world.local_component_id(key.id()),
+        table_id,
+        row_index,
+        query_data_require_component(world, entity, key),
+      )
   }
 }
 
@@ -681,12 +739,14 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor(
             "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
           )
       }
-      {
-        value: Some(value),
-        world: Some(world),
-        entity: Some(entity),
-        local_component_id: Some(local_component_id),
-      }
+      query_data_comp_from_value(
+        world,
+        entity,
+        Some(local_component_id),
+        table_id,
+        row_index,
+        value,
+      )
     }
     _ => Comp::fetch_table_row(world, entity, table_id, row_index)
   }
@@ -712,12 +772,14 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor_with_plan
             "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
           )
       }
-      {
-        value: Some(value),
-        world: Some(world),
-        entity: Some(entity),
-        local_component_id: Some(local_component_id),
-      }
+      query_data_comp_from_value(
+        world,
+        entity,
+        Some(local_component_id),
+        table_id,
+        row_index,
+        value,
+      )
     }
     _ =>
       Comp::fetch_table_row_with_plan_offset(

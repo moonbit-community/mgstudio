@@ -621,6 +621,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(Self[D, F]) -> Que
 pub fn[D : QueryData, F : QueryFilter] Query::count(Self[D, F]) -> Int
 pub fn[D : QueryData, F : QueryFilter] Query::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::get(Self[D, F], @core.Entity) -> D? raise EcsError
+pub fn[D : QueryData, F : QueryFilter] Query::iter(Self[D, F]) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::iter_combinations(Self[D, F]) -> QueryCombinations[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::iter_many(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F] raise EcsError

@@ -364,13 +364,13 @@ fn sprite_mesh_material_cache_key(
   anchor : Anchor,
 ) -> String {
   let atlas_key = match sprite.texture_atlas {
-    Some(atlas) => atlas.to_json().to_string()
+    Some(atlas) => atlas.to_json().stringify()
     None => "none"
   }
   [
     sprite.image.id().to_string(),
     atlas_key,
-    sprite.color.to_json().to_string(),
+    sprite.color.to_json().stringify(),
     sprite.flip_x.to_string(),
     sprite.flip_y.to_string(),
     sprite_material_vec2_option_key(sprite.custom_size),

@@ -18,9 +18,9 @@ test "post_process boundary re-exports bloom and tonemapping APIs" {
   debug_inspect(bloom.max_mip_dimension, content="512")
   let tonemapping = @post_process.Tonemapping::default()
   debug_inspect(
-    tonemapping.to_json().to_string(),
+    tonemapping.to_json(),
     content=(
-      #|"String(\"TonyMcMapface\")"
+      #|String("TonyMcMapface")
     ),
   )
   debug_inspect(

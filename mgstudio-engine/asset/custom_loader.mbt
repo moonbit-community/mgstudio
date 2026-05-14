@@ -258,7 +258,7 @@ fn typed_asset_loader_warn_duplicate_extensions(
   }
   if duplicates.length() > 0 {
     println(
-      "Warning: duplicate typed asset loader extensions for \{type_name}: \{duplicates}; explicit loader metadata is required to disambiguate",
+      "Warning: duplicate typed asset loader extensions for \{type_name}: \{@debug.to_string(duplicates)}; explicit loader metadata is required to disambiguate",
     )
   }
 }

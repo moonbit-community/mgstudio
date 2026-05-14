@@ -15,10 +15,10 @@
 ///|
 test "transmission phase: split range matches stepped partitioning" {
   let ranges = transmissive3d_split_range(10, 3)
-  inspect(ranges.length(), content="3")
-  inspect(ranges[0], content="(0, 4)")
-  inspect(ranges[1], content="(4, 7)")
-  inspect(ranges[2], content="(7, 10)")
+  debug_inspect(ranges.length(), content="3")
+  debug_inspect(ranges[0], content="(0, 4)")
+  debug_inspect(ranges[1], content="(4, 7)")
+  debug_inspect(ranges[2], content="(7, 10)")
 }
 
 ///|

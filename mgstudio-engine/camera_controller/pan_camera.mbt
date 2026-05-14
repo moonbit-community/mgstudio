@@ -64,7 +64,7 @@ pub fn PanCamera::default() -> PanCamera {
 ///|
 fn pan_camera_key_to_string(key : @window.KeyCode?) -> String {
   match key {
-    Some(value) => value.to_json().to_string()
+    Some(value) => @debug.to_string(value)
     None => "None"
   }
 }
