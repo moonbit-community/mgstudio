@@ -848,20 +848,21 @@ test "ecs query cache: archetype fast path keeps entity cache lazy" {
 }
 
 ///|
-test "ecs query cache: entity-check path materializes entity cache" {
+test "ecs query cache: sparse entity-check path materializes entity cache" {
   let world = World::new()
+  ensure_sparse_tag_metadata_registered()
   let e0 = world.spawn()
   let e1 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e0, sparse_tag_key, SparseTag::{  })
+  try! world.set_by_key(e1, sparse_tag_key, SparseTag::{  })
 
   let tick_context = @core.SystemTickContext::new()
   tick_context.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(tick_context)
 
-  let added_query : Query[Comp[Position], Added[Position]] = query_filtered_with_cache(
+  let added_query : Query[Comp[SparseTag], Added[SparseTag]] = query_filtered_with_cache(
     world,
-    Added::new(position_key),
+    Added::new(sparse_tag_key),
     QueryCache::new(),
   )
 
@@ -898,7 +899,7 @@ test "ecs query cache: dense mode tracks matched tables cache" {
 }
 
 ///|
-test "ecs query cache: non-dense mode keeps matched tables cache empty" {
+test "ecs query cache: table tick filter uses dense matched tables" {
   let world = World::new()
   let e0 = world.spawn()
   let e1 = world.spawn()
@@ -912,6 +913,31 @@ test "ecs query cache: non-dense mode keeps matched tables cache empty" {
   let query : Query[Comp[Position], Added[Position]] = query_filtered_with_cache(
     world,
     Added::new(position_key),
+    QueryCache::new(),
+  )
+  debug_inspect(query.count(), content="2")
+  let cache = query.cache_snapshot()
+  debug_inspect(cache.cached_is_dense(), content="true")
+  debug_inspect(cache.cached_matching_tables().length(), content="1")
+  debug_inspect(cache.cached_matching_entities_valid(), content="false")
+}
+
+///|
+test "ecs query cache: sparse non-dense mode keeps matched tables cache empty" {
+  let world = World::new()
+  ensure_sparse_tag_metadata_registered()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  try! world.set_by_key(e0, sparse_tag_key, SparseTag::{  })
+  try! world.set_by_key(e1, sparse_tag_key, SparseTag::{  })
+
+  let tick_context = @core.SystemTickContext::new()
+  tick_context.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(tick_context)
+
+  let query : Query[Comp[SparseTag], Added[SparseTag]] = query_filtered_with_cache(
+    world,
+    Added::new(sparse_tag_key),
     QueryCache::new(),
   )
   debug_inspect(query.count(), content="2")
@@ -1071,7 +1097,7 @@ test "ecs query_state cache: dependency generation invalidates entity cache with
 }
 
 ///|
-test "ecs query_state cache: tick-dependent filters invalidate entity cache across runs" {
+test "ecs query_state cache: table tick-dependent filters stay dense across runs" {
   let world = World::new()
   let e0 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
@@ -1086,11 +1112,7 @@ test "ecs query_state cache: tick-dependent filters invalidate entity cache acro
   debug_inspect(state.count(world), content="1")
   debug_inspect(
     state.cache_snapshot().cached_matching_entities_valid(),
-    content="true",
-  )
-  debug_inspect(
-    state.cache_snapshot().cached_matching_entities_tick(),
-    content="1",
+    content="false",
   )
   let first_entities_generation = state
     .cache_snapshot()
@@ -1109,8 +1131,8 @@ test "ecs query_state cache: tick-dependent filters invalidate entity cache acro
     content="true",
   )
   debug_inspect(
-    state.cache_snapshot().cached_matching_entities_tick(),
-    content="1000005",
+    state.cache_snapshot().cached_matching_entities_valid(),
+    content="false",
   )
 }
 

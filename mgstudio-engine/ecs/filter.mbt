@@ -15,10 +15,18 @@
 ///|
 pub(open) trait QueryFilter {
   matches(self : Self, world : World, entity : @core.Entity) -> Bool
+  matches_table_row(
+    self : Self,
+    world : World,
+    entity : @core.Entity,
+    table_id : Int,
+    row_index : Int,
+  ) -> Bool = _
   mentions_component(self : Self, component_id : Int) -> Bool
   matches_component_set(self : Self, set_contains_id : (Int) -> Bool) -> Bool
   collect_access(self : Self, access : QueryFilterAccess) -> Unit = _
   requires_entity_check(self : Self) -> Bool
+  requires_entity_check_for_world(self : Self, world : World) -> Bool = _
   is_dense(self : Self, world : World) -> Bool = _
   iteration_anchor_component(self : Self) -> Int?
   iteration_anchor_components(self : Self) -> Array[Int] = _
@@ -28,17 +36,41 @@ pub(open) trait QueryFilter {
 ///|
 pub(open) trait QueryFilterDisjunction {
   matches_any(self : Self, world : World, entity : @core.Entity) -> Bool
+  matches_table_row_any(
+    self : Self,
+    world : World,
+    entity : @core.Entity,
+    table_id : Int,
+    row_index : Int,
+  ) -> Bool = _
   mentions_component_any(self : Self, component_id : Int) -> Bool
   matches_component_set_any(self : Self, set_contains_id : (Int) -> Bool) -> Bool
   collect_access_any(self : Self, access : QueryFilterAccess) -> Unit = _
   requires_entity_check_any(self : Self) -> Bool
+  requires_entity_check_any_for_world(self : Self, world : World) -> Bool = _
   is_dense_any(self : Self, world : World) -> Bool = _
   depends_on_ticks_any(self : Self) -> Bool
 }
 
 ///|
+impl QueryFilter with matches_table_row(
+  self,
+  world,
+  entity,
+  _table_id,
+  _row_index,
+) {
+  QueryFilter::matches(self, world, entity)
+}
+
+///|
 impl QueryFilter with collect_access(_self, _access) {
   ()
+}
+
+///|
+impl QueryFilter with requires_entity_check_for_world(self, _world) {
+  QueryFilter::requires_entity_check(self)
 }
 
 ///|
@@ -55,8 +87,27 @@ impl QueryFilter with iteration_anchor_components(self) {
 }
 
 ///|
+impl QueryFilterDisjunction with matches_table_row_any(
+  self,
+  world,
+  entity,
+  _table_id,
+  _row_index,
+) {
+  QueryFilterDisjunction::matches_any(self, world, entity)
+}
+
+///|
 impl QueryFilterDisjunction with collect_access_any(_self, _access) {
   ()
+}
+
+///|
+impl QueryFilterDisjunction with requires_entity_check_any_for_world(
+  self,
+  _world,
+) {
+  QueryFilterDisjunction::requires_entity_check_any(self)
 }
 
 ///|
@@ -149,6 +200,63 @@ fn query_filter_component_is_dense(world : World, component_id : Int) -> Bool {
     Some(Table) => true
     Some(SparseSet) => false
     None => true
+  }
+}
+
+///|
+fn query_filter_component_requires_entity_check_for_world(
+  world : World,
+  component_id : Int,
+) -> Bool {
+  guard world.local_component_id(component_id) is Some(local_component_id) else {
+    return true
+  }
+  match world.local_component_storage_type(local_component_id) {
+    Some(Table) => false
+    Some(SparseSet) => true
+    None => true
+  }
+}
+
+///|
+fn query_filter_table_added_matches(
+  world : World,
+  component_id : Int,
+  table_id : Int,
+  row_index : Int,
+) -> Bool {
+  guard world.local_component_id(component_id) is Some(local_component_id) else {
+    return false
+  }
+  guard world.local_component_storage_type(local_component_id) == Some(Table) else {
+    return false
+  }
+  guard TableRow::from_index(row_index) is Some(row) else { return false }
+  guard world.table_storage(table_id) is Some(table_ref) else { return false }
+  match table_ref.val.added_tick_at_row(row, local_component_id) {
+    Some(tick) => world.get_tick_context().ticks().contains(tick)
+    None => false
+  }
+}
+
+///|
+fn query_filter_table_changed_matches(
+  world : World,
+  component_id : Int,
+  table_id : Int,
+  row_index : Int,
+) -> Bool {
+  guard world.local_component_id(component_id) is Some(local_component_id) else {
+    return false
+  }
+  guard world.local_component_storage_type(local_component_id) == Some(Table) else {
+    return false
+  }
+  guard TableRow::from_index(row_index) is Some(row) else { return false }
+  guard world.table_storage(table_id) is Some(table_ref) else { return false }
+  match table_ref.val.changed_tick_at_row(row, local_component_id) {
+    Some(tick) => world.get_tick_context().ticks().contains(tick)
+    None => false
   }
 }
 
@@ -433,9 +541,27 @@ pub impl[T] QueryFilter for Added[T] with requires_entity_check(self) {
 }
 
 ///|
-pub impl[T] QueryFilter for Added[T] with is_dense(self, _world) {
-  ignore(self)
-  false
+pub impl[T] QueryFilter for Added[T] with requires_entity_check_for_world(
+  self,
+  world,
+) {
+  query_filter_component_requires_entity_check_for_world(world, self.key.id())
+}
+
+///|
+pub impl[T] QueryFilter for Added[T] with matches_table_row(
+  self,
+  world,
+  _entity,
+  table_id,
+  row_index,
+) {
+  query_filter_table_added_matches(world, self.key.id(), table_id, row_index)
+}
+
+///|
+pub impl[T] QueryFilter for Added[T] with is_dense(self, world) {
+  query_filter_component_is_dense(world, self.key.id())
 }
 
 ///|
@@ -493,9 +619,27 @@ pub impl[T] QueryFilter for Changed[T] with requires_entity_check(self) {
 }
 
 ///|
-pub impl[T] QueryFilter for Changed[T] with is_dense(self, _world) {
-  ignore(self)
-  false
+pub impl[T] QueryFilter for Changed[T] with requires_entity_check_for_world(
+  self,
+  world,
+) {
+  query_filter_component_requires_entity_check_for_world(world, self.key.id())
+}
+
+///|
+pub impl[T] QueryFilter for Changed[T] with matches_table_row(
+  self,
+  world,
+  _entity,
+  table_id,
+  row_index,
+) {
+  query_filter_table_changed_matches(world, self.key.id(), table_id, row_index)
+}
+
+///|
+pub impl[T] QueryFilter for Changed[T] with is_dense(self, world) {
+  query_filter_component_is_dense(world, self.key.id())
 }
 
 ///|
@@ -526,6 +670,23 @@ pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with matches(
   entity,
 ) {
   QueryFilterDisjunction::matches_any(self.filters, world, entity)
+}
+
+///|
+pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with matches_table_row(
+  self,
+  world,
+  entity,
+  table_id,
+  row_index,
+) {
+  QueryFilterDisjunction::matches_table_row_any(
+    self.filters,
+    world,
+    entity,
+    table_id,
+    row_index,
+  )
 }
 
 ///|
@@ -563,6 +724,17 @@ pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with requires_entity_
 }
 
 ///|
+pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with requires_entity_check_for_world(
+  self,
+  world,
+) {
+  QueryFilterDisjunction::requires_entity_check_any_for_world(
+    self.filters,
+    world,
+  )
+}
+
+///|
 pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with is_dense(
   self,
   world,
@@ -593,6 +765,18 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with matches(
 ) {
   QueryFilter::matches(self.0, world, entity) &&
   QueryFilter::matches(self.1, world, entity)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with matches_table_row(
+  self,
+  world,
+  entity,
+  table_id,
+  row_index,
+) {
+  QueryFilter::matches_table_row(self.0, world, entity, table_id, row_index) &&
+  QueryFilter::matches_table_row(self.1, world, entity, table_id, row_index)
 }
 
 ///|
@@ -628,6 +812,15 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with requires_
 ) {
   QueryFilter::requires_entity_check(self.0) ||
   QueryFilter::requires_entity_check(self.1)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with requires_entity_check_for_world(
+  self,
+  world,
+) {
+  QueryFilter::requires_entity_check_for_world(self.0, world) ||
+  QueryFilter::requires_entity_check_for_world(self.1, world)
 }
 
 ///|
@@ -687,6 +880,17 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
   A,
   B,
   C,
+) with matches_table_row(self, world, entity, table_id, row_index) {
+  QueryFilter::matches_table_row(self.0, world, entity, table_id, row_index) &&
+  QueryFilter::matches_table_row(self.1, world, entity, table_id, row_index) &&
+  QueryFilter::matches_table_row(self.2, world, entity, table_id, row_index)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
+  A,
+  B,
+  C,
 ) with mentions_component(self, component_id) {
   QueryFilter::mentions_component(self.0, component_id) ||
   QueryFilter::mentions_component(self.1, component_id) ||
@@ -724,6 +928,17 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
   QueryFilter::requires_entity_check(self.0) ||
   QueryFilter::requires_entity_check(self.1) ||
   QueryFilter::requires_entity_check(self.2)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
+  A,
+  B,
+  C,
+) with requires_entity_check_for_world(self, world) {
+  QueryFilter::requires_entity_check_for_world(self.0, world) ||
+  QueryFilter::requires_entity_check_for_world(self.1, world) ||
+  QueryFilter::requires_entity_check_for_world(self.2, world)
 }
 
 ///|
@@ -797,6 +1012,18 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) wit
 }
 
 ///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with matches_table_row_any(
+  self,
+  world,
+  entity,
+  table_id,
+  row_index,
+) {
+  QueryFilter::matches_table_row(self.0, world, entity, table_id, row_index) ||
+  QueryFilter::matches_table_row(self.1, world, entity, table_id, row_index)
+}
+
+///|
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with mentions_component_any(
   self,
   component_id,
@@ -832,6 +1059,15 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) wit
 }
 
 ///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with requires_entity_check_any_for_world(
+  self,
+  world,
+) {
+  QueryFilter::requires_entity_check_for_world(self.0, world) ||
+  QueryFilter::requires_entity_check_for_world(self.1, world)
+}
+
+///|
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with is_dense_any(
   self,
   world,
@@ -855,6 +1091,17 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjuncti
   QueryFilter::matches(self.0, world, entity) ||
   QueryFilter::matches(self.1, world, entity) ||
   QueryFilter::matches(self.2, world, entity)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+) with matches_table_row_any(self, world, entity, table_id, row_index) {
+  QueryFilter::matches_table_row(self.0, world, entity, table_id, row_index) ||
+  QueryFilter::matches_table_row(self.1, world, entity, table_id, row_index) ||
+  QueryFilter::matches_table_row(self.2, world, entity, table_id, row_index)
 }
 
 ///|
@@ -899,6 +1146,17 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjuncti
   QueryFilter::requires_entity_check(self.0) ||
   QueryFilter::requires_entity_check(self.1) ||
   QueryFilter::requires_entity_check(self.2)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+) with requires_entity_check_any_for_world(self, world) {
+  QueryFilter::requires_entity_check_for_world(self.0, world) ||
+  QueryFilter::requires_entity_check_for_world(self.1, world) ||
+  QueryFilter::requires_entity_check_for_world(self.2, world)
 }
 
 ///|

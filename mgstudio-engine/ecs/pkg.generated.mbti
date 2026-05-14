@@ -674,6 +674,10 @@ pub fn QueryDataAccess::new() -> Self
 pub fn QueryDataAccess::read_components(Self) -> Array[Int]
 pub fn QueryDataAccess::write_components(Self) -> Array[Int]
 
+pub(all) struct QueryDataFetchPlan {
+  // private fields
+}
+
 pub struct QueryFilterAccess {
   // private fields
 }
@@ -1018,8 +1022,15 @@ pub(open) trait Mutable {
 pub(open) trait QueryData {
   matches(World, @core.Entity) -> Bool
   fetch(World, @core.Entity) -> Self raise EcsError
+  prepare_fetch_plan(World) -> QueryDataFetchPlan = _
+  append_fetch_plan(World, QueryDataFetchPlan) -> Unit = _
+  fetch_plan_size() -> Int = _
   fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
+  fetch_table_row_with_plan(World, @core.Entity, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
+  fetch_table_row_with_plan_offset(World, @core.Entity, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
   fetch_sparse_anchor(World, @core.Entity, Int, EcsPayload, Int, Int) -> Self raise EcsError = _
+  fetch_sparse_anchor_with_plan(World, @core.Entity, Int, EcsPayload, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
+  fetch_sparse_anchor_with_plan_offset(World, @core.Entity, Int, EcsPayload, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
   mentions_component(Int) -> Bool
   matches_component_set((Int) -> Bool) -> Bool
   collect_access(QueryDataAccess) -> Unit = _
@@ -1038,10 +1049,12 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
 
 pub(open) trait QueryFilter {
   matches(Self, World, @core.Entity) -> Bool
+  matches_table_row(Self, World, @core.Entity, Int, Int) -> Bool = _
   mentions_component(Self, Int) -> Bool
   matches_component_set(Self, (Int) -> Bool) -> Bool
   collect_access(Self, QueryFilterAccess) -> Unit = _
   requires_entity_check(Self) -> Bool
+  requires_entity_check_for_world(Self, World) -> Bool = _
   is_dense(Self, World) -> Bool = _
   iteration_anchor_component(Self) -> Int?
   iteration_anchor_components(Self) -> Array[Int] = _
@@ -1052,10 +1065,12 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (A, 
 
 pub(open) trait QueryFilterDisjunction {
   matches_any(Self, World, @core.Entity) -> Bool
+  matches_table_row_any(Self, World, @core.Entity, Int, Int) -> Bool = _
   mentions_component_any(Self, Int) -> Bool
   matches_component_set_any(Self, (Int) -> Bool) -> Bool
   collect_access_any(Self, QueryFilterAccess) -> Unit = _
   requires_entity_check_any(Self) -> Bool
+  requires_entity_check_any_for_world(Self, World) -> Bool = _
   is_dense_any(Self, World) -> Bool = _
   depends_on_ticks_any(Self) -> Bool
 }

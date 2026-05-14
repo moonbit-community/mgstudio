@@ -13,11 +13,81 @@
 // limitations under the License.
 
 ///|
+pub(all) struct QueryDataFetchPlan {
+  priv local_component_ids : Array[Int]
+}
+
+///|
+fn QueryDataFetchPlan::new() -> QueryDataFetchPlan {
+  { local_component_ids: [] }
+}
+
+///|
+fn QueryDataFetchPlan::push_component_id(
+  self : QueryDataFetchPlan,
+  world : World,
+  component_id : Int,
+) -> Unit {
+  let local_component_id = match world.local_component_id(component_id) {
+    Some(local_component_id) => local_component_id
+    None => -1
+  }
+  self.local_component_ids.push(local_component_id)
+}
+
+///|
+fn QueryDataFetchPlan::local_component_id(
+  self : QueryDataFetchPlan,
+  offset : Int,
+) -> Int? {
+  guard offset >= 0 && offset < self.local_component_ids.length() else {
+    return None
+  }
+  let local_component_id = self.local_component_ids[offset]
+  if local_component_id >= 0 {
+    Some(local_component_id)
+  } else {
+    None
+  }
+}
+
+///|
 pub(open) trait QueryData {
   matches(World, @core.Entity) -> Bool
   fetch(World, @core.Entity) -> Self raise EcsError
+  prepare_fetch_plan(World) -> QueryDataFetchPlan = _
+  append_fetch_plan(World, QueryDataFetchPlan) -> Unit = _
+  fetch_plan_size() -> Int = _
   fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
+  fetch_table_row_with_plan(World, @core.Entity, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
+  fetch_table_row_with_plan_offset(
+    World,
+    @core.Entity,
+    Int,
+    Int,
+    QueryDataFetchPlan,
+    Int,
+  ) -> Self raise EcsError = _
   fetch_sparse_anchor(World, @core.Entity, Int, EcsPayload, Int, Int) -> Self raise EcsError = _
+  fetch_sparse_anchor_with_plan(
+    World,
+    @core.Entity,
+    Int,
+    EcsPayload,
+    Int,
+    Int,
+    QueryDataFetchPlan,
+  ) -> Self raise EcsError = _
+  fetch_sparse_anchor_with_plan_offset(
+    World,
+    @core.Entity,
+    Int,
+    EcsPayload,
+    Int,
+    Int,
+    QueryDataFetchPlan,
+    Int,
+  ) -> Self raise EcsError = _
   mentions_component(Int) -> Bool
   matches_component_set((Int) -> Bool) -> Bool
   collect_access(QueryDataAccess) -> Unit = _
@@ -39,8 +109,50 @@ impl QueryData with is_dense(_world) {
 }
 
 ///|
+impl QueryData with prepare_fetch_plan(world) {
+  let plan = QueryDataFetchPlan::new()
+  Self::append_fetch_plan(world, plan)
+  plan
+}
+
+///|
+impl QueryData with append_fetch_plan(_world, _plan) {
+  ()
+}
+
+///|
+impl QueryData with fetch_plan_size() {
+  0
+}
+
+///|
 impl QueryData with fetch_table_row(world, entity, _table_id, _row_index) {
   Self::fetch(world, entity)
+}
+
+///|
+impl QueryData with fetch_table_row_with_plan(
+  world,
+  entity,
+  table_id,
+  row_index,
+  plan,
+) {
+  Self::fetch_table_row_with_plan_offset(
+    world, entity, table_id, row_index, plan, 0,
+  )
+}
+
+///|
+impl QueryData with fetch_table_row_with_plan_offset(
+  world,
+  entity,
+  table_id,
+  row_index,
+  _plan,
+  _offset,
+) {
+  Self::fetch_table_row(world, entity, table_id, row_index)
 }
 
 ///|
@@ -53,6 +165,38 @@ impl QueryData with fetch_sparse_anchor(
   row_index,
 ) {
   Self::fetch_table_row(world, entity, table_id, row_index)
+}
+
+///|
+impl QueryData with fetch_sparse_anchor_with_plan(
+  world,
+  entity,
+  _anchor_local_component_id,
+  _anchor_payload,
+  table_id,
+  row_index,
+  plan,
+) {
+  Self::fetch_sparse_anchor_with_plan_offset(
+    world, entity, _anchor_local_component_id, _anchor_payload, table_id, row_index,
+    plan, 0,
+  )
+}
+
+///|
+impl QueryData with fetch_sparse_anchor_with_plan_offset(
+  world,
+  entity,
+  _anchor_local_component_id,
+  _anchor_payload,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  Self::fetch_table_row_with_plan_offset(
+    world, entity, table_id, row_index, plan, offset,
+  )
 }
 
 ///|
@@ -293,6 +437,14 @@ fn[T : EcsPayloadCodec] query_data_require_component(
 }
 
 ///|
+fn query_data_local_component_id_from_plan(
+  plan : QueryDataFetchPlan,
+  offset : Int,
+) -> Int? {
+  plan.local_component_id(offset)
+}
+
+///|
 pub fn[T : EcsPayloadCodec] query_data_component_fetch(
   world : World,
   entity : @core.Entity,
@@ -428,6 +580,19 @@ pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
 }
 
 ///|
+pub impl[T : Component] QueryData for Comp[T] with append_fetch_plan(
+  world,
+  plan,
+) {
+  plan.push_component_id(world, T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for Comp[T] with fetch_plan_size() {
+  1
+}
+
+///|
 pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
   world,
   entity,
@@ -436,6 +601,42 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
 ) {
   let key = T::component()
   let local_component_id = world.local_component_id(key.id())
+  let value_at_row = match local_component_id {
+    Some(local_component_id) =>
+      try! world.component_value_by_local_id_at_table_row(
+        key, local_component_id, table_id, row_index,
+      )
+    None => None
+  }
+  match value_at_row {
+    Some(value) =>
+      {
+        value: Some(value),
+        world: Some(world),
+        entity: Some(entity),
+        local_component_id,
+      }
+    None =>
+      {
+        value: Some(query_data_require_component(world, entity, key)),
+        world: Some(world),
+        entity: Some(entity),
+        local_component_id: world.local_component_id(key.id()),
+      }
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for Comp[T] with fetch_table_row_with_plan_offset(
+  world,
+  entity,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  let key = T::component()
+  let local_component_id = query_data_local_component_id_from_plan(plan, offset)
   let value_at_row = match local_component_id {
     Some(local_component_id) =>
       try! world.component_value_by_local_id_at_table_row(
@@ -488,6 +689,40 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor(
       }
     }
     _ => Comp::fetch_table_row(world, entity, table_id, row_index)
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor_with_plan_offset(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  match query_data_local_component_id_from_plan(plan, offset) {
+    Some(local_component_id) if local_component_id == anchor_local_component_id => {
+      let value = match T::from_ecs_payload(anchor_payload) {
+        Some(value) => value
+        None =>
+          abort(
+            "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
+          )
+      }
+      {
+        value: Some(value),
+        world: Some(world),
+        entity: Some(entity),
+        local_component_id: Some(local_component_id),
+      }
+    }
+    _ =>
+      Comp::fetch_table_row_with_plan_offset(
+        world, entity, table_id, row_index, plan, offset,
+      )
   }
 }
 
@@ -546,6 +781,16 @@ pub impl[T : Component] QueryData for Mut[T] with fetch(world, entity) {
 }
 
 ///|
+pub impl[T : Component] QueryData for Mut[T] with append_fetch_plan(world, plan) {
+  plan.push_component_id(world, T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with fetch_plan_size() {
+  1
+}
+
+///|
 pub impl[T : Component] QueryData for Mut[T] with fetch_table_row(
   world,
   entity,
@@ -560,6 +805,26 @@ pub impl[T : Component] QueryData for Mut[T] with fetch_table_row(
     table_id: Some(table_id),
     row_index: Some(row_index),
     local_component_id: world.local_component_id(key.id()),
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with fetch_table_row_with_plan_offset(
+  world,
+  entity,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  let key = T::component()
+  {
+    world: Some(world),
+    entity: Some(entity),
+    key: Some(key),
+    table_id: Some(table_id),
+    row_index: Some(row_index),
+    local_component_id: query_data_local_component_id_from_plan(plan, offset),
   }
 }
 
@@ -581,6 +846,22 @@ pub impl[T : Component] QueryData for Mut[T] with fetch_sparse_anchor(
     row_index: Some(row_index),
     local_component_id: world.local_component_id(key.id()),
   }
+}
+
+///|
+pub impl[T : Component] QueryData for Mut[T] with fetch_sparse_anchor_with_plan_offset(
+  world,
+  entity,
+  _anchor_local_component_id,
+  _anchor_payload,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  Mut::fetch_table_row_with_plan_offset(
+    world, entity, table_id, row_index, plan, offset,
+  )
 }
 
 ///|
@@ -776,6 +1057,16 @@ pub impl[T : QueryData] QueryData for T? with fetch(world, entity) {
 }
 
 ///|
+pub impl[T : QueryData] QueryData for T? with append_fetch_plan(world, plan) {
+  T::append_fetch_plan(world, plan)
+}
+
+///|
+pub impl[T : QueryData] QueryData for T? with fetch_plan_size() {
+  T::fetch_plan_size()
+}
+
+///|
 pub impl[T : QueryData] QueryData for T? with fetch_table_row(
   world,
   entity,
@@ -784,6 +1075,26 @@ pub impl[T : QueryData] QueryData for T? with fetch_table_row(
 ) {
   if T::matches(world, entity) {
     Some(T::fetch_table_row(world, entity, table_id, row_index))
+  } else {
+    None
+  }
+}
+
+///|
+pub impl[T : QueryData] QueryData for T? with fetch_table_row_with_plan_offset(
+  world,
+  entity,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  if T::matches(world, entity) {
+    Some(
+      T::fetch_table_row_with_plan_offset(
+        world, entity, table_id, row_index, plan, offset,
+      ),
+    )
   } else {
     None
   }
@@ -802,6 +1113,29 @@ pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor(
     Some(
       T::fetch_sparse_anchor(
         world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      ),
+    )
+  } else {
+    None
+  }
+}
+
+///|
+pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor_with_plan_offset(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  if T::matches(world, entity) {
+    Some(
+      T::fetch_sparse_anchor_with_plan_offset(
+        world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+        plan, offset,
       ),
     )
   } else {
@@ -857,6 +1191,16 @@ pub impl[T : Component] QueryData for Has[T] with fetch(world, entity) {
 }
 
 ///|
+pub impl[T : Component] QueryData for Has[T] with append_fetch_plan(world, plan) {
+  plan.push_component_id(world, T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for Has[T] with fetch_plan_size() {
+  1
+}
+
+///|
 pub impl[T : Component] QueryData for Has[T] with fetch_table_row(
   world,
   entity,
@@ -864,6 +1208,27 @@ pub impl[T : Component] QueryData for Has[T] with fetch_table_row(
   _row_index,
 ) {
   let present = match world.local_component_id(T::component().id()) {
+    Some(local_component_id) =>
+      if world.local_component_storage_type(local_component_id) == Some(Table) {
+        world.table_has_component_local_id(table_id, local_component_id)
+      } else {
+        entity_has_component_id(world, T::component().id(), entity)
+      }
+    None => false
+  }
+  { present, }
+}
+
+///|
+pub impl[T : Component] QueryData for Has[T] with fetch_table_row_with_plan_offset(
+  world,
+  entity,
+  table_id,
+  _row_index,
+  plan,
+  offset,
+) {
+  let present = match query_data_local_component_id_from_plan(plan, offset) {
     Some(local_component_id) =>
       if world.local_component_storage_type(local_component_id) == Some(Table) {
         world.table_has_component_local_id(table_id, local_component_id)
@@ -886,6 +1251,32 @@ pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor(
 ) {
   ignore(row_index)
   let present = match world.local_component_id(T::component().id()) {
+    Some(local_component_id) if local_component_id == anchor_local_component_id =>
+      true
+    Some(local_component_id) =>
+      if world.local_component_storage_type(local_component_id) == Some(Table) {
+        world.table_has_component_local_id(table_id, local_component_id)
+      } else {
+        entity_has_component_id(world, T::component().id(), entity)
+      }
+    None => false
+  }
+  { present, }
+}
+
+///|
+pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor_with_plan_offset(
+  world,
+  entity,
+  anchor_local_component_id,
+  _anchor_payload,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  ignore(row_index)
+  let present = match query_data_local_component_id_from_plan(plan, offset) {
     Some(local_component_id) if local_component_id == anchor_local_component_id =>
       true
     Some(local_component_id) =>
@@ -949,6 +1340,19 @@ pub impl[T : Component] QueryData for Optional[T] with fetch(world, entity) {
 }
 
 ///|
+pub impl[T : Component] QueryData for Optional[T] with append_fetch_plan(
+  world,
+  plan,
+) {
+  plan.push_component_id(world, T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for Optional[T] with fetch_plan_size() {
+  1
+}
+
+///|
 pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
   world,
   entity,
@@ -957,6 +1361,30 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
 ) {
   let key = T::component()
   let value_at_row = match world.local_component_id(key.id()) {
+    Some(local_component_id) =>
+      try! world.component_value_by_local_id_at_table_row(
+        key, local_component_id, table_id, row_index,
+      )
+    None => None
+  }
+  match value_at_row {
+    Some(value) => { value: Some(value) }
+    None => { value: world.get_by_key(entity, key) }
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for Optional[T] with fetch_table_row_with_plan_offset(
+  world,
+  entity,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  let key = T::component()
+  let value_at_row = match
+    query_data_local_component_id_from_plan(plan, offset) {
     Some(local_component_id) =>
       try! world.component_value_by_local_id_at_table_row(
         key, local_component_id, table_id, row_index,
@@ -990,6 +1418,35 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor(
       { value: Some(value) }
     }
     _ => Optional::fetch_table_row(world, entity, table_id, row_index)
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor_with_plan_offset(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  match query_data_local_component_id_from_plan(plan, offset) {
+    Some(local_component_id) if local_component_id == anchor_local_component_id => {
+      let value = match T::from_ecs_payload(anchor_payload) {
+        Some(value) => value
+        None =>
+          abort(
+            "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
+          )
+      }
+      { value: Some(value) }
+    }
+    _ =>
+      Optional::fetch_table_row_with_plan_offset(
+        world, entity, table_id, row_index, plan, offset,
+      )
   }
 }
 
@@ -1116,6 +1573,20 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch(
 }
 
 ///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with append_fetch_plan(
+  world,
+  plan,
+) {
+  A::append_fetch_plan(world, plan)
+  B::append_fetch_plan(world, plan)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_plan_size() {
+  A::fetch_plan_size() + B::fetch_plan_size()
+}
+
+///|
 pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_table_row(
   world,
   entity,
@@ -1125,6 +1596,26 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_table_row
   (
     A::fetch_table_row(world, entity, table_id, row_index),
     B::fetch_table_row(world, entity, table_id, row_index),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_table_row_with_plan_offset(
+  world,
+  entity,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  let b_offset = offset + A::fetch_plan_size()
+  (
+    A::fetch_table_row_with_plan_offset(
+      world, entity, table_id, row_index, plan, offset,
+    ),
+    B::fetch_table_row_with_plan_offset(
+      world, entity, table_id, row_index, plan, b_offset,
+    ),
   )
 }
 
@@ -1143,6 +1634,30 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_an
     ),
     B::fetch_sparse_anchor(
       world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+    ),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_anchor_with_plan_offset(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  let b_offset = offset + A::fetch_plan_size()
+  (
+    A::fetch_sparse_anchor_with_plan_offset(
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      plan, offset,
+    ),
+    B::fetch_sparse_anchor_with_plan_offset(
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      plan, b_offset,
     ),
   )
 }
@@ -1226,6 +1741,21 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 }
 
 ///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with append_fetch_plan(
+  world,
+  plan,
+) {
+  A::append_fetch_plan(world, plan)
+  B::append_fetch_plan(world, plan)
+  C::append_fetch_plan(world, plan)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_plan_size() {
+  A::fetch_plan_size() + B::fetch_plan_size() + C::fetch_plan_size()
+}
+
+///|
 pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_table_row(
   world,
   entity,
@@ -1236,6 +1766,30 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
     A::fetch_table_row(world, entity, table_id, row_index),
     B::fetch_table_row(world, entity, table_id, row_index),
     C::fetch_table_row(world, entity, table_id, row_index),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_table_row_with_plan_offset(
+  world,
+  entity,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  let b_offset = offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  (
+    A::fetch_table_row_with_plan_offset(
+      world, entity, table_id, row_index, plan, offset,
+    ),
+    B::fetch_table_row_with_plan_offset(
+      world, entity, table_id, row_index, plan, b_offset,
+    ),
+    C::fetch_table_row_with_plan_offset(
+      world, entity, table_id, row_index, plan, c_offset,
+    ),
   )
 }
 
@@ -1257,6 +1811,35 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
     ),
     C::fetch_sparse_anchor(
       world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+    ),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fetch_sparse_anchor_with_plan_offset(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  let b_offset = offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  (
+    A::fetch_sparse_anchor_with_plan_offset(
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      plan, offset,
+    ),
+    B::fetch_sparse_anchor_with_plan_offset(
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      plan, b_offset,
+    ),
+    C::fetch_sparse_anchor_with_plan_offset(
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      plan, c_offset,
     ),
   )
 }
@@ -1373,12 +1956,71 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B,
   C,
   D,
+) with append_fetch_plan(world, plan) {
+  A::append_fetch_plan(world, plan)
+  B::append_fetch_plan(world, plan)
+  C::append_fetch_plan(world, plan)
+  D::append_fetch_plan(world, plan)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with fetch_plan_size() {
+  A::fetch_plan_size() +
+  B::fetch_plan_size() +
+  C::fetch_plan_size() +
+  D::fetch_plan_size()
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
 ) with fetch_table_row(world, entity, table_id, row_index) {
   (
     A::fetch_table_row(world, entity, table_id, row_index),
     B::fetch_table_row(world, entity, table_id, row_index),
     C::fetch_table_row(world, entity, table_id, row_index),
     D::fetch_table_row(world, entity, table_id, row_index),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with fetch_table_row_with_plan_offset(
+  world,
+  entity,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  let b_offset = offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  (
+    A::fetch_table_row_with_plan_offset(
+      world, entity, table_id, row_index, plan, offset,
+    ),
+    B::fetch_table_row_with_plan_offset(
+      world, entity, table_id, row_index, plan, b_offset,
+    ),
+    C::fetch_table_row_with_plan_offset(
+      world, entity, table_id, row_index, plan, c_offset,
+    ),
+    D::fetch_table_row_with_plan_offset(
+      world, entity, table_id, row_index, plan, d_offset,
+    ),
   )
 }
 
@@ -1408,6 +2050,45 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
     ),
     D::fetch_sparse_anchor(
       world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+    ),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with fetch_sparse_anchor_with_plan_offset(
+  world,
+  entity,
+  anchor_local_component_id,
+  anchor_payload,
+  table_id,
+  row_index,
+  plan,
+  offset,
+) {
+  let b_offset = offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  (
+    A::fetch_sparse_anchor_with_plan_offset(
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      plan, offset,
+    ),
+    B::fetch_sparse_anchor_with_plan_offset(
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      plan, b_offset,
+    ),
+    C::fetch_sparse_anchor_with_plan_offset(
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      plan, c_offset,
+    ),
+    D::fetch_sparse_anchor_with_plan_offset(
+      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      plan, d_offset,
     ),
   )
 }
