@@ -1214,7 +1214,7 @@ priv struct MeshletTempBvhNode {
 ///|
 priv struct MeshletBvhBuildResult {
   bvh : Array[BvhNode]
-  meshlets : Array[Meshlet]
+  meshlets : MeshletBuildMeshlets
   cull_data : Array[MeshletCullData]
   aabb : MeshletAabb
   bvh_depth : Int
@@ -1758,18 +1758,18 @@ fn meshlet_verify_bvh(
 ///|
 fn MeshletBvhBuilder::build(
   self : MeshletBvhBuilder,
-  meshlets : Array[Meshlet],
+  meshlets : MeshletBuildMeshlets,
   groups : Array[MeshletTempGroup],
   cull_data : Array[MeshletTempCullData],
 ) -> MeshletBvhBuildResult {
-  let remapped_meshlets : Array[Meshlet] = []
+  let remapped_meshlets : Array[MeshletBuildMeshlet] = []
   let remapped_cull_data : Array[MeshletTempCullData] = []
   for group_index in 0..<groups.length() {
     let group = groups[group_index]
     let first = remapped_meshlets.length()
     let count = group.meshlets.length()
     for meshlet_id in group.meshlets {
-      remapped_meshlets.push(meshlets[meshlet_id])
+      remapped_meshlets.push(meshlets.meshlets[meshlet_id])
       remapped_cull_data.push(cull_data[meshlet_id])
     }
     groups[group_index] = MeshletTempGroup::{
@@ -1822,7 +1822,11 @@ fn MeshletBvhBuilder::build(
   let half = aabb.half_size()
   MeshletBvhBuildResult::{
     bvh: out,
-    meshlets: remapped_meshlets,
+    meshlets: MeshletBuildMeshlets::{
+      meshlets: remapped_meshlets,
+      vertices: meshlets.vertices,
+      triangles: meshlets.triangles,
+    },
     cull_data: asset_cull,
     aabb: MeshletAabb::new(
       center_x=center.x,
@@ -1834,4 +1838,106 @@ fn MeshletBvhBuilder::build(
     ),
     bvh_depth: max_depth.val,
   }
+}
+
+///|
+fn meshlet_read_lsb_bit(words : Array[Int], bit : Int) -> Bool {
+  let word_index = bit / 32
+  let bit_index = bit % 32
+  if word_index >= words.length() {
+    false
+  } else {
+    ((words[word_index].reinterpret_as_uint() >> bit_index) & 1U) != 0U
+  }
+}
+
+///|
+fn meshlet_append_position_bitstream(
+  words : Array[Int],
+  start_bit : Int,
+  source_words : Array[Int],
+  source_bit_len : Int,
+) -> Int {
+  let mut cursor = start_bit
+  for bit in 0..<source_bit_len {
+    let word_index = cursor / 32
+    let bit_index = cursor % 32
+    meshlet_ensure_position_word(words, word_index)
+    if meshlet_read_lsb_bit(source_words, bit) {
+      let current = words[word_index].reinterpret_as_uint()
+      words[word_index] = (current | (1U << bit_index)).reinterpret_as_int()
+    }
+    cursor = cursor + 1
+  }
+  cursor
+}
+
+///|
+fn meshlet_source_vertices_for_build_meshlet(
+  input : MeshletMeshInputData,
+  meshlets : MeshletBuildMeshlets,
+  meshlet : MeshletBuildMeshlet,
+) -> Array[MeshletSourceVertex] {
+  let source_vertices : Array[MeshletSourceVertex] = []
+  for local_vertex_index in 0..<meshlet.vertex_count {
+    let source_vertex_id = meshlets.meshlet_vertex(meshlet, local_vertex_index)
+    source_vertices.push(input.vertices[source_vertex_id])
+  }
+  source_vertices
+}
+
+///|
+fn meshlet_finalize_bvh_build(
+  input : MeshletMeshInputData,
+  built : MeshletBvhBuildResult,
+  vertex_position_quantization_factor? : Int = MESHLET_DEFAULT_VERTEX_POSITION_QUANTIZATION_FACTOR,
+) -> MeshletMesh {
+  let vertex_positions : Array[Int] = []
+  let vertex_normals : Array[Int] = []
+  let vertex_uvs : Array[MeshletVertexUv] = []
+  let meshlets : Array[Meshlet] = []
+  let mut vertex_position_bit_len = 0
+  for build_meshlet in built.meshlets.meshlets {
+    let source_vertices = meshlet_source_vertices_for_build_meshlet(
+      input,
+      built.meshlets,
+      build_meshlet,
+    )
+    let start_vertex_position_bit = vertex_position_bit_len
+    let start_vertex_attribute_id = vertex_normals.length()
+    let compressed = meshlet_build_compressed_vertex_data(
+      source_vertices,
+      start_index_id=build_meshlet.triangle_offset,
+      triangle_count=build_meshlet.triangle_count,
+      vertex_position_quantization_factor~,
+    )
+    vertex_position_bit_len = meshlet_append_position_bitstream(
+      vertex_positions,
+      vertex_position_bit_len,
+      compressed.vertex_positions,
+      compressed.vertex_position_bit_len,
+    )
+    for normal in compressed.vertex_normals {
+      vertex_normals.push(normal)
+    }
+    for uv in compressed.vertex_uvs {
+      vertex_uvs.push(uv)
+    }
+    meshlets.push(Meshlet::{
+      ..compressed.meshlet,
+      start_vertex_position_bit,
+      start_vertex_attribute_id,
+    })
+  }
+  MeshletMesh::from_parts(
+    vertex_positions~,
+    vertex_normals~,
+    vertex_uvs~,
+    indices=built.meshlets.triangles,
+    bvh=built.bvh,
+    meshlets~,
+    meshlet_cull_data=built.cull_data,
+    aabb=built.aabb,
+    bvh_depth=built.bvh_depth,
+  )
 }

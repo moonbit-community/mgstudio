@@ -54,11 +54,6 @@ fn meshlet_wbtest_group(id : Int, meshlets : Array[Int]) -> MeshletTempGroup {
 }
 
 ///|
-fn meshlet_wbtest_meshlet(id : Int) -> Meshlet {
-  Meshlet::new(0, 0, id * 3, 3, 1)
-}
-
-///|
 fn meshlet_wbtest_build_meshlets() -> MeshletBuildMeshlets {
   MeshletBuildMeshlets::new(
     meshlets=[
@@ -87,6 +82,46 @@ fn meshlet_wbtest_build_meshlets() -> MeshletBuildMeshlets {
 }
 
 ///|
+fn meshlet_wbtest_build_meshlets_count(count : Int) -> MeshletBuildMeshlets {
+  let meshlets : Array[MeshletBuildMeshlet] = []
+  let vertices : Array[Int] = []
+  let triangles : Array[Int] = []
+  for id in 0..<count {
+    meshlets.push(
+      MeshletBuildMeshlet::new(
+        vertex_offset=id * 3,
+        triangle_offset=id * 3,
+        vertex_count=3,
+        triangle_count=1,
+      ),
+    )
+    vertices.push(id * 3)
+    vertices.push(id * 3 + 1)
+    vertices.push(id * 3 + 2)
+    triangles.push(0)
+    triangles.push(1)
+    triangles.push(2)
+  }
+  MeshletBuildMeshlets::new(meshlets~, vertices~, triangles~)
+}
+
+///|
+fn meshlet_wbtest_source_vertices(count : Int) -> Array[MeshletSourceVertex] {
+  let vertices : Array[MeshletSourceVertex] = []
+  for index in 0..<count {
+    let x = Float::from_int(index)
+    vertices.push(
+      MeshletSourceVertex::new(
+        position=@math.Vec3::new(x, x * 0.25F, 0.0F),
+        normal=@math.Vec3::new(0.0F, 1.0F, 0.0F),
+        uv=@math.Vec2::new(x * 0.125F, 0.5F),
+      ),
+    )
+  }
+  vertices
+}
+
+///|
 test "pbr meshlet wbtest: merge spheres preserves containing sphere" {
   let left = meshlet_wbtest_sphere(0.0F, 0.0F, 0.0F, 10.0F)
   let right = meshlet_wbtest_sphere(1.0F, 0.0F, 0.0F, 1.0F)
@@ -97,7 +132,7 @@ test "pbr meshlet wbtest: merge spheres preserves containing sphere" {
 
 ///|
 test "pbr meshlet wbtest: bvh builder remaps group meshlets contiguously" {
-  let meshlets = [meshlet_wbtest_meshlet(0), meshlet_wbtest_meshlet(1)]
+  let meshlets = meshlet_wbtest_build_meshlets()
   let cull = [meshlet_wbtest_cull(0), meshlet_wbtest_cull(1)]
   let groups = [meshlet_wbtest_group(0, [1, 0])]
   let builder = MeshletBvhBuilder::new()
@@ -107,8 +142,8 @@ test "pbr meshlet wbtest: bvh builder remaps group meshlets contiguously" {
   debug_inspect(built.bvh_depth, content="1")
   debug_inspect(built.bvh[0].aabbs[0].child_offset, content="0")
   debug_inspect(built.bvh[0].child_counts[0], content="2")
-  debug_inspect(built.meshlets[0].start_index_id, content="3")
-  debug_inspect(built.meshlets[1].start_index_id, content="0")
+  debug_inspect(built.meshlets.meshlets[0].triangle_offset, content="3")
+  debug_inspect(built.meshlets.meshlets[1].triangle_offset, content="0")
   debug_inspect(built.cull_data.length(), content="2")
 }
 
@@ -334,11 +369,10 @@ test "pbr meshlet wbtest: lock group borders marks shared position vertices" {
 
 ///|
 test "pbr meshlet wbtest: bvh builder emits inner nodes for more than eight groups" {
-  let meshlets : Array[Meshlet] = []
+  let meshlets = meshlet_wbtest_build_meshlets_count(10)
   let cull : Array[MeshletTempCullData] = []
   let groups : Array[MeshletTempGroup] = []
   for id in 0..<10 {
-    meshlets.push(meshlet_wbtest_meshlet(id))
     cull.push(meshlet_wbtest_cull(id))
     groups.push(meshlet_wbtest_group(id, [id]))
   }
@@ -348,7 +382,32 @@ test "pbr meshlet wbtest: bvh builder emits inner nodes for more than eight grou
   debug_inspect(built.bvh.length() > 1, content="true")
   debug_inspect(built.bvh_depth >= 2, content="true")
   debug_inspect(built.bvh[0].child_counts[0], content="255")
-  debug_inspect(built.meshlets.length(), content="10")
+  debug_inspect(built.meshlets.len(), content="10")
   debug_inspect(built.cull_data.length(), content="10")
   debug_inspect(built.aabb.half_extent_x > 8.0F, content="true")
+}
+
+///|
+test "pbr meshlet wbtest: finalize compresses bvh-remapped raw meshlets" {
+  let raw_meshlets = meshlet_wbtest_build_meshlets()
+  let cull = [meshlet_wbtest_cull(0), meshlet_wbtest_cull(1)]
+  let groups = [meshlet_wbtest_group(0, [1, 0])]
+  let builder = MeshletBvhBuilder::new()
+  builder.add_lod(0, groups)
+  let built = builder.build(raw_meshlets, groups, cull)
+  let input = MeshletMeshInputData::new(
+    vertices=meshlet_wbtest_source_vertices(7),
+    indices=[0, 1, 2, 2, 1, 3, 4, 5, 6],
+  )
+  let mesh = meshlet_finalize_bvh_build(input, built)
+  debug_inspect(mesh.meshlet_count(), content="2")
+  debug_inspect(mesh.index_count(), content="9")
+  debug_inspect(mesh.vertex_uv_count(), content="6")
+  debug_inspect(mesh.vertex_normal_word_count(), content="6")
+  debug_inspect(mesh.meshlets[0].start_index_id, content="3")
+  debug_inspect(mesh.meshlets[1].start_index_id, content="0")
+  debug_inspect(mesh.meshlets[0].start_vertex_attribute_id, content="0")
+  debug_inspect(mesh.meshlets[1].start_vertex_attribute_id, content="3")
+  debug_inspect(mesh.meshlet_cull_data.length(), content="2")
+  debug_inspect(mesh.bvh_depth, content="1")
 }
