@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/utils",
   "moonbitlang/core/debug",
 }
@@ -58,6 +59,8 @@ pub fn init_meshlet_mesh_asset(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn init_meshlet_pipelines(Int, Int, Int) -> MeshletPipelines
 
 pub fn init_meshlet_pipelines_with_core(Int, Int, Int, Int) -> MeshletPipelines
+
+pub fn meshlet_build_compressed_vertex_data(Array[MeshletSourceVertex], start_index_id~ : Int, triangle_count~ : Int, vertex_position_quantization_factor? : Int) -> MeshletCompressedVertexData
 
 pub fn meshlet_can_convert_from_mesh(Int, Int) -> Bool
 
@@ -327,6 +330,15 @@ pub struct MeshletBufferSliceRange {
   end_ : Int
 } derive(Eq, @debug.Debug)
 
+pub struct MeshletCompressedVertexData {
+  vertex_positions : Array[Int]
+  vertex_position_bit_len : Int
+  vertex_normals : Array[Int]
+  vertex_uvs : Array[MeshletVertexUv]
+  meshlet : Meshlet
+}
+pub fn MeshletCompressedVertexData::new(vertex_positions~ : Array[Int], vertex_position_bit_len~ : Int, vertex_normals~ : Array[Int], vertex_uvs~ : Array[MeshletVertexUv], meshlet~ : Meshlet) -> Self
+
 pub struct MeshletCullData {
   aabb : MeshletAabbErrorOffset
   lod_group_sphere : MeshletBoundingSphere
@@ -513,6 +525,13 @@ pub(all) enum MeshletRuntimeStatus {
   Enabled
   RuntimeUnavailable
 }
+
+pub struct MeshletSourceVertex {
+  position : @math.Vec3
+  normal : @math.Vec3
+  uv : @math.Vec2
+}
+pub fn MeshletSourceVertex::new(position~ : @math.Vec3, normal~ : @math.Vec3, uv~ : @math.Vec2) -> Self
 
 pub struct MeshletVertexUv {
   x : Float

@@ -82,3 +82,59 @@ test "pbr meshlet: input summary validation checks indices and limits" {
     content="true",
   )
 }
+
+///|
+test "pbr meshlet: octahedral normals and UVs are compressed per meshlet" {
+  let data = meshlet_build_compressed_vertex_data(
+    [
+      MeshletSourceVertex::new(
+        position=@math.Vec3::new(0.0F, 0.0F, 0.0F),
+        normal=@math.Vec3::new(0.0F, 0.0F, 1.0F),
+        uv=@math.Vec2::new(0.25F, 0.75F),
+      ),
+      MeshletSourceVertex::new(
+        position=@math.Vec3::new(0.0F, 0.0F, 0.0F),
+        normal=@math.Vec3::new(1.0F, 0.0F, 0.0F),
+        uv=@math.Vec2::new(0.5F, 0.125F),
+      ),
+    ],
+    start_index_id=12,
+    triangle_count=1,
+  )
+  inspect(data.vertex_normals.length(), content="2")
+  inspect(data.vertex_normals[0], content="0")
+  inspect(data.vertex_normals[1], content="32767")
+  inspect(data.vertex_uvs.length(), content="2")
+  inspect(data.vertex_uvs[0].x, content="0.25")
+  inspect(data.vertex_uvs[1].y, content="0.125")
+  inspect(data.meshlet.start_index_id, content="12")
+  inspect(data.meshlet.triangle_count, content="1")
+}
+
+///|
+test "pbr meshlet: quantized positions are packed as LSB-first u32 words" {
+  let data = meshlet_build_compressed_vertex_data(
+    [
+      MeshletSourceVertex::new(
+        position=@math.Vec3::new(0.0F, 0.0F, 0.0F),
+        normal=@math.Vec3::new(0.0F, 0.0F, 1.0F),
+        uv=@math.Vec2::zero(),
+      ),
+      MeshletSourceVertex::new(
+        position=@math.Vec3::new(0.01F, 0.02F, 0.04F),
+        normal=@math.Vec3::new(0.0F, 1.0F, 0.0F),
+        uv=@math.Vec2::zero(),
+      ),
+    ],
+    start_index_id=0,
+    triangle_count=1,
+  )
+  inspect(data.meshlet.bits_per_vertex_position_channel_x, content="5")
+  inspect(data.meshlet.bits_per_vertex_position_channel_y, content="6")
+  inspect(data.meshlet.bits_per_vertex_position_channel_z, content="7")
+  inspect(data.meshlet.min_vertex_position_channel_x, content="0")
+  inspect(data.vertex_position_bit_len, content="36")
+  inspect(data.vertex_positions.length(), content="2")
+  inspect(data.vertex_positions[0], content="8389120")
+  inspect(data.vertex_positions[1], content="2")
+}
