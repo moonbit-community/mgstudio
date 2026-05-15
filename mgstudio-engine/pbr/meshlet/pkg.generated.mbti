@@ -923,19 +923,23 @@ pub struct PersistentBufferSliceRange {
 
 pub struct PersistentGpuBuffer[T] {
   label : String
+  element_byte_size : Int
+  mut allocated_byte_len : Int
   elements : Array[T]
   pending_write_ranges : Array[PersistentBufferSliceRange]
   free_ranges : Array[PersistentBufferSliceRange]
   mut committed_write_count : Int
 }
+pub fn[T] PersistentGpuBuffer::allocated_byte_len(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::clear(Self[T]) -> Unit
 pub fn[T] PersistentGpuBuffer::committed_write_count(Self[T]) -> Int
+pub fn[T] PersistentGpuBuffer::element_byte_size(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::extend(Self[T], Array[T]) -> Unit
 pub fn[T] PersistentGpuBuffer::is_empty(Self[T]) -> Bool
 pub fn[T] PersistentGpuBuffer::label(Self[T]) -> String
 pub fn[T] PersistentGpuBuffer::len(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::mark_slice_unused(Self[T], PersistentBufferSliceRange) -> Unit
-pub fn[T] PersistentGpuBuffer::new(label? : String) -> Self[T]
+pub fn[T] PersistentGpuBuffer::new(label? : String, element_byte_size? : Int) -> Self[T]
 pub fn[T] PersistentGpuBuffer::pending_ranges_snapshot(Self[T]) -> Array[PersistentBufferSliceRange]
 pub fn[T] PersistentGpuBuffer::pending_write_count(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::perform_writes(Self[T]) -> Int

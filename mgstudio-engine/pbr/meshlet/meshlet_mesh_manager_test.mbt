@@ -62,6 +62,28 @@ test "pbr/meshlet: mesh manager uploads real meshlet asset slices" {
 }
 
 ///|
+test "pbr/meshlet: mesh manager returns bvh root node index from byte slices" {
+  let manager = MeshletMeshManager::default()
+  let meshlet_mesh_a = MeshletMesh::new(1, 1).with_vertex_buffers(2, 2, 1, 4)
+  let meshlet_mesh_b = MeshletMesh::new(1, 2).with_vertex_buffers(3, 3, 1, 4)
+  let queued_a = manager.queue_upload_if_needed(21, meshlet_mesh_a)
+  let queued_b = manager.queue_upload_if_needed(22, meshlet_mesh_b)
+  debug_inspect(queued_a.0, content="0")
+  debug_inspect(queued_b.0, content="1")
+  let slices_b = manager.meshlet_mesh_slices.get(22)
+  let vertex_position_start = match slices_b {
+    Some(slices) => slices.vertex_positions.start
+    None => -1
+  }
+  let bvh_node_start = match slices_b {
+    Some(slices) => slices.bvh_nodes.start
+    None => -1
+  }
+  debug_inspect(vertex_position_start, content="8")
+  debug_inspect(bvh_node_start, content="400")
+}
+
+///|
 test "pbr/meshlet: mesh manager removes slices from all persistent buffers" {
   let manager = MeshletMeshManager::default()
   let meshlet_mesh = MeshletMesh::new(2, 1)

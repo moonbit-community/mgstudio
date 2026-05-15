@@ -37,6 +37,8 @@ fn persistent_buffer_safe_slice_range(
 ///|
 pub struct PersistentGpuBuffer[T] {
   label : String
+  element_byte_size : Int
+  mut allocated_byte_len : Int
   elements : Array[T]
   pending_write_ranges : Array[PersistentBufferSliceRange]
   free_ranges : Array[PersistentBufferSliceRange]
@@ -44,11 +46,25 @@ pub struct PersistentGpuBuffer[T] {
 }
 
 ///|
+fn persistent_buffer_safe_element_byte_size(value : Int) -> Int {
+  if value <= 0 {
+    1
+  } else {
+    value
+  }
+}
+
+///|
 pub fn[T] PersistentGpuBuffer::new(
   label? : String = "meshlet_persistent_buffer",
+  element_byte_size? : Int = 1,
 ) -> PersistentGpuBuffer[T] {
   PersistentGpuBuffer::{
     label,
+    element_byte_size: persistent_buffer_safe_element_byte_size(
+      element_byte_size,
+    ),
+    allocated_byte_len: 0,
     elements: [],
     pending_write_ranges: [],
     free_ranges: [],
@@ -59,6 +75,20 @@ pub fn[T] PersistentGpuBuffer::new(
 ///|
 pub fn[T] PersistentGpuBuffer::label(self : PersistentGpuBuffer[T]) -> String {
   self.label
+}
+
+///|
+pub fn[T] PersistentGpuBuffer::element_byte_size(
+  self : PersistentGpuBuffer[T],
+) -> Int {
+  self.element_byte_size
+}
+
+///|
+pub fn[T] PersistentGpuBuffer::allocated_byte_len(
+  self : PersistentGpuBuffer[T],
+) -> Int {
+  self.allocated_byte_len
 }
 
 ///|
@@ -76,6 +106,7 @@ pub fn[T] PersistentGpuBuffer::clear(self : PersistentGpuBuffer[T]) -> Unit {
   self.elements.clear()
   self.pending_write_ranges.clear()
   self.free_ranges.clear()
+  self.allocated_byte_len = 0
 }
 
 ///|
@@ -101,23 +132,24 @@ pub fn[T, M] PersistentGpuBuffer::queue_write(
   _metadata : M,
 ) -> PersistentBufferSliceRange {
   let write_len = values.length()
+  let data_size = write_len * self.element_byte_size
   if write_len == 0 {
     let range = persistent_buffer_safe_slice_range(
-      self.elements.length(),
-      self.elements.length(),
+      self.allocated_byte_len,
+      self.allocated_byte_len,
     )
     self.pending_write_ranges.push(range)
     return range
   }
   let free_index = persistent_buffer_find_free_range(
     self.free_ranges,
-    write_len,
+    data_size,
   )
   let (start, end_) = match free_index {
     Some(index) => {
       let free_range = self.free_ranges[index]
       let allocated_start = free_range.start
-      let allocated_end = allocated_start + write_len
+      let allocated_end = allocated_start + data_size
       if allocated_end >= free_range.end_ {
         ignore(self.free_ranges.remove(index))
       } else {
@@ -129,16 +161,27 @@ pub fn[T, M] PersistentGpuBuffer::queue_write(
       (allocated_start, allocated_end)
     }
     None => {
-      let allocated_start = self.elements.length()
-      for value in values {
-        self.elements.push(value)
-      }
-      (allocated_start, self.elements.length())
+      let allocated_start = self.allocated_byte_len
+      self.allocated_byte_len = self.allocated_byte_len + data_size
+      (allocated_start, self.allocated_byte_len)
     }
   }
-  if end_ <= self.elements.length() {
+  let element_start = start / self.element_byte_size
+  let required_len = element_start + write_len
+  if required_len <= self.elements.length() {
     for index in 0..<write_len {
-      self.elements[start + index] = values[index]
+      self.elements[element_start + index] = values[index]
+    }
+  } else {
+    let mut index = 0
+    while index < write_len {
+      let target = element_start + index
+      if target < self.elements.length() {
+        self.elements[target] = values[index]
+      } else {
+        self.elements.push(values[index])
+      }
+      index = index + 1
     }
   }
   let range = persistent_buffer_safe_slice_range(start, end_)

@@ -36,6 +36,20 @@ test "pbr meshlet: persistent buffer tracks queued writes and committed writes" 
 }
 
 ///|
+test "pbr meshlet: persistent buffer allocates Bevy-shaped byte ranges" {
+  let buffer = PersistentGpuBuffer::new(element_byte_size=4)
+  let slice0 = buffer.queue_write([10, 11], ())
+  let slice1 = buffer.queue_write([12], ())
+  debug_inspect(slice0, content="{ start: 0, end_: 8 }")
+  debug_inspect(slice1, content="{ start: 8, end_: 12 }")
+  inspect(buffer.element_byte_size(), content="4")
+  inspect(buffer.allocated_byte_len(), content="12")
+  buffer.mark_slice_unused(slice0)
+  let reused = buffer.queue_write([21], ())
+  debug_inspect(reused, content="{ start: 0, end_: 4 }")
+}
+
+///|
 test "pbr meshlet: persistent buffer tracks unused slices" {
   let buffer = PersistentGpuBuffer::new()
   let slice = buffer.queue_write([1, 2, 3], ())

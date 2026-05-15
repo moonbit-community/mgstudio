@@ -16,6 +16,24 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/meshlet_mesh_manager.rs`.
 
 ///|
+const MESHLET_U32_BYTE_SIZE : Int = 4
+
+///|
+const MESHLET_U8_BYTE_SIZE : Int = 1
+
+///|
+const MESHLET_VEC2_BYTE_SIZE : Int = 8
+
+///|
+const MESHLET_BVH_NODE_BYTE_SIZE : Int = 400
+
+///|
+const MESHLET_MESHLET_BYTE_SIZE : Int = 32
+
+///|
+const MESHLET_CULL_DATA_BYTE_SIZE : Int = 48
+
+///|
 pub struct MeshletBufferSliceRange {
   start : Int
   end_ : Int
@@ -62,13 +80,34 @@ pub struct MeshletMeshManager {
 ///|
 pub fn MeshletMeshManager::default() -> MeshletMeshManager {
   MeshletMeshManager::{
-    vertex_positions: PersistentGpuBuffer::new(label="meshlet_vertex_positions"),
-    vertex_normals: PersistentGpuBuffer::new(label="meshlet_vertex_normals"),
-    vertex_uvs: PersistentGpuBuffer::new(label="meshlet_vertex_uvs"),
-    indices: PersistentGpuBuffer::new(label="meshlet_indices"),
-    bvh_nodes: PersistentGpuBuffer::new(label="meshlet_bvh_nodes"),
-    meshlets: PersistentGpuBuffer::new(label="meshlets"),
-    meshlet_cull_data: PersistentGpuBuffer::new(label="meshlet_cull_data"),
+    vertex_positions: PersistentGpuBuffer::new(
+      label="meshlet_vertex_positions",
+      element_byte_size=MESHLET_U32_BYTE_SIZE,
+    ),
+    vertex_normals: PersistentGpuBuffer::new(
+      label="meshlet_vertex_normals",
+      element_byte_size=MESHLET_U32_BYTE_SIZE,
+    ),
+    vertex_uvs: PersistentGpuBuffer::new(
+      label="meshlet_vertex_uvs",
+      element_byte_size=MESHLET_VEC2_BYTE_SIZE,
+    ),
+    indices: PersistentGpuBuffer::new(
+      label="meshlet_indices",
+      element_byte_size=MESHLET_U8_BYTE_SIZE,
+    ),
+    bvh_nodes: PersistentGpuBuffer::new(
+      label="meshlet_bvh_nodes",
+      element_byte_size=MESHLET_BVH_NODE_BYTE_SIZE,
+    ),
+    meshlets: PersistentGpuBuffer::new(
+      label="meshlets",
+      element_byte_size=MESHLET_MESHLET_BYTE_SIZE,
+    ),
+    meshlet_cull_data: PersistentGpuBuffer::new(
+      label="meshlet_cull_data",
+      element_byte_size=MESHLET_CULL_DATA_BYTE_SIZE,
+    ),
     pending_mesh_writes: 0,
     committed_mesh_writes: 0,
     pending_upload_asset_ids: [],
@@ -118,7 +157,7 @@ fn meshlet_mesh_manager_insert_asset_slices(
   )
   let bvh_nodes = manager.bvh_nodes.queue_write(
     meshlet_mesh.bvh,
-    meshlets.start,
+    meshlets.start / MESHLET_MESHLET_BYTE_SIZE,
   )
   let meshlet_cull_data = manager.meshlet_cull_data.queue_write(
     meshlet_mesh.meshlet_cull_data,
@@ -318,7 +357,7 @@ pub fn MeshletMeshManager::queue_upload_if_needed(
       )
   }
   (
-    slices.bvh_nodes.start,
+    slices.bvh_nodes.start / MESHLET_BVH_NODE_BYTE_SIZE,
     slices.aabb,
     if slices.bvh_depth < 0 {
       0
