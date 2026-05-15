@@ -165,6 +165,145 @@ pub fn MeshletMeshManager::perform_pending_mesh_writes(
 }
 
 ///|
+fn meshlet_push_u32_values(out : Array[Byte], values : Array[Int]) -> Unit {
+  for value in values {
+    meshlet_push_u32_le(out, value.reinterpret_as_uint())
+  }
+}
+
+///|
+fn meshlet_push_u8_values(out : Array[Byte], values : Array[Int]) -> Unit {
+  for value in values {
+    meshlet_push_u8(out, value)
+  }
+}
+
+///|
+fn meshlet_push_uv_values(
+  out : Array[Byte],
+  values : Array[MeshletVertexUv],
+) -> Unit {
+  for value in values {
+    meshlet_push_f32_le(out, value.x)
+    meshlet_push_f32_le(out, value.y)
+  }
+}
+
+///|
+fn meshlet_push_bvh_values(out : Array[Byte], values : Array[BvhNode]) -> Unit {
+  for value in values {
+    meshlet_push_bvh_node(out, value)
+  }
+}
+
+///|
+fn meshlet_push_meshlet_values(
+  out : Array[Byte],
+  values : Array[Meshlet],
+) -> Unit {
+  for value in values {
+    meshlet_push_meshlet(out, value)
+  }
+}
+
+///|
+fn meshlet_push_cull_data_values(
+  out : Array[Byte],
+  values : Array[MeshletCullData],
+) -> Unit {
+  for value in values {
+    meshlet_push_cull_data(out, value)
+  }
+}
+
+///|
+priv struct MeshletGpuBufferPayload {
+  vertex_positions : Bytes
+  vertex_normals : Bytes
+  vertex_uvs : Bytes
+  indices : Bytes
+  bvh_nodes : Bytes
+  meshlets : Bytes
+  cull_data : Bytes
+  instance_uniforms : Bytes
+  instance_aabbs : Bytes
+  instance_material_ids : Bytes
+  instance_bvh_root_nodes : Bytes
+}
+
+///|
+fn MeshletGpuBufferPayload::byte_count(self : MeshletGpuBufferPayload) -> Int {
+  self.vertex_positions.length() +
+  self.vertex_normals.length() +
+  self.vertex_uvs.length() +
+  self.indices.length() +
+  self.bvh_nodes.length() +
+  self.meshlets.length() +
+  self.cull_data.length() +
+  self.instance_uniforms.length() +
+  self.instance_aabbs.length() +
+  self.instance_material_ids.length() +
+  self.instance_bvh_root_nodes.length()
+}
+
+///|
+fn MeshletMeshManager::gpu_buffer_payload(
+  self : MeshletMeshManager,
+  instance_manager : InstanceManager,
+) -> MeshletGpuBufferPayload {
+  let vertex_positions : Array[Byte] = []
+  let vertex_normals : Array[Byte] = []
+  let vertex_uvs : Array[Byte] = []
+  let indices : Array[Byte] = []
+  let bvh_nodes : Array[Byte] = []
+  let meshlets : Array[Byte] = []
+  let cull_data : Array[Byte] = []
+  meshlet_push_u32_values(vertex_positions, self.vertex_positions.snapshot())
+  meshlet_push_u32_values(vertex_normals, self.vertex_normals.snapshot())
+  meshlet_push_uv_values(vertex_uvs, self.vertex_uvs.snapshot())
+  meshlet_push_u8_values(indices, self.indices.snapshot())
+  meshlet_push_bvh_values(bvh_nodes, self.bvh_nodes.snapshot())
+  meshlet_push_meshlet_values(meshlets, self.meshlets.snapshot())
+  meshlet_push_cull_data_values(cull_data, self.meshlet_cull_data.snapshot())
+  let instance_payload = instance_manager.gpu_buffer_payload()
+  MeshletGpuBufferPayload::{
+    vertex_positions: Bytes::from_array(vertex_positions),
+    vertex_normals: Bytes::from_array(vertex_normals),
+    vertex_uvs: Bytes::from_array(vertex_uvs),
+    indices: Bytes::from_array(indices),
+    bvh_nodes: Bytes::from_array(bvh_nodes),
+    meshlets: Bytes::from_array(meshlets),
+    cull_data: Bytes::from_array(cull_data),
+    instance_uniforms: instance_payload.instance_uniforms,
+    instance_aabbs: instance_payload.instance_aabbs,
+    instance_material_ids: instance_payload.instance_material_ids,
+    instance_bvh_root_nodes: instance_payload.instance_bvh_root_nodes,
+  }
+}
+
+///|
+fn upload_meshlet_mesh_manager_to_renderer(
+  manager : MeshletMeshManager,
+  instance_manager : InstanceManager,
+) -> Int {
+  let payload = manager.gpu_buffer_payload(instance_manager)
+  @renderer.prepare_meshlet_storage_buffers(
+    vertex_positions=payload.vertex_positions,
+    vertex_normals=payload.vertex_normals,
+    vertex_uvs=payload.vertex_uvs,
+    indices=payload.indices,
+    bvh_nodes=payload.bvh_nodes,
+    meshlets=payload.meshlets,
+    cull_data=payload.cull_data,
+    instance_uniforms=payload.instance_uniforms,
+    instance_aabbs=payload.instance_aabbs,
+    instance_material_ids=payload.instance_material_ids,
+    instance_bvh_root_nodes=payload.instance_bvh_root_nodes,
+  )
+  payload.byte_count()
+}
+
+///|
 pub fn MeshletMeshManager::queue_upload_if_needed(
   self : MeshletMeshManager,
   asset_id : Int,

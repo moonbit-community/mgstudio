@@ -227,6 +227,42 @@ pub struct GpuBackend {
   mut mesh3d_preprocess_downsample_depth_first_pipeline : @wgpu.ComputePipeline?
   mut mesh3d_preprocess_downsample_depth_second_pipeline : @wgpu.ComputePipeline?
   mut mesh3d_preprocess_depth_pyramid_sampler : @wgpu.Sampler?
+  mut meshlet_vertex_positions_buf : @wgpu.Buffer?
+  mut meshlet_vertex_positions_capacity : UInt64
+  mut meshlet_vertex_normals_buf : @wgpu.Buffer?
+  mut meshlet_vertex_normals_capacity : UInt64
+  mut meshlet_vertex_uvs_buf : @wgpu.Buffer?
+  mut meshlet_vertex_uvs_capacity : UInt64
+  mut meshlet_indices_buf : @wgpu.Buffer?
+  mut meshlet_indices_capacity : UInt64
+  mut meshlet_bvh_nodes_buf : @wgpu.Buffer?
+  mut meshlet_bvh_nodes_capacity : UInt64
+  mut meshlet_meshlets_buf : @wgpu.Buffer?
+  mut meshlet_meshlets_capacity : UInt64
+  mut meshlet_cull_data_buf : @wgpu.Buffer?
+  mut meshlet_cull_data_capacity : UInt64
+  mut meshlet_instance_uniforms_buf : @wgpu.Buffer?
+  mut meshlet_instance_uniforms_capacity : UInt64
+  mut meshlet_instance_aabbs_buf : @wgpu.Buffer?
+  mut meshlet_instance_aabbs_capacity : UInt64
+  mut meshlet_instance_material_ids_buf : @wgpu.Buffer?
+  mut meshlet_instance_material_ids_capacity : UInt64
+  mut meshlet_instance_bvh_root_nodes_buf : @wgpu.Buffer?
+  mut meshlet_instance_bvh_root_nodes_capacity : UInt64
+  mut meshlet_gpu_buffer_revision : Int
+  mut meshlet_visibility_buffer_raster_clusters_buf : @wgpu.Buffer?
+  mut meshlet_visibility_buffer_raster_clusters_capacity : UInt64
+  mut meshlet_visibility_buffer_raster_cluster_prev_counts_buf : @wgpu.Buffer?
+  mut meshlet_software_raster_cluster_count_buf : @wgpu.Buffer?
+  mut meshlet_bvh_traversal_queue_0_buf : @wgpu.Buffer?
+  mut meshlet_bvh_traversal_queue_0_capacity : UInt64
+  mut meshlet_bvh_traversal_queue_1_buf : @wgpu.Buffer?
+  mut meshlet_bvh_traversal_queue_1_capacity : UInt64
+  mut meshlet_cluster_cull_candidate_queue_buf : @wgpu.Buffer?
+  mut meshlet_cluster_cull_candidate_queue_capacity : UInt64
+  mut meshlet_second_pass_candidates_buf : @wgpu.Buffer?
+  mut meshlet_second_pass_candidates_capacity : UInt64
+  mut meshlet_frame_resource_revision : Int
   mut mesh3d_motion_vector_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu.BindGroupLayout?

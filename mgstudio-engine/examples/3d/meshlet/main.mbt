@@ -14,17 +14,13 @@
 
 ///|
 ///
-/// Baseline parity: the upstream experimental meshlet pipeline (`MeshletPlugin`,
-/// `MeshletMesh3d`, `MeshletDebugMaterial`, meshlet-processed asset format) is
-/// not exposed in current mgstudio render APIs. This port preserves the scene
-/// topology (camera/light/5+5 model rows + floor) and maps meshlet rows to a
-/// shared high-density proxy mesh with equivalent transform/material patterns.
+/// Bevy source: `bevy/examples/3d/meshlet.rs`.
 
 ///|
 const PI : Float = 3.141592653589793F
 
 ///|
-const TWO_PI : Float = 6.283185307179586F
+const BUNNY_MESHLET_ASSET : String = "meshlet/bunny.meshlet_mesh"
 
 ///|
 const DIRECTIONAL_LIGHT_ILLUMINANCE : Float = 100_000.0F
@@ -35,62 +31,6 @@ const ENVIRONMENT_LIGHT_INTENSITY : Float = 150.0F
 ///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
-}
-
-///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = TWO_PI / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
-    }
-  }
-
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @mesh.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-      ),
-    ),
-  )
 }
 
 ///|
@@ -116,6 +56,48 @@ fn color_for_row(index : Int) -> @sprite.Color {
   } else {
     @sprite.Color::new(0.007843138F, 0.5176471F, 0.78039217F, 1.0F)
   }
+}
+
+///|
+fn spawn_meshlet_bunny(
+  world : @ecs.World,
+  meshlet_mesh : @asset.Handle[@pbr_meshlet.MeshletMesh],
+  material : @asset.Handle[@pbr.StandardMaterial],
+  transform : @transform.Transform,
+) -> @core.Entity {
+  let entity = world.spawn_empty()
+  try! world.set_by_key(
+    entity,
+    @pbr_meshlet.ecs_key_meshlet_mesh3d,
+    @pbr_meshlet.MeshletMesh3d::new(meshlet_mesh.id()),
+  )
+  try! world.set_by_key(
+    entity,
+    @pbr.ecs_key_mesh_material3d,
+    @pbr.MeshMaterial3d::new(material),
+  )
+  try! world.set_by_key(
+    entity,
+    @sprite.ecs_key_render_layers,
+    @sprite.RenderLayers::default(),
+  )
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_visibility,
+    @visibility.Visibility::Inherited,
+  )
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_inherited_visibility,
+    @visibility.InheritedVisibility::new(true),
+  )
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! world.set_by_key(entity, @transform.ecs_key_transform, transform)
+  entity
 }
 
 ///|
@@ -170,7 +152,10 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::identity().with_rotation(light_rot),
   )
 
-  let mesh_proxy = uv_sphere_mesh(1.0F, 36, 56)
+  let meshlet_mesh : @asset.Handle[@pbr_meshlet.MeshletMesh] = @asset.asset_world_load(
+    world,
+    BUNNY_MESHLET_ASSET,
+  )
   for i in 0..<5 {
     let x_int = i - 2
     let x = float_from_int(x_int) / 2.0F
@@ -179,13 +164,14 @@ fn setup(world : @ecs.World) -> Unit {
         float_from_int(i) / 4.0F,
       ),
     )
-    @pbr.MeshMaterial3dBundle::new(
-      mesh_proxy,
-      @pbr.MeshMaterial3d::new(material),
+    spawn_meshlet_bunny(
+      world,
+      meshlet_mesh,
+      material,
       @transform.Transform::from_xyz(x, 0.0F, -0.3F).with_scale(
         @math.Vec3::splat(0.2F),
       ),
-    ).spawn(world)
+    )
     |> ignore
   }
 
@@ -202,13 +188,14 @@ fn setup(world : @ecs.World) -> Unit {
         @sprite.Color::new(shade * 0.2F, shade * 0.2F, shade * 0.2F, 1.0F),
       ),
     )
-    @pbr.MeshMaterial3dBundle::new(
-      mesh_proxy,
-      @pbr.MeshMaterial3d::new(material),
+    spawn_meshlet_bunny(
+      world,
+      meshlet_mesh,
+      material,
       @transform.Transform::from_xyz(x, 0.0F, 0.3F)
       .with_scale(@math.Vec3::splat(0.2F))
       .with_rotation(@math.Quat::from_rotation_y(PI)),
-    ).spawn(world)
+    )
     |> ignore
   }
 
@@ -237,6 +224,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@pbr_meshlet.MeshletPlugin::new(16_384))
   .add_systems(@app.Startup, @app.system(setup))
   .run()
 }

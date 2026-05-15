@@ -28,6 +28,8 @@ test "pbr meshlet: visibility node tracks first/second pass and resolve counters
     12,
     view_count=3,
     shadow_view_count=4,
+    max_bvh_depth=5,
+    rightmost_slot=9,
     pipelines_ready=true,
   )
   inspect(state.last_draw_count(), content="12")
@@ -35,4 +37,13 @@ test "pbr meshlet: visibility node tracks first/second pass and resolve counters
   inspect(state.second_pass_draw_count(), content="12")
   inspect(state.resolve_depth_count(), content="7")
   inspect(state.resolve_material_depth_count(), content="3")
+  inspect(state.clear_visibility_buffer_count(), content="7")
+  inspect(state.first_bvh_cull_dispatch_count(), content="35")
+  inspect(state.second_bvh_cull_dispatch_count(), content="35")
+  inspect(state.software_raster_pass_count(), content="14")
+  inspect(state.hardware_raster_pass_count(), content="14")
+  inspect(state.fill_counts_pass_count(), content="14")
+  inspect(state.downsample_depth_count(), content="14")
+  inspect(state.last_max_bvh_depth(), content="5")
+  inspect(state.last_rightmost_slot(), content="9")
 }

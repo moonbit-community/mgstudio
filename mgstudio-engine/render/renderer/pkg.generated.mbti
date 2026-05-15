@@ -213,6 +213,10 @@ pub fn mesh3d_preprocess_disabled() -> Bool
 
 pub fn meshlet_adapter_supports_mesh_shader() -> Bool
 
+pub fn meshlet_frame_resource_revision() -> Int
+
+pub fn meshlet_gpu_buffer_revision() -> Int
+
 pub fn meshlet_missing_native_immediates() -> Bool
 
 pub fn meshlet_missing_native_subgroup_barrier() -> Bool
@@ -232,6 +236,10 @@ pub fn prepare_mesh3d_material_bind_group(texture_id~ : Int, normal_texture_id~ 
 pub fn prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
 
 pub fn prepare_mesh3d_view_bind_group(transmission_source_texture_id~ : Int, point_shadow_texture_id~ : Int, directional_shadow_texture_id? : Int, environment_diffuse_texture_id~ : Int, environment_specular_texture_id~ : Int) -> Unit
+
+pub fn prepare_meshlet_frame_resources(cluster_buffer_slots~ : Int, scene_instance_count~ : Int) -> Unit
+
+pub fn prepare_meshlet_storage_buffers(vertex_positions~ : Bytes, vertex_normals~ : Bytes, vertex_uvs~ : Bytes, indices~ : Bytes, bvh_nodes~ : Bytes, meshlets~ : Bytes, cull_data~ : Bytes, instance_uniforms~ : Bytes, instance_aabbs~ : Bytes, instance_material_ids~ : Bytes, instance_bvh_root_nodes~ : Bytes) -> Unit
 
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
@@ -545,6 +553,42 @@ pub struct GpuBackend {
   mut mesh3d_preprocess_downsample_depth_first_pipeline : @wgpu_mbt.ComputePipeline?
   mut mesh3d_preprocess_downsample_depth_second_pipeline : @wgpu_mbt.ComputePipeline?
   mut mesh3d_preprocess_depth_pyramid_sampler : @wgpu_mbt.Sampler?
+  mut meshlet_vertex_positions_buf : @wgpu_mbt.Buffer?
+  mut meshlet_vertex_positions_capacity : UInt64
+  mut meshlet_vertex_normals_buf : @wgpu_mbt.Buffer?
+  mut meshlet_vertex_normals_capacity : UInt64
+  mut meshlet_vertex_uvs_buf : @wgpu_mbt.Buffer?
+  mut meshlet_vertex_uvs_capacity : UInt64
+  mut meshlet_indices_buf : @wgpu_mbt.Buffer?
+  mut meshlet_indices_capacity : UInt64
+  mut meshlet_bvh_nodes_buf : @wgpu_mbt.Buffer?
+  mut meshlet_bvh_nodes_capacity : UInt64
+  mut meshlet_meshlets_buf : @wgpu_mbt.Buffer?
+  mut meshlet_meshlets_capacity : UInt64
+  mut meshlet_cull_data_buf : @wgpu_mbt.Buffer?
+  mut meshlet_cull_data_capacity : UInt64
+  mut meshlet_instance_uniforms_buf : @wgpu_mbt.Buffer?
+  mut meshlet_instance_uniforms_capacity : UInt64
+  mut meshlet_instance_aabbs_buf : @wgpu_mbt.Buffer?
+  mut meshlet_instance_aabbs_capacity : UInt64
+  mut meshlet_instance_material_ids_buf : @wgpu_mbt.Buffer?
+  mut meshlet_instance_material_ids_capacity : UInt64
+  mut meshlet_instance_bvh_root_nodes_buf : @wgpu_mbt.Buffer?
+  mut meshlet_instance_bvh_root_nodes_capacity : UInt64
+  mut meshlet_gpu_buffer_revision : Int
+  mut meshlet_visibility_buffer_raster_clusters_buf : @wgpu_mbt.Buffer?
+  mut meshlet_visibility_buffer_raster_clusters_capacity : UInt64
+  mut meshlet_visibility_buffer_raster_cluster_prev_counts_buf : @wgpu_mbt.Buffer?
+  mut meshlet_software_raster_cluster_count_buf : @wgpu_mbt.Buffer?
+  mut meshlet_bvh_traversal_queue_0_buf : @wgpu_mbt.Buffer?
+  mut meshlet_bvh_traversal_queue_0_capacity : UInt64
+  mut meshlet_bvh_traversal_queue_1_buf : @wgpu_mbt.Buffer?
+  mut meshlet_bvh_traversal_queue_1_capacity : UInt64
+  mut meshlet_cluster_cull_candidate_queue_buf : @wgpu_mbt.Buffer?
+  mut meshlet_cluster_cull_candidate_queue_capacity : UInt64
+  mut meshlet_second_pass_candidates_buf : @wgpu_mbt.Buffer?
+  mut meshlet_second_pass_candidates_capacity : UInt64
+  mut meshlet_frame_resource_revision : Int
   mut mesh3d_motion_vector_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu_mbt.BindGroupLayout?
@@ -732,6 +776,8 @@ pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(Self, Int, Int, Int, Arra
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_skin_bindings(Self, Array[Float]) -> Unit
 pub fn GpuBackend::prepare_mesh3d_view_bind_group(Self, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::prepare_meshlet_frame_resources(Self, cluster_buffer_slots~ : Int, scene_instance_count~ : Int) -> Unit
+pub fn GpuBackend::prepare_meshlet_storage_buffers(Self, vertex_positions~ : Bytes, vertex_normals~ : Bytes, vertex_uvs~ : Bytes, indices~ : Bytes, bvh_nodes~ : Bytes, meshlets~ : Bytes, cull_data~ : Bytes, instance_uniforms~ : Bytes, instance_aabbs~ : Bytes, instance_material_ids~ : Bytes, instance_bvh_root_nodes~ : Bytes) -> Unit
 pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::reserve_mesh3d_draw_storage(Self, Int) -> Int
 pub fn GpuBackend::set_active_surface_target(Self, Int) -> Unit

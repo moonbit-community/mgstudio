@@ -16,10 +16,40 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/instance_manager.rs`.
 
 ///|
+const MESHLET_MESH_FLAGS_LOD_INDEX_NONE : UInt = 0xFFFFU
+
+///|
+const MESHLET_MESH_FLAGS_SHADOW_RECEIVER : UInt = 1U << 29
+
+///|
+const MESHLET_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3 : UInt = 1U << 31
+
+///|
+pub struct MeshletInstanceUniform {
+  world_from_local : @math.Affine3
+  previous_world_from_local : @math.Affine3
+  material_slot : Int
+  flags : UInt
+}
+
+///|
+pub fn MeshletInstanceUniform::default() -> MeshletInstanceUniform {
+  MeshletInstanceUniform::{
+    world_from_local: @math.Affine3::identity(),
+    previous_world_from_local: @math.Affine3::identity(),
+    material_slot: 0,
+    flags: MESHLET_MESH_FLAGS_LOD_INDEX_NONE |
+    MESHLET_MESH_FLAGS_SHADOW_RECEIVER |
+    MESHLET_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3,
+  }
+}
+
+///|
 pub struct InstanceManager {
   mut scene_instance_count : Int
   mut max_bvh_depth : Int
   mut instances : Array[(UInt64, Int, Bool)]
+  mut instance_uniforms : Array[MeshletInstanceUniform]
   mut instance_uniform_material_slots : Array[Int]
   mut instance_aabbs : Array[MeshletAabb]
   mut instance_material_ids : Array[Int]
@@ -49,6 +79,7 @@ pub fn InstanceManager::default() -> InstanceManager {
     scene_instance_count: 0,
     max_bvh_depth: 0,
     instances: [],
+    instance_uniforms: [],
     instance_uniform_material_slots: [],
     instance_aabbs: [],
     instance_material_ids: [],
@@ -107,11 +138,28 @@ pub fn InstanceManager::add_instance(
   render_layer_mask? : Int = 1,
   not_shadow_caster? : Bool = false,
   material_slot? : Int = 0,
+  world_from_local? : @math.Affine3 = @math.Affine3::identity(),
+  previous_world_from_local? : @math.Affine3 = @math.Affine3::identity(),
+  not_shadow_receiver? : Bool = false,
 ) -> Unit {
   self.instances.push(
     (instance.to_bits(), render_layer_mask, not_shadow_caster),
   )
-  self.instance_uniform_material_slots.push(non_negative(material_slot))
+  let safe_material_slot = non_negative(material_slot)
+  let mut flags = MESHLET_MESH_FLAGS_LOD_INDEX_NONE
+  if !not_shadow_receiver {
+    flags = flags | MESHLET_MESH_FLAGS_SHADOW_RECEIVER
+  }
+  if world_from_local.matrix3.determinant() >= 0.0F {
+    flags = flags | MESHLET_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3
+  }
+  self.instance_uniforms.push(MeshletInstanceUniform::{
+    world_from_local,
+    previous_world_from_local,
+    material_slot: safe_material_slot,
+    flags,
+  })
+  self.instance_uniform_material_slots.push(safe_material_slot)
   self.instance_aabbs.push(aabb)
   self.instance_material_ids.push(0)
   self.instance_material_asset_ids.push(non_negative(material_asset_id))
@@ -143,6 +191,7 @@ pub fn InstanceManager::reset(
   self.scene_instance_count = 0
   self.max_bvh_depth = 0
   self.instances = []
+  self.instance_uniforms = []
   self.instance_uniform_material_slots = []
   self.instance_aabbs = []
   self.instance_material_ids = []
@@ -250,6 +299,117 @@ pub fn InstanceManager::instance_bvh_root_nodes(
     root_nodes.push(root_node)
   }
   root_nodes
+}
+
+///|
+fn meshlet_push_affine3_transpose(
+  out : Array[Byte],
+  affine : @math.Affine3,
+) -> Unit {
+  meshlet_push_f32_le(out, affine.matrix3.x_axis.x)
+  meshlet_push_f32_le(out, affine.matrix3.y_axis.x)
+  meshlet_push_f32_le(out, affine.matrix3.z_axis.x)
+  meshlet_push_f32_le(out, affine.translation.x)
+  meshlet_push_f32_le(out, affine.matrix3.x_axis.y)
+  meshlet_push_f32_le(out, affine.matrix3.y_axis.y)
+  meshlet_push_f32_le(out, affine.matrix3.z_axis.y)
+  meshlet_push_f32_le(out, affine.translation.y)
+  meshlet_push_f32_le(out, affine.matrix3.x_axis.z)
+  meshlet_push_f32_le(out, affine.matrix3.y_axis.z)
+  meshlet_push_f32_le(out, affine.matrix3.z_axis.z)
+  meshlet_push_f32_le(out, affine.translation.z)
+}
+
+///|
+fn meshlet_push_local_from_world_transpose(
+  out : Array[Byte],
+  world_from_local : @math.Affine3,
+) -> Unit {
+  let local_from_world = world_from_local.inverse().matrix3
+  meshlet_push_f32_le(out, local_from_world.x_axis.x)
+  meshlet_push_f32_le(out, local_from_world.x_axis.y)
+  meshlet_push_f32_le(out, local_from_world.x_axis.z)
+  meshlet_push_f32_le(out, local_from_world.y_axis.x)
+  meshlet_push_f32_le(out, local_from_world.y_axis.y)
+  meshlet_push_f32_le(out, local_from_world.y_axis.z)
+  meshlet_push_f32_le(out, local_from_world.z_axis.x)
+  meshlet_push_f32_le(out, local_from_world.z_axis.y)
+  meshlet_push_f32_le(out, local_from_world.z_axis.z)
+}
+
+///|
+fn meshlet_push_instance_uniform(
+  out : Array[Byte],
+  uniform : MeshletInstanceUniform,
+) -> Unit {
+  meshlet_push_affine3_transpose(out, uniform.world_from_local)
+  meshlet_push_affine3_transpose(out, uniform.previous_world_from_local)
+  meshlet_push_local_from_world_transpose(out, uniform.world_from_local)
+  meshlet_push_u32_le(out, uniform.flags)
+  meshlet_push_u32_le(out, 0U)
+  meshlet_push_u32_le(out, 0U)
+  meshlet_push_u32_le(out, 0U)
+  meshlet_push_u32_le(out, 0xFFFF_FFFFU)
+  meshlet_push_u32_le(out, uniform.material_slot.reinterpret_as_uint())
+  meshlet_push_u32_le(out, 0U)
+  meshlet_push_u32_le(out, 0U)
+  for _ in 0..<3 {
+    meshlet_push_u32_le(out, 0U)
+  }
+}
+
+///|
+fn meshlet_push_instance_aabb(out : Array[Byte], aabb : MeshletAabb) -> Unit {
+  meshlet_push_f32_le(out, aabb.center_x)
+  meshlet_push_f32_le(out, aabb.center_y)
+  meshlet_push_f32_le(out, aabb.center_z)
+  meshlet_push_f32_le(out, 0.0)
+  meshlet_push_f32_le(out, aabb.half_extent_x)
+  meshlet_push_f32_le(out, aabb.half_extent_y)
+  meshlet_push_f32_le(out, aabb.half_extent_z)
+  meshlet_push_f32_le(out, 0.0)
+}
+
+///|
+priv struct MeshletInstanceGpuBufferPayload {
+  instance_uniforms : Bytes
+  instance_aabbs : Bytes
+  instance_material_ids : Bytes
+  instance_bvh_root_nodes : Bytes
+}
+
+///|
+fn InstanceManager::gpu_buffer_payload(
+  self : InstanceManager,
+) -> MeshletInstanceGpuBufferPayload {
+  let instance_uniforms : Array[Byte] = []
+  let instance_aabbs : Array[Byte] = []
+  let instance_material_ids : Array[Byte] = []
+  let instance_bvh_root_nodes : Array[Byte] = []
+  for uniform in self.instance_uniforms {
+    meshlet_push_instance_uniform(instance_uniforms, uniform)
+  }
+  for aabb in self.instance_aabbs {
+    meshlet_push_instance_aabb(instance_aabbs, aabb)
+  }
+  for material_id in self.instance_material_ids {
+    meshlet_push_u32_le(
+      instance_material_ids,
+      material_id.reinterpret_as_uint(),
+    )
+  }
+  for root_node in self.instance_bvh_root_nodes {
+    meshlet_push_u32_le(
+      instance_bvh_root_nodes,
+      root_node.reinterpret_as_uint(),
+    )
+  }
+  MeshletInstanceGpuBufferPayload::{
+    instance_uniforms: Bytes::from_array(instance_uniforms),
+    instance_aabbs: Bytes::from_array(instance_aabbs),
+    instance_material_ids: Bytes::from_array(instance_material_ids),
+    instance_bvh_root_nodes: Bytes::from_array(instance_bvh_root_nodes),
+  }
 }
 
 ///|

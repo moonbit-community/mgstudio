@@ -217,6 +217,12 @@ pub fn ResourceManager::bind_group_layout_count(self : ResourceManager) -> Int {
 pub struct MeshletViewResources {
   view_entity : @core.Entity
   meshlet_count : Int
+  scene_instance_count : Int
+  rightmost_slot : Int
+  max_bvh_depth : Int
+  view_width : Int
+  view_height : Int
+  not_shadow_view : Bool
   has_material_depth : Bool
 }
 
@@ -224,11 +230,31 @@ pub struct MeshletViewResources {
 pub fn MeshletViewResources::new(
   view_entity : @core.Entity,
   meshlet_count : Int,
+  scene_instance_count? : Int = meshlet_count,
+  rightmost_slot? : Int = 0,
+  max_bvh_depth? : Int = 0,
+  view_width? : Int = 1,
+  view_height? : Int = 1,
+  not_shadow_view? : Bool = true,
   has_material_depth? : Bool = true,
 ) -> MeshletViewResources {
   MeshletViewResources::{
     view_entity,
     meshlet_count: meshlet_resource_non_negative(meshlet_count),
+    scene_instance_count: meshlet_resource_non_negative(scene_instance_count),
+    rightmost_slot: meshlet_resource_non_negative(rightmost_slot),
+    max_bvh_depth: meshlet_resource_non_negative(max_bvh_depth),
+    view_width: if view_width <= 0 {
+      1
+    } else {
+      view_width
+    },
+    view_height: if view_height <= 0 {
+      1
+    } else {
+      view_height
+    },
+    not_shadow_view,
     has_material_depth,
   }
 }
@@ -238,6 +264,37 @@ pub fn MeshletViewResources::has_material_depth(
   self : MeshletViewResources,
 ) -> Bool {
   self.has_material_depth
+}
+
+///|
+pub fn MeshletViewResources::scene_instance_count(
+  self : MeshletViewResources,
+) -> Int {
+  self.scene_instance_count
+}
+
+///|
+pub fn MeshletViewResources::rightmost_slot(self : MeshletViewResources) -> Int {
+  self.rightmost_slot
+}
+
+///|
+pub fn MeshletViewResources::max_bvh_depth(self : MeshletViewResources) -> Int {
+  self.max_bvh_depth
+}
+
+///|
+pub fn MeshletViewResources::view_size(
+  self : MeshletViewResources,
+) -> (Int, Int) {
+  (self.view_width, self.view_height)
+}
+
+///|
+pub fn MeshletViewResources::not_shadow_view(
+  self : MeshletViewResources,
+) -> Bool {
+  self.not_shadow_view
 }
 
 ///|
@@ -373,6 +430,10 @@ pub fn prepare_meshlet_per_frame_resources(
     }
     manager.cull_queue_rightmost_slot = limited_count - 1
   }
+  @renderer.prepare_meshlet_frame_resources(
+    cluster_buffer_slots=manager.cluster_buffer_slots(),
+    scene_instance_count=meshlet_buffer_count,
+  )
   manager.advance_frame()
 }
 
@@ -380,10 +441,21 @@ pub fn prepare_meshlet_per_frame_resources(
 pub fn prepare_meshlet_view_resources(
   view_entity : @core.Entity,
   meshlet_count : Int,
+  rightmost_slot? : Int = 0,
+  max_bvh_depth? : Int = 0,
+  view_width? : Int = 1,
+  view_height? : Int = 1,
+  not_shadow_view? : Bool = true,
 ) -> MeshletViewResources {
   MeshletViewResources::new(
     view_entity,
     meshlet_count,
+    scene_instance_count=meshlet_count,
+    rightmost_slot~,
+    max_bvh_depth~,
+    view_width~,
+    view_height~,
+    not_shadow_view~,
     has_material_depth=meshlet_count > 0,
   )
 }
@@ -393,8 +465,20 @@ pub fn prepare_meshlet_view_resources_for_view(
   manager : ResourceManager,
   view_entity : @core.Entity,
   meshlet_count : Int,
+  max_bvh_depth? : Int = 0,
+  view_width? : Int = 1,
+  view_height? : Int = 1,
+  not_shadow_view? : Bool = true,
 ) -> MeshletViewResources {
-  let resources = prepare_meshlet_view_resources(view_entity, meshlet_count)
+  let resources = prepare_meshlet_view_resources(
+    view_entity,
+    meshlet_count,
+    rightmost_slot=manager.cull_queue_rightmost_slot(),
+    max_bvh_depth~,
+    view_width~,
+    view_height~,
+    not_shadow_view~,
+  )
   manager.set_prepared_view_resources(resources)
   resources
 }

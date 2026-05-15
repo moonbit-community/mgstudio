@@ -157,7 +157,7 @@ pub fn meshlet_validate_conversion_config(MeshToMeshletMeshConversionConfig) -> 
 
 pub fn meshlet_validate_input_mesh_summary(MeshToMeshletInputMeshSummary, MeshToMeshletMeshConversionConfig, Bool) -> MeshToMeshletMeshConversionError?
 
-pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int, view_count? : Int, shadow_view_count? : Int, pipelines_ready? : Bool) -> Unit
+pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int, view_count? : Int, shadow_view_count? : Int, max_bvh_depth? : Int, rightmost_slot? : Int, pipelines_ready? : Bool) -> Unit
 
 pub fn meshlet_visibility_buffer_raster_state_with_enabled(Bool) -> MeshletVisibilityBufferRasterState
 
@@ -177,9 +177,9 @@ pub fn prepare_meshlet_view_bind_groups(@core.Entity, Int) -> MeshletViewBindGro
 
 pub fn prepare_meshlet_view_bind_groups_for_view(ResourceManager, @core.Entity, Int) -> MeshletViewBindGroups
 
-pub fn prepare_meshlet_view_resources(@core.Entity, Int) -> MeshletViewResources
+pub fn prepare_meshlet_view_resources(@core.Entity, Int, rightmost_slot? : Int, max_bvh_depth? : Int, view_width? : Int, view_height? : Int, not_shadow_view? : Bool) -> MeshletViewResources
 
-pub fn prepare_meshlet_view_resources_for_view(ResourceManager, @core.Entity, Int) -> MeshletViewResources
+pub fn prepare_meshlet_view_resources_for_view(ResourceManager, @core.Entity, Int, max_bvh_depth? : Int, view_width? : Int, view_height? : Int, not_shadow_view? : Bool) -> MeshletViewResources
 
 pub fn queue_material_meshlet_meshes(InstanceManager) -> Int
 
@@ -222,6 +222,7 @@ pub struct InstanceManager {
   mut scene_instance_count : Int
   mut max_bvh_depth : Int
   mut instances : Array[(UInt64, Int, Bool)]
+  mut instance_uniforms : Array[MeshletInstanceUniform]
   mut instance_uniform_material_slots : Array[Int]
   mut instance_aabbs : Array[MeshletAabb]
   mut instance_material_ids : Array[Int]
@@ -232,7 +233,7 @@ pub struct InstanceManager {
   material_id_lookup : Map[Int, Int]
   material_ids_present_in_scene : @utils.IntBitSet
 }
-pub fn InstanceManager::add_instance(Self, @core.Entity, Int, Int, MeshletAabb, Int, render_layer_mask? : Int, not_shadow_caster? : Bool, material_slot? : Int) -> Unit
+pub fn InstanceManager::add_instance(Self, @core.Entity, Int, Int, MeshletAabb, Int, render_layer_mask? : Int, not_shadow_caster? : Bool, material_slot? : Int, world_from_local? : @math.Affine3, previous_world_from_local? : @math.Affine3, not_shadow_receiver? : Bool) -> Unit
 pub fn InstanceManager::default() -> Self
 pub fn InstanceManager::get_material_id(Self, Int) -> Int
 pub fn InstanceManager::instance_bvh_root_nodes(Self) -> Array[Int]
@@ -347,6 +348,14 @@ pub struct MeshletCullData {
   lod_group_sphere : MeshletBoundingSphere
 }
 pub fn MeshletCullData::default() -> Self
+
+pub struct MeshletInstanceUniform {
+  world_from_local : @math.Affine3
+  previous_world_from_local : @math.Affine3
+  material_slot : Int
+  flags : UInt
+}
+pub fn MeshletInstanceUniform::default() -> Self
 
 pub struct MeshletMaterialDrawCall {
   material_id : Int
@@ -614,10 +623,21 @@ pub impl @ecs.EcsPayloadCodec for MeshletViewMaterialsPrepass
 pub struct MeshletViewResources {
   view_entity : @core.Entity
   meshlet_count : Int
+  scene_instance_count : Int
+  rightmost_slot : Int
+  max_bvh_depth : Int
+  view_width : Int
+  view_height : Int
+  not_shadow_view : Bool
   has_material_depth : Bool
 }
 pub fn MeshletViewResources::has_material_depth(Self) -> Bool
-pub fn MeshletViewResources::new(@core.Entity, Int, has_material_depth? : Bool) -> Self
+pub fn MeshletViewResources::max_bvh_depth(Self) -> Int
+pub fn MeshletViewResources::new(@core.Entity, Int, scene_instance_count? : Int, rightmost_slot? : Int, max_bvh_depth? : Int, view_width? : Int, view_height? : Int, not_shadow_view? : Bool, has_material_depth? : Bool) -> Self
+pub fn MeshletViewResources::not_shadow_view(Self) -> Bool
+pub fn MeshletViewResources::rightmost_slot(Self) -> Int
+pub fn MeshletViewResources::scene_instance_count(Self) -> Int
+pub fn MeshletViewResources::view_size(Self) -> (Int, Int)
 
 pub struct MeshletVisibilityBufferRasterState {
   enabled : Bool
@@ -629,17 +649,39 @@ pub struct MeshletVisibilityBufferRasterState {
   mut resolve_depth_count : Int
   mut resolve_material_depth_count : Int
   mut last_draw_count : Int
+  mut clear_visibility_buffer_count : Int
+  mut first_instance_cull_dispatch_count : Int
+  mut first_bvh_cull_dispatch_count : Int
+  mut first_meshlet_cull_dispatch_count : Int
+  mut second_instance_cull_dispatch_count : Int
+  mut second_bvh_cull_dispatch_count : Int
+  mut second_meshlet_cull_dispatch_count : Int
+  mut software_raster_pass_count : Int
+  mut hardware_raster_pass_count : Int
+  mut fill_counts_pass_count : Int
+  mut downsample_depth_count : Int
+  mut last_max_bvh_depth : Int
+  mut last_rightmost_slot : Int
 }
+pub fn MeshletVisibilityBufferRasterState::clear_visibility_buffer_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::default() -> Self
+pub fn MeshletVisibilityBufferRasterState::downsample_depth_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::enabled(Self) -> Bool
+pub fn MeshletVisibilityBufferRasterState::fill_counts_pass_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::first_bvh_cull_dispatch_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::first_pass_draw_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::hardware_raster_pass_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::last_draw_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::last_max_bvh_depth(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::last_pipeline_ready(Self) -> Bool
+pub fn MeshletVisibilityBufferRasterState::last_rightmost_slot(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::last_shadow_view_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::last_view_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::resolve_depth_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::resolve_material_depth_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::second_bvh_cull_dispatch_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::second_pass_draw_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::software_raster_pass_count(Self) -> Int
 pub impl @ecs.EcsPayloadCodec for MeshletVisibilityBufferRasterState
 
 pub struct PersistentBufferSliceRange {
