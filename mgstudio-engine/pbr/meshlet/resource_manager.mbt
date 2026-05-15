@@ -321,6 +321,54 @@ pub fn ResourceManager::prepared_view_resource_count(
 }
 
 ///|
+pub fn ResourceManager::prepared_not_shadow_view_count(
+  self : ResourceManager,
+) -> Int {
+  let mut count = 0
+  for resources in self.prepared_view_resources.values() {
+    if resources.not_shadow_view() {
+      count = count + 1
+    }
+  }
+  count
+}
+
+///|
+pub fn ResourceManager::prepared_shadow_view_count(
+  self : ResourceManager,
+) -> Int {
+  let mut count = 0
+  for resources in self.prepared_view_resources.values() {
+    if !resources.not_shadow_view() {
+      count = count + 1
+    }
+  }
+  count
+}
+
+///|
+pub fn ResourceManager::prepared_material_depth_view_count(
+  self : ResourceManager,
+) -> Int {
+  let mut count = 0
+  for resources in self.prepared_view_resources.values() {
+    if resources.not_shadow_view() && resources.has_material_depth() {
+      count = count + 1
+    }
+  }
+  count
+}
+
+///|
+pub fn ResourceManager::prepared_max_bvh_depth(self : ResourceManager) -> Int {
+  let mut max_depth = 0
+  for resources in self.prepared_view_resources.values() {
+    max_depth = max_depth.max(resources.max_bvh_depth())
+  }
+  max_depth
+}
+
+///|
 pub fn ResourceManager::clear_stale_prepared_view_resources(
   self : ResourceManager,
   active_view_entities : Array[@core.Entity],

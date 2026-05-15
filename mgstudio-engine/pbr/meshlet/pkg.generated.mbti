@@ -157,7 +157,11 @@ pub fn meshlet_validate_conversion_config(MeshToMeshletMeshConversionConfig) -> 
 
 pub fn meshlet_validate_input_mesh_summary(MeshToMeshletInputMeshSummary, MeshToMeshletMeshConversionConfig, Bool) -> MeshToMeshletMeshConversionError?
 
-pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int, view_count? : Int, shadow_view_count? : Int, max_bvh_depth? : Int, rightmost_slot? : Int, pipelines_ready? : Bool) -> Unit
+pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int, view_count? : Int, shadow_view_count? : Int, max_bvh_depth? : Int, rightmost_slot? : Int, material_depth_view_count? : Int, remap_dispatch_enabled? : Bool, pipelines_ready? : Bool) -> Unit
+
+pub fn meshlet_visibility_buffer_raster_op_label(MeshletVisibilityBufferRasterOp) -> String
+
+pub fn meshlet_visibility_buffer_raster_plan(Int, shadow_view_count? : Int, max_bvh_depth? : Int, rightmost_slot? : Int, material_depth_view_count? : Int, remap_dispatch_enabled? : Bool, enabled? : Bool, pipelines_ready? : Bool) -> MeshletVisibilityBufferRasterPlan
 
 pub fn meshlet_visibility_buffer_raster_state_with_enabled(Bool) -> MeshletVisibilityBufferRasterState
 
@@ -639,20 +643,60 @@ pub fn MeshletViewResources::rightmost_slot(Self) -> Int
 pub fn MeshletViewResources::scene_instance_count(Self) -> Int
 pub fn MeshletViewResources::view_size(Self) -> (Int, Int)
 
+pub(all) enum MeshletVisibilityBufferRasterOp {
+  ClearRasterClusterPrevCounts
+  ClearVisibilityBuffer(Bool)
+  FirstInstanceCull(Bool)
+  FirstBvhCull(Bool, Bool)
+  FirstBvhCullClearCount(Bool, Bool)
+  FirstBvhCullClearDispatch(Bool, Bool)
+  FirstMeshletCull(Bool)
+  FirstRemap1dTo2d(Bool)
+  SoftwareRaster(Bool, Bool)
+  HardwareRaster(Bool, Bool)
+  FillCounts(Bool, Bool)
+  DownsampleDepth(Bool, Bool)
+  SecondInstanceCull(Bool)
+  SecondBvhCull(Bool, Bool)
+  SecondMeshletCull(Bool)
+  SecondRemap1dTo2d(Bool)
+  ResolveDepth(Bool)
+  ResolveMaterialDepth
+}
+
+pub struct MeshletVisibilityBufferRasterPlan {
+  operations : Array[MeshletVisibilityBufferRasterOp]
+  view_count : Int
+  shadow_view_count : Int
+  max_bvh_depth : Int
+  rightmost_slot : Int
+}
+pub fn MeshletVisibilityBufferRasterPlan::max_bvh_depth(Self) -> Int
+pub fn MeshletVisibilityBufferRasterPlan::operation_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterPlan::operations(Self) -> Array[MeshletVisibilityBufferRasterOp]
+pub fn MeshletVisibilityBufferRasterPlan::rightmost_slot(Self) -> Int
+pub fn MeshletVisibilityBufferRasterPlan::shadow_view_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterPlan::view_count(Self) -> Int
+
 pub struct MeshletVisibilityBufferRasterState {
   enabled : Bool
   mut last_view_count : Int
   mut last_shadow_view_count : Int
   mut last_pipeline_ready : Bool
+  mut last_operation_count : Int
   mut first_pass_draw_count : Int
   mut second_pass_draw_count : Int
   mut resolve_depth_count : Int
   mut resolve_material_depth_count : Int
   mut last_draw_count : Int
+  mut clear_raster_cluster_prev_counts_count : Int
   mut clear_visibility_buffer_count : Int
   mut first_instance_cull_dispatch_count : Int
   mut first_bvh_cull_dispatch_count : Int
+  mut first_bvh_cull_count_clear_count : Int
+  mut first_bvh_cull_dispatch_clear_count : Int
   mut first_meshlet_cull_dispatch_count : Int
+  mut remap_1d_to_2d_dispatch_count : Int
   mut second_instance_cull_dispatch_count : Int
   mut second_bvh_cull_dispatch_count : Int
   mut second_meshlet_cull_dispatch_count : Int
@@ -663,20 +707,25 @@ pub struct MeshletVisibilityBufferRasterState {
   mut last_max_bvh_depth : Int
   mut last_rightmost_slot : Int
 }
+pub fn MeshletVisibilityBufferRasterState::clear_raster_cluster_prev_counts_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::clear_visibility_buffer_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::default() -> Self
 pub fn MeshletVisibilityBufferRasterState::downsample_depth_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::enabled(Self) -> Bool
 pub fn MeshletVisibilityBufferRasterState::fill_counts_pass_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::first_bvh_cull_count_clear_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::first_bvh_cull_dispatch_clear_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::first_bvh_cull_dispatch_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::first_pass_draw_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::hardware_raster_pass_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::last_draw_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::last_max_bvh_depth(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::last_operation_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::last_pipeline_ready(Self) -> Bool
 pub fn MeshletVisibilityBufferRasterState::last_rightmost_slot(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::last_shadow_view_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::last_view_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterState::remap_1d_to_2d_dispatch_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::resolve_depth_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::resolve_material_depth_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::second_bvh_cull_dispatch_count(Self) -> Int
@@ -750,6 +799,10 @@ pub fn ResourceManager::default() -> Self
 pub fn ResourceManager::frame_index(Self) -> Int
 pub fn ResourceManager::meshlet_buffer_count(Self) -> Int
 pub fn ResourceManager::new(Int) -> Self
+pub fn ResourceManager::prepared_material_depth_view_count(Self) -> Int
+pub fn ResourceManager::prepared_max_bvh_depth(Self) -> Int
+pub fn ResourceManager::prepared_not_shadow_view_count(Self) -> Int
+pub fn ResourceManager::prepared_shadow_view_count(Self) -> Int
 pub fn ResourceManager::prepared_view_bind_group_count(Self) -> Int
 pub fn ResourceManager::prepared_view_bind_groups(Self, @core.Entity) -> MeshletViewBindGroups?
 pub fn ResourceManager::prepared_view_resource_count(Self) -> Int

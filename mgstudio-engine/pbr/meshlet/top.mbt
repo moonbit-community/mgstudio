@@ -678,10 +678,20 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
     )
   }
   let instance_count = meshlet_instance_count_from_world(world)
-  let view_count = match
-    (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
-    Some(manager) => manager.prepared_view_resource_count()
-    None => 0
+  let (
+    view_count,
+    shadow_view_count,
+    material_depth_view_count,
+    resource_max_bvh_depth,
+  ) = match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
+    Some(manager) =>
+      (
+        manager.prepared_not_shadow_view_count(),
+        manager.prepared_shadow_view_count(),
+        manager.prepared_material_depth_view_count(),
+        manager.prepared_max_bvh_depth(),
+      )
+    None => (0, 0, 0, 0)
   }
   let (max_bvh_depth, rightmost_slot) = match
     (
@@ -690,13 +700,14 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
     ) {
     (Some(instance_manager), Some(resource_manager)) =>
       (
-        instance_manager.max_bvh_depth(),
+        instance_manager.max_bvh_depth().max(resource_max_bvh_depth),
         resource_manager.cull_queue_rightmost_slot(),
       )
-    (Some(instance_manager), None) => (instance_manager.max_bvh_depth(), 0)
+    (Some(instance_manager), None) =>
+      (instance_manager.max_bvh_depth().max(resource_max_bvh_depth), 0)
     (None, Some(resource_manager)) =>
-      (0, resource_manager.cull_queue_rightmost_slot())
-    (None, None) => (0, 0)
+      (resource_max_bvh_depth, resource_manager.cull_queue_rightmost_slot())
+    (None, None) => (resource_max_bvh_depth, 0)
   }
   let pipelines_ready = match
     (try! world.get_resource(ecs_key_meshlet_pipelines)) {
@@ -712,9 +723,10 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
         state_ref.val,
         instance_count,
         view_count~,
-        shadow_view_count=0,
+        shadow_view_count~,
         max_bvh_depth~,
         rightmost_slot~,
+        material_depth_view_count~,
         pipelines_ready~,
       )
     _ => ()
