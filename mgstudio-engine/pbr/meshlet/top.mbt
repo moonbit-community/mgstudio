@@ -236,14 +236,12 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
     let has_deferred_prepass = try! source_world.contains_by_key(
       view_entity, @core_pipeline.ecs_key_deferred_prepass,
     )
-    if has_normal_prepass || has_motion_vector_prepass {
+    if has_normal_prepass || has_motion_vector_prepass || has_deferred_prepass {
       try! source_world.set_by_key(
         view_entity,
         ecs_key_meshlet_view_materials_prepass,
         MeshletViewMaterialsPrepass::default(),
       )
-    }
-    if has_deferred_prepass {
       try! source_world.set_by_key(
         view_entity,
         ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,

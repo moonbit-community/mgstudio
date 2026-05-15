@@ -14,7 +14,7 @@ Strict reassessment date: 2026-05-10. The table below is the current authoritati
 | `pbr` | 50% | 42% | 42% | 🔴 Major Gap | Many components exist, but lighting/shadows/material pass behavior and examples still show visible divergence. |
 | `pbr/render` | 50% | 42% | 42% | 🔴 Major Gap | Bind layouts and extracted data improved, but advanced pass specialization and visual output are not 1:1. |
 | `pbr/prepass` | 55% | 50% | 50% | 🟠 Partial | Surface exists, but validation is not broad enough for mostly-done status. |
-| `pbr/meshlet` | 35% | 25% | 25% | 🔴 Major Gap | Mostly scaffold/slot parity; real meshlet backend behavior is far from Bevy. |
+| `pbr/meshlet` | 35% | 25% | 25% | 🔴 Major Gap | Mostly scaffold/slot parity; real meshlet backend behavior is far from Bevy. 2026-05-15: `configure_meshlet_views` now mirrors Bevy's material-bin insertion rule; `MeshletMesh` asset state now carries Bevy-shaped real vertex-position, normal, UV, index, BVH, meshlet, cull-data, AABB, and BVH-depth slices, and `MeshletMeshManager` queues those slices instead of synthesizing all-zero buffers from count-only placeholders. Score intentionally unchanged until real `.meshlet_mesh` loading/conversion and GPU pass execution are wired. |
 | `material` | 65% | 55% | 55% | 🟠 Partial | Data models are closer, but forward/deferred/decal integration is not source-equivalent. |
 | `camera` | 65% | 60% | 60% | 🟠 Partial | Camera components/plugins align in parts, but view/projection/render integration is incomplete. |
 | `sprite` + `sprite_render` | 60% | 55% | 55% | 🟠 Partial | Basic 2D render path exists; batching/extraction/render parity needs a dedicated audit. |
@@ -40,7 +40,7 @@ Strict reassessment date: 2026-05-10. The table below is the current authoritati
 | Rapier integration | 0% | 0% | 0% | ⏸ Out of Bevy Scope | Not present in pinned local `./bevy`; should not count as Bevy parity without a separate third-party reference. |
 | stress tests | 45% | 35% | 35% | 🔴 Major Gap | Tooling exists, but heavy examples are not source/behavior/performance equivalent. |
 | visual screenshot parity | 45% | 30% | 30% | 🔴 Major Gap | Captures exist, but broad screenshot equivalence is still poor. |
-| workspace native validation | 65% | 60% | 60% | 🟠 Partial | `moon check` is stable, but full native test/runtime parity is not yet a reliable gate. |
+| workspace native validation | 65% | 60% | 60% | 🟠 Partial | `moon check` is stable, but full native test/runtime parity is not yet a reliable gate. 2026-05-15: `moon test pbr/meshlet` and `moon test pbr/meshlet --target native` are blocked before test execution by the existing native framework linker failure `tcc: error: file 'Metal' not found`. |
 
 ### Historical Detailed Notes
 | Bevy Side | mgstudio Side | Legacy Structure | Legacy Runtime | Legacy Overall | Legacy Status | Historical Notes |
@@ -91,7 +91,7 @@ Strict reassessment date: 2026-05-10. The table below is the current authoritati
 | Bevy→mgstudio path inventory coverage (not completion) | 100% (`1028/1028`, `missing=0`, 2026-04-13) |
 | Migration completion scoring rule | strict source-level `Overall = min(Structure, Runtime)` |
 | Current strict weighted migration completion (included scope) | 52% |
-| Last updated | 2026-05-10 |
+| Last updated | 2026-05-15 |
 
 ### WGSL naga_oil 过渡层清理 (2026-04-15)
 | 已删除过渡文件 | 对齐后的 Bevy 路径 |

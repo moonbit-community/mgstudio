@@ -16,19 +16,21 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/meshlet/asset.rs`.
 
 ///|
-pub const MESHLET_MESH_ASSET_MAGIC : Int = 1717551717
+pub const MESHLET_MESH_ASSET_MAGIC : UInt64 = 1717551717668UL
 
 ///|
 pub const MESHLET_MESH_ASSET_VERSION : Int = 3
 
 ///|
 pub struct MeshletMesh {
-  meshlet_count : Int
-  bvh_node_count : Int
-  vertex_position_word_count : Int
-  vertex_normal_word_count : Int
-  vertex_uv_count : Int
-  index_count : Int
+  vertex_positions : Array[Int]
+  vertex_normals : Array[Int]
+  vertex_uvs : Array[MeshletVertexUv]
+  indices : Array[Int]
+  bvh : Array[BvhNode]
+  meshlets : Array[Meshlet]
+  meshlet_cull_data : Array[MeshletCullData]
+  aabb : MeshletAabb
   bvh_depth : Int
 }
 
@@ -38,12 +40,14 @@ pub fn MeshletMesh::new(
   bvh_node_count : Int,
 ) -> MeshletMesh {
   MeshletMesh::{
-    meshlet_count: meshlet_non_negative(meshlet_count),
-    bvh_node_count: meshlet_non_negative(bvh_node_count),
-    vertex_position_word_count: 0,
-    vertex_normal_word_count: 0,
-    vertex_uv_count: 0,
-    index_count: 0,
+    vertex_positions: [],
+    vertex_normals: [],
+    vertex_uvs: [],
+    indices: [],
+    bvh: meshlet_default_bvh_nodes(bvh_node_count),
+    meshlets: meshlet_default_meshlets(meshlet_count),
+    meshlet_cull_data: meshlet_default_cull_data(meshlet_count),
+    aabb: MeshletAabb::default(),
     bvh_depth: 0,
   }
 }
@@ -58,6 +62,51 @@ fn meshlet_non_negative(value : Int) -> Int {
 }
 
 ///|
+fn meshlet_zero_words(word_count : Int) -> Array[Int] {
+  let values : Array[Int] = []
+  for _ in 0..<meshlet_non_negative(word_count) {
+    values.push(0)
+  }
+  values
+}
+
+///|
+fn meshlet_default_uvs(uv_count : Int) -> Array[MeshletVertexUv] {
+  let values : Array[MeshletVertexUv] = []
+  for _ in 0..<meshlet_non_negative(uv_count) {
+    values.push(MeshletVertexUv::default())
+  }
+  values
+}
+
+///|
+fn meshlet_default_bvh_nodes(node_count : Int) -> Array[BvhNode] {
+  let values : Array[BvhNode] = []
+  for _ in 0..<meshlet_non_negative(node_count) {
+    values.push(BvhNode::default())
+  }
+  values
+}
+
+///|
+fn meshlet_default_meshlets(meshlet_count : Int) -> Array[Meshlet] {
+  let values : Array[Meshlet] = []
+  for _ in 0..<meshlet_non_negative(meshlet_count) {
+    values.push(Meshlet::new(0, 0, 0, 3, 1))
+  }
+  values
+}
+
+///|
+fn meshlet_default_cull_data(meshlet_count : Int) -> Array[MeshletCullData] {
+  let values : Array[MeshletCullData] = []
+  for _ in 0..<meshlet_non_negative(meshlet_count) {
+    values.push(MeshletCullData::default())
+  }
+  values
+}
+
+///|
 pub fn MeshletMesh::with_vertex_buffers(
   self : MeshletMesh,
   vertex_position_word_count : Int,
@@ -67,10 +116,35 @@ pub fn MeshletMesh::with_vertex_buffers(
 ) -> MeshletMesh {
   MeshletMesh::{
     ..self,
-    vertex_position_word_count: meshlet_non_negative(vertex_position_word_count),
-    vertex_normal_word_count: meshlet_non_negative(vertex_normal_word_count),
-    vertex_uv_count: meshlet_non_negative(vertex_uv_count),
-    index_count: meshlet_non_negative(index_count),
+    vertex_positions: meshlet_zero_words(vertex_position_word_count),
+    vertex_normals: meshlet_zero_words(vertex_normal_word_count),
+    vertex_uvs: meshlet_default_uvs(vertex_uv_count),
+    indices: meshlet_zero_words(index_count),
+  }
+}
+
+///|
+pub fn MeshletMesh::from_parts(
+  vertex_positions~ : Array[Int],
+  vertex_normals~ : Array[Int],
+  vertex_uvs~ : Array[MeshletVertexUv],
+  indices~ : Array[Int],
+  bvh~ : Array[BvhNode],
+  meshlets~ : Array[Meshlet],
+  meshlet_cull_data~ : Array[MeshletCullData],
+  aabb? : MeshletAabb = MeshletAabb::default(),
+  bvh_depth? : Int = 0,
+) -> MeshletMesh {
+  MeshletMesh::{
+    vertex_positions,
+    vertex_normals,
+    vertex_uvs,
+    indices,
+    bvh,
+    meshlets,
+    meshlet_cull_data,
+    aabb,
+    bvh_depth: meshlet_non_negative(bvh_depth),
   }
 }
 
@@ -83,17 +157,55 @@ pub fn MeshletMesh::with_bvh_depth(
 }
 
 ///|
+pub fn MeshletMesh::with_aabb(
+  self : MeshletMesh,
+  aabb : MeshletAabb,
+) -> MeshletMesh {
+  MeshletMesh::{ ..self, aabb, }
+}
+
+///|
+pub fn MeshletMesh::meshlet_count(self : MeshletMesh) -> Int {
+  self.meshlets.length()
+}
+
+///|
+pub fn MeshletMesh::bvh_node_count(self : MeshletMesh) -> Int {
+  self.bvh.length()
+}
+
+///|
+pub fn MeshletMesh::vertex_position_word_count(self : MeshletMesh) -> Int {
+  self.vertex_positions.length()
+}
+
+///|
+pub fn MeshletMesh::vertex_normal_word_count(self : MeshletMesh) -> Int {
+  self.vertex_normals.length()
+}
+
+///|
+pub fn MeshletMesh::vertex_uv_count(self : MeshletMesh) -> Int {
+  self.vertex_uvs.length()
+}
+
+///|
+pub fn MeshletMesh::index_count(self : MeshletMesh) -> Int {
+  self.indices.length()
+}
+
+///|
 pub fn MeshletMesh::vertex_count_estimate(self : MeshletMesh) -> Int {
-  self.vertex_uv_count
+  self.vertex_uvs.length()
 }
 
 ///|
 pub fn MeshletMesh::is_empty(self : MeshletMesh) -> Bool {
-  self.meshlet_count <= 0 || self.index_count <= 0
+  self.meshlets.is_empty() || self.indices.is_empty()
 }
 
 ///|
-pub fn meshlet_mesh_asset_magic() -> Int {
+pub fn meshlet_mesh_asset_magic() -> UInt64 {
   MESHLET_MESH_ASSET_MAGIC
 }
 
@@ -104,42 +216,36 @@ pub fn meshlet_mesh_asset_version() -> Int {
 
 ///|
 pub struct BvhNode {
-  left_child : Int
-  right_child : Int
-  parent : Int
-  child_count : Int
+  aabbs : Array[MeshletAabbErrorOffset]
+  lod_bounds : Array[MeshletBoundingSphere]
+  child_counts : Array[Int]
+  padding : Array[Int]
 }
 
 ///|
-pub fn BvhNode::leaf(index : Int) -> BvhNode {
-  BvhNode::{
-    left_child: index,
-    right_child: -1,
-    parent: -1,
-    child_count: if index < 0 {
-      0
-    } else {
-      1
-    },
+pub fn BvhNode::default() -> BvhNode {
+  let aabbs : Array[MeshletAabbErrorOffset] = []
+  let lod_bounds : Array[MeshletBoundingSphere] = []
+  let child_counts : Array[Int] = []
+  for _ in 0..<8 {
+    aabbs.push(MeshletAabbErrorOffset::default())
+    lod_bounds.push(MeshletBoundingSphere::default())
+    child_counts.push(0)
   }
+  BvhNode::{ aabbs, lod_bounds, child_counts, padding: [0, 0] }
 }
 
 ///|
-pub fn BvhNode::with_children(
+pub fn BvhNode::with_child_count(
   self : BvhNode,
-  left_child : Int,
-  right_child : Int,
+  child_index : Int,
+  child_count : Int,
 ) -> BvhNode {
-  BvhNode::{
-    ..self,
-    left_child,
-    right_child,
-    child_count: if right_child < 0 {
-      1
-    } else {
-      2
-    },
+  let child_counts = self.child_counts
+  if child_index >= 0 && child_index < child_counts.length() {
+    child_counts[child_index] = meshlet_non_negative(child_count)
   }
+  BvhNode::{ ..self, child_counts, }
 }
 
 ///|
@@ -149,10 +255,14 @@ pub struct Meshlet {
   start_index_id : Int
   vertex_count_minus_one : Int
   triangle_count : Int
+  padding : Int
   bits_per_vertex_position_channel_x : Int
   bits_per_vertex_position_channel_y : Int
   bits_per_vertex_position_channel_z : Int
   vertex_position_quantization_factor : Int
+  min_vertex_position_channel_x : Float
+  min_vertex_position_channel_y : Float
+  min_vertex_position_channel_z : Float
 }
 
 ///|
@@ -173,10 +283,14 @@ pub fn Meshlet::new(
       vertex_count - 1
     },
     triangle_count: meshlet_non_negative(triangle_count),
+    padding: 0,
     bits_per_vertex_position_channel_x: 0,
     bits_per_vertex_position_channel_y: 0,
     bits_per_vertex_position_channel_z: 0,
     vertex_position_quantization_factor: 0,
+    min_vertex_position_channel_x: 0.0,
+    min_vertex_position_channel_y: 0.0,
+    min_vertex_position_channel_z: 0.0,
   }
 }
 
@@ -203,6 +317,37 @@ pub fn Meshlet::with_quantization(
 }
 
 ///|
+pub fn Meshlet::with_min_vertex_position_channels(
+  self : Meshlet,
+  x : Float,
+  y : Float,
+  z : Float,
+) -> Meshlet {
+  Meshlet::{
+    ..self,
+    min_vertex_position_channel_x: x,
+    min_vertex_position_channel_y: y,
+    min_vertex_position_channel_z: z,
+  }
+}
+
+///|
+pub struct MeshletVertexUv {
+  x : Float
+  y : Float
+}
+
+///|
+pub fn MeshletVertexUv::new(x : Float, y : Float) -> MeshletVertexUv {
+  MeshletVertexUv::{ x, y }
+}
+
+///|
+pub fn MeshletVertexUv::default() -> MeshletVertexUv {
+  MeshletVertexUv::{ x: 0.0, y: 0.0 }
+}
+
+///|
 pub struct MeshletCullData {
   aabb : MeshletAabbErrorOffset
   lod_group_sphere : MeshletBoundingSphere
@@ -224,6 +369,25 @@ pub struct MeshletAabb {
   half_extent_x : Float
   half_extent_y : Float
   half_extent_z : Float
+}
+
+///|
+pub fn MeshletAabb::new(
+  center_x~ : Float,
+  center_y~ : Float,
+  center_z~ : Float,
+  half_extent_x~ : Float,
+  half_extent_y~ : Float,
+  half_extent_z~ : Float,
+) -> MeshletAabb {
+  MeshletAabb::{
+    center_x,
+    center_y,
+    center_z,
+    half_extent_x,
+    half_extent_y,
+    half_extent_z,
+  }
 }
 
 ///|

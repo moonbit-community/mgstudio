@@ -19,7 +19,7 @@ pub const MESHLET_MAIN_OPAQUE_PASS_NODE : String = "mgstudio.pbr.meshlet.main_op
 
 pub const MESHLET_MAX_CLUSTER_BUFFER_SLOTS : Int = 33_554_432
 
-pub const MESHLET_MESH_ASSET_MAGIC : Int = 1717551717
+pub const MESHLET_MESH_ASSET_MAGIC : UInt64 = 1717551717668
 
 pub const MESHLET_MESH_ASSET_VERSION : Int = 3
 
@@ -83,7 +83,7 @@ pub fn meshlet_material_shade_node_index(String) -> Int?
 
 pub fn meshlet_material_shade_nodes() -> Array[String]
 
-pub fn meshlet_mesh_asset_magic() -> Int
+pub fn meshlet_mesh_asset_magic() -> UInt64
 
 pub fn meshlet_mesh_asset_version() -> Int
 
@@ -177,13 +177,13 @@ pub fn register_embedded_wgsl_sources() -> Unit
 
 // Types and methods
 pub struct BvhNode {
-  left_child : Int
-  right_child : Int
-  parent : Int
-  child_count : Int
+  aabbs : Array[MeshletAabbErrorOffset]
+  lod_bounds : Array[MeshletBoundingSphere]
+  child_counts : Array[Int]
+  padding : Array[Int]
 }
-pub fn BvhNode::leaf(Int) -> Self
-pub fn BvhNode::with_children(Self, Int, Int) -> Self
+pub fn BvhNode::default() -> Self
+pub fn BvhNode::with_child_count(Self, Int, Int) -> Self
 
 pub struct ExtractedMeshletInstance {
   instance : @core.Entity
@@ -267,13 +267,18 @@ pub struct Meshlet {
   start_index_id : Int
   vertex_count_minus_one : Int
   triangle_count : Int
+  padding : Int
   bits_per_vertex_position_channel_x : Int
   bits_per_vertex_position_channel_y : Int
   bits_per_vertex_position_channel_z : Int
   vertex_position_quantization_factor : Int
+  min_vertex_position_channel_x : Float
+  min_vertex_position_channel_y : Float
+  min_vertex_position_channel_z : Float
 }
 pub fn Meshlet::new(Int, Int, Int, Int, Int) -> Self
 pub fn Meshlet::vertex_count(Self) -> Int
+pub fn Meshlet::with_min_vertex_position_channels(Self, Float, Float, Float) -> Self
 pub fn Meshlet::with_quantization(Self, Int, Int, Int, Int) -> Self
 
 pub struct MeshletAabb {
@@ -285,6 +290,7 @@ pub struct MeshletAabb {
   half_extent_z : Float
 }
 pub fn MeshletAabb::default() -> Self
+pub fn MeshletAabb::new(center_x~ : Float, center_y~ : Float, center_z~ : Float, half_extent_x~ : Float, half_extent_y~ : Float, half_extent_z~ : Float) -> Self
 
 pub struct MeshletAabbErrorOffset {
   center_x : Float
@@ -326,17 +332,27 @@ pub struct MeshletMaterialDrawCall {
 } derive(Eq, @debug.Debug)
 
 pub struct MeshletMesh {
-  meshlet_count : Int
-  bvh_node_count : Int
-  vertex_position_word_count : Int
-  vertex_normal_word_count : Int
-  vertex_uv_count : Int
-  index_count : Int
+  vertex_positions : Array[Int]
+  vertex_normals : Array[Int]
+  vertex_uvs : Array[MeshletVertexUv]
+  indices : Array[Int]
+  bvh : Array[BvhNode]
+  meshlets : Array[Meshlet]
+  meshlet_cull_data : Array[MeshletCullData]
+  aabb : MeshletAabb
   bvh_depth : Int
 }
+pub fn MeshletMesh::bvh_node_count(Self) -> Int
+pub fn MeshletMesh::from_parts(vertex_positions~ : Array[Int], vertex_normals~ : Array[Int], vertex_uvs~ : Array[MeshletVertexUv], indices~ : Array[Int], bvh~ : Array[BvhNode], meshlets~ : Array[Meshlet], meshlet_cull_data~ : Array[MeshletCullData], aabb? : MeshletAabb, bvh_depth? : Int) -> Self
+pub fn MeshletMesh::index_count(Self) -> Int
 pub fn MeshletMesh::is_empty(Self) -> Bool
+pub fn MeshletMesh::meshlet_count(Self) -> Int
 pub fn MeshletMesh::new(Int, Int) -> Self
 pub fn MeshletMesh::vertex_count_estimate(Self) -> Int
+pub fn MeshletMesh::vertex_normal_word_count(Self) -> Int
+pub fn MeshletMesh::vertex_position_word_count(Self) -> Int
+pub fn MeshletMesh::vertex_uv_count(Self) -> Int
+pub fn MeshletMesh::with_aabb(Self, MeshletAabb) -> Self
 pub fn MeshletMesh::with_bvh_depth(Self, Int) -> Self
 pub fn MeshletMesh::with_vertex_buffers(Self, Int, Int, Int, Int) -> Self
 
@@ -354,7 +370,7 @@ pub struct MeshletMeshLoader {
 pub struct MeshletMeshManager {
   vertex_positions : PersistentGpuBuffer[Int]
   vertex_normals : PersistentGpuBuffer[Int]
-  vertex_uvs : PersistentGpuBuffer[Int]
+  vertex_uvs : PersistentGpuBuffer[MeshletVertexUv]
   indices : PersistentGpuBuffer[Int]
   bvh_nodes : PersistentGpuBuffer[BvhNode]
   meshlets : PersistentGpuBuffer[Meshlet]
@@ -477,6 +493,13 @@ pub(all) enum MeshletRuntimeStatus {
   Enabled
   RuntimeUnavailable
 }
+
+pub struct MeshletVertexUv {
+  x : Float
+  y : Float
+}
+pub fn MeshletVertexUv::default() -> Self
+pub fn MeshletVertexUv::new(Float, Float) -> Self
 
 pub struct MeshletViewBindGroups {
   view_entity : @core.Entity

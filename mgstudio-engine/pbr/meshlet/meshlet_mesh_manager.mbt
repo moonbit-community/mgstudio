@@ -48,7 +48,7 @@ pub struct MeshletMeshSlices {
 pub struct MeshletMeshManager {
   vertex_positions : PersistentGpuBuffer[Int]
   vertex_normals : PersistentGpuBuffer[Int]
-  vertex_uvs : PersistentGpuBuffer[Int]
+  vertex_uvs : PersistentGpuBuffer[MeshletVertexUv]
   indices : PersistentGpuBuffer[Int]
   bvh_nodes : PersistentGpuBuffer[BvhNode]
   meshlets : PersistentGpuBuffer[Meshlet]
@@ -74,46 +74,6 @@ pub fn MeshletMeshManager::default() -> MeshletMeshManager {
     pending_upload_asset_ids: [],
     meshlet_mesh_slices: {},
   }
-}
-
-///|
-fn meshlet_empty_words(word_count : Int) -> Array[Int] {
-  let safe_count = if word_count < 0 { 0 } else { word_count }
-  let values : Array[Int] = []
-  for _ in 0..<safe_count {
-    values.push(0)
-  }
-  values
-}
-
-///|
-fn meshlet_empty_bvh_nodes(node_count : Int) -> Array[BvhNode] {
-  let safe_count = if node_count < 0 { 0 } else { node_count }
-  let values : Array[BvhNode] = []
-  for index in 0..<safe_count {
-    values.push(BvhNode::leaf(index))
-  }
-  values
-}
-
-///|
-fn meshlet_empty_meshlets(meshlet_count : Int) -> Array[Meshlet] {
-  let safe_count = if meshlet_count < 0 { 0 } else { meshlet_count }
-  let values : Array[Meshlet] = []
-  for _ in 0..<safe_count {
-    values.push(Meshlet::new(0, 0, 0, 3, 1))
-  }
-  values
-}
-
-///|
-fn meshlet_empty_cull_data(meshlet_count : Int) -> Array[MeshletCullData] {
-  let safe_count = if meshlet_count < 0 { 0 } else { meshlet_count }
-  let values : Array[MeshletCullData] = []
-  for _ in 0..<safe_count {
-    values.push(MeshletCullData::default())
-  }
-  values
 }
 
 ///|
@@ -143,31 +103,25 @@ fn meshlet_mesh_manager_insert_asset_slices(
   meshlet_mesh : MeshletMesh,
 ) -> MeshletMeshSlices {
   let vertex_positions = manager.vertex_positions.queue_write(
-    meshlet_empty_words(meshlet_mesh.vertex_position_word_count),
+    meshlet_mesh.vertex_positions,
     (),
   )
   let vertex_normals = manager.vertex_normals.queue_write(
-    meshlet_empty_words(meshlet_mesh.vertex_normal_word_count),
+    meshlet_mesh.vertex_normals,
     (),
   )
-  let vertex_uvs = manager.vertex_uvs.queue_write(
-    meshlet_empty_words(meshlet_mesh.vertex_uv_count),
-    (),
-  )
-  let indices = manager.indices.queue_write(
-    meshlet_empty_words(meshlet_mesh.index_count),
-    (),
-  )
+  let vertex_uvs = manager.vertex_uvs.queue_write(meshlet_mesh.vertex_uvs, ())
+  let indices = manager.indices.queue_write(meshlet_mesh.indices, ())
   let meshlets = manager.meshlets.queue_write(
-    meshlet_empty_meshlets(meshlet_mesh.meshlet_count),
+    meshlet_mesh.meshlets,
     (vertex_positions.start, vertex_normals.start, indices.start),
   )
   let bvh_nodes = manager.bvh_nodes.queue_write(
-    meshlet_empty_bvh_nodes(meshlet_mesh.bvh_node_count),
+    meshlet_mesh.bvh,
     meshlets.start,
   )
   let meshlet_cull_data = manager.meshlet_cull_data.queue_write(
-    meshlet_empty_cull_data(meshlet_mesh.meshlet_count),
+    meshlet_mesh.meshlet_cull_data,
     (),
   )
   let slices = MeshletMeshSlices::{
@@ -178,7 +132,7 @@ fn meshlet_mesh_manager_insert_asset_slices(
     bvh_nodes: meshlet_slice_from_persistent(bvh_nodes),
     meshlets: meshlet_slice_from_persistent(meshlets),
     meshlet_cull_data: meshlet_slice_from_persistent(meshlet_cull_data),
-    aabb: MeshletAabb::default(),
+    aabb: meshlet_mesh.aabb,
     bvh_depth: meshlet_mesh.bvh_depth,
   }
   manager.meshlet_mesh_slices.set(asset_id, slices)

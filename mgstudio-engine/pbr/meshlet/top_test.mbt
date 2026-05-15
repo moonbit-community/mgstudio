@@ -166,7 +166,7 @@ test "pbr meshlet: configure views inserts prepass and deferred bins by view fla
 }
 
 ///|
-test "pbr meshlet: configure views does not insert deferred bin without deferred prepass" {
+test "pbr meshlet: configure views mirrors Bevy prepass bin insertion" {
   let world = @ecs.World::new()
   let view_entity = world.spawn()
   try! world.set_by_key(
@@ -189,7 +189,7 @@ test "pbr meshlet: configure views does not insert deferred bin without deferred
     .get_by_key(
       view_entity, ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
     ))
-    is None,
+    is Some(_),
     content="true",
   )
 }
