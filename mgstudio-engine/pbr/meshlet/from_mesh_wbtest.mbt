@@ -190,6 +190,33 @@ test "pbr meshlet wbtest: group partition graph mirrors bevy metis inputs" {
 }
 
 ///|
+test "pbr meshlet wbtest: groups are assembled from metis partition ids" {
+  let groups = meshlet_groups_from_partitions(
+    [0, 1, 2],
+    [meshlet_wbtest_cull(0), meshlet_wbtest_cull(1), meshlet_wbtest_cull(2)],
+    [1, 0, 1],
+    2,
+  )
+  debug_inspect(groups.length(), content="2")
+  debug_inspect(groups[0].meshlets, content="[1]")
+  debug_inspect(groups[1].meshlets, content="[0, 2]")
+  debug_inspect(groups[0].aabb.center().x, content="2")
+  debug_inspect(groups[1].lod_bounds.radius >= 2.5F, content="true")
+}
+
+///|
+test "pbr meshlet wbtest: simplification group indices mirror meshopt input order" {
+  let meshlets = meshlet_wbtest_build_meshlets()
+  let group = meshlet_wbtest_group(0, [1, 0])
+  debug_inspect(
+    meshlet_collect_group_indices(group, meshlets),
+    content="[2, 1, 3, 0, 1, 2]",
+  )
+  debug_inspect(meshlet_simplified_group_accepted(30, 18), content="true")
+  debug_inspect(meshlet_simplified_group_accepted(30, 19), content="false")
+}
+
+///|
 test "pbr meshlet wbtest: lock group borders marks shared position vertices" {
   let meshlets = MeshletBuildMeshlets::new(
     meshlets=[

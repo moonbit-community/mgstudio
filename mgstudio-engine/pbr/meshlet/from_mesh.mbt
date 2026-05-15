@@ -832,6 +832,82 @@ fn meshlet_collect_indices_per_partition(
 }
 
 ///|
+fn MeshletTempGroup::default() -> MeshletTempGroup {
+  MeshletTempGroup::{
+    aabb: meshlet_bvh_default_aabb(),
+    lod_bounds: meshlet_temp_sphere_zero(),
+    parent_error: 1.0F / 0.0F,
+    meshlets: [],
+  }
+}
+
+///|
+fn meshlet_groups_from_partitions(
+  simplification_queue : Array[Int],
+  meshlet_cull_data : Array[MeshletTempCullData],
+  partition_per_meshlet : Array[Int],
+  partition_count : Int,
+) -> Array[MeshletTempGroup] {
+  if partition_per_meshlet.length() != simplification_queue.length() {
+    abort(
+      "meshlet group partition output length must match simplification queue",
+    )
+  }
+  let groups : Array[MeshletTempGroup] = []
+  for _ in 0..<partition_count {
+    groups.push(MeshletTempGroup::default())
+  }
+  for index in 0..<partition_per_meshlet.length() {
+    let group_index = partition_per_meshlet[index]
+    if group_index < 0 || group_index >= groups.length() {
+      abort("meshlet group partition id out of range")
+    }
+    let meshlet_id = simplification_queue[index]
+    let group = groups[group_index]
+    group.meshlets.push(meshlet_id)
+    let data = meshlet_cull_data[meshlet_id]
+    groups[group_index] = MeshletTempGroup::{
+      ..group,
+      aabb: meshlet_bvh_merge_aabb(group.aabb, data.aabb),
+      lod_bounds: meshlet_merge_spheres(group.lod_bounds, data.lod_group_sphere),
+    }
+  }
+  groups
+}
+
+///|
+fn meshlet_collect_group_indices(
+  group : MeshletTempGroup,
+  meshlets : MeshletBuildMeshlets,
+) -> Array[Int] {
+  let group_indices : Array[Int] = []
+  for meshlet_id in group.meshlets {
+    let meshlet = meshlets.meshlets[meshlet_id]
+    let triangle_index_count = meshlet.triangle_count * 3
+    for triangle_index in 0..<triangle_index_count {
+      let local_vertex_index = meshlets.meshlet_triangle_index(
+        meshlet, triangle_index,
+      )
+      group_indices.push(meshlets.meshlet_vertex(meshlet, local_vertex_index))
+    }
+  }
+  group_indices
+}
+
+///|
+fn meshlet_simplified_group_accepted(
+  original_index_count : Int,
+  simplified_index_count : Int,
+) -> Bool {
+  if original_index_count <= 0 {
+    return false
+  }
+  Float::from_int(simplified_index_count) /
+  Float::from_int(original_index_count) <=
+  MESHLET_SIMPLIFICATION_FAILURE_PERCENTAGE
+}
+
+///|
 fn meshlet_triangles_in_meshlets(
   meshlets : MeshletBuildMeshlets,
   ids : Array[Int],
