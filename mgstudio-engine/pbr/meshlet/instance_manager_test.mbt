@@ -71,6 +71,54 @@ test "pbr/meshlet: instance manager stores Bevy mesh uniform transforms and rend
 }
 
 ///|
+test "pbr/meshlet: per-view instance visibility follows layers and shadow caster flags" {
+  let manager = InstanceManager::default()
+  let view = @core.Entity::new(0, 100)
+  manager.add_instance(
+    @core.Entity::new(0, 1),
+    100,
+    4,
+    MeshletAabb::default(),
+    3,
+    render_layer_mask=0b0001,
+  )
+  manager.add_instance(
+    @core.Entity::new(0, 2),
+    101,
+    5,
+    MeshletAabb::default(),
+    3,
+    render_layer_mask=0b0010,
+  )
+  manager.add_instance(
+    @core.Entity::new(0, 3),
+    102,
+    6,
+    MeshletAabb::default(),
+    3,
+    render_layer_mask=0b0001,
+    not_shadow_caster=true,
+  )
+  let camera_visibility = manager.prepare_view_instance_visibility(
+    view,
+    view_render_layer_mask=0b0001,
+  )
+  debug_inspect(camera_visibility, content="[2]")
+  debug_inspect(manager.view_instance_hidden(view, 0), content="false")
+  debug_inspect(manager.view_instance_hidden(view, 1), content="true")
+  debug_inspect(manager.view_instance_hidden(view, 2), content="false")
+
+  let shadow_visibility = manager.prepare_view_instance_visibility(
+    view,
+    view_render_layer_mask=0b0001,
+    shadow_view=true,
+  )
+  debug_inspect(shadow_visibility, content="[6]")
+  debug_inspect(manager.view_instance_hidden(view, 1), content="true")
+  debug_inspect(manager.view_instance_hidden(view, 2), content="true")
+}
+
+///|
 test "pbr/meshlet: queue helper requires extracted instances to mark scene usage" {
   let manager = InstanceManager::default()
   ignore(queue_material_meshlet_meshes_with_material_assets(manager, [1, 2, 1]))

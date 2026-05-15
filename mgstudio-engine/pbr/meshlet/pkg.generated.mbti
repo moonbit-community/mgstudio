@@ -260,6 +260,7 @@ pub fn InstanceManager::mark_material_present_in_scene(Self, Int) -> Unit
 pub fn InstanceManager::material_id_for_asset(Self, Int) -> Int?
 pub fn InstanceManager::material_present_in_scene(Self, Int) -> Bool
 pub fn InstanceManager::max_bvh_depth(Self) -> Int
+pub fn InstanceManager::prepare_view_instance_visibility(Self, @core.Entity, view_render_layer_mask? : Int, shadow_view? : Bool) -> Array[Int]
 pub fn InstanceManager::present_material_asset_ids(Self) -> Array[Int]
 pub fn InstanceManager::present_material_count(Self) -> Int
 pub fn InstanceManager::present_material_ids(Self) -> Array[Int]
@@ -267,6 +268,8 @@ pub fn InstanceManager::reset(Self, active_views? : Array[@core.Entity]) -> Unit
 pub fn InstanceManager::set_instance_count(Self, Int) -> Unit
 pub fn InstanceManager::set_max_bvh_depth(Self, Int) -> Unit
 pub fn InstanceManager::set_view_instance_visibility(Self, @core.Entity, Array[Int]) -> Unit
+pub fn InstanceManager::view_instance_hidden(Self, @core.Entity, Int) -> Bool
+pub fn InstanceManager::view_instance_visibility(Self, @core.Entity) -> Array[Int]?
 pub fn InstanceManager::view_visibility_count(Self) -> Int
 pub impl @ecs.EcsPayloadCodec for InstanceManager
 

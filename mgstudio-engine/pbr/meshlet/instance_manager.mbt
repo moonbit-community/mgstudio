@@ -427,6 +427,90 @@ pub fn InstanceManager::set_view_instance_visibility(
 }
 
 ///|
+pub fn InstanceManager::view_instance_visibility(
+  self : InstanceManager,
+  view_entity : @core.Entity,
+) -> Array[Int]? {
+  self.view_instance_visibility.get(view_entity.to_bits())
+}
+
+///|
+fn meshlet_instance_hidden_for_view(
+  instance_render_layer_mask : Int,
+  view_render_layer_mask : Int,
+  shadow_view : Bool,
+  not_shadow_caster : Bool,
+) -> Bool {
+  (instance_render_layer_mask & view_render_layer_mask) == 0 ||
+  (shadow_view && not_shadow_caster)
+}
+
+///|
+fn meshlet_set_view_visibility_hidden_bit(
+  visibility : Array[Int],
+  instance_index : Int,
+) -> Unit {
+  if instance_index < 0 {
+    return
+  }
+  let word_index = instance_index / 32
+  let bit = instance_index - word_index * 32
+  while visibility.length() <= word_index {
+    visibility.push(0)
+  }
+  visibility[word_index] = visibility[word_index] | (1 << bit)
+}
+
+///|
+pub fn InstanceManager::prepare_view_instance_visibility(
+  self : InstanceManager,
+  view_entity : @core.Entity,
+  view_render_layer_mask? : Int = 1,
+  shadow_view? : Bool = false,
+) -> Array[Int] {
+  let visibility = match
+    self.view_instance_visibility.get(view_entity.to_bits()) {
+    Some(existing) => {
+      existing.clear()
+      existing
+    }
+    None => []
+  }
+  let safe_view_render_layer_mask = non_negative(view_render_layer_mask)
+  for index in 0..<self.instances.length() {
+    let (_, instance_render_layer_mask, not_shadow_caster) = self.instances[index]
+    if meshlet_instance_hidden_for_view(
+        instance_render_layer_mask, safe_view_render_layer_mask, shadow_view, not_shadow_caster,
+      ) {
+      meshlet_set_view_visibility_hidden_bit(visibility, index)
+    }
+  }
+  self.view_instance_visibility.set(view_entity.to_bits(), visibility)
+  visibility
+}
+
+///|
+pub fn InstanceManager::view_instance_hidden(
+  self : InstanceManager,
+  view_entity : @core.Entity,
+  instance_index : Int,
+) -> Bool {
+  guard instance_index >= 0 else { false }
+  match self.view_instance_visibility.get(view_entity.to_bits()) {
+    Some(visibility) => {
+      let word_index = instance_index / 32
+      let bit = instance_index - word_index * 32
+      if word_index >= visibility.length() {
+        false
+      } else {
+        (visibility[word_index] & (1 << bit)) != 0
+      }
+    }
+    None => false
+  }
+}
+
+///|
 pub fn ExtractedMeshletInstance::new(
   instance : @core.Entity,
   material_asset_id : Int,

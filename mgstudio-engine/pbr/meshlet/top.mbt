@@ -343,9 +343,14 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
   ) {
     view_entities.push(entity)
   })
-  let instance_count = meshlet_instance_count_from_world(world)
-  let max_bvh_depth = match
-    (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+  let instance_manager = try! world.get_resource(
+    ecs_key_meshlet_instance_manager,
+  )
+  let instance_count = match instance_manager {
+    Some(manager) => manager.instance_count()
+    None => 0
+  }
+  let max_bvh_depth = match instance_manager {
     Some(instance_manager) => instance_manager.max_bvh_depth()
     None => 0
   }
@@ -358,6 +363,24 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
           (try! source_world.get_by_key(view_entity, @sprite.ecs_key_camera)) {
           Some(camera) => meshlet_view_size_from_camera(camera)
           None => (1, 1)
+        }
+        match instance_manager {
+          Some(instance_manager) => {
+            let view_render_layer_mask = match
+              (try! source_world.get_by_key(
+                view_entity, @sprite.ecs_key_render_layers,
+              )) {
+              Some(render_layers) => render_layers.mask()
+              None => @sprite.RenderLayers::default().mask()
+            }
+            ignore(
+              instance_manager.prepare_view_instance_visibility(
+                view_entity,
+                view_render_layer_mask~,
+              ),
+            )
+          }
+          None => ()
         }
         ignore(
           prepare_meshlet_view_resources_for_view(
