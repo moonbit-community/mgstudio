@@ -115,6 +115,7 @@ pub fn Mesh::from_2d_geometry(Mesh2dGeometry) -> Self
 pub fn Mesh::from_3d_geometry(Mesh3dGeometry) -> Self
 pub fn Mesh::generate_skinned_mesh_bounds(Self) -> Result[Unit, SkinnedMeshBoundsError]
 pub fn Mesh::generate_tangents(Self) -> MeshGenerateTangentsError?
+pub fn Mesh::get_mesh_vertex_buffer_layout(Self, MeshVertexBufferLayouts) -> MeshVertexBufferLayoutRef
 pub fn Mesh::get_vertex_buffer_size(Self) -> Int
 pub fn Mesh::get_vertex_size(Self) -> Int
 pub fn Mesh::indexed(Self) -> Bool
@@ -386,6 +387,30 @@ pub struct MeshVertexAttributeId {
 pub fn MeshVertexAttributeId::new(UInt64) -> Self
 pub fn MeshVertexAttributeId::value(Self) -> UInt64
 
+pub struct MeshVertexBufferLayout {
+  attribute_ids : Array[MeshVertexAttributeId]
+  layout : VertexBufferLayout
+} derive(@debug.Debug)
+pub fn MeshVertexBufferLayout::attribute_ids(Self) -> Array[MeshVertexAttributeId]
+pub fn MeshVertexBufferLayout::contains(Self, MeshVertexAttributeId) -> Bool
+pub fn MeshVertexBufferLayout::get_layout(Self, Array[VertexAttributeDescriptor]) -> Result[VertexBufferLayout, MissingVertexAttributeError]
+pub fn MeshVertexBufferLayout::layout(Self) -> VertexBufferLayout
+pub fn MeshVertexBufferLayout::new(attribute_ids~ : Array[MeshVertexAttributeId], layout~ : VertexBufferLayout) -> Self
+
+pub struct MeshVertexBufferLayoutRef {
+  index : Int
+  layout : MeshVertexBufferLayout
+}
+pub fn MeshVertexBufferLayoutRef::index(Self) -> Int
+pub fn MeshVertexBufferLayoutRef::layout(Self) -> MeshVertexBufferLayout
+
+pub struct MeshVertexBufferLayouts {
+  layouts : Array[MeshVertexBufferLayout]
+}
+pub fn MeshVertexBufferLayouts::default() -> Self
+pub fn MeshVertexBufferLayouts::insert(Self, MeshVertexBufferLayout) -> MeshVertexBufferLayoutRef
+pub fn MeshVertexBufferLayouts::len(Self) -> Int
+
 pub(all) enum MeshVertexFormat {
   Float32
   Sint32
@@ -402,6 +427,17 @@ pub(all) enum MeshVertexFormat {
   Uint16x4
 } derive(Eq, @debug.Debug)
 pub fn MeshVertexFormat::size(Self) -> Int
+
+pub(all) enum MeshVertexStepMode {
+  Vertex
+  Instance
+} derive(Eq, @debug.Debug)
+
+pub struct MissingVertexAttributeError {
+  id : MeshVertexAttributeId
+  name : String
+  pipeline_type : String?
+}
 
 pub struct MorphTargetMesh {
   source_mesh : @asset.Handle[Mesh]
@@ -491,6 +527,20 @@ pub fn SkinningMat4::transform_point3(Self, @math.Vec3) -> @math.Vec3
 pub fn SkinningMat4::write_affine3_mul_row_major_f32(Self, @math.Affine3, Array[Float], Int) -> Unit
 pub fn SkinningMat4::write_row_major_f32(Self, Array[Float], Int) -> Unit
 
+pub struct VertexAttribute {
+  offset : Int
+  format : MeshVertexFormat
+  shader_location : Int
+} derive(@debug.Debug)
+pub fn VertexAttribute::new(offset~ : Int, format~ : MeshVertexFormat, shader_location~ : Int) -> Self
+
+pub struct VertexAttributeDescriptor {
+  shader_location : Int
+  id : MeshVertexAttributeId
+  name : String
+}
+pub fn VertexAttributeDescriptor::new(shader_location~ : Int, id~ : MeshVertexAttributeId, name~ : String) -> Self
+
 pub(all) enum VertexAttributeValues {
   Float32(Array[Float])
   Sint32(Array[Int])
@@ -513,6 +563,15 @@ pub fn VertexAttributeValues::as_uint16x4(Self) -> Array[MeshJointIndices]?
 pub fn VertexAttributeValues::format(Self) -> MeshVertexFormat
 pub fn VertexAttributeValues::is_empty(Self) -> Bool
 pub fn VertexAttributeValues::len(Self) -> Int
+
+pub struct VertexBufferLayout {
+  array_stride : Int
+  step_mode : MeshVertexStepMode
+  attributes : Array[VertexAttribute]
+} derive(@debug.Debug)
+pub fn VertexBufferLayout::from_vertex_formats(MeshVertexStepMode, Array[MeshVertexFormat]) -> Self
+pub fn VertexBufferLayout::new(array_stride~ : Int, step_mode~ : MeshVertexStepMode, attributes~ : Array[VertexAttribute]) -> Self
+pub fn VertexBufferLayout::offset_locations_by(Self, Int) -> Self
 
 // Type aliases
 

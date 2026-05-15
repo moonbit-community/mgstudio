@@ -161,6 +161,39 @@ pub fn Mesh::get_vertex_buffer_size(self : Mesh) -> Int {
 }
 
 ///|
+pub fn Mesh::get_mesh_vertex_buffer_layout(
+  self : Mesh,
+  mesh_vertex_buffer_layouts : MeshVertexBufferLayouts,
+) -> MeshVertexBufferLayoutRef {
+  let mesh_attributes = self.attributes()
+  let attributes : Array[VertexAttribute] = []
+  let attribute_ids : Array[MeshVertexAttributeId] = []
+  let mut accumulated_offset = 0
+  for index in 0..<mesh_attributes.length() {
+    let data = mesh_attributes[index]
+    attribute_ids.push(data.attribute().id())
+    attributes.push(
+      VertexAttribute::new(
+        offset=accumulated_offset,
+        format=data.attribute().format(),
+        shader_location=index,
+      ),
+    )
+    accumulated_offset = accumulated_offset + data.attribute().format().size()
+  }
+  mesh_vertex_buffer_layouts.insert(
+    MeshVertexBufferLayout::new(
+      attribute_ids~,
+      layout=VertexBufferLayout::new(
+        array_stride=accumulated_offset,
+        step_mode=MeshVertexStepMode::Vertex,
+        attributes~,
+      ),
+    ),
+  )
+}
+
+///|
 fn mesh_push_u16_le(out : Array[Byte], value : UInt) -> Unit {
   out.push(value.to_byte())
   out.push((value >> 8).to_byte())

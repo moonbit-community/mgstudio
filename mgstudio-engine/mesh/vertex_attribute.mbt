@@ -259,6 +259,290 @@ pub fn MeshAttributeData::values(
 }
 
 ///|
+pub(all) enum MeshVertexStepMode {
+  Vertex
+  Instance
+} derive(Eq, Debug)
+
+///|
+pub struct VertexAttribute {
+  offset : Int
+  format : MeshVertexFormat
+  shader_location : Int
+} derive(Debug)
+
+///|
+pub fn VertexAttribute::new(
+  offset~ : Int,
+  format~ : MeshVertexFormat,
+  shader_location~ : Int,
+) -> VertexAttribute {
+  VertexAttribute::{ offset, format, shader_location }
+}
+
+///|
+pub struct VertexBufferLayout {
+  array_stride : Int
+  step_mode : MeshVertexStepMode
+  attributes : Array[VertexAttribute]
+} derive(Debug)
+
+///|
+pub fn VertexBufferLayout::new(
+  array_stride~ : Int,
+  step_mode~ : MeshVertexStepMode,
+  attributes~ : Array[VertexAttribute],
+) -> VertexBufferLayout {
+  VertexBufferLayout::{ array_stride, step_mode, attributes }
+}
+
+///|
+pub fn VertexBufferLayout::from_vertex_formats(
+  step_mode : MeshVertexStepMode,
+  formats : Array[MeshVertexFormat],
+) -> VertexBufferLayout {
+  let attributes : Array[VertexAttribute] = []
+  let mut offset = 0
+  for index in 0..<formats.length() {
+    let format = formats[index]
+    attributes.push(
+      VertexAttribute::new(offset~, format~, shader_location=index),
+    )
+    offset = offset + format.size()
+  }
+  VertexBufferLayout::new(array_stride=offset, step_mode~, attributes~)
+}
+
+///|
+pub fn VertexBufferLayout::offset_locations_by(
+  self : VertexBufferLayout,
+  location : Int,
+) -> VertexBufferLayout {
+  let attributes : Array[VertexAttribute] = []
+  for attribute in self.attributes {
+    attributes.push(VertexAttribute::{
+      ..attribute,
+      shader_location: attribute.shader_location + location,
+    })
+  }
+  VertexBufferLayout::{ ..self, attributes, }
+}
+
+///|
+pub struct VertexAttributeDescriptor {
+  shader_location : Int
+  id : MeshVertexAttributeId
+  name : String
+}
+
+///|
+pub fn VertexAttributeDescriptor::new(
+  shader_location~ : Int,
+  id~ : MeshVertexAttributeId,
+  name~ : String,
+) -> VertexAttributeDescriptor {
+  VertexAttributeDescriptor::{ shader_location, id, name }
+}
+
+///|
+pub struct MissingVertexAttributeError {
+  id : MeshVertexAttributeId
+  name : String
+  pipeline_type : String?
+}
+
+///|
+pub struct MeshVertexBufferLayout {
+  attribute_ids : Array[MeshVertexAttributeId]
+  layout : VertexBufferLayout
+} derive(Debug)
+
+///|
+pub fn MeshVertexBufferLayout::new(
+  attribute_ids~ : Array[MeshVertexAttributeId],
+  layout~ : VertexBufferLayout,
+) -> MeshVertexBufferLayout {
+  MeshVertexBufferLayout::{ attribute_ids, layout }
+}
+
+///|
+pub fn MeshVertexBufferLayout::contains(
+  self : MeshVertexBufferLayout,
+  attribute_id : MeshVertexAttributeId,
+) -> Bool {
+  for id in self.attribute_ids {
+    if mesh_vertex_attribute_id_eq(id, attribute_id) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn MeshVertexBufferLayout::attribute_ids(
+  self : MeshVertexBufferLayout,
+) -> Array[MeshVertexAttributeId] {
+  self.attribute_ids
+}
+
+///|
+pub fn MeshVertexBufferLayout::layout(
+  self : MeshVertexBufferLayout,
+) -> VertexBufferLayout {
+  self.layout
+}
+
+///|
+fn mesh_vertex_buffer_attribute_index(
+  ids : Array[MeshVertexAttributeId],
+  id : MeshVertexAttributeId,
+) -> Int? {
+  for index in 0..<ids.length() {
+    if mesh_vertex_attribute_id_eq(ids[index], id) {
+      return Some(index)
+    }
+  }
+  None
+}
+
+///|
+pub fn MeshVertexBufferLayout::get_layout(
+  self : MeshVertexBufferLayout,
+  attribute_descriptors : Array[VertexAttributeDescriptor],
+) -> Result[VertexBufferLayout, MissingVertexAttributeError] {
+  let attributes : Array[VertexAttribute] = []
+  for descriptor in attribute_descriptors {
+    match
+      mesh_vertex_buffer_attribute_index(self.attribute_ids, descriptor.id) {
+      Some(index) => {
+        let source = self.layout.attributes[index]
+        attributes.push(VertexAttribute::{
+          format: source.format,
+          offset: source.offset,
+          shader_location: descriptor.shader_location,
+        })
+      }
+      None =>
+        return Err(MissingVertexAttributeError::{
+          id: descriptor.id,
+          name: descriptor.name,
+          pipeline_type: None,
+        })
+    }
+  }
+  Ok(VertexBufferLayout::{
+    array_stride: self.layout.array_stride,
+    step_mode: self.layout.step_mode,
+    attributes,
+  })
+}
+
+///|
+pub struct MeshVertexBufferLayoutRef {
+  index : Int
+  layout : MeshVertexBufferLayout
+}
+
+///|
+pub fn MeshVertexBufferLayoutRef::layout(
+  self : MeshVertexBufferLayoutRef,
+) -> MeshVertexBufferLayout {
+  self.layout
+}
+
+///|
+pub fn MeshVertexBufferLayoutRef::index(
+  self : MeshVertexBufferLayoutRef,
+) -> Int {
+  self.index
+}
+
+///|
+pub struct MeshVertexBufferLayouts {
+  layouts : Array[MeshVertexBufferLayout]
+}
+
+///|
+pub fn MeshVertexBufferLayouts::default() -> MeshVertexBufferLayouts {
+  MeshVertexBufferLayouts::{ layouts: [] }
+}
+
+///|
+pub fn MeshVertexBufferLayouts::len(self : MeshVertexBufferLayouts) -> Int {
+  self.layouts.length()
+}
+
+///|
+fn mesh_vertex_attribute_id_array_eq(
+  left : Array[MeshVertexAttributeId],
+  right : Array[MeshVertexAttributeId],
+) -> Bool {
+  if left.length() != right.length() {
+    return false
+  }
+  for index in 0..<left.length() {
+    if !mesh_vertex_attribute_id_eq(left[index], right[index]) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn mesh_vertex_attribute_layout_eq(
+  left : VertexAttribute,
+  right : VertexAttribute,
+) -> Bool {
+  left.offset == right.offset &&
+  left.format == right.format &&
+  left.shader_location == right.shader_location
+}
+
+///|
+fn mesh_vertex_buffer_layout_eq(
+  left : VertexBufferLayout,
+  right : VertexBufferLayout,
+) -> Bool {
+  if left.array_stride != right.array_stride ||
+    left.step_mode != right.step_mode ||
+    left.attributes.length() != right.attributes.length() {
+    return false
+  }
+  for index in 0..<left.attributes.length() {
+    if !mesh_vertex_attribute_layout_eq(
+        left.attributes[index],
+        right.attributes[index],
+      ) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn mesh_mesh_vertex_buffer_layout_eq(
+  left : MeshVertexBufferLayout,
+  right : MeshVertexBufferLayout,
+) -> Bool {
+  mesh_vertex_attribute_id_array_eq(left.attribute_ids, right.attribute_ids) &&
+  mesh_vertex_buffer_layout_eq(left.layout, right.layout)
+}
+
+///|
+pub fn MeshVertexBufferLayouts::insert(
+  self : MeshVertexBufferLayouts,
+  layout : MeshVertexBufferLayout,
+) -> MeshVertexBufferLayoutRef {
+  for index in 0..<self.layouts.length() {
+    if mesh_mesh_vertex_buffer_layout_eq(self.layouts[index], layout) {
+      return MeshVertexBufferLayoutRef::{ index, layout: self.layouts[index] }
+    }
+  }
+  self.layouts.push(layout)
+  MeshVertexBufferLayoutRef::{ index: self.layouts.length() - 1, layout }
+}
+
+///|
 fn mesh_vertex_attribute_id_eq(
   left : MeshVertexAttributeId,
   right : MeshVertexAttributeId,
