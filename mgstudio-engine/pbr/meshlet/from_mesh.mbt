@@ -192,6 +192,131 @@ pub fn MeshletCompressedVertexData::new(
 }
 
 ///|
+pub struct MeshletMeshInputData {
+  vertices : Array[MeshletSourceVertex]
+  indices : Array[Int]
+  triangle_count : Int
+}
+
+///|
+pub fn MeshletMeshInputData::new(
+  vertices~ : Array[MeshletSourceVertex],
+  indices~ : Array[Int],
+) -> MeshletMeshInputData {
+  MeshletMeshInputData::{
+    vertices,
+    indices,
+    triangle_count: indices.length() / 3,
+  }
+}
+
+///|
+pub fn MeshletMeshInputData::summary(
+  self : MeshletMeshInputData,
+) -> MeshToMeshletInputMeshSummary {
+  MeshToMeshletInputMeshSummary::new(
+    primitive_topology="TriangleList",
+    vertex_attributes=meshlet_required_vertex_attributes(),
+    has_indices=true,
+    vertex_count=self.vertices.length(),
+    triangle_count=self.triangle_count,
+  )
+}
+
+///|
+fn meshlet_mesh3d_vertex_attribute_names(
+  geometry : @mesh.Mesh3dGeometry,
+) -> Array[String] {
+  let names : Array[String] = ["POSITION"]
+  if geometry.normals is Some(_) {
+    names.push("NORMAL")
+  }
+  if geometry.uvs is Some(_) {
+    names.push("UV_0")
+  }
+  if geometry.tangents is Some(_) {
+    names.push("TANGENT")
+  }
+  if geometry.colors is Some(_) {
+    names.push("COLOR")
+  }
+  if geometry.joint_indices is Some(_) {
+    names.push("JOINT_INDEX")
+  }
+  if geometry.joint_weights is Some(_) {
+    names.push("JOINT_WEIGHT")
+  }
+  for custom_attribute in geometry.custom_attributes_vec3 {
+    names.push(custom_attribute.name())
+  }
+  names
+}
+
+///|
+fn meshlet_mesh3d_has_exact_required_attributes(
+  geometry : @mesh.Mesh3dGeometry,
+) -> Bool {
+  guard geometry.normals is Some(normals) else { return false }
+  guard geometry.uvs is Some(uvs) else { return false }
+  let vertex_count = geometry.positions.length()
+  normals.length() == vertex_count &&
+  uvs.length() == vertex_count &&
+  geometry.tangents is None &&
+  geometry.colors is None &&
+  geometry.joint_indices is None &&
+  geometry.joint_weights is None &&
+  geometry.custom_attributes_vec3.is_empty()
+}
+
+///|
+pub fn meshlet_extract_mesh_input(
+  mesh : @mesh.Mesh,
+) -> Result[MeshletMeshInputData, MeshToMeshletMeshConversionError] {
+  guard mesh.as_3d_geometry() is Some(geometry) else {
+    return Err(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology)
+  }
+  if geometry.primitive_topology() !=
+    @mesh.Mesh3dPrimitiveTopology::TriangleList {
+    return Err(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology)
+  }
+  if !meshlet_mesh3d_has_exact_required_attributes(geometry) {
+    return Err(
+      MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
+        meshlet_mesh3d_vertex_attribute_names(geometry),
+      ),
+    )
+  }
+  guard geometry.indices is Some(indices) else {
+    return Err(MeshToMeshletMeshConversionError::MeshMissingIndices)
+  }
+  guard geometry.normals is Some(normals) else {
+    return Err(
+      MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
+        meshlet_mesh3d_vertex_attribute_names(geometry),
+      ),
+    )
+  }
+  guard geometry.uvs is Some(uvs) else {
+    return Err(
+      MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
+        meshlet_mesh3d_vertex_attribute_names(geometry),
+      ),
+    )
+  }
+  let vertices : Array[MeshletSourceVertex] = []
+  for index in 0..<geometry.positions.length() {
+    vertices.push(
+      MeshletSourceVertex::new(
+        position=geometry.positions[index],
+        normal=normals[index],
+        uv=uvs[index],
+      ),
+    )
+  }
+  Ok(MeshletMeshInputData::new(vertices~, indices~))
+}
+
+///|
 fn meshlet_sign(value : Float) -> Float {
   if value >= 0.0F {
     1.0F

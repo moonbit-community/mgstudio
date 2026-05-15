@@ -84,6 +84,86 @@ test "pbr meshlet: input summary validation checks indices and limits" {
 }
 
 ///|
+fn meshlet_test_triangle_geometry() -> @mesh.Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::new(
+    [
+      @math.Vec3::new(0.0F, 0.0F, 0.0F),
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ],
+    [
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+    ],
+    Some([0, 1, 2]),
+  ).with_normals(
+    Some([
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    ]),
+  )
+}
+
+///|
+test "pbr meshlet: mesh input extraction mirrors required Bevy attributes" {
+  let mesh = @mesh.Mesh::from_3d_geometry(meshlet_test_triangle_geometry())
+  match meshlet_extract_mesh_input(mesh) {
+    Ok(input) => {
+      inspect(input.vertices.length(), content="3")
+      inspect(input.indices.length(), content="3")
+      inspect(input.indices[0], content="0")
+      inspect(input.indices[2], content="2")
+      inspect(input.triangle_count, content="1")
+      inspect(input.vertices[1].position.x, content="1")
+      inspect(input.vertices[2].uv.y, content="1")
+      let summary = input.summary()
+      inspect(summary.vertex_attributes.length(), content="3")
+      inspect(summary.vertex_attributes[0], content="POSITION")
+      inspect(summary.vertex_attributes[2], content="UV_0")
+    }
+    Err(_) => abort("expected meshlet input extraction to pass")
+  }
+}
+
+///|
+test "pbr meshlet: mesh input extraction rejects wrong topology, attributes, and missing indices" {
+  let wrong_topology = @mesh.Mesh::from_3d_geometry(
+    meshlet_test_triangle_geometry().with_topology(
+      @mesh.Mesh3dPrimitiveTopology::LineList,
+    ),
+  )
+  inspect(
+    meshlet_extract_mesh_input(wrong_topology)
+    is Err(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology),
+    content="true",
+  )
+  let missing_indices = @mesh.Mesh::from_3d_geometry(
+    meshlet_test_triangle_geometry().with_indices(None),
+  )
+  inspect(
+    meshlet_extract_mesh_input(missing_indices)
+    is Err(MeshToMeshletMeshConversionError::MeshMissingIndices),
+    content="true",
+  )
+  let extra_attribute = @mesh.Mesh::from_3d_geometry(
+    meshlet_test_triangle_geometry().with_colors(
+      Some([
+        @math.Vec4::splat(1.0F),
+        @math.Vec4::splat(1.0F),
+        @math.Vec4::splat(1.0F),
+      ]),
+    ),
+  )
+  inspect(
+    meshlet_extract_mesh_input(extra_attribute)
+    is Err(MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(_)),
+    content="true",
+  )
+}
+
+///|
 test "pbr meshlet: octahedral normals and UVs are compressed per meshlet" {
   let data = meshlet_build_compressed_vertex_data(
     [

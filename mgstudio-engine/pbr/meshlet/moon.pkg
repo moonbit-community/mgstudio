@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/ecs" @ecs,
   "Milky2018/mgstudio/material" @material,
   "Milky2018/mgstudio/math" @math,
+  "Milky2018/mgstudio/mesh" @mesh,
   "Milky2018/mgstudio/pbr" @pbr,
   "Milky2018/mgstudio/render" @render,
   "Milky2018/mgstudio/render/renderer" @renderer,

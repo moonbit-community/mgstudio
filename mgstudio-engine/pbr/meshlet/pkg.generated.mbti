@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/utils",
   "moonbitlang/core/debug",
 }
@@ -75,6 +76,8 @@ pub fn meshlet_deferred_gbuffer_prepass(Int) -> Int
 pub fn meshlet_deferred_gbuffer_prepass_draw_calls(MeshletViewMaterialsDeferredGBufferPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Array[MeshletMaterialDrawCall]
 
 pub fn meshlet_deferred_gbuffer_prepass_materials(MeshletViewMaterialsDeferredGBufferPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Int
+
+pub fn meshlet_extract_mesh_input(@mesh.Mesh) -> Result[MeshletMeshInputData, MeshToMeshletMeshConversionError]
 
 pub fn meshlet_main_opaque_pass(Int) -> Int
 
@@ -387,6 +390,14 @@ pub fn MeshletMesh3d::id(Self) -> Int
 pub fn MeshletMesh3d::new(Int) -> Self
 pub impl @ecs.Component for MeshletMesh3d
 pub impl @ecs.EcsPayloadCodec for MeshletMesh3d
+
+pub struct MeshletMeshInputData {
+  vertices : Array[MeshletSourceVertex]
+  indices : Array[Int]
+  triangle_count : Int
+}
+pub fn MeshletMeshInputData::new(vertices~ : Array[MeshletSourceVertex], indices~ : Array[Int]) -> Self
+pub fn MeshletMeshInputData::summary(Self) -> MeshToMeshletInputMeshSummary
 
 pub(all) enum MeshletMeshLoadResult {
   MeshletMeshLoadOk(MeshletMesh)
