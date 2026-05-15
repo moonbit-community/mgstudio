@@ -335,6 +335,33 @@ test "pbr meshlet wbtest: lod iteration leaves stuck groups queued for final lod
 }
 
 ///|
+test "pbr meshlet wbtest: final lod consumes stuck meshlet groups" {
+  let all_groups = [meshlet_wbtest_group(0, [0, 1])]
+  let stuck = [meshlet_wbtest_group(1, [2]), meshlet_wbtest_group(2, [3, 4])]
+  let bvh = MeshletBvhBuilder::new()
+  let appended = meshlet_lod_append_final_stuck_lod(all_groups, stuck, bvh)
+  debug_inspect(appended, content="true")
+  debug_inspect(stuck.length(), content="0")
+  debug_inspect(all_groups.length(), content="3")
+  debug_inspect(bvh.nodes.length(), content="2")
+  debug_inspect(bvh.lods.length(), content="1")
+  debug_inspect(bvh.nodes[0].group, content="1")
+  debug_inspect(bvh.nodes[1].group, content="2")
+}
+
+///|
+test "pbr meshlet wbtest: final lod ignores empty stuck list" {
+  let all_groups = [meshlet_wbtest_group(0, [0, 1])]
+  let stuck : Array[MeshletTempGroup] = []
+  let bvh = MeshletBvhBuilder::new()
+  let appended = meshlet_lod_append_final_stuck_lod(all_groups, stuck, bvh)
+  debug_inspect(appended, content="false")
+  debug_inspect(all_groups.length(), content="1")
+  debug_inspect(bvh.nodes.length(), content="0")
+  debug_inspect(bvh.lods.length(), content="0")
+}
+
+///|
 test "pbr meshlet wbtest: lock group borders marks shared position vertices" {
   let meshlets = MeshletBuildMeshlets::new(
     meshlets=[

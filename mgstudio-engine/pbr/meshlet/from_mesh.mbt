@@ -995,6 +995,24 @@ fn meshlet_lod_iteration_apply_results(
 }
 
 ///|
+fn meshlet_lod_append_final_stuck_lod(
+  all_groups : Array[MeshletTempGroup],
+  stuck : Array[MeshletTempGroup],
+  bvh : MeshletBvhBuilder,
+) -> Bool {
+  if stuck.is_empty() {
+    return false
+  }
+  let first_group = all_groups.length()
+  for group in stuck {
+    all_groups.push(group)
+  }
+  stuck.clear()
+  bvh.add_lod(first_group, all_groups)
+  true
+}
+
+///|
 fn meshlet_merge_build_meshlets(
   meshlets : MeshletBuildMeshlets,
   merge : MeshletBuildMeshlets,
