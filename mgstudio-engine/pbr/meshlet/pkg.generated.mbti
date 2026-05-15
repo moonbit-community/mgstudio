@@ -80,6 +80,8 @@ pub fn meshlet_deferred_gbuffer_prepass_materials(MeshletViewMaterialsDeferredGB
 
 pub fn meshlet_extract_mesh_input(@mesh.Mesh) -> Result[MeshletMeshInputData, MeshToMeshletMeshConversionError]
 
+pub fn meshlet_fake_vertex_buffer_layout() -> MeshletFakeVertexBufferLayout
+
 pub fn meshlet_main_opaque_pass(Int) -> Int
 
 pub fn meshlet_main_opaque_pass_draw_calls(MeshletViewMaterialsMainOpaquePass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Array[MeshletMaterialDrawCall]
@@ -364,6 +366,21 @@ pub struct MeshletCullData {
 }
 pub fn MeshletCullData::default() -> Self
 
+pub struct MeshletFakeVertexAttribute {
+  attribute_id : UInt64
+  format : @mesh.MeshVertexFormat
+  offset : Int
+  shader_location : Int
+}
+pub fn MeshletFakeVertexAttribute::new(@mesh.MeshVertexAttribute, Int, Int) -> Self
+
+pub struct MeshletFakeVertexBufferLayout {
+  attribute_ids : Array[UInt64]
+  array_stride : Int
+  step_mode : MeshletVertexStepMode
+  attributes : Array[MeshletFakeVertexAttribute]
+}
+
 pub struct MeshletInstanceUniform {
   world_from_local : @math.Affine3
   previous_world_from_local : @math.Affine3
@@ -397,6 +414,7 @@ pub struct MeshletMaterialPipelineDescriptor {
   pass_variant : MeshletMaterialPassVariant
   view_key : MeshletViewMaterialPipelineKey
   view_layout_kind : MeshletMaterialViewLayoutKind
+  fake_vertex_buffer_layout : MeshletFakeVertexBufferLayout
   layout_count : Int
   uses_binding_array_layout : Bool
   uses_empty_bind_group_layout : Bool
@@ -412,7 +430,7 @@ pub struct MeshletMaterialPipelineDescriptor {
   depth_compare_equal : Bool
   zero_initialize_workgroup_memory : Bool
 }
-pub fn MeshletMaterialPipelineDescriptor::new(pass_variant? : MeshletMaterialPassVariant, view_key? : MeshletViewMaterialPipelineKey, view_layout_kind? : MeshletMaterialViewLayoutKind, layout_count? : Int, uses_binding_array_layout? : Bool, uses_empty_bind_group_layout? : Bool, uses_material_shade_layout? : Bool, material_layout_id? : Int, vertex_shader_label? : String, fragment_shader_kind? : MeshletMaterialFragmentShaderKind, shader_def_meshlet_material_pass? : Bool, shader_def_count? : Int, uses_material_fragment_entry_point? : Bool, depth_format_depth16_unorm? : Bool, depth_write_enabled? : Bool, depth_compare_equal? : Bool, zero_initialize_workgroup_memory? : Bool) -> Self
+pub fn MeshletMaterialPipelineDescriptor::new(pass_variant? : MeshletMaterialPassVariant, view_key? : MeshletViewMaterialPipelineKey, view_layout_kind? : MeshletMaterialViewLayoutKind, fake_vertex_buffer_layout? : MeshletFakeVertexBufferLayout, layout_count? : Int, uses_binding_array_layout? : Bool, uses_empty_bind_group_layout? : Bool, uses_material_shade_layout? : Bool, material_layout_id? : Int, vertex_shader_label? : String, fragment_shader_kind? : MeshletMaterialFragmentShaderKind, shader_def_meshlet_material_pass? : Bool, shader_def_count? : Int, uses_material_fragment_entry_point? : Bool, depth_format_depth16_unorm? : Bool, depth_write_enabled? : Bool, depth_compare_equal? : Bool, zero_initialize_workgroup_memory? : Bool) -> Self
 
 pub(all) enum MeshletMaterialViewLayoutKind {
   MeshView
@@ -696,6 +714,10 @@ pub struct MeshletSourceVertex {
   uv : @math.Vec2
 }
 pub fn MeshletSourceVertex::new(position~ : @math.Vec3, normal~ : @math.Vec3, uv~ : @math.Vec2) -> Self
+
+pub(all) enum MeshletVertexStepMode {
+  Vertex
+}
 
 pub struct MeshletVertexUv {
   x : Float
