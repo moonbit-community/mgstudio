@@ -127,6 +127,8 @@ pub fn meshlet_persistent_buffer_supports_uint() -> Bool
 
 pub fn meshlet_pipeline_count(MeshletPipelines) -> Int
 
+pub fn meshlet_pipeline_descriptors(remap_dispatch_enabled? : Bool) -> Array[MeshletQueuedPipelineDescriptor]
+
 pub fn meshlet_pipeline_slot_descriptors(remap_dispatch_enabled? : Bool) -> Array[MeshletPipelineSlotDescriptor]
 
 pub fn meshlet_pipelines_ready(MeshletPipelines, remap_dispatch_enabled? : Bool) -> Bool
@@ -509,6 +511,12 @@ pub struct MeshletMeshSlices {
   bvh_depth : Int
 }
 
+pub(all) enum MeshletPipelineDepthFormat {
+  NoDepth
+  Core3dDepth
+  Depth16Unorm
+}
+
 pub(all) enum MeshletPipelineKind {
   Compute
   Render
@@ -600,6 +608,29 @@ pub fn MeshletPreparedMaterialInput::with_reads_view_transmission_texture(Self, 
 pub fn MeshletPreparedMaterialInput::without_material_bind_group(Self) -> Self
 pub fn MeshletPreparedMaterialInput::without_material_bind_group_allocator(Self) -> Self
 pub fn MeshletPreparedMaterialInput::without_material_layout(Self) -> Self
+
+pub struct MeshletQueuedPipelineDescriptor {
+  slot_label : String
+  pipeline_label : String
+  kind : MeshletPipelineKind
+  layout_label : String
+  optional : Bool
+  enabled : Bool
+  immediate_size : Int
+  shader_label : String
+  compute_shader_defs : Array[String]
+  vertex_shader_defs : Array[String]
+  fragment_shader_defs : Array[String]
+  entry_point : String?
+  color_target_r8uint : Bool
+  color_write_mask_empty : Bool
+  depth_format : MeshletPipelineDepthFormat
+  depth_write_enabled : Bool
+  depth_compare_always : Bool
+  zero_initialize_workgroup_memory : Bool
+}
+pub fn MeshletQueuedPipelineDescriptor::has_shader_def(Self, String) -> Bool
+pub fn MeshletQueuedPipelineDescriptor::shader_def_count(Self) -> Int
 
 pub(all) enum MeshletRuntimeStatus {
   Enabled
