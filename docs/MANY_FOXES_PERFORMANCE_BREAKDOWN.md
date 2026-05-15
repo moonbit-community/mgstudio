@@ -2,7 +2,14 @@
 
 This document records the May 12, 2026 `many_foxes` profiling comparison
 between `mgstudio` and the local Bevy 0.19.0-dev checkout, then maps the
-measured gaps back to concrete source-level divergences.
+measured gaps back to source-level divergences that still need evidence before
+they are treated as root causes.
+
+Per the project glossary, any comparable runtime path slower than Bevy by more
+than `4x` is a severe performance gap. This document does not attempt to fix
+those gaps. It records observed gaps, source-level candidate causes, and the
+specific evidence still required to promote a candidate cause to an
+evidence-based parity cause.
 
 ## Measurement Setup
 
@@ -66,20 +73,20 @@ Result:
 
 ## Summary Table
 
-| Area | mgstudio avg ms/frame | Bevy single-thread avg ms/frame | Ratio |
-| --- | ---: | ---: | ---: |
-| Animation target evaluation | `14.594` | `3.451` | `4.2x` |
-| Transform propagation | `11.397` | `0.763` | `14.9x` |
-| Skinned mesh bounds | `8.429` | `0.118` | `71.4x` |
-| Skin extraction/prepare | `5.448` extract only | `0.146 + 0.200` | `15.7x` |
-| Cluster assignment | `0.463` | `0.015` | `30.9x` |
-| Main render execution span | `23.827` | `0.784` render system plus external waits | not directly comparable |
+| Area | mgstudio avg ms/frame | Bevy single-thread avg ms/frame | Ratio | Status |
+| --- | ---: | ---: | ---: | --- |
+| Animation target evaluation | `14.594` | `3.451` | `4.2x` | Severe gap; candidate causes only |
+| Transform propagation | `11.397` | `0.763` | `14.9x` | Severe gap; candidate causes only |
+| Skinned mesh bounds | `8.429` | `0.118` | `71.4x` | Severe gap; candidate causes only |
+| Skin extraction/prepare | `5.448` extract only | `0.146 + 0.200` | `15.7x` | Severe gap; candidate causes only |
+| Cluster assignment | `0.463` | `0.015` | `30.9x` | Severe gap; needs a dedicated source breakdown |
+| Main render execution span | `23.827` | `0.784` render system plus external waits | not directly comparable | Measurement boundaries differ |
 
 The gap is not primarily explained by Bevy's multi-threaded executor. Bevy was
 measured without `multi_threaded`, and the largest `mgstudio` CPU systems are
 still one to two orders of magnitude slower than their Bevy counterparts.
 
-## Source-Level Analysis
+## Observed Gaps And Candidate Causes
 
 ### 1. Animation target evaluation
 
@@ -106,7 +113,12 @@ Bevy source:
   a shared global scratch object and avoids rebuilding broad per-player caches
   as the primary access path.
 
-Likely root causes of the `4.2x` gap:
+Observed gap:
+
+- `mgstudio` is `4.2x` slower than Bevy in this measured system, which crosses
+  the severe-gap threshold.
+
+Candidate causes:
 
 - mgstudio performs an extra player-cache construction pass every frame.
 - mgstudio target mutation goes through erased component columns and payload
@@ -116,7 +128,16 @@ Likely root causes of the `4.2x` gap:
   text color. Bevy's target entity mutator is structured around typed component
   access and does not need fallback `world.set_by_key` staging.
 
-Next alignment target:
+Required evidence before calling this a root cause:
+
+- Add trace spans or counters separating mgstudio player-cache construction,
+  target scan, and target mutation cost.
+- Add Bevy-side comparable spans for player lookup, target query iteration, and
+  target mutation inside `animate_targets`.
+- Confirm allocation/copy counts or payload encode/decode counts for the
+  mgstudio target mutation path.
+
+Candidate alignment target:
 
 - Replace the two-pass player-cache path with a Bevy-like target query that can
   fetch the referenced player directly by entity.
@@ -150,7 +171,12 @@ Bevy source:
 - The hot traversal uses `iter_many_unique_unsafe` over the `Children` slice and
   updates `GlobalTransform` through a typed `Mut`.
 
-Likely root causes of the `14.9x` gap:
+Observed gap:
+
+- `mgstudio` is `14.9x` slower than Bevy in transform propagation, which crosses
+  the severe-gap threshold.
+
+Candidate causes:
 
 - mgstudio re-enters generic `ComponentColumn` APIs for each child. Bevy's
   `NodeQuery` batches component fetch state and then fetches children through
@@ -166,7 +192,16 @@ Likely root causes of the `14.9x` gap:
   `iter_many_unique_unsafe`, avoiding entity-to-table lookup inside the common
   child fetch path. mgstudio still calls `transform_dense_entity_slot` per child.
 
-Next alignment target:
+Required evidence before calling this a root cause:
+
+- Add mgstudio counters for child visits, `transform_dense_entity_slot` calls,
+  component-column decodes, and unchanged `GlobalTransform` rewrites.
+- Add Bevy-side counters or trace spans for root scans, descendant fetches, and
+  `set_if_neq` writes in the same scene.
+- Run an A/B measurement with only the `GlobalTransform` unchanged-write behavior
+  isolated, so lookup overhead and write amplification are not conflated.
+
+Candidate alignment target:
 
 - Build a transform-specific typed node fetch equivalent to Bevy's `NodeQuery`.
 - Store per-child table row locations in hierarchy maintenance, or add a
@@ -200,7 +235,12 @@ Bevy source:
   Option<&GlobalTransform>)` with `With<DynamicSkinnedMeshBounds>`, and joint
   transforms are read through a typed `Query<&GlobalTransform>`.
 
-Likely root causes of the `71.4x` gap:
+Observed gap:
+
+- `mgstudio` is `71.4x` slower than Bevy in skinned mesh bounds, which crosses
+  the severe-gap threshold.
+
+Candidate causes:
 
 - mgstudio still performs a per-joint entity lookup through
   `ComponentColumn::get_fast`. Many foxes have many joints, so this amplifies
@@ -215,7 +255,16 @@ Likely root causes of the `71.4x` gap:
   of the same joint transforms. Bevy also has two paths, but each path is typed
   and cheaper; the duplicated work is not as visible.
 
-Next alignment target:
+Required evidence before calling this a root cause:
+
+- Add mgstudio counters for skins processed, joints processed, joint transform
+  lookups, payload decodes, and inverse-bindpose accesses.
+- Add Bevy-side counters for the same skin and joint counts under the same
+  `many_foxes` count.
+- Measure whether replacing only the joint transform lookup path changes the
+  gap, without changing bounds math or scheduling.
+
+Candidate alignment target:
 
 - Add a typed `Query<&GlobalTransform>`-style fast lookup for joint entities.
 - Cache joint `(table_id, row_index)` in `SkinnedMesh` or skin runtime metadata
@@ -247,7 +296,12 @@ Bevy source:
 - `add_skin`, lines 508-580.
 - `remove_skin`, lines 583-607.
 
-Likely root causes of the `15.7x` gap:
+Observed gap:
+
+- `mgstudio` is `15.7x` slower than Bevy in the measured skin
+  extraction/prepare path, which crosses the severe-gap threshold.
+
+Candidate causes:
 
 - mgstudio tracks `joint_to_skins` as `Map[UInt64, Array[Entity]]`. Bevy uses a
   `MainEntityHashMap` / `MainEntityHashSet` style keyed by entity without
@@ -267,7 +321,16 @@ Likely root causes of the `15.7x` gap:
   `host_gpu_prepare_mesh3d_skin_bindings`, so the actual upload semantics and
   buffering are not yet source-level identical.
 
-Next alignment target:
+Required evidence before calling this a root cause:
+
+- Add trace spans around mgstudio skin add/delete, dirty-skin collection, joint
+  extraction, staging buffer writes, and host upload separately.
+- Add Bevy-side spans around `extract_skins`, `add_or_delete_skins`,
+  `extract_joints`, and `prepare_skins` for the same workload.
+- Record key conversion counts, dirty-skin set sizes, and staging buffer write
+  counts for both engines.
+
+Candidate alignment target:
 
 - Replace `UInt64` skin keys and `Map[UInt64, Array[Entity]]` with a typed
   entity-key map/set matching Bevy's `MainEntityHashMap` usage.
@@ -296,7 +359,7 @@ Bevy source:
 - `bevy/crates/bevy_pbr/src/material.rs`, `queue_material_meshes`, starts at
   line 1171.
 
-Analysis:
+Observed gap:
 
 - The `render_system` number is not directly comparable. Bevy's Chrome trace
   shows `bevy_render::view::window::prepare_windows` around `8.1 ms`, which is
@@ -313,7 +376,25 @@ Analysis:
   MoonBit-level systems. Several of these systems are measured at more than
   `1 ms` each in `many_foxes`.
 
-Next alignment target:
+Candidate causes:
+
+- CPU queue costs and GPU submission or driver wait costs are not separated in
+  the current mgstudio trace.
+- mgstudio still appears to perform more MoonBit-level staging across extract,
+  prepare, queue, and execute than Bevy's hot render systems.
+- Skin and morph flags may still be consulted later in the mesh/material queue
+  path than Bevy's design intends.
+
+Required evidence before calling this a root cause:
+
+- Split mgstudio render timings into CPU queue construction, GPU command
+  encoding, queue submission, and wait/surface synchronization spans.
+- Compare those spans with Bevy `queue_material_meshes`, `render_system`, and
+  window/surface preparation spans under the same example and frame window.
+- Add counters for queued meshes, material phase items, pipeline-cache hits,
+  bind-group builds, and GPU submissions in both engines.
+
+Candidate alignment target:
 
 - Audit `queue_meshes`, `prepare_meshes`, and `extract_commands` against
   Bevy's `extract_meshes_for_gpu_building`, `collect_meshes_for_gpu_building`,
@@ -325,13 +406,15 @@ Next alignment target:
 
 ## Priority Order
 
-1. Skinned mesh bounds and skin extraction. These are the largest proven
-   source-level gaps and are heavily amplified by many foxes.
+1. Skinned mesh bounds and skin extraction. These are the largest observed
+   severe gaps and are heavily amplified by many foxes.
 2. Transform propagation. The single-thread Bevy implementation is still about
    fifteen times faster, so mgstudio needs a typed node-query inner loop.
 3. Animation target evaluation. Replace per-frame cache reconstruction and
    erased writes with direct typed target mutation.
-4. Mesh/material queue and render execution. First separate CPU queue work from
+4. Cluster assignment. It crosses the severe-gap threshold but still needs a
+   dedicated mgstudio-versus-Bevy source breakdown before assigning causes.
+5. Mesh/material queue and render execution. First separate CPU queue work from
    driver/GPU waits, then migrate the hot CPU queue loops to Bevy's layout.
 
 ## Validation Requirements For Future Fixes
