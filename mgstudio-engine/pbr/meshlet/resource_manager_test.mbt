@@ -28,6 +28,89 @@ test "pbr/meshlet: resource manager keeps per-view depth pyramids" {
 }
 
 ///|
+test "pbr/meshlet: resource bind group layouts mirror bevy descriptor order" {
+  let descriptors = meshlet_resource_bind_group_layout_descriptors()
+  debug_inspect(descriptors.length(), content="18")
+  debug_inspect(
+    descriptors[0].label,
+    content="meshlet_clear_visibility_buffer_bind_group_layout",
+  )
+  debug_inspect(
+    descriptors[17].label,
+    content="meshlet_remap_1d_to_2d_dispatch_bind_group_layout",
+  )
+  debug_inspect(descriptors[17].optional, content="true")
+  debug_inspect(descriptors[17].enabled, content="false")
+}
+
+///|
+test "pbr/meshlet: resource layouts preserve visibility buffer texture formats and atomic access" {
+  let descriptors = meshlet_resource_bind_group_layout_descriptors()
+  let camera_raster_layout = descriptors[10]
+  debug_inspect(camera_raster_layout.compute_stage, content="true")
+  debug_inspect(camera_raster_layout.vertex_stage, content="true")
+  debug_inspect(camera_raster_layout.fragment_stage, content="true")
+  debug_inspect(camera_raster_layout.entry_count(), content="9")
+  debug_inspect(
+    camera_raster_layout.uses_storage_texture(
+      MeshletResourceTextureFormat::R64Uint,
+      MeshletResourceStorageTextureAccess::Atomic,
+    ),
+    content="true",
+  )
+  let shadow_raster_layout = descriptors[11]
+  debug_inspect(
+    shadow_raster_layout.uses_storage_texture(
+      MeshletResourceTextureFormat::R32Uint,
+      MeshletResourceStorageTextureAccess::Atomic,
+    ),
+    content="true",
+  )
+}
+
+///|
+test "pbr/meshlet: resource downsample and material shade layouts preserve bevy entry shape" {
+  let descriptors = meshlet_resource_bind_group_layout_descriptors()
+  let downsample = descriptors[8]
+  debug_inspect(downsample.entry_count(), content="14")
+  debug_inspect(
+    downsample.count_binding_kind(
+      MeshletResourceBindingKind::SamplerNonFiltering,
+    ),
+    content="1",
+  )
+  debug_inspect(
+    downsample.uses_storage_texture(
+      MeshletResourceTextureFormat::R64Uint,
+      MeshletResourceStorageTextureAccess::ReadOnly,
+    ),
+    content="true",
+  )
+  let material_shade = descriptors[15]
+  debug_inspect(material_shade.entry_count(), content="8")
+  debug_inspect(
+    material_shade.count_binding_kind(
+      MeshletResourceBindingKind::StorageBufferReadOnly,
+    ),
+    content="7",
+  )
+}
+
+///|
+test "pbr/meshlet: resource fill counts layout follows remap dispatch branch" {
+  let no_remap = meshlet_resource_bind_group_layout_descriptors()
+  let no_remap_fill_counts = no_remap[16]
+  debug_inspect(no_remap_fill_counts.entry_count(), content="3")
+  let remap = meshlet_resource_bind_group_layout_descriptors(
+    needs_dispatch_remap=true,
+  )
+  let remap_fill_counts = remap[16]
+  debug_inspect(remap_fill_counts.entry_count(), content="4")
+  debug_inspect(remap[17].enabled, content="true")
+  debug_inspect(remap[17].entry_count(), content="2")
+}
+
+///|
 test "pbr/meshlet: per-frame prepare updates counters" {
   let manager = ResourceManager::new(4)
   prepare_meshlet_per_frame_resources(manager, 32)

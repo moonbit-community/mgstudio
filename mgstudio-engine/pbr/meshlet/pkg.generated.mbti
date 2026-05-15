@@ -149,6 +149,8 @@ pub fn meshlet_required_vertex_attributes() -> Array[String]
 
 pub fn meshlet_required_wgpu_features() -> UInt64
 
+pub fn meshlet_resource_bind_group_layout_descriptors(needs_dispatch_remap? : Bool) -> Array[MeshletResourceBindGroupLayoutDescriptor]
+
 pub fn meshlet_runtime_available() -> Bool
 
 pub fn meshlet_runtime_status() -> MeshletRuntimeStatus
@@ -631,6 +633,50 @@ pub struct MeshletQueuedPipelineDescriptor {
 }
 pub fn MeshletQueuedPipelineDescriptor::has_shader_def(Self, String) -> Bool
 pub fn MeshletQueuedPipelineDescriptor::shader_def_count(Self) -> Int
+
+pub struct MeshletResourceBindGroupLayoutDescriptor {
+  label : String
+  compute_stage : Bool
+  vertex_stage : Bool
+  fragment_stage : Bool
+  entries : Array[MeshletResourceBindGroupLayoutEntry]
+  optional : Bool
+  enabled : Bool
+}
+pub fn MeshletResourceBindGroupLayoutDescriptor::count_binding_kind(Self, MeshletResourceBindingKind) -> Int
+pub fn MeshletResourceBindGroupLayoutDescriptor::entry_count(Self) -> Int
+pub fn MeshletResourceBindGroupLayoutDescriptor::uses_storage_texture(Self, MeshletResourceTextureFormat, MeshletResourceStorageTextureAccess) -> Bool
+
+pub struct MeshletResourceBindGroupLayoutEntry {
+  binding_kind : MeshletResourceBindingKind
+  texture_format : MeshletResourceTextureFormat
+  storage_texture_access : MeshletResourceStorageTextureAccess
+  uniform_dynamic_offset : Bool
+}
+
+pub(all) enum MeshletResourceBindingKind {
+  Texture2dFloat
+  StorageTexture2d
+  UniformBuffer
+  StorageBufferReadOnly
+  StorageBufferReadWrite
+  SamplerNonFiltering
+}
+
+pub(all) enum MeshletResourceStorageTextureAccess {
+  NoStorageTextureAccess
+  WriteOnly
+  ReadOnly
+  ReadWrite
+  Atomic
+}
+
+pub(all) enum MeshletResourceTextureFormat {
+  NoTextureFormat
+  R64Uint
+  R32Uint
+  R32Float
+}
 
 pub(all) enum MeshletRuntimeStatus {
   Enabled

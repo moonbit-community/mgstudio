@@ -25,6 +25,545 @@ fn meshlet_resource_non_negative(value : Int) -> Int {
 }
 
 ///|
+pub(all) enum MeshletResourceTextureFormat {
+  NoTextureFormat
+  R64Uint
+  R32Uint
+  R32Float
+}
+
+///|
+pub(all) enum MeshletResourceStorageTextureAccess {
+  NoStorageTextureAccess
+  WriteOnly
+  ReadOnly
+  ReadWrite
+  Atomic
+}
+
+///|
+pub(all) enum MeshletResourceBindingKind {
+  Texture2dFloat
+  StorageTexture2d
+  UniformBuffer
+  StorageBufferReadOnly
+  StorageBufferReadWrite
+  SamplerNonFiltering
+}
+
+///|
+pub struct MeshletResourceBindGroupLayoutEntry {
+  binding_kind : MeshletResourceBindingKind
+  texture_format : MeshletResourceTextureFormat
+  storage_texture_access : MeshletResourceStorageTextureAccess
+  uniform_dynamic_offset : Bool
+}
+
+///|
+pub struct MeshletResourceBindGroupLayoutDescriptor {
+  label : String
+  compute_stage : Bool
+  vertex_stage : Bool
+  fragment_stage : Bool
+  entries : Array[MeshletResourceBindGroupLayoutEntry]
+  optional : Bool
+  enabled : Bool
+}
+
+///|
+fn meshlet_resource_layout_entry(
+  binding_kind : MeshletResourceBindingKind,
+  texture_format? : MeshletResourceTextureFormat = MeshletResourceTextureFormat::NoTextureFormat,
+  storage_texture_access? : MeshletResourceStorageTextureAccess = MeshletResourceStorageTextureAccess::NoStorageTextureAccess,
+  uniform_dynamic_offset? : Bool = false,
+) -> MeshletResourceBindGroupLayoutEntry {
+  MeshletResourceBindGroupLayoutEntry::{
+    binding_kind,
+    texture_format,
+    storage_texture_access,
+    uniform_dynamic_offset,
+  }
+}
+
+///|
+fn meshlet_resource_texture_2d_float() -> MeshletResourceBindGroupLayoutEntry {
+  meshlet_resource_layout_entry(MeshletResourceBindingKind::Texture2dFloat)
+}
+
+///|
+fn meshlet_resource_storage_texture_2d(
+  texture_format : MeshletResourceTextureFormat,
+  access : MeshletResourceStorageTextureAccess,
+) -> MeshletResourceBindGroupLayoutEntry {
+  meshlet_resource_layout_entry(
+    MeshletResourceBindingKind::StorageTexture2d,
+    texture_format~,
+    storage_texture_access=access,
+  )
+}
+
+///|
+fn meshlet_resource_uniform_buffer_dynamic() -> MeshletResourceBindGroupLayoutEntry {
+  meshlet_resource_layout_entry(
+    MeshletResourceBindingKind::UniformBuffer,
+    uniform_dynamic_offset=true,
+  )
+}
+
+///|
+fn meshlet_resource_storage_read_only() -> MeshletResourceBindGroupLayoutEntry {
+  meshlet_resource_layout_entry(
+    MeshletResourceBindingKind::StorageBufferReadOnly,
+  )
+}
+
+///|
+fn meshlet_resource_storage_read_write() -> MeshletResourceBindGroupLayoutEntry {
+  meshlet_resource_layout_entry(
+    MeshletResourceBindingKind::StorageBufferReadWrite,
+  )
+}
+
+///|
+fn meshlet_resource_sampler_non_filtering() -> MeshletResourceBindGroupLayoutEntry {
+  meshlet_resource_layout_entry(MeshletResourceBindingKind::SamplerNonFiltering)
+}
+
+///|
+fn meshlet_resource_bind_group_layout_descriptor(
+  label : String,
+  compute_stage? : Bool = false,
+  vertex_stage? : Bool = false,
+  fragment_stage? : Bool = false,
+  entries? : Array[MeshletResourceBindGroupLayoutEntry] = [],
+  optional? : Bool = false,
+  enabled? : Bool = true,
+) -> MeshletResourceBindGroupLayoutDescriptor {
+  MeshletResourceBindGroupLayoutDescriptor::{
+    label,
+    compute_stage,
+    vertex_stage,
+    fragment_stage,
+    entries,
+    optional,
+    enabled,
+  }
+}
+
+///|
+fn meshlet_resource_texture_format_equal(
+  lhs : MeshletResourceTextureFormat,
+  rhs : MeshletResourceTextureFormat,
+) -> Bool {
+  match lhs {
+    NoTextureFormat => rhs is NoTextureFormat
+    R64Uint => rhs is R64Uint
+    R32Uint => rhs is R32Uint
+    R32Float => rhs is R32Float
+  }
+}
+
+///|
+fn meshlet_resource_storage_texture_access_equal(
+  lhs : MeshletResourceStorageTextureAccess,
+  rhs : MeshletResourceStorageTextureAccess,
+) -> Bool {
+  match lhs {
+    NoStorageTextureAccess => rhs is NoStorageTextureAccess
+    WriteOnly => rhs is WriteOnly
+    ReadOnly => rhs is ReadOnly
+    ReadWrite => rhs is ReadWrite
+    Atomic => rhs is Atomic
+  }
+}
+
+///|
+fn meshlet_resource_binding_kind_equal(
+  lhs : MeshletResourceBindingKind,
+  rhs : MeshletResourceBindingKind,
+) -> Bool {
+  match lhs {
+    Texture2dFloat => rhs is Texture2dFloat
+    StorageTexture2d => rhs is StorageTexture2d
+    UniformBuffer => rhs is UniformBuffer
+    StorageBufferReadOnly => rhs is StorageBufferReadOnly
+    StorageBufferReadWrite => rhs is StorageBufferReadWrite
+    SamplerNonFiltering => rhs is SamplerNonFiltering
+  }
+}
+
+///|
+fn meshlet_resource_view_cull_prefix_entries() -> Array[
+  MeshletResourceBindGroupLayoutEntry,
+] {
+  [
+    meshlet_resource_texture_2d_float(),
+    meshlet_resource_uniform_buffer_dynamic(),
+    meshlet_resource_uniform_buffer_dynamic(),
+  ]
+}
+
+///|
+fn meshlet_resource_first_instance_cull_entries() -> Array[
+  MeshletResourceBindGroupLayoutEntry,
+] {
+  let entries = meshlet_resource_view_cull_prefix_entries()
+  for _ in 0..<4 {
+    entries.push(meshlet_resource_storage_read_only())
+  }
+  for _ in 0..<6 {
+    entries.push(meshlet_resource_storage_read_write())
+  }
+  entries
+}
+
+///|
+fn meshlet_resource_second_instance_cull_entries() -> Array[
+  MeshletResourceBindGroupLayoutEntry,
+] {
+  let entries = meshlet_resource_view_cull_prefix_entries()
+  for _ in 0..<4 {
+    entries.push(meshlet_resource_storage_read_only())
+  }
+  for _ in 0..<3 {
+    entries.push(meshlet_resource_storage_read_write())
+  }
+  for _ in 0..<2 {
+    entries.push(meshlet_resource_storage_read_only())
+  }
+  entries
+}
+
+///|
+fn meshlet_resource_first_bvh_cull_entries() -> Array[
+  MeshletResourceBindGroupLayoutEntry,
+] {
+  let entries = meshlet_resource_view_cull_prefix_entries()
+  for _ in 0..<3 {
+    entries.push(meshlet_resource_storage_read_only())
+  }
+  for _ in 0..<11 {
+    entries.push(meshlet_resource_storage_read_write())
+  }
+  entries
+}
+
+///|
+fn meshlet_resource_second_bvh_cull_entries() -> Array[
+  MeshletResourceBindGroupLayoutEntry,
+] {
+  let entries = meshlet_resource_view_cull_prefix_entries()
+  for _ in 0..<3 {
+    entries.push(meshlet_resource_storage_read_only())
+  }
+  for _ in 0..<8 {
+    entries.push(meshlet_resource_storage_read_write())
+  }
+  entries
+}
+
+///|
+fn meshlet_resource_first_meshlet_cull_entries() -> Array[
+  MeshletResourceBindGroupLayoutEntry,
+] {
+  let entries = meshlet_resource_view_cull_prefix_entries()
+  for _ in 0..<2 {
+    entries.push(meshlet_resource_storage_read_only())
+  }
+  for _ in 0..<2 {
+    entries.push(meshlet_resource_storage_read_write())
+  }
+  entries.push(meshlet_resource_storage_read_only())
+  entries.push(meshlet_resource_storage_read_write())
+  entries.push(meshlet_resource_storage_read_only())
+  for _ in 0..<3 {
+    entries.push(meshlet_resource_storage_read_write())
+  }
+  entries
+}
+
+///|
+fn meshlet_resource_second_meshlet_cull_entries() -> Array[
+  MeshletResourceBindGroupLayoutEntry,
+] {
+  let entries = meshlet_resource_view_cull_prefix_entries()
+  for _ in 0..<2 {
+    entries.push(meshlet_resource_storage_read_only())
+  }
+  for _ in 0..<2 {
+    entries.push(meshlet_resource_storage_read_write())
+  }
+  entries.push(meshlet_resource_storage_read_only())
+  entries.push(meshlet_resource_storage_read_write())
+  for _ in 0..<2 {
+    entries.push(meshlet_resource_storage_read_only())
+  }
+  entries
+}
+
+///|
+fn meshlet_resource_downsample_depth_entries(
+  visibility_format : MeshletResourceTextureFormat,
+) -> Array[MeshletResourceBindGroupLayoutEntry] {
+  let entries = [
+    meshlet_resource_storage_texture_2d(
+      visibility_format,
+      MeshletResourceStorageTextureAccess::ReadOnly,
+    ),
+  ]
+  for _ in 0..<5 {
+    entries.push(
+      meshlet_resource_storage_texture_2d(
+        MeshletResourceTextureFormat::R32Float,
+        MeshletResourceStorageTextureAccess::WriteOnly,
+      ),
+    )
+  }
+  entries.push(
+    meshlet_resource_storage_texture_2d(
+      MeshletResourceTextureFormat::R32Float,
+      MeshletResourceStorageTextureAccess::ReadWrite,
+    ),
+  )
+  for _ in 0..<6 {
+    entries.push(
+      meshlet_resource_storage_texture_2d(
+        MeshletResourceTextureFormat::R32Float,
+        MeshletResourceStorageTextureAccess::WriteOnly,
+      ),
+    )
+  }
+  entries.push(meshlet_resource_sampler_non_filtering())
+  entries
+}
+
+///|
+fn meshlet_resource_visibility_buffer_raster_entries(
+  visibility_format : MeshletResourceTextureFormat,
+) -> Array[MeshletResourceBindGroupLayoutEntry] {
+  let entries : Array[MeshletResourceBindGroupLayoutEntry] = []
+  for _ in 0..<7 {
+    entries.push(meshlet_resource_storage_read_only())
+  }
+  entries.push(
+    meshlet_resource_storage_texture_2d(
+      visibility_format,
+      MeshletResourceStorageTextureAccess::Atomic,
+    ),
+  )
+  entries.push(meshlet_resource_uniform_buffer_dynamic())
+  entries
+}
+
+///|
+fn meshlet_resource_material_shade_entries() -> Array[
+  MeshletResourceBindGroupLayoutEntry,
+] {
+  let entries = [
+    meshlet_resource_storage_texture_2d(
+      MeshletResourceTextureFormat::R64Uint,
+      MeshletResourceStorageTextureAccess::ReadOnly,
+    ),
+  ]
+  for _ in 0..<7 {
+    entries.push(meshlet_resource_storage_read_only())
+  }
+  entries
+}
+
+///|
+pub fn meshlet_resource_bind_group_layout_descriptors(
+  needs_dispatch_remap? : Bool = false,
+) -> Array[MeshletResourceBindGroupLayoutDescriptor] {
+  let fill_count_entries : Array[MeshletResourceBindGroupLayoutEntry] = []
+  for _ in 0..<(if needs_dispatch_remap { 4 } else { 3 }) {
+    fill_count_entries.push(meshlet_resource_storage_read_write())
+  }
+  [
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_clear_visibility_buffer_bind_group_layout",
+      compute_stage=true,
+      entries=[
+        meshlet_resource_storage_texture_2d(
+          MeshletResourceTextureFormat::R64Uint,
+          MeshletResourceStorageTextureAccess::WriteOnly,
+        ),
+      ],
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_clear_visibility_buffer_shadow_view_bind_group_layout",
+      compute_stage=true,
+      entries=[
+        meshlet_resource_storage_texture_2d(
+          MeshletResourceTextureFormat::R32Uint,
+          MeshletResourceStorageTextureAccess::WriteOnly,
+        ),
+      ],
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_first_instance_culling_bind_group_layout",
+      compute_stage=true,
+      entries=meshlet_resource_first_instance_cull_entries(),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_second_instance_culling_bind_group_layout",
+      compute_stage=true,
+      entries=meshlet_resource_second_instance_cull_entries(),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_first_bvh_culling_bind_group_layout",
+      compute_stage=true,
+      entries=meshlet_resource_first_bvh_cull_entries(),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_second_bvh_culling_bind_group_layout",
+      compute_stage=true,
+      entries=meshlet_resource_second_bvh_cull_entries(),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_first_meshlet_culling_bind_group_layout",
+      compute_stage=true,
+      entries=meshlet_resource_first_meshlet_cull_entries(),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_second_meshlet_culling_bind_group_layout",
+      compute_stage=true,
+      entries=meshlet_resource_second_meshlet_cull_entries(),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_downsample_depth_bind_group_layout",
+      compute_stage=true,
+      entries=meshlet_resource_downsample_depth_entries(
+        MeshletResourceTextureFormat::R64Uint,
+      ),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_downsample_depth_shadow_view_bind_group_layout",
+      compute_stage=true,
+      entries=meshlet_resource_downsample_depth_entries(
+        MeshletResourceTextureFormat::R32Uint,
+      ),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_visibility_buffer_raster_bind_group_layout",
+      compute_stage=true,
+      vertex_stage=true,
+      fragment_stage=true,
+      entries=meshlet_resource_visibility_buffer_raster_entries(
+        MeshletResourceTextureFormat::R64Uint,
+      ),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_visibility_buffer_raster_shadow_view_bind_group_layout",
+      compute_stage=true,
+      vertex_stage=true,
+      fragment_stage=true,
+      entries=meshlet_resource_visibility_buffer_raster_entries(
+        MeshletResourceTextureFormat::R32Uint,
+      ),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_resolve_depth_bind_group_layout",
+      fragment_stage=true,
+      entries=[
+        meshlet_resource_storage_texture_2d(
+          MeshletResourceTextureFormat::R64Uint,
+          MeshletResourceStorageTextureAccess::ReadOnly,
+        ),
+      ],
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_resolve_depth_shadow_view_bind_group_layout",
+      fragment_stage=true,
+      entries=[
+        meshlet_resource_storage_texture_2d(
+          MeshletResourceTextureFormat::R32Uint,
+          MeshletResourceStorageTextureAccess::ReadOnly,
+        ),
+      ],
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_resolve_material_depth_bind_group_layout",
+      fragment_stage=true,
+      entries=[
+        meshlet_resource_storage_texture_2d(
+          MeshletResourceTextureFormat::R64Uint,
+          MeshletResourceStorageTextureAccess::ReadOnly,
+        ),
+        meshlet_resource_storage_read_only(),
+        meshlet_resource_storage_read_only(),
+      ],
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_mesh_material_shade_bind_group_layout",
+      fragment_stage=true,
+      entries=meshlet_resource_material_shade_entries(),
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_fill_counts_bind_group_layout",
+      compute_stage=true,
+      entries=fill_count_entries,
+    ),
+    meshlet_resource_bind_group_layout_descriptor(
+      "meshlet_remap_1d_to_2d_dispatch_bind_group_layout",
+      compute_stage=true,
+      entries=[
+        meshlet_resource_storage_read_write(),
+        meshlet_resource_storage_read_write(),
+      ],
+      optional=true,
+      enabled=needs_dispatch_remap,
+    ),
+  ]
+}
+
+///|
+pub fn MeshletResourceBindGroupLayoutDescriptor::entry_count(
+  self : MeshletResourceBindGroupLayoutDescriptor,
+) -> Int {
+  self.entries.length()
+}
+
+///|
+pub fn MeshletResourceBindGroupLayoutDescriptor::count_binding_kind(
+  self : MeshletResourceBindGroupLayoutDescriptor,
+  kind : MeshletResourceBindingKind,
+) -> Int {
+  let mut count = 0
+  for entry in self.entries {
+    if meshlet_resource_binding_kind_equal(entry.binding_kind, kind) {
+      count = count + 1
+    }
+  }
+  count
+}
+
+///|
+pub fn MeshletResourceBindGroupLayoutDescriptor::uses_storage_texture(
+  self : MeshletResourceBindGroupLayoutDescriptor,
+  texture_format : MeshletResourceTextureFormat,
+  access : MeshletResourceStorageTextureAccess,
+) -> Bool {
+  for entry in self.entries {
+    if meshlet_resource_binding_kind_equal(
+        entry.binding_kind,
+        MeshletResourceBindingKind::StorageTexture2d,
+      ) &&
+      meshlet_resource_texture_format_equal(
+        entry.texture_format,
+        texture_format,
+      ) &&
+      meshlet_resource_storage_texture_access_equal(
+        entry.storage_texture_access,
+        access,
+      ) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 pub struct ResourceManager {
   mut frame_index : Int
   mut cluster_buffer_slots : Int
