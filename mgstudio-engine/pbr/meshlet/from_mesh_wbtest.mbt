@@ -217,6 +217,89 @@ test "pbr meshlet wbtest: simplification group indices mirror meshopt input orde
 }
 
 ///|
+test "pbr meshlet wbtest: lod iteration merges simplified meshlets and retries stuck groups" {
+  let meshlets = meshlet_wbtest_build_meshlets()
+  let cull_data = [
+    meshlet_wbtest_cull(0),
+    meshlet_wbtest_cull(1),
+    meshlet_wbtest_cull(2),
+  ]
+  let all_groups : Array[MeshletTempGroup] = []
+  let simplification_queue = [0, 1, 2]
+  let stuck : Array[MeshletTempGroup] = []
+  let bvh = MeshletBvhBuilder::new()
+  let new_meshlets = MeshletBuildMeshlets::new(
+    meshlets=[
+      MeshletBuildMeshlet::new(
+        vertex_offset=0,
+        triangle_offset=0,
+        vertex_count=3,
+        triangle_count=4,
+      ),
+    ],
+    vertices=[8, 9, 10],
+    triangles=[0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2],
+  )
+  let result = meshlet_lod_iteration_apply_results(
+    meshlets,
+    cull_data,
+    all_groups,
+    simplification_queue,
+    stuck,
+    bvh,
+    [
+      MeshletLodSimplified(meshlet_wbtest_group(0, [0, 1]), new_meshlets, [
+        meshlet_wbtest_cull(3),
+      ]),
+      MeshletLodStuck(meshlet_wbtest_group(2, [2])),
+    ],
+  )
+  debug_inspect(result.first_group, content="0")
+  debug_inspect(result.passed_tris, content="4")
+  debug_inspect(result.stuck_tris, content="1")
+  debug_inspect(result.retried_stuck, content="true")
+  debug_inspect(meshlets.len(), content="4")
+  debug_inspect(cull_data.length(), content="4")
+  debug_inspect(all_groups.length(), content="1")
+  debug_inspect(stuck.length(), content="0")
+  debug_inspect(simplification_queue, content="[3, 2]")
+  debug_inspect(bvh.nodes.length(), content="1")
+  debug_inspect(bvh.lods.length(), content="1")
+  debug_inspect(meshlets.meshlets[3].vertex_offset, content="9")
+  debug_inspect(meshlets.meshlets[3].triangle_offset, content="9")
+}
+
+///|
+test "pbr meshlet wbtest: lod iteration leaves stuck groups queued for final lod when progress is low" {
+  let meshlets = meshlet_wbtest_build_meshlets()
+  let cull_data = [
+    meshlet_wbtest_cull(0),
+    meshlet_wbtest_cull(1),
+    meshlet_wbtest_cull(2),
+  ]
+  let all_groups : Array[MeshletTempGroup] = []
+  let simplification_queue = [0, 1, 2]
+  let stuck : Array[MeshletTempGroup] = []
+  let bvh = MeshletBvhBuilder::new()
+  let result = meshlet_lod_iteration_apply_results(
+    meshlets,
+    cull_data,
+    all_groups,
+    simplification_queue,
+    stuck,
+    bvh,
+    [MeshletLodStuck(meshlet_wbtest_group(0, [0, 1, 2]))],
+  )
+  debug_inspect(result.passed_tris, content="0")
+  debug_inspect(result.stuck_tris, content="3")
+  debug_inspect(result.retried_stuck, content="false")
+  debug_inspect(simplification_queue, content="[]")
+  debug_inspect(stuck.length(), content="1")
+  debug_inspect(bvh.nodes.length(), content="0")
+  debug_inspect(bvh.lods.length(), content="0")
+}
+
+///|
 test "pbr meshlet wbtest: lock group borders marks shared position vertices" {
   let meshlets = MeshletBuildMeshlets::new(
     meshlets=[

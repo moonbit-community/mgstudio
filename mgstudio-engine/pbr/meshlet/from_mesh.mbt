@@ -920,6 +920,81 @@ fn meshlet_triangles_in_meshlets(
 }
 
 ///|
+priv enum MeshletLodSimplificationResult {
+  MeshletLodSimplified(
+    MeshletTempGroup,
+    MeshletBuildMeshlets,
+    Array[MeshletTempCullData]
+  )
+  MeshletLodStuck(MeshletTempGroup)
+}
+
+///|
+priv struct MeshletLodIterationResult {
+  first_group : Int
+  passed_tris : Int
+  stuck_tris : Int
+  retried_stuck : Bool
+}
+
+///|
+fn meshlet_lod_iteration_apply_results(
+  meshlets : MeshletBuildMeshlets,
+  cull_data : Array[MeshletTempCullData],
+  all_groups : Array[MeshletTempGroup],
+  simplification_queue : Array[Int],
+  stuck : Array[MeshletTempGroup],
+  bvh : MeshletBvhBuilder,
+  simplified : Array[MeshletLodSimplificationResult],
+) -> MeshletLodIterationResult {
+  let first_group = all_groups.length()
+  let mut passed_tris = 0
+  let mut stuck_tris = 0
+  simplification_queue.clear()
+  for result in simplified {
+    match result {
+      MeshletLodSimplified(group, new_meshlets, new_cull_data) => {
+        let start = meshlets.len()
+        meshlet_merge_build_meshlets(meshlets, new_meshlets)
+        for item in new_cull_data {
+          cull_data.push(item)
+        }
+        let end = meshlets.len()
+        let new_meshlet_ids : Array[Int] = []
+        for meshlet_id in start..<end {
+          new_meshlet_ids.push(meshlet_id)
+          simplification_queue.push(meshlet_id)
+        }
+        passed_tris = passed_tris +
+          meshlet_triangles_in_meshlets(meshlets, new_meshlet_ids)
+        all_groups.push(group)
+      }
+      MeshletLodStuck(group) => {
+        stuck_tris = stuck_tris +
+          meshlet_triangles_in_meshlets(meshlets, group.meshlets)
+        stuck.push(group)
+      }
+    }
+  }
+  let retried_stuck = passed_tris > stuck_tris / 3
+  if retried_stuck {
+    for group in stuck {
+      for meshlet_id in group.meshlets {
+        simplification_queue.push(meshlet_id)
+      }
+    }
+    stuck.clear()
+  }
+  bvh.add_lod(first_group, all_groups)
+  MeshletLodIterationResult::{
+    first_group,
+    passed_tris,
+    stuck_tris,
+    retried_stuck,
+  }
+}
+
+///|
 fn meshlet_merge_build_meshlets(
   meshlets : MeshletBuildMeshlets,
   merge : MeshletBuildMeshlets,
