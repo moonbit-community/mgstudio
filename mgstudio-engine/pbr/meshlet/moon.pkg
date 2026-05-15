@@ -12,8 +12,11 @@ import {
   "Milky2018/mgstudio/pbr" @pbr,
   "Milky2018/mgstudio/render" @render,
   "Milky2018/mgstudio/render/renderer" @renderer,
+  "Milky2018/mgstudio/pbr/prepass" @pbr_prepass,
+  "Milky2018/mgstudio/sprite" @sprite,
   "Milky2018/mgstudio/transform" @transform,
   "Milky2018/mgstudio/utils" @utils,
+  "Milky2018/mgstudio/visibility" @visibility,
   "Milky2018/mgstudio/shader/source" @shader_source,
 }
 

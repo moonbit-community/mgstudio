@@ -223,6 +223,21 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
                     Some(global_transform) => global_transform.affine()
                     None => @math.Affine3::identity()
                   }
+                  let previous_world_from_local = match
+                    (try! source_world.get_by_key(
+                      entity, @pbr.ecs_key_previous_global_transform,
+                    )) {
+                    Some(previous_global_transform) =>
+                      previous_global_transform.affine()
+                    None => world_from_local
+                  }
+                  let render_layer_mask = match
+                    (try! source_world.get_by_key(
+                      entity, @sprite.ecs_key_render_layers,
+                    )) {
+                    Some(render_layers) => render_layers.mask()
+                    None => @sprite.RenderLayers::default().mask()
+                  }
                   let not_shadow_caster = try! source_world.contains_by_key(
                     entity, @pbr.ecs_key_not_shadow_caster,
                   )
@@ -235,8 +250,9 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
                     root_bvh_node,
                     aabb,
                     bvh_depth,
+                    render_layer_mask~,
                     world_from_local~,
-                    previous_world_from_local=world_from_local,
+                    previous_world_from_local~,
                     not_shadow_caster~,
                     not_shadow_receiver~,
                   )
@@ -969,6 +985,31 @@ fn meshlet_configure_render_sub_app(
 }
 
 ///|
+pub fn register_meshlet_mesh3d_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_meshlet_mesh3d,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_meshlet_mesh3d,
+    @pbr.ecs_key_previous_global_transform,
+    fn() {
+      @pbr_prepass.PreviousGlobalTransform::from_global_transform(
+        @transform.GlobalTransform::identity(),
+      )
+    },
+  )
+  world.register_required_components_with(
+    ecs_key_meshlet_mesh3d,
+    @visibility.ecs_key_visibility,
+    fn() { @visibility.Visibility::Inherited },
+  )
+}
+
+///|
 pub fn meshlet_plugin_with(
   app : @app.App[@ecs.World],
   plugin : MeshletPlugin,
@@ -981,6 +1022,7 @@ pub fn meshlet_plugin_with(
     next = next.insert_world_resource(ecs_key_meshlet_plugin_marker, MeshletPluginMarker::{
 
     })
+    try! register_meshlet_mesh3d_required_components(next.world())
     next = @render.with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
       meshlet_configure_render_sub_app(sub_app, plugin)
     })

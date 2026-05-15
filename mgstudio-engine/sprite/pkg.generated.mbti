@@ -887,6 +887,7 @@ pub fn RenderLayers::from_layers(Array[Int]) -> Self
 pub fn RenderLayers::intersection(Self, Self) -> Self
 pub fn RenderLayers::intersects(Self, Self) -> Bool
 pub fn RenderLayers::layer(Int) -> Self
+pub fn RenderLayers::mask(Self) -> Int
 pub fn RenderLayers::matches(Self, Self) -> Bool
 pub fn RenderLayers::none() -> Self
 pub fn RenderLayers::remove(Self, Int) -> Self

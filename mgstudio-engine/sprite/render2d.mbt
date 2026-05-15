@@ -144,6 +144,11 @@ pub fn RenderLayers::contains(self : RenderLayers, index : Int) -> Bool {
 }
 
 ///|
+pub fn RenderLayers::mask(self : RenderLayers) -> Int {
+  self.mask
+}
+
+///|
 pub fn RenderLayers::union(
   self : RenderLayers,
   other : RenderLayers,

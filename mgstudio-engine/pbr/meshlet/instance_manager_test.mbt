@@ -44,6 +44,33 @@ test "pbr/meshlet: instance manager tracks counts and material ids" {
 }
 
 ///|
+test "pbr/meshlet: instance manager stores Bevy mesh uniform transforms and render layers" {
+  let manager = InstanceManager::default()
+  let world_from_local = @transform.GlobalTransform::from_transform(
+    @transform.Transform::from_xyz(4.0F, 5.0F, 6.0F),
+  ).affine()
+  let previous_world_from_local = @transform.GlobalTransform::from_transform(
+    @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+  ).affine()
+  manager.add_instance(
+    @core.Entity::new(0, 1),
+    100,
+    4,
+    MeshletAabb::default(),
+    3,
+    render_layer_mask=8,
+    world_from_local~,
+    previous_world_from_local~,
+  )
+  let (_, render_layer_mask, not_shadow_caster) = manager.instances[0]
+  debug_inspect(render_layer_mask, content="8")
+  debug_inspect(not_shadow_caster, content="false")
+  let uniform = manager.instance_uniforms[0]
+  inspect(uniform.world_from_local.translation.x, content="4")
+  inspect(uniform.previous_world_from_local.translation.x, content="1")
+}
+
+///|
 test "pbr/meshlet: queue helper requires extracted instances to mark scene usage" {
   let manager = InstanceManager::default()
   ignore(queue_material_meshlet_meshes_with_material_assets(manager, [1, 2, 1]))

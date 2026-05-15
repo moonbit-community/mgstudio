@@ -199,6 +199,8 @@ pub fn queue_material_meshlet_meshes_with_present_material_assets(InstanceManage
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
+pub fn register_meshlet_mesh3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
+
 // Errors
 
 // Types and methods

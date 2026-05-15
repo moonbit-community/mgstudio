@@ -135,6 +135,32 @@ test "pbr meshlet: plugin installs state into app and render sub-app" {
 }
 
 ///|
+test "pbr meshlet: mesh component installs Bevy required components" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(MeshletPlugin::default())
+  let entity = app.world().spawn()
+  try! app
+  .world()
+  .set_by_key(entity, ecs_key_meshlet_mesh3d, MeshletMesh3d::new(42))
+  inspect(
+    (try! app.world().get_by_key(entity, @transform.ecs_key_transform))
+    is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! app.world().get_by_key(entity, @pbr.ecs_key_previous_global_transform))
+    is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! app.world().get_by_key(entity, @visibility.ecs_key_visibility))
+    is Some(_),
+    content="true",
+  )
+}
+
+///|
 test "pbr meshlet: configure views inserts prepass and deferred bins by view flags" {
   let world = @ecs.World::new()
   let view_entity = world.spawn()
