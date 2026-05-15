@@ -185,9 +185,9 @@ fn create_postprocess_pipeline_split_modules(
   }
   backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let pipeline = try {
+    builder.set_vertex_module(vertex_sm)
+    builder.set_fragment_module(fragment_sm)
     let desc = builder.finish_descriptor_ptr()
-    render_pipeline_descriptor_set_vertex_module(desc, vertex_sm)
-    render_pipeline_descriptor_set_fragment_module(desc, fragment_sm)
     let pipeline = backend.device.create_render_pipeline_ptr(desc)
     @wgpu_c.render_pipeline_descriptor_free(desc)
     builder.free()

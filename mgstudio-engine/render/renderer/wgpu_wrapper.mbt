@@ -44,165 +44,15 @@ pub fn[T] WgpuWrapper::into_inner(self : WgpuWrapper[T]) -> T {
 }
 
 ///|
-pub extern "C" fn pipeline_layout_descriptor_3_new(
-  bind_group_layout0 : @wgpu_c.WGPUBindGroupLayout,
-  bind_group_layout1 : @wgpu_c.WGPUBindGroupLayout,
-  bind_group_layout2 : @wgpu_c.WGPUBindGroupLayout,
-) -> @wgpu_c.WGPUPipelineLayoutDescriptorPtr = "mgstudio_pipeline_layout_descriptor_3_new"
-
-///|
-pub extern "C" fn pipeline_layout_descriptor_4_new(
-  bind_group_layout0 : @wgpu_c.WGPUBindGroupLayout,
-  bind_group_layout1 : @wgpu_c.WGPUBindGroupLayout,
-  bind_group_layout2 : @wgpu_c.WGPUBindGroupLayout,
-  bind_group_layout3 : @wgpu_c.WGPUBindGroupLayout,
-) -> @wgpu_c.WGPUPipelineLayoutDescriptorPtr = "mgstudio_pipeline_layout_descriptor_4_new"
-
-///|
-#borrow(descriptor)
-extern "C" fn render_pipeline_descriptor_set_cull_mode_native(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-  cull_mode : UInt,
-) -> UInt = "mgstudio_render_pipeline_descriptor_set_cull_mode"
-
-///|
-#borrow(descriptor)
-extern "C" fn render_pipeline_descriptor_set_unclipped_depth_native(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-  unclipped_depth : Bool,
-) -> UInt = "mgstudio_render_pipeline_descriptor_set_unclipped_depth"
-
-///|
-#borrow(descriptor, fragment_module)
-extern "C" fn render_pipeline_descriptor_set_fragment_module_native(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-  fragment_module : @wgpu_c.WGPUShaderModule,
-) -> UInt = "mgstudio_render_pipeline_descriptor_set_fragment_module"
-
-///|
-#borrow(descriptor, vertex_module)
-extern "C" fn render_pipeline_descriptor_set_vertex_module_native(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-  vertex_module : @wgpu_c.WGPUShaderModule,
-) -> UInt = "mgstudio_render_pipeline_descriptor_set_vertex_module"
-
-///|
-#borrow(descriptor)
-extern "C" fn render_pipeline_descriptor_clear_fragment_native(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-) -> UInt = "mgstudio_render_pipeline_descriptor_clear_fragment"
-
-///|
-#borrow(descriptor)
-extern "C" fn render_pipeline_descriptor_set_fragment_target_count_zero_native(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-) -> UInt = "mgstudio_render_pipeline_descriptor_set_fragment_target_count_zero"
-
-///|
-#borrow(depth_view)
-extern "C" fn render_pass_descriptor_depth_new_native(
-  depth_view : @wgpu_c.WGPUTextureView,
-  depth_load_op_u32 : UInt,
-  depth_store_op_u32 : UInt,
-  depth_clear_value_f32 : Float,
-  stencil_load_op_u32 : UInt,
-  stencil_store_op_u32 : UInt,
-  stencil_clear_value_u32 : UInt,
-  depth_read_only : Bool,
-  stencil_read_only : Bool,
-) -> @wgpu_c.WGPURenderPassDescriptorPtr = "mgstudio_render_pass_descriptor_depth_new"
-
-///|
-fn render_pipeline_descriptor_set_cull_mode(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-  cull_mode : UInt,
-) -> Unit {
-  let err = render_pipeline_descriptor_set_cull_mode_native(
-    descriptor, cull_mode,
-  )
-  if err != 0U {
-    abort("wgpu: failed to configure mesh pipeline cull mode")
-  }
-}
-
-///|
-fn render_pipeline_descriptor_set_unclipped_depth(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-  unclipped_depth : Bool,
-) -> Unit {
-  let err = render_pipeline_descriptor_set_unclipped_depth_native(
-    descriptor, unclipped_depth,
-  )
-  if err != 0U {
-    abort("wgpu: failed to configure mesh pipeline unclipped depth")
-  }
-}
-
-///|
-fn render_pipeline_descriptor_set_fragment_module(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-  fragment_module : @wgpu.ShaderModule,
-) -> Unit {
-  let err = render_pipeline_descriptor_set_fragment_module_native(
-    descriptor,
-    fragment_module.raw_handle(),
-  )
-  if err != 0U {
-    abort("wgpu: failed to configure mesh pipeline fragment shader module")
-  }
-}
-
-///|
-fn render_pipeline_descriptor_set_vertex_module(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-  vertex_module : @wgpu.ShaderModule,
-) -> Unit {
-  let err = render_pipeline_descriptor_set_vertex_module_native(
-    descriptor,
-    vertex_module.raw_handle(),
-  )
-  if err != 0U {
-    abort("wgpu: failed to configure mesh pipeline vertex shader module")
-  }
-}
-
-///|
-fn render_pipeline_descriptor_clear_fragment(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-) -> Unit {
-  let err = render_pipeline_descriptor_clear_fragment_native(descriptor)
-  if err != 0U {
-    abort("wgpu: failed to clear mesh pipeline fragment state")
-  }
-}
-
-///|
-fn render_pipeline_descriptor_set_fragment_target_count_zero(
-  descriptor : @wgpu_c.WGPURenderPipelineDescriptorPtr,
-) -> Unit {
-  let err = render_pipeline_descriptor_set_fragment_target_count_zero_native(
-    descriptor,
-  )
-  if err != 0U {
-    abort("wgpu: failed to configure zero color targets")
-  }
-}
-
-///|
 fn create_pipeline_layout_3(
   device : @wgpu.Device,
   bind_group_layout0 : @wgpu.BindGroupLayout,
   bind_group_layout1 : @wgpu.BindGroupLayout,
   bind_group_layout2 : @wgpu.BindGroupLayout,
 ) -> @wgpu.PipelineLayout {
-  let descriptor = pipeline_layout_descriptor_3_new(
-    bind_group_layout0.raw_handle(),
-    bind_group_layout1.raw_handle(),
-    bind_group_layout2.raw_handle(),
-  )
-  let layout = device.create_pipeline_layout_ptr(descriptor)
-  @wgpu_c.pipeline_layout_descriptor_free(descriptor)
-  layout
+  device.create_pipeline_layout_many([
+    bind_group_layout0, bind_group_layout1, bind_group_layout2,
+  ])
 }
 
 ///|
@@ -218,20 +68,17 @@ fn command_encoder_begin_render_pass_depth_u32(
   depth_read_only~ : Bool,
   stencil_read_only~ : Bool,
 ) -> @wgpu.RenderPass {
-  let descriptor = render_pass_descriptor_depth_new_native(
-    depth_view.raw_handle(),
-    depth_load_op_u32,
-    depth_store_op_u32,
-    depth_clear_value_f32,
-    stencil_load_op_u32,
-    stencil_store_op_u32,
-    stencil_clear_value_u32,
-    depth_read_only,
-    stencil_read_only,
+  encoder.begin_render_pass_depth_u32(
+    depth_view,
+    depth_load_op_u32~,
+    depth_store_op_u32~,
+    depth_clear_value_f32~,
+    stencil_load_op_u32~,
+    stencil_store_op_u32~,
+    stencil_clear_value_u32~,
+    depth_read_only~,
+    stencil_read_only~,
   )
-  let pass = encoder.begin_render_pass_ptr(descriptor)
-  @wgpu_c.render_pass_descriptor_free(descriptor)
-  pass
 }
 
 ///|
@@ -242,13 +89,7 @@ fn create_pipeline_layout_4(
   bind_group_layout2 : @wgpu.BindGroupLayout,
   bind_group_layout3 : @wgpu.BindGroupLayout,
 ) -> @wgpu.PipelineLayout {
-  let descriptor = pipeline_layout_descriptor_4_new(
-    bind_group_layout0.raw_handle(),
-    bind_group_layout1.raw_handle(),
-    bind_group_layout2.raw_handle(),
-    bind_group_layout3.raw_handle(),
-  )
-  let layout = device.create_pipeline_layout_ptr(descriptor)
-  @wgpu_c.pipeline_layout_descriptor_free(descriptor)
-  layout
+  device.create_pipeline_layout_many([
+    bind_group_layout0, bind_group_layout1, bind_group_layout2, bind_group_layout3,
+  ])
 }

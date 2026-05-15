@@ -18,7 +18,7 @@ function addLinkConfig(packageName, linkFlags) {
 
 if (platform === 'darwin' || platform === 'linux') {
   const zlibLinkFlags = '-lz';
-  const zlibLinkedPackages = [pkg('asset'), pkg('ui'), pkg('shader'), pkg('audio')];
+  const zlibLinkedPackages = [pkg('ui'), pkg('shader'), pkg('audio')];
   for (const packageName of zlibLinkedPackages) {
     addLinkConfig(packageName, zlibLinkFlags);
   }

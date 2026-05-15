@@ -24,7 +24,6 @@ import {
 supported_targets = "native"
 
 options(
-  "native-stub": [ "pipeline_layout_stub.c" ],
   "pre-build": [
     {
       "command": ":embed --input $input --output $output --name screenshot_to_screen_wgsl_source",

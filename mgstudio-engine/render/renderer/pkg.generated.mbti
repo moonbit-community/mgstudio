@@ -4,7 +4,6 @@ package "Milky2018/mgstudio/render/renderer"
 import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/wgpu_mbt",
-  "Milky2018/wgpu_mbt/c",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
 }
@@ -223,10 +222,6 @@ pub fn meshlet_missing_rust_features_u64() -> UInt64
 pub fn meshlet_required_features_supported() -> Bool
 
 pub fn meshlet_required_rust_features_u64() -> UInt64
-
-pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
-
-pub fn pipeline_layout_descriptor_4_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
 
 pub fn prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit
 

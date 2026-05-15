@@ -1407,18 +1407,18 @@ fn mesh3d_build_shadow_depth_pipeline(
       depth_write_enabled=true,
       depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
     )
-    let desc = builder.finish_descriptor_ptr()
-    render_pipeline_descriptor_set_cull_mode(desc, cull_mode_wgpu)
+    builder.set_cull_mode_u32(cull_mode_wgpu)
     if native_unclipped_depth {
-      render_pipeline_descriptor_set_unclipped_depth(desc, true)
+      builder.set_unclipped_depth(true)
     }
     match fragment_sm {
       Some(fragment_module) => {
-        render_pipeline_descriptor_set_fragment_module(desc, fragment_module)
-        render_pipeline_descriptor_set_fragment_target_count_zero(desc)
+        builder.set_fragment_module(fragment_module)
+        builder.set_color_target_count(0U)
       }
-      None => render_pipeline_descriptor_clear_fragment(desc)
+      None => builder.clear_fragment()
     }
+    let desc = builder.finish_descriptor_ptr()
     let pipeline = backend.device.create_render_pipeline_ptr(desc)
     @wgpu_c.render_pipeline_descriptor_free(desc)
     builder.free()

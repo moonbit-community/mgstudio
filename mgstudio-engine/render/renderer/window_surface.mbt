@@ -390,11 +390,14 @@ pub fn GpuBackend::create_surface_binding(
   if surface_state_index_by_surface_id(self, surface_id) is Some(_) {
     return
   }
-  let layer = @wgpu_c.cametallayer_new()
-  @windowing.attach_metal_layer(window, layer)
-  let surface_descriptor = @wgpu.surface_descriptor_metal_layer_new(layer)
-  let surface = self.instance.create_surface(surface_descriptor)
-  @wgpu.surface_descriptor_free(surface_descriptor)
+  let ns_view = match @windowing.content_view_handle(window) {
+    Some(handle) => handle
+    None => abort("wgpu: failed to get macOS window content view handle")
+  }
+  let surface = self.instance.create_surface_macos_ns_view_u64(ns_view) catch {
+    err =>
+      abort("wgpu: failed to create macOS window surface: \{err.message()}")
+  }
   self.surfaces.push(GpuSurfaceState::{
     surface_id,
     target_id,

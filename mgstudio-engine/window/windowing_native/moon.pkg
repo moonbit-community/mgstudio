@@ -3,8 +3,6 @@ import {
   "Milky2018/window/core" @window_core,
   "Milky2018/window/dpi" @window_dpi,
   "Milky2018/window/macos" @window_macos,
-  "Milky2018/wgpu_mbt" @wgpu,
-  "Milky2018/wgpu_mbt/c" @wgpu_c,
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/ref",
 }
@@ -12,6 +10,5 @@ import {
 supported_targets = "native"
 
 options(
-  "native-stub": [ "layer_attach_stub.c" ],
   targets: { "raw.mbt": [ "native" ] },
 )

@@ -3,8 +3,6 @@ package "Milky2018/mgstudio/window/windowing_native"
 
 import {
   "Milky2018/moon_accesskit",
-  "Milky2018/wgpu_mbt",
-  "Milky2018/wgpu_mbt/c",
   "Milky2018/window/core",
   "Milky2018/window/dpi",
   "Milky2018/window/macos",
@@ -16,15 +14,13 @@ pub fn accessibility_requested() -> Bool
 
 pub fn any_window_open() -> Bool
 
-pub fn attach_metal_layer(Int, @c.OpaquePtr) -> Unit
-
-pub fn attach_surface_metal_layer(Int, @wgpu_mbt.Surface) -> Unit
-
 pub fn available_monitors() -> Array[@core.MonitorHandle]
 
 pub fn bind_accessibility_requested(@ref.Ref[Bool]) -> Unit
 
 pub fn commit_pending_accessibility_update() -> Bool
+
+pub fn content_view_handle(Int) -> UInt64?
 
 pub fn create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String, name? : String?, visible~ : Bool, resizable~ : Bool, decorations~ : Bool, transparent? : Bool, panel? : Bool, focused? : Bool, close_button_enabled? : Bool, minimize_button_enabled? : Bool, maximize_button_enabled? : Bool, min_inner_width? : Float, min_inner_height? : Float, max_inner_width? : Float?, max_inner_height? : Float?, movable_by_window_background? : Bool, fullsize_content_view? : Bool, has_shadow? : Bool, titlebar_shown? : Bool, titlebar_transparent? : Bool, titlebar_show_title? : Bool, titlebar_show_buttons? : Bool, borderless_game? : Bool, skip_taskbar? : Bool, clip_children? : Bool) -> Int
 

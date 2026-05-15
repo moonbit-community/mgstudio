@@ -13,15 +13,17 @@
 // limitations under the License.
 
 ///|
-#borrow(bytes)
-extern "c" fn host_asset_gzip_decompress(bytes : Bytes) -> Bytes = "mgstudio_asset_gzip_decompress"
-
-///|
 pub fn gzip_decompress(bytes : Bytes) -> Bytes? {
-  let decoded = host_asset_gzip_decompress(bytes)
-  if bytes.length() > 0 && decoded.length() == 0 {
+  let reader = @gm_io.Buffer::from_bytes(bytes)
+  let (gzip_reader, reader_err) = @gm_gzip.Reader::new(reader)
+  if reader_err is Some(_) {
+    return None
+  }
+  let (decoded, read_err) = @gm_io.read_all(gzip_reader)
+  let close_err = gzip_reader.close()
+  if read_err is Some(_) || close_err is Some(_) {
     None
   } else {
-    Some(decoded)
+    Some(decoded.to_bytes())
   }
 }

@@ -167,8 +167,20 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let set_topology_err = @wgpu_c.render_pipeline_desc_builder_set_topology(
     builder, topology,
   )
-  cull_mode |> ignore
-  if set_topology_err != 0U {
+  let set_cull_mode_err = @wgpu_c.render_pipeline_desc_builder_set_cull_mode(
+    builder, cull_mode,
+  )
+  let set_fragment_module_err = match fragment_shader {
+    Some(fragment_module) =>
+      @wgpu_c.render_pipeline_desc_builder_set_fragment_module(
+        builder,
+        fragment_module.raw_handle(),
+      )
+    None => 0U
+  }
+  if set_topology_err != 0U ||
+    set_cull_mode_err != 0U ||
+    set_fragment_module_err != 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
     fatal("wgpu: failed to configure mesh pipeline primitive state")
   }
@@ -196,12 +208,6 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     fatal(
       "wgpu: mesh pipeline descriptor builder finish failed (error=\{last_error.reinterpret_as_int()}, args=\{last_error_args.to_int()})",
     )
-  }
-  render_pipeline_descriptor_set_cull_mode(desc, cull_mode)
-  match fragment_shader {
-    Some(fragment_module) =>
-      render_pipeline_descriptor_set_fragment_module(desc, fragment_module)
-    None => ()
   }
   desc
 }

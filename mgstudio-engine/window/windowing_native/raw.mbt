@@ -1858,19 +1858,16 @@ pub fn position_y(window : Int) -> Int {
 }
 
 ///|
-pub fn attach_metal_layer(window : Int, layer : @wgpu_c.OpaquePtr) -> Unit {
+pub fn content_view_handle(window : NativeWindowHandle) -> UInt64? {
   match native_window_ref(window) {
-    Some(_window_ref) => host_window_attach_metal_layer(window, layer)
-    None => ()
+    Some(window_ref) => {
+      let handle = window_ref.val.content_view_handle() catch {
+        _ => return None
+      }
+      Some(handle)
+    }
+    None => None
   }
-}
-
-///|
-pub fn attach_surface_metal_layer(
-  window : NativeWindowHandle,
-  surface : @wgpu.Surface,
-) -> Unit {
-  attach_metal_layer(window, surface.metal_layer_handle())
 }
 
 ///|
@@ -2438,9 +2435,3 @@ pub fn input_app_lifecycle_event_kind(index~ : Int) -> Int {
   }
   app_lifecycle_events_ref.val[index]
 }
-
-///|
-extern "C" fn host_window_attach_metal_layer(
-  window : Int,
-  layer : @wgpu_c.OpaquePtr,
-) -> Unit = "mgstudio_window_attach_metal_layer"
