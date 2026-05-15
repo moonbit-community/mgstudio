@@ -38,62 +38,40 @@ pub(all) enum MeshletMaterialFragmentShaderKind {
 }
 
 ///|
-pub(all) enum MeshletVertexStepMode {
-  Vertex
-}
-
-///|
-pub struct MeshletFakeVertexAttribute {
-  attribute_id : UInt64
-  format : @mesh.MeshVertexFormat
-  offset : Int
-  shader_location : Int
-}
-
-///|
-pub fn MeshletFakeVertexAttribute::new(
-  attribute : @mesh.MeshVertexAttribute,
-  offset : Int,
-  shader_location : Int,
-) -> MeshletFakeVertexAttribute {
-  MeshletFakeVertexAttribute::{
-    attribute_id: attribute.id().value(),
-    format: attribute.format(),
-    offset: meshlet_material_non_negative(offset),
-    shader_location: meshlet_material_non_negative(shader_location),
-  }
-}
-
-///|
-pub struct MeshletFakeVertexBufferLayout {
-  attribute_ids : Array[UInt64]
-  array_stride : Int
-  step_mode : MeshletVertexStepMode
-  attributes : Array[MeshletFakeVertexAttribute]
-}
-
-///|
-pub fn meshlet_fake_vertex_buffer_layout() -> MeshletFakeVertexBufferLayout {
+pub fn meshlet_fake_vertex_buffer_layout() -> @mesh.MeshVertexBufferLayout {
   let position = @mesh.MeshVertexAttribute::position()
   let normal = @mesh.MeshVertexAttribute::normal()
   let uv_0 = @mesh.MeshVertexAttribute::uv_0()
   let tangent = @mesh.MeshVertexAttribute::tangent()
-  MeshletFakeVertexBufferLayout::{
-    attribute_ids: [
-      position.id().value(),
-      normal.id().value(),
-      uv_0.id().value(),
-      tangent.id().value(),
-    ],
-    array_stride: 48,
-    step_mode: MeshletVertexStepMode::Vertex,
-    attributes: [
-      MeshletFakeVertexAttribute::new(position, 0, 0),
-      MeshletFakeVertexAttribute::new(normal, 12, 1),
-      MeshletFakeVertexAttribute::new(uv_0, 24, 2),
-      MeshletFakeVertexAttribute::new(tangent, 32, 3),
-    ],
-  }
+  @mesh.MeshVertexBufferLayout::new(
+    attribute_ids=[position.id(), normal.id(), uv_0.id(), tangent.id()],
+    layout=@mesh.VertexBufferLayout::new(
+      array_stride=48,
+      step_mode=@mesh.MeshVertexStepMode::Vertex,
+      attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=position.format(),
+          shader_location=0,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=12,
+          format=normal.format(),
+          shader_location=1,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=24,
+          format=uv_0.format(),
+          shader_location=2,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=32,
+          format=tangent.format(),
+          shader_location=3,
+        ),
+      ],
+    ),
+  )
 }
 
 ///|
@@ -101,7 +79,7 @@ pub struct MeshletMaterialPipelineDescriptor {
   pass_variant : MeshletMaterialPassVariant
   view_key : MeshletViewMaterialPipelineKey
   view_layout_kind : MeshletMaterialViewLayoutKind
-  fake_vertex_buffer_layout : MeshletFakeVertexBufferLayout
+  fake_vertex_buffer_layout : @mesh.MeshVertexBufferLayout
   layout_count : Int
   uses_binding_array_layout : Bool
   uses_empty_bind_group_layout : Bool
@@ -123,7 +101,7 @@ pub fn MeshletMaterialPipelineDescriptor::new(
   pass_variant? : MeshletMaterialPassVariant = MeshletMaterialPassVariant::MainOpaque,
   view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::default(),
   view_layout_kind? : MeshletMaterialViewLayoutKind = MeshletMaterialViewLayoutKind::MeshView,
-  fake_vertex_buffer_layout? : MeshletFakeVertexBufferLayout = meshlet_fake_vertex_buffer_layout(),
+  fake_vertex_buffer_layout? : @mesh.MeshVertexBufferLayout = meshlet_fake_vertex_buffer_layout(),
   layout_count? : Int = 4,
   uses_binding_array_layout? : Bool = true,
   uses_empty_bind_group_layout? : Bool = false,

@@ -362,36 +362,46 @@ test "pbr meshlet: main opaque descriptor mirrors bevy material pass layout" {
     content="true",
   )
   let fake_layout = descriptor.fake_vertex_buffer_layout
-  inspect(fake_layout.attribute_ids.length(), content="4")
-  debug_inspect(fake_layout.attribute_ids, content="[0, 1, 2, 4]")
-  inspect(fake_layout.array_stride, content="48")
+  let attribute_ids = fake_layout.attribute_ids()
+  let vertex_layout = fake_layout.layout()
+  inspect(attribute_ids.length(), content="4")
+  debug_inspect(
+    [
+      attribute_ids[0].value(),
+      attribute_ids[1].value(),
+      attribute_ids[2].value(),
+      attribute_ids[3].value(),
+    ],
+    content="[0, 1, 2, 4]",
+  )
+  inspect(vertex_layout.array_stride, content="48")
   inspect(
-    fake_layout.step_mode is MeshletVertexStepMode::Vertex,
+    vertex_layout.step_mode is @mesh.MeshVertexStepMode::Vertex,
     content="true",
   )
-  inspect(fake_layout.attributes.length(), content="4")
-  inspect(fake_layout.attributes[0].offset, content="0")
-  inspect(fake_layout.attributes[0].shader_location, content="0")
+  inspect(vertex_layout.attributes.length(), content="4")
+  inspect(vertex_layout.attributes[0].offset, content="0")
+  inspect(vertex_layout.attributes[0].shader_location, content="0")
   inspect(
-    fake_layout.attributes[0].format is @mesh.MeshVertexFormat::Float32x3,
+    vertex_layout.attributes[0].format is @mesh.MeshVertexFormat::Float32x3,
     content="true",
   )
-  inspect(fake_layout.attributes[1].offset, content="12")
-  inspect(fake_layout.attributes[1].shader_location, content="1")
+  inspect(vertex_layout.attributes[1].offset, content="12")
+  inspect(vertex_layout.attributes[1].shader_location, content="1")
   inspect(
-    fake_layout.attributes[1].format is @mesh.MeshVertexFormat::Float32x3,
+    vertex_layout.attributes[1].format is @mesh.MeshVertexFormat::Float32x3,
     content="true",
   )
-  inspect(fake_layout.attributes[2].offset, content="24")
-  inspect(fake_layout.attributes[2].shader_location, content="2")
+  inspect(vertex_layout.attributes[2].offset, content="24")
+  inspect(vertex_layout.attributes[2].shader_location, content="2")
   inspect(
-    fake_layout.attributes[2].format is @mesh.MeshVertexFormat::Float32x2,
+    vertex_layout.attributes[2].format is @mesh.MeshVertexFormat::Float32x2,
     content="true",
   )
-  inspect(fake_layout.attributes[3].offset, content="32")
-  inspect(fake_layout.attributes[3].shader_location, content="3")
+  inspect(vertex_layout.attributes[3].offset, content="32")
+  inspect(vertex_layout.attributes[3].shader_location, content="3")
   inspect(
-    fake_layout.attributes[3].format is @mesh.MeshVertexFormat::Float32x4,
+    vertex_layout.attributes[3].format is @mesh.MeshVertexFormat::Float32x4,
     content="true",
   )
   inspect(descriptor.layout_count, content="4")
