@@ -161,6 +161,19 @@ test "pbr meshlet: mesh component installs Bevy required components" {
 }
 
 ///|
+test "pbr meshlet: view resources use camera physical viewport size" {
+  let target_camera = @sprite.Camera::default()
+  debug_inspect(meshlet_view_size_from_camera(target_camera), content="(1, 1)")
+  let viewport_camera = target_camera.with_viewport(
+    @sprite.Viewport::new(@math.IVec2::new(10, 20), @math.IVec2::new(640, 360)),
+  )
+  debug_inspect(
+    meshlet_view_size_from_camera(viewport_camera),
+    content="(640, 360)",
+  )
+}
+
+///|
 test "pbr meshlet: configure views inserts prepass and deferred bins by view flags" {
   let world = @ecs.World::new()
   let view_entity = world.spawn()

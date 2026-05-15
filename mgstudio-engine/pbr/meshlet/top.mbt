@@ -280,6 +280,14 @@ fn meshlet_instance_count_from_world(world : @ecs.World) -> Int {
 }
 
 ///|
+pub fn meshlet_view_size_from_camera(camera : @sprite.Camera) -> (Int, Int) {
+  match camera.physical_viewport_size() {
+    Some(size) => (size.x.max(1), size.y.max(1))
+    None => (1, 1)
+  }
+}
+
+///|
 fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let msaa_off_views : Array[@core.Entity] = []
@@ -346,12 +354,19 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
       prepare_meshlet_per_frame_resources(manager, instance_count)
       manager.clear_stale_prepared_view_resources(view_entities)
       for view_entity in view_entities {
+        let (view_width, view_height) = match
+          (try! source_world.get_by_key(view_entity, @sprite.ecs_key_camera)) {
+          Some(camera) => meshlet_view_size_from_camera(camera)
+          None => (1, 1)
+        }
         ignore(
           prepare_meshlet_view_resources_for_view(
             manager,
             view_entity,
             instance_count,
             max_bvh_depth~,
+            view_width~,
+            view_height~,
           ),
         )
       }
