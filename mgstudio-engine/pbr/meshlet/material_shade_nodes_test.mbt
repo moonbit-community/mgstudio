@@ -13,6 +13,20 @@
 // limitations under the License.
 
 ///|
+fn test_meshlet_shade_entry(
+  material_id : Int,
+  pipeline_id : Int,
+  bind_group : Int,
+) -> MeshletViewMaterialEntry {
+  MeshletViewMaterialEntry::new(
+    material_id,
+    pipeline_id,
+    bind_group,
+    MeshletMaterialPipelineDescriptor::new(),
+  )
+}
+
+///|
 test "pbr meshlet: main opaque pass draw count filters scene presence and pipeline validity" {
   let instance_manager = extract_meshlet_mesh_entities_from_instances([
     ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 7),
@@ -22,9 +36,9 @@ test "pbr meshlet: main opaque pass draw count filters scene presence and pipeli
   )
   ignore(queue_material_meshlet_meshes(instance_manager))
   let materials = MeshletViewMaterialsMainOpaquePass::default()
-  materials.push((1, 100, 10))
-  materials.push((2, 100, 11))
-  materials.push((1, -1, 12))
+  materials.push(test_meshlet_shade_entry(1, 100, 10))
+  materials.push(test_meshlet_shade_entry(2, 100, 11))
+  materials.push(test_meshlet_shade_entry(1, -1, 12))
   debug_inspect(
     meshlet_main_opaque_pass_materials(materials, instance_manager),
     content="1",
@@ -48,9 +62,9 @@ test "pbr meshlet: prepass draw count follows same filtering" {
   ignore(queue_material_meshlet_meshes(instance_manager))
   let prepass = MeshletViewMaterialsPrepass::default()
   let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
-  prepass.push((1, 20, 1))
-  prepass.push((99, 21, 2))
-  deferred.push((1, 22, 3))
+  prepass.push(test_meshlet_shade_entry(1, 20, 1))
+  prepass.push(test_meshlet_shade_entry(99, 21, 2))
+  deferred.push(test_meshlet_shade_entry(1, 22, 3))
   debug_inspect(
     meshlet_prepass_materials(prepass, instance_manager),
     content="1",

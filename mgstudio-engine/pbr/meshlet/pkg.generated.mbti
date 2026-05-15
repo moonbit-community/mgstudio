@@ -369,6 +369,46 @@ pub struct MeshletMaterialDrawCall {
   vertex_end : Int
 } derive(Eq, @debug.Debug)
 
+pub(all) enum MeshletMaterialFragmentShaderKind {
+  MeshletMaterial
+  MeshletFragmentOverride
+  MeshletPrepassFragmentOverride
+  MeshletDeferredFragmentOverride
+}
+
+pub(all) enum MeshletMaterialPassVariant {
+  MainOpaque
+  Prepass
+  DeferredGBufferPrepass
+}
+
+pub struct MeshletMaterialPipelineDescriptor {
+  pass_variant : MeshletMaterialPassVariant
+  view_key : MeshletViewMaterialPipelineKey
+  view_layout_kind : MeshletMaterialViewLayoutKind
+  layout_count : Int
+  uses_binding_array_layout : Bool
+  uses_empty_bind_group_layout : Bool
+  uses_material_shade_layout : Bool
+  material_layout_id : Int
+  vertex_shader_label : String
+  fragment_shader_kind : MeshletMaterialFragmentShaderKind
+  shader_def_meshlet_material_pass : Bool
+  shader_def_count : Int
+  uses_material_fragment_entry_point : Bool
+  depth_format_depth16_unorm : Bool
+  depth_write_enabled : Bool
+  depth_compare_equal : Bool
+  zero_initialize_workgroup_memory : Bool
+}
+pub fn MeshletMaterialPipelineDescriptor::new(pass_variant? : MeshletMaterialPassVariant, view_key? : MeshletViewMaterialPipelineKey, view_layout_kind? : MeshletMaterialViewLayoutKind, layout_count? : Int, uses_binding_array_layout? : Bool, uses_empty_bind_group_layout? : Bool, uses_material_shade_layout? : Bool, material_layout_id? : Int, vertex_shader_label? : String, fragment_shader_kind? : MeshletMaterialFragmentShaderKind, shader_def_meshlet_material_pass? : Bool, shader_def_count? : Int, uses_material_fragment_entry_point? : Bool, depth_format_depth16_unorm? : Bool, depth_write_enabled? : Bool, depth_compare_equal? : Bool, zero_initialize_workgroup_memory? : Bool) -> Self
+
+pub(all) enum MeshletMaterialViewLayoutKind {
+  MeshView
+  PrepassNoMotionVectors
+  PrepassMotionVectors
+}
+
 pub struct MeshletMesh {
   vertex_positions : Array[Int]
   vertex_normals : Array[Int]
@@ -538,12 +578,28 @@ pub struct MeshletPreparedMaterialInput {
   alpha_mode : @material.AlphaMode3d
   reads_view_transmission_texture : Bool
   material_bind_group_id : Int
+  material_layout_id : Int
+  material_shader_def_count : Int
+  has_material_layout : Bool
+  has_material_bind_group_allocator : Bool
+  has_material_bind_group : Bool
+  has_meshlet_fragment_shader_override : Bool
+  has_meshlet_prepass_fragment_shader_override : Bool
+  has_meshlet_deferred_fragment_shader_override : Bool
 }
 pub fn MeshletPreparedMaterialInput::new(Int, Int) -> Self
 pub fn MeshletPreparedMaterialInput::with_alpha_mode(Self, @material.AlphaMode3d) -> Self
 pub fn MeshletPreparedMaterialInput::with_material_bind_group_id(Self, Int) -> Self
+pub fn MeshletPreparedMaterialInput::with_material_layout_id(Self, Int) -> Self
+pub fn MeshletPreparedMaterialInput::with_material_shader_def_count(Self, Int) -> Self
+pub fn MeshletPreparedMaterialInput::with_meshlet_deferred_fragment_shader_override(Self) -> Self
+pub fn MeshletPreparedMaterialInput::with_meshlet_fragment_shader_override(Self) -> Self
+pub fn MeshletPreparedMaterialInput::with_meshlet_prepass_fragment_shader_override(Self) -> Self
 pub fn MeshletPreparedMaterialInput::with_opaque_render_method(Self, @material.OpaqueRendererMethod) -> Self
 pub fn MeshletPreparedMaterialInput::with_reads_view_transmission_texture(Self, Bool) -> Self
+pub fn MeshletPreparedMaterialInput::without_material_bind_group(Self) -> Self
+pub fn MeshletPreparedMaterialInput::without_material_bind_group_allocator(Self) -> Self
+pub fn MeshletPreparedMaterialInput::without_material_layout(Self) -> Self
 
 pub(all) enum MeshletRuntimeStatus {
   Enabled
@@ -572,6 +628,14 @@ pub struct MeshletViewBindGroups {
 pub fn MeshletViewBindGroups::has_material_shade_bind_group(Self) -> Bool
 pub fn MeshletViewBindGroups::new(@core.Entity, Int, has_material_shade_bind_group? : Bool) -> Self
 
+pub struct MeshletViewMaterialEntry {
+  material_id : Int
+  material_pipeline_id : Int
+  material_bind_group : Int
+  descriptor : MeshletMaterialPipelineDescriptor
+}
+pub fn MeshletViewMaterialEntry::new(Int, Int, Int, MeshletMaterialPipelineDescriptor) -> Self
+
 pub struct MeshletViewMaterialPipelineKey {
   hdr : Bool
   normal_prepass : Bool
@@ -590,37 +654,38 @@ pub struct MeshletViewMaterialPipelineKey {
   distance_fog : Bool
 }
 pub fn MeshletViewMaterialPipelineKey::default() -> Self
+pub fn MeshletViewMaterialPipelineKey::equal(Self, Self) -> Bool
 pub fn MeshletViewMaterialPipelineKey::for_meshlet_prepass(Self, Bool) -> Self
 pub fn MeshletViewMaterialPipelineKey::new(hdr? : Bool, normal_prepass? : Bool, depth_prepass? : Bool, motion_vector_prepass? : Bool, deferred_prepass? : Bool, temporal_jitter? : Bool, projection_type? : Int, shadow_filter_method? : Int, tonemap_in_shader? : Bool, tonemapping_mode? : Int, deband_dither? : Bool, environment_map? : Bool, irradiance_volume? : Bool, ssao? : Bool, distance_fog? : Bool) -> Self
 pub fn MeshletViewMaterialPipelineKey::with_deferred_prepass(Self, Bool) -> Self
 
 pub struct MeshletViewMaterialsDeferredGBufferPrepass {
-  mut entries : Array[(Int, Int, Int)]
+  mut entries : Array[MeshletViewMaterialEntry]
 }
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::clear(Self) -> Unit
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::default() -> Self
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::len(Self) -> Int
-pub fn MeshletViewMaterialsDeferredGBufferPrepass::push(Self, (Int, Int, Int)) -> Unit
+pub fn MeshletViewMaterialsDeferredGBufferPrepass::push(Self, MeshletViewMaterialEntry) -> Unit
 pub impl @ecs.Component for MeshletViewMaterialsDeferredGBufferPrepass
 pub impl @ecs.EcsPayloadCodec for MeshletViewMaterialsDeferredGBufferPrepass
 
 pub struct MeshletViewMaterialsMainOpaquePass {
-  mut entries : Array[(Int, Int, Int)]
+  mut entries : Array[MeshletViewMaterialEntry]
 }
 pub fn MeshletViewMaterialsMainOpaquePass::clear(Self) -> Unit
 pub fn MeshletViewMaterialsMainOpaquePass::default() -> Self
 pub fn MeshletViewMaterialsMainOpaquePass::len(Self) -> Int
-pub fn MeshletViewMaterialsMainOpaquePass::push(Self, (Int, Int, Int)) -> Unit
+pub fn MeshletViewMaterialsMainOpaquePass::push(Self, MeshletViewMaterialEntry) -> Unit
 pub impl @ecs.Component for MeshletViewMaterialsMainOpaquePass
 pub impl @ecs.EcsPayloadCodec for MeshletViewMaterialsMainOpaquePass
 
 pub struct MeshletViewMaterialsPrepass {
-  mut entries : Array[(Int, Int, Int)]
+  mut entries : Array[MeshletViewMaterialEntry]
 }
 pub fn MeshletViewMaterialsPrepass::clear(Self) -> Unit
 pub fn MeshletViewMaterialsPrepass::default() -> Self
 pub fn MeshletViewMaterialsPrepass::len(Self) -> Int
-pub fn MeshletViewMaterialsPrepass::push(Self, (Int, Int, Int)) -> Unit
+pub fn MeshletViewMaterialsPrepass::push(Self, MeshletViewMaterialEntry) -> Unit
 pub impl @ecs.Component for MeshletViewMaterialsPrepass
 pub impl @ecs.EcsPayloadCodec for MeshletViewMaterialsPrepass
 

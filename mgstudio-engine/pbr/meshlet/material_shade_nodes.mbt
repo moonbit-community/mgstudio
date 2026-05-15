@@ -74,7 +74,7 @@ pub struct MeshletMaterialDrawCall {
 
 ///|
 fn meshlet_material_bin_draw_calls(
-  material_bins : Array[(Int, Int, Int)],
+  material_bins : Array[MeshletViewMaterialEntry],
   instance_manager : InstanceManager,
   has_material_depth : Bool,
   has_material_shade_bind_group : Bool,
@@ -87,14 +87,13 @@ fn meshlet_material_bin_draw_calls(
   }
   let draw_calls : Array[MeshletMaterialDrawCall] = []
   for material_bin in material_bins {
-    let (material_id, material_pipeline_id, material_bind_group) = material_bin
-    if meshlet_pipeline_id_valid(material_pipeline_id) &&
-      instance_manager.material_present_in_scene(material_id) {
-      let vertex_start = material_id * 3
+    if meshlet_pipeline_id_valid(material_bin.material_pipeline_id) &&
+      instance_manager.material_present_in_scene(material_bin.material_id) {
+      let vertex_start = material_bin.material_id * 3
       draw_calls.push(MeshletMaterialDrawCall::{
-        material_id,
-        material_pipeline_id,
-        material_bind_group,
+        material_id: material_bin.material_id,
+        material_pipeline_id: material_bin.material_pipeline_id,
+        material_bind_group: material_bin.material_bind_group,
         vertex_start,
         vertex_end: vertex_start + 3,
       })
@@ -105,7 +104,7 @@ fn meshlet_material_bin_draw_calls(
 
 ///|
 fn meshlet_material_bin_draw_count(
-  material_bins : Array[(Int, Int, Int)],
+  material_bins : Array[MeshletViewMaterialEntry],
   instance_manager : InstanceManager,
   has_material_depth : Bool,
   has_material_shade_bind_group : Bool,
