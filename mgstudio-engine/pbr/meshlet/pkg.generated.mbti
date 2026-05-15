@@ -21,7 +21,7 @@ pub const MESHLET_MAX_CLUSTER_BUFFER_SLOTS : Int = 33_554_432
 
 pub const MESHLET_MESH_ASSET_MAGIC : UInt64 = 1717551717668
 
-pub const MESHLET_MESH_ASSET_VERSION : Int = 3
+pub const MESHLET_MESH_ASSET_VERSION : UInt64 = 3
 
 pub const MESHLET_PREPASS_NODE : String = "mgstudio.pbr.meshlet.prepass"
 
@@ -83,11 +83,17 @@ pub fn meshlet_material_shade_node_index(String) -> Int?
 
 pub fn meshlet_material_shade_nodes() -> Array[String]
 
+pub fn meshlet_mesh_asset_extensions() -> Array[String]
+
 pub fn meshlet_mesh_asset_magic() -> UInt64
 
 pub fn meshlet_mesh_asset_version() -> Int
 
 pub fn meshlet_mesh_asset_version_matches(Int) -> Bool
+
+pub fn meshlet_mesh_decode_bevy_bytes(Bytes) -> MeshletMeshLoadResult
+
+pub fn meshlet_mesh_encode_bevy_bytes(MeshletMesh) -> Bytes
 
 pub fn meshlet_mesh_loader() -> MeshletMeshLoader
 
@@ -364,8 +370,15 @@ pub fn MeshletMesh3d::new(Int) -> Self
 pub impl @ecs.Component for MeshletMesh3d
 pub impl @ecs.EcsPayloadCodec for MeshletMesh3d
 
+pub(all) enum MeshletMeshLoadResult {
+  MeshletMeshLoadOk(MeshletMesh)
+  MeshletMeshLoadErr(MeshletMeshSaveOrLoadError)
+}
+
 pub struct MeshletMeshLoader {
 }
+pub fn MeshletMeshLoader::extensions(Self) -> Array[String]
+pub fn MeshletMeshLoader::load_bytes(Self, Bytes) -> MeshletMeshLoadResult
 
 pub struct MeshletMeshManager {
   vertex_positions : PersistentGpuBuffer[Int]
@@ -393,13 +406,14 @@ pub impl @ecs.EcsPayloadCodec for MeshletMeshManager
 
 pub(all) enum MeshletMeshSaveOrLoadError {
   WrongFileType
-  WrongVersion(Int)
+  WrongVersion(UInt64)
   CompressionOrDecompression(String)
   IoError(String)
 }
 
 pub struct MeshletMeshSaver {
 }
+pub fn MeshletMeshSaver::save_bytes(Self, MeshletMesh) -> Bytes
 
 pub struct MeshletMeshSlices {
   vertex_positions : MeshletBufferSliceRange
