@@ -14,6 +14,7 @@
 
 ///|
 test "pbr meshlet: conversion reports runtime unavailable first" {
+  inspect(meshlet_processor_available(), content="false")
   let error = meshlet_conversion_error_for_counts(
     10,
     10,
@@ -159,6 +160,26 @@ test "pbr meshlet: mesh input extraction rejects wrong topology, attributes, and
   inspect(
     meshlet_extract_mesh_input(extra_attribute)
     is Err(MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(_)),
+    content="true",
+  )
+}
+
+///|
+test "pbr meshlet: from_mesh validates mesh before processor availability" {
+  let wrong_topology = @mesh.Mesh::from_3d_geometry(
+    meshlet_test_triangle_geometry().with_topology(
+      @mesh.Mesh3dPrimitiveTopology::LineList,
+    ),
+  )
+  inspect(
+    MeshletMesh::from_mesh(wrong_topology)
+    is Err(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology),
+    content="true",
+  )
+  let mesh = @mesh.Mesh::from_3d_geometry(meshlet_test_triangle_geometry())
+  inspect(
+    MeshletMesh::from_mesh(mesh)
+    is Err(MeshToMeshletMeshConversionError::RuntimeUnavailable),
     content="true",
   )
 }

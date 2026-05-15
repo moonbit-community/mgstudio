@@ -146,6 +146,8 @@ pub fn meshlet_prepass_draw_calls(MeshletViewMaterialsPrepass, InstanceManager, 
 
 pub fn meshlet_prepass_materials(MeshletViewMaterialsPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Int
 
+pub fn meshlet_processor_available() -> Bool
+
 pub fn meshlet_render_pipeline_count(MeshletPipelines) -> Int
 
 pub fn meshlet_required_vertex_attributes() -> Array[String]
@@ -438,6 +440,7 @@ pub struct MeshletMesh {
   bvh_depth : Int
 }
 pub fn MeshletMesh::bvh_node_count(Self) -> Int
+pub fn MeshletMesh::from_mesh(@mesh.Mesh, vertex_position_quantization_factor? : Int) -> Result[Self, MeshToMeshletMeshConversionError]
 pub fn MeshletMesh::from_parts(vertex_positions~ : Array[Int], vertex_normals~ : Array[Int], vertex_uvs~ : Array[MeshletVertexUv], indices~ : Array[Int], bvh~ : Array[BvhNode], meshlets~ : Array[Meshlet], meshlet_cull_data~ : Array[MeshletCullData], aabb? : MeshletAabb, bvh_depth? : Int) -> Self
 pub fn MeshletMesh::index_count(Self) -> Int
 pub fn MeshletMesh::is_empty(Self) -> Bool

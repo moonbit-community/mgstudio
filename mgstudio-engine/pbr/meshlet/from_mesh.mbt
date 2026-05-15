@@ -119,10 +119,10 @@ fn meshlet_vertex_attributes_match(attributes : Array[String]) -> Bool {
 pub fn meshlet_validate_input_mesh_summary(
   summary : MeshToMeshletInputMeshSummary,
   config : MeshToMeshletMeshConversionConfig,
-  runtime_available : Bool,
+  processor_available : Bool,
 ) -> MeshToMeshletMeshConversionError? {
   let safe = meshlet_validate_conversion_config(config)
-  if !runtime_available {
+  if !processor_available {
     return Some(MeshToMeshletMeshConversionError::RuntimeUnavailable)
   }
   if summary.primitive_topology != "TriangleList" {
@@ -146,11 +146,16 @@ pub fn meshlet_validate_input_mesh_summary(
 }
 
 ///|
+pub fn meshlet_processor_available() -> Bool {
+  false
+}
+
+///|
 pub fn meshlet_can_convert_from_mesh(
   vertex_count : Int,
   triangle_count : Int,
 ) -> Bool {
-  meshlet_runtime_available() && vertex_count > 0 && triangle_count > 0
+  meshlet_processor_available() && vertex_count > 0 && triangle_count > 0
 }
 
 ///|
@@ -574,8 +579,25 @@ pub fn meshlet_conversion_error_for_counts(
   meshlet_validate_input_mesh_summary(
     summary,
     config,
-    meshlet_runtime_available(),
+    meshlet_processor_available(),
   )
+}
+
+///|
+pub fn MeshletMesh::from_mesh(
+  mesh : @mesh.Mesh,
+  vertex_position_quantization_factor? : Int = MESHLET_DEFAULT_VERTEX_POSITION_QUANTIZATION_FACTOR,
+) -> Result[MeshletMesh, MeshToMeshletMeshConversionError] {
+  let input = match meshlet_extract_mesh_input(mesh) {
+    Ok(input) => input
+    Err(error) => return Err(error)
+  }
+  ignore(vertex_position_quantization_factor)
+  ignore(input)
+  if !meshlet_processor_available() {
+    return Err(MeshToMeshletMeshConversionError::RuntimeUnavailable)
+  }
+  Err(MeshToMeshletMeshConversionError::RuntimeUnavailable)
 }
 
 ///|
