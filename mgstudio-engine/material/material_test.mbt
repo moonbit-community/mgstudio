@@ -288,7 +288,7 @@ fn material_test_base_specialize(
   layout : @material.MaterialMeshVertexLayout,
   _properties : @material.MaterialProperties,
 ) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
-  if layout < 0 {
+  if layout.index() < 0 {
     raise @material.missing_vertex_attribute_error("layout")
   }
   @material.CachedRenderPipelineId::new(11UL)
@@ -301,7 +301,7 @@ fn material_test_prepass_specialize(
   layout : @material.MaterialMeshVertexLayout,
   _properties : @material.MaterialProperties,
 ) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
-  if layout < 0 {
+  if layout.index() < 0 {
     raise @material.missing_vertex_attribute_error("layout")
   }
   @material.CachedRenderPipelineId::new(12UL)
@@ -314,7 +314,7 @@ fn material_test_user_specialize(
   layout : @material.MaterialMeshVertexLayout,
   _key : @material.ErasedMaterialPipelineKey,
 ) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
-  if layout < 0 {
+  if layout.index() < 0 {
     raise @material.missing_vertex_attribute_error("layout")
   }
   let entry = @render_resource.BindGroupLayoutEntry::new(
@@ -325,6 +325,41 @@ fn material_test_user_specialize(
   descriptor.set_layout(
     0,
     @material.BindGroupLayoutDescriptor::new(user_key, [entry]),
+  )
+}
+
+///|
+fn material_test_mesh_vertex_layout(
+  include_unused_attribute? : Bool = false,
+) -> @material.MaterialMeshVertexLayout {
+  let layouts = @mesh.MeshVertexBufferLayouts::default()
+  let attribute_ids = [@mesh.MeshVertexAttribute::position().id()]
+  let attributes = [
+    @mesh.VertexAttribute::new(
+      offset=0,
+      format=@mesh.MeshVertexFormat::Float32x3,
+      shader_location=0,
+    ),
+  ]
+  if include_unused_attribute {
+    attribute_ids.push(@mesh.MeshVertexAttribute::normal().id())
+    attributes.push(
+      @mesh.VertexAttribute::new(
+        offset=0,
+        format=@mesh.MeshVertexFormat::Float32x3,
+        shader_location=1,
+      ),
+    )
+  }
+  layouts.insert(
+    @mesh.MeshVertexBufferLayout::new(
+      attribute_ids~,
+      layout=@mesh.VertexBufferLayout::new(
+        array_stride=12,
+        step_mode=@mesh.MeshVertexStepMode::Vertex,
+        attributes~,
+      ),
+    ),
   )
 }
 
@@ -340,17 +375,18 @@ test "material boundary carries bevy specialize callbacks in material properties
     .with_base_specialize(Some(material_test_base_specialize))
     .with_prepass_specialize(Some(material_test_prepass_specialize))
     .with_user_specialize(Some(material_test_user_specialize))
+  let layout = material_test_mesh_vertex_layout()
   let base_id = match properties.base_specialize {
     Some(base_specialize) =>
       (try! @material.material_specialize_base(
-        base_specialize, world, pipeline_key, 0, properties,
+        base_specialize, world, pipeline_key, layout, properties,
       )).id()
     None => 0UL
   }
   let prepass_id = match properties.prepass_specialize {
     Some(prepass_specialize) =>
       (try! @material.material_specialize_prepass(
-        prepass_specialize, world, pipeline_key, 0, properties,
+        prepass_specialize, world, pipeline_key, layout, properties,
       )).id()
     None => 0UL
   }
@@ -360,7 +396,7 @@ test "material boundary carries bevy specialize callbacks in material properties
         user_specialize,
         "user.specialize",
         @material.RenderPipelineDescriptor::default(),
-        0,
+        layout,
         pipeline_key,
       )).layout[0].label
     None => ""
@@ -368,6 +404,64 @@ test "material boundary carries bevy specialize callbacks in material properties
   inspect(base_id, content="11")
   inspect(prepass_id, content="12")
   inspect(user_layout_label, content="user.specialize")
+}
+
+///|
+fn material_test_specialized_mesh_pipeline(
+  _key : @material.ErasedMaterialPipelineKey,
+  layout : @material.MaterialMeshVertexLayout,
+) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
+  let vertex_layout = match
+    layout
+    .layout()
+    .get_layout([
+      @mesh.VertexAttributeDescriptor::new(
+        shader_location=0,
+        id=@mesh.MeshVertexAttribute::position().id(),
+        name="Vertex_Position",
+      ),
+    ]) {
+    Ok(vertex_layout) => vertex_layout
+    Err(error) =>
+      raise @material.specialized_mesh_pipeline_missing_vertex_attribute_error(
+        error,
+      )
+  }
+  @material.RenderPipelineDescriptor::default().with_vertex(
+    @material.VertexState::new(None, [], None, [vertex_layout]),
+  )
+}
+
+///|
+test "specialized mesh pipelines deduplicate final vertex layouts like bevy" {
+  let mesh_key = @material.ErasedMeshPipelineKey::new(13UL, "MeshKey")
+  let material_key = @material.ErasedMaterialKey::new(5, "MaterialKey")
+  let pipeline_key = @material.ErasedMaterialPipelineKey::new(
+    mesh_key, material_key, "PipelineKey",
+  )
+  let pipelines = @material.SpecializedMeshPipelines::new()
+  let first_layout = material_test_mesh_vertex_layout()
+  let second_layout = material_test_mesh_vertex_layout(
+    include_unused_attribute=true,
+  )
+  let first_id = try! pipelines.specialize(
+    material_test_specialized_mesh_pipeline, pipeline_key, first_layout,
+  )
+  let same_mesh_layout_id = try! pipelines.specialize(
+    material_test_specialized_mesh_pipeline, pipeline_key, first_layout,
+  )
+  let compatible_vertex_layout_id = try! pipelines.specialize(
+    material_test_specialized_mesh_pipeline, pipeline_key, second_layout,
+  )
+  inspect(first_id.id(), content="0")
+  inspect(same_mesh_layout_id.id(), content="0")
+  inspect(compatible_vertex_layout_id.id(), content="0")
+  inspect(pipelines.mesh_layout_cache_len(), content="2")
+  inspect(pipelines.vertex_layout_cache_len(), content="1")
+  inspect(
+    pipelines.render_pipeline_descriptor(first_id) is Some(_),
+    content="true",
+  )
 }
 
 ///|

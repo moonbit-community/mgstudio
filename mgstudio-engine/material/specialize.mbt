@@ -16,11 +16,11 @@
 // Bevy source: `bevy/crates/bevy_material/src/specialize.rs`.
 
 ///|
-pub type MaterialMeshVertexLayout = Int
+pub type MaterialMeshVertexLayout = @mesh.MeshVertexBufferLayoutRef
 
 ///|
 pub suberror SpecializedMeshPipelineError {
-  MissingVertexAttribute(String)
+  MissingVertexAttribute(@mesh.MissingVertexAttributeError)
 }
 
 ///|
@@ -51,7 +51,19 @@ pub type UserSpecializeFn = (
 pub fn missing_vertex_attribute_error(
   attribute : String,
 ) -> SpecializedMeshPipelineError {
-  MissingVertexAttribute(attribute)
+  MissingVertexAttribute(
+    @mesh.MissingVertexAttributeError::new(
+      id=@mesh.MeshVertexAttributeId::new(0UL),
+      name=attribute,
+    ),
+  )
+}
+
+///|
+pub fn specialized_mesh_pipeline_missing_vertex_attribute_error(
+  error : @mesh.MissingVertexAttributeError,
+) -> SpecializedMeshPipelineError {
+  MissingVertexAttribute(error)
 }
 
 ///|
@@ -85,4 +97,152 @@ pub fn material_specialize_user(
   key : ErasedMaterialPipelineKey,
 ) -> RenderPipelineDescriptor raise {
   specialize(user_key, descriptor, layout, key)
+}
+
+///|
+pub type SpecializedMeshPipelineFn = (
+  ErasedMaterialPipelineKey,
+  MaterialMeshVertexLayout,
+) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError
+
+///|
+struct SpecializedMeshPipelineMeshLayoutCacheEntry {
+  layout : MaterialMeshVertexLayout
+  key : ErasedMaterialPipelineKey
+  pipeline_id : CachedRenderPipelineId
+}
+
+///|
+struct SpecializedMeshPipelineVertexLayoutCacheEntry {
+  vertex_layout : VertexBufferLayout
+  key : ErasedMaterialPipelineKey
+  pipeline_id : CachedRenderPipelineId
+  descriptor : RenderPipelineDescriptor
+}
+
+///|
+pub struct SpecializedMeshPipelines {
+  mesh_layout_cache : Array[SpecializedMeshPipelineMeshLayoutCacheEntry]
+  vertex_layout_cache : Array[SpecializedMeshPipelineVertexLayoutCacheEntry]
+}
+
+///|
+pub fn SpecializedMeshPipelines::new() -> SpecializedMeshPipelines {
+  SpecializedMeshPipelines::{ mesh_layout_cache: [], vertex_layout_cache: [] }
+}
+
+///|
+pub fn SpecializedMeshPipelines::default() -> SpecializedMeshPipelines {
+  SpecializedMeshPipelines::new()
+}
+
+///|
+pub impl Default for SpecializedMeshPipelines with default() {
+  SpecializedMeshPipelines::default()
+}
+
+///|
+pub fn SpecializedMeshPipelines::mesh_layout_cache_len(
+  self : SpecializedMeshPipelines,
+) -> Int {
+  self.mesh_layout_cache.length()
+}
+
+///|
+pub fn SpecializedMeshPipelines::vertex_layout_cache_len(
+  self : SpecializedMeshPipelines,
+) -> Int {
+  self.vertex_layout_cache.length()
+}
+
+///|
+pub fn SpecializedMeshPipelines::render_pipeline_descriptor(
+  self : SpecializedMeshPipelines,
+  pipeline_id : CachedRenderPipelineId,
+) -> RenderPipelineDescriptor? {
+  for entry in self.vertex_layout_cache {
+    if entry.pipeline_id.id() == pipeline_id.id() {
+      return Some(entry.descriptor)
+    }
+  }
+  None
+}
+
+///|
+fn specialized_mesh_pipeline_find_mesh_layout_cache(
+  cache : Array[SpecializedMeshPipelineMeshLayoutCacheEntry],
+  layout : MaterialMeshVertexLayout,
+  key : ErasedMaterialPipelineKey,
+) -> CachedRenderPipelineId? {
+  for entry in cache {
+    if entry.layout.equal(layout) && entry.key == key {
+      return Some(entry.pipeline_id)
+    }
+  }
+  None
+}
+
+///|
+fn specialized_mesh_pipeline_find_vertex_layout_cache(
+  cache : Array[SpecializedMeshPipelineVertexLayoutCacheEntry],
+  vertex_layout : VertexBufferLayout,
+  key : ErasedMaterialPipelineKey,
+) -> CachedRenderPipelineId? {
+  for entry in cache {
+    if entry.vertex_layout.equal(vertex_layout) && entry.key == key {
+      return Some(entry.pipeline_id)
+    }
+  }
+  None
+}
+
+///|
+pub fn SpecializedMeshPipelines::specialize(
+  self : SpecializedMeshPipelines,
+  specialize_pipeline : SpecializedMeshPipelineFn,
+  key : ErasedMaterialPipelineKey,
+  layout : MaterialMeshVertexLayout,
+) -> CachedRenderPipelineId raise SpecializedMeshPipelineError {
+  match
+    specialized_mesh_pipeline_find_mesh_layout_cache(
+      self.mesh_layout_cache,
+      layout,
+      key,
+    ) {
+    Some(pipeline_id) => return pipeline_id
+    None => ()
+  }
+  let descriptor = specialize_pipeline(key, layout)
+  if descriptor.vertex.buffers.length() != 1 {
+    abort(
+      "SpecializedMeshPipeline::specialize must return exactly one vertex buffer layout",
+    )
+  }
+  let vertex_layout = descriptor.vertex.buffers[0]
+  let pipeline_id = match
+    specialized_mesh_pipeline_find_vertex_layout_cache(
+      self.vertex_layout_cache,
+      vertex_layout,
+      key,
+    ) {
+    Some(pipeline_id) => pipeline_id
+    None => {
+      let id = CachedRenderPipelineId::new(
+        self.vertex_layout_cache.length().to_uint64(),
+      )
+      self.vertex_layout_cache.push(SpecializedMeshPipelineVertexLayoutCacheEntry::{
+        vertex_layout,
+        key,
+        pipeline_id: id,
+        descriptor,
+      })
+      id
+    }
+  }
+  self.mesh_layout_cache.push(SpecializedMeshPipelineMeshLayoutCacheEntry::{
+    layout,
+    key,
+    pipeline_id,
+  })
+  pipeline_id
 }

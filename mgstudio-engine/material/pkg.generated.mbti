@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
@@ -59,15 +60,17 @@ pub fn material_alpha_is_blended(AlphaMode3d) -> Bool
 
 pub fn material_default_opaque_method_resource(@ecs.World) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod]
 
-pub fn material_specialize_base((@ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError, @ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise
+pub fn material_specialize_base((@ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError, @ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef, MaterialProperties) -> CachedRenderPipelineId raise
 
-pub fn material_specialize_prepass((@ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError, @ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise
+pub fn material_specialize_prepass((@ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError, @ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef, MaterialProperties) -> CachedRenderPipelineId raise
 
-pub fn material_specialize_user((String, RenderPipelineDescriptor, Int, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError, String, RenderPipelineDescriptor, Int, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise
+pub fn material_specialize_user((String, RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError, String, RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise
 
 pub fn missing_vertex_attribute_error(String) -> SpecializedMeshPipelineError
 
 pub fn shader_label(String) -> String
+
+pub fn specialized_mesh_pipeline_missing_vertex_attribute_error(@mesh.MissingVertexAttributeError) -> SpecializedMeshPipelineError
 
 pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
 
@@ -81,7 +84,7 @@ pub suberror NoFragmentStateError {
 }
 
 pub suberror SpecializedMeshPipelineError {
-  MissingVertexAttribute(String)
+  MissingVertexAttribute(@mesh.MissingVertexAttributeError)
 }
 
 // Types and methods
@@ -293,9 +296,9 @@ pub struct MaterialProperties {
   draw_functions : Array[(String, DrawFunctionId)]
   shaders : Array[(String, String)]
   bindless : Bool
-  base_specialize : ((@ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?
-  prepass_specialize : ((@ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?
-  user_specialize : ((String, RenderPipelineDescriptor, Int, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError)?
+  base_specialize : ((@ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?
+  prepass_specialize : ((@ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?
+  user_specialize : ((String, RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError)?
   material_key : ErasedMaterialKey
   shadows_enabled : Bool
   prepass_enabled : Bool
@@ -306,19 +309,19 @@ pub fn MaterialProperties::default() -> Self
 pub fn MaterialProperties::get_draw_function(Self, String) -> DrawFunctionId?
 pub fn MaterialProperties::get_shader(Self, String) -> String?
 pub fn MaterialProperties::with_alpha_mode(Self, AlphaMode3d) -> Self
-pub fn MaterialProperties::with_base_specialize(Self, ((@ecs.World, ErasedMaterialPipelineKey, Int, Self) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?) -> Self
+pub fn MaterialProperties::with_base_specialize(Self, ((@ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef, Self) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?) -> Self
 pub fn MaterialProperties::with_bindless(Self, Bool) -> Self
 pub fn MaterialProperties::with_depth_bias(Self, Float) -> Self
 pub fn MaterialProperties::with_material_key(Self, ErasedMaterialKey) -> Self
 pub fn MaterialProperties::with_material_layout(Self, BindGroupLayoutDescriptor?) -> Self
 pub fn MaterialProperties::with_mesh_pipeline_key_bits(Self, ErasedMeshPipelineKey) -> Self
 pub fn MaterialProperties::with_prepass_enabled(Self, Bool) -> Self
-pub fn MaterialProperties::with_prepass_specialize(Self, ((@ecs.World, ErasedMaterialPipelineKey, Int, Self) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?) -> Self
+pub fn MaterialProperties::with_prepass_specialize(Self, ((@ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef, Self) -> CachedRenderPipelineId raise SpecializedMeshPipelineError)?) -> Self
 pub fn MaterialProperties::with_reads_view_transmission_texture(Self, Bool) -> Self
 pub fn MaterialProperties::with_render_method(Self, OpaqueRendererMethod) -> Self
 pub fn MaterialProperties::with_render_phase_type(Self, RenderPhaseType) -> Self
 pub fn MaterialProperties::with_shadows_enabled(Self, Bool) -> Self
-pub fn MaterialProperties::with_user_specialize(Self, ((String, RenderPipelineDescriptor, Int, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError)?) -> Self
+pub fn MaterialProperties::with_user_specialize(Self, ((String, RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError)?) -> Self
 pub impl Default for MaterialProperties
 
 #alias(MaterialMesh3dComponent)
@@ -419,6 +422,22 @@ pub(all) enum ShaderDefVal {
   String(String, String)
 }
 
+type SpecializedMeshPipelineMeshLayoutCacheEntry
+
+type SpecializedMeshPipelineVertexLayoutCacheEntry
+
+pub struct SpecializedMeshPipelines {
+  mesh_layout_cache : Array[SpecializedMeshPipelineMeshLayoutCacheEntry]
+  vertex_layout_cache : Array[SpecializedMeshPipelineVertexLayoutCacheEntry]
+}
+pub fn SpecializedMeshPipelines::default() -> Self
+pub fn SpecializedMeshPipelines::mesh_layout_cache_len(Self) -> Int
+pub fn SpecializedMeshPipelines::new() -> Self
+pub fn SpecializedMeshPipelines::render_pipeline_descriptor(Self, CachedRenderPipelineId) -> RenderPipelineDescriptor?
+pub fn SpecializedMeshPipelines::specialize(Self, (ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> CachedRenderPipelineId raise SpecializedMeshPipelineError
+pub fn SpecializedMeshPipelines::vertex_layout_cache_len(Self) -> Int
+pub impl Default for SpecializedMeshPipelines
+
 pub struct StandardMaterial {
   base_color : @color.Color
   base_color_texture : @asset.Handle[@image.Image]?
@@ -509,14 +528,14 @@ pub struct VertexState {
   shader : String?
   shader_defs : Array[ShaderDefVal]
   entry_point : String?
-  buffers : Array[Int]
+  buffers : Array[@mesh.VertexBufferLayout]
 }
 pub fn VertexState::default() -> Self
-pub fn VertexState::new(String?, Array[ShaderDefVal], String?, Array[Int]) -> Self
+pub fn VertexState::new(String?, Array[ShaderDefVal], String?, Array[@mesh.VertexBufferLayout]) -> Self
 pub impl Default for VertexState
 
 // Type aliases
-pub type BaseSpecializeFn = (@ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError
+pub type BaseSpecializeFn = (@ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError
 
 pub type DrawFunctionLabel = String
 
@@ -526,15 +545,17 @@ pub type InternedShaderLabel = String
 
 pub using @render_resource {type BindGroupLayoutEntry as MaterialBindGroupLayoutEntry}
 
-pub type MaterialMeshVertexLayout = Int
+pub using @mesh {type MeshVertexBufferLayoutRef as MaterialMeshVertexLayout}
 
-pub type PrepassSpecializeFn = (@ecs.World, ErasedMaterialPipelineKey, Int, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError
+pub type PrepassSpecializeFn = (@ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef, MaterialProperties) -> CachedRenderPipelineId raise SpecializedMeshPipelineError
 
 pub type ShaderLabel = String
 
-pub type UserSpecializeFn = (String, RenderPipelineDescriptor, Int, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError
+pub type SpecializedMeshPipelineFn = (ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError
 
-pub type VertexBufferLayout = Int
+pub type UserSpecializeFn = (String, RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> RenderPipelineDescriptor raise SpecializedMeshPipelineError
+
+pub using @mesh {type VertexBufferLayout}
 
 // Traits
 pub(open) trait IntoStandardMaterialAsset {

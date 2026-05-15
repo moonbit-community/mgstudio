@@ -49,7 +49,7 @@ pub(all) enum ShaderDefVal {
 }
 
 ///|
-pub type VertexBufferLayout = Int
+pub type VertexBufferLayout = @mesh.VertexBufferLayout
 
 ///|
 pub struct VertexState {

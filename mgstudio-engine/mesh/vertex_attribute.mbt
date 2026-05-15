@@ -352,6 +352,44 @@ pub struct MissingVertexAttributeError {
 }
 
 ///|
+pub fn MissingVertexAttributeError::new(
+  id~ : MeshVertexAttributeId,
+  name~ : String,
+  pipeline_type? : String? = None,
+) -> MissingVertexAttributeError {
+  MissingVertexAttributeError::{ id, name, pipeline_type }
+}
+
+///|
+pub fn MissingVertexAttributeError::id(
+  self : MissingVertexAttributeError,
+) -> MeshVertexAttributeId {
+  self.id
+}
+
+///|
+pub fn MissingVertexAttributeError::name(
+  self : MissingVertexAttributeError,
+) -> String {
+  self.name
+}
+
+///|
+pub fn MissingVertexAttributeError::pipeline_type(
+  self : MissingVertexAttributeError,
+) -> String? {
+  self.pipeline_type
+}
+
+///|
+pub fn MissingVertexAttributeError::with_pipeline_type(
+  self : MissingVertexAttributeError,
+  pipeline_type : String?,
+) -> MissingVertexAttributeError {
+  MissingVertexAttributeError::{ ..self, pipeline_type, }
+}
+
+///|
 pub struct MeshVertexBufferLayout {
   attribute_ids : Array[MeshVertexAttributeId]
   layout : VertexBufferLayout
@@ -458,6 +496,14 @@ pub fn MeshVertexBufferLayoutRef::index(
 }
 
 ///|
+pub fn MeshVertexBufferLayoutRef::equal(
+  self : MeshVertexBufferLayoutRef,
+  other : MeshVertexBufferLayoutRef,
+) -> Bool {
+  self.index == other.index && self.layout.equal(other.layout)
+}
+
+///|
 pub struct MeshVertexBufferLayouts {
   layouts : Array[MeshVertexBufferLayout]
 }
@@ -489,30 +535,27 @@ fn mesh_vertex_attribute_id_array_eq(
 }
 
 ///|
-fn mesh_vertex_attribute_layout_eq(
-  left : VertexAttribute,
-  right : VertexAttribute,
+pub fn VertexAttribute::equal(
+  self : VertexAttribute,
+  other : VertexAttribute,
 ) -> Bool {
-  left.offset == right.offset &&
-  left.format == right.format &&
-  left.shader_location == right.shader_location
+  self.offset == other.offset &&
+  self.format == other.format &&
+  self.shader_location == other.shader_location
 }
 
 ///|
-fn mesh_vertex_buffer_layout_eq(
-  left : VertexBufferLayout,
-  right : VertexBufferLayout,
+pub fn VertexBufferLayout::equal(
+  self : VertexBufferLayout,
+  other : VertexBufferLayout,
 ) -> Bool {
-  if left.array_stride != right.array_stride ||
-    left.step_mode != right.step_mode ||
-    left.attributes.length() != right.attributes.length() {
+  if self.array_stride != other.array_stride ||
+    self.step_mode != other.step_mode ||
+    self.attributes.length() != other.attributes.length() {
     return false
   }
-  for index in 0..<left.attributes.length() {
-    if !mesh_vertex_attribute_layout_eq(
-        left.attributes[index],
-        right.attributes[index],
-      ) {
+  for index in 0..<self.attributes.length() {
+    if !self.attributes[index].equal(other.attributes[index]) {
       return false
     }
   }
@@ -520,12 +563,12 @@ fn mesh_vertex_buffer_layout_eq(
 }
 
 ///|
-fn mesh_mesh_vertex_buffer_layout_eq(
-  left : MeshVertexBufferLayout,
-  right : MeshVertexBufferLayout,
+pub fn MeshVertexBufferLayout::equal(
+  self : MeshVertexBufferLayout,
+  other : MeshVertexBufferLayout,
 ) -> Bool {
-  mesh_vertex_attribute_id_array_eq(left.attribute_ids, right.attribute_ids) &&
-  mesh_vertex_buffer_layout_eq(left.layout, right.layout)
+  mesh_vertex_attribute_id_array_eq(self.attribute_ids, other.attribute_ids) &&
+  self.layout.equal(other.layout)
 }
 
 ///|
@@ -534,7 +577,7 @@ pub fn MeshVertexBufferLayouts::insert(
   layout : MeshVertexBufferLayout,
 ) -> MeshVertexBufferLayoutRef {
   for index in 0..<self.layouts.length() {
-    if mesh_mesh_vertex_buffer_layout_eq(self.layouts[index], layout) {
+    if self.layouts[index].equal(layout) {
       return MeshVertexBufferLayoutRef::{ index, layout: self.layouts[index] }
     }
   }
