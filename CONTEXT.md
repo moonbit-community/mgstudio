@@ -48,9 +48,9 @@ _Avoid_: mgstudio parity gap, local workaround target
 The minimum evidence package that lets a community dependency maintainer implement and verify the missing Bevy-required capability.
 _Avoid_: vague upstream note, dependency complaint
 
-**No Local External-Blocker Compatibility Layer**:
-The rule that mgstudio must not bypass an external blocker with a temporary local compatibility layer; work resumes only after the dependency or ecosystem package implements the needed capability.
-_Avoid_: temporary local workaround, compatibility shim, local bypass
+**Recorded External-Blocker Workaround**:
+A temporary mgstudio-side unblock path for an external blocker that is explicitly recorded, does not count as completed parity, and has a dependency-resolution deletion condition.
+_Avoid_: silent workaround, completed parity claim, permanent compatibility layer
 
 **Blocked Parity Subtarget**:
 A portion of a Bevy source owner whose parity work cannot continue until an external blocker is resolved.
@@ -88,7 +88,7 @@ _Avoid_: committed Bevy patch, permanent baseline fork
 - **Runtime Owner Semantics** takes priority over matching Bevy file placement when MoonBit package or dependency constraints require bridge packages.
 - An **External Blocker** is tracked separately from mgstudio implementation parity and can become community dependency work.
 - Every **External Blocker** requires an **External Blocker Reproduction** before it is actionable for the community.
-- **No Local External-Blocker Compatibility Layer** applies to every **External Blocker**.
+- A **Recorded External-Blocker Workaround** may exist for an **External Blocker**, but it must not be counted as completed parity.
 - A **Blocked Parity Subtarget** may still receive tests, documentation, reproduction work, or unrelated cleanup, but not local substitute behavior for the blocked dependency capability.
 - A **Cause Unverified Performance Gap** remains unresolved until one candidate cause becomes an **Evidence-Based Parity Cause**.
 - **Trace-First Performance Diagnosis** applies before refactoring any **Cause Unverified Performance Gap**.
@@ -125,8 +125,8 @@ _Avoid_: committed Bevy patch, permanent baseline fork
 > **Dev:** "Can we just say the dependency is missing a feature?"
 > **Domain expert:** "No — an **External Blocker** needs an **External Blocker Reproduction** with the dependency, Bevy requirement, blocked owner, and verification expectation."
 >
-> **Dev:** "Can mgstudio add a temporary shim while waiting for the dependency?"
-> **Domain expert:** "No — **No Local External-Blocker Compatibility Layer** means parity work waits for the dependency capability."
+> **Dev:** "Can mgstudio temporarily unblock an external blocker while waiting for the dependency?"
+> **Domain expert:** "Yes, but only as a **Recorded External-Blocker Workaround** with a deletion condition, and it must not count as completed parity."
 >
 > **Dev:** "Can we keep working near a blocked owner?"
 > **Domain expert:** "Yes, but only around the **Blocked Parity Subtarget**: add evidence, tests, docs, or unrelated cleanup without adding substitute behavior."
@@ -158,7 +158,7 @@ _Avoid_: committed Bevy patch, permanent baseline fork
 - "owner" could mean the file where code currently lives; resolved: **Runtime Owner Semantics** follows the **Bevy Source Owner**, with bridges and re-exports used only for MoonBit constraints.
 - "dependency limitation" could be counted as a local engine gap; resolved: missing upstream MoonBit package capability is an **External Blocker**.
 - "external blocker" could be a vague note; resolved: it must include an **External Blocker Reproduction** to be actionable.
-- "temporary compatibility layer" could look like progress; resolved: **No Local External-Blocker Compatibility Layer** forbids bypassing external blockers inside mgstudio.
+- "temporary compatibility layer" could look like completed parity; resolved: it must be a **Recorded External-Blocker Workaround** and remain tied to the external blocker.
 - "blocked" could imply no work is allowed nearby; resolved: a **Blocked Parity Subtarget** only forbids substitute behavior for the missing dependency capability.
 - "diagnosed performance gap" could mean plausible explanation; resolved: severe gaps with only candidate causes are **Cause Unverified Performance Gap** entries.
 - "performance fix" could start with refactoring; resolved: **Trace-First Performance Diagnosis** comes before restructuring cause-unverified gaps.
