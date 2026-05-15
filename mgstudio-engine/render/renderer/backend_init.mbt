@@ -45,6 +45,12 @@ pub fn GpuBackend::new(
   if adapter.supports_known_rust_features_u64(@wgpu.FEATURES_SHADER_INT64) {
     required_features.push(@wgpu.NATIVE_FEATURE_SHADER_INT64)
   }
+  if adapter.has_feature_native_texture_atomic() {
+    required_features.push(@wgpu.NATIVE_FEATURE_TEXTURE_ATOMIC)
+  }
+  if adapter.has_feature_native_texture_int64_atomic() {
+    required_features.push(@wgpu.NATIVE_FEATURE_TEXTURE_INT64_ATOMIC)
+  }
   if adapter.supports_known_rust_features_u64(@wgpu.FEATURES_SUBGROUP) {
     required_features.push(@wgpu.NATIVE_FEATURE_SUBGROUP)
   }

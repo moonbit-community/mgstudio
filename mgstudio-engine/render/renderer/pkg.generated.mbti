@@ -223,6 +223,18 @@ pub fn meshlet_missing_native_subgroup_barrier() -> Bool
 
 pub fn meshlet_missing_rust_features_u64() -> UInt64
 
+pub fn meshlet_native_extension_bridge_available() -> Bool
+
+pub fn meshlet_native_extension_bridge_missing_create_visibility_texture() -> Bool
+
+pub fn meshlet_native_extension_bridge_missing_symbol_mask() -> UInt
+
+pub fn meshlet_native_extension_bridge_missing_visibility_storage_layout() -> Bool
+
+pub fn meshlet_native_extension_bridge_required_symbol_mask() -> UInt
+
+pub fn meshlet_native_extension_bridge_symbol_mask() -> UInt
+
 pub fn meshlet_required_features_supported() -> Bool
 
 pub fn meshlet_required_rust_features_u64() -> UInt64

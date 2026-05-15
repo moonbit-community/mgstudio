@@ -582,6 +582,9 @@ pub fn meshlet_required_features_supported() -> Bool {
     if meshlet_missing_native_immediates() {
       return false
     }
+    if !meshlet_native_extension_bridge_available() {
+      return false
+    }
     return true
   }
   false

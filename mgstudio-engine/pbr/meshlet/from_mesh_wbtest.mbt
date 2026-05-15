@@ -1,0 +1,244 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+fn meshlet_wbtest_aabb(
+  x : Float,
+  y : Float,
+  z : Float,
+  half : Float,
+) -> @math.Aabb3d {
+  @math.Aabb3d::new(@math.Vec3::new(x, y, z), @math.Vec3::splat(half))
+}
+
+///|
+fn meshlet_wbtest_sphere(
+  x : Float,
+  y : Float,
+  z : Float,
+  radius : Float,
+) -> MeshletTempSphere {
+  MeshletTempSphere::new(@math.Vec3::new(x, y, z), radius)
+}
+
+///|
+fn meshlet_wbtest_cull(id : Int) -> MeshletTempCullData {
+  let x = Float::from_int(id) * 2.0F
+  MeshletTempCullData::{
+    aabb: meshlet_wbtest_aabb(x, 0.0F, 0.0F, 0.5F),
+    lod_group_sphere: meshlet_wbtest_sphere(x, 0.0F, 0.0F, 0.5F),
+    error: Float::from_int(id) * 0.01F,
+  }
+}
+
+///|
+fn meshlet_wbtest_group(id : Int, meshlets : Array[Int]) -> MeshletTempGroup {
+  let x = Float::from_int(id) * 2.0F
+  MeshletTempGroup::new(
+    aabb=meshlet_wbtest_aabb(x, 0.0F, 0.0F, 0.5F),
+    lod_bounds=meshlet_wbtest_sphere(x, 0.0F, 0.0F, 0.5F),
+    parent_error=Float::from_int(id) * 0.01F,
+    meshlets~,
+  )
+}
+
+///|
+fn meshlet_wbtest_meshlet(id : Int) -> Meshlet {
+  Meshlet::new(0, 0, id * 3, 3, 1)
+}
+
+///|
+fn meshlet_wbtest_build_meshlets() -> MeshletBuildMeshlets {
+  MeshletBuildMeshlets::new(
+    meshlets=[
+      MeshletBuildMeshlet::new(
+        vertex_offset=0,
+        triangle_offset=0,
+        vertex_count=3,
+        triangle_count=1,
+      ),
+      MeshletBuildMeshlet::new(
+        vertex_offset=3,
+        triangle_offset=3,
+        vertex_count=3,
+        triangle_count=1,
+      ),
+      MeshletBuildMeshlet::new(
+        vertex_offset=6,
+        triangle_offset=6,
+        vertex_count=3,
+        triangle_count=1,
+      ),
+    ],
+    vertices=[0, 1, 2, 2, 1, 3, 4, 5, 6],
+    triangles=[0, 1, 2, 0, 1, 2, 0, 1, 2],
+  )
+}
+
+///|
+test "pbr meshlet wbtest: merge spheres preserves containing sphere" {
+  let left = meshlet_wbtest_sphere(0.0F, 0.0F, 0.0F, 10.0F)
+  let right = meshlet_wbtest_sphere(1.0F, 0.0F, 0.0F, 1.0F)
+  let merged = meshlet_merge_spheres(left, right)
+  debug_inspect(merged.center.x, content="0")
+  debug_inspect(merged.radius, content="10")
+}
+
+///|
+test "pbr meshlet wbtest: bvh builder remaps group meshlets contiguously" {
+  let meshlets = [meshlet_wbtest_meshlet(0), meshlet_wbtest_meshlet(1)]
+  let cull = [meshlet_wbtest_cull(0), meshlet_wbtest_cull(1)]
+  let groups = [meshlet_wbtest_group(0, [1, 0])]
+  let builder = MeshletBvhBuilder::new()
+  builder.add_lod(0, groups)
+  let built = builder.build(meshlets, groups, cull)
+  debug_inspect(built.bvh.length(), content="1")
+  debug_inspect(built.bvh_depth, content="1")
+  debug_inspect(built.bvh[0].aabbs[0].child_offset, content="0")
+  debug_inspect(built.bvh[0].child_counts[0], content="2")
+  debug_inspect(built.meshlets[0].start_index_id, content="3")
+  debug_inspect(built.meshlets[1].start_index_id, content="0")
+  debug_inspect(built.cull_data.length(), content="2")
+}
+
+///|
+test "pbr meshlet wbtest: connected meshlets count shared remapped vertices" {
+  let meshlets = meshlet_wbtest_build_meshlets()
+  let connected = meshlet_find_connected_meshlets([0, 1, 2], meshlets, [
+    0, 1, 2, 3, 4, 5, 6,
+  ])
+  debug_inspect(connected[0].length(), content="1")
+  debug_inspect(connected[0][0].meshlet_id, content="1")
+  debug_inspect(connected[0][0].shared_vertex_count, content="2")
+  debug_inspect(connected[1].length(), content="1")
+  debug_inspect(connected[1][0].meshlet_id, content="0")
+  debug_inspect(connected[2].length(), content="0")
+}
+
+///|
+test "pbr meshlet wbtest: position remap collapses equal positions" {
+  let vertices = [
+    MeshletSourceVertex::new(
+      position=@math.Vec3::new(1.0F, 0.0F, 0.0F),
+      normal=@math.Vec3::new(0.0F, 1.0F, 0.0F),
+      uv=@math.Vec2::new(0.0F, 0.0F),
+    ),
+    MeshletSourceVertex::new(
+      position=@math.Vec3::new(2.0F, 0.0F, 0.0F),
+      normal=@math.Vec3::new(0.0F, 1.0F, 0.0F),
+      uv=@math.Vec2::new(0.0F, 0.0F),
+    ),
+    MeshletSourceVertex::new(
+      position=@math.Vec3::new(1.0F, 0.0F, 0.0F),
+      normal=@math.Vec3::new(1.0F, 0.0F, 0.0F),
+      uv=@math.Vec2::new(1.0F, 1.0F),
+    ),
+  ]
+  debug_inspect(meshlet_generate_position_remap(vertices), content="[0, 1, 0]")
+}
+
+///|
+test "pbr meshlet wbtest: triangle partition graph mirrors bevy metis inputs" {
+  let graph = meshlet_build_triangle_partition_graph(
+    [0, 1, 2, 2, 1, 3, 4, 5, 6],
+    [0, 1, 2, 3, 4, 5, 6],
+  )
+  debug_inspect(graph.xadj, content="[0, 1, 2, 2]")
+  debug_inspect(graph.adjncy, content="[1, 0]")
+  debug_inspect(graph.adjwgt, content="[2, 2]")
+  debug_inspect(graph.partition_count, content="1")
+  debug_inspect(graph.seed, content="17")
+  debug_inspect(graph.imbalance_factor, content="1")
+}
+
+///|
+test "pbr meshlet wbtest: indices are collected by metis partition ids" {
+  let indices = meshlet_collect_indices_per_partition(
+    [0, 1, 2, 2, 1, 3, 4, 5, 6],
+    [1, 0, 1],
+    2,
+  )
+  debug_inspect(indices[0], content="[2, 1, 3]")
+  debug_inspect(indices[1], content="[0, 1, 2, 4, 5, 6]")
+}
+
+///|
+test "pbr meshlet wbtest: group partition graph mirrors bevy metis inputs" {
+  let meshlets = meshlet_wbtest_build_meshlets()
+  let queue = [0, 1, 2]
+  let connected = meshlet_find_connected_meshlets(queue, meshlets, [
+    0, 1, 2, 3, 4, 5, 6,
+  ])
+  let graph = meshlet_build_group_partition_graph(queue, connected)
+  debug_inspect(graph.xadj, content="[0, 1, 2, 2]")
+  debug_inspect(graph.adjncy, content="[1, 0]")
+  debug_inspect(graph.adjwgt, content="[2, 2]")
+  debug_inspect(graph.partition_count, content="1")
+  debug_inspect(graph.imbalance_factor, content="200")
+  debug_inspect(MESHLET_SIMPLIFICATION_FAILURE_PERCENTAGE, content="0.6")
+}
+
+///|
+test "pbr meshlet wbtest: lock group borders marks shared position vertices" {
+  let meshlets = MeshletBuildMeshlets::new(
+    meshlets=[
+      MeshletBuildMeshlet::new(
+        vertex_offset=0,
+        triangle_offset=0,
+        vertex_count=3,
+        triangle_count=1,
+      ),
+      MeshletBuildMeshlet::new(
+        vertex_offset=3,
+        triangle_offset=3,
+        vertex_count=3,
+        triangle_count=1,
+      ),
+    ],
+    vertices=[0, 1, 2, 3, 4, 5],
+    triangles=[0, 1, 2, 0, 1, 2],
+  )
+  let vertex_locks = [false, false, false, false, false, false]
+  meshlet_lock_group_borders(
+    vertex_locks,
+    [meshlet_wbtest_group(0, [0]), meshlet_wbtest_group(1, [1])],
+    meshlets,
+    [0, 1, 2, 0, 4, 5],
+  )
+  debug_inspect(
+    vertex_locks,
+    content="[true, false, false, true, false, false]",
+  )
+}
+
+///|
+test "pbr meshlet wbtest: bvh builder emits inner nodes for more than eight groups" {
+  let meshlets : Array[Meshlet] = []
+  let cull : Array[MeshletTempCullData] = []
+  let groups : Array[MeshletTempGroup] = []
+  for id in 0..<10 {
+    meshlets.push(meshlet_wbtest_meshlet(id))
+    cull.push(meshlet_wbtest_cull(id))
+    groups.push(meshlet_wbtest_group(id, [id]))
+  }
+  let builder = MeshletBvhBuilder::new()
+  builder.add_lod(0, groups)
+  let built = builder.build(meshlets, groups, cull)
+  debug_inspect(built.bvh.length() > 1, content="true")
+  debug_inspect(built.bvh_depth >= 2, content="true")
+  debug_inspect(built.bvh[0].child_counts[0], content="255")
+  debug_inspect(built.meshlets.length(), content="10")
+  debug_inspect(built.cull_data.length(), content="10")
+  debug_inspect(built.aabb.half_extent_x > 8.0F, content="true")
+}

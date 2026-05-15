@@ -33,6 +33,18 @@ test "pbr meshlet: required feature mask includes texture atomics" {
 }
 
 ///|
+test "pbr meshlet: native extension bridge gates descriptor gap" {
+  let required = @renderer.meshlet_native_extension_bridge_required_symbol_mask()
+  let missing = @renderer.meshlet_native_extension_bridge_missing_symbol_mask()
+  inspect(required == 0x00000003U, content="true")
+  if @renderer.meshlet_native_extension_bridge_available() {
+    inspect(missing == 0U, content="true")
+  } else {
+    inspect(missing != 0U, content="true")
+  }
+}
+
+///|
 test "pbr meshlet: runtime status helper follows availability" {
   inspect(
     meshlet_runtime_status_from_availability(false) is RuntimeUnavailable,

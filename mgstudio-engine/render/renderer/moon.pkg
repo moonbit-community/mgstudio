@@ -24,6 +24,7 @@ import {
 supported_targets = "native"
 
 options(
+  "native-stub": [ "meshlet_native_extension_bridge.c" ],
   "pre-build": [
     {
       "command": ":embed --input $input --output $output --name screenshot_to_screen_wgsl_source",
