@@ -107,3 +107,102 @@ test "pbr meshlet: visibility raster plan follows bevy pass order" {
     content="downsample_depth_second",
   )
 }
+
+///|
+test "pbr meshlet: visibility raster command descriptors mirror bevy dispatch modes" {
+  let first_instance = meshlet_visibility_buffer_raster_op_command_descriptor(
+    MeshletVisibilityBufferRasterOp::FirstInstanceCull(false),
+  )
+  inspect(
+    first_instance.command_kind()
+    is MeshletVisibilityBufferRasterCommandKind::ComputePass,
+    content="true",
+  )
+  inspect(
+    first_instance.dispatch_kind()
+    is MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+    content="true",
+  )
+  inspect(first_instance.pipeline_slot(), content="first_instance_cull")
+  inspect(first_instance.bind_group(), content="first_instance_cull")
+  inspect(first_instance.immediate_size(), content="4")
+  inspect(first_instance.dynamic_offset_count(), content="2")
+  let first_bvh_pong = meshlet_visibility_buffer_raster_op_command_descriptor(
+    MeshletVisibilityBufferRasterOp::FirstBvhCull(false, false),
+  )
+  inspect(
+    first_bvh_pong.dispatch_kind()
+    is MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+    content="true",
+  )
+  inspect(first_bvh_pong.pipeline_slot(), content="first_bvh_cull")
+  inspect(first_bvh_pong.bind_group(), content="first_bvh_cull_pong")
+  inspect(first_bvh_pong.immediate_size(), content="8")
+  inspect(first_bvh_pong.dynamic_offset_count(), content="2")
+  let clear_count = meshlet_visibility_buffer_raster_op_command_descriptor(
+    MeshletVisibilityBufferRasterOp::FirstBvhCullClearCount(false, true),
+  )
+  inspect(
+    clear_count.command_kind()
+    is MeshletVisibilityBufferRasterCommandKind::ClearBuffer,
+    content="true",
+  )
+  inspect(clear_count.clear_buffer_count(), content="1")
+}
+
+///|
+test "pbr meshlet: visibility raster command descriptors preserve render and shadow variants" {
+  let hardware_camera = meshlet_visibility_buffer_raster_op_command_descriptor(
+    MeshletVisibilityBufferRasterOp::HardwareRaster(true, false),
+  )
+  inspect(
+    hardware_camera.command_kind()
+    is MeshletVisibilityBufferRasterCommandKind::RenderPass,
+    content="true",
+  )
+  inspect(
+    hardware_camera.dispatch_kind()
+    is MeshletVisibilityBufferRasterDispatchKind::IndirectDraw,
+    content="true",
+  )
+  inspect(
+    hardware_camera.pipeline_slot(),
+    content="visibility_buffer_hardware_raster",
+  )
+  inspect(hardware_camera.bind_group(), content="visibility_buffer_raster")
+  inspect(hardware_camera.immediate_size(), content="4")
+  inspect(hardware_camera.dynamic_offset_count(), content="1")
+  inspect(hardware_camera.uses_camera_viewport(), content="true")
+  let hardware_directional_shadow = meshlet_visibility_buffer_raster_op_command_descriptor(
+    MeshletVisibilityBufferRasterOp::HardwareRaster(true, true),
+    directional_shadow_view=true,
+  )
+  inspect(
+    hardware_directional_shadow.pipeline_slot(),
+    content="visibility_buffer_hardware_raster_shadow_view_unclipped",
+  )
+  inspect(
+    hardware_directional_shadow.uses_shadow_unclipped_pipeline(),
+    content="true",
+  )
+  inspect(hardware_directional_shadow.uses_camera_viewport(), content="false")
+  let resolve_material_depth = meshlet_visibility_buffer_raster_op_command_descriptor(
+    MeshletVisibilityBufferRasterOp::ResolveMaterialDepth,
+  )
+  inspect(
+    resolve_material_depth.command_kind()
+    is MeshletVisibilityBufferRasterCommandKind::DepthResolvePass,
+    content="true",
+  )
+  inspect(
+    resolve_material_depth.dispatch_kind()
+    is MeshletVisibilityBufferRasterDispatchKind::DirectDraw,
+    content="true",
+  )
+  inspect(
+    resolve_material_depth.pipeline_slot(),
+    content="resolve_material_depth",
+  )
+  inspect(resolve_material_depth.bind_group(), content="resolve_material_depth")
+  inspect(resolve_material_depth.uses_camera_viewport(), content="true")
+}

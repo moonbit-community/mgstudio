@@ -163,6 +163,8 @@ pub fn meshlet_validate_input_mesh_summary(MeshToMeshletInputMeshSummary, MeshTo
 
 pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int, view_count? : Int, shadow_view_count? : Int, max_bvh_depth? : Int, rightmost_slot? : Int, material_depth_view_count? : Int, remap_dispatch_enabled? : Bool, pipelines_ready? : Bool) -> Unit
 
+pub fn meshlet_visibility_buffer_raster_op_command_descriptor(MeshletVisibilityBufferRasterOp, directional_shadow_view? : Bool) -> MeshletVisibilityBufferRasterCommandDescriptor
+
 pub fn meshlet_visibility_buffer_raster_op_label(MeshletVisibilityBufferRasterOp) -> String
 
 pub fn meshlet_visibility_buffer_raster_plan(Int, shadow_view_count? : Int, max_bvh_depth? : Int, rightmost_slot? : Int, material_depth_view_count? : Int, remap_dispatch_enabled? : Bool, enabled? : Bool, pipelines_ready? : Bool) -> MeshletVisibilityBufferRasterPlan
@@ -784,6 +786,45 @@ pub fn MeshletViewResources::not_shadow_view(Self) -> Bool
 pub fn MeshletViewResources::rightmost_slot(Self) -> Int
 pub fn MeshletViewResources::scene_instance_count(Self) -> Int
 pub fn MeshletViewResources::view_size(Self) -> (Int, Int)
+
+pub struct MeshletVisibilityBufferRasterCommandDescriptor {
+  label : String
+  command_kind : MeshletVisibilityBufferRasterCommandKind
+  dispatch_kind : MeshletVisibilityBufferRasterDispatchKind
+  pipeline_slot : String
+  bind_group : String
+  immediate_size : Int
+  dynamic_offset_count : Int
+  clear_buffer_count : Int
+  uses_camera_viewport : Bool
+  uses_shadow_unclipped_pipeline : Bool
+}
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::bind_group(Self) -> String
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::clear_buffer_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::command_kind(Self) -> MeshletVisibilityBufferRasterCommandKind
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::dispatch_kind(Self) -> MeshletVisibilityBufferRasterDispatchKind
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::dynamic_offset_count(Self) -> Int
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::immediate_size(Self) -> Int
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::label(Self) -> String
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::pipeline_slot(Self) -> String
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::uses_camera_viewport(Self) -> Bool
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::uses_shadow_unclipped_pipeline(Self) -> Bool
+
+pub(all) enum MeshletVisibilityBufferRasterCommandKind {
+  ClearBuffer
+  ComputePass
+  RenderPass
+  DepthPyramidDownsample
+  DepthResolvePass
+}
+
+pub(all) enum MeshletVisibilityBufferRasterDispatchKind {
+  NoDispatch
+  DirectWorkgroups
+  IndirectWorkgroups
+  DirectDraw
+  IndirectDraw
+}
 
 pub(all) enum MeshletVisibilityBufferRasterOp {
   ClearRasterClusterPrevCounts

@@ -115,6 +115,65 @@ pub(all) enum MeshletVisibilityBufferRasterOp {
 }
 
 ///|
+pub(all) enum MeshletVisibilityBufferRasterCommandKind {
+  ClearBuffer
+  ComputePass
+  RenderPass
+  DepthPyramidDownsample
+  DepthResolvePass
+}
+
+///|
+pub(all) enum MeshletVisibilityBufferRasterDispatchKind {
+  NoDispatch
+  DirectWorkgroups
+  IndirectWorkgroups
+  DirectDraw
+  IndirectDraw
+}
+
+///|
+pub struct MeshletVisibilityBufferRasterCommandDescriptor {
+  label : String
+  command_kind : MeshletVisibilityBufferRasterCommandKind
+  dispatch_kind : MeshletVisibilityBufferRasterDispatchKind
+  pipeline_slot : String
+  bind_group : String
+  immediate_size : Int
+  dynamic_offset_count : Int
+  clear_buffer_count : Int
+  uses_camera_viewport : Bool
+  uses_shadow_unclipped_pipeline : Bool
+}
+
+///|
+fn meshlet_visibility_buffer_raster_command_descriptor(
+  label : String,
+  command_kind : MeshletVisibilityBufferRasterCommandKind,
+  dispatch_kind? : MeshletVisibilityBufferRasterDispatchKind = MeshletVisibilityBufferRasterDispatchKind::NoDispatch,
+  pipeline_slot? : String = "",
+  bind_group? : String = "",
+  immediate_size? : Int = 0,
+  dynamic_offset_count? : Int = 0,
+  clear_buffer_count? : Int = 0,
+  uses_camera_viewport? : Bool = false,
+  uses_shadow_unclipped_pipeline? : Bool = false,
+) -> MeshletVisibilityBufferRasterCommandDescriptor {
+  MeshletVisibilityBufferRasterCommandDescriptor::{
+    label,
+    command_kind,
+    dispatch_kind,
+    pipeline_slot,
+    bind_group,
+    immediate_size: meshlet_raster_non_negative(immediate_size),
+    dynamic_offset_count: meshlet_raster_non_negative(dynamic_offset_count),
+    clear_buffer_count: meshlet_raster_non_negative(clear_buffer_count),
+    uses_camera_viewport,
+    uses_shadow_unclipped_pipeline,
+  }
+}
+
+///|
 fn meshlet_visibility_buffer_raster_ping_label(ping : Bool) -> String {
   if ping {
     "ping"
@@ -205,6 +264,281 @@ pub fn meshlet_visibility_buffer_raster_op_label(
       }
     ResolveMaterialDepth => "resolve_material_depth"
   }
+}
+
+///|
+pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
+  op : MeshletVisibilityBufferRasterOp,
+  directional_shadow_view? : Bool = false,
+) -> MeshletVisibilityBufferRasterCommandDescriptor {
+  let label = meshlet_visibility_buffer_raster_op_label(op)
+  match op {
+    ClearRasterClusterPrevCounts =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ClearBuffer,
+        clear_buffer_count=1,
+      )
+    ClearVisibilityBuffer(shadow_view) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        pipeline_slot=if shadow_view {
+          "clear_visibility_buffer_shadow_view"
+        } else {
+          "clear_visibility_buffer"
+        },
+        bind_group="clear_visibility_buffer",
+        immediate_size=8,
+      )
+    FirstInstanceCull(_) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        pipeline_slot="first_instance_cull",
+        bind_group="first_instance_cull",
+        immediate_size=4,
+        dynamic_offset_count=2,
+      )
+    FirstBvhCull(_, ping) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        pipeline_slot="first_bvh_cull",
+        bind_group=if ping {
+          "first_bvh_cull_ping"
+        } else {
+          "first_bvh_cull_pong"
+        },
+        immediate_size=8,
+        dynamic_offset_count=2,
+      )
+    FirstBvhCullClearCount(_, _) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ClearBuffer,
+        clear_buffer_count=1,
+      )
+    FirstBvhCullClearDispatch(_, _) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ClearBuffer,
+        clear_buffer_count=1,
+      )
+    FirstMeshletCull(_) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        pipeline_slot="first_meshlet_cull",
+        bind_group="first_meshlet_cull",
+        immediate_size=4,
+        dynamic_offset_count=2,
+      )
+    FirstRemap1dTo2d(_) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        pipeline_slot="remap_1d_to_2d_dispatch",
+        bind_group="remap_1d_to_2d_dispatch",
+      )
+    SoftwareRaster(_, shadow_view) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        pipeline_slot=if shadow_view {
+          "visibility_buffer_software_raster_shadow_view"
+        } else {
+          "visibility_buffer_software_raster"
+        },
+        bind_group="visibility_buffer_raster",
+        dynamic_offset_count=1,
+      )
+    HardwareRaster(_, shadow_view) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::RenderPass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectDraw,
+        pipeline_slot=if shadow_view && directional_shadow_view {
+          "visibility_buffer_hardware_raster_shadow_view_unclipped"
+        } else if shadow_view {
+          "visibility_buffer_hardware_raster_shadow_view"
+        } else {
+          "visibility_buffer_hardware_raster"
+        },
+        bind_group="visibility_buffer_raster",
+        immediate_size=4,
+        dynamic_offset_count=1,
+        uses_camera_viewport=!shadow_view,
+        uses_shadow_unclipped_pipeline=shadow_view && directional_shadow_view,
+      )
+    FillCounts(_, _) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        pipeline_slot="fill_counts",
+        bind_group="fill_counts",
+      )
+    DownsampleDepth(first_pass, shadow_view) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::DepthPyramidDownsample,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        pipeline_slot=if first_pass {
+          if shadow_view {
+            "downsample_depth_first_shadow_view"
+          } else {
+            "downsample_depth_first"
+          }
+        } else if shadow_view {
+          "downsample_depth_second_shadow_view"
+        } else {
+          "downsample_depth_second"
+        },
+        bind_group="downsample_depth",
+        immediate_size=4,
+      )
+    SecondInstanceCull(_) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        pipeline_slot="second_instance_cull",
+        bind_group="second_instance_cull",
+        immediate_size=4,
+        dynamic_offset_count=2,
+      )
+    SecondBvhCull(_, ping) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        pipeline_slot="second_bvh_cull",
+        bind_group=if ping {
+          "second_bvh_cull_ping"
+        } else {
+          "second_bvh_cull_pong"
+        },
+        immediate_size=8,
+        dynamic_offset_count=2,
+      )
+    SecondMeshletCull(_) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        pipeline_slot="second_meshlet_cull",
+        bind_group="second_meshlet_cull",
+        immediate_size=4,
+        dynamic_offset_count=2,
+      )
+    SecondRemap1dTo2d(_) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::ComputePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        pipeline_slot="remap_1d_to_2d_dispatch",
+        bind_group="remap_1d_to_2d_dispatch",
+      )
+    ResolveDepth(shadow_view) =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::DepthResolvePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectDraw,
+        pipeline_slot=if shadow_view {
+          "resolve_depth_shadow_view"
+        } else {
+          "resolve_depth"
+        },
+        bind_group="resolve_depth",
+        uses_camera_viewport=true,
+      )
+    ResolveMaterialDepth =>
+      meshlet_visibility_buffer_raster_command_descriptor(
+        label,
+        MeshletVisibilityBufferRasterCommandKind::DepthResolvePass,
+        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectDraw,
+        pipeline_slot="resolve_material_depth",
+        bind_group="resolve_material_depth",
+        uses_camera_viewport=true,
+      )
+  }
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::label(
+  self : MeshletVisibilityBufferRasterCommandDescriptor,
+) -> String {
+  self.label
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::command_kind(
+  self : MeshletVisibilityBufferRasterCommandDescriptor,
+) -> MeshletVisibilityBufferRasterCommandKind {
+  self.command_kind
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::dispatch_kind(
+  self : MeshletVisibilityBufferRasterCommandDescriptor,
+) -> MeshletVisibilityBufferRasterDispatchKind {
+  self.dispatch_kind
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::pipeline_slot(
+  self : MeshletVisibilityBufferRasterCommandDescriptor,
+) -> String {
+  self.pipeline_slot
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::bind_group(
+  self : MeshletVisibilityBufferRasterCommandDescriptor,
+) -> String {
+  self.bind_group
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::immediate_size(
+  self : MeshletVisibilityBufferRasterCommandDescriptor,
+) -> Int {
+  self.immediate_size
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::dynamic_offset_count(
+  self : MeshletVisibilityBufferRasterCommandDescriptor,
+) -> Int {
+  self.dynamic_offset_count
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::clear_buffer_count(
+  self : MeshletVisibilityBufferRasterCommandDescriptor,
+) -> Int {
+  self.clear_buffer_count
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::uses_camera_viewport(
+  self : MeshletVisibilityBufferRasterCommandDescriptor,
+) -> Bool {
+  self.uses_camera_viewport
+}
+
+///|
+pub fn MeshletVisibilityBufferRasterCommandDescriptor::uses_shadow_unclipped_pipeline(
+  self : MeshletVisibilityBufferRasterCommandDescriptor,
+) -> Bool {
+  self.uses_shadow_unclipped_pipeline
 }
 
 ///|
