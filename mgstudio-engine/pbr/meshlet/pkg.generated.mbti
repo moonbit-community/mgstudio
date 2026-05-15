@@ -3,8 +3,10 @@ package "Milky2018/mgstudio/pbr/meshlet"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/utils",
   "moonbitlang/core/debug",
@@ -50,6 +52,8 @@ pub let ecs_key_meshlet_visibility_buffer_raster_state : @ecs.ResourceKey[Meshle
 pub fn extract_meshlet_mesh_entities(Int) -> InstanceManager
 
 pub fn extract_meshlet_mesh_entities_from_instances(Array[ExtractedMeshletInstance]) -> InstanceManager
+
+pub fn init_meshlet_mesh_asset(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn init_meshlet_pipelines(Int, Int, Int) -> MeshletPipelines
 
@@ -361,6 +365,8 @@ pub fn MeshletMesh::vertex_uv_count(Self) -> Int
 pub fn MeshletMesh::with_aabb(Self, MeshletAabb) -> Self
 pub fn MeshletMesh::with_bvh_depth(Self, Int) -> Self
 pub fn MeshletMesh::with_vertex_buffers(Self, Int, Int, Int, Int) -> Self
+pub impl @asset.Asset for MeshletMesh
+pub impl @ecs.EcsPayloadCodec for MeshletMesh
 
 pub struct MeshletMesh3d {
   meshlet_mesh_id : Int

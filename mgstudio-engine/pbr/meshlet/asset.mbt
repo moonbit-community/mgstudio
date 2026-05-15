@@ -62,6 +62,34 @@ pub struct MeshletMesh {
 }
 
 ///|
+extenum @ecs.EcsPayload += {
+  EcsPayload_pbr_meshlet_MeshletMesh(MeshletMesh)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for MeshletMesh with to_ecs_payload(self) {
+  EcsPayload_pbr_meshlet_MeshletMesh(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for MeshletMesh with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_pbr_meshlet_MeshletMesh(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @asset.Asset for MeshletMesh with asset_debug_name() {
+  "mgstudio_pbr::meshlet::MeshletMesh"
+}
+
+///|
+pub impl @asset.Asset for MeshletMesh with asset_as_image(_self) {
+  None
+}
+
+///|
 pub fn MeshletMesh::new(
   meshlet_count : Int,
   bvh_node_count : Int,
@@ -554,6 +582,34 @@ pub fn MeshletMeshLoader::load_bytes(
 pub fn MeshletMeshLoader::extensions(self : MeshletMeshLoader) -> Array[String] {
   ignore(self)
   meshlet_mesh_asset_extensions()
+}
+
+///|
+fn meshlet_mesh_load_asset(
+  _asset_server : @asset.AssetServer,
+  path : @asset.AssetPath,
+  bytes : Bytes,
+) -> MeshletMesh {
+  match meshlet_mesh_loader().load_bytes(bytes) {
+    MeshletMeshLoadOk(meshlet_mesh) => meshlet_mesh
+    MeshletMeshLoadErr(error) =>
+      abort(
+        "Failed to load meshlet mesh asset \{path.path}: \{meshlet_mesh_save_or_load_error_debug_message(error)}",
+      )
+  }
+}
+
+///|
+pub fn init_meshlet_mesh_asset(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  @asset.init_asset_loader(
+    @asset.init_asset(app, fn() { MeshletMesh::new(0, 0) }),
+    @asset.AssetLoader::new(
+      meshlet_mesh_asset_extensions(),
+      meshlet_mesh_load_asset,
+    ),
+  )
 }
 
 ///|
