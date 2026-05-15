@@ -224,90 +224,104 @@ pub fn MeshletMeshInputData::summary(
 }
 
 ///|
-fn meshlet_mesh3d_vertex_attribute_names(
-  geometry : @mesh.Mesh3dGeometry,
+fn meshlet_attribute_debug_name(
+  attribute : @mesh.MeshVertexAttribute,
+) -> String {
+  let id = attribute.id().value()
+  if id == @mesh.MeshVertexAttribute::position().id().value() {
+    "POSITION"
+  } else if id == @mesh.MeshVertexAttribute::normal().id().value() {
+    "NORMAL"
+  } else if id == @mesh.MeshVertexAttribute::uv_0().id().value() {
+    "UV_0"
+  } else if id == @mesh.MeshVertexAttribute::tangent().id().value() {
+    "TANGENT"
+  } else if id == @mesh.MeshVertexAttribute::color().id().value() {
+    "COLOR"
+  } else if id == @mesh.MeshVertexAttribute::joint_weight().id().value() {
+    "JOINT_WEIGHT"
+  } else if id == @mesh.MeshVertexAttribute::joint_index().id().value() {
+    "JOINT_INDEX"
+  } else {
+    attribute.name()
+  }
+}
+
+///|
+fn meshlet_mesh_vertex_attribute_names(
+  attributes : Array[@mesh.MeshAttributeData],
 ) -> Array[String] {
-  let names : Array[String] = ["POSITION"]
-  if geometry.normals is Some(_) {
-    names.push("NORMAL")
-  }
-  if geometry.uvs is Some(_) {
-    names.push("UV_0")
-  }
-  if geometry.tangents is Some(_) {
-    names.push("TANGENT")
-  }
-  if geometry.colors is Some(_) {
-    names.push("COLOR")
-  }
-  if geometry.joint_indices is Some(_) {
-    names.push("JOINT_INDEX")
-  }
-  if geometry.joint_weights is Some(_) {
-    names.push("JOINT_WEIGHT")
-  }
-  for custom_attribute in geometry.custom_attributes_vec3 {
-    names.push(custom_attribute.name())
+  let names : Array[String] = []
+  for attribute in attributes {
+    names.push(meshlet_attribute_debug_name(attribute.attribute()))
   }
   names
 }
 
 ///|
-fn meshlet_mesh3d_has_exact_required_attributes(
-  geometry : @mesh.Mesh3dGeometry,
+fn meshlet_mesh_has_exact_required_attributes(
+  attributes : Array[@mesh.MeshAttributeData],
 ) -> Bool {
-  guard geometry.normals is Some(normals) else { return false }
-  guard geometry.uvs is Some(uvs) else { return false }
-  let vertex_count = geometry.positions.length()
-  normals.length() == vertex_count &&
-  uvs.length() == vertex_count &&
-  geometry.tangents is None &&
-  geometry.colors is None &&
-  geometry.joint_indices is None &&
-  geometry.joint_weights is None &&
-  geometry.custom_attributes_vec3.is_empty()
+  if attributes.length() != 3 {
+    return false
+  }
+  attributes[0].attribute().id().value() ==
+  @mesh.MeshVertexAttribute::position().id().value() &&
+  attributes[1].attribute().id().value() ==
+  @mesh.MeshVertexAttribute::normal().id().value() &&
+  attributes[2].attribute().id().value() ==
+  @mesh.MeshVertexAttribute::uv_0().id().value() &&
+  attributes[0].values().len() == attributes[1].values().len() &&
+  attributes[0].values().len() == attributes[2].values().len()
 }
 
 ///|
 pub fn meshlet_extract_mesh_input(
   mesh : @mesh.Mesh,
 ) -> Result[MeshletMeshInputData, MeshToMeshletMeshConversionError] {
-  guard mesh.as_3d_geometry() is Some(geometry) else {
+  guard mesh.primitive_topology()
+    is Some(@mesh.Mesh3dPrimitiveTopology::TriangleList) else {
     return Err(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology)
   }
-  if geometry.primitive_topology() !=
-    @mesh.Mesh3dPrimitiveTopology::TriangleList {
-    return Err(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology)
-  }
-  if !meshlet_mesh3d_has_exact_required_attributes(geometry) {
+  let attributes = mesh.attributes()
+  if !meshlet_mesh_has_exact_required_attributes(attributes) {
     return Err(
       MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
-        meshlet_mesh3d_vertex_attribute_names(geometry),
+        meshlet_mesh_vertex_attribute_names(attributes),
       ),
     )
   }
-  guard geometry.indices is Some(indices) else {
+  guard mesh.indices() is Some(indices) else {
     return Err(MeshToMeshletMeshConversionError::MeshMissingIndices)
   }
-  guard geometry.normals is Some(normals) else {
+  guard attributes[0].values()
+    is @mesh.VertexAttributeValues::Float32x3(positions) else {
     return Err(
       MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
-        meshlet_mesh3d_vertex_attribute_names(geometry),
+        meshlet_mesh_vertex_attribute_names(attributes),
       ),
     )
   }
-  guard geometry.uvs is Some(uvs) else {
+  guard attributes[1].values()
+    is @mesh.VertexAttributeValues::Float32x3(normals) else {
     return Err(
       MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
-        meshlet_mesh3d_vertex_attribute_names(geometry),
+        meshlet_mesh_vertex_attribute_names(attributes),
+      ),
+    )
+  }
+  guard attributes[2].values() is @mesh.VertexAttributeValues::Float32x2(uvs) else {
+    return Err(
+      MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(
+        meshlet_mesh_vertex_attribute_names(attributes),
       ),
     )
   }
   let vertices : Array[MeshletSourceVertex] = []
-  for index in 0..<geometry.positions.length() {
+  for index in 0..<positions.length() {
     vertices.push(
       MeshletSourceVertex::new(
-        position=geometry.positions[index],
+        position=positions[index],
         normal=normals[index],
         uv=uvs[index],
       ),

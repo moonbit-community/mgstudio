@@ -60,3 +60,27 @@ pub fn Mesh3dGeometry::indices_or_sequential(
     None => mesh_sequential_indices(self.positions.length())
   }
 }
+
+///|
+pub fn Mesh::indices(self : Mesh) -> Array[Int]? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(geometry) =>
+      match geometry.indices {
+        Some(indices) => Some(indices.copy())
+        None => None
+      }
+    MeshGeometry::Geometry3d(geometry) =>
+      match geometry.indices {
+        Some(indices) => Some(indices.copy())
+        None => None
+      }
+  }
+}
+
+///|
+pub fn Mesh::primitive_topology(self : Mesh) -> Mesh3dPrimitiveTopology? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(_) => None
+    MeshGeometry::Geometry3d(geometry) => Some(geometry.primitive_topology())
+  }
+}

@@ -122,3 +122,63 @@ test "mesh: Mesh3dGeometry standard attributes use vertex attribute ids" {
   debug_inspect(normals[0].y.to_double(), content="1")
   debug_inspect(geometry.has_indices(), content="true")
 }
+
+///|
+fn mesh3d_test_read_u32_le(bytes : Bytes, offset : Int) -> UInt {
+  let b0 = bytes.get(offset).unwrap().to_int() & 0xFF
+  let b1 = bytes.get(offset + 1).unwrap().to_int() & 0xFF
+  let b2 = bytes.get(offset + 2).unwrap().to_int() & 0xFF
+  let b3 = bytes.get(offset + 3).unwrap().to_int() & 0xFF
+  (b0 & 0xFF).reinterpret_as_uint() |
+  ((b1 & 0xFF).reinterpret_as_uint() << 8) |
+  ((b2 & 0xFF).reinterpret_as_uint() << 16) |
+  ((b3 & 0xFF).reinterpret_as_uint() << 24)
+}
+
+///|
+fn mesh3d_test_read_f32_le(bytes : Bytes, offset : Int) -> Float {
+  Float::reinterpret_from_uint(mesh3d_test_read_u32_le(bytes, offset))
+}
+
+///|
+test "mesh: attributes and packed vertex buffer follow Bevy attribute id order" {
+  let geometry = Mesh3dGeometry::new_with_positions(
+    [@math.Vec3::new(1.0F, 2.0F, 3.0F), @math.Vec3::new(4.0F, 5.0F, 6.0F)],
+    Some([0, 1]),
+  )
+  ignore(
+    geometry.insert_attribute(
+      MeshVertexAttribute::uv_0(),
+      VertexAttributeValues::Float32x2([
+        @math.Vec2::new(0.25F, 0.5F),
+        @math.Vec2::new(0.75F, 1.0F),
+      ]),
+    ),
+  )
+  ignore(
+    geometry.insert_attribute(
+      MeshVertexAttribute::normal(),
+      VertexAttributeValues::Float32x3([
+        @math.Vec3::new(0.0F, 0.0F, 1.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ]),
+    ),
+  )
+  let mesh = Mesh::from_3d_geometry(geometry)
+  let attributes = mesh.attributes()
+  debug_inspect(attributes.length(), content="3")
+  debug_inspect(attributes[0].attribute().name(), content="\"Vertex_Position\"")
+  debug_inspect(attributes[1].attribute().name(), content="\"Vertex_Normal\"")
+  debug_inspect(attributes[2].attribute().name(), content="\"Vertex_Uv\"")
+  debug_inspect(mesh.count_vertices(), content="2")
+  debug_inspect(mesh.get_vertex_size(), content="32")
+  debug_inspect(mesh.get_vertex_buffer_size(), content="64")
+  let packed = mesh.create_packed_vertex_buffer_data()
+  debug_inspect(packed.length(), content="64")
+  debug_inspect(mesh3d_test_read_f32_le(packed, 0).to_double(), content="1")
+  debug_inspect(mesh3d_test_read_f32_le(packed, 12).to_double(), content="0")
+  debug_inspect(mesh3d_test_read_f32_le(packed, 20).to_double(), content="1")
+  debug_inspect(mesh3d_test_read_f32_le(packed, 24).to_double(), content="0.25")
+  debug_inspect(mesh3d_test_read_f32_le(packed, 32).to_double(), content="4")
+  debug_inspect(mesh3d_test_read_f32_le(packed, 60).to_double(), content="1")
+}

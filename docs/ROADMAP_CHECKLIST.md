@@ -32,7 +32,7 @@ Strict reassessment date: 2026-05-10. The table below is the current authoritati
 | `log` + `diagnostic` + `dev_tools` | 60% | 55% | 55% | 🟠 Partial | Useful diagnostics exist; generic deferred diagnostics/material UI paths are not Bevy-equivalent. |
 | `anti_alias` | 55% | 40% | 40% | 🔴 Major Gap | Shader assets and components are present, but SMAA/TAA/DLSS runtime pass parity is incomplete. |
 | `light` | 55% | 45% | 45% | 🔴 Major Gap | Component ownership moved closer, but clustering/shadow/probe behavior is still materially divergent. |
-| `mesh` | 70% | 60% | 60% | 🟠 Partial | Primitive/attribute surfaces improved, but GPU upload/layout and full attribute-map semantics remain incomplete. |
+| `mesh` | 70% | 60% | 60% | 🟠 Partial | Primitive/attribute surfaces improved, but GPU upload/layout and full attribute-map semantics remain incomplete. 2026-05-15: `Mesh` now exposes Bevy-shaped attribute enumeration, vertex counting, vertex-size/buffer-size calculation, index/topology accessors, and packed interleaved vertex-buffer bytes in attribute-id order; score unchanged until render upload/layout callers are fully migrated. |
 | `image` | 65% | 55% | 55% | 🟠 Partial | Codec table is broader, but exact loader/settings/error behavior parity is not complete. |
 | `color` | 75% | 65% | 65% | 🟡 In Progress | Conversion math is comparatively close; remaining work is upstream vector/test coverage breadth. |
 | `math` | 80% | 75% | 75% | 🟡 In Progress | Core math and primitives are one of the stronger areas, but generic trait limits still create source-shape gaps. |
