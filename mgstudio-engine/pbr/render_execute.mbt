@@ -299,20 +299,30 @@ fn render3d_prewarm_material_pipeline(
   let pipeline_key = material_pipeline_key_for_standard_material(
     mesh.material_properties,
   )
-  Some(
-    @material.material_specialize_base(
-      base_specialize,
-      world,
-      pipeline_key,
-      layout,
-      mesh.material_properties,
-    ) catch {
-      err =>
-        abort(
-          "failed to specialize pbr material pipeline for mesh \{mesh.mesh_handle.id()}: \{err}",
-        )
-    },
-  )
+  let pipeline_id = @material.material_specialize_base(
+    base_specialize,
+    world,
+    pipeline_key,
+    layout,
+    mesh.material_properties,
+  ) catch {
+    err =>
+      abort(
+        "failed to specialize pbr material pipeline for mesh \{mesh.mesh_handle.id()}: \{err}",
+      )
+  }
+  match
+    mesh_runtime_state_ref.val.specialized_material_pipelines.render_pipeline_descriptor(
+      pipeline_id,
+    ) {
+    Some(descriptor) =>
+      @render.host_gpu_register_mesh3d_material_pipeline_descriptor(
+        material_pipeline_id=pipeline_id.id(),
+        descriptor~,
+      )
+    None => ()
+  }
+  Some(pipeline_id)
 }
 
 ///|

@@ -21,6 +21,7 @@ import {
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/post_process/effect_stack",
   "Milky2018/mgstudio/post_process/motion_blur",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
@@ -534,7 +535,7 @@ pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@mater
 
 pub fn standard_material_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@material.StandardMaterial]]
 
-pub fn standard_material_bind_group_layout_descriptor() -> @material.BindGroupLayoutDescriptor
+pub fn standard_material_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor
 
 pub fn standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
 
@@ -1169,7 +1170,7 @@ pub struct PbrMaterialPipelineSpecializer {
   properties : @material.MaterialProperties
 }
 pub fn PbrMaterialPipelineSpecializer::new(@material.MaterialProperties) -> Self
-pub fn PbrMaterialPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
+pub fn PbrMaterialPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
 pub(all) struct PbrPlugin {
   prepass_enabled : Bool

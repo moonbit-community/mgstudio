@@ -30,6 +30,7 @@ pub struct BindGroupLayoutEntry {
 
 ///|
 pub struct BindGroupLayoutDescriptor {
+  label : String
   entries : Array[BindGroupLayoutEntry]
 }
 
@@ -90,10 +91,28 @@ pub fn BindGroupLayoutEntry::kind(self : BindGroupLayoutEntry) -> BindingType {
 }
 
 ///|
+pub fn BindGroupLayoutDescriptor::default() -> BindGroupLayoutDescriptor {
+  BindGroupLayoutDescriptor::{ label: "", entries: [] }
+}
+
+///|
+pub impl Default for BindGroupLayoutDescriptor with default() {
+  BindGroupLayoutDescriptor::default()
+}
+
+///|
 pub fn BindGroupLayoutDescriptor::new(
+  label : String,
   entries : Array[BindGroupLayoutEntry],
 ) -> BindGroupLayoutDescriptor {
-  BindGroupLayoutDescriptor::{ entries, }
+  BindGroupLayoutDescriptor::{ label, entries }
+}
+
+///|
+pub fn BindGroupLayoutDescriptor::label(
+  self : BindGroupLayoutDescriptor,
+) -> String {
+  self.label
 }
 
 ///|

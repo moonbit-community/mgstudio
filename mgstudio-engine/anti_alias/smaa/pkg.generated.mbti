@@ -6,8 +6,8 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
-  "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render/render_resource",
   "moonbitlang/core/debug",
 }
 
@@ -39,18 +39,18 @@ pub impl @ecs.Component for Smaa
 pub impl @ecs.EcsPayloadCodec for Smaa
 
 pub struct SmaaBlendingWeightCalculationPipeline {
-  postprocess_bind_group_layout : @material.BindGroupLayoutDescriptor
-  blending_weight_calculation_bind_group_layout : @material.BindGroupLayoutDescriptor
+  postprocess_bind_group_layout : @render_resource.BindGroupLayoutDescriptor
+  blending_weight_calculation_bind_group_layout : @render_resource.BindGroupLayoutDescriptor
   shader : String
 }
-pub fn SmaaBlendingWeightCalculationPipeline::specialize(Self, SmaaPreset) -> @material.RenderPipelineDescriptor
+pub fn SmaaBlendingWeightCalculationPipeline::specialize(Self, SmaaPreset) -> @render_resource.RenderPipelineDescriptor
 
 pub struct SmaaEdgeDetectionPipeline {
-  postprocess_bind_group_layout : @material.BindGroupLayoutDescriptor
-  edge_detection_bind_group_layout : @material.BindGroupLayoutDescriptor
+  postprocess_bind_group_layout : @render_resource.BindGroupLayoutDescriptor
+  edge_detection_bind_group_layout : @render_resource.BindGroupLayoutDescriptor
   shader : String
 }
-pub fn SmaaEdgeDetectionPipeline::specialize(Self, SmaaPreset) -> @material.RenderPipelineDescriptor
+pub fn SmaaEdgeDetectionPipeline::specialize(Self, SmaaPreset) -> @render_resource.RenderPipelineDescriptor
 
 pub struct SmaaInfoUniform {
   rt_metrics : @math.Vec4
@@ -71,11 +71,11 @@ pub impl @app.Resource for SmaaLuts
 pub impl @ecs.EcsPayloadCodec for SmaaLuts
 
 pub struct SmaaNeighborhoodBlendingPipeline {
-  postprocess_bind_group_layout : @material.BindGroupLayoutDescriptor
-  neighborhood_blending_bind_group_layout : @material.BindGroupLayoutDescriptor
+  postprocess_bind_group_layout : @render_resource.BindGroupLayoutDescriptor
+  neighborhood_blending_bind_group_layout : @render_resource.BindGroupLayoutDescriptor
   shader : String
 }
-pub fn SmaaNeighborhoodBlendingPipeline::specialize(Self, SmaaNeighborhoodBlendingPipelineKey) -> @material.RenderPipelineDescriptor
+pub fn SmaaNeighborhoodBlendingPipeline::specialize(Self, SmaaNeighborhoodBlendingPipelineKey) -> @render_resource.RenderPipelineDescriptor
 
 pub struct SmaaNeighborhoodBlendingPipelineKey {
   texture_format : UInt
@@ -112,11 +112,11 @@ pub impl @app.Resource for SmaaRuntimeState
 pub impl @ecs.EcsPayloadCodec for SmaaRuntimeState
 
 pub struct ViewSmaaPipelines {
-  edge_detection_pipeline_id : @material.CachedRenderPipelineId
-  blending_weight_calculation_pipeline_id : @material.CachedRenderPipelineId
-  neighborhood_blending_pipeline_id : @material.CachedRenderPipelineId
+  edge_detection_pipeline_id : @render_resource.CachedRenderPipelineId
+  blending_weight_calculation_pipeline_id : @render_resource.CachedRenderPipelineId
+  neighborhood_blending_pipeline_id : @render_resource.CachedRenderPipelineId
 }
-pub fn ViewSmaaPipelines::new(@material.CachedRenderPipelineId, @material.CachedRenderPipelineId, @material.CachedRenderPipelineId) -> Self
+pub fn ViewSmaaPipelines::new(@render_resource.CachedRenderPipelineId, @render_resource.CachedRenderPipelineId, @render_resource.CachedRenderPipelineId) -> Self
 
 // Type aliases
 

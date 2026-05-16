@@ -198,14 +198,88 @@ fn mesh3d_forward_shader_defines(
 }
 
 ///|
-fn mesh3d_forward_value_defines() -> @hashmap.HashMap[
-  String,
-  @wgsl_common.ShaderDefValue,
-] {
+fn mesh3d_forward_shader_defines_from_descriptor(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+  skinned : Bool,
+  forward_decal : Bool,
+  tonemap_in_shader : Bool,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
+  shadow_filter_method : Int,
+) -> @hashmap.HashMap[String, Bool] {
+  guard descriptor is Some(desc) else {
+    return mesh3d_forward_shader_defines(
+      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method,
+    )
+  }
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
+    for shader_def in shader_defs {
+      match shader_def {
+        Flag(name) => defines.set(name, true)
+        Bool(name, value) => defines.set(name, value)
+        Int(_, _) | UInt(_, _) | String(_, _) => ()
+      }
+    }
+  }
+  apply_defs(desc.vertex.shader_defs)
+  match desc.fragment {
+    Some(fragment) => apply_defs(fragment.shader_defs)
+    None => ()
+  }
+  if skinned {
+    defines.set("SKINNED", true)
+  }
+  if forward_decal {
+    defines.set("FORWARD_DECAL", true)
+  }
+  match shadow_filter_method {
+    0 => defines.set("SHADOW_FILTER_METHOD_HARDWARE_2X2", true)
+    2 => defines.set("SHADOW_FILTER_METHOD_TEMPORAL", true)
+    _ => defines.set("SHADOW_FILTER_METHOD_GAUSSIAN", true)
+  }
+  if tonemap_in_shader {
+    defines.set("TONEMAP_IN_SHADER", true)
+    defines.set(tonemapping_method_define(tonemapping_mode), true)
+    if deband_dither_enabled {
+      defines.set("DEBAND_DITHER", true)
+    }
+  }
+  defines
+}
+
+///|
+fn mesh3d_forward_value_defines(
+  descriptor? : @render_resource.RenderPipelineDescriptor? = None,
+) -> @hashmap.HashMap[String, @wgsl_common.ShaderDefValue] {
   let value_defines = default_wgsl_value_defines()
   value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
   value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", wgsl_def_int(19))
   value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", wgsl_def_int(20))
+  let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
+    for shader_def in shader_defs {
+      match shader_def {
+        Int(name, value) =>
+          value_defines.set(name, @wgsl_common.ShaderDefValue::Int(value))
+        UInt(name, value) =>
+          value_defines.set(name, @wgsl_common.ShaderDefValue::UInt(value))
+        String(name, value) =>
+          value_defines.set(name, @wgsl_common.ShaderDefValue::Raw(value))
+        Bool(_, _) | Flag(_) => ()
+      }
+    }
+  }
+  match descriptor {
+    Some(desc) => {
+      apply_defs(desc.vertex.shader_defs)
+      match desc.fragment {
+        Some(fragment) => apply_defs(fragment.shader_defs)
+        None => ()
+      }
+    }
+    None => ()
+  }
   value_defines
 }
 
@@ -286,6 +360,7 @@ fn load_wgsl_required_mesh3d_shadow_pipeline(
 ///|
 fn load_wgsl_required_mesh3d_forward_pipeline(
   assets_base : String,
+  descriptor : @render_resource.RenderPipelineDescriptor?,
   skinned : Bool,
   forward_decal : Bool,
   tonemap_in_shader : Bool,
@@ -297,11 +372,11 @@ fn load_wgsl_required_mesh3d_forward_pipeline(
   load_wgsl_preprocessed(
     assets_base,
     shader_path,
-    mesh3d_forward_shader_defines(
-      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    mesh3d_forward_shader_defines_from_descriptor(
+      descriptor, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
       shadow_filter_method,
     ),
-    mesh3d_forward_value_defines(),
+    mesh3d_forward_value_defines(descriptor~),
   )
 }
 
@@ -341,6 +416,7 @@ fn mesh3d_create_forward_shader_module(
 ///|
 fn mesh3d_create_forward_shader_modules(
   backend : GpuBackend,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
   skinned : Bool,
   forward_decal : Bool,
   tonemap_in_shader : Bool,
@@ -351,6 +427,7 @@ fn mesh3d_create_forward_shader_modules(
 ) -> Mesh3dForwardShaderModules raise GpuBackendError {
   let vertex_wgsl = load_wgsl_required_mesh3d_forward_pipeline(
     backend.assets_base,
+    material_descriptor,
     skinned,
     forward_decal,
     tonemap_in_shader,
@@ -361,6 +438,7 @@ fn mesh3d_create_forward_shader_modules(
   )
   let fragment_wgsl = load_wgsl_required_mesh3d_forward_pipeline(
     backend.assets_base,
+    material_descriptor,
     skinned,
     forward_decal,
     tonemap_in_shader,
@@ -416,6 +494,70 @@ fn mesh3d_blend_kind_from_material_flags(
     MESH3D_PIPELINE_BLEND_MULTIPLY
   } else {
     MESH3D_PIPELINE_BLEND_ALPHA
+  }
+}
+
+///|
+fn mesh3d_descriptor_vertex_shader_path(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> String? {
+  match descriptor {
+    Some(desc) => desc.vertex.shader
+    None => None
+  }
+}
+
+///|
+fn mesh3d_descriptor_fragment_shader_path(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> String? {
+  match descriptor {
+    Some(desc) =>
+      match desc.fragment {
+        Some(fragment) => fragment.shader
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+fn mesh3d_descriptor_vertex_buffer_layout(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> @mesh.VertexBufferLayout? {
+  match descriptor {
+    Some(desc) if desc.vertex.buffers.length() > 0 =>
+      Some(desc.vertex.buffers[0])
+    _ => None
+  }
+}
+
+///|
+fn mesh3d_descriptor_depth_write_enabled(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+  fallback : Bool,
+) -> Bool {
+  match descriptor {
+    Some(desc) =>
+      match desc.depth_stencil {
+        Some(depth_stencil) => depth_stencil.depth_write_enabled
+        None => fallback
+      }
+    None => fallback
+  }
+}
+
+///|
+fn mesh3d_descriptor_depth_compare(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> UInt {
+  match descriptor {
+    Some(desc) =>
+      match desc.depth_stencil {
+        Some(depth_stencil) => depth_stencil.depth_compare
+        None => @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
+      }
+    None => @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
   }
 }
 
@@ -1050,6 +1192,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   backend : GpuBackend,
   topology : UInt,
   material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
@@ -1081,8 +1224,8 @@ fn ensure_mesh3d_pipeline_rgba8(
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
   let modules = mesh3d_create_forward_shader_modules(
-    backend, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method, "mesh3d rgba8",
+    backend, material_descriptor, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+    deband_dither_enabled, shadow_filter_method, "mesh3d rgba8",
   ) catch {
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
@@ -1100,14 +1243,21 @@ fn ensure_mesh3d_pipeline_rgba8(
     color_format,
     fragment_shader=modules.fragment,
     with_depth=true,
-    depth_write_enabled=!transparent,
+    depth_write_enabled=mesh3d_descriptor_depth_write_enabled(
+      material_descriptor,
+      !transparent,
+    ),
     position3d=true,
     topology~,
     cull_mode=cull_mode_wgpu,
     alpha_blend=transparent,
     blend_kind~,
+    depth_compare_u32=mesh3d_descriptor_depth_compare(material_descriptor),
     vertex_entry="vertex",
     fragment_entry="fragment",
+    vertex_buffer_layout=mesh3d_descriptor_vertex_buffer_layout(
+      material_descriptor,
+    ),
   )
   backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
@@ -1157,6 +1307,7 @@ fn ensure_mesh3d_pipeline_surface(
   format : @wgpu.TextureFormat,
   topology : UInt,
   material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
@@ -1193,8 +1344,8 @@ fn ensure_mesh3d_pipeline_surface(
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
   let modules = mesh3d_create_forward_shader_modules(
-    backend, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method, "mesh3d surface",
+    backend, material_descriptor, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+    deband_dither_enabled, shadow_filter_method, "mesh3d surface",
   ) catch {
     Fatal(message) => {
       mesh3d_pipeline_set_failed(
@@ -1212,14 +1363,21 @@ fn ensure_mesh3d_pipeline_surface(
     color_format,
     fragment_shader=modules.fragment,
     with_depth=true,
-    depth_write_enabled=!transparent,
+    depth_write_enabled=mesh3d_descriptor_depth_write_enabled(
+      material_descriptor,
+      !transparent,
+    ),
     position3d=true,
     topology~,
     cull_mode=cull_mode_wgpu,
     alpha_blend=transparent,
     blend_kind~,
+    depth_compare_u32=mesh3d_descriptor_depth_compare(material_descriptor),
     vertex_entry="vertex",
     fragment_entry="fragment",
+    vertex_buffer_layout=mesh3d_descriptor_vertex_buffer_layout(
+      material_descriptor,
+    ),
   )
   backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
@@ -1280,11 +1438,22 @@ fn mesh3d_pipeline_for_current_pass(
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let resolved_vertex_shader_path = mesh3d_vertex_shader_path_or_default(
-    vertex_shader_path,
+  let material_descriptor = mesh3d_material_pipeline_descriptor_find(
+    backend, material_pipeline_id,
   )
+  let effective_vertex_shader_path = match vertex_shader_path {
+    Some(path) => Some(path)
+    None => mesh3d_descriptor_vertex_shader_path(material_descriptor)
+  }
+  let resolved_vertex_shader_path = mesh3d_vertex_shader_path_or_default(
+    effective_vertex_shader_path,
+  )
+  let effective_fragment_shader_path = match fragment_shader_path {
+    Some(path) => Some(path)
+    None => mesh3d_descriptor_fragment_shader_path(material_descriptor)
+  }
   let resolved_fragment_shader_path = mesh3d_fragment_shader_path_or_default(
-    fragment_shader_path,
+    effective_fragment_shader_path,
   )
   let blend_kind = mesh3d_blend_kind_from_material_flags(
     material_flags, transparent,
@@ -1304,9 +1473,9 @@ fn mesh3d_pipeline_for_current_pass(
   match current_pass_color_format(backend) {
     Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
       ensure_mesh3d_pipeline_surface(
-        backend, format, topology, material_pipeline_id, cull_mode, blend_kind, skinned,
-        forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-        shadow_filter_method,
+        backend, format, topology, material_pipeline_id, material_descriptor, cull_mode,
+        blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+        deband_dither_enabled, shadow_filter_method,
       )
       return mesh3d_pipeline_get(
         backend,
@@ -1326,8 +1495,9 @@ fn mesh3d_pipeline_for_current_pass(
     _ => ()
   }
   ensure_mesh3d_pipeline_rgba8(
-    backend, topology, material_pipeline_id, cull_mode, blend_kind, skinned, forward_decal,
-    tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
+    backend, topology, material_pipeline_id, material_descriptor, cull_mode, blend_kind,
+    skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+    shadow_filter_method,
   )
   mesh3d_pipeline_get(
     backend,

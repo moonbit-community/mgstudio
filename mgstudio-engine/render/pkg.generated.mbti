@@ -245,6 +245,8 @@ pub fn host_gpu_prewarm_mesh3d_pipeline_variants(mesh_topology_kind~ : Int, cull
 
 pub fn host_gpu_read_only_binding_type_uniform(Int) -> Bool
 
+pub fn host_gpu_register_mesh3d_material_pipeline_descriptor(material_pipeline_id~ : UInt64, descriptor~ : @render_resource.RenderPipelineDescriptor) -> Unit
+
 pub fn host_gpu_request_device() -> Int
 
 pub fn host_gpu_reserve_mesh3d_draw_storage(count~ : Int) -> Int

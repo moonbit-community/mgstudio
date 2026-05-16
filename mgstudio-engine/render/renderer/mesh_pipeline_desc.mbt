@@ -46,6 +46,60 @@ fn mesh_pipeline_desc_builder_set_blend_kind(
 }
 
 ///|
+fn mesh_vertex_format_to_wgpu(format : @mesh.MeshVertexFormat) -> UInt {
+  match format {
+    Float32 => @wgpu.VERTEX_FORMAT_FLOAT32
+    Sint32 => @wgpu.VERTEX_FORMAT_SINT32
+    Uint32 => @wgpu.VERTEX_FORMAT_UINT32
+    Float32x2 => @wgpu.VERTEX_FORMAT_FLOAT32X2
+    Sint32x2 => @wgpu.VERTEX_FORMAT_SINT32X2
+    Uint32x2 => @wgpu.VERTEX_FORMAT_UINT32X2
+    Float32x3 => @wgpu.VERTEX_FORMAT_FLOAT32X3
+    Sint32x3 => @wgpu.VERTEX_FORMAT_SINT32X3
+    Uint32x3 => @wgpu.VERTEX_FORMAT_UINT32X3
+    Float32x4 => @wgpu.VERTEX_FORMAT_FLOAT32X4
+    Sint32x4 => @wgpu.VERTEX_FORMAT_SINT32X4
+    Uint32x4 => @wgpu.VERTEX_FORMAT_UINT32X4
+    Uint16x4 => @wgpu.VERTEX_FORMAT_UINT16X4
+  }
+}
+
+///|
+fn mesh_vertex_step_mode_to_wgpu(step_mode : @mesh.MeshVertexStepMode) -> UInt {
+  match step_mode {
+    Vertex => @wgpu.VERTEX_STEP_MODE_VERTEX
+    Instance => @wgpu.VERTEX_STEP_MODE_INSTANCE
+  }
+}
+
+///|
+fn mesh_pipeline_desc_set_vertex_buffer_layout(
+  builder : @wgpu_c.RenderPipelineDescBuilderObj,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
+) -> UInt {
+  let set_layout_err = @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
+    builder,
+    vertex_buffer_layout.array_stride.to_uint64(),
+    mesh_vertex_step_mode_to_wgpu(vertex_buffer_layout.step_mode),
+  )
+  if set_layout_err != 0U {
+    return set_layout_err
+  }
+  for attribute in vertex_buffer_layout.attributes {
+    let add_attribute_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+      builder,
+      mesh_vertex_format_to_wgpu(attribute.format),
+      attribute.offset.to_uint64(),
+      attribute.shader_location.reinterpret_as_uint(),
+    )
+    if add_attribute_err != 0U {
+      return add_attribute_err
+    }
+  }
+  0U
+}
+
+///|
 fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   layout : @wgpu.PipelineLayout,
   shader : @wgpu.ShaderModule,
@@ -61,6 +115,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   depth_compare_u32? : UInt = @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
   vertex_entry? : String = "vs_main",
   fragment_entry? : String = "fs_main",
+  vertex_buffer_layout? : @mesh.VertexBufferLayout? = None,
 ) -> @wgpu_c.WGPURenderPipelineDescriptorPtr raise GpuBackendError {
   let builder = @wgpu_c.render_pipeline_desc_builder_new(
     layout.raw_handle(),
@@ -86,79 +141,93 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
       MESH3D_PIPELINE_BLEND_OPAQUE,
     )
   }
-  let vertex_stride = if position3d { MESH3D_VERTEX_STRIDE_BYTES } else { 32UL }
-  let pos_format = if position3d {
-    @wgpu.VERTEX_FORMAT_FLOAT32X3
-  } else {
-    @wgpu.VERTEX_FORMAT_FLOAT32X2
-  }
-  let normal_offset = 12UL
-  let uv_offset = if position3d { 24UL } else { 8UL }
-  let color_offset = if position3d { 32UL } else { 16UL }
-  let joints_offset = 48UL
-  let weights_offset = 64UL
-  let set_vertex_layout_err = @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
-    builder,
-    vertex_stride,
-    @wgpu.VERTEX_STEP_MODE_VERTEX,
-  )
-  let pos_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
-    builder, pos_format, 0UL, 0U,
-  )
-  let normal_err = if position3d {
-    @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
-      builder,
-      @wgpu.VERTEX_FORMAT_FLOAT32X3,
-      normal_offset,
-      1U,
-    )
-  } else {
-    0U
-  }
-  let uv_location = if position3d { 2U } else { 1U }
-  let color_location = if position3d { 5U } else { 2U }
-  let uv_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
-    builder,
-    @wgpu.VERTEX_FORMAT_FLOAT32X2,
-    uv_offset,
-    uv_location,
-  )
-  let color_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
-    builder,
-    @wgpu.VERTEX_FORMAT_FLOAT32X4,
-    color_offset,
-    color_location,
-  )
-  let joints_err = if position3d {
-    @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
-      builder,
-      @wgpu.VERTEX_FORMAT_UINT32X4,
-      joints_offset,
-      6U,
-    )
-  } else {
-    0U
-  }
-  let weights_err = if position3d {
-    @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
-      builder,
-      @wgpu.VERTEX_FORMAT_FLOAT32X4,
-      weights_offset,
-      7U,
-    )
-  } else {
-    0U
+  let set_vertex_layout_err = match vertex_buffer_layout {
+    Some(layout) => mesh_pipeline_desc_set_vertex_buffer_layout(builder, layout)
+    None => {
+      let vertex_stride = if position3d {
+        MESH3D_VERTEX_STRIDE_BYTES
+      } else {
+        32UL
+      }
+      let pos_format = if position3d {
+        @wgpu.VERTEX_FORMAT_FLOAT32X3
+      } else {
+        @wgpu.VERTEX_FORMAT_FLOAT32X2
+      }
+      let normal_offset = 12UL
+      let uv_offset = if position3d { 24UL } else { 8UL }
+      let color_offset = if position3d { 32UL } else { 16UL }
+      let joints_offset = 48UL
+      let weights_offset = 64UL
+      let layout_err = @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
+        builder,
+        vertex_stride,
+        @wgpu.VERTEX_STEP_MODE_VERTEX,
+      )
+      let pos_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+        builder, pos_format, 0UL, 0U,
+      )
+      let normal_err = if position3d {
+        @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+          builder,
+          @wgpu.VERTEX_FORMAT_FLOAT32X3,
+          normal_offset,
+          1U,
+        )
+      } else {
+        0U
+      }
+      let uv_location = if position3d { 2U } else { 1U }
+      let color_location = if position3d { 5U } else { 2U }
+      let uv_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+        builder,
+        @wgpu.VERTEX_FORMAT_FLOAT32X2,
+        uv_offset,
+        uv_location,
+      )
+      let color_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+        builder,
+        @wgpu.VERTEX_FORMAT_FLOAT32X4,
+        color_offset,
+        color_location,
+      )
+      let joints_err = if position3d {
+        @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+          builder,
+          @wgpu.VERTEX_FORMAT_UINT32X4,
+          joints_offset,
+          6U,
+        )
+      } else {
+        0U
+      }
+      let weights_err = if position3d {
+        @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+          builder,
+          @wgpu.VERTEX_FORMAT_FLOAT32X4,
+          weights_offset,
+          7U,
+        )
+      } else {
+        0U
+      }
+      if layout_err != 0U ||
+        pos_err != 0U ||
+        normal_err != 0U ||
+        uv_err != 0U ||
+        color_err != 0U ||
+        joints_err != 0U ||
+        weights_err != 0U {
+        1U
+      } else {
+        0U
+      }
+    }
   }
   if set_entry_points_err != 0U ||
     set_format_err != 0U ||
     set_blend_err != 0U ||
-    set_vertex_layout_err != 0U ||
-    pos_err != 0U ||
-    normal_err != 0U ||
-    uv_err != 0U ||
-    color_err != 0U ||
-    joints_err != 0U ||
-    weights_err != 0U {
+    set_vertex_layout_err != 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
     fatal(
       "wgpu: failed to configure mesh vertex attributes for runtime mesh pipeline",

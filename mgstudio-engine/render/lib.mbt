@@ -410,6 +410,17 @@ pub fn host_gpu_prewarm_mesh3d_pipeline_variants(
 }
 
 ///|
+pub fn host_gpu_register_mesh3d_material_pipeline_descriptor(
+  material_pipeline_id~ : UInt64,
+  descriptor~ : @render_resource.RenderPipelineDescriptor,
+) -> Unit {
+  @renderer.register_mesh3d_material_pipeline_descriptor(
+    material_pipeline_id~,
+    descriptor~,
+  )
+}
+
+///|
 pub fn host_gpu_begin_pass(
   target_id~ : Int,
   width~ : Int,

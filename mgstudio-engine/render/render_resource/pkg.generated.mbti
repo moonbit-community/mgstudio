@@ -5,12 +5,16 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/wgpu_mbt",
 }
 
 // Values
 
 // Errors
+pub suberror NoFragmentStateError {
+  NoFragmentStateConfigured
+}
 
 // Types and methods
 pub struct BatchedUniformBuffer[T] {
@@ -62,10 +66,14 @@ pub fn BindGroupLayout::new(@wgpu_mbt.BindGroupLayout) -> Self
 pub fn BindGroupLayout::set_label(Self, String) -> Unit
 
 pub struct BindGroupLayoutDescriptor {
+  label : String
   entries : Array[BindGroupLayoutEntry]
 }
+pub fn BindGroupLayoutDescriptor::default() -> Self
 pub fn BindGroupLayoutDescriptor::entries(Self) -> Array[BindGroupLayoutEntry]
-pub fn BindGroupLayoutDescriptor::new(Array[BindGroupLayoutEntry]) -> Self
+pub fn BindGroupLayoutDescriptor::label(Self) -> String
+pub fn BindGroupLayoutDescriptor::new(String, Array[BindGroupLayoutEntry]) -> Self
+pub impl Default for BindGroupLayoutDescriptor
 
 pub struct BindGroupLayoutEntry {
   binding : Int
@@ -141,6 +149,26 @@ pub fn[T] BufferVec::push(Self[T], T) -> Unit
 pub fn[T] BufferVec::values(Self[T]) -> Array[T]
 pub fn[T] BufferVec::with_buffer_id(UInt64) -> Self[T]
 
+pub struct CachedComputePipelineId {
+  id : UInt64
+}
+pub fn CachedComputePipelineId::id(Self) -> UInt64
+pub fn CachedComputePipelineId::invalid() -> Self
+pub fn CachedComputePipelineId::new(UInt64) -> Self
+
+pub struct CachedRenderPipelineId {
+  id : UInt64
+}
+pub fn CachedRenderPipelineId::id(Self) -> UInt64
+pub fn CachedRenderPipelineId::invalid() -> Self
+pub fn CachedRenderPipelineId::new(UInt64) -> Self
+
+pub struct ColorTargetState {
+  format : UInt
+  write_mask : UInt64
+}
+pub fn ColorTargetState::new(UInt, UInt64) -> Self
+
 pub struct ComputePipeline {
   id : UInt64
   value : @wgpu_mbt.ComputePipeline
@@ -152,11 +180,43 @@ pub fn ComputePipeline::into_inner(Self) -> @wgpu_mbt.ComputePipeline
 pub fn ComputePipeline::new(@wgpu_mbt.ComputePipeline) -> Self
 pub fn ComputePipeline::set_label(Self, String) -> Unit
 
+pub struct ComputePipelineDescriptor {
+  label : String?
+  layout : Array[BindGroupLayoutDescriptor]
+  immediate_size : UInt
+  shader : String?
+  shader_defs : Array[ShaderDefVal]
+  entry_point : String?
+  zero_initialize_workgroup_memory : Bool
+}
+pub fn ComputePipelineDescriptor::default() -> Self
+pub impl Default for ComputePipelineDescriptor
+
 pub struct DefaultImageSampler {
   sampler : Sampler
 }
 pub fn DefaultImageSampler::new(Sampler) -> Self
 pub fn DefaultImageSampler::sampler(Self) -> Sampler
+
+pub struct DepthStencilState {
+  format : UInt
+  depth_write_enabled : Bool
+  depth_compare : UInt
+}
+pub fn DepthStencilState::default() -> Self
+pub fn DepthStencilState::new(UInt, Bool, UInt) -> Self
+pub impl Default for DepthStencilState
+
+pub struct FragmentState {
+  shader : String?
+  shader_defs : Array[ShaderDefVal]
+  entry_point : String?
+  targets : Array[ColorTargetState?]
+}
+pub fn FragmentState::default() -> Self
+pub fn FragmentState::new(String?, Array[ShaderDefVal], String?, Array[ColorTargetState?]) -> Self
+pub fn FragmentState::set_target(Self, Int, ColorTargetState) -> Self
+pub impl Default for FragmentState
 
 pub struct GpuArrayBuffer[T] {
   values : Array[T]
@@ -175,6 +235,14 @@ pub(all) struct GpuArrayBufferPayload {
   buffer_id : UInt64
 }
 
+pub struct MultisampleState {
+  count : UInt
+  mask : UInt64
+  alpha_to_coverage_enabled : Bool
+}
+pub fn MultisampleState::default() -> Self
+pub impl Default for MultisampleState
+
 pub struct PipelineCache {
   render_pipelines : Map[String, UInt64]
   compute_pipelines : Map[String, UInt64]
@@ -187,6 +255,11 @@ pub fn PipelineCache::new() -> Self
 pub fn PipelineCache::render_pipeline(Self, String) -> UInt64?
 pub impl @ecs.EcsPayloadCodec for PipelineCache
 
+pub(all) enum PipelineDescriptor {
+  RenderPipelineDescriptor(RenderPipelineDescriptor)
+  ComputePipelineDescriptor(ComputePipelineDescriptor)
+}
+
 pub struct PipelineSpecializer[T] {
   entries : Array[Specializer[T]]
 }
@@ -195,6 +268,14 @@ pub fn[T] PipelineSpecializer::find_label(Self[T], String) -> Specializer[T]?
 pub fn[T] PipelineSpecializer::len(Self[T]) -> Int
 pub fn[T] PipelineSpecializer::new() -> Self[T]
 pub fn[T] PipelineSpecializer::push(Self[T], Specializer[T]) -> Unit
+
+pub struct PrimitiveState {
+  topology : UInt
+  front_face : UInt
+  cull_mode : UInt?
+}
+pub fn PrimitiveState::default() -> Self
+pub impl Default for PrimitiveState
 
 pub struct RenderPipeline {
   id : UInt64
@@ -206,6 +287,27 @@ pub fn RenderPipeline::id(Self) -> UInt64
 pub fn RenderPipeline::into_inner(Self) -> @wgpu_mbt.RenderPipeline
 pub fn RenderPipeline::new(@wgpu_mbt.RenderPipeline) -> Self
 pub fn RenderPipeline::set_label(Self, String) -> Unit
+
+pub struct RenderPipelineDescriptor {
+  label : String?
+  layout : Array[BindGroupLayoutDescriptor]
+  immediate_size : UInt
+  vertex : VertexState
+  primitive : PrimitiveState
+  depth_stencil : DepthStencilState?
+  multisample : MultisampleState
+  fragment : FragmentState?
+  zero_initialize_workgroup_memory : Bool
+}
+pub fn RenderPipelineDescriptor::default() -> Self
+pub fn RenderPipelineDescriptor::fragment_or_error(Self) -> FragmentState raise NoFragmentStateError
+pub fn RenderPipelineDescriptor::set_layout(Self, Int, BindGroupLayoutDescriptor) -> Self
+pub fn RenderPipelineDescriptor::with_depth_stencil(Self, DepthStencilState?) -> Self
+pub fn RenderPipelineDescriptor::with_fragment(Self, FragmentState?) -> Self
+pub fn RenderPipelineDescriptor::with_label(Self, String?) -> Self
+pub fn RenderPipelineDescriptor::with_layout(Self, Array[BindGroupLayoutDescriptor]) -> Self
+pub fn RenderPipelineDescriptor::with_vertex(Self, VertexState) -> Self
+pub impl Default for RenderPipelineDescriptor
 
 pub struct Sampler {
   id : UInt64
@@ -221,6 +323,14 @@ pub(all) enum SamplerBindingType {
   Filtering
   NonFiltering
   Comparison
+}
+
+pub(all) enum ShaderDefVal {
+  Flag(String)
+  Bool(String, Bool)
+  Int(String, Int)
+  UInt(String, UInt)
+  String(String, String)
 }
 
 pub struct Specializer[T] {
@@ -288,6 +398,16 @@ pub fn[T] UniformBuffer::set(Self[T], T) -> Unit
 pub fn[T] UniformBuffer::take(Self[T]) -> T?
 pub fn[T] UniformBuffer::with_value(T) -> Self[T]
 
+pub struct VertexState {
+  shader : String?
+  shader_defs : Array[ShaderDefVal]
+  entry_point : String?
+  buffers : Array[@mesh.VertexBufferLayout]
+}
+pub fn VertexState::default() -> Self
+pub fn VertexState::new(String?, Array[ShaderDefVal], String?, Array[@mesh.VertexBufferLayout]) -> Self
+pub impl Default for VertexState
+
 // Type aliases
 pub type BindGroupId = UInt64
 
@@ -306,6 +426,8 @@ pub type SamplerId = UInt64
 pub type TextureId = UInt64
 
 pub type TextureViewId = UInt64
+
+pub using @mesh {type VertexBufferLayout}
 
 // Traits
 
