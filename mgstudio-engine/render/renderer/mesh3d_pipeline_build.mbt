@@ -317,6 +317,52 @@ fn mesh3d_shadow_shader_defines(
 }
 
 ///|
+fn mesh3d_shadow_shader_defines_from_descriptor(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+  skinned : Bool,
+  material_path : Bool,
+  directional_light : Bool,
+  emulate_unclipped_depth : Bool,
+) -> @hashmap.HashMap[String, Bool] {
+  guard descriptor is Some(desc) else {
+    return mesh3d_shadow_shader_defines(
+      skinned, material_path, directional_light, emulate_unclipped_depth,
+    )
+  }
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
+    for shader_def in shader_defs {
+      match shader_def {
+        Flag(name) => defines.set(name, true)
+        Bool(name, value) => defines.set(name, value)
+        Int(_, _) | UInt(_, _) | String(_, _) => ()
+      }
+    }
+  }
+  apply_defs(desc.vertex.shader_defs)
+  match desc.fragment {
+    Some(fragment) => apply_defs(fragment.shader_defs)
+    None => ()
+  }
+  if directional_light {
+    defines.set("VIEW_PROJECTION_ORTHOGRAPHIC", true)
+  } else {
+    defines.set("VIEW_PROJECTION_PERSPECTIVE", true)
+  }
+  if skinned {
+    defines.set("SKINNED", true)
+  }
+  if emulate_unclipped_depth {
+    defines.set("UNCLIPPED_DEPTH_ORTHO_EMULATION", true)
+    defines.set("PREPASS_FRAGMENT", true)
+  }
+  if material_path {
+    defines.set("MAY_DISCARD", true)
+  }
+  defines
+}
+
+///|
 fn mesh3d_shadow_depth_supports_native_unclipped_depth(
   backend : GpuBackend,
   directional_light : Bool,
@@ -341,6 +387,7 @@ fn mesh3d_shadow_depth_should_emulate_unclipped_depth(
 ///|
 fn load_wgsl_required_mesh3d_shadow_pipeline(
   assets_base : String,
+  descriptor : @render_resource.RenderPipelineDescriptor?,
   skinned : Bool,
   material_path : Bool,
   directional_light : Bool,
@@ -350,10 +397,10 @@ fn load_wgsl_required_mesh3d_shadow_pipeline(
   load_wgsl_preprocessed(
     assets_base,
     shader_path,
-    mesh3d_shadow_shader_defines(
-      skinned, material_path, directional_light, emulate_unclipped_depth,
+    mesh3d_shadow_shader_defines_from_descriptor(
+      descriptor, skinned, material_path, directional_light, emulate_unclipped_depth,
     ),
-    mesh3d_forward_value_defines(),
+    mesh3d_forward_value_defines(descriptor~),
   )
 }
 
@@ -558,6 +605,20 @@ fn mesh3d_descriptor_depth_compare(
         None => @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
       }
     None => @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
+  }
+}
+
+///|
+fn mesh3d_descriptor_depth_format(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> UInt {
+  match descriptor {
+    Some(desc) =>
+      match desc.depth_stencil {
+        Some(depth_stencil) => depth_stencil.format
+        None => @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT
+      }
+    None => @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT
   }
 }
 
@@ -1262,6 +1323,18 @@ fn mesh3d_descriptor_material_layout(
 }
 
 ///|
+fn mesh3d_descriptor_bind_group_layout_exact(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+  index : Int,
+) -> @render_resource.BindGroupLayoutDescriptor? {
+  guard descriptor is Some(descriptor0) else { return None }
+  if index < 0 || descriptor0.layout.length() <= index {
+    return None
+  }
+  Some(descriptor0.layout[index])
+}
+
+///|
 fn mesh3d_descriptor_bind_group_layout(
   descriptor : @render_resource.RenderPipelineDescriptor?,
   index : Int,
@@ -1351,7 +1424,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
     is Some(view_layout_descriptor) else {
     fatal("wgpu: material pipeline descriptor is missing group 0 view layout")
   }
-  guard mesh3d_descriptor_bind_group_layout(material_descriptor, 1)
+  guard mesh3d_descriptor_bind_group_layout_exact(material_descriptor, 1)
     is Some(binding_arrays_layout_descriptor) else {
     fatal(
       "wgpu: material pipeline descriptor is missing group 1 binding-array layout",
@@ -1895,13 +1968,34 @@ fn mesh3d_build_shadow_depth_pipeline(
   }
   let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
+  let vertex_shader_path = match
+    mesh3d_descriptor_vertex_shader_path(material_descriptor) {
+    Some(path) =>
+      if path == "" {
+        MESH3D_PREPASS_VERTEX_SHADER_PATH
+      } else {
+        path
+      }
+    None => MESH3D_PREPASS_VERTEX_SHADER_PATH
+  }
+  let fragment_shader_path = match
+    mesh3d_descriptor_fragment_shader_path(material_descriptor) {
+    Some(path) =>
+      if path == "" {
+        MESH3D_PREPASS_MATERIAL_FRAGMENT_SHADER_PATH
+      } else {
+        path
+      }
+    None => MESH3D_PREPASS_MATERIAL_FRAGMENT_SHADER_PATH
+  }
   let vertex_wgsl = load_wgsl_required_mesh3d_shadow_pipeline(
     backend.assets_base,
+    material_descriptor,
     skinned,
     material_path,
     directional_light,
     emulate_unclipped_depth,
-    MESH3D_PREPASS_VERTEX_SHADER_PATH,
+    vertex_shader_path,
   )
   let vertex_sm = backend.device.create_shader_module_wgsl(vertex_wgsl)
   let fragment_sm = if effective_material_path {
@@ -1909,36 +2003,64 @@ fn mesh3d_build_shadow_depth_pipeline(
       backend.device.create_shader_module_wgsl(
         load_wgsl_required_mesh3d_shadow_pipeline(
           backend.assets_base,
+          material_descriptor,
           skinned,
           material_path,
           directional_light,
           emulate_unclipped_depth,
-          MESH3D_PREPASS_MATERIAL_FRAGMENT_SHADER_PATH,
+          fragment_shader_path,
         ),
       ),
     )
   } else {
     None
   }
+  let descriptor_vertex_layout = mesh3d_descriptor_vertex_buffer_layout(
+    material_descriptor,
+  )
+  if material_descriptor is Some(_) && descriptor_vertex_layout is None {
+    fatal(
+      "wgpu: material prepass descriptor is missing a valid vertex buffer layout",
+    )
+  }
   let pipeline = try {
     let builder = @wgpu.RenderPipelineDescBuilder::new(vertex_sm, layout=pl)
     builder.set_entry_points("vertex", "fragment")
-    builder.set_vertex_buffer_layout(
-      MESH3D_VERTEX_STRIDE_BYTES,
-      @wgpu.VERTEX_STEP_MODE_VERTEX,
-    )
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 1U)
-    if skinned {
-      builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_UINT32X4, 48UL, 5U)
-      builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 6U)
+    match descriptor_vertex_layout {
+      Some(layout) => {
+        builder.set_vertex_buffer_layout(
+          layout.array_stride.to_uint64(),
+          mesh_vertex_step_mode_to_wgpu(layout.step_mode),
+        )
+        for attribute in layout.attributes {
+          builder.add_vertex_attribute(
+            mesh_vertex_format_to_wgpu(attribute.format),
+            attribute.offset.to_uint64(),
+            attribute.shader_location.reinterpret_as_uint(),
+          )
+        }
+      }
+      None => {
+        builder.set_vertex_buffer_layout(
+          MESH3D_VERTEX_STRIDE_BYTES,
+          @wgpu.VERTEX_STEP_MODE_VERTEX,
+        )
+        builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
+        builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 1U)
+        if skinned {
+          builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_UINT32X4, 48UL, 5U)
+        }
+        if skinned {
+          builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 6U)
+        }
+        builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 7U)
+      }
     }
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 7U)
     builder.set_topology_u32(topology)
     builder.set_depth_stencil(
-      tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+      tf(mesh3d_descriptor_depth_format(material_descriptor)),
       depth_write_enabled=true,
-      depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+      depth_compare_u32=mesh3d_descriptor_depth_compare(material_descriptor),
     )
     builder.set_cull_mode_u32(cull_mode_wgpu)
     if native_unclipped_depth {

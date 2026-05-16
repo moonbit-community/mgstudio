@@ -764,6 +764,76 @@ test "renderer: composite alpha mode mapping matches wgpu native constants" {
 }
 
 ///|
+test "renderer: material descriptor exact layout preserves empty prepass group" {
+  let view_layout = @render_resource.BindGroupLayoutDescriptor::new("view", [
+    @render_resource.BindGroupLayoutEntry::new(
+      0,
+      @wgpu.SHADER_STAGE_VERTEX.to_uint(),
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        false,
+        0UL,
+      ),
+    ),
+  ])
+  let empty_layout = @render_resource.BindGroupLayoutDescriptor::new(
+    "prepass_empty",
+    [],
+  )
+  let descriptor = @render_resource.RenderPipelineDescriptor::default().with_layout([
+      view_layout, empty_layout,
+    ],
+  )
+  debug_inspect(
+    mesh3d_descriptor_bind_group_layout_exact(Some(descriptor), 1) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    mesh3d_descriptor_bind_group_layout(Some(descriptor), 1) is None,
+    content="true",
+  )
+}
+
+///|
+test "renderer: shadow shader defs extend descriptor defs with shadow projection state" {
+  let descriptor = @render_resource.RenderPipelineDescriptor::default()
+    .with_vertex(
+      @render_resource.VertexState::new(
+        Some("pbr/prepass/prepass.wgsl"),
+        [@render_resource.ShaderDefVal::Flag("PREPASS_PIPELINE")],
+        None,
+        [],
+      ),
+    )
+    .with_fragment(
+      Some(
+        @render_resource.FragmentState::new(
+          Some("pbr/render/pbr_prepass.wgsl"),
+          [@render_resource.ShaderDefVal::Flag("DEPTH_PREPASS")],
+          None,
+          [],
+        ),
+      ),
+    )
+  let defines = mesh3d_shadow_shader_defines_from_descriptor(
+    Some(descriptor),
+    true,
+    true,
+    true,
+    true,
+  )
+  debug_inspect(defines.get("PREPASS_PIPELINE"), content="Some(true)")
+  debug_inspect(defines.get("DEPTH_PREPASS"), content="Some(true)")
+  debug_inspect(
+    defines.get("VIEW_PROJECTION_ORTHOGRAPHIC"),
+    content="Some(true)",
+  )
+  debug_inspect(defines.get("SKINNED"), content="Some(true)")
+  debug_inspect(defines.get("MAY_DISCARD"), content="Some(true)")
+  debug_inspect(defines.get("PREPASS_FRAGMENT"), content="Some(true)")
+}
+
+///|
 test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   clear_registered_wgsl_source_registry()
   register_wgsl_source(
