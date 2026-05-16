@@ -592,12 +592,12 @@ pub fn MeshletMesh::from_mesh(
     Ok(input) => input
     Err(error) => return Err(error)
   }
-  ignore(vertex_position_quantization_factor)
-  ignore(input)
   if !meshlet_processor_available() {
     return Err(MeshToMeshletMeshConversionError::RuntimeUnavailable)
   }
-  Err(MeshToMeshletMeshConversionError::RuntimeUnavailable)
+  meshlet_build_from_mesh_with_processor(
+    input, vertex_position_quantization_factor,
+  )
 }
 
 ///|
@@ -855,12 +855,12 @@ fn meshlet_collect_indices_per_partition(
 
 ///|
 fn MeshletTempGroup::default() -> MeshletTempGroup {
-  MeshletTempGroup::{
-    aabb: meshlet_bvh_default_aabb(),
-    lod_bounds: meshlet_temp_sphere_zero(),
-    parent_error: 1.0F / 0.0F,
-    meshlets: [],
-  }
+  MeshletTempGroup::new(
+    aabb=meshlet_bvh_default_aabb(),
+    lod_bounds=meshlet_temp_sphere_zero(),
+    parent_error=1.0F / 0.0F,
+    meshlets=[],
+  )
 }
 
 ///|
@@ -1979,5 +1979,235 @@ fn meshlet_finalize_bvh_build(
     meshlet_cull_data=built.cull_data,
     aabb=built.aabb,
     bvh_depth=built.bvh_depth,
+  )
+}
+
+///|
+priv struct MeshletGeneratedMeshlets {
+  meshlets : MeshletBuildMeshlets
+  cull_data : Array[MeshletTempCullData]
+}
+
+///|
+priv struct MeshletTempLodData {
+  lod_bounds : MeshletTempSphere
+  parent_error : Float
+}
+
+///|
+priv struct MeshletSimplifiedIndices {
+  indices : Array[Int]
+  error : Float
+}
+
+///|
+fn meshlet_metis_graph_signature(graph : MeshletMetisPartitionGraph) -> Int {
+  graph.xadj.length() +
+  graph.adjncy.length() * 3 +
+  graph.adjwgt.length() * 5 +
+  graph.partition_count * 7 +
+  graph.seed * 11 +
+  graph.imbalance_factor * 13
+}
+
+///|
+fn meshlet_group_graph_signature(graph : MeshletPartitionGraph) -> Int {
+  graph.xadj.length() +
+  graph.adjncy.length() * 3 +
+  graph.adjwgt.length() * 5 +
+  graph.partition_count * 7 +
+  graph.imbalance_factor * 13
+}
+
+///|
+fn meshlet_metis_partition_triangles(
+  graph : MeshletMetisPartitionGraph,
+) -> Result[Array[Int], MeshToMeshletMeshConversionError] {
+  let signature = meshlet_metis_graph_signature(graph)
+  ignore(signature)
+  Err(MeshToMeshletMeshConversionError::RuntimeUnavailable)
+}
+
+///|
+fn meshlet_metis_partition_meshlets(
+  graph : MeshletPartitionGraph,
+) -> Result[Array[Int], MeshToMeshletMeshConversionError] {
+  let signature = meshlet_group_graph_signature(graph)
+  ignore(signature)
+  Err(MeshToMeshletMeshConversionError::RuntimeUnavailable)
+}
+
+///|
+fn meshlet_meshopt_build_meshlets(
+  input : MeshletMeshInputData,
+  indices_per_partition : Array[Array[Int]],
+  prev_lod_data : MeshletTempLodData?,
+) -> Result[MeshletGeneratedMeshlets, MeshToMeshletMeshConversionError] {
+  ignore(input.vertices.length())
+  match prev_lod_data {
+    Some(data) => {
+      ignore(data.lod_bounds.radius)
+      ignore(data.parent_error)
+    }
+    None => ()
+  }
+  ignore(indices_per_partition.length())
+  Err(MeshToMeshletMeshConversionError::RuntimeUnavailable)
+}
+
+///|
+fn meshlet_compute_meshlets_with_processor(
+  input : MeshletMeshInputData,
+  indices : Array[Int],
+  position_only_vertex_remap : Array[Int],
+  prev_lod_data : MeshletTempLodData?,
+) -> Result[MeshletGeneratedMeshlets, MeshToMeshletMeshConversionError] {
+  let graph = meshlet_build_triangle_partition_graph(
+    indices, position_only_vertex_remap,
+  )
+  let partition_per_triangle = match meshlet_metis_partition_triangles(graph) {
+    Ok(partition_per_triangle) => partition_per_triangle
+    Err(error) => return Err(error)
+  }
+  let indices_per_partition = meshlet_collect_indices_per_partition(
+    indices,
+    partition_per_triangle,
+    graph.partition_count,
+  )
+  meshlet_meshopt_build_meshlets(input, indices_per_partition, prev_lod_data)
+}
+
+///|
+fn meshlet_meshopt_simplify_indices(
+  group_indices : Array[Int],
+  input : MeshletMeshInputData,
+  vertex_locks : Array[Bool],
+) -> MeshletSimplifiedIndices? {
+  ignore(input.vertices.length())
+  ignore(vertex_locks.length())
+  ignore(group_indices.length())
+  None
+}
+
+///|
+fn meshlet_simplify_group_with_processor(
+  group : MeshletTempGroup,
+  meshlets : MeshletBuildMeshlets,
+  cull_data : Array[MeshletTempCullData],
+  input : MeshletMeshInputData,
+  position_only_vertex_remap : Array[Int],
+  vertex_locks : Array[Bool],
+) -> MeshletLodSimplificationResult {
+  if group.meshlets.length() == 1 {
+    return MeshletLodStuck(group)
+  }
+  let group_indices = meshlet_collect_group_indices(group, meshlets)
+  let simplified = match
+    meshlet_meshopt_simplify_indices(group_indices, input, vertex_locks) {
+    Some(simplified) => simplified
+    None => return MeshletLodStuck(group)
+  }
+  if !meshlet_simplified_group_accepted(
+      group_indices.length(),
+      simplified.indices.length(),
+    ) {
+    return MeshletLodStuck(group)
+  }
+  let mut group_error = simplified.error
+  for meshlet_id in group.meshlets {
+    group_error = group_error.max(cull_data[meshlet_id].error)
+  }
+  let next_group = MeshletTempGroup::{ ..group, parent_error: group_error }
+  let generated = match
+    meshlet_compute_meshlets_with_processor(
+      input,
+      simplified.indices,
+      position_only_vertex_remap,
+      Some(MeshletTempLodData::{
+        lod_bounds: next_group.lod_bounds,
+        parent_error: next_group.parent_error,
+      }),
+    ) {
+    Ok(generated) => generated
+    Err(_) => return MeshletLodStuck(next_group)
+  }
+  MeshletLodSimplified(next_group, generated.meshlets, generated.cull_data)
+}
+
+///|
+fn meshlet_build_from_mesh_with_processor(
+  input : MeshletMeshInputData,
+  vertex_position_quantization_factor : Int,
+) -> Result[MeshletMesh, MeshToMeshletMeshConversionError] {
+  let position_only_vertex_remap = meshlet_generate_position_remap(
+    input.vertices,
+  )
+  let generated = match
+    meshlet_compute_meshlets_with_processor(
+      input,
+      input.indices,
+      position_only_vertex_remap,
+      None,
+    ) {
+    Ok(generated) => generated
+    Err(error) => return Err(error)
+  }
+  let meshlets = generated.meshlets
+  let cull_data = generated.cull_data
+  let vertex_locks : Array[Bool] = []
+  for _ in 0..<input.vertices.length() {
+    vertex_locks.push(false)
+  }
+  let bvh = MeshletBvhBuilder::new()
+  let all_groups : Array[MeshletTempGroup] = []
+  let simplification_queue : Array[Int] = []
+  let stuck : Array[MeshletTempGroup] = []
+  for meshlet_id in 0..<meshlets.len() {
+    simplification_queue.push(meshlet_id)
+  }
+  while !simplification_queue.is_empty() {
+    let connected_meshlets_per_meshlet = meshlet_find_connected_meshlets(
+      simplification_queue, meshlets, position_only_vertex_remap,
+    )
+    let graph = meshlet_build_group_partition_graph(
+      simplification_queue, connected_meshlets_per_meshlet,
+    )
+    let partition_per_meshlet = match meshlet_metis_partition_meshlets(graph) {
+      Ok(partition_per_meshlet) => partition_per_meshlet
+      Err(error) => return Err(error)
+    }
+    let groups = meshlet_groups_from_partitions(
+      simplification_queue,
+      cull_data,
+      partition_per_meshlet,
+      graph.partition_count,
+    )
+    meshlet_lock_group_borders(
+      vertex_locks, groups, meshlets, position_only_vertex_remap,
+    )
+    let simplified : Array[MeshletLodSimplificationResult] = []
+    for group in groups {
+      simplified.push(
+        meshlet_simplify_group_with_processor(
+          group, meshlets, cull_data, input, position_only_vertex_remap, vertex_locks,
+        ),
+      )
+    }
+    let result = meshlet_lod_iteration_apply_results(
+      meshlets, cull_data, all_groups, simplification_queue, stuck, bvh, simplified,
+    )
+    ignore(result.first_group)
+    ignore(result.passed_tris)
+    ignore(result.stuck_tris)
+    ignore(result.retried_stuck)
+  }
+  ignore(meshlet_lod_append_final_stuck_lod(all_groups, stuck, bvh))
+  let built = bvh.build(meshlets, all_groups, cull_data)
+  Ok(
+    meshlet_finalize_bvh_build(
+      input,
+      built,
+      vertex_position_quantization_factor~,
+    ),
   )
 }

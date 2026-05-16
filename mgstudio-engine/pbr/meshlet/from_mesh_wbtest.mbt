@@ -198,6 +198,25 @@ test "pbr meshlet wbtest: triangle partition graph mirrors bevy metis inputs" {
 }
 
 ///|
+test "pbr meshlet wbtest: from mesh processor boundary rejects missing metis meshopt backend" {
+  let input = MeshletMeshInputData::new(
+    vertices=meshlet_wbtest_source_vertices(7),
+    indices=[0, 1, 2, 2, 1, 3, 4, 5, 6],
+  )
+  let remap = meshlet_generate_position_remap(input.vertices)
+  inspect(
+    meshlet_compute_meshlets_with_processor(input, input.indices, remap, None)
+    is Err(MeshToMeshletMeshConversionError::RuntimeUnavailable),
+    content="true",
+  )
+  inspect(
+    meshlet_build_from_mesh_with_processor(input, 4)
+    is Err(MeshToMeshletMeshConversionError::RuntimeUnavailable),
+    content="true",
+  )
+}
+
+///|
 test "pbr meshlet wbtest: indices are collected by metis partition ids" {
   let indices = meshlet_collect_indices_per_partition(
     [0, 1, 2, 2, 1, 3, 4, 5, 6],
