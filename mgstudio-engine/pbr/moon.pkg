@@ -39,6 +39,7 @@ import {
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/shader/runtime_render" @shader_runtime_render,
+  "Milky2018/wgpu_mbt" @wgpu,
 }
 
 import {

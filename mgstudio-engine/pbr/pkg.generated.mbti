@@ -42,6 +42,10 @@ pub const MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS : Int = 204
 
 pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 0x0001
 
+pub const PBR_MESH_FRAGMENT_SHADER_PATH : String = "pbr/render/pbr.wgsl"
+
+pub const PBR_MESH_VERTEX_SHADER_PATH : String = "pbr/render/mesh.wgsl"
+
 pub const STANDARD_MATERIAL_KEY_ANISOTROPY : UInt64 = 0x000100
 
 pub const STANDARD_MATERIAL_KEY_BASE_COLOR_TEXTURE : UInt64 = 0x000200
@@ -1158,6 +1162,12 @@ pub struct PbrGlobalClusterSettings {
   max_uniform_buffer_clusterable_objects : Int
   view_cluster_bindings_max_indices : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub struct PbrMaterialPipelineSpecializer {
+  properties : @material.MaterialProperties
+}
+pub fn PbrMaterialPipelineSpecializer::new(@material.MaterialProperties) -> Self
+pub fn PbrMaterialPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
 pub(all) struct PbrPlugin {
   prepass_enabled : Bool
