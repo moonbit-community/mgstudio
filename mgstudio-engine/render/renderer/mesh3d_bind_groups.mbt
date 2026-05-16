@@ -50,6 +50,8 @@ fn ensure_mesh3d_point_shadow_compare_sampler(
 ///|
 fn mesh3d_view_bg_cache_get_or_create(
   backend : GpuBackend,
+  material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
   transmission_source_texture : GpuTextureInfo,
   point_shadow_texture : GpuTextureInfo,
   directional_shadow_texture : GpuTextureInfo,
@@ -64,7 +66,8 @@ fn mesh3d_view_bg_cache_get_or_create(
     backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   for entry in backend.mesh3d_view_bg_cache {
-    if entry.transmission_source_texture_id == transmission_source_texture.id &&
+    if entry.material_pipeline_id == material_pipeline_id &&
+      entry.transmission_source_texture_id == transmission_source_texture.id &&
       entry.point_shadow_texture_id == point_shadow_texture.id &&
       entry.directional_shadow_texture_id == directional_shadow_texture.id &&
       entry.environment_diffuse_texture_id == environment_diffuse_texture.id &&
@@ -73,14 +76,11 @@ fn mesh3d_view_bg_cache_get_or_create(
       return (entry.bind_group, entry.binding_arrays_bind_group)
     }
   }
-  let layout = match backend.mesh3d_bgl_view {
-    Some(v) => v
-    None => fatal("wgpu: missing mesh3d view bind group layout")
-  }
-  let binding_arrays_layout = match backend.mesh3d_bgl_binding_arrays {
-    Some(v) => v
-    None => fatal("wgpu: missing mesh3d binding-array bind group layout")
-  }
+  let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+    backend, material_pipeline_id, material_descriptor,
+  )
+  let layout = layout_entry.view_bind_group_layout
+  let binding_arrays_layout = layout_entry.binding_arrays_bind_group_layout
   let view_buf = match backend.mesh3d_view_buf {
     Some(v) => v
     None => fatal("wgpu: missing mesh3d view uniform buffer")
@@ -248,6 +248,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     label="mgstudio_mesh3d_binding_arrays_bg",
   )
   backend.mesh3d_view_bg_cache.push(Mesh3dViewBindGroupCacheEntry::{
+    material_pipeline_id,
     transmission_source_texture_id: transmission_source_texture.id,
     point_shadow_texture_id: point_shadow_texture.id,
     directional_shadow_texture_id: directional_shadow_texture.id,
@@ -263,6 +264,8 @@ fn mesh3d_view_bg_cache_get_or_create(
 ///|
 fn mesh3d_frame_view_bg_cache_get_or_create(
   backend : GpuBackend,
+  material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
   uniforms : Mesh3dPassUniformState,
   transmission_source_texture : GpuTextureInfo,
   point_shadow_texture : GpuTextureInfo,
@@ -278,7 +281,8 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   for entry in backend.mesh3d_frame_view_bg_cache {
-    if entry.frame_count == uniforms.frame_count &&
+    if entry.material_pipeline_id == material_pipeline_id &&
+      entry.frame_count == uniforms.frame_count &&
       entry.camera_key_hi == uniforms.camera_key_hi &&
       entry.camera_key_lo == uniforms.camera_key_lo &&
       entry.pass_kind == uniforms.pass_kind &&
@@ -294,14 +298,11 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   guard backend.frame is Some(frame) else {
     fatal("wgpu: missing active frame for mesh3d view bind group")
   }
-  let layout = match backend.mesh3d_bgl_view {
-    Some(v) => v
-    None => fatal("wgpu: missing mesh3d view bind group layout")
-  }
-  let binding_arrays_layout = match backend.mesh3d_bgl_binding_arrays {
-    Some(v) => v
-    None => fatal("wgpu: missing mesh3d binding-array bind group layout")
-  }
+  let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+    backend, material_pipeline_id, material_descriptor,
+  )
+  let layout = layout_entry.view_bind_group_layout
+  let binding_arrays_layout = layout_entry.binding_arrays_bind_group_layout
   let clustered_lights_buf = match backend.mesh3d_clustered_lights_buf {
     Some(v) => v
     None => fatal("wgpu: missing mesh3d clustered lights buffer")
@@ -471,6 +472,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   frame.transient_bind_groups.push(bind_group)
   frame.transient_bind_groups.push(binding_arrays_bind_group)
   backend.mesh3d_frame_view_bg_cache.push(Mesh3dFrameViewBindGroupCacheEntry::{
+    material_pipeline_id,
     frame_count: uniforms.frame_count,
     camera_key_hi: uniforms.camera_key_hi,
     camera_key_lo: uniforms.camera_key_lo,
@@ -516,9 +518,10 @@ fn mesh3d_material_cache_get_or_create(
       return entry.bind_group
     }
   }
-  let (layout, _) = mesh3d_material_pipeline_layout_get_or_create(
+  let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
     backend, material_pipeline_id, material_descriptor,
   )
+  let layout = layout_entry.material_bind_group_layout
   let material_uniform_buf = backend.device.create_buffer(
     size=MESH3D_STANDARD_MATERIAL_UNIFORM_SIZE,
     usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
@@ -784,8 +787,18 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
   }
   ignore(
     mesh3d_view_bg_cache_get_or_create(
-      self, transmission_source_texture, point_shadow_texture, directional_shadow_texture,
-      environment_diffuse_texture, environment_specular_texture, 0, -1, -1, -1,
+      self,
+      MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+      None,
+      transmission_source_texture,
+      point_shadow_texture,
+      directional_shadow_texture,
+      environment_diffuse_texture,
+      environment_specular_texture,
+      0,
+      -1,
+      -1,
+      -1,
     ),
   )
 }

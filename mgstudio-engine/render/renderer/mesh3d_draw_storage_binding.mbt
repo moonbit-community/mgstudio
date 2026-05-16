@@ -37,15 +37,31 @@ fn GpuBackend::create_mesh3d_draw_bind_group(
 }
 
 ///|
-pub fn GpuBackend::ensure_mesh3d_draw_slot(
+fn GpuBackend::retire_mesh3d_draw_bind_group(
+  self : GpuBackend,
+  bind_group : @wgpu.BindGroup,
+) -> Unit {
+  if self.frame is Some(frame) {
+    frame.transient_bind_groups.push(bind_group)
+  } else {
+    bind_group.release()
+  }
+}
+
+///|
+fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
   self : GpuBackend,
   slot_index : Int,
+  material_pipeline_id : UInt64,
+  bgl : @wgpu.BindGroupLayout,
 ) -> GpuStorageSlot? {
-  guard self.mesh3d_bgl_draw is Some(bgl) else { return None }
   if slot_index < self.mesh3d_draw_slots.length() &&
     slot_index < self.mesh3d_draw_slot_skin_revisions.length() &&
+    slot_index < self.mesh3d_draw_slot_material_pipeline_ids.length() &&
     self.mesh3d_draw_slot_skin_revisions[slot_index] ==
-    self.mesh3d_skin_revision {
+    self.mesh3d_skin_revision &&
+    self.mesh3d_draw_slot_material_pipeline_ids[slot_index] ==
+    material_pipeline_id {
     return Some(self.mesh3d_draw_slots[slot_index])
   }
   let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
@@ -68,9 +84,12 @@ pub fn GpuBackend::ensure_mesh3d_draw_slot(
       bind_group: draw_bg,
     })
     self.mesh3d_draw_slot_skin_revisions.push(self.mesh3d_skin_revision)
+    self.mesh3d_draw_slot_material_pipeline_ids.push(material_pipeline_id)
   }
   if self.mesh3d_draw_slot_skin_revisions[slot_index] !=
-    self.mesh3d_skin_revision {
+    self.mesh3d_skin_revision ||
+    self.mesh3d_draw_slot_material_pipeline_ids[slot_index] !=
+    material_pipeline_id {
     let slot = self.mesh3d_draw_slots[slot_index]
     guard self.create_mesh3d_draw_bind_group(
         bgl,
@@ -81,25 +100,42 @@ pub fn GpuBackend::ensure_mesh3d_draw_slot(
       is Some(draw_bg) else {
       return None
     }
+    self.retire_mesh3d_draw_bind_group(slot.bind_group)
     self.mesh3d_draw_slots[slot_index] = GpuStorageSlot::{
       buffer: slot.buffer,
       bind_group: draw_bg,
     }
     self.mesh3d_draw_slot_skin_revisions[slot_index] = self.mesh3d_skin_revision
+    self.mesh3d_draw_slot_material_pipeline_ids[slot_index] = material_pipeline_id
   }
   Some(self.mesh3d_draw_slots[slot_index])
 }
 
 ///|
-pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(
+pub fn GpuBackend::ensure_mesh3d_draw_slot(
   self : GpuBackend,
+  slot_index : Int,
+) -> GpuStorageSlot? {
+  guard self.mesh3d_bgl_draw is Some(bgl) else { return None }
+  self.ensure_mesh3d_draw_slot_with_layout(
+    slot_index,
+    MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+    bgl,
+  )
+}
+
+///|
+fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
+  self : GpuBackend,
+  material_pipeline_id : UInt64,
+  bgl : @wgpu.BindGroupLayout,
   required_size : UInt64,
 ) -> (@wgpu.Buffer, @wgpu.BindGroup)? {
-  guard self.mesh3d_bgl_draw is Some(bgl) else { return None }
   if self.mesh3d_instance_draw_buf is Some(draw_buf) &&
     self.mesh3d_instance_draw_bg is Some(draw_bg) &&
     self.mesh3d_instance_draw_capacity >= required_size &&
-    self.mesh3d_instance_draw_skin_revision == self.mesh3d_skin_revision {
+    self.mesh3d_instance_draw_skin_revision == self.mesh3d_skin_revision &&
+    self.mesh3d_instance_draw_material_pipeline_id == material_pipeline_id {
     return Some((draw_buf, draw_bg))
   }
   let mut next_capacity = if self.mesh3d_instance_draw_capacity > 0UL {
@@ -122,11 +158,28 @@ pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(
     is Some(draw_bg) else {
     return None
   }
-  // Keep old buffer/bind group alive: commands recorded earlier in this frame
-  // may still reference them when capacity grows mid-frame.
+  if self.mesh3d_instance_draw_bg is Some(old_bg) {
+    self.retire_mesh3d_draw_bind_group(old_bg)
+  }
+  // Keep old buffer alive: commands recorded earlier in this frame may still
+  // reference it when capacity grows mid-frame.
   self.mesh3d_instance_draw_buf = Some(draw_buf)
   self.mesh3d_instance_draw_bg = Some(draw_bg)
   self.mesh3d_instance_draw_capacity = next_capacity
   self.mesh3d_instance_draw_skin_revision = self.mesh3d_skin_revision
+  self.mesh3d_instance_draw_material_pipeline_id = material_pipeline_id
   Some((draw_buf, draw_bg))
+}
+
+///|
+pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(
+  self : GpuBackend,
+  required_size : UInt64,
+) -> (@wgpu.Buffer, @wgpu.BindGroup)? {
+  guard self.mesh3d_bgl_draw is Some(bgl) else { return None }
+  self.ensure_mesh3d_instance_draw_binding_with_layout(
+    MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+    bgl,
+    required_size,
+  )
 }

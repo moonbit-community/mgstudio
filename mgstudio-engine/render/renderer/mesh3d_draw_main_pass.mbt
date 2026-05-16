@@ -124,6 +124,12 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     is Some(pipeline) else {
     return
   }
+  let material_descriptor = mesh3d_material_pipeline_descriptor_find(
+    self, material_pipeline_id,
+  )
+  let material_layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+    self, material_pipeline_id, material_descriptor,
+  )
   let indirect_first_instance_supported = self.device.supported_features_contains_u32(
     @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
   )
@@ -153,7 +159,11 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       return
     }
     let required_size = next_used_int.to_uint64()
-    guard self.ensure_mesh3d_instance_draw_binding(required_size)
+    guard self.ensure_mesh3d_instance_draw_binding_with_layout(
+        material_pipeline_id,
+        material_layout_entry.draw_bind_group_layout,
+        required_size,
+      )
       is Some((instance_draw_buf, instance_draw_bg)) else {
       return
     }
@@ -167,7 +177,11 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     }
   } else {
     let mesh3d_draw_slot_index = self.mesh3d_draw_slot_used
-    guard self.ensure_mesh3d_draw_slot(mesh3d_draw_slot_index)
+    guard self.ensure_mesh3d_draw_slot_with_layout(
+        mesh3d_draw_slot_index,
+        material_pipeline_id,
+        material_layout_entry.draw_bind_group_layout,
+      )
       is Some(draw_slot) else {
       return
     }
@@ -415,6 +429,8 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   }
   let (view_bg, binding_arrays_bg) = mesh3d_frame_view_bg_cache_get_or_create(
     self,
+    material_pipeline_id,
+    material_descriptor,
     pass_uniforms,
     transmission_source_texture,
     point_shadow_texture,
@@ -429,7 +445,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   let material_bg = mesh3d_material_cache_get_or_create(
     self,
     material_pipeline_id,
-    mesh3d_material_pipeline_descriptor_find(self, material_pipeline_id),
+    material_descriptor,
     base_texture,
     normal_texture,
     emissive_texture,
@@ -451,7 +467,11 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     ),
   )
   pass.set_pipeline(pipeline)
-  pass.set_bind_group(0U, view_bg, [])
+  pass.set_bind_group(
+    0U,
+    view_bg,
+    mesh3d_descriptor_bind_group_dynamic_offsets(material_descriptor, 0),
+  )
   pass.set_bind_group(1U, binding_arrays_bg, [])
   pass.set_bind_group(2U, active_draw_bg, [])
   pass.set_bind_group(3U, material_bg, [])
