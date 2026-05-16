@@ -112,6 +112,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   cull_mode : Int,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
+  material_pipeline_id : UInt64,
 ) -> Unit raise GpuBackendError {
   let material_path = mesh3d_shadow_material_path_from_flags(material_flags)
   let skinned = skinning_key_hi >= 0
@@ -121,6 +122,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   guard mesh3d_shadow_depth_pipeline_for_current_pass(
       self,
       mesh.primitive_topology,
+      material_pipeline_id,
       cull_mode,
       material_path,
       skinned,
@@ -268,8 +270,8 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     let normal_texture = ensure_normal_map_fallback_texture(self)
     mesh3d_material_cache_get_or_create(
       self,
-      MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
-      None,
+      material_pipeline_id,
+      mesh3d_material_pipeline_descriptor_find(self, material_pipeline_id),
       base_color_texture,
       normal_texture,
       default_texture,

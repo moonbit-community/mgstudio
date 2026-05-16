@@ -232,6 +232,7 @@ pub fn GpuBackend::draw_mesh3d(
       cull_mode,
       skinning_key_hi,
       skinning_key_lo,
+      material_pipeline_id,
     )
     return
   }

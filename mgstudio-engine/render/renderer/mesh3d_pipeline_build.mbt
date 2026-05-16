@@ -1847,6 +1847,8 @@ fn mesh3d_pipeline_for_current_pass(
 fn mesh3d_build_shadow_depth_pipeline(
   backend : GpuBackend,
   topology : UInt,
+  material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
   cull_mode : Int,
   material_path : Bool,
   skinned : Bool,
@@ -1860,7 +1862,30 @@ fn mesh3d_build_shadow_depth_pipeline(
     backend, directional_light,
   )
   let effective_material_path = material_path || emulate_unclipped_depth
-  let pipeline_layout = if effective_material_path {
+  let pipeline_layout = if effective_material_path &&
+    material_pipeline_id != MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
+    guard backend.mesh3d_shadow_bgl_view is Some(view_bgl) else {
+      fatal("wgpu: missing mesh3d shadow view bind group layout")
+    }
+    guard backend.mesh3d_shadow_bgl_empty is Some(empty_bgl) else {
+      fatal("wgpu: missing mesh3d shadow empty bind group layout")
+    }
+    guard backend.mesh3d_bgl_draw is Some(draw_bgl) else {
+      fatal("wgpu: missing mesh3d draw bind group layout for shadows")
+    }
+    let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+      backend, material_pipeline_id, material_descriptor,
+    )
+    Some(
+      create_pipeline_layout_4(
+        backend.device,
+        view_bgl,
+        empty_bgl,
+        draw_bgl,
+        layout_entry.material_bind_group_layout,
+      ),
+    )
+  } else if effective_material_path {
     backend.mesh3d_shadow_pipeline_layout_material
   } else {
     backend.mesh3d_shadow_pipeline_layout_depth_only
@@ -1971,23 +1996,38 @@ fn mesh3d_build_shadow_depth_pipeline(
 fn mesh3d_shadow_depth_pipeline_for_current_pass(
   backend : GpuBackend,
   topology : UInt,
+  material_pipeline_id : UInt64,
   cull_mode : Int,
   material_path : Bool,
   skinned : Bool,
   directional_light : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   ensure_mesh3d_shadow_pipeline_layout_resources(backend)
+  let material_descriptor = mesh3d_material_pipeline_descriptor_find(
+    backend, material_pipeline_id,
+  )
+  let emulate_unclipped_depth = mesh3d_shadow_depth_should_emulate_unclipped_depth(
+    backend, directional_light,
+  )
+  let shadow_pipeline_material_id = if material_path || emulate_unclipped_depth {
+    material_pipeline_id
+  } else {
+    MESH3D_DEFAULT_MATERIAL_PIPELINE_ID
+  }
   if mesh3d_shadow_pipeline_get(
-      backend, topology, cull_mode, material_path, skinned, directional_light,
+      backend, topology, shadow_pipeline_material_id, cull_mode, material_path, skinned,
+      directional_light,
     )
     is Some(pipeline) {
     return Some(pipeline)
   }
   let pipeline = mesh3d_build_shadow_depth_pipeline(
-    backend, topology, cull_mode, material_path, skinned, directional_light,
+    backend, topology, shadow_pipeline_material_id, material_descriptor, cull_mode,
+    material_path, skinned, directional_light,
   )
   mesh3d_shadow_pipeline_set(
-    backend, topology, cull_mode, material_path, skinned, directional_light, pipeline,
+    backend, topology, shadow_pipeline_material_id, cull_mode, material_path, skinned,
+    directional_light, pipeline,
   )
   Some(pipeline)
 }
