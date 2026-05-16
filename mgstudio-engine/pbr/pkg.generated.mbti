@@ -534,6 +534,8 @@ pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@mater
 
 pub fn standard_material_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@material.StandardMaterial]]
 
+pub fn standard_material_bind_group_layout_descriptor() -> @material.BindGroupLayoutDescriptor
+
 pub fn standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
 
 pub fn standard_material_key_from_material(@material.StandardMaterial) -> StandardMaterialKey

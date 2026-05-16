@@ -35,9 +35,30 @@ test "render3d: extracted material properties carry core bevy runtime fields" {
   debug_inspect(
     props.reads_view_transmission_texture &&
     props.depth_bias == 5.0F &&
-    props.shadows_enabled,
+    props.shadows_enabled &&
+    props.material_layout is Some(_),
     content="true",
   )
+}
+
+///|
+test "render3d: standard material properties carry bevy material bind group layout" {
+  let props = render3d_material_properties_for_standard_material(
+    StandardMaterial::default(),
+    None,
+    OpaqueRendererMethod::Forward,
+    true,
+  )
+  guard props.material_layout is Some(layout) else {
+    abort("expected StandardMaterial material layout")
+  }
+  inspect(layout.label, content="StandardMaterial")
+  inspect(layout.entries.length(), content="17")
+  inspect(layout.entries[0].binding(), content="0")
+  inspect(layout.entries[1].binding(), content="1")
+  inspect(layout.entries[14].binding(), content="14")
+  inspect(layout.entries[15].binding(), content="29")
+  inspect(layout.entries[16].binding(), content="30")
 }
 
 ///|

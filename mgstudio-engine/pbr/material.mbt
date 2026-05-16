@@ -142,6 +142,9 @@ fn render3d_material_properties_for_standard_material(
     .with_depth_bias(material.depth_bias)
     .with_reads_view_transmission_texture(reads_view_transmission_texture)
     .with_render_phase_type(standard_material_render_phase_type(material))
+    .with_material_layout(
+      Some(standard_material_bind_group_layout_descriptor()),
+    )
     .with_material_key(
       @material.ErasedMaterialKey::new(
         standard_material_key.bits(),

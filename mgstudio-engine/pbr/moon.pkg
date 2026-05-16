@@ -29,6 +29,7 @@ import {
   "Milky2018/mgstudio/pbr/volumetric_fog" @pbr_volumetric_fog,
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/render_resource" @render_resource,
   "Milky2018/mgstudio/shader",
   "Milky2018/mgstudio/pbr/render" @pbr_render,
   "Milky2018/mgstudio/pbr/transmission" @transmission,

@@ -16,6 +16,103 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/material_bind_groups.rs`.
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/pbr_material.rs`
+// `StandardMaterial` derives `AsBindGroup` with the binding indices mirrored
+// here for the descriptor-level material pipeline specializer.
+pub fn standard_material_bind_group_layout_descriptor() -> @material.BindGroupLayoutDescriptor {
+  let fragment = @wgpu.SHADER_STAGE_FRAGMENT.to_uint()
+  let material_uniform_visibility = (@wgpu.SHADER_STAGE_VERTEX |
+  @wgpu.SHADER_STAGE_FRAGMENT).to_uint()
+  @material.BindGroupLayoutDescriptor::new("StandardMaterial", [
+    @render_resource.BindGroupLayoutEntry::new(
+      0,
+      material_uniform_visibility,
+      @render_resource.BindingType::Buffer,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      1,
+      fragment,
+      @render_resource.BindingType::Texture,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      2,
+      fragment,
+      @render_resource.BindingType::Sampler,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      3,
+      fragment,
+      @render_resource.BindingType::Texture,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      4,
+      fragment,
+      @render_resource.BindingType::Sampler,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      5,
+      fragment,
+      @render_resource.BindingType::Texture,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      6,
+      fragment,
+      @render_resource.BindingType::Sampler,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      7,
+      fragment,
+      @render_resource.BindingType::Texture,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      8,
+      fragment,
+      @render_resource.BindingType::Sampler,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      9,
+      fragment,
+      @render_resource.BindingType::Texture,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      10,
+      fragment,
+      @render_resource.BindingType::Sampler,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      11,
+      fragment,
+      @render_resource.BindingType::Texture,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      12,
+      fragment,
+      @render_resource.BindingType::Sampler,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      13,
+      fragment,
+      @render_resource.BindingType::Texture,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      14,
+      fragment,
+      @render_resource.BindingType::Sampler,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      29,
+      fragment,
+      @render_resource.BindingType::Texture,
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      30,
+      fragment,
+      @render_resource.BindingType::Sampler,
+    ),
+  ])
+}
+
+///|
 pub struct MaterialBindGroupIndex {
   value : Int
 } derive(Eq, Debug, ToJson, FromJson)
