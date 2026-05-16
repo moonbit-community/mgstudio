@@ -74,9 +74,13 @@ pub fn meshlet_conversion_error_when_unavailable() -> MeshToMeshletMeshConversio
 
 pub fn meshlet_deferred_gbuffer_prepass(Int) -> Int
 
+pub fn meshlet_deferred_gbuffer_prepass_descriptor(uses_motion_vector_prepass_bind_group? : Bool) -> MeshletMaterialShadePassDescriptor
+
 pub fn meshlet_deferred_gbuffer_prepass_draw_calls(MeshletViewMaterialsDeferredGBufferPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Array[MeshletMaterialDrawCall]
 
 pub fn meshlet_deferred_gbuffer_prepass_materials(MeshletViewMaterialsDeferredGBufferPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Int
+
+pub fn meshlet_deferred_gbuffer_prepass_plan(MeshletViewMaterialsDeferredGBufferPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool, uses_motion_vector_prepass_bind_group? : Bool) -> MeshletMaterialShadePassPlan
 
 pub fn meshlet_extract_mesh_input(@mesh.Mesh) -> Result[MeshletMeshInputData, MeshToMeshletMeshConversionError]
 
@@ -84,9 +88,13 @@ pub fn meshlet_fake_vertex_buffer_layout() -> @mesh.MeshVertexBufferLayout
 
 pub fn meshlet_main_opaque_pass(Int) -> Int
 
+pub fn meshlet_main_opaque_pass_descriptor() -> MeshletMaterialShadePassDescriptor
+
 pub fn meshlet_main_opaque_pass_draw_calls(MeshletViewMaterialsMainOpaquePass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Array[MeshletMaterialDrawCall]
 
 pub fn meshlet_main_opaque_pass_materials(MeshletViewMaterialsMainOpaquePass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Int
+
+pub fn meshlet_main_opaque_pass_plan(MeshletViewMaterialsMainOpaquePass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> MeshletMaterialShadePassPlan
 
 pub fn meshlet_material_prepare_entry_count(MeshletViewMaterialsMainOpaquePass, MeshletViewMaterialsPrepass, MeshletViewMaterialsDeferredGBufferPrepass) -> Int
 
@@ -142,9 +150,13 @@ pub fn meshlet_plugin_with(@app.App[@ecs.World], MeshletPlugin) -> @app.App[@ecs
 
 pub fn meshlet_prepass(Int) -> Int
 
+pub fn meshlet_prepass_descriptor(uses_motion_vector_prepass_bind_group? : Bool) -> MeshletMaterialShadePassDescriptor
+
 pub fn meshlet_prepass_draw_calls(MeshletViewMaterialsPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Array[MeshletMaterialDrawCall]
 
 pub fn meshlet_prepass_materials(MeshletViewMaterialsPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool) -> Int
+
+pub fn meshlet_prepass_plan(MeshletViewMaterialsPrepass, InstanceManager, has_material_depth? : Bool, has_material_shade_bind_group? : Bool, uses_motion_vector_prepass_bind_group? : Bool) -> MeshletMaterialShadePassPlan
 
 pub fn meshlet_processor_available() -> Bool
 
@@ -421,6 +433,36 @@ pub struct MeshletMaterialPipelineDescriptor {
   zero_initialize_workgroup_memory : Bool
 }
 pub fn MeshletMaterialPipelineDescriptor::new(pass_variant? : MeshletMaterialPassVariant, view_key? : MeshletViewMaterialPipelineKey, view_layout_kind? : MeshletMaterialViewLayoutKind, fake_vertex_buffer_layout? : @mesh.MeshVertexBufferLayout, layout_count? : Int, uses_binding_array_layout? : Bool, uses_empty_bind_group_layout? : Bool, uses_material_shade_layout? : Bool, material_layout_id? : Int, vertex_shader_label? : String, fragment_shader_kind? : MeshletMaterialFragmentShaderKind, shader_def_meshlet_material_pass? : Bool, shader_def_count? : Int, uses_material_fragment_entry_point? : Bool, depth_format_depth16_unorm? : Bool, depth_write_enabled? : Bool, depth_compare_equal? : Bool, zero_initialize_workgroup_memory? : Bool) -> Self
+
+pub struct MeshletMaterialShadePassDescriptor {
+  pass_variant : MeshletMaterialShadePassVariant
+  label : String
+  color_attachment_slots : Array[String]
+  depth_load : String
+  depth_store : String
+  view_bind_group_kind : String
+  view_bind_group_dynamic_offset_count : Int
+  sets_binding_array_group : Bool
+  material_shade_bind_group_index : Int
+  material_bind_group_index : Int
+  uses_main_pass_resolution_override : Bool
+  uses_motion_vector_prepass_bind_group : Bool
+  requires_material_depth : Bool
+  requires_material_shade_bind_group : Bool
+} derive(Eq, @debug.Debug)
+
+pub struct MeshletMaterialShadePassPlan {
+  descriptor : MeshletMaterialShadePassDescriptor
+  draw_calls : Array[MeshletMaterialDrawCall]
+  render_pass_enabled : Bool
+} derive(Eq, @debug.Debug)
+pub fn MeshletMaterialShadePassPlan::draw_count(Self) -> Int
+
+pub(all) enum MeshletMaterialShadePassVariant {
+  MainOpaque
+  Prepass
+  DeferredGBufferPrepass
+} derive(Eq, @debug.Debug)
 
 pub(all) enum MeshletMaterialViewLayoutKind {
   MeshView

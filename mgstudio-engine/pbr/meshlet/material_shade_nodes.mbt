@@ -50,6 +50,136 @@ pub fn meshlet_material_shade_node_index(node : String) -> Int? {
 }
 
 ///|
+pub(all) enum MeshletMaterialShadePassVariant {
+  MainOpaque
+  Prepass
+  DeferredGBufferPrepass
+} derive(Eq, Debug)
+
+///|
+pub struct MeshletMaterialShadePassDescriptor {
+  pass_variant : MeshletMaterialShadePassVariant
+  label : String
+  color_attachment_slots : Array[String]
+  depth_load : String
+  depth_store : String
+  view_bind_group_kind : String
+  view_bind_group_dynamic_offset_count : Int
+  sets_binding_array_group : Bool
+  material_shade_bind_group_index : Int
+  material_bind_group_index : Int
+  uses_main_pass_resolution_override : Bool
+  uses_motion_vector_prepass_bind_group : Bool
+  requires_material_depth : Bool
+  requires_material_shade_bind_group : Bool
+} derive(Eq, Debug)
+
+///|
+fn meshlet_material_shade_pass_descriptor(
+  pass_variant : MeshletMaterialShadePassVariant,
+  uses_motion_vector_prepass_bind_group? : Bool = false,
+) -> MeshletMaterialShadePassDescriptor {
+  match pass_variant {
+    MainOpaque =>
+      MeshletMaterialShadePassDescriptor::{
+        pass_variant,
+        label: "meshlet_material_opaque_3d_pass",
+        color_attachment_slots: ["view_target"],
+        depth_load: "Load",
+        depth_store: "Store",
+        view_bind_group_kind: "mesh_view",
+        view_bind_group_dynamic_offset_count: 7,
+        sets_binding_array_group: true,
+        material_shade_bind_group_index: 2,
+        material_bind_group_index: 3,
+        uses_main_pass_resolution_override: true,
+        uses_motion_vector_prepass_bind_group: false,
+        requires_material_depth: true,
+        requires_material_shade_bind_group: true,
+      }
+    Prepass =>
+      MeshletMaterialShadePassDescriptor::{
+        pass_variant,
+        label: "meshlet_material_prepass",
+        color_attachment_slots: ["normal", "motion_vectors", "none", "none"],
+        depth_load: "Load",
+        depth_store: "Store",
+        view_bind_group_kind: if uses_motion_vector_prepass_bind_group {
+          "prepass_motion_vectors"
+        } else {
+          "prepass_no_motion_vectors"
+        },
+        view_bind_group_dynamic_offset_count: if uses_motion_vector_prepass_bind_group {
+          2
+        } else {
+          1
+        },
+        sets_binding_array_group: false,
+        material_shade_bind_group_index: 2,
+        material_bind_group_index: 2,
+        uses_main_pass_resolution_override: true,
+        uses_motion_vector_prepass_bind_group,
+        requires_material_depth: true,
+        requires_material_shade_bind_group: true,
+      }
+    DeferredGBufferPrepass =>
+      MeshletMaterialShadePassDescriptor::{
+        pass_variant,
+        label: "meshlet_material_deferred_prepass",
+        color_attachment_slots: [
+          "normal", "motion_vectors", "deferred", "deferred_lighting_pass_id",
+        ],
+        depth_load: "Load",
+        depth_store: "Store",
+        view_bind_group_kind: if uses_motion_vector_prepass_bind_group {
+          "prepass_motion_vectors"
+        } else {
+          "prepass_no_motion_vectors"
+        },
+        view_bind_group_dynamic_offset_count: if uses_motion_vector_prepass_bind_group {
+          2
+        } else {
+          1
+        },
+        sets_binding_array_group: false,
+        material_shade_bind_group_index: 2,
+        material_bind_group_index: 2,
+        uses_main_pass_resolution_override: true,
+        uses_motion_vector_prepass_bind_group,
+        requires_material_depth: true,
+        requires_material_shade_bind_group: true,
+      }
+  }
+}
+
+///|
+pub fn meshlet_main_opaque_pass_descriptor() -> MeshletMaterialShadePassDescriptor {
+  meshlet_material_shade_pass_descriptor(
+    MeshletMaterialShadePassVariant::MainOpaque,
+  )
+}
+
+///|
+pub fn meshlet_prepass_descriptor(
+  uses_motion_vector_prepass_bind_group? : Bool = false,
+) -> MeshletMaterialShadePassDescriptor {
+  meshlet_material_shade_pass_descriptor(
+    MeshletMaterialShadePassVariant::Prepass,
+    uses_motion_vector_prepass_bind_group~,
+  )
+}
+
+///|
+pub fn meshlet_deferred_gbuffer_prepass_descriptor(
+  uses_motion_vector_prepass_bind_group? : Bool = false,
+) -> MeshletMaterialShadePassDescriptor {
+  meshlet_material_shade_pass_descriptor(
+    MeshletMaterialShadePassVariant::DeferredGBufferPrepass,
+    uses_motion_vector_prepass_bind_group~,
+  )
+}
+
+///|
 fn meshlet_clamp_draw_count(draw_count : Int) -> Int {
   if draw_count < 0 {
     0
@@ -70,6 +200,13 @@ pub struct MeshletMaterialDrawCall {
   material_bind_group : Int
   vertex_start : Int
   vertex_end : Int
+} derive(Eq, Debug)
+
+///|
+pub struct MeshletMaterialShadePassPlan {
+  descriptor : MeshletMaterialShadePassDescriptor
+  draw_calls : Array[MeshletMaterialDrawCall]
+  render_pass_enabled : Bool
 } derive(Eq, Debug)
 
 ///|
@@ -103,6 +240,24 @@ fn meshlet_material_bin_draw_calls(
 }
 
 ///|
+fn meshlet_material_shade_pass_plan(
+  descriptor : MeshletMaterialShadePassDescriptor,
+  material_bins : Array[MeshletViewMaterialEntry],
+  instance_manager : InstanceManager,
+  has_material_depth : Bool,
+  has_material_shade_bind_group : Bool,
+) -> MeshletMaterialShadePassPlan {
+  let draw_calls = meshlet_material_bin_draw_calls(
+    material_bins, instance_manager, has_material_depth, has_material_shade_bind_group,
+  )
+  MeshletMaterialShadePassPlan::{
+    descriptor,
+    draw_calls,
+    render_pass_enabled: draw_calls.length() > 0,
+  }
+}
+
+///|
 fn meshlet_material_bin_draw_count(
   material_bins : Array[MeshletViewMaterialEntry],
   instance_manager : InstanceManager,
@@ -112,6 +267,65 @@ fn meshlet_material_bin_draw_count(
   meshlet_material_bin_draw_calls(
     material_bins, instance_manager, has_material_depth, has_material_shade_bind_group,
   ).length()
+}
+
+///|
+pub fn meshlet_main_opaque_pass_plan(
+  materials : MeshletViewMaterialsMainOpaquePass,
+  instance_manager : InstanceManager,
+  has_material_depth? : Bool = true,
+  has_material_shade_bind_group? : Bool = true,
+) -> MeshletMaterialShadePassPlan {
+  meshlet_material_shade_pass_plan(
+    meshlet_main_opaque_pass_descriptor(),
+    materials.entries,
+    instance_manager,
+    has_material_depth,
+    has_material_shade_bind_group,
+  )
+}
+
+///|
+pub fn meshlet_prepass_plan(
+  materials : MeshletViewMaterialsPrepass,
+  instance_manager : InstanceManager,
+  has_material_depth? : Bool = true,
+  has_material_shade_bind_group? : Bool = true,
+  uses_motion_vector_prepass_bind_group? : Bool = false,
+) -> MeshletMaterialShadePassPlan {
+  meshlet_material_shade_pass_plan(
+    meshlet_prepass_descriptor(uses_motion_vector_prepass_bind_group~),
+    materials.entries,
+    instance_manager,
+    has_material_depth,
+    has_material_shade_bind_group,
+  )
+}
+
+///|
+pub fn meshlet_deferred_gbuffer_prepass_plan(
+  materials : MeshletViewMaterialsDeferredGBufferPrepass,
+  instance_manager : InstanceManager,
+  has_material_depth? : Bool = true,
+  has_material_shade_bind_group? : Bool = true,
+  uses_motion_vector_prepass_bind_group? : Bool = false,
+) -> MeshletMaterialShadePassPlan {
+  meshlet_material_shade_pass_plan(
+    meshlet_deferred_gbuffer_prepass_descriptor(
+      uses_motion_vector_prepass_bind_group~,
+    ),
+    materials.entries,
+    instance_manager,
+    has_material_depth,
+    has_material_shade_bind_group,
+  )
+}
+
+///|
+pub fn MeshletMaterialShadePassPlan::draw_count(
+  self : MeshletMaterialShadePassPlan,
+) -> Int {
+  self.draw_calls.length()
 }
 
 ///|

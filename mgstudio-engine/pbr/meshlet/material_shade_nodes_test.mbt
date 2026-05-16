@@ -52,6 +52,65 @@ test "pbr meshlet: main opaque pass draw count filters scene presence and pipeli
 }
 
 ///|
+test "pbr meshlet: main opaque shade descriptor mirrors bevy fullscreen pass" {
+  let descriptor = meshlet_main_opaque_pass_descriptor()
+  inspect(
+    descriptor.pass_variant is MeshletMaterialShadePassVariant::MainOpaque,
+    content="true",
+  )
+  inspect(descriptor.label, content="meshlet_material_opaque_3d_pass")
+  debug_inspect(descriptor.color_attachment_slots, content="[\"view_target\"]")
+  inspect(descriptor.depth_load, content="Load")
+  inspect(descriptor.depth_store, content="Store")
+  inspect(descriptor.view_bind_group_kind, content="mesh_view")
+  inspect(descriptor.view_bind_group_dynamic_offset_count, content="7")
+  inspect(descriptor.sets_binding_array_group, content="true")
+  inspect(descriptor.material_shade_bind_group_index, content="2")
+  inspect(descriptor.material_bind_group_index, content="3")
+}
+
+///|
+test "pbr meshlet: prepass shade descriptors preserve attachment topology" {
+  let prepass = meshlet_prepass_descriptor(
+    uses_motion_vector_prepass_bind_group=true,
+  )
+  let deferred = meshlet_deferred_gbuffer_prepass_descriptor()
+  debug_inspect(
+    prepass.color_attachment_slots,
+    content="[\"normal\", \"motion_vectors\", \"none\", \"none\"]",
+  )
+  inspect(prepass.view_bind_group_kind, content="prepass_motion_vectors")
+  inspect(prepass.view_bind_group_dynamic_offset_count, content="2")
+  inspect(prepass.material_bind_group_index, content="2")
+  debug_inspect(
+    deferred.color_attachment_slots,
+    content="[\"normal\", \"motion_vectors\", \"deferred\", \"deferred_lighting_pass_id\"]",
+  )
+  inspect(deferred.view_bind_group_kind, content="prepass_no_motion_vectors")
+  inspect(deferred.view_bind_group_dynamic_offset_count, content="1")
+}
+
+///|
+test "pbr meshlet: shade pass plan carries descriptor and filtered draws" {
+  let instance_manager = extract_meshlet_mesh_entities_from_instances([
+    ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 4),
+  ])
+  ignore(
+    queue_material_meshlet_meshes_with_material_assets(instance_manager, [4]),
+  )
+  ignore(queue_material_meshlet_meshes(instance_manager))
+  let materials = MeshletViewMaterialsMainOpaquePass::default()
+  materials.push(test_meshlet_shade_entry(1, 100, 10))
+  materials.push(test_meshlet_shade_entry(2, -1, 11))
+  let plan = meshlet_main_opaque_pass_plan(materials, instance_manager)
+  inspect(plan.render_pass_enabled, content="true")
+  inspect(plan.draw_count(), content="1")
+  inspect(plan.descriptor.label, content="meshlet_material_opaque_3d_pass")
+  inspect(plan.draw_calls[0].vertex_start, content="3")
+  inspect(plan.draw_calls[0].vertex_end, content="6")
+}
+
+///|
 test "pbr meshlet: prepass draw count follows same filtering" {
   let instance_manager = extract_meshlet_mesh_entities_from_instances([
     ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 3),
