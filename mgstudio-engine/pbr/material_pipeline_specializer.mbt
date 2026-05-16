@@ -64,6 +64,9 @@ const MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH : UInt64 = 524288UL
 const MESH_PIPELINE_KEY_BLEND_RESERVED_BITS : UInt64 = 1879048192UL
 
 ///|
+const PBR_PREPASS_RUNTIME_PIPELINE_ID_OFFSET : UInt64 = 0x4000000000000000UL
+
+///|
 fn pbr_shader_def(name : String) -> @material.ShaderDefVal {
   @material.ShaderDefVal::Flag(name)
 }
@@ -739,6 +742,15 @@ fn pbr_material_prepass_specialize(
     },
     key,
     layout,
+  )
+}
+
+///|
+fn pbr_prepass_runtime_pipeline_id(
+  pipeline_id : @material.CachedRenderPipelineId,
+) -> @material.CachedRenderPipelineId {
+  @material.CachedRenderPipelineId::new(
+    PBR_PREPASS_RUNTIME_PIPELINE_ID_OFFSET | pipeline_id.id(),
   )
 }
 

@@ -360,6 +360,7 @@ fn render3d_execute_camera_directional_shadow_pass(
       pass_name: "shadow_directional_light_cascade",
     }
     render3d_execute_shadow_phase_view(
+      world,
       camera_entity,
       pass_lighting,
       shadow_pass_kind,

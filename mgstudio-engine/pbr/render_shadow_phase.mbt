@@ -246,7 +246,68 @@ fn render3d_shadow_visible_extracted_indices(
 }
 
 ///|
+fn render3d_prewarm_shadow_material_pipeline(
+  world : @ecs.World,
+  shadow_mesh : Mesh3dExtractedPayload,
+) -> @material.CachedRenderPipelineId? {
+  if !render3d_shadow_material_may_discard(shadow_mesh.material.alpha_mode) {
+    return None
+  }
+  guard shadow_mesh.material_properties.prepass_specialize
+    is Some(prepass_specialize) else {
+    return None
+  }
+  guard @sprite.render_mesh_asset_get(shadow_mesh.mesh_handle)
+    is Some(mesh_asset) else {
+    return None
+  }
+  let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
+  let layout = mesh_asset.get_mesh_vertex_buffer_layout(
+    state_ref.val.mesh_vertex_buffer_layouts,
+  )
+  let base_key = material_pipeline_key_for_standard_material(
+    shadow_mesh.material_properties,
+  )
+  let shadow_key = @material.ErasedMaterialPipelineKey::new(
+    @material.ErasedMeshPipelineKey::new(
+      base_key.mesh_key().bits() |
+      MESH_PIPELINE_KEY_DEPTH_PREPASS |
+      MESH_PIPELINE_KEY_MAY_DISCARD,
+      "MeshPipelineKey",
+    ),
+    shadow_mesh.material_properties.material_key,
+    "StandardMaterial",
+  )
+  let prepass_pipeline_id = @material.material_specialize_prepass(
+    prepass_specialize,
+    world,
+    shadow_key,
+    layout,
+    shadow_mesh.material_properties,
+  ) catch {
+    err =>
+      abort(
+        "failed to specialize pbr shadow prepass material pipeline for mesh \{shadow_mesh.mesh_handle.id()}: \{err}",
+      )
+  }
+  let runtime_pipeline_id = pbr_prepass_runtime_pipeline_id(prepass_pipeline_id)
+  match
+    state_ref.val.specialized_prepass_material_pipelines.render_pipeline_descriptor(
+      prepass_pipeline_id,
+    ) {
+    Some(descriptor) =>
+      @render.host_gpu_register_mesh3d_material_pipeline_descriptor(
+        material_pipeline_id=runtime_pipeline_id.id(),
+        descriptor~,
+      )
+    None => ()
+  }
+  Some(runtime_pipeline_id)
+}
+
+///|
 fn render3d_execute_shadow_phase_view(
+  world : @ecs.World,
   camera_entity : @core.Entity,
   pass_lighting : Render3dLightingState,
   pass_kind : Int,
@@ -277,6 +338,9 @@ fn render3d_execute_shadow_phase_view(
     ignore(render3d_shadow_phase_item_debug_key(shadow_phase_item))
     let extracted_shadow_mesh = meshes[shadow_phase_item.extracted_index]
     let shadow_mesh = extracted_shadow_mesh.payload
+    let material_pipeline_id = render3d_prewarm_shadow_material_pipeline(
+      world, shadow_mesh,
+    )
     let draw_storage_index = draw_storage_base + draw_storage_offset
     render3d_mesh_gpu_binned_phase_push(
       shadow_phase,
@@ -323,6 +387,7 @@ fn render3d_execute_shadow_phase_view(
         0.0F,
         render3d_mesh_flags(extracted_shadow_mesh),
         0,
+        material_pipeline_id~,
         skinning_key_hi=shadow_mesh.skinning_key_hi,
         skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
       ),

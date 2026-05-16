@@ -85,6 +85,7 @@ fn render3d_execute_camera_point_shadow_pass(
       pass_name: "shadow_point_light_face",
     }
     render3d_execute_shadow_phase_view(
+      world,
       camera_entity,
       pass_lighting,
       point_shadow_pass_kind,

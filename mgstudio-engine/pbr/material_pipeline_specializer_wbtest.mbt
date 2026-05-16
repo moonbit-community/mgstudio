@@ -443,3 +443,15 @@ test "pbr material prepass specialization caches descriptors separately" {
   }
   debug_inspect(descriptor.label, content="Some(\"prepass_pipeline\")")
 }
+
+///|
+test "pbr prepass runtime pipeline ids do not collide with main pass cache ids" {
+  let prepass_zero = pbr_prepass_runtime_pipeline_id(
+    @material.CachedRenderPipelineId::new(0UL),
+  )
+  let prepass_one = pbr_prepass_runtime_pipeline_id(
+    @material.CachedRenderPipelineId::new(1UL),
+  )
+  inspect(prepass_zero.id(), content="4611686018427387904")
+  inspect(prepass_one.id(), content="4611686018427387905")
+}
