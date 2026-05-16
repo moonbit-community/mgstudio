@@ -122,6 +122,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       entity: mesh.entity,
       extracted_index: i,
       phase,
+      pipeline_id: payload.material_pipeline_id,
       distance: @pbr_render.render3d_mesh_position_view_depth(
         payload.world_from_local.translation,
         camera_transform,
@@ -154,6 +155,7 @@ priv struct GpuPreprocessWorkItem3d {
   entity : PhaseEntityRef3d
   extracted_index : Int
   phase : Int
+  pipeline_id : @material.CachedRenderPipelineId?
   distance : Float
 }
 
@@ -201,6 +203,7 @@ fn render3d_collect_meshes_for_gpu_building(
       entity: mesh.entity,
       extracted_index: i,
       phase,
+      pipeline_id: payload.material_pipeline_id,
       distance: @pbr_render.render3d_mesh_position_view_depth(
         payload.world_from_local.translation,
         camera_transform,
@@ -256,6 +259,7 @@ fn render3d_write_batched_instance_buffers(
       entity: work_item.entity,
       extracted_index: work_item.extracted_index,
       phase: work_item.phase,
+      pipeline_id: work_item.pipeline_id,
       distance: work_item.distance,
     })
   }

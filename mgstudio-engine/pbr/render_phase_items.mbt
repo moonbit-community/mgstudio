@@ -146,6 +146,7 @@ priv struct Mesh3dExtractedPayload {
   material_properties : @material.MaterialProperties
   material_vertex_shader_path : String?
   material_fragment_shader_path : String?
+  material_pipeline_id : @material.CachedRenderPipelineId?
   lightmap : Lightmap?
   is_forward_decal : Bool
   forward_decal_material_ext : ForwardDecalMaterialExt?
@@ -197,6 +198,7 @@ priv struct MeshPhaseItem3d {
   entity : PhaseEntityRef3d
   extracted_index : Int
   phase : Int
+  pipeline_id : @material.CachedRenderPipelineId?
   distance : Float
 }
 

@@ -286,12 +286,12 @@ fn render3d_prewarm_material_pipeline(
   world : @ecs.World,
   mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
   mesh : Mesh3dExtractedPayload,
-) -> Unit {
+) -> @material.CachedRenderPipelineId? {
   guard mesh.material_properties.base_specialize is Some(base_specialize) else {
-    return
+    return None
   }
   guard @sprite.render_mesh_asset_get(mesh.mesh_handle) is Some(mesh_asset) else {
-    return
+    return None
   }
   let layout = mesh_asset.get_mesh_vertex_buffer_layout(
     mesh_runtime_state_ref.val.mesh_vertex_buffer_layouts,
@@ -299,7 +299,7 @@ fn render3d_prewarm_material_pipeline(
   let pipeline_key = material_pipeline_key_for_standard_material(
     mesh.material_properties,
   )
-  ignore(
+  Some(
     @material.material_specialize_base(
       base_specialize,
       world,
@@ -322,11 +322,20 @@ fn render3d_prewarm_mesh_pipelines(
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
   let prewarmed_keys : Map[String, Bool] = {}
-  for extracted_mesh in meshes {
+  for mesh_index in 0..<meshes.length() {
+    let extracted_mesh = meshes[mesh_index]
     let mesh = extracted_mesh.payload
-    render3d_prewarm_material_pipeline(world, mesh_runtime_state_ref, mesh)
+    let material_pipeline_id = render3d_prewarm_material_pipeline(
+      world, mesh_runtime_state_ref, mesh,
+    )
+    if material_pipeline_id is Some(_) {
+      meshes[mesh_index] = ExtractedMesh3d::{
+        ..extracted_mesh,
+        payload: Mesh3dExtractedPayload::{ ..mesh, material_pipeline_id, },
+      }
+    }
     let (vertex_shader_path, fragment_shader_path) = render3d_material_shader_paths_for_extracted_mesh(
-      extracted_mesh,
+      meshes[mesh_index],
     )
     let vertex_shader_key = match vertex_shader_path {
       Some(path) => path

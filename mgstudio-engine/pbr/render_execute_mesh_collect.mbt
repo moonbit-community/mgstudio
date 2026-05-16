@@ -401,6 +401,7 @@ fn render3d_extract_mesh_for_entity(
         material_properties,
         material_vertex_shader_path,
         material_fragment_shader_path,
+        material_pipeline_id: None,
         lightmap,
         is_forward_decal,
         forward_decal_material_ext,

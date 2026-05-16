@@ -29,6 +29,7 @@ priv struct MeshGpuBatchSetKey3d {
   cull_mode : Int
   vertex_shader_path : String?
   fragment_shader_path : String?
+  material_pipeline_id : UInt64
   point_shadow_texture_id : Int
   point_shadow_enabled : Float
   point_shadow_depth_bias : Float
@@ -115,6 +116,10 @@ fn render3d_mesh_gpu_batch_set_key(
     cull_mode: payload.cull_mode,
     vertex_shader_path: payload.vertex_shader_path,
     fragment_shader_path: payload.fragment_shader_path,
+    material_pipeline_id: match payload.material_pipeline_id {
+      Some(id) => id.id()
+      None => @material.CachedRenderPipelineId::invalid().id()
+    },
     point_shadow_texture_id: payload.point_shadow_texture_id,
     point_shadow_enabled: payload.point_shadow_enabled,
     point_shadow_depth_bias: payload.point_shadow_depth_bias,
@@ -184,6 +189,7 @@ fn render3d_mesh_gpu_batch_set_key_eq(
   lhs.cull_mode == rhs.cull_mode &&
   lhs.vertex_shader_path == rhs.vertex_shader_path &&
   lhs.fragment_shader_path == rhs.fragment_shader_path &&
+  lhs.material_pipeline_id == rhs.material_pipeline_id &&
   lhs.point_shadow_texture_id == rhs.point_shadow_texture_id &&
   lhs.point_shadow_enabled == rhs.point_shadow_enabled &&
   lhs.point_shadow_depth_bias == rhs.point_shadow_depth_bias &&

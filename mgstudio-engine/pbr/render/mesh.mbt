@@ -218,6 +218,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   cull_mode : Int
   vertex_shader_path : String?
   fragment_shader_path : String?
+  material_pipeline_id : @material.CachedRenderPipelineId?
   skinning_key_hi : Int
   skinning_key_lo : Int
 }
@@ -269,6 +270,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   forward_decal? : Bool = false,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
+  material_pipeline_id? : @material.CachedRenderPipelineId? = None,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
 ) -> MeshGpuDrawPayload3d {
@@ -344,6 +346,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     cull_mode: render3d_cull_mode_value(material, draw_flags),
     vertex_shader_path,
     fragment_shader_path,
+    material_pipeline_id,
     skinning_key_hi,
     skinning_key_lo,
   }
