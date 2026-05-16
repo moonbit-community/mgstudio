@@ -185,6 +185,132 @@ pub fn MeshPipelineViewLayouts::get_view_layout(
 }
 
 ///|
+fn mesh_view_layout_stage_visibility(
+  stage : MeshViewBindGroupLayoutEntryStage,
+) -> UInt {
+  match stage {
+    Vertex => 1U
+    Fragment => 2U
+    VertexFragment => 3U
+  }
+}
+
+///|
+fn mesh_view_layout_texture_sample_type(
+  sample_type : MeshViewTextureSampleType,
+) -> @render_resource.TextureSampleType {
+  match sample_type {
+    FloatFilterable => @render_resource.TextureSampleType::Float(true)
+    FloatNonFilterable => @render_resource.TextureSampleType::Float(false)
+    Depth => @render_resource.TextureSampleType::Depth
+    UInt => @render_resource.TextureSampleType::UInt
+  }
+}
+
+///|
+fn mesh_view_layout_texture_dimension(
+  dimension : MeshViewTextureDimension,
+) -> @render_resource.TextureViewDimension {
+  match dimension {
+    D2 => @render_resource.TextureViewDimension::D2
+    D2Array => @render_resource.TextureViewDimension::D2Array
+    D3 => @render_resource.TextureViewDimension::D3
+    Cube => @render_resource.TextureViewDimension::Cube
+    CubeArray => @render_resource.TextureViewDimension::CubeArray
+  }
+}
+
+///|
+fn mesh_view_layout_sampler_binding_type(
+  sampler_type : MeshViewSamplerBindingType,
+) -> @render_resource.SamplerBindingType {
+  match sampler_type {
+    Filtering => @render_resource.SamplerBindingType::Filtering
+    Comparison => @render_resource.SamplerBindingType::Comparison
+  }
+}
+
+///|
+fn mesh_view_layout_min_binding_size(binding : Int) -> UInt64 {
+  match binding {
+    8 => 16320UL
+    9 => 65536UL
+    10 => 131072UL
+    11 => 16UL
+    12 => 64UL
+    13 => 2048UL
+    14 => 16UL
+    15 => 64UL
+    16 => 16UL
+    18 => 64UL
+    _ => 0UL
+  }
+}
+
+///|
+fn mesh_view_layout_entry_to_render_resource(
+  entry : MeshViewBindGroupLayoutEntry,
+) -> @render_resource.BindGroupLayoutEntry {
+  let visibility = mesh_view_layout_stage_visibility(entry.stage)
+  let kind = match entry.entry_type {
+    UniformBuffer =>
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        entry.has_dynamic_offset,
+        mesh_view_layout_min_binding_size(entry.binding),
+      )
+    StorageBuffer(read_only) =>
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Storage(read_only),
+        entry.has_dynamic_offset,
+        mesh_view_layout_min_binding_size(entry.binding),
+      )
+    Texture(sample_type, dimension, multisampled, _) =>
+      @render_resource.BindingType::TextureBinding(
+        mesh_view_layout_texture_sample_type(sample_type),
+        mesh_view_layout_texture_dimension(dimension),
+        multisampled,
+      )
+    Sampler(sampler_type) =>
+      @render_resource.BindingType::SamplerBinding(
+        mesh_view_layout_sampler_binding_type(sampler_type),
+      )
+  }
+  @render_resource.BindGroupLayoutEntry::new(entry.binding, visibility, kind)
+}
+
+///|
+fn mesh_view_layout_entries_to_render_resource(
+  entries : Array[MeshViewBindGroupLayoutEntry],
+) -> Array[@render_resource.BindGroupLayoutEntry] {
+  let output : Array[@render_resource.BindGroupLayoutEntry] = []
+  for entry in entries {
+    output.push(mesh_view_layout_entry_to_render_resource(entry))
+  }
+  output
+}
+
+///|
+pub fn MeshPipelineViewLayout::main_bind_group_layout_descriptor(
+  self : MeshPipelineViewLayout,
+) -> @render_resource.BindGroupLayoutDescriptor {
+  @render_resource.BindGroupLayoutDescriptor::new(
+    self.main_layout_label,
+    mesh_view_layout_entries_to_render_resource(self.main_entries),
+  )
+}
+
+///|
+pub fn MeshPipelineViewLayout::binding_array_bind_group_layout_descriptor(
+  self : MeshPipelineViewLayout,
+) -> @render_resource.BindGroupLayoutDescriptor {
+  @render_resource.BindGroupLayoutDescriptor::new(
+    self.binding_array_layout_label,
+    mesh_view_layout_entries_to_render_resource(self.binding_array_entries),
+  )
+}
+
+///|
 pub struct MeshViewBindGroupLayoutEntry {
   binding : Int
   name : String

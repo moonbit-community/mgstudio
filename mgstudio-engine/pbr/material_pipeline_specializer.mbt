@@ -57,6 +57,43 @@ fn pbr_mesh_vertex_attribute_descriptor(
 }
 
 ///|
+fn pbr_mesh_pipeline_view_layout() -> @mesh_view_layout.MeshPipelineViewLayout {
+  @mesh_view_layout.render3d_mesh_pipeline_view_layout(
+    true,
+    true,
+    @mesh_view_layout.MeshPipelineViewLayoutKey::default(),
+    clustered_decals_usable=false,
+    irradiance_volumes_usable=false,
+    oit_supported=false,
+  )
+}
+
+///|
+fn pbr_mesh_pipeline_draw_layout_descriptor() -> @material.BindGroupLayoutDescriptor {
+  let vertex_fragment = (@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT).to_uint()
+  @material.BindGroupLayoutDescriptor::new("mesh_layout", [
+    @render_resource.BindGroupLayoutEntry::new(
+      0,
+      vertex_fragment,
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Storage(true),
+        false,
+        176UL,
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      1,
+      @wgpu.SHADER_STAGE_VERTEX.to_uint(),
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Storage(true),
+        false,
+        64UL,
+      ),
+    ),
+  ])
+}
+
+///|
 fn pbr_mesh_pipeline_descriptor(
   mesh_key : @material.ErasedMeshPipelineKey,
   layout : @material.MaterialMeshVertexLayout,
@@ -128,12 +165,13 @@ fn pbr_mesh_pipeline_descriptor(
       )
   }
   let fragment_defs = pbr_shader_defs_clone(shader_defs)
+  let mesh_view_layout = pbr_mesh_pipeline_view_layout()
   @material.RenderPipelineDescriptor::default()
   .with_label(Some("opaque_mesh_pipeline"))
   .with_layout([
-    @material.BindGroupLayoutDescriptor::default(),
-    @material.BindGroupLayoutDescriptor::default(),
-    @material.BindGroupLayoutDescriptor::default(),
+    mesh_view_layout.main_bind_group_layout_descriptor(),
+    mesh_view_layout.binding_array_bind_group_layout_descriptor(),
+    pbr_mesh_pipeline_draw_layout_descriptor(),
   ])
   .with_vertex(
     @material.VertexState::new(

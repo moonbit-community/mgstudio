@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/render/mesh_view_layout"
 
 import {
+  "Milky2018/mgstudio/render/render_resource",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
@@ -32,6 +33,8 @@ pub struct MeshPipelineViewLayout {
   binding_array_entries : Array[MeshViewBindGroupLayoutEntry]
   texture_count : Int
 }
+pub fn MeshPipelineViewLayout::binding_array_bind_group_layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
+pub fn MeshPipelineViewLayout::main_bind_group_layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
 
 pub struct MeshPipelineViewLayoutKey {
   bits : UInt
