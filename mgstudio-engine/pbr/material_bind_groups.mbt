@@ -27,87 +27,139 @@ pub fn standard_material_bind_group_layout_descriptor() -> @material.BindGroupLa
     @render_resource.BindGroupLayoutEntry::new(
       0,
       material_uniform_visibility,
-      @render_resource.BindingType::Buffer,
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        false,
+        192UL,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       1,
       fragment,
-      @render_resource.BindingType::Texture,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       2,
       fragment,
-      @render_resource.BindingType::Sampler,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       3,
       fragment,
-      @render_resource.BindingType::Texture,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       4,
       fragment,
-      @render_resource.BindingType::Sampler,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       5,
       fragment,
-      @render_resource.BindingType::Texture,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       6,
       fragment,
-      @render_resource.BindingType::Sampler,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       7,
       fragment,
-      @render_resource.BindingType::Texture,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       8,
       fragment,
-      @render_resource.BindingType::Sampler,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       9,
       fragment,
-      @render_resource.BindingType::Texture,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       10,
       fragment,
-      @render_resource.BindingType::Sampler,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       11,
       fragment,
-      @render_resource.BindingType::Texture,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       12,
       fragment,
-      @render_resource.BindingType::Sampler,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       13,
       fragment,
-      @render_resource.BindingType::Texture,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       14,
       fragment,
-      @render_resource.BindingType::Sampler,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       29,
       fragment,
-      @render_resource.BindingType::Texture,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      ),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       30,
       fragment,
-      @render_resource.BindingType::Sampler,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
     ),
   ])
 }

@@ -268,6 +268,8 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     let normal_texture = ensure_normal_map_fallback_texture(self)
     mesh3d_material_cache_get_or_create(
       self,
+      MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+      None,
       base_color_texture,
       normal_texture,
       default_texture,

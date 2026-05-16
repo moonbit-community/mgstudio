@@ -59,6 +59,37 @@ test "render3d: standard material properties carry bevy material bind group layo
   inspect(layout.entries[14].binding(), content="14")
   inspect(layout.entries[15].binding(), content="29")
   inspect(layout.entries[16].binding(), content="30")
+  debug_inspect(
+    match layout.entries[0].kind() {
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        false,
+        192UL
+      ) => true
+      _ => false
+    },
+    content="true",
+  )
+  debug_inspect(
+    match layout.entries[1].kind() {
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false
+      ) => true
+      _ => false
+    },
+    content="true",
+  )
+  debug_inspect(
+    match layout.entries[2].kind() {
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering
+      ) => true
+      _ => false
+    },
+    content="true",
+  )
 }
 
 ///|

@@ -22,6 +22,10 @@ pub(all) enum BindingType {
   Sampler
   StorageTexture
   External
+  BufferBinding(BufferBindingType, Bool, UInt64)
+  TextureBinding(TextureSampleType, TextureViewDimension, Bool)
+  SamplerBinding(SamplerBindingType)
+  StorageTextureBinding(StorageTextureAccess, UInt, TextureViewDimension)
 }
 
 ///|
@@ -29,6 +33,37 @@ pub(all) enum SamplerBindingType {
   Filtering
   NonFiltering
   Comparison
+}
+
+///|
+pub(all) enum BufferBindingType {
+  Uniform
+  Storage(Bool)
+}
+
+///|
+pub(all) enum TextureSampleType {
+  Float(Bool)
+  Depth
+  SInt
+  UInt
+}
+
+///|
+pub(all) enum TextureViewDimension {
+  D1
+  D2
+  D2Array
+  Cube
+  CubeArray
+  D3
+}
+
+///|
+pub(all) enum StorageTextureAccess {
+  WriteOnly
+  ReadOnly
+  ReadWrite
 }
 
 ///|

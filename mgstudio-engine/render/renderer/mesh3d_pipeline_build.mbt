@@ -1086,6 +1086,257 @@ fn mesh3d_create_empty_bind_group(
 }
 
 ///|
+fn mesh3d_buffer_binding_type_to_wgpu(
+  kind : @render_resource.BufferBindingType,
+) -> UInt {
+  match kind {
+    Uniform => @wgpu.BUFFER_BINDING_TYPE_UNIFORM
+    Storage(read_only) =>
+      if read_only {
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE
+      } else {
+        @wgpu.BUFFER_BINDING_TYPE_STORAGE
+      }
+  }
+}
+
+///|
+fn mesh3d_texture_sample_type_to_wgpu(
+  kind : @render_resource.TextureSampleType,
+) -> UInt {
+  match kind {
+    Float(filterable) =>
+      if filterable {
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT
+      } else {
+        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT
+      }
+    Depth => @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH
+    SInt => @wgpu.TEXTURE_SAMPLE_TYPE_SINT
+    UInt => @wgpu.TEXTURE_SAMPLE_TYPE_UINT
+  }
+}
+
+///|
+fn mesh3d_texture_view_dimension_to_wgpu(
+  dimension : @render_resource.TextureViewDimension,
+) -> UInt {
+  match dimension {
+    D1 => @wgpu.TEXTURE_VIEW_DIMENSION_1D
+    D2 => @wgpu.TEXTURE_VIEW_DIMENSION_2D
+    D2Array => @wgpu.TEXTURE_VIEW_DIMENSION_2D_ARRAY
+    Cube => @wgpu.TEXTURE_VIEW_DIMENSION_CUBE
+    CubeArray => @wgpu.TEXTURE_VIEW_DIMENSION_CUBE_ARRAY
+    D3 => @wgpu.TEXTURE_VIEW_DIMENSION_3D
+  }
+}
+
+///|
+fn mesh3d_sampler_binding_type_to_wgpu(
+  kind : @render_resource.SamplerBindingType,
+) -> UInt {
+  match kind {
+    Filtering => @wgpu.SAMPLER_BINDING_TYPE_FILTERING
+    NonFiltering => @wgpu.SAMPLER_BINDING_TYPE_NON_FILTERING
+    Comparison => @wgpu.SAMPLER_BINDING_TYPE_COMPARISON
+  }
+}
+
+///|
+fn mesh3d_storage_texture_access_to_wgpu(
+  access : @render_resource.StorageTextureAccess,
+) -> UInt {
+  match access {
+    WriteOnly => @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY
+    ReadOnly => @wgpu.STORAGE_TEXTURE_ACCESS_READ_ONLY
+    ReadWrite => @wgpu.STORAGE_TEXTURE_ACCESS_READ_WRITE
+  }
+}
+
+///|
+fn mesh3d_add_render_resource_layout_entry(
+  builder : @wgpu.BindGroupLayoutBuilder,
+  entry : @render_resource.BindGroupLayoutEntry,
+) -> Bool {
+  if entry.binding() < 0 {
+    return false
+  }
+  let binding = entry.binding().reinterpret_as_uint()
+  let visibility = ss(entry.visibility().to_uint64())
+  match entry.kind() {
+    Buffer =>
+      builder.add_buffer(
+        binding,
+        visibility,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=0UL,
+      )
+    Texture =>
+      builder.add_texture(
+        binding,
+        visibility,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      )
+    Sampler =>
+      builder.add_sampler(
+        binding,
+        visibility,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      )
+    StorageTexture =>
+      builder.add_storage_texture(
+        binding,
+        visibility,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      )
+    External => false
+    BufferBinding(buffer_kind, has_dynamic_offset, min_binding_size) =>
+      builder.add_buffer(
+        binding,
+        visibility,
+        mesh3d_buffer_binding_type_to_wgpu(buffer_kind),
+        has_dynamic_offset~,
+        min_binding_size~,
+      )
+    TextureBinding(sample_type, view_dimension, multisampled) =>
+      builder.add_texture(
+        binding,
+        visibility,
+        mesh3d_texture_sample_type_to_wgpu(sample_type),
+        mesh3d_texture_view_dimension_to_wgpu(view_dimension),
+        multisampled~,
+      )
+    SamplerBinding(sampler_type) =>
+      builder.add_sampler(
+        binding,
+        visibility,
+        mesh3d_sampler_binding_type_to_wgpu(sampler_type),
+      )
+    StorageTextureBinding(access, format, view_dimension) =>
+      builder.add_storage_texture(
+        binding,
+        visibility,
+        mesh3d_storage_texture_access_to_wgpu(access),
+        tf(format),
+        mesh3d_texture_view_dimension_to_wgpu(view_dimension),
+      )
+  }
+}
+
+///|
+fn mesh3d_create_bind_group_layout_from_descriptor(
+  backend : GpuBackend,
+  descriptor : @render_resource.BindGroupLayoutDescriptor,
+  label_suffix : String,
+) -> @wgpu.BindGroupLayout raise GpuBackendError {
+  let entries = descriptor.entries()
+  let builder = @wgpu.BindGroupLayoutBuilder::new(
+    max_entries=entries.length().to_uint64(),
+  )
+  for entry in entries {
+    if !mesh3d_add_render_resource_layout_entry(builder, entry) {
+      builder.free()
+      fatal(
+        "wgpu: unsupported mesh3d bind group layout descriptor entry in " +
+        descriptor.label(),
+      )
+    }
+  }
+  builder.finish(
+    backend.device,
+    label="mgstudio_mesh3d_descriptor_bgl_" +
+      label_suffix +
+      "_" +
+      descriptor.label(),
+  )
+}
+
+///|
+fn mesh3d_descriptor_material_layout(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> @render_resource.BindGroupLayoutDescriptor? {
+  guard descriptor is Some(descriptor0) else { return None }
+  if descriptor0.layout.length() <= 3 {
+    return None
+  }
+  let material_layout = descriptor0.layout[3]
+  if material_layout.entries().length() == 0 {
+    return None
+  }
+  Some(material_layout)
+}
+
+///|
+fn mesh3d_material_pipeline_layout_cache_get(
+  backend : GpuBackend,
+  material_pipeline_id : UInt64,
+) -> Mesh3dMaterialPipelineLayoutCacheEntry? {
+  for entry in backend.mesh3d_material_pipeline_layout_cache {
+    if entry.material_pipeline_id == material_pipeline_id {
+      return Some(entry)
+    }
+  }
+  None
+}
+
+///|
+fn mesh3d_material_pipeline_layout_get_or_create(
+  backend : GpuBackend,
+  material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> (@wgpu.BindGroupLayout, @wgpu.PipelineLayout) raise GpuBackendError {
+  ensure_mesh3d_pipeline_layout_resources(backend)
+  if material_pipeline_id == MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
+    guard backend.mesh3d_bgl_material is Some(material_bgl) else {
+      fatal("wgpu: missing mesh3d material bind group layout")
+    }
+    guard backend.mesh3d_pipeline_layout is Some(pipeline_layout) else {
+      fatal("wgpu: missing mesh3d pipeline layout")
+    }
+    return (material_bgl, pipeline_layout)
+  }
+  if mesh3d_material_pipeline_layout_cache_get(backend, material_pipeline_id)
+    is Some(entry) {
+    return (entry.material_bind_group_layout, entry.pipeline_layout)
+  }
+  guard mesh3d_descriptor_material_layout(material_descriptor)
+    is Some(material_layout_descriptor) else {
+    fatal(
+      "wgpu: material pipeline descriptor is missing group 3 material layout",
+    )
+  }
+  guard backend.mesh3d_bgl_view is Some(view_bgl) else {
+    fatal("wgpu: missing mesh3d view bind group layout")
+  }
+  guard backend.mesh3d_bgl_binding_arrays is Some(binding_arrays_bgl) else {
+    fatal("wgpu: missing mesh3d binding-array bind group layout")
+  }
+  guard backend.mesh3d_bgl_draw is Some(draw_bgl) else {
+    fatal("wgpu: missing mesh3d draw bind group layout")
+  }
+  let label_suffix = material_pipeline_id.to_string()
+  let material_bgl = mesh3d_create_bind_group_layout_from_descriptor(
+    backend, material_layout_descriptor, label_suffix,
+  )
+  let pipeline_layout = create_pipeline_layout_4(
+    backend.device,
+    view_bgl,
+    binding_arrays_bgl,
+    draw_bgl,
+    material_bgl,
+  )
+  backend.mesh3d_material_pipeline_layout_cache.push({
+    material_pipeline_id,
+    material_bind_group_layout: material_bgl,
+    pipeline_layout,
+  })
+  (material_bgl, pipeline_layout)
+}
+
+///|
 fn ensure_mesh3d_shadow_pipeline_layout_resources(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -1222,7 +1473,9 @@ fn ensure_mesh3d_pipeline_rgba8(
   }
   let transparent = blend_kind != MESH3D_PIPELINE_BLEND_OPAQUE
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
-  guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
+  let (_, pl) = mesh3d_material_pipeline_layout_get_or_create(
+    backend, material_pipeline_id, material_descriptor,
+  )
   let modules = mesh3d_create_forward_shader_modules(
     backend, material_descriptor, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
     deband_dither_enabled, shadow_filter_method, "mesh3d rgba8",
@@ -1342,7 +1595,9 @@ fn ensure_mesh3d_pipeline_surface(
   }
   let transparent = blend_kind != MESH3D_PIPELINE_BLEND_OPAQUE
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
-  guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
+  let (_, pl) = mesh3d_material_pipeline_layout_get_or_create(
+    backend, material_pipeline_id, material_descriptor,
+  )
   let modules = mesh3d_create_forward_shader_modules(
     backend, material_descriptor, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
     deband_dither_enabled, shadow_filter_method, "mesh3d surface",

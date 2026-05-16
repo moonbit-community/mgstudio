@@ -428,6 +428,8 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   )
   let material_bg = mesh3d_material_cache_get_or_create(
     self,
+    material_pipeline_id,
+    mesh3d_material_pipeline_descriptor_find(self, material_pipeline_id),
     base_texture,
     normal_texture,
     emissive_texture,

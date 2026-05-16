@@ -329,3 +329,4 @@ Archived completed checklist items moved out of ROADMAP_CHECKLIST to keep line b
 - [x] Issue `stress_examples/recompute_system_conditional_registration`: align `many_text2d`/`many_glyphs` with Bevy by registering recompute systems only when recompute flags are enabled.
 - [x] Issue `ldtk/typed_field_value_surface`: align LDtk field payload to typed `FieldValue` model and expose typed getter family (`get_* / get_maybe_* / iter_*`).
 - [x] Issue `ldtk/assets_project_data_surface`: add `LdtkJsonWithMetadata` + `LdtkProjectData` surface and `LdtkProject::as_standalone/as_parent` parity entry points.
+- [x] `window` (upstream, Milky2018/window): `RequestError` only exposes coarse variants (`NotSupported`/`Ignored`/`Os`) without structured OS error payload, so mgstudio cannot provide Bevy/winit-equivalent detailed error diagnostics for cursor-grab / cursor-hit-test failures.

@@ -78,6 +78,7 @@ struct GpuStorageSlot {
 
 ///|
 pub struct Mesh3dMaterialBindGroupCacheEntry {
+  material_pipeline_id : UInt64
   base_texture_id : Int
   normal_texture_id : Int
   emissive_texture_id : Int
@@ -89,6 +90,13 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   material_uniform_bytes : Bytes
   material_uniform_buffer : @wgpu.Buffer
   bind_group : @wgpu.BindGroup
+}
+
+///|
+pub struct Mesh3dMaterialPipelineLayoutCacheEntry {
+  material_pipeline_id : UInt64
+  material_bind_group_layout : @wgpu.BindGroupLayout
+  pipeline_layout : @wgpu.PipelineLayout
 }
 
 ///|

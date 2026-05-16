@@ -493,6 +493,7 @@ pub struct GpuBackend {
   mut mesh3d_shadow_empty_bg : @wgpu_mbt.BindGroup?
   mesh3d_pipeline_cache : Array[Mesh3dPipelineCacheEntry]
   mesh3d_material_pipeline_descriptors : Array[Mesh3dRegisteredMaterialPipelineDescriptor]
+  mesh3d_material_pipeline_layout_cache : Array[Mesh3dMaterialPipelineLayoutCacheEntry]
   mesh3d_custom_pipeline_cache : Map[String, RenderPipelineCacheState]
   mesh3d_shadow_pipeline_cache : Array[Mesh3dShadowPipelineCacheEntry]
   mut mesh3d_point_shadow_compare_sampler : @wgpu_mbt.Sampler?
@@ -1237,6 +1238,7 @@ pub struct Mesh2dPipelineCacheEntry {
 type Mesh3dFrameViewBindGroupCacheEntry
 
 pub struct Mesh3dMaterialBindGroupCacheEntry {
+  material_pipeline_id : UInt64
   base_texture_id : Int
   normal_texture_id : Int
   emissive_texture_id : Int
@@ -1248,6 +1250,12 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   material_uniform_bytes : Bytes
   material_uniform_buffer : @wgpu_mbt.Buffer
   bind_group : @wgpu_mbt.BindGroup
+}
+
+pub struct Mesh3dMaterialPipelineLayoutCacheEntry {
+  material_pipeline_id : UInt64
+  material_bind_group_layout : @wgpu_mbt.BindGroupLayout
+  pipeline_layout : @wgpu_mbt.PipelineLayout
 }
 
 type Mesh3dPassUniformState

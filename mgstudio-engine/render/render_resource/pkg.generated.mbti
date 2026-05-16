@@ -98,6 +98,10 @@ pub(all) enum BindingType {
   Sampler
   StorageTexture
   External
+  BufferBinding(BufferBindingType, Bool, UInt64)
+  TextureBinding(TextureSampleType, TextureViewDimension, Bool)
+  SamplerBinding(SamplerBindingType)
+  StorageTextureBinding(StorageTextureAccess, UInt, TextureViewDimension)
 }
 
 pub struct BindlessDescriptor {
@@ -126,6 +130,11 @@ pub fn Buffer::into_inner(Self) -> @wgpu_mbt.Buffer
 pub fn Buffer::new(@wgpu_mbt.Buffer) -> Self
 pub fn Buffer::slice(Self, UInt64, UInt64) -> BufferSlice
 pub fn Buffer::unmap(Self) -> Unit
+
+pub(all) enum BufferBindingType {
+  Uniform
+  Storage(Bool)
+}
 
 pub struct BufferSlice {
   buffer_id : UInt64
@@ -361,6 +370,12 @@ pub(all) struct StorageBufferPayload {
   label : String?
 }
 
+pub(all) enum StorageTextureAccess {
+  WriteOnly
+  ReadOnly
+  ReadWrite
+}
+
 pub struct SurfaceTexture {
   value : @wgpu_mbt.SurfaceTexture
 }
@@ -379,6 +394,13 @@ pub fn Texture::into_inner(Self) -> @wgpu_mbt.Texture
 pub fn Texture::new(@wgpu_mbt.Texture) -> Self
 pub fn Texture::set_label(Self, String) -> Unit
 
+pub(all) enum TextureSampleType {
+  Float(Bool)
+  Depth
+  SInt
+  UInt
+}
+
 pub struct TextureView {
   id : UInt64
   value : @wgpu_mbt.TextureView
@@ -386,6 +408,15 @@ pub struct TextureView {
 pub fn TextureView::id(Self) -> UInt64
 pub fn TextureView::into_inner(Self) -> @wgpu_mbt.TextureView
 pub fn TextureView::set_label(Self, String) -> Unit
+
+pub(all) enum TextureViewDimension {
+  D1
+  D2
+  D2Array
+  Cube
+  CubeArray
+  D3
+}
 
 pub struct UniformBuffer[T] {
   mut value : T?

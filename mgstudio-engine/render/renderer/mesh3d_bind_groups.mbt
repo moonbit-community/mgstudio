@@ -490,6 +490,8 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
 ///|
 fn mesh3d_material_cache_get_or_create(
   backend : GpuBackend,
+  material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
   base_texture : GpuTextureInfo,
   normal_texture : GpuTextureInfo,
   emissive_texture : GpuTextureInfo,
@@ -501,7 +503,8 @@ fn mesh3d_material_cache_get_or_create(
   material_uniform_bytes : Bytes,
 ) -> @wgpu.BindGroup raise GpuBackendError {
   for entry in backend.mesh3d_material_bg_cache {
-    if entry.base_texture_id == base_texture.id &&
+    if entry.material_pipeline_id == material_pipeline_id &&
+      entry.base_texture_id == base_texture.id &&
       entry.normal_texture_id == normal_texture.id &&
       entry.emissive_texture_id == emissive_texture.id &&
       entry.metallic_roughness_texture_id == metallic_roughness_texture.id &&
@@ -513,10 +516,9 @@ fn mesh3d_material_cache_get_or_create(
       return entry.bind_group
     }
   }
-  let layout = match backend.mesh3d_bgl_material {
-    Some(v) => v
-    None => fatal("wgpu: missing mesh3d material bind group layout")
-  }
+  let (layout, _) = mesh3d_material_pipeline_layout_get_or_create(
+    backend, material_pipeline_id, material_descriptor,
+  )
   let material_uniform_buf = backend.device.create_buffer(
     size=MESH3D_STANDARD_MATERIAL_UNIFORM_SIZE,
     usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
@@ -555,6 +557,7 @@ fn mesh3d_material_cache_get_or_create(
     label="mgstudio_mesh3d_material_bg",
   )
   backend.mesh3d_material_bg_cache.push(Mesh3dMaterialBindGroupCacheEntry::{
+    material_pipeline_id,
     base_texture_id: base_texture.id,
     normal_texture_id: normal_texture.id,
     emissive_texture_id: emissive_texture.id,
@@ -705,6 +708,8 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
   ignore(
     mesh3d_material_cache_get_or_create(
       self,
+      MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+      None,
       base_texture,
       normal_texture,
       emissive_texture,
