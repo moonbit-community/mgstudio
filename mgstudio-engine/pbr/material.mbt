@@ -106,7 +106,7 @@ pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
 }
 
 ///|
-pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 0x0001UL
+pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 4096UL
 
 ///|
 const MESH_PIPELINE_KEY_MAY_DISCARD : UInt64 = 128UL
@@ -202,8 +202,17 @@ fn render3d_material_properties_for_standard_material(
       ),
     )
     .with_base_specialize(Some(pbr_material_base_specialize))
+    .with_prepass_specialize(Some(pbr_material_prepass_specialize))
     .with_shadows_enabled(shadows_enabled)
     .with_prepass_enabled(prepass_enabled)
+    .add_shader(
+      @material.PREPASS_FRAGMENT_SHADER_LABEL,
+      PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH,
+    )
+    .add_shader(
+      @material.DEFERRED_FRAGMENT_SHADER_LABEL,
+      PBR_MESH_FRAGMENT_SHADER_PATH,
+    )
   if extension is Some(metadata) {
     if metadata.vertex_shader_path is Some(shader_path) {
       properties = properties.add_shader(

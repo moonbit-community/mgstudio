@@ -41,11 +41,15 @@ pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
 
 pub const MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS : Int = 204
 
-pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 0x0001
+pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 4096
 
 pub const PBR_MESH_FRAGMENT_SHADER_PATH : String = "pbr/render/pbr.wgsl"
 
+pub const PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH : String = "pbr/render/pbr_prepass.wgsl"
+
 pub const PBR_MESH_VERTEX_SHADER_PATH : String = "pbr/render/mesh.wgsl"
+
+pub const PBR_PREPASS_SHADER_PATH : String = "pbr/prepass/prepass.wgsl"
 
 pub const STANDARD_MATERIAL_KEY_ANISOTROPY : UInt64 = 0x000100
 
@@ -1189,6 +1193,12 @@ pub struct PbrPluginRuntimeConfig {
 }
 pub fn PbrPluginRuntimeConfig::from_plugin(PbrPlugin) -> Self
 pub impl @ecs.EcsPayloadCodec for PbrPluginRuntimeConfig
+
+pub struct PbrPrepassPipelineSpecializer {
+  properties : @material.MaterialProperties
+}
+pub fn PbrPrepassPipelineSpecializer::new(@material.MaterialProperties) -> Self
+pub fn PbrPrepassPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
 pub(all) struct PhysicalCameraParameters {
   mut aperture_f_stops : Float

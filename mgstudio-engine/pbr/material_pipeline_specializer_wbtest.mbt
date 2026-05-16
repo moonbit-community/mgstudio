@@ -233,6 +233,15 @@ test "pbr standard material properties install base specialization hook" {
     true,
   )
   debug_inspect(properties.base_specialize is Some(_), content="true")
+  debug_inspect(properties.prepass_specialize is Some(_), content="true")
+  debug_inspect(
+    properties.get_shader(@material.PREPASS_FRAGMENT_SHADER_LABEL),
+    content="Some(\"pbr/render/pbr_prepass.wgsl\")",
+  )
+  debug_inspect(
+    properties.get_shader(@material.DEFERRED_FRAGMENT_SHADER_LABEL),
+    content="Some(\"pbr/render/pbr.wgsl\")",
+  )
   let pipeline_key = material_pipeline_key_for_standard_material(properties)
   inspect(
     pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_BLEND_ALPHA,
@@ -287,4 +296,150 @@ test "pbr material base specialization caches descriptors from real material pro
     ),
     content="true",
   )
+}
+
+///|
+test "pbr prepass pipeline specializer mirrors bevy layout and shader defs" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::default().with_alpha_mode(
+      @material.AlphaMode3d::Mask(0.5F),
+    ),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let specializer = PbrPrepassPipelineSpecializer::new(properties)
+  let descriptor = try! specializer.specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_DEPTH_PREPASS |
+        MESH_PIPELINE_KEY_NORMAL_PREPASS |
+        MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS |
+        MESH_PIPELINE_KEY_MAY_DISCARD,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(descriptor.label, content="Some(\"prepass_pipeline\")")
+  inspect(descriptor.layout.length(), content="4")
+  inspect(
+    descriptor.layout[0].label(),
+    content="prepass_view_layout_motion_vectors",
+  )
+  inspect(descriptor.layout[0].entries().length(), content="4")
+  inspect(descriptor.layout[1].label(), content="prepass_empty_layout")
+  inspect(descriptor.layout[2].label(), content="mesh_layout")
+  inspect(descriptor.layout[3].label(), content="StandardMaterial")
+  debug_inspect(
+    descriptor.vertex.shader,
+    content="Some(\"pbr/prepass/prepass.wgsl\")",
+  )
+  let vertex_layout = descriptor.vertex.buffers[0]
+  inspect(vertex_layout.attributes[0].shader_location, content="0")
+  inspect(vertex_layout.attributes[1].shader_location, content="1")
+  inspect(vertex_layout.attributes[2].shader_location, content="3")
+  inspect(vertex_layout.attributes[3].shader_location, content="7")
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "PREPASS_PIPELINE",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "NORMAL_PREPASS",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "MOTION_VECTOR_PREPASS",
+    ),
+    content="true",
+  )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected standard material prepass fragment state")
+  }
+  debug_inspect(
+    fragment.shader,
+    content="Some(\"pbr/render/pbr_prepass.wgsl\")",
+  )
+  inspect(fragment.targets.length(), content="2")
+  debug_inspect(fragment.targets[0] is Some(_), content="true")
+  debug_inspect(fragment.targets[1] is Some(_), content="true")
+}
+
+///|
+test "pbr prepass depth-only opaque path uses empty material layout" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::default(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let specializer = PbrPrepassPipelineSpecializer::new(properties)
+  let descriptor = try! specializer.specialize(
+    pbr_material_specializer_test_key(mesh_bits=MESH_PIPELINE_KEY_DEPTH_PREPASS),
+    pbr_material_specializer_test_layout(),
+  )
+  inspect(
+    descriptor.layout[0].label(),
+    content="prepass_view_layout_no_motion_vectors",
+  )
+  inspect(descriptor.layout[0].entries().length(), content="3")
+  inspect(descriptor.layout[3].label(), content="prepass_empty_layout")
+  debug_inspect(descriptor.fragment is None, content="true")
+  let vertex_layout = descriptor.vertex.buffers[0]
+  inspect(vertex_layout.attributes[0].shader_location, content="0")
+  inspect(vertex_layout.attributes[1].shader_location, content="1")
+  inspect(vertex_layout.attributes[2].shader_location, content="7")
+}
+
+///|
+test "pbr material prepass specialization caches descriptors separately" {
+  let world = @ecs.World::new()
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::default(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  guard properties.prepass_specialize is Some(prepass_specialize) else {
+    abort("expected StandardMaterial prepass specialize hook")
+  }
+  let key = @material.ErasedMaterialPipelineKey::new(
+    @material.ErasedMeshPipelineKey::new(
+      material_pipeline_key_for_standard_material(properties).mesh_key().bits() |
+      MESH_PIPELINE_KEY_DEPTH_PREPASS,
+      "MeshPipelineKey",
+    ),
+    properties.material_key,
+    "StandardMaterial",
+  )
+  let layout = pbr_material_specializer_test_layout()
+  let first_id = try! @material.material_specialize_prepass(
+    prepass_specialize, world, key, layout, properties,
+  )
+  let second_id = try! @material.material_specialize_prepass(
+    prepass_specialize, world, key, layout, properties,
+  )
+  let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
+  inspect(first_id.id(), content="0")
+  inspect(second_id.id(), content="0")
+  inspect(
+    state_ref.val.specialized_material_pipelines.vertex_layout_cache_len(),
+    content="0",
+  )
+  inspect(
+    state_ref.val.specialized_prepass_material_pipelines.mesh_layout_cache_len(),
+    content="1",
+  )
+  guard state_ref.val.specialized_prepass_material_pipelines.render_pipeline_descriptor(
+      first_id,
+    )
+    is Some(descriptor) else {
+    abort("expected cached prepass material descriptor")
+  }
+  debug_inspect(descriptor.label, content="Some(\"prepass_pipeline\")")
 }
