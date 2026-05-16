@@ -111,6 +111,83 @@ test "pbr meshlet: shade pass plan carries descriptor and filtered draws" {
 }
 
 ///|
+test "pbr meshlet: main opaque pass commands mirror bevy bind and draw order" {
+  let instance_manager = extract_meshlet_mesh_entities_from_instances([
+    ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 4),
+  ])
+  ignore(
+    queue_material_meshlet_meshes_with_material_assets(instance_manager, [4]),
+  )
+  ignore(queue_material_meshlet_meshes(instance_manager))
+  let materials = MeshletViewMaterialsMainOpaquePass::default()
+  materials.push(test_meshlet_shade_entry(2, 42, 9))
+  let plan = meshlet_main_opaque_pass_plan(materials, instance_manager)
+  let commands = meshlet_material_shade_pass_commands(
+    plan,
+    has_camera_viewport=true,
+  )
+  inspect(commands.length(), content="8")
+  inspect(
+    commands[0].kind is MeshletMaterialShadePassCommandKind::BeginRenderPass,
+    content="true",
+  )
+  inspect(commands[0].label, content="meshlet_material_opaque_3d_pass")
+  inspect(
+    commands[1].kind is MeshletMaterialShadePassCommandKind::SetCameraViewport,
+    content="true",
+  )
+  inspect(commands[2].bind_group_index, content="0")
+  inspect(commands[2].bind_group_kind, content="mesh_view")
+  inspect(commands[2].dynamic_offset_count, content="7")
+  inspect(commands[3].bind_group_index, content="1")
+  inspect(commands[3].bind_group_kind, content="binding_array")
+  inspect(commands[4].bind_group_index, content="2")
+  inspect(commands[4].bind_group_kind, content="material_shade")
+  inspect(
+    commands[5].kind is MeshletMaterialShadePassCommandKind::SetRenderPipeline,
+    content="true",
+  )
+  inspect(commands[5].material_pipeline_id, content="42")
+  inspect(commands[6].bind_group_index, content="3")
+  inspect(commands[6].bind_group_kind, content="material")
+  inspect(commands[6].material_bind_group, content="9")
+  inspect(commands[7].vertex_start, content="6")
+  inspect(commands[7].vertex_end, content="9")
+}
+
+///|
+test "pbr meshlet: prepass commands preserve bevy group two replacement order" {
+  let instance_manager = extract_meshlet_mesh_entities_from_instances([
+    ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 8),
+  ])
+  ignore(
+    queue_material_meshlet_meshes_with_material_assets(instance_manager, [8]),
+  )
+  ignore(queue_material_meshlet_meshes(instance_manager))
+  let materials = MeshletViewMaterialsPrepass::default()
+  materials.push(test_meshlet_shade_entry(1, 33, 6))
+  let plan = meshlet_prepass_plan(
+    materials,
+    instance_manager,
+    uses_motion_vector_prepass_bind_group=true,
+  )
+  let commands = meshlet_material_shade_pass_commands(plan)
+  inspect(commands.length(), content="7")
+  inspect(commands[1].bind_group_index, content="0")
+  inspect(commands[1].bind_group_kind, content="prepass_motion_vectors")
+  inspect(commands[1].dynamic_offset_count, content="2")
+  inspect(commands[2].bind_group_index, content="1")
+  inspect(commands[2].bind_group_kind, content="empty")
+  inspect(commands[3].bind_group_index, content="2")
+  inspect(commands[3].bind_group_kind, content="material_shade")
+  inspect(commands[5].bind_group_index, content="2")
+  inspect(commands[5].bind_group_kind, content="material")
+  inspect(commands[5].material_bind_group, content="6")
+  inspect(commands[6].vertex_start, content="3")
+  inspect(commands[6].vertex_end, content="6")
+}
+
+///|
 test "pbr meshlet: prepass draw count follows same filtering" {
   let instance_manager = extract_meshlet_mesh_entities_from_instances([
     ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 3),

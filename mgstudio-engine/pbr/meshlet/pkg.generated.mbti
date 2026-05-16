@@ -104,6 +104,8 @@ pub fn meshlet_material_shade_node_index(String) -> Int?
 
 pub fn meshlet_material_shade_nodes() -> Array[String]
 
+pub fn meshlet_material_shade_pass_commands(MeshletMaterialShadePassPlan, has_camera_viewport? : Bool) -> Array[MeshletMaterialShadePassCommand]
+
 pub fn meshlet_mesh_asset_extensions() -> Array[String]
 
 pub fn meshlet_mesh_asset_magic() -> UInt64
@@ -433,6 +435,27 @@ pub struct MeshletMaterialPipelineDescriptor {
   zero_initialize_workgroup_memory : Bool
 }
 pub fn MeshletMaterialPipelineDescriptor::new(pass_variant? : MeshletMaterialPassVariant, view_key? : MeshletViewMaterialPipelineKey, view_layout_kind? : MeshletMaterialViewLayoutKind, fake_vertex_buffer_layout? : @mesh.MeshVertexBufferLayout, layout_count? : Int, uses_binding_array_layout? : Bool, uses_empty_bind_group_layout? : Bool, uses_material_shade_layout? : Bool, material_layout_id? : Int, vertex_shader_label? : String, fragment_shader_kind? : MeshletMaterialFragmentShaderKind, shader_def_meshlet_material_pass? : Bool, shader_def_count? : Int, uses_material_fragment_entry_point? : Bool, depth_format_depth16_unorm? : Bool, depth_write_enabled? : Bool, depth_compare_equal? : Bool, zero_initialize_workgroup_memory? : Bool) -> Self
+
+pub struct MeshletMaterialShadePassCommand {
+  kind : MeshletMaterialShadePassCommandKind
+  label : String
+  bind_group_index : Int
+  bind_group_kind : String
+  dynamic_offset_count : Int
+  material_id : Int
+  material_pipeline_id : Int
+  material_bind_group : Int
+  vertex_start : Int
+  vertex_end : Int
+} derive(Eq, @debug.Debug)
+
+pub(all) enum MeshletMaterialShadePassCommandKind {
+  BeginRenderPass
+  SetCameraViewport
+  SetBindGroup
+  SetRenderPipeline
+  Draw
+} derive(Eq, @debug.Debug)
 
 pub struct MeshletMaterialShadePassDescriptor {
   pass_variant : MeshletMaterialShadePassVariant

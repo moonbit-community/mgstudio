@@ -210,6 +210,56 @@ pub struct MeshletMaterialShadePassPlan {
 } derive(Eq, Debug)
 
 ///|
+pub(all) enum MeshletMaterialShadePassCommandKind {
+  BeginRenderPass
+  SetCameraViewport
+  SetBindGroup
+  SetRenderPipeline
+  Draw
+} derive(Eq, Debug)
+
+///|
+pub struct MeshletMaterialShadePassCommand {
+  kind : MeshletMaterialShadePassCommandKind
+  label : String
+  bind_group_index : Int
+  bind_group_kind : String
+  dynamic_offset_count : Int
+  material_id : Int
+  material_pipeline_id : Int
+  material_bind_group : Int
+  vertex_start : Int
+  vertex_end : Int
+} derive(Eq, Debug)
+
+///|
+fn meshlet_material_shade_command(
+  kind : MeshletMaterialShadePassCommandKind,
+  label? : String = "",
+  bind_group_index? : Int = -1,
+  bind_group_kind? : String = "",
+  dynamic_offset_count? : Int = 0,
+  material_id? : Int = -1,
+  material_pipeline_id? : Int = -1,
+  material_bind_group? : Int = -1,
+  vertex_start? : Int = 0,
+  vertex_end? : Int = 0,
+) -> MeshletMaterialShadePassCommand {
+  MeshletMaterialShadePassCommand::{
+    kind,
+    label,
+    bind_group_index,
+    bind_group_kind,
+    dynamic_offset_count,
+    material_id,
+    material_pipeline_id,
+    material_bind_group,
+    vertex_start,
+    vertex_end,
+  }
+}
+
+///|
 fn meshlet_material_bin_draw_calls(
   material_bins : Array[MeshletViewMaterialEntry],
   instance_manager : InstanceManager,
@@ -326,6 +376,85 @@ pub fn MeshletMaterialShadePassPlan::draw_count(
   self : MeshletMaterialShadePassPlan,
 ) -> Int {
   self.draw_calls.length()
+}
+
+///|
+pub fn meshlet_material_shade_pass_commands(
+  plan : MeshletMaterialShadePassPlan,
+  has_camera_viewport? : Bool = false,
+) -> Array[MeshletMaterialShadePassCommand] {
+  if !plan.render_pass_enabled {
+    return []
+  }
+  let commands : Array[MeshletMaterialShadePassCommand] = []
+  let descriptor = plan.descriptor
+  commands.push(
+    meshlet_material_shade_command(
+      MeshletMaterialShadePassCommandKind::BeginRenderPass,
+      label=descriptor.label,
+    ),
+  )
+  if has_camera_viewport && descriptor.uses_main_pass_resolution_override {
+    commands.push(
+      meshlet_material_shade_command(
+        MeshletMaterialShadePassCommandKind::SetCameraViewport,
+        label="camera_viewport",
+      ),
+    )
+  }
+  commands.push(
+    meshlet_material_shade_command(
+      MeshletMaterialShadePassCommandKind::SetBindGroup,
+      bind_group_index=0,
+      bind_group_kind=descriptor.view_bind_group_kind,
+      dynamic_offset_count=descriptor.view_bind_group_dynamic_offset_count,
+    ),
+  )
+  commands.push(
+    meshlet_material_shade_command(
+      MeshletMaterialShadePassCommandKind::SetBindGroup,
+      bind_group_index=1,
+      bind_group_kind=if descriptor.sets_binding_array_group {
+        "binding_array"
+      } else {
+        "empty"
+      },
+    ),
+  )
+  commands.push(
+    meshlet_material_shade_command(
+      MeshletMaterialShadePassCommandKind::SetBindGroup,
+      bind_group_index=descriptor.material_shade_bind_group_index,
+      bind_group_kind="material_shade",
+    ),
+  )
+  for draw_call in plan.draw_calls {
+    commands.push(
+      meshlet_material_shade_command(
+        MeshletMaterialShadePassCommandKind::SetRenderPipeline,
+        material_id=draw_call.material_id,
+        material_pipeline_id=draw_call.material_pipeline_id,
+      ),
+    )
+    commands.push(
+      meshlet_material_shade_command(
+        MeshletMaterialShadePassCommandKind::SetBindGroup,
+        bind_group_index=descriptor.material_bind_group_index,
+        bind_group_kind="material",
+        material_id=draw_call.material_id,
+        material_bind_group=draw_call.material_bind_group,
+      ),
+    )
+    commands.push(
+      meshlet_material_shade_command(
+        MeshletMaterialShadePassCommandKind::Draw,
+        material_id=draw_call.material_id,
+        vertex_start=draw_call.vertex_start,
+        vertex_end=draw_call.vertex_end,
+      ),
+    )
+  }
+  commands
 }
 
 ///|
