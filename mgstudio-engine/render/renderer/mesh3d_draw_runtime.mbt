@@ -88,6 +88,7 @@ pub fn GpuBackend::draw_mesh3d(
   clearcoat_perceptual_roughness : Float,
   alpha_cutoff : Float,
   material_flags : UInt,
+  material_pipeline_id : UInt64,
   lightmap_exposure : Float,
   deferred_lighting_pass_id : Int,
   transmission_source_texture_id : Int,
@@ -250,6 +251,6 @@ pub fn GpuBackend::draw_mesh3d(
     clearcoat, clearcoat_perceptual_roughness, alpha_cutoff, material_flags, lightmap_exposure,
     deferred_lighting_pass_id, point_shadow_enabled, point_shadow_depth_bias, mesh_flags,
     cull_mode, vertex_shader_path, fragment_shader_path, skinning_key_hi, skinning_key_lo,
-    transparent,
+    material_pipeline_id, transparent,
   )
 }

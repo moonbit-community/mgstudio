@@ -499,6 +499,10 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     clearcoat_perceptual_roughness=payload.clearcoat_perceptual_roughness,
     alpha_cutoff=payload.alpha_cutoff,
     material_flags=payload.material_flags,
+    material_pipeline_id=match payload.material_pipeline_id {
+      Some(id) => id.id()
+      None => @material.CachedRenderPipelineId::invalid().id()
+    },
     lightmap_exposure=payload.lightmap_exposure,
     deferred_lighting_pass_id=payload.deferred_lighting_pass_id,
     transmission_source_texture_id=payload.transmission_source_texture_id,

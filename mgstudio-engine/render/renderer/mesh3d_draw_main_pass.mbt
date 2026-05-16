@@ -91,6 +91,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   fragment_shader_path : String?,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
+  material_pipeline_id : UInt64,
   transparent : Bool,
 ) -> Unit raise GpuBackendError {
   let draw_vertex_shader_path = if pass_kind == 0 {
@@ -108,6 +109,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       self,
       transparent,
       material_flags,
+      material_pipeline_id,
       forward_decal,
       mesh.primitive_topology,
       cull_mode,

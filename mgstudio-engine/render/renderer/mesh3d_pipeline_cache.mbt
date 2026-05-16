@@ -25,6 +25,9 @@ const MESH3D_PIPELINE_BLEND_PREMULTIPLIED_ALPHA : Int = 2
 const MESH3D_PIPELINE_BLEND_MULTIPLY : Int = 3
 
 ///|
+const MESH3D_DEFAULT_MATERIAL_PIPELINE_ID : UInt64 = 0xffffffffffffffffUL
+
+///|
 pub(all) enum RenderPipelineCacheState {
   RenderPipelineOk(@wgpu.RenderPipeline)
   RenderPipelineErr(String)
@@ -34,6 +37,7 @@ pub(all) enum RenderPipelineCacheState {
 struct Mesh3dPipelineCacheEntry {
   color_format : UInt
   topology : UInt
+  material_pipeline_id : UInt64
   cull_mode : Int
   blend_kind : Int
   skinned : Bool
@@ -50,6 +54,7 @@ fn mesh3d_pipeline_get(
   backend : GpuBackend,
   color_format : UInt,
   topology : UInt,
+  material_pipeline_id : UInt64,
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
@@ -63,6 +68,7 @@ fn mesh3d_pipeline_get(
   for entry in backend.mesh3d_pipeline_cache {
     if entry.color_format == color_format &&
       entry.topology == topology &&
+      entry.material_pipeline_id == material_pipeline_id &&
       entry.cull_mode == safe_cull_mode &&
       entry.blend_kind == blend_kind &&
       entry.skinned == skinned &&
@@ -88,6 +94,7 @@ fn mesh3d_pipeline_failed(
   backend : GpuBackend,
   color_format : UInt,
   topology : UInt,
+  material_pipeline_id : UInt64,
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
@@ -101,6 +108,7 @@ fn mesh3d_pipeline_failed(
   for entry in backend.mesh3d_pipeline_cache {
     if entry.color_format == color_format &&
       entry.topology == topology &&
+      entry.material_pipeline_id == material_pipeline_id &&
       entry.cull_mode == safe_cull_mode &&
       entry.blend_kind == blend_kind &&
       entry.skinned == skinned &&
@@ -126,6 +134,7 @@ fn mesh3d_pipeline_set(
   backend : GpuBackend,
   color_format : UInt,
   topology : UInt,
+  material_pipeline_id : UInt64,
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
@@ -139,6 +148,7 @@ fn mesh3d_pipeline_set(
   backend.mesh3d_pipeline_cache.push({
     color_format,
     topology,
+    material_pipeline_id,
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
     blend_kind,
     skinned,
@@ -156,6 +166,7 @@ fn mesh3d_pipeline_set_failed(
   backend : GpuBackend,
   color_format : UInt,
   topology : UInt,
+  material_pipeline_id : UInt64,
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
@@ -167,21 +178,24 @@ fn mesh3d_pipeline_set_failed(
   message : String,
 ) -> Unit {
   if mesh3d_pipeline_get(
-      backend, color_format, topology, cull_mode, blend_kind, skinned, forward_decal,
-      tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
+      backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
+      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method,
     )
     is Some(_) {
     return
   }
   if mesh3d_pipeline_failed(
-      backend, color_format, topology, cull_mode, blend_kind, skinned, forward_decal,
-      tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
+      backend, color_format, topology, material_pipeline_id, cull_mode, blend_kind,
+      skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
+      shadow_filter_method,
     ) {
     return
   }
   backend.mesh3d_pipeline_cache.push({
     color_format,
     topology,
+    material_pipeline_id,
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
     blend_kind,
     skinned,
