@@ -109,6 +109,56 @@ pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
 pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 0x0001UL
 
 ///|
+const MESH_PIPELINE_KEY_MAY_DISCARD : UInt64 = 128UL
+
+///|
+const MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA : UInt64 = 268435456UL
+
+///|
+const MESH_PIPELINE_KEY_BLEND_MULTIPLY : UInt64 = 536870912UL
+
+///|
+const MESH_PIPELINE_KEY_BLEND_ALPHA : UInt64 = 805306368UL
+
+///|
+const MESH_PIPELINE_KEY_BLEND_ALPHA_TO_COVERAGE : UInt64 = 1073741824UL
+
+///|
+fn alpha_mode_pipeline_key(alpha_mode : @material.AlphaMode3d) -> UInt64 {
+  match alpha_mode {
+    @material.AlphaMode3d::Premultiplied =>
+      MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA
+    @material.AlphaMode3d::Add => MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA
+    @material.AlphaMode3d::Blend => MESH_PIPELINE_KEY_BLEND_ALPHA
+    @material.AlphaMode3d::Multiply => MESH_PIPELINE_KEY_BLEND_MULTIPLY
+    @material.AlphaMode3d::Mask(_) => MESH_PIPELINE_KEY_MAY_DISCARD
+    @material.AlphaMode3d::AlphaToCoverage =>
+      MESH_PIPELINE_KEY_BLEND_ALPHA_TO_COVERAGE
+    _ => 0UL
+  }
+}
+
+///|
+fn material_mesh_pipeline_key_with_alpha(
+  properties : @material.MaterialProperties,
+) -> @material.ErasedMeshPipelineKey {
+  let bits = properties.mesh_pipeline_key_bits.bits() |
+    alpha_mode_pipeline_key(properties.alpha_mode)
+  @material.ErasedMeshPipelineKey::new(bits, "MeshPipelineKey")
+}
+
+///|
+fn material_pipeline_key_for_standard_material(
+  properties : @material.MaterialProperties,
+) -> @material.ErasedMaterialPipelineKey {
+  @material.ErasedMaterialPipelineKey::new(
+    material_mesh_pipeline_key_with_alpha(properties),
+    properties.material_key,
+    "StandardMaterial",
+  )
+}
+
+///|
 fn render3d_material_properties_for_standard_material(
   material : StandardMaterial,
   extension : ExtendedMaterialMetadata3d?,
@@ -151,6 +201,7 @@ fn render3d_material_properties_for_standard_material(
         "StandardMaterialKey",
       ),
     )
+    .with_base_specialize(Some(pbr_material_base_specialize))
     .with_shadows_enabled(shadows_enabled)
     .with_prepass_enabled(prepass_enabled)
   if extension is Some(metadata) {

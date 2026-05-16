@@ -1044,6 +1044,8 @@ pub(all) struct Render3dLightingState {
 pub struct Render3dMeshRuntimeState {
   mesh_upload_cache : Map[Int, Int]
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
+  mesh_vertex_buffer_layouts : @mesh.MeshVertexBufferLayouts
+  specialized_material_pipelines : @material.SpecializedMeshPipelines
 }
 pub fn Render3dMeshRuntimeState::new() -> Self
 pub impl @app.Resource for Render3dMeshRuntimeState

@@ -257,3 +257,21 @@ pub fn PbrMaterialPipelineSpecializer::specialize(
 }
 
 ///|
+fn pbr_material_base_specialize(
+  world : @ecs.World,
+  key : @material.ErasedMaterialPipelineKey,
+  layout : @material.MaterialMeshVertexLayout,
+  properties : @material.MaterialProperties,
+) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
+  let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
+  let specializer = PbrMaterialPipelineSpecializer::new(properties)
+  state_ref.val.specialized_material_pipelines.specialize(
+    fn(key, layout) raise @material.SpecializedMeshPipelineError {
+      specializer.specialize(key, layout)
+    },
+    key,
+    layout,
+  )
+}
+
+///|

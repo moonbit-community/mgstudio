@@ -282,10 +282,49 @@ fn render3d_material_shader_paths_for_extracted_mesh(
 }
 
 ///|
-fn render3d_prewarm_mesh_pipelines(meshes : Array[ExtractedMesh3d]) -> Unit {
+fn render3d_prewarm_material_pipeline(
+  world : @ecs.World,
+  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  mesh : Mesh3dExtractedPayload,
+) -> Unit {
+  guard mesh.material_properties.base_specialize is Some(base_specialize) else {
+    return
+  }
+  guard @sprite.render_mesh_asset_get(mesh.mesh_handle) is Some(mesh_asset) else {
+    return
+  }
+  let layout = mesh_asset.get_mesh_vertex_buffer_layout(
+    mesh_runtime_state_ref.val.mesh_vertex_buffer_layouts,
+  )
+  let pipeline_key = material_pipeline_key_for_standard_material(
+    mesh.material_properties,
+  )
+  ignore(
+    @material.material_specialize_base(
+      base_specialize,
+      world,
+      pipeline_key,
+      layout,
+      mesh.material_properties,
+    ) catch {
+      err =>
+        abort(
+          "failed to specialize pbr material pipeline for mesh \{mesh.mesh_handle.id()}: \{err}",
+        )
+    },
+  )
+}
+
+///|
+fn render3d_prewarm_mesh_pipelines(
+  world : @ecs.World,
+  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  meshes : Array[ExtractedMesh3d],
+) -> Unit {
   let prewarmed_keys : Map[String, Bool] = {}
   for extracted_mesh in meshes {
     let mesh = extracted_mesh.payload
+    render3d_prewarm_material_pipeline(world, mesh_runtime_state_ref, mesh)
     let (vertex_shader_path, fragment_shader_path) = render3d_material_shader_paths_for_extracted_mesh(
       extracted_mesh,
     )
@@ -408,7 +447,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     world_transform_cache_ref, needs_mesh_previous_transform,
   )
   render3d_prepare_shader_asset_paths(source_world, meshes)
-  render3d_prewarm_mesh_pipelines(meshes)
+  render3d_prewarm_mesh_pipelines(world, mesh_runtime_state_ref, meshes)
   render3d_queue_store_pending_frame(world, frame_config, cameras, meshes)
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,

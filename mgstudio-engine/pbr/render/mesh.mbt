@@ -18,6 +18,8 @@
 pub struct Render3dMeshRuntimeState {
   mesh_upload_cache : Map[Int, Int]
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
+  mesh_vertex_buffer_layouts : @mesh.MeshVertexBufferLayouts
+  specialized_material_pipelines : @material.SpecializedMeshPipelines
 }
 
 ///|
@@ -25,6 +27,8 @@ pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
   Render3dMeshRuntimeState::{
     mesh_upload_cache: {},
     mesh_preprocess_static_cache: {},
+    mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::default(),
+    specialized_material_pipelines: @material.SpecializedMeshPipelines::new(),
   }
 }
 

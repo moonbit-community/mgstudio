@@ -212,3 +212,70 @@ test "pbr material pipeline specializer inserts material bind group and override
     content="true",
   )
 }
+
+///|
+test "pbr standard material properties install base specialization hook" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::default().with_alpha_mode(
+      @material.AlphaMode3d::Blend,
+    ),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  debug_inspect(properties.base_specialize is Some(_), content="true")
+  let pipeline_key = material_pipeline_key_for_standard_material(properties)
+  inspect(
+    pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_BLEND_ALPHA,
+    content="805306368",
+  )
+  inspect(pipeline_key.type_tag(), content="StandardMaterial")
+}
+
+///|
+test "pbr material base specialization caches descriptors from real material properties" {
+  let world = @ecs.World::new()
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::default(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  guard properties.base_specialize is Some(base_specialize) else {
+    abort("expected StandardMaterial base specialize hook")
+  }
+  let key = material_pipeline_key_for_standard_material(properties)
+  let layout = pbr_material_specializer_test_layout()
+  let first_id = try! @material.material_specialize_base(
+    base_specialize, world, key, layout, properties,
+  )
+  let second_id = try! @material.material_specialize_base(
+    base_specialize, world, key, layout, properties,
+  )
+  let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
+  inspect(first_id.id(), content="0")
+  inspect(second_id.id(), content="0")
+  inspect(
+    state_ref.val.specialized_material_pipelines.mesh_layout_cache_len(),
+    content="1",
+  )
+  inspect(
+    state_ref.val.specialized_material_pipelines.vertex_layout_cache_len(),
+    content="1",
+  )
+  guard state_ref.val.specialized_material_pipelines.render_pipeline_descriptor(
+      first_id,
+    )
+    is Some(descriptor) else {
+    abort("expected cached pbr material descriptor")
+  }
+  inspect(descriptor.layout.length(), content="4")
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_uint(
+      descriptor.vertex.shader_defs,
+      "MATERIAL_BIND_GROUP",
+      MATERIAL_BIND_GROUP_INDEX.reinterpret_as_uint(),
+    ),
+    content="true",
+  )
+}
