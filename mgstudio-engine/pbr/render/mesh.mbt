@@ -140,6 +140,7 @@ pub fn render3d_sweep_mesh_runtime_caches(
     let (mesh_handle_id, _mesh_id) = entry
     if !render3d_mesh_handle_alive(mesh_handle_id) {
       stale_upload_cache_keys.push(mesh_handle_id)
+      ignore(@sprite.render2d_delete_uploaded_mesh_handle_id(mesh_handle_id))
     }
   }
   for mesh_handle_id in stale_upload_cache_keys {

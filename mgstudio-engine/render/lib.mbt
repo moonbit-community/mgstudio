@@ -31,6 +31,11 @@ pub type HostMaterial2dBindGroup = @renderer.HostMaterial2dBindGroup
 pub type HostGpuMeshInfo = @renderer.HostGpuMeshInfo
 
 ///|
+pub fn host_gpu_delete_mesh(mesh_id~ : Int) -> Bool {
+  @renderer.delete_mesh(mesh_id)
+}
+
+///|
 pub type HostMesh3dMainPassDrawEntry = @renderer.HostMesh3dMainPassDrawEntry
 
 ///|

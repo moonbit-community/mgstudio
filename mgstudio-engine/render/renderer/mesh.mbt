@@ -38,6 +38,58 @@ fn find_mesh_index(backend : GpuBackend, id : Int) -> Int? {
 }
 
 ///|
+fn mesh3d_allocator_buffer_used_by_meshes(
+  meshes : Array[GpuMeshInfo],
+  slab_id : Int,
+  usage_kind : Int,
+) -> Bool {
+  for mesh in meshes {
+    if usage_kind == 0 && mesh.vertex_slab_id == slab_id {
+      return true
+    }
+    if usage_kind == 1 && mesh.index_slab_id == slab_id {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn GpuBackend::delete_unused_mesh3d_allocator_buffers(
+  self : GpuBackend,
+) -> Unit {
+  let mut index = 0
+  while index < self.mesh_allocator_buffers.length() {
+    let allocator_buffer = self.mesh_allocator_buffers[index]
+    if mesh3d_allocator_buffer_used_by_meshes(
+        self.meshes,
+        allocator_buffer.slab_id,
+        allocator_buffer.usage_kind,
+      ) {
+      index = index + 1
+    } else {
+      let removed = self.mesh_allocator_buffers.remove(index)
+      removed.buffer.release()
+    }
+  }
+}
+
+///|
+fn GpuBackend::delete_mesh(self : GpuBackend, mesh_id : Int) -> Bool {
+  guard find_mesh_index(self, mesh_id) is Some(mesh_index) else { return false }
+  let mesh = self.meshes[mesh_index]
+  ignore(self.meshes.remove(mesh_index))
+  if mesh.vertex_slab_id >= 0 || mesh.index_slab_id >= 0 {
+    self.mesh_allocator.free_mesh(mesh_id)
+    self.delete_unused_mesh3d_allocator_buffers()
+  } else {
+    mesh.vertex_buf.release()
+    mesh.index_buf.release()
+  }
+  true
+}
+
+///|
 pub struct HostGpuMeshInfo {
   id : Int
   index_count : Int
@@ -99,6 +151,15 @@ pub fn mesh_info(mesh_id : Int) -> HostGpuMeshInfo? {
     }
   } else {
     None
+  }
+}
+
+///|
+pub fn delete_mesh(mesh_id : Int) -> Bool {
+  if ensure_backend() is Some(backend) {
+    backend.delete_mesh(mesh_id)
+  } else {
+    false
   }
 }
 

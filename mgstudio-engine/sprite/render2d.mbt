@@ -1037,17 +1037,27 @@ fn mesh_upload_cache_sync_with_asset_events() -> Unit {
             }
           }
           if !keep_cache {
-            mesh_upload_cache.val.remove(handle.id())
-            mesh_upload_radius_cache.val.remove(mesh_id)
+            ignore(render2d_delete_uploaded_mesh_handle_id(handle.id()))
           }
         }
       @asset.AssetEvent::Removed(handle) =>
-        if mesh_upload_cache.val.get(handle.id()) is Some(mesh_id) {
-          mesh_upload_cache.val.remove(handle.id())
-          mesh_upload_radius_cache.val.remove(mesh_id)
+        if mesh_upload_cache.val.get(handle.id()) is Some(_) {
+          ignore(render2d_delete_uploaded_mesh_handle_id(handle.id()))
         }
       _ => ()
     }
+  }
+}
+
+///|
+pub fn render2d_delete_uploaded_mesh_handle_id(mesh_handle_id : Int) -> Bool {
+  match mesh_upload_cache.val.get(mesh_handle_id) {
+    Some(mesh_id) => {
+      mesh_upload_cache.val.remove(mesh_handle_id)
+      mesh_upload_radius_cache.val.remove(mesh_id)
+      @render.host_gpu_delete_mesh(mesh_id~)
+    }
+    None => false
   }
 }
 

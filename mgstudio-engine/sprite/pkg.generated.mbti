@@ -173,6 +173,8 @@ pub fn render2d_create_render_target_ecs(Int, Int, Bool) -> @asset.Handle[@image
 
 pub fn render2d_debug_log_primary_camera(@ecs.World) -> Unit
 
+pub fn render2d_delete_uploaded_mesh_handle_id(Int) -> Bool
+
 pub fn render2d_diagnostic_execute_cpu_ms() -> Float
 
 pub fn render2d_diagnostic_prepared_camera_count() -> Int

@@ -680,6 +680,34 @@ test "renderer: mesh3d allocator metadata exposes packed slab ranges" {
 }
 
 ///|
+test "renderer: deleting mesh3d frees allocator slabs after last resident mesh" {
+  let backend = GpuBackend::new()
+  backend.meshes.clear()
+  let vertices : Array[Float] = [
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+    0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 1.0F,
+    0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+  ]
+  let first_mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
+  let second_mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
+  let initial_ok = backend.meshes.length() == 2 &&
+    backend.mesh_allocator.slab_count() == 2 &&
+    backend.mesh_allocator_buffers.length() == 2
+  let first_delete_ok = backend.delete_mesh(first_mesh_id) &&
+    backend.meshes.length() == 1 &&
+    backend.mesh_allocator.slab_count() == 2 &&
+    backend.mesh_allocator_buffers.length() == 2
+  let second_delete_ok = backend.delete_mesh(second_mesh_id) &&
+    backend.meshes.length() == 0 &&
+    backend.mesh_allocator.slab_count() == 0 &&
+    backend.mesh_allocator_buffers.length() == 0
+  debug_inspect(
+    initial_ok && first_delete_ok && second_delete_ok,
+    content="true",
+  )
+}
+
+///|
 test "renderer: mesh3d light scalar helpers align with Bevy-style scalar contract" {
   let inverse_square_range = mesh3d_inverse_square_range(10.0F)
   let (spot_scale, spot_offset) = mesh3d_spot_scale_offset(0.25F, 0.5F)
