@@ -203,6 +203,8 @@ pub struct Mesh3dGeometry {
   mut joint_indices : Array[MeshJointIndices]?
   mut joint_weights : Array[@math.Vec4]?
   morph_target_positions : Array[Array[@math.Vec3]]?
+  morph_target_normals : Array[Array[@math.Vec3]]?
+  morph_target_tangents : Array[Array[@math.Vec3]]?
   morph_target_names : Array[String]?
   mut custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
   mut tangents : Array[@math.Vec4]?
@@ -237,7 +239,9 @@ pub fn Mesh3dGeometry::insert_indices(Self, Array[Int]?) -> Unit
 pub fn Mesh3dGeometry::joint_indices(Self) -> Array[MeshJointIndices]?
 pub fn Mesh3dGeometry::joint_weights(Self) -> Array[@math.Vec4]?
 pub fn Mesh3dGeometry::morph_target_names(Self) -> Array[String]?
+pub fn Mesh3dGeometry::morph_target_normals(Self) -> Array[Array[@math.Vec3]]?
 pub fn Mesh3dGeometry::morph_target_positions(Self) -> Array[Array[@math.Vec3]]?
+pub fn Mesh3dGeometry::morph_target_tangents(Self) -> Array[Array[@math.Vec3]]?
 pub fn Mesh3dGeometry::new(Array[@math.Vec3], Array[@math.Vec2], Array[Int]?) -> Self
 pub fn Mesh3dGeometry::new_empty(Mesh3dPrimitiveTopology) -> Self
 pub fn Mesh3dGeometry::new_with_colors(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?) -> Self
@@ -277,7 +281,7 @@ pub fn Mesh3dGeometry::with_indices(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_inserted_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Self
 pub fn Mesh3dGeometry::with_inserted_indices(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_joint_data(Self, Array[MeshJointIndices]?, Array[@math.Vec4]?) -> Self
-pub fn Mesh3dGeometry::with_morph_targets(Self, Array[Array[@math.Vec3]]?, morph_target_names? : Array[String]?) -> Self
+pub fn Mesh3dGeometry::with_morph_targets(Self, Array[Array[@math.Vec3]]?, morph_target_names? : Array[String]?, morph_target_normals? : Array[Array[@math.Vec3]]?, morph_target_tangents? : Array[Array[@math.Vec3]]?) -> Self
 pub fn Mesh3dGeometry::with_normals(Self, Array[@math.Vec3]?) -> Self
 pub fn Mesh3dGeometry::with_removed_attribute(Self, MeshVertexAttributeId) -> Self
 pub fn Mesh3dGeometry::with_topology(Self, Mesh3dPrimitiveTopology) -> Self

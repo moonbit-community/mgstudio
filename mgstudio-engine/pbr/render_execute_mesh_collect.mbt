@@ -360,6 +360,25 @@ fn render3d_extract_mesh_for_entity(
   let (skinning_key_hi, _skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
     skin_uniforms_ref, entity,
   )
+  let morph_weights_index = match
+    morph_indices_ref.val.current.get(entity_key) {
+    Some(offset) => offset.reinterpret_as_int()
+    None => -1
+  }
+  let previous_morph_weights_index = match
+    morph_indices_ref.val.prev.get(entity_key) {
+    Some(offset) => offset.reinterpret_as_int()
+    None => -1
+  }
+  let morph_targets_texture_id = match
+    (try! source_world.get_by_key(entity, @mesh.MorphTargetMesh::component())) {
+    Some(value) =>
+      render3d_morph_target_texture_id(
+        mesh_runtime_state_ref,
+        value.source_mesh(),
+      )
+    None => -1
+  }
   let mesh_id = @pbr_render.render3d_upload_mesh_handle_cached(
     mesh_runtime_state_ref,
     mesh3d.mesh(),
@@ -418,6 +437,9 @@ fn render3d_extract_mesh_for_entity(
         wireframe_color,
         skinning_key_hi,
         has_previous_skin,
+        morph_weights_index,
+        previous_morph_weights_index,
+        morph_targets_texture_id,
         motion_vector_enabled,
       },
     }),

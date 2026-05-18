@@ -201,9 +201,39 @@ fn scene_clone_mesh3d_geometry(
       }
       None => None
     }
+    let copied_normals = match geometry.morph_target_normals {
+      Some(existing) => {
+        let next : Array[Array[@math.Vec3]] = []
+        for morph_target in existing {
+          let copied : Array[@math.Vec3] = []
+          for value in morph_target {
+            copied.push(value)
+          }
+          next.push(copied)
+        }
+        Some(next)
+      }
+      None => None
+    }
+    let copied_tangents = match geometry.morph_target_tangents {
+      Some(existing) => {
+        let next : Array[Array[@math.Vec3]] = []
+        for morph_target in existing {
+          let copied : Array[@math.Vec3] = []
+          for value in morph_target {
+            copied.push(value)
+          }
+          next.push(copied)
+        }
+        Some(next)
+      }
+      None => None
+    }
     cloned = cloned.with_morph_targets(
       Some(copied_targets),
       morph_target_names=copied_names,
+      morph_target_normals=copied_normals,
+      morph_target_tangents=copied_tangents,
     )
   }
   for attribute in geometry.custom_attributes_vec3 {

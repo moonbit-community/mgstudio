@@ -250,9 +250,6 @@ fn render3d_prewarm_shadow_material_pipeline(
   world : @ecs.World,
   shadow_mesh : Mesh3dExtractedPayload,
 ) -> @material.CachedRenderPipelineId? {
-  if !render3d_shadow_material_may_discard(shadow_mesh.material.alpha_mode) {
-    return None
-  }
   guard shadow_mesh.material_properties.prepass_specialize
     is Some(prepass_specialize) else {
     return None
@@ -271,13 +268,17 @@ fn render3d_prewarm_shadow_material_pipeline(
     shadow_mesh.material_properties,
     render_mesh,
   )
+  let shadow_bits = if render3d_shadow_material_may_discard(
+      shadow_mesh.material.alpha_mode,
+    ) {
+    base_key.mesh_key().bits() |
+    MESH_PIPELINE_KEY_DEPTH_PREPASS |
+    MESH_PIPELINE_KEY_MAY_DISCARD
+  } else {
+    base_key.mesh_key().bits() | MESH_PIPELINE_KEY_DEPTH_PREPASS
+  }
   let shadow_key = @material.ErasedMaterialPipelineKey::new(
-    @material.ErasedMeshPipelineKey::new(
-      base_key.mesh_key().bits() |
-      MESH_PIPELINE_KEY_DEPTH_PREPASS |
-      MESH_PIPELINE_KEY_MAY_DISCARD,
-      "MeshPipelineKey",
-    ),
+    @material.ErasedMeshPipelineKey::new(shadow_bits, "MeshPipelineKey"),
     shadow_mesh.material_properties.material_key,
     "StandardMaterial",
   )
@@ -393,6 +394,9 @@ fn render3d_execute_shadow_phase_view(
         material_pipeline_id~,
         skinning_key_hi=shadow_mesh.skinning_key_hi,
         skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
+        morph_weights_index=shadow_mesh.morph_weights_index,
+        previous_morph_weights_index=shadow_mesh.previous_morph_weights_index,
+        morph_targets_texture_id=shadow_mesh.morph_targets_texture_id,
       ),
     )
     draw_storage_offset += 1

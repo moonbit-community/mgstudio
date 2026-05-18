@@ -13,6 +13,74 @@
 // limitations under the License.
 
 ///|
+fn render3d_prewarm_motion_vector_material_pipeline(
+  world : @ecs.World,
+  motion_mesh : Mesh3dExtractedPayload,
+) -> @material.CachedRenderPipelineId? {
+  guard motion_mesh.material_properties.prepass_specialize
+    is Some(prepass_specialize) else {
+    return None
+  }
+  guard @sprite.render_mesh_asset_get(motion_mesh.mesh_handle)
+    is Some(mesh_asset) else {
+    return None
+  }
+  let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
+  let render_mesh = @render_mesh.RenderMesh::from_mesh(
+    mesh_asset,
+    state_ref.val.mesh_vertex_buffer_layouts,
+  )
+  let layout = render_mesh.layout()
+  let base_key = material_pipeline_key_for_standard_material_render_mesh(
+    motion_mesh.material_properties,
+    render_mesh,
+    lightmapped=match motion_mesh.lightmap {
+      Some(lightmap) => lightmap.image.id() > 0
+      None => false
+    },
+    lightmap_bicubic_sampling=false,
+  )
+  let mut motion_bits = base_key.mesh_key().bits() |
+    MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS
+  if motion_mesh.has_previous_skin {
+    motion_bits = motion_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN
+  }
+  if motion_mesh.previous_morph_weights_index >= 0 {
+    motion_bits = motion_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH
+  }
+  let motion_key = @material.ErasedMaterialPipelineKey::new(
+    @material.ErasedMeshPipelineKey::new(motion_bits, "MeshPipelineKey"),
+    motion_mesh.material_properties.material_key,
+    "StandardMaterial",
+  )
+  let prepass_pipeline_id = @material.material_specialize_prepass(
+    prepass_specialize,
+    world,
+    motion_key,
+    layout,
+    motion_mesh.material_properties,
+  ) catch {
+    err =>
+      abort(
+        "failed to specialize pbr motion-vector prepass material pipeline for mesh \{motion_mesh.mesh_handle.id()}: \{err}",
+      )
+  }
+  let runtime_pipeline_id = pbr_prepass_runtime_pipeline_id(prepass_pipeline_id)
+  match
+    state_ref.val.specialized_prepass_material_pipelines.render_pipeline_descriptor(
+      prepass_pipeline_id,
+    ) {
+    Some(descriptor) =>
+      @render.host_gpu_register_mesh3d_material_pipeline_descriptor(
+        material_pipeline_id=runtime_pipeline_id.id(),
+        descriptor~,
+      )
+    None => ()
+  }
+  Some(runtime_pipeline_id)
+}
+
+///|
 fn render3d_execute_camera_motion_vector_pass(
   world : @ecs.World,
   camera_entity : @core.Entity,
@@ -99,6 +167,9 @@ fn render3d_execute_camera_motion_vector_pass(
     if !mesh.motion_vector_enabled {
       continue
     }
+    let material_pipeline_id = render3d_prewarm_motion_vector_material_pipeline(
+      world, mesh,
+    )
     let motion_vector_indexed = mesh.mesh_is_indexed
     let motion_vector_indirect_parameters_index = if motion_vector_indexed {
       indexed_indirect_parameter_indices[draw_item_index]
@@ -165,6 +236,10 @@ fn render3d_execute_camera_motion_vector_pass(
         } else {
           0
         },
+        material_pipeline_id~,
+        morph_weights_index=mesh.morph_weights_index,
+        previous_morph_weights_index=mesh.previous_morph_weights_index,
+        morph_targets_texture_id=mesh.morph_targets_texture_id,
       ),
     )
   }

@@ -13,6 +13,84 @@
 // limitations under the License.
 
 ///|
+fn mesh3d_motion_vector_descriptor_view_bind_groups_get_or_create(
+  backend : GpuBackend,
+  material_pipeline_id : UInt64,
+  layout_entry : Mesh3dMaterialPipelineLayoutCacheEntry,
+) -> (@wgpu.BindGroup, @wgpu.BindGroup, @wgpu.BindGroup)? {
+  guard backend.frame is Some(frame) else { return None }
+  for entry in backend.mesh3d_motion_vector_view_bg_cache {
+    if entry.material_pipeline_id == material_pipeline_id &&
+      entry.frame_count == backend.frame_count {
+      return Some(
+        (
+          entry.view_bind_group,
+          entry.empty_bind_group,
+          entry.empty_material_bind_group,
+        ),
+      )
+    }
+  }
+  guard backend.mesh3d_motion_vector_view_buf is Some(view_buf) else {
+    return None
+  }
+  guard backend.mesh3d_motion_vector_globals_buf is Some(globals_buf) else {
+    return None
+  }
+  guard backend.mesh3d_motion_vector_previous_view_buf
+    is Some(previous_view_buf) else {
+    return None
+  }
+  guard backend.mesh3d_motion_vector_visibility_ranges_buf
+    is Some(visibility_ranges_buf) else {
+    return None
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=4UL)
+  let ok = builder.add_buffer(0U, view_buf, size=MESH2D_VIEW_BUFFER_SIZE) &&
+    builder.add_buffer(1U, globals_buf, size=MESH3D_PREPASS_GLOBALS_BUFFER_SIZE) &&
+    builder.add_buffer(
+      2U,
+      previous_view_buf,
+      size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+    ) &&
+    builder.add_buffer(
+      14U,
+      visibility_ranges_buf,
+      size=MESH3D_PREPASS_VISIBILITY_RANGES_BUFFER_SIZE,
+    )
+  if !ok {
+    builder.free()
+    return None
+  }
+  let view_bg = builder.finish(
+    backend.device,
+    layout_entry.view_bind_group_layout,
+    label="mgstudio_motion_vector_descriptor_view_bg",
+  )
+  let empty_bg = mesh3d_create_empty_bind_group(
+    backend,
+    layout_entry.binding_arrays_bind_group_layout,
+    "mgstudio_motion_vector_descriptor_empty_bg",
+  )
+  let empty_material_bg = mesh3d_create_empty_bind_group(
+    backend,
+    layout_entry.material_bind_group_layout,
+    "mgstudio_motion_vector_descriptor_empty_material_bg",
+  )
+  frame.transient_bind_groups.push(view_bg)
+  frame.transient_bind_groups.push(empty_bg)
+  frame.transient_bind_groups.push(empty_material_bg)
+  backend.mesh3d_motion_vector_view_bg_cache.push(Mesh3dMotionVectorViewBindGroupCacheEntry::{
+    material_pipeline_id,
+    frame_count: backend.frame_count,
+    view_bind_group: view_bg,
+    empty_bind_group: empty_bg,
+    empty_material_bind_group: empty_material_bg,
+  })
+  Some((view_bg, empty_bg, empty_material_bg))
+}
+
+///|
 pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   self : GpuBackend,
   pass : @wgpu.RenderPass,
@@ -45,6 +123,51 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   previous_scale_z : Float,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
+  morph_weights_index : Int,
+  previous_morph_weights_index : Int,
+  morph_target_texture_id : Int,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  texture_id : Int,
+  uv_transform_a : Float,
+  uv_transform_b : Float,
+  uv_transform_c : Float,
+  uv_transform_d : Float,
+  uv_transform_tx : Float,
+  uv_transform_ty : Float,
+  emissive_r : Float,
+  emissive_g : Float,
+  emissive_b : Float,
+  emissive_exposure_weight : Float,
+  metallic : Float,
+  roughness : Float,
+  reflectance : Float,
+  attenuation_color_r : Float,
+  attenuation_color_g : Float,
+  attenuation_color_b : Float,
+  attenuation_distance : Float,
+  clearcoat : Float,
+  clearcoat_perceptual_roughness : Float,
+  parallax_depth_scale : Float,
+  max_parallax_layer_count : Float,
+  max_relief_mapping_search_steps : Float,
+  anisotropy_strength : Float,
+  anisotropy_rotation : Float,
+  specular_tint_r : Float,
+  specular_tint_g : Float,
+  specular_tint_b : Float,
+  diffuse_transmission : Float,
+  specular_transmission : Float,
+  thickness : Float,
+  ior : Float,
+  alpha_cutoff : Float,
+  material_flags : UInt,
+  lightmap_exposure : Float,
+  deferred_lighting_pass_id : Int,
+  cull_mode : Int,
+  material_pipeline_id : UInt64,
   transparent : Bool,
 ) -> Unit raise GpuBackendError {
   if mesh.primitive_topology != MESH3D_TOPOLOGY_TRIANGLE_LIST {
@@ -53,25 +176,55 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   if transparent {
     return
   }
-  ensure_mesh3d_motion_vector_pipeline(self)
   let is_skinned = skinning_key_hi >= 0
   let has_previous_skin = is_skinned && skinning_key_lo > 0
-  let pipeline = if is_skinned {
-    if has_previous_skin {
-      self.mesh3d_motion_vector_pipeline_skinned_prev
-    } else {
-      self.mesh3d_motion_vector_pipeline_skinned
-    }
-  } else {
-    self.mesh3d_motion_vector_pipeline
+  let is_morphed = morph_weights_index >= 0 && morph_target_texture_id >= 0
+  let has_previous_morph = is_morphed && previous_morph_weights_index >= 0
+  let material_descriptor = mesh3d_material_pipeline_descriptor_find(
+    self, material_pipeline_id,
+  )
+  let material_layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+    self, material_pipeline_id, material_descriptor,
+  )
+  guard mesh3d_motion_vector_pipeline_entry_get_or_create(
+      self,
+      mesh.primitive_topology,
+      material_pipeline_id,
+      material_descriptor,
+      cull_mode,
+      is_skinned,
+      has_previous_skin,
+      is_morphed,
+      has_previous_morph,
+    )
+    is Some(pipeline_entry) else {
+    return
   }
-  guard pipeline is Some(pipeline) else { return }
+  let pipeline = pipeline_entry.pipeline
+  let mesh_bgl = pipeline_entry.mesh_bind_group_layout
+  let mesh_layout_descriptor = pipeline_entry.mesh_bind_group_layout_descriptor
+  let mesh_layout_mask = mesh3d_motion_vector_mesh_layout_mask(
+    is_skinned, has_previous_skin, is_morphed, has_previous_morph,
+  )
   guard self.mesh3d_motion_vector_view_buf is Some(view_buf) else { return }
   guard self.mesh3d_motion_vector_previous_view_buf is Some(previous_view_buf) else {
     return
   }
-  guard self.mesh3d_motion_vector_view_bg is Some(view_bg) else { return }
-  guard self.mesh3d_motion_vector_empty_bg is Some(empty_bg) else { return }
+  let (view_bg, empty_bg, empty_material_bg) = match material_descriptor {
+    Some(_) =>
+      match
+        mesh3d_motion_vector_descriptor_view_bind_groups_get_or_create(
+          self, material_pipeline_id, material_layout_entry,
+        ) {
+        Some(groups) => groups
+        None => return
+      }
+    None => {
+      guard self.mesh3d_motion_vector_view_bg is Some(view_bg) else { return }
+      guard self.mesh3d_motion_vector_empty_bg is Some(empty_bg) else { return }
+      (view_bg, empty_bg, empty_bg)
+    }
+  }
   let preprocess_state_index = mesh3d_preprocess_camera_upload_state_index(
     self, preprocess_camera_key_hi, preprocess_camera_key_lo,
   )
@@ -96,7 +249,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
     preprocess_state.output_count > 0 &&
     preprocess_state_index is Some(state_index) &&
     mesh3d_preprocess_motion_vector_mesh_bind_group_get_or_create(
-      self, state_index,
+      self, state_index, mesh_bgl, mesh_layout_descriptor, mesh_layout_mask, morph_target_texture_id,
     )
     is Some(preprocess_mesh_bg) {
     mesh_bind_group = Some(preprocess_mesh_bg)
@@ -119,7 +272,10 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
       return
     }
     let required_size = next_used_int.to_uint64()
-    guard ensure_mesh3d_motion_vector_instance_mesh_binding(self, required_size)
+    guard ensure_mesh3d_motion_vector_instance_mesh_binding(
+        self, mesh_bgl, mesh_layout_descriptor, mesh_layout_mask, required_size,
+        morph_target_texture_id,
+      )
       is Some((instance_mesh_buf, instance_mesh_bg)) else {
       return
     }
@@ -133,7 +289,10 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
     }
   } else {
     let mesh_slot_index = self.mesh3d_motion_vector_mesh_slot_used
-    guard ensure_mesh3d_motion_vector_mesh_slot(self, mesh_slot_index)
+    guard ensure_mesh3d_motion_vector_mesh_slot(
+        self, mesh_slot_index, mesh_bgl, mesh_layout_descriptor, mesh_layout_mask,
+        morph_target_texture_id,
+      )
       is Some(mesh_slot) else {
       return
     }
@@ -181,10 +340,57 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
       ),
     )
   }
+  let material_bg = if mesh3d_descriptor_material_layout(material_descriptor)
+    is Some(_) {
+    let default_texture = ensure_default_texture(self)
+    guard resolve_mesh3d_texture(self, texture_id) is Some(base_color_texture) else {
+      return
+    }
+    let normal_texture = ensure_normal_map_fallback_texture(self)
+    mesh3d_material_cache_get_or_create(
+      self,
+      material_pipeline_id,
+      material_descriptor,
+      base_color_texture,
+      normal_texture,
+      default_texture,
+      default_texture,
+      default_texture,
+      default_texture,
+      default_texture,
+      default_texture,
+      mesh3d_standard_material_uniform_bytes(
+        color_r, color_g, color_b, color_a, uv_transform_a, uv_transform_b, uv_transform_c,
+        uv_transform_d, uv_transform_tx, uv_transform_ty, emissive_r, emissive_g,
+        emissive_b, emissive_exposure_weight, metallic, roughness, reflectance, attenuation_color_r,
+        attenuation_color_g, attenuation_color_b, attenuation_distance, clearcoat,
+        clearcoat_perceptual_roughness, parallax_depth_scale, max_parallax_layer_count,
+        max_relief_mapping_search_steps, anisotropy_strength, anisotropy_rotation,
+        specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission,
+        specular_transmission, thickness, ior, alpha_cutoff, material_flags, lightmap_exposure,
+        deferred_lighting_pass_id,
+      ),
+    )
+  } else {
+    empty_material_bg
+  }
   pass.set_pipeline(pipeline)
-  pass.set_bind_group(0U, view_bg, [])
+  pass.set_bind_group(
+    0U,
+    view_bg,
+    mesh3d_descriptor_bind_group_dynamic_offsets(material_descriptor, 0),
+  )
   pass.set_bind_group(1U, empty_bg, [])
-  pass.set_bind_group(2U, active_mesh_bg, [])
+  pass.set_bind_group(
+    2U,
+    active_mesh_bg,
+    mesh3d_draw_bind_group_dynamic_offsets(
+      mesh_layout_descriptor, morph_weights_index, previous_morph_weights_index,
+    ),
+  )
+  if material_descriptor is Some(_) {
+    pass.set_bind_group(3U, material_bg, [])
+  }
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
   if use_indirect && preprocess_state is Some(preprocess_state) {
     if indirect_kind == MESH3D_DRAW_INDIRECT_KIND_INDEXED &&

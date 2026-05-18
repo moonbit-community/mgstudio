@@ -176,8 +176,10 @@ pub struct GpuBackend {
   mesh3d_frame_view_bg_cache : Array[Mesh3dFrameViewBindGroupCacheEntry]
   mesh3d_draw_slots : Array[GpuStorageSlot]
   mesh3d_draw_slot_skin_revisions : Array[Int]
+  mesh3d_draw_slot_morph_revisions : Array[Int]
   mesh3d_draw_slot_material_pipeline_ids : Array[UInt64]
   mesh3d_draw_slot_lightmap_texture_ids : Array[Int]
+  mesh3d_draw_slot_morph_target_texture_ids : Array[Int]
   mut mesh3d_draw_slot_used : Int
   mut mesh3d_skin_current_buf : @wgpu.Buffer?
   mut mesh3d_skin_current_bg : @wgpu.BindGroup?
@@ -187,13 +189,19 @@ pub struct GpuBackend {
   mut mesh3d_skin_staging_bytes : FixedArray[Byte]
   mut mesh3d_skin_staging_view : Bytes
   mut mesh3d_skin_revision : Int
+  mut mesh3d_morph_current_buf : @wgpu.Buffer?
+  mut mesh3d_morph_prev_buf : @wgpu.Buffer?
+  mut mesh3d_morph_capacity : UInt64
+  mut mesh3d_morph_revision : Int
   mut mesh3d_gpu_instance_builder_enabled : Bool
   mut mesh3d_instance_draw_buf : @wgpu.Buffer?
   mut mesh3d_instance_draw_bg : @wgpu.BindGroup?
   mut mesh3d_instance_draw_capacity : UInt64
   mut mesh3d_instance_draw_skin_revision : Int
+  mut mesh3d_instance_draw_morph_revision : Int
   mut mesh3d_instance_draw_material_pipeline_id : UInt64
   mut mesh3d_instance_draw_lightmap_texture_id : Int
+  mut mesh3d_instance_draw_morph_target_texture_id : Int
   mut mesh3d_instance_draw_used : Int
   mut mesh3d_prepared_draw_camera_key_hi : Int
   mut mesh3d_prepared_draw_camera_key_lo : Int
@@ -280,20 +288,32 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_pipeline : @wgpu.RenderPipeline?
   mut mesh3d_motion_vector_pipeline_skinned : @wgpu.RenderPipeline?
   mut mesh3d_motion_vector_pipeline_skinned_prev : @wgpu.RenderPipeline?
+  mesh3d_motion_vector_pipeline_cache : Array[
+    Mesh3dMotionVectorPipelineCacheEntry,
+  ]
   mut mesh3d_motion_vector_view_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_globals_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_previous_view_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_visibility_ranges_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_view_bg : @wgpu.BindGroup?
   mut mesh3d_motion_vector_empty_bg : @wgpu.BindGroup?
+  mesh3d_motion_vector_view_bg_cache : Array[
+    Mesh3dMotionVectorViewBindGroupCacheEntry,
+  ]
   mesh3d_motion_vector_mesh_slots : Array[GpuStorageSlot]
   mesh3d_motion_vector_mesh_slot_skin_revisions : Array[Int]
+  mesh3d_motion_vector_mesh_slot_morph_revisions : Array[Int]
+  mesh3d_motion_vector_mesh_slot_morph_target_texture_ids : Array[Int]
+  mesh3d_motion_vector_mesh_slot_layout_masks : Array[Int]
   mut mesh3d_motion_vector_mesh_slot_used : Int
   mut mesh3d_motion_vector_instance_mesh_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_instance_mesh_bg : @wgpu.BindGroup?
   mut mesh3d_motion_vector_instance_mesh_capacity : UInt64
   mut mesh3d_motion_vector_instance_mesh_used : Int
   mut mesh3d_motion_vector_instance_mesh_skin_revision : Int
+  mut mesh3d_motion_vector_instance_mesh_morph_revision : Int
+  mut mesh3d_motion_vector_instance_mesh_morph_target_texture_id : Int
+  mut mesh3d_motion_vector_instance_mesh_layout_mask : Int
   mut motion_blur_bgl : @wgpu.BindGroupLayout?
   mut motion_blur_pipeline_layout : @wgpu.PipelineLayout?
   mut motion_blur_pipeline : @wgpu.RenderPipeline?

@@ -21,6 +21,8 @@ pub struct Mesh3dGeometry {
   mut joint_indices : Array[MeshJointIndices]?
   mut joint_weights : Array[@math.Vec4]?
   morph_target_positions : Array[Array[@math.Vec3]]?
+  morph_target_normals : Array[Array[@math.Vec3]]?
+  morph_target_tangents : Array[Array[@math.Vec3]]?
   morph_target_names : Array[String]?
   mut custom_attributes_vec3 : Array[MeshCustomAttributeVec3]
   mut tangents : Array[@math.Vec4]?
@@ -80,6 +82,8 @@ pub fn Mesh3dGeometry::new(
     joint_indices: None,
     joint_weights: None,
     morph_target_positions: None,
+    morph_target_normals: None,
+    morph_target_tangents: None,
     morph_target_names: None,
     custom_attributes_vec3: [],
     tangents: None,
@@ -103,6 +107,8 @@ pub fn Mesh3dGeometry::new_with_colors(
     joint_indices: None,
     joint_weights: None,
     morph_target_positions: None,
+    morph_target_normals: None,
+    morph_target_tangents: None,
     morph_target_names: None,
     custom_attributes_vec3: [],
     tangents: None,
@@ -126,6 +132,8 @@ pub fn Mesh3dGeometry::new_with_topology(
     joint_indices: None,
     joint_weights: None,
     morph_target_positions: None,
+    morph_target_normals: None,
+    morph_target_tangents: None,
     morph_target_names: None,
     custom_attributes_vec3: [],
     tangents: None,
@@ -150,6 +158,8 @@ pub fn Mesh3dGeometry::new_with_colors_and_topology(
     joint_indices: None,
     joint_weights: None,
     morph_target_positions: None,
+    morph_target_normals: None,
+    morph_target_tangents: None,
     morph_target_names: None,
     custom_attributes_vec3: [],
     tangents: None,
@@ -171,6 +181,8 @@ pub fn Mesh3dGeometry::with_topology(
     joint_indices: self.joint_indices,
     joint_weights: self.joint_weights,
     morph_target_positions: self.morph_target_positions,
+    morph_target_normals: self.morph_target_normals,
+    morph_target_tangents: self.morph_target_tangents,
     morph_target_names: self.morph_target_names,
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: None,
@@ -202,6 +214,8 @@ pub fn Mesh3dGeometry::new_with_positions(
     joint_indices: None,
     joint_weights: None,
     morph_target_positions: None,
+    morph_target_normals: None,
+    morph_target_tangents: None,
     morph_target_names: None,
     custom_attributes_vec3: [],
     tangents: None,
@@ -224,6 +238,8 @@ pub fn Mesh3dGeometry::new_with_positions_and_topology(
     joint_indices: None,
     joint_weights: None,
     morph_target_positions: None,
+    morph_target_normals: None,
+    morph_target_tangents: None,
     morph_target_names: None,
     custom_attributes_vec3: [],
     tangents: None,
@@ -313,6 +329,8 @@ pub fn Mesh3dGeometry::with_uvs(
     joint_indices: self.joint_indices,
     joint_weights: self.joint_weights,
     morph_target_positions: self.morph_target_positions,
+    morph_target_normals: self.morph_target_normals,
+    morph_target_tangents: self.morph_target_tangents,
     morph_target_names: self.morph_target_names,
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: None,
@@ -334,6 +352,8 @@ pub fn Mesh3dGeometry::with_normals(
     joint_indices: self.joint_indices,
     joint_weights: self.joint_weights,
     morph_target_positions: self.morph_target_positions,
+    morph_target_normals: self.morph_target_normals,
+    morph_target_tangents: self.morph_target_tangents,
     morph_target_names: self.morph_target_names,
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: None,
@@ -601,6 +621,8 @@ pub fn Mesh3dGeometry::with_indices(
     joint_indices: self.joint_indices,
     joint_weights: self.joint_weights,
     morph_target_positions: self.morph_target_positions,
+    morph_target_normals: self.morph_target_normals,
+    morph_target_tangents: self.morph_target_tangents,
     morph_target_names: self.morph_target_names,
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: None,
@@ -640,6 +662,8 @@ pub fn Mesh3dGeometry::with_colors(
     joint_indices: self.joint_indices,
     joint_weights: self.joint_weights,
     morph_target_positions: self.morph_target_positions,
+    morph_target_normals: self.morph_target_normals,
+    morph_target_tangents: self.morph_target_tangents,
     morph_target_names: self.morph_target_names,
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: self.tangents,
@@ -662,6 +686,8 @@ pub fn Mesh3dGeometry::with_joint_data(
     joint_indices,
     joint_weights,
     morph_target_positions: self.morph_target_positions,
+    morph_target_normals: self.morph_target_normals,
+    morph_target_tangents: self.morph_target_tangents,
     morph_target_names: self.morph_target_names,
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: self.tangents,
@@ -689,6 +715,8 @@ pub fn Mesh3dGeometry::with_morph_targets(
   self : Mesh3dGeometry,
   morph_target_positions : Array[Array[@math.Vec3]]?,
   morph_target_names? : Array[String]? = None,
+  morph_target_normals? : Array[Array[@math.Vec3]]? = None,
+  morph_target_tangents? : Array[Array[@math.Vec3]]? = None,
 ) -> Mesh3dGeometry {
   Mesh3dGeometry::{
     positions: self.positions,
@@ -698,6 +726,8 @@ pub fn Mesh3dGeometry::with_morph_targets(
     joint_indices: self.joint_indices,
     joint_weights: self.joint_weights,
     morph_target_positions,
+    morph_target_normals,
+    morph_target_tangents,
     morph_target_names,
     custom_attributes_vec3: self.custom_attributes_vec3,
     tangents: self.tangents,
@@ -711,6 +741,20 @@ pub fn Mesh3dGeometry::morph_target_positions(
   self : Mesh3dGeometry,
 ) -> Array[Array[@math.Vec3]]? {
   self.morph_target_positions
+}
+
+///|
+pub fn Mesh3dGeometry::morph_target_normals(
+  self : Mesh3dGeometry,
+) -> Array[Array[@math.Vec3]]? {
+  self.morph_target_normals
+}
+
+///|
+pub fn Mesh3dGeometry::morph_target_tangents(
+  self : Mesh3dGeometry,
+) -> Array[Array[@math.Vec3]]? {
+  self.morph_target_tangents
 }
 
 ///|
@@ -747,6 +791,8 @@ pub fn Mesh3dGeometry::with_custom_attribute_vec3(
     joint_indices: self.joint_indices,
     joint_weights: self.joint_weights,
     morph_target_positions: self.morph_target_positions,
+    morph_target_normals: self.morph_target_normals,
+    morph_target_tangents: self.morph_target_tangents,
     morph_target_names: self.morph_target_names,
     custom_attributes_vec3: next,
     tangents: self.tangents,
@@ -876,6 +922,30 @@ pub fn Mesh3dGeometry::validate(
     }
   }
   if self.morph_target_positions is Some(morph_targets) {
+    for morph_target in morph_targets {
+      if morph_target.length() != vertex_count {
+        return Some(
+          Mesh3dValidationError::AttributeLengthMismatch(
+            vertex_count,
+            morph_target.length(),
+          ),
+        )
+      }
+    }
+  }
+  if self.morph_target_normals is Some(morph_targets) {
+    for morph_target in morph_targets {
+      if morph_target.length() != vertex_count {
+        return Some(
+          Mesh3dValidationError::AttributeLengthMismatch(
+            vertex_count,
+            morph_target.length(),
+          ),
+        )
+      }
+    }
+  }
+  if self.morph_target_tangents is Some(morph_targets) {
     for morph_target in morph_targets {
       if morph_target.length() != vertex_count {
         return Some(

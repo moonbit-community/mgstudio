@@ -243,6 +243,20 @@ struct Mesh3dShadowPipelineCacheEntry {
 }
 
 ///|
+struct Mesh3dMotionVectorPipelineCacheEntry {
+  topology : UInt
+  material_pipeline_id : UInt64
+  cull_mode : Int
+  skinned : Bool
+  has_previous_skin : Bool
+  morphed : Bool
+  has_previous_morph : Bool
+  mesh_bind_group_layout_descriptor : @render_resource.BindGroupLayoutDescriptor
+  mesh_bind_group_layout : @wgpu.BindGroupLayout
+  pipeline : @wgpu.RenderPipeline
+}
+
+///|
 fn mesh3d_shadow_pipeline_get(
   backend : GpuBackend,
   topology : UInt,
@@ -286,4 +300,38 @@ fn mesh3d_shadow_pipeline_set(
     directional_light,
     pipeline,
   })
+}
+
+///|
+fn mesh3d_motion_vector_pipeline_get(
+  backend : GpuBackend,
+  topology : UInt,
+  material_pipeline_id : UInt64,
+  cull_mode : Int,
+  skinned : Bool,
+  has_previous_skin : Bool,
+  morphed : Bool,
+  has_previous_morph : Bool,
+) -> Mesh3dMotionVectorPipelineCacheEntry? {
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  for entry in backend.mesh3d_motion_vector_pipeline_cache {
+    if entry.topology == topology &&
+      entry.material_pipeline_id == material_pipeline_id &&
+      entry.cull_mode == safe_cull_mode &&
+      entry.skinned == skinned &&
+      entry.has_previous_skin == has_previous_skin &&
+      entry.morphed == morphed &&
+      entry.has_previous_morph == has_previous_morph {
+      return Some(entry)
+    }
+  }
+  None
+}
+
+///|
+fn mesh3d_motion_vector_pipeline_set(
+  backend : GpuBackend,
+  entry : Mesh3dMotionVectorPipelineCacheEntry,
+) -> Unit {
+  backend.mesh3d_motion_vector_pipeline_cache.push(entry)
 }

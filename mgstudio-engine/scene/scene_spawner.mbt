@@ -635,7 +635,7 @@ fn scene_spawn_instance_when_ready(
         Some(geometry) => geometry.morph_target_positions() is Some(_)
         None => false
       }
-      let needs_instance_mesh = has_morph_targets
+      let needs_instance_mesh = false
       let effective_mesh = if needs_instance_mesh {
         match source_mesh {
           Some(mesh_asset) => {

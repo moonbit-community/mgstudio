@@ -112,10 +112,19 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   cull_mode : Int,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
+  morph_weights_index : Int,
+  previous_morph_weights_index : Int,
+  morph_target_texture_id : Int,
   material_pipeline_id : UInt64,
 ) -> Unit raise GpuBackendError {
   let material_path = mesh3d_shadow_material_path_from_flags(material_flags)
   let skinned = skinning_key_hi >= 0
+  let material_descriptor = mesh3d_material_pipeline_descriptor_find(
+    self, material_pipeline_id,
+  )
+  let material_layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+    self, material_pipeline_id, material_descriptor,
+  )
   let emulate_unclipped_depth = mesh3d_shadow_depth_should_emulate_unclipped_depth(
     self, directional_light,
   )
@@ -160,7 +169,14 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
       return
     }
     let required_size = next_used_int.to_uint64()
-    guard self.ensure_mesh3d_instance_draw_binding(required_size)
+    guard self.ensure_mesh3d_instance_draw_binding_with_layout(
+        material_pipeline_id,
+        material_layout_entry.draw_bind_group_layout,
+        material_layout_entry.draw_bind_group_layout_descriptor,
+        required_size,
+        -1,
+        morph_target_texture_id,
+      )
       is Some((instance_draw_buf, instance_draw_bg)) else {
       return
     }
@@ -174,7 +190,14 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     }
   } else {
     let mesh3d_draw_slot_index = self.mesh3d_draw_slot_used
-    guard self.ensure_mesh3d_draw_slot(mesh3d_draw_slot_index)
+    guard self.ensure_mesh3d_draw_slot_with_layout(
+        mesh3d_draw_slot_index,
+        material_pipeline_id,
+        material_layout_entry.draw_bind_group_layout,
+        material_layout_entry.draw_bind_group_layout_descriptor,
+        -1,
+        morph_target_texture_id,
+      )
       is Some(draw_slot) else {
       return
     }
@@ -304,7 +327,15 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, view_bg, [])
   pass.set_bind_group(1U, empty_bg, [])
-  pass.set_bind_group(2U, active_draw_bg, [])
+  pass.set_bind_group(
+    2U,
+    active_draw_bg,
+    mesh3d_draw_bind_group_dynamic_offsets(
+      material_layout_entry.draw_bind_group_layout_descriptor,
+      morph_weights_index,
+      previous_morph_weights_index,
+    ),
+  )
   pass.set_bind_group(3U, material_bg, [])
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
   render_diagnostics_record_mesh3d_executed_draw()

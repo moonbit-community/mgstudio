@@ -513,184 +513,133 @@ fn render3d_push_morph_weights_to_uniform_buffer(
 }
 
 ///|
-fn render3d_read_morph_weights_from_uniform_buffer(
-  uniform_weights : Array[Float],
-  byte_offset : UInt,
-) -> Array[Float] {
-  let start = (byte_offset / 4U).reinterpret_as_int()
-  let end = start + RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS
-  let clamped_end = if end < uniform_weights.length() {
-    end
-  } else {
-    uniform_weights.length()
-  }
-  let values : Array[Float] = []
-  if start >= clamped_end {
-    return values
-  }
-  for index in start..<clamped_end {
-    values.push(uniform_weights[index])
-  }
-  values
-}
+const RENDER3D_MORPH_TEXTURE_MAX_EDGE : Int = 2048
 
 ///|
-fn render3d_clone_mesh3d_geometry(
-  geometry : @mesh.Mesh3dGeometry,
-) -> @mesh.Mesh3dGeometry {
-  let positions : Array[@math.Vec3] = []
-  for position in geometry.positions {
-    positions.push(position)
-  }
-  let normals = match geometry.normals() {
-    Some(existing) => {
-      let next : Array[@math.Vec3] = []
-      for normal in existing {
-        next.push(normal)
-      }
-      Some(next)
-    }
-    None => None
-  }
-  let uvs = match geometry.uvs() {
-    Some(existing) => {
-      let next : Array[@math.Vec2] = []
-      for uv in existing {
-        next.push(uv)
-      }
-      Some(next)
-    }
-    None => None
-  }
-  let indices = match geometry.indices {
-    Some(existing) => {
-      let next : Array[Int] = []
-      for index in existing {
-        next.push(index)
-      }
-      Some(next)
-    }
-    None => None
-  }
-  let colors = match geometry.colors {
-    Some(existing) => {
-      let next : Array[@math.Vec4] = []
-      for color in existing {
-        next.push(color)
-      }
-      Some(next)
-    }
-    None => None
-  }
-  let mut cloned = @mesh.Mesh3dGeometry::new_with_positions_and_topology(
-      positions,
-      indices,
-      geometry.topology,
-    )
-    .with_normals(normals)
-    .with_uvs(uvs)
-    .with_colors(colors)
-  if geometry.joint_indices is Some(joint_indices) {
-    let copied_indices : Array[@mesh.MeshJointIndices] = []
-    for joint_index in joint_indices {
-      copied_indices.push(joint_index)
-    }
-    let copied_weights = match geometry.joint_weights {
-      Some(existing) => {
-        let next : Array[@math.Vec4] = []
-        for weight in existing {
-          next.push(weight)
-        }
-        Some(next)
-      }
-      None => None
-    }
-    cloned = cloned.with_joint_data(Some(copied_indices), copied_weights)
-  } else if geometry.joint_weights is Some(existing) {
-    let next : Array[@math.Vec4] = []
-    for weight in existing {
-      next.push(weight)
-    }
-    cloned = cloned.with_joint_data(None, Some(next))
-  }
-  if geometry.morph_target_positions is Some(morph_targets) {
-    let copied_targets : Array[Array[@math.Vec3]] = []
-    for morph_target in morph_targets {
-      let copied_positions : Array[@math.Vec3] = []
-      for position in morph_target {
-        copied_positions.push(position)
-      }
-      copied_targets.push(copied_positions)
-    }
-    let copied_names = match geometry.morph_target_names {
-      Some(existing) => {
-        let next : Array[String] = []
-        for name in existing {
-          next.push(name)
-        }
-        Some(next)
-      }
-      None => None
-    }
-    cloned = cloned.with_morph_targets(
-      Some(copied_targets),
-      morph_target_names=copied_names,
-    )
-  }
-  for attribute in geometry.custom_attributes_vec3 {
-    let values : Array[@math.Vec3] = []
-    for value in attribute.values() {
-      values.push(value)
-    }
-    cloned = cloned.with_inserted_attribute(
-      attribute.attribute(),
-      @mesh.VertexAttributeValues::Float32x3(values),
-    )
-  }
-  if geometry.tangents is Some(existing) {
-    let copied : Array[@math.Vec4] = []
-    for tangent in existing {
-      copied.push(tangent)
-    }
-    ignore(cloned.replace_tangents(Some(copied)))
-  }
-  cloned
-}
+const RENDER3D_MORPH_ATTRIBUTE_COMPONENTS : Int = 9
 
 ///|
-fn render3d_apply_morph_targets(
-  base_positions : Array[@math.Vec3],
-  morph_targets : Array[Array[@math.Vec3]],
-  weights : Array[Float],
-) -> Array[@math.Vec3] {
-  let positions : Array[@math.Vec3] = []
-  for position in base_positions {
-    positions.push(position)
+fn render3d_lowest_morph_texture_rect(min_includes : Int) -> (Int, Int, Int)? {
+  if min_includes <= 0 {
+    return Some((1, 1, 1))
   }
-  let limit = if morph_targets.length() < weights.length() {
-    morph_targets.length()
-  } else {
-    weights.length()
-  }
-  for morph_index in 0..<limit {
-    let weight = weights[morph_index]
-    if weight == 0.0F {
+  let mut best_width = 0
+  let mut best_height = 0
+  let mut best_padding = 0
+  for width in 1..<=RENDER3D_MORPH_TEXTURE_MAX_EDGE {
+    let height = (min_includes + width - 1) / width
+    if height > RENDER3D_MORPH_TEXTURE_MAX_EDGE {
       continue
     }
-    let morph_target = morph_targets[morph_index]
-    let vertex_limit = if morph_target.length() < positions.length() {
-      morph_target.length()
-    } else {
-      positions.length()
-    }
-    for vertex_index in 0..<vertex_limit {
-      positions[vertex_index] = @math.Vec3::add(
-        positions[vertex_index],
-        @math.Vec3::mul_scalar(morph_target[vertex_index], weight),
-      )
+    let padding = width * height - min_includes
+    if best_width == 0 || padding < best_padding {
+      best_width = width
+      best_height = height
+      best_padding = padding
+      if padding == 0 {
+        break
+      }
     }
   }
-  positions
+  if best_width == 0 {
+    None
+  } else {
+    Some((best_width, best_height, best_padding))
+  }
+}
+
+///|
+fn render3d_morph_target_texture_components(
+  geometry : @mesh.Mesh3dGeometry,
+) -> (Int, Int, Int, Array[Float])? {
+  guard geometry.morph_target_positions() is Some(morph_targets) else {
+    return None
+  }
+  if morph_targets.length() == 0 ||
+    morph_targets.length() > @pbr_render.RENDER3D_MAX_MORPH_WEIGHTS {
+    return None
+  }
+  let vertex_count = geometry.positions.length()
+  let component_count = vertex_count * RENDER3D_MORPH_ATTRIBUTE_COMPONENTS
+  guard render3d_lowest_morph_texture_rect(component_count)
+    is Some((width, height, padding)) else {
+    return None
+  }
+  let morph_target_normals = geometry.morph_target_normals()
+  let morph_target_tangents = geometry.morph_target_tangents()
+  let components : Array[Float] = []
+  for target_index, morph_target in morph_targets {
+    for vertex_index in 0..<vertex_count {
+      let position = if vertex_index < morph_target.length() {
+        morph_target[vertex_index]
+      } else {
+        @math.Vec3::zero()
+      }
+      let normal = match morph_target_normals {
+        Some(normals) if target_index < normals.length() &&
+          vertex_index < normals[target_index].length() =>
+          normals[target_index][vertex_index]
+        _ => @math.Vec3::zero()
+      }
+      let tangent = match morph_target_tangents {
+        Some(tangents) if target_index < tangents.length() &&
+          vertex_index < tangents[target_index].length() =>
+          tangents[target_index][vertex_index]
+        _ => @math.Vec3::zero()
+      }
+      components.push(position.x)
+      components.push(position.y)
+      components.push(position.z)
+      components.push(normal.x)
+      components.push(normal.y)
+      components.push(normal.z)
+      components.push(tangent.x)
+      components.push(tangent.y)
+      components.push(tangent.z)
+    }
+    for _ in 0..<padding {
+      components.push(0.0F)
+    }
+  }
+  Some((width, height, morph_targets.length(), components))
+}
+
+///|
+fn render3d_morph_target_texture_id(
+  mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  source_mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> Int {
+  let mesh_handle_id = source_mesh_handle.id()
+  if mesh_handle_id < 0 {
+    return -1
+  }
+  match
+    mesh_runtime_state_ref.val.morph_target_texture_cache.get(mesh_handle_id) {
+    Some(texture_id) if texture_id > 0 => texture_id
+    _ => {
+      guard @sprite.render_mesh_asset_get(source_mesh_handle)
+        is Some(source_mesh) else {
+        return -1
+      }
+      guard source_mesh.as_3d_geometry() is Some(geometry) else { return -1 }
+      guard render3d_morph_target_texture_components(geometry)
+        is Some((width, height, depth, components)) else {
+        return -1
+      }
+      let texture_id = @render.host_gpu_create_mesh3d_morph_target_texture(
+        width~,
+        height~,
+        depth~,
+        components~,
+      )
+      if texture_id > 0 {
+        mesh_runtime_state_ref.val.morph_target_texture_cache.set(
+          mesh_handle_id, texture_id,
+        )
+      }
+      texture_id
+    }
+  }
 }
 
 ///|
@@ -742,51 +691,11 @@ pub fn render3d_prepare_morphs(
   morph_indices_ref : Ref[@pbr_render.MorphIndices],
   morph_uniforms_ref : Ref[@pbr_render.MorphUniforms],
 ) -> Unit {
-  let mesh_query : @ecs.Query[
-    (@core.Entity, @ecs.Comp[@mesh.Mesh3d], @ecs.Comp[@mesh.MorphTargetMesh]),
-    @ecs.All,
-  ] = @ecs.query(source_world)
-  let mesh_assets_ref = mesh_assets_mut_or_abort()
-
-  try! mesh_query.view(fn(_entity, data) {
-    let (entity, mesh_component, morph_target_mesh_component) = data
-    let entity_key = render3d_morph_entity_key(entity)
-    let morph_weights_offset = match
-      morph_indices_ref.val.current.get(entity_key) {
-      Some(offset) => offset
-      None => return
-    }
-    let source_mesh_handle = morph_target_mesh_component.value().source_mesh()
-    let instance_mesh_handle = mesh_component.value().mesh()
-    let source_mesh = match mesh_assets_ref.val.get(source_mesh_handle) {
-      Some(value) => value
-      None => return
-    }
-    let source_geometry = match source_mesh.as_3d_geometry() {
-      Some(value) => value
-      None => return
-    }
-
-    let active_morph_weights = render3d_read_morph_weights_from_uniform_buffer(
-      morph_uniforms_ref.val.current_buffer,
-      morph_weights_offset,
-    )
-
-    let mut positions = source_geometry.positions
-    if source_geometry.morph_target_positions() is Some(morph_targets) &&
-      active_morph_weights.length() > 0 {
-      positions = render3d_apply_morph_targets(
-        positions, morph_targets, active_morph_weights,
-      )
-    }
-
-    let updated_geometry = render3d_clone_mesh3d_geometry(source_geometry)
-    guard updated_geometry.replace_positions(positions) else { return }
-    guard source_mesh.with_3d_geometry(updated_geometry) is Some(updated_mesh) else {
-      return
-    }
-    ignore(mesh_assets_ref.val.set(instance_mesh_handle, updated_mesh))
-  })
+  source_world |> ignore
+  morph_indices_ref |> ignore
+  @render.host_gpu_prepare_mesh3d_morph_bindings(
+    morph_weights=morph_uniforms_ref.val.current_buffer,
+  )
 }
 
 ///|

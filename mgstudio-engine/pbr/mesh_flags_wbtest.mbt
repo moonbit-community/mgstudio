@@ -239,6 +239,9 @@ fn render3d_test_extracted_mesh_for_flags(
       wireframe_color: None,
       skinning_key_hi: -1,
       has_previous_skin: false,
+      morph_weights_index: -1,
+      previous_morph_weights_index: -1,
+      morph_targets_texture_id: -1,
       motion_vector_enabled: false,
     },
   }
@@ -296,6 +299,9 @@ fn render3d_test_transparent_mesh_for_queue(
       wireframe_color: None,
       skinning_key_hi: -1,
       has_previous_skin: false,
+      morph_weights_index: -1,
+      previous_morph_weights_index: -1,
+      morph_targets_texture_id: -1,
       motion_vector_enabled: false,
     },
   }
@@ -376,6 +382,9 @@ test "render3d: transmissive materials use a distinct sorted phase" {
       wireframe_color: None,
       skinning_key_hi: -1,
       has_previous_skin: false,
+      morph_weights_index: -1,
+      previous_morph_weights_index: -1,
+      morph_targets_texture_id: -1,
       motion_vector_enabled: false,
     },
   }

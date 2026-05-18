@@ -162,6 +162,9 @@ priv struct Mesh3dExtractedPayload {
   wireframe_color : WireframeColor?
   skinning_key_hi : Int
   has_previous_skin : Bool
+  morph_weights_index : Int
+  previous_morph_weights_index : Int
+  morph_targets_texture_id : Int
   motion_vector_enabled : Bool
 }
 

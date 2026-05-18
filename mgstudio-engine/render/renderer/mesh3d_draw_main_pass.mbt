@@ -96,6 +96,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   fragment_shader_path : String?,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
+  morph_weights_index : Int,
+  previous_morph_weights_index : Int,
+  morph_targets_texture_id : Int,
   material_pipeline_id : UInt64,
   transparent : Bool,
 ) -> Unit raise GpuBackendError {
@@ -170,6 +173,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
         material_layout_entry.draw_bind_group_layout_descriptor,
         required_size,
         lightmap_texture_id,
+        morph_targets_texture_id,
       )
       is Some((instance_draw_buf, instance_draw_bg)) else {
       return
@@ -190,6 +194,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
         material_layout_entry.draw_bind_group_layout,
         material_layout_entry.draw_bind_group_layout_descriptor,
         lightmap_texture_id,
+        morph_targets_texture_id,
       )
       is Some(draw_slot) else {
       return
@@ -488,7 +493,15 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     mesh3d_descriptor_bind_group_dynamic_offsets(material_descriptor, 0),
   )
   pass.set_bind_group(1U, binding_arrays_bg, [])
-  pass.set_bind_group(2U, active_draw_bg, [])
+  pass.set_bind_group(
+    2U,
+    active_draw_bg,
+    mesh3d_draw_bind_group_dynamic_offsets(
+      material_layout_entry.draw_bind_group_layout_descriptor,
+      morph_weights_index,
+      previous_morph_weights_index,
+    ),
+  )
   pass.set_bind_group(3U, material_bg, [])
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
   render_diagnostics_record_mesh3d_executed_draw()

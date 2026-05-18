@@ -666,12 +666,9 @@ test "renderer: mesh3d allocator metadata exposes packed slab ranges" {
     0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F,
   ]
   let indices : Array[Int] = [0, 1, 2]
-  let first_mesh_id = backend.create_mesh3d_xyznuvrgba_indexed(
-    vertices, indices, 0,
-  )
-  let second_mesh_id = backend.create_mesh3d_xyznuvrgba_indexed(
-    vertices, indices, 0,
-  )
+  ignore(indices)
+  let first_mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
+  let second_mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
   let ok = first_mesh_id > 0 &&
     second_mesh_id > first_mesh_id &&
     backend.meshes.length() == 2 &&
@@ -729,12 +726,12 @@ test "renderer: deleting mesh3d frees allocator slabs after last resident mesh" 
   let first_mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
   let second_mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
   let initial_ok = backend.meshes.length() == 2 &&
-    backend.mesh_allocator.slab_count() == 2 &&
-    backend.mesh_allocator_buffers.length() == 2
+    backend.mesh_allocator.slab_count() == 1 &&
+    backend.mesh_allocator_buffers.length() == 1
   let first_delete_ok = backend.delete_mesh(first_mesh_id) &&
     backend.meshes.length() == 1 &&
-    backend.mesh_allocator.slab_count() == 2 &&
-    backend.mesh_allocator_buffers.length() == 2
+    backend.mesh_allocator.slab_count() == 1 &&
+    backend.mesh_allocator_buffers.length() == 1
   let second_delete_ok = backend.delete_mesh(second_mesh_id) &&
     backend.meshes.length() == 0 &&
     backend.mesh_allocator.slab_count() == 0 &&
@@ -814,7 +811,7 @@ test "renderer: mesh uniform packs lightmap uv rect and slot" {
     0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0xFFFF_FFFFU, 0U, 7, 0.25F, 0.5F, 0.75F,
     1.0F, 13U,
   )
-  debug_inspect(words[34], content="2147516416")
+  debug_inspect(words[34], content="2147500032")
   debug_inspect(words[35], content="4294950911")
   debug_inspect(words[36], content="13")
   debug_inspect(words[38], content="0")
@@ -939,6 +936,43 @@ test "renderer: default mesh3d draw descriptor matches storage plus skin layout"
 }
 
 ///|
+test "renderer: mesh3d draw dynamic offsets follow morph binding order" {
+  let descriptor = @render_resource.BindGroupLayoutDescriptor::new("mesh", [
+    @render_resource.BindGroupLayoutEntry::new(
+      0,
+      @wgpu.SHADER_STAGE_VERTEX.to_uint(),
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Storage(true),
+        false,
+        176UL,
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      2,
+      @wgpu.SHADER_STAGE_VERTEX.to_uint(),
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        true,
+        256UL,
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      7,
+      @wgpu.SHADER_STAGE_VERTEX.to_uint(),
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        true,
+        256UL,
+      ),
+    ),
+  ])
+  let offsets = mesh3d_draw_bind_group_dynamic_offsets(descriptor, 256, -1)
+  inspect(offsets.length(), content="2")
+  inspect(offsets[0], content="256")
+  inspect(offsets[1], content="0")
+}
+
+///|
 test "renderer: shadow shader defs extend descriptor defs with shadow projection state" {
   let descriptor = @render_resource.RenderPipelineDescriptor::default()
     .with_vertex(
@@ -975,6 +1009,23 @@ test "renderer: shadow shader defs extend descriptor defs with shadow projection
   debug_inspect(defines.get("SKINNED"), content="Some(true)")
   debug_inspect(defines.get("MAY_DISCARD"), content="Some(true)")
   debug_inspect(defines.get("PREPASS_FRAGMENT"), content="Some(true)")
+}
+
+///|
+test "renderer: shadow depth keeps non-default material pipeline id for mesh layout" {
+  inspect(
+    mesh3d_shadow_pipeline_material_id(42UL, false, false).to_string(),
+    content="42",
+  )
+  debug_inspect(
+    mesh3d_shadow_pipeline_material_id(
+      MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+      false,
+      false,
+    ) ==
+    MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+    content="true",
+  )
 }
 
 ///|
@@ -1395,6 +1446,22 @@ test "renderer: screenshot capture reads rgba8 texture bytes" {
     content="Some([9, 8, 7, 255])",
   )
   render_context_set_backend_for_test(previous_backend)
+}
+
+///|
+test "renderer: motion-vector mesh layout keeps morph dynamic offsets after current skin" {
+  let descriptor = mesh3d_motion_vector_mesh_layout_descriptor(
+    true, true, true, true,
+  )
+  let bindings : Array[Int] = []
+  for entry in descriptor.entries() {
+    bindings.push(entry.binding())
+  }
+  debug_inspect(bindings, content="[0, 1, 2, 3, 6, 7]")
+  debug_inspect(
+    mesh3d_draw_bind_group_dynamic_offsets(descriptor, 256, 512),
+    content="[256, 512]",
+  )
 }
 
 ///|

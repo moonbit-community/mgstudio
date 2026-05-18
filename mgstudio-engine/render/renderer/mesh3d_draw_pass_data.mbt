@@ -971,6 +971,8 @@ fn load_wgsl_required_mesh3d_motion_vector_prepass(
   assets_base : String,
   skinned : Bool,
   has_previous_skin : Bool,
+  morphed : Bool,
+  has_previous_morph : Bool,
 ) -> String raise GpuBackendError {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
   defines.set("PREPASS_FRAGMENT", true)
@@ -979,6 +981,12 @@ fn load_wgsl_required_mesh3d_motion_vector_prepass(
     defines.set("SKINNED", true)
     if has_previous_skin {
       defines.set("HAS_PREVIOUS_SKIN", true)
+    }
+  }
+  if morphed {
+    defines.set("MORPH_TARGETS", true)
+    if has_previous_morph {
+      defines.set("HAS_PREVIOUS_MORPH", true)
     }
   }
   let value_defines = default_wgsl_value_defines()
@@ -1190,24 +1198,198 @@ fn mesh3d_motion_vector_skin_buffers(
 }
 
 ///|
+fn mesh3d_motion_vector_mesh_layout_descriptor(
+  skinned : Bool,
+  has_previous_skin : Bool,
+  morphed : Bool,
+  has_previous_morph : Bool,
+) -> @render_resource.BindGroupLayoutDescriptor {
+  let stage = @wgpu.SHADER_STAGE_VERTEX.to_uint()
+  let entries : Array[@render_resource.BindGroupLayoutEntry] = [
+    @render_resource.BindGroupLayoutEntry::new(
+      0,
+      stage,
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Storage(true),
+        false,
+        MESH3D_PREPASS_MESH_BUFFER_SIZE,
+      ),
+    ),
+  ]
+  if skinned {
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        1,
+        stage,
+        @render_resource.BindingType::BufferBinding(
+          @render_resource.BufferBindingType::Storage(true),
+          false,
+          MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+        ),
+      ),
+    )
+  }
+  if morphed {
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        2,
+        stage,
+        @render_resource.BindingType::BufferBinding(
+          @render_resource.BufferBindingType::Uniform,
+          true,
+          MESH3D_MORPH_WEIGHT_STRIDE_BYTES,
+        ),
+      ),
+    )
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        3,
+        stage,
+        @render_resource.BindingType::TextureBinding(
+          @render_resource.TextureSampleType::Float(false),
+          @render_resource.TextureViewDimension::D3,
+          false,
+        ),
+      ),
+    )
+  }
+  if skinned && has_previous_skin {
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        6,
+        stage,
+        @render_resource.BindingType::BufferBinding(
+          @render_resource.BufferBindingType::Storage(true),
+          false,
+          MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+        ),
+      ),
+    )
+  }
+  if morphed && has_previous_morph {
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        7,
+        stage,
+        @render_resource.BindingType::BufferBinding(
+          @render_resource.BufferBindingType::Uniform,
+          true,
+          MESH3D_MORPH_WEIGHT_STRIDE_BYTES,
+        ),
+      ),
+    )
+  }
+  @render_resource.BindGroupLayoutDescriptor::new(
+    "motion_vector_mesh_layout", entries,
+  )
+}
+
+///|
+fn mesh3d_motion_vector_mesh_layout_mask(
+  skinned : Bool,
+  has_previous_skin : Bool,
+  morphed : Bool,
+  has_previous_morph : Bool,
+) -> Int {
+  let mut mask = 0
+  if skinned {
+    mask = mask | 1
+  }
+  if has_previous_skin {
+    mask = mask | 2
+  }
+  if morphed {
+    mask = mask | 4
+  }
+  if has_previous_morph {
+    mask = mask | 8
+  }
+  mask
+}
+
+///|
 fn create_mesh3d_motion_vector_mesh_bind_group(
   backend : GpuBackend,
   bgl : @wgpu.BindGroupLayout,
+  layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
   mesh_buf : @wgpu.Buffer,
   mesh_buf_size : UInt64,
+  morph_target_texture_id : Int,
   label : String,
 ) -> @wgpu.BindGroup? {
-  guard mesh3d_motion_vector_skin_buffers(backend)
-    is Some((current_skin_buf, prev_skin_buf)) else {
-    return None
-  }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
-  let ok = builder.add_buffer(0U, mesh_buf, size=mesh_buf_size) &&
-    builder.add_buffer(1U, current_skin_buf, size=backend.mesh3d_skin_capacity) &&
-    builder.add_buffer(6U, prev_skin_buf, size=backend.mesh3d_skin_capacity)
-  if !ok {
-    builder.free()
-    return None
+  let entries = layout_descriptor.entries()
+  let builder = @wgpu.BindGroupBuilder::new(
+    max_entries=entries.length().to_uint64(),
+  )
+  for entry in entries {
+    let ok = match entry.binding() {
+      0 => builder.add_buffer(0U, mesh_buf, size=mesh_buf_size)
+      1 => {
+        guard mesh3d_motion_vector_skin_buffers(backend)
+          is Some((current_skin_buf, _)) else {
+          false
+        }
+        builder.add_buffer(
+          1U,
+          current_skin_buf,
+          size=backend.mesh3d_skin_capacity,
+        )
+      }
+      2 => {
+        guard ensure_mesh3d_morph_buffers(
+          backend,
+          MESH3D_MORPH_WEIGHT_STRIDE_BYTES,
+        ) else {
+          false
+        }
+        guard backend.mesh3d_morph_current_buf is Some(current_morph_buf) else {
+          false
+        }
+        builder.add_buffer(
+          2U,
+          current_morph_buf,
+          size=backend.mesh3d_morph_capacity,
+        )
+      }
+      3 => {
+        guard morph_target_texture_id >= 0 else { false }
+        guard (resolve_mesh3d_texture(backend, morph_target_texture_id) catch {
+            _ => None
+          })
+          is Some(morph_target_texture) else {
+          false
+        }
+        builder.add_texture_view(3U, morph_target_texture.view)
+      }
+      6 => {
+        guard mesh3d_motion_vector_skin_buffers(backend)
+          is Some((_, prev_skin_buf)) else {
+          false
+        }
+        builder.add_buffer(6U, prev_skin_buf, size=backend.mesh3d_skin_capacity)
+      }
+      7 => {
+        guard ensure_mesh3d_morph_buffers(
+          backend,
+          MESH3D_MORPH_WEIGHT_STRIDE_BYTES,
+        ) else {
+          false
+        }
+        guard backend.mesh3d_morph_prev_buf is Some(prev_morph_buf) else {
+          false
+        }
+        builder.add_buffer(
+          7U,
+          prev_morph_buf,
+          size=backend.mesh3d_morph_capacity,
+        )
+      }
+      _ => false
+    }
+    if !ok {
+      builder.free()
+      return None
+    }
   }
   Some(builder.finish(backend.device, bgl, label~))
 }
@@ -1216,8 +1398,11 @@ fn create_mesh3d_motion_vector_mesh_bind_group(
 fn ensure_mesh3d_motion_vector_mesh_slot(
   backend : GpuBackend,
   slot_index : Int,
+  bgl : @wgpu.BindGroupLayout,
+  layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
+  layout_mask : Int,
+  morph_target_texture_id : Int,
 ) -> GpuStorageSlot? {
-  guard backend.mesh3d_motion_vector_bgl_mesh is Some(bgl) else { return None }
   let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
   while backend.mesh3d_motion_vector_mesh_slots.length() <= slot_index {
     let mesh_buf = backend.device.create_buffer(
@@ -1227,8 +1412,10 @@ fn ensure_mesh3d_motion_vector_mesh_slot(
     guard create_mesh3d_motion_vector_mesh_bind_group(
         backend,
         bgl,
+        layout_descriptor,
         mesh_buf,
         MESH3D_PREPASS_MESH_BUFFER_SIZE,
+        morph_target_texture_id,
         "mgstudio_motion_vector_mesh_slot_bg",
       )
       is Some(mesh_bg) else {
@@ -1241,15 +1428,38 @@ fn ensure_mesh3d_motion_vector_mesh_slot(
     backend.mesh3d_motion_vector_mesh_slot_skin_revisions.push(
       backend.mesh3d_skin_revision,
     )
+    backend.mesh3d_motion_vector_mesh_slot_morph_revisions.push(
+      mesh3d_draw_layout_morph_revision(backend, layout_descriptor),
+    )
+    backend.mesh3d_motion_vector_mesh_slot_morph_target_texture_ids.push(
+      mesh3d_draw_layout_morph_target_texture_id(
+        layout_descriptor, morph_target_texture_id,
+      ),
+    )
+    backend.mesh3d_motion_vector_mesh_slot_layout_masks.push(layout_mask)
   }
+  let morph_revision = mesh3d_draw_layout_morph_revision(
+    backend, layout_descriptor,
+  )
+  let resolved_morph_target_texture_id = mesh3d_draw_layout_morph_target_texture_id(
+    layout_descriptor, morph_target_texture_id,
+  )
   if backend.mesh3d_motion_vector_mesh_slot_skin_revisions[slot_index] !=
-    backend.mesh3d_skin_revision {
+    backend.mesh3d_skin_revision ||
+    backend.mesh3d_motion_vector_mesh_slot_morph_revisions[slot_index] !=
+    morph_revision ||
+    backend.mesh3d_motion_vector_mesh_slot_morph_target_texture_ids[slot_index] !=
+    resolved_morph_target_texture_id ||
+    backend.mesh3d_motion_vector_mesh_slot_layout_masks[slot_index] !=
+    layout_mask {
     let mesh_buf = backend.mesh3d_motion_vector_mesh_slots[slot_index].buffer
     guard create_mesh3d_motion_vector_mesh_bind_group(
         backend,
         bgl,
+        layout_descriptor,
         mesh_buf,
         MESH3D_PREPASS_MESH_BUFFER_SIZE,
+        morph_target_texture_id,
         "mgstudio_motion_vector_mesh_slot_bg",
       )
       is Some(mesh_bg) else {
@@ -1260,6 +1470,9 @@ fn ensure_mesh3d_motion_vector_mesh_slot(
       bind_group: mesh_bg,
     }
     backend.mesh3d_motion_vector_mesh_slot_skin_revisions[slot_index] = backend.mesh3d_skin_revision
+    backend.mesh3d_motion_vector_mesh_slot_morph_revisions[slot_index] = morph_revision
+    backend.mesh3d_motion_vector_mesh_slot_morph_target_texture_ids[slot_index] = resolved_morph_target_texture_id
+    backend.mesh3d_motion_vector_mesh_slot_layout_masks[slot_index] = layout_mask
   }
   Some(backend.mesh3d_motion_vector_mesh_slots[slot_index])
 }
@@ -1267,17 +1480,27 @@ fn ensure_mesh3d_motion_vector_mesh_slot(
 ///|
 fn ensure_mesh3d_motion_vector_instance_mesh_binding(
   backend : GpuBackend,
+  bgl : @wgpu.BindGroupLayout,
+  layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
+  layout_mask : Int,
   required_size : UInt64,
+  morph_target_texture_id : Int,
 ) -> (@wgpu.Buffer, @wgpu.BindGroup)? {
-  guard backend.mesh3d_motion_vector_bgl_mesh is Some(bgl) else { return None }
-  if !ensure_mesh3d_skin_buffers(backend, MESH3D_SKINNING_STORAGE_STRIDE_BYTES) {
-    return None
-  }
+  let morph_revision = mesh3d_draw_layout_morph_revision(
+    backend, layout_descriptor,
+  )
+  let resolved_morph_target_texture_id = mesh3d_draw_layout_morph_target_texture_id(
+    layout_descriptor, morph_target_texture_id,
+  )
   if backend.mesh3d_motion_vector_instance_mesh_buf is Some(mesh_buf) &&
     backend.mesh3d_motion_vector_instance_mesh_bg is Some(mesh_bg) &&
     backend.mesh3d_motion_vector_instance_mesh_capacity >= required_size &&
     backend.mesh3d_motion_vector_instance_mesh_skin_revision ==
-    backend.mesh3d_skin_revision {
+    backend.mesh3d_skin_revision &&
+    backend.mesh3d_motion_vector_instance_mesh_morph_revision == morph_revision &&
+    backend.mesh3d_motion_vector_instance_mesh_morph_target_texture_id ==
+    resolved_morph_target_texture_id &&
+    backend.mesh3d_motion_vector_instance_mesh_layout_mask == layout_mask {
     return Some((mesh_buf, mesh_bg))
   }
   let mesh_buf = if backend.mesh3d_motion_vector_instance_mesh_buf
@@ -1301,8 +1524,10 @@ fn ensure_mesh3d_motion_vector_instance_mesh_binding(
   guard create_mesh3d_motion_vector_mesh_bind_group(
       backend,
       bgl,
+      layout_descriptor,
       mesh_buf,
       backend.mesh3d_motion_vector_instance_mesh_capacity,
+      morph_target_texture_id,
       "mgstudio_motion_vector_instance_mesh_bg",
     )
     is Some(mesh_bg) else {
@@ -1311,6 +1536,9 @@ fn ensure_mesh3d_motion_vector_instance_mesh_binding(
   backend.mesh3d_motion_vector_instance_mesh_buf = Some(mesh_buf)
   backend.mesh3d_motion_vector_instance_mesh_bg = Some(mesh_bg)
   backend.mesh3d_motion_vector_instance_mesh_skin_revision = backend.mesh3d_skin_revision
+  backend.mesh3d_motion_vector_instance_mesh_morph_revision = morph_revision
+  backend.mesh3d_motion_vector_instance_mesh_morph_target_texture_id = resolved_morph_target_texture_id
+  backend.mesh3d_motion_vector_instance_mesh_layout_mask = layout_mask
   Some((mesh_buf, mesh_bg))
 }
 

@@ -115,6 +115,9 @@ pub fn GpuBackend::draw_mesh3d(
   fragment_shader_path : String?,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
+  morph_weights_index? : Int = -1,
+  previous_morph_weights_index? : Int = -1,
+  morph_targets_texture_id? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
@@ -164,7 +167,16 @@ pub fn GpuBackend::draw_mesh3d(
       rotation_z, rotation_w, scale_x, scale_y, scale_z, previous_x, previous_y,
       previous_z, previous_rotation_x, previous_rotation_y, previous_rotation_z,
       previous_rotation_w, previous_scale_x, previous_scale_y, previous_scale_z,
-      skinning_key_hi, skinning_key_lo, transparent,
+      skinning_key_hi, skinning_key_lo, morph_weights_index, previous_morph_weights_index,
+      morph_targets_texture_id, color_r, color_g, color_b, color_a, texture_id, uv_transform_a,
+      uv_transform_b, uv_transform_c, uv_transform_d, uv_transform_tx, uv_transform_ty,
+      emissive_r, emissive_g, emissive_b, emissive_exposure_weight, metallic, roughness,
+      reflectance, attenuation_color_r, attenuation_color_g, attenuation_color_b,
+      attenuation_distance, clearcoat, clearcoat_perceptual_roughness, parallax_depth_scale,
+      max_parallax_layer_count, max_relief_mapping_search_steps, anisotropy_strength,
+      anisotropy_rotation, specular_tint_r, specular_tint_g, specular_tint_b, diffuse_transmission,
+      specular_transmission, thickness, ior, alpha_cutoff, material_flags, lightmap_exposure,
+      deferred_lighting_pass_id, cull_mode, material_pipeline_id, transparent,
     )
     return
   }
@@ -237,6 +249,9 @@ pub fn GpuBackend::draw_mesh3d(
       cull_mode,
       skinning_key_hi,
       skinning_key_lo,
+      morph_weights_index,
+      previous_morph_weights_index,
+      morph_targets_texture_id,
       material_pipeline_id,
     )
     return
@@ -258,6 +273,7 @@ pub fn GpuBackend::draw_mesh3d(
     lightmap_texture_id, lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x,
     lightmap_uv_max_y, deferred_lighting_pass_id, point_shadow_enabled, point_shadow_depth_bias,
     mesh_flags, cull_mode, vertex_shader_path, fragment_shader_path, skinning_key_hi,
-    skinning_key_lo, material_pipeline_id, transparent,
+    skinning_key_lo, morph_weights_index, previous_morph_weights_index, morph_targets_texture_id,
+    material_pipeline_id, transparent,
   )
 }

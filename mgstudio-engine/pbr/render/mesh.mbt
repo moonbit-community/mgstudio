@@ -17,6 +17,7 @@
 ///|
 pub struct Render3dMeshRuntimeState {
   mesh_upload_cache : Map[Int, Int]
+  morph_target_texture_cache : Map[Int, Int]
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
   mesh_vertex_buffer_layouts : @mesh.MeshVertexBufferLayouts
   specialized_material_pipelines : @material.SpecializedMeshPipelines
@@ -27,6 +28,7 @@ pub struct Render3dMeshRuntimeState {
 pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
   Render3dMeshRuntimeState::{
     mesh_upload_cache: {},
+    morph_target_texture_cache: {},
     mesh_preprocess_static_cache: {},
     mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::default(),
     specialized_material_pipelines: @material.SpecializedMeshPipelines::new(),
@@ -149,6 +151,16 @@ pub fn render3d_sweep_mesh_runtime_caches(
   for mesh_handle_id in stale_upload_cache_keys {
     mesh_runtime_state_ref.val.mesh_upload_cache.remove(mesh_handle_id)
   }
+  let stale_morph_target_texture_keys : Array[Int] = []
+  for entry in mesh_runtime_state_ref.val.morph_target_texture_cache.iter() {
+    let (mesh_handle_id, _texture_id) = entry
+    if !render3d_mesh_handle_alive(mesh_handle_id) {
+      stale_morph_target_texture_keys.push(mesh_handle_id)
+    }
+  }
+  for mesh_handle_id in stale_morph_target_texture_keys {
+    mesh_runtime_state_ref.val.morph_target_texture_cache.remove(mesh_handle_id)
+  }
   let stale_preprocess_cache_keys : Array[Int] = []
   for entry in mesh_runtime_state_ref.val.mesh_preprocess_static_cache.iter() {
     let (mesh_handle_id, _metadata) = entry
@@ -232,6 +244,9 @@ pub(all) struct MeshGpuDrawPayload3d {
   material_pipeline_id : @material.CachedRenderPipelineId?
   skinning_key_hi : Int
   skinning_key_lo : Int
+  morph_weights_index : Int
+  previous_morph_weights_index : Int
+  morph_targets_texture_id : Int
 }
 
 ///|
@@ -284,6 +299,9 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   material_pipeline_id? : @material.CachedRenderPipelineId? = None,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
+  morph_weights_index? : Int = -1,
+  previous_morph_weights_index? : Int = -1,
+  morph_targets_texture_id? : Int = -1,
   lightmap_texture_id? : Int = -1,
   lightmap_uv_min_x? : Float = 0.0F,
   lightmap_uv_min_y? : Float = 0.0F,
@@ -370,6 +388,9 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     material_pipeline_id,
     skinning_key_hi,
     skinning_key_lo,
+    morph_weights_index,
+    previous_morph_weights_index,
+    morph_targets_texture_id,
   }
 }
 
@@ -447,6 +468,9 @@ pub fn render3d_host_main_pass_draw_entry(
     point_shadow_depth_bias=payload.point_shadow_depth_bias,
     mesh_flags=payload.mesh_flags,
     skinning_key_hi=payload.skinning_key_hi,
+    morph_weights_index=payload.morph_weights_index,
+    previous_morph_weights_index=payload.previous_morph_weights_index,
+    morph_targets_texture_id=payload.morph_targets_texture_id,
   )
 }
 
@@ -555,5 +579,8 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     fragment_shader_path=payload.fragment_shader_path,
     skinning_key_hi=payload.skinning_key_hi,
     skinning_key_lo=payload.skinning_key_lo,
+    morph_weights_index=payload.morph_weights_index,
+    previous_morph_weights_index=payload.previous_morph_weights_index,
+    morph_targets_texture_id=payload.morph_targets_texture_id,
   )
 }

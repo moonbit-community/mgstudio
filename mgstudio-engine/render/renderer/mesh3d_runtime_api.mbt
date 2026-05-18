@@ -58,6 +58,30 @@ pub fn prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit {
 }
 
 ///|
+pub fn prepare_mesh3d_morph_bindings(morph_weights~ : Array[Float]) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_mesh3d_morph_bindings(morph_weights)
+  }
+}
+
+///|
+pub fn create_mesh3d_morph_target_texture(
+  width~ : Int,
+  height~ : Int,
+  depth~ : Int,
+  components~ : Array[Float],
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    return backend.create_mesh3d_morph_target_texture(
+      width, height, depth, components,
+    ) catch {
+      _ => -1
+    }
+  }
+  -1
+}
+
+///|
 pub fn GpuBackend::prepare_mesh3d_cluster_buffers(
   self : GpuBackend,
   clustered_lights_bytes : Bytes,
@@ -169,6 +193,9 @@ pub struct HostMesh3dMainPassDrawEntry {
   point_shadow_depth_bias : Float
   mesh_flags : UInt
   skinning_key_hi : Int
+  morph_weights_index : Int
+  previous_morph_weights_index : Int
+  morph_targets_texture_id : Int
 }
 
 ///|
@@ -242,6 +269,9 @@ pub fn host_mesh3d_main_pass_draw_entry(
   point_shadow_depth_bias~ : Float,
   mesh_flags~ : UInt,
   skinning_key_hi~ : Int,
+  morph_weights_index? : Int = -1,
+  previous_morph_weights_index? : Int = -1,
+  morph_targets_texture_id? : Int = -1,
 ) -> HostMesh3dMainPassDrawEntry {
   HostMesh3dMainPassDrawEntry::{
     draw_storage_index,
@@ -313,6 +343,9 @@ pub fn host_mesh3d_main_pass_draw_entry(
     point_shadow_depth_bias,
     mesh_flags,
     skinning_key_hi,
+    morph_weights_index,
+    previous_morph_weights_index,
+    morph_targets_texture_id,
   }
 }
 
@@ -994,6 +1027,9 @@ pub fn draw_mesh3d(
   fragment_shader_path? : String? = None,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
+  morph_weights_index? : Int = -1,
+  previous_morph_weights_index? : Int = -1,
+  morph_targets_texture_id? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
 ) -> Unit {
   render_diagnostics_record_mesh3d_draw(mesh_id)
@@ -1099,6 +1135,9 @@ pub fn draw_mesh3d(
       fragment_shader_path,
       skinning_key_hi,
       skinning_key_lo,
+      morph_weights_index~,
+      previous_morph_weights_index~,
+      morph_targets_texture_id~,
       skinning_matrices~,
     ) catch {
       err => debug_runtime_error("draw_mesh3d", err)

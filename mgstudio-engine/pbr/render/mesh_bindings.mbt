@@ -233,3 +233,327 @@ pub fn MeshLayouts3d::select(
     (false, false, false, _) => self.model_only
   }
 }
+
+///|
+pub struct RenderMeshBindingInput3d {
+  mesh_asset_id : Int
+  skinned : Bool
+  morph_targets : Bool
+}
+
+///|
+pub fn RenderMeshBindingInput3d::new(
+  mesh_asset_id : Int,
+  skinned? : Bool = false,
+  morph_targets? : Bool = false,
+) -> RenderMeshBindingInput3d {
+  RenderMeshBindingInput3d::{ mesh_asset_id, skinned, morph_targets }
+}
+
+///|
+pub fn RenderMeshBindingInput3d::mesh_asset_id(
+  self : RenderMeshBindingInput3d,
+) -> Int {
+  self.mesh_asset_id
+}
+
+///|
+pub fn RenderMeshBindingInput3d::skinned(
+  self : RenderMeshBindingInput3d,
+) -> Bool {
+  self.skinned
+}
+
+///|
+pub fn RenderMeshBindingInput3d::morph_targets(
+  self : RenderMeshBindingInput3d,
+) -> Bool {
+  self.morph_targets
+}
+
+///|
+pub struct MeshPreparedBindGroup3d {
+  label : String
+  layout_name : String
+  bindings : Array[(MeshBindingSlot3d, Int)]
+}
+
+///|
+fn mesh_prepared_bind_group_3d(
+  label : String,
+  layout : MeshBindingLayout3d,
+) -> MeshPreparedBindGroup3d {
+  MeshPreparedBindGroup3d::{
+    label,
+    layout_name: layout.name(),
+    bindings: layout.bindings(),
+  }
+}
+
+///|
+pub fn MeshPreparedBindGroup3d::label(self : MeshPreparedBindGroup3d) -> String {
+  self.label
+}
+
+///|
+pub fn MeshPreparedBindGroup3d::layout_name(
+  self : MeshPreparedBindGroup3d,
+) -> String {
+  self.layout_name
+}
+
+///|
+pub fn MeshPreparedBindGroup3d::bindings(
+  self : MeshPreparedBindGroup3d,
+) -> Array[(MeshBindingSlot3d, Int)] {
+  let bindings : Array[(MeshBindingSlot3d, Int)] = []
+  for binding in self.bindings {
+    bindings.push(binding)
+  }
+  bindings
+}
+
+///|
+pub fn MeshPreparedBindGroup3d::has_slot(
+  self : MeshPreparedBindGroup3d,
+  slot : MeshBindingSlot3d,
+) -> Bool {
+  for binding in self.bindings {
+    if binding.0 == slot {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn MeshPreparedBindGroup3d::binding_count(
+  self : MeshPreparedBindGroup3d,
+) -> Int {
+  self.bindings.length()
+}
+
+///|
+pub struct MeshBindGroupPair3d {
+  motion_vectors : MeshPreparedBindGroup3d
+  no_motion_vectors : MeshPreparedBindGroup3d
+}
+
+///|
+fn mesh_bind_group_pair_3d(
+  motion_vectors : MeshPreparedBindGroup3d,
+  no_motion_vectors : MeshPreparedBindGroup3d,
+) -> MeshBindGroupPair3d {
+  MeshBindGroupPair3d::{ motion_vectors, no_motion_vectors }
+}
+
+///|
+pub fn MeshBindGroupPair3d::get(
+  self : MeshBindGroupPair3d,
+  motion_vectors : Bool,
+) -> MeshPreparedBindGroup3d {
+  if motion_vectors {
+    self.motion_vectors
+  } else {
+    self.no_motion_vectors
+  }
+}
+
+///|
+pub struct MeshPhaseBindGroups3d {
+  mut model_only : MeshPreparedBindGroup3d?
+  mut skinned : MeshBindGroupPair3d?
+  mut morph_targets : Map[Int, MeshBindGroupPair3d]
+  mut lightmaps : Map[Int, MeshPreparedBindGroup3d]
+}
+
+///|
+pub fn MeshPhaseBindGroups3d::new() -> MeshPhaseBindGroups3d {
+  MeshPhaseBindGroups3d::{
+    model_only: None,
+    skinned: None,
+    morph_targets: {},
+    lightmaps: {},
+  }
+}
+
+///|
+pub fn MeshPhaseBindGroups3d::reset(self : MeshPhaseBindGroups3d) -> Unit {
+  self.model_only = None
+  self.skinned = None
+  self.morph_targets = {}
+  self.lightmaps = {}
+}
+
+///|
+pub fn MeshPhaseBindGroups3d::morph_target_count(
+  self : MeshPhaseBindGroups3d,
+) -> Int {
+  self.morph_targets.length()
+}
+
+///|
+pub fn MeshPhaseBindGroups3d::lightmap_count(
+  self : MeshPhaseBindGroups3d,
+) -> Int {
+  self.lightmaps.length()
+}
+
+///|
+pub fn MeshPhaseBindGroups3d::has_model_only(
+  self : MeshPhaseBindGroups3d,
+) -> Bool {
+  self.model_only is Some(_)
+}
+
+///|
+pub fn MeshPhaseBindGroups3d::has_skinned(self : MeshPhaseBindGroups3d) -> Bool {
+  self.skinned is Some(_)
+}
+
+///|
+pub fn MeshPhaseBindGroups3d::get(
+  self : MeshPhaseBindGroups3d,
+  mesh_asset_id : Int,
+  lightmap_slab_index : Int?,
+  skinned : Bool,
+  morphed : Bool,
+  motion_vectors : Bool,
+) -> MeshPreparedBindGroup3d? {
+  match (skinned, morphed, lightmap_slab_index) {
+    (_, true, _) =>
+      match self.morph_targets.get(mesh_asset_id) {
+        Some(pair) => Some(pair.get(motion_vectors))
+        None => None
+      }
+    (true, false, _) =>
+      match self.skinned {
+        Some(pair) => Some(pair.get(motion_vectors))
+        None => None
+      }
+    (false, false, Some(lightmap_slab)) => self.lightmaps.get(lightmap_slab)
+    (false, false, None) => self.model_only
+  }
+}
+
+///|
+pub enum MeshBindGroups3d {
+  CpuPreprocessing(MeshPhaseBindGroups3d)
+  GpuPreprocessing(Map[String, MeshPhaseBindGroups3d])
+}
+
+///|
+pub fn render3d_mesh_bind_groups_cpu_preprocessing(
+  groups : MeshPhaseBindGroups3d,
+) -> MeshBindGroups3d {
+  MeshBindGroups3d::CpuPreprocessing(groups)
+}
+
+///|
+pub fn render3d_mesh_bind_groups_gpu_preprocessing(
+  phase_groups : Map[String, MeshPhaseBindGroups3d],
+) -> MeshBindGroups3d {
+  MeshBindGroups3d::GpuPreprocessing(phase_groups)
+}
+
+///|
+pub fn render3d_prepare_mesh_bind_groups_for_phase(
+  meshes : Array[RenderMeshBindingInput3d],
+  morph_weights_available? : Bool = false,
+  lightmap_slab_count? : Int = 0,
+) -> MeshPhaseBindGroups3d {
+  let layouts = render3d_mesh_layouts()
+  let groups = MeshPhaseBindGroups3d::new()
+  groups.model_only = Some(
+    mesh_prepared_bind_group_3d(
+      "model_only_mesh_bind_group",
+      layouts.model_only,
+    ),
+  )
+  groups.skinned = Some(
+    mesh_bind_group_pair_3d(
+      mesh_prepared_bind_group_3d(
+        "skinned_motion_mesh_bind_group",
+        layouts.skinned_motion,
+      ),
+      mesh_prepared_bind_group_3d("skinned_mesh_bind_group", layouts.skinned),
+    ),
+  )
+  if morph_weights_available {
+    for mesh in meshes {
+      if mesh.morph_targets {
+        let pair = if mesh.skinned {
+          mesh_bind_group_pair_3d(
+            mesh_prepared_bind_group_3d(
+              "morphed_skinned_motion_mesh_bind_group",
+              layouts.morphed_skinned_motion,
+            ),
+            mesh_prepared_bind_group_3d(
+              "morphed_skinned_mesh_bind_group",
+              layouts.morphed_skinned,
+            ),
+          )
+        } else {
+          mesh_bind_group_pair_3d(
+            mesh_prepared_bind_group_3d(
+              "morphed_motion_mesh_bind_group",
+              layouts.morphed_motion,
+            ),
+            mesh_prepared_bind_group_3d(
+              "morphed_mesh_bind_group",
+              layouts.morphed,
+            ),
+          )
+        }
+        groups.morph_targets.set(mesh.mesh_asset_id, pair)
+      }
+    }
+  }
+  for slab_index in 0..<lightmap_slab_count.max(0) {
+    groups.lightmaps.set(
+      slab_index,
+      mesh_prepared_bind_group_3d(
+        "lightmapped_mesh_bind_group",
+        layouts.lightmapped,
+      ),
+    )
+  }
+  groups
+}
+
+///|
+pub fn render3d_mesh_bind_group_dynamic_offsets(
+  phase_dynamic_offset? : UInt? = None,
+  current_skin_byte_offset? : UInt? = None,
+  current_morph_index? : UInt? = None,
+  prev_morph_index? : UInt? = None,
+  motion_vectors? : Bool = false,
+  skins_use_uniform_buffers? : Bool = true,
+) -> Array[UInt] {
+  let offsets : Array[UInt] = []
+  match phase_dynamic_offset {
+    Some(offset) => offsets.push(offset)
+    None => ()
+  }
+  match current_skin_byte_offset {
+    Some(offset) => if skins_use_uniform_buffers { offsets.push(offset) }
+    None => ()
+  }
+  match current_morph_index {
+    Some(index) => offsets.push(index)
+    None => ()
+  }
+  if motion_vectors {
+    match current_skin_byte_offset {
+      Some(offset) => if skins_use_uniform_buffers { offsets.push(offset) }
+      None => ()
+    }
+    if current_morph_index is Some(_) {
+      match prev_morph_index {
+        Some(index) => offsets.push(index)
+        None => offsets.push(0U)
+      }
+    }
+  }
+  offsets
+}

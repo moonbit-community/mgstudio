@@ -156,6 +156,15 @@ struct Mesh3dFrameViewBindGroupCacheEntry {
 }
 
 ///|
+struct Mesh3dMotionVectorViewBindGroupCacheEntry {
+  material_pipeline_id : UInt64
+  frame_count : UInt
+  view_bind_group : @wgpu.BindGroup
+  empty_bind_group : @wgpu.BindGroup
+  empty_material_bind_group : @wgpu.BindGroup
+}
+
+///|
 pub struct Mesh2dPipelineCacheEntry {
   key : String
   pipeline : @wgpu.RenderPipeline
@@ -194,6 +203,9 @@ struct GpuMesh3dPreprocessCameraUploadState {
   mut output_count : Int
   mut motion_vector_mesh_bind_group : @wgpu.BindGroup?
   mut motion_vector_mesh_bind_group_skin_revision : Int
+  mut motion_vector_mesh_bind_group_morph_revision : Int
+  mut motion_vector_mesh_bind_group_morph_target_texture_id : Int
+  mut motion_vector_mesh_bind_group_layout_mask : Int
   mut preprocess_main_direct_bind_group : @wgpu.BindGroup?
   mut preprocess_main_indexed_bind_group : @wgpu.BindGroup?
   mut preprocess_main_non_indexed_bind_group : @wgpu.BindGroup?

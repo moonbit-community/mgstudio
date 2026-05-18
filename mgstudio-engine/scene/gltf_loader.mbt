@@ -123,10 +123,17 @@ priv struct GltfPrimitiveDef {
   joint_indices : Int?
   joint_weights : Int?
   custom_attributes : Array[(String, Int)]
-  morph_targets : Array[Int?]
+  morph_targets : Array[GltfMorphTargetDef]
   indices : Int?
   material : Int?
   extras : String?
+}
+
+///|
+priv struct GltfMorphTargetDef {
+  position : Int?
+  normal : Int?
+  tangent : Int?
 }
 
 ///|
@@ -1423,14 +1430,22 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                   }
                 }
               }
-              let morph_targets : Array[Int?] = []
+              let morph_targets : Array[GltfMorphTargetDef] = []
               if json_get_array(primitive_obj, "targets")
                 is Some(target_entries) {
                 for target_entry in target_entries {
                   if json_object(target_entry) is Some(target_obj) {
-                    morph_targets.push(json_get_int(target_obj, "POSITION"))
+                    morph_targets.push(GltfMorphTargetDef::{
+                      position: json_get_int(target_obj, "POSITION"),
+                      normal: json_get_int(target_obj, "NORMAL"),
+                      tangent: json_get_int(target_obj, "TANGENT"),
+                    })
                   } else {
-                    morph_targets.push(None)
+                    morph_targets.push(GltfMorphTargetDef::{
+                      position: None,
+                      normal: None,
+                      tangent: None,
+                    })
                   }
                 }
               }
@@ -3143,6 +3158,34 @@ fn gltf_select_animation_index(
 }
 
 ///|
+fn gltf_zero_morph_vec3(vertex_count : Int) -> Array[@math.Vec3] {
+  let values : Array[@math.Vec3] = []
+  for _ in 0..<vertex_count {
+    values.push(@math.Vec3::zero())
+  }
+  values
+}
+
+///|
+fn gltf_read_morph_accessor_vec3(
+  doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
+  accessor : Int?,
+  convert_coordinates : @gltf.GltfConvertCoordinates,
+) -> Array[@math.Vec3]? {
+  guard accessor is Some(accessor_index) else { return None }
+  guard gltf_read_accessor_vec3(doc, buffer_bytes, accessor_index)
+    is Some(values) else {
+    return None
+  }
+  if convert_coordinates.rotate_meshes {
+    Some(values.map(@gltf.gltf_convert_coordinates_vec3))
+  } else {
+    Some(values)
+  }
+}
+
+///|
 fn scene_build_animation_clip_from_gltf(
   animation_index : Int,
   doc : ParsedGltfDocument,
@@ -3324,23 +3367,59 @@ fn scene_build_mesh_primitive_from_gltf(
   }
   if primitive.morph_targets.length() > 0 {
     let morph_targets : Array[Array[@math.Vec3]] = []
-    for morph_target_position in primitive.morph_targets {
-      match morph_target_position {
-        Some(accessor_index) =>
-          if gltf_read_accessor_vec3(doc, buffer_bytes, accessor_index)
-            is Some(values) {
-            morph_targets.push(
-              if convert_coordinates.rotate_meshes {
-                values.map(@gltf.gltf_convert_coordinates_vec3)
-              } else {
-                values
-              },
-            )
-          }
-        None => ()
+    let morph_target_normals : Array[Array[@math.Vec3]] = []
+    let morph_target_tangents : Array[Array[@math.Vec3]] = []
+    let mut has_morph_target = false
+    let mut has_morph_target_normal = false
+    let mut has_morph_target_tangent = false
+    let vertex_count = geometry.positions.length()
+    for morph_target in primitive.morph_targets {
+      let position_values = match
+        gltf_read_morph_accessor_vec3(
+          doc,
+          buffer_bytes,
+          morph_target.position,
+          convert_coordinates,
+        ) {
+        Some(values) => {
+          has_morph_target = true
+          values
+        }
+        None => gltf_zero_morph_vec3(vertex_count)
       }
+      let normal_values = match
+        gltf_read_morph_accessor_vec3(
+          doc,
+          buffer_bytes,
+          morph_target.normal,
+          convert_coordinates,
+        ) {
+        Some(values) => {
+          has_morph_target = true
+          has_morph_target_normal = true
+          values
+        }
+        None => gltf_zero_morph_vec3(vertex_count)
+      }
+      let tangent_values = match
+        gltf_read_morph_accessor_vec3(
+          doc,
+          buffer_bytes,
+          morph_target.tangent,
+          convert_coordinates,
+        ) {
+        Some(values) => {
+          has_morph_target = true
+          has_morph_target_tangent = true
+          values
+        }
+        None => gltf_zero_morph_vec3(vertex_count)
+      }
+      morph_targets.push(position_values)
+      morph_target_normals.push(normal_values)
+      morph_target_tangents.push(tangent_values)
     }
-    if morph_targets.length() > 0 {
+    if has_morph_target {
       let morph_target_names = if mesh.morph_target_names.length() ==
         morph_targets.length() {
         Some(mesh.morph_target_names)
@@ -3350,6 +3429,16 @@ fn scene_build_mesh_primitive_from_gltf(
       geometry = geometry.with_morph_targets(
         Some(morph_targets),
         morph_target_names~,
+        morph_target_normals=if has_morph_target_normal {
+          Some(morph_target_normals)
+        } else {
+          None
+        },
+        morph_target_tangents=if has_morph_target_tangent {
+          Some(morph_target_tangents)
+        } else {
+          None
+        },
       )
     }
   }

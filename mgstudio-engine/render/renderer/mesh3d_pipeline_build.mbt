@@ -623,6 +623,78 @@ fn mesh3d_descriptor_depth_format(
 }
 
 ///|
+fn mesh3d_descriptor_shader_bool_defines(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+  fallback : @hashmap.HashMap[String, Bool],
+) -> @hashmap.HashMap[String, Bool] {
+  guard descriptor is Some(desc) else { return fallback }
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
+    for shader_def in shader_defs {
+      match shader_def {
+        Flag(name) => defines.set(name, true)
+        Bool(name, value) => defines.set(name, value)
+        Int(_, _) | UInt(_, _) | String(_, _) => ()
+      }
+    }
+  }
+  apply_defs(desc.vertex.shader_defs)
+  match desc.fragment {
+    Some(fragment) => apply_defs(fragment.shader_defs)
+    None => ()
+  }
+  defines
+}
+
+///|
+fn mesh3d_descriptor_fragment_targets(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> Unit raise @wgpu.RenderPipelineDescError {
+  let targets = match material_descriptor {
+    Some(desc) =>
+      match desc.fragment {
+        Some(fragment) => fragment.targets
+        None => []
+      }
+    None =>
+      [
+        None,
+        Some(
+          @render_resource.ColorTargetState::new(
+            @wgpu.TEXTURE_FORMAT_RG16_FLOAT,
+            @wgpu.COLOR_WRITE_MASK_ALL,
+          ),
+        ),
+      ]
+  }
+  if targets.length() == 0 {
+    builder.set_color_target_count(0U)
+    return
+  }
+  builder.set_color_target_count(targets.length().reinterpret_as_uint())
+  for index in 0..<targets.length() {
+    let index_u = index.reinterpret_as_uint()
+    match targets[index] {
+      Some(target) => {
+        builder.set_color_target_format_at(index_u, tf(target.format))
+        builder.set_color_target_write_mask_at(index_u, target.write_mask)
+      }
+      None => {
+        builder.set_color_target_format_at(
+          index_u,
+          tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+        )
+        builder.set_color_target_write_mask_at(
+          index_u,
+          @wgpu.COLOR_WRITE_MASK_NONE,
+        )
+      }
+    }
+  }
+}
+
+///|
 fn mesh3d_pipeline_blend_suffix(blend_kind : Int) -> String {
   if blend_kind == MESH3D_PIPELINE_BLEND_PREMULTIPLIED_ALPHA {
     "premultiplied"
@@ -1460,12 +1532,6 @@ fn mesh3d_material_pipeline_layout_get_or_create(
     is Some(draw_layout_descriptor) else {
     fatal("wgpu: material pipeline descriptor is missing group 2 draw layout")
   }
-  guard mesh3d_descriptor_material_layout(material_descriptor)
-    is Some(material_layout_descriptor) else {
-    fatal(
-      "wgpu: material pipeline descriptor is missing group 3 material layout",
-    )
-  }
   let label_suffix = material_pipeline_id.to_string()
   let view_bgl = mesh3d_create_bind_group_layout_from_descriptor(
     backend,
@@ -1482,11 +1548,20 @@ fn mesh3d_material_pipeline_layout_get_or_create(
     draw_layout_descriptor,
     label_suffix + "_draw",
   )
-  let material_bgl = mesh3d_create_bind_group_layout_from_descriptor(
-    backend,
-    material_layout_descriptor,
-    label_suffix + "_material",
-  )
+  let material_bgl = match
+    mesh3d_descriptor_material_layout(material_descriptor) {
+    Some(material_layout_descriptor) =>
+      mesh3d_create_bind_group_layout_from_descriptor(
+        backend,
+        material_layout_descriptor,
+        label_suffix + "_material",
+      )
+    None =>
+      mesh3d_create_empty_bind_group_layout(
+        backend,
+        "mgstudio_mesh3d_empty_material_bgl_" + label_suffix,
+      )
+  }
   let pipeline_layout = create_pipeline_layout_4(
     backend.device,
     view_bgl,
@@ -1970,8 +2045,24 @@ fn mesh3d_build_shadow_depth_pipeline(
     guard backend.mesh3d_shadow_bgl_empty is Some(empty_bgl) else {
       fatal("wgpu: missing mesh3d shadow empty bind group layout")
     }
-    guard backend.mesh3d_bgl_draw is Some(draw_bgl) else {
-      fatal("wgpu: missing mesh3d draw bind group layout for shadows")
+    let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+      backend, material_pipeline_id, material_descriptor,
+    )
+    Some(
+      create_pipeline_layout_4(
+        backend.device,
+        view_bgl,
+        empty_bgl,
+        layout_entry.draw_bind_group_layout,
+        layout_entry.material_bind_group_layout,
+      ),
+    )
+  } else if material_pipeline_id != MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
+    guard backend.mesh3d_shadow_bgl_view is Some(view_bgl) else {
+      fatal("wgpu: missing mesh3d shadow view bind group layout")
+    }
+    guard backend.mesh3d_shadow_bgl_empty is Some(empty_bgl) else {
+      fatal("wgpu: missing mesh3d shadow empty bind group layout")
     }
     let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
       backend, material_pipeline_id, material_descriptor,
@@ -1981,8 +2072,8 @@ fn mesh3d_build_shadow_depth_pipeline(
         backend.device,
         view_bgl,
         empty_bgl,
-        draw_bgl,
-        layout_entry.material_bind_group_layout,
+        layout_entry.draw_bind_group_layout,
+        empty_bgl,
       ),
     )
   } else if effective_material_path {
@@ -2158,11 +2249,9 @@ fn mesh3d_shadow_depth_pipeline_for_current_pass(
   let emulate_unclipped_depth = mesh3d_shadow_depth_should_emulate_unclipped_depth(
     backend, directional_light,
   )
-  let shadow_pipeline_material_id = if material_path || emulate_unclipped_depth {
-    material_pipeline_id
-  } else {
-    MESH3D_DEFAULT_MATERIAL_PIPELINE_ID
-  }
+  let shadow_pipeline_material_id = mesh3d_shadow_pipeline_material_id(
+    material_pipeline_id, material_path, emulate_unclipped_depth,
+  )
   if mesh3d_shadow_pipeline_get(
       backend, topology, shadow_pipeline_material_id, cull_mode, material_path, skinned,
       directional_light,
@@ -2182,61 +2271,184 @@ fn mesh3d_shadow_depth_pipeline_for_current_pass(
 }
 
 ///|
+fn mesh3d_shadow_pipeline_material_id(
+  material_pipeline_id : UInt64,
+  material_path : Bool,
+  emulate_unclipped_depth : Bool,
+) -> UInt64 {
+  if material_pipeline_id != MESH3D_DEFAULT_MATERIAL_PIPELINE_ID ||
+    material_path ||
+    emulate_unclipped_depth {
+    material_pipeline_id
+  } else {
+    MESH3D_DEFAULT_MATERIAL_PIPELINE_ID
+  }
+}
+
+///|
 fn mesh3d_build_motion_vector_pipeline(
   backend : GpuBackend,
   pipeline_layout : @wgpu.PipelineLayout,
+  topology : UInt,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
+  cull_mode : Int,
   skinned : Bool,
   has_previous_skin : Bool,
+  morphed : Bool,
+  has_previous_morph : Bool,
   label : String,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
-  let wgsl = load_wgsl_required_mesh3d_motion_vector_prepass(
-    backend.assets_base,
-    skinned,
-    has_previous_skin,
+  let fallback_wgsl = fn() raise GpuBackendError {
+    load_wgsl_required_mesh3d_motion_vector_prepass(
+      backend.assets_base,
+      skinned,
+      has_previous_skin,
+      morphed,
+      has_previous_morph,
+    )
+  }
+  let vertex_shader_path = match
+    mesh3d_descriptor_vertex_shader_path(material_descriptor) {
+    Some(path) =>
+      if path == "" {
+        MESH3D_PREPASS_VERTEX_SHADER_PATH
+      } else {
+        path
+      }
+    None => MESH3D_PREPASS_VERTEX_SHADER_PATH
+  }
+  let fragment_shader_path = mesh3d_descriptor_fragment_shader_path(
+    material_descriptor,
   )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let fallback_defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  fallback_defines.set("PREPASS_FRAGMENT", true)
+  fallback_defines.set("MOTION_VECTOR_PREPASS", true)
+  if skinned {
+    fallback_defines.set("SKINNED", true)
+    if has_previous_skin {
+      fallback_defines.set("HAS_PREVIOUS_SKIN", true)
+    }
+  }
+  if morphed {
+    fallback_defines.set("MORPH_TARGETS", true)
+    if has_previous_morph {
+      fallback_defines.set("HAS_PREVIOUS_MORPH", true)
+    }
+  }
+  let defines = mesh3d_descriptor_shader_bool_defines(
+    material_descriptor, fallback_defines,
+  )
+  let value_defines = mesh3d_forward_value_defines(
+    descriptor=material_descriptor,
+  )
+  value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
+  let vertex_wgsl = if material_descriptor is Some(_) {
+    load_wgsl_preprocessed(
+      backend.assets_base,
+      vertex_shader_path,
+      defines,
+      value_defines,
+    )
+  } else {
+    fallback_wgsl()
+  }
+  let vertex_sm = backend.device.create_shader_module_wgsl(vertex_wgsl)
+  let fragment_sm = match fragment_shader_path {
+    Some(path) =>
+      Some(
+        backend.device.create_shader_module_wgsl(
+          load_wgsl_preprocessed(
+            backend.assets_base,
+            if path == "" {
+              MESH3D_PREPASS_VERTEX_SHADER_PATH
+            } else {
+              path
+            },
+            defines,
+            value_defines,
+          ),
+        ),
+      )
+    None =>
+      if material_descriptor is Some(_) {
+        None
+      } else {
+        Some(backend.device.create_shader_module_wgsl(fallback_wgsl()))
+      }
+  }
+  let descriptor_vertex_layout = mesh3d_descriptor_vertex_buffer_layout(
+    material_descriptor,
+  )
   let pipeline = try {
     let builder = @wgpu.RenderPipelineDescBuilder::new(
-      sm,
+      vertex_sm,
       layout=pipeline_layout,
     )
     builder.set_entry_points("vertex", "fragment")
-    builder.set_color_target_count(2U)
-    builder.set_color_target_format_at(
-      0U,
-      tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
-    )
-    builder.set_color_target_format_at(1U, tf(@wgpu.TEXTURE_FORMAT_RG16_FLOAT))
-    builder.set_color_target_write_mask_at(0U, @wgpu.COLOR_WRITE_MASK_NONE)
-    builder.set_color_target_write_mask_at(1U, @wgpu.COLOR_WRITE_MASK_ALL)
-    builder.disable_blend()
-    builder.set_vertex_buffer_layout(
-      MESH3D_VERTEX_STRIDE_BYTES,
-      @wgpu.VERTEX_STEP_MODE_VERTEX,
-    )
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 1U)
-    if skinned {
-      builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_UINT32X4, 48UL, 5U)
-      builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 6U)
+    match fragment_sm {
+      Some(fragment_module) => {
+        builder.set_fragment_module(fragment_module)
+        mesh3d_descriptor_fragment_targets(builder, material_descriptor)
+      }
+      None => builder.clear_fragment()
     }
-    builder.set_topology_u32(@wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+    builder.disable_blend()
+    match descriptor_vertex_layout {
+      Some(layout) => {
+        builder.set_vertex_buffer_layout(
+          layout.array_stride.to_uint64(),
+          mesh_vertex_step_mode_to_wgpu(layout.step_mode),
+        )
+        for attribute in layout.attributes {
+          builder.add_vertex_attribute(
+            mesh_vertex_format_to_wgpu(attribute.format),
+            attribute.offset.to_uint64(),
+            attribute.shader_location.reinterpret_as_uint(),
+          )
+        }
+      }
+      None => {
+        builder.set_vertex_buffer_layout(
+          MESH3D_VERTEX_STRIDE_BYTES,
+          @wgpu.VERTEX_STEP_MODE_VERTEX,
+        )
+        builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
+        builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 1U)
+        if skinned {
+          builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_UINT32X4, 48UL, 5U)
+          builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 6U)
+        }
+      }
+    }
+    builder.set_topology_u32(topology)
     builder.set_depth_stencil(
-      tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
-      depth_write_enabled=true,
-      depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+      tf(mesh3d_descriptor_depth_format(material_descriptor)),
+      depth_write_enabled=mesh3d_descriptor_depth_write_enabled(
+        material_descriptor, true,
+      ),
+      depth_compare_u32=mesh3d_descriptor_depth_compare(material_descriptor),
     )
+    builder.set_cull_mode_u32(mesh3d_cull_mode_wgpu(cull_mode))
     builder.create_pipeline(backend.device)
   } catch {
     err => {
-      sm.release()
+      err |> ignore
+      vertex_sm.release()
+      match fragment_sm {
+        Some(fragment_module) => fragment_module.release()
+        None => ()
+      }
       fatal(
-        "wgpu: failed to build canonical mesh3d motion vector prepass pipeline: \{err.message()}",
+        "wgpu: failed to build canonical mesh3d motion vector prepass pipeline",
       )
     }
   }
   pipeline.set_label(label)
-  sm.release()
+  vertex_sm.release()
+  match fragment_sm {
+    Some(fragment_module) => fragment_module.release()
+    None => ()
+  }
   pipeline
 }
 
@@ -2398,17 +2610,128 @@ fn ensure_mesh3d_motion_vector_pipeline(
   }
   backend.mesh3d_motion_vector_pipeline = Some(
     mesh3d_build_motion_vector_pipeline(
-      backend, pipeline_layout, false, false, "mgstudio_motion_vector_prepass",
+      backend,
+      pipeline_layout,
+      @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      None,
+      2,
+      false,
+      false,
+      false,
+      false,
+      "mgstudio_motion_vector_prepass",
     ),
   )
   backend.mesh3d_motion_vector_pipeline_skinned = Some(
     mesh3d_build_motion_vector_pipeline(
-      backend, pipeline_layout, true, false, "mgstudio_motion_vector_prepass_skinned",
+      backend,
+      pipeline_layout,
+      @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      None,
+      2,
+      true,
+      false,
+      false,
+      false,
+      "mgstudio_motion_vector_prepass_skinned",
     ),
   )
   backend.mesh3d_motion_vector_pipeline_skinned_prev = Some(
     mesh3d_build_motion_vector_pipeline(
-      backend, pipeline_layout, true, true, "mgstudio_motion_vector_prepass_skinned_previous",
+      backend,
+      pipeline_layout,
+      @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      None,
+      2,
+      true,
+      true,
+      false,
+      false,
+      "mgstudio_motion_vector_prepass_skinned_previous",
     ),
   )
+}
+
+///|
+fn mesh3d_motion_vector_pipeline_entry_get_or_create(
+  backend : GpuBackend,
+  topology : UInt,
+  material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
+  cull_mode : Int,
+  skinned : Bool,
+  has_previous_skin : Bool,
+  morphed : Bool,
+  has_previous_morph : Bool,
+) -> Mesh3dMotionVectorPipelineCacheEntry? raise GpuBackendError {
+  ensure_mesh3d_motion_vector_pipeline(backend)
+  if mesh3d_motion_vector_pipeline_get(
+      backend, topology, material_pipeline_id, cull_mode, skinned, has_previous_skin,
+      morphed, has_previous_morph,
+    )
+    is Some(entry) {
+    return Some(entry)
+  }
+  let (mesh_layout_descriptor, mesh_bgl, pipeline_layout) = match
+    material_descriptor {
+    Some(_) => {
+      let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+        backend, material_pipeline_id, material_descriptor,
+      )
+      (
+        layout_entry.draw_bind_group_layout_descriptor,
+        layout_entry.draw_bind_group_layout,
+        layout_entry.pipeline_layout,
+      )
+    }
+    None => {
+      guard backend.mesh3d_motion_vector_bgl_view is Some(view_bgl) else {
+        return None
+      }
+      guard backend.mesh3d_motion_vector_bgl_empty is Some(empty_bgl) else {
+        return None
+      }
+      let mesh_layout_descriptor = mesh3d_motion_vector_mesh_layout_descriptor(
+        skinned, has_previous_skin, morphed, has_previous_morph,
+      )
+      let layout_mask = mesh3d_motion_vector_mesh_layout_mask(
+        skinned, has_previous_skin, morphed, has_previous_morph,
+      )
+      let mesh_bgl = mesh3d_create_bind_group_layout_from_descriptor(
+        backend,
+        mesh_layout_descriptor,
+        "motion_vector_\{layout_mask}",
+      )
+      let pipeline_layout = create_pipeline_layout_3(
+        backend.device,
+        view_bgl,
+        empty_bgl,
+        mesh_bgl,
+      )
+      (mesh_layout_descriptor, mesh_bgl, pipeline_layout)
+    }
+  }
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  let layout_mask = mesh3d_motion_vector_mesh_layout_mask(
+    skinned, has_previous_skin, morphed, has_previous_morph,
+  )
+  let label = "mgstudio_motion_vector_prepass_layout_\{layout_mask}"
+  let pipeline = mesh3d_build_motion_vector_pipeline(
+    backend, pipeline_layout, topology, material_descriptor, safe_cull_mode, skinned,
+    has_previous_skin, morphed, has_previous_morph, label,
+  )
+  let entry = Mesh3dMotionVectorPipelineCacheEntry::{
+    topology,
+    material_pipeline_id,
+    cull_mode: safe_cull_mode,
+    skinned,
+    has_previous_skin,
+    morphed,
+    has_previous_morph,
+    mesh_bind_group_layout_descriptor: mesh_layout_descriptor,
+    mesh_bind_group_layout: mesh_bgl,
+    pipeline,
+  }
+  mesh3d_motion_vector_pipeline_set(backend, entry)
+  Some(entry)
 }

@@ -215,7 +215,7 @@ pub fn render3d_apply_view_fog_uniform_offsets(@ecs.World, Array[(@core.Entity, 
 
 pub fn render3d_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, @transform.Transform, Render3dPassProjection, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, Render3dLightingState, camera_exposure? : Float, previous_clip_from_world~ : ProjectionMatrix3d?, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation? : @math.Quat, point_shadow_near~ : Float, directional_shadow_texture_id? : Int, directional_shadow_enabled? : Float, directional_shadow_depth_bias? : Float, directional_shadow_normal_bias? : Float, directional_shadow_soft_size? : Float, directional_shadow_cascade_count? : Int, directional_shadow_cascade_overlap? : Float, directional_shadow_cascade_data? : Array[Float], clip_from_world_override? : ProjectionMatrix3d?, tonemap_in_shader? : Bool, tonemapping_mode? : Int, tonemapping_agx_lut_texture_id? : Int, tonemapping_tony_lut_texture_id? : Int, tonemapping_blender_lut_texture_id? : Int, deband_dither_enabled? : Bool, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
 
-pub fn render3d_build_mesh_gpu_draw_payload(Int, Int, Int, Int, Int, Int, @material.StandardMaterial, @transform.Transform, @transform.Transform, Float, Float, Float, Float, Int, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Int, Int, Float, @math.Quat, @color.Color, Float, Float, UInt, Int, forward_decal? : Bool, vertex_shader_path? : String?, fragment_shader_path? : String?, material_pipeline_id? : @render_resource.CachedRenderPipelineId?, skinning_key_hi? : Int, skinning_key_lo? : Int, lightmap_texture_id? : Int, lightmap_uv_min_x? : Float, lightmap_uv_min_y? : Float, lightmap_uv_max_x? : Float, lightmap_uv_max_y? : Float) -> MeshGpuDrawPayload3d
+pub fn render3d_build_mesh_gpu_draw_payload(Int, Int, Int, Int, Int, Int, @material.StandardMaterial, @transform.Transform, @transform.Transform, Float, Float, Float, Float, Int, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Int, Int, Float, @math.Quat, @color.Color, Float, Float, UInt, Int, forward_decal? : Bool, vertex_shader_path? : String?, fragment_shader_path? : String?, material_pipeline_id? : @render_resource.CachedRenderPipelineId?, skinning_key_hi? : Int, skinning_key_lo? : Int, morph_weights_index? : Int, previous_morph_weights_index? : Int, morph_targets_texture_id? : Int, lightmap_texture_id? : Int, lightmap_uv_min_x? : Float, lightmap_uv_min_y? : Float, lightmap_uv_max_x? : Float, lightmap_uv_max_y? : Float) -> MeshGpuDrawPayload3d
 
 pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 
@@ -327,6 +327,12 @@ pub fn render3d_inverse_transform_direction(@transform.Transform, @math.Vec3) ->
 
 pub fn render3d_inverse_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3?
 
+pub fn render3d_mesh_bind_group_dynamic_offsets(phase_dynamic_offset? : UInt?, current_skin_byte_offset? : UInt?, current_morph_index? : UInt?, prev_morph_index? : UInt?, motion_vectors? : Bool, skins_use_uniform_buffers? : Bool) -> Array[UInt]
+
+pub fn render3d_mesh_bind_groups_cpu_preprocessing(MeshPhaseBindGroups3d) -> MeshBindGroups3d
+
+pub fn render3d_mesh_bind_groups_gpu_preprocessing(Map[String, MeshPhaseBindGroups3d]) -> MeshBindGroups3d
+
 pub fn render3d_mesh_layouts() -> MeshLayouts3d
 
 pub fn render3d_mesh_position_view_depth(@math.Vec3, @transform.Transform) -> Float
@@ -390,6 +396,8 @@ pub fn render3d_point_shadow_pass_projection(Float, Float) -> Render3dPassProjec
 pub fn render3d_prepare_build_indirect_parameters_pipeline(BuildIndirectParametersPipeline) -> BuildIndirectParametersPipeline
 
 pub fn render3d_prepare_fog_uniforms(Array[(@core.Entity, Render3dViewFogData?)], FogMeta) -> Array[(@core.Entity, ViewFogUniformOffset)]
+
+pub fn render3d_prepare_mesh_bind_groups_for_phase(Array[RenderMeshBindingInput3d], morph_weights_available? : Bool, lightmap_slab_count? : Int) -> MeshPhaseBindGroups3d
 
 pub fn render3d_prepare_preprocess_phase_pipelines(PreprocessPhasePipelines) -> PreprocessPhasePipelines
 
@@ -698,6 +706,17 @@ pub(all) enum GpuPreprocessWorkItemBuffers3d {
   Indirect(Array[GpuPreprocessShaderWorkItem3d], Array[GpuPreprocessShaderWorkItem3d], GpuOcclusionCullingWorkItemBuffers3d?)
 }
 
+pub struct MeshBindGroupPair3d {
+  motion_vectors : MeshPreparedBindGroup3d
+  no_motion_vectors : MeshPreparedBindGroup3d
+}
+pub fn MeshBindGroupPair3d::get(Self, Bool) -> MeshPreparedBindGroup3d
+
+pub enum MeshBindGroups3d {
+  CpuPreprocessing(MeshPhaseBindGroups3d)
+  GpuPreprocessing(Map[String, MeshPhaseBindGroups3d])
+}
+
 pub struct MeshBindingLayout3d {
   name : String
   bindings : Array[(MeshBindingSlot3d, Int)]
@@ -784,6 +803,9 @@ pub(all) struct MeshGpuDrawPayload3d {
   material_pipeline_id : @render_resource.CachedRenderPipelineId?
   skinning_key_hi : Int
   skinning_key_lo : Int
+  morph_weights_index : Int
+  previous_morph_weights_index : Int
+  morph_targets_texture_id : Int
 }
 
 pub struct MeshLayouts3d {
@@ -797,6 +819,31 @@ pub struct MeshLayouts3d {
   morphed_skinned_motion : MeshBindingLayout3d
 }
 pub fn MeshLayouts3d::select(Self, skinned~ : Bool, morphed~ : Bool, lightmapped~ : Bool, motion_vectors~ : Bool) -> MeshBindingLayout3d
+
+pub struct MeshPhaseBindGroups3d {
+  mut model_only : MeshPreparedBindGroup3d?
+  mut skinned : MeshBindGroupPair3d?
+  mut morph_targets : Map[Int, MeshBindGroupPair3d]
+  mut lightmaps : Map[Int, MeshPreparedBindGroup3d]
+}
+pub fn MeshPhaseBindGroups3d::get(Self, Int, Int?, Bool, Bool, Bool) -> MeshPreparedBindGroup3d?
+pub fn MeshPhaseBindGroups3d::has_model_only(Self) -> Bool
+pub fn MeshPhaseBindGroups3d::has_skinned(Self) -> Bool
+pub fn MeshPhaseBindGroups3d::lightmap_count(Self) -> Int
+pub fn MeshPhaseBindGroups3d::morph_target_count(Self) -> Int
+pub fn MeshPhaseBindGroups3d::new() -> Self
+pub fn MeshPhaseBindGroups3d::reset(Self) -> Unit
+
+pub struct MeshPreparedBindGroup3d {
+  label : String
+  layout_name : String
+  bindings : Array[(MeshBindingSlot3d, Int)]
+}
+pub fn MeshPreparedBindGroup3d::binding_count(Self) -> Int
+pub fn MeshPreparedBindGroup3d::bindings(Self) -> Array[(MeshBindingSlot3d, Int)]
+pub fn MeshPreparedBindGroup3d::has_slot(Self, MeshBindingSlot3d) -> Bool
+pub fn MeshPreparedBindGroup3d::label(Self) -> String
+pub fn MeshPreparedBindGroup3d::layout_name(Self) -> String
 
 pub(all) struct MeshPreprocessStatic3d {
   topology_kind : Int
@@ -1051,6 +1098,7 @@ pub(all) struct Render3dLightingState {
 
 pub struct Render3dMeshRuntimeState {
   mesh_upload_cache : Map[Int, Int]
+  morph_target_texture_cache : Map[Int, Int]
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
   mesh_vertex_buffer_layouts : @mesh.MeshVertexBufferLayouts
   specialized_material_pipelines : @material.SpecializedMeshPipelines
@@ -1110,6 +1158,16 @@ pub struct Render3dWorldTransformCache {
   skinning_stamps : Array[Int]
 }
 pub impl @ecs.EcsPayloadCodec for Render3dWorldTransformCache
+
+pub struct RenderMeshBindingInput3d {
+  mesh_asset_id : Int
+  skinned : Bool
+  morph_targets : Bool
+}
+pub fn RenderMeshBindingInput3d::mesh_asset_id(Self) -> Int
+pub fn RenderMeshBindingInput3d::morph_targets(Self) -> Bool
+pub fn RenderMeshBindingInput3d::new(Int, skinned? : Bool, morph_targets? : Bool) -> Self
+pub fn RenderMeshBindingInput3d::skinned(Self) -> Bool
 
 pub struct RenderTargetComputed3d {
   target_id : Int

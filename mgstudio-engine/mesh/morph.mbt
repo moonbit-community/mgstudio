@@ -29,7 +29,9 @@ pub fn Mesh::has_morph_targets(self : Mesh) -> Bool {
   match self.geometry {
     MeshGeometry::Geometry2d(_) => false
     MeshGeometry::Geometry3d(geometry3d) =>
-      geometry3d.morph_target_positions() is Some(_)
+      geometry3d.morph_target_positions() is Some(_) ||
+      geometry3d.morph_target_normals() is Some(_) ||
+      geometry3d.morph_target_tangents() is Some(_)
   }
 }
 
