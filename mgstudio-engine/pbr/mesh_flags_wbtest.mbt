@@ -245,6 +245,92 @@ fn render3d_test_extracted_mesh_for_flags(
 }
 
 ///|
+fn render3d_test_transparent_mesh_for_queue(
+  entity_id : Int,
+  z : Float,
+  depth_bias : Float,
+) -> ExtractedMesh3d {
+  let transform = @transform.Transform::from_xyz(0.0F, 0.0F, z)
+  let world_from_local = @math.Affine3::from_translation(transform.translation)
+  let material = StandardMaterial::default().with_alpha_mode(
+    @material.AlphaMode3d::Blend,
+  )
+  ExtractedMesh3d::{
+    entity: phase_entity_ref3d_for_main(@core.Entity::new(entity_id, 0)),
+    payload: Mesh3dExtractedPayload::{
+      mesh_handle: @asset.Handle::new(entity_id),
+      mesh_id: entity_id,
+      mesh_topology_kind: 0,
+      mesh_is_indexed: true,
+      mesh_preprocess_static: None,
+      world_from_local,
+      previous_world_from_local: world_from_local,
+      transform,
+      previous_transform: transform,
+      visibility_range: None,
+      aabb: None,
+      aabb_center_world: None,
+      material,
+      material_extension: None,
+      material_properties: render3d_material_properties_for_standard_material(
+        material,
+        None,
+        OpaqueRendererMethod::Forward,
+        true,
+      ).with_depth_bias(depth_bias),
+      material_vertex_shader_path: None,
+      material_fragment_shader_path: None,
+      material_pipeline_id: None,
+      lightmap: None,
+      is_forward_decal: false,
+      forward_decal_material_ext: None,
+      clustered_decal: None,
+      has_not_shadow_caster: false,
+      has_not_shadow_receiver: false,
+      has_transmitted_shadow_receiver: false,
+      has_no_frustum_culling: false,
+      has_no_cpu_culling: false,
+      layers: @sprite.RenderLayers::default(),
+      has_wireframe: false,
+      has_no_wireframe: false,
+      wireframe_color: None,
+      skinning_key_hi: -1,
+      has_previous_skin: false,
+      motion_vector_enabled: false,
+    },
+  }
+}
+
+///|
+test "render3d: transparent phase ordering includes bevy material depth bias" {
+  let meshes = [
+    render3d_test_transparent_mesh_for_queue(1, -1.0F, 0.0F),
+    render3d_test_transparent_mesh_for_queue(2, -1.0F, 2.0F),
+  ]
+  let camera_transform = @transform.Transform::identity()
+  let cpu_items = render3d_queue_mesh_phase_items(
+    meshes,
+    @sprite.RenderLayers::default(),
+    camera_transform,
+    [],
+    false,
+    false,
+  )
+  let gpu_items = render3d_queue_mesh_phase_items(
+    meshes,
+    @sprite.RenderLayers::default(),
+    camera_transform,
+    [],
+    false,
+    true,
+  )
+  debug_inspect(cpu_items[0].entity.main_entity.id, content="2")
+  debug_inspect(cpu_items[0].distance, content="3")
+  debug_inspect(gpu_items[0].entity.main_entity.id, content="2")
+  debug_inspect(gpu_items[0].distance, content="3")
+}
+
+///|
 test "render3d: mesh flags default to shadow receiver and positive determinant" {
   let flags = render3d_mesh_flags(
     render3d_test_extracted_mesh_for_flags(

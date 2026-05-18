@@ -123,10 +123,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       extracted_index: i,
       phase,
       pipeline_id: payload.material_pipeline_id,
-      distance: @pbr_render.render3d_mesh_position_view_depth(
-        payload.world_from_local.translation,
-        camera_transform,
-      ),
+      distance: render3d_material_phase_distance(payload, camera_transform),
     })
   }
   items.sort_by(fn(a, b) {
@@ -204,10 +201,7 @@ fn render3d_collect_meshes_for_gpu_building(
       extracted_index: i,
       phase,
       pipeline_id: payload.material_pipeline_id,
-      distance: @pbr_render.render3d_mesh_position_view_depth(
-        payload.world_from_local.translation,
-        camera_transform,
-      ),
+      distance: render3d_material_phase_distance(payload, camera_transform),
     })
   }
   work_items

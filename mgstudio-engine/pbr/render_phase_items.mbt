@@ -287,6 +287,23 @@ fn render3d_mesh_phase_kind(material : StandardMaterial, alpha : Float) -> Int? 
 }
 
 ///|
+fn render3d_material_phase_distance(
+  payload : Mesh3dExtractedPayload,
+  camera_transform : @transform.Transform,
+) -> Float {
+  let distance = @pbr_render.render3d_mesh_position_view_depth(
+    payload.world_from_local.translation,
+    camera_transform,
+  )
+  match payload.material_properties.render_phase_type {
+    @material.RenderPhaseType::Transmissive
+    | @material.RenderPhaseType::Transparent =>
+      distance + payload.material_properties.depth_bias
+    _ => distance
+  }
+}
+
+///|
 fn render3d_split_phase_ranges(
   length : Int,
   max_num_splits : Int,
