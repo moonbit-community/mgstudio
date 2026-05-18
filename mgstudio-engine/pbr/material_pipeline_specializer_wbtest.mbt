@@ -54,6 +54,17 @@ fn pbr_material_specializer_test_layout() -> @mesh.MeshVertexBufferLayoutRef {
 }
 
 ///|
+fn pbr_material_specializer_test_render_mesh() -> @render_mesh.RenderMesh {
+  @render_mesh.RenderMesh::new(
+    vertex_count=3,
+    key_bits=@mesh.BaseMeshPipelineKey::from_primitive_topology(
+      @mesh.Mesh3dPrimitiveTopology::TriangleList,
+    ),
+    layout=pbr_material_specializer_test_layout(),
+  )
+}
+
+///|
 fn pbr_material_specializer_test_key(
   mesh_bits? : UInt64 = 0UL,
 ) -> @material.ErasedMaterialPipelineKey {
@@ -242,7 +253,10 @@ test "pbr standard material properties install base specialization hook" {
     properties.get_shader(@material.DEFERRED_FRAGMENT_SHADER_LABEL),
     content="Some(\"pbr/render/pbr.wgsl\")",
   )
-  let pipeline_key = material_pipeline_key_for_standard_material(properties)
+  let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
+    properties,
+    pbr_material_specializer_test_render_mesh(),
+  )
   inspect(
     pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_BLEND_ALPHA,
     content="805306368",
@@ -262,7 +276,10 @@ test "pbr material base specialization caches descriptors from real material pro
   guard properties.base_specialize is Some(base_specialize) else {
     abort("expected StandardMaterial base specialize hook")
   }
-  let key = material_pipeline_key_for_standard_material(properties)
+  let key = material_pipeline_key_for_standard_material_render_mesh(
+    properties,
+    pbr_material_specializer_test_render_mesh(),
+  )
   let layout = pbr_material_specializer_test_layout()
   let first_id = try! @material.material_specialize_base(
     base_specialize, world, key, layout, properties,
@@ -410,7 +427,12 @@ test "pbr material prepass specialization caches descriptors separately" {
   }
   let key = @material.ErasedMaterialPipelineKey::new(
     @material.ErasedMeshPipelineKey::new(
-      material_pipeline_key_for_standard_material(properties).mesh_key().bits() |
+      material_pipeline_key_for_standard_material_render_mesh(
+        properties,
+        pbr_material_specializer_test_render_mesh(),
+      )
+      .mesh_key()
+      .bits() |
       MESH_PIPELINE_KEY_DEPTH_PREPASS,
       "MeshPipelineKey",
     ),

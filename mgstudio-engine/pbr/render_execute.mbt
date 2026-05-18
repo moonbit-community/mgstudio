@@ -304,11 +304,14 @@ fn render3d_prewarm_material_pipeline(
   guard @sprite.render_mesh_asset_get(mesh.mesh_handle) is Some(mesh_asset) else {
     return None
   }
-  let layout = mesh_asset.get_mesh_vertex_buffer_layout(
+  let render_mesh = @render_mesh.RenderMesh::from_mesh(
+    mesh_asset,
     mesh_runtime_state_ref.val.mesh_vertex_buffer_layouts,
   )
-  let pipeline_key = material_pipeline_key_for_standard_material(
+  let layout = render_mesh.layout()
+  let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
     mesh.material_properties,
+    render_mesh,
   )
   let pipeline_id = @material.material_specialize_base(
     base_specialize,

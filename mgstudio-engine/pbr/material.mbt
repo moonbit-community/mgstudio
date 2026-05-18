@@ -315,20 +315,23 @@ fn alpha_mode_pipeline_key(alpha_mode : @material.AlphaMode3d) -> UInt64 {
 }
 
 ///|
-fn material_mesh_pipeline_key_with_alpha(
+fn material_mesh_pipeline_key_for_render_mesh(
   properties : @material.MaterialProperties,
+  render_mesh : @render_mesh.RenderMesh,
 ) -> @material.ErasedMeshPipelineKey {
   let bits = properties.mesh_pipeline_key_bits.bits() |
+    render_mesh.key_bits().bits() |
     alpha_mode_pipeline_key(properties.alpha_mode)
   @material.ErasedMeshPipelineKey::new(bits, "MeshPipelineKey")
 }
 
 ///|
-fn material_pipeline_key_for_standard_material(
+fn material_pipeline_key_for_standard_material_render_mesh(
   properties : @material.MaterialProperties,
+  render_mesh : @render_mesh.RenderMesh,
 ) -> @material.ErasedMaterialPipelineKey {
   @material.ErasedMaterialPipelineKey::new(
-    material_mesh_pipeline_key_with_alpha(properties),
+    material_mesh_pipeline_key_for_render_mesh(properties, render_mesh),
     properties.material_key,
     "StandardMaterial",
   )

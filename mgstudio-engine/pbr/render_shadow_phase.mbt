@@ -262,11 +262,14 @@ fn render3d_prewarm_shadow_material_pipeline(
     return None
   }
   let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
-  let layout = mesh_asset.get_mesh_vertex_buffer_layout(
+  let render_mesh = @render_mesh.RenderMesh::from_mesh(
+    mesh_asset,
     state_ref.val.mesh_vertex_buffer_layouts,
   )
-  let base_key = material_pipeline_key_for_standard_material(
+  let layout = render_mesh.layout()
+  let base_key = material_pipeline_key_for_standard_material_render_mesh(
     shadow_mesh.material_properties,
+    render_mesh,
   )
   let shadow_key = @material.ErasedMaterialPipelineKey::new(
     @material.ErasedMeshPipelineKey::new(

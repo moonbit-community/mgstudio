@@ -396,6 +396,26 @@ test "render3d: transmissive materials use a distinct sorted phase" {
 }
 
 ///|
+test "render3d: standard material pipeline key includes render mesh topology" {
+  let line_key = @mesh.BaseMeshPipelineKey::from_primitive_topology(
+    @mesh.Mesh3dPrimitiveTopology::LineList,
+  )
+  let render_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=2,
+    key_bits=line_key,
+  )
+  let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
+    @material.MaterialProperties::default(),
+    render_mesh,
+  )
+  let mesh_key_bits = pipeline_key.mesh_key().downcast_u64("MeshPipelineKey")
+  debug_inspect(
+    (mesh_key_bits & line_key.bits()) == line_key.bits(),
+    content="true",
+  )
+}
+
+///|
 test "render3d: mesh flags default to shadow receiver and positive determinant" {
   let flags = render3d_mesh_flags(
     render3d_test_extracted_mesh_for_flags(
