@@ -287,9 +287,13 @@ pub fn pipeline_cache_resource_key() -> @ecs.ResourceKey[@render_resource.Pipeli
 
 pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn[A, B] prepare_erased_render_assets_with(ExtractedAssets[A], ErasedRenderAssets[B], ErasedPrepareNextFrameAssets[A], (A, Int, B?) -> Result[B, ErasedPrepareAssetError], (Int, B?) -> Unit) -> Unit
+
 pub fn[C : @ecs.Component + @ecs.EcsPayloadCodec] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
 
 pub fn[A : RenderAssetResource] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[A]]
+
+pub fn[A, B] prepare_render_assets_with(ExtractedAssets[A], RenderAssets[B], PrepareNextFrameAssets[A], (A, Int, B?) -> Result[B, PrepareAssetError], (Int, B?) -> Unit) -> Unit
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
@@ -459,6 +463,7 @@ pub fn[A] ErasedPrepareNextFrameAssets::len(Self[A]) -> Int
 pub fn[A] ErasedPrepareNextFrameAssets::new() -> Self[A]
 pub fn[A] ErasedPrepareNextFrameAssets::push(Self[A], Int, A) -> Unit
 pub fn[A] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[Self[A]]
+pub fn[A] ErasedPrepareNextFrameAssets::take(Self[A]) -> Array[(Int, A)]
 pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for ErasedPrepareNextFrameAssets[A]
 pub impl[A : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for ErasedPrepareNextFrameAssets[A]
 
@@ -628,6 +633,7 @@ pub fn[A] PrepareNextFrameAssets::len(Self[A]) -> Int
 pub fn[A] PrepareNextFrameAssets::new() -> Self[A]
 pub fn[A] PrepareNextFrameAssets::push(Self[A], Int, A) -> Unit
 pub fn[A] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[Self[A]]
+pub fn[A] PrepareNextFrameAssets::take(Self[A]) -> Array[(Int, A)]
 pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for PrepareNextFrameAssets[A]
 pub impl[A : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for PrepareNextFrameAssets[A]
 

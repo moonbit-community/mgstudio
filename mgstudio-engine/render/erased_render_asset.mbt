@@ -184,10 +184,66 @@ pub fn[A] ErasedPrepareNextFrameAssets::clear(
 }
 
 ///|
+pub fn[A] ErasedPrepareNextFrameAssets::take(
+  self : ErasedPrepareNextFrameAssets[A],
+) -> Array[(UntypedRenderAssetId, A)] {
+  let values = self.values.copy()
+  self.values.clear()
+  values
+}
+
+///|
 pub fn[A] ErasedPrepareNextFrameAssets::push(
   self : ErasedPrepareNextFrameAssets[A],
   id : UntypedRenderAssetId,
   value : A,
 ) -> Unit {
   self.values.push((id, value))
+}
+
+///|
+pub fn[A, B] prepare_erased_render_assets_with(
+  extracted_assets : ExtractedAssets[A],
+  render_assets : ErasedRenderAssets[B],
+  prepare_next_frame : ErasedPrepareNextFrameAssets[A],
+  prepare_asset : (A, UntypedRenderAssetId, B?) -> Result[
+    B,
+    ErasedPrepareAssetError,
+  ],
+  unload_asset : (UntypedRenderAssetId, B?) -> Unit,
+) -> Unit {
+  let queued_assets = prepare_next_frame.take()
+  for entry in queued_assets {
+    let (id, extracted_asset) = entry
+    if extracted_assets.removed.contains(id) ||
+      extracted_assets.added.contains(id) {
+      continue
+    }
+    let previous_asset = render_assets.get(id)
+    match prepare_asset(extracted_asset, id, previous_asset) {
+      Ok(prepared_asset) => render_assets.insert(id, prepared_asset)
+      Err(RetryNextUpdate(_)) => prepare_next_frame.push(id, extracted_asset)
+      Err(AsBindGroupError(_)) => ()
+    }
+  }
+
+  for id in extracted_assets.removed.iter() {
+    let previous_asset = render_assets.remove(id)
+    unload_asset(id, previous_asset)
+  }
+  extracted_assets.removed.clear()
+
+  let extracted = extracted_assets.extracted.copy()
+  extracted_assets.extracted.clear()
+  for entry in extracted {
+    let (id, extracted_asset) = entry
+    let previous_asset = render_assets.remove(id)
+    match prepare_asset(extracted_asset, id, previous_asset) {
+      Ok(prepared_asset) => render_assets.insert(id, prepared_asset)
+      Err(RetryNextUpdate(_)) => prepare_next_frame.push(id, extracted_asset)
+      Err(AsBindGroupError(_)) => ()
+    }
+  }
+  extracted_assets.modified.clear()
+  extracted_assets.added.clear()
 }
