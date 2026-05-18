@@ -178,7 +178,10 @@ const RENDER3D_PHASE_OPAQUE : Int = 0
 const RENDER3D_PHASE_ALPHA_MASK : Int = 1
 
 ///|
-const RENDER3D_PHASE_TRANSPARENT : Int = 2
+const RENDER3D_PHASE_TRANSMISSIVE : Int = 2
+
+///|
+const RENDER3D_PHASE_TRANSPARENT : Int = 3
 
 ///|
 priv struct CameraPhaseItem3d {
@@ -272,16 +275,7 @@ fn render3d_mesh_phase_kind(material : StandardMaterial, alpha : Float) -> Int? 
           }
         _ => Some(RENDER3D_PHASE_ALPHA_MASK)
       }
-    @material.RenderPhaseType::Transmissive =>
-      match material.alpha_mode {
-        Mask(cutoff) =>
-          if alpha >= cutoff {
-            Some(RENDER3D_PHASE_ALPHA_MASK)
-          } else {
-            None
-          }
-        _ => Some(RENDER3D_PHASE_OPAQUE)
-      }
+    @material.RenderPhaseType::Transmissive => Some(RENDER3D_PHASE_TRANSMISSIVE)
     @material.RenderPhaseType::Transparent => Some(RENDER3D_PHASE_TRANSPARENT)
   }
 }

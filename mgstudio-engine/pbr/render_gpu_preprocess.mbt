@@ -131,7 +131,8 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
     if phase_cmp != 0 {
       return phase_cmp
     }
-    if a.phase == RENDER3D_PHASE_TRANSPARENT {
+    if a.phase == RENDER3D_PHASE_TRANSMISSIVE ||
+      a.phase == RENDER3D_PHASE_TRANSPARENT {
       let depth_cmp = @pbr_render.cmp_float(b.distance, a.distance)
       if depth_cmp != 0 {
         return depth_cmp
@@ -213,28 +214,39 @@ fn render3d_sort_gpu_preprocess_work_items(
 ) -> Array[GpuPreprocessWorkItem3d] {
   let opaque_items : Array[GpuPreprocessWorkItem3d] = []
   let alpha_mask_items : Array[GpuPreprocessWorkItem3d] = []
+  let transmissive_items : Array[GpuPreprocessWorkItem3d] = []
   let transparent_items : Array[GpuPreprocessWorkItem3d] = []
   for work_item in work_items {
     if work_item.phase == RENDER3D_PHASE_OPAQUE {
       opaque_items.push(work_item)
     } else if work_item.phase == RENDER3D_PHASE_ALPHA_MASK {
       alpha_mask_items.push(work_item)
+    } else if work_item.phase == RENDER3D_PHASE_TRANSMISSIVE {
+      transmissive_items.push(work_item)
     } else if work_item.phase == RENDER3D_PHASE_TRANSPARENT {
       transparent_items.push(work_item)
     }
   }
-  transparent_items.sort_by(fn(a, b) {
+  let sort_back_to_front = fn(
+    a : GpuPreprocessWorkItem3d,
+    b : GpuPreprocessWorkItem3d,
+  ) -> Int {
     let depth_cmp = @pbr_render.cmp_float(b.distance, a.distance)
     if depth_cmp != 0 {
       return depth_cmp
     }
     phase_entity_ref3d_cmp(a.entity, b.entity)
-  })
+  }
+  transmissive_items.sort_by(sort_back_to_front)
+  transparent_items.sort_by(sort_back_to_front)
   let sorted : Array[GpuPreprocessWorkItem3d] = []
   for item in opaque_items {
     sorted.push(item)
   }
   for item in alpha_mask_items {
+    sorted.push(item)
+  }
+  for item in transmissive_items {
     sorted.push(item)
   }
   for item in transparent_items {
