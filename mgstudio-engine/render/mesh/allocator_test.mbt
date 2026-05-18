@@ -222,6 +222,74 @@ test "render mesh allocator: upload plans preserve bevy general write semantics"
 }
 
 ///|
+test "render mesh allocator: render mesh plan allocates vertex and index uploads" {
+  let allocator = MeshAllocator::new()
+  let mesh = RenderMesh::new(vertex_count=4, indexed=true, index_count=6)
+  let plan = allocator.allocate_render_mesh(41, mesh, 32)
+  guard plan.vertex_allocation() is Some(vertex_allocation) else {
+    fail("expected vertex allocation")
+  }
+  guard plan.index_allocation() is Some(index_allocation) else {
+    fail("expected index allocation")
+  }
+  inspect(vertex_allocation.kind() is General, content="true")
+  inspect(vertex_allocation.slot_count(), content="4")
+  inspect(index_allocation.kind() is General, content="true")
+  inspect(index_allocation.slot_count(), content="6")
+  guard plan.vertex_upload() is Some(vertex_upload) else {
+    fail("expected vertex upload")
+  }
+  guard plan.index_upload() is Some(index_upload) else {
+    fail("expected index upload")
+  }
+  inspect(vertex_upload.usage() is VertexBuffer, content="true")
+  inspect(vertex_upload.size(), content="128")
+  inspect(index_upload.usage() is IndexBuffer, content="true")
+  inspect(index_upload.size(), content="24")
+  inspect(plan.vertex_reallocate() is Some(_), content="true")
+  inspect(plan.index_reallocate() is Some(_), content="true")
+}
+
+///|
+test "render mesh allocator: non-indexed render mesh skips index allocation" {
+  let allocator = MeshAllocator::new()
+  let mesh = RenderMesh::new(vertex_count=3)
+  let plan = allocator.allocate_render_mesh(42, mesh, 32)
+  guard plan.vertex_allocation() is Some(vertex_allocation) else {
+    fail("expected vertex allocation")
+  }
+  inspect(vertex_allocation.slot_count(), content="3")
+  inspect(plan.index_allocation() is None, content="true")
+  inspect(plan.index_upload() is None, content="true")
+  inspect(plan.index_reallocate() is None, content="true")
+}
+
+///|
+test "render mesh allocator: render mesh plan preserves webgl vertex slab rule" {
+  let allocator = MeshAllocator::new(general_vertex_slabs_supported=false)
+  let mesh = RenderMesh::new(vertex_count=4, indexed=true, index_count=6)
+  let plan = allocator.allocate_render_mesh(43, mesh, 32)
+  guard plan.vertex_allocation() is Some(vertex_allocation) else {
+    fail("expected vertex allocation")
+  }
+  guard plan.index_allocation() is Some(index_allocation) else {
+    fail("expected index allocation")
+  }
+  inspect(vertex_allocation.kind() is LargeObject, content="true")
+  inspect(index_allocation.kind() is General, content="true")
+  guard plan.vertex_upload() is Some(vertex_upload) else {
+    fail("expected vertex upload")
+  }
+  guard plan.index_upload() is Some(index_upload) else {
+    fail("expected index upload")
+  }
+  inspect(vertex_upload.mapped_at_creation(), content="true")
+  inspect(index_upload.mapped_at_creation(), content="false")
+  inspect(plan.vertex_reallocate() is None, content="true")
+  inspect(plan.index_reallocate() is Some(_), content="true")
+}
+
+///|
 test "render mesh allocator: large upload plans preserve mapped buffer labels" {
   let allocator = MeshAllocator::new(general_vertex_slabs_supported=false)
   guard allocator.allocate(38, 96, MeshAllocatorElementLayout::vertex(32))

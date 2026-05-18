@@ -585,6 +585,58 @@ pub fn MeshAllocatorReallocateSlabPlan::old_copy_size(
 }
 
 ///|
+pub struct MeshAllocatorRenderMeshPlan {
+  vertex_allocation : MeshAllocatorSlabPlan?
+  index_allocation : MeshAllocatorSlabPlan?
+  vertex_upload : MeshAllocatorUploadPlan?
+  index_upload : MeshAllocatorUploadPlan?
+  vertex_reallocate : MeshAllocatorReallocateSlabPlan?
+  index_reallocate : MeshAllocatorReallocateSlabPlan?
+} derive(Eq, Debug)
+
+///|
+pub fn MeshAllocatorRenderMeshPlan::vertex_allocation(
+  self : MeshAllocatorRenderMeshPlan,
+) -> MeshAllocatorSlabPlan? {
+  self.vertex_allocation
+}
+
+///|
+pub fn MeshAllocatorRenderMeshPlan::index_allocation(
+  self : MeshAllocatorRenderMeshPlan,
+) -> MeshAllocatorSlabPlan? {
+  self.index_allocation
+}
+
+///|
+pub fn MeshAllocatorRenderMeshPlan::vertex_upload(
+  self : MeshAllocatorRenderMeshPlan,
+) -> MeshAllocatorUploadPlan? {
+  self.vertex_upload
+}
+
+///|
+pub fn MeshAllocatorRenderMeshPlan::index_upload(
+  self : MeshAllocatorRenderMeshPlan,
+) -> MeshAllocatorUploadPlan? {
+  self.index_upload
+}
+
+///|
+pub fn MeshAllocatorRenderMeshPlan::vertex_reallocate(
+  self : MeshAllocatorRenderMeshPlan,
+) -> MeshAllocatorReallocateSlabPlan? {
+  self.vertex_reallocate
+}
+
+///|
+pub fn MeshAllocatorRenderMeshPlan::index_reallocate(
+  self : MeshAllocatorRenderMeshPlan,
+) -> MeshAllocatorReallocateSlabPlan? {
+  self.index_reallocate
+}
+
+///|
 pub(all) struct MeshAllocatorSlabAllocation {
   mesh_id : Int
   offset : Int
@@ -1130,6 +1182,86 @@ pub fn MeshAllocator::allocate(
 }
 
 ///|
+fn MeshAllocator::reallocate_plan_for_allocation(
+  self : MeshAllocator,
+  allocation : MeshAllocatorSlabPlan?,
+) -> MeshAllocatorReallocateSlabPlan? {
+  match allocation {
+    Some(plan) =>
+      if plan.growth().kind() == NeededGrowth {
+        self.reallocate_slab_plan(
+          plan.slab_id(),
+          plan.growth().old_slot_capacity(),
+        )
+      } else {
+        None
+      }
+    None => None
+  }
+}
+
+///|
+fn mesh_allocator_render_mesh_index_byte_len(
+  mesh : RenderMesh,
+  index_layout : MeshAllocatorElementLayout,
+) -> Int? {
+  match mesh.buffer_info() {
+    Indexed(index_count) =>
+      if index_count > 0 {
+        Some(index_count * index_layout.size())
+      } else {
+        None
+      }
+    NonIndexed => None
+  }
+}
+
+///|
+pub fn MeshAllocator::allocate_render_mesh(
+  self : MeshAllocator,
+  mesh_id : Int,
+  mesh : RenderMesh,
+  vertex_stride : Int,
+  index_layout? : MeshAllocatorElementLayout = MeshAllocatorElementLayout::index_u32(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings::default(),
+) -> MeshAllocatorRenderMeshPlan {
+  let vertex_byte_len = mesh.vertex_count() * vertex_stride
+  let vertex_allocation = if vertex_byte_len > 0 {
+    self.allocate(
+      mesh_id,
+      vertex_byte_len,
+      MeshAllocatorElementLayout::vertex(vertex_stride),
+      settings~,
+    )
+  } else {
+    None
+  }
+  let vertex_upload = match vertex_allocation {
+    Some(_) => self.pending_upload_plan(mesh_id, Vertex, vertex_byte_len)
+    None => None
+  }
+  let index_byte_len = mesh_allocator_render_mesh_index_byte_len(
+    mesh, index_layout,
+  )
+  let index_allocation = match index_byte_len {
+    Some(byte_len) => self.allocate(mesh_id, byte_len, index_layout, settings~)
+    None => None
+  }
+  let index_upload = match index_byte_len {
+    Some(byte_len) => self.pending_upload_plan(mesh_id, Index, byte_len)
+    None => None
+  }
+  MeshAllocatorRenderMeshPlan::{
+    vertex_allocation,
+    index_allocation,
+    vertex_upload,
+    index_upload,
+    vertex_reallocate: self.reallocate_plan_for_allocation(vertex_allocation),
+    index_reallocate: self.reallocate_plan_for_allocation(index_allocation),
+  }
+}
+
+///|
 pub fn MeshAllocator::mesh_slabs(
   self : MeshAllocator,
   mesh_id : Int,
@@ -1317,33 +1449,4 @@ fn MeshAllocator::remove_empty_slabs(self : MeshAllocator) -> Unit {
       index = index + 1
     }
   }
-}
-
-///|
-pub fn mesh_allocator_create_mesh3d(
-  vertices_xyzuvrgba_csv~ : String,
-  primitive_topology~ : Int,
-) -> Int {
-  @renderer.create_mesh3d(vertices_xyzuvrgba_csv~, primitive_topology~)
-}
-
-///|
-pub fn mesh_allocator_create_mesh3d_xyznuvrgba(
-  vertices_xyznuvrgba~ : Array[Float],
-  primitive_topology~ : Int,
-) -> Int {
-  @renderer.create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~, primitive_topology~)
-}
-
-///|
-pub fn mesh_allocator_update_mesh3d_xyznuvrgba(
-  mesh_id~ : Int,
-  vertices_xyznuvrgba~ : Array[Float],
-  primitive_topology~ : Int,
-) -> Bool {
-  @renderer.update_mesh3d_xyznuvrgba(
-    mesh_id~,
-    vertices_xyznuvrgba~,
-    primitive_topology~,
-  )
 }
