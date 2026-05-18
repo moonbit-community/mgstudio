@@ -66,3 +66,39 @@ test "pbr deferred: plugin keeps explicit depth id value" {
   }
   inspect(depth.get(), content="7")
 }
+
+///|
+test "pbr deferred: deferred prepass run plan is exposed from core node owner" {
+  let state = DeferredPrepassViewState::new(
+    has_opaque_deferred_phase=true,
+    has_alpha_mask_deferred_phase=true,
+    has_normal_attachment=true,
+    has_motion_vectors_attachment=true,
+    has_deferred_attachment=true,
+    has_deferred_lighting_pass_id_attachment=true,
+    has_prepass_depth_attachment=true,
+    occlusion_culling_enabled=true,
+  )
+  let early = deferred_prepass_run_plan(DeferredPrepassRunKind::Early, state)
+  inspect(
+    deferred_prepass_run_kind_label(DeferredPrepassRunKind::Early),
+    content="early deferred prepass",
+  )
+  inspect(early.should_run, content="true")
+  inspect(early.color_attachments.slot_count, content="4")
+  inspect(
+    early.color_attachments.deferred_attachment_loads_existing,
+    content="false",
+  )
+  inspect(early.draw_opaque_phase, content="true")
+  inspect(early.draw_alpha_mask_phase, content="true")
+  inspect(early.copy_depth_to_prepass_depth, content="true")
+
+  let late = deferred_prepass_run_plan(DeferredPrepassRunKind::Late, state)
+  inspect(late.should_run, content="true")
+  inspect(late.is_late, content="true")
+  inspect(
+    late.color_attachments.deferred_attachment_loads_existing,
+    content="true",
+  )
+}

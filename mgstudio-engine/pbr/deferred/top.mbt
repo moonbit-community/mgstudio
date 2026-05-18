@@ -19,6 +19,30 @@ const DEFERRED_PBR_LIGHTING_PLUGIN_NAME : String = "mgstudio.pbr.DeferredPbrLigh
 pub const DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID : Int = 1
 
 ///|
+pub const DEFERRED_PREPASS_EARLY_LABEL : String = @core_deferred.DEFERRED_PREPASS_EARLY_LABEL
+
+///|
+pub const DEFERRED_PREPASS_LATE_LABEL : String = @core_deferred.DEFERRED_PREPASS_LATE_LABEL
+
+///|
+pub type DeferredPlugin = @core_deferred.DeferredPlugin
+
+///|
+pub type DeferredPrepassNode = @core_deferred.DeferredPrepassNode
+
+///|
+pub type DeferredPrepassRunKind = @core_deferred.DeferredPrepassRunKind
+
+///|
+pub type DeferredPrepassViewState = @core_deferred.DeferredPrepassViewState
+
+///|
+pub type DeferredPrepassColorAttachmentPlan = @core_deferred.DeferredPrepassColorAttachmentPlan
+
+///|
+pub type DeferredPrepassRunPlan = @core_deferred.DeferredPrepassRunPlan
+
+///|
 pub struct DeferredPbrLightingState {
   enabled : Bool
 }
@@ -154,4 +178,80 @@ pub fn deferred_pbr_lighting_enabled(world : @ecs.World) -> Bool {
     Some(state) => state.enabled
     None => false
   }
+}
+
+///|
+pub fn deferred_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @core_deferred.deferred_plugin(app)
+}
+
+///|
+pub fn deferred_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : DeferredPlugin,
+) -> @app.App[@ecs.World] {
+  @core_deferred.deferred_plugin_with(app, plugin)
+}
+
+///|
+pub fn deferred_prepass_has_any_phase(state : DeferredPrepassViewState) -> Bool {
+  @core_deferred.deferred_prepass_has_any_phase(state)
+}
+
+///|
+pub fn early_deferred_prepass_should_run(
+  state : DeferredPrepassViewState,
+) -> Bool {
+  @core_deferred.early_deferred_prepass_should_run(state)
+}
+
+///|
+pub fn late_deferred_prepass_should_run(
+  state : DeferredPrepassViewState,
+) -> Bool {
+  @core_deferred.late_deferred_prepass_should_run(state)
+}
+
+///|
+pub fn deferred_prepass_run_kind_label(kind : DeferredPrepassRunKind) -> String {
+  @core_deferred.deferred_prepass_run_kind_label(kind)
+}
+
+///|
+pub fn deferred_prepass_run_kind_is_late(kind : DeferredPrepassRunKind) -> Bool {
+  @core_deferred.deferred_prepass_run_kind_is_late(kind)
+}
+
+///|
+pub fn deferred_prepass_run_kind_should_run(
+  kind : DeferredPrepassRunKind,
+  state : DeferredPrepassViewState,
+) -> Bool {
+  @core_deferred.deferred_prepass_run_kind_should_run(kind, state)
+}
+
+///|
+pub fn deferred_prepass_color_attachment_plan(
+  kind : DeferredPrepassRunKind,
+  state : DeferredPrepassViewState,
+  webgl_manual_clear_supported? : Bool = false,
+) -> DeferredPrepassColorAttachmentPlan {
+  @core_deferred.deferred_prepass_color_attachment_plan(
+    kind,
+    state,
+    webgl_manual_clear_supported~,
+  )
+}
+
+///|
+pub fn deferred_prepass_run_plan(
+  kind : DeferredPrepassRunKind,
+  state : DeferredPrepassViewState,
+  webgl_manual_clear_supported? : Bool = false,
+) -> DeferredPrepassRunPlan {
+  @core_deferred.deferred_prepass_run_plan(
+    kind,
+    state,
+    webgl_manual_clear_supported~,
+  )
 }

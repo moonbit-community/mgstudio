@@ -9,13 +9,37 @@ import {
 // Values
 pub const DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID : Int = 1
 
+pub const DEFERRED_PREPASS_EARLY_LABEL : String = "early deferred prepass"
+
+pub const DEFERRED_PREPASS_LATE_LABEL : String = "late deferred prepass"
+
 pub fn deferred_pbr_lighting_enabled(@ecs.World) -> Bool
 
 pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn deferred_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn deferred_plugin_with(@app.App[@ecs.World], @Milky2018/mgstudio/core_pipeline/deferred.DeferredPlugin) -> @app.App[@ecs.World]
+
+pub fn deferred_prepass_color_attachment_plan(@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassRunKind, @Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassViewState, webgl_manual_clear_supported? : Bool) -> @Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassColorAttachmentPlan
+
+pub fn deferred_prepass_has_any_phase(@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassViewState) -> Bool
+
+pub fn deferred_prepass_run_kind_is_late(@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassRunKind) -> Bool
+
+pub fn deferred_prepass_run_kind_label(@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassRunKind) -> String
+
+pub fn deferred_prepass_run_kind_should_run(@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassRunKind, @Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassViewState) -> Bool
+
+pub fn deferred_prepass_run_plan(@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassRunKind, @Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassViewState, webgl_manual_clear_supported? : Bool) -> @Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassRunPlan
+
+pub fn early_deferred_prepass_should_run(@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassViewState) -> Bool
+
 pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[DeferredPbrLightingState]
 
 pub let ecs_key_pbr_deferred_lighting_depth_id : @ecs.ComponentKey[PbrDeferredLightingDepthId]
+
+pub fn late_deferred_prepass_should_run(@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepassViewState) -> Bool
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
@@ -45,6 +69,17 @@ pub impl @ecs.Component for PbrDeferredLightingDepthId
 pub impl @ecs.EcsPayloadCodec for PbrDeferredLightingDepthId
 
 // Type aliases
+pub using @Milky2018/mgstudio/core_pipeline/deferred {type DeferredPlugin}
+
+pub using @Milky2018/mgstudio/core_pipeline/deferred {type DeferredPrepassColorAttachmentPlan}
+
+pub using @Milky2018/mgstudio/core_pipeline/deferred {type DeferredPrepassNode}
+
+pub using @Milky2018/mgstudio/core_pipeline/deferred {type DeferredPrepassRunKind}
+
+pub using @Milky2018/mgstudio/core_pipeline/deferred {type DeferredPrepassRunPlan}
+
+pub using @Milky2018/mgstudio/core_pipeline/deferred {type DeferredPrepassViewState}
 
 // Traits
 
