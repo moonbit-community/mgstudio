@@ -49,6 +49,8 @@ pub const DEFERRED_LIGHTING_SHADER_PATH : String = "pbr/deferred/deferred_lighti
 
 pub const DEFERRED_OPAQUE_DRAW_FUNCTION_LABEL : String = "DeferredOpaqueDrawFunction"
 
+pub const DUMMY_MESH_MATERIAL_ID : Int = -1
+
 pub const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05
 
 pub const MAIN_PASS_ALPHA_MASK_DRAW_FUNCTION_LABEL : String = "MainPassAlphaMaskDrawFunction"
@@ -272,6 +274,8 @@ pub let ecs_key_previous_global_transform : @ecs.ComponentKey[@Milky2018/mgstudi
 pub let ecs_key_previous_view_data : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/prepass.PreviousViewData]
 
 pub let ecs_key_projection : @ecs.ComponentKey[Projection]
+
+pub let ecs_key_render_material_instances : @ecs.ResourceKey[RenderMaterialInstances]
 
 pub let ecs_key_scattering_medium_plugin_state : @ecs.ResourceKey[ScatteringMediumPluginState]
 
@@ -1323,6 +1327,27 @@ pub fn Render3dDiagnosticsSnapshot::default() -> Self
 
 type Render3dInternalAssetsState
 pub impl @ecs.EcsPayloadCodec for Render3dInternalAssetsState
+
+pub struct RenderMaterialInstance {
+  asset_id : Int
+  last_change_tick : UInt
+}
+pub fn RenderMaterialInstance::asset_id(Self) -> Int
+pub fn RenderMaterialInstance::last_change_tick(Self) -> UInt
+pub fn RenderMaterialInstance::new(Int, UInt) -> Self
+
+pub struct RenderMaterialInstances {
+  instances : Map[UInt64, RenderMaterialInstance]
+  mut current_change_tick : UInt
+}
+pub fn RenderMaterialInstances::current_change_tick(Self) -> UInt
+pub fn RenderMaterialInstances::default() -> Self
+pub fn RenderMaterialInstances::early_sweep_removed_mesh_material(Self, @core.Entity) -> Bool
+pub fn RenderMaterialInstances::extract_mesh_material(Self, @core.Entity, Bool, @material.MeshMaterial3d) -> Unit
+pub fn RenderMaterialInstances::get(Self, @core.Entity) -> RenderMaterialInstance?
+pub fn RenderMaterialInstances::late_sweep_removed_mesh3d(Self, @core.Entity) -> Bool
+pub fn RenderMaterialInstances::len(Self) -> Int
+pub fn RenderMaterialInstances::mesh_material(Self, @core.Entity) -> Int
 
 pub struct ScatteringMediumLutConfig {
   falloff_resolution : Int
