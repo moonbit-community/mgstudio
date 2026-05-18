@@ -1750,6 +1750,31 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
 }
 
 ///|
+pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights_vertices(
+  self : Mesh3dGeometry,
+) -> Array[Double]? {
+  if self.validate() is Some(_) {
+    return None
+  }
+  let out : Array[Double] = []
+  let joint_indices = self.joint_indices
+  let joint_weights = self.joint_weights
+  let explicit_normals = self.mesh3d_valid_normals()
+  let normal = mesh3d_runtime_default_normal()
+  for i in 0..<self.positions.length() {
+    mesh3d_push_interleaved_xyz_normal_uv_rgba(
+      out,
+      self.positions[i],
+      mesh3d_normal_at_or(explicit_normals, i, normal),
+      mesh3d_uv_at_or_zero(self.uvs, i),
+      mesh3d_vertex_color_or_white(self.colors, i),
+    )
+    mesh3d_push_skinning_joint_data(out, joint_indices, joint_weights, i)
+  }
+  Some(out)
+}
+
+///|
 pub fn Mesh3dGeometry::encode_interleaved_xyz_uv_rgba_csv(
   self : Mesh3dGeometry,
 ) -> String? {

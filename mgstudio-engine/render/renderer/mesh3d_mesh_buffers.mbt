@@ -284,6 +284,68 @@ fn GpuBackend::mesh3d_execute_allocator_upload(
 }
 
 ///|
+fn mesh3d_usable_non_indexed_vertex_count(
+  vertex_count : Int,
+  primitive_topology : UInt,
+) -> Int {
+  if primitive_topology == MESH3D_TOPOLOGY_TRIANGLE_LIST {
+    vertex_count - vertex_count % 3
+  } else if primitive_topology == MESH3D_TOPOLOGY_LINE_LIST {
+    vertex_count - vertex_count % 2
+  } else if vertex_count < 2 {
+    0
+  } else {
+    vertex_count
+  }
+}
+
+///|
+fn mesh3d_indices_valid(indices : Array[Int], vertex_count : Int) -> Bool {
+  if indices.length() <= 0 || vertex_count <= 0 {
+    return false
+  }
+  for index in indices {
+    if index < 0 || index >= vertex_count {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn mesh3d_indices_use_u32(indices : Array[Int]) -> Bool {
+  for index in indices {
+    if index > 65535 {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn mesh3d_index_bytes(indices : Array[Int], uses_u32_indices : Bool) -> Bytes {
+  if uses_u32_indices {
+    let indices_u32 : Array[UInt] = []
+    for index in indices {
+      indices_u32.push(index.reinterpret_as_uint())
+    }
+    u32le_pack(indices_u32)
+  } else {
+    u16le_pack(indices)
+  }
+}
+
+///|
+fn GpuBackend::create_mesh3d_empty_index_buffer(
+  self : GpuBackend,
+) -> @wgpu.Buffer {
+  self.device.create_buffer_init(
+    usage=bu(@wgpu.BUFFER_USAGE_INDEX),
+    u16le_pack([0]),
+  )
+}
+
+///|
 pub fn GpuBackend::create_mesh3d_xyznuvrgba(
   self : GpuBackend,
   vertices : Array[Float],
@@ -298,19 +360,12 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba(
   if vcount <= 0 {
     return 0
   }
-  let usable_vcount = if primitive_topology == MESH3D_TOPOLOGY_TRIANGLE_LIST {
-    vcount - vcount % 3
-  } else if primitive_topology == MESH3D_TOPOLOGY_LINE_LIST {
-    vcount - vcount % 2
-  } else if vcount < 2 {
-    0
-  } else {
-    vcount
-  }
+  let usable_vcount = mesh3d_usable_non_indexed_vertex_count(
+    vcount, primitive_topology,
+  )
   if usable_vcount <= 0 {
     return 0
   }
-  let uses_u32_indices = usable_vcount > 65535
   let id = alloc_id(self)
   let trimmed_vertices = if usable_vcount == vcount {
     expanded_vertices
@@ -323,28 +378,75 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba(
     out
   }
   let vertex_bytes = mesh3d_vertex_bytes(trimmed_vertices)
+  let render_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=usable_vcount,
+    indexed=false,
+  )
+  let plan = self.mesh_allocator.allocate_render_mesh(
+    id,
+    render_mesh,
+    MESH3D_VERTEX_STRIDE_BYTES.to_int(),
+  )
+  if plan.vertex_reallocate() is Some(reallocate) {
+    self.mesh3d_reallocate_allocator_slab(reallocate)
+  }
+  guard plan.vertex_upload() is Some(vertex_upload) else { return 0 }
+  guard self.mesh3d_execute_allocator_upload(id, vertex_upload, vertex_bytes)
+    is Some(vb) else {
+    return 0
+  }
+  guard self.mesh_allocator.mesh_vertex_slice(id) is Some(vertex_slice) else {
+    return 0
+  }
+  let info = GpuMeshInfo::{
+    id,
+    index_count: 0U,
+    vertex_count: usable_vcount.reinterpret_as_uint(),
+    index_start: 0U,
+    vertex_start: vertex_slice.start().reinterpret_as_uint(),
+    index_slab_id: -1,
+    vertex_slab_id: vertex_slice.slab_id(),
+    primitive_topology,
+    vertex_stride_bytes: MESH3D_VERTEX_STRIDE_BYTES,
+    index_stride_bytes: 2UL,
+    uses_u32_indices: false,
+    vertex_buf: vb,
+    index_buf: self.create_mesh3d_empty_index_buffer(),
+  }
+  self.meshes.push(info)
+  id
+}
+
+///|
+pub fn GpuBackend::create_mesh3d_xyznuvrgba_indexed(
+  self : GpuBackend,
+  vertices : Array[Float],
+  indices : Array[Int],
+  primitive_topology_kind : Int,
+) -> Int {
+  guard mesh3d_expand_vertices_with_skinning_defaults(vertices)
+    is Some(expanded_vertices) else {
+    return 0
+  }
+  let primitive_topology = mesh3d_topology_from_kind(primitive_topology_kind)
+  let vertex_count = expanded_vertices.length() /
+    MESH3D_VERTEX_SKINNED_FLOAT_STRIDE
+  if !mesh3d_indices_valid(indices, vertex_count) {
+    return 0
+  }
+  let uses_u32_indices = mesh3d_indices_use_u32(indices)
+  let id = alloc_id(self)
+  let vertex_bytes = mesh3d_vertex_bytes(expanded_vertices)
   let index_layout = if uses_u32_indices {
     @render_mesh.MeshAllocatorElementLayout::index_u32()
   } else {
     @render_mesh.MeshAllocatorElementLayout::index_u16()
   }
-  let index_bytes = if uses_u32_indices {
-    let indices_u32 : Array[UInt] = []
-    for i in 0..<usable_vcount {
-      indices_u32.push(i.reinterpret_as_uint())
-    }
-    u32le_pack(indices_u32)
-  } else {
-    let indices_u16 : Array[Int] = []
-    for i in 0..<usable_vcount {
-      indices_u16.push(i)
-    }
-    u16le_pack(indices_u16)
-  }
+  let index_bytes = mesh3d_index_bytes(indices, uses_u32_indices)
   let render_mesh = @render_mesh.RenderMesh::new(
-    vertex_count=usable_vcount,
+    vertex_count~,
     indexed=true,
-    index_count=usable_vcount,
+    index_count=indices.length(),
   )
   let plan = self.mesh_allocator.allocate_render_mesh(
     id,
@@ -376,8 +478,8 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba(
   }
   let info = GpuMeshInfo::{
     id,
-    index_count: usable_vcount.reinterpret_as_uint(),
-    vertex_count: usable_vcount.reinterpret_as_uint(),
+    index_count: indices.length().reinterpret_as_uint(),
+    vertex_count: vertex_count.reinterpret_as_uint(),
     index_start: index_slice.start().reinterpret_as_uint(),
     vertex_start: vertex_slice.start().reinterpret_as_uint(),
     index_slab_id: index_slice.slab_id(),
@@ -421,15 +523,9 @@ pub fn GpuBackend::update_mesh3d_xyznuvrgba(
   if vcount <= 0 {
     return false
   }
-  let usable_vcount = if primitive_topology == MESH3D_TOPOLOGY_TRIANGLE_LIST {
-    vcount - vcount % 3
-  } else if primitive_topology == MESH3D_TOPOLOGY_LINE_LIST {
-    vcount - vcount % 2
-  } else if vcount < 2 {
-    0
-  } else {
-    vcount
-  }
+  let usable_vcount = mesh3d_usable_non_indexed_vertex_count(
+    vcount, primitive_topology,
+  )
   if usable_vcount <= 0 {
     return false
   }
@@ -437,7 +533,8 @@ pub fn GpuBackend::update_mesh3d_xyznuvrgba(
   let mesh = self.meshes[mesh_index]
   if mesh.vertex_stride_bytes != MESH3D_VERTEX_STRIDE_BYTES ||
     mesh.primitive_topology != primitive_topology ||
-    mesh.vertex_count.reinterpret_as_int() != usable_vcount {
+    mesh.vertex_count.reinterpret_as_int() != usable_vcount ||
+    mesh.index_count != 0U {
     return false
   }
   let trimmed_vertices = if usable_vcount == vcount {
@@ -455,6 +552,48 @@ pub fn GpuBackend::update_mesh3d_xyznuvrgba(
     mesh.vertex_start.reinterpret_as_int().to_uint64() *
     mesh.vertex_stride_bytes,
     mesh3d_vertex_bytes(trimmed_vertices),
+  )
+  true
+}
+
+///|
+pub fn GpuBackend::update_mesh3d_xyznuvrgba_indexed(
+  self : GpuBackend,
+  mesh_id : Int,
+  vertices : Array[Float],
+  indices : Array[Int],
+  primitive_topology_kind : Int,
+) -> Bool {
+  guard mesh3d_expand_vertices_with_skinning_defaults(vertices)
+    is Some(expanded_vertices) else {
+    return false
+  }
+  let primitive_topology = mesh3d_topology_from_kind(primitive_topology_kind)
+  let vertex_count = expanded_vertices.length() /
+    MESH3D_VERTEX_SKINNED_FLOAT_STRIDE
+  if !mesh3d_indices_valid(indices, vertex_count) {
+    return false
+  }
+  let uses_u32_indices = mesh3d_indices_use_u32(indices)
+  guard find_mesh_index(self, mesh_id) is Some(mesh_index) else { return false }
+  let mesh = self.meshes[mesh_index]
+  if mesh.vertex_stride_bytes != MESH3D_VERTEX_STRIDE_BYTES ||
+    mesh.primitive_topology != primitive_topology ||
+    mesh.vertex_count.reinterpret_as_int() != vertex_count ||
+    mesh.index_count.reinterpret_as_int() != indices.length() ||
+    mesh.uses_u32_indices != uses_u32_indices {
+    return false
+  }
+  self.queue.write_buffer(
+    mesh.vertex_buf,
+    mesh.vertex_start.reinterpret_as_int().to_uint64() *
+    mesh.vertex_stride_bytes,
+    mesh3d_vertex_bytes(expanded_vertices),
+  )
+  self.queue.write_buffer(
+    mesh.index_buf,
+    mesh.index_start.reinterpret_as_int().to_uint64() * mesh.index_stride_bytes,
+    mesh3d_index_bytes(indices, uses_u32_indices),
   )
   true
 }

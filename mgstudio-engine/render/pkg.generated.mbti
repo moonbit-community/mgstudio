@@ -155,6 +155,8 @@ pub fn host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topolo
 
 pub fn host_gpu_create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Int
 
+pub fn host_gpu_create_mesh3d_xyznuvrgba_indexed(vertices_xyznuvrgba~ : Array[Float], indices~ : Array[Int], primitive_topology~ : Int) -> Int
+
 pub fn host_gpu_create_mesh_capsule(radius~ : Float, half_length~ : Float, segments~ : Int) -> Int
 
 pub fn host_gpu_create_mesh_rectangle(width~ : Float, height~ : Float) -> Int
@@ -266,6 +268,8 @@ pub fn host_gpu_surface_target_id(Int) -> Int
 pub fn host_gpu_surface_target_id_for_window(Int) -> Int
 
 pub fn host_gpu_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Bool
+
+pub fn host_gpu_update_mesh3d_xyznuvrgba_indexed(mesh_id~ : Int, vertices_xyznuvrgba~ : Array[Float], indices~ : Array[Int], primitive_topology~ : Int) -> Bool
 
 pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : @renderer.HostMesh3dPreprocessCameraPayload) -> Unit
 

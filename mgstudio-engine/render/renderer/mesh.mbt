@@ -82,6 +82,9 @@ fn GpuBackend::delete_mesh(self : GpuBackend, mesh_id : Int) -> Bool {
   if mesh.vertex_slab_id >= 0 || mesh.index_slab_id >= 0 {
     self.mesh_allocator.free_mesh(mesh_id)
     self.delete_unused_mesh3d_allocator_buffers()
+    if mesh.index_slab_id < 0 {
+      mesh.index_buf.release()
+    }
   } else {
     mesh.vertex_buf.release()
     mesh.index_buf.release()
@@ -292,6 +295,26 @@ pub fn create_mesh3d_xyznuvrgba(
 }
 
 ///|
+pub fn create_mesh3d_xyznuvrgba_indexed(
+  vertices_xyznuvrgba~ : Array[Float],
+  indices~ : Array[Int],
+  primitive_topology~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    let mesh_id = backend.create_mesh3d_xyznuvrgba_indexed(
+      vertices_xyznuvrgba, indices, primitive_topology,
+    )
+    if mesh_id <= 0 {
+      debug(
+        "[renderer] create_mesh3d_xyznuvrgba_indexed failed: values=\{vertices_xyznuvrgba.length().to_string()}, indices=\{indices.length().to_string()}, topology=\{primitive_topology.to_string()}",
+      )
+    }
+    return mesh_id
+  }
+  0
+}
+
+///|
 pub fn update_mesh3d_xyznuvrgba(
   mesh_id~ : Int,
   vertices_xyznuvrgba~ : Array[Float],
@@ -300,6 +323,21 @@ pub fn update_mesh3d_xyznuvrgba(
   if ensure_backend() is Some(backend) {
     return backend.update_mesh3d_xyznuvrgba(
       mesh_id, vertices_xyznuvrgba, primitive_topology,
+    )
+  }
+  false
+}
+
+///|
+pub fn update_mesh3d_xyznuvrgba_indexed(
+  mesh_id~ : Int,
+  vertices_xyznuvrgba~ : Array[Float],
+  indices~ : Array[Int],
+  primitive_topology~ : Int,
+) -> Bool {
+  if ensure_backend() is Some(backend) {
+    return backend.update_mesh3d_xyznuvrgba_indexed(
+      mesh_id, vertices_xyznuvrgba, indices, primitive_topology,
     )
   }
   false

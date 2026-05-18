@@ -202,6 +202,8 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
         non_indexed_indirect_parameters_buffer,
         mesh3d_non_indexed_indirect_offset(indirect_parameters_index),
       )
+    } else if mesh.index_count == 0U {
+      pass.draw(mesh.vertex_count, 1U, mesh.vertex_start, mesh_index)
     } else {
       gpu_mesh_bind_index_buffer(pass, mesh)
       pass.draw_indexed(
@@ -212,6 +214,8 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
         mesh_index,
       )
     }
+  } else if mesh.index_count == 0U {
+    pass.draw(mesh.vertex_count, 1U, mesh.vertex_start, mesh_index)
   } else {
     gpu_mesh_bind_index_buffer(pass, mesh)
     pass.draw_indexed(

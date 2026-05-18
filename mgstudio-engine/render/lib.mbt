@@ -1826,6 +1826,19 @@ pub fn host_gpu_create_mesh3d_xyznuvrgba(
 }
 
 ///|
+pub fn host_gpu_create_mesh3d_xyznuvrgba_indexed(
+  vertices_xyznuvrgba~ : Array[Float],
+  indices~ : Array[Int],
+  primitive_topology~ : Int,
+) -> Int {
+  @renderer.create_mesh3d_xyznuvrgba_indexed(
+    vertices_xyznuvrgba~,
+    indices~,
+    primitive_topology~,
+  )
+}
+
+///|
 pub fn host_gpu_mesh_info(mesh_id : Int) -> HostGpuMeshInfo? {
   @renderer.mesh_info(mesh_id)
 }
@@ -1839,6 +1852,21 @@ pub fn host_gpu_update_mesh3d_xyznuvrgba(
   @renderer.update_mesh3d_xyznuvrgba(
     mesh_id~,
     vertices_xyznuvrgba~,
+    primitive_topology~,
+  )
+}
+
+///|
+pub fn host_gpu_update_mesh3d_xyznuvrgba_indexed(
+  mesh_id~ : Int,
+  vertices_xyznuvrgba~ : Array[Float],
+  indices~ : Array[Int],
+  primitive_topology~ : Int,
+) -> Bool {
+  @renderer.update_mesh3d_xyznuvrgba_indexed(
+    mesh_id~,
+    vertices_xyznuvrgba~,
+    indices~,
     primitive_topology~,
   )
 }

@@ -343,7 +343,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
       return
     }
   }
-  if mesh.primitive_topology == MESH3D_TOPOLOGY_LINE_STRIP {
+  if mesh.index_count == 0U {
     pass.draw(
       mesh.vertex_count,
       indirect_draw_count.reinterpret_as_uint(),

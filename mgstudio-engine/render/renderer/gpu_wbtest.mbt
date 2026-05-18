@@ -626,6 +626,7 @@ test "renderer: large mesh3d upload switches to u32 index buffers" {
   let backend = GpuBackend::new()
   backend.meshes.clear()
   let vertices : Array[Float] = []
+  let indices : Array[Int] = []
   for i in 0..<65538 {
     let x = Float::from_int(i % 3)
     let y = Float::from_int(i / 3 % 3)
@@ -641,8 +642,9 @@ test "renderer: large mesh3d upload switches to u32 index buffers" {
     vertices.push(1.0F)
     vertices.push(1.0F)
     vertices.push(1.0F)
+    indices.push(i)
   }
-  let mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
+  let mesh_id = backend.create_mesh3d_xyznuvrgba_indexed(vertices, indices, 0)
   let ok = mesh_id > 0 &&
     backend.meshes.length() == 1 &&
     backend.meshes[0].id == mesh_id &&
@@ -663,8 +665,44 @@ test "renderer: mesh3d allocator metadata exposes packed slab ranges" {
     0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 1.0F,
     0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F,
   ]
-  let first_mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
-  let second_mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
+  let indices : Array[Int] = [0, 1, 2]
+  let first_mesh_id = backend.create_mesh3d_xyznuvrgba_indexed(
+    vertices, indices, 0,
+  )
+  let second_mesh_id = backend.create_mesh3d_xyznuvrgba_indexed(
+    vertices, indices, 0,
+  )
+  let ok = first_mesh_id > 0 &&
+    second_mesh_id > first_mesh_id &&
+    backend.meshes.length() == 2 &&
+    backend.meshes[0].vertex_start == 0U &&
+    backend.meshes[0].index_start == 0U &&
+    backend.meshes[1].vertex_start == 3U &&
+    backend.meshes[1].index_start == 0U &&
+    backend.meshes[0].vertex_slab_id == backend.meshes[1].vertex_slab_id &&
+    backend.meshes[0].index_slab_id == -1 &&
+    backend.meshes[1].index_slab_id == -1 &&
+    backend.meshes[1].vertex_count == 3U &&
+    backend.meshes[1].index_count == 0U
+  debug_inspect(ok, content="true")
+}
+
+///|
+test "renderer: indexed mesh3d allocator metadata exposes index slab ranges" {
+  let backend = GpuBackend::new()
+  backend.meshes.clear()
+  let vertices : Array[Float] = [
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+    0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 1.0F,
+    0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+  ]
+  let indices : Array[Int] = [0, 1, 2]
+  let first_mesh_id = backend.create_mesh3d_xyznuvrgba_indexed(
+    vertices, indices, 0,
+  )
+  let second_mesh_id = backend.create_mesh3d_xyznuvrgba_indexed(
+    vertices, indices, 0,
+  )
   let ok = first_mesh_id > 0 &&
     second_mesh_id > first_mesh_id &&
     backend.meshes.length() == 2 &&

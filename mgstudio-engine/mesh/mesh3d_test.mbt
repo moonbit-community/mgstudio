@@ -85,6 +85,35 @@ test "mesh: Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba gives default
 }
 
 ///|
+test "mesh: Mesh3dGeometry vertex-order flatten preserves indexed source vertices" {
+  let geometry = Mesh3dGeometry::new(
+    [
+      @math.Vec3::new(-1.0F, -1.0F, 0.0F),
+      @math.Vec3::new(1.0F, -1.0F, 0.0F),
+      @math.Vec3::new(1.0F, 1.0F, 0.0F),
+      @math.Vec3::new(-1.0F, 1.0F, 0.0F),
+    ],
+    [
+      @math.Vec2::new(0.0F, 1.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 0.0F),
+    ],
+    Some([0, 1, 2, 0, 2, 3]),
+  )
+  match geometry.flatten_interleaved_xyz_normal_uv_rgba_joints_weights() {
+    Some(index_expanded) =>
+      debug_inspect(index_expanded.length(), content="120")
+    None => abort("expected index-expanded flatten data")
+  }
+  match
+    geometry.flatten_interleaved_xyz_normal_uv_rgba_joints_weights_vertices() {
+    Some(vertex_order) => debug_inspect(vertex_order.length(), content="80")
+    None => abort("expected vertex-order flatten data")
+  }
+}
+
+///|
 test "mesh: Mesh3dGeometry standard attributes use vertex attribute ids" {
   let geometry = Mesh3dGeometry::new_with_positions(
     [@math.Vec3::new(1.0F, 2.0F, 3.0F)],

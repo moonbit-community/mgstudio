@@ -988,7 +988,8 @@ fn mesh2d_geometry_base_radius(geometry : @mesh.Mesh2dGeometry) -> Float {
 fn mesh3d_geometry_flatten_vertices_f32(
   geometry : @mesh.Mesh3dGeometry,
 ) -> Array[Float]? {
-  match geometry.flatten_interleaved_xyz_normal_uv_rgba_joints_weights() {
+  match
+    geometry.flatten_interleaved_xyz_normal_uv_rgba_joints_weights_vertices() {
     Some(vertices) => {
       let vertices_f32 : Array[Float] = []
       for value in vertices {
@@ -1027,11 +1028,25 @@ fn mesh_upload_cache_sync_with_asset_events() -> Unit {
               @mesh.MeshGeometry::Geometry3d(geometry3d) =>
                 if mesh3d_geometry_flatten_vertices_f32(geometry3d)
                   is Some(vertices_f32) {
-                  keep_cache = @render.host_gpu_update_mesh3d_xyznuvrgba(
-                    mesh_id~,
-                    vertices_xyznuvrgba=vertices_f32,
-                    primitive_topology=geometry3d.primitive_topology().to_int(),
-                  )
+                  keep_cache = match geometry3d.indices {
+                    Some(indices) =>
+                      @render.host_gpu_update_mesh3d_xyznuvrgba_indexed(
+                        mesh_id~,
+                        vertices_xyznuvrgba=vertices_f32,
+                        indices~,
+                        primitive_topology=geometry3d
+                          .primitive_topology()
+                          .to_int(),
+                      )
+                    None =>
+                      @render.host_gpu_update_mesh3d_xyznuvrgba(
+                        mesh_id~,
+                        vertices_xyznuvrgba=vertices_f32,
+                        primitive_topology=geometry3d
+                          .primitive_topology()
+                          .to_int(),
+                      )
+                  }
                 }
               _ => ()
             }

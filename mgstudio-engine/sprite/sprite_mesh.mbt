@@ -953,10 +953,19 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
           uploaded_mesh_radius = 64.0F
           match mesh3d_geometry_flatten_vertices_f32(geometry3d) {
             Some(vertices_f32) =>
-              @render.host_gpu_create_mesh3d_xyznuvrgba(
-                vertices_xyznuvrgba=vertices_f32,
-                primitive_topology=geometry3d.primitive_topology().to_int(),
-              )
+              match geometry3d.indices {
+                Some(indices) =>
+                  @render.host_gpu_create_mesh3d_xyznuvrgba_indexed(
+                    vertices_xyznuvrgba=vertices_f32,
+                    indices~,
+                    primitive_topology=geometry3d.primitive_topology().to_int(),
+                  )
+                None =>
+                  @render.host_gpu_create_mesh3d_xyznuvrgba(
+                    vertices_xyznuvrgba=vertices_f32,
+                    primitive_topology=geometry3d.primitive_topology().to_int(),
+                  )
+              }
             None => {
               let message = match geometry3d.validate() {
                 Some(err) =>
