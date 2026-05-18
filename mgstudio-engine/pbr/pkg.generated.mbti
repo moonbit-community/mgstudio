@@ -345,6 +345,8 @@ pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wirefram
 
 pub fn[T : MaterialExtension] material_extension_metadata_from_extension(T) -> @material.ExtendedMaterialMetadata3d
 
+pub fn material_uses_bindless_resources(Bool, Int?) -> Bool
+
 pub fn materials_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn mesh_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@mesh.Mesh]]
@@ -591,6 +593,8 @@ pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@mater
 
 pub fn standard_material_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@material.StandardMaterial]]
 
+pub fn standard_material_bind_group_allocator_install_plan(Bool, Int?) -> MaterialBindGroupAllocatorInstallPlan
+
 pub fn standard_material_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor
 
 pub fn standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
@@ -600,6 +604,8 @@ pub fn standard_material_key_from_material(@material.StandardMaterial) -> Standa
 pub fn standard_material_opaque_render_method(@material.StandardMaterial, @material.OpaqueRendererMethod) -> @material.OpaqueRendererMethod
 
 pub fn standard_material_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn standard_material_plugin_plan(StandardMaterialPlugin) -> StandardMaterialPluginPlan
 
 pub fn standard_material_plugin_with(@app.App[@ecs.World], StandardMaterialPlugin) -> @app.App[@ecs.World]
 
@@ -1019,6 +1025,17 @@ pub fn MaterialBindGroupAllocator::default_non_bindless() -> Self
 pub fn MaterialBindGroupAllocator::slab_count(Self) -> Int
 pub fn MaterialBindGroupAllocator::slabs_size(Self) -> Int
 
+pub struct MaterialBindGroupAllocatorInstallPlan {
+  material_label : String
+  uses_bindless_resources : Bool
+  bindless_slot_count : Int?
+  layout_descriptor : @render_resource.BindGroupLayoutDescriptor
+}
+pub fn MaterialBindGroupAllocatorInstallPlan::bindless_slot_count(Self) -> Int?
+pub fn MaterialBindGroupAllocatorInstallPlan::layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
+pub fn MaterialBindGroupAllocatorInstallPlan::material_label(Self) -> String
+pub fn MaterialBindGroupAllocatorInstallPlan::uses_bindless_resources(Self) -> Bool
+
 pub struct MaterialBindGroupAllocators {
   allocators : Map[String, MaterialBindGroupAllocator]
 }
@@ -1026,6 +1043,8 @@ pub fn MaterialBindGroupAllocators::contains(Self, String) -> Bool
 pub fn MaterialBindGroupAllocators::default() -> Self
 pub fn MaterialBindGroupAllocators::get(Self, String) -> MaterialBindGroupAllocator?
 pub fn MaterialBindGroupAllocators::insert(Self, String, MaterialBindGroupAllocator) -> Unit
+pub fn MaterialBindGroupAllocators::install_standard_material(Self, Bool, Int?) -> MaterialBindGroupAllocatorInstallPlan
+pub fn MaterialBindGroupAllocators::len(Self) -> Int
 
 pub struct MaterialBindGroupBindlessAllocator {
   slab_capacity : Int
@@ -1399,10 +1418,27 @@ pub fn StandardMaterialPlugin::default() -> Self
 pub fn StandardMaterialPlugin::with_prepass_enabled(Self, Bool) -> Self
 pub impl @app.Plugin for StandardMaterialPlugin
 
+pub struct StandardMaterialPluginPlan {
+  prepass_enabled : Bool
+  shadows_enabled : Bool
+  main_world_steps : Array[String]
+  post_update_steps : Array[String]
+  render_startup_steps : Array[String]
+  extract_schedule_steps : Array[String]
+}
+pub fn StandardMaterialPluginPlan::extract_schedule_steps(Self) -> Array[String]
+pub fn StandardMaterialPluginPlan::main_world_steps(Self) -> Array[String]
+pub fn StandardMaterialPluginPlan::post_update_steps(Self) -> Array[String]
+pub fn StandardMaterialPluginPlan::prepass_enabled(Self) -> Bool
+pub fn StandardMaterialPluginPlan::render_startup_steps(Self) -> Array[String]
+pub fn StandardMaterialPluginPlan::shadows_enabled(Self) -> Bool
+
 pub struct StandardMaterialPluginState {
   prepass_enabled : Bool
+  plan : StandardMaterialPluginPlan
 }
 pub fn StandardMaterialPluginState::from_plugin(StandardMaterialPlugin) -> Self
+pub fn StandardMaterialPluginState::plan(Self) -> StandardMaterialPluginPlan
 pub impl @ecs.EcsPayloadCodec for StandardMaterialPluginState
 
 pub struct TransmittedShadowReceiver {

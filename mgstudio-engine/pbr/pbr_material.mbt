@@ -271,15 +271,103 @@ pub fn StandardMaterialPlugin::with_prepass_enabled(
 }
 
 ///|
+pub struct StandardMaterialPluginPlan {
+  prepass_enabled : Bool
+  shadows_enabled : Bool
+  main_world_steps : Array[String]
+  post_update_steps : Array[String]
+  render_startup_steps : Array[String]
+  extract_schedule_steps : Array[String]
+}
+
+///|
+pub fn StandardMaterialPluginPlan::prepass_enabled(
+  self : StandardMaterialPluginPlan,
+) -> Bool {
+  self.prepass_enabled
+}
+
+///|
+pub fn StandardMaterialPluginPlan::shadows_enabled(
+  self : StandardMaterialPluginPlan,
+) -> Bool {
+  self.shadows_enabled
+}
+
+///|
+pub fn StandardMaterialPluginPlan::main_world_steps(
+  self : StandardMaterialPluginPlan,
+) -> Array[String] {
+  self.main_world_steps
+}
+
+///|
+pub fn StandardMaterialPluginPlan::post_update_steps(
+  self : StandardMaterialPluginPlan,
+) -> Array[String] {
+  self.post_update_steps
+}
+
+///|
+pub fn StandardMaterialPluginPlan::render_startup_steps(
+  self : StandardMaterialPluginPlan,
+) -> Array[String] {
+  self.render_startup_steps
+}
+
+///|
+pub fn StandardMaterialPluginPlan::extract_schedule_steps(
+  self : StandardMaterialPluginPlan,
+) -> Array[String] {
+  self.extract_schedule_steps
+}
+
+///|
+pub fn standard_material_plugin_plan(
+  plugin : StandardMaterialPlugin,
+) -> StandardMaterialPluginPlan {
+  StandardMaterialPluginPlan::{
+    prepass_enabled: plugin.prepass_enabled,
+    shadows_enabled: true,
+    main_world_steps: [
+      "init_asset<StandardMaterial>", "register_type<MeshMaterial3d<StandardMaterial>>",
+      "init_resource<EntitiesNeedingSpecialization<StandardMaterial>>", "add_plugin<ErasedRenderAssetPlugin<MeshMaterial3d<StandardMaterial>>>",
+    ],
+    post_update_steps: [
+      "mark_meshes_as_changed_if_their_materials_changed<StandardMaterial>", "check_entities_needing_specialization<StandardMaterial>",
+      "check_light_entities_needing_specialization<StandardMaterial>",
+    ],
+    render_startup_steps: [
+      "add_material_bind_group_allocator<StandardMaterial>",
+    ],
+    extract_schedule_steps: [
+      "extract_mesh_materials<StandardMaterial>", "early_sweep_material_instances<StandardMaterial>",
+      "extract_entities_needs_specialization<StandardMaterial>", "sweep_entities_needing_specialization<StandardMaterial>",
+    ],
+  }
+}
+
+///|
 pub struct StandardMaterialPluginState {
   prepass_enabled : Bool
+  plan : StandardMaterialPluginPlan
 }
 
 ///|
 pub fn StandardMaterialPluginState::from_plugin(
   plugin : StandardMaterialPlugin,
 ) -> StandardMaterialPluginState {
-  StandardMaterialPluginState::{ prepass_enabled: plugin.prepass_enabled }
+  StandardMaterialPluginState::{
+    prepass_enabled: plugin.prepass_enabled,
+    plan: standard_material_plugin_plan(plugin),
+  }
+}
+
+///|
+pub fn StandardMaterialPluginState::plan(
+  self : StandardMaterialPluginState,
+) -> StandardMaterialPluginPlan {
+  self.plan
 }
 
 ///|

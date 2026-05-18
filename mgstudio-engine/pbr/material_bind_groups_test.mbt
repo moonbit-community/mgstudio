@@ -59,6 +59,7 @@ test "render3d: allocator registry stores by key" {
   debug_inspect(allocators.contains("StandardMaterial"), content="true")
   debug_inspect(allocators.get("StandardMaterial") is Some(_), content="true")
   debug_inspect(allocators.get("Missing") is None, content="true")
+  debug_inspect(allocators.len(), content="1")
 }
 
 ///|
@@ -78,4 +79,56 @@ test "render3d: allocator exposes slab and allocation counters" {
   debug_inspect(non_bindless_alloc.slab_count(), content="2")
   debug_inspect(non_bindless_alloc.slabs_size(), content="2")
   debug_inspect(non_bindless_alloc.allocations(), content="2")
+}
+
+///|
+test "render3d: material uses bindless resources follows bevy support and slot rule" {
+  debug_inspect(material_uses_bindless_resources(true, Some(2)), content="true")
+  debug_inspect(
+    material_uses_bindless_resources(false, Some(2)),
+    content="false",
+  )
+  debug_inspect(
+    material_uses_bindless_resources(true, Some(1)),
+    content="false",
+  )
+  debug_inspect(material_uses_bindless_resources(true, None), content="false")
+}
+
+///|
+test "render3d: standard material allocator install plan carries layout descriptor" {
+  let plan = standard_material_bind_group_allocator_install_plan(true, Some(4))
+  let layout = plan.layout_descriptor()
+  debug_inspect(plan.material_label(), content="\"StandardMaterial\"")
+  debug_inspect(plan.uses_bindless_resources(), content="true")
+  debug_inspect(layout.label(), content="\"StandardMaterial\"")
+  debug_inspect(layout.entries().length(), content="17")
+}
+
+///|
+test "render3d: standard material allocator install chooses bindless mode from bevy rule" {
+  let bindless_allocators = MaterialBindGroupAllocators::default()
+  let bindless_plan = bindless_allocators.install_standard_material(
+    true,
+    Some(8),
+  )
+  debug_inspect(bindless_plan.uses_bindless_resources(), content="true")
+  debug_inspect(bindless_allocators.len(), content="1")
+  match bindless_allocators.get("StandardMaterial") {
+    Some(MaterialBindGroupAllocator::Bindless(_)) =>
+      debug_inspect(true, content="true")
+    _ => debug_inspect(false, content="true")
+  }
+
+  let non_bindless_allocators = MaterialBindGroupAllocators::default()
+  let non_bindless_plan = non_bindless_allocators.install_standard_material(
+    true,
+    Some(1),
+  )
+  debug_inspect(non_bindless_plan.uses_bindless_resources(), content="false")
+  match non_bindless_allocators.get("StandardMaterial") {
+    Some(MaterialBindGroupAllocator::NonBindless(_)) =>
+      debug_inspect(true, content="true")
+    _ => debug_inspect(false, content="true")
+  }
 }

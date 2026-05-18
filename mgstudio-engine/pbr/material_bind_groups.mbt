@@ -165,6 +165,68 @@ pub fn standard_material_bind_group_layout_descriptor() -> @material.BindGroupLa
 }
 
 ///|
+pub fn material_uses_bindless_resources(
+  bindless_supported : Bool,
+  bindless_slot_count : Int?,
+) -> Bool {
+  match bindless_slot_count {
+    Some(slot_count) => bindless_supported && slot_count > 1
+    None => false
+  }
+}
+
+///|
+pub struct MaterialBindGroupAllocatorInstallPlan {
+  material_label : String
+  uses_bindless_resources : Bool
+  bindless_slot_count : Int?
+  layout_descriptor : @material.BindGroupLayoutDescriptor
+}
+
+///|
+pub fn MaterialBindGroupAllocatorInstallPlan::material_label(
+  self : MaterialBindGroupAllocatorInstallPlan,
+) -> String {
+  self.material_label
+}
+
+///|
+pub fn MaterialBindGroupAllocatorInstallPlan::uses_bindless_resources(
+  self : MaterialBindGroupAllocatorInstallPlan,
+) -> Bool {
+  self.uses_bindless_resources
+}
+
+///|
+pub fn MaterialBindGroupAllocatorInstallPlan::bindless_slot_count(
+  self : MaterialBindGroupAllocatorInstallPlan,
+) -> Int? {
+  self.bindless_slot_count
+}
+
+///|
+pub fn MaterialBindGroupAllocatorInstallPlan::layout_descriptor(
+  self : MaterialBindGroupAllocatorInstallPlan,
+) -> @material.BindGroupLayoutDescriptor {
+  self.layout_descriptor
+}
+
+///|
+pub fn standard_material_bind_group_allocator_install_plan(
+  bindless_supported : Bool,
+  bindless_slot_count : Int?,
+) -> MaterialBindGroupAllocatorInstallPlan {
+  MaterialBindGroupAllocatorInstallPlan::{
+    material_label: "StandardMaterial",
+    uses_bindless_resources: material_uses_bindless_resources(
+      bindless_supported, bindless_slot_count,
+    ),
+    bindless_slot_count,
+    layout_descriptor: standard_material_bind_group_layout_descriptor(),
+  }
+}
+
+///|
 pub struct MaterialBindGroupIndex {
   value : Int
 } derive(Eq, Debug, ToJson, FromJson)
@@ -569,6 +631,33 @@ pub fn MaterialBindGroupAllocators::contains(
   key : String,
 ) -> Bool {
   self.allocators.contains(key)
+}
+
+///|
+pub fn MaterialBindGroupAllocators::len(
+  self : MaterialBindGroupAllocators,
+) -> Int {
+  self.allocators.length()
+}
+
+///|
+pub fn MaterialBindGroupAllocators::install_standard_material(
+  self : MaterialBindGroupAllocators,
+  bindless_supported : Bool,
+  bindless_slot_count : Int?,
+) -> MaterialBindGroupAllocatorInstallPlan {
+  let plan = standard_material_bind_group_allocator_install_plan(
+    bindless_supported, bindless_slot_count,
+  )
+  self.insert(
+    plan.material_label(),
+    if plan.uses_bindless_resources() {
+      MaterialBindGroupAllocator::default_bindless()
+    } else {
+      MaterialBindGroupAllocator::default_non_bindless()
+    },
+  )
+  plan
 }
 
 ///|

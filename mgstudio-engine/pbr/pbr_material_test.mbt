@@ -117,3 +117,43 @@ test "pbr material: render phase type matches bevy ordering" {
     content="true",
   )
 }
+
+///|
+test "pbr material: standard material plugin plan mirrors material plugin build surface" {
+  let plan = standard_material_plugin_plan(StandardMaterialPlugin::default())
+  inspect(plan.prepass_enabled(), content="true")
+  inspect(plan.shadows_enabled(), content="true")
+  inspect(plan.main_world_steps().length(), content="4")
+  inspect(plan.post_update_steps().length(), content="3")
+  inspect(plan.render_startup_steps().length(), content="1")
+  inspect(plan.extract_schedule_steps().length(), content="4")
+  inspect(plan.main_world_steps()[0], content="init_asset<StandardMaterial>")
+  inspect(
+    plan.main_world_steps()[3],
+    content="add_plugin<ErasedRenderAssetPlugin<MeshMaterial3d<StandardMaterial>>>",
+  )
+  inspect(
+    plan.post_update_steps()[2],
+    content="check_light_entities_needing_specialization<StandardMaterial>",
+  )
+  inspect(
+    plan.render_startup_steps()[0],
+    content="add_material_bind_group_allocator<StandardMaterial>",
+  )
+  inspect(
+    plan.extract_schedule_steps()[3],
+    content="sweep_entities_needing_specialization<StandardMaterial>",
+  )
+}
+
+///|
+test "pbr material: standard material plugin state retains build plan" {
+  let plugin = StandardMaterialPlugin::default().with_prepass_enabled(false)
+  let state = StandardMaterialPluginState::from_plugin(plugin)
+  let plan = state.plan()
+  inspect(plan.prepass_enabled(), content="false")
+  inspect(
+    plan.extract_schedule_steps()[0],
+    content="extract_mesh_materials<StandardMaterial>",
+  )
+}
