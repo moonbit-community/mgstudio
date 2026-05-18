@@ -70,3 +70,18 @@ test "render3d: late sweep removes stale entries and advances change tick" {
   debug_inspect(instances.mesh_material(stale), content="-1")
   debug_inspect(instances.current_change_tick(), content="2")
 }
+
+///|
+test "render3d: late sweep removes stale material instances after all-query extraction" {
+  let instances = RenderMaterialInstances::default()
+  let stale = @core.Entity::new(21, 0)
+  let current = @core.Entity::new(22, 0)
+  let material = MeshMaterial3d::new(@asset.Handle::new(8))
+
+  instances.extract_mesh_material(stale, true, material)
+  ignore(instances.late_sweep_stale_mesh_materials())
+  instances.extract_mesh_material(current, true, material)
+  debug_inspect(instances.late_sweep_stale_mesh_materials(), content="1")
+  debug_inspect(instances.mesh_material(stale), content="-1")
+  debug_inspect(instances.mesh_material(current), content="8")
+}

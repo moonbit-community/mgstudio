@@ -142,3 +142,23 @@ pub fn RenderMaterialInstances::late_sweep_removed_mesh3d(
   )
   removed
 }
+
+///|
+pub fn RenderMaterialInstances::late_sweep_stale_mesh_materials(
+  self : RenderMaterialInstances,
+) -> Int {
+  let stale_keys : Array[UInt64] = []
+  for key, instance in self.instances {
+    if instance.last_change_tick() != self.current_change_tick {
+      stale_keys.push(key)
+    }
+  }
+  for key in stale_keys {
+    ignore(self.instances.remove(key))
+  }
+  self.current_change_tick = @core.tick_wrapping_add(
+    self.current_change_tick,
+    1,
+  )
+  stale_keys.length()
+}

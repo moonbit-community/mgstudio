@@ -445,6 +445,11 @@ fn render3d_execute_collect_meshes(
     world,
   )
   let material_prepass_enabled = standard_material_prepass_enabled(world)
+  let render_material_instances_ref = match
+    (try! world.get_resource_ref_mut(ecs_key_render_material_instances)) {
+    Some(value) => value
+    None => abort("missing RenderMaterialInstances resource in render world")
+  }
   let meshes : Array[ExtractedMesh3d] = []
   let mesh_query : @ecs.Query[
     (
@@ -513,6 +518,11 @@ fn render3d_execute_collect_meshes(
         (wireframe, no_wireframe, wireframe_color),
       ),
     ) = data
+    render_material_instances_ref.val.extract_mesh_material(
+      entity,
+      view_visibility.value().is_visible(),
+      material.value(),
+    )
     let (next_mesh, needs_reextract_next_frame) = render3d_extract_mesh_for_entity(
       source_world,
       entity,
@@ -564,6 +574,7 @@ fn render3d_execute_collect_meshes(
     "execute_3d_collect_meshes",
     trace_collect_meshes_start_us,
   )
+  ignore(render_material_instances_ref.val.late_sweep_stale_mesh_materials())
   render3d_update_mesh_preprocess_static_cache(
     mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
     meshes,

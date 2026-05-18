@@ -1378,6 +1378,7 @@ pub fn RenderMaterialInstances::early_sweep_removed_mesh_material(Self, @core.En
 pub fn RenderMaterialInstances::extract_mesh_material(Self, @core.Entity, Bool, @material.MeshMaterial3d) -> Unit
 pub fn RenderMaterialInstances::get(Self, @core.Entity) -> RenderMaterialInstance?
 pub fn RenderMaterialInstances::late_sweep_removed_mesh3d(Self, @core.Entity) -> Bool
+pub fn RenderMaterialInstances::late_sweep_stale_mesh_materials(Self) -> Int
 pub fn RenderMaterialInstances::len(Self) -> Int
 pub fn RenderMaterialInstances::mesh_material(Self, @core.Entity) -> Int
 pub impl @ecs.EcsPayloadCodec for RenderMaterialInstances
