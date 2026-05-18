@@ -58,6 +58,12 @@ extenum @ecs.EcsPayload += {
   EcsPayload_pbr_AutoExposureCompensationCurve(AutoExposureCompensationCurve)
   EcsPayload_pbr_MeshRenderPluginState(MeshRenderPluginState)
   EcsPayload_pbr_StandardMaterialPluginState(StandardMaterialPluginState)
+  EcsPayload_pbr_RenderMaterialInstances(RenderMaterialInstances)
+  EcsPayload_pbr_EntitySpecializationTicks(EntitySpecializationTicks)
+  EcsPayload_pbr_SpecializedMaterialPipelineCache(
+    SpecializedMaterialPipelineCache
+  )
+  EcsPayload_pbr_MaterialBindGroupAllocators(MaterialBindGroupAllocators)
   EcsPayload_pbr_Render3dPreviousGlobalTransformSyncState(
     Render3dPreviousGlobalTransformSyncState
   )
@@ -636,6 +642,74 @@ pub impl @ecs.EcsPayloadCodec for StandardMaterialPluginState with from_ecs_payl
 ) {
   match payload {
     EcsPayload_pbr_StandardMaterialPluginState(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for RenderMaterialInstances with to_ecs_payload(
+  self,
+) {
+  EcsPayload_pbr_RenderMaterialInstances(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for RenderMaterialInstances with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_pbr_RenderMaterialInstances(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for EntitySpecializationTicks with to_ecs_payload(
+  self,
+) {
+  EcsPayload_pbr_EntitySpecializationTicks(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for EntitySpecializationTicks with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_pbr_EntitySpecializationTicks(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for SpecializedMaterialPipelineCache with to_ecs_payload(
+  self,
+) {
+  EcsPayload_pbr_SpecializedMaterialPipelineCache(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for SpecializedMaterialPipelineCache with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_pbr_SpecializedMaterialPipelineCache(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for MaterialBindGroupAllocators with to_ecs_payload(
+  self,
+) {
+  EcsPayload_pbr_MaterialBindGroupAllocators(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for MaterialBindGroupAllocators with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_pbr_MaterialBindGroupAllocators(value) => Some(value)
     _ => None
   }
 }

@@ -231,6 +231,8 @@ pub let ecs_key_light_probe : @ecs.ComponentKey[@light.LightProbe]
 
 pub let ecs_key_lightmap : @ecs.ComponentKey[@lightmap.Lightmap]
 
+pub let ecs_key_material_bind_group_allocators : @ecs.ResourceKey[MaterialBindGroupAllocators]
+
 pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState]
 
 pub let ecs_key_mesh3d : @ecs.ComponentKey[@mesh.Mesh3d]
@@ -929,6 +931,7 @@ pub fn EntitySpecializationTicks::get(Self, @core.Entity) -> EntitySpecializatio
 pub fn EntitySpecializationTicks::insert(Self, @core.Entity, EntitySpecializationTickPair) -> Unit
 pub fn EntitySpecializationTicks::len(Self) -> Int
 pub fn EntitySpecializationTicks::remove(Self, @core.Entity) -> Bool
+pub impl @ecs.EcsPayloadCodec for EntitySpecializationTicks
 
 pub struct Exposure {
   ev100 : Float
@@ -1077,6 +1080,7 @@ pub fn MaterialBindGroupAllocators::get(Self, String) -> MaterialBindGroupAlloca
 pub fn MaterialBindGroupAllocators::insert(Self, String, MaterialBindGroupAllocator) -> Unit
 pub fn MaterialBindGroupAllocators::install_standard_material(Self, Bool, Int?) -> MaterialBindGroupAllocatorInstallPlan
 pub fn MaterialBindGroupAllocators::len(Self) -> Int
+pub impl @ecs.EcsPayloadCodec for MaterialBindGroupAllocators
 
 pub struct MaterialBindGroupBindlessAllocator {
   slab_capacity : Int
@@ -1376,6 +1380,7 @@ pub fn RenderMaterialInstances::get(Self, @core.Entity) -> RenderMaterialInstanc
 pub fn RenderMaterialInstances::late_sweep_removed_mesh3d(Self, @core.Entity) -> Bool
 pub fn RenderMaterialInstances::len(Self) -> Int
 pub fn RenderMaterialInstances::mesh_material(Self, @core.Entity) -> Int
+pub impl @ecs.EcsPayloadCodec for RenderMaterialInstances
 
 pub struct ScatteringMediumLutConfig {
   falloff_resolution : Int
@@ -1461,6 +1466,7 @@ pub fn SpecializedMaterialPipelineCache::insert(Self, @core.Entity, @core.Entity
 pub fn SpecializedMaterialPipelineCache::len(Self) -> Int
 pub fn SpecializedMaterialPipelineCache::remove_entity_from_all_views(Self, @core.Entity) -> Int
 pub fn SpecializedMaterialPipelineCache::view_or_insert(Self, @core.Entity) -> SpecializedMaterialViewPipelineCache
+pub impl @ecs.EcsPayloadCodec for SpecializedMaterialPipelineCache
 
 pub struct SpecializedMaterialPipelineCacheEntry {
   tick : UInt

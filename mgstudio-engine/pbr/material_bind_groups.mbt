@@ -609,6 +609,13 @@ pub fn MaterialBindGroupAllocators::default() -> MaterialBindGroupAllocators {
 }
 
 ///|
+pub let ecs_key_material_bind_group_allocators : @ecs.ResourceKey[
+  MaterialBindGroupAllocators,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::MaterialBindGroupAllocators",
+)
+
+///|
 pub fn MaterialBindGroupAllocators::insert(
   self : MaterialBindGroupAllocators,
   key : String,
