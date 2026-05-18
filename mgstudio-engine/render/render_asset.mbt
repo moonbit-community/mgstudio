@@ -152,6 +152,119 @@ pub struct PrepareNextFrameAssets[A] {
 }
 
 ///|
+pub struct RenderAssetBytesPerFrame {
+  max_bytes : Int?
+}
+
+///|
+pub impl Default for RenderAssetBytesPerFrame with default() {
+  RenderAssetBytesPerFrame::{ max_bytes: None }
+}
+
+///|
+pub fn RenderAssetBytesPerFrame::new(
+  max_bytes : Int,
+) -> RenderAssetBytesPerFrame {
+  RenderAssetBytesPerFrame::{ max_bytes: Some(max_bytes) }
+}
+
+///|
+pub fn RenderAssetBytesPerFrame::max_bytes(
+  self : RenderAssetBytesPerFrame,
+) -> Int? {
+  self.max_bytes
+}
+
+///|
+pub struct RenderAssetBytesPerFrameLimiter {
+  mut max_bytes : Int?
+  mut bytes_written : Int
+}
+
+///|
+pub impl Default for RenderAssetBytesPerFrameLimiter with default() {
+  RenderAssetBytesPerFrameLimiter::{ max_bytes: None, bytes_written: 0 }
+}
+
+///|
+pub fn RenderAssetBytesPerFrameLimiter::new(
+  max_bytes : Int,
+) -> RenderAssetBytesPerFrameLimiter {
+  RenderAssetBytesPerFrameLimiter::{
+    max_bytes: Some(max_bytes),
+    bytes_written: 0,
+  }
+}
+
+///|
+pub fn RenderAssetBytesPerFrameLimiter::reset(
+  self : RenderAssetBytesPerFrameLimiter,
+) -> Unit {
+  if self.max_bytes is Some(_) {
+    self.bytes_written = 0
+  }
+}
+
+///|
+pub fn RenderAssetBytesPerFrameLimiter::extract(
+  self : RenderAssetBytesPerFrameLimiter,
+  bytes_per_frame : RenderAssetBytesPerFrame,
+) -> Unit {
+  self.max_bytes = bytes_per_frame.max_bytes()
+}
+
+///|
+pub fn RenderAssetBytesPerFrameLimiter::bytes_written(
+  self : RenderAssetBytesPerFrameLimiter,
+) -> Int {
+  self.bytes_written
+}
+
+///|
+pub fn RenderAssetBytesPerFrameLimiter::available_bytes(
+  self : RenderAssetBytesPerFrameLimiter,
+  required_bytes : Int,
+) -> Int {
+  match self.max_bytes {
+    Some(max_bytes) => {
+      let total_bytes = self.bytes_written
+      self.bytes_written = self.bytes_written + required_bytes
+      if total_bytes >= max_bytes {
+        let overshot = total_bytes - max_bytes
+        if required_bytes > overshot {
+          required_bytes - overshot
+        } else {
+          0
+        }
+      } else {
+        required_bytes
+      }
+    }
+    None => required_bytes
+  }
+}
+
+///|
+pub fn RenderAssetBytesPerFrameLimiter::write_bytes(
+  self : RenderAssetBytesPerFrameLimiter,
+  bytes : Int,
+) -> Unit {
+  if self.max_bytes is Some(_) && bytes > 0 {
+    self.bytes_written = self.bytes_written + bytes
+  }
+}
+
+///|
+pub fn RenderAssetBytesPerFrameLimiter::exhausted(
+  self : RenderAssetBytesPerFrameLimiter,
+) -> Bool {
+  match self.max_bytes {
+    Some(max_bytes) => self.bytes_written >= max_bytes
+    None => false
+  }
+}
+
+///|
 fn prepare_next_frame_assets_debug_name() -> String {
   "mgstudio.render.PrepareNextFrameAssets"
 }
@@ -217,6 +330,8 @@ pub fn[A, B] prepare_render_assets_with(
   prepare_next_frame : PrepareNextFrameAssets[A],
   prepare_asset : (A, Int, B?) -> Result[B, PrepareAssetError],
   unload_asset : (Int, B?) -> Unit,
+  byte_len? : (A) -> Int? = fn(_) { None },
+  bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter::default(),
 ) -> Unit {
   let queued_assets = prepare_next_frame.take()
   for entry in queued_assets {
@@ -225,9 +340,22 @@ pub fn[A, B] prepare_render_assets_with(
       extracted_assets.added.contains(id) {
       continue
     }
+    let write_bytes = match byte_len(extracted_asset) {
+      Some(size) =>
+        if bytes_per_frame.exhausted() {
+          prepare_next_frame.push(id, extracted_asset)
+          continue
+        } else {
+          size
+        }
+      None => 0
+    }
     let previous_asset = render_assets.get(id)
     match prepare_asset(extracted_asset, id, previous_asset) {
-      Ok(prepared_asset) => render_assets.insert(id, prepared_asset)
+      Ok(prepared_asset) => {
+        render_assets.insert(id, prepared_asset)
+        bytes_per_frame.write_bytes(write_bytes)
+      }
       Err(RetryNextUpdate(_)) => prepare_next_frame.push(id, extracted_asset)
       Err(AsBindGroupError(_)) => ()
     }
@@ -244,8 +372,21 @@ pub fn[A, B] prepare_render_assets_with(
   for entry in extracted {
     let (id, extracted_asset) = entry
     let previous_asset = render_assets.remove(id)
+    let write_bytes = match byte_len(extracted_asset) {
+      Some(size) =>
+        if bytes_per_frame.exhausted() {
+          prepare_next_frame.push(id, extracted_asset)
+          continue
+        } else {
+          size
+        }
+      None => 0
+    }
     match prepare_asset(extracted_asset, id, previous_asset) {
-      Ok(prepared_asset) => render_assets.insert(id, prepared_asset)
+      Ok(prepared_asset) => {
+        render_assets.insert(id, prepared_asset)
+        bytes_per_frame.write_bytes(write_bytes)
+      }
       Err(RetryNextUpdate(_)) => prepare_next_frame.push(id, extracted_asset)
       Err(AsBindGroupError(_)) => ()
     }

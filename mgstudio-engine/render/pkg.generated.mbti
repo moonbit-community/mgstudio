@@ -287,13 +287,13 @@ pub fn pipeline_cache_resource_key() -> @ecs.ResourceKey[@render_resource.Pipeli
 
 pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[A, B] prepare_erased_render_assets_with(ExtractedAssets[A], ErasedRenderAssets[B], ErasedPrepareNextFrameAssets[A], (A, Int, B?) -> Result[B, ErasedPrepareAssetError], (Int, B?) -> Unit) -> Unit
+pub fn[A, B] prepare_erased_render_assets_with(ExtractedAssets[A], ErasedRenderAssets[B], ErasedPrepareNextFrameAssets[A], (A, Int, B?) -> Result[B, ErasedPrepareAssetError], (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
 
 pub fn[C : @ecs.Component + @ecs.EcsPayloadCodec] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
 
 pub fn[A : RenderAssetResource] prepare_render_assets_resource_key() -> @ecs.ResourceKey[RenderAssets[A]]
 
-pub fn[A, B] prepare_render_assets_with(ExtractedAssets[A], RenderAssets[B], PrepareNextFrameAssets[A], (A, Int, B?) -> Result[B, PrepareAssetError], (Int, B?) -> Unit) -> Unit
+pub fn[A, B] prepare_render_assets_with(ExtractedAssets[A], RenderAssets[B], PrepareNextFrameAssets[A], (A, Int, B?) -> Result[B, PrepareAssetError], (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
@@ -650,6 +650,26 @@ pub fn RenderAppChannels::render_app_in_render_thread(Self) -> Bool
 pub fn RenderAppChannels::send_blocking(Self, @app.SubApp[@ecs.World]) -> Self
 pub impl @app.Resource for RenderAppChannels
 pub impl @ecs.EcsPayloadCodec for RenderAppChannels
+
+pub struct RenderAssetBytesPerFrame {
+  max_bytes : Int?
+}
+pub fn RenderAssetBytesPerFrame::max_bytes(Self) -> Int?
+pub fn RenderAssetBytesPerFrame::new(Int) -> Self
+pub impl Default for RenderAssetBytesPerFrame
+
+pub struct RenderAssetBytesPerFrameLimiter {
+  mut max_bytes : Int?
+  mut bytes_written : Int
+}
+pub fn RenderAssetBytesPerFrameLimiter::available_bytes(Self, Int) -> Int
+pub fn RenderAssetBytesPerFrameLimiter::bytes_written(Self) -> Int
+pub fn RenderAssetBytesPerFrameLimiter::exhausted(Self) -> Bool
+pub fn RenderAssetBytesPerFrameLimiter::extract(Self, RenderAssetBytesPerFrame) -> Unit
+pub fn RenderAssetBytesPerFrameLimiter::new(Int) -> Self
+pub fn RenderAssetBytesPerFrameLimiter::reset(Self) -> Unit
+pub fn RenderAssetBytesPerFrameLimiter::write_bytes(Self, Int) -> Unit
+pub impl Default for RenderAssetBytesPerFrameLimiter
 
 pub struct RenderAssets[A] {
   items : @hashmap.HashMap[Int, @ref.Ref[A]]

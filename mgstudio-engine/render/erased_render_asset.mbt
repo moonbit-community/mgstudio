@@ -211,6 +211,8 @@ pub fn[A, B] prepare_erased_render_assets_with(
     ErasedPrepareAssetError,
   ],
   unload_asset : (UntypedRenderAssetId, B?) -> Unit,
+  byte_len? : (A) -> Int? = fn(_) { None },
+  bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter::default(),
 ) -> Unit {
   let queued_assets = prepare_next_frame.take()
   for entry in queued_assets {
@@ -219,9 +221,22 @@ pub fn[A, B] prepare_erased_render_assets_with(
       extracted_assets.added.contains(id) {
       continue
     }
+    let write_bytes = match byte_len(extracted_asset) {
+      Some(size) =>
+        if bytes_per_frame.exhausted() {
+          prepare_next_frame.push(id, extracted_asset)
+          continue
+        } else {
+          size
+        }
+      None => 0
+    }
     let previous_asset = render_assets.get(id)
     match prepare_asset(extracted_asset, id, previous_asset) {
-      Ok(prepared_asset) => render_assets.insert(id, prepared_asset)
+      Ok(prepared_asset) => {
+        render_assets.insert(id, prepared_asset)
+        bytes_per_frame.write_bytes(write_bytes)
+      }
       Err(RetryNextUpdate(_)) => prepare_next_frame.push(id, extracted_asset)
       Err(AsBindGroupError(_)) => ()
     }
@@ -238,8 +253,21 @@ pub fn[A, B] prepare_erased_render_assets_with(
   for entry in extracted {
     let (id, extracted_asset) = entry
     let previous_asset = render_assets.remove(id)
+    let write_bytes = match byte_len(extracted_asset) {
+      Some(size) =>
+        if bytes_per_frame.exhausted() {
+          prepare_next_frame.push(id, extracted_asset)
+          continue
+        } else {
+          size
+        }
+      None => 0
+    }
     match prepare_asset(extracted_asset, id, previous_asset) {
-      Ok(prepared_asset) => render_assets.insert(id, prepared_asset)
+      Ok(prepared_asset) => {
+        render_assets.insert(id, prepared_asset)
+        bytes_per_frame.write_bytes(write_bytes)
+      }
       Err(RetryNextUpdate(_)) => prepare_next_frame.push(id, extracted_asset)
       Err(AsBindGroupError(_)) => ()
     }
