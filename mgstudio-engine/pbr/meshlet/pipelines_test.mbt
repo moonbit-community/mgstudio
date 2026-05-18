@@ -36,12 +36,12 @@ test "pbr/meshlet: pipeline slot descriptors expose bevy-shaped surface" {
 test "pbr/meshlet: queued pipeline descriptors mirror bevy init order and labels" {
   let descriptors = meshlet_pipeline_descriptors()
   debug_inspect(descriptors.length(), content="22")
-  debug_inspect(descriptors[0].slot_label, content="clear_visibility_buffer")
-  debug_inspect(
+  inspect(descriptors[0].slot_label, content="clear_visibility_buffer")
+  inspect(
     descriptors[0].pipeline_label,
     content="meshlet_clear_visibility_buffer_pipeline",
   )
-  debug_inspect(descriptors[21].slot_label, content="remap_1d_to_2d_dispatch")
+  inspect(descriptors[21].slot_label, content="remap_1d_to_2d_dispatch")
   debug_inspect(descriptors[21].enabled, content="false")
 }
 
@@ -50,7 +50,7 @@ test "pbr/meshlet: cull descriptors carry bevy shader defs and immediates" {
   let descriptors = meshlet_pipeline_descriptors()
   let first_instance_cull = descriptors[2]
   debug_inspect(first_instance_cull.immediate_size, content="4")
-  debug_inspect(first_instance_cull.shader_label, content="cull_instances.wgsl")
+  inspect(first_instance_cull.shader_label, content="cull_instances.wgsl")
   debug_inspect(
     first_instance_cull.has_shader_def("MESHLET_INSTANCE_CULLING_PASS"),
     content="true",
@@ -93,7 +93,7 @@ test "pbr/meshlet: raster and resolve descriptors expose render target depth sta
   debug_inspect(resolve_material_depth.depth_compare_always, content="true")
   debug_inspect(
     resolve_material_depth.entry_point,
-    content="Some(resolve_material_depth)",
+    content="Some(\"resolve_material_depth\")",
   )
 }
 
@@ -101,7 +101,7 @@ test "pbr/meshlet: raster and resolve descriptors expose render target depth sta
 test "pbr/meshlet: remap dispatch flag follows bevy empty shader-def shape" {
   let descriptors_without_remap = meshlet_pipeline_descriptors()
   let software_without_remap = descriptors_without_remap[12]
-  debug_inspect(software_without_remap.compute_shader_defs[2], content="")
+  debug_inspect(software_without_remap.compute_shader_defs[2], content="\"\"")
   let remap_without = descriptors_without_remap[21]
   debug_inspect(remap_without.optional, content="true")
   debug_inspect(remap_without.enabled, content="false")
@@ -111,7 +111,7 @@ test "pbr/meshlet: remap dispatch flag follows bevy empty shader-def shape" {
   let software_with_remap = descriptors_with_remap[12]
   debug_inspect(
     software_with_remap.compute_shader_defs[2],
-    content="MESHLET_2D_DISPATCH",
+    content="\"MESHLET_2D_DISPATCH\"",
   )
   let remap_with = descriptors_with_remap[21]
   debug_inspect(remap_with.enabled, content="true")

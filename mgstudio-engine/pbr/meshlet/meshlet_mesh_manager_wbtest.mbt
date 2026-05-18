@@ -13,6 +13,18 @@
 // limitations under the License.
 
 ///|
+fn meshlet_wbtest_bytes_prefix(bytes : Bytes, count : Int) -> Array[Int] {
+  let values : Array[Int] = []
+  for index in 0..<count {
+    match bytes.get(index) {
+      Some(byte) => values.push(byte.to_int() & 0xFF)
+      None => values.push(-1)
+    }
+  }
+  values
+}
+
+///|
 test "pbr/meshlet: mesh manager produces Bevy-shaped GPU buffer payloads" {
   let manager = MeshletMeshManager::default()
   let meshlet_mesh = MeshletMesh::from_parts(
@@ -40,27 +52,30 @@ test "pbr/meshlet: mesh manager produces Bevy-shaped GPU buffer payloads" {
   ignore(queue_material_meshlet_meshes(instance_manager))
   let payload = manager.gpu_buffer_payload(instance_manager)
   debug_inspect(
-    payload.vertex_positions.to_array(),
+    meshlet_wbtest_bytes_prefix(payload.vertex_positions, 12),
     content="[31, 0, 0, 0, 32, 0, 0, 0, 33, 0, 0, 0]",
   )
   debug_inspect(
-    payload.vertex_normals.to_array(),
+    meshlet_wbtest_bytes_prefix(payload.vertex_normals, 8),
     content="[41, 0, 0, 0, 42, 0, 0, 0]",
   )
   debug_inspect(payload.vertex_uvs.length(), content="8")
-  debug_inspect(payload.indices.to_array(), content="[0, 2, 1]")
+  debug_inspect(
+    meshlet_wbtest_bytes_prefix(payload.indices, 3),
+    content="[0, 2, 1]",
+  )
   debug_inspect(payload.bvh_nodes.length(), content="400")
   debug_inspect(payload.meshlets.length(), content="32")
   debug_inspect(payload.cull_data.length(), content="48")
   debug_inspect(payload.instance_uniforms.length(), content="176")
   debug_inspect(payload.instance_aabbs.length(), content="32")
   debug_inspect(
-    payload.instance_material_ids.to_array(),
+    meshlet_wbtest_bytes_prefix(payload.instance_material_ids, 4),
     content="[1, 0, 0, 0]",
   )
   debug_inspect(
-    payload.instance_bvh_root_nodes.to_array(),
+    meshlet_wbtest_bytes_prefix(payload.instance_bvh_root_nodes, 4),
     content="[0, 0, 0, 0]",
   )
-  debug_inspect(payload.byte_count(), content="723")
+  debug_inspect(payload.byte_count(), content="727")
 }

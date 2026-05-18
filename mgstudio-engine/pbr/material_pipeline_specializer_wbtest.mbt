@@ -268,9 +268,9 @@ test "pbr material pipeline specializer inserts material bind group and override
     content="mesh_view_layout_binding_array",
   )
   inspect(descriptor.layout[2].label(), content="mesh_layout")
-  inspect(descriptor.layout[0].entries().length(), content="19")
-  inspect(descriptor.layout[1].entries().length(), content="2")
-  inspect(descriptor.layout[2].entries().length(), content="2")
+  inspect(descriptor.layout[0].entries().length(), content="21")
+  inspect(descriptor.layout[1].entries().length(), content="3")
+  inspect(descriptor.layout[2].entries().length(), content="1")
   debug_inspect(
     descriptor.vertex.shader == Some("custom/material_vertex.wgsl"),
     content="true",

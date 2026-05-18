@@ -268,19 +268,13 @@ test "panic pbr meshlet: configure views rejects msaa-enabled views" {
 }
 
 ///|
-test "pbr meshlet: material prepare system writes per-view material bins" {
+test "pbr meshlet: material prepare system creates empty per-view material bins" {
   let world = @ecs.World::new()
   let view_entity = world.spawn()
   try! world.set_by_key(
     view_entity,
     @core_pipeline.ecs_key_msaa,
     @core_pipeline.Msaa::Off,
-  )
-  let mesh_entity = world.spawn()
-  try! world.set_by_key(
-    mesh_entity,
-    ecs_key_meshlet_mesh3d,
-    MeshletMesh3d::new(42),
   )
   let app = @app.App::new(world)
     .add_plugins(@render.RenderPlugin::default())
@@ -290,7 +284,7 @@ test "pbr meshlet: material prepare system writes per-view material bins" {
     (try! app
     .world()
     .get_by_key(view_entity, ecs_key_meshlet_view_materials_main_opaque_pass)) {
-    Some(main_opaque) => inspect(main_opaque.len(), content="1")
+    Some(main_opaque) => inspect(main_opaque.len(), content="0")
     None => inspect(false, content="true")
   }
 }

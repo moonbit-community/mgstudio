@@ -88,10 +88,14 @@ test "pbr meshlet: visibility raster plan follows bevy pass order" {
   )
   inspect(
     meshlet_visibility_buffer_raster_op_label(ops[12]),
-    content="downsample_depth_first",
+    content="fill_counts_first",
   )
   inspect(
     meshlet_visibility_buffer_raster_op_label(ops[13]),
+    content="downsample_depth_first",
+  )
+  inspect(
+    meshlet_visibility_buffer_raster_op_label(ops[14]),
     content="meshlet_second_instance_cull",
   )
   inspect(

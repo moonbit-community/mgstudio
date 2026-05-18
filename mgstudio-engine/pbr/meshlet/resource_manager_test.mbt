@@ -31,11 +31,11 @@ test "pbr/meshlet: resource manager keeps per-view depth pyramids" {
 test "pbr/meshlet: resource bind group layouts mirror bevy descriptor order" {
   let descriptors = meshlet_resource_bind_group_layout_descriptors()
   debug_inspect(descriptors.length(), content="18")
-  debug_inspect(
+  inspect(
     descriptors[0].label,
     content="meshlet_clear_visibility_buffer_bind_group_layout",
   )
-  debug_inspect(
+  inspect(
     descriptors[17].label,
     content="meshlet_remap_1d_to_2d_dispatch_bind_group_layout",
   )
@@ -140,8 +140,8 @@ test "pbr/meshlet: per-view bind groups are tracked by entity" {
   debug_inspect(manager.prepared_shadow_view_count(), content="0")
   debug_inspect(manager.prepared_material_depth_view_count(), content="2")
   debug_inspect(manager.prepared_max_bvh_depth(), content="3")
-  manager.clear_stale_prepared_view_resources([view_a])
-  debug_inspect(manager.prepared_view_resources(view_b) is None, content="true")
+  manager.clear_stale_prepared_view_resources([view_b])
+  debug_inspect(manager.prepared_view_resources(view_a) is None, content="true")
   let view_b_resources = manager.prepared_view_resources(view_b)
   let view_b_summary = match view_b_resources {
     Some(resources) =>

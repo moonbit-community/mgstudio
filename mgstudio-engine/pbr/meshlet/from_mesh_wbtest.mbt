@@ -44,13 +44,16 @@ fn meshlet_wbtest_cull(id : Int) -> MeshletTempCullData {
 
 ///|
 fn meshlet_wbtest_group(id : Int, meshlets : Array[Int]) -> MeshletTempGroup {
-  let x = Float::from_int(id) * 2.0F
-  MeshletTempGroup::new(
-    aabb=meshlet_wbtest_aabb(x, 0.0F, 0.0F, 0.5F),
-    lod_bounds=meshlet_wbtest_sphere(x, 0.0F, 0.0F, 0.5F),
-    parent_error=Float::from_int(id) * 0.01F,
-    meshlets~,
-  )
+  let mut aabb = meshlet_bvh_default_aabb()
+  let mut lod_bounds = meshlet_temp_sphere_zero()
+  let mut parent_error = Float::from_int(id) * 0.01F
+  for meshlet_id in meshlets {
+    let cull_data = meshlet_wbtest_cull(meshlet_id)
+    aabb = meshlet_bvh_merge_aabb(aabb, cull_data.aabb)
+    lod_bounds = meshlet_merge_spheres(lod_bounds, cull_data.lod_group_sphere)
+    parent_error = parent_error.max(cull_data.error)
+  }
+  MeshletTempGroup::new(aabb~, lod_bounds~, parent_error~, meshlets~)
 }
 
 ///|
@@ -240,7 +243,10 @@ test "pbr meshlet wbtest: group partition graph mirrors bevy metis inputs" {
   debug_inspect(graph.adjwgt, content="[2, 2]")
   debug_inspect(graph.partition_count, content="1")
   debug_inspect(graph.imbalance_factor, content="200")
-  debug_inspect(MESHLET_SIMPLIFICATION_FAILURE_PERCENTAGE, content="0.6")
+  debug_inspect(
+    (MESHLET_SIMPLIFICATION_FAILURE_PERCENTAGE - 0.6F).abs() < 0.000001F,
+    content="true",
+  )
 }
 
 ///|

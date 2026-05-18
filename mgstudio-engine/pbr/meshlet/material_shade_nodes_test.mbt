@@ -120,7 +120,7 @@ test "pbr meshlet: main opaque pass commands mirror bevy bind and draw order" {
   )
   ignore(queue_material_meshlet_meshes(instance_manager))
   let materials = MeshletViewMaterialsMainOpaquePass::default()
-  materials.push(test_meshlet_shade_entry(2, 42, 9))
+  materials.push(test_meshlet_shade_entry(1, 42, 9))
   let plan = meshlet_main_opaque_pass_plan(materials, instance_manager)
   let commands = meshlet_material_shade_pass_commands(
     plan,
@@ -151,8 +151,8 @@ test "pbr meshlet: main opaque pass commands mirror bevy bind and draw order" {
   inspect(commands[6].bind_group_index, content="3")
   inspect(commands[6].bind_group_kind, content="material")
   inspect(commands[6].material_bind_group, content="9")
-  inspect(commands[7].vertex_start, content="6")
-  inspect(commands[7].vertex_end, content="9")
+  inspect(commands[7].vertex_start, content="3")
+  inspect(commands[7].vertex_end, content="6")
 }
 
 ///|

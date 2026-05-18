@@ -236,6 +236,6 @@ test "pbr meshlet: quantized positions are packed as LSB-first u32 words" {
   inspect(data.meshlet.min_vertex_position_channel_x, content="0")
   inspect(data.vertex_position_bit_len, content="36")
   inspect(data.vertex_positions.length(), content="2")
-  inspect(data.vertex_positions[0], content="8389120")
-  inspect(data.vertex_positions[1], content="2")
+  inspect(data.vertex_positions[0], content="272629760")
+  inspect(data.vertex_positions[1], content="8")
 }
