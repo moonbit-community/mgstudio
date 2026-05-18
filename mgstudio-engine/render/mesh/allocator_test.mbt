@@ -251,6 +251,59 @@ test "render mesh allocator: render mesh plan allocates vertex and index uploads
 }
 
 ///|
+test "render mesh allocator: render mesh index format selects index layout" {
+  let allocator = MeshAllocator::new()
+  let mesh = RenderMesh::new(
+    vertex_count=4,
+    indexed=true,
+    index_count=6,
+    index_format=Uint16,
+  )
+  let plan = allocator.allocate_render_mesh(44, mesh, 32)
+  guard plan.index_allocation() is Some(index_allocation) else {
+    fail("expected index allocation")
+  }
+  guard plan.index_upload() is Some(index_upload) else {
+    fail("expected index upload")
+  }
+  inspect(index_allocation.slot_count(), content="3")
+  inspect(index_upload.size(), content="12")
+}
+
+///|
+test "render mesh: constructor preserves topology key and vertex layout" {
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::default()
+  let layout = layouts.insert(
+    @asset_mesh.MeshVertexBufferLayout::new(
+      attribute_ids=[],
+      layout=@asset_mesh.VertexBufferLayout::new(
+        array_stride=0,
+        step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
+        attributes=[],
+      ),
+    ),
+  )
+  let key_bits = @asset_mesh.BaseMeshPipelineKey::from_primitive_topology(
+    @asset_mesh.Mesh3dPrimitiveTopology::LineList,
+  )
+  let render_mesh = RenderMesh::new(
+    vertex_count=2,
+    indexed=false,
+    key_bits~,
+    layout~,
+  )
+  inspect(render_mesh.vertex_count(), content="2")
+  inspect(render_mesh.indexed(), content="false")
+  inspect(
+    render_mesh.primitive_topology() ==
+    @asset_mesh.Mesh3dPrimitiveTopology::LineList,
+    content="true",
+  )
+  inspect(render_mesh.layout().index(), content="0")
+  inspect(layouts.len(), content="1")
+}
+
+///|
 test "render mesh allocator: non-indexed render mesh skips index allocation" {
   let allocator = MeshAllocator::new()
   let mesh = RenderMesh::new(vertex_count=3)

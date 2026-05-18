@@ -223,21 +223,32 @@ pub struct RenderMesh {
   vertex_count : Int
   buffer_info : RenderMeshBufferInfo
   dimension : RenderMeshDimension
-} derive(Eq, @debug.Debug)
+  key_bits : @Milky2018/mgstudio/mesh.BaseMeshPipelineKey
+  layout : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
+}
 pub fn RenderMesh::buffer_info(Self) -> RenderMeshBufferInfo
 pub fn RenderMesh::dimension(Self) -> RenderMeshDimension
+pub fn RenderMesh::from_mesh(@Milky2018/mgstudio/mesh.Mesh, @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, dimension? : RenderMeshDimension) -> Self
 pub fn RenderMesh::indexed(Self) -> Bool
-pub fn RenderMesh::new(vertex_count~ : Int, indexed? : Bool, index_count? : Int, dimension? : RenderMeshDimension) -> Self
+pub fn RenderMesh::key_bits(Self) -> @Milky2018/mgstudio/mesh.BaseMeshPipelineKey
+pub fn RenderMesh::layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
+pub fn RenderMesh::new(vertex_count~ : Int, indexed? : Bool, index_count? : Int, index_format? : RenderMeshIndexFormat, dimension? : RenderMeshDimension, key_bits? : @Milky2018/mgstudio/mesh.BaseMeshPipelineKey, layout? : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> Self
+pub fn RenderMesh::primitive_topology(Self) -> @Milky2018/mgstudio/mesh.Mesh3dPrimitiveTopology
 pub fn RenderMesh::vertex_count(Self) -> Int
 
 pub(all) enum RenderMeshBufferInfo {
-  Indexed(Int)
+  Indexed(Int, RenderMeshIndexFormat)
   NonIndexed
 } derive(Eq, @debug.Debug)
 
 pub(all) enum RenderMeshDimension {
   Dim2
   Dim3
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RenderMeshIndexFormat {
+  Uint16
+  Uint32
 } derive(Eq, @debug.Debug)
 
 // Type aliases

@@ -1220,7 +1220,7 @@ fn mesh_allocator_render_mesh_index_byte_len(
   index_layout : MeshAllocatorElementLayout,
 ) -> Int? {
   match mesh.buffer_info() {
-    Indexed(index_count) =>
+    Indexed(index_count, _) =>
       if index_count > 0 {
         Some(index_count * index_layout.size())
       } else {
@@ -1231,12 +1231,25 @@ fn mesh_allocator_render_mesh_index_byte_len(
 }
 
 ///|
+fn mesh_allocator_render_mesh_index_layout(
+  mesh : RenderMesh,
+) -> MeshAllocatorElementLayout {
+  match mesh.buffer_info() {
+    Indexed(_, Uint16) => MeshAllocatorElementLayout::index_u16()
+    Indexed(_, Uint32) => MeshAllocatorElementLayout::index_u32()
+    NonIndexed => MeshAllocatorElementLayout::index_u32()
+  }
+}
+
+///|
 pub fn MeshAllocator::allocate_render_mesh(
   self : MeshAllocator,
   mesh_id : Int,
   mesh : RenderMesh,
   vertex_stride : Int,
-  index_layout? : MeshAllocatorElementLayout = MeshAllocatorElementLayout::index_u32(),
+  index_layout? : MeshAllocatorElementLayout = mesh_allocator_render_mesh_index_layout(
+    mesh,
+  ),
   settings? : MeshAllocatorSettings = MeshAllocatorSettings::default(),
 ) -> MeshAllocatorRenderMeshPlan {
   let vertex_byte_len = mesh.vertex_count() * vertex_stride
