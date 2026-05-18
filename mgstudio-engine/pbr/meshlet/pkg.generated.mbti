@@ -184,6 +184,8 @@ pub fn meshlet_view_size_from_camera(@sprite.Camera) -> (Int, Int)
 
 pub fn meshlet_visibility_buffer_raster(MeshletVisibilityBufferRasterState, Int, view_count? : Int, shadow_view_count? : Int, max_bvh_depth? : Int, rightmost_slot? : Int, material_depth_view_count? : Int, remap_dispatch_enabled? : Bool, pipelines_ready? : Bool) -> Unit
 
+pub fn meshlet_visibility_buffer_raster_execution_events(Int, shadow_pass_names? : Array[String], max_bvh_depth? : Int, material_depth_view_count? : Int, remap_dispatch_enabled? : Bool, enabled? : Bool, pipelines_ready? : Bool) -> Array[MeshletVisibilityBufferRasterExecutionEvent]
+
 pub fn meshlet_visibility_buffer_raster_op_command_descriptor(MeshletVisibilityBufferRasterOp, directional_shadow_view? : Bool) -> MeshletVisibilityBufferRasterCommandDescriptor
 
 pub fn meshlet_visibility_buffer_raster_op_label(MeshletVisibilityBufferRasterOp) -> String
@@ -904,6 +906,20 @@ pub(all) enum MeshletVisibilityBufferRasterDispatchKind {
   DirectDraw
   IndirectDraw
 }
+
+pub struct MeshletVisibilityBufferRasterExecutionEvent {
+  kind : MeshletVisibilityBufferRasterExecutionEventKind
+  label : String
+  operation_label : String
+} derive(Eq, @debug.Debug)
+
+pub(all) enum MeshletVisibilityBufferRasterExecutionEventKind {
+  PushDebugGroup
+  PopDebugGroup
+  BeginDiagnosticSpan
+  EndDiagnosticSpan
+  Operation
+} derive(Eq, @debug.Debug)
 
 pub(all) enum MeshletVisibilityBufferRasterOp {
   ClearRasterClusterPrevCounts

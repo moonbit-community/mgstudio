@@ -206,3 +206,83 @@ test "pbr meshlet: visibility raster command descriptors preserve render and sha
   inspect(resolve_material_depth.bind_group(), content="resolve_material_depth")
   inspect(resolve_material_depth.uses_camera_viewport(), content="true")
 }
+
+///|
+test "pbr meshlet: visibility raster execution events preserve bevy diagnostic groups" {
+  let events = meshlet_visibility_buffer_raster_execution_events(
+    1,
+    max_bvh_depth=1,
+  )
+  inspect(events.length(), content="32")
+  inspect(
+    events[0].kind
+    is MeshletVisibilityBufferRasterExecutionEventKind::PushDebugGroup,
+    content="true",
+  )
+  inspect(events[0].label, content="meshlet_visibility_buffer_raster")
+  inspect(
+    events[1].kind
+    is MeshletVisibilityBufferRasterExecutionEventKind::BeginDiagnosticSpan,
+    content="true",
+  )
+  inspect(events[1].label, content="meshlet_visibility_buffer_raster")
+  inspect(events[2].operation_label, content="clear_raster_cluster_prev_counts")
+  inspect(events[3].operation_label, content="clear_visibility_buffer")
+  inspect(events[4].label, content="meshlet_first_pass")
+  inspect(events[6].label, content="meshlet_first_bvh_cull")
+  inspect(events[7].operation_label, content="meshlet_first_bvh_cull_ping")
+  inspect(events[10].label, content="meshlet_first_bvh_cull")
+  inspect(events[16].operation_label, content="downsample_depth_first")
+  inspect(events[17].label, content="meshlet_second_pass")
+  inspect(events[19].label, content="meshlet_second_bvh_cull")
+  inspect(events[20].operation_label, content="meshlet_second_bvh_cull_ping")
+  inspect(events[29].operation_label, content="downsample_depth_second")
+  inspect(
+    events[30].kind
+    is MeshletVisibilityBufferRasterExecutionEventKind::EndDiagnosticSpan,
+    content="true",
+  )
+  inspect(events[31].label, content="meshlet_visibility_buffer_raster")
+}
+
+///|
+test "pbr meshlet: visibility raster execution events preserve shadow diagnostic spans" {
+  let events = meshlet_visibility_buffer_raster_execution_events(
+    1,
+    shadow_pass_names=["directional_light_shadow_map"],
+    max_bvh_depth=1,
+    remap_dispatch_enabled=true,
+  )
+  inspect(events.length(), content="66")
+  inspect(
+    events[34].label,
+    content="meshlet_visibility_buffer_raster: directional_light_shadow_map",
+  )
+  inspect(
+    events[35].kind
+    is MeshletVisibilityBufferRasterExecutionEventKind::BeginDiagnosticSpan,
+    content="true",
+  )
+  inspect(events[35].label, content="directional_light_shadow_map")
+  inspect(
+    events[36].operation_label,
+    content="clear_visibility_buffer_shadow_view",
+  )
+  inspect(
+    events[45].operation_label,
+    content="meshlet_first_remap_1d_to_2d_dispatch",
+  )
+  inspect(
+    events[57].operation_label,
+    content="meshlet_second_remap_1d_to_2d_dispatch",
+  )
+  inspect(
+    events[63].operation_label,
+    content="downsample_depth_second_shadow_view",
+  )
+  inspect(events[64].label, content="directional_light_shadow_map")
+  inspect(
+    events[65].label,
+    content="meshlet_visibility_buffer_raster: directional_light_shadow_map",
+  )
+}

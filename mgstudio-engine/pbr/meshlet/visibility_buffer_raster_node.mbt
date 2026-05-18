@@ -147,6 +147,31 @@ pub struct MeshletVisibilityBufferRasterCommandDescriptor {
 }
 
 ///|
+pub(all) enum MeshletVisibilityBufferRasterExecutionEventKind {
+  PushDebugGroup
+  PopDebugGroup
+  BeginDiagnosticSpan
+  EndDiagnosticSpan
+  Operation
+} derive(Eq, Debug)
+
+///|
+pub struct MeshletVisibilityBufferRasterExecutionEvent {
+  kind : MeshletVisibilityBufferRasterExecutionEventKind
+  label : String
+  operation_label : String
+} derive(Eq, Debug)
+
+///|
+fn meshlet_visibility_buffer_raster_execution_event(
+  kind : MeshletVisibilityBufferRasterExecutionEventKind,
+  label? : String = "",
+  operation_label? : String = "",
+) -> MeshletVisibilityBufferRasterExecutionEvent {
+  MeshletVisibilityBufferRasterExecutionEvent::{ kind, label, operation_label }
+}
+
+///|
 fn meshlet_visibility_buffer_raster_command_descriptor(
   label : String,
   command_kind : MeshletVisibilityBufferRasterCommandKind,
@@ -666,6 +691,288 @@ fn meshlet_push_visibility_buffer_raster_view_ops(
   operations.push(
     MeshletVisibilityBufferRasterOp::DownsampleDepth(false, shadow_view),
   )
+}
+
+///|
+fn meshlet_visibility_buffer_raster_push_operation_event(
+  events : Array[MeshletVisibilityBufferRasterExecutionEvent],
+  op : MeshletVisibilityBufferRasterOp,
+) -> Unit {
+  events.push(
+    meshlet_visibility_buffer_raster_execution_event(
+      MeshletVisibilityBufferRasterExecutionEventKind::Operation,
+      operation_label=meshlet_visibility_buffer_raster_op_label(op),
+    ),
+  )
+}
+
+///|
+fn meshlet_visibility_buffer_raster_push_debug_group(
+  events : Array[MeshletVisibilityBufferRasterExecutionEvent],
+  label : String,
+) -> Unit {
+  events.push(
+    meshlet_visibility_buffer_raster_execution_event(
+      MeshletVisibilityBufferRasterExecutionEventKind::PushDebugGroup,
+      label~,
+    ),
+  )
+}
+
+///|
+fn meshlet_visibility_buffer_raster_pop_debug_group(
+  events : Array[MeshletVisibilityBufferRasterExecutionEvent],
+  label : String,
+) -> Unit {
+  events.push(
+    meshlet_visibility_buffer_raster_execution_event(
+      MeshletVisibilityBufferRasterExecutionEventKind::PopDebugGroup,
+      label~,
+    ),
+  )
+}
+
+///|
+fn meshlet_visibility_buffer_raster_begin_span(
+  events : Array[MeshletVisibilityBufferRasterExecutionEvent],
+  label : String,
+) -> Unit {
+  events.push(
+    meshlet_visibility_buffer_raster_execution_event(
+      MeshletVisibilityBufferRasterExecutionEventKind::BeginDiagnosticSpan,
+      label~,
+    ),
+  )
+}
+
+///|
+fn meshlet_visibility_buffer_raster_end_span(
+  events : Array[MeshletVisibilityBufferRasterExecutionEvent],
+  label : String,
+) -> Unit {
+  events.push(
+    meshlet_visibility_buffer_raster_execution_event(
+      MeshletVisibilityBufferRasterExecutionEventKind::EndDiagnosticSpan,
+      label~,
+    ),
+  )
+}
+
+///|
+fn meshlet_push_first_pass_execution_events(
+  events : Array[MeshletVisibilityBufferRasterExecutionEvent],
+  shadow_view : Bool,
+  max_bvh_depth : Int,
+  remap_dispatch_enabled : Bool,
+) -> Unit {
+  meshlet_visibility_buffer_raster_push_debug_group(
+    events, "meshlet_first_pass",
+  )
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::FirstInstanceCull(shadow_view),
+  )
+  meshlet_visibility_buffer_raster_push_debug_group(
+    events, "meshlet_first_bvh_cull",
+  )
+  let mut ping = true
+  for _ in 0..<max_bvh_depth {
+    meshlet_visibility_buffer_raster_push_operation_event(
+      events,
+      MeshletVisibilityBufferRasterOp::FirstBvhCull(shadow_view, ping),
+    )
+    meshlet_visibility_buffer_raster_push_operation_event(
+      events,
+      MeshletVisibilityBufferRasterOp::FirstBvhCullClearCount(shadow_view, ping),
+    )
+    meshlet_visibility_buffer_raster_push_operation_event(
+      events,
+      MeshletVisibilityBufferRasterOp::FirstBvhCullClearDispatch(
+        shadow_view, ping,
+      ),
+    )
+    ping = !ping
+  }
+  meshlet_visibility_buffer_raster_pop_debug_group(
+    events, "meshlet_first_bvh_cull",
+  )
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::FirstMeshletCull(shadow_view),
+  )
+  if remap_dispatch_enabled {
+    meshlet_visibility_buffer_raster_push_operation_event(
+      events,
+      MeshletVisibilityBufferRasterOp::FirstRemap1dTo2d(shadow_view),
+    )
+  }
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::SoftwareRaster(true, shadow_view),
+  )
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::HardwareRaster(true, shadow_view),
+  )
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::FillCounts(true, shadow_view),
+  )
+  meshlet_visibility_buffer_raster_pop_debug_group(events, "meshlet_first_pass")
+}
+
+///|
+fn meshlet_push_second_pass_execution_events(
+  events : Array[MeshletVisibilityBufferRasterExecutionEvent],
+  shadow_view : Bool,
+  max_bvh_depth : Int,
+  remap_dispatch_enabled : Bool,
+) -> Unit {
+  meshlet_visibility_buffer_raster_push_debug_group(
+    events, "meshlet_second_pass",
+  )
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::SecondInstanceCull(shadow_view),
+  )
+  meshlet_visibility_buffer_raster_push_debug_group(
+    events, "meshlet_second_bvh_cull",
+  )
+  let mut ping = true
+  for _ in 0..<max_bvh_depth {
+    meshlet_visibility_buffer_raster_push_operation_event(
+      events,
+      MeshletVisibilityBufferRasterOp::SecondBvhCull(shadow_view, ping),
+    )
+    ping = !ping
+  }
+  meshlet_visibility_buffer_raster_pop_debug_group(
+    events, "meshlet_second_bvh_cull",
+  )
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::SecondMeshletCull(shadow_view),
+  )
+  if remap_dispatch_enabled {
+    meshlet_visibility_buffer_raster_push_operation_event(
+      events,
+      MeshletVisibilityBufferRasterOp::SecondRemap1dTo2d(shadow_view),
+    )
+  }
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::SoftwareRaster(false, shadow_view),
+  )
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::HardwareRaster(false, shadow_view),
+  )
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::FillCounts(false, shadow_view),
+  )
+  meshlet_visibility_buffer_raster_pop_debug_group(
+    events, "meshlet_second_pass",
+  )
+}
+
+///|
+fn meshlet_push_visibility_buffer_raster_view_execution_events(
+  events : Array[MeshletVisibilityBufferRasterExecutionEvent],
+  shadow_view : Bool,
+  max_bvh_depth : Int,
+  has_material_depth : Bool,
+  remap_dispatch_enabled : Bool,
+) -> Unit {
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::ClearVisibilityBuffer(shadow_view),
+  )
+  meshlet_push_first_pass_execution_events(
+    events, shadow_view, max_bvh_depth, remap_dispatch_enabled,
+  )
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::DownsampleDepth(true, shadow_view),
+  )
+  meshlet_push_second_pass_execution_events(
+    events, shadow_view, max_bvh_depth, remap_dispatch_enabled,
+  )
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::ResolveDepth(shadow_view),
+  )
+  if !shadow_view && has_material_depth {
+    meshlet_visibility_buffer_raster_push_operation_event(
+      events,
+      MeshletVisibilityBufferRasterOp::ResolveMaterialDepth,
+    )
+  }
+  meshlet_visibility_buffer_raster_push_operation_event(
+    events,
+    MeshletVisibilityBufferRasterOp::DownsampleDepth(false, shadow_view),
+  )
+}
+
+///|
+pub fn meshlet_visibility_buffer_raster_execution_events(
+  view_count : Int,
+  shadow_pass_names? : Array[String] = [],
+  max_bvh_depth? : Int = 0,
+  material_depth_view_count? : Int = view_count,
+  remap_dispatch_enabled? : Bool = false,
+  enabled? : Bool = true,
+  pipelines_ready? : Bool = true,
+) -> Array[MeshletVisibilityBufferRasterExecutionEvent] {
+  let safe_view_count = meshlet_raster_non_negative(view_count)
+  let safe_max_bvh_depth = meshlet_raster_non_negative(max_bvh_depth)
+  let safe_material_depth_view_count = meshlet_raster_non_negative(
+    material_depth_view_count,
+  ).min(safe_view_count)
+  let events : Array[MeshletVisibilityBufferRasterExecutionEvent] = []
+  if enabled && pipelines_ready {
+    meshlet_visibility_buffer_raster_push_debug_group(
+      events, "meshlet_visibility_buffer_raster",
+    )
+    meshlet_visibility_buffer_raster_begin_span(
+      events, "meshlet_visibility_buffer_raster",
+    )
+    meshlet_visibility_buffer_raster_push_operation_event(
+      events,
+      MeshletVisibilityBufferRasterOp::ClearRasterClusterPrevCounts,
+    )
+    for index in 0..<safe_view_count {
+      meshlet_push_visibility_buffer_raster_view_execution_events(
+        events,
+        false,
+        safe_max_bvh_depth,
+        index < safe_material_depth_view_count,
+        remap_dispatch_enabled,
+      )
+    }
+    meshlet_visibility_buffer_raster_end_span(
+      events, "meshlet_visibility_buffer_raster",
+    )
+    meshlet_visibility_buffer_raster_pop_debug_group(
+      events, "meshlet_visibility_buffer_raster",
+    )
+    for pass_name in shadow_pass_names {
+      meshlet_visibility_buffer_raster_push_debug_group(
+        events,
+        "meshlet_visibility_buffer_raster: \{pass_name}",
+      )
+      meshlet_visibility_buffer_raster_begin_span(events, pass_name)
+      meshlet_push_visibility_buffer_raster_view_execution_events(
+        events, true, safe_max_bvh_depth, false, remap_dispatch_enabled,
+      )
+      meshlet_visibility_buffer_raster_end_span(events, pass_name)
+      meshlet_visibility_buffer_raster_pop_debug_group(
+        events,
+        "meshlet_visibility_buffer_raster: \{pass_name}",
+      )
+    }
+  }
+  events
 }
 
 ///|
