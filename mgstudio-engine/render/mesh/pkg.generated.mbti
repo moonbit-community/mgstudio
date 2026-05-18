@@ -43,6 +43,32 @@ pub fn mesh_allocator_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrg
 // Errors
 
 // Types and methods
+pub struct MeshAllocator {
+  slabs : Array[MeshAllocatorSlabState]
+  mesh_id_to_vertex_slab : Array[MeshAllocatorMeshSlabEntry]
+  mesh_id_to_index_slab : Array[MeshAllocatorMeshSlabEntry]
+  mut next_slab_id : Int
+  general_vertex_slabs_supported : Bool
+}
+pub fn MeshAllocator::allocate(Self, Int, Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> MeshAllocatorSlabPlan?
+pub fn MeshAllocator::allocations(Self) -> Int
+pub fn MeshAllocator::free_mesh(Self, Int) -> Unit
+pub fn MeshAllocator::free_meshes(Self, Array[Int], Array[Int]) -> Unit
+pub fn MeshAllocator::mark_resident(Self, Int, MeshAllocatorElementClass) -> Bool
+pub fn MeshAllocator::mesh_index_slice(Self, Int) -> MeshAllocatorSlice?
+pub fn MeshAllocator::mesh_slabs(Self, Int) -> (Int?, Int?)
+pub fn MeshAllocator::mesh_slice_in_slab(Self, Int, Int) -> MeshAllocatorSlice?
+pub fn MeshAllocator::mesh_vertex_slice(Self, Int) -> MeshAllocatorSlice?
+pub fn MeshAllocator::new(general_vertex_slabs_supported? : Bool) -> Self
+pub fn MeshAllocator::slab_count(Self) -> Int
+pub fn MeshAllocator::slabs_size(Self) -> Int
+pub impl Default for MeshAllocator
+
+pub(all) enum MeshAllocatorAllocationResidency {
+  Pending
+  Resident
+} derive(Eq, @debug.Debug)
+
 pub(all) enum MeshAllocatorElementClass {
   Vertex
   Index
@@ -62,6 +88,16 @@ pub fn MeshAllocatorElementLayout::size(Self) -> Int
 pub fn MeshAllocatorElementLayout::slot_size(Self) -> Int
 pub fn MeshAllocatorElementLayout::vertex(Int) -> Self
 
+pub(all) struct MeshAllocatorFreeRange {
+  offset : Int
+  slot_count : Int
+}
+
+pub(all) struct MeshAllocatorMeshSlabEntry {
+  mesh_id : Int
+  slab_id : Int
+}
+
 pub struct MeshAllocatorSettings {
   min_slab_size : Int
   max_slab_size : Int
@@ -75,6 +111,13 @@ pub fn MeshAllocatorSettings::max_slab_size(Self) -> Int
 pub fn MeshAllocatorSettings::min_slab_size(Self) -> Int
 pub fn MeshAllocatorSettings::new(min_slab_size~ : Int, max_slab_size~ : Int, large_threshold~ : Int, growth_factor~ : Float) -> Self
 pub impl Default for MeshAllocatorSettings
+
+pub(all) struct MeshAllocatorSlabAllocation {
+  mesh_id : Int
+  offset : Int
+  slot_count : Int
+  residency : MeshAllocatorAllocationResidency
+}
 
 pub struct MeshAllocatorSlabGrowth {
   kind : MeshAllocatorSlabGrowthKind
@@ -112,6 +155,25 @@ pub fn MeshAllocatorSlabPlan::layout(Self) -> MeshAllocatorElementLayout
 pub fn MeshAllocatorSlabPlan::offset(Self) -> Int
 pub fn MeshAllocatorSlabPlan::slab_id(Self) -> Int
 pub fn MeshAllocatorSlabPlan::slot_count(Self) -> Int
+
+pub(all) struct MeshAllocatorSlabState {
+  id : Int
+  kind : MeshAllocatorSlabKind
+  layout : MeshAllocatorElementLayout
+  mut current_slot_capacity : Int
+  max_slot_capacity : Int
+  allocations : Array[MeshAllocatorSlabAllocation]
+  free_ranges : Array[MeshAllocatorFreeRange]
+}
+
+pub struct MeshAllocatorSlice {
+  slab_id : Int
+  start : Int
+  end : Int
+} derive(Eq, @debug.Debug)
+pub fn MeshAllocatorSlice::end(Self) -> Int
+pub fn MeshAllocatorSlice::slab_id(Self) -> Int
+pub fn MeshAllocatorSlice::start(Self) -> Int
 
 pub struct RenderMesh {
   vertex_count : Int

@@ -113,3 +113,106 @@ test "render mesh allocator: large-object decision uses min threshold max slab" 
   inspect(large.slot_count(), content="8")
   inspect(large.current_slot_capacity(), content="8")
 }
+
+///|
+test "render mesh allocator: state records vertex and index slab ids" {
+  let allocator = MeshAllocator::new()
+  let vertex_layout = MeshAllocatorElementLayout::vertex(32)
+  let index_layout = MeshAllocatorElementLayout::index_u32()
+  guard allocator.allocate(10, 96, vertex_layout) is Some(vertex_plan) else {
+    fail("expected vertex allocation")
+  }
+  guard allocator.allocate(10, 24, index_layout) is Some(index_plan) else {
+    fail("expected index allocation")
+  }
+  inspect(vertex_plan.kind() is General, content="true")
+  inspect(index_plan.kind() is General, content="true")
+  inspect(allocator.slab_count(), content="2")
+  let (vertex_slab, index_slab) = allocator.mesh_slabs(10)
+  inspect(vertex_slab == Some(vertex_plan.slab_id()), content="true")
+  inspect(index_slab == Some(index_plan.slab_id()), content="true")
+  inspect(allocator.allocations(), content="1")
+  guard allocator.mesh_vertex_slice(10) is Some(vertex_slice) else {
+    fail("expected vertex slice")
+  }
+  inspect(vertex_slice.start(), content="0")
+  inspect(vertex_slice.end(), content="3")
+  guard allocator.mesh_index_slice(10) is Some(index_slice) else {
+    fail("expected index slice")
+  }
+  inspect(index_slice.start(), content="0")
+  inspect(index_slice.end(), content="6")
+}
+
+///|
+test "render mesh allocator: free removes both maps and empty slabs" {
+  let allocator = MeshAllocator::new()
+  let vertex_layout = MeshAllocatorElementLayout::vertex(32)
+  let index_layout = MeshAllocatorElementLayout::index_u16()
+  ignore(allocator.allocate(20, 64, vertex_layout))
+  ignore(allocator.allocate(20, 12, index_layout))
+  inspect(allocator.slab_count(), content="2")
+  allocator.free_mesh(20)
+  inspect(allocator.slab_count(), content="0")
+  let (vertex_slab, index_slab) = allocator.mesh_slabs(20)
+  inspect(vertex_slab is None, content="true")
+  inspect(index_slab is None, content="true")
+  inspect(allocator.mesh_vertex_slice(20) is None, content="true")
+}
+
+///|
+test "render mesh allocator: modified meshes follow bevy free-before-allocate semantics" {
+  let allocator = MeshAllocator::new()
+  let layout = MeshAllocatorElementLayout::vertex(32)
+  ignore(allocator.allocate(30, 64, layout))
+  ignore(allocator.allocate(31, 64, layout))
+  inspect(allocator.slab_count(), content="1")
+  allocator.free_meshes([], [30])
+  let (modified_vertex_slab, _) = allocator.mesh_slabs(30)
+  let (kept_vertex_slab, _) = allocator.mesh_slabs(31)
+  inspect(modified_vertex_slab is None, content="true")
+  inspect(kept_vertex_slab is Some(_), content="true")
+  inspect(allocator.slab_count(), content="1")
+}
+
+///|
+test "render mesh allocator: general slabs grow instead of creating new slab" {
+  let allocator = MeshAllocator::new()
+  let layout = MeshAllocatorElementLayout::vertex(32)
+  let settings = MeshAllocatorSettings::new(
+    min_slab_size=64,
+    max_slab_size=512,
+    large_threshold=1024,
+    growth_factor=1.5F,
+  )
+  guard allocator.allocate(35, 64, layout, settings~) is Some(first) else {
+    fail("expected first allocation")
+  }
+  guard allocator.allocate(36, 64, layout, settings~) is Some(second) else {
+    fail("expected second allocation")
+  }
+  inspect(first.slab_id(), content="0")
+  inspect(first.current_slot_capacity(), content="2")
+  inspect(second.slab_id(), content="0")
+  inspect(second.offset(), content="2")
+  inspect(second.growth().kind() is NeededGrowth, content="true")
+  inspect(second.growth().old_slot_capacity(), content="2")
+  inspect(second.current_slot_capacity(), content="5")
+  inspect(allocator.slab_count(), content="1")
+}
+
+///|
+test "render mesh allocator: webgl-style vertex allocation uses large slabs" {
+  let allocator = MeshAllocator::new(general_vertex_slabs_supported=false)
+  guard allocator.allocate(40, 96, MeshAllocatorElementLayout::vertex(32))
+    is Some(plan) else {
+    fail("expected vertex allocation")
+  }
+  inspect(plan.kind() is LargeObject, content="true")
+  inspect(plan.slot_count(), content="3")
+  guard allocator.mesh_vertex_slice(40) is Some(slice) else {
+    fail("expected large vertex slice")
+  }
+  inspect(slice.start(), content="0")
+  inspect(slice.end(), content="3")
+}
