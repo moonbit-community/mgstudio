@@ -286,7 +286,18 @@ fn render3d_prewarm_material_pipeline(
   world : @ecs.World,
   mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
   mesh : Mesh3dExtractedPayload,
+  view_entity : @core.Entity,
+  visible_entity : @core.Entity,
+  specialization_tick : @core.Tick,
 ) -> @material.CachedRenderPipelineId? {
+  match (try! world.get_resource(ecs_key_specialized_material_pipeline_cache)) {
+    Some(cache) =>
+      match cache.pipeline_id(view_entity, visible_entity) {
+        Some(pipeline_id) => return Some(pipeline_id)
+        None => ()
+      }
+    None => ()
+  }
   guard mesh.material_properties.base_specialize is Some(base_specialize) else {
     return None
   }
@@ -312,6 +323,21 @@ fn render3d_prewarm_material_pipeline(
       )
   }
   match
+    (try! world.get_resource_mut(ecs_key_specialized_material_pipeline_cache)) {
+    Some(cache_ref) =>
+      ignore(
+        cache_ref.modify(fn(cache) {
+          cache.insert(
+            view_entity, visible_entity, specialization_tick, pipeline_id,
+          )
+        }),
+      )
+    None =>
+      abort(
+        "missing SpecializedMaterialPipelineCache resource during pbr material pipeline specialization",
+      )
+  }
+  match
     mesh_runtime_state_ref.val.specialized_material_pipelines.render_pipeline_descriptor(
       pipeline_id,
     ) {
@@ -329,15 +355,28 @@ fn render3d_prewarm_material_pipeline(
 fn render3d_prewarm_mesh_pipelines(
   world : @ecs.World,
   mesh_runtime_state_ref : Ref[@pbr_render.Render3dMeshRuntimeState],
+  cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
   let prewarmed_keys : Map[String, Bool] = {}
+  let specialization_tick = world.read_change_tick()
   for mesh_index in 0..<meshes.length() {
     let extracted_mesh = meshes[mesh_index]
     let mesh = extracted_mesh.payload
-    let material_pipeline_id = render3d_prewarm_material_pipeline(
-      world, mesh_runtime_state_ref, mesh,
-    )
+    let mut material_pipeline_id : @material.CachedRenderPipelineId? = None
+    for camera in cameras {
+      let view_pipeline_id = render3d_prewarm_material_pipeline(
+        world,
+        mesh_runtime_state_ref,
+        mesh,
+        camera.entity.main_entity,
+        extracted_mesh.entity.main_entity,
+        specialization_tick,
+      )
+      if material_pipeline_id is None {
+        material_pipeline_id = view_pipeline_id
+      }
+    }
     if material_pipeline_id is Some(_) {
       meshes[mesh_index] = ExtractedMesh3d::{
         ..extracted_mesh,
@@ -466,7 +505,9 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     world_transform_cache_ref, needs_mesh_previous_transform,
   )
   render3d_prepare_shader_asset_paths(source_world, meshes)
-  render3d_prewarm_mesh_pipelines(world, mesh_runtime_state_ref, meshes)
+  render3d_prewarm_mesh_pipelines(
+    world, mesh_runtime_state_ref, cameras, meshes,
+  )
   render3d_queue_store_pending_frame(world, frame_config, cameras, meshes)
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,

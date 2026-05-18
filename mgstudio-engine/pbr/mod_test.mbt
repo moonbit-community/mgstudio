@@ -59,6 +59,24 @@ fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
 }
 
 ///|
+fn render_world_with_material_resources(app : @app.App[@ecs.World]) -> Bool {
+  match app.get_sub_app(@app.RenderApp) {
+    Some(render_sub_app) => {
+      let render_world = render_sub_app.world()
+      (try! render_world.get_resource(ecs_key_entity_specialization_ticks))
+      is Some(_) &&
+      (try! render_world.get_resource(
+        ecs_key_specialized_material_pipeline_cache,
+      ))
+      is Some(_) &&
+      (try! render_world.get_resource(ecs_key_render_material_instances))
+      is Some(_)
+    }
+    None => false
+  }
+}
+
+///|
 fn mesh_assets_mut_or_abort(
   world : @ecs.World,
 ) -> Ref[@asset.Assets[@mesh.Mesh]] {
@@ -154,6 +172,7 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
     app.contains_resource(ecs_key_materials_plugin_state),
     content="true",
   )
+  debug_inspect(render_world_with_material_resources(app), content="true")
   debug_inspect(render_world_with_fog_meta(app), content="true")
   debug_inspect(
     read_deferred_lighting_state(app.world()).enabled,

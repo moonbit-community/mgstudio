@@ -46,7 +46,7 @@ test "render3d: materials startup preserves existing material render resources" 
   let world = @ecs.World::new()
   let entity_ticks = EntitySpecializationTicks::default()
   let entity = @core.Entity::new(12, 0)
-  entity_ticks.insert(entity, EntitySpecializationTickPair::new(5U, 6U))
+  entity_ticks.insert(entity, EntitySpecializationTickPair::new(5, 6))
   world.insert_resource(ecs_key_entity_specialization_ticks, entity_ticks)
 
   init_materials_resources(world)

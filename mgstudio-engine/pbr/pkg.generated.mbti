@@ -353,11 +353,11 @@ pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@l
 
 pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[WireframeConfig]
 
-pub fn material_entity_needs_specialization(UInt?, UInt, UInt, UInt) -> Bool
+pub fn material_entity_needs_specialization(Int64?, Int64, Int64, Int64) -> Bool
 
 pub fn[T : MaterialExtension] material_extension_metadata_from_extension(T) -> @material.ExtendedMaterialMetadata3d
 
-pub fn material_specialization_tick_is_newer_than(UInt, UInt, UInt) -> Bool
+pub fn material_specialization_tick_is_newer_than(Int64, Int64, Int64) -> Bool
 
 pub fn material_uses_bindless_resources(Bool, Int?) -> Bool
 
@@ -915,18 +915,18 @@ pub impl @ecs.Component for DistanceFog
 pub impl @ecs.EcsPayloadCodec for DistanceFog
 
 pub struct EntitySpecializationTickPair {
-  system_tick : UInt
-  material_instances_tick : UInt
+  system_tick : Int64
+  material_instances_tick : Int64
 } derive(Eq, @debug.Debug)
-pub fn EntitySpecializationTickPair::material_instances_tick(Self) -> UInt
-pub fn EntitySpecializationTickPair::new(UInt, UInt) -> Self
-pub fn EntitySpecializationTickPair::system_tick(Self) -> UInt
+pub fn EntitySpecializationTickPair::material_instances_tick(Self) -> Int64
+pub fn EntitySpecializationTickPair::new(Int64, Int64) -> Self
+pub fn EntitySpecializationTickPair::system_tick(Self) -> Int64
 
 pub struct EntitySpecializationTicks {
   entities : Map[UInt64, EntitySpecializationTickPair]
 }
 pub fn EntitySpecializationTicks::default() -> Self
-pub fn EntitySpecializationTicks::extract_entity_needs_specialization(Self, @core.Entity, UInt, RenderMaterialInstances) -> Unit
+pub fn EntitySpecializationTicks::extract_entity_needs_specialization(Self, @core.Entity, Int64, RenderMaterialInstances) -> Unit
 pub fn EntitySpecializationTicks::get(Self, @core.Entity) -> EntitySpecializationTickPair?
 pub fn EntitySpecializationTicks::insert(Self, @core.Entity, EntitySpecializationTickPair) -> Unit
 pub fn EntitySpecializationTicks::len(Self) -> Int
@@ -1362,17 +1362,17 @@ pub impl @ecs.EcsPayloadCodec for Render3dInternalAssetsState
 
 pub struct RenderMaterialInstance {
   asset_id : Int
-  last_change_tick : UInt
+  last_change_tick : Int64
 }
 pub fn RenderMaterialInstance::asset_id(Self) -> Int
-pub fn RenderMaterialInstance::last_change_tick(Self) -> UInt
-pub fn RenderMaterialInstance::new(Int, UInt) -> Self
+pub fn RenderMaterialInstance::last_change_tick(Self) -> Int64
+pub fn RenderMaterialInstance::new(Int, Int64) -> Self
 
 pub struct RenderMaterialInstances {
   instances : Map[UInt64, RenderMaterialInstance]
-  mut current_change_tick : UInt
+  mut current_change_tick : Int64
 }
-pub fn RenderMaterialInstances::current_change_tick(Self) -> UInt
+pub fn RenderMaterialInstances::current_change_tick(Self) -> Int64
 pub fn RenderMaterialInstances::default() -> Self
 pub fn RenderMaterialInstances::early_sweep_removed_mesh_material(Self, @core.Entity) -> Bool
 pub fn RenderMaterialInstances::extract_mesh_material(Self, @core.Entity, Bool, @material.MeshMaterial3d) -> Unit
@@ -1462,19 +1462,20 @@ pub struct SpecializedMaterialPipelineCache {
 }
 pub fn SpecializedMaterialPipelineCache::default() -> Self
 pub fn SpecializedMaterialPipelineCache::get(Self, @core.Entity) -> SpecializedMaterialViewPipelineCache?
-pub fn SpecializedMaterialPipelineCache::insert(Self, @core.Entity, @core.Entity, UInt, @render_resource.CachedRenderPipelineId) -> Unit
+pub fn SpecializedMaterialPipelineCache::insert(Self, @core.Entity, @core.Entity, Int64, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedMaterialPipelineCache::len(Self) -> Int
+pub fn SpecializedMaterialPipelineCache::pipeline_id(Self, @core.Entity, @core.Entity) -> @render_resource.CachedRenderPipelineId?
 pub fn SpecializedMaterialPipelineCache::remove_entity_from_all_views(Self, @core.Entity) -> Int
 pub fn SpecializedMaterialPipelineCache::view_or_insert(Self, @core.Entity) -> SpecializedMaterialViewPipelineCache
 pub impl @ecs.EcsPayloadCodec for SpecializedMaterialPipelineCache
 
 pub struct SpecializedMaterialPipelineCacheEntry {
-  tick : UInt
+  tick : Int64
   pipeline_id : @render_resource.CachedRenderPipelineId
 }
-pub fn SpecializedMaterialPipelineCacheEntry::new(UInt, @render_resource.CachedRenderPipelineId) -> Self
+pub fn SpecializedMaterialPipelineCacheEntry::new(Int64, @render_resource.CachedRenderPipelineId) -> Self
 pub fn SpecializedMaterialPipelineCacheEntry::pipeline_id(Self) -> @render_resource.CachedRenderPipelineId
-pub fn SpecializedMaterialPipelineCacheEntry::tick(Self) -> UInt
+pub fn SpecializedMaterialPipelineCacheEntry::tick(Self) -> Int64
 
 pub struct SpecializedMaterialViewPipelineCache {
   entries : Map[UInt64, SpecializedMaterialPipelineCacheEntry]

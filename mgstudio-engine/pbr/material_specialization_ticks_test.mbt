@@ -21,7 +21,7 @@ test "pbr material specialization: entity ticks capture system and material inst
   material_instances.late_sweep_removed_mesh3d(@core.Entity::new(999, 0))
   |> ignore
   entity_ticks.extract_entity_needs_specialization(
-    entity, 7U, material_instances,
+    entity, 7, material_instances,
   )
 
   match entity_ticks.get(entity) {
@@ -40,7 +40,7 @@ test "pbr material specialization: cache stores per-view pipeline ids" {
   let entity = @core.Entity::new(2, 0)
   let pipeline_id = @material.CachedRenderPipelineId::new(55UL)
 
-  cache.insert(view, entity, 11U, pipeline_id)
+  cache.insert(view, entity, 11, pipeline_id)
   debug_inspect(cache.len(), content="1")
   let cached_entry = match cache.get(view) {
     Some(view_cache) => view_cache.get(entity)
@@ -53,24 +53,28 @@ test "pbr material specialization: cache stores per-view pipeline ids" {
     }
     None => debug_inspect(false, content="true")
   }
+  debug_inspect(
+    cache.pipeline_id(view, entity).map(fn(value) { value.id() }),
+    content="Some(55)",
+  )
 }
 
 ///|
 test "pbr material specialization: needs specialization follows view or entity tick freshness" {
   debug_inspect(
-    material_entity_needs_specialization(None, 1U, 1U, 2U),
+    material_entity_needs_specialization(None, 1, 1, 2),
     content="true",
   )
   debug_inspect(
-    material_entity_needs_specialization(Some(5U), 6U, 5U, 7U),
+    material_entity_needs_specialization(Some(5), 6, 5, 7),
     content="true",
   )
   debug_inspect(
-    material_entity_needs_specialization(Some(5U), 5U, 6U, 7U),
+    material_entity_needs_specialization(Some(5), 5, 6, 7),
     content="true",
   )
   debug_inspect(
-    material_entity_needs_specialization(Some(5U), 5U, 5U, 7U),
+    material_entity_needs_specialization(Some(5), 5, 5, 7),
     content="false",
   )
 }
@@ -84,9 +88,9 @@ test "pbr material specialization: sweep preserves same-frame material type repl
   let entity = @core.Entity::new(5, 0)
 
   entity_ticks.extract_entity_needs_specialization(
-    entity, 3U, material_instances,
+    entity, 3, material_instances,
   )
-  cache.insert(view, entity, 3U, @material.CachedRenderPipelineId::new(77UL))
+  cache.insert(view, entity, 3, @material.CachedRenderPipelineId::new(77UL))
 
   debug_inspect(
     sweep_entity_needing_specialization(
@@ -111,12 +115,12 @@ test "pbr material specialization: sweep removes stale ticks and cached pipeline
   let entity = @core.Entity::new(11, 0)
 
   entity_ticks.extract_entity_needs_specialization(
-    entity, 3U, material_instances,
+    entity, 3, material_instances,
   )
   material_instances.late_sweep_removed_mesh3d(@core.Entity::new(999, 0))
   |> ignore
-  cache.insert(view_a, entity, 3U, @material.CachedRenderPipelineId::new(7UL))
-  cache.insert(view_b, entity, 3U, @material.CachedRenderPipelineId::new(8UL))
+  cache.insert(view_a, entity, 3, @material.CachedRenderPipelineId::new(7UL))
+  cache.insert(view_b, entity, 3, @material.CachedRenderPipelineId::new(8UL))
 
   debug_inspect(
     sweep_entity_needing_specialization(

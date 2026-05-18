@@ -130,6 +130,14 @@ pub fn materials_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+fn configure_materials_render_sub_app(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  init_materials_resources(sub_app.world())
+  sub_app
+}
+
+///|
 fn materials_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let app = if app.contains_resource(ecs_key_materials_plugin_state) {
     app
@@ -140,6 +148,7 @@ fn materials_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
     })
     .add_startup_system(init_materials_resources)
   }
+  let app = @render.try_with_render_app(app, configure_materials_render_sub_app)
   @pbr_prepass.prepass_plugin(app)
 }
 

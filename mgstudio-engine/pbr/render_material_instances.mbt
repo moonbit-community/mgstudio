@@ -21,13 +21,13 @@ pub const DUMMY_MESH_MATERIAL_ID : Int = -1
 ///|
 pub struct RenderMaterialInstance {
   asset_id : Int
-  last_change_tick : UInt
+  last_change_tick : @core.Tick
 }
 
 ///|
 pub fn RenderMaterialInstance::new(
   asset_id : Int,
-  last_change_tick : UInt,
+  last_change_tick : @core.Tick,
 ) -> RenderMaterialInstance {
   RenderMaterialInstance::{ asset_id, last_change_tick }
 }
@@ -40,19 +40,19 @@ pub fn RenderMaterialInstance::asset_id(self : RenderMaterialInstance) -> Int {
 ///|
 pub fn RenderMaterialInstance::last_change_tick(
   self : RenderMaterialInstance,
-) -> UInt {
+) -> @core.Tick {
   self.last_change_tick
 }
 
 ///|
 pub struct RenderMaterialInstances {
   instances : Map[UInt64, RenderMaterialInstance]
-  mut current_change_tick : UInt
+  mut current_change_tick : @core.Tick
 }
 
 ///|
 pub fn RenderMaterialInstances::default() -> RenderMaterialInstances {
-  RenderMaterialInstances::{ instances: {}, current_change_tick: 0U }
+  RenderMaterialInstances::{ instances: {}, current_change_tick: 0 }
 }
 
 ///|
@@ -68,7 +68,7 @@ pub fn RenderMaterialInstances::len(self : RenderMaterialInstances) -> Int {
 ///|
 pub fn RenderMaterialInstances::current_change_tick(
   self : RenderMaterialInstances,
-) -> UInt {
+) -> @core.Tick {
   self.current_change_tick
 }
 
@@ -136,6 +136,9 @@ pub fn RenderMaterialInstances::late_sweep_removed_mesh3d(
   entity : @core.Entity,
 ) -> Bool {
   let removed = self.early_sweep_removed_mesh_material(entity)
-  self.current_change_tick = self.current_change_tick + 1U
+  self.current_change_tick = @core.tick_wrapping_add(
+    self.current_change_tick,
+    1,
+  )
   removed
 }

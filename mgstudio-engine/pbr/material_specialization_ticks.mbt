@@ -17,14 +17,14 @@
 
 ///|
 pub struct EntitySpecializationTickPair {
-  system_tick : UInt
-  material_instances_tick : UInt
+  system_tick : @core.Tick
+  material_instances_tick : @core.Tick
 } derive(Eq, Debug)
 
 ///|
 pub fn EntitySpecializationTickPair::new(
-  system_tick : UInt,
-  material_instances_tick : UInt,
+  system_tick : @core.Tick,
+  material_instances_tick : @core.Tick,
 ) -> EntitySpecializationTickPair {
   EntitySpecializationTickPair::{ system_tick, material_instances_tick }
 }
@@ -32,14 +32,14 @@ pub fn EntitySpecializationTickPair::new(
 ///|
 pub fn EntitySpecializationTickPair::system_tick(
   self : EntitySpecializationTickPair,
-) -> UInt {
+) -> @core.Tick {
   self.system_tick
 }
 
 ///|
 pub fn EntitySpecializationTickPair::material_instances_tick(
   self : EntitySpecializationTickPair,
-) -> UInt {
+) -> @core.Tick {
   self.material_instances_tick
 }
 
@@ -98,7 +98,7 @@ pub fn EntitySpecializationTicks::remove(
 pub fn EntitySpecializationTicks::extract_entity_needs_specialization(
   self : EntitySpecializationTicks,
   entity : @core.Entity,
-  system_tick : UInt,
+  system_tick : @core.Tick,
   render_material_instances : RenderMaterialInstances,
 ) -> Unit {
   self.insert(
@@ -112,13 +112,13 @@ pub fn EntitySpecializationTicks::extract_entity_needs_specialization(
 
 ///|
 pub struct SpecializedMaterialPipelineCacheEntry {
-  tick : UInt
+  tick : @core.Tick
   pipeline_id : @material.CachedRenderPipelineId
 }
 
 ///|
 pub fn SpecializedMaterialPipelineCacheEntry::new(
-  tick : UInt,
+  tick : @core.Tick,
   pipeline_id : @material.CachedRenderPipelineId,
 ) -> SpecializedMaterialPipelineCacheEntry {
   SpecializedMaterialPipelineCacheEntry::{ tick, pipeline_id }
@@ -127,7 +127,7 @@ pub fn SpecializedMaterialPipelineCacheEntry::new(
 ///|
 pub fn SpecializedMaterialPipelineCacheEntry::tick(
   self : SpecializedMaterialPipelineCacheEntry,
-) -> UInt {
+) -> @core.Tick {
   self.tick
 }
 
@@ -219,6 +219,19 @@ pub fn SpecializedMaterialPipelineCache::get(
 }
 
 ///|
+pub fn SpecializedMaterialPipelineCache::pipeline_id(
+  self : SpecializedMaterialPipelineCache,
+  view : @core.Entity,
+  entity : @core.Entity,
+) -> @material.CachedRenderPipelineId? {
+  match self.get(view) {
+    Some(view_cache) =>
+      view_cache.get(entity).map(fn(entry) { entry.pipeline_id() })
+    None => None
+  }
+}
+
+///|
 pub fn SpecializedMaterialPipelineCache::view_or_insert(
   self : SpecializedMaterialPipelineCache,
   view : @core.Entity,
@@ -239,7 +252,7 @@ pub fn SpecializedMaterialPipelineCache::insert(
   self : SpecializedMaterialPipelineCache,
   view : @core.Entity,
   entity : @core.Entity,
-  tick : UInt,
+  tick : @core.Tick,
   pipeline_id : @material.CachedRenderPipelineId,
 ) -> Unit {
   self
@@ -263,19 +276,19 @@ pub fn SpecializedMaterialPipelineCache::remove_entity_from_all_views(
 
 ///|
 pub fn material_specialization_tick_is_newer_than(
-  tick : UInt,
-  last_run : UInt,
-  _this_run : UInt,
+  tick : @core.Tick,
+  last_run : @core.Tick,
+  this_run : @core.Tick,
 ) -> Bool {
-  tick > last_run
+  @core.tick_is_newer_than(tick, last_run, this_run)
 }
 
 ///|
 pub fn material_entity_needs_specialization(
-  last_specialized_tick : UInt?,
-  view_tick : UInt,
-  entity_tick : UInt,
-  this_run : UInt,
+  last_specialized_tick : @core.Tick?,
+  view_tick : @core.Tick,
+  entity_tick : @core.Tick,
+  this_run : @core.Tick,
 ) -> Bool {
   match last_specialized_tick {
     None => true
