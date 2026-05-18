@@ -15,7 +15,9 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_pbr_deferred_DeferredPbrLightingState(DeferredPbrLightingState)
+  EcsPayload_pbr_deferred_DeferredLightingPipeline(DeferredLightingPipeline)
   EcsPayload_pbr_deferred_PbrDeferredLightingDepthId(PbrDeferredLightingDepthId)
+  EcsPayload_pbr_deferred_SkipDeferredLighting(SkipDeferredLighting)
 }
 
 ///|
@@ -36,6 +38,23 @@ pub impl @ecs.EcsPayloadCodec for DeferredPbrLightingState with from_ecs_payload
 }
 
 ///|
+pub impl @ecs.EcsPayloadCodec for DeferredLightingPipeline with to_ecs_payload(
+  self,
+) {
+  EcsPayload_pbr_deferred_DeferredLightingPipeline(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for DeferredLightingPipeline with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_pbr_deferred_DeferredLightingPipeline(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 pub impl @ecs.EcsPayloadCodec for PbrDeferredLightingDepthId with to_ecs_payload(
   self,
 ) {
@@ -48,6 +67,21 @@ pub impl @ecs.EcsPayloadCodec for PbrDeferredLightingDepthId with from_ecs_paylo
 ) {
   match payload {
     EcsPayload_pbr_deferred_PbrDeferredLightingDepthId(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for SkipDeferredLighting with to_ecs_payload(self) {
+  EcsPayload_pbr_deferred_SkipDeferredLighting(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for SkipDeferredLighting with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_pbr_deferred_SkipDeferredLighting(value) => Some(value)
     _ => None
   }
 }
