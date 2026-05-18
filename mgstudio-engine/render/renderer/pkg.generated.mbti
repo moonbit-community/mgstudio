@@ -1296,6 +1296,7 @@ pub struct Mesh3dMaterialPipelineLayoutCacheEntry {
   material_pipeline_id : UInt64
   view_bind_group_layout : @wgpu_mbt.BindGroupLayout
   binding_arrays_bind_group_layout : @wgpu_mbt.BindGroupLayout
+  draw_bind_group_layout_descriptor : @render_resource.BindGroupLayoutDescriptor
   draw_bind_group_layout : @wgpu_mbt.BindGroupLayout
   material_bind_group_layout : @wgpu_mbt.BindGroupLayout
   pipeline_layout : @wgpu_mbt.PipelineLayout

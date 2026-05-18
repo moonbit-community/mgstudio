@@ -46,6 +46,9 @@ const MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS : UInt64 = 64UL
 const MESH_PIPELINE_KEY_ALL_PREPASS_BITS : UInt64 = 16777464UL
 
 ///|
+const MESH_PIPELINE_KEY_MORPH_TARGETS : UInt64 = 0x8000_0000_0000_0000UL
+
+///|
 const MESH_PIPELINE_KEY_LIGHTMAPPED : UInt64 = 8192UL
 
 ///|
@@ -112,28 +115,112 @@ fn pbr_mesh_pipeline_view_layout() -> @mesh_view_layout.MeshPipelineViewLayout {
 }
 
 ///|
-fn pbr_mesh_pipeline_draw_layout_descriptor() -> @material.BindGroupLayoutDescriptor {
+fn pbr_mesh_binding_layout_entry(
+  slot : @pbr_render.MeshBindingSlot3d,
+  binding : Int,
+) -> @render_resource.BindGroupLayoutEntry {
   let vertex_fragment = (@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT).to_uint()
-  @material.BindGroupLayoutDescriptor::new("mesh_layout", [
-    @render_resource.BindGroupLayoutEntry::new(
-      0,
-      vertex_fragment,
+  let vertex = @wgpu.SHADER_STAGE_VERTEX.to_uint()
+  let fragment = @wgpu.SHADER_STAGE_FRAGMENT.to_uint()
+  let kind = match slot {
+    @pbr_render.MeshBindingSlot3d::Model =>
       @render_resource.BindingType::BufferBinding(
         @render_resource.BufferBindingType::Storage(true),
         false,
         176UL,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      1,
-      @wgpu.SHADER_STAGE_VERTEX.to_uint(),
+      )
+    @pbr_render.MeshBindingSlot3d::SkinCurrent
+    | @pbr_render.MeshBindingSlot3d::SkinPrevious =>
       @render_resource.BindingType::BufferBinding(
         @render_resource.BufferBindingType::Storage(true),
         false,
-        64UL,
+        @pbr_render.RENDER3D_JOINT_BUFFER_SIZE_BYTES.to_uint64(),
+      )
+    @pbr_render.MeshBindingSlot3d::MorphWeightsCurrent
+    | @pbr_render.MeshBindingSlot3d::MorphWeightsPrevious =>
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        true,
+        @pbr_render.RENDER3D_MORPH_BUFFER_SIZE_BYTES.to_uint64(),
+      )
+    @pbr_render.MeshBindingSlot3d::MorphTargets =>
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(false),
+        @render_resource.TextureViewDimension::D3,
+        false,
+      )
+    @pbr_render.MeshBindingSlot3d::LightmapTexture =>
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      )
+    @pbr_render.MeshBindingSlot3d::LightmapSampler =>
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      )
+  }
+  let visibility = match slot {
+    @pbr_render.MeshBindingSlot3d::Model => vertex_fragment
+    @pbr_render.MeshBindingSlot3d::LightmapTexture
+    | @pbr_render.MeshBindingSlot3d::LightmapSampler => fragment
+    _ => vertex
+  }
+  @render_resource.BindGroupLayoutEntry::new(binding, visibility, kind)
+}
+
+///|
+fn pbr_mesh_layout_is_skinned(
+  mesh_layout : @mesh.MeshVertexBufferLayoutRef,
+) -> Bool {
+  let layout = mesh_layout.layout()
+  layout.contains(@mesh.MeshVertexAttribute::joint_index().id()) &&
+  layout.contains(@mesh.MeshVertexAttribute::joint_weight().id())
+}
+
+///|
+fn pbr_setup_morph_and_skinning_defs(
+  mesh_key_bits : UInt64,
+  mesh_layout : @mesh.MeshVertexBufferLayoutRef,
+  skinning_attribute_offset : Int,
+  shader_defs : Array[@material.ShaderDefVal],
+  vertex_attributes : Array[@mesh.VertexAttributeDescriptor],
+) -> @material.BindGroupLayoutDescriptor {
+  let is_morphed = (mesh_key_bits & MESH_PIPELINE_KEY_MORPH_TARGETS) != 0UL
+  let is_lightmapped = (mesh_key_bits & MESH_PIPELINE_KEY_LIGHTMAPPED) != 0UL
+  let motion_vectors = (mesh_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS) !=
+    0UL
+  let is_skinned = pbr_mesh_layout_is_skinned(mesh_layout)
+  if is_skinned {
+    shader_defs.push(pbr_shader_def("SKINNED"))
+    vertex_attributes.push(
+      pbr_mesh_vertex_attribute_descriptor(
+        @mesh.MeshVertexAttribute::joint_index(),
+        skinning_attribute_offset,
       ),
-    ),
-  ])
+    )
+    vertex_attributes.push(
+      pbr_mesh_vertex_attribute_descriptor(
+        @mesh.MeshVertexAttribute::joint_weight(),
+        skinning_attribute_offset + 1,
+      ),
+    )
+  }
+  if is_morphed {
+    shader_defs.push(pbr_shader_def("MORPH_TARGETS"))
+  }
+  let selected_layout = @pbr_render.render3d_mesh_layouts().select(
+    skinned=is_skinned,
+    morphed=is_morphed,
+    lightmapped=is_lightmapped,
+    motion_vectors~,
+  )
+  let entries : Array[@render_resource.BindGroupLayoutEntry] = []
+  for binding in selected_layout.bindings() {
+    let (slot, binding_index) = binding
+    entries.push(pbr_mesh_binding_layout_entry(slot, binding_index))
+  }
+  @material.BindGroupLayoutDescriptor::new(selected_layout.name(), entries)
 }
 
 ///|
@@ -328,6 +415,9 @@ fn pbr_mesh_pipeline_descriptor(
   if (mesh_key_bits & MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE) != 0UL {
     shader_defs.push(pbr_shader_def("READS_VIEW_TRANSMISSION_TEXTURE"))
   }
+  let draw_layout = pbr_setup_morph_and_skinning_defs(
+    mesh_key_bits, layout, 6, shader_defs, vertex_attributes,
+  )
   let vertex_buffer_layout = match mesh_layout.get_layout(vertex_attributes) {
     Ok(vertex_buffer_layout) => vertex_buffer_layout
     Err(error) =>
@@ -342,7 +432,7 @@ fn pbr_mesh_pipeline_descriptor(
   .with_layout([
     mesh_view_layout.main_bind_group_layout_descriptor(),
     mesh_view_layout.binding_array_bind_group_layout_descriptor(),
-    pbr_mesh_pipeline_draw_layout_descriptor(),
+    draw_layout,
   ])
   .with_vertex(
     @material.VertexState::new(
@@ -505,6 +595,9 @@ fn pbr_prepass_pipeline_descriptor(
   if normal_prepass || motion_vector_prepass || deferred_prepass {
     shader_defs.push(pbr_shader_def("PREPASS_FRAGMENT"))
   }
+  let draw_layout = pbr_setup_morph_and_skinning_defs(
+    mesh_key_bits, layout, 5, shader_defs, vertex_attributes,
+  )
   let vertex_buffer_layout = match mesh_layout.get_layout(vertex_attributes) {
     Ok(vertex_buffer_layout) => vertex_buffer_layout
     Err(error) =>
@@ -568,7 +661,7 @@ fn pbr_prepass_pipeline_descriptor(
   .with_layout([
     pbr_prepass_view_layout_descriptor(motion_vector_prepass),
     pbr_prepass_empty_layout_descriptor(),
-    pbr_mesh_pipeline_draw_layout_descriptor(),
+    draw_layout,
     material_layout,
   ])
   .with_vertex(

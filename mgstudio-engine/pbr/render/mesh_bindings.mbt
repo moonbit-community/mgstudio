@@ -77,6 +77,22 @@ pub struct MeshLayouts3d {
 }
 
 ///|
+pub fn MeshBindingLayout3d::name(self : MeshBindingLayout3d) -> String {
+  self.name
+}
+
+///|
+pub fn MeshBindingLayout3d::bindings(
+  self : MeshBindingLayout3d,
+) -> Array[(MeshBindingSlot3d, Int)] {
+  let bindings : Array[(MeshBindingSlot3d, Int)] = []
+  for binding in self.bindings {
+    bindings.push(binding)
+  }
+  bindings
+}
+
+///|
 fn mesh_binding_layout_slots(
   lightmapped : Bool,
   skinned : Bool,
@@ -195,5 +211,25 @@ pub fn render3d_mesh_layouts() -> MeshLayouts3d {
     morphed_motion: mesh_binding_layout(false, false, true, true),
     morphed_skinned: mesh_binding_layout(false, true, true, false),
     morphed_skinned_motion: mesh_binding_layout(false, true, true, true),
+  }
+}
+
+///|
+pub fn MeshLayouts3d::select(
+  self : MeshLayouts3d,
+  skinned~ : Bool,
+  morphed~ : Bool,
+  lightmapped~ : Bool,
+  motion_vectors~ : Bool,
+) -> MeshBindingLayout3d {
+  match (skinned, morphed, lightmapped, motion_vectors) {
+    (true, false, _, true) => self.skinned_motion
+    (true, false, _, false) => self.skinned
+    (true, true, _, true) => self.morphed_skinned_motion
+    (true, true, _, false) => self.morphed_skinned
+    (false, true, _, true) => self.morphed_motion
+    (false, true, _, false) => self.morphed
+    (false, false, true, _) => self.lightmapped
+    (false, false, false, _) => self.model_only
   }
 }

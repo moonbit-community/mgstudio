@@ -162,6 +162,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     guard self.ensure_mesh3d_instance_draw_binding_with_layout(
         material_pipeline_id,
         material_layout_entry.draw_bind_group_layout,
+        material_layout_entry.draw_bind_group_layout_descriptor,
         required_size,
       )
       is Some((instance_draw_buf, instance_draw_bg)) else {
@@ -181,6 +182,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
         mesh3d_draw_slot_index,
         material_pipeline_id,
         material_layout_entry.draw_bind_group_layout,
+        material_layout_entry.draw_bind_group_layout_descriptor,
       )
       is Some(draw_slot) else {
       return

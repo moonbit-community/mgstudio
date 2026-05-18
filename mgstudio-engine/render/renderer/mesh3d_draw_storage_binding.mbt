@@ -16,22 +16,46 @@
 fn GpuBackend::create_mesh3d_draw_bind_group(
   self : GpuBackend,
   bgl : @wgpu.BindGroupLayout,
+  layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
   draw_buf : @wgpu.Buffer,
   draw_size : UInt64,
   label : String,
 ) -> @wgpu.BindGroup? {
-  guard ensure_mesh3d_skin_buffers(self, MESH3D_SKINNING_STORAGE_STRIDE_BYTES) else {
-    return None
-  }
-  guard self.mesh3d_skin_current_buf is Some(current_skin_buf) else {
-    return None
-  }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=2UL)
-  let ok = builder.add_buffer(0U, draw_buf, size=draw_size) &&
-    builder.add_buffer(1U, current_skin_buf, size=self.mesh3d_skin_capacity)
-  if !ok {
-    builder.free()
-    return None
+  let entries = layout_descriptor.entries()
+  let builder = @wgpu.BindGroupBuilder::new(
+    max_entries=entries.length().to_uint64(),
+  )
+  for entry in entries {
+    let ok = match entry.binding() {
+      0 => builder.add_buffer(0U, draw_buf, size=draw_size)
+      1 => {
+        guard ensure_mesh3d_skin_buffers(
+          self,
+          MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+        ) else {
+          false
+        }
+        guard self.mesh3d_skin_current_buf is Some(current_skin_buf) else {
+          false
+        }
+        builder.add_buffer(1U, current_skin_buf, size=self.mesh3d_skin_capacity)
+      }
+      6 => {
+        guard ensure_mesh3d_skin_buffers(
+          self,
+          MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+        ) else {
+          false
+        }
+        guard self.mesh3d_skin_prev_buf is Some(prev_skin_buf) else { false }
+        builder.add_buffer(6U, prev_skin_buf, size=self.mesh3d_skin_capacity)
+      }
+      _ => false
+    }
+    if !ok {
+      builder.free()
+      return None
+    }
   }
   Some(builder.finish(self.device, bgl, label~))
 }
@@ -54,6 +78,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
   slot_index : Int,
   material_pipeline_id : UInt64,
   bgl : @wgpu.BindGroupLayout,
+  layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
 ) -> GpuStorageSlot? {
   if slot_index < self.mesh3d_draw_slots.length() &&
     slot_index < self.mesh3d_draw_slot_skin_revisions.length() &&
@@ -72,6 +97,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
     )
     guard self.create_mesh3d_draw_bind_group(
         bgl,
+        layout_descriptor,
         draw_buf,
         MESH3D_DRAW_STORAGE_STRIDE_BYTES,
         "mgstudio_mesh3d_draw_slot_bg",
@@ -93,6 +119,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
     let slot = self.mesh3d_draw_slots[slot_index]
     guard self.create_mesh3d_draw_bind_group(
         bgl,
+        layout_descriptor,
         slot.buffer,
         MESH3D_DRAW_STORAGE_STRIDE_BYTES,
         "mgstudio_mesh3d_draw_slot_bg",
@@ -121,6 +148,7 @@ pub fn GpuBackend::ensure_mesh3d_draw_slot(
     slot_index,
     MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
     bgl,
+    mesh3d_default_draw_bind_group_layout_descriptor(),
   )
 }
 
@@ -129,6 +157,7 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
   self : GpuBackend,
   material_pipeline_id : UInt64,
   bgl : @wgpu.BindGroupLayout,
+  layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
   required_size : UInt64,
 ) -> (@wgpu.Buffer, @wgpu.BindGroup)? {
   if self.mesh3d_instance_draw_buf is Some(draw_buf) &&
@@ -153,7 +182,7 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
     _ => self.device.create_buffer(size=next_capacity, usage~)
   }
   guard self.create_mesh3d_draw_bind_group(
-      bgl, draw_buf, next_capacity, "mgstudio_mesh3d_instance_draw_bg",
+      bgl, layout_descriptor, draw_buf, next_capacity, "mgstudio_mesh3d_instance_draw_bg",
     )
     is Some(draw_bg) else {
     return None
@@ -180,6 +209,7 @@ pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(
   self.ensure_mesh3d_instance_draw_binding_with_layout(
     MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
     bgl,
+    mesh3d_default_draw_bind_group_layout_descriptor(),
     required_size,
   )
 }

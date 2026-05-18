@@ -54,6 +54,59 @@ fn pbr_material_specializer_test_layout() -> @mesh.MeshVertexBufferLayoutRef {
 }
 
 ///|
+fn pbr_material_specializer_test_skinned_layout() -> @mesh.MeshVertexBufferLayoutRef {
+  let layouts = @mesh.MeshVertexBufferLayouts::default()
+  layouts.insert(
+    @mesh.MeshVertexBufferLayout::new(
+      attribute_ids=[
+        @mesh.MeshVertexAttribute::position().id(),
+        @mesh.MeshVertexAttribute::normal().id(),
+        @mesh.MeshVertexAttribute::uv_0().id(),
+        @mesh.MeshVertexAttribute::color().id(),
+        @mesh.MeshVertexAttribute::joint_index().id(),
+        @mesh.MeshVertexAttribute::joint_weight().id(),
+      ],
+      layout=@mesh.VertexBufferLayout::new(
+        array_stride=72,
+        step_mode=@mesh.MeshVertexStepMode::Vertex,
+        attributes=[
+          @mesh.VertexAttribute::new(
+            offset=0,
+            format=@mesh.MeshVertexFormat::Float32x3,
+            shader_location=9,
+          ),
+          @mesh.VertexAttribute::new(
+            offset=12,
+            format=@mesh.MeshVertexFormat::Float32x3,
+            shader_location=10,
+          ),
+          @mesh.VertexAttribute::new(
+            offset=24,
+            format=@mesh.MeshVertexFormat::Float32x2,
+            shader_location=11,
+          ),
+          @mesh.VertexAttribute::new(
+            offset=32,
+            format=@mesh.MeshVertexFormat::Float32x4,
+            shader_location=12,
+          ),
+          @mesh.VertexAttribute::new(
+            offset=48,
+            format=@mesh.MeshVertexFormat::Uint16x4,
+            shader_location=13,
+          ),
+          @mesh.VertexAttribute::new(
+            offset=56,
+            format=@mesh.MeshVertexFormat::Float32x4,
+            shader_location=14,
+          ),
+        ],
+      ),
+    ),
+  )
+}
+
+///|
 fn pbr_material_specializer_test_render_mesh() -> @render_mesh.RenderMesh {
   @render_mesh.RenderMesh::new(
     vertex_count=3,
@@ -151,6 +204,41 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
   inspect(vertex_layout.attributes[1].shader_location, content="1")
   inspect(vertex_layout.attributes[2].shader_location, content="2")
   inspect(vertex_layout.attributes[3].shader_location, content="5")
+}
+
+///|
+test "pbr material pipeline specializer selects morphed skinned mesh layout" {
+  let properties = @material.MaterialProperties::default().with_material_layout(
+    Some(@material.BindGroupLayoutDescriptor::default()),
+  )
+  let specializer = PbrMaterialPipelineSpecializer::new(properties)
+  let descriptor = try! specializer.specialize(
+    pbr_material_specializer_test_key(mesh_bits=MESH_PIPELINE_KEY_MORPH_TARGETS),
+    pbr_material_specializer_test_skinned_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "MORPH_TARGETS",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "SKINNED",
+    ),
+    content="true",
+  )
+  inspect(descriptor.layout[2].label(), content="mesh_layout_skinned_morphed")
+  inspect(descriptor.layout[2].entries().length(), content="4")
+  inspect(descriptor.layout[2].entries()[0].binding(), content="0")
+  inspect(descriptor.layout[2].entries()[1].binding(), content="1")
+  inspect(descriptor.layout[2].entries()[2].binding(), content="2")
+  inspect(descriptor.layout[2].entries()[3].binding(), content="3")
+  let vertex_layout = descriptor.vertex.buffers[0]
+  inspect(vertex_layout.attributes[4].shader_location, content="6")
+  inspect(vertex_layout.attributes[5].shader_location, content="7")
 }
 
 ///|
@@ -411,6 +499,53 @@ test "pbr prepass depth-only opaque path uses empty material layout" {
   inspect(vertex_layout.attributes[0].shader_location, content="0")
   inspect(vertex_layout.attributes[1].shader_location, content="1")
   inspect(vertex_layout.attributes[2].shader_location, content="7")
+}
+
+///|
+test "pbr prepass pipeline specializer selects morphed skinned motion layout" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::default(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let specializer = PbrPrepassPipelineSpecializer::new(properties)
+  let descriptor = try! specializer.specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_DEPTH_PREPASS |
+        MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS |
+        MESH_PIPELINE_KEY_MORPH_TARGETS,
+    ),
+    pbr_material_specializer_test_skinned_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "MORPH_TARGETS",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "SKINNED",
+    ),
+    content="true",
+  )
+  inspect(
+    descriptor.layout[2].label(),
+    content="mesh_layout_skinned_morphed_motion",
+  )
+  inspect(descriptor.layout[2].entries().length(), content="6")
+  inspect(descriptor.layout[2].entries()[0].binding(), content="0")
+  inspect(descriptor.layout[2].entries()[1].binding(), content="1")
+  inspect(descriptor.layout[2].entries()[2].binding(), content="6")
+  inspect(descriptor.layout[2].entries()[3].binding(), content="2")
+  inspect(descriptor.layout[2].entries()[4].binding(), content="3")
+  inspect(descriptor.layout[2].entries()[5].binding(), content="7")
+  let vertex_layout = descriptor.vertex.buffers[0]
+  inspect(vertex_layout.attributes[3].shader_location, content="5")
+  inspect(vertex_layout.attributes[4].shader_location, content="6")
 }
 
 ///|

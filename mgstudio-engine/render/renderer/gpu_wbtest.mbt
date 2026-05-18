@@ -886,6 +886,33 @@ test "renderer: material descriptor exact layout preserves empty prepass group" 
 }
 
 ///|
+test "renderer: default mesh3d draw descriptor matches storage plus skin layout" {
+  let descriptor = mesh3d_default_draw_bind_group_layout_descriptor()
+  inspect(descriptor.label(), content="mesh_layout")
+  inspect(descriptor.entries().length(), content="2")
+  let draw_entry = descriptor.entries()[0]
+  inspect(draw_entry.binding(), content="0")
+  match draw_entry.kind() {
+    @render_resource.BindingType::BufferBinding(
+      @render_resource.BufferBindingType::Storage(true),
+      false,
+      size
+    ) => inspect(size, content="176")
+    _ => fail("expected draw storage buffer binding")
+  }
+  let skin_entry = descriptor.entries()[1]
+  inspect(skin_entry.binding(), content="1")
+  match skin_entry.kind() {
+    @render_resource.BindingType::BufferBinding(
+      @render_resource.BufferBindingType::Storage(true),
+      false,
+      size
+    ) => inspect(size, content="16384")
+    _ => fail("expected skin storage buffer binding")
+  }
+}
+
+///|
 test "renderer: shadow shader defs extend descriptor defs with shadow projection state" {
   let descriptor = @render_resource.RenderPipelineDescriptor::default()
     .with_vertex(

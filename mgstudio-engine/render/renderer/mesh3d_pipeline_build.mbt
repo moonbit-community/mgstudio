@@ -1147,6 +1147,31 @@ fn mesh3d_create_empty_bind_group(
 }
 
 ///|
+fn mesh3d_default_draw_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor {
+  let view_stage = (@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT).to_uint()
+  @render_resource.BindGroupLayoutDescriptor::new("mesh_layout", [
+    @render_resource.BindGroupLayoutEntry::new(
+      0,
+      view_stage,
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Storage(true),
+        false,
+        MESH3D_DRAW_STORAGE_STRIDE_BYTES,
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      1,
+      @wgpu.SHADER_STAGE_VERTEX.to_uint(),
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Storage(true),
+        false,
+        MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
+      ),
+    ),
+  ])
+}
+
+///|
 fn mesh3d_buffer_binding_type_to_wgpu(
   kind : @render_resource.BufferBindingType,
 ) -> UInt {
@@ -1411,6 +1436,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
       material_pipeline_id,
       view_bind_group_layout: view_bgl,
       binding_arrays_bind_group_layout: binding_arrays_bgl,
+      draw_bind_group_layout_descriptor: mesh3d_default_draw_bind_group_layout_descriptor(),
       draw_bind_group_layout: draw_bgl,
       material_bind_group_layout: material_bgl,
       pipeline_layout,
@@ -1472,6 +1498,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
     material_pipeline_id,
     view_bind_group_layout: view_bgl,
     binding_arrays_bind_group_layout: binding_arrays_bgl,
+    draw_bind_group_layout_descriptor: draw_layout_descriptor,
     draw_bind_group_layout: draw_bgl,
     material_bind_group_layout: material_bgl,
     pipeline_layout,

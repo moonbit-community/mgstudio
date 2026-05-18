@@ -704,6 +704,8 @@ pub struct MeshBindingLayout3d {
   name : String
   bindings : Array[(MeshBindingSlot3d, Int)]
 }
+pub fn MeshBindingLayout3d::bindings(Self) -> Array[(MeshBindingSlot3d, Int)]
+pub fn MeshBindingLayout3d::name(Self) -> String
 
 pub enum MeshBindingSlot3d {
   Model
@@ -791,6 +793,7 @@ pub struct MeshLayouts3d {
   morphed_skinned : MeshBindingLayout3d
   morphed_skinned_motion : MeshBindingLayout3d
 }
+pub fn MeshLayouts3d::select(Self, skinned~ : Bool, morphed~ : Bool, lightmapped~ : Bool, motion_vectors~ : Bool) -> MeshBindingLayout3d
 
 pub(all) struct MeshPreprocessStatic3d {
   topology_kind : Int
