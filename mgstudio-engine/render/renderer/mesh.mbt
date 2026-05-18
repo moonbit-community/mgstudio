@@ -38,6 +38,71 @@ fn find_mesh_index(backend : GpuBackend, id : Int) -> Int? {
 }
 
 ///|
+pub struct HostGpuMeshInfo {
+  id : Int
+  index_count : Int
+  vertex_count : Int
+  index_start : Int
+  vertex_start : Int
+  index_slab_id : Int
+  vertex_slab_id : Int
+  primitive_topology : UInt
+  uses_u32_indices : Bool
+} derive(Eq, Debug)
+
+///|
+pub fn HostGpuMeshInfo::index_count(self : HostGpuMeshInfo) -> Int {
+  self.index_count
+}
+
+///|
+pub fn HostGpuMeshInfo::vertex_count(self : HostGpuMeshInfo) -> Int {
+  self.vertex_count
+}
+
+///|
+pub fn HostGpuMeshInfo::index_start(self : HostGpuMeshInfo) -> Int {
+  self.index_start
+}
+
+///|
+pub fn HostGpuMeshInfo::vertex_start(self : HostGpuMeshInfo) -> Int {
+  self.vertex_start
+}
+
+///|
+pub fn HostGpuMeshInfo::uses_u32_indices(self : HostGpuMeshInfo) -> Bool {
+  self.uses_u32_indices
+}
+
+///|
+fn host_gpu_mesh_info_from_gpu(mesh : GpuMeshInfo) -> HostGpuMeshInfo {
+  HostGpuMeshInfo::{
+    id: mesh.id,
+    index_count: mesh.index_count.reinterpret_as_int(),
+    vertex_count: mesh.vertex_count.reinterpret_as_int(),
+    index_start: mesh.index_start.reinterpret_as_int(),
+    vertex_start: mesh.vertex_start.reinterpret_as_int(),
+    index_slab_id: mesh.index_slab_id,
+    vertex_slab_id: mesh.vertex_slab_id,
+    primitive_topology: mesh.primitive_topology,
+    uses_u32_indices: mesh.uses_u32_indices,
+  }
+}
+
+///|
+pub fn mesh_info(mesh_id : Int) -> HostGpuMeshInfo? {
+  if ensure_backend() is Some(backend) {
+    match find_mesh(backend, mesh_id) {
+      Some(mesh) => Some(host_gpu_mesh_info_from_gpu(mesh))
+      None => None
+    }
+  } else {
+    None
+  }
+}
+
+///|
 fn gpu_mesh_bind_index_buffer(
   pass : @wgpu.RenderPass,
   mesh : GpuMeshInfo,

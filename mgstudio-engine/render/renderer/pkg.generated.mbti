@@ -213,6 +213,8 @@ pub fn mesh3d_non_indexed_indirect_offset(Int) -> UInt64
 
 pub fn mesh3d_preprocess_disabled() -> Bool
 
+pub fn mesh_info(Int) -> HostGpuMeshInfo?
+
 pub fn meshlet_adapter_supports_mesh_shader() -> Bool
 
 pub fn meshlet_frame_resource_revision() -> Int
@@ -997,6 +999,23 @@ pub struct GpuTextureInfo {
   sampler : @wgpu_mbt.Sampler
   bind_group : @wgpu_mbt.BindGroup
 }
+
+pub struct HostGpuMeshInfo {
+  id : Int
+  index_count : Int
+  vertex_count : Int
+  index_start : Int
+  vertex_start : Int
+  index_slab_id : Int
+  vertex_slab_id : Int
+  primitive_topology : UInt
+  uses_u32_indices : Bool
+} derive(Eq, @debug.Debug)
+pub fn HostGpuMeshInfo::index_count(Self) -> Int
+pub fn HostGpuMeshInfo::index_start(Self) -> Int
+pub fn HostGpuMeshInfo::uses_u32_indices(Self) -> Bool
+pub fn HostGpuMeshInfo::vertex_count(Self) -> Int
+pub fn HostGpuMeshInfo::vertex_start(Self) -> Int
 
 pub struct HostMaterial2dBindGroup {
   bindings : Array[HostMaterial2dBinding]

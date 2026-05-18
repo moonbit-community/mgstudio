@@ -360,13 +360,14 @@ fn render3d_extract_mesh_for_entity(
   let (skinning_key_hi, _skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
     skin_uniforms_ref, entity,
   )
-  let mesh_preprocess_static = render3d_mesh_preprocess_static_cached(
-    mesh3d.mesh(),
-    mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
-  )
   let mesh_id = @pbr_render.render3d_upload_mesh_handle_cached(
     mesh_runtime_state_ref,
     mesh3d.mesh(),
+  )
+  let mesh_preprocess_static = render3d_mesh_preprocess_static_cached(
+    mesh3d.mesh(),
+    mesh_id,
+    mesh_runtime_state_ref.val.mesh_preprocess_static_cache,
   )
   let lightmap = prefetched_lightmap
   let is_forward_decal = prefetched_is_forward_decal

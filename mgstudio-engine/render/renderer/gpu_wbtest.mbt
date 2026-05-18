@@ -655,6 +655,31 @@ test "renderer: large mesh3d upload switches to u32 index buffers" {
 }
 
 ///|
+test "renderer: mesh3d allocator metadata exposes packed slab ranges" {
+  let backend = GpuBackend::new()
+  backend.meshes.clear()
+  let vertices : Array[Float] = [
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+    0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 1.0F,
+    0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+  ]
+  let first_mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
+  let second_mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
+  let ok = first_mesh_id > 0 &&
+    second_mesh_id > first_mesh_id &&
+    backend.meshes.length() == 2 &&
+    backend.meshes[0].vertex_start == 0U &&
+    backend.meshes[0].index_start == 0U &&
+    backend.meshes[1].vertex_start == 3U &&
+    backend.meshes[1].index_start == 4U &&
+    backend.meshes[0].vertex_slab_id == backend.meshes[1].vertex_slab_id &&
+    backend.meshes[0].index_slab_id == backend.meshes[1].index_slab_id &&
+    backend.meshes[1].vertex_count == 3U &&
+    backend.meshes[1].index_count == 3U
+  debug_inspect(ok, content="true")
+}
+
+///|
 test "renderer: mesh3d light scalar helpers align with Bevy-style scalar contract" {
   let inverse_square_range = mesh3d_inverse_square_range(10.0F)
   let (spot_scale, spot_offset) = mesh3d_spot_scale_offset(0.25F, 0.5F)

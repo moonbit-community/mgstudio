@@ -825,7 +825,22 @@ fn render3d_host_preprocess_mesh_culling_data(
 ///|
 fn render3d_mesh_handle_preprocess_counts(
   mesh_handle : @asset.Handle[@mesh.Mesh],
+  mesh_id : Int,
 ) -> (Bool, Int, Int, Int) {
+  match @render.host_gpu_mesh_info(mesh_id) {
+    Some(info) =>
+      return (
+        info.index_count() > 0,
+        info.vertex_start(),
+        info.index_start(),
+        if info.index_count() > 0 {
+          info.index_count()
+        } else {
+          info.vertex_count()
+        },
+      )
+    None => ()
+  }
   match @sprite.render_mesh_asset_get(mesh_handle) {
     Some(mesh_asset) =>
       match mesh_asset.geometry {
@@ -899,10 +914,11 @@ fn render3d_mesh_handle_local_aabb(
 ///|
 fn render3d_mesh_preprocess_static(
   mesh_handle : @asset.Handle[@mesh.Mesh],
+  mesh_id : Int,
 ) -> MeshPreprocessStatic3d {
   let topology_kind = render3d_mesh_handle_topology_kind(mesh_handle)
   let (is_indexed, first_vertex_index, first_index_index, index_count) = render3d_mesh_handle_preprocess_counts(
-    mesh_handle,
+    mesh_handle, mesh_id,
   )
   let (has_local_aabb, aabb_center, aabb_half_extents) = match
     render3d_mesh_handle_local_aabb(mesh_handle) {
@@ -954,7 +970,11 @@ fn render3d_update_mesh_preprocess_static_cache(
     }
     let metadata = match mesh.payload.mesh_preprocess_static {
       Some(static_metadata) => static_metadata
-      None => render3d_mesh_preprocess_static(mesh.payload.mesh_handle)
+      None =>
+        render3d_mesh_preprocess_static(
+          mesh.payload.mesh_handle,
+          mesh.payload.mesh_id,
+        )
     }
     cache.set(mesh_handle_id, metadata)
   }
@@ -977,23 +997,30 @@ fn render3d_mesh_preprocess_static_for_draw_item(
   }
   match mesh_preprocess_static_cache.get(mesh_handle_id) {
     Some(metadata) => Some(metadata)
-    None => Some(render3d_mesh_preprocess_static(mesh_handle))
+    None =>
+      Some(
+        render3d_mesh_preprocess_static(
+          mesh_handle,
+          meshes[draw_item.extracted_index].payload.mesh_id,
+        ),
+      )
   }
 }
 
 ///|
 fn render3d_mesh_preprocess_static_cached(
   mesh_handle : @asset.Handle[@mesh.Mesh],
+  mesh_id : Int,
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
 ) -> MeshPreprocessStatic3d {
   let mesh_handle_id = mesh_handle.id()
   if mesh_handle_id < 0 {
-    return render3d_mesh_preprocess_static(mesh_handle)
+    return render3d_mesh_preprocess_static(mesh_handle, mesh_id)
   }
   match mesh_preprocess_static_cache.get(mesh_handle_id) {
     Some(metadata) => metadata
     None => {
-      let metadata = render3d_mesh_preprocess_static(mesh_handle)
+      let metadata = render3d_mesh_preprocess_static(mesh_handle, mesh_id)
       mesh_preprocess_static_cache.set(mesh_handle_id, metadata)
       metadata
     }

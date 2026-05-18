@@ -28,6 +28,9 @@ pub type HostMaterial2dBinding = @renderer.HostMaterial2dBinding
 pub type HostMaterial2dBindGroup = @renderer.HostMaterial2dBindGroup
 
 ///|
+pub type HostGpuMeshInfo = @renderer.HostGpuMeshInfo
+
+///|
 pub type HostMesh3dMainPassDrawEntry = @renderer.HostMesh3dMainPassDrawEntry
 
 ///|
@@ -1815,6 +1818,11 @@ pub fn host_gpu_create_mesh3d_xyznuvrgba(
   primitive_topology~ : Int,
 ) -> Int {
   @renderer.create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~, primitive_topology~)
+}
+
+///|
+pub fn host_gpu_mesh_info(mesh_id : Int) -> HostGpuMeshInfo? {
+  @renderer.mesh_info(mesh_id)
 }
 
 ///|
