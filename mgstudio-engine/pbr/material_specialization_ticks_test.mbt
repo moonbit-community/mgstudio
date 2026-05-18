@@ -1,0 +1,136 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+test "pbr material specialization: entity ticks capture system and material instance ticks" {
+  let entity_ticks = EntitySpecializationTicks::default()
+  let material_instances = RenderMaterialInstances::default()
+  let entity = @core.Entity::new(31, 0)
+
+  material_instances.late_sweep_removed_mesh3d(@core.Entity::new(999, 0))
+  |> ignore
+  entity_ticks.extract_entity_needs_specialization(
+    entity, 7U, material_instances,
+  )
+
+  match entity_ticks.get(entity) {
+    Some(pair) => {
+      debug_inspect(pair.system_tick(), content="7")
+      debug_inspect(pair.material_instances_tick(), content="1")
+    }
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
+test "pbr material specialization: cache stores per-view pipeline ids" {
+  let cache = SpecializedMaterialPipelineCache::default()
+  let view = @core.Entity::new(1, 0)
+  let entity = @core.Entity::new(2, 0)
+  let pipeline_id = @material.CachedRenderPipelineId::new(55UL)
+
+  cache.insert(view, entity, 11U, pipeline_id)
+  debug_inspect(cache.len(), content="1")
+  let cached_entry = match cache.get(view) {
+    Some(view_cache) => view_cache.get(entity)
+    None => None
+  }
+  match cached_entry {
+    Some(entry) => {
+      debug_inspect(entry.tick(), content="11")
+      debug_inspect(entry.pipeline_id().id(), content="55")
+    }
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
+test "pbr material specialization: needs specialization follows view or entity tick freshness" {
+  debug_inspect(
+    material_entity_needs_specialization(None, 1U, 1U, 2U),
+    content="true",
+  )
+  debug_inspect(
+    material_entity_needs_specialization(Some(5U), 6U, 5U, 7U),
+    content="true",
+  )
+  debug_inspect(
+    material_entity_needs_specialization(Some(5U), 5U, 6U, 7U),
+    content="true",
+  )
+  debug_inspect(
+    material_entity_needs_specialization(Some(5U), 5U, 5U, 7U),
+    content="false",
+  )
+}
+
+///|
+test "pbr material specialization: sweep preserves same-frame material type replacement" {
+  let entity_ticks = EntitySpecializationTicks::default()
+  let cache = SpecializedMaterialPipelineCache::default()
+  let material_instances = RenderMaterialInstances::default()
+  let view = @core.Entity::new(4, 0)
+  let entity = @core.Entity::new(5, 0)
+
+  entity_ticks.extract_entity_needs_specialization(
+    entity, 3U, material_instances,
+  )
+  cache.insert(view, entity, 3U, @material.CachedRenderPipelineId::new(77UL))
+
+  debug_inspect(
+    sweep_entity_needing_specialization(
+      entity_ticks, cache, material_instances, entity,
+    ),
+    content="false",
+  )
+  debug_inspect(entity_ticks.len(), content="1")
+  debug_inspect(
+    cache.get(view).map(fn(value) { value.len() }),
+    content="Some(1)",
+  )
+}
+
+///|
+test "pbr material specialization: sweep removes stale ticks and cached pipelines" {
+  let entity_ticks = EntitySpecializationTicks::default()
+  let cache = SpecializedMaterialPipelineCache::default()
+  let material_instances = RenderMaterialInstances::default()
+  let view_a = @core.Entity::new(9, 0)
+  let view_b = @core.Entity::new(10, 0)
+  let entity = @core.Entity::new(11, 0)
+
+  entity_ticks.extract_entity_needs_specialization(
+    entity, 3U, material_instances,
+  )
+  material_instances.late_sweep_removed_mesh3d(@core.Entity::new(999, 0))
+  |> ignore
+  cache.insert(view_a, entity, 3U, @material.CachedRenderPipelineId::new(7UL))
+  cache.insert(view_b, entity, 3U, @material.CachedRenderPipelineId::new(8UL))
+
+  debug_inspect(
+    sweep_entity_needing_specialization(
+      entity_ticks, cache, material_instances, entity,
+    ),
+    content="true",
+  )
+  debug_inspect(entity_ticks.len(), content="0")
+  debug_inspect(
+    cache.get(view_a).map(fn(value) { value.len() }),
+    content="Some(0)",
+  )
+  debug_inspect(
+    cache.get(view_b).map(fn(value) { value.len() }),
+    content="Some(0)",
+  )
+}

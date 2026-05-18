@@ -197,6 +197,8 @@ pub let ecs_key_directional_light_texture : @ecs.ComponentKey[@light.Directional
 
 pub let ecs_key_distance_fog : @ecs.ComponentKey[DistanceFog]
 
+pub let ecs_key_entity_specialization_ticks : @ecs.ResourceKey[EntitySpecializationTicks]
+
 pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapLight]
 
 pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
@@ -293,6 +295,8 @@ pub let ecs_key_skip_deferred_lighting : @ecs.ComponentKey[@Milky2018/mgstudio/p
 
 pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
 
+pub let ecs_key_specialized_material_pipeline_cache : @ecs.ResourceKey[SpecializedMaterialPipelineCache]
+
 pub let ecs_key_spot_light : @ecs.ComponentKey[@light.SpotLight]
 
 pub let ecs_key_spot_light_texture : @ecs.ComponentKey[@light.SpotLightTexture]
@@ -347,7 +351,11 @@ pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@l
 
 pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[WireframeConfig]
 
+pub fn material_entity_needs_specialization(UInt?, UInt, UInt, UInt) -> Bool
+
 pub fn[T : MaterialExtension] material_extension_metadata_from_extension(T) -> @material.ExtendedMaterialMetadata3d
+
+pub fn material_specialization_tick_is_newer_than(UInt, UInt, UInt) -> Bool
 
 pub fn material_uses_bindless_resources(Bool, Int?) -> Bool
 
@@ -620,6 +628,8 @@ pub fn standard_material_reads_view_transmission_texture(@material.StandardMater
 pub fn standard_material_render_phase_type(@material.StandardMaterial) -> @material.RenderPhaseType
 
 pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
+
+pub fn sweep_entity_needing_specialization(EntitySpecializationTicks, SpecializedMaterialPipelineCache, RenderMaterialInstances, @core.Entity) -> Bool
 
 pub fn wireframe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -901,6 +911,24 @@ pub fn DistanceFog::with_directional_light_exponent(Self, Float) -> Self
 pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
 pub impl @ecs.Component for DistanceFog
 pub impl @ecs.EcsPayloadCodec for DistanceFog
+
+pub struct EntitySpecializationTickPair {
+  system_tick : UInt
+  material_instances_tick : UInt
+} derive(Eq, @debug.Debug)
+pub fn EntitySpecializationTickPair::material_instances_tick(Self) -> UInt
+pub fn EntitySpecializationTickPair::new(UInt, UInt) -> Self
+pub fn EntitySpecializationTickPair::system_tick(Self) -> UInt
+
+pub struct EntitySpecializationTicks {
+  entities : Map[UInt64, EntitySpecializationTickPair]
+}
+pub fn EntitySpecializationTicks::default() -> Self
+pub fn EntitySpecializationTicks::extract_entity_needs_specialization(Self, @core.Entity, UInt, RenderMaterialInstances) -> Unit
+pub fn EntitySpecializationTicks::get(Self, @core.Entity) -> EntitySpecializationTickPair?
+pub fn EntitySpecializationTicks::insert(Self, @core.Entity, EntitySpecializationTickPair) -> Unit
+pub fn EntitySpecializationTicks::len(Self) -> Int
+pub fn EntitySpecializationTicks::remove(Self, @core.Entity) -> Bool
 
 pub struct Exposure {
   ev100 : Float
@@ -1423,6 +1451,33 @@ pub fn Skybox::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
 pub impl @ecs.Component for Skybox
 pub impl @ecs.EcsPayloadCodec for Skybox
+
+pub struct SpecializedMaterialPipelineCache {
+  views : Map[UInt64, SpecializedMaterialViewPipelineCache]
+}
+pub fn SpecializedMaterialPipelineCache::default() -> Self
+pub fn SpecializedMaterialPipelineCache::get(Self, @core.Entity) -> SpecializedMaterialViewPipelineCache?
+pub fn SpecializedMaterialPipelineCache::insert(Self, @core.Entity, @core.Entity, UInt, @render_resource.CachedRenderPipelineId) -> Unit
+pub fn SpecializedMaterialPipelineCache::len(Self) -> Int
+pub fn SpecializedMaterialPipelineCache::remove_entity_from_all_views(Self, @core.Entity) -> Int
+pub fn SpecializedMaterialPipelineCache::view_or_insert(Self, @core.Entity) -> SpecializedMaterialViewPipelineCache
+
+pub struct SpecializedMaterialPipelineCacheEntry {
+  tick : UInt
+  pipeline_id : @render_resource.CachedRenderPipelineId
+}
+pub fn SpecializedMaterialPipelineCacheEntry::new(UInt, @render_resource.CachedRenderPipelineId) -> Self
+pub fn SpecializedMaterialPipelineCacheEntry::pipeline_id(Self) -> @render_resource.CachedRenderPipelineId
+pub fn SpecializedMaterialPipelineCacheEntry::tick(Self) -> UInt
+
+pub struct SpecializedMaterialViewPipelineCache {
+  entries : Map[UInt64, SpecializedMaterialPipelineCacheEntry]
+}
+pub fn SpecializedMaterialViewPipelineCache::default() -> Self
+pub fn SpecializedMaterialViewPipelineCache::get(Self, @core.Entity) -> SpecializedMaterialPipelineCacheEntry?
+pub fn SpecializedMaterialViewPipelineCache::insert(Self, @core.Entity, SpecializedMaterialPipelineCacheEntry) -> Unit
+pub fn SpecializedMaterialViewPipelineCache::len(Self) -> Int
+pub fn SpecializedMaterialViewPipelineCache::remove(Self, @core.Entity) -> Bool
 
 pub struct StandardMaterialKey {
   bits : UInt64
