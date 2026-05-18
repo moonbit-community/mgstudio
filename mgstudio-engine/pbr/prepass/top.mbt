@@ -50,7 +50,16 @@ pub impl @app.Plugin for PrepassPipelinePlugin with build(self, app) {
 pub type PrepassNode = @core_prepass.PrepassNode
 
 ///|
+pub type PrepassRunKind = @core_prepass.PrepassRunKind
+
+///|
 pub type PrepassViewState = @core_prepass.PrepassViewState
+
+///|
+pub type PrepassColorAttachmentPlan = @core_prepass.PrepassColorAttachmentPlan
+
+///|
+pub type PrepassRunPlan = @core_prepass.PrepassRunPlan
 
 ///|
 pub struct AnyPrepassPluginLoaded {} derive(Default, Eq, Debug)
@@ -304,6 +313,45 @@ pub fn prepass_should_copy_depth_to_prepass_depth(
 ///|
 pub fn prepass_has_any_color_attachment(state : PrepassViewState) -> Bool {
   @core_prepass.prepass_has_any_color_attachment(state)
+}
+
+///|
+pub fn prepass_color_attachment_plan(
+  state : PrepassViewState,
+) -> PrepassColorAttachmentPlan {
+  @core_prepass.prepass_color_attachment_plan(state)
+}
+
+///|
+pub fn prepass_run_kind_label(kind : PrepassRunKind) -> String {
+  @core_prepass.prepass_run_kind_label(kind)
+}
+
+///|
+pub fn prepass_run_kind_should_run(
+  kind : PrepassRunKind,
+  state : PrepassViewState,
+) -> Bool {
+  @core_prepass.prepass_run_kind_should_run(kind, state)
+}
+
+///|
+pub fn prepass_run_plan(
+  kind : PrepassRunKind,
+  state : PrepassViewState,
+  has_skybox_prepass_pipeline? : Bool = false,
+  has_skybox_prepass_bind_group? : Bool = false,
+  has_previous_view_uniform_offset? : Bool = false,
+  skybox_pipeline_ready? : Bool = false,
+) -> PrepassRunPlan {
+  @core_prepass.prepass_run_plan(
+    kind,
+    state,
+    has_skybox_prepass_pipeline~,
+    has_skybox_prepass_bind_group~,
+    has_previous_view_uniform_offset~,
+    skybox_pipeline_ready~,
+  )
 }
 
 ///|

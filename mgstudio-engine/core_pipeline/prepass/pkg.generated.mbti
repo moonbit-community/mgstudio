@@ -26,6 +26,8 @@ pub fn late_prepass_should_run(PrepassViewState) -> Bool
 
 pub fn prepass_any_color_attachment_enabled(has_normal~ : Bool, has_motion_vectors~ : Bool, has_deferred~ : Bool, has_deferred_lighting_pass_id~ : Bool) -> Bool
 
+pub fn prepass_color_attachment_plan(PrepassViewState) -> PrepassColorAttachmentPlan
+
 pub fn prepass_has_any_color_attachment(PrepassViewState) -> Bool
 
 pub fn prepass_has_any_phase(PrepassViewState) -> Bool
@@ -33,6 +35,12 @@ pub fn prepass_has_any_phase(PrepassViewState) -> Bool
 pub fn prepass_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn prepass_plugin_with(@app.App[@ecs.World], PrepassPlugin) -> @app.App[@ecs.World]
+
+pub fn prepass_run_kind_label(PrepassRunKind) -> String
+
+pub fn prepass_run_kind_should_run(PrepassRunKind, PrepassViewState) -> Bool
+
+pub fn prepass_run_plan(PrepassRunKind, PrepassViewState, has_skybox_prepass_pipeline? : Bool, has_skybox_prepass_bind_group? : Bool, has_previous_view_uniform_offset? : Bool, skybox_pipeline_ready? : Bool) -> PrepassRunPlan
 
 pub fn prepass_should_copy_depth_to_prepass_depth(PrepassViewState) -> Bool
 
@@ -59,6 +67,14 @@ pub fn NormalPrepass::default() -> Self
 pub impl @ecs.Component for NormalPrepass
 pub impl @ecs.EcsPayloadCodec for NormalPrepass
 
+pub struct PrepassColorAttachmentPlan {
+  normal : Bool
+  motion_vectors : Bool
+  deferred : Bool
+  deferred_lighting_pass_id : Bool
+  slot_count : Int
+}
+
 pub struct PrepassNode {
   label : String
 }
@@ -70,6 +86,24 @@ pub struct PrepassPlugin {
 }
 pub fn PrepassPlugin::default() -> Self
 pub impl @app.Plugin for PrepassPlugin
+
+pub(all) enum PrepassRunKind {
+  Early
+  Late
+}
+
+pub struct PrepassRunPlan {
+  label : String
+  should_run : Bool
+  skip_due_to_deferred : Bool
+  color_attachments : PrepassColorAttachmentPlan
+  has_depth_stencil_attachment : Bool
+  draw_opaque_phase : Bool
+  draw_alpha_mask_phase : Bool
+  draw_skybox : Bool
+  skybox_dynamic_offset_count : Int
+  copy_depth_to_prepass_depth : Bool
+}
 
 pub struct PrepassViewState {
   has_deferred_prepass_component : Bool

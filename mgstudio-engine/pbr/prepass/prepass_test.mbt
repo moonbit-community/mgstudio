@@ -55,3 +55,23 @@ test "pbr prepass: update pipeline state becomes ready when prepass components e
   let state = (try! world.get_resource(ecs_key_prepass_pipeline_state)).unwrap()
   inspect(state.pipeline_ready, content="true")
 }
+
+///|
+test "pbr prepass: run plan is exposed from core prepass node owner" {
+  let state = PrepassViewState::new(
+    has_opaque_prepass_phase=true,
+    has_normal_attachment=true,
+    has_motion_vectors_attachment=true,
+    has_prepass_depth_attachment=true,
+  )
+  let plan = prepass_run_plan(PrepassRunKind::Early, state)
+  inspect(
+    prepass_run_kind_label(PrepassRunKind::Early),
+    content="early prepass",
+  )
+  inspect(plan.should_run, content="true")
+  inspect(plan.color_attachments.slot_count, content="4")
+  inspect(plan.color_attachments.normal, content="true")
+  inspect(plan.color_attachments.motion_vectors, content="true")
+  inspect(plan.copy_depth_to_prepass_depth, content="true")
+}

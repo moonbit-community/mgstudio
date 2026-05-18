@@ -41,6 +41,8 @@ pub fn late_prepass_should_run(@Milky2018/mgstudio/core_pipeline/prepass.Prepass
 
 pub fn prepass_any_color_attachment_enabled(has_normal~ : Bool, has_motion_vectors~ : Bool, has_deferred~ : Bool, has_deferred_lighting_pass_id~ : Bool) -> Bool
 
+pub fn prepass_color_attachment_plan(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> @Milky2018/mgstudio/core_pipeline/prepass.PrepassColorAttachmentPlan
+
 pub fn prepass_has_any_color_attachment(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
 
 pub fn prepass_has_any_phase(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
@@ -52,6 +54,12 @@ pub fn prepass_pipeline_plugin_with(@app.App[@ecs.World], PrepassPipelinePlugin)
 pub fn prepass_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn prepass_plugin_with(@app.App[@ecs.World], @Milky2018/mgstudio/core_pipeline/prepass.PrepassPlugin) -> @app.App[@ecs.World]
+
+pub fn prepass_run_kind_label(@Milky2018/mgstudio/core_pipeline/prepass.PrepassRunKind) -> String
+
+pub fn prepass_run_kind_should_run(@Milky2018/mgstudio/core_pipeline/prepass.PrepassRunKind, @Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
+
+pub fn prepass_run_plan(@Milky2018/mgstudio/core_pipeline/prepass.PrepassRunKind, @Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState, has_skybox_prepass_pipeline? : Bool, has_skybox_prepass_bind_group? : Bool, has_previous_view_uniform_offset? : Bool, skybox_pipeline_ready? : Bool) -> @Milky2018/mgstudio/core_pipeline/prepass.PrepassRunPlan
 
 pub fn prepass_should_copy_depth_to_prepass_depth(@Milky2018/mgstudio/core_pipeline/prepass.PrepassViewState) -> Bool
 
@@ -138,9 +146,15 @@ pub using @Milky2018/mgstudio/core_pipeline/prepass {type MotionVectorPrepass}
 
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type NormalPrepass}
 
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassColorAttachmentPlan}
+
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassNode}
 
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassPlugin}
+
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassRunKind}
+
+pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassRunPlan}
 
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type PrepassViewState}
 
