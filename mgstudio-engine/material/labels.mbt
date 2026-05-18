@@ -38,6 +38,27 @@ pub fn draw_function_label(value : String) -> DrawFunctionLabel {
 }
 
 ///|
+pub struct DrawFunctions {
+  entries : Array[(InternedDrawFunctionLabel, DrawFunctionId)]
+  mut next_id : UInt
+}
+
+///|
+pub fn DrawFunctions::default() -> DrawFunctions {
+  DrawFunctions::{ entries: [], next_id: 0U }
+}
+
+///|
+pub impl Default for DrawFunctions with default() {
+  DrawFunctions::default()
+}
+
+///|
+pub fn DrawFunctions::new() -> DrawFunctions {
+  DrawFunctions::default()
+}
+
+///|
 pub struct DrawFunctionId {
   id : UInt
 } derive(Eq)
@@ -50,4 +71,49 @@ pub fn DrawFunctionId::new(id : UInt) -> DrawFunctionId {
 ///|
 pub fn DrawFunctionId::id(self : DrawFunctionId) -> UInt {
   self.id
+}
+
+///|
+pub fn DrawFunctions::len(self : DrawFunctions) -> Int {
+  self.entries.length()
+}
+
+///|
+pub fn DrawFunctions::id(
+  self : DrawFunctions,
+  label : DrawFunctionLabel,
+) -> DrawFunctionId? {
+  for entry in self.entries {
+    let (entry_label, entry_id) = entry
+    if entry_label == label {
+      return Some(entry_id)
+    }
+  }
+  None
+}
+
+///|
+pub fn DrawFunctions::register(
+  self : DrawFunctions,
+  label : DrawFunctionLabel,
+) -> DrawFunctionId {
+  match self.id(label) {
+    Some(id) => id
+    None => {
+      let id = DrawFunctionId::new(self.next_id)
+      self.entries.push((label, id))
+      self.next_id = self.next_id + 1U
+      id
+    }
+  }
+}
+
+///|
+pub fn DrawFunctions::labels(self : DrawFunctions) -> Array[DrawFunctionLabel] {
+  let labels : Array[DrawFunctionLabel] = []
+  for entry in self.entries {
+    let (label, _) = entry
+    labels.push(label)
+  }
+  labels
 }

@@ -19,6 +19,39 @@ pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
 const MATERIALS_PLUGIN_NAME : String = "mgstudio.pbr.MaterialsPlugin"
 
 ///|
+pub const MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "MainPassOpaqueDrawFunction"
+
+///|
+pub const MAIN_PASS_ALPHA_MASK_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "MainPassAlphaMaskDrawFunction"
+
+///|
+pub const MAIN_PASS_TRANSMISSIVE_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "MainPassTransmissiveDrawFunction"
+
+///|
+pub const MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "MainPassTransparentDrawFunction"
+
+///|
+pub const PREPASS_OPAQUE_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "PrepassOpaqueDrawFunction"
+
+///|
+pub const PREPASS_ALPHA_MASK_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "PrepassAlphaMaskDrawFunction"
+
+///|
+pub const PREPASS_OPAQUE_DEPTH_ONLY_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "PrepassOpaqueDepthOnlyDrawFunction"
+
+///|
+pub const DEFERRED_OPAQUE_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "DeferredOpaqueDrawFunction"
+
+///|
+pub const DEFERRED_ALPHA_MASK_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "DeferredAlphaMaskDrawFunction"
+
+///|
+pub const SHADOWS_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "ShadowsDrawFunction"
+
+///|
+pub const SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel = "ShadowsDepthOnlyDrawFunction"
+
+///|
 pub struct MaterialsPlugin {}
 
 ///|
@@ -103,6 +136,115 @@ pub fn pbr_materials_plugin_state_new() -> MaterialsPluginState {
 ///|
 pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
   MaterialsPlugin::default()
+}
+
+///|
+pub struct PbrMaterialDrawFunctionIds {
+  main_pass_opaque : @material.DrawFunctionId
+  main_pass_alpha_mask : @material.DrawFunctionId
+  main_pass_transmissive : @material.DrawFunctionId
+  main_pass_transparent : @material.DrawFunctionId
+  prepass_opaque : @material.DrawFunctionId
+  prepass_alpha_mask : @material.DrawFunctionId
+  prepass_opaque_depth_only : @material.DrawFunctionId
+  deferred_opaque : @material.DrawFunctionId
+  deferred_alpha_mask : @material.DrawFunctionId
+  shadows : @material.DrawFunctionId
+  shadows_depth_only : @material.DrawFunctionId
+}
+
+///|
+pub fn pbr_material_draw_function_labels() -> Array[@material.DrawFunctionLabel] {
+  [
+    MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL,
+    MAIN_PASS_ALPHA_MASK_DRAW_FUNCTION_LABEL,
+    MAIN_PASS_TRANSMISSIVE_DRAW_FUNCTION_LABEL,
+    MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL,
+    PREPASS_OPAQUE_DRAW_FUNCTION_LABEL,
+    PREPASS_ALPHA_MASK_DRAW_FUNCTION_LABEL,
+    PREPASS_OPAQUE_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
+    DEFERRED_OPAQUE_DRAW_FUNCTION_LABEL,
+    DEFERRED_ALPHA_MASK_DRAW_FUNCTION_LABEL,
+    SHADOWS_DRAW_FUNCTION_LABEL,
+    SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
+  ]
+}
+
+///|
+pub fn pbr_material_register_draw_functions(
+  draw_functions : @material.DrawFunctions,
+) -> PbrMaterialDrawFunctionIds {
+  PbrMaterialDrawFunctionIds::{
+    main_pass_opaque: draw_functions.register(
+      MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL,
+    ),
+    main_pass_alpha_mask: draw_functions.register(
+      MAIN_PASS_ALPHA_MASK_DRAW_FUNCTION_LABEL,
+    ),
+    main_pass_transmissive: draw_functions.register(
+      MAIN_PASS_TRANSMISSIVE_DRAW_FUNCTION_LABEL,
+    ),
+    main_pass_transparent: draw_functions.register(
+      MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL,
+    ),
+    prepass_opaque: draw_functions.register(PREPASS_OPAQUE_DRAW_FUNCTION_LABEL),
+    prepass_alpha_mask: draw_functions.register(
+      PREPASS_ALPHA_MASK_DRAW_FUNCTION_LABEL,
+    ),
+    prepass_opaque_depth_only: draw_functions.register(
+      PREPASS_OPAQUE_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
+    ),
+    deferred_opaque: draw_functions.register(
+      DEFERRED_OPAQUE_DRAW_FUNCTION_LABEL,
+    ),
+    deferred_alpha_mask: draw_functions.register(
+      DEFERRED_ALPHA_MASK_DRAW_FUNCTION_LABEL,
+    ),
+    shadows: draw_functions.register(SHADOWS_DRAW_FUNCTION_LABEL),
+    shadows_depth_only: draw_functions.register(
+      SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
+    ),
+  }
+}
+
+///|
+pub fn pbr_material_apply_draw_functions(
+  properties : @material.MaterialProperties,
+  ids : PbrMaterialDrawFunctionIds,
+) -> @material.MaterialProperties {
+  properties
+  .add_draw_function(MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL, ids.main_pass_opaque)
+  .add_draw_function(
+    MAIN_PASS_ALPHA_MASK_DRAW_FUNCTION_LABEL,
+    ids.main_pass_alpha_mask,
+  )
+  .add_draw_function(
+    MAIN_PASS_TRANSMISSIVE_DRAW_FUNCTION_LABEL,
+    ids.main_pass_transmissive,
+  )
+  .add_draw_function(
+    MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL,
+    ids.main_pass_transparent,
+  )
+  .add_draw_function(PREPASS_OPAQUE_DRAW_FUNCTION_LABEL, ids.prepass_opaque)
+  .add_draw_function(
+    PREPASS_ALPHA_MASK_DRAW_FUNCTION_LABEL,
+    ids.prepass_alpha_mask,
+  )
+  .add_draw_function(
+    PREPASS_OPAQUE_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
+    ids.prepass_opaque_depth_only,
+  )
+  .add_draw_function(DEFERRED_OPAQUE_DRAW_FUNCTION_LABEL, ids.deferred_opaque)
+  .add_draw_function(
+    DEFERRED_ALPHA_MASK_DRAW_FUNCTION_LABEL,
+    ids.deferred_alpha_mask,
+  )
+  .add_draw_function(SHADOWS_DRAW_FUNCTION_LABEL, ids.shadows)
+  .add_draw_function(
+    SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
+    ids.shadows_depth_only,
+  )
 }
 
 ///|

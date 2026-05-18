@@ -129,3 +129,49 @@ test "render3d: extracted material properties prepass flag follows plugin runtim
   debug_inspect(enabled_props.prepass_enabled, content="true")
   debug_inspect(disabled_props.prepass_enabled, content="false")
 }
+
+///|
+test "render3d: pbr material draw function labels mirror bevy prepared material order" {
+  let labels = pbr_material_draw_function_labels()
+  inspect(labels.length(), content="11")
+  inspect(labels[0], content="MainPassOpaqueDrawFunction")
+  inspect(labels[1], content="MainPassAlphaMaskDrawFunction")
+  inspect(labels[2], content="MainPassTransmissiveDrawFunction")
+  inspect(labels[3], content="MainPassTransparentDrawFunction")
+  inspect(labels[4], content="PrepassOpaqueDrawFunction")
+  inspect(labels[5], content="PrepassAlphaMaskDrawFunction")
+  inspect(labels[6], content="PrepassOpaqueDepthOnlyDrawFunction")
+  inspect(labels[7], content="DeferredOpaqueDrawFunction")
+  inspect(labels[8], content="DeferredAlphaMaskDrawFunction")
+  inspect(labels[9], content="ShadowsDrawFunction")
+  inspect(labels[10], content="ShadowsDepthOnlyDrawFunction")
+}
+
+///|
+test "render3d: pbr material properties can carry bevy draw function ids" {
+  let draw_functions = @material.DrawFunctions::new()
+  let ids = pbr_material_register_draw_functions(draw_functions)
+  inspect(draw_functions.len(), content="11")
+  let properties = pbr_material_apply_draw_functions(
+    @material.MaterialProperties::default(),
+    ids,
+  )
+  debug_inspect(
+    properties
+    .get_draw_function(MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL)
+    .map(fn(id) { id.id() }),
+    content="Some(0)",
+  )
+  debug_inspect(
+    properties
+    .get_draw_function(DEFERRED_ALPHA_MASK_DRAW_FUNCTION_LABEL)
+    .map(fn(id) { id.id() }),
+    content="Some(8)",
+  )
+  debug_inspect(
+    properties
+    .get_draw_function(SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL)
+    .map(fn(id) { id.id() }),
+    content="Some(10)",
+  )
+}

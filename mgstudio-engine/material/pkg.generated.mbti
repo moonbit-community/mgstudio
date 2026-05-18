@@ -133,6 +133,18 @@ pub struct DrawFunctionId {
 pub fn DrawFunctionId::id(Self) -> UInt
 pub fn DrawFunctionId::new(UInt) -> Self
 
+pub struct DrawFunctions {
+  entries : Array[(String, DrawFunctionId)]
+  mut next_id : UInt
+}
+pub fn DrawFunctions::default() -> Self
+pub fn DrawFunctions::id(Self, String) -> DrawFunctionId?
+pub fn DrawFunctions::labels(Self) -> Array[String]
+pub fn DrawFunctions::len(Self) -> Int
+pub fn DrawFunctions::new() -> Self
+pub fn DrawFunctions::register(Self, String) -> DrawFunctionId
+pub impl Default for DrawFunctions
+
 pub struct DynamicBindGroupLayoutEntries {
   default_visibility : UInt
   entries : Array[@render_resource.BindGroupLayoutEntry]

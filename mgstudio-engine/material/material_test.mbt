@@ -258,6 +258,24 @@ test "material boundary exposes bevy-shaped erased key + properties helpers" {
 }
 
 ///|
+test "material boundary draw functions register stable ids by label" {
+  let draw_functions = @material.DrawFunctions::new()
+  let opaque_id = draw_functions.register("MainPassOpaqueDrawFunction")
+  let transparent = draw_functions.register("MainPassTransparentDrawFunction")
+  let duplicate = draw_functions.register("MainPassOpaqueDrawFunction")
+  inspect(opaque_id.id(), content="0")
+  inspect(transparent.id(), content="1")
+  inspect(duplicate.id(), content="0")
+  inspect(draw_functions.len(), content="2")
+  debug_inspect(
+    draw_functions.id("MainPassTransparentDrawFunction").map(fn(id) { id.id() }),
+    content="Some(1)",
+  )
+  inspect(draw_functions.labels()[0], content="MainPassOpaqueDrawFunction")
+  inspect(draw_functions.labels()[1], content="MainPassTransparentDrawFunction")
+}
+
+///|
 test "material boundary dynamic bind group layout entries mirror bevy builder flow" {
   let texture = @material.bind_group_layout_entry_builder(
     @render_resource.BindingType::Texture,

@@ -35,6 +35,8 @@ pub const CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT : UInt = 3
 
 pub const DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID : Int = 1
 
+pub const DEFERRED_ALPHA_MASK_DRAW_FUNCTION_LABEL : String = "DeferredAlphaMaskDrawFunction"
+
 pub const DEFERRED_LIGHTING_LAYOUT_GROUP_2_LABEL : String = "deferred_lighting_layout_group_2"
 
 pub const DEFERRED_LIGHTING_LAYOUT_LABEL : String = "deferred_lighting_layout"
@@ -45,7 +47,17 @@ pub const DEFERRED_LIGHTING_PIPELINE_LABEL : String = "deferred_lighting_pipelin
 
 pub const DEFERRED_LIGHTING_SHADER_PATH : String = "pbr/deferred/deferred_lighting.wgsl"
 
+pub const DEFERRED_OPAQUE_DRAW_FUNCTION_LABEL : String = "DeferredOpaqueDrawFunction"
+
 pub const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05
+
+pub const MAIN_PASS_ALPHA_MASK_DRAW_FUNCTION_LABEL : String = "MainPassAlphaMaskDrawFunction"
+
+pub const MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL : String = "MainPassOpaqueDrawFunction"
+
+pub const MAIN_PASS_TRANSMISSIVE_DRAW_FUNCTION_LABEL : String = "MainPassTransmissiveDrawFunction"
+
+pub const MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL : String = "MainPassTransparentDrawFunction"
 
 pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
 
@@ -60,6 +72,16 @@ pub const PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH : String = "pbr/render/pbr_prepa
 pub const PBR_MESH_VERTEX_SHADER_PATH : String = "pbr/render/mesh.wgsl"
 
 pub const PBR_PREPASS_SHADER_PATH : String = "pbr/prepass/prepass.wgsl"
+
+pub const PREPASS_ALPHA_MASK_DRAW_FUNCTION_LABEL : String = "PrepassAlphaMaskDrawFunction"
+
+pub const PREPASS_OPAQUE_DEPTH_ONLY_DRAW_FUNCTION_LABEL : String = "PrepassOpaqueDepthOnlyDrawFunction"
+
+pub const PREPASS_OPAQUE_DRAW_FUNCTION_LABEL : String = "PrepassOpaqueDrawFunction"
+
+pub const SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL : String = "ShadowsDepthOnlyDrawFunction"
+
+pub const SHADOWS_DRAW_FUNCTION_LABEL : String = "ShadowsDrawFunction"
 
 pub const STANDARD_MATERIAL_KEY_ANISOTROPY : UInt64 = 0x000100
 
@@ -363,11 +385,17 @@ pub fn pbr_gpu_instance_buffer_builder_enabled(@ecs.World) -> Bool
 
 pub fn pbr_make_global_cluster_settings(Bool, Bool) -> PbrGlobalClusterSettings
 
+pub fn pbr_material_apply_draw_functions(@material.MaterialProperties, PbrMaterialDrawFunctionIds) -> @material.MaterialProperties
+
 pub fn pbr_material_bind_group_index() -> Int
+
+pub fn pbr_material_draw_function_labels() -> Array[String]
 
 pub fn pbr_material_forward_decal_material_ext_default() -> @material.ForwardDecalMaterialExt
 
 pub fn pbr_material_forward_decal_material_ext_new(Float) -> @material.ForwardDecalMaterialExt
+
+pub fn pbr_material_register_draw_functions(@material.DrawFunctions) -> PbrMaterialDrawFunctionIds
 
 pub fn pbr_materials_plugin_default() -> MaterialsPlugin
 
@@ -1193,6 +1221,20 @@ pub struct PbrGlobalClusterSettings {
   max_uniform_buffer_clusterable_objects : Int
   view_cluster_bindings_max_indices : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub struct PbrMaterialDrawFunctionIds {
+  main_pass_opaque : @material.DrawFunctionId
+  main_pass_alpha_mask : @material.DrawFunctionId
+  main_pass_transmissive : @material.DrawFunctionId
+  main_pass_transparent : @material.DrawFunctionId
+  prepass_opaque : @material.DrawFunctionId
+  prepass_alpha_mask : @material.DrawFunctionId
+  prepass_opaque_depth_only : @material.DrawFunctionId
+  deferred_opaque : @material.DrawFunctionId
+  deferred_alpha_mask : @material.DrawFunctionId
+  shadows : @material.DrawFunctionId
+  shadows_depth_only : @material.DrawFunctionId
+}
 
 pub struct PbrMaterialPipelineSpecializer {
   properties : @material.MaterialProperties
