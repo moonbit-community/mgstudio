@@ -76,9 +76,12 @@ pub fn render3d_upload_mesh_handle_cached(
   }
   match mesh_runtime_state_ref.val.mesh_upload_cache.get(mesh_handle_id) {
     Some(mesh_id) =>
-      if mesh_id > 0 {
+      if mesh_id > 0 && @render_gpu.host_gpu_mesh_info(mesh_id) is Some(_) {
         mesh_id
       } else {
+        mesh_runtime_state_ref.val.mesh_preprocess_static_cache.remove(
+          mesh_handle_id,
+        )
         let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
           mesh_handle,
         )
