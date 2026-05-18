@@ -82,6 +82,11 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   alpha_cutoff : Float,
   material_flags : UInt,
   lightmap_exposure : Float,
+  lightmap_texture_id : Int,
+  lightmap_uv_min_x : Float,
+  lightmap_uv_min_y : Float,
+  lightmap_uv_max_x : Float,
+  lightmap_uv_max_y : Float,
   deferred_lighting_pass_id : Int,
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
@@ -164,6 +169,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
         material_layout_entry.draw_bind_group_layout,
         material_layout_entry.draw_bind_group_layout_descriptor,
         required_size,
+        lightmap_texture_id,
       )
       is Some((instance_draw_buf, instance_draw_bg)) else {
       return
@@ -183,6 +189,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
         material_pipeline_id,
         material_layout_entry.draw_bind_group_layout,
         material_layout_entry.draw_bind_group_layout_descriptor,
+        lightmap_texture_id,
       )
       is Some(draw_slot) else {
       return
@@ -426,6 +433,12 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       },
       mesh_flags,
       draw_point_shadow_depth_bias,
+      lightmap_texture_id,
+      lightmap_uv_min_x,
+      lightmap_uv_min_y,
+      lightmap_uv_max_x,
+      lightmap_uv_max_y,
+      mesh.vertex_start,
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }

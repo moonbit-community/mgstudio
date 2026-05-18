@@ -353,6 +353,30 @@ test "pbr standard material properties install base specialization hook" {
 }
 
 ///|
+test "pbr material pipeline key carries mesh-owned lightmap bits" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::default(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
+    properties,
+    pbr_material_specializer_test_render_mesh(),
+    lightmapped=true,
+    lightmap_bicubic_sampling=true,
+  )
+  inspect(
+    pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_LIGHTMAPPED,
+    content="8192",
+  )
+  inspect(
+    pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING,
+    content="16384",
+  )
+}
+
+///|
 test "pbr material base specialization caches descriptors from real material properties" {
   let world = @ecs.World::new()
   let properties = render3d_material_properties_for_standard_material(

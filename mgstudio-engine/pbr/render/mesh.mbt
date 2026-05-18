@@ -206,6 +206,11 @@ pub(all) struct MeshGpuDrawPayload3d {
   alpha_cutoff : Float
   material_flags : UInt
   lightmap_exposure : Float
+  lightmap_texture_id : Int
+  lightmap_uv_min_x : Float
+  lightmap_uv_min_y : Float
+  lightmap_uv_max_x : Float
+  lightmap_uv_max_y : Float
   deferred_lighting_pass_id : Int
   transmission_source_texture_id : Int
   transmission_blur_taps : Float
@@ -279,6 +284,11 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   material_pipeline_id? : @material.CachedRenderPipelineId? = None,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
+  lightmap_texture_id? : Int = -1,
+  lightmap_uv_min_x? : Float = 0.0F,
+  lightmap_uv_min_y? : Float = 0.0F,
+  lightmap_uv_max_x? : Float = 0.0F,
+  lightmap_uv_max_y? : Float = 0.0F,
 ) -> MeshGpuDrawPayload3d {
   let material_flags = render3d_standard_material_flags(
     material,
@@ -334,6 +344,11 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     alpha_cutoff: render3d_standard_material_alpha_cutoff(material.alpha_mode),
     material_flags,
     lightmap_exposure: material.lightmap_exposure,
+    lightmap_texture_id,
+    lightmap_uv_min_x,
+    lightmap_uv_min_y,
+    lightmap_uv_max_x,
+    lightmap_uv_max_y,
     deferred_lighting_pass_id: material.deferred_lighting_pass_id,
     transmission_source_texture_id,
     transmission_blur_taps,
@@ -421,6 +436,11 @@ pub fn render3d_host_main_pass_draw_entry(
     alpha_cutoff=payload.alpha_cutoff,
     material_flags=payload.material_flags,
     lightmap_exposure=payload.lightmap_exposure,
+    lightmap_texture_id=payload.lightmap_texture_id,
+    lightmap_uv_min_x=payload.lightmap_uv_min_x,
+    lightmap_uv_min_y=payload.lightmap_uv_min_y,
+    lightmap_uv_max_x=payload.lightmap_uv_max_x,
+    lightmap_uv_max_y=payload.lightmap_uv_max_y,
     deferred_lighting_pass_id=payload.deferred_lighting_pass_id,
     point_shadow_texture_id=payload.point_shadow_texture_id,
     point_shadow_enabled=payload.point_shadow_enabled,
@@ -510,6 +530,11 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
       None => @material.CachedRenderPipelineId::invalid().id()
     },
     lightmap_exposure=payload.lightmap_exposure,
+    lightmap_texture_id=payload.lightmap_texture_id,
+    lightmap_uv_min_x=payload.lightmap_uv_min_x,
+    lightmap_uv_min_y=payload.lightmap_uv_min_y,
+    lightmap_uv_max_x=payload.lightmap_uv_max_x,
+    lightmap_uv_max_y=payload.lightmap_uv_max_y,
     deferred_lighting_pass_id=payload.deferred_lighting_pass_id,
     transmission_source_texture_id=payload.transmission_source_texture_id,
     transmission_blur_taps=payload.transmission_blur_taps,

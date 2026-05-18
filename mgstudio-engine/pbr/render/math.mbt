@@ -175,14 +175,6 @@ pub fn absf(value : Float) -> Float {
 }
 
 ///|
-pub fn render3d_lightmap_uv_transform(
-  uv_rect : @math.Rect,
-) -> @transform.Affine2 {
-  let size = uv_rect.size()
-  @transform.Affine2::from_scale_translation(size, uv_rect.min)
-}
-
-///|
 pub fn render3d_inverse_transform_point(
   transform : @transform.Transform,
   world_point : @math.Vec3,

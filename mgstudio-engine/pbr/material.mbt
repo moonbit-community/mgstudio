@@ -285,6 +285,12 @@ pub fn pbr_material_apply_draw_functions(
 pub const MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE : UInt64 = 4096UL
 
 ///|
+pub const MESH_PIPELINE_KEY_LIGHTMAPPED : UInt64 = 8192UL
+
+///|
+pub const MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING : UInt64 = 16384UL
+
+///|
 const MESH_PIPELINE_KEY_MAY_DISCARD : UInt64 = 128UL
 
 ///|
@@ -318,10 +324,18 @@ fn alpha_mode_pipeline_key(alpha_mode : @material.AlphaMode3d) -> UInt64 {
 fn material_mesh_pipeline_key_for_render_mesh(
   properties : @material.MaterialProperties,
   render_mesh : @render_mesh.RenderMesh,
+  lightmapped? : Bool = false,
+  lightmap_bicubic_sampling? : Bool = false,
 ) -> @material.ErasedMeshPipelineKey {
-  let bits = properties.mesh_pipeline_key_bits.bits() |
+  let mut bits = properties.mesh_pipeline_key_bits.bits() |
     render_mesh.key_bits().bits() |
     alpha_mode_pipeline_key(properties.alpha_mode)
+  if lightmapped {
+    bits = bits | MESH_PIPELINE_KEY_LIGHTMAPPED
+  }
+  if lightmap_bicubic_sampling {
+    bits = bits | MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING
+  }
   @material.ErasedMeshPipelineKey::new(bits, "MeshPipelineKey")
 }
 
@@ -329,9 +343,16 @@ fn material_mesh_pipeline_key_for_render_mesh(
 fn material_pipeline_key_for_standard_material_render_mesh(
   properties : @material.MaterialProperties,
   render_mesh : @render_mesh.RenderMesh,
+  lightmapped? : Bool = false,
+  lightmap_bicubic_sampling? : Bool = false,
 ) -> @material.ErasedMaterialPipelineKey {
   @material.ErasedMaterialPipelineKey::new(
-    material_mesh_pipeline_key_for_render_mesh(properties, render_mesh),
+    material_mesh_pipeline_key_for_render_mesh(
+      properties,
+      render_mesh,
+      lightmapped~,
+      lightmap_bicubic_sampling~,
+    ),
     properties.material_key,
     "StandardMaterial",
   )

@@ -19,6 +19,7 @@ fn GpuBackend::create_mesh3d_draw_bind_group(
   layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
   draw_buf : @wgpu.Buffer,
   draw_size : UInt64,
+  lightmap_texture_id : Int,
   label : String,
 ) -> @wgpu.BindGroup? {
   let entries = layout_descriptor.entries()
@@ -50,6 +51,26 @@ fn GpuBackend::create_mesh3d_draw_bind_group(
         guard self.mesh3d_skin_prev_buf is Some(prev_skin_buf) else { false }
         builder.add_buffer(6U, prev_skin_buf, size=self.mesh3d_skin_capacity)
       }
+      4 => {
+        guard lightmap_texture_id >= 0 else { false }
+        guard (resolve_mesh3d_texture(self, lightmap_texture_id) catch {
+            _ => None
+          })
+          is Some(lightmap_texture) else {
+          false
+        }
+        builder.add_texture_view(4U, lightmap_texture.view)
+      }
+      5 => {
+        guard lightmap_texture_id >= 0 else { false }
+        guard (resolve_mesh3d_texture(self, lightmap_texture_id) catch {
+            _ => None
+          })
+          is Some(lightmap_texture) else {
+          false
+        }
+        builder.add_sampler(5U, lightmap_texture.sampler)
+      }
       _ => false
     }
     if !ok {
@@ -79,14 +100,18 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
   material_pipeline_id : UInt64,
   bgl : @wgpu.BindGroupLayout,
   layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
+  lightmap_texture_id : Int,
 ) -> GpuStorageSlot? {
   if slot_index < self.mesh3d_draw_slots.length() &&
     slot_index < self.mesh3d_draw_slot_skin_revisions.length() &&
     slot_index < self.mesh3d_draw_slot_material_pipeline_ids.length() &&
+    slot_index < self.mesh3d_draw_slot_lightmap_texture_ids.length() &&
     self.mesh3d_draw_slot_skin_revisions[slot_index] ==
     self.mesh3d_skin_revision &&
     self.mesh3d_draw_slot_material_pipeline_ids[slot_index] ==
-    material_pipeline_id {
+    material_pipeline_id &&
+    self.mesh3d_draw_slot_lightmap_texture_ids[slot_index] ==
+    lightmap_texture_id {
     return Some(self.mesh3d_draw_slots[slot_index])
   }
   let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
@@ -100,6 +125,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
         layout_descriptor,
         draw_buf,
         MESH3D_DRAW_STORAGE_STRIDE_BYTES,
+        lightmap_texture_id,
         "mgstudio_mesh3d_draw_slot_bg",
       )
       is Some(draw_bg) else {
@@ -111,17 +137,21 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
     })
     self.mesh3d_draw_slot_skin_revisions.push(self.mesh3d_skin_revision)
     self.mesh3d_draw_slot_material_pipeline_ids.push(material_pipeline_id)
+    self.mesh3d_draw_slot_lightmap_texture_ids.push(lightmap_texture_id)
   }
   if self.mesh3d_draw_slot_skin_revisions[slot_index] !=
     self.mesh3d_skin_revision ||
     self.mesh3d_draw_slot_material_pipeline_ids[slot_index] !=
-    material_pipeline_id {
+    material_pipeline_id ||
+    self.mesh3d_draw_slot_lightmap_texture_ids[slot_index] !=
+    lightmap_texture_id {
     let slot = self.mesh3d_draw_slots[slot_index]
     guard self.create_mesh3d_draw_bind_group(
         bgl,
         layout_descriptor,
         slot.buffer,
         MESH3D_DRAW_STORAGE_STRIDE_BYTES,
+        lightmap_texture_id,
         "mgstudio_mesh3d_draw_slot_bg",
       )
       is Some(draw_bg) else {
@@ -134,6 +164,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
     }
     self.mesh3d_draw_slot_skin_revisions[slot_index] = self.mesh3d_skin_revision
     self.mesh3d_draw_slot_material_pipeline_ids[slot_index] = material_pipeline_id
+    self.mesh3d_draw_slot_lightmap_texture_ids[slot_index] = lightmap_texture_id
   }
   Some(self.mesh3d_draw_slots[slot_index])
 }
@@ -149,6 +180,7 @@ pub fn GpuBackend::ensure_mesh3d_draw_slot(
     MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
     bgl,
     mesh3d_default_draw_bind_group_layout_descriptor(),
+    -1,
   )
 }
 
@@ -159,12 +191,14 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
   bgl : @wgpu.BindGroupLayout,
   layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
   required_size : UInt64,
+  lightmap_texture_id : Int,
 ) -> (@wgpu.Buffer, @wgpu.BindGroup)? {
   if self.mesh3d_instance_draw_buf is Some(draw_buf) &&
     self.mesh3d_instance_draw_bg is Some(draw_bg) &&
     self.mesh3d_instance_draw_capacity >= required_size &&
     self.mesh3d_instance_draw_skin_revision == self.mesh3d_skin_revision &&
-    self.mesh3d_instance_draw_material_pipeline_id == material_pipeline_id {
+    self.mesh3d_instance_draw_material_pipeline_id == material_pipeline_id &&
+    self.mesh3d_instance_draw_lightmap_texture_id == lightmap_texture_id {
     return Some((draw_buf, draw_bg))
   }
   let mut next_capacity = if self.mesh3d_instance_draw_capacity > 0UL {
@@ -182,7 +216,7 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
     _ => self.device.create_buffer(size=next_capacity, usage~)
   }
   guard self.create_mesh3d_draw_bind_group(
-      bgl, layout_descriptor, draw_buf, next_capacity, "mgstudio_mesh3d_instance_draw_bg",
+      bgl, layout_descriptor, draw_buf, next_capacity, lightmap_texture_id, "mgstudio_mesh3d_instance_draw_bg",
     )
     is Some(draw_bg) else {
     return None
@@ -197,6 +231,7 @@ fn GpuBackend::ensure_mesh3d_instance_draw_binding_with_layout(
   self.mesh3d_instance_draw_capacity = next_capacity
   self.mesh3d_instance_draw_skin_revision = self.mesh3d_skin_revision
   self.mesh3d_instance_draw_material_pipeline_id = material_pipeline_id
+  self.mesh3d_instance_draw_lightmap_texture_id = lightmap_texture_id
   Some((draw_buf, draw_bg))
 }
 
@@ -211,5 +246,6 @@ pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(
     bgl,
     mesh3d_default_draw_bind_group_layout_descriptor(),
     required_size,
+    -1,
   )
 }

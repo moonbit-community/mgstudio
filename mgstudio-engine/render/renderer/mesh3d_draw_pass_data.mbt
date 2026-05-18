@@ -440,6 +440,43 @@ fn mesh3d_spot_scale_offset(
 }
 
 ///|
+fn mesh3d_lightmap_uv_component(value : Float) -> UInt {
+  let clamped = if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
+    1.0F
+  } else {
+    value
+  }
+  (clamped.to_double() * 65535.0).round().to_int().reinterpret_as_uint()
+}
+
+///|
+fn mesh3d_pack_lightmap_uv_rect_words(
+  min_x : Float,
+  min_y : Float,
+  max_x : Float,
+  max_y : Float,
+) -> (UInt, UInt) {
+  let x = mesh3d_lightmap_uv_component(min_x)
+  let y = mesh3d_lightmap_uv_component(min_y)
+  let z = mesh3d_lightmap_uv_component(max_x)
+  let w = mesh3d_lightmap_uv_component(max_y)
+  (x | (y << 16), z | (w << 16))
+}
+
+///|
+fn mesh3d_material_and_lightmap_bind_group_slot(
+  lightmap_texture_id : Int,
+) -> UInt {
+  if lightmap_texture_id >= 0 {
+    0U
+  } else {
+    0xFFFF0000U
+  }
+}
+
+///|
 fn mesh3d_mesh_uniform_words(
   x : Float,
   y : Float,
@@ -463,10 +500,23 @@ fn mesh3d_mesh_uniform_words(
   previous_scale_z : Float,
   current_skin_index : UInt,
   mesh_flags : UInt,
+  lightmap_texture_id : Int,
+  lightmap_uv_min_x : Float,
+  lightmap_uv_min_y : Float,
+  lightmap_uv_max_x : Float,
+  lightmap_uv_max_y : Float,
+  first_vertex_index : UInt,
 ) -> Array[UInt] {
   let inverse_transpose = mesh3d_inverse_transpose_words(
     rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
   )
+  let (lightmap_uv_rect_x, lightmap_uv_rect_y) = if lightmap_texture_id >= 0 {
+    mesh3d_pack_lightmap_uv_rect_words(
+      lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x, lightmap_uv_max_y,
+    )
+  } else {
+    (0U, 0U)
+  }
   let words : Array[UInt] = []
   for
     word in mesh3d_world_from_local_words(
@@ -488,11 +538,11 @@ fn mesh3d_mesh_uniform_words(
   }
   words.push(inverse_transpose[8])
   words.push(mesh_flags)
-  words.push(0U)
-  words.push(0U)
-  words.push(0U)
+  words.push(lightmap_uv_rect_x)
+  words.push(lightmap_uv_rect_y)
+  words.push(first_vertex_index)
   words.push(current_skin_index)
-  words.push(0U)
+  words.push(mesh3d_material_and_lightmap_bind_group_slot(lightmap_texture_id))
   words.push(0U)
   words.push(0U)
   for _ in 0..<3 {
@@ -560,6 +610,12 @@ fn mesh3d_draw_uniform_bytes(
   current_skin_index : UInt,
   mesh_flags : UInt,
   point_shadow_depth_bias : Float,
+  lightmap_texture_id : Int,
+  lightmap_uv_min_x : Float,
+  lightmap_uv_min_y : Float,
+  lightmap_uv_max_x : Float,
+  lightmap_uv_max_y : Float,
+  first_vertex_index : UInt,
 ) -> Bytes {
   ignore(color_r)
   ignore(color_g)
@@ -596,7 +652,8 @@ fn mesh3d_draw_uniform_bytes(
   let words = mesh3d_mesh_uniform_words(
     x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
     x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
-    current_skin_index, mesh_flags,
+    current_skin_index, mesh_flags, lightmap_texture_id, lightmap_uv_min_x, lightmap_uv_min_y,
+    lightmap_uv_max_x, lightmap_uv_max_y, first_vertex_index,
   )
   u32le_pack(words)
 }
@@ -792,6 +849,12 @@ fn mesh3d_draw_uniform_write(
   current_skin_index : UInt,
   mesh_flags : UInt,
   point_shadow_depth_bias : Float,
+  lightmap_texture_id : Int,
+  lightmap_uv_min_x : Float,
+  lightmap_uv_min_y : Float,
+  lightmap_uv_max_x : Float,
+  lightmap_uv_max_y : Float,
+  first_vertex_index : UInt,
 ) -> Unit {
   ignore(color_r)
   ignore(color_g)
@@ -831,7 +894,8 @@ fn mesh3d_draw_uniform_write(
     mesh3d_mesh_uniform_words(
       x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
       scale_z, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x,
-      scale_y, scale_z, current_skin_index, mesh_flags,
+      scale_y, scale_z, current_skin_index, mesh_flags, lightmap_texture_id, lightmap_uv_min_x,
+      lightmap_uv_min_y, lightmap_uv_max_x, lightmap_uv_max_y, first_vertex_index,
     ),
   )
 }

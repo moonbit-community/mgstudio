@@ -158,6 +158,11 @@ pub struct HostMesh3dMainPassDrawEntry {
   alpha_cutoff : Float
   material_flags : UInt
   lightmap_exposure : Float
+  lightmap_texture_id : Int
+  lightmap_uv_min_x : Float
+  lightmap_uv_min_y : Float
+  lightmap_uv_max_x : Float
+  lightmap_uv_max_y : Float
   deferred_lighting_pass_id : Int
   point_shadow_texture_id : Int
   point_shadow_enabled : Float
@@ -226,6 +231,11 @@ pub fn host_mesh3d_main_pass_draw_entry(
   alpha_cutoff~ : Float,
   material_flags~ : UInt,
   lightmap_exposure? : Float = 1.0F,
+  lightmap_texture_id? : Int = -1,
+  lightmap_uv_min_x? : Float = 0.0F,
+  lightmap_uv_min_y? : Float = 0.0F,
+  lightmap_uv_max_x? : Float = 0.0F,
+  lightmap_uv_max_y? : Float = 0.0F,
   deferred_lighting_pass_id? : Int = 1,
   point_shadow_texture_id~ : Int,
   point_shadow_enabled~ : Float,
@@ -292,6 +302,11 @@ pub fn host_mesh3d_main_pass_draw_entry(
     alpha_cutoff,
     material_flags,
     lightmap_exposure,
+    lightmap_texture_id,
+    lightmap_uv_min_x,
+    lightmap_uv_min_y,
+    lightmap_uv_max_x,
+    lightmap_uv_max_y,
     deferred_lighting_pass_id,
     point_shadow_texture_id,
     point_shadow_enabled,
@@ -406,6 +421,12 @@ fn GpuBackend::write_mesh3d_main_pass_draw_entry(
     },
     entry.mesh_flags,
     draw_point_shadow_depth_bias,
+    entry.lightmap_texture_id,
+    entry.lightmap_uv_min_x,
+    entry.lightmap_uv_min_y,
+    entry.lightmap_uv_max_x,
+    entry.lightmap_uv_max_y,
+    0U,
   )
   true
 }
@@ -948,6 +969,11 @@ pub fn draw_mesh3d(
   material_flags~ : UInt,
   material_pipeline_id? : UInt64 = MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
   lightmap_exposure? : Float = 1.0F,
+  lightmap_texture_id? : Int = -1,
+  lightmap_uv_min_x? : Float = 0.0F,
+  lightmap_uv_min_y? : Float = 0.0F,
+  lightmap_uv_max_x? : Float = 0.0F,
+  lightmap_uv_max_y? : Float = 0.0F,
   deferred_lighting_pass_id? : Int = 1,
   transmission_source_texture_id~ : Int,
   transmission_blur_taps~ : Float,
@@ -1048,6 +1074,11 @@ pub fn draw_mesh3d(
       material_flags,
       material_pipeline_id,
       lightmap_exposure,
+      lightmap_texture_id,
+      lightmap_uv_min_x,
+      lightmap_uv_min_y,
+      lightmap_uv_max_x,
+      lightmap_uv_max_y,
       deferred_lighting_pass_id,
       transmission_source_texture_id,
       transmission_blur_taps,

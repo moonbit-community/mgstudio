@@ -280,14 +280,20 @@ fn render3d_execute_camera_main_pass(
       is Some(base_draw_alpha) else {
       continue
     }
-    let mut draw_material = mesh.material
-    if mesh.lightmap is Some(lightmap) && lightmap.image.id() > 0 {
-      draw_material = draw_material
-        .with_base_color_texture(Some(lightmap.image))
-        .with_uv_transform(
-          @pbr_render.render3d_lightmap_uv_transform(lightmap.uv_rect),
-        )
-        .with_unlit(true)
+    let draw_material = mesh.material
+    let (
+      lightmap_texture_id,
+      lightmap_uv_min_x,
+      lightmap_uv_min_y,
+      lightmap_uv_max_x,
+      lightmap_uv_max_y,
+    ) = match mesh.lightmap {
+      Some(lightmap) if lightmap.image.id() > 0 => {
+        let uv_min = lightmap.uv_rect.min()
+        let uv_max = lightmap.uv_rect.max()
+        (lightmap.image.id(), uv_min.x, uv_min.y, uv_max.x, uv_max.y)
+      }
+      _ => (-1, 0.0F, 0.0F, 0.0F, 0.0F)
     }
     let mut draw_alpha = base_draw_alpha
     let mut texture_id = match draw_material.base_color_texture {
@@ -513,6 +519,11 @@ fn render3d_execute_camera_main_pass(
       material_pipeline_id=draw_item.pipeline_id,
       skinning_key_hi=mesh.skinning_key_hi,
       skinning_key_lo=if mesh.skinning_key_hi >= 0 { 0 } else { -1 },
+      lightmap_texture_id~,
+      lightmap_uv_min_x~,
+      lightmap_uv_min_y~,
+      lightmap_uv_max_x~,
+      lightmap_uv_max_y~,
     )
     if draw_render_phase_type is @material.RenderPhaseType::Transparent {
       transparent_draws.push(draw_payload)

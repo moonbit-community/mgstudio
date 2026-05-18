@@ -188,10 +188,7 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
   mesh : ExtractedMesh3d,
   prepared_material_bind_groups : Map[String, Bool],
 ) -> Unit {
-  let mut draw_material = mesh.payload.material
-  if mesh.payload.lightmap is Some(lightmap) && lightmap.image.id() > 0 {
-    draw_material = draw_material.with_base_color_texture(Some(lightmap.image))
-  }
+  let draw_material = mesh.payload.material
   let mut texture_id = match draw_material.base_color_texture {
     Some(texture) => texture.id()
     None => -1
@@ -312,6 +309,14 @@ fn render3d_prewarm_material_pipeline(
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
     mesh.material_properties,
     render_mesh,
+    lightmapped=match mesh.lightmap {
+      Some(lightmap) => lightmap.image.id() > 0
+      None => false
+    },
+    lightmap_bicubic_sampling=match mesh.lightmap {
+      Some(lightmap) => lightmap.image.id() > 0 && lightmap.bicubic_sampling
+      None => false
+    },
   )
   let pipeline_id = @material.material_specialize_base(
     base_specialize,

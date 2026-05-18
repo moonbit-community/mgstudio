@@ -254,6 +254,12 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
       },
       mesh_flags,
       0.0F,
+      -1,
+      0.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      mesh.vertex_start,
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }

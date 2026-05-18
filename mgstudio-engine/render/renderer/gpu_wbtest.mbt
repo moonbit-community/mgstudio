@@ -801,9 +801,35 @@ test "renderer: mesh uniform stores caller supplied mesh flags" {
   let flags = 0xA000_FFFFU
   let words = mesh3d_mesh_uniform_words(
     0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F,
-    0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0xFFFF_FFFFU, flags,
+    0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0xFFFF_FFFFU, flags, -1, 0.0F, 0.0F,
+    0.0F, 0.0F, 0U,
   )
   debug_inspect(words[33], content="2684420095")
+}
+
+///|
+test "renderer: mesh uniform packs lightmap uv rect and slot" {
+  let words = mesh3d_mesh_uniform_words(
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0xFFFF_FFFFU, 0U, 7, 0.25F, 0.5F, 0.75F,
+    1.0F, 13U,
+  )
+  debug_inspect(words[34], content="2147516416")
+  debug_inspect(words[35], content="4294950911")
+  debug_inspect(words[36], content="13")
+  debug_inspect(words[38], content="0")
+}
+
+///|
+test "renderer: mesh uniform marks absent lightmap with max slot" {
+  let words = mesh3d_mesh_uniform_words(
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0xFFFF_FFFFU, 0U, -1, 0.0F, 0.0F, 0.0F,
+    0.0F, 0U,
+  )
+  debug_inspect(words[34], content="0")
+  debug_inspect(words[35], content="0")
+  debug_inspect(words[38], content="4294901760")
 }
 
 ///|
