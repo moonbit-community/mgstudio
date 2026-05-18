@@ -60,6 +60,8 @@ pub fn MeshAllocator::mesh_slabs(Self, Int) -> (Int?, Int?)
 pub fn MeshAllocator::mesh_slice_in_slab(Self, Int, Int) -> MeshAllocatorSlice?
 pub fn MeshAllocator::mesh_vertex_slice(Self, Int) -> MeshAllocatorSlice?
 pub fn MeshAllocator::new(general_vertex_slabs_supported? : Bool) -> Self
+pub fn MeshAllocator::pending_upload_plan(Self, Int, MeshAllocatorElementClass, Int) -> MeshAllocatorUploadPlan?
+pub fn MeshAllocator::reallocate_slab_plan(Self, Int, Int) -> MeshAllocatorReallocateSlabPlan?
 pub fn MeshAllocator::slab_count(Self) -> Int
 pub fn MeshAllocator::slabs_size(Self) -> Int
 pub impl Default for MeshAllocator
@@ -67,6 +69,24 @@ pub impl Default for MeshAllocator
 pub(all) enum MeshAllocatorAllocationResidency {
   Pending
   Resident
+} derive(Eq, @debug.Debug)
+
+pub struct MeshAllocatorBufferPlan {
+  slab_id : Int
+  label : String
+  usage : MeshAllocatorBufferUsage
+  size : Int
+  mapped_at_creation : Bool
+} derive(Eq, @debug.Debug)
+pub fn MeshAllocatorBufferPlan::label(Self) -> String
+pub fn MeshAllocatorBufferPlan::mapped_at_creation(Self) -> Bool
+pub fn MeshAllocatorBufferPlan::size(Self) -> Int
+pub fn MeshAllocatorBufferPlan::slab_id(Self) -> Int
+pub fn MeshAllocatorBufferPlan::usage(Self) -> MeshAllocatorBufferUsage
+
+pub(all) enum MeshAllocatorBufferUsage {
+  VertexBuffer
+  IndexBuffer
 } derive(Eq, @debug.Debug)
 
 pub(all) enum MeshAllocatorElementClass {
@@ -97,6 +117,19 @@ pub(all) struct MeshAllocatorMeshSlabEntry {
   mesh_id : Int
   slab_id : Int
 }
+
+pub struct MeshAllocatorReallocateSlabPlan {
+  slab_id : Int
+  label : String
+  usage : MeshAllocatorBufferUsage
+  new_size : Int
+  old_copy_size : Int
+} derive(Eq, @debug.Debug)
+pub fn MeshAllocatorReallocateSlabPlan::label(Self) -> String
+pub fn MeshAllocatorReallocateSlabPlan::new_size(Self) -> Int
+pub fn MeshAllocatorReallocateSlabPlan::old_copy_size(Self) -> Int
+pub fn MeshAllocatorReallocateSlabPlan::slab_id(Self) -> Int
+pub fn MeshAllocatorReallocateSlabPlan::usage(Self) -> MeshAllocatorBufferUsage
 
 pub struct MeshAllocatorSettings {
   min_slab_size : Int
@@ -174,6 +207,21 @@ pub struct MeshAllocatorSlice {
 pub fn MeshAllocatorSlice::end(Self) -> Int
 pub fn MeshAllocatorSlice::slab_id(Self) -> Int
 pub fn MeshAllocatorSlice::start(Self) -> Int
+
+pub struct MeshAllocatorUploadPlan {
+  slab_id : Int
+  label : String
+  usage : MeshAllocatorBufferUsage
+  offset : Int
+  size : Int
+  mapped_at_creation : Bool
+} derive(Eq, @debug.Debug)
+pub fn MeshAllocatorUploadPlan::label(Self) -> String
+pub fn MeshAllocatorUploadPlan::mapped_at_creation(Self) -> Bool
+pub fn MeshAllocatorUploadPlan::offset(Self) -> Int
+pub fn MeshAllocatorUploadPlan::size(Self) -> Int
+pub fn MeshAllocatorUploadPlan::slab_id(Self) -> Int
+pub fn MeshAllocatorUploadPlan::usage(Self) -> MeshAllocatorBufferUsage
 
 pub struct RenderMesh {
   vertex_count : Int

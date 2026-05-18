@@ -453,6 +453,138 @@ pub fn MeshAllocatorSlice::end(self : MeshAllocatorSlice) -> Int {
 }
 
 ///|
+pub(all) enum MeshAllocatorBufferUsage {
+  VertexBuffer
+  IndexBuffer
+} derive(Eq, Debug)
+
+///|
+pub struct MeshAllocatorBufferPlan {
+  slab_id : Int
+  label : String
+  usage : MeshAllocatorBufferUsage
+  size : Int
+  mapped_at_creation : Bool
+} derive(Eq, Debug)
+
+///|
+pub fn MeshAllocatorBufferPlan::slab_id(self : MeshAllocatorBufferPlan) -> Int {
+  self.slab_id
+}
+
+///|
+pub fn MeshAllocatorBufferPlan::label(self : MeshAllocatorBufferPlan) -> String {
+  self.label
+}
+
+///|
+pub fn MeshAllocatorBufferPlan::usage(
+  self : MeshAllocatorBufferPlan,
+) -> MeshAllocatorBufferUsage {
+  self.usage
+}
+
+///|
+pub fn MeshAllocatorBufferPlan::size(self : MeshAllocatorBufferPlan) -> Int {
+  self.size
+}
+
+///|
+pub fn MeshAllocatorBufferPlan::mapped_at_creation(
+  self : MeshAllocatorBufferPlan,
+) -> Bool {
+  self.mapped_at_creation
+}
+
+///|
+pub struct MeshAllocatorUploadPlan {
+  slab_id : Int
+  label : String
+  usage : MeshAllocatorBufferUsage
+  offset : Int
+  size : Int
+  mapped_at_creation : Bool
+} derive(Eq, Debug)
+
+///|
+pub fn MeshAllocatorUploadPlan::slab_id(self : MeshAllocatorUploadPlan) -> Int {
+  self.slab_id
+}
+
+///|
+pub fn MeshAllocatorUploadPlan::label(self : MeshAllocatorUploadPlan) -> String {
+  self.label
+}
+
+///|
+pub fn MeshAllocatorUploadPlan::usage(
+  self : MeshAllocatorUploadPlan,
+) -> MeshAllocatorBufferUsage {
+  self.usage
+}
+
+///|
+pub fn MeshAllocatorUploadPlan::offset(self : MeshAllocatorUploadPlan) -> Int {
+  self.offset
+}
+
+///|
+pub fn MeshAllocatorUploadPlan::size(self : MeshAllocatorUploadPlan) -> Int {
+  self.size
+}
+
+///|
+pub fn MeshAllocatorUploadPlan::mapped_at_creation(
+  self : MeshAllocatorUploadPlan,
+) -> Bool {
+  self.mapped_at_creation
+}
+
+///|
+pub struct MeshAllocatorReallocateSlabPlan {
+  slab_id : Int
+  label : String
+  usage : MeshAllocatorBufferUsage
+  new_size : Int
+  old_copy_size : Int
+} derive(Eq, Debug)
+
+///|
+pub fn MeshAllocatorReallocateSlabPlan::slab_id(
+  self : MeshAllocatorReallocateSlabPlan,
+) -> Int {
+  self.slab_id
+}
+
+///|
+pub fn MeshAllocatorReallocateSlabPlan::label(
+  self : MeshAllocatorReallocateSlabPlan,
+) -> String {
+  self.label
+}
+
+///|
+pub fn MeshAllocatorReallocateSlabPlan::usage(
+  self : MeshAllocatorReallocateSlabPlan,
+) -> MeshAllocatorBufferUsage {
+  self.usage
+}
+
+///|
+pub fn MeshAllocatorReallocateSlabPlan::new_size(
+  self : MeshAllocatorReallocateSlabPlan,
+) -> Int {
+  self.new_size
+}
+
+///|
+pub fn MeshAllocatorReallocateSlabPlan::old_copy_size(
+  self : MeshAllocatorReallocateSlabPlan,
+) -> Int {
+  self.old_copy_size
+}
+
+///|
 pub(all) struct MeshAllocatorSlabAllocation {
   mesh_id : Int
   offset : Int
@@ -527,6 +659,44 @@ fn mesh_allocator_data_slot_count(
 ) -> Int {
   let data_element_count = mesh_allocator_div_ceil(data_byte_len, layout.size())
   mesh_allocator_div_ceil(data_element_count, layout.elements_per_slot())
+}
+
+///|
+fn mesh_allocator_next_multiple_of(value : Int, quantum : Int) -> Int {
+  mesh_allocator_div_ceil(value, quantum) * quantum
+}
+
+///|
+fn mesh_allocator_buffer_usage(
+  element_class : MeshAllocatorElementClass,
+) -> MeshAllocatorBufferUsage {
+  match element_class {
+    Vertex => VertexBuffer
+    Index => IndexBuffer
+  }
+}
+
+///|
+fn mesh_allocator_buffer_usage_label(
+  usage : MeshAllocatorBufferUsage,
+) -> String {
+  match usage {
+    VertexBuffer => "vertex "
+    IndexBuffer => "index "
+  }
+}
+
+///|
+fn mesh_allocator_buffer_label(
+  kind : MeshAllocatorSlabKind,
+  slab_id : Int,
+  usage : MeshAllocatorBufferUsage,
+) -> String {
+  let slab_kind = match kind {
+    General => "general"
+    LargeObject => "large"
+  }
+  "\{slab_kind} mesh slab \{slab_id} (\{mesh_allocator_buffer_usage_label(usage)}buffer)"
 }
 
 ///|
@@ -763,6 +933,55 @@ fn MeshAllocatorSlabState::slice_for_mesh(
 }
 
 ///|
+fn MeshAllocatorSlabState::buffer_plan(
+  self : MeshAllocatorSlabState,
+  mapped_at_creation : Bool,
+) -> MeshAllocatorBufferPlan {
+  let usage = mesh_allocator_buffer_usage(self.layout.class)
+  MeshAllocatorBufferPlan::{
+    slab_id: self.id,
+    label: mesh_allocator_buffer_label(self.kind, self.id, usage),
+    usage,
+    size: self.current_slot_capacity * self.layout.slot_size(),
+    mapped_at_creation,
+  }
+}
+
+///|
+fn MeshAllocatorSlabState::upload_plan_for_mesh(
+  self : MeshAllocatorSlabState,
+  mesh_id : Int,
+  data_byte_len : Int,
+) -> MeshAllocatorUploadPlan? {
+  for allocation in self.allocations {
+    if allocation.mesh_id == mesh_id {
+      if allocation.residency != Pending {
+        return None
+      }
+      let usage = mesh_allocator_buffer_usage(self.layout.class)
+      let slot_size = self.layout.slot_size()
+      return Some(MeshAllocatorUploadPlan::{
+        slab_id: self.id,
+        label: mesh_allocator_buffer_label(self.kind, self.id, usage),
+        usage,
+        offset: if self.kind == LargeObject {
+          0
+        } else {
+          allocation.offset * slot_size
+        },
+        size: if self.kind == LargeObject {
+          data_byte_len
+        } else {
+          mesh_allocator_next_multiple_of(data_byte_len, slot_size)
+        },
+        mapped_at_creation: self.kind == LargeObject,
+      })
+    }
+  }
+  None
+}
+
+///|
 fn MeshAllocator::allocate_large(
   self : MeshAllocator,
   mesh_id : Int,
@@ -991,6 +1210,53 @@ pub fn MeshAllocator::mark_resident(
         None => false
       }
     None => false
+  }
+}
+
+///|
+pub fn MeshAllocator::pending_upload_plan(
+  self : MeshAllocator,
+  mesh_id : Int,
+  element_class : MeshAllocatorElementClass,
+  data_byte_len : Int,
+) -> MeshAllocatorUploadPlan? {
+  let slab_id = match element_class {
+    Vertex => mesh_allocator_lookup_map(self.mesh_id_to_vertex_slab, mesh_id)
+    Index => mesh_allocator_lookup_map(self.mesh_id_to_index_slab, mesh_id)
+  }
+  match slab_id {
+    Some(slab_id) =>
+      match mesh_allocator_find_slab_index(self.slabs, slab_id) {
+        Some(index) =>
+          self.slabs[index].upload_plan_for_mesh(mesh_id, data_byte_len)
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+pub fn MeshAllocator::reallocate_slab_plan(
+  self : MeshAllocator,
+  slab_id : Int,
+  old_slot_capacity : Int,
+) -> MeshAllocatorReallocateSlabPlan? {
+  match mesh_allocator_find_slab_index(self.slabs, slab_id) {
+    Some(index) => {
+      let slab = self.slabs[index]
+      if slab.kind != General {
+        return None
+      }
+      let buffer = slab.buffer_plan(false)
+      Some(MeshAllocatorReallocateSlabPlan::{
+        slab_id,
+        label: buffer.label,
+        usage: buffer.usage,
+        new_size: buffer.size,
+        old_copy_size: old_slot_capacity * slab.layout.slot_size(),
+      })
+    }
+    None => None
   }
 }
 

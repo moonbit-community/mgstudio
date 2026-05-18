@@ -202,6 +202,71 @@ test "render mesh allocator: general slabs grow instead of creating new slab" {
 }
 
 ///|
+test "render mesh allocator: upload plans preserve bevy general write semantics" {
+  let allocator = MeshAllocator::new()
+  let layout = MeshAllocatorElementLayout::vertex(3)
+  guard allocator.allocate(37, 5, layout) is Some(plan) else {
+    fail("expected allocation")
+  }
+  guard allocator.pending_upload_plan(37, Vertex, 5) is Some(upload) else {
+    fail("expected upload plan")
+  }
+  inspect(upload.slab_id(), content="\{plan.slab_id()}")
+  inspect(upload.label(), content="general mesh slab 0 (vertex buffer)")
+  inspect(upload.usage() is VertexBuffer, content="true")
+  inspect(upload.offset(), content="0")
+  inspect(upload.size(), content="12")
+  inspect(upload.mapped_at_creation(), content="false")
+  inspect(allocator.mark_resident(37, Vertex), content="true")
+  inspect(allocator.pending_upload_plan(37, Vertex, 5) is None, content="true")
+}
+
+///|
+test "render mesh allocator: large upload plans preserve mapped buffer labels" {
+  let allocator = MeshAllocator::new(general_vertex_slabs_supported=false)
+  guard allocator.allocate(38, 96, MeshAllocatorElementLayout::vertex(32))
+    is Some(plan) else {
+    fail("expected large allocation")
+  }
+  guard allocator.pending_upload_plan(38, Vertex, 96) is Some(upload) else {
+    fail("expected large upload plan")
+  }
+  inspect(plan.kind() is LargeObject, content="true")
+  inspect(upload.label(), content="large mesh slab 0 (vertex buffer)")
+  inspect(upload.offset(), content="0")
+  inspect(upload.size(), content="96")
+  inspect(upload.mapped_at_creation(), content="true")
+}
+
+///|
+test "render mesh allocator: reallocation plan preserves bevy copy size" {
+  let allocator = MeshAllocator::new()
+  let layout = MeshAllocatorElementLayout::index_u16()
+  let settings = MeshAllocatorSettings::new(
+    min_slab_size=8,
+    max_slab_size=64,
+    large_threshold=128,
+    growth_factor=2.0F,
+  )
+  guard allocator.allocate(39, 8, layout, settings~) is Some(first) else {
+    fail("expected first allocation")
+  }
+  guard allocator.allocate(40, 8, layout, settings~) is Some(second) else {
+    fail("expected second allocation")
+  }
+  inspect(first.current_slot_capacity(), content="2")
+  inspect(second.growth().old_slot_capacity(), content="2")
+  guard allocator.reallocate_slab_plan(0, second.growth().old_slot_capacity())
+    is Some(reallocate) else {
+    fail("expected reallocation plan")
+  }
+  inspect(reallocate.label(), content="general mesh slab 0 (index buffer)")
+  inspect(reallocate.usage() is IndexBuffer, content="true")
+  inspect(reallocate.new_size(), content="16")
+  inspect(reallocate.old_copy_size(), content="8")
+}
+
+///|
 test "render mesh allocator: webgl-style vertex allocation uses large slabs" {
   let allocator = MeshAllocator::new(general_vertex_slabs_supported=false)
   guard allocator.allocate(40, 96, MeshAllocatorElementLayout::vertex(32))
