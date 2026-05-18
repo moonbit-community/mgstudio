@@ -60,6 +60,14 @@ fn render3d_main_pass_deband_dither_enabled(
 }
 
 ///|
+fn render3d_main_pass_skips_deferred_opaque(
+  material_properties : @material.MaterialProperties,
+) -> Bool {
+  material_properties.render_phase_type is @material.RenderPhaseType::Opaque &&
+  material_properties.render_method is OpaqueRendererMethod::Deferred
+}
+
+///|
 fn render3d_draw_gizmo_lines_3d(
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
@@ -262,9 +270,7 @@ fn render3d_execute_camera_main_pass(
       }
     }
     let material_properties = mesh.material_properties
-    let mesh_opaque_mode = material_properties.render_method
-    if mesh_opaque_mode is OpaqueRendererMethod::Deferred &&
-      !camera_deferred_enabled {
+    if render3d_main_pass_skips_deferred_opaque(material_properties) {
       continue
     }
     guard render3d_mesh_draw_alpha(
