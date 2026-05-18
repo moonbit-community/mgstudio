@@ -22,9 +22,17 @@ pub fn[T] batch_meta_sort_and_merge(Array[BatchMeta[T]], (T, T) -> Bool) -> Arra
 
 pub fn[T] clear_batched_cpu_instance_buffers(BatchedInstanceBuffer[T]?) -> Unit
 
+pub fn get_or_create_work_item_buffer(@hashmap.HashMap[String, PreprocessWorkItemBuffers], String, Bool, Bool) -> PreprocessWorkItemBuffers
+
 pub fn gpu_preprocessing_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gpu_preprocessing_plugin_with(@app.App[@ecs.World], GpuPreprocessingPlugin) -> @app.App[@ecs.World]
+
+pub fn init_work_item_buffers(PreprocessWorkItemBuffers, Array[LatePreprocessWorkItemIndirectParameters], Array[LatePreprocessWorkItemIndirectParameters]) -> Unit
+
+pub fn preprocess_work_item_buffers_direct() -> PreprocessWorkItemBuffers
+
+pub fn preprocess_work_item_buffers_indirect(Bool) -> PreprocessWorkItemBuffers
 
 pub fn[T] write_batched_instance_buffer(BatchedInstanceBuffer[T]) -> Array[T]
 
@@ -50,13 +58,21 @@ pub fn[T] BatchedInstanceBuffer::push(Self[T], T) -> Unit
 pub fn[T] BatchedInstanceBuffer::values(Self[T]) -> Array[T]
 
 pub struct BatchedInstanceBuffers[BD, BDI] {
-  current_input_buffer : @render_resource.GpuArrayBuffer[BDI]
-  previous_input_buffer : @render_resource.GpuArrayBuffer[BDI]
+  current_input_buffer : InstanceInputUniformBuffer[BDI]
+  previous_input_buffer : InstanceInputUniformBuffer[BDI]
   phase_instance_buffers : @hashmap.HashMap[String, PhaseBatchedInstanceBuffers[BD]]
 }
 pub fn[BD, BDI] BatchedInstanceBuffers::clear(Self[BD, BDI]) -> Unit
 pub fn[BD, BDI] BatchedInstanceBuffers::new() -> Self[BD, BDI]
 pub fn[BD, BDI] BatchedInstanceBuffers::swap_input_buffers(Self[BD, BDI]) -> Unit
+
+pub struct GpuOcclusionCullingWorkItemBuffers {
+  late_indexed : Array[PreprocessWorkItem]
+  late_non_indexed : Array[PreprocessWorkItem]
+  mut late_indirect_parameters_indexed_offset : Int
+  mut late_indirect_parameters_non_indexed_offset : Int
+}
+pub fn GpuOcclusionCullingWorkItemBuffers::new() -> Self
 
 pub(all) enum GpuPreprocessingMode {
   None
@@ -81,6 +97,30 @@ pub fn GpuPreprocessingSupport::min(Self, GpuPreprocessingMode) -> GpuPreprocess
 pub impl @app.Resource for GpuPreprocessingSupport
 pub impl @ecs.EcsPayloadCodec for GpuPreprocessingSupport
 
+pub struct InstanceInputUniformBuffer[BDI] {
+  buffer : Array[BDI]
+  free_uniform_indices : Array[Int]
+}
+pub fn[BDI] InstanceInputUniformBuffer::add(Self[BDI], BDI) -> Int
+pub fn[BDI] InstanceInputUniformBuffer::clear(Self[BDI]) -> Unit
+pub fn[BDI] InstanceInputUniformBuffer::ensure_nonempty(Self[BDI], BDI) -> Unit
+pub fn[BDI] InstanceInputUniformBuffer::get(Self[BDI], Int) -> BDI?
+pub fn[BDI] InstanceInputUniformBuffer::get_unchecked(Self[BDI], Int) -> BDI
+pub fn[BDI] InstanceInputUniformBuffer::is_empty(Self[BDI]) -> Bool
+pub fn[BDI] InstanceInputUniformBuffer::len(Self[BDI]) -> Int
+pub fn[BDI] InstanceInputUniformBuffer::new() -> Self[BDI]
+pub fn[BDI] InstanceInputUniformBuffer::remove(Self[BDI], Int) -> Unit
+pub fn[BDI] InstanceInputUniformBuffer::set(Self[BDI], Int, BDI) -> Unit
+pub fn[BDI] InstanceInputUniformBuffer::values(Self[BDI]) -> Array[BDI]
+
+pub struct LatePreprocessWorkItemIndirectParameters {
+  dispatch_x : Int
+  dispatch_y : Int
+  dispatch_z : Int
+  work_item_count : Int
+} derive(Eq, @debug.Debug)
+pub fn LatePreprocessWorkItemIndirectParameters::default() -> Self
+
 pub struct NoAutomaticBatching {
 }
 pub fn NoAutomaticBatching::default() -> Self
@@ -92,9 +132,32 @@ pub struct PhaseBatchedInstanceBuffers[BD] {
 pub fn[BD] PhaseBatchedInstanceBuffers::clear(Self[BD]) -> Unit
 pub fn[BD] PhaseBatchedInstanceBuffers::new() -> Self[BD]
 
-pub struct UntypedPhaseBatchedInstanceBuffers[BD] {
-  values : @render_resource.GpuArrayBuffer[BD]
+pub struct PreprocessWorkItem {
+  input_index : Int
+  output_or_indirect_parameters_index : Int
+} derive(Eq, @debug.Debug)
+pub fn PreprocessWorkItem::new(Int, Int) -> Self
+
+pub(all) enum PreprocessWorkItemBuffers {
+  Direct(Array[PreprocessWorkItem])
+  Indirect(Array[PreprocessWorkItem], Array[PreprocessWorkItem], GpuOcclusionCullingWorkItemBuffers?)
 }
+pub fn PreprocessWorkItemBuffers::clear(Self) -> Unit
+pub fn PreprocessWorkItemBuffers::direct_len(Self) -> Int
+pub fn PreprocessWorkItemBuffers::indexed_len(Self) -> Int
+pub fn PreprocessWorkItemBuffers::late_indexed_len(Self) -> Int
+pub fn PreprocessWorkItemBuffers::late_indirect_offsets(Self) -> (Int, Int)?
+pub fn PreprocessWorkItemBuffers::late_non_indexed_len(Self) -> Int
+pub fn PreprocessWorkItemBuffers::non_indexed_len(Self) -> Int
+pub fn PreprocessWorkItemBuffers::push(Self, Bool, PreprocessWorkItem) -> Unit
+
+pub struct UntypedPhaseBatchedInstanceBuffers[BD] {
+  data_buffer : @render_resource.GpuArrayBuffer[BD]
+  work_item_buffers : @hashmap.HashMap[String, PreprocessWorkItemBuffers]
+  late_indexed_indirect_parameters_buffer : Array[LatePreprocessWorkItemIndirectParameters]
+  late_non_indexed_indirect_parameters_buffer : Array[LatePreprocessWorkItemIndirectParameters]
+}
+pub fn[BD] UntypedPhaseBatchedInstanceBuffers::clear(Self[BD]) -> Unit
 pub fn[BD] UntypedPhaseBatchedInstanceBuffers::new() -> Self[BD]
 
 // Type aliases

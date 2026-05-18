@@ -64,9 +64,120 @@ pub fn GpuPreprocessingSupport::is_culling_supported(
 }
 
 ///|
+pub struct InstanceInputUniformBuffer[BDI] {
+  buffer : Array[BDI]
+  free_uniform_indices : Array[Int]
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::new() -> InstanceInputUniformBuffer[BDI] {
+  InstanceInputUniformBuffer::{ buffer: [], free_uniform_indices: [] }
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::clear(
+  self : InstanceInputUniformBuffer[BDI],
+) -> Unit {
+  self.buffer.clear()
+  self.free_uniform_indices.clear()
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::add(
+  self : InstanceInputUniformBuffer[BDI],
+  element : BDI,
+) -> Int {
+  match self.free_uniform_indices.pop() {
+    Some(uniform_index) => {
+      self.buffer[uniform_index] = element
+      uniform_index
+    }
+    None => {
+      let uniform_index = self.buffer.length()
+      self.buffer.push(element)
+      uniform_index
+    }
+  }
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::remove(
+  self : InstanceInputUniformBuffer[BDI],
+  uniform_index : Int,
+) -> Unit {
+  if uniform_index >= 0 &&
+    uniform_index < self.buffer.length() &&
+    !self.free_uniform_indices.contains(uniform_index) {
+    self.free_uniform_indices.push(uniform_index)
+  }
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::get(
+  self : InstanceInputUniformBuffer[BDI],
+  uniform_index : Int,
+) -> BDI? {
+  if uniform_index < 0 ||
+    uniform_index >= self.buffer.length() ||
+    self.free_uniform_indices.contains(uniform_index) {
+    None
+  } else {
+    Some(self.buffer[uniform_index])
+  }
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::get_unchecked(
+  self : InstanceInputUniformBuffer[BDI],
+  uniform_index : Int,
+) -> BDI {
+  self.buffer[uniform_index]
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::set(
+  self : InstanceInputUniformBuffer[BDI],
+  uniform_index : Int,
+  element : BDI,
+) -> Unit {
+  self.buffer[uniform_index] = element
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::ensure_nonempty(
+  self : InstanceInputUniformBuffer[BDI],
+  default_value : BDI,
+) -> Unit {
+  if self.buffer.is_empty() {
+    self.buffer.push(default_value)
+  }
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::len(
+  self : InstanceInputUniformBuffer[BDI],
+) -> Int {
+  self.buffer.length()
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::is_empty(
+  self : InstanceInputUniformBuffer[BDI],
+) -> Bool {
+  self.buffer.is_empty()
+}
+
+///|
+pub fn[BDI] InstanceInputUniformBuffer::values(
+  self : InstanceInputUniformBuffer[BDI],
+) -> Array[BDI] {
+  self.buffer
+}
+
+///|
 pub struct BatchedInstanceBuffers[BD, BDI] {
-  current_input_buffer : @render_resource.GpuArrayBuffer[BDI]
-  previous_input_buffer : @render_resource.GpuArrayBuffer[BDI]
+  current_input_buffer : InstanceInputUniformBuffer[BDI]
+  previous_input_buffer : InstanceInputUniformBuffer[BDI]
   phase_instance_buffers : @hashmap.HashMap[
     String,
     PhaseBatchedInstanceBuffers[BD],
@@ -76,8 +187,8 @@ pub struct BatchedInstanceBuffers[BD, BDI] {
 ///|
 pub fn[BD, BDI] BatchedInstanceBuffers::new() -> BatchedInstanceBuffers[BD, BDI] {
   BatchedInstanceBuffers::{
-    current_input_buffer: @render_resource.GpuArrayBuffer::new(),
-    previous_input_buffer: @render_resource.GpuArrayBuffer::new(),
+    current_input_buffer: InstanceInputUniformBuffer::new(),
+    previous_input_buffer: InstanceInputUniformBuffer::new(),
     phase_instance_buffers: @hashmap.HashMap([]),
   }
 }
@@ -97,14 +208,21 @@ pub fn[BD, BDI] BatchedInstanceBuffers::swap_input_buffers(
 ) -> Unit {
   self.previous_input_buffer.clear()
   for value in self.current_input_buffer.values() {
-    self.previous_input_buffer.push(value)
+    ignore(self.previous_input_buffer.add(value))
   }
   self.current_input_buffer.clear()
 }
 
 ///|
 pub struct UntypedPhaseBatchedInstanceBuffers[BD] {
-  values : @render_resource.GpuArrayBuffer[BD]
+  data_buffer : @render_resource.GpuArrayBuffer[BD]
+  work_item_buffers : @hashmap.HashMap[String, PreprocessWorkItemBuffers]
+  late_indexed_indirect_parameters_buffer : Array[
+    LatePreprocessWorkItemIndirectParameters,
+  ]
+  late_non_indexed_indirect_parameters_buffer : Array[
+    LatePreprocessWorkItemIndirectParameters,
+  ]
 }
 
 ///|
@@ -112,8 +230,21 @@ pub fn[BD] UntypedPhaseBatchedInstanceBuffers::new() -> UntypedPhaseBatchedInsta
   BD,
 ] {
   UntypedPhaseBatchedInstanceBuffers::{
-    values: @render_resource.GpuArrayBuffer::new(),
+    data_buffer: @render_resource.GpuArrayBuffer::new(),
+    work_item_buffers: @hashmap.HashMap([]),
+    late_indexed_indirect_parameters_buffer: [],
+    late_non_indexed_indirect_parameters_buffer: [],
   }
+}
+
+///|
+pub fn[BD] UntypedPhaseBatchedInstanceBuffers::clear(
+  self : UntypedPhaseBatchedInstanceBuffers[BD],
+) -> Unit {
+  self.data_buffer.clear()
+  self.work_item_buffers.clear()
+  self.late_indexed_indirect_parameters_buffer.clear()
+  self.late_non_indexed_indirect_parameters_buffer.clear()
 }
 
 ///|
@@ -134,8 +265,265 @@ pub fn[BD] PhaseBatchedInstanceBuffers::new() -> PhaseBatchedInstanceBuffers[BD]
 pub fn[BD] PhaseBatchedInstanceBuffers::clear(
   self : PhaseBatchedInstanceBuffers[BD],
 ) -> Unit {
-  self.buffers.values.clear()
+  self.buffers.clear()
   self.marker = 0
+}
+
+///|
+pub struct PreprocessWorkItem {
+  input_index : Int
+  output_or_indirect_parameters_index : Int
+} derive(Eq, Debug)
+
+///|
+pub fn PreprocessWorkItem::new(
+  input_index : Int,
+  output_or_indirect_parameters_index : Int,
+) -> PreprocessWorkItem {
+  PreprocessWorkItem::{ input_index, output_or_indirect_parameters_index }
+}
+
+///|
+pub struct LatePreprocessWorkItemIndirectParameters {
+  dispatch_x : Int
+  dispatch_y : Int
+  dispatch_z : Int
+  work_item_count : Int
+} derive(Eq, Debug)
+
+///|
+pub fn LatePreprocessWorkItemIndirectParameters::default() -> LatePreprocessWorkItemIndirectParameters {
+  LatePreprocessWorkItemIndirectParameters::{
+    dispatch_x: 0,
+    dispatch_y: 1,
+    dispatch_z: 1,
+    work_item_count: 0,
+  }
+}
+
+///|
+pub struct GpuOcclusionCullingWorkItemBuffers {
+  late_indexed : Array[PreprocessWorkItem]
+  late_non_indexed : Array[PreprocessWorkItem]
+  mut late_indirect_parameters_indexed_offset : Int
+  mut late_indirect_parameters_non_indexed_offset : Int
+}
+
+///|
+pub fn GpuOcclusionCullingWorkItemBuffers::new() -> GpuOcclusionCullingWorkItemBuffers {
+  GpuOcclusionCullingWorkItemBuffers::{
+    late_indexed: [],
+    late_non_indexed: [],
+    late_indirect_parameters_indexed_offset: 0,
+    late_indirect_parameters_non_indexed_offset: 0,
+  }
+}
+
+///|
+pub(all) enum PreprocessWorkItemBuffers {
+  Direct(Array[PreprocessWorkItem])
+  Indirect(
+    Array[PreprocessWorkItem],
+    Array[PreprocessWorkItem],
+    GpuOcclusionCullingWorkItemBuffers?
+  )
+}
+
+///|
+pub fn preprocess_work_item_buffers_direct() -> PreprocessWorkItemBuffers {
+  PreprocessWorkItemBuffers::Direct([])
+}
+
+///|
+pub fn preprocess_work_item_buffers_indirect(
+  enable_gpu_occlusion_culling : Bool,
+) -> PreprocessWorkItemBuffers {
+  PreprocessWorkItemBuffers::Indirect(
+    [],
+    [],
+    if enable_gpu_occlusion_culling {
+      Some(GpuOcclusionCullingWorkItemBuffers::new())
+    } else {
+      None
+    },
+  )
+}
+
+///|
+pub fn get_or_create_work_item_buffer(
+  work_item_buffers : @hashmap.HashMap[String, PreprocessWorkItemBuffers],
+  view : String,
+  no_indirect_drawing : Bool,
+  enable_gpu_occlusion_culling : Bool,
+) -> PreprocessWorkItemBuffers {
+  let current = match work_item_buffers.get(view) {
+    Some(buffer) => buffer
+    None => {
+      let buffer = if no_indirect_drawing {
+        preprocess_work_item_buffers_direct()
+      } else {
+        preprocess_work_item_buffers_indirect(enable_gpu_occlusion_culling)
+      }
+      work_item_buffers.set(view, buffer)
+      buffer
+    }
+  }
+  match current {
+    Indirect(indexed, non_indexed, gpu_occlusion_culling) => {
+      let next_gpu_occlusion_culling = match
+        (enable_gpu_occlusion_culling, gpu_occlusion_culling) {
+        (true, Some(existing)) => Some(existing)
+        (true, None) => Some(GpuOcclusionCullingWorkItemBuffers::new())
+        (false, _) => None
+      }
+      let next = PreprocessWorkItemBuffers::Indirect(
+        indexed, non_indexed, next_gpu_occlusion_culling,
+      )
+      work_item_buffers.set(view, next)
+      next
+    }
+    Direct(_) => current
+  }
+}
+
+///|
+pub fn init_work_item_buffers(
+  work_item_buffers : PreprocessWorkItemBuffers,
+  late_indexed_indirect_parameters_buffer : Array[
+    LatePreprocessWorkItemIndirectParameters,
+  ],
+  late_non_indexed_indirect_parameters_buffer : Array[
+    LatePreprocessWorkItemIndirectParameters,
+  ],
+) -> Unit {
+  match work_item_buffers {
+    Indirect(_, _, Some(gpu_occlusion_culling)) => {
+      gpu_occlusion_culling.late_indirect_parameters_indexed_offset = late_indexed_indirect_parameters_buffer.length()
+      late_indexed_indirect_parameters_buffer.push(
+        LatePreprocessWorkItemIndirectParameters::default(),
+      )
+      gpu_occlusion_culling.late_indirect_parameters_non_indexed_offset = late_non_indexed_indirect_parameters_buffer.length()
+      late_non_indexed_indirect_parameters_buffer.push(
+        LatePreprocessWorkItemIndirectParameters::default(),
+      )
+    }
+    _ => ()
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::push(
+  self : PreprocessWorkItemBuffers,
+  indexed : Bool,
+  preprocess_work_item : PreprocessWorkItem,
+) -> Unit {
+  match self {
+    Direct(buffer) => buffer.push(preprocess_work_item)
+    Indirect(indexed_buffer, non_indexed_buffer, gpu_occlusion_culling) => {
+      if indexed {
+        indexed_buffer.push(preprocess_work_item)
+      } else {
+        non_indexed_buffer.push(preprocess_work_item)
+      }
+      match gpu_occlusion_culling {
+        Some(buffers) =>
+          if indexed {
+            buffers.late_indexed.push(preprocess_work_item)
+          } else {
+            buffers.late_non_indexed.push(preprocess_work_item)
+          }
+        None => ()
+      }
+    }
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::clear(
+  self : PreprocessWorkItemBuffers,
+) -> Unit {
+  match self {
+    Direct(buffer) => buffer.clear()
+    Indirect(indexed_buffer, non_indexed_buffer, gpu_occlusion_culling) => {
+      indexed_buffer.clear()
+      non_indexed_buffer.clear()
+      match gpu_occlusion_culling {
+        Some(buffers) => {
+          buffers.late_indexed.clear()
+          buffers.late_non_indexed.clear()
+          buffers.late_indirect_parameters_indexed_offset = 0
+          buffers.late_indirect_parameters_non_indexed_offset = 0
+        }
+        None => ()
+      }
+    }
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::direct_len(
+  self : PreprocessWorkItemBuffers,
+) -> Int {
+  match self {
+    Direct(buffer) => buffer.length()
+    Indirect(_, _, _) => 0
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::indexed_len(
+  self : PreprocessWorkItemBuffers,
+) -> Int {
+  match self {
+    Direct(_) => 0
+    Indirect(indexed_buffer, _, _) => indexed_buffer.length()
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::non_indexed_len(
+  self : PreprocessWorkItemBuffers,
+) -> Int {
+  match self {
+    Direct(_) => 0
+    Indirect(_, non_indexed_buffer, _) => non_indexed_buffer.length()
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::late_indexed_len(
+  self : PreprocessWorkItemBuffers,
+) -> Int {
+  match self {
+    Indirect(_, _, Some(buffers)) => buffers.late_indexed.length()
+    _ => 0
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::late_non_indexed_len(
+  self : PreprocessWorkItemBuffers,
+) -> Int {
+  match self {
+    Indirect(_, _, Some(buffers)) => buffers.late_non_indexed.length()
+    _ => 0
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::late_indirect_offsets(
+  self : PreprocessWorkItemBuffers,
+) -> (Int, Int)? {
+  match self {
+    Indirect(_, _, Some(buffers)) =>
+      Some(
+        (
+          buffers.late_indirect_parameters_indexed_offset,
+          buffers.late_indirect_parameters_non_indexed_offset,
+        ),
+      )
+    _ => None
+  }
 }
 
 ///|
