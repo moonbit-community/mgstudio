@@ -35,6 +35,16 @@ pub const CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT : UInt = 3
 
 pub const DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID : Int = 1
 
+pub const DEFERRED_LIGHTING_LAYOUT_GROUP_2_LABEL : String = "deferred_lighting_layout_group_2"
+
+pub const DEFERRED_LIGHTING_LAYOUT_LABEL : String = "deferred_lighting_layout"
+
+pub const DEFERRED_LIGHTING_PASS_LABEL : String = "deferred_lighting"
+
+pub const DEFERRED_LIGHTING_PIPELINE_LABEL : String = "deferred_lighting_pipeline"
+
+pub const DEFERRED_LIGHTING_SHADER_PATH : String = "pbr/deferred/deferred_lighting.wgsl"
+
 pub const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05
 
 pub const MATERIAL_BIND_GROUP_INDEX : Int = 3
@@ -99,6 +109,16 @@ pub fn contact_shadows_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.Wor
 
 pub fn contact_shadows_plugin_install_with(@app.App[@ecs.World], ContactShadowsPlugin) -> @app.App[@ecs.World]
 
+pub fn deferred_lighting_color_target_format(@Milky2018/mgstudio/pbr/deferred.DeferredLightingViewState) -> String
+
+pub fn deferred_lighting_pass_plan(has_pipeline? : Bool, has_depth_id_binding? : Bool, has_mesh_view_bind_group? : Bool, has_view_target? : Bool, has_deferred_lighting_id_depth_texture? : Bool) -> @Milky2018/mgstudio/pbr/deferred.DeferredLightingPassPlan
+
+pub fn deferred_lighting_pipeline_descriptor_plan(@Milky2018/mgstudio/pbr/deferred.DeferredLightingViewState) -> @Milky2018/mgstudio/pbr/deferred.DeferredLightingPipelineDescriptorPlan
+
+pub fn deferred_lighting_prepare_plan(@Milky2018/mgstudio/pbr/deferred.DeferredLightingViewState) -> @Milky2018/mgstudio/pbr/deferred.DeferredLightingPreparePlan
+
+pub fn deferred_lighting_shader_defs(@Milky2018/mgstudio/pbr/deferred.DeferredLightingViewState) -> Array[String]
+
 pub fn deferred_pbr_lighting_enabled(@ecs.World) -> Bool
 
 pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -134,6 +154,8 @@ pub let ecs_key_custom_post_process3d : @ecs.ComponentKey[@post_process.CustomPo
 pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[@material.DefaultOpaqueRendererMethod]
+
+pub let ecs_key_deferred_lighting_pipeline : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/deferred.DeferredLightingPipeline]
 
 pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[@Milky2018/mgstudio/pbr/deferred.DeferredPbrLightingState]
 
@@ -240,6 +262,8 @@ pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[@post_process.Scree
 pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[@transmission.ScreenSpaceTransmission]
 
 pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[ShadowFilteringMethod]
+
+pub let ecs_key_skip_deferred_lighting : @ecs.ComponentKey[@Milky2018/mgstudio/pbr/deferred.SkipDeferredLighting]
 
 pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
 
@@ -1442,6 +1466,18 @@ pub using @post_process {type DebandDither}
 
 pub using @material {type DefaultOpaqueRendererMethod}
 
+pub using @Milky2018/mgstudio/pbr/deferred {type DeferredLightingPassPlan}
+
+pub using @Milky2018/mgstudio/pbr/deferred {type DeferredLightingPipeline}
+
+pub using @Milky2018/mgstudio/pbr/deferred {type DeferredLightingPipelineDescriptorPlan}
+
+pub using @Milky2018/mgstudio/pbr/deferred {type DeferredLightingPreparePlan}
+
+pub using @Milky2018/mgstudio/pbr/deferred {type DeferredLightingShadowFilteringMethod}
+
+pub using @Milky2018/mgstudio/pbr/deferred {type DeferredLightingViewState}
+
 pub using @Milky2018/mgstudio/pbr/deferred {type DeferredPbrLightingPlugin}
 
 pub using @Milky2018/mgstudio/pbr/deferred {type DeferredPbrLightingState}
@@ -1539,6 +1575,8 @@ pub using @transmission {type ScreenSpaceTransmission}
 pub using @transmission {type ScreenSpaceTransmissionQuality}
 
 pub using @light {type ShowLightGizmo}
+
+pub using @Milky2018/mgstudio/pbr/deferred {type SkipDeferredLighting}
 
 pub using @light {type SpotLight}
 

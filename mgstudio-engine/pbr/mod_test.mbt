@@ -223,6 +223,46 @@ test "render3d: pbr plugin config updates runtime feature switches" {
 }
 
 ///|
+test "render3d: root pbr exposes deferred lighting planning surface" {
+  let state = DeferredLightingViewState::new(
+    deferred_prepass=true,
+    tonemapping=Some(Tonemapping::TonyMcMapface),
+    deband_dither=Some(DebandDither::Enabled),
+    shadow_filter_method=Some(
+      DeferredLightingShadowFilteringMethod::Hardware2x2,
+    ),
+    normal_prepass=true,
+  )
+  let prepare = deferred_lighting_prepare_plan(state)
+  debug_inspect(prepare.should_prepare, content="true")
+  debug_inspect(prepare.shader_defs.length(), content="7")
+  debug_inspect(
+    prepare.shader_defs[0],
+    content="\"DEFERRED_LIGHTING_PIPELINE\"",
+  )
+  debug_inspect(
+    prepare.shader_defs[2],
+    content="\"TONEMAP_METHOD_TONY_MC_MAPFACE\"",
+  )
+  debug_inspect(prepare.shader_defs[4], content="\"NORMAL_PREPASS\"")
+  debug_inspect(
+    prepare.shader_defs[6],
+    content="\"SHADOW_FILTER_METHOD_HARDWARE_2X2\"",
+  )
+
+  let pass = deferred_lighting_pass_plan(
+    has_pipeline=true,
+    has_depth_id_binding=true,
+    has_mesh_view_bind_group=true,
+    has_view_target=true,
+    has_deferred_lighting_id_depth_texture=true,
+  )
+  debug_inspect(pass.should_run, content="true")
+  debug_inspect(pass.bind_group_count, content="3")
+  debug_inspect(pass.dynamic_offset_count, content="7")
+}
+
+///|
 test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@render.RenderPlugin::default())
