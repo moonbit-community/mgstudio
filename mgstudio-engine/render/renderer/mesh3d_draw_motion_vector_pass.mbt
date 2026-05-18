@@ -185,9 +185,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   pass.set_bind_group(0U, view_bg, [])
   pass.set_bind_group(1U, empty_bg, [])
   pass.set_bind_group(2U, active_mesh_bg, [])
-  let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
-    mesh.vertex_stride_bytes
-  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
+  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
   if use_indirect && preprocess_state is Some(preprocess_state) {
     if indirect_kind == MESH3D_DRAW_INDIRECT_KIND_INDEXED &&
       preprocess_state.indexed_indirect_parameters_buffer
@@ -206,10 +204,22 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
       )
     } else {
       gpu_mesh_bind_index_buffer(pass, mesh)
-      pass.draw_indexed(mesh.index_count, 1U, 0U, 0, mesh_index)
+      pass.draw_indexed(
+        mesh.index_count,
+        1U,
+        mesh.index_start,
+        mesh.vertex_start.reinterpret_as_int(),
+        mesh_index,
+      )
     }
   } else {
     gpu_mesh_bind_index_buffer(pass, mesh)
-    pass.draw_indexed(mesh.index_count, 1U, 0U, 0, mesh_index)
+    pass.draw_indexed(
+      mesh.index_count,
+      1U,
+      mesh.index_start,
+      mesh.vertex_start.reinterpret_as_int(),
+      mesh_index,
+    )
   }
 }

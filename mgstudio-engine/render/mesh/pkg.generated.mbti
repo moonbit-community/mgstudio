@@ -8,24 +8,6 @@ import {
 // Values
 pub const MESH_ALLOCATOR_COPY_BUFFER_ALIGNMENT : Int = 4
 
-pub fn host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
-
-pub fn host_gpu_create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Int
-
-pub fn host_gpu_create_mesh_capsule(radius~ : Float, half_length~ : Float, segments~ : Int) -> Int
-
-pub fn host_gpu_create_mesh_rectangle(width~ : Float, height~ : Float) -> Int
-
-pub fn host_gpu_create_mesh_triangles(vertices_xy_csv~ : String) -> Int
-
-pub fn host_gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv~ : String) -> Int
-
-pub fn host_gpu_create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int
-
-pub fn host_gpu_prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
-
-pub fn host_gpu_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Bool
-
 pub fn mesh_allocator_grow_general_slab_if_necessary(Int, Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> MeshAllocatorSlabGrowth
 
 pub fn mesh_allocator_plan_large_slab(Int, Int, MeshAllocatorElementLayout) -> MeshAllocatorSlabPlan
@@ -49,7 +31,9 @@ pub fn MeshAllocator::allocate_render_mesh(Self, Int, RenderMesh, Int, index_lay
 pub fn MeshAllocator::allocations(Self) -> Int
 pub fn MeshAllocator::free_mesh(Self, Int) -> Unit
 pub fn MeshAllocator::free_meshes(Self, Array[Int], Array[Int]) -> Unit
+pub fn MeshAllocator::mark_index_resident(Self, Int) -> Bool
 pub fn MeshAllocator::mark_resident(Self, Int, MeshAllocatorElementClass) -> Bool
+pub fn MeshAllocator::mark_vertex_resident(Self, Int) -> Bool
 pub fn MeshAllocator::mesh_index_slice(Self, Int) -> MeshAllocatorSlice?
 pub fn MeshAllocator::mesh_slabs(Self, Int) -> (Int?, Int?)
 pub fn MeshAllocator::mesh_slice_in_slab(Self, Int, Int) -> MeshAllocatorSlice?
@@ -83,6 +67,8 @@ pub(all) enum MeshAllocatorBufferUsage {
   VertexBuffer
   IndexBuffer
 } derive(Eq, @debug.Debug)
+pub fn MeshAllocatorBufferUsage::is_index_buffer(Self) -> Bool
+pub fn MeshAllocatorBufferUsage::is_vertex_buffer(Self) -> Bool
 
 pub(all) enum MeshAllocatorElementClass {
   Vertex

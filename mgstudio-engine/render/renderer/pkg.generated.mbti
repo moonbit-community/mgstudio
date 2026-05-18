@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/render/renderer"
 
 import {
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/mesh",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
@@ -728,6 +729,8 @@ pub struct GpuBackend {
   mut active_surface_target_id : Int
   textures : Array[GpuTextureInfo]
   meshes : Array[GpuMeshInfo]
+  mesh_allocator : @mesh.MeshAllocator
+  mesh_allocator_buffers : Array[GpuMeshAllocatorBuffer]
 }
 pub fn GpuBackend::activate_auto_exposure_view_state(Self, Int, Int) -> Unit
 pub fn GpuBackend::apply_auto_exposure(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Bytes, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
@@ -844,10 +847,16 @@ pub struct GpuFrameState {
 
 type GpuMesh3dPreprocessCameraUploadState
 
+type GpuMeshAllocatorBuffer
+
 pub struct GpuMeshInfo {
   id : Int
   index_count : UInt
   vertex_count : UInt
+  index_start : UInt
+  vertex_start : UInt
+  index_slab_id : Int
+  vertex_slab_id : Int
   primitive_topology : UInt
   vertex_stride_bytes : UInt64
   index_stride_bytes : UInt64

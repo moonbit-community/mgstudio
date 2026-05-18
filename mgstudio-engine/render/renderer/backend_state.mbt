@@ -393,4 +393,6 @@ pub struct GpuBackend {
   mut active_surface_target_id : Int
   textures : Array[GpuTextureInfo]
   meshes : Array[GpuMeshInfo]
+  mesh_allocator : @render_mesh.MeshAllocator
+  mesh_allocator_buffers : Array[GpuMeshAllocatorBuffer]
 }

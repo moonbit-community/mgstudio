@@ -85,6 +85,205 @@ fn mesh3d_vertex_bytes(vertices : Array[Float]) -> Bytes {
 }
 
 ///|
+fn mesh3d_pad_upload_bytes(bytes : Bytes, byte_len : Int) -> Bytes {
+  if byte_len <= bytes.length() {
+    return bytes
+  }
+  let out = bytes.to_array()
+  for _ in 0..<(byte_len - bytes.length()) {
+    out.push((0).to_byte())
+  }
+  Bytes::from_array(out)
+}
+
+///|
+fn mesh3d_allocator_usage_kind(
+  usage : @render_mesh.MeshAllocatorBufferUsage,
+) -> Int {
+  if usage.is_vertex_buffer() {
+    0
+  } else {
+    1
+  }
+}
+
+///|
+fn mesh3d_allocator_buffer_usage(
+  usage : @render_mesh.MeshAllocatorBufferUsage,
+  copy_src~ : Bool,
+) -> @wgpu.BufferUsage {
+  let mut raw = @wgpu.BUFFER_USAGE_COPY_DST
+  if copy_src {
+    raw = raw | @wgpu.BUFFER_USAGE_COPY_SRC
+  }
+  if usage.is_vertex_buffer() {
+    raw = raw | @wgpu.BUFFER_USAGE_VERTEX
+  } else {
+    raw = raw | @wgpu.BUFFER_USAGE_INDEX
+  }
+  bu(raw)
+}
+
+///|
+fn mesh3d_allocator_buffer_index(
+  buffers : Array[GpuMeshAllocatorBuffer],
+  slab_id : Int,
+  usage_kind : Int,
+) -> Int? {
+  for index in 0..<buffers.length() {
+    let buffer = buffers[index]
+    if buffer.slab_id == slab_id && buffer.usage_kind == usage_kind {
+      return Some(index)
+    }
+  }
+  None
+}
+
+///|
+fn GpuBackend::mesh3d_update_mesh_infos_for_allocator_buffer(
+  self : GpuBackend,
+  slab_id : Int,
+  usage_kind : Int,
+  buffer : @wgpu.Buffer,
+) -> Unit {
+  for index in 0..<self.meshes.length() {
+    let mesh = self.meshes[index]
+    if usage_kind == 0 && mesh.vertex_slab_id == slab_id {
+      self.meshes[index] = GpuMeshInfo::{ ..mesh, vertex_buf: buffer.add_ref() }
+    } else if usage_kind == 1 && mesh.index_slab_id == slab_id {
+      self.meshes[index] = GpuMeshInfo::{ ..mesh, index_buf: buffer.add_ref() }
+    }
+  }
+}
+
+///|
+fn GpuBackend::mesh3d_store_allocator_buffer(
+  self : GpuBackend,
+  slab_id : Int,
+  usage_kind : Int,
+  buffer : @wgpu.Buffer,
+) -> Unit {
+  match
+    mesh3d_allocator_buffer_index(
+      self.mesh_allocator_buffers,
+      slab_id,
+      usage_kind,
+    ) {
+    Some(index) => {
+      let old = self.mesh_allocator_buffers[index].buffer
+      self.frame_retired_buffers.push(old)
+      self.mesh_allocator_buffers[index] = GpuMeshAllocatorBuffer::{
+        slab_id,
+        usage_kind,
+        buffer: buffer.add_ref(),
+      }
+    }
+    None =>
+      self.mesh_allocator_buffers.push(GpuMeshAllocatorBuffer::{
+        slab_id,
+        usage_kind,
+        buffer: buffer.add_ref(),
+      })
+  }
+  self.mesh3d_update_mesh_infos_for_allocator_buffer(
+    slab_id, usage_kind, buffer,
+  )
+}
+
+///|
+fn GpuBackend::mesh3d_allocator_buffer(
+  self : GpuBackend,
+  slab_id : Int,
+  usage_kind : Int,
+) -> @wgpu.Buffer? {
+  match
+    mesh3d_allocator_buffer_index(
+      self.mesh_allocator_buffers,
+      slab_id,
+      usage_kind,
+    ) {
+    Some(index) => Some(self.mesh_allocator_buffers[index].buffer)
+    None => None
+  }
+}
+
+///|
+fn GpuBackend::mesh3d_reallocate_allocator_slab(
+  self : GpuBackend,
+  plan : @render_mesh.MeshAllocatorReallocateSlabPlan,
+) -> Unit {
+  let usage_kind = mesh3d_allocator_usage_kind(plan.usage())
+  let slab_id = plan.slab_id()
+  let new_buffer = self.device.create_buffer(
+    size=plan.new_size().to_uint64(),
+    usage=mesh3d_allocator_buffer_usage(plan.usage(), copy_src=true),
+  )
+  new_buffer.set_label(plan.label())
+  match self.mesh3d_allocator_buffer(slab_id, usage_kind) {
+    Some(old_buffer) =>
+      if plan.old_copy_size() > 0 {
+        let encoder = self.device.create_command_encoder()
+        encoder.copy_buffer_to_buffer(
+          old_buffer,
+          0UL,
+          new_buffer,
+          0UL,
+          plan.old_copy_size().to_uint64(),
+        )
+        let command_buffer = encoder.finish()
+        self.queue.submit_one(command_buffer)
+        command_buffer.release()
+        encoder.release()
+      }
+    None => ()
+  }
+  self.mesh3d_store_allocator_buffer(slab_id, usage_kind, new_buffer)
+}
+
+///|
+fn GpuBackend::mesh3d_execute_allocator_upload(
+  self : GpuBackend,
+  mesh_id : Int,
+  upload : @render_mesh.MeshAllocatorUploadPlan,
+  bytes : Bytes,
+) -> @wgpu.Buffer? {
+  let usage_kind = mesh3d_allocator_usage_kind(upload.usage())
+  let slab_id = upload.slab_id()
+  let buffer = match self.mesh3d_allocator_buffer(slab_id, usage_kind) {
+    Some(buffer) => buffer
+    None =>
+      if upload.mapped_at_creation() {
+        let created = self.device.create_buffer_init(
+          usage=mesh3d_allocator_buffer_usage(upload.usage(), copy_src=false),
+          mesh3d_pad_upload_bytes(bytes, upload.size()),
+        )
+        created.set_label(upload.label())
+        self.mesh3d_store_allocator_buffer(slab_id, usage_kind, created)
+        created
+      } else {
+        return None
+      }
+  }
+  if upload.mapped_at_creation() {
+    if buffer.size().to_int() != upload.size() {
+      self.queue.write_buffer(buffer, 0UL, bytes)
+    }
+  } else {
+    self.queue.write_buffer(
+      buffer,
+      upload.offset().to_uint64(),
+      mesh3d_pad_upload_bytes(bytes, upload.size()),
+    )
+  }
+  if upload.usage().is_vertex_buffer() {
+    ignore(self.mesh_allocator.mark_vertex_resident(mesh_id))
+  } else {
+    ignore(self.mesh_allocator.mark_index_resident(mesh_id))
+  }
+  Some(buffer)
+}
+
+///|
 pub fn GpuBackend::create_mesh3d_xyznuvrgba(
   self : GpuBackend,
   vertices : Array[Float],
@@ -123,29 +322,66 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba(
     }
     out
   }
-  let vb_usage = bu(@wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST)
-  let vb = self.device.create_buffer_init(
-    usage=vb_usage,
-    mesh3d_vertex_bytes(trimmed_vertices),
-  )
-  let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
-  let ib = if uses_u32_indices {
+  let vertex_bytes = mesh3d_vertex_bytes(trimmed_vertices)
+  let index_layout = if uses_u32_indices {
+    @render_mesh.MeshAllocatorElementLayout::index_u32()
+  } else {
+    @render_mesh.MeshAllocatorElementLayout::index_u16()
+  }
+  let index_bytes = if uses_u32_indices {
     let indices_u32 : Array[UInt] = []
     for i in 0..<usable_vcount {
       indices_u32.push(i.reinterpret_as_uint())
     }
-    self.device.create_buffer_init(usage=ib_usage, u32le_pack(indices_u32))
+    u32le_pack(indices_u32)
   } else {
     let indices_u16 : Array[Int] = []
     for i in 0..<usable_vcount {
       indices_u16.push(i)
     }
-    self.device.create_buffer_init(usage=ib_usage, u16le_pack(indices_u16))
+    u16le_pack(indices_u16)
+  }
+  let render_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=usable_vcount,
+    indexed=true,
+    index_count=usable_vcount,
+  )
+  let plan = self.mesh_allocator.allocate_render_mesh(
+    id,
+    render_mesh,
+    MESH3D_VERTEX_STRIDE_BYTES.to_int(),
+    index_layout~,
+  )
+  if plan.vertex_reallocate() is Some(reallocate) {
+    self.mesh3d_reallocate_allocator_slab(reallocate)
+  }
+  if plan.index_reallocate() is Some(reallocate) {
+    self.mesh3d_reallocate_allocator_slab(reallocate)
+  }
+  guard plan.vertex_upload() is Some(vertex_upload) else { return 0 }
+  guard plan.index_upload() is Some(index_upload) else { return 0 }
+  guard self.mesh3d_execute_allocator_upload(id, vertex_upload, vertex_bytes)
+    is Some(vb) else {
+    return 0
+  }
+  guard self.mesh3d_execute_allocator_upload(id, index_upload, index_bytes)
+    is Some(ib) else {
+    return 0
+  }
+  guard self.mesh_allocator.mesh_vertex_slice(id) is Some(vertex_slice) else {
+    return 0
+  }
+  guard self.mesh_allocator.mesh_index_slice(id) is Some(index_slice) else {
+    return 0
   }
   let info = GpuMeshInfo::{
     id,
     index_count: usable_vcount.reinterpret_as_uint(),
     vertex_count: usable_vcount.reinterpret_as_uint(),
+    index_start: index_slice.start().reinterpret_as_uint(),
+    vertex_start: vertex_slice.start().reinterpret_as_uint(),
+    index_slab_id: index_slice.slab_id(),
+    vertex_slab_id: vertex_slice.slab_id(),
     primitive_topology,
     vertex_stride_bytes: MESH3D_VERTEX_STRIDE_BYTES,
     index_stride_bytes: if uses_u32_indices {
@@ -216,7 +452,8 @@ pub fn GpuBackend::update_mesh3d_xyznuvrgba(
   }
   self.queue.write_buffer(
     mesh.vertex_buf,
-    0UL,
+    mesh.vertex_start.reinterpret_as_int().to_uint64() *
+    mesh.vertex_stride_bytes,
     mesh3d_vertex_bytes(trimmed_vertices),
   )
   true

@@ -32,7 +32,7 @@ The table below is the current authoritative score. Criteria are source-level 1:
 | `log` + `diagnostic` + `dev_tools` | 60% | 55% | 55% | 🟠 Partial | Useful diagnostics exist; generic deferred diagnostics/material UI paths are not Bevy-equivalent. |
 | `anti_alias` | 55% | 40% | 40% | 🔴 Major Gap | Shader assets and components are present, but SMAA/TAA/DLSS runtime pass parity is incomplete. |
 | `light` | 55% | 45% | 45% | 🔴 Major Gap | Component ownership moved closer, but clustering/shadow/probe behavior is still materially divergent. |
-| `mesh` | 76% | 68% | 68% | 🟠 Partial | Primitive, attribute, vertex-layout, allocator-state, upload-descriptor surfaces, and render-mesh allocation planning are closer to Bevy. Remaining runtime work is executing allocator buffer plans from the renderer path instead of direct mesh creation. |
+| `mesh` | 78% | 70% | 70% | 🟡 In Progress | Primitive, attribute, vertex-layout, allocator-state, upload-descriptor surfaces, render-mesh allocation planning, and renderer mesh3d slab upload execution are closer to Bevy. Remaining runtime work is full extracted-asset prepare integration and indirect/preprocess draw parity. |
 | `image` | 65% | 55% | 55% | 🟠 Partial | Codec table is broader, but exact loader/settings/error behavior parity is not complete. |
 | `color` | 75% | 65% | 65% | 🟡 In Progress | Conversion math is comparatively close; remaining work is upstream vector/test coverage breadth. |
 | `math` | 80% | 75% | 75% | 🟡 In Progress | Core math and primitives are one of the stronger areas, but generic trait limits still create source-shape gaps. |

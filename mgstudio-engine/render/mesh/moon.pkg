@@ -1,6 +1,5 @@
 import {
   "moonbitlang/core/float" @float,
-  "Milky2018/mgstudio/render/renderer" @renderer,
 }
 
 supported_targets = "native"

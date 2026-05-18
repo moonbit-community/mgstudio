@@ -43,7 +43,7 @@ pub const MESH3D_SKINNING_STORAGE_STRIDE_BYTES : UInt64 = @renderer.MESH3D_SKINN
 pub fn host_gpu_prepare_mesh3d_skin_bindings(
   skinning_rows~ : Array[Float],
 ) -> Unit {
-  @render_mesh.host_gpu_prepare_mesh3d_skin_bindings(skinning_rows~)
+  @renderer.prepare_mesh3d_skin_bindings(skinning_rows~)
 }
 
 ///|
@@ -1774,31 +1774,31 @@ pub fn host_gpu_create_mesh_capsule(
   half_length~ : Float,
   segments~ : Int,
 ) -> Int {
-  @render_mesh.host_gpu_create_mesh_capsule(radius~, half_length~, segments~)
+  @renderer.create_mesh_capsule(radius~, half_length~, segments~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_rectangle(width~ : Float, height~ : Float) -> Int {
-  @render_mesh.host_gpu_create_mesh_rectangle(width~, height~)
+  @renderer.create_mesh_rectangle(width~, height~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
-  @render_mesh.host_gpu_create_mesh_triangles(vertices_xy_csv~)
+  @renderer.create_mesh_triangles(vertices_xy_csv~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_triangles_xyuvrgba(
   vertices_xyuvrgba_csv~ : String,
 ) -> Int {
-  @render_mesh.host_gpu_create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~)
+  @renderer.create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_triangles3d(
   vertices_xyzuvrgba_csv~ : String,
 ) -> Int {
-  @render_mesh.host_gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv~)
+  host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~, primitive_topology=0)
 }
 
 ///|
@@ -1806,10 +1806,7 @@ pub fn host_gpu_create_mesh3d(
   vertices_xyzuvrgba_csv~ : String,
   primitive_topology~ : Int,
 ) -> Int {
-  @render_mesh.host_gpu_create_mesh3d(
-    vertices_xyzuvrgba_csv~,
-    primitive_topology~,
-  )
+  @renderer.create_mesh3d(vertices_xyzuvrgba_csv~, primitive_topology~)
 }
 
 ///|
@@ -1817,10 +1814,7 @@ pub fn host_gpu_create_mesh3d_xyznuvrgba(
   vertices_xyznuvrgba~ : Array[Float],
   primitive_topology~ : Int,
 ) -> Int {
-  @render_mesh.host_gpu_create_mesh3d_xyznuvrgba(
-    vertices_xyznuvrgba~,
-    primitive_topology~,
-  )
+  @renderer.create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~, primitive_topology~)
 }
 
 ///|
@@ -1829,7 +1823,7 @@ pub fn host_gpu_update_mesh3d_xyznuvrgba(
   vertices_xyznuvrgba~ : Array[Float],
   primitive_topology~ : Int,
 ) -> Bool {
-  @render_mesh.host_gpu_update_mesh3d_xyznuvrgba(
+  @renderer.update_mesh3d_xyznuvrgba(
     mesh_id~,
     vertices_xyznuvrgba~,
     primitive_topology~,

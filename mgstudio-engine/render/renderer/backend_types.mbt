@@ -33,12 +33,23 @@ pub struct GpuMeshInfo {
   id : Int
   index_count : UInt
   vertex_count : UInt
+  index_start : UInt
+  vertex_start : UInt
+  index_slab_id : Int
+  vertex_slab_id : Int
   primitive_topology : UInt
   vertex_stride_bytes : UInt64
   index_stride_bytes : UInt64
   uses_u32_indices : Bool
   vertex_buf : @wgpu.Buffer
   index_buf : @wgpu.Buffer
+}
+
+///|
+struct GpuMeshAllocatorBuffer {
+  slab_id : Int
+  usage_kind : Int
+  buffer : @wgpu.Buffer
 }
 
 ///|

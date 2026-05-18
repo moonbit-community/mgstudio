@@ -458,5 +458,7 @@ pub fn GpuBackend::new(
     active_surface_target_id: -1,
     textures: [],
     meshes: [],
+    mesh_allocator: @render_mesh.MeshAllocator::new(),
+    mesh_allocator_buffers: [],
   }
 }

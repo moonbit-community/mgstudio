@@ -42,8 +42,7 @@ fn gpu_mesh_bind_index_buffer(
   pass : @wgpu.RenderPass,
   mesh : GpuMeshInfo,
 ) -> Unit {
-  let index_bytes = mesh.index_count.reinterpret_as_int().to_uint64() *
-    mesh.index_stride_bytes
+  let index_bytes = mesh.index_buf.size()
   if mesh.uses_u32_indices {
     pass.set_index_buffer_u32(mesh.index_buf, 0UL, index_bytes)
   } else {

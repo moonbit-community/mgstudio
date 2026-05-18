@@ -300,9 +300,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   pass.set_bind_group(1U, empty_bg, [])
   pass.set_bind_group(2U, active_draw_bg, [])
   pass.set_bind_group(3U, material_bg, [])
-  let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
-    mesh.vertex_stride_bytes
-  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
+  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
   render_diagnostics_record_mesh3d_executed_draw()
   if use_indirect &&
     mesh3d_preprocess_camera_upload_state(
@@ -349,7 +347,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     pass.draw(
       mesh.vertex_count,
       indirect_draw_count.reinterpret_as_uint(),
-      0U,
+      mesh.vertex_start,
       draw_index,
     )
   } else {
@@ -357,8 +355,8 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     pass.draw_indexed(
       mesh.index_count,
       indirect_draw_count.reinterpret_as_uint(),
-      0U,
-      0,
+      mesh.index_start,
+      mesh.vertex_start.reinterpret_as_int(),
       draw_index,
     )
   }

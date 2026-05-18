@@ -497,6 +497,20 @@ pub fn MeshAllocatorBufferPlan::mapped_at_creation(
 }
 
 ///|
+pub fn MeshAllocatorBufferUsage::is_vertex_buffer(
+  self : MeshAllocatorBufferUsage,
+) -> Bool {
+  self == VertexBuffer
+}
+
+///|
+pub fn MeshAllocatorBufferUsage::is_index_buffer(
+  self : MeshAllocatorBufferUsage,
+) -> Bool {
+  self == IndexBuffer
+}
+
+///|
 pub struct MeshAllocatorUploadPlan {
   slab_id : Int
   label : String
@@ -1343,6 +1357,22 @@ pub fn MeshAllocator::mark_resident(
       }
     None => false
   }
+}
+
+///|
+pub fn MeshAllocator::mark_vertex_resident(
+  self : MeshAllocator,
+  mesh_id : Int,
+) -> Bool {
+  self.mark_resident(mesh_id, Vertex)
+}
+
+///|
+pub fn MeshAllocator::mark_index_resident(
+  self : MeshAllocator,
+  mesh_id : Int,
+) -> Bool {
+  self.mark_resident(mesh_id, Index)
 }
 
 ///|

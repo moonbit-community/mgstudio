@@ -1319,16 +1319,14 @@ fn flush_mesh2d_batches(backend : GpuBackend) -> Unit {
   pass.set_bind_group(0U, view_bg, [0U])
   pass.set_bind_group(1U, instance_uniform_bg, [uniform_dynamic_offset])
   pass.set_bind_group(2U, material_bg, [])
-  let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
-    mesh.vertex_stride_bytes
-  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
+  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
   gpu_mesh_bind_index_buffer(pass, mesh)
   render_diagnostics_record_mesh2d_executed_draw()
   pass.draw_indexed(
     mesh.index_count,
     backend.mesh2d_batch_instance_count,
-    0U,
-    0,
+    mesh.index_start,
+    mesh.vertex_start.reinterpret_as_int(),
     0U,
   )
   mesh2d_reset_pending_batch(backend)
@@ -1389,6 +1387,10 @@ pub fn GpuBackend::create_mesh_rectangle(
     id,
     index_count: 6U,
     vertex_count: 4U,
+    index_start: 0U,
+    vertex_start: 0U,
+    index_slab_id: -1,
+    vertex_slab_id: -1,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
     index_stride_bytes: 2UL,
@@ -1475,6 +1477,10 @@ pub fn GpuBackend::create_mesh_capsule(
     id,
     index_count: inds.length().reinterpret_as_uint(),
     vertex_count: (verts.length() / 9).reinterpret_as_uint(),
+    index_start: 0U,
+    vertex_start: 0U,
+    index_slab_id: -1,
+    vertex_slab_id: -1,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
     index_stride_bytes: 2UL,
@@ -1604,6 +1610,10 @@ pub fn GpuBackend::create_mesh_triangles_xyuvrgba(
     id,
     index_count: indices_u16.length().reinterpret_as_uint(),
     vertex_count: usable_vcount.reinterpret_as_uint(),
+    index_start: 0U,
+    vertex_start: 0U,
+    index_slab_id: -1,
+    vertex_slab_id: -1,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
     index_stride_bytes: 2UL,
