@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub const MESH_ALLOCATOR_COPY_BUFFER_ALIGNMENT : Int = 4
+
 pub fn host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
 
 pub fn host_gpu_create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Int
@@ -28,11 +30,89 @@ pub fn mesh_allocator_create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_
 
 pub fn mesh_allocator_create_mesh3d_xyznuvrgba(vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Int
 
+pub fn mesh_allocator_grow_general_slab_if_necessary(Int, Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> MeshAllocatorSlabGrowth
+
+pub fn mesh_allocator_plan_large_slab(Int, Int, MeshAllocatorElementLayout) -> MeshAllocatorSlabPlan
+
+pub fn mesh_allocator_plan_new_general_slab(Int, Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> MeshAllocatorSlabPlan
+
+pub fn mesh_allocator_should_allocate_large(Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> Bool
+
 pub fn mesh_allocator_update_mesh3d_xyznuvrgba(mesh_id~ : Int, vertices_xyznuvrgba~ : Array[Float], primitive_topology~ : Int) -> Bool
 
 // Errors
 
 // Types and methods
+pub(all) enum MeshAllocatorElementClass {
+  Vertex
+  Index
+} derive(Eq, @debug.Debug)
+
+pub struct MeshAllocatorElementLayout {
+  class : MeshAllocatorElementClass
+  size : Int
+  elements_per_slot : Int
+} derive(Eq, @debug.Debug)
+pub fn MeshAllocatorElementLayout::class(Self) -> MeshAllocatorElementClass
+pub fn MeshAllocatorElementLayout::elements_per_slot(Self) -> Int
+pub fn MeshAllocatorElementLayout::index_u16() -> Self
+pub fn MeshAllocatorElementLayout::index_u32() -> Self
+pub fn MeshAllocatorElementLayout::new(MeshAllocatorElementClass, Int) -> Self
+pub fn MeshAllocatorElementLayout::size(Self) -> Int
+pub fn MeshAllocatorElementLayout::slot_size(Self) -> Int
+pub fn MeshAllocatorElementLayout::vertex(Int) -> Self
+
+pub struct MeshAllocatorSettings {
+  min_slab_size : Int
+  max_slab_size : Int
+  large_threshold : Int
+  growth_factor : Float
+}
+pub fn MeshAllocatorSettings::default() -> Self
+pub fn MeshAllocatorSettings::growth_factor(Self) -> Float
+pub fn MeshAllocatorSettings::large_threshold(Self) -> Int
+pub fn MeshAllocatorSettings::max_slab_size(Self) -> Int
+pub fn MeshAllocatorSettings::min_slab_size(Self) -> Int
+pub fn MeshAllocatorSettings::new(min_slab_size~ : Int, max_slab_size~ : Int, large_threshold~ : Int, growth_factor~ : Float) -> Self
+pub impl Default for MeshAllocatorSettings
+
+pub struct MeshAllocatorSlabGrowth {
+  kind : MeshAllocatorSlabGrowthKind
+  old_slot_capacity : Int
+  current_slot_capacity : Int
+} derive(Eq, @debug.Debug)
+pub fn MeshAllocatorSlabGrowth::current_slot_capacity(Self) -> Int
+pub fn MeshAllocatorSlabGrowth::kind(Self) -> MeshAllocatorSlabGrowthKind
+pub fn MeshAllocatorSlabGrowth::old_slot_capacity(Self) -> Int
+
+pub(all) enum MeshAllocatorSlabGrowthKind {
+  NoGrowthNeeded
+  NeededGrowth
+  CantGrow
+} derive(Eq, @debug.Debug)
+
+pub(all) enum MeshAllocatorSlabKind {
+  General
+  LargeObject
+} derive(Eq, @debug.Debug)
+
+pub struct MeshAllocatorSlabPlan {
+  slab_id : Int
+  kind : MeshAllocatorSlabKind
+  layout : MeshAllocatorElementLayout
+  offset : Int
+  slot_count : Int
+  current_slot_capacity : Int
+  growth : MeshAllocatorSlabGrowth
+} derive(Eq, @debug.Debug)
+pub fn MeshAllocatorSlabPlan::current_slot_capacity(Self) -> Int
+pub fn MeshAllocatorSlabPlan::growth(Self) -> MeshAllocatorSlabGrowth
+pub fn MeshAllocatorSlabPlan::kind(Self) -> MeshAllocatorSlabKind
+pub fn MeshAllocatorSlabPlan::layout(Self) -> MeshAllocatorElementLayout
+pub fn MeshAllocatorSlabPlan::offset(Self) -> Int
+pub fn MeshAllocatorSlabPlan::slab_id(Self) -> Int
+pub fn MeshAllocatorSlabPlan::slot_count(Self) -> Int
+
 pub struct RenderMesh {
   vertex_count : Int
   buffer_info : RenderMeshBufferInfo
