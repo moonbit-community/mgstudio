@@ -63,6 +63,15 @@ pub const DEFERRED_PREPASS_EARLY_LABEL : String = "early deferred prepass"
 pub const DEFERRED_PREPASS_LATE_LABEL : String = "late deferred prepass"
 
 ///|
+pub const DEFERRED_PREPASS_FORMAT : String = "Rgba32Uint"
+
+///|
+pub const DEFERRED_LIGHTING_PASS_ID_FORMAT : String = "R8Uint"
+
+///|
+pub const DEFERRED_LIGHTING_PASS_ID_DEPTH_FORMAT : String = "Depth16Unorm"
+
+///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/deferred/mod.rs`.
 pub struct DeferredPrepass {} derive(ToJson, FromJson)
 
