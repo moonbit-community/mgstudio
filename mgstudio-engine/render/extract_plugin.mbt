@@ -60,6 +60,12 @@ pub fn render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let mut next = app.add_plugins(SyncWorldPlugin::default())
+  if !next.contains_resource(render_asset_bytes_per_frame_resource_key()) {
+    next = next.insert_world_resource(
+      render_asset_bytes_per_frame_resource_key(),
+      RenderAssetBytesPerFrame::default(),
+    )
+  }
   if next.get_sub_app(@app.RenderApp) is None {
     let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
       Some(render_schedule_stage()),
@@ -78,9 +84,27 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   if next.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
     init_renderer_context_resources(render_sub_app_ref.val.world())
     init_render_state(render_sub_app_ref.val.world())
+    render_sub_app_ref.val
+    .world()
+    .insert_resource(
+      render_asset_bytes_per_frame_limiter_resource_key(),
+      RenderAssetBytesPerFrameLimiter::default(),
+    )
+    render_sub_app_ref.val = render_sub_app_ref.val.add_systems(
+      render_schedule_stage(),
+      @app.system(extract_render_asset_bytes_per_frame).in_set(
+        render_system_set_extract_commands,
+      ),
+    )
     render_sub_app_ref.val = render_sub_app_ref.val.add_systems(
       render_schedule_stage(),
       @app.system(despawn_temporary_render_entities).in_set(
+        render_system_set_cleanup,
+      ),
+    )
+    render_sub_app_ref.val = render_sub_app_ref.val.add_systems(
+      render_schedule_stage(),
+      @app.system(reset_render_asset_bytes_per_frame).in_set(
         render_system_set_cleanup,
       ),
     )

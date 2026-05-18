@@ -25,6 +25,10 @@ extenum @ecs.EcsPayload += {
   EcsPayload_render_TemporaryRenderEntity(TemporaryRenderEntity)
   EcsPayload_render_PendingSyncEntity(PendingSyncEntity)
   EcsPayload_render_RenderState(RenderState)
+  EcsPayload_render_RenderAssetBytesPerFrame(RenderAssetBytesPerFrame)
+  EcsPayload_render_RenderAssetBytesPerFrameLimiter(
+    RenderAssetBytesPerFrameLimiter
+  )
   EcsPayload_render_RenderAssets(RenderAssetsPayload)
   EcsPayload_render_PrepareNextFrameAssets(PrepareNextFrameAssetsPayload)
   EcsPayload_render_ErasedRenderAssets(ErasedRenderAssetsPayload)
@@ -185,6 +189,40 @@ pub impl @ecs.EcsPayloadCodec for RenderState with to_ecs_payload(self) {
 pub impl @ecs.EcsPayloadCodec for RenderState with from_ecs_payload(payload) {
   match payload {
     EcsPayload_render_RenderState(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for RenderAssetBytesPerFrame with to_ecs_payload(
+  self,
+) {
+  EcsPayload_render_RenderAssetBytesPerFrame(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for RenderAssetBytesPerFrame with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_render_RenderAssetBytesPerFrame(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for RenderAssetBytesPerFrameLimiter with to_ecs_payload(
+  self,
+) {
+  EcsPayload_render_RenderAssetBytesPerFrameLimiter(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for RenderAssetBytesPerFrameLimiter with from_ecs_payload(
+  payload,
+) {
+  match payload {
+    EcsPayload_render_RenderAssetBytesPerFrameLimiter(value) => Some(value)
     _ => None
   }
 }

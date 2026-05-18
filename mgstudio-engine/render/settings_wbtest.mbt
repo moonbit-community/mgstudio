@@ -95,6 +95,48 @@ test "render plugin: initializes pending command buffers in render app" {
 }
 
 ///|
+test "render plugin: installs render asset byte budget resources" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    RenderPlugin::default(),
+  )
+  let main_budget = (try! app
+  .world()
+  .get_resource(render_asset_bytes_per_frame_resource_key())).unwrap()
+  debug_inspect(main_budget.max_bytes() is None, content="true")
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let limiter = (try! render_world.get_resource(
+    render_asset_bytes_per_frame_limiter_resource_key(),
+  )).unwrap()
+  debug_inspect(limiter.max_bytes() is None, content="true")
+  debug_inspect(limiter.bytes_written(), content="0")
+}
+
+///|
+test "render asset byte budget: extract updates limiter and cleanup resets writes" {
+  let main_world = @ecs.World::new()
+  main_world.insert_resource(
+    render_asset_bytes_per_frame_resource_key(),
+    RenderAssetBytesPerFrame::new(64),
+  )
+  let render_world = @ecs.World::new()
+  render_world.insert_resource(
+    render_asset_bytes_per_frame_limiter_resource_key(),
+    RenderAssetBytesPerFrameLimiter::default(),
+  )
+  let synced = render_sub_app_extract(main_world, render_world)
+  let render_world = synced.1
+  extract_render_asset_bytes_per_frame(render_world)
+  let limiter = (try! render_world.get_resource(
+    render_asset_bytes_per_frame_limiter_resource_key(),
+  )).unwrap()
+  debug_inspect(limiter.max_bytes().unwrap(), content="64")
+  limiter.write_bytes(16)
+  debug_inspect(limiter.bytes_written(), content="16")
+  reset_render_asset_bytes_per_frame(render_world)
+  debug_inspect(limiter.bytes_written(), content="0")
+}
+
+///|
 test "render plugin: initializes render state as not ready" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     RenderPlugin::default(),

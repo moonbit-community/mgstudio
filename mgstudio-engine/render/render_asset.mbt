@@ -157,8 +157,27 @@ pub struct RenderAssetBytesPerFrame {
 }
 
 ///|
+let ecs_key_render_asset_bytes_per_frame : @ecs.ResourceKey[
+  RenderAssetBytesPerFrame,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::RenderAssetBytesPerFrame",
+)
+
+///|
 pub impl Default for RenderAssetBytesPerFrame with default() {
   RenderAssetBytesPerFrame::{ max_bytes: None }
+}
+
+///|
+pub impl @app.Resource for RenderAssetBytesPerFrame with resource() {
+  ecs_key_render_asset_bytes_per_frame
+}
+
+///|
+pub fn render_asset_bytes_per_frame_resource_key() -> @ecs.ResourceKey[
+  RenderAssetBytesPerFrame,
+] {
+  ecs_key_render_asset_bytes_per_frame
 }
 
 ///|
@@ -182,8 +201,27 @@ pub struct RenderAssetBytesPerFrameLimiter {
 }
 
 ///|
+let ecs_key_render_asset_bytes_per_frame_limiter : @ecs.ResourceKey[
+  RenderAssetBytesPerFrameLimiter,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::RenderAssetBytesPerFrameLimiter",
+)
+
+///|
 pub impl Default for RenderAssetBytesPerFrameLimiter with default() {
   RenderAssetBytesPerFrameLimiter::{ max_bytes: None, bytes_written: 0 }
+}
+
+///|
+pub impl @app.Resource for RenderAssetBytesPerFrameLimiter with resource() {
+  ecs_key_render_asset_bytes_per_frame_limiter
+}
+
+///|
+pub fn render_asset_bytes_per_frame_limiter_resource_key() -> @ecs.ResourceKey[
+  RenderAssetBytesPerFrameLimiter,
+] {
+  ecs_key_render_asset_bytes_per_frame_limiter
 }
 
 ///|
@@ -218,6 +256,13 @@ pub fn RenderAssetBytesPerFrameLimiter::bytes_written(
   self : RenderAssetBytesPerFrameLimiter,
 ) -> Int {
   self.bytes_written
+}
+
+///|
+pub fn RenderAssetBytesPerFrameLimiter::max_bytes(
+  self : RenderAssetBytesPerFrameLimiter,
+) -> Int? {
+  self.max_bytes
 }
 
 ///|
@@ -261,6 +306,34 @@ pub fn RenderAssetBytesPerFrameLimiter::exhausted(
   match self.max_bytes {
     Some(max_bytes) => self.bytes_written >= max_bytes
     None => false
+  }
+}
+
+///|
+pub fn reset_render_asset_bytes_per_frame(world : @ecs.World) -> Unit {
+  match
+    (world.get_resource(ecs_key_render_asset_bytes_per_frame_limiter) catch {
+      _ => None
+    }) {
+    Some(limiter) => limiter.reset()
+    None => ()
+  }
+}
+
+///|
+pub fn extract_render_asset_bytes_per_frame(world : @ecs.World) -> Unit {
+  let main_world = render_source_world(world)
+  let bytes_per_frame = main_world.get_resource(
+    ecs_key_render_asset_bytes_per_frame,
+  ) catch {
+    _ => None
+  }
+  let limiter = world.get_resource(ecs_key_render_asset_bytes_per_frame_limiter) catch {
+    _ => None
+  }
+  match (bytes_per_frame, limiter) {
+    (Some(bytes_per_frame), Some(limiter)) => limiter.extract(bytes_per_frame)
+    _ => ()
   }
 }
 

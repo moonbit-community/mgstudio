@@ -107,6 +107,8 @@ pub fn extract_param_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn extract_param_source_world(@ecs.World) -> @ecs.World
 
+pub fn extract_render_asset_bytes_per_frame(@ecs.World) -> Unit
+
 pub fn[R, S] extract_resource_once(S, (S) -> R) -> R
 
 pub fn extract_resource_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -303,6 +305,10 @@ pub fn render_adapter_info_resource_key() -> @ecs.ResourceKey[@renderer.RenderAd
 
 pub fn render_adapter_resource_key() -> @ecs.ResourceKey[@renderer.RenderAdapter]
 
+pub fn render_asset_bytes_per_frame_limiter_resource_key() -> @ecs.ResourceKey[RenderAssetBytesPerFrameLimiter]
+
+pub fn render_asset_bytes_per_frame_resource_key() -> @ecs.ResourceKey[RenderAssetBytesPerFrame]
+
 pub fn render_device_resource_key() -> @ecs.ResourceKey[@renderer.RenderDevice]
 
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
@@ -368,6 +374,8 @@ pub let render_system_set_render : String
 pub fn renderer_is_ready(@ecs.World) -> Bool
 
 pub fn report_render_runtime_error(@app.RenderRuntimeError) -> Unit
+
+pub fn reset_render_asset_bytes_per_frame(@ecs.World) -> Unit
 
 pub fn reset_render_error_handler() -> Unit
 
@@ -656,6 +664,8 @@ pub struct RenderAssetBytesPerFrame {
 }
 pub fn RenderAssetBytesPerFrame::max_bytes(Self) -> Int?
 pub fn RenderAssetBytesPerFrame::new(Int) -> Self
+pub impl @app.Resource for RenderAssetBytesPerFrame
+pub impl @ecs.EcsPayloadCodec for RenderAssetBytesPerFrame
 pub impl Default for RenderAssetBytesPerFrame
 
 pub struct RenderAssetBytesPerFrameLimiter {
@@ -666,9 +676,12 @@ pub fn RenderAssetBytesPerFrameLimiter::available_bytes(Self, Int) -> Int
 pub fn RenderAssetBytesPerFrameLimiter::bytes_written(Self) -> Int
 pub fn RenderAssetBytesPerFrameLimiter::exhausted(Self) -> Bool
 pub fn RenderAssetBytesPerFrameLimiter::extract(Self, RenderAssetBytesPerFrame) -> Unit
+pub fn RenderAssetBytesPerFrameLimiter::max_bytes(Self) -> Int?
 pub fn RenderAssetBytesPerFrameLimiter::new(Int) -> Self
 pub fn RenderAssetBytesPerFrameLimiter::reset(Self) -> Unit
 pub fn RenderAssetBytesPerFrameLimiter::write_bytes(Self, Int) -> Unit
+pub impl @app.Resource for RenderAssetBytesPerFrameLimiter
+pub impl @ecs.EcsPayloadCodec for RenderAssetBytesPerFrameLimiter
 pub impl Default for RenderAssetBytesPerFrameLimiter
 
 pub struct RenderAssets[A] {
