@@ -99,9 +99,17 @@ pub fn RenderMesh::from_mesh(
     Some(topology) => topology
     None => @asset_mesh.Mesh3dPrimitiveTopology::TriangleList
   }
-  let key_bits = @asset_mesh.BaseMeshPipelineKey::from_primitive_topology(
+  let base_key_bits = @asset_mesh.BaseMeshPipelineKey::from_primitive_topology(
     primitive_topology,
   )
+  let key_bits = if mesh.has_morph_targets() {
+    @asset_mesh.BaseMeshPipelineKey::new(
+      base_key_bits.bits() |
+      @asset_mesh.BaseMeshPipelineKey::morph_targets().bits(),
+    )
+  } else {
+    base_key_bits
+  }
   let layout = mesh.get_mesh_vertex_buffer_layout(mesh_vertex_buffer_layouts)
   RenderMesh::{ vertex_count, buffer_info, dimension, key_bits, layout }
 }

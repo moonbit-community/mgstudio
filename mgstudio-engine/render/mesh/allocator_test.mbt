@@ -304,6 +304,37 @@ test "render mesh: constructor preserves topology key and vertex layout" {
 }
 
 ///|
+test "render mesh: from mesh includes morph target key bit" {
+  let geometry = @asset_mesh.Mesh3dGeometry::new(
+    [
+      @math.Vec3::new(0.0F, 0.0F, 0.0F),
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ],
+    [
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+    ],
+    Some([0, 1, 2]),
+  ).with_morph_targets(
+    Some([
+      [
+        @math.Vec3::new(0.1F, 0.0F, 0.0F),
+        @math.Vec3::new(0.0F, 0.1F, 0.0F),
+        @math.Vec3::new(0.0F, 0.0F, 0.1F),
+      ],
+    ]),
+  )
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::default()
+  let render_mesh = RenderMesh::from_mesh(
+    @asset_mesh.Mesh::from_3d_geometry(geometry),
+    layouts,
+  )
+  inspect(render_mesh.key_bits().contains_morph_targets(), content="true")
+}
+
+///|
 test "render mesh allocator: non-indexed render mesh skips index allocation" {
   let allocator = MeshAllocator::new()
   let mesh = RenderMesh::new(vertex_count=3)

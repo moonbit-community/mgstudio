@@ -25,6 +25,15 @@ pub fn Mesh::morph_target_names(self : Mesh) -> Array[String]? {
 }
 
 ///|
+pub fn Mesh::has_morph_targets(self : Mesh) -> Bool {
+  match self.geometry {
+    MeshGeometry::Geometry2d(_) => false
+    MeshGeometry::Geometry3d(geometry3d) =>
+      geometry3d.morph_target_positions() is Some(_)
+  }
+}
+
+///|
 pub fn Mesh::custom_attribute_vec3(
   self : Mesh,
   name : String,

@@ -3,4 +3,8 @@ import {
   "moonbitlang/core/float" @float,
 }
 
+import {
+  "Milky2018/mgstudio/math",
+} for "test"
+
 supported_targets = "native"

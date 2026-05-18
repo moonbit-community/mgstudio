@@ -118,6 +118,7 @@ pub fn Mesh::generate_tangents(Self) -> MeshGenerateTangentsError?
 pub fn Mesh::get_mesh_vertex_buffer_layout(Self, MeshVertexBufferLayouts) -> MeshVertexBufferLayoutRef
 pub fn Mesh::get_vertex_buffer_size(Self) -> Int
 pub fn Mesh::get_vertex_size(Self) -> Int
+pub fn Mesh::has_morph_targets(Self) -> Bool
 pub fn Mesh::indexed(Self) -> Bool
 pub fn Mesh::indices(Self) -> Array[Int]?
 pub fn Mesh::morph_target_names(Self) -> Array[String]?
