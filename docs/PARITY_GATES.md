@@ -91,6 +91,27 @@ CI intentionally splits parity gates into two jobs:
 This split keeps the static provenance checks fast while preserving a real
 native visual gate for representative runtime behavior.
 
+## Interpretation
+
+Passing an example gate is evidence, not proof of source-level Bevy parity. A
+scene can look correct and accept input while still diverging in ECS structure,
+component/resource ownership, schedule placement, dirty/change tracking, or
+pipeline data flow. Treat visually plausible output as a starting point for
+source-owner audit, not as a completion signal.
+
+The `examples/3d/motion_blur` parity audit is the reference caution: the example
+rendered and responded to keys, but its UI state had been modeled as one whole
+`Text` value rewritten every frame instead of Bevy's `Text` root plus dynamic
+`TextSpan` children updated through the text writer flow. That difference was
+not obvious from the screenshot, but it mattered for text/UI pipeline semantics.
+
+When a runtime symptom appears in one feature area, validate adjacent Bevy
+boundaries before assigning cause. Render/PBR/mesh issues commonly cross window
+event delivery, app scheduling, input resources, UI/text dirty tracking, and
+renderer preparation. Completion scores should only move after source topology,
+runtime semantics, representative example behavior, and visual/performance
+evidence all support the claim.
+
 ## Scope note
 
 Per the approved migration strategy, shader parity gates target:

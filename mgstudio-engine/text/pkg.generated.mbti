@@ -148,6 +148,8 @@ pub fn text_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn text_rasterize_glyph(@asset.Handle[@asset.Font], Float, Int, FontSmoothing) -> GlyphRaster?
 
+pub fn text_reader(@ecs.World) -> TextReader
+
 pub fn text_render_system(@ecs.World) -> Unit
 
 pub fn text_render_transparent_2d_queue_system(@ecs.World) -> Unit
@@ -231,6 +233,8 @@ pub fn text_spawn_span(TextHandle, TextSpanBundle) -> TextSpanHandle
 pub fn text_update_system(@ecs.World) -> Unit
 
 pub fn text_visual_bounds(TextHandle) -> @math.Rect?
+
+pub fn text_writer(@ecs.World) -> TextWriter
 
 pub fn ui_text_ecs_handle(@ecs.World, @core.Entity) -> TextHandle?
 
@@ -750,6 +754,20 @@ pub struct TextPlugin {
 pub fn TextPlugin::default() -> Self
 pub impl @app.Plugin for TextPlugin
 
+pub struct TextReader {
+  world : @ecs.World
+}
+pub fn TextReader::color(Self, @core.Entity, Int) -> TextColor
+pub fn TextReader::font(Self, @core.Entity, Int) -> TextFont
+pub fn TextReader::get(Self, @core.Entity, Int) -> (@core.Entity, Int, String, TextFont, TextColor, LineHeight)?
+pub fn TextReader::get_color(Self, @core.Entity, Int) -> TextColor?
+pub fn TextReader::get_font(Self, @core.Entity, Int) -> TextFont?
+pub fn TextReader::get_line_height(Self, @core.Entity, Int) -> LineHeight?
+pub fn TextReader::get_text(Self, @core.Entity, Int) -> String?
+pub fn TextReader::line_height(Self, @core.Entity, Int) -> LineHeight
+pub fn TextReader::new(@ecs.World) -> Self
+pub fn TextReader::text(Self, @core.Entity, Int) -> String
+
 pub(all) struct TextShadow {
   mut offset : @math.Vec2
   mut color : @color.Color
@@ -799,6 +817,15 @@ pub struct TextSpanRange {
   start : Int
   length : Int
 }
+
+pub struct TextWriter {
+  world : @ecs.World
+}
+pub fn TextWriter::new(@ecs.World) -> Self
+pub fn TextWriter::set_color(Self, @core.Entity, Int, TextColor) -> Bool
+pub fn TextWriter::set_font(Self, @core.Entity, Int, TextFont) -> Bool
+pub fn TextWriter::set_line_height(Self, @core.Entity, Int, LineHeight) -> Bool
+pub fn TextWriter::set_text(Self, @core.Entity, Int, String) -> Bool
 
 pub struct Underline {
 }

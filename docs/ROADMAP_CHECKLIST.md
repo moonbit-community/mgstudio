@@ -18,9 +18,9 @@ The table below is the current authoritative score. Criteria are source-level 1:
 | `material` | 74% | 66% | 66% | 🟠 Partial | Material specialization and descriptor ownership are closer to Bevy, including shared mesh vertex layouts, richer bind-group layout entries, and a Bevy-shaped draw-function registry. Forward, deferred, and decal integration are still not source-equivalent. |
 | `camera` | 65% | 60% | 60% | 🟠 Partial | Camera components/plugins align in parts, but view/projection/render integration is incomplete. |
 | `sprite` + `sprite_render` | 60% | 55% | 55% | 🟠 Partial | Basic 2D render path exists; batching/extraction/render parity needs a dedicated audit. |
-| `ui` + `ui_render` + `ui_widgets` | 60% | 50% | 50% | 🟠 Partial | Data model is improving, but layout/render/interaction parity is blocked by incomplete deeper taffy/render integration. |
+| `ui` + `ui_render` + `ui_widgets` | 60% | 50% | 50% | 🟠 Partial | Data model is improving and UI text access is now a thin Bevy-style wrapper over the text owner, but layout/render/interaction parity is blocked by incomplete deeper taffy/render integration. |
 | `feathers` | 45% | 40% | 40% | 🔴 Major Gap | Only a subset of controls/tokens is ported; source-level widget ecosystem parity is not close. |
-| `text` | 55% | 45% | 45% | 🔴 Major Gap | Font/layout surfaces exist, but text shaping/visual parity depends on incomplete upstream and local integration. |
+| `text` | 55% | 45% | 45% | 🔴 Major Gap | Font/layout surfaces exist and `TextReader`/`TextWriter` now own Bevy-style flattened root/span access, but text shaping/visual parity depends on incomplete upstream and local integration. |
 | `gltf` + scene import path | 55% | 45% | 45% | 🔴 Major Gap | Loader path works for selected cases, but full asset/animation/material scene parity is not established. |
 | `animation` | 60% | 50% | 50% | 🟠 Partial | Graph/runtime work exists, but example behavior and full Bevy test parity are not complete. |
 | `scene` static path | 65% | 55% | 55% | 🟠 Partial | Static scene spawning is useful, but dynamic/runtime corner cases and reload parity remain open. |

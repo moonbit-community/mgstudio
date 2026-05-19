@@ -225,7 +225,22 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
   debug_inspect(view_visible, content="true")
   debug_inspect(
     bundle.transform.to_json(),
-    content="Array([Number(250), Number(125), Number(0), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])",
+    content=(
+      #|Array(
+      #|  [
+      #|    Number(250),
+      #|    Number(125),
+      #|    Number(0),
+      #|    Number(0),
+      #|    Number(0),
+      #|    Number(0),
+      #|    Number(1),
+      #|    Number(1),
+      #|    Number(1),
+      #|    Number(1),
+      #|  ],
+      #|)
+    ),
   )
 }
 
@@ -500,7 +515,22 @@ test "ui text bridge preserves runtime-owned placement during sync" {
 
   debug_inspect(
     text_get_transform(synced.handle).unwrap().to_json(),
-    content="Array([Number(320), Number(-180), Number(7), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])",
+    content=(
+      #|Array(
+      #|  [
+      #|    Number(320),
+      #|    Number(-180),
+      #|    Number(7),
+      #|    Number(0),
+      #|    Number(0),
+      #|    Number(0),
+      #|    Number(1),
+      #|    Number(1),
+      #|    Number(1),
+      #|    Number(1),
+      #|  ],
+      #|)
+    ),
   )
   debug_inspect(instance.layers.to_json(), content="Number(2048)")
   debug_inspect(

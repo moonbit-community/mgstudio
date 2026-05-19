@@ -57,8 +57,7 @@ priv struct WheelState {
 priv struct MotionBlurExampleState {
   mut camera : @core.Entity?
   mut tracked_car : @core.Entity?
-  mut help_shutter_span : @core.Entity?
-  mut help_samples_span : @core.Entity?
+  mut help_text : @core.Entity?
   car_bodies : Array[CarBody]
   wheels : Array[WheelState]
   mut camera_mode : CameraMode
@@ -70,8 +69,7 @@ priv struct MotionBlurExampleState {
 let motion_blur_state : Ref[MotionBlurExampleState] = Ref({
   camera: None,
   tracked_car: None,
-  help_shutter_span: None,
-  help_samples_span: None,
+  help_text: None,
   car_bodies: [],
   wheels: [],
   camera_mode: CameraMode::Chase,
@@ -141,32 +139,11 @@ fn help_samples_text() -> String {
 }
 
 ///|
-fn set_help_span_text(
-  world : @ecs.World,
-  entity : @core.Entity?,
-  content : String,
-) -> Unit {
-  guard entity is Some(span_entity) else { return }
-  guard (try! world.get_by_key(span_entity, @text.ecs_key_text_span))
-    is Some(span) else {
-    return
-  }
-  span.content = content
-  ignore(try! world.replace(span_entity, @text.ecs_key_text_span, span))
-}
-
-///|
 fn update_help_text(world : @ecs.World) -> Unit {
-  set_help_span_text(
-    world,
-    motion_blur_state.val.help_shutter_span,
-    help_shutter_text(),
-  )
-  set_help_span_text(
-    world,
-    motion_blur_state.val.help_samples_span,
-    help_samples_text(),
-  )
+  guard motion_blur_state.val.help_text is Some(help_text) else { return }
+  let writer = @ui.TextUiWriter::new(world)
+  writer.set_text(help_text, 1, help_shutter_text()) |> ignore
+  writer.set_text(help_text, 2, help_samples_text()) |> ignore
 }
 
 ///|
@@ -365,12 +342,9 @@ fn spawn_help_text(world : @ecs.World) -> Unit {
     @text.ecs_key_text_layout,
     @text.TextLayout::default(),
   )
-  motion_blur_state.val.help_shutter_span = Some(
-    spawn_help_text_span(world, text_entity, ""),
-  )
-  motion_blur_state.val.help_samples_span = Some(
-    spawn_help_text_span(world, text_entity, ""),
-  )
+  motion_blur_state.val.help_text = Some(text_entity)
+  spawn_help_text_span(world, text_entity, "") |> ignore
+  spawn_help_text_span(world, text_entity, "") |> ignore
   spawn_help_text_span(
     world, text_entity, "1/2: -/+ shutter angle (blur amount)\n",
   )
@@ -650,8 +624,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 fn setup(world : @ecs.World) -> Unit {
   motion_blur_state.val.camera = None
   motion_blur_state.val.tracked_car = None
-  motion_blur_state.val.help_shutter_span = None
-  motion_blur_state.val.help_samples_span = None
+  motion_blur_state.val.help_text = None
   motion_blur_state.val.car_bodies.clear()
   motion_blur_state.val.wheels.clear()
   motion_blur_state.val.camera_mode = CameraMode::Chase

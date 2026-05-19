@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/input_focus",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_accesskit",
   "moonbitlang/core/debug",
@@ -114,6 +115,10 @@ pub fn on_remove_disabled(@ecs.ComponentOn[@ecs.Remove, InteractionDisabled]) ->
 pub fn percent(Float) -> Val
 
 pub fn px(Float) -> Val
+
+pub fn text_ui_reader(@ecs.World) -> TextUiReader
+
+pub fn text_ui_writer(@ecs.World) -> TextUiWriter
 
 pub fn ui_a11y_update_system(@ecs.World) -> Unit
 
@@ -737,6 +742,29 @@ pub(all) enum SliceScaleMode {
   Tile(Float)
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn SliceScaleMode::default() -> Self
+
+pub struct TextUiReader {
+  inner : @text.TextReader
+}
+pub fn TextUiReader::color(Self, @core.Entity, Int) -> @text.TextColor
+pub fn TextUiReader::font(Self, @core.Entity, Int) -> @text.TextFont
+pub fn TextUiReader::get(Self, @core.Entity, Int) -> (@core.Entity, Int, String, @text.TextFont, @text.TextColor, @text.LineHeight)?
+pub fn TextUiReader::get_color(Self, @core.Entity, Int) -> @text.TextColor?
+pub fn TextUiReader::get_font(Self, @core.Entity, Int) -> @text.TextFont?
+pub fn TextUiReader::get_line_height(Self, @core.Entity, Int) -> @text.LineHeight?
+pub fn TextUiReader::get_text(Self, @core.Entity, Int) -> String?
+pub fn TextUiReader::line_height(Self, @core.Entity, Int) -> @text.LineHeight
+pub fn TextUiReader::new(@ecs.World) -> Self
+pub fn TextUiReader::text(Self, @core.Entity, Int) -> String
+
+pub struct TextUiWriter {
+  inner : @text.TextWriter
+}
+pub fn TextUiWriter::new(@ecs.World) -> Self
+pub fn TextUiWriter::set_color(Self, @core.Entity, Int, @text.TextColor) -> Bool
+pub fn TextUiWriter::set_font(Self, @core.Entity, Int, @text.TextFont) -> Bool
+pub fn TextUiWriter::set_line_height(Self, @core.Entity, Int, @text.LineHeight) -> Bool
+pub fn TextUiWriter::set_text(Self, @core.Entity, Int, String) -> Bool
 
 pub struct TextureSlicer {
   border : BorderRect
