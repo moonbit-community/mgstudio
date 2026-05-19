@@ -361,3 +361,4 @@
 - [x] `physics2d/physics3d`: local `./bevy` does not contain `bevy_rapier`; treat physics as third-party Rapier integration rather than a Bevy core package. 2D/3D plugins now expose explicit fixed-schedule system sets, set ordering, and stable profiler names.
 - [x] Screenshot parity runner lifecycle: parity capture now exposes a runtime completion flag and `winit` runner closes all windows once capture output is written.
 - [x] `window` (upstream, Milky2018/window): `window/core` surface does not yet expose a backend-agnostic cursor hit-test setter/getter (Bevy/winit-equivalent `set_cursor_hittest` style API), so mgstudio currently uses backend-specific `window/macos` calls inside `windowing_native` as a workaround.
+- [x] `window/upstream macOS keyDown`: `Milky2018/window@0.5.1` restores `Pressed` keyboard events on the macOS pending key snapshot path; `moonbit-community/window#15` resolved the `0.5.0` keyDown payload gap.

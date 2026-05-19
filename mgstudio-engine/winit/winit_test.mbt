@@ -85,6 +85,24 @@ fn read_keyboard_focus_lost(
 }
 
 ///|
+let keyboard_press_probe_direct_ref : Ref[Bool] = Ref(false)
+
+///|
+let keyboard_press_probe_button_ref : Ref[Bool] = Ref(false)
+
+///|
+fn keyboard_press_probe_system(
+  keyboard_input : @input.ButtonInput[@window.KeyCode],
+) -> Unit {
+  keyboard_press_probe_direct_ref.val = @input.key_just_pressed(
+    @window.KeyCode::Digit1,
+  )
+  keyboard_press_probe_button_ref.val = keyboard_input.just_pressed(
+    @window.KeyCode::Digit1,
+  )
+}
+
+///|
 fn read_window_closing(world : @ecs.World) -> Array[@window.WindowClosing] {
   let reader = world.message_reader(@window.ecs_key_window_closing, Ref(0))
   try! reader.read()
@@ -512,6 +530,57 @@ test "winit: typed raw winit events are published as messages" {
   }
 
   assert_eq(read_raw_winit_window_events(world, cursor).length(), 0)
+}
+
+///|
+test "winit: keyboard press reaches update input readers" {
+  keyboard_press_probe_direct_ref.val = false
+  keyboard_press_probe_button_ref.val = false
+
+  let world = @ecs.World::new()
+  let window_entity = world.spawn()
+  try! (world
+  .entity_mut(window_entity)
+  .insert_component(@window.Window::default())
+  |> ignore)
+  try! (world
+  .entity_mut(window_entity)
+  .insert_component(@window.PrimaryWindow::{  })
+  |> ignore)
+
+  let mut app = winit_plugin(@window.window_plugin(@app.App::new(world)))
+    .add_systems(
+      @app.Update,
+      @app.system(@app.system_param(keyboard_press_probe_system)),
+    )
+    .run_once()
+  let host_window = match
+    @window.window_host_window_for_ref(
+      app.world(),
+      @window.WindowRef::Entity(window_entity),
+    ) {
+    Some(host_window) => host_window
+    None => abort("missing host window for keyboard input test")
+  }
+  let key_event = @window_core.KeyEvent(
+    @window_core.PhysicalKey::from_key_code(@window_core.KeyCode::Digit1),
+    @window_core.Key::Character("1"),
+    @window_core.Key::Character("1"),
+    @window_core.KeyLocation::Standard,
+    @window_core.ElementState::Pressed,
+    false,
+    Some("1"),
+    Some("1"),
+  )
+  @windowing.runner_process_window_event(
+    host_window,
+    @window_core.WindowEvent::KeyboardInput(None, key_event, false),
+  )
+
+  app = app.run_once()
+
+  debug_inspect(keyboard_press_probe_direct_ref.val, content="true")
+  debug_inspect(keyboard_press_probe_button_ref.val, content="true")
 }
 
 ///|
