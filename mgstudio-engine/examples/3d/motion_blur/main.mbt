@@ -57,7 +57,8 @@ priv struct WheelState {
 priv struct MotionBlurExampleState {
   mut camera : @core.Entity?
   mut tracked_car : @core.Entity?
-  mut help_text : @core.Entity?
+  mut help_shutter_span : @core.Entity?
+  mut help_samples_span : @core.Entity?
   car_bodies : Array[CarBody]
   wheels : Array[WheelState]
   mut camera_mode : CameraMode
@@ -69,7 +70,8 @@ priv struct MotionBlurExampleState {
 let motion_blur_state : Ref[MotionBlurExampleState] = Ref({
   camera: None,
   tracked_car: None,
-  help_text: None,
+  help_shutter_span: None,
+  help_samples_span: None,
   car_bodies: [],
   wheels: [],
   camera_mode: CameraMode::Chase,
@@ -129,19 +131,42 @@ fn race_track_pos(offset : Float, t : Float) -> @math.Vec2 {
 }
 
 ///|
-fn help_text_content() -> String {
-  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\nSamples: \{motion_blur_state.val.samples}\n1/2: -/+ shutter angle (blur amount)\n3/4: -/+ sample count (blur quality)\nSpacebar: cycle camera\n"
+fn help_shutter_text() -> String {
+  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\n"
+}
+
+///|
+fn help_samples_text() -> String {
+  "Samples: \{motion_blur_state.val.samples}\n"
+}
+
+///|
+fn set_help_span_text(
+  world : @ecs.World,
+  entity : @core.Entity?,
+  content : String,
+) -> Unit {
+  guard entity is Some(span_entity) else { return }
+  guard (try! world.get_by_key(span_entity, @text.ecs_key_text_span))
+    is Some(span) else {
+    return
+  }
+  span.content = content
+  ignore(try! world.replace(span_entity, @text.ecs_key_text_span, span))
 }
 
 ///|
 fn update_help_text(world : @ecs.World) -> Unit {
-  guard motion_blur_state.val.help_text is Some(help_text) else { return }
-  guard (try! world.get_by_key(help_text, @text.ecs_key_text))
-    is Some(text_value) else {
-    return
-  }
-  text_value.content = help_text_content()
-  ignore(try! world.replace(help_text, @text.ecs_key_text, text_value))
+  set_help_span_text(
+    world,
+    motion_blur_state.val.help_shutter_span,
+    help_shutter_text(),
+  )
+  set_help_span_text(
+    world,
+    motion_blur_state.val.help_samples_span,
+    help_samples_text(),
+  )
 }
 
 ///|
@@ -273,6 +298,26 @@ fn motion_blur_uv_debug_texture(
 }
 
 ///|
+fn spawn_help_text_span(
+  world : @ecs.World,
+  parent : @core.Entity,
+  content : String,
+) -> @core.Entity {
+  let span_entity = world.spawn_empty()
+  try! world.set_by_key(
+    span_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set_by_key(
+    span_entity,
+    @text.ecs_key_text_span,
+    @text.TextSpan::new(content),
+  )
+  span_entity
+}
+
+///|
 fn spawn_help_text(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
@@ -304,7 +349,7 @@ fn spawn_help_text(world : @ecs.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
   )
-  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::new(""))
+  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::default())
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
@@ -320,7 +365,21 @@ fn spawn_help_text(world : @ecs.World) -> Unit {
     @text.ecs_key_text_layout,
     @text.TextLayout::default(),
   )
-  motion_blur_state.val.help_text = Some(text_entity)
+  motion_blur_state.val.help_shutter_span = Some(
+    spawn_help_text_span(world, text_entity, ""),
+  )
+  motion_blur_state.val.help_samples_span = Some(
+    spawn_help_text_span(world, text_entity, ""),
+  )
+  spawn_help_text_span(
+    world, text_entity, "1/2: -/+ shutter angle (blur amount)\n",
+  )
+  |> ignore
+  spawn_help_text_span(
+    world, text_entity, "3/4: -/+ sample count (blur quality)\n",
+  )
+  |> ignore
+  spawn_help_text_span(world, text_entity, "Spacebar: cycle camera\n") |> ignore
 }
 
 ///|
@@ -591,7 +650,8 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 fn setup(world : @ecs.World) -> Unit {
   motion_blur_state.val.camera = None
   motion_blur_state.val.tracked_car = None
-  motion_blur_state.val.help_text = None
+  motion_blur_state.val.help_shutter_span = None
+  motion_blur_state.val.help_samples_span = None
   motion_blur_state.val.car_bodies.clear()
   motion_blur_state.val.wheels.clear()
   motion_blur_state.val.camera_mode = CameraMode::Chase
@@ -608,24 +668,18 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn keyboard_inputs(world : @ecs.World) -> Unit {
-  let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     motion_blur_state.val.shutter_angle = motion_blur_state.val.shutter_angle -
       0.25F
-    changed = true
   } else if @input.key_just_pressed(@window.KeyCode::Digit2) {
     motion_blur_state.val.shutter_angle = motion_blur_state.val.shutter_angle +
       0.25F
-    changed = true
   } else if @input.key_just_pressed(@window.KeyCode::Digit3) {
     motion_blur_state.val.samples = motion_blur_state.val.samples - 1
-    changed = true
   } else if @input.key_just_pressed(@window.KeyCode::Digit4) {
     motion_blur_state.val.samples = motion_blur_state.val.samples + 1
-    changed = true
   } else if @input.key_just_pressed(@window.KeyCode::Space) {
     toggle_camera_mode()
-    changed = true
   }
 
   motion_blur_state.val.shutter_angle = clampf(
@@ -639,9 +693,7 @@ fn keyboard_inputs(world : @ecs.World) -> Unit {
     motion_blur_state.val.samples = 64
   }
 
-  if changed {
-    apply_motion_blur_settings(world)
-  }
+  apply_motion_blur_settings(world)
   update_help_text(world)
 }
 
