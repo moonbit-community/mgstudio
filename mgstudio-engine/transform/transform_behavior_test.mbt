@@ -71,6 +71,19 @@ test "transform behavior: looking_to aligns forward direction" {
 }
 
 ///|
+test "transform behavior: looking_to aligns arbitrary forward and back" {
+  let direction = @math.Vec3::new(0.35F, -0.2F, -0.9F).normalize_or_zero()
+  let transform = Transform::from_xyz(1.0F, 2.0F, 3.0F).looking_to(
+    direction,
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  let forward = transform.forward()
+  let back = transform.back()
+  debug_inspect(forward.dot(direction) > 0.999F, content="true")
+  debug_inspect(back.dot(direction.neg()) > 0.999F, content="true")
+}
+
+///|
 test "transform behavior: rotate_z updates z rotation" {
   let transform = Transform::identity()
   transform.rotate_z(@math.pi_half())
@@ -112,6 +125,46 @@ test "transform behavior: constructors and rotate_y preserve semantics" {
   rotated.rotate_y(@math.pi_half())
   debug_inspect(
     behavior_quat_same_rotation(rotated.rotation, rotation),
+    content="true",
+  )
+}
+
+///|
+test "transform behavior: global affine axes match directional helpers" {
+  let transform = Transform::from_xyz(1.25F, -0.5F, 2.0F).looking_to(
+    @math.Vec3::new(0.35F, 0.1F, -0.9F),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  transform.scale = @math.Vec3::new(1.5F, 0.75F, 2.0F)
+  let affine = GlobalTransform::from_transform(transform).affine()
+  debug_inspect(
+    behavior_approx_vec3(
+      affine.matrix3.x_axis,
+      transform.right().mul_scalar(transform.scale.x),
+    ),
+    content="true",
+  )
+  debug_inspect(
+    behavior_approx_vec3(
+      affine.matrix3.y_axis,
+      transform.up().mul_scalar(transform.scale.y),
+    ),
+    content="true",
+  )
+  debug_inspect(
+    behavior_approx_vec3(
+      affine.matrix3.z_axis,
+      transform.back().mul_scalar(transform.scale.z),
+    ),
+    content="true",
+  )
+  debug_inspect(
+    behavior_approx_vec3(
+      affine.transform_point3(@math.Vec3::new(0.0F, 0.0F, -1.0F)),
+      transform.translation.add(
+        transform.forward().mul_scalar(transform.scale.z),
+      ),
+    ),
     content="true",
   )
 }

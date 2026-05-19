@@ -125,6 +125,7 @@ pub fn prepare_mesh3d_cluster_buffers(
 ///|
 pub struct HostMesh3dMainPassDrawEntry {
   draw_storage_index : Int
+  world_from_local : Array[Float]?
   x : Float
   y : Float
   z : Float
@@ -196,11 +197,13 @@ pub struct HostMesh3dMainPassDrawEntry {
   morph_weights_index : Int
   previous_morph_weights_index : Int
   morph_targets_texture_id : Int
+  first_vertex_index : UInt
 }
 
 ///|
 pub fn host_mesh3d_main_pass_draw_entry(
   draw_storage_index~ : Int,
+  world_from_local? : Array[Float]? = None,
   x~ : Float,
   y~ : Float,
   z~ : Float,
@@ -272,9 +275,11 @@ pub fn host_mesh3d_main_pass_draw_entry(
   morph_weights_index? : Int = -1,
   previous_morph_weights_index? : Int = -1,
   morph_targets_texture_id? : Int = -1,
+  first_vertex_index? : UInt = 0U,
 ) -> HostMesh3dMainPassDrawEntry {
   HostMesh3dMainPassDrawEntry::{
     draw_storage_index,
+    world_from_local,
     x,
     y,
     z,
@@ -346,6 +351,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
     morph_weights_index,
     previous_morph_weights_index,
     morph_targets_texture_id,
+    first_vertex_index,
   }
 }
 
@@ -406,6 +412,7 @@ fn GpuBackend::write_mesh3d_main_pass_draw_entry(
   mesh3d_draw_uniform_write(
     packed_bytes,
     byte_offset,
+    entry.world_from_local,
     entry.x,
     entry.y,
     entry.z,
@@ -459,7 +466,7 @@ fn GpuBackend::write_mesh3d_main_pass_draw_entry(
     entry.lightmap_uv_min_y,
     entry.lightmap_uv_max_x,
     entry.lightmap_uv_max_y,
-    0U,
+    entry.first_vertex_index,
   )
   true
 }
@@ -954,6 +961,8 @@ pub fn draw_mesh3d(
   previous_scale_x~ : Float,
   previous_scale_y~ : Float,
   previous_scale_z~ : Float,
+  world_from_local? : Array[Float]? = None,
+  previous_world_from_local? : Array[Float]? = None,
   color_r~ : Float,
   color_g~ : Float,
   color_b~ : Float,
@@ -1062,6 +1071,8 @@ pub fn draw_mesh3d(
       previous_scale_x,
       previous_scale_y,
       previous_scale_z,
+      world_from_local,
+      previous_world_from_local,
       color_r,
       color_g,
       color_b,

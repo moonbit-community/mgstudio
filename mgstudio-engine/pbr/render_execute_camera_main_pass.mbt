@@ -527,6 +527,8 @@ fn render3d_execute_camera_main_pass(
       lightmap_uv_min_y~,
       lightmap_uv_max_x~,
       lightmap_uv_max_y~,
+      world_from_local=Some(mesh.world_from_local),
+      previous_world_from_local=Some(mesh.previous_world_from_local),
     )
     if draw_render_phase_type is @material.RenderPhaseType::Transparent {
       transparent_draws.push(draw_payload)
@@ -612,6 +614,8 @@ fn render3d_execute_camera_main_pass(
         0.0F,
         render3d_mesh_flags(extracted_mesh),
         render3d_mesh_draw_flags(extracted_mesh),
+        world_from_local=Some(mesh.world_from_local),
+        previous_world_from_local=Some(mesh.previous_world_from_local),
       ),
     )
   }

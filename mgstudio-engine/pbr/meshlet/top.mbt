@@ -62,6 +62,13 @@ pub let ecs_key_meshlet_visibility_buffer_raster_state : @ecs.ResourceKey[
 )
 
 ///|
+pub let ecs_key_meshlet_materialized_mesh_cache : @ecs.ResourceKey[
+  MeshletMaterializedMeshCache,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::meshlet::MeshletMaterializedMeshCache",
+)
+
+///|
 pub let ecs_key_meshlet_mesh3d : @ecs.ComponentKey[MeshletMesh3d] = @ecs.register_component(
   debug_name="render3d.meshlet_mesh3d",
 )
@@ -446,6 +453,195 @@ fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+pub struct MeshletMaterializedMeshCache {
+  mesh_handles_by_meshlet_asset_id : Map[Int, @asset.Handle[@mesh.Mesh]]
+  debug_mesh_handles_by_entity_bits : Map[UInt64, @asset.Handle[@mesh.Mesh]]
+  mut debug_material : @asset.Handle[@material.StandardMaterial]?
+}
+
+///|
+pub fn MeshletMaterializedMeshCache::default() -> MeshletMaterializedMeshCache {
+  MeshletMaterializedMeshCache::{
+    mesh_handles_by_meshlet_asset_id: {},
+    debug_mesh_handles_by_entity_bits: {},
+    debug_material: None,
+  }
+}
+
+///|
+priv struct MeshletMaterializeEntity {
+  entity : @core.Entity
+  meshlet_mesh3d : MeshletMesh3d
+}
+
+///|
+fn meshlet_materialized_mesh_for_asset(
+  cache : MeshletMaterializedMeshCache,
+  world : @ecs.World,
+  meshlet_asset_id : Int,
+  meshlet_mesh : MeshletMesh,
+) -> @asset.Handle[@mesh.Mesh] {
+  match cache.mesh_handles_by_meshlet_asset_id.get(meshlet_asset_id) {
+    Some(handle) => handle
+    None => {
+      let handle = @asset.asset_world_add(world, meshlet_mesh.to_mesh())
+      cache.mesh_handles_by_meshlet_asset_id.set(meshlet_asset_id, handle)
+      handle
+    }
+  }
+}
+
+///|
+fn meshlet_materialized_debug_mesh_for_entity(
+  cache : MeshletMaterializedMeshCache,
+  world : @ecs.World,
+  entity : @core.Entity,
+  meshlet_mesh : MeshletMesh,
+) -> @asset.Handle[@mesh.Mesh] {
+  let entity_bits = entity.to_bits()
+  match cache.debug_mesh_handles_by_entity_bits.get(entity_bits) {
+    Some(handle) => handle
+    None => {
+      let handle = @asset.asset_world_add(
+        world,
+        meshlet_mesh
+        .to_debug_mesh3d_geometry(entity.id.reinterpret_as_uint())
+        .to_mesh(),
+      )
+      cache.debug_mesh_handles_by_entity_bits.set(entity_bits, handle)
+      handle
+    }
+  }
+}
+
+///|
+fn meshlet_materialized_debug_material(
+  cache : MeshletMaterializedMeshCache,
+  world : @ecs.World,
+) -> @asset.Handle[@material.StandardMaterial] {
+  match cache.debug_material {
+    Some(handle) => handle
+    None => {
+      let handle = @asset.asset_world_add(
+        world,
+        @material.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(
+          true,
+        ),
+      )
+      cache.debug_material = Some(handle)
+      handle
+    }
+  }
+}
+
+///|
+fn meshlet_material_is_debug_unlit(
+  material : @material.StandardMaterial,
+) -> Bool {
+  material.unlit
+}
+
+///|
+fn meshlet_materialize_unavailable_runtime_meshes_system(
+  world : @ecs.World,
+) -> Unit {
+  if meshlet_runtime_available() {
+    return
+  }
+  if (try! world.get_resource(ecs_key_meshlet_materialized_mesh_cache)) is None {
+    world.insert_resource(
+      ecs_key_meshlet_materialized_mesh_cache,
+      MeshletMaterializedMeshCache::default(),
+    )
+  }
+  let meshlet_assets_key : @ecs.ResourceKey[@asset.Assets[MeshletMesh]] = @asset.assets_resource_key()
+  guard (try! world.get_resource(meshlet_assets_key)) is Some(meshlet_assets) else {
+    return
+  }
+  guard (try! world.get_resource_ref_mut(
+      ecs_key_meshlet_materialized_mesh_cache,
+    ))
+    is Some(cache_ref) else {
+    return
+  }
+  let asset_server = try! world.get_resource(@asset.asset_server_resource_key())
+  let entities : Array[MeshletMaterializeEntity] = []
+  world.for_each_component(ecs_key_meshlet_mesh3d, fn(entity, meshlet_mesh3d) {
+    if (try! world.get_by_key(entity, @mesh.ecs_key_mesh3d)) is None {
+      entities.push(MeshletMaterializeEntity::{ entity, meshlet_mesh3d })
+    }
+  })
+  for item in entities {
+    let handle : @asset.Handle[MeshletMesh] = @asset.Handle::new(
+      item.meshlet_mesh3d.id(),
+    )
+    let ready = match asset_server {
+      Some(server) => server.is_loaded_with_dependencies(handle)
+      None => true
+    }
+    if ready {
+      match meshlet_assets.get(handle) {
+        Some(meshlet_mesh) => {
+          let material_handle = match
+            (try! world.get_by_key(item.entity, @pbr.ecs_key_mesh_material3d)) {
+            Some(mesh_material) => Some(mesh_material.material)
+            None => None
+          }
+          let material = match material_handle {
+            Some(handle) => @pbr.pbr_standard_material_get(handle)
+            None => None
+          }
+          let debug_material = match material {
+            Some(value) => meshlet_material_is_debug_unlit(value)
+            None => false
+          }
+          let mesh_handle = if debug_material {
+            meshlet_materialized_debug_mesh_for_entity(
+              cache_ref.val,
+              world,
+              item.entity,
+              meshlet_mesh,
+            )
+          } else {
+            meshlet_materialized_mesh_for_asset(
+              cache_ref.val,
+              world,
+              item.meshlet_mesh3d.id(),
+              meshlet_mesh,
+            )
+          }
+          try! world.set_by_key(
+            item.entity,
+            @mesh.ecs_key_mesh3d,
+            @mesh.Mesh3d::new(mesh_handle),
+          )
+          if debug_material {
+            let replacement_material = meshlet_materialized_debug_material(
+              cache_ref.val,
+              world,
+            )
+            try! world.set_by_key(
+              item.entity,
+              @pbr.ecs_key_mesh_material3d,
+              @pbr.MeshMaterial3d::new(replacement_material),
+            )
+          }
+        }
+        None => ()
+      }
+    }
+  }
+}
+
+///|
+fn meshlet_refresh_plugin_state_system(world : @ecs.World) -> Unit {
+  world.insert_resource(
+    ecs_key_meshlet_plugin_state,
+    MeshletPluginState::from_plugin(MeshletPlugin::default()),
+  )
+}
+
+///|
 fn meshlet_material_reads_view_transmission_texture(
   material : @material.StandardMaterial,
 ) -> Bool {
@@ -772,7 +968,8 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
     (try! world.get_resource_ref_mut(
       ecs_key_meshlet_visibility_buffer_raster_state,
     )) {
-    Some(state_ref) =>
+    Some(state_ref) => {
+      state_ref.val.enabled = meshlet_runtime_available()
       meshlet_visibility_buffer_raster(
         state_ref.val,
         instance_count,
@@ -783,6 +980,7 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
         material_depth_view_count~,
         pipelines_ready~,
       )
+    }
     _ => ()
   }
 }
@@ -909,9 +1107,6 @@ fn meshlet_ensure_render_sub_app_resources(
       InstanceManager::default(),
     )
   }
-  if plugin_state.runtime_status is RuntimeUnavailable {
-    return
-  }
   if (try! world.get_resource(ecs_key_meshlet_resource_manager)) is None {
     world.insert_resource(
       ecs_key_meshlet_resource_manager,
@@ -947,6 +1142,12 @@ fn meshlet_configure_render_sub_app(
   meshlet_ensure_render_sub_app_resources(sub_app.world(), plugin)
   let stage = @render.render_schedule_stage()
   @render.configure_base_render_sets(sub_app)
+  .add_systems(
+    stage,
+    @app.system(meshlet_refresh_plugin_state_system).in_set(
+      meshlet_render3d_set_extract,
+    ),
+  )
   .add_systems(
     stage,
     @app.system(meshlet_extract_entities_system).in_set(
@@ -1061,6 +1262,10 @@ pub fn meshlet_plugin_with(
 
     })
     try! register_meshlet_mesh3d_required_components(next.world())
+    next = next.add_systems(
+      @app.Update,
+      @app.system(meshlet_materialize_unavailable_runtime_meshes_system),
+    )
     next = @render.with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
       meshlet_configure_render_sub_app(sub_app, plugin)
     })

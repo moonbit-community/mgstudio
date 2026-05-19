@@ -20,7 +20,7 @@ pub const MESHLET_VISIBILITY_BUFFER_RASTER_NODE : String = "mgstudio.pbr.meshlet
 
 ///|
 pub struct MeshletVisibilityBufferRasterState {
-  enabled : Bool
+  mut enabled : Bool
   mut last_view_count : Int
   mut last_shadow_view_count : Int
   mut last_pipeline_ready : Bool

@@ -590,6 +590,61 @@ test "transform plugin: post update reflects update stage transform writes" {
 }
 
 ///|
+test "transform plugin: post update reflects hierarchy root transform writes" {
+  let parent_ref = Ref(@core.Entity::new(0, 0))
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    TransformPlugin::default(),
+  )
+  let world = app.world()
+  let parent = world.spawn_empty()
+  let child = world.spawn_empty()
+  parent_ref.val = parent
+  try! world.set_by_key(
+    parent,
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
+      @math.Vec2::new(1.0F, 2.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
+      @math.Vec2::new(3.0F, 4.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+
+  let app = app.add_system(fn(world : @ecs.World) {
+    try! world.set_by_key(
+      parent_ref.val,
+      ecs_key_transform,
+      Transform::from_xy_rotation_scale(
+        @math.Vec2::new(7.0F, 8.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+      ),
+    )
+  })
+
+  app.run_startup() |> ignore
+  app.run_once() |> ignore
+
+  let parent_gt = (try! app.world().get_by_key(parent, ecs_key_global_transform)).unwrap()
+  let child_gt = (try! app.world().get_by_key(child, ecs_key_global_transform)).unwrap()
+  debug_inspect(global_translation_eq(parent_gt, 7.0F, 8.0F), content="true")
+  debug_inspect(global_translation_eq(child_gt, 10.0F, 12.0F), content="true")
+}
+
+///|
 test "transform ecs: reparenting in the same frame preserves global transform" {
   let world = @ecs.World::new()
   let parent = world.spawn_empty()

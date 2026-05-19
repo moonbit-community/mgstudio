@@ -8,6 +8,12 @@ import {
 // Values
 pub const MESH_ALLOCATOR_COPY_BUFFER_ALIGNMENT : Int = 4
 
+pub const RENDER_MESH3D_HOST_VERTEX_BASE_FLOAT_STRIDE : Int = 12
+
+pub const RENDER_MESH3D_HOST_VERTEX_SKINNED_FLOAT_STRIDE : Int = 20
+
+pub const RENDER_MESH3D_HOST_VERTEX_STRIDE_BYTES : Int = 80
+
 pub fn mesh_allocator_grow_general_slab_if_necessary(Int, Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> MeshAllocatorSlabGrowth
 
 pub fn mesh_allocator_plan_large_slab(Int, Int, MeshAllocatorElementLayout) -> MeshAllocatorSlabPlan
@@ -15,6 +21,8 @@ pub fn mesh_allocator_plan_large_slab(Int, Int, MeshAllocatorElementLayout) -> M
 pub fn mesh_allocator_plan_new_general_slab(Int, Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> MeshAllocatorSlabPlan
 
 pub fn mesh_allocator_should_allocate_large(Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> Bool
+
+pub fn render_mesh3d_host_vertex_buffer_layout(@Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
 
 // Errors
 
@@ -229,6 +237,7 @@ pub struct RenderMesh {
 pub fn RenderMesh::buffer_info(Self) -> RenderMeshBufferInfo
 pub fn RenderMesh::dimension(Self) -> RenderMeshDimension
 pub fn RenderMesh::from_mesh(@Milky2018/mgstudio/mesh.Mesh, @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, dimension? : RenderMeshDimension) -> Self
+pub fn RenderMesh::host_vertex_buffer_layout(Self, @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
 pub fn RenderMesh::indexed(Self) -> Bool
 pub fn RenderMesh::key_bits(Self) -> @Milky2018/mgstudio/mesh.BaseMeshPipelineKey
 pub fn RenderMesh::layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef

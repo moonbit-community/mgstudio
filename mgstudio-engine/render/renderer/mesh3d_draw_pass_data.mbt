@@ -478,6 +478,8 @@ fn mesh3d_material_and_lightmap_bind_group_slot(
 
 ///|
 fn mesh3d_mesh_uniform_words(
+  world_from_local : Array[Float]?,
+  previous_world_from_local : Array[Float]?,
   x : Float,
   y : Float,
   z : Float,
@@ -507,8 +509,9 @@ fn mesh3d_mesh_uniform_words(
   lightmap_uv_max_y : Float,
   first_vertex_index : UInt,
 ) -> Array[UInt] {
-  let inverse_transpose = mesh3d_inverse_transpose_words(
-    rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
+  let inverse_transpose = mesh3d_inverse_transpose_words_resolved(
+    world_from_local, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
+    scale_z,
   )
   let (lightmap_uv_rect_x, lightmap_uv_rect_y) = if lightmap_texture_id >= 0 {
     mesh3d_pack_lightmap_uv_rect_words(
@@ -519,17 +522,17 @@ fn mesh3d_mesh_uniform_words(
   }
   let words : Array[UInt] = []
   for
-    word in mesh3d_world_from_local_words(
-      x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
-      scale_z,
+    word in mesh3d_world_from_local_words_resolved(
+      world_from_local, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w,
+      scale_x, scale_y, scale_z,
     ) {
     words.push(word)
   }
   for
-    word in mesh3d_world_from_local_words(
-      previous_x, previous_y, previous_z, previous_rotation_x, previous_rotation_y,
-      previous_rotation_z, previous_rotation_w, previous_scale_x, previous_scale_y,
-      previous_scale_z,
+    word in mesh3d_world_from_local_words_resolved(
+      previous_world_from_local, previous_x, previous_y, previous_z, previous_rotation_x,
+      previous_rotation_y, previous_rotation_z, previous_rotation_w, previous_scale_x,
+      previous_scale_y, previous_scale_z,
     ) {
     words.push(word)
   }
@@ -566,6 +569,7 @@ fn mesh3d_mesh_uniform_write(
 
 ///|
 fn mesh3d_draw_uniform_bytes(
+  world_from_local : Array[Float]?,
   x : Float,
   y : Float,
   z : Float,
@@ -650,10 +654,10 @@ fn mesh3d_draw_uniform_bytes(
   ignore(material_flags)
   ignore(point_shadow_depth_bias)
   let words = mesh3d_mesh_uniform_words(
-    x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
-    x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
-    current_skin_index, mesh_flags, lightmap_texture_id, lightmap_uv_min_x, lightmap_uv_min_y,
-    lightmap_uv_max_x, lightmap_uv_max_y, first_vertex_index,
+    world_from_local, world_from_local, x, y, z, rotation_x, rotation_y, rotation_z,
+    rotation_w, scale_x, scale_y, scale_z, x, y, z, rotation_x, rotation_y, rotation_z,
+    rotation_w, scale_x, scale_y, scale_z, current_skin_index, mesh_flags, lightmap_texture_id,
+    lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x, lightmap_uv_max_y, first_vertex_index,
   )
   u32le_pack(words)
 }
@@ -805,6 +809,7 @@ fn mesh3d_standard_material_default_uniform_bytes() -> Bytes {
 fn mesh3d_draw_uniform_write(
   bytes : FixedArray[Byte],
   byte_offset : Int,
+  world_from_local : Array[Float]?,
   x : Float,
   y : Float,
   z : Float,
@@ -892,10 +897,11 @@ fn mesh3d_draw_uniform_write(
     bytes,
     byte_offset,
     mesh3d_mesh_uniform_words(
-      x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
-      scale_z, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x,
-      scale_y, scale_z, current_skin_index, mesh_flags, lightmap_texture_id, lightmap_uv_min_x,
-      lightmap_uv_min_y, lightmap_uv_max_x, lightmap_uv_max_y, first_vertex_index,
+      world_from_local, world_from_local, x, y, z, rotation_x, rotation_y, rotation_z,
+      rotation_w, scale_x, scale_y, scale_z, x, y, z, rotation_x, rotation_y, rotation_z,
+      rotation_w, scale_x, scale_y, scale_z, current_skin_index, mesh_flags, lightmap_texture_id,
+      lightmap_uv_min_x, lightmap_uv_min_y, lightmap_uv_max_x, lightmap_uv_max_y,
+      first_vertex_index,
     ),
   )
 }
@@ -1084,6 +1090,162 @@ fn mesh3d_world_from_local_words(
 }
 
 ///|
+fn mesh3d_affine_transpose_words(
+  affine_transpose : Array[Float],
+) -> Array[UInt]? {
+  if affine_transpose.length() < 12 {
+    return None
+  }
+  Some([
+    f32_bits(affine_transpose[0]),
+    f32_bits(affine_transpose[1]),
+    f32_bits(affine_transpose[2]),
+    f32_bits(affine_transpose[3]),
+    f32_bits(affine_transpose[4]),
+    f32_bits(affine_transpose[5]),
+    f32_bits(affine_transpose[6]),
+    f32_bits(affine_transpose[7]),
+    f32_bits(affine_transpose[8]),
+    f32_bits(affine_transpose[9]),
+    f32_bits(affine_transpose[10]),
+    f32_bits(affine_transpose[11]),
+  ])
+}
+
+///|
+fn mesh3d_world_from_local_words_resolved(
+  affine_transpose : Array[Float]?,
+  translation_x : Float,
+  translation_y : Float,
+  translation_z : Float,
+  rotation_x : Float,
+  rotation_y : Float,
+  rotation_z : Float,
+  rotation_w : Float,
+  scale_x : Float,
+  scale_y : Float,
+  scale_z : Float,
+) -> Array[UInt] {
+  match affine_transpose {
+    Some(values) =>
+      match mesh3d_affine_transpose_words(values) {
+        Some(words) => words
+        None =>
+          mesh3d_world_from_local_words(
+            translation_x, translation_y, translation_z, rotation_x, rotation_y,
+            rotation_z, rotation_w, scale_x, scale_y, scale_z,
+          )
+      }
+    None =>
+      mesh3d_world_from_local_words(
+        translation_x, translation_y, translation_z, rotation_x, rotation_y, rotation_z,
+        rotation_w, scale_x, scale_y, scale_z,
+      )
+  }
+}
+
+///|
+fn mesh3d_cross_x(
+  _ax : Float,
+  ay : Float,
+  az : Float,
+  _bx : Float,
+  by : Float,
+  bz : Float,
+) -> Float {
+  ay * bz - az * by
+}
+
+///|
+fn mesh3d_cross_y(
+  ax : Float,
+  _ay : Float,
+  az : Float,
+  bx : Float,
+  _by : Float,
+  bz : Float,
+) -> Float {
+  az * bx - ax * bz
+}
+
+///|
+fn mesh3d_cross_z(
+  ax : Float,
+  ay : Float,
+  _az : Float,
+  bx : Float,
+  by : Float,
+  _bz : Float,
+) -> Float {
+  ax * by - ay * bx
+}
+
+///|
+fn mesh3d_affine_transpose_determinant(
+  affine_transpose : Array[Float],
+) -> Float? {
+  if affine_transpose.length() < 12 {
+    return None
+  }
+  let x0 = affine_transpose[0]
+  let x1 = affine_transpose[4]
+  let x2 = affine_transpose[8]
+  let y0 = affine_transpose[1]
+  let y1 = affine_transpose[5]
+  let y2 = affine_transpose[9]
+  let z0 = affine_transpose[2]
+  let z1 = affine_transpose[6]
+  let z2 = affine_transpose[10]
+  let c0 = mesh3d_cross_x(y0, y1, y2, z0, z1, z2)
+  let c1 = mesh3d_cross_y(y0, y1, y2, z0, z1, z2)
+  let c2 = mesh3d_cross_z(y0, y1, y2, z0, z1, z2)
+  Some(x0 * c0 + x1 * c1 + x2 * c2)
+}
+
+///|
+fn mesh3d_inverse_transpose_words_from_affine(
+  affine_transpose : Array[Float],
+) -> Array[UInt]? {
+  if affine_transpose.length() < 12 {
+    return None
+  }
+  let x0 = affine_transpose[0]
+  let x1 = affine_transpose[4]
+  let x2 = affine_transpose[8]
+  let y0 = affine_transpose[1]
+  let y1 = affine_transpose[5]
+  let y2 = affine_transpose[9]
+  let z0 = affine_transpose[2]
+  let z1 = affine_transpose[6]
+  let z2 = affine_transpose[10]
+  let cx0 = mesh3d_cross_x(y0, y1, y2, z0, z1, z2)
+  let cx1 = mesh3d_cross_y(y0, y1, y2, z0, z1, z2)
+  let cx2 = mesh3d_cross_z(y0, y1, y2, z0, z1, z2)
+  let cy0 = mesh3d_cross_x(z0, z1, z2, x0, x1, x2)
+  let cy1 = mesh3d_cross_y(z0, z1, z2, x0, x1, x2)
+  let cy2 = mesh3d_cross_z(z0, z1, z2, x0, x1, x2)
+  let cz0 = mesh3d_cross_x(x0, x1, x2, y0, y1, y2)
+  let cz1 = mesh3d_cross_y(x0, x1, x2, y0, y1, y2)
+  let cz2 = mesh3d_cross_z(x0, x1, x2, y0, y1, y2)
+  let det = x0 * cx0 + x1 * cx1 + x2 * cx2
+  if det <= 1.0e-12F && det >= -1.0e-12F {
+    return None
+  }
+  let inv_det = 1.0F / det
+  Some([
+    f32_bits(cx0 * inv_det),
+    f32_bits(cx1 * inv_det),
+    f32_bits(cx2 * inv_det),
+    f32_bits(cy0 * inv_det),
+    f32_bits(cy1 * inv_det),
+    f32_bits(cy2 * inv_det),
+    f32_bits(cz0 * inv_det),
+    f32_bits(cz1 * inv_det),
+    f32_bits(cz2 * inv_det),
+  ])
+}
+
+///|
 fn mesh3d_inverse_transpose_words(
   rotation_x : Float,
   rotation_y : Float,
@@ -1113,7 +1275,36 @@ fn mesh3d_inverse_transpose_words(
 }
 
 ///|
+fn mesh3d_inverse_transpose_words_resolved(
+  affine_transpose : Array[Float]?,
+  rotation_x : Float,
+  rotation_y : Float,
+  rotation_z : Float,
+  rotation_w : Float,
+  scale_x : Float,
+  scale_y : Float,
+  scale_z : Float,
+) -> Array[UInt] {
+  match affine_transpose {
+    Some(values) =>
+      match mesh3d_inverse_transpose_words_from_affine(values) {
+        Some(words) => words
+        None =>
+          mesh3d_inverse_transpose_words(
+            rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
+          )
+      }
+    None =>
+      mesh3d_inverse_transpose_words(
+        rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
+      )
+  }
+}
+
+///|
 fn mesh3d_motion_vector_mesh_bytes(
+  world_from_local : Array[Float]?,
+  previous_world_from_local : Array[Float]?,
   translation_x : Float,
   translation_y : Float,
   translation_z : Float,
@@ -1136,7 +1327,14 @@ fn mesh3d_motion_vector_mesh_bytes(
   previous_scale_z : Float,
   skinning_key_hi : Int,
 ) -> Bytes {
-  let determinant = scale_x * scale_y * scale_z
+  let determinant = match world_from_local {
+    Some(values) =>
+      match mesh3d_affine_transpose_determinant(values) {
+        Some(det) => det
+        None => scale_x * scale_y * scale_z
+      }
+    None => scale_x * scale_y * scale_z
+  }
   let mut flags = 0xFFFFU
   if determinant >= 0.0F {
     flags = flags | (1U << 31)
@@ -1146,22 +1344,23 @@ fn mesh3d_motion_vector_mesh_bytes(
   } else {
     0xFFFFFFFFU
   }
-  let inverse_transpose = mesh3d_inverse_transpose_words(
-    rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
+  let inverse_transpose = mesh3d_inverse_transpose_words_resolved(
+    world_from_local, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
+    scale_z,
   )
   let words : Array[UInt] = []
   for
-    word in mesh3d_world_from_local_words(
-      translation_x, translation_y, translation_z, rotation_x, rotation_y, rotation_z,
-      rotation_w, scale_x, scale_y, scale_z,
+    word in mesh3d_world_from_local_words_resolved(
+      world_from_local, translation_x, translation_y, translation_z, rotation_x,
+      rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
     ) {
     words.push(word)
   }
   for
-    word in mesh3d_world_from_local_words(
-      previous_translation_x, previous_translation_y, previous_translation_z, previous_rotation_x,
-      previous_rotation_y, previous_rotation_z, previous_rotation_w, previous_scale_x,
-      previous_scale_y, previous_scale_z,
+    word in mesh3d_world_from_local_words_resolved(
+      previous_world_from_local, previous_translation_x, previous_translation_y,
+      previous_translation_z, previous_rotation_x, previous_rotation_y, previous_rotation_z,
+      previous_rotation_w, previous_scale_x, previous_scale_y, previous_scale_z,
     ) {
     words.push(word)
   }

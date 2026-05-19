@@ -120,18 +120,19 @@ test "pbr meshlet: plugin installs state into app and render sub-app" {
     is Some(_),
     content="true",
   )
-  if meshlet_runtime_available() {
-    inspect(
-      (try! render_world.get_resource(ecs_key_meshlet_resource_manager))
-      is Some(_),
-      content="true",
-    )
-  } else {
-    inspect(
-      (try! render_world.get_resource(ecs_key_meshlet_resource_manager)) is None,
-      content="true",
-    )
-  }
+  inspect(
+    (try! render_world.get_resource(ecs_key_meshlet_resource_manager))
+    is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! render_world.get_resource(ecs_key_meshlet_pipelines)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! render_world.get_resource(ecs_key_meshlet_mesh_manager)) is Some(_),
+    content="true",
+  )
 }
 
 ///|

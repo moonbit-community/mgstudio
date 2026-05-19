@@ -43,6 +43,15 @@ pub struct RenderMesh {
 }
 
 ///|
+pub const RENDER_MESH3D_HOST_VERTEX_BASE_FLOAT_STRIDE : Int = 12
+
+///|
+pub const RENDER_MESH3D_HOST_VERTEX_SKINNED_FLOAT_STRIDE : Int = 20
+
+///|
+pub const RENDER_MESH3D_HOST_VERTEX_STRIDE_BYTES : Int = 80
+
+///|
 fn render_mesh_default_layout_ref() -> @asset_mesh.MeshVertexBufferLayoutRef {
   let layouts = @asset_mesh.MeshVertexBufferLayouts::default()
   layouts.insert(
@@ -52,6 +61,98 @@ fn render_mesh_default_layout_ref() -> @asset_mesh.MeshVertexBufferLayoutRef {
         array_stride=0,
         step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
         attributes=[],
+      ),
+    ),
+  )
+}
+
+///|
+fn render_mesh3d_host_vertex_push_attribute(
+  source_layout : @asset_mesh.MeshVertexBufferLayout,
+  attribute : @asset_mesh.MeshVertexAttribute,
+  offset : Int,
+  format : @asset_mesh.MeshVertexFormat,
+  shader_location : Int,
+  attribute_ids : Array[@asset_mesh.MeshVertexAttributeId],
+  attributes : Array[@asset_mesh.VertexAttribute],
+) -> Unit {
+  if source_layout.contains(attribute.id()) {
+    attribute_ids.push(attribute.id())
+    attributes.push(
+      @asset_mesh.VertexAttribute::new(offset~, format~, shader_location~),
+    )
+  }
+}
+
+///|
+pub fn render_mesh3d_host_vertex_buffer_layout(
+  mesh_vertex_buffer_layouts : @asset_mesh.MeshVertexBufferLayouts,
+  source_layout_ref : @asset_mesh.MeshVertexBufferLayoutRef,
+) -> @asset_mesh.MeshVertexBufferLayoutRef {
+  let source_layout = source_layout_ref.layout()
+  let attribute_ids : Array[@asset_mesh.MeshVertexAttributeId] = []
+  let attributes : Array[@asset_mesh.VertexAttribute] = []
+  render_mesh3d_host_vertex_push_attribute(
+    source_layout,
+    @asset_mesh.MeshVertexAttribute::position(),
+    0,
+    @asset_mesh.MeshVertexFormat::Float32x3,
+    0,
+    attribute_ids,
+    attributes,
+  )
+  render_mesh3d_host_vertex_push_attribute(
+    source_layout,
+    @asset_mesh.MeshVertexAttribute::normal(),
+    12,
+    @asset_mesh.MeshVertexFormat::Float32x3,
+    1,
+    attribute_ids,
+    attributes,
+  )
+  render_mesh3d_host_vertex_push_attribute(
+    source_layout,
+    @asset_mesh.MeshVertexAttribute::uv_0(),
+    24,
+    @asset_mesh.MeshVertexFormat::Float32x2,
+    2,
+    attribute_ids,
+    attributes,
+  )
+  render_mesh3d_host_vertex_push_attribute(
+    source_layout,
+    @asset_mesh.MeshVertexAttribute::color(),
+    32,
+    @asset_mesh.MeshVertexFormat::Float32x4,
+    5,
+    attribute_ids,
+    attributes,
+  )
+  render_mesh3d_host_vertex_push_attribute(
+    source_layout,
+    @asset_mesh.MeshVertexAttribute::joint_index(),
+    48,
+    @asset_mesh.MeshVertexFormat::Uint32x4,
+    6,
+    attribute_ids,
+    attributes,
+  )
+  render_mesh3d_host_vertex_push_attribute(
+    source_layout,
+    @asset_mesh.MeshVertexAttribute::joint_weight(),
+    64,
+    @asset_mesh.MeshVertexFormat::Float32x4,
+    7,
+    attribute_ids,
+    attributes,
+  )
+  mesh_vertex_buffer_layouts.insert(
+    @asset_mesh.MeshVertexBufferLayout::new(
+      attribute_ids~,
+      layout=@asset_mesh.VertexBufferLayout::new(
+        array_stride=RENDER_MESH3D_HOST_VERTEX_STRIDE_BYTES,
+        step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
+        attributes~,
       ),
     ),
   )
@@ -159,6 +260,17 @@ pub fn RenderMesh::layout(
   self : RenderMesh,
 ) -> @asset_mesh.MeshVertexBufferLayoutRef {
   self.layout
+}
+
+///|
+pub fn RenderMesh::host_vertex_buffer_layout(
+  self : RenderMesh,
+  mesh_vertex_buffer_layouts : @asset_mesh.MeshVertexBufferLayouts,
+) -> @asset_mesh.MeshVertexBufferLayoutRef {
+  render_mesh3d_host_vertex_buffer_layout(
+    mesh_vertex_buffer_layouts,
+    self.layout,
+  )
 }
 
 ///|

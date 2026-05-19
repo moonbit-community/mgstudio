@@ -67,6 +67,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   scale_x : Float,
   scale_y : Float,
   scale_z : Float,
+  world_from_local : Array[Float]?,
   color_r : Float,
   color_g : Float,
   color_b : Float,
@@ -229,6 +230,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
   }
   if !draw_preuploaded {
     let draw_bytes = mesh3d_draw_uniform_bytes(
+      world_from_local,
       x,
       y,
       z,

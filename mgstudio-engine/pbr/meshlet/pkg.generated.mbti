@@ -34,6 +34,8 @@ pub const MESHLET_VISIBILITY_BUFFER_RASTER_NODE : String = "mgstudio.pbr.meshlet
 
 pub let ecs_key_meshlet_instance_manager : @ecs.ResourceKey[InstanceManager]
 
+pub let ecs_key_meshlet_materialized_mesh_cache : @ecs.ResourceKey[MeshletMaterializedMeshCache]
+
 pub let ecs_key_meshlet_mesh3d : @ecs.ComponentKey[MeshletMesh3d]
 
 pub let ecs_key_meshlet_mesh_manager : @ecs.ResourceKey[MeshletMeshManager]
@@ -495,6 +497,14 @@ pub(all) enum MeshletMaterialViewLayoutKind {
   PrepassMotionVectors
 }
 
+pub struct MeshletMaterializedMeshCache {
+  mesh_handles_by_meshlet_asset_id : Map[Int, @asset.Handle[@mesh.Mesh]]
+  debug_mesh_handles_by_entity_bits : Map[UInt64, @asset.Handle[@mesh.Mesh]]
+  mut debug_material : @asset.Handle[@material.StandardMaterial]?
+}
+pub fn MeshletMaterializedMeshCache::default() -> Self
+pub impl @ecs.EcsPayloadCodec for MeshletMaterializedMeshCache
+
 pub struct MeshletMesh {
   vertex_positions : Array[Int]
   vertex_normals : Array[Int]
@@ -513,6 +523,9 @@ pub fn MeshletMesh::index_count(Self) -> Int
 pub fn MeshletMesh::is_empty(Self) -> Bool
 pub fn MeshletMesh::meshlet_count(Self) -> Int
 pub fn MeshletMesh::new(Int, Int) -> Self
+pub fn MeshletMesh::to_debug_mesh3d_geometry(Self, UInt) -> @mesh.Mesh3dGeometry
+pub fn MeshletMesh::to_mesh(Self) -> @mesh.Mesh
+pub fn MeshletMesh::to_mesh3d_geometry(Self) -> @mesh.Mesh3dGeometry
 pub fn MeshletMesh::vertex_count_estimate(Self) -> Int
 pub fn MeshletMesh::vertex_normal_word_count(Self) -> Int
 pub fn MeshletMesh::vertex_position_word_count(Self) -> Int
@@ -957,7 +970,7 @@ pub fn MeshletVisibilityBufferRasterPlan::shadow_view_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterPlan::view_count(Self) -> Int
 
 pub struct MeshletVisibilityBufferRasterState {
-  enabled : Bool
+  mut enabled : Bool
   mut last_view_count : Int
   mut last_shadow_view_count : Int
   mut last_pipeline_ready : Bool

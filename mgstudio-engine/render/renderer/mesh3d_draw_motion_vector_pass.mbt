@@ -121,6 +121,8 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   previous_scale_x : Float,
   previous_scale_y : Float,
   previous_scale_z : Float,
+  world_from_local : Array[Float]?,
+  previous_world_from_local : Array[Float]?,
   skinning_key_hi : Int,
   skinning_key_lo : Int,
   morph_weights_index : Int,
@@ -333,10 +335,11 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
       active_mesh_buffer,
       mesh_write_offset,
       mesh3d_motion_vector_mesh_bytes(
-        x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
-        scale_z, previous_x, previous_y, previous_z, previous_rotation_x, previous_rotation_y,
-        previous_rotation_z, previous_rotation_w, previous_scale_x, previous_scale_y,
-        previous_scale_z, skinning_key_hi,
+        world_from_local, previous_world_from_local, x, y, z, rotation_x, rotation_y,
+        rotation_z, rotation_w, scale_x, scale_y, scale_z, previous_x, previous_y,
+        previous_z, previous_rotation_x, previous_rotation_y, previous_rotation_z,
+        previous_rotation_w, previous_scale_x, previous_scale_y, previous_scale_z,
+        skinning_key_hi,
       ),
     )
   }

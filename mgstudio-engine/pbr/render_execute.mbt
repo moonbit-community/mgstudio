@@ -305,7 +305,9 @@ fn render3d_prewarm_material_pipeline(
     mesh_asset,
     mesh_runtime_state_ref.val.mesh_vertex_buffer_layouts,
   )
-  let layout = render_mesh.layout()
+  let layout = render_mesh.host_vertex_buffer_layout(
+    mesh_runtime_state_ref.val.mesh_vertex_buffer_layouts,
+  )
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
     mesh.material_properties,
     render_mesh,

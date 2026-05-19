@@ -260,6 +260,325 @@ pub fn MeshletMesh::is_empty(self : MeshletMesh) -> Bool {
 }
 
 ///|
+fn meshlet_u32_at(words : Array[Int], index : Int) -> UInt {
+  if index < 0 || index >= words.length() {
+    0U
+  } else {
+    words[index].reinterpret_as_uint()
+  }
+}
+
+///|
+fn meshlet_extract_position_bits(
+  words : Array[Int],
+  start_bit : Int,
+  bit_count : Int,
+) -> UInt {
+  if bit_count <= 0 {
+    return 0U
+  }
+  let lower_word_index = start_bit / 32
+  let lower_word_bit_offset = start_bit & 31
+  let lower = meshlet_u32_at(words, lower_word_index) >> lower_word_bit_offset
+  let bits = if lower_word_bit_offset + bit_count > 32 {
+    lower |
+    (
+      meshlet_u32_at(words, lower_word_index + 1) <<
+      (32 - lower_word_bit_offset)
+    )
+  } else {
+    lower
+  }
+  if bit_count >= 32 {
+    bits
+  } else {
+    bits & ((1U << bit_count) - 1U)
+  }
+}
+
+///|
+fn meshlet_uint_to_float(value : UInt) -> Float {
+  Float::from_double(value.to_double())
+}
+
+///|
+fn meshlet_decode_quantization_scale(factor : Int) -> Float {
+  let mut scale = 1.0F
+  for _ in 0..<meshlet_non_negative(factor) {
+    scale = scale * 2.0F
+  }
+  scale * 100.0F
+}
+
+///|
+fn meshlet_decode_vertex_position(
+  mesh : MeshletMesh,
+  meshlet : Meshlet,
+  vertex_id : Int,
+) -> @math.Vec3 {
+  let bits_x = meshlet.bits_per_vertex_position_channel_x
+  let bits_y = meshlet.bits_per_vertex_position_channel_y
+  let bits_z = meshlet.bits_per_vertex_position_channel_z
+  let bits_per_vertex = bits_x + bits_y + bits_z
+  let start = meshlet.start_vertex_position_bit + vertex_id * bits_per_vertex
+  let packed_x = meshlet_extract_position_bits(
+    mesh.vertex_positions,
+    start,
+    bits_x,
+  )
+  let packed_y = meshlet_extract_position_bits(
+    mesh.vertex_positions,
+    start + bits_x,
+    bits_y,
+  )
+  let packed_z = meshlet_extract_position_bits(
+    mesh.vertex_positions,
+    start + bits_x + bits_y,
+    bits_z,
+  )
+  let scale = meshlet_decode_quantization_scale(
+    meshlet.vertex_position_quantization_factor,
+  )
+  @math.Vec3::new(
+    (meshlet_uint_to_float(packed_x) + meshlet.min_vertex_position_channel_x) /
+    scale,
+    (meshlet_uint_to_float(packed_y) + meshlet.min_vertex_position_channel_y) /
+    scale,
+    (meshlet_uint_to_float(packed_z) + meshlet.min_vertex_position_channel_z) /
+    scale,
+  )
+}
+
+///|
+fn meshlet_u16_to_snorm(value : UInt) -> Float {
+  let raw = (value & 0xFFFFU).reinterpret_as_int()
+  let signed = if raw >= 0x8000 { raw - 0x10000 } else { raw }
+  let normalized = Float::from_double(signed.to_double()) / 32767.0F
+  if normalized < -1.0F {
+    -1.0F
+  } else {
+    normalized
+  }
+}
+
+///|
+fn meshlet_octahedral_decode_signed(x : Float, y : Float) -> @math.Vec3 {
+  let ax = if x < 0.0F { -x } else { x }
+  let ay = if y < 0.0F { -y } else { y }
+  let z = 1.0F - ax - ay
+  let t = if z < 0.0F { -z } else { 0.0F }
+  let nx = if x >= 0.0F { x - t } else { x + t }
+  let ny = if y >= 0.0F { y - t } else { y + t }
+  @math.Vec3::new(nx, ny, z).normalize()
+}
+
+///|
+fn meshlet_decode_vertex_normal(
+  mesh : MeshletMesh,
+  meshlet : Meshlet,
+  vertex_id : Int,
+) -> @math.Vec3 {
+  let packed = meshlet_u32_at(
+    mesh.vertex_normals,
+    meshlet.start_vertex_attribute_id + vertex_id,
+  )
+  meshlet_octahedral_decode_signed(
+    meshlet_u16_to_snorm(packed),
+    meshlet_u16_to_snorm(packed >> 16),
+  )
+}
+
+///|
+fn meshlet_decode_vertex_uv(
+  mesh : MeshletMesh,
+  meshlet : Meshlet,
+  vertex_id : Int,
+) -> @math.Vec2 {
+  let index = meshlet.start_vertex_attribute_id + vertex_id
+  if index < 0 || index >= mesh.vertex_uvs.length() {
+    @math.Vec2::zero()
+  } else {
+    let uv = mesh.vertex_uvs[index]
+    @math.Vec2::new(uv.x, uv.y)
+  }
+}
+
+///|
+fn meshlet_decode_index(mesh : MeshletMesh, index_id : Int) -> Int {
+  if index_id < 0 || index_id >= mesh.indices.length() {
+    0
+  } else {
+    mesh.indices[index_id] & 0xFF
+  }
+}
+
+///|
+pub fn MeshletMesh::to_mesh3d_geometry(
+  self : MeshletMesh,
+) -> @mesh.Mesh3dGeometry {
+  self.to_mesh3d_geometry_with_debug_seed(None)
+}
+
+///|
+fn meshlet_rand_u(state : UInt) -> (UInt, UInt) {
+  let next = state * 747796405U + 2891336453U
+  let shift = ((next >> 28) + 4U).reinterpret_as_int()
+  let word = ((next >> shift) ^ next) * 277803737U
+  (next, (word >> 22) ^ word)
+}
+
+///|
+fn meshlet_rand_f(state : UInt) -> (UInt, Float) {
+  let (next, value) = meshlet_rand_u(state)
+  (next, Float::from_double(value.to_double() * 0.00000000023283065))
+}
+
+///|
+fn meshlet_debug_color(seed : UInt) -> @math.Vec4 {
+  let (state1, red) = meshlet_rand_f(seed)
+  let (state2, green) = meshlet_rand_f(state1)
+  let (_, blue) = meshlet_rand_f(state2)
+  @math.Vec4::new(red, green, blue, 1.0F)
+}
+
+///|
+fn meshlet_push_range_meshlet_ids(
+  out : Array[Int],
+  start : Int,
+  count : Int,
+  max_count : Int,
+) -> Unit {
+  let safe_start = if start < 0 { 0 } else { start }
+  let safe_end = (safe_start + count).min(max_count)
+  for id in safe_start..<safe_end {
+    out.push(id)
+  }
+}
+
+///|
+fn meshlet_collect_bvh_leaf_meshlet_ids(
+  mesh : MeshletMesh,
+  out : Array[Int],
+  node_id : Int,
+) -> Unit {
+  if node_id < 0 || node_id >= mesh.bvh.length() {
+    return
+  }
+  let node = mesh.bvh[node_id]
+  for child_index in 0..<8 {
+    let child_count = node.child_counts[child_index]
+    if child_count == 0 {
+      break
+    }
+    let child_offset = node.aabbs[child_index].child_offset
+    if child_count == 255 {
+      meshlet_collect_bvh_leaf_meshlet_ids(mesh, out, child_offset)
+    } else {
+      meshlet_push_range_meshlet_ids(
+        out,
+        child_offset,
+        child_count,
+        mesh.meshlets.length(),
+      )
+    }
+  }
+}
+
+///|
+fn MeshletMesh::materialized_lod0_meshlet_ids(self : MeshletMesh) -> Array[Int] {
+  let ids : Array[Int] = []
+  if self.bvh.is_empty() {
+    meshlet_push_range_meshlet_ids(
+      ids,
+      0,
+      self.meshlets.length(),
+      self.meshlets.length(),
+    )
+    return ids
+  }
+  let root = self.bvh[0]
+  let child_count = root.child_counts[0]
+  if child_count == 255 {
+    meshlet_collect_bvh_leaf_meshlet_ids(self, ids, root.aabbs[0].child_offset)
+  } else if child_count > 0 {
+    meshlet_push_range_meshlet_ids(
+      ids,
+      root.aabbs[0].child_offset,
+      child_count,
+      self.meshlets.length(),
+    )
+  }
+  if ids.is_empty() {
+    meshlet_push_range_meshlet_ids(
+      ids,
+      0,
+      self.meshlets.length(),
+      self.meshlets.length(),
+    )
+  }
+  ids
+}
+
+///|
+pub fn MeshletMesh::to_debug_mesh3d_geometry(
+  self : MeshletMesh,
+  instance_seed : UInt,
+) -> @mesh.Mesh3dGeometry {
+  self.to_mesh3d_geometry_with_debug_seed(Some(instance_seed))
+}
+
+///|
+fn MeshletMesh::to_mesh3d_geometry_with_debug_seed(
+  self : MeshletMesh,
+  debug_seed : UInt?,
+) -> @mesh.Mesh3dGeometry {
+  let positions : Array[@math.Vec3] = []
+  let normals : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  let colors : Array[@math.Vec4] = []
+  let indices : Array[Int] = []
+  let meshlet_ids = self.materialized_lod0_meshlet_ids()
+  for meshlet_index in meshlet_ids {
+    let meshlet = self.meshlets[meshlet_index]
+    let base_vertex = positions.length()
+    let debug_color = match debug_seed {
+      Some(seed) =>
+        meshlet_debug_color(seed ^ meshlet_index.reinterpret_as_uint())
+      None => @math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F)
+    }
+    for vertex_id in 0..<meshlet.vertex_count() {
+      positions.push(meshlet_decode_vertex_position(self, meshlet, vertex_id))
+      normals.push(meshlet_decode_vertex_normal(self, meshlet, vertex_id))
+      uvs.push(meshlet_decode_vertex_uv(self, meshlet, vertex_id))
+      colors.push(debug_color)
+    }
+    let index_count = meshlet.triangle_count * 3
+    for index_offset in 0..<index_count {
+      indices.push(
+        base_vertex +
+        meshlet_decode_index(self, meshlet.start_index_id + index_offset),
+      )
+    }
+  }
+  let geometry = match debug_seed {
+    Some(_) =>
+      @mesh.Mesh3dGeometry::new_with_colors(
+        positions,
+        uvs,
+        colors,
+        Some(indices),
+      )
+    None => @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
+  }
+  geometry.with_normals(Some(normals))
+}
+
+///|
+pub fn MeshletMesh::to_mesh(self : MeshletMesh) -> @mesh.Mesh {
+  self.to_mesh3d_geometry().to_mesh()
+}
+
+///|
 pub fn meshlet_mesh_asset_magic() -> UInt64 {
   MESHLET_MESH_ASSET_MAGIC
 }

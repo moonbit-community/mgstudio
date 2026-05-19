@@ -92,6 +92,7 @@ pub fn host_gpu_prepare_mesh3d_cluster_buffers(
 ///|
 pub fn host_mesh3d_main_pass_draw_entry(
   draw_storage_index~ : Int,
+  world_from_local? : Array[Float]? = None,
   x~ : Float,
   y~ : Float,
   z~ : Float,
@@ -163,9 +164,11 @@ pub fn host_mesh3d_main_pass_draw_entry(
   morph_weights_index? : Int = -1,
   previous_morph_weights_index? : Int = -1,
   morph_targets_texture_id? : Int = -1,
+  first_vertex_index? : UInt = 0U,
 ) -> HostMesh3dMainPassDrawEntry {
   @renderer.host_mesh3d_main_pass_draw_entry(
     draw_storage_index~,
+    world_from_local~,
     x~,
     y~,
     z~,
@@ -237,6 +240,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
     morph_weights_index~,
     previous_morph_weights_index~,
     morph_targets_texture_id~,
+    first_vertex_index~,
   )
 }
 
@@ -1254,6 +1258,8 @@ pub fn host_gpu_draw_mesh3d(
   previous_scale_x~ : Float,
   previous_scale_y~ : Float,
   previous_scale_z~ : Float,
+  world_from_local? : Array[Float]? = None,
+  previous_world_from_local? : Array[Float]? = None,
   color_r~ : Float,
   color_g~ : Float,
   color_b~ : Float,
@@ -1360,6 +1366,8 @@ pub fn host_gpu_draw_mesh3d(
     previous_scale_x~,
     previous_scale_y~,
     previous_scale_z~,
+    world_from_local~,
+    previous_world_from_local~,
     color_r~,
     color_g~,
     color_b~,

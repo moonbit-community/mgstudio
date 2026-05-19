@@ -132,6 +132,31 @@ test "pbr/meshlet: bevy bytes round trip all raw slices" {
 }
 
 ///|
+test "pbr/meshlet: materialized mesh uses the first bvh lod branch only" {
+  let root = BvhNode::default().with_child_count(0, 1).with_child_count(1, 1)
+  let meshlet_mesh = MeshletMesh::from_parts(
+    vertex_positions=[],
+    vertex_normals=[0, 0, 0, 0, 0, 0],
+    vertex_uvs=[
+      MeshletVertexUv::new(0.0, 0.0),
+      MeshletVertexUv::new(1.0, 0.0),
+      MeshletVertexUv::new(0.0, 1.0),
+      MeshletVertexUv::new(0.0, 0.0),
+      MeshletVertexUv::new(1.0, 0.0),
+      MeshletVertexUv::new(0.0, 1.0),
+    ],
+    indices=[0, 1, 2, 0, 1, 2],
+    bvh=[root],
+    meshlets=[Meshlet::new(0, 0, 0, 3, 1), Meshlet::new(0, 3, 3, 3, 1)],
+    meshlet_cull_data=[MeshletCullData::default(), MeshletCullData::default()],
+    bvh_depth=1,
+  )
+  let geometry = meshlet_mesh.to_mesh3d_geometry()
+  debug_inspect(geometry.vertex_count(), content="3")
+  debug_inspect(geometry.triangle_count(), content="Some(1)")
+}
+
+///|
 test "pbr/meshlet: loader rejects wrong file type before decompression" {
   let bytes = Bytes::from_array(Array::make(44, (0).to_byte()))
   match meshlet_mesh_decode_bevy_bytes(bytes) {

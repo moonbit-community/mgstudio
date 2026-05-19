@@ -30,7 +30,9 @@ fn render3d_prewarm_motion_vector_material_pipeline(
     mesh_asset,
     state_ref.val.mesh_vertex_buffer_layouts,
   )
-  let layout = render_mesh.layout()
+  let layout = render_mesh.host_vertex_buffer_layout(
+    state_ref.val.mesh_vertex_buffer_layouts,
+  )
   let base_key = material_pipeline_key_for_standard_material_render_mesh(
     motion_mesh.material_properties,
     render_mesh,
@@ -240,6 +242,8 @@ fn render3d_execute_camera_motion_vector_pass(
         morph_weights_index=mesh.morph_weights_index,
         previous_morph_weights_index=mesh.previous_morph_weights_index,
         morph_targets_texture_id=mesh.morph_targets_texture_id,
+        world_from_local=Some(mesh.world_from_local),
+        previous_world_from_local=Some(mesh.previous_world_from_local),
       ),
     )
   }

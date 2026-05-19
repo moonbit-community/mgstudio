@@ -23,6 +23,12 @@ const PI : Float = 3.141592653589793F
 const BUNNY_MESHLET_ASSET : String = "meshlet/bunny.meshlet_mesh"
 
 ///|
+const ENV_DIFFUSE_MAP_ASSET : String = "environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"
+
+///|
+const ENV_SPECULAR_MAP_ASSET : String = "environment_maps/pisa_specular_rgb9e5_zstd.ktx2"
+
+///|
 const DIRECTIONAL_LIGHT_ILLUMINANCE : Float = 100_000.0F
 
 ///|
@@ -31,16 +37,6 @@ const ENVIRONMENT_LIGHT_INTENSITY : Float = 150.0F
 ///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
-}
-
-///|
-fn set_global_ambient_light(
-  world : @ecs.World,
-  color : @sprite.Color,
-  brightness : Float,
-) -> Unit {
-  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -102,12 +98,12 @@ fn spawn_meshlet_bunny(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
+  let asset_server = @asset.AssetServer::new()
   world.insert_resource(
     @pbr.ecs_key_directional_light_shadow_map,
     @pbr.DirectionalLightShadowMap::new(4096),
   )
 
-  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
   let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(1.8F, 0.4F, -0.1F).looking_at(
@@ -119,7 +115,9 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_environment_map_light,
-    @pbr.EnvironmentMapLight::default().with_intensity(
+    @pbr.EnvironmentMapLight::new(
+      Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
+      Some(asset_server.load(ENV_SPECULAR_MAP_ASSET)),
       ENVIRONMENT_LIGHT_INTENSITY,
     ),
   )

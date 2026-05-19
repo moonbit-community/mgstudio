@@ -184,6 +184,8 @@ pub(all) struct MeshGpuDrawPayload3d {
   indirect_kind : Int
   indirect_parameters_index : Int
   indirect_draw_count : Int
+  world_from_local : @math.Affine3
+  previous_world_from_local : @math.Affine3
   transform : @transform.Transform
   previous_transform : @transform.Transform
   color_r : Float
@@ -250,6 +252,33 @@ pub(all) struct MeshGpuDrawPayload3d {
 }
 
 ///|
+fn render3d_transform_affine(transform : @transform.Transform) -> @math.Affine3 {
+  @math.Affine3::from_scale_rotation_translation(
+    transform.scale,
+    transform.rotation,
+    transform.translation,
+  )
+}
+
+///|
+fn render3d_affine3_transpose_values(affine : @math.Affine3) -> Array[Float] {
+  [
+    affine.matrix3.x_axis.x,
+    affine.matrix3.y_axis.x,
+    affine.matrix3.z_axis.x,
+    affine.translation.x,
+    affine.matrix3.x_axis.y,
+    affine.matrix3.y_axis.y,
+    affine.matrix3.z_axis.y,
+    affine.translation.y,
+    affine.matrix3.x_axis.z,
+    affine.matrix3.y_axis.z,
+    affine.matrix3.z_axis.z,
+    affine.translation.z,
+  ]
+}
+
+///|
 pub fn render3d_build_mesh_gpu_draw_payload(
   mesh_id : Int,
   preprocess_camera_key_hi : Int,
@@ -307,6 +336,8 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   lightmap_uv_min_y? : Float = 0.0F,
   lightmap_uv_max_x? : Float = 0.0F,
   lightmap_uv_max_y? : Float = 0.0F,
+  world_from_local? : @math.Affine3? = None,
+  previous_world_from_local? : @math.Affine3? = None,
 ) -> MeshGpuDrawPayload3d {
   let material_flags = render3d_standard_material_flags(
     material,
@@ -320,6 +351,14 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     specular_tint_texture_id,
     forward_decal~,
   )
+  let resolved_world_from_local = match world_from_local {
+    Some(affine) => affine
+    None => render3d_transform_affine(transform)
+  }
+  let resolved_previous_world_from_local = match previous_world_from_local {
+    Some(affine) => affine
+    None => render3d_transform_affine(previous_transform)
+  }
   MeshGpuDrawPayload3d::{
     mesh_id,
     preprocess_camera_key_hi,
@@ -328,6 +367,8 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     indirect_kind,
     indirect_parameters_index,
     indirect_draw_count: 1,
+    world_from_local: resolved_world_from_local,
+    previous_world_from_local: resolved_previous_world_from_local,
     transform,
     previous_transform,
     color_r: draw_color_r,
@@ -398,6 +439,11 @@ pub fn render3d_build_mesh_gpu_draw_payload(
 pub fn render3d_host_main_pass_draw_entry(
   payload : MeshGpuDrawPayload3d,
 ) -> @render_gpu.HostMesh3dMainPassDrawEntry {
+  let first_vertex_index = match
+    @render_gpu.host_gpu_mesh_info(payload.mesh_id) {
+    Some(mesh_info) => mesh_info.vertex_start().reinterpret_as_uint()
+    None => 0U
+  }
   @render_gpu.host_mesh3d_main_pass_draw_entry(
     draw_storage_index=payload.draw_storage_index,
     x=payload.transform.translation.x,
@@ -410,6 +456,9 @@ pub fn render3d_host_main_pass_draw_entry(
     scale_x=payload.transform.scale.x,
     scale_y=payload.transform.scale.y,
     scale_z=payload.transform.scale.z,
+    world_from_local=Some(
+      render3d_affine3_transpose_values(payload.world_from_local),
+    ),
     color_r=payload.color_r,
     color_g=payload.color_g,
     color_b=payload.color_b,
@@ -471,6 +520,7 @@ pub fn render3d_host_main_pass_draw_entry(
     morph_weights_index=payload.morph_weights_index,
     previous_morph_weights_index=payload.previous_morph_weights_index,
     morph_targets_texture_id=payload.morph_targets_texture_id,
+    first_vertex_index~,
   )
 }
 
@@ -504,6 +554,12 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     previous_scale_x=payload.previous_transform.scale.x,
     previous_scale_y=payload.previous_transform.scale.y,
     previous_scale_z=payload.previous_transform.scale.z,
+    world_from_local=Some(
+      render3d_affine3_transpose_values(payload.world_from_local),
+    ),
+    previous_world_from_local=Some(
+      render3d_affine3_transpose_values(payload.previous_world_from_local),
+    ),
     color_r=payload.color_r,
     color_g=payload.color_g,
     color_b=payload.color_b,
