@@ -3,6 +3,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/dev_tools/ci_testing" @dev_tools_ci_testing,
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/input",
@@ -14,6 +15,7 @@ import {
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
 }

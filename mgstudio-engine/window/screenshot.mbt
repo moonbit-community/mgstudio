@@ -181,7 +181,10 @@ fn screenshot_request_capture(
       }
       let target_id = @render.host_gpu_surface_target_id_for_window(host_window)
       if target_id <= 0 {
-        return 0
+        match window_ref {
+          Primary => return @render.screenshot_capture_surface_request()
+          Entity(_) => return 0
+        }
       }
       @render.screenshot_capture_surface_target_request(target_id~)
     }

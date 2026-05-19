@@ -14,9 +14,9 @@
 
 ///|
 ///
-/// Parity target: keep upstream camera controls (`shutter_angle`, `samples`,
-/// camera-mode switching) and enforce the same MSAA-off compatibility path used
-/// by upstream for web constraints.
+/// Parity target: keep upstream camera controls (`shutter_angle`, `samples`),
+/// camera-mode switching, scene geometry, generated ground texture, and
+/// sampler behavior aligned with Bevy's `examples/3d/motion_blur.rs`.
 
 ///|
 const TWO_PI : Float = 6.283185307179586F
@@ -29,6 +29,9 @@ const N_CONES : Int = 100
 
 ///|
 const N_TREES : Int = 30
+
+///|
+const TEXTURE_SIZE : Int = 7
 
 ///|
 pub(all) enum CameraMode {
@@ -54,7 +57,7 @@ priv struct WheelState {
 priv struct MotionBlurExampleState {
   mut camera : @core.Entity?
   mut tracked_car : @core.Entity?
-  mut help_text : @text.TextHandle?
+  mut help_text : @core.Entity?
   car_bodies : Array[CarBody]
   wheels : Array[WheelState]
   mut camera_mode : CameraMode
@@ -87,16 +90,16 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 
 ///|
 fn float_text_2(value : Float) -> String {
-  let rounded = (value * 100.0F).round() / 100.0F
-  "\{rounded}"
+  let rounded = (value * 100.0F).round().to_int()
+  let whole = rounded / 100
+  let fractional = rounded.abs() % 100
+  let prefix = if fractional < 10 { "0" } else { "" }
+  "\{whole}.\{prefix}\{fractional}"
 }
 
 ///|
-fn camera_mode_text(mode : CameraMode) -> String {
-  match mode {
-    Track => "Track"
-    Chase => "Chase"
-  }
+fn byte_from_int(value : Int) -> Byte {
+  value.to_byte()
 }
 
 ///|
@@ -126,26 +129,19 @@ fn race_track_pos(offset : Float, t : Float) -> @math.Vec2 {
 }
 
 ///|
-fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
-  let qv = @math.Vec3::new(q.x, q.y, q.z)
-  let t = qv.cross(v).mul_scalar(2.0F)
-  v.add(t.mul_scalar(q.w)).add(qv.cross(t))
-}
-
-///|
-fn transform_forward(transform : @transform.Transform) -> @math.Vec3 {
-  quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, -1.0F)).normalize_or_zero()
-}
-
-///|
 fn help_text_content() -> String {
-  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\nSamples: \{motion_blur_state.val.samples}\nCamera mode: \{camera_mode_text(motion_blur_state.val.camera_mode)}\nMSAA: Off (upstream web compatibility path)\n1/2: -/+ shutter angle (blur amount)\n3/4: -/+ sample count (blur quality)\nSpacebar: cycle camera\n"
+  "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\nSamples: \{motion_blur_state.val.samples}\n1/2: -/+ shutter angle (blur amount)\n3/4: -/+ sample count (blur quality)\nSpacebar: cycle camera\n"
 }
 
 ///|
-fn update_help_text() -> Unit {
+fn update_help_text(world : @ecs.World) -> Unit {
   guard motion_blur_state.val.help_text is Some(help_text) else { return }
-  @text.text_set_content(help_text, help_text_content())
+  guard (try! world.get_by_key(help_text, @text.ecs_key_text))
+    is Some(text_value) else {
+    return
+  }
+  text_value.content = help_text_content()
+  ignore(try! world.replace(help_text, @text.ecs_key_text, text_value))
 }
 
 ///|
@@ -194,38 +190,137 @@ fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
 fn spawn_camera(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @transform.Transform::from_xyz(15.0F, -0.5F, 0.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
+    @transform.Transform::identity(),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   motion_blur_state.val.camera = Some(camera)
 }
 
 ///|
-fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
-  let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::default()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::default()))
-    .spawn()
-  motion_blur_state.val.help_text = Some(handle)
+fn mesh3d_from_geometry(
+  meshes : @asset.Assets[@mesh.Mesh],
+  geometry : @mesh.Mesh3dGeometry,
+) -> @mesh.Mesh3d {
+  @mesh.Mesh3d::new(meshes.add(@mesh.Mesh::from_3d_geometry(geometry)))
+}
+
+///|
+fn motion_blur_uv_debug_texture(
+  images : @asset.Assets[@asset.Image],
+) -> @asset.Handle[@asset.Image] {
+  let palette : Array[Byte] = [
+    byte_from_int(164),
+    byte_from_int(164),
+    byte_from_int(164),
+    byte_from_int(255),
+    byte_from_int(168),
+    byte_from_int(168),
+    byte_from_int(168),
+    byte_from_int(255),
+    byte_from_int(153),
+    byte_from_int(153),
+    byte_from_int(153),
+    byte_from_int(255),
+    byte_from_int(139),
+    byte_from_int(139),
+    byte_from_int(139),
+    byte_from_int(255),
+    byte_from_int(153),
+    byte_from_int(153),
+    byte_from_int(153),
+    byte_from_int(255),
+    byte_from_int(177),
+    byte_from_int(177),
+    byte_from_int(177),
+    byte_from_int(255),
+    byte_from_int(159),
+    byte_from_int(159),
+    byte_from_int(159),
+    byte_from_int(255),
+  ]
+  let texture_data : Array[Byte] = []
+  for _y in 0..<TEXTURE_SIZE {
+    for i in 0..<palette.length() {
+      texture_data.push(palette[i])
+    }
+    let tail : Array[Byte] = []
+    for i in (palette.length() - 12)..<palette.length() {
+      tail.push(palette[i])
+    }
+    let mut index = palette.length() - 1
+    while index >= 12 {
+      palette[index] = palette[index - 12]
+      index = index - 1
+    }
+    for i in 0..<tail.length() {
+      palette[i] = tail[i]
+    }
+  }
+  let image = @asset.Image::new(
+    TEXTURE_SIZE,
+    TEXTURE_SIZE,
+    Bytes::from_array(texture_data),
+  ).with_format(Rgba8UnormSrgb)
+  let handle = images.add(image)
+  let sampler = @asset.ImageSamplerDescriptor::linear()
+  sampler.address_mode_u = @asset.ImageAddressMode::Repeat
+  sampler.address_mode_v = @asset.ImageAddressMode::MirrorRepeat
+  sampler.mag_filter = @asset.ImageFilterMode::Nearest
+  @asset.asset_set_texture_sampler(
+    handle,
+    @asset.ImageSampler::Descriptor(sampler),
+  )
+  handle
+}
+
+///|
+fn spawn_help_text(world : @ecs.World) -> Unit {
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
+    @transform.Transform::identity(),
+  ).spawn(world)
+  |> ignore
+
+  let root = world.spawn_empty()
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(
+    root,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F)),
+  )
+
+  let text_entity = world.spawn_empty()
+  try! world.set_by_key(
+    text_entity,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @ui.ecs_key_node,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.Val::Px(12.0F))
+    .with_left(@ui.Val::Px(12.0F)),
+  )
+  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::new(""))
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_font,
+    @text.TextFont::default(),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_color,
+    @text.TextColor::default(),
+  )
+  try! world.set_by_key(
+    text_entity,
+    @text.ecs_key_text_layout,
+    @text.TextLayout::default(),
+  )
+  motion_blur_state.val.help_text = Some(text_entity)
 }
 
 ///|
@@ -241,7 +336,7 @@ fn spawn_car(
   let body = @pbr.MeshMaterial3dBundle::new(
     body_mesh,
     @pbr.MeshMaterial3d::new(car_material),
-    @transform.Transform::from_xyz(0.0F, -0.59F, 0.0F).with_scale(
+    @transform.Transform::identity().with_scale(
       @math.Vec3::new(0.5F, 0.5F, 0.5F),
     ),
   ).spawn(world)
@@ -356,6 +451,9 @@ fn spawn_trees(
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   set_global_ambient_light(world, 300.0F)
+  let mesh_assets = @pbr.mesh_assets_mut_or_abort().val
+  let image_assets_ref : @ecs.ResourceMut[@asset.Assets[@asset.Image]] = @asset.asset_assets_ref_mut_or_abort()
+  let image_assets = image_assets_ref.peek()
 
   let directional_light = world.spawn_empty()
   try! world.set_by_key(
@@ -372,9 +470,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
   )
 
-  let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+  let sphere_mesh = mesh3d_from_geometry(
+    mesh_assets,
+    @mesh_primitives_dim3.SphereMeshBuilder::default().build(),
   )
   let sky_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -382,32 +480,28 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ).with_unlit(true),
   )
   @pbr.MeshMaterial3dBundle::new(
-    cube_mesh,
+    sphere_mesh,
     @pbr.MeshMaterial3d::new(sky_material),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
-      @math.Vec3::splat(-4000.0F),
-    ),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(-4000.0F)),
   ).spawn(world)
   |> ignore
 
-  let icon = asset_server.load("branding/icon.png")
+  let ground_geometry = @mesh_primitives_dim3.PlaneMeshBuilder::default().build()
+  ignore(
+    ground_geometry.replace_uvs([
+      @math.Vec2::new(4000.0F, 0.0F),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(0.0F, 4000.0F),
+      @math.Vec2::new(4000.0F, 4000.0F),
+    ]),
+  )
   let ground_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_perceptual_roughness(1.0F)
-    .with_base_color_texture(Some(icon))
-    .with_uv_transform(
-      @transform.Affine2::from_scale(@math.Vec2::new(250.0F, 250.0F)),
-    ),
+    .with_base_color_texture(Some(motion_blur_uv_debug_texture(image_assets))),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(
-        @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-          @math.Vec2::new(1.0F, 1.0F),
-        ).build(),
-      ),
-    ),
+    mesh3d_from_geometry(mesh_assets, ground_geometry),
     @pbr.MeshMaterial3d::new(ground_material),
     @transform.Transform::from_xyz(0.0F, -0.65F, 0.0F).with_scale(
       @math.Vec3::splat(80.0F),
@@ -437,13 +531,13 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
   )
 
-  let car_body_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(0.3F, 0.15F, 0.55F)),
+  let car_body_mesh = mesh3d_from_geometry(
+    mesh_assets,
+    @mesh_primitives_dim3.CuboidMeshBuilder::new(0.3F, 0.15F, 0.55F).build(),
   )
-  let wheel_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+  let wheel_mesh = mesh3d_from_geometry(
+    mesh_assets,
+    @mesh_primitives_dim3.CylinderMeshBuilder::default().build(),
   )
   for i in 0..<N_CARS {
     let material = car_materials[i % car_materials.length()]
@@ -460,14 +554,14 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let barrier_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(1.0F, 87.0F / 255.0F, 51.0F / 255.0F, 1.0F),
+      @sprite.Color::srgb(1.0F, 87.0F / 255.0F, 51.0F / 255.0F),
     ).with_reflectance(1.0F),
   )
   spawn_barriers(
     world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val
-      |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+    mesh3d_from_geometry(
+      mesh_assets,
+      @mesh_primitives_dim3.Capsule3dMeshBuilder::default().build(),
     ),
     barrier_material,
   )
@@ -482,11 +576,15 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       @sprite.Color::new(0.4F, 0.2F, 0.2F, 1.0F),
     ),
   )
-  let tree_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val
-    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+  let leaves_mesh = mesh3d_from_geometry(
+    mesh_assets,
+    @mesh_primitives_dim3.SphereMeshBuilder::default().build(),
   )
-  spawn_trees(world, tree_mesh, tree_mesh, leaves_material, trunk_material)
+  let trunk_mesh = mesh3d_from_geometry(
+    mesh_assets,
+    @mesh_primitives_dim3.Capsule3dMeshBuilder::default().build(),
+  )
+  spawn_trees(world, leaves_mesh, trunk_mesh, leaves_material, trunk_material)
 }
 
 ///|
@@ -503,9 +601,9 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   spawn_camera(world)
   spawn_scene(world, asset_server)
-  spawn_help_text(asset_server)
+  spawn_help_text(world)
   apply_motion_blur_settings(world)
-  update_help_text()
+  update_help_text(world)
 }
 
 ///|
@@ -543,8 +641,8 @@ fn keyboard_inputs(world : @ecs.World) -> Unit {
 
   if changed {
     apply_motion_blur_settings(world)
-    update_help_text()
   }
+  update_help_text(world)
 }
 
 ///|
@@ -578,8 +676,8 @@ fn move_cars(world : @ecs.World) -> Unit {
       next_translation,
     )
     if delta.length_squared() > 1.0e-8F {
-      next_transform = next_transform.looking_at(
-        next_translation.add(delta),
+      next_transform = next_transform.looking_to(
+        delta,
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       )
     }
@@ -632,8 +730,8 @@ fn move_camera(world : @ecs.World) -> Unit {
   match motion_blur_state.val.camera_mode {
     Track => {
       let next_transform = current_camera_transform
-        .with_translation(@math.Vec3::new(15.0F, -0.5F, 0.0F))
         .looking_at(tracked_transform.translation, up)
+        .with_translation(@math.Vec3::new(15.0F, -0.5F, 0.0F))
       try! (world.replace(
         camera_entity, @transform.ecs_key_transform, next_transform,
       )
@@ -641,14 +739,13 @@ fn move_camera(world : @ecs.World) -> Unit {
       set_camera_fov(world, camera_entity, 0.05F)
     }
     Chase => {
-      let forward = transform_forward(tracked_transform)
       let next_transform = current_camera_transform
         .with_translation(
           tracked_transform.translation
           .add(@math.Vec3::new(0.0F, 0.15F, 0.0F))
-          .sub(forward.mul_scalar(0.6F)),
+          .add(tracked_transform.back().mul_scalar(0.6F)),
         )
-        .looking_at(tracked_transform.translation.add(forward), up)
+        .looking_to(tracked_transform.forward(), up)
       try! (world.replace(
         camera_entity, @transform.ecs_key_transform, next_transform,
       )
@@ -662,9 +759,16 @@ fn move_camera(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@dev_tools_ci_testing.CiTestingPlugin::default())
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(keyboard_inputs))
-  .add_systems(@app.Update, @app.system(move_cars))
-  .add_systems(@app.Update, @app.system(move_camera))
+  .add_systems(
+    @app.Update,
+    (
+      @app.system(keyboard_inputs),
+      @app.system(move_cars),
+      @app.system(move_camera),
+    )
+    |> @app.chain(),
+  )
   .run()
 }
