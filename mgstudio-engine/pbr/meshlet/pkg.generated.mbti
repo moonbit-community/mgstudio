@@ -310,6 +310,7 @@ pub fn MeshToMeshletMeshConversionConfig::default() -> Self
 
 pub(all) enum MeshToMeshletMeshConversionError {
   RuntimeUnavailable
+  ProcessorError(String)
   WrongMeshPrimitiveTopology
   WrongMeshVertexAttributes(Array[String])
   MeshMissingIndices

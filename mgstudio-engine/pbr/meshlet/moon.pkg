@@ -18,6 +18,8 @@ import {
   "Milky2018/mgstudio/utils" @utils,
   "Milky2018/mgstudio/visibility" @visibility,
   "Milky2018/mgstudio/shader/source" @shader_source,
+  "Milky2018/metis" @metis,
+  "Milky2018/meshopt_mbt" @meshopt,
 }
 
 supported_targets = "native"

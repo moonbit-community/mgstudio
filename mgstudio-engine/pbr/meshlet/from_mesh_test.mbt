@@ -13,17 +13,14 @@
 // limitations under the License.
 
 ///|
-test "pbr meshlet: conversion reports runtime unavailable first" {
-  inspect(meshlet_processor_available(), content="false")
+test "pbr meshlet: conversion reports native processor availability" {
+  inspect(meshlet_processor_available(), content="true")
   let error = meshlet_conversion_error_for_counts(
     10,
     10,
     MeshToMeshletMeshConversionConfig::default(),
   )
-  inspect(
-    error is Some(MeshToMeshletMeshConversionError::RuntimeUnavailable),
-    content="true",
-  )
+  inspect(error is None, content="true")
 }
 
 ///|
@@ -165,7 +162,7 @@ test "pbr meshlet: mesh input extraction rejects wrong topology, attributes, and
 }
 
 ///|
-test "pbr meshlet: from_mesh validates mesh before processor availability" {
+test "pbr meshlet: from_mesh validates mesh before running processor" {
   let wrong_topology = @mesh.Mesh::from_3d_geometry(
     meshlet_test_triangle_geometry().with_topology(
       @mesh.Mesh3dPrimitiveTopology::LineList,
@@ -177,11 +174,14 @@ test "pbr meshlet: from_mesh validates mesh before processor availability" {
     content="true",
   )
   let mesh = @mesh.Mesh::from_3d_geometry(meshlet_test_triangle_geometry())
-  inspect(
-    MeshletMesh::from_mesh(mesh)
-    is Err(MeshToMeshletMeshConversionError::RuntimeUnavailable),
-    content="true",
-  )
+  match MeshletMesh::from_mesh(mesh) {
+    Ok(meshlet_mesh) => {
+      inspect(meshlet_mesh.meshlet_count() > 0, content="true")
+      inspect(meshlet_mesh.index_count() > 0, content="true")
+      inspect(meshlet_mesh.bvh_depth > 0, content="true")
+    }
+    Err(_) => abort("expected native meshlet processor to build a meshlet mesh")
+  }
 }
 
 ///|

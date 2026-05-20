@@ -201,22 +201,27 @@ test "pbr meshlet wbtest: triangle partition graph mirrors bevy metis inputs" {
 }
 
 ///|
-test "pbr meshlet wbtest: from mesh processor boundary rejects missing metis meshopt backend" {
+test "pbr meshlet wbtest: from mesh processor boundary calls metis and meshopt" {
   let input = MeshletMeshInputData::new(
     vertices=meshlet_wbtest_source_vertices(7),
     indices=[0, 1, 2, 2, 1, 3, 4, 5, 6],
   )
   let remap = meshlet_generate_position_remap(input.vertices)
-  inspect(
-    meshlet_compute_meshlets_with_processor(input, input.indices, remap, None)
-    is Err(MeshToMeshletMeshConversionError::RuntimeUnavailable),
-    content="true",
-  )
-  inspect(
-    meshlet_build_from_mesh_with_processor(input, 4)
-    is Err(MeshToMeshletMeshConversionError::RuntimeUnavailable),
-    content="true",
-  )
+  match
+    meshlet_compute_meshlets_with_processor(input, input.indices, remap, None) {
+    Ok(generated) => {
+      debug_inspect(generated.meshlets.len() > 0, content="true")
+      debug_inspect(generated.cull_data.length() > 0, content="true")
+    }
+    Err(_) => abort("expected native meshlet processor to compute meshlets")
+  }
+  match meshlet_build_from_mesh_with_processor(input, 4) {
+    Ok(meshlet_mesh) => {
+      debug_inspect(meshlet_mesh.meshlet_count() > 0, content="true")
+      debug_inspect(meshlet_mesh.index_count() > 0, content="true")
+    }
+    Err(_) => abort("expected native meshlet processor to build meshlet mesh")
+  }
 }
 
 ///|
