@@ -20,6 +20,7 @@ pub struct Render3dMeshRuntimeState {
   morph_target_texture_cache : Map[Int, Int]
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
   mesh_vertex_buffer_layouts : @mesh.MeshVertexBufferLayouts
+  binding_arrays_are_usable : Bool
   specialized_material_pipelines : @material.SpecializedMeshPipelines
   specialized_prepass_material_pipelines : @material.SpecializedMeshPipelines
 }
@@ -31,6 +32,7 @@ pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
     morph_target_texture_cache: {},
     mesh_preprocess_static_cache: {},
     mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::default(),
+    binding_arrays_are_usable: false,
     specialized_material_pipelines: @material.SpecializedMeshPipelines::new(),
     specialized_prepass_material_pipelines: @material.SpecializedMeshPipelines::new(),
   }

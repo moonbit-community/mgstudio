@@ -230,7 +230,7 @@ test "pbr material pipeline specializer selects morphed skinned mesh layout" {
     ),
     content="true",
   )
-  inspect(descriptor.layout[2].label(), content="mesh_layout_skinned_morphed")
+  inspect(descriptor.layout[2].label(), content="morphed_skinned_mesh_layout")
   inspect(descriptor.layout[2].entries().length(), content="4")
   inspect(descriptor.layout[2].entries()[0].binding(), content="0")
   inspect(descriptor.layout[2].entries()[1].binding(), content="1")
@@ -373,6 +373,47 @@ test "pbr material pipeline key carries mesh-owned lightmap bits" {
   inspect(
     pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING,
     content="16384",
+  )
+}
+
+///|
+test "pbr material pipeline gates lightmap binding-array defs on pipeline support" {
+  let properties = @material.MaterialProperties::default().with_material_layout(
+    Some(@material.BindGroupLayoutDescriptor::default()),
+  )
+  let default_specializer = PbrMaterialPipelineSpecializer::new(properties)
+  let default_descriptor = try! default_specializer.specialize(
+    pbr_material_specializer_test_key(mesh_bits=MESH_PIPELINE_KEY_LIGHTMAPPED),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      default_descriptor.vertex.shader_defs,
+      "MULTIPLE_LIGHTMAPS_IN_ARRAY",
+    ),
+    content="false",
+  )
+  let binding_array_specializer = PbrMaterialPipelineSpecializer::new(
+    properties,
+    binding_arrays_are_usable=true,
+  )
+  let binding_array_descriptor = try! binding_array_specializer.specialize(
+    pbr_material_specializer_test_key(mesh_bits=MESH_PIPELINE_KEY_LIGHTMAPPED),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      binding_array_descriptor.vertex.shader_defs,
+      "MULTIPLE_LIGHT_PROBES_IN_ARRAY",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      binding_array_descriptor.vertex.shader_defs,
+      "MULTIPLE_LIGHTMAPS_IN_ARRAY",
+    ),
+    content="true",
   )
 }
 
@@ -558,18 +599,59 @@ test "pbr prepass pipeline specializer selects morphed skinned motion layout" {
   )
   inspect(
     descriptor.layout[2].label(),
-    content="mesh_layout_skinned_morphed_motion",
+    content="morphed_skinned_motion_mesh_layout",
   )
   inspect(descriptor.layout[2].entries().length(), content="6")
   inspect(descriptor.layout[2].entries()[0].binding(), content="0")
   inspect(descriptor.layout[2].entries()[1].binding(), content="1")
-  inspect(descriptor.layout[2].entries()[2].binding(), content="6")
-  inspect(descriptor.layout[2].entries()[3].binding(), content="2")
-  inspect(descriptor.layout[2].entries()[4].binding(), content="3")
+  inspect(descriptor.layout[2].entries()[2].binding(), content="2")
+  inspect(descriptor.layout[2].entries()[3].binding(), content="3")
+  inspect(descriptor.layout[2].entries()[4].binding(), content="6")
   inspect(descriptor.layout[2].entries()[5].binding(), content="7")
   let vertex_layout = descriptor.vertex.buffers[0]
   inspect(vertex_layout.attributes[3].shader_location, content="5")
   inspect(vertex_layout.attributes[4].shader_location, content="6")
+}
+
+///|
+test "pbr prepass pipeline gates lightmap binding-array defs on pipeline support" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::default(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let default_specializer = PbrPrepassPipelineSpecializer::new(properties)
+  let default_descriptor = try! default_specializer.specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_DEPTH_PREPASS | MESH_PIPELINE_KEY_LIGHTMAPPED,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      default_descriptor.vertex.shader_defs,
+      "MULTIPLE_LIGHTMAPS_IN_ARRAY",
+    ),
+    content="false",
+  )
+  let binding_array_specializer = PbrPrepassPipelineSpecializer::new(
+    properties,
+    binding_arrays_are_usable=true,
+  )
+  let binding_array_descriptor = try! binding_array_specializer.specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_DEPTH_PREPASS | MESH_PIPELINE_KEY_LIGHTMAPPED,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      binding_array_descriptor.vertex.shader_defs,
+      "MULTIPLE_LIGHTMAPS_IN_ARRAY",
+    ),
+    content="true",
+  )
 }
 
 ///|

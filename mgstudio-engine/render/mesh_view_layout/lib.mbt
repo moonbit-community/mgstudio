@@ -276,7 +276,16 @@ fn mesh_view_layout_entry_to_render_resource(
         mesh_view_layout_sampler_binding_type(sampler_type),
       )
   }
-  @render_resource.BindGroupLayoutEntry::new(entry.binding, visibility, kind)
+  let count = match entry.entry_type {
+    Texture(_, _, _, array_count) => array_count
+    _ => 0
+  }
+  @render_resource.BindGroupLayoutEntry::new(
+    entry.binding,
+    visibility,
+    kind,
+    count~,
+  )
 }
 
 ///|

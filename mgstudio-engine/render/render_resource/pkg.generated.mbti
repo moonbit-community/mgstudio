@@ -79,10 +79,12 @@ pub struct BindGroupLayoutEntry {
   binding : Int
   visibility : UInt
   kind : BindingType
+  count : Int
 }
 pub fn BindGroupLayoutEntry::binding(Self) -> Int
+pub fn BindGroupLayoutEntry::count(Self) -> Int
 pub fn BindGroupLayoutEntry::kind(Self) -> BindingType
-pub fn BindGroupLayoutEntry::new(Int, UInt, BindingType) -> Self
+pub fn BindGroupLayoutEntry::new(Int, UInt, BindingType, count? : Int) -> Self
 pub fn BindGroupLayoutEntry::visibility(Self) -> UInt
 
 pub(all) enum BindingResource {

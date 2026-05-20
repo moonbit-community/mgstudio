@@ -41,7 +41,7 @@ test "pbr/render mesh bindings: prepare phase builds bevy mesh bind group famili
   )
   let morphed = groups.get(7, None, false, true, false).unwrap()
   inspect(morphed.label(), content="morphed_mesh_bind_group")
-  inspect(morphed.layout_name(), content="mesh_layout_morphed")
+  inspect(morphed.layout_name(), content="morphed_mesh_layout")
   inspect(
     morphed.has_slot(MeshBindingSlot3d::MorphWeightsCurrent),
     content="true",
@@ -54,9 +54,16 @@ test "pbr/render mesh bindings: prepare phase builds bevy mesh bind group famili
   )
   inspect(
     morphed_skinned_motion.layout_name(),
-    content="mesh_layout_skinned_morphed_motion",
+    content="morphed_skinned_motion_mesh_layout",
   )
   inspect(morphed_skinned_motion.binding_count(), content="6")
+  let bindings = morphed_skinned_motion.bindings()
+  inspect(bindings[0].1, content="0")
+  inspect(bindings[1].1, content="1")
+  inspect(bindings[2].1, content="2")
+  inspect(bindings[3].1, content="3")
+  inspect(bindings[4].1, content="6")
+  inspect(bindings[5].1, content="7")
 }
 
 ///|

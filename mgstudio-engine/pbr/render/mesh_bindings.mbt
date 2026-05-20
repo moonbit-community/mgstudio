@@ -112,14 +112,6 @@ fn mesh_binding_layout_slots(
         mesh_binding_slot_index(MeshBindingSlot3d::SkinCurrent),
       ),
     )
-    if motion_vectors {
-      slots.push(
-        (
-          MeshBindingSlot3d::SkinPrevious,
-          mesh_binding_slot_index(MeshBindingSlot3d::SkinPrevious),
-        ),
-      )
-    }
   }
   if morphed {
     slots.push(
@@ -134,14 +126,22 @@ fn mesh_binding_layout_slots(
         mesh_binding_slot_index(MeshBindingSlot3d::MorphTargets),
       ),
     )
-    if motion_vectors {
-      slots.push(
-        (
-          MeshBindingSlot3d::MorphWeightsPrevious,
-          mesh_binding_slot_index(MeshBindingSlot3d::MorphWeightsPrevious),
-        ),
-      )
-    }
+  }
+  if skinned && motion_vectors {
+    slots.push(
+      (
+        MeshBindingSlot3d::SkinPrevious,
+        mesh_binding_slot_index(MeshBindingSlot3d::SkinPrevious),
+      ),
+    )
+  }
+  if morphed && motion_vectors {
+    slots.push(
+      (
+        MeshBindingSlot3d::MorphWeightsPrevious,
+        mesh_binding_slot_index(MeshBindingSlot3d::MorphWeightsPrevious),
+      ),
+    )
   }
   if lightmapped {
     slots.push(
@@ -161,39 +161,15 @@ fn mesh_binding_layout_slots(
 }
 
 ///|
-fn mesh_binding_layout_name(
-  lightmapped : Bool,
-  skinned : Bool,
-  morphed : Bool,
-  motion_vectors : Bool,
-) -> String {
-  let mut name = "mesh_layout"
-  if lightmapped {
-    name = "\{name}_lightmapped"
-  }
-  if skinned {
-    name = "\{name}_skinned"
-  }
-  if morphed {
-    name = "\{name}_morphed"
-  }
-  if motion_vectors {
-    name = "\{name}_motion"
-  }
-  name
-}
-
-///|
 fn mesh_binding_layout(
+  name : String,
   lightmapped : Bool,
   skinned : Bool,
   morphed : Bool,
   motion_vectors : Bool,
 ) -> MeshBindingLayout3d {
   MeshBindingLayout3d::{
-    name: mesh_binding_layout_name(
-      lightmapped, skinned, morphed, motion_vectors,
-    ),
+    name,
     bindings: mesh_binding_layout_slots(
       lightmapped, skinned, morphed, motion_vectors,
     ),
@@ -203,14 +179,28 @@ fn mesh_binding_layout(
 ///|
 pub fn render3d_mesh_layouts() -> MeshLayouts3d {
   MeshLayouts3d::{
-    model_only: mesh_binding_layout(false, false, false, false),
-    lightmapped: mesh_binding_layout(true, false, false, false),
-    skinned: mesh_binding_layout(false, true, false, false),
-    skinned_motion: mesh_binding_layout(false, true, false, true),
-    morphed: mesh_binding_layout(false, false, true, false),
-    morphed_motion: mesh_binding_layout(false, false, true, true),
-    morphed_skinned: mesh_binding_layout(false, true, true, false),
-    morphed_skinned_motion: mesh_binding_layout(false, true, true, true),
+    model_only: mesh_binding_layout("mesh_layout", false, false, false, false),
+    lightmapped: mesh_binding_layout(
+      "lightmapped_mesh_layout", true, false, false, false,
+    ),
+    skinned: mesh_binding_layout(
+      "skinned_mesh_layout", false, true, false, false,
+    ),
+    skinned_motion: mesh_binding_layout(
+      "skinned_motion_mesh_layout", false, true, false, true,
+    ),
+    morphed: mesh_binding_layout(
+      "morphed_mesh_layout", false, false, true, false,
+    ),
+    morphed_motion: mesh_binding_layout(
+      "morphed_mesh_layout", false, false, true, true,
+    ),
+    morphed_skinned: mesh_binding_layout(
+      "morphed_skinned_mesh_layout", false, true, true, false,
+    ),
+    morphed_skinned_motion: mesh_binding_layout(
+      "morphed_skinned_motion_mesh_layout", false, true, true, true,
+    ),
   }
 }
 

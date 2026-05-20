@@ -1321,6 +1321,11 @@ fn mesh3d_add_render_resource_layout_entry(
   }
   let binding = entry.binding().reinterpret_as_uint()
   let visibility = ss(entry.visibility().to_uint64())
+  let count = if entry.count() > 1 {
+    entry.count().reinterpret_as_uint()
+  } else {
+    1U
+  }
   match entry.kind() {
     Buffer =>
       builder.add_buffer(
@@ -1335,12 +1340,14 @@ fn mesh3d_add_render_resource_layout_entry(
         visibility,
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        count~,
       )
     Sampler =>
       builder.add_sampler(
         binding,
         visibility,
         @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+        count~,
       )
     StorageTexture =>
       builder.add_storage_texture(
@@ -1366,12 +1373,14 @@ fn mesh3d_add_render_resource_layout_entry(
         mesh3d_texture_sample_type_to_wgpu(sample_type),
         mesh3d_texture_view_dimension_to_wgpu(view_dimension),
         multisampled~,
+        count~,
       )
     SamplerBinding(sampler_type) =>
       builder.add_sampler(
         binding,
         visibility,
         mesh3d_sampler_binding_type_to_wgpu(sampler_type),
+        count~,
       )
     StorageTextureBinding(access, format, view_dimension) =>
       builder.add_storage_texture(

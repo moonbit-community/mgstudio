@@ -349,6 +349,7 @@ fn pbr_prepass_target_descriptors(
 fn pbr_mesh_pipeline_descriptor(
   mesh_key : @material.ErasedMeshPipelineKey,
   layout : @material.MaterialMeshVertexLayout,
+  binding_arrays_are_usable : Bool,
 ) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
   let mesh_key_bits = mesh_key.downcast_u64("MeshPipelineKey")
   let shader_defs : Array[@material.ShaderDefVal] = []
@@ -408,6 +409,10 @@ fn pbr_mesh_pipeline_descriptor(
   }
   if (mesh_key_bits & MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE) != 0UL {
     shader_defs.push(pbr_shader_def("READS_VIEW_TRANSMISSION_TEXTURE"))
+  }
+  if binding_arrays_are_usable {
+    shader_defs.push(pbr_shader_def("MULTIPLE_LIGHT_PROBES_IN_ARRAY"))
+    shader_defs.push(pbr_shader_def("MULTIPLE_LIGHTMAPS_IN_ARRAY"))
   }
   let draw_layout = pbr_setup_morph_and_skinning_defs(
     mesh_key_bits, layout, 6, shader_defs, vertex_attributes,
@@ -469,6 +474,7 @@ fn pbr_prepass_pipeline_descriptor(
   mesh_key : @material.ErasedMeshPipelineKey,
   layout : @material.MaterialMeshVertexLayout,
   properties : @material.MaterialProperties,
+  binding_arrays_are_usable : Bool,
 ) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
   let mesh_key_bits = mesh_key.downcast_u64("MeshPipelineKey")
   let motion_vector_prepass = (
@@ -582,7 +588,9 @@ fn pbr_prepass_pipeline_descriptor(
   if (mesh_key_bits & MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH) != 0UL {
     shader_defs.push(pbr_shader_def("HAS_PREVIOUS_MORPH"))
   }
-  shader_defs.push(pbr_shader_def("MULTIPLE_LIGHTMAPS_IN_ARRAY"))
+  if binding_arrays_are_usable {
+    shader_defs.push(pbr_shader_def("MULTIPLE_LIGHTMAPS_IN_ARRAY"))
+  }
   if (mesh_key_bits & MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER) != 0UL {
     shader_defs.push(pbr_shader_def("VISIBILITY_RANGE_DITHER"))
   }
@@ -678,13 +686,15 @@ fn pbr_prepass_pipeline_descriptor(
 ///|
 pub struct PbrMaterialPipelineSpecializer {
   properties : @material.MaterialProperties
+  binding_arrays_are_usable : Bool
 }
 
 ///|
 pub fn PbrMaterialPipelineSpecializer::new(
   properties : @material.MaterialProperties,
+  binding_arrays_are_usable? : Bool = false,
 ) -> PbrMaterialPipelineSpecializer {
-  PbrMaterialPipelineSpecializer::{ properties, }
+  PbrMaterialPipelineSpecializer::{ properties, binding_arrays_are_usable }
 }
 
 ///|
@@ -693,7 +703,11 @@ pub fn PbrMaterialPipelineSpecializer::specialize(
   key : @material.ErasedMaterialPipelineKey,
   layout : @material.MaterialMeshVertexLayout,
 ) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
-  let mut descriptor = pbr_mesh_pipeline_descriptor(key.mesh_key(), layout)
+  let mut descriptor = pbr_mesh_pipeline_descriptor(
+    key.mesh_key(),
+    layout,
+    self.binding_arrays_are_usable,
+  )
   descriptor.vertex.shader_defs.push(
     pbr_shader_def_uint(
       "MATERIAL_BIND_GROUP",
@@ -763,13 +777,15 @@ pub fn PbrMaterialPipelineSpecializer::specialize(
 ///|
 pub struct PbrPrepassPipelineSpecializer {
   properties : @material.MaterialProperties
+  binding_arrays_are_usable : Bool
 }
 
 ///|
 pub fn PbrPrepassPipelineSpecializer::new(
   properties : @material.MaterialProperties,
+  binding_arrays_are_usable? : Bool = false,
 ) -> PbrPrepassPipelineSpecializer {
-  PbrPrepassPipelineSpecializer::{ properties, }
+  PbrPrepassPipelineSpecializer::{ properties, binding_arrays_are_usable }
 }
 
 ///|
@@ -782,6 +798,7 @@ pub fn PbrPrepassPipelineSpecializer::specialize(
     key.mesh_key(),
     layout,
     self.properties,
+    self.binding_arrays_are_usable,
   )
   if self.properties.user_specialize is Some(specialize) {
     descriptor = specialize("PrepassPipeline", descriptor, layout, key)
@@ -804,7 +821,10 @@ fn pbr_material_base_specialize(
   properties : @material.MaterialProperties,
 ) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
   let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
-  let specializer = PbrMaterialPipelineSpecializer::new(properties)
+  let specializer = PbrMaterialPipelineSpecializer::new(
+    properties,
+    binding_arrays_are_usable=state_ref.val.binding_arrays_are_usable,
+  )
   state_ref.val.specialized_material_pipelines.specialize(
     fn(key, layout) raise @material.SpecializedMeshPipelineError {
       specializer.specialize(key, layout)
@@ -822,7 +842,10 @@ fn pbr_material_prepass_specialize(
   properties : @material.MaterialProperties,
 ) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
   let state_ref = @pbr_render.render3d_mesh_runtime_state_ref_or_abort(world)
-  let specializer = PbrPrepassPipelineSpecializer::new(properties)
+  let specializer = PbrPrepassPipelineSpecializer::new(
+    properties,
+    binding_arrays_are_usable=state_ref.val.binding_arrays_are_usable,
+  )
   state_ref.val.specialized_prepass_material_pipelines.specialize(
     fn(key, layout) raise @material.SpecializedMeshPipelineError {
       specializer.specialize(key, layout)

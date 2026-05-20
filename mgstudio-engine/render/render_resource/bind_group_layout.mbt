@@ -26,6 +26,7 @@ pub struct BindGroupLayoutEntry {
   binding : Int
   visibility : UInt
   kind : BindingType
+  count : Int
 }
 
 ///|
@@ -71,8 +72,9 @@ pub fn BindGroupLayoutEntry::new(
   binding : Int,
   visibility : UInt,
   kind : BindingType,
+  count? : Int = 0,
 ) -> BindGroupLayoutEntry {
-  BindGroupLayoutEntry::{ binding, visibility, kind }
+  BindGroupLayoutEntry::{ binding, visibility, kind, count }
 }
 
 ///|
@@ -88,6 +90,11 @@ pub fn BindGroupLayoutEntry::visibility(self : BindGroupLayoutEntry) -> UInt {
 ///|
 pub fn BindGroupLayoutEntry::kind(self : BindGroupLayoutEntry) -> BindingType {
   self.kind
+}
+
+///|
+pub fn BindGroupLayoutEntry::count(self : BindGroupLayoutEntry) -> Int {
+  self.count
 }
 
 ///|

@@ -1103,6 +1103,7 @@ pub struct Render3dMeshRuntimeState {
   morph_target_texture_cache : Map[Int, Int]
   mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
   mesh_vertex_buffer_layouts : @mesh.MeshVertexBufferLayouts
+  binding_arrays_are_usable : Bool
   specialized_material_pipelines : @material.SpecializedMeshPipelines
   specialized_prepass_material_pipelines : @material.SpecializedMeshPipelines
 }

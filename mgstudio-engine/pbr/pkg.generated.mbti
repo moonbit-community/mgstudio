@@ -1297,8 +1297,9 @@ pub struct PbrMaterialDrawFunctionIds {
 
 pub struct PbrMaterialPipelineSpecializer {
   properties : @material.MaterialProperties
+  binding_arrays_are_usable : Bool
 }
-pub fn PbrMaterialPipelineSpecializer::new(@material.MaterialProperties) -> Self
+pub fn PbrMaterialPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool) -> Self
 pub fn PbrMaterialPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
 pub(all) struct PbrPlugin {
@@ -1321,8 +1322,9 @@ pub impl @ecs.EcsPayloadCodec for PbrPluginRuntimeConfig
 
 pub struct PbrPrepassPipelineSpecializer {
   properties : @material.MaterialProperties
+  binding_arrays_are_usable : Bool
 }
-pub fn PbrPrepassPipelineSpecializer::new(@material.MaterialProperties) -> Self
+pub fn PbrPrepassPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool) -> Self
 pub fn PbrPrepassPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
 pub(all) struct PhysicalCameraParameters {
