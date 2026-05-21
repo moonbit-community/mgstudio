@@ -20,6 +20,7 @@ extenum @ecs.EcsPayload += {
   EcsPayload_light_SpotLight(SpotLight)
   EcsPayload_light_SpotLightTexture(SpotLightTexture)
   EcsPayload_light_DirectionalLight(DirectionalLight)
+  EcsPayload_light_RectLight(RectLight)
   EcsPayload_light_SunDisk(SunDisk)
   EcsPayload_light_VolumetricLight(VolumetricLight)
   EcsPayload_light_VolumetricFog(VolumetricFog)
@@ -120,6 +121,19 @@ pub impl @ecs.EcsPayloadCodec for DirectionalLight with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_light_DirectionalLight(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for RectLight with to_ecs_payload(self) {
+  EcsPayload_light_RectLight(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for RectLight with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_light_RectLight(value) => Some(value)
     _ => None
   }
 }

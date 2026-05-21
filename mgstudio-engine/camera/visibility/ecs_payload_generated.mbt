@@ -15,6 +15,7 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_camera_visibility_VisibleEntityRanges(VisibleEntityRanges)
+  EcsPayload_camera_visibility_ShadowLodOrigin(ShadowLodOrigin)
 }
 
 ///|
@@ -28,6 +29,19 @@ pub impl @ecs.EcsPayloadCodec for VisibleEntityRanges with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_camera_visibility_VisibleEntityRanges(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for ShadowLodOrigin with to_ecs_payload(self) {
+  EcsPayload_camera_visibility_ShadowLodOrigin(self)
+}
+
+///|
+pub impl @ecs.EcsPayloadCodec for ShadowLodOrigin with from_ecs_payload(payload) {
+  match payload {
+    EcsPayload_camera_visibility_ShadowLodOrigin(value) => Some(value)
     _ => None
   }
 }

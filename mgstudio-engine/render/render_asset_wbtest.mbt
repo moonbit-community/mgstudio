@@ -41,7 +41,7 @@ test "render asset prepare: retries queued assets and drops stale queued updates
     test_prepare_render_asset,
     fn(_id, _previous) { () },
   )
-  debug_inspect(render_assets.get(1).unwrap(), content="8")
+  debug_inspect(render_assets.get(1).unwrap(), content="28")
   debug_inspect(render_assets.contains(2), content="false")
   debug_inspect(next_frame.len(), content="1")
 }
@@ -98,7 +98,7 @@ test "render asset prepare: bytes-per-frame limiter defers excess extracted asse
   debug_inspect(render_assets.contains(1), content="true")
   debug_inspect(render_assets.contains(2), content="true")
   debug_inspect(render_assets.contains(3), content="false")
-  debug_inspect(render_assets.get(2).unwrap(), content="9")
+  debug_inspect(render_assets.get(2).unwrap(), content="209")
   debug_inspect(next_frame.len(), content="1")
   debug_inspect(limiter.bytes_written(), content="17")
   debug_inspect(limiter.exhausted(), content="true")

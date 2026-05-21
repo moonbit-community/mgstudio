@@ -1,6 +1,6 @@
 import {
   "Milky2018/mgstudio/mesh" @asset_mesh,
-  "moonbitlang/core/float" @float,
+  "moonbitlang/core/float",
 }
 
 import {

@@ -22,6 +22,15 @@ const VISIBILITY_RANGE_PLUGIN_NAME : String = "mgstudio.camera.visibility.range.
 pub struct VisibilityRangePlugin {}
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/camera.rs::ShadowLodOrigin`.
+pub struct ShadowLodOrigin {} derive(Eq, Debug)
+
+///|
+pub fn ShadowLodOrigin::default() -> ShadowLodOrigin {
+  ShadowLodOrigin::{  }
+}
+
+///|
 pub let visibility_range_set_check : @app.SystemSet = @app.system_set(
   "mgstudio.camera.visibility.range.check",
 )
@@ -99,14 +108,6 @@ pub fn VisibleEntityRanges::entity_is_in_range_of_view(
 }
 
 ///|
-pub fn VisibleEntityRanges::entity_is_in_range_of_any_view(
-  self : VisibleEntityRanges,
-  entity : @core.Entity,
-) -> Bool {
-  self.entities.get(entity.id) is Some(_)
-}
-
-///|
 pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
   let visible_ranges = (world.get_resource_mut(ecs_key_visible_entity_ranges) catch {
     _ => None
@@ -135,6 +136,35 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
     let view_position = global_transform_component.value().translation()
     view_positions.push((view_index, view_position))
   })
+  let shadow_lod_origin_query : @ecs.Query[
+    (
+      @core.Entity,
+      @ecs.Comp[@transform.GlobalTransform],
+      @ecs.Comp[ShadowLodOrigin],
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! shadow_lod_origin_query.view(fn(_, data) {
+    if view_positions.length() >= 32 {
+      return
+    }
+    let (entity, global_transform_component, _origin) = data
+    let mut already_added = false
+    for entry in view_entries {
+      if entry.0 == entity.id {
+        already_added = true
+        break
+      }
+    }
+    if already_added {
+      return
+    }
+    let view_index = view_positions.length()
+    view_entries.push((entity.id, view_index))
+    view_positions.push(
+      (view_index, global_transform_component.value().translation()),
+    )
+  })
   for entry in view_entries {
     visible_ranges_value.views.set(entry.0, entry.1)
   }
@@ -161,6 +191,11 @@ pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
       visibility_range_component,
       aabb_component,
     ) = data
+    if (try! world.contains_by_key(
+        entity, @root_visibility.ecs_key_no_cpu_culling,
+      )) {
+      return
+    }
     let global_transform = global_transform_component.value()
     let visibility_range = visibility_range_component.value()
     let model_position = if visibility_range.use_aabb() {
@@ -246,6 +281,16 @@ pub let ecs_key_visible_entity_ranges : @ecs.ResourceKey[VisibleEntityRanges] = 
 )
 
 ///|
+pub let ecs_key_shadow_lod_origin : @ecs.ComponentKey[ShadowLodOrigin] = @ecs.register_component(
+  debug_name="mgstudio.camera.visibility.range.ShadowLodOrigin",
+)
+
+///|
 pub impl @app.Resource for VisibleEntityRanges with resource() {
   ecs_key_visible_entity_ranges
+}
+
+///|
+pub impl @ecs.Component for ShadowLodOrigin with component() {
+  ecs_key_shadow_lod_origin
 }

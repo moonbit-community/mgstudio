@@ -357,6 +357,8 @@ pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@l
 
 pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[WireframeConfig]
 
+pub fn gltf_pbr_mesh_material(@asset.Handle[@material.StandardMaterial]) -> @material.MeshMaterial3d
+
 pub fn material_entity_needs_specialization(Int64?, Int64, Int64, Int64) -> Bool
 
 pub fn[T : MaterialExtension] material_extension_metadata_from_extension(T) -> @material.ExtendedMaterialMetadata3d
@@ -616,6 +618,8 @@ pub fn standard_material_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@materi
 pub fn standard_material_bind_group_allocator_install_plan(Bool, Int?) -> MaterialBindGroupAllocatorInstallPlan
 
 pub fn standard_material_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor
+
+pub fn standard_material_from_gltf_material(@material.StandardMaterial) -> @material.StandardMaterial
 
 pub fn standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
 
@@ -1034,6 +1038,14 @@ pub(all) struct FreeCameraState {
 pub fn FreeCameraState::default() -> Self
 pub impl @ecs.Component for FreeCameraState
 pub impl @ecs.EcsPayloadCodec for FreeCameraState
+
+pub struct GltfExtensionHandlerPbrState {
+  default_material_label : String
+  material_suffix : String
+} derive(Eq, @debug.Debug)
+pub fn GltfExtensionHandlerPbrState::default() -> Self
+pub fn GltfExtensionHandlerPbrState::default_material_label(Self) -> String
+pub fn GltfExtensionHandlerPbrState::standard_material_label(Self, String) -> String
 
 pub struct GpuScatteringMedium {
   runtime : ScatteringMediumRuntime

@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/core_pipeline/prepass"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
@@ -12,11 +13,15 @@ pub const EARLY_PREPASS_LABEL : String = "early prepass"
 
 pub const LATE_PREPASS_LABEL : String = "late prepass"
 
+pub fn background_motion_vectors_should_prepare(Bool, Bool, Bool) -> Bool
+
 pub fn early_prepass_should_run(PrepassViewState) -> Bool
 
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass]
 
 pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass]
+
+pub let ecs_key_no_background_motion_vectors : @ecs.ComponentKey[NoBackgroundMotionVectors]
 
 pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass]
 
@@ -49,6 +54,21 @@ pub fn prepass_should_skip_due_to_deferred(PrepassViewState) -> Bool
 // Errors
 
 // Types and methods
+pub struct BackgroundMotionVectorsPipelineKey {
+  samples : Int
+  normal_prepass : Bool
+} derive(Eq, @debug.Debug)
+pub fn BackgroundMotionVectorsPipelineKey::new(samples~ : Int, normal_prepass~ : Bool) -> Self
+pub fn BackgroundMotionVectorsPipelineKey::normal_prepass(Self) -> Bool
+pub fn BackgroundMotionVectorsPipelineKey::samples(Self) -> Int
+
+pub struct BackgroundMotionVectorsPluginState {
+  required_independent_blend : Bool
+  enabled : Bool
+} derive(Eq, @debug.Debug)
+pub fn BackgroundMotionVectorsPluginState::enabled(Self) -> Bool
+pub fn BackgroundMotionVectorsPluginState::new(Bool) -> Self
+
 pub struct DepthPrepass {
 } derive(ToJson, @json.FromJson)
 pub fn DepthPrepass::default() -> Self
@@ -60,6 +80,12 @@ pub struct MotionVectorPrepass {
 pub fn MotionVectorPrepass::default() -> Self
 pub impl @ecs.Component for MotionVectorPrepass
 pub impl @ecs.EcsPayloadCodec for MotionVectorPrepass
+
+pub struct NoBackgroundMotionVectors {
+} derive(Eq, @debug.Debug)
+pub fn NoBackgroundMotionVectors::default() -> Self
+pub impl @ecs.Component for NoBackgroundMotionVectors
+pub impl @ecs.EcsPayloadCodec for NoBackgroundMotionVectors
 
 pub struct NormalPrepass {
 } derive(ToJson, @json.FromJson)

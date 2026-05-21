@@ -113,16 +113,15 @@ pub fn[C : @ecs.Component + @ecs.EcsPayloadCodec] prepare_gpu_component_array_bu
   component_key? : @ecs.ComponentKey[C] = C::component(),
 ) -> Unit {
   let state_ref = gpu_component_array_buffer_state_ref(world, state_key)
-  ignore(
-    state_ref.modify(fn(state) {
-      state.clear()
-      world.for_each_component(component_key, fn(entity, component) {
-        let index = state.buffer.len().reinterpret_as_uint()
-        state.buffer.push(component)
-        state.indices.set(gpu_component_array_buffer_entity_key(entity), index)
-      })
-    }),
-  )
+  state_ref.update(fn(state) {
+    state.clear()
+    world.for_each_component(component_key, fn(entity, component) {
+      let index = state.buffer.len().reinterpret_as_uint()
+      state.buffer.push(component)
+      state.indices.set(gpu_component_array_buffer_entity_key(entity), index)
+    })
+    state
+  })
 }
 
 ///|

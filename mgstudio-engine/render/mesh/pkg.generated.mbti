@@ -14,6 +14,12 @@ pub const RENDER_MESH3D_HOST_VERTEX_SKINNED_FLOAT_STRIDE : Int = 20
 
 pub const RENDER_MESH3D_HOST_VERTEX_STRIDE_BYTES : Int = 80
 
+pub const RENDER_MORPH_ATTRIBUTE_COMPONENT_COUNT : Int = 9
+
+pub const RENDER_MORPH_MAX_TEXTURE_WIDTH : Int = 2048
+
+pub const RENDER_MORPH_MAX_WEIGHTS : Int = 256
+
 pub fn mesh_allocator_grow_general_slab_if_necessary(Int, Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> MeshAllocatorSlabGrowth
 
 pub fn mesh_allocator_plan_large_slab(Int, Int, MeshAllocatorElementLayout) -> MeshAllocatorSlabPlan
@@ -23,6 +29,12 @@ pub fn mesh_allocator_plan_new_general_slab(Int, Int, MeshAllocatorElementLayout
 pub fn mesh_allocator_should_allocate_large(Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> Bool
 
 pub fn render_mesh3d_host_vertex_buffer_layout(@Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
+
+pub fn render_morph_lowest_2d(Int, max_edge? : Int) -> RenderMorphTextureRect?
+
+pub fn render_morph_pack_attribute_components(position_x~ : Float, position_y~ : Float, position_z~ : Float, normal_x~ : Float, normal_y~ : Float, normal_z~ : Float, tangent_x~ : Float, tangent_y~ : Float, tangent_z~ : Float) -> Array[Float]
+
+pub fn render_morph_target_image_plan(Int, Int) -> Result[MorphTargetImagePlan, RenderMorphBuildError]
 
 // Errors
 
@@ -227,6 +239,21 @@ pub fn MeshAllocatorUploadPlan::size(Self) -> Int
 pub fn MeshAllocatorUploadPlan::slab_id(Self) -> Int
 pub fn MeshAllocatorUploadPlan::usage(Self) -> MeshAllocatorBufferUsage
 
+pub struct MorphTargetImagePlan {
+  width : Int
+  height : Int
+  depth_or_array_layers : Int
+  padding_components_per_layer : Int
+  component_count_per_layer : Int
+  byte_count : Int
+} derive(Eq, @debug.Debug)
+pub fn MorphTargetImagePlan::byte_count(Self) -> Int
+pub fn MorphTargetImagePlan::component_count_per_layer(Self) -> Int
+pub fn MorphTargetImagePlan::depth_or_array_layers(Self) -> Int
+pub fn MorphTargetImagePlan::height(Self) -> Int
+pub fn MorphTargetImagePlan::padding_components_per_layer(Self) -> Int
+pub fn MorphTargetImagePlan::width(Self) -> Int
+
 pub struct RenderMesh {
   vertex_count : Int
   buffer_info : RenderMeshBufferInfo
@@ -259,6 +286,36 @@ pub(all) enum RenderMeshIndexFormat {
   Uint16
   Uint32
 } derive(Eq, @debug.Debug)
+
+pub(all) enum RenderMorphBuildError {
+  TooManyAttributes(vertex_count~ : Int, component_count~ : Int)
+  TooManyTargets(target_count~ : Int)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RenderMorphTargetAllocatorMode {
+  Image
+  Storage
+} derive(Eq, @debug.Debug)
+
+pub struct RenderMorphTargetAllocatorState {
+  mode : RenderMorphTargetAllocatorMode
+  mesh_ids : Array[Int]
+} derive(@debug.Debug)
+pub fn RenderMorphTargetAllocatorState::allocate(Self, Int) -> Unit
+pub fn RenderMorphTargetAllocatorState::free(Self, Int) -> Unit
+pub fn RenderMorphTargetAllocatorState::has_image(Self, Int) -> Bool
+pub fn RenderMorphTargetAllocatorState::image() -> Self
+pub fn RenderMorphTargetAllocatorState::mode(Self) -> RenderMorphTargetAllocatorMode
+pub fn RenderMorphTargetAllocatorState::storage() -> Self
+
+pub struct RenderMorphTextureRect {
+  width : Int
+  height : Int
+  padding : Int
+} derive(Eq, @debug.Debug)
+pub fn RenderMorphTextureRect::height(Self) -> Int
+pub fn RenderMorphTextureRect::padding(Self) -> Int
+pub fn RenderMorphTextureRect::width(Self) -> Int
 
 // Type aliases
 

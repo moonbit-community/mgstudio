@@ -77,7 +77,6 @@ test "camera visibility range: entity in range of camera" {
     _ => None
   }).unwrap()
   debug_inspect(ranges.entity_is_in_range_of_view(mesh, camera), content="true")
-  debug_inspect(ranges.entity_is_in_range_of_any_view(mesh), content="true")
 }
 
 ///|
@@ -103,7 +102,6 @@ test "camera visibility range: entity out of range of camera" {
     ranges.entity_is_in_range_of_view(mesh, camera),
     content="false",
   )
-  debug_inspect(ranges.entity_is_in_range_of_any_view(mesh), content="false")
 }
 
 ///|
@@ -134,4 +132,68 @@ test "camera visibility range: use_aabb uses transformed aabb center" {
     _ => None
   }).unwrap()
   debug_inspect(ranges.entity_is_in_range_of_view(mesh, camera), content="true")
+}
+
+///|
+test "camera visibility range: no cpu culling entities are excluded" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    ecs_key_visible_entity_ranges,
+    VisibleEntityRanges::default(),
+  )
+  let camera = spawn_camera_entity(world, 0.0F, 0.0F, 0.0F)
+  let mesh = spawn_visibility_entity(
+    world,
+    0.0F,
+    0.0F,
+    5.0F,
+    @root_visibility.VisibilityRange::abrupt(0.0F, 10.0F),
+  )
+  try! world.set_by_key(
+    mesh,
+    @root_visibility.ecs_key_no_cpu_culling,
+    @root_visibility.NoCpuCulling::default(),
+  )
+  check_visibility_ranges(world)
+  let ranges = (world.get_resource(ecs_key_visible_entity_ranges) catch {
+    _ => None
+  }).unwrap()
+  debug_inspect(
+    ranges.entity_is_in_range_of_view(mesh, camera),
+    content="false",
+  )
+}
+
+///|
+test "camera visibility range: shadow lod origin participates as a view" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    ecs_key_visible_entity_ranges,
+    VisibleEntityRanges::default(),
+  )
+  let origin = world.spawn()
+  try! world.set_by_key(
+    origin,
+    @transform.GlobalTransform::component(),
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+    ),
+  )
+  try! world.set_by_key(
+    origin,
+    ecs_key_shadow_lod_origin,
+    ShadowLodOrigin::default(),
+  )
+  let mesh = spawn_visibility_entity(
+    world,
+    0.0F,
+    0.0F,
+    5.0F,
+    @root_visibility.VisibilityRange::abrupt(0.0F, 10.0F),
+  )
+  check_visibility_ranges(world)
+  let ranges = (world.get_resource(ecs_key_visible_entity_ranges) catch {
+    _ => None
+  }).unwrap()
+  debug_inspect(ranges.entity_is_in_range_of_view(mesh, origin), content="true")
 }

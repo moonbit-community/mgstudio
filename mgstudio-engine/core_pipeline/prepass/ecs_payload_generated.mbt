@@ -17,6 +17,9 @@ extenum @ecs.EcsPayload += {
   EcsPayload_core_pipeline_prepass_DepthPrepass(DepthPrepass)
   EcsPayload_core_pipeline_prepass_NormalPrepass(NormalPrepass)
   EcsPayload_core_pipeline_prepass_MotionVectorPrepass(MotionVectorPrepass)
+  EcsPayload_core_pipeline_prepass_NoBackgroundMotionVectors(
+    NoBackgroundMotionVectors
+  )
   EcsPayload_core_pipeline_prepass_PrepassViewState(PrepassViewState)
 }
 

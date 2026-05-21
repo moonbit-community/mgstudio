@@ -7,9 +7,33 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/mesh",
   "Milky2018/wgpu_mbt",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub const MAX_WORKGROUPS : Int = 65535
+
+pub const PAGES_PER_DIRTY_WORD : Int = 32
+
+pub const REALLOCATION_FACTOR : Float = 1.5
+
+pub const REALLOCATION_SIZE_MULTIPLE : Int = 256
+
+pub const SPARSE_BUFFER_UPDATE_WORKGROUP_SIZE : Int = 256
+
+pub const SPARSE_UPLOAD_THRESHOLD : Float = 0.15
+
+pub fn atomic_pod_unit_blob() -> AtomicPodBlob
+
+pub fn atomic_pod_word_count(Int) -> Int
+
+pub fn calculate_sparse_buffer_allocation_size(Int) -> Int
+
+pub fn sparse_buffer_div_ceil(Int, Int) -> Int
+
+pub fn sparse_buffer_page_size(Int) -> Int
+
+pub fn sparse_buffer_should_perform_full_reupload(changed_page_count~ : Int, buffer_length~ : Int, page_size~ : Int, element_word_size~ : Int) -> Bool
 
 // Errors
 pub suberror NoFragmentStateError {
@@ -17,6 +41,48 @@ pub suberror NoFragmentStateError {
 }
 
 // Types and methods
+pub struct AtomicPodBlob {
+  words : Array[UInt]
+} derive(Eq, @debug.Debug)
+pub fn AtomicPodBlob::field_words(Self, Int, Int) -> Array[UInt]
+pub fn AtomicPodBlob::from_words(Array[UInt]) -> Self
+pub fn AtomicPodBlob::new(Int) -> Self
+pub fn AtomicPodBlob::read_word(Self, Int) -> UInt
+pub fn AtomicPodBlob::read_words(Self) -> Array[UInt]
+pub fn AtomicPodBlob::set_field_words(Self, Int, Array[UInt]) -> Unit
+pub fn AtomicPodBlob::word_count(Self) -> Int
+pub fn AtomicPodBlob::write_word(Self, Int, UInt) -> Unit
+pub fn AtomicPodBlob::write_words(Self, Array[UInt]) -> Unit
+
+pub struct AtomicSparseBufferVecState {
+  mut len : Int
+  mut capacity : Int
+  element_word_size : Int
+  page_size_log2 : Int
+  dirty_words : Array[UInt]
+  mut needs_full_reupload : Bool
+  mut sparse_update_scheduled : Bool
+  label : String
+} derive(@debug.Debug)
+pub fn AtomicSparseBufferVecState::capacity(Self) -> Int
+pub fn AtomicSparseBufferVecState::changed_page_count(Self) -> Int
+pub fn AtomicSparseBufferVecState::clear(Self) -> Unit
+pub fn AtomicSparseBufferVecState::dirty_pages(Self) -> Array[Int]
+pub fn AtomicSparseBufferVecState::grow(Self, Int) -> Unit
+pub fn AtomicSparseBufferVecState::index_to_page(Self, Int) -> Int
+pub fn AtomicSparseBufferVecState::is_empty(Self) -> Bool
+pub fn AtomicSparseBufferVecState::len(Self) -> Int
+pub fn AtomicSparseBufferVecState::mark_uploaded(Self, sparse_update_scheduled~ : Bool) -> Unit
+pub fn AtomicSparseBufferVecState::new(element_word_size~ : Int, page_size_log2~ : Int, label~ : String) -> Self
+pub fn AtomicSparseBufferVecState::note_changed_index(Self, Int) -> Unit
+pub fn AtomicSparseBufferVecState::page_size(Self) -> Int
+pub fn AtomicSparseBufferVecState::push(Self) -> Int
+pub fn AtomicSparseBufferVecState::reserve(Self, Int) -> Unit
+pub fn AtomicSparseBufferVecState::should_perform_full_reupload(Self, max_storage_buffers_per_shader_stage~ : Int) -> Bool
+pub fn AtomicSparseBufferVecState::sparse_update_scheduled(Self) -> Bool
+pub fn AtomicSparseBufferVecState::truncate(Self, Int) -> Unit
+pub fn AtomicSparseBufferVecState::upload_plan(Self, max_storage_buffers_per_shader_stage~ : Int) -> SparseBufferUploadPlan
+
 pub struct BatchedUniformBuffer[T] {
   values : Array[T]
   batch_size : Int
@@ -246,6 +312,16 @@ pub(all) struct GpuArrayBufferPayload {
   buffer_id : UInt64
 }
 
+pub struct GpuSparseBufferUpdateMetadata {
+  element_size : Int
+  updated_page_count : Int
+  page_size_log2 : Int
+} derive(Eq, @debug.Debug)
+pub fn GpuSparseBufferUpdateMetadata::element_size(Self) -> Int
+pub fn GpuSparseBufferUpdateMetadata::new(element_size~ : Int, updated_page_count~ : Int, page_size_log2~ : Int) -> Self
+pub fn GpuSparseBufferUpdateMetadata::page_size_log2(Self) -> Int
+pub fn GpuSparseBufferUpdateMetadata::updated_page_count(Self) -> Int
+
 pub struct MultisampleState {
   count : UInt
   mask : UInt64
@@ -343,6 +419,41 @@ pub(all) enum ShaderDefVal {
   UInt(String, UInt)
   String(String, String)
 }
+
+pub struct SparseBufferId {
+  id : UInt64
+} derive(Eq, @debug.Debug)
+pub fn SparseBufferId::id(Self) -> UInt64
+pub fn SparseBufferId::new(UInt64) -> Self
+
+pub struct SparseBufferUpdateJob {
+  updated_page_count : Int
+  page_size_log2 : Int
+  element_word_size : Int
+  label : String
+} derive(Eq, @debug.Debug)
+pub fn SparseBufferUpdateJob::label(Self) -> String
+pub fn SparseBufferUpdateJob::new(updated_page_count~ : Int, page_size_log2~ : Int, element_word_size~ : Int, label~ : String) -> Self
+pub fn SparseBufferUpdateJob::page_size(Self) -> Int
+pub fn SparseBufferUpdateJob::words_to_update(Self) -> Int
+pub fn SparseBufferUpdateJob::workgroup_count(Self) -> Int
+
+pub(all) enum SparseBufferUploadKind {
+  FullReupload
+  SparseUpload
+  NoUpload
+} derive(Eq, @debug.Debug)
+
+pub struct SparseBufferUploadPlan {
+  kind : SparseBufferUploadKind
+  pages : Array[Int]
+  metadata : GpuSparseBufferUpdateMetadata
+  workgroup_count : Int
+} derive(Eq, @debug.Debug)
+pub fn SparseBufferUploadPlan::kind(Self) -> SparseBufferUploadKind
+pub fn SparseBufferUploadPlan::metadata(Self) -> GpuSparseBufferUpdateMetadata
+pub fn SparseBufferUploadPlan::pages(Self) -> Array[Int]
+pub fn SparseBufferUploadPlan::workgroup_count(Self) -> Int
 
 pub struct Specializer[T] {
   key : T

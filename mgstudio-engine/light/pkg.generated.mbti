@@ -91,6 +91,8 @@ pub let ecs_key_point_light_texture : @ecs.ComponentKey[PointLightTexture]
 
 pub let ecs_key_point_light_texture_component : @ecs.ComponentKey[PointLightTexture]
 
+pub let ecs_key_rect_light : @ecs.ComponentKey[RectLight]
+
 pub let ecs_key_spot_light : @ecs.ComponentKey[SpotLight]
 
 pub let ecs_key_spot_light_component : @ecs.ComponentKey[SpotLight]
@@ -455,6 +457,23 @@ pub fn PointLightTexture::with_cubemap_layout(Self, CubemapLayout3d) -> Self
 pub fn PointLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for PointLightTexture
 pub impl @ecs.EcsPayloadCodec for PointLightTexture
+
+pub struct RectLight {
+  color : @color.Color
+  intensity : Float
+  range : Float
+  width : Float
+  height : Float
+} derive(ToJson, @json.FromJson)
+pub fn RectLight::color(Self) -> @color.Color
+pub fn RectLight::default() -> Self
+pub fn RectLight::height(Self) -> Float
+pub fn RectLight::intensity(Self) -> Float
+pub fn RectLight::new(@color.Color, Float, Float, Float, Float) -> Self
+pub fn RectLight::range(Self) -> Float
+pub fn RectLight::width(Self) -> Float
+pub impl @ecs.Component for RectLight
+pub impl @ecs.EcsPayloadCodec for RectLight
 
 #alias(AtmosphereMedium)
 pub struct ScatteringMedium {

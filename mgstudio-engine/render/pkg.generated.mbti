@@ -397,6 +397,22 @@ pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
 pub fn set_render_error_handler((@app.RenderRuntimeError) -> @app.RenderErrorPolicy) -> Unit
 
+pub fn slab_allocator_allocation_shape(Int, SlabItemLayoutInfo) -> SlabAllocationShape
+
+pub fn slab_allocator_div_ceil(Int, Int) -> Int
+
+pub fn slab_allocator_grow_general_slab_if_necessary(Int, Int, SlabItemLayoutInfo, settings? : SlabAllocatorSettings) -> SlabGrowth
+
+pub fn slab_allocator_growth_capacity(Int, SlabAllocatorSettings, SlabItemLayoutInfo) -> Int
+
+pub fn slab_allocator_initial_general_slab_slot_capacity(SlabItemLayoutInfo, Int, settings? : SlabAllocatorSettings) -> Int
+
+pub fn slab_allocator_plan_large_slab(Int, Int, SlabItemLayoutInfo) -> SlabAllocationPlan
+
+pub fn slab_allocator_plan_new_general_slab(Int, Int, SlabItemLayoutInfo, settings? : SlabAllocatorSettings) -> SlabAllocationPlan
+
+pub fn slab_allocator_should_allocate_large(Int, SlabItemLayoutInfo, settings? : SlabAllocatorSettings) -> Bool
+
 pub fn sorted_cameras_clear(@ecs.ResourceMut[SortedCameras]) -> Unit
 
 pub let sorted_cameras_key : @ecs.ResourceKey[SortedCameras]
@@ -420,6 +436,8 @@ pub fn sync_world(@ecs.World, @ecs.World) -> (@ecs.World, @ecs.World)
 pub fn sync_world_plugin_with(@app.App[@ecs.World], SyncWorldPlugin) -> @app.App[@ecs.World]
 
 pub fn try_with_render_app(@app.App[@ecs.World], (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn uniform_component_prepare_indices(Int) -> Array[UInt]
 
 pub fn with_render_app(@app.App[@ecs.World], (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -778,6 +796,77 @@ pub fn[K, V] RenderStorage::len(Self[K, V]) -> Int
 pub fn[K : Hash + Eq, V] RenderStorage::new() -> Self[K, V]
 pub fn[K : Hash + Eq, V] RenderStorage::remove(Self[K, V], K) -> V?
 
+pub struct SlabAllocationPlan {
+  slab_id : Int
+  kind : SlabKind
+  layout : SlabItemLayoutInfo
+  offset : Int
+  slot_count : Int
+  padding : Int
+  current_slot_capacity : Int
+  growth : SlabGrowth
+} derive(Eq, @debug.Debug)
+pub fn SlabAllocationPlan::current_slot_capacity(Self) -> Int
+pub fn SlabAllocationPlan::growth(Self) -> SlabGrowth
+pub fn SlabAllocationPlan::kind(Self) -> SlabKind
+pub fn SlabAllocationPlan::padding(Self) -> Int
+pub fn SlabAllocationPlan::slab_id(Self) -> Int
+pub fn SlabAllocationPlan::slot_count(Self) -> Int
+
+pub struct SlabAllocationShape {
+  element_count : Int
+  slot_count : Int
+  padding : Int
+} derive(Eq, @debug.Debug)
+pub fn SlabAllocationShape::element_count(Self) -> Int
+pub fn SlabAllocationShape::padding(Self) -> Int
+pub fn SlabAllocationShape::slot_count(Self) -> Int
+
+pub struct SlabAllocatorSettings {
+  min_slab_size : Int
+  max_slab_size : Int
+  large_threshold : Int
+  growth_factor : Float
+}
+pub fn SlabAllocatorSettings::default() -> Self
+pub fn SlabAllocatorSettings::growth_factor(Self) -> Float
+pub fn SlabAllocatorSettings::large_threshold(Self) -> Int
+pub fn SlabAllocatorSettings::max_slab_size(Self) -> Int
+pub fn SlabAllocatorSettings::min_slab_size(Self) -> Int
+pub fn SlabAllocatorSettings::new(min_slab_size~ : Int, max_slab_size~ : Int, large_threshold~ : Int, growth_factor~ : Float) -> Self
+pub impl Default for SlabAllocatorSettings
+
+pub struct SlabGrowth {
+  kind : SlabGrowthKind
+  old_slot_capacity : Int
+  current_slot_capacity : Int
+} derive(Eq, @debug.Debug)
+pub fn SlabGrowth::current_slot_capacity(Self) -> Int
+pub fn SlabGrowth::kind(Self) -> SlabGrowthKind
+pub fn SlabGrowth::old_slot_capacity(Self) -> Int
+
+pub(all) enum SlabGrowthKind {
+  NoGrowthNeeded
+  NeededGrowth
+  CantGrow
+} derive(Eq, @debug.Debug)
+
+pub struct SlabItemLayoutInfo {
+  size : Int
+  elements_per_slot : Int
+  buffer_usages : UInt
+} derive(Eq, @debug.Debug)
+pub fn SlabItemLayoutInfo::buffer_usages(Self) -> UInt
+pub fn SlabItemLayoutInfo::elements_per_slot(Self) -> Int
+pub fn SlabItemLayoutInfo::new(size~ : Int, elements_per_slot~ : Int, buffer_usages? : UInt) -> Self
+pub fn SlabItemLayoutInfo::size(Self) -> Int
+pub fn SlabItemLayoutInfo::slot_size(Self) -> Int
+
+pub(all) enum SlabKind {
+  General
+  LargeObject
+} derive(Eq, @debug.Debug)
+
 pub struct SortedCameras {
   mut entities : Array[@core.Entity]
 }
@@ -807,6 +896,14 @@ pub struct TemporaryRenderEntity {
 pub fn TemporaryRenderEntity::default() -> Self
 pub impl @ecs.Component for TemporaryRenderEntity
 pub impl @ecs.EcsPayloadCodec for TemporaryRenderEntity
+
+pub struct UniformComponentPluginState {
+  component_debug_name : String
+  prepared_count : Int
+} derive(Eq, @debug.Debug)
+pub fn UniformComponentPluginState::component_debug_name(Self) -> String
+pub fn UniformComponentPluginState::new(String) -> Self
+pub fn UniformComponentPluginState::prepared_count(Self) -> Int
 
 pub struct WgpuSettings {
   device_label : String?
