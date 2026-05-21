@@ -34,8 +34,6 @@ pub const MESHLET_VISIBILITY_BUFFER_RASTER_NODE : String = "mgstudio.pbr.meshlet
 
 pub let ecs_key_meshlet_instance_manager : @ecs.ResourceKey[InstanceManager]
 
-pub let ecs_key_meshlet_materialized_mesh_cache : @ecs.ResourceKey[MeshletMaterializedMeshCache]
-
 pub let ecs_key_meshlet_mesh3d : @ecs.ComponentKey[MeshletMesh3d]
 
 pub let ecs_key_meshlet_mesh_manager : @ecs.ResourceKey[MeshletMeshManager]
@@ -497,14 +495,6 @@ pub(all) enum MeshletMaterialViewLayoutKind {
   PrepassNoMotionVectors
   PrepassMotionVectors
 }
-
-pub struct MeshletMaterializedMeshCache {
-  mesh_handles_by_meshlet_asset_id : Map[Int, @asset.Handle[@mesh.Mesh]]
-  debug_mesh_handles_by_entity_bits : Map[UInt64, @asset.Handle[@mesh.Mesh]]
-  mut debug_material : @asset.Handle[@material.StandardMaterial]?
-}
-pub fn MeshletMaterializedMeshCache::default() -> Self
-pub impl @ecs.EcsPayloadCodec for MeshletMaterializedMeshCache
 
 pub struct MeshletMesh {
   vertex_positions : Array[Int]

@@ -33,6 +33,7 @@ test "pbr meshlet: portable visibility buffer drops texture atomics" {
   inspect((required & 0x0000002000000000UL) == 0UL, content="true")
   inspect((required & 0x0000004000000000UL) != 0UL, content="true")
   inspect((required & 0x0000000000000001UL) != 0UL, content="true")
+  inspect((required & 0x0000000000010000UL) != 0UL, content="true")
 }
 
 ///|

@@ -33,9 +33,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_pbr_meshlet_MeshletVisibilityBufferRasterState(
     MeshletVisibilityBufferRasterState
   )
-  EcsPayload_pbr_meshlet_MeshletMaterializedMeshCache(
-    MeshletMaterializedMeshCache
-  )
 }
 
 ///|
@@ -207,18 +204,3 @@ pub impl @ecs.EcsPayloadCodec for MeshletVisibilityBufferRasterState with from_e
 }
 
 ///|
-pub impl @ecs.EcsPayloadCodec for MeshletMaterializedMeshCache with to_ecs_payload(
-  self,
-) {
-  EcsPayload_pbr_meshlet_MeshletMaterializedMeshCache(self)
-}
-
-///|
-pub impl @ecs.EcsPayloadCodec for MeshletMaterializedMeshCache with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_meshlet_MeshletMaterializedMeshCache(value) => Some(value)
-    _ => None
-  }
-}
