@@ -852,12 +852,12 @@ pub impl @ecs.EcsPayloadCodec for YAxisOrientation
 
 // Traits
 pub(open) trait IntoFontSize {
-  into_font_size(Self) -> FontSize
+  fn into_font_size(Self) -> FontSize
 }
 pub impl IntoFontSize for Float
 
 pub(open) trait IntoFontSource {
-  into_font_source(Self) -> FontSource
+  fn into_font_source(Self) -> FontSource
 }
 pub impl IntoFontSource for String
 pub impl IntoFontSource for @asset.Handle[@asset.Font]

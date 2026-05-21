@@ -709,6 +709,10 @@ fn mesh3d_preprocess_view_uniform_bytes(
       words.push(word)
     }
   }
+  words.push(f32_bits(view.world_position_x))
+  words.push(f32_bits(view.world_position_y))
+  words.push(f32_bits(view.world_position_z))
+  words.push(0U)
   for _ in 0..<40 {
     words.push(0U)
   }

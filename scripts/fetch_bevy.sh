@@ -19,7 +19,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 BEVY_DIR="${REPO_DIR}/bevy"
 BEVY_REMOTE_URL="https://github.com/bevyengine/bevy.git"
-BEVY_BASELINE_COMMIT="48ec375a3a3cdc904476ef1d13f9d71c9f2820d3"
+BEVY_BASELINE_COMMIT="1413bc4e3632233b8fa610a6cf14b90258556c51"
 
 if [[ -e "${BEVY_DIR}" ]] && [[ ! -d "${BEVY_DIR}/.git" ]]; then
   echo "[fetch-bevy] existing path is not a git checkout: ${BEVY_DIR}" >&2

@@ -224,23 +224,23 @@ pub impl @json.FromJson for Volume
 
 // Traits
 pub(open) trait AudioPlayerSource {
-  audio_player_source_debug_name() -> String
+  fn audio_player_source_debug_name() -> String
 }
 
 pub(open) trait AudioSinkPlayback {
-  volume(Self) -> Volume
-  set_volume(Self, Volume) -> Self
-  speed(Self) -> Float
-  set_speed(Self, Float) -> Self
-  play(Self) -> Unit
-  position(Self) -> @core.Duration
-  try_seek(Self, @core.Duration) -> Bool
-  pause(Self) -> Unit
-  is_paused(Self) -> Bool
-  stop(Self) -> Unit
-  empty(Self) -> Bool
-  is_muted(Self) -> Bool
-  mute(Self) -> Self
-  unmute(Self) -> Self
+  fn volume(Self) -> Volume
+  fn set_volume(Self, Volume) -> Self
+  fn speed(Self) -> Float
+  fn set_speed(Self, Float) -> Self
+  fn play(Self) -> Unit
+  fn position(Self) -> @core.Duration
+  fn try_seek(Self, @core.Duration) -> Bool
+  fn pause(Self) -> Unit
+  fn is_paused(Self) -> Bool
+  fn stop(Self) -> Unit
+  fn empty(Self) -> Bool
+  fn is_muted(Self) -> Bool
+  fn mute(Self) -> Self
+  fn unmute(Self) -> Self
 }
 

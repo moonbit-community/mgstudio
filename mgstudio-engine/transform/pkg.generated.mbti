@@ -178,7 +178,7 @@ pub impl Default for TransformTreeChanged
 
 // Traits
 pub(open) trait TransformPoint {
-  transform_point(Self, @math.Vec3) -> @math.Vec3
+  fn transform_point(Self, @math.Vec3) -> @math.Vec3
 }
 pub impl TransformPoint for @math.Isometry3d
 

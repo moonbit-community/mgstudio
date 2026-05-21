@@ -14,7 +14,7 @@ let clustered_wgsl_source : String =
   #|//      let is_orthographic = view_is_orthographic();
   #|//
   #|//      let cluster_index =
-  #|//          clustered_forward::fragment_cluster_index(frag_coord, view_z, is_orthographic);
+  #|//          clustered_forward::view_fragment_cluster_index(frag_coord, view_z, is_orthographic);
   #|//      var clusterable_object_index_ranges =
   #|//          clustered_forward::unpack_clusterable_object_index_ranges(cluster_index);
   #|//
@@ -84,7 +84,7 @@ let clustered_wgsl_source : String =
   #|//      let is_orthographic = view_is_orthographic();
   #|//
   #|//      let cluster_index =
-  #|//          clustered_forward::fragment_cluster_index(frag_coord, view_z, is_orthographic);
+  #|//          clustered_forward::view_fragment_cluster_index(frag_coord, view_z, is_orthographic);
   #|//      var clusterable_object_index_ranges =
   #|//          clustered_forward::unpack_clusterable_object_index_ranges(cluster_index);
   #|fn clustered_decal_iterator_new(
@@ -189,7 +189,7 @@ let clustered_wgsl_source : String =
   #|    let is_orthographic = view_is_orthographic();
   #|
   #|    let cluster_index =
-  #|        clustered_forward::fragment_cluster_index(frag_coord, view_z, is_orthographic);
+  #|        clustered_forward::view_fragment_cluster_index(frag_coord, view_z, is_orthographic);
   #|    var clusterable_object_index_ranges =
   #|        clustered_forward::unpack_clusterable_object_index_ranges(cluster_index);
   #|

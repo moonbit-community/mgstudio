@@ -881,6 +881,6 @@ pub type UntypedRenderAssetId = Int
 
 // Traits
 pub(open) trait RenderAssetResource : @ecs.EcsPayloadCodec {
-  render_asset_resource_debug_name() -> String
+  fn render_asset_resource_debug_name() -> String
 }
 

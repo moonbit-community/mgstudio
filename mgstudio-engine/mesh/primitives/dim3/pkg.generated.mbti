@@ -314,11 +314,11 @@ pub using @math {type Triangle3d}
 
 // Traits
 pub(open) trait MeshBuilder {
-  build(Self) -> @mesh.Mesh3dGeometry
+  fn build(Self) -> @mesh.Mesh3dGeometry
 }
 
 pub(open) trait Meshable {
-  mesh(Self) -> @mesh.Mesh3dGeometry
+  fn mesh(Self) -> @mesh.Mesh3dGeometry
 }
 pub impl Meshable for @math.Capsule3d
 pub impl Meshable for @math.Cone

@@ -15,6 +15,7 @@ let ui_wgsl_source : String =
   #|const BORDER_RIGHT: u32 = 1024u;
   #|const BORDER_BOTTOM: u32 = 2048u;
   #|const BORDER_ANY: u32 = BORDER_LEFT + BORDER_TOP + BORDER_RIGHT + BORDER_BOTTOM;
+  #|const INVERT: u32 = 4096u;
   #|
   #|fn enabled(flags: u32, mask: u32) -> bool {
   #|    return (flags & mask) != 0u;
@@ -201,9 +202,10 @@ let ui_wgsl_source : String =
   #|    size: vec2<f32>,
   #|    radius: vec4<f32>,
   #|    border: vec4<f32>,
+  #|    flags: u32,
   #|) -> vec4<f32> {
   #|    // When drawing the background only draw the internal area and not the border.
-  #|    let internal_distance = sd_inset_rounded_box(point, size, radius, border);
+  #|    let internal_distance = sd_inset_rounded_box(point, size, radius, border) * select(1., -1, enabled(flags, INVERT));
   #|
   #|#ifdef ANTI_ALIAS
   #|    let t = antialias(internal_distance);
@@ -225,7 +227,7 @@ let ui_wgsl_source : String =
   #|    if enabled(in.flags, BORDER_ANY) {
   #|        return draw_uinode_border(color, in.point, in.size, in.radius, in.border, in.flags);
   #|    } else {
-  #|        return draw_uinode_background(color, in.point, in.size, in.radius, in.border);
+  #|        return draw_uinode_background(color, in.point, in.size, in.radius, in.border, in.flags);
   #|    }
   #|}
   #|

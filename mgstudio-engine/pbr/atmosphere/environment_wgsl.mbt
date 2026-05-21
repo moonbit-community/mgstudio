@@ -33,9 +33,8 @@ let environment_wgsl_source : String =
   #|
   #|    let world_pos = get_view_position();
   #|    let r = length(world_pos);
-  #|    let up = normalize(world_pos);
   #|
-  #|    let ray_dir_as = direction_world_to_atmosphere(ray_dir_ws.xyz, up);
+  #|    let ray_dir_as = direction_world_to_atmosphere(ray_dir_ws.xyz);
   #|    let inscattering = sample_sky_view_lut(r, ray_dir_as);
   #|    let color = vec4<f32>(inscattering, 1.0);
   #|

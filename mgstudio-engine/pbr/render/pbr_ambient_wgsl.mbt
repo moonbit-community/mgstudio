@@ -26,7 +26,7 @@ let pbr_ambient_wgsl_source : String =
   #|
   #|    // No real world material has specular values under 0.02, so we use this range as a
   #|    // "pre-baked specular occlusion" that extinguishes the fresnel term, for artistic control.
-  #|    // See: https://google.github.io/filament/Filament.html#specularocclusion
+  #|    // See: https://google.github.io/filament/Filament.md.html#specularocclusion
   #|    let specular_occlusion = saturate(dot(specular_color, vec3(50.0 * 0.33)));
   #|
   #|    return (diffuse_ambient + specular_ambient * specular_occlusion) * lights.ambient_color.rgb * occlusion;

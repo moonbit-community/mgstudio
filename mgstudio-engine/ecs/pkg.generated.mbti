@@ -973,7 +973,7 @@ pub(all) struct WorldQueuedRegistrations {
 
 // Traits
 pub(open) trait Bundle {
-  insert_into(Self, World, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
+  fn insert_into(Self, World, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
 }
 pub impl Bundle for Unit
 pub impl[A : Component, B : Component] Bundle for (A, B)
@@ -985,20 +985,20 @@ pub impl[A : Component, B : Component, C : Component, D : Component, E : Compone
 pub impl[A : Component, B : Component, C : Component, D : Component, E : Component, F : Component, G : Component, H : Component] Bundle for (A, B, C, D, E, F, G, H)
 
 pub(open) trait Component : EcsPayloadCodec {
-  component() -> ComponentKey[Self]
+  fn component() -> ComponentKey[Self]
 }
 
 pub(open) trait ComponentObserverEvent {
-  register_component_observer(World, Int, @core.Entity?, (World) -> Unit) -> ObserverHandle
-  current_observer_entity() -> @core.Entity
-  current_observer_component_id() -> Int
-  marker() -> Self
-  debug_name() -> String
+  fn register_component_observer(World, Int, @core.Entity?, (World) -> Unit) -> ObserverHandle
+  fn current_observer_entity() -> @core.Entity
+  fn current_observer_component_id() -> Int
+  fn marker() -> Self
+  fn debug_name() -> String
 }
 
 pub(open) trait EcsPayloadCodec {
-  to_ecs_payload(Self) -> EcsPayload
-  from_ecs_payload(EcsPayload) -> Self?
+  fn to_ecs_payload(Self) -> EcsPayload
+  fn from_ecs_payload(EcsPayload) -> Self?
 }
 pub impl EcsPayloadCodec for Unit
 pub impl EcsPayloadCodec for Bool
@@ -1013,33 +1013,33 @@ pub(open) trait EventData : EcsPayloadCodec {
 }
 
 pub(open) trait Message : EcsPayloadCodec {
-  message() -> MessageKey[Self]
+  fn message() -> MessageKey[Self]
 }
 
 pub(open) trait Mutable {
-  set(Self, @ref.Ref[Self]) -> Unit = _
+  fn set(Self, @ref.Ref[Self]) -> Unit = _
 }
 
 pub(open) trait QueryData {
-  matches(World, @core.Entity) -> Bool
-  fetch(World, @core.Entity) -> Self raise EcsError
-  prepare_fetch_plan(World) -> QueryDataFetchPlan = _
-  append_fetch_plan(World, QueryDataFetchPlan) -> Unit = _
-  fetch_plan_size() -> Int = _
-  fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
-  fetch_table_row_with_plan(World, @core.Entity, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
-  fetch_table_row_with_plan_offset(World, @core.Entity, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
-  fetch_sparse_anchor(World, @core.Entity, Int, EcsPayload, Int, Int) -> Self raise EcsError = _
-  fetch_sparse_anchor_with_plan(World, @core.Entity, Int, EcsPayload, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
-  fetch_sparse_anchor_with_plan_offset(World, @core.Entity, Int, EcsPayload, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
-  mentions_component(Int) -> Bool
-  matches_component_set((Int) -> Bool) -> Bool
-  collect_access(QueryDataAccess) -> Unit = _
-  requires_entity_check() -> Bool
-  is_dense(World) -> Bool = _
-  iteration_anchor_component() -> Int?
-  iteration_anchor_components() -> Array[Int] = _
-  contiguous_compatible() -> Bool
+  fn matches(World, @core.Entity) -> Bool
+  fn fetch(World, @core.Entity) -> Self raise EcsError
+  fn prepare_fetch_plan(World) -> QueryDataFetchPlan = _
+  fn append_fetch_plan(World, QueryDataFetchPlan) -> Unit = _
+  fn fetch_plan_size() -> Int = _
+  fn fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
+  fn fetch_table_row_with_plan(World, @core.Entity, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
+  fn fetch_table_row_with_plan_offset(World, @core.Entity, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
+  fn fetch_sparse_anchor(World, @core.Entity, Int, EcsPayload, Int, Int) -> Self raise EcsError = _
+  fn fetch_sparse_anchor_with_plan(World, @core.Entity, Int, EcsPayload, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
+  fn fetch_sparse_anchor_with_plan_offset(World, @core.Entity, Int, EcsPayload, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
+  fn mentions_component(Int) -> Bool
+  fn matches_component_set((Int) -> Bool) -> Bool
+  fn collect_access(QueryDataAccess) -> Unit = _
+  fn requires_entity_check() -> Bool
+  fn is_dense(World) -> Bool = _
+  fn iteration_anchor_component() -> Int?
+  fn iteration_anchor_components() -> Array[Int] = _
+  fn contiguous_compatible() -> Bool
 }
 pub impl QueryData for Unit
 pub impl[T : QueryData] QueryData for T?
@@ -1049,31 +1049,31 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C)
 pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (A, B, C, D)
 
 pub(open) trait QueryFilter {
-  matches(Self, World, @core.Entity) -> Bool
-  matches_table_row(Self, World, @core.Entity, Int, Int) -> Bool = _
-  mentions_component(Self, Int) -> Bool
-  matches_component_set(Self, (Int) -> Bool) -> Bool
-  collect_access(Self, QueryFilterAccess) -> Unit = _
-  requires_entity_check(Self) -> Bool
-  requires_entity_check_for_world(Self, World) -> Bool = _
-  is_dense(Self, World) -> Bool = _
-  iteration_anchor_component(Self) -> Int?
-  iteration_anchor_components(Self) -> Array[Int] = _
-  depends_on_ticks(Self) -> Bool
+  fn matches(Self, World, @core.Entity) -> Bool
+  fn matches_table_row(Self, World, @core.Entity, Int, Int) -> Bool = _
+  fn mentions_component(Self, Int) -> Bool
+  fn matches_component_set(Self, (Int) -> Bool) -> Bool
+  fn collect_access(Self, QueryFilterAccess) -> Unit = _
+  fn requires_entity_check(Self) -> Bool
+  fn requires_entity_check_for_world(Self, World) -> Bool = _
+  fn is_dense(Self, World) -> Bool = _
+  fn iteration_anchor_component(Self) -> Int?
+  fn iteration_anchor_components(Self) -> Array[Int] = _
+  fn depends_on_ticks(Self) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (A, B, C)
 
 pub(open) trait QueryFilterDisjunction {
-  matches_any(Self, World, @core.Entity) -> Bool
-  matches_table_row_any(Self, World, @core.Entity, Int, Int) -> Bool = _
-  mentions_component_any(Self, Int) -> Bool
-  matches_component_set_any(Self, (Int) -> Bool) -> Bool
-  collect_access_any(Self, QueryFilterAccess) -> Unit = _
-  requires_entity_check_any(Self) -> Bool
-  requires_entity_check_any_for_world(Self, World) -> Bool = _
-  is_dense_any(Self, World) -> Bool = _
-  depends_on_ticks_any(Self) -> Bool
+  fn matches_any(Self, World, @core.Entity) -> Bool
+  fn matches_table_row_any(Self, World, @core.Entity, Int, Int) -> Bool = _
+  fn mentions_component_any(Self, Int) -> Bool
+  fn matches_component_set_any(Self, (Int) -> Bool) -> Bool
+  fn collect_access_any(Self, QueryFilterAccess) -> Unit = _
+  fn requires_entity_check_any(Self) -> Bool
+  fn requires_entity_check_any_for_world(Self, World) -> Bool = _
+  fn is_dense_any(Self, World) -> Bool = _
+  fn depends_on_ticks_any(Self) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (A, B, C)
@@ -1082,10 +1082,10 @@ pub(open) trait ResourceData : EcsPayloadCodec {
 }
 
 pub(open) trait TriggerEvent : EcsPayloadCodec {
-  observer_event() -> EventKey[Self]
-  observer_entity(Self) -> @core.Entity?
-  set_observer_entity(Self, @core.Entity) -> Self
-  auto_propagate(Self) -> Bool
-  debug_name() -> String
+  fn observer_event() -> EventKey[Self]
+  fn observer_entity(Self) -> @core.Entity?
+  fn set_observer_entity(Self, @core.Entity) -> Self
+  fn auto_propagate(Self) -> Bool
+  fn debug_name() -> String
 }
 

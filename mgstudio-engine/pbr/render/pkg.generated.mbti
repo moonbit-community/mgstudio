@@ -1267,11 +1267,11 @@ pub using @compose {type Composer as PbrRenderWgslComposer}
 
 // Traits
 pub(open) trait CameraProjection3d {
-  get_clip_from_view(Self) -> ProjectionMatrix3d
-  get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
-  update(Self, Float, Float) -> Self
-  far(Self) -> Float
-  compute_frustum(Self, @transform.Transform) -> Frustum
-  get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+  fn get_clip_from_view(Self) -> ProjectionMatrix3d
+  fn get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+  fn update(Self, Float, Float) -> Self
+  fn far(Self) -> Float
+  fn compute_frustum(Self, @transform.Transform) -> Frustum
+  fn get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 }
 

@@ -773,17 +773,17 @@ pub using @image {type TextureFormat}
 
 // Traits
 pub(open) trait Asset : @ecs.EcsPayloadCodec {
-  asset_debug_name() -> String
-  asset_as_image(Self) -> @image.Image?
+  fn asset_debug_name() -> String
+  fn asset_as_image(Self) -> @image.Image?
 }
 pub impl Asset for @image.Image
 
 pub(open) trait AssetLoadGuard {
-  release(Self) -> Unit
+  fn release(Self) -> Unit
 }
 
 pub(open) trait IntoAssetPath {
-  into_asset_path(Self) -> AssetPath
+  fn into_asset_path(Self) -> AssetPath
 }
 pub impl IntoAssetPath for String
 

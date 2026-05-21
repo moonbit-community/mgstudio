@@ -1271,36 +1271,36 @@ pub(all) struct WithTwoDerivatives[T] {
 
 // Traits
 pub(open) trait Bounded2d {
-  aabb_2d(Self, Isometry2d) -> Aabb2d
-  bounding_circle(Self, Isometry2d) -> BoundingCircle
+  fn aabb_2d(Self, Isometry2d) -> Aabb2d
+  fn bounding_circle(Self, Isometry2d) -> BoundingCircle
 }
 
 pub(open) trait Bounded3d {
-  aabb_3d(Self, Isometry3d) -> Aabb3d
-  bounding_sphere(Self, Isometry3d) -> BoundingSphere
+  fn aabb_3d(Self, Isometry3d) -> Aabb3d
+  fn bounding_sphere(Self, Isometry3d) -> BoundingSphere
 }
 
 pub(open) trait Ease {
-  interpolate(Self, Self, Float) -> Self
+  fn interpolate(Self, Self, Float) -> Self
 }
 pub impl Ease for Float
 
 pub(open) trait FromRng {
-  from_rng(@random.Rand) -> Self
+  fn from_rng(@random.Rand) -> Self
 }
 
 pub(open) trait Inset : Primitive2d {
-  inset(Self, Float) -> Self
+  fn inset(Self, Float) -> Self
 }
 
 pub(open) trait Measured2d {
-  perimeter(Self) -> Float
-  area(Self) -> Float
+  fn perimeter(Self) -> Float
+  fn area(Self) -> Float
 }
 
 pub(open) trait Measured3d {
-  area(Self) -> Float
-  volume(Self) -> Float
+  fn area(Self) -> Float
+  fn volume(Self) -> Float
 }
 
 pub(open) trait Primitive2d {
@@ -1313,29 +1313,29 @@ pub(open) trait ShapeSample {
 }
 
 pub(open) trait SplinePoint {
-  zero() -> Self
-  add(Self, Self) -> Self
-  sub(Self, Self) -> Self
-  mul_scalar(Self, Float) -> Self
+  fn zero() -> Self
+  fn add(Self, Self) -> Self
+  fn sub(Self, Self) -> Self
+  fn mul_scalar(Self, Float) -> Self
 }
 pub impl SplinePoint for Float
 
 pub(open) trait StableInterpolate {
-  stable_interpolate(Self, Self, Float) -> Self
+  fn stable_interpolate(Self, Self, Float) -> Self
 }
 pub impl StableInterpolate for Float
 
 pub(open) trait ToRing : Primitive2d + Inset {
-  to_ring(Self, Float) -> Ring[Self]
+  fn to_ring(Self, Float) -> Ring[Self]
 }
 
 pub(open) trait VectorSpace {
-  zero() -> Self
-  add(Self, Self) -> Self
-  sub(Self, Self) -> Self
-  neg(Self) -> Self
-  mul_scalar(Self, Float) -> Self
-  div_scalar(Self, Float) -> Self
+  fn zero() -> Self
+  fn add(Self, Self) -> Self
+  fn sub(Self, Self) -> Self
+  fn neg(Self) -> Self
+  fn mul_scalar(Self, Float) -> Self
+  fn div_scalar(Self, Float) -> Self
 }
 pub impl VectorSpace for Float
 

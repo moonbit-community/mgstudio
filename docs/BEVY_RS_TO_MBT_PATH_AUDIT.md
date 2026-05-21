@@ -28,17 +28,17 @@
   - `INCLUDE_NON_GOAL=1 scripts/sync_bevy_rs_to_mbt_paths.sh`
   - `INCLUDE_NON_GOAL=1 INCLUDE_EXCLUDED=1 scripts/sync_bevy_rs_to_mbt_paths.sh`
 
-## Current Snapshot (2026-04-14)
+## Current Snapshot (2026-05-21)
 
 - Canonical run:
-  - `total_rs=1423`
-  - `considered_rs=1027`
-  - `excluded_rs=396` (`non_goal_ecs=151`, `non_goal_reflect=143`, `non_goal_tasks=12`, `non_goal_platform=30`, `non_goal_macro=16`, `non_goal_dynamic_scene=3`, `scope_removed_ptr=1`, `scope_removed_remote=6`, `scope_removed_solari=14`, `non_goal_example=20`)
+  - `total_rs=1505`
+  - `considered_rs=1106`
+  - `excluded_rs=399` (`non_goal_ecs=154`, `non_goal_example=22`, `non_goal_macro=18`, `non_goal_platform=30`, `non_goal_reflect=143`, `non_goal_tasks=11`, `scope_removed_ptr=1`, `scope_removed_remote=6`, `scope_removed_solari=14`)
   - `missing=0`
   - `collision_count=0`
   - `mod_rule_violation_count=0`
 - Source-shape scaffold status:
-  - `pure_anchor_files=0` (`rg -l "Bevy source-shape anchor\\." mgstudio-engine | wc -l`)
+  - `pure_anchor_files=101` (`rg -l "Bevy source-shape anchor:" mgstudio-engine | wc -l`)
   - `scaffold_files_with_explicit_bevy_source=0/0` (`scripts/check_bevy_rs_to_mbt_paths.sh`, `scaffold_without_bevy_source=0`)
   - `_scaffold_owner marker files=0` (`rg -l "_scaffold_owner" mgstudio-engine | wc -l`)
 

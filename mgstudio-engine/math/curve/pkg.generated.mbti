@@ -255,7 +255,7 @@ pub fn[T] UnevenSampleCurve::to_curve(Self[T]) -> Curve[T]
 
 // Traits
 pub(open) trait Ease {
-  interpolate(Self, Self, Float) -> Self
+  fn interpolate(Self, Self, Float) -> Self
 }
 pub impl Ease for Float
 pub impl Ease for @math.Quat

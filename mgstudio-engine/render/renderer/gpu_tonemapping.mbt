@@ -562,6 +562,10 @@ fn tonemapping_view_uniform_bytes_full(
   for _ in 0..<24 {
     words.push(0U)
   }
+  words.push(f32_bits(pass_state.camera_x))
+  words.push(f32_bits(pass_state.camera_y))
+  words.push(f32_bits(pass_state.camera_z))
+  words.push(0U)
   words.push(f32_bits(color_grading_balance_x_axis_x))
   words.push(f32_bits(color_grading_balance_x_axis_y))
   words.push(f32_bits(color_grading_balance_x_axis_z))

@@ -11,6 +11,12 @@ let mesh2d_wgsl_source : String =
   #|#ifdef TONEMAP_IN_SHADER
   #|#import bevy_core_pipeline::tonemapping
   #|#endif
+  #|#ifdef SRGB_OUTPUT
+  #|#import bevy_render::color_operations::linear_to_srgb
+  #|#endif
+  #|#ifdef OKLAB_OUTPUT
+  #|#import bevy_render::color_operations::linear_rgb_to_oklab
+  #|#endif
   #|
   #|struct Vertex {
   #|    @builtin(instance_index) instance_index: u32,
@@ -72,6 +78,12 @@ let mesh2d_wgsl_source : String =
   #|    var color = in.color;
   #|#ifdef TONEMAP_IN_SHADER
   #|    color = tonemapping::tone_mapping(color, view.color_grading);
+  #|#endif
+  #|#ifdef SRGB_OUTPUT
+  #|    color = vec4(linear_to_srgb(color.rgb), color.a);
+  #|#endif
+  #|#ifdef OKLAB_OUTPUT
+  #|    color = vec4(linear_rgb_to_oklab(color.rgb), color.a);
   #|#endif
   #|    return color;
   #|#else

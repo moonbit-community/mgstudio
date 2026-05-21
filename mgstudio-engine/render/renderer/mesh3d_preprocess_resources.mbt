@@ -16,6 +16,7 @@
 fn ensure_mesh3d_preprocess_indirect_resources(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
+  ensure_mesh3d_view_binding_buffers(backend)
   let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
   if backend.mesh3d_preprocess_direct_bgl is None {
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
@@ -55,7 +56,7 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     backend.mesh3d_preprocess_direct_pipeline_layout = Some(layout)
   }
   if backend.mesh3d_preprocess_indirect_bgl is None {
-    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=8UL)
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=9UL)
     let ok = builder.add_buffer(
         0U,
         compute,
@@ -88,6 +89,11 @@ fn ensure_mesh3d_preprocess_indirect_resources(
         9U,
         compute,
         @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(
+        10U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
       )
     if !ok {
       builder.free()
@@ -105,6 +111,79 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     backend.mesh3d_preprocess_indirect_pipeline_layout = Some(layout)
   }
   if backend.mesh3d_preprocess_indirect_early_occlusion_bgl is None {
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=13UL)
+    let ok = builder.add_buffer(
+        0U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
+      ) &&
+      builder.add_buffer(
+        2U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+      ) &&
+      builder.add_buffer(
+        3U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(
+        4U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(
+        5U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(6U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(
+        7U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(8U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(
+        9U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(
+        10U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_texture(
+        11U,
+        compute,
+        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_buffer(12U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(13U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
+    if !ok {
+      builder.free()
+      fatal(
+        "wgpu: failed to build mesh3d preprocess indirect early occlusion bind group layout",
+      )
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_preprocess_indirect_early_occlusion_bgl",
+    )
+    let layout = backend.device.create_pipeline_layout_1(bgl)
+    layout.set_label(
+      "mgstudio_mesh3d_preprocess_indirect_early_occlusion_pipeline_layout",
+    )
+    backend.mesh3d_preprocess_indirect_early_occlusion_bgl = Some(bgl)
+    backend.mesh3d_preprocess_indirect_early_occlusion_pipeline_layout = Some(
+      layout,
+    )
+  }
+  if backend.mesh3d_preprocess_indirect_late_occlusion_bgl is None {
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=12UL)
     let ok = builder.add_buffer(
         0U,
@@ -145,82 +224,19 @@ fn ensure_mesh3d_preprocess_indirect_resources(
         compute,
         @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
       ) &&
-      builder.add_texture(
+      builder.add_buffer(
         10U,
-        compute,
-        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_buffer(11U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
-      builder.add_buffer(12U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
-    if !ok {
-      builder.free()
-      fatal(
-        "wgpu: failed to build mesh3d preprocess indirect early occlusion bind group layout",
-      )
-    }
-    let bgl = builder.finish(
-      backend.device,
-      label="mgstudio_mesh3d_preprocess_indirect_early_occlusion_bgl",
-    )
-    let layout = backend.device.create_pipeline_layout_1(bgl)
-    layout.set_label(
-      "mgstudio_mesh3d_preprocess_indirect_early_occlusion_pipeline_layout",
-    )
-    backend.mesh3d_preprocess_indirect_early_occlusion_bgl = Some(bgl)
-    backend.mesh3d_preprocess_indirect_early_occlusion_pipeline_layout = Some(
-      layout,
-    )
-  }
-  if backend.mesh3d_preprocess_indirect_late_occlusion_bgl is None {
-    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=11UL)
-    let ok = builder.add_buffer(
-        0U,
-        compute,
-        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        min_binding_size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
-      ) &&
-      builder.add_buffer(
-        2U,
-        compute,
-        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        min_binding_size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
-      ) &&
-      builder.add_buffer(
-        3U,
-        compute,
-        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-      ) &&
-      builder.add_buffer(
-        4U,
-        compute,
-        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-      ) &&
-      builder.add_buffer(
-        5U,
-        compute,
-        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-      ) &&
-      builder.add_buffer(6U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
-      builder.add_buffer(
-        7U,
-        compute,
-        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-      ) &&
-      builder.add_buffer(8U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
-      builder.add_buffer(
-        9U,
         compute,
         @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
       ) &&
       builder.add_texture(
-        10U,
+        11U,
         compute,
         @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
       ) &&
       builder.add_buffer(
-        12U,
+        13U,
         compute,
         @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
       )

@@ -293,7 +293,7 @@ pub impl Default for Virtual
 
 // Traits
 pub(open) trait TimeContext : Default + @ecs.EcsPayloadCodec {
-  time_context_debug_name() -> String
+  fn time_context_debug_name() -> String
 }
 pub impl TimeContext for Unit
 

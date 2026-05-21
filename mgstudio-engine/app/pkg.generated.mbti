@@ -1413,7 +1413,7 @@ pub type TimelineTraceSpanSink = (TimelineTraceSpan) -> Unit
 
 // Traits
 pub(open) trait ChainedSystemConfigs {
-  chain(Self) -> SystemConfig[@ecs.World]
+  fn chain(Self) -> SystemConfig[@ecs.World]
 }
 pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World])
 pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
@@ -1422,7 +1422,7 @@ pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.W
 pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
 
 pub(open) trait CommandSpawnComponents {
-  spawn_components(Self, @ecs.World, @core.Entity, Int64, loc~ : SourceLoc) -> Unit raise @ecs.EcsError
+  fn spawn_components(Self, @ecs.World, @core.Entity, Int64, loc~ : SourceLoc) -> Unit raise @ecs.EcsError
 }
 pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (A, B)
 pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpawnComponents for (A, B, C)
@@ -1436,7 +1436,7 @@ pub(open) trait FreelyMutableState : States {
 }
 
 pub(open) trait FromWorld {
-  from_world(@ecs.World) -> Self
+  fn from_world(@ecs.World) -> Self
 }
 pub impl FromWorld for Bool
 pub impl FromWorld for Int
@@ -1457,43 +1457,43 @@ pub impl[A : FromWorld, B : FromWorld] FromWorld for (A, B)
 pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C)
 
 pub(open) trait Plugin {
-  build(Self, App[@ecs.World]) -> App[@ecs.World]
-  name(Self) -> String = _
-  is_unique(Self) -> Bool = _
-  ready(Self, App[@ecs.World]) -> Bool = _
-  finish(Self, App[@ecs.World]) -> App[@ecs.World] = _
-  cleanup(Self, App[@ecs.World]) -> App[@ecs.World] = _
+  fn build(Self, App[@ecs.World]) -> App[@ecs.World]
+  fn name(Self) -> String = _
+  fn is_unique(Self) -> Bool = _
+  fn ready(Self, App[@ecs.World]) -> Bool = _
+  fn finish(Self, App[@ecs.World]) -> App[@ecs.World] = _
+  fn cleanup(Self, App[@ecs.World]) -> App[@ecs.World] = _
 }
 
 pub(open) trait PluginGroup {
-  build(Self) -> PluginGroupBuilder[@ecs.World]
-  name(Self) -> String = _
+  fn build(Self) -> PluginGroupBuilder[@ecs.World]
+  fn name(Self) -> String = _
 }
 
 pub(open) trait PointerObserverKind {
-  event_kind() -> @pointer_events.PointerEventKind
-  source_label() -> String
+  fn event_kind() -> @pointer_events.PointerEventKind
+  fn source_label() -> String
 }
 
 pub(open) trait Resource : @ecs.EcsPayloadCodec {
-  resource() -> @ecs.ResourceKey[Self]
+  fn resource() -> @ecs.ResourceKey[Self]
 }
 pub impl[T : @ecs.Message] Resource for @ecs.Messages[T]
 
 pub(open) trait States : Eq + @debug.Debug + @ecs.EcsPayloadCodec {
-  type_debug_name() -> String
-  debug_name(Self) -> String
-  dependency_depth(Self) -> Int = _
+  fn type_debug_name() -> String
+  fn debug_name(Self) -> String
+  fn dependency_depth(Self) -> Int = _
 }
 
 pub(open) trait SubStates : States + FreelyMutableState {
 }
 
 pub(open) trait SystemParam {
-  init_state(@ecs.World) -> Json
-  get(@ref.Ref[Json]) -> Self raise
-  store(Self, @ref.Ref[Json]) -> Unit
-  access(@ecs.World) -> SystemAccess = _
+  fn init_state(@ecs.World) -> Json
+  fn get(@ref.Ref[Json]) -> Self raise
+  fn store(Self, @ref.Ref[Json]) -> Unit
+  fn access(@ecs.World) -> SystemAccess = _
 }
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]
 pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T]

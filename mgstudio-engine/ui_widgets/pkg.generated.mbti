@@ -368,6 +368,6 @@ pub using @ui {type Interaction}
 
 // Traits
 pub(open) trait ValueChangeValue : @ecs.EcsPayloadCodec {
-  value_change_value_debug_name() -> String
+  fn value_change_value_debug_name() -> String
 }
 

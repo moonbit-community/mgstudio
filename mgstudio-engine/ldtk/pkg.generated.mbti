@@ -815,15 +815,15 @@ pub type LdtkIntCellDispatcher = (@ecs.World, @core.Entity, IntGridCell, LayerIn
 
 // Traits
 pub(open) trait LdtkFields {
-  field_instances(Self) -> Array[LdtkFieldInstance]
+  fn field_instances(Self) -> Array[LdtkFieldInstance]
 }
 
 pub(open) trait LevelMetadataAccessor {
-  get_level_metadata_by_iid(Self, String) -> LevelMetadata?
+  fn get_level_metadata_by_iid(Self, String) -> LevelMetadata?
 }
 
 pub(open) trait RawLevelAccessor {
-  root_levels(Self) -> Array[Level]
-  worlds(Self) -> Array[World]
+  fn root_levels(Self) -> Array[Level]
+  fn worlds(Self) -> Array[World]
 }
 

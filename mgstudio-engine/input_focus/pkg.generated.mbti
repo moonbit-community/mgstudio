@@ -197,14 +197,14 @@ pub impl @app.Plugin for TabNavigationPlugin
 
 // Traits
 pub(open) trait IsFocused {
-  is_focused(Self, @core.Entity) -> Bool
-  is_focus_within(Self, @core.Entity) -> Bool
-  is_focus_visible(Self, @core.Entity) -> Bool
-  is_focus_within_visible(Self, @core.Entity) -> Bool
+  fn is_focused(Self, @core.Entity) -> Bool
+  fn is_focus_within(Self, @core.Entity) -> Bool
+  fn is_focus_visible(Self, @core.Entity) -> Bool
+  fn is_focus_within_visible(Self, @core.Entity) -> Bool
 }
 pub impl IsFocused for @ecs.World
 
 pub(open) trait Navigable {
-  get_bounds(Self) -> (@math.Vec2, @math.Vec2)
+  fn get_bounds(Self) -> (@math.Vec2, @math.Vec2)
 }
 

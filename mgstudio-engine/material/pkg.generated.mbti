@@ -475,7 +475,7 @@ pub using @render_resource {type VertexState}
 
 // Traits
 pub(open) trait IntoStandardMaterialAsset {
-  into_standard_material_asset(Self) -> StandardMaterial
+  fn into_standard_material_asset(Self) -> StandardMaterial
 }
 pub impl IntoStandardMaterialAsset for @asset.Handle[@image.Image]
 pub impl IntoStandardMaterialAsset for @color.Color

@@ -1300,20 +1300,20 @@ pub using @math {type Triangle2d}
 
 // Traits
 pub(open) trait GizmoConfigGroup {
-  gizmo_config_group_debug_name() -> String
-  new_gizmo_config_group_cell() -> GizmoConfigGroupCell
-  gizmo_config_group_cell_ref(GizmoConfigGroupCell) -> @ref.Ref[Self]?
-  gizmo_config_group_marker(Self) -> Unit
+  fn gizmo_config_group_debug_name() -> String
+  fn new_gizmo_config_group_cell() -> GizmoConfigGroupCell
+  fn gizmo_config_group_cell_ref(GizmoConfigGroupCell) -> @ref.Ref[Self]?
+  fn gizmo_config_group_marker(Self) -> Unit
 }
 
 pub(open) trait IntoColorMaterialAsset {
-  into_color_material_asset(Self) -> ColorMaterialAsset
+  fn into_color_material_asset(Self) -> ColorMaterialAsset
 }
 pub impl IntoColorMaterialAsset for @asset.Handle[@image.Image]
 pub impl IntoColorMaterialAsset for @color.Color
 
 pub(open) trait IntoSpriteMeshAsset {
-  into_sprite_mesh_asset(Self) -> @mesh.Mesh
+  fn into_sprite_mesh_asset(Self) -> @mesh.Mesh
 }
 pub impl IntoSpriteMeshAsset for @math.Annulus
 pub impl IntoSpriteMeshAsset for @math.Capsule2d
@@ -1331,7 +1331,7 @@ pub impl IntoSpriteMeshAsset for @math.Triangle2d
 pub impl IntoSpriteMeshAsset for @mesh.Mesh2dGeometry
 
 pub(open) trait IntoSpriteRingMeshGeometry {
-  into_sprite_ring_mesh_geometry(Self, Self) -> @mesh.Mesh2dGeometry
+  fn into_sprite_ring_mesh_geometry(Self, Self) -> @mesh.Mesh2dGeometry
 }
 pub impl IntoSpriteRingMeshGeometry for @math.Capsule2d
 pub impl IntoSpriteRingMeshGeometry for @math.Circle
@@ -1344,8 +1344,8 @@ pub impl IntoSpriteRingMeshGeometry for @math.Rhombus
 pub impl IntoSpriteRingMeshGeometry for @math.Triangle2d
 
 pub(open) trait Material2d {
-  material2d_debug_name() -> String
-  alpha_mode(Self) -> AlphaMode2d
-  bind_group(Self) -> Material2dBindGroup
+  fn material2d_debug_name() -> String
+  fn alpha_mode(Self) -> AlphaMode2d
+  fn bind_group(Self) -> Material2dBindGroup
 }
 

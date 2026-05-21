@@ -1243,6 +1243,9 @@ fn mesh3d_preprocess_main_indexed_bind_group_get_or_create(
     is Some(mesh_culling_data_buffer) else {
     return None
   }
+  guard backend.mesh3d_visibility_ranges_buf is Some(visibility_ranges_buf) else {
+    return None
+  }
   let preprocess_view_capacity = backend.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_capacity
   let mesh_input_capacity = backend.mesh3d_preprocess_camera_upload_states[state_index].mesh_input_capacity
   let previous_mesh_input_capacity = backend.mesh3d_preprocess_camera_upload_states[state_index].previous_mesh_input_capacity
@@ -1261,7 +1264,7 @@ fn mesh3d_preprocess_main_indexed_bind_group_get_or_create(
     mesh_culling_data_capacity == 0UL {
     return None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=9UL)
   let ok = builder.add_buffer(
       0U,
       preprocess_view_buffer,
@@ -1293,6 +1296,11 @@ fn mesh3d_preprocess_main_indexed_bind_group_get_or_create(
       9U,
       mesh_culling_data_buffer,
       size=mesh_culling_data_capacity,
+    ) &&
+    builder.add_buffer(
+      10U,
+      visibility_ranges_buf,
+      size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
     )
   if !ok {
     builder.free()
@@ -1352,6 +1360,9 @@ fn mesh3d_preprocess_main_non_indexed_bind_group_get_or_create(
     is Some(mesh_culling_data_buffer) else {
     return None
   }
+  guard backend.mesh3d_visibility_ranges_buf is Some(visibility_ranges_buf) else {
+    return None
+  }
   let preprocess_view_capacity = backend.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_capacity
   let mesh_input_capacity = backend.mesh3d_preprocess_camera_upload_states[state_index].mesh_input_capacity
   let previous_mesh_input_capacity = backend.mesh3d_preprocess_camera_upload_states[state_index].previous_mesh_input_capacity
@@ -1370,7 +1381,7 @@ fn mesh3d_preprocess_main_non_indexed_bind_group_get_or_create(
     mesh_culling_data_capacity == 0UL {
     return None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=9UL)
   let ok = builder.add_buffer(
       0U,
       preprocess_view_buffer,
@@ -1402,6 +1413,11 @@ fn mesh3d_preprocess_main_non_indexed_bind_group_get_or_create(
       9U,
       mesh_culling_data_buffer,
       size=mesh_culling_data_capacity,
+    ) &&
+    builder.add_buffer(
+      10U,
+      visibility_ranges_buf,
+      size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
     )
   if !ok {
     builder.free()
@@ -1466,6 +1482,9 @@ fn mesh3d_preprocess_early_indexed_bind_group_get_or_create(
     is Some(mesh_culling_data_buffer) else {
     return None
   }
+  guard backend.mesh3d_visibility_ranges_buf is Some(visibility_ranges_buf) else {
+    return None
+  }
   guard backend.mesh3d_preprocess_camera_upload_states[state_index].depth_pyramid_all_mips_view
     is Some(depth_pyramid_all_mips_view) else {
     return None
@@ -1500,7 +1519,7 @@ fn mesh3d_preprocess_early_indexed_bind_group_get_or_create(
     late_indexed_work_item_capacity == 0UL {
     return None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=12UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=13UL)
   let ok = builder.add_buffer(
       0U,
       preprocess_view_buffer,
@@ -1534,14 +1553,19 @@ fn mesh3d_preprocess_early_indexed_bind_group_get_or_create(
       mesh_culling_data_buffer,
       size=mesh_culling_data_capacity,
     ) &&
-    builder.add_texture_view(10U, depth_pyramid_all_mips_view) &&
     builder.add_buffer(
-      11U,
+      10U,
+      visibility_ranges_buf,
+      size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
+    ) &&
+    builder.add_texture_view(11U, depth_pyramid_all_mips_view) &&
+    builder.add_buffer(
+      12U,
       late_indexed_work_item_buffer,
       size=late_indexed_work_item_capacity,
     ) &&
     builder.add_buffer(
-      12U,
+      13U,
       late_indexed_dispatch_buffer,
       size=MESH3D_PREPROCESS_LATE_DISPATCH_PARAMETERS_STRIDE_BYTES,
     )
@@ -1608,6 +1632,9 @@ fn mesh3d_preprocess_late_indexed_bind_group_get_or_create(
     is Some(mesh_culling_data_buffer) else {
     return None
   }
+  guard backend.mesh3d_visibility_ranges_buf is Some(visibility_ranges_buf) else {
+    return None
+  }
   guard backend.mesh3d_preprocess_camera_upload_states[state_index].depth_pyramid_all_mips_view
     is Some(depth_pyramid_all_mips_view) else {
     return None
@@ -1636,7 +1663,7 @@ fn mesh3d_preprocess_late_indexed_bind_group_get_or_create(
     mesh_culling_data_capacity == 0UL {
     return None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=11UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=12UL)
   let ok = builder.add_buffer(
       0U,
       preprocess_view_buffer,
@@ -1670,9 +1697,14 @@ fn mesh3d_preprocess_late_indexed_bind_group_get_or_create(
       mesh_culling_data_buffer,
       size=mesh_culling_data_capacity,
     ) &&
-    builder.add_texture_view(10U, depth_pyramid_all_mips_view) &&
     builder.add_buffer(
-      12U,
+      10U,
+      visibility_ranges_buf,
+      size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
+    ) &&
+    builder.add_texture_view(11U, depth_pyramid_all_mips_view) &&
+    builder.add_buffer(
+      13U,
       late_indexed_dispatch_buffer,
       size=MESH3D_PREPROCESS_LATE_DISPATCH_PARAMETERS_STRIDE_BYTES,
     )
@@ -1739,6 +1771,9 @@ fn mesh3d_preprocess_early_non_indexed_bind_group_get_or_create(
     is Some(mesh_culling_data_buffer) else {
     return None
   }
+  guard backend.mesh3d_visibility_ranges_buf is Some(visibility_ranges_buf) else {
+    return None
+  }
   guard backend.mesh3d_preprocess_camera_upload_states[state_index].depth_pyramid_all_mips_view
     is Some(depth_pyramid_all_mips_view) else {
     return None
@@ -1773,7 +1808,7 @@ fn mesh3d_preprocess_early_non_indexed_bind_group_get_or_create(
     late_non_indexed_work_item_capacity == 0UL {
     return None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=12UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=13UL)
   let ok = builder.add_buffer(
       0U,
       preprocess_view_buffer,
@@ -1807,14 +1842,19 @@ fn mesh3d_preprocess_early_non_indexed_bind_group_get_or_create(
       mesh_culling_data_buffer,
       size=mesh_culling_data_capacity,
     ) &&
-    builder.add_texture_view(10U, depth_pyramid_all_mips_view) &&
     builder.add_buffer(
-      11U,
+      10U,
+      visibility_ranges_buf,
+      size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
+    ) &&
+    builder.add_texture_view(11U, depth_pyramid_all_mips_view) &&
+    builder.add_buffer(
+      12U,
       late_non_indexed_work_item_buffer,
       size=late_non_indexed_work_item_capacity,
     ) &&
     builder.add_buffer(
-      12U,
+      13U,
       late_non_indexed_dispatch_buffer,
       size=MESH3D_PREPROCESS_LATE_DISPATCH_PARAMETERS_STRIDE_BYTES,
     )
@@ -1881,6 +1921,9 @@ fn mesh3d_preprocess_late_non_indexed_bind_group_get_or_create(
     is Some(mesh_culling_data_buffer) else {
     return None
   }
+  guard backend.mesh3d_visibility_ranges_buf is Some(visibility_ranges_buf) else {
+    return None
+  }
   guard backend.mesh3d_preprocess_camera_upload_states[state_index].depth_pyramid_all_mips_view
     is Some(depth_pyramid_all_mips_view) else {
     return None
@@ -1909,7 +1952,7 @@ fn mesh3d_preprocess_late_non_indexed_bind_group_get_or_create(
     mesh_culling_data_capacity == 0UL {
     return None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=11UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=12UL)
   let ok = builder.add_buffer(
       0U,
       preprocess_view_buffer,
@@ -1943,9 +1986,14 @@ fn mesh3d_preprocess_late_non_indexed_bind_group_get_or_create(
       mesh_culling_data_buffer,
       size=mesh_culling_data_capacity,
     ) &&
-    builder.add_texture_view(10U, depth_pyramid_all_mips_view) &&
     builder.add_buffer(
-      12U,
+      10U,
+      visibility_ranges_buf,
+      size=MESH3D_VISIBILITY_RANGES_BUFFER_SIZE,
+    ) &&
+    builder.add_texture_view(11U, depth_pyramid_all_mips_view) &&
+    builder.add_buffer(
+      13U,
       late_non_indexed_dispatch_buffer,
       size=MESH3D_PREPROCESS_LATE_DISPATCH_PARAMETERS_STRIDE_BYTES,
     )

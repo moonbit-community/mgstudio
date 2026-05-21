@@ -29,6 +29,23 @@ class CopyPlan:
     destination: Path
 
 
+BEVY_WGSL_MIRROR_EXCLUDES = {
+    # These meshlet shaders intentionally carry the local portable visibility
+    # buffer rewrite while official webgpu.h cannot express Bevy's R64Uint
+    # atomic storage-texture ABI. Keep the ROADMAP blocker active until this
+    # exception can be deleted.
+    Path("crates/bevy_pbr/src/meshlet/clear_visibility_buffer.wgsl"),
+    Path("crates/bevy_pbr/src/meshlet/cull_bvh.wgsl"),
+    Path("crates/bevy_pbr/src/meshlet/cull_instances.wgsl"),
+    Path("crates/bevy_pbr/src/meshlet/meshlet_bindings.wgsl"),
+    Path("crates/bevy_pbr/src/meshlet/meshlet_cull_shared.wgsl"),
+    Path("crates/bevy_pbr/src/meshlet/resolve_render_targets.wgsl"),
+    Path("crates/bevy_pbr/src/meshlet/visibility_buffer_hardware_raster.wgsl"),
+    Path("crates/bevy_pbr/src/meshlet/visibility_buffer_resolve.wgsl"),
+    Path("crates/bevy_pbr/src/meshlet/visibility_buffer_software_raster.wgsl"),
+}
+
+
 def repository_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
@@ -56,6 +73,8 @@ def destination_for(source: Path, bevy_root: Path, mgstudio_root: Path) -> Path 
 def collect_copy_plan(bevy_root: Path, mgstudio_root: Path) -> list[CopyPlan]:
     plans: list[CopyPlan] = []
     for source in sorted(bevy_root.rglob("*.wgsl")):
+        if source.relative_to(bevy_root) in BEVY_WGSL_MIRROR_EXCLUDES:
+            continue
         destination = destination_for(source, bevy_root, mgstudio_root)
         if destination is not None:
             plans.append(CopyPlan(source=source, destination=destination))

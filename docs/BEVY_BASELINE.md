@@ -10,9 +10,11 @@ ported behavior.
 
 - Repository: `bevyengine/bevy`
 - Workspace source: local `./bevy` git checkout (not committed)
-- Commit: `48ec375a3a3cdc904476ef1d13f9d71c9f2820d3`
-- Describe: `v0.16.0-rc.4-1998-g48ec375a3`
+- Commit: `1413bc4e3632233b8fa610a6cf14b90258556c51`
+- Describe: `1413bc4e3`
 - Cargo package version (`bevy/Cargo.toml`): `0.19.0-dev`
+- Render dependency constraint (`bevy/crates/bevy_render/Cargo.toml`): `wgpu 29.0.3`, `wgpu-types 29.0.3`, `naga 29.0.3`
+- Current lockfile resolution (`bevy/Cargo.lock`): `wgpu 28.0.0`, `wgpu-core 28.0.0`, `wgpu-hal 28.0.0`, `wgpu-types 28.0.0`
 
 This baseline supersedes the historical `v0.15.3` reference.
 

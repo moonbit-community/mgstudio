@@ -202,7 +202,7 @@ pub type Tick = Int64
 
 // Traits
 pub(open) trait Message {
-  reader(SystemTicks) -> MessageReader[Self]
-  writer(Int64) -> MessageWriter[Self]
+  fn reader(SystemTicks) -> MessageReader[Self]
+  fn writer(Int64) -> MessageWriter[Self]
 }
 

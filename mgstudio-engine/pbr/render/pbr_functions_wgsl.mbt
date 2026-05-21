@@ -11,11 +11,9 @@ let pbr_functions_wgsl_source : String =
   #|    mesh_view_types,
   #|    lighting,
   #|    lighting::{LAYER_BASE, LAYER_CLEARCOAT},
-  #|    transmission,
   #|    clustered_forward as clustering,
   #|    shadows,
   #|    ambient,
-  #|    irradiance_volume,
   #|    view_transformations,
   #|    raymarch,
   #|    utils,
@@ -24,6 +22,14 @@ let pbr_functions_wgsl_source : String =
   #|#import bevy_pbr::mesh_view_bindings::globals
   #|#import bevy_pbr::view_transformations::{position_world_to_ndc}
   #|#import bevy_render::maths::{E, powsafe}
+  #|
+  #|#ifdef STANDARD_MATERIAL_SPECULAR_TRANSMISSION
+  #|#import bevy_pbr::transmission
+  #|#endif
+  #|
+  #|#ifdef IRRADIANCE_VOLUME
+  #|#import bevy_pbr::irradiance_volume
+  #|#endif
   #|
   #|#ifdef MESHLET_MESH_MATERIAL_PASS
   #|#import bevy_pbr::meshlet_visibility_buffer_resolve::VertexOutput
@@ -280,12 +286,18 @@ let pbr_functions_wgsl_source : String =
   #|        (1.0 - diffuse_transmission);
   #|}
   #|
-  #|// Remapping [0,1] reflectance to F0
-  #|// See https://google.github.io/filament/Filament.html#materialsystem/parameterization/remapping
-  #|fn calculate_F0(base_color: vec3<f32>, metallic: f32, reflectance: vec3<f32>) -> vec3<f32> {
-  #|    return 0.16 * reflectance * reflectance * (1.0 - metallic) + base_color * metallic;
+  #|// Remapping [0,1] reflectance to F0 for dielectrics
+  #|fn calculate_F0_dielectric(reflectance: vec3<f32>) -> vec3<f32> {
+  #|    return 0.16 * reflectance * reflectance;
   #|}
   #|
+  #|// Remapping [0,1] reflectance to F0
+  #|// See https://google.github.io/filament/Filament.md.html#materialsystem/parameterization/remapping
+  #|fn calculate_F0(base_color: vec3<f32>, metallic: f32, reflectance: vec3<f32>) -> vec3<f32> {
+  #|    return mix(calculate_F0_dielectric(reflectance), base_color, metallic);
+  #|}
+  #|
+  #|#ifdef CONTACT_SHADOWS
   #|#ifdef DEPTH_PREPASS
   #|fn calculate_contact_shadow(
   #|    world_position: vec3<f32>,
@@ -321,6 +333,7 @@ let pbr_functions_wgsl_source : String =
   #|    }
   #|    return 1.0;
   #|}
+  #|#endif
   #|#endif
   #|
   #|#ifndef PREPASS_FRAGMENT
@@ -392,7 +405,9 @@ let pbr_functions_wgsl_source : String =
   #|    lighting_input.P = in.world_position.xyz;
   #|    lighting_input.V = in.V;
   #|    lighting_input.diffuse_color = diffuse_color;
-  #|    lighting_input.F0_ = F0;
+  #|    lighting_input.metallic = metallic;
+  #|    lighting_input.F0_dielectric = calculate_F0_dielectric(reflectance);
+  #|    lighting_input.F0_metallic = output_color.rgb;
   #|    lighting_input.F_ab = F_ab;
   #|#ifdef STANDARD_MATERIAL_CLEARCOAT
   #|    lighting_input.layers[LAYER_CLEARCOAT].NdotV = clearcoat_NdotV;
@@ -419,7 +434,9 @@ let pbr_functions_wgsl_source : String =
   #|    transmissive_lighting_input.P = diffuse_transmissive_lobe_world_position.xyz;
   #|    transmissive_lighting_input.V = -in.V;
   #|    transmissive_lighting_input.diffuse_color = diffuse_transmissive_color;
-  #|    transmissive_lighting_input.F0_ = vec3(0.0);
+  #|    transmissive_lighting_input.metallic = 0.0;
+  #|    transmissive_lighting_input.F0_dielectric = vec3(0.0);
+  #|    transmissive_lighting_input.F0_metallic = vec3(0.0);
   #|    transmissive_lighting_input.F_ab = vec2(0.1);
   #|#ifdef STANDARD_MATERIAL_CLEARCOAT
   #|    transmissive_lighting_input.layers[LAYER_CLEARCOAT].NdotV = 0.0;
@@ -442,12 +459,14 @@ let pbr_functions_wgsl_source : String =
   #|        view_bindings::view.view_from_world[2].z,
   #|        view_bindings::view.view_from_world[3].z
   #|    ), in.world_position);
-  #|    let cluster_index = clustering::fragment_cluster_index(in.frag_coord.xy, view_z, in.is_orthographic);
+  #|    let cluster_index = clustering::view_fragment_cluster_index(in.frag_coord.xy, view_z, in.is_orthographic);
   #|    var clusterable_object_index_ranges =
   #|        clustering::unpack_clusterable_object_index_ranges(cluster_index);
   #|
+  #|#ifdef CONTACT_SHADOWS
   #|    let contact_shadow_steps = view_bindings::contact_shadows_settings.linear_steps;
   #|    let contact_shadow_enabled = contact_shadow_steps > 0u;
+  #|#endif
   #|
   #|    // Point lights (direct)
   #|    for (var i: u32 = clusterable_object_index_ranges.first_point_light_index_offset;
@@ -471,6 +490,7 @@ let pbr_functions_wgsl_source : String =
   #|            shadow = shadows::fetch_point_shadow(light_id, in.world_position, in.world_normal, in.frag_coord.xy);
   #|        }
   #|
+  #|#ifdef CONTACT_SHADOWS
   #|#ifdef DEPTH_PREPASS
   #|        if contact_shadow_enabled && (in.flags & MESH_FLAGS_SHADOW_RECEIVER_BIT) != 0u && shadow > 0.0 &&
   #|                (view_bindings::clustered_lights.data[light_id].flags &
@@ -478,6 +498,7 @@ let pbr_functions_wgsl_source : String =
   #|            let L = normalize(view_bindings::clustered_lights.data[light_id].position_radius.xyz - in.world_position.xyz);
   #|            shadow *= calculate_contact_shadow(in.world_position.xyz, in.frag_coord.xy, L, contact_shadow_steps);
   #|        }
+  #|#endif
   #|#endif
   #|
   #|        let light_contrib = lighting::point_light(light_id, &lighting_input, enable_diffuse, true);
@@ -534,6 +555,7 @@ let pbr_functions_wgsl_source : String =
   #|            );
   #|        }
   #|
+  #|#ifdef CONTACT_SHADOWS
   #|#ifdef DEPTH_PREPASS
   #|        if contact_shadow_enabled && (in.flags & MESH_FLAGS_SHADOW_RECEIVER_BIT) != 0u && shadow > 0.0 &&
   #|                (view_bindings::clustered_lights.data[light_id].flags &
@@ -541,6 +563,7 @@ let pbr_functions_wgsl_source : String =
   #|            let L = normalize(view_bindings::clustered_lights.data[light_id].position_radius.xyz - in.world_position.xyz);
   #|            shadow *= calculate_contact_shadow(in.world_position.xyz, in.frag_coord.xy, L, contact_shadow_steps);
   #|        }
+  #|#endif
   #|#endif
   #|
   #|        let light_contrib = lighting::spot_light(light_id, &lighting_input, enable_diffuse);
@@ -598,6 +621,7 @@ let pbr_functions_wgsl_source : String =
   #|            shadow = shadows::fetch_directional_shadow(i, in.world_position, in.world_normal, view_z, in.frag_coord.xy);
   #|        }
   #|
+  #|#ifdef CONTACT_SHADOWS
   #|#ifdef DEPTH_PREPASS
   #|        if contact_shadow_enabled && (in.flags & MESH_FLAGS_SHADOW_RECEIVER_BIT) != 0u && shadow > 0.0 &&
   #|                (view_bindings::lights.directional_lights[i].flags &
@@ -605,6 +629,7 @@ let pbr_functions_wgsl_source : String =
   #|            let L = view_bindings::lights.directional_lights[i].direction_to_light;
   #|            shadow *= calculate_contact_shadow(in.world_position.xyz, in.frag_coord.xy, L, contact_shadow_steps);
   #|        }
+  #|#endif
   #|#endif
   #|
   #|        var light_contrib = lighting::directional_light(i, &lighting_input, enable_diffuse);
@@ -635,6 +660,22 @@ let pbr_functions_wgsl_source : String =
   #|        transmitted_light += transmitted_light_contrib * transmitted_shadow;
   #|#endif
   #|    }
+  #|
+  #|#ifdef AREA_LIGHT_LUTS
+  #|    // Rect lights
+  #|    let n_rect_lights = view_bindings::lights.n_rect_lights;
+  #|    for (var i: u32 = 0u; i < n_rect_lights; i = i + 1u) {
+  #|        let enable_diffuse = true;
+  #|        let light_contrib = lighting::rect_light(i, &lighting_input, enable_diffuse);
+  #|        direct_light += light_contrib;
+  #|
+  #|    #ifdef STANDARD_MATERIAL_DIFFUSE_TRANSMISSION
+  #|        let transmitted_light_contrib =
+  #|            lighting::rect_light(i, &transmissive_lighting_input, enable_diffuse);
+  #|        transmitted_light += transmitted_light_contrib;
+  #|    #endif
+  #|    }
+  #|#endif
   #|
   #|#ifdef STANDARD_MATERIAL_DIFFUSE_TRANSMISSION
   #|    // NOTE: We use the diffuse transmissive color, the second Lambertian lobe's calculated
@@ -739,7 +780,7 @@ let pbr_functions_wgsl_source : String =
   #|    // diffuse_color = vec3<f32>(1.0) // later we use `diffuse_transmissive_color` and `specular_transmissive_color`
   #|    // NdotV = 1.0;
   #|    // R = T // see definition below
-  #|    // F0 = vec3<f32>(1.0)
+  #|    // F0 = vec3<f32>(1.0) (using F0_dielectric = 1, F0_metallic = 0 and metallic = 0)
   #|    // diffuse_occlusion = 1.0
   #|    //
   #|    // (This one is slightly different from the other light types above, because the environment
@@ -759,7 +800,9 @@ let pbr_functions_wgsl_source : String =
   #|    transmissive_environment_light_input.layers[LAYER_BASE].R = T;
   #|    transmissive_environment_light_input.layers[LAYER_BASE].perceptual_roughness = perceptual_roughness;
   #|    transmissive_environment_light_input.layers[LAYER_BASE].roughness = roughness;
-  #|    transmissive_environment_light_input.F0_ = vec3<f32>(1.0);
+  #|    transmissive_environment_light_input.metallic = 0.0;
+  #|    transmissive_environment_light_input.F0_dielectric = vec3<f32>(1.0);
+  #|    transmissive_environment_light_input.F0_metallic = vec3<f32>(0.0);
   #|    transmissive_environment_light_input.F_ab = vec2(0.1);
   #|#ifdef STANDARD_MATERIAL_CLEARCOAT
   #|    // No clearcoat.

@@ -618,20 +618,20 @@ pub using @events {type TouchPhase}
 
 // Traits
 pub(open) trait ButtonInputButton {
-  button_id(Self) -> String
+  fn button_id(Self) -> String
 }
 pub impl ButtonInputButton for @events.Key
 pub impl ButtonInputButton for @events.KeyCode
 pub impl ButtonInputButton for @events.MouseButton
 
 pub(open) trait ButtonInputSnapshotProvider {
-  read_button_input() -> ButtonInput[Self]
+  fn read_button_input() -> ButtonInput[Self]
 }
 pub impl ButtonInputSnapshotProvider for @events.Key
 pub impl ButtonInputSnapshotProvider for @events.KeyCode
 pub impl ButtonInputSnapshotProvider for @events.MouseButton
 
 pub(open) trait IntoGamepadInput {
-  into_gamepad_input(Self) -> GamepadInput
+  fn into_gamepad_input(Self) -> GamepadInput
 }
 
