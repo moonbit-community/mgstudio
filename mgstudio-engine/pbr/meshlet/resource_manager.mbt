@@ -887,6 +887,11 @@ pub fn ResourceManager::clear_stale_prepared_view_resources(
   for stale_key in stale_keys {
     self.prepared_view_resources.remove(stale_key)
   }
+  let active_bits : Array[UInt64] = []
+  for view_entity in active_view_entities {
+    active_bits.push(view_entity.to_bits())
+  }
+  @renderer.clear_stale_meshlet_view_visibility_buffers(active_bits)
 }
 
 ///|
@@ -1029,6 +1034,12 @@ pub fn prepare_meshlet_view_resources_for_view(
     not_shadow_view~,
   )
   manager.set_prepared_view_resources(resources)
+  @renderer.prepare_meshlet_view_visibility_buffer(
+    view_entity_bits=view_entity.to_bits(),
+    view_width=resources.view_width,
+    view_height=resources.view_height,
+    not_shadow_view=resources.not_shadow_view,
+  )
   resources
 }
 

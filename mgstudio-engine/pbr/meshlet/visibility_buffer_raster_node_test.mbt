@@ -14,7 +14,7 @@
 
 ///|
 test "pbr meshlet: visibility node keeps zero draw count when runtime unavailable" {
-  let state = MeshletVisibilityBufferRasterState::default()
+  let state = meshlet_visibility_buffer_raster_state_with_enabled(false)
   meshlet_visibility_buffer_raster(state, 20)
   inspect(state.enabled(), content="false")
   inspect(state.last_draw_count(), content="0")

@@ -281,6 +281,8 @@ pub struct GpuBackend {
   mut meshlet_second_pass_candidates_buf : @wgpu.Buffer?
   mut meshlet_second_pass_candidates_capacity : UInt64
   mut meshlet_frame_resource_revision : Int
+  meshlet_view_visibility_buffers : Map[UInt64, MeshletViewVisibilityBuffer]
+  mut meshlet_view_visibility_buffer_revision : Int
   mut mesh3d_motion_vector_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu.BindGroupLayout?

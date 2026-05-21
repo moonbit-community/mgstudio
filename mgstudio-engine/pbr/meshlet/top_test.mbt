@@ -22,26 +22,17 @@ test "pbr meshlet: runtime defaults to unavailable on current path" {
 }
 
 ///|
-test "pbr meshlet: required feature mask includes texture atomics" {
+test "pbr meshlet: portable visibility buffer drops texture atomics" {
   let required = meshlet_required_wgpu_features()
   inspect(
     required == @renderer.meshlet_required_rust_features_u64(),
     content="true",
   )
-  inspect((required & 0x0000000010000000UL) != 0UL, content="true")
-  inspect((required & 0x0000400000000000UL) != 0UL, content="true")
-}
-
-///|
-test "pbr meshlet: native extension bridge gates descriptor gap" {
-  let required = @renderer.meshlet_native_extension_bridge_required_symbol_mask()
-  let missing = @renderer.meshlet_native_extension_bridge_missing_symbol_mask()
-  inspect(required == 0x00000003U, content="true")
-  if @renderer.meshlet_native_extension_bridge_available() {
-    inspect(missing == 0U, content="true")
-  } else {
-    inspect(missing != 0U, content="true")
-  }
+  inspect((required & 0x0000400000000000UL) == 0UL, content="true")
+  inspect((required & 0x0000000010000000UL) == 0UL, content="true")
+  inspect((required & 0x0000002000000000UL) == 0UL, content="true")
+  inspect((required & 0x0000004000000000UL) != 0UL, content="true")
+  inspect((required & 0x0000000000000001UL) != 0UL, content="true")
 }
 
 ///|
@@ -75,10 +66,8 @@ test "pbr meshlet: plugin state includes missing feature mask" {
   } else {
     inspect(state.runtime_status is RuntimeUnavailable, content="true")
   }
-  inspect(
-    (state.missing_required_features & meshlet_required_wgpu_features()) != 0UL,
-    content="true",
-  )
+  let expected_missing = @renderer.meshlet_missing_rust_features_u64()
+  inspect(state.missing_required_features == expected_missing, content="true")
   inspect(
     state.missing_native_subgroup_barrier ==
     @renderer.meshlet_missing_native_subgroup_barrier(),

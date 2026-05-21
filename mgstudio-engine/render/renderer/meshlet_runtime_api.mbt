@@ -139,6 +139,164 @@ fn meshlet_second_pass_candidate_size(scene_instance_count : Int) -> UInt64 {
 }
 
 ///|
+pub(all) struct MeshletViewVisibilityBuffer {
+  buffer : @wgpu.Buffer
+  capacity : UInt64
+  view_width : Int
+  view_height : Int
+  not_shadow_view : Bool
+}
+
+///|
+fn meshlet_visibility_buffer_pixel_count(
+  view_width : Int,
+  view_height : Int,
+) -> UInt64 {
+  let width = if view_width <= 0 { 1 } else { view_width }
+  let height = if view_height <= 0 { 1 } else { view_height }
+  width.to_uint64() * height.to_uint64()
+}
+
+///|
+fn meshlet_visibility_buffer_size(
+  view_width : Int,
+  view_height : Int,
+) -> UInt64 {
+  meshlet_visibility_buffer_pixel_count(view_width, view_height) * 4UL
+}
+
+///|
+fn meshlet_create_visibility_buffer(
+  backend : GpuBackend,
+  required_size : UInt64,
+  label : String,
+) -> @wgpu.Buffer {
+  let buffer = backend.device.create_buffer(
+    size=meshlet_non_zero_u64(required_size),
+    usage=bu(
+      @wgpu.BUFFER_USAGE_STORAGE |
+      @wgpu.BUFFER_USAGE_COPY_DST |
+      @wgpu.BUFFER_USAGE_COPY_SRC,
+    ),
+  )
+  buffer.set_label(label)
+  buffer
+}
+
+///|
+pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+  view_width~ : Int,
+  view_height~ : Int,
+  not_shadow_view~ : Bool,
+) -> Unit {
+  let required_size = meshlet_visibility_buffer_size(view_width, view_height)
+  let label = if not_shadow_view {
+    "mgstudio_meshlet_visibility_buffer"
+  } else {
+    "mgstudio_meshlet_shadow_visibility_buffer"
+  }
+  let next = match self.meshlet_view_visibility_buffers.get(view_entity_bits) {
+    Some(existing) if existing.capacity >= required_size =>
+      MeshletViewVisibilityBuffer::{
+        buffer: existing.buffer,
+        capacity: existing.capacity,
+        view_width,
+        view_height,
+        not_shadow_view,
+      }
+    Some(existing) => {
+      existing.buffer.release()
+      MeshletViewVisibilityBuffer::{
+        buffer: meshlet_create_visibility_buffer(self, required_size, label),
+        capacity: required_size,
+        view_width,
+        view_height,
+        not_shadow_view,
+      }
+    }
+    None =>
+      MeshletViewVisibilityBuffer::{
+        buffer: meshlet_create_visibility_buffer(self, required_size, label),
+        capacity: required_size,
+        view_width,
+        view_height,
+        not_shadow_view,
+      }
+  }
+  self.meshlet_view_visibility_buffers.set(view_entity_bits, next)
+  self.meshlet_view_visibility_buffer_revision = self.meshlet_view_visibility_buffer_revision +
+    1
+}
+
+///|
+pub fn prepare_meshlet_view_visibility_buffer(
+  view_entity_bits~ : UInt64,
+  view_width~ : Int,
+  view_height~ : Int,
+  not_shadow_view~ : Bool,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_meshlet_view_visibility_buffer(
+      view_entity_bits~,
+      view_width~,
+      view_height~,
+      not_shadow_view~,
+    )
+  }
+}
+
+///|
+pub fn GpuBackend::clear_stale_meshlet_view_visibility_buffers(
+  self : GpuBackend,
+  active_view_bits : Array[UInt64],
+) -> Unit {
+  let active : Map[UInt64, Bool] = {}
+  for view_bits in active_view_bits {
+    active.set(view_bits, true)
+  }
+  let stale : Array[UInt64] = []
+  for view_bits in self.meshlet_view_visibility_buffers.keys() {
+    if active.get(view_bits) is None {
+      stale.push(view_bits)
+    }
+  }
+  for view_bits in stale {
+    match self.meshlet_view_visibility_buffers.get(view_bits) {
+      Some(resources) => resources.buffer.release()
+      None => ()
+    }
+    self.meshlet_view_visibility_buffers.remove(view_bits)
+  }
+}
+
+///|
+pub fn clear_stale_meshlet_view_visibility_buffers(
+  active_view_bits : Array[UInt64],
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.clear_stale_meshlet_view_visibility_buffers(active_view_bits)
+  }
+}
+
+///|
+pub fn meshlet_view_visibility_buffer_revision() -> Int {
+  match ensure_backend() {
+    Some(backend) => backend.meshlet_view_visibility_buffer_revision
+    None => 0
+  }
+}
+
+///|
+pub fn meshlet_view_visibility_buffer_count() -> Int {
+  match ensure_backend() {
+    Some(backend) => backend.meshlet_view_visibility_buffers.length()
+    None => 0
+  }
+}
+
+///|
 pub fn GpuBackend::prepare_meshlet_frame_resources(
   self : GpuBackend,
   cluster_buffer_slots~ : Int,

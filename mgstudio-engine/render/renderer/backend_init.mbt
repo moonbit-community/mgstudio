@@ -42,15 +42,6 @@ pub fn GpuBackend::new(
   if adapter.supports_known_rust_features_u64(@wgpu.FEATURES_DEPTH_CLIP_CONTROL) {
     required_features.push(@wgpu.FEATURE_NAME_DEPTH_CLIP_CONTROL)
   }
-  if adapter.supports_known_rust_features_u64(@wgpu.FEATURES_SHADER_INT64) {
-    required_features.push(@wgpu.NATIVE_FEATURE_SHADER_INT64)
-  }
-  if adapter.has_feature_native_texture_atomic() {
-    required_features.push(@wgpu.NATIVE_FEATURE_TEXTURE_ATOMIC)
-  }
-  if adapter.has_feature_native_texture_int64_atomic() {
-    required_features.push(@wgpu.NATIVE_FEATURE_TEXTURE_INT64_ATOMIC)
-  }
   if adapter.supports_known_rust_features_u64(@wgpu.FEATURES_SUBGROUP) {
     required_features.push(@wgpu.NATIVE_FEATURE_SUBGROUP)
   }
@@ -348,6 +339,8 @@ pub fn GpuBackend::new(
     meshlet_second_pass_candidates_buf: None,
     meshlet_second_pass_candidates_capacity: 0UL,
     meshlet_frame_resource_revision: 0,
+    meshlet_view_visibility_buffers: {},
+    meshlet_view_visibility_buffer_revision: 0,
     mesh3d_motion_vector_bgl_view: None,
     mesh3d_motion_vector_bgl_empty: None,
     mesh3d_motion_vector_bgl_mesh: None,
