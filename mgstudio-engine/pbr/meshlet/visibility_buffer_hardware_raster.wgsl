@@ -7,6 +7,8 @@
         meshlet_raster_clusters,
         meshlet_previous_raster_counts,
         meshlet_visibility_buffer,
+        mgstudio_pack_portable_visibility,
+        mgstudio_visibility_pixel_index,
         view,
         get_meshlet_triangle_count,
         get_meshlet_vertex_id,
@@ -21,9 +23,7 @@ var<immediate> meshlet_raster_cluster_rightmost_slot: u32;
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
-#ifdef MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
     @location(0) @interpolate(flat) packed_ids: u32,
-#endif
 }
 
 @vertex
@@ -47,29 +47,22 @@ fn vertex(@builtin(instance_index) instance_index: u32, @builtin(vertex_index) v
 
     return VertexOutput(
         clip_position,
-#ifdef MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
         (cluster_id << 7u) | triangle_id,
-#endif
     );
 }
 
 @fragment
 fn fragment(vertex_output: VertexOutput) {
     let depth = bitcast<u32>(vertex_output.position.z);
-#ifdef MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
-    let visibility = (u64(depth) << 32u) | u64(vertex_output.packed_ids);
-#else
-    let visibility = depth;
-#endif
-    textureAtomicMax(meshlet_visibility_buffer, vec2<u32>(vertex_output.position.xy), visibility);
+    let pixel = vec2<u32>(vertex_output.position.xy);
+    let visibility = mgstudio_pack_portable_visibility(depth, vertex_output.packed_ids);
+    atomicMax(&meshlet_visibility_buffer[mgstudio_visibility_pixel_index(pixel.x, pixel.y)], visibility);
 }
 
 fn dummy_vertex() -> VertexOutput {
     return VertexOutput(
         vec4(divide(0.0, 0.0)), // NaN vertex position
-#ifdef MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT
         0u,
-#endif
     );
 }
 

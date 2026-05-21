@@ -303,14 +303,9 @@ fn meshlet_resource_second_meshlet_cull_entries() -> Array[
 
 ///|
 fn meshlet_resource_downsample_depth_entries(
-  visibility_format : MeshletResourceTextureFormat,
+  _visibility_format : MeshletResourceTextureFormat,
 ) -> Array[MeshletResourceBindGroupLayoutEntry] {
-  let entries = [
-    meshlet_resource_storage_texture_2d(
-      visibility_format,
-      MeshletResourceStorageTextureAccess::ReadOnly,
-    ),
-  ]
+  let entries = [meshlet_resource_storage_read_only()]
   for _ in 0..<5 {
     entries.push(
       meshlet_resource_storage_texture_2d(
@@ -339,18 +334,13 @@ fn meshlet_resource_downsample_depth_entries(
 
 ///|
 fn meshlet_resource_visibility_buffer_raster_entries(
-  visibility_format : MeshletResourceTextureFormat,
+  _visibility_format : MeshletResourceTextureFormat,
 ) -> Array[MeshletResourceBindGroupLayoutEntry] {
   let entries : Array[MeshletResourceBindGroupLayoutEntry] = []
   for _ in 0..<7 {
     entries.push(meshlet_resource_storage_read_only())
   }
-  entries.push(
-    meshlet_resource_storage_texture_2d(
-      visibility_format,
-      MeshletResourceStorageTextureAccess::Atomic,
-    ),
-  )
+  entries.push(meshlet_resource_storage_read_write())
   entries.push(meshlet_resource_uniform_buffer_dynamic())
   entries
 }
@@ -359,12 +349,7 @@ fn meshlet_resource_visibility_buffer_raster_entries(
 fn meshlet_resource_material_shade_entries() -> Array[
   MeshletResourceBindGroupLayoutEntry,
 ] {
-  let entries = [
-    meshlet_resource_storage_texture_2d(
-      MeshletResourceTextureFormat::R64Uint,
-      MeshletResourceStorageTextureAccess::ReadOnly,
-    ),
-  ]
+  let entries = [meshlet_resource_storage_read_only()]
   for _ in 0..<7 {
     entries.push(meshlet_resource_storage_read_only())
   }
@@ -383,22 +368,12 @@ pub fn meshlet_resource_bind_group_layout_descriptors(
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_clear_visibility_buffer_bind_group_layout",
       compute_stage=true,
-      entries=[
-        meshlet_resource_storage_texture_2d(
-          MeshletResourceTextureFormat::R64Uint,
-          MeshletResourceStorageTextureAccess::WriteOnly,
-        ),
-      ],
+      entries=[meshlet_resource_storage_read_write()],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_clear_visibility_buffer_shadow_view_bind_group_layout",
       compute_stage=true,
-      entries=[
-        meshlet_resource_storage_texture_2d(
-          MeshletResourceTextureFormat::R32Uint,
-          MeshletResourceStorageTextureAccess::WriteOnly,
-        ),
-      ],
+      entries=[meshlet_resource_storage_read_write()],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_first_instance_culling_bind_group_layout",
@@ -465,31 +440,18 @@ pub fn meshlet_resource_bind_group_layout_descriptors(
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_resolve_depth_bind_group_layout",
       fragment_stage=true,
-      entries=[
-        meshlet_resource_storage_texture_2d(
-          MeshletResourceTextureFormat::R64Uint,
-          MeshletResourceStorageTextureAccess::ReadOnly,
-        ),
-      ],
+      entries=[meshlet_resource_storage_read_only()],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_resolve_depth_shadow_view_bind_group_layout",
       fragment_stage=true,
-      entries=[
-        meshlet_resource_storage_texture_2d(
-          MeshletResourceTextureFormat::R32Uint,
-          MeshletResourceStorageTextureAccess::ReadOnly,
-        ),
-      ],
+      entries=[meshlet_resource_storage_read_only()],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_resolve_material_depth_bind_group_layout",
       fragment_stage=true,
       entries=[
-        meshlet_resource_storage_texture_2d(
-          MeshletResourceTextureFormat::R64Uint,
-          MeshletResourceStorageTextureAccess::ReadOnly,
-        ),
+        meshlet_resource_storage_read_only(),
         meshlet_resource_storage_read_only(),
         meshlet_resource_storage_read_only(),
       ],

@@ -459,6 +459,8 @@ pub fn pbr_plugin_with(@app.App[@ecs.World], PbrPlugin) -> @app.App[@ecs.World]
 
 pub fn pbr_prepass_enabled(@ecs.World) -> Bool
 
+pub fn pbr_prepass_material_specialization_decision(@material.MaterialProperties, UInt64, UInt64, has_deferred_prepass? : Bool, lightmapped? : Bool, lightmap_bicubic_sampling? : Bool, visibility_range_dither? : Bool, has_previous_skin? : Bool, has_previous_morph? : Bool, emulate_unclipped_depth? : Bool) -> PbrPrepassMaterialSpecializationDecision
+
 pub fn pbr_scattering_medium_default() -> @light.ScatteringMedium
 
 pub fn pbr_scattering_medium_default_density_lut(ScatteringMediumRuntime) -> Array[@math.Vec4]
@@ -1319,6 +1321,25 @@ pub struct PbrPluginRuntimeConfig {
 }
 pub fn PbrPluginRuntimeConfig::from_plugin(PbrPlugin) -> Self
 pub impl @ecs.EcsPayloadCodec for PbrPluginRuntimeConfig
+
+pub enum PbrPrepassMaterialSpecializationDecision {
+  Queue(PbrPrepassMaterialSpecializationPlan)
+  Remove
+  Skip
+}
+
+pub struct PbrPrepassMaterialSpecializationPlan {
+  mesh_key_bits : UInt64
+  draw_function_label : String
+  draw_function : @material.DrawFunctionId
+  deferred : Bool
+  material_bind_group_required : Bool
+}
+pub fn PbrPrepassMaterialSpecializationPlan::deferred(Self) -> Bool
+pub fn PbrPrepassMaterialSpecializationPlan::draw_function(Self) -> @material.DrawFunctionId
+pub fn PbrPrepassMaterialSpecializationPlan::draw_function_label(Self) -> String
+pub fn PbrPrepassMaterialSpecializationPlan::material_bind_group_required(Self) -> Bool
+pub fn PbrPrepassMaterialSpecializationPlan::mesh_key_bits(Self) -> UInt64
 
 pub struct PbrPrepassPipelineSpecializer {
   properties : @material.MaterialProperties

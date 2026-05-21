@@ -33,6 +33,9 @@ pub const RENDER3D_JOINT_BUFFER_SIZE_BYTES : Int = RENDER3D_MAX_SKIN_JOINTS *
   RENDER3D_JOINT_MATRIX_SIZE_BYTES
 
 ///|
+pub const RENDER3D_LIGHTMAPS_PER_SLAB : Int = 4
+
+///|
 pub enum MeshBindingSlot3d {
   Model
   SkinCurrent
@@ -59,9 +62,16 @@ pub fn mesh_binding_slot_index(slot : MeshBindingSlot3d) -> Int {
 }
 
 ///|
+pub struct MeshBindingLayoutEntry3d {
+  slot : MeshBindingSlot3d
+  binding : Int
+  count : Int
+}
+
+///|
 pub struct MeshBindingLayout3d {
   name : String
-  bindings : Array[(MeshBindingSlot3d, Int)]
+  entries : Array[MeshBindingLayoutEntry3d]
 }
 
 ///|
@@ -82,14 +92,74 @@ pub fn MeshBindingLayout3d::name(self : MeshBindingLayout3d) -> String {
 }
 
 ///|
+pub fn MeshBindingLayoutEntry3d::new(
+  slot : MeshBindingSlot3d,
+  binding : Int,
+  count? : Int = 0,
+) -> MeshBindingLayoutEntry3d {
+  MeshBindingLayoutEntry3d::{ slot, binding, count }
+}
+
+///|
+pub fn MeshBindingLayoutEntry3d::slot(
+  self : MeshBindingLayoutEntry3d,
+) -> MeshBindingSlot3d {
+  self.slot
+}
+
+///|
+pub fn MeshBindingLayoutEntry3d::binding(
+  self : MeshBindingLayoutEntry3d,
+) -> Int {
+  self.binding
+}
+
+///|
+pub fn MeshBindingLayoutEntry3d::count(self : MeshBindingLayoutEntry3d) -> Int {
+  self.count
+}
+
+///|
+pub fn MeshBindingLayout3d::entries(
+  self : MeshBindingLayout3d,
+) -> Array[MeshBindingLayoutEntry3d] {
+  let entries : Array[MeshBindingLayoutEntry3d] = []
+  for entry in self.entries {
+    entries.push(entry)
+  }
+  entries
+}
+
+///|
 pub fn MeshBindingLayout3d::bindings(
   self : MeshBindingLayout3d,
 ) -> Array[(MeshBindingSlot3d, Int)] {
   let bindings : Array[(MeshBindingSlot3d, Int)] = []
-  for binding in self.bindings {
-    bindings.push(binding)
+  for entry in self.entries {
+    bindings.push((entry.slot(), entry.binding()))
   }
   bindings
+}
+
+///|
+pub fn MeshBindingLayout3d::binding_array_count(
+  self : MeshBindingLayout3d,
+  slot : MeshBindingSlot3d,
+) -> Int {
+  for entry in self.entries {
+    if entry.slot() == slot {
+      return entry.count()
+    }
+  }
+  0
+}
+
+///|
+fn mesh_binding_layout_entry(
+  slot : MeshBindingSlot3d,
+  count? : Int = 0,
+) -> MeshBindingLayoutEntry3d {
+  MeshBindingLayoutEntry3d::new(slot, mesh_binding_slot_index(slot), count~)
 }
 
 ///|
@@ -98,62 +168,44 @@ fn mesh_binding_layout_slots(
   skinned : Bool,
   morphed : Bool,
   motion_vectors : Bool,
-) -> Array[(MeshBindingSlot3d, Int)] {
-  let slots : Array[(MeshBindingSlot3d, Int)] = [
-    (
-      MeshBindingSlot3d::Model,
-      mesh_binding_slot_index(MeshBindingSlot3d::Model),
-    ),
+  binding_arrays_are_usable : Bool,
+) -> Array[MeshBindingLayoutEntry3d] {
+  let slots : Array[MeshBindingLayoutEntry3d] = [
+    mesh_binding_layout_entry(MeshBindingSlot3d::Model),
   ]
   if skinned {
-    slots.push(
-      (
-        MeshBindingSlot3d::SkinCurrent,
-        mesh_binding_slot_index(MeshBindingSlot3d::SkinCurrent),
-      ),
-    )
+    slots.push(mesh_binding_layout_entry(MeshBindingSlot3d::SkinCurrent))
   }
   if morphed {
     slots.push(
-      (
-        MeshBindingSlot3d::MorphWeightsCurrent,
-        mesh_binding_slot_index(MeshBindingSlot3d::MorphWeightsCurrent),
-      ),
+      mesh_binding_layout_entry(MeshBindingSlot3d::MorphWeightsCurrent),
     )
-    slots.push(
-      (
-        MeshBindingSlot3d::MorphTargets,
-        mesh_binding_slot_index(MeshBindingSlot3d::MorphTargets),
-      ),
-    )
+    slots.push(mesh_binding_layout_entry(MeshBindingSlot3d::MorphTargets))
   }
   if skinned && motion_vectors {
-    slots.push(
-      (
-        MeshBindingSlot3d::SkinPrevious,
-        mesh_binding_slot_index(MeshBindingSlot3d::SkinPrevious),
-      ),
-    )
+    slots.push(mesh_binding_layout_entry(MeshBindingSlot3d::SkinPrevious))
   }
   if morphed && motion_vectors {
     slots.push(
-      (
-        MeshBindingSlot3d::MorphWeightsPrevious,
-        mesh_binding_slot_index(MeshBindingSlot3d::MorphWeightsPrevious),
-      ),
+      mesh_binding_layout_entry(MeshBindingSlot3d::MorphWeightsPrevious),
     )
   }
   if lightmapped {
+    let lightmap_count = if binding_arrays_are_usable {
+      RENDER3D_LIGHTMAPS_PER_SLAB
+    } else {
+      0
+    }
     slots.push(
-      (
+      mesh_binding_layout_entry(
         MeshBindingSlot3d::LightmapTexture,
-        mesh_binding_slot_index(MeshBindingSlot3d::LightmapTexture),
+        count=lightmap_count,
       ),
     )
     slots.push(
-      (
+      mesh_binding_layout_entry(
         MeshBindingSlot3d::LightmapSampler,
-        mesh_binding_slot_index(MeshBindingSlot3d::LightmapSampler),
+        count=lightmap_count,
       ),
     )
   }
@@ -167,39 +219,44 @@ fn mesh_binding_layout(
   skinned : Bool,
   morphed : Bool,
   motion_vectors : Bool,
+  binding_arrays_are_usable : Bool,
 ) -> MeshBindingLayout3d {
   MeshBindingLayout3d::{
     name,
-    bindings: mesh_binding_layout_slots(
-      lightmapped, skinned, morphed, motion_vectors,
+    entries: mesh_binding_layout_slots(
+      lightmapped, skinned, morphed, motion_vectors, binding_arrays_are_usable,
     ),
   }
 }
 
 ///|
-pub fn render3d_mesh_layouts() -> MeshLayouts3d {
+pub fn render3d_mesh_layouts(
+  binding_arrays_are_usable? : Bool = false,
+) -> MeshLayouts3d {
   MeshLayouts3d::{
-    model_only: mesh_binding_layout("mesh_layout", false, false, false, false),
+    model_only: mesh_binding_layout(
+      "mesh_layout", false, false, false, false, binding_arrays_are_usable,
+    ),
     lightmapped: mesh_binding_layout(
-      "lightmapped_mesh_layout", true, false, false, false,
+      "lightmapped_mesh_layout", true, false, false, false, binding_arrays_are_usable,
     ),
     skinned: mesh_binding_layout(
-      "skinned_mesh_layout", false, true, false, false,
+      "skinned_mesh_layout", false, true, false, false, binding_arrays_are_usable,
     ),
     skinned_motion: mesh_binding_layout(
-      "skinned_motion_mesh_layout", false, true, false, true,
+      "skinned_motion_mesh_layout", false, true, false, true, binding_arrays_are_usable,
     ),
     morphed: mesh_binding_layout(
-      "morphed_mesh_layout", false, false, true, false,
+      "morphed_mesh_layout", false, false, true, false, binding_arrays_are_usable,
     ),
     morphed_motion: mesh_binding_layout(
-      "morphed_mesh_layout", false, false, true, true,
+      "morphed_mesh_layout", false, false, true, true, binding_arrays_are_usable,
     ),
     morphed_skinned: mesh_binding_layout(
-      "morphed_skinned_mesh_layout", false, true, true, false,
+      "morphed_skinned_mesh_layout", false, true, true, false, binding_arrays_are_usable,
     ),
     morphed_skinned_motion: mesh_binding_layout(
-      "morphed_skinned_motion_mesh_layout", false, true, true, true,
+      "morphed_skinned_motion_mesh_layout", false, true, true, true, binding_arrays_are_usable,
     ),
   }
 }

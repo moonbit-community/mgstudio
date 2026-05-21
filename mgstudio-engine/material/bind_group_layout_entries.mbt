@@ -61,11 +61,15 @@ pub fn BindGroupLayoutEntryBuilder::build(
   binding : Int,
   default_visibility : UInt,
 ) -> MaterialBindGroupLayoutEntry {
-  ignore(self.count)
+  let count = match self.count {
+    Some(count) => count.reinterpret_as_int()
+    None => 0
+  }
   @render_resource.BindGroupLayoutEntry::new(
     binding,
     self.visibility.unwrap_or(default_visibility),
     self.kind,
+    count~,
   )
 }
 

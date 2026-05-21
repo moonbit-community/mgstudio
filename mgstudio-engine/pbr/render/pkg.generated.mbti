@@ -57,6 +57,8 @@ pub const RENDER3D_JOINT_BUFFER_SIZE_BYTES : Int = 16384
 
 pub const RENDER3D_JOINT_MATRIX_SIZE_BYTES : Int = 64
 
+pub const RENDER3D_LIGHTMAPS_PER_SLAB : Int = 4
+
 pub const RENDER3D_MAX_MORPH_WEIGHTS : Int = 64
 
 pub const RENDER3D_MAX_SKINNING_JOINTS : Int = 256
@@ -333,7 +335,7 @@ pub fn render3d_mesh_bind_groups_cpu_preprocessing(MeshPhaseBindGroups3d) -> Mes
 
 pub fn render3d_mesh_bind_groups_gpu_preprocessing(Map[String, MeshPhaseBindGroups3d]) -> MeshBindGroups3d
 
-pub fn render3d_mesh_layouts() -> MeshLayouts3d
+pub fn render3d_mesh_layouts(binding_arrays_are_usable? : Bool) -> MeshLayouts3d
 
 pub fn render3d_mesh_position_view_depth(@math.Vec3, @transform.Transform) -> Float
 
@@ -719,10 +721,22 @@ pub enum MeshBindGroups3d {
 
 pub struct MeshBindingLayout3d {
   name : String
-  bindings : Array[(MeshBindingSlot3d, Int)]
+  entries : Array[MeshBindingLayoutEntry3d]
 }
+pub fn MeshBindingLayout3d::binding_array_count(Self, MeshBindingSlot3d) -> Int
 pub fn MeshBindingLayout3d::bindings(Self) -> Array[(MeshBindingSlot3d, Int)]
+pub fn MeshBindingLayout3d::entries(Self) -> Array[MeshBindingLayoutEntry3d]
 pub fn MeshBindingLayout3d::name(Self) -> String
+
+pub struct MeshBindingLayoutEntry3d {
+  slot : MeshBindingSlot3d
+  binding : Int
+  count : Int
+}
+pub fn MeshBindingLayoutEntry3d::binding(Self) -> Int
+pub fn MeshBindingLayoutEntry3d::count(Self) -> Int
+pub fn MeshBindingLayoutEntry3d::new(MeshBindingSlot3d, Int, count? : Int) -> Self
+pub fn MeshBindingLayoutEntry3d::slot(Self) -> MeshBindingSlot3d
 
 pub enum MeshBindingSlot3d {
   Model

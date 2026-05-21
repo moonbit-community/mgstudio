@@ -112,6 +112,7 @@ fn pbr_mesh_pipeline_view_layout() -> @mesh_view_layout.MeshPipelineViewLayout {
 fn pbr_mesh_binding_layout_entry(
   slot : @pbr_render.MeshBindingSlot3d,
   binding : Int,
+  count? : Int = 0,
 ) -> @render_resource.BindGroupLayoutEntry {
   let vertex_fragment = (@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT).to_uint()
   let vertex = @wgpu.SHADER_STAGE_VERTEX.to_uint()
@@ -160,7 +161,7 @@ fn pbr_mesh_binding_layout_entry(
     | @pbr_render.MeshBindingSlot3d::LightmapSampler => fragment
     _ => vertex
   }
-  @render_resource.BindGroupLayoutEntry::new(binding, visibility, kind)
+  @render_resource.BindGroupLayoutEntry::new(binding, visibility, kind, count~)
 }
 
 ///|
@@ -179,6 +180,7 @@ fn pbr_setup_morph_and_skinning_defs(
   skinning_attribute_offset : Int,
   shader_defs : Array[@material.ShaderDefVal],
   vertex_attributes : Array[@mesh.VertexAttributeDescriptor],
+  binding_arrays_are_usable : Bool,
 ) -> @material.BindGroupLayoutDescriptor {
   let is_morphed = (mesh_key_bits & MESH_PIPELINE_KEY_MORPH_TARGETS) != 0UL
   let is_lightmapped = (mesh_key_bits & MESH_PIPELINE_KEY_LIGHTMAPPED) != 0UL
@@ -203,16 +205,23 @@ fn pbr_setup_morph_and_skinning_defs(
   if is_morphed {
     shader_defs.push(pbr_shader_def("MORPH_TARGETS"))
   }
-  let selected_layout = @pbr_render.render3d_mesh_layouts().select(
+  let selected_layout = @pbr_render.render3d_mesh_layouts(
+    binding_arrays_are_usable~,
+  ).select(
     skinned=is_skinned,
     morphed=is_morphed,
     lightmapped=is_lightmapped,
     motion_vectors~,
   )
   let entries : Array[@render_resource.BindGroupLayoutEntry] = []
-  for binding in selected_layout.bindings() {
-    let (slot, binding_index) = binding
-    entries.push(pbr_mesh_binding_layout_entry(slot, binding_index))
+  for entry in selected_layout.entries() {
+    entries.push(
+      pbr_mesh_binding_layout_entry(
+        entry.slot(),
+        entry.binding(),
+        count=entry.count(),
+      ),
+    )
   }
   @material.BindGroupLayoutDescriptor::new(selected_layout.name(), entries)
 }
@@ -415,7 +424,7 @@ fn pbr_mesh_pipeline_descriptor(
     shader_defs.push(pbr_shader_def("MULTIPLE_LIGHTMAPS_IN_ARRAY"))
   }
   let draw_layout = pbr_setup_morph_and_skinning_defs(
-    mesh_key_bits, layout, 6, shader_defs, vertex_attributes,
+    mesh_key_bits, layout, 6, shader_defs, vertex_attributes, binding_arrays_are_usable,
   )
   let vertex_buffer_layout = match mesh_layout.get_layout(vertex_attributes) {
     Ok(vertex_buffer_layout) => vertex_buffer_layout
@@ -598,7 +607,7 @@ fn pbr_prepass_pipeline_descriptor(
     shader_defs.push(pbr_shader_def("PREPASS_FRAGMENT"))
   }
   let draw_layout = pbr_setup_morph_and_skinning_defs(
-    mesh_key_bits, layout, 5, shader_defs, vertex_attributes,
+    mesh_key_bits, layout, 5, shader_defs, vertex_attributes, binding_arrays_are_usable,
   )
   let vertex_buffer_layout = match mesh_layout.get_layout(vertex_attributes) {
     Ok(vertex_buffer_layout) => vertex_buffer_layout

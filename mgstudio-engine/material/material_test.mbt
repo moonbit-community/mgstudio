@@ -297,6 +297,12 @@ test "material boundary dynamic bind group layout entries mirror bevy builder fl
   inspect(entries[1].binding(), content="1")
   inspect(entries[2].binding(), content="7")
   inspect(entries[2].visibility(), content="1")
+  inspect(entries[2].count(), content="0")
+  let counted = @material.bind_group_layout_entries_single(
+    @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
+    texture.count(4U),
+  )
+  inspect(counted[0].count(), content="4")
 }
 
 ///|

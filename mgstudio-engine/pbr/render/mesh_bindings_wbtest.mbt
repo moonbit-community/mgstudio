@@ -84,6 +84,36 @@ test "pbr/render mesh bindings: selection mirrors bevy morph skin lightmap prior
 }
 
 ///|
+test "pbr/render mesh bindings: bindless lightmap layouts keep bevy slab counts" {
+  let default_lightmapped = render3d_mesh_layouts().select(
+    skinned=false,
+    morphed=false,
+    lightmapped=true,
+    motion_vectors=false,
+  )
+  inspect(
+    default_lightmapped.binding_array_count(MeshBindingSlot3d::LightmapTexture),
+    content="0",
+  )
+  inspect(
+    default_lightmapped.binding_array_count(MeshBindingSlot3d::LightmapSampler),
+    content="0",
+  )
+  let bindless_lightmapped = render3d_mesh_layouts(
+    binding_arrays_are_usable=true,
+  ).select(skinned=false, morphed=false, lightmapped=true, motion_vectors=false)
+  inspect(
+    bindless_lightmapped.binding_array_count(MeshBindingSlot3d::LightmapTexture),
+    content="4",
+  )
+  inspect(
+    bindless_lightmapped.binding_array_count(MeshBindingSlot3d::LightmapSampler),
+    content="4",
+  )
+  inspect(bindless_lightmapped.bindings()[1].1, content="4")
+}
+
+///|
 test "pbr/render mesh bindings: dynamic offsets follow SetMeshBindGroup order" {
   let offsets = render3d_mesh_bind_group_dynamic_offsets(
     phase_dynamic_offset=Some(3U),

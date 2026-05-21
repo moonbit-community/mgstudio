@@ -386,6 +386,12 @@ test "pbr material pipeline gates lightmap binding-array defs on pipeline suppor
     pbr_material_specializer_test_key(mesh_bits=MESH_PIPELINE_KEY_LIGHTMAPPED),
     pbr_material_specializer_test_layout(),
   )
+  inspect(
+    default_descriptor.layout[2].label(),
+    content="lightmapped_mesh_layout",
+  )
+  inspect(default_descriptor.layout[2].entries()[1].count(), content="0")
+  inspect(default_descriptor.layout[2].entries()[2].count(), content="0")
   debug_inspect(
     pbr_material_specializer_shader_defs_contain_flag(
       default_descriptor.vertex.shader_defs,
@@ -401,6 +407,12 @@ test "pbr material pipeline gates lightmap binding-array defs on pipeline suppor
     pbr_material_specializer_test_key(mesh_bits=MESH_PIPELINE_KEY_LIGHTMAPPED),
     pbr_material_specializer_test_layout(),
   )
+  inspect(
+    binding_array_descriptor.layout[2].label(),
+    content="lightmapped_mesh_layout",
+  )
+  inspect(binding_array_descriptor.layout[2].entries()[1].count(), content="4")
+  inspect(binding_array_descriptor.layout[2].entries()[2].count(), content="4")
   debug_inspect(
     pbr_material_specializer_shader_defs_contain_flag(
       binding_array_descriptor.vertex.shader_defs,
@@ -628,6 +640,12 @@ test "pbr prepass pipeline gates lightmap binding-array defs on pipeline support
     ),
     pbr_material_specializer_test_layout(),
   )
+  inspect(
+    default_descriptor.layout[2].label(),
+    content="lightmapped_mesh_layout",
+  )
+  inspect(default_descriptor.layout[2].entries()[1].count(), content="0")
+  inspect(default_descriptor.layout[2].entries()[2].count(), content="0")
   debug_inspect(
     pbr_material_specializer_shader_defs_contain_flag(
       default_descriptor.vertex.shader_defs,
@@ -645,6 +663,12 @@ test "pbr prepass pipeline gates lightmap binding-array defs on pipeline support
     ),
     pbr_material_specializer_test_layout(),
   )
+  inspect(
+    binding_array_descriptor.layout[2].label(),
+    content="lightmapped_mesh_layout",
+  )
+  inspect(binding_array_descriptor.layout[2].entries()[1].count(), content="4")
+  inspect(binding_array_descriptor.layout[2].entries()[2].count(), content="4")
   debug_inspect(
     pbr_material_specializer_shader_defs_contain_flag(
       binding_array_descriptor.vertex.shader_defs,
