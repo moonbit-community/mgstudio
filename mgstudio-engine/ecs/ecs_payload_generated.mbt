@@ -159,13 +159,14 @@ pub impl EcsPayloadCodec for Despawn with from_ecs_payload(payload) {
 
 ///|
 pub impl[T] EcsPayloadCodec for Messages[T] with to_ecs_payload(self) {
-  EcsPayload_ecs_Messages(self.state)
+  EcsPayload_ecs_Messages(self.slot.state)
 }
 
 ///|
 pub impl[T] EcsPayloadCodec for Messages[T] with from_ecs_payload(payload) {
   match payload {
-    EcsPayload_ecs_Messages(state) => Some(Messages::{ state, })
+    EcsPayload_ecs_Messages(state) =>
+      Some(Messages::{ slot: MessageQueueSlot::{ state, } })
     _ => None
   }
 }

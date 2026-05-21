@@ -119,20 +119,20 @@ pub fn[E, C] ComponentOn::marker_component(self : ComponentOn[E, C]) -> C? {
 
 ///|
 pub(open) trait ComponentObserverEvent {
-  register_component_observer(World, Int, @core.Entity?, (World) -> Unit) -> ObserverHandle
-  current_observer_entity() -> @core.Entity
-  current_observer_component_id() -> Int
-  marker() -> Self
-  debug_name() -> String
+  fn register_component_observer(World, Int, @core.Entity?, (World) -> Unit) -> ObserverHandle
+  fn current_observer_entity() -> @core.Entity
+  fn current_observer_component_id() -> Int
+  fn marker() -> Self
+  fn debug_name() -> String
 }
 
 ///|
 pub(open) trait TriggerEvent: EcsPayloadCodec {
-  observer_event() -> EventKey[Self]
-  observer_entity(Self) -> @core.Entity?
-  set_observer_entity(Self, @core.Entity) -> Self
-  auto_propagate(Self) -> Bool
-  debug_name() -> String
+  fn observer_event() -> EventKey[Self]
+  fn observer_entity(Self) -> @core.Entity?
+  fn set_observer_entity(Self, @core.Entity) -> Self
+  fn auto_propagate(Self) -> Bool
+  fn debug_name() -> String
 }
 
 ///|

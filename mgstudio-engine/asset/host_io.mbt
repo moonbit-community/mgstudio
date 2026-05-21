@@ -73,10 +73,15 @@ priv struct AssetIoRuntimeState {
 }
 
 ///|
+let asset_io_runtime_state_resource_key_value : @ecs.ResourceKey[
+  AssetIoRuntimeState,
+] = @ecs.register_resource(debug_name="mgstudio_asset::AssetIoRuntimeState")
+
+///|
 fn asset_io_runtime_state_resource_key() -> @ecs.ResourceKey[
   AssetIoRuntimeState,
 ] {
-  @ecs.register_resource(debug_name="mgstudio_asset::AssetIoRuntimeState")
+  asset_io_runtime_state_resource_key_value
 }
 
 ///|

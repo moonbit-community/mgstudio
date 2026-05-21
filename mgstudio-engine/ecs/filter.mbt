@@ -14,42 +14,42 @@
 
 ///|
 pub(open) trait QueryFilter {
-  matches(self : Self, world : World, entity : @core.Entity) -> Bool
-  matches_table_row(
+  fn matches(self : Self, world : World, entity : @core.Entity) -> Bool
+  fn matches_table_row(
     self : Self,
     world : World,
     entity : @core.Entity,
     table_id : Int,
     row_index : Int,
   ) -> Bool = _
-  mentions_component(self : Self, component_id : Int) -> Bool
-  matches_component_set(self : Self, set_contains_id : (Int) -> Bool) -> Bool
-  collect_access(self : Self, access : QueryFilterAccess) -> Unit = _
-  requires_entity_check(self : Self) -> Bool
-  requires_entity_check_for_world(self : Self, world : World) -> Bool = _
-  is_dense(self : Self, world : World) -> Bool = _
-  iteration_anchor_component(self : Self) -> Int?
-  iteration_anchor_components(self : Self) -> Array[Int] = _
-  depends_on_ticks(self : Self) -> Bool
+  fn mentions_component(self : Self, component_id : Int) -> Bool
+  fn matches_component_set(self : Self, set_contains_id : (Int) -> Bool) -> Bool
+  fn collect_access(self : Self, access : QueryFilterAccess) -> Unit = _
+  fn requires_entity_check(self : Self) -> Bool
+  fn requires_entity_check_for_world(self : Self, world : World) -> Bool = _
+  fn is_dense(self : Self, world : World) -> Bool = _
+  fn iteration_anchor_component(self : Self) -> Int?
+  fn iteration_anchor_components(self : Self) -> Array[Int] = _
+  fn depends_on_ticks(self : Self) -> Bool
 }
 
 ///|
 pub(open) trait QueryFilterDisjunction {
-  matches_any(self : Self, world : World, entity : @core.Entity) -> Bool
-  matches_table_row_any(
+  fn matches_any(self : Self, world : World, entity : @core.Entity) -> Bool
+  fn matches_table_row_any(
     self : Self,
     world : World,
     entity : @core.Entity,
     table_id : Int,
     row_index : Int,
   ) -> Bool = _
-  mentions_component_any(self : Self, component_id : Int) -> Bool
-  matches_component_set_any(self : Self, set_contains_id : (Int) -> Bool) -> Bool
-  collect_access_any(self : Self, access : QueryFilterAccess) -> Unit = _
-  requires_entity_check_any(self : Self) -> Bool
-  requires_entity_check_any_for_world(self : Self, world : World) -> Bool = _
-  is_dense_any(self : Self, world : World) -> Bool = _
-  depends_on_ticks_any(self : Self) -> Bool
+  fn mentions_component_any(self : Self, component_id : Int) -> Bool
+  fn matches_component_set_any(self : Self, set_contains_id : (Int) -> Bool) -> Bool
+  fn collect_access_any(self : Self, access : QueryFilterAccess) -> Unit = _
+  fn requires_entity_check_any(self : Self) -> Bool
+  fn requires_entity_check_any_for_world(self : Self, world : World) -> Bool = _
+  fn is_dense_any(self : Self, world : World) -> Bool = _
+  fn depends_on_ticks_any(self : Self) -> Bool
 }
 
 ///|

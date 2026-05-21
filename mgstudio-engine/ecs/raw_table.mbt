@@ -72,7 +72,7 @@ fn raw_table_load_changed_caller(caller_id : Int) -> String? {
 ///|
 pub(all) struct RawTableColumn {
   component_ops : ComponentOps
-  storage : RawTableValueColumnKernel
+  storage : RawTableColumnKernel
 }
 
 ///|
@@ -92,69 +92,33 @@ priv struct RawTableSwapRemoveResult {
 
 ///|
 fn raw_table_column_new(component_ops : ComponentOps) -> RawTableColumn {
-  { component_ops, storage: raw_table_value_column_kernel_new() }
+  { component_ops, storage: raw_table_column_kernel_new() }
 }
 
 ///|
-fn RawTableColumn::payload_at_row(
-  self : RawTableColumn,
-  row_index : Int,
-) -> EcsPayload? {
-  raw_table_value_column_kernel_value(self.storage, row_index)
-}
-
-///|
-fn RawTableColumn::replace_payload_at_row(
-  self : RawTableColumn,
-  row_index : Int,
-  payload : EcsPayload,
-) -> Bool {
-  raw_table_value_column_kernel_replace(self.storage, row_index, payload)
-}
-
-///|
-fn RawTableColumn::replace_typed_payload_at_row(
-  self : RawTableColumn,
-  row_index : Int,
-  payload : EcsPayload,
-) -> Bool {
-  raw_table_value_column_kernel_replace(self.storage, row_index, payload)
-}
-
-///|
-fn RawTableColumn::replace_writer_at_row(
-  self : RawTableColumn,
-  row_index : Int,
-  writer : EcsPayloadWriter,
-) -> Bool {
-  if writer.component_definition_id != self.component_ops.definition_id {
-    return false
-  }
-  raw_table_value_column_kernel_replace(
+fn RawTableColumn::append_row(self : RawTableColumn) -> Bool {
+  raw_table_column_kernel_push(
     self.storage,
-    row_index,
-    writer.to_ecs_payload(),
+    raw_table_invalid_tick(),
+    raw_table_invalid_tick(),
+    0,
   )
 }
 
 ///|
 fn RawTableColumn::append_writer(
   self : RawTableColumn,
+  world : World,
+  entity : @core.Entity,
   writer : EcsPayloadWriter,
 ) -> Bool {
   if writer.component_definition_id != self.component_ops.definition_id {
     return false
   }
-  guard raw_table_value_column_kernel_push(
-    self.storage,
-    writer.to_ecs_payload(),
-    raw_table_invalid_tick(),
-    raw_table_invalid_tick(),
-    0,
-  ) else {
+  guard (self.component_ops.set_payload)(world, entity, writer.to_ecs_payload()) else {
     return false
   }
-  true
+  self.append_row()
 }
 
 ///|
@@ -163,22 +127,10 @@ fn RawTableColumn::append_from_row(
   source : RawTableColumn,
   row_index : Int,
 ) -> Bool {
-  match source.payload_at_row(row_index) {
-    Some(payload) =>
-      raw_table_value_column_kernel_push(
-        self.storage,
-        payload,
-        raw_table_invalid_tick(),
-        raw_table_invalid_tick(),
-        0,
-      )
-    None => false
+  if row_index < 0 || row_index >= raw_table_column_kernel_len(source.storage) {
+    return false
   }
-}
-
-///|
-fn RawTableColumn::append_metadata(self : RawTableColumn) -> Unit {
-  ignore(self)
+  self.append_row()
 }
 
 ///|
@@ -189,7 +141,7 @@ fn RawTableColumn::set_metadata_at_row(
   changed_tick : @core.Tick?,
   changed_caller : String?,
 ) -> Bool {
-  if !raw_table_value_column_kernel_set_metadata(
+  if !raw_table_column_kernel_set_metadata(
       self.storage,
       row_index,
       raw_table_store_tick(added_tick),
@@ -206,13 +158,10 @@ fn RawTableColumn::added_tick_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> @core.Tick? {
-  if row_index < 0 ||
-    row_index >= raw_table_value_column_kernel_len(self.storage) {
+  if row_index < 0 || row_index >= raw_table_column_kernel_len(self.storage) {
     return None
   }
-  raw_table_load_tick(
-    raw_table_value_column_kernel_added(self.storage, row_index),
-  )
+  raw_table_load_tick(raw_table_column_kernel_added(self.storage, row_index))
 }
 
 ///|
@@ -220,13 +169,10 @@ fn RawTableColumn::changed_tick_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> @core.Tick? {
-  if row_index < 0 ||
-    row_index >= raw_table_value_column_kernel_len(self.storage) {
+  if row_index < 0 || row_index >= raw_table_column_kernel_len(self.storage) {
     return None
   }
-  raw_table_load_tick(
-    raw_table_value_column_kernel_changed(self.storage, row_index),
-  )
+  raw_table_load_tick(raw_table_column_kernel_changed(self.storage, row_index))
 }
 
 ///|
@@ -234,12 +180,11 @@ fn RawTableColumn::changed_caller_at_row(
   self : RawTableColumn,
   row_index : Int,
 ) -> String? {
-  if row_index < 0 ||
-    row_index >= raw_table_value_column_kernel_len(self.storage) {
+  if row_index < 0 || row_index >= raw_table_column_kernel_len(self.storage) {
     return None
   }
   raw_table_load_changed_caller(
-    raw_table_value_column_kernel_changed_caller_id(self.storage, row_index),
+    raw_table_column_kernel_changed_caller_id(self.storage, row_index),
   )
 }
 
@@ -268,7 +213,7 @@ fn RawTableColumn::record_changed_at_row(
   tick : @core.Tick,
   caller : String?,
 ) -> Bool {
-  raw_table_value_column_kernel_set_changed(
+  raw_table_column_kernel_set_changed(
     self.storage,
     row_index,
     raw_table_store_tick(Some(tick)),
@@ -281,7 +226,7 @@ fn RawTableColumn::check_change_ticks(
   self : RawTableColumn,
   present_tick : @core.Tick,
 ) -> Unit {
-  let len = raw_table_value_column_kernel_len(self.storage)
+  let len = raw_table_column_kernel_len(self.storage)
   for row_index in 0..<len {
     let added_tick = match self.added_tick_at_row(row_index) {
       Some(tick) => Some(@core.tick_check(tick, present_tick))
@@ -303,59 +248,12 @@ fn RawTableColumn::check_change_ticks(
 }
 
 ///|
-fn[T : EcsPayloadCodec] RawTableColumn::value_at_row(
-  self : RawTableColumn,
-  row_index : Int,
-) -> T? {
-  match raw_table_value_column_kernel_value(self.storage, row_index) {
-    Some(value) => T::from_ecs_payload(value)
-    None => None
-  }
-}
-
-///|
-fn[T : EcsPayloadCodec] RawTableColumn::value_at_row_unchecked(
-  self : RawTableColumn,
-  row_index : Int,
-) -> T? {
-  T::from_ecs_payload(
-    raw_table_value_column_kernel_value_unchecked(self.storage, row_index),
-  )
-}
-
-///|
-fn[T : EcsPayloadCodec] RawTableColumn::values_snapshot(
-  self : RawTableColumn,
-) -> Array[T]? {
-  let values : Array[T] = []
-  let len = raw_table_value_column_kernel_len(self.storage)
-  for row_index in 0..<len {
-    guard raw_table_value_column_kernel_value(self.storage, row_index)
-      is Some(payload) else {
-      return None
-    }
-    match T::from_ecs_payload(payload) {
-      Some(value) => values.push(value)
-      None => return None
-    }
-  }
-  Some(values)
-}
-
-///|
-fn[T : EcsPayloadCodec] RawTableColumn::values_cached(
-  self : RawTableColumn,
-) -> Array[T]? {
-  self.values_snapshot()
-}
-
-///|
 fn raw_table_column_swap_remove(
   column_ref : Ref[RawTableColumn],
   row_index : Int,
 ) -> Bool {
   let column = column_ref.val
-  raw_table_value_column_kernel_swap_remove(column.storage, row_index)
+  raw_table_column_kernel_swap_remove(column.storage, row_index)
 }
 
 ///|
@@ -408,71 +306,6 @@ fn RawTable::column(
 ///|
 fn RawTable::entity_at_row(self : RawTable, row : TableRow) -> @core.Entity? {
   raw_table_row_kernel_entity_at(self.rows, row.index())
-}
-
-///|
-fn RawTable::payload_at_row(
-  self : RawTable,
-  row : TableRow,
-  component_local_id : Int,
-) -> EcsPayload? {
-  guard self.column(component_local_id) is Some(column_ref) else { return None }
-  column_ref.val.payload_at_row(row.index())
-}
-
-///|
-
-///|
-fn[T : EcsPayloadCodec] RawTable::value_at_row_index(
-  self : RawTable,
-  row_index : Int,
-  component_local_id : Int,
-) -> T? {
-  guard self.column(component_local_id) is Some(column_ref) else { return None }
-  column_ref.val.value_at_row(row_index)
-}
-
-///|
-fn RawTable::replace_payload_at_row(
-  self : RawTable,
-  row : TableRow,
-  component_local_id : Int,
-  payload : EcsPayload,
-) -> Bool {
-  guard self.column(component_local_id) is Some(column_ref) else {
-    return false
-  }
-  column_ref.val.replace_payload_at_row(row.index(), payload)
-}
-
-///|
-fn RawTable::replace_writer_at_row(
-  self : RawTable,
-  row : TableRow,
-  component_local_id : Int,
-  writer : EcsPayloadWriter,
-) -> Bool {
-  guard self.column(component_local_id) is Some(column_ref) else {
-    return false
-  }
-  column_ref.val.replace_writer_at_row(row.index(), writer)
-}
-
-///|
-fn[T : EcsPayloadCodec] RawTable::replace_value_at_row_index(
-  self : RawTable,
-  row_index : Int,
-  component_local_id : Int,
-  key : ComponentKey[T],
-  value : T,
-) -> Bool {
-  guard self.column(component_local_id) is Some(column_ref) else {
-    return false
-  }
-  column_ref.val.replace_writer_at_row(
-    row_index,
-    ecs_payload_writer(key, value),
-  )
 }
 
 ///|
@@ -560,6 +393,7 @@ fn RawTable::check_change_ticks(
 ///|
 fn RawTable::append_row_from_source_table(
   self : RawTable,
+  world : World,
   entity : @core.Entity,
   source_table : Ref[RawTable]?,
   source_row : TableRow?,
@@ -567,6 +401,7 @@ fn RawTable::append_row_from_source_table(
 ) -> TableRow? {
   let row = raw_table_row_kernel_push(self.rows, entity)
   let row_index = row
+  let appended_payload_ops : Array[ComponentOps] = []
   for column_index in 0..<self.columns.length() {
     let component_local_id = self.component_local_ids[column_index]
     let column = self.columns[column_index].val
@@ -604,7 +439,12 @@ fn RawTable::append_row_from_source_table(
                       }
                       None => ()
                     }
-                    column.append_writer(writer)
+                    if column.append_writer(world, entity, writer) {
+                      appended_payload_ops.push(column.component_ops)
+                      true
+                    } else {
+                      false
+                    }
                   }
                   None => false
                 }
@@ -620,7 +460,12 @@ fn RawTable::append_row_from_source_table(
                   }
                   None => ()
                 }
-                column.append_writer(writer)
+                if column.append_writer(world, entity, writer) {
+                  appended_payload_ops.push(column.component_ops)
+                  true
+                } else {
+                  false
+                }
               }
               None => false
             }
@@ -636,7 +481,12 @@ fn RawTable::append_row_from_source_table(
               }
               None => ()
             }
-            column.append_writer(writer)
+            if column.append_writer(world, entity, writer) {
+              appended_payload_ops.push(column.component_ops)
+              true
+            } else {
+              false
+            }
           }
           None => false
         }
@@ -651,9 +501,11 @@ fn RawTable::append_row_from_source_table(
         )
       }
       ignore(raw_table_row_kernel_swap_remove(self.rows, row_index))
+      for ops in appended_payload_ops {
+        ignore((ops.remove_payload)(world, entity))
+      }
       return None
     }
-    column.append_metadata()
     if !column.set_metadata_at_row(
         row_index, added_tick, changed_tick, changed_caller,
       ) {
@@ -666,6 +518,9 @@ fn RawTable::append_row_from_source_table(
         )
       }
       ignore(raw_table_row_kernel_swap_remove(self.rows, row_index))
+      for ops in appended_payload_ops {
+        ignore((ops.remove_payload)(world, entity))
+      }
       return None
     }
   }
@@ -874,37 +729,10 @@ fn[T : EcsPayloadCodec] World::component_value_by_local_id(
       }
     None => ()
   }
-  match self.local_component_storage_type(local_component_id) {
-    Some(SparseSet) =>
-      match self.sparse_component_columns.get(local_component_id) {
-        Some(store_ref) =>
-          match store_ref.val.get(entity) {
-            Some(payload) => Some(self.component_value(key, entity, payload))
-            None => None
-          }
-        None => None
-      }
-    Some(Table) => {
-      let entity_id = entity.id
-      guard entity_id >= 0 &&
-        entity_id < self.entity_table_ids.length() &&
-        entity_id < self.entity_table_rows.length() else {
-        return None
-      }
-      let table_id = self.entity_table_ids[entity_id]
-      let row_index = self.entity_table_rows[entity_id]
-      guard table_id >= 0 && row_index >= 0 else { return None }
-      guard self.table_storage(table_id) is Some(table_ref) else { return None }
-      guard table_ref.val.column(local_component_id) is Some(column_ref) else {
-        return None
-      }
-      match column_ref.val.payload_at_row(row_index) {
-        Some(payload) => Some(self.component_value(key, entity, payload))
-        None => None
-      }
-    }
-    None => None
+  guard self.entity_has_component_local_id(entity, local_component_id) else {
+    return None
   }
+  (key.access.get)(self, entity)
 }
 
 ///|
@@ -940,30 +768,11 @@ fn[T : EcsPayloadCodec] World::replace_component_value_by_local_id(
       }
     None => ()
   }
-  match self.local_component_storage_type(local_component_id) {
-    Some(SparseSet) => {
-      let store_ref = self.ensure_component_store_for_local_id(
-        local_component_id,
-        SparseSet,
-      )
-      store_ref.val.set(entity, T::to_ecs_payload(value))
-    }
-    Some(Table) => {
-      guard self.table_id_for_entity(entity) is Some(table_id) else {
-        return false
-      }
-      guard self.table_storage(table_id) is Some(table_ref) else {
-        return false
-      }
-      guard self.entity_table_row(entity) is Some(row) else { return false }
-      table_ref.val.replace_writer_at_row(
-        row,
-        local_component_id,
-        ecs_payload_writer(key, value),
-      )
-    }
-    None => false
+  guard self.entity_has_component_local_id(entity, local_component_id) else {
+    return false
   }
+  (key.access.set)(self, entity, value)
+  true
 }
 
 ///|
@@ -983,7 +792,7 @@ fn[T : EcsPayloadCodec] World::replace_component_value_by_key(
 }
 
 ///|
-fn[T : EcsPayloadCodec] World::replace_component_value_at_table_row(
+fn[T] World::replace_component_value_at_table_row(
   self : World,
   key : ComponentKey[T],
   local_component_id : Int,
@@ -995,9 +804,13 @@ fn[T : EcsPayloadCodec] World::replace_component_value_at_table_row(
     return false
   }
   guard self.table_storage(table_id) is Some(table_ref) else { return false }
-  table_ref.val.replace_value_at_row_index(
-    row_index, local_component_id, key, value,
-  )
+  guard TableRow::from_index(row_index) is Some(row) else { return false }
+  guard table_ref.val.entity_at_row(row) is Some(entity) else { return false }
+  guard self.entity_has_component_local_id(entity, local_component_id) else {
+    return false
+  }
+  (key.access.set)(self, entity, value)
+  true
 }
 
 ///|
@@ -1065,14 +878,20 @@ fn World::table_has_component_local_id(
 }
 
 ///|
-fn[T : EcsPayloadCodec] World::component_value_by_table_row_fast(
+fn[T] World::component_value_by_table_row_fast(
   self : World,
+  key : ComponentKey[T],
   local_component_id : Int,
   table_id : Int,
   row_index : Int,
 ) -> T? {
   guard self.table_storage(table_id) is Some(table_ref) else { return None }
-  table_ref.val.value_at_row_index(row_index, local_component_id)
+  guard TableRow::from_index(row_index) is Some(row) else { return None }
+  guard table_ref.val.entity_at_row(row) is Some(entity) else { return None }
+  guard self.entity_has_component_local_id(entity, local_component_id) else {
+    return None
+  }
+  (key.access.get)(self, entity)
 }
 
 ///|
@@ -1156,10 +975,11 @@ fn World::record_sparse_component_added_by_local_id(
   guard self.local_component_storage_type(local_component_id) == Some(SparseSet) else {
     return false
   }
-  guard self.sparse_component_columns.get(local_component_id) is Some(store_ref) else {
+  guard self.definition_component_id(local_component_id) is Some(definition_id) else {
     return false
   }
-  guard store_ref.val.contains(entity) else { return false }
+  let ops = component_ops(definition_id)
+  guard (ops.contains)(self, entity) else { return false }
   let metadata_store_ref = self.ensure_sparse_component_metadata_store_for_local_id(
     local_component_id,
   )
@@ -1185,10 +1005,11 @@ fn World::record_sparse_component_changed_by_local_id(
   guard self.local_component_storage_type(local_component_id) == Some(SparseSet) else {
     return false
   }
-  guard self.sparse_component_columns.get(local_component_id) is Some(store_ref) else {
+  guard self.definition_component_id(local_component_id) is Some(definition_id) else {
     return false
   }
-  guard store_ref.val.contains(entity) else { return false }
+  let ops = component_ops(definition_id)
+  guard (ops.contains)(self, entity) else { return false }
   let metadata_store_ref = self.ensure_sparse_component_metadata_store_for_local_id(
     local_component_id,
   )
@@ -1227,22 +1048,14 @@ fn World::component_payload_by_local_id(
   if self.pending_component_payload(entity, local_component_id) is Some(payload) {
     return Some(payload)
   }
-  match self.local_component_storage_type(local_component_id) {
-    Some(SparseSet) =>
-      match self.sparse_component_columns.get(local_component_id) {
-        Some(store_ref) => store_ref.val.get(entity)
-        None => None
-      }
-    Some(Table) => {
-      guard self.table_id_for_entity(entity) is Some(table_id) else {
-        return None
-      }
-      guard self.table_storage(table_id) is Some(table_ref) else { return None }
-      guard self.entity_table_row(entity) is Some(row) else { return None }
-      table_ref.val.payload_at_row(row, local_component_id)
-    }
-    None => None
+  guard self.entity_has_component_local_id(entity, local_component_id) else {
+    return None
   }
+  guard self.definition_component_id(local_component_id) is Some(definition_id) else {
+    return None
+  }
+  let ops = component_ops(definition_id)
+  (ops.payload)(self, entity)
 }
 
 ///|
@@ -1286,26 +1099,14 @@ fn World::replace_component_payload_by_local_id(
       }
     None => ()
   }
-  match self.local_component_storage_type(local_component_id) {
-    Some(SparseSet) => {
-      let store_ref = self.ensure_component_store_for_local_id(
-        local_component_id,
-        SparseSet,
-      )
-      store_ref.val.set(entity, payload)
-    }
-    Some(Table) => {
-      guard self.table_id_for_entity(entity) is Some(table_id) else {
-        return false
-      }
-      guard self.table_storage(table_id) is Some(table_ref) else {
-        return false
-      }
-      guard self.entity_table_row(entity) is Some(row) else { return false }
-      table_ref.val.replace_payload_at_row(row, local_component_id, payload)
-    }
-    None => false
+  guard self.entity_has_component_local_id(entity, local_component_id) else {
+    return false
   }
+  guard self.definition_component_id(local_component_id) is Some(definition_id) else {
+    return false
+  }
+  let ops = component_ops(definition_id)
+  (ops.set_payload)(self, entity, payload)
 }
 
 ///|
@@ -1324,26 +1125,15 @@ fn World::replace_component_writer_by_local_id(
       }
     None => ()
   }
-  match self.local_component_storage_type(local_component_id) {
-    Some(SparseSet) => {
-      let store_ref = self.ensure_component_store_for_local_id(
-        local_component_id,
-        SparseSet,
-      )
-      store_ref.val.set(entity, writer.to_ecs_payload())
-    }
-    Some(Table) => {
-      guard self.table_id_for_entity(entity) is Some(table_id) else {
-        return false
-      }
-      guard self.table_storage(table_id) is Some(table_ref) else {
-        return false
-      }
-      guard self.entity_table_row(entity) is Some(row) else { return false }
-      table_ref.val.replace_writer_at_row(row, local_component_id, writer)
-    }
-    None => false
+  guard self.entity_has_component_local_id(entity, local_component_id) else {
+    return false
   }
+  guard self.definition_component_id(local_component_id) is Some(definition_id) else {
+    return false
+  }
+  guard writer.component_definition_id == definition_id else { return false }
+  let ops = component_ops(definition_id)
+  (ops.set_payload)(self, entity, writer.to_ecs_payload())
 }
 
 ///|
@@ -1363,18 +1153,16 @@ fn World::replace_component_writer(
 }
 
 ///|
-fn World::remove_sparse_component_payload_by_local_id(
+fn World::remove_component_payload_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
 ) -> EcsPayload? {
-  guard self.local_component_storage_type(local_component_id) == Some(SparseSet) else {
+  guard self.definition_component_id(local_component_id) is Some(definition_id) else {
     return None
   }
-  let removed = match self.sparse_component_columns.get(local_component_id) {
-    Some(store_ref) => store_ref.val.remove(entity)
-    None => None
-  }
+  let ops = component_ops(definition_id)
+  let removed = (ops.remove_payload)(self, entity)
   self.clear_sparse_component_metadata_by_local_id(entity, local_component_id)
   removed
 }
@@ -1389,11 +1177,8 @@ fn World::write_pending_sparse_component_payloads(
     let component_local_id = entry.local_component_id
     let payload = entry.writer.to_ecs_payload()
     if self.local_component_storage_type(component_local_id) == Some(SparseSet) {
-      let store_ref = self.ensure_component_store_for_local_id(
-        component_local_id,
-        SparseSet,
-      )
-      store_ref.val.insert(entity, payload)
+      let ops = component_ops(entry.writer.component_definition_id)
+      ignore((ops.set_payload)(self, entity, payload))
       let metadata_store_ref = self.ensure_sparse_component_metadata_store_for_local_id(
         component_local_id,
       )

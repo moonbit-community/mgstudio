@@ -24,8 +24,13 @@ pub fn StatesPlugin::default() -> StatesPlugin {
 priv struct StatesPluginMarker {}
 
 ///|
+let states_plugin_marker_key_value : @ecs.ResourceKey[StatesPluginMarker] = @ecs.register_resource(
+  debug_name="mgstudio_state::StatesPlugin",
+)
+
+///|
 fn states_plugin_marker_key() -> @ecs.ResourceKey[StatesPluginMarker] {
-  @ecs.register_resource(debug_name="mgstudio_state::StatesPlugin")
+  states_plugin_marker_key_value
 }
 
 ///|

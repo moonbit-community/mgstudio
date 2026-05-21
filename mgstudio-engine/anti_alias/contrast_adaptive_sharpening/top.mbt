@@ -123,7 +123,9 @@ let cas_camera_component_key_ref : Ref[@ecs.ComponentKey[Unit]?] = Ref(None)
 
 ///|
 pub fn[T] cas_register_camera_component_key(key : @ecs.ComponentKey[T]) -> Unit {
-  cas_camera_component_key_ref.val = Some(key.cast())
+  cas_camera_component_key_ref.val = Some(
+    @ecs.component_key_from_id(key.id(), debug_name=key.debug_name()),
+  )
 }
 
 ///|

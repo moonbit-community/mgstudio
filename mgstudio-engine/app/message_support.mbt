@@ -16,8 +16,13 @@
 priv struct MessageUpdateMarker {}
 
 ///|
+let message_update_marker_key_value : @ecs.ResourceKey[MessageUpdateMarker] = @ecs.register_resource(
+  debug_name="mgstudio_app::MessageUpdateMarker",
+)
+
+///|
 fn message_update_marker_key() -> @ecs.ResourceKey[MessageUpdateMarker] {
-  @ecs.register_resource(debug_name="mgstudio_app::MessageUpdateMarker")
+  message_update_marker_key_value
 }
 
 ///|
@@ -116,7 +121,7 @@ pub fn[T : @ecs.Message] ResMut::write(
   message : T,
 ) -> Int {
   let key : @ecs.MessageKey[T] = @ecs.Message::message()
-  self.modify(fn(queue) { queue.write_message(key, message) })
+  res_mut_world_or_abort(self).send_message(key, message)
 }
 
 ///|
@@ -134,7 +139,7 @@ pub fn[T : @ecs.Message + Default] ResMut::write_default(
   self : ResMut[@ecs.Messages[T]],
 ) -> Int {
   let key : @ecs.MessageKey[T] = @ecs.Message::message()
-  self.modify(fn(queue) { queue.write_message_default(key) })
+  res_mut_world_or_abort(self).send_message(key, T::default())
 }
 
 ///|

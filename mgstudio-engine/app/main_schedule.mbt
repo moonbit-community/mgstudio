@@ -84,22 +84,37 @@ pub fn FixedMainScheduleOrder::default() -> FixedMainScheduleOrder {
 }
 
 ///|
+let main_schedule_order_resource_key_value : @ecs.ResourceKey[MainScheduleOrder] = @ecs.register_resource(
+  debug_name="mgstudio_app::MainScheduleOrder",
+)
+
+///|
 pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder] {
-  @ecs.register_resource(debug_name="mgstudio_app::MainScheduleOrder")
+  main_schedule_order_resource_key_value
 }
+
+///|
+let fixed_main_schedule_order_resource_key_value : @ecs.ResourceKey[
+  FixedMainScheduleOrder,
+] = @ecs.register_resource(debug_name="mgstudio_app::FixedMainScheduleOrder")
 
 ///|
 pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[
   FixedMainScheduleOrder,
 ] {
-  @ecs.register_resource(debug_name="mgstudio_app::FixedMainScheduleOrder")
+  fixed_main_schedule_order_resource_key_value
 }
+
+///|
+let main_schedule_runtime_state_resource_key_value : @ecs.ResourceKey[
+  MainScheduleRuntimeState,
+] = @ecs.register_resource(debug_name="mgstudio_app::MainScheduleRuntimeState")
 
 ///|
 fn main_schedule_runtime_state_resource_key() -> @ecs.ResourceKey[
   MainScheduleRuntimeState,
 ] {
-  @ecs.register_resource(debug_name="mgstudio_app::MainScheduleRuntimeState")
+  main_schedule_runtime_state_resource_key_value
 }
 
 ///|

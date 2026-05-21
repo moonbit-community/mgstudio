@@ -14,17 +14,19 @@
 
 ///|
 pub struct MessageKey[T] {
+  priv id : Int
+  priv debug_name : String
   priv queue_key : ResourceKey[Messages[T]]
 }
 
 ///|
 pub fn[T] MessageKey::id(self : MessageKey[T]) -> Int {
-  self.queue_key.id()
+  self.id
 }
 
 ///|
 pub fn[T] MessageKey::debug_name(self : MessageKey[T]) -> String {
-  self.queue_key.debug_name()
+  self.debug_name
 }
 
 ///|
@@ -33,23 +35,87 @@ fn[T] MessageKey::queue_key(self : MessageKey[T]) -> ResourceKey[Messages[T]] {
 }
 
 ///|
-let named_message_queue_registry : @hashmap.HashMap[
-  String,
-  ResourceKey[Messages[Unit]],
+priv struct MessageQueueSlot {
+  mut state : MessageQueueState
+}
+
+///|
+let named_message_queue_registry : @hashmap.HashMap[String, Int] = @hashmap.HashMap([],
+)
+
+///|
+let message_queue_slots_by_id : @hashmap.HashMap[
+  Int,
+  @hashmap.HashMap[Int, MessageQueueSlot],
 ] = @hashmap.HashMap([])
 
 ///|
-pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {
-  let queue_key : ResourceKey[Messages[T]] = if debug_name == "" {
-    register_resource(debug_name~)
-  } else {
-    named_message_queue_registry
-    .get_or_init(debug_name, fn() -> ResourceKey[Messages[Unit]] {
-      register_resource(debug_name~)
-    })
-    .cast()
+fn message_queue_slots(id : Int) -> @hashmap.HashMap[Int, MessageQueueSlot] {
+  message_queue_slots_by_id.get_or_init(id, fn() { @hashmap.HashMap([]) })
+}
+
+///|
+fn[T] message_queue_resource_access_ops(
+  id : Int,
+) -> ResourceAccessOps[Messages[T]] {
+  let slots = message_queue_slots(id)
+  {
+    contains: fn(world) { slots.contains(world.world_id()) },
+    get: fn(world) {
+      match slots.get(world.world_id()) {
+        Some(slot) => Some(Messages::{ slot, })
+        None => None
+      }
+    },
+    set: fn(world, messages) {
+      match slots.get(world.world_id()) {
+        Some(slot) => slot.state = messages.slot.state
+        None =>
+          slots.set(world.world_id(), MessageQueueSlot::{
+            state: messages.slot.state,
+          })
+      }
+    },
+    remove: fn(world) {
+      match slots.get(world.world_id()) {
+        Some(slot) => {
+          let messages = Messages::{ slot, }
+          slots.remove(world.world_id())
+          Some(messages)
+        }
+        None => None
+      }
+    },
   }
-  MessageKey::{ queue_key, }
+}
+
+///|
+fn[T] message_queue_resource_key(
+  id : Int,
+  debug_name : String,
+) -> ResourceKey[Messages[T]] {
+  ResourceKey::{ id, debug_name, access: message_queue_resource_access_ops(id) }
+}
+
+///|
+fn[T] message_key_new(id : Int, debug_name : String) -> MessageKey[T] {
+  MessageKey::{
+    id,
+    debug_name,
+    queue_key: message_queue_resource_key(id, debug_name),
+  }
+}
+
+///|
+pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {
+  let id = if debug_name == "" {
+    allocate_resource_id(debug_name~)
+  } else {
+    named_message_queue_registry.get_or_init(debug_name, fn() {
+      allocate_resource_id(debug_name~)
+    })
+  }
+  message_key_new(id, debug_name)
 }
 
 ///|
@@ -57,12 +123,12 @@ pub fn[T] message_key_from_id(
   id : Int,
   debug_name? : String = "",
 ) -> MessageKey[T] {
-  MessageKey::{ queue_key: resource_key_from_id(id, debug_name~) }
+  message_key_new(id, debug_name)
 }
 
 ///|
 pub(open) trait Message: EcsPayloadCodec {
-  message() -> MessageKey[Self]
+  fn message() -> MessageKey[Self]
 }
 
 ///|
@@ -81,7 +147,7 @@ pub struct MessageQueueState {
 
 ///|
 pub struct Messages[_] {
-  priv state : MessageQueueState
+  priv slot : MessageQueueSlot
 }
 
 ///|
@@ -146,17 +212,17 @@ pub fn MessageQueueState::clear(self : MessageQueueState) -> Unit {
 
 ///|
 pub fn[T] Messages::new() -> Messages[T] {
-  { state: MessageQueueState::new() }
+  { slot: MessageQueueSlot::{ state: MessageQueueState::new() } }
 }
 
 ///|
 pub fn[T] Messages::len(self : Messages[T]) -> Int {
-  self.state.len()
+  self.slot.state.len()
 }
 
 ///|
 pub fn[T] Messages::oldest_message_count(self : Messages[T]) -> Int {
-  self.state.oldest_message_count()
+  self.slot.state.oldest_message_count()
 }
 
 ///|
@@ -164,7 +230,7 @@ pub fn[T : EcsPayloadCodec] Messages::write(
   self : Messages[T],
   message : T,
 ) -> Int {
-  self.state.write(T::to_ecs_payload(message))
+  self.slot.state.write(T::to_ecs_payload(message))
 }
 
 ///|
@@ -176,7 +242,7 @@ pub fn[T : EcsPayloadCodec] Messages::write_batch(
   for message in messages {
     payloads.push(T::to_ecs_payload(message))
   }
-  self.state.write_batch(payloads)
+  self.slot.state.write_batch(payloads)
 }
 
 ///|
@@ -188,12 +254,12 @@ pub fn[T : Default + EcsPayloadCodec] Messages::write_default(
 
 ///|
 pub fn[T] Messages::update(self : Messages[T]) -> Unit {
-  self.state.update()
+  self.slot.state.update()
 }
 
 ///|
 pub fn[T] Messages::clear(self : Messages[T]) -> Unit {
-  self.state.clear()
+  self.slot.state.clear()
 }
 
 ///|
@@ -237,13 +303,13 @@ fn queue_unread_len_for_segment(
 ///|
 fn[T] Messages::unread_len(self : Messages[T], last_message_count : Int) -> Int {
   queue_unread_len_for_segment(
-    self.state.messages_a_start,
-    self.state.messages_a,
+    self.slot.state.messages_a_start,
+    self.slot.state.messages_a,
     last_message_count,
   ) +
   queue_unread_len_for_segment(
-    self.state.messages_b_start,
-    self.state.messages_b,
+    self.slot.state.messages_b_start,
+    self.slot.state.messages_b,
     last_message_count,
   )
 }
@@ -255,26 +321,42 @@ fn[T] Messages::unread(
 ) -> Array[(Int, EcsPayload)] {
   let unread : Array[(Int, EcsPayload)] = []
   if last_message_count <
-    self.state.messages_a_start + self.state.messages_a.length() {
+    self.slot.state.messages_a_start + self.slot.state.messages_a.length() {
     let offset = queue_start_offset(
-      self.state.messages_a_start,
+      self.slot.state.messages_a_start,
       last_message_count,
     )
-    for i in offset..<self.state.messages_a.length() {
-      unread.push((self.state.messages_a_start + i, self.state.messages_a[i]))
+    for i in offset..<self.slot.state.messages_a.length() {
+      unread.push(
+        (self.slot.state.messages_a_start + i, self.slot.state.messages_a[i]),
+      )
     }
   }
   if last_message_count <
-    self.state.messages_b_start + self.state.messages_b.length() {
+    self.slot.state.messages_b_start + self.slot.state.messages_b.length() {
     let offset = queue_start_offset(
-      self.state.messages_b_start,
+      self.slot.state.messages_b_start,
       last_message_count,
     )
-    for i in offset..<self.state.messages_b.length() {
-      unread.push((self.state.messages_b_start + i, self.state.messages_b[i]))
+    for i in offset..<self.slot.state.messages_b.length() {
+      unread.push(
+        (self.slot.state.messages_b_start + i, self.slot.state.messages_b[i]),
+      )
     }
   }
   unread
+}
+
+///|
+fn message_cursor_advance_after_unread(
+  previous_count : Int,
+  unread_values : Array[(Int, EcsPayload)],
+) -> Int {
+  if unread_values.length() == 0 {
+    previous_count
+  } else {
+    unread_values[unread_values.length() - 1].0 + 1
+  }
 }
 
 ///|
@@ -283,8 +365,13 @@ pub(all) struct MessageRegistryState {
 }
 
 ///|
+let message_registry_resource_key_value : ResourceKey[MessageRegistryState] = register_resource(
+  debug_name="mgstudio_ecs::message::MessageRegistry",
+)
+
+///|
 fn message_registry_resource_key() -> ResourceKey[MessageRegistryState] {
-  register_resource(debug_name="mgstudio_ecs::message::MessageRegistry")
+  message_registry_resource_key_value
 }
 
 ///|
@@ -379,9 +466,8 @@ pub fn[T] World::clear_messages(self : World, key : MessageKey[T]) -> Unit {
 pub fn World::update_messages(self : World) -> Unit {
   let registry = world_message_registry(self)
   for id in registry.ids {
-    let key : ResourceKey[Messages[Unit]] = resource_key_from_id(
-      id,
-      debug_name="mgstudio_ecs::message::Messages",
+    let key : ResourceKey[Messages[Unit]] = message_queue_resource_key(
+      id, "mgstudio_ecs::message::Messages",
     )
     let access = self.resource(key)
     guard access.get() is Some(queue) else { continue }
@@ -454,7 +540,7 @@ pub fn[T] Messages::get_cursor(self : Messages[T]) -> MessageCursor[T] {
 
 ///|
 pub fn[T] Messages::get_cursor_current(self : Messages[T]) -> MessageCursor[T] {
-  { last_message_count: self.state.message_count }
+  { last_message_count: self.slot.state.message_count }
 }
 
 ///|
@@ -519,7 +605,7 @@ pub fn[T] MessageCursor::clear(
   self : MessageCursor[T],
   messages : Messages[T],
 ) -> Unit {
-  self.last_message_count = messages.state.message_count
+  self.last_message_count = messages.slot.state.message_count
 }
 
 ///|
@@ -533,7 +619,10 @@ pub fn[T : Message] MessageCursor::read(
   for entry in unread_values {
     unread.push(decode_message_payload(key, entry.0, entry.1))
   }
-  self.last_message_count = messages.state.message_count
+  self.last_message_count = message_cursor_advance_after_unread(
+    self.last_message_count,
+    unread_values,
+  )
   unread
 }
 
@@ -548,7 +637,10 @@ pub fn[T : Message] MessageCursor::read_mut(
   for entry in unread_values {
     unread.push(decode_message_mut_payload(key, entry.0, entry.1))
   }
-  self.last_message_count = messages.state.message_count
+  self.last_message_count = message_cursor_advance_after_unread(
+    self.last_message_count,
+    unread_values,
+  )
   unread
 }
 
@@ -619,7 +711,7 @@ pub fn[T] MessageMutator::is_empty(self : MessageMutator[T]) -> Bool {
 pub fn[T] MessageReader::clear(self : MessageReader[T]) -> Unit {
   let queue = self.world.resource(self.key.queue_key()).get()
   match queue {
-    Some(queue) => self.cursor_ref.val = queue.state.message_count
+    Some(queue) => self.cursor_ref.val = queue.slot.state.message_count
     None => self.cursor_ref.val = 0
   }
 }
@@ -628,7 +720,7 @@ pub fn[T] MessageReader::clear(self : MessageReader[T]) -> Unit {
 pub fn[T] MessageMutator::clear(self : MessageMutator[T]) -> Unit {
   let queue = self.world.resource(self.key.queue_key()).get()
   match queue {
-    Some(queue) => self.cursor_ref.val = queue.state.message_count
+    Some(queue) => self.cursor_ref.val = queue.slot.state.message_count
     None => self.cursor_ref.val = 0
   }
 }
@@ -654,7 +746,10 @@ pub fn[T : EcsPayloadCodec] MessageReader::read(
   for entry in unread_values {
     unread.push(decode_message_payload(self.key, entry.0, entry.1))
   }
-  self.cursor_ref.val = queue.state.message_count
+  self.cursor_ref.val = message_cursor_advance_after_unread(
+    self.cursor_ref.val,
+    unread_values,
+  )
   unread
 }
 
@@ -669,7 +764,10 @@ pub fn[T : EcsPayloadCodec] MessageMutator::read(
   for entry in unread_values {
     unread.push(decode_message_mut_payload(self.key, entry.0, entry.1))
   }
-  self.cursor_ref.val = queue.state.message_count
+  self.cursor_ref.val = message_cursor_advance_after_unread(
+    self.cursor_ref.val,
+    unread_values,
+  )
   unread
 }
 

@@ -1042,7 +1042,7 @@ fn World::bundle_migrate_new_archetype_new_table(
     target_component_local_ids.length() > 0 {
     let appended_row = match
       self.ensure_table_storage(to_table_id).val.append_row_from_source_table(
-        entity, source_table, source_row, pending_payloads,
+        self, entity, source_table, source_row, pending_payloads,
       ) {
       Some(row) => Some(row)
       None =>

@@ -149,7 +149,7 @@ fn erased_prepare_next_frame_assets_debug_name() -> String {
 }
 
 ///|
-pub fn[A] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
+pub fn[A : @ecs.EcsPayloadCodec] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
   ErasedPrepareNextFrameAssets[A],
 ] {
   @ecs.register_resource(

@@ -13,9 +13,15 @@
 // limitations under the License.
 
 ///|
-pub(all) struct ComponentOps {
+struct ComponentOps {
   definition_id : Int
   debug_name : String
+  contains : (World, @core.Entity) -> Bool
+  for_each_entity : (World, (@core.Entity) -> Unit) -> Unit
+  for_each_payload : (World, (@core.Entity, EcsPayload) -> Unit) -> Unit
+  payload : (World, @core.Entity) -> EcsPayload?
+  set_payload : (World, @core.Entity, EcsPayload) -> Bool
+  remove_payload : (World, @core.Entity) -> EcsPayload?
 }
 
 ///|
@@ -23,14 +29,34 @@ let component_ops_registry : @hashmap.HashMap[Int, ComponentOps] = @hashmap.Hash
 )
 
 ///|
-fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {
+fn[T : EcsPayloadCodec] component_ops_for_key(
+  key : ComponentKey[T],
+) -> ComponentOps {
   let definition_id = key.id()
   let debug_name = key.debug_name()
-  { definition_id, debug_name }
+  {
+    definition_id,
+    debug_name,
+    contains: key.access.contains,
+    for_each_entity: fn(world, visit) {
+      (key.access.for_each)(world, fn(entity, _value) { visit(entity) })
+    },
+    for_each_payload: fn(world, visit) {
+      (key.access.for_each)(world, fn(entity, value) {
+        visit(entity, T::to_ecs_payload(value))
+      })
+    },
+    payload: key.access.payload,
+    set_payload: key.access.set_payload,
+    remove_payload: key.access.remove_payload,
+  }
 }
 
 ///|
-fn[T] register_component_ops(component_id : Int, key : ComponentKey[T]) -> Unit {
+fn[T : EcsPayloadCodec] register_component_ops(
+  component_id : Int,
+  key : ComponentKey[T],
+) -> Unit {
   if component_ops_registry.get(component_id) is Some(_) {
     return
   }

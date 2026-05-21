@@ -33,7 +33,7 @@ pub fn[T] World::resource(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::get_resource_mut(
+pub fn[T] World::get_resource_mut(
   self : World,
   key : ResourceKey[T],
 ) -> ResourceMut[T]? raise EcsError {
@@ -44,7 +44,7 @@ pub fn[T : EcsPayloadCodec] World::get_resource_mut(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::get_resource_ref_mut(
+pub fn[T] World::get_resource_ref_mut(
   self : World,
   key : ResourceKey[T],
 ) -> Ref[T]? raise EcsError {
@@ -55,7 +55,7 @@ pub fn[T : EcsPayloadCodec] World::get_resource_ref_mut(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::get_resource_ref(
+pub fn[T] World::get_resource_ref(
   self : World,
   key : ResourceKey[T],
 ) -> Ref[T]? raise EcsError {
@@ -67,62 +67,44 @@ pub fn[T : EcsPayloadCodec] World::get_resource_ref(
 
 ///|
 pub fn[T] ResourceAccess::is_present(self : ResourceAccess[T]) -> Bool {
-  self.world.resources.contains(self.key.id())
+  (self.key.access.contains)(self.world)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
-  guard self.world.resources.get(self.key.id()) is Some(slot) else {
-    return None
-  }
-  try self.world.resource_value(self.key, slot.payload) catch {
-    _ => None
-  } noraise {
-    value => Some(value)
-  }
+pub fn[T] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
+  (self.key.access.get)(self.world)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ResourceAccess::get_mut(
+pub fn[T] ResourceAccess::get_mut(
   self : ResourceAccess[T],
 ) -> ResourceMut[T]? raise EcsError {
   self.world.get_resource_mut(self.key)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ResourceAccess::insert(
-  self : ResourceAccess[T],
-  value : T,
-) -> Unit {
+pub fn[T] ResourceAccess::insert(self : ResourceAccess[T], value : T) -> Unit {
   self.world.insert_resource(self.key, value)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ResourceAccess::set(
-  self : ResourceAccess[T],
-  value : T,
-) -> Bool {
+pub fn[T] ResourceAccess::set(self : ResourceAccess[T], value : T) -> Bool {
   self.insert(value)
   true
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ResourceAccess::upsert(
-  self : ResourceAccess[T],
-  value : T,
-) -> Unit {
+pub fn[T] ResourceAccess::upsert(self : ResourceAccess[T], value : T) -> Unit {
   self.insert(value)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ResourceAccess::remove(
-  self : ResourceAccess[T],
-) -> T? {
+pub fn[T] ResourceAccess::remove(self : ResourceAccess[T]) -> T? {
   try! self.world.remove_resource(self.key)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ResourceAccess::update(
+pub fn[T] ResourceAccess::update(
   self : ResourceAccess[T],
   update : (T) -> T,
 ) -> Bool {
@@ -149,35 +131,36 @@ fn[T] resource_mut_key_or_abort(item : ResourceMut[T]) -> ResourceKey[T] {
 }
 
 ///|
-fn[T : EcsPayloadCodec] resource_mut_value_or_abort(item : ResourceMut[T]) -> T {
+fn[T] resource_mut_value_or_abort(item : ResourceMut[T]) -> T {
   let world = resource_mut_world_or_abort(item)
   let key = resource_mut_key_or_abort(item)
-  match world.resources.get(key.id()) {
-    Some(slot) => try! world.resource_value(key, slot.payload)
+  match (key.access.get)(world) {
+    Some(value) => value
     None => abort("ResourceMut expected a fetched resource")
   }
 }
 
 ///|
-fn[T : EcsPayloadCodec] resource_mut_replace_value_or_abort(
+fn[T] resource_mut_replace_value_or_abort(
   item : ResourceMut[T],
   value : T,
 ) -> Unit {
   let world = resource_mut_world_or_abort(item)
   let key = resource_mut_key_or_abort(item)
-  match world.resources.get(key.id()) {
-    Some(slot) => slot.payload = T::to_ecs_payload(value)
-    None => abort("ResourceMut expected a fetched resource")
+  if (key.access.contains)(world) {
+    (key.access.set)(world, value)
+  } else {
+    abort("ResourceMut expected a fetched resource")
   }
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ResourceMut::peek(self : ResourceMut[T]) -> T {
+pub fn[T] ResourceMut::peek(self : ResourceMut[T]) -> T {
   resource_mut_value_or_abort(self)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ResourceMut::value(self : ResourceMut[T]) -> T {
+pub fn[T] ResourceMut::value(self : ResourceMut[T]) -> T {
   self.peek()
 }
 
@@ -258,13 +241,14 @@ pub fn[T : EcsPayloadCodec, R] ResourceMut::modify(
 ) -> R {
   let value = self.peek()
   let result = f(value)
+  resource_mut_replace_value_or_abort(self, value)
   self.set_changed(loc~)
   result
 }
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] ResourceMut::update(
+pub fn[T] ResourceMut::update(
   self : ResourceMut[T],
   f : (T) -> T,
   loc~ : SourceLoc,
@@ -274,7 +258,7 @@ pub fn[T : EcsPayloadCodec] ResourceMut::update(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] ResourceMut::set(
+pub fn[T] ResourceMut::set(
   self : ResourceMut[T],
   value : T,
   loc~ : SourceLoc,

@@ -83,7 +83,7 @@ fn[S : States] state_type_debug_name(state : S) -> String {
 }
 
 ///|
-fn[T] registered_typed_resource_key(
+fn[T : @ecs.EcsPayloadCodec] registered_typed_resource_key(
   registry : Ref[@hashmap.HashMap[String, Int]],
   debug_name : String,
 ) -> @ecs.ResourceKey[T] {

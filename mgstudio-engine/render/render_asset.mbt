@@ -54,7 +54,7 @@ pub struct RenderAssets[A] {
 
 ///|
 pub(open) trait RenderAssetResource: @ecs.EcsPayloadCodec {
-  render_asset_resource_debug_name() -> String
+  fn render_asset_resource_debug_name() -> String
 }
 
 ///|
@@ -343,7 +343,7 @@ fn prepare_next_frame_assets_debug_name() -> String {
 }
 
 ///|
-pub fn[A] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
+pub fn[A : @ecs.EcsPayloadCodec] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
   PrepareNextFrameAssets[A],
 ] {
   @ecs.register_resource(debug_name=prepare_next_frame_assets_debug_name())

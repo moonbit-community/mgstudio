@@ -102,12 +102,17 @@ priv struct AssetProcessorRegistryState {
 }
 
 ///|
+let asset_processor_registry_state_resource_key_value : @ecs.ResourceKey[
+  AssetProcessorRegistryState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_asset::AssetProcessorRegistryState",
+)
+
+///|
 fn asset_processor_registry_state_resource_key() -> @ecs.ResourceKey[
   AssetProcessorRegistryState,
 ] {
-  @ecs.register_resource(
-    debug_name="mgstudio_asset::AssetProcessorRegistryState",
-  )
+  asset_processor_registry_state_resource_key_value
 }
 
 ///|

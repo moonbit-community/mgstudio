@@ -43,7 +43,7 @@ pub struct Mut[T] {
 /// provided storage reference; types that need custom in-place assignment can
 /// override it.
 pub(open) trait Mutable {
-  set(Self, Ref[Self]) -> Unit = _
+  fn set(Self, Ref[Self]) -> Unit = _
 }
 
 ///|
@@ -53,7 +53,7 @@ impl Mutable with set(self, value) {
 
 ///|
 pub(open) trait Bundle {
-  insert_into(
+  fn insert_into(
     self : Self,
     world : World,
     entity : @core.Entity,
@@ -109,7 +109,7 @@ fn[T : EcsPayloadCodec] mut_value_or_abort(item : Mut[T]) -> T {
     (Some(table_id), Some(row_index), Some(local_component_id)) =>
       match
         world.component_value_by_table_row_fast(
-          local_component_id, table_id, row_index,
+          key, local_component_id, table_id, row_index,
         ) {
         Some(value) => return value
         None => ()

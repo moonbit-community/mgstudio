@@ -13,19 +13,18 @@
 // limitations under the License.
 
 ///|
-pub fn[T : EcsPayloadCodec] World::insert_resource(
+pub fn[T] World::insert_resource(
   self : World,
   key : ResourceKey[T],
   value : T,
 ) -> Unit {
-  let existed = self.resources.contains(key.id())
-  let payload = T::to_ecs_payload(value)
+  let existed = (key.access.contains)(self)
+  (key.access.set)(self, value)
   if existed {
     guard self.resources.get(key.id()) is Some(slot) else { return }
-    slot.payload = payload
+    ignore(slot)
   } else {
     self.resources.set(key.id(), ResourceSlot::{
-      payload,
       added_tick: None,
       changed_tick: None,
       changed_caller: None,
@@ -38,28 +37,25 @@ pub fn[T : EcsPayloadCodec] World::insert_resource(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::get_resource(
+pub fn[T] World::get_resource(
   self : World,
   key : ResourceKey[T],
 ) -> T? raise EcsError {
-  match self.resources.get(key.id()) {
-    Some(slot) => Some(self.resource_value(key, slot.payload))
-    None => None
-  }
+  (key.access.get)(self)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::remove_resource(
+pub fn[T] World::remove_resource(
   self : World,
   key : ResourceKey[T],
 ) -> T? raise EcsError {
-  guard self.get_resource(key) is Some(value) else { return None }
+  guard (key.access.remove)(self) is Some(value) else { return None }
   self.resources.remove(key.id())
   Some(value)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::update_resource(
+pub fn[T] World::update_resource(
   self : World,
   key : ResourceKey[T],
   update : (T) -> T,
@@ -68,19 +64,6 @@ pub fn[T : EcsPayloadCodec] World::update_resource(
   let new_value = update(old_value)
   self.insert_resource(key, new_value)
   true
-}
-
-///|
-fn[T : EcsPayloadCodec] World::resource_value(
-  _self : World,
-  key : ResourceKey[T],
-  payload : EcsPayload,
-) -> T raise EcsError {
-  match T::from_ecs_payload(payload) {
-    Some(value) => value
-    None =>
-      raise ResourceTypeMismatch(key.id(), key.debug_name(), "payload mismatch")
-  }
 }
 
 ///|

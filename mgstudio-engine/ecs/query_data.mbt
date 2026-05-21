@@ -118,21 +118,52 @@ fn[T : EcsPayloadCodec] QueryDataFetchPlan::value_at_table_row(
   row_index : Int,
 ) -> T? {
   match self.table_column_ref(world, offset, table_id) {
-    Some(column_ref) => column_ref.val.value_at_row_unchecked(row_index)
+    Some(column_ref) => {
+      guard row_index >= 0 &&
+        row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
+        return None
+      }
+      guard offset >= 0 && offset < self.local_component_ids.length() else {
+        return None
+      }
+      let local_component_id = self.local_component_ids[offset]
+      guard world.definition_component_id(local_component_id)
+        is Some(definition_id) else {
+        return None
+      }
+      guard world.table_storage(table_id) is Some(table_ref) else {
+        return None
+      }
+      guard TableRow::from_index(row_index) is Some(row) else { return None }
+      guard table_ref.val.entity_at_row(row) is Some(entity) else {
+        return None
+      }
+      let ops = component_ops(definition_id)
+      match (ops.payload)(world, entity) {
+        Some(payload) => T::from_ecs_payload(payload)
+        None => None
+      }
+    }
     None => None
   }
 }
 
 ///|
 pub(open) trait QueryData {
-  matches(World, @core.Entity) -> Bool
-  fetch(World, @core.Entity) -> Self raise EcsError
-  prepare_fetch_plan(World) -> QueryDataFetchPlan = _
-  append_fetch_plan(World, QueryDataFetchPlan) -> Unit = _
-  fetch_plan_size() -> Int = _
-  fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
-  fetch_table_row_with_plan(World, @core.Entity, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
-  fetch_table_row_with_plan_offset(
+  fn matches(World, @core.Entity) -> Bool
+  fn fetch(World, @core.Entity) -> Self raise EcsError
+  fn prepare_fetch_plan(World) -> QueryDataFetchPlan = _
+  fn append_fetch_plan(World, QueryDataFetchPlan) -> Unit = _
+  fn fetch_plan_size() -> Int = _
+  fn fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
+  fn fetch_table_row_with_plan(
+    World,
+    @core.Entity,
+    Int,
+    Int,
+    QueryDataFetchPlan,
+  ) -> Self raise EcsError = _
+  fn fetch_table_row_with_plan_offset(
     World,
     @core.Entity,
     Int,
@@ -140,8 +171,8 @@ pub(open) trait QueryData {
     QueryDataFetchPlan,
     Int,
   ) -> Self raise EcsError = _
-  fetch_sparse_anchor(World, @core.Entity, Int, EcsPayload, Int, Int) -> Self raise EcsError = _
-  fetch_sparse_anchor_with_plan(
+  fn fetch_sparse_anchor(World, @core.Entity, Int, EcsPayload, Int, Int) -> Self raise EcsError = _
+  fn fetch_sparse_anchor_with_plan(
     World,
     @core.Entity,
     Int,
@@ -150,7 +181,7 @@ pub(open) trait QueryData {
     Int,
     QueryDataFetchPlan,
   ) -> Self raise EcsError = _
-  fetch_sparse_anchor_with_plan_offset(
+  fn fetch_sparse_anchor_with_plan_offset(
     World,
     @core.Entity,
     Int,
@@ -160,14 +191,14 @@ pub(open) trait QueryData {
     QueryDataFetchPlan,
     Int,
   ) -> Self raise EcsError = _
-  mentions_component(Int) -> Bool
-  matches_component_set((Int) -> Bool) -> Bool
-  collect_access(QueryDataAccess) -> Unit = _
-  requires_entity_check() -> Bool
-  is_dense(World) -> Bool = _
-  iteration_anchor_component() -> Int?
-  iteration_anchor_components() -> Array[Int] = _
-  contiguous_compatible() -> Bool
+  fn mentions_component(Int) -> Bool
+  fn matches_component_set((Int) -> Bool) -> Bool
+  fn collect_access(QueryDataAccess) -> Unit = _
+  fn requires_entity_check() -> Bool
+  fn is_dense(World) -> Bool = _
+  fn iteration_anchor_component() -> Int?
+  fn iteration_anchor_components() -> Array[Int] = _
+  fn contiguous_compatible() -> Bool
 }
 
 ///|
@@ -736,7 +767,7 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
   let value_at_row = match local_component_id {
     Some(local_component_id) =>
       world.component_value_by_table_row_fast(
-        local_component_id, table_id, row_index,
+        key, local_component_id, table_id, row_index,
       )
     None => None
   }
@@ -1491,7 +1522,7 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
   let value_at_row = match world.local_component_id(key.id()) {
     Some(local_component_id) =>
       world.component_value_by_table_row_fast(
-        local_component_id, table_id, row_index,
+        key, local_component_id, table_id, row_index,
       )
     None => None
   }

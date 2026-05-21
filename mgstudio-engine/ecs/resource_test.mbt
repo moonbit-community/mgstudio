@@ -65,25 +65,6 @@ test "ecs resource: update missing returns false" {
 }
 
 ///|
-test "ecs resource: type mismatch diagnostics fail fast" {
-  let world = World::new()
-  let res_config : ResourceKey[RuntimeConfig] = register_resource(
-    debug_name="decode_runtime_config",
-  )
-  let res_broken : ResourceKey[BrokenConfig] = res_config.cast()
-
-  world.insert_resource(res_config, RuntimeConfig::{ fps: 144 })
-
-  let result : Result[BrokenConfig?, EcsError] = try? world.get_resource(
-    res_broken,
-  )
-  guard result is Err(ResourceTypeMismatch(key_id, _debug_name, _actual)) else {
-    fail("expected resource type mismatch diagnostics")
-  }
-  debug_inspect(key_id == res_config.id(), content="true")
-}
-
-///|
 test "ecs resource: get_resource reads world storage" {
   let world = World::new()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(

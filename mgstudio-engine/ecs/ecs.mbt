@@ -15,7 +15,7 @@
 ///|
 /// ECS component value constraint.
 pub(open) trait Component: EcsPayloadCodec {
-  component() -> ComponentKey[Self]
+  fn component() -> ComponentKey[Self]
 }
 
 ///|
@@ -27,9 +27,10 @@ pub(open) trait ResourceData: EcsPayloadCodec {}
 pub(open) trait EventData: EcsPayloadCodec {}
 
 ///|
-pub struct ComponentKey[_] {
+pub struct ComponentKey[T] {
   priv id : Int
   priv debug_name : String
+  priv access : ComponentAccess[T]
 }
 
 ///|
@@ -43,14 +44,10 @@ pub fn[T] ComponentKey::debug_name(self : ComponentKey[T]) -> String {
 }
 
 ///|
-pub fn[U, T] ComponentKey::cast(self : ComponentKey[T]) -> ComponentKey[U] {
-  ComponentKey::{ id: self.id, debug_name: self.debug_name }
-}
-
-///|
-pub struct ResourceKey[_] {
+pub struct ResourceKey[T] {
   priv id : Int
   priv debug_name : String
+  priv access : ResourceAccessOps[T]
 }
 
 ///|
@@ -61,11 +58,6 @@ pub fn[T] ResourceKey::id(self : ResourceKey[T]) -> Int {
 ///|
 pub fn[T] ResourceKey::debug_name(self : ResourceKey[T]) -> String {
   self.debug_name
-}
-
-///|
-pub fn[U, T] ResourceKey::cast(self : ResourceKey[T]) -> ResourceKey[U] {
-  ResourceKey::{ id: self.id, debug_name: self.debug_name }
 }
 
 ///|
@@ -125,51 +117,92 @@ let next_event_id_ref : Ref[Int] = Ref(1)
 let next_world_id_ref : Ref[Int] = Ref(1)
 
 ///|
-let resource_ids_by_debug_name : @hashmap.HashMap[String, Int] = @hashmap.HashMap([],
-)
-
-///|
-pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
+pub fn[T : EcsPayloadCodec] register_component(
+  debug_name? : String = "",
+) -> ComponentKey[T] {
   let id = next_component_id_ref.val
   next_component_id_ref.val = id + 1
   ignore(component_metadata_ref(id, debug_name~))
-  let key = ComponentKey::{ id, debug_name }
+  let key = ComponentKey::{ id, debug_name, access: component_access_new() }
   register_component_ops(id, key)
   key
 }
 
 ///|
-pub fn[T] component_key_from_id(
+fn allocate_resource_id(debug_name? : String = "") -> Int {
+  ignore(debug_name)
+  let id = next_resource_id_ref.val
+  next_resource_id_ref.val = id + 1
+  id
+}
+
+///|
+pub fn[T : EcsPayloadCodec] register_resource(
+  debug_name? : String = "",
+) -> ResourceKey[T] {
+  let id = allocate_resource_id(debug_name~)
+  let key = ResourceKey::{ id, debug_name, access: resource_access_ops_new() }
+  register_resource_ops(id, key)
+  key
+}
+
+///|
+pub fn[T : EcsPayloadCodec] component_key_from_id(
   id : Int,
   debug_name? : String = "",
 ) -> ComponentKey[T] {
-  ignore(component_metadata_ref(id, debug_name~))
-  let key = ComponentKey::{ id, debug_name }
-  register_component_ops(id, key)
-  key
+  let ops = component_ops(id)
+  let access = ComponentAccess::{
+    contains: ops.contains,
+    get: fn(world, entity) {
+      match (ops.payload)(world, entity) {
+        Some(payload) => T::from_ecs_payload(payload)
+        None => None
+      }
+    },
+    set: fn(world, entity, value) {
+      ignore((ops.set_payload)(world, entity, T::to_ecs_payload(value)))
+    },
+    for_each: fn(world, visit) {
+      (ops.for_each_payload)(world, fn(entity, payload) {
+        match T::from_ecs_payload(payload) {
+          Some(value) => visit(entity, value)
+          None => ()
+        }
+      })
+    },
+    payload: ops.payload,
+    set_payload: ops.set_payload,
+    remove_payload: ops.remove_payload,
+  }
+  ComponentKey::{ id, debug_name, access }
 }
 
 ///|
-pub fn[T] register_resource(debug_name? : String = "") -> ResourceKey[T] {
-  if debug_name != "" {
-    if resource_ids_by_debug_name.get(debug_name) is Some(id) {
-      return ResourceKey::{ id, debug_name }
-    }
-  }
-  let id = next_resource_id_ref.val
-  next_resource_id_ref.val = id + 1
-  if debug_name != "" {
-    resource_ids_by_debug_name.set(debug_name, id)
-  }
-  ResourceKey::{ id, debug_name }
-}
-
-///|
-pub fn[T] resource_key_from_id(
+pub fn[T : EcsPayloadCodec] resource_key_from_id(
   id : Int,
   debug_name? : String = "",
 ) -> ResourceKey[T] {
-  ResourceKey::{ id, debug_name }
+  let ops = resource_ops(id)
+  let access = ResourceAccessOps::{
+    contains: ops.contains,
+    get: fn(world) {
+      match (ops.payload)(world) {
+        Some(payload) => T::from_ecs_payload(payload)
+        None => None
+      }
+    },
+    set: fn(world, value) {
+      ignore((ops.set_payload)(world, T::to_ecs_payload(value)))
+    },
+    remove: fn(world) {
+      match (ops.remove_payload)(world) {
+        Some(payload) => T::from_ecs_payload(payload)
+        None => None
+      }
+    },
+  }
+  ResourceKey::{ id, debug_name, access }
 }
 
 ///|
@@ -199,7 +232,6 @@ pub(all) suberror EcsError {
 
 ///|
 struct ResourceSlot {
-  mut payload : EcsPayload
   mut added_tick : @core.Tick?
   mut changed_tick : @core.Tick?
   mut changed_caller : String?
@@ -407,17 +439,9 @@ pub struct World {
   priv mut pending_component_payload_context : PendingComponentPayloadContext?
   priv mut active_query_iteration_count : Int
   priv tables : Map[Int, Ref[RawTable]]
-  priv sparse_component_columns : Map[
-    Int,
-    Ref[@core.ComponentStore[EcsPayload]],
-  ]
   priv sparse_component_metadata : Map[
     Int,
     Ref[@core.ComponentStore[ComponentTickMetadata]],
-  ]
-  priv component_store_cache_by_definition_id : Map[
-    Int,
-    Ref[@core.ComponentStore[EcsPayload]],
   ]
   priv mut next_archetype_id : Int
   priv mut next_table_id : Int
@@ -488,9 +512,7 @@ pub fn World::new() -> World {
     pending_component_payload_context: None,
     active_query_iteration_count: 0,
     tables: {},
-    sparse_component_columns: {},
     sparse_component_metadata: {},
-    component_store_cache_by_definition_id: {},
     next_archetype_id: 1,
     next_table_id: 1,
     next_bundle_id: 1,
@@ -619,9 +641,8 @@ pub fn World::despawn(
   self.mark_structure_changed()
   for entry in removed_components {
     let key_id = entry.0
-    if self.local_component_id(key_id) is Some(local_id) &&
-      self.local_component_storage_type(local_id) == Some(SparseSet) {
-      ignore(self.remove_sparse_component_payload_by_local_id(entity, local_id))
+    if self.local_component_id(key_id) is Some(local_id) {
+      ignore(self.remove_component_payload_by_local_id(entity, local_id))
     }
     self.run_remove_observers(entity, key_id)
     self.ensure_removed_component_messages(key_id).val.send(
@@ -707,13 +728,7 @@ pub fn[T] World::remove_by_key(
   self.run_component_replace_hooks(entity, key.id(), caller~)
   self.run_replace_observers(entity, key.id())
   self.run_component_remove_hooks(entity, key.id(), caller~)
-  if self.local_component_storage_type(component_local_id) == Some(SparseSet) {
-    ignore(
-      self.remove_sparse_component_payload_by_local_id(
-        entity, component_local_id,
-      ),
-    )
-  }
+  ignore(self.remove_component_payload_by_local_id(entity, component_local_id))
   self.entity_remove_component_local_id(entity, component_local_id)
   self.refresh_entity_archetype_after_component_remove(
     entity, component_local_id,
@@ -838,24 +853,6 @@ fn World::entity_lifecycle_generation(self : World) -> Int {
 ///|
 fn World::mark_entity_lifecycle_changed(self : World) -> Unit {
   self.entity_lifecycle_generation = self.entity_lifecycle_generation + 1
-}
-
-///|
-fn World::ensure_component_store_for_local_id(
-  self : World,
-  local_id : Int,
-  storage_type : ComponentStorageType,
-) -> Ref[@core.ComponentStore[EcsPayload]] {
-  match storage_type {
-    Table =>
-      abort(
-        "Table component storage is backed by RawTable; sparse component store lookup is invalid for local component id \{local_id.to_string()}",
-      )
-    SparseSet =>
-      self.sparse_component_columns.get_or_init(local_id, fn() {
-        Ref(@core.ComponentStore::new())
-      })
-  }
 }
 
 ///|

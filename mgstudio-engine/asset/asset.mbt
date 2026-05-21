@@ -215,8 +215,13 @@ fn AssetServer::reserve_typed_asset_handle_id(
 }
 
 ///|
+let asset_server_resource_key_value : @ecs.ResourceKey[AssetServer] = @ecs.register_resource(
+  debug_name="mgstudio_asset::AssetServer",
+)
+
+///|
 pub fn asset_server_resource_key() -> @ecs.ResourceKey[AssetServer] {
-  @ecs.register_resource(debug_name="mgstudio_asset::AssetServer")
+  asset_server_resource_key_value
 }
 
 ///|

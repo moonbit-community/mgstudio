@@ -31,7 +31,7 @@ pub impl Component for ComponentColumnCacheValue with component() {
 pub impl Mutable for ComponentColumnCacheValue
 
 ///|
-test "ecs component column: cached table values write through raw column" {
+test "ecs component column: cached table values write through typed storage" {
   let world = World::new()
   let entity = world.spawn()
   try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
@@ -42,10 +42,6 @@ test "ecs component column: cached table values write through raw column" {
   }
   guard world.entity_table_row(entity) is Some(table_row) else {
     fail("expected table row")
-  }
-  guard world.local_component_id(component_column_cache_value_key.id())
-    is Some(local_component_id) else {
-    fail("expected local component id")
   }
   guard world.component_column(component_column_cache_value_key)
     is Some(component_column) else {
@@ -60,27 +56,15 @@ test "ecs component column: cached table values write through raw column" {
     component_column.set_tick_only(entity, ComponentColumnCacheValue::{ x: 2 }),
   )
 
-  guard world.table_storage(table_id) is Some(table_ref) else {
-    fail("expected table storage")
-  }
-  guard table_ref.val.column(local_component_id) is Some(column_ref) else {
-    fail("expected raw table column")
-  }
-  guard raw_table_value_column_kernel_value(
-      column_ref.val.storage,
-      table_row.index(),
-    )
-    is Some(raw_value) else {
-    fail("expected raw column value")
-  }
-  guard ComponentColumnCacheValue::from_ecs_payload(raw_value) is Some(value) else {
-    fail("expected raw value type")
-  }
+  let value_opt = try! world.get_by_key(
+    entity, component_column_cache_value_key,
+  )
+  guard value_opt is Some(value) else { fail("expected typed component value") }
   debug_inspect(value, content="{ x: 2 }")
 }
 
 ///|
-test "ecs mut query: cached table values write through raw column" {
+test "ecs mut query: cached table values write through typed storage" {
   let world = World::new()
   let entity = world.spawn()
   try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
@@ -91,10 +75,6 @@ test "ecs mut query: cached table values write through raw column" {
   }
   guard world.entity_table_row(entity) is Some(table_row) else {
     fail("expected table row")
-  }
-  guard world.local_component_id(component_column_cache_value_key.id())
-    is Some(local_component_id) else {
-    fail("expected local component id")
   }
   guard world.component_column(component_column_cache_value_key)
     is Some(component_column) else {
@@ -110,21 +90,9 @@ test "ecs mut query: cached table values write through raw column" {
     value_mut.set(ComponentColumnCacheValue::{ x: 4 })
   })
 
-  guard world.table_storage(table_id) is Some(table_ref) else {
-    fail("expected table storage")
-  }
-  guard table_ref.val.column(local_component_id) is Some(column_ref) else {
-    fail("expected raw table column")
-  }
-  guard raw_table_value_column_kernel_value(
-      column_ref.val.storage,
-      table_row.index(),
-    )
-    is Some(raw_value) else {
-    fail("expected raw column value")
-  }
-  guard ComponentColumnCacheValue::from_ecs_payload(raw_value) is Some(value) else {
-    fail("expected raw value type")
-  }
+  let value_opt = try! world.get_by_key(
+    entity, component_column_cache_value_key,
+  )
+  guard value_opt is Some(value) else { fail("expected typed component value") }
   debug_inspect(value, content="{ x: 4 }")
 }

@@ -28,8 +28,8 @@ extenum EcsPayload += {
 
 ///|
 pub(open) trait EcsPayloadCodec {
-  to_ecs_payload(Self) -> EcsPayload
-  from_ecs_payload(EcsPayload) -> Self?
+  fn to_ecs_payload(Self) -> EcsPayload
+  fn from_ecs_payload(EcsPayload) -> Self?
 }
 
 ///|

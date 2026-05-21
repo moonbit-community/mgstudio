@@ -112,8 +112,15 @@ pub impl @ecs.Component for ScheduleBatchMarker with component() {
 }
 
 ///|
+let missing_run_if_parity_resource_key : @ecs.ResourceKey[
+  MissingRunIfParityResource,
+] = @ecs.register_resource(
+  debug_name="tests.app.schedule.missing_run_if_parity",
+)
+
+///|
 pub impl Resource for MissingRunIfParityResource with resource() {
-  @ecs.register_resource(debug_name="tests.app.schedule.missing_run_if_parity")
+  missing_run_if_parity_resource_key
 }
 
 ///|

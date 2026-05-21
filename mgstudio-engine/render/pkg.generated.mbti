@@ -123,7 +123,7 @@ pub fn flush_pending_command_buffers(@ecs.World) -> Unit
 
 pub fn[C] gpu_component_array_buffer_plugin(@app.App[@ecs.World], _plugin? : GpuComponentArrayBufferPlugin[C]) -> @app.App[@ecs.World]
 
-pub fn[C] gpu_component_array_buffer_state_key(debug_name? : String) -> @ecs.ResourceKey[GpuComponentArrayBufferState[C]]
+pub fn[C : @ecs.EcsPayloadCodec] gpu_component_array_buffer_state_key(debug_name? : String) -> @ecs.ResourceKey[GpuComponentArrayBufferState[C]]
 
 pub fn host_color_grading_from_post_process(@post_process.ColorGrading?) -> HostColorGrading
 
@@ -492,7 +492,7 @@ pub fn[A] ErasedPrepareNextFrameAssets::clear(Self[A]) -> Unit
 pub fn[A] ErasedPrepareNextFrameAssets::len(Self[A]) -> Int
 pub fn[A] ErasedPrepareNextFrameAssets::new() -> Self[A]
 pub fn[A] ErasedPrepareNextFrameAssets::push(Self[A], Int, A) -> Unit
-pub fn[A] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[Self[A]]
+pub fn[A : @ecs.EcsPayloadCodec] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[Self[A]]
 pub fn[A] ErasedPrepareNextFrameAssets::take(Self[A]) -> Array[(Int, A)]
 pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for ErasedPrepareNextFrameAssets[A]
 pub impl[A : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for ErasedPrepareNextFrameAssets[A]
@@ -662,7 +662,7 @@ pub fn[A] PrepareNextFrameAssets::clear(Self[A]) -> Unit
 pub fn[A] PrepareNextFrameAssets::len(Self[A]) -> Int
 pub fn[A] PrepareNextFrameAssets::new() -> Self[A]
 pub fn[A] PrepareNextFrameAssets::push(Self[A], Int, A) -> Unit
-pub fn[A] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[Self[A]]
+pub fn[A : @ecs.EcsPayloadCodec] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[Self[A]]
 pub fn[A] PrepareNextFrameAssets::take(Self[A]) -> Array[(Int, A)]
 pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for PrepareNextFrameAssets[A]
 pub impl[A : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for PrepareNextFrameAssets[A]

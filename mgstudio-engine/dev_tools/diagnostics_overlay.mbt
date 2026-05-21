@@ -220,8 +220,13 @@ impl @app.Resource for DiagnosticsOverlayDragState with resource() {
 }
 
 ///|
+let diagnostics_overlay_plugin_marker_key_value : @ecs.ResourceKey[Bool] = @ecs.register_resource(
+  debug_name="dev_tools.DiagnosticsOverlayPluginMarker",
+)
+
+///|
 fn diagnostics_overlay_plugin_marker_key() -> @ecs.ResourceKey[Bool] {
-  @ecs.register_resource(debug_name="dev_tools.DiagnosticsOverlayPluginMarker")
+  diagnostics_overlay_plugin_marker_key_value
 }
 
 ///|

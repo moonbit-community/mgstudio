@@ -49,10 +49,17 @@ priv struct AssetLoaderRegistryState {
 }
 
 ///|
+let asset_loader_registry_state_resource_key_value : @ecs.ResourceKey[
+  AssetLoaderRegistryState,
+] = @ecs.register_resource(
+  debug_name="mgstudio_asset::AssetLoaderRegistryState",
+)
+
+///|
 fn asset_loader_registry_state_resource_key() -> @ecs.ResourceKey[
   AssetLoaderRegistryState,
 ] {
-  @ecs.register_resource(debug_name="mgstudio_asset::AssetLoaderRegistryState")
+  asset_loader_registry_state_resource_key_value
 }
 
 ///|

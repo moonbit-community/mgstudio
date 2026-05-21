@@ -24,6 +24,9 @@ pub struct ComponentColumn[T] {
 
 ///|
 pub struct ComponentTableColumn[T] {
+  priv world : World
+  priv table_id : Int
+  priv local_component_id : Int
   priv column : Ref[RawTableColumn]
   priv key : ComponentKey[T]
 }
@@ -201,9 +204,29 @@ pub fn[T] ComponentColumn::table_column(
 ) -> ComponentTableColumn[T]? {
   guard self.storage_type == Table else { return None }
   match self.table_column_ref(table_id) {
-    Some(column) => Some(ComponentTableColumn::{ column, key: self.key })
+    Some(column) =>
+      Some(ComponentTableColumn::{
+        world: self.world,
+        table_id,
+        local_component_id: self.local_component_id,
+        column,
+        key: self.key,
+      })
     None => None
   }
+}
+
+///|
+fn[T] ComponentTableColumn::entity_at_row(
+  self : ComponentTableColumn[T],
+  row_index : Int,
+) -> @core.Entity? {
+  guard row_index >= 0 else { return None }
+  guard self.world.table_storage(self.table_id) is Some(table_ref) else {
+    return None
+  }
+  guard TableRow::from_index(row_index) is Some(row) else { return None }
+  table_ref.val.entity_at_row(row)
 }
 
 ///|
@@ -214,28 +237,26 @@ pub fn[T] ComponentTableColumn::key(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row(
+pub fn[T] ComponentTableColumn::value_at_row(
   self : ComponentTableColumn[T],
   row_index : Int,
 ) -> T? {
-  match
-    raw_table_value_column_kernel_value(self.column.val.storage, row_index) {
-    Some(payload) => T::from_ecs_payload(payload)
-    None => None
+  guard self.entity_at_row(row_index) is Some(entity) else { return None }
+  guard self.world.entity_has_component_local_id(
+    entity,
+    self.local_component_id,
+  ) else {
+    return None
   }
+  (self.key.access.get)(self.world, entity)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentTableColumn::value_at_row_unchecked(
+pub fn[T] ComponentTableColumn::value_at_row_unchecked(
   self : ComponentTableColumn[T],
   row_index : Int,
 ) -> T? {
-  T::from_ecs_payload(
-    raw_table_value_column_kernel_value_unchecked(
-      self.column.val.storage,
-      row_index,
-    ),
-  )
+  self.value_at_row(row_index)
 }
 
 ///|
@@ -251,19 +272,21 @@ pub fn[T] ComponentTableColumn::is_changed_at_row(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentTableColumn::set_tick_only_hot_at_row(
+pub fn[T] ComponentTableColumn::set_tick_only_hot_at_row(
   self : ComponentTableColumn[T],
   row_index : Int,
   value : T,
   tick : @core.Tick,
 ) -> Bool {
   guard row_index >= 0 else { return false }
-  guard self.column.val.replace_typed_payload_at_row(
-    row_index,
-    T::to_ecs_payload(value),
+  guard self.entity_at_row(row_index) is Some(entity) else { return false }
+  guard self.world.entity_has_component_local_id(
+    entity,
+    self.local_component_id,
   ) else {
     return false
   }
+  (self.key.access.set)(self.world, entity, value)
   ignore(self.column.val.record_changed_at_row(row_index, tick, None))
   true
 }
@@ -280,7 +303,7 @@ pub fn[T] ComponentTableColumn::record_changed_at_row(
 }
 
 ///|
-fn[T : EcsPayloadCodec] ComponentColumn::table_values_ref(
+fn[T] ComponentColumn::table_values_ref(
   self : ComponentColumn[T],
   table_id : Int,
 ) -> Array[T]? {
@@ -288,7 +311,25 @@ fn[T : EcsPayloadCodec] ComponentColumn::table_values_ref(
     return None
   }
   guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
-  column_ref.val.values_cached()
+  ignore(column_ref)
+  guard self.world.table_storage(table_id) is Some(table_ref) else {
+    return None
+  }
+  let values : Array[T] = []
+  let entities = table_ref.val.rows.entities
+  for entity in entities {
+    guard self.world.entity_has_component_local_id(
+      entity,
+      self.local_component_id,
+    ) else {
+      return None
+    }
+    guard (self.key.access.get)(self.world, entity) is Some(value) else {
+      return None
+    }
+    values.push(value)
+  }
+  Some(values)
 }
 
 ///|
@@ -306,10 +347,8 @@ pub fn[T] ComponentColumn::contains(
   }
   match self.storage_type {
     SparseSet =>
-      match self.world.sparse_component_columns.get(self.local_component_id) {
-        Some(store_ref) => store_ref.val.contains(entity)
-        None => false
-      }
+      self.world.entity_has_component_local_id(entity, self.local_component_id) &&
+      (self.key.access.contains)(self.world, entity)
     Table => {
       if !self.world.entity_has_component_local_id(
           entity,
@@ -328,7 +367,8 @@ pub fn[T] ComponentColumn::contains(
       guard table_id >= 0 && row_index >= 0 else { return false }
       match self.table_column_ref(table_id) {
         Some(column_ref) =>
-          row_index < raw_table_value_column_kernel_len(column_ref.val.storage)
+          row_index < raw_table_column_kernel_len(column_ref.val.storage) &&
+          (self.key.access.contains)(self.world, entity)
         None => false
       }
     }
@@ -350,13 +390,13 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::get(
   }
   match self.storage_type {
     SparseSet =>
-      match self.world.sparse_component_columns.get(self.local_component_id) {
-        Some(store_ref) =>
-          match store_ref.val.get(entity) {
-            Some(payload) => T::from_ecs_payload(payload)
-            None => None
-          }
-        None => None
+      if self.world.entity_has_component_local_id(
+          entity,
+          self.local_component_id,
+        ) {
+        (self.key.access.get)(self.world, entity)
+      } else {
+        None
       }
     Table => {
       let entity_id = entity.id
@@ -371,25 +411,29 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::get(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return None
       }
-      column_ref.val.value_at_row(row_index)
+      if row_index < raw_table_column_kernel_len(column_ref.val.storage) {
+        (self.key.access.get)(self.world, entity)
+      } else {
+        None
+      }
     }
   }
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::get_fast(
+pub fn[T] ComponentColumn::get_fast(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> T? {
   match self.storage_type {
     SparseSet =>
-      match self.world.sparse_component_columns.get(self.local_component_id) {
-        Some(store_ref) =>
-          match store_ref.val.get(entity) {
-            Some(payload) => T::from_ecs_payload(payload)
-            None => None
-          }
-        None => None
+      if self.world.entity_has_component_local_id(
+          entity,
+          self.local_component_id,
+        ) {
+        (self.key.access.get)(self.world, entity)
+      } else {
+        None
       }
     Table => {
       let entity_id = entity.id
@@ -404,7 +448,11 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::get_fast(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return None
       }
-      column_ref.val.value_at_row(row_index)
+      if row_index < raw_table_column_kernel_len(column_ref.val.storage) {
+        (self.key.access.get)(self.world, entity)
+      } else {
+        None
+      }
     }
   }
 }
@@ -419,7 +467,7 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::table_values(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_row(
+pub fn[T] ComponentColumn::table_value_at_row(
   self : ComponentColumn[T],
   table_id : Int,
   row_index : Int,
@@ -427,7 +475,21 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_row(
   guard self.storage_type == Table else { return None }
   guard row_index >= 0 else { return None }
   guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
-  column_ref.val.value_at_row(row_index)
+  guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
+    return None
+  }
+  guard self.world.table_storage(table_id) is Some(table_ref) else {
+    return None
+  }
+  guard TableRow::from_index(row_index) is Some(row) else { return None }
+  guard table_ref.val.entity_at_row(row) is Some(entity) else { return None }
+  guard self.world.entity_has_component_local_id(
+    entity,
+    self.local_component_id,
+  ) else {
+    return None
+  }
+  (self.key.access.get)(self.world, entity)
 }
 
 ///|
@@ -441,7 +503,16 @@ pub fn[T] ComponentColumn::table_has_value_at_row(
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  row_index < raw_table_value_column_kernel_len(column_ref.val.storage)
+  guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
+    return false
+  }
+  guard self.world.table_storage(table_id) is Some(table_ref) else {
+    return false
+  }
+  guard TableRow::from_index(row_index) is Some(row) else { return false }
+  guard table_ref.val.entity_at_row(row) is Some(entity) else { return false }
+  self.world.entity_has_component_local_id(entity, self.local_component_id) &&
+  (self.key.access.contains)(self.world, entity)
 }
 
 ///|
@@ -460,14 +531,14 @@ pub fn[T] ComponentColumn::table_row_location(
   let row_index = self.world.entity_table_rows[entity_id]
   guard table_id >= 0 && row_index >= 0 else { return None }
   guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
-  guard row_index < raw_table_value_column_kernel_len(column_ref.val.storage) else {
+  guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
     return None
   }
   Some((table_id, row_index))
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_entity_row(
+pub fn[T] ComponentColumn::table_value_at_entity_row(
   self : ComponentColumn[T],
   entity : @core.Entity,
   table_id : Int,
@@ -483,7 +554,10 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_entity_row(
   }
   guard row_entity.to_bits() == entity.to_bits() else { return None }
   guard self.table_column_ref(table_id) is Some(column_ref) else { return None }
-  column_ref.val.value_at_row(row_index)
+  guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
+    return None
+  }
+  (self.key.access.get)(self.world, entity)
 }
 
 ///|
@@ -629,22 +703,20 @@ pub fn[T] ComponentColumn::get_mut(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::for_each(
+pub fn[T] ComponentColumn::for_each(
   self : ComponentColumn[T],
   visit : (@core.Entity, T) -> Unit,
 ) -> Unit {
   match self.storage_type {
     SparseSet =>
-      match self.world.sparse_component_columns.get(self.local_component_id) {
-        Some(store_ref) =>
-          store_ref.val.for_each(fn(entity, payload) {
-            match T::from_ecs_payload(payload) {
-              Some(value) => visit(entity, value)
-              None => ()
-            }
-          })
-        None => ()
-      }
+      (self.key.access.for_each)(self.world, fn(entity, value) {
+        if self.world.entity_has_component_local_id(
+            entity,
+            self.local_component_id,
+          ) {
+          visit(entity, value)
+        }
+      })
     Table => {
       let archetype_ids = self.world.archetype_ids_for_component_local_id(
         self.local_component_id,
@@ -669,7 +741,10 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::for_each(
           if row_index < 0 {
             continue
           }
-          guard column_ref.val.value_at_row(row_index) is Some(value) else {
+          guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
+            continue
+          }
+          guard (self.key.access.get)(self.world, entity) is Some(value) else {
             continue
           }
           visit(entity, value)
@@ -726,7 +801,10 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without(
       if row_index < 0 {
         continue
       }
-      guard column_ref.val.value_at_row(row_index) is Some(value) else {
+      guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
+        continue
+      }
+      guard (self.key.access.get)(self.world, entity) is Some(value) else {
         continue
       }
       visit(entity, value)
@@ -784,10 +862,14 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with(
       if row_index < 0 {
         continue
       }
-      guard left_column_ref.val.value_at_row(row_index) is Some(left_value) else {
+      guard row_index < raw_table_column_kernel_len(left_column_ref.val.storage) &&
+        row_index < raw_table_column_kernel_len(right_column_ref.val.storage) else {
         continue
       }
-      guard right_column_ref.val.value_at_row(row_index) is Some(right_value) else {
+      guard (self.key.access.get)(self.world, entity) is Some(left_value) else {
+        continue
+      }
+      guard (other.key.access.get)(self.world, entity) is Some(right_value) else {
         continue
       }
       visit(entity, left_value, right_value)
@@ -825,12 +907,12 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
     }
     let entities = table_ref.val.rows.entities
     let row_count = entities.length()
-    if raw_table_value_column_kernel_len(column_ref.val.storage) < row_count {
+    if raw_table_column_kernel_len(column_ref.val.storage) < row_count {
       continue
     }
     for row_index in 0..<row_count {
       let entity = entities[row_index]
-      guard column_ref.val.value_at_row_unchecked(row_index) is Some(value) else {
+      guard (self.key.access.get)(self.world, entity) is Some(value) else {
         continue
       }
       visit(entity, value)
@@ -889,20 +971,16 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
     }
     let entities = table_ref.val.rows.entities
     let row_count = entities.length()
-    if raw_table_value_column_kernel_len(left_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(right_column_ref.val.storage) <
-      row_count {
+    if raw_table_column_kernel_len(left_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(right_column_ref.val.storage) < row_count {
       continue
     }
     for row_index in 0..<row_count {
       let entity = entities[row_index]
-      guard left_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(left_value) else {
+      guard (self.key.access.get)(self.world, entity) is Some(left_value) else {
         continue
       }
-      guard right_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(right_value) else {
+      guard (other.key.access.get)(self.world, entity) is Some(right_value) else {
         continue
       }
       visit(entity, table_id, row_index, left_value, right_value)
@@ -956,26 +1034,20 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
     }
     let entities = table_ref.val.rows.entities
     let row_count = entities.length()
-    if raw_table_value_column_kernel_len(first_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(second_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(third_column_ref.val.storage) <
-      row_count {
+    if raw_table_column_kernel_len(first_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(second_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(third_column_ref.val.storage) < row_count {
       continue
     }
     for row_index in 0..<row_count {
       let entity = entities[row_index]
-      guard first_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(first_value) else {
+      guard (self.key.access.get)(self.world, entity) is Some(first_value) else {
         continue
       }
-      guard second_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(second_value) else {
+      guard (second.key.access.get)(self.world, entity) is Some(second_value) else {
         continue
       }
-      guard third_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(third_value) else {
+      guard (third.key.access.get)(self.world, entity) is Some(third_value) else {
         continue
       }
       visit(entity, table_id, row_index, first_value, second_value, third_value)
@@ -1030,26 +1102,20 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
     }
     let entities = table_ref.val.rows.entities
     let row_count = entities.length()
-    if raw_table_value_column_kernel_len(first_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(second_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(third_column_ref.val.storage) <
-      row_count {
+    if raw_table_column_kernel_len(first_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(second_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(third_column_ref.val.storage) < row_count {
       continue
     }
     for row_index in 0..<row_count {
       let entity = entities[row_index]
-      guard first_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(first_value) else {
+      guard (self.key.access.get)(self.world, entity) is Some(first_value) else {
         continue
       }
-      guard second_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(second_value) else {
+      guard (second.key.access.get)(self.world, entity) is Some(second_value) else {
         continue
       }
-      guard third_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(third_value) else {
+      guard (third.key.access.get)(self.world, entity) is Some(third_value) else {
         continue
       }
       if visit(
@@ -1116,20 +1182,16 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, M, N] ComponentColumn::for_each
     }
     let entities = table_ref.val.rows.entities
     let row_count = entities.length()
-    if raw_table_value_column_kernel_len(first_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(second_column_ref.val.storage) <
-      row_count {
+    if raw_table_column_kernel_len(first_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(second_column_ref.val.storage) < row_count {
       continue
     }
     for row_index in 0..<row_count {
       let entity = entities[row_index]
-      guard first_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(first_value) else {
+      guard (self.key.access.get)(self.world, entity) is Some(first_value) else {
         continue
       }
-      guard second_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(second_value) else {
+      guard (other.key.access.get)(self.world, entity) is Some(second_value) else {
         continue
       }
       visit(entity, table_id, row_index, first_value, second_value)
@@ -1201,32 +1263,24 @@ pub fn[
     }
     let entities = table_ref.val.rows.entities
     let row_count = entities.length()
-    if raw_table_value_column_kernel_len(first_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(second_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(third_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(fourth_column_ref.val.storage) <
-      row_count {
+    if raw_table_column_kernel_len(first_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(second_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(third_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(fourth_column_ref.val.storage) < row_count {
       continue
     }
     for row_index in 0..<row_count {
       let entity = entities[row_index]
-      guard first_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(first_value) else {
+      guard (self.key.access.get)(self.world, entity) is Some(first_value) else {
         continue
       }
-      guard second_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(second_value) else {
+      guard (second.key.access.get)(self.world, entity) is Some(second_value) else {
         continue
       }
-      guard third_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(third_value) else {
+      guard (third.key.access.get)(self.world, entity) is Some(third_value) else {
         continue
       }
-      guard fourth_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(fourth_value) else {
+      guard (fourth.key.access.get)(self.world, entity) is Some(fourth_value) else {
         continue
       }
       visit(
@@ -1310,38 +1364,28 @@ pub fn[
     }
     let entities = table_ref.val.rows.entities
     let row_count = entities.length()
-    if raw_table_value_column_kernel_len(first_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(second_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(third_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(fourth_column_ref.val.storage) <
-      row_count ||
-      raw_table_value_column_kernel_len(fifth_column_ref.val.storage) <
-      row_count {
+    if raw_table_column_kernel_len(first_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(second_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(third_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(fourth_column_ref.val.storage) < row_count ||
+      raw_table_column_kernel_len(fifth_column_ref.val.storage) < row_count {
       continue
     }
     for row_index in 0..<row_count {
       let entity = entities[row_index]
-      guard first_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(first_value) else {
+      guard (self.key.access.get)(self.world, entity) is Some(first_value) else {
         continue
       }
-      guard second_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(second_value) else {
+      guard (second.key.access.get)(self.world, entity) is Some(second_value) else {
         continue
       }
-      guard third_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(third_value) else {
+      guard (third.key.access.get)(self.world, entity) is Some(third_value) else {
         continue
       }
-      guard fourth_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(fourth_value) else {
+      guard (fourth.key.access.get)(self.world, entity) is Some(fourth_value) else {
         continue
       }
-      guard fifth_column_ref.val.value_at_row_unchecked(row_index)
-        is Some(fifth_value) else {
+      guard (fifth.key.access.get)(self.world, entity) is Some(fifth_value) else {
         continue
       }
       visit(
@@ -1396,24 +1440,24 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only(
     None => ()
   }
   match self.storage_type {
-    SparseSet =>
-      match self.world.sparse_component_columns.get(self.local_component_id) {
-        Some(store_ref) => {
-          guard store_ref.val.set(entity, T::to_ecs_payload(value)) else {
-            return false
-          }
-          ignore(
-            self.world.record_sparse_component_changed_by_local_id(
-              entity,
-              self.local_component_id,
-              tick,
-              None,
-            ),
-          )
-          true
-        }
-        None => false
+    SparseSet => {
+      guard self.world.entity_has_component_local_id(
+        entity,
+        self.local_component_id,
+      ) else {
+        return false
       }
+      (self.key.access.set)(self.world, entity, value)
+      ignore(
+        self.world.record_sparse_component_changed_by_local_id(
+          entity,
+          self.local_component_id,
+          tick,
+          None,
+        ),
+      )
+      true
+    }
     Table => {
       guard self.world.table_id_for_entity(entity) is Some(table_id) else {
         return false
@@ -1425,12 +1469,10 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only(
         return false
       }
       let row_index = row.index()
-      guard column_ref.val.replace_typed_payload_at_row(
-        row_index,
-        T::to_ecs_payload(value),
-      ) else {
+      guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
         return false
       }
+      (self.key.access.set)(self.world, entity, value)
       guard self.world.table_storage(table_id) is Some(table_ref) else {
         return false
       }
@@ -1448,31 +1490,31 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_fast(
+pub fn[T] ComponentColumn::set_tick_only_fast(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
 ) -> Bool {
   let tick = component_write_tick(self.world)
   match self.storage_type {
-    SparseSet =>
-      match self.world.sparse_component_columns.get(self.local_component_id) {
-        Some(store_ref) => {
-          guard store_ref.val.set(entity, T::to_ecs_payload(value)) else {
-            return false
-          }
-          ignore(
-            self.world.record_sparse_component_changed_by_local_id(
-              entity,
-              self.local_component_id,
-              tick,
-              None,
-            ),
-          )
-          true
-        }
-        None => false
+    SparseSet => {
+      guard self.world.entity_has_component_local_id(
+        entity,
+        self.local_component_id,
+      ) else {
+        return false
       }
+      (self.key.access.set)(self.world, entity, value)
+      ignore(
+        self.world.record_sparse_component_changed_by_local_id(
+          entity,
+          self.local_component_id,
+          tick,
+          None,
+        ),
+      )
+      true
+    }
     Table => {
       let entity_id = entity.id
       guard entity_id >= 0 &&
@@ -1486,12 +1528,10 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_fast(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return false
       }
-      guard column_ref.val.replace_typed_payload_at_row(
-        row_index,
-        T::to_ecs_payload(value),
-      ) else {
+      guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
         return false
       }
+      (self.key.access.set)(self.world, entity, value)
       ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
       true
     }
@@ -1499,31 +1539,31 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_fast(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot(
+pub fn[T] ComponentColumn::set_tick_only_hot(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
 ) -> Bool {
   let tick = component_write_tick(self.world)
   match self.storage_type {
-    SparseSet =>
-      match self.world.sparse_component_columns.get(self.local_component_id) {
-        Some(store_ref) => {
-          guard store_ref.val.set(entity, T::to_ecs_payload(value)) else {
-            return false
-          }
-          ignore(
-            self.world.record_sparse_component_changed_by_local_id(
-              entity,
-              self.local_component_id,
-              tick,
-              None,
-            ),
-          )
-          true
-        }
-        None => false
+    SparseSet => {
+      guard self.world.entity_has_component_local_id(
+        entity,
+        self.local_component_id,
+      ) else {
+        return false
       }
+      (self.key.access.set)(self.world, entity, value)
+      ignore(
+        self.world.record_sparse_component_changed_by_local_id(
+          entity,
+          self.local_component_id,
+          tick,
+          None,
+        ),
+      )
+      true
+    }
     Table => {
       let entity_id = entity.id
       guard entity_id >= 0 &&
@@ -1537,12 +1577,10 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot(
       guard self.table_column_ref(table_id) is Some(column_ref) else {
         return false
       }
-      guard column_ref.val.replace_typed_payload_at_row(
-        row_index,
-        T::to_ecs_payload(value),
-      ) else {
+      guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
         return false
       }
+      (self.key.access.set)(self.world, entity, value)
       ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
       true
     }
@@ -1550,7 +1588,7 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_row(
+pub fn[T] ComponentColumn::set_tick_only_hot_at_row(
   self : ComponentColumn[T],
   entity : @core.Entity,
   values : Array[T],
@@ -1572,18 +1610,16 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_row(
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  guard column_ref.val.replace_typed_payload_at_row(
-    row_index,
-    T::to_ecs_payload(value),
-  ) else {
+  guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
     return false
   }
+  (self.key.access.set)(self.world, entity, value)
   ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
   true
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_table_row(
+pub fn[T] ComponentColumn::set_tick_only_hot_at_table_row(
   self : ComponentColumn[T],
   table_id : Int,
   values : Array[T],
@@ -1600,18 +1636,21 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_table_row(
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  guard column_ref.val.replace_typed_payload_at_row(
-    row_index,
-    T::to_ecs_payload(value),
-  ) else {
+  guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
     return false
   }
+  guard self.world.table_storage(table_id) is Some(table_ref) else {
+    return false
+  }
+  guard TableRow::from_index(row_index) is Some(row) else { return false }
+  guard table_ref.val.entity_at_row(row) is Some(entity) else { return false }
+  (self.key.access.set)(self.world, entity, value)
   ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
   true
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_table_row_value(
+pub fn[T] ComponentColumn::set_tick_only_hot_at_table_row_value(
   self : ComponentColumn[T],
   table_id : Int,
   row_index : Int,
@@ -1623,12 +1662,15 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only_hot_at_table_row_valu
   guard self.table_column_ref(table_id) is Some(column_ref) else {
     return false
   }
-  guard column_ref.val.replace_typed_payload_at_row(
-    row_index,
-    T::to_ecs_payload(value),
-  ) else {
+  guard row_index < raw_table_column_kernel_len(column_ref.val.storage) else {
     return false
   }
+  guard self.world.table_storage(table_id) is Some(table_ref) else {
+    return false
+  }
+  guard TableRow::from_index(row_index) is Some(row) else { return false }
+  guard table_ref.val.entity_at_row(row) is Some(entity) else { return false }
+  (self.key.access.set)(self.world, entity, value)
   ignore(column_ref.val.record_changed_at_row(row_index, tick, None))
   true
 }

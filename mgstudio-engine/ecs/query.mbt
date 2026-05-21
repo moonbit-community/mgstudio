@@ -284,7 +284,7 @@ pub struct QueryMany[D, F] {
   priv mut dense_table_row_count : Int
   priv mut dense_table_row_index : Int
   priv sparse_anchor_info : QuerySparseAnchorInfo?
-  priv sparse_anchor_archetype_bits : @utils.IntBitSet
+  priv sparse_anchor_entities : Array[@core.Entity]
   priv mut sparse_anchor_index : Int
   priv entities : Array[@core.Entity]
   priv mut index : Int
@@ -318,6 +318,7 @@ pub struct QueryParallel[D, F] {
 ///|
 priv struct QuerySparseAnchorInfo {
   local_component_id : Int
+  component_definition_id : Int
 }
 
 ///|
@@ -583,7 +584,15 @@ fn[D, F] query_many_from_plan(
     dense_table_row_count: 0,
     dense_table_row_index: 0,
     sparse_anchor_info: plan.sparse_anchor_info,
-    sparse_anchor_archetype_bits: plan.sparse_anchor_archetype_bits,
+    sparse_anchor_entities: match plan.sparse_anchor_info {
+      Some(anchor_info) =>
+        query_sparse_anchor_entities(
+          query.world,
+          anchor_info,
+          plan.sparse_anchor_archetype_bits,
+        )
+      None => []
+    },
     sparse_anchor_index: 0,
     entities: plan.entities,
     index: 0,
@@ -750,7 +759,32 @@ fn query_sparse_anchor_info(
     Some(SparseSet) else {
     return None
   }
-  Some({ local_component_id, })
+  Some({ local_component_id, component_definition_id: component_id })
+}
+
+///|
+fn query_sparse_anchor_entities(
+  world : World,
+  anchor_info : QuerySparseAnchorInfo,
+  matched_archetype_bits : @utils.IntBitSet,
+) -> Array[@core.Entity] {
+  let entities : Array[@core.Entity] = []
+  let ops = component_ops(anchor_info.component_definition_id)
+  (ops.for_each_entity)(world, fn(entity) {
+    guard world.entity_has_component_local_id(
+      entity,
+      anchor_info.local_component_id,
+    ) else {
+      return
+    }
+    guard world.entity_archetype_id(entity) is Some(archetype_id) else {
+      return
+    }
+    if matched_archetype_bits.contains(archetype_id) {
+      entities.push(entity)
+    }
+  })
+  entities
 }
 
 ///|
@@ -931,22 +965,7 @@ fn query_sparse_anchor_count_matching(
   anchor_info : QuerySparseAnchorInfo,
   matched_archetype_bits : @utils.IntBitSet,
 ) -> Int {
-  guard world.sparse_component_columns.get(anchor_info.local_component_id)
-    is Some(store_ref) else {
-    return 0
-  }
-  let store = store_ref.val
-  let count = Ref(0)
-  for index in 0..<store.len() {
-    let entity = store.entity_at(index)
-    guard world.entity_archetype_id(entity) is Some(archetype_id) else {
-      continue
-    }
-    if matched_archetype_bits.contains(archetype_id) {
-      count.val = count.val + 1
-    }
-  }
-  count.val
+  query_sparse_anchor_entities(world, anchor_info, matched_archetype_bits).length()
 }
 
 ///|
@@ -955,36 +974,21 @@ fn[D : QueryData] query_sparse_anchor_single_matching(
   anchor_info : QuerySparseAnchorInfo,
   matched_archetype_bits : @utils.IntBitSet,
 ) -> D? raise EcsError {
-  guard world.sparse_component_columns.get(anchor_info.local_component_id)
-    is Some(store_ref) else {
-    return None
-  }
+  let entities = query_sparse_anchor_entities(
+    world, anchor_info, matched_archetype_bits,
+  )
+  guard entities.length() == 1 else { return None }
   let plan = D::prepare_fetch_plan(world)
-  let store = store_ref.val
-  let found_index = Ref(-1)
-  for index in 0..<store.len() {
-    let entity = store.entity_at(index)
-    guard world.entity_archetype_id(entity) is Some(archetype_id) else {
-      continue
-    }
-    guard matched_archetype_bits.contains(archetype_id) else { continue }
-    if found_index.val >= 0 {
-      return None
-    }
-    found_index.val = index
-  }
-  if found_index.val < 0 {
+  let entity = entities[0]
+  guard world.component_payload_by_local_id(
+      entity,
+      anchor_info.local_component_id,
+    )
+    is Some(payload) else {
     return None
   }
-  let entity = store.entity_at(found_index.val)
   Some(
-    query_fetch_with_sparse_anchor(
-      world,
-      entity,
-      anchor_info,
-      store.value_at(found_index.val),
-      plan,
-    ),
+    query_fetch_with_sparse_anchor(world, entity, anchor_info, payload, plan),
   )
 }
 
@@ -1258,7 +1262,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
     dense_table_row_count: 0,
     dense_table_row_index: 0,
     sparse_anchor_info: None,
-    sparse_anchor_archetype_bits: @utils.IntBitSet::new(),
+    sparse_anchor_entities: [],
     sparse_anchor_index: 0,
     entities,
     index: 0,
@@ -2118,7 +2122,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
     dense_table_row_count: 0,
     dense_table_row_index: 0,
     sparse_anchor_info: None,
-    sparse_anchor_archetype_bits: @utils.IntBitSet::new(),
+    sparse_anchor_entities: [],
     sparse_anchor_index: 0,
     entities,
     index: 0,
@@ -2652,21 +2656,15 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
   }
   match self.sparse_anchor_info {
     Some(anchor_info) => {
-      guard self.query.world.sparse_component_columns.get(
-          anchor_info.local_component_id,
-        )
-        is Some(store_ref) else {
-        return None
-      }
-      let store = store_ref.val
-      while self.sparse_anchor_index < store.len() {
+      while self.sparse_anchor_index < self.sparse_anchor_entities.length() {
         let index = self.sparse_anchor_index
         self.sparse_anchor_index = self.sparse_anchor_index + 1
-        let entity = store.entity_at(index)
-        guard self.query.world.entity_archetype_id(entity) is Some(archetype_id) else {
-          continue
-        }
-        guard self.sparse_anchor_archetype_bits.contains(archetype_id) else {
+        let entity = self.sparse_anchor_entities[index]
+        guard self.query.world.component_payload_by_local_id(
+            entity,
+            anchor_info.local_component_id,
+          )
+          is Some(payload) else {
           continue
         }
         return Some(
@@ -2676,7 +2674,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
               self.query.world,
               entity,
               anchor_info,
-              store.value_at(index),
+              payload,
               self.data_fetch_plan,
             ),
           ),
