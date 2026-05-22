@@ -53,31 +53,36 @@ pub struct RenderAssets[A] {
 }
 
 ///|
-pub(open) trait RenderAssetResource: @ecs.EcsPayloadCodec {
-  fn render_asset_resource_debug_name() -> String
+pub struct RenderAssetResourceKeys[A] {
+  render_assets : @ecs.ResourceKey[RenderAssets[A]]
+  erased_render_assets : @ecs.ResourceKey[ErasedRenderAssets[A]]
 }
 
 ///|
-let render_assets_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
+pub fn[A] register_render_asset_resource_keys(
+  debug_name : String,
+) -> RenderAssetResourceKeys[A] {
+  {
+    render_assets: @ecs.register_resource(
+      debug_name="mgstudio_render::RenderAssets<\{debug_name}>",
+    ),
+    erased_render_assets: @ecs.register_resource(
+      debug_name="mgstudio_render::ErasedRenderAssets<\{debug_name}>",
+    ),
+  }
+}
+
+///|
+pub(open) trait RenderAssetResource {
+  fn render_asset_resource_debug_name() -> String
+  fn render_asset_resource_keys() -> RenderAssetResourceKeys[Self]
+}
 
 ///|
 pub fn[A : RenderAssetResource] RenderAssets::resource() -> @ecs.ResourceKey[
   RenderAssets[A],
 ] {
-  let type_name = "RenderAssets<\{A::render_asset_resource_debug_name()}>"
-  match render_assets_resource_registry.val.get(type_name) {
-    Some(id) =>
-      @ecs.resource_key_from_id(id, debug_name="mgstudio_render::\{type_name}")
-    None => {
-      let key : @ecs.ResourceKey[RenderAssets[A]] = @ecs.register_erased_resource(
-        debug_name="mgstudio_render::\{type_name}",
-      )
-      render_assets_resource_registry.val.set(type_name, key.id())
-      key
-    }
-  }
+  A::render_asset_resource_keys().render_assets
 }
 
 ///|

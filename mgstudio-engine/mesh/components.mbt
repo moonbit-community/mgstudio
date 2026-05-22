@@ -116,6 +116,18 @@ pub impl @asset.Asset for SkinnedMeshInverseBindposes with asset_as_image(_self)
 }
 
 ///|
+let skinned_mesh_inverse_bindposes_asset_resource_keys : @asset.AssetResourceKeys[
+  SkinnedMeshInverseBindposes,
+] = @asset.register_asset_resource_keys(
+  SkinnedMeshInverseBindposes::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for SkinnedMeshInverseBindposes with asset_resource_keys() {
+  skinned_mesh_inverse_bindposes_asset_resource_keys
+}
+
+///|
 pub fn SkinnedMeshInverseBindposes::new(
   values : Array[SkinningMat4],
 ) -> SkinnedMeshInverseBindposes {

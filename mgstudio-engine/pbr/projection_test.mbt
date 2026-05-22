@@ -83,17 +83,15 @@ test "render3d: perspective with_near keeps default clip plane in sync and prese
 }
 
 ///|
-test "render3d: custom projection default stores perspective default payload" {
+test "render3d: custom projection default stores perspective behavior" {
   let custom = CustomProjection3d::CustomProjection3d()
-  let perspective : PerspectiveProjection3d? = custom.get()
-  let ok = match perspective {
-    Some(perspective) =>
-      projection_approx_eq(custom.far(), 1000.0F) &&
-      projection_approx_eq(perspective.fov, @math.pi_half() * 0.5F) &&
-      projection_approx_eq(perspective.near, 0.1F) &&
-      projection_approx_eq(perspective.aspect_ratio, 1.0F)
-    None => false
-  }
+  let perspective = PerspectiveProjection3d::PerspectiveProjection3d()
+  let custom_matrix = custom.get_clip_from_view()
+  let perspective_matrix = perspective.get_clip_from_view()
+  let ok = projection_approx_eq(custom.far(), perspective.far) &&
+    projection_approx_eq(custom_matrix.x_axis.x, perspective_matrix.x_axis.x) &&
+    projection_approx_eq(custom_matrix.y_axis.y, perspective_matrix.y_axis.y) &&
+    projection_approx_eq(custom_matrix.z_axis.z, perspective_matrix.z_axis.z)
   debug_inspect(ok, content="true")
 }
 
@@ -183,26 +181,6 @@ struct TestCustomProjection3d {
 }
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_pbr_projection_test_TestCustomProjection3d(TestCustomProjection3d)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TestCustomProjection3d with to_ecs_payload(self) {
-  EcsPayload_pbr_projection_test_TestCustomProjection3d(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TestCustomProjection3d with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_projection_test_TestCustomProjection3d(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
 fn test_custom_projection_matrix(
   view_width : Float,
   view_height : Float,
@@ -276,7 +254,7 @@ impl CameraProjection3d for TestCustomProjection3d with get_frustum_corners(
 }
 
 ///|
-test "render3d: custom projection stores typed payload and updates lifecycle state" {
+test "render3d: custom projection stores typed behavior and updates lifecycle state" {
   let initial = Projection::custom(TestCustomProjection3d::{
     view_width: 1.0F,
     view_height: 1.0F,
@@ -290,17 +268,11 @@ test "render3d: custom projection stores typed payload and updates lifecycle sta
   let updated = initial.update(640.0F, 320.0F)
   let ok = match updated {
     Projection::Custom(custom) => {
-      let payload : TestCustomProjection3d? = custom.get()
-      let payload_ok = match payload {
-        Some(payload) =>
-          projection_approx_eq(payload.view_width, 640.0F) &&
-          projection_approx_eq(payload.view_height, 320.0F) &&
-          projection_approx_eq(payload.far_plane, 500.0F)
-        None => false
-      }
+      let clip_matrix = custom.get_clip_from_view()
       let sub_matrix = custom.get_clip_from_view_for_sub(sub_view)
       let frustum = custom.get_frustum_corners(0.25F, 25.0F)
-      payload_ok &&
+      projection_approx_eq(clip_matrix.x_axis.x, 2.0F / 640.0F) &&
+      projection_approx_eq(clip_matrix.y_axis.y, 2.0F / 320.0F) &&
       projection_approx_eq(custom.far(), 500.0F) &&
       projection_approx_eq(sub_matrix.w_axis.x, 12.0F) &&
       frustum.length() == 8 &&

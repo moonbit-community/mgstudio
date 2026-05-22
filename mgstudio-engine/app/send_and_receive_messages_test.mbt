@@ -25,15 +25,23 @@ struct TestParamSetMessage {
 } derive(Eq, Debug)
 
 ///|
+let test_cursor_message_key : @ecs.MessageKey[TestCursorMessage] = @ecs.register_message(
+  debug_name="tests.app.send_and_receive_messages.cursor",
+)
+
+///|
 impl @ecs.Message for TestCursorMessage with message() {
-  @ecs.register_message(debug_name="tests.app.send_and_receive_messages.cursor")
+  test_cursor_message_key
 }
 
 ///|
+let test_param_set_message_key : @ecs.MessageKey[TestParamSetMessage] = @ecs.register_message(
+  debug_name="tests.app.send_and_receive_messages.param_set",
+)
+
+///|
 impl @ecs.Message for TestParamSetMessage with message() {
-  @ecs.register_message(
-    debug_name="tests.app.send_and_receive_messages.param_set",
-  )
+  test_param_set_message_key
 }
 
 ///|

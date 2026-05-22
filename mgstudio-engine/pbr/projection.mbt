@@ -44,40 +44,28 @@ pub(open) trait CameraProjection3d {
 ///|
 struct CustomProjection3d {
   type_name : String
-  payload : @ecs.EcsPayload
-  get_clip_from_view_fn : (@ecs.EcsPayload) -> ProjectionMatrix3d
-  get_clip_from_view_for_sub_fn : (@ecs.EcsPayload, SubCameraView3d) -> ProjectionMatrix3d
-  update_fn : (@ecs.EcsPayload, Float, Float) -> @ecs.EcsPayload
-  far_fn : (@ecs.EcsPayload) -> Float
-  get_frustum_corners_fn : (@ecs.EcsPayload, Float, Float) -> Array[@math.Vec3]
+  get_clip_from_view_fn : () -> ProjectionMatrix3d
+  get_clip_from_view_for_sub_fn : (SubCameraView3d) -> ProjectionMatrix3d
+  update_fn : (Float, Float) -> CustomProjection3d
+  far_fn : () -> Float
+  get_frustum_corners_fn : (Float, Float) -> Array[@math.Vec3]
 }
 
 ///|
-pub fn[T : CameraProjection3d + @ecs.EcsPayloadCodec] CustomProjection3d::new(
+pub fn[T : CameraProjection3d] CustomProjection3d::new(
   projection : T,
 ) -> CustomProjection3d {
-  let payload = T::to_ecs_payload(projection)
   CustomProjection3d::{
     type_name: "CustomProjection3d",
-    payload,
-    get_clip_from_view_fn: fn(payload) {
-      let projection : T = T::from_ecs_payload(payload).unwrap()
-      projection.get_clip_from_view()
-    },
-    get_clip_from_view_for_sub_fn: fn(payload, sub_view) {
-      let projection : T = T::from_ecs_payload(payload).unwrap()
+    get_clip_from_view_fn: fn() { projection.get_clip_from_view() },
+    get_clip_from_view_for_sub_fn: fn(sub_view) {
       projection.get_clip_from_view_for_sub(sub_view)
     },
-    update_fn: fn(payload, width, height) {
-      let projection : T = T::from_ecs_payload(payload).unwrap()
-      T::to_ecs_payload(projection.update(width, height))
+    update_fn: fn(width, height) {
+      CustomProjection3d::new(projection.update(width, height))
     },
-    far_fn: fn(payload) {
-      let projection : T = T::from_ecs_payload(payload).unwrap()
-      projection.far()
-    },
-    get_frustum_corners_fn: fn(payload, z_near, z_far) {
-      let projection : T = T::from_ecs_payload(payload).unwrap()
+    far_fn: fn() { projection.far() },
+    get_frustum_corners_fn: fn(z_near, z_far) {
       projection.get_frustum_corners(z_near, z_far)
     },
   }
@@ -91,13 +79,6 @@ pub fn CustomProjection3d::CustomProjection3d() -> CustomProjection3d {
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] CustomProjection3d::get(
-  self : CustomProjection3d,
-) -> T? {
-  T::from_ecs_payload(self.payload)
-}
-
-///|
 pub fn CustomProjection3d::type_name(self : CustomProjection3d) -> String {
   self.type_name
 }
@@ -106,7 +87,7 @@ pub fn CustomProjection3d::type_name(self : CustomProjection3d) -> String {
 pub fn CustomProjection3d::get_clip_from_view(
   self : CustomProjection3d,
 ) -> ProjectionMatrix3d {
-  (self.get_clip_from_view_fn)(self.payload)
+  (self.get_clip_from_view_fn)()
 }
 
 ///|
@@ -114,7 +95,7 @@ pub fn CustomProjection3d::get_clip_from_view_for_sub(
   self : CustomProjection3d,
   sub_view : SubCameraView3d,
 ) -> ProjectionMatrix3d {
-  (self.get_clip_from_view_for_sub_fn)(self.payload, sub_view)
+  (self.get_clip_from_view_for_sub_fn)(sub_view)
 }
 
 ///|
@@ -123,20 +104,12 @@ pub fn CustomProjection3d::update(
   width : Float,
   height : Float,
 ) -> CustomProjection3d {
-  CustomProjection3d::{
-    type_name: self.type_name,
-    payload: (self.update_fn)(self.payload, width, height),
-    get_clip_from_view_fn: self.get_clip_from_view_fn,
-    get_clip_from_view_for_sub_fn: self.get_clip_from_view_for_sub_fn,
-    update_fn: self.update_fn,
-    far_fn: self.far_fn,
-    get_frustum_corners_fn: self.get_frustum_corners_fn,
-  }
+  (self.update_fn)(width, height)
 }
 
 ///|
 pub fn CustomProjection3d::far(self : CustomProjection3d) -> Float {
-  (self.far_fn)(self.payload)
+  (self.far_fn)()
 }
 
 ///|
@@ -145,7 +118,7 @@ pub fn CustomProjection3d::get_frustum_corners(
   z_near : Float,
   z_far : Float,
 ) -> Array[@math.Vec3] {
-  (self.get_frustum_corners_fn)(self.payload, z_near, z_far)
+  (self.get_frustum_corners_fn)(z_near, z_far)
 }
 
 ///|
@@ -164,9 +137,7 @@ pub fn Projection::default() -> Projection {
 }
 
 ///|
-pub fn[T : CameraProjection3d + @ecs.EcsPayloadCodec] Projection::custom(
-  projection : T,
-) -> Projection {
+pub fn[T : CameraProjection3d] Projection::custom(projection : T) -> Projection {
   Custom(CustomProjection3d::new(projection))
 }
 
@@ -287,7 +258,7 @@ pub fn Projection::compute_frustum(
 
 ///|
 pub impl CameraProjection3d for CustomProjection3d with get_clip_from_view(self) {
-  (self.get_clip_from_view_fn)(self.payload)
+  self.get_clip_from_view()
 }
 
 ///|
@@ -295,7 +266,7 @@ pub impl CameraProjection3d for CustomProjection3d with get_clip_from_view_for_s
   self,
   sub_view,
 ) {
-  (self.get_clip_from_view_for_sub_fn)(self.payload, sub_view)
+  self.get_clip_from_view_for_sub(sub_view)
 }
 
 ///|
@@ -304,20 +275,12 @@ pub impl CameraProjection3d for CustomProjection3d with update(
   width,
   height,
 ) {
-  CustomProjection3d::{
-    type_name: self.type_name,
-    payload: (self.update_fn)(self.payload, width, height),
-    get_clip_from_view_fn: self.get_clip_from_view_fn,
-    get_clip_from_view_for_sub_fn: self.get_clip_from_view_for_sub_fn,
-    update_fn: self.update_fn,
-    far_fn: self.far_fn,
-    get_frustum_corners_fn: self.get_frustum_corners_fn,
-  }
+  self.update(width, height)
 }
 
 ///|
 pub impl CameraProjection3d for CustomProjection3d with far(self) {
-  (self.far_fn)(self.payload)
+  self.far()
 }
 
 ///|
@@ -334,7 +297,7 @@ pub impl CameraProjection3d for CustomProjection3d with get_frustum_corners(
   z_near,
   z_far,
 ) {
-  (self.get_frustum_corners_fn)(self.payload, z_near, z_far)
+  self.get_frustum_corners(z_near, z_far)
 }
 
 ///|

@@ -26,6 +26,16 @@ pub impl Asset for Font with asset_as_image(_self) {
 }
 
 ///|
+pub let font_asset_resource_keys : AssetResourceKeys[Font] = register_asset_resource_keys(
+  "mgstudio_asset::Font",
+)
+
+///|
+pub impl Asset for Font with asset_resource_keys() {
+  font_asset_resource_keys
+}
+
+///|
 pub fn host_asset_load_font(path~ : String) -> Int {
   load_font(path~)
 }

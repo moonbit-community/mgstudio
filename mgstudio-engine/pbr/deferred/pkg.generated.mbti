@@ -95,7 +95,6 @@ pub struct DeferredLightingPipeline {
 pub fn DeferredLightingPipeline::new(pipeline_id~ : Int) -> Self
 pub fn DeferredLightingPipeline::pipeline_id(Self) -> Int
 pub impl @ecs.Component for DeferredLightingPipeline
-pub impl @ecs.EcsPayloadCodec for DeferredLightingPipeline
 
 pub struct DeferredLightingPipelineDescriptorPlan {
   label : String
@@ -160,7 +159,6 @@ pub struct DeferredPbrLightingState {
 }
 pub fn DeferredPbrLightingState::disabled() -> Self
 pub fn DeferredPbrLightingState::enabled() -> Self
-pub impl @ecs.EcsPayloadCodec for DeferredPbrLightingState
 
 pub struct PbrDeferredLightingDepthId {
   mut depth_id : Int
@@ -170,12 +168,10 @@ pub fn PbrDeferredLightingDepthId::get(Self) -> Int
 pub fn PbrDeferredLightingDepthId::new(Int) -> Self
 pub fn PbrDeferredLightingDepthId::set(Self, Int) -> Unit
 pub impl @ecs.Component for PbrDeferredLightingDepthId
-pub impl @ecs.EcsPayloadCodec for PbrDeferredLightingDepthId
 
 pub struct SkipDeferredLighting {
 } derive(Default, Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for SkipDeferredLighting
-pub impl @ecs.EcsPayloadCodec for SkipDeferredLighting
 
 // Type aliases
 pub using @post_process {type DebandDither}

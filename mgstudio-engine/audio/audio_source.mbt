@@ -33,6 +33,11 @@ pub impl AudioPlayerSource for AudioSource with audio_player_source_debug_name()
 }
 
 ///|
+pub impl AudioPlayerSource for AudioSource with audio_player_component_key() {
+  ecs_key_audio_source_player
+}
+
+///|
 pub impl @asset.Asset for AudioSource with asset_debug_name() {
   "mgstudio_audio::AudioSource"
 }
@@ -40,6 +45,16 @@ pub impl @asset.Asset for AudioSource with asset_debug_name() {
 ///|
 pub impl @asset.Asset for AudioSource with asset_as_image(_self) {
   None
+}
+
+///|
+let audio_source_asset_resource_keys : @asset.AssetResourceKeys[AudioSource] = @asset.register_asset_resource_keys(
+  AudioSource::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for AudioSource with asset_resource_keys() {
+  audio_source_asset_resource_keys
 }
 
 ///|

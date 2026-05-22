@@ -72,7 +72,6 @@ pub struct GltfExtras {
 pub fn GltfExtras::as_str(Self) -> String
 pub fn GltfExtras::new(String) -> Self
 pub impl @ecs.Component for GltfExtras
-pub impl @ecs.EcsPayloadCodec for GltfExtras
 
 pub struct GltfMaterialExtras {
   value : String
@@ -80,7 +79,6 @@ pub struct GltfMaterialExtras {
 pub fn GltfMaterialExtras::as_str(Self) -> String
 pub fn GltfMaterialExtras::new(String) -> Self
 pub impl @ecs.Component for GltfMaterialExtras
-pub impl @ecs.EcsPayloadCodec for GltfMaterialExtras
 
 pub struct GltfMaterialName {
   name : String
@@ -88,7 +86,6 @@ pub struct GltfMaterialName {
 pub fn GltfMaterialName::as_str(Self) -> String
 pub fn GltfMaterialName::new(String) -> Self
 pub impl @ecs.Component for GltfMaterialName
-pub impl @ecs.EcsPayloadCodec for GltfMaterialName
 
 pub struct GltfMeshExtras {
   value : String
@@ -96,7 +93,6 @@ pub struct GltfMeshExtras {
 pub fn GltfMeshExtras::as_str(Self) -> String
 pub fn GltfMeshExtras::new(String) -> Self
 pub impl @ecs.Component for GltfMeshExtras
-pub impl @ecs.EcsPayloadCodec for GltfMeshExtras
 
 pub struct GltfMeshIndex {
   mesh_index : Int
@@ -104,7 +100,6 @@ pub struct GltfMeshIndex {
 pub fn GltfMeshIndex::index(Self) -> Int
 pub fn GltfMeshIndex::new(Int) -> Self
 pub impl @ecs.Component for GltfMeshIndex
-pub impl @ecs.EcsPayloadCodec for GltfMeshIndex
 
 pub struct GltfNodeIndex {
   node_index : Int
@@ -112,7 +107,6 @@ pub struct GltfNodeIndex {
 pub fn GltfNodeIndex::index(Self) -> Int
 pub fn GltfNodeIndex::new(Int) -> Self
 pub impl @ecs.Component for GltfNodeIndex
-pub impl @ecs.EcsPayloadCodec for GltfNodeIndex
 
 pub struct GltfPrimitiveIndex {
   mesh_index : Int
@@ -122,7 +116,6 @@ pub fn GltfPrimitiveIndex::mesh_index(Self) -> Int
 pub fn GltfPrimitiveIndex::new(Int, Int) -> Self
 pub fn GltfPrimitiveIndex::primitive_index(Self) -> Int
 pub impl @ecs.Component for GltfPrimitiveIndex
-pub impl @ecs.EcsPayloadCodec for GltfPrimitiveIndex
 
 pub struct GltfSceneExtras {
   value : String
@@ -130,7 +123,6 @@ pub struct GltfSceneExtras {
 pub fn GltfSceneExtras::as_str(Self) -> String
 pub fn GltfSceneExtras::new(String) -> Self
 pub impl @ecs.Component for GltfSceneExtras
-pub impl @ecs.EcsPayloadCodec for GltfSceneExtras
 
 pub struct GltfSceneIndex {
   scene_index : Int
@@ -138,7 +130,6 @@ pub struct GltfSceneIndex {
 pub fn GltfSceneIndex::index(Self) -> Int
 pub fn GltfSceneIndex::new(Int) -> Self
 pub impl @ecs.Component for GltfSceneIndex
-pub impl @ecs.EcsPayloadCodec for GltfSceneIndex
 
 pub struct GltfSkinIndex {
   index : Int
@@ -146,7 +137,6 @@ pub struct GltfSkinIndex {
 pub fn GltfSkinIndex::index(Self) -> Int
 pub fn GltfSkinIndex::new(Int) -> Self
 pub impl @ecs.Component for GltfSkinIndex
-pub impl @ecs.EcsPayloadCodec for GltfSkinIndex
 pub impl ToJson for GltfSkinIndex
 pub impl @json.FromJson for GltfSkinIndex
 

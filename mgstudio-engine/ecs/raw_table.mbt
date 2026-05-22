@@ -106,22 +106,6 @@ fn RawTableColumn::append_row(self : RawTableColumn) -> Bool {
 }
 
 ///|
-fn RawTableColumn::append_writer(
-  self : RawTableColumn,
-  world : World,
-  entity : @core.Entity,
-  writer : EcsPayloadWriter,
-) -> Bool {
-  if writer.component_definition_id != self.component_ops.definition_id {
-    return false
-  }
-  guard (self.component_ops.set_payload)(world, entity, writer.to_ecs_payload()) else {
-    return false
-  }
-  self.append_row()
-}
-
-///|
 fn RawTableColumn::append_from_row(
   self : RawTableColumn,
   source : RawTableColumn,
@@ -393,15 +377,13 @@ fn RawTable::check_change_ticks(
 ///|
 fn RawTable::append_row_from_source_table(
   self : RawTable,
-  world : World,
   entity : @core.Entity,
   source_table : Ref[RawTable]?,
   source_row : TableRow?,
-  pending_payloads : PendingComponentPayloadSet,
+  pending_writes : PendingComponentWriteSet,
 ) -> TableRow? {
   let row = raw_table_row_kernel_push(self.rows, entity)
   let row_index = row
-  let appended_payload_ops : Array[ComponentOps] = []
   for column_index in 0..<self.columns.length() {
     let component_local_id = self.component_local_ids[column_index]
     let column = self.columns[column_index].val
@@ -429,66 +411,48 @@ fn RawTable::append_row_from_source_table(
                 )
               }
               None =>
-                match pending_payloads.writer(component_local_id) {
-                  Some(writer) => {
-                    match pending_payloads.metadata(component_local_id) {
-                      Some(metadata) => {
-                        added_tick = metadata.added_tick
-                        changed_tick = metadata.changed_tick
-                        changed_caller = metadata.changed_caller
-                      }
-                      None => ()
+                if pending_writes.contains(component_local_id) {
+                  match pending_writes.metadata(component_local_id) {
+                    Some(metadata) => {
+                      added_tick = metadata.added_tick
+                      changed_tick = metadata.changed_tick
+                      changed_caller = metadata.changed_caller
                     }
-                    if column.append_writer(world, entity, writer) {
-                      appended_payload_ops.push(column.component_ops)
-                      true
-                    } else {
-                      false
-                    }
+                    None => ()
                   }
-                  None => false
-                }
-            }
-          None =>
-            match pending_payloads.writer(component_local_id) {
-              Some(writer) => {
-                match pending_payloads.metadata(component_local_id) {
-                  Some(metadata) => {
-                    added_tick = metadata.added_tick
-                    changed_tick = metadata.changed_tick
-                    changed_caller = metadata.changed_caller
-                  }
-                  None => ()
-                }
-                if column.append_writer(world, entity, writer) {
-                  appended_payload_ops.push(column.component_ops)
-                  true
+                  column.append_row()
                 } else {
                   false
                 }
-              }
-              None => false
             }
-        }
-      None =>
-        match pending_payloads.writer(component_local_id) {
-          Some(writer) => {
-            match pending_payloads.metadata(component_local_id) {
-              Some(metadata) => {
-                added_tick = metadata.added_tick
-                changed_tick = metadata.changed_tick
-                changed_caller = metadata.changed_caller
+          None =>
+            if pending_writes.contains(component_local_id) {
+              match pending_writes.metadata(component_local_id) {
+                Some(metadata) => {
+                  added_tick = metadata.added_tick
+                  changed_tick = metadata.changed_tick
+                  changed_caller = metadata.changed_caller
+                }
+                None => ()
               }
-              None => ()
-            }
-            if column.append_writer(world, entity, writer) {
-              appended_payload_ops.push(column.component_ops)
-              true
+              column.append_row()
             } else {
               false
             }
+        }
+      None =>
+        if pending_writes.contains(component_local_id) {
+          match pending_writes.metadata(component_local_id) {
+            Some(metadata) => {
+              added_tick = metadata.added_tick
+              changed_tick = metadata.changed_tick
+              changed_caller = metadata.changed_caller
+            }
+            None => ()
           }
-          None => false
+          column.append_row()
+        } else {
+          false
         }
     }
     if !appended {
@@ -501,9 +465,6 @@ fn RawTable::append_row_from_source_table(
         )
       }
       ignore(raw_table_row_kernel_swap_remove(self.rows, row_index))
-      for ops in appended_payload_ops {
-        ignore((ops.remove_payload)(world, entity))
-      }
       return None
     }
     if !column.set_metadata_at_row(
@@ -518,9 +479,6 @@ fn RawTable::append_row_from_source_table(
         )
       }
       ignore(raw_table_row_kernel_swap_remove(self.rows, row_index))
-      for ops in appended_payload_ops {
-        ignore((ops.remove_payload)(world, entity))
-      }
       return None
     }
   }
@@ -591,45 +549,39 @@ fn World::table_entities_view(
 }
 
 ///|
-fn World::pending_component_payload(
+fn World::pending_component_present(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-) -> EcsPayload? {
-  match self.pending_component_payload_context {
+) -> Bool {
+  match self.pending_component_write_context {
     Some(context) =>
       if context.entity_id == entity.id {
-        match context.payloads.writer(local_component_id) {
-          Some(writer) => Some(writer.to_ecs_payload())
-          None => None
-        }
+        context.writes.contains(local_component_id)
       } else {
-        None
+        false
       }
-    None => None
+    None => false
   }
 }
 
 ///|
-fn World::push_pending_component_payload_context(
+fn World::push_pending_component_write_context(
   self : World,
   entity : @core.Entity,
-  payloads : PendingComponentPayloadSet,
-) -> PendingComponentPayloadContext? {
-  let previous = self.pending_component_payload_context
-  self.pending_component_payload_context = Some({
-    entity_id: entity.id,
-    payloads,
-  })
+  writes : PendingComponentWriteSet,
+) -> PendingComponentWriteContext? {
+  let previous = self.pending_component_write_context
+  self.pending_component_write_context = Some({ entity_id: entity.id, writes })
   previous
 }
 
 ///|
-fn World::restore_pending_component_payload_context(
+fn World::restore_pending_component_write_context(
   self : World,
-  previous : PendingComponentPayloadContext?,
+  previous : PendingComponentWriteContext?,
 ) -> Unit {
-  self.pending_component_payload_context = previous
+  self.pending_component_write_context = previous
 }
 
 ///|
@@ -715,28 +667,21 @@ fn World::alive_entity_by_id(self : World, entity_id : Int) -> @core.Entity? {
 }
 
 ///|
-fn[T : EcsPayloadCodec] World::component_value_by_local_id(
+fn[T] World::component_value_by_local_id(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
   local_component_id : Int,
 ) -> T? raise EcsError {
-  match self.pending_component_payload_context {
-    Some(_) =>
-      if self.pending_component_payload(entity, local_component_id)
-        is Some(payload) {
-        return Some(self.component_value(key, entity, payload))
-      }
-    None => ()
-  }
-  guard self.entity_has_component_local_id(entity, local_component_id) else {
+  guard self.pending_component_present(entity, local_component_id) ||
+    self.entity_has_component_local_id(entity, local_component_id) else {
     return None
   }
   (key.access.get)(self, entity)
 }
 
 ///|
-fn[T : EcsPayloadCodec] World::component_value_by_key(
+fn[T] World::component_value_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -749,21 +694,18 @@ fn[T : EcsPayloadCodec] World::component_value_by_key(
 }
 
 ///|
-fn[T : EcsPayloadCodec] World::replace_component_value_by_local_id(
+fn[T] World::replace_component_value_by_local_id(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
   local_component_id : Int,
   value : T,
 ) -> Bool {
-  match self.pending_component_payload_context {
+  match self.pending_component_write_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.contains(local_component_id) {
-        context.payloads.set_writer(
-          local_component_id,
-          ecs_payload_writer(key, value),
-        )
+        context.writes.contains(local_component_id) {
+        (key.access.set)(self, entity, value)
         return true
       }
     None => ()
@@ -776,7 +718,7 @@ fn[T : EcsPayloadCodec] World::replace_component_value_by_local_id(
 }
 
 ///|
-fn[T : EcsPayloadCodec] World::replace_component_value_by_key(
+fn[T] World::replace_component_value_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -991,6 +933,11 @@ fn World::record_sparse_component_added_by_local_id(
       caller,
     ),
   )
+  ignore(
+    self.record_pending_component_added_metadata(
+      entity, local_component_id, tick, caller,
+    ),
+  )
   true
 }
 
@@ -1021,6 +968,11 @@ fn World::record_sparse_component_changed_by_local_id(
       caller,
     ),
   )
+  ignore(
+    self.record_pending_component_changed_metadata(
+      entity, local_component_id, tick, caller,
+    ),
+  )
   true
 }
 
@@ -1040,73 +992,26 @@ fn World::clear_sparse_component_metadata_by_local_id(
 }
 
 ///|
-fn World::component_payload_by_local_id(
+fn World::component_present_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-) -> EcsPayload? {
-  if self.pending_component_payload(entity, local_component_id) is Some(payload) {
-    return Some(payload)
-  }
-  guard self.entity_has_component_local_id(entity, local_component_id) else {
-    return None
-  }
-  guard self.definition_component_id(local_component_id) is Some(definition_id) else {
-    return None
-  }
-  let ops = component_ops(definition_id)
-  (ops.payload)(self, entity)
+) -> Bool {
+  self.pending_component_present(entity, local_component_id) ||
+  self.entity_has_component_local_id(entity, local_component_id)
 }
 
 ///|
-fn World::component_payload(
+fn World::component_present(
   self : World,
   component_definition_id : Int,
   entity : @core.Entity,
-) -> EcsPayload? {
+) -> Bool {
   match self.local_component_id(component_definition_id) {
     Some(local_component_id) =>
-      self.component_payload_by_local_id(entity, local_component_id)
-    None => None
+      self.component_present_by_local_id(entity, local_component_id)
+    None => false
   }
-}
-
-///|
-fn World::replace_component_payload_by_local_id(
-  self : World,
-  entity : @core.Entity,
-  local_component_id : Int,
-  payload : EcsPayload,
-) -> Bool {
-  match self.pending_component_payload_context {
-    Some(context) =>
-      if context.entity_id == entity.id &&
-        context.payloads.contains(local_component_id) {
-        guard self.definition_component_id(local_component_id)
-          is Some(definition_id) else {
-          return false
-        }
-        let ops = component_ops(definition_id)
-        context.payloads.set_writer(
-          local_component_id,
-          ecs_payload_writer_from_payload(
-            definition_id,
-            ops.debug_name,
-            payload,
-          ),
-        )
-        return true
-      }
-    None => ()
-  }
-  guard self.entity_has_component_local_id(entity, local_component_id) else {
-    return false
-  }
-  guard self.definition_component_id(local_component_id) is Some(definition_id) else {
-    return false
-  }
-  let ops = component_ops(definition_id)
-  (ops.set_payload)(self, entity, payload)
 }
 
 ///|
@@ -1114,13 +1019,13 @@ fn World::replace_component_writer_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-  writer : EcsPayloadWriter,
+  writer : ComponentWriter,
 ) -> Bool {
-  match self.pending_component_payload_context {
+  match self.pending_component_write_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.contains(local_component_id) {
-        context.payloads.set_writer(local_component_id, writer)
+        context.writes.contains(local_component_id) {
+        writer.apply(self, entity)
         return true
       }
     None => ()
@@ -1132,8 +1037,8 @@ fn World::replace_component_writer_by_local_id(
     return false
   }
   guard writer.component_definition_id == definition_id else { return false }
-  let ops = component_ops(definition_id)
-  (ops.set_payload)(self, entity, writer.to_ecs_payload())
+  writer.apply(self, entity)
+  true
 }
 
 ///|
@@ -1141,7 +1046,7 @@ fn World::replace_component_writer(
   self : World,
   component_definition_id : Int,
   entity : @core.Entity,
-  writer : EcsPayloadWriter,
+  writer : ComponentWriter,
 ) -> Bool {
   match self.local_component_id(component_definition_id) {
     Some(local_component_id) =>
@@ -1153,32 +1058,29 @@ fn World::replace_component_writer(
 }
 
 ///|
-fn World::remove_component_payload_by_local_id(
+fn World::remove_component_write_by_local_id(
   self : World,
   entity : @core.Entity,
   local_component_id : Int,
-) -> EcsPayload? {
+) -> Bool {
   guard self.definition_component_id(local_component_id) is Some(definition_id) else {
-    return None
+    return false
   }
   let ops = component_ops(definition_id)
-  let removed = (ops.remove_payload)(self, entity)
+  let removed = (ops.remove)(self, entity)
   self.clear_sparse_component_metadata_by_local_id(entity, local_component_id)
   removed
 }
 
 ///|
-fn World::write_pending_sparse_component_payloads(
+fn World::write_pending_sparse_component_writes(
   self : World,
   entity : @core.Entity,
-  pending_payloads : PendingComponentPayloadSet,
+  pending_writes : PendingComponentWriteSet,
 ) -> Unit {
-  for entry in pending_payloads.entries {
+  for entry in pending_writes.entries {
     let component_local_id = entry.local_component_id
-    let payload = entry.writer.to_ecs_payload()
     if self.local_component_storage_type(component_local_id) == Some(SparseSet) {
-      let ops = component_ops(entry.writer.component_definition_id)
-      ignore((ops.set_payload)(self, entity, payload))
       let metadata_store_ref = self.ensure_sparse_component_metadata_store_for_local_id(
         component_local_id,
       )

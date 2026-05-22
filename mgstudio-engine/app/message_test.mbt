@@ -24,15 +24,23 @@ struct TestCursorAppMessage {
 } derive(Eq, Debug)
 
 ///|
+let test_app_message_key : @ecs.MessageKey[TestAppMessage] = @ecs.register_message(
+  debug_name="tests.app.message_support.test_app_message",
+)
+
+///|
 impl @ecs.Message for TestAppMessage with message() {
-  @ecs.register_message(debug_name="tests.app.message_support.test_app_message")
+  test_app_message_key
 }
 
 ///|
+let test_cursor_app_message_key : @ecs.MessageKey[TestCursorAppMessage] = @ecs.register_message(
+  debug_name="tests.app.message_support.test_cursor_app_message",
+)
+
+///|
 impl @ecs.Message for TestCursorAppMessage with message() {
-  @ecs.register_message(
-    debug_name="tests.app.message_support.test_cursor_app_message",
-  )
+  test_cursor_app_message_key
 }
 
 ///|
@@ -41,10 +49,13 @@ struct TestDefaultAppMessage {
 } derive(Eq, Debug)
 
 ///|
+let test_default_app_message_key : @ecs.MessageKey[TestDefaultAppMessage] = @ecs.register_message(
+  debug_name="tests.app.message_support.test_default_app_message",
+)
+
+///|
 impl @ecs.Message for TestDefaultAppMessage with message() {
-  @ecs.register_message(
-    debug_name="tests.app.message_support.test_default_app_message",
-  )
+  test_default_app_message_key
 }
 
 ///|

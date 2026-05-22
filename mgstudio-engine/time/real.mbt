@@ -39,6 +39,11 @@ pub impl TimeContext for Real with time_context_debug_name() {
 }
 
 ///|
+pub impl TimeContext for Real with time_resource_key() {
+  real_time_resource_key
+}
+
+///|
 pub fn Time::new(startup : @core.Instant) -> Time[Real] {
   Time::new_with({ ..Real(), startup, })
 }

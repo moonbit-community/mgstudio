@@ -44,7 +44,6 @@ pub fn ClusterCameraProjection::is_orthographic(Self) -> Bool
 pub fn ClusterCameraProjection::new(ClusterProjectionMatrix3d, Bool, Float, Float) -> Self
 pub fn ClusterCameraProjection::orthographic_first_slice_depth(Self) -> Float
 pub impl @ecs.Component for ClusterCameraProjection
-pub impl @ecs.EcsPayloadCodec for ClusterCameraProjection
 
 pub(all) enum ClusterConfig {
   None
@@ -54,7 +53,6 @@ pub(all) enum ClusterConfig {
 } derive(Eq, @debug.Debug)
 pub fn ClusterConfig::default() -> Self
 pub impl @ecs.Component for ClusterConfig
-pub impl @ecs.EcsPayloadCodec for ClusterConfig
 
 pub(all) enum ClusterFarZMode {
   MaxClusterableObjectRange
@@ -122,7 +120,6 @@ pub fn Clusters::dimensions(Self) -> (Int, Int, Int)
 pub fn Clusters::new(Int, Int, Int, Int, Int, Float, Float) -> Self
 pub fn Clusters::update(Self, Int, Int, Int, Int, Int) -> Unit
 pub impl @ecs.Component for Clusters
-pub impl @ecs.EcsPayloadCodec for Clusters
 
 pub struct GlobalClusterSettings {
   supports_storage_buffers : Bool
@@ -132,7 +129,6 @@ pub struct GlobalClusterSettings {
 } derive(Eq, @debug.Debug)
 pub fn GlobalClusterSettings::GlobalClusterSettings() -> Self
 pub impl @app.Resource for GlobalClusterSettings
-pub impl @ecs.EcsPayloadCodec for GlobalClusterSettings
 
 pub struct ObjectsInCluster {
   clusterables : Array[@core.Entity]
@@ -165,7 +161,6 @@ pub fn VisibleClusterableObjects::point_and_spot_light_count(Self) -> Int
 pub fn VisibleClusterableObjects::reflection_probe_count(Self) -> Int
 pub fn VisibleClusterableObjects::reflection_probe_entities(Self) -> Array[@core.Entity]
 pub impl @ecs.Component for VisibleClusterableObjects
-pub impl @ecs.EcsPayloadCodec for VisibleClusterableObjects
 
 // Type aliases
 pub using @light {type DirectionalLight as ClusterDirectionalLight}

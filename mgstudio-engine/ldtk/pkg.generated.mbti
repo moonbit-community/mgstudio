@@ -277,7 +277,6 @@ pub struct EntityIid {
 pub fn EntityIid::as_str(Self) -> String
 pub fn EntityIid::new(String) -> Self
 pub impl @ecs.Component for EntityIid
-pub impl @ecs.EcsPayloadCodec for EntityIid
 
 pub struct EntityInstance {
   iid : String
@@ -340,14 +339,12 @@ pub fn GridCoords::mul(Self, Self) -> Self
 pub fn GridCoords::new(Int, Int) -> Self
 pub fn GridCoords::sub(Self, Self) -> Self
 pub impl @ecs.Component for GridCoords
-pub impl @ecs.EcsPayloadCodec for GridCoords
 
 pub struct IntGridCell {
   value : Int
 }
 pub fn IntGridCell::new(Int) -> Self
 pub impl @ecs.Component for IntGridCell
-pub impl @ecs.EcsPayloadCodec for IntGridCell
 
 pub(all) enum IntGridRendering {
   Colorful
@@ -420,14 +417,12 @@ pub struct LayerMetadata {
 }
 pub fn LayerMetadata::from_layer_instance(LayerInstance) -> Self
 pub impl @ecs.Component for LayerMetadata
-pub impl @ecs.EcsPayloadCodec for LayerMetadata
 
 pub struct LdtkEntityMap {
   entries : @hashmap.HashMap[(String?, String?), (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit]
 }
 pub fn LdtkEntityMap::LdtkEntityMap() -> Self
 pub impl @app.Resource for LdtkEntityMap
-pub impl @ecs.EcsPayloadCodec for LdtkEntityMap
 
 #alias(FieldInstance)
 pub struct LdtkFieldInstance {
@@ -445,7 +440,6 @@ pub struct LdtkIntCellMap {
 }
 pub fn LdtkIntCellMap::LdtkIntCellMap() -> Self
 pub impl @app.Resource for LdtkIntCellMap
-pub impl @ecs.EcsPayloadCodec for LdtkIntCellMap
 
 pub struct LdtkJson {
   iid : String
@@ -503,7 +497,6 @@ pub fn LdtkProject::root_levels(Self) -> Array[Level]
 pub fn LdtkProject::tileset_map(Self) -> @hashmap.HashMap[Int, @asset.Handle[@image.Image]]
 pub fn LdtkProject::worlds(Self) -> Array[World]
 pub impl @asset.Asset for LdtkProject
-pub impl @ecs.EcsPayloadCodec for LdtkProject
 pub impl LevelMetadataAccessor for LdtkProject
 pub impl RawLevelAccessor for LdtkProject
 
@@ -525,7 +518,6 @@ pub fn LdtkProjectHandle::handle(Self) -> @asset.Handle[LdtkProject]
 pub fn LdtkProjectHandle::id(Self) -> Int
 pub fn LdtkProjectHandle::new(@asset.Handle[LdtkProject]) -> Self
 pub impl @ecs.Component for LdtkProjectHandle
-pub impl @ecs.EcsPayloadCodec for LdtkProjectHandle
 
 pub struct LdtkRuntimeState {
   spawned_levels_by_world : @hashmap.HashMap[String, @hashmap.HashMap[String, @core.Entity]]
@@ -534,7 +526,6 @@ pub fn LdtkRuntimeState::LdtkRuntimeState() -> Self
 pub fn LdtkRuntimeState::remove_world(Self, @core.Entity) -> Unit
 pub fn LdtkRuntimeState::world_spawned_levels(Self, @core.Entity) -> @hashmap.HashMap[String, @core.Entity]
 pub impl @app.Resource for LdtkRuntimeState
-pub impl @ecs.EcsPayloadCodec for LdtkRuntimeState
 
 pub struct LdtkSettings {
   level_spawn_behavior : LevelSpawnBehavior
@@ -545,7 +536,6 @@ pub struct LdtkSettings {
 }
 pub fn LdtkSettings::LdtkSettings() -> Self
 pub impl @app.Resource for LdtkSettings
-pub impl @ecs.EcsPayloadCodec for LdtkSettings
 
 pub struct LdtkSpawnedLevelIids {
   iids : Array[LevelIid]
@@ -553,7 +543,6 @@ pub struct LdtkSpawnedLevelIids {
 pub fn LdtkSpawnedLevelIids::LdtkSpawnedLevelIids() -> Self
 pub fn LdtkSpawnedLevelIids::iids(Self) -> Array[LevelIid]
 pub impl @app.Resource for LdtkSpawnedLevelIids
-pub impl @ecs.EcsPayloadCodec for LdtkSpawnedLevelIids
 
 pub struct LdtkTileEnumTags {
   tags : Array[String]
@@ -619,7 +608,6 @@ pub(all) enum LevelEvent {
   Transformed(LevelIid)
   Despawned(LevelIid)
 }
-pub impl @ecs.EcsPayloadCodec for LevelEvent
 pub impl @ecs.Message for LevelEvent
 
 pub struct LevelIid {
@@ -629,7 +617,6 @@ pub fn LevelIid::as_str(Self) -> String
 pub fn LevelIid::get(Self) -> String
 pub fn LevelIid::new(String) -> Self
 pub impl @ecs.Component for LevelIid
-pub impl @ecs.EcsPayloadCodec for LevelIid
 
 pub struct LevelIndices {
   world : Int?
@@ -656,7 +643,6 @@ pub fn LevelSelection::index(Int) -> Self
 pub fn LevelSelection::indices(Int, Int) -> Self
 pub fn LevelSelection::is_match(Self, LevelIndices, Level) -> Bool
 pub impl @app.Resource for LevelSelection
-pub impl @ecs.EcsPayloadCodec for LevelSelection
 
 pub struct LevelSet {
   iids : Array[LevelIid]
@@ -667,7 +653,6 @@ pub fn LevelSet::from_iids(Array[String]) -> Self
 pub fn LevelSet::iids(Self) -> Array[LevelIid]
 pub fn LevelSet::new(Array[LevelIid]) -> Self
 pub impl @ecs.Component for LevelSet
-pub impl @ecs.EcsPayloadCodec for LevelSet
 pub impl @ecs.Mutable for LevelSet
 
 pub(all) enum LevelSpawnBehavior {
@@ -723,7 +708,6 @@ pub struct ReferenceToAnEntityInstance {
 pub struct Respawn {
 }
 pub impl @ecs.Component for Respawn
-pub impl @ecs.EcsPayloadCodec for Respawn
 
 pub(all) enum SetClearColor {
   No
@@ -743,7 +727,6 @@ pub struct TileEnumTags {
 }
 pub fn TileEnumTags::new(Array[String], Int?) -> Self
 pub impl @ecs.Component for TileEnumTags
-pub impl @ecs.EcsPayloadCodec for TileEnumTags
 
 pub struct TileInstance {
   px : @math.IVec2
@@ -758,7 +741,6 @@ pub struct TileMetadata {
 }
 pub fn TileMetadata::new(String) -> Self
 pub impl @ecs.Component for TileMetadata
-pub impl @ecs.EcsPayloadCodec for TileMetadata
 
 pub struct TilesetDefinition {
   uid : Int
@@ -806,7 +788,6 @@ pub struct Worldly {
 pub fn Worldly::from_entity_info(EntityInstance) -> Self
 pub fn Worldly::new(String) -> Self
 pub impl @ecs.Component for Worldly
-pub impl @ecs.EcsPayloadCodec for Worldly
 
 // Type aliases
 pub type LdtkEntityDispatcher = (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit

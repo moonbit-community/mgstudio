@@ -15,6 +15,7 @@
 ///|
 pub(open) trait GizmoConfigGroup {
   fn gizmo_config_group_debug_name() -> String
+  fn gizmo_storage_resource_key() -> @ecs.ResourceKey[GizmoStorage[Self]]
   fn new_gizmo_config_group_cell() -> GizmoConfigGroupCell
   fn gizmo_config_group_cell_ref(GizmoConfigGroupCell) -> Ref[Self]?
   fn gizmo_config_group_marker(self : Self) -> Unit
@@ -46,6 +47,18 @@ pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with gizmo_config_group_ma
 ///|
 pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with gizmo_config_group_debug_name() {
   "mgstudio_gizmos::DefaultGizmoConfigGroup"
+}
+
+///|
+let default_gizmo_storage_resource_key : @ecs.ResourceKey[
+  GizmoStorage[DefaultGizmoConfigGroup],
+] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos::GizmoStorage<mgstudio_gizmos::DefaultGizmoConfigGroup>",
+)
+
+///|
+pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with gizmo_storage_resource_key() {
+  default_gizmo_storage_resource_key
 }
 
 ///|

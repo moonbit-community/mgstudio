@@ -31,18 +31,10 @@ const BUTTON_LABEL_FONT_SIZE : Float = 18.0F
 const OPTION_TITLE_WIDTH : Float = 150.0F
 
 ///|
-let widget_click_event_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
-
-///|
-let widget_click_sender_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
-
-///|
-pub(open) trait WidgetValue: @ecs.EcsPayloadCodec {
+pub(open) trait WidgetValue {
   fn widget_debug_name() -> String
+  fn widget_click_event_key() -> @ecs.MessageKey[WidgetClickEvent[Self]]
+  fn widget_click_sender_key() -> @ecs.ComponentKey[WidgetClickSender[Self]]
 }
 
 ///|
@@ -105,34 +97,14 @@ pub impl @ecs.Component for RadioButtonText with component() {
 pub fn[T : WidgetValue] widget_click_event_key() -> @ecs.MessageKey[
   WidgetClickEvent[T],
 ] {
-  let type_name = "examples.helpers.widgets_lib.WidgetClickEvent<\{T::widget_debug_name()}>"
-  match widget_click_event_registry.val.get(type_name) {
-    Some(id) => @ecs.message_key_from_id(id, debug_name=type_name)
-    None => {
-      let key : @ecs.MessageKey[WidgetClickEvent[T]] = @ecs.register_message(
-        debug_name=type_name,
-      )
-      widget_click_event_registry.val.set(type_name, key.id())
-      key
-    }
-  }
+  T::widget_click_event_key()
 }
 
 ///|
 pub fn[T : WidgetValue] widget_click_sender_key() -> @ecs.ComponentKey[
   WidgetClickSender[T],
 ] {
-  let type_name = "examples.helpers.widgets_lib.WidgetClickSender<\{T::widget_debug_name()}>"
-  match widget_click_sender_registry.val.get(type_name) {
-    Some(id) => @ecs.component_key_from_id(id, debug_name=type_name)
-    None => {
-      let key : @ecs.ComponentKey[WidgetClickSender[T]] = @ecs.register_erased_component(
-        debug_name=type_name,
-      )
-      widget_click_sender_registry.val.set(type_name, key.id())
-      key
-    }
-  }
+  T::widget_click_sender_key()
 }
 
 ///|

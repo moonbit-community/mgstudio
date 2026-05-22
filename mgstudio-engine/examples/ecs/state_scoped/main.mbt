@@ -45,6 +45,16 @@ impl @app.States for GameState with debug_name(self) {
 }
 
 ///|
+let game_state_resource_keys : @app.StateResourceKeys[GameState] = @app.register_state_resource_keys(
+  "GameState",
+)
+
+///|
+impl @app.States for GameState with state_resource_keys() {
+  game_state_resource_keys
+}
+
+///|
 impl @app.Resource for TickTock with resource() {
   tick_tock_resource_key
 }

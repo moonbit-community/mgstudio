@@ -81,7 +81,6 @@ pub fn render3d_prepass_bindings_for_entity(@ecs.World, @core.Entity) -> Prepass
 pub struct AnyPrepassPluginLoaded {
 } derive(Default, Eq, @debug.Debug)
 pub impl @app.Resource for AnyPrepassPluginLoaded
-pub impl @ecs.EcsPayloadCodec for AnyPrepassPluginLoaded
 
 pub struct PrepassBindings3d {
   depth : Bool
@@ -107,7 +106,6 @@ pub struct PrepassPipelineState {
 } derive(Eq, @debug.Debug)
 pub fn PrepassPipelineState::PrepassPipelineState() -> Self
 pub impl @app.Resource for PrepassPipelineState
-pub impl @ecs.EcsPayloadCodec for PrepassPipelineState
 
 pub struct PrepassPluginState {
   enabled : Bool
@@ -124,7 +122,6 @@ pub fn PreviousGlobalTransform::from_global_transform(@transform.GlobalTransform
 pub fn PreviousGlobalTransform::new(@transform.Transform) -> Self
 pub fn PreviousGlobalTransform::transform(Self) -> @transform.Transform
 pub impl @ecs.Component for PreviousGlobalTransform
-pub impl @ecs.EcsPayloadCodec for PreviousGlobalTransform
 pub impl @ecs.Mutable for PreviousGlobalTransform
 
 pub struct PreviousViewData {
@@ -135,7 +132,6 @@ pub fn PreviousViewData::clip_from_world(Self) -> @render.ProjectionMatrix3d
 pub fn PreviousViewData::new(@transform.Transform, @render.ProjectionMatrix3d) -> Self
 pub fn PreviousViewData::transform(Self) -> @transform.Transform
 pub impl @ecs.Component for PreviousViewData
-pub impl @ecs.EcsPayloadCodec for PreviousViewData
 
 // Type aliases
 pub using @deferred {type DeferredPrepass}

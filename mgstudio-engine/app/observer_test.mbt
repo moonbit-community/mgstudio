@@ -72,8 +72,13 @@ struct ObserverTriggered {
 } derive(Eq)
 
 ///|
+let observer_triggered_message_key : @ecs.MessageKey[ObserverTriggered] = @ecs.register_message(
+  debug_name="tests.app.observer.triggered",
+)
+
+///|
 fn observer_triggered_key() -> @ecs.MessageKey[ObserverTriggered] {
-  @ecs.register_message(debug_name="tests.app.observer.triggered")
+  observer_triggered_message_key
 }
 
 ///|
@@ -87,8 +92,13 @@ struct TriggerObserverTriggered {
 } derive(Eq)
 
 ///|
+let trigger_observer_triggered_message_key : @ecs.MessageKey[
+  TriggerObserverTriggered,
+] = @ecs.register_message(debug_name="tests.app.observer.trigger_message")
+
+///|
 fn trigger_observer_triggered_key() -> @ecs.MessageKey[TriggerObserverTriggered] {
-  @ecs.register_message(debug_name="tests.app.observer.trigger_message")
+  trigger_observer_triggered_message_key
 }
 
 ///|

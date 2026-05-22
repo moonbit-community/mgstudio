@@ -145,6 +145,16 @@ pub impl @asset.Asset for AnimationGraph with asset_as_image(_self) {
 }
 
 ///|
+let animation_graph_asset_resource_keys : @asset.AssetResourceKeys[
+  AnimationGraph,
+] = @asset.register_asset_resource_keys(AnimationGraph::asset_debug_name())
+
+///|
+pub impl @asset.Asset for AnimationGraph with asset_resource_keys() {
+  animation_graph_asset_resource_keys
+}
+
+///|
 pub fn AnimationGraph::new() -> AnimationGraph {
   let root = AnimationNodeIndex::new(0)
   AnimationGraph::{

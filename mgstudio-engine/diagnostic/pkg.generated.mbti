@@ -187,7 +187,6 @@ pub fn DiagnosticsStore::iter(Self) -> Array[Diagnostic]
 pub fn DiagnosticsStore::iter_mut(Self) -> Array[@ref.Ref[Diagnostic]]
 pub fn DiagnosticsStore::iter_refs(Self) -> Array[@ref.Ref[Diagnostic]]
 pub impl @app.Resource for DiagnosticsStore
-pub impl @ecs.EcsPayloadCodec for DiagnosticsStore
 
 pub struct EntityCountDiagnosticsPlugin {
   max_history_length : Int
@@ -201,7 +200,6 @@ pub struct FrameCount {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn FrameCount::FrameCount() -> Self
 pub impl @app.Resource for FrameCount
-pub impl @ecs.EcsPayloadCodec for FrameCount
 
 pub struct FrameCountPlugin {
 }
@@ -238,7 +236,6 @@ pub fn LogDiagnosticsState::extend_filter(Self, Array[DiagnosticPath]) -> Unit
 pub fn LogDiagnosticsState::remove_filter(Self, DiagnosticPath) -> Bool
 pub fn LogDiagnosticsState::set_timer_duration(Self, Float) -> Unit
 pub impl @app.Resource for LogDiagnosticsState
-pub impl @ecs.EcsPayloadCodec for LogDiagnosticsState
 
 pub struct RenderDiagnosticsPlugin {
   max_history_length : Int
@@ -265,7 +262,6 @@ pub struct SystemInfo {
 } derive(@debug.Debug)
 pub fn SystemInfo::SystemInfo() -> Self
 pub impl @app.Resource for SystemInfo
-pub impl @ecs.EcsPayloadCodec for SystemInfo
 
 pub struct SystemInformationDiagnosticsPlugin {
 }

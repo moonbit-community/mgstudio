@@ -126,7 +126,6 @@ pub struct GltfLoaderRuntimeState {
   custom_vertex_attributes : Array[GltfCustomVertexAttribute]
 }
 pub impl @app.Resource for GltfLoaderRuntimeState
-pub impl @ecs.EcsPayloadCodec for GltfLoaderRuntimeState
 
 pub struct GltfPlugin {
   pbr_material_handler_enabled : Bool

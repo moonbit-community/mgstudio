@@ -204,7 +204,6 @@ pub struct AccessibilityLabel {
 } derive(ToJson, @json.FromJson)
 pub fn AccessibilityLabel::new(String) -> Self
 pub impl @ecs.Component for AccessibilityLabel
-pub impl @ecs.EcsPayloadCodec for AccessibilityLabel
 
 pub(all) enum AlignContent {
   Center
@@ -246,7 +245,6 @@ pub struct AutoDirectionalNavigation {
 } derive(ToJson, @json.FromJson)
 pub fn AutoDirectionalNavigation::AutoDirectionalNavigation() -> Self
 pub impl @ecs.Component for AutoDirectionalNavigation
-pub impl @ecs.EcsPayloadCodec for AutoDirectionalNavigation
 
 pub struct AutoDirectionalNavigator {
   world : @ecs.World
@@ -260,7 +258,6 @@ pub struct BackgroundColor {
 } derive(ToJson, @json.FromJson)
 pub fn BackgroundColor::new(@color.Color) -> Self
 pub impl @ecs.Component for BackgroundColor
-pub impl @ecs.EcsPayloadCodec for BackgroundColor
 pub impl @ecs.Mutable for BackgroundColor
 
 pub struct BorderColor {
@@ -268,7 +265,6 @@ pub struct BorderColor {
 } derive(ToJson, @json.FromJson)
 pub fn BorderColor::new(@color.Color) -> Self
 pub impl @ecs.Component for BorderColor
-pub impl @ecs.EcsPayloadCodec for BorderColor
 pub impl @ecs.Mutable for BorderColor
 
 pub struct BorderRadius {
@@ -322,7 +318,6 @@ pub struct BoxShadow {
 pub fn BoxShadow::BoxShadow() -> Self
 pub fn BoxShadow::new(@color.Color, Val, Val, Val, Val) -> Self
 pub impl @ecs.Component for BoxShadow
-pub impl @ecs.EcsPayloadCodec for BoxShadow
 pub impl @ecs.Mutable for BoxShadow
 
 pub(all) enum BoxSizing {
@@ -335,7 +330,6 @@ pub struct Button {
 } derive(ToJson, @json.FromJson)
 pub fn Button::Button() -> Self
 pub impl @ecs.Component for Button
-pub impl @ecs.EcsPayloadCodec for Button
 
 pub struct ButtonColors {
   normal : @color.Color
@@ -344,26 +338,22 @@ pub struct ButtonColors {
 } derive(ToJson, @json.FromJson)
 pub fn ButtonColors::new(@color.Color, @color.Color, @color.Color) -> Self
 pub impl @ecs.Component for ButtonColors
-pub impl @ecs.EcsPayloadCodec for ButtonColors
 
 pub struct CalculatedClip {
   clip : @math.Rect
 } derive(ToJson, @json.FromJson)
 pub fn CalculatedClip::new(@math.Rect) -> Self
 pub impl @ecs.Component for CalculatedClip
-pub impl @ecs.EcsPayloadCodec for CalculatedClip
 
 pub struct Checkable {
 } derive(ToJson, @json.FromJson)
 pub fn Checkable::Checkable() -> Self
 pub impl @ecs.Component for Checkable
-pub impl @ecs.EcsPayloadCodec for Checkable
 
 pub struct Checked {
 } derive(ToJson, @json.FromJson)
 pub fn Checked::Checked() -> Self
 pub impl @ecs.Component for Checked
-pub impl @ecs.EcsPayloadCodec for Checked
 
 pub struct ComputedUiRenderTargetInfo {
   scale_factor : Float
@@ -375,7 +365,6 @@ pub fn ComputedUiRenderTargetInfo::new(Float, @math.IVec2) -> Self
 pub fn ComputedUiRenderTargetInfo::physical_size(Self) -> @math.IVec2
 pub fn ComputedUiRenderTargetInfo::scale_factor(Self) -> Float
 pub impl @ecs.Component for ComputedUiRenderTargetInfo
-pub impl @ecs.EcsPayloadCodec for ComputedUiRenderTargetInfo
 
 pub struct ComputedUiTargetCamera {
   camera : @core.Entity
@@ -384,7 +373,6 @@ pub fn ComputedUiTargetCamera::ComputedUiTargetCamera() -> Self
 pub fn ComputedUiTargetCamera::get(Self) -> @core.Entity?
 pub fn ComputedUiTargetCamera::new(@core.Entity) -> Self
 pub impl @ecs.Component for ComputedUiTargetCamera
-pub impl @ecs.EcsPayloadCodec for ComputedUiTargetCamera
 
 pub struct ContentSize {
   size : @math.Vec2
@@ -392,7 +380,6 @@ pub struct ContentSize {
 pub fn ContentSize::new(@math.Vec2) -> Self
 pub fn ContentSize::size(Self) -> @math.Vec2
 pub impl @ecs.Component for ContentSize
-pub impl @ecs.EcsPayloadCodec for ContentSize
 
 pub(all) enum Display {
   Block
@@ -420,20 +407,17 @@ pub(all) enum FocusPolicy {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn FocusPolicy::default() -> Self
 pub impl @ecs.Component for FocusPolicy
-pub impl @ecs.EcsPayloadCodec for FocusPolicy
 
 pub struct GhostNode {
 } derive(ToJson, @json.FromJson)
 pub fn GhostNode::GhostNode() -> Self
 pub impl @ecs.Component for GhostNode
-pub impl @ecs.EcsPayloadCodec for GhostNode
 
 pub struct GlobalZIndex {
   value : Int
 } derive(ToJson, @json.FromJson)
 pub fn GlobalZIndex::new(Int) -> Self
 pub impl @ecs.Component for GlobalZIndex
-pub impl @ecs.EcsPayloadCodec for GlobalZIndex
 pub impl @ecs.Mutable for GlobalZIndex
 
 pub(all) enum GridAutoFlow {
@@ -491,7 +475,6 @@ pub fn ImageNode::with_mode(Self, NodeImageMode) -> Self
 pub fn ImageNode::with_rect(Self, @math.Rect?) -> Self
 pub fn ImageNode::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 pub impl @ecs.Component for ImageNode
-pub impl @ecs.EcsPayloadCodec for ImageNode
 pub impl @ecs.Mutable for ImageNode
 
 pub struct ImageNodeSize {
@@ -500,7 +483,6 @@ pub struct ImageNodeSize {
 pub fn ImageNodeSize::ImageNodeSize() -> Self
 pub fn ImageNodeSize::size(Self) -> @math.UVec2
 pub impl @ecs.Component for ImageNodeSize
-pub impl @ecs.EcsPayloadCodec for ImageNodeSize
 
 pub(all) enum Interaction {
   None
@@ -508,19 +490,16 @@ pub(all) enum Interaction {
   Pressed
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for Interaction
-pub impl @ecs.EcsPayloadCodec for Interaction
 
 pub struct InteractionDisabled {
 } derive(ToJson, @json.FromJson)
 pub fn InteractionDisabled::InteractionDisabled() -> Self
 pub impl @ecs.Component for InteractionDisabled
-pub impl @ecs.EcsPayloadCodec for InteractionDisabled
 
 pub struct IsDefaultUiCamera {
 } derive(ToJson, @json.FromJson)
 pub fn IsDefaultUiCamera::IsDefaultUiCamera() -> Self
 pub impl @ecs.Component for IsDefaultUiCamera
-pub impl @ecs.EcsPayloadCodec for IsDefaultUiCamera
 
 pub(all) enum JustifyContent {
   Center
@@ -557,7 +536,6 @@ pub struct Label {
 } derive(ToJson, @json.FromJson)
 pub fn Label::Label() -> Self
 pub impl @ecs.Component for Label
-pub impl @ecs.EcsPayloadCodec for Label
 
 pub(all) struct Node {
   display : Display
@@ -630,7 +608,6 @@ pub fn Node::with_scrollbar_width(Self, Float) -> Self
 pub fn Node::with_top(Self, Val) -> Self
 pub fn Node::with_width(Self, Val) -> Self
 pub impl @ecs.Component for Node
-pub impl @ecs.EcsPayloadCodec for Node
 pub impl @ecs.Mutable for Node
 
 pub(all) enum NodeImageMode {
@@ -650,7 +627,6 @@ pub struct Outline {
 pub fn Outline::Outline() -> Self
 pub fn Outline::new(Val, Val, @color.Color) -> Self
 pub impl @ecs.Component for Outline
-pub impl @ecs.EcsPayloadCodec for Outline
 pub impl @ecs.Mutable for Outline
 
 pub struct Overflow {
@@ -693,7 +669,6 @@ pub struct Pressed {
 } derive(ToJson, @json.FromJson)
 pub fn Pressed::Pressed() -> Self
 pub impl @ecs.Component for Pressed
-pub impl @ecs.EcsPayloadCodec for Pressed
 
 pub struct RelativeCursorPosition {
   normalized_visible_node_rect : @math.Rect
@@ -702,7 +677,6 @@ pub struct RelativeCursorPosition {
 pub fn RelativeCursorPosition::RelativeCursorPosition() -> Self
 pub fn RelativeCursorPosition::cursor_over(Self) -> Bool
 pub impl @ecs.Component for RelativeCursorPosition
-pub impl @ecs.EcsPayloadCodec for RelativeCursorPosition
 
 pub struct RepeatedGridTrack {
   repetition : GridTrackRepetition
@@ -734,7 +708,6 @@ pub fn ScrollPosition::with_y(Self, Float) -> Self
 pub fn ScrollPosition::x(Self) -> Float
 pub fn ScrollPosition::y(Self) -> Float
 pub impl @ecs.Component for ScrollPosition
-pub impl @ecs.EcsPayloadCodec for ScrollPosition
 pub impl @ecs.Mutable for ScrollPosition
 
 pub(all) enum SliceScaleMode {
@@ -793,7 +766,6 @@ pub struct UiContext {
 }
 pub fn UiContext::UiContext() -> Self
 pub fn UiContext::new(@asset.Handle[@image.Image], @math.Vec2, @math.Vec2, @core.Entity?, @transform.Transform, Float, @math.Vec2?, Bool, pointer_just_pressed? : Bool, pointer_just_released? : Bool, wheel_delta? : @math.Vec2) -> Self
-pub impl @ecs.EcsPayloadCodec for UiContext
 pub impl ToJson for UiContext
 pub impl @json.FromJson for UiContext
 
@@ -812,7 +784,6 @@ pub fn UiImage::with_flip_y(Self) -> Self
 pub fn UiImage::with_rect(Self, @math.Rect?) -> Self
 pub fn UiImage::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 pub impl @ecs.Component for UiImage
-pub impl @ecs.EcsPayloadCodec for UiImage
 
 pub struct UiLayout {
   stack_index : Int
@@ -843,7 +814,6 @@ pub fn UiLayout::size(Self) -> @math.Vec2
 pub fn UiLayout::stack_index(Self) -> Int
 pub fn UiLayout::with_stack_index(Self, Int) -> Self
 pub impl @ecs.Component for UiLayout
-pub impl @ecs.EcsPayloadCodec for UiLayout
 
 pub struct UiPlugin {
 }
@@ -877,13 +847,11 @@ pub struct UiRoot {
 } derive(ToJson, @json.FromJson)
 pub fn UiRoot::UiRoot() -> Self
 pub impl @ecs.Component for UiRoot
-pub impl @ecs.EcsPayloadCodec for UiRoot
 
 pub struct UiScale {
   value : Float
 } derive(ToJson, @json.FromJson)
 pub fn UiScale::new(Float) -> Self
-pub impl @ecs.EcsPayloadCodec for UiScale
 
 pub struct UiStack {
   mut partition : Array[(Int, Int)]
@@ -893,7 +861,6 @@ pub fn UiStack::UiStack() -> Self
 pub fn UiStack::clear(@ref.Ref[Self]) -> Unit
 pub fn UiStack::partition(Self) -> Array[(Int, Int)]
 pub fn UiStack::uinodes(Self) -> Array[@core.Entity]
-pub impl @ecs.EcsPayloadCodec for UiStack
 
 pub struct UiTargetCamera {
   camera : @core.Entity
@@ -901,7 +868,6 @@ pub struct UiTargetCamera {
 pub fn UiTargetCamera::entity(Self) -> @core.Entity
 pub fn UiTargetCamera::new(@core.Entity) -> Self
 pub impl @ecs.Component for UiTargetCamera
-pub impl @ecs.EcsPayloadCodec for UiTargetCamera
 
 pub(all) enum Val {
   Auto
@@ -933,7 +899,6 @@ pub struct ZIndex {
 } derive(ToJson, @json.FromJson)
 pub fn ZIndex::new(Int) -> Self
 pub impl @ecs.Component for ZIndex
-pub impl @ecs.EcsPayloadCodec for ZIndex
 
 // Type aliases
 

@@ -1372,6 +1372,16 @@ pub impl @asset.Asset for GizmoAsset with asset_as_image(_self) {
 }
 
 ///|
+let gizmo_asset_resource_keys : @asset.AssetResourceKeys[GizmoAsset] = @asset.register_asset_resource_keys(
+  GizmoAsset::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for GizmoAsset with asset_resource_keys() {
+  gizmo_asset_resource_keys
+}
+
+///|
 pub fn GizmoAsset::new() -> GizmoAsset {
   GizmoAsset::{
     buffer: GizmoBuffer::GizmoBuffer(),

@@ -30,6 +30,16 @@ impl States for TestSubState with debug_name(self) {
 }
 
 ///|
+let test_sub_state_resource_keys : StateResourceKeys[TestSubState] = register_state_resource_keys(
+  "TestSubState",
+)
+
+///|
+impl States for TestSubState with state_resource_keys() {
+  test_sub_state_resource_keys
+}
+
+///|
 impl FreelyMutableState for TestSubState
 
 ///|

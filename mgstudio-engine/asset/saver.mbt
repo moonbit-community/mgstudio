@@ -49,46 +49,17 @@ pub fn Writer::finish(self : Writer) -> Bytes {
 ///|
 pub struct SavedAsset[T] {
   asset : T
-  labeled_assets : Array[(String, ErasedSavedAsset)]
-  handle_labels : Array[(Int, String)]
-}
-
-///|
-struct ErasedSavedAsset {
-  asset : @ecs.EcsPayload
   handle_labels : Array[(Int, String)]
 }
 
 ///|
 pub fn[T] SavedAsset::from_asset(asset : T) -> SavedAsset[T] {
-  SavedAsset::{ asset, labeled_assets: [], handle_labels: [] }
+  SavedAsset::{ asset, handle_labels: [] }
 }
 
 ///|
 pub fn[T] SavedAsset::get(self : SavedAsset[T]) -> T {
   self.asset
-}
-
-///|
-pub fn[T, U : @ecs.EcsPayloadCodec] SavedAsset::get_labeled(
-  self : SavedAsset[T],
-  label : String,
-) -> SavedAsset[U]? {
-  for entry in self.labeled_assets {
-    let (candidate, asset) = entry
-    if candidate == label {
-      match U::from_ecs_payload(asset.asset) {
-        Some(value) =>
-          return Some(SavedAsset::{
-            asset: value,
-            labeled_assets: [],
-            handle_labels: asset.handle_labels,
-          })
-        None => return None
-      }
-    }
-  }
-  None
 }
 
 ///|
@@ -109,7 +80,6 @@ pub fn[T, U] SavedAsset::label_for(
 pub struct SavedAssetBuilder {
   asset_server : AssetServer
   path : AssetPath
-  labeled_assets : Array[(String, ErasedSavedAsset)]
   handle_labels : Array[(Int, String)]
   mut next_handle_id : Int
 }
@@ -122,31 +92,22 @@ pub fn SavedAssetBuilder::new(
   SavedAssetBuilder::{
     asset_server,
     path,
-    labeled_assets: [],
     handle_labels: [],
     next_handle_id: 0,
   }
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] SavedAssetBuilder::add_labeled_asset_with_new_handle(
+pub fn[T] SavedAssetBuilder::add_labeled_asset_with_new_handle(
   self : SavedAssetBuilder,
   label : String,
   asset : SavedAsset[T],
 ) -> Handle[T] {
   self.asset_server |> ignore
   self.path |> ignore
+  asset |> ignore
   let handle = Handle::new(self.next_handle_id)
   self.next_handle_id = self.next_handle_id + 1
-  self.labeled_assets.push(
-    (
-      label,
-      ErasedSavedAsset::{
-        asset: T::to_ecs_payload(asset.asset),
-        handle_labels: asset.handle_labels,
-      },
-    ),
-  )
   self.handle_labels.push((handle.id(), label))
   handle
 }
@@ -156,11 +117,7 @@ pub fn[T] SavedAssetBuilder::build(
   self : SavedAssetBuilder,
   asset : T,
 ) -> SavedAsset[T] {
-  SavedAsset::{
-    asset,
-    labeled_assets: self.labeled_assets,
-    handle_labels: self.handle_labels,
-  }
+  SavedAsset::{ asset, handle_labels: self.handle_labels }
 }
 
 ///|

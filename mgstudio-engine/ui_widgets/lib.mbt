@@ -57,9 +57,15 @@ pub struct ValueChange[T] {
 } derive(ToJson, FromJson)
 
 ///|
-pub(open) trait ValueChangeValue: @ecs.EcsPayloadCodec {
+pub(open) trait ValueChangeValue {
   fn value_change_value_debug_name() -> String
+  fn value_change_event_key() -> @ecs.EventKey[ValueChange[Self]]
 }
+
+///|
+let bool_value_change_event_key : @ecs.EventKey[ValueChange[Bool]] = @ecs.register_event(
+  debug_name="mgstudio_ui_widgets::ValueChange<Bool>",
+)
 
 ///|
 impl ValueChangeValue for Bool with value_change_value_debug_name() {
@@ -67,9 +73,29 @@ impl ValueChangeValue for Bool with value_change_value_debug_name() {
 }
 
 ///|
+impl ValueChangeValue for Bool with value_change_event_key() {
+  bool_value_change_event_key
+}
+
+///|
+let float_value_change_event_key : @ecs.EventKey[ValueChange[Float]] = @ecs.register_event(
+  debug_name="mgstudio_ui_widgets::ValueChange<Float>",
+)
+
+///|
 impl ValueChangeValue for Float with value_change_value_debug_name() {
   "Float"
 }
+
+///|
+impl ValueChangeValue for Float with value_change_event_key() {
+  float_value_change_event_key
+}
+
+///|
+let entity_value_change_event_key : @ecs.EventKey[ValueChange[@core.Entity]] = @ecs.register_event(
+  debug_name="mgstudio_ui_widgets::ValueChange<mgstudio_core::Entity>",
+)
 
 ///|
 impl ValueChangeValue for @core.Entity with value_change_value_debug_name() {
@@ -77,27 +103,15 @@ impl ValueChangeValue for @core.Entity with value_change_value_debug_name() {
 }
 
 ///|
-fn[T : ValueChangeValue] value_change_debug_name(_sample : T?) -> String {
-  ignore(_sample)
-  "mgstudio_ui_widgets::ValueChange<\{T::value_change_value_debug_name()}>"
+impl ValueChangeValue for @core.Entity with value_change_event_key() {
+  entity_value_change_event_key
 }
-
-///|
-let value_change_event_id_by_debug_name_ref : Ref[Map[String, Int]] = Ref({})
 
 ///|
 fn[T : ValueChangeValue] value_change_event_key() -> @ecs.EventKey[
   ValueChange[T],
 ] {
-  let debug_name = value_change_debug_name((None : T?))
-  match value_change_event_id_by_debug_name_ref.val.get(debug_name) {
-    Some(id) => @ecs.event_key_from_id(id, debug_name~)
-    None => {
-      let key : @ecs.EventKey[ValueChange[T]] = @ecs.register_event(debug_name~)
-      value_change_event_id_by_debug_name_ref.val.set(debug_name, key.id())
-      key
-    }
-  }
+  T::value_change_event_key()
 }
 
 ///|

@@ -36,6 +36,16 @@ pub impl @app.States for TestState with debug_name(self) {
 }
 
 ///|
+let test_state_resource_keys : @app.StateResourceKeys[TestState] = @app.register_state_resource_keys(
+  "TestState",
+)
+
+///|
+pub impl @app.States for TestState with state_resource_keys() {
+  test_state_resource_keys
+}
+
+///|
 test "state boundary re-exports state resources and transitions" {
   let world = @ecs.World::new()
   let app = @app.App::new(world).add_plugins(@app.StatesPlugin::StatesPlugin())

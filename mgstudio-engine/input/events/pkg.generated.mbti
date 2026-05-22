@@ -42,7 +42,6 @@ pub fn ButtonState::is_pressed(Self) -> Bool
 
 pub(all) struct DoubleTapGesture {
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for DoubleTapGesture
 pub impl @ecs.Message for DoubleTapGesture
 
 pub(all) enum Key {
@@ -141,12 +140,10 @@ pub(all) enum KeyCode {
 pub(all) struct KeyboardCharacter {
   character : String
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for KeyboardCharacter
 pub impl @ecs.Message for KeyboardCharacter
 
 pub(all) struct KeyboardFocusLost {
 } derive(Eq, ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for KeyboardFocusLost
 pub impl @ecs.Message for KeyboardFocusLost
 
 pub(all) struct KeyboardInput {
@@ -156,7 +153,6 @@ pub(all) struct KeyboardInput {
   repeat : Bool
   text : String?
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for KeyboardInput
 pub impl @ecs.Message for KeyboardInput
 
 pub(all) enum MouseButton {
@@ -169,13 +165,11 @@ pub(all) struct MouseButtonInput {
   button : MouseButton
   state : ButtonState
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for MouseButtonInput
 pub impl @ecs.Message for MouseButtonInput
 
 pub(all) struct MouseMotion {
   delta : @math.Vec2
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for MouseMotion
 pub impl @ecs.Message for MouseMotion
 
 pub(all) enum MouseScrollUnit {
@@ -188,25 +182,21 @@ pub(all) struct MouseWheel {
   x : Float
   y : Float
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for MouseWheel
 pub impl @ecs.Message for MouseWheel
 
 pub(all) struct PanGesture {
   delta : @math.Vec2
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for PanGesture
 pub impl @ecs.Message for PanGesture
 
 pub(all) struct PinchGesture {
   delta : Float
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for PinchGesture
 pub impl @ecs.Message for PinchGesture
 
 pub(all) struct RotationGesture {
   delta : Float
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for RotationGesture
 pub impl @ecs.Message for RotationGesture
 
 pub(all) struct TouchInput {
@@ -214,7 +204,6 @@ pub(all) struct TouchInput {
   phase : TouchPhase
   position : @math.Vec2
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for TouchInput
 pub impl @ecs.Message for TouchInput
 
 pub(all) enum TouchPhase {

@@ -61,7 +61,6 @@ pub fn StaticTransformOptimizations::disabled() -> Self
 pub fn StaticTransformOptimizations::enabled() -> Self
 pub fn StaticTransformOptimizations::from_threshold(Float) -> Self
 pub impl @app.Resource for StaticTransformOptimizations
-pub impl @ecs.EcsPayloadCodec for StaticTransformOptimizations
 pub impl Default for StaticTransformOptimizations
 
 pub struct Transform {

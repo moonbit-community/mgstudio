@@ -97,7 +97,6 @@ pub struct Fixed {
   overstep : @core.Duration
 }
 pub fn Fixed::Fixed() -> Self
-pub impl @ecs.EcsPayloadCodec for Fixed
 pub impl TimeContext for Fixed
 pub impl Default for Fixed
 
@@ -107,7 +106,6 @@ pub struct Real {
   last_update : @core.Instant?
 }
 pub fn Real::Real() -> Self
-pub impl @ecs.EcsPayloadCodec for Real
 pub impl TimeContext for Real
 pub impl Default for Real
 
@@ -208,22 +206,7 @@ pub fn Time::was_paused(Self[Virtual]) -> Bool
 pub fn[T] Time::wrap_period(Self[T]) -> @core.Duration
 pub fn[T] Time::wrap_period_seconds(Self[T]) -> Float
 pub impl[T : TimeContext] @app.Resource for Time[T]
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for Time[T]
 pub impl[T : Default] Default for Time[T]
-
-pub(all) struct TimePayload {
-  context : @ecs.EcsPayload
-  wrap_period : @core.Duration
-  delta : @core.Duration
-  delta_secs : Float
-  delta_secs_f64 : Double
-  elapsed : @core.Duration
-  elapsed_secs : Float
-  elapsed_secs_f64 : Double
-  elapsed_wrapped : @core.Duration
-  elapsed_secs_wrapped : Float
-  elapsed_secs_wrapped_f64 : Double
-}
 
 pub struct TimePlugin {
 }
@@ -238,7 +221,6 @@ pub(all) enum TimeUpdateStrategy {
 } derive(Eq, @debug.Debug)
 pub fn TimeUpdateStrategy::default() -> Self
 pub impl @app.Resource for TimeUpdateStrategy
-pub impl @ecs.EcsPayloadCodec for TimeUpdateStrategy
 
 pub struct Timer {
   stopwatch : Stopwatch
@@ -289,15 +271,15 @@ pub struct Virtual {
   effective_speed : Double
 }
 pub fn Virtual::Virtual() -> Self
-pub impl @ecs.EcsPayloadCodec for Virtual
 pub impl TimeContext for Virtual
 pub impl Default for Virtual
 
 // Type aliases
 
 // Traits
-pub(open) trait TimeContext : Default + @ecs.EcsPayloadCodec {
+pub(open) trait TimeContext : Default {
   fn time_context_debug_name() -> String
+  fn time_resource_key() -> @ecs.ResourceKey[Time[Self]]
 }
 pub impl TimeContext for Unit
 

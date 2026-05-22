@@ -49,6 +49,18 @@ pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with gizmo_config_gro
 }
 
 ///|
+let aabb_gizmo_storage_resource_key : @ecs.ResourceKey[
+  @sprite.GizmoStorage[AabbGizmoConfigGroup],
+] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos::GizmoStorage<mgstudio_gizmos::AabbGizmoConfigGroup>",
+)
+
+///|
+pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with gizmo_storage_resource_key() {
+  aabb_gizmo_storage_resource_key
+}
+
+///|
 extenum @sprite.GizmoConfigGroupCell += {
   AabbGizmoConfigGroupCell(Ref[AabbGizmoConfigGroup])
 }

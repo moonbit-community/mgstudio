@@ -13,9 +13,10 @@
 // limitations under the License.
 
 ///|
-pub(open) trait States: Eq + Debug + @ecs.EcsPayloadCodec {
+pub(open) trait States: Eq + Debug {
   fn type_debug_name() -> String
   fn debug_name(Self) -> String
+  fn state_resource_keys() -> StateResourceKeys[Self]
   fn dependency_depth(Self) -> Int = _
 }
 

@@ -28,31 +28,6 @@ struct CameraBundleCustomProjection3d {
 }
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_pbr_camera_bundle_test_CameraBundleCustomProjection3d(
-    CameraBundleCustomProjection3d
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CameraBundleCustomProjection3d with to_ecs_payload(
-  self,
-) {
-  EcsPayload_pbr_camera_bundle_test_CameraBundleCustomProjection3d(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CameraBundleCustomProjection3d with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_camera_bundle_test_CameraBundleCustomProjection3d(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
 impl CameraProjection3d for CameraBundleCustomProjection3d with get_clip_from_view(
   self,
 ) {
@@ -142,7 +117,7 @@ test "render3d: Camera3dBundle stores window render target" {
 }
 
 ///|
-test "render3d: Camera3dBundle stores custom projection payload" {
+test "render3d: Camera3dBundle stores custom projection behavior" {
   let world = @ecs.World::new()
   let bundle = Camera3dBundle::new_with_projection(
     @sprite.Camera::Camera(),
@@ -156,11 +131,8 @@ test "render3d: Camera3dBundle stores custom projection payload" {
   )
   let ok = match projection {
     Some(Projection::Custom(custom)) => {
-      let payload : CameraBundleCustomProjection3d? = custom.get()
-      match payload {
-        Some(value) => camera_bundle_projection_approx_eq(value.marker, 42.0F)
-        None => false
-      }
+      let matrix = custom.get_clip_from_view()
+      camera_bundle_projection_approx_eq(matrix.w_axis.x, 42.0F)
     }
     Some(Projection::Perspective(_)) => false
     Some(Projection::Orthographic(_)) => false

@@ -266,10 +266,7 @@ fn[D : @ecs.QueryData, F : @ecs.QueryFilter] first_entity(
 }
 
 ///|
-fn[
-  A : @ecs.Component + @ecs.EcsPayloadCodec,
-  B : @ecs.Component + @ecs.EcsPayloadCodec,
-] first2(
+fn[A : @ecs.Component, B : @ecs.Component] first2(
   query : @ecs.Query[(@ecs.Comp[A], @ecs.Comp[B]), @ecs.All],
 ) -> (@core.Entity, A, B)? {
   let result : Ref[(@core.Entity, A, B)?] = Ref(None)
@@ -283,11 +280,7 @@ fn[
 }
 
 ///|
-fn[
-  A : @ecs.Component + @ecs.EcsPayloadCodec,
-  B : @ecs.Component + @ecs.EcsPayloadCodec,
-  C : @ecs.Component + @ecs.EcsPayloadCodec,
-] first3(
+fn[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] first3(
   query : @ecs.Query[(@ecs.Comp[A], @ecs.Comp[B], @ecs.Comp[C]), @ecs.All],
 ) -> (@core.Entity, A, B, C)? {
   let result : Ref[(@core.Entity, A, B, C)?] = Ref(None)

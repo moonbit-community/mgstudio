@@ -89,7 +89,6 @@ pub let ui_widgets_set_interaction : String
 pub struct Activate {
   entity : @core.Entity
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for Activate
 pub impl @ecs.TriggerEvent for Activate
 
 pub struct ButtonWidgetPlugin {
@@ -100,12 +99,10 @@ pub impl @app.Plugin for ButtonWidgetPlugin
 pub struct Checkable {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for Checkable
-pub impl @ecs.EcsPayloadCodec for Checkable
 
 pub struct Checkbox {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for Checkbox
-pub impl @ecs.EcsPayloadCodec for Checkbox
 
 pub struct CheckboxWidgetPlugin {
 }
@@ -115,7 +112,6 @@ pub impl @app.Plugin for CheckboxWidgetPlugin
 pub struct Checked {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for Checked
-pub impl @ecs.EcsPayloadCodec for Checked
 
 pub(all) enum ControlOrientation {
   Horizontal
@@ -129,17 +125,14 @@ pub struct CoreScrollbarDragState {
 } derive(ToJson, @json.FromJson)
 pub fn CoreScrollbarDragState::CoreScrollbarDragState() -> Self
 pub impl @ecs.Component for CoreScrollbarDragState
-pub impl @ecs.EcsPayloadCodec for CoreScrollbarDragState
 
 pub struct CoreScrollbarThumb {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for CoreScrollbarThumb
-pub impl @ecs.EcsPayloadCodec for CoreScrollbarThumb
 
 pub struct InteractionDisabled {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for InteractionDisabled
-pub impl @ecs.EcsPayloadCodec for InteractionDisabled
 
 pub(all) enum MenuAction {
   Open
@@ -153,13 +146,11 @@ pub struct MenuEvent {
   source : @core.Entity
   action : MenuAction
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for MenuEvent
 pub impl @ecs.TriggerEvent for MenuEvent
 
 pub struct MenuItem {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for MenuItem
-pub impl @ecs.EcsPayloadCodec for MenuItem
 
 pub(all) enum MenuLayout {
   Column
@@ -173,7 +164,6 @@ pub struct MenuPopup {
 } derive(ToJson, @json.FromJson)
 pub fn MenuPopup::MenuPopup() -> Self
 pub impl @ecs.Component for MenuPopup
-pub impl @ecs.EcsPayloadCodec for MenuPopup
 
 pub struct MenuWidgetPlugin {
 }
@@ -186,7 +176,6 @@ pub struct Popover {
 } derive(ToJson, @json.FromJson)
 pub fn Popover::Popover() -> Self
 pub impl @ecs.Component for Popover
-pub impl @ecs.EcsPayloadCodec for Popover
 
 pub(all) enum PopoverAlign {
   Start
@@ -219,17 +208,14 @@ pub impl @app.Plugin for PopoverWidgetPlugin
 pub struct Pressed {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for Pressed
-pub impl @ecs.EcsPayloadCodec for Pressed
 
 pub struct RadioButton {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for RadioButton
-pub impl @ecs.EcsPayloadCodec for RadioButton
 
 pub struct RadioGroup {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for RadioGroup
-pub impl @ecs.EcsPayloadCodec for RadioGroup
 
 pub struct RadioGroupWidgetPlugin {
 }
@@ -243,7 +229,6 @@ pub struct Scrollbar {
 } derive(ToJson, @json.FromJson)
 pub fn Scrollbar::new(@core.Entity, ControlOrientation, Float) -> Self
 pub impl @ecs.Component for Scrollbar
-pub impl @ecs.EcsPayloadCodec for Scrollbar
 
 pub struct ScrollbarWidgetPlugin {
 }
@@ -254,14 +239,12 @@ pub struct SetChecked {
   entity : @core.Entity
   checked : Bool
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for SetChecked
 pub impl @ecs.TriggerEvent for SetChecked
 
 pub struct SetSliderValue {
   entity : @core.Entity
   value : Float
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for SetSliderValue
 pub impl @ecs.TriggerEvent for SetSliderValue
 
 pub struct Slider {
@@ -269,7 +252,6 @@ pub struct Slider {
 } derive(ToJson, @json.FromJson)
 pub fn Slider::Slider() -> Self
 pub impl @ecs.Component for Slider
-pub impl @ecs.EcsPayloadCodec for Slider
 
 pub struct SliderPrecision {
   digits : Int
@@ -278,7 +260,6 @@ pub fn SliderPrecision::SliderPrecision() -> Self
 pub fn SliderPrecision::new(Int) -> Self
 pub fn SliderPrecision::round(Self, Float) -> Float
 pub impl @ecs.Component for SliderPrecision
-pub impl @ecs.EcsPayloadCodec for SliderPrecision
 
 pub struct SliderRange {
   start : Float
@@ -293,7 +274,6 @@ pub fn SliderRange::span(Self) -> Float
 pub fn SliderRange::start(Self) -> Float
 pub fn SliderRange::thumb_position(Self, Float) -> Float
 pub impl @ecs.Component for SliderRange
-pub impl @ecs.EcsPayloadCodec for SliderRange
 
 pub struct SliderStep {
   value : Float
@@ -302,12 +282,10 @@ pub fn SliderStep::SliderStep() -> Self
 pub fn SliderStep::new(Float) -> Self
 pub fn SliderStep::value(Self) -> Float
 pub impl @ecs.Component for SliderStep
-pub impl @ecs.EcsPayloadCodec for SliderStep
 
 pub struct SliderThumb {
 } derive(ToJson, @json.FromJson)
 pub impl @ecs.Component for SliderThumb
-pub impl @ecs.EcsPayloadCodec for SliderThumb
 
 pub struct SliderValue {
   value : Float
@@ -316,7 +294,6 @@ pub fn SliderValue::SliderValue() -> Self
 pub fn SliderValue::new(Float) -> Self
 pub fn SliderValue::value(Self) -> Float
 pub impl @ecs.Component for SliderValue
-pub impl @ecs.EcsPayloadCodec for SliderValue
 
 pub struct SliderWidgetPlugin {
 }
@@ -326,7 +303,6 @@ pub impl @app.Plugin for SliderWidgetPlugin
 pub struct ToggleChecked {
   entity : @core.Entity
 } derive(ToJson, @json.FromJson)
-pub impl @ecs.EcsPayloadCodec for ToggleChecked
 pub impl @ecs.TriggerEvent for ToggleChecked
 
 pub(all) enum TrackClick {
@@ -339,7 +315,6 @@ pub fn TrackClick::default() -> Self
 pub struct UiWidgetsPluginMarker {
 }
 pub impl @app.Resource for UiWidgetsPluginMarker
-pub impl @ecs.EcsPayloadCodec for UiWidgetsPluginMarker
 
 pub struct UiWidgetsPlugins {
 }
@@ -351,13 +326,7 @@ pub struct ValueChange[T] {
   source : @core.Entity
   value : T
 } derive(ToJson, @json.FromJson)
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for ValueChange[T]
 pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T]
-
-pub(all) struct ValueChangePayload {
-  source : @core.Entity
-  value : @ecs.EcsPayload
-}
 
 // Type aliases
 pub using @ui {type Button}
@@ -367,7 +336,8 @@ pub using @ui {type ButtonColors}
 pub using @ui {type Interaction}
 
 // Traits
-pub(open) trait ValueChangeValue : @ecs.EcsPayloadCodec {
+pub(open) trait ValueChangeValue {
   fn value_change_value_debug_name() -> String
+  fn value_change_event_key() -> @ecs.EventKey[ValueChange[Self]]
 }
 

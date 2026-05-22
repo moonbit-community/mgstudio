@@ -151,7 +151,7 @@ pub fn cmp_float(Float, Float) -> Int
 
 pub fn cmp_int(Int, Int) -> Int
 
-pub fn custom_projection3d_from_callbacks(String, @ecs.EcsPayload, (@ecs.EcsPayload) -> ProjectionMatrix3d, (@ecs.EcsPayload, SubCameraView3d) -> ProjectionMatrix3d, (@ecs.EcsPayload, Float, Float) -> @ecs.EcsPayload, (@ecs.EcsPayload) -> Float, (@ecs.EcsPayload, Float, Float) -> Array[@math.Vec3]) -> CustomProjection3d
+pub fn custom_projection3d_from_callbacks(String, () -> ProjectionMatrix3d, (SubCameraView3d) -> ProjectionMatrix3d, (Float, Float) -> CustomProjection3d, () -> Float, (Float, Float) -> Array[@math.Vec3]) -> CustomProjection3d
 
 pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
 
@@ -467,7 +467,7 @@ pub fn render3d_transform_local_normal(@transform.Transform, @math.Vec3) -> @mat
 
 pub fn render3d_transform_point(@transform.Transform, @math.Vec3) -> @math.Vec3
 
-pub fn[T : @ecs.EcsPayloadCodec] render3d_update_frusta_system_by_projection_key(@ecs.World, @ecs.ComponentKey[T], (T, @transform.Transform) -> Frustum) -> Unit
+pub fn[T] render3d_update_frusta_system_by_projection_key(@ecs.World, @ecs.ComponentKey[T], (T, @transform.Transform) -> Frustum) -> Unit
 
 pub fn render3d_upload_mesh_handle_cached(@ref.Ref[Render3dMeshRuntimeState], @asset.Handle[@mesh.Mesh]) -> Int
 
@@ -506,21 +506,19 @@ pub fn BuildIndirectParametersPipelineKey::shader_defs(Self) -> Array[String]
 
 pub struct CustomProjection3d {
   type_name : String
-  payload : @ecs.EcsPayload
-  get_clip_from_view_fn : (@ecs.EcsPayload) -> ProjectionMatrix3d
-  get_clip_from_view_for_sub_fn : (@ecs.EcsPayload, SubCameraView3d) -> ProjectionMatrix3d
-  update_fn : (@ecs.EcsPayload, Float, Float) -> @ecs.EcsPayload
-  far_fn : (@ecs.EcsPayload) -> Float
-  get_frustum_corners_fn : (@ecs.EcsPayload, Float, Float) -> Array[@math.Vec3]
+  get_clip_from_view_fn : () -> ProjectionMatrix3d
+  get_clip_from_view_for_sub_fn : (SubCameraView3d) -> ProjectionMatrix3d
+  update_fn : (Float, Float) -> CustomProjection3d
+  far_fn : () -> Float
+  get_frustum_corners_fn : (Float, Float) -> Array[@math.Vec3]
 }
 pub fn CustomProjection3d::CustomProjection3d() -> Self
 pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
 pub fn CustomProjection3d::far(Self) -> Float
-pub fn[T : @ecs.EcsPayloadCodec] CustomProjection3d::get(Self) -> T?
 pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
 pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
 pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
-pub fn[T : CameraProjection3d + @ecs.EcsPayloadCodec] CustomProjection3d::new(T) -> Self
+pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
 pub fn CustomProjection3d::type_name(Self) -> String
 pub fn CustomProjection3d::update(Self, Float, Float) -> Self
 pub impl CameraProjection3d for CustomProjection3d
@@ -580,7 +578,6 @@ pub fn FogMeta::fog_at(Self, UInt) -> GpuFog?
 pub fn FogMeta::len(Self) -> Int
 pub fn FogMeta::push(Self, GpuFog) -> UInt
 pub impl @app.Resource for FogMeta
-pub impl @ecs.EcsPayloadCodec for FogMeta
 
 pub struct FogPlugin {
 }
@@ -594,7 +591,6 @@ pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
 pub fn Frustum::new(ViewFrustum) -> Self
 pub fn Frustum::view_frustum(Self) -> ViewFrustum
 pub impl @ecs.Component for Frustum
-pub impl @ecs.EcsPayloadCodec for Frustum
 
 pub struct GpuDirectionalCascade3d {
   far_bound : Float
@@ -887,7 +883,6 @@ pub struct MorphIndices {
 }
 pub fn MorphIndices::new() -> Self
 pub impl @app.Resource for MorphIndices
-pub impl @ecs.EcsPayloadCodec for MorphIndices
 
 pub struct MorphUniforms {
   mut current_buffer : Array[Float]
@@ -895,7 +890,6 @@ pub struct MorphUniforms {
 }
 pub fn MorphUniforms::new() -> Self
 pub impl @app.Resource for MorphUniforms
-pub impl @ecs.EcsPayloadCodec for MorphUniforms
 
 pub(all) struct OrthographicProjection3d {
   mut near : Float
@@ -924,7 +918,6 @@ pub fn OrthographicProjection3d::with_near(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
 pub fn OrthographicProjection3d::with_viewport_origin(Self, @math.Vec2) -> Self
-pub impl @ecs.EcsPayloadCodec for OrthographicProjection3d
 pub impl CameraProjection3d for OrthographicProjection3d
 
 pub(all) enum OrthographicScalingMode3d {
@@ -958,7 +951,6 @@ pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
-pub impl @ecs.EcsPayloadCodec for PerspectiveProjection3d
 pub impl CameraProjection3d for PerspectiveProjection3d
 
 pub(all) enum PhasePreprocessBindGroups {
@@ -1011,7 +1003,7 @@ pub enum Projection {
   Custom(CustomProjection3d)
 }
 pub fn Projection::compute_frustum(Self, @transform.Transform) -> Frustum
-pub fn[T : CameraProjection3d + @ecs.EcsPayloadCodec] Projection::custom(T) -> Self
+pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
 pub fn Projection::get_clip_from_view(Self) -> ProjectionMatrix3d
@@ -1041,7 +1033,6 @@ pub(all) struct ProjectionRuntime3d {
   orthographic_first_slice_depth : Float
 }
 pub impl @ecs.Component for ProjectionRuntime3d
-pub impl @ecs.EcsPayloadCodec for ProjectionRuntime3d
 
 pub struct Render3dDiagnosticsState {
   mut runtime_initialized : Bool
@@ -1050,7 +1041,6 @@ pub struct Render3dDiagnosticsState {
   mut queue_cpu_ms : Float
   mut execute_cpu_ms : Float
 }
-pub impl @ecs.EcsPayloadCodec for Render3dDiagnosticsState
 
 pub enum Render3dFogFalloff {
   Linear(Float, Float)
@@ -1074,7 +1064,6 @@ pub fn Render3dGpuPreprocessState::dispatch_count(Self) -> Int
 pub fn Render3dGpuPreprocessState::enabled(Self) -> Bool
 pub fn Render3dGpuPreprocessState::indirect_enabled(Self) -> Bool
 pub impl @app.Resource for Render3dGpuPreprocessState
-pub impl @ecs.EcsPayloadCodec for Render3dGpuPreprocessState
 
 pub(all) struct Render3dLightingState {
   ambient_color : @color.Color
@@ -1123,7 +1112,6 @@ pub struct Render3dMeshRuntimeState {
 }
 pub fn Render3dMeshRuntimeState::new() -> Self
 pub impl @app.Resource for Render3dMeshRuntimeState
-pub impl @ecs.EcsPayloadCodec for Render3dMeshRuntimeState
 
 pub struct Render3dMeshUploadCacheState {
   clear_count : Int
@@ -1174,7 +1162,6 @@ pub struct Render3dWorldTransformCache {
   skinning_generations : Array[Int]
   skinning_stamps : Array[Int]
 }
-pub impl @ecs.EcsPayloadCodec for Render3dWorldTransformCache
 
 pub struct RenderMeshBindingInput3d {
   mesh_asset_id : Int
@@ -1230,7 +1217,6 @@ pub struct SkinUniforms {
 }
 pub fn SkinUniforms::new() -> Self
 pub impl @app.Resource for SkinUniforms
-pub impl @ecs.EcsPayloadCodec for SkinUniforms
 
 pub struct SubCameraView3d {
   full_size : @math.IVec2
@@ -1240,7 +1226,6 @@ pub struct SubCameraView3d {
 pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
 pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for SubCameraView3d
-pub impl @ecs.EcsPayloadCodec for SubCameraView3d
 
 pub struct ViewFogUniformOffset {
   offset : UInt
@@ -1248,7 +1233,6 @@ pub struct ViewFogUniformOffset {
 pub fn ViewFogUniformOffset::new(UInt) -> Self
 pub fn ViewFogUniformOffset::offset(Self) -> UInt
 pub impl @ecs.Component for ViewFogUniformOffset
-pub impl @ecs.EcsPayloadCodec for ViewFogUniformOffset
 
 pub struct ViewFrustum {
   inner : @math.ViewFrustum

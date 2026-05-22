@@ -38,26 +38,10 @@ pub struct ErasedRenderAssets[A] {
 }
 
 ///|
-let erased_render_assets_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
-
-///|
 pub fn[A : RenderAssetResource] ErasedRenderAssets::resource() -> @ecs.ResourceKey[
   ErasedRenderAssets[A],
 ] {
-  let type_name = "ErasedRenderAssets<\{A::render_asset_resource_debug_name()}>"
-  match erased_render_assets_resource_registry.val.get(type_name) {
-    Some(id) =>
-      @ecs.resource_key_from_id(id, debug_name="mgstudio_render::\{type_name}")
-    None => {
-      let key : @ecs.ResourceKey[ErasedRenderAssets[A]] = @ecs.register_erased_resource(
-        debug_name="mgstudio_render::\{type_name}",
-      )
-      erased_render_assets_resource_registry.val.set(type_name, key.id())
-      key
-    }
-  }
+  A::render_asset_resource_keys().erased_render_assets
 }
 
 ///|

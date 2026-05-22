@@ -30,29 +30,6 @@ struct TestCustomProjection3dWb {
 }
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_pbr_projection_wbtest_TestCustomProjection3dWb(
-    TestCustomProjection3dWb
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TestCustomProjection3dWb with to_ecs_payload(self) {
-  EcsPayload_pbr_projection_wbtest_TestCustomProjection3dWb(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TestCustomProjection3dWb with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_projection_wbtest_TestCustomProjection3dWb(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
 fn test_custom_projection_matrix_wb(
   view_width : Float,
   view_height : Float,

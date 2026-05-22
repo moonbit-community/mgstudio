@@ -30,6 +30,16 @@ impl States for TestState with debug_name(self) {
 }
 
 ///|
+let test_state_resource_keys : StateResourceKeys[TestState] = register_state_resource_keys(
+  "TestState",
+)
+
+///|
+impl States for TestState with state_resource_keys() {
+  test_state_resource_keys
+}
+
+///|
 fn read_test_state(world : @ecs.World) -> TestState? {
   match world_state(world, TestState::A) {
     Some(state) => Some(state.get())

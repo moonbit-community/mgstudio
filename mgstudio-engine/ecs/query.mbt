@@ -792,7 +792,6 @@ fn[D : QueryData] query_fetch_with_sparse_anchor(
   world : World,
   entity : @core.Entity,
   anchor_info : QuerySparseAnchorInfo,
-  payload : EcsPayload,
   plan : QueryDataFetchPlan,
 ) -> D raise EcsError {
   let entity_id = entity.id
@@ -806,7 +805,6 @@ fn[D : QueryData] query_fetch_with_sparse_anchor(
         world,
         entity,
         anchor_info.local_component_id,
-        payload,
         table_id,
         row_index,
         plan,
@@ -980,16 +978,13 @@ fn[D : QueryData] query_sparse_anchor_single_matching(
   guard entities.length() == 1 else { return None }
   let plan = D::prepare_fetch_plan(world)
   let entity = entities[0]
-  guard world.component_payload_by_local_id(
-      entity,
-      anchor_info.local_component_id,
-    )
-    is Some(payload) else {
+  guard world.component_present_by_local_id(
+    entity,
+    anchor_info.local_component_id,
+  ) else {
     return None
   }
-  Some(
-    query_fetch_with_sparse_anchor(world, entity, anchor_info, payload, plan),
-  )
+  Some(query_fetch_with_sparse_anchor(world, entity, anchor_info, plan))
 }
 
 ///|
@@ -2660,11 +2655,10 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
         let index = self.sparse_anchor_index
         self.sparse_anchor_index = self.sparse_anchor_index + 1
         let entity = self.sparse_anchor_entities[index]
-        guard self.query.world.component_payload_by_local_id(
-            entity,
-            anchor_info.local_component_id,
-          )
-          is Some(payload) else {
+        guard self.query.world.component_present_by_local_id(
+          entity,
+          anchor_info.local_component_id,
+        ) else {
           continue
         }
         return Some(
@@ -2674,7 +2668,6 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
               self.query.world,
               entity,
               anchor_info,
-              payload,
               self.data_fetch_plan,
             ),
           ),

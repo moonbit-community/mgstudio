@@ -133,7 +133,6 @@ pub struct LightProbePluginState {
 }
 pub fn LightProbePluginState::LightProbePluginState() -> Self
 pub impl @app.Resource for LightProbePluginState
-pub impl @ecs.EcsPayloadCodec for LightProbePluginState
 
 pub struct LightProbesUniform {
   reflection_probe_count : Int
@@ -142,7 +141,6 @@ pub struct LightProbesUniform {
 }
 pub fn LightProbesUniform::LightProbesUniform() -> Self
 pub impl @app.Resource for LightProbesUniform
-pub impl @ecs.EcsPayloadCodec for LightProbesUniform
 
 pub struct RenderLightProbe {
   light_from_world_transposed : Array[@math.Vec4]
@@ -193,14 +191,12 @@ pub fn RenderViewLightProbes::push_probe(Self, RenderLightProbe) -> Unit
 pub fn RenderViewLightProbes::push_texture(Self, @asset.Handle[@image.Image]?) -> Int
 pub fn RenderViewLightProbes::texture_count(Self) -> Int
 pub impl @ecs.Component for RenderViewLightProbes
-pub impl @ecs.EcsPayloadCodec for RenderViewLightProbes
 
 pub struct ViewLightProbesUniformOffset {
   offset : UInt
 }
 pub fn ViewLightProbesUniformOffset::ViewLightProbesUniformOffset() -> Self
 pub impl @ecs.Component for ViewLightProbesUniformOffset
-pub impl @ecs.EcsPayloadCodec for ViewLightProbesUniformOffset
 
 // Type aliases
 pub using @light {type EnvironmentMapLight}

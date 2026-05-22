@@ -39,6 +39,16 @@ pub impl @asset.Asset for Shader with asset_as_image(_self) {
 }
 
 ///|
+let shader_asset_resource_keys : @asset.AssetResourceKeys[Shader] = @asset.register_asset_resource_keys(
+  Shader::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for Shader with asset_resource_keys() {
+  shader_asset_resource_keys
+}
+
+///|
 fn trim_trailing_semicolons(text : String) -> String {
   let mut out = text.trim().to_owned()
   while out.length() > 0 && out.code_unit_at(out.length() - 1).to_int() == 59 { // ';'

@@ -337,13 +337,8 @@ pub fn[T] ComponentColumn::contains(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> Bool {
-  match self.world.pending_component_payload_context {
-    Some(_) =>
-      if self.world.pending_component_payload(entity, self.local_component_id)
-        is Some(_) {
-        return true
-      }
-    None => ()
+  if self.world.pending_component_present(entity, self.local_component_id) {
+    return true
   }
   match self.storage_type {
     SparseSet =>
@@ -376,17 +371,12 @@ pub fn[T] ComponentColumn::contains(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::get(
+pub fn[T] ComponentColumn::get(
   self : ComponentColumn[T],
   entity : @core.Entity,
 ) -> T? {
-  match self.world.pending_component_payload_context {
-    Some(_) =>
-      if self.world.pending_component_payload(entity, self.local_component_id)
-        is Some(payload) {
-        return T::from_ecs_payload(payload)
-      }
-    None => ()
+  if self.world.pending_component_present(entity, self.local_component_id) {
+    return (self.key.access.get)(self.world, entity)
   }
   match self.storage_type {
     SparseSet =>
@@ -813,7 +803,7 @@ pub fn[T, U] ComponentColumn::for_each_without(
 }
 
 ///|
-pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with(
+pub fn[T, U] ComponentColumn::for_each_with(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, T, U) -> Unit,
@@ -921,7 +911,7 @@ pub fn[T, U] ComponentColumn::for_each_without_fast(
 }
 
 ///|
-pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast(
+pub fn[T, U] ComponentColumn::for_each_with_fast(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, T, U) -> Unit,
@@ -938,7 +928,7 @@ pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast(
 }
 
 ///|
-pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast_table_row(
+pub fn[T, U] ComponentColumn::for_each_with_fast_table_row(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, Int, Int, T, U) -> Unit,
@@ -989,7 +979,7 @@ pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast_table_row(
 }
 
 ///|
-pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row(
+pub fn[T, U, V] ComponentColumn::for_each3_fast_table_row(
   self : ComponentColumn[T],
   second : ComponentColumn[U],
   third : ComponentColumn[V],
@@ -1056,7 +1046,7 @@ pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_f
 }
 
 ///|
-pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row_mark_third_changed(
+pub fn[T, U, V] ComponentColumn::for_each3_fast_table_row_mark_third_changed(
   self : ComponentColumn[T],
   second : ComponentColumn[U],
   third : ComponentColumn[V],
@@ -1130,7 +1120,7 @@ pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_f
 }
 
 ///|
-pub fn[T, U : EcsPayloadCodec, M, N] ComponentColumn::for_each2_with2_markers_fast_table_row(
+pub fn[T, U, M, N] ComponentColumn::for_each2_with2_markers_fast_table_row(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   marker_a : ComponentColumn[M],
@@ -1200,7 +1190,7 @@ pub fn[T, U : EcsPayloadCodec, M, N] ComponentColumn::for_each2_with2_markers_fa
 }
 
 ///|
-pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec, W : EcsPayloadCodec] ComponentColumn::for_each4_fast_table_row(
+pub fn[T, U, V, W] ComponentColumn::for_each4_fast_table_row(
   self : ComponentColumn[T],
   second : ComponentColumn[U],
   third : ComponentColumn[V],
@@ -1286,13 +1276,7 @@ pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec, W : EcsPayloadCodec] Compone
 }
 
 ///|
-pub fn[
-  T,
-  U : EcsPayloadCodec,
-  V : EcsPayloadCodec,
-  W : EcsPayloadCodec,
-  X : EcsPayloadCodec,
-] ComponentColumn::for_each5_fast_table_row(
+pub fn[T, U, V, W, X] ComponentColumn::for_each5_fast_table_row(
   self : ComponentColumn[T],
   second : ComponentColumn[U],
   third : ComponentColumn[V],
@@ -1392,7 +1376,7 @@ pub fn[
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set(
+pub fn[T] ComponentColumn::set(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
@@ -1408,20 +1392,17 @@ pub fn[T : EcsPayloadCodec] ComponentColumn::set(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only(
+pub fn[T] ComponentColumn::set_tick_only(
   self : ComponentColumn[T],
   entity : @core.Entity,
   value : T,
 ) -> Bool {
   let tick = component_write_tick(self.world)
-  match self.world.pending_component_payload_context {
+  match self.world.pending_component_write_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.contains(self.local_component_id) {
-        context.payloads.set_writer(
-          self.local_component_id,
-          ecs_payload_writer(self.key, value),
-        )
+        context.writes.contains(self.local_component_id) {
+        (self.key.access.set)(self.world, entity, value)
         ignore(
           self.world.record_pending_component_changed_metadata(
             entity,

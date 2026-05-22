@@ -51,6 +51,16 @@ impl @app.States for AppState with debug_name(self) {
 }
 
 ///|
+let app_state_resource_keys : @app.StateResourceKeys[AppState] = @app.register_state_resource_keys(
+  "AppState",
+)
+
+///|
+impl @app.States for AppState with state_resource_keys() {
+  app_state_resource_keys
+}
+
+///|
 impl @app.States for IsPaused with type_debug_name() {
   "IsPaused"
 }
@@ -59,6 +69,16 @@ impl @app.States for IsPaused with type_debug_name() {
 impl @app.States for IsPaused with debug_name(self) {
   ignore(self)
   "IsPaused"
+}
+
+///|
+let is_paused_resource_keys : @app.StateResourceKeys[IsPaused] = @app.register_state_resource_keys(
+  "IsPaused",
+)
+
+///|
+impl @app.States for IsPaused with state_resource_keys() {
+  is_paused_resource_keys
 }
 
 ///|

@@ -34,7 +34,7 @@ pub fn apply_deferred_system() -> SystemConfig[@ecs.World]
 
 pub fn[T : ChainedSystemConfigs] chain(T) -> SystemConfig[@ecs.World]
 
-pub fn[C] check_parent_has_component_message_key(@ecs.ComponentKey[C]) -> @ecs.MessageKey[CheckParentHasComponent[C]]
+pub fn[C : ValidateParentHasComponentTarget] check_parent_has_component_message_key(@ecs.ComponentKey[C]) -> @ecs.MessageKey[CheckParentHasComponent[C]]
 
 pub fn clear_timeline_trace_span_sink() -> Unit
 
@@ -177,6 +177,8 @@ pub fn[A : States, B : States, C : States, Derived : States] register_computed_s
 
 pub fn[A : States, B : States, C : States, Derived : States] register_computed_state3_optional(A, B, OptionalStateSource[C], Derived, ((A, B, C?)) -> Derived?, allow_same_state_transitions? : Bool) -> Unit
 
+pub fn[S] register_state_resource_keys(String) -> StateResourceKeys[S]
+
 pub fn[Source : States, Derived : SubStates] register_sub_state(Source, Derived, (Source) -> Derived?) -> Unit
 
 pub fn register_system(@ecs.World, SystemConfig[@ecs.World]) -> SystemId
@@ -188,6 +190,8 @@ pub fn[P1 : SystemParam, P2 : SystemParam] register_system_param2(@ecs.World, (P
 pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] register_system_param3(@ecs.World, (P1, P2, P3) -> Unit) -> SystemId
 
 pub fn[P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] register_system_param4(@ecs.World, (P1, P2, P3, P4) -> Unit) -> SystemId
+
+pub fn[C] register_validate_parent_has_component_keys(String) -> ValidateParentHasComponentKeys[C]
 
 pub fn register_world_system(@ecs.World, (@ecs.World) -> Unit) -> SystemId
 
@@ -577,7 +581,6 @@ pub fn AppExit::error() -> Self
 pub fn AppExit::from_code(Int) -> Self
 pub fn AppExit::is_error(Self) -> Bool
 pub fn AppExit::is_success(Self) -> Bool
-pub impl @ecs.EcsPayloadCodec for AppExit
 pub impl @ecs.Message for AppExit
 
 pub(all) enum AppLabel {
@@ -594,13 +597,7 @@ pub struct CheckParentHasComponent[_] {
 pub fn[C] CheckParentHasComponent::caller(Self[C]) -> String?
 pub fn[C] CheckParentHasComponent::entity(Self[C]) -> @core.Entity
 pub fn[C] CheckParentHasComponent::new(@core.Entity, caller? : String?) -> Self[C]
-pub impl[C] @ecs.EcsPayloadCodec for CheckParentHasComponent[C]
-pub impl[C : @ecs.Component] @ecs.Message for CheckParentHasComponent[C]
-
-pub(all) struct CheckParentHasComponentPayload {
-  entity : @core.Entity
-  caller : String?
-}
+pub impl[C : ValidateParentHasComponentTarget] @ecs.Message for CheckParentHasComponent[C]
 
 pub struct Commands {
   world : @ecs.World
@@ -627,7 +624,7 @@ pub fn[T : CommandSpawnComponents] Commands::spawn_batch(Self, Array[T], loc~ : 
 #callsite(autofill(loc))
 pub fn[B : @ecs.Bundle] Commands::spawn_bundle(Self, B, loc~ : SourceLoc) -> @core.Entity
 #callsite(autofill(loc))
-pub fn[T : @ecs.Component + @ecs.EcsPayloadCodec] Commands::spawn_component(Self, T, loc~ : SourceLoc) -> @core.Entity
+pub fn[T : @ecs.Component] Commands::spawn_component(Self, T, loc~ : SourceLoc) -> @core.Entity
 pub fn Commands::spawn_empty(Self) -> @core.Entity
 pub fn[E : @ecs.TriggerEvent] Commands::trigger(Self, E) -> Unit
 pub impl SystemParam for Commands
@@ -646,7 +643,6 @@ pub fn[S : States] DespawnOnEnter::new(S) -> Self
 pub fn DespawnOnEnter::state_debug(Self) -> String
 pub fn DespawnOnEnter::transition_key(Self) -> String
 pub impl @ecs.Component for DespawnOnEnter
-pub impl @ecs.EcsPayloadCodec for DespawnOnEnter
 
 pub struct DespawnOnExit {
   transition_key : String
@@ -656,7 +652,6 @@ pub fn[S : States] DespawnOnExit::new(S) -> Self
 pub fn DespawnOnExit::state_debug(Self) -> String
 pub fn DespawnOnExit::transition_key(Self) -> String
 pub impl @ecs.Component for DespawnOnExit
-pub impl @ecs.EcsPayloadCodec for DespawnOnExit
 
 pub struct EntityCommands {
   commands : Commands
@@ -669,7 +664,7 @@ pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T, loc~ : Source
 #callsite(autofill(loc))
 pub fn[B : @ecs.Bundle] EntityCommands::insert_bundle(Self, B, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
-pub fn[T : @ecs.Component + @ecs.EcsPayloadCodec] EntityCommands::insert_component(Self, T, loc~ : SourceLoc) -> Unit
+pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T, loc~ : SourceLoc) -> Unit
 pub fn[E : @ecs.TriggerEvent] EntityCommands::observe(Self, (@ecs.On[E]) -> Unit) -> Self
 pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2(Self, (@ecs.On[E], P2) -> Unit) -> Self
 pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2_fallible(Self, (@ecs.On[E], P2) -> Unit raise) -> Self
@@ -726,7 +721,6 @@ pub fn FixedMainScheduleOrder::FixedMainScheduleOrder() -> Self
 pub fn FixedMainScheduleOrder::insert_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn FixedMainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn FixedMainScheduleOrder::new(Array[ScheduleStage]) -> Self
-pub impl @ecs.EcsPayloadCodec for FixedMainScheduleOrder
 
 pub struct FixedSchedulePropagationConfig {
   run_fixed_update : Bool
@@ -739,7 +733,6 @@ pub struct HotPatchChanges {
 }
 pub fn HotPatchChanges::HotPatchChanges() -> Self
 pub impl Resource for HotPatchChanges
-pub impl @ecs.EcsPayloadCodec for HotPatchChanges
 
 pub struct HotPatchPlugin {
 }
@@ -748,7 +741,6 @@ pub fn HotPatchPlugin::HotPatchPlugin() -> Self
 pub struct HotPatched {
 }
 pub fn HotPatched::HotPatched() -> Self
-pub impl @ecs.EcsPayloadCodec for HotPatched
 pub impl @ecs.Message for HotPatched
 
 pub struct In[T] {
@@ -809,7 +801,6 @@ pub fn MainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> S
 pub fn MainScheduleOrder::insert_startup_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::insert_startup_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::new(Array[ScheduleStage], Array[ScheduleStage]) -> Self
-pub impl @ecs.EcsPayloadCodec for MainScheduleOrder
 
 pub(all) enum NextState[S] {
   Unchanged
@@ -820,12 +811,6 @@ pub fn[S] NextState::reset(Self[S]) -> Self[S]
 pub fn[S] NextState::set(Self[S], S) -> Self[S]
 pub fn[S : Eq] NextState::set_if_neq(Self[S], S) -> Self[S]
 pub impl[S : States] Resource for NextState[S]
-pub impl[S : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for NextState[S]
-
-pub(all) struct NextStatePayload {
-  tag : Int
-  value : @ecs.EcsPayload?
-}
 
 pub struct NoopPluginGroup {
 }
@@ -906,7 +891,6 @@ pub fn PickingEvents::drain(@ref.Ref[Self]) -> Array[@pointer_events.PointerEven
 pub fn PickingEvents::drain_all(Self) -> Array[@pointer_events.PointerEvent]
 pub fn PickingEvents::push(@ref.Ref[Self], @pointer_events.PointerEvent) -> Unit
 pub impl Resource for PickingEvents
-pub impl @ecs.EcsPayloadCodec for PickingEvents
 
 pub struct PluginGroupBuilder[W] {
   group_name : String
@@ -987,7 +971,6 @@ pub struct PreviousState[S] {
 } derive(Eq, @debug.Debug)
 pub fn[S] PreviousState::get(Self[S]) -> S
 pub impl[S : States] Resource for PreviousState[S]
-pub impl[S : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for PreviousState[S]
 
 type QuerySystemAccess
 
@@ -1149,10 +1132,13 @@ pub struct State[S] {
 pub fn[S] State::get(Self[S]) -> S
 pub fn[S] State::new(S) -> Self[S]
 pub impl[S : States] Resource for State[S]
-pub impl[S : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for State[S]
 
-pub(all) struct StatePayload {
-  value : @ecs.EcsPayload
+pub struct StateResourceKeys[S] {
+  state : @ecs.ResourceKey[State[S]]
+  previous_state : @ecs.ResourceKey[PreviousState[S]]
+  next_state : @ecs.ResourceKey[NextState[S]]
+  state_transition_event : @ecs.ResourceKey[StateTransitionEvent[S]]
+  pending_state_transition_event : @ecs.ResourceKey[StateTransitionEvent[S]]
 }
 
 pub struct StateTransitionEvent[S] {
@@ -1161,13 +1147,6 @@ pub struct StateTransitionEvent[S] {
   allow_same_state_transitions : Bool
 } derive(Eq, @debug.Debug)
 pub impl[S : States] Resource for StateTransitionEvent[S]
-pub impl[S : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for StateTransitionEvent[S]
-
-pub(all) struct StateTransitionEventPayload {
-  exited : @ecs.EcsPayload?
-  entered : @ecs.EcsPayload?
-  allow_same_state_transitions : Bool
-}
 
 pub(all) enum StateTransitionSystems {
   DependentTransitions
@@ -1198,7 +1177,6 @@ pub fn Stepping::schedules(Self) -> Array[ScheduleStage]
 pub fn Stepping::set_breakpoint(Self, ScheduleStage, String) -> Self
 pub fn Stepping::step_frame(Self) -> Self
 pub impl Resource for Stepping
-pub impl @ecs.EcsPayloadCodec for Stepping
 
 pub(all) enum SteppingAction {
   RunAll
@@ -1379,12 +1357,16 @@ pub fn TimelineTraceSpan::dur_us(Self) -> Int64
 pub fn TimelineTraceSpan::name(Self) -> String
 pub fn TimelineTraceSpan::ts_us(Self) -> Int64
 
+pub struct ValidateParentHasComponentKeys[C] {
+  message : @ecs.MessageKey[CheckParentHasComponent[C]]
+}
+
 pub struct ValidateParentHasComponentPlugin[_] {
   schedule : ScheduleStage
 }
 pub fn[C] ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin() -> Self[C]
 pub fn[C] ValidateParentHasComponentPlugin::in_schedule(ScheduleStage) -> Self[C]
-pub impl[C : @ecs.Component] Plugin for ValidateParentHasComponentPlugin[C]
+pub impl[C : @ecs.Component + ValidateParentHasComponentTarget] Plugin for ValidateParentHasComponentPlugin[C]
 
 // Type aliases
 pub type ErrorHandler = (Error, ErrorContext) -> Unit
@@ -1424,13 +1406,13 @@ pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.W
 pub(open) trait CommandSpawnComponents {
   fn spawn_components(Self, @ecs.World, @core.Entity, Int64, loc~ : SourceLoc) -> Unit raise @ecs.EcsError
 }
-pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B)
-pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C)
-pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec, D : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C, D)
-pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec, D : @ecs.Component + @ecs.EcsPayloadCodec, E : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C, D, E)
-pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec, D : @ecs.Component + @ecs.EcsPayloadCodec, E : @ecs.Component + @ecs.EcsPayloadCodec, F : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C, D, E, F)
-pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec, D : @ecs.Component + @ecs.EcsPayloadCodec, E : @ecs.Component + @ecs.EcsPayloadCodec, F : @ecs.Component + @ecs.EcsPayloadCodec, G : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C, D, E, F, G)
-pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec, D : @ecs.Component + @ecs.EcsPayloadCodec, E : @ecs.Component + @ecs.EcsPayloadCodec, F : @ecs.Component + @ecs.EcsPayloadCodec, G : @ecs.Component + @ecs.EcsPayloadCodec, H : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C, D, E, F, G, H)
+pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (A, B)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpawnComponents for (A, B, C)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component] CommandSpawnComponents for (A, B, C, D)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component, G : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F, G)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component, G : @ecs.Component, H : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F, G, H)
 
 pub(open) trait FreelyMutableState : States {
 }
@@ -1480,9 +1462,10 @@ pub(open) trait Resource {
 }
 pub impl[T : @ecs.Message] Resource for @ecs.Messages[T]
 
-pub(open) trait States : Eq + @debug.Debug + @ecs.EcsPayloadCodec {
+pub(open) trait States : Eq + @debug.Debug {
   fn type_debug_name() -> String
   fn debug_name(Self) -> String
+  fn state_resource_keys() -> StateResourceKeys[Self]
   fn dependency_depth(Self) -> Int = _
 }
 
@@ -1504,4 +1487,8 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T]
 pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E]
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[D, F]
 pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T]
+
+pub(open) trait ValidateParentHasComponentTarget {
+  fn validate_parent_has_component_keys() -> ValidateParentHasComponentKeys[Self]
+}
 

@@ -274,20 +274,20 @@ fn archetype_union_sorted_unique_local_component_ids_with_presence(
 }
 
 ///|
-fn World::ensure_bundle_info_for_payloads(
+fn World::ensure_bundle_info_for_writes(
   self : World,
-  payloads : Array[(Int, EcsPayloadWriter)],
+  writes : Array[(Int, ComponentWriter)],
 ) -> BundleInfo? {
-  if payloads.length() == 0 {
+  if writes.length() == 0 {
     return None
   }
-  if payloads.length() == 1 {
+  if writes.length() == 1 {
     return None
   }
   let component_definition_ids : Array[Int] = []
   let component_definition_presence = @utils.IntBitSet::new()
-  for payload in payloads {
-    let component_definition_id = payload.0
+  for write in writes {
+    let component_definition_id = write.0
     if !component_definition_presence.contains(component_definition_id) {
       component_definition_presence.insert(component_definition_id)
       component_definition_ids.push(component_definition_id)
@@ -341,11 +341,11 @@ fn World::ensure_bundle_info_for_payloads(
 }
 
 ///|
-fn archetype_bundle_info_covers_pending_payloads(
-  pending_payloads : PendingComponentPayloadSet,
+fn archetype_bundle_info_covers_pending_writes(
+  pending_writes : PendingComponentWriteSet,
   bundle_info : BundleInfo,
 ) -> Bool {
-  for entry in pending_payloads.entries {
+  for entry in pending_writes.entries {
     let component_local_id = entry.local_component_id
     if !bundle_info.component_local_id_presence.contains(component_local_id) {
       return false
@@ -1011,10 +1011,10 @@ fn World::bundle_migrate_new_archetype_same_table(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : PendingComponentPayloadSet,
+  pending_writes : PendingComponentWriteSet,
 ) -> Unit {
   self.bundle_migrate_new_archetype(entity, from_archetype_id, to_archetype_id)
-  self.write_pending_sparse_component_payloads(entity, pending_payloads)
+  self.write_pending_sparse_component_writes(entity, pending_writes)
 }
 
 ///|
@@ -1023,7 +1023,7 @@ fn World::bundle_migrate_new_archetype_new_table(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : PendingComponentPayloadSet,
+  pending_writes : PendingComponentWriteSet,
 ) -> Unit {
   let from_table_id = self.archetype_table_id_or_invalid(from_archetype_id)
   let to_table_id = self.archetype_table_id_or_invalid(to_archetype_id)
@@ -1042,7 +1042,7 @@ fn World::bundle_migrate_new_archetype_new_table(
     target_component_local_ids.length() > 0 {
     let appended_row = match
       self.ensure_table_storage(to_table_id).val.append_row_from_source_table(
-        self, entity, source_table, source_row, pending_payloads,
+        entity, source_table, source_row, pending_writes,
       ) {
       Some(row) => Some(row)
       None =>
@@ -1079,7 +1079,7 @@ fn World::bundle_migrate_new_archetype_new_table(
     Some(row) => row.index()
     None => -1
   }
-  self.write_pending_sparse_component_payloads(entity, pending_payloads)
+  self.write_pending_sparse_component_writes(entity, pending_writes)
 }
 
 ///|
@@ -1087,7 +1087,7 @@ fn World::execute_bundle_migration_plan(
   self : World,
   entity : @core.Entity,
   plan : ArchetypeBundleMigrationPlan,
-  pending_payloads : PendingComponentPayloadSet,
+  pending_writes : PendingComponentWriteSet,
 ) -> ArchetypeBundleMigrationPath {
   self.ensure_entity_archetype_capacity(entity.id)
   match plan.path {
@@ -1099,14 +1099,14 @@ fn World::execute_bundle_migration_plan(
           entity,
           plan.from_archetype_id,
           plan.to_archetype_id,
-          pending_payloads,
+          pending_writes,
         )
       } else {
         self.bundle_migrate_new_archetype_new_table(
           entity,
           plan.from_archetype_id,
           plan.to_archetype_id,
-          pending_payloads,
+          pending_writes,
         )
       }
     NewArchetypeNewTable =>
@@ -1115,14 +1115,14 @@ fn World::execute_bundle_migration_plan(
           entity,
           plan.from_archetype_id,
           plan.to_archetype_id,
-          pending_payloads,
+          pending_writes,
         )
       } else {
         self.bundle_migrate_new_archetype_new_table(
           entity,
           plan.from_archetype_id,
           plan.to_archetype_id,
-          pending_payloads,
+          pending_writes,
         )
       }
   }
@@ -1135,10 +1135,10 @@ fn World::migrate_entity_bundle(
   entity : @core.Entity,
   from_archetype_id : Int,
   to_archetype_id : Int,
-  pending_payloads : PendingComponentPayloadSet,
+  pending_writes : PendingComponentWriteSet,
 ) -> ArchetypeBundleMigrationPath {
   let plan = self.bundle_migration_plan(from_archetype_id, to_archetype_id)
-  self.execute_bundle_migration_plan(entity, plan, pending_payloads)
+  self.execute_bundle_migration_plan(entity, plan, pending_writes)
 }
 
 ///|
@@ -1235,7 +1235,7 @@ fn World::initialize_entity_archetype_tracking(
       entity,
       previous_archetype_id,
       0,
-      pending_component_payload_set_new(),
+      pending_component_write_set_new(),
     ),
   )
 }
@@ -1259,7 +1259,7 @@ fn World::clear_entity_archetype_tracking(
       entity,
       previous_archetype_id,
       -1,
-      pending_component_payload_set_new(),
+      pending_component_write_set_new(),
     ),
   )
   self.entity_replace_component_local_ids_without_membership_update(entity, [])
@@ -1318,7 +1318,7 @@ fn World::refresh_entity_archetype_with_bundle_info(
   self : World,
   entity : @core.Entity,
   bundle_info : BundleInfo?,
-  pending_payloads : PendingComponentPayloadSet,
+  pending_writes : PendingComponentWriteSet,
 ) -> Unit {
   if !self.is_alive(entity) {
     return
@@ -1330,8 +1330,8 @@ fn World::refresh_entity_archetype_with_bundle_info(
   let mut normalized_components : Array[Int]? = None
   match bundle_info {
     Some(bundle_info) if previous_archetype_id >= 0 =>
-      if archetype_bundle_info_covers_pending_payloads(
-          pending_payloads, bundle_info,
+      if archetype_bundle_info_covers_pending_writes(
+          pending_writes, bundle_info,
         ) {
         next_archetype_id = Some(
           self.ensure_archetype_insert_bundle_edge_target(
@@ -1402,25 +1402,25 @@ fn World::refresh_entity_archetype_with_bundle_info(
   }
   ignore(
     self.migrate_entity_bundle(
-      entity, previous_archetype_id, next_archetype_id, pending_payloads,
+      entity, previous_archetype_id, next_archetype_id, pending_writes,
     ),
   )
 }
 
 ///|
-fn World::refresh_entity_archetype_with_pending_payloads(
+fn World::refresh_entity_archetype_with_pending_writes(
   self : World,
   entity : @core.Entity,
-  pending_payloads : PendingComponentPayloadSet,
+  pending_writes : PendingComponentWriteSet,
 ) -> Unit {
-  self.refresh_entity_archetype_with_bundle_info(entity, None, pending_payloads)
+  self.refresh_entity_archetype_with_bundle_info(entity, None, pending_writes)
 }
 
 ///|
 fn World::refresh_entity_archetype(self : World, entity : @core.Entity) -> Unit {
-  self.refresh_entity_archetype_with_pending_payloads(
+  self.refresh_entity_archetype_with_pending_writes(
     entity,
-    pending_component_payload_set_new(),
+    pending_component_write_set_new(),
   )
 }
 
@@ -1460,7 +1460,7 @@ fn World::refresh_entity_archetype_after_component_remove(
       entity,
       previous_archetype_id,
       next_archetype_id,
-      pending_component_payload_set_new(),
+      pending_component_write_set_new(),
     ),
   )
 }

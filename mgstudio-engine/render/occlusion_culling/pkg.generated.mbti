@@ -31,7 +31,6 @@ pub struct OcclusionCulling {
 } derive(Eq, @debug.Debug)
 pub fn OcclusionCulling::OcclusionCulling() -> Self
 pub impl @ecs.Component for OcclusionCulling
-pub impl @ecs.EcsPayloadCodec for OcclusionCulling
 
 pub struct OcclusionCullingPlugin {
 }

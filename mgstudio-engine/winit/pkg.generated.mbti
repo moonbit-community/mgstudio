@@ -51,7 +51,6 @@ pub(all) struct RawWinitWindowEvent {
   window_id : Int
   event : @windowing_native.RawWinitWindowEventData
 } derive(Eq)
-pub impl @ecs.EcsPayloadCodec for RawWinitWindowEvent
 pub impl @ecs.Message for RawWinitWindowEvent
 
 pub(all) enum UpdateMode {
@@ -75,7 +74,6 @@ pub fn WinitMonitors::find_entity(Self, @Milky2018/mgstudio/core.Entity) -> @Mil
 pub fn WinitMonitors::new() -> Self
 pub fn WinitMonitors::nth(Self, Int) -> @Milky2018/window/core.MonitorHandle?
 pub impl @app.Resource for WinitMonitors
-pub impl @ecs.EcsPayloadCodec for WinitMonitors
 
 pub(all) struct WinitPlugin {
   run_on_any_thread : Bool
@@ -94,7 +92,6 @@ pub fn WinitSettings::game() -> Self
 pub fn WinitSettings::mobile() -> Self
 pub fn WinitSettings::update_mode(Self, Bool) -> UpdateMode
 pub impl @app.Resource for WinitSettings
-pub impl @ecs.EcsPayloadCodec for WinitSettings
 
 pub struct WinitWindowEntry {
   entity : @Milky2018/mgstudio/core.Entity
@@ -112,7 +109,6 @@ pub fn WinitWindows::new() -> Self
 pub fn WinitWindows::remove_window(Self, @Milky2018/mgstudio/core.Entity) -> Int?
 pub fn WinitWindows::sync_windows(Self, @ecs.World) -> Unit
 pub impl @app.Resource for WinitWindows
-pub impl @ecs.EcsPayloadCodec for WinitWindows
 
 // Type aliases
 pub using @windowing_native {type RawWinitWindowEventData}

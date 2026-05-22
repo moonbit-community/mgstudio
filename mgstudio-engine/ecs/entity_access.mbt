@@ -102,7 +102,7 @@ fn[T] mut_key_or_abort(item : Mut[T]) -> ComponentKey[T] {
 }
 
 ///|
-fn[T : EcsPayloadCodec] mut_value_or_abort(item : Mut[T]) -> T {
+fn[T] mut_value_or_abort(item : Mut[T]) -> T {
   let world = mut_world_or_abort(item)
   let key = mut_key_or_abort(item)
   match (item.table_id, item.row_index, item.local_component_id) {
@@ -128,10 +128,7 @@ fn[T : EcsPayloadCodec] mut_value_or_abort(item : Mut[T]) -> T {
 }
 
 ///|
-fn[T : EcsPayloadCodec] mut_write_value_or_abort(
-  item : Mut[T],
-  value : T,
-) -> Unit {
+fn[T] mut_write_value_or_abort(item : Mut[T], value : T) -> Unit {
   let world = mut_world_or_abort(item)
   let key = mut_key_or_abort(item)
   match (item.table_id, item.row_index, item.local_component_id) {
@@ -150,10 +147,7 @@ fn[T : EcsPayloadCodec] mut_write_value_or_abort(
 }
 
 ///|
-fn[T : EcsPayloadCodec + Mutable] mut_assign_value_or_abort(
-  item : Mut[T],
-  value : T,
-) -> Unit {
+fn[T : Mutable] mut_assign_value_or_abort(item : Mut[T], value : T) -> Unit {
   let current = Ref(mut_value_or_abort(item))
   Mutable::set(value, current)
   mut_write_value_or_abort(item, current.val)
@@ -209,12 +203,12 @@ pub fn[T : Component] Mut::key(self : Mut[T]) -> ComponentKey[T] {
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] Mut::peek(self : Mut[T]) -> T {
+pub fn[T] Mut::peek(self : Mut[T]) -> T {
   mut_value_or_abort(self)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] Mut::value(self : Mut[T]) -> T {
+pub fn[T] Mut::value(self : Mut[T]) -> T {
   self.peek()
 }
 
@@ -300,11 +294,7 @@ pub fn[T : Component] Mut::set_added(self : Mut[T], loc~ : SourceLoc) -> Unit {
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec, R] Mut::modify(
-  self : Mut[T],
-  f : (T) -> R,
-  loc~ : SourceLoc,
-) -> R {
+pub fn[T, R] Mut::modify(self : Mut[T], f : (T) -> R, loc~ : SourceLoc) -> R {
   let value = self.peek()
   let result = f(value)
   mut_mark_changed(self, caller=hook_caller_from_loc(loc))
@@ -313,7 +303,7 @@ pub fn[T : EcsPayloadCodec, R] Mut::modify(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec + Mutable] Mut::update(
+pub fn[T : Mutable] Mut::update(
   self : Mut[T],
   f : (T) -> T,
   loc~ : SourceLoc,
@@ -323,7 +313,7 @@ pub fn[T : EcsPayloadCodec + Mutable] Mut::update(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Eq + EcsPayloadCodec + Mutable] Mut::set_if_neq(
+pub fn[T : Eq + Mutable] Mut::set_if_neq(
   self : Mut[T],
   value : T,
   loc~ : SourceLoc,
@@ -339,7 +329,7 @@ pub fn[T : Eq + EcsPayloadCodec + Mutable] Mut::set_if_neq(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec + Mutable] Mut::set(
+pub fn[T : Mutable] Mut::set(
   self : Mut[T],
   value : T,
   loc~ : SourceLoc,
@@ -355,9 +345,7 @@ fn[T] world_component_mut(
   key : ComponentKey[T],
 ) -> Mut[T]? raise EcsError {
   world.ensure_entity_alive(entity)
-  guard world.component_payload(key.id(), entity) is Some(_) else {
-    return None
-  }
+  guard world.component_present(key.id(), entity) else { return None }
   let local_component_id = world.local_component_id(key.id())
   let table_id = world.table_id_for_entity(entity)
   let row_index = match world.entity_table_row(entity) {
@@ -375,11 +363,9 @@ fn[T] world_component_mut(
 }
 
 ///|
-fn[T : Component + EcsPayloadCodec] component_bundle_writer(
-  value : T,
-) -> (Int, EcsPayloadWriter) {
+fn[T : Component] component_bundle_writer(value : T) -> (Int, ComponentWriter) {
   let key = T::component()
-  (key.id(), ecs_payload_writer(key, value))
+  (key.id(), component_writer_for_key(key, value))
 }
 
 ///|
@@ -442,9 +428,7 @@ pub fn[T : Component] EntityRef::contains(
 }
 
 ///|
-pub fn[T : Component + EcsPayloadCodec] EntityRef::get(
-  self : EntityRef,
-) -> T? raise EcsError {
+pub fn[T : Component] EntityRef::get(self : EntityRef) -> T? raise EcsError {
   self.world.get_by_key(self.entity, T::component())
 }
 
@@ -473,9 +457,7 @@ pub fn[T : Component] EntityMut::contains(
 }
 
 ///|
-pub fn[T : Component + EcsPayloadCodec] EntityMut::get(
-  self : EntityMut,
-) -> T? raise EcsError {
+pub fn[T : Component] EntityMut::get(self : EntityMut) -> T? raise EcsError {
   self.world.get_by_key(self.entity, T::component())
 }
 
@@ -503,96 +485,99 @@ pub impl Bundle for Unit with insert_into(_self, _world, _entity, loc~) {
 }
 
 ///|
-pub impl[A : Component + EcsPayloadCodec, B : Component + EcsPayloadCodec] Bundle for (
-  A,
-  B,
-) with insert_into(self, world, entity, loc~) {
+pub impl[A : Component, B : Component] Bundle for (A, B) with insert_into(
+  self,
+  world,
+  entity,
+  loc~,
+) {
   let (a, b) = self
-  let payloads : Array[(Int, EcsPayloadWriter)] = [
+  let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
     component_bundle_writer(b),
   ]
-  try! world.insert_component_payloads_with_requirements(
+  try! world.insert_component_writes_with_requirements(
     entity,
-    payloads,
+    writes,
     caller=hook_caller_from_loc(loc),
   )
 }
 
 ///|
-pub impl[
-  A : Component + EcsPayloadCodec,
-  B : Component + EcsPayloadCodec,
-  C : Component + EcsPayloadCodec,
-] Bundle for (A, B, C) with insert_into(self, world, entity, loc~) {
+pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C) with insert_into(
+  self,
+  world,
+  entity,
+  loc~,
+) {
   let (a, b, c) = self
-  let payloads : Array[(Int, EcsPayloadWriter)] = [
+  let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
     component_bundle_writer(b),
     component_bundle_writer(c),
   ]
-  try! world.insert_component_payloads_with_requirements(
+  try! world.insert_component_writes_with_requirements(
     entity,
-    payloads,
+    writes,
     caller=hook_caller_from_loc(loc),
   )
 }
 
 ///|
-pub impl[
-  A : Component + EcsPayloadCodec,
-  B : Component + EcsPayloadCodec,
-  C : Component + EcsPayloadCodec,
-  D : Component + EcsPayloadCodec,
-] Bundle for (A, B, C, D) with insert_into(self, world, entity, loc~) {
+pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for (
+  A,
+  B,
+  C,
+  D,
+) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d) = self
-  let payloads : Array[(Int, EcsPayloadWriter)] = [
+  let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
     component_bundle_writer(b),
     component_bundle_writer(c),
     component_bundle_writer(d),
   ]
-  try! world.insert_component_payloads_with_requirements(
+  try! world.insert_component_writes_with_requirements(
     entity,
-    payloads,
+    writes,
     caller=hook_caller_from_loc(loc),
   )
 }
 
 ///|
 pub impl[
-  A : Component + EcsPayloadCodec,
-  B : Component + EcsPayloadCodec,
-  C : Component + EcsPayloadCodec,
-  D : Component + EcsPayloadCodec,
-  E : Component + EcsPayloadCodec,
+  A : Component,
+  B : Component,
+  C : Component,
+  D : Component,
+  E : Component,
 ] Bundle for (A, B, C, D, E) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e) = self
-  let payloads : Array[(Int, EcsPayloadWriter)] = [
+  let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
     component_bundle_writer(b),
     component_bundle_writer(c),
     component_bundle_writer(d),
     component_bundle_writer(e),
   ]
-  try! world.insert_component_payloads_with_requirements(
+  try! world.insert_component_writes_with_requirements(
     entity,
-    payloads,
+    writes,
     caller=hook_caller_from_loc(loc),
   )
 }
 
 ///|
 pub impl[
-  A : Component + EcsPayloadCodec,
-  B : Component + EcsPayloadCodec,
-  C : Component + EcsPayloadCodec,
-  D : Component + EcsPayloadCodec,
-  E : Component + EcsPayloadCodec,
-  F : Component + EcsPayloadCodec,
+  A : Component,
+  B : Component,
+  C : Component,
+  D : Component,
+  E : Component,
+  F : Component,
 ] Bundle for (A, B, C, D, E, F) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e, f) = self
-  let payloads : Array[(Int, EcsPayloadWriter)] = [
+  let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
     component_bundle_writer(b),
     component_bundle_writer(c),
@@ -600,25 +585,25 @@ pub impl[
     component_bundle_writer(e),
     component_bundle_writer(f),
   ]
-  try! world.insert_component_payloads_with_requirements(
+  try! world.insert_component_writes_with_requirements(
     entity,
-    payloads,
+    writes,
     caller=hook_caller_from_loc(loc),
   )
 }
 
 ///|
 pub impl[
-  A : Component + EcsPayloadCodec,
-  B : Component + EcsPayloadCodec,
-  C : Component + EcsPayloadCodec,
-  D : Component + EcsPayloadCodec,
-  E : Component + EcsPayloadCodec,
-  F : Component + EcsPayloadCodec,
-  G : Component + EcsPayloadCodec,
+  A : Component,
+  B : Component,
+  C : Component,
+  D : Component,
+  E : Component,
+  F : Component,
+  G : Component,
 ] Bundle for (A, B, C, D, E, F, G) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e, f, g) = self
-  let payloads : Array[(Int, EcsPayloadWriter)] = [
+  let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
     component_bundle_writer(b),
     component_bundle_writer(c),
@@ -627,23 +612,23 @@ pub impl[
     component_bundle_writer(f),
     component_bundle_writer(g),
   ]
-  try! world.insert_component_payloads_with_requirements(
+  try! world.insert_component_writes_with_requirements(
     entity,
-    payloads,
+    writes,
     caller=hook_caller_from_loc(loc),
   )
 }
 
 ///|
 pub impl[
-  A : Component + EcsPayloadCodec,
-  B : Component + EcsPayloadCodec,
-  C : Component + EcsPayloadCodec,
-  D : Component + EcsPayloadCodec,
-  E : Component + EcsPayloadCodec,
-  F : Component + EcsPayloadCodec,
-  G : Component + EcsPayloadCodec,
-  H : Component + EcsPayloadCodec,
+  A : Component,
+  B : Component,
+  C : Component,
+  D : Component,
+  E : Component,
+  F : Component,
+  G : Component,
+  H : Component,
 ] Bundle for (A, B, C, D, E, F, G, H) with insert_into(
   self,
   world,
@@ -651,7 +636,7 @@ pub impl[
   loc~,
 ) {
   let (a, b, c, d, e, f, g, h) = self
-  let payloads : Array[(Int, EcsPayloadWriter)] = [
+  let writes : Array[(Int, ComponentWriter)] = [
     component_bundle_writer(a),
     component_bundle_writer(b),
     component_bundle_writer(c),
@@ -661,9 +646,9 @@ pub impl[
     component_bundle_writer(g),
     component_bundle_writer(h),
   ]
-  try! world.insert_component_payloads_with_requirements(
+  try! world.insert_component_writes_with_requirements(
     entity,
-    payloads,
+    writes,
     caller=hook_caller_from_loc(loc),
   )
 }
@@ -693,7 +678,7 @@ pub fn[B : Bundle] EntityMut::insert(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component + EcsPayloadCodec] EntityMut::insert_component(
+pub fn[T : Component] EntityMut::insert_component(
   self : EntityMut,
   component : T,
   loc~ : SourceLoc,
@@ -704,7 +689,7 @@ pub fn[T : Component + EcsPayloadCodec] EntityMut::insert_component(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component + EcsPayloadCodec] EntityMut::remove_component(
+pub fn[T : Component] EntityMut::remove_component(
   self : EntityMut,
   loc~ : SourceLoc,
 ) -> T? raise EcsError {

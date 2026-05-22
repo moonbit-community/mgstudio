@@ -28,8 +28,7 @@ pub struct LoadContext {
 ///|
 priv struct TypedAssetLoaderEntry {
   extensions : Array[String]
-  load : (LoadContext, Bytes) -> @ecs.EcsPayload
-  insert : (@ecs.World, Int, @ecs.EcsPayload) -> Unit
+  load_and_insert : (@ecs.World, AssetServer, AssetPath, Int, Bytes) -> Unit
 }
 
 ///|
@@ -120,14 +119,6 @@ fn LoadContext::new(
   path : AssetPath,
 ) -> LoadContext {
   LoadContext::{ world: Some(world), asset_server, path }
-}
-
-///|
-fn LoadContext::new_detached(
-  asset_server : AssetServer,
-  path : AssetPath,
-) -> LoadContext {
-  LoadContext::{ world: None, asset_server, path }
 }
 
 ///|
@@ -478,10 +469,7 @@ pub fn[T : Asset] register_asset_loader(
   let next_entries = typed_asset_loader_clone_entries(existing)
   next_entries.push(TypedAssetLoaderEntry::{
     extensions: normalized_extensions,
-    load: fn(context, bytes) {
-      T::to_ecs_payload((loader.load)(context, bytes))
-    },
-    insert: fn(world, handle_id, payload) {
+    load_and_insert: fn(world, asset_server, path, handle_id, bytes) {
       let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
       let assets = match world.get_resource_mut(key) {
         Some(value) => value
@@ -490,13 +478,8 @@ pub fn[T : Asset] register_asset_loader(
             "Assets resource is missing for custom loader insertion; call init_asset before registering or loading this asset type",
           )
       }
-      let value : T = match T::from_ecs_payload(payload) {
-        Some(value) => value
-        None =>
-          abort(
-            "typed asset loader returned a mismatched asset value for \{type_name}",
-          )
-      }
+      let context = LoadContext::new(world, asset_server, path)
+      let value : T = (loader.load)(context, bytes)
       ignore(
         assets.modify(fn(store) {
           let handle = Handle::new(handle_id)
@@ -559,39 +542,6 @@ pub fn[P : IntoAssetPath] AssetServer::load_image_direct(
 }
 
 ///|
-pub fn[T : Asset, P : IntoAssetPath] AssetServer::load_direct(
-  self : AssetServer,
-  path : P,
-  bytes : Bytes,
-) -> T {
-  asset_with_server_world(self, fn() {
-    let parsed_path = path.into_asset_path()
-    let type_name = assets_type_name((None : T?))
-    let registry = typed_asset_loader_registry_active()
-
-    let context = match asset_current_world() {
-      Some(world) => LoadContext::new(world, self, parsed_path)
-      None => LoadContext::new_detached(self, parsed_path)
-    }
-
-    match typed_asset_loader_entry_for_path(registry, type_name, parsed_path) {
-      Some(entry) =>
-        match T::from_ecs_payload((entry.load)(context, bytes)) {
-          Some(value) => value
-          None =>
-            abort(
-              "typed asset loader returned a mismatched asset value for \{type_name}",
-            )
-        }
-      None =>
-        abort(
-          "No typed asset loader is registered for \{type_name}; register the loader before calling AssetServer::load_direct",
-        )
-    }
-  })
-}
-
-///|
 fn asset_process_pending_typed_asset_loads(
   world : @ecs.World,
   asset_server : AssetServer,
@@ -608,11 +558,13 @@ fn asset_process_pending_typed_asset_loads(
       Some(entry) => {
         let formatted_path = asset_format_path(pending.path)
         let bytes = load_asset_file_bytes(asset_canonical_path(formatted_path))
-        let value_any = (entry.load)(
-          LoadContext::new(world, asset_server, pending.path),
+        (entry.load_and_insert)(
+          world,
+          asset_server,
+          pending.path,
+          pending.handle_id,
           bytes,
         )
-        (entry.insert)(world, pending.handle_id, value_any)
         asset_server.set_typed_loaded_states(
           pending.type_name,
           pending.handle_id,

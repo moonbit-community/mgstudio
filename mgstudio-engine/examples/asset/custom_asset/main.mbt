@@ -28,6 +28,16 @@ impl @asset.Asset for CustomAsset with asset_as_image(_self) {
 }
 
 ///|
+let custom_asset_resource_keys : @asset.AssetResourceKeys[CustomAsset] = @asset.register_asset_resource_keys(
+  CustomAsset::asset_debug_name(),
+)
+
+///|
+impl @asset.Asset for CustomAsset with asset_resource_keys() {
+  custom_asset_resource_keys
+}
+
+///|
 struct Blob {
   bytes : Bytes
 }
@@ -40,6 +50,16 @@ impl @asset.Asset for Blob with asset_debug_name() {
 ///|
 impl @asset.Asset for Blob with asset_as_image(_self) {
   None
+}
+
+///|
+let blob_resource_keys : @asset.AssetResourceKeys[Blob] = @asset.register_asset_resource_keys(
+  Blob::asset_debug_name(),
+)
+
+///|
+impl @asset.Asset for Blob with asset_resource_keys() {
+  blob_resource_keys
 }
 
 ///|

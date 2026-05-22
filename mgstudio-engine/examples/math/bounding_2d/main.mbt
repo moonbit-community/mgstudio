@@ -48,6 +48,16 @@ impl @app.States for Test with debug_name(self) {
 }
 
 ///|
+let test_state_resource_keys : @app.StateResourceKeys[Test] = @app.register_state_resource_keys(
+  "examples.math.bounding_2d.Test",
+)
+
+///|
+impl @app.States for Test with state_resource_keys() {
+  test_state_resource_keys
+}
+
+///|
 priv struct Spin {}
 
 ///|

@@ -110,9 +110,10 @@ fn QueryDataFetchPlan::table_column_ref(
 }
 
 ///|
-fn[T : EcsPayloadCodec] QueryDataFetchPlan::value_at_table_row(
+fn[T] QueryDataFetchPlan::value_at_table_row(
   self : QueryDataFetchPlan,
   world : World,
+  key : ComponentKey[T],
   offset : Int,
   table_id : Int,
   row_index : Int,
@@ -127,10 +128,6 @@ fn[T : EcsPayloadCodec] QueryDataFetchPlan::value_at_table_row(
         return None
       }
       let local_component_id = self.local_component_ids[offset]
-      guard world.definition_component_id(local_component_id)
-        is Some(definition_id) else {
-        return None
-      }
       guard world.table_storage(table_id) is Some(table_ref) else {
         return None
       }
@@ -138,11 +135,8 @@ fn[T : EcsPayloadCodec] QueryDataFetchPlan::value_at_table_row(
       guard table_ref.val.entity_at_row(row) is Some(entity) else {
         return None
       }
-      let ops = component_ops(definition_id)
-      match (ops.payload)(world, entity) {
-        Some(payload) => T::from_ecs_payload(payload)
-        None => None
-      }
+      ignore(local_component_id)
+      (key.access.get)(world, entity)
     }
     None => None
   }
@@ -171,12 +165,11 @@ pub(open) trait QueryData {
     QueryDataFetchPlan,
     Int,
   ) -> Self raise EcsError = _
-  fn fetch_sparse_anchor(World, @core.Entity, Int, EcsPayload, Int, Int) -> Self raise EcsError = _
+  fn fetch_sparse_anchor(World, @core.Entity, Int, Int, Int) -> Self raise EcsError = _
   fn fetch_sparse_anchor_with_plan(
     World,
     @core.Entity,
     Int,
-    EcsPayload,
     Int,
     Int,
     QueryDataFetchPlan,
@@ -185,7 +178,6 @@ pub(open) trait QueryData {
     World,
     @core.Entity,
     Int,
-    EcsPayload,
     Int,
     Int,
     QueryDataFetchPlan,
@@ -263,7 +255,6 @@ impl QueryData with fetch_sparse_anchor(
   world,
   entity,
   _anchor_local_component_id,
-  _anchor_payload,
   table_id,
   row_index,
 ) {
@@ -275,14 +266,12 @@ impl QueryData with fetch_sparse_anchor_with_plan(
   world,
   entity,
   _anchor_local_component_id,
-  _anchor_payload,
   table_id,
   row_index,
   plan,
 ) {
   Self::fetch_sparse_anchor_with_plan_offset(
-    world, entity, _anchor_local_component_id, _anchor_payload, table_id, row_index,
-    plan, 0,
+    world, entity, _anchor_local_component_id, table_id, row_index, plan, 0,
   )
 }
 
@@ -291,7 +280,6 @@ impl QueryData with fetch_sparse_anchor_with_plan_offset(
   world,
   entity,
   _anchor_local_component_id,
-  _anchor_payload,
   table_id,
   row_index,
   plan,
@@ -495,7 +483,7 @@ pub fn[T] query_data_component_matches(
 }
 
 ///|
-fn[T : EcsPayloadCodec] query_data_require_component(
+fn[T] query_data_require_component(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -503,9 +491,7 @@ fn[T : EcsPayloadCodec] query_data_require_component(
   match world.component_value_by_key(entity, key) {
     Some(value) => value
     None =>
-      abort(
-        "QueryData::fetch expected component payload to exist after matches",
-      )
+      abort("QueryData::fetch expected component value to exist after matches")
   }
 }
 
@@ -606,7 +592,7 @@ fn[T] query_data_comp_from_value(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] query_data_component_fetch(
+pub fn[T] query_data_component_fetch(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -615,7 +601,7 @@ pub fn[T : EcsPayloadCodec] query_data_component_fetch(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] query_data_component_optional(
+pub fn[T] query_data_component_optional(
   world : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -629,8 +615,8 @@ fn[T] query_data_require_component_mut(
   entity : @core.Entity,
   key : ComponentKey[T],
 ) -> Mut[T] {
-  guard world.component_payload(key.id(), entity) is Some(_) else {
-    abort("QueryData::fetch expected component payload to exist after matches")
+  guard world.component_present(key.id(), entity) else {
+    abort("QueryData::fetch expected component value to exist after matches")
   }
   let local_component_id = world.local_component_id(key.id())
   let table_id = world.table_id_for_entity(entity)
@@ -682,7 +668,6 @@ pub impl QueryData for @core.Entity with fetch_sparse_anchor(
   _world,
   entity,
   _anchor_local_component_id,
-  _anchor_payload,
   _table_id,
   _row_index,
 ) {
@@ -725,18 +710,12 @@ pub impl QueryData for @core.Entity with contiguous_compatible() {
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with matches(
-  world,
-  entity,
-) {
+pub impl[T : Component] QueryData for Comp[T] with matches(world, entity) {
   query_data_component_matches(world, entity, T::component())
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch(
-  world,
-  entity,
-) {
+pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
   let key = T::component()
   query_data_comp_from_value(
     world,
@@ -749,7 +728,7 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch(
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with append_fetch_plan(
+pub impl[T : Component] QueryData for Comp[T] with append_fetch_plan(
   world,
   plan,
 ) {
@@ -757,12 +736,12 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with append_fetc
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_plan_size() {
+pub impl[T : Component] QueryData for Comp[T] with fetch_plan_size() {
   1
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_table_row(
+pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
   world,
   entity,
   table_id,
@@ -795,7 +774,7 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_table
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_table_row_with_plan_offset(
+pub impl[T : Component] QueryData for Comp[T] with fetch_table_row_with_plan_offset(
   world,
   entity,
   table_id,
@@ -805,7 +784,9 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_table
 ) {
   let key = T::component()
   let local_component_id = query_data_local_component_id_from_plan(plan, offset)
-  let value_at_row = plan.value_at_table_row(world, offset, table_id, row_index)
+  let value_at_row = plan.value_at_table_row(
+    world, key, offset, table_id, row_index,
+  )
   match value_at_row {
     Some(value) =>
       query_data_comp_from_value(
@@ -824,24 +805,17 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_table
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_sparse_anchor(
+pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor(
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
 ) {
   let key = T::component()
   match world.local_component_id(key.id()) {
     Some(local_component_id) if local_component_id == anchor_local_component_id => {
-      let value = match T::from_ecs_payload(anchor_payload) {
-        Some(value) => value
-        None =>
-          abort(
-            "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
-          )
-      }
+      let value = query_data_require_component(world, entity, key)
       query_data_comp_from_value(
         world,
         entity,
@@ -856,25 +830,19 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_spars
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_sparse_anchor_with_plan_offset(
+pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor_with_plan_offset(
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
   plan,
   offset,
 ) {
+  let key = T::component()
   match query_data_local_component_id_from_plan(plan, offset) {
     Some(local_component_id) if local_component_id == anchor_local_component_id => {
-      let value = match T::from_ecs_payload(anchor_payload) {
-        Some(value) => value
-        None =>
-          abort(
-            "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
-          )
-      }
+      let value = query_data_require_component(world, entity, key)
       query_data_comp_from_value(
         world,
         entity,
@@ -892,50 +860,46 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_spars
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with mentions_component(
+pub impl[T : Component] QueryData for Comp[T] with mentions_component(
   component_id,
 ) {
   component_id == T::component().id()
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with matches_component_set(
+pub impl[T : Component] QueryData for Comp[T] with matches_component_set(
   set_contains_id,
 ) {
   set_contains_id(T::component().id())
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with collect_access(
-  access,
-) {
+pub impl[T : Component] QueryData for Comp[T] with collect_access(access) {
   access.add_read_component(T::component().id())
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with requires_entity_check() {
+pub impl[T : Component] QueryData for Comp[T] with requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with is_dense(
-  world,
-) {
+pub impl[T : Component] QueryData for Comp[T] with is_dense(world) {
   query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with iteration_anchor_component() {
+pub impl[T : Component] QueryData for Comp[T] with iteration_anchor_component() {
   Some(T::component().id())
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with iteration_anchor_components() {
+pub impl[T : Component] QueryData for Comp[T] with iteration_anchor_components() {
   [T::component().id()]
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with contiguous_compatible() {
+pub impl[T : Component] QueryData for Comp[T] with contiguous_compatible() {
   true
 }
 
@@ -1002,7 +966,6 @@ pub impl[T : Component] QueryData for Mut[T] with fetch_sparse_anchor(
   world,
   entity,
   _anchor_local_component_id,
-  _anchor_payload,
   table_id,
   row_index,
 ) {
@@ -1022,7 +985,6 @@ pub impl[T : Component] QueryData for Mut[T] with fetch_sparse_anchor_with_plan_
   world,
   entity,
   _anchor_local_component_id,
-  _anchor_payload,
   table_id,
   row_index,
   plan,
@@ -1102,7 +1064,6 @@ pub impl QueryData for EntityRef with fetch_sparse_anchor(
   world,
   entity,
   _anchor_local_component_id,
-  _anchor_payload,
   _table_id,
   _row_index,
 ) {
@@ -1169,7 +1130,6 @@ pub impl QueryData for EntityMut with fetch_sparse_anchor(
   world,
   entity,
   _anchor_local_component_id,
-  _anchor_payload,
   _table_id,
   _row_index,
 ) {
@@ -1274,14 +1234,13 @@ pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor(
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
 ) {
   if T::matches(world, entity) {
     Some(
       T::fetch_sparse_anchor(
-        world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+        world, entity, anchor_local_component_id, table_id, row_index,
       ),
     )
   } else {
@@ -1294,7 +1253,6 @@ pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor_with_plan_offs
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
   plan,
@@ -1303,8 +1261,7 @@ pub impl[T : QueryData] QueryData for T? with fetch_sparse_anchor_with_plan_offs
   if T::matches(world, entity) {
     Some(
       T::fetch_sparse_anchor_with_plan_offset(
-        world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
-        plan, offset,
+        world, entity, anchor_local_component_id, table_id, row_index, plan, offset,
       ),
     )
   } else {
@@ -1414,7 +1371,6 @@ pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor(
   world,
   entity,
   anchor_local_component_id,
-  _anchor_payload,
   table_id,
   row_index,
 ) {
@@ -1438,7 +1394,6 @@ pub impl[T : Component] QueryData for Has[T] with fetch_sparse_anchor_with_plan_
   world,
   entity,
   anchor_local_component_id,
-  _anchor_payload,
   table_id,
   row_index,
   plan,
@@ -1499,23 +1454,17 @@ pub impl[T : Component] QueryData for Has[T] with contiguous_compatible() {
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with matches(
-  _world,
-  _entity,
-) {
+pub impl[T : Component] QueryData for Optional[T] with matches(_world, _entity) {
   true
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch(
-  world,
-  entity,
-) {
+pub impl[T : Component] QueryData for Optional[T] with fetch(world, entity) {
   { value: world.get_by_key(entity, T::component()) }
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with append_fetch_plan(
+pub impl[T : Component] QueryData for Optional[T] with append_fetch_plan(
   world,
   plan,
 ) {
@@ -1523,12 +1472,12 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with append_
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_plan_size() {
+pub impl[T : Component] QueryData for Optional[T] with fetch_plan_size() {
   1
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_table_row(
+pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
   world,
   entity,
   table_id,
@@ -1549,7 +1498,7 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_t
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_table_row_with_plan_offset(
+pub impl[T : Component] QueryData for Optional[T] with fetch_table_row_with_plan_offset(
   world,
   entity,
   table_id,
@@ -1558,7 +1507,9 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_t
   offset,
 ) {
   let key = T::component()
-  let value_at_row = plan.value_at_table_row(world, offset, table_id, row_index)
+  let value_at_row = plan.value_at_table_row(
+    world, key, offset, table_id, row_index,
+  )
   match value_at_row {
     Some(value) => { value: Some(value) }
     None => { value: world.get_by_key(entity, key) }
@@ -1566,50 +1517,36 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_t
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_sparse_anchor(
+pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor(
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
 ) {
-  match world.local_component_id(T::component().id()) {
-    Some(local_component_id) if local_component_id == anchor_local_component_id => {
-      let value = match T::from_ecs_payload(anchor_payload) {
-        Some(value) => value
-        None =>
-          abort(
-            "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
-          )
-      }
-      { value: Some(value) }
-    }
+  let key = T::component()
+  match world.local_component_id(key.id()) {
+    Some(local_component_id) if local_component_id == anchor_local_component_id =>
+      { value: world.component_value_by_key(entity, key) }
     _ => Optional::fetch_table_row(world, entity, table_id, row_index)
   }
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_sparse_anchor_with_plan_offset(
+pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor_with_plan_offset(
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
   plan,
   offset,
 ) {
+  let key = T::component()
   match query_data_local_component_id_from_plan(plan, offset) {
     Some(local_component_id) if local_component_id == anchor_local_component_id => {
-      let value = match T::from_ecs_payload(anchor_payload) {
-        Some(value) => value
-        None =>
-          abort(
-            "QueryData::fetch_sparse_anchor expected anchor payload type to match component",
-          )
-      }
-      { value: Some(value) }
+      ignore(local_component_id)
+      { value: world.component_value_by_key(entity, key) }
     }
     _ =>
       Optional::fetch_table_row_with_plan_offset(
@@ -1619,45 +1556,41 @@ pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_s
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with mentions_component(
+pub impl[T : Component] QueryData for Optional[T] with mentions_component(
   _component_id,
 ) {
   false
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with matches_component_set(
+pub impl[T : Component] QueryData for Optional[T] with matches_component_set(
   _set_contains_id,
 ) {
   true
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with collect_access(
-  access,
-) {
+pub impl[T : Component] QueryData for Optional[T] with collect_access(access) {
   access.add_read_component(T::component().id())
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with requires_entity_check() {
+pub impl[T : Component] QueryData for Optional[T] with requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with is_dense(
-  world,
-) {
+pub impl[T : Component] QueryData for Optional[T] with is_dense(world) {
   query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with iteration_anchor_component() {
+pub impl[T : Component] QueryData for Optional[T] with iteration_anchor_component() {
   None
 }
 
 ///|
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with contiguous_compatible() {
+pub impl[T : Component] QueryData for Optional[T] with contiguous_compatible() {
   true
 }
 
@@ -1686,7 +1619,6 @@ pub impl QueryData for Unit with fetch_sparse_anchor(
   _world,
   _entity,
   _anchor_local_component_id,
-  _anchor_payload,
   _table_id,
   _row_index,
 ) {
@@ -1796,16 +1728,15 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_an
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
 ) {
   (
     A::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      world, entity, anchor_local_component_id, table_id, row_index,
     ),
     B::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      world, entity, anchor_local_component_id, table_id, row_index,
     ),
   )
 }
@@ -1815,7 +1746,6 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_an
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
   plan,
@@ -1824,12 +1754,10 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fetch_sparse_an
   let b_offset = offset + A::fetch_plan_size()
   (
     A::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
-      plan, offset,
+      world, entity, anchor_local_component_id, table_id, row_index, plan, offset,
     ),
     B::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
-      plan, b_offset,
+      world, entity, anchor_local_component_id, table_id, row_index, plan, b_offset,
     ),
   )
 }
@@ -1970,19 +1898,18 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
 ) {
   (
     A::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      world, entity, anchor_local_component_id, table_id, row_index,
     ),
     B::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      world, entity, anchor_local_component_id, table_id, row_index,
     ),
     C::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      world, entity, anchor_local_component_id, table_id, row_index,
     ),
   )
 }
@@ -1992,7 +1919,6 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
   plan,
@@ -2002,16 +1928,13 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
   let c_offset = b_offset + B::fetch_plan_size()
   (
     A::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
-      plan, offset,
+      world, entity, anchor_local_component_id, table_id, row_index, plan, offset,
     ),
     B::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
-      plan, b_offset,
+      world, entity, anchor_local_component_id, table_id, row_index, plan, b_offset,
     ),
     C::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
-      plan, c_offset,
+      world, entity, anchor_local_component_id, table_id, row_index, plan, c_offset,
     ),
   )
 }
@@ -2206,22 +2129,21 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
 ) {
   (
     A::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      world, entity, anchor_local_component_id, table_id, row_index,
     ),
     B::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      world, entity, anchor_local_component_id, table_id, row_index,
     ),
     C::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      world, entity, anchor_local_component_id, table_id, row_index,
     ),
     D::fetch_sparse_anchor(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
+      world, entity, anchor_local_component_id, table_id, row_index,
     ),
   )
 }
@@ -2236,7 +2158,6 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   world,
   entity,
   anchor_local_component_id,
-  anchor_payload,
   table_id,
   row_index,
   plan,
@@ -2247,20 +2168,16 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   let d_offset = c_offset + C::fetch_plan_size()
   (
     A::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
-      plan, offset,
+      world, entity, anchor_local_component_id, table_id, row_index, plan, offset,
     ),
     B::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
-      plan, b_offset,
+      world, entity, anchor_local_component_id, table_id, row_index, plan, b_offset,
     ),
     C::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
-      plan, c_offset,
+      world, entity, anchor_local_component_id, table_id, row_index, plan, c_offset,
     ),
     D::fetch_sparse_anchor_with_plan_offset(
-      world, entity, anchor_local_component_id, anchor_payload, table_id, row_index,
-      plan, d_offset,
+      world, entity, anchor_local_component_id, table_id, row_index, plan, d_offset,
     ),
   )
 }

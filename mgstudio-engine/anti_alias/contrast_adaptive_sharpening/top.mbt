@@ -119,16 +119,15 @@ pub let ecs_key_cas_runtime_state : @ecs.ResourceKey[CasRuntimeState] = @ecs.reg
 )
 
 ///|
-let cas_camera_component_key_ref : Ref[@ecs.ComponentKey[Unit]?] = Ref(None)
+let cas_camera_component_present_ref : Ref[
+  ((@ecs.World, @core.Entity) -> Bool)?,
+] = Ref(None)
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] cas_register_camera_component_key(
-  key : @ecs.ComponentKey[T],
-) -> Unit {
-  ignore(@ecs.ensure_erased_component(key))
-  cas_camera_component_key_ref.val = Some(
-    @ecs.component_key_from_id(key.id(), debug_name=key.debug_name()),
-  )
+pub fn[T] cas_register_camera_component_key(key : @ecs.ComponentKey[T]) -> Unit {
+  cas_camera_component_present_ref.val = Some(fn(world, entity) {
+    try! world.contains_by_key(entity, key)
+  })
 }
 
 ///|
@@ -167,8 +166,10 @@ fn cas_camera_component_present(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Bool {
-  guard cas_camera_component_key_ref.val is Some(key) else { return false }
-  try! world.contains_by_key(entity, key)
+  guard cas_camera_component_present_ref.val is Some(contains) else {
+    return false
+  }
+  contains(world, entity)
 }
 
 ///|

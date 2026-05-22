@@ -22,7 +22,7 @@ pub(all) suberror RequiredComponentsError {
 ///|
 priv struct RequiredComponentRegistration {
   component_id : Int
-  init : () -> EcsPayloadWriter
+  init : () -> ComponentWriter
   depth : Int
 }
 
@@ -271,7 +271,7 @@ fn World::register_required_components_by_keys(
   self : World,
   requiree : Int,
   required : Int,
-  init_value : () -> EcsPayloadWriter,
+  init_value : () -> ComponentWriter,
 ) -> Unit raise RequiredComponentsError {
   let requiree_local_id = self.ensure_component_registered(requiree)
   if self.component_has_been_used(requiree_local_id) {
@@ -305,7 +305,7 @@ fn World::register_required_components_by_keys(
 }
 
 ///|
-pub fn[T, R : Default + EcsPayloadCodec] World::register_required_components(
+pub fn[T, R : Default] World::register_required_components(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -313,12 +313,12 @@ pub fn[T, R : Default + EcsPayloadCodec] World::register_required_components(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { ecs_payload_writer(required_key, R::default()) },
+    fn() { component_writer_for_key(required_key, R::default()) },
   )
 }
 
 ///|
-pub fn[T, R : EcsPayloadCodec] World::register_required_components_with(
+pub fn[T, R] World::register_required_components_with(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -327,12 +327,12 @@ pub fn[T, R : EcsPayloadCodec] World::register_required_components_with(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { ecs_payload_writer(required_key, init()) },
+    fn() { component_writer_for_key(required_key, init()) },
   )
 }
 
 ///|
-pub fn[T, R : Default + EcsPayloadCodec] World::try_register_required_components(
+pub fn[T, R : Default] World::try_register_required_components(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -340,12 +340,12 @@ pub fn[T, R : Default + EcsPayloadCodec] World::try_register_required_components
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { ecs_payload_writer(required_key, R::default()) },
+    fn() { component_writer_for_key(required_key, R::default()) },
   )
 }
 
 ///|
-pub fn[T, R : EcsPayloadCodec] World::try_register_required_components_with(
+pub fn[T, R] World::try_register_required_components_with(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -354,7 +354,7 @@ pub fn[T, R : EcsPayloadCodec] World::try_register_required_components_with(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { ecs_payload_writer(required_key, init()) },
+    fn() { component_writer_for_key(required_key, init()) },
   )
 }
 
@@ -427,10 +427,10 @@ fn World::insert_component_with_requirements(
   self : World,
   entity : @core.Entity,
   component_id : Int,
-  writer : EcsPayloadWriter,
+  writer : ComponentWriter,
   caller? : String? = None,
 ) -> Unit raise EcsError {
-  self.insert_component_payloads_with_requirements(
+  self.insert_component_writes_with_requirements(
     entity,
     [(component_id, writer)],
     caller~,
@@ -438,25 +438,25 @@ fn World::insert_component_with_requirements(
 }
 
 ///|
-fn World::insert_component_payloads_with_requirements(
+fn World::insert_component_writes_with_requirements(
   self : World,
   entity : @core.Entity,
-  payloads : Array[(Int, EcsPayloadWriter)],
+  writes : Array[(Int, ComponentWriter)],
   caller? : String? = None,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
   if self.has_active_query_iteration() {
-    for payload in payloads {
-      if self.component_payload(payload.0, entity) is None {
+    for write in writes {
+      if !self.component_present(write.0, entity) {
         self.ensure_query_iteration_can_change_structure("insert component")
       }
     }
   }
   let outermost = self.begin_deferred_hook_command_scope()
   let structural_changed_ref = Ref(false)
-  let bundle_info = self.ensure_bundle_info_for_payloads(payloads)
+  let bundle_info = self.ensure_bundle_info_for_writes(writes)
   let has_existing_pending_context = match
-    self.pending_component_payload_context {
+    self.pending_component_write_context {
     Some(context) if context.entity_id == entity.id => true
     _ => false
   }
@@ -466,31 +466,31 @@ fn World::insert_component_payloads_with_requirements(
     self.entity_archetype_ids[entity.id] == 0 &&
     entity.id < self.entity_component_local_ids.length() &&
     self.entity_component_local_ids[entity.id].length() == 0
-  let pending_payloads = match self.pending_component_payload_context {
-    Some(context) if context.entity_id == entity.id => context.payloads
-    _ => pending_component_payload_set_new()
+  let pending_writes = match self.pending_component_write_context {
+    Some(context) if context.entity_id == entity.id => context.writes
+    _ => pending_component_write_set_new()
   }
-  let previous_pending_context = self.push_pending_component_payload_context(
-    entity, pending_payloads,
+  let previous_pending_context = self.push_pending_component_write_context(
+    entity, pending_writes,
   )
-  for payload in payloads {
+  for write in writes {
     self.insert_component_with_requirements_unchecked(
       entity,
-      payload.0,
-      payload.1,
+      write.0,
+      write.1,
       structural_changed_ref,
-      pending_payloads,
+      pending_writes,
       assume_no_existing_components,
       caller~,
     )
   }
   if structural_changed_ref.val {
     self.refresh_entity_archetype_with_bundle_info(
-      entity, bundle_info, pending_payloads,
+      entity, bundle_info, pending_writes,
     )
     self.mark_structure_changed()
   }
-  self.restore_pending_component_payload_context(previous_pending_context)
+  self.restore_pending_component_write_context(previous_pending_context)
   self.end_deferred_hook_command_scope(outermost)
 }
 
@@ -498,17 +498,17 @@ fn World::insert_component_payloads_with_requirements(
 pub fn World::insert_component_writers(
   self : World,
   entity : @core.Entity,
-  writers : Array[EcsPayloadWriter],
+  writers : Array[ComponentWriter],
   caller? : String? = None,
 ) -> Unit raise EcsError {
   if writers.is_empty() {
     return
   }
-  let payloads : Array[(Int, EcsPayloadWriter)] = []
+  let writes : Array[(Int, ComponentWriter)] = []
   for writer in writers {
-    payloads.push((writer.component_definition_id, writer))
+    writes.push((writer.component_definition_id, writer))
   }
-  self.insert_component_payloads_with_requirements(entity, payloads, caller~)
+  self.insert_component_writes_with_requirements(entity, writes, caller~)
 }
 
 ///|
@@ -516,9 +516,9 @@ fn World::insert_component_with_requirements_unchecked(
   self : World,
   entity : @core.Entity,
   component_definition_id : Int,
-  writer : EcsPayloadWriter,
+  writer : ComponentWriter,
   structural_changed_ref : Ref[Bool],
-  pending_payloads : PendingComponentPayloadSet,
+  pending_writes : PendingComponentWriteSet,
   assume_no_existing_components : Bool,
   caller? : String? = None,
 ) -> Unit {
@@ -526,9 +526,9 @@ fn World::insert_component_with_requirements_unchecked(
     component_definition_id,
   )
   let replacing = if assume_no_existing_components {
-    pending_payloads.contains(component_local_id)
+    pending_writes.contains(component_local_id)
   } else {
-    self.component_payload(component_definition_id, entity) is Some(_)
+    self.component_present(component_definition_id, entity)
   }
   if replacing {
     self.run_component_replace_hooks(entity, component_definition_id, caller~)
@@ -539,7 +539,8 @@ fn World::insert_component_with_requirements_unchecked(
       self.replace_component_writer(component_definition_id, entity, writer),
     )
   } else {
-    pending_payloads.set_writer(component_local_id, writer)
+    pending_writes.insert(component_local_id)
+    writer.apply(self, entity)
   }
   self.mark_component_used(component_local_id)
   self.record_component_changed_with_caller(
@@ -569,8 +570,8 @@ fn World::insert_component_with_requirements_unchecked(
     return
   }
   for entry in state_ref.val.all {
-    if self.component_payload_by_local_id(entity, entry.component_id) is Some(_) ||
-      pending_payloads.contains(entry.component_id) {
+    if self.component_present_by_local_id(entity, entry.component_id) ||
+      pending_writes.contains(entry.component_id) {
       continue
     }
     guard self.definition_component_id(entry.component_id)
@@ -582,7 +583,7 @@ fn World::insert_component_with_requirements_unchecked(
       required_definition_id,
       (entry.init)(),
       structural_changed_ref,
-      pending_payloads,
+      pending_writes,
       assume_no_existing_components,
       caller~,
     )

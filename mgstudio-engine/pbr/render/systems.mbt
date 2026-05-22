@@ -35,7 +35,7 @@ pub fn render3d_system_labels() -> Array[String] {
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] render3d_update_frusta_system_by_projection_key(
+pub fn[T] render3d_update_frusta_system_by_projection_key(
   world : @ecs.World,
   projection_key : @ecs.ComponentKey[T],
   compute_frustum : (T, @transform.Transform) -> Frustum,

@@ -26,6 +26,18 @@ pub impl @ecs.Component for HierarchyValidationMarker with component() {
 }
 
 ///|
+let hierarchy_validation_marker_parent_keys : ValidateParentHasComponentKeys[
+  HierarchyValidationMarker,
+] = register_validate_parent_has_component_keys(
+  hierarchy_validation_marker_key.debug_name(),
+)
+
+///|
+pub impl ValidateParentHasComponentTarget for HierarchyValidationMarker with validate_parent_has_component_keys() {
+  hierarchy_validation_marker_parent_keys
+}
+
+///|
 test "app hierarchy: validate-parent plugin queues a check when parent lacks component" {
   let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin()
   let app = App::new(@ecs.World::new()).add_plugins(

@@ -62,6 +62,16 @@ pub impl Asset for Image with asset_as_image(self) {
 }
 
 ///|
+pub let image_asset_resource_keys : AssetResourceKeys[Image] = register_asset_resource_keys(
+  "mgstudio_asset::Image",
+)
+
+///|
+pub impl Asset for Image with asset_resource_keys() {
+  image_asset_resource_keys
+}
+
+///|
 pub impl Asset for Blob with asset_debug_name() {
   "mgstudio_asset::Blob"
 }
@@ -69,6 +79,16 @@ pub impl Asset for Blob with asset_debug_name() {
 ///|
 pub impl Asset for Blob with asset_as_image(_self) {
   None
+}
+
+///|
+pub let blob_asset_resource_keys : AssetResourceKeys[Blob] = register_asset_resource_keys(
+  "mgstudio_asset::Blob",
+)
+
+///|
+pub impl Asset for Blob with asset_resource_keys() {
+  blob_asset_resource_keys
 }
 
 ///|

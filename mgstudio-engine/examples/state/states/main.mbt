@@ -45,6 +45,16 @@ impl @app.States for AppState with debug_name(self) {
 }
 
 ///|
+let app_state_resource_keys : @app.StateResourceKeys[AppState] = @app.register_state_resource_keys(
+  "AppState",
+)
+
+///|
+impl @app.States for AppState with state_resource_keys() {
+  app_state_resource_keys
+}
+
+///|
 pub impl @app.Resource for MenuData with resource() {
   menu_data_resource_key
 }

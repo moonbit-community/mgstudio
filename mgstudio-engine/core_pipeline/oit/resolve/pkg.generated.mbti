@@ -63,7 +63,6 @@ pub struct OitResolvePipeline {
 pub fn OitResolvePipeline::OitResolvePipeline() -> Self
 pub fn OitResolvePipeline::new() -> Self
 pub impl @app.Resource for OitResolvePipeline
-pub impl @ecs.EcsPayloadCodec for OitResolvePipeline
 
 pub struct OitResolvePipelineId {
   pipeline_id : Int

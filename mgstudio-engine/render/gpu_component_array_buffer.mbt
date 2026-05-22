@@ -48,6 +48,13 @@ pub struct GpuComponentArrayBufferState[C] {
 }
 
 ///|
+pub(open) trait GpuComponentArrayBufferComponent: @ecs.Component {
+  fn gpu_component_array_buffer_state_key() -> @ecs.ResourceKey[
+    GpuComponentArrayBufferState[Self],
+  ]
+}
+
+///|
 pub fn[C] GpuComponentArrayBufferState::new() -> GpuComponentArrayBufferState[C] {
   GpuComponentArrayBufferState::{
     buffer: @render_resource.GpuArrayBuffer::new(),
@@ -79,26 +86,12 @@ pub fn[C] GpuComponentArrayBufferState::index(
 }
 
 ///|
-pub fn[C : @ecs.EcsPayloadCodec] gpu_component_array_buffer_state_key(
+pub fn[C : GpuComponentArrayBufferComponent] gpu_component_array_buffer_state_key(
   debug_name? : String = "mgstudio_render::GpuComponentArrayBufferState",
 ) -> @ecs.ResourceKey[GpuComponentArrayBufferState[C]] {
-  match gpu_component_array_buffer_state_key_registry.get(debug_name) {
-    Some(id) => @ecs.resource_key_from_id(id, debug_name~)
-    None => {
-      let key : @ecs.ResourceKey[GpuComponentArrayBufferState[C]] = @ecs.register_erased_resource(
-        debug_name~,
-      )
-      gpu_component_array_buffer_state_key_registry.set(debug_name, key.id())
-      key
-    }
-  }
+  ignore(debug_name)
+  C::gpu_component_array_buffer_state_key()
 }
-
-///|
-let gpu_component_array_buffer_state_key_registry : @hashmap.HashMap[
-  String,
-  Int,
-] = @hashmap.HashMap([])
 
 ///|
 fn[C] gpu_component_array_buffer_state_ref(

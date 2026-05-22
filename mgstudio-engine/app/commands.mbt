@@ -29,7 +29,7 @@ pub struct DeferredCommandEntry {
 }
 
 ///|
-fn[T : @ecs.Component + @ecs.EcsPayloadCodec] insert_spawn_component(
+fn[T : @ecs.Component] insert_spawn_component(
   world : @ecs.World,
   entity : @core.Entity,
   component : T,
@@ -52,33 +52,21 @@ pub(open) trait CommandSpawnComponents {
 }
 
 ///|
-pub impl[
-  A : @ecs.Component + @ecs.EcsPayloadCodec,
-  B : @ecs.Component + @ecs.EcsPayloadCodec,
-] CommandSpawnComponents for (A, B) with spawn_components(
-  self,
-  world,
-  entity,
-  tick,
-  loc~,
-) {
+pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (
+  A,
+  B,
+) with spawn_components(self, world, entity, tick, loc~) {
   let (a, b) = self
   insert_spawn_component(world, entity, a, tick, loc~)
   insert_spawn_component(world, entity, b, tick, loc~)
 }
 
 ///|
-pub impl[
-  A : @ecs.Component + @ecs.EcsPayloadCodec,
-  B : @ecs.Component + @ecs.EcsPayloadCodec,
-  C : @ecs.Component + @ecs.EcsPayloadCodec,
-] CommandSpawnComponents for (A, B, C) with spawn_components(
-  self,
-  world,
-  entity,
-  tick,
-  loc~,
-) {
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpawnComponents for (
+  A,
+  B,
+  C,
+) with spawn_components(self, world, entity, tick, loc~) {
   let (a, b, c) = self
   insert_spawn_component(world, entity, a, tick, loc~)
   insert_spawn_component(world, entity, b, tick, loc~)
@@ -87,10 +75,10 @@ pub impl[
 
 ///|
 pub impl[
-  A : @ecs.Component + @ecs.EcsPayloadCodec,
-  B : @ecs.Component + @ecs.EcsPayloadCodec,
-  C : @ecs.Component + @ecs.EcsPayloadCodec,
-  D : @ecs.Component + @ecs.EcsPayloadCodec,
+  A : @ecs.Component,
+  B : @ecs.Component,
+  C : @ecs.Component,
+  D : @ecs.Component,
 ] CommandSpawnComponents for (A, B, C, D) with spawn_components(
   self,
   world,
@@ -107,11 +95,11 @@ pub impl[
 
 ///|
 pub impl[
-  A : @ecs.Component + @ecs.EcsPayloadCodec,
-  B : @ecs.Component + @ecs.EcsPayloadCodec,
-  C : @ecs.Component + @ecs.EcsPayloadCodec,
-  D : @ecs.Component + @ecs.EcsPayloadCodec,
-  E : @ecs.Component + @ecs.EcsPayloadCodec,
+  A : @ecs.Component,
+  B : @ecs.Component,
+  C : @ecs.Component,
+  D : @ecs.Component,
+  E : @ecs.Component,
 ] CommandSpawnComponents for (A, B, C, D, E) with spawn_components(
   self,
   world,
@@ -129,12 +117,12 @@ pub impl[
 
 ///|
 pub impl[
-  A : @ecs.Component + @ecs.EcsPayloadCodec,
-  B : @ecs.Component + @ecs.EcsPayloadCodec,
-  C : @ecs.Component + @ecs.EcsPayloadCodec,
-  D : @ecs.Component + @ecs.EcsPayloadCodec,
-  E : @ecs.Component + @ecs.EcsPayloadCodec,
-  F : @ecs.Component + @ecs.EcsPayloadCodec,
+  A : @ecs.Component,
+  B : @ecs.Component,
+  C : @ecs.Component,
+  D : @ecs.Component,
+  E : @ecs.Component,
+  F : @ecs.Component,
 ] CommandSpawnComponents for (A, B, C, D, E, F) with spawn_components(
   self,
   world,
@@ -153,13 +141,13 @@ pub impl[
 
 ///|
 pub impl[
-  A : @ecs.Component + @ecs.EcsPayloadCodec,
-  B : @ecs.Component + @ecs.EcsPayloadCodec,
-  C : @ecs.Component + @ecs.EcsPayloadCodec,
-  D : @ecs.Component + @ecs.EcsPayloadCodec,
-  E : @ecs.Component + @ecs.EcsPayloadCodec,
-  F : @ecs.Component + @ecs.EcsPayloadCodec,
-  G : @ecs.Component + @ecs.EcsPayloadCodec,
+  A : @ecs.Component,
+  B : @ecs.Component,
+  C : @ecs.Component,
+  D : @ecs.Component,
+  E : @ecs.Component,
+  F : @ecs.Component,
+  G : @ecs.Component,
 ] CommandSpawnComponents for (A, B, C, D, E, F, G) with spawn_components(
   self,
   world,
@@ -179,14 +167,14 @@ pub impl[
 
 ///|
 pub impl[
-  A : @ecs.Component + @ecs.EcsPayloadCodec,
-  B : @ecs.Component + @ecs.EcsPayloadCodec,
-  C : @ecs.Component + @ecs.EcsPayloadCodec,
-  D : @ecs.Component + @ecs.EcsPayloadCodec,
-  E : @ecs.Component + @ecs.EcsPayloadCodec,
-  F : @ecs.Component + @ecs.EcsPayloadCodec,
-  G : @ecs.Component + @ecs.EcsPayloadCodec,
-  H : @ecs.Component + @ecs.EcsPayloadCodec,
+  A : @ecs.Component,
+  B : @ecs.Component,
+  C : @ecs.Component,
+  D : @ecs.Component,
+  E : @ecs.Component,
+  F : @ecs.Component,
+  G : @ecs.Component,
+  H : @ecs.Component,
 ] CommandSpawnComponents for (A, B, C, D, E, F, G, H) with spawn_components(
   self,
   world,
@@ -356,7 +344,7 @@ pub fn Commands::run_system(self : Commands, system_id : SystemId) -> Unit {
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : @ecs.Component + @ecs.EcsPayloadCodec] Commands::spawn_component(
+pub fn[T : @ecs.Component] Commands::spawn_component(
   self : Commands,
   component : T,
   loc~ : SourceLoc,
@@ -571,7 +559,7 @@ pub fn[B : @ecs.Bundle] EntityCommands::insert_bundle(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : @ecs.Component + @ecs.EcsPayloadCodec] EntityCommands::insert_component(
+pub fn[T : @ecs.Component] EntityCommands::insert_component(
   self : EntityCommands,
   component : T,
   loc~ : SourceLoc,

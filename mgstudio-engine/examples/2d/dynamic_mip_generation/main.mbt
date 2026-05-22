@@ -56,6 +56,30 @@ impl @widgets_lib.WidgetValue for AppSetting with widget_debug_name() {
 }
 
 ///|
+let app_setting_widget_click_event_key : @ecs.MessageKey[
+  @widgets_lib.WidgetClickEvent[AppSetting],
+] = @ecs.register_message(
+  debug_name="examples.helpers.widgets_lib.WidgetClickEvent<examples.2d.dynamic_mip_generation.AppSetting>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for AppSetting with widget_click_event_key() {
+  app_setting_widget_click_event_key
+}
+
+///|
+let app_setting_widget_click_sender_key : @ecs.ComponentKey[
+  @widgets_lib.WidgetClickSender[AppSetting],
+] = @ecs.register_component(
+  debug_name="examples.helpers.widgets_lib.WidgetClickSender<examples.2d.dynamic_mip_generation.AppSetting>",
+)
+
+///|
+impl @widgets_lib.WidgetValue for AppSetting with widget_click_sender_key() {
+  app_setting_widget_click_sender_key
+}
+
+///|
 priv struct AppStatus {
   mut enable_mip_generation : EnableMipGeneration
   mut image_width : ImageSize

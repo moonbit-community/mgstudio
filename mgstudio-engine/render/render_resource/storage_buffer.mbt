@@ -22,15 +22,25 @@ pub struct StorageBuffer[T] {
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @asset.Asset for StorageBuffer[T] with asset_debug_name() {
-  "mgstudio_render_resource::StorageBuffer"
+pub impl @asset.Asset for StorageBuffer[Float] with asset_debug_name() {
+  "mgstudio_render_resource::StorageBuffer<Float>"
 }
 
 ///|
-pub impl[T : @ecs.EcsPayloadCodec] @asset.Asset for StorageBuffer[T] with asset_as_image(
-  _self,
-) {
+pub impl @asset.Asset for StorageBuffer[Float] with asset_as_image(_self) {
   None
+}
+
+///|
+let storage_buffer_float_asset_resource_keys : @asset.AssetResourceKeys[
+  StorageBuffer[Float],
+] = @asset.register_asset_resource_keys(
+  "mgstudio_render_resource::StorageBuffer<Float>",
+)
+
+///|
+pub impl @asset.Asset for StorageBuffer[Float] with asset_resource_keys() {
+  storage_buffer_float_asset_resource_keys
 }
 
 ///|

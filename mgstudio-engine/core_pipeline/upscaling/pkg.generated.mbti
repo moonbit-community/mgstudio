@@ -70,7 +70,6 @@ pub struct ViewUpscalingPipeline {
 pub fn ViewUpscalingPipeline::ViewUpscalingPipeline() -> Self
 pub fn ViewUpscalingPipeline::new(pipeline_id~ : Int) -> Self
 pub impl @app.Resource for ViewUpscalingPipeline
-pub impl @ecs.EcsPayloadCodec for ViewUpscalingPipeline
 
 // Type aliases
 

@@ -38,6 +38,18 @@ impl @sprite.GizmoConfigGroup for MyRoundGizmos with gizmo_config_group_debug_na
 }
 
 ///|
+let my_round_gizmos_storage_resource_key : @ecs.ResourceKey[
+  @sprite.GizmoStorage[MyRoundGizmos],
+] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos::GizmoStorage<examples.gizmos.2d_gizmos.MyRoundGizmos>",
+)
+
+///|
+impl @sprite.GizmoConfigGroup for MyRoundGizmos with gizmo_storage_resource_key() {
+  my_round_gizmos_storage_resource_key
+}
+
+///|
 extenum @sprite.GizmoConfigGroupCell += {
   MyRoundGizmosCell(Ref[MyRoundGizmos])
 }

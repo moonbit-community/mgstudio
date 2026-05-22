@@ -28,6 +28,16 @@ impl @asset.Asset for Text with asset_as_image(_self) {
 }
 
 ///|
+let text_asset_resource_keys : @asset.AssetResourceKeys[Text] = @asset.register_asset_resource_keys(
+  Text::asset_debug_name(),
+)
+
+///|
+impl @asset.Asset for Text with asset_resource_keys() {
+  text_asset_resource_keys
+}
+
+///|
 fn Text::new(value : String) -> Text {
   Text::{ value, }
 }

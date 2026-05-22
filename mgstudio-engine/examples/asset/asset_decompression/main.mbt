@@ -29,6 +29,16 @@ impl @asset.Asset for GzAsset with asset_as_image(_self) {
 }
 
 ///|
+let gz_asset_resource_keys : @asset.AssetResourceKeys[GzAsset] = @asset.register_asset_resource_keys(
+  GzAsset::asset_debug_name(),
+)
+
+///|
+impl @asset.Asset for GzAsset with asset_resource_keys() {
+  gz_asset_resource_keys
+}
+
+///|
 struct CompressedImage {
   compressed : @asset.Handle[GzAsset]
 }

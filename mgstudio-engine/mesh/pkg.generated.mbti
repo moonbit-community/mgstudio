@@ -57,7 +57,6 @@ pub struct DynamicSkinnedMeshBounds {
 }
 pub fn DynamicSkinnedMeshBounds::new() -> Self
 pub impl @ecs.Component for DynamicSkinnedMeshBounds
-pub impl @ecs.EcsPayloadCodec for DynamicSkinnedMeshBounds
 
 pub(all) enum EntityAabbFromSkinnedMeshBoundsError {
   OutOfRangeJointIndex(JointIndex)
@@ -131,7 +130,6 @@ pub fn Mesh::with_3d_geometry(Self, Mesh3dGeometry) -> Self?
 pub fn Mesh::with_generated_skinned_mesh_bounds(Self) -> Result[Self, SkinnedMeshBoundsError]
 pub fn Mesh::with_skinned_mesh_bounds(Self, SkinnedMeshBounds?) -> Self
 pub impl @asset.Asset for Mesh
-pub impl @ecs.EcsPayloadCodec for Mesh
 
 pub struct Mesh2d {
   mesh : @asset.Handle[Mesh]
@@ -139,7 +137,6 @@ pub struct Mesh2d {
 pub fn Mesh2d::mesh(Self) -> @asset.Handle[Mesh]
 pub fn Mesh2d::new(@asset.Handle[Mesh]) -> Self
 pub impl @ecs.Component for Mesh2d
-pub impl @ecs.EcsPayloadCodec for Mesh2d
 pub impl ToJson for Mesh2d
 pub impl @json.FromJson for Mesh2d
 
@@ -185,7 +182,6 @@ pub struct Mesh3d {
 pub fn Mesh3d::mesh(Self) -> @asset.Handle[Mesh]
 pub fn Mesh3d::new(@asset.Handle[Mesh]) -> Self
 pub impl @ecs.Component for Mesh3d
-pub impl @ecs.EcsPayloadCodec for Mesh3d
 pub impl ToJson for Mesh3d
 pub impl @json.FromJson for Mesh3d
 
@@ -365,7 +361,6 @@ pub fn MeshTag::MeshTag() -> Self
 pub fn MeshTag::new(UInt) -> Self
 pub fn MeshTag::value(Self) -> UInt
 pub impl @ecs.Component for MeshTag
-pub impl @ecs.EcsPayloadCodec for MeshTag
 pub impl ToJson for MeshTag
 pub impl @json.FromJson for MeshTag
 
@@ -458,7 +453,6 @@ pub struct MorphTargetMesh {
 pub fn MorphTargetMesh::new(@asset.Handle[Mesh]) -> Self
 pub fn MorphTargetMesh::source_mesh(Self) -> @asset.Handle[Mesh]
 pub impl @ecs.Component for MorphTargetMesh
-pub impl @ecs.EcsPayloadCodec for MorphTargetMesh
 
 pub struct MorphWeights {
   values : Array[Float]
@@ -466,7 +460,6 @@ pub struct MorphWeights {
 pub fn MorphWeights::new(Array[Float]) -> Self
 pub fn MorphWeights::values(Self) -> Array[Float]
 pub impl @ecs.Component for MorphWeights
-pub impl @ecs.EcsPayloadCodec for MorphWeights
 
 pub struct SkinnedMesh {
   inverse_bindposes : @asset.Handle[SkinnedMeshInverseBindposes]
@@ -479,7 +472,6 @@ pub fn SkinnedMesh::joint_global_transform_cached(Self, @ecs.ComponentColumn[@tr
 pub fn SkinnedMesh::joints(Self) -> Array[@core.Entity]
 pub fn SkinnedMesh::new(@asset.Handle[SkinnedMeshInverseBindposes], Array[@core.Entity]) -> Self
 pub impl @ecs.Component for SkinnedMesh
-pub impl @ecs.EcsPayloadCodec for SkinnedMesh
 
 pub struct SkinnedMeshBounds {
   aabbs : Array[JointAabb]
@@ -507,7 +499,6 @@ pub fn SkinnedMeshInverseBindposes::len(Self) -> Int
 pub fn SkinnedMeshInverseBindposes::new(Array[SkinningMat4]) -> Self
 pub fn SkinnedMeshInverseBindposes::values(Self) -> Array[SkinningMat4]
 pub impl @asset.Asset for SkinnedMeshInverseBindposes
-pub impl @ecs.EcsPayloadCodec for SkinnedMeshInverseBindposes
 
 pub struct SkinningMat4 {
   m00 : Float

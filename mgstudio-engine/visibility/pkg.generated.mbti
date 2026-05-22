@@ -49,7 +49,6 @@ pub fn InheritedVisibility::is_visible(Self) -> Bool
 pub fn InheritedVisibility::new(Bool) -> Self
 pub fn InheritedVisibility::visible() -> Self
 pub impl @ecs.Component for InheritedVisibility
-pub impl @ecs.EcsPayloadCodec for InheritedVisibility
 pub impl ToJson for InheritedVisibility
 pub impl @json.FromJson for InheritedVisibility
 
@@ -57,19 +56,16 @@ pub struct NoAutoAabb {
 } derive(Eq, @debug.Debug)
 pub fn NoAutoAabb::NoAutoAabb() -> Self
 pub impl @ecs.Component for NoAutoAabb
-pub impl @ecs.EcsPayloadCodec for NoAutoAabb
 
 pub struct NoCpuCulling {
 } derive(Eq, @debug.Debug)
 pub fn NoCpuCulling::NoCpuCulling() -> Self
 pub impl @ecs.Component for NoCpuCulling
-pub impl @ecs.EcsPayloadCodec for NoCpuCulling
 
 pub struct NoFrustumCulling {
 } derive(Eq, @debug.Debug)
 pub fn NoFrustumCulling::NoFrustumCulling() -> Self
 pub impl @ecs.Component for NoFrustumCulling
-pub impl @ecs.EcsPayloadCodec for NoFrustumCulling
 
 pub struct ViewVisibility {
   mut bits : Int
@@ -82,7 +78,6 @@ pub fn ViewVisibility::set_visible(Self) -> Unit
 pub fn ViewVisibility::update(Self) -> Unit
 pub fn ViewVisibility::was_visible_now_hidden(Self) -> Bool
 pub impl @ecs.Component for ViewVisibility
-pub impl @ecs.EcsPayloadCodec for ViewVisibility
 pub impl ToJson for ViewVisibility
 pub impl @json.FromJson for ViewVisibility
 
@@ -96,7 +91,6 @@ pub fn Visibility::toggle_inherited_hidden(Self) -> Self
 pub fn Visibility::toggle_inherited_visible(Self) -> Self
 pub fn Visibility::toggle_visible_hidden(Self) -> Self
 pub impl @ecs.Component for Visibility
-pub impl @ecs.EcsPayloadCodec for Visibility
 pub impl @ecs.Mutable for Visibility
 pub impl ToJson for Visibility
 pub impl @json.FromJson for Visibility
@@ -126,7 +120,6 @@ pub fn VisibilityRange::start_margin_max(Self) -> Float
 pub fn VisibilityRange::start_margin_min(Self) -> Float
 pub fn VisibilityRange::use_aabb(Self) -> Bool
 pub impl @ecs.Component for VisibilityRange
-pub impl @ecs.EcsPayloadCodec for VisibilityRange
 pub impl ToJson for VisibilityRange
 pub impl @json.FromJson for VisibilityRange
 

@@ -139,7 +139,6 @@ pub fn Atmosphere::with_ground_albedo(Self, @math.Vec3) -> Self
 pub fn Atmosphere::with_medium(Self, ScatteringMedium) -> Self
 pub fn Atmosphere::with_radii(Self, Float, Float) -> Self
 pub impl @ecs.Component for Atmosphere
-pub impl @ecs.EcsPayloadCodec for Atmosphere
 
 #alias(AtmosphereEnvMapLight)
 pub struct AtmosphereEnvironmentMapLight {
@@ -153,7 +152,6 @@ pub fn AtmosphereEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(Self
 pub fn AtmosphereEnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn AtmosphereEnvironmentMapLight::with_size(Self, @math.UVec2) -> Self
 pub impl @ecs.Component for AtmosphereEnvironmentMapLight
-pub impl @ecs.EcsPayloadCodec for AtmosphereEnvironmentMapLight
 
 #alias(AtmosphereRenderMode)
 pub(all) enum AtmosphereMode {
@@ -173,7 +171,6 @@ pub fn AtmosphereSettings::with_rendering_method(Self, AtmosphereMode) -> Self
 pub fn AtmosphereSettings::with_scene_units_to_m(Self, Float) -> Self
 pub fn AtmosphereSettings::with_sky_max_samples(Self, Int) -> Self
 pub impl @ecs.Component for AtmosphereSettings
-pub impl @ecs.EcsPayloadCodec for AtmosphereSettings
 
 #alias(CascadeConfig)
 pub struct CascadeShadowConfig {
@@ -219,7 +216,6 @@ pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@imag
 pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn ClusteredDecal::with_tag(Self, Int) -> Self
 pub impl @ecs.Component for ClusteredDecal
-pub impl @ecs.EcsPayloadCodec for ClusteredDecal
 
 pub(all) enum CubemapLayout3d {
   CrossVertical
@@ -255,7 +251,6 @@ pub fn DirectionalLight::with_shadow_maps_enabled(Self, Bool) -> Self
 pub fn DirectionalLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn DirectionalLight::with_soft_shadow_size(Self, Float?) -> Self
 pub impl @ecs.Component for DirectionalLight
-pub impl @ecs.EcsPayloadCodec for DirectionalLight
 
 #alias(DirectionalShadowMapResource)
 pub struct DirectionalLightShadowMap {
@@ -265,7 +260,6 @@ pub fn DirectionalLightShadowMap::DirectionalLightShadowMap() -> Self
 pub fn DirectionalLightShadowMap::new(Int) -> Self
 pub fn DirectionalLightShadowMap::with_size(Self, Int) -> Self
 pub impl @app.Resource for DirectionalLightShadowMap
-pub impl @ecs.EcsPayloadCodec for DirectionalLightShadowMap
 
 #alias(DirectionalLightTextureComponent)
 pub struct DirectionalLightTexture {
@@ -277,7 +271,6 @@ pub fn DirectionalLightTexture::new(@asset.Handle[@image.Image]?, Bool) -> Self
 pub fn DirectionalLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn DirectionalLightTexture::with_tiled(Self, Bool) -> Self
 pub impl @ecs.Component for DirectionalLightTexture
-pub impl @ecs.EcsPayloadCodec for DirectionalLightTexture
 
 #alias(EnvironmentMapLightComponent)
 pub struct EnvironmentMapLight {
@@ -295,7 +288,6 @@ pub fn EnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn EnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
 pub fn EnvironmentMapLight::with_specular_map(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for EnvironmentMapLight
-pub impl @ecs.EcsPayloadCodec for EnvironmentMapLight
 
 #alias(FogVolumeComponent)
 pub struct FogVolume {
@@ -320,7 +312,6 @@ pub fn FogVolume::with_light_tint(Self, @color.Color) -> Self
 pub fn FogVolume::with_scattering(Self, Float) -> Self
 pub fn FogVolume::with_scattering_asymmetry(Self, Float) -> Self
 pub impl @ecs.Component for FogVolume
-pub impl @ecs.EcsPayloadCodec for FogVolume
 
 #alias(GeneratedEnvironmentMapLightComponent)
 pub struct GeneratedEnvironmentMapLight {
@@ -336,7 +327,6 @@ pub fn GeneratedEnvironmentMapLight::with_environment_map(Self, @asset.Handle[@i
 pub fn GeneratedEnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn GeneratedEnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
 pub impl @ecs.Component for GeneratedEnvironmentMapLight
-pub impl @ecs.EcsPayloadCodec for GeneratedEnvironmentMapLight
 
 #alias(AmbientLightResource)
 pub struct GlobalAmbientLight {
@@ -348,7 +338,6 @@ pub fn GlobalAmbientLight::GlobalAmbientLight() -> Self
 pub fn GlobalAmbientLight::new(@color.Color, Float) -> Self
 pub fn GlobalAmbientLight::with_affects_lightmapped_meshes(Self, Bool) -> Self
 pub impl @app.Resource for GlobalAmbientLight
-pub impl @ecs.EcsPayloadCodec for GlobalAmbientLight
 
 #alias(IrradianceVolumeComponent)
 pub struct IrradianceVolume {
@@ -360,7 +349,6 @@ pub fn IrradianceVolume::new(@asset.Handle[@image.Image]?, Float) -> Self
 pub fn IrradianceVolume::with_intensity(Self, Float) -> Self
 pub fn IrradianceVolume::with_voxels(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for IrradianceVolume
-pub impl @ecs.EcsPayloadCodec for IrradianceVolume
 
 pub(all) enum LightGizmoColor {
   Manual(@color.Color)
@@ -394,7 +382,6 @@ pub fn LightProbe::LightProbe() -> Self
 pub fn LightProbe::new() -> Self
 pub fn LightProbe::with_falloff(Self, @math.Vec3) -> Self
 pub impl @ecs.Component for LightProbe
-pub impl @ecs.EcsPayloadCodec for LightProbe
 
 #alias(ParallaxCorrectionComponent)
 pub(all) enum ParallaxCorrection {
@@ -404,7 +391,6 @@ pub(all) enum ParallaxCorrection {
 } derive(ToJson, @json.FromJson)
 pub fn ParallaxCorrection::default() -> Self
 pub impl @ecs.Component for ParallaxCorrection
-pub impl @ecs.EcsPayloadCodec for ParallaxCorrection
 
 #alias(PointLightComponent)
 pub struct PointLight {
@@ -434,7 +420,6 @@ pub fn PointLight::with_shadow_maps_enabled(Self, Bool) -> Self
 pub fn PointLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn PointLight::with_soft_shadows_enabled(Self, Bool) -> Self
 pub impl @ecs.Component for PointLight
-pub impl @ecs.EcsPayloadCodec for PointLight
 
 #alias(PointLightShadowMapResource)
 pub struct PointLightShadowMap {
@@ -444,7 +429,6 @@ pub fn PointLightShadowMap::PointLightShadowMap() -> Self
 pub fn PointLightShadowMap::new(Int) -> Self
 pub fn PointLightShadowMap::with_size(Self, Int) -> Self
 pub impl @app.Resource for PointLightShadowMap
-pub impl @ecs.EcsPayloadCodec for PointLightShadowMap
 
 #alias(PointLightTextureComponent)
 pub struct PointLightTexture {
@@ -456,7 +440,6 @@ pub fn PointLightTexture::new(@asset.Handle[@image.Image]?, CubemapLayout3d) -> 
 pub fn PointLightTexture::with_cubemap_layout(Self, CubemapLayout3d) -> Self
 pub fn PointLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for PointLightTexture
-pub impl @ecs.EcsPayloadCodec for PointLightTexture
 
 pub struct RectLight {
   color : @color.Color
@@ -473,7 +456,6 @@ pub fn RectLight::new(@color.Color, Float, Float, Float, Float) -> Self
 pub fn RectLight::range(Self) -> Float
 pub fn RectLight::width(Self) -> Float
 pub impl @ecs.Component for RectLight
-pub impl @ecs.EcsPayloadCodec for RectLight
 
 #alias(AtmosphereMedium)
 pub struct ScatteringMedium {
@@ -483,7 +465,6 @@ pub fn ScatteringMedium::ScatteringMedium() -> Self
 pub fn ScatteringMedium::earthlike() -> Self
 pub fn ScatteringMedium::with_density_multiplier(Self, Float) -> Self
 pub impl @asset.Asset for ScatteringMedium
-pub impl @ecs.EcsPayloadCodec for ScatteringMedium
 
 pub struct ShowLightGizmo {
   color : LightGizmoColor?
@@ -491,7 +472,6 @@ pub struct ShowLightGizmo {
 pub fn ShowLightGizmo::ShowLightGizmo() -> Self
 pub fn ShowLightGizmo::with_color(Self, LightGizmoColor?) -> Self
 pub impl @ecs.Component for ShowLightGizmo
-pub impl @ecs.EcsPayloadCodec for ShowLightGizmo
 
 #alias(SpotLightComponent)
 pub struct SpotLight {
@@ -523,7 +503,6 @@ pub fn SpotLight::with_shadow_maps_enabled(Self, Bool) -> Self
 pub fn SpotLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn SpotLight::with_soft_shadows_enabled(Self, Bool) -> Self
 pub impl @ecs.Component for SpotLight
-pub impl @ecs.EcsPayloadCodec for SpotLight
 
 #alias(SpotLightTextureComponent)
 pub struct SpotLightTexture {
@@ -533,7 +512,6 @@ pub fn SpotLightTexture::SpotLightTexture() -> Self
 pub fn SpotLightTexture::new(@asset.Handle[@image.Image]?) -> Self
 pub fn SpotLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for SpotLightTexture
-pub impl @ecs.EcsPayloadCodec for SpotLightTexture
 
 #alias(SunDiskComponent)
 pub struct SunDisk {
@@ -547,7 +525,6 @@ pub fn SunDisk::off() -> Self
 pub fn SunDisk::with_angular_size(Self, Float) -> Self
 pub fn SunDisk::with_intensity(Self, Float) -> Self
 pub impl @ecs.Component for SunDisk
-pub impl @ecs.EcsPayloadCodec for SunDisk
 
 #alias(VolumetricFogComponent)
 pub struct VolumetricFog {
@@ -562,14 +539,12 @@ pub fn VolumetricFog::with_ambient_intensity(Self, Float) -> Self
 pub fn VolumetricFog::with_jitter(Self, Float) -> Self
 pub fn VolumetricFog::with_step_count(Self, Int) -> Self
 pub impl @ecs.Component for VolumetricFog
-pub impl @ecs.EcsPayloadCodec for VolumetricFog
 
 #alias(VolumetricLightComponent)
 pub struct VolumetricLight {
 }
 pub fn VolumetricLight::VolumetricLight() -> Self
 pub impl @ecs.Component for VolumetricLight
-pub impl @ecs.EcsPayloadCodec for VolumetricLight
 
 // Type aliases
 

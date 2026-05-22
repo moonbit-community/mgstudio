@@ -115,7 +115,7 @@ pub fn DeferredWorld::spawn_empty(self : DeferredWorld) -> @core.Entity {
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] DeferredWorld::get(
+pub fn[T] DeferredWorld::get(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -124,7 +124,7 @@ pub fn[T : EcsPayloadCodec] DeferredWorld::get(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] DeferredWorld::get_by_key(
+pub fn[T] DeferredWorld::get_by_key(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -163,7 +163,7 @@ pub fn[T] DeferredWorld::resource(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::set(
+pub fn[T] DeferredWorld::set(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -175,7 +175,7 @@ pub fn[T : EcsPayloadCodec] DeferredWorld::set(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::set_by_key(
+pub fn[T] DeferredWorld::set_by_key(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -187,7 +187,7 @@ pub fn[T : EcsPayloadCodec] DeferredWorld::set_by_key(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::replace(
+pub fn[T] DeferredWorld::replace(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -199,7 +199,7 @@ pub fn[T : EcsPayloadCodec] DeferredWorld::replace(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::replace_by_key(
+pub fn[T] DeferredWorld::replace_by_key(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -211,7 +211,7 @@ pub fn[T : EcsPayloadCodec] DeferredWorld::replace_by_key(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::take(
+pub fn[T] DeferredWorld::take(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -222,7 +222,7 @@ pub fn[T : EcsPayloadCodec] DeferredWorld::take(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::take_by_key(
+pub fn[T] DeferredWorld::take_by_key(
   self : DeferredWorld,
   entity : @core.Entity,
   key : ComponentKey[T],

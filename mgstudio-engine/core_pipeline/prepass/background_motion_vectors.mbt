@@ -94,24 +94,6 @@ pub let ecs_key_no_background_motion_vectors : @ecs.ComponentKey[
 )
 
 ///|
-pub impl @ecs.EcsPayloadCodec for NoBackgroundMotionVectors with to_ecs_payload(
-  self,
-) {
-  EcsPayload_core_pipeline_prepass_NoBackgroundMotionVectors(self)
-}
-
-///|
-pub impl @ecs.EcsPayloadCodec for NoBackgroundMotionVectors with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_core_pipeline_prepass_NoBackgroundMotionVectors(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
 pub impl @ecs.Component for NoBackgroundMotionVectors with component() {
   ecs_key_no_background_motion_vectors
 }

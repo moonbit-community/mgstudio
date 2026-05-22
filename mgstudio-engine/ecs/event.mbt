@@ -13,65 +13,109 @@
 // limitations under the License.
 
 ///|
-pub fn[T : EcsPayloadCodec] World::send_event(
-  self : World,
-  key : EventKey[T],
-  event : T,
-) -> Unit {
-  let queue = self.current_events.get_or_init(key.id(), fn() { [] })
-  queue.push(T::to_ecs_payload(event))
+struct EventAccessOps[T] {
+  send : (World, T) -> Unit
+  read : (World) -> Array[T]
+  clear : (World) -> Unit
+  advance : (World) -> Unit
+  current_trigger : (World) -> Ref[T]?
+  set_current_trigger : (World, Ref[T]) -> Unit
+  clear_current_trigger : (World) -> Unit
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::read_events(
+priv struct EventQueueSlot[T] {
+  mut previous : Array[T]
+  current : Array[T]
+}
+
+///|
+priv struct EventOps {
+  advance : (World) -> Unit
+}
+
+///|
+let event_ops_registry : @hashmap.HashMap[Int, EventOps] = @hashmap.HashMap([])
+
+///|
+fn[T] event_access_ops_new() -> EventAccessOps[T] {
+  let slots_by_world : Map[Int, EventQueueSlot[T]] = {}
+  let current_trigger_by_world : Map[Int, Ref[T]] = {}
+  let slot = fn(world : World) -> EventQueueSlot[T] {
+    match slots_by_world.get(world.world_id()) {
+      Some(slot) => slot
+      None => {
+        let slot : EventQueueSlot[T] = { previous: [], current: [] }
+        slots_by_world.set(world.world_id(), slot)
+        slot
+      }
+    }
+  }
+  let access : EventAccessOps[T] = {
+    send: fn(world, event) { slot(world).current.push(event) },
+    read: fn(world) {
+      let out : Array[T] = []
+      let slot = slot(world)
+      for event in slot.previous {
+        out.push(event)
+      }
+      for event in slot.current {
+        out.push(event)
+      }
+      out
+    },
+    clear: fn(world) {
+      let slot = slot(world)
+      slot.previous.clear()
+      slot.current.clear()
+    },
+    advance: fn(world) {
+      let slot = slot(world)
+      slot.previous = slot.current.copy()
+      slot.current.clear()
+    },
+    current_trigger: fn(world) {
+      current_trigger_by_world.get(world.world_id())
+    },
+    set_current_trigger: fn(world, event_ref) {
+      current_trigger_by_world.set(world.world_id(), event_ref)
+    },
+    clear_current_trigger: fn(world) {
+      current_trigger_by_world.remove(world.world_id())
+    },
+  }
+  access
+}
+
+///|
+fn[T] register_event_ops(id : Int, key : EventKey[T]) -> Unit {
+  if event_ops_registry.contains(id) {
+    return
+  }
+  event_ops_registry.set(id, { advance: key.access.advance })
+}
+
+///|
+pub fn[T] World::send_event(self : World, key : EventKey[T], event : T) -> Unit {
+  (key.access.send)(self, event)
+}
+
+///|
+pub fn[T] World::read_events(
   self : World,
   key : EventKey[T],
 ) -> Array[T] raise EcsError {
-  let out : Array[T] = []
-
-  if self.previous_events.get(key.id()) is Some(queue) {
-    for i in 0..<queue.length() {
-      out.push(self.decode_event_payload(key, i, queue[i]))
-    }
-  }
-
-  let offset = out.length()
-  if self.current_events.get(key.id()) is Some(queue) {
-    for i in 0..<queue.length() {
-      out.push(self.decode_event_payload(key, offset + i, queue[i]))
-    }
-  }
-
-  out
+  (key.access.read)(self)
 }
 
 ///|
 pub fn[T] World::clear_events(self : World, key : EventKey[T]) -> Unit {
-  self.previous_events.remove(key.id())
-  self.current_events.remove(key.id())
+  (key.access.clear)(self)
 }
 
 ///|
 pub fn World::advance_event_frame(self : World) -> Unit {
-  self.previous_events = self.current_events.copy()
-  self.current_events.clear()
-}
-
-///|
-fn[T : EcsPayloadCodec] World::decode_event_payload(
-  _self : World,
-  key : EventKey[T],
-  index : Int,
-  payload : EcsPayload,
-) -> T raise EcsError {
-  match T::from_ecs_payload(payload) {
-    Some(value) => value
-    None =>
-      raise EventTypeMismatch(
-        key.id(),
-        key.debug_name(),
-        index,
-        "payload mismatch",
-      )
+  for entry in event_ops_registry.iter() {
+    (entry.1.advance)(self)
   }
 }

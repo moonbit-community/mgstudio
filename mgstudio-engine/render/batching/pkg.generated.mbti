@@ -95,7 +95,6 @@ pub fn GpuPreprocessingSupport::is_available(Self) -> Bool
 pub fn GpuPreprocessingSupport::is_culling_supported(Self) -> Bool
 pub fn GpuPreprocessingSupport::min(Self, GpuPreprocessingMode) -> GpuPreprocessingMode
 pub impl @app.Resource for GpuPreprocessingSupport
-pub impl @ecs.EcsPayloadCodec for GpuPreprocessingSupport
 
 pub struct InstanceInputUniformBuffer[BDI] {
   buffer : Array[BDI]

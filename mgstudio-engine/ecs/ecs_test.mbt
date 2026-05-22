@@ -347,14 +347,14 @@ test "ecs: register_resource allocates a fresh typed key for repeated debug_name
 }
 
 ///|
-test "ecs: register_message reuses stable id for repeated debug_name" {
+test "ecs: register_message allocates a fresh typed key for repeated debug_name" {
   let message_a : MessageKey[TickEvent] = register_message(
     debug_name="stable_tick_message",
   )
   let message_b : MessageKey[TickEvent] = register_message(
     debug_name="stable_tick_message",
   )
-  debug_inspect(message_a.id() == message_b.id(), content="true")
+  debug_inspect(message_a.id() != message_b.id(), content="true")
 }
 
 ///|

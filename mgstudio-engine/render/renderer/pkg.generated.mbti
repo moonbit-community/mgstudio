@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/render/renderer"
 
 import {
-  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/render/mesh",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/wgpu_mbt",
@@ -1380,7 +1379,6 @@ pub fn PendingCommandBuffers::push(Self, Array[@wgpu_mbt.CommandBuffer]) -> Unit
 pub fn PendingCommandBuffers::push_encoder(Self, @wgpu_mbt.CommandEncoder) -> Unit
 pub fn PendingCommandBuffers::push_one(Self, @wgpu_mbt.CommandBuffer) -> Unit
 pub fn PendingCommandBuffers::take(Self) -> Array[@wgpu_mbt.CommandBuffer]
-pub impl @ecs.EcsPayloadCodec for PendingCommandBuffers
 
 pub(all) struct PendingCommandBuffersInner {
   mut buffers : Array[@wgpu_mbt.CommandBuffer]
@@ -1396,7 +1394,6 @@ pub fn RenderAdapter::new(WgpuWrapper[@wgpu_mbt.Adapter]) -> Self
 pub fn RenderAdapter::supported_rust_features_u64(Self) -> UInt64
 pub fn RenderAdapter::supports_rust_features_u64(Self, UInt64) -> Bool
 pub fn RenderAdapter::wgpu_adapter(Self) -> @wgpu_mbt.Adapter
-pub impl @ecs.EcsPayloadCodec for RenderAdapter
 
 pub struct RenderAdapterInfo {
   name : String
@@ -1416,7 +1413,6 @@ pub fn RenderAdapterInfo::from_backend(GpuBackend) -> Self
 pub fn RenderAdapterInfo::name(Self) -> String
 pub fn RenderAdapterInfo::vendor(Self) -> String
 pub fn RenderAdapterInfo::vendor_id(Self) -> UInt
-pub impl @ecs.EcsPayloadCodec for RenderAdapterInfo
 
 pub struct RenderContextState {
   inner : WgpuWrapper[RenderContextStateInner]
@@ -1452,7 +1448,6 @@ pub fn RenderDevice::supported_features_count_u64(Self) -> UInt64
 pub fn RenderDevice::supported_rust_features_u64(Self) -> UInt64
 pub fn RenderDevice::supports_rust_features_u64(Self, UInt64) -> Bool
 pub fn RenderDevice::wgpu_device(Self) -> @wgpu_mbt.Device
-pub impl @ecs.EcsPayloadCodec for RenderDevice
 
 pub struct RenderDiagnosticsSnapshot {
   mesh2d_draw_calls : Int
@@ -1480,7 +1475,6 @@ pub fn RenderInstance::from_backend(GpuBackend) -> Self
 pub fn RenderInstance::from_wgpu(@wgpu_mbt.Instance) -> Self
 pub fn RenderInstance::new(WgpuWrapper[@wgpu_mbt.Instance]) -> Self
 pub fn RenderInstance::wgpu_instance(Self) -> @wgpu_mbt.Instance
-pub impl @ecs.EcsPayloadCodec for RenderInstance
 
 pub(all) enum RenderPipelineCacheState {
   RenderPipelineOk(@wgpu_mbt.RenderPipeline)
@@ -1497,7 +1491,6 @@ pub fn RenderQueue::new(WgpuWrapper[@wgpu_mbt.Queue]) -> Self
 pub fn RenderQueue::submit(Self, Array[@wgpu_mbt.CommandBuffer]) -> Unit
 pub fn RenderQueue::submit_for_index(Self, Array[@wgpu_mbt.CommandBuffer]) -> UInt64
 pub fn RenderQueue::wgpu_queue(Self) -> @wgpu_mbt.Queue
-pub impl @ecs.EcsPayloadCodec for RenderQueue
 
 pub struct ScreenshotCaptureResult {
   id : Int

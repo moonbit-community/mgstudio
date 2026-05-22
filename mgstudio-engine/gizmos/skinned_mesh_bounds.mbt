@@ -65,6 +65,18 @@ pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with giz
 }
 
 ///|
+let skinned_mesh_bounds_gizmo_storage_resource_key : @ecs.ResourceKey[
+  @sprite.GizmoStorage[SkinnedMeshBoundsGizmoConfigGroup],
+] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos::GizmoStorage<mgstudio_gizmos::SkinnedMeshBoundsGizmoConfigGroup>",
+)
+
+///|
+pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with gizmo_storage_resource_key() {
+  skinned_mesh_bounds_gizmo_storage_resource_key
+}
+
+///|
 extenum @sprite.GizmoConfigGroupCell += {
   SkinnedMeshBoundsGizmoConfigGroupCell(Ref[SkinnedMeshBoundsGizmoConfigGroup])
 }

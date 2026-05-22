@@ -50,6 +50,11 @@ pub impl TimeContext for Virtual with time_context_debug_name() {
 }
 
 ///|
+pub impl TimeContext for Virtual with time_resource_key() {
+  virtual_time_resource_key
+}
+
+///|
 pub fn Time::from_max_delta(max_delta : @core.Duration) -> Time[Virtual] {
   let virtual_time : Time[Virtual] = Time::Time()
   virtual_time.set_max_delta(max_delta)

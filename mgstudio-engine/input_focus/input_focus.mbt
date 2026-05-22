@@ -78,6 +78,11 @@ pub struct FocusedInput[M] {
 }
 
 ///|
+pub(open) trait FocusedInputSourceMessage {
+  fn focused_input_message_key() -> @ecs.MessageKey[FocusedInput[Self]]
+}
+
+///|
 pub fn[M] FocusedInput::new(
   focused_entity : @core.Entity,
   input : M,
@@ -143,9 +148,40 @@ let input_focus_visible_resource_key : @ecs.ResourceKey[InputFocusVisible] = @ec
 )
 
 ///|
-let focused_input_message_registry : Ref[@hashmap.HashMap[Int, Int]] = Ref(
-  @hashmap.HashMap([]),
+let focused_keyboard_input_message_key_value : @ecs.MessageKey[
+  FocusedInput[@input.KeyboardInput],
+] = @ecs.register_message(
+  debug_name="mgstudio_input_focus::FocusedInput<mgstudio_input::keyboard::KeyboardInput>",
 )
+
+///|
+pub impl FocusedInputSourceMessage for @input.KeyboardInput with focused_input_message_key() {
+  focused_keyboard_input_message_key_value
+}
+
+///|
+let focused_gamepad_button_input_message_key_value : @ecs.MessageKey[
+  FocusedInput[@input.GamepadButtonChangedEvent],
+] = @ecs.register_message(
+  debug_name="mgstudio_input_focus::FocusedInput<input.gamepad.GamepadButtonChangedEvent>",
+)
+
+///|
+pub impl FocusedInputSourceMessage for @input.GamepadButtonChangedEvent with focused_input_message_key() {
+  focused_gamepad_button_input_message_key_value
+}
+
+///|
+let focused_mouse_wheel_message_key_value : @ecs.MessageKey[
+  FocusedInput[@input.MouseWheel],
+] = @ecs.register_message(
+  debug_name="mgstudio_input_focus::FocusedInput<mgstudio_input::mouse::MouseWheel>",
+)
+
+///|
+pub impl FocusedInputSourceMessage for @input.MouseWheel with focused_input_message_key() {
+  focused_mouse_wheel_message_key_value
+}
 
 ///|
 fn current_input_focus_world_abort_missing() -> @ecs.World {
@@ -218,25 +254,10 @@ fn input_focus_is_within_ancestor(
 }
 
 ///|
-pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[
+pub fn[M : FocusedInputSourceMessage] focused_input_message_key() -> @ecs.MessageKey[
   FocusedInput[M],
 ] {
-  let source_key = M::message()
-  let source_id = source_key.id()
-  match focused_input_message_registry.val.get(source_id) {
-    Some(id) =>
-      @ecs.message_key_from_id(
-        id,
-        debug_name="mgstudio_input_focus::FocusedInput<\{source_key.debug_name()}>",
-      )
-    None => {
-      let key : @ecs.MessageKey[FocusedInput[M]] = @ecs.register_message(
-        debug_name="mgstudio_input_focus::FocusedInput<\{source_key.debug_name()}>",
-      )
-      focused_input_message_registry.val.set(source_id, key.id())
-      key
-    }
-  }
+  M::focused_input_message_key()
 }
 
 ///|
@@ -250,7 +271,7 @@ pub impl @app.Resource for InputFocusVisible with resource() {
 }
 
 ///|
-pub impl[M : @ecs.Message] @ecs.Message for FocusedInput[M] with message() {
+pub impl[M : FocusedInputSourceMessage] @ecs.Message for FocusedInput[M] with message() {
   focused_input_message_key()
 }
 
@@ -352,7 +373,7 @@ pub fn set_initial_focus(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn[M : @ecs.Message] dispatch_focused_input(
+pub fn[M : FocusedInputSourceMessage] dispatch_focused_input(
   input_reader : @ecs.MessageReader[M],
   focus : @app.ResMut[InputFocus],
 ) -> Unit {

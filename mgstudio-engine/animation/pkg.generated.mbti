@@ -187,7 +187,6 @@ pub struct AnimatedBy {
 pub fn AnimatedBy::new(@core.Entity) -> Self
 pub fn AnimatedBy::player(Self) -> @core.Entity
 pub impl @ecs.Component for AnimatedBy
-pub impl @ecs.EcsPayloadCodec for AnimatedBy
 pub impl ToJson for AnimatedBy
 pub impl @json.FromJson for AnimatedBy
 
@@ -223,7 +222,6 @@ pub fn AnimationClip::set_duration(Self, Float) -> Self
 pub fn AnimationClip::triggered_root_events(Self, ActiveAnimation) -> Array[AnimationClipEvent]
 pub fn AnimationClip::triggered_target_events(Self, AnimationTargetId, ActiveAnimation) -> Array[AnimationClipEvent]
 pub impl @asset.Asset for AnimationClip
-pub impl @ecs.EcsPayloadCodec for AnimationClip
 
 pub struct AnimationClipEvent {
   time : Float
@@ -280,7 +278,6 @@ pub fn AnimationGraph::root(Self) -> AnimationNodeIndex
 pub fn AnimationGraph::set(Self, AnimationNodeIndex, AnimationGraphNode) -> Bool
 pub fn AnimationGraph::target_mask(Self, AnimationTargetId) -> UInt
 pub impl @asset.Asset for AnimationGraph
-pub impl @ecs.EcsPayloadCodec for AnimationGraph
 
 pub struct AnimationGraphHandle {
   graph : @asset.Handle[AnimationGraph]
@@ -288,7 +285,6 @@ pub struct AnimationGraphHandle {
 pub fn AnimationGraphHandle::graph(Self) -> @asset.Handle[AnimationGraph]
 pub fn AnimationGraphHandle::new(@asset.Handle[AnimationGraph]) -> Self
 pub impl @ecs.Component for AnimationGraphHandle
-pub impl @ecs.EcsPayloadCodec for AnimationGraphHandle
 pub impl ToJson for AnimationGraphHandle
 pub impl @json.FromJson for AnimationGraphHandle
 
@@ -347,7 +343,6 @@ pub fn AnimationPlayer::start(Self, AnimationNodeIndex) -> AnimationPlayerEntry
 pub fn AnimationPlayer::stop(Self, AnimationNodeIndex) -> Self
 pub fn AnimationPlayer::stop_all(Self) -> Self
 pub impl @ecs.Component for AnimationPlayer
-pub impl @ecs.EcsPayloadCodec for AnimationPlayer
 pub impl ToJson for AnimationPlayer
 pub impl @json.FromJson for AnimationPlayer
 
@@ -410,7 +405,6 @@ pub fn AnimationTargetId::from_name(String) -> Self
 pub fn AnimationTargetId::from_names(Array[String]) -> Self
 pub fn AnimationTargetId::new(Int, Int) -> Self
 pub impl @ecs.Component for AnimationTargetId
-pub impl @ecs.EcsPayloadCodec for AnimationTargetId
 pub impl ToJson for AnimationTargetId
 pub impl @json.FromJson for AnimationTargetId
 
@@ -431,7 +425,6 @@ pub fn AnimationTransitions::main_animation(Self) -> AnimationNodeIndex?
 pub fn AnimationTransitions::new() -> Self
 pub fn AnimationTransitions::play(Self, AnimationPlayer, AnimationNodeIndex, Float) -> AnimationPlayerEntry
 pub impl @ecs.Component for AnimationTransitions
-pub impl @ecs.EcsPayloadCodec for AnimationTransitions
 pub impl ToJson for AnimationTransitions
 pub impl @json.FromJson for AnimationTransitions
 
@@ -452,7 +445,6 @@ pub fn AnimationTriggeredEvent::target_id(Self) -> AnimationTargetId?
 pub fn AnimationTriggeredEvent::time(Self) -> Float
 pub fn AnimationTriggeredEvent::weight(Self) -> Float
 pub impl @core.Message for AnimationTriggeredEvent
-pub impl @ecs.EcsPayloadCodec for AnimationTriggeredEvent
 
 pub struct AnimationWeights {
   values : Array[Float]
@@ -460,7 +452,6 @@ pub struct AnimationWeights {
 pub fn AnimationWeights::new(Array[Float]) -> Self
 pub fn AnimationWeights::values(Self) -> Array[Float]
 pub impl @ecs.Component for AnimationWeights
-pub impl @ecs.EcsPayloadCodec for AnimationWeights
 pub impl ToJson for AnimationWeights
 pub impl @json.FromJson for AnimationWeights
 

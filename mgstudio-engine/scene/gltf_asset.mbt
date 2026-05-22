@@ -35,6 +35,16 @@ pub impl @asset.Asset for Gltf with asset_as_image(_self) {
 }
 
 ///|
+let gltf_asset_resource_keys : @asset.AssetResourceKeys[Gltf] = @asset.register_asset_resource_keys(
+  Gltf::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for Gltf with asset_resource_keys() {
+  gltf_asset_resource_keys
+}
+
+///|
 pub fn Gltf::new(
   scenes : Array[@asset.Handle[Scene]],
   named_scenes? : Array[(String, @asset.Handle[Scene])] = [],

@@ -27,7 +27,6 @@ pub fn Children::entities(Self) -> Array[@core.Entity]
 pub fn Children::entity_table_row_cached(Self, @ecs.World, Int) -> (Int, Int)?
 pub fn Children::new(Array[@core.Entity]) -> Self
 pub impl @ecs.Component for Children
-pub impl @ecs.EcsPayloadCodec for Children
 pub impl ToJson for Children
 pub impl @json.FromJson for Children
 
@@ -37,7 +36,6 @@ pub struct Parent {
 pub fn Parent::entity(Self) -> @core.Entity
 pub fn Parent::new(@core.Entity) -> Self
 pub impl @ecs.Component for Parent
-pub impl @ecs.EcsPayloadCodec for Parent
 pub impl ToJson for Parent
 pub impl @json.FromJson for Parent
 

@@ -92,6 +92,18 @@ pub impl @asset.Asset for FrametimeGraphMaterial with asset_as_image(_self) {
 }
 
 ///|
+let frametime_graph_material_asset_resource_keys : @asset.AssetResourceKeys[
+  FrametimeGraphMaterial,
+] = @asset.register_asset_resource_keys(
+  FrametimeGraphMaterial::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for FrametimeGraphMaterial with asset_resource_keys() {
+  frametime_graph_material_asset_resource_keys
+}
+
+///|
 fn frame_time_graph_material_assets_key() -> @ecs.ResourceKey[
   @asset.Assets[FrametimeGraphMaterial],
 ] {

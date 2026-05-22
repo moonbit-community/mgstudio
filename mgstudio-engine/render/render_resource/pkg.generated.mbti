@@ -3,7 +3,6 @@ package "Milky2018/mgstudio/render/render_resource"
 
 import {
   "Milky2018/mgstudio/asset",
-  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/mesh",
   "Milky2018/wgpu_mbt",
@@ -305,12 +304,6 @@ pub fn[T] GpuArrayBuffer::len(Self[T]) -> Int
 pub fn[T] GpuArrayBuffer::new() -> Self[T]
 pub fn[T] GpuArrayBuffer::push(Self[T], T) -> Unit
 pub fn[T] GpuArrayBuffer::values(Self[T]) -> Array[T]
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for GpuArrayBuffer[T]
-
-pub(all) struct GpuArrayBufferPayload {
-  values : Array[@ecs.EcsPayload]
-  buffer_id : UInt64
-}
 
 pub struct GpuSparseBufferUpdateMetadata {
   element_size : Int
@@ -340,7 +333,6 @@ pub fn PipelineCache::insert_compute(Self, String, UInt64) -> Unit
 pub fn PipelineCache::insert_render(Self, String, UInt64) -> Unit
 pub fn PipelineCache::new() -> Self
 pub fn PipelineCache::render_pipeline(Self, String) -> UInt64?
-pub impl @ecs.EcsPayloadCodec for PipelineCache
 
 pub(all) enum PipelineDescriptor {
   RenderPipelineDescriptor(RenderPipelineDescriptor)
@@ -474,14 +466,7 @@ pub fn[T] StorageBuffer::new() -> Self[T]
 pub fn[T] StorageBuffer::push(Self[T], T) -> Unit
 pub fn[T] StorageBuffer::values(Self[T]) -> Array[T]
 pub fn[T] StorageBuffer::with_label(String) -> Self[T]
-pub impl[T : @ecs.EcsPayloadCodec] @asset.Asset for StorageBuffer[T]
-pub impl[T : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for StorageBuffer[T]
-
-pub(all) struct StorageBufferPayload {
-  values : Array[@ecs.EcsPayload]
-  buffer_id : UInt64
-  label : String?
-}
+pub impl @asset.Asset for StorageBuffer[Float]
 
 pub(all) enum StorageTextureAccess {
   WriteOnly

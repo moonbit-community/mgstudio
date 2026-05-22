@@ -47,13 +47,18 @@ pub fn AppExit::from_code(code : Int) -> AppExit {
 }
 
 ///|
+let app_exit_message_key_value : @ecs.MessageKey[AppExit] = @ecs.register_message(
+  debug_name="mgstudio_app::AppExit",
+)
+
+///|
 fn app_exit_message_key() -> @ecs.MessageKey[AppExit] {
-  @ecs.Message::message()
+  app_exit_message_key_value
 }
 
 ///|
 pub impl @ecs.Message for AppExit with message() {
-  @ecs.register_message(debug_name="mgstudio_app::AppExit")
+  app_exit_message_key()
 }
 
 ///|

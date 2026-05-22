@@ -35,6 +35,16 @@ impl @app.States for AppState with debug_name(self) {
 }
 
 ///|
+let app_state_resource_keys : @app.StateResourceKeys[AppState] = @app.register_state_resource_keys(
+  "examples.2d.texture_atlas.AppState",
+)
+
+///|
+impl @app.States for AppState with state_resource_keys() {
+  app_state_resource_keys
+}
+
+///|
 struct RpgSpriteFolder {
   handle : @asset.Handle[@asset.LoadedFolder]
 }

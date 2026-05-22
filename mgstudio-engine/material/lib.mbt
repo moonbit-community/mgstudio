@@ -440,6 +440,16 @@ pub impl @asset.Asset for StandardMaterial with asset_as_image(_self) {
 }
 
 ///|
+let standard_material_asset_resource_keys : @asset.AssetResourceKeys[
+  StandardMaterial,
+] = @asset.register_asset_resource_keys(StandardMaterial::asset_debug_name())
+
+///|
+pub impl @asset.Asset for StandardMaterial with asset_resource_keys() {
+  standard_material_asset_resource_keys
+}
+
+///|
 pub(open) trait IntoStandardMaterialAsset {
   fn into_standard_material_asset(Self) -> StandardMaterial
 }

@@ -18,8 +18,13 @@ struct TestRuntimeMessage {
 } derive(Eq, Debug)
 
 ///|
+let test_runtime_message_key : MessageKey[TestRuntimeMessage] = register_message(
+  debug_name="tests.ecs.message.runtime",
+)
+
+///|
 impl Message for TestRuntimeMessage with message() {
-  register_message(debug_name="tests.ecs.message.runtime")
+  test_runtime_message_key
 }
 
 ///|
@@ -28,8 +33,13 @@ struct TestDefaultRuntimeMessage {
 } derive(Eq, Debug)
 
 ///|
+let test_default_runtime_message_key : MessageKey[TestDefaultRuntimeMessage] = register_message(
+  debug_name="tests.ecs.message.default",
+)
+
+///|
 impl Message for TestDefaultRuntimeMessage with message() {
-  register_message(debug_name="tests.ecs.message.default")
+  test_default_runtime_message_key
 }
 
 ///|

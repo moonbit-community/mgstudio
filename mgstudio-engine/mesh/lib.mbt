@@ -223,3 +223,13 @@ pub impl @asset.Asset for Mesh with asset_debug_name() {
 pub impl @asset.Asset for Mesh with asset_as_image(_self) {
   None
 }
+
+///|
+let mesh_asset_resource_keys : @asset.AssetResourceKeys[Mesh] = @asset.register_asset_resource_keys(
+  Mesh::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for Mesh with asset_resource_keys() {
+  mesh_asset_resource_keys
+}

@@ -211,7 +211,6 @@ pub struct ActiveCollisionTypes3d {
 }
 pub fn ActiveCollisionTypes3d::new(@collision.ActiveCollisionTypes) -> Self
 pub impl @ecs.Component for ActiveCollisionTypes3d
-pub impl @ecs.EcsPayloadCodec for ActiveCollisionTypes3d
 pub impl ToJson for ActiveCollisionTypes3d
 pub impl @json.FromJson for ActiveCollisionTypes3d
 
@@ -222,7 +221,6 @@ pub fn ActiveEvents3d::collision_events() -> Self
 pub fn ActiveEvents3d::empty() -> Self
 pub fn ActiveEvents3d::new(@collision.ActiveEvents) -> Self
 pub impl @ecs.Component for ActiveEvents3d
-pub impl @ecs.EcsPayloadCodec for ActiveEvents3d
 pub impl ToJson for ActiveEvents3d
 pub impl @json.FromJson for ActiveEvents3d
 
@@ -231,7 +229,6 @@ pub struct ActiveHooks3d {
 }
 pub fn ActiveHooks3d::new(@collision.ActiveHooks) -> Self
 pub impl @ecs.Component for ActiveHooks3d
-pub impl @ecs.EcsPayloadCodec for ActiveHooks3d
 pub impl ToJson for ActiveHooks3d
 pub impl @json.FromJson for ActiveHooks3d
 
@@ -242,14 +239,12 @@ pub enum AdditionalMassProperties3d {
 pub fn AdditionalMassProperties3d::mass(Float) -> Self
 pub fn AdditionalMassProperties3d::mass_properties(@Milky2018/moon_rapier/core.MassProperties3) -> Self
 pub impl @ecs.Component for AdditionalMassProperties3d
-pub impl @ecs.EcsPayloadCodec for AdditionalMassProperties3d
 
 pub struct AdditionalSolverIterations3d {
   iterations : Int
 }
 pub fn AdditionalSolverIterations3d::new(Int) -> Self
 pub impl @ecs.Component for AdditionalSolverIterations3d
-pub impl @ecs.EcsPayloadCodec for AdditionalSolverIterations3d
 
 pub struct Ccd3d {
   enabled : Bool
@@ -258,7 +253,6 @@ pub struct Ccd3d {
 pub fn Ccd3d::enabled() -> Self
 pub fn Ccd3d::new(Bool, Float) -> Self
 pub impl @ecs.Component for Ccd3d
-pub impl @ecs.EcsPayloadCodec for Ccd3d
 
 pub struct CharacterCollision3d {
   other : @Milky2018/mgstudio/core.Entity?
@@ -277,7 +271,6 @@ pub struct Collider3d {
 pub fn Collider3d::new(ColliderShape3d) -> Self
 pub fn Collider3d::sensor(Self, Bool) -> Self
 pub impl @ecs.Component for Collider3d
-pub impl @ecs.EcsPayloadCodec for Collider3d
 pub impl ToJson for Collider3d
 pub impl @json.FromJson for Collider3d
 
@@ -286,7 +279,6 @@ pub struct ColliderDensity3d {
 }
 pub fn ColliderDensity3d::new(Float) -> Self
 pub impl @ecs.Component for ColliderDensity3d
-pub impl @ecs.EcsPayloadCodec for ColliderDensity3d
 
 pub struct ColliderEnabled3d {
   enabled : Bool
@@ -294,21 +286,18 @@ pub struct ColliderEnabled3d {
 pub fn ColliderEnabled3d::disabled() -> Self
 pub fn ColliderEnabled3d::new(Bool) -> Self
 pub impl @ecs.Component for ColliderEnabled3d
-pub impl @ecs.EcsPayloadCodec for ColliderEnabled3d
 
 pub struct ColliderMassProperties3d {
   mass_properties : @Milky2018/moon_rapier/core.MassProperties3
 }
 pub fn ColliderMassProperties3d::new(@Milky2018/moon_rapier/core.MassProperties3) -> Self
 pub impl @ecs.Component for ColliderMassProperties3d
-pub impl @ecs.EcsPayloadCodec for ColliderMassProperties3d
 
 pub struct ColliderParent3d {
   parent : @Milky2018/mgstudio/core.Entity
 }
 pub fn ColliderParent3d::new(@Milky2018/mgstudio/core.Entity) -> Self
 pub impl @ecs.Component for ColliderParent3d
-pub impl @ecs.EcsPayloadCodec for ColliderParent3d
 
 pub enum ColliderShape3d {
   Ball(Float)
@@ -355,7 +344,6 @@ pub struct CollisionGroups3d {
 }
 pub fn CollisionGroups3d::new(Int, Int, @dynamics.InteractionTestMode) -> Self
 pub impl @ecs.Component for CollisionGroups3d
-pub impl @ecs.EcsPayloadCodec for CollisionGroups3d
 
 pub struct ContactForceEvent3d {
   entity1 : @Milky2018/mgstudio/core.Entity
@@ -371,7 +359,6 @@ pub struct ContactForceEventThreshold3d {
 }
 pub fn ContactForceEventThreshold3d::new(Float) -> Self
 pub impl @ecs.Component for ContactForceEventThreshold3d
-pub impl @ecs.EcsPayloadCodec for ContactForceEventThreshold3d
 pub impl ToJson for ContactForceEventThreshold3d
 pub impl @json.FromJson for ContactForceEventThreshold3d
 
@@ -380,7 +367,6 @@ pub struct ContactSkin3d {
 }
 pub fn ContactSkin3d::new(Float) -> Self
 pub impl @ecs.Component for ContactSkin3d
-pub impl @ecs.EcsPayloadCodec for ContactSkin3d
 
 pub struct Damping3d {
   linear : Float
@@ -388,14 +374,12 @@ pub struct Damping3d {
 }
 pub fn Damping3d::new(Float, Float) -> Self
 pub impl @ecs.Component for Damping3d
-pub impl @ecs.EcsPayloadCodec for Damping3d
 
 pub struct Dominance3d {
   group : Int
 }
 pub fn Dominance3d::new(Int) -> Self
 pub impl @ecs.Component for Dominance3d
-pub impl @ecs.EcsPayloadCodec for Dominance3d
 
 pub struct ExternalForce3d {
   force : @math.Vec3
@@ -404,7 +388,6 @@ pub struct ExternalForce3d {
 pub fn ExternalForce3d::new(@math.Vec3, @math.Vec3) -> Self
 pub fn ExternalForce3d::zero() -> Self
 pub impl @ecs.Component for ExternalForce3d
-pub impl @ecs.EcsPayloadCodec for ExternalForce3d
 
 pub struct ExternalImpulse3d {
   impulse : @math.Vec3
@@ -413,28 +396,24 @@ pub struct ExternalImpulse3d {
 pub fn ExternalImpulse3d::new(@math.Vec3, @math.Vec3) -> Self
 pub fn ExternalImpulse3d::zero() -> Self
 pub impl @ecs.Component for ExternalImpulse3d
-pub impl @ecs.EcsPayloadCodec for ExternalImpulse3d
 
 pub struct Friction3d {
   coefficient : Float
 }
 pub fn Friction3d::new(Float) -> Self
 pub impl @ecs.Component for Friction3d
-pub impl @ecs.EcsPayloadCodec for Friction3d
 
 pub struct FrictionCombineRule3d {
   rule : @dynamics.CoefficientCombineRule
 }
 pub fn FrictionCombineRule3d::new(@dynamics.CoefficientCombineRule) -> Self
 pub impl @ecs.Component for FrictionCombineRule3d
-pub impl @ecs.EcsPayloadCodec for FrictionCombineRule3d
 
 pub struct GravityScale3d {
   scale : Float
 }
 pub fn GravityScale3d::new(Float) -> Self
 pub impl @ecs.Component for GravityScale3d
-pub impl @ecs.EcsPayloadCodec for GravityScale3d
 
 pub struct ImpulseJoint3d {
   other : @Milky2018/mgstudio/core.Entity
@@ -444,7 +423,6 @@ pub struct ImpulseJoint3d {
 pub fn ImpulseJoint3d::new(@Milky2018/mgstudio/core.Entity, @dynamics.GenericJoint) -> Self
 pub fn ImpulseJoint3d::with_wake_up(Self, Bool) -> Self
 pub impl @ecs.Component for ImpulseJoint3d
-pub impl @ecs.EcsPayloadCodec for ImpulseJoint3d
 
 pub struct KinematicCharacterController3d {
   translation : @math.Vec3
@@ -463,7 +441,6 @@ pub fn KinematicCharacterController3d::with_snap_to_ground(Self, @control.Charac
 pub fn KinematicCharacterController3d::with_translation(Self, @math.Vec3) -> Self
 pub fn KinematicCharacterController3d::with_up(Self, @math.Vec3) -> Self
 pub impl @ecs.Component for KinematicCharacterController3d
-pub impl @ecs.EcsPayloadCodec for KinematicCharacterController3d
 
 pub struct KinematicCharacterControllerOutput3d {
   effective_translation : @math.Vec3
@@ -474,7 +451,6 @@ pub struct KinematicCharacterControllerOutput3d {
 pub fn KinematicCharacterControllerOutput3d::new() -> Self
 pub fn KinematicCharacterControllerOutput3d::without_collisions(Self) -> Self
 pub impl @ecs.Component for KinematicCharacterControllerOutput3d
-pub impl @ecs.EcsPayloadCodec for KinematicCharacterControllerOutput3d
 
 pub struct LockedAxes3d {
   lock_translation_x : Bool
@@ -487,7 +463,6 @@ pub struct LockedAxes3d {
 pub fn LockedAxes3d::locked() -> Self
 pub fn LockedAxes3d::new(Bool, Bool, Bool, Bool, Bool, Bool) -> Self
 pub impl @ecs.Component for LockedAxes3d
-pub impl @ecs.EcsPayloadCodec for LockedAxes3d
 
 pub struct MultibodyJoint3d {
   other : @Milky2018/mgstudio/core.Entity
@@ -499,7 +474,6 @@ pub fn MultibodyJoint3d::new(@Milky2018/mgstudio/core.Entity, @dynamics.GenericJ
 pub fn MultibodyJoint3d::with_kinematic(Self, Bool) -> Self
 pub fn MultibodyJoint3d::with_wake_up(Self, Bool) -> Self
 pub impl @ecs.Component for MultibodyJoint3d
-pub impl @ecs.EcsPayloadCodec for MultibodyJoint3d
 
 pub struct Physics3dConfig {
   gravity : @math.Vec3
@@ -511,7 +485,6 @@ pub fn Physics3dConfig::new(@math.Vec3) -> Self
 pub fn Physics3dConfig::with_gravity(Self, @math.Vec3) -> Self
 pub fn Physics3dConfig::with_integration_parameters(Self, @dynamics.IntegrationParameters) -> Self
 pub fn Physics3dConfig::with_physics_pipeline_active(Self, Bool) -> Self
-pub impl @ecs.EcsPayloadCodec for Physics3dConfig
 pub impl ToJson for Physics3dConfig
 pub impl @json.FromJson for Physics3dConfig
 
@@ -554,7 +527,6 @@ pub fn Physics3dContext::project_point_entity_with_filter(Self, @math.Vec3, Floa
 pub fn Physics3dContext::query(Self) -> @collision.QueryPipeline3DReal
 pub fn Physics3dContext::query_filter_exclude_entity(Self, @collision.QueryFilter3DReal, @Milky2018/mgstudio/core.Entity) -> @collision.QueryFilter3DReal
 pub fn Physics3dContext::rigid_body_handle_of(Self, @Milky2018/mgstudio/core.Entity) -> @dynamics.RigidBodyHandle?
-pub impl @ecs.EcsPayloadCodec for Physics3dContext
 pub impl ToJson for Physics3dContext
 pub impl @json.FromJson for Physics3dContext
 
@@ -569,7 +541,6 @@ pub struct Physics3dEvents {
 }
 pub fn Physics3dEvents::clear(Self) -> Unit
 pub fn Physics3dEvents::new() -> Self
-pub impl @ecs.EcsPayloadCodec for Physics3dEvents
 pub impl ToJson for Physics3dEvents
 pub impl @json.FromJson for Physics3dEvents
 
@@ -579,7 +550,6 @@ pub struct Physics3dHooksConfig {
   modify_solver_contacts : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @Milky2018/moon_rapier/core.Vec3) -> (Bool, @Milky2018/moon_rapier/core.Vec3?))?
 }
 pub fn Physics3dHooksConfig::Physics3dHooksConfig() -> Self
-pub impl @ecs.EcsPayloadCodec for Physics3dHooksConfig
 
 pub struct Physics3dPlugin {
 }
@@ -597,7 +567,6 @@ pub struct RapierBodyHandle3d {
 }
 pub fn RapierBodyHandle3d::new(@dynamics.RigidBodyHandle) -> Self
 pub impl @ecs.Component for RapierBodyHandle3d
-pub impl @ecs.EcsPayloadCodec for RapierBodyHandle3d
 pub impl ToJson for RapierBodyHandle3d
 pub impl @json.FromJson for RapierBodyHandle3d
 
@@ -606,7 +575,6 @@ pub struct RapierColliderHandle3d {
 }
 pub fn RapierColliderHandle3d::new(@collision.ColliderHandle3D) -> Self
 pub impl @ecs.Component for RapierColliderHandle3d
-pub impl @ecs.EcsPayloadCodec for RapierColliderHandle3d
 pub impl ToJson for RapierColliderHandle3d
 pub impl @json.FromJson for RapierColliderHandle3d
 
@@ -616,7 +584,6 @@ pub struct RapierImpulseJointHandle3d {
 }
 pub fn RapierImpulseJointHandle3d::new(@dynamics.JointHandle3DReal, @Milky2018/mgstudio/core.Entity) -> Self
 pub impl @ecs.Component for RapierImpulseJointHandle3d
-pub impl @ecs.EcsPayloadCodec for RapierImpulseJointHandle3d
 
 pub struct RapierMultibodyJointHandle3d {
   handle : @dynamics.MultibodyJointHandle
@@ -624,7 +591,6 @@ pub struct RapierMultibodyJointHandle3d {
 }
 pub fn RapierMultibodyJointHandle3d::new(@dynamics.MultibodyJointHandle, @Milky2018/mgstudio/core.Entity) -> Self
 pub impl @ecs.Component for RapierMultibodyJointHandle3d
-pub impl @ecs.EcsPayloadCodec for RapierMultibodyJointHandle3d
 
 pub struct RayHit3d {
   entity : @Milky2018/mgstudio/core.Entity
@@ -642,14 +608,12 @@ pub struct Restitution3d {
 }
 pub fn Restitution3d::new(Float) -> Self
 pub impl @ecs.Component for Restitution3d
-pub impl @ecs.EcsPayloadCodec for Restitution3d
 
 pub struct RestitutionCombineRule3d {
   rule : @dynamics.CoefficientCombineRule
 }
 pub fn RestitutionCombineRule3d::new(@dynamics.CoefficientCombineRule) -> Self
 pub impl @ecs.Component for RestitutionCombineRule3d
-pub impl @ecs.EcsPayloadCodec for RestitutionCombineRule3d
 
 pub struct RigidBody3d {
   body_type : @dynamics.RigidBodyType
@@ -659,7 +623,6 @@ pub fn RigidBody3d::fixed() -> Self
 pub fn RigidBody3d::kinematic_position_based() -> Self
 pub fn RigidBody3d::kinematic_velocity_based() -> Self
 pub impl @ecs.Component for RigidBody3d
-pub impl @ecs.EcsPayloadCodec for RigidBody3d
 pub impl ToJson for RigidBody3d
 pub impl @json.FromJson for RigidBody3d
 
@@ -669,7 +632,6 @@ pub struct RigidBodyEnabled3d {
 pub fn RigidBodyEnabled3d::disabled() -> Self
 pub fn RigidBodyEnabled3d::new(Bool) -> Self
 pub impl @ecs.Component for RigidBodyEnabled3d
-pub impl @ecs.EcsPayloadCodec for RigidBodyEnabled3d
 
 pub struct ShapeCastHit3d {
   entity : @Milky2018/mgstudio/core.Entity
@@ -683,7 +645,6 @@ pub struct Sleeping3d {
 }
 pub fn Sleeping3d::new(Bool) -> Self
 pub impl @ecs.Component for Sleeping3d
-pub impl @ecs.EcsPayloadCodec for Sleeping3d
 
 pub struct SolverGroups3d {
   memberships : Int
@@ -692,7 +653,6 @@ pub struct SolverGroups3d {
 }
 pub fn SolverGroups3d::new(Int, Int, @dynamics.InteractionTestMode) -> Self
 pub impl @ecs.Component for SolverGroups3d
-pub impl @ecs.EcsPayloadCodec for SolverGroups3d
 
 pub struct Velocity3d {
   linvel : @math.Vec3
@@ -701,7 +661,6 @@ pub struct Velocity3d {
 pub fn Velocity3d::new(@math.Vec3, @math.Vec3) -> Self
 pub fn Velocity3d::zero() -> Self
 pub impl @ecs.Component for Velocity3d
-pub impl @ecs.EcsPayloadCodec for Velocity3d
 pub impl ToJson for Velocity3d
 pub impl @json.FromJson for Velocity3d
 

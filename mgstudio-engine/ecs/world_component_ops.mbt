@@ -14,7 +14,7 @@
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] World::replace(
+pub fn[T] World::replace(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -23,17 +23,15 @@ pub fn[T : EcsPayloadCodec] World::replace(
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
   let component_local_id = self.ensure_component_registered(key.id())
-  guard self.component_payload_by_local_id(entity, component_local_id)
-    is Some(_) else {
+  guard self.component_present_by_local_id(entity, component_local_id) else {
     return false
   }
-  let payload = T::to_ecs_payload(value)
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
   ignore(
-    self.replace_component_payload_by_local_id(
-      entity, component_local_id, payload,
+    self.replace_component_value_by_local_id(
+      entity, key, component_local_id, value,
     ),
   )
   self.record_component_changed_with_caller(entity, key.id(), caller)
@@ -44,7 +42,7 @@ pub fn[T : EcsPayloadCodec] World::replace(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] World::take(
+pub fn[T] World::take(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],

@@ -85,6 +85,16 @@ impl @app.States for AppState with debug_name(self) {
 }
 
 ///|
+let app_state_resource_keys : @app.StateResourceKeys[AppState] = @app.register_state_resource_keys(
+  "AppState",
+)
+
+///|
+impl @app.States for AppState with state_resource_keys() {
+  app_state_resource_keys
+}
+
+///|
 impl @app.States for TutorialState with type_debug_name() {
   "TutorialState"
 }
@@ -93,6 +103,16 @@ impl @app.States for TutorialState with type_debug_name() {
 impl @app.States for TutorialState with debug_name(self) {
   ignore(self)
   "TutorialState"
+}
+
+///|
+let tutorial_state_resource_keys : @app.StateResourceKeys[TutorialState] = @app.register_state_resource_keys(
+  "TutorialState",
+)
+
+///|
+impl @app.States for TutorialState with state_resource_keys() {
+  tutorial_state_resource_keys
 }
 
 ///|
@@ -107,6 +127,16 @@ impl @app.States for InGame with debug_name(self) {
 }
 
 ///|
+let in_game_resource_keys : @app.StateResourceKeys[InGame] = @app.register_state_resource_keys(
+  "InGame",
+)
+
+///|
+impl @app.States for InGame with state_resource_keys() {
+  in_game_resource_keys
+}
+
+///|
 impl @app.States for TurboMode with type_debug_name() {
   "TurboMode"
 }
@@ -115,6 +145,16 @@ impl @app.States for TurboMode with type_debug_name() {
 impl @app.States for TurboMode with debug_name(self) {
   ignore(self)
   "TurboMode"
+}
+
+///|
+let turbo_mode_resource_keys : @app.StateResourceKeys[TurboMode] = @app.register_state_resource_keys(
+  "TurboMode",
+)
+
+///|
+impl @app.States for TurboMode with state_resource_keys() {
+  turbo_mode_resource_keys
 }
 
 ///|
@@ -129,6 +169,16 @@ impl @app.States for IsPaused with debug_name(self) {
 }
 
 ///|
+let is_paused_resource_keys : @app.StateResourceKeys[IsPaused] = @app.register_state_resource_keys(
+  "IsPaused",
+)
+
+///|
+impl @app.States for IsPaused with state_resource_keys() {
+  is_paused_resource_keys
+}
+
+///|
 impl @app.States for Tutorial with type_debug_name() {
   "Tutorial"
 }
@@ -137,6 +187,16 @@ impl @app.States for Tutorial with type_debug_name() {
 impl @app.States for Tutorial with debug_name(self) {
   ignore(self)
   "Tutorial"
+}
+
+///|
+let tutorial_resource_keys : @app.StateResourceKeys[Tutorial] = @app.register_state_resource_keys(
+  "Tutorial",
+)
+
+///|
+impl @app.States for Tutorial with state_resource_keys() {
+  tutorial_resource_keys
 }
 
 ///|

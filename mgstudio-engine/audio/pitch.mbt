@@ -29,6 +29,11 @@ pub impl AudioPlayerSource for Pitch with audio_player_source_debug_name() {
 }
 
 ///|
+pub impl AudioPlayerSource for Pitch with audio_player_component_key() {
+  ecs_key_pitch_player
+}
+
+///|
 pub impl @asset.Asset for Pitch with asset_debug_name() {
   "mgstudio_audio::Pitch"
 }
@@ -36,6 +41,16 @@ pub impl @asset.Asset for Pitch with asset_debug_name() {
 ///|
 pub impl @asset.Asset for Pitch with asset_as_image(_self) {
   None
+}
+
+///|
+let pitch_asset_resource_keys : @asset.AssetResourceKeys[Pitch] = @asset.register_asset_resource_keys(
+  Pitch::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for Pitch with asset_resource_keys() {
+  pitch_asset_resource_keys
 }
 
 ///|

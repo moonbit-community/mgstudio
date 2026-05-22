@@ -59,18 +59,19 @@ fn current_time_world_abort_missing() -> @ecs.World {
 }
 
 ///|
-let time_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
-
-///|
-pub(open) trait TimeContext: Default + @ecs.EcsPayloadCodec {
+pub(open) trait TimeContext: Default {
   fn time_context_debug_name() -> String
+  fn time_resource_key() -> @ecs.ResourceKey[Time[Self]]
 }
 
 ///|
 pub impl TimeContext for Unit with time_context_debug_name() {
   "Unit"
+}
+
+///|
+pub impl TimeContext for Unit with time_resource_key() {
+  default_time_resource_key
 }
 
 ///|
@@ -80,31 +81,28 @@ let time_update_strategy_resource_key : @ecs.ResourceKey[TimeUpdateStrategy] = @
 
 ///|
 fn[T : TimeContext] registered_time_resource_key() -> @ecs.ResourceKey[Time[T]] {
-  let type_name = "Time<\{T::time_context_debug_name()}>"
-  match time_resource_registry.val.get(type_name) {
-    Some(id) =>
-      @ecs.resource_key_from_id(id, debug_name="mgstudio_time::\{type_name}")
-    None => {
-      let key : @ecs.ResourceKey[Time[T]] = @ecs.register_erased_resource(
-        debug_name="mgstudio_time::\{type_name}",
-      )
-      time_resource_registry.val.set(type_name, key.id())
-      key
-    }
-  }
+  T::time_resource_key()
 }
 
 ///|
-pub let default_time_resource_key : @ecs.ResourceKey[Time[Unit]] = registered_time_resource_key()
+pub let default_time_resource_key : @ecs.ResourceKey[Time[Unit]] = @ecs.register_resource(
+  debug_name="mgstudio_time::Time<Unit>",
+)
 
 ///|
-pub let real_time_resource_key : @ecs.ResourceKey[Time[Real]] = registered_time_resource_key()
+pub let real_time_resource_key : @ecs.ResourceKey[Time[Real]] = @ecs.register_resource(
+  debug_name="mgstudio_time::Time<Real>",
+)
 
 ///|
-pub let virtual_time_resource_key : @ecs.ResourceKey[Time[Virtual]] = registered_time_resource_key()
+pub let virtual_time_resource_key : @ecs.ResourceKey[Time[Virtual]] = @ecs.register_resource(
+  debug_name="mgstudio_time::Time<Virtual>",
+)
 
 ///|
-pub let fixed_time_resource_key : @ecs.ResourceKey[Time[Fixed]] = registered_time_resource_key()
+pub let fixed_time_resource_key : @ecs.ResourceKey[Time[Fixed]] = @ecs.register_resource(
+  debug_name="mgstudio_time::Time<Fixed>",
+)
 
 ///|
 pub impl[T : TimeContext] @app.Resource for Time[T] with resource() {

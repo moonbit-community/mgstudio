@@ -311,6 +311,16 @@ pub impl @asset.Asset for ScatteringMedium with asset_as_image(_self) {
 }
 
 ///|
+let scattering_medium_asset_resource_keys : @asset.AssetResourceKeys[
+  ScatteringMedium,
+] = @asset.register_asset_resource_keys(ScatteringMedium::asset_debug_name())
+
+///|
+pub impl @asset.Asset for ScatteringMedium with asset_resource_keys() {
+  scattering_medium_asset_resource_keys
+}
+
+///|
 pub fn ScatteringMedium::ScatteringMedium() -> ScatteringMedium {
   ScatteringMedium::{ density_multiplier: 1.0F }
 }

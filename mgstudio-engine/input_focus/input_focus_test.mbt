@@ -66,6 +66,18 @@ pub impl @ecs.Message for MockInput with message() {
 }
 
 ///|
+let focused_mock_input_message_key : @ecs.MessageKey[
+  @input_focus.FocusedInput[MockInput],
+] = @ecs.register_message(
+  debug_name="mgstudio_input_focus::FocusedInput<input_focus_test::MockInput>",
+)
+
+///|
+impl @input_focus.FocusedInputSourceMessage for MockInput with focused_input_message_key() {
+  focused_mock_input_message_key
+}
+
+///|
 fn read_focused_mock_inputs(
   world : @ecs.World,
 ) -> Array[@input_focus.FocusedInput[MockInput]] {

@@ -81,16 +81,9 @@ struct PendingProcessedAssetLoad {
 }
 
 ///|
-priv struct ProcessedAssetPayload {
-  asset : @ecs.EcsPayload
-  saved_bytes : Bytes?
-}
-
-///|
 priv struct AssetProcessorEntry {
   extensions : Array[String]
-  process : (AssetServer, AssetPath, Bytes) -> ProcessedAssetPayload raise AssetProcessError
-  insert : (@ecs.World, Int, @ecs.EcsPayload) -> Unit
+  process_and_insert : (@ecs.World, AssetServer, Int, AssetPath, Bytes) -> Bytes? raise AssetProcessError
 }
 
 ///|
@@ -231,14 +224,14 @@ fn[T : Asset] register_asset_processor_with_name(
       type_name,
       AssetProcessorEntry::{
         extensions: processor.extensions,
-        process: fn(asset_server, path, bytes) raise AssetProcessError {
+        process_and_insert: fn(
+          world,
+          asset_server,
+          handle_id,
+          path,
+          bytes,
+        ) raise AssetProcessError {
           let processed = (processor.process)(asset_server, path, bytes)
-          ProcessedAssetPayload::{
-            asset: T::to_ecs_payload(processed.asset()),
-            saved_bytes: processed.saved_bytes(),
-          }
-        },
-        insert: fn(world, handle_id, payload) {
           let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
           let assets = match world.get_resource_mut(key) {
             Some(value) => value
@@ -247,18 +240,12 @@ fn[T : Asset] register_asset_processor_with_name(
                 "Assets resource is missing for asset processor output; call init_asset before registering or processing this asset type",
               )
           }
-          let value : T = match T::from_ecs_payload(payload) {
-            Some(value) => value
-            None =>
-              abort(
-                "asset processor produced a mismatched asset value for \{type_name}",
-              )
-          }
           ignore(
             assets.modify(fn(store) {
-              store.insert(Handle::new(handle_id), value)
+              store.insert(Handle::new(handle_id), processed.asset())
             }),
           )
+          processed.saved_bytes()
         },
       },
       processor_name,
@@ -464,18 +451,23 @@ fn asset_process_pending_processed_asset_loads(
       Some(entry) => {
         let formatted_path = asset_format_path(pending.path)
         let bytes = load_asset_file_bytes(asset_canonical_path(formatted_path))
-        let processed = (entry.process)(asset_server, pending.path, bytes) catch {
+        let saved_bytes = (entry.process_and_insert)(
+          world,
+          asset_server,
+          pending.handle_id,
+          pending.path,
+          bytes,
+        ) catch {
           _ => {
             remaining.push(pending)
             continue
           }
         }
-        (entry.insert)(world, pending.handle_id, processed.asset)
         asset_server.set_typed_loaded_states(
           pending.type_name,
           pending.handle_id,
         )
-        if processed.saved_bytes is Some(saved_bytes) {
+        if saved_bytes is Some(saved_bytes) {
           if asset_processed_output_path(asset_server, pending.path)
             is Some(output_path) {
             host_asset_save_bytes(path=output_path, bytes=saved_bytes)

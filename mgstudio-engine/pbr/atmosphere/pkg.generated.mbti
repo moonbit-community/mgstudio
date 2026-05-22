@@ -79,7 +79,6 @@ pub struct AtmospherePluginState {
 }
 pub fn AtmospherePluginState::AtmospherePluginState() -> Self
 pub impl @app.Resource for AtmospherePluginState
-pub impl @ecs.EcsPayloadCodec for AtmospherePluginState
 
 pub struct AtmosphereRenderNodeState {
   luts_ready : Bool

@@ -79,7 +79,6 @@ pub fn AlphaMask3dPhase::clear(Self) -> Unit
 pub fn AlphaMask3dPhase::is_empty(Self) -> Bool
 pub fn AlphaMask3dPhase::push(Self, AlphaMask3d) -> Unit
 pub impl @app.Resource for AlphaMask3dPhase
-pub impl @ecs.EcsPayloadCodec for AlphaMask3dPhase
 
 pub struct Core3dPlugin {
 }
@@ -90,7 +89,6 @@ pub struct Hdr {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn Hdr::Hdr() -> Self
 pub impl @ecs.Component for Hdr
-pub impl @ecs.EcsPayloadCodec for Hdr
 
 pub struct MainOpaquePass3dNode {
   label : String
@@ -131,7 +129,6 @@ pub fn Msaa::default() -> Self
 pub fn Msaa::from_samples(Int) -> Self
 pub fn Msaa::samples(Self) -> Int
 pub impl @ecs.Component for Msaa
-pub impl @ecs.EcsPayloadCodec for Msaa
 
 pub struct Opaque3d {
   batch_set_key : Opaque3dBatchSetKey
@@ -170,7 +167,6 @@ pub fn Opaque3dPhase::clear(Self) -> Unit
 pub fn Opaque3dPhase::is_empty(Self) -> Bool
 pub fn Opaque3dPhase::push(Self, Opaque3d) -> Unit
 pub impl @app.Resource for Opaque3dPhase
-pub impl @ecs.EcsPayloadCodec for Opaque3dPhase
 
 pub struct OpaqueNoLightmap3dBatchSetKey {
   pipeline_id : Int
@@ -209,7 +205,6 @@ pub fn Transparent3dPhase::clear(Self) -> Unit
 pub fn Transparent3dPhase::is_empty(Self) -> Bool
 pub fn Transparent3dPhase::push(Self, Transparent3d) -> Unit
 pub impl @app.Resource for Transparent3dPhase
-pub impl @ecs.EcsPayloadCodec for Transparent3dPhase
 
 // Type aliases
 

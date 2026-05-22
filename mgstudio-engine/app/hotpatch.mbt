@@ -52,8 +52,13 @@ pub impl Resource for HotPatchChanges with resource() {
 }
 
 ///|
+let hot_patched_message_key : @ecs.MessageKey[HotPatched] = @ecs.register_message(
+  debug_name="mgstudio_app::HotPatched",
+)
+
+///|
 pub impl @ecs.Message for HotPatched with message() {
-  @ecs.register_message(debug_name="mgstudio_app::HotPatched")
+  hot_patched_message_key
 }
 
 ///|

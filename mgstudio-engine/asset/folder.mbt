@@ -28,6 +28,16 @@ pub impl Asset for LoadedFolder with asset_as_image(_self) {
 }
 
 ///|
+pub let loaded_folder_asset_resource_keys : AssetResourceKeys[LoadedFolder] = register_asset_resource_keys(
+  "mgstudio_asset::LoadedFolder",
+)
+
+///|
+pub impl Asset for LoadedFolder with asset_resource_keys() {
+  loaded_folder_asset_resource_keys
+}
+
+///|
 pub let loaded_folder_assets_resource_key : @ecs.ResourceKey[
   Assets[LoadedFolder],
 ] = registered_assets_resource_key()

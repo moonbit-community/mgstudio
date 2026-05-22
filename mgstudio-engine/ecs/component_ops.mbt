@@ -18,10 +18,7 @@ struct ComponentOps {
   debug_name : String
   contains : (World, @core.Entity) -> Bool
   for_each_entity : (World, (@core.Entity) -> Unit) -> Unit
-  for_each_payload : (World, (@core.Entity, EcsPayload) -> Unit) -> Unit
-  payload : (World, @core.Entity) -> EcsPayload?
-  set_payload : (World, @core.Entity, EcsPayload) -> Bool
-  remove_payload : (World, @core.Entity) -> EcsPayload?
+  remove : (World, @core.Entity) -> Bool
 }
 
 ///|
@@ -29,9 +26,7 @@ let component_ops_registry : @hashmap.HashMap[Int, ComponentOps] = @hashmap.Hash
 )
 
 ///|
-fn[T : EcsPayloadCodec] component_ops_for_key(
-  key : ComponentKey[T],
-) -> ComponentOps {
+fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {
   let definition_id = key.id()
   let debug_name = key.debug_name()
   {
@@ -41,40 +36,12 @@ fn[T : EcsPayloadCodec] component_ops_for_key(
     for_each_entity: fn(world, visit) {
       (key.access.for_each)(world, fn(entity, _value) { visit(entity) })
     },
-    for_each_payload: fn(world, visit) {
-      (key.access.for_each)(world, fn(entity, value) {
-        visit(entity, T::to_ecs_payload(value))
-      })
-    },
-    payload: fn(world, entity) {
-      match (key.access.get)(world, entity) {
-        Some(value) => Some(T::to_ecs_payload(value))
-        None => None
-      }
-    },
-    set_payload: fn(world, entity, payload) {
-      match T::from_ecs_payload(payload) {
-        Some(value) => {
-          (key.access.set)(world, entity, value)
-          true
-        }
-        None => false
-      }
-    },
-    remove_payload: fn(world, entity) {
-      match (key.access.remove)(world, entity) {
-        Some(value) => Some(T::to_ecs_payload(value))
-        None => None
-      }
-    },
+    remove: fn(world, entity) { (key.access.remove)(world, entity) is Some(_) },
   }
 }
 
 ///|
-fn[T : EcsPayloadCodec] register_component_ops(
-  component_id : Int,
-  key : ComponentKey[T],
-) -> Unit {
+fn[T] register_component_ops(component_id : Int, key : ComponentKey[T]) -> Unit {
   if component_ops_registry.get(component_id) is Some(_) {
     return
   }
@@ -82,9 +49,7 @@ fn[T : EcsPayloadCodec] register_component_ops(
 }
 
 ///|
-fn[T : EcsPayloadCodec] ensure_component_ops_for_key(
-  key : ComponentKey[T],
-) -> Unit {
+fn[T] ensure_component_ops_for_key(key : ComponentKey[T]) -> Unit {
   register_component_ops(key.id(), key)
 }
 

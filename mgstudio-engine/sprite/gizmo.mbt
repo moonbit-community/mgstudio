@@ -634,11 +634,6 @@ pub impl[Config] Default for GizmoStorage[Config] with default() {
 }
 
 ///|
-let gizmo_storage_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
-
-///|
 let gizmo_storage_drain_registry : Ref[
   @hashmap.HashMap[String, (@ecs.World) -> Unit],
 ] = Ref(@hashmap.HashMap([]))
@@ -655,19 +650,7 @@ fn[Config : GizmoConfigGroup] gizmo_storage_type_name_of(
 fn[Config : GizmoConfigGroup] registered_gizmo_storage_resource_key() -> @ecs.ResourceKey[
   GizmoStorage[Config],
 ] {
-  let probe : GizmoStorage[Config] = GizmoStorage::new()
-  let type_name = gizmo_storage_type_name_of(probe)
-  match gizmo_storage_resource_registry.val.get(type_name) {
-    Some(id) =>
-      @ecs.resource_key_from_id(id, debug_name="mgstudio_gizmos::\{type_name}")
-    None => {
-      let key : @ecs.ResourceKey[GizmoStorage[Config]] = @ecs.register_erased_resource(
-        debug_name="mgstudio_gizmos::\{type_name}",
-      )
-      gizmo_storage_resource_registry.val.set(type_name, key.id())
-      key
-    }
-  }
+  Config::gizmo_storage_resource_key()
 }
 
 ///|

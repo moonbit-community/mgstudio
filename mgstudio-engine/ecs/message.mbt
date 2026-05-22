@@ -35,58 +35,27 @@ fn[T] MessageKey::queue_key(self : MessageKey[T]) -> ResourceKey[Messages[T]] {
 }
 
 ///|
-priv struct MessageQueueSlot {
-  mut state : MessageQueueState
+priv struct MessageUpdateOp {
+  update : (World) -> Unit
 }
 
 ///|
-let named_message_queue_registry : @hashmap.HashMap[String, Int] = @hashmap.HashMap([],
+let message_update_ops : @hashmap.HashMap[Int, MessageUpdateOp] = @hashmap.HashMap([],
 )
 
 ///|
-let message_queue_slots_by_id : @hashmap.HashMap[
-  Int,
-  @hashmap.HashMap[Int, MessageQueueSlot],
-] = @hashmap.HashMap([])
-
-///|
-fn message_queue_slots(id : Int) -> @hashmap.HashMap[Int, MessageQueueSlot] {
-  message_queue_slots_by_id.get_or_init(id, fn() { @hashmap.HashMap([]) })
-}
-
-///|
-fn[T] message_queue_resource_access_ops(
-  id : Int,
-) -> ResourceAccessOps[Messages[T]] {
-  let slots = message_queue_slots(id)
-  {
-    contains: fn(world) { slots.contains(world.world_id()) },
-    get: fn(world) {
-      match slots.get(world.world_id()) {
-        Some(slot) => Some(Messages::{ slot, })
-        None => None
-      }
-    },
-    set: fn(world, messages) {
-      match slots.get(world.world_id()) {
-        Some(slot) => slot.state = messages.slot.state
-        None =>
-          slots.set(world.world_id(), MessageQueueSlot::{
-            state: messages.slot.state,
-          })
-      }
-    },
-    remove: fn(world) {
-      match slots.get(world.world_id()) {
-        Some(slot) => {
-          let messages = Messages::{ slot, }
-          slots.remove(world.world_id())
-          Some(messages)
-        }
-        None => None
-      }
-    },
+fn[T] register_message_update_op(key : MessageKey[T]) -> Unit {
+  if message_update_ops.contains(key.id()) {
+    return
   }
+  message_update_ops.set(key.id(), {
+    update: fn(world) {
+      let access = world.resource(key.queue_key())
+      guard access.get() is Some(queue) else { return }
+      queue.update()
+      access.set(queue) |> ignore
+    },
+  })
 }
 
 ///|
@@ -94,40 +63,28 @@ fn[T] message_queue_resource_key(
   id : Int,
   debug_name : String,
 ) -> ResourceKey[Messages[T]] {
-  ResourceKey::{ id, debug_name, access: message_queue_resource_access_ops(id) }
+  ResourceKey::{ id, debug_name, access: resource_access_ops_new() }
 }
 
 ///|
 fn[T] message_key_new(id : Int, debug_name : String) -> MessageKey[T] {
-  MessageKey::{
+  let key = MessageKey::{
     id,
     debug_name,
     queue_key: message_queue_resource_key(id, debug_name),
   }
+  register_message_update_op(key)
+  key
 }
 
 ///|
 pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {
-  let id = if debug_name == "" {
-    allocate_resource_id(debug_name~)
-  } else {
-    named_message_queue_registry.get_or_init(debug_name, fn() {
-      allocate_resource_id(debug_name~)
-    })
-  }
+  let id = allocate_resource_id(debug_name~)
   message_key_new(id, debug_name)
 }
 
 ///|
-pub fn[T] message_key_from_id(
-  id : Int,
-  debug_name? : String = "",
-) -> MessageKey[T] {
-  message_key_new(id, debug_name)
-}
-
-///|
-pub(open) trait Message: EcsPayloadCodec {
+pub(open) trait Message {
   fn message() -> MessageKey[Self]
 }
 
@@ -137,21 +94,21 @@ pub struct MessageCursor[_] {
 }
 
 ///|
-pub struct MessageQueueState {
+pub struct MessageQueueState[T] {
   priv mut messages_a_start : Int
-  priv mut messages_a : Array[EcsPayload]
+  priv mut messages_a : Array[T]
   priv mut messages_b_start : Int
-  priv mut messages_b : Array[EcsPayload]
+  priv mut messages_b : Array[T]
   priv mut message_count : Int
 }
 
 ///|
-pub struct Messages[_] {
-  priv slot : MessageQueueSlot
+pub struct Messages[T] {
+  priv state : MessageQueueState[T]
 }
 
 ///|
-pub fn MessageQueueState::new() -> MessageQueueState {
+pub fn[T] MessageQueueState::new() -> MessageQueueState[T] {
   {
     messages_a_start: 0,
     messages_a: [],
@@ -162,38 +119,40 @@ pub fn MessageQueueState::new() -> MessageQueueState {
 }
 
 ///|
-pub fn MessageQueueState::len(self : MessageQueueState) -> Int {
+pub fn[T] MessageQueueState::len(self : MessageQueueState[T]) -> Int {
   self.messages_a.length() + self.messages_b.length()
 }
 
 ///|
-pub fn MessageQueueState::oldest_message_count(self : MessageQueueState) -> Int {
+pub fn[T] MessageQueueState::oldest_message_count(
+  self : MessageQueueState[T],
+) -> Int {
   self.messages_a_start
 }
 
 ///|
-pub fn MessageQueueState::write(
-  self : MessageQueueState,
-  payload : EcsPayload,
+pub fn[T] MessageQueueState::write(
+  self : MessageQueueState[T],
+  message : T,
 ) -> Int {
   let message_id = self.message_count
-  self.messages_b.push(payload)
+  self.messages_b.push(message)
   self.message_count = self.message_count + 1
   message_id
 }
 
 ///|
-pub fn MessageQueueState::write_batch(
-  self : MessageQueueState,
-  payloads : Array[EcsPayload],
+pub fn[T] MessageQueueState::write_batch(
+  self : MessageQueueState[T],
+  messages : Array[T],
 ) -> Unit {
-  for payload in payloads {
-    ignore(self.write(payload))
+  for message in messages {
+    ignore(self.write(message))
   }
 }
 
 ///|
-pub fn MessageQueueState::update(self : MessageQueueState) -> Unit {
+pub fn[T] MessageQueueState::update(self : MessageQueueState[T]) -> Unit {
   let drained_messages = self.messages_b
   let drained_start = self.messages_b_start
   self.messages_b = []
@@ -203,7 +162,7 @@ pub fn MessageQueueState::update(self : MessageQueueState) -> Unit {
 }
 
 ///|
-pub fn MessageQueueState::clear(self : MessageQueueState) -> Unit {
+pub fn[T] MessageQueueState::clear(self : MessageQueueState[T]) -> Unit {
   self.messages_a.clear()
   self.messages_b.clear()
   self.messages_a_start = self.message_count
@@ -212,54 +171,45 @@ pub fn MessageQueueState::clear(self : MessageQueueState) -> Unit {
 
 ///|
 pub fn[T] Messages::new() -> Messages[T] {
-  { slot: MessageQueueSlot::{ state: MessageQueueState::new() } }
+  { state: MessageQueueState::new() }
 }
 
 ///|
 pub fn[T] Messages::len(self : Messages[T]) -> Int {
-  self.slot.state.len()
+  self.state.len()
 }
 
 ///|
 pub fn[T] Messages::oldest_message_count(self : Messages[T]) -> Int {
-  self.slot.state.oldest_message_count()
+  self.state.oldest_message_count()
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] Messages::write(
-  self : Messages[T],
-  message : T,
-) -> Int {
-  self.slot.state.write(T::to_ecs_payload(message))
+pub fn[T] Messages::write(self : Messages[T], message : T) -> Int {
+  self.state.write(message)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] Messages::write_batch(
+pub fn[T] Messages::write_batch(
   self : Messages[T],
   messages : Array[T],
 ) -> Unit {
-  let payloads : Array[EcsPayload] = []
-  for message in messages {
-    payloads.push(T::to_ecs_payload(message))
-  }
-  self.slot.state.write_batch(payloads)
+  self.state.write_batch(messages)
 }
 
 ///|
-pub fn[T : Default + EcsPayloadCodec] Messages::write_default(
-  self : Messages[T],
-) -> Int {
+pub fn[T : Default] Messages::write_default(self : Messages[T]) -> Int {
   self.write(T::default())
 }
 
 ///|
 pub fn[T] Messages::update(self : Messages[T]) -> Unit {
-  self.slot.state.update()
+  self.state.update()
 }
 
 ///|
 pub fn[T] Messages::clear(self : Messages[T]) -> Unit {
-  self.slot.state.clear()
+  self.state.clear()
 }
 
 ///|
@@ -293,9 +243,9 @@ fn queue_start_offset(start : Int, last_message_count : Int) -> Int {
 }
 
 ///|
-fn queue_unread_len_for_segment(
+fn[T] queue_unread_len_for_segment(
   start : Int,
-  values : Array[EcsPayload],
+  values : Array[T],
   last_message_count : Int,
 ) -> Int {
   if last_message_count >= start + values.length() {
@@ -308,13 +258,13 @@ fn queue_unread_len_for_segment(
 ///|
 fn[T] Messages::unread_len(self : Messages[T], last_message_count : Int) -> Int {
   queue_unread_len_for_segment(
-    self.slot.state.messages_a_start,
-    self.slot.state.messages_a,
+    self.state.messages_a_start,
+    self.state.messages_a,
     last_message_count,
   ) +
   queue_unread_len_for_segment(
-    self.slot.state.messages_b_start,
-    self.slot.state.messages_b,
+    self.state.messages_b_start,
+    self.state.messages_b,
     last_message_count,
   )
 }
@@ -323,39 +273,35 @@ fn[T] Messages::unread_len(self : Messages[T], last_message_count : Int) -> Int 
 fn[T] Messages::unread(
   self : Messages[T],
   last_message_count : Int,
-) -> Array[(Int, EcsPayload)] {
-  let unread : Array[(Int, EcsPayload)] = []
+) -> Array[(Int, T)] {
+  let unread : Array[(Int, T)] = []
   if last_message_count <
-    self.slot.state.messages_a_start + self.slot.state.messages_a.length() {
+    self.state.messages_a_start + self.state.messages_a.length() {
     let offset = queue_start_offset(
-      self.slot.state.messages_a_start,
+      self.state.messages_a_start,
       last_message_count,
     )
-    for i in offset..<self.slot.state.messages_a.length() {
-      unread.push(
-        (self.slot.state.messages_a_start + i, self.slot.state.messages_a[i]),
-      )
+    for i in offset..<self.state.messages_a.length() {
+      unread.push((self.state.messages_a_start + i, self.state.messages_a[i]))
     }
   }
   if last_message_count <
-    self.slot.state.messages_b_start + self.slot.state.messages_b.length() {
+    self.state.messages_b_start + self.state.messages_b.length() {
     let offset = queue_start_offset(
-      self.slot.state.messages_b_start,
+      self.state.messages_b_start,
       last_message_count,
     )
-    for i in offset..<self.slot.state.messages_b.length() {
-      unread.push(
-        (self.slot.state.messages_b_start + i, self.slot.state.messages_b[i]),
-      )
+    for i in offset..<self.state.messages_b.length() {
+      unread.push((self.state.messages_b_start + i, self.state.messages_b[i]))
     }
   }
   unread
 }
 
 ///|
-fn message_cursor_advance_after_unread(
+fn[T] message_cursor_advance_after_unread(
   previous_count : Int,
-  unread_values : Array[(Int, EcsPayload)],
+  unread_values : Array[(Int, T)],
 ) -> Int {
   if unread_values.length() == 0 {
     previous_count
@@ -425,7 +371,7 @@ pub fn[T] World::init_message(self : World, key : MessageKey[T]) -> Unit {
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::send_message(
+pub fn[T] World::send_message(
   self : World,
   key : MessageKey[T],
   message : T,
@@ -441,7 +387,7 @@ pub fn[T : EcsPayloadCodec] World::send_message(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::send_message_batch(
+pub fn[T] World::send_message_batch(
   self : World,
   key : MessageKey[T],
   messages : Array[T],
@@ -466,13 +412,8 @@ pub fn[T] World::clear_messages(self : World, key : MessageKey[T]) -> Unit {
 pub fn World::update_messages(self : World) -> Unit {
   let registry = world_message_registry(self)
   for id in registry.ids {
-    let key : ResourceKey[Messages[Unit]] = message_queue_resource_key(
-      id, "mgstudio_ecs::message::Messages",
-    )
-    let access = self.resource(key)
-    guard access.get() is Some(queue) else { continue }
-    queue.update()
-    access.set(queue) |> ignore
+    guard message_update_ops.get(id) is Some(op) else { continue }
+    (op.update)(self)
   }
 }
 
@@ -497,42 +438,6 @@ pub struct MessageWriter[T] {
 }
 
 ///|
-fn[T : EcsPayloadCodec] decode_message_payload(
-  key : MessageKey[T],
-  index : Int,
-  payload : EcsPayload,
-) -> T raise EcsError {
-  match T::from_ecs_payload(payload) {
-    Some(value) => value
-    None =>
-      raise MessageTypeMismatch(
-        key.id(),
-        key.debug_name(),
-        index,
-        "payload mismatch",
-      )
-  }
-}
-
-///|
-fn[T : EcsPayloadCodec] decode_message_mut_payload(
-  key : MessageKey[T],
-  index : Int,
-  payload : EcsPayload,
-) -> T raise EcsError {
-  match T::from_ecs_payload(payload) {
-    Some(value) => value
-    None =>
-      raise MessageTypeMismatch(
-        key.id(),
-        key.debug_name(),
-        index,
-        "payload mismatch",
-      )
-  }
-}
-
-///|
 pub fn[T] Messages::get_cursor(self : Messages[T]) -> MessageCursor[T] {
   ignore(self)
   MessageCursor::MessageCursor()
@@ -540,11 +445,11 @@ pub fn[T] Messages::get_cursor(self : Messages[T]) -> MessageCursor[T] {
 
 ///|
 pub fn[T] Messages::get_cursor_current(self : Messages[T]) -> MessageCursor[T] {
-  { last_message_count: self.slot.state.message_count }
+  { last_message_count: self.state.message_count }
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] Messages::write_message(
+pub fn[T] Messages::write_message(
   self : Messages[T],
   key : MessageKey[T],
   message : T,
@@ -554,7 +459,7 @@ pub fn[T : EcsPayloadCodec] Messages::write_message(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] Messages::write_message_batch(
+pub fn[T] Messages::write_message_batch(
   self : Messages[T],
   key : MessageKey[T],
   messages : Array[T],
@@ -564,7 +469,7 @@ pub fn[T : EcsPayloadCodec] Messages::write_message_batch(
 }
 
 ///|
-pub fn[T : Default + EcsPayloadCodec] Messages::write_message_default(
+pub fn[T : Default] Messages::write_message_default(
   self : Messages[T],
   key : MessageKey[T],
 ) -> Int {
@@ -605,7 +510,7 @@ pub fn[T] MessageCursor::clear(
   self : MessageCursor[T],
   messages : Messages[T],
 ) -> Unit {
-  self.last_message_count = messages.slot.state.message_count
+  self.last_message_count = messages.state.message_count
 }
 
 ///|
@@ -616,8 +521,9 @@ pub fn[T : Message] MessageCursor::read(
   let key : MessageKey[T] = Message::message()
   let unread_values = messages.unread(self.last_message_count)
   let unread : Array[T] = []
+  ignore(key)
   for entry in unread_values {
-    unread.push(decode_message_payload(key, entry.0, entry.1))
+    unread.push(entry.1)
   }
   self.last_message_count = message_cursor_advance_after_unread(
     self.last_message_count,
@@ -634,8 +540,9 @@ pub fn[T : Message] MessageCursor::read_mut(
   let key : MessageKey[T] = Message::message()
   let unread_values = messages.unread(self.last_message_count)
   let unread : Array[T] = []
+  ignore(key)
   for entry in unread_values {
-    unread.push(decode_message_mut_payload(key, entry.0, entry.1))
+    unread.push(entry.1)
   }
   self.last_message_count = message_cursor_advance_after_unread(
     self.last_message_count,
@@ -711,7 +618,7 @@ pub fn[T] MessageMutator::is_empty(self : MessageMutator[T]) -> Bool {
 pub fn[T] MessageReader::clear(self : MessageReader[T]) -> Unit {
   let queue = self.world.resource(self.key.queue_key()).get()
   match queue {
-    Some(queue) => self.cursor_ref.val = queue.slot.state.message_count
+    Some(queue) => self.cursor_ref.val = queue.state.message_count
     None => self.cursor_ref.val = 0
   }
 }
@@ -720,7 +627,7 @@ pub fn[T] MessageReader::clear(self : MessageReader[T]) -> Unit {
 pub fn[T] MessageMutator::clear(self : MessageMutator[T]) -> Unit {
   let queue = self.world.resource(self.key.queue_key()).get()
   match queue {
-    Some(queue) => self.cursor_ref.val = queue.slot.state.message_count
+    Some(queue) => self.cursor_ref.val = queue.state.message_count
     None => self.cursor_ref.val = 0
   }
 }
@@ -736,7 +643,7 @@ pub fn[T] MessageMutator::cursor(self : MessageMutator[T]) -> Int {
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] MessageReader::read(
+pub fn[T] MessageReader::read(
   self : MessageReader[T],
 ) -> Array[T] raise EcsError {
   let queue_access = self.world.resource(self.key.queue_key())
@@ -744,7 +651,7 @@ pub fn[T : EcsPayloadCodec] MessageReader::read(
   let unread_values = queue.unread(self.cursor_ref.val)
   let unread : Array[T] = []
   for entry in unread_values {
-    unread.push(decode_message_payload(self.key, entry.0, entry.1))
+    unread.push(entry.1)
   }
   self.cursor_ref.val = message_cursor_advance_after_unread(
     self.cursor_ref.val,
@@ -754,7 +661,7 @@ pub fn[T : EcsPayloadCodec] MessageReader::read(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] MessageMutator::read(
+pub fn[T] MessageMutator::read(
   self : MessageMutator[T],
 ) -> Array[T] raise EcsError {
   let queue_access = self.world.resource(self.key.queue_key())
@@ -762,7 +669,7 @@ pub fn[T : EcsPayloadCodec] MessageMutator::read(
   let unread_values = queue.unread(self.cursor_ref.val)
   let unread : Array[T] = []
   for entry in unread_values {
-    unread.push(decode_message_mut_payload(self.key, entry.0, entry.1))
+    unread.push(entry.1)
   }
   self.cursor_ref.val = message_cursor_advance_after_unread(
     self.cursor_ref.val,
@@ -772,15 +679,12 @@ pub fn[T : EcsPayloadCodec] MessageMutator::read(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] MessageWriter::write(
-  self : MessageWriter[T],
-  message : T,
-) -> Int {
+pub fn[T] MessageWriter::write(self : MessageWriter[T], message : T) -> Int {
   self.world.send_message(self.key, message)
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] MessageWriter::write_batch(
+pub fn[T] MessageWriter::write_batch(
   self : MessageWriter[T],
   messages : Array[T],
 ) -> Unit {
@@ -788,7 +692,7 @@ pub fn[T : EcsPayloadCodec] MessageWriter::write_batch(
 }
 
 ///|
-pub fn[T : Default + EcsPayloadCodec] MessageWriter::write_default(
+pub fn[T : Default] MessageWriter::write_default(
   self : MessageWriter[T],
 ) -> Int {
   self.write(T::default())

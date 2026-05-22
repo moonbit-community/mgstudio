@@ -31,7 +31,6 @@ pub struct OrderIndependentTransparencySettings {
 } derive(ToJson, @json.FromJson)
 pub fn OrderIndependentTransparencySettings::OrderIndependentTransparencySettings() -> Self
 pub impl @ecs.Component for OrderIndependentTransparencySettings
-pub impl @ecs.EcsPayloadCodec for OrderIndependentTransparencySettings
 
 // Type aliases
 

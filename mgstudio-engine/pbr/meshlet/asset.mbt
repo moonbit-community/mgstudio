@@ -62,24 +62,6 @@ pub struct MeshletMesh {
 }
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_pbr_meshlet_MeshletMesh(MeshletMesh)
-}
-
-///|
-pub impl @ecs.EcsPayloadCodec for MeshletMesh with to_ecs_payload(self) {
-  EcsPayload_pbr_meshlet_MeshletMesh(self)
-}
-
-///|
-pub impl @ecs.EcsPayloadCodec for MeshletMesh with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_pbr_meshlet_MeshletMesh(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
 pub impl @asset.Asset for MeshletMesh with asset_debug_name() {
   "mgstudio_pbr::meshlet::MeshletMesh"
 }
@@ -87,6 +69,16 @@ pub impl @asset.Asset for MeshletMesh with asset_debug_name() {
 ///|
 pub impl @asset.Asset for MeshletMesh with asset_as_image(_self) {
   None
+}
+
+///|
+let meshlet_mesh_asset_resource_keys : @asset.AssetResourceKeys[MeshletMesh] = @asset.register_asset_resource_keys(
+  MeshletMesh::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for MeshletMesh with asset_resource_keys() {
+  meshlet_mesh_asset_resource_keys
 }
 
 ///|

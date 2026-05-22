@@ -32,14 +32,12 @@ pub struct BoxShadowSamples {
 pub fn BoxShadowSamples::BoxShadowSamples() -> Self
 pub fn BoxShadowSamples::new(Int) -> Self
 pub impl @ecs.Component for BoxShadowSamples
-pub impl @ecs.EcsPayloadCodec for BoxShadowSamples
 
 pub(all) enum UiAntiAlias {
   Off
   On
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for UiAntiAlias
-pub impl @ecs.EcsPayloadCodec for UiAntiAlias
 
 pub struct UiRenderPlugin {
 }

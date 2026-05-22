@@ -13,143 +13,21 @@
 // limitations under the License.
 
 ///|
-pub extenum EcsPayload {}
-
-///|
-extenum EcsPayload += {
-  EcsPayload_Unit(Unit)
-  EcsPayload_Bool(Bool)
-  EcsPayload_Int(Int)
-  EcsPayload_UInt64(UInt64)
-  EcsPayload_Float(Float)
-  EcsPayload_Double(Double)
-  EcsPayload_String(String)
-}
-
-///|
-pub(open) trait EcsPayloadCodec {
-  fn to_ecs_payload(Self) -> EcsPayload
-  fn from_ecs_payload(EcsPayload) -> Self?
-}
-
-///|
-pub impl EcsPayloadCodec for Unit with to_ecs_payload(self) {
-  EcsPayload_Unit(self)
-}
-
-///|
-pub impl EcsPayloadCodec for Unit with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_Unit(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-pub impl EcsPayloadCodec for Bool with to_ecs_payload(self) {
-  EcsPayload_Bool(self)
-}
-
-///|
-pub impl EcsPayloadCodec for Bool with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_Bool(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-pub impl EcsPayloadCodec for Int with to_ecs_payload(self) {
-  EcsPayload_Int(self)
-}
-
-///|
-pub impl EcsPayloadCodec for Int with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_Int(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-pub impl EcsPayloadCodec for UInt64 with to_ecs_payload(self) {
-  EcsPayload_UInt64(self)
-}
-
-///|
-pub impl EcsPayloadCodec for UInt64 with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_UInt64(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-pub impl EcsPayloadCodec for Float with to_ecs_payload(self) {
-  EcsPayload_Float(self)
-}
-
-///|
-pub impl EcsPayloadCodec for Float with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_Float(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-pub impl EcsPayloadCodec for Double with to_ecs_payload(self) {
-  EcsPayload_Double(self)
-}
-
-///|
-pub impl EcsPayloadCodec for Double with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_Double(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-pub impl EcsPayloadCodec for String with to_ecs_payload(self) {
-  EcsPayload_String(self)
-}
-
-///|
-pub impl EcsPayloadCodec for String with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_String(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-pub struct EcsPayloadWriter {
+pub struct ComponentWriter {
   priv component_definition_id : Int
   priv component_debug_name : String
   priv value_type_name : String
-  priv payload : EcsPayload
+  priv apply_fn : (World, @core.Entity) -> Unit
 }
 
 ///|
-fn[T : EcsPayloadCodec] ecs_payload_writer(
+fn[T] component_writer_for_key(
   key : ComponentKey[T],
   value : T,
-) -> EcsPayloadWriter {
+) -> ComponentWriter {
   ensure_component_ops_for_key(key)
-  ecs_payload_writer_from_payload(
-    key.id(),
-    key.debug_name(),
-    T::to_ecs_payload(value),
-  )
-}
-
-///|
-fn ecs_payload_writer_from_payload(
-  component_definition_id : Int,
-  component_debug_name : String,
-  payload : EcsPayload,
-) -> EcsPayloadWriter {
+  let component_definition_id = key.id()
+  let component_debug_name = key.debug_name()
   {
     component_definition_id,
     component_debug_name,
@@ -158,38 +36,35 @@ fn ecs_payload_writer_from_payload(
     } else {
       "component#\{component_definition_id.to_string()}"
     },
-    payload,
+    apply_fn: fn(world, entity) { (key.access.set)(world, entity, value) },
   }
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] component_writer(
-  key : ComponentKey[T],
-  value : T,
-) -> EcsPayloadWriter {
-  ecs_payload_writer(key, value)
+pub fn[T] component_writer(key : ComponentKey[T], value : T) -> ComponentWriter {
+  component_writer_for_key(key, value)
 }
 
 ///|
-fn EcsPayloadWriter::to_ecs_payload(self : EcsPayloadWriter) -> EcsPayload {
-  self.payload
+fn ComponentWriter::apply(
+  self : ComponentWriter,
+  world : World,
+  entity : @core.Entity,
+) -> Unit {
+  (self.apply_fn)(world, entity)
 }
 
 ///|
-pub fn EcsPayloadWriter::component_definition_id(
-  self : EcsPayloadWriter,
-) -> Int {
+pub fn ComponentWriter::component_definition_id(self : ComponentWriter) -> Int {
   self.component_definition_id
 }
 
 ///|
-pub fn EcsPayloadWriter::component_debug_name(
-  self : EcsPayloadWriter,
-) -> String {
+pub fn ComponentWriter::component_debug_name(self : ComponentWriter) -> String {
   self.component_debug_name
 }
 
 ///|
-pub fn EcsPayloadWriter::value_type_name(self : EcsPayloadWriter) -> String {
+pub fn ComponentWriter::value_type_name(self : ComponentWriter) -> String {
   self.value_type_name
 }

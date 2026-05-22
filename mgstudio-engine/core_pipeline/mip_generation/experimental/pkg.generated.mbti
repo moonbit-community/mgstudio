@@ -51,7 +51,6 @@ pub struct DownsampleDepthPipelinePairState {
 pub fn DownsampleDepthPipelinePairState::DownsampleDepthPipelinePairState() -> Self
 pub fn DownsampleDepthPipelinePairState::new(first_pipeline_ready? : Bool, second_pipeline_ready? : Bool, first_multisample_pipeline_ready? : Bool, second_multisample_pipeline_ready? : Bool) -> Self
 pub impl @app.Resource for DownsampleDepthPipelinePairState
-pub impl @ecs.EcsPayloadCodec for DownsampleDepthPipelinePairState
 
 pub struct DownsampleDepthViewState {
   has_depth_pyramid : Bool

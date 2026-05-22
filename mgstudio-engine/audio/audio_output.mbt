@@ -42,40 +42,29 @@ pub struct PlaybackDespawnMarker {} derive(ToJson, FromJson)
 pub struct PlaybackRemoveMarker {} derive(ToJson, FromJson)
 
 ///|
-let audio_player_component_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
-
-///|
 pub(open) trait AudioPlayerSource {
   fn audio_player_source_debug_name() -> String
+  fn audio_player_component_key() -> @ecs.ComponentKey[AudioPlayer[Self]]
 }
 
 ///|
 fn[Source : AudioPlayerSource] registered_audio_player_component_key() -> @ecs.ComponentKey[
   AudioPlayer[Source],
 ] {
-  let type_name = "AudioPlayer<\{Source::audio_player_source_debug_name()}>"
-  match audio_player_component_registry.val.get(type_name) {
-    Some(id) =>
-      @ecs.component_key_from_id(id, debug_name="mgstudio_audio::\{type_name}")
-    None => {
-      let key : @ecs.ComponentKey[AudioPlayer[Source]] = @ecs.register_erased_component(
-        debug_name="mgstudio_audio::\{type_name}",
-      )
-      audio_player_component_registry.val.set(type_name, key.id())
-      key
-    }
-  }
+  Source::audio_player_component_key()
 }
 
 ///|
 pub let ecs_key_audio_source_player : @ecs.ComponentKey[
   AudioPlayer[AudioSource],
-] = registered_audio_player_component_key()
+] = @ecs.register_component(
+  debug_name="mgstudio_audio::AudioPlayer<mgstudio_audio::AudioSource>",
+)
 
 ///|
-pub let ecs_key_pitch_player : @ecs.ComponentKey[AudioPlayer[Pitch]] = registered_audio_player_component_key()
+pub let ecs_key_pitch_player : @ecs.ComponentKey[AudioPlayer[Pitch]] = @ecs.register_component(
+  debug_name="mgstudio_audio::AudioPlayer<mgstudio_audio::Pitch>",
+)
 
 ///|
 pub let ecs_key_playback_settings : @ecs.ComponentKey[PlaybackSettings] = @ecs.register_component(

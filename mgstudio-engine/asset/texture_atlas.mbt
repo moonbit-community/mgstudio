@@ -29,6 +29,16 @@ pub impl Asset for TextureAtlasLayout with asset_as_image(_self) {
 }
 
 ///|
+pub let texture_atlas_layout_asset_resource_keys : AssetResourceKeys[
+  TextureAtlasLayout,
+] = register_asset_resource_keys("mgstudio_asset::TextureAtlasLayout")
+
+///|
+pub impl Asset for TextureAtlasLayout with asset_resource_keys() {
+  texture_atlas_layout_asset_resource_keys
+}
+
+///|
 pub fn TextureAtlasLayout::new_empty(
   dimensions : @math.UVec2,
 ) -> TextureAtlasLayout {

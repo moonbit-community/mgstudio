@@ -25,7 +25,6 @@ pub struct FullscreenShader {
 pub fn FullscreenShader::FullscreenShader() -> Self
 pub fn FullscreenShader::new(path? : String, entry_point? : String) -> Self
 pub impl @app.Resource for FullscreenShader
-pub impl @ecs.EcsPayloadCodec for FullscreenShader
 
 // Type aliases
 

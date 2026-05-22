@@ -63,6 +63,18 @@ pub impl @asset.Asset for AutoExposureCompensationCurve with asset_as_image(
 }
 
 ///|
+let auto_exposure_compensation_curve_asset_resource_keys : @asset.AssetResourceKeys[
+  AutoExposureCompensationCurve,
+] = @asset.register_asset_resource_keys(
+  AutoExposureCompensationCurve::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for AutoExposureCompensationCurve with asset_resource_keys() {
+  auto_exposure_compensation_curve_asset_resource_keys
+}
+
+///|
 pub fn AutoExposureCompensationCurve::AutoExposureCompensationCurve() -> AutoExposureCompensationCurve {
   AutoExposureCompensationCurve::{
     min_log_lum: 0.0F,

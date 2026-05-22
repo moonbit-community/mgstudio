@@ -242,6 +242,16 @@ pub impl @asset.Asset for AnimationClip with asset_as_image(_self) {
 }
 
 ///|
+let animation_clip_asset_resource_keys : @asset.AssetResourceKeys[AnimationClip] = @asset.register_asset_resource_keys(
+  AnimationClip::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for AnimationClip with asset_resource_keys() {
+  animation_clip_asset_resource_keys
+}
+
+///|
 pub fn AnimationClip::new() -> AnimationClip {
   AnimationClip::{
     duration_seconds: 0.0F,

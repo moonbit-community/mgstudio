@@ -77,6 +77,18 @@ pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with gizmo_config_gr
 }
 
 ///|
+let light_gizmo_storage_resource_key : @ecs.ResourceKey[
+  @sprite.GizmoStorage[LightGizmoConfigGroup],
+] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos::GizmoStorage<mgstudio_light::LightGizmoConfigGroup>",
+)
+
+///|
+pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with gizmo_storage_resource_key() {
+  light_gizmo_storage_resource_key
+}
+
+///|
 extenum @sprite.GizmoConfigGroupCell += {
   LightGizmoConfigGroupCell(Ref[LightGizmoConfigGroup])
 }

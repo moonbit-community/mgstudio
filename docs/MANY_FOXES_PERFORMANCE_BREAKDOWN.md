@@ -98,8 +98,8 @@ mgstudio source:
 - It then scans `AnimatedBy + AnimationTargetId` table rows and calls
   `animation_apply_threaded_player_to_target`.
 - Component writes use table-row hot writes when possible, but the evaluation
-  still passes through `EcsPayloadCodec` decode/encode and dynamic component
-  column APIs.
+  still relies on dynamic component column APIs instead of a Bevy-shaped
+  precompiled query fetch plan.
 
 Bevy source:
 

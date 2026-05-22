@@ -44,7 +44,6 @@ pub fn DownsampleShaders::depth_shader_path(Self) -> String
 pub fn DownsampleShaders::general_shader_count(Self) -> Int
 pub fn DownsampleShaders::new(depth_shader_path? : String, general_shader_count? : Int) -> Self
 pub impl @app.Resource for DownsampleShaders
-pub impl @ecs.EcsPayloadCodec for DownsampleShaders
 
 pub struct MipGenerationJob {
   phase : MipGenerationPhaseId
@@ -66,7 +65,6 @@ pub fn MipGenerationJobs::phase(Self, MipGenerationPhaseId) -> MipGenerationPhas
 pub fn MipGenerationJobs::phase_count(Self) -> Int
 pub fn MipGenerationJobs::remove_phase(Self, MipGenerationPhaseId) -> (Self, MipGenerationPhase?)
 pub impl @app.Resource for MipGenerationJobs
-pub impl @ecs.EcsPayloadCodec for MipGenerationJobs
 
 pub struct MipGenerationPhase {
   image_asset_ids : Array[@asset.AssetId[@image.Image]]
@@ -94,7 +92,6 @@ pub fn MipGenerationPipelines::new(texture_format_pipeline_count? : Int, bind_gr
 pub fn MipGenerationPipelines::register_texture_format_pipeline(Self) -> Self
 pub fn MipGenerationPipelines::reset_bind_group_cache(Self) -> Self
 pub impl @app.Resource for MipGenerationPipelines
-pub impl @ecs.EcsPayloadCodec for MipGenerationPipelines
 
 pub struct MipGenerationPipelinesState {
   texture_format_pipeline_count : Int
@@ -119,7 +116,6 @@ pub fn MipGenerationResources::min_filter(Self) -> String
 pub fn MipGenerationResources::mipmap_filter(Self) -> String
 pub fn MipGenerationResources::sampler_label(Self) -> String
 pub impl @app.Resource for MipGenerationResources
-pub impl @ecs.EcsPayloadCodec for MipGenerationResources
 
 // Type aliases
 

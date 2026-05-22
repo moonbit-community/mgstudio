@@ -64,21 +64,21 @@ test "ecs event: clear removes both previous and current queues" {
 }
 
 ///|
-test "ecs event: type mismatch diagnostics fail fast" {
+test "ecs event: typed keys keep queues isolated" {
   let world = World::new()
   let event_runtime : EventKey[RuntimeEvent] = register_event(
-    debug_name="runtime_event_decode",
+    debug_name="runtime_event_isolated",
   )
-  let event_broken : EventKey[BrokenEvent] = event_runtime.cast()
+  let event_broken : EventKey[BrokenEvent] = register_event(
+    debug_name="broken_event_isolated",
+  )
 
   world.send_event(event_runtime, RuntimeEvent::{ value: 9 })
+  world.send_event(event_broken, BrokenEvent::{ value: "broken" })
 
-  let result : Result[Array[BrokenEvent], EcsError] = try? world.read_events(
-    event_broken,
+  debug_inspect(try! world.read_events(event_runtime), content="[{ value: 9 }]")
+  debug_inspect(
+    try! world.read_events(event_broken),
+    content="[{ value: \"broken\" }]",
   )
-  guard result is Err(EventTypeMismatch(key_id, _debug_name, index, _actual)) else {
-    fail("expected event type mismatch diagnostics")
-  }
-  debug_inspect(key_id == event_runtime.id(), content="true")
-  debug_inspect(index == 0, content="true")
 }

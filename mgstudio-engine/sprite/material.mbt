@@ -30,11 +30,6 @@ pub struct RenderMaterial2dInstances[M] {
 }
 
 ///|
-let render_material2d_instances_resource_registry : Ref[
-  @hashmap.HashMap[String, Int],
-] = Ref(@hashmap.HashMap([]))
-
-///|
 pub fn[M] RenderMaterial2dInstances::new() -> RenderMaterial2dInstances[M] {
   RenderMaterial2dInstances::{ instances: @hashmap.HashMap([]) }
 }
@@ -80,37 +75,16 @@ pub fn[M] RenderMaterial2dInstances::clear(
 }
 
 ///|
-fn[M : Material2d] registered_render_material2d_instances_resource_key() -> @ecs.ResourceKey[
-  RenderMaterial2dInstances[M],
-] {
-  let type_name = render_material2d_instances_type_name((None : M?))
-  match render_material2d_instances_resource_registry.val.get(type_name) {
-    Some(id) =>
-      @ecs.resource_key_from_id(
-        id,
-        debug_name="mgstudio_sprite_render::\{type_name}",
-      )
-    None => {
-      let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = @ecs.register_erased_resource(
-        debug_name="mgstudio_sprite_render::\{type_name}",
-      )
-      render_material2d_instances_resource_registry.val.set(type_name, key.id())
-      key
-    }
-  }
-}
-
-///|
 pub fn[M : Material2d] render_material2d_instances_resource_key_of(
   _probe : @asset.Handle[M],
 ) -> @ecs.ResourceKey[RenderMaterial2dInstances[M]] {
   ignore(_probe)
-  registered_render_material2d_instances_resource_key()
+  M::material2d_keys().render_material2d_instances
 }
 
 ///|
 pub impl[M : Material2d] @app.Resource for RenderMaterial2dInstances[M] with resource() {
-  registered_render_material2d_instances_resource_key()
+  M::material2d_keys().render_material2d_instances
 }
 
 ///|
@@ -310,13 +284,6 @@ pub fn Material2dBindGroup::bind_group_data(
 }
 
 ///|
-pub(open) trait Material2d {
-  fn material2d_debug_name() -> String
-  fn alpha_mode(self : Self) -> AlphaMode2d
-  fn bind_group(self : Self) -> Material2dBindGroup
-}
-
-///|
 pub struct Material2dKey[_] {
   mesh_key : Int
   bind_group_layout_key : String
@@ -336,6 +303,42 @@ pub fn[M] Material2dKey::new(
 pub struct Material2dPipeline[_] {
   vertex_shader : String?
   fragment_shader : String?
+}
+
+///|
+pub struct Material2dKeys[M] {
+  mesh_material2d_component : @ecs.ComponentKey[MeshMaterial2d[M]]
+  render_material2d_instances : @ecs.ResourceKey[RenderMaterial2dInstances[M]]
+  material2d_pipeline : @ecs.ResourceKey[Material2dPipeline[M]]
+  prepared_render_asset : @render.RenderAssetResourceKeys[PreparedMaterial2d[M]]
+}
+
+///|
+pub fn[M] register_material2d_keys(
+  material_debug_name : String,
+) -> Material2dKeys[M] {
+  Material2dKeys::{
+    mesh_material2d_component: @ecs.register_component(
+      debug_name="mgstudio_sprite_render::MeshMaterial2d<\{material_debug_name}>",
+    ),
+    render_material2d_instances: @ecs.register_resource(
+      debug_name="mgstudio_sprite_render::RenderMaterial2dInstances<\{material_debug_name}>",
+    ),
+    material2d_pipeline: @ecs.register_resource(
+      debug_name="mgstudio_sprite_render::Material2dPipeline<\{material_debug_name}>",
+    ),
+    prepared_render_asset: @render.register_render_asset_resource_keys(
+      "mgstudio_sprite::PreparedMaterial2d<\{material_debug_name}>",
+    ),
+  }
+}
+
+///|
+pub(open) trait Material2d {
+  fn material2d_debug_name() -> String
+  fn material2d_keys() -> Material2dKeys[Self]
+  fn alpha_mode(self : Self) -> AlphaMode2d
+  fn bind_group(self : Self) -> Material2dBindGroup
 }
 
 ///|
@@ -393,6 +396,11 @@ pub impl[M : Material2d] @render.RenderAssetResource for PreparedMaterial2d[M] w
 }
 
 ///|
+pub impl[M : Material2d] @render.RenderAssetResource for PreparedMaterial2d[M] with render_asset_resource_keys() {
+  M::material2d_keys().prepared_render_asset
+}
+
+///|
 pub fn[M : Material2d] PreparedMaterial2d::from_material(
   source : @asset.Handle[M],
   material : M,
@@ -418,61 +426,16 @@ pub fn[M] PreparedMaterial2d::prepared_handle(
 }
 
 ///|
-let material2d_pipeline_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
-
-///|
-fn[M : Material2d] registered_material2d_pipeline_resource_key() -> @ecs.ResourceKey[
-  Material2dPipeline[M],
-] {
-  let type_name = material2d_pipeline_type_name((None : M?))
-  match material2d_pipeline_resource_registry.val.get(type_name) {
-    Some(id) =>
-      @ecs.resource_key_from_id(
-        id,
-        debug_name="mgstudio_sprite_render::\{type_name}",
-      )
-    None => {
-      let key : @ecs.ResourceKey[Material2dPipeline[M]] = @ecs.register_erased_resource(
-        debug_name="mgstudio_sprite_render::\{type_name}",
-      )
-      material2d_pipeline_resource_registry.val.set(type_name, key.id())
-      key
-    }
-  }
-}
-
-///|
 pub impl[M : Material2d] @app.Resource for Material2dPipeline[M] with resource() {
-  registered_material2d_pipeline_resource_key()
-}
-
-///|
-fn[M : Material2d] material2d_type_name(_probe : @asset.Handle[M]) -> String {
-  ignore(_probe)
-  "Material2d<\{M::material2d_debug_name()}>"
-}
-
-///|
-fn[M : Material2d] render_material2d_instances_type_name(
-  _sample : M?,
-) -> String {
-  ignore(_sample)
-  "RenderMaterial2dInstances<\{M::material2d_debug_name()}>"
-}
-
-///|
-fn[M : Material2d] material2d_pipeline_type_name(_sample : M?) -> String {
-  ignore(_sample)
-  "Material2dPipeline<\{M::material2d_debug_name()}>"
+  M::material2d_keys().material2d_pipeline
 }
 
 ///|
 pub fn[M : Material2d] material2d_runtime_type_name(
   _probe : @asset.Handle[M],
 ) -> String {
-  material2d_type_name(_probe)
+  ignore(_probe)
+  "Material2d<\{M::material2d_debug_name()}>"
 }
 
 ///|
@@ -968,7 +931,7 @@ fn material2d_runtime_registry_or_empty(
 fn[M : Material2d] material2d_runtime_entry(
   probe : @asset.Handle[M],
 ) -> Material2dRuntimeEntry {
-  let type_name = material2d_type_name(probe)
+  let type_name = material2d_runtime_type_name(probe)
   let material_key : @ecs.ComponentKey[MeshMaterial2d[M]] = MeshMaterial2d::component()
   let contains_source_material = fn(
     source_world : @ecs.World,

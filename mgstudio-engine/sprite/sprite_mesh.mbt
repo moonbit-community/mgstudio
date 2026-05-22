@@ -68,6 +68,16 @@ pub impl @asset.Asset for SpriteMaterial with asset_as_image(_self) {
 }
 
 ///|
+let sprite_material_asset_resource_keys : @asset.AssetResourceKeys[
+  SpriteMaterial,
+] = @asset.register_asset_resource_keys(SpriteMaterial::asset_debug_name())
+
+///|
+pub impl @asset.Asset for SpriteMaterial with asset_resource_keys() {
+  sprite_material_asset_resource_keys
+}
+
+///|
 fn sprite_alpha_mode_to_alpha_mode2d(
   alpha_mode : SpriteAlphaMode,
 ) -> AlphaMode2d {
@@ -729,6 +739,16 @@ pub impl Material2d for SpriteMaterial with alpha_mode(self) {
 ///|
 pub impl Material2d for SpriteMaterial with material2d_debug_name() {
   "mgstudio_sprite::SpriteMaterial"
+}
+
+///|
+let sprite_material_material2d_keys : Material2dKeys[SpriteMaterial] = register_material2d_keys(
+  SpriteMaterial::material2d_debug_name(),
+)
+
+///|
+pub impl Material2d for SpriteMaterial with material2d_keys() {
+  sprite_material_material2d_keys
 }
 
 ///|

@@ -85,18 +85,17 @@ pub fn[C, F] extract_component_only_extract_visible(
 }
 
 ///|
-pub impl[C : @ecs.Component + @ecs.EcsPayloadCodec, F] @app.Plugin for ExtractComponentPlugin[
-  C,
-  F,
-] with name(_self) {
+pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] with name(
+  _self,
+) {
   EXTRACT_COMPONENT_PLUGIN_NAME
 }
 
 ///|
-pub impl[C : @ecs.Component + @ecs.EcsPayloadCodec, F] @app.Plugin for ExtractComponentPlugin[
-  C,
-  F,
-] with build(self, app) {
+pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] with build(
+  self,
+  app,
+) {
   extract_component_plugin_with(app, self)
 }
 
@@ -111,7 +110,7 @@ fn[T] extract_component_register_world_component(
 }
 
 ///|
-fn[C : @ecs.Component + @ecs.EcsPayloadCodec] extract_components(
+fn[C : @ecs.Component] extract_components(
   render_world : @ecs.World,
   only_visible : Bool,
   component_key : @ecs.ComponentKey[C],
@@ -188,7 +187,7 @@ pub fn extract_component_plugin(
 }
 
 ///|
-pub fn[C : @ecs.Component + @ecs.EcsPayloadCodec, F] extract_component_plugin_with(
+pub fn[C : @ecs.Component, F] extract_component_plugin_with(
   app : @app.App[@ecs.World],
   plugin : ExtractComponentPlugin[C, F],
 ) -> @app.App[@ecs.World] {

@@ -37,46 +37,26 @@ let asset_load_failed_untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent]
 )
 
 ///|
-let asset_load_failed_typed_message_registry : Ref[
-  @hashmap.HashMap[String, Int],
-] = Ref(@hashmap.HashMap([]))
-
-///|
 let asset_load_failed_dispatch_registry : Ref[
   @hashmap.HashMap[String, AssetLoadFailedDispatch],
 ] = Ref(@hashmap.HashMap([]))
 
 ///|
-fn[T] registered_asset_load_failed_message_key_with_type_name(
-  type_name : String,
-) -> @ecs.MessageKey[AssetLoadFailedEvent[T]] {
-  match asset_load_failed_typed_message_registry.val.get(type_name) {
-    Some(id) =>
-      @ecs.message_key_from_id(
-        id,
-        debug_name="mgstudio_asset::AssetLoadFailedEvent<\{type_name}>",
-      )
-    None => {
-      let key : @ecs.MessageKey[AssetLoadFailedEvent[T]] = @ecs.register_message(
-        debug_name="mgstudio_asset::AssetLoadFailedEvent<\{type_name}>",
-      )
-      asset_load_failed_typed_message_registry.val.set(type_name, key.id())
-      key
-    }
-  }
+fn[T : Asset] registered_asset_load_failed_message_key() -> @ecs.MessageKey[
+  AssetLoadFailedEvent[T],
+] {
+  T::asset_resource_keys().load_failed
 }
 
 ///|
-fn[T] register_asset_load_failed_dispatch_for_type_name(
+fn[T : Asset] register_asset_load_failed_dispatch_for_type_name(
   type_name : String,
   _probe : Assets[T],
 ) -> Unit {
   if asset_load_failed_dispatch_registry.val.contains(type_name) {
     return
   }
-  let message_key : @ecs.MessageKey[AssetLoadFailedEvent[T]] = registered_asset_load_failed_message_key_with_type_name(
-    type_name,
-  )
+  let message_key : @ecs.MessageKey[AssetLoadFailedEvent[T]] = registered_asset_load_failed_message_key()
   let dispatch : AssetLoadFailedDispatch = fn(world, failure) {
     if !world.contains_message(message_key) {
       world.init_message(message_key)
@@ -123,7 +103,7 @@ pub impl[T : Asset] @ecs.Message for AssetLoadFailedEvent[T] with message() {
   let type_name = assets_type_name((None : T?))
   let probe : Assets[T] = Assets::new()
   register_asset_load_failed_dispatch_for_type_name(type_name, probe)
-  registered_asset_load_failed_message_key_with_type_name(type_name)
+  registered_asset_load_failed_message_key()
 }
 
 ///|

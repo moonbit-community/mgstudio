@@ -51,7 +51,6 @@ pub struct Skybox {
 } derive(ToJson, @json.FromJson)
 pub fn Skybox::Skybox() -> Self
 pub impl @ecs.Component for Skybox
-pub impl @ecs.EcsPayloadCodec for Skybox
 
 pub struct SkyboxBindGroup {
   bind_group_id : Int
@@ -79,7 +78,6 @@ pub fn SkyboxPipelineState::SkyboxPipelineState() -> Self
 pub fn SkyboxPipelineState::record_bind_group(Self) -> Unit
 pub fn SkyboxPipelineState::record_pipeline(Self) -> Unit
 pub impl @app.Resource for SkyboxPipelineState
-pub impl @ecs.EcsPayloadCodec for SkyboxPipelineState
 
 pub struct SkyboxPlugin {
 }

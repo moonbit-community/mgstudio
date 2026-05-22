@@ -49,6 +49,18 @@ pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with gizmo_config_
 }
 
 ///|
+let frustum_gizmo_storage_resource_key : @ecs.ResourceKey[
+  @sprite.GizmoStorage[FrustumGizmoConfigGroup],
+] = @ecs.register_resource(
+  debug_name="mgstudio_gizmos::GizmoStorage<mgstudio_gizmos::FrustumGizmoConfigGroup>",
+)
+
+///|
+pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with gizmo_storage_resource_key() {
+  frustum_gizmo_storage_resource_key
+}
+
+///|
 extenum @sprite.GizmoConfigGroupCell += {
   FrustumGizmoConfigGroupCell(Ref[FrustumGizmoConfigGroup])
 }

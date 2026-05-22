@@ -177,6 +177,16 @@ pub impl @asset.Asset for Scene with asset_as_image(_self) {
 }
 
 ///|
+let scene_asset_resource_keys : @asset.AssetResourceKeys[Scene] = @asset.register_asset_resource_keys(
+  Scene::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for Scene with asset_resource_keys() {
+  scene_asset_resource_keys
+}
+
+///|
 pub fn Scene::new(nodes3d : Array[SceneNode3d]) -> Scene {
   Scene::{ nodes3d, gltf_scene_extras: None, ready: true }
 }

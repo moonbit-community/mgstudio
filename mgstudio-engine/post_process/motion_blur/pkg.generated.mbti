@@ -29,7 +29,6 @@ pub fn MotionBlur::new(Float, Int) -> Self
 pub fn MotionBlur::with_samples(Self, Int) -> Self
 pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
 pub impl @ecs.Component for MotionBlur
-pub impl @ecs.EcsPayloadCodec for MotionBlur
 
 pub struct MotionBlurSample {
   offset : Float

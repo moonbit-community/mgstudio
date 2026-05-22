@@ -63,7 +63,6 @@ pub enum DebugPickingMode {
 } derive(Eq, @debug.Debug)
 pub fn DebugPickingMode::default() -> Self
 pub impl @app.Resource for DebugPickingMode
-pub impl @ecs.EcsPayloadCodec for DebugPickingMode
 
 pub struct DevToolsDiagnosticsOverlayPlugin {
 }
@@ -99,7 +98,6 @@ pub fn DiagnosticsOverlay::fps() -> Self
 pub fn DiagnosticsOverlay::new(String, Array[DiagnosticsOverlayItem]) -> Self
 pub fn DiagnosticsOverlay::render() -> Self
 pub impl @ecs.Component for DiagnosticsOverlay
-pub impl @ecs.EcsPayloadCodec for DiagnosticsOverlay
 
 pub struct DiagnosticsOverlayItem {
   statistic : DiagnosticsOverlayStatistic
@@ -111,7 +109,6 @@ pub fn DiagnosticsOverlayItem::default_with_path(@diagnostic.DiagnosticPath) -> 
 pub struct DiagnosticsOverlayPlane {
 }
 pub impl @ecs.Component for DiagnosticsOverlayPlane
-pub impl @ecs.EcsPayloadCodec for DiagnosticsOverlayPlane
 
 pub(all) struct DiagnosticsOverlayPlugin {
   refresh_interval_seconds : Float
@@ -131,14 +128,12 @@ pub struct EasyScreenshotConfig {
 }
 pub fn EasyScreenshotConfig::EasyScreenshotConfig() -> Self
 pub impl @app.Resource for EasyScreenshotConfig
-pub impl @ecs.EcsPayloadCodec for EasyScreenshotConfig
 
 pub(all) struct EasyScreenshotState {
   mut next_capture_index : Int
   mut pending_capture_frames : Int
 }
 pub impl @app.Resource for EasyScreenshotState
-pub impl @ecs.EcsPayloadCodec for EasyScreenshotState
 
 pub(all) struct FpsOverlayConfig {
   mut text_config : @text.TextFont
@@ -149,7 +144,6 @@ pub(all) struct FpsOverlayConfig {
 }
 pub fn FpsOverlayConfig::FpsOverlayConfig() -> Self
 pub impl @app.Resource for FpsOverlayConfig
-pub impl @ecs.EcsPayloadCodec for FpsOverlayConfig
 
 pub(all) struct FpsOverlayPlugin {
   config : FpsOverlayConfig
@@ -185,7 +179,6 @@ pub(all) struct FrametimeGraphMaterial {
 }
 pub fn FrametimeGraphMaterial::new(@asset.Handle[@render_resource.StorageBuffer[Float]], FrameTimeGraphConfigUniform) -> Self
 pub impl @asset.Asset for FrametimeGraphMaterial
-pub impl @ecs.EcsPayloadCodec for FrametimeGraphMaterial
 
 // Type aliases
 

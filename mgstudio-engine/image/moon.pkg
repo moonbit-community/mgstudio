@@ -1,5 +1,1 @@
 supported_targets = "native"
-
-import {
-  "Milky2018/mgstudio/ecs",
-}

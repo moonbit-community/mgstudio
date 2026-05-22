@@ -43,6 +43,11 @@ pub impl TimeContext for Fixed with time_context_debug_name() {
 }
 
 ///|
+pub impl TimeContext for Fixed with time_resource_key() {
+  fixed_time_resource_key
+}
+
+///|
 pub fn Time::from_duration(timestep : @core.Duration) -> Time[Fixed] {
   let fixed_time : Time[Fixed] = Time::Time()
   fixed_time.set_timestep(timestep)

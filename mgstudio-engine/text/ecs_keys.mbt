@@ -798,7 +798,7 @@ fn text_ecs_world_entity_ref(
 }
 
 ///|
-fn[T : @ecs.Component + @ecs.EcsPayloadCodec] text_ecs_entity_ref_get(
+fn[T : @ecs.Component] text_ecs_entity_ref_get(
   entity_ref : @ecs.EntityRef,
 ) -> T? {
   entity_ref.get() catch {

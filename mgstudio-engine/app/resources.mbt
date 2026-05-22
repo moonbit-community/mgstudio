@@ -52,29 +52,13 @@ pub struct StateTransitionEvent[S] {
 } derive(Eq, Debug)
 
 ///|
-let state_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
-
-///|
-let previous_state_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
-
-///|
-let next_state_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
-  @hashmap.HashMap([]),
-)
-
-///|
-let state_transition_event_resource_registry : Ref[
-  @hashmap.HashMap[String, Int],
-] = Ref(@hashmap.HashMap([]))
-
-///|
-let pending_state_transition_event_resource_registry : Ref[
-  @hashmap.HashMap[String, Int],
-] = Ref(@hashmap.HashMap([]))
+pub struct StateResourceKeys[S] {
+  state : @ecs.ResourceKey[State[S]]
+  previous_state : @ecs.ResourceKey[PreviousState[S]]
+  next_state : @ecs.ResourceKey[NextState[S]]
+  state_transition_event : @ecs.ResourceKey[StateTransitionEvent[S]]
+  pending_state_transition_event : @ecs.ResourceKey[StateTransitionEvent[S]]
+}
 
 ///|
 fn[S : States] state_type_debug_name(state : S) -> String {
@@ -83,60 +67,59 @@ fn[S : States] state_type_debug_name(state : S) -> String {
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] registered_typed_resource_key(
-  registry : Ref[@hashmap.HashMap[String, Int]],
-  debug_name : String,
-) -> @ecs.ResourceKey[T] {
-  match registry.val.get(debug_name) {
-    Some(id) => @ecs.resource_key_from_id(id, debug_name~)
-    None => {
-      let key : @ecs.ResourceKey[T] = @ecs.register_erased_resource(debug_name~)
-      registry.val.set(debug_name, key.id())
-      key
-    }
+pub fn[S] register_state_resource_keys(
+  type_debug_name : String,
+) -> StateResourceKeys[S] {
+  {
+    state: @ecs.register_resource(
+      debug_name="mgstudio_state::State<\{type_debug_name}>",
+    ),
+    previous_state: @ecs.register_resource(
+      debug_name="mgstudio_state::PreviousState<\{type_debug_name}>",
+    ),
+    next_state: @ecs.register_resource(
+      debug_name="mgstudio_state::NextState<\{type_debug_name}>",
+    ),
+    state_transition_event: @ecs.register_resource(
+      debug_name="mgstudio_state::StateTransitionEvent<\{type_debug_name}>",
+    ),
+    pending_state_transition_event: @ecs.register_resource(
+      debug_name="mgstudio_state::PendingStateTransitionEvent<\{type_debug_name}>",
+    ),
   }
 }
 
 ///|
 fn[S : States] registered_state_resource_key() -> @ecs.ResourceKey[State[S]] {
-  let debug_name = "mgstudio_state::State<\{S::type_debug_name()}>"
-  registered_typed_resource_key(state_resource_registry, debug_name)
+  S::state_resource_keys().state
 }
 
 ///|
 fn[S : States] registered_previous_state_resource_key() -> @ecs.ResourceKey[
   PreviousState[S],
 ] {
-  let debug_name = "mgstudio_state::PreviousState<\{S::type_debug_name()}>"
-  registered_typed_resource_key(previous_state_resource_registry, debug_name)
+  S::state_resource_keys().previous_state
 }
 
 ///|
 fn[S : States] registered_next_state_resource_key() -> @ecs.ResourceKey[
   NextState[S],
 ] {
-  let debug_name = "mgstudio_state::NextState<\{S::type_debug_name()}>"
-  registered_typed_resource_key(next_state_resource_registry, debug_name)
+  S::state_resource_keys().next_state
 }
 
 ///|
 fn[S : States] registered_state_transition_event_resource_key() -> @ecs.ResourceKey[
   StateTransitionEvent[S],
 ] {
-  let debug_name = "mgstudio_state::StateTransitionEvent<\{S::type_debug_name()}>"
-  registered_typed_resource_key(
-    state_transition_event_resource_registry, debug_name,
-  )
+  S::state_resource_keys().state_transition_event
 }
 
 ///|
 fn[S : States] registered_pending_state_transition_event_resource_key() -> @ecs.ResourceKey[
   StateTransitionEvent[S],
 ] {
-  let debug_name = "mgstudio_state::PendingStateTransitionEvent<\{S::type_debug_name()}>"
-  registered_typed_resource_key(
-    pending_state_transition_event_resource_registry, debug_name,
-  )
+  S::state_resource_keys().pending_state_transition_event
 }
 
 ///|

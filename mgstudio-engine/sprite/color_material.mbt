@@ -44,6 +44,16 @@ pub impl @asset.Asset for ColorMaterialAsset with asset_as_image(_self) {
 }
 
 ///|
+let color_material_asset_resource_keys : @asset.AssetResourceKeys[
+  ColorMaterialAsset,
+] = @asset.register_asset_resource_keys(ColorMaterialAsset::asset_debug_name())
+
+///|
+pub impl @asset.Asset for ColorMaterialAsset with asset_resource_keys() {
+  color_material_asset_resource_keys
+}
+
+///|
 pub(open) trait IntoColorMaterialAsset {
   fn into_color_material_asset(Self) -> ColorMaterialAsset
 }
@@ -373,6 +383,16 @@ pub impl Material2d for ColorMaterial with material2d_debug_name() {
 }
 
 ///|
+let color_material_material2d_keys : Material2dKeys[ColorMaterial] = register_material2d_keys(
+  ColorMaterial::material2d_debug_name(),
+)
+
+///|
+pub impl Material2d for ColorMaterial with material2d_keys() {
+  color_material_material2d_keys
+}
+
+///|
 pub impl Material2d for ColorMaterial with bind_group(self) {
   Material2dBindGroup::color_material(
     ColorMaterial::color(self),
@@ -391,6 +411,16 @@ pub impl Material2d for ColorMaterialAsset with alpha_mode(self) {
 ///|
 pub impl Material2d for ColorMaterialAsset with material2d_debug_name() {
   "mgstudio_sprite::ColorMaterialAsset"
+}
+
+///|
+let color_material_asset_material2d_keys : Material2dKeys[ColorMaterialAsset] = register_material2d_keys(
+  ColorMaterialAsset::material2d_debug_name(),
+)
+
+///|
+pub impl Material2d for ColorMaterialAsset with material2d_keys() {
+  color_material_asset_material2d_keys
 }
 
 ///|
@@ -522,6 +552,18 @@ pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with alpha_mode(self)
 ///|
 pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with material2d_debug_name() {
   "mgstudio_sprite::MeshMaterial2d<mgstudio_sprite::ColorMaterialAsset>"
+}
+
+///|
+let mesh_color_material_asset_material2d_keys : Material2dKeys[
+  MeshMaterial2d[ColorMaterialAsset],
+] = register_material2d_keys(
+  "mgstudio_sprite::MeshMaterial2d<mgstudio_sprite::ColorMaterialAsset>",
+)
+
+///|
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with material2d_keys() {
+  mesh_color_material_asset_material2d_keys
 }
 
 ///|

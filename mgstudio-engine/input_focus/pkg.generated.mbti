@@ -5,6 +5,8 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/input",
+  "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
@@ -18,11 +20,11 @@ pub fn auto_generate_navigation_edges(DirectionalNavigationMap, Array[FocusableA
 
 pub fn directional_navigation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[M : @ecs.Message] dispatch_focused_input(@ecs.MessageReader[M], @app.ResMut[InputFocus]) -> Unit
+pub fn[M : FocusedInputSourceMessage] dispatch_focused_input(@ecs.MessageReader[M], @app.ResMut[InputFocus]) -> Unit
 
 pub fn find_best_candidate(FocusableArea, @math.CompassOctant, Array[FocusableArea], AutoNavigationConfig) -> @core.Entity?
 
-pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[FocusedInput[M]]
+pub fn[M : FocusedInputSourceMessage] focused_input_message_key() -> @ecs.MessageKey[FocusedInput[M]]
 
 pub fn input_dispatch_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -52,7 +54,6 @@ pub(all) suberror DirectionalNavigationError {
 pub struct AutoFocus {
 } derive(Default, @debug.Debug)
 pub impl @ecs.Component for AutoFocus
-pub impl @ecs.EcsPayloadCodec for AutoFocus
 
 pub struct AutoNavigationConfig {
   min_alignment_factor : Float
@@ -65,7 +66,6 @@ pub fn AutoNavigationConfig::min_alignment_factor(Self) -> Float
 pub fn AutoNavigationConfig::new(Float, Float?, Bool) -> Self
 pub fn AutoNavigationConfig::prefer_aligned(Self) -> Bool
 pub impl @app.Resource for AutoNavigationConfig
-pub impl @ecs.EcsPayloadCodec for AutoNavigationConfig
 
 pub struct DirectionalNavigation {
   world : @ecs.World
@@ -87,7 +87,6 @@ pub fn DirectionalNavigationMap::get_neighbor(Self, @core.Entity, @math.CompassO
 pub fn DirectionalNavigationMap::get_neighbors(Self, @core.Entity) -> NavNeighbors?
 pub fn DirectionalNavigationMap::remove(Self, @core.Entity) -> Unit
 pub impl @app.Resource for DirectionalNavigationMap
-pub impl @ecs.EcsPayloadCodec for DirectionalNavigationMap
 
 pub struct DirectionalNavigationPlugin {
 }
@@ -110,14 +109,7 @@ pub struct FocusedInput[M] {
   window : @core.Entity
 }
 pub fn[M] FocusedInput::new(@core.Entity, M, @core.Entity) -> Self[M]
-pub impl[M : @ecs.EcsPayloadCodec] @ecs.EcsPayloadCodec for FocusedInput[M]
-pub impl[M : @ecs.Message] @ecs.Message for FocusedInput[M]
-
-pub(all) struct FocusedInputPayload {
-  focused_entity : @core.Entity
-  input : @ecs.EcsPayload
-  window : @core.Entity
-}
+pub impl[M : FocusedInputSourceMessage] @ecs.Message for FocusedInput[M]
 
 pub struct InputDispatchPlugin {
 }
@@ -133,7 +125,6 @@ pub fn InputFocus::from_entity(@core.Entity) -> Self
 pub fn InputFocus::get(Self) -> @core.Entity?
 pub fn InputFocus::set(Self, @core.Entity) -> Unit
 pub impl @app.Resource for InputFocus
-pub impl @ecs.EcsPayloadCodec for InputFocus
 
 pub(all) enum InputFocusSystems {
   Dispatch
@@ -147,7 +138,6 @@ pub fn InputFocusVisible::new(Bool) -> Self
 pub fn InputFocusVisible::set_visible(Self, Bool) -> Unit
 pub fn InputFocusVisible::visible(Self) -> Bool
 pub impl @app.Resource for InputFocusVisible
-pub impl @ecs.EcsPayloadCodec for InputFocusVisible
 
 pub struct IsFocusedHelper {
   world : @ecs.World
@@ -178,7 +168,6 @@ pub fn TabGroup::modal() -> Self
 pub fn TabGroup::new(Int) -> Self
 pub fn TabGroup::order(Self) -> Int
 pub impl @ecs.Component for TabGroup
-pub impl @ecs.EcsPayloadCodec for TabGroup
 
 pub struct TabIndex {
   value : Int
@@ -186,7 +175,6 @@ pub struct TabIndex {
 pub fn TabIndex::new(Int) -> Self
 pub fn TabIndex::value(Self) -> Int
 pub impl @ecs.Component for TabIndex
-pub impl @ecs.EcsPayloadCodec for TabIndex
 
 pub struct TabNavigationPlugin {
 }
@@ -196,6 +184,13 @@ pub impl @app.Plugin for TabNavigationPlugin
 // Type aliases
 
 // Traits
+pub(open) trait FocusedInputSourceMessage {
+  fn focused_input_message_key() -> @ecs.MessageKey[FocusedInput[Self]]
+}
+pub impl FocusedInputSourceMessage for @input.GamepadButtonChangedEvent
+pub impl FocusedInputSourceMessage for @events.KeyboardInput
+pub impl FocusedInputSourceMessage for @events.MouseWheel
+
 pub(open) trait IsFocused {
   fn is_focused(Self, @core.Entity) -> Bool
   fn is_focus_within(Self, @core.Entity) -> Bool

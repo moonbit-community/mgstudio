@@ -24,7 +24,7 @@ pub(open) trait ResourceData {}
 
 ///|
 /// ECS event value constraint.
-pub(open) trait EventData: EcsPayloadCodec {}
+pub(open) trait EventData {}
 
 ///|
 pub struct ComponentKey[T] {
@@ -61,9 +61,10 @@ pub fn[T] ResourceKey::debug_name(self : ResourceKey[T]) -> String {
 }
 
 ///|
-pub struct EventKey[_] {
+pub struct EventKey[T] {
   priv id : Int
   priv debug_name : String
+  priv access : EventAccessOps[T]
 }
 
 ///|
@@ -74,11 +75,6 @@ pub fn[T] EventKey::id(self : EventKey[T]) -> Int {
 ///|
 pub fn[T] EventKey::debug_name(self : EventKey[T]) -> String {
   self.debug_name
-}
-
-///|
-pub fn[U, T] EventKey::cast(self : EventKey[T]) -> EventKey[U] {
-  EventKey::{ id: self.id, debug_name: self.debug_name }
 }
 
 ///|
@@ -126,22 +122,6 @@ pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ensure_erased_component(
-  key : ComponentKey[T],
-) -> ComponentKey[T] {
-  ensure_component_ops_for_key(key)
-  key
-}
-
-///|
-pub fn[T : EcsPayloadCodec] register_erased_component(
-  debug_name? : String = "",
-) -> ComponentKey[T] {
-  let key : ComponentKey[T] = register_component(debug_name~)
-  ensure_erased_component(key)
-}
-
-///|
 fn allocate_resource_id(debug_name? : String = "") -> Int {
   ignore(debug_name)
   let id = next_resource_id_ref.val
@@ -156,86 +136,12 @@ pub fn[T] register_resource(debug_name? : String = "") -> ResourceKey[T] {
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] register_erased_resource(
-  debug_name? : String = "",
-) -> ResourceKey[T] {
-  let key : ResourceKey[T] = register_resource(debug_name~)
-  register_resource_ops(key.id(), key)
-  key
-}
-
-///|
-pub fn[T : EcsPayloadCodec] component_key_from_id(
-  id : Int,
-  debug_name? : String = "",
-) -> ComponentKey[T] {
-  let ops = component_ops(id)
-  let access = ComponentAccess::{
-    contains: ops.contains,
-    get: fn(world, entity) {
-      match (ops.payload)(world, entity) {
-        Some(payload) => T::from_ecs_payload(payload)
-        None => None
-      }
-    },
-    set: fn(world, entity, value) {
-      ignore((ops.set_payload)(world, entity, T::to_ecs_payload(value)))
-    },
-    remove: fn(world, entity) {
-      match (ops.remove_payload)(world, entity) {
-        Some(payload) => T::from_ecs_payload(payload)
-        None => None
-      }
-    },
-    for_each: fn(world, visit) {
-      (ops.for_each_payload)(world, fn(entity, payload) {
-        match T::from_ecs_payload(payload) {
-          Some(value) => visit(entity, value)
-          None => ()
-        }
-      })
-    },
-  }
-  ComponentKey::{ id, debug_name, access }
-}
-
-///|
-pub fn[T : EcsPayloadCodec] resource_key_from_id(
-  id : Int,
-  debug_name? : String = "",
-) -> ResourceKey[T] {
-  let ops = resource_ops(id)
-  let access = ResourceAccessOps::{
-    contains: ops.contains,
-    get: fn(world) {
-      match (ops.payload)(world) {
-        Some(payload) => T::from_ecs_payload(payload)
-        None => None
-      }
-    },
-    set: fn(world, value) {
-      ignore((ops.set_payload)(world, T::to_ecs_payload(value)))
-    },
-    remove: fn(world) {
-      match (ops.remove_payload)(world) {
-        Some(payload) => T::from_ecs_payload(payload)
-        None => None
-      }
-    },
-  }
-  ResourceKey::{ id, debug_name, access }
-}
-
-///|
 pub fn[T] register_event(debug_name? : String = "") -> EventKey[T] {
   let id = next_event_id_ref.val
   next_event_id_ref.val = id + 1
-  EventKey::{ id, debug_name }
-}
-
-///|
-pub fn[T] event_key_from_id(id : Int, debug_name? : String = "") -> EventKey[T] {
-  EventKey::{ id, debug_name }
+  let key = EventKey::{ id, debug_name, access: event_access_ops_new() }
+  register_event_ops(id, key)
+  key
 }
 
 ///|
@@ -248,7 +154,6 @@ pub(all) suberror EcsError {
   ResourceTypeMismatch(Int, String, String)
   EventTypeMismatch(Int, String, Int, String)
   MessageTypeMismatch(Int, String, Int, String)
-  PayloadTypeMismatch(Int, String)
 }
 
 ///|
@@ -320,21 +225,20 @@ fn component_tick_metadata_check_ticks(
 }
 
 ///|
-priv struct PendingComponentPayloadEntry {
+priv struct PendingComponentWriteEntry {
   local_component_id : Int
-  mut writer : EcsPayloadWriter
   mut metadata : ComponentTickMetadata
 }
 
 ///|
-priv struct PendingComponentPayloadSet {
-  entries : Array[PendingComponentPayloadEntry]
+priv struct PendingComponentWriteSet {
+  entries : Array[PendingComponentWriteEntry]
   indices_by_local_component_id : Map[Int, Int]
   presence : @utils.IntBitSet
 }
 
 ///|
-fn pending_component_payload_set_new() -> PendingComponentPayloadSet {
+fn pending_component_write_set_new() -> PendingComponentWriteSet {
   {
     entries: [],
     indices_by_local_component_id: {},
@@ -343,35 +247,24 @@ fn pending_component_payload_set_new() -> PendingComponentPayloadSet {
 }
 
 ///|
-fn PendingComponentPayloadSet::index_of(
-  self : PendingComponentPayloadSet,
+fn PendingComponentWriteSet::index_of(
+  self : PendingComponentWriteSet,
   local_component_id : Int,
 ) -> Int? {
   self.indices_by_local_component_id.get(local_component_id)
 }
 
 ///|
-fn PendingComponentPayloadSet::contains(
-  self : PendingComponentPayloadSet,
+fn PendingComponentWriteSet::contains(
+  self : PendingComponentWriteSet,
   local_component_id : Int,
 ) -> Bool {
   self.presence.contains(local_component_id)
 }
 
 ///|
-fn PendingComponentPayloadSet::writer(
-  self : PendingComponentPayloadSet,
-  local_component_id : Int,
-) -> EcsPayloadWriter? {
-  match self.index_of(local_component_id) {
-    Some(index) => Some(self.entries[index].writer)
-    None => None
-  }
-}
-
-///|
-fn PendingComponentPayloadSet::metadata(
-  self : PendingComponentPayloadSet,
+fn PendingComponentWriteSet::metadata(
+  self : PendingComponentWriteSet,
   local_component_id : Int,
 ) -> ComponentTickMetadata? {
   match self.index_of(local_component_id) {
@@ -381,29 +274,25 @@ fn PendingComponentPayloadSet::metadata(
 }
 
 ///|
-fn PendingComponentPayloadSet::set_writer(
-  self : PendingComponentPayloadSet,
+fn PendingComponentWriteSet::insert(
+  self : PendingComponentWriteSet,
   local_component_id : Int,
-  writer : EcsPayloadWriter,
 ) -> Unit {
-  match self.index_of(local_component_id) {
-    Some(index) => self.entries[index].writer = writer
-    None => {
-      let index = self.entries.length()
-      self.entries.push({
-        local_component_id,
-        writer,
-        metadata: component_tick_metadata_empty(),
-      })
-      self.indices_by_local_component_id.set(local_component_id, index)
-      self.presence.insert(local_component_id)
-    }
+  if self.contains(local_component_id) {
+    return
   }
+  let index = self.entries.length()
+  self.entries.push({
+    local_component_id,
+    metadata: component_tick_metadata_empty(),
+  })
+  self.indices_by_local_component_id.set(local_component_id, index)
+  self.presence.insert(local_component_id)
 }
 
 ///|
-fn PendingComponentPayloadSet::set_metadata(
-  self : PendingComponentPayloadSet,
+fn PendingComponentWriteSet::set_metadata(
+  self : PendingComponentWriteSet,
   local_component_id : Int,
   metadata : ComponentTickMetadata,
 ) -> Unit {
@@ -414,9 +303,9 @@ fn PendingComponentPayloadSet::set_metadata(
 }
 
 ///|
-struct PendingComponentPayloadContext {
+struct PendingComponentWriteContext {
   entity_id : Int
-  payloads : PendingComponentPayloadSet
+  writes : PendingComponentWriteSet
 }
 
 ///|
@@ -457,7 +346,7 @@ pub struct World {
   priv mut change_tick : @core.Tick
   priv mut last_change_tick_check : @core.Tick
   priv mut system_tick_context : @core.SystemTickContext
-  priv mut pending_component_payload_context : PendingComponentPayloadContext?
+  priv mut pending_component_write_context : PendingComponentWriteContext?
   priv mut active_query_iteration_count : Int
   priv tables : Map[Int, Ref[RawTable]]
   priv sparse_component_metadata : Map[
@@ -504,8 +393,6 @@ pub struct World {
   priv removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   priv component_hooks_registry : Map[Int, ComponentHooks]
   priv resources : Map[Int, ResourceSlot]
-  priv mut previous_events : Map[Int, Array[EcsPayload]]
-  priv current_events : Map[Int, Array[EcsPayload]]
   priv mut deferred_hook_command_depth : Int
   priv deferred_hook_commands : Array[DeferredHookCommand]
 }
@@ -530,7 +417,7 @@ pub fn World::new() -> World {
     change_tick: 0,
     last_change_tick_check: 0,
     system_tick_context: @core.SystemTickContext::new(),
-    pending_component_payload_context: None,
+    pending_component_write_context: None,
     active_query_iteration_count: 0,
     tables: {},
     sparse_component_metadata: {},
@@ -574,8 +461,6 @@ pub fn World::new() -> World {
     removed_components: {},
     component_hooks_registry: {},
     resources: {},
-    previous_events: {},
-    current_events: {},
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
   }
@@ -635,24 +520,24 @@ pub fn World::despawn(
   self.ensure_query_iteration_can_change_structure("despawn entity")
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
-  let removed_components : Array[(Int, EcsPayload)] = []
+  let removed_components : Array[Int] = []
   let component_local_ids = self.entity_local_components(entity).copy()
   for local_id in component_local_ids {
     guard self.definition_component_id(local_id) is Some(key_id) else {
       continue
     }
-    if self.component_payload_by_local_id(entity, local_id) is Some(payload) {
-      removed_components.push((key_id, payload))
+    if self.component_present_by_local_id(entity, local_id) {
+      removed_components.push(key_id)
     }
   }
-  for entry in removed_components {
-    self.run_component_despawn_hooks(entity, entry.0, caller~)
-    self.run_despawn_observers(entity, entry.0)
+  for key_id in removed_components {
+    self.run_component_despawn_hooks(entity, key_id, caller~)
+    self.run_despawn_observers(entity, key_id)
   }
-  for entry in removed_components {
-    self.run_component_replace_hooks(entity, entry.0, caller~)
-    self.run_replace_observers(entity, entry.0)
-    self.run_component_remove_hooks(entity, entry.0, caller~)
+  for key_id in removed_components {
+    self.run_component_replace_hooks(entity, key_id, caller~)
+    self.run_replace_observers(entity, key_id)
+    self.run_component_remove_hooks(entity, key_id, caller~)
   }
   self.entities.despawn(entity) catch {
     err => raise EntityStateError(err)
@@ -660,10 +545,9 @@ pub fn World::despawn(
   self.clear_entity_archetype_tracking(entity)
   self.mark_entity_lifecycle_changed()
   self.mark_structure_changed()
-  for entry in removed_components {
-    let key_id = entry.0
+  for key_id in removed_components {
     if self.local_component_id(key_id) is Some(local_id) {
-      ignore(self.remove_component_payload_by_local_id(entity, local_id))
+      ignore(self.remove_component_write_by_local_id(entity, local_id))
     }
     self.run_remove_observers(entity, key_id)
     self.ensure_removed_component_messages(key_id).val.send(
@@ -677,7 +561,7 @@ pub fn World::despawn(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] World::set_by_key(
+pub fn[T] World::set_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -687,13 +571,13 @@ pub fn[T : EcsPayloadCodec] World::set_by_key(
   self.insert_component_with_requirements(
     entity,
     key.id(),
-    ecs_payload_writer(key, value),
+    component_writer_for_key(key, value),
     caller=hook_caller_from_loc(loc),
   )
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::get_by_key(
+pub fn[T] World::get_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -704,7 +588,7 @@ pub fn[T : EcsPayloadCodec] World::get_by_key(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] World::update_by_key(
+pub fn[T] World::update_by_key(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -740,7 +624,7 @@ pub fn[T] World::remove_by_key(
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
-  guard self.component_payload(key.id(), entity) is Some(_) else {
+  guard self.component_present(key.id(), entity) else {
     self.end_deferred_hook_command_scope(outermost)
     return false
   }
@@ -749,7 +633,7 @@ pub fn[T] World::remove_by_key(
   self.run_component_replace_hooks(entity, key.id(), caller~)
   self.run_replace_observers(entity, key.id())
   self.run_component_remove_hooks(entity, key.id(), caller~)
-  ignore(self.remove_component_payload_by_local_id(entity, component_local_id))
+  ignore(self.remove_component_write_by_local_id(entity, component_local_id))
   self.entity_remove_component_local_id(entity, component_local_id)
   self.refresh_entity_archetype_after_component_remove(
     entity, component_local_id,
@@ -767,7 +651,7 @@ pub fn[T] World::remove_by_key(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component + EcsPayloadCodec] World::set(
+pub fn[T : Component] World::set(
   self : World,
   entity : @core.Entity,
   key? : ComponentKey[T] = T::component(),
@@ -778,7 +662,7 @@ pub fn[T : Component + EcsPayloadCodec] World::set(
 }
 
 ///|
-pub fn[T : Component + EcsPayloadCodec] World::get(
+pub fn[T : Component] World::get(
   self : World,
   entity : @core.Entity,
   key? : ComponentKey[T] = T::component(),
@@ -788,7 +672,7 @@ pub fn[T : Component + EcsPayloadCodec] World::get(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component + EcsPayloadCodec] World::update(
+pub fn[T : Component] World::update(
   self : World,
   entity : @core.Entity,
   key? : ComponentKey[T] = T::component(),
@@ -968,10 +852,10 @@ fn World::pending_component_tick_metadata(
   entity_id : Int,
   local_component_id : Int,
 ) -> ComponentTickMetadata? {
-  match self.pending_component_payload_context {
+  match self.pending_component_write_context {
     Some(context) =>
       if context.entity_id == entity_id {
-        context.payloads.metadata(local_component_id)
+        context.writes.metadata(local_component_id)
       } else {
         None
       }
@@ -987,14 +871,14 @@ fn World::record_pending_component_added_metadata(
   tick : @core.Tick,
   caller : String?,
 ) -> Bool {
-  match self.pending_component_payload_context {
+  match self.pending_component_write_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.contains(local_component_id) {
-        context.payloads.set_metadata(
+        context.writes.contains(local_component_id) {
+        context.writes.set_metadata(
           local_component_id,
           component_tick_metadata_with_added(
-            context.payloads.metadata(local_component_id),
+            context.writes.metadata(local_component_id),
             tick,
             caller,
           ),
@@ -1015,14 +899,14 @@ fn World::record_pending_component_changed_metadata(
   tick : @core.Tick,
   caller : String?,
 ) -> Bool {
-  match self.pending_component_payload_context {
+  match self.pending_component_write_context {
     Some(context) =>
       if context.entity_id == entity.id &&
-        context.payloads.contains(local_component_id) {
-        context.payloads.set_metadata(
+        context.writes.contains(local_component_id) {
+        context.writes.set_metadata(
           local_component_id,
           component_tick_metadata_with_changed(
-            context.payloads.metadata(local_component_id),
+            context.writes.metadata(local_component_id),
             tick,
             caller,
           ),
@@ -1119,10 +1003,10 @@ fn World::clear_component_tick_records(
   if self.local_component_storage_type(local_id) == Some(SparseSet) {
     self.clear_sparse_component_metadata_by_local_id(entity, local_id)
   }
-  match self.pending_component_payload_context {
+  match self.pending_component_write_context {
     Some(context) =>
       if context.entity_id == entity.id {
-        context.payloads.set_metadata(local_id, component_tick_metadata_empty())
+        context.writes.set_metadata(local_id, component_tick_metadata_empty())
       }
     None => ()
   }
@@ -1307,25 +1191,6 @@ fn World::removed_component_messages(
   match self.local_component_id(key_id) {
     Some(local_id) => self.removed_components.get(local_id)
     None => None
-  }
-}
-
-///|
-fn[T : EcsPayloadCodec] World::component_value(
-  _self : World,
-  key : ComponentKey[T],
-  entity : @core.Entity,
-  payload : EcsPayload,
-) -> T raise EcsError {
-  match T::from_ecs_payload(payload) {
-    Some(value) => value
-    None =>
-      raise ComponentTypeMismatch(
-        key.id(),
-        key.debug_name(),
-        entity,
-        "payload mismatch",
-      )
   }
 }
 

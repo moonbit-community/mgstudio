@@ -87,7 +87,6 @@ pub fn AlphaMask2dPhase::is_empty(Self) -> Bool
 pub fn AlphaMask2dPhase::len(Self) -> Int
 pub fn AlphaMask2dPhase::push(Self, AlphaMask2d) -> Unit
 pub impl @app.Resource for AlphaMask2dPhase
-pub impl @ecs.EcsPayloadCodec for AlphaMask2dPhase
 
 pub struct BatchSetKey2d {
   indexed : Bool
@@ -156,7 +155,6 @@ pub fn Opaque2dPhase::is_empty(Self) -> Bool
 pub fn Opaque2dPhase::len(Self) -> Int
 pub fn Opaque2dPhase::push(Self, Opaque2d) -> Unit
 pub impl @app.Resource for Opaque2dPhase
-pub impl @ecs.EcsPayloadCodec for Opaque2dPhase
 
 pub struct Transparent2d {
   sort_key : Float
@@ -183,7 +181,6 @@ pub fn Transparent2dPhase::is_empty(Self) -> Bool
 pub fn Transparent2dPhase::len(Self) -> Int
 pub fn Transparent2dPhase::push(Self, Transparent2d) -> Unit
 pub impl @app.Resource for Transparent2dPhase
-pub impl @ecs.EcsPayloadCodec for Transparent2dPhase
 
 // Type aliases
 pub using @post_process {type DebandDither}

@@ -171,7 +171,6 @@ pub fn HoverMap::from_array(Array[(Int, Array[(@core.Entity, HitData)])]) -> Sel
 pub fn HoverMap::get(Self, Int) -> Array[(@core.Entity, HitData)]
 pub fn HoverMap::is_hovering(Self, Int, @core.Entity) -> Bool
 pub impl @app.Resource for HoverMap
-pub impl @ecs.EcsPayloadCodec for HoverMap
 
 pub struct InteractionPlugin {
 }
@@ -185,7 +184,6 @@ pub struct Pickable {
 pub fn Pickable::Pickable() -> Self
 pub fn Pickable::new(Bool, Bool) -> Self
 pub impl @ecs.Component for Pickable
-pub impl @ecs.EcsPayloadCodec for Pickable
 
 pub struct PickingPlugin {
 }
@@ -200,7 +198,6 @@ pub struct PickingSettings {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn PickingSettings::PickingSettings() -> Self
 pub impl @app.Resource for PickingSettings
-pub impl @ecs.EcsPayloadCodec for PickingSettings
 
 pub struct PickingState {
   hovered : Array[@core.Entity?]
@@ -215,7 +212,6 @@ pub fn PickingState::set_hovered(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingState::set_last_position(@ref.Ref[Self], Int, @math.Vec2?) -> Unit
 pub fn PickingState::set_pressed(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub impl @app.Resource for PickingState
-pub impl @ecs.EcsPayloadCodec for PickingState
 
 pub(all) enum PointerButton {
   Primary
@@ -229,7 +225,6 @@ pub struct PointerHits {
   order : Float
 } derive(ToJson, @json.FromJson)
 pub fn PointerHits::new(Int, Array[(@core.Entity, HitData)], Float) -> Self
-pub impl @ecs.EcsPayloadCodec for PointerHits
 pub impl @ecs.Message for PointerHits
 
 pub struct PointerId {
@@ -243,7 +238,6 @@ pub fn PointerId::new(Int) -> Self
 pub fn PointerId::touch(Int) -> Self
 pub fn PointerId::value(Self) -> Int
 pub impl @ecs.Component for PointerId
-pub impl @ecs.EcsPayloadCodec for PointerId
 
 pub struct PointerInput {
   pointer : Int
@@ -253,7 +247,6 @@ pub struct PointerInput {
   just_released : Bool
 } derive(ToJson, @json.FromJson)
 pub fn PointerInput::new(Int, @math.Vec2?, Bool, Bool, Bool) -> Self
-pub impl @ecs.EcsPayloadCodec for PointerInput
 pub impl @ecs.Message for PointerInput
 
 pub struct PointerInputPlugin {
@@ -268,7 +261,6 @@ pub struct PointerInputSettings {
 pub fn PointerInputSettings::PointerInputSettings() -> Self
 pub fn PointerInputSettings::new(Bool, Bool) -> Self
 pub impl @app.Resource for PointerInputSettings
-pub impl @ecs.EcsPayloadCodec for PointerInputSettings
 
 pub struct PointerInteraction {
   sorted_entities : Array[(@core.Entity, HitData)]
@@ -276,7 +268,6 @@ pub struct PointerInteraction {
 pub fn PointerInteraction::PointerInteraction() -> Self
 pub fn PointerInteraction::get_nearest_hit(Self) -> (@core.Entity, HitData)?
 pub impl @ecs.Component for PointerInteraction
-pub impl @ecs.EcsPayloadCodec for PointerInteraction
 
 pub struct PointerLocation {
   location : @math.Vec2?
@@ -285,7 +276,6 @@ pub fn PointerLocation::PointerLocation() -> Self
 pub fn PointerLocation::location(Self) -> @math.Vec2?
 pub fn PointerLocation::new(@math.Vec2) -> Self
 pub impl @ecs.Component for PointerLocation
-pub impl @ecs.EcsPayloadCodec for PointerLocation
 
 pub struct PointerMap {
   inner : @hashmap.HashMap[Int, @core.Entity]
@@ -293,7 +283,6 @@ pub struct PointerMap {
 pub fn PointerMap::PointerMap() -> Self
 pub fn PointerMap::get_entity(Self, Int) -> @core.Entity?
 pub impl @app.Resource for PointerMap
-pub impl @ecs.EcsPayloadCodec for PointerMap
 
 pub struct PointerPress {
   primary : Bool
@@ -306,19 +295,16 @@ pub fn PointerPress::is_middle_pressed(Self) -> Bool
 pub fn PointerPress::is_primary_pressed(Self) -> Bool
 pub fn PointerPress::is_secondary_pressed(Self) -> Bool
 pub impl @ecs.Component for PointerPress
-pub impl @ecs.EcsPayloadCodec for PointerPress
 
 pub struct PreviousHoverMap {
   inner : @hashmap.HashMap[Int, Array[(@core.Entity, HitData)]]
 }
 pub fn PreviousHoverMap::PreviousHoverMap() -> Self
 pub impl @app.Resource for PreviousHoverMap
-pub impl @ecs.EcsPayloadCodec for PreviousHoverMap
 
 pub struct SpritePickingCamera {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub impl @ecs.Component for SpritePickingCamera
-pub impl @ecs.EcsPayloadCodec for SpritePickingCamera
 
 pub(all) enum SpritePickingMode {
   BoundingBox
@@ -332,7 +318,6 @@ pub struct SpritePickingSettings {
 pub fn SpritePickingSettings::SpritePickingSettings() -> Self
 pub fn SpritePickingSettings::new(Bool, SpritePickingMode) -> Self
 pub impl @app.Resource for SpritePickingSettings
-pub impl @ecs.EcsPayloadCodec for SpritePickingSettings
 
 // Type aliases
 

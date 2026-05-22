@@ -10,11 +10,9 @@ import {
 }
 
 // Values
-pub fn[T : EcsPayloadCodec] component_key_from_id(Int, debug_name? : String) -> ComponentKey[T]
-
 pub fn[T] component_metadata_builder(ComponentKey[T]) -> ComponentMetadataBuilder[T]
 
-pub fn[T : EcsPayloadCodec] component_writer(ComponentKey[T], T) -> EcsPayloadWriter
+pub fn[T] component_writer(ComponentKey[T], T) -> ComponentWriter
 
 pub fn[C : Component] current_add_observer() -> ComponentOn[Add, C]
 
@@ -54,23 +52,17 @@ pub let ecs_key_disabled : ComponentKey[Disabled]
 
 pub let ecs_key_name : ComponentKey[Name]
 
-pub fn[T : EcsPayloadCodec] ensure_erased_component(ComponentKey[T]) -> ComponentKey[T]
-
-pub fn[T] event_key_from_id(Int, debug_name? : String) -> EventKey[T]
-
-pub fn[T] message_key_from_id(Int, debug_name? : String) -> MessageKey[T]
-
 pub fn[D] query(World) -> Query[D, All]
 
 pub fn[F : QueryFilter] query_access_descriptor(F, (QueryDataAccess) -> Unit) -> (QueryDataAccess, QueryFilterAccess)
 
-pub fn[T : EcsPayloadCodec] query_data_component_fetch(World, @core.Entity, ComponentKey[T]) -> T raise EcsError
+pub fn[T] query_data_component_fetch(World, @core.Entity, ComponentKey[T]) -> T raise EcsError
 
 pub fn[T] query_data_component_has(World, @core.Entity, ComponentKey[T]) -> Bool
 
 pub fn[T] query_data_component_matches(World, @core.Entity, ComponentKey[T]) -> Bool
 
-pub fn[T : EcsPayloadCodec] query_data_component_optional(World, @core.Entity, ComponentKey[T]) -> T? raise EcsError
+pub fn[T] query_data_component_optional(World, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 
 pub fn[D, F] query_filtered(World, F) -> Query[D, F]
 
@@ -82,17 +74,11 @@ pub fn query_validate_data_filter_access(QueryDataAccess, QueryFilterAccess) -> 
 
 pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
 
-pub fn[T : EcsPayloadCodec] register_erased_component(debug_name? : String) -> ComponentKey[T]
-
-pub fn[T : EcsPayloadCodec] register_erased_resource(debug_name? : String) -> ResourceKey[T]
-
 pub fn[T] register_event(debug_name? : String) -> EventKey[T]
 
 pub fn[T] register_message(debug_name? : String) -> MessageKey[T]
 
 pub fn[T] register_resource(debug_name? : String) -> ResourceKey[T]
-
-pub fn[T : EcsPayloadCodec] resource_key_from_id(Int, debug_name? : String) -> ResourceKey[T]
 
 // Errors
 pub(all) suberror ComponentHooksError {
@@ -110,7 +96,6 @@ pub(all) suberror EcsError {
   ResourceTypeMismatch(Int, String, String)
   EventTypeMismatch(Int, String, Int, String)
   MessageTypeMismatch(Int, String, Int, String)
-  PayloadTypeMismatch(Int, String)
 }
 
 pub(all) suberror RequiredComponentsError {
@@ -131,7 +116,6 @@ pub fn SystemParamValidationError::message(Self) -> String
 pub struct Add {
 }
 pub impl ComponentObserverEvent for Add
-pub impl EcsPayloadCodec for Add
 
 pub struct Added[T] {
   // private fields
@@ -206,7 +190,7 @@ pub fn[T : Component] Comp::key(Self[T]) -> ComponentKey[T]
 pub fn[T] Comp::last_changed(Self[T]) -> Int64
 pub fn[T] Comp::new(ComponentKey[T]) -> Self[T]
 pub fn[T] Comp::value(Self[T]) -> T
-pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T]
+pub impl[T : Component] QueryData for Comp[T]
 
 type ComponentAccess[T]
 
@@ -215,23 +199,23 @@ pub struct ComponentColumn[T] {
 }
 pub fn[T] ComponentColumn::contains(Self[T], @core.Entity) -> Bool
 pub fn[T] ComponentColumn::for_each(Self[T], (@core.Entity, T) -> Unit) -> Unit
-pub fn[T, U : EcsPayloadCodec, M, N] ComponentColumn::for_each2_with2_markers_fast_table_row(Self[T], Self[U], Self[M], Self[N], (@core.Entity, Int, Int, T, U) -> Unit) -> Unit
-pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row(Self[T], Self[U], Self[V], (@core.Entity, Int, Int, T, U, V) -> Unit) -> Unit
-pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row_mark_third_changed(Self[T], Self[U], Self[V], Int64, (@core.Entity, Int, Int, T, U, V) -> Bool) -> Unit
-pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec, W : EcsPayloadCodec] ComponentColumn::for_each4_fast_table_row(Self[T], Self[U], Self[V], Self[W], (@core.Entity, Int, Int, T, U, V, W) -> Unit) -> Unit
-pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec, W : EcsPayloadCodec, X : EcsPayloadCodec] ComponentColumn::for_each5_fast_table_row(Self[T], Self[U], Self[V], Self[W], Self[X], (@core.Entity, Int, Int, T, U, V, W, X) -> Unit) -> Unit
+pub fn[T, U, M, N] ComponentColumn::for_each2_with2_markers_fast_table_row(Self[T], Self[U], Self[M], Self[N], (@core.Entity, Int, Int, T, U) -> Unit) -> Unit
+pub fn[T, U, V] ComponentColumn::for_each3_fast_table_row(Self[T], Self[U], Self[V], (@core.Entity, Int, Int, T, U, V) -> Unit) -> Unit
+pub fn[T, U, V] ComponentColumn::for_each3_fast_table_row_mark_third_changed(Self[T], Self[U], Self[V], Int64, (@core.Entity, Int, Int, T, U, V) -> Bool) -> Unit
+pub fn[T, U, V, W] ComponentColumn::for_each4_fast_table_row(Self[T], Self[U], Self[V], Self[W], (@core.Entity, Int, Int, T, U, V, W) -> Unit) -> Unit
+pub fn[T, U, V, W, X] ComponentColumn::for_each5_fast_table_row(Self[T], Self[U], Self[V], Self[W], Self[X], (@core.Entity, Int, Int, T, U, V, W, X) -> Unit) -> Unit
 pub fn[T] ComponentColumn::for_each_changed_table_entity(Self[T], @core.SystemTicks, (@core.Entity, Int, Int) -> Bool) -> Bool
-pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with(Self[T], Self[U], (@core.Entity, T, U) -> Unit) -> Unit
-pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast(Self[T], Self[U], (@core.Entity, T, U) -> Unit) -> Unit
-pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast_table_row(Self[T], Self[U], (@core.Entity, Int, Int, T, U) -> Unit) -> Unit
+pub fn[T, U] ComponentColumn::for_each_with(Self[T], Self[U], (@core.Entity, T, U) -> Unit) -> Unit
+pub fn[T, U] ComponentColumn::for_each_with_fast(Self[T], Self[U], (@core.Entity, T, U) -> Unit) -> Unit
+pub fn[T, U] ComponentColumn::for_each_with_fast_table_row(Self[T], Self[U], (@core.Entity, Int, Int, T, U) -> Unit) -> Unit
 pub fn[T, U] ComponentColumn::for_each_without(Self[T], Self[U], (@core.Entity, T) -> Unit) -> Unit
 pub fn[T, U] ComponentColumn::for_each_without_fast(Self[T], Self[U], (@core.Entity, T) -> Unit) -> Unit
-pub fn[T : EcsPayloadCodec] ComponentColumn::get(Self[T], @core.Entity) -> T?
+pub fn[T] ComponentColumn::get(Self[T], @core.Entity) -> T?
 pub fn[T] ComponentColumn::get_fast(Self[T], @core.Entity) -> T?
 pub fn[T] ComponentColumn::get_mut(Self[T], @core.Entity) -> Mut[T]?
 pub fn[T] ComponentColumn::record_changed_hot_at_table_row(Self[T], Int, Int, Int64) -> Bool
-pub fn[T : EcsPayloadCodec] ComponentColumn::set(Self[T], @core.Entity, T) -> Bool
-pub fn[T : EcsPayloadCodec] ComponentColumn::set_tick_only(Self[T], @core.Entity, T) -> Bool
+pub fn[T] ComponentColumn::set(Self[T], @core.Entity, T) -> Bool
+pub fn[T] ComponentColumn::set_tick_only(Self[T], @core.Entity, T) -> Bool
 pub fn[T] ComponentColumn::set_tick_only_fast(Self[T], @core.Entity, T) -> Bool
 pub fn[T] ComponentColumn::set_tick_only_hot(Self[T], @core.Entity, T) -> Bool
 pub fn[T] ComponentColumn::set_tick_only_hot_at_row(Self[T], @core.Entity, Array[T], Int, T, Int64) -> Bool
@@ -286,9 +270,9 @@ pub fn[T] ComponentMetadataBuilder::on_insert(Self[T], (DeferredWorld, HookConte
 pub fn[T] ComponentMetadataBuilder::on_remove(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
 pub fn[T] ComponentMetadataBuilder::on_replace(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T]
 pub fn[T] ComponentMetadataBuilder::relationship_source(Self[T], (World, @core.Entity) -> @core.Entity?, observer_parent_lookup? : Bool) -> Self[T]
-pub fn[T : EcsPayloadCodec] ComponentMetadataBuilder::relationship_target(Self[T], linked_spawn? : Bool, linked_entities? : ((T) -> Array[@core.Entity])?) -> Self[T]
-pub fn[T, R : Default + EcsPayloadCodec] ComponentMetadataBuilder::require_default(Self[T], ComponentKey[R]) -> Self[T]
-pub fn[T, R : EcsPayloadCodec] ComponentMetadataBuilder::require_with(Self[T], ComponentKey[R], () -> R) -> Self[T]
+pub fn[T] ComponentMetadataBuilder::relationship_target(Self[T], linked_spawn? : Bool, linked_entities? : ((T) -> Array[@core.Entity])?) -> Self[T]
+pub fn[T, R : Default] ComponentMetadataBuilder::require_default(Self[T], ComponentKey[R]) -> Self[T]
+pub fn[T, R] ComponentMetadataBuilder::require_with(Self[T], ComponentKey[R], () -> R) -> Self[T]
 pub fn[T] ComponentMetadataBuilder::storage_sparse_set(Self[T]) -> Self[T]
 pub fn[T] ComponentMetadataBuilder::storage_table(Self[T]) -> Self[T]
 
@@ -331,6 +315,13 @@ pub fn[T] ComponentTableColumn::value_at_row_unchecked(Self[T], Int) -> T?
 
 type ComponentTickMetadata
 
+pub struct ComponentWriter {
+  // private fields
+}
+pub fn ComponentWriter::component_debug_name(Self) -> String
+pub fn ComponentWriter::component_definition_id(Self) -> Int
+pub fn ComponentWriter::value_type_name(Self) -> String
+
 pub struct ComponentsQueuedRegistrator {
   // private fields
 }
@@ -351,7 +342,6 @@ pub struct DefaultQueryFilters {
 pub fn DefaultQueryFilters::disabling_component_ids(Self) -> Array[Int]
 pub fn DefaultQueryFilters::empty() -> Self
 pub fn DefaultQueryFilters::register_disabling_component(Self, Int) -> Self
-pub impl EcsPayloadCodec for DefaultQueryFilters
 
 pub struct DeferredEntityCommands {
   // private fields
@@ -368,8 +358,8 @@ pub fn[T] DeferredWorld::contains(Self, @core.Entity, ComponentKey[T]) -> Bool
 pub fn[T] DeferredWorld::contains_by_key(Self, @core.Entity, ComponentKey[T]) -> Bool
 #callsite(autofill(loc))
 pub fn DeferredWorld::despawn(Self, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
-pub fn[T : EcsPayloadCodec] DeferredWorld::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
-pub fn[T : EcsPayloadCodec] DeferredWorld::get_by_key(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
+pub fn[T] DeferredWorld::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
+pub fn[T] DeferredWorld::get_by_key(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn DeferredWorld::is_alive(Self, @core.Entity) -> Bool
 pub fn DeferredWorld::read_change_tick(Self) -> Int64
 #callsite(autofill(loc))
@@ -377,19 +367,19 @@ pub fn[T] DeferredWorld::remove(Self, @core.Entity, ComponentKey[T], loc~ : Sour
 #callsite(autofill(loc))
 pub fn[T] DeferredWorld::remove_by_key(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> Bool raise EcsError
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::replace(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Bool raise EcsError
+pub fn[T] DeferredWorld::replace(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Bool raise EcsError
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::replace_by_key(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Bool raise EcsError
+pub fn[T] DeferredWorld::replace_by_key(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Bool raise EcsError
 pub fn[T] DeferredWorld::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::set(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
+pub fn[T] DeferredWorld::set(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::set_by_key(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
+pub fn[T] DeferredWorld::set_by_key(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn DeferredWorld::spawn_empty(Self) -> @core.Entity
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::take(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError
+pub fn[T] DeferredWorld::take(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] DeferredWorld::take_by_key(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError
+pub fn[T] DeferredWorld::take_by_key(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError
 pub fn DeferredWorld::world(Self) -> World
 
 pub struct DeferredWorldCommands {
@@ -400,23 +390,11 @@ pub fn DeferredWorldCommands::entity(Self, @core.Entity) -> DeferredEntityComman
 pub struct Despawn {
 }
 pub impl ComponentObserverEvent for Despawn
-pub impl EcsPayloadCodec for Despawn
 
 pub struct Disabled {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn Disabled::new() -> Self
 pub impl Component for Disabled
-pub impl EcsPayloadCodec for Disabled
-
-pub extenum EcsPayload {
-}
-
-pub struct EcsPayloadWriter {
-  // private fields
-}
-pub fn EcsPayloadWriter::component_debug_name(Self) -> String
-pub fn EcsPayloadWriter::component_definition_id(Self) -> Int
-pub fn EcsPayloadWriter::value_type_name(Self) -> String
 
 pub struct EntityMut {
   // private fields
@@ -424,31 +402,32 @@ pub struct EntityMut {
 pub fn[T : Component] EntityMut::contains(Self, key? : ComponentKey[T]) -> Bool raise EcsError
 #callsite(autofill(loc))
 pub fn EntityMut::despawn(Self, loc~ : SourceLoc) -> Unit raise EcsError
-pub fn[T : Component + EcsPayloadCodec] EntityMut::get(Self) -> T? raise EcsError
+pub fn[T : Component] EntityMut::get(Self) -> T? raise EcsError
 pub fn[T : Component] EntityMut::get_mut(Self, key? : ComponentKey[T]) -> Mut[T]? raise EcsError
 pub fn EntityMut::id(Self) -> @core.Entity
 #callsite(autofill(loc))
 pub fn[B : Bundle] EntityMut::insert(Self, B, loc~ : SourceLoc) -> Self raise EcsError
 #callsite(autofill(loc))
-pub fn[T : Component + EcsPayloadCodec] EntityMut::insert_component(Self, T, loc~ : SourceLoc) -> Self raise EcsError
+pub fn[T : Component] EntityMut::insert_component(Self, T, loc~ : SourceLoc) -> Self raise EcsError
 pub fn[E : TriggerEvent] EntityMut::observe(Self, (On[E]) -> Unit) -> Self
 #callsite(autofill(loc))
-pub fn[T : Component + EcsPayloadCodec] EntityMut::remove_component(Self, loc~ : SourceLoc) -> T? raise EcsError
+pub fn[T : Component] EntityMut::remove_component(Self, loc~ : SourceLoc) -> T? raise EcsError
 pub impl QueryData for EntityMut
 
 pub struct EntityRef {
   // private fields
 }
 pub fn[T : Component] EntityRef::contains(Self, key? : ComponentKey[T]) -> Bool raise EcsError
-pub fn[T : Component + EcsPayloadCodec] EntityRef::get(Self) -> T? raise EcsError
+pub fn[T : Component] EntityRef::get(Self) -> T? raise EcsError
 pub fn[D : QueryData] EntityRef::get_components(Self) -> D? raise EcsError
 pub fn EntityRef::id(Self) -> @core.Entity
 pub impl QueryData for EntityRef
 
-pub struct EventKey[_] {
+type EventAccessOps[T]
+
+pub struct EventKey[T] {
   // private fields
 }
-pub fn[U, T] EventKey::cast(Self[T]) -> Self[U]
 pub fn[T] EventKey::debug_name(Self[T]) -> String
 pub fn[T] EventKey::id(Self[T]) -> Int
 
@@ -470,7 +449,6 @@ pub fn HookContext::entity(Self) -> @core.Entity
 pub struct Insert {
 }
 pub impl ComponentObserverEvent for Insert
-pub impl EcsPayloadCodec for Insert
 
 pub struct MessageCursor[_] {
   // private fields
@@ -500,18 +478,18 @@ pub fn[T] MessageMutator::clear(Self[T]) -> Unit
 pub fn[T] MessageMutator::cursor(Self[T]) -> Int
 pub fn[T] MessageMutator::is_empty(Self[T]) -> Bool
 pub fn[T] MessageMutator::len(Self[T]) -> Int
-pub fn[T : EcsPayloadCodec] MessageMutator::read(Self[T]) -> Array[T] raise EcsError
+pub fn[T] MessageMutator::read(Self[T]) -> Array[T] raise EcsError
 
-pub struct MessageQueueState {
+pub struct MessageQueueState[T] {
   // private fields
 }
-pub fn MessageQueueState::clear(Self) -> Unit
-pub fn MessageQueueState::len(Self) -> Int
-pub fn MessageQueueState::new() -> Self
-pub fn MessageQueueState::oldest_message_count(Self) -> Int
-pub fn MessageQueueState::update(Self) -> Unit
-pub fn MessageQueueState::write(Self, EcsPayload) -> Int
-pub fn MessageQueueState::write_batch(Self, Array[EcsPayload]) -> Unit
+pub fn[T] MessageQueueState::clear(Self[T]) -> Unit
+pub fn[T] MessageQueueState::len(Self[T]) -> Int
+pub fn[T] MessageQueueState::new() -> Self[T]
+pub fn[T] MessageQueueState::oldest_message_count(Self[T]) -> Int
+pub fn[T] MessageQueueState::update(Self[T]) -> Unit
+pub fn[T] MessageQueueState::write(Self[T], T) -> Int
+pub fn[T] MessageQueueState::write_batch(Self[T], Array[T]) -> Unit
 
 pub struct MessageReader[T] {
   // private fields
@@ -520,21 +498,20 @@ pub fn[T] MessageReader::clear(Self[T]) -> Unit
 pub fn[T] MessageReader::cursor(Self[T]) -> Int
 pub fn[T] MessageReader::is_empty(Self[T]) -> Bool
 pub fn[T] MessageReader::len(Self[T]) -> Int
-pub fn[T : EcsPayloadCodec] MessageReader::read(Self[T]) -> Array[T] raise EcsError
+pub fn[T] MessageReader::read(Self[T]) -> Array[T] raise EcsError
 
 pub(all) struct MessageRegistryState {
   ids : Array[Int]
 }
-pub impl EcsPayloadCodec for MessageRegistryState
 
 pub struct MessageWriter[T] {
   // private fields
 }
-pub fn[T : EcsPayloadCodec] MessageWriter::write(Self[T], T) -> Int
-pub fn[T : EcsPayloadCodec] MessageWriter::write_batch(Self[T], Array[T]) -> Unit
-pub fn[T : Default + EcsPayloadCodec] MessageWriter::write_default(Self[T]) -> Int
+pub fn[T] MessageWriter::write(Self[T], T) -> Int
+pub fn[T] MessageWriter::write_batch(Self[T], Array[T]) -> Unit
+pub fn[T : Default] MessageWriter::write_default(Self[T]) -> Int
 
-pub struct Messages[_] {
+pub struct Messages[T] {
   // private fields
 }
 pub fn[T] Messages::clear(Self[T]) -> Unit
@@ -544,13 +521,12 @@ pub fn[T] Messages::len(Self[T]) -> Int
 pub fn[T] Messages::new() -> Self[T]
 pub fn[T] Messages::oldest_message_count(Self[T]) -> Int
 pub fn[T] Messages::update(Self[T]) -> Unit
-pub fn[T : EcsPayloadCodec] Messages::write(Self[T], T) -> Int
-pub fn[T : EcsPayloadCodec] Messages::write_batch(Self[T], Array[T]) -> Unit
-pub fn[T : Default + EcsPayloadCodec] Messages::write_default(Self[T]) -> Int
-pub fn[T : EcsPayloadCodec] Messages::write_message(Self[T], MessageKey[T], T) -> Int
-pub fn[T : EcsPayloadCodec] Messages::write_message_batch(Self[T], MessageKey[T], Array[T]) -> Unit
-pub fn[T : Default + EcsPayloadCodec] Messages::write_message_default(Self[T], MessageKey[T]) -> Int
-pub impl[T] EcsPayloadCodec for Messages[T]
+pub fn[T] Messages::write(Self[T], T) -> Int
+pub fn[T] Messages::write_batch(Self[T], Array[T]) -> Unit
+pub fn[T : Default] Messages::write_default(Self[T]) -> Int
+pub fn[T] Messages::write_message(Self[T], MessageKey[T], T) -> Int
+pub fn[T] Messages::write_message_batch(Self[T], MessageKey[T], Array[T]) -> Unit
+pub fn[T : Default] Messages::write_message_default(Self[T], MessageKey[T]) -> Int
 
 pub struct Mut[T] {
   // private fields
@@ -562,20 +538,20 @@ pub fn[T] Mut::is_changed(Self[T]) -> Bool
 pub fn[T : Component] Mut::key(Self[T]) -> ComponentKey[T]
 pub fn[T] Mut::last_changed(Self[T]) -> Int64
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec, R] Mut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
+pub fn[T, R] Mut::modify(Self[T], (T) -> R, loc~ : SourceLoc) -> R
 pub fn[T] Mut::new(ComponentKey[T]) -> Self[T]
-pub fn[T : EcsPayloadCodec] Mut::peek(Self[T]) -> T
+pub fn[T] Mut::peek(Self[T]) -> T
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec + Mutable] Mut::set(Self[T], T, loc~ : SourceLoc) -> Unit
+pub fn[T : Mutable] Mut::set(Self[T], T, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Component] Mut::set_added(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Component] Mut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
-pub fn[T : Eq + EcsPayloadCodec + Mutable] Mut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
+pub fn[T : Eq + Mutable] Mut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec + Mutable] Mut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
-pub fn[T : EcsPayloadCodec] Mut::value(Self[T]) -> T
+pub fn[T : Mutable] Mut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
+pub fn[T] Mut::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Mut[T]
 
 pub struct Name {
@@ -584,7 +560,6 @@ pub struct Name {
 pub fn Name::as_str(Self) -> String
 pub fn Name::new(String) -> Self
 pub impl Component for Name
-pub impl EcsPayloadCodec for Name
 
 pub struct ObserverHandle {
   // private fields
@@ -597,9 +572,9 @@ pub struct On[E] {
 }
 pub fn[E] On::caller(Self[E]) -> String?
 pub fn[E] On::entity(Self[E]) -> @core.Entity?
-pub fn[E : EcsPayloadCodec] On::event(Self[E]) -> E
+pub fn[E] On::event(Self[E]) -> E
 pub fn[E] On::is_propagating(Self[E]) -> Bool
-pub fn[E : EcsPayloadCodec, R] On::modify(Self[E], (E) -> R) -> R
+pub fn[E, R] On::modify(Self[E], (E) -> R) -> R
 pub fn[E] On::propagate(Self[E], Bool) -> Unit
 
 pub struct Optional[T] {
@@ -608,7 +583,7 @@ pub struct Optional[T] {
 pub fn[T : Component] Optional::key(Self[T]) -> ComponentKey[T]
 pub fn[T] Optional::new(ComponentKey[T]) -> Self[T]
 pub fn[T] Optional::value(Self[T]) -> T?
-pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T]
+pub impl[T : Component] QueryData for Optional[T]
 
 pub struct Or[F] {
   // private fields
@@ -616,7 +591,7 @@ pub struct Or[F] {
 pub fn[F] Or::new(F) -> Self[F]
 pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F]
 
-type PendingComponentPayloadContext
+type PendingComponentWriteContext
 
 pub struct Query[_, F] {
   // private fields
@@ -736,7 +711,6 @@ pub(all) struct RawTableColumnKernel {
 pub struct Remove {
 }
 pub impl ComponentObserverEvent for Remove
-pub impl EcsPayloadCodec for Remove
 
 pub struct RemovedComponents[_] {
   // private fields
@@ -749,7 +723,6 @@ pub fn[T] RemovedComponents::read(Self[T]) -> Array[@core.Entity]
 pub struct Replace {
 }
 pub impl ComponentObserverEvent for Replace
-pub impl EcsPayloadCodec for Replace
 
 pub struct RequiredComponents {
   // private fields
@@ -871,8 +844,8 @@ pub fn World::entity_mut(Self, @core.Entity) -> EntityMut raise EcsError
 pub fn World::entity_table_location(Self, @core.Entity) -> (Int, Int)?
 pub fn World::entity_table_location_by_id(Self, Int) -> (Int, Int)?
 pub fn[T] World::for_each_component(Self, ComponentKey[T], (@core.Entity, T) -> Unit) -> Unit
-pub fn[T : Component + EcsPayloadCodec] World::get(Self, @core.Entity, key? : ComponentKey[T]) -> T? raise EcsError
-pub fn[T : EcsPayloadCodec] World::get_by_key(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
+pub fn[T : Component] World::get(Self, @core.Entity, key? : ComponentKey[T]) -> T? raise EcsError
+pub fn[T] World::get_by_key(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn[T : Component] World::get_mut(Self, @core.Entity, key? : ComponentKey[T]) -> Mut[T]? raise EcsError
 pub fn[T] World::get_required_by_components(Self, ComponentKey[T]) -> RequiredComponents?
 pub fn World::get_required_by_components_by_id(Self, Int) -> RequiredComponents?
@@ -885,7 +858,7 @@ pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T]) -> @ref.Ref[T]?
 pub fn World::get_tick_context(Self) -> @core.SystemTickContext
 pub fn World::increment_change_tick(Self) -> Int64
 pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
-pub fn World::insert_component_writers(Self, @core.Entity, Array[EcsPayloadWriter], caller? : String?) -> Unit raise EcsError
+pub fn World::insert_component_writers(Self, @core.Entity, Array[ComponentWriter], caller? : String?) -> Unit raise EcsError
 pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
 pub fn[T] World::is_added_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemTicks) -> Bool
 pub fn World::is_alive(Self, @core.Entity) -> Bool
@@ -906,13 +879,13 @@ pub fn[T : Component] World::queue_register_component(Self, key? : ComponentKey[
 pub fn[T] World::queue_register_component_by_key(Self, ComponentKey[T]) -> Int
 pub fn World::queued_component_registration_count(Self) -> Int
 pub fn World::read_change_tick(Self) -> Int64
-pub fn[T : EcsPayloadCodec] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
+pub fn[T] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
 pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T]
 pub fn[T] World::register_component_hooks_for_key(Self, ComponentKey[T]) -> ComponentHooksBuilder[T]
 pub fn[T] World::register_component_hooks_with(Self, ComponentKey[T], ComponentHooks) -> Unit raise ComponentHooksError
 pub fn[T] World::register_disabling_component(Self, ComponentKey[T]) -> Unit
-pub fn[T, R : Default + EcsPayloadCodec] World::register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
-pub fn[T, R : EcsPayloadCodec] World::register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError
+pub fn[T, R : Default] World::register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
+pub fn[T, R] World::register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError
 #callsite(autofill(loc))
 pub fn[T : Component] World::remove(Self, @core.Entity, key? : ComponentKey[T], loc~ : SourceLoc) -> Bool raise EcsError
 #callsite(autofill(loc))
@@ -920,20 +893,20 @@ pub fn[T] World::remove_by_key(Self, @core.Entity, ComponentKey[T], loc~ : Sourc
 pub fn[T] World::remove_resource(Self, ResourceKey[T]) -> T?
 pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemTicks) -> RemovedComponents[T]
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] World::replace(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Bool raise EcsError
+pub fn[T] World::replace(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Bool raise EcsError
 pub fn[T] World::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
 pub fn[T] World::resource_added_since(Self, ResourceKey[T], Int64) -> Bool
 pub fn[T] World::resource_added_tick(Self, ResourceKey[T]) -> Int64?
 pub fn[T] World::resource_changed_by(Self, ResourceKey[T]) -> String?
 pub fn[T] World::resource_changed_since(Self, ResourceKey[T], Int64) -> Bool
 pub fn[T] World::resource_changed_tick(Self, ResourceKey[T]) -> Int64?
-pub fn[T : EcsPayloadCodec] World::send_event(Self, EventKey[T], T) -> Unit
-pub fn[T : EcsPayloadCodec] World::send_message(Self, MessageKey[T], T) -> Int
-pub fn[T : EcsPayloadCodec] World::send_message_batch(Self, MessageKey[T], Array[T]) -> Unit
+pub fn[T] World::send_event(Self, EventKey[T], T) -> Unit
+pub fn[T] World::send_message(Self, MessageKey[T], T) -> Int
+pub fn[T] World::send_message_batch(Self, MessageKey[T], Array[T]) -> Unit
 #callsite(autofill(loc))
-pub fn[T : Component + EcsPayloadCodec] World::set(Self, @core.Entity, key? : ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
+pub fn[T : Component] World::set(Self, @core.Entity, key? : ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] World::set_by_key(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
+pub fn[T] World::set_by_key(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn World::set_tick_context(Self, @core.SystemTickContext) -> Unit
 pub fn World::spawn(Self) -> @core.Entity
 #callsite(autofill(loc))
@@ -941,14 +914,14 @@ pub fn[B : Bundle] World::spawn_bundle(Self, B, loc~ : SourceLoc) -> @core.Entit
 pub fn World::spawn_empty(Self) -> @core.Entity
 pub fn World::structural_generation(Self) -> Int
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] World::take(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError
+pub fn[T] World::take(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError
 pub fn[E : TriggerEvent] World::trigger(Self, E, caller? : String?) -> Unit
-pub fn[T, R : Default + EcsPayloadCodec] World::try_register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
-pub fn[T, R : EcsPayloadCodec] World::try_register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError
+pub fn[T, R : Default] World::try_register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
+pub fn[T, R] World::try_register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError
 #callsite(autofill(loc))
-pub fn[T : Component + EcsPayloadCodec] World::update(Self, @core.Entity, key? : ComponentKey[T], (T) -> T, loc~ : SourceLoc) -> Bool raise EcsError
+pub fn[T : Component] World::update(Self, @core.Entity, key? : ComponentKey[T], (T) -> T, loc~ : SourceLoc) -> Bool raise EcsError
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec] World::update_by_key(Self, @core.Entity, ComponentKey[T], (T) -> T, loc~ : SourceLoc) -> Bool raise EcsError
+pub fn[T] World::update_by_key(Self, @core.Entity, ComponentKey[T], (T) -> T, loc~ : SourceLoc) -> Bool raise EcsError
 pub fn World::update_messages(Self) -> Unit
 pub fn[T] World::update_resource(Self, ResourceKey[T], (T) -> T) -> Bool
 pub fn World::world_id(Self) -> Int
@@ -982,13 +955,13 @@ pub(open) trait Bundle {
   fn insert_into(Self, World, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
 }
 pub impl Bundle for Unit
-pub impl[A : Component + EcsPayloadCodec, B : Component + EcsPayloadCodec] Bundle for (A, B)
-pub impl[A : Component + EcsPayloadCodec, B : Component + EcsPayloadCodec, C : Component + EcsPayloadCodec] Bundle for (A, B, C)
-pub impl[A : Component + EcsPayloadCodec, B : Component + EcsPayloadCodec, C : Component + EcsPayloadCodec, D : Component + EcsPayloadCodec] Bundle for (A, B, C, D)
-pub impl[A : Component + EcsPayloadCodec, B : Component + EcsPayloadCodec, C : Component + EcsPayloadCodec, D : Component + EcsPayloadCodec, E : Component + EcsPayloadCodec] Bundle for (A, B, C, D, E)
-pub impl[A : Component + EcsPayloadCodec, B : Component + EcsPayloadCodec, C : Component + EcsPayloadCodec, D : Component + EcsPayloadCodec, E : Component + EcsPayloadCodec, F : Component + EcsPayloadCodec] Bundle for (A, B, C, D, E, F)
-pub impl[A : Component + EcsPayloadCodec, B : Component + EcsPayloadCodec, C : Component + EcsPayloadCodec, D : Component + EcsPayloadCodec, E : Component + EcsPayloadCodec, F : Component + EcsPayloadCodec, G : Component + EcsPayloadCodec] Bundle for (A, B, C, D, E, F, G)
-pub impl[A : Component + EcsPayloadCodec, B : Component + EcsPayloadCodec, C : Component + EcsPayloadCodec, D : Component + EcsPayloadCodec, E : Component + EcsPayloadCodec, F : Component + EcsPayloadCodec, G : Component + EcsPayloadCodec, H : Component + EcsPayloadCodec] Bundle for (A, B, C, D, E, F, G, H)
+pub impl[A : Component, B : Component] Bundle for (A, B)
+pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C)
+pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for (A, B, C, D)
+pub impl[A : Component, B : Component, C : Component, D : Component, E : Component] Bundle for (A, B, C, D, E)
+pub impl[A : Component, B : Component, C : Component, D : Component, E : Component, F : Component] Bundle for (A, B, C, D, E, F)
+pub impl[A : Component, B : Component, C : Component, D : Component, E : Component, F : Component, G : Component] Bundle for (A, B, C, D, E, F, G)
+pub impl[A : Component, B : Component, C : Component, D : Component, E : Component, F : Component, G : Component, H : Component] Bundle for (A, B, C, D, E, F, G, H)
 
 pub(open) trait Component {
   fn component() -> ComponentKey[Self]
@@ -1002,23 +975,10 @@ pub(open) trait ComponentObserverEvent {
   fn debug_name() -> String
 }
 
-pub(open) trait EcsPayloadCodec {
-  fn to_ecs_payload(Self) -> EcsPayload
-  fn from_ecs_payload(EcsPayload) -> Self?
-}
-pub impl EcsPayloadCodec for Unit
-pub impl EcsPayloadCodec for Bool
-pub impl EcsPayloadCodec for Int
-pub impl EcsPayloadCodec for UInt64
-pub impl EcsPayloadCodec for Float
-pub impl EcsPayloadCodec for Double
-pub impl EcsPayloadCodec for String
-pub impl EcsPayloadCodec for @core.Entity
-
-pub(open) trait EventData : EcsPayloadCodec {
+pub(open) trait EventData {
 }
 
-pub(open) trait Message : EcsPayloadCodec {
+pub(open) trait Message {
   fn message() -> MessageKey[Self]
 }
 
@@ -1035,9 +995,9 @@ pub(open) trait QueryData {
   fn fetch_table_row(World, @core.Entity, Int, Int) -> Self raise EcsError = _
   fn fetch_table_row_with_plan(World, @core.Entity, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
   fn fetch_table_row_with_plan_offset(World, @core.Entity, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
-  fn fetch_sparse_anchor(World, @core.Entity, Int, EcsPayload, Int, Int) -> Self raise EcsError = _
-  fn fetch_sparse_anchor_with_plan(World, @core.Entity, Int, EcsPayload, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
-  fn fetch_sparse_anchor_with_plan_offset(World, @core.Entity, Int, EcsPayload, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
+  fn fetch_sparse_anchor(World, @core.Entity, Int, Int, Int) -> Self raise EcsError = _
+  fn fetch_sparse_anchor_with_plan(World, @core.Entity, Int, Int, Int, QueryDataFetchPlan) -> Self raise EcsError = _
+  fn fetch_sparse_anchor_with_plan_offset(World, @core.Entity, Int, Int, Int, QueryDataFetchPlan, Int) -> Self raise EcsError = _
   fn mentions_component(Int) -> Bool
   fn matches_component_set((Int) -> Bool) -> Bool
   fn collect_access(QueryDataAccess) -> Unit = _
@@ -1087,7 +1047,7 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjuncti
 pub(open) trait ResourceData {
 }
 
-pub(open) trait TriggerEvent : EcsPayloadCodec {
+pub(open) trait TriggerEvent {
   fn observer_event() -> EventKey[Self]
   fn observer_entity(Self) -> @core.Entity?
   fn set_observer_entity(Self, @core.Entity) -> Self

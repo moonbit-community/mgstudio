@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] ecs_has_non_null_payload(
+fn[T] ecs_has_non_null_payload(
   world : @ecs.World,
   entity : @core.Entity,
   key : @ecs.ComponentKey[T],
@@ -63,24 +63,6 @@ struct DummyMaterialAsset {
 }
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_sprite_test_DummyMaterialAsset(DummyMaterialAsset)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DummyMaterialAsset with to_ecs_payload(self) {
-  EcsPayload_sprite_test_DummyMaterialAsset(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DummyMaterialAsset with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_sprite_test_DummyMaterialAsset(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
 impl @asset.Asset for DummyMaterialAsset with asset_debug_name() {
   "mgstudio_sprite_test::DummyMaterialAsset"
 }
@@ -88,6 +70,16 @@ impl @asset.Asset for DummyMaterialAsset with asset_debug_name() {
 ///|
 impl @asset.Asset for DummyMaterialAsset with asset_as_image(_self) {
   None
+}
+
+///|
+let dummy_material_asset_resource_keys : @asset.AssetResourceKeys[
+  DummyMaterialAsset,
+] = @asset.register_asset_resource_keys(DummyMaterialAsset::asset_debug_name())
+
+///|
+impl @asset.Asset for DummyMaterialAsset with asset_resource_keys() {
+  dummy_material_asset_resource_keys
 }
 
 ///|
@@ -134,6 +126,16 @@ pub impl Material2d for DummyMaterialAsset with alpha_mode(self) {
 ///|
 pub impl Material2d for DummyMaterialAsset with material2d_debug_name() {
   "mgstudio_sprite_test::DummyMaterialAsset"
+}
+
+///|
+let dummy_material_asset_material2d_keys : Material2dKeys[DummyMaterialAsset] = register_material2d_keys(
+  DummyMaterialAsset::material2d_debug_name(),
+)
+
+///|
+pub impl Material2d for DummyMaterialAsset with material2d_keys() {
+  dummy_material_asset_material2d_keys
 }
 
 ///|

@@ -82,6 +82,16 @@ pub impl @asset.Asset for LdtkProject with asset_as_image(_self) {
 }
 
 ///|
+let ldtk_project_asset_resource_keys : @asset.AssetResourceKeys[LdtkProject] = @asset.register_asset_resource_keys(
+  LdtkProject::asset_debug_name(),
+)
+
+///|
+pub impl @asset.Asset for LdtkProject with asset_resource_keys() {
+  ldtk_project_asset_resource_keys
+}
+
+///|
 pub fn LdtkProject::new(
   data : LdtkJson,
   level_map : @hashmap.HashMap[String, LevelMetadata],

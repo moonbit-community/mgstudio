@@ -28,7 +28,6 @@ pub fn Aabb::from_min_max(@math.Vec3, @math.Vec3) -> Self
 pub fn Aabb::half_size(Self) -> @math.Vec3
 pub fn Aabb::to_math(Self) -> @math.Aabb3d
 pub impl @ecs.Component for Aabb
-pub impl @ecs.EcsPayloadCodec for Aabb
 
 // Type aliases
 pub using @math {type BoundingSphere as Sphere}

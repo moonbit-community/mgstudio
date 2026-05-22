@@ -30,6 +30,16 @@ impl @asset.Asset for CustomMaterial with asset_as_image(_self) {
 }
 
 ///|
+let custom_material_resource_keys : @asset.AssetResourceKeys[CustomMaterial] = @asset.register_asset_resource_keys(
+  CustomMaterial::asset_debug_name(),
+)
+
+///|
+impl @asset.Asset for CustomMaterial with asset_resource_keys() {
+  custom_material_resource_keys
+}
+
+///|
 fn custom_material(
   color : @sprite.Color,
   color_texture : @asset.Handle[@asset.Image]?,
@@ -88,6 +98,16 @@ pub impl @sprite.Material2d for CustomMaterial with alpha_mode(self) {
 ///|
 pub impl @sprite.Material2d for CustomMaterial with material2d_debug_name() {
   "examples.shader.shader_material_2d.CustomMaterial"
+}
+
+///|
+let custom_material_material2d_keys : @sprite.Material2dKeys[CustomMaterial] = @sprite.register_material2d_keys(
+  CustomMaterial::material2d_debug_name(),
+)
+
+///|
+pub impl @sprite.Material2d for CustomMaterial with material2d_keys() {
+  custom_material_material2d_keys
 }
 
 ///|

@@ -47,14 +47,14 @@ pub fn[E] On::entity(self : On[E]) -> @core.Entity? {
 }
 
 ///|
-pub fn[E : EcsPayloadCodec] On::event(self : On[E]) -> E {
+pub fn[E] On::event(self : On[E]) -> E {
   let context = current_trigger_observer_context_abort_missing()
   if context.event_key_id != self.event_key.id() {
-    abort("Current observer event payload is no longer available")
+    abort("Current observer event is no longer available")
   }
-  match E::from_ecs_payload(context.payload) {
-    Some(event) => event
-    None => abort("Current observer event payload type mismatch")
+  match (self.event_key.access.current_trigger)(self.world) {
+    Some(event_ref) => event_ref.val
+    None => abort("Current observer event is no longer available")
   }
 }
 
@@ -69,23 +69,19 @@ pub fn[E] On::is_propagating(self : On[E]) -> Bool {
 }
 
 ///|
-pub fn[E : EcsPayloadCodec, R] On::modify(self : On[E], f : (E) -> R) -> R {
+pub fn[E, R] On::modify(self : On[E], f : (E) -> R) -> R {
   let context = current_trigger_observer_context_abort_missing()
   if context.event_key_id != self.event_key.id() {
-    abort("Current observer event payload is no longer available")
+    abort("Current observer event is no longer available")
   }
-  let event = match E::from_ecs_payload(context.payload) {
-    Some(event) => event
-    None => abort("Current observer event payload type mismatch")
+  let event_ref = match (self.event_key.access.current_trigger)(self.world) {
+    Some(event_ref) => event_ref
+    None => abort("Current observer event is no longer available")
   }
+  let event = event_ref.val
   let result = f(event)
-  self.world.current_trigger_observer_context = Some({
-    event_key_id: context.event_key_id,
-    entity: context.entity,
-    payload: E::to_ecs_payload(event),
-    caller: context.caller,
-    propagate_ref: context.propagate_ref,
-  })
+  event_ref.val = event
+  ignore(context)
   result
 }
 
@@ -127,7 +123,7 @@ pub(open) trait ComponentObserverEvent {
 }
 
 ///|
-pub(open) trait TriggerEvent: EcsPayloadCodec {
+pub(open) trait TriggerEvent {
   fn observer_event() -> EventKey[Self]
   fn observer_entity(Self) -> @core.Entity?
   fn set_observer_entity(Self, @core.Entity) -> Self
@@ -161,7 +157,6 @@ struct ComponentObserverContext {
 struct TriggerObserverContext {
   event_key_id : Int
   entity : @core.Entity?
-  payload : EcsPayload
   caller : String?
   propagate_ref : Ref[Bool]
 }
@@ -888,29 +883,23 @@ pub fn[E : TriggerEvent] World::trigger(
   caller? : String? = None,
 ) -> Unit {
   let event_key : EventKey[E] = E::observer_event()
-  let mut current_event = event
-  let propagate_ref : Ref[Bool] = Ref(E::auto_propagate(current_event))
+  let current_event_ref : Ref[E] = Ref(event)
+  let propagate_ref : Ref[Bool] = Ref(E::auto_propagate(event))
   let previous_context = self.current_trigger_observer_context
   let previous_world = current_observer_world_ref.val
   current_observer_world_ref.val = Some(self)
+  let previous_trigger_ref = (event_key.access.current_trigger)(self)
+  (event_key.access.set_current_trigger)(self, current_event_ref)
   while true {
+    let current_event = current_event_ref.val
     let entity = E::observer_entity(current_event)
     self.current_trigger_observer_context = Some({
       event_key_id: event_key.id(),
       entity,
-      payload: E::to_ecs_payload(current_event),
       caller,
       propagate_ref,
     })
     self.run_trigger_observers(event_key.id())
-    let context = current_trigger_observer_context_abort_missing()
-    current_event = match E::from_ecs_payload(context.payload) {
-      Some(event) => event
-      None =>
-        abort(
-          "Current trigger observer payload type mismatch for `\{E::debug_name()}`",
-        )
-    }
     if !propagate_ref.val {
       break
     }
@@ -918,7 +907,14 @@ pub fn[E : TriggerEvent] World::trigger(
     guard observer_parent_entity(self, current_entity) is Some(parent) else {
       break
     }
-    current_event = E::set_observer_entity(current_event, parent)
+    current_event_ref.val = E::set_observer_entity(
+      current_event_ref.val,
+      parent,
+    )
+  }
+  match previous_trigger_ref {
+    Some(event_ref) => (event_key.access.set_current_trigger)(self, event_ref)
+    None => (event_key.access.clear_current_trigger)(self)
   }
   current_observer_world_ref.val = previous_world
   self.current_trigger_observer_context = previous_context

@@ -1465,30 +1465,6 @@ struct MultiLoaderAsset {
 }
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_asset_test_StoreTestAsset(StoreTestAsset)
-  EcsPayload_asset_test_MissingLoaderAsset(MissingLoaderAsset)
-  EcsPayload_asset_test_RegistryScopedLegacyAsset(RegistryScopedLegacyAsset)
-  EcsPayload_asset_test_ProcessorScopeAsset(ProcessorScopeAsset)
-  EcsPayload_asset_test_NamedProcessorScopeAsset(NamedProcessorScopeAsset)
-  EcsPayload_asset_test_TestCustomAsset(TestCustomAsset)
-  EcsPayload_asset_test_MultiLoaderAsset(MultiLoaderAsset)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StoreTestAsset with to_ecs_payload(self) {
-  EcsPayload_asset_test_StoreTestAsset(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StoreTestAsset with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_asset_test_StoreTestAsset(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
 impl Asset for StoreTestAsset with asset_debug_name() {
   "mgstudio_asset_test::StoreTestAsset"
 }
@@ -1499,16 +1475,13 @@ impl Asset for StoreTestAsset with asset_as_image(_self) {
 }
 
 ///|
-impl @ecs.EcsPayloadCodec for MissingLoaderAsset with to_ecs_payload(self) {
-  EcsPayload_asset_test_MissingLoaderAsset(self)
-}
+let store_test_asset_resource_keys : AssetResourceKeys[StoreTestAsset] = register_asset_resource_keys(
+  StoreTestAsset::asset_debug_name(),
+)
 
 ///|
-impl @ecs.EcsPayloadCodec for MissingLoaderAsset with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_asset_test_MissingLoaderAsset(value) => Some(value)
-    _ => None
-  }
+impl Asset for StoreTestAsset with asset_resource_keys() {
+  store_test_asset_resource_keys
 }
 
 ///|
@@ -1522,20 +1495,13 @@ impl Asset for MissingLoaderAsset with asset_as_image(_self) {
 }
 
 ///|
-impl @ecs.EcsPayloadCodec for RegistryScopedLegacyAsset with to_ecs_payload(
-  self,
-) {
-  EcsPayload_asset_test_RegistryScopedLegacyAsset(self)
-}
+let missing_loader_asset_resource_keys : AssetResourceKeys[MissingLoaderAsset] = register_asset_resource_keys(
+  MissingLoaderAsset::asset_debug_name(),
+)
 
 ///|
-impl @ecs.EcsPayloadCodec for RegistryScopedLegacyAsset with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_asset_test_RegistryScopedLegacyAsset(value) => Some(value)
-    _ => None
-  }
+impl Asset for MissingLoaderAsset with asset_resource_keys() {
+  missing_loader_asset_resource_keys
 }
 
 ///|
@@ -1549,16 +1515,13 @@ impl Asset for RegistryScopedLegacyAsset with asset_as_image(_self) {
 }
 
 ///|
-impl @ecs.EcsPayloadCodec for ProcessorScopeAsset with to_ecs_payload(self) {
-  EcsPayload_asset_test_ProcessorScopeAsset(self)
-}
+let registry_scoped_legacy_asset_resource_keys : AssetResourceKeys[
+  RegistryScopedLegacyAsset,
+] = register_asset_resource_keys(RegistryScopedLegacyAsset::asset_debug_name())
 
 ///|
-impl @ecs.EcsPayloadCodec for ProcessorScopeAsset with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_asset_test_ProcessorScopeAsset(value) => Some(value)
-    _ => None
-  }
+impl Asset for RegistryScopedLegacyAsset with asset_resource_keys() {
+  registry_scoped_legacy_asset_resource_keys
 }
 
 ///|
@@ -1572,18 +1535,13 @@ impl Asset for ProcessorScopeAsset with asset_as_image(_self) {
 }
 
 ///|
-impl @ecs.EcsPayloadCodec for NamedProcessorScopeAsset with to_ecs_payload(self) {
-  EcsPayload_asset_test_NamedProcessorScopeAsset(self)
-}
+let processor_scope_asset_resource_keys : AssetResourceKeys[ProcessorScopeAsset] = register_asset_resource_keys(
+  ProcessorScopeAsset::asset_debug_name(),
+)
 
 ///|
-impl @ecs.EcsPayloadCodec for NamedProcessorScopeAsset with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_asset_test_NamedProcessorScopeAsset(value) => Some(value)
-    _ => None
-  }
+impl Asset for ProcessorScopeAsset with asset_resource_keys() {
+  processor_scope_asset_resource_keys
 }
 
 ///|
@@ -1597,16 +1555,13 @@ impl Asset for NamedProcessorScopeAsset with asset_as_image(_self) {
 }
 
 ///|
-impl @ecs.EcsPayloadCodec for TestCustomAsset with to_ecs_payload(self) {
-  EcsPayload_asset_test_TestCustomAsset(self)
-}
+let named_processor_scope_asset_resource_keys : AssetResourceKeys[
+  NamedProcessorScopeAsset,
+] = register_asset_resource_keys(NamedProcessorScopeAsset::asset_debug_name())
 
 ///|
-impl @ecs.EcsPayloadCodec for TestCustomAsset with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_asset_test_TestCustomAsset(value) => Some(value)
-    _ => None
-  }
+impl Asset for NamedProcessorScopeAsset with asset_resource_keys() {
+  named_processor_scope_asset_resource_keys
 }
 
 ///|
@@ -1620,16 +1575,13 @@ impl Asset for TestCustomAsset with asset_as_image(_self) {
 }
 
 ///|
-impl @ecs.EcsPayloadCodec for MultiLoaderAsset with to_ecs_payload(self) {
-  EcsPayload_asset_test_MultiLoaderAsset(self)
-}
+let test_custom_asset_resource_keys : AssetResourceKeys[TestCustomAsset] = register_asset_resource_keys(
+  TestCustomAsset::asset_debug_name(),
+)
 
 ///|
-impl @ecs.EcsPayloadCodec for MultiLoaderAsset with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_asset_test_MultiLoaderAsset(value) => Some(value)
-    _ => None
-  }
+impl Asset for TestCustomAsset with asset_resource_keys() {
+  test_custom_asset_resource_keys
 }
 
 ///|
@@ -1640,6 +1592,16 @@ impl Asset for MultiLoaderAsset with asset_debug_name() {
 ///|
 impl Asset for MultiLoaderAsset with asset_as_image(_self) {
   None
+}
+
+///|
+let multi_loader_asset_resource_keys : AssetResourceKeys[MultiLoaderAsset] = register_asset_resource_keys(
+  MultiLoaderAsset::asset_debug_name(),
+)
+
+///|
+impl Asset for MultiLoaderAsset with asset_resource_keys() {
+  multi_loader_asset_resource_keys
 }
 
 ///|

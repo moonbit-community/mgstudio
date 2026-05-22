@@ -46,7 +46,6 @@ pub struct TemporalAntiAliasRuntimeState {
 } derive(Eq, @debug.Debug)
 pub fn TemporalAntiAliasRuntimeState::TemporalAntiAliasRuntimeState() -> Self
 pub impl @app.Resource for TemporalAntiAliasRuntimeState
-pub impl @ecs.EcsPayloadCodec for TemporalAntiAliasRuntimeState
 
 // Type aliases
 pub using @post_process {type MipBias}

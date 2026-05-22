@@ -25,8 +25,20 @@ let ecs_key_test_gpu_component_array_buffer_component : @ecs.ComponentKey[
 )
 
 ///|
+let test_gpu_component_array_buffer_state_key : @ecs.ResourceKey[
+  GpuComponentArrayBufferState[TestGpuComponentArrayBufferComponent],
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::TestGpuArrayBufferState",
+)
+
+///|
 pub impl @ecs.Component for TestGpuComponentArrayBufferComponent with component() {
   ecs_key_test_gpu_component_array_buffer_component
+}
+
+///|
+pub impl GpuComponentArrayBufferComponent for TestGpuComponentArrayBufferComponent with gpu_component_array_buffer_state_key() {
+  test_gpu_component_array_buffer_state_key
 }
 
 ///|

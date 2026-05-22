@@ -33,6 +33,18 @@ pub impl @ecs.Component for GlobalTransform with component() {
 }
 
 ///|
+let global_transform_validate_parent_keys : @app.ValidateParentHasComponentKeys[
+  GlobalTransform,
+] = @app.register_validate_parent_has_component_keys(
+  ecs_key_global_transform.debug_name(),
+)
+
+///|
+pub impl @app.ValidateParentHasComponentTarget for GlobalTransform with validate_parent_has_component_keys() {
+  global_transform_validate_parent_keys
+}
+
+///|
 pub let ecs_key_transform_tree_changed : @ecs.ComponentKey[TransformTreeChanged] = @ecs.register_component(
   debug_name="transform.tree_changed",
 )

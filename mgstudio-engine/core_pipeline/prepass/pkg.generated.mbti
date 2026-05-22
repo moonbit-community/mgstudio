@@ -73,25 +73,21 @@ pub struct DepthPrepass {
 } derive(ToJson, @json.FromJson)
 pub fn DepthPrepass::DepthPrepass() -> Self
 pub impl @ecs.Component for DepthPrepass
-pub impl @ecs.EcsPayloadCodec for DepthPrepass
 
 pub struct MotionVectorPrepass {
 } derive(ToJson, @json.FromJson)
 pub fn MotionVectorPrepass::MotionVectorPrepass() -> Self
 pub impl @ecs.Component for MotionVectorPrepass
-pub impl @ecs.EcsPayloadCodec for MotionVectorPrepass
 
 pub struct NoBackgroundMotionVectors {
 } derive(Eq, @debug.Debug)
 pub fn NoBackgroundMotionVectors::NoBackgroundMotionVectors() -> Self
 pub impl @ecs.Component for NoBackgroundMotionVectors
-pub impl @ecs.EcsPayloadCodec for NoBackgroundMotionVectors
 
 pub struct NormalPrepass {
 } derive(ToJson, @json.FromJson)
 pub fn NormalPrepass::NormalPrepass() -> Self
 pub impl @ecs.Component for NormalPrepass
-pub impl @ecs.EcsPayloadCodec for NormalPrepass
 
 pub struct PrepassColorAttachmentPlan {
   normal : Bool
@@ -146,7 +142,6 @@ pub struct PrepassViewState {
 pub fn PrepassViewState::PrepassViewState() -> Self
 pub fn PrepassViewState::new(has_deferred_prepass_component? : Bool, has_opaque_prepass_phase? : Bool, has_alpha_mask_prepass_phase? : Bool, has_normal_attachment? : Bool, has_motion_vectors_attachment? : Bool, has_deferred_attachment? : Bool, has_deferred_lighting_pass_id_attachment? : Bool, occlusion_culling_enabled? : Bool, no_indirect_drawing? : Bool, has_prepass_depth_attachment? : Bool) -> Self
 pub impl @app.Resource for PrepassViewState
-pub impl @ecs.EcsPayloadCodec for PrepassViewState
 
 // Type aliases
 

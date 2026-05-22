@@ -72,7 +72,6 @@ pub struct GltfExtensionRuntimeState {
   mut pbr_material_handler_enabled : Bool
 }
 pub impl @app.Resource for GltfExtensionRuntimeState
-pub impl @ecs.EcsPayloadCodec for GltfExtensionRuntimeState
 
 // Type aliases
 

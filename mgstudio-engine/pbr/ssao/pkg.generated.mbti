@@ -34,7 +34,6 @@ pub struct ScreenSpaceAmbientOcclusionPluginState {
 }
 pub fn ScreenSpaceAmbientOcclusionPluginState::ScreenSpaceAmbientOcclusionPluginState() -> Self
 pub impl @app.Resource for ScreenSpaceAmbientOcclusionPluginState
-pub impl @ecs.EcsPayloadCodec for ScreenSpaceAmbientOcclusionPluginState
 
 pub struct SsaoPipelineId {
   id : Int
