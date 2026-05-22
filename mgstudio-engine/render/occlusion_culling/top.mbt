@@ -22,7 +22,7 @@ const OCCLUSION_CULLING_PLUGIN_NAME : String = "mgstudio.render.occlusion_cullin
 pub struct OcclusionCullingPlugin {}
 
 ///|
-pub fn OcclusionCullingPlugin::default() -> OcclusionCullingPlugin {
+pub fn OcclusionCullingPlugin::OcclusionCullingPlugin() -> OcclusionCullingPlugin {
   OcclusionCullingPlugin::{  }
 }
 
@@ -30,7 +30,10 @@ pub fn OcclusionCullingPlugin::default() -> OcclusionCullingPlugin {
 pub fn occlusion_culling_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  occlusion_culling_plugin_with(app, OcclusionCullingPlugin::default())
+  occlusion_culling_plugin_with(
+    app,
+    OcclusionCullingPlugin::OcclusionCullingPlugin(),
+  )
 }
 
 ///|
@@ -57,7 +60,7 @@ pub fn occlusion_culling_plugin_with(
 pub struct OcclusionCulling {} derive(Eq, Debug)
 
 ///|
-pub fn OcclusionCulling::default() -> OcclusionCulling {
+pub fn OcclusionCulling::OcclusionCulling() -> OcclusionCulling {
   OcclusionCulling::{  }
 }
 

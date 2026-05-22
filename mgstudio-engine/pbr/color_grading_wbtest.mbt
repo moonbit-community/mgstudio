@@ -59,32 +59,32 @@ test "render3d: default color grading host uniform matches Bevy defaults" {
 
 ///|
 test "render3d: custom color grading host uniform preserves Bevy section values" {
-  let global = ColorGradingGlobal::default()
+  let global = @post_process.ColorGradingGlobal::ColorGradingGlobal()
   global.exposure = 1.25F
   global.temperature = 0.08F
   global.tint = -0.03F
   global.hue = 0.4F
   global.post_saturation = 1.6F
   global.midtones_range = { start: 0.15F, end_: 0.65F }
-  let shadows = ColorGradingSection::default()
+  let shadows = @post_process.ColorGradingSection::ColorGradingSection()
   shadows.saturation = 0.8F
   shadows.contrast = 1.1F
   shadows.gamma = 1.3F
   shadows.gain = 1.2F
   shadows.lift = -0.05F
-  let midtones = ColorGradingSection::default()
+  let midtones = @post_process.ColorGradingSection::ColorGradingSection()
   midtones.saturation = 1.2F
   midtones.contrast = 0.95F
   midtones.gamma = 0.9F
   midtones.gain = 1.05F
   midtones.lift = 0.02F
-  let highlights = ColorGradingSection::default()
+  let highlights = @post_process.ColorGradingSection::ColorGradingSection()
   highlights.saturation = 1.4F
   highlights.contrast = 1.25F
   highlights.gamma = 1.1F
   highlights.gain = 1.15F
   highlights.lift = 0.1F
-  let grading = ColorGrading::default()
+  let grading = @post_process.ColorGrading::ColorGrading()
   grading.global = global
   grading.shadows = shadows
   grading.midtones = midtones
@@ -116,7 +116,7 @@ test "render3d: custom color grading host uniform preserves Bevy section values"
 
 ///|
 test "render3d: direct color grading field mutation matches Bevy-style usage" {
-  let grading = ColorGrading::default()
+  let grading = @post_process.ColorGrading::ColorGrading()
   grading.global.exposure = 0.75F
   grading.global.post_saturation = 1.4F
   grading.global.midtones_range = { start: 0.3F, end_: 0.6F }
@@ -134,7 +134,7 @@ test "render3d: direct color grading field mutation matches Bevy-style usage" {
 
 ///|
 test "render3d: color grading all_sections iterates in Bevy order" {
-  let grading = ColorGrading::default()
+  let grading = @post_process.ColorGrading::ColorGrading()
   grading.shadows.gamma = 1.1F
   grading.midtones.gamma = 1.2F
   grading.highlights.gamma = 1.3F
@@ -151,7 +151,7 @@ test "render3d: color grading all_sections iterates in Bevy order" {
 
 ///|
 test "render3d: color grading all_sections_mut updates original sections" {
-  let grading = ColorGrading::default()
+  let grading = @post_process.ColorGrading::ColorGrading()
   for section in grading.all_sections_mut() {
     section.gamma = section.gamma + 0.5F
     section.saturation = section.saturation + 0.25F
@@ -171,7 +171,7 @@ test "render3d: color grading alone enables tonemap postprocess path" {
     None,
     None,
     false,
-    Some(ColorGrading::default()),
+    Some(@post_process.ColorGrading::ColorGrading()),
   )
   debug_inspect(enabled, content="true")
 }

@@ -146,8 +146,8 @@ pub struct ActiveAnimation {
   mut just_completed : Bool
   paused : Bool
 }
+pub fn ActiveAnimation::ActiveAnimation() -> Self
 pub fn ActiveAnimation::completions(Self) -> Int
-pub fn ActiveAnimation::default() -> Self
 pub fn ActiveAnimation::elapsed(Self) -> Float
 pub fn ActiveAnimation::is_finished(Self) -> Bool
 pub fn ActiveAnimation::is_paused(Self) -> Bool
@@ -322,13 +322,15 @@ pub(all) enum AnimationNodeType {
   Add
 }
 
-type AnimationPlayer
+pub struct AnimationPlayer {
+  // private fields
+}
+pub fn AnimationPlayer::AnimationPlayer() -> Self
 pub fn AnimationPlayer::adjust_speeds(Self, Float) -> Self
 pub fn AnimationPlayer::all_finished(Self) -> Bool
 pub fn AnimationPlayer::all_paused(Self) -> Bool
 pub fn AnimationPlayer::animation(Self, AnimationNodeIndex) -> ActiveAnimation?
 pub fn AnimationPlayer::animation_mut(Self, AnimationNodeIndex) -> AnimationPlayerEntry?
-pub fn AnimationPlayer::default() -> Self
 pub fn AnimationPlayer::is_playing_animation(Self, AnimationNodeIndex) -> Bool
 pub fn AnimationPlayer::pause_all(Self) -> Self
 pub fn AnimationPlayer::play(Self, AnimationNodeIndex) -> AnimationPlayerEntry
@@ -376,7 +378,7 @@ pub fn AnimationPlayerEntry::weight(Self) -> Float
 
 pub struct AnimationPlugin {
 }
-pub fn AnimationPlugin::default() -> Self
+pub fn AnimationPlugin::AnimationPlugin() -> Self
 pub impl @app.Plugin for AnimationPlugin
 
 type AnimationSample

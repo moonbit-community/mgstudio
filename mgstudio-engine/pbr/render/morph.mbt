@@ -109,7 +109,7 @@ pub struct Render3dMorphState {
 }
 
 ///|
-pub fn Render3dMorphState::default() -> Render3dMorphState {
+pub fn Render3dMorphState::Render3dMorphState() -> Render3dMorphState {
   Render3dMorphState::{ weights: [], normalized: true }
 }
 

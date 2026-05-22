@@ -152,7 +152,7 @@ pub fn update_pointer_map_system(@ecs.World) -> Unit
 // Types and methods
 pub struct DefaultPickingPlugins {
 }
-pub fn DefaultPickingPlugins::default() -> Self
+pub fn DefaultPickingPlugins::DefaultPickingPlugins() -> Self
 pub impl @app.PluginGroup for DefaultPickingPlugins
 
 pub struct HitData {
@@ -166,7 +166,7 @@ pub fn HitData::new(@core.Entity, Float, @math.Vec3?, @math.Vec3?) -> Self
 pub struct HoverMap {
   inner : @hashmap.HashMap[Int, Array[(@core.Entity, HitData)]]
 }
-pub fn HoverMap::default() -> Self
+pub fn HoverMap::HoverMap() -> Self
 pub fn HoverMap::from_array(Array[(Int, Array[(@core.Entity, HitData)])]) -> Self
 pub fn HoverMap::get(Self, Int) -> Array[(@core.Entity, HitData)]
 pub fn HoverMap::is_hovering(Self, Int, @core.Entity) -> Bool
@@ -175,21 +175,21 @@ pub impl @ecs.EcsPayloadCodec for HoverMap
 
 pub struct InteractionPlugin {
 }
-pub fn InteractionPlugin::default() -> Self
+pub fn InteractionPlugin::InteractionPlugin() -> Self
 pub impl @app.Plugin for InteractionPlugin
 
 pub struct Pickable {
   should_block_lower : Bool
   is_hoverable : Bool
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn Pickable::default() -> Self
+pub fn Pickable::Pickable() -> Self
 pub fn Pickable::new(Bool, Bool) -> Self
 pub impl @ecs.Component for Pickable
 pub impl @ecs.EcsPayloadCodec for Pickable
 
 pub struct PickingPlugin {
 }
-pub fn PickingPlugin::default() -> Self
+pub fn PickingPlugin::PickingPlugin() -> Self
 pub impl @app.Plugin for PickingPlugin
 
 pub struct PickingSettings {
@@ -198,7 +198,7 @@ pub struct PickingSettings {
   is_hover_enabled : Bool
   is_window_picking_enabled : Bool
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn PickingSettings::default() -> Self
+pub fn PickingSettings::PickingSettings() -> Self
 pub impl @app.Resource for PickingSettings
 pub impl @ecs.EcsPayloadCodec for PickingSettings
 
@@ -207,7 +207,7 @@ pub struct PickingState {
   pressed : Array[@core.Entity?]
   last_position : Array[@math.Vec2?]
 } derive(ToJson, @json.FromJson)
-pub fn PickingState::default() -> Self
+pub fn PickingState::PickingState() -> Self
 pub fn PickingState::hovered(Self, Int) -> @core.Entity?
 pub fn PickingState::last_position(Self, Int) -> @math.Vec2?
 pub fn PickingState::pressed(Self, Int) -> @core.Entity?
@@ -258,14 +258,14 @@ pub impl @ecs.Message for PointerInput
 
 pub struct PointerInputPlugin {
 }
-pub fn PointerInputPlugin::default() -> Self
+pub fn PointerInputPlugin::PointerInputPlugin() -> Self
 pub impl @app.Plugin for PointerInputPlugin
 
 pub struct PointerInputSettings {
   is_touch_enabled : Bool
   is_mouse_enabled : Bool
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn PointerInputSettings::default() -> Self
+pub fn PointerInputSettings::PointerInputSettings() -> Self
 pub fn PointerInputSettings::new(Bool, Bool) -> Self
 pub impl @app.Resource for PointerInputSettings
 pub impl @ecs.EcsPayloadCodec for PointerInputSettings
@@ -273,7 +273,7 @@ pub impl @ecs.EcsPayloadCodec for PointerInputSettings
 pub struct PointerInteraction {
   sorted_entities : Array[(@core.Entity, HitData)]
 } derive(ToJson, @json.FromJson)
-pub fn PointerInteraction::default() -> Self
+pub fn PointerInteraction::PointerInteraction() -> Self
 pub fn PointerInteraction::get_nearest_hit(Self) -> (@core.Entity, HitData)?
 pub impl @ecs.Component for PointerInteraction
 pub impl @ecs.EcsPayloadCodec for PointerInteraction
@@ -281,7 +281,7 @@ pub impl @ecs.EcsPayloadCodec for PointerInteraction
 pub struct PointerLocation {
   location : @math.Vec2?
 } derive(ToJson, @json.FromJson)
-pub fn PointerLocation::default() -> Self
+pub fn PointerLocation::PointerLocation() -> Self
 pub fn PointerLocation::location(Self) -> @math.Vec2?
 pub fn PointerLocation::new(@math.Vec2) -> Self
 pub impl @ecs.Component for PointerLocation
@@ -290,7 +290,7 @@ pub impl @ecs.EcsPayloadCodec for PointerLocation
 pub struct PointerMap {
   inner : @hashmap.HashMap[Int, @core.Entity]
 }
-pub fn PointerMap::default() -> Self
+pub fn PointerMap::PointerMap() -> Self
 pub fn PointerMap::get_entity(Self, Int) -> @core.Entity?
 pub impl @app.Resource for PointerMap
 pub impl @ecs.EcsPayloadCodec for PointerMap
@@ -300,7 +300,7 @@ pub struct PointerPress {
   secondary : Bool
   middle : Bool
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn PointerPress::default() -> Self
+pub fn PointerPress::PointerPress() -> Self
 pub fn PointerPress::is_any_pressed(Self) -> Bool
 pub fn PointerPress::is_middle_pressed(Self) -> Bool
 pub fn PointerPress::is_primary_pressed(Self) -> Bool
@@ -311,7 +311,7 @@ pub impl @ecs.EcsPayloadCodec for PointerPress
 pub struct PreviousHoverMap {
   inner : @hashmap.HashMap[Int, Array[(@core.Entity, HitData)]]
 }
-pub fn PreviousHoverMap::default() -> Self
+pub fn PreviousHoverMap::PreviousHoverMap() -> Self
 pub impl @app.Resource for PreviousHoverMap
 pub impl @ecs.EcsPayloadCodec for PreviousHoverMap
 
@@ -329,7 +329,7 @@ pub struct SpritePickingSettings {
   require_markers : Bool
   picking_mode : SpritePickingMode
 } derive(@debug.Debug)
-pub fn SpritePickingSettings::default() -> Self
+pub fn SpritePickingSettings::SpritePickingSettings() -> Self
 pub fn SpritePickingSettings::new(Bool, SpritePickingMode) -> Self
 pub impl @app.Resource for SpritePickingSettings
 pub impl @ecs.EcsPayloadCodec for SpritePickingSettings

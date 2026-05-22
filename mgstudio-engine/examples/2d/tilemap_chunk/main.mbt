@@ -80,9 +80,7 @@ fn main {
   )
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(
-    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
-  )
+  .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .add_systems(
     @app.Startup,
     (setup_system, spawn_fake_player_system) |> @app.chain(),
@@ -144,7 +142,7 @@ fn setup(
       ),
     ),
   )
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   commands.insert_resource(SeededRng::{ rng, })
 }
 

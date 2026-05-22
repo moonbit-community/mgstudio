@@ -17,7 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_ecs_observer_propagation_HitPoints(HitPoints)
   EcsPayload_examples_ecs_observer_propagation_Armor(Armor)
   EcsPayload_examples_ecs_observer_propagation_Attack(Attack)
-  EcsPayload_examples_ecs_observer_propagation_AttackSchedule(AttackSchedule)
 }
 
 ///|
@@ -55,20 +54,6 @@ impl @ecs.EcsPayloadCodec for Attack with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for Attack with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ecs_observer_propagation_Attack(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AttackSchedule with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_observer_propagation_AttackSchedule(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AttackSchedule with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_observer_propagation_AttackSchedule(value) =>
-      Some(value)
     _ => None
   }
 }

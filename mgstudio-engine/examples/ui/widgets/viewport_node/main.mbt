@@ -45,8 +45,8 @@ fn setup(
 
   commands.spawn(
     (
-      @camera.Camera3d::default(),
-      @sprite.Camera::default().with_order(-1),
+      @camera.Camera3d::Camera3d(),
+      @sprite.Camera::Camera().with_order(-1),
       @sprite.RenderTarget::Image(target),
       @transform.Transform::from_xyz(0.0F, 2.5F, 5.5F).looking_at(
         @math.Vec3::zero(),
@@ -81,12 +81,12 @@ fn setup(
   )
   |> ignore
 
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
@@ -97,7 +97,7 @@ fn setup(
   commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(260.0F))
       .with_height(@ui.Val::Px(260.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(4.0F)))
@@ -126,7 +126,7 @@ fn rotate_mesh(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(rotate_mesh)))
   .run()

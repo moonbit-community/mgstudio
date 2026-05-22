@@ -13,19 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_audio_decodable_DecodableState(DecodableState)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DecodableState with to_ecs_payload(self) {
-  EcsPayload_examples_audio_decodable_DecodableState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DecodableState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_audio_decodable_DecodableState(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

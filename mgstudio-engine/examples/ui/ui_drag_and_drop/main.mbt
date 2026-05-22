@@ -29,7 +29,7 @@ struct DragState {
 }
 
 ///|
-fn DragState::default() -> DragState {
+fn DragState::DragState() -> DragState {
   { active: None, hovered: None, start_position: @math.Vec2::new(0.0F, 0.0F) }
 }
 
@@ -86,7 +86,7 @@ fn tile_hover_border_color_b() -> @sprite.Color {
 ///|
 fn tile_node(column : Int, row : Int) -> @ui.Node {
   @ui.Node::{
-    ..@ui.Node::default(),
+    ..@ui.Node(),
     width: @ui.Val::Px(TILE_SIZE),
     height: @ui.Val::Px(TILE_SIZE),
     border: @ui.UiRect::all(@ui.Val::Px(4.0F)),
@@ -99,7 +99,7 @@ fn tile_node(column : Int, row : Int) -> @ui.Node {
 
 ///|
 fn label_font(font : @asset.Handle[@asset.Font]) -> @text.TextFont {
-  @text.TextFont::default()
+  @text.TextFont::TextFont()
   .with_font(font)
   .with_font_size(@text.FontSize::Px(16.0F))
 }
@@ -197,7 +197,7 @@ fn release_active_tile(
       ..current_transform,
       translation: @math.Vec3::new(0.0F, 0.0F, z),
     })
-    outline.set(@ui.Outline::default())
+    outline.set(@ui.Outline::Outline())
     global_z.set(@ui.GlobalZIndex::new(0))
   }
 
@@ -230,16 +230,16 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  commands.insert_resource(DragState::default())
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.insert_resource(DragState::DragState())
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
@@ -251,7 +251,7 @@ fn setup(
   let board = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default().with_display(@ui.Display::Grid),
+      @ui.Node::Node().with_display(@ui.Display::Grid),
     ),
   )
 
@@ -281,7 +281,7 @@ fn setup(
           @hierarchy.Parent::new(board),
           tile_node(column, row),
           @transform.Transform::identity(),
-          @ui.Outline::default(),
+          @ui.Outline::Outline(),
           @ui.GlobalZIndex::new(0),
           @ui.BorderColor::new(tile_border_color),
           @ui.BackgroundColor::new(tile_color),
@@ -346,7 +346,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param2(setup)
   .add_pointer_observer3(drag_active_tile)
   .add_pointer_observer4(release_active_tile)

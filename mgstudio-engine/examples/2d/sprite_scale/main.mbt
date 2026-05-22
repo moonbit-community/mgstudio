@@ -79,7 +79,7 @@ pub impl @ecs.Component for AnimationTimer with component() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup_sprites)))
   .add_systems(
     @app.Startup,
@@ -92,7 +92,7 @@ fn main {
 
 ///|
 fn setup_camera(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 }
 
 ///|

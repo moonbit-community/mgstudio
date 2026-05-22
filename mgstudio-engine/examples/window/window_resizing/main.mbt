@@ -45,7 +45,7 @@ fn main {
     medium: @math.Vec2::new(800.0F, 600.0F),
     small: @math.Vec2::new(640.0F, 360.0F),
   })
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup_camera))
   .add_systems(@app.Startup, @app.system(setup_ui))
   .add_systems(@app.Update, @app.system(@app.system_param2(toggle_resolution)))
@@ -56,7 +56,7 @@ fn main {
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -67,11 +67,11 @@ fn setup_ui(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default().with_width(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(@ui.Val::Percent(100.0F)),
   )
   let text_entity = world.spawn_empty()
   try! world.set_by_key(
@@ -102,7 +102,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(42.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(42.0F),
   )
   try! world.set_by_key(
     text_entity,

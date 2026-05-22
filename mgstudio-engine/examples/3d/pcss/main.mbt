@@ -176,7 +176,7 @@ fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       camera,
       @post_process.ecs_key_temporal_anti_aliasing,
-      @post_process.TemporalAntiAliasing::default(),
+      @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
     )
   } else {
     try! (world.take(camera, @post_process.ecs_key_temporal_anti_aliasing)
@@ -223,7 +223,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(
       -12.912F * 0.7F,
       4.466F * 0.7F,
@@ -244,34 +244,34 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_jitter,
-    @post_process.TemporalJitter::default(),
+    @post_process.TemporalJitter::TemporalJitter(),
   )
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_jitter,
-    @post_process.TemporalJitter::default(),
+    @post_process.TemporalJitter::TemporalJitter(),
   )
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_depth_prepass,
-    @pbr.DepthPrepass::default(),
+    @pbr.DepthPrepass::DepthPrepass(),
   )
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_jitter,
-    @post_process.TemporalJitter::default(),
+    @post_process.TemporalJitter::TemporalJitter(),
   )
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_depth_prepass,
-    @pbr.DepthPrepass::default(),
+    @pbr.DepthPrepass::DepthPrepass(),
   )
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_motion_vector_prepass,
-    @pbr.MotionVectorPrepass::default(),
+    @pbr.MotionVectorPrepass::MotionVectorPrepass(),
   )
   try! world.set_by_key(
     camera,
@@ -307,7 +307,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -323,7 +323,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   pcss_state.val.help_text = Some(help_text)
 
@@ -382,7 +382,7 @@ fn controls(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(controls))
   .run()

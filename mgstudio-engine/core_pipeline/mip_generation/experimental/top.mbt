@@ -20,7 +20,7 @@
 pub struct ExperimentalMipGeneration {}
 
 ///|
-pub fn ExperimentalMipGeneration::default() -> ExperimentalMipGeneration {
+pub fn ExperimentalMipGeneration::ExperimentalMipGeneration() -> ExperimentalMipGeneration {
   ExperimentalMipGeneration::{  }
 }
 
@@ -28,7 +28,7 @@ pub fn ExperimentalMipGeneration::default() -> ExperimentalMipGeneration {
 pub fn experimental_mip_generation_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  app.add_plugins(ExperimentalMipGeneration::default())
+  app.add_plugins(ExperimentalMipGeneration::ExperimentalMipGeneration())
 }
 
 ///|
@@ -45,7 +45,9 @@ fn experimental_mip_generation_plugin_install_with(
   plugin : ExperimentalMipGeneration,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { DownsampleDepthPipelinePairState::default() })
+  app.init_resource(fn() {
+    DownsampleDepthPipelinePairState::DownsampleDepthPipelinePairState()
+  })
 }
 
 ///|

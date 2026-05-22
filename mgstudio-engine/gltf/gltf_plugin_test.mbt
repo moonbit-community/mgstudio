@@ -88,7 +88,7 @@ test "gltf: loader registration runs in finish lifecycle and only once" {
   })
 
   let mut app = @app.App::new(@ecs.World::new()).add_plugins(
-    GltfPlugin::default(),
+    @gltf_loader.GltfPlugin::GltfPlugin(),
   )
   debug_inspect(registration_count.val, content="0")
 

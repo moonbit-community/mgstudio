@@ -26,7 +26,7 @@ pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
 pub struct ForwardDecalPlugin {}
 
 ///|
-pub fn ForwardDecalPlugin::default() -> ForwardDecalPlugin {
+pub fn ForwardDecalPlugin::ForwardDecalPlugin() -> ForwardDecalPlugin {
   ForwardDecalPlugin::{  }
 }
 
@@ -48,7 +48,7 @@ pub struct ForwardDecalMaterialExtUniform {
 }
 
 ///|
-pub fn ForwardDecalMaterialExtUniform::default() -> ForwardDecalMaterialExtUniform {
+pub fn ForwardDecalMaterialExtUniform::ForwardDecalMaterialExtUniform() -> ForwardDecalMaterialExtUniform {
   ForwardDecalMaterialExtUniform::{ inv_depth_fade_factor: 1.0F / 8.0F }
 }
 
@@ -67,7 +67,7 @@ pub struct ForwardDecalPipelineKey {
 }
 
 ///|
-pub fn ForwardDecalPipelineKey::default() -> ForwardDecalPipelineKey {
+pub fn ForwardDecalPipelineKey::ForwardDecalPipelineKey() -> ForwardDecalPipelineKey {
   ForwardDecalPipelineKey::{ alpha_blend: true, depth_compare_always: true }
 }
 
@@ -84,7 +84,7 @@ pub fn pbr_forward_decal_specialized_label(base : String) -> String {
 }
 
 ///|
-pub fn ForwardDecal::default() -> ForwardDecal {
+pub fn ForwardDecal::ForwardDecal() -> ForwardDecal {
   ForwardDecal::{  }
 }
 

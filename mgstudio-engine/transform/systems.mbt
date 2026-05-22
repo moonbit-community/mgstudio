@@ -159,7 +159,10 @@ fn transform_abort_malformed_hierarchy() -> Unit {
 fn ensure_transform_runtime_resources(world : @ecs.World) -> Unit {
   let key = static_transform_optimizations_resource_key
   if !world.resource(key).is_present() {
-    world.insert_resource(key, StaticTransformOptimizations::default())
+    world.insert_resource(
+      key,
+      StaticTransformOptimizations::StaticTransformOptimizations(),
+    )
   }
   if world.get_resource(ecs_key_transform_propagation_scratch) is None {
     world.insert_resource(
@@ -177,7 +180,7 @@ fn read_static_transform_optimizations(
   world
   .resource(static_transform_optimizations_resource_key)
   .get()
-  .unwrap_or(StaticTransformOptimizations::default())
+  .unwrap_or(StaticTransformOptimizations::StaticTransformOptimizations())
 }
 
 ///|

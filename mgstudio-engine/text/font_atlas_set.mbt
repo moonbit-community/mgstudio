@@ -67,7 +67,7 @@ pub struct FontAtlasSet {
 }
 
 ///|
-pub fn FontAtlasSet::default() -> FontAtlasSet {
+pub fn FontAtlasSet::FontAtlasSet() -> FontAtlasSet {
   FontAtlasSet::{ entries: [] }
 }
 

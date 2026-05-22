@@ -23,8 +23,8 @@ pub struct Segment3dMeshBuilder {
 }
 
 ///|
-pub fn Segment3dMeshBuilder::default() -> Segment3dMeshBuilder {
-  { segment: @math.Segment3d::default() }
+pub fn Segment3dMeshBuilder::Segment3dMeshBuilder() -> Segment3dMeshBuilder {
+  { segment: @math.Segment3d::Segment3d() }
 }
 
 ///|

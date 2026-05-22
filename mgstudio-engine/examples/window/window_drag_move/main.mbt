@@ -116,12 +116,12 @@ fn refresh_instruction_text(world : @ecs.World) -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
   let overlay_camera = @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(1).with_clear_color_none(),
+    @sprite.Camera::Camera().with_order(1).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
   let camera_tick = world.read_change_tick()
@@ -129,7 +129,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     overlay_camera,
     @ui.IsDefaultUiCamera::component(),
-    @ui.IsDefaultUiCamera::default(),
+    @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
   )
 
   let content = instruction_text(
@@ -137,11 +137,11 @@ fn setup(world : @ecs.World) -> Unit {
     @math.CompassOctant::NorthWest,
   )
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(0.0F))
     .with_left(@ui.Val::Px(0.0F))
@@ -152,11 +152,11 @@ fn setup(world : @ecs.World) -> Unit {
     @ui.GlobalZIndex::component(),
     @ui.GlobalZIndex::new(2147483647),
   )
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(0.0F))
     .with_left(@ui.Val::Px(0.0F))
@@ -206,7 +206,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default(),
+    @text.TextFont::TextFont(),
   )
   try! world.set_by_key(
     text_entity,
@@ -221,7 +221,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default(),
+    @text.TextFont::TextFont(),
   )
   try! world.set_by_key(
     text_entity,
@@ -241,7 +241,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default(),
+    @text.TextFont::TextFont(),
   )
   try! world.set_by_key(
     text_entity,
@@ -324,12 +324,12 @@ fn main {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(
         {
-          let window = @window.Window::default()
+          let window = @window.Window::Window()
           window.decorations = false
           window
         },
       ),
-      primary_cursor_options: Some(@window.CursorOptions::default()),
+      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
     }),

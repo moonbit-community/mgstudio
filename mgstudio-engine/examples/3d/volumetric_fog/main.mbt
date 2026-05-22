@@ -239,7 +239,7 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-1.7F, 1.5F, 4.5F).looking_at(
       scene_focus(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -253,7 +253,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_bloom,
-    @post_process.Bloom::default(),
+    @post_process.Bloom::Bloom(),
   )
   try! world.set_by_key(
     camera,
@@ -332,7 +332,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(create_text()),
-      @text.TextFont::default().with_font(font).with_font_size(16.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
@@ -346,7 +346,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   volumetric_fog_state.val.help_text = Some(handle)
 }
@@ -595,7 +595,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(move_directional_light))
   .add_systems(@app.Update, @app.system(move_point_light))

@@ -50,14 +50,14 @@ fn setup(
     .with_center_scale_mode(@ui.SliceScaleMode::Tile(1.0F))
     .with_sides_scale_mode(@ui.SliceScaleMode::Tile(1.0F))
 
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
+      @ui.UiRoot::UiRoot(),
       @ui.Node::{
-        ..@ui.Node::default(),
+        ..@ui.Node(),
         width: @ui.Val::Percent(100.0F),
         height: @ui.Val::Percent(100.0F),
         justify_content: @ui.JustifyContent::Center,
@@ -88,7 +88,7 @@ fn setup(
           (
             @hierarchy.Parent::new(root),
             image_node,
-            @ui.Node::default()
+            @ui.Node::Node()
             .with_width(@ui.Val::Px(16.0F * float_from_int(dimension.0)))
             .with_height(@ui.Val::Px(16.0F * float_from_int(dimension.1))),
           ),
@@ -101,7 +101,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

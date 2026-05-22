@@ -19,7 +19,7 @@
 pub struct NoAutomaticBatching {}
 
 ///|
-pub fn NoAutomaticBatching::default() -> NoAutomaticBatching {
+pub fn NoAutomaticBatching::NoAutomaticBatching() -> NoAutomaticBatching {
   NoAutomaticBatching::{  }
 }
 

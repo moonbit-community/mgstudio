@@ -71,7 +71,7 @@ pub struct PointerLocation {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PointerLocation::default() -> PointerLocation {
+pub fn PointerLocation::PointerLocation() -> PointerLocation {
   PointerLocation::{ location: None }
 }
 
@@ -98,7 +98,7 @@ pub struct PointerPress {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn PointerPress::default() -> PointerPress {
+pub fn PointerPress::PointerPress() -> PointerPress {
   PointerPress::{ primary: false, secondary: false, middle: false }
 }
 
@@ -133,7 +133,7 @@ pub struct PointerInteraction {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PointerInteraction::default() -> PointerInteraction {
+pub fn PointerInteraction::PointerInteraction() -> PointerInteraction {
   PointerInteraction::{ sorted_entities: [] }
 }
 
@@ -159,7 +159,7 @@ pub struct PointerMap {
 }
 
 ///|
-pub fn PointerMap::default() -> PointerMap {
+pub fn PointerMap::PointerMap() -> PointerMap {
   PointerMap::{ inner: @hashmap.HashMap([]) }
 }
 
@@ -180,7 +180,7 @@ pub impl @app.Resource for PointerMap with resource() {
 pub fn ensure_pointer_map_system(world : @ecs.World) -> Unit {
   let res = get_pointer_map_resource(world)
   if res.get() is None {
-    res.insert(PointerMap::default())
+    res.insert(PointerMap::PointerMap())
   }
 }
 
@@ -250,14 +250,14 @@ fn ensure_pointer_entity(
     try! world.set_by_key(
       entity,
       ecs_key_pointer_press,
-      PointerPress::default(),
+      PointerPress::PointerPress(),
     )
   }
   if !(try! world.contains_by_key(entity, ecs_key_pointer_interaction)) {
     try! world.set_by_key(
       entity,
       ecs_key_pointer_interaction,
-      PointerInteraction::default(),
+      PointerInteraction::PointerInteraction(),
     )
   }
   entity
@@ -275,7 +275,7 @@ priv struct PointerInputReaderState {
 }
 
 ///|
-fn PointerInputReaderState::default() -> PointerInputReaderState {
+fn PointerInputReaderState::PointerInputReaderState() -> PointerInputReaderState {
   { cursor: 0 }
 }
 
@@ -290,7 +290,7 @@ let pointer_input_reader_state_resource_key : @ecs.ResourceKey[
 fn ensure_pointer_input_reader_state(world : @ecs.World) -> Unit {
   let res = world.resource(pointer_input_reader_state_resource_key)
   if !res.is_present() {
-    res.insert(PointerInputReaderState::default())
+    res.insert(PointerInputReaderState::PointerInputReaderState())
   }
 }
 
@@ -329,7 +329,7 @@ pub fn pointer_input_receive_system(world : @ecs.World) -> Unit {
     let prev_press = match
       (try! world.get_by_key(entity, ecs_key_pointer_press)) {
       Some(value) => value
-      None => PointerPress::default()
+      None => PointerPress::PointerPress()
     }
     let primary = if input.just_pressed {
       true
@@ -370,7 +370,7 @@ pub fn pointer_inputs_from_entities(world : @ecs.World) -> Array[PointerInput] {
     }
     let press = match (try! world.get_by_key(entity, ecs_key_pointer_press)) {
       Some(value) => value
-      None => PointerPress::default()
+      None => PointerPress::PointerPress()
     }
     inputs.push(
       PointerInput::new(

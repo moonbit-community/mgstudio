@@ -66,7 +66,7 @@ pub fn LevelSet::new(iids : Array[LevelIid]) -> LevelSet {
 }
 
 ///|
-pub fn LevelSet::default() -> LevelSet {
+pub fn LevelSet::LevelSet() -> LevelSet {
   LevelSet::{ iids: [] }
 }
 
@@ -279,7 +279,7 @@ pub fn LdtkWorldBundle::new(
   let transform = @transform.Transform::identity()
   LdtkWorldBundle::{
     ldtk_handle: LdtkProjectHandle::new(handle),
-    level_set: LevelSet::default(),
+    level_set: LevelSet::LevelSet(),
     transform,
     global_transform: @transform.GlobalTransform::from_transform(transform),
     visibility: @visibility.Visibility::Inherited,

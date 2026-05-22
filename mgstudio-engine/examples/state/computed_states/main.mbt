@@ -229,8 +229,8 @@ fn compute_tutorial(input : (TutorialState, InGame, IsPaused?)) -> Tutorial? {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@app.StatesPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(AppState::default())
   .insert_state(TutorialState::default())
   .add_computed_state(AppState::Menu, InGame::{  }, compute_in_game)
@@ -286,13 +286,13 @@ fn main {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 }
 
 ///|
 fn setup_menu(commands : @app.Commands) -> Unit {
   let root = commands.spawn_component(
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_justify_content(@ui.JustifyContent::Center)
@@ -303,8 +303,8 @@ fn setup_menu(commands : @app.Commands) -> Unit {
   let play_button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Button::default(),
-      @ui.Node::default()
+      @ui.Button::Button(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(200.0F))
       .with_height(@ui.Val::Px(65.0F))
       .with_justify_content(@ui.JustifyContent::Center)
@@ -318,7 +318,7 @@ fn setup_menu(commands : @app.Commands) -> Unit {
       (
         @hierarchy.Parent::new(play_button),
         @text.Text::new("Play"),
-        @text.TextFont::default().with_font_size(33.0F),
+        @text.TextFont::TextFont().with_font_size(33.0F),
         @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),
@@ -326,8 +326,8 @@ fn setup_menu(commands : @app.Commands) -> Unit {
   let tutorial_button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Button::default(),
-      @ui.Node::default()
+      @ui.Button::Button(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(200.0F))
       .with_height(@ui.Val::Px(65.0F))
       .with_justify_content(@ui.JustifyContent::Center)
@@ -341,7 +341,7 @@ fn setup_menu(commands : @app.Commands) -> Unit {
       (
         @hierarchy.Parent::new(tutorial_button),
         @text.Text::new("Tutorial"),
-        @text.TextFont::default().with_font_size(33.0F),
+        @text.TextFont::TextFont().with_font_size(33.0F),
         @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),
@@ -493,7 +493,7 @@ fn setup_paused_screen(commands : @app.Commands) -> Unit {
   let root = commands.spawn(
     (
       @state.DespawnOnExit::new(IsPaused::Paused),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_position_type(@ui.PositionType::Absolute)
@@ -505,7 +505,7 @@ fn setup_paused_screen(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_width(@ui.Val::Px(400.0F))
         .with_height(@ui.Val::Px(120.0F))
         .with_justify_content(@ui.JustifyContent::Center)
@@ -519,7 +519,7 @@ fn setup_paused_screen(commands : @app.Commands) -> Unit {
       (
         @hierarchy.Parent::new(root),
         @text.Text::new("Paused"),
-        @text.TextFont::default().with_font_size(33.0F),
+        @text.TextFont::TextFont().with_font_size(33.0F),
         @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),
@@ -533,10 +533,10 @@ fn setup_turbo_text(commands : @app.Commands) -> Unit {
       (
         @state.DespawnOnExit::new(TurboMode::{  }),
         @text.Text::new("TURBO MODE"),
-        @text.TextFont::default().with_font_size(33.0F),
+        @text.TextFont::TextFont().with_font_size(33.0F),
         @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.3F, 0.1F)),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           top: @ui.Val::Px(16.0F),
           left: @ui.Val::Px(16.0F),
@@ -564,7 +564,7 @@ fn movement_instructions(commands : @app.Commands) -> Unit {
   let root = commands.spawn(
     (
       @state.DespawnOnExit::new(Tutorial::MovementInstructions),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_position_type(@ui.PositionType::Absolute)
@@ -584,7 +584,7 @@ fn movement_instructions(commands : @app.Commands) -> Unit {
         (
           @hierarchy.Parent::new(root),
           @text.Text::new(line),
-          @text.TextFont::default().with_font_size(28.0F),
+          @text.TextFont::TextFont().with_font_size(28.0F),
           @text.TextColor::new(@sprite.Color::srgb(0.3F, 0.3F, 0.7F)),
         ),
       ),
@@ -597,7 +597,7 @@ fn pause_instructions(commands : @app.Commands) -> Unit {
   let root = commands.spawn(
     (
       @state.DespawnOnExit::new(Tutorial::PauseInstructions),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_position_type(@ui.PositionType::Absolute)
@@ -614,7 +614,7 @@ fn pause_instructions(commands : @app.Commands) -> Unit {
         (
           @hierarchy.Parent::new(root),
           @text.Text::new(line),
-          @text.TextFont::default().with_font_size(28.0F),
+          @text.TextFont::TextFont().with_font_size(28.0F),
           @text.TextColor::new(@sprite.Color::srgb(0.3F, 0.3F, 0.7F)),
         ),
       ),

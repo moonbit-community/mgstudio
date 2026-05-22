@@ -41,7 +41,7 @@ pub const DEFERRED_LIGHTING_ID_DEPTH_TEXTURE_LABEL : String = "deferred_lighting
 pub struct CopyDeferredLightingIdPlugin {}
 
 ///|
-pub fn CopyDeferredLightingIdPlugin::default() -> CopyDeferredLightingIdPlugin {
+pub fn CopyDeferredLightingIdPlugin::CopyDeferredLightingIdPlugin() -> CopyDeferredLightingIdPlugin {
   CopyDeferredLightingIdPlugin::{  }
 }
 
@@ -107,7 +107,7 @@ pub fn copy_deferred_lighting_id_plugin(
 ) -> @app.App[@ecs.World] {
   copy_deferred_lighting_id_plugin_with(
     app,
-    CopyDeferredLightingIdPlugin::default(),
+    CopyDeferredLightingIdPlugin::CopyDeferredLightingIdPlugin(),
   )
 }
 
@@ -128,7 +128,9 @@ pub fn copy_deferred_lighting_id_plugin_with(
   plugin : CopyDeferredLightingIdPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { CopyDeferredLightingIdState::default() })
+  app.init_resource(fn() {
+    CopyDeferredLightingIdState::CopyDeferredLightingIdState()
+  })
 }
 
 ///|
@@ -146,7 +148,7 @@ pub struct CopyDeferredLightingIdState {
 }
 
 ///|
-pub fn CopyDeferredLightingIdState::default() -> CopyDeferredLightingIdState {
+pub fn CopyDeferredLightingIdState::CopyDeferredLightingIdState() -> CopyDeferredLightingIdState {
   CopyDeferredLightingIdState::new()
 }
 

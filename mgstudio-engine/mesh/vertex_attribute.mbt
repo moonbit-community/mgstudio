@@ -509,7 +509,7 @@ pub struct MeshVertexBufferLayouts {
 }
 
 ///|
-pub fn MeshVertexBufferLayouts::default() -> MeshVertexBufferLayouts {
+pub fn MeshVertexBufferLayouts::MeshVertexBufferLayouts() -> MeshVertexBufferLayouts {
   MeshVertexBufferLayouts::{ layouts: [] }
 }
 

@@ -126,7 +126,7 @@ pub fn[T : WidgetValue] widget_click_sender_key() -> @ecs.ComponentKey[
   match widget_click_sender_registry.val.get(type_name) {
     Some(id) => @ecs.component_key_from_id(id, debug_name=type_name)
     None => {
-      let key : @ecs.ComponentKey[WidgetClickSender[T]] = @ecs.register_component(
+      let key : @ecs.ComponentKey[WidgetClickSender[T]] = @ecs.register_erased_component(
         debug_name=type_name,
       )
       widget_click_sender_registry.val.set(type_name, key.id())
@@ -226,7 +226,7 @@ fn radio_button_foreground_color(selected : Bool) -> @sprite.Color {
 
 ///|
 pub fn main_ui_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_flex_direction(@ui.FlexDirection::Column)
   .with_position_type(@ui.PositionType::Absolute)
   .with_row_gap(@ui.Val::Px(6.0F))
@@ -241,7 +241,7 @@ pub fn ui_text(
 ) -> (@text.Text, @text.TextFont, @text.TextColor) {
   (
     @text.Text::new(label),
-    @text.TextFont::default().with_font_size(BUTTON_LABEL_FONT_SIZE),
+    @text.TextFont::TextFont().with_font_size(BUTTON_LABEL_FONT_SIZE),
     @text.TextColor::new(color),
   )
 }
@@ -257,8 +257,8 @@ pub fn[T : WidgetValue] spawn_action_button(
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(parent),
-      @ui.Button::default(),
-      @ui.Node::default()
+      @ui.Button::Button(),
+      @ui.Node::Node()
       .with_border(@ui.UiRect::all(@ui.Val::Px(BUTTON_BORDER_WIDTH)))
       .with_justify_content(@ui.JustifyContent::Center)
       .with_align_items(@ui.AlignItems::Center)
@@ -294,8 +294,8 @@ pub fn[T : WidgetValue] spawn_option_button(
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(parent),
-      @ui.Button::default(),
-      @ui.Node::default()
+      @ui.Button::Button(),
+      @ui.Node::Node()
       .with_border(
         button_border(if is_first { BUTTON_BORDER_WIDTH } else { 0.0F }),
       )
@@ -336,14 +336,14 @@ pub fn[T : WidgetValue] spawn_option_buttons(
   let row = commands.spawn(
     (
       @hierarchy.Parent::new(parent),
-      @ui.Node::default().with_align_items(@ui.AlignItems::Center),
+      @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
     ),
   )
   ignore(
     commands.spawn(
       (
         @hierarchy.Parent::new(row),
-        @ui.Node::default().with_width(@ui.Val::Px(OPTION_TITLE_WIDTH)),
+        @ui.Node::Node().with_width(@ui.Val::Px(OPTION_TITLE_WIDTH)),
         text,
         text_font,
         text_color,

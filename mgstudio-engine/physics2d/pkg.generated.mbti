@@ -478,8 +478,8 @@ pub struct KinematicCharacterController2d {
   translation : @math.Vec2
   controller : @control.KinematicCharacterController
 }
+pub fn KinematicCharacterController2d::KinematicCharacterController2d() -> Self
 pub fn KinematicCharacterController2d::add_translation(Self, @math.Vec2) -> Self
-pub fn KinematicCharacterController2d::default() -> Self
 pub fn KinematicCharacterController2d::reset_translation(Self) -> Self
 pub fn KinematicCharacterController2d::with_autostep(Self, @control.CharacterAutostep?) -> Self
 pub fn KinematicCharacterController2d::with_max_slope_climb_angle(Self, Float) -> Self
@@ -538,7 +538,7 @@ pub struct Physics2dConfig {
   physics_pipeline_active : Bool
   integration : @dynamics.IntegrationParameters
 }
-pub fn Physics2dConfig::default() -> Self
+pub fn Physics2dConfig::Physics2dConfig() -> Self
 pub fn Physics2dConfig::new(@math.Vec2) -> Self
 pub fn Physics2dConfig::with_gravity(Self, @math.Vec2) -> Self
 pub fn Physics2dConfig::with_integration_parameters(Self, @dynamics.IntegrationParameters) -> Self
@@ -604,7 +604,7 @@ pub struct Physics2dDebugRenderConfig {
   rigid_body_color : @color.Color
   joint_color : @color.Color
 }
-pub fn Physics2dDebugRenderConfig::default() -> Self
+pub fn Physics2dDebugRenderConfig::Physics2dDebugRenderConfig() -> Self
 
 pub struct Physics2dEvents {
   collisions : Array[CollisionEvent2d]
@@ -622,12 +622,12 @@ pub struct Physics2dHooksConfig {
   modify_solver_contacts : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @Milky2018/moon_rapier/core.Vec2))?
   modify_solver_contacts_with_solver_contacts : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags)?
 }
-pub fn Physics2dHooksConfig::default() -> Self
+pub fn Physics2dHooksConfig::Physics2dHooksConfig() -> Self
 pub impl @ecs.EcsPayloadCodec for Physics2dHooksConfig
 
 pub struct Physics2dPlugin {
 }
-pub fn Physics2dPlugin::default() -> Self
+pub fn Physics2dPlugin::Physics2dPlugin() -> Self
 pub impl @app.Plugin for Physics2dPlugin
 
 pub struct PointProjection2d {

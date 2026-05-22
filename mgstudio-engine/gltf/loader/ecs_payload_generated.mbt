@@ -15,9 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_gltf_loader_GltfLoaderRuntimeState(GltfLoaderRuntimeState)
-  EcsPayload_gltf_loader_GltfLoaderPluginRuntimeState(
-    GltfLoaderPluginRuntimeState
-  )
 }
 
 ///|
@@ -33,23 +30,6 @@ pub impl @ecs.EcsPayloadCodec for GltfLoaderRuntimeState with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_gltf_loader_GltfLoaderRuntimeState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GltfLoaderPluginRuntimeState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_gltf_loader_GltfLoaderPluginRuntimeState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GltfLoaderPluginRuntimeState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_gltf_loader_GltfLoaderPluginRuntimeState(value) => Some(value)
     _ => None
   }
 }

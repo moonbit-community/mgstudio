@@ -31,11 +31,11 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_display(Display::Grid)
     .with_grid_template_columns([
       RepeatedGridTrack::new(GridTrackRepetition::Count(1), [
@@ -56,14 +56,14 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(a, ecs_key_node, Node::default())
+  try! world.set_by_key(a, ecs_key_node, Node::Node())
   let b = world.spawn_empty()
   try! world.set_by_key(
     b,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(b, ecs_key_node, Node::default())
+  try! world.set_by_key(b, ecs_key_node, Node::Node())
 
   // Build Children from Parent before layout.
   ui_layout_system(world)

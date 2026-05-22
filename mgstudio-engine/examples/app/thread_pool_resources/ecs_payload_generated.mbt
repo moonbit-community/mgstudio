@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_app_thread_pool_resources_WorkerCube(WorkerCube)
-  EcsPayload_examples_app_thread_pool_resources_SimulatedPool(SimulatedPool)
 }
 
 ///|
@@ -27,20 +26,6 @@ impl @ecs.EcsPayloadCodec for WorkerCube with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for WorkerCube with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_app_thread_pool_resources_WorkerCube(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SimulatedPool with to_ecs_payload(self) {
-  EcsPayload_examples_app_thread_pool_resources_SimulatedPool(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SimulatedPool with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_app_thread_pool_resources_SimulatedPool(value) =>
       Some(value)
     _ => None
   }

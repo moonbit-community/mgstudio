@@ -17,7 +17,7 @@
 
 ///|
 pub fn create_dark_theme() -> ThemeProps {
-  let props = ThemeProps::default()
+  let props = ThemeProps::ThemeProps()
   let tok = fn(name : String) { ThemeToken::new_static(name) }
   let gray_3_hover = "#54555B"
   let gray_3_pressed = "#616369"

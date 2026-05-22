@@ -78,7 +78,7 @@ pub struct MeshletMeshManager {
 }
 
 ///|
-pub fn MeshletMeshManager::default() -> MeshletMeshManager {
+pub fn MeshletMeshManager::MeshletMeshManager() -> MeshletMeshManager {
   MeshletMeshManager::{
     vertex_positions: PersistentGpuBuffer::new(
       label="meshlet_vertex_positions",

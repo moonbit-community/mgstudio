@@ -36,6 +36,6 @@ pub fn BorderRect::square(value : Float) -> BorderRect {
 }
 
 ///|
-pub fn BorderRect::default() -> BorderRect {
+pub fn BorderRect::BorderRect() -> BorderRect {
   BorderRect::square(0.0F)
 }

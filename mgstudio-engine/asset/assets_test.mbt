@@ -421,7 +421,7 @@ test "asset processor registry is world-scoped per app world" {
       init_asset_loader(
         init_asset(
           @app.App::new(@ecs.World::new()).add_plugins(
-            AssetPlugin::default().with_mode(AssetMode::Processed),
+            @asset.AssetPlugin::AssetPlugin().with_mode(AssetMode::Processed),
           ),
           fn() { ProcessorScopeAsset::{ from_processor: false } },
         ),
@@ -461,7 +461,7 @@ test "asset processor registry is world-scoped per app world" {
   let app_b = init_asset_loader(
     init_asset(
       @app.App::new(@ecs.World::new()).add_plugins(
-        AssetPlugin::default().with_mode(AssetMode::Processed),
+        @asset.AssetPlugin::AssetPlugin().with_mode(AssetMode::Processed),
       ),
       fn() { ProcessorScopeAsset::{ from_processor: false } },
     ),
@@ -510,7 +510,7 @@ test "asset processor default can be selected by processor name" {
         init_asset_loader(
           init_asset(
             @app.App::new(@ecs.World::new()).add_plugins(
-              AssetPlugin::default().with_mode(AssetMode::Processed),
+              @asset.AssetPlugin::AssetPlugin().with_mode(AssetMode::Processed),
             ),
             fn() { NamedProcessorScopeAsset::{ marker: 0 } },
           ),
@@ -569,7 +569,7 @@ test "asset processor default by name keeps previous selection when name is ambi
         init_asset_loader(
           init_asset(
             @app.App::new(@ecs.World::new()).add_plugins(
-              AssetPlugin::default().with_mode(AssetMode::Processed),
+              @asset.AssetPlugin::AssetPlugin().with_mode(AssetMode::Processed),
             ),
             fn() { NamedProcessorScopeAsset::{ marker: 0 } },
           ),

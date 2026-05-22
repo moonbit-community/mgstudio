@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(
     @app.Update,
@@ -105,8 +105,8 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @text.Text::default(),
-        @ui.Node::default()
+        @text.Text::Text(),
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
@@ -125,10 +125,10 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::default(),
+        @sprite.Camera2d::Camera2d(),
         @sprite.Camera::new(@sprite.Color::black()),
         @sprite.Tonemapping::TonyMcMapface,
-        @sprite.Bloom::default(),
+        @sprite.Bloom::Bloom(),
         @sprite.DebandDither::Enabled,
       ),
     ),
@@ -315,9 +315,7 @@ fn update_bloom_settings(
       }
     None =>
       if @input.key_just_pressed(@window.KeyCode::Space) {
-        commands
-        .entity(camera_entity)
-        .insert_component(@sprite.Bloom::default())
+        commands.entity(camera_entity).insert_component(@sprite.Bloom::Bloom())
       }
   }
 

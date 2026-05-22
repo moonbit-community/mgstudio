@@ -19,7 +19,7 @@
 pub struct FrameTimeGraphPlugin {}
 
 ///|
-pub fn FrameTimeGraphPlugin::default() -> FrameTimeGraphPlugin {
+pub fn FrameTimeGraphPlugin::FrameTimeGraphPlugin() -> FrameTimeGraphPlugin {
   FrameTimeGraphPlugin::{  }
 }
 
@@ -39,7 +39,7 @@ priv struct FrameTimeGraphValues {
 }
 
 ///|
-fn FrameTimeGraphValues::default() -> FrameTimeGraphValues {
+fn FrameTimeGraphValues::FrameTimeGraphValues() -> FrameTimeGraphValues {
   FrameTimeGraphValues::{ values: [] }
 }
 
@@ -170,7 +170,10 @@ fn frame_time_graph_has_frame_time_diagnostics(
 pub fn frame_time_graph_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  frame_time_graph_plugin_with(app, FrameTimeGraphPlugin::default())
+  frame_time_graph_plugin_with(
+    app,
+    FrameTimeGraphPlugin::FrameTimeGraphPlugin(),
+  )
 }
 
 ///|
@@ -186,7 +189,7 @@ pub fn frame_time_graph_plugin_with(
     @asset.init_asset(
       app.insert_world_resource(
         frame_time_graph_values_resource_key,
-        FrameTimeGraphValues::default(),
+        FrameTimeGraphValues::FrameTimeGraphValues(),
       ),
       fn() -> @render_resource.StorageBuffer[Float] {
         @render_resource.StorageBuffer::new()

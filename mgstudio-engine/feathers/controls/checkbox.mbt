@@ -29,7 +29,7 @@ pub fn checkbox(label : String) -> Checkbox {
 pub struct CheckboxPlugin {}
 
 ///|
-pub fn CheckboxPlugin::default() -> CheckboxPlugin {
+pub fn CheckboxPlugin::CheckboxPlugin() -> CheckboxPlugin {
   CheckboxPlugin::{  }
 }
 

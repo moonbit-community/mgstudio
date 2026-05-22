@@ -53,7 +53,7 @@ pub struct UiStack {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn UiStack::default() -> UiStack {
+pub fn UiStack::UiStack() -> UiStack {
   UiStack::{ partition: [], uinodes: [] }
 }
 

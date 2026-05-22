@@ -59,7 +59,7 @@ pub struct AutoNavigationConfig {
   max_search_distance : Float?
   prefer_aligned : Bool
 }
-pub fn AutoNavigationConfig::default() -> Self
+pub fn AutoNavigationConfig::AutoNavigationConfig() -> Self
 pub fn AutoNavigationConfig::max_search_distance(Self) -> Float?
 pub fn AutoNavigationConfig::min_alignment_factor(Self) -> Float
 pub fn AutoNavigationConfig::new(Float, Float?, Bool) -> Self
@@ -77,12 +77,12 @@ pub impl @app.SystemParam for DirectionalNavigation
 pub struct DirectionalNavigationMap {
   neighbors : @hashmap.HashMap[(Int, Int), NavNeighbors]
 }
+pub fn DirectionalNavigationMap::DirectionalNavigationMap() -> Self
 pub fn DirectionalNavigationMap::add_edge(Self, @core.Entity, @core.Entity, @math.CompassOctant) -> Unit
 pub fn DirectionalNavigationMap::add_edges(Self, Array[@core.Entity], @math.CompassOctant) -> Unit
 pub fn DirectionalNavigationMap::add_looping_edges(Self, Array[@core.Entity], @math.CompassOctant) -> Unit
 pub fn DirectionalNavigationMap::add_symmetrical_edge(Self, @core.Entity, @core.Entity, @math.CompassOctant) -> Unit
 pub fn DirectionalNavigationMap::clear(Self) -> Unit
-pub fn DirectionalNavigationMap::default() -> Self
 pub fn DirectionalNavigationMap::get_neighbor(Self, @core.Entity, @math.CompassOctant) -> @core.Entity?
 pub fn DirectionalNavigationMap::get_neighbors(Self, @core.Entity) -> NavNeighbors?
 pub fn DirectionalNavigationMap::remove(Self, @core.Entity) -> Unit
@@ -91,7 +91,7 @@ pub impl @ecs.EcsPayloadCodec for DirectionalNavigationMap
 
 pub struct DirectionalNavigationPlugin {
 }
-pub fn DirectionalNavigationPlugin::default() -> Self
+pub fn DirectionalNavigationPlugin::DirectionalNavigationPlugin() -> Self
 pub impl @app.Plugin for DirectionalNavigationPlugin
 
 pub struct FocusableArea {
@@ -121,14 +121,14 @@ pub(all) struct FocusedInputPayload {
 
 pub struct InputDispatchPlugin {
 }
-pub fn InputDispatchPlugin::default() -> Self
+pub fn InputDispatchPlugin::InputDispatchPlugin() -> Self
 pub impl @app.Plugin for InputDispatchPlugin
 
 pub struct InputFocus {
   mut focused_entity : @core.Entity?
 }
+pub fn InputFocus::InputFocus() -> Self
 pub fn InputFocus::clear(Self) -> Unit
-pub fn InputFocus::default() -> Self
 pub fn InputFocus::from_entity(@core.Entity) -> Self
 pub fn InputFocus::get(Self) -> @core.Entity?
 pub fn InputFocus::set(Self, @core.Entity) -> Unit
@@ -142,7 +142,7 @@ pub(all) enum InputFocusSystems {
 pub struct InputFocusVisible {
   mut visible : Bool
 }
-pub fn InputFocusVisible::default() -> Self
+pub fn InputFocusVisible::InputFocusVisible() -> Self
 pub fn InputFocusVisible::new(Bool) -> Self
 pub fn InputFocusVisible::set_visible(Self, Bool) -> Unit
 pub fn InputFocusVisible::visible(Self) -> Bool
@@ -165,7 +165,7 @@ pub struct NavNeighbors {
   west : @core.Entity?
   north_west : @core.Entity?
 }
-pub fn NavNeighbors::default() -> Self
+pub fn NavNeighbors::NavNeighbors() -> Self
 pub fn NavNeighbors::get(Self, @math.CompassOctant) -> @core.Entity?
 pub fn NavNeighbors::set(Self, @math.CompassOctant, @core.Entity) -> Self
 
@@ -190,7 +190,7 @@ pub impl @ecs.EcsPayloadCodec for TabIndex
 
 pub struct TabNavigationPlugin {
 }
-pub fn TabNavigationPlugin::default() -> Self
+pub fn TabNavigationPlugin::TabNavigationPlugin() -> Self
 pub impl @app.Plugin for TabNavigationPlugin
 
 // Type aliases

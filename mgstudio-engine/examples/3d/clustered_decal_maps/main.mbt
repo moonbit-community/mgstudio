@@ -195,13 +195,13 @@ fn spawn_light(world : @ecs.World) -> Unit {
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(2.0F, 0.0F, -7.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
 }
 
 ///|
@@ -238,7 +238,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -254,7 +254,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   clustered_decal_maps_state.val.help_text = Some(help_text)
   update_help_text()
@@ -284,7 +284,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
       .with_emissive_texture(Some(textures.decal_emissive_texture))
       .with_emissive(@sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
   }
-  let mut clustered_decal = @pbr.ClusteredDecal::default()
+  let mut clustered_decal = @pbr.ClusteredDecal::ClusteredDecal()
     .with_base_color_texture(Some(textures.decal_base_color_texture))
     .with_normal_map_texture(Some(textures.decal_normal_map_texture))
     .with_metallic_roughness_texture(
@@ -404,7 +404,7 @@ fn spawn_loop(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(controls))
   .add_systems(@app.Update, @app.system(spawn_loop))

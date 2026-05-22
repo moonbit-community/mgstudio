@@ -29,13 +29,13 @@ pub impl @ecs.Component for GradientStop with component() {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_flex_direction(@ui.FlexDirection::Column)
@@ -49,7 +49,7 @@ fn setup(commands : @app.Commands) -> Unit {
     let row = commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_height(@ui.Val::Px(90.0F))
         .with_display(@ui.Display::Flex)
         .with_flex_direction(@ui.FlexDirection::Row),
@@ -61,7 +61,7 @@ fn setup(commands : @app.Commands) -> Unit {
         (
           @hierarchy.Parent::new(row),
           GradientStop::{ t, },
-          @ui.Node::default()
+          @ui.Node::Node()
           .with_width(@ui.Val::Percent(100.0F / 24.0F))
           .with_height(@ui.Val::Percent(100.0F)),
           @ui.BackgroundColor::new(
@@ -116,7 +116,7 @@ fn animate_gradients(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(animate_gradients)))
   .run()

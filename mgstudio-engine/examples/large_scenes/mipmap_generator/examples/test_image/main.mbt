@@ -35,7 +35,7 @@ fn build_pixels(width : Int, height : Int) -> Bytes {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   let texture = @asset.asset_create_dynamic_texture(
     @math.UVec2::new(IMAGE_SIZE, IMAGE_SIZE),
     false,
@@ -64,7 +64,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .run()
 }

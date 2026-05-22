@@ -13,20 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_animation_animated_mesh_control_Animations(Animations)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Animations with to_ecs_payload(self) {
-  EcsPayload_examples_animation_animated_mesh_control_Animations(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Animations with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_animation_animated_mesh_control_Animations(value) =>
-      Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

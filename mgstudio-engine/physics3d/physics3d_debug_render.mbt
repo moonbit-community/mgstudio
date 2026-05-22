@@ -27,7 +27,7 @@ pub struct Physics3dDebugRenderContext {
 }
 
 ///|
-pub fn Physics3dDebugRenderContext::default() -> Physics3dDebugRenderContext {
+pub fn Physics3dDebugRenderContext::Physics3dDebugRenderContext() -> Physics3dDebugRenderContext {
   { enabled: true }
 }
 
@@ -44,7 +44,7 @@ priv struct Physics3dDebugRenderState {
 
 ///|
 let physics3d_debug_render_context : Ref[Physics3dDebugRenderContext] = Ref(
-  Physics3dDebugRenderContext::default(),
+  Physics3dDebugRenderContext::Physics3dDebugRenderContext(),
 )
 
 ///|

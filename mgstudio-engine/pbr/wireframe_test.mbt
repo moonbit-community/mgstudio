@@ -16,7 +16,7 @@
 test "pbr: WireframeConfig can be accessed through ResMut" {
   let observed : Ref[Bool?] = Ref(None)
   let app = @app.App::new(@ecs.World::new())
-    .insert_resource(WireframeConfig::default())
+    .insert_resource(WireframeConfig::WireframeConfig())
     .add_system_param(fn(config : @app.ResMut[WireframeConfig]) {
       observed.val = Some(config.get().global)
       config.update(fn(value) { value.with_global(true) })

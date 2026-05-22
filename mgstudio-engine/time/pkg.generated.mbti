@@ -96,6 +96,7 @@ pub struct Fixed {
   timestep : @core.Duration
   overstep : @core.Duration
 }
+pub fn Fixed::Fixed() -> Self
 pub impl @ecs.EcsPayloadCodec for Fixed
 pub impl TimeContext for Fixed
 pub impl Default for Fixed
@@ -105,6 +106,7 @@ pub struct Real {
   first_update : @core.Instant?
   last_update : @core.Instant?
 }
+pub fn Real::Real() -> Self
 pub impl @ecs.EcsPayloadCodec for Real
 pub impl TimeContext for Real
 pub impl Default for Real
@@ -139,6 +141,7 @@ pub struct Time[T] {
   elapsed_secs_wrapped : Float
   elapsed_secs_wrapped_f64 : Double
 }
+pub fn[T : Default] Time::Time() -> Self[T]
 pub fn Time::accumulate_overstep(Self[Fixed], @core.Duration) -> Self[Fixed]
 pub fn[T] Time::advance_by(Self[T], @core.Duration) -> Self[T]
 pub fn[T] Time::advance_to(Self[T], @core.Duration) -> Self[T]
@@ -224,7 +227,7 @@ pub(all) struct TimePayload {
 
 pub struct TimePlugin {
 }
-pub fn TimePlugin::default() -> Self
+pub fn TimePlugin::TimePlugin() -> Self
 pub impl @app.Plugin for TimePlugin
 
 pub(all) enum TimeUpdateStrategy {
@@ -285,6 +288,7 @@ pub struct Virtual {
   relative_speed : Double
   effective_speed : Double
 }
+pub fn Virtual::Virtual() -> Self
 pub impl @ecs.EcsPayloadCodec for Virtual
 pub impl TimeContext for Virtual
 pub impl Default for Virtual

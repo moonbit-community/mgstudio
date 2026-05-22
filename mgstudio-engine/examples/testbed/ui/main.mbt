@@ -40,11 +40,11 @@ fn float_from_int(value : Int) -> Float {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   let root = commands.spawn(
     (
-      @mgui.UiRoot::default(),
-      @mgui.Node::default()
+      @mgui.UiRoot::UiRoot(),
+      @mgui.Node::Node()
       .with_width(@mgui.Val::Percent(100.0F))
       .with_height(@mgui.Val::Percent(100.0F))
       .with_display(@mgui.Display::Grid)
@@ -71,9 +71,9 @@ fn setup(commands : @app.Commands) -> Unit {
       commands.spawn(
         (
           @hierarchy.Parent::new(root),
-          @mgui.Button::default(),
+          @mgui.Button::Button(),
           IdleColor::{ color: bg },
-          @mgui.Node::default()
+          @mgui.Node::Node()
           .with_width(@mgui.Val::Percent(100.0F))
           .with_height(@mgui.Val::Percent(100.0F))
           .with_border(
@@ -112,9 +112,11 @@ fn button_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(
+    @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param(button_system)))
   .run()

@@ -33,7 +33,7 @@ pub struct MeshletInstanceUniform {
 }
 
 ///|
-pub fn MeshletInstanceUniform::default() -> MeshletInstanceUniform {
+pub fn MeshletInstanceUniform::MeshletInstanceUniform() -> MeshletInstanceUniform {
   MeshletInstanceUniform::{
     world_from_local: @math.Affine3::identity(),
     previous_world_from_local: @math.Affine3::identity(),
@@ -74,7 +74,7 @@ pub struct ExtractedMeshletInstance {
 }
 
 ///|
-pub fn InstanceManager::default() -> InstanceManager {
+pub fn InstanceManager::InstanceManager() -> InstanceManager {
   InstanceManager::{
     scene_instance_count: 0,
     max_bvh_depth: 0,
@@ -519,7 +519,7 @@ pub fn ExtractedMeshletInstance::new(
     instance,
     material_asset_id: non_negative(material_asset_id),
     root_bvh_node: 0,
-    aabb: MeshletAabb::default(),
+    aabb: MeshletAabb::MeshletAabb(),
     bvh_depth: 0,
     render_layer_mask: 1,
     not_shadow_caster: false,
@@ -582,7 +582,7 @@ pub fn ExtractedMeshletInstance::with_material_slot(
 pub fn extract_meshlet_mesh_entities_from_instances(
   extracted_instances : Array[ExtractedMeshletInstance],
 ) -> InstanceManager {
-  let manager = InstanceManager::default()
+  let manager = InstanceManager::InstanceManager()
   for extracted_instance in extracted_instances {
     manager.add_instance(
       extracted_instance.instance,
@@ -600,7 +600,7 @@ pub fn extract_meshlet_mesh_entities_from_instances(
 
 ///|
 pub fn extract_meshlet_mesh_entities(instance_count : Int) -> InstanceManager {
-  let manager = InstanceManager::default()
+  let manager = InstanceManager::InstanceManager()
   manager.set_instance_count(instance_count)
   manager
 }

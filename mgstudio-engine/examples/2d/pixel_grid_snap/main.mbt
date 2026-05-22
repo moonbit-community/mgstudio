@@ -98,9 +98,7 @@ fn main {
     @app.system_param3(setup_mesh),
   )
   @app.App::new(@ecs.World::new())
-  .add_plugins(
-    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
-  )
+  .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .add_systems(
     @app.Startup,
     (setup_camera_system, setup_sprite_system, setup_mesh_system)
@@ -155,7 +153,7 @@ fn setup_mesh(
           meshes
           .peek()
           .add(
-            @sprite.mesh2d_geometry_capsule(@sprite.Capsule2d::default()).to_mesh(),
+            @sprite.mesh2d_geometry_capsule(@sprite.Capsule2d::Capsule2d()).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(
@@ -184,8 +182,8 @@ fn setup_camera(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::default(),
-        @sprite.Camera::default()
+        @sprite.Camera2d::Camera2d(),
+        @sprite.Camera::Camera()
         .with_order(-1)
         .with_clear_color(@sprite.Color::srgb(0.5F, 0.5F, 0.5F)),
         @sprite.RenderTarget::Image(image_handle),
@@ -207,7 +205,7 @@ fn setup_camera(commands : @app.Commands) -> Unit {
 
   ignore(
     commands.spawn(
-      (@sprite.Camera2d::default(), OuterCamera::{  }, high_res_layers()),
+      (@sprite.Camera2d::Camera2d(), OuterCamera::{  }, high_res_layers()),
     ),
   )
 }

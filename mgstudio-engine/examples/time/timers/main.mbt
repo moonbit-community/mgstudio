@@ -46,7 +46,7 @@ impl @app.Resource for Countdown with resource() {
 }
 
 ///|
-impl Default for Countdown with default() {
+fn Countdown::Countdown() -> Countdown {
   {
     percent_trigger: @time.Timer::from_seconds(4.0F, @time.TimerMode::Repeating),
     main_timer: @time.Timer::from_seconds(20.0F, @time.TimerMode::Once),
@@ -110,8 +110,8 @@ fn countdown(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .init_resource(fn() { Countdown::default() })
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .init_resource(fn() { Countdown::Countdown() })
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(countdown)))
   .add_systems(

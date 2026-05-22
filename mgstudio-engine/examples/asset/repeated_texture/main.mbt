@@ -33,14 +33,14 @@ fn setup(
   let center_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::default().with_base_color_texture(
+      @pbr.StandardMaterial::StandardMaterial().with_base_color_texture(
         Some(image_with_default_sampler),
       ),
     )
   let left_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::default()
+      @pbr.StandardMaterial::StandardMaterial()
       .with_base_color_texture(
         Some(
           asset_server
@@ -49,7 +49,7 @@ fn setup(
             "textures/fantasy_ui_borders/panel-border-010-repeated.png",
             fn(settings) {
               settings.sampler = @asset.ImageSampler::Descriptor(
-                @asset.ImageSamplerDescriptor::default().set_address_mode(
+                @asset.ImageSamplerDescriptor::ImageSamplerDescriptor().set_address_mode(
                   @asset.ImageAddressMode::Repeat,
                 ),
               )
@@ -64,7 +64,7 @@ fn setup(
   let right_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::default()
+      @pbr.StandardMaterial::StandardMaterial()
       .with_base_color_texture(Some(image_with_default_sampler))
       .with_uv_transform(
         @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
@@ -101,7 +101,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default().with_shadow_maps_enabled(true),
+        @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
         @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
       ),
     ),
@@ -109,7 +109,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(0.0F, 1.5F, 4.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -122,7 +122,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }

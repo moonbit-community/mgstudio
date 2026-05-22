@@ -29,7 +29,7 @@ pub impl @ecs.Component for WireframeHelpText with component() {
 fn main {
   @sprite.wireframe2d_plugin(
     @app.App::new(@ecs.World::new()).add_plugins(
-      @mgstudio.DefaultPlugins::default(),
+      @mgstudio.DefaultPlugins::DefaultPlugins(),
     ),
   )
   .insert_resource(@sprite.Wireframe2dConfig::new(true, color_default_white()))
@@ -116,7 +116,7 @@ fn setup(
           materials.peek().add(@sprite.ColorMaterialAsset::from_color(black)),
         ),
         @transform.Transform::from_xyz(-150.0F, 0.0F, 0.0F),
-        @sprite.NoWireframe2d::default(),
+        @sprite.NoWireframe2d::NoWireframe2d(),
       ),
     ),
   )
@@ -155,19 +155,19 @@ fn setup(
           materials.peek().add(@sprite.ColorMaterialAsset::from_color(black)),
         ),
         @transform.Transform::from_xyz(150.0F, 0.0F, 0.0F),
-        @sprite.Wireframe2d::default(),
+        @sprite.Wireframe2d::Wireframe2d(),
         @sprite.Wireframe2dColor::new(color_green()),
       ),
     ),
   )
 
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
     ),
@@ -176,12 +176,12 @@ fn setup(
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_left(@ui.Val::Px(12.0F))
         .with_top(@ui.Val::Px(12.0F)),
         @text.Text::new(""),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
         WireframeHelpText::{  },

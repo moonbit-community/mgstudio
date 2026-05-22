@@ -92,14 +92,19 @@ impl @ecs.Component for CameraShakeConfig with component() {
 }
 
 ///|
-impl Default for CameraShakeState with default() {
+fn CameraShakeState::CameraShakeState() -> CameraShakeState {
   { trauma: 0.0F, original_transform: @transform.Transform::identity() }
+}
+
+///|
+impl Default for CameraShakeState with default() {
+  CameraShakeState::CameraShakeState()
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(register_camera_shake_requirements))
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup_scene)))
   .add_systems(
@@ -180,7 +185,7 @@ fn setup_camera(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::default(),
+        @sprite.Camera2d::Camera2d(),
         CameraShakeConfig::{
           trauma_decay_per_second: TRAUMA_DECAY_PER_SECOND,
           exponent: TRAUMA_EXPONENT,
@@ -308,9 +313,9 @@ fn setup_instructions(
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
+      @ui.UiRoot::UiRoot(),
       @ui.Node::{
-        ..@ui.Node::default(),
+        ..@ui.Node(),
         width: @ui.Val::Percent(100.0F),
         height: @ui.Val::Percent(100.0F),
       },
@@ -321,13 +326,13 @@ fn setup_instructions(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           bottom: @ui.Val::Px(12.0F),
           left: @ui.Val::Px(12.0F),
         },
         @text.Text::new(INSTRUCTIONS),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),

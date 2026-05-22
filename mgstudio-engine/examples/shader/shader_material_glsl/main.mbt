@@ -73,7 +73,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @camera.Camera3d::default(),
+      @camera.Camera3d::Camera3d(),
       @transform.Transform::from_xyz(-3.0F, 3.2F, 7.0F).looking_at(
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -86,7 +86,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }

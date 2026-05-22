@@ -257,7 +257,7 @@ pub(all) struct StandardMaterialPlugin {
 }
 
 ///|
-pub fn StandardMaterialPlugin::default() -> StandardMaterialPlugin {
+pub fn StandardMaterialPlugin::StandardMaterialPlugin() -> StandardMaterialPlugin {
   StandardMaterialPlugin::{ prepass_enabled: true }
 }
 
@@ -391,7 +391,10 @@ pub impl @app.Plugin for StandardMaterialPlugin with build(self, app) {
 pub fn standard_material_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  standard_material_plugin_with(app, StandardMaterialPlugin::default())
+  standard_material_plugin_with(
+    app,
+    StandardMaterialPlugin::StandardMaterialPlugin(),
+  )
 }
 
 ///|
@@ -476,7 +479,7 @@ pub fn pbr_mesh_material3d_with_extension_fragment_shader_path(
 
 ///|
 pub fn pbr_material_forward_decal_material_ext_default() -> @material.ForwardDecalMaterialExt {
-  @material.ForwardDecalMaterialExt::default()
+  @material.ForwardDecalMaterialExt::ForwardDecalMaterialExt()
 }
 
 ///|

@@ -98,7 +98,7 @@ test "render3d: tetrahedron-shape builder builds valid geometry" {
 test "render3d: Assets::add accepts common primitive authoring values" {
   let meshes : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
   let cuboid = meshes |> add_mesh(@math.Cuboid::new(1.0F, 2.0F, 3.0F))
-  let plane = meshes |> add_mesh(@math.Plane3d::default())
+  let plane = meshes |> add_mesh(@math.Plane3d::Plane3d())
   let sphere = meshes |> add_mesh(@math.Sphere::new(0.5F))
   let tetrahedron = meshes
     |> add_mesh(

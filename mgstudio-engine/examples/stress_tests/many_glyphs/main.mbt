@@ -50,7 +50,7 @@ fn parse_args() -> Args {
 
 ///|
 fn configured_window() -> @window.Window {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.present_mode = @window.PresentMode::AutoNoVsync
   window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
     1.0F,
@@ -60,7 +60,7 @@ fn configured_window() -> @window.Window {
 
 ///|
 fn setup(commands : @app.Commands, args : @app.Res[Args]) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   let text_string = build_glyph_text(10_000)
   let text_font = @text.TextFont::from_font_size(4.0F)
   let text_layout = @text.TextLayout::new(
@@ -69,7 +69,7 @@ fn setup(commands : @app.Commands, args : @app.Res[Args]) -> Unit {
   )
   if !args.get().no_ui {
     let center_node = commands.spawn_component(
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::Center),
@@ -77,7 +77,7 @@ fn setup(commands : @app.Commands, args : @app.Res[Args]) -> Unit {
     let text_node = commands.spawn(
       (
         @hierarchy.Parent::new(center_node),
-        @ui.Node::default().with_width(@ui.Val::Px(1000.0F)),
+        @ui.Node::Node().with_width(@ui.Val::Px(1000.0F)),
       ),
     )
     ignore(
@@ -130,7 +130,7 @@ fn main {
         close_when_requested: true,
       }),
     )
-    .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+    .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
     .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   if args.recompute_text {
     app.add_systems(

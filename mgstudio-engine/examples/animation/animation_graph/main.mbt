@@ -56,8 +56,13 @@ pub impl @ecs.Component for ExampleAnimationWeights with component() {
 }
 
 ///|
-pub impl Default for ExampleAnimationWeights with default() {
+pub fn ExampleAnimationWeights::ExampleAnimationWeights() -> ExampleAnimationWeights {
   { weights: [1.0F, 1.0F, 1.0F] }
+}
+
+///|
+pub impl Default for ExampleAnimationWeights with default() {
+  ExampleAnimationWeights::ExampleAnimationWeights()
 }
 
 ///|
@@ -142,7 +147,7 @@ fn spawn_line(
   commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(left))
       .with_bottom(@ui.Val::Px(bottom))
@@ -166,11 +171,11 @@ fn spawn_clip_node(
   let container = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Button::default(),
+      @ui.Button::Button(),
       @ui.Interaction::None,
-      @ui.RelativeCursorPosition::default(),
+      @ui.RelativeCursorPosition::RelativeCursorPosition(),
       ClipNode::{ index, },
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(rect.left))
       .with_bottom(@ui.Val::Px(rect.bottom))
@@ -186,7 +191,7 @@ fn spawn_clip_node(
     (
       @hierarchy.Parent::new(container),
       ClipNodeFill::{ index, },
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(0.0F))
       .with_bottom(@ui.Val::Px(0.0F))
@@ -200,12 +205,12 @@ fn spawn_clip_node(
       @hierarchy.Parent::new(container),
       ClipNodeLabel::{ index, text: label },
       @text.Text::new(label),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(16.0F)),
       @text.TextColor::new(@sprite.Color::srgb(0.98F, 0.92F, 0.84F)),
       @text.TextLayout::new_with_justify(@text.Justify::Center),
-      @ui.Node::default(),
+      @ui.Node::Node(),
     ),
   )
   ignore(fill)
@@ -224,7 +229,7 @@ fn spawn_blend_node(
   let node = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(left))
       .with_bottom(@ui.Val::Px(bottom))
@@ -240,12 +245,12 @@ fn spawn_blend_node(
     (
       @hierarchy.Parent::new(node),
       @text.Text::new(label),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(16.0F)),
       @text.TextColor::new(@sprite.Color::srgb(0.98F, 0.92F, 0.84F)),
       @text.TextLayout::new_with_justify(@text.Justify::Center),
-      @ui.Node::default(),
+      @ui.Node::Node(),
     ),
   )
   ignore(node)
@@ -291,7 +296,7 @@ fn setup_scene(
 
   commands.spawn(
     (
-      @camera.Camera3d::default(),
+      @camera.Camera3d::Camera3d(),
       @transform.Transform::from_xyz(-10.0F, 5.0F, 13.0F).looking_at(
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -299,11 +304,11 @@ fn setup_scene(
     ),
   )
   |> ignore
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
   commands.spawn(
     (
-      @pbr.PointLight::default()
+      @pbr.PointLight::PointLight()
       .with_intensity(10_000_000.0F)
       .with_shadow_maps_enabled(true),
       @transform.Transform::from_xyz(-4.0F, 8.0F, 13.0F),
@@ -342,8 +347,8 @@ fn setup_ui(
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
     ),
@@ -353,11 +358,11 @@ fn setup_ui(
     (
       @hierarchy.Parent::new(root),
       @text.Text::new(HELP_TEXT),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(16.0F)),
       @text.TextColor::new(@sprite.Color::white()),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_top(@ui.Val::Px(12.0F))
       .with_left(@ui.Val::Px(12.0F)),
@@ -407,7 +412,7 @@ fn init_animations(
     .insert(
       (
         @animation.AnimationGraphHandle::new(animation_graph.get().graph_handle),
-        ExampleAnimationWeights::default(),
+        ExampleAnimationWeights::ExampleAnimationWeights(),
       ),
     )
     player_mut.modify(fn(player) {
@@ -507,7 +512,7 @@ fn sync_weights(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup_assets)))
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup_scene)))
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup_ui)))

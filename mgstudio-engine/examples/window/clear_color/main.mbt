@@ -18,7 +18,7 @@ fn main {
   .insert_resource(
     @sprite.ClearColor::new(@sprite.Color::new(0.5F, 0.5F, 0.9F, 1.0F)),
   )
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,
@@ -30,7 +30,7 @@ fn main {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore

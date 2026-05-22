@@ -32,7 +32,7 @@ test "render mesh allocator: element layouts preserve bevy copy alignment slots"
 
 ///|
 test "render mesh allocator: default settings preserve bevy slab thresholds" {
-  let settings = MeshAllocatorSettings::default()
+  let settings = @mesh.MeshAllocatorSettings::MeshAllocatorSettings()
   inspect(settings.min_slab_size(), content="1048576")
   inspect(settings.max_slab_size(), content="536870912")
   inspect(settings.large_threshold(), content="268435456")
@@ -272,7 +272,7 @@ test "render mesh allocator: render mesh index format selects index layout" {
 
 ///|
 test "render mesh: constructor preserves topology key and vertex layout" {
-  let layouts = @asset_mesh.MeshVertexBufferLayouts::default()
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let layout = layouts.insert(
     @asset_mesh.MeshVertexBufferLayout::new(
       attribute_ids=[],
@@ -326,7 +326,7 @@ test "render mesh: from mesh includes morph target key bit" {
       ],
     ]),
   )
-  let layouts = @asset_mesh.MeshVertexBufferLayouts::default()
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let render_mesh = RenderMesh::from_mesh(
     @asset_mesh.Mesh::from_3d_geometry(geometry),
     layouts,

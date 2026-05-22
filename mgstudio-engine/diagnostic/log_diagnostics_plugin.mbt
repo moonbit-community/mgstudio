@@ -27,7 +27,7 @@ pub struct LogDiagnosticsPlugin {
 }
 
 ///|
-pub fn LogDiagnosticsPlugin::default() -> LogDiagnosticsPlugin {
+pub fn LogDiagnosticsPlugin::LogDiagnosticsPlugin() -> LogDiagnosticsPlugin {
   LogDiagnosticsPlugin::{
     debug: false,
     wait_duration_seconds: 1.0F,
@@ -43,10 +43,7 @@ pub fn LogDiagnosticsPlugin::filtered(
   for path in filter {
     filter_map.set(path.as_str(), true)
   }
-  LogDiagnosticsPlugin::{
-    ..LogDiagnosticsPlugin::default(),
-    filter: Some(filter_map),
-  }
+  LogDiagnosticsPlugin::{ ..LogDiagnosticsPlugin(), filter: Some(filter_map) }
 }
 
 ///|
@@ -140,7 +137,7 @@ pub fn LogDiagnosticsState::disable_filtering(
 }
 
 ///|
-pub fn LogDiagnosticsState::default() -> LogDiagnosticsState {
+pub fn LogDiagnosticsState::LogDiagnosticsState() -> LogDiagnosticsState {
   LogDiagnosticsState::{
     timer: @time.Timer::from_seconds(1.0F, @time.Repeating),
     filter: None,
@@ -161,7 +158,7 @@ pub impl @app.Resource for LogDiagnosticsState with resource() {
 pub fn log_diagnostics_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  log_diagnostics_plugin_with(app, LogDiagnosticsPlugin::default())
+  log_diagnostics_plugin_with(app, LogDiagnosticsPlugin::LogDiagnosticsPlugin())
 }
 
 ///|

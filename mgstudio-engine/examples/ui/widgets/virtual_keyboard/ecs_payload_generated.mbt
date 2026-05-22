@@ -19,7 +19,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardDisplay(
     KeyboardDisplay
   )
-  EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardBuffer(KeyboardBuffer)
 }
 
 ///|
@@ -58,20 +57,6 @@ impl @ecs.EcsPayloadCodec for KeyboardDisplay with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for KeyboardDisplay with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardDisplay(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for KeyboardBuffer with to_ecs_payload(self) {
-  EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardBuffer(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for KeyboardBuffer with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_widgets_virtual_keyboard_KeyboardBuffer(value) =>
       Some(value)
     _ => None
   }

@@ -26,24 +26,24 @@ fn meshlet_wbtest_bytes_prefix(bytes : Bytes, count : Int) -> Array[Int] {
 
 ///|
 test "pbr/meshlet: mesh manager produces Bevy-shaped GPU buffer payloads" {
-  let manager = MeshletMeshManager::default()
+  let manager = MeshletMeshManager::MeshletMeshManager()
   let meshlet_mesh = MeshletMesh::from_parts(
     vertex_positions=[31, 32, 33],
     vertex_normals=[41, 42],
     vertex_uvs=[MeshletVertexUv::new(0.5, 0.25)],
     indices=[0, 2, 1],
-    bvh=[BvhNode::default().with_child_count(0, 2)],
+    bvh=[BvhNode::BvhNode().with_child_count(0, 2)],
     meshlets=[Meshlet::new(0, 0, 0, 3, 1)],
-    meshlet_cull_data=[MeshletCullData::default()],
+    meshlet_cull_data=[MeshletCullData::MeshletCullData()],
   )
   ignore(manager.queue_upload_if_needed(11, meshlet_mesh))
   ignore(manager.perform_pending_mesh_writes())
-  let instance_manager = InstanceManager::default()
+  let instance_manager = InstanceManager::InstanceManager()
   instance_manager.add_instance(
     @core.Entity::new(1, 0),
     7,
     0,
-    MeshletAabb::default(),
+    MeshletAabb::MeshletAabb(),
     0,
   )
   ignore(

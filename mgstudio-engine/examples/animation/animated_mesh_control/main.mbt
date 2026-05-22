@@ -54,7 +54,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   ignore(
     @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
         @math.Vec3::new(0.0F, 20.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -63,7 +63,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   ignore(
     @sprite.Camera2dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::identity(),
     ).spawn(world),
   )
@@ -98,7 +98,7 @@ fn setup(world : @ecs.World) -> Unit {
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -PI / 4.0F),
         ),
         @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
-          @pbr.CascadeShadowConfigBuilder::default()
+          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
           .with_first_cascade_far_bound(200.0F)
           .with_maximum_distance(400.0F),
         ),
@@ -124,8 +124,8 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(root)
     .insert(
       (
-        @ui.UiRoot::default(),
-        @ui.Node::default()
+        @ui.UiRoot::UiRoot(),
+        @ui.Node::Node()
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Percent(100.0F)),
       ),
@@ -144,7 +144,7 @@ fn setup(world : @ecs.World) -> Unit {
         @text.TextFont::from_font_size(@text.FontSize::Px(26.0F)).with_font(
           asset_server.load_font("fonts/FiraSans-Bold.ttf"),
         ),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
@@ -309,7 +309,7 @@ fn keyboard_control(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param4(keyboard_control)))
   .run()

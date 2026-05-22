@@ -41,7 +41,7 @@ pub struct MeshRayCastIntersectionSettings {
   include_invisible : Bool
   only_entities : Array[@core.Entity]?
 }
-pub fn MeshRayCastIntersectionSettings::default() -> Self
+pub fn MeshRayCastIntersectionSettings::MeshRayCastIntersectionSettings() -> Self
 pub fn MeshRayCastIntersectionSettings::with_include_invisible(Self, Bool) -> Self
 pub fn MeshRayCastIntersectionSettings::with_max_distance(Self, Float) -> Self
 pub fn MeshRayCastIntersectionSettings::with_max_hits(Self, Int) -> Self

@@ -91,7 +91,7 @@ fn[M : Material2d] registered_render_material2d_instances_resource_key() -> @ecs
         debug_name="mgstudio_sprite_render::\{type_name}",
       )
     None => {
-      let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = @ecs.register_resource(
+      let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = @ecs.register_erased_resource(
         debug_name="mgstudio_sprite_render::\{type_name}",
       )
       render_material2d_instances_resource_registry.val.set(type_name, key.id())
@@ -264,7 +264,7 @@ pub fn Material2dBindGroup::new(
 }
 
 ///|
-pub fn Material2dBindGroup::default() -> Material2dBindGroup {
+pub fn Material2dBindGroup::Material2dBindGroup() -> Material2dBindGroup {
   Material2dBindGroup::new([])
 }
 
@@ -339,7 +339,7 @@ pub struct Material2dPipeline[_] {
 }
 
 ///|
-pub fn[M] Material2dPipeline::default() -> Material2dPipeline[M] {
+pub fn[M] Material2dPipeline::Material2dPipeline() -> Material2dPipeline[M] {
   Material2dPipeline::{ vertex_shader: None, fragment_shader: None }
 }
 
@@ -434,7 +434,7 @@ fn[M : Material2d] registered_material2d_pipeline_resource_key() -> @ecs.Resourc
         debug_name="mgstudio_sprite_render::\{type_name}",
       )
     None => {
-      let key : @ecs.ResourceKey[Material2dPipeline[M]] = @ecs.register_resource(
+      let key : @ecs.ResourceKey[Material2dPipeline[M]] = @ecs.register_erased_resource(
         debug_name="mgstudio_sprite_render::\{type_name}",
       )
       material2d_pipeline_resource_registry.val.set(type_name, key.id())
@@ -528,7 +528,7 @@ pub struct Material2dPlugin[M] {
 }
 
 ///|
-pub fn[M] Material2dPlugin::default() -> Material2dPlugin[M] {
+pub fn[M] Material2dPlugin::Material2dPlugin() -> Material2dPlugin[M] {
   Material2dPlugin::{
     vertex_shader: None,
     fragment_shader: None,
@@ -849,7 +849,7 @@ fn[M : Material2d] material2d_pipeline_or_default(
 ) -> Material2dPipeline[M] {
   _probe |> ignore
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[M]] = Material2dPipeline::resource()
-  let default_pipeline = Material2dPipeline::default()
+  let default_pipeline = Material2dPipeline::Material2dPipeline()
   if world.get_resource(pipeline_key) is Some(pipeline) {
     pipeline
   } else {

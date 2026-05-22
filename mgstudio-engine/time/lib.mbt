@@ -20,7 +20,7 @@
 pub struct TimePlugin {}
 
 ///|
-pub fn TimePlugin::default() -> TimePlugin {
+pub fn TimePlugin::TimePlugin() -> TimePlugin {
   TimePlugin::{  }
 }
 
@@ -85,7 +85,7 @@ fn[T : TimeContext] registered_time_resource_key() -> @ecs.ResourceKey[Time[T]] 
     Some(id) =>
       @ecs.resource_key_from_id(id, debug_name="mgstudio_time::\{type_name}")
     None => {
-      let key : @ecs.ResourceKey[Time[T]] = @ecs.register_resource(
+      let key : @ecs.ResourceKey[Time[T]] = @ecs.register_erased_resource(
         debug_name="mgstudio_time::\{type_name}",
       )
       time_resource_registry.val.set(type_name, key.id())
@@ -166,7 +166,7 @@ fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
     world,
     virtual_time_resource_key,
     fn() {
-      let time : Time[Virtual] = Time::default()
+      let time : Time[Virtual] = Time::Time()
       time
     },
   )
@@ -176,7 +176,7 @@ fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
 ///|
 fn ensure_time_resources(world : @ecs.World) -> Unit {
   if world_time_resource(world, default_time_resource_key) is None {
-    let time : Time[Unit] = Time::default()
+    let time : Time[Unit] = Time::Time()
     world.insert_resource(default_time_resource_key, time)
   }
   if world_time_resource(world, real_time_resource_key) is None {
@@ -186,11 +186,11 @@ fn ensure_time_resources(world : @ecs.World) -> Unit {
     )
   }
   if world_time_resource(world, virtual_time_resource_key) is None {
-    let time : Time[Virtual] = Time::default()
+    let time : Time[Virtual] = Time::Time()
     world.insert_resource(virtual_time_resource_key, time)
   }
   if world_time_resource(world, fixed_time_resource_key) is None {
-    let time : Time[Fixed] = Time::default()
+    let time : Time[Fixed] = Time::Time()
     world.insert_resource(fixed_time_resource_key, time)
   }
   if world_time_resource(world, time_update_strategy_resource_key) is None {
@@ -251,16 +251,16 @@ pub fn time_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let startup_instant = host_time_now_instant()
   app
   .init_resource(fn() {
-    let time : Time[Unit] = Time::default()
+    let time : Time[Unit] = Time::Time()
     time
   })
   .init_resource(fn() { Time::new(startup_instant) })
   .init_resource(fn() {
-    let time : Time[Virtual] = Time::default()
+    let time : Time[Virtual] = Time::Time()
     time
   })
   .init_resource(fn() {
-    let time : Time[Fixed] = Time::default()
+    let time : Time[Fixed] = Time::Time()
     time
   })
   .init_resource(fn() { TimeUpdateStrategy::default() })

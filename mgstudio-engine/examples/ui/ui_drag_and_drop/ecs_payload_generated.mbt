@@ -13,19 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_ui_ui_drag_and_drop_DragState(DragState)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DragState with to_ecs_payload(self) {
-  EcsPayload_examples_ui_ui_drag_and_drop_DragState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DragState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_ui_drag_and_drop_DragState(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

@@ -29,7 +29,7 @@ pub fn sprite_plugin_with(
 }
 
 ///|
-pub fn SpritePlugin::default() -> SpritePlugin {
+pub fn SpritePlugin::SpritePlugin() -> SpritePlugin {
   SpritePlugin::{  }
 }
 

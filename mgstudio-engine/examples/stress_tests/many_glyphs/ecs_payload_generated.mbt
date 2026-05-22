@@ -13,19 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_stress_tests_many_glyphs_Args(Args)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Args with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_glyphs_Args(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Args with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_glyphs_Args(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

@@ -50,17 +50,17 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
 
   let (graph_handle, node, target) = animated_ui_graph()
-  let player = @animation.AnimationPlayer::default()
+  let player = @animation.AnimationPlayer::AnimationPlayer()
   player.play(node).repeat() |> ignore
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
@@ -74,9 +74,9 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @ecs.Name::new(TARGET_NAME),
-      @ui.Node::default(),
+      @ui.Node::Node(),
       @text.Text::new("Bevy"),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(@text.FontSize::Px(80.0F)),
       @text.TextColor::new(@sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
@@ -93,7 +93,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

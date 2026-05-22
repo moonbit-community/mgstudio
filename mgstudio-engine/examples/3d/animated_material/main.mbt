@@ -98,7 +98,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(3.0F, 1.0F, 3.0F).looking_at(
           @math.Vec3::new(0.0F, -0.5F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -173,7 +173,7 @@ fn animate_materials(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(animate_materials)))
   .run()

@@ -21,7 +21,7 @@ fn default_plugins_marker() -> DefaultPlugins {
 }
 
 ///|
-pub fn DefaultPlugins::default() -> DefaultPlugins {
+pub fn DefaultPlugins::DefaultPlugins() -> DefaultPlugins {
   default_plugins_marker()
 }
 
@@ -65,7 +65,7 @@ fn minimal_plugins_marker() -> MinimalPlugins {
 }
 
 ///|
-pub fn MinimalPlugins::default() -> MinimalPlugins {
+pub fn MinimalPlugins::MinimalPlugins() -> MinimalPlugins {
   minimal_plugins_marker()
 }
 

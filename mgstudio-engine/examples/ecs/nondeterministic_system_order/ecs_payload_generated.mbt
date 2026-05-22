@@ -13,35 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_ecs_nondeterministic_system_order_A(A)
-  EcsPayload_examples_ecs_nondeterministic_system_order_B(B)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for A with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_nondeterministic_system_order_A(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for A with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_nondeterministic_system_order_A(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for B with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_nondeterministic_system_order_B(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for B with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_nondeterministic_system_order_B(value) =>
-      Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

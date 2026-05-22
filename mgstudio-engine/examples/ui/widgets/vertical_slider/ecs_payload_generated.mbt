@@ -16,7 +16,6 @@
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_ui_widgets_vertical_slider_VerticalFill(VerticalFill)
   EcsPayload_examples_ui_widgets_vertical_slider_HorizontalFill(HorizontalFill)
-  EcsPayload_examples_ui_widgets_vertical_slider_SliderValues(SliderValues)
 }
 
 ///|
@@ -42,20 +41,6 @@ impl @ecs.EcsPayloadCodec for HorizontalFill with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for HorizontalFill with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ui_widgets_vertical_slider_HorizontalFill(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SliderValues with to_ecs_payload(self) {
-  EcsPayload_examples_ui_widgets_vertical_slider_SliderValues(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SliderValues with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_widgets_vertical_slider_SliderValues(value) =>
       Some(value)
     _ => None
   }

@@ -101,7 +101,7 @@ pub struct GltfLodVisibilityPolicy {
   first_end_margin_max : Float
   step : Float
 }
-pub fn GltfLodVisibilityPolicy::default() -> Self
+pub fn GltfLodVisibilityPolicy::GltfLodVisibilityPolicy() -> Self
 pub fn GltfLodVisibilityPolicy::with_enabled(Self, Bool) -> Self
 pub fn GltfLodVisibilityPolicy::with_first_lod_range(Self, Float, Float, Float, Float) -> Self
 pub fn GltfLodVisibilityPolicy::with_step(Self, Float) -> Self
@@ -191,7 +191,7 @@ pub fn SceneNode3d::new_empty(@transform.Transform, @visibility.VisibilityRange?
 pub(all) struct ScenePlugin {
   lod_visibility_policy : GltfLodVisibilityPolicy
 }
-pub fn ScenePlugin::default() -> Self
+pub fn ScenePlugin::ScenePlugin() -> Self
 pub fn ScenePlugin::with_gltf_lod_visibility_policy(Self, GltfLodVisibilityPolicy) -> Self
 pub impl @app.Plugin for ScenePlugin
 

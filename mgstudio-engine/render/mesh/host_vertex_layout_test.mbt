@@ -28,7 +28,7 @@ fn host_vertex_layout_test_descriptor(
 fn host_vertex_layout_test_source_layout(
   skinned? : Bool = false,
 ) -> @asset_mesh.MeshVertexBufferLayoutRef {
-  let layouts = @asset_mesh.MeshVertexBufferLayouts::default()
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let attribute_ids = [
     @asset_mesh.MeshVertexAttribute::position().id(),
     @asset_mesh.MeshVertexAttribute::normal().id(),
@@ -91,7 +91,7 @@ fn host_vertex_layout_test_source_layout(
 
 ///|
 test "render mesh host vertex layout matches fixed renderer upload stride" {
-  let layouts = @asset_mesh.MeshVertexBufferLayouts::default()
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let host_layout = render_mesh3d_host_vertex_buffer_layout(
     layouts,
     host_vertex_layout_test_source_layout(),
@@ -141,7 +141,7 @@ test "render mesh host vertex layout matches fixed renderer upload stride" {
 
 ///|
 test "render mesh host vertex layout preserves skinned semantics with renderer offsets" {
-  let layouts = @asset_mesh.MeshVertexBufferLayouts::default()
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let host_layout = render_mesh3d_host_vertex_buffer_layout(
     layouts,
     host_vertex_layout_test_source_layout(skinned=true),

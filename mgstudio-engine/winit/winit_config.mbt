@@ -84,7 +84,7 @@ pub fn WinitSettings::update_mode(
 }
 
 ///|
-pub impl Default for WinitSettings with default() {
+pub fn WinitSettings::WinitSettings() -> WinitSettings {
   WinitSettings::game()
 }
 

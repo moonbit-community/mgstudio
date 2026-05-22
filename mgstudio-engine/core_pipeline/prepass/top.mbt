@@ -26,13 +26,13 @@ pub const LATE_PREPASS_LABEL : String = "late prepass"
 pub struct PrepassPlugin {}
 
 ///|
-pub fn PrepassPlugin::default() -> PrepassPlugin {
+pub fn PrepassPlugin::PrepassPlugin() -> PrepassPlugin {
   PrepassPlugin::{  }
 }
 
 ///|
 pub fn prepass_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  prepass_plugin_with(app, PrepassPlugin::default())
+  prepass_plugin_with(app, PrepassPlugin::PrepassPlugin())
 }
 
 ///|
@@ -51,7 +51,7 @@ pub fn prepass_plugin_with(
   plugin : PrepassPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { PrepassViewState::default() })
+  app.init_resource(fn() { PrepassViewState::PrepassViewState() })
 }
 
 ///|
@@ -59,7 +59,7 @@ pub fn prepass_plugin_with(
 pub struct DepthPrepass {} derive(ToJson, FromJson)
 
 ///|
-pub fn DepthPrepass::default() -> DepthPrepass {
+pub fn DepthPrepass::DepthPrepass() -> DepthPrepass {
   DepthPrepass::{  }
 }
 
@@ -68,7 +68,7 @@ pub fn DepthPrepass::default() -> DepthPrepass {
 pub struct NormalPrepass {} derive(ToJson, FromJson)
 
 ///|
-pub fn NormalPrepass::default() -> NormalPrepass {
+pub fn NormalPrepass::NormalPrepass() -> NormalPrepass {
   NormalPrepass::{  }
 }
 
@@ -77,7 +77,7 @@ pub fn NormalPrepass::default() -> NormalPrepass {
 pub struct MotionVectorPrepass {} derive(ToJson, FromJson)
 
 ///|
-pub fn MotionVectorPrepass::default() -> MotionVectorPrepass {
+pub fn MotionVectorPrepass::MotionVectorPrepass() -> MotionVectorPrepass {
   MotionVectorPrepass::{  }
 }
 

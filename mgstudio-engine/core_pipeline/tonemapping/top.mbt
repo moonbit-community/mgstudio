@@ -23,7 +23,7 @@ const TONEMAPPING_PLUGIN_NAME : String = "mgstudio.core_pipeline.tonemapping.Ton
 pub struct TonemappingPlugin {}
 
 ///|
-pub fn TonemappingPlugin::default() -> TonemappingPlugin {
+pub fn TonemappingPlugin::TonemappingPlugin() -> TonemappingPlugin {
   TonemappingPlugin::{  }
 }
 
@@ -103,7 +103,7 @@ pub struct TonemappingPipelineKeyFlags {
 } derive(Eq, Debug)
 
 ///|
-pub fn TonemappingPipelineKeyFlags::default() -> TonemappingPipelineKeyFlags {
+pub fn TonemappingPipelineKeyFlags::TonemappingPipelineKeyFlags() -> TonemappingPipelineKeyFlags {
   TonemappingPipelineKeyFlags::{
     hue_rotate: false,
     white_balance: false,
@@ -135,13 +135,13 @@ pub struct TonemappingPipelineKey {
 pub fn TonemappingPipelineKey::new(
   deband_dither? : DebandDither = DebandDither::default(),
   tonemapping? : Tonemapping = Tonemapping::default(),
-  flags? : TonemappingPipelineKeyFlags = TonemappingPipelineKeyFlags::default(),
+  flags? : TonemappingPipelineKeyFlags = TonemappingPipelineKeyFlags::TonemappingPipelineKeyFlags(),
 ) -> TonemappingPipelineKey {
   TonemappingPipelineKey::{ deband_dither, tonemapping, flags }
 }
 
 ///|
-pub fn TonemappingPipelineKey::default() -> TonemappingPipelineKey {
+pub fn TonemappingPipelineKey::TonemappingPipelineKey() -> TonemappingPipelineKey {
   TonemappingPipelineKey::new()
 }
 
@@ -182,7 +182,7 @@ pub fn tonemapping_pipeline_key_shader_defs(
 
 ///|
 pub fn tonemapping_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(TonemappingPlugin::default())
+  app.add_plugins(TonemappingPlugin::TonemappingPlugin())
 }
 
 ///|
@@ -217,7 +217,7 @@ fn tonemapping_plugin_install_with(
       TonemappingLuts::from_asset_server(@asset.AssetServer::new()),
     )
   }
-  app.init_resource(fn() { TonemappingPipelineKey::default() })
+  app.init_resource(fn() { TonemappingPipelineKey::TonemappingPipelineKey() })
 }
 
 ///|

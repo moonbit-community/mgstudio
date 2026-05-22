@@ -305,7 +305,7 @@ fn setup(world : @ecs.World) -> Unit {
   light_textures_state.val.rotating_cube = Some(cube)
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -422,7 +422,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -438,7 +438,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   light_textures_state.val.help_text = Some(help_text)
 
@@ -683,7 +683,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(controls))
   .add_systems(@app.Update, @app.system(rotate_cube))

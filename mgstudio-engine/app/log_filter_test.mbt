@@ -19,7 +19,7 @@ test "app log: target filter specificity follows Bevy EnvFilter shape" {
     records.push(record.message())
   }
   let _app = App::new(@ecs.World::new()).add_plugins(
-    LogPlugin::default()
+    @app.LogPlugin::LogPlugin()
     .with_level(LogLevel::Trace)
     .with_filter("warn,target_a=trace,target_a::child=error")
     .with_fmt_layer(layer),

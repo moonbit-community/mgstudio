@@ -26,7 +26,7 @@ let parent_entity_state : Ref[@core.Entity?] = Ref(None)
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(visibility_setup))
   .add_systems(@app.Update, @app.system(visibility_toggle_system))
   .run()
@@ -68,7 +68,7 @@ fn visibility_setup(world : @ecs.World) -> Unit {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  let camera = @sprite.Camera::default()
+  let camera = @sprite.Camera::Camera()
   @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
     world,
   )

@@ -24,7 +24,7 @@ const CORE_PIPELINE_PLUGIN_NAME : String = "mgstudio.core_pipeline.CorePipelineP
 pub struct CorePipelinePlugin {}
 
 ///|
-pub fn CorePipelinePlugin::default() -> CorePipelinePlugin {
+pub fn CorePipelinePlugin::CorePipelinePlugin() -> CorePipelinePlugin {
   CorePipelinePlugin::{  }
 }
 
@@ -112,7 +112,7 @@ fn core_pipeline_configure_render_sub_app(
     is None {
     world.insert_resource(
       @fullscreen_vertex_shader.ecs_key_fullscreen_shader,
-      FullscreenShader::default(),
+      FullscreenShader(),
     )
   }
   @render.configure_base_render_sets(sub_app).add_systems(
@@ -135,7 +135,7 @@ fn core_pipeline_install_render_graph_driver(
 
 ///|
 pub fn core_pipeline_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(CorePipelinePlugin::default())
+  app.add_plugins(CorePipelinePlugin::CorePipelinePlugin())
 }
 
 ///|
@@ -152,13 +152,17 @@ fn core_pipeline_plugin_install_with(
   _plugin : CorePipelinePlugin,
 ) -> @app.App[@ecs.World] {
   let app = app
-    .add_plugins(@core_2d.Core2dPlugin::default())
-    .add_plugins(@core_3d.Core3dPlugin::default())
-    .add_plugins(@deferred.CopyDeferredLightingIdPlugin::default())
-    .add_plugins(@blit.BlitPlugin::default())
-    .add_plugins(@tonemapping.TonemappingPlugin::default())
-    .add_plugins(@upscaling.UpscalingPlugin::default())
-    .add_plugins(@oit.OrderIndependentTransparencyPlugin::default())
-    .add_plugins(@mip_generation.MipGenerationPlugin::default())
+    .add_plugins(@core_2d.Core2dPlugin::Core2dPlugin())
+    .add_plugins(@core_3d.Core3dPlugin::Core3dPlugin())
+    .add_plugins(
+      @deferred.CopyDeferredLightingIdPlugin::CopyDeferredLightingIdPlugin(),
+    )
+    .add_plugins(@blit.BlitPlugin::BlitPlugin())
+    .add_plugins(@tonemapping.TonemappingPlugin::TonemappingPlugin())
+    .add_plugins(@upscaling.UpscalingPlugin::UpscalingPlugin())
+    .add_plugins(
+      @oit.OrderIndependentTransparencyPlugin::OrderIndependentTransparencyPlugin(),
+    )
+    .add_plugins(@mip_generation.MipGenerationPlugin::MipGenerationPlugin())
   core_pipeline_install_render_graph_driver(app)
 }

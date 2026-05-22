@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_ecs_system_param_Player(Player)
-  EcsPayload_examples_ecs_system_param_PlayerCount(PlayerCount)
 }
 
 ///|
@@ -27,19 +26,6 @@ impl @ecs.EcsPayloadCodec for Player with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for Player with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ecs_system_param_Player(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PlayerCount with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_system_param_PlayerCount(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PlayerCount with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_system_param_PlayerCount(value) => Some(value)
     _ => None
   }
 }

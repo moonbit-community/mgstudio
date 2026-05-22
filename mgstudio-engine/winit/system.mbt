@@ -77,7 +77,7 @@ pub fn winit_create_monitors_system(world : @ecs.World) -> Unit {
   let primary_monitor = @windowing.primary_monitor()
   let monitors = match world.get_resource(WinitMonitors::resource()) {
     Some(monitors) => monitors
-    None => WinitMonitors::default()
+    None => WinitMonitors::WinitMonitors()
   }
 
   let seen_entries : Array[Bool] = []
@@ -181,7 +181,7 @@ pub fn winit_write_raw_winit_window_events_system(world : @ecs.World) -> Unit {
 fn winit_monitors_resource(world : @ecs.World) -> WinitMonitors {
   match world.get_resource(WinitMonitors::resource()) {
     Some(monitors) => monitors
-    None => WinitMonitors::default()
+    None => WinitMonitors::WinitMonitors()
   }
 }
 

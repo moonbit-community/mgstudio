@@ -122,12 +122,12 @@ fn build_ability(
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(80.0F))
       .with_height(@ui.Val::Px(80.0F))
       .with_flex_direction(@ui.FlexDirection::ColumnReverse),
       @ui.BackgroundColor::new(food_button_color()),
-      @ui.Button::default(),
+      @ui.Button::Button(),
       @ui.ImageNode::from_atlas_image(
         texture,
         @asset.TextureAtlas::new(layout, food.index),
@@ -137,7 +137,7 @@ fn build_ability(
   let overlay = commands.spawn(
     (
       @hierarchy.Parent::new(button),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(0.0F)),
       @ui.BackgroundColor::new(food_overlay_color()),
@@ -166,7 +166,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   texture_atlas_layouts : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let texture = asset_server.get().load("textures/food_kenney.png")
   let layout = texture_atlas_layouts
@@ -174,7 +174,7 @@ fn setup(
     .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::splat(64), 7, 7))
 
   let root = commands.spawn_component(
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_align_items(@ui.AlignItems::Center)
@@ -189,9 +189,9 @@ fn setup(
     commands.spawn(
       (
         @text.Text::new("*Click some food to eat it*"),
-        @text.TextFont::default().with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::white()),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
@@ -280,7 +280,7 @@ fn animate_cooldowns(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param4(activate_ability)))
   .add_systems(

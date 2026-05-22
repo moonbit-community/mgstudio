@@ -33,8 +33,13 @@ impl Message for TestDefaultRuntimeMessage with message() {
 }
 
 ///|
-pub impl Default for TestDefaultRuntimeMessage with default() {
+pub fn TestDefaultRuntimeMessage::TestDefaultRuntimeMessage() -> TestDefaultRuntimeMessage {
   { value: 42 }
+}
+
+///|
+pub impl Default for TestDefaultRuntimeMessage with default() {
+  TestDefaultRuntimeMessage::TestDefaultRuntimeMessage()
 }
 
 ///|

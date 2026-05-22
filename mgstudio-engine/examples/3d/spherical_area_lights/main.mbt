@@ -139,7 +139,7 @@ fn setup(world : @ecs.World) -> Unit {
   set_global_ambient_light(world, @sprite.Color::white(), 60.0F)
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.2F, 1.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -195,7 +195,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       point_light,
       @pbr.ecs_key_point_light,
-      @pbr.PointLight::default()
+      @pbr.PointLight::PointLight()
       .with_color(@sprite.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
       .with_radius(radius)
       .with_range(mapped_point_light_range(radius))
@@ -210,7 +210,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       point_light,
       @pbr.ecs_key_point_light,
-      @pbr.PointLight::default()
+      @pbr.PointLight::PointLight()
       .with_color(@sprite.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
       .with_radius(radius)
       .with_range(mapped_point_light_range(radius))
@@ -233,7 +233,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .run()
 }

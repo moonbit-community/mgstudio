@@ -143,7 +143,8 @@ fn current_ssao_value(
 ) -> @post_process.ScreenSpaceAmbientOcclusion {
   match current {
     Some(ssao) => ssao
-    None => @post_process.ScreenSpaceAmbientOcclusion::default()
+    None =>
+      @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion()
   }
 }
 
@@ -180,45 +181,45 @@ fn setup(
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-2.0F, 2.0F, -2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::default(),
+    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
   )
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::default(),
+    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::default(),
+    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
   )
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::default(),
+    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::default(),
+    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_jitter,
-    @post_process.TemporalJitter::default(),
+    @post_process.TemporalJitter::TemporalJitter(),
   )
   try! world.set_by_key(camera, SsaoCamera::component(), SsaoCamera::{  })
 
@@ -306,11 +307,13 @@ fn setup(
   let instructions = @text.Text2dBundle::new(
       @text.Text2d::new(
         ssao_ui_text(
-          Some(@post_process.ScreenSpaceAmbientOcclusion::default()),
+          Some(
+            @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
+          ),
           true,
         ),
       ),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -440,7 +443,7 @@ fn update(
       try! world.set_by_key(
         camera_entity,
         @post_process.ecs_key_temporal_jitter,
-        @post_process.TemporalJitter::default(),
+        @post_process.TemporalJitter::TemporalJitter(),
       )
     }
   }

@@ -14,7 +14,7 @@
 
 ///|
 test "render3d: PhysicalCameraParameters default and ev100 match Bevy semantics" {
-  let params = PhysicalCameraParameters::default()
+  let params = PhysicalCameraParameters::PhysicalCameraParameters()
   debug_inspect(params.aperture_f_stops == 1.0F, content="true")
   debug_inspect(params.shutter_speed_s == 1.0F / 125.0F, content="true")
   debug_inspect(params.sensitivity_iso == 100.0F, content="true")
@@ -24,7 +24,7 @@ test "render3d: PhysicalCameraParameters default and ev100 match Bevy semantics"
 
 ///|
 test "render3d: Exposure and DepthOfField can be created from physical camera parameters" {
-  let params = PhysicalCameraParameters::default()
+  let params = PhysicalCameraParameters::PhysicalCameraParameters()
   params.aperture_f_stops = 2.8F
   params.sensor_height = 0.024F
 
@@ -42,7 +42,7 @@ test "render3d: Exposure and DepthOfField can be created from physical camera pa
 
 ///|
 test "render3d: DepthOfField default and direct field mutation align with Bevy component style" {
-  let dof = DepthOfField::default()
+  let dof = DepthOfField::DepthOfField()
   debug_inspect(dof.mode == DepthOfFieldMode::Gaussian, content="true")
   debug_inspect(dof.max_depth.is_inf(), content="true")
 

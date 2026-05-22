@@ -72,7 +72,7 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let bird_left = Bird::normal()
   let bird_right = Bird::normal()
@@ -118,7 +118,7 @@ fn spawn_text(commands : @app.Commands) -> Unit {
           "Space: swap the right sprite's image handle\nEnter: modify the left sprite image asset",
         ),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           top: @ui.Val::Px(12.0F),
           left: @ui.Val::Px(12.0F),
@@ -173,7 +173,7 @@ fn alter_asset(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Startup, @app.system(@app.system_param(spawn_text)))
   .add_systems(

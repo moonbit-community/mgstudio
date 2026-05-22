@@ -51,7 +51,7 @@ pub fn[A : RenderAssetResource] ErasedRenderAssets::resource() -> @ecs.ResourceK
     Some(id) =>
       @ecs.resource_key_from_id(id, debug_name="mgstudio_render::\{type_name}")
     None => {
-      let key : @ecs.ResourceKey[ErasedRenderAssets[A]] = @ecs.register_resource(
+      let key : @ecs.ResourceKey[ErasedRenderAssets[A]] = @ecs.register_erased_resource(
         debug_name="mgstudio_render::\{type_name}",
       )
       erased_render_assets_resource_registry.val.set(type_name, key.id())
@@ -149,7 +149,7 @@ fn erased_prepare_next_frame_assets_debug_name() -> String {
 }
 
 ///|
-pub fn[A : @ecs.EcsPayloadCodec] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
+pub fn[A] ErasedPrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
   ErasedPrepareNextFrameAssets[A],
 ] {
   @ecs.register_resource(
@@ -158,9 +158,7 @@ pub fn[A : @ecs.EcsPayloadCodec] ErasedPrepareNextFrameAssets::resource() -> @ec
 }
 
 ///|
-pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for ErasedPrepareNextFrameAssets[
-  A,
-] with resource() {
+pub impl[A] @app.Resource for ErasedPrepareNextFrameAssets[A] with resource() {
   ErasedPrepareNextFrameAssets::resource()
 }
 
@@ -212,7 +210,7 @@ pub fn[A, B] prepare_erased_render_assets_with(
   ],
   unload_asset : (UntypedRenderAssetId, B?) -> Unit,
   byte_len? : (A) -> Int? = fn(_) { None },
-  bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter::default(),
+  bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
 ) -> Unit {
   let queued_assets = prepare_next_frame.take()
   for entry in queued_assets {

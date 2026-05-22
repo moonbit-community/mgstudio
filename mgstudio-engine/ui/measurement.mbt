@@ -23,7 +23,7 @@ pub struct ScrollPosition {
 pub impl @ecs.Mutable for ScrollPosition
 
 ///|
-pub fn ScrollPosition::default() -> ScrollPosition {
+pub fn ScrollPosition::ScrollPosition() -> ScrollPosition {
   ScrollPosition::{ offset_x: 0.0F, offset_y: 0.0F }
 }
 
@@ -101,7 +101,7 @@ pub struct ImageNodeSize {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ImageNodeSize::default() -> ImageNodeSize {
+pub fn ImageNodeSize::ImageNodeSize() -> ImageNodeSize {
   ImageNodeSize::{ size: @math.UVec2::zero() }
 }
 

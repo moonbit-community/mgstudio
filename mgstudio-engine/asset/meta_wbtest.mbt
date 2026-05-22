@@ -30,7 +30,7 @@ fn meta_layout_is_row_height(layout : ImageArrayLayout?, pixels : Int) -> Bool {
 
 ///|
 test "asset wb: image meta applies format/texture/usages and row-height layout" {
-  let settings = ImageLoaderSettings::default()
+  let settings = ImageLoaderSettings::ImageLoaderSettings()
   let content = "(asset: Load(settings: (format: Guess, texture_format: Some(Rgba16Float), is_srgb: false, array_layout: Some(RowHeight { pixels: 64 }), asset_usage: RenderAssetUsages(\"RENDER_WORLD\"), load_meshes: RenderAssetUsages(\"MAIN_WORLD\"),),),)"
   apply_image_meta_settings(settings, content)
   debug_inspect(settings.format == ImageFormatSetting::Guess, content="true")
@@ -55,7 +55,7 @@ test "asset wb: image meta applies format/texture/usages and row-height layout" 
 
 ///|
 test "asset wb: image meta accepts row-count and explicit format variant" {
-  let settings = ImageLoaderSettings::default()
+  let settings = ImageLoaderSettings::ImageLoaderSettings()
   let content = "(asset: Load(settings: (format: Format(Png), array_layout: Some(RowCount(rows: 4)), asset_usage: RenderAssetUsages(\"MAIN_WORLD | RENDER_WORLD\"), load_meshes: RenderAssetUsages(\"RENDER_WORLD | MAIN_WORLD\"),),),)"
   apply_image_meta_settings(settings, content)
   debug_inspect(
@@ -78,7 +78,7 @@ test "asset wb: image meta accepts row-count and explicit format variant" {
 
 ///|
 test "asset wb: image meta parses sampler compare/border/anisotropy fields" {
-  let settings = ImageLoaderSettings::default()
+  let settings = ImageLoaderSettings::ImageLoaderSettings()
   let content = "(asset: Load(settings: (sampler: Descriptor (ImageSamplerDescriptor(compare: Some(LessEqual), border_color: Some(OpaqueWhite), anisotropy_clamp: 8,)),),),)"
   apply_image_meta_settings(settings, content)
   match settings.sampler {

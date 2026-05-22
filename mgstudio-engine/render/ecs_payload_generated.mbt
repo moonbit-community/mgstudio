@@ -17,8 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_render_CurrentView(CurrentView)
   EcsPayload_render_RenderAppChannels(RenderAppChannels)
   EcsPayload_render_SortedCameras(SortedCameras)
-  EcsPayload_render_RenderPluginMarker(RenderPluginMarker)
-  EcsPayload_render_RenderMainWorld(RenderMainWorld)
   EcsPayload_render_SyncToRenderWorld(SyncToRenderWorld)
   EcsPayload_render_RenderEntity(RenderEntity)
   EcsPayload_render_MainEntity(MainEntity)
@@ -77,32 +75,6 @@ pub impl @ecs.EcsPayloadCodec for SortedCameras with to_ecs_payload(self) {
 pub impl @ecs.EcsPayloadCodec for SortedCameras with from_ecs_payload(payload) {
   match payload {
     EcsPayload_render_SortedCameras(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RenderPluginMarker with to_ecs_payload(self) {
-  EcsPayload_render_RenderPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RenderPluginMarker with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_render_RenderPluginMarker(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RenderMainWorld with to_ecs_payload(self) {
-  EcsPayload_render_RenderMainWorld(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RenderMainWorld with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_render_RenderMainWorld(value) => Some(value)
     _ => None
   }
 }

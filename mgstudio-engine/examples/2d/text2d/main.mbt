@@ -54,7 +54,7 @@ impl @ecs.Component for AnimateScale with component() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(
     @app.Update,
@@ -73,17 +73,17 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let large_font = @text.TextFont::default()
+  let large_font = @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(50.0F)
-  let medium_font = @text.TextFont::default()
+  let medium_font = @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(35.0F)
   let text_justification = @text.Justify::Center
   let box_color = @sprite.Color::srgb(0.25F, 0.25F, 0.55F)
   let text_shadow_color = color_darker(box_color, 0.05F)
 
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   ignore(
     commands.spawn(
@@ -94,7 +94,7 @@ fn setup(
         @text.TextBackgroundColor::new(
           @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F),
         ),
-        @text.Text2dShadow::default(),
+        @text.Text2dShadow::Text2dShadow(),
         AnimateTranslation::{  },
       ),
     ),
@@ -109,7 +109,7 @@ fn setup(
         @text.TextBackgroundColor::new(
           @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F),
         ),
-        @text.Text2dShadow::default(),
+        @text.Text2dShadow::Text2dShadow(),
         AnimateRotation::{  },
       ),
     ),
@@ -125,7 +125,7 @@ fn setup(
         @text.TextBackgroundColor::new(
           @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F),
         ),
-        @text.Text2dShadow::default(),
+        @text.Text2dShadow::Text2dShadow(),
         AnimateScale::{  },
       ),
     ),
@@ -167,7 +167,7 @@ fn setup(
         medium_font.with_font_smoothing(@text.FontSmoothing::None),
         @text.TextLayout::new_with_justify(@text.Justify::Center),
         @transform.Transform::from_xyz(-400.0F, -250.0F, 0.0F),
-        @text.Text2dShadow::default(),
+        @text.Text2dShadow::Text2dShadow(),
       ),
     ),
   )
@@ -265,11 +265,11 @@ fn spawn_wrapped_text_box(
       @text.TextLayout::new(@text.Justify::Left, linebreak),
       @text.TextBounds::new(size.x, size.y),
       @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
-      @text.Text2dShadow::default().with_color(shadow_color),
+      @text.Text2dShadow::Text2dShadow().with_color(shadow_color),
     ),
   )
   if underline {
-    commands.entity(text_entity).insert_component(@text.Underline::default())
+    commands.entity(text_entity).insert_component(@text.Underline::Underline())
   }
 }
 

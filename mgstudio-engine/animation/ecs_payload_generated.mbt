@@ -23,8 +23,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_animation_AnimationGraphHandle(AnimationGraphHandle)
   EcsPayload_animation_AnimationTransitions(AnimationTransitions)
   EcsPayload_animation_AnimationWeights(AnimationWeights)
-  EcsPayload_animation_ThreadedAnimationGraphs(ThreadedAnimationGraphs)
-  EcsPayload_animation_AnimationRuntimeScratch(AnimationRuntimeScratch)
 }
 
 ///|
@@ -152,36 +150,6 @@ pub impl @ecs.EcsPayloadCodec for AnimationWeights with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_animation_AnimationWeights(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ThreadedAnimationGraphs with to_ecs_payload(self) {
-  EcsPayload_animation_ThreadedAnimationGraphs(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ThreadedAnimationGraphs with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_animation_ThreadedAnimationGraphs(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationRuntimeScratch with to_ecs_payload(self) {
-  EcsPayload_animation_AnimationRuntimeScratch(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationRuntimeScratch with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_animation_AnimationRuntimeScratch(value) => Some(value)
     _ => None
   }
 }

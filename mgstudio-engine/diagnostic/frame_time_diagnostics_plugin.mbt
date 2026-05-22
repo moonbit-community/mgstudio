@@ -46,7 +46,7 @@ pub fn FrameTimeDiagnosticsPlugin::new(
 }
 
 ///|
-pub fn FrameTimeDiagnosticsPlugin::default() -> FrameTimeDiagnosticsPlugin {
+pub fn FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin() -> FrameTimeDiagnosticsPlugin {
   FrameTimeDiagnosticsPlugin::new(DEFAULT_MAX_HISTORY_LENGTH)
 }
 
@@ -79,7 +79,10 @@ pub let frame_time_diagnostic_frame_time : DiagnosticPath = DiagnosticPath::cons
 pub fn frame_time_diagnostics_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  frame_time_diagnostics_plugin_with(app, FrameTimeDiagnosticsPlugin::default())
+  frame_time_diagnostics_plugin_with(
+    app,
+    FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
 }
 
 ///|

@@ -30,14 +30,14 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
@@ -49,7 +49,7 @@ fn setup(
   let panel = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(360.0F))
       .with_height(@ui.Val::Px(260.0F))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F)))
@@ -62,7 +62,7 @@ fn setup(
   let content_row = commands.spawn(
     (
       @hierarchy.Parent::new(panel),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Px(210.0F))
       .with_flex_direction(@ui.FlexDirection::Row)
@@ -75,7 +75,7 @@ fn setup(
       @hierarchy.Parent::new(content_row),
       AutoScrollArea::{  },
       @ui.ScrollPosition::new(0.0F, 0.0F),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(320.0F))
       .with_height(@ui.Val::Px(210.0F))
       .with_overflow(
@@ -92,7 +92,7 @@ fn setup(
       (
         @hierarchy.Parent::new(scroll_area),
         @text.Text::new("Scrollable line \{i.to_string()}"),
-        @text.TextFont::default().with_font(font).with_font_size(16.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
         @text.TextColor::new(@sprite.Color::srgb(0.92F, 0.92F, 0.92F)),
       ),
     )
@@ -102,7 +102,7 @@ fn setup(
   commands.spawn(
     (
       @hierarchy.Parent::new(content_row),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(12.0F))
       .with_height(@ui.Val::Px(210.0F))
       .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
@@ -114,7 +114,7 @@ fn setup(
   commands.spawn(
     (
       @hierarchy.Parent::new(panel),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(320.0F))
       .with_height(@ui.Val::Px(12.0F))
       .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
@@ -136,7 +136,7 @@ fn auto_scroll(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param(auto_scroll)))
   .run()

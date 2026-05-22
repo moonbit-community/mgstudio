@@ -13,20 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_camera_projection_zoom_CameraSettings(CameraSettings)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CameraSettings with to_ecs_payload(self) {
-  EcsPayload_examples_camera_projection_zoom_CameraSettings(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CameraSettings with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_camera_projection_zoom_CameraSettings(value) =>
-      Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

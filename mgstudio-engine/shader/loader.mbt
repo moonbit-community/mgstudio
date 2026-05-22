@@ -16,7 +16,7 @@
 pub struct ShaderLoader {}
 
 ///|
-pub fn ShaderLoader::default() -> ShaderLoader {
+pub fn ShaderLoader::ShaderLoader() -> ShaderLoader {
   ShaderLoader::{  }
 }
 
@@ -40,7 +40,7 @@ struct ShaderAssetPaths {
 }
 
 ///|
-fn ShaderAssetPaths::default() -> ShaderAssetPaths {
+fn ShaderAssetPaths::ShaderAssetPaths() -> ShaderAssetPaths {
   { entries: [] }
 }
 
@@ -238,10 +238,10 @@ fn shader_load_registered(
       let assets = shader_assets_mut_or_abort()
       let handle = assets.modify(fn(value) { value.reserve_handle() })
       registry.modify(fn(value) { value.insert(canonical_path, handle) })
-      let shader = ShaderLoader::default().load(
+      let shader = ShaderLoader::ShaderLoader().load(
         asset_server,
         canonical_path,
-        ShaderSettings::default(),
+        ShaderSettings::ShaderSettings(),
       ) catch {
         error => {
           registry.modify(fn(value) { value.remove(canonical_path) })
@@ -262,6 +262,6 @@ pub fn shader_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     })
   })
   @asset.init_asset(app, fn() { Shader::new("") })
-  .init_resource(fn() { ShaderAssetPaths::default() })
-  .init_resource(fn() { ShaderRuntimeCache::default() })
+  .init_resource(fn() { ShaderAssetPaths::ShaderAssetPaths() })
+  .init_resource(fn() { ShaderRuntimeCache::ShaderRuntimeCache() })
 }

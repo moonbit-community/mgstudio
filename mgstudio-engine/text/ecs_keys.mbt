@@ -265,7 +265,7 @@ fn reset_text_runtime_state() -> Unit {
   text_ecs_index_by_world_id_ref.val.clear()
   ui_text_ecs_entries.clear()
   ui_text_ecs_index_by_world_id_ref.val.clear()
-  font_atlas_set_state.val = FontAtlasSet::default()
+  font_atlas_set_state.val = FontAtlasSet::FontAtlasSet()
   default_text_font_handle_ref.val = None
   cosmic_font_system_state.val = CosmicFontSystemState::{
     font_system: @cosmic.FontSystem::new(),
@@ -298,13 +298,13 @@ fn register_text_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(ecs_key_text2d, ecs_key_text_layout, fn() {
-    TextLayout::default()
+    TextLayout::TextLayout()
   })
   world.register_required_components_with(ecs_key_text2d, ecs_key_text_font, fn() {
-    TextFont::default()
+    TextFont::TextFont()
   })
   world.register_required_components_with(ecs_key_text2d, ecs_key_text_color, fn() {
-    TextColor::default()
+    TextColor::TextColor()
   })
   world.register_required_components_with(
     ecs_key_text2d,
@@ -317,12 +317,12 @@ fn register_text_required_components(
     fn() { FontHinting::default() },
   )
   world.register_required_components_with(ecs_key_text2d, ecs_key_text_bounds, fn() {
-    TextBounds::default()
+    TextBounds::TextBounds()
   })
   world.register_required_components_with(
     ecs_key_text2d,
     @sprite.ecs_key_anchor,
-    fn() { @sprite.Anchor::default() },
+    fn() { @sprite.Anchor::Anchor() },
   )
   world.register_required_components_with(
     ecs_key_text2d,
@@ -340,7 +340,7 @@ fn register_text_required_components(
 fn sync_text_runtime_rem_size(world : @ecs.World) -> Unit {
   let rem_size = match world.resource(RemSize::resource()).get() {
     Some(value) => value.value()
-    None => RemSize::default().value()
+    None => RemSize::RemSize().value()
   }
   text_set_runtime_rem_size(rem_size)
 }
@@ -798,7 +798,7 @@ fn text_ecs_world_entity_ref(
 }
 
 ///|
-fn[T : @ecs.Component] text_ecs_entity_ref_get(
+fn[T : @ecs.Component + @ecs.EcsPayloadCodec] text_ecs_entity_ref_get(
   entity_ref : @ecs.EntityRef,
 ) -> T? {
   entity_ref.get() catch {
@@ -827,21 +827,21 @@ fn text_ecs_bundle_from_entity(
       Text2dBundle::{
         text,
         font,
-        color: TextColor::default(),
+        color: TextColor::TextColor(),
         background_color: None,
         underline: None,
         underline_color: None,
         strikethrough: None,
         strikethrough_color: None,
-        layout: TextLayout::default(),
-        bounds: TextBounds::default(),
+        layout: TextLayout::TextLayout(),
+        bounds: TextBounds::TextBounds(),
         line_height: LineHeight::default(),
         font_hinting: FontHinting::default(),
         shadow: None,
         transform: local_transform,
-        layers: @sprite.RenderLayers::default(),
+        layers: @sprite.RenderLayers::RenderLayers(),
         no_frustum_culling: false,
-        anchor: @sprite.Anchor::default(),
+        anchor: @sprite.Anchor::Anchor(),
         y_axis: YAxisOrientation::TopToBottom,
         logical_viewport_size: None,
       },
@@ -855,7 +855,7 @@ fn text_ecs_bundle_from_entity(
   }
   let color = match (text_ecs_entity_ref_get(entity_ref) : TextColor?) {
     Some(color) => color
-    None => TextColor::default()
+    None => TextColor::TextColor()
   }
   let background_color : TextBackgroundColor? = text_ecs_entity_ref_get(
     entity_ref,
@@ -868,11 +868,11 @@ fn text_ecs_bundle_from_entity(
   )
   let layout = match (text_ecs_entity_ref_get(entity_ref) : TextLayout?) {
     Some(layout) => layout
-    None => TextLayout::default()
+    None => TextLayout::TextLayout()
   }
   let bounds = match (text_ecs_entity_ref_get(entity_ref) : TextBounds?) {
     Some(bounds) => bounds
-    None => TextBounds::default()
+    None => TextBounds::TextBounds()
   }
   let line_height = match (text_ecs_entity_ref_get(entity_ref) : LineHeight?) {
     Some(line_height) => line_height
@@ -887,11 +887,11 @@ fn text_ecs_bundle_from_entity(
   let layers = match
     (text_ecs_entity_ref_get(entity_ref) : @sprite.RenderLayers?) {
     Some(layers) => layers
-    None => @sprite.RenderLayers::default()
+    None => @sprite.RenderLayers::RenderLayers()
   }
   let anchor = match (text_ecs_entity_ref_get(entity_ref) : @sprite.Anchor?) {
     Some(anchor) => anchor
-    None => @sprite.Anchor::default()
+    None => @sprite.Anchor::Anchor()
   }
   let y_axis = match (text_ecs_entity_ref_get(entity_ref) : YAxisOrientation?) {
     Some(y_axis) => y_axis
@@ -951,7 +951,7 @@ fn text_ecs_span_bundle_from_entity(
   }
   let color = match (text_ecs_entity_ref_get(entity_ref) : TextColor?) {
     Some(color) => color
-    None => TextColor::default()
+    None => TextColor::TextColor()
   }
   let background_color : TextBackgroundColor? = text_ecs_entity_ref_get(
     entity_ref,
@@ -1500,33 +1500,33 @@ fn ui_text_ecs_bundle_from_entity(
   guard text_ecs_world_entity_ref(world, entity) is Some(entity_ref) else {
     return Text2dBundle::{
       text: Text2d::new(text.content),
-      font: TextFont::default(),
-      color: TextColor::default(),
+      font: TextFont::TextFont(),
+      color: TextColor::TextColor(),
       background_color: None,
       underline: None,
       underline_color: None,
       strikethrough: None,
       strikethrough_color: None,
-      layout: TextLayout::default(),
-      bounds: TextBounds::default(),
+      layout: TextLayout::TextLayout(),
+      bounds: TextBounds::TextBounds(),
       line_height: LineHeight::default(),
       font_hinting: FontHinting::default(),
       shadow: None,
       transform: @transform.Transform::identity(),
-      layers: @sprite.RenderLayers::default(),
+      layers: @sprite.RenderLayers::RenderLayers(),
       no_frustum_culling: false,
-      anchor: @sprite.Anchor::default(),
+      anchor: @sprite.Anchor::Anchor(),
       y_axis: YAxisOrientation::TopToBottom,
       logical_viewport_size: None,
     }
   }
   let font = match (text_ecs_entity_ref_get(entity_ref) : TextFont?) {
     Some(font) => font
-    None => TextFont::default()
+    None => TextFont::TextFont()
   }
   let color = match (text_ecs_entity_ref_get(entity_ref) : TextColor?) {
     Some(color) => color
-    None => TextColor::default()
+    None => TextColor::TextColor()
   }
   let background_color : TextBackgroundColor? = text_ecs_entity_ref_get(
     entity_ref,
@@ -1539,7 +1539,7 @@ fn ui_text_ecs_bundle_from_entity(
   )
   let layout = match (text_ecs_entity_ref_get(entity_ref) : TextLayout?) {
     Some(layout) => layout
-    None => TextLayout::default()
+    None => TextLayout::TextLayout()
   }
   let line_height = match (text_ecs_entity_ref_get(entity_ref) : LineHeight?) {
     Some(line_height) => line_height
@@ -1561,14 +1561,14 @@ fn ui_text_ecs_bundle_from_entity(
     strikethrough,
     strikethrough_color,
     layout,
-    bounds: TextBounds::default(),
+    bounds: TextBounds::TextBounds(),
     line_height,
     font_hinting,
     shadow: text_shadow_component_to_2d(shadow_component),
     transform: @transform.Transform::identity(),
-    layers: @sprite.RenderLayers::default(),
+    layers: @sprite.RenderLayers::RenderLayers(),
     no_frustum_culling: false,
-    anchor: @sprite.Anchor::default(),
+    anchor: @sprite.Anchor::Anchor(),
     y_axis: YAxisOrientation::TopToBottom,
     logical_viewport_size: None,
   }

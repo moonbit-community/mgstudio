@@ -14,7 +14,7 @@
 
 ///|
 test "pbr/meshlet: mesh manager queues uploads by asset id" {
-  let manager = MeshletMeshManager::default()
+  let manager = MeshletMeshManager::MeshletMeshManager()
   let meshlet_mesh = MeshletMesh::new(4, 3)
     .with_vertex_buffers(10, 20, 5, 30)
     .with_bvh_depth(6)
@@ -31,7 +31,7 @@ test "pbr/meshlet: mesh manager queues uploads by asset id" {
 
 ///|
 test "pbr/meshlet: mesh manager uploads real meshlet asset slices" {
-  let manager = MeshletMeshManager::default()
+  let manager = MeshletMeshManager::MeshletMeshManager()
   let aabb = MeshletAabb::new(
     center_x=1.0,
     center_y=2.0,
@@ -45,9 +45,9 @@ test "pbr/meshlet: mesh manager uploads real meshlet asset slices" {
     vertex_normals=[41, 42],
     vertex_uvs=[MeshletVertexUv::new(0.5, 0.25)],
     indices=[0, 2, 1],
-    bvh=[BvhNode::default().with_child_count(0, 2)],
+    bvh=[BvhNode::BvhNode().with_child_count(0, 2)],
     meshlets=[Meshlet::new(0, 0, 0, 3, 1)],
-    meshlet_cull_data=[MeshletCullData::default()],
+    meshlet_cull_data=[MeshletCullData::MeshletCullData()],
     aabb~,
     bvh_depth=9,
   )
@@ -63,7 +63,7 @@ test "pbr/meshlet: mesh manager uploads real meshlet asset slices" {
 
 ///|
 test "pbr/meshlet: mesh manager returns bvh root node index from byte slices" {
-  let manager = MeshletMeshManager::default()
+  let manager = MeshletMeshManager::MeshletMeshManager()
   let meshlet_mesh_a = MeshletMesh::new(1, 1).with_vertex_buffers(2, 2, 1, 4)
   let meshlet_mesh_b = MeshletMesh::new(1, 2).with_vertex_buffers(3, 3, 1, 4)
   let queued_a = manager.queue_upload_if_needed(21, meshlet_mesh_a)
@@ -85,7 +85,7 @@ test "pbr/meshlet: mesh manager returns bvh root node index from byte slices" {
 
 ///|
 test "pbr/meshlet: mesh manager removes slices from all persistent buffers" {
-  let manager = MeshletMeshManager::default()
+  let manager = MeshletMeshManager::MeshletMeshManager()
   let meshlet_mesh = MeshletMesh::new(2, 1)
     .with_vertex_buffers(4, 4, 2, 6)
     .with_bvh_depth(2)

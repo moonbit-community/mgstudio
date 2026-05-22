@@ -1054,7 +1054,7 @@ pub fn HostGpuMeshInfo::vertex_start(Self) -> Int
 pub struct HostMaterial2dBindGroup {
   bindings : Array[HostMaterial2dBinding]
 }
-pub fn HostMaterial2dBindGroup::default() -> Self
+pub fn HostMaterial2dBindGroup::HostMaterial2dBindGroup() -> Self
 pub fn HostMaterial2dBindGroup::new(Array[HostMaterial2dBinding]) -> Self
 
 pub(all) struct HostMaterial2dBinding {
@@ -1371,7 +1371,7 @@ pub(all) struct MeshletViewVisibilityBuffer {
 pub struct PendingCommandBuffers {
   inner : WgpuWrapper[PendingCommandBuffersInner]
 }
-pub fn PendingCommandBuffers::default() -> Self
+pub fn PendingCommandBuffers::PendingCommandBuffers() -> Self
 pub fn PendingCommandBuffers::is_empty(Self) -> Bool
 pub fn PendingCommandBuffers::len(Self) -> Int
 pub fn PendingCommandBuffers::length(Self) -> Int
@@ -1421,9 +1421,9 @@ pub impl @ecs.EcsPayloadCodec for RenderAdapterInfo
 pub struct RenderContextState {
   inner : WgpuWrapper[RenderContextStateInner]
 }
+pub fn RenderContextState::RenderContextState() -> Self
 pub fn RenderContextState::add_command_buffer(Self, @wgpu_mbt.CommandBuffer) -> Unit
 pub fn RenderContextState::command_encoder(Self) -> @wgpu_mbt.CommandEncoder
-pub fn RenderContextState::default() -> Self
 pub fn RenderContextState::finish(Self) -> Array[@wgpu_mbt.CommandBuffer]
 pub fn RenderContextState::is_empty(Self) -> Bool
 pub fn RenderContextState::new() -> Self
@@ -1470,7 +1470,7 @@ pub struct RenderDiagnosticsSnapshot {
   pass_3d_motion_vector_cpu_ms : Float
   pass_3d_point_shadow_cpu_ms : Float
 }
-pub fn RenderDiagnosticsSnapshot::default() -> Self
+pub fn RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot() -> Self
 pub fn RenderDiagnosticsSnapshot::new(Int, Int, Int, Int) -> Self
 
 pub struct RenderInstance {

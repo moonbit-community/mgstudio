@@ -91,7 +91,7 @@ fn spawn_row(
   let row = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_display(@ui.Display::Grid)
       .with_grid_template_columns([
         @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(3), [
@@ -146,12 +146,12 @@ fn spawn_row(
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_display(@ui.Display::Grid)
       .with_grid_template_columns([
         @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
@@ -171,7 +171,7 @@ fn setup(commands : @app.Commands) -> Unit {
         @hierarchy.Parent::new(root),
         @text.Text::new("Generic Font Families"),
         @text.TextFont::from_font_size(font_size()),
-        @text.Underline::default(),
+        @text.Underline::Underline(),
       ),
     ),
   )
@@ -191,7 +191,7 @@ fn setup(commands : @app.Commands) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .run()
 }

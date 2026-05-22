@@ -240,7 +240,7 @@ test "input gamepad: axis threshold filter ignores changes below threshold" {
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()
-  let settings = GamepadSettings::default().default_axis_settings
+  let settings = GamepadSettings::GamepadSettings().default_axis_settings
   let base_value = 0.5F
 
   send_connection(world, entity)
@@ -283,7 +283,7 @@ test "input gamepad: axis deadzone filter drops zeroed changes" {
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()
-  let settings = GamepadSettings::default().default_axis_settings
+  let settings = GamepadSettings::GamepadSettings().default_axis_settings
 
   send_connection(world, entity)
   app = app.run_once()
@@ -318,7 +318,7 @@ test "input gamepad: axis deadzone inputs are rounded to zero when crossing from
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()
-  let settings = GamepadSettings::default().default_axis_settings
+  let settings = GamepadSettings::GamepadSettings().default_axis_settings
 
   send_connection(world, entity)
   app = app.run_once()
@@ -361,7 +361,7 @@ test "input gamepad: axis livezone filter ignores clamped changes beyond the edg
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()
-  let settings = GamepadSettings::default().default_axis_settings
+  let settings = GamepadSettings::GamepadSettings().default_axis_settings
 
   send_connection(world, entity)
   app = app.run_once()
@@ -402,7 +402,7 @@ test "input gamepad: axis livezone values are rounded to the extremes" {
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()
-  let settings = GamepadSettings::default().default_axis_settings
+  let settings = GamepadSettings::GamepadSettings().default_axis_settings
 
   send_connection(world, entity)
   app = app.run_once()
@@ -437,7 +437,7 @@ test "input gamepad: button press emits state change and updates digital state" 
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()
-  let digital_settings = GamepadSettings::default().default_button_settings
+  let digital_settings = GamepadSettings::GamepadSettings().default_button_settings
 
   send_connection(world, entity)
   app = app.run_once()
@@ -483,7 +483,7 @@ test "input gamepad: just_pressed lasts for one frame" {
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()
-  let digital_settings = GamepadSettings::default().default_button_settings
+  let digital_settings = GamepadSettings::GamepadSettings().default_button_settings
 
   send_connection(world, entity)
   app = app.run_once()
@@ -517,7 +517,7 @@ test "input gamepad: button release emits state change and clears digital state"
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()
-  let digital_settings = GamepadSettings::default().default_button_settings
+  let digital_settings = GamepadSettings::GamepadSettings().default_button_settings
 
   send_connection(world, entity)
   app = app.run_once()
@@ -569,7 +569,7 @@ test "input gamepad: just_released lasts for one frame" {
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()
-  let digital_settings = GamepadSettings::default().default_button_settings
+  let digital_settings = GamepadSettings::GamepadSettings().default_button_settings
 
   send_connection(world, entity)
   app = app.run_once()
@@ -610,8 +610,8 @@ test "input gamepad: button axis filtering matches bevy analog and digital count
   let mut app = gamepad_test_app()
   let world = app.world()
   let entity = world.spawn_empty()
-  let digital_settings = GamepadSettings::default().default_button_settings
-  let analog_settings = GamepadSettings::default().default_button_axis_settings
+  let digital_settings = GamepadSettings::GamepadSettings().default_button_settings
+  let analog_settings = GamepadSettings::GamepadSettings().default_button_axis_settings
 
   send_connection(world, entity)
   app = app.run_once()

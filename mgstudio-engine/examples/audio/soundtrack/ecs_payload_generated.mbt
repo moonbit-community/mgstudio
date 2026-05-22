@@ -14,65 +14,8 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_audio_soundtrack_GameState(GameState)
-  EcsPayload_examples_audio_soundtrack_GameStateTimer(GameStateTimer)
-  EcsPayload_examples_audio_soundtrack_SoundtrackPlayer(SoundtrackPlayer)
-  EcsPayload_examples_audio_soundtrack_TrackChangePending(TrackChangePending)
   EcsPayload_examples_audio_soundtrack_FadeIn(FadeIn)
   EcsPayload_examples_audio_soundtrack_FadeOut(FadeOut)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GameState with to_ecs_payload(self) {
-  EcsPayload_examples_audio_soundtrack_GameState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GameState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_audio_soundtrack_GameState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GameStateTimer with to_ecs_payload(self) {
-  EcsPayload_examples_audio_soundtrack_GameStateTimer(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GameStateTimer with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_audio_soundtrack_GameStateTimer(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SoundtrackPlayer with to_ecs_payload(self) {
-  EcsPayload_examples_audio_soundtrack_SoundtrackPlayer(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SoundtrackPlayer with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_audio_soundtrack_SoundtrackPlayer(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TrackChangePending with to_ecs_payload(self) {
-  EcsPayload_examples_audio_soundtrack_TrackChangePending(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TrackChangePending with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_audio_soundtrack_TrackChangePending(value) =>
-      Some(value)
-    _ => None
-  }
 }
 
 ///|

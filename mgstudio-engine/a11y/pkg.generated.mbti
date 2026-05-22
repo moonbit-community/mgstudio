@@ -80,14 +80,14 @@ pub impl @ecs.EcsPayloadCodec for AccessibilityNode
 
 pub(all) struct AccessibilityPlugin {
 }
-pub fn AccessibilityPlugin::default() -> Self
+pub fn AccessibilityPlugin::AccessibilityPlugin() -> Self
 pub impl @app.Plugin for AccessibilityPlugin
 
 pub struct AccessibilityRequested {
   requested : @ref.Ref[Bool]
 }
+pub fn AccessibilityRequested::AccessibilityRequested() -> Self
 pub fn AccessibilityRequested::clone(Self) -> Self
-pub fn AccessibilityRequested::default() -> Self
 pub fn AccessibilityRequested::get(Self) -> Bool
 pub fn AccessibilityRequested::handle(Self) -> @ref.Ref[Bool]
 pub fn AccessibilityRequested::set(Self, Bool) -> Unit
@@ -113,7 +113,7 @@ pub impl @ecs.Message for ActionRequest
 pub struct ManageAccessibilityUpdates {
   mut value : Bool
 }
-pub fn ManageAccessibilityUpdates::default() -> Self
+pub fn ManageAccessibilityUpdates::ManageAccessibilityUpdates() -> Self
 pub fn ManageAccessibilityUpdates::get(Self) -> Bool
 pub fn ManageAccessibilityUpdates::set(Self, Bool) -> Unit
 pub impl @app.Resource for ManageAccessibilityUpdates

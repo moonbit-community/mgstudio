@@ -122,7 +122,7 @@ fn processed_cool_text_value(path : String) -> String {
 struct TextPlugin {}
 
 ///|
-fn TextPlugin::default() -> TextPlugin {
+fn TextPlugin::TextPlugin() -> TextPlugin {
   TextPlugin::{  }
 }
 
@@ -184,8 +184,8 @@ fn print_text(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(TextPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(TextPlugin::TextPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(print_text)))
   .run()

@@ -48,7 +48,7 @@ pub struct DownsampleDepthPipelinePairState {
   first_multisample_pipeline_ready : Bool
   second_multisample_pipeline_ready : Bool
 }
-pub fn DownsampleDepthPipelinePairState::default() -> Self
+pub fn DownsampleDepthPipelinePairState::DownsampleDepthPipelinePairState() -> Self
 pub fn DownsampleDepthPipelinePairState::new(first_pipeline_ready? : Bool, second_pipeline_ready? : Bool, first_multisample_pipeline_ready? : Bool, second_multisample_pipeline_ready? : Bool) -> Self
 pub impl @app.Resource for DownsampleDepthPipelinePairState
 pub impl @ecs.EcsPayloadCodec for DownsampleDepthPipelinePairState
@@ -65,12 +65,12 @@ pub fn DownsampleDepthViewState::new(has_depth_pyramid? : Bool, has_downsample_b
 pub struct ExperimentalDepthMipGenerationNode {
   label : String
 }
-pub fn ExperimentalDepthMipGenerationNode::default() -> Self
+pub fn ExperimentalDepthMipGenerationNode::ExperimentalDepthMipGenerationNode() -> Self
 pub fn ExperimentalDepthMipGenerationNode::label(Self) -> String
 
 pub struct ExperimentalMipGeneration {
 }
-pub fn ExperimentalMipGeneration::default() -> Self
+pub fn ExperimentalMipGeneration::ExperimentalMipGeneration() -> Self
 pub impl @app.Plugin for ExperimentalMipGeneration
 
 // Type aliases

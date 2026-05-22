@@ -19,11 +19,11 @@
 pub type Layer = Int
 
 ///|
-pub let default_layers : @sprite.RenderLayers = @sprite.RenderLayers::default()
+pub let default_layers : @sprite.RenderLayers = @sprite.RenderLayers::RenderLayers()
 
 ///|
 pub fn render_layers_default() -> @sprite.RenderLayers {
-  @sprite.RenderLayers::default()
+  @sprite.RenderLayers::RenderLayers()
 }
 
 ///|

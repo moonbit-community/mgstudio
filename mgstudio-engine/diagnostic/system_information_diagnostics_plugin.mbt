@@ -23,7 +23,7 @@ const SYSTEM_INFORMATION_DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic
 pub struct SystemInformationDiagnosticsPlugin {}
 
 ///|
-pub fn SystemInformationDiagnosticsPlugin::default() -> SystemInformationDiagnosticsPlugin {
+pub fn SystemInformationDiagnosticsPlugin::SystemInformationDiagnosticsPlugin() -> SystemInformationDiagnosticsPlugin {
   SystemInformationDiagnosticsPlugin::{  }
 }
 
@@ -184,7 +184,7 @@ fn collect_system_info() -> SystemInfo {
 }
 
 ///|
-pub fn SystemInfo::default() -> SystemInfo {
+pub fn SystemInfo::SystemInfo() -> SystemInfo {
   collect_system_info()
 }
 
@@ -302,7 +302,7 @@ pub fn system_information_diagnostics_plugin(
 ) -> @app.App[@ecs.World] {
   system_information_diagnostics_plugin_with(
     app,
-    SystemInformationDiagnosticsPlugin::default(),
+    SystemInformationDiagnosticsPlugin::SystemInformationDiagnosticsPlugin(),
   )
 }
 
@@ -325,7 +325,7 @@ pub fn system_information_diagnostics_plugin_with(
             system_information_diagnostics_plugin_marker_key,
             SystemInformationDiagnosticsPluginMarker::{  },
           )
-          .init_resource(fn() { SystemInfo::default() }),
+          .init_resource(fn() { SystemInfo::SystemInfo() }),
           Diagnostic::new(system_information_diagnostic_system_cpu_usage).with_suffix(
             PROCESS_USAGE_SUFFIX,
           ),

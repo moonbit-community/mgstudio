@@ -30,7 +30,7 @@ pub let camera_update_systems : @app.SystemSet = @app.system_set(
 pub struct CameraProjectionPlugin {}
 
 ///|
-pub fn CameraProjectionPlugin::default() -> CameraProjectionPlugin {
+pub fn CameraProjectionPlugin::CameraProjectionPlugin() -> CameraProjectionPlugin {
   CameraProjectionPlugin::{  }
 }
 
@@ -48,7 +48,7 @@ pub impl @app.Plugin for CameraProjectionPlugin with build(_self, app) {
 pub struct CameraPlugin {}
 
 ///|
-pub fn CameraPlugin::default() -> CameraPlugin {
+pub fn CameraPlugin::CameraPlugin() -> CameraPlugin {
   CameraPlugin::{  }
 }
 
@@ -77,8 +77,10 @@ pub fn camera_projection_plugin(
 ///|
 pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .init_resource(fn() { @sprite.ClearColor::default() })
-  .add_plugins(CameraProjectionPlugin::default())
-  .add_plugins(@camera_visibility.VisibilityPlugin::default())
-  .add_plugins(@camera_visibility.VisibilityRangePlugin::default())
+  .init_resource(fn() { @sprite.ClearColor::ClearColor() })
+  .add_plugins(CameraProjectionPlugin::CameraProjectionPlugin())
+  .add_plugins(@camera_visibility.VisibilityPlugin::VisibilityPlugin())
+  .add_plugins(
+    @camera_visibility.VisibilityRangePlugin::VisibilityRangePlugin(),
+  )
 }

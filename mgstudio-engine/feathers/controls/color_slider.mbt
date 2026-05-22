@@ -112,7 +112,7 @@ pub fn SliderBaseColor::new(color : @color.Color) -> SliderBaseColor {
 }
 
 ///|
-pub fn SliderBaseColor::default() -> SliderBaseColor {
+pub fn SliderBaseColor::SliderBaseColor() -> SliderBaseColor {
   SliderBaseColor::new(@color.Color::white())
 }
 
@@ -123,7 +123,7 @@ pub(all) struct ColorSliderProps {
 }
 
 ///|
-pub fn ColorSliderProps::default() -> ColorSliderProps {
+pub fn ColorSliderProps::ColorSliderProps() -> ColorSliderProps {
   ColorSliderProps::{ value: 0.0, channel: Alpha }
 }
 
@@ -133,7 +133,7 @@ pub(all) struct ColorSlider {
 }
 
 ///|
-pub fn ColorSlider::default() -> ColorSlider {
+pub fn ColorSlider::ColorSlider() -> ColorSlider {
   ColorSlider::{ channel: ColorChannel::default() }
 }
 
@@ -152,7 +152,7 @@ pub fn color_slider(
 pub struct ColorSliderPlugin {}
 
 ///|
-pub fn ColorSliderPlugin::default() -> ColorSliderPlugin {
+pub fn ColorSliderPlugin::ColorSliderPlugin() -> ColorSliderPlugin {
   ColorSliderPlugin::{  }
 }
 

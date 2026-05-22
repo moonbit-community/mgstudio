@@ -14,7 +14,7 @@
 
 ///|
 test "pbr/decal: clustered render-table deduplicates texture indices" {
-  let render_decals = RenderClusteredDecals::default()
+  let render_decals = RenderClusteredDecals::RenderClusteredDecals()
   let entity0 = @core.Entity::new(20, 1)
   let entity1 = @core.Entity::new(21, 1)
 
@@ -42,8 +42,8 @@ test "pbr/decal: clustered tag is clamped to non-negative" {
 
 ///|
 test "pbr/decal: upload_decals keeps gpu buffer non-empty" {
-  let render_decals = RenderClusteredDecals::default()
-  let decals_buffer = DecalsBuffer::default()
+  let render_decals = RenderClusteredDecals::RenderClusteredDecals()
+  let decals_buffer = DecalsBuffer::DecalsBuffer()
 
   render3d_upload_decals(render_decals, decals_buffer)
   debug_inspect(decals_buffer.is_empty(), content="false")
@@ -63,8 +63,8 @@ test "pbr/decal: upload_decals keeps gpu buffer non-empty" {
 
 ///|
 test "pbr/decal: bind-group entries pad textures when partial binding is unavailable" {
-  let render_decals = RenderClusteredDecals::default()
-  let decals_buffer = DecalsBuffer::default()
+  let render_decals = RenderClusteredDecals::RenderClusteredDecals()
+  let decals_buffer = DecalsBuffer::DecalsBuffer()
   let entity = @core.Entity::new(42, 1)
 
   ignore(

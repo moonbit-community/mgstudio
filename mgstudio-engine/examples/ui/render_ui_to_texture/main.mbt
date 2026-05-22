@@ -81,7 +81,7 @@ struct PanelDragState {
 }
 
 ///|
-fn PanelDragState::default() -> PanelDragState {
+fn PanelDragState::PanelDragState() -> PanelDragState {
   { active: false }
 }
 
@@ -205,7 +205,7 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   images : @app.ResMut[@asset.Assets[@asset.Image]],
 ) -> Unit {
-  commands.insert_resource(PanelDragState::default())
+  commands.insert_resource(PanelDragState::PanelDragState())
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let image_handle = images
@@ -229,18 +229,18 @@ fn setup(
 
   let texture_camera = commands.spawn(
     (
-      @sprite.Camera2d::default(),
-      @sprite.Camera::default().with_order(-1),
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera().with_order(-1),
       @transform.Transform::identity(),
       @sprite.RenderTarget::Image(image_handle),
-      @ui.IsDefaultUiCamera::default(),
+      @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
     ),
   )
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
       @ui.BackgroundColor::new(gray()),
@@ -252,8 +252,8 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       DraggablePanel::{  },
-      @ui.Button::default(),
-      @ui.Node::default()
+      @ui.Button::Button(),
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_width(@ui.Val::Px(PANEL_WIDTH))
       .with_height(@ui.Val::Px(PANEL_HEIGHT))
@@ -269,7 +269,7 @@ fn setup(
     (
       @hierarchy.Parent::new(panel),
       @text.Text::new("Drag Me!"),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(40.0F)),
       @text.TextColor::new(@sprite.Color::white()),
@@ -304,7 +304,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::default(),
+        @pbr.DirectionalLight::DirectionalLight(),
         @transform.Transform::from_xyz(0.0F, 3.0F, 6.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -328,7 +328,7 @@ fn setup(
 
   commands.queue(fn(world : @ecs.World) {
     let camera_entity = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -396,7 +396,7 @@ fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
       @window.window_scale_factor(),
     )
     is Some((ray_origin, ray_direction)) {
-    let settings = @picking_mesh_ray_cast.MeshRayCastSettings::default()
+    let settings = @picking_mesh_ray_cast.MeshRayCastIntersectionSettings::MeshRayCastIntersectionSettings()
       .with_max_hits(1)
       .with_only_entities(Some([cube_entity]))
     if @picking_mesh_ray_cast.mesh_ray_cast_first(
@@ -456,7 +456,7 @@ fn stop_drag_panel(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param5(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(rotate_cube)))
   .add_systems(

@@ -142,11 +142,11 @@ fn setup(
 
   commands.spawn(
     (
-      @camera.Camera3d::default(),
+      @camera.Camera3d::Camera3d(),
       @camera.Projection::custom(ObliquePerspectiveProjection::{
         horizontal_obliqueness: 0.2F,
         vertical_obliqueness: 0.6F,
-        perspective: @camera.PerspectiveProjection3d::default(),
+        perspective: @camera.PerspectiveProjection3d::PerspectiveProjection3d(),
       }),
       @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
         @math.Vec3::zero(),
@@ -177,7 +177,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @pbr.PointLight::default().with_shadow_maps_enabled(true),
+      @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
       @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
     ),
   )
@@ -187,7 +187,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .run()
 }

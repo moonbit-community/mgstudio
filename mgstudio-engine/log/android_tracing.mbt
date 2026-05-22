@@ -19,7 +19,7 @@
 pub struct AndroidTracingPlugin {}
 
 ///|
-pub fn AndroidTracingPlugin::default() -> AndroidTracingPlugin {
+pub fn AndroidTracingPlugin::AndroidTracingPlugin() -> AndroidTracingPlugin {
   AndroidTracingPlugin::{  }
 }
 

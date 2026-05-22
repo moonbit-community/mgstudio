@@ -47,8 +47,8 @@ pub(all) struct FpsOverlayPlugin {
 }
 
 ///|
-pub fn FpsOverlayPlugin::default() -> FpsOverlayPlugin {
-  FpsOverlayPlugin::{ config: FpsOverlayConfig::default() }
+pub fn FpsOverlayPlugin::FpsOverlayPlugin() -> FpsOverlayPlugin {
+  FpsOverlayPlugin::{ config: FpsOverlayConfig::FpsOverlayConfig() }
 }
 
 ///|
@@ -80,7 +80,7 @@ fn fps_overlay_touch_config_mutability(config : FpsOverlayConfig) -> Unit {
 }
 
 ///|
-pub fn FpsOverlayConfig::default() -> FpsOverlayConfig {
+pub fn FpsOverlayConfig::FpsOverlayConfig() -> FpsOverlayConfig {
   let config = FpsOverlayConfig::{
     text_config: @text.TextFont::from_font_size(32.0F),
     text_color: @sprite.Color::white(),
@@ -119,7 +119,7 @@ fn fps_overlay_touch_frame_time_graph_config_mutability(
 }
 
 ///|
-pub fn FrameTimeGraphConfig::default() -> FrameTimeGraphConfig {
+pub fn FrameTimeGraphConfig::FrameTimeGraphConfig() -> FrameTimeGraphConfig {
   let config = FrameTimeGraphConfig::{
     enabled: true,
     min_fps: 30.0F,
@@ -133,10 +133,7 @@ pub fn FrameTimeGraphConfig::default() -> FrameTimeGraphConfig {
 pub fn FrameTimeGraphConfig::target_fps(
   target_fps : Float,
 ) -> FrameTimeGraphConfig {
-  let config = FrameTimeGraphConfig::{
-    ..FrameTimeGraphConfig::default(),
-    target_fps,
-  }
+  let config = FrameTimeGraphConfig::{ ..FrameTimeGraphConfig(), target_fps, }
   fps_overlay_touch_frame_time_graph_config_mutability(config)
   config
 }
@@ -159,7 +156,7 @@ priv struct FpsOverlayState {
 }
 
 ///|
-fn FpsOverlayState::default() -> FpsOverlayState {
+fn FpsOverlayState::FpsOverlayState() -> FpsOverlayState {
   FpsOverlayState::{
     root_entity: None,
     text_entity: None,
@@ -243,7 +240,7 @@ fn fps_overlay_has_frame_time_graph_plugin(app : @app.App[@ecs.World]) -> Bool {
 
 ///|
 pub fn fps_overlay_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  fps_overlay_plugin_with(app, FpsOverlayPlugin::default())
+  fps_overlay_plugin_with(app, FpsOverlayPlugin::FpsOverlayPlugin())
 }
 
 ///|
@@ -256,10 +253,12 @@ pub fn fps_overlay_plugin_with(
   }
   let mut next = app
   if !fps_overlay_has_frame_time_diagnostics(next) {
-    next = next.add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+    next = next.add_plugins(
+      @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+    )
   }
   if !fps_overlay_has_frame_time_graph_plugin(next) {
-    next = next.add_plugins(FrameTimeGraphPlugin::default())
+    next = next.add_plugins(FrameTimeGraphPlugin::FrameTimeGraphPlugin())
   }
   fps_overlay_warn_on_low_interval(plugin.config)
   next
@@ -269,7 +268,7 @@ pub fn fps_overlay_plugin_with(
   .insert_resource(plugin.config)
   .insert_world_resource(
     fps_overlay_state_resource_key,
-    FpsOverlayState::default(),
+    FpsOverlayState::FpsOverlayState(),
   )
   .add_systems(@app.Startup, @app.system(fps_overlay_setup))
   .add_systems(
@@ -454,11 +453,11 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   }
 
   let root = world.spawn_empty()
-  try! (world.entity_mut(root).insert_component(@ui.UiRoot::default()) |> ignore)
+  try! (world.entity_mut(root).insert_component(@ui.UiRoot::UiRoot()) |> ignore)
   try! (world
   .entity_mut(root)
   .insert_component(
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_flex_direction(@ui.FlexDirection::Column),
   )
@@ -475,7 +474,7 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   .entity_mut(text_entity)
   .insert_component(@hierarchy.Parent::new(root))
   |> ignore)
-  try! (world.entity_mut(text_entity).insert_component(@ui.Node::default())
+  try! (world.entity_mut(text_entity).insert_component(@ui.Node::Node())
   |> ignore)
   try! (world
   .entity_mut(text_entity)
@@ -498,7 +497,7 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   |> ignore)
   try! (world
   .entity_mut(text_value_span_entity)
-  .insert_component(@text.TextSpan::default())
+  .insert_component(@text.TextSpan::TextSpan())
   |> ignore)
   try! (world
   .entity_mut(text_value_span_entity)
@@ -513,7 +512,7 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   try! (world
   .entity_mut(graph_entity)
   .insert_component(
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Px(fps_overlay_graph_width(config)))
     .with_height(@ui.Val::Px(fps_overlay_graph_height(config)))
     .with_display(fps_overlay_graph_display(config))
@@ -632,7 +631,7 @@ fn fps_overlay_resize_bars(
     .entity_mut(bar)
     .insert_component(@hierarchy.Parent::new(graph_entity))
     |> ignore)
-    try! (world.entity_mut(bar).insert_component(@ui.Node::default()) |> ignore)
+    try! (world.entity_mut(bar).insert_component(@ui.Node::Node()) |> ignore)
     try! (world
     .entity_mut(bar)
     .insert_component(

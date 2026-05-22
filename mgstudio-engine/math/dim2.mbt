@@ -30,7 +30,7 @@ pub fn Capsule2d::with_segments(self : Capsule2d, segments : Int) -> Capsule2d {
 }
 
 ///|
-pub fn Capsule2d::default() -> Capsule2d {
+pub fn Capsule2d::Capsule2d() -> Capsule2d {
   Capsule2d::new(0.5F, 1.0F)
 }
 
@@ -50,7 +50,7 @@ pub fn Rectangle::from_size(size : Vec2) -> Rectangle {
 }
 
 ///|
-pub fn Rectangle::default() -> Rectangle {
+pub fn Rectangle::Rectangle() -> Rectangle {
   Rectangle::{ half_size: Vec2::new(0.5F, 0.5F) }
 }
 
@@ -71,7 +71,7 @@ pub fn Circle::with_vertices(self : Circle, vertices : Int) -> Circle {
 }
 
 ///|
-pub fn Circle::default() -> Circle {
+pub fn Circle::Circle() -> Circle {
   Circle::new(0.5F)
 }
 
@@ -158,7 +158,7 @@ pub fn Ellipse::with_vertices(self : Ellipse, vertices : Int) -> Ellipse {
 }
 
 ///|
-pub fn Ellipse::default() -> Ellipse {
+pub fn Ellipse::Ellipse() -> Ellipse {
   Ellipse::new(0.5F, 0.25F)
 }
 
@@ -180,7 +180,7 @@ pub fn Annulus::with_vertices(self : Annulus, vertices : Int) -> Annulus {
 }
 
 ///|
-pub fn Annulus::default() -> Annulus {
+pub fn Annulus::Annulus() -> Annulus {
   Annulus::new(0.25F, 0.5F)
 }
 
@@ -227,7 +227,7 @@ pub fn Rhombus::new(width : Float, height : Float) -> Rhombus {
 }
 
 ///|
-pub fn Rhombus::default() -> Rhombus {
+pub fn Rhombus::Rhombus() -> Rhombus {
   Rhombus::new(1.0F, 1.0F)
 }
 
@@ -243,7 +243,7 @@ pub fn RegularPolygon::new(radius : Float, sides : Int) -> RegularPolygon {
 }
 
 ///|
-pub fn RegularPolygon::default() -> RegularPolygon {
+pub fn RegularPolygon::RegularPolygon() -> RegularPolygon {
   RegularPolygon::new(0.5F, 6)
 }
 
@@ -260,7 +260,7 @@ pub fn Triangle2d::new(a : Vec2, b : Vec2, c : Vec2) -> Triangle2d {
 }
 
 ///|
-pub fn Triangle2d::default() -> Triangle2d {
+pub fn Triangle2d::Triangle2d() -> Triangle2d {
   Triangle2d::{
     a: Vec2::new(0.0F, 0.5F),
     b: Vec2::new(-0.5F, -0.5F),
@@ -391,7 +391,7 @@ pub fn CircularSector::angle(self : CircularSector) -> Float {
 }
 
 ///|
-pub fn CircularSector::default() -> CircularSector {
+pub fn CircularSector::CircularSector() -> CircularSector {
   CircularSector::new(0.5F, pi_half() * 2.0F / 3.0F)
 }
 
@@ -454,7 +454,7 @@ pub fn CircularSegment::angle(self : CircularSegment) -> Float {
 }
 
 ///|
-pub fn CircularSegment::default() -> CircularSegment {
+pub fn CircularSegment::CircularSegment() -> CircularSegment {
   CircularSegment::new(0.5F, pi_half() * 2.0F / 3.0F)
 }
 

@@ -58,13 +58,13 @@ pub struct Button {
 
 pub struct ButtonPlugin {
 }
-pub fn ButtonPlugin::default() -> Self
+pub fn ButtonPlugin::ButtonPlugin() -> Self
 
 pub(all) struct ButtonProps {
   variant : ButtonVariant
   corners : @rounded_corners.RoundedCorners
 }
-pub fn ButtonProps::default() -> Self
+pub fn ButtonProps::ButtonProps() -> Self
 
 pub(all) enum ButtonVariant {
   Normal
@@ -77,7 +77,7 @@ pub(all) struct Checkbox {
 
 pub struct CheckboxPlugin {
 }
-pub fn CheckboxPlugin::default() -> Self
+pub fn CheckboxPlugin::CheckboxPlugin() -> Self
 
 pub(all) enum ColorChannel {
   Red
@@ -103,28 +103,28 @@ pub fn ColorPlane::default() -> Self
 
 pub struct ColorPlanePlugin {
 }
-pub fn ColorPlanePlugin::default() -> Self
+pub fn ColorPlanePlugin::ColorPlanePlugin() -> Self
 
 pub(all) struct ColorPlaneValue {
   value : @math.Vec3
 }
-pub fn ColorPlaneValue::default() -> Self
+pub fn ColorPlaneValue::ColorPlaneValue() -> Self
 pub fn ColorPlaneValue::new(@math.Vec3) -> Self
 
 pub(all) struct ColorSlider {
   channel : ColorChannel
 }
-pub fn ColorSlider::default() -> Self
+pub fn ColorSlider::ColorSlider() -> Self
 
 pub struct ColorSliderPlugin {
 }
-pub fn ColorSliderPlugin::default() -> Self
+pub fn ColorSliderPlugin::ColorSliderPlugin() -> Self
 
 pub(all) struct ColorSliderProps {
   value : Float
   channel : ColorChannel
 }
-pub fn ColorSliderProps::default() -> Self
+pub fn ColorSliderProps::ColorSliderProps() -> Self
 
 pub struct ColorSwatch {
 } derive(Default, @debug.Debug)
@@ -134,17 +134,17 @@ pub struct ColorSwatchFg {
 
 pub struct ColorSwatchPlugin {
 }
-pub fn ColorSwatchPlugin::default() -> Self
+pub fn ColorSwatchPlugin::ColorSwatchPlugin() -> Self
 
 pub(all) struct ColorSwatchValue {
   color : @color.Color
 }
-pub fn ColorSwatchValue::default() -> Self
+pub fn ColorSwatchValue::ColorSwatchValue() -> Self
 pub fn ColorSwatchValue::new(@color.Color) -> Self
 
 pub struct ControlsPlugin {
 }
-pub fn ControlsPlugin::default() -> Self
+pub fn ControlsPlugin::ControlsPlugin() -> Self
 pub impl @app.Plugin for ControlsPlugin
 
 pub(all) struct RadioButton {
@@ -153,7 +153,7 @@ pub(all) struct RadioButton {
 
 pub struct RadioPlugin {
 }
-pub fn RadioPlugin::default() -> Self
+pub fn RadioPlugin::RadioPlugin() -> Self
 
 pub struct Slider {
   props : SliderProps
@@ -162,26 +162,26 @@ pub struct Slider {
 pub(all) struct SliderBaseColor {
   color : @color.Color
 }
-pub fn SliderBaseColor::default() -> Self
+pub fn SliderBaseColor::SliderBaseColor() -> Self
 pub fn SliderBaseColor::new(@color.Color) -> Self
 
 pub struct SliderPlugin {
 }
-pub fn SliderPlugin::default() -> Self
+pub fn SliderPlugin::SliderPlugin() -> Self
 
 pub struct SliderProps {
   value : Float
   min : Float
   max : Float
 }
-pub fn SliderProps::default() -> Self
+pub fn SliderProps::SliderProps() -> Self
 
 pub struct ToggleSwitch {
 }
 
 pub struct ToggleSwitchPlugin {
 }
-pub fn ToggleSwitchPlugin::default() -> Self
+pub fn ToggleSwitchPlugin::ToggleSwitchPlugin() -> Self
 
 pub struct VirtualKeyPressed[T] {
   entity_id : Int

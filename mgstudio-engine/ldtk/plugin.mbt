@@ -37,7 +37,7 @@ let process_api_set_clean : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub fn LdtkPlugin::default() -> LdtkPlugin {
+pub fn LdtkPlugin::LdtkPlugin() -> LdtkPlugin {
   LdtkPlugin::{  }
 }
 
@@ -53,7 +53,7 @@ pub impl @app.Plugin for LdtkPlugin with build(self, app) {
 
 ///|
 pub fn ldtk_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  ldtk_plugin_with(app, LdtkPlugin::default())
+  ldtk_plugin_with(app, LdtkPlugin::LdtkPlugin())
 }
 
 ///|
@@ -65,7 +65,7 @@ pub fn ldtk_plugin_with(
   let main_schedule_order_key : @ecs.ResourceKey[@app.MainScheduleOrder] = @app.main_schedule_order_resource_key
   let main_schedule_order = match world.get_resource(main_schedule_order_key) {
     Some(value) => value
-    None => @app.MainScheduleOrder::default()
+    None => @app.MainScheduleOrder::MainScheduleOrder()
   }
   ldtk_init_assets(app)
   .insert_world_resource(
@@ -76,12 +76,12 @@ pub fn ldtk_plugin_with(
   .configure_set(process_ldtk_api_schedule, process_api_set_clean, after=[
     process_api_set_pre_clean,
   ])
-  .init_resource(fn() { LdtkEntityMap::default() })
-  .init_resource(fn() { LdtkIntCellMap::default() })
+  .init_resource(fn() { LdtkEntityMap::LdtkEntityMap() })
+  .init_resource(fn() { LdtkIntCellMap::LdtkIntCellMap() })
   .init_resource(fn() { LevelSelection::default() })
-  .init_resource(fn() { LdtkSettings::default() })
-  .init_resource(fn() { LdtkRuntimeState::default() })
-  .init_resource(fn() { LdtkSpawnedLevelIids::default() })
+  .init_resource(fn() { LdtkSettings::LdtkSettings() })
+  .init_resource(fn() { LdtkRuntimeState::LdtkRuntimeState() })
+  .init_resource(fn() { LdtkSpawnedLevelIids::LdtkSpawnedLevelIids() })
   .add_message(ldtk_level_event_key)
   .add_systems(@app.PreUpdate, @app.system(process_ldtk_assets))
   .add_systems(@app.PreUpdate, @app.system(process_ldtk_levels))

@@ -28,7 +28,7 @@ pub type ScreenSpaceAmbientOcclusion = @post_process.ScreenSpaceAmbientOcclusion
 pub struct ScreenSpaceAmbientOcclusionPlugin {}
 
 ///|
-pub fn ScreenSpaceAmbientOcclusionPlugin::default() -> ScreenSpaceAmbientOcclusionPlugin {
+pub fn ScreenSpaceAmbientOcclusionPlugin::ScreenSpaceAmbientOcclusionPlugin() -> ScreenSpaceAmbientOcclusionPlugin {
   ScreenSpaceAmbientOcclusionPlugin::{  }
 }
 
@@ -49,7 +49,7 @@ pub struct SsaoPipelineId {
 }
 
 ///|
-pub fn SsaoPipelineId::default() -> SsaoPipelineId {
+pub fn SsaoPipelineId::SsaoPipelineId() -> SsaoPipelineId {
   SsaoPipelineId::{ id: -1 }
 }
 
@@ -65,10 +65,10 @@ pub struct SsaoPipelines {
 }
 
 ///|
-pub fn SsaoPipelines::default() -> SsaoPipelines {
+pub fn SsaoPipelines::SsaoPipelines() -> SsaoPipelines {
   SsaoPipelines::{
-    preprocess_depth_pipeline: SsaoPipelineId::default(),
-    spatial_denoise_pipeline: SsaoPipelineId::default(),
+    preprocess_depth_pipeline: SsaoPipelineId::SsaoPipelineId(),
+    spatial_denoise_pipeline: SsaoPipelineId::SsaoPipelineId(),
   }
 }
 
@@ -79,7 +79,7 @@ pub struct SsaoPipelineKey {
 }
 
 ///|
-pub fn SsaoPipelineKey::default() -> SsaoPipelineKey {
+pub fn SsaoPipelineKey::SsaoPipelineKey() -> SsaoPipelineKey {
   SsaoPipelineKey::{
     quality_level: ScreenSpaceAmbientOcclusionQualityLevel::default(),
     temporal_jitter: false,
@@ -93,10 +93,10 @@ pub struct ScreenSpaceAmbientOcclusionPluginState {
 }
 
 ///|
-pub fn ScreenSpaceAmbientOcclusionPluginState::default() -> ScreenSpaceAmbientOcclusionPluginState {
+pub fn ScreenSpaceAmbientOcclusionPluginState::ScreenSpaceAmbientOcclusionPluginState() -> ScreenSpaceAmbientOcclusionPluginState {
   ScreenSpaceAmbientOcclusionPluginState::{
     supported: true,
-    pipelines: SsaoPipelines::default(),
+    pipelines: SsaoPipelines::SsaoPipelines(),
   }
 }
 
@@ -134,12 +134,15 @@ pub fn ssao_pipeline_key(
 
 ///|
 pub fn pbr_ssao_default() -> ScreenSpaceAmbientOcclusion {
-  ScreenSpaceAmbientOcclusion::default()
+  ScreenSpaceAmbientOcclusion()
 }
 
 ///|
 pub fn ssao_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  ssao_plugin_install_with(app, ScreenSpaceAmbientOcclusionPlugin::default())
+  ssao_plugin_install_with(
+    app,
+    ScreenSpaceAmbientOcclusionPlugin::ScreenSpaceAmbientOcclusionPlugin(),
+  )
 }
 
 ///|
@@ -153,7 +156,7 @@ pub fn ssao_plugin_install_with(
   } else {
     app.insert_world_resource(
       ecs_key_ssao_plugin_state,
-      ScreenSpaceAmbientOcclusionPluginState::default(),
+      ScreenSpaceAmbientOcclusionPluginState::ScreenSpaceAmbientOcclusionPluginState(),
     )
   }
 }

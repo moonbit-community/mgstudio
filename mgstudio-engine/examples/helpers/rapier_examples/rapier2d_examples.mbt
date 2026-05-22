@@ -15,7 +15,7 @@
 ///|
 pub fn rapier2d_spawn_camera(world : @ecs.World, x : Float, y : Float) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(x, y, 0.0F),
   ).spawn(world)
   |> ignore

@@ -24,7 +24,7 @@ let cursor_icons_key : @ecs.ResourceKey[CursorIcons] = @ecs.register_resource(
 
 ///|
 fn configured_window() -> @window.Window {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.title = "I am a window!"
   window.name = Some("mgstudio.app")
   window.resolution.set_physical_resolution(500, 300)
@@ -77,7 +77,7 @@ fn update_primary_cursor_options(
   let options = match
     (try! world.get_by_key(entity, @window.ecs_key_cursor_options)) {
     Some(options) => options
-    None => @window.CursorOptions::default()
+    None => @window.CursorOptions::CursorOptions()
   }
   update(options)
   if (try! world.get_by_key(entity, @window.ecs_key_cursor_options)) is Some(_) {
@@ -269,7 +269,7 @@ fn cycle_cursor_icon(
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -281,13 +281,15 @@ fn main {
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
-      primary_cursor_options: Some(@window.CursorOptions::default()),
+      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
     }),
   )
-  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
-  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
+  .add_plugins(
+    @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
   .add_systems(@app.Startup, @app.system(setup_camera))
   .add_systems(@app.Startup, @app.system(init_cursor_icons))
   .add_systems(@app.Update, @app.system(@app.system_param(toggle_vsync)))

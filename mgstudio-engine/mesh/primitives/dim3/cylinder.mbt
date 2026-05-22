@@ -44,9 +44,9 @@ pub(all) struct CylinderMeshBuilder {
 }
 
 ///|
-pub fn CylinderMeshBuilder::default() -> CylinderMeshBuilder {
+pub fn CylinderMeshBuilder::CylinderMeshBuilder() -> CylinderMeshBuilder {
   {
-    cylinder: @math.Cylinder::default(),
+    cylinder: @math.Cylinder::Cylinder(),
     resolution: 32,
     segments: 1,
     caps: true,

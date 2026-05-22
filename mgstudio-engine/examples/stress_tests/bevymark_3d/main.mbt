@@ -75,7 +75,7 @@ impl @app.Resource for CubeCounter with resource() {
 }
 
 ///|
-fn CubeCounter::default() -> CubeCounter {
+fn CubeCounter::CubeCounter() -> CubeCounter {
   { count: 0, print_timer: 0.0F }
 }
 
@@ -157,7 +157,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default()
+        @pbr.PointLight::PointLight()
         .with_intensity(1800000.0F)
         .with_shadow_maps_enabled(true)
         .with_range(260.0F),
@@ -168,7 +168,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(42.0F, 34.0F, 42.0F).looking_at(
           @math.Vec3::new(0.0F, 10.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -265,10 +265,10 @@ fn print_count(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .insert_resource(CubeCounter::default())
+  .insert_resource(CubeCounter::CubeCounter())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(mouse_spawn)))
   .add_systems(@app.Update, @app.system(@app.system_param2(movement)))

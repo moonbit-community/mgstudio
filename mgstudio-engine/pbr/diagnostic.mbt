@@ -51,7 +51,7 @@ pub struct Render3dDiagnosticsSnapshot {
 }
 
 ///|
-pub fn Render3dDiagnosticsSnapshot::default() -> Render3dDiagnosticsSnapshot {
+pub fn Render3dDiagnosticsSnapshot::Render3dDiagnosticsSnapshot() -> Render3dDiagnosticsSnapshot {
   Render3dDiagnosticsSnapshot::{
     prepared_camera_count: 0,
     queued_visible_mesh_count: 0,
@@ -82,7 +82,7 @@ pub struct MaterialAllocatorDiagnosticsSnapshot {
 }
 
 ///|
-pub fn MaterialAllocatorDiagnosticsSnapshot::default() -> MaterialAllocatorDiagnosticsSnapshot {
+pub fn MaterialAllocatorDiagnosticsSnapshot::MaterialAllocatorDiagnosticsSnapshot() -> MaterialAllocatorDiagnosticsSnapshot {
   MaterialAllocatorDiagnosticsSnapshot::{
     slabs: 0,
     slabs_size: 0,

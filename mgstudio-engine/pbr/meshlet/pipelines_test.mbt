@@ -120,7 +120,7 @@ test "pbr/meshlet: remap dispatch flag follows bevy empty shader-def shape" {
 
 ///|
 test "pbr/meshlet: readiness reports missing required slots" {
-  let pipelines = MeshletPipelines::default()
+  let pipelines = MeshletPipelines::MeshletPipelines()
   debug_inspect(meshlet_pipelines_ready(pipelines), content="false")
   let missing = meshlet_missing_required_pipeline_slots(pipelines)
   debug_inspect(missing.length() > 0, content="true")

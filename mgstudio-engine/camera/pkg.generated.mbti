@@ -76,12 +76,12 @@ pub fn perspective_projection_3d_with_aspect_ratio(@render.PerspectiveProjection
 // Types and methods
 pub struct CameraPlugin {
 }
-pub fn CameraPlugin::default() -> Self
+pub fn CameraPlugin::CameraPlugin() -> Self
 pub impl @app.Plugin for CameraPlugin
 
 pub struct CameraProjectionPlugin {
 }
-pub fn CameraProjectionPlugin::default() -> Self
+pub fn CameraProjectionPlugin::CameraProjectionPlugin() -> Self
 pub impl @app.Plugin for CameraProjectionPlugin
 
 // Type aliases

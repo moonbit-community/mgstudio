@@ -39,7 +39,7 @@ fn main {
   }
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(overlay_plugin)
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param2(customize_config)))
@@ -49,7 +49,7 @@ fn main {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -57,11 +57,11 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   ignore(tick)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -74,7 +74,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_bottom(@ui.Val::Px(12.0F)),
@@ -89,7 +89,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font_size(20.0F),
+    @text.TextFont::TextFont().with_font_size(20.0F),
   )
   try! world.set_by_key(
     text_entity,

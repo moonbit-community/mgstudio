@@ -239,7 +239,7 @@ test "visibility: no-cpu-culling marker has stable default and ecs key" {
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_no_cpu_culling,
-    @visibility.NoCpuCulling::default(),
+    @visibility.NoCpuCulling::NoCpuCulling(),
   )
   debug_inspect(
     (try! world.get_by_key(entity, @visibility.ecs_key_no_cpu_culling))

@@ -215,7 +215,7 @@ pub struct GltfLodVisibilityPolicy {
 }
 
 ///|
-pub fn GltfLodVisibilityPolicy::default() -> GltfLodVisibilityPolicy {
+pub fn GltfLodVisibilityPolicy::GltfLodVisibilityPolicy() -> GltfLodVisibilityPolicy {
   GltfLodVisibilityPolicy::{
     enabled: true,
     first_start_margin_min: GLTF_LOD_DEFAULT_FIRST_START_MARGIN_MIN,

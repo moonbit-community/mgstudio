@@ -37,7 +37,7 @@ pub fn ErasedMeshPipelineKey::new_untyped(
 }
 
 ///|
-pub fn ErasedMeshPipelineKey::default() -> ErasedMeshPipelineKey {
+pub fn ErasedMeshPipelineKey::ErasedMeshPipelineKey() -> ErasedMeshPipelineKey {
   ErasedMeshPipelineKey::{ bits: 0UL, type_tag: "()" }
 }
 
@@ -95,7 +95,7 @@ pub fn[T : ToJson] ErasedMaterialKey::new_untyped(
 }
 
 ///|
-pub fn ErasedMaterialKey::default() -> ErasedMaterialKey {
+pub fn ErasedMaterialKey::ErasedMaterialKey() -> ErasedMaterialKey {
   ErasedMaterialKey::new((), "()")
 }
 

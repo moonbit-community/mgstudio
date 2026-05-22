@@ -26,25 +26,25 @@ pub fn ssr_plugin_install_with(@app.App[@ecs.World], ScreenSpaceReflectionsPlugi
 pub struct ScreenSpaceReflectionsPipelineId {
   id : Int
 }
-pub fn ScreenSpaceReflectionsPipelineId::default() -> Self
+pub fn ScreenSpaceReflectionsPipelineId::ScreenSpaceReflectionsPipelineId() -> Self
 
 pub struct ScreenSpaceReflectionsPipelineKey {
   is_hdr : Bool
   has_environment_maps : Bool
   has_atmosphere : Bool
 }
-pub fn ScreenSpaceReflectionsPipelineKey::default() -> Self
+pub fn ScreenSpaceReflectionsPipelineKey::ScreenSpaceReflectionsPipelineKey() -> Self
 
 pub struct ScreenSpaceReflectionsPlugin {
 }
-pub fn ScreenSpaceReflectionsPlugin::default() -> Self
+pub fn ScreenSpaceReflectionsPlugin::ScreenSpaceReflectionsPlugin() -> Self
 pub impl @app.Plugin for ScreenSpaceReflectionsPlugin
 
 pub struct ScreenSpaceReflectionsPluginState {
   enabled : Bool
   pipeline_id : ScreenSpaceReflectionsPipelineId
 }
-pub fn ScreenSpaceReflectionsPluginState::default() -> Self
+pub fn ScreenSpaceReflectionsPluginState::ScreenSpaceReflectionsPluginState() -> Self
 pub impl @app.Resource for ScreenSpaceReflectionsPluginState
 pub impl @ecs.EcsPayloadCodec for ScreenSpaceReflectionsPluginState
 
@@ -61,7 +61,7 @@ pub struct ScreenSpaceReflectionsUniform {
   bisection_steps : Int
   use_secant : Bool
 }
-pub fn ScreenSpaceReflectionsUniform::default() -> Self
+pub fn ScreenSpaceReflectionsUniform::ScreenSpaceReflectionsUniform() -> Self
 
 // Type aliases
 pub using @post_process {type ScreenSpaceReflections}

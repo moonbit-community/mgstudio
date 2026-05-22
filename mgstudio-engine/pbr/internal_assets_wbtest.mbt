@@ -73,7 +73,7 @@ test "render3d: internal assets are stored per world resource" {
 ///|
 test "render3d: light plugin inserts default directional shadow map resource" {
   let app = @app.App::new(render3d_test_world_with_asset_server()).add_plugins(
-    @light.LightPlugin::default(),
+    @light.LightPlugin::LightPlugin(),
   )
   let world = app.world()
   init_mesh_render_resources(world)

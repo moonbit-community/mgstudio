@@ -51,7 +51,7 @@ pub struct TextLayout {
 pub impl @ecs.Mutable for TextLayout
 
 ///|
-pub fn TextLayout::default() -> TextLayout {
+pub fn TextLayout::TextLayout() -> TextLayout {
   TextLayout::{ justify: Justify::Left, linebreak: LineBreak::WordBoundary }
 }
 
@@ -62,12 +62,12 @@ pub fn TextLayout::new(justify : Justify, linebreak : LineBreak) -> TextLayout {
 
 ///|
 pub fn TextLayout::new_with_justify(justify : Justify) -> TextLayout {
-  TextLayout::{ ..TextLayout::default(), justify, }
+  TextLayout::{ ..TextLayout(), justify, }
 }
 
 ///|
 pub fn TextLayout::new_with_linebreak(linebreak : LineBreak) -> TextLayout {
-  TextLayout::{ ..TextLayout::default(), linebreak, }
+  TextLayout::{ ..TextLayout(), linebreak, }
 }
 
 ///|
@@ -267,7 +267,7 @@ pub struct RemSize {
 }
 
 ///|
-pub fn RemSize::default() -> RemSize {
+pub fn RemSize::RemSize() -> RemSize {
   RemSize::{ value: 20.0 }
 }
 
@@ -292,7 +292,7 @@ pub fn FontCx::new() -> FontCx {
 }
 
 ///|
-pub fn FontCx::default() -> FontCx {
+pub fn FontCx::FontCx() -> FontCx {
   FontCx::new()
 }
 
@@ -461,18 +461,18 @@ pub struct FontFeatures {
 }
 
 ///|
-pub fn FontFeatures::default() -> FontFeatures {
+pub fn FontFeatures::FontFeatures() -> FontFeatures {
   FontFeatures::{ features: [] }
 }
 
 ///|
 pub fn FontFeatures::new() -> FontFeatures {
-  FontFeatures::default()
+  FontFeatures::FontFeatures()
 }
 
 ///|
 pub fn FontFeatures::builder() -> FontFeaturesBuilder {
-  FontFeaturesBuilder::default()
+  FontFeaturesBuilder::FontFeaturesBuilder()
 }
 
 ///|
@@ -497,7 +497,7 @@ pub struct FontFeaturesBuilder {
 }
 
 ///|
-pub fn FontFeaturesBuilder::default() -> FontFeaturesBuilder {
+pub fn FontFeaturesBuilder::FontFeaturesBuilder() -> FontFeaturesBuilder {
   FontFeaturesBuilder::{ features: [] }
 }
 
@@ -544,7 +544,7 @@ pub(all) struct TextFont {
 }
 
 ///|
-pub fn TextFont::default() -> TextFont {
+pub fn TextFont::TextFont() -> TextFont {
   TextFont::{
     font: FontSource::default(),
     font_size: FontSize::default(),
@@ -552,13 +552,13 @@ pub fn TextFont::default() -> TextFont {
     width: FontWidth::default(),
     style: FontStyle::default(),
     font_smoothing: FontSmoothing::default(),
-    font_features: FontFeatures::default(),
+    font_features: FontFeatures::FontFeatures(),
   }
 }
 
 ///|
 pub fn[S : IntoFontSize] TextFont::from_font_size(font_size : S) -> TextFont {
-  TextFont::{ ..TextFont::default(), font_size: font_size.into_font_size() }
+  TextFont::{ ..TextFont(), font_size: font_size.into_font_size() }
 }
 
 ///|
@@ -711,7 +711,7 @@ pub fn TextColor::new(color : @sprite.Color) -> TextColor {
 pub impl @ecs.Mutable for TextColor
 
 ///|
-pub fn TextColor::default() -> TextColor {
+pub fn TextColor::TextColor() -> TextColor {
   TextColor::new(@sprite.Color::white())
 }
 
@@ -739,7 +739,7 @@ pub fn TextBackgroundColor::new(color : @sprite.Color) -> TextBackgroundColor {
 }
 
 ///|
-pub fn TextBackgroundColor::default() -> TextBackgroundColor {
+pub fn TextBackgroundColor::TextBackgroundColor() -> TextBackgroundColor {
   TextBackgroundColor::new(@sprite.Color::black())
 }
 
@@ -764,7 +764,7 @@ pub fn UnderlineColor::new(color : @sprite.Color) -> UnderlineColor {
 }
 
 ///|
-pub fn UnderlineColor::default() -> UnderlineColor {
+pub fn UnderlineColor::UnderlineColor() -> UnderlineColor {
   UnderlineColor::new(@sprite.Color::white())
 }
 
@@ -779,7 +779,7 @@ pub fn StrikethroughColor::new(color : @sprite.Color) -> StrikethroughColor {
 }
 
 ///|
-pub fn StrikethroughColor::default() -> StrikethroughColor {
+pub fn StrikethroughColor::StrikethroughColor() -> StrikethroughColor {
   StrikethroughColor::new(@sprite.Color::white())
 }
 
@@ -787,7 +787,7 @@ pub fn StrikethroughColor::default() -> StrikethroughColor {
 pub struct Underline {}
 
 ///|
-pub fn Underline::default() -> Underline {
+pub fn Underline::Underline() -> Underline {
   Underline::{  }
 }
 
@@ -795,7 +795,7 @@ pub fn Underline::default() -> Underline {
 pub struct Strikethrough {}
 
 ///|
-pub fn Strikethrough::default() -> Strikethrough {
+pub fn Strikethrough::Strikethrough() -> Strikethrough {
   Strikethrough::{  }
 }
 
@@ -833,7 +833,7 @@ pub fn TextShadow::new(
 }
 
 ///|
-pub fn TextShadow::default() -> TextShadow {
+pub fn TextShadow::TextShadow() -> TextShadow {
   TextShadow::new(@math.Vec2::new(4.0F, -4.0F), @sprite.Color::black())
 }
 
@@ -868,7 +868,7 @@ pub fn Text2dShadow::new(
 }
 
 ///|
-pub fn Text2dShadow::default() -> Text2dShadow {
+pub fn Text2dShadow::Text2dShadow() -> Text2dShadow {
   Text2dShadow::new(@math.Vec2::new(4.0F, -4.0F), @sprite.Color::black())
 }
 

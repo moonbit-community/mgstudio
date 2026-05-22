@@ -24,13 +24,15 @@ fn approx_eq(a : Float, b : Float, eps : Float) -> Bool {
 
 ///|
 test "light boundary re-exports direct light component APIs" {
-  let point = @light.PointLight::default()
+  let point = @light.PointLight::PointLight()
     .with_intensity(321.0)
     .with_range(45.0)
-  let spot = @light.SpotLight::default()
+  let spot = @light.SpotLight::SpotLight()
     .with_inner_angle(0.25)
     .with_outer_angle(0.5)
-  let directional = @light.DirectionalLight::default().with_illuminance(1000.0)
+  let directional = @light.DirectionalLight::DirectionalLight().with_illuminance(
+    1000.0,
+  )
   debug_inspect(point.intensity.to_double(), content="321")
   debug_inspect(point.range.to_double(), content="45")
   debug_inspect(spot.inner_angle.to_double(), content="0.25")
@@ -42,8 +44,10 @@ test "light boundary re-exports direct light component APIs" {
 test "light boundary re-exports shadow maps and volumetric APIs" {
   let point_shadow = @light.PointLightShadowMap::new(2048)
   let directional_shadow = @light.DirectionalLightShadowMap::new(1024)
-  let medium = @light.ScatteringMedium::default().with_density_multiplier(1.5)
-  let fog = @light.VolumetricFog::default().with_step_count(96)
+  let medium = @light.ScatteringMedium::ScatteringMedium().with_density_multiplier(
+    1.5,
+  )
+  let fog = @light.VolumetricFog::VolumetricFog().with_step_count(96)
   debug_inspect(point_shadow.size, content="2048")
   debug_inspect(directional_shadow.size, content="1024")
   debug_inspect(medium.density_multiplier.to_double(), content="1.5")
@@ -52,7 +56,7 @@ test "light boundary re-exports shadow maps and volumetric APIs" {
 
 ///|
 test "light gizmo config group defaults align with light kinds" {
-  let config = @light.LightGizmoConfigGroup::default()
+  let config = @light.LightGizmoConfigGroup::LightGizmoConfigGroup()
   debug_inspect(config.draw_all, content="false")
   debug_inspect(
     if config.color is MatchLightColor {
@@ -69,7 +73,7 @@ test "light gizmo config group defaults align with light kinds" {
 
 ///|
 test "show light gizmo stores optional color override" {
-  let gizmo = @light.ShowLightGizmo::default().with_color(
+  let gizmo = @light.ShowLightGizmo::ShowLightGizmo().with_color(
     Some(@light.LightGizmoColor::ByLightType),
   )
   debug_inspect(
@@ -84,17 +88,17 @@ test "show light gizmo stores optional color override" {
 
 ///|
 test "directional and spot support explicit shadow map toggles" {
-  let directional = @light.DirectionalLight::default().with_shadow_maps_enabled(
+  let directional = @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(
     true,
   )
-  let spot = @light.SpotLight::default().with_shadow_maps_enabled(true)
+  let spot = @light.SpotLight::SpotLight().with_shadow_maps_enabled(true)
   debug_inspect(directional.shadow_maps_enabled, content="true")
   debug_inspect(spot.shadow_maps_enabled, content="true")
 }
 
 ///|
 test "global ambient light supports affects_lightmapped_meshes toggle" {
-  let ambient = @light.GlobalAmbientLight::default().with_affects_lightmapped_meshes(
+  let ambient = @light.GlobalAmbientLight::GlobalAmbientLight().with_affects_lightmapped_meshes(
     false,
   )
   debug_inspect(ambient.affects_lightmapped_meshes, content="false")
@@ -102,7 +106,7 @@ test "global ambient light supports affects_lightmapped_meshes toggle" {
 
 ///|
 test "sun disk defaults and off profile align with bevy intent" {
-  let earth = @light.SunDisk::default()
+  let earth = @light.SunDisk::SunDisk()
   debug_inspect(
     approx_eq(earth.angular_size, 0.00930842F, 1.0e-6F),
     content="true",

@@ -37,7 +37,7 @@ pub struct OverrideCursor {
 }
 
 ///|
-pub fn DefaultCursor::default() -> DefaultCursor {
+pub fn DefaultCursor::DefaultCursor() -> DefaultCursor {
   DefaultCursor::{ cursor: System("default") }
 }
 
@@ -47,7 +47,7 @@ pub impl @app.Resource for DefaultCursor with resource() {
 }
 
 ///|
-pub fn OverrideCursor::default() -> OverrideCursor {
+pub fn OverrideCursor::OverrideCursor() -> OverrideCursor {
   OverrideCursor::{ cursor: None }
 }
 
@@ -63,7 +63,7 @@ let cursor_icon_plugin_marker_key : @ecs.ResourceKey[CursorIconPluginMarker] = @
 )
 
 ///|
-pub fn CursorIconPlugin::default() -> CursorIconPlugin {
+pub fn CursorIconPlugin::CursorIconPlugin() -> CursorIconPlugin {
   CursorIconPlugin::{  }
 }
 
@@ -75,6 +75,6 @@ pub fn cursor_icon_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     app
     .world()
     .insert_resource(cursor_icon_plugin_marker_key, CursorIconPluginMarker::{  })
-    app.init_resource(fn() { DefaultCursor::default() })
+    app.init_resource(fn() { DefaultCursor::DefaultCursor() })
   }
 }

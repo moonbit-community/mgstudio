@@ -25,7 +25,7 @@ pub struct HoverMap {
 }
 
 ///|
-pub fn HoverMap::default() -> HoverMap {
+pub fn HoverMap::HoverMap() -> HoverMap {
   HoverMap::{ inner: @hashmap.HashMap([]) }
 }
 
@@ -83,7 +83,7 @@ pub struct PreviousHoverMap {
 }
 
 ///|
-pub fn PreviousHoverMap::default() -> PreviousHoverMap {
+pub fn PreviousHoverMap::PreviousHoverMap() -> PreviousHoverMap {
   PreviousHoverMap::{ inner: @hashmap.HashMap([]) }
 }
 
@@ -101,11 +101,11 @@ pub impl @app.Resource for PreviousHoverMap with resource() {
 pub fn ensure_hover_maps_system(world : @ecs.World) -> Unit {
   let hover_res = get_hover_map_resource(world)
   if hover_res.get() is None {
-    hover_res.insert(HoverMap::default())
+    hover_res.insert(HoverMap::HoverMap())
   }
   let previous_res = get_previous_hover_map_resource(world)
   if previous_res.get() is None {
-    previous_res.insert(PreviousHoverMap::default())
+    previous_res.insert(PreviousHoverMap::PreviousHoverMap())
   }
 }
 
@@ -115,7 +115,7 @@ priv struct PickingPointerHitsReaderState {
 }
 
 ///|
-fn PickingPointerHitsReaderState::default() -> PickingPointerHitsReaderState {
+fn PickingPointerHitsReaderState::PickingPointerHitsReaderState() -> PickingPointerHitsReaderState {
   { cursor: 0 }
 }
 
@@ -130,7 +130,7 @@ let picking_pointer_hits_reader_state_resource_key : @ecs.ResourceKey[
 fn ensure_picking_pointer_hits_reader_state(world : @ecs.World) -> Unit {
   let res = world.resource(picking_pointer_hits_reader_state_resource_key)
   if !res.is_present() {
-    res.insert(PickingPointerHitsReaderState::default())
+    res.insert(PickingPointerHitsReaderState::PickingPointerHitsReaderState())
   }
 }
 
@@ -209,7 +209,7 @@ pub fn picking_generate_hovermap_system(world : @ecs.World) -> Unit {
   let hover_res = get_hover_map_resource(world)
   let previous = match hover_res.get() {
     Some(current) => PreviousHoverMap::{ inner: current.inner.copy() }
-    None => PreviousHoverMap::default()
+    None => PreviousHoverMap::PreviousHoverMap()
   }
   let flat_hits : Array[
     (@pointer_events.PointerId, Float, @core.Entity, HitData),
@@ -300,7 +300,7 @@ pub struct PickingState {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PickingState::default() -> PickingState {
+pub fn PickingState::PickingState() -> PickingState {
   PickingState::{ hovered: [], pressed: [], last_position: [] }
 }
 
@@ -399,7 +399,7 @@ pub impl @app.Resource for PickingState with resource() {
 pub fn ensure_picking_state_system(world : @ecs.World) -> Unit {
   let res = get_picking_state_resource(world)
   if res.get() is None {
-    res.insert(PickingState::default())
+    res.insert(PickingState::PickingState())
   }
 }
 

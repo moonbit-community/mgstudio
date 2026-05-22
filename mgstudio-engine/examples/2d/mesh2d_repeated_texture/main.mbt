@@ -60,7 +60,7 @@ fn spawn_panel(
       (
         @hierarchy.Parent::new(panel),
         @text.Text2d::new(label),
-        @text.TextFont::default().with_font(font),
+        @text.TextFont::TextFont().with_font(font),
         @text.TextBounds::new_horizontal(RECTANGLE_SIDE),
         @text.TextLayout::new_with_justify(@text.Justify::Center),
         @transform.Transform::from_xyz(0.0F, LABEL_OFFSET, 0.0F),
@@ -131,7 +131,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::default(),
+        @sprite.Camera2d::Camera2d(),
         @transform.Transform::identity().looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -144,7 +144,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }

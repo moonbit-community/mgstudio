@@ -41,7 +41,7 @@ pub struct ThemeProps {
 }
 
 ///|
-pub fn ThemeProps::default() -> ThemeProps {
+pub fn ThemeProps::ThemeProps() -> ThemeProps {
   ThemeProps::{ color: [] }
 }
 
@@ -78,8 +78,8 @@ pub struct UiTheme {
 }
 
 ///|
-pub fn UiTheme::default() -> UiTheme {
-  UiTheme::{ props: ThemeProps::default() }
+pub fn UiTheme::UiTheme() -> UiTheme {
+  UiTheme::{ props: ThemeProps::ThemeProps() }
 }
 
 ///|

@@ -237,7 +237,7 @@ fn spawn_directional_light(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     entity,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::default().with_illuminance(3000.0F),
+    @pbr.DirectionalLight::DirectionalLight().with_illuminance(3000.0F),
   )
 }
 
@@ -247,7 +247,7 @@ fn spawn_point_light(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     entity,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default().with_intensity(200_000.0F),
+    @pbr.PointLight::PointLight().with_intensity(200_000.0F),
   )
 }
 
@@ -380,7 +380,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(
       CAMERA_INITIAL_X,
       CAMERA_INITIAL_Y,
@@ -430,7 +430,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(anisotropy_help_text()),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(18.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -446,7 +446,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   anisotropy_state.val.help_text = Some(help_text)
   update_help_text()
@@ -602,7 +602,7 @@ fn handle_input(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(create_material_variants))
   .add_systems(@app.Update, @app.system(animate_light))

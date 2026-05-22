@@ -14,21 +14,7 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_games_loading_screen_LoadingState(LoadingState)
   EcsPayload_examples_games_loading_screen_LoadingBar(LoadingBar)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for LoadingState with to_ecs_payload(self) {
-  EcsPayload_examples_games_loading_screen_LoadingState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for LoadingState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_games_loading_screen_LoadingState(value) => Some(value)
-    _ => None
-  }
 }
 
 ///|

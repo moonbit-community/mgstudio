@@ -102,7 +102,7 @@ pub fn MeshletMesh::new(
     bvh: meshlet_default_bvh_nodes(bvh_node_count),
     meshlets: meshlet_default_meshlets(meshlet_count),
     meshlet_cull_data: meshlet_default_cull_data(meshlet_count),
-    aabb: MeshletAabb::default(),
+    aabb: MeshletAabb::MeshletAabb(),
     bvh_depth: 0,
   }
 }
@@ -129,7 +129,7 @@ fn meshlet_zero_words(word_count : Int) -> Array[Int] {
 fn meshlet_default_uvs(uv_count : Int) -> Array[MeshletVertexUv] {
   let values : Array[MeshletVertexUv] = []
   for _ in 0..<meshlet_non_negative(uv_count) {
-    values.push(MeshletVertexUv::default())
+    values.push(MeshletVertexUv::MeshletVertexUv())
   }
   values
 }
@@ -138,7 +138,7 @@ fn meshlet_default_uvs(uv_count : Int) -> Array[MeshletVertexUv] {
 fn meshlet_default_bvh_nodes(node_count : Int) -> Array[BvhNode] {
   let values : Array[BvhNode] = []
   for _ in 0..<meshlet_non_negative(node_count) {
-    values.push(BvhNode::default())
+    values.push(BvhNode::BvhNode())
   }
   values
 }
@@ -156,7 +156,7 @@ fn meshlet_default_meshlets(meshlet_count : Int) -> Array[Meshlet] {
 fn meshlet_default_cull_data(meshlet_count : Int) -> Array[MeshletCullData] {
   let values : Array[MeshletCullData] = []
   for _ in 0..<meshlet_non_negative(meshlet_count) {
-    values.push(MeshletCullData::default())
+    values.push(MeshletCullData::MeshletCullData())
   }
   values
 }
@@ -187,7 +187,7 @@ pub fn MeshletMesh::from_parts(
   bvh~ : Array[BvhNode],
   meshlets~ : Array[Meshlet],
   meshlet_cull_data~ : Array[MeshletCullData],
-  aabb? : MeshletAabb = MeshletAabb::default(),
+  aabb? : MeshletAabb = MeshletAabb::MeshletAabb(),
   bvh_depth? : Int = 0,
 ) -> MeshletMesh {
   MeshletMesh::{
@@ -597,13 +597,13 @@ pub struct BvhNode {
 }
 
 ///|
-pub fn BvhNode::default() -> BvhNode {
+pub fn BvhNode::BvhNode() -> BvhNode {
   let aabbs : Array[MeshletAabbErrorOffset] = []
   let lod_bounds : Array[MeshletBoundingSphere] = []
   let child_counts : Array[Int] = []
   for _ in 0..<8 {
-    aabbs.push(MeshletAabbErrorOffset::default())
-    lod_bounds.push(MeshletBoundingSphere::default())
+    aabbs.push(MeshletAabbErrorOffset::MeshletAabbErrorOffset())
+    lod_bounds.push(MeshletBoundingSphere::MeshletBoundingSphere())
     child_counts.push(0)
   }
   BvhNode::{ aabbs, lod_bounds, child_counts, padding: [0, 0] }
@@ -717,7 +717,7 @@ pub fn MeshletVertexUv::new(x : Float, y : Float) -> MeshletVertexUv {
 }
 
 ///|
-pub fn MeshletVertexUv::default() -> MeshletVertexUv {
+pub fn MeshletVertexUv::MeshletVertexUv() -> MeshletVertexUv {
   MeshletVertexUv::{ x: 0.0, y: 0.0 }
 }
 
@@ -728,10 +728,10 @@ pub struct MeshletCullData {
 }
 
 ///|
-pub fn MeshletCullData::default() -> MeshletCullData {
+pub fn MeshletCullData::MeshletCullData() -> MeshletCullData {
   MeshletCullData::{
-    aabb: MeshletAabbErrorOffset::default(),
-    lod_group_sphere: MeshletBoundingSphere::default(),
+    aabb: MeshletAabbErrorOffset::MeshletAabbErrorOffset(),
+    lod_group_sphere: MeshletBoundingSphere::MeshletBoundingSphere(),
   }
 }
 
@@ -765,7 +765,7 @@ pub fn MeshletAabb::new(
 }
 
 ///|
-pub fn MeshletAabb::default() -> MeshletAabb {
+pub fn MeshletAabb::MeshletAabb() -> MeshletAabb {
   MeshletAabb::{
     center_x: 0.0,
     center_y: 0.0,
@@ -789,7 +789,7 @@ pub struct MeshletAabbErrorOffset {
 }
 
 ///|
-pub fn MeshletAabbErrorOffset::default() -> MeshletAabbErrorOffset {
+pub fn MeshletAabbErrorOffset::MeshletAabbErrorOffset() -> MeshletAabbErrorOffset {
   MeshletAabbErrorOffset::{
     center_x: 0.0,
     center_y: 0.0,
@@ -811,7 +811,7 @@ pub struct MeshletBoundingSphere {
 }
 
 ///|
-pub fn MeshletBoundingSphere::default() -> MeshletBoundingSphere {
+pub fn MeshletBoundingSphere::MeshletBoundingSphere() -> MeshletBoundingSphere {
   MeshletBoundingSphere::{
     center_x: 0.0,
     center_y: 0.0,
@@ -1012,14 +1012,20 @@ fn meshlet_push_bvh_node(out : Array[Byte], node : BvhNode) -> Unit {
     if index < node.aabbs.length() {
       meshlet_push_aabb_error_offset(out, node.aabbs[index])
     } else {
-      meshlet_push_aabb_error_offset(out, MeshletAabbErrorOffset::default())
+      meshlet_push_aabb_error_offset(
+        out,
+        MeshletAabbErrorOffset::MeshletAabbErrorOffset(),
+      )
     }
   }
   for index in 0..<8 {
     if index < node.lod_bounds.length() {
       meshlet_push_bounding_sphere(out, node.lod_bounds[index])
     } else {
-      meshlet_push_bounding_sphere(out, MeshletBoundingSphere::default())
+      meshlet_push_bounding_sphere(
+        out,
+        MeshletBoundingSphere::MeshletBoundingSphere(),
+      )
     }
   }
   for index in 0..<8 {

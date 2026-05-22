@@ -376,8 +376,8 @@ pub(all) struct AssetPlugin {
   file_path : String?
   processed_file_path : String?
 }
-pub fn AssetPlugin::default() -> Self
-pub fn AssetPlugin::default_nearest() -> Self
+pub fn AssetPlugin::AssetPlugin() -> Self
+pub fn AssetPlugin::nearest() -> Self
 pub fn AssetPlugin::with_default_sampler_nearest(Self, Bool) -> Self
 pub fn AssetPlugin::with_file_path(Self, String) -> Self
 pub fn AssetPlugin::with_mode(Self, AssetMode) -> Self
@@ -593,7 +593,7 @@ pub(all) struct ImageLoaderSettings {
   mut convert_coordinates_rotate_meshes : Bool?
   mut skinned_mesh_bounds_policy : Int?
 }
-pub fn ImageLoaderSettings::default() -> Self
+pub fn ImageLoaderSettings::ImageLoaderSettings() -> Self
 
 pub struct LoadContext {
   world : @ecs.World?
@@ -694,9 +694,9 @@ pub struct TextureAtlasBuilder {
   nearest : Bool
   textures : Array[Handle[@image.Image]]
 }
+pub fn TextureAtlasBuilder::TextureAtlasBuilder() -> Self
 pub fn TextureAtlasBuilder::add_texture(Self, Handle[@image.Image]) -> Self
 pub fn TextureAtlasBuilder::build(Self) -> (TextureAtlasLayout, TextureAtlasSources, Handle[@image.Image])
-pub fn TextureAtlasBuilder::default() -> Self
 pub fn TextureAtlasBuilder::initial_size(Self, @math.UVec2) -> Self
 pub fn TextureAtlasBuilder::max_size(Self, @math.UVec2) -> Self
 pub fn TextureAtlasBuilder::padding(Self, @math.UVec2) -> Self
@@ -735,7 +735,7 @@ pub impl @ecs.Message for UntypedAssetLoadFailedEvent
 pub(all) struct WebAssetPlugin {
   silence_startup_warning : Bool
 }
-pub fn WebAssetPlugin::default() -> Self
+pub fn WebAssetPlugin::WebAssetPlugin() -> Self
 pub fn WebAssetPlugin::with_silence_startup_warning(Self, Bool) -> Self
 pub impl @app.Plugin for WebAssetPlugin
 

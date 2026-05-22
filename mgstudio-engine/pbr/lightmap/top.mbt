@@ -47,7 +47,7 @@ pub struct LightmapPluginState {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn LightmapPluginState::default() -> LightmapPluginState {
+pub fn LightmapPluginState::LightmapPluginState() -> LightmapPluginState {
   LightmapPluginState::{
     bindless_supported: false,
     lightmaps_per_slab: LIGHTMAPS_PER_SLAB,
@@ -71,7 +71,7 @@ pub struct Lightmap {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Lightmap::default() -> Lightmap {
+pub fn Lightmap::Lightmap() -> Lightmap {
   Lightmap::{
     image: @asset.Handle::new(-1),
     uv_rect: @math.Rect::new(@math.Vec2::zero(), @math.Vec2::new(1.0F, 1.0F)),
@@ -81,7 +81,7 @@ pub fn Lightmap::default() -> Lightmap {
 
 ///|
 pub fn Lightmap::new(image : @asset.Handle[@asset.Image]) -> Lightmap {
-  Lightmap::{ ..Lightmap::default(), image, }
+  Lightmap::{ ..Lightmap(), image, }
 }
 
 ///|
@@ -164,7 +164,7 @@ pub struct LightmapSlab {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn LightmapSlab::default() -> LightmapSlab {
+pub fn LightmapSlab::LightmapSlab() -> LightmapSlab {
   LightmapSlab::{ capacity: LIGHTMAPS_PER_SLAB, allocated: 0 }
 }
 
@@ -191,10 +191,10 @@ pub struct RenderLightmaps {
 }
 
 ///|
-pub fn RenderLightmaps::default() -> RenderLightmaps {
+pub fn RenderLightmaps::RenderLightmaps() -> RenderLightmaps {
   RenderLightmaps::{
     render_lightmaps: {},
-    slabs: [LightmapSlab::default()],
+    slabs: [LightmapSlab::LightmapSlab()],
     bindless_supported: false,
   }
 }
@@ -225,7 +225,7 @@ fn render_lightmaps_allocate_slot(
       return (LightmapSlabIndex::new(index), LightmapSlotIndex::new(slot))
     }
   }
-  render_lightmaps.slabs.push(LightmapSlab::default())
+  render_lightmaps.slabs.push(LightmapSlab::LightmapSlab())
   let new_index = render_lightmaps.slabs.length() - 1
   let slab = render_lightmaps.slabs[new_index]
   let slot = slab.allocated
@@ -240,7 +240,7 @@ fn render_lightmaps_allocate_slot(
 pub fn RenderLightmaps::clear(self : RenderLightmaps) -> Unit {
   self.render_lightmaps.clear()
   self.slabs.clear()
-  self.slabs.push(LightmapSlab::default())
+  self.slabs.push(LightmapSlab::LightmapSlab())
 }
 
 ///|
@@ -356,13 +356,13 @@ pub fn lightmap_plugin_install_with(
   if !next.contains_resource(ecs_key_render_lightmaps) {
     next = next.insert_world_resource(
       ecs_key_render_lightmaps,
-      RenderLightmaps::default(),
+      RenderLightmaps::RenderLightmaps(),
     )
   }
   if !next.contains_resource(ecs_key_lightmap_plugin_state) {
     next = next.insert_world_resource(
       ecs_key_lightmap_plugin_state,
-      LightmapPluginState::default(),
+      LightmapPluginState::LightmapPluginState(),
     )
   }
   next

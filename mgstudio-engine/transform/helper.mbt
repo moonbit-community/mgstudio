@@ -19,7 +19,7 @@
 pub struct TransformHelper {}
 
 ///|
-pub fn TransformHelper::default() -> TransformHelper {
+pub fn TransformHelper::TransformHelper() -> TransformHelper {
   TransformHelper::{  }
 }
 

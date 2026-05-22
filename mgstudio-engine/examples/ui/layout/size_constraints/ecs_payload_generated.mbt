@@ -18,9 +18,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_ui_layout_size_constraints_ConstraintButton(
     ConstraintButton
   )
-  EcsPayload_examples_ui_layout_size_constraints_ConstraintSettings(
-    ConstraintSettings
-  )
 }
 
 ///|
@@ -45,20 +42,6 @@ impl @ecs.EcsPayloadCodec for ConstraintButton with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for ConstraintButton with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ui_layout_size_constraints_ConstraintButton(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ConstraintSettings with to_ecs_payload(self) {
-  EcsPayload_examples_ui_layout_size_constraints_ConstraintSettings(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ConstraintSettings with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_layout_size_constraints_ConstraintSettings(value) =>
       Some(value)
     _ => None
   }

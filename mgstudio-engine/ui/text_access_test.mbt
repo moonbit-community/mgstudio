@@ -39,12 +39,12 @@ test "ui text writer addresses root and TextSpan children by Bevy flattened inde
     try! world.set_by_key(
       entity,
       @text.ecs_key_text_font,
-      @text.TextFont::default(),
+      @text.TextFont::TextFont(),
     )
     try! world.set_by_key(
       entity,
       @text.ecs_key_text_color,
-      @text.TextColor::default(),
+      @text.TextColor::TextColor(),
     )
     try! world.set_by_key(
       entity,

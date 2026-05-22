@@ -330,31 +330,33 @@ test "animation graph: from_clip/from_clips/add APIs" {
 
 ///|
 test "active animation: repeat semantics" {
-  let never = ActiveAnimation::default()
+  let never = ActiveAnimation::ActiveAnimation()
     .set_repeat(RepeatAnimation::Never)
     .update(0.6F, 1.0F)
     .update(0.6F, 1.0F)
   debug_inspect(never.is_finished(), content="true")
   debug_inspect(never.completions(), content="1")
 
-  let count = ActiveAnimation::default()
+  let count = ActiveAnimation::ActiveAnimation()
     .set_repeat(RepeatAnimation::Count(2))
     .update(1.1F, 1.0F)
     .update(1.1F, 1.0F)
   debug_inspect(count.is_finished(), content="true")
   debug_inspect(count.completions(), content="2")
 
-  let forever = ActiveAnimation::default().repeat_forever().update(3.1F, 1.0F)
+  let forever = ActiveAnimation::ActiveAnimation()
+    .repeat_forever()
+    .update(3.1F, 1.0F)
   debug_inspect(forever.is_finished(), content="false")
   debug_inspect(forever.completions() >= 1, content="true")
 }
 
 ///|
 test "active animation: replay and weight semantics match bevy" {
-  let weighted = ActiveAnimation::default().set_weight(-0.5F)
+  let weighted = ActiveAnimation::ActiveAnimation().set_weight(-0.5F)
   assert_true(approx_eq_animation(weighted.weight(), -0.5F))
 
-  let replayed = ActiveAnimation::default()
+  let replayed = ActiveAnimation::ActiveAnimation()
     .pause()
     .seek_to(0.7F)
     .set_repeat(RepeatAnimation::Count(3))
@@ -366,7 +368,7 @@ test "active animation: replay and weight semantics match bevy" {
 
 ///|
 test "active animation: zero-speed at clip end does not complete" {
-  let stationary = ActiveAnimation::default()
+  let stationary = ActiveAnimation::ActiveAnimation()
     .set_speed(0.0F)
     .seek_to(1.0F)
     .set_repeat(RepeatAnimation::Never)
@@ -378,7 +380,7 @@ test "active animation: zero-speed at clip end does not complete" {
 
 ///|
 test "active animation: zero-duration clip completes for non-repeating playback" {
-  let completed = ActiveAnimation::default()
+  let completed = ActiveAnimation::ActiveAnimation()
     .set_repeat(RepeatAnimation::Never)
     .update(0.1F, 0.0F)
   debug_inspect(completed.just_completed(), content="true")
@@ -391,7 +393,7 @@ test "animation transitions: play updates main animation and starts new clip" {
   let node_a = AnimationNodeIndex::new(1)
   let node_b = AnimationNodeIndex::new(2)
 
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
   let transitions = AnimationTransitions::new()
   transitions.play(player, node_a, 0.2F).repeat() |> ignore
 
@@ -424,7 +426,7 @@ test "animation transitions: zero-duration switch expires via transition systems
 
   let node_a = AnimationNodeIndex::new(1)
   let node_b = AnimationNodeIndex::new(2)
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
   let transitions = AnimationTransitions::new()
   transitions.play(player, node_a, 0.2F).repeat() |> ignore
   transitions.play(player, node_b, 0.0F).repeat() |> ignore
@@ -440,7 +442,7 @@ test "animation transitions: zero-duration switch expires via transition systems
   advance_transitions(world)
   expire_completed_transitions(world)
   let after_player = (try! world.get_by_key(entity, ecs_key_animation_player)).unwrap_or(
-    AnimationPlayer::default(),
+    AnimationPlayer::AnimationPlayer(),
   )
   let after_transitions = (try! world.get_by_key(
     entity, ecs_key_animation_transitions,
@@ -463,7 +465,7 @@ test "animation transitions: remaining weight is not clamped like bevy" {
 
   let node_a = AnimationNodeIndex::new(1)
   let node_b = AnimationNodeIndex::new(2)
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
   let transitions = AnimationTransitions::new()
   transitions.play(player, node_a, 0.2F).repeat() |> ignore
   player.set_weight(node_a, 2.0F) |> ignore
@@ -476,7 +478,7 @@ test "animation transitions: remaining weight is not clamped like bevy" {
   set_delta(0.0F)
   advance_transitions(world)
   let after_player = (try! world.get_by_key(entity, ecs_key_animation_player)).unwrap_or(
-    AnimationPlayer::default(),
+    AnimationPlayer::AnimationPlayer(),
   )
   debug_inspect(
     if after_player.animation(node_a) is Some(active_a) {
@@ -509,7 +511,7 @@ test "animation transitions: advance/expire keep frame-snapshot weight decline s
 
   let node_a = AnimationNodeIndex::new(1)
   let node_b = AnimationNodeIndex::new(2)
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
   let transitions = AnimationTransitions::new()
   transitions.play(player, node_a, 0.2F).repeat() |> ignore
   transitions.play(player, node_b, 0.5F).repeat() |> ignore
@@ -522,7 +524,7 @@ test "animation transitions: advance/expire keep frame-snapshot weight decline s
   advance_transitions(world)
   let after_first_player = (try! world.get_by_key(
     entity, ecs_key_animation_player,
-  )).unwrap_or(AnimationPlayer::default())
+  )).unwrap_or(AnimationPlayer::AnimationPlayer())
   debug_inspect(
     if after_first_player.animation(node_a) is Some(active_a) {
       approx_eq_animation(active_a.weight(), 0.5F)
@@ -548,7 +550,7 @@ test "animation transitions: advance/expire keep frame-snapshot weight decline s
   )).unwrap_or(AnimationTransitions::new())
   let after_second_player = (try! world.get_by_key(
     entity, ecs_key_animation_player,
-  )).unwrap_or(AnimationPlayer::default())
+  )).unwrap_or(AnimationPlayer::AnimationPlayer())
   debug_inspect(after_second_transitions.transitions.length(), content="0")
   debug_inspect(after_second_player.animation(node_a) is None, content="true")
   debug_inspect(
@@ -565,7 +567,7 @@ test "animation transitions: advance/expire keep frame-snapshot weight decline s
 test "animation player: live active handles and bulk helpers mutate in place" {
   let node_a = AnimationNodeIndex::new(1)
   let node_b = AnimationNodeIndex::new(2)
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
 
   player.play(node_a).set_speed(1.5F).repeat().pause() |> ignore
   player.play(node_b).seek_to(0.25F) |> ignore
@@ -673,7 +675,7 @@ test "animation clip events: forward and looping intervals" {
     .add_event(0.1F, "first", "")
     .add_event(0.6F, "second", "")
 
-  let active0 = ActiveAnimation::default().repeat_forever()
+  let active0 = ActiveAnimation::ActiveAnimation().repeat_forever()
   let active1 = active0.update(0.5F, clip.duration())
   let events1 = clip.triggered_root_events(active1)
   debug_inspect(events1.length(), content="1")
@@ -694,7 +696,7 @@ test "animation clip events: match bevy forward reverse and looping edge cases" 
     .add_event(0.5F, "half-c", "")
   clip.set_duration(1.0F) |> ignore
 
-  let active0 = ActiveAnimation::default().repeat_forever()
+  let active0 = ActiveAnimation::ActiveAnimation().repeat_forever()
   debug_inspect(
     clip_event_times(clip.triggered_root_events(active0)),
     content="[]",
@@ -727,7 +729,7 @@ test "animation clip events: bevy reverse and looping traversal cases" {
     .add_event(0.0F, "start", "")
   debug_inspect(approx_eq_animation(clip.duration(), 0.2F), content="true")
 
-  let active0 = ActiveAnimation::default()
+  let active0 = ActiveAnimation::ActiveAnimation()
   debug_inspect(
     clip_event_times(clip.triggered_root_events(active0)),
     content="[]",
@@ -754,7 +756,7 @@ test "animation clip events: bevy reverse and looping traversal cases" {
     content="[]",
   )
 
-  let reverse0 = ActiveAnimation::default()
+  let reverse0 = ActiveAnimation::ActiveAnimation()
     .set_speed(-1.0F)
     .set_seek_time(clip.duration())
   let reverse1 = reverse0.update(0.1F, clip.duration())
@@ -793,7 +795,7 @@ test "animation clip events: bevy looping forward and reverse traversal cases" {
     .add_event(0.2F, "middle", "")
   debug_inspect(approx_eq_animation(clip.duration(), 0.3F), content="true")
 
-  let active0 = ActiveAnimation::default().repeat_forever()
+  let active0 = ActiveAnimation::ActiveAnimation().repeat_forever()
   debug_inspect(
     clip_event_times(clip.triggered_root_events(active0)),
     content="[]",
@@ -874,10 +876,10 @@ test "animation clip events: bevy looping forward and reverse traversal cases" {
 
 ///|
 test "animation runtime: animate_targets applies sampled transform and weights" {
-  let default_time : @time.Time[Unit] = @time.Time::default()
+  let default_time : @time.Time[Unit] = @time.Time::Time()
   let mut app = @app.App::new(@ecs.World::new())
     .insert_resource(default_time)
-    .add_plugins(AnimationPlugin::default())
+    .add_plugins(AnimationPlugin::AnimationPlugin())
   let world = app.world()
   let player_entity = world.spawn()
   let target_entity = world.spawn()
@@ -899,7 +901,7 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
   let clip_handle = clip_assets.add(clip)
   let (graph, node) = AnimationGraph::from_clip(clip_handle)
   let graph_handle = graph_assets.add(graph)
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
   player.play(node).seek_to(0.5F) |> ignore
 
   try! world.set_by_key(player_entity, ecs_key_animation_player, player)
@@ -938,10 +940,10 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
 
 ///|
 test "animation runtime: evaluator stack overwrites animated fields like Bevy" {
-  let default_time : @time.Time[Unit] = @time.Time::default()
+  let default_time : @time.Time[Unit] = @time.Time::Time()
   let mut app = @app.App::new(@ecs.World::new())
     .insert_resource(default_time)
-    .add_plugins(AnimationPlugin::default())
+    .add_plugins(AnimationPlugin::AnimationPlugin())
   let world = app.world()
   let player_entity = world.spawn()
   let target_entity = world.spawn()
@@ -957,7 +959,7 @@ test "animation runtime: evaluator stack overwrites animated fields like Bevy" {
   let clip_handle = clip_assets.add(clip)
   let (graph, node) = AnimationGraph::from_clip(clip_handle)
   let graph_handle = graph_assets.add(graph)
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
   player.play(node).set_weight(0.25F) |> ignore
 
   try! world.set_by_key(player_entity, ecs_key_animation_player, player)
@@ -996,11 +998,11 @@ test "animation runtime: evaluator stack overwrites animated fields like Bevy" {
 ///|
 test "animation runtime: trigger_events emits root and target messages" {
   let captured : Array[AnimationTriggeredEvent] = []
-  let delta_time : @time.Time[Unit] = @time.Time::default().advance_by(
+  let delta_time : @time.Time[Unit] = @time.Time::Time().advance_by(
     @core.Duration::from_millis(250L),
   )
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(AnimationPlugin::default())
+    .add_plugins(AnimationPlugin::AnimationPlugin())
     .insert_resource(delta_time)
     .add_post_update_system_config(
       @app.system(
@@ -1029,7 +1031,7 @@ test "animation runtime: trigger_events emits root and target messages" {
   let clip_handle = clip_assets.add(clip)
   let (graph, node) = AnimationGraph::from_clip(clip_handle)
   let graph_handle = graph_assets.add(graph)
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
   player.play(node).repeat() |> ignore
 
   try! world.set_by_key(player_entity, ecs_key_animation_player, player)
@@ -1070,11 +1072,11 @@ test "animation runtime: trigger_events emits root and target messages" {
 test "animation runtime: targeted events are emitted in animate_targets stage" {
   let animate_targets_stage_labels : Array[String] = []
   let untargeted_stage_labels : Array[String] = []
-  let delta_time : @time.Time[Unit] = @time.Time::default().advance_by(
+  let delta_time : @time.Time[Unit] = @time.Time::Time().advance_by(
     @core.Duration::from_millis(250L),
   )
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(AnimationPlugin::default())
+    .add_plugins(AnimationPlugin::AnimationPlugin())
     .insert_resource(delta_time)
     .add_post_update_system_config(
       @app.system(
@@ -1116,7 +1118,7 @@ test "animation runtime: targeted events are emitted in animate_targets stage" {
   let clip_handle = clip_assets.add(clip)
   let (graph, node) = AnimationGraph::from_clip(clip_handle)
   let graph_handle = graph_assets.add(graph)
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
   player.play(node).repeat() |> ignore
 
   try! world.set_by_key(player_entity, ecs_key_animation_player, player)
@@ -1140,11 +1142,11 @@ test "animation runtime: targeted events are emitted in animate_targets stage" {
 
 ///|
 test "animation runtime: trigger_events dispatches typed root and target observers" {
-  let delta_time : @time.Time[Unit] = @time.Time::default().advance_by(
+  let delta_time : @time.Time[Unit] = @time.Time::Time().advance_by(
     @core.Duration::from_millis(250L),
   )
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(AnimationPlugin::default())
+    .add_plugins(AnimationPlugin::AnimationPlugin())
     .add_observer2(observe_typed_animation_event)
     .insert_resource(delta_time)
   let world = app.world()
@@ -1169,7 +1171,7 @@ test "animation runtime: trigger_events dispatches typed root and target observe
   let clip_handle = clip_assets.add(clip)
   let (graph, node) = AnimationGraph::from_clip(clip_handle)
   let graph_handle = graph_assets.add(graph)
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
   player.play(node).repeat() |> ignore
 
   try! world.set_by_key(player_entity, ecs_key_animation_player, player)
@@ -1200,11 +1202,11 @@ test "animation runtime: trigger_events dispatches typed root and target observe
 
 ///|
 test "animation runtime: animate_targets updates text color" {
-  let delta_time : @time.Time[Unit] = @time.Time::default().advance_by(
+  let delta_time : @time.Time[Unit] = @time.Time::Time().advance_by(
     @core.Duration::from_millis(500L),
   )
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(AnimationPlugin::default())
+    .add_plugins(AnimationPlugin::AnimationPlugin())
     .insert_resource(delta_time)
   let world = app.world()
   let player_entity = world.spawn()
@@ -1227,7 +1229,7 @@ test "animation runtime: animate_targets updates text color" {
   let clip_handle = clip_assets.add(clip)
   let (graph, node) = AnimationGraph::from_clip(clip_handle)
   let graph_handle = graph_assets.add(graph)
-  let player = AnimationPlayer::default()
+  let player = AnimationPlayer::AnimationPlayer()
   player.play(node).repeat() |> ignore
 
   try! world.set_by_key(player_entity, ecs_key_animation_player, player)

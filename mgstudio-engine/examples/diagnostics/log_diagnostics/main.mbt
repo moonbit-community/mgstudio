@@ -191,12 +191,12 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default(),
+    @pbr.PointLight::PointLight(),
   )
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default(),
+    @pbr.PointLight::PointLight(),
   )
   try! world.set_by_key(
     light,
@@ -205,7 +205,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -218,7 +218,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.Text2d::new(
         command_text_content(LogDiagnosticsStatus::Disabled, default_filters()),
       ),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -232,7 +232,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   world.insert_resource(LogDiagnosticsCommandsText::resource(), {
     entity: text_entity,
@@ -321,11 +321,15 @@ fn update_commands(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
-  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-  .add_plugins(@diagnostic.EntityCountDiagnosticsPlugin::default())
-  .add_plugins(@diagnostic.RenderDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
+  .add_plugins(
+    @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
+  .add_plugins(
+    @diagnostic.EntityCountDiagnosticsPlugin::EntityCountDiagnosticsPlugin(),
+  )
+  .add_plugins(@diagnostic.RenderDiagnosticsPlugin::RenderDiagnosticsPlugin())
   .insert_resource(default_filters())
   .insert_resource(LogDiagnosticsStatus::Disabled)
   .add_systems(@app.Startup, @app.system(setup))

@@ -49,8 +49,8 @@ fn spawn_menu_item(
   let item = commands.spawn(
     (
       @hierarchy.Parent::new(menu_entity),
-      @ui.Button::default(),
-      @ui.Node::default()
+      @ui.Button::Button(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(180.0F))
       .with_height(@ui.Val::Px(34.0F))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F)))
@@ -62,7 +62,7 @@ fn spawn_menu_item(
     (
       @hierarchy.Parent::new(item),
       @text.Text::new(label),
-      @text.TextFont::default().with_font_size(@text.FontSize::Px(18.0F)),
+      @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(18.0F)),
       @text.TextColor::new(@sprite.Color::white()),
     ),
   )
@@ -91,7 +91,7 @@ fn open_context_menu(
 
   let menu = commands.spawn(
     (
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(position.x))
       .with_top(@ui.Val::Px(position.y))
@@ -144,12 +144,12 @@ fn open_context_menu(
 ///|
 fn setup(commands : @app.Commands) -> Unit {
   commands.insert_resource(ContextMenuState::{ menu: None })
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
@@ -159,8 +159,8 @@ fn setup(commands : @app.Commands) -> Unit {
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Button::default(),
-      @ui.Node::default()
+      @ui.Button::Button(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(260.0F))
       .with_height(@ui.Val::Px(68.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(4.0F)))
@@ -174,7 +174,7 @@ fn setup(commands : @app.Commands) -> Unit {
     (
       @hierarchy.Parent::new(button),
       @text.Text::new("Open Context Menu"),
-      @text.TextFont::default().with_font_size(@text.FontSize::Px(28.0F)),
+      @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(28.0F)),
       @text.TextColor::new(@sprite.Color::white()),
     ),
   )
@@ -196,7 +196,7 @@ fn setup(commands : @app.Commands) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param(setup)
   .run()
 }

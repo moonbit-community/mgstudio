@@ -35,7 +35,7 @@ const DEV_TOOLS_EASY_SCREENSHOT_PLUGIN_NAME : String = "mgstudio.dev_tools.EasyS
 pub struct DevToolsDiagnosticsOverlayPlugin {}
 
 ///|
-pub fn DevToolsDiagnosticsOverlayPlugin::default() -> DevToolsDiagnosticsOverlayPlugin {
+pub fn DevToolsDiagnosticsOverlayPlugin::DevToolsDiagnosticsOverlayPlugin() -> DevToolsDiagnosticsOverlayPlugin {
   DevToolsDiagnosticsOverlayPlugin::{  }
 }
 
@@ -53,7 +53,7 @@ pub impl @app.Plugin for DevToolsDiagnosticsOverlayPlugin with build(_self, app)
 pub struct DevToolsFpsOverlayPlugin {}
 
 ///|
-pub fn DevToolsFpsOverlayPlugin::default() -> DevToolsFpsOverlayPlugin {
+pub fn DevToolsFpsOverlayPlugin::DevToolsFpsOverlayPlugin() -> DevToolsFpsOverlayPlugin {
   DevToolsFpsOverlayPlugin::{  }
 }
 
@@ -71,7 +71,7 @@ pub impl @app.Plugin for DevToolsFpsOverlayPlugin with build(_self, app) {
 pub struct DevToolsPickingDebugPlugin {}
 
 ///|
-pub fn DevToolsPickingDebugPlugin::default() -> DevToolsPickingDebugPlugin {
+pub fn DevToolsPickingDebugPlugin::DevToolsPickingDebugPlugin() -> DevToolsPickingDebugPlugin {
   DevToolsPickingDebugPlugin::{  }
 }
 
@@ -89,7 +89,7 @@ pub impl @app.Plugin for DevToolsPickingDebugPlugin with build(_self, app) {
 pub struct DevToolsEasyScreenshotPlugin {}
 
 ///|
-pub fn DevToolsEasyScreenshotPlugin::default() -> DevToolsEasyScreenshotPlugin {
+pub fn DevToolsEasyScreenshotPlugin::DevToolsEasyScreenshotPlugin() -> DevToolsEasyScreenshotPlugin {
   DevToolsEasyScreenshotPlugin::{  }
 }
 
@@ -107,18 +107,18 @@ pub impl @app.Plugin for DevToolsEasyScreenshotPlugin with build(_self, app) {
 pub struct DevToolsPlugins {}
 
 ///|
-pub fn DevToolsPlugins::default() -> DevToolsPlugins {
+pub fn DevToolsPlugins::DevToolsPlugins() -> DevToolsPlugins {
   DevToolsPlugins::{  }
 }
 
 ///|
 pub fn DevToolsPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
   @app.PluginGroupBuilder::start_named("DevToolsPlugins")
-  .add(DevToolsDiagnosticsOverlayPlugin::default())
-  .add(DevToolsFpsOverlayPlugin::default())
-  .add(DevToolsPickingDebugPlugin::default())
-  .add(DevToolsEasyScreenshotPlugin::default())
-  .add(@dev_tools_ci_testing.CiTestingPlugin::default())
+  .add(DevToolsDiagnosticsOverlayPlugin::DevToolsDiagnosticsOverlayPlugin())
+  .add(DevToolsFpsOverlayPlugin::DevToolsFpsOverlayPlugin())
+  .add(DevToolsPickingDebugPlugin::DevToolsPickingDebugPlugin())
+  .add(DevToolsEasyScreenshotPlugin::DevToolsEasyScreenshotPlugin())
+  .add(@dev_tools_ci_testing.CiTestingPlugin::CiTestingPlugin())
 }
 
 ///|
@@ -133,5 +133,5 @@ pub impl @app.Plugin for DevToolsPlugins with build(_self, app) {
 
 ///|
 pub fn dev_tools_plugins() -> DevToolsPlugins {
-  DevToolsPlugins::default()
+  DevToolsPlugins::DevToolsPlugins()
 }

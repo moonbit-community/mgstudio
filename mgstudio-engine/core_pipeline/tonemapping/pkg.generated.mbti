@@ -85,7 +85,7 @@ pub struct TonemappingPipelineKey {
   tonemapping : @post_process.Tonemapping
   flags : TonemappingPipelineKeyFlags
 } derive(Eq, @debug.Debug)
-pub fn TonemappingPipelineKey::default() -> Self
+pub fn TonemappingPipelineKey::TonemappingPipelineKey() -> Self
 pub fn TonemappingPipelineKey::new(deband_dither? : @post_process.DebandDither, tonemapping? : @post_process.Tonemapping, flags? : TonemappingPipelineKeyFlags) -> Self
 pub impl @app.Resource for TonemappingPipelineKey
 pub impl @ecs.EcsPayloadCodec for TonemappingPipelineKey
@@ -95,12 +95,12 @@ pub struct TonemappingPipelineKeyFlags {
   white_balance : Bool
   sectional_color_grading : Bool
 } derive(Eq, @debug.Debug)
-pub fn TonemappingPipelineKeyFlags::default() -> Self
+pub fn TonemappingPipelineKeyFlags::TonemappingPipelineKeyFlags() -> Self
 pub fn TonemappingPipelineKeyFlags::new(hue_rotate? : Bool, white_balance? : Bool, sectional_color_grading? : Bool) -> Self
 
 pub struct TonemappingPlugin {
 }
-pub fn TonemappingPlugin::default() -> Self
+pub fn TonemappingPlugin::TonemappingPlugin() -> Self
 pub impl @app.Plugin for TonemappingPlugin
 
 // Type aliases

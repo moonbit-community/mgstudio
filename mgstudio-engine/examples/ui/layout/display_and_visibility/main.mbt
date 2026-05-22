@@ -114,7 +114,7 @@ fn spawn_text(
   font : @asset.Handle[@asset.Font],
   font_size : Float,
   color : @sprite.Color,
-  node? : @ui.Node = @ui.Node::default(),
+  node? : @ui.Node = @ui.Node::Node(),
 ) -> @core.Entity {
   let entity = world.spawn_empty()
   try! world.set_by_key(
@@ -127,7 +127,7 @@ fn spawn_text(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
+    @text.TextFont::TextFont().with_font(font).with_font_size(font_size),
   )
   try! world.set_by_key(
     entity,
@@ -323,7 +323,7 @@ fn spawn_button(
   let button = spawn_node(
     world,
     Some(parent),
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Px(240.0F))
     .with_height(@ui.Val::Px(42.0F))
     .with_border(@ui.UiRect::all(@ui.Val::Px(3.0F)))
@@ -333,7 +333,7 @@ fn spawn_button(
     .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
     Some(@ui.BackgroundColor::new(normal_button_color())),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_border_color,
@@ -357,7 +357,7 @@ fn spawn_target_panel(
   let panel = spawn_node(
     world,
     parent,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Px(size))
     .with_height(@ui.Val::Px(size))
     .with_padding(@ui.UiRect::all(@ui.Val::Px(18.0F)))
@@ -389,7 +389,7 @@ fn spawn_target_panel(
       } else {
         @sprite.Color::white()
       },
-      node=@ui.Node::default()
+      node=@ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_left(@ui.Val::Px(10.0F))
         .with_top(@ui.Val::Px(10.0F)),
@@ -404,7 +404,7 @@ fn setup(world : @ecs.World) -> Unit {
   let font = @asset.AssetServer::new().load_font("fonts/FiraSans-Bold.ttf")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -412,7 +412,7 @@ fn setup(world : @ecs.World) -> Unit {
   let root = spawn_node(
     world,
     None,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_flex_direction(@ui.FlexDirection::Column)
@@ -420,7 +420,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_row_gap(@ui.Val::Px(12.0F)),
     Some(@ui.BackgroundColor::new(@sprite.Color::black())),
   )
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
 
   ignore(
     spawn_text(
@@ -436,7 +436,7 @@ fn setup(world : @ecs.World) -> Unit {
   let content = spawn_node(
     world,
     Some(root),
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_flex_direction(@ui.FlexDirection::Row)
@@ -447,7 +447,7 @@ fn setup(world : @ecs.World) -> Unit {
   let left = spawn_node(
     world,
     Some(content),
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(60.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_align_items(@ui.AlignItems::Center)
@@ -457,7 +457,7 @@ fn setup(world : @ecs.World) -> Unit {
   let right = spawn_node(
     world,
     Some(content),
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Px(320.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_flex_direction(@ui.FlexDirection::Column)
@@ -475,7 +475,7 @@ fn setup(world : @ecs.World) -> Unit {
     let row = spawn_node(
       world,
       Some(right),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_row_gap(@ui.Val::Px(6.0F))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F))),
@@ -571,7 +571,7 @@ fn display_and_visibility_system(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_system_config(
     @app.system(display_and_visibility_system).after(@ui.ui_set_focus),

@@ -57,7 +57,7 @@ fn render3d_execute_camera(
   )
   let camera_deferred_config = match camera.deferred_config {
     Some(value) => value
-    None => CameraDeferredConfig3d::default()
+    None => CameraDeferredConfig3d::CameraDeferredConfig3d()
   }
   let camera_deferred_mode = render3d_camera_deferred_mode(
     camera_deferred_config, default_opaque_renderer_method, deferred_lighting_enabled,

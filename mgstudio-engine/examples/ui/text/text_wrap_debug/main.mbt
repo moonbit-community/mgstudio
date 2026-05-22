@@ -52,7 +52,7 @@ fn spawn_text_block(
   try! world.set_by_key(
     entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_margin(
       @ui.UiRect::new(
@@ -67,7 +67,7 @@ fn spawn_text_block(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(12.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(12.0F),
   )
   try! world.set_by_key(
     entity,
@@ -120,7 +120,7 @@ fn setup(world : @ecs.World) -> Unit {
   let font = @asset.AssetServer::new().load_font("fonts/FiraSans-Bold.ttf")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -128,13 +128,13 @@ fn setup(world : @ecs.World) -> Unit {
   let root = spawn_node(
     world,
     None,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_flex_direction(@ui.FlexDirection::Column),
     Some(@ui.BackgroundColor::new(@sprite.Color::black())),
   )
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
 
   let linebreaks : Array[@text.LineBreak] = [
     @text.LineBreak::AnyCharacter,
@@ -160,7 +160,7 @@ fn setup(world : @ecs.World) -> Unit {
     let row_entity = spawn_node(
       world,
       Some(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_flex_grow(1.0F)
       .with_flex_direction(@ui.FlexDirection::Row)
@@ -176,7 +176,7 @@ fn setup(world : @ecs.World) -> Unit {
       let column_entity = spawn_node(
         world,
         Some(row_entity),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_width(@ui.Val::Percent(16.0F))
         .with_height(@ui.Val::Percent(95.0F))
         .with_flex_direction(@ui.FlexDirection::Column)
@@ -225,7 +225,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .run()
 }

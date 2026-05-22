@@ -102,9 +102,7 @@ pub impl @ecs.Component for RightSprite with component() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(
-    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
-  )
+  .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(execute_animations)))
   .add_systems(
@@ -130,7 +128,7 @@ fn spawn_help_overlay(asset_server : @app.Res[@asset.AssetServer]) -> Unit {
       @text.Text2d::new(
         "Left Arrow: Animate Left Sprite\nRight Arrow: Animate Right Sprite",
       ),
-      @text.TextFont::default().with_font(font).with_font_size(20.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-620.0F, 340.0F),
         0.0F,
@@ -151,7 +149,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   texture_atlas_layouts : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   spawn_help_overlay(asset_server)
 
   let texture = asset_server

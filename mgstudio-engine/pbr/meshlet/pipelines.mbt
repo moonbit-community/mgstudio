@@ -425,7 +425,7 @@ pub fn MeshletQueuedPipelineDescriptor::has_shader_def(
 }
 
 ///|
-pub fn MeshletPipelines::default() -> MeshletPipelines {
+pub fn MeshletPipelines::MeshletPipelines() -> MeshletPipelines {
   MeshletPipelines::{
     clear_visibility_buffer: -1,
     clear_visibility_buffer_shadow_view: -1,
@@ -618,7 +618,7 @@ pub fn init_meshlet_pipelines_with_core(
   resolve_material_depth : Int,
   fill_counts : Int,
 ) -> MeshletPipelines {
-  let pipelines = MeshletPipelines::default()
+  let pipelines = MeshletPipelines::MeshletPipelines()
   MeshletPipelines::{
     ..pipelines,
     visibility_buffer_hardware_raster: meshlet_pipeline_sanitize_id(

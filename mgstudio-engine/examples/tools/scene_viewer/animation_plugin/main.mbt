@@ -50,7 +50,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   ignore(
     @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(5.0F, 4.0F, 7.0F).looking_at(
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -99,7 +99,7 @@ fn rotate_preview(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param2(rotate_preview)))
   .run()

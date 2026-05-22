@@ -94,7 +94,7 @@ pub impl @ecs.TriggerEvent for Activate
 
 pub struct ButtonWidgetPlugin {
 }
-pub fn ButtonWidgetPlugin::default() -> Self
+pub fn ButtonWidgetPlugin::ButtonWidgetPlugin() -> Self
 pub impl @app.Plugin for ButtonWidgetPlugin
 
 pub struct Checkable {
@@ -109,7 +109,7 @@ pub impl @ecs.EcsPayloadCodec for Checkbox
 
 pub struct CheckboxWidgetPlugin {
 }
-pub fn CheckboxWidgetPlugin::default() -> Self
+pub fn CheckboxWidgetPlugin::CheckboxWidgetPlugin() -> Self
 pub impl @app.Plugin for CheckboxWidgetPlugin
 
 pub struct Checked {
@@ -127,7 +127,7 @@ pub struct CoreScrollbarDragState {
   dragging : Bool
   drag_origin : Float
 } derive(ToJson, @json.FromJson)
-pub fn CoreScrollbarDragState::default() -> Self
+pub fn CoreScrollbarDragState::CoreScrollbarDragState() -> Self
 pub impl @ecs.Component for CoreScrollbarDragState
 pub impl @ecs.EcsPayloadCodec for CoreScrollbarDragState
 
@@ -171,20 +171,20 @@ pub fn MenuLayout::default() -> Self
 pub struct MenuPopup {
   layout : MenuLayout
 } derive(ToJson, @json.FromJson)
-pub fn MenuPopup::default() -> Self
+pub fn MenuPopup::MenuPopup() -> Self
 pub impl @ecs.Component for MenuPopup
 pub impl @ecs.EcsPayloadCodec for MenuPopup
 
 pub struct MenuWidgetPlugin {
 }
-pub fn MenuWidgetPlugin::default() -> Self
+pub fn MenuWidgetPlugin::MenuWidgetPlugin() -> Self
 pub impl @app.Plugin for MenuWidgetPlugin
 
 pub struct Popover {
   positions : Array[PopoverPlacement]
   window_margin : Float
 } derive(ToJson, @json.FromJson)
-pub fn Popover::default() -> Self
+pub fn Popover::Popover() -> Self
 pub impl @ecs.Component for Popover
 pub impl @ecs.EcsPayloadCodec for Popover
 
@@ -200,7 +200,7 @@ pub struct PopoverPlacement {
   align : PopoverAlign
   gap : Float
 } derive(ToJson, @json.FromJson)
-pub fn PopoverPlacement::default() -> Self
+pub fn PopoverPlacement::PopoverPlacement() -> Self
 
 pub(all) enum PopoverSide {
   Top
@@ -213,7 +213,7 @@ pub fn PopoverSide::mirror(Self) -> Self
 
 pub struct PopoverWidgetPlugin {
 }
-pub fn PopoverWidgetPlugin::default() -> Self
+pub fn PopoverWidgetPlugin::PopoverWidgetPlugin() -> Self
 pub impl @app.Plugin for PopoverWidgetPlugin
 
 pub struct Pressed {
@@ -233,7 +233,7 @@ pub impl @ecs.EcsPayloadCodec for RadioGroup
 
 pub struct RadioGroupWidgetPlugin {
 }
-pub fn RadioGroupWidgetPlugin::default() -> Self
+pub fn RadioGroupWidgetPlugin::RadioGroupWidgetPlugin() -> Self
 pub impl @app.Plugin for RadioGroupWidgetPlugin
 
 pub struct Scrollbar {
@@ -247,7 +247,7 @@ pub impl @ecs.EcsPayloadCodec for Scrollbar
 
 pub struct ScrollbarWidgetPlugin {
 }
-pub fn ScrollbarWidgetPlugin::default() -> Self
+pub fn ScrollbarWidgetPlugin::ScrollbarWidgetPlugin() -> Self
 pub impl @app.Plugin for ScrollbarWidgetPlugin
 
 pub struct SetChecked {
@@ -267,14 +267,14 @@ pub impl @ecs.TriggerEvent for SetSliderValue
 pub struct Slider {
   track_click : TrackClick
 } derive(ToJson, @json.FromJson)
-pub fn Slider::default() -> Self
+pub fn Slider::Slider() -> Self
 pub impl @ecs.Component for Slider
 pub impl @ecs.EcsPayloadCodec for Slider
 
 pub struct SliderPrecision {
   digits : Int
 } derive(ToJson, @json.FromJson)
-pub fn SliderPrecision::default() -> Self
+pub fn SliderPrecision::SliderPrecision() -> Self
 pub fn SliderPrecision::new(Int) -> Self
 pub fn SliderPrecision::round(Self, Float) -> Float
 pub impl @ecs.Component for SliderPrecision
@@ -284,9 +284,9 @@ pub struct SliderRange {
   start : Float
   end : Float
 } derive(ToJson, @json.FromJson)
+pub fn SliderRange::SliderRange() -> Self
 pub fn SliderRange::center(Self) -> Float
 pub fn SliderRange::clamp(Self, Float) -> Float
-pub fn SliderRange::default() -> Self
 pub fn SliderRange::end(Self) -> Float
 pub fn SliderRange::new(Float, Float) -> Self
 pub fn SliderRange::span(Self) -> Float
@@ -298,7 +298,7 @@ pub impl @ecs.EcsPayloadCodec for SliderRange
 pub struct SliderStep {
   value : Float
 } derive(ToJson, @json.FromJson)
-pub fn SliderStep::default() -> Self
+pub fn SliderStep::SliderStep() -> Self
 pub fn SliderStep::new(Float) -> Self
 pub fn SliderStep::value(Self) -> Float
 pub impl @ecs.Component for SliderStep
@@ -312,7 +312,7 @@ pub impl @ecs.EcsPayloadCodec for SliderThumb
 pub struct SliderValue {
   value : Float
 } derive(ToJson, @json.FromJson)
-pub fn SliderValue::default() -> Self
+pub fn SliderValue::SliderValue() -> Self
 pub fn SliderValue::new(Float) -> Self
 pub fn SliderValue::value(Self) -> Float
 pub impl @ecs.Component for SliderValue
@@ -320,7 +320,7 @@ pub impl @ecs.EcsPayloadCodec for SliderValue
 
 pub struct SliderWidgetPlugin {
 }
-pub fn SliderWidgetPlugin::default() -> Self
+pub fn SliderWidgetPlugin::SliderWidgetPlugin() -> Self
 pub impl @app.Plugin for SliderWidgetPlugin
 
 pub struct ToggleChecked {
@@ -343,8 +343,8 @@ pub impl @ecs.EcsPayloadCodec for UiWidgetsPluginMarker
 
 pub struct UiWidgetsPlugins {
 }
+pub fn UiWidgetsPlugins::UiWidgetsPlugins() -> Self
 pub fn UiWidgetsPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
-pub fn UiWidgetsPlugins::default() -> Self
 pub impl @app.Plugin for UiWidgetsPlugins
 
 pub struct ValueChange[T] {

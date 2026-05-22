@@ -17,17 +17,17 @@
 
 ///|
 pub fn default_gizmo_config() -> @sprite.GizmoConfig {
-  @sprite.GizmoConfig::default()
+  @sprite.GizmoConfig::GizmoConfig()
 }
 
 ///|
 pub fn default_gizmo_line_config() -> @sprite.GizmoLineConfig {
-  @sprite.GizmoLineConfig::default()
+  @sprite.GizmoLineConfig::GizmoLineConfig()
 }
 
 ///|
 pub fn default_gizmo_config_group() -> @sprite.DefaultGizmoConfigGroup {
-  @sprite.DefaultGizmoConfigGroup::default()
+  @sprite.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup()
 }
 
 ///|

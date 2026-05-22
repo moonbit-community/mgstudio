@@ -74,7 +74,7 @@ fn trigger_identity_transition_once(step : ResMut[TriggerIdentityOnce]) -> Unit 
 test "app identity transition: default enter and exit ignore same-state transitions" {
   transition_entries.clear()
   let app = App::new(@ecs.World::new())
-    .add_plugins(StatesPlugin::default())
+    .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_resource(TriggerIdentityOnce::{ done: false })
     .insert_state(TestState::A)
     .add_on_enter_system(TestState::A, on_enter_a)
@@ -96,7 +96,7 @@ test "app identity transition: default enter and exit ignore same-state transiti
 ///|
 test "app identity transition: DespawnOnExit removes scoped entities" {
   let app = App::new(@ecs.World::new())
-    .add_plugins(StatesPlugin::default())
+    .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_resource(TriggerIdentityOnce::{ done: false })
     .insert_state(TestState::A)
     .add_systems(Update, system(system_param(trigger_identity_transition_once)))
@@ -120,7 +120,7 @@ test "app identity transition: DespawnOnExit removes scoped entities" {
 ///|
 test "app identity transition: DespawnOnEnter removes scoped entities" {
   let app = App::new(@ecs.World::new())
-    .add_plugins(StatesPlugin::default())
+    .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_system_config(
       system(fn(_world : @ecs.World) { set_state(TestState::B) }).run_if(

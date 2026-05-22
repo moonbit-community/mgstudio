@@ -14,7 +14,9 @@
 
 ///|
 test "core prepass node: color attachment plan preserves Bevy slots" {
-  let empty = prepass_color_attachment_plan(PrepassViewState::default())
+  let empty = prepass_color_attachment_plan(
+    PrepassViewState::PrepassViewState(),
+  )
   inspect(empty.slot_count, content="0")
   let with_normal_and_motion = prepass_color_attachment_plan(
     PrepassViewState::new(

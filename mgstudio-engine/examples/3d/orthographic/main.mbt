@@ -25,7 +25,7 @@ fn setup(world : @ecs.World) -> Unit {
   })
 
   @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     projection,
     @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
@@ -104,12 +104,12 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default(),
+    @pbr.PointLight::PointLight(),
   )
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default(),
+    @pbr.PointLight::PointLight(),
   )
   try! world.set_by_key(
     light,
@@ -121,7 +121,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .run()
 }

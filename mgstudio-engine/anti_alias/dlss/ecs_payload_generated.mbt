@@ -23,7 +23,6 @@ extenum @ecs.EcsPayload += {
     DlssRayReconstructionSupported
   )
   EcsPayload_anti_alias_dlss_DlssRuntimeState(DlssRuntimeState)
-  EcsPayload_anti_alias_dlss_DlssInitPluginMarker(DlssInitPluginMarker)
 }
 
 ///|
@@ -99,21 +98,6 @@ pub impl @ecs.EcsPayloadCodec for DlssRuntimeState with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_anti_alias_dlss_DlssRuntimeState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DlssInitPluginMarker with to_ecs_payload(self) {
-  EcsPayload_anti_alias_dlss_DlssInitPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DlssInitPluginMarker with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_anti_alias_dlss_DlssInitPluginMarker(value) => Some(value)
     _ => None
   }
 }

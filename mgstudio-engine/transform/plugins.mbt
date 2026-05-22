@@ -49,7 +49,7 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   ensure_transform_runtime_resources(app.world())
   let validate_parent_plugin : @app.ValidateParentHasComponentPlugin[
     GlobalTransform,
-  ] = @app.ValidateParentHasComponentPlugin::default()
+  ] = @app.ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin()
   app
   .add_plugins(validate_parent_plugin)
   .add_systems(

@@ -14,7 +14,7 @@
 
 ///|
 test "feathers controls button: props mirror Bevy defaults" {
-  let props = ButtonProps::default()
+  let props = ButtonProps::ButtonProps()
   debug_inspect(props.variant is ButtonVariant::Normal, content="true")
   debug_inspect(
     props.corners is @rounded_corners.RoundedCorners::All,
@@ -77,7 +77,7 @@ test "feathers controls color slider mirrors Bevy data model" {
     content="true",
   )
 
-  let props = ColorSliderProps::default()
+  let props = ColorSliderProps::ColorSliderProps()
   debug_inspect(props.channel is ColorChannel::Alpha, content="true")
   let (slider0, value0, range0) = color_slider(props)
   debug_inspect(slider0.channel is ColorChannel::Alpha, content="true")

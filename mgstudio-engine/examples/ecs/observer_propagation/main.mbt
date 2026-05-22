@@ -98,7 +98,7 @@ pub impl @app.Resource for AttackSchedule with resource() {
 }
 
 ///|
-pub impl Default for AttackSchedule with default() {
+pub fn AttackSchedule::AttackSchedule() -> AttackSchedule {
   { accumulator: 0.0F, next_attack_index: 0 }
 }
 
@@ -226,8 +226,8 @@ fn take_damage(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .init_resource(AttackSchedule::default)
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .init_resource(fn() { AttackSchedule::AttackSchedule() })
   .add_startup_system_param(setup)
   .add_system_param4(attack_armor)
   .add_observer2(attack_hits)

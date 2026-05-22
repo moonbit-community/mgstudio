@@ -18,29 +18,27 @@ fn dlss_test_spawn_camera(world : @ecs.World) -> @core.Entity {
   try! world.set_by_key(
     entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
   entity
 }
 
 ///|
 test "anti_alias/dlss: runtime state counts camera-only DLSS components" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(DlssPlugin::default())
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    DlssPlugin::DlssPlugin(),
+  )
   let camera_entity = dlss_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()
   try! app
   .world()
-  .set_by_key(
-    camera_entity,
-    Dlss::component(),
-    Dlss::default().with_reset(true),
-  )
+  .set_by_key(camera_entity, Dlss::component(), Dlss::Dlss().with_reset(true))
   try! app
   .world()
   .set_by_key(
     non_camera_entity,
     Dlss::component(),
-    Dlss::default().with_reset(true),
+    Dlss::Dlss().with_reset(true),
   )
   let app = app.update()
   let runtime = app.world().get_resource(DlssRuntimeState::resource()).unwrap()
@@ -68,9 +66,11 @@ test "anti_alias/dlss: runtime state counts camera-only DLSS components" {
 
 ///|
 test "anti_alias/dlss: required camera components mirror Bevy" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(DlssPlugin::default())
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    DlssPlugin::DlssPlugin(),
+  )
   let entity = app.world().spawn_empty()
-  try! app.world().set_by_key(entity, Dlss::component(), Dlss::default())
+  try! app.world().set_by_key(entity, Dlss::component(), Dlss::Dlss())
   debug_inspect(
     try! app
     .world()
@@ -97,9 +97,12 @@ test "anti_alias/dlss: required camera components mirror Bevy" {
     try! app.world().contains_by_key(entity, @core_pipeline.ecs_key_hdr),
     content="true",
   )
-  debug_inspect(Default::default() is DlssPerfQualityMode::Auto, content="true")
   debug_inspect(
-    (Default::default() : Dlss).perf_quality_mode is DlssPerfQualityMode::Auto,
+    DlssPerfQualityMode::default() is DlssPerfQualityMode::Auto,
+    content="true",
+  )
+  debug_inspect(
+    Dlss::Dlss().perf_quality_mode is DlssPerfQualityMode::Auto,
     content="true",
   )
 }

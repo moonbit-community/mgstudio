@@ -26,7 +26,7 @@ fn print_world_system(_world : @ecs.World) -> Unit {
 struct PrintHelloPlugin {}
 
 ///|
-fn PrintHelloPlugin::default() -> PrintHelloPlugin {
+fn PrintHelloPlugin::PrintHelloPlugin() -> PrintHelloPlugin {
   PrintHelloPlugin::{  }
 }
 
@@ -44,7 +44,7 @@ impl @app.Plugin for PrintHelloPlugin with build(_self, app) {
 struct PrintWorldPlugin {}
 
 ///|
-fn PrintWorldPlugin::default() -> PrintWorldPlugin {
+fn PrintWorldPlugin::PrintWorldPlugin() -> PrintWorldPlugin {
   PrintWorldPlugin::{  }
 }
 
@@ -62,15 +62,15 @@ impl @app.Plugin for PrintWorldPlugin with build(_self, app) {
 struct HelloWorldPlugins {}
 
 ///|
-fn HelloWorldPlugins::default() -> HelloWorldPlugins {
+fn HelloWorldPlugins::HelloWorldPlugins() -> HelloWorldPlugins {
   HelloWorldPlugins::{  }
 }
 
 ///|
 fn HelloWorldPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
   @app.PluginGroupBuilder::start_named("HelloWorldPlugins")
-  .add(PrintHelloPlugin::default())
-  .add(PrintWorldPlugin::default())
+  .add(PrintHelloPlugin::PrintHelloPlugin())
+  .add(PrintWorldPlugin::PrintWorldPlugin())
 }
 
 ///|
@@ -86,7 +86,7 @@ impl @app.Plugin for HelloWorldPlugins with build(_self, app) {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(HelloWorldPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(HelloWorldPlugins::HelloWorldPlugins())
   .run()
 }

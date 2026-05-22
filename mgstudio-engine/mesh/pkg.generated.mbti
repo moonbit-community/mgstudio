@@ -355,13 +355,13 @@ pub fn MeshJointIndices::values(Self) -> Array[Int]
 
 pub struct MeshPlugin {
 }
-pub fn MeshPlugin::default() -> Self
+pub fn MeshPlugin::MeshPlugin() -> Self
 pub impl @app.Plugin for MeshPlugin
 
 pub struct MeshTag {
   value : UInt
 }
-pub fn MeshTag::default() -> Self
+pub fn MeshTag::MeshTag() -> Self
 pub fn MeshTag::new(UInt) -> Self
 pub fn MeshTag::value(Self) -> UInt
 pub impl @ecs.Component for MeshTag
@@ -415,7 +415,7 @@ pub fn MeshVertexBufferLayoutRef::layout(Self) -> MeshVertexBufferLayout
 pub struct MeshVertexBufferLayouts {
   layouts : Array[MeshVertexBufferLayout]
 }
-pub fn MeshVertexBufferLayouts::default() -> Self
+pub fn MeshVertexBufferLayouts::MeshVertexBufferLayouts() -> Self
 pub fn MeshVertexBufferLayouts::insert(Self, MeshVertexBufferLayout) -> MeshVertexBufferLayoutRef
 pub fn MeshVertexBufferLayouts::len(Self) -> Int
 
@@ -485,9 +485,9 @@ pub struct SkinnedMeshBounds {
   aabbs : Array[JointAabb]
   aabb_index_to_joint_index : Array[JointIndex]
 }
+pub fn SkinnedMeshBounds::SkinnedMeshBounds() -> Self
 pub fn SkinnedMeshBounds::aabb_index_to_joint_index(Self) -> Array[JointIndex]
 pub fn SkinnedMeshBounds::aabbs(Self) -> Array[JointAabb]
-pub fn SkinnedMeshBounds::default() -> Self
 pub fn SkinnedMeshBounds::from_mesh(Mesh) -> Result[Self, SkinnedMeshBoundsError]
 pub fn SkinnedMeshBounds::iter(Self) -> Array[(JointIndex, JointAabb)]
 pub fn SkinnedMeshBounds::new(Array[JointAabb], Array[JointIndex]) -> Self

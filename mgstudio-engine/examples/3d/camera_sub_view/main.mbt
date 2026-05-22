@@ -58,7 +58,7 @@ fn spawn_perspective_camera(
   moving? : Bool = false,
 ) -> Unit {
   let entity = @camera.Camera3dBundle::new(
-      @sprite.Camera::default().with_order(order),
+      @sprite.Camera::Camera().with_order(order),
       camera_sub_view_state.val.base_transform,
     )
     .with_sub_camera_view(sub_camera_view)
@@ -78,7 +78,7 @@ fn spawn_orthographic_camera(
   moving? : Bool = false,
 ) -> Unit {
   let entity = @camera.Camera3dBundle::new_with_projection(
-      @sprite.Camera::default().with_order(order),
+      @sprite.Camera::Camera().with_order(order),
       @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
         ..@camera.OrthographicProjection3d::default_3d(),
         scaling_mode: @pbr.OrthographicScalingMode3d::FixedVertical(
@@ -296,7 +296,7 @@ fn resize_viewports(world : @ecs.World) -> Unit {
     if (try! world.get_by_key(entity, @sprite.ecs_key_camera)) is Some(camera) {
       let viewport = match camera.viewport {
         Some(viewport) => viewport
-        None => @sprite.Viewport::default()
+        None => @sprite.Viewport::Viewport()
       }
       try! (world.replace(
         entity,
@@ -318,7 +318,7 @@ fn resize_viewports(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(move_camera_view))
   .add_systems(@app.Update, @app.system(resize_viewports))

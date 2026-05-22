@@ -16,7 +16,7 @@
 fn setup_camera(world : @ecs.World) -> Unit {
   ignore(
     @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -31,7 +31,7 @@ fn configure_gizmos(
 ) -> Unit {
   config_store.modify(fn(store) {
     let (config, _group) = store.config_mut(
-      @gizmos.DefaultGizmoConfigGroup::default(),
+      @gizmos.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     )
     config.val = { ..config.val, line: { ..config.val.line, width: 4.0F } }
   })
@@ -79,7 +79,7 @@ fn draw_text(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup_camera))
   .add_systems(@app.Startup, @app.system(@app.system_param(configure_gizmos)))
   .add_system_param2(draw_text)

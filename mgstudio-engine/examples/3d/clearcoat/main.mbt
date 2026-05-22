@@ -261,14 +261,14 @@ fn setup(world : @ecs.World) -> Unit {
   apply_light_mode(world)
 
   let camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
-      ..@camera.PerspectiveProjection3d::default(),
+      ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
       fov: 27.0F * PI / 180.0F,
     }),
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_tonemapping,
@@ -294,7 +294,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -310,7 +310,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   clearcoat_state.val.help_text = Some(help_text)
   update_help_text()
@@ -382,7 +382,7 @@ fn handle_input(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(animate_light))
   .add_systems(@app.Update, @app.system(animate_spheres))

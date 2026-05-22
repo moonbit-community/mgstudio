@@ -79,7 +79,7 @@ pub(all) struct WindowResizeConstraints {
 } derive(Eq, Debug)
 
 ///|
-pub fn WindowResizeConstraints::default() -> WindowResizeConstraints {
+pub fn WindowResizeConstraints::WindowResizeConstraints() -> WindowResizeConstraints {
   WindowResizeConstraints::{
     min_width: 180.0F,
     min_height: 120.0F,
@@ -167,7 +167,7 @@ pub(all) struct EnabledButtons {
 } derive(Eq, Debug)
 
 ///|
-pub fn EnabledButtons::default() -> EnabledButtons {
+pub fn EnabledButtons::EnabledButtons() -> EnabledButtons {
   EnabledButtons::{ minimize: true, maximize: true, close: true }
 }
 
@@ -180,7 +180,7 @@ pub(all) struct WindowResolution {
 } derive(Eq, Debug)
 
 ///|
-pub fn WindowResolution::default() -> WindowResolution {
+pub fn WindowResolution::WindowResolution() -> WindowResolution {
   WindowResolution::{
     physical_width: 1280,
     physical_height: 720,
@@ -194,7 +194,7 @@ pub fn WindowResolution::new(
   physical_width : Int,
   physical_height : Int,
 ) -> WindowResolution {
-  let resolution = WindowResolution::default()
+  let resolution = WindowResolution::WindowResolution()
   resolution.physical_width = if physical_width <= 0 {
     1
   } else {
@@ -365,19 +365,19 @@ pub(all) struct Window {
 }
 
 ///|
-pub fn Window::default() -> Window {
+pub fn Window::Window() -> Window {
   Window::{
     title: DEFAULT_WINDOW_TITLE,
     name: None,
     composite_alpha_mode: CompositeAlphaMode::default(),
-    resize_constraints: WindowResizeConstraints::default(),
+    resize_constraints: WindowResizeConstraints::WindowResizeConstraints(),
     canvas: None,
-    resolution: WindowResolution::default(),
+    resolution: WindowResolution::WindowResolution(),
     present_mode: PresentMode::Fifo,
     position: Automatic,
     mode: Windowed,
     resizable: true,
-    enabled_buttons: EnabledButtons::default(),
+    enabled_buttons: EnabledButtons::EnabledButtons(),
     decorations: true,
     transparent: false,
     focused: true,
@@ -533,10 +533,10 @@ pub(all) struct WindowPlugin {
 const WINDOW_PLUGIN_NAME : String = "mgstudio.window.WindowPlugin"
 
 ///|
-pub fn WindowPlugin::default() -> WindowPlugin {
+pub fn WindowPlugin::WindowPlugin() -> WindowPlugin {
   WindowPlugin::{
-    primary_window: Some(Window::default()),
-    primary_cursor_options: Some(CursorOptions::default()),
+    primary_window: Some(Window::Window()),
+    primary_cursor_options: Some(CursorOptions::CursorOptions()),
     exit_condition: OnAllClosed,
     close_when_requested: true,
   }

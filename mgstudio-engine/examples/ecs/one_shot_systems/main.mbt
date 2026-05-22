@@ -95,7 +95,7 @@ fn main {
     |> @app.chain()
 
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@mgstudio.DefaultPlugins::default())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_systems(@app.Startup, @app.system(@app.system_param2(setup_ui)))
     .add_systems(
       @app.Startup,
@@ -113,7 +113,7 @@ fn setup_ui(
 ) -> Unit {
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   ignore(
     commands.spawn(
@@ -122,12 +122,12 @@ fn setup_ui(
           "Press A or B to trigger a one-shot system.\nThe label below updates when a registered callback runs.",
         ),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           left: @ui.Val::Px(16.0F),
           top: @ui.Val::Px(16.0F),
         },
-        @text.TextFont::default().with_font(font).with_font_size(18.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
@@ -139,12 +139,12 @@ fn setup_ui(
       (
         @text.Text::new("Last Triggered: -"),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           left: @ui.Val::Px(16.0F),
           top: @ui.Val::Px(96.0F),
         },
-        @text.TextFont::default().with_font(font).with_font_size(22.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(22.0F),
         @text.TextColor::new(@sprite.Color::srgb(1.0F, 0.55F, 0.2F)),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
         LastTriggeredLabel::{  },

@@ -18,7 +18,7 @@ pub struct PickingEvents {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PickingEvents::default() -> PickingEvents {
+pub fn PickingEvents::PickingEvents() -> PickingEvents {
   PickingEvents::{ events: [] }
 }
 
@@ -221,7 +221,7 @@ priv struct PointerObserverRegistry {
 }
 
 ///|
-fn PointerObserverRegistry::default() -> PointerObserverRegistry {
+fn PointerObserverRegistry::PointerObserverRegistry() -> PointerObserverRegistry {
   { entries: [] }
 }
 
@@ -248,7 +248,7 @@ fn register_pointer_observer_entry_in_world(
   let registry_res = get_pointer_observer_registry_resource(world)
   let registry = match registry_res.get() {
     Some(value) => Ref(value)
-    None => Ref(PointerObserverRegistry::default())
+    None => Ref(PointerObserverRegistry::PointerObserverRegistry())
   }
   registry.val.entries.push({
     kind,

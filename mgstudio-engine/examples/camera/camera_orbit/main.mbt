@@ -33,7 +33,7 @@ impl @app.Resource for CameraSettings with resource() {
 }
 
 ///|
-fn CameraSettings::default() -> CameraSettings {
+fn CameraSettings::CameraSettings() -> CameraSettings {
   let pitch_limit = @math.pi() / 2.0F - 0.01F
   {
     orbit_distance: 20.0F,
@@ -55,7 +55,7 @@ fn setup(
     commands.spawn(
       (
         @ecs.Name::new("Camera"),
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -114,7 +114,7 @@ fn setup(
     commands.spawn(
       (
         @ecs.Name::new("Light"),
-        @pbr.PointLight::default(),
+        @pbr.PointLight::PointLight(),
         @transform.Transform::from_xyz(3.0F, 8.0F, 5.0F),
       ),
     ),
@@ -129,8 +129,8 @@ fn instructions(
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
     ),
@@ -140,14 +140,14 @@ fn instructions(
       (
         @ecs.Name::new("Instructions"),
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
         @text.Text::new(
           "Mouse up or down: pitch\nMouse left or right: yaw\nMouse buttons: roll",
         ),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
@@ -226,8 +226,8 @@ fn main {
     @app.system_param2(instructions),
   )
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .init_resource(CameraSettings::default)
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .init_resource(fn() { CameraSettings::CameraSettings() })
   .add_systems(
     @app.Startup,
     (setup_system, instructions_system) |> @app.chain(),

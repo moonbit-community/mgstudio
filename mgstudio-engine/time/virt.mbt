@@ -30,7 +30,7 @@ pub struct Virtual {
 }
 
 ///|
-pub impl Default for Virtual with default() {
+pub fn Virtual::Virtual() -> Virtual {
   {
     max_delta: default_virtual_max_delta,
     paused: false,
@@ -40,13 +40,18 @@ pub impl Default for Virtual with default() {
 }
 
 ///|
+pub impl Default for Virtual with default() {
+  Virtual::Virtual()
+}
+
+///|
 pub impl TimeContext for Virtual with time_context_debug_name() {
   "mgstudio_time::Virtual"
 }
 
 ///|
 pub fn Time::from_max_delta(max_delta : @core.Duration) -> Time[Virtual] {
-  let virtual_time : Time[Virtual] = Time::default()
+  let virtual_time : Time[Virtual] = Time::Time()
   virtual_time.set_max_delta(max_delta)
 }
 
@@ -191,7 +196,7 @@ pub fn update_virtual_time(
 ///|
 fn world_virtual_or_default(world : @ecs.World) -> Time[Virtual] {
   world_time_resource_or_default(world, virtual_time_resource_key, fn() {
-    Time::default()
+    Time::Time()
   })
 }
 

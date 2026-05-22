@@ -230,7 +230,7 @@ test "mesh: vertex buffer layout mirrors Bevy attribute id order" {
       VertexAttributeValues::Float32x3([@math.Vec3::new(0.0F, 0.0F, 1.0F)]),
     ),
   )
-  let layouts = MeshVertexBufferLayouts::default()
+  let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let layout_ref = Mesh::from_3d_geometry(geometry).get_mesh_vertex_buffer_layout(
     layouts,
   )
@@ -345,7 +345,7 @@ test "mesh: specialized vertex buffer layout reports missing attributes" {
 
 ///|
 test "mesh: vertex buffer layout store deduplicates structural layouts" {
-  let layouts = MeshVertexBufferLayouts::default()
+  let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let layout = MeshVertexBufferLayout::new(
     attribute_ids=[MeshVertexAttribute::position().id()],
     layout=VertexBufferLayout::new(

@@ -20,7 +20,7 @@ test "material boundary matches bevy opaque renderer defaults" {
     content="true",
   )
   inspect(
-    @material.DefaultOpaqueRendererMethod::default().renderer_method()
+    @material.DefaultOpaqueRendererMethod::DefaultOpaqueRendererMethod().renderer_method()
     is @material.OpaqueRendererMethod::Forward,
     content="true",
   )
@@ -28,7 +28,7 @@ test "material boundary matches bevy opaque renderer defaults" {
 
 ///|
 test "material boundary re-exports standard material APIs" {
-  let material = @material.StandardMaterial::default()
+  let material = @material.StandardMaterial::StandardMaterial()
     .with_metallic(0.25)
     .with_perceptual_roughness(0.75)
     .with_unlit(true)
@@ -44,7 +44,7 @@ test "material boundary re-exports standard material APIs" {
 
 ///|
 test "standard material defaults align with bevy clearcoat and alpha threshold" {
-  let default_material = @material.StandardMaterial::default()
+  let default_material = @material.StandardMaterial::StandardMaterial()
   debug_inspect(
     default_material.clearcoat_perceptual_roughness.to_double(),
     content="0.5",
@@ -68,7 +68,9 @@ test "standard material defaults align with bevy clearcoat and alpha threshold" 
 ///|
 test "standard material flip helpers keep bevy uv left-multiply semantics" {
   let sample = @math.Vec2::new(0.25F, 0.6F)
-  let horizontal = @material.StandardMaterial::default().flip(true, false)
+  let horizontal = @material.StandardMaterial::StandardMaterial().flip(
+    true, false,
+  )
   let horizontal_uv = horizontal.uv_transform.transform_point2(sample)
   debug_inspect(
     material_test_nearly_equal(horizontal_uv.x, 0.75F),
@@ -78,14 +80,16 @@ test "standard material flip helpers keep bevy uv left-multiply semantics" {
     material_test_nearly_equal(horizontal_uv.y, 0.6F),
     content="true",
   )
-  let vertical = @material.StandardMaterial::default().flip(false, true)
+  let vertical = @material.StandardMaterial::StandardMaterial().flip(
+    false, true,
+  )
   let vertical_uv = vertical.uv_transform.transform_point2(sample)
   debug_inspect(
     material_test_nearly_equal(vertical_uv.x, 0.25F),
     content="true",
   )
   debug_inspect(material_test_nearly_equal(vertical_uv.y, 0.4F), content="true")
-  let hv = @material.StandardMaterial::default().flipped(true, true)
+  let hv = @material.StandardMaterial::StandardMaterial().flipped(true, true)
   let hv_uv = hv.uv_transform.transform_point2(sample)
   debug_inspect(material_test_nearly_equal(hv_uv.x, 0.75F), content="true")
   debug_inspect(material_test_nearly_equal(hv_uv.y, 0.4F), content="true")
@@ -168,11 +172,11 @@ test "material boundary descriptor helpers match bevy layout/target behavior" {
   let layout = @material.BindGroupLayoutDescriptor::new("material.layout", [
     entry,
   ])
-  let descriptor = @material.RenderPipelineDescriptor::default().set_layout(
+  let descriptor = @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor().set_layout(
     2, layout,
   )
   inspect(descriptor.layout.length(), content="3")
-  let fragment = @material.FragmentState::default().set_target(
+  let fragment = @render_resource.FragmentState::FragmentState().set_target(
     1,
     @material.ColorTargetState::new(
       @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
@@ -180,8 +184,8 @@ test "material boundary descriptor helpers match bevy layout/target behavior" {
     ),
   )
   inspect(fragment.targets.length(), content="2")
-  let default_descriptor : @material.RenderPipelineDescriptor = Default::default()
-  let default_fragment : @material.FragmentState = Default::default()
+  let default_descriptor = @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
+  let default_fragment = @render_resource.FragmentState::FragmentState()
   inspect(default_descriptor.zero_initialize_workgroup_memory, content="true")
   inspect(default_fragment.targets.length(), content="0")
 }
@@ -196,7 +200,7 @@ test "material boundary includes material layout and bindless property builders"
   let layout = @material.BindGroupLayoutDescriptor::new("material.layout", [
     layout_entry,
   ])
-  let properties = @material.MaterialProperties::default()
+  let properties = @material.MaterialProperties::MaterialProperties()
     .with_material_layout(Some(layout))
     .with_bindless(true)
   debug_inspect(
@@ -209,7 +213,7 @@ test "material boundary includes material layout and bindless property builders"
 
 ///|
 test "material boundary defaults mirror bevy derived MaterialProperties default" {
-  let properties = @material.MaterialProperties::default()
+  let properties = @material.MaterialProperties::MaterialProperties()
   inspect(properties.shadows_enabled, content="false")
   inspect(properties.prepass_enabled, content="false")
   inspect(
@@ -217,13 +221,17 @@ test "material boundary defaults mirror bevy derived MaterialProperties default"
     content="true",
   )
   inspect(properties.alpha_mode is @material.AlphaMode::Opaque, content="true")
-  inspect(Default::default() is @material.AlphaMode::Opaque, content="true")
   inspect(
-    Default::default() is @material.OpaqueRendererMethod::Forward,
+    @material.AlphaMode3d::default() is @material.AlphaMode::Opaque,
     content="true",
   )
   inspect(
-    Default::default() is @material.RenderPhaseType::Opaque,
+    @material.OpaqueRendererMethod::default()
+    is @material.OpaqueRendererMethod::Forward,
+    content="true",
+  )
+  inspect(
+    @material.RenderPhaseType::default() is @material.RenderPhaseType::Opaque,
     content="true",
   )
 }
@@ -238,7 +246,7 @@ test "material boundary exposes bevy-shaped erased key + properties helpers" {
   let pipeline_key = @material.ErasedMaterialPipelineKey::new(
     mesh_key, material_key, "PipelineKey",
   )
-  let properties = @material.MaterialProperties::default()
+  let properties = @material.MaterialProperties::MaterialProperties()
     .add_shader("main.fragment", "shaders/pbr.wgsl")
     .add_draw_function("main.opaque", @material.DrawFunctionId::new(3U))
   inspect(mesh_key.downcast_u64("MeshKey"), content="7")
@@ -356,7 +364,7 @@ fn material_test_user_specialize(
 fn material_test_mesh_vertex_layout(
   include_unused_attribute? : Bool = false,
 ) -> @material.MaterialMeshVertexLayout {
-  let layouts = @mesh.MeshVertexBufferLayouts::default()
+  let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let attribute_ids = [@mesh.MeshVertexAttribute::position().id()]
   let attributes = [
     @mesh.VertexAttribute::new(
@@ -395,7 +403,7 @@ test "material boundary carries bevy specialize callbacks in material properties
     mesh_key, material_key, "PipelineKey",
   )
   let world = @ecs.World::new()
-  let properties = @material.MaterialProperties::default()
+  let properties = @material.MaterialProperties::MaterialProperties()
     .with_base_specialize(Some(material_test_base_specialize))
     .with_prepass_specialize(Some(material_test_prepass_specialize))
     .with_user_specialize(Some(material_test_user_specialize))
@@ -419,7 +427,7 @@ test "material boundary carries bevy specialize callbacks in material properties
       (try! @material.material_specialize_user(
         user_specialize,
         "user.specialize",
-        @material.RenderPipelineDescriptor::default(),
+        @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor(),
         layout,
         pipeline_key,
       )).layout[0].label
@@ -451,7 +459,7 @@ fn material_test_specialized_mesh_pipeline(
         error,
       )
   }
-  @material.RenderPipelineDescriptor::default().with_vertex(
+  @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor().with_vertex(
     @material.VertexState::new(None, [], None, [vertex_layout]),
   )
 }

@@ -104,7 +104,7 @@ fn spawn_text_block(
   node : @ui.Node,
   background_color : @sprite.Color,
   text_color? : @sprite.Color = @sprite.Color::white(),
-  layout? : @text.TextLayout = @text.TextLayout::default(),
+  layout? : @text.TextLayout = @text.TextLayout::TextLayout(),
 ) -> @core.Entity {
   commands.spawn(
     (
@@ -153,13 +153,13 @@ fn setup(
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_justify_content(@ui.JustifyContent::SpaceBetween),
@@ -169,7 +169,7 @@ fn setup(
   let left_column = spawn_node(
     commands,
     root,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_justify_content(@ui.JustifyContent::SpaceBetween)
     .with_align_items(@ui.AlignItems::Start)
@@ -188,10 +188,10 @@ fn setup(
       commands,
       left_column,
       "This is\ntext with\nline breaks\nin the top left.",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(25.0F)),
-      @ui.Node::default(),
+      @ui.Node::Node(),
       maroon(),
     ),
   )
@@ -200,10 +200,10 @@ fn setup(
       commands,
       left_column,
       "This text is right-justified. The `Justify` component controls the horizontal alignment of the lines of multi-line text relative to each other, and does not affect the text node's position in the UI layout.",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(25.0F)),
-      { ..@ui.Node::default(), max_width: @ui.Val::Px(300.0F) },
+      { ..@ui.Node(), max_width: @ui.Val::Px(300.0F) },
       maroon(),
       text_color=yellow(),
       layout=@text.TextLayout::new_with_justify(@text.Justify::Right),
@@ -214,10 +214,10 @@ fn setup(
       commands,
       left_column,
       "This\ntext has\nline breaks and also a set width in the bottom left.",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(25.0F)),
-      { ..@ui.Node::default(), max_width: @ui.Val::Px(300.0F) },
+      { ..@ui.Node(), max_width: @ui.Val::Px(300.0F) },
       maroon(),
     ),
   )
@@ -225,7 +225,7 @@ fn setup(
   let right_column = spawn_node(
     commands,
     root,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_justify_content(@ui.JustifyContent::SpaceBetween)
     .with_align_items(@ui.AlignItems::End)
@@ -244,10 +244,10 @@ fn setup(
       commands,
       right_column,
       "This text is very long, has a limited width, is center-justified, is positioned in the top right and is also colored pink.",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(33.0F)),
-      { ..@ui.Node::default(), max_width: @ui.Val::Px(400.0F) },
+      { ..@ui.Node(), max_width: @ui.Val::Px(400.0F) },
       maroon(),
       text_color=pink(),
       layout=@text.TextLayout::new_with_justify(@text.Justify::Center),
@@ -258,10 +258,10 @@ fn setup(
       commands,
       right_column,
       "This text is left-justified and is vertically positioned to distribute the empty space equally above and below it.",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(29.0F)),
-      { ..@ui.Node::default(), max_width: @ui.Val::Px(300.0F) },
+      { ..@ui.Node(), max_width: @ui.Val::Px(300.0F) },
       maroon(),
       text_color=yellow(),
       layout=@text.TextLayout::new_with_justify(@text.Justify::Left),
@@ -272,10 +272,10 @@ fn setup(
       commands,
       right_column,
       "This text is fully justified and is positioned in the same way.",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(29.0F)),
-      { ..@ui.Node::default(), max_width: @ui.Val::Px(300.0F) },
+      { ..@ui.Node(), max_width: @ui.Val::Px(300.0F) },
       maroon(),
       text_color=green_yellow(),
       layout=@text.TextLayout::new_with_justify(@text.Justify::Justified),
@@ -286,7 +286,7 @@ fn setup(
     (
       @hierarchy.Parent::new(right_column),
       @text.Text::new("This text changes in the bottom right - "),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(21.0F)),
       background(maroon()),
@@ -296,7 +296,7 @@ fn setup(
     commands,
     changing_text,
     "--",
-    @text.TextFont::default()
+    @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(@text.FontSize::Px(21.0F)),
     orange_red(),
@@ -307,7 +307,7 @@ fn setup(
       commands,
       changing_text,
       " s, ",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(10.0F)),
       yellow(),
@@ -317,7 +317,7 @@ fn setup(
     commands,
     changing_text,
     "--",
-    @text.TextFont::default()
+    @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(@text.FontSize::Px(21.0F)),
     lime(),
@@ -328,7 +328,7 @@ fn setup(
       commands,
       changing_text,
       " fps, ",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(10.0F)),
       yellow(),
@@ -338,7 +338,7 @@ fn setup(
     commands,
     changing_text,
     "--",
-    @text.TextFont::default()
+    @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(@text.FontSize::Px(42.0F)),
     @sprite.Color::srgb(0.2F, 0.5F, 1.0F),
@@ -351,7 +351,7 @@ fn setup(
       commands,
       changing_text,
       " ms/frame",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(42.0F)),
       @sprite.Color::srgb(0.2F, 0.5F, 1.0F),
@@ -362,7 +362,7 @@ fn setup(
       commands,
       changing_text,
       " this text has zero font size",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(0.0F)),
       @sprite.Color::srgb(0.2F, 0.5F, 1.0F),
@@ -402,8 +402,10 @@ fn change_text_system(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(
+    @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param5(change_text_system)))
   .run()

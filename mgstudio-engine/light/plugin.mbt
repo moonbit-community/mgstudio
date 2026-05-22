@@ -22,7 +22,7 @@ const LIGHT_PLUGIN_NAME : String = "mgstudio.light.LightPlugin"
 pub struct LightPlugin {}
 
 ///|
-pub fn LightPlugin::default() -> LightPlugin {
+pub fn LightPlugin::LightPlugin() -> LightPlugin {
   LightPlugin::{  }
 }
 
@@ -50,7 +50,7 @@ fn register_light_required_components(
   world.register_required_components_with(
     ecs_key_irradiance_volume,
     ecs_key_light_probe,
-    fn() { LightProbe::default() },
+    fn() { LightProbe::LightProbe() },
   )
 }
 
@@ -67,23 +67,25 @@ pub impl @app.Plugin for LightPlugin with build(_self, app) {
 ///|
 pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_light_required_components(app.world())
-  let mut next = @asset.init_asset(app, fn() { ScatteringMedium::default() })
+  let mut next = @asset.init_asset(app, fn() {
+    ScatteringMedium::ScatteringMedium()
+  })
   if !next.contains_resource(ecs_key_global_ambient_light) {
     next = next.insert_world_resource(
       ecs_key_global_ambient_light,
-      GlobalAmbientLight::default(),
+      GlobalAmbientLight::GlobalAmbientLight(),
     )
   }
   if !next.contains_resource(ecs_key_point_light_shadow_map) {
     next = next.insert_world_resource(
       ecs_key_point_light_shadow_map,
-      PointLightShadowMap::default(),
+      PointLightShadowMap::PointLightShadowMap(),
     )
   }
   if !next.contains_resource(ecs_key_directional_light_shadow_map) {
     next = next.insert_world_resource(
       ecs_key_directional_light_shadow_map,
-      DirectionalLightShadowMap::default(),
+      DirectionalLightShadowMap::DirectionalLightShadowMap(),
     )
   }
   next

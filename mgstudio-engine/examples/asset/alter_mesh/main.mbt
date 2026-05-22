@@ -115,7 +115,7 @@ fn setup(
     commands.spawn(
       (
         @ecs.Name::new("Point Light"),
-        @pbr.PointLight::default(),
+        @pbr.PointLight::PointLight(),
         @transform.Transform::from_xyz(4.0F, 5.0F, 4.0F),
       ),
     ),
@@ -125,7 +125,7 @@ fn setup(
     commands.spawn(
       (
         @ecs.Name::new("Camera"),
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(0.0F, 3.0F, 20.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -145,7 +145,7 @@ fn spawn_text(commands : @app.Commands) -> Unit {
           "Space: swap meshes by mutating a Handle<Mesh>\nEnter: mutate the mesh asset itself",
         ),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           top: @ui.Val::Px(12.0F),
           left: @ui.Val::Px(12.0F),
@@ -205,7 +205,7 @@ fn alter_mesh(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Startup, @app.system(@app.system_param(spawn_text)))
   .add_systems(

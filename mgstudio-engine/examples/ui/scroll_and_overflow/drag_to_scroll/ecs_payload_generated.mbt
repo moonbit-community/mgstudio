@@ -17,9 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_ui_scroll_and_overflow_drag_to_scroll_ScrollableNode(
     ScrollableNode
   )
-  EcsPayload_examples_ui_scroll_and_overflow_drag_to_scroll_ScrollDragState(
-    ScrollDragState
-  )
 }
 
 ///|
@@ -31,23 +28,6 @@ impl @ecs.EcsPayloadCodec for ScrollableNode with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for ScrollableNode with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ui_scroll_and_overflow_drag_to_scroll_ScrollableNode(
-      value
-    ) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ScrollDragState with to_ecs_payload(self) {
-  EcsPayload_examples_ui_scroll_and_overflow_drag_to_scroll_ScrollDragState(
-    self,
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ScrollDragState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_scroll_and_overflow_drag_to_scroll_ScrollDragState(
       value
     ) => Some(value)
     _ => None

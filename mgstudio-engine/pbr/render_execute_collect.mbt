@@ -80,7 +80,7 @@ fn render3d_execute_collect_cameras(
     ) = data
     let camera = match camera_opt.value() {
       Some(v) => v
-      None => @sprite.Camera::default()
+      None => @sprite.Camera::Camera()
     }
     if !camera.is_active {
       return
@@ -183,7 +183,7 @@ fn render3d_execute_collect_cameras(
     }
     let layers = match layers_opt.value() {
       Some(v) => v
-      None => @sprite.RenderLayers::default()
+      None => @sprite.RenderLayers::RenderLayers()
     }
     let has_no_cpu_culling = (try! source_world.get_by_key(
         entity, @visibility.ecs_key_no_cpu_culling,

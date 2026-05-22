@@ -32,7 +32,7 @@ pub fn RenderDiagnosticsPlugin::new(
 }
 
 ///|
-pub fn RenderDiagnosticsPlugin::default() -> RenderDiagnosticsPlugin {
+pub fn RenderDiagnosticsPlugin::RenderDiagnosticsPlugin() -> RenderDiagnosticsPlugin {
   RenderDiagnosticsPlugin::new(DEFAULT_MAX_HISTORY_LENGTH)
 }
 
@@ -186,7 +186,10 @@ priv struct RenderDiagnosticsMeasurements {
 pub fn render_diagnostics_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  render_diagnostics_plugin_with(app, RenderDiagnosticsPlugin::default())
+  render_diagnostics_plugin_with(
+    app,
+    RenderDiagnosticsPlugin::RenderDiagnosticsPlugin(),
+  )
 }
 
 ///|

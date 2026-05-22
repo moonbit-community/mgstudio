@@ -184,7 +184,7 @@ pub fn ViewVisibility::set_visible(self : ViewVisibility) -> Unit {
 pub struct NoFrustumCulling {} derive(Eq, Debug)
 
 ///|
-pub fn NoFrustumCulling::default() -> NoFrustumCulling {
+pub fn NoFrustumCulling::NoFrustumCulling() -> NoFrustumCulling {
   NoFrustumCulling::{  }
 }
 
@@ -194,7 +194,7 @@ pub fn NoFrustumCulling::default() -> NoFrustumCulling {
 pub struct NoAutoAabb {} derive(Eq, Debug)
 
 ///|
-pub fn NoAutoAabb::default() -> NoAutoAabb {
+pub fn NoAutoAabb::NoAutoAabb() -> NoAutoAabb {
   NoAutoAabb::{  }
 }
 
@@ -205,7 +205,7 @@ pub fn NoAutoAabb::default() -> NoAutoAabb {
 pub struct NoCpuCulling {} derive(Eq, Debug)
 
 ///|
-pub fn NoCpuCulling::default() -> NoCpuCulling {
+pub fn NoCpuCulling::NoCpuCulling() -> NoCpuCulling {
   NoCpuCulling::{  }
 }
 

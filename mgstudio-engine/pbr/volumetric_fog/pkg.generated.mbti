@@ -49,56 +49,56 @@ pub struct FogAssets {
   plane_mesh : @asset.Handle[@mesh.Mesh]?
   cube_mesh : @asset.Handle[@mesh.Mesh]?
 }
-pub fn FogAssets::default() -> Self
+pub fn FogAssets::FogAssets() -> Self
 
 pub struct ViewFogVolume {
   density_texture : @asset.Handle[@image.Image]?
   uniform_buffer_offset : Int
   exterior : Bool
 }
-pub fn ViewFogVolume::default() -> Self
+pub fn ViewFogVolume::ViewFogVolume() -> Self
 pub fn ViewFogVolume::has_density_texture(Self) -> Bool
 
 pub struct ViewVolumetricFog {
   volumes : Array[ViewFogVolume]
 }
+pub fn ViewVolumetricFog::ViewVolumetricFog() -> Self
 pub fn ViewVolumetricFog::count(Self) -> Int
-pub fn ViewVolumetricFog::default() -> Self
 pub fn ViewVolumetricFog::push(Self, ViewFogVolume) -> Unit
 
 pub struct ViewVolumetricFogPipelines {
   textureless : Int
   textured : Int
 }
-pub fn ViewVolumetricFogPipelines::default() -> Self
+pub fn ViewVolumetricFogPipelines::ViewVolumetricFogPipelines() -> Self
 
 pub struct VolumetricFogBindGroupLayoutKey {
   multisampled : Bool
   density_texture : Bool
 }
-pub fn VolumetricFogBindGroupLayoutKey::default() -> Self
+pub fn VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey() -> Self
 
 pub struct VolumetricFogPipeline {
   shader_label : String
   bind_group_layout_count : Int
 }
-pub fn VolumetricFogPipeline::default() -> Self
+pub fn VolumetricFogPipeline::VolumetricFogPipeline() -> Self
 
 pub struct VolumetricFogPipelineKey {
   msaa_samples : Int
   flags : VolumetricFogPipelineKeyFlags
 }
-pub fn VolumetricFogPipelineKey::default() -> Self
+pub fn VolumetricFogPipelineKey::VolumetricFogPipelineKey() -> Self
 
 pub struct VolumetricFogPipelineKeyFlags {
   hdr : Bool
   density_texture : Bool
 }
-pub fn VolumetricFogPipelineKeyFlags::default() -> Self
+pub fn VolumetricFogPipelineKeyFlags::VolumetricFogPipelineKeyFlags() -> Self
 
 pub struct VolumetricFogPlugin {
 }
-pub fn VolumetricFogPlugin::default() -> Self
+pub fn VolumetricFogPlugin::VolumetricFogPlugin() -> Self
 pub impl @app.Plugin for VolumetricFogPlugin
 
 pub struct VolumetricFogPluginState {
@@ -106,7 +106,7 @@ pub struct VolumetricFogPluginState {
   extracted_view_count : Int
   extracted_volume_count : Int
 }
-pub fn VolumetricFogPluginState::default() -> Self
+pub fn VolumetricFogPluginState::VolumetricFogPluginState() -> Self
 pub impl @app.Resource for VolumetricFogPluginState
 pub impl @ecs.EcsPayloadCodec for VolumetricFogPluginState
 
@@ -128,7 +128,7 @@ pub struct VolumetricFogUniform {
   light_intensity : Float
   jitter_strength : Float
 }
-pub fn VolumetricFogUniform::default() -> Self
+pub fn VolumetricFogUniform::VolumetricFogUniform() -> Self
 pub fn VolumetricFogUniform::with_density(Self, Float) -> Self
 pub fn VolumetricFogUniform::with_jitter_strength(Self, Float) -> Self
 pub fn VolumetricFogUniform::with_step_count(Self, Int) -> Self
@@ -136,9 +136,9 @@ pub fn VolumetricFogUniform::with_step_count(Self, Int) -> Self
 pub struct VolumetricFogUniformBuffer {
   mut uniforms : Array[VolumetricFogUniform]
 }
+pub fn VolumetricFogUniformBuffer::VolumetricFogUniformBuffer() -> Self
 pub fn VolumetricFogUniformBuffer::clear(Self) -> Unit
 pub fn VolumetricFogUniformBuffer::count(Self) -> Int
-pub fn VolumetricFogUniformBuffer::default() -> Self
 pub fn VolumetricFogUniformBuffer::push(Self, VolumetricFogUniform) -> Int
 
 // Type aliases

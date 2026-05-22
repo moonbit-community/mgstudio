@@ -161,7 +161,7 @@ fn compute_optional_state(
 ///|
 test "app computed state: follows source transitions" {
   let app = App::new(@ecs.World::new())
-    .add_plugins(StatesPlugin::default())
+    .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_computed_state(
       TestState::A,
@@ -201,7 +201,7 @@ test "app computed state: follows source transitions" {
 ///|
 test "app computed state: supports two source states" {
   let app = App::new(@ecs.World::new())
-    .add_plugins(StatesPlugin::default())
+    .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .insert_state(PairState::Disabled)
     .add_computed_state2(
@@ -238,7 +238,7 @@ test "app computed state: supports two source states" {
 ///|
 test "app computed state: supports optional source states" {
   let app = App::new(@ecs.World::new())
-    .add_plugins(StatesPlugin::default())
+    .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .insert_state(PairState::Enabled)
     .insert_state(OptionalParentState::Disabled)

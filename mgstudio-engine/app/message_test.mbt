@@ -48,8 +48,13 @@ impl @ecs.Message for TestDefaultAppMessage with message() {
 }
 
 ///|
-pub impl Default for TestDefaultAppMessage with default() {
+pub fn TestDefaultAppMessage::TestDefaultAppMessage() -> TestDefaultAppMessage {
   { value: 5 }
+}
+
+///|
+pub impl Default for TestDefaultAppMessage with default() {
+  TestDefaultAppMessage::TestDefaultAppMessage()
 }
 
 ///|

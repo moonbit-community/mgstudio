@@ -22,7 +22,7 @@ pub struct FixedSchedulePropagationConfig {
 }
 
 ///|
-pub fn FixedSchedulePropagationConfig::default() -> FixedSchedulePropagationConfig {
+pub fn FixedSchedulePropagationConfig::FixedSchedulePropagationConfig() -> FixedSchedulePropagationConfig {
   FixedSchedulePropagationConfig::{
     run_fixed_update: true,
     run_fixed_main: true,
@@ -56,6 +56,6 @@ pub fn run_fixed_schedules_with_config(
 pub fn run_all_fixed_schedules(world : @ecs.World) -> Unit {
   run_fixed_schedules_with_config(
     world,
-    FixedSchedulePropagationConfig::default(),
+    FixedSchedulePropagationConfig::FixedSchedulePropagationConfig(),
   )
 }

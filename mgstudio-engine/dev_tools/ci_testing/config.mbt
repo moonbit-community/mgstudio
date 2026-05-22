@@ -21,7 +21,7 @@ pub struct CiTestingSetup {
 }
 
 ///|
-pub fn CiTestingSetup::default() -> CiTestingSetup {
+pub fn CiTestingSetup::CiTestingSetup() -> CiTestingSetup {
   CiTestingSetup::{ fixed_frame_time: None }
 }
 
@@ -65,8 +65,8 @@ pub struct CiTestingConfig {
 }
 
 ///|
-pub fn CiTestingConfig::default() -> CiTestingConfig {
-  CiTestingConfig::{ setup: CiTestingSetup::default(), events: [] }
+pub fn CiTestingConfig::CiTestingConfig() -> CiTestingConfig {
+  CiTestingConfig::{ setup: CiTestingSetup::CiTestingSetup(), events: [] }
 }
 
 ///|

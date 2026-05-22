@@ -37,7 +37,7 @@ pub fn TracyGpuContext::new(
 }
 
 ///|
-pub fn TracyGpuContext::default() -> TracyGpuContext {
+pub fn TracyGpuContext::TracyGpuContext() -> TracyGpuContext {
   TracyGpuContext::new(tracy_gpu_context_backend(), tracy_gpu_context_enabled())
 }
 

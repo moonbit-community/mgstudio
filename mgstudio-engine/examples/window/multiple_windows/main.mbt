@@ -37,7 +37,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::default(),
+    @pbr.DirectionalLight::DirectionalLight(),
   )
   try! world.set_by_key(
     light,
@@ -50,7 +50,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   // Camera for primary window
   let first_window_camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -59,7 +59,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   // Spawn second window
   let second_window = world.spawn_empty()
-  let second_window_component = @window.Window::default()
+  let second_window_component = @window.Window::Window()
   second_window_component.title = "Second window"
   try! world.set_by_key(
     second_window, @window.ecs_key_window, second_window_component,
@@ -67,7 +67,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   // Camera for secondary window
   let second_window_camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(6.0F, 0.0F, 0.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -91,11 +91,11 @@ fn spawn_label(
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
@@ -116,7 +116,7 @@ fn spawn_label(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(24.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
   )
   try! world.set_by_key(
     text_entity,
@@ -126,14 +126,14 @@ fn spawn_label(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_shadow,
-    @text.TextShadow::default(),
+    @text.TextShadow::TextShadow(),
   )
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup_scene))
   .run()
 }

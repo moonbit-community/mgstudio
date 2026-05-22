@@ -18,7 +18,7 @@ let debug_toggle_state : Ref[Bool] = Ref(true)
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(rapier2d_debug_toggle2_setup))
   .add_systems(@app.Update, @app.system(rapier2d_debug_toggle2_update))
   .run()
@@ -34,7 +34,7 @@ fn rapier2d_debug_toggle2_setup(world : @ecs.World) -> Unit {
     @sprite.ClearColor::new(@sprite.Color::new(0.62F, 0.76F, 0.55F, 1.0F)),
   )
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore

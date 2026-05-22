@@ -14,7 +14,7 @@
 
 ///|
 test "render3d: non-bindless allocator reuses freed indices" {
-  let allocator = MaterialBindGroupNonBindlessAllocator::default()
+  let allocator = MaterialBindGroupNonBindlessAllocator::MaterialBindGroupNonBindlessAllocator()
   let first = allocator.allocate(11)
   let second = allocator.allocate(22)
   debug_inspect(first.group().to_int(), content="0")
@@ -51,7 +51,7 @@ test "render3d: bindless allocator respects slab capacity" {
 
 ///|
 test "render3d: allocator registry stores by key" {
-  let allocators = MaterialBindGroupAllocators::default()
+  let allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
   allocators.insert(
     "StandardMaterial",
     MaterialBindGroupAllocator::default_bindless(),
@@ -72,7 +72,7 @@ test "render3d: allocator exposes slab and allocation counters" {
   debug_inspect(bindless_alloc.slabs_size(), content="4")
   debug_inspect(bindless_alloc.allocations(), content="2")
 
-  let non_bindless = MaterialBindGroupNonBindlessAllocator::default()
+  let non_bindless = MaterialBindGroupNonBindlessAllocator::MaterialBindGroupNonBindlessAllocator()
   ignore(non_bindless.allocate(7))
   ignore(non_bindless.allocate(8))
   let non_bindless_alloc = MaterialBindGroupAllocator::NonBindless(non_bindless)
@@ -107,7 +107,7 @@ test "render3d: standard material allocator install plan carries layout descript
 
 ///|
 test "render3d: standard material allocator install chooses bindless mode from bevy rule" {
-  let bindless_allocators = MaterialBindGroupAllocators::default()
+  let bindless_allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
   let bindless_plan = bindless_allocators.install_standard_material(
     true,
     Some(8),
@@ -120,7 +120,7 @@ test "render3d: standard material allocator install chooses bindless mode from b
     _ => debug_inspect(false, content="true")
   }
 
-  let non_bindless_allocators = MaterialBindGroupAllocators::default()
+  let non_bindless_allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
   let non_bindless_plan = non_bindless_allocators.install_standard_material(
     true,
     Some(1),

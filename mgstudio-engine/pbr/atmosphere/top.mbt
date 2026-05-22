@@ -26,7 +26,7 @@ pub struct AtmospherePlugin {
 }
 
 ///|
-pub fn AtmospherePlugin::default() -> AtmospherePlugin {
+pub fn AtmospherePlugin::AtmospherePlugin() -> AtmospherePlugin {
   AtmospherePlugin::{
     enabled: true,
     supports_compute: true,
@@ -53,9 +53,9 @@ pub struct AtmospherePluginState {
 }
 
 ///|
-pub fn AtmospherePluginState::default() -> AtmospherePluginState {
+pub fn AtmospherePluginState::AtmospherePluginState() -> AtmospherePluginState {
   AtmospherePluginState::{
-    plugin: AtmospherePlugin::default(),
+    plugin: AtmospherePlugin::AtmospherePlugin(),
     extracted_camera_count: 0,
     lut_ready: false,
   }
@@ -96,14 +96,14 @@ pub fn atmosphere_plugin_state_with_lut_ready(
 
 ///|
 pub fn atmosphere_plugin() -> AtmospherePlugin {
-  AtmospherePlugin::default()
+  AtmospherePlugin::AtmospherePlugin()
 }
 
 ///|
 pub fn atmosphere_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  atmosphere_plugin_install_with(app, AtmospherePlugin::default())
+  atmosphere_plugin_install_with(app, AtmospherePlugin::AtmospherePlugin())
 }
 
 ///|
@@ -115,7 +115,7 @@ pub fn atmosphere_plugin_install_with(
     app
   } else {
     app.insert_world_resource(ecs_key_atmosphere_plugin_state, AtmospherePluginState::{
-      ..AtmospherePluginState::default(),
+      ..AtmospherePluginState(),
       plugin,
     })
   }

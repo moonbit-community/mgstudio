@@ -24,7 +24,7 @@ const STAR_INNER_RADIUS : Float = 100.0F
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .run()
 }
@@ -40,7 +40,7 @@ fn setup(
     .peek()
     .add(@sprite.ColorMaterialAsset::from_color(@sprite.Color::white()))
 
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   ignore(
     commands.spawn(
       (@sprite.Mesh2d::new(star), @sprite.MeshMaterial2d::new(material)),

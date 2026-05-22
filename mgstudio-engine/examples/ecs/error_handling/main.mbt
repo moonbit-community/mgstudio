@@ -46,7 +46,7 @@ fn main {
 
   let mut app = @app.App::new(@ecs.World::new())
     .set_error_handler(@app.ErrorHandlers::warn)
-    .add_plugins(@mgstudio.DefaultPlugins::default())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
     .add_systems(@app.Startup, @app.system(@app.system_param(failing_commands)))
     .add_systems(
@@ -67,7 +67,7 @@ fn setup(
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let ship = asset_server.get().load("textures/simplespace/ship_C.png")
 
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   ignore(
     commands.spawn(
@@ -90,12 +90,12 @@ fn setup(
           "Raise-based error handling\n\nMove the cursor over the ship.\nWarnings come from the global handler.\nPostStartup uses a per-system handler.",
         ),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           left: @ui.Val::Px(12.0F),
           top: @ui.Val::Px(12.0F),
         },
-        @text.TextFont::default().with_font(font).with_font_size(18.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
@@ -149,7 +149,7 @@ fn capture_failing_system_error(
 fn failing_commands(commands : @app.Commands) -> Unit {
   commands
   .entity(@core.Entity::new(12345678, 1))
-  .insert_component(@transform.Transform::default())
+  .insert_component(@transform.Transform::Transform())
 
   commands.queue_handled(
     fn(_world : @ecs.World) raise { raise MissingUninitializedResource },

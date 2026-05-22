@@ -58,7 +58,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default().with_shadow_maps_enabled(true),
+        @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
         @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
       ),
     ),
@@ -67,7 +67,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -79,8 +79,8 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
-        @sprite.Camera::default()
+        @camera.Camera3d::Camera3d(),
+        @sprite.Camera::Camera()
         .with_order(1)
         .with_clear_color_config(@sprite.ClearColorConfig::None),
         @transform.Transform::from_xyz(10.0F, 10.0F, -5.0F).looking_at(
@@ -95,7 +95,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .run()
 }

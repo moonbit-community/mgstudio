@@ -86,7 +86,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default()
+        @pbr.PointLight::PointLight()
         .with_intensity(800000.0F)
         .with_range(120.0F)
         .with_shadow_maps_enabled(true),
@@ -108,7 +108,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(20.0F, 18.0F, 20.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -157,8 +157,8 @@ fn move_camera(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(rotate_cubes)))
   .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))

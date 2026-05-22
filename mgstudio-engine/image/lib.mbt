@@ -167,7 +167,7 @@ pub(all) struct ImageSamplerDescriptor {
 }
 
 ///|
-pub fn ImageSamplerDescriptor::default() -> ImageSamplerDescriptor {
+pub fn ImageSamplerDescriptor::ImageSamplerDescriptor() -> ImageSamplerDescriptor {
   ImageSamplerDescriptor::{
     label: None,
     address_mode_u: ImageAddressMode::default(),
@@ -186,7 +186,7 @@ pub fn ImageSamplerDescriptor::default() -> ImageSamplerDescriptor {
 
 ///|
 pub fn ImageSamplerDescriptor::linear() -> ImageSamplerDescriptor {
-  let descriptor = ImageSamplerDescriptor::default()
+  let descriptor = ImageSamplerDescriptor::ImageSamplerDescriptor()
   descriptor.mag_filter = ImageFilterMode::Linear
   descriptor.min_filter = ImageFilterMode::Linear
   descriptor.mipmap_filter = ImageFilterMode::Linear
@@ -195,7 +195,7 @@ pub fn ImageSamplerDescriptor::linear() -> ImageSamplerDescriptor {
 
 ///|
 pub fn ImageSamplerDescriptor::nearest() -> ImageSamplerDescriptor {
-  ImageSamplerDescriptor::default()
+  ImageSamplerDescriptor::ImageSamplerDescriptor()
 }
 
 ///|

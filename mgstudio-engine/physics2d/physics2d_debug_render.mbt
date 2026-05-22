@@ -30,7 +30,7 @@ pub struct Physics2dDebugRenderConfig {
 }
 
 ///|
-pub fn Physics2dDebugRenderConfig::default() -> Physics2dDebugRenderConfig {
+pub fn Physics2dDebugRenderConfig::Physics2dDebugRenderConfig() -> Physics2dDebugRenderConfig {
   {
     enabled: false,
     colliders: true,
@@ -45,7 +45,7 @@ pub fn Physics2dDebugRenderConfig::default() -> Physics2dDebugRenderConfig {
 
 ///|
 let physics2d_debug_render_state : Ref[Physics2dDebugRenderConfig] = Ref(
-  Physics2dDebugRenderConfig::default(),
+  Physics2dDebugRenderConfig::Physics2dDebugRenderConfig(),
 )
 
 ///|

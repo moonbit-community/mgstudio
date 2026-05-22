@@ -50,7 +50,7 @@ test "mesh ray cast includes Mesh2d front and back faces" {
     world,
     @math.Vec3::new(0.0F, 0.0F, 10.0F),
     @math.Vec3::new(0.0F, 0.0F, -1.0F),
-    MeshRayCastIntersectionSettings::default(),
+    MeshRayCastIntersectionSettings::MeshRayCastIntersectionSettings(),
   )
   guard front_hits.length() == 1 && front_hits[0].0.id == entity.id else {
     fail("expected one front-face Mesh2d hit")
@@ -60,7 +60,7 @@ test "mesh ray cast includes Mesh2d front and back faces" {
     world,
     @math.Vec3::new(0.0F, 0.0F, -10.0F),
     @math.Vec3::new(0.0F, 0.0F, 1.0F),
-    MeshRayCastIntersectionSettings::default(),
+    MeshRayCastIntersectionSettings::MeshRayCastIntersectionSettings(),
   )
   guard back_hits.length() == 1 && back_hits[0].0.id == entity.id else {
     fail("expected one back-face Mesh2d hit")
@@ -83,14 +83,16 @@ test "mesh ray cast filters invisible Mesh2d unless configured" {
     world,
     @math.Vec3::new(0.0F, 0.0F, 10.0F),
     @math.Vec3::new(0.0F, 0.0F, -1.0F),
-    MeshRayCastIntersectionSettings::default(),
+    MeshRayCastIntersectionSettings::MeshRayCastIntersectionSettings(),
   )
   assert_eq(hidden_hits.length(), 0)
   let included_hits = mesh_ray_cast_intersections(
     world,
     @math.Vec3::new(0.0F, 0.0F, 10.0F),
     @math.Vec3::new(0.0F, 0.0F, -1.0F),
-    MeshRayCastIntersectionSettings::default().with_include_invisible(true),
+    MeshRayCastIntersectionSettings::MeshRayCastIntersectionSettings().with_include_invisible(
+      true,
+    ),
   )
   assert_eq(included_hits.length(), 1)
 }

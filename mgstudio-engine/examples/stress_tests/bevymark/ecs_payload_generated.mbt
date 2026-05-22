@@ -15,8 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_stress_tests_bevymark_Bird(Bird)
-  EcsPayload_examples_stress_tests_bevymark_BirdCounter(BirdCounter)
-  EcsPayload_examples_stress_tests_bevymark_BirdAssets(BirdAssets)
 }
 
 ///|
@@ -28,32 +26,6 @@ impl @ecs.EcsPayloadCodec for Bird with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for Bird with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_stress_tests_bevymark_Bird(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for BirdCounter with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_bevymark_BirdCounter(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for BirdCounter with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_bevymark_BirdCounter(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for BirdAssets with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_bevymark_BirdAssets(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for BirdAssets with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_bevymark_BirdAssets(value) => Some(value)
     _ => None
   }
 }

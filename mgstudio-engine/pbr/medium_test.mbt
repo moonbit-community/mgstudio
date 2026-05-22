@@ -14,18 +14,23 @@
 
 ///|
 test "pbr medium: default sampler is linear clamp" {
-  inspect(ScatteringMediumSampler::default().is_linear_clamp(), content="true")
+  inspect(
+    ScatteringMediumSampler::ScatteringMediumSampler().is_linear_clamp(),
+    content="true",
+  )
 }
 
 ///|
 test "pbr medium: gpu medium LUT lengths follow config" {
-  let config = ScatteringMediumLutConfig::default()
+  let config = ScatteringMediumLutConfig::ScatteringMediumLutConfig()
     .with_falloff_resolution(8)
     .with_phase_resolution(4)
-  let runtime = ScatteringMediumRuntime::default().with_lut_config(config)
+  let runtime = ScatteringMediumRuntime::ScatteringMediumRuntime().with_lut_config(
+    config,
+  )
   let gpu_medium = GpuScatteringMedium::new(
     runtime,
-    ScatteringMediumSampler::default(),
+    ScatteringMediumSampler::ScatteringMediumSampler(),
   )
   inspect(gpu_medium.density_lut_len(), content="16")
   inspect(gpu_medium.scattering_lut_len(), content="32")

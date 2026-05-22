@@ -14,32 +14,11 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_3d_color_grading_SelectedColorGradingOption(
-    SelectedColorGradingOption
-  )
   EcsPayload_examples_3d_color_grading_ColorGradingOptionWidget(
     ColorGradingOptionWidget
   )
   EcsPayload_examples_3d_color_grading_HelpText(HelpText)
   EcsPayload_examples_3d_color_grading_ColorGradingCamera(ColorGradingCamera)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SelectedColorGradingOption with to_ecs_payload(
-  self,
-) {
-  EcsPayload_examples_3d_color_grading_SelectedColorGradingOption(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SelectedColorGradingOption with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_examples_3d_color_grading_SelectedColorGradingOption(value) =>
-      Some(value)
-    _ => None
-  }
 }
 
 ///|

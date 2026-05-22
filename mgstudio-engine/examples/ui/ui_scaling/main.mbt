@@ -37,7 +37,7 @@ fn setup(world : @ecs.World) -> Unit {
   let icon = @asset.AssetServer::new().load_image("branding/icon.png")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -45,11 +45,11 @@ fn setup(world : @ecs.World) -> Unit {
   @ui.get_ui_scale_resource(world).insert(@ui.UiScale::new(1.0F))
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(50.0F))
     .with_height(@ui.Val::Percent(50.0F))
     .with_position_type(@ui.PositionType::Absolute)
@@ -73,7 +73,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     red_box,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Px(40.0F))
     .with_height(@ui.Val::Px(40.0F)),
   )
@@ -93,7 +93,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     red_text,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font_size(@text.FontSize::Px(13.0F)),
+    @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(13.0F)),
   )
   try! world.set_by_key(
     red_text,
@@ -110,7 +110,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     blue_box,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(15.0F))
     .with_height(@ui.Val::Percent(15.0F)),
   )
@@ -129,7 +129,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     image,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Px(30.0F))
     .with_height(@ui.Val::Px(30.0F)),
   )
@@ -154,7 +154,7 @@ fn change_scaling(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system(setup)
   .add_systems(@app.Update, @app.system(change_scaling))
   .run()

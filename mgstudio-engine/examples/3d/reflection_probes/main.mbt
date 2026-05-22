@@ -232,7 +232,7 @@ fn spawn_reflection_probe(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     probe,
     @pbr.ecs_key_light_probe,
-    @pbr.LightProbe::default(),
+    @pbr.LightProbe::LightProbe(),
   )
   try! world.set_by_key(
     probe,
@@ -333,20 +333,20 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-3.883F, 0.325F, 2.781F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
   reflection_probes_state.val.camera = Some(camera)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_exposure,
     @pbr.Exposure::new(11.0F),
   )
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_exposure,
@@ -394,7 +394,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -410,7 +410,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   reflection_probes_state.val.help_text = Some(help_text)
 
@@ -540,7 +540,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(setup_environment_map_usage))
   .add_systems(@app.Update, @app.system(cycle_reflection_mode))

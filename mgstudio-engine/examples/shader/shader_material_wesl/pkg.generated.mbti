@@ -17,8 +17,10 @@ pub impl @ecs.Component for Spin
 type UtilityShaderHandle
 pub impl @app.Resource for UtilityShaderHandle
 
-type UtilityShaderPlugin
-pub fn UtilityShaderPlugin::default() -> Self
+pub struct UtilityShaderPlugin {
+  // private fields
+}
+pub fn UtilityShaderPlugin::UtilityShaderPlugin() -> Self
 pub impl @app.Plugin for UtilityShaderPlugin
 
 // Type aliases

@@ -136,6 +136,7 @@ fn[T : EcsPayloadCodec] ecs_payload_writer(
   key : ComponentKey[T],
   value : T,
 ) -> EcsPayloadWriter {
+  ensure_component_ops_for_key(key)
   ecs_payload_writer_from_payload(
     key.id(),
     key.debug_name(),

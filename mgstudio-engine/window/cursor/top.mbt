@@ -59,7 +59,7 @@ pub(all) struct CursorOptions {
 } derive(Eq, Debug)
 
 ///|
-pub fn CursorOptions::default() -> CursorOptions {
+pub fn CursorOptions::CursorOptions() -> CursorOptions {
   CursorOptions::{ visible: true, grab_mode: GrabNone, hit_test: true }
 }
 

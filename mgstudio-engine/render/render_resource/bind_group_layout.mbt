@@ -98,13 +98,13 @@ pub fn BindGroupLayoutEntry::count(self : BindGroupLayoutEntry) -> Int {
 }
 
 ///|
-pub fn BindGroupLayoutDescriptor::default() -> BindGroupLayoutDescriptor {
+pub fn BindGroupLayoutDescriptor::BindGroupLayoutDescriptor() -> BindGroupLayoutDescriptor {
   BindGroupLayoutDescriptor::{ label: "", entries: [] }
 }
 
 ///|
 pub impl Default for BindGroupLayoutDescriptor with default() {
-  BindGroupLayoutDescriptor::default()
+  BindGroupLayoutDescriptor::BindGroupLayoutDescriptor()
 }
 
 ///|

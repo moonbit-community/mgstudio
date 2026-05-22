@@ -16,7 +16,7 @@
 pub struct TransformPlugin {}
 
 ///|
-pub fn TransformPlugin::default() -> TransformPlugin {
+pub fn TransformPlugin::TransformPlugin() -> TransformPlugin {
   TransformPlugin::{  }
 }
 

@@ -26,9 +26,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_ui_navigation_directional_navigation_overrides_OverrideLastInputDisplay(
     OverrideLastInputDisplay
   )
-  EcsPayload_examples_ui_navigation_directional_navigation_overrides_OverrideStatus(
-    OverrideStatus
-  )
 }
 
 ///|
@@ -97,23 +94,6 @@ impl @ecs.EcsPayloadCodec for OverrideLastInputDisplay with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_examples_ui_navigation_directional_navigation_overrides_OverrideLastInputDisplay(
-      value
-    ) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for OverrideStatus with to_ecs_payload(self) {
-  EcsPayload_examples_ui_navigation_directional_navigation_overrides_OverrideStatus(
-    self,
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for OverrideStatus with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_navigation_directional_navigation_overrides_OverrideStatus(
       value
     ) => Some(value)
     _ => None

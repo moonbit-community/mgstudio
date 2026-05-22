@@ -21,7 +21,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Update, @app.system(@app.system_param(touch_event_system)))
   .run()
 }

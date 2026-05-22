@@ -19,7 +19,7 @@
 pub struct FontLoader {}
 
 ///|
-pub fn FontLoader::default() -> FontLoader {
+pub fn FontLoader::FontLoader() -> FontLoader {
   FontLoader::{  }
 }
 

@@ -22,13 +22,13 @@ pub struct LineGizmo3dPlugin {}
 const LINE_GIZMO_3D_PLUGIN_NAME : String = "mgstudio.gizmos_render.LineGizmo3dPlugin"
 
 ///|
-pub fn LineGizmo3dPlugin::default() -> LineGizmo3dPlugin {
+pub fn LineGizmo3dPlugin::LineGizmo3dPlugin() -> LineGizmo3dPlugin {
   LineGizmo3dPlugin::{  }
 }
 
 ///|
 pub fn line_gizmo_3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  line_gizmo_3d_plugin_with(app, LineGizmo3dPlugin::default())
+  line_gizmo_3d_plugin_with(app, LineGizmo3dPlugin::LineGizmo3dPlugin())
 }
 
 ///|

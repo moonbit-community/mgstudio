@@ -19,14 +19,14 @@ fn setup(
 ) -> Unit {
   ignore(
     commands.spawn(
-      (@sprite.Camera2d::default(), @ui.IsDefaultUiCamera::default()),
+      (@sprite.Camera2d::Camera2d(), @ui.IsDefaultUiCamera::IsDefaultUiCamera()),
     ),
   )
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::default(),
-        @sprite.Camera::default().with_order(1).with_clear_color_none(),
+        @sprite.Camera2d::Camera2d(),
+        @sprite.Camera::Camera().with_order(1).with_clear_color_none(),
         @sprite.RenderLayers::layer(1),
       ),
     ),
@@ -34,9 +34,9 @@ fn setup(
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
+      @ui.UiRoot::UiRoot(),
       @ui.Node::{
-        ..@ui.Node::default(),
+        ..@ui.Node(),
         width: @ui.Val::Percent(100.0F),
         height: @ui.Val::Percent(100.0F),
         justify_content: @ui.JustifyContent::Center,
@@ -50,7 +50,7 @@ fn setup(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           width: @ui.Val::Percent(20.0F),
           height: @ui.Val::Percent(30.0F),
           min_width: @ui.Val::Px(150.0F),
@@ -98,7 +98,7 @@ fn rotate_sprite(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(rotate_sprite)))
   .run()

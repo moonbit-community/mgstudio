@@ -49,7 +49,7 @@ pub(all) struct LightGizmoConfigGroup {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn LightGizmoConfigGroup::default() -> LightGizmoConfigGroup {
+pub fn LightGizmoConfigGroup::LightGizmoConfigGroup() -> LightGizmoConfigGroup {
   LightGizmoConfigGroup::{
     draw_all: false,
     color: MatchLightColor,
@@ -61,13 +61,7 @@ pub fn LightGizmoConfigGroup::default() -> LightGizmoConfigGroup {
 
 ///|
 pub impl Default for LightGizmoConfigGroup with default() {
-  LightGizmoConfigGroup::{
-    draw_all: false,
-    color: MatchLightColor,
-    point_light_color: @sprite.Color::srgb(1.0F, 0.0F, 0.0F),
-    spot_light_color: @sprite.Color::srgb(0.0F, 1.0F, 0.0F),
-    directional_light_color: @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
-  }
+  LightGizmoConfigGroup::LightGizmoConfigGroup()
 }
 
 ///|
@@ -89,7 +83,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 
 ///|
 pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with new_gizmo_config_group_cell() {
-  LightGizmoConfigGroupCell(Ref(LightGizmoConfigGroup::default()))
+  LightGizmoConfigGroupCell(Ref(LightGizmoConfigGroup::LightGizmoConfigGroup()))
 }
 
 ///|
@@ -108,7 +102,7 @@ pub struct ShowLightGizmo {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ShowLightGizmo::default() -> ShowLightGizmo {
+pub fn ShowLightGizmo::ShowLightGizmo() -> ShowLightGizmo {
   ShowLightGizmo::{ color: None }
 }
 

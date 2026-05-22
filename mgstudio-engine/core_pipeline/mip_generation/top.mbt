@@ -23,7 +23,7 @@ const MIP_GENERATION_PLUGIN_NAME : String = "mgstudio.core_pipeline.mip_generati
 pub struct MipGenerationPlugin {}
 
 ///|
-pub fn MipGenerationPlugin::default() -> MipGenerationPlugin {
+pub fn MipGenerationPlugin::MipGenerationPlugin() -> MipGenerationPlugin {
   MipGenerationPlugin::{  }
 }
 
@@ -31,7 +31,7 @@ pub fn MipGenerationPlugin::default() -> MipGenerationPlugin {
 pub fn mip_generation_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  app.add_plugins(MipGenerationPlugin::default())
+  app.add_plugins(MipGenerationPlugin::MipGenerationPlugin())
 }
 
 ///|
@@ -63,7 +63,9 @@ fn mip_generation_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : MipGenerationPlugin,
 ) -> @app.App[@ecs.World] {
-  let next = app.add_plugins(@experimental.ExperimentalMipGeneration::default())
+  let next = app.add_plugins(
+    @experimental.ExperimentalMipGeneration::ExperimentalMipGeneration(),
+  )
   @render.with_render_app(next, mip_generation_configure_render_sub_app)
 }
 
@@ -77,7 +79,7 @@ fn mip_generation_plugin_finish_with(
     if !world.resource(ecs_key_mip_generation_resources).is_present() {
       world.insert_resource(
         ecs_key_mip_generation_resources,
-        MipGenerationResources::default(),
+        MipGenerationResources::MipGenerationResources(),
       )
     }
     sub_app
@@ -92,19 +94,19 @@ fn mip_generation_configure_render_sub_app(
   if !world.resource(ecs_key_downsample_shaders).is_present() {
     world.insert_resource(
       ecs_key_downsample_shaders,
-      DownsampleShaders::default(),
+      DownsampleShaders::DownsampleShaders(),
     )
   }
   if !world.resource(ecs_key_mip_generation_jobs).is_present() {
     world.insert_resource(
       ecs_key_mip_generation_jobs,
-      MipGenerationJobs::default(),
+      MipGenerationJobs::MipGenerationJobs(),
     )
   }
   if !world.resource(ecs_key_mip_generation_pipelines).is_present() {
     world.insert_resource(
       ecs_key_mip_generation_pipelines,
-      MipGenerationPipelines::default(),
+      MipGenerationPipelines::MipGenerationPipelines(),
     )
   }
   @render.configure_base_render_sets(sub_app).add_systems(
@@ -127,7 +129,7 @@ pub struct MipGenerationResources {
 } derive(Eq, Debug)
 
 ///|
-pub fn MipGenerationResources::default() -> MipGenerationResources {
+pub fn MipGenerationResources::MipGenerationResources() -> MipGenerationResources {
   MipGenerationResources::{
     sampler_label: "mip generation sampler",
     mag_filter: "Linear",
@@ -229,7 +231,7 @@ pub struct DownsampleShaders {
 }
 
 ///|
-pub fn DownsampleShaders::default() -> DownsampleShaders {
+pub fn DownsampleShaders::DownsampleShaders() -> DownsampleShaders {
   DownsampleShaders::new(
     general_shader_count=downsample_texture_formats().length(),
   )
@@ -289,7 +291,7 @@ pub struct MipGenerationPhase {
 }
 
 ///|
-pub fn MipGenerationPhase::default() -> MipGenerationPhase {
+pub fn MipGenerationPhase::MipGenerationPhase() -> MipGenerationPhase {
   MipGenerationPhase::{ image_asset_ids: [] }
 }
 
@@ -326,13 +328,13 @@ pub struct MipGenerationJobs {
 }
 
 ///|
-pub fn MipGenerationJobs::default() -> MipGenerationJobs {
+pub fn MipGenerationJobs::MipGenerationJobs() -> MipGenerationJobs {
   MipGenerationJobs::{ phases: {} }
 }
 
 ///|
 pub fn MipGenerationJobs::clear(_ : MipGenerationJobs) -> MipGenerationJobs {
-  MipGenerationJobs::default()
+  MipGenerationJobs::MipGenerationJobs()
 }
 
 ///|
@@ -361,7 +363,7 @@ pub fn MipGenerationJobs::add(
   let phases = self.phases.copy()
   let next_phase = match phases.get(key) {
     Some(existing) => existing.push(image_asset_id)
-    None => MipGenerationPhase::default().push(image_asset_id)
+    None => MipGenerationPhase::MipGenerationPhase().push(image_asset_id)
   }
   phases.set(key, next_phase)
   MipGenerationJobs::{ phases, }
@@ -429,7 +431,7 @@ fn reset_mip_generation_jobs(world : @ecs.World) -> Unit {
   ignore(
     world
     .resource(ecs_key_mip_generation_jobs)
-    .update(fn(_) { MipGenerationJobs::default() }),
+    .update(fn(_) { MipGenerationJobs::MipGenerationJobs() }),
   )
 }
 
@@ -440,7 +442,7 @@ pub struct MipGenerationPipelines {
 } derive(Eq, Debug)
 
 ///|
-pub fn MipGenerationPipelines::default() -> MipGenerationPipelines {
+pub fn MipGenerationPipelines::MipGenerationPipelines() -> MipGenerationPipelines {
   MipGenerationPipelines::{
     texture_format_pipeline_count: 0,
     bind_group_cache_count: 0,
@@ -497,7 +499,7 @@ pub fn MipGenerationPipelines::reset_bind_group_cache(
 pub fn MipGenerationPipelines::clear(
   _ : MipGenerationPipelines,
 ) -> MipGenerationPipelines {
-  MipGenerationPipelines::default()
+  MipGenerationPipelines::MipGenerationPipelines()
 }
 
 ///|

@@ -226,7 +226,7 @@ pub(all) struct CursorOptions {
 pub impl @ecs.Mutable for CursorOptions
 
 ///|
-pub fn CursorOptions::default() -> CursorOptions {
+pub fn CursorOptions::CursorOptions() -> CursorOptions {
   CursorOptions::{ visible: true, grab_mode: GrabNone, hit_test: true }
 }
 

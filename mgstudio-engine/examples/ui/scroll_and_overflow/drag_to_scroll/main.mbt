@@ -56,13 +56,18 @@ pub impl @app.Resource for ScrollDragState with resource() {
 }
 
 ///|
-pub impl Default for ScrollDragState with default() {
+pub fn ScrollDragState::ScrollDragState() -> ScrollDragState {
   {
     active_entity: None,
     start_pointer: @math.Vec2::zero(),
     start_offset_x: 0.0F,
     start_offset_y: 0.0F,
   }
+}
+
+///|
+pub impl Default for ScrollDragState with default() {
+  ScrollDragState::ScrollDragState()
 }
 
 ///|
@@ -78,7 +83,7 @@ fn tile_color(x : Int, y : Int) -> @sprite.Color {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   commands.queue(fn(world : @ecs.World) {
@@ -86,16 +91,19 @@ fn setup(commands : @app.Commands) -> Unit {
       @ui.ecs_key_ui_scale,
       @ui.UiScale::new(UI_SCALE_FACTOR),
     )
-    world.insert_resource(scroll_drag_state_key, ScrollDragState::default())
+    world.insert_resource(
+      scroll_drag_state_key,
+      ScrollDragState::ScrollDragState(),
+    )
   })
 
   let scroll_area = commands.spawn(
     (
-      @ui.UiRoot::default(),
+      @ui.UiRoot::UiRoot(),
       ScrollableNode::{  },
-      @ui.RelativeCursorPosition::default(),
+      @ui.RelativeCursorPosition::RelativeCursorPosition(),
       @ui.ScrollPosition::new(0.0F, 0.0F),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_overflow(
@@ -108,7 +116,7 @@ fn setup(commands : @app.Commands) -> Unit {
     (
       @hierarchy.Parent::new(scroll_area),
       @ui.Node::{
-        ..@ui.Node::default(),
+        ..@ui.Node(),
         display: @ui.Display::Grid,
         grid_template_rows: [
           @ui.RepeatedGridTrack::new(
@@ -132,7 +140,7 @@ fn setup(commands : @app.Commands) -> Unit {
         (
           @hierarchy.Parent::new(grid),
           @ui.Node::{
-            ..@ui.Node::default(),
+            ..@ui.Node(),
             grid_row: @ui.GridPlacement::start(y + 1),
             grid_column: @ui.GridPlacement::start(x + 1),
           },
@@ -209,7 +217,7 @@ fn end_drag(drag_state : @app.ResMut[ScrollDragState]) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param(setup)
   .add_pointer_observer3(start_drag)
   .add_pointer_observer3(update_drag)

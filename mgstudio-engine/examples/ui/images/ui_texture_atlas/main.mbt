@@ -25,13 +25,13 @@ fn setup(
     .peek()
     .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::splat(24), 7, 1))
 
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_flex_direction(@ui.FlexDirection::Column)
@@ -49,7 +49,7 @@ fn setup(
           texture,
           @asset.TextureAtlas::new(atlas_layout, 0),
         ),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_width(@ui.Val::Px(256.0F))
         .with_height(@ui.Val::Px(256.0F)),
         @ui.BackgroundColor::new(@sprite.Color::srgb(0.98F, 0.92F, 0.84F)),
@@ -115,7 +115,7 @@ fn increment_atlas_index(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(
     @app.Update,

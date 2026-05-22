@@ -18,22 +18,13 @@ extenum @ecs.EcsPayload += {
   EcsPayload_dev_tools_FpsOverlayConfig(FpsOverlayConfig)
   EcsPayload_dev_tools_FpsText(FpsText)
   EcsPayload_dev_tools_FrameTimeGraph(FrameTimeGraph)
-  EcsPayload_dev_tools_FpsOverlayPluginMarker(FpsOverlayPluginMarker)
-  EcsPayload_dev_tools_FpsOverlayState(FpsOverlayState)
   EcsPayload_dev_tools_EasyScreenshotConfig(EasyScreenshotConfig)
   EcsPayload_dev_tools_EasyScreenshotState(EasyScreenshotState)
   EcsPayload_dev_tools_DiagnosticsOverlay(DiagnosticsOverlay)
   EcsPayload_dev_tools_DiagnosticsOverlayPlane(DiagnosticsOverlayPlane)
   EcsPayload_dev_tools_DiagnosticsOverlayWindow(DiagnosticsOverlayWindow)
   EcsPayload_dev_tools_DiagnosticsOverlayHeader(DiagnosticsOverlayHeader)
-  EcsPayload_dev_tools_DiagnosticsOverlayDragState(DiagnosticsOverlayDragState)
-  EcsPayload_dev_tools_DiagnosticsOverlayRuntimeState(
-    DiagnosticsOverlayRuntimeState
-  )
-  EcsPayload_dev_tools_EasyScreenshotPluginMarker(EasyScreenshotPluginMarker)
-  EcsPayload_dev_tools_FrameTimeGraphValues(FrameTimeGraphValues)
   EcsPayload_dev_tools_FrametimeGraphMaterial(FrametimeGraphMaterial)
-  EcsPayload_dev_tools_PickingDebugPluginMarker(PickingDebugPluginMarker)
 }
 
 ///|
@@ -88,34 +79,6 @@ impl @ecs.EcsPayloadCodec for FrameTimeGraph with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for FrameTimeGraph with from_ecs_payload(payload) {
   match payload {
     EcsPayload_dev_tools_FrameTimeGraph(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FpsOverlayPluginMarker with to_ecs_payload(self) {
-  EcsPayload_dev_tools_FpsOverlayPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FpsOverlayPluginMarker with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_dev_tools_FpsOverlayPluginMarker(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FpsOverlayState with to_ecs_payload(self) {
-  EcsPayload_dev_tools_FpsOverlayState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FpsOverlayState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_dev_tools_FpsOverlayState(value) => Some(value)
     _ => None
   }
 }
@@ -213,72 +176,6 @@ impl @ecs.EcsPayloadCodec for DiagnosticsOverlayHeader with from_ecs_payload(
 }
 
 ///|
-impl @ecs.EcsPayloadCodec for DiagnosticsOverlayDragState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_dev_tools_DiagnosticsOverlayDragState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DiagnosticsOverlayDragState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_dev_tools_DiagnosticsOverlayDragState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DiagnosticsOverlayRuntimeState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_dev_tools_DiagnosticsOverlayRuntimeState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DiagnosticsOverlayRuntimeState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_dev_tools_DiagnosticsOverlayRuntimeState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for EasyScreenshotPluginMarker with to_ecs_payload(
-  self,
-) {
-  EcsPayload_dev_tools_EasyScreenshotPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for EasyScreenshotPluginMarker with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_dev_tools_EasyScreenshotPluginMarker(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FrameTimeGraphValues with to_ecs_payload(self) {
-  EcsPayload_dev_tools_FrameTimeGraphValues(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FrameTimeGraphValues with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_dev_tools_FrameTimeGraphValues(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
 pub impl @ecs.EcsPayloadCodec for FrametimeGraphMaterial with to_ecs_payload(
   self,
 ) {
@@ -291,21 +188,6 @@ pub impl @ecs.EcsPayloadCodec for FrametimeGraphMaterial with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_dev_tools_FrametimeGraphMaterial(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PickingDebugPluginMarker with to_ecs_payload(self) {
-  EcsPayload_dev_tools_PickingDebugPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PickingDebugPluginMarker with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_dev_tools_PickingDebugPluginMarker(value) => Some(value)
     _ => None
   }
 }

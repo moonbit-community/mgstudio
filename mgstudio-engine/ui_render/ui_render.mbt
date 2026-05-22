@@ -94,9 +94,9 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
               camera_entity, ecs_key_ui_box_shadow_samples,
             ) : BoxShadowSamples?) {
           Some(v) => v.samples
-          None => BoxShadowSamples::default().samples
+          None => BoxShadowSamples::BoxShadowSamples().samples
         }
-      None => BoxShadowSamples::default().samples
+      None => BoxShadowSamples::BoxShadowSamples().samples
     }
     let rect = layout.rect
     let size = rect.size()
@@ -106,7 +106,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     let layers = match
       (try! source_world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
       Some(v) => v
-      None => @sprite.RenderLayers::default()
+      None => @sprite.RenderLayers::RenderLayers()
     }
     let scissor = match
       (try! source_world.get_by_key(entity, @sprite.ecs_key_scissor_rect)) {

@@ -17,7 +17,7 @@
 pub struct IsDefaultUiCamera {} derive(ToJson, FromJson)
 
 ///|
-pub fn IsDefaultUiCamera::default() -> IsDefaultUiCamera {
+pub fn IsDefaultUiCamera::IsDefaultUiCamera() -> IsDefaultUiCamera {
   IsDefaultUiCamera::{  }
 }
 
@@ -49,7 +49,7 @@ pub fn ComputedUiTargetCamera::new(
 }
 
 ///|
-pub fn ComputedUiTargetCamera::default() -> ComputedUiTargetCamera {
+pub fn ComputedUiTargetCamera::ComputedUiTargetCamera() -> ComputedUiTargetCamera {
   ComputedUiTargetCamera::{ camera: @core.Entity::placeholder() }
 }
 
@@ -79,7 +79,7 @@ pub fn ComputedUiRenderTargetInfo::new(
 }
 
 ///|
-pub fn ComputedUiRenderTargetInfo::default() -> ComputedUiRenderTargetInfo {
+pub fn ComputedUiRenderTargetInfo::ComputedUiRenderTargetInfo() -> ComputedUiRenderTargetInfo {
   ComputedUiRenderTargetInfo::{
     scale_factor: 1.0F,
     physical_size: @math.IVec2::new(0, 0),
@@ -129,7 +129,7 @@ pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
     rect,
     border: @sprite.UiBorderRect::zero(),
     padding: @sprite.UiBorderRect::zero(),
-    border_radius: ResolvedBorderRadius::default(),
+    border_radius: ResolvedBorderRadius::ResolvedBorderRadius(),
     outline_width: 0.0F,
     outline_offset: 0.0F,
   }
@@ -319,11 +319,11 @@ pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
     }
     let computed_camera = match camera_entity {
       Some(entity) => ComputedUiTargetCamera::new(entity)
-      None => ComputedUiTargetCamera::default()
+      None => ComputedUiTargetCamera::ComputedUiTargetCamera()
     }
     let render_target_info = match camera_entity {
       Some(entity) => ui_compute_render_target_info(world, entity)
-      None => ComputedUiRenderTargetInfo::default()
+      None => ComputedUiRenderTargetInfo::ComputedUiRenderTargetInfo()
     }
     ui_propagate_target_camera_subtree(
       world, root, computed_camera, render_target_info,

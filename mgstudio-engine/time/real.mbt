@@ -24,8 +24,13 @@ pub struct Real {
 }
 
 ///|
-pub impl Default for Real with default() {
+pub fn Real::Real() -> Real {
   { startup: @core.Instant::now(), first_update: None, last_update: None }
+}
+
+///|
+pub impl Default for Real with default() {
+  Real::Real()
 }
 
 ///|
@@ -35,7 +40,7 @@ pub impl TimeContext for Real with time_context_debug_name() {
 
 ///|
 pub fn Time::new(startup : @core.Instant) -> Time[Real] {
-  Time::new_with({ ..Real::default(), startup, })
+  Time::new_with({ ..Real(), startup, })
 }
 
 ///|
@@ -118,7 +123,7 @@ pub fn Time::last_update_seconds(self : Time[Real]) -> Float? {
 ///|
 fn world_real_or_default(world : @ecs.World) -> Time[Real] {
   world_time_resource_or_default(world, real_time_resource_key, fn() {
-    Time::default()
+    Time::Time()
   })
 }
 

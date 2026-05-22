@@ -107,16 +107,16 @@ fn setup_scene(world : @ecs.World) -> Unit {
   }
 
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
+      @sprite.Camera::Camera().with_clear_color(@sprite.Color::black()),
       @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
     .with_tonemapping(Some(@post_process.Tonemapping::TonyMcMapface))
-    .with_bloom(Some(@post_process.Bloom::default()))
+    .with_bloom(Some(@post_process.Bloom::Bloom()))
     .spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(camera, BloomCamera::component(), BloomCamera::{  })
 
   let material_emissive1 = @pbr.standard_material_add(
@@ -171,8 +171,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
   }
 
   let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(bloom_text(Some(@post_process.Bloom::default()))),
-      @text.TextFont::default()
+      @text.Text2d::new(bloom_text(Some(@post_process.Bloom::Bloom()))),
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -188,7 +188,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   world.insert_resource(bloom_instructions_resource_key, BloomInstructions::{
     handle: help_text,
@@ -215,7 +215,7 @@ fn update_bloom_settings(
         try! world.set_by_key(
           camera_entity,
           @post_process.ecs_key_bloom,
-          @post_process.Bloom::default(),
+          @post_process.Bloom::Bloom(),
         )
       }
     Some(bloom) => {
@@ -357,7 +357,7 @@ fn bounce_spheres(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup_scene))
   .add_systems(
     @app.Update,

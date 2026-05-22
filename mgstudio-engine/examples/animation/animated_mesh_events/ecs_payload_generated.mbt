@@ -14,42 +14,8 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_animation_animated_mesh_events_AnimationSetup(
-    AnimationSetup
-  )
-  EcsPayload_examples_animation_animated_mesh_events_ParticleAssets(
-    ParticleAssets
-  )
   EcsPayload_examples_animation_animated_mesh_events_Particle(Particle)
   EcsPayload_examples_animation_animated_mesh_events_StepEvent(StepEvent)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationSetup with to_ecs_payload(self) {
-  EcsPayload_examples_animation_animated_mesh_events_AnimationSetup(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationSetup with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_animation_animated_mesh_events_AnimationSetup(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ParticleAssets with to_ecs_payload(self) {
-  EcsPayload_examples_animation_animated_mesh_events_ParticleAssets(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ParticleAssets with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_animation_animated_mesh_events_ParticleAssets(value) =>
-      Some(value)
-    _ => None
-  }
 }
 
 ///|

@@ -112,7 +112,7 @@ pub impl @app.Resource for GameRules with resource() {
 }
 
 ///|
-impl Default for GameState with default() {
+fn GameState::GameState() -> GameState {
   GameState::{ current_round: 0, total_players: 0, winning_player: None }
 }
 
@@ -336,7 +336,7 @@ fn main {
     |> @app.chain()
 
   @app.App::new(@ecs.World::new())
-  .init_resource(GameState::default)
+  .init_resource(fn() { GameState::GameState() })
   .add_plugins(@app.ScheduleRunnerPlugin::run_loop(0.05F))
   .add_systems(@app.Startup, @app.system(@app.system_param2(startup_system)))
   .add_systems(@app.Update, @app.system(print_message_system))

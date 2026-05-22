@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_ecs_change_detection_MyComponent(MyComponent)
-  EcsPayload_examples_ecs_change_detection_MyResource(MyResource)
 }
 
 ///|
@@ -27,19 +26,6 @@ impl @ecs.EcsPayloadCodec for MyComponent with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for MyComponent with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ecs_change_detection_MyComponent(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MyResource with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_change_detection_MyResource(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MyResource with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_change_detection_MyResource(value) => Some(value)
     _ => None
   }
 }

@@ -47,7 +47,7 @@ fn spawn_window_for_monitor(
   let window_entity = commands.spawn(
     (
       @window.Window::{
-        ..@window.Window::default(),
+        ..@window.Window(),
         title,
         mode: @window.WindowMode::Fullscreen(
           @window.MonitorSelection::Entity(monitor_entity),
@@ -64,7 +64,7 @@ fn spawn_window_for_monitor(
   ignore(
     commands.spawn(
       @sprite.Camera2dBundle::new_with_target(
-        @sprite.Camera::default(),
+        @sprite.Camera::Camera(),
         @transform.Transform::identity(),
         @sprite.RenderTarget::Window(@window.WindowRef::Entity(window_entity)),
       ),
@@ -108,7 +108,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(
     @mgstudio.DefaultPlugins::set_window(@window.WindowPlugin::{
-      ..@window.WindowPlugin::default(),
+      ..@window.WindowPlugin(),
       primary_window: None,
       exit_condition: @window.ExitCondition::DontExit,
     }),

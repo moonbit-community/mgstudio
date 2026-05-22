@@ -18,7 +18,7 @@ pub struct ValidateParentHasComponentPlugin[_] {
 }
 
 ///|
-pub fn[C] ValidateParentHasComponentPlugin::default() -> ValidateParentHasComponentPlugin[
+pub fn[C] ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin() -> ValidateParentHasComponentPlugin[
   C,
 ] {
   ValidateParentHasComponentPlugin::in_schedule(Last)

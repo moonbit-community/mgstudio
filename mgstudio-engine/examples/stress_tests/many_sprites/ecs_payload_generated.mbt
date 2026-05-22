@@ -13,20 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_stress_tests_many_sprites_SpriteStats(SpriteStats)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SpriteStats with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_sprites_SpriteStats(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SpriteStats with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_sprites_SpriteStats(value) =>
-      Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

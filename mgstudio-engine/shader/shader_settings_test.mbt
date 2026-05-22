@@ -14,7 +14,7 @@
 
 ///|
 test "shader: settings default to empty shader defs" {
-  let settings = @shader.ShaderSettings::default()
+  let settings = @shader.ShaderSettings::ShaderSettings()
   debug_inspect(settings.shader_defs.length(), content="0")
 }
 

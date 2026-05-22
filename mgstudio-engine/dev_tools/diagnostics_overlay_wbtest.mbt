@@ -17,7 +17,7 @@ fn diagnostics_overlay_test_app_with_overlay(
   overlay : DiagnosticsOverlay,
 ) -> (@app.App[@ecs.World], @core.Entity) {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @time.TimePlugin::default(),
+    @time.TimePlugin::TimePlugin(),
   )
   let app = diagnostics_overlay_plugin_with(app, DiagnosticsOverlayPlugin::{
     refresh_interval_seconds: 0.01F,
@@ -59,7 +59,7 @@ test "dev_tools: diagnostics overlay uses Missing text for absent diagnostics" {
   let missing_item = DiagnosticsOverlayItem::default_with_path(
     @diagnostic.DiagnosticPath::const_new("missing.path"),
   )
-  let store = @diagnostic.DiagnosticsStore::default()
+  let store = @diagnostic.DiagnosticsStore::DiagnosticsStore()
   debug_inspect(
     diagnostics_overlay_measurement_text(missing_item, store),
     content="\"Missing\"",

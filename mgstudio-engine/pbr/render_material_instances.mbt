@@ -51,7 +51,7 @@ pub struct RenderMaterialInstances {
 }
 
 ///|
-pub fn RenderMaterialInstances::default() -> RenderMaterialInstances {
+pub fn RenderMaterialInstances::RenderMaterialInstances() -> RenderMaterialInstances {
   RenderMaterialInstances::{ instances: {}, current_change_tick: 0 }
 }
 

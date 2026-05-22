@@ -244,6 +244,7 @@ pub impl @ecs.EcsPayloadCodec for AccumulatedMouseScroll
 pub struct Axis[T] {
   axis_data : Array[(T, Float)]
 }
+pub fn[T] Axis::Axis() -> Self[T]
 pub fn[T] Axis::all_axes(Self[T]) -> Array[T]
 pub fn[T] Axis::all_axes_and_values(Self[T]) -> Array[(T, Float)]
 pub fn[T : Eq] Axis::get(Self[T], T) -> Float?
@@ -262,6 +263,7 @@ pub struct AxisSettings {
   mut livezone_lowerbound : Float
   mut threshold : Float
 } derive(Eq, ToJson, @json.FromJson)
+pub fn AxisSettings::AxisSettings() -> Self
 pub fn AxisSettings::deadzone_lowerbound(Self) -> Float
 pub fn AxisSettings::deadzone_upperbound(Self) -> Float
 pub fn AxisSettings::livezone_lowerbound(Self) -> Float
@@ -285,6 +287,7 @@ pub struct ButtonAxisSettings {
   low : Float
   threshold : Float
 } derive(Eq, ToJson, @json.FromJson)
+pub fn ButtonAxisSettings::ButtonAxisSettings() -> Self
 pub impl Default for ButtonAxisSettings
 
 pub struct ButtonInput[T] {
@@ -292,6 +295,7 @@ pub struct ButtonInput[T] {
   just_pressed : Array[(String, T)]
   just_released : Array[(String, T)]
 }
+pub fn[T] ButtonInput::ButtonInput() -> Self[T]
 pub fn[T : ButtonInputButton] ButtonInput::all_just_pressed(Self[T], Array[T]) -> Bool
 pub fn[T : ButtonInputButton] ButtonInput::all_just_released(Self[T], Array[T]) -> Bool
 pub fn[T : ButtonInputButton] ButtonInput::all_pressed(Self[T], Array[T]) -> Bool
@@ -325,6 +329,7 @@ pub struct ButtonSettings {
   mut press_threshold : Float
   mut release_threshold : Float
 } derive(Eq, ToJson, @json.FromJson)
+pub fn ButtonSettings::ButtonSettings() -> Self
 pub fn ButtonSettings::is_pressed(Self, Float) -> Bool
 pub fn ButtonSettings::is_released(Self, Float) -> Bool
 pub fn ButtonSettings::new(Float, Float) -> Self raise ButtonSettingsError
@@ -342,6 +347,7 @@ pub struct Gamepad {
   digital : ButtonInput[GamepadButton]
   analog : Axis[GamepadInput]
 } derive(ToJson, @json.FromJson)
+pub fn Gamepad::Gamepad() -> Self
 pub fn Gamepad::all_just_pressed(Self, Array[GamepadButton]) -> Bool
 pub fn Gamepad::all_just_released(Self, Array[GamepadButton]) -> Bool
 pub fn Gamepad::all_pressed(Self, Array[GamepadButton]) -> Bool
@@ -500,6 +506,7 @@ pub struct GamepadSettings {
   axis_settings : Array[(GamepadAxis, AxisSettings)]
   button_axis_settings : Array[(GamepadButton, ButtonAxisSettings)]
 } derive(ToJson, @json.FromJson)
+pub fn GamepadSettings::GamepadSettings() -> Self
 pub fn GamepadSettings::get_axis_settings(Self, GamepadAxis) -> AxisSettings
 pub fn GamepadSettings::get_button_axis_settings(Self, GamepadButton) -> ButtonAxisSettings
 pub fn GamepadSettings::get_button_settings(Self, GamepadButton) -> ButtonSettings
@@ -509,7 +516,7 @@ pub impl Default for GamepadSettings
 
 pub(all) struct InputPlugin {
 }
-pub fn InputPlugin::default() -> Self
+pub fn InputPlugin::InputPlugin() -> Self
 pub impl @app.Plugin for InputPlugin
 
 pub struct RawGamepadAxisChangedEvent {

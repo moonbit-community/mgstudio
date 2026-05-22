@@ -17,7 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_ecs_message_DealDamage(DealDamage)
   EcsPayload_examples_ecs_message_DamageReceived(DamageReceived)
   EcsPayload_examples_ecs_message_ArmorBlockedDamage(ArmorBlockedDamage)
-  EcsPayload_examples_ecs_message_DamageTimer(DamageTimer)
 }
 
 ///|
@@ -55,19 +54,6 @@ impl @ecs.EcsPayloadCodec for ArmorBlockedDamage with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for ArmorBlockedDamage with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ecs_message_ArmorBlockedDamage(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DamageTimer with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_message_DamageTimer(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DamageTimer with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_message_DamageTimer(value) => Some(value)
     _ => None
   }
 }

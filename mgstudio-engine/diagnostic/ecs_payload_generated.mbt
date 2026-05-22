@@ -15,18 +15,8 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_diagnostic_FrameCount(FrameCount)
-  EcsPayload_diagnostic_FrameCountPluginMarker(FrameCountPluginMarker)
-  EcsPayload_diagnostic_FrameTimeDiagnosticsPluginMarker(
-    FrameTimeDiagnosticsPluginMarker
-  )
-  EcsPayload_diagnostic_StressMetricsState(StressMetricsState)
-  EcsPayload_diagnostic_TimelineTraceState(TimelineTraceState)
   EcsPayload_diagnostic_DiagnosticsStore(DiagnosticsStore)
   EcsPayload_diagnostic_SystemInfo(SystemInfo)
-  EcsPayload_diagnostic_SystemInformationDiagnosticsPluginMarker(
-    SystemInformationDiagnosticsPluginMarker
-  )
-  EcsPayload_diagnostic_SysinfoRefreshState(SysinfoRefreshState)
   EcsPayload_diagnostic_LogDiagnosticsState(LogDiagnosticsState)
 }
 
@@ -39,64 +29,6 @@ pub impl @ecs.EcsPayloadCodec for FrameCount with to_ecs_payload(self) {
 pub impl @ecs.EcsPayloadCodec for FrameCount with from_ecs_payload(payload) {
   match payload {
     EcsPayload_diagnostic_FrameCount(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FrameCountPluginMarker with to_ecs_payload(self) {
-  EcsPayload_diagnostic_FrameCountPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FrameCountPluginMarker with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_diagnostic_FrameCountPluginMarker(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FrameTimeDiagnosticsPluginMarker with to_ecs_payload(
-  self,
-) {
-  EcsPayload_diagnostic_FrameTimeDiagnosticsPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FrameTimeDiagnosticsPluginMarker with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_diagnostic_FrameTimeDiagnosticsPluginMarker(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StressMetricsState with to_ecs_payload(self) {
-  EcsPayload_diagnostic_StressMetricsState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StressMetricsState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_diagnostic_StressMetricsState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TimelineTraceState with to_ecs_payload(self) {
-  EcsPayload_diagnostic_TimelineTraceState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TimelineTraceState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_diagnostic_TimelineTraceState(value) => Some(value)
     _ => None
   }
 }
@@ -125,37 +57,6 @@ pub impl @ecs.EcsPayloadCodec for SystemInfo with to_ecs_payload(self) {
 pub impl @ecs.EcsPayloadCodec for SystemInfo with from_ecs_payload(payload) {
   match payload {
     EcsPayload_diagnostic_SystemInfo(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SystemInformationDiagnosticsPluginMarker with to_ecs_payload(
-  self,
-) {
-  EcsPayload_diagnostic_SystemInformationDiagnosticsPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SystemInformationDiagnosticsPluginMarker with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_diagnostic_SystemInformationDiagnosticsPluginMarker(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SysinfoRefreshState with to_ecs_payload(self) {
-  EcsPayload_diagnostic_SysinfoRefreshState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SysinfoRefreshState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_diagnostic_SysinfoRefreshState(value) => Some(value)
     _ => None
   }
 }

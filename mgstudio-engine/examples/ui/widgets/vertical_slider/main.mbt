@@ -60,14 +60,14 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   commands.insert_resource(SliderValues::{ vertical: 0.5F, horizontal: 0.5F })
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_flex_direction(@ui.FlexDirection::Row)
@@ -81,7 +81,7 @@ fn setup(
   let vertical = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(24.0F))
       .with_height(@ui.Val::Px(240.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
@@ -93,7 +93,7 @@ fn setup(
     (
       @hierarchy.Parent::new(vertical),
       VerticalFill::{  },
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(50.0F))
       .with_position_type(@ui.PositionType::Absolute)
@@ -106,7 +106,7 @@ fn setup(
   let horizontal = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(260.0F))
       .with_height(@ui.Val::Px(24.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
@@ -118,7 +118,7 @@ fn setup(
     (
       @hierarchy.Parent::new(horizontal),
       HorizontalFill::{  },
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(50.0F))
       .with_height(@ui.Val::Percent(100.0F)),
       @ui.BackgroundColor::new(@sprite.Color::srgb(0.35F, 0.76F, 0.35F)),
@@ -130,7 +130,7 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @text.Text::new("Use Arrow keys to adjust both sliders"),
-      @text.TextFont::default().with_font(font).with_font_size(16.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
       @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
     ),
   )
@@ -186,7 +186,7 @@ fn apply_values(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(update_values)))
   .add_systems(@app.Update, @app.system(@app.system_param3(apply_values)))

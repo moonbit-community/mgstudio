@@ -19,7 +19,7 @@ fn mesh3d_default_mesh_view_layout() -> @mesh_view_layout.MeshPipelineViewLayout
   @mesh_view_layout.render3d_mesh_pipeline_view_layout(
     true,
     true,
-    @mesh_view_layout.MeshPipelineViewLayoutKey::default(),
+    @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
     clustered_decals_usable=false,
     irradiance_volumes_usable=false,
     oit_supported=false,

@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_ecs_component_hooks_MyComponent(MyComponent)
-  EcsPayload_examples_ecs_component_hooks_MyComponentIndex(MyComponentIndex)
   EcsPayload_examples_ecs_component_hooks_MyMessage(MyMessage)
 }
 
@@ -28,20 +27,6 @@ impl @ecs.EcsPayloadCodec for MyComponent with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for MyComponent with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ecs_component_hooks_MyComponent(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MyComponentIndex with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_component_hooks_MyComponentIndex(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MyComponentIndex with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_component_hooks_MyComponentIndex(value) =>
-      Some(value)
     _ => None
   }
 }

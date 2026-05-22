@@ -172,7 +172,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @text.Text2dBundle::new(
     @text.Text2d::new("Perceptual Roughness"),
-    @text.TextFont::default().with_font(overlay_font).with_font_size(30.0F),
+    @text.TextFont::TextFont().with_font(overlay_font).with_font_size(30.0F),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-300.0F, 330.0F),
       0.0F,
@@ -189,7 +189,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @text.Text2dBundle::new(
     @text.Text2d::new("Metallic"),
-    @text.TextFont::default().with_font(overlay_font).with_font_size(30.0F),
+    @text.TextFont::TextFont().with_font(overlay_font).with_font_size(30.0F),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(360.0F, 80.0F),
       @math.pi_half(),
@@ -206,7 +206,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let env_loading_label = @text.Text2dBundle::new(
       @text.Text2d::new("Loading Environment Map..."),
-      @text.TextFont::default().with_font(overlay_font).with_font_size(24.0F),
+      @text.TextFont::TextFont().with_font(overlay_font).with_font_size(24.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(375.0F, -330.0F),
         0.0F,
@@ -226,7 +226,7 @@ fn setup(world : @ecs.World) -> Unit {
     scale: 0.01F,
   }
   let camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @camera.Projection::Orthographic(orthographic),
     @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -266,7 +266,7 @@ fn environment_map_load_finish(_world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(environment_map_load_finish))
   .run()

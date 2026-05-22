@@ -505,7 +505,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   light_probe_blending_state.val.prism = Some(prism)
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   light_probe_blending_state.val.camera = Some(camera)
@@ -534,7 +534,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     probe_1,
     @pbr.ecs_key_light_probe,
-    @pbr.LightProbe::default().with_falloff(
+    @pbr.LightProbe::LightProbe().with_falloff(
       @math.Vec3::splat(LIGHT_PROBE_FALLOFF),
     ),
   )
@@ -568,7 +568,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     probe_2,
     @pbr.ecs_key_light_probe,
-    @pbr.LightProbe::default().with_falloff(
+    @pbr.LightProbe::LightProbe().with_falloff(
       @math.Vec3::splat(LIGHT_PROBE_FALLOFF),
     ),
   )
@@ -668,7 +668,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -684,7 +684,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   light_probe_blending_state.val.help_text = Some(help_text)
 }
@@ -867,7 +867,7 @@ fn free_camera(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(move_sphere))
   .add_systems(@app.Update, @app.system(handle_keyboard_actions))

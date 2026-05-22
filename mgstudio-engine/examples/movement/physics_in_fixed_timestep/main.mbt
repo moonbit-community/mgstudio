@@ -139,32 +139,32 @@ impl @app.Resource for DidFixedTimestepRunThisFrame with resource() {
 }
 
 ///|
-fn AccumulatedInput::default() -> AccumulatedInput {
+fn AccumulatedInput::AccumulatedInput() -> AccumulatedInput {
   { movement: @math.Vec2::zero() }
 }
 
 ///|
-fn Velocity::default() -> Velocity {
+fn Velocity::Velocity() -> Velocity {
   { value: @math.Vec3::zero() }
 }
 
 ///|
-fn PhysicalTranslation::default() -> PhysicalTranslation {
+fn PhysicalTranslation::PhysicalTranslation() -> PhysicalTranslation {
   { value: @math.Vec3::zero() }
 }
 
 ///|
-fn PreviousPhysicalTranslation::default() -> PreviousPhysicalTranslation {
+fn PreviousPhysicalTranslation::PreviousPhysicalTranslation() -> PreviousPhysicalTranslation {
   { value: @math.Vec3::zero() }
 }
 
 ///|
-fn CameraSensitivity::default() -> CameraSensitivity {
+fn CameraSensitivity::CameraSensitivity() -> CameraSensitivity {
   { x: 0.003F, y: 0.002F }
 }
 
 ///|
-fn DidFixedTimestepRunThisFrame::default() -> DidFixedTimestepRunThisFrame {
+fn DidFixedTimestepRunThisFrame::DidFixedTimestepRunThisFrame() -> DidFixedTimestepRunThisFrame {
   { value: false }
 }
 
@@ -172,16 +172,16 @@ fn DidFixedTimestepRunThisFrame::default() -> DidFixedTimestepRunThisFrame {
 fn spawn_text(commands : @app.Commands) -> Unit {
   let overlay_camera = commands.spawn(
     (
-      @sprite.Camera2d::default(),
-      @sprite.Camera::default().with_order(1).with_clear_color_none(),
-      @ui.IsDefaultUiCamera::default(),
+      @sprite.Camera2d::Camera2d(),
+      @sprite.Camera::Camera().with_order(1).with_clear_color_none(),
+      @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
     ),
   )
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
       @ui.UiTargetCamera::new(overlay_camera),
@@ -191,7 +191,7 @@ fn spawn_text(commands : @app.Commands) -> Unit {
   let panel = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_bottom(@ui.Val::Px(12.0F))
       .with_left(@ui.Val::Px(12.0F))
@@ -199,12 +199,12 @@ fn spawn_text(commands : @app.Commands) -> Unit {
     ),
   )
 
-  let font = @text.TextFont::default().with_font_size(25.0F)
+  let font = @text.TextFont::TextFont().with_font_size(25.0F)
   ignore(
     commands.spawn(
       (
         @hierarchy.Parent::new(panel),
-        @ui.Node::default(),
+        @ui.Node::Node(),
         @text.Text::new("Move the player with WASD"),
         font,
         @text.TextColor::new(@sprite.Color::white()),
@@ -216,7 +216,7 @@ fn spawn_text(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @hierarchy.Parent::new(panel),
-        @ui.Node::default(),
+        @ui.Node::Node(),
         @text.Text::new("Rotate the camera with the mouse"),
         font,
         @text.TextColor::new(@sprite.Color::white()),
@@ -230,9 +230,9 @@ fn spawn_player(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::identity(),
-        CameraSensitivity::default(),
+        CameraSensitivity::CameraSensitivity(),
       ),
     ),
   )
@@ -242,10 +242,10 @@ fn spawn_player(commands : @app.Commands) -> Unit {
       (
         @ecs.Name::new("Player"),
         @transform.Transform::identity().with_scale(@math.Vec3::splat(0.3F)),
-        AccumulatedInput::default(),
-        Velocity::default(),
-        PhysicalTranslation::default(),
-        PreviousPhysicalTranslation::default(),
+        AccumulatedInput::AccumulatedInput(),
+        Velocity::Velocity(),
+        PhysicalTranslation::PhysicalTranslation(),
+        PreviousPhysicalTranslation::PreviousPhysicalTranslation(),
       ),
     ),
   )
@@ -294,7 +294,7 @@ fn spawn_environment(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::default(),
+        @pbr.DirectionalLight::DirectionalLight(),
         @transform.Transform::identity().looking_to(
           @math.Vec3::new(-1.0F, -3.0F, 0.5F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -528,8 +528,10 @@ fn main {
   )
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .init_resource(DidFixedTimestepRunThisFrame::default)
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .init_resource(fn() {
+    DidFixedTimestepRunThisFrame::DidFixedTimestepRunThisFrame()
+  })
   .add_systems(@app.Startup, spawn_text_system)
   .add_systems(@app.Startup, spawn_player_system)
   .add_systems(@app.Startup, spawn_environment_system)

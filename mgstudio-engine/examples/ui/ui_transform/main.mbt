@@ -134,7 +134,7 @@ fn text_color() -> @sprite.Color {
 
 ///|
 fn button_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_width(@ui.Val::Px(80.0F))
   .with_height(@ui.Val::Px(80.0F))
   .with_align_items(@ui.AlignItems::Center)
@@ -144,7 +144,7 @@ fn button_node() -> @ui.Node {
 
 ///|
 fn control_column_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_flex_direction(@ui.FlexDirection::Column)
   .with_justify_content(@ui.JustifyContent::Center)
   .with_row_gap(@ui.Val::Px(10.0F))
@@ -152,7 +152,7 @@ fn control_column_node() -> @ui.Node {
 
 ///|
 fn button_text_font(font : @asset.Handle[@asset.Font]) -> @text.TextFont {
-  @text.TextFont::default().with_font(font).with_font_size(33.0F)
+  @text.TextFont::TextFont().with_font(font).with_font_size(33.0F)
 }
 
 ///|
@@ -195,7 +195,7 @@ fn spawn_control_button(
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(parent),
-      @ui.Button::default(),
+      @ui.Button::Button(),
       ControlButton::{  },
       ButtonPressState::{ pressed: false },
       button_node(),
@@ -241,7 +241,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
@@ -249,9 +249,9 @@ fn setup(
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
+      @ui.UiRoot::UiRoot(),
       @transform.Transform::identity(),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
@@ -263,7 +263,7 @@ fn setup(
   let content = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_align_items(@ui.AlignItems::Center)
       .with_justify_content(@ui.JustifyContent::SpaceEvenly)
       .with_column_gap(@ui.Val::Px(25.0F)),
@@ -293,7 +293,7 @@ fn setup(
       @hierarchy.Parent::new(content),
       TargetNode::{  },
       @transform.Transform::identity(),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(300.0F))
       .with_height(@ui.Val::Px(300.0F))
       .with_flex_direction(@ui.FlexDirection::Column)
@@ -309,7 +309,7 @@ fn setup(
     (
       @hierarchy.Parent::new(target),
       @ui.Node::{
-        ..@ui.Node::default()
+        ..@ui.Node()
         .with_justify_content(@ui.JustifyContent::SpaceBetween)
         .with_align_items(@ui.AlignItems::Center),
         align_self: @ui.AlignSelf::Stretch,
@@ -327,7 +327,7 @@ fn setup(
     commands.spawn(
       (
         @hierarchy.Parent::new(middle_row),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_width(@ui.Val::Px(100.0F))
         .with_height(@ui.Val::Px(100.0F)),
         @ui.ImageNode::new(icon),
@@ -465,7 +465,7 @@ fn translation_system(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(button_system))
   .add_systems(@app.Update, @app.system(@app.system_param3(translation_system)))

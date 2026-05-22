@@ -60,9 +60,9 @@ pub fn Camera3dBundle::new(
     custom_post_process3d: None,
     vignette: None,
     motion_blur: None,
-    exposure: Some(Exposure::default()),
+    exposure: Some(Exposure::Exposure()),
     color_grading: None,
-    camera3d: Camera3d::default(),
+    camera3d: Camera3d::Camera3d(),
     decal_config: None,
     deferred_config: None,
     distance_fog: None,
@@ -73,7 +73,7 @@ pub fn Camera3dBundle::new(
     atmosphere_settings: None,
     transform,
     target: @sprite.RenderTarget::Screen,
-    layers: @sprite.RenderLayers::default(),
+    layers: @sprite.RenderLayers::RenderLayers(),
   }
 }
 
@@ -96,9 +96,9 @@ pub fn Camera3dBundle::new_with_projection(
     custom_post_process3d: None,
     vignette: None,
     motion_blur: None,
-    exposure: Some(Exposure::default()),
+    exposure: Some(Exposure::Exposure()),
     color_grading: None,
-    camera3d: Camera3d::default(),
+    camera3d: Camera3d::Camera3d(),
     decal_config: None,
     deferred_config: None,
     distance_fog: None,
@@ -109,7 +109,7 @@ pub fn Camera3dBundle::new_with_projection(
     atmosphere_settings: None,
     transform,
     target: @sprite.RenderTarget::Screen,
-    layers: @sprite.RenderLayers::default(),
+    layers: @sprite.RenderLayers::RenderLayers(),
   }
 }
 
@@ -310,7 +310,7 @@ pub fn MeshMaterial3dBundle::new(
     mesh,
     material,
     transform,
-    layers: @sprite.RenderLayers::default(),
+    layers: @sprite.RenderLayers::RenderLayers(),
     visibility: @visibility.Visibility::Inherited,
     inherited_visibility: @visibility.InheritedVisibility::new(true),
     view_visibility: @visibility.ViewVisibility::new(true),
@@ -477,7 +477,7 @@ pub fn register_render3d_required_components(
   world.register_required_components_with(
     ecs_key_camera3d,
     @sprite.ecs_key_camera,
-    fn() { @sprite.Camera::default() },
+    fn() { @sprite.Camera::Camera() },
   )
   world.register_required_components_with(
     ecs_key_camera3d,
@@ -497,7 +497,7 @@ pub fn register_render3d_required_components(
   world.register_required_components_with(
     ecs_key_camera3d,
     @sprite.ecs_key_render_layers,
-    fn() { @sprite.RenderLayers::default() },
+    fn() { @sprite.RenderLayers::RenderLayers() },
   )
   world.register_required_components_with(
     ecs_key_camera3d,
@@ -510,7 +510,7 @@ pub fn register_render3d_required_components(
     fn() { DebandDither::Enabled },
   )
   world.register_required_components_with(ecs_key_camera3d, ecs_key_exposure, fn() {
-    Exposure::default()
+    Exposure::Exposure()
   })
   world.register_required_components_with(ecs_key_camera3d, ecs_key_frustum, fn() {
     Projection::default().compute_frustum(@transform.Transform::identity())
@@ -518,12 +518,12 @@ pub fn register_render3d_required_components(
   world.register_required_components_with(
     ecs_key_motion_blur,
     ecs_key_depth_prepass,
-    fn() { DepthPrepass::default() },
+    fn() { DepthPrepass() },
   )
   world.register_required_components_with(
     ecs_key_motion_blur,
     ecs_key_motion_vector_prepass,
-    fn() { MotionVectorPrepass::default() },
+    fn() { MotionVectorPrepass() },
   )
 }
 

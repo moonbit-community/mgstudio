@@ -131,7 +131,7 @@ pub fn extract_line_gizmos(render_world : @ecs.World) -> Unit {
     let (gap_scale, line_scale) = retained_line_style_parts(line_config.style)
     let render_layers = match render_layers_comp {
       Some(layers_comp) => layers_comp.value()
-      None => @sprite.RenderLayers::default()
+      None => @sprite.RenderLayers::RenderLayers()
     }
     values.push(ExtractedLineGizmo::{
       uniform: LineGizmoUniform::{
@@ -159,7 +159,7 @@ pub fn extract_line_gizmos(render_world : @ecs.World) -> Unit {
     try! render_world.set(render_entity, value.main_entity)
     try! render_world.set(
       render_entity,
-      @render.TemporaryRenderEntity::default(),
+      @render.TemporaryRenderEntity::TemporaryRenderEntity(),
     )
   }
 }

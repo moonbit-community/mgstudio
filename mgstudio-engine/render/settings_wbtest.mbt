@@ -42,7 +42,7 @@ test "render settings: bevy renderer resources use distinct world keys" {
 
 ///|
 test "render schedule: render graph aliases canonical render schedule" {
-  let graph = RenderGraph::default()
+  let graph = RenderGraph::RenderGraph()
   ignore(graph)
   debug_inspect(
     RenderGraph::schedule() == render_schedule_stage(),
@@ -84,7 +84,7 @@ test "render settings: current view stores the render entity" {
 ///|
 test "render plugin: initializes pending command buffers in render app" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    RenderPlugin::default(),
+    RenderPlugin::RenderPlugin(),
   )
   let render_sub_app = app.get_sub_app(@app.RenderApp).unwrap()
   let render_world = render_sub_app.world()
@@ -97,7 +97,7 @@ test "render plugin: initializes pending command buffers in render app" {
 ///|
 test "render plugin: installs render asset byte budget resources" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    RenderPlugin::default(),
+    RenderPlugin::RenderPlugin(),
   )
   let main_budget = app
     .world()
@@ -122,7 +122,7 @@ test "render asset byte budget: extract updates limiter and cleanup resets write
   let render_world = @ecs.World::new()
   render_world.insert_resource(
     render_asset_bytes_per_frame_limiter_resource_key,
-    RenderAssetBytesPerFrameLimiter::default(),
+    RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
   )
   let synced = render_sub_app_extract(main_world, render_world)
   let render_world = synced.1
@@ -140,7 +140,7 @@ test "render asset byte budget: extract updates limiter and cleanup resets write
 ///|
 test "render plugin: initializes render state as not ready" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    RenderPlugin::default(),
+    RenderPlugin::RenderPlugin(),
   )
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let state = render_world.get_resource(render_state_resource_key).unwrap()

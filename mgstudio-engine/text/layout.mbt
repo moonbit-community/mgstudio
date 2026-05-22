@@ -83,7 +83,7 @@ pub struct TextLayoutInfo {
 }
 
 ///|
-pub fn TextLayoutInfo::default() -> TextLayoutInfo {
+pub fn TextLayoutInfo::TextLayoutInfo() -> TextLayoutInfo {
   TextLayoutInfo::{
     scale_factor: 1.0F,
     glyphs: [],
@@ -95,5 +95,5 @@ pub fn TextLayoutInfo::default() -> TextLayoutInfo {
 ///|
 pub fn TextLayoutInfo::clear(self : TextLayoutInfo) -> TextLayoutInfo {
   self |> ignore
-  TextLayoutInfo::default()
+  TextLayoutInfo::TextLayoutInfo()
 }

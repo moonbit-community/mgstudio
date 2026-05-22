@@ -72,26 +72,26 @@ pub let visibility_range_set_check : String
 // Types and methods
 pub struct ShadowLodOrigin {
 } derive(Eq, @debug.Debug)
-pub fn ShadowLodOrigin::default() -> Self
+pub fn ShadowLodOrigin::ShadowLodOrigin() -> Self
 pub impl @ecs.Component for ShadowLodOrigin
 pub impl @ecs.EcsPayloadCodec for ShadowLodOrigin
 
 pub struct VisibilityPlugin {
 }
-pub fn VisibilityPlugin::default() -> Self
+pub fn VisibilityPlugin::VisibilityPlugin() -> Self
 pub impl @app.Plugin for VisibilityPlugin
 
 pub struct VisibilityRangePlugin {
 }
-pub fn VisibilityRangePlugin::default() -> Self
+pub fn VisibilityRangePlugin::VisibilityRangePlugin() -> Self
 pub impl @app.Plugin for VisibilityRangePlugin
 
 pub struct VisibleEntityRanges {
   views : @hashmap.HashMap[Int, Int]
   entities : @hashmap.HashMap[Int, Int]
 }
+pub fn VisibleEntityRanges::VisibleEntityRanges() -> Self
 pub fn VisibleEntityRanges::clear(Self) -> Unit
-pub fn VisibleEntityRanges::default() -> Self
 pub fn VisibleEntityRanges::entity_is_in_range_of_view(Self, @core.Entity, @core.Entity) -> Bool
 pub impl @app.Resource for VisibleEntityRanges
 pub impl @ecs.EcsPayloadCodec for VisibleEntityRanges

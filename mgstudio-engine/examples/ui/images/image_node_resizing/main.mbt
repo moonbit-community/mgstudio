@@ -265,11 +265,11 @@ fn spawn_label(
           IMAGE_GROUP_BOX_INIT_HEIGHT,
         ),
       ),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(22.0F)),
       @text.TextColor::new(text_color()),
-      @ui.Node::default().with_margin(@ui.UiRect::all(@ui.Val::Px(10.0F))),
+      @ui.Node::Node().with_margin(@ui.UiRect::all(@ui.Val::Px(10.0F))),
     ),
   )
   ignore(commands.entity(label).observe2_fallible(update_text))
@@ -287,7 +287,7 @@ fn spawn_image_group(
     (
       @hierarchy.Parent::new(parent),
       ImageGroup::{  },
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(IMAGE_GROUP_BOX_INIT_WIDTH))
       .with_height(@ui.Val::Percent(IMAGE_GROUP_BOX_INIT_HEIGHT))
       .with_align_items(@ui.AlignItems::Center),
@@ -301,7 +301,7 @@ fn spawn_image_group(
           commands.spawn(
             (
               @hierarchy.Parent::new(group),
-              @ui.Node::default(),
+              @ui.Node::Node(),
               @ui.ImageNode::new(image).with_mode(@ui.NodeImageMode::Auto),
             ),
           ),
@@ -314,7 +314,7 @@ fn spawn_image_group(
           commands.spawn(
             (
               @hierarchy.Parent::new(group),
-              @ui.Node::default()
+              @ui.Node::Node()
               .with_width(@ui.Val::Percent(width))
               .with_height(@ui.Val::Percent(100.0F)),
               @ui.ImageNode::new(image).with_mode(@ui.NodeImageMode::Stretch),
@@ -334,7 +334,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
 
   let icon = asset_server.get().load_image("branding/icon.png")
@@ -342,8 +342,8 @@ fn setup(
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_flex_direction(@ui.FlexDirection::Column)
@@ -358,7 +358,7 @@ fn setup(
   let panel = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_justify_content(@ui.JustifyContent::SpaceAround)
@@ -459,7 +459,7 @@ fn on_trigger_image_group(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param2(setup)
   .add_system_param3(update)
   .add_observer2(on_trigger_image_group)

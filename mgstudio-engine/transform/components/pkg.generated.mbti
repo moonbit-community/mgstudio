@@ -40,6 +40,7 @@ pub struct GlobalTransform {
   affine : Affine2
   z : Float
 }
+pub fn GlobalTransform::GlobalTransform() -> Self
 pub fn GlobalTransform::compute_transform(Self) -> Transform
 pub fn GlobalTransform::from_transform(Transform) -> Self
 pub fn GlobalTransform::identity() -> Self
@@ -55,6 +56,7 @@ pub struct StaticTransformOptimizations {
   threshold : Float
   enabled : Bool
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn StaticTransformOptimizations::StaticTransformOptimizations() -> Self
 pub fn StaticTransformOptimizations::disabled() -> Self
 pub fn StaticTransformOptimizations::enabled() -> Self
 pub fn StaticTransformOptimizations::from_threshold(Float) -> Self
@@ -67,6 +69,7 @@ pub struct Transform {
   mut rotation : @math.Quat
   scale : @math.Vec3
 }
+pub fn Transform::Transform() -> Self
 pub fn Transform::align(Self, @math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> Unit
 pub fn Transform::aligned_by(Self, @math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> Self
 pub fn Transform::back(Self) -> @math.Vec3
@@ -102,6 +105,7 @@ pub impl @json.FromJson for Transform
 
 pub struct TransformTreeChanged {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn TransformTreeChanged::TransformTreeChanged() -> Self
 pub impl Default for TransformTreeChanged
 
 // Type aliases

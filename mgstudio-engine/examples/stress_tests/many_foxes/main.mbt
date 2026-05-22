@@ -71,7 +71,7 @@ impl @app.Resource for Foxes with resource() {
 let scene_ready_counter_ref : Ref[Int] = Ref(0)
 
 ///|
-fn Foxes::default() -> Foxes {
+fn Foxes::Foxes() -> Foxes {
   { count: DEFAULT_FOX_COUNT, speed: 2.0F, moving: true, sync: false }
 }
 
@@ -142,7 +142,7 @@ fn parse_args() -> Args {
 
 ///|
 fn configured_window() -> @window.Window {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.title = "🦊🦊🦊 Many Foxes! 🦊🦊🦊"
   window.present_mode = @window.PresentMode::AutoNoVsync
   window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
@@ -280,7 +280,7 @@ fn setup(
     }
     let ring_parent = commands.spawn(
       (
-        @transform.Transform::default(),
+        @transform.Transform::Transform(),
         @visibility.Visibility::Inherited,
         RotationDirection::{ sign: direction_sign },
         Ring::{ radius, },
@@ -328,7 +328,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_translation(camera_translation).looking_at(
           @math.Vec3::new(
             camera_translation.x * 0.2F,
@@ -367,7 +367,7 @@ fn setup(
     commands.spawn(
       (
         @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
-          @pbr.CascadeShadowConfigBuilder::default()
+          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
           .with_first_cascade_far_bound(0.9F * radius)
           .with_maximum_distance(2.8F * radius),
         ),
@@ -560,11 +560,7 @@ fn main {
     @app.system_param3(update_fox_rings),
   ).named("examples.stress_tests.many_foxes.update_fox_rings")
   let app = @app.App::new(@ecs.World::new())
-    .insert_resource(Foxes::{
-      ..Foxes::default(),
-      count: args.count,
-      sync: args.sync,
-    })
+    .insert_resource(Foxes::{ ..Foxes(), count: args.count, sync: args.sync })
     .insert_resource(stress_metrics_state_default())
     .insert_resource(@transform.StaticTransformOptimizations::disabled())
     .insert_resource(@winit.WinitSettings::continuous())
@@ -576,9 +572,11 @@ fn main {
         close_when_requested: true,
       }),
     )
-    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-    .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
-    .add_plugins(@diagnostic.TimelineTracePlugin::default())
+    .add_plugins(
+      @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+    )
+    .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
+    .add_plugins(@diagnostic.TimelineTracePlugin::TimelineTracePlugin())
     .add_systems(
       @app.Startup,
       @app.system(@app.system_param3(setup)).named(

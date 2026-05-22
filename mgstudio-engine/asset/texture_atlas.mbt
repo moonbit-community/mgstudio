@@ -420,7 +420,7 @@ pub struct TextureAtlasBuilder {
 }
 
 ///|
-pub fn TextureAtlasBuilder::default() -> TextureAtlasBuilder {
+pub fn TextureAtlasBuilder::TextureAtlasBuilder() -> TextureAtlasBuilder {
   TextureAtlasBuilder::{
     padding: @math.UVec2::zero(),
     initial_size: @math.UVec2::splat(256),

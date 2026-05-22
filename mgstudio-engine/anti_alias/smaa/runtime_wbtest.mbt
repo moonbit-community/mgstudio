@@ -18,20 +18,22 @@ fn smaa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
   try! world.set_by_key(
     entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
   entity
 }
 
 ///|
 test "anti_alias/smaa: runtime state counts only camera entities with Smaa" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(SmaaPlugin::default())
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    SmaaPlugin::SmaaPlugin(),
+  )
   let camera_entity = smaa_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()
-  try! app.world().set_by_key(camera_entity, Smaa::component(), Smaa::default())
+  try! app.world().set_by_key(camera_entity, Smaa::component(), Smaa::Smaa())
   try! app
   .world()
-  .set_by_key(non_camera_entity, Smaa::component(), Smaa::default())
+  .set_by_key(non_camera_entity, Smaa::component(), Smaa::Smaa())
   let app = app.update()
   let runtime = app.world().get_resource(SmaaRuntimeState::resource()).unwrap()
   debug_inspect(runtime.enabled_camera_count, content="1")
@@ -40,7 +42,9 @@ test "anti_alias/smaa: runtime state counts only camera entities with Smaa" {
 
 ///|
 test "anti_alias/smaa: plugin registers embedded wgsl source" {
-  let _app = @app.App::new(@ecs.World::new()).add_plugins(SmaaPlugin::default())
+  let _app = @app.App::new(@ecs.World::new()).add_plugins(
+    SmaaPlugin::SmaaPlugin(),
+  )
   let source = match
     @shader_source.embedded_shader_source("anti_alias/smaa/smaa.wgsl") {
     Some(source) => source
@@ -54,7 +58,9 @@ test "anti_alias/smaa: plugin registers embedded wgsl source" {
 
 ///|
 test "anti_alias/smaa: plugin registers Bevy lookup table assets" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(SmaaPlugin::default())
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    SmaaPlugin::SmaaPlugin(),
+  )
   debug_inspect(
     app.world().get_resource(ecs_key_smaa_luts) is Some(_),
     content="true",

@@ -16,7 +16,7 @@
 pub struct UiPlugin {}
 
 ///|
-pub fn UiPlugin::default() -> UiPlugin {
+pub fn UiPlugin::UiPlugin() -> UiPlugin {
   UiPlugin::{  }
 }
 

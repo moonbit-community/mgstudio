@@ -45,7 +45,7 @@ fn dedup_sorted_families(families : Array[String]) -> Array[String] {
 
 ///|
 fn root_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_width(@ui.Val::Percent(100.0F))
   .with_height(@ui.Val::Percent(100.0F))
   .with_align_items(@ui.AlignItems::Center)
@@ -54,7 +54,7 @@ fn root_node() -> @ui.Node {
 
 ///|
 fn page_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_width(@ui.Val::Percent(100.0F))
   .with_height(@ui.Val::Percent(100.0F))
   .with_align_items(@ui.AlignItems::Center)
@@ -64,7 +64,7 @@ fn page_node() -> @ui.Node {
 
 ///|
 fn list_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_flex_direction(@ui.FlexDirection::Column)
   .with_row_gap(@ui.Val::Px(6.0F))
   .with_width(@ui.Val::Percent(100.0F))
@@ -77,17 +77,17 @@ fn list_node() -> @ui.Node {
 
 ///|
 fn heading_font() -> @text.TextFont {
-  @text.TextFont::default().with_font_size(@text.FontSize::Px(28.0F))
+  @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(28.0F))
 }
 
 ///|
 fn body_font() -> @text.TextFont {
-  @text.TextFont::default().with_font_size(@text.FontSize::Px(22.0F))
+  @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(22.0F))
 }
 
 ///|
 fn family_preview_font(family : String) -> @text.TextFont {
-  @text.TextFont::default()
+  @text.TextFont::TextFont()
   .with_family(family)
   .with_font_size(@text.FontSize::Px(22.0F))
 }
@@ -122,7 +122,7 @@ fn spawn_family_row(
   let row = commands.spawn(
     (
       @hierarchy.Parent::new(parent),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_display(@ui.Display::Grid)
       .with_grid_template_columns([
         @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(2), [
@@ -142,7 +142,7 @@ fn spawn_family_row(
       family,
       family_preview_font(family),
       label_color(),
-      @ui.Node::default(),
+      @ui.Node::Node(),
     ),
   )
   ignore(
@@ -152,20 +152,20 @@ fn spawn_family_row(
       family,
       body_font(),
       label_color(),
-      @ui.Node::default(),
+      @ui.Node::Node(),
     ),
   )
 }
 
 ///|
 fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit {
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   let families = dedup_sorted_families(font_cx.peek().family_names())
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
+      @ui.UiRoot::UiRoot(),
       root_node(),
       @ui.BackgroundColor::new(page_background()),
     ),
@@ -180,7 +180,7 @@ fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit 
   let panel = commands.spawn(
     (
       @hierarchy.Parent::new(page),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(1000.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_flex_direction(@ui.FlexDirection::Column)
@@ -196,7 +196,7 @@ fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit 
       "Total available fonts: \{families.length().to_string()}",
       heading_font(),
       label_color(),
-      @ui.Node::default(),
+      @ui.Node::Node(),
     ),
   )
 
@@ -215,7 +215,7 @@ fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

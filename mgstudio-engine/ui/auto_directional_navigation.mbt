@@ -18,7 +18,7 @@ pub struct AutoDirectionalNavigation {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn AutoDirectionalNavigation::default() -> AutoDirectionalNavigation {
+pub fn AutoDirectionalNavigation::AutoDirectionalNavigation() -> AutoDirectionalNavigation {
   { respect_tab_order: false }
 }
 
@@ -66,7 +66,7 @@ fn auto_directional_navigation_map(
   )
   match map {
     Some(map) => map
-    None => @input_focus.DirectionalNavigationMap::default()
+    None => @input_focus.DirectionalNavigationMap::DirectionalNavigationMap()
   }
 }
 
@@ -79,7 +79,7 @@ fn auto_directional_navigation_config(
   )
   match config {
     Some(config) => config
-    None => @input_focus.AutoNavigationConfig::default()
+    None => @input_focus.AutoNavigationConfig::AutoNavigationConfig()
   }
 }
 

@@ -40,7 +40,7 @@ pub(all) struct AssetPlugin {
 }
 
 ///|
-pub fn AssetPlugin::default() -> AssetPlugin {
+pub fn AssetPlugin::AssetPlugin() -> AssetPlugin {
   AssetPlugin::{
     default_sampler_nearest: false,
     mode: AssetMode::Unprocessed,
@@ -50,7 +50,7 @@ pub fn AssetPlugin::default() -> AssetPlugin {
 }
 
 ///|
-pub fn AssetPlugin::default_nearest() -> AssetPlugin {
+pub fn AssetPlugin::nearest() -> AssetPlugin {
   AssetPlugin::{
     default_sampler_nearest: true,
     mode: AssetMode::Unprocessed,

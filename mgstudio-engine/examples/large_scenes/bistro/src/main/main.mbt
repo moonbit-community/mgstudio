@@ -46,7 +46,7 @@ fn setup(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(0.0F, 36.0F, 42.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -57,7 +57,7 @@ fn setup(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default()
+        @pbr.PointLight::PointLight()
         .with_shadow_maps_enabled(true)
         .with_intensity(2_200_000.0F)
         .with_range(200.0F),
@@ -139,7 +139,7 @@ fn spin_light(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(spin_light)))
   .run()

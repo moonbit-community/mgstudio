@@ -98,7 +98,7 @@ impl @app.Resource for TrackChangePending with resource() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(cycle_game_state))
   .add_systems(@app.Update, @app.system(change_track))
@@ -132,7 +132,7 @@ fn setup(world : @ecs.World) -> Unit {
   })
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore

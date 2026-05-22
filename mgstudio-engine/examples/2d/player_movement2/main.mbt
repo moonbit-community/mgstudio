@@ -25,7 +25,7 @@ let player_movement_state : Ref[PlayerMovementState] = Ref(PlayerMovementState::
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(rapier2d_player_movement2_setup))
   .add_systems(@app.FixedUpdate, @app.system(rapier2d_player_movement2_fixed))
   .run()
@@ -41,7 +41,7 @@ fn rapier2d_player_movement2_setup(world : @ecs.World) -> Unit {
     @sprite.ClearColor::new(@sprite.Color::new(0.75F, 0.82F, 0.65F, 1.0F)),
   )
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -105,7 +105,7 @@ fn rapier2d_player_movement2_setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     player,
     @physics2d.ecs_key_kinematic_character_controller2d,
-    @physics2d.KinematicCharacterController2d::default(),
+    @physics2d.KinematicCharacterController2d::KinematicCharacterController2d(),
   )
   try! world.set_by_key(
     player,

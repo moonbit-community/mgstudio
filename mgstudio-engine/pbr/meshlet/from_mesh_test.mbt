@@ -18,14 +18,14 @@ test "pbr meshlet: conversion reports native processor availability" {
   let error = meshlet_conversion_error_for_counts(
     10,
     10,
-    MeshToMeshletMeshConversionConfig::default(),
+    MeshToMeshletMeshConversionConfig::MeshToMeshletMeshConversionConfig(),
   )
   inspect(error is None, content="true")
 }
 
 ///|
 test "pbr meshlet: input summary validation checks topology and attributes" {
-  let config = MeshToMeshletMeshConversionConfig::default()
+  let config = MeshToMeshletMeshConversionConfig::MeshToMeshletMeshConversionConfig()
   let wrong_topology = MeshToMeshletInputMeshSummary::new(
     primitive_topology="TriangleStrip",
     vertex_attributes=meshlet_required_vertex_attributes(),
@@ -54,7 +54,7 @@ test "pbr meshlet: input summary validation checks topology and attributes" {
 
 ///|
 test "pbr meshlet: input summary validation checks indices and limits" {
-  let config = MeshToMeshletMeshConversionConfig::default()
+  let config = MeshToMeshletMeshConversionConfig::MeshToMeshletMeshConversionConfig()
   let missing_indices = MeshToMeshletInputMeshSummary::new(
     primitive_topology="TriangleList",
     vertex_attributes=meshlet_required_vertex_attributes(),

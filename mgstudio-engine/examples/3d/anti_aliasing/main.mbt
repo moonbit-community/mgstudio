@@ -210,7 +210,9 @@ fn set_camera_projection(world : @ecs.World) -> Unit {
       scale: 0.002F,
     })
   } else {
-    @camera.Projection::Perspective(@camera.PerspectiveProjection3d::default())
+    @camera.Projection::Perspective(
+      @camera.PerspectiveProjection3d::PerspectiveProjection3d(),
+    )
   }
   try! (world.replace(camera_entity, @pbr.ecs_key_projection, projection)
   |> ignore)
@@ -283,7 +285,7 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       camera_entity,
       @post_process.ecs_key_fxaa,
-      @post_process.Fxaa::default().with_sensitivity(
+      @post_process.Fxaa::Fxaa().with_sensitivity(
         fxaa_sensitivity_component(anti_aliasing_state.val.fxaa_sensitivity),
       ),
     )
@@ -295,22 +297,22 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       camera_entity,
       @post_process.ecs_key_temporal_anti_aliasing,
-      @post_process.TemporalAntiAliasing::default(),
+      @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
     )
     try! world.set_by_key(
       camera_entity,
       @post_process.ecs_key_temporal_jitter,
-      @post_process.TemporalJitter::default(),
+      @post_process.TemporalJitter::TemporalJitter(),
     )
     try! world.set_by_key(
       camera_entity,
       @pbr.ecs_key_depth_prepass,
-      @pbr.DepthPrepass::default(),
+      @pbr.DepthPrepass::DepthPrepass(),
     )
     try! world.set_by_key(
       camera_entity,
       @pbr.ecs_key_motion_vector_prepass,
-      @pbr.MotionVectorPrepass::default(),
+      @pbr.MotionVectorPrepass::MotionVectorPrepass(),
     )
     return
   }
@@ -684,7 +686,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera_entity = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -717,7 +719,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -733,7 +735,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   anti_aliasing_state.val.help_text = Some(help_text)
 
@@ -950,7 +952,7 @@ fn update(keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput]) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param(update)))
   .run()

@@ -20,7 +20,7 @@
 pub struct Wireframe2d {}
 
 ///|
-pub fn Wireframe2d::default() -> Wireframe2d {
+pub fn Wireframe2d::Wireframe2d() -> Wireframe2d {
   Wireframe2d::{  }
 }
 
@@ -32,7 +32,7 @@ pub fn Wireframe2d::default() -> Wireframe2d {
 pub struct NoWireframe2d {}
 
 ///|
-pub fn NoWireframe2d::default() -> NoWireframe2d {
+pub fn NoWireframe2d::NoWireframe2d() -> NoWireframe2d {
   NoWireframe2d::{  }
 }
 
@@ -46,7 +46,7 @@ pub struct Wireframe2dColor {
 pub impl @ecs.Mutable for Wireframe2dColor
 
 ///|
-pub fn Wireframe2dColor::default() -> Wireframe2dColor {
+pub fn Wireframe2dColor::Wireframe2dColor() -> Wireframe2dColor {
   Wireframe2dColor::{ color: Color::white() }
 }
 
@@ -71,7 +71,7 @@ pub struct Wireframe2dConfig {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Wireframe2dConfig::default() -> Wireframe2dConfig {
+pub fn Wireframe2dConfig::Wireframe2dConfig() -> Wireframe2dConfig {
   Wireframe2dConfig::{ global: false, default_color: Color::white() }
 }
 
@@ -108,7 +108,7 @@ pub impl @app.Resource for Wireframe2dConfig with resource() {
 fn init_wireframe2d_resources(world : @ecs.World) -> Unit {
   let wireframe_config = get_wireframe2d_config_resource(world)
   if !wireframe_config.is_present() {
-    wireframe_config.insert(Wireframe2dConfig::default())
+    wireframe_config.insert(Wireframe2dConfig::Wireframe2dConfig())
   }
 }
 

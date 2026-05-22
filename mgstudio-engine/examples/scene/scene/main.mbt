@@ -42,7 +42,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(16.0F, 12.0F, 16.0F).looking_at(
           @math.Vec3::new(0.0F, 0.8F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -112,7 +112,7 @@ fn rotate_scene_roots(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(rotate_scene_roots)))
   .run()

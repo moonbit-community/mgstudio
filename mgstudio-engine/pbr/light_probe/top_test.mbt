@@ -14,10 +14,10 @@
 
 ///|
 test "pbr light probe: view probe container enforces max probe count" {
-  let probes = RenderViewLightProbes::default()
+  let probes = RenderViewLightProbes::RenderViewLightProbes()
   for i in 0..<16 {
     ignore(probes.push_texture(None))
-    probes.push_probe(RenderLightProbe::default())
+    probes.push_probe(RenderLightProbe::RenderLightProbe())
     i |> ignore
   }
   inspect(probes.texture_count(), content="8")
@@ -39,7 +39,7 @@ test "pbr light probe: resource and component keys round-trip through ecs APIs" 
   let world = @ecs.World::new()
   world.insert_resource(
     ecs_key_light_probe_plugin_state,
-    LightProbePluginState::default(),
+    LightProbePluginState::LightProbePluginState(),
   )
   let state : LightProbePluginState? = world.get_resource(
     ecs_key_light_probe_plugin_state,
@@ -50,7 +50,7 @@ test "pbr light probe: resource and component keys round-trip through ecs APIs" 
   try! (world.set_by_key(
     entity,
     ecs_key_render_view_light_probes,
-    RenderViewLightProbes::default(),
+    RenderViewLightProbes::RenderViewLightProbes(),
   )
   |> ignore)
   let probes = try! world.get_by_key(entity, ecs_key_render_view_light_probes)

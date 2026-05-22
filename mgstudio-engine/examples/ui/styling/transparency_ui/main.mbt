@@ -14,7 +14,7 @@
 
 ///|
 fn button_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_width(@ui.Val::Px(150.0F))
   .with_height(@ui.Val::Px(65.0F))
   .with_justify_content(@ui.JustifyContent::Center)
@@ -41,7 +41,7 @@ fn spawn_button(
     .insert(
       (
         @hierarchy.Parent::new(parent),
-        @ui.Button::default(),
+        @ui.Button::Button(),
         button_node(),
         @ui.BackgroundColor::new(background),
       ),
@@ -69,7 +69,7 @@ fn spawn_button(
 fn setup(world : @ecs.World) -> Unit {
   ignore(
     @sprite.Camera2dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::identity(),
     ).spawn(world),
   )
@@ -83,8 +83,8 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(root)
     .insert(
       (
-        @ui.UiRoot::default(),
-        @ui.Node::default()
+        @ui.UiRoot::UiRoot(),
+        @ui.Node::Node()
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Percent(100.0F))
         .with_align_items(@ui.AlignItems::Center)
@@ -112,7 +112,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(
     @sprite.ClearColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.0F)),
   )

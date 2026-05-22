@@ -39,7 +39,7 @@ pub struct DownsampleShaders {
   depth_shader_path : String
   general_shader_count : Int
 }
-pub fn DownsampleShaders::default() -> Self
+pub fn DownsampleShaders::DownsampleShaders() -> Self
 pub fn DownsampleShaders::depth_shader_path(Self) -> String
 pub fn DownsampleShaders::general_shader_count(Self) -> Int
 pub fn DownsampleShaders::new(depth_shader_path? : String, general_shader_count? : Int) -> Self
@@ -55,10 +55,10 @@ pub fn MipGenerationJob::new(MipGenerationPhaseId, image_asset_id~ : @asset.Asse
 pub struct MipGenerationJobs {
   phases : Map[UInt, MipGenerationPhase]
 }
+pub fn MipGenerationJobs::MipGenerationJobs() -> Self
 pub fn MipGenerationJobs::add(Self, MipGenerationPhaseId, @asset.AssetId[@image.Image]) -> Self
 pub fn MipGenerationJobs::add_handle(Self, MipGenerationPhaseId, @asset.Handle[@image.Image]) -> Self
 pub fn MipGenerationJobs::clear(Self) -> Self
-pub fn MipGenerationJobs::default() -> Self
 pub fn MipGenerationJobs::drain_phase(Self, MipGenerationPhaseId) -> (Self, Array[@asset.AssetId[@image.Image]])
 pub fn MipGenerationJobs::has_phase(Self, MipGenerationPhaseId) -> Bool
 pub fn MipGenerationJobs::job_count(Self) -> Int
@@ -71,7 +71,7 @@ pub impl @ecs.EcsPayloadCodec for MipGenerationJobs
 pub struct MipGenerationPhase {
   image_asset_ids : Array[@asset.AssetId[@image.Image]]
 }
-pub fn MipGenerationPhase::default() -> Self
+pub fn MipGenerationPhase::MipGenerationPhase() -> Self
 pub fn MipGenerationPhase::is_empty(Self) -> Bool
 pub fn MipGenerationPhase::len(Self) -> Int
 pub fn MipGenerationPhase::push(Self, @asset.AssetId[@image.Image]) -> Self
@@ -87,9 +87,9 @@ pub struct MipGenerationPipelines {
   texture_format_pipeline_count : Int
   bind_group_cache_count : Int
 } derive(Eq, @debug.Debug)
+pub fn MipGenerationPipelines::MipGenerationPipelines() -> Self
 pub fn MipGenerationPipelines::cache_bind_group(Self) -> Self
 pub fn MipGenerationPipelines::clear(Self) -> Self
-pub fn MipGenerationPipelines::default() -> Self
 pub fn MipGenerationPipelines::new(texture_format_pipeline_count? : Int, bind_group_cache_count? : Int) -> Self
 pub fn MipGenerationPipelines::register_texture_format_pipeline(Self) -> Self
 pub fn MipGenerationPipelines::reset_bind_group_cache(Self) -> Self
@@ -104,7 +104,7 @@ pub fn MipGenerationPipelinesState::new(texture_format_pipeline_count? : Int, bi
 
 pub struct MipGenerationPlugin {
 }
-pub fn MipGenerationPlugin::default() -> Self
+pub fn MipGenerationPlugin::MipGenerationPlugin() -> Self
 pub impl @app.Plugin for MipGenerationPlugin
 
 pub struct MipGenerationResources {
@@ -113,7 +113,7 @@ pub struct MipGenerationResources {
   min_filter : String
   mipmap_filter : String
 } derive(Eq, @debug.Debug)
-pub fn MipGenerationResources::default() -> Self
+pub fn MipGenerationResources::MipGenerationResources() -> Self
 pub fn MipGenerationResources::mag_filter(Self) -> String
 pub fn MipGenerationResources::min_filter(Self) -> String
 pub fn MipGenerationResources::mipmap_filter(Self) -> String

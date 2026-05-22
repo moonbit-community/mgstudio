@@ -64,7 +64,7 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
   world.for_each_component(ecs_key_camera3d, fn(entity, _camera3d) {
     let camera = match (try! world.get_by_key(entity, @sprite.ecs_key_camera)) {
       Some(value) => value
-      None => @sprite.Camera::default()
+      None => @sprite.Camera::Camera()
     }
     if !camera.is_active {
       return

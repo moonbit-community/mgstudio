@@ -296,7 +296,7 @@ fn spawn_main_scene(
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default().with_clear_color(
+    @sprite.Camera::Camera().with_clear_color(
       @sprite.Color::srgb(0.18F, 0.20F, 0.24F),
     ),
     @transform.Transform::from_xyz(-10.012F, 4.8605F, 13.281F).looking_at(
@@ -325,7 +325,7 @@ fn spawn_irradiance_volume(
   try! world.set_by_key(
     entity,
     @pbr.ecs_key_light_probe,
-    @pbr.LightProbe::default(),
+    @pbr.LightProbe::LightProbe(),
   )
   try! world.set_by_key(
     entity,
@@ -445,7 +445,7 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
         try! world.set_by_key(
           entity,
           @pbr.ecs_key_not_shadow_caster,
-          @pbr.NotShadowCaster::default(),
+          @pbr.NotShadowCaster::NotShadowCaster(),
         )
         irradiance_volumes_state.val.voxel_cubes.push(entity)
       }
@@ -464,7 +464,7 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
 fn spawn_text(_world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let text = @text.Text2dBundle::new(
       @text.Text2d::new(create_help_text()),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(15.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -478,7 +478,7 @@ fn spawn_text(_world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   irradiance_volumes_state.val.help_text = Some(text)
 }
@@ -693,7 +693,7 @@ fn update_text(_world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(rotate_camera))
   .add_systems(@app.Update, @app.system(handle_mouse_clicks))

@@ -25,7 +25,7 @@ pub struct UpscalingNode {
 }
 
 ///|
-pub fn UpscalingNode::default() -> UpscalingNode {
+pub fn UpscalingNode::UpscalingNode() -> UpscalingNode {
   UpscalingNode::{ label: UPSCALING_PASS_LABEL }
 }
 

@@ -74,8 +74,8 @@ fn expensive_sum_message() -> String {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@app.LogPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@app.LogPlugin::LogPlugin())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Startup, @app.system(setup_visual))
   .add_systems(@app.Update, @app.system(log_system))
@@ -87,7 +87,7 @@ fn main {
 ///|
 fn setup_visual(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_clear_color(
+    @sprite.Camera::Camera().with_clear_color(
       @sprite.Color::srgb(0.16F, 0.12F, 0.18F),
     ),
     @transform.Transform::identity(),

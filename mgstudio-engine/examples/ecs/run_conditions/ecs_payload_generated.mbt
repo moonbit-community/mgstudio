@@ -13,33 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_ecs_run_conditions_InputCounter(InputCounter)
-  EcsPayload_examples_ecs_run_conditions_Unused(Unused)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for InputCounter with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_run_conditions_InputCounter(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for InputCounter with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_run_conditions_InputCounter(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Unused with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_run_conditions_Unused(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Unused with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_run_conditions_Unused(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

@@ -41,7 +41,7 @@ fn setup(
   })
   commands.spawn(
     (
-      @camera.Camera3d::default(),
+      @camera.Camera3d::Camera3d(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -58,7 +58,7 @@ fn setup(
   commands.spawn(
     (
       @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
-        @pbr.CascadeShadowConfigBuilder::default()
+        @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
         .with_num_cascades(1)
         .with_maximum_distance(1.6F),
       ),
@@ -102,7 +102,7 @@ fn animate_light_direction(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(
     @app.Update,

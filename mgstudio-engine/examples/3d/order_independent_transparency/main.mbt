@@ -370,7 +370,7 @@ fn spawn_scene_instancing(
     |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
   )
   let material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::default()
+    @pbr.StandardMaterial::StandardMaterial()
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_base_color_texture(
       Some(asset_server.load("textures/slice_square.png")),
@@ -421,7 +421,7 @@ fn apply_oit_mode(world : @ecs.World) -> Unit {
       try! world.set_by_key(
         camera,
         @pbr.ecs_key_order_independent_transparency_settings,
-        @pbr.OrderIndependentTransparencySettings::default(),
+        @pbr.OrderIndependentTransparencySettings::OrderIndependentTransparencySettings(),
       )
     } else {
       try! (world.take(
@@ -444,7 +444,7 @@ fn setup(world : @ecs.World) -> Unit {
   oit_state.val.scene_entities = []
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -454,7 +454,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_depth_prepass,
-    @pbr.DepthPrepass::default(),
+    @pbr.DepthPrepass::DepthPrepass(),
   )
   oit_state.val.camera = Some(camera)
 
@@ -462,12 +462,12 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(false),
+    @pbr.PointLight::PointLight().with_shadow_maps_enabled(false),
   )
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(false),
+    @pbr.PointLight::PointLight().with_shadow_maps_enabled(false),
   )
   try! world.set_by_key(
     light,
@@ -478,7 +478,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -494,7 +494,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   oit_state.val.help_text = Some(help_text)
 
@@ -538,7 +538,7 @@ fn controls(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(controls))
   .run()

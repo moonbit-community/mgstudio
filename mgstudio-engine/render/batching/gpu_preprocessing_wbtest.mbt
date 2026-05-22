@@ -53,8 +53,12 @@ test "gpu preprocessing: indirect work-item buffers split mesh classes and late 
   let buffers = preprocess_work_item_buffers_indirect(true)
   let indexed_offsets : Array[LatePreprocessWorkItemIndirectParameters] = []
   let non_indexed_offsets : Array[LatePreprocessWorkItemIndirectParameters] = []
-  indexed_offsets.push(LatePreprocessWorkItemIndirectParameters::default())
-  non_indexed_offsets.push(LatePreprocessWorkItemIndirectParameters::default())
+  indexed_offsets.push(
+    LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters(),
+  )
+  non_indexed_offsets.push(
+    LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters(),
+  )
   init_work_item_buffers(buffers, indexed_offsets, non_indexed_offsets)
   buffers.push(true, PreprocessWorkItem::new(1, 10))
   buffers.push(false, PreprocessWorkItem::new(2, 20))

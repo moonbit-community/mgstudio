@@ -42,8 +42,8 @@ pub(all) struct ConeMeshBuilder {
 }
 
 ///|
-pub fn ConeMeshBuilder::default() -> ConeMeshBuilder {
-  { cone: @math.Cone::default(), resolution: 32, anchor: ConeAnchor::default() }
+pub fn ConeMeshBuilder::ConeMeshBuilder() -> ConeMeshBuilder {
+  { cone: @math.Cone::Cone(), resolution: 32, anchor: ConeAnchor::default() }
 }
 
 ///|

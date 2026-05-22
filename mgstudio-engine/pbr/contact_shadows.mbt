@@ -24,7 +24,7 @@ pub struct ContactShadows {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ContactShadows::default() -> ContactShadows {
+pub fn ContactShadows::ContactShadows() -> ContactShadows {
   ContactShadows::{ linear_steps: 16, thickness: 0.1F, length: 0.3F }
 }
 
@@ -85,7 +85,7 @@ pub struct ContactShadowsUniform {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ContactShadowsUniform::default() -> ContactShadowsUniform {
+pub fn ContactShadowsUniform::ContactShadowsUniform() -> ContactShadowsUniform {
   ContactShadowsUniform::{ linear_steps: 0U, thickness: 0.0F, length: 0.0F }
 }
 
@@ -114,7 +114,7 @@ pub fn ContactShadowsUniform::from_settings(
 
 ///|
 pub fn ContactShadowsUniform::disabled() -> ContactShadowsUniform {
-  ContactShadowsUniform::default()
+  ContactShadowsUniform::ContactShadowsUniform()
 }
 
 ///|
@@ -181,7 +181,7 @@ pub impl @app.Resource for ContactShadowsBuffer with resource() {
 }
 
 ///|
-pub fn ContactShadowsBuffer::default() -> ContactShadowsBuffer {
+pub fn ContactShadowsBuffer::ContactShadowsBuffer() -> ContactShadowsBuffer {
   ContactShadowsBuffer::{ uniforms: [] }
 }
 
@@ -222,7 +222,7 @@ pub fn ContactShadowsBuffer::uniform_at(
 pub struct ContactShadowsPlugin {}
 
 ///|
-pub fn ContactShadowsPlugin::default() -> ContactShadowsPlugin {
+pub fn ContactShadowsPlugin::ContactShadowsPlugin() -> ContactShadowsPlugin {
   ContactShadowsPlugin::{  }
 }
 
@@ -247,7 +247,10 @@ pub impl @app.Plugin for ContactShadowsPlugin with build(self, app) {
 pub fn contact_shadows_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  contact_shadows_plugin_install_with(app, ContactShadowsPlugin::default())
+  contact_shadows_plugin_install_with(
+    app,
+    ContactShadowsPlugin::ContactShadowsPlugin(),
+  )
 }
 
 ///|
@@ -255,14 +258,14 @@ pub fn contact_shadows_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : ContactShadowsPlugin,
 ) -> @app.App[@ecs.World] {
-  let extract_plugin : @render.ExtractComponentPlugin[ContactShadows, Unit] = @render.ExtractComponentPlugin::default()
+  let extract_plugin : @render.ExtractComponentPlugin[ContactShadows, Unit] = @render.ExtractComponentPlugin::ExtractComponentPlugin()
   let next = @render.extract_component_plugin_with(app, extract_plugin)
   @render.with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
     let world = sub_app.world()
     if world.get_resource(ContactShadowsBuffer::resource()) is None {
       world.insert_resource(
         ContactShadowsBuffer::resource(),
-        ContactShadowsBuffer::default(),
+        ContactShadowsBuffer::ContactShadowsBuffer(),
       )
     }
     sub_app.add_systems(
@@ -291,7 +294,7 @@ pub fn render3d_contact_shadows_buffer_ref_or_init(
   if render3d_contact_shadows_buffer_ref(world) is None {
     world.insert_resource(
       ContactShadowsBuffer::resource(),
-      ContactShadowsBuffer::default(),
+      ContactShadowsBuffer::ContactShadowsBuffer(),
     )
   }
   match render3d_contact_shadows_buffer_ref(world) {

@@ -82,7 +82,7 @@ pub impl @app.Resource for SeededRng with resource() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(@time.Time::from_hz(120.0F))
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.FixedUpdate, @app.system(@app.system_param5(draw)))
@@ -94,7 +94,7 @@ fn setup(
   commands : @app.Commands,
   images : @app.ResMut[@asset.Assets[@asset.Image]],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let handle = images
     .peek()

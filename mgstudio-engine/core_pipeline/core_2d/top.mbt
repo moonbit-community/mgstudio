@@ -26,7 +26,7 @@ pub const CORE_2D_DEPTH_FORMAT : String = "depth32float"
 pub struct Core2dPlugin {}
 
 ///|
-pub fn Core2dPlugin::default() -> Core2dPlugin {
+pub fn Core2dPlugin::Core2dPlugin() -> Core2dPlugin {
   Core2dPlugin::{  }
 }
 
@@ -74,7 +74,7 @@ pub let core_2d_set_post_process : @app.SystemSet = @app.system_set(
 
 ///|
 pub fn core_2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  core_2d_plugin_with(app, Core2dPlugin::default())
+  core_2d_plugin_with(app, Core2dPlugin::Core2dPlugin())
 }
 
 ///|
@@ -83,18 +83,21 @@ fn core_2d_configure_render_sub_app(
 ) -> @app.SubApp[@ecs.World] {
   let world = sub_app.world()
   if !world.resource(ecs_key_opaque2d_phase).is_present() {
-    world.insert_resource(ecs_key_opaque2d_phase, Opaque2dPhase::default())
+    world.insert_resource(
+      ecs_key_opaque2d_phase,
+      Opaque2dPhase::Opaque2dPhase(),
+    )
   }
   if !world.resource(ecs_key_alpha_mask2d_phase).is_present() {
     world.insert_resource(
       ecs_key_alpha_mask2d_phase,
-      AlphaMask2dPhase::default(),
+      AlphaMask2dPhase::AlphaMask2dPhase(),
     )
   }
   if !world.resource(ecs_key_transparent2d_phase).is_present() {
     world.insert_resource(
       ecs_key_transparent2d_phase,
-      Transparent2dPhase::default(),
+      Transparent2dPhase::Transparent2dPhase(),
     )
   }
   let stage = @render.render_schedule_stage()
@@ -362,7 +365,7 @@ pub struct Opaque2dPhase {
 }
 
 ///|
-pub fn Opaque2dPhase::default() -> Opaque2dPhase {
+pub fn Opaque2dPhase::Opaque2dPhase() -> Opaque2dPhase {
   Opaque2dPhase::{ items: [] }
 }
 
@@ -392,7 +395,7 @@ pub struct AlphaMask2dPhase {
 }
 
 ///|
-pub fn AlphaMask2dPhase::default() -> AlphaMask2dPhase {
+pub fn AlphaMask2dPhase::AlphaMask2dPhase() -> AlphaMask2dPhase {
   AlphaMask2dPhase::{ items: [] }
 }
 
@@ -425,7 +428,7 @@ pub struct Transparent2dPhase {
 }
 
 ///|
-pub fn Transparent2dPhase::default() -> Transparent2dPhase {
+pub fn Transparent2dPhase::Transparent2dPhase() -> Transparent2dPhase {
   Transparent2dPhase::{ items: [] }
 }
 

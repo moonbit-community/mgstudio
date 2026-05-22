@@ -610,7 +610,7 @@ pub struct Physics3dConfig {
 }
 
 ///|
-pub fn Physics3dConfig::default() -> Physics3dConfig {
+pub fn Physics3dConfig::Physics3dConfig() -> Physics3dConfig {
   {
     gravity: @math.Vec3::new(0.0F, -9.81F, 0.0F),
     physics_pipeline_active: true,
@@ -620,7 +620,7 @@ pub fn Physics3dConfig::default() -> Physics3dConfig {
 
 ///|
 pub fn Physics3dConfig::new(gravity : @math.Vec3) -> Physics3dConfig {
-  Physics3dConfig::{ ..Physics3dConfig::default(), gravity, }
+  Physics3dConfig::{ ..Physics3dConfig(), gravity, }
 }
 
 ///|

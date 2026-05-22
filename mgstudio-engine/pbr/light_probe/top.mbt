@@ -33,7 +33,7 @@ pub fn max_view_light_probes() -> Int {
 pub struct LightProbePlugin {}
 
 ///|
-pub fn LightProbePlugin::default() -> LightProbePlugin {
+pub fn LightProbePlugin::LightProbePlugin() -> LightProbePlugin {
   LightProbePlugin::{  }
 }
 
@@ -55,7 +55,7 @@ pub struct LightProbePluginState {
 }
 
 ///|
-pub fn LightProbePluginState::default() -> LightProbePluginState {
+pub fn LightProbePluginState::LightProbePluginState() -> LightProbePluginState {
   LightProbePluginState::{
     binding_arrays_supported: true,
     extracted_probe_count: 0,
@@ -64,7 +64,7 @@ pub fn LightProbePluginState::default() -> LightProbePluginState {
 
 ///|
 pub fn light_probe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  light_probe_plugin_with(app, LightProbePlugin::default())
+  light_probe_plugin_with(app, LightProbePlugin::LightProbePlugin())
 }
 
 ///|
@@ -73,8 +73,8 @@ pub fn light_probe_plugin_with(
   _plugin : LightProbePlugin,
 ) -> @app.App[@ecs.World] {
   app
-  .init_resource(fn() { LightProbePluginState::default() })
-  .init_resource(fn() { LightProbesUniform::default() })
+  .init_resource(fn() { LightProbePluginState::LightProbePluginState() })
+  .init_resource(fn() { LightProbesUniform::LightProbesUniform() })
 }
 
 ///|
@@ -103,7 +103,7 @@ pub struct RenderLightProbe {
 }
 
 ///|
-pub fn RenderLightProbe::default() -> RenderLightProbe {
+pub fn RenderLightProbe::RenderLightProbe() -> RenderLightProbe {
   RenderLightProbe::{
     light_from_world_transposed: [
       @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
@@ -142,7 +142,7 @@ pub struct RenderViewLightProbes {
 }
 
 ///|
-pub fn RenderViewLightProbes::default() -> RenderViewLightProbes {
+pub fn RenderViewLightProbes::RenderViewLightProbes() -> RenderViewLightProbes {
   RenderViewLightProbes::{
     binding_index_to_textures: [],
     render_light_probes: [],
@@ -206,7 +206,7 @@ pub struct LightProbesUniform {
 }
 
 ///|
-pub fn LightProbesUniform::default() -> LightProbesUniform {
+pub fn LightProbesUniform::LightProbesUniform() -> LightProbesUniform {
   LightProbesUniform::{
     reflection_probe_count: 0,
     irradiance_volume_count: 0,
@@ -225,7 +225,7 @@ pub struct ViewLightProbesUniformOffset {
 }
 
 ///|
-pub fn ViewLightProbesUniformOffset::default() -> ViewLightProbesUniformOffset {
+pub fn ViewLightProbesUniformOffset::ViewLightProbesUniformOffset() -> ViewLightProbesUniformOffset {
   ViewLightProbesUniformOffset::{ offset: 0U }
 }
 

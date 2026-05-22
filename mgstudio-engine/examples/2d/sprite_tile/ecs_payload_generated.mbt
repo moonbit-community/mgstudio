@@ -13,19 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_2d_sprite_tile_AnimationState(AnimationState)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationState with to_ecs_payload(self) {
-  EcsPayload_examples_2d_sprite_tile_AnimationState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_2d_sprite_tile_AnimationState(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

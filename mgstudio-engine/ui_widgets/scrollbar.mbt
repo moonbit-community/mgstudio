@@ -50,7 +50,7 @@ pub struct CoreScrollbarDragState {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn CoreScrollbarDragState::default() -> CoreScrollbarDragState {
+pub fn CoreScrollbarDragState::CoreScrollbarDragState() -> CoreScrollbarDragState {
   CoreScrollbarDragState::{ dragging: false, drag_origin: 0.0F }
 }
 

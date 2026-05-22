@@ -16,7 +16,7 @@
 pub struct Physics3dPlugin {}
 
 ///|
-pub fn Physics3dPlugin::default() -> Physics3dPlugin {
+pub fn Physics3dPlugin::Physics3dPlugin() -> Physics3dPlugin {
   Physics3dPlugin::{  }
 }
 

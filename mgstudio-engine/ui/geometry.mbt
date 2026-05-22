@@ -287,7 +287,7 @@ pub fn UiRect::new(left : Val, right : Val, top : Val, bottom : Val) -> UiRect {
 }
 
 ///|
-pub fn UiRect::default() -> UiRect {
+pub fn UiRect::UiRect() -> UiRect {
   UiRect::new(Val::Px(0.0F), Val::Px(0.0F), Val::Px(0.0F), Val::Px(0.0F))
 }
 
@@ -323,12 +323,12 @@ pub fn UiRect::percent(
 
 ///|
 pub fn UiRect::horizontal(value : Val) -> UiRect {
-  UiRect::{ ..UiRect::default(), left: value, right: value }
+  UiRect::{ ..UiRect(), left: value, right: value }
 }
 
 ///|
 pub fn UiRect::vertical(value : Val) -> UiRect {
-  UiRect::{ ..UiRect::default(), top: value, bottom: value }
+  UiRect::{ ..UiRect(), top: value, bottom: value }
 }
 
 ///|
@@ -343,22 +343,22 @@ pub fn UiRect::axes(horizontal : Val, vertical : Val) -> UiRect {
 
 ///|
 pub fn UiRect::left(value : Val) -> UiRect {
-  UiRect::{ ..UiRect::default(), left: value }
+  UiRect::{ ..UiRect(), left: value }
 }
 
 ///|
 pub fn UiRect::right(value : Val) -> UiRect {
-  UiRect::{ ..UiRect::default(), right: value }
+  UiRect::{ ..UiRect(), right: value }
 }
 
 ///|
 pub fn UiRect::top(value : Val) -> UiRect {
-  UiRect::{ ..UiRect::default(), top: value }
+  UiRect::{ ..UiRect(), top: value }
 }
 
 ///|
 pub fn UiRect::bottom(value : Val) -> UiRect {
-  UiRect::{ ..UiRect::default(), bottom: value }
+  UiRect::{ ..UiRect(), bottom: value }
 }
 
 ///|
@@ -390,7 +390,7 @@ pub struct BorderRadius {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn BorderRadius::default() -> BorderRadius {
+pub fn BorderRadius::BorderRadius() -> BorderRadius {
   BorderRadius::{
     top_left: Val::Px(0.0F),
     top_right: Val::Px(0.0F),
@@ -451,58 +451,42 @@ pub fn BorderRadius::percent(
 
 ///|
 pub fn BorderRadius::top_left(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius::default(), top_left: radius }
+  BorderRadius::{ ..BorderRadius(), top_left: radius }
 }
 
 ///|
 pub fn BorderRadius::top_right(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius::default(), top_right: radius }
+  BorderRadius::{ ..BorderRadius(), top_right: radius }
 }
 
 ///|
 pub fn BorderRadius::bottom_right(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius::default(), bottom_right: radius }
+  BorderRadius::{ ..BorderRadius(), bottom_right: radius }
 }
 
 ///|
 pub fn BorderRadius::bottom_left(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius::default(), bottom_left: radius }
+  BorderRadius::{ ..BorderRadius(), bottom_left: radius }
 }
 
 ///|
 pub fn BorderRadius::left(radius : Val) -> BorderRadius {
-  BorderRadius::{
-    ..BorderRadius::default(),
-    top_left: radius,
-    bottom_left: radius,
-  }
+  BorderRadius::{ ..BorderRadius(), top_left: radius, bottom_left: radius }
 }
 
 ///|
 pub fn BorderRadius::right(radius : Val) -> BorderRadius {
-  BorderRadius::{
-    ..BorderRadius::default(),
-    top_right: radius,
-    bottom_right: radius,
-  }
+  BorderRadius::{ ..BorderRadius(), top_right: radius, bottom_right: radius }
 }
 
 ///|
 pub fn BorderRadius::top(radius : Val) -> BorderRadius {
-  BorderRadius::{
-    ..BorderRadius::default(),
-    top_left: radius,
-    top_right: radius,
-  }
+  BorderRadius::{ ..BorderRadius(), top_left: radius, top_right: radius }
 }
 
 ///|
 pub fn BorderRadius::bottom(radius : Val) -> BorderRadius {
-  BorderRadius::{
-    ..BorderRadius::default(),
-    bottom_left: radius,
-    bottom_right: radius,
-  }
+  BorderRadius::{ ..BorderRadius(), bottom_left: radius, bottom_right: radius }
 }
 
 ///|
@@ -642,7 +626,7 @@ pub fn ResolvedBorderRadius::zero() -> ResolvedBorderRadius {
 }
 
 ///|
-pub fn ResolvedBorderRadius::default() -> ResolvedBorderRadius {
+pub fn ResolvedBorderRadius::ResolvedBorderRadius() -> ResolvedBorderRadius {
   ResolvedBorderRadius::zero()
 }
 
@@ -686,7 +670,7 @@ pub fn Outline::new(
 }
 
 ///|
-pub fn Outline::default() -> Outline {
+pub fn Outline::Outline() -> Outline {
   Outline::{
     width: Val::Px(0.0F),
     offset: Val::Px(0.0F),

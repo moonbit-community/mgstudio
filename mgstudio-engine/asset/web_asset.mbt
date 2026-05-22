@@ -21,7 +21,7 @@ pub(all) struct WebAssetPlugin {
 }
 
 ///|
-pub fn WebAssetPlugin::default() -> WebAssetPlugin {
+pub fn WebAssetPlugin::WebAssetPlugin() -> WebAssetPlugin {
   WebAssetPlugin::{ silence_startup_warning: false }
 }
 
@@ -53,7 +53,7 @@ fn web_asset_source_builder(scheme : String) -> AssetSourceBuilder {
 ///|
 pub fn web_asset_plugin(
   app : @app.App[@ecs.World],
-  plugin? : WebAssetPlugin = WebAssetPlugin::default(),
+  plugin? : WebAssetPlugin = WebAssetPlugin::WebAssetPlugin(),
 ) -> @app.App[@ecs.World] {
   if !plugin.silence_startup_warning {
     println(

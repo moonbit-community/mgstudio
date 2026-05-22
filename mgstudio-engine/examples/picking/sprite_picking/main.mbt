@@ -34,7 +34,7 @@ fn setup(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       @sprite.Camera2dBundle::new(
-        @sprite.Camera::default(),
+        @sprite.Camera::Camera(),
         @transform.Transform::identity(),
       ),
     ),
@@ -144,7 +144,7 @@ fn pointer_up_sprite(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param(setup)
   .add_pointer_observer2(fn(pointer, query) {
     pointer_enter_sprite(pointer, query)

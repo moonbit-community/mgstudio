@@ -29,13 +29,13 @@ pub impl @ecs.Component for Layer with component() {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
       @ui.BackgroundColor::new(@sprite.Color::black()),
@@ -47,7 +47,7 @@ fn setup(commands : @app.Commands) -> Unit {
       (
         @hierarchy.Parent::new(root),
         Layer::{ index: i },
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Percent(100.0F))
         .with_position_type(@ui.PositionType::Absolute),
@@ -94,7 +94,7 @@ fn animate_layers(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(animate_layers)))
   .run()

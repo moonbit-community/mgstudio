@@ -41,7 +41,7 @@ pub fn UpscalingBindGroupCacheState::new(has_cached_bind_group? : Bool, cached_m
 pub struct UpscalingNode {
   label : String
 }
-pub fn UpscalingNode::default() -> Self
+pub fn UpscalingNode::UpscalingNode() -> Self
 pub fn UpscalingNode::label(Self) -> String
 
 pub struct UpscalingNodeState {
@@ -53,7 +53,7 @@ pub fn UpscalingNodeState::new(camera_output_mode_skip? : Bool, has_specialized_
 
 pub struct UpscalingPlugin {
 }
-pub fn UpscalingPlugin::default() -> Self
+pub fn UpscalingPlugin::UpscalingPlugin() -> Self
 pub impl @app.Plugin for UpscalingPlugin
 
 pub struct UpscalingPrepareViewState {
@@ -67,7 +67,7 @@ pub fn UpscalingPrepareViewState::new(out_texture_id~ : Int, camera_output_mode_
 pub struct ViewUpscalingPipeline {
   pipeline_id : Int
 }
-pub fn ViewUpscalingPipeline::default() -> Self
+pub fn ViewUpscalingPipeline::ViewUpscalingPipeline() -> Self
 pub fn ViewUpscalingPipeline::new(pipeline_id~ : Int) -> Self
 pub impl @app.Resource for ViewUpscalingPipeline
 pub impl @ecs.EcsPayloadCodec for ViewUpscalingPipeline

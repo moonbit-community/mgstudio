@@ -14,7 +14,7 @@
 
 ///|
 test "image sampler descriptor: repeat keeps Bevy default nearest filters" {
-  let descriptor = ImageSamplerDescriptor::default().set_address_mode(
+  let descriptor = @image.ImageSamplerDescriptor::ImageSamplerDescriptor().set_address_mode(
     ImageAddressMode::Repeat,
   )
   debug_inspect(
@@ -50,7 +50,9 @@ test "image sampler descriptor: repeat keeps Bevy default nearest filters" {
 
 ///|
 test "image sampler descriptor: anisotropic filter matches Bevy helper semantics" {
-  let descriptor = ImageSamplerDescriptor::default().set_anisotropic_filter(8)
+  let descriptor = @image.ImageSamplerDescriptor::ImageSamplerDescriptor().set_anisotropic_filter(
+    8,
+  )
   debug_inspect(
     descriptor.mag_filter == ImageFilterMode::Linear,
     content="true",
@@ -68,7 +70,7 @@ test "image sampler descriptor: anisotropic filter matches Bevy helper semantics
 
 ///|
 test "image sampler descriptor: public fields preserve compare lod and mirror repeat" {
-  let descriptor = ImageSamplerDescriptor::linear()
+  let descriptor = @image.ImageSamplerDescriptor::linear()
   descriptor.address_mode_u = ImageAddressMode::MirrorRepeat
   descriptor.address_mode_v = ImageAddressMode::Repeat
   descriptor.address_mode_w = ImageAddressMode::ClampToEdge
@@ -112,16 +114,21 @@ test "image sampler descriptor: public fields preserve compare lod and mirror re
 
 ///|
 test "image loader settings: closure-style mutation updates public fields" {
-  let settings = ImageLoaderSettings::default()
+  let settings = @asset.ImageLoaderSettings::ImageLoaderSettings()
   settings.sampler = ImageSampler::Descriptor(
-    ImageSamplerDescriptor::default().set_address_mode(ImageAddressMode::Repeat),
+    @image.ImageSamplerDescriptor::ImageSamplerDescriptor().set_address_mode(
+      ImageAddressMode::Repeat,
+    ),
   )
   settings.is_srgb = false
-  settings.array_layout = Some(RowCount(4))
+  settings.array_layout = Some(@image.ImageArrayLayout::RowCount(4))
 
   debug_inspect(settings.is_srgb, content="false")
-  debug_inspect(settings.array_layout is Some(RowCount(_)), content="true")
-  if settings.array_layout is Some(RowCount(count)) {
+  debug_inspect(
+    settings.array_layout is Some(@image.ImageArrayLayout::RowCount(_)),
+    content="true",
+  )
+  if settings.array_layout is Some(@image.ImageArrayLayout::RowCount(count)) {
     debug_inspect(count, content="4")
   }
   debug_inspect(settings.sampler is Descriptor(_), content="true")
@@ -142,7 +149,7 @@ test "asset server load_with_settings invokes configuration closure" {
     fn(settings) {
       configured.val = true
       settings.sampler = ImageSampler::Descriptor(
-        ImageSamplerDescriptor::default().set_address_mode(
+        @image.ImageSamplerDescriptor::ImageSamplerDescriptor().set_address_mode(
           ImageAddressMode::Repeat,
         ),
       )

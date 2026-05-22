@@ -61,13 +61,13 @@ fn spawn_camera(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F).looking_to(
           @math.Vec3::new(1.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
         @camera_controller.FreeCamera::{
-          ..@camera_controller.FreeCamera::default(),
+          ..@camera_controller.FreeCamera(),
           sensitivity: 0.2F,
           friction: 25.0F,
           walk_speed: 3.0F,
@@ -97,17 +97,17 @@ fn spawn_text(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::default(),
-        @sprite.Camera::default().with_order(1).with_clear_color_none(),
-        @ui.IsDefaultUiCamera::default(),
+        @sprite.Camera2d::Camera2d(),
+        @sprite.Camera::Camera().with_order(1).with_clear_color_none(),
+        @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
       ),
     ),
   )
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
     ),
@@ -117,12 +117,12 @@ fn spawn_text(
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(-16.0F))
         .with_left(@ui.Val::Px(12.0F)),
         @text.Text::new(free_camera_text(free_camera)),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
@@ -133,14 +133,14 @@ fn spawn_text(
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_bottom(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
         @text.Text::new(
           "Z/X: decrease/increase sensitivity\nC/V: decrease/increase friction\nF/G: decrease/increase scroll factor\nB: enable/disable controller",
         ),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
@@ -151,12 +151,12 @@ fn spawn_text(
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_right(@ui.Val::Px(12.0F)),
         @text.Text::new(""),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
         InfoText::{  },
@@ -308,7 +308,7 @@ fn spawn_lights(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default(),
+        @pbr.PointLight::PointLight(),
         @transform.Transform::from_xyz(-3.5F, 3.0F, 0.0F),
       ),
     ),
@@ -451,8 +451,8 @@ fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 fn main {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@mgstudio.DefaultPlugins::default())
-    .add_plugins(@camera_controller.FreeCameraPlugin::default())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+    .add_plugins(@camera_controller.FreeCameraPlugin::FreeCameraPlugin())
   let app = camera_plugin(app)
   let app = camera_settings_plugin(app)
   scene_plugin(app).run()

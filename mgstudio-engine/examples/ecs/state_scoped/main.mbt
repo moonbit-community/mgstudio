@@ -59,7 +59,7 @@ fn spawn_text(
   exit_marker : @state.DespawnOnExit?,
   enter_marker : @state.DespawnOnEnter?,
 ) -> Unit {
-  let node = @ui.Node::default()
+  let node = @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(top))
     .with_left(@ui.Val::Px(left))
@@ -69,7 +69,7 @@ fn spawn_text(
       commands.spawn(
         (
           @text.Text::new(text),
-          @text.TextFont::default().with_font_size(33.0F),
+          @text.TextFont::TextFont().with_font_size(33.0F),
           @text.TextColor::new(color),
           node,
           marker,
@@ -79,7 +79,7 @@ fn spawn_text(
       commands.spawn(
         (
           @text.Text::new(text),
-          @text.TextFont::default().with_font_size(33.0F),
+          @text.TextFont::TextFont().with_font_size(33.0F),
           @text.TextColor::new(color),
           node,
           marker,
@@ -159,7 +159,7 @@ fn on_b_exit(commands : @app.Commands) -> Unit {
 
 ///|
 fn setup_camera(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@camera.Camera3d::default()))
+  ignore(commands.spawn_component(@camera.Camera3d::Camera3d()))
 }
 
 ///|
@@ -185,8 +185,8 @@ fn toggle(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@app.StatesPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(GameState::default())
   .insert_resource(TickTock::{
     timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),

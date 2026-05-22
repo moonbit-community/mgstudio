@@ -37,7 +37,7 @@ struct ShaderData[ShaderModule, ShaderId] {
 }
 
 ///|
-pub fn[ShaderModule, ShaderId : Hash + Eq] ShaderData::default() -> ShaderData[
+pub fn[ShaderModule, ShaderId : Hash + Eq] ShaderData::ShaderData() -> ShaderData[
   ShaderModule,
   ShaderId,
 ] {
@@ -276,7 +276,7 @@ fn[ShaderModule, RenderDevice] shader_cache_data_or_default(
 ) -> ShaderData[ShaderModule, Int] {
   match cache.data.get(shader_key) {
     Some(data) => data
-    None => ShaderData::default()
+    None => ShaderData::ShaderData()
   }
 }
 

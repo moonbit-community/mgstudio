@@ -24,7 +24,7 @@ test "pbr fog: bridge prepares view fog uniforms from DistanceFog component" {
   )
   |> ignore)
 
-  let fog_meta = @pbr_render.FogMeta::default()
+  let fog_meta = @pbr_render.FogMeta::FogMeta()
   let offsets = render3d_prepare_camera_fog_uniforms(
     world,
     [with_fog, without_fog],

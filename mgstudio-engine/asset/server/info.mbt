@@ -22,7 +22,7 @@ pub struct AssetServerInfo {
 }
 
 ///|
-pub fn AssetServerInfo::default() -> AssetServerInfo {
+pub fn AssetServerInfo::AssetServerInfo() -> AssetServerInfo {
   AssetServerInfo::{
     supported_compressed_image_formats: @asset.asset_supported_compressed_image_formats(),
     default_sampler_nearest: false,

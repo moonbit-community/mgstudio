@@ -13,19 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_app_plugin_PrintMessageState(PrintMessageState)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PrintMessageState with to_ecs_payload(self) {
-  EcsPayload_examples_app_plugin_PrintMessageState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PrintMessageState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_app_plugin_PrintMessageState(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

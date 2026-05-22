@@ -88,7 +88,7 @@ fn dof_component() -> @pbr.DepthOfField? {
   match dof_state.val.mode {
     Off => None
     Bokeh => {
-      let dof = @pbr.DepthOfField::default()
+      let dof = @pbr.DepthOfField::DepthOfField()
       dof.mode = @pbr.DepthOfFieldMode::Bokeh
       dof.focal_distance = dof_state.val.focal_distance
       dof.aperture_f_stops = dof_state.val.aperture_f_stops
@@ -96,7 +96,7 @@ fn dof_component() -> @pbr.DepthOfField? {
       Some(dof)
     }
     Gaussian => {
-      let dof = @pbr.DepthOfField::default()
+      let dof = @pbr.DepthOfField::DepthOfField()
       dof.mode = @pbr.DepthOfFieldMode::Gaussian
       dof.focal_distance = dof_state.val.focal_distance
       dof.aperture_f_stops = dof_state.val.aperture_f_stops
@@ -122,7 +122,7 @@ fn apply_dof_settings(world : @ecs.World) -> Unit {
 
 ///|
 fn help_text() -> String {
-  let fov = @camera.PerspectiveProjection3d::default().fov
+  let fov = @camera.PerspectiveProjection3d::PerspectiveProjection3d().fov
   let focal_length_mm = compute_focal_length_meters(fov) * 1000.0F
   let sensor_mm = SENSOR_HEIGHT_METERS * 1000.0F
   if dof_state.val.mode is Off {
@@ -150,13 +150,13 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 4.5F, 8.25F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_tonemapping,
@@ -165,7 +165,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_bloom,
-    @post_process.Bloom::default(),
+    @post_process.Bloom::Bloom(),
   )
   dof_state.val.camera = Some(camera)
 
@@ -259,7 +259,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -275,7 +275,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   dof_state.val.help_text = Some(help_text)
 
@@ -334,7 +334,7 @@ fn adjust_focus_and_mode(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(adjust_focus_and_mode))
   .run()

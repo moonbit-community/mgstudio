@@ -15,7 +15,7 @@
 ///|
 test "camera plugin: installs visibility and visibility-range plugins" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins(
-    CameraPlugin::default(),
+    CameraPlugin::CameraPlugin(),
   )
   debug_inspect(
     app.contains_resource(@camera_visibility.ecs_key_visible_entity_ranges),
@@ -46,7 +46,7 @@ test "camera plugin: installs visibility and visibility-range plugins" {
 ///|
 test "camera projection plugin: updates frustum when transform changes" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins(
-    CameraProjectionPlugin::default(),
+    CameraProjectionPlugin::CameraProjectionPlugin(),
   )
   let world = app.world()
   let entity = world.spawn()

@@ -103,7 +103,7 @@ fn read_window_events(world : @ecs.World) -> Array[WindowEvent] {
 
 ///|
 test "window: default window fields align with bevy defaults" {
-  let window = Window::default()
+  let window = @window.Window::Window()
   debug_inspect(window.composite_alpha_mode, content="Auto")
   debug_inspect(window.resize_constraints.min_width, content="180")
   debug_inspect(window.resize_constraints.min_height, content="120")
@@ -144,7 +144,7 @@ test "window: resize constraints clamp invalid values" {
 
 ///|
 test "window: plugin spawns configured primary window entity and messages" {
-  let configured_window = Window::default()
+  let configured_window = @window.Window::Window()
   configured_window.title = "Configured Window"
   configured_window.resolution.set_physical_resolution(800, 600)
   configured_window.resolution.set_scale_factor(2.0F)
@@ -163,7 +163,7 @@ test "window: plugin spawns configured primary window entity and messages" {
   configured_window.window_level = WindowLevel::AlwaysOnTop
   configured_window.window_theme = Some(WindowTheme::Dark)
   configured_window.visible = false
-  let configured_cursor = CursorOptions::default()
+  let configured_cursor = @window.CursorOptions::CursorOptions()
   configured_cursor.visible = false
   configured_cursor.grab_mode = CursorGrabMode::GrabLocked
 
@@ -304,7 +304,7 @@ test "window: plugin spawns configured primary window entity and messages" {
 
 ///|
 test "window: compatibility helpers read and write ECS primary window state" {
-  let configured_window = Window::default()
+  let configured_window = @window.Window::Window()
   configured_window.title = "Primary"
   configured_window.resolution.set_physical_resolution(320, 180)
   configured_window.resolution.set_scale_factor(2.0F)
@@ -412,7 +412,7 @@ test "window: compatibility helpers read and write ECS primary window state" {
 
 ///|
 test "window: drag request helpers write pending requests" {
-  let window = Window::default()
+  let window = @window.Window::Window()
   window.set_maximized(true)
   window.set_minimized(true)
   window.start_drag_move()
@@ -425,10 +425,10 @@ test "window: drag request helpers write pending requests" {
 
 ///|
 test "window: window refs resolve entity-backed metrics" {
-  let primary_window = Window::default()
+  let primary_window = @window.Window::Window()
   primary_window.resolution.set_physical_resolution(320, 180)
   primary_window.resolution.set_scale_factor(1.0F)
-  let secondary_window = Window::default()
+  let secondary_window = @window.Window::Window()
   secondary_window.title = "Secondary"
   secondary_window.resolution.set_physical_resolution(640, 360)
   secondary_window.resolution.set_scale_factor_override(Some(2.0F))
@@ -466,7 +466,7 @@ test "window: window refs resolve entity-backed metrics" {
 
 ///|
 test "window: primary refs do not fall back to secondary windows" {
-  let secondary_window = Window::default()
+  let secondary_window = @window.Window::Window()
   secondary_window.title = "Secondary"
   secondary_window.resolution.set_physical_resolution(640, 360)
   secondary_window.resolution.set_scale_factor_override(Some(2.0F))
@@ -495,7 +495,7 @@ test "window: primary refs do not fall back to secondary windows" {
 test "window: singleton helpers no-op when no primary window exists" {
   let world = @ecs.World::new()
   let secondary = world.spawn()
-  let secondary_window = Window::default()
+  let secondary_window = @window.Window::Window()
   secondary_window.title = "Secondary"
   secondary_window.resolution.set_physical_resolution(640, 360)
   try! (world.entity_mut(secondary).insert_component(secondary_window) |> ignore)
@@ -557,14 +557,14 @@ test "window: singleton helpers no-op when no primary window exists" {
 
 ///|
 test "window: scale-factor helper prefers override over observed host scale" {
-  let configured_window = Window::default()
+  let configured_window = @window.Window::Window()
   configured_window.resolution.set_physical_resolution(500, 300)
   configured_window.resolution.set_scale_factor_override(Some(1.0F))
   let seen_scale_factor : Ref[Float] = Ref(0.0F)
 
   let app = window_plugin_with(@app.App::new(@ecs.World::new()), WindowPlugin::{
     primary_window: Some(configured_window),
-    primary_cursor_options: Some(CursorOptions::default()),
+    primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
     exit_condition: ExitCondition::DontExit,
     close_when_requested: false,
   }).add_systems(
@@ -597,7 +597,8 @@ test "window: plugin does not own backend window synchronization" {
 test "window: close_when_requested marks windows without immediate despawn" {
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
+  try! (world.entity_mut(entity).insert_component(@window.Window::Window())
+  |> ignore)
   let mut app = @app.App::new(world)
     .add_message(ecs_key_window_close_requested)
     .add_message(ecs_key_window_closing)
@@ -640,10 +641,11 @@ test "window: exit_on_primary_closed only exits after primary window disappears"
   let world = @ecs.World::new()
   let primary = world.spawn()
   let secondary = world.spawn()
-  try! (world.entity_mut(primary).insert_component(Window::default()) |> ignore)
+  try! (world.entity_mut(primary).insert_component(@window.Window::Window())
+  |> ignore)
   try! (world.entity_mut(primary).insert_component(PrimaryWindow::{  })
   |> ignore)
-  try! (world.entity_mut(secondary).insert_component(Window::default())
+  try! (world.entity_mut(secondary).insert_component(@window.Window::Window())
   |> ignore)
   let mut app = @app.App::new(world)
     .add_message(@app.AppExit::message())
@@ -727,7 +729,7 @@ test "window: app lifecycle active states align with bevy semantics" {
 
 ///|
 test "window: cursor position follows bevy physical bounds semantics" {
-  let window = Window::default()
+  let window = @window.Window::Window()
   window.resolution = WindowResolution::new(800, 600)
 
   window.set_physical_cursor_position(Some(@math.Vec2::new(0.0F, 300.0F)))
@@ -769,7 +771,7 @@ test "window: resolution can apply scale factor to physical size like bevy" {
 
 ///|
 test "window: resolution scale factor accessors preserve raw bevy values" {
-  let resolution = WindowResolution::default()
+  let resolution = @window.WindowResolution::WindowResolution()
   resolution.set_scale_factor(0.0F)
   debug_inspect(resolution.base_scale_factor(), content="0")
   debug_inspect(resolution.scale_factor(), content="0")
@@ -782,7 +784,7 @@ test "window: resolution scale factor accessors preserve raw bevy values" {
 test "window: cursor events write back window cursor state like bevy winit" {
   let world = @ecs.World::new()
   let entity = world.spawn()
-  let window = Window::default()
+  let window = @window.Window::Window()
   window.resolution = WindowResolution::new(800, 600)
   window.resolution.set_scale_factor(2.0F)
   try! (world.entity_mut(entity).insert_component(window) |> ignore)
@@ -806,7 +808,8 @@ test "window: cursor events write back window cursor state like bevy winit" {
 test "window: aggregate event bus mirrors window-owned emit helpers" {
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
+  try! (world.entity_mut(entity).insert_component(@window.Window::Window())
+  |> ignore)
   try! (world.entity_mut(entity).insert_component(PrimaryWindow::{  }) |> ignore)
 
   let app = window_plugin(@app.App::new(world)).run_once()

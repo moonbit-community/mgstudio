@@ -35,13 +35,8 @@ pub(all) enum SpriteScalingMode {
 }
 
 ///|
-pub fn SpriteScalingMode::default() -> SpriteScalingMode {
-  SpriteScalingMode::FillCenter
-}
-
-///|
 pub impl Default for SpriteScalingMode with default() {
-  SpriteScalingMode::default()
+  SpriteScalingMode::FillCenter
 }
 
 ///|
@@ -61,13 +56,13 @@ pub fn SpriteTiling::new(
 }
 
 ///|
-pub fn SpriteTiling::default() -> SpriteTiling {
+pub fn SpriteTiling::SpriteTiling() -> SpriteTiling {
   SpriteTiling::new(true, true, 1.0F)
 }
 
 ///|
 pub impl Default for SpriteTiling with default() {
-  SpriteTiling::default()
+  SpriteTiling::SpriteTiling()
 }
 
 ///|
@@ -103,13 +98,8 @@ pub(all) enum SpriteImageMode {
 }
 
 ///|
-pub fn SpriteImageMode::default() -> SpriteImageMode {
-  SpriteImageMode::Auto
-}
-
-///|
 pub impl Default for SpriteImageMode with default() {
-  SpriteImageMode::default()
+  SpriteImageMode::Auto
 }
 
 ///|
@@ -138,7 +128,7 @@ pub fn SpriteImageMode::tiled(
 }
 
 ///|
-pub fn Sprite::default() -> Sprite {
+pub fn Sprite::Sprite() -> Sprite {
   Sprite::from_image(@asset.Handle::new(0))
 }
 
@@ -147,7 +137,7 @@ pub impl @ecs.Mutable for Sprite
 
 ///|
 pub impl Default for Sprite with default() {
-  Sprite::default()
+  Sprite::Sprite()
 }
 
 ///|
@@ -171,7 +161,7 @@ pub fn Sprite::sized(size : @math.Vec2) -> Sprite {
 
 ///|
 pub fn Sprite::from_color(color : Color, size : @math.Vec2) -> Sprite {
-  Sprite::{ ..Sprite::default(), color, custom_size: Some(size) }
+  Sprite::{ ..Sprite(), color, custom_size: Some(size) }
 }
 
 ///|

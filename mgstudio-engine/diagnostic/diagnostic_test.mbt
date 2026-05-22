@@ -56,7 +56,9 @@ test "diagnostic: duration tracks instant span" {
 test "diagnostics: system param buffers and keeps last value per path" {
   let path = DiagnosticPath::new("test/deferred")
   let mut app = register_diagnostic(
-    @app.App::new(@ecs.World::new()).add_plugins(DiagnosticsPlugin::default()),
+    @app.App::new(@ecs.World::new()).add_plugins(
+      DiagnosticsPlugin::DiagnosticsPlugin(),
+    ),
     Diagnostic::new(path),
   ).add_system_param(fn(diagnostics : Diagnostics) {
     diagnostics.add_measurement(path, fn() { 1.0F })
@@ -71,7 +73,7 @@ test "diagnostics: system param buffers and keeps last value per path" {
 
 ///|
 test "diagnostics store iter_mut exposes live diagnostic refs" {
-  let store = DiagnosticsStore::default()
+  let store = DiagnosticsStore::DiagnosticsStore()
   let path = DiagnosticPath::new("test")
   store.add(Diagnostic::new(path))
   let diagnostics = store.iter_mut()

@@ -345,7 +345,7 @@ fn sanitize_ssr_ranges() -> Unit {
 
 ///|
 fn build_ssr_settings() -> @post_process.ScreenSpaceReflections {
-  @post_process.ScreenSpaceReflections::default()
+  @post_process.ScreenSpaceReflections::ScreenSpaceReflections()
   .with_min_perceptual_roughness(
     ssr_state.val.min_roughness_start,
     ssr_state.val.min_roughness_end,
@@ -564,7 +564,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(-1.25F, CAMERA_HEIGHT, 4.5F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -574,23 +574,23 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
     .spawn(world)
   ssr_state.val.camera = Some(camera)
 
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::default(),
+    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
   )
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::default(),
+    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::default(),
+    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
   )
   try! world.set_by_key(
     camera,
@@ -655,7 +655,7 @@ fn setup_text(_world : @ecs.World) -> Unit {
 
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(ssr_ui_text()),
-      @text.TextFont::default().with_font(font).with_font_size(16.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
@@ -951,7 +951,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(control_system))
   .add_systems(@app.Update, @app.system(rotate_models))

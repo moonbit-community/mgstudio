@@ -61,10 +61,10 @@ let shadow_biases_state : Ref[ShadowBiasesState] = Ref({
   light_position: @math.Vec3::new(5.0F, 5.0F, 0.0F),
   using_point_light: false,
   filter_method: @pbr.ShadowFilteringMethod::Hardware2x2,
-  point_depth_bias: @pbr.PointLight::default().shadow_depth_bias,
-  point_normal_bias: @pbr.PointLight::default().shadow_normal_bias,
-  directional_depth_bias: @pbr.DirectionalLight::default().shadow_depth_bias,
-  directional_normal_bias: @pbr.DirectionalLight::default().shadow_normal_bias,
+  point_depth_bias: @pbr.PointLight::PointLight().shadow_depth_bias,
+  point_normal_bias: @pbr.PointLight::PointLight().shadow_normal_bias,
+  directional_depth_bias: @pbr.DirectionalLight::DirectionalLight().shadow_depth_bias,
+  directional_normal_bias: @pbr.DirectionalLight::DirectionalLight().shadow_normal_bias,
   help_text: None,
 })
 
@@ -193,10 +193,10 @@ fn setup(world : @ecs.World) -> Unit {
   shadow_biases_state.val.light_position = @math.Vec3::new(5.0F, 5.0F, 0.0F)
   shadow_biases_state.val.using_point_light = false
   shadow_biases_state.val.filter_method = @pbr.ShadowFilteringMethod::Hardware2x2
-  shadow_biases_state.val.point_depth_bias = @pbr.PointLight::default().shadow_depth_bias
-  shadow_biases_state.val.point_normal_bias = @pbr.PointLight::default().shadow_normal_bias
-  shadow_biases_state.val.directional_depth_bias = @pbr.DirectionalLight::default().shadow_depth_bias
-  shadow_biases_state.val.directional_normal_bias = @pbr.DirectionalLight::default().shadow_normal_bias
+  shadow_biases_state.val.point_depth_bias = @pbr.PointLight::PointLight().shadow_depth_bias
+  shadow_biases_state.val.point_normal_bias = @pbr.PointLight::PointLight().shadow_normal_bias
+  shadow_biases_state.val.directional_depth_bias = @pbr.DirectionalLight::DirectionalLight().shadow_depth_bias
+  shadow_biases_state.val.directional_normal_bias = @pbr.DirectionalLight::DirectionalLight().shadow_normal_bias
   shadow_biases_state.val.help_text = None
 
   let white_material = @pbr.standard_material_add(
@@ -237,7 +237,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-1.0F, 1.0F, 1.0F).looking_at(
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -248,7 +248,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_free_camera,
-    @pbr.FreeCamera::default(),
+    @pbr.FreeCamera::FreeCamera(),
   )
   try! world.set_by_key(
     camera,
@@ -295,7 +295,7 @@ fn setup(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text = @text.Text2dBundle::new(
       @text.Text2d::new(ui_text()),
-      @text.TextFont::default().with_font(font).with_font_size(16.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
@@ -309,7 +309,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   shadow_biases_state.val.help_text = Some(text)
 
@@ -382,8 +382,8 @@ fn update(world : @ecs.World) -> Unit {
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyR) {
-    let point_default = @pbr.PointLight::default()
-    let directional_default = @pbr.DirectionalLight::default()
+    let point_default = @pbr.PointLight::PointLight()
+    let directional_default = @pbr.DirectionalLight::DirectionalLight()
     shadow_biases_state.val.point_depth_bias = point_default.shadow_depth_bias
     shadow_biases_state.val.point_normal_bias = point_default.shadow_normal_bias
     shadow_biases_state.val.directional_depth_bias = directional_default.shadow_depth_bias
@@ -439,8 +439,8 @@ fn update(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@pbr.FreeCameraPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@pbr.FreeCameraPlugin::FreeCameraPlugin())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(update))
   .run()

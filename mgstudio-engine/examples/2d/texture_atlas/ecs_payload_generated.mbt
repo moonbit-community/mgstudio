@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_2d_texture_atlas_AppState(AppState)
-  EcsPayload_examples_2d_texture_atlas_RpgSpriteFolder(RpgSpriteFolder)
 }
 
 ///|
@@ -27,19 +26,6 @@ impl @ecs.EcsPayloadCodec for AppState with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for AppState with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_2d_texture_atlas_AppState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RpgSpriteFolder with to_ecs_payload(self) {
-  EcsPayload_examples_2d_texture_atlas_RpgSpriteFolder(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RpgSpriteFolder with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_2d_texture_atlas_RpgSpriteFolder(value) => Some(value)
     _ => None
   }
 }

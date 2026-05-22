@@ -22,7 +22,7 @@ pub fn on_timer(duration : @core.Duration) -> @app.RunConditionFn[@ecs.World] {
   fn(world : @ecs.World) -> Bool {
     timer_ref.val = timer_ref.val.tick(
       world_time_resource_or_default(world, default_time_resource_key, fn() {
-        let time : Time[Unit] = Time::default()
+        let time : Time[Unit] = Time::Time()
         time
       }).delta(),
     )
@@ -49,7 +49,7 @@ pub fn once_after_delay(
   fn(world : @ecs.World) -> Bool {
     timer_ref.val = timer_ref.val.tick(
       world_time_resource_or_default(world, default_time_resource_key, fn() {
-        let time : Time[Unit] = Time::default()
+        let time : Time[Unit] = Time::Time()
         time
       }).delta(),
     )
@@ -76,7 +76,7 @@ pub fn repeating_after_delay(
   fn(world : @ecs.World) -> Bool {
     timer_ref.val = timer_ref.val.tick(
       world_time_resource_or_default(world, default_time_resource_key, fn() {
-        let time : Time[Unit] = Time::default()
+        let time : Time[Unit] = Time::Time()
         time
       }).delta(),
     )

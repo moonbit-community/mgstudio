@@ -168,7 +168,7 @@ pub struct SpawnExclusions {
 }
 
 ///|
-pub fn SpawnExclusions::default() -> SpawnExclusions {
+pub fn SpawnExclusions::SpawnExclusions() -> SpawnExclusions {
   SpawnExclusions::{ layer_identifiers: [] }
 }
 
@@ -182,13 +182,13 @@ pub struct LdtkSettings {
 }
 
 ///|
-pub fn LdtkSettings::default() -> LdtkSettings {
+pub fn LdtkSettings::LdtkSettings() -> LdtkSettings {
   LdtkSettings::{
     level_spawn_behavior: LevelSpawnBehavior::default(),
     set_clear_color: SetClearColor::default(),
     int_grid_rendering: IntGridRendering::default(),
     level_background: LevelBackground::default(),
-    exclusions: SpawnExclusions::default(),
+    exclusions: SpawnExclusions::SpawnExclusions(),
   }
 }
 
@@ -201,7 +201,7 @@ pub struct LdtkRuntimeState {
 }
 
 ///|
-pub fn LdtkRuntimeState::default() -> LdtkRuntimeState {
+pub fn LdtkRuntimeState::LdtkRuntimeState() -> LdtkRuntimeState {
   LdtkRuntimeState::{ spawned_levels_by_world: @hashmap.HashMap([]) }
 }
 
@@ -211,7 +211,7 @@ pub struct LdtkSpawnedLevelIids {
 }
 
 ///|
-pub fn LdtkSpawnedLevelIids::default() -> LdtkSpawnedLevelIids {
+pub fn LdtkSpawnedLevelIids::LdtkSpawnedLevelIids() -> LdtkSpawnedLevelIids {
   LdtkSpawnedLevelIids::{ iids: [] }
 }
 

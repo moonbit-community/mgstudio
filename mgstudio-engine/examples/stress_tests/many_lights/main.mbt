@@ -40,7 +40,7 @@ impl @app.Resource for LightStats with resource() {
 }
 
 ///|
-fn LightStats::default() -> LightStats {
+fn LightStats::LightStats() -> LightStats {
   { print_timer: 0.0F }
 }
 
@@ -121,7 +121,7 @@ fn setup(
     ignore(
       commands.spawn(
         (
-          @pbr.PointLight::default()
+          @pbr.PointLight::PointLight()
           .with_range(3.5F)
           .with_intensity(2200.0F)
           .with_color(@sprite.Color::hsl(float_from_int(i % 360), 1.0F, 0.5F)),
@@ -138,7 +138,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(CAMERA_RADIUS, 0.0F, 0.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -188,10 +188,10 @@ fn print_light_count(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .insert_resource(LightStats::default())
+  .insert_resource(LightStats::LightStats())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
   .add_systems(@app.Update, @app.system(@app.system_param3(print_light_count)))

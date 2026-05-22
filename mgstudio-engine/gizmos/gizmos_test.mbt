@@ -16,7 +16,7 @@
 test "gizmos boundary re-exports configuration and plugin surface" {
   let app = @gizmos.init_gizmo_group(
     @app.App::new(@ecs.World::new()),
-    @gizmos.DefaultGizmoConfigGroup::default(),
+    @gizmos.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   )
   let _ = @gizmos.gizmo_plugin(app)
   debug_inspect(
@@ -30,8 +30,13 @@ test "gizmos boundary re-exports configuration and plugin surface" {
 struct TestRoundGizmos {}
 
 ///|
-impl Default for TestRoundGizmos with default() {
+fn TestRoundGizmos::TestRoundGizmos() -> TestRoundGizmos {
   TestRoundGizmos::{  }
+}
+
+///|
+impl Default for TestRoundGizmos with default() {
+  TestRoundGizmos::TestRoundGizmos()
 }
 
 ///|
@@ -53,7 +58,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 
 ///|
 impl @sprite.GizmoConfigGroup for TestRoundGizmos with new_gizmo_config_group_cell() {
-  TestRoundGizmosCell(Ref(TestRoundGizmos::default()))
+  TestRoundGizmosCell(Ref(TestRoundGizmos::TestRoundGizmos()))
 }
 
 ///|
@@ -71,7 +76,7 @@ test "custom gizmo groups expose config through store and system param" {
   let seen_width = Ref(-1.0F)
   let app = @gizmos.init_gizmo_group(
     @app.App::new(@ecs.World::new()),
-    TestRoundGizmos::default(),
+    TestRoundGizmos::TestRoundGizmos(),
   ).add_systems(
     @app.Update,
     @app.system(
@@ -84,7 +89,7 @@ test "custom gizmo groups expose config through store and system param" {
   match app.world().get_resource_ref_mut(@gizmos.GizmoConfigStore::resource()) {
     Some(store_ref) => {
       let (config_ref, _group_ref) = store_ref.val.config_mut(
-        TestRoundGizmos::default(),
+        TestRoundGizmos::TestRoundGizmos(),
       )
       let current = config_ref.val
       config_ref.val = { ..current, line: { ..current.line, width: 7.0F } }
@@ -101,7 +106,7 @@ test "retained gizmo component installs Bevy required Transform and asset store"
   let app = @gizmos.gizmo_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
   let entity = world.spawn()
-  try! (world.entity_mut(entity).insert_component(@gizmos.Gizmo::default())
+  try! (world.entity_mut(entity).insert_component(@gizmos.Gizmo::Gizmo())
   |> ignore)
   debug_inspect(
     try! world.contains_by_key(entity, @transform.Transform::component()),
@@ -113,7 +118,7 @@ test "retained gizmo component installs Bevy required Transform and asset store"
 
 ///|
 test "retained gizmo asset stores Bevy line-list and line-strip buffers" {
-  let asset = @gizmos.GizmoAsset::default()
+  let asset = @gizmos.GizmoAsset::GizmoAsset()
   asset.line(
     @math.Vec3::zero(),
     @math.Vec3::new(1.0F, 0.0F, 0.0F),
@@ -140,7 +145,7 @@ test "retained gizmo asset stores Bevy line-list and line-strip buffers" {
 
 ///|
 test "retained gizmo asset delegates Bevy buffer helpers" {
-  let asset = @gizmos.GizmoAsset::default()
+  let asset = @gizmos.GizmoAsset::GizmoAsset()
   asset.ray(
     @math.Vec3::zero(),
     @math.Vec3::new(1.0F, 0.0F, 0.0F),
@@ -174,7 +179,7 @@ test "retained gizmo asset delegates Bevy buffer helpers" {
 
 ///|
 test "retained gizmo asset delegates Bevy rect and cube helpers" {
-  let asset = @gizmos.GizmoAsset::default()
+  let asset = @gizmos.GizmoAsset::GizmoAsset()
   asset.rect_2d(
     @sprite.Isometry2d::identity(),
     @math.Vec2::new(2.0F, 2.0F),
@@ -208,7 +213,7 @@ test "retained gizmo asset delegates Bevy rect and cube helpers" {
 
 ///|
 test "retained gizmo asset delegates Bevy cross helpers" {
-  let asset = @gizmos.GizmoAsset::default()
+  let asset = @gizmos.GizmoAsset::GizmoAsset()
   asset.cross(@math.Isometry3d::identity(), 0.5F, @color.Color::white())
   debug_inspect(asset.buffer().list_positions().length(), content="6")
   asset.cross_2d(@sprite.Isometry2d::identity(), 0.5F, @color.Color::white())
@@ -217,7 +222,7 @@ test "retained gizmo asset delegates Bevy cross helpers" {
 
 ///|
 test "retained gizmo circle builder flushes with Bevy resolution semantics" {
-  let asset = @gizmos.GizmoAsset::default()
+  let asset = @gizmos.GizmoAsset::GizmoAsset()
   ignore(
     asset
     .circle_2d(@sprite.Isometry2d::identity(), 1.0F, @color.Color::white())
@@ -243,7 +248,7 @@ test "retained gizmo circle builder flushes with Bevy resolution semantics" {
 
 ///|
 test "retained gizmo arc builders flush in Bevy call order" {
-  let asset = @gizmos.GizmoAsset::default()
+  let asset = @gizmos.GizmoAsset::GizmoAsset()
   ignore(
     asset
     .arc_2d(
@@ -278,7 +283,7 @@ test "retained gizmo arc builders flush in Bevy call order" {
 
 ///|
 test "retained gizmo short and long arc helpers mirror Bevy builders" {
-  let asset = @gizmos.GizmoAsset::default()
+  let asset = @gizmos.GizmoAsset::GizmoAsset()
   ignore(
     asset
     .short_arc_2d_between(
@@ -339,7 +344,7 @@ test "retained gizmo short and long arc helpers mirror Bevy builders" {
 
 ///|
 test "retained gizmo sphere builder draws three Bevy great circles" {
-  let asset = @gizmos.GizmoAsset::default()
+  let asset = @gizmos.GizmoAsset::GizmoAsset()
   ignore(
     asset
     .sphere(@math.Isometry3d::identity(), 1.0F, @color.Color::white())
@@ -365,7 +370,7 @@ test "retained gizmo sphere builder draws three Bevy great circles" {
 
 ///|
 test "retained gizmo arrow builders mirror Bevy tips and axes helpers" {
-  let asset = @gizmos.GizmoAsset::default()
+  let asset = @gizmos.GizmoAsset::GizmoAsset()
   ignore(
     asset.arrow(
       @math.Vec3::zero(),

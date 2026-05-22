@@ -48,7 +48,7 @@ test "ui: a11y button role/label/actions are synced into AccessibilityNode" {
   ui_a11y_test_setup_context(world)
 
   let button = world.spawn_empty()
-  try! world.set_by_key(button, ecs_key_button, Button::default())
+  try! world.set_by_key(button, ecs_key_button, Button::Button())
   try! world.set_by_key(
     button,
     ecs_key_ui_layout,
@@ -65,7 +65,7 @@ test "ui: a11y button role/label/actions are synced into AccessibilityNode" {
   try! world.set_by_key(
     label,
     @text.ecs_key_text_font,
-    @text.TextFont::default(),
+    @text.TextFont::TextFont(),
   )
   try! world.set_by_key(
     label,
@@ -92,7 +92,7 @@ test "ui: a11y label role/value are synced into AccessibilityNode" {
   ui_a11y_test_setup_context(world)
 
   let entity = world.spawn_empty()
-  try! world.set_by_key(entity, ecs_key_label, Label::default())
+  try! world.set_by_key(entity, ecs_key_label, Label::Label())
   try! world.set_by_key(
     entity,
     ecs_key_ui_layout,
@@ -107,7 +107,7 @@ test "ui: a11y label role/value are synced into AccessibilityNode" {
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default(),
+    @text.TextFont::TextFont(),
   )
 
   ui_stack_system(world)
@@ -123,7 +123,7 @@ test "ui: a11y visibility and clip metadata are synced into AccessibilityNode" {
   ui_a11y_test_setup_context(world)
 
   let entity = world.spawn_empty()
-  try! world.set_by_key(entity, ecs_key_button, Button::default())
+  try! world.set_by_key(entity, ecs_key_button, Button::Button())
   try! world.set_by_key(
     entity,
     ecs_key_ui_layout,
@@ -174,14 +174,14 @@ test "ui: interaction state observers update AccessibilityNode like Bevy" {
   try! world.set_by_key(
     entity,
     ecs_key_interaction_disabled,
-    InteractionDisabled::default(),
+    InteractionDisabled::InteractionDisabled(),
   )
   assert_true(ui_a11y_test_read_node(world, entity).is_disabled())
 
   ignore(try! world.remove_by_key(entity, ecs_key_interaction_disabled))
   assert_false(ui_a11y_test_read_node(world, entity).is_disabled())
 
-  try! world.set_by_key(entity, ecs_key_checked, Checked::default())
+  try! world.set_by_key(entity, ecs_key_checked, Checked::Checked())
   debug_inspect(
     ui_a11y_test_read_node(world, entity).toggled()
     is Some(@moon_accesskit.Toggled::True),
@@ -202,11 +202,11 @@ test "ui: a11y focus in tree update follows InputFocus resource" {
   ui_a11y_test_setup_context(world)
   world.insert_resource(
     @input_focus.InputFocus::resource(),
-    @input_focus.InputFocus::default(),
+    @input_focus.InputFocus::InputFocus(),
   )
 
   let back = world.spawn_empty()
-  try! world.set_by_key(back, ecs_key_button, Button::default())
+  try! world.set_by_key(back, ecs_key_button, Button::Button())
   try! world.set_by_key(
     back,
     ecs_key_ui_layout,
@@ -238,7 +238,7 @@ test "ui: editable label exports text input role and SetValue action" {
   ui_a11y_test_setup_context(world)
 
   let editable = world.spawn_empty()
-  try! world.set_by_key(editable, ecs_key_label, Label::default())
+  try! world.set_by_key(editable, ecs_key_label, Label::Label())
   try! world.set_by_key(
     editable,
     ecs_key_accessibility_label,
@@ -262,7 +262,7 @@ test "ui: editable label exports text input role and SetValue action" {
   try! world.set_by_key(
     editable,
     @text.ecs_key_text_font,
-    @text.TextFont::default(),
+    @text.TextFont::TextFont(),
   )
 
   ui_stack_system(world)

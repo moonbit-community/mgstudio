@@ -35,13 +35,8 @@ pub(all) enum DlssPerfQualityMode {
 } derive(Eq, Debug)
 
 ///|
-pub fn DlssPerfQualityMode::default() -> DlssPerfQualityMode {
-  Auto
-}
-
-///|
 pub impl Default for DlssPerfQualityMode with default() {
-  DlssPerfQualityMode::default()
+  Auto
 }
 
 ///|
@@ -63,7 +58,7 @@ pub fn DlssProjectId::value(self : DlssProjectId) -> String {
 pub struct DlssInitPlugin {}
 
 ///|
-pub fn DlssInitPlugin::default() -> DlssInitPlugin {
+pub fn DlssInitPlugin::DlssInitPlugin() -> DlssInitPlugin {
   DlssInitPlugin::{  }
 }
 
@@ -71,7 +66,7 @@ pub fn DlssInitPlugin::default() -> DlssInitPlugin {
 pub struct DlssPlugin {}
 
 ///|
-pub fn DlssPlugin::default() -> DlssPlugin {
+pub fn DlssPlugin::DlssPlugin() -> DlssPlugin {
   DlssPlugin::{  }
 }
 
@@ -82,13 +77,13 @@ pub struct Dlss {
 }
 
 ///|
-pub fn Dlss::default() -> Dlss {
+pub fn Dlss::Dlss() -> Dlss {
   Dlss::{ perf_quality_mode: DlssPerfQualityMode::default(), reset: false }
 }
 
 ///|
 pub impl Default for Dlss with default() {
-  Dlss::default()
+  Dlss::Dlss()
 }
 
 ///|
@@ -120,7 +115,7 @@ pub struct DlssRuntimeState {
 } derive(Eq, Debug)
 
 ///|
-pub fn DlssRuntimeState::default() -> DlssRuntimeState {
+pub fn DlssRuntimeState::DlssRuntimeState() -> DlssRuntimeState {
   DlssRuntimeState::{
     enabled_camera_count: 0,
     reset_requested_count: 0,
@@ -222,20 +217,18 @@ pub fn install_dlss_required_components() -> Unit {
   ignore(
     @ecs.component_metadata_builder(ecs_key_dlss)
     .require_with(@post_process.ecs_key_temporal_jitter, fn() {
-      @post_process.TemporalJitter::default()
+      @post_process.TemporalJitter::TemporalJitter()
     })
     .require_with(@post_process.ecs_key_mip_bias, fn() {
-      @post_process.MipBias::default()
+      @post_process.MipBias::MipBias()
     })
     .require_with(@core_pipeline.ecs_key_depth_prepass, fn() {
-      @core_pipeline.DepthPrepass::default()
+      @core_pipeline.DepthPrepass::DepthPrepass()
     })
     .require_with(@core_pipeline.ecs_key_motion_vector_prepass, fn() {
-      @core_pipeline.MotionVectorPrepass::default()
+      @core_pipeline.MotionVectorPrepass::MotionVectorPrepass()
     })
-    .require_with(@core_pipeline.ecs_key_hdr, fn() {
-      @core_pipeline.Hdr::default()
-    }),
+    .require_with(@core_pipeline.ecs_key_hdr, fn() { @core_pipeline.Hdr::Hdr() }),
   )
   dlss_required_components_installed.val = true
 }
@@ -248,7 +241,7 @@ pub impl @app.Plugin for DlssPlugin with build(self, app) {
 
 ///|
 pub fn dlss_init_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  dlss_init_plugin_with(app, DlssInitPlugin::default())
+  dlss_init_plugin_with(app, DlssInitPlugin::DlssInitPlugin())
 }
 
 ///|
@@ -272,7 +265,7 @@ pub fn dlss_init_plugin_with(
 
 ///|
 pub fn dlss_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  dlss_plugin_with(app, DlssPlugin::default())
+  dlss_plugin_with(app, DlssPlugin::DlssPlugin())
 }
 
 ///|
@@ -297,7 +290,7 @@ pub fn dlss_plugin_with(
     app
   }
   app
-  .init_resource(fn() { DlssRuntimeState::default() })
+  .init_resource(fn() { DlssRuntimeState::DlssRuntimeState() })
   .add_system(dlss_update_runtime_state)
 }
 

@@ -25,7 +25,7 @@ const CAS_PLUGIN_NAME : String = "mgstudio.anti_alias.contrast_adaptive_sharpeni
 pub struct CasPlugin {}
 
 ///|
-pub fn CasPlugin::default() -> CasPlugin {
+pub fn CasPlugin::CasPlugin() -> CasPlugin {
   CasPlugin::{  }
 }
 
@@ -37,7 +37,7 @@ pub struct ContrastAdaptiveSharpening {
 } derive(Eq, Debug)
 
 ///|
-pub fn ContrastAdaptiveSharpening::default() -> ContrastAdaptiveSharpening {
+pub fn ContrastAdaptiveSharpening::ContrastAdaptiveSharpening() -> ContrastAdaptiveSharpening {
   ContrastAdaptiveSharpening::{
     enabled: true,
     sharpening_strength: 0.6,
@@ -51,7 +51,7 @@ pub struct DenoiseCas {
 } derive(Eq, Debug)
 
 ///|
-pub fn DenoiseCas::default() -> DenoiseCas {
+pub fn DenoiseCas::DenoiseCas() -> DenoiseCas {
   DenoiseCas::{ enabled: false }
 }
 
@@ -61,7 +61,7 @@ pub struct CasUniform {
 } derive(Eq, Debug)
 
 ///|
-pub fn CasUniform::default() -> CasUniform {
+pub fn CasUniform::CasUniform() -> CasUniform {
   CasUniform::{ sharpness: 0.0 }
 }
 
@@ -105,7 +105,7 @@ pub struct CasRuntimeState {
 } derive(Eq, Debug)
 
 ///|
-pub fn CasRuntimeState::default() -> CasRuntimeState {
+pub fn CasRuntimeState::CasRuntimeState() -> CasRuntimeState {
   CasRuntimeState::{
     enabled_camera_count: 0,
     active_camera_count: 0,
@@ -122,7 +122,10 @@ pub let ecs_key_cas_runtime_state : @ecs.ResourceKey[CasRuntimeState] = @ecs.reg
 let cas_camera_component_key_ref : Ref[@ecs.ComponentKey[Unit]?] = Ref(None)
 
 ///|
-pub fn[T] cas_register_camera_component_key(key : @ecs.ComponentKey[T]) -> Unit {
+pub fn[T : @ecs.EcsPayloadCodec] cas_register_camera_component_key(
+  key : @ecs.ComponentKey[T],
+) -> Unit {
+  ignore(@ecs.ensure_erased_component(key))
   cas_camera_component_key_ref.val = Some(
     @ecs.component_key_from_id(key.id(), debug_name=key.debug_name()),
   )
@@ -146,7 +149,7 @@ pub impl @app.Plugin for CasPlugin with build(self, app) {
 
 ///|
 pub fn cas_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  cas_plugin_with(app, CasPlugin::default())
+  cas_plugin_with(app, CasPlugin::CasPlugin())
 }
 
 ///|
@@ -155,7 +158,7 @@ pub fn cas_plugin_with(
   _plugin : CasPlugin,
 ) -> @app.App[@ecs.World] {
   app
-  .init_resource(fn() { CasRuntimeState::default() })
+  .init_resource(fn() { CasRuntimeState::CasRuntimeState() })
   .add_system(cas_update_runtime_state)
 }
 

@@ -39,7 +39,7 @@ pub struct GpuAtmosphereSettings {
 }
 
 ///|
-pub fn GpuAtmosphereSettings::default() -> GpuAtmosphereSettings {
+pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> GpuAtmosphereSettings {
   GpuAtmosphereSettings::{
     transmittance_lut_size: @math.UVec2::new(256, 128),
     multiscattering_lut_size: @math.UVec2::new(32, 32),
@@ -61,7 +61,7 @@ pub fn GpuAtmosphereSettings::default() -> GpuAtmosphereSettings {
 pub fn pbr_gpu_atmosphere_settings(
   _settings : AtmosphereSettings,
 ) -> GpuAtmosphereSettings {
-  GpuAtmosphereSettings::default()
+  GpuAtmosphereSettings::GpuAtmosphereSettings()
 }
 
 ///|
@@ -70,7 +70,7 @@ pub fn pbr_gpu_atmosphere_settings_with_runtime(
   sky_max_samples : Int,
   rendering_method : AtmosphereMode,
 ) -> GpuAtmosphereSettings {
-  let defaults = GpuAtmosphereSettings::default()
+  let defaults = GpuAtmosphereSettings::GpuAtmosphereSettings()
   GpuAtmosphereSettings::{
     ..defaults,
     scene_units_to_m: if scene_units_to_m <= 0.0F {
@@ -89,7 +89,7 @@ pub fn pbr_gpu_atmosphere_settings_with_runtime(
 
 ///|
 pub fn pbr_atmosphere_settings_default() -> AtmosphereSettings {
-  AtmosphereSettings::default()
+  AtmosphereSettings()
 }
 
 ///|

@@ -555,7 +555,7 @@ pub struct ResourceManager {
 }
 
 ///|
-pub fn ResourceManager::default() -> ResourceManager {
+pub fn ResourceManager::ResourceManager() -> ResourceManager {
   ResourceManager::new(0)
 }
 

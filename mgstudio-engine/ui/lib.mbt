@@ -18,22 +18,22 @@ fn register_ui_text_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(@text.ecs_key_text, ecs_key_node, fn() {
-    Node::default()
+    Node::Node()
   })
   world.register_required_components_with(
     @text.ecs_key_text,
     @text.ecs_key_text_font,
-    fn() { @text.TextFont::default() },
+    fn() { @text.TextFont::TextFont() },
   )
   world.register_required_components_with(
     @text.ecs_key_text,
     @text.ecs_key_text_color,
-    fn() { @text.TextColor::default() },
+    fn() { @text.TextColor::TextColor() },
   )
   world.register_required_components_with(
     @text.ecs_key_text,
     @text.ecs_key_text_layout,
-    fn() { @text.TextLayout::default() },
+    fn() { @text.TextLayout::TextLayout() },
   )
   world.register_required_components_with(
     @text.ecs_key_text,

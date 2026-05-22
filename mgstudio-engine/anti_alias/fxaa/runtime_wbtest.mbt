@@ -18,34 +18,32 @@ fn fxaa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
   try! world.set_by_key(
     entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
   entity
 }
 
 ///|
 test "anti_alias/fxaa: runtime state counts only camera entities with Fxaa" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(FxaaPlugin::default())
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    FxaaPlugin::FxaaPlugin(),
+  )
   let camera_entity = fxaa_test_spawn_camera(app.world())
   let disabled_camera_entity = fxaa_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()
   try! app
   .world()
-  .set_by_key(camera_entity, ecs_key_fxaa, Fxaa::default().with_enabled(true))
+  .set_by_key(camera_entity, ecs_key_fxaa, Fxaa::Fxaa().with_enabled(true))
   try! app
   .world()
   .set_by_key(
     disabled_camera_entity,
     ecs_key_fxaa,
-    Fxaa::default().with_enabled(false),
+    Fxaa::Fxaa().with_enabled(false),
   )
   try! app
   .world()
-  .set_by_key(
-    non_camera_entity,
-    ecs_key_fxaa,
-    Fxaa::default().with_enabled(true),
-  )
+  .set_by_key(non_camera_entity, ecs_key_fxaa, Fxaa::Fxaa().with_enabled(true))
   let app = app.update()
   let runtime = app.world().get_resource(ecs_key_fxaa_runtime_state).unwrap()
   debug_inspect(runtime.enabled_camera_count, content="1")
@@ -59,19 +57,19 @@ test "anti_alias/fxaa: node requires camera component and enabled=true" {
   try! world.set_by_key(
     camera_entity,
     ecs_key_fxaa,
-    Fxaa::default().with_enabled(false),
+    Fxaa::Fxaa().with_enabled(false),
   )
   try! world.set_by_key(
     non_camera_entity,
     ecs_key_fxaa,
-    Fxaa::default().with_enabled(true),
+    Fxaa::Fxaa().with_enabled(true),
   )
   debug_inspect(fxaa_node_enabled(world, camera_entity), content="false")
   debug_inspect(fxaa_node_enabled(world, non_camera_entity), content="false")
   try! (world.replace(
     camera_entity,
     ecs_key_fxaa,
-    Fxaa::default().with_enabled(true),
+    Fxaa::Fxaa().with_enabled(true),
   )
   |> ignore)
   debug_inspect(fxaa_node_enabled(world, camera_entity), content="true")

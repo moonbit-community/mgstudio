@@ -18,7 +18,7 @@ pub struct InputFocus {
 }
 
 ///|
-pub fn InputFocus::default() -> InputFocus {
+pub fn InputFocus::InputFocus() -> InputFocus {
   InputFocus::{ focused_entity: None }
 }
 
@@ -48,7 +48,7 @@ pub struct InputFocusVisible {
 }
 
 ///|
-pub fn InputFocusVisible::default() -> InputFocusVisible {
+pub fn InputFocusVisible::InputFocusVisible() -> InputFocusVisible {
   InputFocusVisible::{ visible: false }
 }
 
@@ -118,7 +118,7 @@ pub struct IsFocusedHelper {
 pub struct InputDispatchPlugin {}
 
 ///|
-pub fn InputDispatchPlugin::default() -> InputDispatchPlugin {
+pub fn InputDispatchPlugin::InputDispatchPlugin() -> InputDispatchPlugin {
   InputDispatchPlugin::{  }
 }
 
@@ -431,8 +431,8 @@ pub fn input_dispatch_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
   app
-  .init_resource(fn() { InputFocus::default() })
-  .init_resource(fn() { InputFocusVisible::default() })
+  .init_resource(fn() { InputFocus::InputFocus() })
+  .init_resource(fn() { InputFocusVisible::InputFocusVisible() })
   .add_message(focused_keyboard_input_message_key())
   .add_message(focused_gamepad_button_input_message_key())
   .add_message(focused_mouse_wheel_message_key())

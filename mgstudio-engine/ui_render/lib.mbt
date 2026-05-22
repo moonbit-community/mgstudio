@@ -15,7 +15,7 @@
 ///|
 // Bevy source: `bevy/crates/bevy_ui_render/src/lib.rs`.
 pub fn ui_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(UiRenderPlugin::default())
+  app.add_plugins(UiRenderPlugin::UiRenderPlugin())
 }
 
 ///|

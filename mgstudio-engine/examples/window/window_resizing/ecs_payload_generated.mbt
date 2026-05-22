@@ -14,24 +14,7 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_window_window_resizing_ResolutionSettings(
-    ResolutionSettings
-  )
   EcsPayload_examples_window_window_resizing_ResolutionText(ResolutionText)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ResolutionSettings with to_ecs_payload(self) {
-  EcsPayload_examples_window_window_resizing_ResolutionSettings(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ResolutionSettings with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_window_window_resizing_ResolutionSettings(value) =>
-      Some(value)
-    _ => None
-  }
 }
 
 ///|

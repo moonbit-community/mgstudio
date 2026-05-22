@@ -40,7 +40,7 @@ pub struct CosmicBuffer {
 }
 
 ///|
-pub fn CosmicBuffer::default() -> CosmicBuffer {
+pub fn CosmicBuffer::CosmicBuffer() -> CosmicBuffer {
   CosmicBuffer::{
     text: "",
     spans: [],
@@ -69,9 +69,9 @@ pub struct ComputedTextBlock {
 }
 
 ///|
-pub fn ComputedTextBlock::default() -> ComputedTextBlock {
+pub fn ComputedTextBlock::ComputedTextBlock() -> ComputedTextBlock {
   ComputedTextBlock::{
-    buffer: CosmicBuffer::default(),
+    buffer: CosmicBuffer::CosmicBuffer(),
     scale_factor: 1.0F,
     needs_rerender: true,
     uses_viewport_sizes: false,
@@ -110,7 +110,7 @@ pub fn ComputedTextBlock::entities(
 pub struct TextPipeline {}
 
 ///|
-pub fn TextPipeline::default() -> TextPipeline {
+pub fn TextPipeline::TextPipeline() -> TextPipeline {
   TextPipeline::{  }
 }
 
@@ -362,7 +362,7 @@ fn text_instance_has_run_overlays(instance : TextInstance) -> Bool {
 }
 
 ///|
-let font_atlas_set_state : Ref[FontAtlasSet] = Ref(FontAtlasSet::default())
+let font_atlas_set_state : Ref[FontAtlasSet] = Ref(FontAtlasSet::FontAtlasSet())
 
 ///|
 let default_text_font_handle_ref : Ref[@asset.Handle[@asset.Font]?] = Ref(None)
@@ -448,7 +448,7 @@ priv struct OverlaySpriteSliceBatchBounds {
 }
 
 ///|
-fn OverlaySpriteSliceBatchBounds::default() -> OverlaySpriteSliceBatchBounds {
+fn OverlaySpriteSliceBatchBounds::OverlaySpriteSliceBatchBounds() -> OverlaySpriteSliceBatchBounds {
   OverlaySpriteSliceBatchBounds::{
     has_bounds: false,
     min_x: 0.0F,
@@ -1257,7 +1257,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
 fn text_runtime_resolve_rem_size(world : @ecs.World) -> Float {
   match world.resource(RemSize::resource()).get() {
     Some(rem_size) => rem_size.value()
-    None => RemSize::default().value()
+    None => RemSize::RemSize().value()
   }
 }
 
@@ -1893,7 +1893,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     let mut main_batch_texture_id = -1
     let mut main_batch_span_index = -1
     let mut main_batch_color = @sprite.Color::srgb(1.0F, 1.0F, 1.0F)
-    let main_batch_bounds = OverlaySpriteSliceBatchBounds::default()
+    let main_batch_bounds = OverlaySpriteSliceBatchBounds::OverlaySpriteSliceBatchBounds()
     instance_main_batches.reserve_capacity(run_count + 1)
     main_batch_slices_xy_uv.reserve_capacity(glyph_count * 6)
 
@@ -1901,7 +1901,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     let mut shadow_batch_slices_xy_uv : Array[Float] = []
     let mut shadow_batch_texture : @asset.Handle[@asset.Image]? = None
     let mut shadow_batch_texture_id = -1
-    let shadow_batch_bounds = OverlaySpriteSliceBatchBounds::default()
+    let shadow_batch_bounds = OverlaySpriteSliceBatchBounds::OverlaySpriteSliceBatchBounds()
     instance_shadow_batches.reserve_capacity(run_count + 1)
     if shadow_opt is Some(_) {
       shadow_batch_slices_xy_uv.reserve_capacity(glyph_count * 6)
@@ -2194,9 +2194,9 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_text_required_components(app.world())
   text_pipeline_ensure_default_font_handle() |> ignore
   let next = app
-    .insert_resource(RemSize::default())
-    .insert_resource(FontCx::default())
-    .insert_resource(FontAtlasSet::default())
+    .insert_resource(RemSize::RemSize())
+    .insert_resource(FontCx::FontCx())
+    .insert_resource(FontAtlasSet::FontAtlasSet())
     .add_system(text_update_system)
     .add_last_system(text_trim_shape_run_cache_system)
     .add_post_update_system_config(

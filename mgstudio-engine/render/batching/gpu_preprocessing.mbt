@@ -31,7 +31,7 @@ pub struct GpuPreprocessingSupport {
 }
 
 ///|
-pub fn GpuPreprocessingSupport::default() -> GpuPreprocessingSupport {
+pub fn GpuPreprocessingSupport::GpuPreprocessingSupport() -> GpuPreprocessingSupport {
   GpuPreprocessingSupport::{ max_supported_mode: GpuPreprocessingMode::None }
 }
 
@@ -292,7 +292,7 @@ pub struct LatePreprocessWorkItemIndirectParameters {
 } derive(Eq, Debug)
 
 ///|
-pub fn LatePreprocessWorkItemIndirectParameters::default() -> LatePreprocessWorkItemIndirectParameters {
+pub fn LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters() -> LatePreprocessWorkItemIndirectParameters {
   LatePreprocessWorkItemIndirectParameters::{
     dispatch_x: 0,
     dispatch_y: 1,
@@ -400,11 +400,11 @@ pub fn init_work_item_buffers(
     Indirect(_, _, Some(gpu_occlusion_culling)) => {
       gpu_occlusion_culling.late_indirect_parameters_indexed_offset = late_indexed_indirect_parameters_buffer.length()
       late_indexed_indirect_parameters_buffer.push(
-        LatePreprocessWorkItemIndirectParameters::default(),
+        LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters(),
       )
       gpu_occlusion_culling.late_indirect_parameters_non_indexed_offset = late_non_indexed_indirect_parameters_buffer.length()
       late_non_indexed_indirect_parameters_buffer.push(
-        LatePreprocessWorkItemIndirectParameters::default(),
+        LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters(),
       )
     }
     _ => ()
@@ -532,7 +532,7 @@ pub struct GpuPreprocessingPlugin {
 }
 
 ///|
-pub fn GpuPreprocessingPlugin::default() -> GpuPreprocessingPlugin {
+pub fn GpuPreprocessingPlugin::GpuPreprocessingPlugin() -> GpuPreprocessingPlugin {
   GpuPreprocessingPlugin::{ mode: GpuPreprocessingMode::Culling }
 }
 
@@ -569,7 +569,10 @@ pub impl @app.Resource for GpuPreprocessingSupport with resource() {
 pub fn gpu_preprocessing_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  gpu_preprocessing_plugin_with(app, GpuPreprocessingPlugin::default())
+  gpu_preprocessing_plugin_with(
+    app,
+    GpuPreprocessingPlugin::GpuPreprocessingPlugin(),
+  )
 }
 
 ///|

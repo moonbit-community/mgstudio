@@ -16,7 +16,7 @@
 pub struct TextPlugin {}
 
 ///|
-pub fn TextPlugin::default() -> TextPlugin {
+pub fn TextPlugin::TextPlugin() -> TextPlugin {
   TextPlugin::{  }
 }
 

@@ -16,8 +16,13 @@
 struct MyRoundGizmos {}
 
 ///|
-impl Default for MyRoundGizmos with default() {
+fn MyRoundGizmos::MyRoundGizmos() -> MyRoundGizmos {
   MyRoundGizmos::{  }
+}
+
+///|
+impl Default for MyRoundGizmos with default() {
+  MyRoundGizmos::MyRoundGizmos()
 }
 
 ///|
@@ -39,7 +44,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 
 ///|
 impl @sprite.GizmoConfigGroup for MyRoundGizmos with new_gizmo_config_group_cell() {
-  MyRoundGizmosCell(Ref(MyRoundGizmos::default()))
+  MyRoundGizmosCell(Ref(MyRoundGizmos::MyRoundGizmos()))
 }
 
 ///|
@@ -167,8 +172,8 @@ fn spawn_help_overlay(
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
     ),
@@ -177,14 +182,14 @@ fn spawn_help_overlay(
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_left(@ui.Val::Px(12.0F))
         .with_top(@ui.Val::Px(12.0F)),
         @text.Text::new(
           "Arrow Left/Right: straight gizmo line width\nArrow Up/Down: round gizmo line width\n1 / 2: toggle straight / round gizmos\nU / I: cycle line styles\nJ / K: cycle line joins\nSpace: pause virtual time",
         ),
-        @text.TextFont::default().with_font(font).with_font_size(18.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
@@ -199,13 +204,13 @@ fn setup(
   config_store : @app.ResMut[@gizmos.GizmoConfigStore],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
   spawn_help_overlay(commands, asset_server)
 
   config_store.modify(fn(store) {
     let (default_config, _default_group) = store.config_mut(
-      @gizmos.DefaultGizmoConfigGroup::default(),
+      @gizmos.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     )
     let current_default = default_config.val
     default_config.val = gizmo_config_with_line_joints(
@@ -214,7 +219,7 @@ fn setup(
     )
 
     let (round_config, _round_group) = store.config_mut(
-      MyRoundGizmos::default(),
+      MyRoundGizmos::MyRoundGizmos(),
     )
     let current_round = round_config.val
     round_config.val = gizmo_config_with_line_joints(
@@ -357,7 +362,7 @@ fn update_config(
   let delta = real_time.get().delta_secs()
   config_store.modify(fn(store) {
     let (default_config, _default_group) = store.config_mut(
-      @gizmos.DefaultGizmoConfigGroup::default(),
+      @gizmos.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     )
     if keyboard.pressed(ArrowRight) {
       let current = default_config.val
@@ -392,7 +397,7 @@ fn update_config(
     }
 
     let (round_config, _round_group) = store.config_mut(
-      MyRoundGizmos::default(),
+      MyRoundGizmos::MyRoundGizmos(),
     )
     if keyboard.pressed(ArrowUp) {
       let current = round_config.val
@@ -435,9 +440,9 @@ fn update_config(
 fn main {
   @gizmos.init_gizmo_group(
     @app.App::new(@ecs.World::new()).add_plugins(
-      @mgstudio.DefaultPlugins::default(),
+      @mgstudio.DefaultPlugins::DefaultPlugins(),
     ),
-    MyRoundGizmos::default(),
+    MyRoundGizmos::MyRoundGizmos(),
   )
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(

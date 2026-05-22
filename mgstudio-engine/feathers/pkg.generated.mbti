@@ -171,11 +171,11 @@ pub struct AlphaPattern {
 
 pub struct AlphaPatternMaterial {
 }
-pub fn AlphaPatternMaterial::default() -> Self
+pub fn AlphaPatternMaterial::AlphaPatternMaterial() -> Self
 
 pub struct AlphaPatternPlugin {
 }
-pub fn AlphaPatternPlugin::default() -> Self
+pub fn AlphaPatternPlugin::AlphaPatternPlugin() -> Self
 
 pub(all) struct AlphaPatternPluginMarker {
 }
@@ -184,13 +184,13 @@ pub impl @ecs.EcsPayloadCodec for AlphaPatternPluginMarker
 pub struct AlphaPatternResource {
   material_id : Int
 }
-pub fn AlphaPatternResource::default() -> Self
+pub fn AlphaPatternResource::AlphaPatternResource() -> Self
 pub impl @app.Resource for AlphaPatternResource
 pub impl @ecs.EcsPayloadCodec for AlphaPatternResource
 
 pub struct CursorIconPlugin {
 }
-pub fn CursorIconPlugin::default() -> Self
+pub fn CursorIconPlugin::CursorIconPlugin() -> Self
 
 pub(all) struct CursorIconPluginMarker {
 }
@@ -199,7 +199,7 @@ pub impl @ecs.EcsPayloadCodec for CursorIconPluginMarker
 pub struct DefaultCursor {
   cursor : EntityCursor
 }
-pub fn DefaultCursor::default() -> Self
+pub fn DefaultCursor::DefaultCursor() -> Self
 pub impl @app.Resource for DefaultCursor
 pub impl @ecs.EcsPayloadCodec for DefaultCursor
 
@@ -210,7 +210,7 @@ pub(all) enum EntityCursor {
 
 pub struct FeathersPlugin {
 }
-pub fn FeathersPlugin::default() -> Self
+pub fn FeathersPlugin::FeathersPlugin() -> Self
 pub impl @app.Plugin for FeathersPlugin
 
 pub(all) struct FeathersPluginMarker {
@@ -219,8 +219,8 @@ pub impl @ecs.EcsPayloadCodec for FeathersPluginMarker
 
 pub struct FeathersPlugins {
 }
+pub fn FeathersPlugins::FeathersPlugins() -> Self
 pub fn FeathersPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
-pub fn FeathersPlugins::default() -> Self
 pub impl @app.Plugin for FeathersPlugins
 
 pub(all) enum HandleOrPath[T] {
@@ -234,7 +234,7 @@ pub struct InheritableFont {
   font : HandleOrPath[String]
   font_size_px : Float
 }
-pub fn InheritableFont::default() -> Self
+pub fn InheritableFont::InheritableFont() -> Self
 pub fn InheritableFont::from_handle(String) -> Self
 pub fn InheritableFont::from_path(String) -> Self
 pub impl @ecs.Component for InheritableFont
@@ -243,7 +243,7 @@ pub impl @ecs.EcsPayloadCodec for InheritableFont
 pub struct OverrideCursor {
   cursor : EntityCursor?
 }
-pub fn OverrideCursor::default() -> Self
+pub fn OverrideCursor::OverrideCursor() -> Self
 
 pub struct ThemeBackgroundColor {
   token : ThemeToken
@@ -272,7 +272,7 @@ pub impl @ecs.EcsPayloadCodec for ThemeFontColor
 pub struct ThemeProps {
   color : Array[(ThemeToken, String)]
 }
-pub fn ThemeProps::default() -> Self
+pub fn ThemeProps::ThemeProps() -> Self
 pub fn ThemeProps::get_color(Self, ThemeToken) -> String?
 pub fn ThemeProps::set_color(Self, ThemeToken, String) -> Unit
 
@@ -291,8 +291,8 @@ pub impl @ecs.EcsPayloadCodec for ThemedText
 pub struct UiTheme {
   props : ThemeProps
 }
+pub fn UiTheme::UiTheme() -> Self
 pub fn UiTheme::color(Self, ThemeToken) -> String
-pub fn UiTheme::default() -> Self
 pub fn UiTheme::set_color(Self, String, String) -> Unit
 pub impl @app.Resource for UiTheme
 pub impl @ecs.EcsPayloadCodec for UiTheme

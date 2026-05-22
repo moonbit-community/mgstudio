@@ -73,7 +73,7 @@ pub(all) struct GizmoLineConfig {
 const DEFAULT_GIZMO_LINE_WIDTH : Float = 2.0F
 
 ///|
-pub fn GizmoLineConfig::default() -> GizmoLineConfig {
+pub fn GizmoLineConfig::GizmoLineConfig() -> GizmoLineConfig {
   GizmoLineConfig::{
     width: DEFAULT_GIZMO_LINE_WIDTH,
     perspective: false,
@@ -91,12 +91,12 @@ pub(all) struct GizmoConfig {
 }
 
 ///|
-pub fn GizmoConfig::default() -> GizmoConfig {
+pub fn GizmoConfig::GizmoConfig() -> GizmoConfig {
   GizmoConfig::{
     enabled: true,
-    line: GizmoLineConfig::default(),
+    line: GizmoLineConfig::GizmoLineConfig(),
     depth_bias: 0.0F,
-    render_layers: RenderLayers::default(),
+    render_layers: RenderLayers::RenderLayers(),
   }
 }
 
@@ -624,8 +624,13 @@ pub fn[Config] GizmoStorage::new() -> GizmoStorage[Config] {
 }
 
 ///|
-pub impl[Config] Default for GizmoStorage[Config] with default() {
+pub fn[Config] GizmoStorage::GizmoStorage() -> GizmoStorage[Config] {
   GizmoStorage::new()
+}
+
+///|
+pub impl[Config] Default for GizmoStorage[Config] with default() {
+  GizmoStorage::GizmoStorage()
 }
 
 ///|
@@ -656,7 +661,7 @@ fn[Config : GizmoConfigGroup] registered_gizmo_storage_resource_key() -> @ecs.Re
     Some(id) =>
       @ecs.resource_key_from_id(id, debug_name="mgstudio_gizmos::\{type_name}")
     None => {
-      let key : @ecs.ResourceKey[GizmoStorage[Config]] = @ecs.register_resource(
+      let key : @ecs.ResourceKey[GizmoStorage[Config]] = @ecs.register_erased_resource(
         debug_name="mgstudio_gizmos::\{type_name}",
       )
       gizmo_storage_resource_registry.val.set(type_name, key.id())
@@ -720,8 +725,8 @@ let global_gizmo_state : Ref[GizmoState] = Ref(GizmoState::new())
 ///|
 pub fn gizmo() -> Gizmos[DefaultGizmoConfigGroup] {
   Gizmos::{
-    config: GizmoConfig::default(),
-    config_group: DefaultGizmoConfigGroup::default(),
+    config: GizmoConfig::GizmoConfig(),
+    config_group: DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     state: global_gizmo_state,
     world: None,
   }

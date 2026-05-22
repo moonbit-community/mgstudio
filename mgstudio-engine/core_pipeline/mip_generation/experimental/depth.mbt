@@ -25,7 +25,7 @@ pub struct ExperimentalDepthMipGenerationNode {
 }
 
 ///|
-pub fn ExperimentalDepthMipGenerationNode::default() -> ExperimentalDepthMipGenerationNode {
+pub fn ExperimentalDepthMipGenerationNode::ExperimentalDepthMipGenerationNode() -> ExperimentalDepthMipGenerationNode {
   ExperimentalDepthMipGenerationNode::{
     label: EXPERIMENTAL_DEPTH_MIP_GENERATION_LABEL,
   }
@@ -64,7 +64,7 @@ pub struct DownsampleDepthPipelinePairState {
 }
 
 ///|
-pub fn DownsampleDepthPipelinePairState::default() -> DownsampleDepthPipelinePairState {
+pub fn DownsampleDepthPipelinePairState::DownsampleDepthPipelinePairState() -> DownsampleDepthPipelinePairState {
   DownsampleDepthPipelinePairState::new()
 }
 

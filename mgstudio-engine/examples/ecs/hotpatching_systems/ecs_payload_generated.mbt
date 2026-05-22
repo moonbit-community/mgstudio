@@ -14,35 +14,7 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_ecs_hotpatching_systems_Mode(Mode)
-  EcsPayload_examples_ecs_hotpatching_systems_ClickCount(ClickCount)
   EcsPayload_examples_ecs_hotpatching_systems_HotText(HotText)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Mode with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_hotpatching_systems_Mode(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Mode with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_hotpatching_systems_Mode(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ClickCount with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_hotpatching_systems_ClickCount(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ClickCount with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_hotpatching_systems_ClickCount(value) => Some(value)
-    _ => None
-  }
 }
 
 ///|

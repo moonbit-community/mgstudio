@@ -19,8 +19,6 @@ extenum @ecs.EcsPayload += {
   )
   EcsPayload_examples_ui_styling_box_shadow_ShadowValueLabel(ShadowValueLabel)
   EcsPayload_examples_ui_styling_box_shadow_ShadowNode(ShadowNode)
-  EcsPayload_examples_ui_styling_box_shadow_ShadowSettings(ShadowSettings)
-  EcsPayload_examples_ui_styling_box_shadow_PressedControls(PressedControls)
 }
 
 ///|
@@ -60,34 +58,6 @@ impl @ecs.EcsPayloadCodec for ShadowNode with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for ShadowNode with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ui_styling_box_shadow_ShadowNode(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ShadowSettings with to_ecs_payload(self) {
-  EcsPayload_examples_ui_styling_box_shadow_ShadowSettings(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ShadowSettings with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_styling_box_shadow_ShadowSettings(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PressedControls with to_ecs_payload(self) {
-  EcsPayload_examples_ui_styling_box_shadow_PressedControls(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PressedControls with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_styling_box_shadow_PressedControls(value) =>
-      Some(value)
     _ => None
   }
 }

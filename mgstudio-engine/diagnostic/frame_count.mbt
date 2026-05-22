@@ -25,7 +25,7 @@ pub struct FrameCount {
 const FRAME_COUNT_PLUGIN_NAME : String = "mgstudio.diagnostic.FrameCountPlugin"
 
 ///|
-pub fn FrameCount::default() -> FrameCount {
+pub fn FrameCount::FrameCount() -> FrameCount {
   FrameCount::{ value: 0 }
 }
 
@@ -51,7 +51,7 @@ pub impl @app.Resource for FrameCount with resource() {
 pub struct FrameCountPlugin {}
 
 ///|
-pub fn FrameCountPlugin::default() -> FrameCountPlugin {
+pub fn FrameCountPlugin::FrameCountPlugin() -> FrameCountPlugin {
   FrameCountPlugin::{  }
 }
 
@@ -67,7 +67,7 @@ pub impl @app.Plugin for FrameCountPlugin with build(self, app) {
 
 ///|
 pub fn frame_count_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  frame_count_plugin_with(app, FrameCountPlugin::default())
+  frame_count_plugin_with(app, FrameCountPlugin::FrameCountPlugin())
 }
 
 ///|
@@ -82,7 +82,7 @@ pub fn frame_count_plugin_with(
   .insert_world_resource(frame_count_plugin_marker_key, FrameCountPluginMarker::{
 
   })
-  .init_resource(fn() { FrameCount::default() })
+  .init_resource(fn() { FrameCount::FrameCount() })
   .add_last_system_param(update_frame_count)
 }
 

@@ -57,7 +57,7 @@ fn prepare_transform_world(world : @ecs.World) -> Unit {
   if !world.resource(static_transform_optimizations_resource_key).is_present() {
     world.insert_resource(
       static_transform_optimizations_resource_key,
-      StaticTransformOptimizations::default(),
+      StaticTransformOptimizations::StaticTransformOptimizations(),
     )
   }
 }
@@ -473,7 +473,7 @@ test "transform ecs: mark_dirty_trees disables static optimization above thresho
 ///|
 test "transform plugin: post startup populates hierarchy globals" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    TransformPlugin::default(),
+    @transform.TransformPlugin::TransformPlugin(),
   )
   let world = app.world()
   let parent = world.spawn_empty()
@@ -512,7 +512,7 @@ test "transform plugin: post startup populates hierarchy globals" {
 ///|
 test "transform plugin: queues parent validation for missing parent GlobalTransform" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    TransformPlugin::default(),
+    @transform.TransformPlugin::TransformPlugin(),
   )
   let world = app.world()
   let parent = world.spawn_empty()
@@ -544,7 +544,7 @@ test "transform plugin: queues parent validation for missing parent GlobalTransf
 test "transform plugin: keeps preinserted static optimization resource" {
   let app = @app.App::new(@ecs.World::new())
     .insert_resource(StaticTransformOptimizations::disabled())
-    .add_plugins(TransformPlugin::default())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
   let value = app
     .world()
     .get_resource(static_transform_optimizations_resource_key)
@@ -556,7 +556,7 @@ test "transform plugin: keeps preinserted static optimization resource" {
 test "transform plugin: post update reflects update stage transform writes" {
   let entity_ref = Ref(@core.Entity::new(0, 0))
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    TransformPlugin::default(),
+    @transform.TransformPlugin::TransformPlugin(),
   )
   let world = app.world()
   let entity = world.spawn_empty()
@@ -594,7 +594,7 @@ test "transform plugin: post update reflects update stage transform writes" {
 test "transform plugin: post update reflects hierarchy root transform writes" {
   let parent_ref = Ref(@core.Entity::new(0, 0))
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    TransformPlugin::default(),
+    @transform.TransformPlugin::TransformPlugin(),
   )
   let world = app.world()
   let parent = world.spawn_empty()

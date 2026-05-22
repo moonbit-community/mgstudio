@@ -28,7 +28,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(4.0F, 4.0F, 12.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.5F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -43,7 +43,7 @@ fn setup(
         @transform.Transform::from_rotation(
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -FRAC_PI_4),
         ),
-        @pbr.DirectionalLight::default(),
+        @pbr.DirectionalLight::DirectionalLight(),
       ),
     ),
   )
@@ -116,7 +116,7 @@ fn find_top_material_and_mesh(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(
     @app.Update,

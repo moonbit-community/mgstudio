@@ -132,7 +132,7 @@ fn setup(world : @ecs.World) -> Unit {
   let texture = asset_server.load("branding/icon.png")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -167,7 +167,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let real_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default().with_font(font).with_font_size(24.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
@@ -179,13 +179,13 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(260.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   virtual_time_state.val.real_text = Some(real_text)
 
   @text.Text2dBundle::new(
     @text.Text2d::new("CONTROLS\n(Un)pause: Space\nSpeed+: Up\nSpeed-: Down"),
-    @text.TextFont::default().with_font(font).with_font_size(24.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 320.0F),
       0.0F,
@@ -199,13 +199,13 @@ fn setup(world : @ecs.World) -> Unit {
   .with_color(
     @text.TextColor::new(@sprite.Color::new(0.85F, 0.85F, 0.85F, 1.0F)),
   )
-  .with_shadow(Some(@text.Text2dShadow::default()))
+  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
   |> ignore
 
   let virtual_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default().with_font(font).with_font_size(24.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(390.0F, 320.0F),
         0.0F,
@@ -219,7 +219,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   virtual_time_state.val.virtual_text = Some(virtual_text)
 
@@ -310,7 +310,7 @@ fn move_virtual_time_sprites(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,

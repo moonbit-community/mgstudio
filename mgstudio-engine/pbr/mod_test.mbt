@@ -89,10 +89,10 @@ fn pbr_app_with_mesh3d_entity() -> (
   @asset.Handle[@mesh.Mesh],
 ) {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(PbrPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
   let world = app.world()
   let mesh_handle = mesh_assets_mut_or_abort(world).val.add(
     @mesh.Mesh::from_3d_geometry(@mesh_primitives.rectangle_mesh(1.0F, 1.0F)),
@@ -106,7 +106,7 @@ fn pbr_app_with_mesh3d_entity() -> (
 
 ///|
 test "render3d: plugin replacement id aligns with bevy_pbr" {
-  let plugin = PbrPlugin::default()
+  let plugin = PbrPlugin::PbrPlugin()
   debug_inspect(plugin.name(), content="\"mgstudio.pbr.PbrPlugin\"")
 }
 
@@ -151,7 +151,7 @@ test "render3d: non-modified Mesh asset events do not mark Mesh3d as changed" {
 test "render3d: default pbr plugin installs bevy-style runtime config defaults" {
   let app = pbr_plugin(
     @app.App::new(@ecs.World::new()).add_plugins(
-      @render.RenderPlugin::default(),
+      @render.RenderPlugin::RenderPlugin(),
     ),
   )
   let config = read_pbr_runtime_config(app.world())
@@ -187,7 +187,7 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
 test "render3d: pbr plugin config updates runtime feature switches" {
   let _app = pbr_plugin_with(
     @app.App::new(@ecs.World::new()).add_plugins(
-      @render.RenderPlugin::default(),
+      @render.RenderPlugin::RenderPlugin(),
     ),
     PbrPlugin::{
       prepass_enabled: false,
@@ -227,7 +227,7 @@ test "render3d: pbr plugin config updates runtime feature switches" {
 
   let _reset = pbr_plugin(
     @app.App::new(@ecs.World::new()).add_plugins(
-      @render.RenderPlugin::default(),
+      @render.RenderPlugin::RenderPlugin(),
     ),
   )
   debug_inspect(
@@ -279,10 +279,10 @@ test "render3d: root pbr exposes deferred lighting planning surface" {
 ///|
 test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(
       @app.PluginGroupBuilder::start_named("test-pbr")
-      .add(PbrPlugin::default())
+      .add(PbrPlugin::PbrPlugin())
       .set(PbrPlugin::{
         prepass_enabled: false,
         add_default_deferred_lighting_plugin: false,
@@ -314,7 +314,7 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
 test "render3d: render3d_plugin alias maps to pbr plugin" {
   let app = render3d_plugin(
     @app.App::new(@ecs.World::new()).add_plugins(
-      @render.RenderPlugin::default(),
+      @render.RenderPlugin::RenderPlugin(),
     ),
   )
   debug_inspect(

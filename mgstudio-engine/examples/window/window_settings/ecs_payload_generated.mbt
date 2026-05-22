@@ -13,19 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_window_window_settings_CursorIcons(CursorIcons)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CursorIcons with to_ecs_payload(self) {
-  EcsPayload_examples_window_window_settings_CursorIcons(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CursorIcons with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_window_window_settings_CursorIcons(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

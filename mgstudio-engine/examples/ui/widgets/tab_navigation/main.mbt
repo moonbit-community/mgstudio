@@ -43,9 +43,9 @@ fn spawn_tab_button(
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(parent),
-      @ui.Button::default(),
+      @ui.Button::Button(),
       @input_focus.TabIndex::new(tab_index),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(200.0F))
       .with_height(@ui.Val::Px(65.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
@@ -60,7 +60,7 @@ fn spawn_tab_button(
       (
         @hierarchy.Parent::new(button),
         @text.Text::new(label),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),
@@ -91,7 +91,7 @@ fn spawn_tab_group(
       (
         @hierarchy.Parent::new(root),
         @text.Text::new(label),
-        @text.TextFont::default().with_font(font).with_font_size(18.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@sprite.Color::white()),
       ),
     ),
@@ -101,7 +101,7 @@ fn spawn_tab_group(
     (
       @hierarchy.Parent::new(root),
       tab_group,
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_flex_direction(@ui.FlexDirection::Row)
       .with_column_gap(@ui.Val::Px(6.0F))
       .with_margin(
@@ -132,14 +132,14 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_flex_direction(@ui.FlexDirection::Column)
@@ -259,9 +259,9 @@ fn focus_system(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@input_focus.InputDispatchPlugin::default())
-  .add_plugins(@input_focus.TabNavigationPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@input_focus.InputDispatchPlugin::InputDispatchPlugin())
+  .add_plugins(@input_focus.TabNavigationPlugin::TabNavigationPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(button_system))
   .add_systems(@app.Update, @app.system(focus_system))

@@ -33,8 +33,8 @@ test "pbr/meshlet: meshlet asset stores real bevy slice data" {
   let meshlet = Meshlet::new(1, 2, 3, 4, 5)
     .with_quantization(6, 7, 8, 9)
     .with_min_vertex_position_channels(10.0, 11.0, 12.0)
-  let bvh = BvhNode::default().with_child_count(0, 255)
-  let cull = MeshletCullData::default()
+  let bvh = BvhNode::BvhNode().with_child_count(0, 255)
+  let cull = MeshletCullData::MeshletCullData()
   let aabb = MeshletAabb::new(
     center_x=1.0,
     center_y=2.0,
@@ -78,7 +78,7 @@ fn test_meshlet_asset_fixture() -> MeshletMesh {
   let meshlet = Meshlet::new(32, 4, 7, 9, 3)
     .with_quantization(10, 11, 12, 2)
     .with_min_vertex_position_channels(-1.5, 2.25, 4.5)
-  let bvh = BvhNode::default().with_child_count(0, 255)
+  let bvh = BvhNode::BvhNode().with_child_count(0, 255)
   let aabb = MeshletAabb::new(
     center_x=1.0,
     center_y=2.0,
@@ -94,7 +94,7 @@ fn test_meshlet_asset_fixture() -> MeshletMesh {
     indices=[0, 1, 2, 255],
     bvh=[bvh],
     meshlets=[meshlet],
-    meshlet_cull_data=[MeshletCullData::default()],
+    meshlet_cull_data=[MeshletCullData::MeshletCullData()],
     aabb~,
     bvh_depth=5,
   )
@@ -133,7 +133,7 @@ test "pbr/meshlet: bevy bytes round trip all raw slices" {
 
 ///|
 test "pbr/meshlet: materialized mesh uses the first bvh lod branch only" {
-  let root = BvhNode::default().with_child_count(0, 1).with_child_count(1, 1)
+  let root = BvhNode::BvhNode().with_child_count(0, 1).with_child_count(1, 1)
   let meshlet_mesh = MeshletMesh::from_parts(
     vertex_positions=[],
     vertex_normals=[0, 0, 0, 0, 0, 0],
@@ -148,7 +148,10 @@ test "pbr/meshlet: materialized mesh uses the first bvh lod branch only" {
     indices=[0, 1, 2, 0, 1, 2],
     bvh=[root],
     meshlets=[Meshlet::new(0, 0, 0, 3, 1), Meshlet::new(0, 3, 3, 3, 1)],
-    meshlet_cull_data=[MeshletCullData::default(), MeshletCullData::default()],
+    meshlet_cull_data=[
+      MeshletCullData::MeshletCullData(),
+      MeshletCullData::MeshletCullData(),
+    ],
     bvh_depth=1,
   )
   let geometry = meshlet_mesh.to_mesh3d_geometry()

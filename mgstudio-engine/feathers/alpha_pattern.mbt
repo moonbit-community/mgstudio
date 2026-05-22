@@ -19,7 +19,7 @@
 pub struct AlphaPatternMaterial {}
 
 ///|
-pub fn AlphaPatternMaterial::default() -> AlphaPatternMaterial {
+pub fn AlphaPatternMaterial::AlphaPatternMaterial() -> AlphaPatternMaterial {
   AlphaPatternMaterial::{  }
 }
 
@@ -37,7 +37,7 @@ let alpha_pattern_resource_key : @ecs.ResourceKey[AlphaPatternResource] = @ecs.r
 pub struct AlphaPattern {} derive(Default, Debug)
 
 ///|
-pub fn AlphaPatternResource::default() -> AlphaPatternResource {
+pub fn AlphaPatternResource::AlphaPatternResource() -> AlphaPatternResource {
   AlphaPatternResource::{ material_id: -1 }
 }
 
@@ -58,7 +58,7 @@ let alpha_pattern_plugin_marker_key : @ecs.ResourceKey[AlphaPatternPluginMarker]
 )
 
 ///|
-pub fn AlphaPatternPlugin::default() -> AlphaPatternPlugin {
+pub fn AlphaPatternPlugin::AlphaPatternPlugin() -> AlphaPatternPlugin {
   AlphaPatternPlugin::{  }
 }
 
@@ -72,6 +72,6 @@ pub fn alpha_pattern_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
     .insert_resource(alpha_pattern_plugin_marker_key, AlphaPatternPluginMarker::{
 
     })
-    app.init_resource(fn() { AlphaPatternResource::default() })
+    app.init_resource(fn() { AlphaPatternResource::AlphaPatternResource() })
   }
 }

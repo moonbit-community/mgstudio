@@ -401,7 +401,7 @@ pub(all) struct CursorOptions {
   mut grab_mode : CursorGrabMode
   hit_test : Bool
 } derive(Eq, @debug.Debug)
-pub fn CursorOptions::default() -> Self
+pub fn CursorOptions::CursorOptions() -> Self
 pub impl @ecs.Component for CursorOptions
 pub impl @ecs.EcsPayloadCodec for CursorOptions
 pub impl @ecs.Mutable for CursorOptions
@@ -432,7 +432,7 @@ pub(all) struct EnabledButtons {
   mut maximize : Bool
   mut close : Bool
 } derive(Eq, @debug.Debug)
-pub fn EnabledButtons::default() -> Self
+pub fn EnabledButtons::EnabledButtons() -> Self
 
 pub(all) enum ExitCondition {
   OnPrimaryClosed
@@ -664,8 +664,8 @@ pub(all) struct Window {
   mut drag_resize_request : @math.CompassOctant?
   mut physical_cursor_position : @math.Vec2?
 }
+pub fn Window::Window() -> Self
 pub fn Window::cursor_position(Self) -> @math.Vec2?
-pub fn Window::default() -> Self
 pub fn Window::height(Self) -> Float
 pub fn Window::physical_cursor_position(Self) -> @math.Vec2?
 pub fn Window::physical_height(Self) -> Int
@@ -799,7 +799,7 @@ pub(all) struct WindowPlugin {
   exit_condition : ExitCondition
   close_when_requested : Bool
 }
-pub fn WindowPlugin::default() -> Self
+pub fn WindowPlugin::WindowPlugin() -> Self
 pub impl @app.Plugin for WindowPlugin
 
 pub(all) enum WindowPosition {
@@ -822,8 +822,8 @@ pub(all) struct WindowResizeConstraints {
   max_width : Float
   max_height : Float
 } derive(Eq, @debug.Debug)
+pub fn WindowResizeConstraints::WindowResizeConstraints() -> Self
 pub fn WindowResizeConstraints::check_constraints(Self) -> Self
-pub fn WindowResizeConstraints::default() -> Self
 
 pub(all) struct WindowResized {
   window : @Milky2018/mgstudio/core.Entity
@@ -839,8 +839,8 @@ pub(all) struct WindowResolution {
   mut scale_factor_override : Float?
   mut scale_factor : Float
 } derive(Eq, @debug.Debug)
+pub fn WindowResolution::WindowResolution() -> Self
 pub fn WindowResolution::base_scale_factor(Self) -> Float
-pub fn WindowResolution::default() -> Self
 pub fn WindowResolution::height(Self) -> Float
 pub fn WindowResolution::new(Int, Int) -> Self
 pub fn WindowResolution::physical_height(Self) -> Int

@@ -24,7 +24,7 @@ pub(all) struct MeshRenderPlugin {
 }
 
 ///|
-pub fn MeshRenderPlugin::default() -> MeshRenderPlugin {
+pub fn MeshRenderPlugin::MeshRenderPlugin() -> MeshRenderPlugin {
   MeshRenderPlugin::{ use_gpu_instance_buffer_builder: true }
 }
 
@@ -74,7 +74,7 @@ fn init_auto_exposure_compensation_curve_asset(
     @asset.Assets[AutoExposureCompensationCurve],
   ] = @asset.assets_resource_key()
   let next = @asset.init_asset(app, fn() {
-    AutoExposureCompensationCurve::default()
+    AutoExposureCompensationCurve::AutoExposureCompensationCurve()
   })
   if next.world().get_resource_mut(auto_exposure_curve_assets_key)
     is Some(curves_ref) {
@@ -85,7 +85,7 @@ fn init_auto_exposure_compensation_curve_asset(
     if !curves.contains(default_curve_handle) {
       curves.insert(
         default_curve_handle,
-        AutoExposureCompensationCurve::default(),
+        AutoExposureCompensationCurve::AutoExposureCompensationCurve(),
       )
       |> ignore
     }
@@ -256,7 +256,7 @@ pub impl @app.Plugin for MeshRenderPlugin with build(self, app) {
 
 ///|
 pub fn mesh_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  mesh_render_plugin_with(app, MeshRenderPlugin::default())
+  mesh_render_plugin_with(app, MeshRenderPlugin::MeshRenderPlugin())
 }
 
 ///|

@@ -74,8 +74,8 @@ pub fn AlphaMask3d::new(OpaqueNoLightmap3dBatchSetKey, OpaqueNoLightmap3dBinKey,
 pub struct AlphaMask3dPhase {
   items : Array[AlphaMask3d]
 }
+pub fn AlphaMask3dPhase::AlphaMask3dPhase() -> Self
 pub fn AlphaMask3dPhase::clear(Self) -> Unit
-pub fn AlphaMask3dPhase::default() -> Self
 pub fn AlphaMask3dPhase::is_empty(Self) -> Bool
 pub fn AlphaMask3dPhase::push(Self, AlphaMask3d) -> Unit
 pub impl @app.Resource for AlphaMask3dPhase
@@ -83,19 +83,19 @@ pub impl @ecs.EcsPayloadCodec for AlphaMask3dPhase
 
 pub struct Core3dPlugin {
 }
-pub fn Core3dPlugin::default() -> Self
+pub fn Core3dPlugin::Core3dPlugin() -> Self
 pub impl @app.Plugin for Core3dPlugin
 
 pub struct Hdr {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn Hdr::default() -> Self
+pub fn Hdr::Hdr() -> Self
 pub impl @ecs.Component for Hdr
 pub impl @ecs.EcsPayloadCodec for Hdr
 
 pub struct MainOpaquePass3dNode {
   label : String
 }
-pub fn MainOpaquePass3dNode::default() -> Self
+pub fn MainOpaquePass3dNode::MainOpaquePass3dNode() -> Self
 pub fn MainOpaquePass3dNode::label(Self) -> String
 
 pub struct MainOpaquePass3dState {
@@ -109,7 +109,7 @@ pub fn MainOpaquePass3dState::new(has_opaque_phase? : Bool, has_alpha_mask_phase
 pub struct MainTransparentPass3dNode {
   label : String
 }
-pub fn MainTransparentPass3dNode::default() -> Self
+pub fn MainTransparentPass3dNode::MainTransparentPass3dNode() -> Self
 pub fn MainTransparentPass3dNode::label(Self) -> String
 
 pub struct MainTransparentPass3dState {
@@ -165,8 +165,8 @@ pub fn Opaque3dBinKey::new(asset_id~ : Int) -> Self
 pub struct Opaque3dPhase {
   items : Array[Opaque3d]
 }
+pub fn Opaque3dPhase::Opaque3dPhase() -> Self
 pub fn Opaque3dPhase::clear(Self) -> Unit
-pub fn Opaque3dPhase::default() -> Self
 pub fn Opaque3dPhase::is_empty(Self) -> Bool
 pub fn Opaque3dPhase::push(Self, Opaque3d) -> Unit
 pub impl @app.Resource for Opaque3dPhase
@@ -204,8 +204,8 @@ pub fn Transparent3d::sort_key(Self) -> Float
 pub struct Transparent3dPhase {
   items : Array[Transparent3d]
 }
+pub fn Transparent3dPhase::Transparent3dPhase() -> Self
 pub fn Transparent3dPhase::clear(Self) -> Unit
-pub fn Transparent3dPhase::default() -> Self
 pub fn Transparent3dPhase::is_empty(Self) -> Bool
 pub fn Transparent3dPhase::push(Self, Transparent3d) -> Unit
 pub impl @app.Resource for Transparent3dPhase

@@ -52,7 +52,7 @@ pub struct KinematicCharacterController2d {
 }
 
 ///|
-pub fn KinematicCharacterController2d::default() -> KinematicCharacterController2d {
+pub fn KinematicCharacterController2d::KinematicCharacterController2d() -> KinematicCharacterController2d {
   {
     translation: @math.Vec2::new(0.0F, 0.0F),
     controller: @control.KinematicCharacterController::default(),

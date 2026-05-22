@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Update, @app.system(@app.system_param2(grab_mouse)))
   .run()
 }
@@ -47,7 +47,7 @@ fn update_primary_cursor_options(
   let options = match
     (try! world.get_by_key(entity, @window.ecs_key_cursor_options)) {
     Some(options) => options
-    None => @window.CursorOptions::default()
+    None => @window.CursorOptions::CursorOptions()
   }
   update(options)
   if (try! world.get_by_key(entity, @window.ecs_key_cursor_options)) is Some(_) {

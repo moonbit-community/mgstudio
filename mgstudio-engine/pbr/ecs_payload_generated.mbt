@@ -14,18 +14,11 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_pbr_Render3dPointLightShadowTargets(
-    Render3dPointLightShadowTargets
-  )
   EcsPayload_pbr_ViewContactShadowsUniformOffset(
     ViewContactShadowsUniformOffset
   )
   EcsPayload_pbr_ContactShadowsBuffer(ContactShadowsBuffer)
-  EcsPayload_pbr_Render3dExecuteQueueState(Render3dExecuteQueueState)
   EcsPayload_pbr_WireframeConfig(WireframeConfig)
-  EcsPayload_pbr_Render3dWireframeMeshCache(Render3dWireframeMeshCache)
-  EcsPayload_pbr_Render3dSceneTargetsState(Render3dSceneTargetsState)
-  EcsPayload_pbr_FreeCameraSystemState(FreeCameraSystemState)
   EcsPayload_pbr_MaterialsPluginState(MaterialsPluginState)
   EcsPayload_pbr_Skybox(Skybox)
   EcsPayload_pbr_Camera3d(Camera3d)
@@ -64,31 +57,6 @@ extenum @ecs.EcsPayload += {
     SpecializedMaterialPipelineCache
   )
   EcsPayload_pbr_MaterialBindGroupAllocators(MaterialBindGroupAllocators)
-  EcsPayload_pbr_Render3dPreviousGlobalTransformSyncState(
-    Render3dPreviousGlobalTransformSyncState
-  )
-  EcsPayload_pbr_MeshRenderPluginMarker(MeshRenderPluginMarker)
-  EcsPayload_pbr_Render3dDirectionalLightShadowTargets(
-    Render3dDirectionalLightShadowTargets
-  )
-  EcsPayload_pbr_PbrPluginMarker(PbrPluginMarker)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dPointLightShadowTargets with to_ecs_payload(
-  self,
-) {
-  EcsPayload_pbr_Render3dPointLightShadowTargets(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dPointLightShadowTargets with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_Render3dPointLightShadowTargets(value) => Some(value)
-    _ => None
-  }
 }
 
 ///|
@@ -124,23 +92,6 @@ pub impl @ecs.EcsPayloadCodec for ContactShadowsBuffer with from_ecs_payload(
 }
 
 ///|
-impl @ecs.EcsPayloadCodec for Render3dExecuteQueueState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_pbr_Render3dExecuteQueueState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dExecuteQueueState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_Render3dExecuteQueueState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
 pub impl @ecs.EcsPayloadCodec for WireframeConfig with to_ecs_payload(self) {
   EcsPayload_pbr_WireframeConfig(self)
 }
@@ -149,55 +100,6 @@ pub impl @ecs.EcsPayloadCodec for WireframeConfig with to_ecs_payload(self) {
 pub impl @ecs.EcsPayloadCodec for WireframeConfig with from_ecs_payload(payload) {
   match payload {
     EcsPayload_pbr_WireframeConfig(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dWireframeMeshCache with to_ecs_payload(
-  self,
-) {
-  EcsPayload_pbr_Render3dWireframeMeshCache(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dWireframeMeshCache with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_Render3dWireframeMeshCache(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dSceneTargetsState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_pbr_Render3dSceneTargetsState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dSceneTargetsState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_Render3dSceneTargetsState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FreeCameraSystemState with to_ecs_payload(self) {
-  EcsPayload_pbr_FreeCameraSystemState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FreeCameraSystemState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_FreeCameraSystemState(value) => Some(value)
     _ => None
   }
 }
@@ -710,69 +612,6 @@ pub impl @ecs.EcsPayloadCodec for MaterialBindGroupAllocators with from_ecs_payl
 ) {
   match payload {
     EcsPayload_pbr_MaterialBindGroupAllocators(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dPreviousGlobalTransformSyncState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_pbr_Render3dPreviousGlobalTransformSyncState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dPreviousGlobalTransformSyncState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_Render3dPreviousGlobalTransformSyncState(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MeshRenderPluginMarker with to_ecs_payload(self) {
-  EcsPayload_pbr_MeshRenderPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MeshRenderPluginMarker with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_MeshRenderPluginMarker(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dDirectionalLightShadowTargets with to_ecs_payload(
-  self,
-) {
-  EcsPayload_pbr_Render3dDirectionalLightShadowTargets(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Render3dDirectionalLightShadowTargets with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_pbr_Render3dDirectionalLightShadowTargets(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PbrPluginMarker with to_ecs_payload(self) {
-  EcsPayload_pbr_PbrPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PbrPluginMarker with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_pbr_PbrPluginMarker(value) => Some(value)
     _ => None
   }
 }

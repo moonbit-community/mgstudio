@@ -92,7 +92,7 @@ fn main {
 
   @app.App::new(@ecs.World::new())
   .set_error_handler(@app.ErrorHandlers::warn)
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(EnemySpawnCursor::{ next: 0 })
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(
@@ -113,7 +113,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   cursor : @app.ResMut[EnemySpawnCursor],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   cursor.modify(fn(value) { value.next = 0 })
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
@@ -140,12 +140,12 @@ fn setup(
           "A: add enemy ship\nR: remove enemy ship\n\nThe player follows only when exactly one enemy exists.",
         ),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           left: @ui.Val::Px(12.0F),
           top: @ui.Val::Px(12.0F),
         },
-        @text.TextFont::default().with_font(font).with_font_size(18.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),

@@ -47,7 +47,7 @@ pub fn BloomFilter::new(
 }
 
 ///|
-pub fn BloomFilter::default() -> BloomFilter {
+pub fn BloomFilter::BloomFilter() -> BloomFilter {
   BloomFilter::new()
 }
 

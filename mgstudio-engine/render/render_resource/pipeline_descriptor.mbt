@@ -36,7 +36,7 @@ pub struct VertexState {
 }
 
 ///|
-pub fn VertexState::default() -> VertexState {
+pub fn VertexState::VertexState() -> VertexState {
   VertexState::{ shader: None, shader_defs: [], entry_point: None, buffers: [] }
 }
 
@@ -52,7 +52,7 @@ pub fn VertexState::new(
 
 ///|
 pub impl Default for VertexState with default() {
-  VertexState::default()
+  VertexState::VertexState()
 }
 
 ///|
@@ -78,7 +78,7 @@ pub struct FragmentState {
 }
 
 ///|
-pub fn FragmentState::default() -> FragmentState {
+pub fn FragmentState::FragmentState() -> FragmentState {
   FragmentState::{
     shader: None,
     shader_defs: [],
@@ -99,7 +99,7 @@ pub fn FragmentState::new(
 
 ///|
 pub impl Default for FragmentState with default() {
-  FragmentState::default()
+  FragmentState::FragmentState()
 }
 
 ///|
@@ -110,7 +110,7 @@ pub struct PrimitiveState {
 }
 
 ///|
-pub fn PrimitiveState::default() -> PrimitiveState {
+pub fn PrimitiveState::PrimitiveState() -> PrimitiveState {
   PrimitiveState::{
     topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     front_face: @wgpu.FRONT_FACE_CCW,
@@ -120,7 +120,7 @@ pub fn PrimitiveState::default() -> PrimitiveState {
 
 ///|
 pub impl Default for PrimitiveState with default() {
-  PrimitiveState::default()
+  PrimitiveState::PrimitiveState()
 }
 
 ///|
@@ -131,7 +131,7 @@ pub struct DepthStencilState {
 }
 
 ///|
-pub fn DepthStencilState::default() -> DepthStencilState {
+pub fn DepthStencilState::DepthStencilState() -> DepthStencilState {
   DepthStencilState::{
     format: @wgpu.TEXTURE_FORMAT_DEPTH24_PLUS,
     depth_write_enabled: true,
@@ -150,7 +150,7 @@ pub fn DepthStencilState::new(
 
 ///|
 pub impl Default for DepthStencilState with default() {
-  DepthStencilState::default()
+  DepthStencilState::DepthStencilState()
 }
 
 ///|
@@ -161,7 +161,7 @@ pub struct MultisampleState {
 }
 
 ///|
-pub fn MultisampleState::default() -> MultisampleState {
+pub fn MultisampleState::MultisampleState() -> MultisampleState {
   MultisampleState::{
     count: 1U,
     mask: 0xffffffffffffffffUL,
@@ -171,7 +171,7 @@ pub fn MultisampleState::default() -> MultisampleState {
 
 ///|
 pub impl Default for MultisampleState with default() {
-  MultisampleState::default()
+  MultisampleState::MultisampleState()
 }
 
 ///|
@@ -188,15 +188,15 @@ pub struct RenderPipelineDescriptor {
 }
 
 ///|
-pub fn RenderPipelineDescriptor::default() -> RenderPipelineDescriptor {
+pub fn RenderPipelineDescriptor::RenderPipelineDescriptor() -> RenderPipelineDescriptor {
   RenderPipelineDescriptor::{
     label: None,
     layout: [],
     immediate_size: 0U,
-    vertex: VertexState::default(),
-    primitive: PrimitiveState::default(),
+    vertex: VertexState::VertexState(),
+    primitive: PrimitiveState::PrimitiveState(),
     depth_stencil: None,
-    multisample: MultisampleState::default(),
+    multisample: MultisampleState::MultisampleState(),
     fragment: None,
     zero_initialize_workgroup_memory: true,
   }
@@ -204,7 +204,7 @@ pub fn RenderPipelineDescriptor::default() -> RenderPipelineDescriptor {
 
 ///|
 pub impl Default for RenderPipelineDescriptor with default() {
-  RenderPipelineDescriptor::default()
+  RenderPipelineDescriptor::RenderPipelineDescriptor()
 }
 
 ///|
@@ -274,7 +274,7 @@ pub struct ComputePipelineDescriptor {
 }
 
 ///|
-pub fn ComputePipelineDescriptor::default() -> ComputePipelineDescriptor {
+pub fn ComputePipelineDescriptor::ComputePipelineDescriptor() -> ComputePipelineDescriptor {
   ComputePipelineDescriptor::{
     label: None,
     layout: [],
@@ -288,7 +288,7 @@ pub fn ComputePipelineDescriptor::default() -> ComputePipelineDescriptor {
 
 ///|
 pub impl Default for ComputePipelineDescriptor with default() {
-  ComputePipelineDescriptor::default()
+  ComputePipelineDescriptor::ComputePipelineDescriptor()
 }
 
 ///|
@@ -320,7 +320,7 @@ pub fn RenderPipelineDescriptor::set_layout(
   filling_set_at(
     next_layout,
     index,
-    BindGroupLayoutDescriptor::default(),
+    BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
     layout,
   )
   RenderPipelineDescriptor::{ ..self, layout: next_layout }

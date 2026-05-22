@@ -39,7 +39,7 @@ fn build_base_pixels(width : Int, height : Int) -> Bytes {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   let mip_chain = @asset.asset_create_dynamic_texture_mip_chain_rgba8(
     BASE_WIDTH,
     BASE_HEIGHT,
@@ -71,7 +71,7 @@ fn setup(commands : @app.Commands) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .run()
 }

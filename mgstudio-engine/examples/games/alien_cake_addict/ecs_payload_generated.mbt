@@ -16,7 +16,6 @@
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_games_alien_cake_addict_Player(Player)
   EcsPayload_examples_games_alien_cake_addict_Cake(Cake)
-  EcsPayload_examples_games_alien_cake_addict_Score(Score)
 }
 
 ///|
@@ -41,19 +40,6 @@ impl @ecs.EcsPayloadCodec for Cake with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for Cake with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_games_alien_cake_addict_Cake(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Score with to_ecs_payload(self) {
-  EcsPayload_examples_games_alien_cake_addict_Score(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Score with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_games_alien_cake_addict_Score(value) => Some(value)
     _ => None
   }
 }

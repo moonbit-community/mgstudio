@@ -153,7 +153,7 @@ test "image wb: default texture format helpers" {
 
 ///|
 test "image wb: compressed saver quality clamp and format eligibility" {
-  let options = CompressedImageSaveOptions::default()
+  let options = CompressedImageSaveOptions::CompressedImageSaveOptions()
     .with_quality(-3)
     .with_quality(180)
     .with_format_hint("png")
@@ -181,7 +181,7 @@ test "image wb: compressed saver quality clamp and format eligibility" {
 
 ///|
 test "image wb: image loader settings defaults" {
-  let settings = ImageLoaderSettings::default()
+  let settings = ImageLoaderSettings::ImageLoaderSettings()
   debug_inspect(
     settings.format == ImageFormatSetting::FromExtension,
     content="true",

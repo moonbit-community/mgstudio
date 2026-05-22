@@ -88,7 +88,7 @@ fn setup(
   commands.spawn(
     (
       OrbitCamera::{  },
-      @camera.Camera3d::default(),
+      @camera.Camera3d::Camera3d(),
       @transform.Transform::from_xyz(0.0F, 2.5F, 6.0F).looking_at(
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -120,7 +120,7 @@ fn orbit_camera_system(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(
     @app.Update,

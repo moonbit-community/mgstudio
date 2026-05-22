@@ -24,7 +24,7 @@ pub struct ErasedRenderAssetDiagnosticPlugin {
 }
 
 ///|
-pub fn ErasedRenderAssetDiagnosticPlugin::default() -> ErasedRenderAssetDiagnosticPlugin {
+pub fn ErasedRenderAssetDiagnosticPlugin::ErasedRenderAssetDiagnosticPlugin() -> ErasedRenderAssetDiagnosticPlugin {
   ErasedRenderAssetDiagnosticPlugin::{ suffix: " assets" }
 }
 
@@ -76,7 +76,7 @@ pub fn ErasedRenderAssetDiagnosticState::new(
 ) -> ErasedRenderAssetDiagnosticState {
   ErasedRenderAssetDiagnosticState::{
     suffix,
-    snapshot: @renderer.RenderDiagnosticsSnapshot::default(),
+    snapshot: @renderer.RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot(),
     sample_count: 0,
     last_sample_us: 0.0F,
   }
@@ -103,7 +103,7 @@ pub fn erased_render_asset_diagnostic_plugin(
 ) -> @app.App[@ecs.World] {
   erased_render_asset_diagnostic_plugin_with(
     app,
-    ErasedRenderAssetDiagnosticPlugin::default(),
+    ErasedRenderAssetDiagnosticPlugin::ErasedRenderAssetDiagnosticPlugin(),
   )
 }
 

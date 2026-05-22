@@ -22,8 +22,13 @@ const HALF_PI : Float = 1.5707963267948966F
 struct MyRoundGizmos {}
 
 ///|
-impl Default for MyRoundGizmos with default() {
+fn MyRoundGizmos::MyRoundGizmos() -> MyRoundGizmos {
   MyRoundGizmos::{  }
+}
+
+///|
+impl Default for MyRoundGizmos with default() {
+  MyRoundGizmos::MyRoundGizmos()
 }
 
 ///|
@@ -45,7 +50,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 
 ///|
 impl @sprite.GizmoConfigGroup for MyRoundGizmos with new_gizmo_config_group_cell() {
-  MyRoundGizmosCell(Ref(MyRoundGizmos::default()))
+  MyRoundGizmosCell(Ref(MyRoundGizmos::MyRoundGizmos()))
 }
 
 ///|
@@ -175,8 +180,8 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera::default(),
-        @camera.Camera3d::default(),
+        @sprite.Camera::Camera(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(0.0F, 4.5F, 10.0F).looking_at(
           @math.Vec3::new(0.0F, 0.8F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -189,7 +194,7 @@ fn setup(
     commands.spawn(
       (
         @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
-        @pbr.PointLight::default().with_shadow_maps_enabled(true),
+        @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
       ),
     ),
   )
@@ -230,7 +235,7 @@ fn setup(
 
   config_store.modify(fn(store) {
     let (default_config, _default_group) = store.config_mut(
-      @gizmos.DefaultGizmoConfigGroup::default(),
+      @gizmos.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     )
     default_config.val = gizmo_config_with_line_joints(
       gizmo_config_with_line_width(default_config.val, 2.0F),
@@ -238,7 +243,7 @@ fn setup(
     )
 
     let (round_config, _round_group) = store.config_mut(
-      MyRoundGizmos::default(),
+      MyRoundGizmos::MyRoundGizmos(),
     )
     round_config.val = gizmo_config_with_line_joints(
       gizmo_config_with_line_width(round_config.val, 4.0F),
@@ -360,7 +365,7 @@ fn update_config(
   let delta = real_time.get().delta_secs()
   config_store.modify(fn(store) {
     let (default_config, _default_group) = store.config_mut(
-      @gizmos.DefaultGizmoConfigGroup::default(),
+      @gizmos.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     )
     if keyboard.pressed(ArrowRight) {
       default_config.val = gizmo_config_with_line_width(
@@ -391,7 +396,7 @@ fn update_config(
     }
 
     let (round_config, _round_group) = store.config_mut(
-      MyRoundGizmos::default(),
+      MyRoundGizmos::MyRoundGizmos(),
     )
     if keyboard.pressed(ArrowUp) {
       round_config.val = gizmo_config_with_line_width(
@@ -430,9 +435,9 @@ fn update_config(
 fn main {
   @gizmos.init_gizmo_group(
     @app.App::new(@ecs.World::new()).add_plugins(
-      @mgstudio.DefaultPlugins::default(),
+      @mgstudio.DefaultPlugins::DefaultPlugins(),
     ),
-    MyRoundGizmos::default(),
+    MyRoundGizmos::MyRoundGizmos(),
   )
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(

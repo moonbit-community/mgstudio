@@ -26,8 +26,13 @@ pub struct BatchingStrategy {
 } derive(Eq, Debug)
 
 ///|
-pub impl Default for BatchingStrategy with default() {
+pub fn BatchingStrategy::BatchingStrategy() -> BatchingStrategy {
   BatchingStrategy::new()
+}
+
+///|
+pub impl Default for BatchingStrategy with default() {
+  BatchingStrategy::BatchingStrategy()
 }
 
 ///|

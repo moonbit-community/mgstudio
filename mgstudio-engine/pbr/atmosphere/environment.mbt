@@ -28,7 +28,7 @@ pub struct AtmosphereEnvironmentMap {
 }
 
 ///|
-pub fn AtmosphereEnvironmentMap::default() -> AtmosphereEnvironmentMap {
+pub fn AtmosphereEnvironmentMap::AtmosphereEnvironmentMap() -> AtmosphereEnvironmentMap {
   AtmosphereEnvironmentMap::{
     environment_map: None,
     size: @math.UVec2::new(512, 512),
@@ -82,7 +82,7 @@ pub fn pbr_generated_environment_map_light_from_atmosphere(
 
 ///|
 pub fn pbr_atmosphere_environment_map_light_default() -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::default()
+  AtmosphereEnvironmentMapLight()
 }
 
 ///|

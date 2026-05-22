@@ -17,7 +17,7 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   let url = "https://raw.githubusercontent.com/bevyengine/bevy/refs/heads/main/assets/branding/bevy_bird_dark.png"
   ignore(
     commands.spawn_component(

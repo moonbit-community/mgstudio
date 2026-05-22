@@ -34,7 +34,7 @@ pub struct PlaybackSettings {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PlaybackSettings::default() -> PlaybackSettings {
+pub fn PlaybackSettings::PlaybackSettings() -> PlaybackSettings {
   PlaybackSettings::once()
 }
 
@@ -142,7 +142,7 @@ pub fn SpatialListener::new(gap : Float) -> SpatialListener {
 }
 
 ///|
-pub fn SpatialListener::default() -> SpatialListener {
+pub fn SpatialListener::SpatialListener() -> SpatialListener {
   SpatialListener::new(4.0F)
 }
 
@@ -162,7 +162,7 @@ pub fn SpatialScale::new_2d(scale : Float) -> SpatialScale {
 }
 
 ///|
-pub fn SpatialScale::default() -> SpatialScale {
+pub fn SpatialScale::SpatialScale() -> SpatialScale {
   SpatialScale::new(1.0F)
 }
 
@@ -177,8 +177,8 @@ pub fn DefaultSpatialScale::new(scale : SpatialScale) -> DefaultSpatialScale {
 }
 
 ///|
-pub fn DefaultSpatialScale::default() -> DefaultSpatialScale {
-  DefaultSpatialScale::new(SpatialScale::default())
+pub fn DefaultSpatialScale::DefaultSpatialScale() -> DefaultSpatialScale {
+  DefaultSpatialScale::new(SpatialScale::SpatialScale())
 }
 
 ///|
@@ -258,10 +258,10 @@ pub struct AudioPlugin {
 }
 
 ///|
-pub fn AudioPlugin::default() -> AudioPlugin {
+pub fn AudioPlugin::AudioPlugin() -> AudioPlugin {
   AudioPlugin::{
-    global_volume: GlobalVolume::default(),
-    default_spatial_scale: SpatialScale::default(),
+    global_volume: GlobalVolume::GlobalVolume(),
+    default_spatial_scale: SpatialScale::SpatialScale(),
   }
 }
 
@@ -277,7 +277,7 @@ pub impl @app.Plugin for AudioPlugin with build(self, app) {
 
 ///|
 pub fn audio_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  audio_plugin_with(app, AudioPlugin::default())
+  audio_plugin_with(app, AudioPlugin::AudioPlugin())
 }
 
 ///|
@@ -296,7 +296,7 @@ pub fn audio_plugin_with(
   )
   .insert_resource(plugin.global_volume)
   .insert_resource(DefaultSpatialScale::new(plugin.default_spatial_scale))
-  .init_resource(fn() { AudioOutput::default() })
+  .init_resource(fn() { AudioOutput::AudioOutput() })
   .init_resource(fn() { AudioSourceAssetPaths::new() })
   .add_post_update_system(audio_playback_system)
 }

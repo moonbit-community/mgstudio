@@ -17,7 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_ui_render_ui_to_texture_Cube(Cube)
   EcsPayload_examples_ui_render_ui_to_texture_MainCamera(MainCamera)
   EcsPayload_examples_ui_render_ui_to_texture_DraggablePanel(DraggablePanel)
-  EcsPayload_examples_ui_render_ui_to_texture_PanelDragState(PanelDragState)
 }
 
 ///|
@@ -55,20 +54,6 @@ impl @ecs.EcsPayloadCodec for DraggablePanel with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for DraggablePanel with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ui_render_ui_to_texture_DraggablePanel(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PanelDragState with to_ecs_payload(self) {
-  EcsPayload_examples_ui_render_ui_to_texture_PanelDragState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PanelDragState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_render_ui_to_texture_PanelDragState(value) =>
       Some(value)
     _ => None
   }

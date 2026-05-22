@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .run()
 }
@@ -26,7 +26,7 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   ignore(
     commands.spawn(
@@ -35,7 +35,7 @@ fn setup(
           meshes
           .peek()
           .add(
-            @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::default()).to_mesh(),
+            @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::Rectangle()).to_mesh(),
           ),
         ),
         @sprite.MeshMaterial2d::new(

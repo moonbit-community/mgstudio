@@ -27,7 +27,7 @@ pub struct CuboidMeshBuilder {
 }
 
 ///|
-pub fn CuboidMeshBuilder::default() -> CuboidMeshBuilder {
+pub fn CuboidMeshBuilder::CuboidMeshBuilder() -> CuboidMeshBuilder {
   { half_size: @math.Vec3::splat(0.5F) }
 }
 

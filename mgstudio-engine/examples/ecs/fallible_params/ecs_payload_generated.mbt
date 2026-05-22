@@ -16,7 +16,6 @@
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_ecs_fallible_params_Enemy(Enemy)
   EcsPayload_examples_ecs_fallible_params_Player(Player)
-  EcsPayload_examples_ecs_fallible_params_EnemySpawnCursor(EnemySpawnCursor)
 }
 
 ///|
@@ -41,20 +40,6 @@ impl @ecs.EcsPayloadCodec for Player with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for Player with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ecs_fallible_params_Player(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for EnemySpawnCursor with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_fallible_params_EnemySpawnCursor(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for EnemySpawnCursor with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_fallible_params_EnemySpawnCursor(value) =>
-      Some(value)
     _ => None
   }
 }

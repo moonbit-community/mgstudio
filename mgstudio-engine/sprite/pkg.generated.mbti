@@ -277,6 +277,7 @@ pub(all) enum AlphaMode2d {
 pub struct Anchor {
   value : @math.Vec2
 }
+pub fn Anchor::Anchor() -> Self
 pub fn Anchor::as_vec(Self) -> @math.Vec2
 pub fn Anchor::bottom_center() -> Self
 pub fn Anchor::bottom_left() -> Self
@@ -284,7 +285,6 @@ pub fn Anchor::bottom_right() -> Self
 pub fn Anchor::center() -> Self
 pub fn Anchor::center_left() -> Self
 pub fn Anchor::center_right() -> Self
-pub fn Anchor::default() -> Self
 pub fn Anchor::new(@math.Vec2) -> Self
 pub fn Anchor::top_center() -> Self
 pub fn Anchor::top_left() -> Self
@@ -314,7 +314,7 @@ pub struct BorderRect {
   top : Float
   bottom : Float
 }
-pub fn BorderRect::default() -> Self
+pub fn BorderRect::BorderRect() -> Self
 pub fn BorderRect::new(Float, Float, Float, Float) -> Self
 pub fn BorderRect::square(Float) -> Self
 
@@ -325,8 +325,8 @@ pub struct Camera {
   computed : CameraComputedValues
   clear_color : ClearColorConfig
 }
+pub fn Camera::Camera() -> Self
 pub fn Camera::clear_viewport(Self) -> Self
-pub fn Camera::default() -> Self
 pub fn Camera::logical_target_size(Self) -> @math.Vec2?
 pub fn Camera::logical_viewport_size(Self) -> @math.Vec2?
 pub fn Camera::new(@color.Color) -> Self
@@ -348,7 +348,7 @@ pub impl @json.FromJson for Camera
 
 pub struct Camera2d {
 }
-pub fn Camera2d::default() -> Self
+pub fn Camera2d::Camera2d() -> Self
 pub impl @ecs.Component for Camera2d
 pub impl @ecs.EcsPayloadCodec for Camera2d
 pub impl ToJson for Camera2d
@@ -383,19 +383,19 @@ pub struct CameraComputedValues {
   target_info : CameraTargetInfo?
   old_viewport_size : @math.IVec2?
 }
-pub fn CameraComputedValues::default() -> Self
+pub fn CameraComputedValues::CameraComputedValues() -> Self
 
 pub struct CameraTargetInfo {
   physical_size : @math.IVec2
   scale_factor : Float
 }
-pub fn CameraTargetInfo::default() -> Self
+pub fn CameraTargetInfo::CameraTargetInfo() -> Self
 pub fn CameraTargetInfo::new(@math.IVec2, Float) -> Self
 
 pub struct ClearColor {
   color : @color.Color
 }
-pub fn ClearColor::default() -> Self
+pub fn ClearColor::ClearColor() -> Self
 pub fn ClearColor::new(@color.Color) -> Self
 pub impl @app.Resource for ClearColor
 pub impl @ecs.EcsPayloadCodec for ClearColor
@@ -416,6 +416,7 @@ pub impl @json.FromJson for ClearColorConfig
 pub struct ColorMaterial {
   handle : @asset.Handle[ColorMaterialAsset]
 }
+pub fn ColorMaterial::ColorMaterial() -> Self
 pub fn ColorMaterial::alpha_mode(Self) -> AlphaMode2d
 pub fn ColorMaterial::color(Self) -> @color.Color
 pub fn ColorMaterial::texture(Self) -> @asset.Handle[@image.Image]?
@@ -452,11 +453,12 @@ pub impl Material2d for ColorMaterialAsset
 
 pub struct ColorMaterialPlugin {
 }
-pub fn ColorMaterialPlugin::default() -> Self
+pub fn ColorMaterialPlugin::ColorMaterialPlugin() -> Self
 pub impl @app.Plugin for ColorMaterialPlugin
 
 pub struct DefaultGizmoConfigGroup {
 }
+pub fn DefaultGizmoConfigGroup::DefaultGizmoConfigGroup() -> Self
 pub impl GizmoConfigGroup for DefaultGizmoConfigGroup
 pub impl Default for DefaultGizmoConfigGroup
 
@@ -472,12 +474,15 @@ pub(all) struct GizmoConfig {
   depth_bias : Float
   render_layers : RenderLayers
 }
-pub fn GizmoConfig::default() -> Self
+pub fn GizmoConfig::GizmoConfig() -> Self
 
 pub extenum GizmoConfigGroupCell {
 }
 
-type GizmoConfigStore
+pub struct GizmoConfigStore {
+  // private fields
+}
+pub fn GizmoConfigStore::GizmoConfigStore() -> Self
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::config(Self, T) -> (GizmoConfig, T)
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::config_mut(Self, T) -> (@ref.Ref[GizmoConfig], @ref.Ref[T])
 pub fn[T : GizmoConfigGroup] GizmoConfigStore::contains(Self, T) -> Bool
@@ -512,7 +517,7 @@ pub(all) struct GizmoLineConfig {
   style : GizmoLineStyle
   joints : GizmoLineJoint
 }
-pub fn GizmoLineConfig::default() -> Self
+pub fn GizmoLineConfig::GizmoLineConfig() -> Self
 
 pub(all) enum GizmoLineJoint {
   None
@@ -542,6 +547,7 @@ pub struct GizmoStorage[Config] {
   state : GizmoState
   phantom : Config?
 }
+pub fn[Config] GizmoStorage::GizmoStorage() -> Self[Config]
 pub fn[Config] GizmoStorage::new() -> Self[Config]
 pub impl[Config : GizmoConfigGroup] @app.Resource for GizmoStorage[Config]
 pub impl[Config] @ecs.EcsPayloadCodec for GizmoStorage[Config]
@@ -622,10 +628,10 @@ pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 pub struct Material2dBindGroup {
   bindings : Array[Material2dBinding]
 }
+pub fn Material2dBindGroup::Material2dBindGroup() -> Self
 pub fn Material2dBindGroup::bind_group_data(Self) -> String
 pub fn Material2dBindGroup::binding(Self, Int) -> Material2dBinding?
 pub fn Material2dBindGroup::color_material(@color.Color, AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_offset? : @math.Vec2, uv_scale? : @math.Vec2) -> Self
-pub fn Material2dBindGroup::default() -> Self
 pub fn Material2dBindGroup::layout_key(Self) -> String
 pub fn Material2dBindGroup::new(Array[Material2dBinding]) -> Self
 pub fn Material2dBindGroup::sprite_material(SpriteMaterial) -> Self
@@ -655,7 +661,7 @@ pub struct Material2dPipeline[_] {
   vertex_shader : String?
   fragment_shader : String?
 }
-pub fn[M] Material2dPipeline::default() -> Self[M]
+pub fn[M] Material2dPipeline::Material2dPipeline() -> Self[M]
 pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M, Material2dBindGroup) -> Material2dKey[M]
 pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
 pub impl[M : Material2d] @app.Resource for Material2dPipeline[M]
@@ -671,7 +677,7 @@ pub struct Material2dPlugin[M] {
   fragment_shader : String?
   asset_init : (() -> M)?
 }
-pub fn[M] Material2dPlugin::default() -> Self[M]
+pub fn[M] Material2dPlugin::Material2dPlugin() -> Self[M]
 pub fn[M] Material2dPlugin::with_asset_init(Self[M], () -> M) -> Self[M]
 pub fn[M] Material2dPlugin::with_fragment_shader(Self[M], String) -> Self[M]
 pub fn[M] Material2dPlugin::with_vertex_shader(Self[M], String) -> Self[M]
@@ -729,7 +735,7 @@ pub(all) struct MeshMaterial2dPayload {
 
 pub struct NoWireframe2d {
 }
-pub fn NoWireframe2d::default() -> Self
+pub fn NoWireframe2d::NoWireframe2d() -> Self
 pub impl @ecs.Component for NoWireframe2d
 pub impl @ecs.EcsPayloadCodec for NoWireframe2d
 pub impl ToJson for NoWireframe2d
@@ -784,7 +790,7 @@ pub(all) struct PanCamera {
   mut key_rotate_ccw : @events.KeyCode?
   mut key_rotate_cw : @events.KeyCode?
 } derive(ToJson, @json.FromJson)
-pub fn PanCamera::default() -> Self
+pub fn PanCamera::PanCamera() -> Self
 pub impl @ecs.Component for PanCamera
 pub impl @ecs.EcsPayloadCodec for PanCamera
 pub impl Show for PanCamera
@@ -870,21 +876,21 @@ pub impl @json.FromJson for Projection
 
 pub struct Render2dEcsPlugin {
 }
-pub fn Render2dEcsPlugin::default() -> Self
+pub fn Render2dEcsPlugin::Render2dEcsPlugin() -> Self
 pub impl @app.Plugin for Render2dEcsPlugin
 
 pub struct Render2dPlugin {
 }
-pub fn Render2dPlugin::default() -> Self
+pub fn Render2dPlugin::Render2dPlugin() -> Self
 pub impl @app.Plugin for Render2dPlugin
 
 pub struct RenderLayers {
   mask : Int
 }
+pub fn RenderLayers::RenderLayers() -> Self
 pub fn RenderLayers::add(Self, Int) -> Self
 pub fn RenderLayers::combine(Self, Self) -> Self
 pub fn RenderLayers::contains(Self, Int) -> Bool
-pub fn RenderLayers::default() -> Self
 pub fn RenderLayers::from_layers(Array[Int]) -> Self
 pub fn RenderLayers::intersection(Self, Self) -> Self
 pub fn RenderLayers::intersects(Self, Self) -> Bool
@@ -975,8 +981,8 @@ pub(all) struct Sprite {
   mut rect : @math.Rect?
   mut image_mode : SpriteImageMode
 }
+pub fn Sprite::Sprite() -> Self
 pub fn Sprite::compute_pixel_space_point(Self, @math.Vec2, Anchor, @asset.Assets[@image.Image], @asset.Assets[@asset.TextureAtlasLayout]) -> Result[@math.Vec2, @math.Vec2]
-pub fn Sprite::default() -> Self
 pub fn Sprite::from_atlas_image(@asset.Handle[@image.Image], @asset.TextureAtlas) -> Self
 pub fn Sprite::from_color(@color.Color, @math.Vec2) -> Self
 pub fn Sprite::from_image(@asset.Handle[@image.Image]) -> Self
@@ -1024,7 +1030,6 @@ pub(all) enum SpriteImageMode {
   Sliced(TextureSlicer)
   Tiled(SpriteTiling)
 }
-pub fn SpriteImageMode::default() -> Self
 pub fn SpriteImageMode::scale(scaling_mode? : SpriteScalingMode) -> Self
 pub fn SpriteImageMode::tiled(tile_x? : Bool, tile_y? : Bool, stretch_value? : Float) -> Self
 pub fn SpriteImageMode::uses_slices(Self) -> Bool
@@ -1044,7 +1049,7 @@ pub struct SpriteMaterial {
   texture_atlas_layout : @asset.TextureAtlasLayout?
   texture_atlas_index : Int
 }
-pub fn SpriteMaterial::default() -> Self
+pub fn SpriteMaterial::SpriteMaterial() -> Self
 pub fn SpriteMaterial::from_sprite_mesh(SpriteMesh) -> Self
 pub fn SpriteMaterial::with_anchor(Self, @math.Vec2) -> Self
 pub fn SpriteMaterial::with_texture_atlas_layout(Self, @asset.TextureAtlasLayout?, Int) -> Self
@@ -1054,7 +1059,7 @@ pub impl Material2d for SpriteMaterial
 
 pub struct SpriteMaterialPlugin {
 }
-pub fn SpriteMaterialPlugin::default() -> Self
+pub fn SpriteMaterialPlugin::SpriteMaterialPlugin() -> Self
 pub impl @app.Plugin for SpriteMaterialPlugin
 
 pub(all) struct SpriteMesh {
@@ -1068,8 +1073,8 @@ pub(all) struct SpriteMesh {
   mut image_mode : SpriteImageMode
   mut alpha_mode : SpriteAlphaMode
 }
+pub fn SpriteMesh::SpriteMesh() -> Self
 pub fn SpriteMesh::compute_pixel_space_point(Self, @math.Vec2, Anchor, @asset.Assets[@image.Image], @asset.Assets[@asset.TextureAtlasLayout]) -> Result[@math.Vec2, @math.Vec2]
-pub fn SpriteMesh::default() -> Self
 pub fn SpriteMesh::from_atlas_image(@asset.Handle[@image.Image], @asset.TextureAtlas) -> Self
 pub fn SpriteMesh::from_color(@color.Color, @math.Vec2) -> Self
 pub fn SpriteMesh::from_image(@asset.Handle[@image.Image]) -> Self
@@ -1087,12 +1092,12 @@ pub impl @ecs.EcsPayloadCodec for SpriteMesh
 
 pub struct SpriteMeshPlugin {
 }
-pub fn SpriteMeshPlugin::default() -> Self
+pub fn SpriteMeshPlugin::SpriteMeshPlugin() -> Self
 pub impl @app.Plugin for SpriteMeshPlugin
 
 pub struct SpritePlugin {
 }
-pub fn SpritePlugin::default() -> Self
+pub fn SpritePlugin::SpritePlugin() -> Self
 pub impl @app.Plugin for SpritePlugin
 
 pub(all) enum SpriteScalingMode {
@@ -1103,7 +1108,6 @@ pub(all) enum SpriteScalingMode {
   FitStart
   FitEnd
 }
-pub fn SpriteScalingMode::default() -> Self
 pub impl Default for SpriteScalingMode
 
 pub struct SpriteTiling {
@@ -1111,7 +1115,7 @@ pub struct SpriteTiling {
   tile_y : Bool
   stretch_value : Float
 }
-pub fn SpriteTiling::default() -> Self
+pub fn SpriteTiling::SpriteTiling() -> Self
 pub fn SpriteTiling::new(Bool, Bool, Float) -> Self
 pub fn SpriteTiling::with_stretch_value(Self, Float) -> Self
 pub fn SpriteTiling::with_tile_x(Self, Bool) -> Self
@@ -1131,8 +1135,8 @@ pub struct TextureSlicer {
   sides_scale_mode : SliceScaleMode
   max_corner_scale : Float
 }
+pub fn TextureSlicer::TextureSlicer() -> Self
 pub fn TextureSlicer::compute_slices(Self, @math.Rect, @math.Vec2?) -> Array[TextureSlice]
-pub fn TextureSlicer::default() -> Self
 pub fn TextureSlicer::new(BorderRect) -> Self
 pub fn TextureSlicer::with_center_scale_mode(Self, SliceScaleMode) -> Self
 pub fn TextureSlicer::with_max_corner_scale(Self, Float) -> Self
@@ -1194,15 +1198,15 @@ pub struct Viewport {
   depth_min : Float
   depth_max : Float
 }
+pub fn Viewport::Viewport() -> Self
 pub fn Viewport::clamp_to_size(Self, @math.IVec2) -> Self
-pub fn Viewport::default() -> Self
 pub fn Viewport::new(@math.IVec2, @math.IVec2) -> Self
 pub fn Viewport::new_with_depth(@math.IVec2, @math.IVec2, Float, Float) -> Self
 pub fn Viewport::with_depth(Self, Float, Float) -> Self
 
 pub struct Wireframe2d {
 }
-pub fn Wireframe2d::default() -> Self
+pub fn Wireframe2d::Wireframe2d() -> Self
 pub impl @ecs.Component for Wireframe2d
 pub impl @ecs.EcsPayloadCodec for Wireframe2d
 pub impl ToJson for Wireframe2d
@@ -1211,7 +1215,7 @@ pub impl @json.FromJson for Wireframe2d
 pub struct Wireframe2dColor {
   color : @color.Color
 }
-pub fn Wireframe2dColor::default() -> Self
+pub fn Wireframe2dColor::Wireframe2dColor() -> Self
 pub fn Wireframe2dColor::new(@color.Color) -> Self
 pub fn Wireframe2dColor::with_color(Self, @color.Color) -> Self
 pub impl @ecs.Component for Wireframe2dColor
@@ -1224,7 +1228,7 @@ pub struct Wireframe2dConfig {
   global : Bool
   default_color : @color.Color
 } derive(ToJson, @json.FromJson)
-pub fn Wireframe2dConfig::default() -> Self
+pub fn Wireframe2dConfig::Wireframe2dConfig() -> Self
 pub fn Wireframe2dConfig::new(Bool, @color.Color) -> Self
 pub fn Wireframe2dConfig::with_default_color(Self, @color.Color) -> Self
 pub fn Wireframe2dConfig::with_global(Self, Bool) -> Self

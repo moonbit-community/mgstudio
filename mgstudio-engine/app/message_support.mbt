@@ -107,7 +107,7 @@ pub impl[T : @ecs.Message] Resource for @ecs.Messages[T] with resource() {
 
 ///|
 pub impl[T] FromWorld for @ecs.MessageCursor[T] with from_world(_world) {
-  @ecs.MessageCursor::default()
+  @ecs.MessageCursor::MessageCursor()
 }
 
 ///|

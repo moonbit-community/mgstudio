@@ -14,19 +14,19 @@
 
 ///|
 test "pbr/meshlet: instance manager tracks counts and material ids" {
-  let manager = InstanceManager::default()
+  let manager = InstanceManager::InstanceManager()
   manager.add_instance(
     @core.Entity::new(0, 1),
     100,
     4,
-    MeshletAabb::default(),
+    MeshletAabb::MeshletAabb(),
     3,
   )
   manager.add_instance(
     @core.Entity::new(0, 2),
     100,
     9,
-    MeshletAabb::default(),
+    MeshletAabb::MeshletAabb(),
     7,
   )
   debug_inspect(manager.instance_count(), content="2")
@@ -45,7 +45,7 @@ test "pbr/meshlet: instance manager tracks counts and material ids" {
 
 ///|
 test "pbr/meshlet: instance manager stores Bevy mesh uniform transforms and render layers" {
-  let manager = InstanceManager::default()
+  let manager = InstanceManager::InstanceManager()
   let world_from_local = @transform.GlobalTransform::from_transform(
     @transform.Transform::from_xyz(4.0F, 5.0F, 6.0F),
   ).affine()
@@ -56,7 +56,7 @@ test "pbr/meshlet: instance manager stores Bevy mesh uniform transforms and rend
     @core.Entity::new(0, 1),
     100,
     4,
-    MeshletAabb::default(),
+    MeshletAabb::MeshletAabb(),
     3,
     render_layer_mask=8,
     world_from_local~,
@@ -72,13 +72,13 @@ test "pbr/meshlet: instance manager stores Bevy mesh uniform transforms and rend
 
 ///|
 test "pbr/meshlet: per-view instance visibility follows layers and shadow caster flags" {
-  let manager = InstanceManager::default()
+  let manager = InstanceManager::InstanceManager()
   let view = @core.Entity::new(0, 100)
   manager.add_instance(
     @core.Entity::new(0, 1),
     100,
     4,
-    MeshletAabb::default(),
+    MeshletAabb::MeshletAabb(),
     3,
     render_layer_mask=0b0001,
   )
@@ -86,7 +86,7 @@ test "pbr/meshlet: per-view instance visibility follows layers and shadow caster
     @core.Entity::new(0, 2),
     101,
     5,
-    MeshletAabb::default(),
+    MeshletAabb::MeshletAabb(),
     3,
     render_layer_mask=0b0010,
   )
@@ -94,7 +94,7 @@ test "pbr/meshlet: per-view instance visibility follows layers and shadow caster
     @core.Entity::new(0, 3),
     102,
     6,
-    MeshletAabb::default(),
+    MeshletAabb::MeshletAabb(),
     3,
     render_layer_mask=0b0001,
     not_shadow_caster=true,
@@ -120,7 +120,7 @@ test "pbr/meshlet: per-view instance visibility follows layers and shadow caster
 
 ///|
 test "pbr/meshlet: queue helper requires extracted instances to mark scene usage" {
-  let manager = InstanceManager::default()
+  let manager = InstanceManager::InstanceManager()
   ignore(queue_material_meshlet_meshes_with_material_assets(manager, [1, 2, 1]))
   debug_inspect(queue_material_meshlet_meshes(manager), content="0")
 }

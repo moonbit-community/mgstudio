@@ -26,7 +26,7 @@ test "render3d: contact shadows uniform mirrors settings" {
 
 ///|
 test "render3d: contact shadows buffer push/lookup tracks offsets" {
-  let buffer = ContactShadowsBuffer::default()
+  let buffer = ContactShadowsBuffer::ContactShadowsBuffer()
   let a = buffer.push(
     ContactShadowsUniform::from_settings(ContactShadows::new(8, 0.1F, 0.4F)),
   )

@@ -56,7 +56,7 @@ pub struct PopoverPlacement {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PopoverPlacement::default() -> PopoverPlacement {
+pub fn PopoverPlacement::PopoverPlacement() -> PopoverPlacement {
   PopoverPlacement::{
     side: PopoverSide::default(),
     align: PopoverAlign::default(),
@@ -71,8 +71,11 @@ pub struct Popover {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Popover::default() -> Popover {
-  Popover::{ positions: [PopoverPlacement::default()], window_margin: 0.0F }
+pub fn Popover::Popover() -> Popover {
+  Popover::{
+    positions: [PopoverPlacement::PopoverPlacement()],
+    window_margin: 0.0F,
+  }
 }
 
 ///|
@@ -110,7 +113,7 @@ fn popover_best_rect(
   positions : Array[PopoverPlacement],
 ) -> @math.Rect {
   let candidates = if positions.is_empty() {
-    [PopoverPlacement::default()]
+    [PopoverPlacement::PopoverPlacement()]
   } else {
     positions
   }

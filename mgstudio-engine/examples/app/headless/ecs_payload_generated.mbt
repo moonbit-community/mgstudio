@@ -13,19 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_app_headless_CounterState(CounterState)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CounterState with to_ecs_payload(self) {
-  EcsPayload_examples_app_headless_CounterState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CounterState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_app_headless_CounterState(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

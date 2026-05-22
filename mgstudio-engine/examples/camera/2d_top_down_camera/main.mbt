@@ -77,7 +77,7 @@ fn setup_instructions(commands : @app.Commands) -> Unit {
           "Move the light with WASD.\nThe camera will smoothly track the light.",
         ),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           left: @ui.Val::Px(12.0F),
           bottom: @ui.Val::Px(12.0F),
@@ -90,7 +90,7 @@ fn setup_instructions(commands : @app.Commands) -> Unit {
 ///|
 fn setup_camera(commands : @app.Commands) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Bloom::natural())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Bloom::natural())),
   )
 }
 
@@ -163,7 +163,7 @@ fn main {
     @app.system_param3(update_camera),
   )
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup_scene)))
   .add_systems(@app.Startup, @app.system(@app.system_param(setup_instructions)))
   .add_systems(@app.Startup, @app.system(@app.system_param(setup_camera)))

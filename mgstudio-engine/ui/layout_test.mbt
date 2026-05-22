@@ -45,7 +45,7 @@ test "ui: layout computes rect and camera-compensated transform" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   let node = world.spawn_empty()
   try! world.set_by_key(
     node,
@@ -55,7 +55,7 @@ test "ui: layout computes rect and camera-compensated transform" {
   try! world.set_by_key(
     node,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_position_type(PositionType::Absolute)
     .with_left(Val::Px(40.0F))
     .with_top(Val::Px(50.0F))
@@ -116,7 +116,7 @@ test "ui: layout stores Bevy-style resolved node geometry" {
     ),
   )
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   let node = world.spawn_empty()
   try! world.set_by_key(
     node,
@@ -126,7 +126,7 @@ test "ui: layout stores Bevy-style resolved node geometry" {
   try! world.set_by_key(
     node,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_position_type(PositionType::Absolute)
     .with_left(Val::Px(40.0F))
     .with_top(Val::Px(50.0F))
@@ -223,7 +223,7 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   let panel = world.spawn_empty()
   try! world.set_by_key(
     panel,
@@ -233,7 +233,7 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
   try! world.set_by_key(
     panel,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Px(200.0F))
     .with_height(Val::Px(120.0F))
     .with_overflow(Overflow::new(OverflowAxis::Hidden, OverflowAxis::Scroll)),
@@ -252,7 +252,7 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
   try! world.set_by_key(
     child,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_position_type(PositionType::Absolute)
     .with_left(Val::Px(0.0F))
     .with_top(Val::Px(0.0F))
@@ -283,7 +283,7 @@ test "ui: ghost node children layout as direct descendants" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   let container = world.spawn_empty()
   try! world.set_by_key(
     container,
@@ -293,7 +293,7 @@ test "ui: ghost node children layout as direct descendants" {
   try! world.set_by_key(
     container,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Px(300.0F))
     .with_height(Val::Px(80.0F))
     .with_flex_direction(FlexDirection::Row),
@@ -307,7 +307,7 @@ test "ui: ghost node children layout as direct descendants" {
   try! world.set_by_key(
     first,
     ecs_key_node,
-    Node::default().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
   )
   let ghost = world.spawn_empty()
   try! world.set_by_key(
@@ -315,7 +315,7 @@ test "ui: ghost node children layout as direct descendants" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(container),
   )
-  try! world.set_by_key(ghost, ecs_key_ghost_node, GhostNode::default())
+  try! world.set_by_key(ghost, ecs_key_ghost_node, GhostNode::GhostNode())
   let second = world.spawn_empty()
   try! world.set_by_key(
     second,
@@ -325,7 +325,7 @@ test "ui: ghost node children layout as direct descendants" {
   try! world.set_by_key(
     second,
     ecs_key_node,
-    Node::default().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
   )
 
   ui_layout_system(world)
@@ -361,7 +361,7 @@ test "ui: editable text transform stays in input content box and in front" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   let editable = world.spawn_empty()
   try! world.set_by_key(
     editable,
@@ -371,7 +371,7 @@ test "ui: editable text transform stays in input content box and in front" {
   try! world.set_by_key(
     editable,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_position_type(PositionType::Absolute)
     .with_left(Val::Px(120.0F))
     .with_top(Val::Px(360.0F))
@@ -387,7 +387,7 @@ test "ui: editable text transform stays in input content box and in front" {
   world.set_by_key(
     editable,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font_size(24.0F),
+    @text.TextFont::TextFont().with_font_size(24.0F),
   )
   @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
@@ -436,7 +436,7 @@ test "ui: editable status text renders in front of editable background (z-order)
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   let editable = world.spawn_empty()
   try! world.set_by_key(
     editable,
@@ -446,7 +446,7 @@ test "ui: editable status text renders in front of editable background (z-order)
   try! world.set_by_key(
     editable,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_position_type(PositionType::Absolute)
     .with_left(Val::Px(40.0F))
     .with_top(Val::Px(420.0F))
@@ -467,7 +467,7 @@ test "ui: editable status text renders in front of editable background (z-order)
   world.set_by_key(
     editable,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font_size(24.0F),
+    @text.TextFont::TextFont().with_font_size(24.0F),
   )
   @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
@@ -500,7 +500,7 @@ test "ui: editable label node is laid out above input box node" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   let group = world.spawn_empty()
   try! world.set_by_key(
     group,
@@ -510,7 +510,7 @@ test "ui: editable label node is laid out above input box node" {
   try! world.set_by_key(
     group,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_position_type(PositionType::Absolute)
     .with_left(Val::Px(120.0F))
     .with_top(Val::Px(360.0F))
@@ -527,7 +527,7 @@ test "ui: editable label node is laid out above input box node" {
   try! world.set_by_key(
     label,
     ecs_key_node,
-    Node::default().with_width(Val::Auto).with_height(Val::Auto),
+    Node::Node().with_width(Val::Auto).with_height(Val::Auto),
   )
   let editable = world.spawn_empty()
   try! world.set_by_key(
@@ -538,7 +538,7 @@ test "ui: editable label node is laid out above input box node" {
   try! world.set_by_key(
     editable,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Px(420.0F))
     .with_height(Val::Px(48.0F))
     .with_padding(UiRect::all(Val::Px(8.0F))),
@@ -575,7 +575,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   let panel = world.spawn_empty()
   try! world.set_by_key(
     panel,
@@ -585,7 +585,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
   try! world.set_by_key(
     panel,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_position_type(PositionType::Absolute)
     .with_left(Val::Px(40.0F))
     .with_top(Val::Px(80.0F))
@@ -603,7 +603,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
   try! world.set_by_key(
     panel_content,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Px(760.0F))
     .with_height(Val::Px(420.0F))
     .with_padding(UiRect::all(Val::Px(12.0F))),
@@ -617,7 +617,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
   try! world.set_by_key(
     panel_text,
     ecs_key_node,
-    Node::default().with_width(Val::Px(720.0F)).with_height(Val::Auto),
+    Node::Node().with_width(Val::Px(720.0F)).with_height(Val::Auto),
   )
   world.set_by_key(
     panel_text,
@@ -629,7 +629,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
   world.set_by_key(
     panel_text,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font_size(18.0F),
+    @text.TextFont::TextFont().with_font_size(18.0F),
   )
   @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
@@ -663,11 +663,11 @@ test "ui: panel text scissor stays above editable title block" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Px(800.0F))
     .with_height(Val::Px(600.0F))
     .with_flex_direction(FlexDirection::Column)
@@ -683,7 +683,7 @@ test "ui: panel text scissor stays above editable title block" {
   try! world.set_by_key(
     panel,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Px(420.0F))
     .with_height(Val::Px(190.0F))
     .with_overflow(Overflow::new(OverflowAxis::Hidden, OverflowAxis::Scroll))
@@ -698,7 +698,7 @@ test "ui: panel text scissor stays above editable title block" {
   try! world.set_by_key(
     panel_content,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Px(760.0F))
     .with_height(Val::Px(420.0F))
     .with_padding(UiRect::all(Val::Px(12.0F))),
@@ -712,7 +712,7 @@ test "ui: panel text scissor stays above editable title block" {
   try! world.set_by_key(
     panel_text,
     ecs_key_node,
-    Node::default().with_width(Val::Px(720.0F)).with_height(Val::Auto),
+    Node::Node().with_width(Val::Px(720.0F)).with_height(Val::Auto),
   )
   world.set_by_key(
     panel_text,
@@ -724,7 +724,7 @@ test "ui: panel text scissor stays above editable title block" {
   world.set_by_key(
     panel_text,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font_size(18.0F),
+    @text.TextFont::TextFont().with_font_size(18.0F),
   )
   let editable_section = world.spawn_empty()
   try! world.set_by_key(
@@ -735,7 +735,7 @@ test "ui: panel text scissor stays above editable title block" {
   try! world.set_by_key(
     editable_section,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Px(420.0F))
     .with_flex_direction(FlexDirection::Column)
     .with_row_gap(Val::Px(8.0F)),
@@ -749,7 +749,7 @@ test "ui: panel text scissor stays above editable title block" {
   try! world.set_by_key(
     editable_title,
     ecs_key_node,
-    Node::default().with_width(Val::Auto).with_height(Val::Px(32.0F)),
+    Node::Node().with_width(Val::Auto).with_height(Val::Px(32.0F)),
   )
   try! world.set_by_key(
     editable_title,
@@ -759,7 +759,7 @@ test "ui: panel text scissor stays above editable title block" {
   world.set_by_key(
     editable_title,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font_size(24.0F),
+    @text.TextFont::TextFont().with_font_size(24.0F),
   )
   @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)

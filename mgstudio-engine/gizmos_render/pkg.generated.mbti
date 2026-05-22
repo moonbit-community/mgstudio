@@ -41,7 +41,7 @@ pub fn line_gizmo_3d_plugin_with(@app.App[@ecs.World], LineGizmo3dPlugin) -> @ap
 // Types and methods
 pub struct GizmoRenderPlugin {
 }
-pub fn GizmoRenderPlugin::default() -> Self
+pub fn GizmoRenderPlugin::GizmoRenderPlugin() -> Self
 pub impl @app.Plugin for GizmoRenderPlugin
 
 pub(all) enum GizmoRenderSystems {
@@ -51,12 +51,12 @@ pub(all) enum GizmoRenderSystems {
 
 pub struct LineGizmo2dPlugin {
 }
-pub fn LineGizmo2dPlugin::default() -> Self
+pub fn LineGizmo2dPlugin::LineGizmo2dPlugin() -> Self
 pub impl @app.Plugin for LineGizmo2dPlugin
 
 pub struct LineGizmo3dPlugin {
 }
-pub fn LineGizmo3dPlugin::default() -> Self
+pub fn LineGizmo3dPlugin::LineGizmo3dPlugin() -> Self
 pub impl @app.Plugin for LineGizmo3dPlugin
 
 pub struct LineGizmoUniform {

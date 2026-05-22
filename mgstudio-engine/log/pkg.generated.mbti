@@ -42,7 +42,7 @@ pub fn warn_once(String, String) -> Unit
 // Types and methods
 pub struct AndroidTracingPlugin {
 }
-pub fn AndroidTracingPlugin::default() -> Self
+pub fn AndroidTracingPlugin::AndroidTracingPlugin() -> Self
 pub impl @app.Plugin for AndroidTracingPlugin
 
 // Type aliases

@@ -34,7 +34,7 @@ pub fn smaa_update_runtime_state(@ecs.World) -> Unit
 pub struct Smaa {
   preset : SmaaPreset
 } derive(Eq, @debug.Debug)
-pub fn Smaa::default() -> Self
+pub fn Smaa::Smaa() -> Self
 pub impl @ecs.Component for Smaa
 pub impl @ecs.EcsPayloadCodec for Smaa
 
@@ -91,7 +91,7 @@ pub struct SmaaPipelines {
 
 pub struct SmaaPlugin {
 }
-pub fn SmaaPlugin::default() -> Self
+pub fn SmaaPlugin::SmaaPlugin() -> Self
 pub impl @app.Plugin for SmaaPlugin
 
 pub(all) enum SmaaPreset {
@@ -107,7 +107,7 @@ pub struct SmaaRuntimeState {
   enabled_camera_count : Int
   runtime_supported : Bool
 } derive(Eq, @debug.Debug)
-pub fn SmaaRuntimeState::default() -> Self
+pub fn SmaaRuntimeState::SmaaRuntimeState() -> Self
 pub impl @app.Resource for SmaaRuntimeState
 pub impl @ecs.EcsPayloadCodec for SmaaRuntimeState
 

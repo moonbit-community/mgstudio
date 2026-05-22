@@ -46,7 +46,7 @@ test "render sync world: add/remove syncs entities between main world and render
   let mut render_world = @ecs.World::new()
   main_world.insert_resource(
     ecs_key_pending_sync_entity,
-    PendingSyncEntity::default(),
+    PendingSyncEntity::PendingSyncEntity(),
   )
 
   for _ in 0..<99 {
@@ -62,7 +62,7 @@ test "render sync world: add/remove syncs entities between main world and render
   try! main_world.set_by_key(
     main_entity,
     ecs_key_sync_to_render_world,
-    SyncToRenderWorld::default(),
+    SyncToRenderWorld::SyncToRenderWorld(),
   )
 
   let synced = sync_world(main_world, render_world)
@@ -98,8 +98,14 @@ test "render sync world: cleanup despawns temporary render entities" {
   let stable = render_world.spawn()
   let temporary0 = render_world.spawn()
   let temporary1 = render_world.spawn()
-  try! render_world.set(temporary0, TemporaryRenderEntity::default())
-  try! render_world.set(temporary1, TemporaryRenderEntity::default())
+  try! render_world.set(
+    temporary0,
+    @render.TemporaryRenderEntity::TemporaryRenderEntity(),
+  )
+  try! render_world.set(
+    temporary1,
+    @render.TemporaryRenderEntity::TemporaryRenderEntity(),
+  )
 
   despawn_temporary_render_entities(render_world)
 

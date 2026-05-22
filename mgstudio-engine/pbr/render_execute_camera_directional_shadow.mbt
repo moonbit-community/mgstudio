@@ -317,7 +317,7 @@ fn render3d_execute_camera_directional_shadow_pass(
   let shadow_map_size = match
     world.get_resource(@light.ecs_key_directional_light_shadow_map) {
     Some(v) => if v.size <= 0 { 1 } else { v.size }
-    None => @light.DirectionalLightShadowMap::default().size
+    None => @light.DirectionalLightShadowMap::DirectionalLightShadowMap().size
   }
   let cascades = render3d_directional_shadow_cascades(
     camera, pass_lighting, shadow_map_size,

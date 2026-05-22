@@ -666,7 +666,7 @@ pub struct AutoExposure {
   compensation_curve : @asset.Handle[AutoExposureCompensationCurve]?
   metering_mask : @asset.Handle[@image.Image]?
 } derive(ToJson, @json.FromJson)
-pub fn AutoExposure::default() -> Self
+pub fn AutoExposure::AutoExposure() -> Self
 pub fn AutoExposure::new(Float, Float) -> Self
 pub fn AutoExposure::with_compensation_curve(Self, @asset.Handle[AutoExposureCompensationCurve]?) -> Self
 pub fn AutoExposure::with_exponential_transition_distance(Self, Float) -> Self
@@ -685,7 +685,7 @@ pub struct AutoExposureCompensationCurve {
   max_compensation : Float
   lut : Bytes
 }
-pub fn AutoExposureCompensationCurve::default() -> Self
+pub fn AutoExposureCompensationCurve::AutoExposureCompensationCurve() -> Self
 pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Self raise AutoExposureCompensationCurveError
 pub impl @asset.Asset for AutoExposureCompensationCurve
 pub impl @ecs.EcsPayloadCodec for AutoExposureCompensationCurve
@@ -694,7 +694,7 @@ pub struct Camera3d {
   depth_load_op : Camera3dDepthLoadOp
   depth_texture_usages : Camera3dDepthTextureUsage
 } derive(ToJson, @json.FromJson)
-pub fn Camera3d::default() -> Self
+pub fn Camera3d::Camera3d() -> Self
 pub impl @ecs.Component for Camera3d
 pub impl @ecs.EcsPayloadCodec for Camera3d
 
@@ -764,14 +764,14 @@ pub fn Camera3dDepthLoadOp::default() -> Self
 pub struct Camera3dDepthTextureUsage {
   bits : UInt
 } derive(ToJson, @json.FromJson)
-pub fn Camera3dDepthTextureUsage::default() -> Self
+pub fn Camera3dDepthTextureUsage::Camera3dDepthTextureUsage() -> Self
 
 pub struct CameraDecalConfig3d {
   mode : DecalRenderMode3d
   requires_depth_prepass : Bool
   clustered_requires_deferred_prepass : Bool
 } derive(ToJson, @json.FromJson)
-pub fn CameraDecalConfig3d::default() -> Self
+pub fn CameraDecalConfig3d::CameraDecalConfig3d() -> Self
 pub fn CameraDecalConfig3d::with_clustered_requires_deferred_prepass(Self, Bool) -> Self
 pub fn CameraDecalConfig3d::with_mode(Self, DecalRenderMode3d) -> Self
 pub fn CameraDecalConfig3d::with_requires_depth_prepass(Self, Bool) -> Self
@@ -782,7 +782,7 @@ pub struct CameraDeferredConfig3d {
   mode : CameraDeferredMode3d
   requires_deferred_prepass : Bool
 } derive(ToJson, @json.FromJson)
-pub fn CameraDeferredConfig3d::default() -> Self
+pub fn CameraDeferredConfig3d::CameraDeferredConfig3d() -> Self
 pub fn CameraDeferredConfig3d::with_mode(Self, CameraDeferredMode3d) -> Self
 pub fn CameraDeferredConfig3d::with_requires_deferred_prepass(Self, Bool) -> Self
 pub impl @ecs.Component for CameraDeferredConfig3d
@@ -801,7 +801,7 @@ pub struct ClusterConfig3d {
   dimensions_z : Int
   dynamic_resizing : Bool
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn ClusterConfig3d::default() -> Self
+pub fn ClusterConfig3d::ClusterConfig3d() -> Self
 pub fn ClusterConfig3d::dimensions(Self) -> (Int, Int, Int)
 pub fn ClusterConfig3d::with_dimensions(Self, Int, Int, Int) -> Self
 pub fn ClusterConfig3d::with_dynamic_resizing(Self, Bool) -> Self
@@ -822,7 +822,7 @@ pub struct ClusterableObjectCounts3d {
   irradiance_volumes : UInt
   decals : UInt
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn ClusterableObjectCounts3d::default() -> Self
+pub fn ClusterableObjectCounts3d::ClusterableObjectCounts3d() -> Self
 pub fn ClusterableObjectCounts3d::new(UInt, UInt, UInt, UInt, UInt) -> Self
 pub fn ClusterableObjectCounts3d::point_lights(Self) -> UInt
 pub fn ClusterableObjectCounts3d::spot_lights(Self) -> UInt
@@ -833,7 +833,7 @@ pub struct ContactShadows {
   thickness : Float
   length : Float
 } derive(ToJson, @json.FromJson)
-pub fn ContactShadows::default() -> Self
+pub fn ContactShadows::ContactShadows() -> Self
 pub fn ContactShadows::new(Int, Float, Float) -> Self
 pub fn ContactShadows::with_length(Self, Float) -> Self
 pub fn ContactShadows::with_linear_steps(Self, Int) -> Self
@@ -844,8 +844,8 @@ pub impl @ecs.EcsPayloadCodec for ContactShadows
 pub struct ContactShadowsBuffer {
   uniforms : Array[ContactShadowsUniform]
 }
+pub fn ContactShadowsBuffer::ContactShadowsBuffer() -> Self
 pub fn ContactShadowsBuffer::clear(Self) -> Unit
-pub fn ContactShadowsBuffer::default() -> Self
 pub fn ContactShadowsBuffer::len(Self) -> Int
 pub fn ContactShadowsBuffer::push(Self, ContactShadowsUniform) -> UInt
 pub fn ContactShadowsBuffer::uniform_at(Self, UInt) -> ContactShadowsUniform?
@@ -854,7 +854,7 @@ pub impl @ecs.EcsPayloadCodec for ContactShadowsBuffer
 
 pub struct ContactShadowsPlugin {
 }
-pub fn ContactShadowsPlugin::default() -> Self
+pub fn ContactShadowsPlugin::ContactShadowsPlugin() -> Self
 pub impl @app.Plugin for ContactShadowsPlugin
 
 pub struct ContactShadowsUniform {
@@ -862,16 +862,18 @@ pub struct ContactShadowsUniform {
   thickness : Float
   length : Float
 } derive(ToJson, @json.FromJson)
-pub fn ContactShadowsUniform::default() -> Self
+pub fn ContactShadowsUniform::ContactShadowsUniform() -> Self
 pub fn ContactShadowsUniform::disabled() -> Self
 pub fn ContactShadowsUniform::from_settings(ContactShadows) -> Self
 pub fn ContactShadowsUniform::length(Self) -> Float
 pub fn ContactShadowsUniform::linear_steps(Self) -> UInt
 pub fn ContactShadowsUniform::thickness(Self) -> Float
 
-type CustomProjection3d
+pub struct CustomProjection3d {
+  // private fields
+}
+pub fn CustomProjection3d::CustomProjection3d() -> Self
 pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> @render.Frustum
-pub fn CustomProjection3d::default() -> Self
 pub fn CustomProjection3d::far(Self) -> Float
 pub fn[T : @ecs.EcsPayloadCodec] CustomProjection3d::get(Self) -> T?
 pub fn CustomProjection3d::get_clip_from_view(Self) -> @render.ProjectionMatrix3d
@@ -898,7 +900,7 @@ pub(all) struct DepthOfField {
   mut max_circle_of_confusion_diameter : Float
   mut max_depth : Float
 } derive(ToJson, @json.FromJson)
-pub fn DepthOfField::default() -> Self
+pub fn DepthOfField::DepthOfField() -> Self
 pub fn DepthOfField::from_physical_camera(PhysicalCameraParameters) -> Self
 pub impl @ecs.Component for DepthOfField
 pub impl @ecs.EcsPayloadCodec for DepthOfField
@@ -915,7 +917,7 @@ pub struct DistanceFog {
   directional_light_exponent : Float
   falloff : FogFalloff3d
 } derive(ToJson, @json.FromJson)
-pub fn DistanceFog::default() -> Self
+pub fn DistanceFog::DistanceFog() -> Self
 pub fn DistanceFog::new(@color.Color, FogFalloff3d) -> Self
 pub fn DistanceFog::with_color(Self, @color.Color) -> Self
 pub fn DistanceFog::with_directional_light_color(Self, @color.Color) -> Self
@@ -935,7 +937,7 @@ pub fn EntitySpecializationTickPair::system_tick(Self) -> Int64
 pub struct EntitySpecializationTicks {
   entities : Map[UInt64, EntitySpecializationTickPair]
 }
-pub fn EntitySpecializationTicks::default() -> Self
+pub fn EntitySpecializationTicks::EntitySpecializationTicks() -> Self
 pub fn EntitySpecializationTicks::extract_entity_needs_specialization(Self, @core.Entity, Int64, RenderMaterialInstances) -> Unit
 pub fn EntitySpecializationTicks::get(Self, @core.Entity) -> EntitySpecializationTickPair?
 pub fn EntitySpecializationTicks::insert(Self, @core.Entity, EntitySpecializationTickPair) -> Unit
@@ -946,8 +948,8 @@ pub impl @ecs.EcsPayloadCodec for EntitySpecializationTicks
 pub struct Exposure {
   ev100 : Float
 } derive(ToJson, @json.FromJson)
+pub fn Exposure::Exposure() -> Self
 pub fn Exposure::blender() -> Self
-pub fn Exposure::default() -> Self
 pub fn Exposure::exposure(Self) -> Float
 pub fn Exposure::from_physical_camera(PhysicalCameraParameters) -> Self
 pub fn Exposure::indoor() -> Self
@@ -963,8 +965,8 @@ pub struct ExtendedMaterial[B, E] {
   base : B
   extension : E
 }
+pub fn[B : Default, E : Default] ExtendedMaterial::ExtendedMaterial() -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::base(Self[B, E]) -> B
-pub fn[B : Default, E : Default] ExtendedMaterial::default() -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::extension(Self[B, E]) -> E
 pub fn[B, E : MaterialExtension] ExtendedMaterial::material_pipeline_support(Self[B, E], MaterialExtensionPipeline) -> Bool
 pub fn[B, E : MaterialExtension] ExtendedMaterial::metadata(Self[B, E]) -> @material.ExtendedMaterialMetadata3d
@@ -997,7 +999,7 @@ pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
 pub struct ForwardDecalMaterialExtension {
   ext : @material.ForwardDecalMaterialExt
 }
-pub fn ForwardDecalMaterialExtension::default() -> Self
+pub fn ForwardDecalMaterialExtension::ForwardDecalMaterialExtension() -> Self
 pub fn ForwardDecalMaterialExtension::ext(Self) -> @material.ForwardDecalMaterialExt
 pub fn ForwardDecalMaterialExtension::new(@material.ForwardDecalMaterialExt) -> Self
 pub impl MaterialExtension for ForwardDecalMaterialExtension
@@ -1018,13 +1020,13 @@ pub(all) struct FreeCamera {
   scroll_factor : Float
   friction : Float
 } derive(ToJson, @json.FromJson)
-pub fn FreeCamera::default() -> Self
+pub fn FreeCamera::FreeCamera() -> Self
 pub impl @ecs.Component for FreeCamera
 pub impl @ecs.EcsPayloadCodec for FreeCamera
 
 pub struct FreeCameraPlugin {
 }
-pub fn FreeCameraPlugin::default() -> Self
+pub fn FreeCameraPlugin::FreeCameraPlugin() -> Self
 pub impl @app.Plugin for FreeCameraPlugin
 
 pub(all) struct FreeCameraState {
@@ -1035,7 +1037,7 @@ pub(all) struct FreeCameraState {
   speed_multiplier : Float
   velocity : @math.Vec3
 } derive(ToJson, @json.FromJson)
-pub fn FreeCameraState::default() -> Self
+pub fn FreeCameraState::FreeCameraState() -> Self
 pub impl @ecs.Component for FreeCameraState
 pub impl @ecs.EcsPayloadCodec for FreeCameraState
 
@@ -1043,7 +1045,7 @@ pub struct GltfExtensionHandlerPbrState {
   default_material_label : String
   material_suffix : String
 } derive(Eq, @debug.Debug)
-pub fn GltfExtensionHandlerPbrState::default() -> Self
+pub fn GltfExtensionHandlerPbrState::GltfExtensionHandlerPbrState() -> Self
 pub fn GltfExtensionHandlerPbrState::default_material_label(Self) -> String
 pub fn GltfExtensionHandlerPbrState::standard_material_label(Self, String) -> String
 
@@ -1066,7 +1068,7 @@ pub struct MaterialAllocatorDiagnosticsSnapshot {
   slabs_size : Int
   allocations : UInt
 }
-pub fn MaterialAllocatorDiagnosticsSnapshot::default() -> Self
+pub fn MaterialAllocatorDiagnosticsSnapshot::MaterialAllocatorDiagnosticsSnapshot() -> Self
 
 pub(all) enum MaterialBindGroupAllocator {
   Bindless(MaterialBindGroupBindlessAllocator)
@@ -1092,8 +1094,8 @@ pub fn MaterialBindGroupAllocatorInstallPlan::uses_bindless_resources(Self) -> B
 pub struct MaterialBindGroupAllocators {
   allocators : Map[String, MaterialBindGroupAllocator]
 }
+pub fn MaterialBindGroupAllocators::MaterialBindGroupAllocators() -> Self
 pub fn MaterialBindGroupAllocators::contains(Self, String) -> Bool
-pub fn MaterialBindGroupAllocators::default() -> Self
 pub fn MaterialBindGroupAllocators::get(Self, String) -> MaterialBindGroupAllocator?
 pub fn MaterialBindGroupAllocators::insert(Self, String, MaterialBindGroupAllocator) -> Unit
 pub fn MaterialBindGroupAllocators::install_standard_material(Self, Bool, Int?) -> MaterialBindGroupAllocatorInstallPlan
@@ -1105,9 +1107,9 @@ pub struct MaterialBindGroupBindlessAllocator {
   slots : Array[Int?]
   free_slots : Array[Int]
 }
+pub fn MaterialBindGroupBindlessAllocator::MaterialBindGroupBindlessAllocator() -> Self
 pub fn MaterialBindGroupBindlessAllocator::allocate(Self, Int) -> MaterialBindingId?
 pub fn MaterialBindGroupBindlessAllocator::allocations(Self) -> UInt
-pub fn MaterialBindGroupBindlessAllocator::default() -> Self
 pub fn MaterialBindGroupBindlessAllocator::free(Self, MaterialBindingId) -> Unit
 pub fn MaterialBindGroupBindlessAllocator::len(Self) -> Int
 pub fn MaterialBindGroupBindlessAllocator::slab_count(Self) -> Int
@@ -1132,9 +1134,9 @@ pub struct MaterialBindGroupNonBindlessAllocator {
   bind_groups : Array[MaterialNonBindlessAllocatedBindGroup?]
   free_indices : Array[Int]
 }
+pub fn MaterialBindGroupNonBindlessAllocator::MaterialBindGroupNonBindlessAllocator() -> Self
 pub fn MaterialBindGroupNonBindlessAllocator::allocate(Self, Int) -> MaterialBindingId
 pub fn MaterialBindGroupNonBindlessAllocator::allocations(Self) -> UInt
-pub fn MaterialBindGroupNonBindlessAllocator::default() -> Self
 pub fn MaterialBindGroupNonBindlessAllocator::free(Self, MaterialBindingId) -> Unit
 pub fn MaterialBindGroupNonBindlessAllocator::get(Self, MaterialBindGroupIndex) -> MaterialNonBindlessAllocatedBindGroup?
 pub fn MaterialBindGroupNonBindlessAllocator::len(Self) -> Int
@@ -1150,7 +1152,7 @@ pub fn MaterialBindGroupSlot::to_int(Self) -> Int
 pub struct MaterialBindGroups {
   entries : Array[MaterialBindGroupEntry]
 }
-pub fn MaterialBindGroups::default() -> Self
+pub fn MaterialBindGroups::MaterialBindGroups() -> Self
 pub fn MaterialBindGroups::entry_count(Self) -> Int
 pub fn MaterialBindGroups::push(Self, MaterialBindGroupEntry) -> Unit
 
@@ -1158,7 +1160,7 @@ pub struct MaterialBindingId {
   group : MaterialBindGroupIndex
   slot : MaterialBindGroupSlot
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn MaterialBindingId::default() -> Self
+pub fn MaterialBindingId::MaterialBindingId() -> Self
 pub fn MaterialBindingId::group(Self) -> MaterialBindGroupIndex
 pub fn MaterialBindingId::new(MaterialBindGroupIndex, MaterialBindGroupSlot) -> Self
 pub fn MaterialBindingId::slot(Self) -> MaterialBindGroupSlot
@@ -1177,7 +1179,7 @@ pub struct MaterialExtensionPipeline {
   use_prepass : Bool
   use_shadows : Bool
 }
-pub fn MaterialExtensionPipeline::default() -> Self
+pub fn MaterialExtensionPipeline::MaterialExtensionPipeline() -> Self
 pub fn MaterialExtensionPipeline::with_prepass(Self, Bool) -> Self
 pub fn MaterialExtensionPipeline::with_shadows(Self, Bool) -> Self
 
@@ -1189,12 +1191,12 @@ pub fn MaterialNonBindlessAllocatedBindGroup::new(Int) -> Self
 
 pub struct MaterialsPlugin {
 }
-pub fn MaterialsPlugin::default() -> Self
+pub fn MaterialsPlugin::MaterialsPlugin() -> Self
 pub impl @app.Plugin for MaterialsPlugin
 
 pub struct MaterialsPluginState {
 }
-pub fn MaterialsPluginState::default() -> Self
+pub fn MaterialsPluginState::MaterialsPluginState() -> Self
 pub fn MaterialsPluginState::new() -> Self
 pub impl @ecs.EcsPayloadCodec for MaterialsPluginState
 
@@ -1226,7 +1228,7 @@ pub struct MeshRayCastSettings {
   include_invisible : Bool
   only_entities : Array[@core.Entity]?
 }
-pub fn MeshRayCastSettings::default() -> Self
+pub fn MeshRayCastSettings::MeshRayCastSettings() -> Self
 pub fn MeshRayCastSettings::with_include_invisible(Self, Bool) -> Self
 pub fn MeshRayCastSettings::with_max_distance(Self, Float) -> Self
 pub fn MeshRayCastSettings::with_max_hits(Self, Int) -> Self
@@ -1236,7 +1238,7 @@ pub fn MeshRayCastSettings::with_ray_epsilon(Self, Float) -> Self
 pub(all) struct MeshRenderPlugin {
   use_gpu_instance_buffer_builder : Bool
 }
-pub fn MeshRenderPlugin::default() -> Self
+pub fn MeshRenderPlugin::MeshRenderPlugin() -> Self
 pub impl @app.Plugin for MeshRenderPlugin
 
 pub struct MeshRenderPluginState {
@@ -1247,31 +1249,31 @@ pub impl @ecs.EcsPayloadCodec for MeshRenderPluginState
 
 pub struct NoIndirectDrawing {
 } derive(ToJson, @json.FromJson)
-pub fn NoIndirectDrawing::default() -> Self
+pub fn NoIndirectDrawing::NoIndirectDrawing() -> Self
 pub impl @ecs.Component for NoIndirectDrawing
 pub impl @ecs.EcsPayloadCodec for NoIndirectDrawing
 
 pub struct NoWireframe {
 } derive(ToJson, @json.FromJson)
-pub fn NoWireframe::default() -> Self
+pub fn NoWireframe::NoWireframe() -> Self
 pub impl @ecs.Component for NoWireframe
 pub impl @ecs.EcsPayloadCodec for NoWireframe
 
 pub struct NotShadowCaster {
 } derive(ToJson, @json.FromJson)
-pub fn NotShadowCaster::default() -> Self
+pub fn NotShadowCaster::NotShadowCaster() -> Self
 pub impl @ecs.Component for NotShadowCaster
 pub impl @ecs.EcsPayloadCodec for NotShadowCaster
 
 pub struct NotShadowReceiver {
 } derive(ToJson, @json.FromJson)
-pub fn NotShadowReceiver::default() -> Self
+pub fn NotShadowReceiver::NotShadowReceiver() -> Self
 pub impl @ecs.Component for NotShadowReceiver
 pub impl @ecs.EcsPayloadCodec for NotShadowReceiver
 
 pub struct OcclusionCulling {
 } derive(ToJson, @json.FromJson)
-pub fn OcclusionCulling::default() -> Self
+pub fn OcclusionCulling::OcclusionCulling() -> Self
 pub impl @ecs.Component for OcclusionCulling
 pub impl @ecs.EcsPayloadCodec for OcclusionCulling
 
@@ -1280,7 +1282,7 @@ pub struct OrderIndependentTransparencySettings {
   fragments_per_pixel_average : Float
   alpha_threshold : Float
 } derive(ToJson, @json.FromJson)
-pub fn OrderIndependentTransparencySettings::default() -> Self
+pub fn OrderIndependentTransparencySettings::OrderIndependentTransparencySettings() -> Self
 pub fn OrderIndependentTransparencySettings::new(Int, Float, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_alpha_threshold(Self, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_fragments_per_pixel_average(Self, Float) -> Self
@@ -1322,7 +1324,7 @@ pub(all) struct PbrPlugin {
   use_gpu_instance_buffer_builder : Bool
   gltf_render_enabled : Bool
 }
-pub fn PbrPlugin::default() -> Self
+pub fn PbrPlugin::PbrPlugin() -> Self
 pub impl @app.Plugin for PbrPlugin
 
 pub struct PbrPluginRuntimeConfig {
@@ -1366,7 +1368,7 @@ pub(all) struct PhysicalCameraParameters {
   mut sensitivity_iso : Float
   mut sensor_height : Float
 } derive(ToJson, @json.FromJson)
-pub fn PhysicalCameraParameters::default() -> Self
+pub fn PhysicalCameraParameters::PhysicalCameraParameters() -> Self
 pub fn PhysicalCameraParameters::ev100(Self) -> Float
 
 pub(all) enum Projection {
@@ -1394,7 +1396,7 @@ pub struct Render3dDiagnosticsSnapshot {
   queue_cpu_ms : Float
   execute_cpu_ms : Float
 }
-pub fn Render3dDiagnosticsSnapshot::default() -> Self
+pub fn Render3dDiagnosticsSnapshot::Render3dDiagnosticsSnapshot() -> Self
 
 type Render3dInternalAssetsState
 pub impl @ecs.EcsPayloadCodec for Render3dInternalAssetsState
@@ -1411,8 +1413,8 @@ pub struct RenderMaterialInstances {
   instances : Map[UInt64, RenderMaterialInstance]
   mut current_change_tick : Int64
 }
+pub fn RenderMaterialInstances::RenderMaterialInstances() -> Self
 pub fn RenderMaterialInstances::current_change_tick(Self) -> Int64
-pub fn RenderMaterialInstances::default() -> Self
 pub fn RenderMaterialInstances::early_sweep_removed_mesh_material(Self, @core.Entity) -> Bool
 pub fn RenderMaterialInstances::extract_mesh_material(Self, @core.Entity, Bool, @material.MeshMaterial3d) -> Unit
 pub fn RenderMaterialInstances::get(Self, @core.Entity) -> RenderMaterialInstance?
@@ -1426,7 +1428,7 @@ pub struct ScatteringMediumLutConfig {
   falloff_resolution : Int
   phase_resolution : Int
 }
-pub fn ScatteringMediumLutConfig::default() -> Self
+pub fn ScatteringMediumLutConfig::ScatteringMediumLutConfig() -> Self
 pub fn ScatteringMediumLutConfig::with_falloff_resolution(Self, Int) -> Self
 pub fn ScatteringMediumLutConfig::with_phase_resolution(Self, Int) -> Self
 
@@ -1435,7 +1437,7 @@ pub struct ScatteringMediumPlugin {
   runtime_config : ScatteringMediumLutConfig
   sampler : ScatteringMediumSampler
 }
-pub fn ScatteringMediumPlugin::default() -> Self
+pub fn ScatteringMediumPlugin::ScatteringMediumPlugin() -> Self
 pub fn ScatteringMediumPlugin::disabled() -> Self
 pub fn ScatteringMediumPlugin::with_lut_config(Self, ScatteringMediumLutConfig) -> Self
 pub fn ScatteringMediumPlugin::with_sampler(Self, ScatteringMediumSampler) -> Self
@@ -1454,7 +1456,7 @@ pub struct ScatteringMediumRuntime {
   density_multiplier : Float
   lut_config : ScatteringMediumLutConfig
 }
-pub fn ScatteringMediumRuntime::default() -> Self
+pub fn ScatteringMediumRuntime::ScatteringMediumRuntime() -> Self
 pub fn ScatteringMediumRuntime::earthlike() -> Self
 pub fn ScatteringMediumRuntime::from_medium(@light.ScatteringMedium) -> Self
 pub fn ScatteringMediumRuntime::with_density_multiplier(Self, Float) -> Self
@@ -1468,7 +1470,7 @@ pub struct ScatteringMediumSampler {
   min_filter : @image.ImageFilterMode
   mipmap_filter : @image.ImageFilterMode
 }
-pub fn ScatteringMediumSampler::default() -> Self
+pub fn ScatteringMediumSampler::ScatteringMediumSampler() -> Self
 pub fn ScatteringMediumSampler::is_linear_clamp(Self) -> Bool
 pub fn ScatteringMediumSampler::linear_clamp() -> Self
 pub fn ScatteringMediumSampler::with_address_mode(Self, @image.ImageAddressMode) -> Self
@@ -1489,7 +1491,7 @@ pub struct Skybox {
   brightness : Float
   rotation : @math.Quat
 } derive(ToJson, @json.FromJson)
-pub fn Skybox::default() -> Self
+pub fn Skybox::Skybox() -> Self
 pub fn Skybox::new(@asset.Handle[@image.Image], Float) -> Self
 pub fn Skybox::with_brightness(Self, Float) -> Self
 pub fn Skybox::with_image(Self, @asset.Handle[@image.Image]?) -> Self
@@ -1500,7 +1502,7 @@ pub impl @ecs.EcsPayloadCodec for Skybox
 pub struct SpecializedMaterialPipelineCache {
   views : Map[UInt64, SpecializedMaterialViewPipelineCache]
 }
-pub fn SpecializedMaterialPipelineCache::default() -> Self
+pub fn SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache() -> Self
 pub fn SpecializedMaterialPipelineCache::get(Self, @core.Entity) -> SpecializedMaterialViewPipelineCache?
 pub fn SpecializedMaterialPipelineCache::insert(Self, @core.Entity, @core.Entity, Int64, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedMaterialPipelineCache::len(Self) -> Int
@@ -1520,7 +1522,7 @@ pub fn SpecializedMaterialPipelineCacheEntry::tick(Self) -> Int64
 pub struct SpecializedMaterialViewPipelineCache {
   entries : Map[UInt64, SpecializedMaterialPipelineCacheEntry]
 }
-pub fn SpecializedMaterialViewPipelineCache::default() -> Self
+pub fn SpecializedMaterialViewPipelineCache::SpecializedMaterialViewPipelineCache() -> Self
 pub fn SpecializedMaterialViewPipelineCache::get(Self, @core.Entity) -> SpecializedMaterialPipelineCacheEntry?
 pub fn SpecializedMaterialViewPipelineCache::insert(Self, @core.Entity, SpecializedMaterialPipelineCacheEntry) -> Unit
 pub fn SpecializedMaterialViewPipelineCache::len(Self) -> Int
@@ -1541,7 +1543,7 @@ pub fn StandardMaterialKey::without_flag(Self, UInt64) -> Self
 pub(all) struct StandardMaterialPlugin {
   prepass_enabled : Bool
 }
-pub fn StandardMaterialPlugin::default() -> Self
+pub fn StandardMaterialPlugin::StandardMaterialPlugin() -> Self
 pub fn StandardMaterialPlugin::with_prepass_enabled(Self, Bool) -> Self
 pub impl @app.Plugin for StandardMaterialPlugin
 
@@ -1570,7 +1572,7 @@ pub impl @ecs.EcsPayloadCodec for StandardMaterialPluginState
 
 pub struct TransmittedShadowReceiver {
 } derive(ToJson, @json.FromJson)
-pub fn TransmittedShadowReceiver::default() -> Self
+pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> Self
 pub impl @ecs.Component for TransmittedShadowReceiver
 pub impl @ecs.EcsPayloadCodec for TransmittedShadowReceiver
 
@@ -1580,8 +1582,8 @@ pub struct ViewClusterBindings3d {
   max_indices : Int
   max_offsets : Int
 }
+pub fn ViewClusterBindings3d::ViewClusterBindings3d() -> Self
 pub fn ViewClusterBindings3d::clear(Self) -> Unit
-pub fn ViewClusterBindings3d::default() -> Self
 pub fn ViewClusterBindings3d::index(Self, Int) -> UInt?
 pub fn ViewClusterBindings3d::n_indices(Self) -> Int
 pub fn ViewClusterBindings3d::n_offsets(Self) -> Int
@@ -1601,14 +1603,14 @@ pub impl @ecs.EcsPayloadCodec for ViewContactShadowsUniformOffset
 
 pub struct Wireframe {
 } derive(ToJson, @json.FromJson)
-pub fn Wireframe::default() -> Self
+pub fn Wireframe::Wireframe() -> Self
 pub impl @ecs.Component for Wireframe
 pub impl @ecs.EcsPayloadCodec for Wireframe
 
 pub struct WireframeColor {
   color : @color.Color
 } derive(ToJson, @json.FromJson)
-pub fn WireframeColor::default() -> Self
+pub fn WireframeColor::WireframeColor() -> Self
 pub fn WireframeColor::new(@color.Color) -> Self
 pub fn WireframeColor::with_color(Self, @color.Color) -> Self
 pub impl @ecs.Component for WireframeColor
@@ -1618,7 +1620,7 @@ pub struct WireframeConfig {
   global : Bool
   default_color : @color.Color
 } derive(ToJson, @json.FromJson)
-pub fn WireframeConfig::default() -> Self
+pub fn WireframeConfig::WireframeConfig() -> Self
 pub fn WireframeConfig::new(Bool, @color.Color) -> Self
 pub fn WireframeConfig::with_default_color(Self, @color.Color) -> Self
 pub fn WireframeConfig::with_global(Self, Bool) -> Self
@@ -1627,7 +1629,7 @@ pub impl @ecs.EcsPayloadCodec for WireframeConfig
 
 pub struct WireframePlugin {
 }
-pub fn WireframePlugin::default() -> Self
+pub fn WireframePlugin::WireframePlugin() -> Self
 pub impl @app.Plugin for WireframePlugin
 
 // Type aliases

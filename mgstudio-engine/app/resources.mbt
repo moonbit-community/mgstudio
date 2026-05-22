@@ -90,7 +90,7 @@ fn[T : @ecs.EcsPayloadCodec] registered_typed_resource_key(
   match registry.val.get(debug_name) {
     Some(id) => @ecs.resource_key_from_id(id, debug_name~)
     None => {
-      let key : @ecs.ResourceKey[T] = @ecs.register_resource(debug_name~)
+      let key : @ecs.ResourceKey[T] = @ecs.register_erased_resource(debug_name~)
       registry.val.set(debug_name, key.id())
       key
     }

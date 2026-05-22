@@ -83,14 +83,14 @@ fn spawn_text(
   font : @asset.Handle[@asset.Font],
   font_size : Float,
   color : @sprite.Color,
-  node? : @ui.Node = @ui.Node::default(),
+  node? : @ui.Node = @ui.Node::Node(),
 ) -> @core.Entity {
   commands.spawn(
     (
       @hierarchy.Parent::new(parent),
       node,
       @text.Text::new(content),
-      @text.TextFont::default().with_font(font).with_font_size(font_size),
+      @text.TextFont::TextFont().with_font(font).with_font_size(font_size),
       @text.TextColor::new(color),
     ),
   )
@@ -105,9 +105,9 @@ fn spawn_button(
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(parent),
-      @ui.Button::default(),
+      @ui.Button::Button(),
       ButtonPressState::{ pressed: false },
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(150.0F))
       .with_height(@ui.Val::Px(65.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
@@ -136,13 +136,13 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
-  let ghost_root = commands.spawn_component(@ui.GhostNode::default())
+  let ghost_root = commands.spawn_component(@ui.GhostNode::GhostNode())
   let ghost_root_text_box = commands.spawn(
     (
       @hierarchy.Parent::new(ghost_root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(24.0F))
       .with_top(@ui.Val::Px(24.0F))
@@ -163,8 +163,8 @@ fn setup(
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_justify_content(@ui.JustifyContent::Center)
@@ -174,7 +174,7 @@ fn setup(
   let panel = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_padding(@ui.UiRect::all(@ui.Val::Px(24.0F)))
       .with_row_gap(@ui.Val::Px(16.0F))
       .with_align_items(@ui.AlignItems::Center)
@@ -196,7 +196,7 @@ fn setup(
     (
       @hierarchy.Parent::new(panel),
       Counter::{ value: 0 },
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_column_gap(@ui.Val::Px(16.0F))
       .with_align_items(@ui.AlignItems::Center)
       .with_flex_direction(@ui.FlexDirection::Row),
@@ -205,7 +205,7 @@ fn setup(
   let ghost_parent = commands.spawn(
     (
       @hierarchy.Parent::new(button_row),
-      @ui.GhostNode::default(),
+      @ui.GhostNode::GhostNode(),
       Counter::{ value: 0 },
     ),
   )
@@ -303,7 +303,7 @@ fn button_system(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param2(setup)
   .add_systems(@app.Update, @app.system(button_system).after(@ui.ui_set_focus))
   .run()

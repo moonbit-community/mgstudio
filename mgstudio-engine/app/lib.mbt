@@ -472,7 +472,7 @@ pub impl Plugin for PluginGroupBuilder[@ecs.World] with build(self, app) {
 }
 
 ///|
-pub fn NoopPluginGroup::default() -> NoopPluginGroup {
+pub fn NoopPluginGroup::NoopPluginGroup() -> NoopPluginGroup {
   NoopPluginGroup::{  }
 }
 
@@ -597,7 +597,7 @@ impl SystemParam with access(_world) {
 }
 
 ///|
-pub(open) trait Resource: @ecs.EcsPayloadCodec {
+pub(open) trait Resource {
   fn resource() -> @ecs.ResourceKey[Self]
 }
 

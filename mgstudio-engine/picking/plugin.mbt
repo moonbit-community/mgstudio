@@ -16,7 +16,7 @@
 pub struct PickingPlugin {}
 
 ///|
-pub fn PickingPlugin::default() -> PickingPlugin {
+pub fn PickingPlugin::PickingPlugin() -> PickingPlugin {
   PickingPlugin::{  }
 }
 
@@ -24,7 +24,7 @@ pub fn PickingPlugin::default() -> PickingPlugin {
 pub struct PointerInputPlugin {}
 
 ///|
-pub fn PointerInputPlugin::default() -> PointerInputPlugin {
+pub fn PointerInputPlugin::PointerInputPlugin() -> PointerInputPlugin {
   PointerInputPlugin::{  }
 }
 
@@ -32,7 +32,7 @@ pub fn PointerInputPlugin::default() -> PointerInputPlugin {
 pub struct InteractionPlugin {}
 
 ///|
-pub fn InteractionPlugin::default() -> InteractionPlugin {
+pub fn InteractionPlugin::InteractionPlugin() -> InteractionPlugin {
   InteractionPlugin::{  }
 }
 
@@ -40,7 +40,7 @@ pub fn InteractionPlugin::default() -> InteractionPlugin {
 pub struct DefaultPickingPlugins {}
 
 ///|
-pub fn DefaultPickingPlugins::default() -> DefaultPickingPlugins {
+pub fn DefaultPickingPlugins::DefaultPickingPlugins() -> DefaultPickingPlugins {
   DefaultPickingPlugins::{  }
 }
 
@@ -82,7 +82,7 @@ pub impl @app.PluginGroup for DefaultPickingPlugins with name(_self) {
 ///|
 pub impl @app.PluginGroup for DefaultPickingPlugins with build(_self) {
   @app.PluginGroupBuilder::start_named("mgstudio.picking.DefaultPickingPlugins")
-  .add(PointerInputPlugin::default())
-  .add(PickingPlugin::default())
-  .add(InteractionPlugin::default())
+  .add(PointerInputPlugin::PointerInputPlugin())
+  .add(PickingPlugin::PickingPlugin())
+  .add(InteractionPlugin::InteractionPlugin())
 }

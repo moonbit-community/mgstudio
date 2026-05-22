@@ -70,23 +70,24 @@ pub fn WinitMonitorEntry::new(@Milky2018/window/core.MonitorHandle, @Milky2018/m
 pub struct WinitMonitors {
   monitors : Array[WinitMonitorEntry]
 } derive(Eq)
+pub fn WinitMonitors::WinitMonitors() -> Self
 pub fn WinitMonitors::find_entity(Self, @Milky2018/mgstudio/core.Entity) -> @Milky2018/window/core.MonitorHandle?
 pub fn WinitMonitors::new() -> Self
 pub fn WinitMonitors::nth(Self, Int) -> @Milky2018/window/core.MonitorHandle?
 pub impl @app.Resource for WinitMonitors
 pub impl @ecs.EcsPayloadCodec for WinitMonitors
-pub impl Default for WinitMonitors
 
 pub(all) struct WinitPlugin {
   run_on_any_thread : Bool
 }
-pub fn WinitPlugin::default() -> Self
+pub fn WinitPlugin::WinitPlugin() -> Self
 pub impl @app.Plugin for WinitPlugin
 
 pub(all) struct WinitSettings {
   focused_mode : UpdateMode
   unfocused_mode : UpdateMode
 } derive(Eq, @debug.Debug)
+pub fn WinitSettings::WinitSettings() -> Self
 pub fn WinitSettings::continuous() -> Self
 pub fn WinitSettings::desktop_app() -> Self
 pub fn WinitSettings::game() -> Self
@@ -94,7 +95,6 @@ pub fn WinitSettings::mobile() -> Self
 pub fn WinitSettings::update_mode(Self, Bool) -> UpdateMode
 pub impl @app.Resource for WinitSettings
 pub impl @ecs.EcsPayloadCodec for WinitSettings
-pub impl Default for WinitSettings
 
 pub struct WinitWindowEntry {
   entity : @Milky2018/mgstudio/core.Entity
@@ -105,6 +105,7 @@ pub fn WinitWindowEntry::new(@Milky2018/mgstudio/core.Entity, Int) -> Self
 pub struct WinitWindows {
   windows : Array[WinitWindowEntry]
 } derive(Eq)
+pub fn WinitWindows::WinitWindows() -> Self
 pub fn WinitWindows::get_window(Self, @Milky2018/mgstudio/core.Entity) -> Int?
 pub fn WinitWindows::get_window_entity(Self, Int) -> @Milky2018/mgstudio/core.Entity?
 pub fn WinitWindows::new() -> Self
@@ -112,7 +113,6 @@ pub fn WinitWindows::remove_window(Self, @Milky2018/mgstudio/core.Entity) -> Int
 pub fn WinitWindows::sync_windows(Self, @ecs.World) -> Unit
 pub impl @app.Resource for WinitWindows
 pub impl @ecs.EcsPayloadCodec for WinitWindows
-pub impl Default for WinitWindows
 
 // Type aliases
 pub using @windowing_native {type RawWinitWindowEventData}

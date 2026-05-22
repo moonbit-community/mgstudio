@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }
@@ -30,7 +30,7 @@ fn setup(
   let texture_handle = asset_server.get().load("branding/banner.png")
   let mesh_handle = meshes.peek().add(create_colored_quad_mesh())
 
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   ignore(
     commands.spawn(

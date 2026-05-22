@@ -16,7 +16,7 @@
 test "sprite 3d gizmo shapes emit expected line segments" {
   gizmos_reset()
   let gizmos : Gizmos[DefaultGizmoConfigGroup] = {
-    config: GizmoConfig::default(),
+    config: GizmoConfig::GizmoConfig(),
     config_group: DefaultGizmoConfigGroup::{  },
     state: gizmo_state,
     world: None,
@@ -71,7 +71,7 @@ test "gizmos system param queues into world storage before render drain" {
   gizmos_reset()
   let app = init_gizmo_group(
     @app.App::new(@ecs.World::new()),
-    DefaultGizmoConfigGroup::default(),
+    DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   ).add_systems(
     @app.Update,
     @app.system(
@@ -103,7 +103,7 @@ test "global gizmo buffer flushes through last schedule into default storage" {
   gizmos_reset()
   let app = init_gizmo_group(
     @app.App::new(@ecs.World::new()),
-    DefaultGizmoConfigGroup::default(),
+    DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   ).add_last_system_config(@app.system(@app.system_param(flush_global_gizmos)))
 
   gizmo().line_3d(

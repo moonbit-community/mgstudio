@@ -24,13 +24,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_asset_Font(Font)
   EcsPayload_asset_LoadedFolder(LoadedFolder)
   EcsPayload_asset_TextureAtlasLayout(TextureAtlasLayout)
-  EcsPayload_asset_AssetIoRuntimeState(AssetIoRuntimeState)
-  EcsPayload_asset_AssetLoaderRegistryState(AssetLoaderRegistryState)
-  EcsPayload_asset_TypedAssetLoaderRegistryState(TypedAssetLoaderRegistryState)
-  EcsPayload_asset_AssetSourceBuilderRegistryState(
-    AssetSourceBuilderRegistryState
-  )
-  EcsPayload_asset_AssetProcessorRegistryState(AssetProcessorRegistryState)
 }
 
 ///|
@@ -243,85 +236,6 @@ pub impl @ecs.EcsPayloadCodec for TextureAtlasLayout with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_asset_TextureAtlasLayout(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AssetIoRuntimeState with to_ecs_payload(self) {
-  EcsPayload_asset_AssetIoRuntimeState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AssetIoRuntimeState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_asset_AssetIoRuntimeState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AssetLoaderRegistryState with to_ecs_payload(self) {
-  EcsPayload_asset_AssetLoaderRegistryState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AssetLoaderRegistryState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_asset_AssetLoaderRegistryState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TypedAssetLoaderRegistryState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_asset_TypedAssetLoaderRegistryState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TypedAssetLoaderRegistryState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_asset_TypedAssetLoaderRegistryState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AssetSourceBuilderRegistryState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_asset_AssetSourceBuilderRegistryState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AssetSourceBuilderRegistryState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_asset_AssetSourceBuilderRegistryState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AssetProcessorRegistryState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_asset_AssetProcessorRegistryState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AssetProcessorRegistryState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_asset_AssetProcessorRegistryState(value) => Some(value)
     _ => None
   }
 }

@@ -22,7 +22,7 @@ const CONTROLS_PLUGIN_NAME : String = "mgstudio.feathers.controls.ControlsPlugin
 pub struct ControlsPlugin {}
 
 ///|
-pub fn ControlsPlugin::default() -> ControlsPlugin {
+pub fn ControlsPlugin::ControlsPlugin() -> ControlsPlugin {
   ControlsPlugin::{  }
 }
 

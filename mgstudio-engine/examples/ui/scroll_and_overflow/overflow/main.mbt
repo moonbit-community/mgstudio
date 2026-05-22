@@ -57,17 +57,17 @@ fn setup(world : @ecs.World) -> Unit {
   let icon = @asset.AssetServer::new().load_image("branding/icon.png")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_align_items(@ui.AlignItems::Center)
@@ -96,7 +96,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       column,
       @ui.ecs_key_node,
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_flex_direction(@ui.FlexDirection::Column)
       .with_align_items(@ui.AlignItems::Center)
       .with_margin(margin_x(@ui.Val::Px(25.0F))),
@@ -111,7 +111,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       label_box,
       @ui.ecs_key_node,
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
       .with_margin(margin_bottom(@ui.Val::Px(25.0F))),
     )
@@ -135,7 +135,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       label,
       @text.ecs_key_text_font,
-      @text.TextFont::default(),
+      @text.TextFont::TextFont(),
     )
 
     let panel = world.spawn_empty()
@@ -147,7 +147,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       panel,
       @ui.ecs_key_node,
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(100.0F))
       .with_height(@ui.Val::Px(100.0F))
       .with_padding(padding_left_top(@ui.Val::Px(25.0F), @ui.Val::Px(25.0F)))
@@ -172,7 +172,7 @@ fn setup(world : @ecs.World) -> Unit {
       @hierarchy.Parent::new(panel),
     )
     try! world.set_by_key(image, @ui.ecs_key_node, @ui.Node::{
-      ..@ui.Node::default(),
+      ..@ui.Node(),
       min_width: @ui.Val::Px(100.0F),
       min_height: @ui.Val::Px(100.0F),
     })
@@ -182,7 +182,7 @@ fn setup(world : @ecs.World) -> Unit {
       @ui.ImageNode::new(icon),
     )
     try! world.set_by_key(image, @ui.ecs_key_interaction, @ui.Interaction::None)
-    try! world.set_by_key(image, @ui.ecs_key_outline, @ui.Outline::default())
+    try! world.set_by_key(image, @ui.ecs_key_outline, @ui.Outline::Outline())
   }
 }
 
@@ -208,7 +208,7 @@ fn update_outlines(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system(setup)
   .add_systems(@app.Update, @app.system(@app.system_param(update_outlines)))
   .run()

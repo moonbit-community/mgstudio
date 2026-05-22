@@ -17,7 +17,7 @@
 /// https://github.com/dimforge/bevy_rapier/blob/master/bevy_rapier3d/examples/events3.rs
 fn main {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @mgstudio.DefaultPlugins::default(),
+    @mgstudio.DefaultPlugins::DefaultPlugins(),
   )
   @physics3d.physics3d_debug_render_plugin(app)
   .add_systems(@app.Startup, @app.system(setup_graphics))

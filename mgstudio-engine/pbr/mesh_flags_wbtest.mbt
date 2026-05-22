@@ -24,7 +24,7 @@ fn render3d_flags_approx_eq(lhs : Float, rhs : Float) -> Bool {
 
 ///|
 test "render3d: standard material flags pack current Bevy subset bits" {
-  let material = StandardMaterial::default()
+  let material = @material.StandardMaterial::StandardMaterial()
     .with_unlit(true)
     .with_double_sided(true)
     .with_flip_normal_map_y(true)
@@ -59,7 +59,7 @@ test "render3d: standard material flags pack current Bevy subset bits" {
 ///|
 test "render3d: forward decal specialization bit is carried into material flags" {
   let flags = @pbr_render.render3d_standard_material_flags(
-    StandardMaterial::default(),
+    @material.StandardMaterial::StandardMaterial(),
     -1,
     -1,
     -1,
@@ -79,7 +79,7 @@ test "render3d: forward decal specialization bit is carried into material flags"
 ///|
 test "render3d: standard material flags keep opaque default when maps are absent" {
   let flags = @pbr_render.render3d_standard_material_flags(
-    StandardMaterial::default(),
+    @material.StandardMaterial::StandardMaterial(),
     -1,
     -1,
     -1,
@@ -102,7 +102,7 @@ test "render3d: standard material flags keep opaque default when maps are absent
 ///|
 test "render3d: normal map encoding bits stay host-minimal without bound texture" {
   let flags = @pbr_render.render3d_standard_material_flags(
-    StandardMaterial::default().with_flip_normal_map_y(true),
+    @material.StandardMaterial::StandardMaterial().with_flip_normal_map_y(true),
     -1,
     -1,
     -1,
@@ -218,9 +218,9 @@ fn render3d_test_extracted_mesh_for_flags(
       visibility_range: None,
       aabb: None,
       aabb_center_world: None,
-      material: StandardMaterial::default(),
+      material: @material.StandardMaterial::StandardMaterial(),
       material_extension: None,
-      material_properties: @material.MaterialProperties::default(),
+      material_properties: @material.MaterialProperties::MaterialProperties(),
       material_vertex_shader_path: None,
       material_fragment_shader_path: None,
       material_pipeline_id: None,
@@ -233,7 +233,7 @@ fn render3d_test_extracted_mesh_for_flags(
       has_transmitted_shadow_receiver,
       has_no_frustum_culling,
       has_no_cpu_culling: false,
-      layers: @sprite.RenderLayers::default(),
+      layers: @sprite.RenderLayers::RenderLayers(),
       has_wireframe: false,
       has_no_wireframe: false,
       wireframe_color: None,
@@ -255,7 +255,7 @@ fn render3d_test_transparent_mesh_for_queue(
 ) -> ExtractedMesh3d {
   let transform = @transform.Transform::from_xyz(0.0F, 0.0F, z)
   let world_from_local = @math.Affine3::from_translation(transform.translation)
-  let material = StandardMaterial::default().with_alpha_mode(
+  let material = @material.StandardMaterial::StandardMaterial().with_alpha_mode(
     @material.AlphaMode3d::Blend,
   )
   ExtractedMesh3d::{
@@ -293,7 +293,7 @@ fn render3d_test_transparent_mesh_for_queue(
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,
       has_no_cpu_culling: false,
-      layers: @sprite.RenderLayers::default(),
+      layers: @sprite.RenderLayers::RenderLayers(),
       has_wireframe: false,
       has_no_wireframe: false,
       wireframe_color: None,
@@ -316,7 +316,7 @@ test "render3d: transparent phase ordering includes bevy material depth bias" {
   let camera_transform = @transform.Transform::identity()
   let cpu_items = render3d_queue_mesh_phase_items(
     meshes,
-    @sprite.RenderLayers::default(),
+    @sprite.RenderLayers::RenderLayers(),
     camera_transform,
     [],
     false,
@@ -324,7 +324,7 @@ test "render3d: transparent phase ordering includes bevy material depth bias" {
   )
   let gpu_items = render3d_queue_mesh_phase_items(
     meshes,
-    @sprite.RenderLayers::default(),
+    @sprite.RenderLayers::RenderLayers(),
     camera_transform,
     [],
     false,
@@ -338,7 +338,9 @@ test "render3d: transparent phase ordering includes bevy material depth bias" {
 
 ///|
 test "render3d: transmissive materials use a distinct sorted phase" {
-  let material = StandardMaterial::default().with_specular_transmission(0.5F)
+  let material = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
+    0.5F,
+  )
   let transform = @transform.Transform::from_xyz(0.0F, 0.0F, -1.0F)
   let world_from_local = @math.Affine3::from_translation(transform.translation)
   let mesh = ExtractedMesh3d::{
@@ -376,7 +378,7 @@ test "render3d: transmissive materials use a distinct sorted phase" {
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,
       has_no_cpu_culling: false,
-      layers: @sprite.RenderLayers::default(),
+      layers: @sprite.RenderLayers::RenderLayers(),
       has_wireframe: false,
       has_no_wireframe: false,
       wireframe_color: None,
@@ -390,7 +392,7 @@ test "render3d: transmissive materials use a distinct sorted phase" {
   }
   let items = render3d_queue_mesh_phase_items(
     [mesh],
-    @sprite.RenderLayers::default(),
+    @sprite.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
     false,
@@ -414,7 +416,7 @@ test "render3d: standard material pipeline key includes render mesh topology" {
     key_bits=line_key,
   )
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
-    @material.MaterialProperties::default(),
+    @material.MaterialProperties::MaterialProperties(),
     render_mesh,
   )
   let mesh_key_bits = pipeline_key.mesh_key().downcast_u64("MeshPipelineKey")

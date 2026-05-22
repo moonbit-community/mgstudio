@@ -49,7 +49,7 @@ pub fn RenderSkyboxPrepassPipeline::new(pipeline_id~ : Int) -> Self
 
 pub struct Skybox {
 } derive(ToJson, @json.FromJson)
-pub fn Skybox::default() -> Self
+pub fn Skybox::Skybox() -> Self
 pub impl @ecs.Component for Skybox
 pub impl @ecs.EcsPayloadCodec for Skybox
 
@@ -75,7 +75,7 @@ pub struct SkyboxPipelineState {
   mut pipeline_count : Int
   mut bind_group_count : Int
 }
-pub fn SkyboxPipelineState::default() -> Self
+pub fn SkyboxPipelineState::SkyboxPipelineState() -> Self
 pub fn SkyboxPipelineState::record_bind_group(Self) -> Unit
 pub fn SkyboxPipelineState::record_pipeline(Self) -> Unit
 pub impl @app.Resource for SkyboxPipelineState
@@ -83,7 +83,7 @@ pub impl @ecs.EcsPayloadCodec for SkyboxPipelineState
 
 pub struct SkyboxPlugin {
 }
-pub fn SkyboxPlugin::default() -> Self
+pub fn SkyboxPlugin::SkyboxPlugin() -> Self
 pub impl @app.Plugin for SkyboxPlugin
 
 pub struct SkyboxPrepareViewState {
@@ -104,7 +104,7 @@ pub fn SkyboxPrepassBindGroup::new(bind_group_id~ : Int) -> Self
 pub struct SkyboxPrepassNode {
   label : String
 }
-pub fn SkyboxPrepassNode::default() -> Self
+pub fn SkyboxPrepassNode::SkyboxPrepassNode() -> Self
 pub fn SkyboxPrepassNode::label(Self) -> String
 
 pub struct SkyboxPrepassPipelineKey {

@@ -15,9 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_animation_morph_targets_AnimationToPlay(AnimationToPlay)
-  EcsPayload_examples_animation_morph_targets_MorphTargetAssetState(
-    MorphTargetAssetState
-  )
 }
 
 ///|
@@ -29,22 +26,6 @@ impl @ecs.EcsPayloadCodec for AnimationToPlay with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for AnimationToPlay with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_animation_morph_targets_AnimationToPlay(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MorphTargetAssetState with to_ecs_payload(self) {
-  EcsPayload_examples_animation_morph_targets_MorphTargetAssetState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MorphTargetAssetState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_examples_animation_morph_targets_MorphTargetAssetState(value) =>
       Some(value)
     _ => None
   }

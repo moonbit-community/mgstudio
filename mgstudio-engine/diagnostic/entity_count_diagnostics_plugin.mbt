@@ -32,7 +32,7 @@ pub fn EntityCountDiagnosticsPlugin::new(
 }
 
 ///|
-pub fn EntityCountDiagnosticsPlugin::default() -> EntityCountDiagnosticsPlugin {
+pub fn EntityCountDiagnosticsPlugin::EntityCountDiagnosticsPlugin() -> EntityCountDiagnosticsPlugin {
   EntityCountDiagnosticsPlugin::new(DEFAULT_MAX_HISTORY_LENGTH)
 }
 
@@ -57,7 +57,7 @@ pub fn entity_count_diagnostics_plugin(
 ) -> @app.App[@ecs.World] {
   entity_count_diagnostics_plugin_with(
     app,
-    EntityCountDiagnosticsPlugin::default(),
+    EntityCountDiagnosticsPlugin::EntityCountDiagnosticsPlugin(),
   )
 }
 

@@ -14,36 +14,12 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_scene_SceneGltfPendingRequestsState(SceneGltfPendingRequestsState)
   EcsPayload_scene_Scene(Scene)
   EcsPayload_scene_Gltf(Gltf)
   EcsPayload_scene_SceneRoot(SceneRoot)
   EcsPayload_scene_SceneInstance(SceneInstance)
   EcsPayload_scene_SceneInstanceReady(SceneInstanceReady)
   EcsPayload_scene_SceneRootRespawnRequested(SceneRootRespawnRequested)
-  EcsPayload_scene_SceneAssetRegistryState(SceneAssetRegistryState)
-  EcsPayload_scene_SceneAssetHooksInstalledState(SceneAssetHooksInstalledState)
-  EcsPayload_scene_SceneModifiedEventsCursorState(
-    SceneModifiedEventsCursorState
-  )
-  EcsPayload_scene_SceneRuntimeState(SceneRuntimeState)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SceneGltfPendingRequestsState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_scene_SceneGltfPendingRequestsState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SceneGltfPendingRequestsState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_scene_SceneGltfPendingRequestsState(value) => Some(value)
-    _ => None
-  }
 }
 
 ///|
@@ -126,68 +102,6 @@ impl @ecs.EcsPayloadCodec for SceneRootRespawnRequested with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_scene_SceneRootRespawnRequested(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SceneAssetRegistryState with to_ecs_payload(self) {
-  EcsPayload_scene_SceneAssetRegistryState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SceneAssetRegistryState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_scene_SceneAssetRegistryState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SceneAssetHooksInstalledState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_scene_SceneAssetHooksInstalledState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SceneAssetHooksInstalledState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_scene_SceneAssetHooksInstalledState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SceneModifiedEventsCursorState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_scene_SceneModifiedEventsCursorState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SceneModifiedEventsCursorState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_scene_SceneModifiedEventsCursorState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SceneRuntimeState with to_ecs_payload(self) {
-  EcsPayload_scene_SceneRuntimeState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SceneRuntimeState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_scene_SceneRuntimeState(value) => Some(value)
     _ => None
   }
 }

@@ -21,7 +21,7 @@ pub struct TabIndex {
 pub struct TabNavigationPlugin {}
 
 ///|
-pub fn TabNavigationPlugin::default() -> TabNavigationPlugin {
+pub fn TabNavigationPlugin::TabNavigationPlugin() -> TabNavigationPlugin {
   TabNavigationPlugin::{  }
 }
 

@@ -14,7 +14,7 @@
 
 ///|
 fn pbr_material_specializer_test_layout() -> @mesh.MeshVertexBufferLayoutRef {
-  let layouts = @mesh.MeshVertexBufferLayouts::default()
+  let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   layouts.insert(
     @mesh.MeshVertexBufferLayout::new(
       attribute_ids=[
@@ -55,7 +55,7 @@ fn pbr_material_specializer_test_layout() -> @mesh.MeshVertexBufferLayoutRef {
 
 ///|
 fn pbr_material_specializer_test_skinned_layout() -> @mesh.MeshVertexBufferLayoutRef {
-  let layouts = @mesh.MeshVertexBufferLayouts::default()
+  let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   layouts.insert(
     @mesh.MeshVertexBufferLayout::new(
       attribute_ids=[
@@ -160,8 +160,10 @@ fn pbr_material_specializer_shader_defs_contain_uint(
 
 ///|
 test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs" {
-  let properties = @material.MaterialProperties::default().with_material_layout(
-    Some(@material.BindGroupLayoutDescriptor::default()),
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
   )
   let specializer = PbrMaterialPipelineSpecializer::new(properties)
   let descriptor = try! specializer.specialize(
@@ -208,8 +210,10 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
 
 ///|
 test "pbr material pipeline specializer selects morphed skinned mesh layout" {
-  let properties = @material.MaterialProperties::default().with_material_layout(
-    Some(@material.BindGroupLayoutDescriptor::default()),
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
   )
   let specializer = PbrMaterialPipelineSpecializer::new(properties)
   let descriptor = try! specializer.specialize(
@@ -243,8 +247,12 @@ test "pbr material pipeline specializer selects morphed skinned mesh layout" {
 
 ///|
 test "pbr material pipeline specializer inserts material bind group and overrides shaders" {
-  let properties = @material.MaterialProperties::default()
-    .with_material_layout(Some(@material.BindGroupLayoutDescriptor::default()))
+  let properties = @material.MaterialProperties::MaterialProperties()
+    .with_material_layout(
+      Some(
+        @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+      ),
+    )
     .with_bindless(true)
     .add_shader(
       @material.MATERIAL_VERTEX_SHADER_LABEL,
@@ -324,7 +332,7 @@ test "pbr material pipeline specializer inserts material bind group and override
 ///|
 test "pbr standard material properties install base specialization hook" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::default().with_alpha_mode(
+    @material.StandardMaterial::StandardMaterial().with_alpha_mode(
       @material.AlphaMode3d::Blend,
     ),
     None,
@@ -355,7 +363,7 @@ test "pbr standard material properties install base specialization hook" {
 ///|
 test "pbr material pipeline key carries mesh-owned lightmap bits" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::default(),
+    @material.StandardMaterial::StandardMaterial(),
     None,
     @material.OpaqueRendererMethod::Forward,
     true,
@@ -378,8 +386,10 @@ test "pbr material pipeline key carries mesh-owned lightmap bits" {
 
 ///|
 test "pbr material pipeline gates lightmap binding-array defs on pipeline support" {
-  let properties = @material.MaterialProperties::default().with_material_layout(
-    Some(@material.BindGroupLayoutDescriptor::default()),
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
   )
   let default_specializer = PbrMaterialPipelineSpecializer::new(properties)
   let default_descriptor = try! default_specializer.specialize(
@@ -433,7 +443,7 @@ test "pbr material pipeline gates lightmap binding-array defs on pipeline suppor
 test "pbr material base specialization caches descriptors from real material properties" {
   let world = @ecs.World::new()
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::default(),
+    @material.StandardMaterial::StandardMaterial(),
     None,
     @material.OpaqueRendererMethod::Forward,
     true,
@@ -483,7 +493,7 @@ test "pbr material base specialization caches descriptors from real material pro
 ///|
 test "pbr prepass pipeline specializer mirrors bevy layout and shader defs" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::default().with_alpha_mode(
+    @material.StandardMaterial::StandardMaterial().with_alpha_mode(
       @material.AlphaMode3d::Mask(0.5F),
     ),
     None,
@@ -555,7 +565,7 @@ test "pbr prepass pipeline specializer mirrors bevy layout and shader defs" {
 ///|
 test "pbr prepass depth-only opaque path uses empty material layout" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::default(),
+    @material.StandardMaterial::StandardMaterial(),
     None,
     @material.OpaqueRendererMethod::Forward,
     true,
@@ -581,7 +591,7 @@ test "pbr prepass depth-only opaque path uses empty material layout" {
 ///|
 test "pbr prepass pipeline specializer selects morphed skinned motion layout" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::default(),
+    @material.StandardMaterial::StandardMaterial(),
     None,
     @material.OpaqueRendererMethod::Forward,
     true,
@@ -628,7 +638,7 @@ test "pbr prepass pipeline specializer selects morphed skinned motion layout" {
 ///|
 test "pbr prepass pipeline gates lightmap binding-array defs on pipeline support" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::default(),
+    @material.StandardMaterial::StandardMaterial(),
     None,
     @material.OpaqueRendererMethod::Forward,
     true,
@@ -682,7 +692,7 @@ test "pbr prepass pipeline gates lightmap binding-array defs on pipeline support
 test "pbr material prepass specialization caches descriptors separately" {
   let world = @ecs.World::new()
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::default(),
+    @material.StandardMaterial::StandardMaterial(),
     None,
     @material.OpaqueRendererMethod::Forward,
     true,

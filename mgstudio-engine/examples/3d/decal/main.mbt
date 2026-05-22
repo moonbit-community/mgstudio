@@ -67,7 +67,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     decal,
     @pbr.ecs_key_forward_decal,
-    @pbr.ForwardDecal::default(),
+    @pbr.ForwardDecal::ForwardDecal(),
   )
   try! world.set_by_key(
     decal,
@@ -76,7 +76,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(2.0F, 9.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -85,18 +85,18 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_free_camera,
-    @pbr.FreeCamera::default(),
+    @pbr.FreeCamera::FreeCamera(),
   )
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_depth_prepass,
-    @pbr.DepthPrepass::default(),
+    @pbr.DepthPrepass::DepthPrepass(),
   )
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_fxaa,
-    @post_process.Fxaa::default(),
+    @post_process.Fxaa::Fxaa(),
   )
 
   let white_material = @pbr.standard_material_add(
@@ -141,7 +141,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(true),
+    @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
   )
   try! world.set_by_key(
     light,
@@ -153,7 +153,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .run()
 }

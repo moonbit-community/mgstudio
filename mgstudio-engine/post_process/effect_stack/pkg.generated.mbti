@@ -30,7 +30,7 @@ pub struct ChromaticAberration {
   intensity : Float
   max_samples : Int
 } derive(ToJson, @json.FromJson)
-pub fn ChromaticAberration::default() -> Self
+pub fn ChromaticAberration::ChromaticAberration() -> Self
 pub fn ChromaticAberration::new(Float, Int) -> Self
 pub fn ChromaticAberration::with_intensity(Self, Float) -> Self
 pub fn ChromaticAberration::with_max_samples(Self, Int) -> Self
@@ -52,7 +52,7 @@ pub struct Vignette {
   edge_compensation : Float
   color : @color.Color
 } derive(ToJson, @json.FromJson)
-pub fn Vignette::default() -> Self
+pub fn Vignette::Vignette() -> Self
 pub fn Vignette::new(Float, Float, Float, Float) -> Self
 pub fn Vignette::with_center(Self, @math.Vec2) -> Self
 pub fn Vignette::with_color(Self, @color.Color) -> Self

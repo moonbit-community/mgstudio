@@ -13,23 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_gltf_custom_gltf_vertex_attribute_ConvertedMeshState(
-    ConvertedMeshState
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ConvertedMeshState with to_ecs_payload(self) {
-  EcsPayload_examples_gltf_custom_gltf_vertex_attribute_ConvertedMeshState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ConvertedMeshState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_gltf_custom_gltf_vertex_attribute_ConvertedMeshState(
-      value
-    ) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

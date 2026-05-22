@@ -79,7 +79,7 @@ pub fn MeshTag::new(value : UInt) -> MeshTag {
 }
 
 ///|
-pub fn MeshTag::default() -> MeshTag {
+pub fn MeshTag::MeshTag() -> MeshTag {
   MeshTag::new(0U)
 }
 

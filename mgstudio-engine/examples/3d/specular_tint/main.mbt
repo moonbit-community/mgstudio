@@ -211,13 +211,13 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-2.0F, 0.0F, 3.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_skybox,
@@ -235,16 +235,16 @@ fn setup(world : @ecs.World) -> Unit {
   state.camera = Some(camera)
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(100).with_clear_color_none(),
+    @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -257,7 +257,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     help_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_bottom(@ui.Val::Px(12.0F)),
@@ -270,7 +270,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     help_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(ui_font).with_font_size(18.0F),
+    @text.TextFont::TextFont().with_font(ui_font).with_font_size(18.0F),
   )
   try! world.set_by_key(
     help_entity,
@@ -377,7 +377,7 @@ fn update_help_text(_world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(rotate_camera))
   .add_systems(@app.Update, @app.system(toggle_specular_map))

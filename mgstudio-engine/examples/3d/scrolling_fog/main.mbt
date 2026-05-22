@@ -29,7 +29,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).looking_at(
         @math.Vec3::new(-5.0F, 3.5F, -6.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -37,7 +37,7 @@ fn setup(world : @ecs.World) -> Unit {
     )
     .with_volumetric_fog(
       Some(
-        @pbr.VolumetricFog::default()
+        @pbr.VolumetricFog::VolumetricFog()
         .with_ambient_intensity(0.0F)
         .with_jitter(0.5F),
       ),
@@ -47,18 +47,18 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::default(),
+    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
   )
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::default(),
+    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_bloom,
-    @post_process.Bloom::default(),
+    @post_process.Bloom::Bloom(),
   )
 
   let directional_light = world.spawn_empty()
@@ -78,7 +78,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional_light,
     @pbr.ecs_key_volumetric_light,
-    @pbr.VolumetricLight::default(),
+    @pbr.VolumetricLight::VolumetricLight(),
   )
 
   let black_material = @pbr.standard_material_add(
@@ -127,7 +127,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     fog_volume,
     @pbr.ecs_key_fog_volume,
-    @pbr.FogVolume::default()
+    @pbr.FogVolume::FogVolume()
     .with_density_texture(Some(noise_texture))
     .with_density_factor(0.05F),
   )
@@ -163,7 +163,7 @@ fn scroll_fog(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(scroll_fog))
   .run()

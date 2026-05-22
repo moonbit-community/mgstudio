@@ -36,8 +36,13 @@ pub impl @ecs.Message for PlayPitch with message() {
 }
 
 ///|
-pub impl Default for PlayPitch with default() {
+pub fn PlayPitch::PlayPitch() -> PlayPitch {
   PlayPitch::{  }
+}
+
+///|
+pub impl Default for PlayPitch with default() {
+  PlayPitch::PlayPitch()
 }
 
 ///|
@@ -48,7 +53,7 @@ pub impl @app.Resource for PitchFrequency with resource() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_message(play_pitch_message_key)
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param4(play_pitch)))

@@ -95,7 +95,6 @@ pub(all) enum AlphaMode3d {
   Add
   Multiply
 }
-pub fn AlphaMode3d::default() -> Self
 pub impl Default for AlphaMode3d
 
 pub struct BindGroupLayoutEntries {
@@ -116,7 +115,7 @@ pub fn BindGroupLayoutEntryBuilder::visibility(Self, UInt) -> Self
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
 } derive(ToJson, @json.FromJson)
-pub fn DefaultOpaqueRendererMethod::default() -> Self
+pub fn DefaultOpaqueRendererMethod::DefaultOpaqueRendererMethod() -> Self
 pub fn DefaultOpaqueRendererMethod::deferred() -> Self
 pub fn DefaultOpaqueRendererMethod::forward() -> Self
 pub fn DefaultOpaqueRendererMethod::new(OpaqueRendererMethod) -> Self
@@ -137,7 +136,7 @@ pub struct DrawFunctions {
   entries : Array[(String, DrawFunctionId)]
   mut next_id : UInt
 }
-pub fn DrawFunctions::default() -> Self
+pub fn DrawFunctions::DrawFunctions() -> Self
 pub fn DrawFunctions::id(Self, String) -> DrawFunctionId?
 pub fn DrawFunctions::labels(Self) -> Array[String]
 pub fn DrawFunctions::len(Self) -> Int
@@ -159,7 +158,7 @@ pub struct ErasedMaterialKey {
   hash : UInt64
   value_json : String
 } derive(Eq, @debug.Debug)
-pub fn ErasedMaterialKey::default() -> Self
+pub fn ErasedMaterialKey::ErasedMaterialKey() -> Self
 pub fn ErasedMaterialKey::hash(Self) -> UInt64
 pub fn[T : ToJson] ErasedMaterialKey::new(T, String) -> Self
 pub fn[T : ToJson] ErasedMaterialKey::new_untyped(T) -> Self
@@ -182,8 +181,8 @@ pub struct ErasedMeshPipelineKey {
   bits : UInt64
   type_tag : String
 } derive(Eq, @debug.Debug)
+pub fn ErasedMeshPipelineKey::ErasedMeshPipelineKey() -> Self
 pub fn ErasedMeshPipelineKey::bits(Self) -> UInt64
-pub fn ErasedMeshPipelineKey::default() -> Self
 pub fn ErasedMeshPipelineKey::downcast_u64(Self, String) -> UInt64
 pub fn ErasedMeshPipelineKey::new(UInt64, String) -> Self
 pub fn ErasedMeshPipelineKey::new_untyped(UInt64) -> Self
@@ -203,7 +202,7 @@ pub struct ExtendedMaterialMetadata3d {
   requires_deferred_prepass : Bool
   disable_shadows : Bool
 }
-pub fn ExtendedMaterialMetadata3d::default() -> Self
+pub fn ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d() -> Self
 pub fn ExtendedMaterialMetadata3d::new(Int) -> Self
 pub fn ExtendedMaterialMetadata3d::with_alpha_mode_override(Self, AlphaMode3d?) -> Self
 pub fn ExtendedMaterialMetadata3d::with_deferred_fragment_shader_path(Self, String?) -> Self
@@ -227,7 +226,7 @@ pub(all) enum Face3d {
 pub struct ForwardDecalMaterialExt {
   depth_fade_factor : Float
 } derive(ToJson, @json.FromJson)
-pub fn ForwardDecalMaterialExt::default() -> Self
+pub fn ForwardDecalMaterialExt::ForwardDecalMaterialExt() -> Self
 pub fn ForwardDecalMaterialExt::new(Float) -> Self
 pub fn ForwardDecalMaterialExt::with_depth_fade_factor(Self, Float) -> Self
 pub impl @ecs.Component for ForwardDecalMaterialExt
@@ -251,9 +250,9 @@ pub struct MaterialProperties {
   shadows_enabled : Bool
   prepass_enabled : Bool
 }
+pub fn MaterialProperties::MaterialProperties() -> Self
 pub fn MaterialProperties::add_draw_function(Self, String, DrawFunctionId) -> Self
 pub fn MaterialProperties::add_shader(Self, String, String) -> Self
-pub fn MaterialProperties::default() -> Self
 pub fn MaterialProperties::get_draw_function(Self, String) -> DrawFunctionId?
 pub fn MaterialProperties::get_shader(Self, String) -> String?
 pub fn MaterialProperties::with_alpha_mode(Self, AlphaMode3d) -> Self
@@ -298,7 +297,6 @@ pub(all) enum OpaqueRendererMethod {
   Deferred
   Auto
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn OpaqueRendererMethod::default() -> Self
 pub fn OpaqueRendererMethod::resolve_runtime(Self, Self) -> Self
 pub impl Default for OpaqueRendererMethod
 
@@ -317,7 +315,6 @@ pub(all) enum RenderPhaseType {
   Transmissive
   Transparent
 }
-pub fn RenderPhaseType::default() -> Self
 pub impl Default for RenderPhaseType
 
 type SpecializedMeshPipelineMeshLayoutCacheEntry
@@ -328,7 +325,7 @@ pub struct SpecializedMeshPipelines {
   mesh_layout_cache : Array[SpecializedMeshPipelineMeshLayoutCacheEntry]
   vertex_layout_cache : Array[SpecializedMeshPipelineVertexLayoutCacheEntry]
 }
-pub fn SpecializedMeshPipelines::default() -> Self
+pub fn SpecializedMeshPipelines::SpecializedMeshPipelines() -> Self
 pub fn SpecializedMeshPipelines::mesh_layout_cache_len(Self) -> Int
 pub fn SpecializedMeshPipelines::new() -> Self
 pub fn SpecializedMeshPipelines::render_pipeline_descriptor(Self, @render_resource.CachedRenderPipelineId) -> @render_resource.RenderPipelineDescriptor?
@@ -379,7 +376,7 @@ pub struct StandardMaterial {
   unlit : Bool
   cull_mode : Face3d?
 }
-pub fn StandardMaterial::default() -> Self
+pub fn StandardMaterial::StandardMaterial() -> Self
 pub fn StandardMaterial::flip(Self, Bool, Bool) -> Self
 pub fn StandardMaterial::flipped(Self, Bool, Bool) -> Self
 pub fn StandardMaterial::from_color(@color.Color) -> Self

@@ -16,7 +16,7 @@
 pub struct StatesPlugin {}
 
 ///|
-pub fn StatesPlugin::default() -> StatesPlugin {
+pub fn StatesPlugin::StatesPlugin() -> StatesPlugin {
   StatesPlugin::{  }
 }
 
@@ -37,7 +37,7 @@ fn states_plugin_installed(world : @ecs.World) -> Bool {
 fn require_states_plugin_installed(world : @ecs.World) -> Unit {
   if !states_plugin_installed(world) {
     abort(
-      "StatesPlugin is not installed. Add .add_plugins(@app.StatesPlugin::default()) before installing states.",
+      "StatesPlugin is not installed. Add .add_plugins(@app.StatesPlugin::StatesPlugin()) before installing states.",
     )
   }
 }

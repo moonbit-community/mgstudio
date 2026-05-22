@@ -14,22 +14,7 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_ui_text_font_atlas_debug_AtlasDebugState(AtlasDebugState)
   EcsPayload_examples_ui_text_font_atlas_debug_AtlasDebugText(AtlasDebugText)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AtlasDebugState with to_ecs_payload(self) {
-  EcsPayload_examples_ui_text_font_atlas_debug_AtlasDebugState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AtlasDebugState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_text_font_atlas_debug_AtlasDebugState(value) =>
-      Some(value)
-    _ => None
-  }
 }
 
 ///|

@@ -23,13 +23,13 @@ const UPSCALING_PLUGIN_NAME : String = "mgstudio.core_pipeline.upscaling.Upscali
 pub struct UpscalingPlugin {}
 
 ///|
-pub fn UpscalingPlugin::default() -> UpscalingPlugin {
+pub fn UpscalingPlugin::UpscalingPlugin() -> UpscalingPlugin {
   UpscalingPlugin::{  }
 }
 
 ///|
 pub fn upscaling_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  upscaling_plugin_with(app, UpscalingPlugin::default())
+  upscaling_plugin_with(app, UpscalingPlugin::UpscalingPlugin())
 }
 
 ///|
@@ -48,7 +48,7 @@ pub fn upscaling_plugin_with(
   plugin : UpscalingPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { ViewUpscalingPipeline::default() })
+  app.init_resource(fn() { ViewUpscalingPipeline::ViewUpscalingPipeline() })
 }
 
 ///|
@@ -57,7 +57,7 @@ pub struct ViewUpscalingPipeline {
 }
 
 ///|
-pub fn ViewUpscalingPipeline::default() -> ViewUpscalingPipeline {
+pub fn ViewUpscalingPipeline::ViewUpscalingPipeline() -> ViewUpscalingPipeline {
   ViewUpscalingPipeline::{ pipeline_id: -1 }
 }
 

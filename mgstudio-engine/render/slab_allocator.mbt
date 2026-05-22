@@ -45,7 +45,7 @@ pub fn SlabAllocatorSettings::new(
 }
 
 ///|
-pub fn SlabAllocatorSettings::default() -> SlabAllocatorSettings {
+pub fn SlabAllocatorSettings::SlabAllocatorSettings() -> SlabAllocatorSettings {
   SlabAllocatorSettings::new(
     min_slab_size=1024 * 1024,
     max_slab_size=1024 * 1024 * 512,
@@ -56,7 +56,7 @@ pub fn SlabAllocatorSettings::default() -> SlabAllocatorSettings {
 
 ///|
 pub impl Default for SlabAllocatorSettings with default() {
-  SlabAllocatorSettings::default()
+  SlabAllocatorSettings::SlabAllocatorSettings()
 }
 
 ///|
@@ -194,7 +194,7 @@ pub fn slab_allocator_allocation_shape(
 pub fn slab_allocator_should_allocate_large(
   data_byte_len : Int,
   layout : SlabItemLayoutInfo,
-  settings? : SlabAllocatorSettings = SlabAllocatorSettings::default(),
+  settings? : SlabAllocatorSettings = SlabAllocatorSettings::SlabAllocatorSettings(),
 ) -> Bool {
   let shape = slab_allocator_allocation_shape(data_byte_len, layout)
   shape.slot_count * layout.slot_size() >=
@@ -236,7 +236,7 @@ fn slab_allocator_min_allocator_size(slot_count : Int) -> Int {
 pub fn slab_allocator_initial_general_slab_slot_capacity(
   layout : SlabItemLayoutInfo,
   data_slot_count : Int,
-  settings? : SlabAllocatorSettings = SlabAllocatorSettings::default(),
+  settings? : SlabAllocatorSettings = SlabAllocatorSettings::SlabAllocatorSettings(),
 ) -> Int {
   slab_allocator_div_ceil(settings.min_slab_size, layout.slot_size()).max(
     slab_allocator_min_allocator_size(data_slot_count),
@@ -263,7 +263,7 @@ pub fn slab_allocator_grow_general_slab_if_necessary(
   current_slot_capacity : Int,
   new_size_in_slots : Int,
   layout : SlabItemLayoutInfo,
-  settings? : SlabAllocatorSettings = SlabAllocatorSettings::default(),
+  settings? : SlabAllocatorSettings = SlabAllocatorSettings::SlabAllocatorSettings(),
 ) -> SlabGrowth {
   let initial_slot_capacity = current_slot_capacity
   if current_slot_capacity >= new_size_in_slots {
@@ -343,7 +343,7 @@ pub fn slab_allocator_plan_new_general_slab(
   slab_id : Int,
   data_byte_len : Int,
   layout : SlabItemLayoutInfo,
-  settings? : SlabAllocatorSettings = SlabAllocatorSettings::default(),
+  settings? : SlabAllocatorSettings = SlabAllocatorSettings::SlabAllocatorSettings(),
 ) -> SlabAllocationPlan {
   let shape = slab_allocator_allocation_shape(data_byte_len, layout)
   let current_slot_capacity = slab_allocator_initial_general_slab_slot_capacity(

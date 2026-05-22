@@ -40,7 +40,7 @@ fn spawn_text(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default()
+    @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(@text.FontSize::Px(16.0F)),
   )
@@ -59,17 +59,17 @@ fn setup(world : @ecs.World) -> Unit {
   let font = @asset.AssetServer::new().load_font("fonts/FiraSans-Bold.ttf")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    node_with_display(@ui.Node::default(), @ui.Display::Grid)
+    node_with_display(@ui.Node::Node(), @ui.Display::Grid)
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_grid_template_columns([
@@ -105,7 +105,7 @@ fn setup(world : @ecs.World) -> Unit {
     @hierarchy.Parent::new(root),
   )
   try! world.set_by_key(header, @ui.ecs_key_node, @ui.Node::{
-    ..node_with_display(@ui.Node::default(), @ui.Display::Grid).with_padding(
+    ..node_with_display(@ui.Node::Node(), @ui.Display::Grid).with_padding(
       @ui.UiRect::all(@ui.Val::Px(6.0F)),
     ),
     grid_column: @ui.GridPlacement::span(2),
@@ -130,7 +130,7 @@ fn setup(world : @ecs.World) -> Unit {
     main_grid,
     @ui.ecs_key_node,
     node_with_aspect_ratio(
-      node_with_display(@ui.Node::default(), @ui.Display::Grid)
+      node_with_display(@ui.Node::Node(), @ui.Display::Grid)
       .with_height(@ui.Val::Percent(100.0F))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(24.0F)))
       .with_grid_template_columns([
@@ -182,7 +182,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       frame,
       @ui.ecs_key_node,
-      node_with_display(@ui.Node::default(), @ui.Display::Grid).with_padding(
+      node_with_display(@ui.Node::Node(), @ui.Display::Grid).with_padding(
         @ui.UiRect::all(@ui.Val::Px(3.0F)),
       ),
     )
@@ -198,7 +198,7 @@ fn setup(world : @ecs.World) -> Unit {
       @hierarchy.ecs_key_parent,
       @hierarchy.Parent::new(frame),
     )
-    try! world.set_by_key(inner, @ui.ecs_key_node, @ui.Node::default())
+    try! world.set_by_key(inner, @ui.ecs_key_node, @ui.Node::Node())
     try! world.set_by_key(
       inner,
       @ui.ecs_key_background_color,
@@ -213,7 +213,7 @@ fn setup(world : @ecs.World) -> Unit {
     @hierarchy.Parent::new(root),
   )
   try! world.set_by_key(sidebar, @ui.ecs_key_node, @ui.Node::{
-    ..node_with_display(@ui.Node::default(), @ui.Display::Grid)
+    ..node_with_display(@ui.Node::Node(), @ui.Display::Grid)
     .with_align_items(@ui.AlignItems::Start)
     .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
     .with_grid_template_rows([
@@ -252,7 +252,7 @@ fn setup(world : @ecs.World) -> Unit {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(sidebar),
   )
-  try! world.set_by_key(spacer, @ui.ecs_key_node, @ui.Node::default())
+  try! world.set_by_key(spacer, @ui.ecs_key_node, @ui.Node::Node())
 
   let footer = world.spawn_empty()
   try! world.set_by_key(
@@ -261,7 +261,7 @@ fn setup(world : @ecs.World) -> Unit {
     @hierarchy.Parent::new(root),
   )
   try! world.set_by_key(footer, @ui.ecs_key_node, @ui.Node::{
-    ..@ui.Node::default(),
+    ..@ui.Node(),
     grid_column: @ui.GridPlacement::span(2),
   })
   try! world.set_by_key(
@@ -274,7 +274,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system(setup)
   .run()
 }

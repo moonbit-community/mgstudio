@@ -68,7 +68,7 @@ pub impl @app.Resource for ConstraintSettings with resource() {
 }
 
 ///|
-impl Default for ConstraintSettings with default() {
+fn ConstraintSettings::ConstraintSettings() -> ConstraintSettings {
   ConstraintSettings::{
     flex_basis: @ui.Val::Percent(100.0F),
     width: @ui.Val::Auto,
@@ -202,9 +202,9 @@ fn spawn_button(
     .insert(
       (
         @hierarchy.Parent::new(parent),
-        @ui.Button::default(),
+        @ui.Button::Button(),
         ConstraintButton::{ kind, value },
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_align_items(@ui.AlignItems::Center)
         .with_justify_content(@ui.JustifyContent::Center)
         .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
@@ -250,7 +250,7 @@ fn spawn_button_row(
     .insert(
       (
         @hierarchy.Parent::new(parent),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_flex_direction(@ui.FlexDirection::Row)
         .with_align_items(@ui.AlignItems::Center)
         .with_margin(
@@ -273,7 +273,7 @@ fn spawn_button_row(
       (
         @hierarchy.Parent::new(row),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           min_width: @ui.Val::Px(180.0F),
           max_width: @ui.Val::Px(180.0F),
         },
@@ -298,7 +298,7 @@ fn spawn_button_row(
     .insert(
       (
         @hierarchy.Parent::new(row),
-        @ui.Node::default().with_flex_direction(@ui.FlexDirection::Row),
+        @ui.Node::Node().with_flex_direction(@ui.FlexDirection::Row),
       ),
     ),
   )
@@ -318,7 +318,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   ignore(
     @sprite.Camera2dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::identity(),
     ).spawn(world),
   )
@@ -329,8 +329,8 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(root)
     .insert(
       (
-        @ui.UiRoot::default(),
-        @ui.Node::default()
+        @ui.UiRoot::UiRoot(),
+        @ui.Node::Node()
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Percent(100.0F))
         .with_justify_content(@ui.JustifyContent::Center)
@@ -347,7 +347,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_flex_direction(@ui.FlexDirection::Column)
         .with_align_items(@ui.AlignItems::Center)
         .with_justify_content(@ui.JustifyContent::Center),
@@ -373,7 +373,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @hierarchy.Parent::new(content),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_flex_basis(@ui.Val::Percent(100.0F))
         .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
         .with_margin(
@@ -396,7 +396,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @hierarchy.Parent::new(outer_bar),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Px(100.0F))
         .with_padding(@ui.UiRect::all(@ui.Val::Px(4.0F))),
@@ -412,7 +412,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @hierarchy.Parent::new(frame),
-        @ui.Node::default(),
+        @ui.Node::Node(),
         @ui.BackgroundColor::new(@sprite.Color::white()),
         Bar::{  },
       ),
@@ -426,7 +426,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @hierarchy.Parent::new(content),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_flex_direction(@ui.FlexDirection::Column)
         .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
         .with_margin(
@@ -511,8 +511,8 @@ fn apply_settings(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .insert_resource(ConstraintSettings::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .insert_resource(ConstraintSettings::ConstraintSettings())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param2(update_buttons)))
   .add_systems(@app.Update, @app.system(@app.system_param2(apply_settings)))

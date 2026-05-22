@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_gizmos_render_LineGizmoUniform(LineGizmoUniform)
-  EcsPayload_gizmos_render_GizmoRenderPluginMarker(GizmoRenderPluginMarker)
 }
 
 ///|
@@ -29,21 +28,6 @@ pub impl @ecs.EcsPayloadCodec for LineGizmoUniform with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_gizmos_render_LineGizmoUniform(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GizmoRenderPluginMarker with to_ecs_payload(self) {
-  EcsPayload_gizmos_render_GizmoRenderPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GizmoRenderPluginMarker with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_gizmos_render_GizmoRenderPluginMarker(value) => Some(value)
     _ => None
   }
 }

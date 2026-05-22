@@ -28,7 +28,7 @@ test "render3d: cluster pack/unpack keeps offset + point/spot counts" {
 ///|
 test "render3d: view cluster bindings enforce index/offset bounds" {
   let bindings = ViewClusterBindings3d::with_limits(2, 1)
-  let counts = ClusterableObjectCounts3d::default()
+  let counts = ClusterableObjectCounts3d::ClusterableObjectCounts3d()
   debug_inspect(bindings.push_offset_and_counts(0U, counts), content="true")
   debug_inspect(bindings.push_offset_and_counts(1U, counts), content="false")
 

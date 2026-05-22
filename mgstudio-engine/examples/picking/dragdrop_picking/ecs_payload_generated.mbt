@@ -17,7 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_picking_dragdrop_picking_DropArea(DropArea)
   EcsPayload_examples_picking_dragdrop_picking_DraggableButton(DraggableButton)
   EcsPayload_examples_picking_dragdrop_picking_GhostPreview(GhostPreview)
-  EcsPayload_examples_picking_dragdrop_picking_DragState(DragState)
 }
 
 ///|
@@ -57,19 +56,6 @@ impl @ecs.EcsPayloadCodec for GhostPreview with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_picking_dragdrop_picking_GhostPreview(value) =>
       Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DragState with to_ecs_payload(self) {
-  EcsPayload_examples_picking_dragdrop_picking_DragState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DragState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_picking_dragdrop_picking_DragState(value) => Some(value)
     _ => None
   }
 }

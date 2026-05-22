@@ -25,7 +25,7 @@ pub fn BoxShadowSamples::new(samples : Int) -> BoxShadowSamples {
 }
 
 ///|
-pub fn BoxShadowSamples::default() -> BoxShadowSamples {
+pub fn BoxShadowSamples::BoxShadowSamples() -> BoxShadowSamples {
   BoxShadowSamples::new(4)
 }
 

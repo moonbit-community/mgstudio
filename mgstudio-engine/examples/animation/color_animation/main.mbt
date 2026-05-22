@@ -183,7 +183,7 @@ impl @ecs.Component for MixedOklcha with component() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(color_animation_setup))
   .add_systems(
     @app.Update,
@@ -216,7 +216,7 @@ fn color_animation_setup(world : @ecs.World) -> Unit {
   let oklcha_points = to_oklcha_points(linear_points)
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore

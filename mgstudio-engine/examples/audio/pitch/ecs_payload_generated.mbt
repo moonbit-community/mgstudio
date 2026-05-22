@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_audio_pitch_PlayPitch(PlayPitch)
-  EcsPayload_examples_audio_pitch_PitchFrequency(PitchFrequency)
 }
 
 ///|
@@ -27,19 +26,6 @@ impl @ecs.EcsPayloadCodec for PlayPitch with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for PlayPitch with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_audio_pitch_PlayPitch(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PitchFrequency with to_ecs_payload(self) {
-  EcsPayload_examples_audio_pitch_PitchFrequency(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PitchFrequency with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_audio_pitch_PitchFrequency(value) => Some(value)
     _ => None
   }
 }

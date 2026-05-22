@@ -28,9 +28,9 @@ fn test_meshlet_material_entry(
 
 ///|
 test "pbr meshlet: material prepare entry count aggregates all passes" {
-  let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
-  let prepass = MeshletViewMaterialsPrepass::default()
-  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let main_opaque = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
+  let prepass = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   main_opaque.push(test_meshlet_material_entry(1, 2, 3))
   prepass.push(test_meshlet_material_entry(4, 5, 6))
   inspect(
@@ -41,15 +41,15 @@ test "pbr meshlet: material prepare entry count aggregates all passes" {
 
 ///|
 test "pbr meshlet: prepare main opaque pass fills bins from material ids" {
-  let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
+  let main_opaque = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   prepare_material_meshlet_meshes_main_opaque_pass(main_opaque, [10, 20, 30])
   inspect(main_opaque.len(), content="3")
 }
 
 ///|
 test "pbr meshlet: prepare prepass respects deferred toggle" {
-  let prepass = MeshletViewMaterialsPrepass::default()
-  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let prepass = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   prepare_material_meshlet_meshes_prepass(
     prepass,
     deferred,
@@ -62,7 +62,7 @@ test "pbr meshlet: prepare prepass respects deferred toggle" {
 
 ///|
 test "pbr meshlet: main opaque pass filters by renderer method and transmission" {
-  let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
+  let main_opaque = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(main_opaque, [
     MeshletPreparedMaterialInput::new(1, 10).with_opaque_render_method(
       @material.OpaqueRendererMethod::Forward,
@@ -82,8 +82,8 @@ test "pbr meshlet: main opaque pass filters by renderer method and transmission"
 
 ///|
 test "pbr meshlet: prepass routes deferred materials to deferred bins" {
-  let prepass = MeshletViewMaterialsPrepass::default()
-  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let prepass = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   let view_key = MeshletViewMaterialPipelineKey::new(
     normal_prepass=false,
     motion_vector_prepass=false,
@@ -109,8 +109,8 @@ test "pbr meshlet: prepass routes deferred materials to deferred bins" {
 
 ///|
 test "pbr meshlet: prepass preserves bevy working view key carry after deferred material" {
-  let prepass = MeshletViewMaterialsPrepass::default()
-  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let prepass = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   let view_key = MeshletViewMaterialPipelineKey::new(
     normal_prepass=true,
     motion_vector_prepass=false,
@@ -141,7 +141,7 @@ test "pbr meshlet: prepass preserves bevy working view key carry after deferred 
 
 ///|
 test "pbr meshlet: main opaque pass deduplicates material ids" {
-  let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
+  let main_opaque = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(main_opaque, [
     MeshletPreparedMaterialInput::new(10, 100),
     MeshletPreparedMaterialInput::new(10, 101),
@@ -152,8 +152,8 @@ test "pbr meshlet: main opaque pass deduplicates material ids" {
 
 ///|
 test "pbr meshlet: prepass deduplicates material ids per pass" {
-  let prepass = MeshletViewMaterialsPrepass::default()
-  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let prepass = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   let view_key = MeshletViewMaterialPipelineKey::new(
     normal_prepass=true,
     motion_vector_prepass=false,
@@ -185,10 +185,10 @@ test "pbr meshlet: prepass deduplicates material ids per pass" {
 
 ///|
 test "pbr meshlet: prepass pipeline key ignores depth-prepass bit" {
-  let prepass_a = MeshletViewMaterialsPrepass::default()
-  let deferred_a = MeshletViewMaterialsDeferredGBufferPrepass::default()
-  let prepass_b = MeshletViewMaterialsPrepass::default()
-  let deferred_b = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let prepass_a = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred_a = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
+  let prepass_b = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred_b = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   let inputs = [
     MeshletPreparedMaterialInput::new(1, 100).with_opaque_render_method(
       @material.OpaqueRendererMethod::Forward,
@@ -227,10 +227,10 @@ test "pbr meshlet: prepass pipeline key ignores depth-prepass bit" {
 
 ///|
 test "pbr meshlet: prepass pipeline key ignores main-pass-only view dimensions" {
-  let prepass_a = MeshletViewMaterialsPrepass::default()
-  let deferred_a = MeshletViewMaterialsDeferredGBufferPrepass::default()
-  let prepass_b = MeshletViewMaterialsPrepass::default()
-  let deferred_b = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let prepass_a = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred_a = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
+  let prepass_b = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred_b = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   let inputs = [
     MeshletPreparedMaterialInput::new(1, 100).with_opaque_render_method(
       @material.OpaqueRendererMethod::Forward,
@@ -291,8 +291,8 @@ test "pbr meshlet: prepass pipeline key ignores main-pass-only view dimensions" 
 
 ///|
 test "pbr meshlet: main opaque pipeline key includes bevy view dimensions" {
-  let main_opaque_a = MeshletViewMaterialsMainOpaquePass::default()
-  let main_opaque_b = MeshletViewMaterialsMainOpaquePass::default()
+  let main_opaque_a = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
+  let main_opaque_b = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   let inputs = [MeshletPreparedMaterialInput::new(1, 100)]
   prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
     main_opaque_a,
@@ -339,7 +339,7 @@ test "pbr meshlet: main opaque pipeline key includes bevy view dimensions" {
 
 ///|
 test "pbr meshlet: main opaque descriptor mirrors bevy material pass layout" {
-  let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
+  let main_opaque = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   let view_key = MeshletViewMaterialPipelineKey::new(hdr=true)
   prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
     main_opaque,
@@ -425,8 +425,8 @@ test "pbr meshlet: main opaque descriptor mirrors bevy material pass layout" {
 
 ///|
 test "pbr meshlet: prepass descriptor switches view layout and entry point for overrides" {
-  let prepass = MeshletViewMaterialsPrepass::default()
-  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let prepass = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   let view_key = MeshletViewMaterialPipelineKey::new(
     normal_prepass=true,
     motion_vector_prepass=true,
@@ -464,7 +464,7 @@ test "pbr meshlet: prepass descriptor switches view layout and entry point for o
 
 ///|
 test "pbr meshlet: prepare skips materials without bevy required binding state" {
-  let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
+  let main_opaque = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(main_opaque, [
     MeshletPreparedMaterialInput::new(1, 10).without_material_layout(),
     MeshletPreparedMaterialInput::new(2, 20).without_material_bind_group_allocator(),

@@ -22,7 +22,7 @@ pub struct OitResolveNode {
 }
 
 ///|
-pub fn OitResolveNode::default() -> OitResolveNode {
+pub fn OitResolveNode::OitResolveNode() -> OitResolveNode {
   OitResolveNode::{ label: OIT_RESOLVE_PASS_LABEL }
 }
 

@@ -60,7 +60,7 @@ pub fn ImageLoader::new(supported_compressed_formats : Int) -> ImageLoader {
 }
 
 ///|
-pub fn ImageLoader::default() -> ImageLoader {
+pub fn ImageLoader::ImageLoader() -> ImageLoader {
   ImageLoader::new(0)
 }
 
@@ -169,7 +169,7 @@ pub(all) struct ImageLoaderSettings {
 }
 
 ///|
-pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
+pub fn ImageLoaderSettings::ImageLoaderSettings() -> ImageLoaderSettings {
   ImageLoaderSettings::{
     format: ImageFormatSetting::default(),
     texture_format: None,

@@ -67,8 +67,8 @@ fn pressed_button_color() -> @sprite.Color {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@app.StatesPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(AppState::default())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_on_enter_system(AppState::Menu, @app.system_param(setup_menu))
@@ -95,13 +95,13 @@ fn main {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 }
 
 ///|
 fn setup_menu(commands : @app.Commands) -> Unit {
   let root = commands.spawn_component(
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_justify_content(@ui.JustifyContent::Center)
@@ -110,8 +110,8 @@ fn setup_menu(commands : @app.Commands) -> Unit {
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Button::default(),
-      @ui.Node::default()
+      @ui.Button::Button(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(150.0F))
       .with_height(@ui.Val::Px(65.0F))
       .with_justify_content(@ui.JustifyContent::Center)
@@ -124,7 +124,7 @@ fn setup_menu(commands : @app.Commands) -> Unit {
       (
         @hierarchy.Parent::new(button),
         @text.Text::new("Play"),
-        @text.TextFont::default().with_font_size(33.0F),
+        @text.TextFont::TextFont().with_font_size(33.0F),
         @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
       ),
     ),

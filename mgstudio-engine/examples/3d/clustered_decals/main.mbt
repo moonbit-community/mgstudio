@@ -174,11 +174,11 @@ fn spawn_button(
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
     .with_padding(
       @ui.UiRect::new(
@@ -194,11 +194,11 @@ fn spawn_button(
       @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
     ),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
     .with_padding(
       @ui.UiRect::new(
@@ -235,7 +235,7 @@ fn spawn_button(
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
+    @ui.Node::Node().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
   )
   try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::new(label))
   try! world.set_by_key(
@@ -246,13 +246,13 @@ fn spawn_button(
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
+    @ui.Node::Node().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
   )
   try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::new(label))
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
   )
   try! world.set_by_key(
     text_entity,
@@ -266,17 +266,17 @@ fn spawn_button(
 ///|
 fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(100).with_clear_color_none(),
+    @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -290,7 +290,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     help_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
@@ -299,7 +299,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     help_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
   )
   try! world.set_by_key(
     help_entity,
@@ -310,7 +310,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     help_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
   )
   try! world.set_by_key(
     help_entity,
@@ -333,7 +333,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     selection_panel,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(10.0F))
     .with_bottom(@ui.Val::Px(10.0F))
@@ -356,9 +356,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     hint_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
-    .with_width(@ui.Val::Px(125.0F))
-    .with_height(@ui.Val::Auto),
+    @ui.Node::Node().with_width(@ui.Val::Px(125.0F)).with_height(@ui.Val::Auto),
   )
   try! world.set_by_key(
     hint_entity,
@@ -373,9 +371,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     hint_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
-    .with_width(@ui.Val::Px(125.0F))
-    .with_height(@ui.Val::Auto),
+    @ui.Node::Node().with_width(@ui.Val::Px(125.0F)).with_height(@ui.Val::Auto),
   )
   try! world.set_by_key(
     hint_entity,
@@ -385,7 +381,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     hint_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
   )
   try! world.set_by_key(
     hint_entity,
@@ -420,7 +416,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   try! world.set_by_key(
     drag_mode_panel,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_right(@ui.Val::Px(10.0F))
     .with_bottom(@ui.Val::Px(10.0F))
@@ -576,7 +572,7 @@ fn setup(world : @ecs.World) -> Unit {
   clustered_decals_state.val.rotating_cube = Some(cube)
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -588,7 +584,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::default(),
+    @pbr.DirectionalLight::DirectionalLight(),
   )
   try! world.set_by_key(
     light,
@@ -632,7 +628,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     decal_a,
     @pbr.ecs_key_clustered_decal,
-    @pbr.ClusteredDecal::default()
+    @pbr.ClusteredDecal::ClusteredDecal()
     .with_base_color_texture(Some(decal_texture))
     .with_tag(1),
   )
@@ -653,7 +649,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     decal_b,
     @pbr.ecs_key_clustered_decal,
-    @pbr.ClusteredDecal::default()
+    @pbr.ClusteredDecal::ClusteredDecal()
     .with_base_color_texture(Some(decal_texture))
     .with_tag(2),
   )
@@ -911,7 +907,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(rotate_cube))
   .add_systems(@app.Update, @app.system(process_drag_input))

@@ -43,7 +43,7 @@ pub fn OitResolveBindGroup::new(bind_group_id~ : Int) -> Self
 pub struct OitResolveNode {
   label : String
 }
-pub fn OitResolveNode::default() -> Self
+pub fn OitResolveNode::OitResolveNode() -> Self
 pub fn OitResolveNode::label(Self) -> String
 
 pub struct OitResolveNodeState {
@@ -60,7 +60,7 @@ pub struct OitResolvePipeline {
   has_view_bind_group_layout : Bool
   has_depth_bind_group_layout : Bool
 }
-pub fn OitResolvePipeline::default() -> Self
+pub fn OitResolvePipeline::OitResolvePipeline() -> Self
 pub fn OitResolvePipeline::new() -> Self
 pub impl @app.Resource for OitResolvePipeline
 pub impl @ecs.EcsPayloadCodec for OitResolvePipeline
@@ -79,7 +79,7 @@ pub fn OitResolvePipelineKey::new(hdr? : Bool, sorted_fragment_max_count? : Int,
 
 pub struct OitResolvePlugin {
 }
-pub fn OitResolvePlugin::default() -> Self
+pub fn OitResolvePlugin::OitResolvePlugin() -> Self
 pub impl @app.Plugin for OitResolvePlugin
 
 pub struct OitSupportState {

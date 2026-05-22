@@ -67,28 +67,28 @@ pub impl @ecs.EcsPayloadCodec for DebugPickingMode
 
 pub struct DevToolsDiagnosticsOverlayPlugin {
 }
-pub fn DevToolsDiagnosticsOverlayPlugin::default() -> Self
+pub fn DevToolsDiagnosticsOverlayPlugin::DevToolsDiagnosticsOverlayPlugin() -> Self
 pub impl @app.Plugin for DevToolsDiagnosticsOverlayPlugin
 
 pub struct DevToolsEasyScreenshotPlugin {
 }
-pub fn DevToolsEasyScreenshotPlugin::default() -> Self
+pub fn DevToolsEasyScreenshotPlugin::DevToolsEasyScreenshotPlugin() -> Self
 pub impl @app.Plugin for DevToolsEasyScreenshotPlugin
 
 pub struct DevToolsFpsOverlayPlugin {
 }
-pub fn DevToolsFpsOverlayPlugin::default() -> Self
+pub fn DevToolsFpsOverlayPlugin::DevToolsFpsOverlayPlugin() -> Self
 pub impl @app.Plugin for DevToolsFpsOverlayPlugin
 
 pub struct DevToolsPickingDebugPlugin {
 }
-pub fn DevToolsPickingDebugPlugin::default() -> Self
+pub fn DevToolsPickingDebugPlugin::DevToolsPickingDebugPlugin() -> Self
 pub impl @app.Plugin for DevToolsPickingDebugPlugin
 
 pub struct DevToolsPlugins {
 }
+pub fn DevToolsPlugins::DevToolsPlugins() -> Self
 pub fn DevToolsPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
-pub fn DevToolsPlugins::default() -> Self
 pub impl @app.Plugin for DevToolsPlugins
 
 pub struct DiagnosticsOverlay {
@@ -116,7 +116,7 @@ pub impl @ecs.EcsPayloadCodec for DiagnosticsOverlayPlane
 pub(all) struct DiagnosticsOverlayPlugin {
   refresh_interval_seconds : Float
 }
-pub fn DiagnosticsOverlayPlugin::default() -> Self
+pub fn DiagnosticsOverlayPlugin::DiagnosticsOverlayPlugin() -> Self
 
 pub(all) enum DiagnosticsOverlayStatistic {
   Value
@@ -129,7 +129,7 @@ pub struct EasyScreenshotConfig {
   enabled : Bool
   delay_frames : Int
 }
-pub fn EasyScreenshotConfig::default() -> Self
+pub fn EasyScreenshotConfig::EasyScreenshotConfig() -> Self
 pub impl @app.Resource for EasyScreenshotConfig
 pub impl @ecs.EcsPayloadCodec for EasyScreenshotConfig
 
@@ -147,14 +147,14 @@ pub(all) struct FpsOverlayConfig {
   mut refresh_interval : @core.Duration
   mut frame_time_graph_config : FrameTimeGraphConfig
 }
-pub fn FpsOverlayConfig::default() -> Self
+pub fn FpsOverlayConfig::FpsOverlayConfig() -> Self
 pub impl @app.Resource for FpsOverlayConfig
 pub impl @ecs.EcsPayloadCodec for FpsOverlayConfig
 
 pub(all) struct FpsOverlayPlugin {
   config : FpsOverlayConfig
 }
-pub fn FpsOverlayPlugin::default() -> Self
+pub fn FpsOverlayPlugin::FpsOverlayPlugin() -> Self
 pub impl @app.Plugin for FpsOverlayPlugin
 
 pub(all) struct FrameTimeGraphConfig {
@@ -162,7 +162,7 @@ pub(all) struct FrameTimeGraphConfig {
   mut min_fps : Float
   mut target_fps : Float
 }
-pub fn FrameTimeGraphConfig::default() -> Self
+pub fn FrameTimeGraphConfig::FrameTimeGraphConfig() -> Self
 pub fn FrameTimeGraphConfig::target_fps(Float) -> Self
 
 pub(all) struct FrameTimeGraphConfigUniform {
@@ -176,7 +176,7 @@ pub fn FrameTimeGraphConfigUniform::new(Float, Float, Bool) -> Self
 
 pub struct FrameTimeGraphPlugin {
 }
-pub fn FrameTimeGraphPlugin::default() -> Self
+pub fn FrameTimeGraphPlugin::FrameTimeGraphPlugin() -> Self
 pub impl @app.Plugin for FrameTimeGraphPlugin
 
 pub(all) struct FrametimeGraphMaterial {

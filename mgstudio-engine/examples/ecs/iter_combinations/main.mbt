@@ -110,7 +110,7 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let mesh_assets = meshes.peek()
   let material_assets = materials.peek()
@@ -241,7 +241,7 @@ fn main {
     FIXED_STEP_SECONDS,
   )
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(fixed_time)
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(

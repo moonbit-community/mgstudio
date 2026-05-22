@@ -41,7 +41,7 @@ pub impl @ecs.Component for MainCamera with component() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(
     @app.FixedUpdate,
@@ -65,7 +65,7 @@ fn setup(
       ),
     ),
   )
-  ignore(commands.spawn((@sprite.Camera2d::default(), MainCamera::{  })))
+  ignore(commands.spawn((@sprite.Camera2d::Camera2d(), MainCamera::{  })))
 }
 
 ///|

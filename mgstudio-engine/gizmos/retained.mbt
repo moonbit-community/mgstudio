@@ -155,8 +155,13 @@ pub fn GizmoBuffer::new() -> GizmoBuffer {
 }
 
 ///|
-pub impl Default for GizmoBuffer with default() {
+pub fn GizmoBuffer::GizmoBuffer() -> GizmoBuffer {
   GizmoBuffer::new()
+}
+
+///|
+pub impl Default for GizmoBuffer with default() {
+  GizmoBuffer::GizmoBuffer()
 }
 
 ///|
@@ -1369,7 +1374,7 @@ pub impl @asset.Asset for GizmoAsset with asset_as_image(_self) {
 ///|
 pub fn GizmoAsset::new() -> GizmoAsset {
   GizmoAsset::{
-    buffer: GizmoBuffer::default(),
+    buffer: GizmoBuffer::GizmoBuffer(),
     config_type_name: @sprite.DefaultGizmoConfigGroup::gizmo_config_group_debug_name(),
   }
 }
@@ -1729,8 +1734,13 @@ pub fn GizmoAsset::config_type_name(self : GizmoAsset) -> String {
 }
 
 ///|
-pub impl Default for GizmoAsset with default() {
+pub fn GizmoAsset::GizmoAsset() -> GizmoAsset {
   GizmoAsset::new()
+}
+
+///|
+pub impl Default for GizmoAsset with default() {
+  GizmoAsset::GizmoAsset()
 }
 
 ///|
@@ -1746,10 +1756,10 @@ pub struct Gizmo {
 }
 
 ///|
-pub fn Gizmo::default() -> Gizmo {
+pub fn Gizmo::Gizmo() -> Gizmo {
   Gizmo::{
     handle: @asset.Handle::new(0),
-    line_config: GizmoLineConfig::default(),
+    line_config: GizmoLineConfig(),
     depth_bias: 0.0F,
   }
 }
@@ -1792,7 +1802,7 @@ pub fn Gizmo::with_depth_bias(self : Gizmo, depth_bias : Float) -> Gizmo {
 
 ///|
 pub impl Default for Gizmo with default() {
-  Gizmo::default()
+  Gizmo::Gizmo()
 }
 
 ///|

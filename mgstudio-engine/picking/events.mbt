@@ -27,7 +27,7 @@ priv struct PickingA11yActionReaderState {
 }
 
 ///|
-fn PickingA11yActionReaderState::default() -> PickingA11yActionReaderState {
+fn PickingA11yActionReaderState::PickingA11yActionReaderState() -> PickingA11yActionReaderState {
   { cursor: 0 }
 }
 
@@ -42,7 +42,7 @@ let picking_a11y_action_reader_state_resource_key : @ecs.ResourceKey[
 fn ensure_picking_a11y_action_reader_state(world : @ecs.World) -> Unit {
   let res = world.resource(picking_a11y_action_reader_state_resource_key)
   if !res.is_present() {
-    res.insert(PickingA11yActionReaderState::default())
+    res.insert(PickingA11yActionReaderState::PickingA11yActionReaderState())
   }
 }
 
@@ -66,7 +66,7 @@ priv struct PickingPointerInputEventReaderState {
 }
 
 ///|
-fn PickingPointerInputEventReaderState::default() -> PickingPointerInputEventReaderState {
+fn PickingPointerInputEventReaderState::PickingPointerInputEventReaderState() -> PickingPointerInputEventReaderState {
   { cursor: 0 }
 }
 
@@ -83,7 +83,9 @@ fn ensure_picking_pointer_input_event_reader_state(world : @ecs.World) -> Unit {
     picking_pointer_input_event_reader_state_resource_key,
   )
   if !res.is_present() {
-    res.insert(PickingPointerInputEventReaderState::default())
+    res.insert(
+      PickingPointerInputEventReaderState::PickingPointerInputEventReaderState(),
+    )
   }
 }
 
@@ -133,7 +135,7 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
     let prev = match
       (try! world.get_by_key(entity, @ui.ecs_key_scroll_position)) {
       Some(v) => v
-      None => @ui.ScrollPosition::default()
+      None => @ui.ScrollPosition::ScrollPosition()
     }
     let mut max_offset_x = 0.0F
     let mut max_offset_y = 0.0F

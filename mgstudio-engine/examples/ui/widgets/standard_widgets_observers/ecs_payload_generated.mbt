@@ -14,27 +14,9 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_ui_widgets_standard_widgets_observers_ClickCounter(
-    ClickCounter
-  )
   EcsPayload_examples_ui_widgets_standard_widgets_observers_CounterLabel(
     CounterLabel
   )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ClickCounter with to_ecs_payload(self) {
-  EcsPayload_examples_ui_widgets_standard_widgets_observers_ClickCounter(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ClickCounter with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_widgets_standard_widgets_observers_ClickCounter(
-      value
-    ) => Some(value)
-    _ => None
-  }
 }
 
 ///|

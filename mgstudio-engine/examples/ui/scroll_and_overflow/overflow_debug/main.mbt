@@ -110,7 +110,7 @@ pub impl @app.Resource for OverflowDebugSettings with resource() {
 }
 
 ///|
-impl Default for AnimationState with default() {
+fn AnimationState::AnimationState() -> AnimationState {
   AnimationState::{
     paused_at: 0.0F,
     paused_total: 0.0F,
@@ -120,7 +120,7 @@ impl Default for AnimationState with default() {
 }
 
 ///|
-impl Default for OverflowDebugSettings with default() {
+fn OverflowDebugSettings::OverflowDebugSettings() -> OverflowDebugSettings {
   OverflowDebugSettings::{ overflow_index: 3, size_index: 0 }
 }
 
@@ -187,14 +187,14 @@ fn instructions_text(
 
 ///|
 fn root_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_width(@ui.Val::Percent(100.0F))
   .with_height(@ui.Val::Percent(100.0F))
 }
 
 ///|
 fn demo_grid_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_display(@ui.Display::Grid)
   .with_grid_template_columns([
     @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(3), [
@@ -212,7 +212,7 @@ fn demo_grid_node() -> @ui.Node {
 
 ///|
 fn demo_cell_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_width(@ui.Val::Px(CELL_SIZE))
   .with_height(@ui.Val::Px(CELL_SIZE))
   .with_flex_direction(@ui.FlexDirection::Column)
@@ -223,7 +223,7 @@ fn demo_cell_node() -> @ui.Node {
 
 ///|
 fn clipped_container_node(size : Float, overflow : @ui.Overflow) -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_width(@ui.Val::Px(size))
   .with_height(@ui.Val::Px(size))
   .with_align_items(@ui.AlignItems::Center)
@@ -233,12 +233,12 @@ fn clipped_container_node(size : Float, overflow : @ui.Overflow) -> @ui.Node {
 
 ///|
 fn title_font(font : @asset.Handle[@asset.Font]) -> @text.TextFont {
-  @text.TextFont::default().with_font(font).with_font_size(18.0F)
+  @text.TextFont::TextFont().with_font(font).with_font_size(18.0F)
 }
 
 ///|
 fn content_font(font : @asset.Handle[@asset.Font]) -> @text.TextFont {
-  @text.TextFont::default().with_font(font).with_font_size(100.0F)
+  @text.TextFont::TextFont().with_font(font).with_font_size(100.0F)
 }
 
 ///|
@@ -280,7 +280,7 @@ fn spawn_demo_cell(
             @hierarchy.Parent::new(clipped),
             AnimationMotion::{ kind: motion_kind },
             @transform.Transform::identity(),
-            @ui.Node::default()
+            @ui.Node::Node()
             .with_width(@ui.Val::Px(360.0F))
             .with_height(@ui.Val::Px(120.0F)),
             @ui.ImageNode::new(image),
@@ -323,19 +323,21 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
 
-  commands.insert_resource(AnimationState::default())
-  commands.insert_resource(OverflowDebugSettings::default())
+  commands.insert_resource(AnimationState::AnimationState())
+  commands.insert_resource(OverflowDebugSettings::OverflowDebugSettings())
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let image = asset_server.get().load_image("branding/bevy_logo_dark_big.png")
-  let overflow = overflow_at(OverflowDebugSettings::default().overflow_index)
+  let overflow = overflow_at(
+    OverflowDebugSettings::OverflowDebugSettings().overflow_index,
+  )
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
+      @ui.UiRoot::UiRoot(),
       root_node(),
       @ui.BackgroundColor::new(@sprite.Color::black()),
     ),
@@ -346,17 +348,17 @@ fn setup(
       (
         @hierarchy.Parent::new(root),
         InstructionsText::{  },
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
         @text.Text::new(
           instructions_text(
-            OverflowDebugSettings::default(),
-            AnimationState::default(),
+            OverflowDebugSettings::OverflowDebugSettings(),
+            AnimationState::AnimationState(),
           ),
         ),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::white()),
       ),
     ),
@@ -365,7 +367,7 @@ fn setup(
   let center = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
@@ -544,7 +546,7 @@ fn update_instructions(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(update_controls)))
   .add_systems(@app.Update, @app.system(@app.system_param2(update_animation)))

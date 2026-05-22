@@ -500,8 +500,8 @@ pub fn BuildIndirectParametersPipeline::new(String, String) -> Self
 pub struct BuildIndirectParametersPipelineKey {
   bits : UInt
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn BuildIndirectParametersPipelineKey::BuildIndirectParametersPipelineKey() -> Self
 pub fn BuildIndirectParametersPipelineKey::contains(Self, UInt) -> Bool
-pub fn BuildIndirectParametersPipelineKey::default() -> Self
 pub fn BuildIndirectParametersPipelineKey::shader_defs(Self) -> Array[String]
 
 pub struct CustomProjection3d {
@@ -513,8 +513,8 @@ pub struct CustomProjection3d {
   far_fn : (@ecs.EcsPayload) -> Float
   get_frustum_corners_fn : (@ecs.EcsPayload, Float, Float) -> Array[@math.Vec3]
 }
+pub fn CustomProjection3d::CustomProjection3d() -> Self
 pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
-pub fn CustomProjection3d::default() -> Self
 pub fn CustomProjection3d::far(Self) -> Float
 pub fn[T : @ecs.EcsPayloadCodec] CustomProjection3d::get(Self) -> T?
 pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
@@ -574,8 +574,8 @@ pub struct ExtractedPointLight3d {
 pub struct FogMeta {
   gpu_fogs : Array[GpuFog]
 }
+pub fn FogMeta::FogMeta() -> Self
 pub fn FogMeta::clear(Self) -> Unit
-pub fn FogMeta::default() -> Self
 pub fn FogMeta::fog_at(Self, UInt) -> GpuFog?
 pub fn FogMeta::len(Self) -> Int
 pub fn FogMeta::push(Self, GpuFog) -> UInt
@@ -584,7 +584,7 @@ pub impl @ecs.EcsPayloadCodec for FogMeta
 
 pub struct FogPlugin {
 }
-pub fn FogPlugin::default() -> Self
+pub fn FogPlugin::FogPlugin() -> Self
 pub impl @app.Plugin for FogPlugin
 
 pub struct Frustum {
@@ -627,10 +627,10 @@ pub struct GpuFog {
   bi : @math.Vec3
   mode : UInt
 } derive(ToJson, @json.FromJson)
+pub fn GpuFog::GpuFog() -> Self
 pub fn GpuFog::base_color(Self) -> @math.Vec4
 pub fn GpuFog::be(Self) -> @math.Vec3
 pub fn GpuFog::bi(Self) -> @math.Vec3
-pub fn GpuFog::default() -> Self
 pub fn GpuFog::directional_light_color(Self) -> @math.Vec4
 pub fn GpuFog::directional_light_exponent(Self) -> Float
 pub fn GpuFog::mode(Self) -> UInt
@@ -649,7 +649,7 @@ pub struct GpuLights3d {
 pub struct GpuMeshPreprocessPlugin {
   use_gpu_instance_buffer_builder : Bool
 }
-pub fn GpuMeshPreprocessPlugin::default() -> Self
+pub fn GpuMeshPreprocessPlugin::GpuMeshPreprocessPlugin() -> Self
 pub fn GpuMeshPreprocessPlugin::new(Bool) -> Self
 pub impl @app.Plugin for GpuMeshPreprocessPlugin
 
@@ -879,7 +879,7 @@ pub struct MeshViewBindings3d {
   view_matrix : ProjectionMatrix3d
   layout_key : @mesh_view_layout.MeshPipelineViewLayoutKey
 }
-pub fn MeshViewBindings3d::default() -> Self
+pub fn MeshViewBindings3d::MeshViewBindings3d() -> Self
 
 pub struct MorphIndices {
   mut current : Map[UInt64, UInt]
@@ -905,8 +905,8 @@ pub(all) struct OrthographicProjection3d {
   mut scale : Float
   mut area : @math.Rect
 } derive(ToJson, @json.FromJson)
+pub fn OrthographicProjection3d::OrthographicProjection3d() -> Self
 pub fn OrthographicProjection3d::area(Self) -> @math.Rect
-pub fn OrthographicProjection3d::default() -> Self
 pub fn OrthographicProjection3d::default_2d() -> Self
 pub fn OrthographicProjection3d::default_3d() -> Self
 pub fn OrthographicProjection3d::far(Self) -> Float
@@ -943,8 +943,8 @@ pub(all) struct PerspectiveProjection3d {
   mut aspect_ratio : Float
   mut near_clip_plane : @math.Vec4
 } derive(ToJson, @json.FromJson)
+pub fn PerspectiveProjection3d::PerspectiveProjection3d() -> Self
 pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
-pub fn PerspectiveProjection3d::default() -> Self
 pub fn PerspectiveProjection3d::far(Self) -> Float
 pub fn PerspectiveProjection3d::fov(Self) -> Float
 pub fn PerspectiveProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
@@ -989,8 +989,8 @@ pub fn PreprocessPipeline::new(String, String) -> Self
 pub struct PreprocessPipelineKey {
   bits : UInt
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PreprocessPipelineKey::PreprocessPipelineKey() -> Self
 pub fn PreprocessPipelineKey::contains(Self, UInt) -> Bool
-pub fn PreprocessPipelineKey::default() -> Self
 pub fn PreprocessPipelineKey::shader_defs(Self) -> Array[String]
 
 pub struct PreprocessPipelines {
@@ -1069,7 +1069,7 @@ pub struct Render3dGpuPreprocessState {
   indirect_enabled : Bool
   last_dispatch_count : Int
 }
-pub fn Render3dGpuPreprocessState::default() -> Self
+pub fn Render3dGpuPreprocessState::Render3dGpuPreprocessState() -> Self
 pub fn Render3dGpuPreprocessState::dispatch_count(Self) -> Int
 pub fn Render3dGpuPreprocessState::enabled(Self) -> Bool
 pub fn Render3dGpuPreprocessState::indirect_enabled(Self) -> Bool
@@ -1128,13 +1128,13 @@ pub impl @ecs.EcsPayloadCodec for Render3dMeshRuntimeState
 pub struct Render3dMeshUploadCacheState {
   clear_count : Int
 }
-pub fn Render3dMeshUploadCacheState::default() -> Self
+pub fn Render3dMeshUploadCacheState::Render3dMeshUploadCacheState() -> Self
 
 pub struct Render3dMorphState {
   weights : Array[Float]
   normalized : Bool
 }
-pub fn Render3dMorphState::default() -> Self
+pub fn Render3dMorphState::Render3dMorphState() -> Self
 pub fn Render3dMorphState::weights(Self) -> Array[Float]
 
 pub(all) struct Render3dPassProjection {

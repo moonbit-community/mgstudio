@@ -660,7 +660,7 @@ pub fn AssetServer::gltf_loader_settings_for_asset_path(
       return image_loader_settings_clone(entry.1)
     }
   }
-  ImageLoaderSettings::default()
+  ImageLoaderSettings::ImageLoaderSettings()
 }
 
 ///|
@@ -821,7 +821,7 @@ let asset_transparent_texture_handle : Ref[Handle[Image]?] = Ref(None)
 /// Returns a lazily-created 1x1 fully transparent texture handle.
 ///
 /// This is used to match Bevy's `TRANSPARENT_IMAGE_HANDLE` behavior in widgets
-/// (e.g. `ImageNode::default()`).
+/// (e.g. `ImageNode()`).
 pub fn asset_transparent_texture() -> Handle[Image] {
   match asset_transparent_texture_handle.val {
     Some(h) => h
@@ -1108,7 +1108,7 @@ fn AssetServer::image_loader_settings_for_path(
   canonical_path : String,
 ) -> ImageLoaderSettings {
   self |> ignore
-  let settings = ImageLoaderSettings::default()
+  let settings = ImageLoaderSettings::ImageLoaderSettings()
   if load_optional_asset_text(image_meta_path(canonical_path)) is Some(content) {
     apply_image_meta_settings(settings, content)
   }
@@ -1527,7 +1527,7 @@ pub fn[T : Asset, P : IntoAssetPath] AssetServer::load_with_settings(
         self.load_image_with_settings(canonical_path, settings).id(),
       )
     }
-    let settings = ImageLoaderSettings::default()
+    let settings = ImageLoaderSettings::ImageLoaderSettings()
     configure(settings)
     self.set_gltf_loader_settings(formatted_path, settings)
     self.load(formatted_path)

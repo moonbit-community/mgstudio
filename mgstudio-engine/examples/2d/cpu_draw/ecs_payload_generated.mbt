@@ -13,33 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_2d_cpu_draw_MyProcGenImage(MyProcGenImage)
-  EcsPayload_examples_2d_cpu_draw_SeededRng(SeededRng)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MyProcGenImage with to_ecs_payload(self) {
-  EcsPayload_examples_2d_cpu_draw_MyProcGenImage(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MyProcGenImage with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_2d_cpu_draw_MyProcGenImage(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SeededRng with to_ecs_payload(self) {
-  EcsPayload_examples_2d_cpu_draw_SeededRng(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SeededRng with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_2d_cpu_draw_SeededRng(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

@@ -40,7 +40,7 @@ impl @app.Resource for SpriteStats with resource() {
 }
 
 ///|
-fn SpriteStats::default() -> SpriteStats {
+fn SpriteStats::SpriteStats() -> SpriteStats {
   { print_timer: 0.0F }
 }
 
@@ -57,7 +57,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::default(),
+        @sprite.Camera2d::Camera2d(),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
     ),
@@ -132,10 +132,10 @@ fn print_sprite_count(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .insert_resource(SpriteStats::default())
+  .insert_resource(SpriteStats::SpriteStats())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
   .add_systems(@app.Update, @app.system(@app.system_param3(print_sprite_count)))

@@ -41,7 +41,7 @@ pub struct PanCamera {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PanCamera::default() -> PanCamera {
+pub fn PanCamera::PanCamera() -> PanCamera {
   PanCamera::{
     enabled: true,
     zoom_factor: 1.0F,
@@ -266,7 +266,7 @@ pub fn pan_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 pub struct PanCameraPlugin {}
 
 ///|
-pub fn PanCameraPlugin::default() -> PanCameraPlugin {
+pub fn PanCameraPlugin::PanCameraPlugin() -> PanCameraPlugin {
   PanCameraPlugin::{  }
 }
 

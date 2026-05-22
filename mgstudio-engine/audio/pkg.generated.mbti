@@ -55,8 +55,10 @@ pub fn pitch_set(@ecs.World, @asset.Handle[Pitch], Pitch) -> Bool
 // Errors
 
 // Types and methods
-type AudioOutput
-pub fn AudioOutput::default() -> Self
+pub struct AudioOutput {
+  // private fields
+}
+pub fn AudioOutput::AudioOutput() -> Self
 pub impl @app.Resource for AudioOutput
 pub impl @ecs.EcsPayloadCodec for AudioOutput
 
@@ -78,7 +80,7 @@ pub struct AudioPlugin {
   global_volume : GlobalVolume
   default_spatial_scale : SpatialScale
 }
-pub fn AudioPlugin::default() -> Self
+pub fn AudioPlugin::AudioPlugin() -> Self
 pub impl @app.Plugin for AudioPlugin
 
 pub struct AudioSink {
@@ -105,7 +107,7 @@ pub impl @ecs.EcsPayloadCodec for AudioSource
 pub struct DefaultSpatialScale {
   scale : SpatialScale
 } derive(ToJson, @json.FromJson)
-pub fn DefaultSpatialScale::default() -> Self
+pub fn DefaultSpatialScale::DefaultSpatialScale() -> Self
 pub fn DefaultSpatialScale::new(SpatialScale) -> Self
 pub impl @app.Resource for DefaultSpatialScale
 pub impl @ecs.EcsPayloadCodec for DefaultSpatialScale
@@ -113,7 +115,7 @@ pub impl @ecs.EcsPayloadCodec for DefaultSpatialScale
 pub struct GlobalVolume {
   volume : Volume
 }
-pub fn GlobalVolume::default() -> Self
+pub fn GlobalVolume::GlobalVolume() -> Self
 pub fn GlobalVolume::new(Volume) -> Self
 pub impl @app.Resource for GlobalVolume
 pub impl @ecs.EcsPayloadCodec for GlobalVolume
@@ -157,7 +159,7 @@ pub struct PlaybackSettings {
   start_position : @core.Duration?
   duration : @core.Duration?
 } derive(ToJson, @json.FromJson)
-pub fn PlaybackSettings::default() -> Self
+pub fn PlaybackSettings::PlaybackSettings() -> Self
 pub fn PlaybackSettings::despawn() -> Self
 pub fn PlaybackSettings::looped() -> Self
 pub fn PlaybackSettings::muted(Self) -> Self
@@ -192,7 +194,7 @@ pub struct SpatialListener {
   left_ear_offset : @math.Vec3
   right_ear_offset : @math.Vec3
 } derive(ToJson, @json.FromJson)
-pub fn SpatialListener::default() -> Self
+pub fn SpatialListener::SpatialListener() -> Self
 pub fn SpatialListener::new(Float) -> Self
 pub impl @ecs.Component for SpatialListener
 pub impl @ecs.EcsPayloadCodec for SpatialListener
@@ -200,7 +202,7 @@ pub impl @ecs.EcsPayloadCodec for SpatialListener
 pub struct SpatialScale {
   scale : @math.Vec3
 } derive(ToJson, @json.FromJson)
-pub fn SpatialScale::default() -> Self
+pub fn SpatialScale::SpatialScale() -> Self
 pub fn SpatialScale::new(Float) -> Self
 pub fn SpatialScale::new_2d(Float) -> Self
 

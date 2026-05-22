@@ -61,7 +61,7 @@ pub impl @ecs.Message for MyMessage with message() {
 }
 
 ///|
-pub impl Default for MyComponentIndex with default() {
+pub fn MyComponentIndex::MyComponentIndex() -> MyComponentIndex {
   { entities: @hashmap.HashMap([]) }
 }
 
@@ -186,8 +186,8 @@ fn trigger_hooks(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .init_resource(MyComponentIndex::default)
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .init_resource(fn() { MyComponentIndex::MyComponentIndex() })
   .add_message(my_message_key)
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param3(trigger_hooks)))

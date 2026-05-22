@@ -26,7 +26,7 @@ fn main {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     @rapier_examples.rapier2d_default_plugins(),
   )
-  let settings = @app.ScheduleGraphSettings::default().with_include_system_name(
+  let settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(
     rapier_debugdump_include_system,
   )
   let dot = app.schedule_graph_dot(@app.PostUpdate, settings~)

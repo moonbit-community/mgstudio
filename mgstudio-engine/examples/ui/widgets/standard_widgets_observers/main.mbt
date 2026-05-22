@@ -46,14 +46,14 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   commands.insert_resource(ClickCounter::{ value: 0 })
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
@@ -67,8 +67,8 @@ fn setup(
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Button::default(),
-      @ui.Node::default()
+      @ui.Button::Button(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(220.0F))
       .with_height(@ui.Val::Px(60.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
@@ -82,7 +82,7 @@ fn setup(
     (
       @hierarchy.Parent::new(button),
       @text.Text::new("Click Me"),
-      @text.TextFont::default().with_font(font).with_font_size(22.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(22.0F),
       @text.TextColor::new(@sprite.Color::white()),
     ),
   )
@@ -93,7 +93,7 @@ fn setup(
       @hierarchy.Parent::new(root),
       CounterLabel::{  },
       @text.Text::new("Clicks: 0"),
-      @text.TextFont::default().with_font(font).with_font_size(24.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
       @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
     ),
   )
@@ -124,7 +124,7 @@ fn update_counter_label(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(
     @app.Update,

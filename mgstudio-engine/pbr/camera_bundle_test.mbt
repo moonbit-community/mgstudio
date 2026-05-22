@@ -117,7 +117,7 @@ test "render3d: Camera3dBundle stores window render target" {
   let world = @ecs.World::new()
   let target_window = @core.Entity::new(11, 3)
   let bundle = Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).with_target(
     @sprite.RenderTarget::Window(@window.WindowRef::Entity(target_window)),
@@ -145,7 +145,7 @@ test "render3d: Camera3dBundle stores window render target" {
 test "render3d: Camera3dBundle stores custom projection payload" {
   let world = @ecs.World::new()
   let bundle = Camera3dBundle::new_with_projection(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     Projection::custom(CameraBundleCustomProjection3d::{ marker: 42.0F }),
     @transform.Transform::identity(),
   )
@@ -179,9 +179,9 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
     spawned.val = Some(
       commands.spawn(
         Camera3dBundle::new(
-          @sprite.Camera::default(),
+          @sprite.Camera::Camera(),
           @transform.Transform::identity(),
-        ).with_color_grading(Some(ColorGrading::default())),
+        ).with_color_grading(Some(@post_process.ColorGrading::ColorGrading())),
       ),
     )
   })
@@ -208,7 +208,7 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
 test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
   let world = @ecs.World::new()
   let entity = Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
 
@@ -231,7 +231,7 @@ test "render3d: required components align Camera3d with Bevy camera authoring" {
   try! register_render3d_required_components(world)
   let entity = world.spawn_empty()
 
-  try! (world.set_by_key(entity, ecs_key_camera3d, Camera3d::default())
+  try! (world.set_by_key(entity, ecs_key_camera3d, Camera3d::Camera3d())
   |> ignore)
 
   debug_inspect(
@@ -302,7 +302,7 @@ test "render3d: spawn_component(Camera3d) uses required component defaults" {
   let mut app = @app.App::new(world).add_system_param(fn(
     commands : @app.Commands,
   ) {
-    spawned.val = Some(commands.spawn_component(Camera3d::default()))
+    spawned.val = Some(commands.spawn_component(Camera3d::Camera3d()))
   })
   app = app.run_once()
 

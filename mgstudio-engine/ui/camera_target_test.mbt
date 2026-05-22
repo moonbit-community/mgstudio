@@ -75,7 +75,7 @@ test "ui: single IsDefaultUiCamera wins over higher-order fallback camera" {
   try! world.set_by_key(
     marked,
     ecs_key_is_default_ui_camera,
-    IsDefaultUiCamera::default(),
+    IsDefaultUiCamera::IsDefaultUiCamera(),
   )
 
   ui_update_context_system(world)
@@ -91,7 +91,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   let tick = seed_ui_context(world)
   ignore(tick)
 
-  let primary_window = @window.Window::default()
+  let primary_window = @window.Window::Window()
   primary_window.resolution.set_physical_resolution(960, 540)
   primary_window.resolution.set_scale_factor(1.0F)
   let primary_window_entity = world.spawn()
@@ -111,7 +111,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   try! world.set_by_key(
     marked_a,
     ecs_key_is_default_ui_camera,
-    IsDefaultUiCamera::default(),
+    IsDefaultUiCamera::IsDefaultUiCamera(),
   )
 
   let marked_b = world.spawn_empty()
@@ -128,7 +128,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   try! world.set_by_key(
     marked_b,
     ecs_key_is_default_ui_camera,
-    IsDefaultUiCamera::default(),
+    IsDefaultUiCamera::IsDefaultUiCamera(),
   )
 
   let primary_ref = world.spawn_empty()
@@ -187,7 +187,7 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
   )
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_ui_target_camera,
@@ -247,7 +247,7 @@ test "ui: propagated target info falls back to camera target when computed info 
   ignore(tick)
   get_ui_scale_resource(world).insert(UiScale::new(1.0F))
 
-  let primary_window = @window.Window::default()
+  let primary_window = @window.Window::Window()
   primary_window.resolution.set_physical_resolution(960, 540)
   primary_window.resolution.set_scale_factor(1.5F)
   let primary_window_entity = world.spawn()
@@ -262,11 +262,11 @@ test "ui: propagated target info falls back to camera target when computed info 
   try! world.set_by_key(
     target_camera,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_ui_target_camera,
@@ -305,13 +305,13 @@ test "ui: perspective target camera keeps overlays in screen space" {
   )
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_ui_target_camera,
     UiTargetCamera::new(target_camera),
   )
-  try! world.set_by_key(root, ecs_key_node, Node::default())
+  try! world.set_by_key(root, ecs_key_node, Node::Node())
 
   ui_propagate_target_cameras_system(world)
   ui_layout_system(world)
@@ -345,22 +345,22 @@ test "ui: layout resolves each root against its propagated target viewport" {
   )
 
   let root_a = world.spawn_empty()
-  try! world.set_by_key(root_a, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root_a, ecs_key_ui_root, UiRoot::UiRoot())
   try! world.set_by_key(
     root_a,
     ecs_key_ui_target_camera,
     UiTargetCamera::new(camera_a),
   )
-  try! world.set_by_key(root_a, ecs_key_node, Node::default())
+  try! world.set_by_key(root_a, ecs_key_node, Node::Node())
 
   let root_b = world.spawn_empty()
-  try! world.set_by_key(root_b, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root_b, ecs_key_ui_root, UiRoot::UiRoot())
   try! world.set_by_key(
     root_b,
     ecs_key_ui_target_camera,
     UiTargetCamera::new(camera_b),
   )
-  try! world.set_by_key(root_b, ecs_key_node, Node::default())
+  try! world.set_by_key(root_b, ecs_key_node, Node::Node())
 
   ui_propagate_target_cameras_system(world)
   ui_layout_system(world)

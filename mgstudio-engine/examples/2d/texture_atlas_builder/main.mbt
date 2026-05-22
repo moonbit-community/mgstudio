@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(texture_atlas_builder_setup))
   .add_systems(@app.Update, @app.system(texture_atlas_builder_update))
   .run()
@@ -43,7 +43,7 @@ fn texture_atlas_builder_setup(world : @ecs.World) -> Unit {
   builder_state.val.built = false
   builder_state.val.texture_a = Some(texture_a)
   builder_state.val.texture_b = Some(texture_b)
-  let camera = @sprite.Camera::default()
+  let camera = @sprite.Camera::Camera()
   @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
     world,
   )
@@ -62,7 +62,7 @@ fn texture_atlas_builder_update(world : @ecs.World) -> Unit {
       !@asset.asset_is_texture_loaded(texture_b) {
       return
     }
-    let builder = @asset.TextureAtlasBuilder::default()
+    let builder = @asset.TextureAtlasBuilder::TextureAtlasBuilder()
       .initial_size(@math.UVec2::splat(256))
       .max_size(@math.UVec2::splat(1024))
       .add_texture(texture_a)

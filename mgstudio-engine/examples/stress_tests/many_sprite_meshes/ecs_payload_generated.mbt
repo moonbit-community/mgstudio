@@ -17,7 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_stress_tests_many_sprite_meshes_SpriteMeshTag(
     SpriteMeshTag
   )
-  EcsPayload_examples_stress_tests_many_sprite_meshes_PrintTimer(PrintTimer)
 }
 
 ///|
@@ -29,20 +28,6 @@ impl @ecs.EcsPayloadCodec for SpriteMeshTag with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for SpriteMeshTag with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_stress_tests_many_sprite_meshes_SpriteMeshTag(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PrintTimer with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_sprite_meshes_PrintTimer(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PrintTimer with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_sprite_meshes_PrintTimer(value) =>
       Some(value)
     _ => None
   }

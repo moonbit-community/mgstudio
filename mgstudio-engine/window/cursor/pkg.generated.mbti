@@ -44,7 +44,7 @@ pub(all) struct CursorOptions {
   mut grab_mode : CursorGrabMode
   hit_test : Bool
 } derive(Eq, @debug.Debug)
-pub fn CursorOptions::default() -> Self
+pub fn CursorOptions::CursorOptions() -> Self
 pub impl @ecs.Component for CursorOptions
 pub impl @ecs.EcsPayloadCodec for CursorOptions
 

@@ -16,7 +16,6 @@
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_2d_tilemap_chunk_UpdateTimer(UpdateTimer)
   EcsPayload_examples_2d_tilemap_chunk_MovePlayer(MovePlayer)
-  EcsPayload_examples_2d_tilemap_chunk_SeededRng(SeededRng)
 }
 
 ///|
@@ -41,19 +40,6 @@ impl @ecs.EcsPayloadCodec for MovePlayer with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for MovePlayer with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_2d_tilemap_chunk_MovePlayer(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SeededRng with to_ecs_payload(self) {
-  EcsPayload_examples_2d_tilemap_chunk_SeededRng(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SeededRng with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_2d_tilemap_chunk_SeededRng(value) => Some(value)
     _ => None
   }
 }

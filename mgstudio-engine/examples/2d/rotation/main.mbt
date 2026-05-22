@@ -68,7 +68,7 @@ pub impl @ecs.Component for RotateToPlayer with component() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(@time.Time::from_hz(60.0F))
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(
@@ -145,8 +145,8 @@ fn spawn_help_overlay(
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
     ),
@@ -155,12 +155,12 @@ fn spawn_help_overlay(
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_left(@ui.Val::Px(12.0F))
         .with_top(@ui.Val::Px(12.0F)),
         @text.Text::new("Up Arrow: Move Forward\nLeft / Right Arrow: Turn"),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
@@ -194,7 +194,7 @@ fn setup(
     .get()
     .load("textures/simplespace/enemy_B.png")
 
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   spawn_help_overlay(commands, asset_server)
 
   let horizontal_margin = BOUNDS_X / 4.0F

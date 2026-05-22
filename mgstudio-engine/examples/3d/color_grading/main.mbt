@@ -377,7 +377,7 @@ fn spawn_row_label(
   try! world.set_by_key(
     label_entity,
     @ui.ecs_key_node,
-    @ui.Node::default().with_width(@ui.Val::Px(125.0F)),
+    @ui.Node::Node().with_width(@ui.Val::Px(125.0F)),
   )
   try! world.set_by_key(
     label_entity,
@@ -387,7 +387,7 @@ fn spawn_row_label(
   try! world.set_by_key(
     label_entity,
     @ui.ecs_key_node,
-    @ui.Node::default().with_width(@ui.Val::Px(125.0F)),
+    @ui.Node::Node().with_width(@ui.Val::Px(125.0F)),
   )
   try! world.set_by_key(
     label_entity,
@@ -402,7 +402,7 @@ fn spawn_row_label(
   try! world.set_by_key(
     label_entity,
     @ui.ecs_key_node,
-    @ui.Node::default().with_width(@ui.Val::Px(125.0F)),
+    @ui.Node::Node().with_width(@ui.Val::Px(125.0F)),
   )
   try! world.set_by_key(
     label_entity,
@@ -412,7 +412,7 @@ fn spawn_row_label(
   try! world.set_by_key(
     label_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(15.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
   )
   try! world.set_by_key(
     label_entity,
@@ -435,11 +435,11 @@ fn spawn_option_button(
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(row),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
     .with_width(@ui.Val::Px(BUTTON_WIDTH))
     .with_justify_content(@ui.JustifyContent::Center)
@@ -462,11 +462,11 @@ fn spawn_option_button(
     )
     .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
     .with_width(@ui.Val::Px(BUTTON_WIDTH))
     .with_justify_content(@ui.JustifyContent::Center)
@@ -494,11 +494,11 @@ fn spawn_option_button(
     @ui.ecs_key_border_color,
     @ui.BorderColor::new(@sprite.Color::white()),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
     .with_width(@ui.Val::Px(BUTTON_WIDTH))
     .with_justify_content(@ui.JustifyContent::Center)
@@ -531,11 +531,11 @@ fn spawn_option_button(
     @ui.ecs_key_background_color,
     @ui.BackgroundColor::new(normal_button_color()),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
     .with_width(@ui.Val::Px(BUTTON_WIDTH))
     .with_justify_content(@ui.JustifyContent::Center)
@@ -579,13 +579,13 @@ fn spawn_option_button(
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(button),
   )
-  try! world.set_by_key(label_entity, @ui.ecs_key_node, @ui.Node::default())
+  try! world.set_by_key(label_entity, @ui.ecs_key_node, @ui.Node::Node())
   try! world.set_by_key(
     label_entity,
     @text.ecs_key_text,
     @text.Text::new(selected_option_button_label(option)),
   )
-  try! world.set_by_key(label_entity, @ui.ecs_key_node, @ui.Node::default())
+  try! world.set_by_key(label_entity, @ui.ecs_key_node, @ui.Node::Node())
   try! world.set_by_key(
     label_entity,
     @text.ecs_key_text,
@@ -594,14 +594,14 @@ fn spawn_option_button(
   try! world.set_by_key(
     label_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(15.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
   )
   try! world.set_by_key(
     label_entity,
     @text.ecs_key_text_color,
     @text.TextColor::new(@sprite.Color::white()),
   )
-  try! world.set_by_key(label_entity, @ui.ecs_key_node, @ui.Node::default())
+  try! world.set_by_key(label_entity, @ui.ecs_key_node, @ui.Node::Node())
   try! world.set_by_key(
     label_entity,
     @text.ecs_key_text,
@@ -610,7 +610,7 @@ fn spawn_option_button(
   try! world.set_by_key(
     label_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(15.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
   )
   try! world.set_by_key(
     label_entity,
@@ -636,7 +636,7 @@ fn spawn_option_button(
   try! world.set_by_key(
     spacer,
     @ui.ecs_key_node,
-    @ui.Node::default().with_flex_grow(1.0F),
+    @ui.Node::Node().with_flex_grow(1.0F),
   )
 
   let value_entity = world.spawn_empty()
@@ -645,7 +645,7 @@ fn spawn_option_button(
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(button),
   )
-  try! world.set_by_key(value_entity, @ui.ecs_key_node, @ui.Node::default())
+  try! world.set_by_key(value_entity, @ui.ecs_key_node, @ui.Node::Node())
   try! world.set_by_key(
     value_entity,
     @text.ecs_key_text,
@@ -654,14 +654,14 @@ fn spawn_option_button(
   try! world.set_by_key(
     value_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(15.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
   )
   try! world.set_by_key(
     value_entity,
     @text.ecs_key_text_color,
     @text.TextColor::new(@sprite.Color::white()),
   )
-  try! world.set_by_key(value_entity, @ui.ecs_key_node, @ui.Node::default())
+  try! world.set_by_key(value_entity, @ui.ecs_key_node, @ui.Node::Node())
   try! world.set_by_key(
     value_entity,
     @text.ecs_key_text,
@@ -670,7 +670,7 @@ fn spawn_option_button(
   try! world.set_by_key(
     value_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(15.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
   )
   try! world.set_by_key(
     value_entity,
@@ -690,11 +690,11 @@ fn add_buttons(
   color_grading : @post_process.ColorGrading,
 ) -> Unit {
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -708,7 +708,7 @@ fn add_buttons(
   try! world.set_by_key(
     panel,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_bottom(@ui.Val::Px(12.0F))
@@ -716,7 +716,7 @@ fn add_buttons(
     .with_row_gap(@ui.Val::Px(6.0F)),
   )
 
-  let global_row = spawn_row(world, panel, @ui.Node::default())
+  let global_row = spawn_row(world, panel, @ui.Node::Node())
   spawn_row_label(world, global_row, font, "")
   for
     option in [
@@ -743,7 +743,7 @@ fn add_buttons(
     let row = spawn_row(
       world,
       panel,
-      @ui.Node::default().with_align_items(@ui.AlignItems::Center),
+      @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
     )
     spawn_row_label(world, row, font, section_name(section))
     for
@@ -778,7 +778,7 @@ fn add_buttons(
   try! world.set_by_key(
     help_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
@@ -791,7 +791,7 @@ fn add_buttons(
   try! world.set_by_key(
     help_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
   )
   try! world.set_by_key(
     help_entity,
@@ -806,7 +806,7 @@ fn add_buttons(
   try! world.set_by_key(
     help_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
@@ -819,7 +819,7 @@ fn add_buttons(
   try! world.set_by_key(
     help_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
   )
   try! world.set_by_key(
     help_entity,
@@ -837,13 +837,13 @@ fn add_buttons(
 ///|
 fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_color_grading(Some(@post_process.ColorGrading::default()))
+    .with_color_grading(Some(@post_process.ColorGrading::ColorGrading()))
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
@@ -853,7 +853,7 @@ fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       ),
     )
     .spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_environment_map_light,
@@ -913,7 +913,7 @@ fn add_basic_scene(
     directional_light,
     @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
-      @pbr.CascadeShadowConfigBuilder::default()
+      @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
       .with_maximum_distance(3.0F)
       .with_first_cascade_far_bound(0.9F),
     ),
@@ -938,17 +938,17 @@ fn setup(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
 
   add_basic_scene(world, asset_server)
-  add_buttons(world, font, @post_process.ColorGrading::default())
+  add_buttons(world, font, @post_process.ColorGrading::ColorGrading())
   add_camera(world, asset_server)
 
   let overlay_camera = @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(100).with_clear_color_none(),
+    @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
   try! world.set_by_key(
     overlay_camera,
     @ui.IsDefaultUiCamera::component(),
-    @ui.IsDefaultUiCamera::default(),
+    @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
   )
 }
 
@@ -1094,7 +1094,7 @@ fn update_ui_state(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(SelectedColorGradingOption::default())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,

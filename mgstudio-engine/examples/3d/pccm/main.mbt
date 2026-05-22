@@ -89,7 +89,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, -2.5F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -133,7 +133,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light_probe,
     @pbr.ecs_key_light_probe,
-    @pbr.LightProbe::default(),
+    @pbr.LightProbe::LightProbe(),
   )
   try! world.set_by_key(
     light_probe,
@@ -153,7 +153,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -169,7 +169,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   pccm_state.val.help_text = Some(help_text)
 
@@ -199,7 +199,7 @@ fn handle_keyboard_input(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(handle_keyboard_input))
   .run()

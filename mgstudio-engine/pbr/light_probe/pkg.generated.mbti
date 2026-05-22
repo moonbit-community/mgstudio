@@ -77,19 +77,19 @@ pub fn render_light_probe_flags_insert(Int, Int) -> Int
 pub struct DownsamplingConfig {
   combine_bind_group : Bool
 }
+pub fn DownsamplingConfig::DownsamplingConfig() -> Self
 pub fn DownsamplingConfig::combine_bind_group_enabled(Self) -> Bool
-pub fn DownsamplingConfig::default() -> Self
 
 pub struct EnvironmentMapGenerationPlugin {
 }
-pub fn EnvironmentMapGenerationPlugin::default() -> Self
+pub fn EnvironmentMapGenerationPlugin::EnvironmentMapGenerationPlugin() -> Self
 pub impl @app.Plugin for EnvironmentMapGenerationPlugin
 
 pub struct EnvironmentMapIds {
   diffuse : @asset.Handle[@image.Image]?
   specular : @asset.Handle[@image.Image]?
 }
-pub fn EnvironmentMapIds::default() -> Self
+pub fn EnvironmentMapIds::EnvironmentMapIds() -> Self
 
 pub struct EnvironmentMapViewLightProbeInfo {
   cubemap_index : Int
@@ -97,7 +97,7 @@ pub struct EnvironmentMapViewLightProbeInfo {
   intensity : Float
   affects_lightmapped_mesh_diffuse : Bool
 }
-pub fn EnvironmentMapViewLightProbeInfo::default() -> Self
+pub fn EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo() -> Self
 
 pub struct GeneratorBindGroupLayouts {
   downsampling_first : String
@@ -106,7 +106,7 @@ pub struct GeneratorBindGroupLayouts {
   irradiance : String
   copy : String
 }
-pub fn GeneratorBindGroupLayouts::default() -> Self
+pub fn GeneratorBindGroupLayouts::GeneratorBindGroupLayouts() -> Self
 
 pub struct GeneratorPipelines {
   downsample_first : Int
@@ -115,23 +115,23 @@ pub struct GeneratorPipelines {
   radiance : Int
   irradiance : Int
 }
-pub fn GeneratorPipelines::default() -> Self
+pub fn GeneratorPipelines::GeneratorPipelines() -> Self
 
 pub struct GeneratorSamplers {
   linear : String
 }
-pub fn GeneratorSamplers::default() -> Self
+pub fn GeneratorSamplers::GeneratorSamplers() -> Self
 
 pub struct LightProbePlugin {
 }
-pub fn LightProbePlugin::default() -> Self
+pub fn LightProbePlugin::LightProbePlugin() -> Self
 pub impl @app.Plugin for LightProbePlugin
 
 pub struct LightProbePluginState {
   binding_arrays_supported : Bool
   extracted_probe_count : Int
 }
-pub fn LightProbePluginState::default() -> Self
+pub fn LightProbePluginState::LightProbePluginState() -> Self
 pub impl @app.Resource for LightProbePluginState
 pub impl @ecs.EcsPayloadCodec for LightProbePluginState
 
@@ -140,7 +140,7 @@ pub struct LightProbesUniform {
   irradiance_volume_count : Int
   view_cubemap_index : Int
 }
-pub fn LightProbesUniform::default() -> Self
+pub fn LightProbesUniform::LightProbesUniform() -> Self
 pub impl @app.Resource for LightProbesUniform
 pub impl @ecs.EcsPayloadCodec for LightProbesUniform
 
@@ -152,7 +152,7 @@ pub struct RenderLightProbe {
   intensity : Float
   flags : Int
 }
-pub fn RenderLightProbe::default() -> Self
+pub fn RenderLightProbe::RenderLightProbe() -> Self
 
 pub(all) enum RenderViewEnvironmentMapBindGroupEntries {
   Single(RenderViewEnvironmentMapBindGroupEntriesSingle)
@@ -178,7 +178,7 @@ pub struct RenderViewIrradianceVolumeInfo {
   texture : @asset.Handle[@image.Image]?
   intensity : Float
 }
-pub fn RenderViewIrradianceVolumeInfo::default() -> Self
+pub fn RenderViewIrradianceVolumeInfo::RenderViewIrradianceVolumeInfo() -> Self
 pub fn RenderViewIrradianceVolumeInfo::with_intensity(Self, Float) -> Self
 pub fn RenderViewIrradianceVolumeInfo::with_texture(Self, @asset.Handle[@image.Image]?) -> Self
 
@@ -187,7 +187,7 @@ pub struct RenderViewLightProbes {
   render_light_probes : Array[RenderLightProbe]
   view_texture_index : Int
 }
-pub fn RenderViewLightProbes::default() -> Self
+pub fn RenderViewLightProbes::RenderViewLightProbes() -> Self
 pub fn RenderViewLightProbes::probe_count(Self) -> Int
 pub fn RenderViewLightProbes::push_probe(Self, RenderLightProbe) -> Unit
 pub fn RenderViewLightProbes::push_texture(Self, @asset.Handle[@image.Image]?) -> Int
@@ -198,7 +198,7 @@ pub impl @ecs.EcsPayloadCodec for RenderViewLightProbes
 pub struct ViewLightProbesUniformOffset {
   offset : UInt
 }
-pub fn ViewLightProbesUniformOffset::default() -> Self
+pub fn ViewLightProbesUniformOffset::ViewLightProbesUniformOffset() -> Self
 pub impl @ecs.Component for ViewLightProbesUniformOffset
 pub impl @ecs.EcsPayloadCodec for ViewLightProbesUniformOffset
 

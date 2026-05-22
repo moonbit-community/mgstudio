@@ -558,7 +558,7 @@ pub struct Physics2dConfig {
 }
 
 ///|
-pub fn Physics2dConfig::default() -> Physics2dConfig {
+pub fn Physics2dConfig::Physics2dConfig() -> Physics2dConfig {
   {
     gravity: @math.Vec2::new(0.0F, -9.81F),
     physics_pipeline_active: true,
@@ -568,7 +568,7 @@ pub fn Physics2dConfig::default() -> Physics2dConfig {
 
 ///|
 pub fn Physics2dConfig::new(gravity : @math.Vec2) -> Physics2dConfig {
-  Physics2dConfig::{ ..Physics2dConfig::default(), gravity, }
+  Physics2dConfig::{ ..Physics2dConfig(), gravity, }
 }
 
 ///|

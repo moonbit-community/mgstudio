@@ -16,7 +16,9 @@
 test "window: duplicate screenshot targets are despawned during queueing" {
   let world = @ecs.World::new()
   let primary_window = world.spawn()
-  try! (world.entity_mut(primary_window).insert_component(Window::default())
+  try! (world
+  .entity_mut(primary_window)
+  .insert_component(@window.Window::Window())
   |> ignore)
   try! (world.entity_mut(primary_window).insert_component(PrimaryWindow::{  })
   |> ignore)
@@ -43,7 +45,9 @@ test "window: duplicate screenshot targets are despawned during queueing" {
 test "window: non-primary window screenshot target still deduplicates" {
   let world = @ecs.World::new()
   let secondary_window = world.spawn()
-  try! (world.entity_mut(secondary_window).insert_component(Window::default())
+  try! (world
+  .entity_mut(secondary_window)
+  .insert_component(@window.Window::Window())
   |> ignore)
 
   let first_request = world.spawn()

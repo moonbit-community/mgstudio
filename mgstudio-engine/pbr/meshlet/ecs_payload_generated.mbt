@@ -24,7 +24,6 @@ extenum @ecs.EcsPayload += {
     MeshletViewMaterialsDeferredGBufferPrepass
   )
   EcsPayload_pbr_meshlet_MeshletMesh3d(MeshletMesh3d)
-  EcsPayload_pbr_meshlet_MeshletPluginMarker(MeshletPluginMarker)
   EcsPayload_pbr_meshlet_MeshletPluginState(MeshletPluginState)
   EcsPayload_pbr_meshlet_InstanceManager(InstanceManager)
   EcsPayload_pbr_meshlet_ResourceManager(ResourceManager)
@@ -97,19 +96,6 @@ pub impl @ecs.EcsPayloadCodec for MeshletMesh3d with to_ecs_payload(self) {
 pub impl @ecs.EcsPayloadCodec for MeshletMesh3d with from_ecs_payload(payload) {
   match payload {
     EcsPayload_pbr_meshlet_MeshletMesh3d(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MeshletPluginMarker with to_ecs_payload(self) {
-  EcsPayload_pbr_meshlet_MeshletPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MeshletPluginMarker with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_pbr_meshlet_MeshletPluginMarker(value) => Some(value)
     _ => None
   }
 }

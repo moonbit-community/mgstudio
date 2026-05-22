@@ -37,14 +37,14 @@ pub fn temporal_anti_alias_update_runtime_state(@ecs.World) -> Unit
 // Types and methods
 pub struct TemporalAntiAliasPlugin {
 }
-pub fn TemporalAntiAliasPlugin::default() -> Self
+pub fn TemporalAntiAliasPlugin::TemporalAntiAliasPlugin() -> Self
 pub impl @app.Plugin for TemporalAntiAliasPlugin
 
 pub struct TemporalAntiAliasRuntimeState {
   enabled_camera_count : Int
   reset_requested_count : Int
 } derive(Eq, @debug.Debug)
-pub fn TemporalAntiAliasRuntimeState::default() -> Self
+pub fn TemporalAntiAliasRuntimeState::TemporalAntiAliasRuntimeState() -> Self
 pub impl @app.Resource for TemporalAntiAliasRuntimeState
 pub impl @ecs.EcsPayloadCodec for TemporalAntiAliasRuntimeState
 

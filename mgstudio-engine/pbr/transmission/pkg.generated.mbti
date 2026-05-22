@@ -43,7 +43,7 @@ pub struct MainTransmissivePass3dConfig {
   steps : Int
   should_copy_main_texture : Bool
 }
-pub fn MainTransmissivePass3dConfig::default() -> Self
+pub fn MainTransmissivePass3dConfig::MainTransmissivePass3dConfig() -> Self
 pub fn MainTransmissivePass3dConfig::from_transmission(ScreenSpaceTransmission) -> Self
 pub fn MainTransmissivePass3dConfig::with_enabled(Self, Bool) -> Self
 pub fn MainTransmissivePass3dConfig::with_steps(Self, Int) -> Self
@@ -52,7 +52,7 @@ pub struct ScreenSpaceTransmission {
   quality : ScreenSpaceTransmissionQuality
   steps : Int
 } derive(ToJson, @json.FromJson)
-pub fn ScreenSpaceTransmission::default() -> Self
+pub fn ScreenSpaceTransmission::ScreenSpaceTransmission() -> Self
 pub fn ScreenSpaceTransmission::new(ScreenSpaceTransmissionQuality, Int) -> Self
 pub fn ScreenSpaceTransmission::with_quality(Self, ScreenSpaceTransmissionQuality) -> Self
 pub fn ScreenSpaceTransmission::with_steps(Self, Int) -> Self
@@ -71,7 +71,7 @@ pub struct TransmissionTextureState {
   source_texture_id : Int
   blur_texture_id : Int
 }
-pub fn TransmissionTextureState::default() -> Self
+pub fn TransmissionTextureState::TransmissionTextureState() -> Self
 pub fn TransmissionTextureState::with_blur_texture_id(Self, Int) -> Self
 pub fn TransmissionTextureState::with_source_texture_id(Self, Int) -> Self
 
@@ -92,7 +92,7 @@ pub fn Transmissive3d::sort_key(Self) -> Float
 
 pub struct TransmittedShadowReceiver {
 } derive(ToJson, @json.FromJson)
-pub fn TransmittedShadowReceiver::default() -> Self
+pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> Self
 pub impl @ecs.Component for TransmittedShadowReceiver
 pub impl @ecs.EcsPayloadCodec for TransmittedShadowReceiver
 
@@ -102,7 +102,7 @@ pub struct ViewTransmissionTexture {
   height : Int
   sampler_linear : Bool
 }
-pub fn ViewTransmissionTexture::default() -> Self
+pub fn ViewTransmissionTexture::ViewTransmissionTexture() -> Self
 pub fn ViewTransmissionTexture::is_ready(Self) -> Bool
 
 // Type aliases

@@ -263,7 +263,7 @@ pub struct MaterialBindingId {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn MaterialBindingId::default() -> MaterialBindingId {
+pub fn MaterialBindingId::MaterialBindingId() -> MaterialBindingId {
   MaterialBindingId::{
     group: MaterialBindGroupIndex::new(0),
     slot: MaterialBindGroupSlot::new(0),
@@ -346,7 +346,7 @@ pub struct MaterialBindGroupNonBindlessAllocator {
 }
 
 ///|
-pub fn MaterialBindGroupNonBindlessAllocator::default() -> MaterialBindGroupNonBindlessAllocator {
+pub fn MaterialBindGroupNonBindlessAllocator::MaterialBindGroupNonBindlessAllocator() -> MaterialBindGroupNonBindlessAllocator {
   MaterialBindGroupNonBindlessAllocator::{ bind_groups: [], free_indices: [] }
 }
 
@@ -448,7 +448,7 @@ pub struct MaterialBindGroupBindlessAllocator {
 }
 
 ///|
-pub fn MaterialBindGroupBindlessAllocator::default() -> MaterialBindGroupBindlessAllocator {
+pub fn MaterialBindGroupBindlessAllocator::MaterialBindGroupBindlessAllocator() -> MaterialBindGroupBindlessAllocator {
   MaterialBindGroupBindlessAllocator::with_slab_capacity(256)
 }
 
@@ -557,14 +557,14 @@ pub(all) enum MaterialBindGroupAllocator {
 ///|
 pub fn MaterialBindGroupAllocator::default_bindless() -> MaterialBindGroupAllocator {
   MaterialBindGroupAllocator::Bindless(
-    MaterialBindGroupBindlessAllocator::default(),
+    MaterialBindGroupBindlessAllocator::MaterialBindGroupBindlessAllocator(),
   )
 }
 
 ///|
 pub fn MaterialBindGroupAllocator::default_non_bindless() -> MaterialBindGroupAllocator {
   MaterialBindGroupAllocator::NonBindless(
-    MaterialBindGroupNonBindlessAllocator::default(),
+    MaterialBindGroupNonBindlessAllocator::MaterialBindGroupNonBindlessAllocator(),
   )
 }
 
@@ -604,7 +604,7 @@ pub struct MaterialBindGroupAllocators {
 }
 
 ///|
-pub fn MaterialBindGroupAllocators::default() -> MaterialBindGroupAllocators {
+pub fn MaterialBindGroupAllocators::MaterialBindGroupAllocators() -> MaterialBindGroupAllocators {
   MaterialBindGroupAllocators::{ allocators: {} }
 }
 
@@ -673,7 +673,7 @@ pub struct MaterialBindGroups {
 }
 
 ///|
-pub fn MaterialBindGroups::default() -> MaterialBindGroups {
+pub fn MaterialBindGroups::MaterialBindGroups() -> MaterialBindGroups {
   MaterialBindGroups::{ entries: [] }
 }
 

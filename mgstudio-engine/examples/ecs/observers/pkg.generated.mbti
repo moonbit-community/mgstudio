@@ -21,9 +21,11 @@ pub impl @ecs.TriggerEvent for ExplodeMines
 type Mine
 pub impl @ecs.Component for Mine
 
-type MineWorldState
+pub struct MineWorldState {
+  // private fields
+}
+pub fn MineWorldState::MineWorldState() -> Self
 pub impl @app.Resource for MineWorldState
-pub impl Default for MineWorldState
 
 // Type aliases
 

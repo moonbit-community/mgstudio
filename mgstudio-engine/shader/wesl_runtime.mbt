@@ -33,7 +33,7 @@ fn shader_runtime_load_module(
 }
 
 ///|
-fn ShaderRuntimeCache::default() -> ShaderRuntimeCache {
+fn ShaderRuntimeCache::ShaderRuntimeCache() -> ShaderRuntimeCache {
   { cache: ShaderCache::new((), shader_runtime_load_module) }
 }
 

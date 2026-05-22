@@ -12,17 +12,25 @@ import {
 // Errors
 
 // Types and methods
-type ArmorBlockedDamage derive(@debug.Debug)
+pub struct ArmorBlockedDamage {
+  // private fields
+} derive(@debug.Debug)
+pub fn ArmorBlockedDamage::ArmorBlockedDamage() -> Self
 pub impl @ecs.Message for ArmorBlockedDamage
 pub impl Default for ArmorBlockedDamage
 
-type DamageReceived derive(@debug.Debug)
+pub struct DamageReceived {
+  // private fields
+} derive(@debug.Debug)
+pub fn DamageReceived::DamageReceived() -> Self
 pub impl @ecs.Message for DamageReceived
 pub impl Default for DamageReceived
 
-type DamageTimer derive(@debug.Debug)
+pub struct DamageTimer {
+  // private fields
+} derive(@debug.Debug)
+pub fn DamageTimer::DamageTimer() -> Self
 pub impl @app.Resource for DamageTimer
-pub impl Default for DamageTimer
 
 type DealDamage derive(@debug.Debug)
 pub impl @ecs.Message for DealDamage

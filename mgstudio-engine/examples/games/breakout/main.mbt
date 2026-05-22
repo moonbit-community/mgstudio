@@ -77,7 +77,7 @@ fn clampf(value : Float, lower : Float, upper : Float) -> Float {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   ignore(
     commands.spawn(
       (
@@ -209,7 +209,7 @@ fn move_ball(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(move_paddle)))
   .add_systems(@app.Update, @app.system(@app.system_param5(move_ball)))

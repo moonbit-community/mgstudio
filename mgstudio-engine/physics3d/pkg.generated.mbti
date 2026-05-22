@@ -450,8 +450,8 @@ pub struct KinematicCharacterController3d {
   translation : @math.Vec3
   controller : @control.KinematicCharacterController3DReal
 }
+pub fn KinematicCharacterController3d::KinematicCharacterController3d() -> Self
 pub fn KinematicCharacterController3d::add_translation(Self, @math.Vec3) -> Self
-pub fn KinematicCharacterController3d::default() -> Self
 pub fn KinematicCharacterController3d::reset_translation(Self) -> Self
 pub fn KinematicCharacterController3d::with_autostep(Self, @control.CharacterAutostep?) -> Self
 pub fn KinematicCharacterController3d::with_max_slope_climb_angle(Self, Float) -> Self
@@ -506,7 +506,7 @@ pub struct Physics3dConfig {
   physics_pipeline_active : Bool
   integration : @dynamics.IntegrationParameters
 }
-pub fn Physics3dConfig::default() -> Self
+pub fn Physics3dConfig::Physics3dConfig() -> Self
 pub fn Physics3dConfig::new(@math.Vec3) -> Self
 pub fn Physics3dConfig::with_gravity(Self, @math.Vec3) -> Self
 pub fn Physics3dConfig::with_integration_parameters(Self, @dynamics.IntegrationParameters) -> Self
@@ -561,7 +561,7 @@ pub impl @json.FromJson for Physics3dContext
 pub struct Physics3dDebugRenderContext {
   mut enabled : Bool
 }
-pub fn Physics3dDebugRenderContext::default() -> Self
+pub fn Physics3dDebugRenderContext::Physics3dDebugRenderContext() -> Self
 
 pub struct Physics3dEvents {
   collisions : Array[CollisionEvent3d]
@@ -578,12 +578,12 @@ pub struct Physics3dHooksConfig {
   filter_intersection_pair : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool)?
   modify_solver_contacts : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @Milky2018/moon_rapier/core.Vec3) -> (Bool, @Milky2018/moon_rapier/core.Vec3?))?
 }
-pub fn Physics3dHooksConfig::default() -> Self
+pub fn Physics3dHooksConfig::Physics3dHooksConfig() -> Self
 pub impl @ecs.EcsPayloadCodec for Physics3dHooksConfig
 
 pub struct Physics3dPlugin {
 }
-pub fn Physics3dPlugin::default() -> Self
+pub fn Physics3dPlugin::Physics3dPlugin() -> Self
 pub impl @app.Plugin for Physics3dPlugin
 
 pub struct PointProjection3d {

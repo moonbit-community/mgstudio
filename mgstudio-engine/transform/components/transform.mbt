@@ -78,8 +78,13 @@ pub fn Transform::identity() -> Transform {
 }
 
 ///|
-pub impl Default for Transform with default() {
+pub fn Transform::Transform() -> Transform {
   Transform::identity()
+}
+
+///|
+pub impl Default for Transform with default() {
+  Transform::Transform()
 }
 
 ///|

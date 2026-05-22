@@ -23,7 +23,7 @@ pub struct SliderProps {
 }
 
 ///|
-pub fn SliderProps::default() -> SliderProps {
+pub fn SliderProps::SliderProps() -> SliderProps {
   SliderProps::{ value: 0.0, min: 0.0, max: 1.0 }
 }
 
@@ -41,7 +41,7 @@ pub fn slider(props : SliderProps) -> Slider {
 pub struct SliderPlugin {}
 
 ///|
-pub fn SliderPlugin::default() -> SliderPlugin {
+pub fn SliderPlugin::SliderPlugin() -> SliderPlugin {
   SliderPlugin::{  }
 }
 

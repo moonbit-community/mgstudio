@@ -25,7 +25,7 @@ pub struct MainTransparentPass2dNode {
 }
 
 ///|
-pub fn MainTransparentPass2dNode::default() -> MainTransparentPass2dNode {
+pub fn MainTransparentPass2dNode::MainTransparentPass2dNode() -> MainTransparentPass2dNode {
   MainTransparentPass2dNode::{ label: MAIN_TRANSPARENT_PASS_2D_LABEL }
 }
 

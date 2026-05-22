@@ -93,7 +93,7 @@ pub struct PrepassViewState {
 }
 
 ///|
-pub fn PrepassViewState::default() -> PrepassViewState {
+pub fn PrepassViewState::PrepassViewState() -> PrepassViewState {
   PrepassViewState::new()
 }
 

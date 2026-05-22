@@ -30,7 +30,7 @@ fn cas_test_spawn_camera(world : @ecs.World) -> @core.Entity {
 ///|
 test "anti_alias/cas: runtime state counts camera-only CAS components" {
   cas_register_camera_component_key(cas_test_camera_key)
-  let app = @app.App::new(@ecs.World::new()).add_plugins(CasPlugin::default())
+  let app = @app.App::new(@ecs.World::new()).add_plugins(CasPlugin::CasPlugin())
   let camera_entity = cas_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()
   try! app
@@ -38,14 +38,14 @@ test "anti_alias/cas: runtime state counts camera-only CAS components" {
   .set_by_key(
     camera_entity,
     ContrastAdaptiveSharpening::component(),
-    ContrastAdaptiveSharpening::default(),
+    ContrastAdaptiveSharpening::ContrastAdaptiveSharpening(),
   )
   try! app
   .world()
   .set_by_key(
     non_camera_entity,
     ContrastAdaptiveSharpening::component(),
-    ContrastAdaptiveSharpening::default(),
+    ContrastAdaptiveSharpening::ContrastAdaptiveSharpening(),
   )
   let app = app.update()
   let runtime = app.world().get_resource(ecs_key_cas_runtime_state).unwrap()

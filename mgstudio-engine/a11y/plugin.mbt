@@ -19,7 +19,7 @@ pub(all) struct AccessibilityPlugin {}
 const ACCESSIBILITY_PLUGIN_NAME : String = "mgstudio.a11y.AccessibilityPlugin"
 
 ///|
-pub fn AccessibilityPlugin::default() -> AccessibilityPlugin {
+pub fn AccessibilityPlugin::AccessibilityPlugin() -> AccessibilityPlugin {
   AccessibilityPlugin::{  }
 }
 
@@ -35,7 +35,7 @@ pub impl @app.Plugin for AccessibilityPlugin with build(self, app) {
 
 ///|
 pub fn accessibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  accessibility_plugin_with(app, AccessibilityPlugin::default())
+  accessibility_plugin_with(app, AccessibilityPlugin::AccessibilityPlugin())
 }
 
 ///|
@@ -44,8 +44,10 @@ pub fn accessibility_plugin_with(
   _plugin : AccessibilityPlugin,
 ) -> @app.App[@ecs.World] {
   app
-  .init_resource(AccessibilityRequested::default)
-  .init_resource(ManageAccessibilityUpdates::default)
+  .init_resource(fn() { AccessibilityRequested::AccessibilityRequested() })
+  .init_resource(fn() {
+    ManageAccessibilityUpdates::ManageAccessibilityUpdates()
+  })
   .allow_ambiguous_component(key=ecs_key_accessibility_node)
 }
 

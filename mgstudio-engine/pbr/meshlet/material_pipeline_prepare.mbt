@@ -99,7 +99,7 @@ pub struct MeshletMaterialPipelineDescriptor {
 ///|
 pub fn MeshletMaterialPipelineDescriptor::new(
   pass_variant? : MeshletMaterialPassVariant = MeshletMaterialPassVariant::MainOpaque,
-  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::default(),
+  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::MeshletViewMaterialPipelineKey(),
   view_layout_kind? : MeshletMaterialViewLayoutKind = MeshletMaterialViewLayoutKind::MeshView,
   fake_vertex_buffer_layout? : @mesh.MeshVertexBufferLayout = meshlet_fake_vertex_buffer_layout(),
   layout_count? : Int = 4,
@@ -160,7 +160,7 @@ pub let ecs_key_meshlet_view_materials_main_opaque_pass : @ecs.ComponentKey[
 )
 
 ///|
-pub fn MeshletViewMaterialsMainOpaquePass::default() -> MeshletViewMaterialsMainOpaquePass {
+pub fn MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass() -> MeshletViewMaterialsMainOpaquePass {
   MeshletViewMaterialsMainOpaquePass::{ entries: [] }
 }
 
@@ -199,7 +199,7 @@ pub let ecs_key_meshlet_view_materials_prepass : @ecs.ComponentKey[
 )
 
 ///|
-pub fn MeshletViewMaterialsPrepass::default() -> MeshletViewMaterialsPrepass {
+pub fn MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass() -> MeshletViewMaterialsPrepass {
   MeshletViewMaterialsPrepass::{ entries: [] }
 }
 
@@ -238,7 +238,7 @@ pub let ecs_key_meshlet_view_materials_deferred_gbuffer_prepass : @ecs.Component
 )
 
 ///|
-pub fn MeshletViewMaterialsDeferredGBufferPrepass::default() -> MeshletViewMaterialsDeferredGBufferPrepass {
+pub fn MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass() -> MeshletViewMaterialsDeferredGBufferPrepass {
   MeshletViewMaterialsDeferredGBufferPrepass::{ entries: [] }
 }
 
@@ -350,7 +350,7 @@ pub fn MeshletViewMaterialPipelineKey::new(
 }
 
 ///|
-pub fn MeshletViewMaterialPipelineKey::default() -> MeshletViewMaterialPipelineKey {
+pub fn MeshletViewMaterialPipelineKey::MeshletViewMaterialPipelineKey() -> MeshletViewMaterialPipelineKey {
   MeshletViewMaterialPipelineKey::new()
 }
 
@@ -767,7 +767,7 @@ fn meshlet_material_inputs_from_ids(
 pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
   view_materials : MeshletViewMaterialsMainOpaquePass,
   material_inputs : Array[MeshletPreparedMaterialInput],
-  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::default(),
+  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::MeshletViewMaterialPipelineKey(),
 ) -> Unit {
   view_materials.clear()
   let queued_material_ids = @utils.IntBitSet::new()
@@ -822,7 +822,7 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
   prepass_materials : MeshletViewMaterialsPrepass,
   deferred_prepass_materials : MeshletViewMaterialsDeferredGBufferPrepass,
   material_inputs : Array[MeshletPreparedMaterialInput],
-  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::default(),
+  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::MeshletViewMaterialPipelineKey(),
   deferred_enabled? : Bool = true,
 ) -> Unit {
   prepass_materials.clear()

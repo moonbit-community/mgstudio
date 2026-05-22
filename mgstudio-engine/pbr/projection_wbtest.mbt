@@ -162,7 +162,7 @@ test "render3d: camera pass projection keeps custom clip matrices alive" {
 ///|
 test "render3d: camera pass projection applies Bevy temporal jitter" {
   let projection = Projection::Perspective(
-    PerspectiveProjection3d::default()
+    @pbr_render.PerspectiveProjection3d::PerspectiveProjection3d()
     .with_fov(1.0F)
     .with_near(0.5F)
     .with_far(100.0F)
@@ -198,7 +198,7 @@ test "render3d: camera pass projection applies Bevy temporal jitter" {
 ///|
 test "render3d: perspective clip plane rewrites third row without changing render near distance" {
   let projection = Projection::Perspective(
-    PerspectiveProjection3d::default().with_near_clip_plane(
+    @pbr_render.PerspectiveProjection3d::PerspectiveProjection3d().with_near_clip_plane(
       @math.Vec4::new(0.0F, 0.0F, -1.0F, -2.0F),
     ),
   )
@@ -231,7 +231,7 @@ test "render3d: projection runtime updates changed orthographic projection at st
       orthographic_first_slice_depth: 0.0F,
     }),
     true,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @math.IVec2::new(800, 400),
     1.0F,
   )

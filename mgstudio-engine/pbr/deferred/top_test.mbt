@@ -23,14 +23,14 @@ test "pbr deferred: depth id clamps to byte range" {
 ///|
 test "pbr deferred: plugin inserts default depth id for deferred prepass entity" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins(
-    DeferredPbrLightingPlugin::default(),
+    @deferred.DeferredPbrLightingPlugin::DeferredPbrLightingPlugin(),
   )
   let world = app.world()
   let entity = world.spawn_empty()
   try! world.set_by_key(
     entity,
     @core_pipeline.ecs_key_deferred_prepass,
-    @core_pipeline.DeferredPrepass::default(),
+    @core_pipeline.DeferredPrepass::DeferredPrepass(),
   )
   app = app.run_once()
   let depth = match
@@ -44,14 +44,14 @@ test "pbr deferred: plugin inserts default depth id for deferred prepass entity"
 ///|
 test "pbr deferred: plugin keeps explicit depth id value" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins(
-    DeferredPbrLightingPlugin::default(),
+    @deferred.DeferredPbrLightingPlugin::DeferredPbrLightingPlugin(),
   )
   let world = app.world()
   let entity = world.spawn_empty()
   try! world.set_by_key(
     entity,
     @core_pipeline.ecs_key_deferred_prepass,
-    @core_pipeline.DeferredPrepass::default(),
+    @core_pipeline.DeferredPrepass::DeferredPrepass(),
   )
   try! world.set_by_key(
     entity,

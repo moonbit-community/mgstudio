@@ -21,7 +21,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_visibility_NoAutoAabb(NoAutoAabb)
   EcsPayload_visibility_NoCpuCulling(NoCpuCulling)
   EcsPayload_visibility_VisibilityRange(VisibilityRange)
-  EcsPayload_visibility_VisibilityPropagationState(VisibilityPropagationState)
 }
 
 ///|
@@ -115,23 +114,6 @@ pub impl @ecs.EcsPayloadCodec for VisibilityRange with to_ecs_payload(self) {
 pub impl @ecs.EcsPayloadCodec for VisibilityRange with from_ecs_payload(payload) {
   match payload {
     EcsPayload_visibility_VisibilityRange(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for VisibilityPropagationState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_visibility_VisibilityPropagationState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for VisibilityPropagationState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_visibility_VisibilityPropagationState(value) => Some(value)
     _ => None
   }
 }

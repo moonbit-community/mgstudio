@@ -30,5 +30,5 @@ pub fn gizmos_plugin_with(
 
 ///|
 pub fn gizmos_default_group() -> DefaultGizmoConfigGroup {
-  DefaultGizmoConfigGroup::default()
+  DefaultGizmoConfigGroup()
 }

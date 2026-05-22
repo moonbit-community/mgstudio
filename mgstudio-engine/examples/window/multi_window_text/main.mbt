@@ -35,9 +35,9 @@ const TEXT2D_BOTH : String = "Text2d Both Windows"
 
 ///|
 fn configured_primary_window() -> @window.Window {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.title = PRIMARY_WINDOW_TITLE
-  window.resolution = @window.WindowResolution::default().with_scale_factor_override(
+  window.resolution = @window.WindowResolution::WindowResolution().with_scale_factor_override(
     1.0F,
   )
   window
@@ -45,9 +45,9 @@ fn configured_primary_window() -> @window.Window {
 
 ///|
 fn configured_secondary_window() -> @window.Window {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.title = SECONDARY_WINDOW_TITLE
-  window.resolution = @window.WindowResolution::default().with_scale_factor_override(
+  window.resolution = @window.WindowResolution::WindowResolution().with_scale_factor_override(
     2.0F,
   )
   window
@@ -61,11 +61,11 @@ fn spawn_ui_label(
   font : @text.TextFont,
 ) -> Unit {
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
@@ -99,7 +99,7 @@ fn spawn_ui_label(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_shadow,
-    @text.TextShadow::default(),
+    @text.TextShadow::TextShadow(),
   )
 }
 
@@ -108,7 +108,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let text_font = @text.TextFont::from_font_size(30.0F)
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_clear_color(
+    @sprite.Camera::Camera().with_clear_color(
       @sprite.Color::srgb(0.14F, 0.12F, 0.20F),
     ),
     @transform.Transform::identity(),
@@ -128,7 +128,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let secondary_window_camera = @sprite.Camera2dBundle::new_with_layers(
-    @sprite.Camera::default().with_clear_color(
+    @sprite.Camera::Camera().with_clear_color(
       @sprite.Color::srgb(0.08F, 0.10F, 0.14F),
     ),
     @transform.Transform::identity(),
@@ -150,7 +150,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)))
-  .with_shadow(Some(@text.Text2dShadow::default()))
+  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
   |> ignore
 
@@ -161,7 +161,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @sprite.RenderLayers::layer(1),
   )
   .with_color(@text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)))
-  .with_shadow(Some(@text.Text2dShadow::default()))
+  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
   |> ignore
 
@@ -172,7 +172,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @sprite.RenderLayers::from_layers([0, 1]),
   )
   .with_color(@text.TextColor::new(@sprite.Color::srgb(0.8784314F, 1.0F, 1.0F)))
-  .with_shadow(Some(@text.Text2dShadow::default()))
+  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
   |> ignore
 }
@@ -183,7 +183,7 @@ fn main {
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_primary_window()),
-      primary_cursor_options: Some(@window.CursorOptions::default()),
+      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
     }),

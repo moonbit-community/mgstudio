@@ -280,7 +280,7 @@ pub struct DiagnosticsStore {
 }
 
 ///|
-pub fn DiagnosticsStore::default() -> DiagnosticsStore {
+pub fn DiagnosticsStore::DiagnosticsStore() -> DiagnosticsStore {
   DiagnosticsStore::{ diagnostics: @hashmap.HashMap([]) }
 }
 
@@ -488,7 +488,7 @@ pub fn register_diagnostic(
   if world.get_resource(DiagnosticsStore::resource()) is None {
     world.insert_resource(
       DiagnosticsStore::resource(),
-      DiagnosticsStore::default(),
+      DiagnosticsStore::DiagnosticsStore(),
     )
   }
   match diagnostics_store_ref_mut(world) {

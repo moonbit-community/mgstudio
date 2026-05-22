@@ -15,9 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_shader_shader_material_wesl_Spin(Spin)
-  EcsPayload_examples_shader_shader_material_wesl_UtilityShaderHandle(
-    UtilityShaderHandle
-  )
 }
 
 ///|
@@ -29,20 +26,6 @@ impl @ecs.EcsPayloadCodec for Spin with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for Spin with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_shader_shader_material_wesl_Spin(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for UtilityShaderHandle with to_ecs_payload(self) {
-  EcsPayload_examples_shader_shader_material_wesl_UtilityShaderHandle(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for UtilityShaderHandle with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_shader_shader_material_wesl_UtilityShaderHandle(value) =>
-      Some(value)
     _ => None
   }
 }

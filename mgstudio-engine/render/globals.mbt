@@ -49,7 +49,7 @@ pub(all) struct HostColorGrading {
 }
 
 ///|
-pub fn HostColorGrading::default() -> HostColorGrading {
+pub fn HostColorGrading::HostColorGrading() -> HostColorGrading {
   HostColorGrading::{
     balance_x_axis_x: 1.0F,
     balance_x_axis_y: 0.0F,
@@ -117,7 +117,7 @@ pub fn host_color_grading_from_post_process(
 ) -> HostColorGrading {
   let grading = match color_grading {
     Some(value) => value
-    None => @post_process.ColorGrading::default()
+    None => @post_process.ColorGrading::ColorGrading()
   }
   let white_point_x = HOST_COLOR_GRADING_D65_X - grading.global.temperature
   let white_point_y = HOST_COLOR_GRADING_D65_Y + grading.global.tint

@@ -17,7 +17,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(
     @mgstudio.DefaultPlugins::build().disable(
-      @physics2d.Physics2dPlugin::default(),
+      @physics2d.Physics2dPlugin::Physics2dPlugin(),
     ),
   )
   .add_startup_system(@physics2d.physics2d_init_resources_system)
@@ -44,7 +44,7 @@ fn rapier2d_custom_system_setup2_setup(world : @ecs.World) -> Unit {
     @sprite.ClearColor::new(@sprite.Color::new(0.92F, 0.94F, 0.98F, 1.0F)),
   )
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore

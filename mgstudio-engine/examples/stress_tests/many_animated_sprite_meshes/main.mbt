@@ -91,7 +91,7 @@ impl @app.Resource for PrintTimer with resource() {
 }
 
 ///|
-fn PrintTimer::default() -> PrintTimer {
+fn PrintTimer::PrintTimer() -> PrintTimer {
   { seconds: 0.0F }
 }
 
@@ -107,7 +107,7 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let texture = asset_server
     .get()
@@ -239,10 +239,10 @@ fn print_count(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .insert_resource(PrintTimer::default())
+  .insert_resource(PrintTimer::PrintTimer())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(animate_meshes)))
   .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))

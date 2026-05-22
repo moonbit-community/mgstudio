@@ -18,7 +18,7 @@ fn taa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
   try! world.set_by_key(
     entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
   entity
 }
@@ -26,7 +26,7 @@ fn taa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
 ///|
 test "anti_alias/taa: runtime state tracks camera-only and reset count" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    TemporalAntiAliasPlugin::default(),
+    TemporalAntiAliasPlugin::TemporalAntiAliasPlugin(),
   )
   let camera_entity = taa_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()
@@ -61,7 +61,7 @@ test "anti_alias/taa: runtime state tracks camera-only and reset count" {
 ///|
 test "anti_alias/taa: plugin registers embedded wgsl source" {
   let _app = @app.App::new(@ecs.World::new()).add_plugins(
-    TemporalAntiAliasPlugin::default(),
+    TemporalAntiAliasPlugin::TemporalAntiAliasPlugin(),
   )
   let source = match
     @shader_source.embedded_shader_source("anti_alias/taa/taa.wgsl") {
@@ -74,16 +74,12 @@ test "anti_alias/taa: plugin registers embedded wgsl source" {
 ///|
 test "anti_alias/taa: required components mirror Bevy camera prerequisites" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    TemporalAntiAliasPlugin::default(),
+    TemporalAntiAliasPlugin::TemporalAntiAliasPlugin(),
   )
   let entity = app.world().spawn_empty()
   try! app
   .world()
-  .set_by_key(
-    entity,
-    ecs_key_temporal_anti_aliasing,
-    TemporalAntiAliasing::default(),
-  )
+  .set_by_key(entity, ecs_key_temporal_anti_aliasing, TemporalAntiAliasing())
   debug_inspect(
     try! app.world().contains_by_key(entity, ecs_key_temporal_jitter),
     content="true",
@@ -109,19 +105,15 @@ test "anti_alias/taa: required components mirror Bevy camera prerequisites" {
 ///|
 test "anti_alias/taa: prepare_taa_jitter follows Bevy Halton sequence" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@diagnostic.FrameCountPlugin::default())
-    .add_plugins(TemporalAntiAliasPlugin::default())
+    .add_plugins(@diagnostic.FrameCountPlugin::FrameCountPlugin())
+    .add_plugins(TemporalAntiAliasPlugin::TemporalAntiAliasPlugin())
   let entity = taa_test_spawn_camera(app.world())
   try! app
   .world()
-  .set_by_key(entity, @pbr.ecs_key_camera3d, @pbr.Camera3d::default())
+  .set_by_key(entity, @pbr.ecs_key_camera3d, @pbr.Camera3d::Camera3d())
   try! app
   .world()
-  .set_by_key(
-    entity,
-    ecs_key_temporal_anti_aliasing,
-    TemporalAntiAliasing::default(),
-  )
+  .set_by_key(entity, ecs_key_temporal_anti_aliasing, TemporalAntiAliasing())
   let app = app.update().update().update().update()
   let jitter = try! app
     .world()

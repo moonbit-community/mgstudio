@@ -83,6 +83,7 @@ pub fn Affine2::transform_point2(Self, @math.Vec2) -> @math.Vec2
 pub struct GlobalTransform {
   mut affine : @math.Affine3
 }
+pub fn GlobalTransform::GlobalTransform() -> Self
 pub fn GlobalTransform::affine(Self) -> @math.Affine3
 pub fn GlobalTransform::compute_transform(Self) -> Transform
 pub fn GlobalTransform::from_transform(Transform) -> Self
@@ -108,6 +109,7 @@ pub struct StaticTransformOptimizations {
   threshold : Float
   mut enabled : Bool
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn StaticTransformOptimizations::StaticTransformOptimizations() -> Self
 pub fn StaticTransformOptimizations::disabled() -> Self
 pub fn StaticTransformOptimizations::enabled() -> Self
 pub fn StaticTransformOptimizations::from_threshold(Float) -> Self
@@ -120,6 +122,7 @@ pub(all) struct Transform {
   mut rotation : @math.Quat
   mut scale : @math.Vec3
 }
+pub fn Transform::Transform() -> Self
 pub fn Transform::align(Self, @math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> Unit
 pub fn Transform::aligned_by(Self, @math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> Self
 pub fn Transform::back(Self) -> @math.Vec3
@@ -160,16 +163,17 @@ pub impl @json.FromJson for Transform
 
 pub struct TransformHelper {
 }
+pub fn TransformHelper::TransformHelper() -> Self
 pub fn TransformHelper::compute_global_transform(Self, @ecs.World, @core.Entity) -> GlobalTransform?
-pub fn TransformHelper::default() -> Self
 
 pub struct TransformPlugin {
 }
-pub fn TransformPlugin::default() -> Self
+pub fn TransformPlugin::TransformPlugin() -> Self
 pub impl @app.Plugin for TransformPlugin
 
 pub struct TransformTreeChanged {
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn TransformTreeChanged::TransformTreeChanged() -> Self
 pub impl @ecs.Component for TransformTreeChanged
 pub impl @ecs.EcsPayloadCodec for TransformTreeChanged
 pub impl Default for TransformTreeChanged

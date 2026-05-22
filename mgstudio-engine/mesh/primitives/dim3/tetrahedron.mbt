@@ -28,8 +28,8 @@ pub struct TetrahedronMeshBuilder {
 }
 
 ///|
-pub fn TetrahedronMeshBuilder::default() -> TetrahedronMeshBuilder {
-  { tetrahedron: @math.Tetrahedron::default() }
+pub fn TetrahedronMeshBuilder::TetrahedronMeshBuilder() -> TetrahedronMeshBuilder {
+  { tetrahedron: @math.Tetrahedron::Tetrahedron() }
 }
 
 ///|

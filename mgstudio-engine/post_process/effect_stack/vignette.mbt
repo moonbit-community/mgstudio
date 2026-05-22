@@ -28,7 +28,7 @@ pub struct Vignette {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Vignette::default() -> Vignette {
+pub fn Vignette::Vignette() -> Vignette {
   Vignette::{
     intensity: 1.0F,
     radius: 0.75F,
@@ -52,7 +52,7 @@ pub fn Vignette::new(
   let safe_smoothness = if smoothness <= 0.01F { 0.01F } else { smoothness }
   let safe_roundness = if roundness <= 0.01F { 0.01F } else { roundness }
   Vignette::{
-    ..Vignette::default(),
+    ..Vignette(),
     intensity: safe_intensity,
     radius: safe_radius,
     smoothness: safe_smoothness,

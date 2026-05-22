@@ -23,7 +23,7 @@ pub struct PointerInputSettings {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn PointerInputSettings::default() -> PointerInputSettings {
+pub fn PointerInputSettings::PointerInputSettings() -> PointerInputSettings {
   PointerInputSettings::{ is_touch_enabled: true, is_mouse_enabled: true }
 }
 
@@ -44,7 +44,7 @@ pub impl @app.Resource for PointerInputSettings with resource() {
 fn picking_pointer_input_settings(world : @ecs.World) -> PointerInputSettings {
   match get_pointer_input_settings_resource(world).get() {
     Some(settings) => settings
-    None => PointerInputSettings::default()
+    None => PointerInputSettings::PointerInputSettings()
   }
 }
 
@@ -61,7 +61,7 @@ fn picking_pointer_from_touch_id(touch_id : Int) -> @pointer_events.PointerId {
 pub fn ensure_pointer_input_settings_system(world : @ecs.World) -> Unit {
   let res = get_pointer_input_settings_resource(world)
   if res.get() is None {
-    res.insert(PointerInputSettings::default())
+    res.insert(PointerInputSettings::PointerInputSettings())
   }
 }
 

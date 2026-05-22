@@ -23,7 +23,7 @@ pub fn GlobalVolume::new(volume : Volume) -> GlobalVolume {
 }
 
 ///|
-pub fn GlobalVolume::default() -> GlobalVolume {
+pub fn GlobalVolume::GlobalVolume() -> GlobalVolume {
   GlobalVolume::new(Volume::default())
 }
 

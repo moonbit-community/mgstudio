@@ -56,7 +56,7 @@ pub struct Physics2dHooksConfig {
 }
 
 ///|
-pub fn Physics2dHooksConfig::default() -> Physics2dHooksConfig {
+pub fn Physics2dHooksConfig::Physics2dHooksConfig() -> Physics2dHooksConfig {
   {
     filter_contact_pair: None,
     filter_intersection_pair: None,
@@ -74,7 +74,7 @@ let physics2d_hook_collider_to_entity : Ref[
 pub fn physics2d_hooks_config(world : @ecs.World) -> Physics2dHooksConfig {
   match get_physics2d_hooks_config_resource(world).get() {
     Some(cfg) => cfg
-    None => Physics2dHooksConfig::default()
+    None => Physics2dHooksConfig::Physics2dHooksConfig()
   }
 }
 

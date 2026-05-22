@@ -649,8 +649,8 @@ pub(all) struct SphereMeshBuilder {
 }
 
 ///|
-pub fn SphereMeshBuilder::default() -> SphereMeshBuilder {
-  { sphere: @math.Sphere::default(), kind: SphereKind::default() }
+pub fn SphereMeshBuilder::SphereMeshBuilder() -> SphereMeshBuilder {
+  { sphere: @math.Sphere::Sphere(), kind: SphereKind::default() }
 }
 
 ///|

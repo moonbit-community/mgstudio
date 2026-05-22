@@ -59,7 +59,9 @@ fn test_mesh2d_asset(width : Float, height : Float) -> Mesh {
 
 ///|
 test "mesh plugin: initializes mesh and skinned-inverse-bindposes asset resources" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(MeshPlugin::default())
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @mesh.MeshPlugin::MeshPlugin(),
+  )
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[Mesh]] = @asset.assets_resource_key()
   let inverse_bindposes_assets_key : @ecs.ResourceKey[
     @asset.Assets[SkinnedMeshInverseBindposes],
@@ -74,8 +76,8 @@ test "mesh plugin: initializes mesh and skinned-inverse-bindposes asset resource
 ///|
 test "mesh plugin: modified SkinnedMeshInverseBindposes marks SkinnedMesh changed" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(MeshPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let world = app.world()
 
   let inverse_bindposes_handle = inverse_bindposes_assets_mut_or_abort(world).modify(fn(
@@ -120,8 +122,8 @@ test "mesh plugin: modified SkinnedMeshInverseBindposes marks SkinnedMesh change
 ///|
 test "mesh plugin: non-modified SkinnedMeshInverseBindposes does not mark SkinnedMesh changed" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(MeshPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let world = app.world()
 
   let inverse_bindposes_handle = inverse_bindposes_assets_mut_or_abort(world).modify(fn(
@@ -151,8 +153,8 @@ test "mesh plugin: non-modified SkinnedMeshInverseBindposes does not mark Skinne
 ///|
 test "mesh plugin: modified Mesh marks Mesh2d changed" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(MeshPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let world = app.world()
   let mesh_handle = mesh_assets_mut_or_abort(world).modify(fn(assets) {
     assets.add(test_mesh2d_asset(10.0F, 8.0F))
@@ -182,8 +184,8 @@ test "mesh plugin: modified Mesh marks Mesh2d changed" {
 ///|
 test "mesh plugin: non-modified Mesh does not mark Mesh2d changed" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(MeshPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let world = app.world()
   let mesh_handle = mesh_assets_mut_or_abort(world).modify(fn(assets) {
     assets.add(test_mesh2d_asset(10.0F, 8.0F))

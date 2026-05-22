@@ -23,8 +23,8 @@ pub struct Polyline3dMeshBuilder {
 }
 
 ///|
-pub fn Polyline3dMeshBuilder::default() -> Polyline3dMeshBuilder {
-  { polyline: @math.Polyline3d::default() }
+pub fn Polyline3dMeshBuilder::Polyline3dMeshBuilder() -> Polyline3dMeshBuilder {
+  { polyline: @math.Polyline3d::Polyline3d() }
 }
 
 ///|

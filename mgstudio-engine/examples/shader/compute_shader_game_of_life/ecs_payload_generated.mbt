@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_shader_compute_shader_game_of_life_Cell(Cell)
-  EcsPayload_examples_shader_compute_shader_game_of_life_LifeState(LifeState)
 }
 
 ///|
@@ -27,20 +26,6 @@ impl @ecs.EcsPayloadCodec for Cell with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for Cell with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_shader_compute_shader_game_of_life_Cell(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for LifeState with to_ecs_payload(self) {
-  EcsPayload_examples_shader_compute_shader_game_of_life_LifeState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for LifeState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_shader_compute_shader_game_of_life_LifeState(value) =>
       Some(value)
     _ => None
   }

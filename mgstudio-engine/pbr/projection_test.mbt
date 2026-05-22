@@ -37,7 +37,7 @@ fn[T : CameraProjection3d] generic_projection_frustum(
 
 ///|
 test "render3d: perspective projection getters expose configured values" {
-  let projection = PerspectiveProjection3d::default()
+  let projection = @pbr_render.PerspectiveProjection3d::PerspectiveProjection3d()
   projection.fov = 1.2F
   projection.near = 0.3F
   projection.far = 250.0F
@@ -62,8 +62,10 @@ test "render3d: perspective projection getters expose configured values" {
 
 ///|
 test "render3d: perspective with_near keeps default clip plane in sync and preserves custom planes" {
-  let synced = PerspectiveProjection3d::default().with_near(0.75F)
-  let preserved = PerspectiveProjection3d::default()
+  let synced = @pbr_render.PerspectiveProjection3d::PerspectiveProjection3d().with_near(
+    0.75F,
+  )
+  let preserved = @pbr_render.PerspectiveProjection3d::PerspectiveProjection3d()
     .with_near_clip_plane(@math.Vec4::new(0.0F, -1.0F, 0.0F, -2.0F))
     .with_near(0.75F)
   debug_inspect(
@@ -82,7 +84,7 @@ test "render3d: perspective with_near keeps default clip plane in sync and prese
 
 ///|
 test "render3d: custom projection default stores perspective default payload" {
-  let custom = CustomProjection3d::default()
+  let custom = CustomProjection3d::CustomProjection3d()
   let perspective : PerspectiveProjection3d? = custom.get()
   let ok = match perspective {
     Some(perspective) =>
@@ -144,7 +146,9 @@ test "render3d: orthographic projection update matches Bevy auto min area" {
 
 ///|
 test "render3d: projection compute_frustum uses camera transform and custom far plane" {
-  let perspective = PerspectiveProjection3d::default().with_far(10.0F)
+  let perspective = @pbr_render.PerspectiveProjection3d::PerspectiveProjection3d().with_far(
+    10.0F,
+  )
   let frustum = Projection::Perspective(perspective).compute_frustum(
     @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
   )
@@ -161,7 +165,9 @@ test "render3d: standard material stores full affine uv transform" {
   let uv_transform = @transform.Affine2::from_translation(
     @math.Vec2::new(0.25F, -0.5F),
   ).mul(@transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)))
-  let material = StandardMaterial::default().with_uv_transform(uv_transform)
+  let material = @material.StandardMaterial::StandardMaterial().with_uv_transform(
+    uv_transform,
+  )
   let point = material.uv_transform.transform_point2(
     @math.Vec2::new(0.5F, 0.25F),
   )
@@ -343,7 +349,7 @@ test "render3d: CameraProjection3d trait exposes compute_frustum" {
 
 ///|
 test "render3d: camera helper projection APIs respect custom runtime updates" {
-  let camera = @sprite.Camera::default()
+  let camera = @sprite.Camera::Camera()
   let projection = Projection::custom(TestCustomProjection3d::{
     view_width: 1.0F,
     view_height: 1.0F,

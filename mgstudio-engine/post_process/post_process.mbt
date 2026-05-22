@@ -58,7 +58,7 @@ pub struct Fxaa {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Fxaa::default() -> Fxaa {
+pub fn Fxaa::Fxaa() -> Fxaa {
   Fxaa::{
     enabled: true,
     edge_threshold: FxaaSensitivity::High,
@@ -68,7 +68,7 @@ pub fn Fxaa::default() -> Fxaa {
 
 ///|
 pub fn Fxaa::new(enabled : Bool) -> Fxaa {
-  Fxaa::{ ..Fxaa::default(), enabled, }
+  Fxaa::{ ..Fxaa(), enabled, }
 }
 
 ///|
@@ -126,7 +126,7 @@ pub struct CustomPostProcess3d {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn CustomPostProcess3d::default() -> CustomPostProcess3d {
+pub fn CustomPostProcess3d::CustomPostProcess3d() -> CustomPostProcess3d {
   CustomPostProcess3d::{
     enabled: false,
     shader_path: "",
@@ -140,7 +140,7 @@ pub fn CustomPostProcess3d::default() -> CustomPostProcess3d {
 
 ///|
 pub fn CustomPostProcess3d::new(shader_path : String) -> CustomPostProcess3d {
-  CustomPostProcess3d::{ ..CustomPostProcess3d::default(), shader_path, }
+  CustomPostProcess3d::{ ..CustomPostProcess3d(), shader_path, }
 }
 
 ///|
@@ -193,7 +193,7 @@ pub struct TemporalAntiAliasing {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn TemporalAntiAliasing::default() -> TemporalAntiAliasing {
+pub fn TemporalAntiAliasing::TemporalAntiAliasing() -> TemporalAntiAliasing {
   TemporalAntiAliasing::{ reset: true }
 }
 
@@ -224,7 +224,7 @@ pub struct MipBias {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub fn MipBias::default() -> MipBias {
+pub fn MipBias::MipBias() -> MipBias {
   MipBias::{ bias: -1.0F }
 }
 
@@ -254,7 +254,7 @@ pub struct TemporalJitter {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn TemporalJitter::default() -> TemporalJitter {
+pub fn TemporalJitter::TemporalJitter() -> TemporalJitter {
   TemporalJitter::{ offset: @math.Vec2::new(0.0F, 0.0F) }
 }
 
@@ -280,13 +280,13 @@ pub(all) struct ColorGradingRange {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ColorGradingRange::default() -> ColorGradingRange {
+pub fn ColorGradingRange::ColorGradingRange() -> ColorGradingRange {
   ColorGradingRange::{ start: 0.2F, end_: 0.7F }
 }
 
 ///|
 fn color_grading_range_copy(value : ColorGradingRange) -> ColorGradingRange {
-  let out = ColorGradingRange::default()
+  let out = ColorGradingRange::ColorGradingRange()
   out.start = value.start
   out.end_ = value.end_
   out
@@ -304,20 +304,20 @@ pub(all) struct ColorGradingGlobal {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ColorGradingGlobal::default() -> ColorGradingGlobal {
+pub fn ColorGradingGlobal::ColorGradingGlobal() -> ColorGradingGlobal {
   ColorGradingGlobal::{
     exposure: 0.0F,
     temperature: 0.0F,
     tint: 0.0F,
     hue: 0.0F,
     post_saturation: 1.0F,
-    midtones_range: ColorGradingRange::default(),
+    midtones_range: ColorGradingRange::ColorGradingRange(),
   }
 }
 
 ///|
 fn color_grading_global_copy(value : ColorGradingGlobal) -> ColorGradingGlobal {
-  let out = ColorGradingGlobal::default()
+  let out = ColorGradingGlobal::ColorGradingGlobal()
   out.exposure = value.exposure
   out.temperature = value.temperature
   out.tint = value.tint
@@ -338,7 +338,7 @@ pub(all) struct ColorGradingSection {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ColorGradingSection::default() -> ColorGradingSection {
+pub fn ColorGradingSection::ColorGradingSection() -> ColorGradingSection {
   ColorGradingSection::{
     saturation: 1.0F,
     contrast: 1.0F,
@@ -352,7 +352,7 @@ pub fn ColorGradingSection::default() -> ColorGradingSection {
 fn color_grading_section_copy(
   value : ColorGradingSection,
 ) -> ColorGradingSection {
-  let out = ColorGradingSection::default()
+  let out = ColorGradingSection::ColorGradingSection()
   out.saturation = value.saturation
   out.contrast = value.contrast
   out.gamma = value.gamma
@@ -374,12 +374,12 @@ pub(all) struct ColorGrading {
 pub impl @ecs.Mutable for ColorGrading
 
 ///|
-pub fn ColorGrading::default() -> ColorGrading {
+pub fn ColorGrading::ColorGrading() -> ColorGrading {
   ColorGrading::{
-    global: ColorGradingGlobal::default(),
-    shadows: ColorGradingSection::default(),
-    midtones: ColorGradingSection::default(),
-    highlights: ColorGradingSection::default(),
+    global: ColorGradingGlobal::ColorGradingGlobal(),
+    shadows: ColorGradingSection::ColorGradingSection(),
+    midtones: ColorGradingSection::ColorGradingSection(),
+    highlights: ColorGradingSection::ColorGradingSection(),
   }
 }
 
@@ -388,7 +388,7 @@ pub fn ColorGrading::with_identical_sections(
   global : ColorGradingGlobal,
   section : ColorGradingSection,
 ) -> ColorGrading {
-  let color_grading = ColorGrading::default()
+  let color_grading = ColorGrading::ColorGrading()
   color_grading.global = color_grading_global_copy(global)
   color_grading.shadows = color_grading_section_copy(section)
   color_grading.midtones = color_grading_section_copy(section)
@@ -450,7 +450,7 @@ pub struct BloomPrefilter {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn BloomPrefilter::default() -> BloomPrefilter {
+pub fn BloomPrefilter::BloomPrefilter() -> BloomPrefilter {
   BloomPrefilter::{ threshold: 0.0F, threshold_softness: 0.0F }
 }
 
@@ -519,13 +519,13 @@ pub struct Bloom {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Bloom::default() -> Bloom {
+pub fn Bloom::Bloom() -> Bloom {
   Bloom::{
     intensity: 0.15F,
     low_frequency_boost: 0.7F,
     low_frequency_boost_curvature: 0.95F,
     high_pass_frequency: 1.0F,
-    prefilter: BloomPrefilter::default(),
+    prefilter: BloomPrefilter::BloomPrefilter(),
     composite_mode: BloomCompositeMode::EnergyConserving,
     max_mip_dimension: BLOOM_DEFAULT_MAX_MIP_DIMENSION,
     scale: @math.Vec2::new(1.0F, 1.0F),
@@ -534,13 +534,13 @@ pub fn Bloom::default() -> Bloom {
 
 ///|
 pub fn Bloom::natural() -> Bloom {
-  Bloom::default()
+  Bloom::Bloom()
 }
 
 ///|
 pub fn Bloom::anamorphic() -> Bloom {
   Bloom::{
-    ..Bloom::default(),
+    ..Bloom(),
     max_mip_dimension: BLOOM_DEFAULT_MAX_MIP_DIMENSION * 2,
     scale: @math.Vec2::new(4.0F, 1.0F),
   }
@@ -549,7 +549,7 @@ pub fn Bloom::anamorphic() -> Bloom {
 ///|
 pub fn Bloom::old_school() -> Bloom {
   Bloom::{
-    ..Bloom::default(),
+    ..Bloom(),
     intensity: 0.05F,
     prefilter: BloomPrefilter::new(0.6F, 0.2F),
     composite_mode: BloomCompositeMode::Additive,
@@ -559,7 +559,7 @@ pub fn Bloom::old_school() -> Bloom {
 ///|
 pub fn Bloom::screen_blur() -> Bloom {
   Bloom::{
-    ..Bloom::default(),
+    ..Bloom(),
     intensity: 1.0F,
     low_frequency_boost: 0.0F,
     low_frequency_boost_curvature: 0.0F,
@@ -570,7 +570,7 @@ pub fn Bloom::screen_blur() -> Bloom {
 ///|
 pub fn Bloom::new(intensity : Float) -> Bloom {
   Bloom::{
-    ..Bloom::default(),
+    ..Bloom(),
     intensity: if intensity < 0.0F {
       0.0F
     } else {
@@ -735,7 +735,7 @@ pub struct ScreenSpaceAmbientOcclusion {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ScreenSpaceAmbientOcclusion::default() -> ScreenSpaceAmbientOcclusion {
+pub fn ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion() -> ScreenSpaceAmbientOcclusion {
   ScreenSpaceAmbientOcclusion::{
     quality_level: ScreenSpaceAmbientOcclusionQualityLevel::default(),
     constant_object_thickness: 0.25F,
@@ -858,7 +858,7 @@ pub struct ScreenSpaceReflections {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ScreenSpaceReflections::default() -> ScreenSpaceReflections {
+pub fn ScreenSpaceReflections::ScreenSpaceReflections() -> ScreenSpaceReflections {
   let (min_start, min_end) = screen_space_reflections_safe_range(0.08F, 0.12F)
   let (max_start, max_end) = screen_space_reflections_safe_range(0.55F, 0.6F)
   let (edge_start, edge_end) = screen_space_reflections_safe_range(0.0F, 0.0F)

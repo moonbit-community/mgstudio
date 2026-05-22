@@ -27,7 +27,7 @@
 /// - H: toggle the "no-collision" hook for a specific ball pair.
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(
     @app.FixedUpdate,
     @app.system(physics2d_showcase_player_controls_fixed),
@@ -67,7 +67,7 @@ fn physics2d_showcase_spawn_controls_overlay() -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let content = "Physics2D Showcase Controls\nW/A/S/D or Arrow Keys: Move player\nLeft Click: Spawn ball at cursor\nG: Toggle debug render\nH: Toggle ghost pair no-collision"
-  let font_style = @text.TextFont::default()
+  let font_style = @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(20.0F)
   @text.Text2dBundle::new(
@@ -86,7 +86,7 @@ fn physics2d_showcase_spawn_controls_overlay() -> Unit {
   .with_color(
     @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
-  .with_shadow(Some(@text.Text2dShadow::default()))
+  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
   |> ignore
 }
@@ -111,7 +111,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let texture = asset_server.load("branding/icon.png")
 
   // Camera.
-  let camera = @sprite.Camera::default()
+  let camera = @sprite.Camera::Camera()
   @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
     world,
   )
@@ -264,7 +264,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     player,
     @physics2d.ecs_key_kinematic_character_controller2d,
-    @physics2d.KinematicCharacterController2d::default(),
+    @physics2d.KinematicCharacterController2d::KinematicCharacterController2d(),
   )
   try! world.set_by_key(
     player,

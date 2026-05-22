@@ -14,7 +14,7 @@
 
 ///|
 test "window runtime: create requests logical size from resolution scale factor" {
-  let resolution = WindowResolution::default()
+  let resolution = WindowResolution::WindowResolution()
   resolution.set_physical_resolution(800, 600)
   resolution.set_scale_factor(2.0F)
 
@@ -24,7 +24,7 @@ test "window runtime: create requests logical size from resolution scale factor"
 
 ///|
 test "window runtime: create forces physical request only when override exists" {
-  let resolution = WindowResolution::default()
+  let resolution = WindowResolution::WindowResolution()
   debug_inspect(
     window_uses_physical_request_on_create(resolution),
     content="false",
@@ -41,7 +41,7 @@ test "window runtime: create forces physical request only when override exists" 
 
 ///|
 test "window runtime: scale override reapplies requested physical size after create" {
-  let window = Window::default()
+  let window = Window::Window()
   window.resolution = WindowResolution::new(1920, 1080).with_scale_factor_override(
     1.0F,
   )
@@ -55,7 +55,7 @@ test "window runtime: scale override reapplies requested physical size after cre
     content="false",
   )
 
-  let logical_window = Window::default()
+  let logical_window = Window::Window()
   logical_window.resolution = WindowResolution::new(1920, 1080)
   debug_inspect(
     window_should_reapply_physical_size_after_create(logical_window, 3456, 1924),
@@ -98,7 +98,7 @@ test "window runtime: create pass is separated from prepare pass" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
+  try! (world.entity_mut(entity).insert_component(Window::Window()) |> ignore)
 
   window_backend_prepare_system(world)
   debug_inspect(window_host_entries(world).length(), content="0")
@@ -126,7 +126,7 @@ test "window runtime: centered monitor entity drives window position on create" 
   })
 
   let window_entity = world.spawn()
-  let window = Window::default()
+  let window = Window::Window()
   window.position = Centered(Entity(monitor_entity))
   try! world.set_by_key(window_entity, ecs_key_window, window)
 
@@ -146,7 +146,7 @@ test "window runtime: minimize request is consumed during apply" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
+  try! (world.entity_mut(entity).insert_component(Window::Window()) |> ignore)
 
   window_backend_create_windows_system(world)
   ignore(
@@ -173,7 +173,7 @@ test "window runtime: cursor hit-test options are applied on create and update" 
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
+  try! (world.entity_mut(entity).insert_component(Window::Window()) |> ignore)
   try! (world
   .entity_mut(entity)
   .insert_component(CursorOptions::{
@@ -189,7 +189,9 @@ test "window runtime: cursor hit-test options are applied on create and update" 
   let host_window = entries[0].host_window
   debug_inspect(host_window_get_cursor_hit_test(host_window), content="false")
 
-  try! (world.entity_mut(entity).insert_component(CursorOptions::default())
+  try! (world
+  .entity_mut(entity)
+  .insert_component(CursorOptions::CursorOptions())
   |> ignore)
   window_backend_apply_changed_cursor_options_system(world)
   debug_inspect(host_window_get_cursor_hit_test(host_window), content="true")
@@ -202,7 +204,7 @@ test "window runtime: unsupported transparent and canvas updates are reverted" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
   let entity = world.spawn()
-  let initial_window = Window::default()
+  let initial_window = Window::Window()
   initial_window.canvas = Some("#existing")
   try! (world.entity_mut(entity).insert_component(initial_window) |> ignore)
 
@@ -232,7 +234,7 @@ test "window runtime: unsupported create-only name taskbar and clip updates are 
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
   let entity = world.spawn()
-  let initial_window = Window::default()
+  let initial_window = Window::Window()
   initial_window.name = Some("main-window")
   initial_window.skip_taskbar = true
   initial_window.clip_children = false
@@ -266,7 +268,7 @@ test "window runtime: iOS preference fields remain mutable at runtime" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! (world.entity_mut(entity).insert_component(Window::default()) |> ignore)
+  try! (world.entity_mut(entity).insert_component(Window::Window()) |> ignore)
 
   window_backend_create_windows_system(world)
   ignore(

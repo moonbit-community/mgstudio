@@ -38,7 +38,7 @@ pub struct BlitPipeline {
   has_fullscreen_shader : Bool
   has_fragment_shader : Bool
 }
-pub fn BlitPipeline::default() -> Self
+pub fn BlitPipeline::BlitPipeline() -> Self
 pub fn BlitPipeline::new(has_bind_group_layout? : Bool, has_sampler? : Bool, has_fullscreen_shader? : Bool, has_fragment_shader? : Bool) -> Self
 pub impl @app.Resource for BlitPipeline
 pub impl @ecs.EcsPayloadCodec for BlitPipeline
@@ -52,7 +52,7 @@ pub fn BlitPipelineKey::new(texture_format? : String, blend_state? : String, sam
 
 pub struct BlitPlugin {
 }
-pub fn BlitPlugin::default() -> Self
+pub fn BlitPlugin::BlitPlugin() -> Self
 pub impl @app.Plugin for BlitPlugin
 
 // Type aliases

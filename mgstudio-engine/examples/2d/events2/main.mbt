@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(rapier2d_events2_setup))
   .add_systems(@app.Update, @app.system(rapier2d_events2_print))
   .run()
@@ -31,7 +31,7 @@ fn rapier2d_events2_setup(world : @ecs.World) -> Unit {
     @sprite.ClearColor::new(@sprite.Color::new(0.55F, 0.69F, 0.43F, 1.0F)),
   )
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore

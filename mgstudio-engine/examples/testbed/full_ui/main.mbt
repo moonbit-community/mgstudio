@@ -43,12 +43,12 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_display(@ui.Display::Flex)
@@ -64,9 +64,9 @@ fn setup(
       (
         @hierarchy.Parent::new(root),
         @text.Text::new("Full UI Testbed"),
-        @text.TextFont::default().with_font(font).with_font_size(32.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(32.0F),
         @text.TextColor::new(@sprite.Color::white()),
-        @ui.Node::default().with_height(@ui.Val::Px(44.0F)),
+        @ui.Node::Node().with_height(@ui.Val::Px(44.0F)),
       ),
     ),
   )
@@ -74,7 +74,7 @@ fn setup(
   let grid = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_display(@ui.Display::Grid)
       .with_height(@ui.Val::Percent(100.0F))
       .with_grid_template_columns([
@@ -101,9 +101,9 @@ fn setup(
       commands.spawn(
         (
           @hierarchy.Parent::new(grid),
-          @ui.Button::default(),
+          @ui.Button::Button(),
           IdleColor::{ color: idle },
-          @ui.Node::default()
+          @ui.Node::Node()
           .with_width(@ui.Val::Percent(100.0F))
           .with_height(@ui.Val::Percent(100.0F))
           .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
@@ -141,9 +141,11 @@ fn button_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(
+    @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param(button_system)))
   .run()

@@ -30,7 +30,7 @@ test "gizmos_render boundary exposes render systems and plugin entry" {
 test "extract_line_gizmos spawns Bevy-shaped temporary render entities" {
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! world.set(entity, @gizmos.Gizmo::default())
+  try! world.set(entity, @gizmos.Gizmo::Gizmo())
   try! world.set(entity, @transform.GlobalTransform::identity())
   @gizmos_render.extract_line_gizmos(world)
   let query : @ecs.Query[
@@ -68,7 +68,7 @@ test "extract_line_gizmos preserves dashed scale values" {
   let entity = world.spawn()
   try! world.set(
     entity,
-    @gizmos.Gizmo::default().with_line_config(@gizmos.GizmoLineConfig::{
+    @gizmos.Gizmo::Gizmo().with_line_config(@gizmos.GizmoLineConfig::{
       width: 2.0F,
       perspective: false,
       style: @gizmos.GizmoLineStyle::Dashed(gap_scale=-2.0F, line_scale=0.0F),

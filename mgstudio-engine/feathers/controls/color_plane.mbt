@@ -40,20 +40,20 @@ pub fn ColorPlaneValue::new(value : @math.Vec3) -> ColorPlaneValue {
 }
 
 ///|
-pub fn ColorPlaneValue::default() -> ColorPlaneValue {
+pub fn ColorPlaneValue::ColorPlaneValue() -> ColorPlaneValue {
   ColorPlaneValue::new(@math.Vec3::zero())
 }
 
 ///|
 pub fn color_plane(plane : ColorPlane) -> (ColorPlane, ColorPlaneValue) {
-  (plane, ColorPlaneValue::default())
+  (plane, ColorPlaneValue::ColorPlaneValue())
 }
 
 ///|
 pub struct ColorPlanePlugin {}
 
 ///|
-pub fn ColorPlanePlugin::default() -> ColorPlanePlugin {
+pub fn ColorPlanePlugin::ColorPlanePlugin() -> ColorPlanePlugin {
   ColorPlanePlugin::{  }
 }
 

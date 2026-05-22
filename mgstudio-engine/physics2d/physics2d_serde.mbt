@@ -1556,7 +1556,9 @@ pub impl ToJson for Physics2dConfig with to_json(self) {
 ///|
 pub impl @json.FromJson for Physics2dConfig with from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
-  physics2d_config_serde_values.get(id).unwrap_or(Physics2dConfig::default())
+  physics2d_config_serde_values
+  .get(id)
+  .unwrap_or(Physics2dConfig::Physics2dConfig())
 }
 
 ///|

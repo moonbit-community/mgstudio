@@ -86,7 +86,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default()
+        @pbr.PointLight::PointLight()
         .with_intensity(750000.0F)
         .with_shadow_maps_enabled(true),
         @transform.Transform::from_xyz(18.0F, 28.0F, 12.0F),
@@ -96,7 +96,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(20.0F, 18.0F, 24.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -141,9 +141,11 @@ fn orbit_camera(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(
+    @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(spin_cubes)))
   .add_systems(@app.Update, @app.system(@app.system_param2(orbit_camera)))

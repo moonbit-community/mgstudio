@@ -14,31 +14,12 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_animation_animation_graph_ExampleAnimationGraph(
-    ExampleAnimationGraph
-  )
   EcsPayload_examples_animation_animation_graph_ExampleAnimationWeights(
     ExampleAnimationWeights
   )
   EcsPayload_examples_animation_animation_graph_ClipNode(ClipNode)
   EcsPayload_examples_animation_animation_graph_ClipNodeFill(ClipNodeFill)
   EcsPayload_examples_animation_animation_graph_ClipNodeLabel(ClipNodeLabel)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ExampleAnimationGraph with to_ecs_payload(self) {
-  EcsPayload_examples_animation_animation_graph_ExampleAnimationGraph(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ExampleAnimationGraph with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_examples_animation_animation_graph_ExampleAnimationGraph(value) =>
-      Some(value)
-    _ => None
-  }
 }
 
 ///|

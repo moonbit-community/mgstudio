@@ -65,7 +65,7 @@ pub fn Overflow::new(x : OverflowAxis, y : OverflowAxis) -> Overflow {
 }
 
 ///|
-pub fn Overflow::default() -> Overflow {
+pub fn Overflow::Overflow() -> Overflow {
   Overflow::new(OverflowAxis::Visible, OverflowAxis::Visible)
 }
 
@@ -83,7 +83,7 @@ pub struct OverflowClipMargin {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn OverflowClipMargin::default() -> OverflowClipMargin {
+pub fn OverflowClipMargin::OverflowClipMargin() -> OverflowClipMargin {
   OverflowClipMargin::{ visual_box: OverflowClipBox::ContentBox, margin: 0.0F }
 }
 
@@ -253,7 +253,7 @@ pub fn RepeatedGridTrack::new(
 }
 
 ///|
-pub fn RepeatedGridTrack::default() -> RepeatedGridTrack {
+pub fn RepeatedGridTrack::RepeatedGridTrack() -> RepeatedGridTrack {
   RepeatedGridTrack::{
     repetition: GridTrackRepetition::Count(1),
     tracks: [GridTrack::Auto],
@@ -268,19 +268,19 @@ pub struct GridPlacement {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn GridPlacement::default() -> GridPlacement {
+pub fn GridPlacement::GridPlacement() -> GridPlacement {
   GridPlacement::{ start: None, span: Some(1), end: None }
 }
 
 ///|
 pub fn GridPlacement::auto() -> GridPlacement {
-  GridPlacement::default()
+  GridPlacement::GridPlacement()
 }
 
 ///|
 pub fn GridPlacement::span(span : Int) -> GridPlacement {
   if span == 0 {
-    GridPlacement::default()
+    GridPlacement::GridPlacement()
   } else {
     GridPlacement::{ start: None, end: None, span: Some(span) }
   }
@@ -289,25 +289,25 @@ pub fn GridPlacement::span(span : Int) -> GridPlacement {
 ///|
 pub fn GridPlacement::start(start : Int) -> GridPlacement {
   if start == 0 {
-    GridPlacement::default()
+    GridPlacement::GridPlacement()
   } else {
-    GridPlacement::{ ..GridPlacement::default(), start: Some(start) }
+    GridPlacement::{ ..GridPlacement(), start: Some(start) }
   }
 }
 
 ///|
 pub fn GridPlacement::end(end : Int) -> GridPlacement {
   if end == 0 {
-    GridPlacement::default()
+    GridPlacement::GridPlacement()
   } else {
-    GridPlacement::{ ..GridPlacement::default(), end: Some(end) }
+    GridPlacement::{ ..GridPlacement(), end: Some(end) }
   }
 }
 
 ///|
 pub fn GridPlacement::start_span(start : Int, span : Int) -> GridPlacement {
   if start == 0 || span == 0 {
-    GridPlacement::default()
+    GridPlacement::GridPlacement()
   } else {
     GridPlacement::{ start: Some(start), end: None, span: Some(span) }
   }
@@ -316,7 +316,7 @@ pub fn GridPlacement::start_span(start : Int, span : Int) -> GridPlacement {
 ///|
 pub fn GridPlacement::start_end(start : Int, end : Int) -> GridPlacement {
   if start == 0 || end == 0 {
-    GridPlacement::default()
+    GridPlacement::GridPlacement()
   } else {
     GridPlacement::{ start: Some(start), end: Some(end), span: None }
   }
@@ -325,7 +325,7 @@ pub fn GridPlacement::start_end(start : Int, end : Int) -> GridPlacement {
 ///|
 pub fn GridPlacement::end_span(end : Int, span : Int) -> GridPlacement {
   if end == 0 || span == 0 {
-    GridPlacement::default()
+    GridPlacement::GridPlacement()
   } else {
     GridPlacement::{ start: None, end: Some(end), span: Some(span) }
   }
@@ -378,14 +378,14 @@ pub(all) struct Node {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Node::default() -> Node {
+pub fn Node::Node() -> Node {
   Node::{
     display: Display::Flex,
     box_sizing: BoxSizing::default(),
     position_type: PositionType::Relative,
-    overflow: Overflow::default(),
+    overflow: Overflow::Overflow(),
     scrollbar_width: 0.0F,
-    overflow_clip_margin: OverflowClipMargin::default(),
+    overflow_clip_margin: OverflowClipMargin::OverflowClipMargin(),
     left: Val::Auto,
     right: Val::Auto,
     top: Val::Auto,
@@ -403,10 +403,10 @@ pub fn Node::default() -> Node {
     justify_self: JustifySelf::Auto,
     align_content: AlignContent::Default,
     justify_content: JustifyContent::Default,
-    margin: UiRect::default(),
-    padding: UiRect::default(),
-    border: UiRect::default(),
-    border_radius: BorderRadius::default(),
+    margin: UiRect::UiRect(),
+    padding: UiRect::UiRect(),
+    border: UiRect::UiRect(),
+    border_radius: BorderRadius::BorderRadius(),
     flex_direction: FlexDirection::Row,
     flex_wrap: FlexWrap::NoWrap,
     flex_grow: 0.0F,
@@ -419,8 +419,8 @@ pub fn Node::default() -> Node {
     grid_template_columns: [],
     grid_auto_rows: [],
     grid_auto_columns: [],
-    grid_row: GridPlacement::default(),
-    grid_column: GridPlacement::default(),
+    grid_row: GridPlacement::GridPlacement(),
+    grid_column: GridPlacement::GridPlacement(),
   }
 }
 
@@ -582,7 +582,7 @@ pub fn Node::with_grid_template_columns(
 pub struct GhostNode {} derive(ToJson, FromJson)
 
 ///|
-pub fn GhostNode::default() -> GhostNode {
+pub fn GhostNode::GhostNode() -> GhostNode {
   GhostNode::{  }
 }
 
@@ -590,7 +590,7 @@ pub fn GhostNode::default() -> GhostNode {
 pub struct UiRoot {} derive(ToJson, FromJson)
 
 ///|
-pub fn UiRoot::default() -> UiRoot {
+pub fn UiRoot::UiRoot() -> UiRoot {
   UiRoot::{  }
 }
 
@@ -689,7 +689,7 @@ pub fn BorderRect::rectangle(
 }
 
 ///|
-pub fn BorderRect::default() -> BorderRect {
+pub fn BorderRect::BorderRect() -> BorderRect {
   BorderRect::square(0.0F)
 }
 
@@ -725,8 +725,8 @@ pub fn TextureSlicer::new(border : BorderRect) -> TextureSlicer {
 }
 
 ///|
-pub fn TextureSlicer::default() -> TextureSlicer {
-  TextureSlicer::new(BorderRect::default())
+pub fn TextureSlicer::TextureSlicer() -> TextureSlicer {
+  TextureSlicer::new(BorderRect::BorderRect())
 }
 
 ///|
@@ -795,7 +795,7 @@ pub struct ImageNode {
 pub impl @ecs.Mutable for ImageNode
 
 ///|
-pub fn ImageNode::default() -> ImageNode {
+pub fn ImageNode::ImageNode() -> ImageNode {
   ImageNode::{
     color: @sprite.Color::white(),
     image: @asset.asset_transparent_texture(),
@@ -809,7 +809,7 @@ pub fn ImageNode::default() -> ImageNode {
 
 ///|
 pub fn ImageNode::new(image : @asset.Handle[@asset.Image]) -> ImageNode {
-  ImageNode::{ ..ImageNode::default(), image, }
+  ImageNode::{ ..ImageNode(), image, }
 }
 
 ///|
@@ -872,7 +872,7 @@ pub(all) enum Interaction {
 pub struct Button {} derive(ToJson, FromJson)
 
 ///|
-pub fn Button::default() -> Button {
+pub fn Button::Button() -> Button {
   Button::{  }
 }
 
@@ -881,7 +881,7 @@ pub fn Button::default() -> Button {
 pub struct Label {} derive(ToJson, FromJson)
 
 ///|
-pub fn Label::default() -> Label {
+pub fn Label::Label() -> Label {
   Label::{  }
 }
 
@@ -1122,7 +1122,7 @@ fn ensure_ui_context_resource(world : @ecs.World) -> UiContext {
   match res.get() {
     Some(value) => value
     None => {
-      let value = UiContext::default()
+      let value = UiContext::UiContext()
       res.insert(value)
       value
     }
@@ -1374,7 +1374,7 @@ fn ui_compute_render_target_info(
       let scale_factor = target_scale_factor * ui_scale_value
       ComputedUiRenderTargetInfo::new(scale_factor, physical_size)
     }
-    None => ComputedUiRenderTargetInfo::default()
+    None => ComputedUiRenderTargetInfo::ComputedUiRenderTargetInfo()
   }
 }
 
@@ -2080,7 +2080,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   ) -> @taffy_style.Style {
     let node = match (try! world.get_by_key(entity, ecs_key_node)) {
       Some(v) => v
-      None => Node::default()
+      None => Node::Node()
     }
     let mut style = @taffy_style.Style::default()
       .with_display(display_to_taffy(node.display))
@@ -2361,7 +2361,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       let node_for_layout = match
         (try! world.get_by_key(entity, ecs_key_node)) {
         Some(v) => v
-        None => Node::default()
+        None => Node::Node()
       }
       let border_l = clamp_nonneg(
         resolve_axis(
@@ -2513,7 +2513,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       let scroll_raw = match
         (try! world.get_by_key(entity, ecs_key_scroll_position)) {
         Some(v) => v
-        None => ScrollPosition::default()
+        None => ScrollPosition::ScrollPosition()
       }
       let scroll = match (try! world.get_by_key(entity, ecs_key_node)) {
         Some(node) => {
@@ -2531,7 +2531,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
           }
           ScrollPosition::new(x, y)
         }
-        None => ScrollPosition::default()
+        None => ScrollPosition::ScrollPosition()
       }
       let child_rect = @math.Rect::new(
         @math.Vec2::new(
@@ -2602,7 +2602,7 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
   guard target is Some(target_e) else { return }
   let prev = match (try! world.get_by_key(target_e, ecs_key_scroll_position)) {
     Some(v) => v
-    None => ScrollPosition::default()
+    None => ScrollPosition::ScrollPosition()
   }
   guard (try! world.get_by_key(target_e, ecs_key_node)) is Some(target_node) else {
     return
@@ -2808,7 +2808,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     }
     let node = match (try! world.get_by_key(entity, ecs_key_node)) {
       Some(v) => v
-      None => Node::default()
+      None => Node::Node()
     }
     let mut child_clip = self_clip
     let mut child_clipped = clipped_by_parent
@@ -2862,7 +2862,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
 /// while preserving insertion order for ties.
 pub fn ui_stack_system(world : @ecs.World) -> Unit {
   let res = get_ui_stack_resource(world)
-  let stack = Ref(res.get().unwrap_or(UiStack::default()))
+  let stack = Ref(res.get().unwrap_or(UiStack::UiStack()))
   UiStack::clear(stack)
   fn cmp_int(a : Int, b : Int) -> Int {
     if a < b {
@@ -3646,7 +3646,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       try! (world.replace(
         entity,
         ecs_key_relative_cursor_position,
-        RelativeCursorPosition::default(),
+        RelativeCursorPosition::RelativeCursorPosition(),
       )
       |> ignore)
     }

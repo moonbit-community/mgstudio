@@ -18,6 +18,6 @@ pub(all) struct ShaderSettings {
 } derive(Eq, Debug)
 
 ///|
-pub fn ShaderSettings::default() -> ShaderSettings {
+pub fn ShaderSettings::ShaderSettings() -> ShaderSettings {
   { shader_defs: [] }
 }

@@ -171,7 +171,7 @@ fn apply_camera_components(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       camera,
       @pbr.ecs_key_contact_shadows,
-      @pbr.ContactShadows::default(),
+      @pbr.ContactShadows::ContactShadows(),
     )
   } else {
     try! (world.take(camera, @pbr.ecs_key_contact_shadows) |> ignore)
@@ -189,7 +189,7 @@ fn apply_ground_receive_shadows(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       ground_entity,
       @pbr.ecs_key_not_shadow_receiver,
-      @pbr.NotShadowReceiver::default(),
+      @pbr.NotShadowReceiver::NotShadowReceiver(),
     )
   }
 }
@@ -296,14 +296,14 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(-0.8F, 0.6F, -0.8F).looking_at(
         @math.Vec3::new(0.0F, 0.35F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
     .with_motion_blur(
-      Some(@post_process.MotionBlur::default().with_shutter_angle(2.0F)),
+      Some(@post_process.MotionBlur::MotionBlur().with_shutter_angle(2.0F)),
     )
     .spawn(world)
 
@@ -311,29 +311,29 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_contact_shadows,
-    @pbr.ContactShadows::default(),
+    @pbr.ContactShadows::ContactShadows(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::default(),
+    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::default(),
+    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
   )
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_depth_prepass,
-    @pbr.DepthPrepass::default(),
+    @pbr.DepthPrepass::DepthPrepass(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_bloom,
-    @post_process.Bloom::default(),
+    @post_process.Bloom::Bloom(),
   )
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_tonemapping,
@@ -364,17 +364,17 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     directional_light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::default(),
+    @pbr.DirectionalLight::DirectionalLight(),
   )
   try! world.set_by_key(
     point_light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default(),
+    @pbr.PointLight::PointLight(),
   )
   try! world.set_by_key(
     spot_light,
     @pbr.ecs_key_spot_light,
-    @pbr.SpotLight::default(),
+    @pbr.SpotLight::SpotLight(),
   )
 
   let model = world.spawn_empty()
@@ -422,7 +422,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -438,7 +438,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   contact_shadows_state.val.help_text = Some(help_text)
 
@@ -550,7 +550,7 @@ fn controls(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(controls))
   .add_systems(@app.Update, @app.system(rotate_light))

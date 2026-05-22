@@ -14,56 +14,10 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_stress_tests_many_foxes_FoxAnimations(FoxAnimations)
-  EcsPayload_examples_stress_tests_many_foxes_Foxes(Foxes)
-  EcsPayload_examples_stress_tests_many_foxes_StressMetricsState(
-    StressMetricsState
-  )
   EcsPayload_examples_stress_tests_many_foxes_Ring(Ring)
   EcsPayload_examples_stress_tests_many_foxes_RotationDirection(
     RotationDirection
   )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FoxAnimations with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_foxes_FoxAnimations(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for FoxAnimations with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_foxes_FoxAnimations(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Foxes with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_foxes_Foxes(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Foxes with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_foxes_Foxes(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StressMetricsState with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_foxes_StressMetricsState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StressMetricsState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_foxes_StressMetricsState(value) =>
-      Some(value)
-    _ => None
-  }
 }
 
 ///|

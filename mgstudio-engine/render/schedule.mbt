@@ -20,7 +20,7 @@
 pub struct RenderGraph {}
 
 ///|
-pub fn RenderGraph::default() -> RenderGraph {
+pub fn RenderGraph::RenderGraph() -> RenderGraph {
   RenderGraph::{  }
 }
 

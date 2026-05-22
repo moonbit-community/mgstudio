@@ -31,7 +31,7 @@ pub fn RenderAssetDiagnosticPlugin::new(
 }
 
 ///|
-pub fn RenderAssetDiagnosticPlugin::default() -> RenderAssetDiagnosticPlugin {
+pub fn RenderAssetDiagnosticPlugin::RenderAssetDiagnosticPlugin() -> RenderAssetDiagnosticPlugin {
   RenderAssetDiagnosticPlugin::new(" assets")
 }
 
@@ -76,7 +76,7 @@ pub fn RenderAssetDiagnosticState::new(
 ) -> RenderAssetDiagnosticState {
   RenderAssetDiagnosticState::{
     suffix,
-    snapshot: @renderer.RenderDiagnosticsSnapshot::default(),
+    snapshot: @renderer.RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot(),
     sample_count: 0,
     last_sample_us: 0.0F,
   }
@@ -103,7 +103,7 @@ pub fn render_asset_diagnostic_plugin(
 ) -> @app.App[@ecs.World] {
   render_asset_diagnostic_plugin_with(
     app,
-    RenderAssetDiagnosticPlugin::default(),
+    RenderAssetDiagnosticPlugin::RenderAssetDiagnosticPlugin(),
   )
 }
 

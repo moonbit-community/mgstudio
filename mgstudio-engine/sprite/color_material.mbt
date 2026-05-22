@@ -251,8 +251,13 @@ pub fn ColorMaterial::uv_scale(self : ColorMaterial) -> @math.Vec2 {
 }
 
 ///|
-pub impl Default for ColorMaterial with default() {
+pub fn ColorMaterial::ColorMaterial() -> ColorMaterial {
   ColorMaterial::{ handle: default_color_material_asset_handle() }
+}
+
+///|
+pub impl Default for ColorMaterial with default() {
+  ColorMaterial::ColorMaterial()
 }
 
 ///|
@@ -430,7 +435,7 @@ fn init_default_color_material_asset(
 pub struct ColorMaterialPlugin {}
 
 ///|
-pub fn ColorMaterialPlugin::default() -> ColorMaterialPlugin {
+pub fn ColorMaterialPlugin::ColorMaterialPlugin() -> ColorMaterialPlugin {
   ColorMaterialPlugin::{  }
 }
 
@@ -441,7 +446,7 @@ pub impl @app.Plugin for ColorMaterialPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for ColorMaterialPlugin with build(_self, app) {
-  let plugin : Material2dPlugin[ColorMaterialAsset] = Material2dPlugin::default()
+  let plugin : Material2dPlugin[ColorMaterialAsset] = Material2dPlugin::Material2dPlugin()
     .with_asset_init(default_color_material_asset)
     .with_vertex_shader(MESH2D_SHADER_PATH)
     .with_fragment_shader("sprite_render/mesh2d/color_material.wgsl")

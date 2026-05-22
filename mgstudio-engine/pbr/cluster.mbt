@@ -49,7 +49,7 @@ pub struct ClusterableObjectCounts3d {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn ClusterableObjectCounts3d::default() -> ClusterableObjectCounts3d {
+pub fn ClusterableObjectCounts3d::ClusterableObjectCounts3d() -> ClusterableObjectCounts3d {
   ClusterableObjectCounts3d::{
     point_lights: 0U,
     spot_lights: 0U,
@@ -140,7 +140,7 @@ fn cluster_config_sanitize_dimension(value : Int) -> Int {
 }
 
 ///|
-pub fn ClusterConfig3d::default() -> ClusterConfig3d {
+pub fn ClusterConfig3d::ClusterConfig3d() -> ClusterConfig3d {
   ClusterConfig3d::{
     dimensions_x: 16,
     dimensions_y: 9,
@@ -241,7 +241,7 @@ pub struct ViewClusterBindings3d {
 }
 
 ///|
-pub fn ViewClusterBindings3d::default() -> ViewClusterBindings3d {
+pub fn ViewClusterBindings3d::ViewClusterBindings3d() -> ViewClusterBindings3d {
   ViewClusterBindings3d::{
     indices: [],
     offsets_and_counts: [],

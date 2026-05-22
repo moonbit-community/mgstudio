@@ -38,7 +38,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(2.0F, 2.0F, 2.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -47,12 +47,12 @@ fn setup(
     ),
   )
 
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::default(),
+        @pbr.DirectionalLight::DirectionalLight(),
         @transform.Transform::from_xyz(3.0F, 5.0F, 3.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -73,8 +73,8 @@ fn setup(
 
   let ui_root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
     ),
@@ -87,7 +87,7 @@ fn setup(
         @text.Text::new("Waiting for glTF extras..."),
         @text.TextFont::from_font_size(15.0F),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           top: @ui.Val::Px(12.0F),
           left: @ui.Val::Px(12.0F),
@@ -172,7 +172,7 @@ fn update_display(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(update_display)))
   .run()

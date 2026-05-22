@@ -42,8 +42,8 @@ pub fn TextureSlicer::new(border : BorderRect) -> TextureSlicer {
 }
 
 ///|
-pub fn TextureSlicer::default() -> TextureSlicer {
-  TextureSlicer::new(BorderRect::default())
+pub fn TextureSlicer::TextureSlicer() -> TextureSlicer {
+  TextureSlicer::new(BorderRect::BorderRect())
 }
 
 ///|

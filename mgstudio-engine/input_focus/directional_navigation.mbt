@@ -19,7 +19,7 @@ const DIRECTIONAL_NAVIGATION_NO_SCORE : Float = 1000000000000.0F
 pub struct DirectionalNavigationPlugin {}
 
 ///|
-pub fn DirectionalNavigationPlugin::default() -> DirectionalNavigationPlugin {
+pub fn DirectionalNavigationPlugin::DirectionalNavigationPlugin() -> DirectionalNavigationPlugin {
   DirectionalNavigationPlugin::{  }
 }
 
@@ -54,7 +54,7 @@ pub fn AutoNavigationConfig::new(
 }
 
 ///|
-pub fn AutoNavigationConfig::default() -> AutoNavigationConfig {
+pub fn AutoNavigationConfig::AutoNavigationConfig() -> AutoNavigationConfig {
   AutoNavigationConfig::new(0.0F, None, true)
 }
 
@@ -92,7 +92,7 @@ pub struct NavNeighbors {
 }
 
 ///|
-pub fn NavNeighbors::default() -> NavNeighbors {
+pub fn NavNeighbors::NavNeighbors() -> NavNeighbors {
   NavNeighbors::{
     north: None,
     north_east: None,
@@ -146,7 +146,7 @@ pub struct DirectionalNavigationMap {
 }
 
 ///|
-pub fn DirectionalNavigationMap::default() -> DirectionalNavigationMap {
+pub fn DirectionalNavigationMap::DirectionalNavigationMap() -> DirectionalNavigationMap {
   { neighbors: @hashmap.HashMap([]) }
 }
 
@@ -293,7 +293,9 @@ pub fn DirectionalNavigationMap::add_edge(
   direction : @math.CompassOctant,
 ) -> Unit {
   let key = directional_navigation_entity_key(a)
-  let neighbors = self.neighbors.get(key).unwrap_or(NavNeighbors::default())
+  let neighbors = self.neighbors
+    .get(key)
+    .unwrap_or(NavNeighbors::NavNeighbors())
   self.neighbors.set(key, neighbors.set(direction, b))
 }
 
@@ -364,7 +366,7 @@ fn directional_navigation_map_value(
 ) -> DirectionalNavigationMap {
   match world.get_resource(DirectionalNavigationMap::resource()) {
     Some(map) => map
-    None => DirectionalNavigationMap::default()
+    None => DirectionalNavigationMap::DirectionalNavigationMap()
   }
 }
 
@@ -663,6 +665,6 @@ pub fn directional_navigation_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
   app
-  .init_resource(fn() { DirectionalNavigationMap::default() })
-  .init_resource(fn() { AutoNavigationConfig::default() })
+  .init_resource(fn() { DirectionalNavigationMap::DirectionalNavigationMap() })
+  .init_resource(fn() { AutoNavigationConfig::AutoNavigationConfig() })
 }

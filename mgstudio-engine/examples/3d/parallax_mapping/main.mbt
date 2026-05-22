@@ -247,7 +247,7 @@ fn push_spin_target(entity : @core.Entity, speed : Float) -> Unit {
 fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -263,7 +263,7 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   parallax_state.val.help_text = Some(handle)
 }
@@ -323,7 +323,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     fn(settings) { settings.is_srgb = false },
   )
   let parallax_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::default()
+    @pbr.StandardMaterial::StandardMaterial()
     .with_perceptual_roughness(0.4F)
     .with_base_color_texture(
       Some(asset_server.load("textures/parallax_example/cube_color.png")),
@@ -405,7 +405,7 @@ fn setup(world : @ecs.World) -> Unit {
   parallax_state.val.current_method = @pbr.ParallaxMappingMethod::Relief(4)
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     camera_view_transform(0),
   ).spawn(world)
   parallax_state.val.camera = Some(camera)
@@ -542,7 +542,7 @@ fn update_parallax_controls(_world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(spin))
   .add_systems(@app.Update, @app.system(move_camera))

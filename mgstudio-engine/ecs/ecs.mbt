@@ -14,13 +14,13 @@
 
 ///|
 /// ECS component value constraint.
-pub(open) trait Component: EcsPayloadCodec {
+pub(open) trait Component {
   fn component() -> ComponentKey[Self]
 }
 
 ///|
 /// ECS resource value constraint.
-pub(open) trait ResourceData: EcsPayloadCodec {}
+pub(open) trait ResourceData {}
 
 ///|
 /// ECS event value constraint.
@@ -117,15 +117,28 @@ let next_event_id_ref : Ref[Int] = Ref(1)
 let next_world_id_ref : Ref[Int] = Ref(1)
 
 ///|
-pub fn[T : EcsPayloadCodec] register_component(
-  debug_name? : String = "",
-) -> ComponentKey[T] {
+pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
   let id = next_component_id_ref.val
   next_component_id_ref.val = id + 1
   ignore(component_metadata_ref(id, debug_name~))
   let key = ComponentKey::{ id, debug_name, access: component_access_new() }
-  register_component_ops(id, key)
   key
+}
+
+///|
+pub fn[T : EcsPayloadCodec] ensure_erased_component(
+  key : ComponentKey[T],
+) -> ComponentKey[T] {
+  ensure_component_ops_for_key(key)
+  key
+}
+
+///|
+pub fn[T : EcsPayloadCodec] register_erased_component(
+  debug_name? : String = "",
+) -> ComponentKey[T] {
+  let key : ComponentKey[T] = register_component(debug_name~)
+  ensure_erased_component(key)
 }
 
 ///|
@@ -137,12 +150,17 @@ fn allocate_resource_id(debug_name? : String = "") -> Int {
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] register_resource(
+pub fn[T] register_resource(debug_name? : String = "") -> ResourceKey[T] {
+  let id = allocate_resource_id(debug_name~)
+  ResourceKey::{ id, debug_name, access: resource_access_ops_new() }
+}
+
+///|
+pub fn[T : EcsPayloadCodec] register_erased_resource(
   debug_name? : String = "",
 ) -> ResourceKey[T] {
-  let id = allocate_resource_id(debug_name~)
-  let key = ResourceKey::{ id, debug_name, access: resource_access_ops_new() }
-  register_resource_ops(id, key)
+  let key : ResourceKey[T] = register_resource(debug_name~)
+  register_resource_ops(key.id(), key)
   key
 }
 
@@ -163,6 +181,12 @@ pub fn[T : EcsPayloadCodec] component_key_from_id(
     set: fn(world, entity, value) {
       ignore((ops.set_payload)(world, entity, T::to_ecs_payload(value)))
     },
+    remove: fn(world, entity) {
+      match (ops.remove_payload)(world, entity) {
+        Some(payload) => T::from_ecs_payload(payload)
+        None => None
+      }
+    },
     for_each: fn(world, visit) {
       (ops.for_each_payload)(world, fn(entity, payload) {
         match T::from_ecs_payload(payload) {
@@ -171,9 +195,6 @@ pub fn[T : EcsPayloadCodec] component_key_from_id(
         }
       })
     },
-    payload: ops.payload,
-    set_payload: ops.set_payload,
-    remove_payload: ops.remove_payload,
   }
   ComponentKey::{ id, debug_name, access }
 }
@@ -746,7 +767,7 @@ pub fn[T] World::remove_by_key(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component] World::set(
+pub fn[T : Component + EcsPayloadCodec] World::set(
   self : World,
   entity : @core.Entity,
   key? : ComponentKey[T] = T::component(),
@@ -757,7 +778,7 @@ pub fn[T : Component] World::set(
 }
 
 ///|
-pub fn[T : Component] World::get(
+pub fn[T : Component + EcsPayloadCodec] World::get(
   self : World,
   entity : @core.Entity,
   key? : ComponentKey[T] = T::component(),
@@ -767,7 +788,7 @@ pub fn[T : Component] World::get(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component] World::update(
+pub fn[T : Component + EcsPayloadCodec] World::update(
   self : World,
   entity : @core.Entity,
   key? : ComponentKey[T] = T::component(),

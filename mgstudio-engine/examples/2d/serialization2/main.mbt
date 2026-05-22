@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(rapier2d_serialization2_setup))
   .run()
 }
@@ -30,7 +30,7 @@ fn rapier2d_serialization2_setup(world : @ecs.World) -> Unit {
     @sprite.ClearColor::new(@sprite.Color::new(0.90F, 0.92F, 0.96F, 1.0F)),
   )
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore

@@ -14,22 +14,7 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_asset_multi_asset_sync_PendingTextures(PendingTextures)
   EcsPayload_examples_asset_multi_asset_sync_LoadedSprite(LoadedSprite)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PendingTextures with to_ecs_payload(self) {
-  EcsPayload_examples_asset_multi_asset_sync_PendingTextures(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PendingTextures with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_asset_multi_asset_sync_PendingTextures(value) =>
-      Some(value)
-    _ => None
-  }
 }
 
 ///|

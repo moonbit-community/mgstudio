@@ -93,7 +93,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
 
   ignore(
     @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
         @math.Vec3::new(0.0F, 20.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -131,7 +131,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -PI / 4.0F),
         ),
         @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
-          @pbr.CascadeShadowConfigBuilder::default()
+          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
           .with_first_cascade_far_bound(200.0F)
           .with_maximum_distance(400.0F),
         ),
@@ -143,7 +143,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(
     @app.Startup,
     @app.system(@app.system_param2(setup_mesh_and_animation)),

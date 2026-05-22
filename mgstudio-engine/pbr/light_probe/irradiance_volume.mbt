@@ -37,7 +37,7 @@ pub struct RenderViewIrradianceVolumeInfo {
 }
 
 ///|
-pub fn RenderViewIrradianceVolumeInfo::default() -> RenderViewIrradianceVolumeInfo {
+pub fn RenderViewIrradianceVolumeInfo::RenderViewIrradianceVolumeInfo() -> RenderViewIrradianceVolumeInfo {
   RenderViewIrradianceVolumeInfo::{ texture: None, intensity: 1.0F }
 }
 
@@ -112,5 +112,5 @@ pub fn pbr_parallax_correction_default() -> ParallaxCorrection {
 
 ///|
 pub fn pbr_irradiance_volume_default() -> IrradianceVolume {
-  IrradianceVolume::default()
+  IrradianceVolume()
 }

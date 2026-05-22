@@ -91,7 +91,7 @@ pub fn BaseMeshPipelineKey::primitive_topology(
 pub struct MeshPlugin {}
 
 ///|
-pub fn MeshPlugin::default() -> MeshPlugin {
+pub fn MeshPlugin::MeshPlugin() -> MeshPlugin {
   MeshPlugin::{  }
 }
 

@@ -60,7 +60,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   ignore(
     @sprite.Camera2dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::identity(),
     ).spawn(world),
   )
@@ -71,8 +71,8 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(root)
     .insert(
       (
-        @ui.UiRoot::default(),
-        @ui.Node::default()
+        @ui.UiRoot::UiRoot(),
+        @ui.Node::Node()
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Percent(100.0F))
         .with_align_items(@ui.AlignItems::Center)
@@ -93,7 +93,7 @@ fn setup(world : @ecs.World) -> Unit {
       .insert(
         (
           @hierarchy.Parent::new(root),
-          @ui.Node::default()
+          @ui.Node::Node()
           .with_flex_direction(@ui.FlexDirection::Row)
           .with_column_gap(@ui.Val::Px(20.0F)),
           @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F)),
@@ -108,7 +108,7 @@ fn setup(world : @ecs.World) -> Unit {
       .insert(
         (
           @hierarchy.Parent::new(row),
-          @ui.Node::default()
+          @ui.Node::Node()
           .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
           .with_margin(
             @ui.UiRect::new(
@@ -131,7 +131,7 @@ fn setup(world : @ecs.World) -> Unit {
       .insert(
         (
           @hierarchy.Parent::new(row),
-          @ui.Node::default()
+          @ui.Node::Node()
           .with_width(@ui.Val::Px(100.0F))
           .with_height(@ui.Val::Px(100.0F))
           .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F)))
@@ -162,7 +162,7 @@ fn setup(world : @ecs.World) -> Unit {
         (
           @hierarchy.Parent::new(panel),
           @ui.Node::{
-            ..@ui.Node::default(),
+            ..@ui.Node(),
             min_width: @ui.Val::Px(100.0F),
             min_height: @ui.Val::Px(100.0F),
           },
@@ -177,7 +177,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .run()
 }

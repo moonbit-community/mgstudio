@@ -23,7 +23,7 @@ const SKYBOX_PLUGIN_NAME : String = "mgstudio.core_pipeline.skybox.SkyboxPlugin"
 pub struct SkyboxPlugin {}
 
 ///|
-pub fn SkyboxPlugin::default() -> SkyboxPlugin {
+pub fn SkyboxPlugin::SkyboxPlugin() -> SkyboxPlugin {
   SkyboxPlugin::{  }
 }
 
@@ -31,7 +31,7 @@ pub fn SkyboxPlugin::default() -> SkyboxPlugin {
 pub struct Skybox {} derive(ToJson, FromJson)
 
 ///|
-pub fn Skybox::default() -> Skybox {
+pub fn Skybox::Skybox() -> Skybox {
   Skybox::{  }
 }
 
@@ -145,7 +145,7 @@ pub impl @ecs.Component for Skybox with component() {
 
 ///|
 pub fn skybox_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(SkyboxPlugin::default())
+  app.add_plugins(SkyboxPlugin::SkyboxPlugin())
 }
 
 ///|
@@ -173,7 +173,7 @@ fn skybox_plugin_install_with(
   plugin : SkyboxPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { SkyboxPipelineState::default() })
+  app.init_resource(fn() { SkyboxPipelineState::SkyboxPipelineState() })
 }
 
 ///|
@@ -183,7 +183,7 @@ pub struct SkyboxPipelineState {
 }
 
 ///|
-pub fn SkyboxPipelineState::default() -> SkyboxPipelineState {
+pub fn SkyboxPipelineState::SkyboxPipelineState() -> SkyboxPipelineState {
   SkyboxPipelineState::{ pipeline_count: 0, bind_group_count: 0 }
 }
 

@@ -63,7 +63,7 @@ pub impl @asset.Asset for AutoExposureCompensationCurve with asset_as_image(
 }
 
 ///|
-pub fn AutoExposureCompensationCurve::default() -> AutoExposureCompensationCurve {
+pub fn AutoExposureCompensationCurve::AutoExposureCompensationCurve() -> AutoExposureCompensationCurve {
   AutoExposureCompensationCurve::{
     min_log_lum: 0.0F,
     max_log_lum: 0.0F,

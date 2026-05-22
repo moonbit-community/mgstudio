@@ -307,7 +307,7 @@ priv struct SceneModifiedEventsCursorState {
 }
 
 ///|
-fn SceneModifiedEventsCursorState::default() -> SceneModifiedEventsCursorState {
+fn SceneModifiedEventsCursorState::SceneModifiedEventsCursorState() -> SceneModifiedEventsCursorState {
   SceneModifiedEventsCursorState::{
     modified_event_cursor: Ref(0),
     debounced_scene_asset_ages: Ref({}),
@@ -363,13 +363,15 @@ pub fn scene_set_gltf_lod_visibility_policy(
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy {
   match scene_registry_if_present() {
     Some(state) => state.lod_visibility_policy
-    None => GltfLodVisibilityPolicy::default()
+    None => GltfLodVisibilityPolicy::GltfLodVisibilityPolicy()
   }
 }
 
 ///|
 pub fn scene_reset_gltf_lod_visibility_policy() -> Unit {
-  scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy::default())
+  scene_set_gltf_lod_visibility_policy(
+    GltfLodVisibilityPolicy::GltfLodVisibilityPolicy(),
+  )
 }
 
 ///|

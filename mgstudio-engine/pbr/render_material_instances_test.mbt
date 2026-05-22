@@ -14,7 +14,7 @@
 
 ///|
 test "render3d: render material instances extract visible material ids" {
-  let instances = RenderMaterialInstances::default()
+  let instances = RenderMaterialInstances::RenderMaterialInstances()
   let entity = @core.Entity::new(7, 2)
   let material = MeshMaterial3d::new(@asset.Handle::new(42))
 
@@ -30,7 +30,7 @@ test "render3d: render material instances extract visible material ids" {
 
 ///|
 test "render3d: render material instances remove invisible materials immediately" {
-  let instances = RenderMaterialInstances::default()
+  let instances = RenderMaterialInstances::RenderMaterialInstances()
   let entity = @core.Entity::new(3, 1)
   let material = MeshMaterial3d::new(@asset.Handle::new(9))
 
@@ -42,7 +42,7 @@ test "render3d: render material instances remove invisible materials immediately
 
 ///|
 test "render3d: early sweep preserves same-frame material replacement" {
-  let instances = RenderMaterialInstances::default()
+  let instances = RenderMaterialInstances::RenderMaterialInstances()
   let entity = @core.Entity::new(11, 0)
   let first = MeshMaterial3d::new(@asset.Handle::new(1))
   let second = MeshMaterial3d::new(@asset.Handle::new(2))
@@ -58,7 +58,7 @@ test "render3d: early sweep preserves same-frame material replacement" {
 
 ///|
 test "render3d: late sweep removes stale entries and advances change tick" {
-  let instances = RenderMaterialInstances::default()
+  let instances = RenderMaterialInstances::RenderMaterialInstances()
   let stale = @core.Entity::new(19, 0)
   let current = @core.Entity::new(20, 0)
   let material = MeshMaterial3d::new(@asset.Handle::new(5))
@@ -73,7 +73,7 @@ test "render3d: late sweep removes stale entries and advances change tick" {
 
 ///|
 test "render3d: late sweep removes stale material instances after all-query extraction" {
-  let instances = RenderMaterialInstances::default()
+  let instances = RenderMaterialInstances::RenderMaterialInstances()
   let stale = @core.Entity::new(21, 0)
   let current = @core.Entity::new(22, 0)
   let material = MeshMaterial3d::new(@asset.Handle::new(8))

@@ -50,7 +50,7 @@ pub struct MeshletVisibilityBufferRasterState {
 }
 
 ///|
-pub fn MeshletVisibilityBufferRasterState::default() -> MeshletVisibilityBufferRasterState {
+pub fn MeshletVisibilityBufferRasterState::MeshletVisibilityBufferRasterState() -> MeshletVisibilityBufferRasterState {
   MeshletVisibilityBufferRasterState::{
     enabled: meshlet_runtime_available(),
     last_view_count: 0,
@@ -87,7 +87,7 @@ pub fn meshlet_visibility_buffer_raster_state_with_enabled(
   enabled : Bool,
 ) -> MeshletVisibilityBufferRasterState {
   MeshletVisibilityBufferRasterState::{
-    ..MeshletVisibilityBufferRasterState::default(),
+    ..MeshletVisibilityBufferRasterState(),
     enabled,
   }
 }

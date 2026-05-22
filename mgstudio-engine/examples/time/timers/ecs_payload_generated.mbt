@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_time_timers_PrintOnCompletionTimer(PrintOnCompletionTimer)
-  EcsPayload_examples_time_timers_Countdown(Countdown)
 }
 
 ///|
@@ -29,19 +28,6 @@ impl @ecs.EcsPayloadCodec for PrintOnCompletionTimer with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_examples_time_timers_PrintOnCompletionTimer(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Countdown with to_ecs_payload(self) {
-  EcsPayload_examples_time_timers_Countdown(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Countdown with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_time_timers_Countdown(value) => Some(value)
     _ => None
   }
 }

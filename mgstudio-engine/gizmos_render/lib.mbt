@@ -32,7 +32,7 @@ let ecs_res_key_gizmo_render_plugin_marker : @ecs.ResourceKey[
 pub struct GizmoRenderPlugin {}
 
 ///|
-pub fn GizmoRenderPlugin::default() -> GizmoRenderPlugin {
+pub fn GizmoRenderPlugin::GizmoRenderPlugin() -> GizmoRenderPlugin {
   GizmoRenderPlugin::{  }
 }
 
@@ -44,7 +44,7 @@ pub(all) enum GizmoRenderSystems {
 
 ///|
 pub fn gizmo_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  gizmo_render_plugin_with(app, GizmoRenderPlugin::default())
+  gizmo_render_plugin_with(app, GizmoRenderPlugin::GizmoRenderPlugin())
 }
 
 ///|

@@ -147,7 +147,7 @@ fn render3d_point_light_shadow_texel_size(world : @ecs.World) -> Float {
   let shadow_map_size = match
     world.get_resource(@light.ecs_key_point_light_shadow_map) {
     Some(v) => if v.size <= 0 { 1 } else { v.size }
-    None => @light.PointLightShadowMap::default().size
+    None => @light.PointLightShadowMap::PointLightShadowMap().size
   }
   2.0F / Float::from_double(shadow_map_size.to_double())
 }
@@ -156,7 +156,7 @@ fn render3d_point_light_shadow_texel_size(world : @ecs.World) -> Float {
 fn render3d_directional_light_shadow_map_size(world : @ecs.World) -> Int {
   match world.get_resource(@light.ecs_key_directional_light_shadow_map) {
     Some(v) => if v.size <= 0 { 1 } else { v.size }
-    None => @light.DirectionalLightShadowMap::default().size
+    None => @light.DirectionalLightShadowMap::DirectionalLightShadowMap().size
   }
 }
 
@@ -906,11 +906,11 @@ fn render3d_extract_directional_light(
   let sun_disk = match
     (try! world.get_by_key(entity, @light.ecs_key_sun_disk)) {
     Some(v) => v
-    None => @light.SunDisk::default()
+    None => @light.SunDisk::SunDisk()
   }
   let cascade_config = match light.cascade_shadow_config {
     Some(config) => config
-    None => @light.CascadeShadowConfig::default()
+    None => @light.CascadeShadowConfig::CascadeShadowConfig()
   }
   let cascade_count = cascade_config.bounds.length()
   let cascade_overlap_proportion = cascade_config.overlap_proportion
@@ -1508,7 +1508,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     is Some(v) {
     v
   } else {
-    @light.GlobalAmbientLight::default()
+    @light.GlobalAmbientLight::GlobalAmbientLight()
   }
   let (cluster_screen_width, cluster_screen_height) = render3d_cluster_view_info(
     world,

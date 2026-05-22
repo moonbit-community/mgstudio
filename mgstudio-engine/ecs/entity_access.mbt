@@ -375,7 +375,9 @@ fn[T] world_component_mut(
 }
 
 ///|
-fn[T : Component] component_bundle_writer(value : T) -> (Int, EcsPayloadWriter) {
+fn[T : Component + EcsPayloadCodec] component_bundle_writer(
+  value : T,
+) -> (Int, EcsPayloadWriter) {
   let key = T::component()
   (key.id(), ecs_payload_writer(key, value))
 }
@@ -440,7 +442,9 @@ pub fn[T : Component] EntityRef::contains(
 }
 
 ///|
-pub fn[T : Component] EntityRef::get(self : EntityRef) -> T? raise EcsError {
+pub fn[T : Component + EcsPayloadCodec] EntityRef::get(
+  self : EntityRef,
+) -> T? raise EcsError {
   self.world.get_by_key(self.entity, T::component())
 }
 
@@ -469,7 +473,9 @@ pub fn[T : Component] EntityMut::contains(
 }
 
 ///|
-pub fn[T : Component] EntityMut::get(self : EntityMut) -> T? raise EcsError {
+pub fn[T : Component + EcsPayloadCodec] EntityMut::get(
+  self : EntityMut,
+) -> T? raise EcsError {
   self.world.get_by_key(self.entity, T::component())
 }
 
@@ -497,12 +503,10 @@ pub impl Bundle for Unit with insert_into(_self, _world, _entity, loc~) {
 }
 
 ///|
-pub impl[A : Component, B : Component] Bundle for (A, B) with insert_into(
-  self,
-  world,
-  entity,
-  loc~,
-) {
+pub impl[A : Component + EcsPayloadCodec, B : Component + EcsPayloadCodec] Bundle for (
+  A,
+  B,
+) with insert_into(self, world, entity, loc~) {
   let (a, b) = self
   let payloads : Array[(Int, EcsPayloadWriter)] = [
     component_bundle_writer(a),
@@ -516,12 +520,11 @@ pub impl[A : Component, B : Component] Bundle for (A, B) with insert_into(
 }
 
 ///|
-pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C) with insert_into(
-  self,
-  world,
-  entity,
-  loc~,
-) {
+pub impl[
+  A : Component + EcsPayloadCodec,
+  B : Component + EcsPayloadCodec,
+  C : Component + EcsPayloadCodec,
+] Bundle for (A, B, C) with insert_into(self, world, entity, loc~) {
   let (a, b, c) = self
   let payloads : Array[(Int, EcsPayloadWriter)] = [
     component_bundle_writer(a),
@@ -536,12 +539,12 @@ pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C) with 
 }
 
 ///|
-pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for (
-  A,
-  B,
-  C,
-  D,
-) with insert_into(self, world, entity, loc~) {
+pub impl[
+  A : Component + EcsPayloadCodec,
+  B : Component + EcsPayloadCodec,
+  C : Component + EcsPayloadCodec,
+  D : Component + EcsPayloadCodec,
+] Bundle for (A, B, C, D) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d) = self
   let payloads : Array[(Int, EcsPayloadWriter)] = [
     component_bundle_writer(a),
@@ -558,11 +561,11 @@ pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for 
 
 ///|
 pub impl[
-  A : Component,
-  B : Component,
-  C : Component,
-  D : Component,
-  E : Component,
+  A : Component + EcsPayloadCodec,
+  B : Component + EcsPayloadCodec,
+  C : Component + EcsPayloadCodec,
+  D : Component + EcsPayloadCodec,
+  E : Component + EcsPayloadCodec,
 ] Bundle for (A, B, C, D, E) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e) = self
   let payloads : Array[(Int, EcsPayloadWriter)] = [
@@ -581,12 +584,12 @@ pub impl[
 
 ///|
 pub impl[
-  A : Component,
-  B : Component,
-  C : Component,
-  D : Component,
-  E : Component,
-  F : Component,
+  A : Component + EcsPayloadCodec,
+  B : Component + EcsPayloadCodec,
+  C : Component + EcsPayloadCodec,
+  D : Component + EcsPayloadCodec,
+  E : Component + EcsPayloadCodec,
+  F : Component + EcsPayloadCodec,
 ] Bundle for (A, B, C, D, E, F) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e, f) = self
   let payloads : Array[(Int, EcsPayloadWriter)] = [
@@ -606,13 +609,13 @@ pub impl[
 
 ///|
 pub impl[
-  A : Component,
-  B : Component,
-  C : Component,
-  D : Component,
-  E : Component,
-  F : Component,
-  G : Component,
+  A : Component + EcsPayloadCodec,
+  B : Component + EcsPayloadCodec,
+  C : Component + EcsPayloadCodec,
+  D : Component + EcsPayloadCodec,
+  E : Component + EcsPayloadCodec,
+  F : Component + EcsPayloadCodec,
+  G : Component + EcsPayloadCodec,
 ] Bundle for (A, B, C, D, E, F, G) with insert_into(self, world, entity, loc~) {
   let (a, b, c, d, e, f, g) = self
   let payloads : Array[(Int, EcsPayloadWriter)] = [
@@ -633,14 +636,14 @@ pub impl[
 
 ///|
 pub impl[
-  A : Component,
-  B : Component,
-  C : Component,
-  D : Component,
-  E : Component,
-  F : Component,
-  G : Component,
-  H : Component,
+  A : Component + EcsPayloadCodec,
+  B : Component + EcsPayloadCodec,
+  C : Component + EcsPayloadCodec,
+  D : Component + EcsPayloadCodec,
+  E : Component + EcsPayloadCodec,
+  F : Component + EcsPayloadCodec,
+  G : Component + EcsPayloadCodec,
+  H : Component + EcsPayloadCodec,
 ] Bundle for (A, B, C, D, E, F, G, H) with insert_into(
   self,
   world,
@@ -690,7 +693,7 @@ pub fn[B : Bundle] EntityMut::insert(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component] EntityMut::insert_component(
+pub fn[T : Component + EcsPayloadCodec] EntityMut::insert_component(
   self : EntityMut,
   component : T,
   loc~ : SourceLoc,
@@ -701,7 +704,7 @@ pub fn[T : Component] EntityMut::insert_component(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Component] EntityMut::remove_component(
+pub fn[T : Component + EcsPayloadCodec] EntityMut::remove_component(
   self : EntityMut,
   loc~ : SourceLoc,
 ) -> T? raise EcsError {

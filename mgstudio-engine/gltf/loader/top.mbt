@@ -110,7 +110,7 @@ pub fn gltf_convert_coordinates_vec3_components(
 }
 
 ///|
-pub fn GltfConvertCoordinates::default() -> GltfConvertCoordinates {
+pub fn GltfConvertCoordinates::GltfConvertCoordinates() -> GltfConvertCoordinates {
   { rotate_scene_entity: false, rotate_meshes: false }
 }
 
@@ -174,11 +174,11 @@ pub struct GltfPlugin {
 }
 
 ///|
-pub fn GltfPlugin::default() -> GltfPlugin {
+pub fn GltfPlugin::GltfPlugin() -> GltfPlugin {
   {
     pbr_material_handler_enabled: true,
     default_image_sampler: @image.ImageSamplerDescriptor::linear(),
-    convert_coordinates: GltfConvertCoordinates::default(),
+    convert_coordinates: GltfConvertCoordinates::GltfConvertCoordinates(),
     custom_vertex_attributes: [],
     extension_handlers: [],
     skinned_mesh_bounds_policy: GltfSkinnedMeshBoundsPolicy::default(),
@@ -309,7 +309,7 @@ let gltf_default_image_sampler_bootstrap_ref : Ref[
 
 ///|
 let gltf_default_convert_coordinates_bootstrap_ref : Ref[GltfConvertCoordinates] = Ref(
-  GltfConvertCoordinates::default(),
+  GltfConvertCoordinates::GltfConvertCoordinates(),
 )
 
 ///|
@@ -370,7 +370,7 @@ pub fn gltf_loader_runtime_plugin(
     )
     gltf_custom_vertex_attributes_bootstrap.clear()
     gltf_default_image_sampler_bootstrap_ref.val = @image.ImageSamplerDescriptor::linear()
-    gltf_default_convert_coordinates_bootstrap_ref.val = GltfConvertCoordinates::default()
+    gltf_default_convert_coordinates_bootstrap_ref.val = GltfConvertCoordinates::GltfConvertCoordinates()
     gltf_default_skinned_mesh_bounds_policy_bootstrap_ref.val = GltfSkinnedMeshBoundsPolicy::default()
     next
   }
@@ -511,7 +511,7 @@ pub fn gltf_plugin_finish(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn gltf_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  gltf_plugin_with(app, GltfPlugin::default())
+  gltf_plugin_with(app, GltfPlugin::GltfPlugin())
 }
 
 ///|

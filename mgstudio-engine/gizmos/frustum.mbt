@@ -27,13 +27,13 @@ pub(all) struct FrustumGizmoConfigGroup {
 }
 
 ///|
-pub fn FrustumGizmoConfigGroup::default() -> FrustumGizmoConfigGroup {
+pub fn FrustumGizmoConfigGroup::FrustumGizmoConfigGroup() -> FrustumGizmoConfigGroup {
   FrustumGizmoConfigGroup::{ draw_all: false, default_color: None }
 }
 
 ///|
 pub impl Default for FrustumGizmoConfigGroup with default() {
-  FrustumGizmoConfigGroup::default()
+  FrustumGizmoConfigGroup::FrustumGizmoConfigGroup()
 }
 
 ///|
@@ -55,7 +55,9 @@ extenum @sprite.GizmoConfigGroupCell += {
 
 ///|
 pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with new_gizmo_config_group_cell() {
-  FrustumGizmoConfigGroupCell(Ref(FrustumGizmoConfigGroup::default()))
+  FrustumGizmoConfigGroupCell(
+    Ref(FrustumGizmoConfigGroup::FrustumGizmoConfigGroup()),
+  )
 }
 
 ///|
@@ -74,7 +76,7 @@ pub struct ShowFrustumGizmo {
 }
 
 ///|
-pub fn ShowFrustumGizmo::default() -> ShowFrustumGizmo {
+pub fn ShowFrustumGizmo::ShowFrustumGizmo() -> ShowFrustumGizmo {
   ShowFrustumGizmo::{ color: None }
 }
 
@@ -199,6 +201,6 @@ pub fn frustum_gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
       @app.PostUpdate,
       @app.system(@app.system_param2(draw_all_frustum_gizmos)),
     ),
-    FrustumGizmoConfigGroup::default(),
+    FrustumGizmoConfigGroup::FrustumGizmoConfigGroup(),
   )
 }

@@ -22,7 +22,7 @@ pub struct InheritableFont {
 }
 
 ///|
-pub fn InheritableFont::default() -> InheritableFont {
+pub fn InheritableFont::InheritableFont() -> InheritableFont {
   InheritableFont::{ font: Path(FONT_REGULAR), font_size_px: 16.0 }
 }
 

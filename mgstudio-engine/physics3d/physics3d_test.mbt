@@ -342,7 +342,7 @@ test "physics3d: kinematic character controller applies translation and writes o
   try! world.set_by_key(
     player,
     ecs_key_kinematic_character_controller3d,
-    KinematicCharacterController3d::default().add_translation(
+    KinematicCharacterController3d::KinematicCharacterController3d().add_translation(
       @math.Vec3::new(0.5F, 0.0F, 0.0F),
     ),
   )

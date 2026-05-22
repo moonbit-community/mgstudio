@@ -26,7 +26,7 @@ pub struct CiTestingConfig {
   setup : CiTestingSetup
   mut events : Array[CiTestingEventOnFrame]
 }
-pub fn CiTestingConfig::default() -> Self
+pub fn CiTestingConfig::CiTestingConfig() -> Self
 pub fn CiTestingConfig::with_event(Self, Int, CiTestingEvent) -> Self
 pub fn CiTestingConfig::with_setup(Self, CiTestingSetup) -> Self
 pub impl @app.Resource for CiTestingConfig
@@ -57,21 +57,21 @@ pub fn CiTestingEventOnFrame::new(Int, CiTestingEvent) -> Self
 
 pub struct CiTestingPlugin {
 }
-pub fn CiTestingPlugin::default() -> Self
+pub fn CiTestingPlugin::CiTestingPlugin() -> Self
 pub impl @app.Plugin for CiTestingPlugin
 
 pub(all) struct CiTestingRuntimeState {
   mut current_frame : Int
   mut pending_screenshot_exit_entities : Array[@core.Entity]
 }
-pub fn CiTestingRuntimeState::default() -> Self
+pub fn CiTestingRuntimeState::CiTestingRuntimeState() -> Self
 pub impl @app.Resource for CiTestingRuntimeState
 pub impl @ecs.EcsPayloadCodec for CiTestingRuntimeState
 
 pub struct CiTestingSetup {
   fixed_frame_time : @core.Duration?
 }
-pub fn CiTestingSetup::default() -> Self
+pub fn CiTestingSetup::CiTestingSetup() -> Self
 pub fn CiTestingSetup::with_fixed_frame_time(Self, @core.Duration) -> Self
 
 // Type aliases

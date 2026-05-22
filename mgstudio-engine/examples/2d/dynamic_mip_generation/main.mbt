@@ -74,7 +74,7 @@ impl @app.Resource for AppStatus with resource() {
 }
 
 ///|
-fn AppStatus::default() -> AppStatus {
+fn AppStatus::AppStatus() -> AppStatus {
   AppStatus::{
     enable_mip_generation: On,
     image_width: Size640,
@@ -186,7 +186,7 @@ impl @app.Resource for AppAssets with resource() {
 fn AppAssets::new(asset_server : @asset.AssetServer) -> AppAssets {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   AppAssets::{
-    text_font: @text.TextFont::default()
+    text_font: @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(FONT_SIZE),
   }
@@ -259,8 +259,8 @@ fn main {
   )
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .init_resource(AppStatus::default)
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .init_resource(fn() { AppStatus::AppStatus() })
   .add_message(regenerate_image_key)
   .add_message(widget_click_message_key)
   .add_systems(@app.Startup, setup_system)
@@ -285,7 +285,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   regenerate_writer : @ecs.MessageWriter[RegenerateImage],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   commands.insert_resource(AppAssets::new(asset_server.get()))
   spawn_ui(commands)
   ignore(regenerate_writer.write(RegenerateImage::{  }))
@@ -293,9 +293,7 @@ fn setup(
 
 ///|
 fn spawn_ui(commands : @app.Commands) -> Unit {
-  let root = commands.spawn(
-    (@ui.UiRoot::default(), @widgets_lib.main_ui_node()),
-  )
+  let root = commands.spawn((@ui.UiRoot::UiRoot(), @widgets_lib.main_ui_node()))
 
   ignore(
     @widgets_lib.spawn_action_button(
@@ -602,7 +600,7 @@ fn spawn_mip_level_views(
           @text.Text2d::new(mip_level_label(i, mip_size)),
           app_assets.text_font,
           @text.TextLayout::new_with_justify(@text.Justify::Center),
-          @text.Text2dShadow::default(),
+          @text.Text2dShadow::Text2dShadow(),
           @transform.Transform::from_xy_rotation_scale(
             @math.Vec2::new(label_x, y_center),
             0.0F,

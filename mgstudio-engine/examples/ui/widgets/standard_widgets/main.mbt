@@ -86,14 +86,14 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   commands.insert_resource(WidgetState::{ enabled: true, slider: 0.5F })
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_flex_direction(@ui.FlexDirection::Column)
@@ -108,8 +108,8 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       ToggleButton::{  },
-      @ui.Button::default(),
-      @ui.Node::default()
+      @ui.Button::Button(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(220.0F))
       .with_height(@ui.Val::Px(56.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
@@ -124,7 +124,7 @@ fn setup(
       @hierarchy.Parent::new(toggle_button),
       ToggleLabel::{  },
       @text.Text::new("Enabled"),
-      @text.TextFont::default().with_font(font).with_font_size(20.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
       @text.TextColor::new(@sprite.Color::white()),
     ),
   )
@@ -134,7 +134,7 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       WidgetSlider::{  },
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(300.0F))
       .with_height(@ui.Val::Px(20.0F))
       .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
@@ -146,7 +146,7 @@ fn setup(
     (
       @hierarchy.Parent::new(slider),
       WidgetSliderFill::{  },
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(50.0F))
       .with_height(@ui.Val::Percent(100.0F)),
       @ui.BackgroundColor::new(@sprite.Color::srgb(0.32F, 0.72F, 0.32F)),
@@ -213,7 +213,7 @@ fn update_widget_styles(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(input_system)))
   .add_systems(

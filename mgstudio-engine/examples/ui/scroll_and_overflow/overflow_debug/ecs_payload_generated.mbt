@@ -21,12 +21,6 @@ extenum @ecs.EcsPayload += {
     AnimationMotion
   )
   EcsPayload_examples_ui_scroll_and_overflow_overflow_debug_Container(Container)
-  EcsPayload_examples_ui_scroll_and_overflow_overflow_debug_AnimationState(
-    AnimationState
-  )
-  EcsPayload_examples_ui_scroll_and_overflow_overflow_debug_OverflowDebugSettings(
-    OverflowDebugSettings
-  )
 }
 
 ///|
@@ -73,40 +67,6 @@ impl @ecs.EcsPayloadCodec for Container with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ui_scroll_and_overflow_overflow_debug_Container(value) =>
       Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationState with to_ecs_payload(self) {
-  EcsPayload_examples_ui_scroll_and_overflow_overflow_debug_AnimationState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_scroll_and_overflow_overflow_debug_AnimationState(
-      value
-    ) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for OverflowDebugSettings with to_ecs_payload(self) {
-  EcsPayload_examples_ui_scroll_and_overflow_overflow_debug_OverflowDebugSettings(
-    self,
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for OverflowDebugSettings with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_examples_ui_scroll_and_overflow_overflow_debug_OverflowDebugSettings(
-      value
-    ) => Some(value)
     _ => None
   }
 }

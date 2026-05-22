@@ -106,7 +106,7 @@ pub struct CopyDeferredLightingIdPipelinePlan {
 
 pub struct CopyDeferredLightingIdPlugin {
 }
-pub fn CopyDeferredLightingIdPlugin::default() -> Self
+pub fn CopyDeferredLightingIdPlugin::CopyDeferredLightingIdPlugin() -> Self
 pub impl @app.Plugin for CopyDeferredLightingIdPlugin
 
 pub struct CopyDeferredLightingIdState {
@@ -114,7 +114,7 @@ pub struct CopyDeferredLightingIdState {
   has_deferred_lighting_pass_id_texture : Bool
   has_deferred_lighting_id_depth_texture : Bool
 }
-pub fn CopyDeferredLightingIdState::default() -> Self
+pub fn CopyDeferredLightingIdState::CopyDeferredLightingIdState() -> Self
 pub fn CopyDeferredLightingIdState::new(has_copy_pipeline? : Bool, has_deferred_lighting_pass_id_texture? : Bool, has_deferred_lighting_id_depth_texture? : Bool) -> Self
 pub impl @app.Resource for CopyDeferredLightingIdState
 pub impl @ecs.EcsPayloadCodec for CopyDeferredLightingIdState
@@ -140,12 +140,12 @@ pub struct DeferredLightingIdDepthTextureDescriptorPlan {
 
 pub struct DeferredPlugin {
 }
-pub fn DeferredPlugin::default() -> Self
+pub fn DeferredPlugin::DeferredPlugin() -> Self
 pub impl @app.Plugin for DeferredPlugin
 
 pub struct DeferredPrepass {
 } derive(ToJson, @json.FromJson)
-pub fn DeferredPrepass::default() -> Self
+pub fn DeferredPrepass::DeferredPrepass() -> Self
 pub impl @ecs.Component for DeferredPrepass
 pub impl @ecs.EcsPayloadCodec for DeferredPrepass
 

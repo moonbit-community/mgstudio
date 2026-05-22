@@ -24,7 +24,7 @@ pub struct ViewTransmissionTexture {
 }
 
 ///|
-pub fn ViewTransmissionTexture::default() -> ViewTransmissionTexture {
+pub fn ViewTransmissionTexture::ViewTransmissionTexture() -> ViewTransmissionTexture {
   ViewTransmissionTexture::{
     texture_id: -1,
     width: 0,
@@ -84,7 +84,7 @@ pub struct TransmissionTextureState {
 }
 
 ///|
-pub fn TransmissionTextureState::default() -> TransmissionTextureState {
+pub fn TransmissionTextureState::TransmissionTextureState() -> TransmissionTextureState {
   TransmissionTextureState::{ source_texture_id: -1, blur_texture_id: -1 }
 }
 

@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,
@@ -69,12 +69,12 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(true),
+    @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
   )
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(true),
+    @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
   )
   try! world.set_by_key(
     light,
@@ -83,7 +83,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -98,17 +98,17 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(100).with_clear_color_none(),
+    @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -127,7 +127,7 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
@@ -140,7 +140,7 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(24.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
   )
   try! world.set_by_key(
     text_entity,
@@ -155,7 +155,7 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
@@ -168,7 +168,7 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(24.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
   )
   try! world.set_by_key(
     text_entity,

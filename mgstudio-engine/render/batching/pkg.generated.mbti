@@ -83,14 +83,14 @@ pub(all) enum GpuPreprocessingMode {
 pub struct GpuPreprocessingPlugin {
   mode : GpuPreprocessingMode
 }
-pub fn GpuPreprocessingPlugin::default() -> Self
+pub fn GpuPreprocessingPlugin::GpuPreprocessingPlugin() -> Self
 pub fn GpuPreprocessingPlugin::with_mode(GpuPreprocessingMode) -> Self
 pub impl @app.Plugin for GpuPreprocessingPlugin
 
 pub struct GpuPreprocessingSupport {
   max_supported_mode : GpuPreprocessingMode
 }
-pub fn GpuPreprocessingSupport::default() -> Self
+pub fn GpuPreprocessingSupport::GpuPreprocessingSupport() -> Self
 pub fn GpuPreprocessingSupport::is_available(Self) -> Bool
 pub fn GpuPreprocessingSupport::is_culling_supported(Self) -> Bool
 pub fn GpuPreprocessingSupport::min(Self, GpuPreprocessingMode) -> GpuPreprocessingMode
@@ -119,11 +119,11 @@ pub struct LatePreprocessWorkItemIndirectParameters {
   dispatch_z : Int
   work_item_count : Int
 } derive(Eq, @debug.Debug)
-pub fn LatePreprocessWorkItemIndirectParameters::default() -> Self
+pub fn LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters() -> Self
 
 pub struct NoAutomaticBatching {
 }
-pub fn NoAutomaticBatching::default() -> Self
+pub fn NoAutomaticBatching::NoAutomaticBatching() -> Self
 
 pub struct PhaseBatchedInstanceBuffers[BD] {
   buffers : UntypedPhaseBatchedInstanceBuffers[BD]

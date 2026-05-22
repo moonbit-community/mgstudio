@@ -14,11 +14,11 @@
 
 ///|
 test "core_pipeline boundary re-exports prepass markers and msaa" {
-  let depth = @core_pipeline.DepthPrepass::default()
-  let normal = @core_pipeline.NormalPrepass::default()
-  let motion = @core_pipeline.MotionVectorPrepass::default()
-  let deferred = @core_pipeline.DeferredPrepass::default()
-  let hdr = @core_pipeline.Hdr::default()
+  let depth = @core_pipeline.DepthPrepass::DepthPrepass()
+  let normal = @core_pipeline.NormalPrepass::NormalPrepass()
+  let motion = @core_pipeline.MotionVectorPrepass::MotionVectorPrepass()
+  let deferred = @core_pipeline.DeferredPrepass::DeferredPrepass()
+  let hdr = @core_pipeline.Hdr::Hdr()
   debug_inspect(depth.to_json(), content="Object({})")
   debug_inspect(normal.to_json(), content="Object({})")
   debug_inspect(motion.to_json(), content="Object({})")
@@ -30,8 +30,8 @@ test "core_pipeline boundary re-exports prepass markers and msaa" {
 ///|
 test "mip_generation plugin initializes downsample shader registry resource" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(@mip_generation.MipGenerationPlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@mip_generation.MipGenerationPlugin::MipGenerationPlugin())
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let shaders = render_world
     .get_resource(@mip_generation.ecs_key_downsample_shaders)
@@ -57,8 +57,8 @@ test "mip_generation texture format table follows bevy list shape" {
 ///|
 test "mip_generation plugin initializes finish-stage resources in render sub-app" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(@mip_generation.MipGenerationPlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@mip_generation.MipGenerationPlugin::MipGenerationPlugin())
     .finish()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let resources = render_world
@@ -73,8 +73,8 @@ test "mip_generation plugin initializes finish-stage resources in render sub-app
 ///|
 test "core_2d plugin initializes phase resources in render sub-app only" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(@core_pipeline.CorePipelinePlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
   let main_world = app.world()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   debug_inspect(
@@ -109,31 +109,6 @@ priv struct CameraDriverScheduleProbe {
 }
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_core_pipeline_test_CameraDriverScheduleProbe(
-    CameraDriverScheduleProbe
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CameraDriverScheduleProbe with to_ecs_payload(
-  self,
-) {
-  EcsPayload_core_pipeline_test_CameraDriverScheduleProbe(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CameraDriverScheduleProbe with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_core_pipeline_test_CameraDriverScheduleProbe(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
 let camera_driver_schedule_probe_key : @ecs.ResourceKey[
   CameraDriverScheduleProbe,
 ] = @ecs.register_resource(
@@ -150,8 +125,8 @@ fn camera_driver_probe_tick(world : @ecs.World) -> Unit {
 ///|
 test "camera_driver runs core pipeline camera schedules" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(@core_pipeline.CorePipelinePlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
   if app.get_sub_app_mut(@app.RenderApp) is Some(render_sub_app_ref) {
     let render_sub_app = render_sub_app_ref.val
     render_sub_app

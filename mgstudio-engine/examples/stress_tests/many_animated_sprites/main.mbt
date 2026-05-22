@@ -55,7 +55,7 @@ impl @app.Resource for PrintTimer with resource() {
 }
 
 ///|
-fn PrintTimer::default() -> PrintTimer {
+fn PrintTimer::PrintTimer() -> PrintTimer {
   { seconds: 0.0F }
 }
 
@@ -76,7 +76,7 @@ fn setup(
   let atlas_layout = texture_atlas_layouts
     .peek()
     .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::new(24, 24), 7, 1))
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   for y in -GRID_HALF_Y..<GRID_HALF_Y {
     for x in -GRID_HALF_X..<GRID_HALF_X {
@@ -181,10 +181,10 @@ fn print_sprite_count(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .insert_resource(PrintTimer::default())
+  .insert_resource(PrintTimer::PrintTimer())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(animate_sprites)))
   .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))

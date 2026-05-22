@@ -31,7 +31,7 @@ fn make_focus_app() -> @app.App[@ecs.World] {
 }
 
 ///|
-fn[T : @ecs.Component] insert_component(
+fn[T : @ecs.Component + @ecs.EcsPayloadCodec] insert_component(
   world : @ecs.World,
   entity : @core.Entity,
   value : T,

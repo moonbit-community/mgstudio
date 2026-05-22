@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_ecs_observers_Mine(Mine)
-  EcsPayload_examples_ecs_observers_MineWorldState(MineWorldState)
   EcsPayload_examples_ecs_observers_ExplodeMines(ExplodeMines)
   EcsPayload_examples_ecs_observers_Explode(Explode)
 }
@@ -29,19 +28,6 @@ impl @ecs.EcsPayloadCodec for Mine with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for Mine with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ecs_observers_Mine(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MineWorldState with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_observers_MineWorldState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MineWorldState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_observers_MineWorldState(value) => Some(value)
     _ => None
   }
 }

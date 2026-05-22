@@ -81,7 +81,7 @@ fn spawn_label_chip(
   let chip = spawn_node(
     world,
     Some(parent),
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_margin(margin)
     .with_padding(
       @ui.UiRect::new(
@@ -103,7 +103,7 @@ fn spawn_label_chip(
   try! world.set_by_key(
     text,
     @text.ecs_key_text_font,
-    @text.TextFont::default()
+    @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(@text.FontSize::Px(14.0F)),
   )
@@ -122,7 +122,7 @@ fn setup(world : @ecs.World) -> Unit {
   let font = @asset.AssetServer::new().load_font("fonts/FiraSans-Bold.ttf")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -130,7 +130,7 @@ fn setup(world : @ecs.World) -> Unit {
   let root = spawn_node(
     world,
     None,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_flex_direction(@ui.FlexDirection::Column)
@@ -139,12 +139,12 @@ fn setup(world : @ecs.World) -> Unit {
     .with_row_gap(panel_gap()),
     Some(@ui.BackgroundColor::new(@sprite.Color::black())),
   )
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
 
   let legend = spawn_node(
     world,
     Some(root),
-    @ui.Node::default().with_flex_direction(@ui.FlexDirection::Row),
+    @ui.Node::Node().with_flex_direction(@ui.FlexDirection::Row),
     None,
   )
   ignore(
@@ -163,7 +163,7 @@ fn setup(world : @ecs.World) -> Unit {
       legend,
       "JustifyContent",
       justify_content_color(),
-      @ui.UiRect::default(),
+      @ui.UiRect::UiRect(),
       font,
     ),
   )
@@ -171,7 +171,7 @@ fn setup(world : @ecs.World) -> Unit {
   let content = spawn_node(
     world,
     Some(root),
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_flex_direction(@ui.FlexDirection::Column)
@@ -199,7 +199,7 @@ fn setup(world : @ecs.World) -> Unit {
     let row = spawn_node(
       world,
       Some(content),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_flex_direction(@ui.FlexDirection::Row)
       .with_column_gap(panel_gap())
@@ -211,7 +211,7 @@ fn setup(world : @ecs.World) -> Unit {
       let cell = spawn_node(
         world,
         Some(row),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Percent(100.0F))
         .with_flex_direction(@ui.FlexDirection::Column)
@@ -226,7 +226,7 @@ fn setup(world : @ecs.World) -> Unit {
           cell,
           to_repr(alignment).to_string(),
           align_items_color(),
-          @ui.UiRect::default(),
+          @ui.UiRect::UiRect(),
           font,
         ),
       )
@@ -247,7 +247,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system(setup)
   .run()
 }

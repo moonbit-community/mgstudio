@@ -26,13 +26,13 @@ pub const OIT_RESOLVE_PASS_LABEL : String = "oit_resolve"
 pub struct OitResolvePlugin {}
 
 ///|
-pub fn OitResolvePlugin::default() -> OitResolvePlugin {
+pub fn OitResolvePlugin::OitResolvePlugin() -> OitResolvePlugin {
   OitResolvePlugin::{  }
 }
 
 ///|
 pub fn oit_resolve_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(OitResolvePlugin::default())
+  app.add_plugins(OitResolvePlugin::OitResolvePlugin())
 }
 
 ///|
@@ -49,7 +49,7 @@ fn oit_resolve_plugin_install_with(
   plugin : OitResolvePlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { OitResolvePipeline::default() })
+  app.init_resource(fn() { OitResolvePipeline::OitResolvePipeline() })
 }
 
 ///|
@@ -106,7 +106,7 @@ pub struct OitResolvePipeline {
 }
 
 ///|
-pub fn OitResolvePipeline::default() -> OitResolvePipeline {
+pub fn OitResolvePipeline::OitResolvePipeline() -> OitResolvePipeline {
   OitResolvePipeline::new()
 }
 

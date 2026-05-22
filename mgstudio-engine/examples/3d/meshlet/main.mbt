@@ -75,7 +75,7 @@ fn spawn_meshlet_bunny(
   try! world.set_by_key(
     entity,
     @sprite.ecs_key_render_layers,
-    @sprite.RenderLayers::default(),
+    @sprite.RenderLayers::RenderLayers(),
   )
   try! world.set_by_key(
     entity,
@@ -105,7 +105,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(1.8F, 0.4F, -0.1F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -124,11 +124,11 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_free_camera,
-    @pbr.FreeCamera::default(),
+    @pbr.FreeCamera::FreeCamera(),
   )
 
   let directional = world.spawn_empty()
-  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
+  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
     .with_num_cascades(1)
     .with_maximum_distance(15.0F)
     .build()
@@ -221,7 +221,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr_meshlet.MeshletPlugin::new(16_384))
   .add_systems(@app.Startup, @app.system(setup))
   .run()

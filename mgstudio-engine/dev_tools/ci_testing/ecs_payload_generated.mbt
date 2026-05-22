@@ -17,7 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_dev_tools_ci_testing_CiTestingConfig(CiTestingConfig)
   EcsPayload_dev_tools_ci_testing_CiTestingCustomEvent(CiTestingCustomEvent)
   EcsPayload_dev_tools_ci_testing_CiTestingRuntimeState(CiTestingRuntimeState)
-  EcsPayload_dev_tools_ci_testing_CiTestingPluginMarker(CiTestingPluginMarker)
 }
 
 ///|
@@ -61,21 +60,6 @@ pub impl @ecs.EcsPayloadCodec for CiTestingRuntimeState with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_dev_tools_ci_testing_CiTestingRuntimeState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CiTestingPluginMarker with to_ecs_payload(self) {
-  EcsPayload_dev_tools_ci_testing_CiTestingPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CiTestingPluginMarker with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_dev_tools_ci_testing_CiTestingPluginMarker(value) => Some(value)
     _ => None
   }
 }

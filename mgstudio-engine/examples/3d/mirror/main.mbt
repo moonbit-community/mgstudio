@@ -409,7 +409,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   // Main camera.
-  let main_camera_projection = @camera.PerspectiveProjection3d::default()
+  let main_camera_projection = @camera.PerspectiveProjection3d::PerspectiveProjection3d()
   let initial_main_translation = @math.Vec3::new(-2.0F, 1.0F, -2.0F)
     .normalize_or_zero()
     .mul_scalar(CAMERA_ORBIT_DISTANCE)
@@ -419,7 +419,7 @@ fn setup(world : @ecs.World) -> Unit {
     initial_main_translation.z,
   ).looking_at(camera_target(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
   let main_camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @camera.Projection::Perspective(main_camera_projection),
     main_camera_transform,
   ).spawn(world)
@@ -459,7 +459,7 @@ fn setup(world : @ecs.World) -> Unit {
   // Help text.
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(create_help_text()),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -475,7 +475,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   mirror_state.val.help_text = Some(help_text)
 }
@@ -706,7 +706,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(handle_window_resize_messages))
   .add_systems(@app.Update, @app.system(handle_drag_action_change))

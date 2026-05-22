@@ -29,7 +29,7 @@ pub let pickable_ignore : Pickable = Pickable::{
 }
 
 ///|
-pub fn Pickable::default() -> Pickable {
+pub fn Pickable::Pickable() -> Pickable {
   Pickable::{ should_block_lower: true, is_hoverable: true }
 }
 
@@ -70,7 +70,7 @@ pub struct SpritePickingSettings {
 } derive(Debug)
 
 ///|
-pub fn SpritePickingSettings::default() -> SpritePickingSettings {
+pub fn SpritePickingSettings::SpritePickingSettings() -> SpritePickingSettings {
   SpritePickingSettings::{
     require_markers: false,
     picking_mode: AlphaThreshold(0.1F),
@@ -99,7 +99,7 @@ pub struct PickingSettings {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn PickingSettings::default() -> PickingSettings {
+pub fn PickingSettings::PickingSettings() -> PickingSettings {
   PickingSettings::{
     is_enabled: true,
     is_input_enabled: true,
@@ -117,7 +117,7 @@ pub impl @app.Resource for PickingSettings with resource() {
 fn current_picking_settings(world : @ecs.World) -> PickingSettings {
   match get_picking_settings_resource(world).get() {
     Some(settings) => settings
-    None => PickingSettings::default()
+    None => PickingSettings::PickingSettings()
   }
 }
 
@@ -188,7 +188,9 @@ pub let picking_set_events : @app.SystemSet = picking_set_hover
 
 ///|
 pub fn picking_clear_system(world : @ecs.World) -> Unit {
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
 }
 
 ///|
@@ -216,8 +218,8 @@ pub fn picking_input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
 ///|
 pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .init_resource(() => PickingSettings::default())
-  .init_resource(() => SpritePickingSettings::default())
+  .init_resource(() => PickingSettings::PickingSettings())
+  .init_resource(() => SpritePickingSettings::SpritePickingSettings())
   .add_message(pointer_input_message_key())
   .add_message(pointer_hits_message_key())
   .add_pre_update_system_config(

@@ -97,7 +97,7 @@ fn[M : Material2d] registered_mesh_material2d_component_key() -> @ecs.ComponentK
         debug_name="mgstudio_sprite_render::\{type_name}",
       )
     None => {
-      let key : @ecs.ComponentKey[MeshMaterial2d[M]] = @ecs.register_component(
+      let key : @ecs.ComponentKey[MeshMaterial2d[M]] = @ecs.register_erased_component(
         debug_name="mgstudio_sprite_render::\{type_name}",
       )
       mesh_material2d_component_registry.val.set(type_name, key.id())
@@ -241,7 +241,7 @@ pub fn register_render2d_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(ecs_key_sprite, ecs_key_anchor, fn() {
-    Anchor::default()
+    Anchor::Anchor()
   })
   world.register_required_components_with(
     ecs_key_sprite,
@@ -256,10 +256,10 @@ pub fn register_render2d_required_components(
   world.register_required_components_with(
     ecs_key_sprite,
     @render.ecs_key_sync_to_render_world,
-    fn() { @render.SyncToRenderWorld::default() },
+    fn() { @render.SyncToRenderWorld::SyncToRenderWorld() },
   )
   world.register_required_components_with(ecs_key_sprite_mesh, ecs_key_anchor, fn() {
-    Anchor::default()
+    Anchor::Anchor()
   })
   world.register_required_components_with(
     ecs_key_sprite_mesh,
@@ -274,10 +274,10 @@ pub fn register_render2d_required_components(
   world.register_required_components_with(
     ecs_key_camera,
     @render.ecs_key_sync_to_render_world,
-    fn() { @render.SyncToRenderWorld::default() },
+    fn() { @render.SyncToRenderWorld::SyncToRenderWorld() },
   )
   world.register_required_components_with(ecs_key_camera2d, ecs_key_camera, fn() {
-    Camera::default()
+    Camera::Camera()
   })
   world.register_required_components_with(
     ecs_key_camera2d,
@@ -297,7 +297,7 @@ pub fn register_render2d_required_components(
   world.register_required_components_with(
     ecs_key_camera2d,
     ecs_key_render_layers,
-    fn() { RenderLayers::default() },
+    fn() { RenderLayers::RenderLayers() },
   )
   world.register_required_components_with(
     ecs_key_camera2d,
@@ -310,7 +310,7 @@ pub fn register_render2d_required_components(
     fn() { DebandDither::Disabled },
   )
   world.register_required_components_with(ecs_key_bloom, ecs_key_hdr, fn() {
-    Hdr::default()
+    Hdr()
   })
 }
 
@@ -775,7 +775,7 @@ fn decode_camera(json : Json) -> Camera {
 
 ///|
 fn decode_camera2d(_json : Json) -> Camera2d {
-  Camera2d::default()
+  Camera2d::Camera2d()
 }
 
 ///|
@@ -852,12 +852,12 @@ fn decode_scissor_rect(json : Json) -> ScissorRect {
 
 ///|
 fn decode_wireframe2d(_json : Json) -> Wireframe2d {
-  Wireframe2d::default()
+  Wireframe2d::Wireframe2d()
 }
 
 ///|
 fn decode_no_wireframe2d(_json : Json) -> NoWireframe2d {
-  NoWireframe2d::default()
+  NoWireframe2d::NoWireframe2d()
 }
 
 ///|

@@ -99,7 +99,7 @@ pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[
 pub struct DeferredPbrLightingPlugin {}
 
 ///|
-pub fn DeferredPbrLightingPlugin::default() -> DeferredPbrLightingPlugin {
+pub fn DeferredPbrLightingPlugin::DeferredPbrLightingPlugin() -> DeferredPbrLightingPlugin {
   DeferredPbrLightingPlugin::{  }
 }
 
@@ -263,7 +263,7 @@ pub let ecs_key_skip_deferred_lighting : @ecs.ComponentKey[SkipDeferredLighting]
 )
 
 ///|
-pub fn PbrDeferredLightingDepthId::default() -> PbrDeferredLightingDepthId {
+pub fn PbrDeferredLightingDepthId::PbrDeferredLightingDepthId() -> PbrDeferredLightingDepthId {
   PbrDeferredLightingDepthId::{
     depth_id: DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID,
   }
@@ -333,7 +333,7 @@ fn insert_deferred_lighting_pass_id_component(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       entity,
       ecs_key_pbr_deferred_lighting_depth_id,
-      PbrDeferredLightingDepthId::default(),
+      PbrDeferredLightingDepthId::PbrDeferredLightingDepthId(),
     )
   }
 }

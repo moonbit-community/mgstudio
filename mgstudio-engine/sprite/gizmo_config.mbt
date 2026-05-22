@@ -27,8 +27,13 @@ pub extenum GizmoConfigGroupCell {}
 pub struct DefaultGizmoConfigGroup {}
 
 ///|
-pub impl Default for DefaultGizmoConfigGroup with default() {
+pub fn DefaultGizmoConfigGroup::DefaultGizmoConfigGroup() -> DefaultGizmoConfigGroup {
   DefaultGizmoConfigGroup::{  }
+}
+
+///|
+pub impl Default for DefaultGizmoConfigGroup with default() {
+  DefaultGizmoConfigGroup::DefaultGizmoConfigGroup()
 }
 
 ///|
@@ -50,7 +55,9 @@ extenum GizmoConfigGroupCell += {
 
 ///|
 pub impl GizmoConfigGroup for DefaultGizmoConfigGroup with new_gizmo_config_group_cell() {
-  DefaultGizmoConfigGroupCell(Ref(DefaultGizmoConfigGroup::default()))
+  DefaultGizmoConfigGroupCell(
+    Ref(DefaultGizmoConfigGroup::DefaultGizmoConfigGroup()),
+  )
 }
 
 ///|
@@ -101,16 +108,21 @@ fn[T : GizmoConfigGroup] gizmo_config_store_entry(
 ) -> GizmoConfigStoreEntry {
   group.gizmo_config_group_marker()
   GizmoConfigStoreEntry::{
-    config: Ref(GizmoConfig::default()),
+    config: Ref(GizmoConfig::GizmoConfig()),
     ext_config: T::new_gizmo_config_group_cell(),
   }
 }
 
 ///|
-pub impl Default for GizmoConfigStore with default() {
+pub fn GizmoConfigStore::GizmoConfigStore() -> GizmoConfigStore {
   let store = GizmoConfigStore::{ entries: @hashmap.HashMap([]) }
-  store.register(DefaultGizmoConfigGroup::default())
+  store.register(DefaultGizmoConfigGroup::DefaultGizmoConfigGroup())
   store
+}
+
+///|
+pub impl Default for GizmoConfigStore with default() {
+  GizmoConfigStore::GizmoConfigStore()
 }
 
 ///|
@@ -196,7 +208,7 @@ pub fn[T : GizmoConfigGroup] init_gizmo_group(
   group : T,
 ) -> @app.App[@ecs.World] {
   let app = app
-    .init_resource(fn() { GizmoConfigStore::default() })
+    .init_resource(fn() { GizmoConfigStore::GizmoConfigStore() })
     .init_resource(fn() {
       let storage : GizmoStorage[T] = GizmoStorage::new()
       storage

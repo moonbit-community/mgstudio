@@ -317,7 +317,7 @@ pub struct DistanceFog {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn DistanceFog::default() -> DistanceFog {
+pub fn DistanceFog::DistanceFog() -> DistanceFog {
   DistanceFog::{
     color: @sprite.Color::white(),
     directional_light_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),

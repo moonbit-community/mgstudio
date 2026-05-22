@@ -93,7 +93,7 @@ test "light cluster: assign system populates camera cluster payload with default
   try! (world.set_by_key(
     camera_entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
   |> ignore)
   cluster_assign_lights_system(world)
@@ -126,14 +126,14 @@ test "light cluster: assign system uses max light range for default far z mode" 
   try! (world.set_by_key(
     camera_entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
   |> ignore)
   let point = world.spawn()
   try! (world.set_by_key(
     point,
     @light.ecs_key_point_light,
-    @light.PointLight::default().with_range(40.0F),
+    @light.PointLight::PointLight().with_range(40.0F),
   )
   |> ignore)
   let spot = world.spawn()
@@ -168,7 +168,7 @@ test "light cluster: assign system writes visible point lights into cluster list
   try! (world.set_by_key(
     camera_entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -184,7 +184,7 @@ test "light cluster: assign system writes visible point lights into cluster list
   try! (world.set_by_key(
     point,
     @light.ecs_key_point_light,
-    @light.PointLight::default().with_range(10.0F),
+    @light.PointLight::PointLight().with_range(10.0F),
   )
   |> ignore)
 
@@ -209,7 +209,7 @@ test "light cluster: assign system honors constant far z mode from config" {
   try! (world.set_by_key(
     camera_entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -240,7 +240,7 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     camera_entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
   |> ignore)
 
@@ -248,7 +248,7 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     point_visible,
     @light.ecs_key_point_light,
-    @light.PointLight::default().with_range(10.0F),
+    @light.PointLight::PointLight().with_range(10.0F),
   )
   |> ignore)
 
@@ -256,7 +256,7 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     point_hidden,
     @light.ecs_key_point_light,
-    @light.PointLight::default().with_range(80.0F),
+    @light.PointLight::PointLight().with_range(80.0F),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -270,7 +270,7 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     probe_visible,
     @light.ecs_key_environment_map_light,
-    @light.EnvironmentMapLight::default(),
+    @light.EnvironmentMapLight::EnvironmentMapLight(),
   )
   |> ignore)
 
@@ -278,7 +278,7 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     probe_hidden,
     @light.ecs_key_environment_map_light,
-    @light.EnvironmentMapLight::default(),
+    @light.EnvironmentMapLight::EnvironmentMapLight(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -292,7 +292,7 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     irradiance_visible,
     @light.ecs_key_irradiance_volume,
-    @light.IrradianceVolume::default(),
+    @light.IrradianceVolume::IrradianceVolume(),
   )
   |> ignore)
 
@@ -300,7 +300,7 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     irradiance_hidden,
     @light.ecs_key_irradiance_volume,
-    @light.IrradianceVolume::default(),
+    @light.IrradianceVolume::IrradianceVolume(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -357,7 +357,7 @@ test "light cluster: runtime container helpers follow bevy-style semantics" {
   inspect(visible.reflection_probe_count(), content="0")
   inspect(visible.irradiance_volume_count(), content="0")
 
-  let in_cluster = ObjectsInCluster::default()
+  let in_cluster = ObjectsInCluster::ObjectsInCluster()
   in_cluster.add_point_light(entity0)
   in_cluster.add_spot_light(entity1)
   in_cluster.add_reflection_probe(entity2)

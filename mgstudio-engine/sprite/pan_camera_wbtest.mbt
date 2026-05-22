@@ -28,7 +28,7 @@ fn pan_camera_approx_eq(a : Float, b : Float) -> Bool {
 
 ///|
 test "render2d: pan camera default text matches bevy controls" {
-  let text = PanCamera::default().to_string()
+  let text = PanCamera::PanCamera().to_string()
   debug_inspect(text.contains("PanCamera Controls:"), content="true")
   debug_inspect(text.contains("KeyW / KeyS"), content="true")
   debug_inspect(text.contains("Mouse Scroll + Equal / Minus"), content="true")
@@ -42,7 +42,7 @@ test "render2d: pan camera movement normalizes diagonal input" {
   let scroll = @input.AccumulatedMouseScroll::new()
   let (transform, _controller) = pan_camera_step(
     @transform.Transform::identity(),
-    PanCamera::default(),
+    PanCamera::PanCamera(),
     0.5F,
     key_input,
     scroll,
@@ -64,7 +64,7 @@ test "render2d: pan camera rotation and zoom follow controller settings" {
   )
   let (transform, controller) = pan_camera_step(
     @transform.Transform::identity(),
-    PanCamera::default(),
+    PanCamera::PanCamera(),
     0.5F,
     key_input,
     scroll,
@@ -88,11 +88,7 @@ test "render2d: pan camera zoom clamps to configured bounds" {
     @input.MouseScrollUnit::Line,
     @math.Vec2::new(0.0F, 200.0F),
   )
-  let controller = PanCamera::{
-    ..PanCamera::default(),
-    min_zoom: 0.5F,
-    max_zoom: 2.0F,
-  }
+  let controller = PanCamera::{ ..PanCamera(), min_zoom: 0.5F, max_zoom: 2.0F }
   let (transform, updated) = pan_camera_step(
     @transform.Transform::identity(),
     controller,

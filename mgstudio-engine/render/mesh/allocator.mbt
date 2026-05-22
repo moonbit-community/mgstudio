@@ -61,7 +61,7 @@ pub fn MeshAllocatorSettings::new(
 }
 
 ///|
-pub fn MeshAllocatorSettings::default() -> MeshAllocatorSettings {
+pub fn MeshAllocatorSettings::MeshAllocatorSettings() -> MeshAllocatorSettings {
   MeshAllocatorSettings::new(
     min_slab_size=1024 * 1024,
     max_slab_size=1024 * 1024 * 512,
@@ -72,7 +72,7 @@ pub fn MeshAllocatorSettings::default() -> MeshAllocatorSettings {
 
 ///|
 pub impl Default for MeshAllocatorSettings with default() {
-  MeshAllocatorSettings::default()
+  MeshAllocatorSettings::MeshAllocatorSettings()
 }
 
 ///|
@@ -317,7 +317,7 @@ pub fn mesh_allocator_grow_general_slab_if_necessary(
   current_slot_capacity : Int,
   new_size_in_slots : Int,
   layout : MeshAllocatorElementLayout,
-  settings? : MeshAllocatorSettings = MeshAllocatorSettings::default(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings::MeshAllocatorSettings(),
 ) -> MeshAllocatorSlabGrowth {
   let initial_slot_capacity = current_slot_capacity
   if current_slot_capacity >= new_size_in_slots {
@@ -353,7 +353,7 @@ pub fn mesh_allocator_plan_new_general_slab(
   slab_id : Int,
   data_byte_len : Int,
   layout : MeshAllocatorElementLayout,
-  settings? : MeshAllocatorSettings = MeshAllocatorSettings::default(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings::MeshAllocatorSettings(),
 ) -> MeshAllocatorSlabPlan {
   let data_element_count = mesh_allocator_div_ceil(data_byte_len, layout.size())
   let data_slot_count = mesh_allocator_div_ceil(
@@ -413,7 +413,7 @@ pub fn mesh_allocator_plan_large_slab(
 pub fn mesh_allocator_should_allocate_large(
   data_byte_len : Int,
   layout : MeshAllocatorElementLayout,
-  settings? : MeshAllocatorSettings = MeshAllocatorSettings::default(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings::MeshAllocatorSettings(),
 ) -> Bool {
   let data_element_count = mesh_allocator_div_ceil(data_byte_len, layout.size())
   let data_slot_count = mesh_allocator_div_ceil(
@@ -704,8 +704,13 @@ pub fn MeshAllocator::new(
 }
 
 ///|
-pub impl Default for MeshAllocator with default() {
+pub fn MeshAllocator::MeshAllocator() -> MeshAllocator {
   MeshAllocator::new()
+}
+
+///|
+pub impl Default for MeshAllocator with default() {
+  MeshAllocator::MeshAllocator()
 }
 
 ///|
@@ -1178,7 +1183,7 @@ pub fn MeshAllocator::allocate(
   mesh_id : Int,
   data_byte_len : Int,
   layout : MeshAllocatorElementLayout,
-  settings? : MeshAllocatorSettings = MeshAllocatorSettings::default(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings::MeshAllocatorSettings(),
 ) -> MeshAllocatorSlabPlan? {
   if data_byte_len <= 0 {
     return None
@@ -1250,7 +1255,7 @@ pub fn MeshAllocator::allocate_render_mesh(
   index_layout? : MeshAllocatorElementLayout = mesh_allocator_render_mesh_index_layout(
     mesh,
   ),
-  settings? : MeshAllocatorSettings = MeshAllocatorSettings::default(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings::MeshAllocatorSettings(),
 ) -> MeshAllocatorRenderMeshPlan {
   let vertex_byte_len = mesh.vertex_count() * vertex_stride
   let vertex_allocation = if vertex_byte_len > 0 {

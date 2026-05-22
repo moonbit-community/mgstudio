@@ -31,7 +31,7 @@ pub struct Slider {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Slider::default() -> Slider {
+pub fn Slider::Slider() -> Slider {
   Slider::{ track_click: TrackClick::default() }
 }
 
@@ -44,7 +44,7 @@ pub struct SliderValue {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn SliderValue::default() -> SliderValue {
+pub fn SliderValue::SliderValue() -> SliderValue {
   SliderValue::{ value: 0.0F }
 }
 
@@ -65,7 +65,7 @@ pub struct SliderRange {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn SliderRange::default() -> SliderRange {
+pub fn SliderRange::SliderRange() -> SliderRange {
   SliderRange::{ start: 0.0F, end: 1.0F }
 }
 
@@ -114,7 +114,7 @@ pub struct SliderStep {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn SliderStep::default() -> SliderStep {
+pub fn SliderStep::SliderStep() -> SliderStep {
   SliderStep::{ value: 1.0F }
 }
 
@@ -134,7 +134,7 @@ pub struct SliderPrecision {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn SliderPrecision::default() -> SliderPrecision {
+pub fn SliderPrecision::SliderPrecision() -> SliderPrecision {
   SliderPrecision::{ digits: 0 }
 }
 
@@ -315,7 +315,7 @@ fn slider_on_pointer_down(
     slider_comp.value(),
     range_comp.value().start(),
     range_comp.value(),
-    SliderStep::default(),
+    SliderStep::SliderStep(),
     None,
     layout_comp.value(),
     pointer.position(),
@@ -349,7 +349,7 @@ fn slider_on_pointer_click(
     slider_comp.value(),
     range_comp.value().start(),
     range_comp.value(),
-    SliderStep::default(),
+    SliderStep::SliderStep(),
     None,
     layout_comp.value(),
     pointer.position(),

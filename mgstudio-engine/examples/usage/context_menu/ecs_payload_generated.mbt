@@ -13,20 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_usage_context_menu_ContextMenuState(ContextMenuState)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ContextMenuState with to_ecs_payload(self) {
-  EcsPayload_examples_usage_context_menu_ContextMenuState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ContextMenuState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_usage_context_menu_ContextMenuState(value) =>
-      Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

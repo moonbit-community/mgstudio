@@ -453,12 +453,12 @@ test "scene gltf wb: loader settings resolve convert_coordinates overrides" {
   })
 
   let inherited = gltf_loader_convert_coordinates(
-    @asset.ImageLoaderSettings::default(),
+    @asset.ImageLoaderSettings::ImageLoaderSettings(),
   )
   debug_inspect(inherited.rotate_scene_entity, content="true")
   debug_inspect(inherited.rotate_meshes, content="false")
 
-  let settings = @asset.ImageLoaderSettings::default()
+  let settings = @asset.ImageLoaderSettings::ImageLoaderSettings()
   settings.convert_coordinates_rotate_scene_entity = Some(false)
   settings.convert_coordinates_rotate_meshes = Some(true)
   let overridden = gltf_loader_convert_coordinates(settings)
@@ -476,14 +476,14 @@ test "scene gltf wb: loader settings resolve skinned mesh bounds policy" {
   )
 
   let inherited = gltf_loader_skinned_mesh_bounds_policy_from_settings(
-    @asset.ImageLoaderSettings::default(),
+    @asset.ImageLoaderSettings::ImageLoaderSettings(),
   )
   debug_inspect(
     inherited == @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
     content="true",
   )
 
-  let bind_pose = @asset.ImageLoaderSettings::default()
+  let bind_pose = @asset.ImageLoaderSettings::ImageLoaderSettings()
   bind_pose.skinned_mesh_bounds_policy = Some(0)
   debug_inspect(
     gltf_loader_skinned_mesh_bounds_policy_from_settings(bind_pose) ==
@@ -491,7 +491,7 @@ test "scene gltf wb: loader settings resolve skinned mesh bounds policy" {
     content="true",
   )
 
-  let dynamic = @asset.ImageLoaderSettings::default()
+  let dynamic = @asset.ImageLoaderSettings::ImageLoaderSettings()
   dynamic.skinned_mesh_bounds_policy = Some(1)
   debug_inspect(
     gltf_loader_skinned_mesh_bounds_policy_from_settings(dynamic) ==
@@ -499,7 +499,7 @@ test "scene gltf wb: loader settings resolve skinned mesh bounds policy" {
     content="true",
   )
 
-  let no_frustum = @asset.ImageLoaderSettings::default()
+  let no_frustum = @asset.ImageLoaderSettings::ImageLoaderSettings()
   no_frustum.skinned_mesh_bounds_policy = Some(2)
   debug_inspect(
     gltf_loader_skinned_mesh_bounds_policy_from_settings(no_frustum) ==
@@ -507,7 +507,7 @@ test "scene gltf wb: loader settings resolve skinned mesh bounds policy" {
     content="true",
   )
 
-  let unknown = @asset.ImageLoaderSettings::default()
+  let unknown = @asset.ImageLoaderSettings::ImageLoaderSettings()
   unknown.skinned_mesh_bounds_policy = Some(999)
   debug_inspect(
     gltf_loader_skinned_mesh_bounds_policy_from_settings(unknown) ==
@@ -539,7 +539,7 @@ test "scene gltf wb: mesh primitive builder applies coordinate conversion" {
     buffer_bytes,
     0,
     0,
-    @gltf.GltfConvertCoordinates::default(),
+    @gltf.GltfConvertCoordinates::GltfConvertCoordinates(),
   ).unwrap()
   let geometry_unconverted = mesh_unconverted.as_3d_geometry().unwrap()
   debug_inspect(
@@ -692,7 +692,7 @@ test "scene gltf wb: camera and light helpers respect loader gates" {
     None => abort("expected second camera components")
   }
 
-  let disabled_settings = @asset.ImageLoaderSettings::default()
+  let disabled_settings = @asset.ImageLoaderSettings::ImageLoaderSettings()
   disabled_settings.load_cameras = false
   disabled_settings.load_lights = false
   let disabled_camera = if disabled_settings.load_cameras {
@@ -724,7 +724,7 @@ test "scene gltf wb: camera and light helpers respect loader gates" {
 
 ///|
 test "scene gltf wb: default visibility ranges for lod levels" {
-  let policy = GltfLodVisibilityPolicy::default()
+  let policy = GltfLodVisibilityPolicy::GltfLodVisibilityPolicy()
   let lod0 = gltf_lod_visibility_range_with_policy(policy, 0).unwrap()
   debug_inspect(lod0.start_margin_min.to_double(), content="0")
   debug_inspect(lod0.start_margin_max.to_double(), content="0")
@@ -746,7 +746,7 @@ test "scene gltf wb: default visibility ranges for lod levels" {
 
 ///|
 test "scene gltf wb: custom lod visibility policy and disable switch" {
-  let custom_policy = GltfLodVisibilityPolicy::default()
+  let custom_policy = GltfLodVisibilityPolicy::GltfLodVisibilityPolicy()
     .with_first_lod_range(1.0F, 2.0F, 11.0F, 12.0F)
     .with_step(2.0F)
   let lod0 = gltf_lod_visibility_range_with_policy(custom_policy, 0).unwrap()

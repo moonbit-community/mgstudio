@@ -1275,7 +1275,7 @@ test "physics2d: kinematic character controller moves and outputs" {
   try! world.set_by_key(
     character,
     ecs_key_kinematic_character_controller2d,
-    KinematicCharacterController2d::default().with_translation(
+    @physics2d.KinematicCharacterController2d::KinematicCharacterController2d().with_translation(
       @math.Vec2::new(0.0F, -2.0F),
     ),
   )

@@ -61,7 +61,7 @@ test "panic pbr meshlet: plugin rejects non-positive cluster buffer slots" {
 ///|
 test "pbr meshlet: plugin state includes missing feature mask" {
   let runtime_available = meshlet_runtime_available()
-  let state = MeshletPluginState::default()
+  let state = MeshletPluginState::MeshletPluginState()
   if runtime_available {
     inspect(state.runtime_status is Enabled, content="true")
   } else {
@@ -89,8 +89,8 @@ test "pbr meshlet: plugin state includes missing feature mask" {
 ///|
 test "pbr meshlet: plugin installs state into app and render sub-app" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(MeshletPlugin::MeshletPlugin())
   inspect(
     app.world().get_resource(ecs_key_meshlet_plugin_state) is Some(_),
     content="true",
@@ -126,8 +126,8 @@ test "pbr meshlet: plugin installs state into app and render sub-app" {
 ///|
 test "pbr meshlet: mesh component installs Bevy required components" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(MeshletPlugin::MeshletPlugin())
   let entity = app.world().spawn()
   try! app
   .world()
@@ -151,7 +151,7 @@ test "pbr meshlet: mesh component installs Bevy required components" {
 
 ///|
 test "pbr meshlet: view resources use camera physical viewport size" {
-  let target_camera = @sprite.Camera::default()
+  let target_camera = @sprite.Camera::Camera()
   debug_inspect(meshlet_view_size_from_camera(target_camera), content="(1, 1)")
   let viewport_camera = target_camera.with_viewport(
     @sprite.Viewport::new(@math.IVec2::new(10, 20), @math.IVec2::new(640, 360)),
@@ -174,16 +174,16 @@ test "pbr meshlet: configure views inserts prepass and deferred bins by view fla
   try! world.set_by_key(
     view_entity,
     @core_pipeline.ecs_key_normal_prepass,
-    @core_pipeline.NormalPrepass::default(),
+    @core_pipeline.NormalPrepass::NormalPrepass(),
   )
   try! world.set_by_key(
     view_entity,
     @core_pipeline.ecs_key_deferred_prepass,
-    @core_pipeline.DeferredPrepass::default(),
+    @core_pipeline.DeferredPrepass::DeferredPrepass(),
   )
   let app = @app.App::new(world)
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(MeshletPlugin::MeshletPlugin())
     .update()
   inspect(
     (try! app
@@ -222,11 +222,11 @@ test "pbr meshlet: configure views mirrors Bevy prepass bin insertion" {
   try! world.set_by_key(
     view_entity,
     @core_pipeline.ecs_key_normal_prepass,
-    @core_pipeline.NormalPrepass::default(),
+    @core_pipeline.NormalPrepass::NormalPrepass(),
   )
   let app = @app.App::new(world)
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(MeshletPlugin::MeshletPlugin())
     .update()
   inspect(
     (try! app
@@ -250,8 +250,8 @@ test "panic pbr meshlet: configure views rejects msaa-enabled views" {
   )
   ignore(
     @app.App::new(world)
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(MeshletPlugin::MeshletPlugin())
     .update(),
   )
 }
@@ -266,8 +266,8 @@ test "pbr meshlet: material prepare system creates empty per-view material bins"
     @core_pipeline.Msaa::Off,
   )
   let app = @app.App::new(world)
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(MeshletPlugin::default())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(MeshletPlugin::MeshletPlugin())
     .update()
   match
     (try! app
@@ -280,10 +280,10 @@ test "pbr meshlet: material prepare system creates empty per-view material bins"
 
 ///|
 test "pbr meshlet: transmission and alpha-mode helpers follow bevy standard material semantics" {
-  let diffuse_only = @material.StandardMaterial::default().with_diffuse_transmission(
+  let diffuse_only = @material.StandardMaterial::StandardMaterial().with_diffuse_transmission(
     0.8F,
   )
-  let specular_only = @material.StandardMaterial::default().with_specular_transmission(
+  let specular_only = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
     0.8F,
   )
   inspect(
@@ -294,7 +294,7 @@ test "pbr meshlet: transmission and alpha-mode helpers follow bevy standard mate
     @pbr.standard_material_reads_view_transmission_texture(specular_only),
     content="true",
   )
-  let alpha_to_coverage_material = @material.StandardMaterial::default().with_alpha_mode(
+  let alpha_to_coverage_material = @material.StandardMaterial::StandardMaterial().with_alpha_mode(
     @material.AlphaMode3d::AlphaToCoverage,
   )
   inspect(

@@ -26,7 +26,7 @@ test "shader plugin initializes Assets<Shader> resource" {
 ///|
 test "shader loader exposes wesl extension through the shared shader loader" {
   debug_inspect(
-    ShaderLoader::default().extensions().contains("wesl"),
+    @shader.ShaderLoader::ShaderLoader().extensions().contains("wesl"),
     content="true",
   )
 }

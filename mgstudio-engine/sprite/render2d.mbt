@@ -71,7 +71,7 @@ fn render_layer_bit(index : Int) -> Int {
 }
 
 ///|
-pub fn RenderLayers::default() -> RenderLayers {
+pub fn RenderLayers::RenderLayers() -> RenderLayers {
   RenderLayers::{ mask: 1 }
 }
 
@@ -289,7 +289,7 @@ pub fn Viewport::clamp_to_size(self : Viewport, size : @math.IVec2) -> Viewport 
 }
 
 ///|
-pub fn Viewport::default() -> Viewport {
+pub fn Viewport::Viewport() -> Viewport {
   Viewport::new(@math.IVec2::new(0, 0), @math.IVec2::new(1, 1))
 }
 
@@ -420,13 +420,13 @@ pub fn Anchor::top_right() -> Anchor {
 }
 
 ///|
-pub fn Anchor::default() -> Anchor {
+pub fn Anchor::Anchor() -> Anchor {
   Anchor::center()
 }
 
 ///|
 pub impl Default for Anchor with default() {
-  Anchor::default()
+  Anchor::Anchor()
 }
 
 ///|
@@ -440,7 +440,7 @@ pub fn ClearColor::new(color : Color) -> ClearColor {
 }
 
 ///|
-pub fn ClearColor::default() -> ClearColor {
+pub fn ClearColor::ClearColor() -> ClearColor {
   // Match Bevy's default `ClearColor` (`bevy_camera::clear_color`):
   // Color::srgb_u8(43, 44, 47)
   ClearColor::{
@@ -450,12 +450,12 @@ pub fn ClearColor::default() -> ClearColor {
 
 ///|
 pub impl Default for ClearColor with default() {
-  ClearColor::default()
+  ClearColor::ClearColor()
 }
 
 ///|
 fn clear_color_default_value() -> Color {
-  ClearColor::default().color
+  ClearColor::ClearColor().color
 }
 
 ///|
@@ -566,7 +566,7 @@ pub fn CameraTargetInfo::new(
 }
 
 ///|
-pub fn CameraTargetInfo::default() -> CameraTargetInfo {
+pub fn CameraTargetInfo::CameraTargetInfo() -> CameraTargetInfo {
   CameraTargetInfo::{
     physical_size: @math.IVec2::new(0, 0),
     scale_factor: 1.0F,
@@ -580,7 +580,7 @@ pub struct CameraComputedValues {
 }
 
 ///|
-pub fn CameraComputedValues::default() -> CameraComputedValues {
+pub fn CameraComputedValues::CameraComputedValues() -> CameraComputedValues {
   CameraComputedValues::{ target_info: None, old_viewport_size: None }
 }
 
@@ -602,18 +602,18 @@ pub fn Camera::new(clear_color : Color) -> Camera {
     viewport: None,
     order: 0,
     is_active: true,
-    computed: CameraComputedValues::default(),
+    computed: CameraComputedValues::CameraComputedValues(),
     clear_color: Custom(clear_color),
   }
 }
 
 ///|
-pub fn Camera::default() -> Camera {
+pub fn Camera::Camera() -> Camera {
   Camera::{
     viewport: None,
     order: 0,
     is_active: true,
-    computed: CameraComputedValues::default(),
+    computed: CameraComputedValues::CameraComputedValues(),
     clear_color: ClearColorConfig::default(),
   }
 }
@@ -754,7 +754,7 @@ pub fn Projection::orthographic_2d() -> Projection {
 pub struct Camera2d {}
 
 ///|
-pub fn Camera2d::default() -> Camera2d {
+pub fn Camera2d::Camera2d() -> Camera2d {
   Camera2d::{  }
 }
 
@@ -778,7 +778,7 @@ pub(all) struct PanCamera {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PanCamera::default() -> PanCamera {
+pub fn PanCamera::PanCamera() -> PanCamera {
   PanCamera::{
     enabled: true,
     zoom_factor: 1.0F,
@@ -2038,9 +2038,9 @@ pub fn SpriteBundle::new(
 ) -> SpriteBundle {
   SpriteBundle::{
     sprite,
-    anchor: Anchor::default(),
+    anchor: Anchor::Anchor(),
     transform,
-    layers: RenderLayers::default(),
+    layers: RenderLayers::RenderLayers(),
     visibility: @visibility.Visibility::Inherited,
     inherited_visibility: @visibility.InheritedVisibility::new(true),
     view_visibility: @visibility.ViewVisibility::new(true),
@@ -2055,7 +2055,7 @@ pub fn SpriteBundle::new_with_layers(
 ) -> SpriteBundle {
   SpriteBundle::{
     sprite,
-    anchor: Anchor::default(),
+    anchor: Anchor::Anchor(),
     transform,
     layers,
     visibility: @visibility.Visibility::Inherited,
@@ -2086,10 +2086,10 @@ pub fn Camera2dBundle::new(
   Camera2dBundle::{
     camera,
     projection: Projection::orthographic_2d(),
-    camera2d: Camera2d::default(),
+    camera2d: Camera2d::Camera2d(),
     transform,
     target: RenderTarget::Screen,
-    layers: RenderLayers::default(),
+    layers: RenderLayers::RenderLayers(),
     bloom: None,
     tonemapping: Some(Tonemapping::None),
     color_grading: None,
@@ -2106,10 +2106,10 @@ pub fn Camera2dBundle::new_with_projection(
   Camera2dBundle::{
     camera,
     projection,
-    camera2d: Camera2d::default(),
+    camera2d: Camera2d::Camera2d(),
     transform,
     target: RenderTarget::Screen,
-    layers: RenderLayers::default(),
+    layers: RenderLayers::RenderLayers(),
     bloom: None,
     tonemapping: Some(Tonemapping::None),
     color_grading: None,
@@ -2126,10 +2126,10 @@ pub fn Camera2dBundle::new_with_target(
   Camera2dBundle::{
     camera,
     projection: Projection::orthographic_2d(),
-    camera2d: Camera2d::default(),
+    camera2d: Camera2d::Camera2d(),
     transform,
     target,
-    layers: RenderLayers::default(),
+    layers: RenderLayers::RenderLayers(),
     bloom: None,
     tonemapping: Some(Tonemapping::None),
     color_grading: None,
@@ -2147,7 +2147,7 @@ pub fn Camera2dBundle::new_with_layers(
   Camera2dBundle::{
     camera,
     projection: Projection::orthographic_2d(),
-    camera2d: Camera2d::default(),
+    camera2d: Camera2d::Camera2d(),
     transform,
     target,
     layers,
@@ -2211,7 +2211,7 @@ pub fn Mesh2dBundle::new_with_mesh_material(
     mesh,
     material,
     transform,
-    layers: RenderLayers::default(),
+    layers: RenderLayers::RenderLayers(),
     visibility: @visibility.Visibility::Inherited,
     inherited_visibility: @visibility.InheritedVisibility::new(true),
     view_visibility: @visibility.ViewVisibility::new(true),
@@ -4655,7 +4655,7 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
     }
     let camera = match (try! world.get_by_key(entity, ecs_key_camera)) {
       Some(value) => value
-      None => Camera::default()
+      None => Camera::Camera()
     }
     try! (ecs_world
     .get_by_key(entity, ecs_key_projection)
@@ -4774,7 +4774,7 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
       RenderTarget::Screen,
     )
     let camera = (try! world.get_by_key(entity, ecs_key_camera)).unwrap_or(
-      Camera::default(),
+      Camera::Camera(),
     )
     (try! world.get_by_key(entity, ecs_key_projection)).unwrap_or(
       Projection::orthographic_2d(),
@@ -4858,7 +4858,7 @@ fn render2d_extract_camera_entity_ecs(
     RenderTarget::Screen,
   )
   let layers = (try! world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
-    RenderLayers::default(),
+    RenderLayers::RenderLayers(),
   )
   let bloom = try! world.get_by_key(entity, ecs_key_bloom)
   let contrast_adaptive_sharpening = try! world.get_by_key(
@@ -4983,7 +4983,7 @@ fn render2d_extract_tilemap_chunks(world : @ecs.World) -> Unit {
         return
       }
       let layers = (try! world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
-        RenderLayers::default(),
+        RenderLayers::RenderLayers(),
       )
       let transform = render2d_resolve_transform_ecs(world, entity)
       render2d_draw_tilemap_chunk(
@@ -5038,10 +5038,10 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       }
       let sprite = sprite.value()
       let anchor = (try! source_world.get_by_key(entity, ecs_key_anchor)).unwrap_or(
-        Anchor::default(),
+        Anchor::Anchor(),
       )
       let layers = (try! source_world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
-        RenderLayers::default(),
+        RenderLayers::RenderLayers(),
       )
       let transform = render2d_resolve_transform_ecs(source_world, entity)
       let mut uv_min = default_uv_min()
@@ -5147,7 +5147,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         return
       }
       let layers = (try! source_world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
-        RenderLayers::default(),
+        RenderLayers::RenderLayers(),
       )
       let transform = render2d_resolve_transform_ecs(source_world, entity)
       let wireframe = wireframe2d_mesh_should_draw(
@@ -6437,7 +6437,7 @@ test "render2d: mesh prepared material handle resolves from extracted entity ins
     entity,
     12,
     @transform.Transform::identity(),
-    RenderLayers::default(),
+    RenderLayers::RenderLayers(),
   )
   let instances = render_material2d_instances_for_tests([(entity, handle)])
   let prepared_id = match
@@ -6454,7 +6454,7 @@ test "render2d: extracted mesh keeps wireframe state out of gizmo path" {
     @core.Entity::new(2, 0),
     12,
     @transform.Transform::identity(),
-    RenderLayers::default(),
+    RenderLayers::RenderLayers(),
     wireframe=true,
     wireframe_color=Color::new(0.25F, 0.5F, 0.75F, 1.0F),
   )
@@ -6467,7 +6467,7 @@ test "render2d: extracted mesh keeps wireframe state out of gizmo path" {
 
 ///|
 test "render2d: unified draw items order sprites and meshes by z" {
-  let layers = RenderLayers::default()
+  let layers = RenderLayers::RenderLayers()
   let mesh_entity = @core.Entity::new(1, 0)
   let material_handle = @asset.Handle::new(1)
   let prepared_materials = prepared_color_material_assets_for_tests([
@@ -6540,7 +6540,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
 
 ///|
 test "render2d: UI overlay draw items route by target camera" {
-  let layers = RenderLayers::default()
+  let layers = RenderLayers::RenderLayers()
   let prepared_materials : @render.RenderAssets[
     PreparedMaterial2d[ColorMaterialAsset],
   ] = @render.RenderAssets::new()
@@ -6609,7 +6609,7 @@ test "render2d: UI overlay draw items route by target camera" {
 
 ///|
 test "render2d: scene draw items exclude UI overlays" {
-  let layers = RenderLayers::default()
+  let layers = RenderLayers::RenderLayers()
   let prepared_materials : @render.RenderAssets[
     PreparedMaterial2d[ColorMaterialAsset],
   ] = @render.RenderAssets::new()
@@ -6658,12 +6658,7 @@ test "render2d: scene draw items exclude UI overlays" {
 
 ///|
 test "render2d: host window bloom postprocess keeps Bevy stage ownership" {
-  let plan = render2d_camera_postprocess_plan(
-    Some(Bloom::default()),
-    0,
-    None,
-    None,
-  )
+  let plan = render2d_camera_postprocess_plan(Some(Bloom()), 0, None, None)
   let ok = plan.uses_intermediate_source &&
     plan.apply_bloom_before_tonemapping &&
     !plan.tonemapping_stage_enabled &&
@@ -6693,7 +6688,7 @@ test "render2d: color grading alone keeps host window tonemapping copy stage" {
   let plan = render2d_camera_postprocess_plan(
     None,
     0,
-    Some(ColorGrading::default()),
+    Some(ColorGrading()),
     None,
   )
   let ok = plan.uses_intermediate_source &&
@@ -6710,7 +6705,7 @@ test "render2d: CAS alone uses Bevy postprocess source path" {
     None,
     0,
     None,
-    Some(@cas.ContrastAdaptiveSharpening::default()),
+    Some(@cas.ContrastAdaptiveSharpening::ContrastAdaptiveSharpening()),
   )
   let ok = plan.uses_intermediate_source &&
     !plan.apply_bloom_before_tonemapping &&
@@ -6724,7 +6719,7 @@ test "render2d: CAS alone uses Bevy postprocess source path" {
 test "render2d: queue counts keep overlay UI isolated per camera pass" {
   let world = @ecs.World::new()
   ensure_render_state_resource(world)
-  let layers = RenderLayers::default()
+  let layers = RenderLayers::RenderLayers()
   let camera_a = @core.Entity::new(10, 0)
   let camera_b = @core.Entity::new(11, 0)
   render_state_update(world, fn(rs) {
@@ -6732,7 +6727,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
     rs.val.cameras.clear()
     rs.val.cameras.push(ExtractedCamera2d::{
       entity: camera_a,
-      camera: Camera::default().with_order(0),
+      camera: Camera::Camera().with_order(0),
       projection: OrthographicProjection::default_2d(),
       transform: @transform.Transform::identity(),
       target: RenderTarget::Screen,
@@ -6749,7 +6744,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
     })
     rs.val.cameras.push(ExtractedCamera2d::{
       entity: camera_b,
-      camera: Camera::default().with_order(1),
+      camera: Camera::Camera().with_order(1),
       projection: OrthographicProjection::default_2d(),
       transform: @transform.Transform::identity(),
       target: RenderTarget::Screen,
@@ -6821,9 +6816,9 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
 test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
   let world = @ecs.World::new()
   ensure_render_state_resource(world)
-  let layers = RenderLayers::default()
+  let layers = RenderLayers::RenderLayers()
   let camera = world.spawn_empty()
-  try! (world.set_by_key(camera, ecs_key_camera, Camera::default()) |> ignore)
+  try! (world.set_by_key(camera, ecs_key_camera, Camera::Camera()) |> ignore)
 
   render_state_update(world, fn(rs) {
     rs.val.extra_ui_sprites.clear()
@@ -6863,7 +6858,7 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
 
 ///|
 test "render2d: mesh opaque alpha mode stays in opaque phase" {
-  let layers = RenderLayers::default()
+  let layers = RenderLayers::RenderLayers()
   let opaque_entity = @core.Entity::new(2, 0)
   let blend_entity = @core.Entity::new(1, 0)
   let opaque_handle = @asset.Handle::new(20)
@@ -6932,7 +6927,7 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
 
 ///|
 test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
-  let layers = RenderLayers::default()
+  let layers = RenderLayers::RenderLayers()
   let mesh_entity = @core.Entity::new(1, 0)
   let material_handle = @asset.Handle::new(30)
   let prepared_materials = prepared_color_material_assets_for_tests([
@@ -6986,7 +6981,7 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
 
 ///|
 test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
-  let layers = RenderLayers::default()
+  let layers = RenderLayers::RenderLayers()
   let masked_low_entity = @core.Entity::new(1, 0)
   let masked_high_entity = @core.Entity::new(2, 0)
   let masked_low_handle = @asset.Handle::new(40)
@@ -7086,7 +7081,7 @@ test "render2d: sliced sprite extraction follows computed slices instead of ui s
     sprite,
     Anchor::center(),
     @transform.Transform::identity(),
-    RenderLayers::default(),
+    RenderLayers::RenderLayers(),
     None,
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(1.0F, 1.0F),
@@ -7144,8 +7139,10 @@ test "render2d: shape geometry builders validate" {
     regular_polygon_ring_to_mesh2d_geometry(
       RegularPolygon::new(10.0F, 6).to_ring(1.0F),
     ),
-    triangle_to_mesh2d_geometry(Triangle2d::default()),
-    triangle_ring_to_mesh2d_geometry(Triangle2d::default().to_ring(0.1F)),
+    triangle_to_mesh2d_geometry(@math.Triangle2d::Triangle2d()),
+    triangle_ring_to_mesh2d_geometry(
+      @math.Triangle2d::Triangle2d().to_ring(0.1F),
+    ),
     segment_to_mesh2d_geometry(
       Segment2d::new(
         @math.Vec2::new(-30.0F, 30.0F),
@@ -7183,9 +7180,9 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
   let second_uv_min_y : Ref[Double] = Ref(-1.0)
   let second_uv_max_y : Ref[Double] = Ref(-1.0)
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(Render2dPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(Render2dPlugin::Render2dPlugin())
 
   app = app.add_system(fn(world : @ecs.World) {
     ensure_render_state_resource(world)
@@ -8664,7 +8661,7 @@ fn configure_render2d_render_sub_app_ecs(
 pub struct Render2dPlugin {}
 
 ///|
-pub fn Render2dPlugin::default() -> Render2dPlugin {
+pub fn Render2dPlugin::Render2dPlugin() -> Render2dPlugin {
   Render2dPlugin::{  }
 }
 
@@ -8672,7 +8669,7 @@ pub fn Render2dPlugin::default() -> Render2dPlugin {
 pub struct Render2dEcsPlugin {}
 
 ///|
-pub fn Render2dEcsPlugin::default() -> Render2dEcsPlugin {
+pub fn Render2dEcsPlugin::Render2dEcsPlugin() -> Render2dEcsPlugin {
   Render2dEcsPlugin::{  }
 }
 
@@ -8702,7 +8699,7 @@ pub impl @app.Plugin for Render2dEcsPlugin with build(_self, app) {
 
 ///|
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(Render2dPlugin::default())
+  app.add_plugins(Render2dPlugin::Render2dPlugin())
 }
 
 ///|
@@ -8710,11 +8707,11 @@ fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let app = @shader.shader_plugin(app)
   ensure_render2d_required_components(app.world())
   let next = init_gizmo_group(
-      app.init_resource(fn() { ClearColor::default() }),
-      DefaultGizmoConfigGroup::default(),
+      app.init_resource(fn() { ClearColor::ClearColor() }),
+      DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     )
-    .add_plugins(ColorMaterialPlugin::default())
-    .add_plugins(SpriteMeshPlugin::default())
+    .add_plugins(ColorMaterialPlugin::ColorMaterialPlugin())
+    .add_plugins(SpriteMeshPlugin::SpriteMeshPlugin())
     .add_startup_system(register_render2d_shader_sources)
     .add_post_update_system_config(
       @app.system(render2d_camera_system).in_set(camera_update_systems),
@@ -8724,7 +8721,7 @@ fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(Render2dEcsPlugin::default())
+  app.add_plugins(Render2dEcsPlugin::Render2dEcsPlugin())
 }
 
 ///|
@@ -8734,11 +8731,11 @@ fn render2d_plugin_ecs_install(
   let app = @shader.shader_plugin(app)
   ensure_render2d_required_components(app.world())
   let next = init_gizmo_group(
-      app.init_resource(fn() { ClearColor::default() }),
-      DefaultGizmoConfigGroup::default(),
+      app.init_resource(fn() { ClearColor::ClearColor() }),
+      DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     )
-    .add_plugins(ColorMaterialPlugin::default())
-    .add_plugins(SpriteMeshPlugin::default())
+    .add_plugins(ColorMaterialPlugin::ColorMaterialPlugin())
+    .add_plugins(SpriteMeshPlugin::SpriteMeshPlugin())
     .add_startup_system(register_render2d_shader_sources)
     .add_post_update_system_config(
       @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),

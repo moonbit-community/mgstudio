@@ -55,7 +55,7 @@ impl @app.Resource for HierarchyStats with resource() {
 }
 
 ///|
-fn HierarchyStats::default() -> HierarchyStats {
+fn HierarchyStats::HierarchyStats() -> HierarchyStats {
   { nodes: 0, print_timer: 0.0F }
 }
 
@@ -148,7 +148,7 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   stats : @app.ResMut[HierarchyStats],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   let icon = asset_server.get().load("branding/icon.png")
   spawn_tree(commands, icon, stats)
 }
@@ -198,10 +198,10 @@ fn print_stats(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .insert_resource(HierarchyStats::default())
+  .insert_resource(HierarchyStats::HierarchyStats())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(update_transforms)))
   .add_systems(@app.Update, @app.system(@app.system_param2(print_stats)))

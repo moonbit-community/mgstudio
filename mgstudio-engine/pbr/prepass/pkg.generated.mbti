@@ -89,8 +89,8 @@ pub struct PrepassBindings3d {
   motion_vector : Bool
   deferred : Bool
 }
+pub fn PrepassBindings3d::PrepassBindings3d() -> Self
 pub fn PrepassBindings3d::any_enabled(Self) -> Bool
-pub fn PrepassBindings3d::default() -> Self
 pub fn PrepassBindings3d::with_deferred(Self, Bool) -> Self
 pub fn PrepassBindings3d::with_depth(Self, Bool) -> Self
 pub fn PrepassBindings3d::with_motion_vector(Self, Bool) -> Self
@@ -98,14 +98,14 @@ pub fn PrepassBindings3d::with_normal(Self, Bool) -> Self
 
 pub struct PrepassPipelinePlugin {
 }
-pub fn PrepassPipelinePlugin::default() -> Self
+pub fn PrepassPipelinePlugin::PrepassPipelinePlugin() -> Self
 pub impl @app.Plugin for PrepassPipelinePlugin
 
 pub struct PrepassPipelineState {
   pipeline_ready : Bool
   view_bind_group_ready : Bool
 } derive(Eq, @debug.Debug)
-pub fn PrepassPipelineState::default() -> Self
+pub fn PrepassPipelineState::PrepassPipelineState() -> Self
 pub impl @app.Resource for PrepassPipelineState
 pub impl @ecs.EcsPayloadCodec for PrepassPipelineState
 
@@ -113,7 +113,7 @@ pub struct PrepassPluginState {
   enabled : Bool
   view_count : Int
 }
-pub fn PrepassPluginState::default() -> Self
+pub fn PrepassPluginState::PrepassPluginState() -> Self
 
 pub struct PreviousGlobalTransform {
   affine : @math.Affine3

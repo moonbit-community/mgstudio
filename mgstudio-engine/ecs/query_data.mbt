@@ -725,12 +725,18 @@ pub impl QueryData for @core.Entity with contiguous_compatible() {
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with matches(world, entity) {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with matches(
+  world,
+  entity,
+) {
   query_data_component_matches(world, entity, T::component())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch(
+  world,
+  entity,
+) {
   let key = T::component()
   query_data_comp_from_value(
     world,
@@ -743,7 +749,7 @@ pub impl[T : Component] QueryData for Comp[T] with fetch(world, entity) {
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with append_fetch_plan(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with append_fetch_plan(
   world,
   plan,
 ) {
@@ -751,12 +757,12 @@ pub impl[T : Component] QueryData for Comp[T] with append_fetch_plan(
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_plan_size() {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_plan_size() {
   1
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_table_row(
   world,
   entity,
   table_id,
@@ -789,7 +795,7 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row(
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_table_row_with_plan_offset(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_table_row_with_plan_offset(
   world,
   entity,
   table_id,
@@ -818,7 +824,7 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_table_row_with_plan_off
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_sparse_anchor(
   world,
   entity,
   anchor_local_component_id,
@@ -850,7 +856,7 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor(
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor_with_plan_offset(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with fetch_sparse_anchor_with_plan_offset(
   world,
   entity,
   anchor_local_component_id,
@@ -886,46 +892,50 @@ pub impl[T : Component] QueryData for Comp[T] with fetch_sparse_anchor_with_plan
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with mentions_component(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with mentions_component(
   component_id,
 ) {
   component_id == T::component().id()
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with matches_component_set(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with matches_component_set(
   set_contains_id,
 ) {
   set_contains_id(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with collect_access(access) {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with collect_access(
+  access,
+) {
   access.add_read_component(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with requires_entity_check() {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with is_dense(world) {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with is_dense(
+  world,
+) {
   query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with iteration_anchor_component() {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with iteration_anchor_component() {
   Some(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with iteration_anchor_components() {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with iteration_anchor_components() {
   [T::component().id()]
 }
 
 ///|
-pub impl[T : Component] QueryData for Comp[T] with contiguous_compatible() {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Comp[T] with contiguous_compatible() {
   true
 }
 
@@ -1489,17 +1499,23 @@ pub impl[T : Component] QueryData for Has[T] with contiguous_compatible() {
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with matches(_world, _entity) {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with matches(
+  _world,
+  _entity,
+) {
   true
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch(world, entity) {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch(
+  world,
+  entity,
+) {
   { value: world.get_by_key(entity, T::component()) }
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with append_fetch_plan(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with append_fetch_plan(
   world,
   plan,
 ) {
@@ -1507,12 +1523,12 @@ pub impl[T : Component] QueryData for Optional[T] with append_fetch_plan(
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_plan_size() {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_plan_size() {
   1
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_table_row(
   world,
   entity,
   table_id,
@@ -1533,7 +1549,7 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_table_row(
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_table_row_with_plan_offset(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_table_row_with_plan_offset(
   world,
   entity,
   table_id,
@@ -1550,7 +1566,7 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_table_row_with_plan
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_sparse_anchor(
   world,
   entity,
   anchor_local_component_id,
@@ -1574,7 +1590,7 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor(
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor_with_plan_offset(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with fetch_sparse_anchor_with_plan_offset(
   world,
   entity,
   anchor_local_component_id,
@@ -1603,41 +1619,45 @@ pub impl[T : Component] QueryData for Optional[T] with fetch_sparse_anchor_with_
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with mentions_component(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with mentions_component(
   _component_id,
 ) {
   false
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with matches_component_set(
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with matches_component_set(
   _set_contains_id,
 ) {
   true
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with collect_access(access) {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with collect_access(
+  access,
+) {
   access.add_read_component(T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with requires_entity_check() {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with requires_entity_check() {
   false
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with is_dense(world) {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with is_dense(
+  world,
+) {
   query_data_component_is_dense(world, T::component().id())
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with iteration_anchor_component() {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with iteration_anchor_component() {
   None
 }
 
 ///|
-pub impl[T : Component] QueryData for Optional[T] with contiguous_compatible() {
+pub impl[T : Component + EcsPayloadCodec] QueryData for Optional[T] with contiguous_compatible() {
   true
 }
 

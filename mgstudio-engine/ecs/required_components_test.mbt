@@ -31,18 +31,33 @@ struct RequiredCounter {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub impl Default for RequiredB with default() {
+pub fn RequiredB::RequiredB() -> RequiredB {
   RequiredB::{ value: 10 }
 }
 
 ///|
-pub impl Default for RequiredC with default() {
+pub impl Default for RequiredB with default() {
+  RequiredB::RequiredB()
+}
+
+///|
+pub fn RequiredC::RequiredC() -> RequiredC {
   RequiredC::{ value: 20 }
 }
 
 ///|
-pub impl Default for RequiredCounter with default() {
+pub impl Default for RequiredC with default() {
+  RequiredC::RequiredC()
+}
+
+///|
+pub fn RequiredCounter::RequiredCounter() -> RequiredCounter {
   RequiredCounter::{ value: 0 }
+}
+
+///|
+pub impl Default for RequiredCounter with default() {
+  RequiredCounter::RequiredCounter()
 }
 
 ///|

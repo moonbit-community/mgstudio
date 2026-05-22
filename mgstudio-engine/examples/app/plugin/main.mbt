@@ -84,7 +84,7 @@ fn print_message_system(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(
     print_message_plugin({
       wait_duration_seconds: 1.0F,

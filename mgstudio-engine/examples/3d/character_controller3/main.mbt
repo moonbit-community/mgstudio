@@ -52,7 +52,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     player,
     @physics3d.ecs_key_kinematic_character_controller3d,
-    @physics3d.KinematicCharacterController3d::default(),
+    @physics3d.KinematicCharacterController3d::KinematicCharacterController3d(),
   )
   player_entity.val = Some(player)
   println("[character_controller3] WASD to move the capsule controller")

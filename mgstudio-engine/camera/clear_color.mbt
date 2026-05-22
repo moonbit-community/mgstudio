@@ -17,7 +17,7 @@
 
 ///|
 pub fn camera_clear_color_default() -> @sprite.ClearColor {
-  @sprite.ClearColor::default()
+  @sprite.ClearColor::ClearColor()
 }
 
 ///|

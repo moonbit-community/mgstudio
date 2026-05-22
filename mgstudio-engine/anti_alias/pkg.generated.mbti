@@ -47,7 +47,7 @@ pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter
 // Types and methods
 pub struct AntiAliasPlugin {
 }
-pub fn AntiAliasPlugin::default() -> Self
+pub fn AntiAliasPlugin::AntiAliasPlugin() -> Self
 pub impl @app.Plugin for AntiAliasPlugin
 
 // Type aliases

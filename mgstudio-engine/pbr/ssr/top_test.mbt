@@ -14,7 +14,7 @@
 
 ///|
 test "pbr ssr: uniform step sanitization" {
-  let uniform = ScreenSpaceReflectionsUniform::default()
+  let uniform = @ssr.ScreenSpaceReflectionsUniform::ScreenSpaceReflectionsUniform()
   let with_linear = pbr_ssr_uniform_with_linear_steps(uniform, 0)
   let with_bisection = pbr_ssr_uniform_with_bisection_steps(with_linear, -1)
   inspect(with_bisection.linear_steps, content="1")

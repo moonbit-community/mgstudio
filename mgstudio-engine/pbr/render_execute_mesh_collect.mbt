@@ -307,7 +307,7 @@ fn render3d_extract_mesh_for_entity(
   let material_fragment_shader_path = resolved_material.material_fragment_shader_path
   let layers = match prefetched_layers {
     Some(v) => v
-    None => @sprite.RenderLayers::default()
+    None => @sprite.RenderLayers::RenderLayers()
   }
   // Bevy `bevy_pbr::render::mesh::extract_meshes_for_cpu_building` reads
   // `&GlobalTransform` directly and derives render instance transforms from it.

@@ -70,7 +70,7 @@ pub struct AutoExposurePipeline {
   histogram_bin_count : Int
   histogram_workgroup_size : Int
 } derive(ToJson, @json.FromJson)
-pub fn AutoExposurePipeline::default() -> Self
+pub fn AutoExposurePipeline::AutoExposurePipeline() -> Self
 pub fn AutoExposurePipeline::new(Int, Int) -> Self
 
 pub struct AutoExposureUniform {

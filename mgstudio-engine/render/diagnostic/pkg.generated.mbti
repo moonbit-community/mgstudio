@@ -46,7 +46,7 @@ pub fn tracy_gpu_context_enabled() -> Bool
 pub struct ErasedRenderAssetDiagnosticPlugin {
   suffix : String
 }
-pub fn ErasedRenderAssetDiagnosticPlugin::default() -> Self
+pub fn ErasedRenderAssetDiagnosticPlugin::ErasedRenderAssetDiagnosticPlugin() -> Self
 pub fn ErasedRenderAssetDiagnosticPlugin::new(String) -> Self
 pub impl @app.Plugin for ErasedRenderAssetDiagnosticPlugin
 
@@ -63,7 +63,7 @@ pub impl @ecs.EcsPayloadCodec for ErasedRenderAssetDiagnosticState
 pub struct MeshAllocatorDiagnosticPlugin {
   suffix : String
 }
-pub fn MeshAllocatorDiagnosticPlugin::default() -> Self
+pub fn MeshAllocatorDiagnosticPlugin::MeshAllocatorDiagnosticPlugin() -> Self
 pub fn MeshAllocatorDiagnosticPlugin::new(String) -> Self
 pub impl @app.Plugin for MeshAllocatorDiagnosticPlugin
 
@@ -80,7 +80,7 @@ pub impl @ecs.EcsPayloadCodec for MeshAllocatorDiagnosticState
 pub struct RenderAssetDiagnosticPlugin {
   suffix : String
 }
-pub fn RenderAssetDiagnosticPlugin::default() -> Self
+pub fn RenderAssetDiagnosticPlugin::RenderAssetDiagnosticPlugin() -> Self
 pub fn RenderAssetDiagnosticPlugin::new(String) -> Self
 pub impl @app.Plugin for RenderAssetDiagnosticPlugin
 
@@ -99,7 +99,7 @@ pub struct RenderDiagnosticsModuleState {
   mut last_sample_us : Float
   mut sample_count : Int
 }
-pub fn RenderDiagnosticsModuleState::default() -> Self
+pub fn RenderDiagnosticsModuleState::RenderDiagnosticsModuleState() -> Self
 pub impl @app.Resource for RenderDiagnosticsModuleState
 pub impl @ecs.EcsPayloadCodec for RenderDiagnosticsModuleState
 
@@ -108,9 +108,9 @@ pub struct TracyGpuContext {
   created_at_us : Float
   enabled : Bool
 }
+pub fn TracyGpuContext::TracyGpuContext() -> Self
 pub fn TracyGpuContext::backend(Self) -> String
 pub fn TracyGpuContext::created_at_us(Self) -> Float
-pub fn TracyGpuContext::default() -> Self
 pub fn TracyGpuContext::enabled(Self) -> Bool
 pub fn TracyGpuContext::new(String, Bool) -> Self
 

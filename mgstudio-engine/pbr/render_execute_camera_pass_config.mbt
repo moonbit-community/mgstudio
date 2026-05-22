@@ -71,11 +71,11 @@ fn render3d_execute_camera_pass_config(
 ) -> Render3dExecuteCameraPassConfig {
   let camera_deferred_config = match camera.deferred_config {
     Some(value) => value
-    None => CameraDeferredConfig3d::default()
+    None => CameraDeferredConfig3d::CameraDeferredConfig3d()
   }
   let camera_decal_config = match camera.decal_config {
     Some(value) => value
-    None => CameraDecalConfig3d::default()
+    None => CameraDecalConfig3d::CameraDecalConfig3d()
   }
   let camera_deferred_enabled = deferred_lighting_enabled &&
     prepass_enabled &&
@@ -106,7 +106,7 @@ fn render3d_execute_camera_pass_config(
   let effective_exposure = camera.exposure
   let camera_exposure_value = match effective_exposure {
     Some(value) => value.exposure()
-    None => Exposure::default().exposure()
+    None => Exposure::Exposure().exposure()
   }
   let camera_base_fog = match camera.distance_fog {
     Some(value) => value

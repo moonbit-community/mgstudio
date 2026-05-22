@@ -195,8 +195,13 @@ pub fn[T] ButtonInput::new() -> ButtonInput[T] {
 }
 
 ///|
-pub impl[T] Default for ButtonInput[T] with default() {
+pub fn[T] ButtonInput::ButtonInput() -> ButtonInput[T] {
   ButtonInput::new()
+}
+
+///|
+pub impl[T] Default for ButtonInput[T] with default() {
+  ButtonInput::ButtonInput()
 }
 
 ///|
@@ -234,8 +239,13 @@ pub fn[T] Axis::new() -> Axis[T] {
 }
 
 ///|
-pub impl[T] Default for Axis[T] with default() {
+pub fn[T] Axis::Axis() -> Axis[T] {
   Axis::new()
+}
+
+///|
+pub impl[T] Default for Axis[T] with default() {
+  Axis::Axis()
 }
 
 ///|
@@ -926,6 +936,28 @@ let touches_resource_key : @ecs.ResourceKey[Touches] = @ecs.register_resource(
 )
 
 ///|
+priv struct InputEventCursors {
+  mouse_motion : Ref[Int]
+  mouse_wheel : Ref[Int]
+  window_focused : Ref[Int]
+}
+
+///|
+fn InputEventCursors::InputEventCursors() -> InputEventCursors {
+  { mouse_motion: Ref(0), mouse_wheel: Ref(0), window_focused: Ref(0) }
+}
+
+///|
+let input_event_cursors_resource_key : @ecs.ResourceKey[InputEventCursors] = @ecs.register_resource(
+  debug_name="mgstudio_input::InputEventCursors",
+)
+
+///|
+impl @app.Resource for InputEventCursors with resource() {
+  input_event_cursors_resource_key
+}
+
+///|
 let input_last_mouse_position_ref : Ref[@math.Vec2?] = Ref(None)
 
 ///|
@@ -938,15 +970,6 @@ let input_primary_pointer_position_ref : Ref[@math.Vec2?] = Ref(None)
 let input_primary_pointer_delta_ref : Ref[@math.Vec2] = Ref(
   @math.Vec2::new(0.0F, 0.0F),
 )
-
-///|
-let input_mouse_motion_event_cursor_ref : Ref[Int] = Ref(0)
-
-///|
-let input_mouse_wheel_event_cursor_ref : Ref[Int] = Ref(0)
-
-///|
-let input_window_focused_event_cursor_ref : Ref[Int] = Ref(0)
 
 ///|
 fn host_input_is_key_down(code : String) -> Bool {
@@ -1683,9 +1706,10 @@ pub fn input_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
   if !world.contains_message(@window.WindowFocused::message()) {
     return
   }
+  let cursors = input_event_cursors(world)
   let focused_reader = world.message_reader(
     @window.WindowFocused::message(),
-    input_window_focused_event_cursor_ref,
+    cursors.window_focused,
   )
   let focused_events = try focused_reader.read() catch {
     _ => []
@@ -1778,6 +1802,7 @@ fn vec2_is_zero(value : @math.Vec2) -> Bool {
 
 ///|
 fn ensure_input_resources(world : @ecs.World) -> Unit {
+  ignore(input_event_cursors(world))
   if world.get_resource(AccumulatedMouseMotion::resource()) is None {
     world.insert_resource(
       AccumulatedMouseMotion::resource(),
@@ -1792,6 +1817,18 @@ fn ensure_input_resources(world : @ecs.World) -> Unit {
   }
   if world.get_resource(Touches::resource()) is None {
     world.insert_resource(Touches::resource(), Touches::new())
+  }
+}
+
+///|
+fn input_event_cursors(world : @ecs.World) -> InputEventCursors {
+  match world.get_resource(InputEventCursors::resource()) {
+    Some(cursors) => cursors
+    None => {
+      let cursors = InputEventCursors::InputEventCursors()
+      world.insert_resource(InputEventCursors::resource(), cursors)
+      cursors
+    }
   }
 }
 
@@ -2047,9 +2084,10 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
 ///|
 pub fn input_accumulate_mouse_motion_system(world : @ecs.World) -> Unit {
   ensure_input_resources(world)
+  let cursors = input_event_cursors(world)
   let reader = world.message_reader(
     mouse_motion_message_key(),
-    input_mouse_motion_event_cursor_ref,
+    cursors.mouse_motion,
   )
   let events = try reader.read() catch {
     _ => []
@@ -2069,9 +2107,10 @@ pub fn input_accumulate_mouse_motion_system(world : @ecs.World) -> Unit {
 ///|
 pub fn input_accumulate_mouse_scroll_system(world : @ecs.World) -> Unit {
   ensure_input_resources(world)
+  let cursors = input_event_cursors(world)
   let reader = world.message_reader(
     mouse_wheel_message_key(),
-    input_mouse_wheel_event_cursor_ref,
+    cursors.mouse_wheel,
   )
   let events = try reader.read() catch {
     _ => []
@@ -2217,7 +2256,7 @@ pub impl @app.Resource for Touches with resource() {
 
 ///|
 pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  input_plugin_with(app, InputPlugin::default())
+  input_plugin_with(app, InputPlugin::InputPlugin())
 }
 
 ///|
@@ -2227,7 +2266,7 @@ pub(all) struct InputPlugin {}
 const INPUT_PLUGIN_NAME : String = "mgstudio.input.InputPlugin"
 
 ///|
-pub fn InputPlugin::default() -> InputPlugin {
+pub fn InputPlugin::InputPlugin() -> InputPlugin {
   InputPlugin::{  }
 }
 
@@ -2247,6 +2286,7 @@ pub fn input_plugin_with(
   _plugin : InputPlugin,
 ) -> @app.App[@ecs.World] {
   input_gamepad_plugin(app)
+  .init_resource(fn() { InputEventCursors::InputEventCursors() })
   .init_resource(AccumulatedMouseMotion::new)
   .init_resource(AccumulatedMouseScroll::new)
   .init_resource(Touches::new)

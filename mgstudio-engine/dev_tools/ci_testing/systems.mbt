@@ -30,7 +30,7 @@ pub(all) struct CiTestingRuntimeState {
 }
 
 ///|
-pub fn CiTestingRuntimeState::default() -> CiTestingRuntimeState {
+pub fn CiTestingRuntimeState::CiTestingRuntimeState() -> CiTestingRuntimeState {
   CiTestingRuntimeState::{
     current_frame: 0,
     pending_screenshot_exit_entities: [],

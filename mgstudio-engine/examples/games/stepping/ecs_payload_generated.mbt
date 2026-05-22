@@ -14,21 +14,7 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_games_stepping_StepState(StepState)
   EcsPayload_examples_games_stepping_StepSprite(StepSprite)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StepState with to_ecs_payload(self) {
-  EcsPayload_examples_games_stepping_StepState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StepState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_games_stepping_StepState(value) => Some(value)
-    _ => None
-  }
 }
 
 ///|

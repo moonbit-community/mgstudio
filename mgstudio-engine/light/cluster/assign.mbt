@@ -130,7 +130,7 @@ fn cluster_assign_cluster_objects(
     return objects
   }
   for _ in 0..<cluster_count {
-    objects.push(ObjectsInCluster::default())
+    objects.push(ObjectsInCluster::ObjectsInCluster())
   }
   objects
 }

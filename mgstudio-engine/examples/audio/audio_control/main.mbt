@@ -31,7 +31,7 @@ let progress_text_marker_component_key : @ecs.ComponentKey[ProgressTextMarker] =
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(update_progress_text))
   .add_systems(@app.Update, @app.system(update_speed))
@@ -92,7 +92,7 @@ fn spawn_ui_text(
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  let mut node = @ui.Node::default()
+  let mut node = @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
   if top is Some(value) {
@@ -106,7 +106,7 @@ fn spawn_ui_text(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
   )
   try! world.set_by_key(
     entity,
@@ -128,11 +128,11 @@ fn spawn_ui_text(
 ///|
 fn spawn_ui_overlay(world : @ecs.World) -> Unit {
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -173,7 +173,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_ui_overlay(world)
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   |> ignore

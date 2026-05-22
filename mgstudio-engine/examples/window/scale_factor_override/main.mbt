@@ -22,7 +22,7 @@ let custom_text_key : @ecs.ComponentKey[CustomText] = @ecs.register_component(
 
 ///|
 fn configured_window() -> @window.Window {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.resolution = @window.WindowResolution::new(500, 300).with_scale_factor_override(
     1.0F,
   )
@@ -35,7 +35,7 @@ fn main {
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
-      primary_cursor_options: Some(@window.CursorOptions::default()),
+      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
     }),
@@ -50,7 +50,7 @@ fn main {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -59,11 +59,11 @@ fn setup(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_justify_content(@ui.JustifyContent::SpaceBetween),
@@ -78,7 +78,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     panel,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Px(300.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
@@ -99,7 +99,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     label,
     @ui.ecs_key_node,
-    @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
+    @ui.Node::Node().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
   )
   try! world.set_by_key(
     label,
@@ -109,7 +109,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     label,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(36.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(36.0F),
   )
   try! world.set_by_key(
     label,

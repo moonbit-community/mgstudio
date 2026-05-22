@@ -29,12 +29,12 @@ pub struct Core3d {}
 pub struct Core2d {}
 
 ///|
-pub fn Core3d::default() -> Core3d {
+pub fn Core3d::Core3d() -> Core3d {
   Core3d::{  }
 }
 
 ///|
-pub fn Core2d::default() -> Core2d {
+pub fn Core2d::Core2d() -> Core2d {
   Core2d::{  }
 }
 

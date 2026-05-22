@@ -221,27 +221,27 @@ fn setup(
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.TetrahedronMeshBuilder::default().build(),
+      @mesh_primitives_dim3.TetrahedronMeshBuilder::TetrahedronMeshBuilder().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.Capsule3dMeshBuilder::default().build(),
+      @mesh_primitives_dim3.Capsule3dMeshBuilder::Capsule3dMeshBuilder().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.TorusMeshBuilder::default().build(),
+      @mesh_primitives_dim3.TorusMeshBuilder::TorusMeshBuilder().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.CylinderMeshBuilder::default().build(),
+      @mesh_primitives_dim3.CylinderMeshBuilder::CylinderMeshBuilder().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.ConeMeshBuilder::default().build(),
+      @mesh_primitives_dim3.ConeMeshBuilder::ConeMeshBuilder().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.ConicalFrustumMeshBuilder::default().build(),
+      @mesh_primitives_dim3.ConicalFrustumMeshBuilder::ConicalFrustumMeshBuilder().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
@@ -259,7 +259,7 @@ fn setup(
     ),
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.Segment3dMeshBuilder::default().build(),
+      @mesh_primitives_dim3.Segment3dMeshBuilder::Segment3dMeshBuilder().build(),
     ),
     mesh3d_from_geometry(
       mesh_assets,
@@ -288,43 +288,43 @@ fn setup(
     mesh3d_from_geometry(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Rectangle::default(), 1.0F),
+        @math.Extrusion::new(@math.Rectangle::Rectangle(), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Capsule2d::default(), 1.0F),
+        @math.Extrusion::new(@math.Capsule2d::Capsule2d(), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Annulus::default(), 1.0F),
+        @math.Extrusion::new(@math.Annulus::Annulus(), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Circle::default(), 1.0F),
+        @math.Extrusion::new(@math.Circle::Circle(), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Ellipse::default(), 1.0F),
+        @math.Extrusion::new(@math.Ellipse::Ellipse(), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.RegularPolygon::default(), 1.0F),
+        @math.Extrusion::new(@math.RegularPolygon::RegularPolygon(), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Triangle2d::default(), 1.0F),
+        @math.Extrusion::new(@math.Triangle2d::Triangle2d(), 1.0F),
       ),
     ),
   ]
@@ -345,7 +345,7 @@ fn setup(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
         @math.Extrusion::new(
-          @math.Rectangle::default().to_ring(THICKNESS),
+          @math.Rectangle::Rectangle().to_ring(THICKNESS),
           1.0F,
         ),
       ),
@@ -354,7 +354,7 @@ fn setup(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
         @math.Extrusion::new(
-          @math.Capsule2d::default().to_ring(THICKNESS),
+          @math.Capsule2d::Capsule2d().to_ring(THICKNESS),
           1.0F,
         ),
       ),
@@ -371,7 +371,7 @@ fn setup(
     mesh3d_from_geometry(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
-        @math.Extrusion::new(@math.Circle::default().to_ring(THICKNESS), 1.0F),
+        @math.Extrusion::new(@math.Circle::Circle().to_ring(THICKNESS), 1.0F),
       ),
     ),
     mesh3d_from_geometry(
@@ -379,7 +379,7 @@ fn setup(
       @mesh_primitives.extrusion_mesh(
         @math.Extrusion::new(
           {
-            let outer = @math.Ellipse::default()
+            let outer = @math.Ellipse::Ellipse()
             let inner = @math.Ellipse::new(
               outer.half_size.x - THICKNESS,
               outer.half_size.y - THICKNESS,
@@ -394,7 +394,7 @@ fn setup(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
         @math.Extrusion::new(
-          @math.RegularPolygon::default().to_ring(THICKNESS),
+          @math.RegularPolygon::RegularPolygon().to_ring(THICKNESS),
           1.0F,
         ),
       ),
@@ -403,7 +403,7 @@ fn setup(
       mesh_assets,
       @mesh_primitives.extrusion_mesh(
         @math.Extrusion::new(
-          @math.Triangle2d::default().to_ring(THICKNESS),
+          @math.Triangle2d::Triangle2d().to_ring(THICKNESS),
           1.0F,
         ),
       ),
@@ -464,7 +464,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(0.0F, 7.0F, 14.0F).looking_at(
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -475,18 +475,18 @@ fn setup(
 
   let ui_camera = commands.spawn(
     @sprite.Camera2dBundle::new(
-      @sprite.Camera::default().with_order(100).with_clear_color_none(),
+      @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
       @transform.Transform::identity(),
     ),
   )
-  commands.entity(ui_camera).insert_component(@ui.IsDefaultUiCamera::default())
+  commands
+  .entity(ui_camera)
+  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
-      .with_width(Percent(100.0F))
-      .with_height(Percent(100.0F)),
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.UiTargetCamera::new(ui_camera),
     ),
   )
@@ -494,16 +494,16 @@ fn setup(
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(Absolute)
         .with_top(Px(12.0F))
         .with_left(Px(12.0F)),
         @text.Text::new(
           "Press 'R' to pause/resume rotation\nPress 'Tab' to cycle through rows\nPress 'Space' to toggle wireframes",
         ),
-        @text.TextFont::default(),
-        @text.TextColor::default(),
-        @text.TextLayout::default(),
+        @text.TextFont::TextFont(),
+        @text.TextColor::TextColor(),
+        @text.TextLayout::TextLayout(),
         @text.LineHeight::default(),
         @text.FontHinting::default(),
       ),
@@ -550,10 +550,8 @@ fn toggle_wireframe(config : @app.ResMut[@pbr.WireframeConfig]) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(
-    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
-  )
-  .add_plugins(@pbr.WireframePlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
+  .add_plugins(@pbr.WireframePlugin::WireframePlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(
     @app.Update,

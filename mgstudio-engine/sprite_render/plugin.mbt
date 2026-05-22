@@ -16,7 +16,7 @@
 pub struct SpriteRenderPlugin {}
 
 ///|
-pub fn SpriteRenderPlugin::default() -> SpriteRenderPlugin {
+pub fn SpriteRenderPlugin::SpriteRenderPlugin() -> SpriteRenderPlugin {
   SpriteRenderPlugin::{  }
 }
 

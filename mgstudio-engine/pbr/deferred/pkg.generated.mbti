@@ -152,7 +152,7 @@ pub fn DeferredLightingViewState::new(hdr? : Bool, invert_culling? : Bool, tonem
 
 pub struct DeferredPbrLightingPlugin {
 }
-pub fn DeferredPbrLightingPlugin::default() -> Self
+pub fn DeferredPbrLightingPlugin::DeferredPbrLightingPlugin() -> Self
 pub impl @app.Plugin for DeferredPbrLightingPlugin
 
 pub struct DeferredPbrLightingState {
@@ -165,7 +165,7 @@ pub impl @ecs.EcsPayloadCodec for DeferredPbrLightingState
 pub struct PbrDeferredLightingDepthId {
   mut depth_id : Int
 }
-pub fn PbrDeferredLightingDepthId::default() -> Self
+pub fn PbrDeferredLightingDepthId::PbrDeferredLightingDepthId() -> Self
 pub fn PbrDeferredLightingDepthId::get(Self) -> Int
 pub fn PbrDeferredLightingDepthId::new(Int) -> Self
 pub fn PbrDeferredLightingDepthId::set(Self, Int) -> Unit

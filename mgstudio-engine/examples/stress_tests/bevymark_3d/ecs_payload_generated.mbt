@@ -15,8 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_stress_tests_bevymark_3d_CubeVelocity(CubeVelocity)
-  EcsPayload_examples_stress_tests_bevymark_3d_CubeAssets(CubeAssets)
-  EcsPayload_examples_stress_tests_bevymark_3d_CubeCounter(CubeCounter)
 }
 
 ///|
@@ -28,34 +26,6 @@ impl @ecs.EcsPayloadCodec for CubeVelocity with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for CubeVelocity with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_stress_tests_bevymark_3d_CubeVelocity(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CubeAssets with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_bevymark_3d_CubeAssets(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CubeAssets with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_bevymark_3d_CubeAssets(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CubeCounter with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_bevymark_3d_CubeCounter(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CubeCounter with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_bevymark_3d_CubeCounter(value) =>
       Some(value)
     _ => None
   }

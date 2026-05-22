@@ -153,10 +153,10 @@ fn camera_screen_space_transmission(
         camera_entity, @pbr.ecs_key_screen_space_transmission,
       )) {
       Some(value) => value
-      None => @pbr.ScreenSpaceTransmission::default()
+      None => @pbr.ScreenSpaceTransmission::ScreenSpaceTransmission()
     }
   } else {
-    @pbr.ScreenSpaceTransmission::default()
+    @pbr.ScreenSpaceTransmission::ScreenSpaceTransmission()
   }
 }
 
@@ -216,11 +216,7 @@ fn camera_toggle_hdr(world : @ecs.World) -> Unit {
     if (try! world.contains_by_key(camera_entity, @pbr.ecs_key_hdr)) {
       try! (world.take(camera_entity, @pbr.ecs_key_hdr) |> ignore)
     } else {
-      try! world.set_by_key(
-        camera_entity,
-        @pbr.ecs_key_hdr,
-        @pbr.Hdr::default(),
-      )
+      try! world.set_by_key(camera_entity, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
     }
   }
 }
@@ -234,7 +230,7 @@ fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
       try! world.set_by_key(
         camera_entity,
         @pbr.ecs_key_depth_prepass,
-        @pbr.DepthPrepass::default(),
+        @pbr.DepthPrepass::DepthPrepass(),
       )
     }
   }
@@ -256,12 +252,12 @@ fn camera_toggle_taa(world : @ecs.World) -> Unit {
       try! world.set_by_key(
         camera_entity,
         @post_process.ecs_key_temporal_jitter,
-        @post_process.TemporalJitter::default(),
+        @post_process.TemporalJitter::TemporalJitter(),
       )
       try! world.set_by_key(
         camera_entity,
         @post_process.ecs_key_temporal_anti_aliasing,
-        @post_process.TemporalAntiAliasing::default(),
+        @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
       )
     }
   }
@@ -479,7 +475,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let candle_mesh = cylinder_mesh(0.5F, 2.0F, 50)
 
   let cube_1_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::default(),
+    @pbr.StandardMaterial::StandardMaterial(),
   )
   register_material(cube_1_material, true, false, false)
   spawn_mesh(
@@ -495,7 +491,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let cube_2_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::default(),
+    @pbr.StandardMaterial::StandardMaterial(),
   )
   register_material(cube_2_material, true, false, false)
   spawn_mesh(
@@ -543,7 +539,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     flame_mesh_entity,
     @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::default(),
+    @pbr.NotShadowCaster::NotShadowCaster(),
   )
   transmission_state.val.flame_mesh = Some(flame_mesh_entity)
 
@@ -678,7 +674,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     paper_entity,
     @pbr.ecs_key_transmitted_shadow_receiver,
-    @pbr.TransmittedShadowReceiver::default(),
+    @pbr.TransmittedShadowReceiver::TransmittedShadowReceiver(),
   )
 
   let flame_light = world.spawn_empty()
@@ -703,10 +699,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let color_grading = @post_process.ColorGrading::default()
+  let color_grading = @post_process.ColorGrading::ColorGrading()
   color_grading.global.post_saturation = 1.2F
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
+      @sprite.Camera::Camera().with_clear_color(@sprite.Color::black()),
       @transform.Transform::from_xyz(
         CAMERA_INITIAL_X,
         CAMERA_INITIAL_Y,
@@ -714,25 +710,25 @@ fn setup_camera(world : @ecs.World) -> Unit {
       ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
     )
     .with_screen_space_transmission(
-      Some(@pbr.ScreenSpaceTransmission::default()),
+      Some(@pbr.ScreenSpaceTransmission::ScreenSpaceTransmission()),
     )
     .spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_bloom,
-    @post_process.Bloom::default(),
+    @post_process.Bloom::Bloom(),
   )
   try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_jitter,
-    @post_process.TemporalJitter::default(),
+    @post_process.TemporalJitter::TemporalJitter(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::default(),
+    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
   )
   try! world.set_by_key(camera, @pbr.ecs_key_exposure, @pbr.Exposure::new(6.0F))
   try! world.set_by_key(
@@ -762,7 +758,7 @@ fn setup_text(world : @ecs.World) -> Unit {
 
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(transmission_hud_text(world)),
-      @text.TextFont::default().with_font(font).with_font_size(16.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
@@ -1151,7 +1147,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(example_control_system))
   .add_systems(@app.Update, @app.system(flicker_system))

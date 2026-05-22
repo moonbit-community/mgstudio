@@ -57,7 +57,7 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           align_self: @ui.AlignSelf::Center,
           justify_self: @ui.JustifySelf::Center,
           justify_content: @ui.JustifyContent::Center,
@@ -77,8 +77,8 @@ fn setup(commands : @app.Commands) -> Unit {
     let color = colors[i]
     let camera_entity = commands.spawn(
       (
-        @sprite.Camera2d::default(),
-        @sprite.Camera::default().with_clear_color(color).with_order(i),
+        @sprite.Camera2d::Camera2d(),
+        @sprite.Camera::Camera().with_clear_color(color).with_order(i),
       ),
     )
 
@@ -94,7 +94,7 @@ fn setup(commands : @app.Commands) -> Unit {
     let button_entity = commands.spawn(
       (
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           align_self: @ui.AlignSelf::Center,
           justify_self: @ui.JustifySelf::Center,
           justify_content: @ui.JustifyContent::Center,
@@ -106,7 +106,7 @@ fn setup(commands : @app.Commands) -> Unit {
           border: @ui.UiRect::all(@ui.Val::Px(0.1F * BOX_SIZE)),
         },
         @ui.UiTargetCamera::new(camera_entity),
-        @ui.Button::default(),
+        @ui.Button::Button(),
         @ui.BackgroundColor::new(@sprite.Color::black()),
         @ui.BorderColor::new(yellow()),
         CameraOrderBox::{ camera_entity, label_entity },
@@ -157,7 +157,7 @@ fn update_camera_orders(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(
     @app.Update,

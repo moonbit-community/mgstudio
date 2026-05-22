@@ -147,7 +147,7 @@ pub(all) struct PerspectiveProjection3d {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PerspectiveProjection3d::default() -> PerspectiveProjection3d {
+pub fn PerspectiveProjection3d::PerspectiveProjection3d() -> PerspectiveProjection3d {
   PerspectiveProjection3d::{
     // Match Bevy's PerspectiveProjection::default() (PI / 4.0).
     fov: @math.pi_half() * 0.5F,
@@ -312,7 +312,7 @@ pub fn OrthographicProjection3d::default_3d() -> OrthographicProjection3d {
 }
 
 ///|
-pub fn OrthographicProjection3d::default() -> OrthographicProjection3d {
+pub fn OrthographicProjection3d::OrthographicProjection3d() -> OrthographicProjection3d {
   OrthographicProjection3d::default_3d()
 }
 

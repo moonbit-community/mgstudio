@@ -42,7 +42,7 @@ pub struct Dlss {
   perf_quality_mode : DlssPerfQualityMode
   reset : Bool
 }
-pub fn Dlss::default() -> Self
+pub fn Dlss::Dlss() -> Self
 pub fn Dlss::new(perf_quality_mode? : DlssPerfQualityMode, reset? : Bool) -> Self
 pub fn Dlss::with_perf_quality_mode(Self, DlssPerfQualityMode) -> Self
 pub fn Dlss::with_reset(Self, Bool) -> Self
@@ -52,7 +52,7 @@ pub impl Default for Dlss
 
 pub struct DlssInitPlugin {
 }
-pub fn DlssInitPlugin::default() -> Self
+pub fn DlssInitPlugin::DlssInitPlugin() -> Self
 pub impl @app.Plugin for DlssInitPlugin
 
 pub(all) enum DlssPerfQualityMode {
@@ -63,12 +63,11 @@ pub(all) enum DlssPerfQualityMode {
   Performance
   UltraPerformance
 } derive(Eq, @debug.Debug)
-pub fn DlssPerfQualityMode::default() -> Self
 pub impl Default for DlssPerfQualityMode
 
 pub struct DlssPlugin {
 }
-pub fn DlssPlugin::default() -> Self
+pub fn DlssPlugin::DlssPlugin() -> Self
 pub impl @app.Plugin for DlssPlugin
 
 pub struct DlssProjectId {
@@ -89,7 +88,7 @@ pub struct DlssRuntimeState {
   reset_requested_count : Int
   runtime_supported : Bool
 } derive(Eq, @debug.Debug)
-pub fn DlssRuntimeState::default() -> Self
+pub fn DlssRuntimeState::DlssRuntimeState() -> Self
 pub impl @app.Resource for DlssRuntimeState
 pub impl @ecs.EcsPayloadCodec for DlssRuntimeState
 

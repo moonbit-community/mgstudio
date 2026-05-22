@@ -51,7 +51,7 @@ fn ensure_layers_default(
   match (try! world.get_by_key(entity, @sprite.ecs_key_render_layers)) {
     Some(v) => v
     None => {
-      let layers = @sprite.RenderLayers::default()
+      let layers = @sprite.RenderLayers::RenderLayers()
       try! world.set_by_key(entity, @sprite.ecs_key_render_layers, layers)
       layers
     }

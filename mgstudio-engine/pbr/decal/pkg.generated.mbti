@@ -75,22 +75,22 @@ pub enum ClusteredDecalBindGroupLayoutEntryType {
 
 pub struct ClusteredDecalPlugin {
 }
-pub fn ClusteredDecalPlugin::default() -> Self
+pub fn ClusteredDecalPlugin::ClusteredDecalPlugin() -> Self
 pub impl @app.Plugin for ClusteredDecalPlugin
 
 pub struct DecalPluginState {
   forward_enabled : Bool
   clustered_enabled : Bool
 }
+pub fn DecalPluginState::DecalPluginState() -> Self
 pub fn DecalPluginState::clustered_enabled(Self) -> Bool
-pub fn DecalPluginState::default() -> Self
 pub fn DecalPluginState::forward_enabled(Self) -> Bool
 
 pub struct DecalsBuffer {
   decals : Array[RenderClusteredDecal]
 }
+pub fn DecalsBuffer::DecalsBuffer() -> Self
 pub fn DecalsBuffer::clear(Self) -> Unit
-pub fn DecalsBuffer::default() -> Self
 pub fn DecalsBuffer::is_empty(Self) -> Bool
 pub fn DecalsBuffer::push(Self, RenderClusteredDecal) -> Unit
 pub impl @app.Resource for DecalsBuffer
@@ -98,24 +98,24 @@ pub impl @ecs.EcsPayloadCodec for DecalsBuffer
 
 pub struct ForwardDecal {
 } derive(ToJson, @json.FromJson)
-pub fn ForwardDecal::default() -> Self
+pub fn ForwardDecal::ForwardDecal() -> Self
 pub impl @ecs.Component for ForwardDecal
 pub impl @ecs.EcsPayloadCodec for ForwardDecal
 
 pub struct ForwardDecalMaterialExtUniform {
   inv_depth_fade_factor : Float
 }
-pub fn ForwardDecalMaterialExtUniform::default() -> Self
+pub fn ForwardDecalMaterialExtUniform::ForwardDecalMaterialExtUniform() -> Self
 
 pub struct ForwardDecalPipelineKey {
   alpha_blend : Bool
   depth_compare_always : Bool
 }
-pub fn ForwardDecalPipelineKey::default() -> Self
+pub fn ForwardDecalPipelineKey::ForwardDecalPipelineKey() -> Self
 
 pub struct ForwardDecalPlugin {
 }
-pub fn ForwardDecalPlugin::default() -> Self
+pub fn ForwardDecalPlugin::ForwardDecalPlugin() -> Self
 pub impl @app.Plugin for ForwardDecalPlugin
 
 pub struct RenderClusteredDecal {
@@ -129,7 +129,7 @@ pub struct RenderClusteredDecal {
   pad_b : Int
   pad_c : Int
 }
-pub fn RenderClusteredDecal::default() -> Self
+pub fn RenderClusteredDecal::RenderClusteredDecal() -> Self
 pub fn RenderClusteredDecal::new(@math.Affine3, Int, Int, Int, Int, Int) -> Self
 
 pub struct RenderClusteredDecals {
@@ -138,8 +138,8 @@ pub struct RenderClusteredDecals {
   decals : Array[RenderClusteredDecal]
   entity_to_decal_index : Map[Int, Int]
 }
+pub fn RenderClusteredDecals::RenderClusteredDecals() -> Self
 pub fn RenderClusteredDecals::clear(Self) -> Unit
-pub fn RenderClusteredDecals::default() -> Self
 pub fn RenderClusteredDecals::get_decal_index(Self, @core.Entity) -> Int?
 pub fn RenderClusteredDecals::get_or_insert_texture(Self, Int) -> Int
 pub fn RenderClusteredDecals::insert_decal(Self, @core.Entity, @light.ClusteredDecal) -> Int

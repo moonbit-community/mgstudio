@@ -14,13 +14,13 @@
 
 ///|
 test "render3d: main pass skips deferred opaque materials like bevy queue_material_meshes" {
-  let deferred_opaque = @material.MaterialProperties::default()
+  let deferred_opaque = @material.MaterialProperties::MaterialProperties()
     .with_render_phase_type(@material.RenderPhaseType::Opaque)
     .with_render_method(OpaqueRendererMethod::Deferred)
-  let forward_opaque = @material.MaterialProperties::default()
+  let forward_opaque = @material.MaterialProperties::MaterialProperties()
     .with_render_phase_type(@material.RenderPhaseType::Opaque)
     .with_render_method(OpaqueRendererMethod::Forward)
-  let deferred_alpha_mask = @material.MaterialProperties::default()
+  let deferred_alpha_mask = @material.MaterialProperties::MaterialProperties()
     .with_render_phase_type(@material.RenderPhaseType::AlphaMask)
     .with_render_method(OpaqueRendererMethod::Deferred)
 

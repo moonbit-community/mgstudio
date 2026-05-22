@@ -233,7 +233,7 @@ pub struct BvhNode {
   child_counts : Array[Int]
   padding : Array[Int]
 }
-pub fn BvhNode::default() -> Self
+pub fn BvhNode::BvhNode() -> Self
 pub fn BvhNode::with_child_count(Self, Int, Int) -> Self
 
 pub struct ExtractedMeshletInstance {
@@ -268,8 +268,8 @@ pub struct InstanceManager {
   material_id_lookup : Map[Int, Int]
   material_ids_present_in_scene : @utils.IntBitSet
 }
+pub fn InstanceManager::InstanceManager() -> Self
 pub fn InstanceManager::add_instance(Self, @core.Entity, Int, Int, MeshletAabb, Int, render_layer_mask? : Int, not_shadow_caster? : Bool, material_slot? : Int, world_from_local? : @math.Affine3, previous_world_from_local? : @math.Affine3, not_shadow_receiver? : Bool) -> Unit
-pub fn InstanceManager::default() -> Self
 pub fn InstanceManager::get_material_id(Self, Int) -> Int
 pub fn InstanceManager::instance_bvh_root_nodes(Self) -> Array[Int]
 pub fn InstanceManager::instance_count(Self) -> Int
@@ -304,7 +304,7 @@ pub struct MeshToMeshletMeshConversionConfig {
   max_vertices : Int
   max_triangles : Int
 }
-pub fn MeshToMeshletMeshConversionConfig::default() -> Self
+pub fn MeshToMeshletMeshConversionConfig::MeshToMeshletMeshConversionConfig() -> Self
 
 pub(all) enum MeshToMeshletMeshConversionError {
   RuntimeUnavailable
@@ -345,7 +345,7 @@ pub struct MeshletAabb {
   half_extent_y : Float
   half_extent_z : Float
 }
-pub fn MeshletAabb::default() -> Self
+pub fn MeshletAabb::MeshletAabb() -> Self
 pub fn MeshletAabb::new(center_x~ : Float, center_y~ : Float, center_z~ : Float, half_extent_x~ : Float, half_extent_y~ : Float, half_extent_z~ : Float) -> Self
 
 pub struct MeshletAabbErrorOffset {
@@ -358,7 +358,7 @@ pub struct MeshletAabbErrorOffset {
   half_extent_z : Float
   child_offset : Int
 }
-pub fn MeshletAabbErrorOffset::default() -> Self
+pub fn MeshletAabbErrorOffset::MeshletAabbErrorOffset() -> Self
 
 pub struct MeshletBoundingSphere {
   center_x : Float
@@ -366,7 +366,7 @@ pub struct MeshletBoundingSphere {
   center_z : Float
   radius : Float
 }
-pub fn MeshletBoundingSphere::default() -> Self
+pub fn MeshletBoundingSphere::MeshletBoundingSphere() -> Self
 
 pub struct MeshletBufferSliceRange {
   start : Int
@@ -386,7 +386,7 @@ pub struct MeshletCullData {
   aabb : MeshletAabbErrorOffset
   lod_group_sphere : MeshletBoundingSphere
 }
-pub fn MeshletCullData::default() -> Self
+pub fn MeshletCullData::MeshletCullData() -> Self
 
 pub struct MeshletInstanceUniform {
   world_from_local : @math.Affine3
@@ -394,7 +394,7 @@ pub struct MeshletInstanceUniform {
   material_slot : Int
   flags : UInt
 }
-pub fn MeshletInstanceUniform::default() -> Self
+pub fn MeshletInstanceUniform::MeshletInstanceUniform() -> Self
 
 pub struct MeshletMaterialDrawCall {
   material_id : Int
@@ -566,9 +566,9 @@ pub struct MeshletMeshManager {
   pending_upload_asset_ids : Array[Int]
   meshlet_mesh_slices : Map[Int, MeshletMeshSlices]
 }
+pub fn MeshletMeshManager::MeshletMeshManager() -> Self
 pub fn MeshletMeshManager::buffered_asset_count(Self) -> Int
 pub fn MeshletMeshManager::committed_mesh_writes(Self) -> Int
-pub fn MeshletMeshManager::default() -> Self
 pub fn MeshletMeshManager::pending_mesh_writes(Self) -> Int
 pub fn MeshletMeshManager::pending_upload_count(Self) -> Int
 pub fn MeshletMeshManager::perform_pending_mesh_writes(Self) -> Int
@@ -643,7 +643,7 @@ pub struct MeshletPipelines {
   fill_counts : Int
   meshlet_mesh_material_shader : String
 }
-pub fn MeshletPipelines::default() -> Self
+pub fn MeshletPipelines::MeshletPipelines() -> Self
 pub fn MeshletPipelines::get(Self) -> (Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int?, Int)?
 pub fn MeshletPipelines::meshlet_mesh_material_shader(Self) -> String
 pub impl @ecs.EcsPayloadCodec for MeshletPipelines
@@ -651,8 +651,8 @@ pub impl @ecs.EcsPayloadCodec for MeshletPipelines
 pub struct MeshletPlugin {
   cluster_buffer_slots : Int
 }
+pub fn MeshletPlugin::MeshletPlugin() -> Self
 pub fn MeshletPlugin::cluster_buffer_slots(Self) -> Int
-pub fn MeshletPlugin::default() -> Self
 pub fn MeshletPlugin::new(Int) -> Self
 pub fn MeshletPlugin::required_wgpu_features() -> UInt64
 pub impl @app.Plugin for MeshletPlugin
@@ -664,7 +664,7 @@ pub struct MeshletPluginState {
   missing_native_immediates : Bool
   adapter_supports_mesh_shader : Bool
 }
-pub fn MeshletPluginState::default() -> Self
+pub fn MeshletPluginState::MeshletPluginState() -> Self
 pub fn MeshletPluginState::from_plugin(MeshletPlugin) -> Self
 pub impl @ecs.EcsPayloadCodec for MeshletPluginState
 
@@ -781,7 +781,7 @@ pub struct MeshletVertexUv {
   x : Float
   y : Float
 }
-pub fn MeshletVertexUv::default() -> Self
+pub fn MeshletVertexUv::MeshletVertexUv() -> Self
 pub fn MeshletVertexUv::new(Float, Float) -> Self
 
 pub struct MeshletViewBindGroups {
@@ -817,7 +817,7 @@ pub struct MeshletViewMaterialPipelineKey {
   ssao : Bool
   distance_fog : Bool
 }
-pub fn MeshletViewMaterialPipelineKey::default() -> Self
+pub fn MeshletViewMaterialPipelineKey::MeshletViewMaterialPipelineKey() -> Self
 pub fn MeshletViewMaterialPipelineKey::equal(Self, Self) -> Bool
 pub fn MeshletViewMaterialPipelineKey::for_meshlet_prepass(Self, Bool) -> Self
 pub fn MeshletViewMaterialPipelineKey::new(hdr? : Bool, normal_prepass? : Bool, depth_prepass? : Bool, motion_vector_prepass? : Bool, deferred_prepass? : Bool, temporal_jitter? : Bool, projection_type? : Int, shadow_filter_method? : Int, tonemap_in_shader? : Bool, tonemapping_mode? : Int, deband_dither? : Bool, environment_map? : Bool, irradiance_volume? : Bool, ssao? : Bool, distance_fog? : Bool) -> Self
@@ -826,8 +826,8 @@ pub fn MeshletViewMaterialPipelineKey::with_deferred_prepass(Self, Bool) -> Self
 pub struct MeshletViewMaterialsDeferredGBufferPrepass {
   mut entries : Array[MeshletViewMaterialEntry]
 }
+pub fn MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass() -> Self
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::clear(Self) -> Unit
-pub fn MeshletViewMaterialsDeferredGBufferPrepass::default() -> Self
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::len(Self) -> Int
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::push(Self, MeshletViewMaterialEntry) -> Unit
 pub impl @ecs.Component for MeshletViewMaterialsDeferredGBufferPrepass
@@ -836,8 +836,8 @@ pub impl @ecs.EcsPayloadCodec for MeshletViewMaterialsDeferredGBufferPrepass
 pub struct MeshletViewMaterialsMainOpaquePass {
   mut entries : Array[MeshletViewMaterialEntry]
 }
+pub fn MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass() -> Self
 pub fn MeshletViewMaterialsMainOpaquePass::clear(Self) -> Unit
-pub fn MeshletViewMaterialsMainOpaquePass::default() -> Self
 pub fn MeshletViewMaterialsMainOpaquePass::len(Self) -> Int
 pub fn MeshletViewMaterialsMainOpaquePass::push(Self, MeshletViewMaterialEntry) -> Unit
 pub impl @ecs.Component for MeshletViewMaterialsMainOpaquePass
@@ -846,8 +846,8 @@ pub impl @ecs.EcsPayloadCodec for MeshletViewMaterialsMainOpaquePass
 pub struct MeshletViewMaterialsPrepass {
   mut entries : Array[MeshletViewMaterialEntry]
 }
+pub fn MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass() -> Self
 pub fn MeshletViewMaterialsPrepass::clear(Self) -> Unit
-pub fn MeshletViewMaterialsPrepass::default() -> Self
 pub fn MeshletViewMaterialsPrepass::len(Self) -> Int
 pub fn MeshletViewMaterialsPrepass::push(Self, MeshletViewMaterialEntry) -> Unit
 pub impl @ecs.Component for MeshletViewMaterialsPrepass
@@ -989,9 +989,9 @@ pub struct MeshletVisibilityBufferRasterState {
   mut last_max_bvh_depth : Int
   mut last_rightmost_slot : Int
 }
+pub fn MeshletVisibilityBufferRasterState::MeshletVisibilityBufferRasterState() -> Self
 pub fn MeshletVisibilityBufferRasterState::clear_raster_cluster_prev_counts_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::clear_visibility_buffer_count(Self) -> Int
-pub fn MeshletVisibilityBufferRasterState::default() -> Self
 pub fn MeshletVisibilityBufferRasterState::downsample_depth_count(Self) -> Int
 pub fn MeshletVisibilityBufferRasterState::enabled(Self) -> Bool
 pub fn MeshletVisibilityBufferRasterState::fill_counts_pass_count(Self) -> Int
@@ -1074,6 +1074,7 @@ pub struct ResourceManager {
   fill_counts_bind_group_layout_id : Int
   remap_1d_to_2d_dispatch_bind_group_layout_id : Int?
 }
+pub fn ResourceManager::ResourceManager() -> Self
 pub fn ResourceManager::advance_frame(Self) -> Unit
 pub fn ResourceManager::bind_group_layout_count(Self) -> Int
 pub fn ResourceManager::clear_stale_prepared_view_bind_groups(Self, Array[@core.Entity]) -> Unit
@@ -1081,7 +1082,6 @@ pub fn ResourceManager::clear_stale_prepared_view_resources(Self, Array[@core.En
 pub fn ResourceManager::clear_stale_previous_depth_pyramids(Self, Array[Int]) -> Unit
 pub fn ResourceManager::cluster_buffer_slots(Self) -> Int
 pub fn ResourceManager::cull_queue_rightmost_slot(Self) -> Int
-pub fn ResourceManager::default() -> Self
 pub fn ResourceManager::frame_index(Self) -> Int
 pub fn ResourceManager::meshlet_buffer_count(Self) -> Int
 pub fn ResourceManager::new(Int) -> Self

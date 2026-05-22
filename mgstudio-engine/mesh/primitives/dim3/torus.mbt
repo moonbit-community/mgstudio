@@ -32,9 +32,9 @@ pub(all) struct TorusMeshBuilder {
 }
 
 ///|
-pub fn TorusMeshBuilder::default() -> TorusMeshBuilder {
+pub fn TorusMeshBuilder::TorusMeshBuilder() -> TorusMeshBuilder {
   {
-    torus: @math.Torus::default(),
+    torus: @math.Torus::Torus(),
     minor_resolution: 24,
     major_resolution: 32,
     start_angle: 0.0F,

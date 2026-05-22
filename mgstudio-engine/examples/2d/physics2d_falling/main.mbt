@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(physics2d_falling_setup))
   .add_systems(@app.Update, @app.system(physics2d_print_events))
   .run()
@@ -97,7 +97,7 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   )
 
   // Camera.
-  let camera = @sprite.Camera::default()
+  let camera = @sprite.Camera::Camera()
   @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
     world,
   )

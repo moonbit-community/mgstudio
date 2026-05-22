@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_shader_gpu_readback_ReadbackSample(ReadbackSample)
-  EcsPayload_examples_shader_gpu_readback_ReadbackState(ReadbackState)
 }
 
 ///|
@@ -27,19 +26,6 @@ impl @ecs.EcsPayloadCodec for ReadbackSample with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for ReadbackSample with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_shader_gpu_readback_ReadbackSample(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ReadbackState with to_ecs_payload(self) {
-  EcsPayload_examples_shader_gpu_readback_ReadbackState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ReadbackState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_shader_gpu_readback_ReadbackState(value) => Some(value)
     _ => None
   }
 }

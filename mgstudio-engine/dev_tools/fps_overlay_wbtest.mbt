@@ -15,14 +15,14 @@
 ///|
 fn overlay_test_app(config : FpsOverlayConfig) -> @app.App[@ecs.World] {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @time.TimePlugin::default(),
+    @time.TimePlugin::TimePlugin(),
   )
   fps_overlay_plugin_with(app, FpsOverlayPlugin::{ config, })
 }
 
 ///|
 test "dev_tools: fps overlay startup spawns root, text, graph, and bars" {
-  let app = overlay_test_app(FpsOverlayConfig::default()).run_startup()
+  let app = overlay_test_app(FpsOverlayConfig::FpsOverlayConfig()).run_startup()
   let state = app.world().get_resource(fps_overlay_state_resource_key).unwrap()
   guard state.root_entity is Some(root_entity) else {
     abort("missing overlay root")
@@ -81,7 +81,7 @@ test "dev_tools: fps overlay startup spawns root, text, graph, and bars" {
 
 ///|
 test "dev_tools: fps overlay installs frame time graph plugin" {
-  let app = overlay_test_app(FpsOverlayConfig::default())
+  let app = overlay_test_app(FpsOverlayConfig::FpsOverlayConfig())
   debug_inspect(
     app.plugin_names().contains("mgstudio.dev_tools.FrameTimeGraphPlugin"),
     content="true",
@@ -91,9 +91,11 @@ test "dev_tools: fps overlay installs frame time graph plugin" {
 ///|
 test "dev_tools: frame time graph plugin does not install fps overlay" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@diagnostic.DiagnosticsPlugin::default())
-    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-    .add_plugins(FrameTimeGraphPlugin::default())
+    .add_plugins(@diagnostic.DiagnosticsPlugin::DiagnosticsPlugin())
+    .add_plugins(
+      @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+    )
+    .add_plugins(FrameTimeGraphPlugin::FrameTimeGraphPlugin())
   debug_inspect(
     app.world().get_resource(FpsOverlayConfig::resource()) is Some(_),
     content="false",
@@ -104,9 +106,11 @@ test "dev_tools: frame time graph plugin does not install fps overlay" {
 test "dev_tools: frame time graph plugin registers embedded wgsl shader" {
   ignore(
     @app.App::new(@ecs.World::new())
-    .add_plugins(@diagnostic.DiagnosticsPlugin::default())
-    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-    .add_plugins(FrameTimeGraphPlugin::default()),
+    .add_plugins(@diagnostic.DiagnosticsPlugin::DiagnosticsPlugin())
+    .add_plugins(
+      @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+    )
+    .add_plugins(FrameTimeGraphPlugin::FrameTimeGraphPlugin()),
   )
   let source = @shader_source.embedded_shader_source(
     "dev_tools/frame_time_graph/frame_time_graph.wgsl",
@@ -117,9 +121,11 @@ test "dev_tools: frame time graph plugin registers embedded wgsl shader" {
 ///|
 test "dev_tools: frame time graph values mirror diagnostics history in seconds" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@diagnostic.DiagnosticsPlugin::default())
-    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-    .add_plugins(FrameTimeGraphPlugin::default())
+    .add_plugins(@diagnostic.DiagnosticsPlugin::DiagnosticsPlugin())
+    .add_plugins(
+      @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+    )
+    .add_plugins(FrameTimeGraphPlugin::FrameTimeGraphPlugin())
   let store_ref = app
     .world()
     .get_resource_ref_mut(@diagnostic.DiagnosticsStore::resource())
@@ -152,9 +158,11 @@ test "dev_tools: frame time graph values mirror diagnostics history in seconds" 
 ///|
 test "dev_tools: frame time graph material buffers mirror diagnostics history" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@diagnostic.DiagnosticsPlugin::default())
-    .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-    .add_plugins(FrameTimeGraphPlugin::default())
+    .add_plugins(@diagnostic.DiagnosticsPlugin::DiagnosticsPlugin())
+    .add_plugins(
+      @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+    )
+    .add_plugins(FrameTimeGraphPlugin::FrameTimeGraphPlugin())
   let buffer_handle = app
   .world()
   .get_resource_ref_mut(frame_time_graph_buffer_assets_key())
@@ -209,7 +217,7 @@ test "dev_tools: frame time graph material buffers mirror diagnostics history" {
 
 ///|
 test "dev_tools: fps overlay hides text and graph when disabled" {
-  let mut app = overlay_test_app(FpsOverlayConfig::default()).run_startup()
+  let mut app = overlay_test_app(FpsOverlayConfig::FpsOverlayConfig()).run_startup()
   let state = app.world().get_resource(fps_overlay_state_resource_key).unwrap()
   let config = app.world().get_resource(FpsOverlayConfig::resource()).unwrap()
   config.enabled = false
@@ -237,7 +245,7 @@ test "dev_tools: fps overlay hides text and graph when disabled" {
 
 ///|
 test "dev_tools: fps overlay updates text and graph from diagnostics" {
-  let mut app = overlay_test_app(FpsOverlayConfig::default()).run_startup()
+  let mut app = overlay_test_app(FpsOverlayConfig::FpsOverlayConfig()).run_startup()
   app = app.insert_resource(
     @time.TimeUpdateStrategy::ManualDuration(@core.Duration::from_millis(100)),
   )

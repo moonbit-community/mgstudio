@@ -25,7 +25,7 @@ const SMAA_PLUGIN_NAME : String = "mgstudio.anti_alias.smaa.SmaaPlugin"
 pub struct SmaaPlugin {}
 
 ///|
-pub fn SmaaPlugin::default() -> SmaaPlugin {
+pub fn SmaaPlugin::SmaaPlugin() -> SmaaPlugin {
   SmaaPlugin::{  }
 }
 
@@ -58,7 +58,7 @@ pub struct Smaa {
 } derive(Eq, Debug)
 
 ///|
-pub fn Smaa::default() -> Smaa {
+pub fn Smaa::Smaa() -> Smaa {
   Smaa::{ preset: SmaaPreset::default() }
 }
 
@@ -201,7 +201,7 @@ pub fn ViewSmaaPipelines::new(
 }
 
 ///|
-pub fn SmaaRuntimeState::default() -> SmaaRuntimeState {
+pub fn SmaaRuntimeState::SmaaRuntimeState() -> SmaaRuntimeState {
   SmaaRuntimeState::{
     enabled_camera_count: 0,
     runtime_supported: SMAA_RUNTIME_SUPPORTED,
@@ -348,7 +348,7 @@ pub fn SmaaEdgeDetectionPipeline::specialize(
     @material.ShaderDefVal::Flag("SMAA_EDGE_DETECTION"),
     @material.ShaderDefVal::Flag(preset.shader_def()),
   ]
-  @material.RenderPipelineDescriptor::default()
+  @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_label(Some("SMAA edge detection"))
   .with_layout([
     self.postprocess_bind_group_layout,
@@ -379,7 +379,7 @@ pub fn SmaaBlendingWeightCalculationPipeline::specialize(
     @material.ShaderDefVal::Flag("SMAA_BLENDING_WEIGHT_CALCULATION"),
     @material.ShaderDefVal::Flag(preset.shader_def()),
   ]
-  @material.RenderPipelineDescriptor::default()
+  @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_label(Some("SMAA blending weight calculation"))
   .with_layout([
     self.postprocess_bind_group_layout,
@@ -414,7 +414,7 @@ pub fn SmaaNeighborhoodBlendingPipeline::specialize(
     @material.ShaderDefVal::Flag("SMAA_NEIGHBORHOOD_BLENDING"),
     @material.ShaderDefVal::Flag(key.preset.shader_def()),
   ]
-  @material.RenderPipelineDescriptor::default()
+  @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_label(Some("SMAA neighborhood blending"))
   .with_layout([
     self.postprocess_bind_group_layout,
@@ -454,7 +454,7 @@ pub impl @app.Plugin for SmaaPlugin with build(self, app) {
 
 ///|
 pub fn smaa_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  smaa_plugin_with(app, SmaaPlugin::default())
+  smaa_plugin_with(app, SmaaPlugin::SmaaPlugin())
 }
 
 ///|
@@ -470,7 +470,7 @@ pub fn smaa_plugin_with(
     )
   }
   app
-  .init_resource(fn() { SmaaRuntimeState::default() })
+  .init_resource(fn() { SmaaRuntimeState::SmaaRuntimeState() })
   .add_system(smaa_update_runtime_state)
 }
 

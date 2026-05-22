@@ -23,8 +23,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_sprite_MeshMaterial2d(MeshMaterial2dPayload)
   EcsPayload_sprite_GizmoStorage(GizmoStoragePayload)
   EcsPayload_sprite_GizmoConfigStore(GizmoConfigStore)
-  EcsPayload_sprite_SpriteMeshQuad(SpriteMeshQuad)
-  EcsPayload_sprite_SpriteMeshMaterialCache(SpriteMeshMaterialCache)
   EcsPayload_sprite_Material2dRuntimeRegistry(Material2dRuntimeRegistry)
   EcsPayload_sprite_Sprite(Sprite)
   EcsPayload_sprite_SpriteMesh(SpriteMesh)
@@ -45,7 +43,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_sprite_TilemapChunkTileData(TilemapChunkTileData)
   EcsPayload_sprite_RenderState(RenderState)
   EcsPayload_sprite_Wireframe2dConfig(Wireframe2dConfig)
-  EcsPayload_sprite_SpritePluginMarker(SpritePluginMarker)
 }
 
 ///|
@@ -257,34 +254,6 @@ pub impl @ecs.EcsPayloadCodec for GizmoConfigStore with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_sprite_GizmoConfigStore(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SpriteMeshQuad with to_ecs_payload(self) {
-  EcsPayload_sprite_SpriteMeshQuad(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SpriteMeshQuad with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_sprite_SpriteMeshQuad(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SpriteMeshMaterialCache with to_ecs_payload(self) {
-  EcsPayload_sprite_SpriteMeshMaterialCache(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SpriteMeshMaterialCache with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_sprite_SpriteMeshMaterialCache(value) => Some(value)
     _ => None
   }
 }
@@ -557,19 +526,6 @@ pub impl @ecs.EcsPayloadCodec for Wireframe2dConfig with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_sprite_Wireframe2dConfig(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SpritePluginMarker with to_ecs_payload(self) {
-  EcsPayload_sprite_SpritePluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SpritePluginMarker with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_sprite_SpritePluginMarker(value) => Some(value)
     _ => None
   }
 }

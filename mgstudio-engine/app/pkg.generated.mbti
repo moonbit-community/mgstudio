@@ -627,7 +627,7 @@ pub fn[T : CommandSpawnComponents] Commands::spawn_batch(Self, Array[T], loc~ : 
 #callsite(autofill(loc))
 pub fn[B : @ecs.Bundle] Commands::spawn_bundle(Self, B, loc~ : SourceLoc) -> @core.Entity
 #callsite(autofill(loc))
-pub fn[T : @ecs.Component] Commands::spawn_component(Self, T, loc~ : SourceLoc) -> @core.Entity
+pub fn[T : @ecs.Component + @ecs.EcsPayloadCodec] Commands::spawn_component(Self, T, loc~ : SourceLoc) -> @core.Entity
 pub fn Commands::spawn_empty(Self) -> @core.Entity
 pub fn[E : @ecs.TriggerEvent] Commands::trigger(Self, E) -> Unit
 pub impl SystemParam for Commands
@@ -669,7 +669,7 @@ pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T, loc~ : Source
 #callsite(autofill(loc))
 pub fn[B : @ecs.Bundle] EntityCommands::insert_bundle(Self, B, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
-pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T, loc~ : SourceLoc) -> Unit
+pub fn[T : @ecs.Component + @ecs.EcsPayloadCodec] EntityCommands::insert_component(Self, T, loc~ : SourceLoc) -> Unit
 pub fn[E : @ecs.TriggerEvent] EntityCommands::observe(Self, (@ecs.On[E]) -> Unit) -> Self
 pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2(Self, (@ecs.On[E], P2) -> Unit) -> Self
 pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2_fallible(Self, (@ecs.On[E], P2) -> Unit raise) -> Self
@@ -722,7 +722,7 @@ pub(all) enum ExecutorKind {
 pub struct FixedMainScheduleOrder {
   labels : Array[ScheduleStage]
 } derive(Eq, @debug.Debug)
-pub fn FixedMainScheduleOrder::default() -> Self
+pub fn FixedMainScheduleOrder::FixedMainScheduleOrder() -> Self
 pub fn FixedMainScheduleOrder::insert_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn FixedMainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn FixedMainScheduleOrder::new(Array[ScheduleStage]) -> Self
@@ -732,22 +732,22 @@ pub struct FixedSchedulePropagationConfig {
   run_fixed_update : Bool
   run_fixed_main : Bool
 }
-pub fn FixedSchedulePropagationConfig::default() -> Self
+pub fn FixedSchedulePropagationConfig::FixedSchedulePropagationConfig() -> Self
 
 pub struct HotPatchChanges {
   mut revision : Int
 }
-pub fn HotPatchChanges::default() -> Self
+pub fn HotPatchChanges::HotPatchChanges() -> Self
 pub impl Resource for HotPatchChanges
 pub impl @ecs.EcsPayloadCodec for HotPatchChanges
 
 pub struct HotPatchPlugin {
 }
-pub fn HotPatchPlugin::default() -> Self
+pub fn HotPatchPlugin::HotPatchPlugin() -> Self
 
 pub struct HotPatched {
 }
-pub fn HotPatched::default() -> Self
+pub fn HotPatched::HotPatched() -> Self
 pub impl @ecs.EcsPayloadCodec for HotPatched
 pub impl @ecs.Message for HotPatched
 
@@ -781,7 +781,7 @@ pub struct LogPlugin {
   custom_layer : ((LogRecord) -> Unit)?
   fmt_layer : ((LogRecord) -> Unit)?
 }
-pub fn LogPlugin::default() -> Self
+pub fn LogPlugin::LogPlugin() -> Self
 pub fn LogPlugin::with_custom_layer(Self, (LogRecord) -> Unit) -> Self
 pub fn LogPlugin::with_filter(Self, String) -> Self
 pub fn LogPlugin::with_fmt_layer(Self, (LogRecord) -> Unit) -> Self
@@ -803,7 +803,7 @@ pub struct MainScheduleOrder {
   labels : Array[ScheduleStage]
   startup_labels : Array[ScheduleStage]
 } derive(Eq, @debug.Debug)
-pub fn MainScheduleOrder::default() -> Self
+pub fn MainScheduleOrder::MainScheduleOrder() -> Self
 pub fn MainScheduleOrder::insert_after(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> Self
 pub fn MainScheduleOrder::insert_startup_after(Self, ScheduleStage, ScheduleStage) -> Self
@@ -829,7 +829,7 @@ pub(all) struct NextStatePayload {
 
 pub struct NoopPluginGroup {
 }
-pub fn NoopPluginGroup::default() -> Self
+pub fn NoopPluginGroup::NoopPluginGroup() -> Self
 pub impl Plugin for NoopPluginGroup
 pub impl PluginGroup for NoopPluginGroup
 
@@ -901,7 +901,7 @@ pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1]
 pub struct PickingEvents {
   mut events : Array[@pointer_events.PointerEvent]
 } derive(ToJson, @json.FromJson)
-pub fn PickingEvents::default() -> Self
+pub fn PickingEvents::PickingEvents() -> Self
 pub fn PickingEvents::drain(@ref.Ref[Self]) -> Array[@pointer_events.PointerEvent]
 pub fn PickingEvents::drain_all(Self) -> Array[@pointer_events.PointerEvent]
 pub fn PickingEvents::push(@ref.Ref[Self], @pointer_events.PointerEvent) -> Unit
@@ -1097,7 +1097,7 @@ pub fn ScheduleBuildSettings::use_shortnames(Self) -> Bool
 pub struct ScheduleGraphSettings {
   include_system_name : ((String) -> Bool)?
 }
-pub fn ScheduleGraphSettings::default() -> Self
+pub fn ScheduleGraphSettings::ScheduleGraphSettings() -> Self
 pub fn ScheduleGraphSettings::with_include_system_name(Self, (String) -> Bool) -> Self
 
 type ScheduleRegistry[W]
@@ -1178,7 +1178,7 @@ pub(all) enum StateTransitionSystems {
 
 pub struct StatesPlugin {
 }
-pub fn StatesPlugin::default() -> Self
+pub fn StatesPlugin::StatesPlugin() -> Self
 pub impl Plugin for StatesPlugin
 
 type Stepping
@@ -1338,15 +1338,15 @@ pub(all) struct TaskPoolOptions {
   async_compute : TaskPoolThreadAssignmentPolicy
   compute : TaskPoolThreadAssignmentPolicy
 } derive(@debug.Debug)
+pub fn TaskPoolOptions::TaskPoolOptions() -> Self
 pub fn TaskPoolOptions::create_default_pools(Self) -> Unit
-pub fn TaskPoolOptions::default() -> Self
 pub fn TaskPoolOptions::with_num_threads(Int) -> Self
 
 pub(all) struct TaskPoolPlugin {
   task_pool_options : TaskPoolOptions
 } derive(@debug.Debug)
+pub fn TaskPoolPlugin::TaskPoolPlugin() -> Self
 pub fn TaskPoolPlugin::build(Self, App[@ecs.World]) -> App[@ecs.World]
-pub fn TaskPoolPlugin::default() -> Self
 
 pub(all) struct TaskPoolThreadAssignmentPolicy {
   min_threads : Int
@@ -1359,7 +1359,7 @@ pub fn TaskPoolThreadAssignmentPolicy::default_io() -> Self
 
 pub struct TerminalCtrlCHandlerPlugin {
 }
-pub fn TerminalCtrlCHandlerPlugin::default() -> Self
+pub fn TerminalCtrlCHandlerPlugin::TerminalCtrlCHandlerPlugin() -> Self
 
 pub(all) enum TimelineTraceCategory {
   ScheduleStage
@@ -1382,7 +1382,7 @@ pub fn TimelineTraceSpan::ts_us(Self) -> Int64
 pub struct ValidateParentHasComponentPlugin[_] {
   schedule : ScheduleStage
 }
-pub fn[C] ValidateParentHasComponentPlugin::default() -> Self[C]
+pub fn[C] ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin() -> Self[C]
 pub fn[C] ValidateParentHasComponentPlugin::in_schedule(ScheduleStage) -> Self[C]
 pub impl[C : @ecs.Component] Plugin for ValidateParentHasComponentPlugin[C]
 
@@ -1424,13 +1424,13 @@ pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.W
 pub(open) trait CommandSpawnComponents {
   fn spawn_components(Self, @ecs.World, @core.Entity, Int64, loc~ : SourceLoc) -> Unit raise @ecs.EcsError
 }
-pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (A, B)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpawnComponents for (A, B, C)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component] CommandSpawnComponents for (A, B, C, D)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component, G : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F, G)
-pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component, G : @ecs.Component, H : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F, G, H)
+pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B)
+pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C)
+pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec, D : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C, D)
+pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec, D : @ecs.Component + @ecs.EcsPayloadCodec, E : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C, D, E)
+pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec, D : @ecs.Component + @ecs.EcsPayloadCodec, E : @ecs.Component + @ecs.EcsPayloadCodec, F : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C, D, E, F)
+pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec, D : @ecs.Component + @ecs.EcsPayloadCodec, E : @ecs.Component + @ecs.EcsPayloadCodec, F : @ecs.Component + @ecs.EcsPayloadCodec, G : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C, D, E, F, G)
+pub impl[A : @ecs.Component + @ecs.EcsPayloadCodec, B : @ecs.Component + @ecs.EcsPayloadCodec, C : @ecs.Component + @ecs.EcsPayloadCodec, D : @ecs.Component + @ecs.EcsPayloadCodec, E : @ecs.Component + @ecs.EcsPayloadCodec, F : @ecs.Component + @ecs.EcsPayloadCodec, G : @ecs.Component + @ecs.EcsPayloadCodec, H : @ecs.Component + @ecs.EcsPayloadCodec] CommandSpawnComponents for (A, B, C, D, E, F, G, H)
 
 pub(open) trait FreelyMutableState : States {
 }
@@ -1475,7 +1475,7 @@ pub(open) trait PointerObserverKind {
   fn source_label() -> String
 }
 
-pub(open) trait Resource : @ecs.EcsPayloadCodec {
+pub(open) trait Resource {
   fn resource() -> @ecs.ResourceKey[Self]
 }
 pub impl[T : @ecs.Message] Resource for @ecs.Messages[T]

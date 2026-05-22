@@ -61,7 +61,7 @@ impl @app.Resource for Args with resource() {
 }
 
 ///|
-fn TextStats::default() -> TextStats {
+fn TextStats::TextStats() -> TextStats {
   { print_timer: 0.0F }
 }
 
@@ -133,7 +133,7 @@ fn random_font_size(idx : Int, args : Args) -> Float {
 
 ///|
 fn configured_window() -> @window.Window {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.present_mode = @window.PresentMode::AutoNoVsync
   window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
     1.0F,
@@ -148,7 +148,7 @@ fn setup(
   args_res : @app.Res[Args],
 ) -> Unit {
   let args = args_res.get()
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let half_x = (MAP_SIZE / 4.0F).to_int()
   let half_y = (MAP_SIZE / 4.0F).to_int()
@@ -180,7 +180,7 @@ fn setup(
       text_entities.push(
         (
           @text.Text2d::new(random_text(idx, args)),
-          @text.TextFont::default()
+          @text.TextFont::TextFont()
           .with_font(font)
           .with_font_size(random_font_size(idx, args)),
           @text.TextColor::new(
@@ -218,7 +218,7 @@ fn setup(
           color,
           layout,
           transform,
-          @visibility.NoFrustumCulling::default(),
+          @visibility.NoFrustumCulling::NoFrustumCulling(),
         ),
       )
     }
@@ -293,7 +293,7 @@ fn print_counts(
 fn main {
   let args = parse_args()
   let app = @app.App::new(@ecs.World::new())
-    .insert_resource(TextStats::default())
+    .insert_resource(TextStats::TextStats())
     .insert_resource(args)
     .insert_resource(@winit.WinitSettings::continuous())
     .add_plugins(
@@ -304,7 +304,7 @@ fn main {
         close_when_requested: true,
       }),
     )
-    .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+    .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
     .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
     .add_systems(@app.Update, @app.system(@app.system_param2(move_camera)))
     .add_systems(@app.Update, @app.system(@app.system_param4(print_counts)))

@@ -31,7 +31,7 @@ const FXAA_PLUGIN_NAME : String = "mgstudio.anti_alias.fxaa.FxaaPlugin"
 pub struct FxaaPlugin {}
 
 ///|
-pub fn FxaaPlugin::default() -> FxaaPlugin {
+pub fn FxaaPlugin::FxaaPlugin() -> FxaaPlugin {
   FxaaPlugin::{  }
 }
 
@@ -41,7 +41,7 @@ pub struct FxaaRuntimeState {
 } derive(Eq, Debug)
 
 ///|
-pub fn FxaaRuntimeState::default() -> FxaaRuntimeState {
+pub fn FxaaRuntimeState::FxaaRuntimeState() -> FxaaRuntimeState {
   FxaaRuntimeState::{ enabled_camera_count: 0 }
 }
 
@@ -68,7 +68,7 @@ pub impl @app.Plugin for FxaaPlugin with build(self, app) {
 
 ///|
 pub fn fxaa_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(FxaaPlugin::default())
+  app.add_plugins(FxaaPlugin::FxaaPlugin())
 }
 
 ///|
@@ -85,7 +85,7 @@ fn fxaa_plugin_install_with(
   _plugin : FxaaPlugin,
 ) -> @app.App[@ecs.World] {
   app
-  .init_resource(fn() { FxaaRuntimeState::default() })
+  .init_resource(fn() { FxaaRuntimeState::FxaaRuntimeState() })
   .add_system(fxaa_update_runtime_state)
 }
 

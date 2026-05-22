@@ -24,7 +24,7 @@ fn text_access_test_insert_style(
     ecs_key_text_font,
     TextFont::from_font_size(font_size),
   )
-  try! world.set_by_key(entity, ecs_key_text_color, TextColor::default())
+  try! world.set_by_key(entity, ecs_key_text_color, TextColor::TextColor())
   try! world.set_by_key(entity, ecs_key_text_line_height, line_height)
 }
 

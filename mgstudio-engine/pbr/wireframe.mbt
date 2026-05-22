@@ -20,7 +20,7 @@
 pub struct Wireframe {} derive(ToJson, FromJson)
 
 ///|
-pub fn Wireframe::default() -> Wireframe {
+pub fn Wireframe::Wireframe() -> Wireframe {
   Wireframe::{  }
 }
 
@@ -32,7 +32,7 @@ pub fn Wireframe::default() -> Wireframe {
 pub struct NoWireframe {} derive(ToJson, FromJson)
 
 ///|
-pub fn NoWireframe::default() -> NoWireframe {
+pub fn NoWireframe::NoWireframe() -> NoWireframe {
   NoWireframe::{  }
 }
 
@@ -43,7 +43,7 @@ pub struct WireframeColor {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn WireframeColor::default() -> WireframeColor {
+pub fn WireframeColor::WireframeColor() -> WireframeColor {
   WireframeColor::{ color: @sprite.Color::white() }
 }
 
@@ -68,7 +68,7 @@ pub struct WireframeConfig {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn WireframeConfig::default() -> WireframeConfig {
+pub fn WireframeConfig::WireframeConfig() -> WireframeConfig {
   WireframeConfig::{ global: false, default_color: @sprite.Color::white() }
 }
 
@@ -108,7 +108,7 @@ const WIREFRAME_PLUGIN_NAME : String = "mgstudio.pbr.WireframePlugin"
 pub struct WireframePlugin {}
 
 ///|
-pub fn WireframePlugin::default() -> WireframePlugin {
+pub fn WireframePlugin::WireframePlugin() -> WireframePlugin {
   WireframePlugin::{  }
 }
 
@@ -126,13 +126,13 @@ pub impl @app.Plugin for WireframePlugin with build(_self, app) {
 fn init_wireframe_resources(world : @ecs.World) -> Unit {
   let wireframe_config = get_wireframe_config_resource(world)
   if !wireframe_config.is_present() {
-    wireframe_config.insert(WireframeConfig::default())
+    wireframe_config.insert(WireframeConfig::WireframeConfig())
   }
 }
 
 ///|
 pub fn wireframe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  wireframe_plugin_with(app, WireframePlugin::default())
+  wireframe_plugin_with(app, WireframePlugin::WireframePlugin())
 }
 
 ///|

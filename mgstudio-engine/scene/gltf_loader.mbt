@@ -57,7 +57,7 @@ priv struct SceneGltfPendingRequestsState {
 }
 
 ///|
-fn SceneGltfPendingRequestsState::default() -> SceneGltfPendingRequestsState {
+fn SceneGltfPendingRequestsState::SceneGltfPendingRequestsState() -> SceneGltfPendingRequestsState {
   SceneGltfPendingRequestsState::{
     pending_scene_requests: [],
     pending_animation_requests: [],
@@ -1121,7 +1121,7 @@ fn gltf_parse_node_light_index(obj : Map[String, Json]) -> Int? {
 fn gltf_parse_camera_projection(
   obj : Map[String, Json],
 ) -> GltfCameraProjectionDef {
-  let perspective_default = @camera.PerspectiveProjection3d::default()
+  let perspective_default = @camera.PerspectiveProjection3d::PerspectiveProjection3d()
   let orthographic_default = @camera.OrthographicProjection3d::default_3d()
   let camera_type = json_get_string(obj, "type").unwrap_or("")
   if camera_type == "orthographic" &&
@@ -1178,8 +1178,8 @@ fn gltf_parse_cameras(root : Map[String, Json]) -> Array[GltfCameraDef] {
       } else {
         cameras.push({
           projection: Perspective(
-            @camera.PerspectiveProjection3d::default().fov(),
-            @camera.PerspectiveProjection3d::default().near(),
+            @camera.PerspectiveProjection3d::PerspectiveProjection3d().fov(),
+            @camera.PerspectiveProjection3d::PerspectiveProjection3d().near(),
             None,
             None,
           ),
@@ -2651,7 +2651,7 @@ fn gltf_camera_projection_from_def(
 ) -> @camera.Projection {
   match definition {
     Perspective(yfov, znear, zfar, aspect_ratio) => {
-      let mut projection = @camera.PerspectiveProjection3d::default()
+      let mut projection = @camera.PerspectiveProjection3d::PerspectiveProjection3d()
         .with_fov(yfov)
         .with_near(znear)
       if zfar is Some(far_clip) {
@@ -2684,11 +2684,11 @@ fn gltf_scene_node_camera_components(
   guard camera_index >= 0 && camera_index < doc.cameras.length() else {
     return None
   }
-  let camera = @sprite.Camera::default().with_is_active(
+  let camera = @sprite.Camera::Camera().with_is_active(
     !active_camera_found_ref.val,
   )
   active_camera_found_ref.val = true
-  let camera3d = @camera.Camera3d::default()
+  let camera3d = @camera.Camera3d::Camera3d()
   let projection = gltf_camera_projection_from_def(
     doc.cameras[camera_index].projection,
   )
@@ -2739,7 +2739,7 @@ fn gltf_scene_node_light_components(
         extras,
         directional_light: None,
         point_light: Some(
-          @light.PointLight::default()
+          @light.PointLight::PointLight()
           .with_color(light.color)
           .with_intensity(intensity)
           .with_range(range)
@@ -2945,7 +2945,7 @@ fn scene_build_material_component(
   let def = doc.materials[material_index]
   let default_sampler = gltf_loader_default_sampler_descriptor(loader_settings)
   let override_sampler = loader_settings.override_sampler
-  let mut material = @pbr.StandardMaterial::default()
+  let mut material = @pbr.StandardMaterial::StandardMaterial()
   material = material.with_base_color(def.base_color)
   material = material.with_alpha_mode(def.alpha_mode)
   material = material.with_uv_transform(
@@ -3519,7 +3519,7 @@ fn scene_build_from_gltf(
   }
 
   let default_material_component = @pbr.MeshMaterial3d::new(
-    @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+    @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
   )
   let should_load_meshes = gltf_loader_should_load_meshes(
     request.loader_settings,

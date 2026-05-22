@@ -14,7 +14,7 @@
 
 ///|
 test "winit: runner maps window present mode to render host mode" {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.present_mode = @window.PresentMode::AutoVsync
   let auto_vsync_ok = runner_surface_present_mode(Some(window)) ==
     @render.HostGpuPresentMode::AutoVsync
@@ -49,7 +49,7 @@ test "winit: runner maps window present mode to render host mode" {
 
 ///|
 test "winit: runner maps window composite alpha mode to render host mode" {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.composite_alpha_mode = @window.CompositeAlphaMode::Auto
   let auto_ok = runner_surface_composite_alpha_mode(Some(window)) ==
     @render.HostGpuCompositeAlphaMode::Auto
@@ -75,7 +75,7 @@ test "winit: runner maps window composite alpha mode to render host mode" {
 
 ///|
 test "winit: runner maps window desired maximum frame latency" {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.desired_maximum_frame_latency = None
   let none_ok = runner_surface_desired_maximum_frame_latency(Some(window)) ==
     @render.HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY

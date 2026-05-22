@@ -48,8 +48,8 @@ priv struct FogVolumesState {
 let fog_volumes_state : Ref[FogVolumesState] = Ref({
   camera: None,
   light: None,
-  volumetric_fog: @pbr.VolumetricFog::default(),
-  fog_volume: @pbr.FogVolume::default(),
+  volumetric_fog: @pbr.VolumetricFog::VolumetricFog(),
+  fog_volume: @pbr.FogVolume::FogVolume(),
 })
 
 ///|
@@ -94,7 +94,7 @@ fn apply_distance_fog(world : @ecs.World, phase : Float) -> Unit {
   let directional_alpha = clampf(0.25F + phase * 0.55F, 0.2F, 0.9F)
   let fog_color = fog_volume.fog_color
 
-  let fog = @pbr.DistanceFog::default()
+  let fog = @pbr.DistanceFog::DistanceFog()
     .with_color(
       @sprite.Color::new(
         clamp01(fog_color.r * brightness + ambient_lift),
@@ -237,10 +237,10 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
 fn setup(world : @ecs.World) -> Unit {
   fog_volumes_state.val.camera = None
   fog_volumes_state.val.light = None
-  fog_volumes_state.val.volumetric_fog = @pbr.VolumetricFog::default()
+  fog_volumes_state.val.volumetric_fog = @pbr.VolumetricFog::VolumetricFog()
     .with_step_count(64)
     .with_ambient_intensity(0.0F)
-  fog_volumes_state.val.fog_volume = @pbr.FogVolume::default()
+  fog_volumes_state.val.fog_volume = @pbr.FogVolume::FogVolume()
     .with_density_factor(1.0F)
     .with_scattering(1.0F)
     .with_absorption(0.3F)
@@ -270,13 +270,13 @@ fn setup(world : @ecs.World) -> Unit {
   fog_volumes_state.val.light = Some(light)
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-0.75F, 1.0F, 2.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   fog_volumes_state.val.camera = Some(camera)
   apply_distance_fog(world, 1.0F)
 }
@@ -335,7 +335,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(rotate_camera))
   .run()

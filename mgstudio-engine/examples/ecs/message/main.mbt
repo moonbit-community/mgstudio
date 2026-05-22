@@ -69,17 +69,27 @@ pub impl @app.Resource for DamageTimer with resource() {
 }
 
 ///|
-pub impl Default for DamageReceived with default() {
+pub fn DamageReceived::DamageReceived() -> DamageReceived {
   DamageReceived::{  }
 }
 
 ///|
-pub impl Default for ArmorBlockedDamage with default() {
+pub impl Default for DamageReceived with default() {
+  DamageReceived::DamageReceived()
+}
+
+///|
+pub fn ArmorBlockedDamage::ArmorBlockedDamage() -> ArmorBlockedDamage {
   ArmorBlockedDamage::{  }
 }
 
 ///|
-pub impl Default for DamageTimer with default() {
+pub impl Default for ArmorBlockedDamage with default() {
+  ArmorBlockedDamage::ArmorBlockedDamage()
+}
+
+///|
+pub fn DamageTimer::DamageTimer() -> DamageTimer {
   { timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating) }
 }
 
@@ -158,11 +168,11 @@ fn play_damage_received_particle_effect(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_message(deal_damage_key)
   .add_message(armor_blocked_damage_key)
   .add_message(damage_received_key)
-  .init_resource(DamageTimer::default)
+  .init_resource(fn() { DamageTimer::DamageTimer() })
   .add_systems(
     @app.Update,
     @app.system(@app.system_param3(deal_damage_over_time)).in_set(

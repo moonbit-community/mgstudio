@@ -23,7 +23,7 @@ pub struct PrepassBindings3d {
 }
 
 ///|
-pub fn PrepassBindings3d::default() -> PrepassBindings3d {
+pub fn PrepassBindings3d::PrepassBindings3d() -> PrepassBindings3d {
   PrepassBindings3d::{
     depth: false,
     normal: false,
@@ -76,6 +76,6 @@ pub struct PrepassPluginState {
 }
 
 ///|
-pub fn PrepassPluginState::default() -> PrepassPluginState {
+pub fn PrepassPluginState::PrepassPluginState() -> PrepassPluginState {
   PrepassPluginState::{ enabled: true, view_count: 0 }
 }

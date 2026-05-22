@@ -38,7 +38,7 @@ pub fn BoxShadow::new(
 }
 
 ///|
-pub fn BoxShadow::default() -> BoxShadow {
+pub fn BoxShadow::BoxShadow() -> BoxShadow {
   BoxShadow::{
     color: @sprite.Color::black(),
     x_offset: Val::Percent(20.0F),

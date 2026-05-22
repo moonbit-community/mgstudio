@@ -98,7 +98,7 @@ pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 // Types and methods
 pub struct SpriteRenderPlugin {
 }
-pub fn SpriteRenderPlugin::default() -> Self
+pub fn SpriteRenderPlugin::SpriteRenderPlugin() -> Self
 pub impl @app.Plugin for SpriteRenderPlugin
 
 // Type aliases

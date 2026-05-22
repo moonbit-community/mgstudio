@@ -36,22 +36,22 @@ let feathers_plugin_marker_key : @ecs.ResourceKey[FeathersPluginMarker] = @ecs.r
 )
 
 ///|
-pub fn FeathersPlugin::default() -> FeathersPlugin {
+pub fn FeathersPlugin::FeathersPlugin() -> FeathersPlugin {
   FeathersPlugin::{  }
 }
 
 ///|
-pub fn FeathersPlugins::default() -> FeathersPlugins {
+pub fn FeathersPlugins::FeathersPlugins() -> FeathersPlugins {
   FeathersPlugins::{  }
 }
 
 ///|
 pub fn FeathersPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
   @app.PluginGroupBuilder::start_named("FeathersPlugins")
-  .add(@ui_widgets.UiWidgetsPlugins::default())
-  .add(@input_focus.InputDispatchPlugin::default())
-  .add(@input_focus.TabNavigationPlugin::default())
-  .add(FeathersPlugin::default())
+  .add(@ui_widgets.UiWidgetsPlugins::UiWidgetsPlugins())
+  .add(@input_focus.InputDispatchPlugin::InputDispatchPlugin())
+  .add(@input_focus.TabNavigationPlugin::TabNavigationPlugin())
+  .add(FeathersPlugin::FeathersPlugin())
 }
 
 ///|
@@ -82,14 +82,14 @@ pub fn feathers_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     app
     .world()
     .insert_resource(feathers_plugin_marker_key, FeathersPluginMarker::{  })
-    let app = app.init_resource(fn() { UiTheme::default() })
+    let app = app.init_resource(fn() { UiTheme::UiTheme() })
     let app = alpha_pattern_plugin(app)
-    let app = app.add_plugins(@controls.ControlsPlugin::default())
+    let app = app.add_plugins(@controls.ControlsPlugin::ControlsPlugin())
     cursor_icon_plugin(app)
   }
 }
 
 ///|
 pub fn feathers_plugins() -> FeathersPlugins {
-  FeathersPlugins::default()
+  FeathersPlugins::FeathersPlugins()
 }

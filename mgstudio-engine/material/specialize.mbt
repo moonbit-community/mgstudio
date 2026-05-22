@@ -132,13 +132,13 @@ pub fn SpecializedMeshPipelines::new() -> SpecializedMeshPipelines {
 }
 
 ///|
-pub fn SpecializedMeshPipelines::default() -> SpecializedMeshPipelines {
+pub fn SpecializedMeshPipelines::SpecializedMeshPipelines() -> SpecializedMeshPipelines {
   SpecializedMeshPipelines::new()
 }
 
 ///|
 pub impl Default for SpecializedMeshPipelines with default() {
-  SpecializedMeshPipelines::default()
+  SpecializedMeshPipelines::SpecializedMeshPipelines()
 }
 
 ///|

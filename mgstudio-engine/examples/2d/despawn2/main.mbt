@@ -18,7 +18,7 @@ let despawn2_state : Ref[(Int, @core.Entity?)] = Ref((0, None))
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(rapier2d_despawn2_setup))
   .add_systems(@app.Update, @app.system(rapier2d_despawn2_tick))
   .run()
@@ -34,7 +34,7 @@ fn rapier2d_despawn2_setup(world : @ecs.World) -> Unit {
     @sprite.ClearColor::new(@sprite.Color::new(0.84F, 0.90F, 0.96F, 1.0F)),
   )
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore

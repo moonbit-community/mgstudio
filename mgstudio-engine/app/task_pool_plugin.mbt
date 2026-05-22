@@ -59,7 +59,7 @@ pub(all) struct TaskPoolOptions {
 } derive(Debug)
 
 ///|
-pub fn TaskPoolOptions::default() -> TaskPoolOptions {
+pub fn TaskPoolOptions::TaskPoolOptions() -> TaskPoolOptions {
   TaskPoolOptions::{
     min_total_threads: 1,
     max_total_threads: 2147483647,
@@ -72,7 +72,7 @@ pub fn TaskPoolOptions::default() -> TaskPoolOptions {
 ///|
 pub fn TaskPoolOptions::with_num_threads(thread_count : Int) -> TaskPoolOptions {
   TaskPoolOptions::{
-    ..TaskPoolOptions::default(),
+    ..TaskPoolOptions(),
     min_total_threads: thread_count,
     max_total_threads: thread_count,
   }
@@ -89,8 +89,8 @@ pub(all) struct TaskPoolPlugin {
 } derive(Debug)
 
 ///|
-pub fn TaskPoolPlugin::default() -> TaskPoolPlugin {
-  TaskPoolPlugin::{ task_pool_options: TaskPoolOptions::default() }
+pub fn TaskPoolPlugin::TaskPoolPlugin() -> TaskPoolPlugin {
+  TaskPoolPlugin::{ task_pool_options: TaskPoolOptions::TaskPoolOptions() }
 }
 
 ///|
@@ -104,5 +104,5 @@ pub fn TaskPoolPlugin::build(
 
 ///|
 pub fn task_pool_plugin(app : App[@ecs.World]) -> App[@ecs.World] {
-  TaskPoolPlugin::default().build(app)
+  TaskPoolPlugin::TaskPoolPlugin().build(app)
 }

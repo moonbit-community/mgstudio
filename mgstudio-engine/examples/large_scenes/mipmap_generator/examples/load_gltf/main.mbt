@@ -23,7 +23,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(0.8F, 1.0F, 1.6F).looking_at(
           @math.Vec3::new(0.0F, 0.3F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -57,7 +57,7 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

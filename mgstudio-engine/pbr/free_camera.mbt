@@ -35,7 +35,7 @@ pub(all) struct FreeCamera {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn FreeCamera::default() -> FreeCamera {
+pub fn FreeCamera::FreeCamera() -> FreeCamera {
   FreeCamera::{
     sensitivity: 0.2F,
     key_forward: @window.KeyCode::KeyW,
@@ -66,7 +66,7 @@ pub(all) struct FreeCameraState {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn FreeCameraState::default() -> FreeCameraState {
+pub fn FreeCameraState::FreeCameraState() -> FreeCameraState {
   FreeCameraState::{
     enabled: true,
     initialized: false,
@@ -174,7 +174,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
     (try! world.get_by_key(controlled_entity, ecs_key_free_camera_state)) {
     Some(existing) => existing
     None => {
-      let default_state = FreeCameraState::default()
+      let default_state = FreeCameraState::FreeCameraState()
       try! world.set_by_key(
         controlled_entity, ecs_key_free_camera_state, default_state,
       )
@@ -354,7 +354,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
 pub struct FreeCameraPlugin {}
 
 ///|
-pub fn FreeCameraPlugin::default() -> FreeCameraPlugin {
+pub fn FreeCameraPlugin::FreeCameraPlugin() -> FreeCameraPlugin {
   FreeCameraPlugin::{  }
 }
 

@@ -16,7 +16,6 @@
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_asset_custom_asset_CustomAsset(CustomAsset)
   EcsPayload_examples_asset_custom_asset_Blob(Blob)
-  EcsPayload_examples_asset_custom_asset_State(State)
 }
 
 ///|
@@ -41,19 +40,6 @@ impl @ecs.EcsPayloadCodec for Blob with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for Blob with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_asset_custom_asset_Blob(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for State with to_ecs_payload(self) {
-  EcsPayload_examples_asset_custom_asset_State(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for State with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_asset_custom_asset_State(value) => Some(value)
     _ => None
   }
 }

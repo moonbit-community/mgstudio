@@ -37,7 +37,7 @@ pub struct Lightmap {
   uv_rect : @math.Rect
   bicubic_sampling : Bool
 } derive(ToJson, @json.FromJson)
-pub fn Lightmap::default() -> Self
+pub fn Lightmap::Lightmap() -> Self
 pub fn Lightmap::new(@asset.Handle[@image.Image]) -> Self
 pub fn Lightmap::with_bicubic_sampling(Self, Bool) -> Self
 pub fn Lightmap::with_uv_rect(Self, @math.Rect) -> Self
@@ -52,7 +52,7 @@ pub struct LightmapPluginState {
   bindless_supported : Bool
   lightmaps_per_slab : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn LightmapPluginState::default() -> Self
+pub fn LightmapPluginState::LightmapPluginState() -> Self
 pub impl @app.Resource for LightmapPluginState
 pub impl @ecs.EcsPayloadCodec for LightmapPluginState
 
@@ -60,8 +60,8 @@ pub struct LightmapSlab {
   capacity : Int
   allocated : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn LightmapSlab::LightmapSlab() -> Self
 pub fn LightmapSlab::available_slots(Self) -> Int
-pub fn LightmapSlab::default() -> Self
 pub fn LightmapSlab::is_full(Self) -> Bool
 
 pub struct LightmapSlabIndex {
@@ -89,8 +89,8 @@ pub struct RenderLightmaps {
   slabs : Array[LightmapSlab]
   mut bindless_supported : Bool
 }
+pub fn RenderLightmaps::RenderLightmaps() -> Self
 pub fn RenderLightmaps::clear(Self) -> Unit
-pub fn RenderLightmaps::default() -> Self
 pub fn RenderLightmaps::entity_count(Self) -> Int
 pub fn RenderLightmaps::get(Self, @core.Entity) -> RenderLightmap?
 pub fn RenderLightmaps::insert_lightmap(Self, @core.Entity, Lightmap) -> RenderLightmap

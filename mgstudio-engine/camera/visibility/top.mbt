@@ -27,13 +27,13 @@ let visibility_set_update_skinned_mesh_bounds : @app.SystemSet = @app.system_set
 pub struct VisibilityPlugin {}
 
 ///|
-pub fn VisibilityPlugin::default() -> VisibilityPlugin {
+pub fn VisibilityPlugin::VisibilityPlugin() -> VisibilityPlugin {
   VisibilityPlugin::{  }
 }
 
 ///|
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  visibility_plugin_with(app, VisibilityPlugin::default())
+  visibility_plugin_with(app, VisibilityPlugin::VisibilityPlugin())
 }
 
 ///|
@@ -104,15 +104,15 @@ pub fn view_visibility(visible : Bool) -> @root_visibility.ViewVisibility {
 
 ///|
 pub fn no_frustum_culling() -> @root_visibility.NoFrustumCulling {
-  @root_visibility.NoFrustumCulling::default()
+  @root_visibility.NoFrustumCulling::NoFrustumCulling()
 }
 
 ///|
 pub fn no_auto_aabb() -> @root_visibility.NoAutoAabb {
-  @root_visibility.NoAutoAabb::default()
+  @root_visibility.NoAutoAabb::NoAutoAabb()
 }
 
 ///|
 pub fn no_cpu_culling() -> @root_visibility.NoCpuCulling {
-  @root_visibility.NoCpuCulling::default()
+  @root_visibility.NoCpuCulling::NoCpuCulling()
 }

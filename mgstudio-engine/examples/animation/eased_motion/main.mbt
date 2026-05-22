@@ -94,7 +94,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 100.0F),
   )
 
-  let player = @animation.AnimationPlayer::default()
+  let player = @animation.AnimationPlayer::AnimationPlayer()
   player.play(animation_node).repeat() |> ignore
 
   let cube = @pbr.MeshMaterial3dBundle::new(
@@ -163,7 +163,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 6.0F, 12.0F).looking_at(
       @math.Vec3::new(0.0F, 1.5F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -175,7 +175,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .run()
 }

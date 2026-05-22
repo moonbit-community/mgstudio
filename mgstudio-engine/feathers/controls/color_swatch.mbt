@@ -32,20 +32,20 @@ pub fn ColorSwatchValue::new(color : @color.Color) -> ColorSwatchValue {
 }
 
 ///|
-pub fn ColorSwatchValue::default() -> ColorSwatchValue {
+pub fn ColorSwatchValue::ColorSwatchValue() -> ColorSwatchValue {
   ColorSwatchValue::new(@color.Color::white())
 }
 
 ///|
 pub fn color_swatch() -> (ColorSwatch, ColorSwatchValue, ColorSwatchFg) {
-  (ColorSwatch::{  }, ColorSwatchValue::default(), ColorSwatchFg::{  })
+  (ColorSwatch::{  }, ColorSwatchValue::ColorSwatchValue(), ColorSwatchFg::{  })
 }
 
 ///|
 pub struct ColorSwatchPlugin {}
 
 ///|
-pub fn ColorSwatchPlugin::default() -> ColorSwatchPlugin {
+pub fn ColorSwatchPlugin::ColorSwatchPlugin() -> ColorSwatchPlugin {
   ColorSwatchPlugin::{  }
 }
 

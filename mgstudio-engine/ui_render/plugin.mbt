@@ -16,7 +16,7 @@
 pub struct UiRenderPlugin {}
 
 ///|
-pub fn UiRenderPlugin::default() -> UiRenderPlugin {
+pub fn UiRenderPlugin::UiRenderPlugin() -> UiRenderPlugin {
   UiRenderPlugin::{  }
 }
 

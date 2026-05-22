@@ -85,7 +85,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @post_process.CustomPostProcess3d::new(SHADER_ASSET_PATH).with_enabled(
           true,
         ),
@@ -119,7 +119,7 @@ fn rotate_cube(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(rotate_cube)))
   .run()

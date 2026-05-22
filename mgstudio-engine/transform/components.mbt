@@ -100,8 +100,13 @@ pub fn GlobalTransform::identity() -> GlobalTransform {
 }
 
 ///|
-pub impl Default for GlobalTransform with default() {
+pub fn GlobalTransform::GlobalTransform() -> GlobalTransform {
   GlobalTransform::identity()
+}
+
+///|
+pub impl Default for GlobalTransform with default() {
+  GlobalTransform::GlobalTransform()
 }
 
 ///|
@@ -478,8 +483,13 @@ pub fn GlobalTransform::compute_transform(self : GlobalTransform) -> Transform {
 pub struct TransformTreeChanged {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub impl Default for TransformTreeChanged with default() {
+pub fn TransformTreeChanged::TransformTreeChanged() -> TransformTreeChanged {
   TransformTreeChanged::{  }
+}
+
+///|
+pub impl Default for TransformTreeChanged with default() {
+  TransformTreeChanged::TransformTreeChanged()
 }
 
 ///|
@@ -506,8 +516,13 @@ pub fn StaticTransformOptimizations::enabled() -> StaticTransformOptimizations {
 }
 
 ///|
-pub impl Default for StaticTransformOptimizations with default() {
+pub fn StaticTransformOptimizations::StaticTransformOptimizations() -> StaticTransformOptimizations {
   { threshold: 0.3F, enabled: true }
+}
+
+///|
+pub impl Default for StaticTransformOptimizations with default() {
+  StaticTransformOptimizations::StaticTransformOptimizations()
 }
 
 ///|

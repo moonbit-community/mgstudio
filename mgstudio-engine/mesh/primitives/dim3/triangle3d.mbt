@@ -27,8 +27,8 @@ pub struct Triangle3dMeshBuilder {
 }
 
 ///|
-pub fn Triangle3dMeshBuilder::default() -> Triangle3dMeshBuilder {
-  { triangle: @math.Triangle3d::default() }
+pub fn Triangle3dMeshBuilder::Triangle3dMeshBuilder() -> Triangle3dMeshBuilder {
+  { triangle: @math.Triangle3d::Triangle3d() }
 }
 
 ///|

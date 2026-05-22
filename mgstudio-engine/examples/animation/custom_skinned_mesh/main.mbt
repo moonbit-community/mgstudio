@@ -64,7 +64,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   ignore(
     @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(0.0F, 1.4F, 6.0F).looking_at(
         @math.Vec3::new(0.0F, 0.8F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -176,7 +176,7 @@ fn animate_joint(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param2(animate_joint)))
   .run()

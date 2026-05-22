@@ -53,7 +53,7 @@ let spatial_audio_3d_state : Ref[SpatialAudio3dState] = Ref({
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(update_positions))
   .add_systems(@app.Update, @app.system(update_listener))
@@ -165,11 +165,11 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -188,7 +188,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_bottom(@ui.Val::Px(12.0F)),
@@ -206,7 +206,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_bottom(@ui.Val::Px(12.0F)),
@@ -219,7 +219,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
   )
   try! world.set_by_key(
     text_entity,
@@ -234,7 +234,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_bottom(@ui.Val::Px(12.0F)),
@@ -247,7 +247,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
   )
   try! world.set_by_key(
     text_entity,
@@ -359,7 +359,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::default(),
+    @pbr.DirectionalLight::DirectionalLight(),
   )
   try! world.set_by_key(
     light,
@@ -375,7 +375,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

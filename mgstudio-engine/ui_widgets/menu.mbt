@@ -76,7 +76,7 @@ pub struct MenuPopup {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn MenuPopup::default() -> MenuPopup {
+pub fn MenuPopup::MenuPopup() -> MenuPopup {
   MenuPopup::{ layout: MenuLayout::default() }
 }
 

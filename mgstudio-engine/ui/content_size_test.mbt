@@ -29,11 +29,11 @@ test "ui: ContentSize drives auto measured size" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Percent(100.0F))
     .with_height(Val::Percent(100.0F))
     .with_align_items(AlignItems::FlexStart),
@@ -44,7 +44,7 @@ test "ui: ContentSize drives auto measured size" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(child, ecs_key_node, Node::default())
+  try! world.set_by_key(child, ecs_key_node, Node::Node())
   try! world.set_by_key(
     child,
     ecs_key_content_size,

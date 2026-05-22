@@ -44,18 +44,18 @@ pub struct DrawFunctions {
 }
 
 ///|
-pub fn DrawFunctions::default() -> DrawFunctions {
+pub fn DrawFunctions::DrawFunctions() -> DrawFunctions {
   DrawFunctions::{ entries: [], next_id: 0U }
 }
 
 ///|
 pub impl Default for DrawFunctions with default() {
-  DrawFunctions::default()
+  DrawFunctions::DrawFunctions()
 }
 
 ///|
 pub fn DrawFunctions::new() -> DrawFunctions {
-  DrawFunctions::default()
+  DrawFunctions::DrawFunctions()
 }
 
 ///|

@@ -14,7 +14,7 @@
 
 ///|
 test "pbr decal: plugin state defaults to both paths enabled" {
-  let state = DecalPluginState::default()
+  let state = DecalPluginState::DecalPluginState()
   inspect(state.forward_enabled(), content="true")
   inspect(state.clustered_enabled(), content="true")
 }

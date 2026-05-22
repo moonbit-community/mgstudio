@@ -14,7 +14,7 @@
 
 ///|
 test "sprite_render boundary re-exports wireframe config and alpha mode" {
-  let config = @sprite_render.Wireframe2dConfig::default()
+  let config = @sprite.Wireframe2dConfig::Wireframe2dConfig()
   debug_inspect(config.global, content="false")
   debug_inspect(config.default_color.r.to_double(), content="1")
   debug_inspect(

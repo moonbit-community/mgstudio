@@ -29,7 +29,7 @@ test "ui: interaction updates component state" {
   )
   get_ui_context_resource(world).insert(ctx)
   let e = world.spawn_empty()
-  try! world.set_by_key(e, ecs_key_button, Button::default())
+  try! world.set_by_key(e, ecs_key_button, Button::Button())
   try! world.set_by_key(
     e,
     ecs_key_ui_layout,
@@ -108,7 +108,7 @@ test "ui: pointer viewport conversion keeps top-left y direction" {
 
 ///|
 test "ui: RelativeCursorPosition default reports cursor outside" {
-  let relative_cursor_position = RelativeCursorPosition::default()
+  let relative_cursor_position = RelativeCursorPosition::RelativeCursorPosition()
   debug_inspect(relative_cursor_position.cursor_over(), content="false")
   debug_inspect(relative_cursor_position.normalized is None, content="true")
 }
@@ -129,7 +129,7 @@ test "ui: interaction hit test respects node transform rotation" {
   )
   get_ui_context_resource(world).insert(ctx)
   let e = world.spawn_empty()
-  try! world.set_by_key(e, ecs_key_button, Button::default())
+  try! world.set_by_key(e, ecs_key_button, Button::Button())
   let rect = @math.Rect::new(
     @math.Vec2::new(40.0F, 50.0F),
     @math.Vec2::new(240.0F, 110.0F),
@@ -171,11 +171,11 @@ test "ui: interaction keeps top and bottom rows distinct" {
   )
   get_ui_context_resource(world).insert(ctx_top)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Percent(100.0F))
     .with_height(Val::Percent(100.0F))
     .with_display(Display::Grid)
@@ -196,11 +196,11 @@ test "ui: interaction keeps top and bottom rows distinct" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(top, ecs_key_button, Button::default())
+  try! world.set_by_key(top, ecs_key_button, Button::Button())
   try! world.set_by_key(
     top,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Percent(100.0F))
     .with_height(Val::Percent(100.0F)),
   )
@@ -210,11 +210,11 @@ test "ui: interaction keeps top and bottom rows distinct" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(bottom, ecs_key_button, Button::default())
+  try! world.set_by_key(bottom, ecs_key_button, Button::Button())
   try! world.set_by_key(
     bottom,
     ecs_key_node,
-    Node::default()
+    Node::Node()
     .with_width(Val::Percent(100.0F))
     .with_height(Val::Percent(100.0F)),
   )

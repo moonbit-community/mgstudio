@@ -14,7 +14,7 @@
 
 ///|
 test "shader cache data preserves shader-def sequence as cache key" {
-  let data : ShaderData[String, Int] = ShaderData::default()
+  let data : ShaderData[String, Int] = ShaderData::ShaderData()
   let ab = [@shader.shader_def("A"), @shader.ShaderDefVal::UInt("MODE", 2U)]
   let ba = [@shader.ShaderDefVal::UInt("MODE", 2U), @shader.shader_def("A")]
   let abb = [
@@ -32,7 +32,7 @@ test "shader cache data preserves shader-def sequence as cache key" {
 
 ///|
 test "shader cache data tracks pipelines imports and dependents" {
-  let data : ShaderData[String, String] = ShaderData::default()
+  let data : ShaderData[String, String] = ShaderData::ShaderData()
   data.track_pipeline(3)
   data.track_pipeline(3)
   data.track_pipeline(8)
@@ -126,7 +126,7 @@ test "shader cache lifecycle tracks waiting imports and dependent invalidation" 
   )
   let child_data_before = match cache.data.get(child_id.index()) {
     Some(data) => data
-    None => @shader.ShaderData::default()
+    None => @shader.ShaderData::ShaderData()
   }
   child_data_before.track_pipeline(7)
   cache.data.set(child_id.index(), child_data_before)

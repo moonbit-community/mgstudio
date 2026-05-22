@@ -33,7 +33,7 @@ pub struct CameraDecalConfig3d {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn CameraDecalConfig3d::default() -> CameraDecalConfig3d {
+pub fn CameraDecalConfig3d::CameraDecalConfig3d() -> CameraDecalConfig3d {
   CameraDecalConfig3d::{
     mode: DecalRenderMode3d::ForwardAndClustered,
     requires_depth_prepass: true,
@@ -84,7 +84,7 @@ pub struct CameraDeferredConfig3d {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn CameraDeferredConfig3d::default() -> CameraDeferredConfig3d {
+pub fn CameraDeferredConfig3d::CameraDeferredConfig3d() -> CameraDeferredConfig3d {
   CameraDeferredConfig3d::{
     mode: CameraDeferredMode3d::Auto,
     requires_deferred_prepass: false,
@@ -122,7 +122,7 @@ pub struct AutoExposure {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn AutoExposure::default() -> AutoExposure {
+pub fn AutoExposure::AutoExposure() -> AutoExposure {
   AutoExposure::{
     min_ev100: -8.0F,
     max_ev100: 8.0F,
@@ -138,7 +138,7 @@ pub fn AutoExposure::default() -> AutoExposure {
 
 ///|
 pub fn AutoExposure::new(min_ev100 : Float, max_ev100 : Float) -> AutoExposure {
-  AutoExposure::default().with_range(min_ev100, max_ev100)
+  AutoExposure::AutoExposure().with_range(min_ev100, max_ev100)
 }
 
 ///|
@@ -262,11 +262,11 @@ pub(all) struct DepthOfField {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn DepthOfField::default() -> DepthOfField {
+pub fn DepthOfField::DepthOfField() -> DepthOfField {
   DepthOfField::{
     mode: DepthOfFieldMode::default(),
     focal_distance: 10.0F,
-    sensor_height: PhysicalCameraParameters::default().sensor_height,
+    sensor_height: PhysicalCameraParameters::PhysicalCameraParameters().sensor_height,
     aperture_f_stops: 4.0F,
     max_circle_of_confusion_diameter: 64.0F,
     max_depth: @float.infinity,
@@ -277,7 +277,7 @@ pub fn DepthOfField::default() -> DepthOfField {
 pub fn DepthOfField::from_physical_camera(
   camera : PhysicalCameraParameters,
 ) -> DepthOfField {
-  let depth_of_field = DepthOfField::default()
+  let depth_of_field = DepthOfField::DepthOfField()
   depth_of_field.sensor_height = camera.sensor_height
   depth_of_field.aperture_f_stops = camera.aperture_f_stops
   depth_of_field
@@ -301,7 +301,7 @@ pub struct Camera3dDepthTextureUsage {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Camera3dDepthTextureUsage::default() -> Camera3dDepthTextureUsage {
+pub fn Camera3dDepthTextureUsage::Camera3dDepthTextureUsage() -> Camera3dDepthTextureUsage {
   Camera3dDepthTextureUsage::{
     bits: @asset.IMAGE_USAGE_RENDER_ATTACHMENT.reinterpret_as_uint(),
   }
@@ -314,10 +314,10 @@ pub struct Camera3d {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Camera3d::default() -> Camera3d {
+pub fn Camera3d::Camera3d() -> Camera3d {
   Camera3d::{
     depth_load_op: Camera3dDepthLoadOp::default(),
-    depth_texture_usages: Camera3dDepthTextureUsage::default(),
+    depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
   }
 }
 
@@ -359,7 +359,7 @@ pub type DeferredPrepass = @pbr_prepass.DeferredPrepass
 pub struct OcclusionCulling {} derive(ToJson, FromJson)
 
 ///|
-pub fn OcclusionCulling::default() -> OcclusionCulling {
+pub fn OcclusionCulling::OcclusionCulling() -> OcclusionCulling {
   OcclusionCulling::{  }
 }
 
@@ -368,7 +368,7 @@ pub fn OcclusionCulling::default() -> OcclusionCulling {
 pub struct NoIndirectDrawing {} derive(ToJson, FromJson)
 
 ///|
-pub fn NoIndirectDrawing::default() -> NoIndirectDrawing {
+pub fn NoIndirectDrawing::NoIndirectDrawing() -> NoIndirectDrawing {
   NoIndirectDrawing::{  }
 }
 
@@ -377,7 +377,7 @@ pub fn NoIndirectDrawing::default() -> NoIndirectDrawing {
 pub struct NotShadowCaster {} derive(ToJson, FromJson)
 
 ///|
-pub fn NotShadowCaster::default() -> NotShadowCaster {
+pub fn NotShadowCaster::NotShadowCaster() -> NotShadowCaster {
   NotShadowCaster::{  }
 }
 
@@ -386,7 +386,7 @@ pub fn NotShadowCaster::default() -> NotShadowCaster {
 pub struct NotShadowReceiver {} derive(ToJson, FromJson)
 
 ///|
-pub fn NotShadowReceiver::default() -> NotShadowReceiver {
+pub fn NotShadowReceiver::NotShadowReceiver() -> NotShadowReceiver {
   NotShadowReceiver::{  }
 }
 
@@ -395,7 +395,7 @@ pub fn NotShadowReceiver::default() -> NotShadowReceiver {
 pub struct TransmittedShadowReceiver {} derive(ToJson, FromJson)
 
 ///|
-pub fn TransmittedShadowReceiver::default() -> TransmittedShadowReceiver {
+pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> TransmittedShadowReceiver {
   TransmittedShadowReceiver::{  }
 }
 
@@ -438,7 +438,7 @@ fn oit_safe_alpha_threshold(value : Float) -> Float {
 }
 
 ///|
-pub fn OrderIndependentTransparencySettings::default() -> OrderIndependentTransparencySettings {
+pub fn OrderIndependentTransparencySettings::OrderIndependentTransparencySettings() -> OrderIndependentTransparencySettings {
   OrderIndependentTransparencySettings::{
     sorted_fragment_max_count: 8,
     fragments_per_pixel_average: 4.0F,
@@ -531,7 +531,7 @@ pub struct Exposure {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Exposure::default() -> Exposure {
+pub fn Exposure::Exposure() -> Exposure {
   Exposure::{ ev100: EXPOSURE_EV100_BLENDER }
 }
 
@@ -617,7 +617,7 @@ pub(all) struct PhysicalCameraParameters {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PhysicalCameraParameters::default() -> PhysicalCameraParameters {
+pub fn PhysicalCameraParameters::PhysicalCameraParameters() -> PhysicalCameraParameters {
   PhysicalCameraParameters::{
     aperture_f_stops: 1.0F,
     shutter_speed_s: 1.0F / 125.0F,
@@ -671,7 +671,7 @@ pub struct Skybox {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Skybox::default() -> Skybox {
+pub fn Skybox::Skybox() -> Skybox {
   Skybox::{ image: None, brightness: 0.0F, rotation: @math.Quat::identity() }
 }
 
@@ -681,7 +681,7 @@ pub fn Skybox::new(
   brightness : Float,
 ) -> Skybox {
   Skybox::{
-    ..Skybox::default(),
+    ..Skybox(),
     image: Some(image),
     brightness: if brightness < 0.0F {
       0.0F

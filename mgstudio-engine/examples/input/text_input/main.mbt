@@ -49,7 +49,7 @@ let bubble_lines_ref : Ref[Array[BubbleLine]] = Ref([])
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup_scene))
   .add_systems(@app.Update, @app.system(@app.system_param(toggle_ime_system)))
   .add_systems(
@@ -67,24 +67,24 @@ fn main {
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
-  let ui_font = @text.TextFont::default().with_font(font).with_font_size(30.0F)
-  let edit_font = @text.TextFont::default()
+  let ui_font = @text.TextFont::TextFont().with_font(font).with_font_size(30.0F)
+  let edit_font = @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(100.0F)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F))
@@ -136,7 +136,7 @@ fn spawn_ui_text_line(
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(text_entity, @ui.ecs_key_node, @ui.Node::default())
+  try! world.set_by_key(text_entity, @ui.ecs_key_node, @ui.Node::Node())
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text,

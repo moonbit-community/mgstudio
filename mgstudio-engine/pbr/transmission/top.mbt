@@ -35,7 +35,7 @@ pub struct ScreenSpaceTransmission {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ScreenSpaceTransmission::default() -> ScreenSpaceTransmission {
+pub fn ScreenSpaceTransmission::ScreenSpaceTransmission() -> ScreenSpaceTransmission {
   ScreenSpaceTransmission::{
     quality: ScreenSpaceTransmissionQuality::default(),
     steps: 2,

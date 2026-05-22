@@ -18,15 +18,15 @@ fn run_scene_test_app_with_gltf_plugin(
   system : (@ecs.World) -> Unit,
 ) -> Unit {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@asset.AssetPlugin::default())
-  .add_plugins(@mesh.MeshPlugin::default())
-  .add_plugins(@render.RenderPlugin::default())
-  .add_plugins(@shader.ShaderPlugin::default())
-  .add_plugins(@pbr.PbrPlugin::default())
-  .add_plugins(@animation.AnimationPlugin::default())
-  .add_plugins(@scene.ScenePlugin::default())
+  .add_plugins(@asset.AssetPlugin::AssetPlugin())
+  .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+  .add_plugins(@render.RenderPlugin::RenderPlugin())
+  .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+  .add_plugins(@pbr.PbrPlugin::PbrPlugin())
+  .add_plugins(@animation.AnimationPlugin::AnimationPlugin())
+  .add_plugins(@scene.ScenePlugin::ScenePlugin())
   .add_plugins(gltf_plugin)
-  .add_plugins(@time.TimePlugin::default())
+  .add_plugins(@time.TimePlugin::TimePlugin())
   .add_system(system)
   .run_once()
   |> ignore
@@ -34,7 +34,7 @@ fn run_scene_test_app_with_gltf_plugin(
 
 ///|
 fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
-  run_scene_test_app_with_gltf_plugin(@gltf.GltfPlugin::default(), system)
+  run_scene_test_app_with_gltf_plugin(@gltf.GltfPlugin::GltfPlugin(), system)
 }
 
 ///|
@@ -120,15 +120,15 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
   let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(@shader.ShaderPlugin::default())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(@pbr.PbrPlugin::default())
-    .add_plugins(@animation.AnimationPlugin::default())
-    .add_plugins(@scene.ScenePlugin::default())
-    .add_plugins(@gltf.GltfPlugin::default())
-    .add_plugins(@time.TimePlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@pbr.PbrPlugin::PbrPlugin())
+    .add_plugins(@animation.AnimationPlugin::AnimationPlugin())
+    .add_plugins(@scene.ScenePlugin::ScenePlugin())
+    .add_plugins(@gltf.GltfPlugin::GltfPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
     .add_systems(
       @app.Startup,
       @app.system(fn(_world : @ecs.World) {
@@ -191,15 +191,15 @@ test "scene: root gltf include_source keeps source payload" {
   let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(@shader.ShaderPlugin::default())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(@pbr.PbrPlugin::default())
-    .add_plugins(@animation.AnimationPlugin::default())
-    .add_plugins(@scene.ScenePlugin::default())
-    .add_plugins(@gltf.GltfPlugin::default())
-    .add_plugins(@time.TimePlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@pbr.PbrPlugin::PbrPlugin())
+    .add_plugins(@animation.AnimationPlugin::AnimationPlugin())
+    .add_plugins(@scene.ScenePlugin::ScenePlugin())
+    .add_plugins(@gltf.GltfPlugin::GltfPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
     .add_systems(
       @app.Startup,
       @app.system(fn(_world : @ecs.World) {
@@ -247,15 +247,15 @@ test "scene: root gltf asset collects materials and named_materials" {
   let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(@shader.ShaderPlugin::default())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(@pbr.PbrPlugin::default())
-    .add_plugins(@animation.AnimationPlugin::default())
-    .add_plugins(@scene.ScenePlugin::default())
-    .add_plugins(@gltf.GltfPlugin::default())
-    .add_plugins(@time.TimePlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@pbr.PbrPlugin::PbrPlugin())
+    .add_plugins(@animation.AnimationPlugin::AnimationPlugin())
+    .add_plugins(@scene.ScenePlugin::ScenePlugin())
+    .add_plugins(@gltf.GltfPlugin::GltfPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
     .add_systems(
       @app.Startup,
       @app.system(fn(_world : @ecs.World) {
@@ -348,8 +348,8 @@ test "scene: spawn applies camera and light components from scene node payload" 
           @transform.Transform::identity(),
           None,
           None,
-          camera=Some(@sprite.Camera::default()),
-          camera3d=Some(@camera.Camera3d::default()),
+          camera=Some(@sprite.Camera::Camera()),
+          camera3d=Some(@camera.Camera3d::Camera3d()),
           projection=Some(@camera.Projection::default()),
         ),
         @scene.SceneNode3d::new_empty(
@@ -357,21 +357,21 @@ test "scene: spawn applies camera and light components from scene node payload" 
           None,
           None,
           parent_node_index=Some(0),
-          directional_light=Some(@light.DirectionalLight::default()),
+          directional_light=Some(@light.DirectionalLight::DirectionalLight()),
         ),
         @scene.SceneNode3d::new_empty(
           @transform.Transform::identity(),
           None,
           None,
           parent_node_index=Some(0),
-          point_light=Some(@light.PointLight::default()),
+          point_light=Some(@light.PointLight::PointLight()),
         ),
         @scene.SceneNode3d::new_empty(
           @transform.Transform::identity(),
           None,
           None,
           parent_node_index=Some(0),
-          spot_light=Some(@light.SpotLight::default()),
+          spot_light=Some(@light.SpotLight::SpotLight()),
         ),
       ]),
     )
@@ -441,7 +441,7 @@ test "scene: skinned mesh joints map by gltf node index" {
       @math.Cuboid::new(1.0F, 1.0F, 1.0F),
     )
     let material = @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+      @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
     )
     let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
       world,
@@ -551,7 +551,7 @@ test "scene: skinned mesh skips when any gltf joint node is unresolved" {
       @math.Cuboid::new(1.0F, 1.0F, 1.0F),
     )
     let material = @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+      @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
     )
     let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
       world,
@@ -608,7 +608,7 @@ test "scene: skinned mesh policy NoFrustumCulling inserts no-frustum component" 
   let has_no_frustum_culling = Ref(false)
 
   run_scene_test_app_with_gltf_plugin(
-    @gltf.GltfPlugin::default().with_skinned_mesh_bounds_policy(
+    @gltf.GltfPlugin::GltfPlugin().with_skinned_mesh_bounds_policy(
       @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
     ),
     fn(world : @ecs.World) {
@@ -622,7 +622,7 @@ test "scene: skinned mesh policy NoFrustumCulling inserts no-frustum component" 
         ),
       )
       let material = @pbr.MeshMaterial3d::new(
-        @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+        @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
       )
       let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
         world,
@@ -692,7 +692,7 @@ test "scene: skinned mesh policy BindPose keeps static bounds components unset" 
   let has_no_frustum_culling = Ref(false)
 
   run_scene_test_app_with_gltf_plugin(
-    @gltf.GltfPlugin::default().with_skinned_mesh_bounds_policy(
+    @gltf.GltfPlugin::GltfPlugin().with_skinned_mesh_bounds_policy(
       @gltf.GltfSkinnedMeshBoundsPolicy::BindPose,
     ),
     fn(world : @ecs.World) {
@@ -706,7 +706,7 @@ test "scene: skinned mesh policy BindPose keeps static bounds components unset" 
         ),
       )
       let material = @pbr.MeshMaterial3d::new(
-        @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+        @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
       )
       let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
         world,
@@ -802,7 +802,9 @@ test "scene: SceneRoot propagates gltf extras metadata" {
             ),
           ),
           @pbr.MeshMaterial3d::new(
-            @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+            @pbr.standard_material_add(
+              @pbr.StandardMaterial::StandardMaterial(),
+            ),
           ),
           @transform.Transform::identity(),
           None,
@@ -990,7 +992,9 @@ test "scene: removing SceneRoot despawns spawned children" {
             ),
           ),
           @pbr.MeshMaterial3d::new(
-            @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+            @pbr.standard_material_add(
+              @pbr.StandardMaterial::StandardMaterial(),
+            ),
           ),
           @transform.Transform::identity(),
           None,
@@ -1219,7 +1223,9 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
               ),
             ),
             @pbr.MeshMaterial3d::new(
-              @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+              @pbr.standard_material_add(
+                @pbr.StandardMaterial::StandardMaterial(),
+              ),
             ),
             @transform.Transform::identity(),
             None,
@@ -1296,7 +1302,9 @@ test "scene: instance readiness and entity iteration follow Bevy semantics" {
               ),
             ),
             @pbr.MeshMaterial3d::new(
-              @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+              @pbr.standard_material_add(
+                @pbr.StandardMaterial::StandardMaterial(),
+              ),
             ),
             @transform.Transform::identity(),
             None,
@@ -1553,7 +1561,9 @@ test "scene: changed SceneRoot with same handle still respawns instance" {
             ),
           ),
           @pbr.MeshMaterial3d::new(
-            @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+            @pbr.standard_material_add(
+              @pbr.StandardMaterial::StandardMaterial(),
+            ),
           ),
           @transform.Transform::identity(),
           None,

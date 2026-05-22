@@ -46,9 +46,27 @@ fn[T : EcsPayloadCodec] component_ops_for_key(
         visit(entity, T::to_ecs_payload(value))
       })
     },
-    payload: key.access.payload,
-    set_payload: key.access.set_payload,
-    remove_payload: key.access.remove_payload,
+    payload: fn(world, entity) {
+      match (key.access.get)(world, entity) {
+        Some(value) => Some(T::to_ecs_payload(value))
+        None => None
+      }
+    },
+    set_payload: fn(world, entity, payload) {
+      match T::from_ecs_payload(payload) {
+        Some(value) => {
+          (key.access.set)(world, entity, value)
+          true
+        }
+        None => false
+      }
+    },
+    remove_payload: fn(world, entity) {
+      match (key.access.remove)(world, entity) {
+        Some(value) => Some(T::to_ecs_payload(value))
+        None => None
+      }
+    },
   }
 }
 
@@ -61,6 +79,13 @@ fn[T : EcsPayloadCodec] register_component_ops(
     return
   }
   component_ops_registry.set(component_id, component_ops_for_key(key))
+}
+
+///|
+fn[T : EcsPayloadCodec] ensure_component_ops_for_key(
+  key : ComponentKey[T],
+) -> Unit {
+  register_component_ops(key.id(), key)
 }
 
 ///|

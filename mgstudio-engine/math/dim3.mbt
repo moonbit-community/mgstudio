@@ -18,8 +18,13 @@ pub(all) struct Cuboid {
 }
 
 ///|
-pub impl Default for Cuboid with default() {
+pub fn Cuboid::Cuboid() -> Cuboid {
   Cuboid::{ half_size: Vec3::splat(0.5F) }
+}
+
+///|
+pub impl Default for Cuboid with default() {
+  Cuboid::Cuboid()
 }
 
 ///|
@@ -93,8 +98,13 @@ pub(all) struct Sphere {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl Default for Sphere with default() {
+pub fn Sphere::Sphere() -> Sphere {
   Sphere::{ radius: 0.5F }
+}
+
+///|
+pub impl Default for Sphere with default() {
+  Sphere::Sphere()
 }
 
 ///|
@@ -114,8 +124,13 @@ pub(all) struct Cylinder {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl Default for Cylinder with default() {
+pub fn Cylinder::Cylinder() -> Cylinder {
   Cylinder::{ radius: 0.5F, half_height: 0.5F }
+}
+
+///|
+pub impl Default for Cylinder with default() {
+  Cylinder::Cylinder()
 }
 
 ///|
@@ -136,7 +151,7 @@ pub fn Plane3d::new(normal : Vec3, half_size : Vec2) -> Plane3d {
 }
 
 ///|
-pub fn Plane3d::default() -> Plane3d {
+pub fn Plane3d::Plane3d() -> Plane3d {
   Plane3d::{ normal: Dir3::y(), half_size: Vec2::new(0.5F, 0.5F) }
 }
 
@@ -162,7 +177,7 @@ pub fn InfinitePlane3d::new(normal : Vec3) -> InfinitePlane3d {
 }
 
 ///|
-pub fn InfinitePlane3d::default() -> InfinitePlane3d {
+pub fn InfinitePlane3d::InfinitePlane3d() -> InfinitePlane3d {
   InfinitePlane3d::{ normal: Dir3::y() }
 }
 
@@ -210,11 +225,16 @@ pub struct Segment3d {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl Default for Segment3d with default() {
+pub fn Segment3d::Segment3d() -> Segment3d {
   Segment3d::{
     point_a: Vec3::new(-0.5F, 0.0F, 0.0F),
     point_b: Vec3::new(0.5F, 0.0F, 0.0F),
   }
+}
+
+///|
+pub impl Default for Segment3d with default() {
+  Segment3d::Segment3d()
 }
 
 ///|
@@ -248,8 +268,13 @@ pub struct Polyline3d {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl Default for Polyline3d with default() {
+pub fn Polyline3d::Polyline3d() -> Polyline3d {
   Polyline3d::new([Vec3::new(-0.5F, 0.0F, 0.0F), Vec3::new(0.5F, 0.0F, 0.0F)])
+}
+
+///|
+pub impl Default for Polyline3d with default() {
+  Polyline3d::Polyline3d()
 }
 
 ///|
@@ -264,8 +289,13 @@ pub(all) struct Capsule3d {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl Default for Capsule3d with default() {
+pub fn Capsule3d::Capsule3d() -> Capsule3d {
   Capsule3d::{ radius: 0.5F, half_length: 0.5F }
+}
+
+///|
+pub impl Default for Capsule3d with default() {
+  Capsule3d::Capsule3d()
 }
 
 ///|
@@ -285,7 +315,7 @@ pub fn Cone::new(radius : Float, height : Float) -> Cone {
 }
 
 ///|
-pub fn Cone::default() -> Cone {
+pub fn Cone::Cone() -> Cone {
   Cone::{ radius: 0.5F, height: 1.0F }
 }
 
@@ -306,7 +336,7 @@ pub fn ConicalFrustum::new(
 }
 
 ///|
-pub fn ConicalFrustum::default() -> ConicalFrustum {
+pub fn ConicalFrustum::ConicalFrustum() -> ConicalFrustum {
   ConicalFrustum::{ radius_top: 0.25F, radius_bottom: 0.5F, height: 1.0F }
 }
 
@@ -322,7 +352,7 @@ pub fn Torus::new(major_radius : Float, minor_radius : Float) -> Torus {
 }
 
 ///|
-pub fn Torus::default() -> Torus {
+pub fn Torus::Torus() -> Torus {
   Torus::{ major_radius: 0.75F, minor_radius: 0.25F }
 }
 
@@ -337,7 +367,7 @@ pub(all) struct Triangle3d {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl Default for Triangle3d with default() {
+pub fn Triangle3d::Triangle3d() -> Triangle3d {
   Triangle3d::{
     vertices: [
       Vec3::new(0.0F, 0.5F, 0.0F),
@@ -345,6 +375,11 @@ pub impl Default for Triangle3d with default() {
       Vec3::new(0.5F, -0.5F, 0.0F),
     ],
   }
+}
+
+///|
+pub impl Default for Triangle3d with default() {
+  Triangle3d::Triangle3d()
 }
 
 ///|
@@ -358,7 +393,7 @@ pub(all) struct Tetrahedron {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl Default for Tetrahedron with default() {
+pub fn Tetrahedron::Tetrahedron() -> Tetrahedron {
   Tetrahedron::{
     vertices: [
       Vec3::new(0.5F, 0.5F, 0.5F),
@@ -367,6 +402,11 @@ pub impl Default for Tetrahedron with default() {
       Vec3::new(0.5F, -0.5F, -0.5F),
     ],
   }
+}
+
+///|
+pub impl Default for Tetrahedron with default() {
+  Tetrahedron::Tetrahedron()
 }
 
 ///|

@@ -190,7 +190,7 @@ pub struct Annulus {
   outer_radius : Float
   vertices : Int
 }
-pub fn Annulus::default() -> Self
+pub fn Annulus::Annulus() -> Self
 pub fn Annulus::new(Float, Float) -> Self
 pub fn Annulus::with_vertices(Self, Int) -> Self
 pub impl Bounded2d for Annulus
@@ -275,7 +275,7 @@ pub struct Capsule2d {
   half_length : Float
   segments : Int
 }
-pub fn Capsule2d::default() -> Self
+pub fn Capsule2d::Capsule2d() -> Self
 pub fn Capsule2d::new(Float, Float) -> Self
 pub fn Capsule2d::with_segments(Self, Int) -> Self
 pub impl Bounded2d for Capsule2d
@@ -287,6 +287,7 @@ pub(all) struct Capsule3d {
   radius : Float
   half_length : Float
 } derive(ToJson, @json.FromJson)
+pub fn Capsule3d::Capsule3d() -> Self
 pub fn Capsule3d::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Capsule3d::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Capsule3d::new(Float, Float) -> Self
@@ -302,7 +303,7 @@ pub struct Circle {
   radius : Float
   vertices : Int
 }
-pub fn Circle::default() -> Self
+pub fn Circle::Circle() -> Self
 pub fn Circle::diameter(Self) -> Float
 pub fn Circle::new(Float) -> Self
 pub fn Circle::with_vertices(Self, Int) -> Self
@@ -322,8 +323,8 @@ pub struct CircularSector {
   vertices : Int
   uv_mode : CircularMeshUvMode
 }
+pub fn CircularSector::CircularSector() -> Self
 pub fn CircularSector::angle(Self) -> Float
-pub fn CircularSector::default() -> Self
 pub fn CircularSector::from_turns(Float, Float) -> Self
 pub fn CircularSector::half_angle(Self) -> Float
 pub fn CircularSector::new(Float, Float) -> Self
@@ -340,8 +341,8 @@ pub struct CircularSegment {
   vertices : Int
   uv_mode : CircularMeshUvMode
 }
+pub fn CircularSegment::CircularSegment() -> Self
 pub fn CircularSegment::angle(Self) -> Float
-pub fn CircularSegment::default() -> Self
 pub fn CircularSegment::from_turns(Float, Float) -> Self
 pub fn CircularSegment::half_angle(Self) -> Float
 pub fn CircularSegment::new(Float, Float) -> Self
@@ -376,7 +377,7 @@ pub struct Cone {
   radius : Float
   height : Float
 } derive(ToJson, @json.FromJson)
-pub fn Cone::default() -> Self
+pub fn Cone::Cone() -> Self
 pub fn Cone::new(Float, Float) -> Self
 pub impl Bounded3d for Cone
 pub impl Measured3d for Cone
@@ -387,7 +388,7 @@ pub struct ConicalFrustum {
   radius_bottom : Float
   height : Float
 } derive(ToJson, @json.FromJson)
-pub fn ConicalFrustum::default() -> Self
+pub fn ConicalFrustum::ConicalFrustum() -> Self
 pub fn ConicalFrustum::new(Float, Float, Float) -> Self
 pub impl Bounded3d for ConicalFrustum
 pub impl Measured3d for ConicalFrustum
@@ -474,6 +475,7 @@ pub fn[P : SplinePoint] CubicSegment::velocity(Self[P], Float) -> P
 pub(all) struct Cuboid {
   half_size : Vec3
 }
+pub fn Cuboid::Cuboid() -> Self
 pub fn Cuboid::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Cuboid::from_corners(Vec3, Vec3) -> Self
 pub fn Cuboid::from_length(Float) -> Self
@@ -515,6 +517,7 @@ pub(all) struct Cylinder {
   radius : Float
   half_height : Float
 } derive(ToJson, @json.FromJson)
+pub fn Cylinder::Cylinder() -> Self
 pub fn Cylinder::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Cylinder::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Cylinder::new(Float, Float) -> Self
@@ -616,7 +619,7 @@ pub struct Ellipse {
   half_size : Vec2
   vertices : Int
 }
-pub fn Ellipse::default() -> Self
+pub fn Ellipse::Ellipse() -> Self
 pub fn Ellipse::new(Float, Float) -> Self
 pub fn Ellipse::with_vertices(Self, Int) -> Self
 pub impl Bounded2d for Ellipse
@@ -707,7 +710,7 @@ pub impl @json.FromJson for IVec2
 pub struct InfinitePlane3d {
   normal : Dir3
 }
-pub fn InfinitePlane3d::default() -> Self
+pub fn InfinitePlane3d::InfinitePlane3d() -> Self
 pub fn InfinitePlane3d::new(Vec3) -> Self
 pub fn InfinitePlane3d::project_point(Self, Isometry3d, Vec3) -> Vec3
 pub fn InfinitePlane3d::signed_distance(Self, Isometry3d, Vec3) -> Float
@@ -829,7 +832,7 @@ pub struct Plane3d {
   normal : Dir3
   half_size : Vec2
 }
-pub fn Plane3d::default() -> Self
+pub fn Plane3d::Plane3d() -> Self
 pub fn Plane3d::half_size(Self) -> Vec2
 pub fn Plane3d::new(Vec3, Vec2) -> Self
 pub fn Plane3d::normal(Self) -> Dir3
@@ -855,6 +858,7 @@ pub impl Primitive2d for Polyline2d
 pub struct Polyline3d {
   vertices : Array[Vec3]
 } derive(ToJson, @json.FromJson)
+pub fn Polyline3d::Polyline3d() -> Self
 pub fn Polyline3d::new(Array[Vec3]) -> Self
 pub impl Bounded3d for Polyline3d
 pub impl Primitive3d for Polyline3d
@@ -944,7 +948,7 @@ pub impl @json.FromJson for Rect
 pub struct Rectangle {
   half_size : Vec2
 }
-pub fn Rectangle::default() -> Self
+pub fn Rectangle::Rectangle() -> Self
 pub fn Rectangle::from_size(Vec2) -> Self
 pub fn Rectangle::new(Float, Float) -> Self
 pub impl Bounded2d for Rectangle
@@ -957,7 +961,7 @@ pub struct RegularPolygon {
   radius : Float
   sides : Int
 }
-pub fn RegularPolygon::default() -> Self
+pub fn RegularPolygon::RegularPolygon() -> Self
 pub fn RegularPolygon::new(Float, Int) -> Self
 pub impl Bounded2d for RegularPolygon
 pub impl Inset for RegularPolygon
@@ -968,7 +972,7 @@ pub impl ToRing for RegularPolygon
 pub struct Rhombus {
   half_diagonal : Vec2
 }
-pub fn Rhombus::default() -> Self
+pub fn Rhombus::Rhombus() -> Self
 pub fn Rhombus::new(Float, Float) -> Self
 pub impl Bounded2d for Rhombus
 pub impl Inset for Rhombus
@@ -1040,6 +1044,7 @@ pub struct Segment3d {
   point_a : Vec3
   point_b : Vec3
 } derive(ToJson, @json.FromJson)
+pub fn Segment3d::Segment3d() -> Self
 pub fn Segment3d::center(Self) -> Vec3
 pub fn Segment3d::length(Self) -> Float
 pub fn Segment3d::new(Vec3, Vec3) -> Self
@@ -1052,6 +1057,7 @@ pub impl Default for Segment3d
 pub(all) struct Sphere {
   radius : Float
 } derive(ToJson, @json.FromJson)
+pub fn Sphere::Sphere() -> Self
 pub fn Sphere::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Sphere::diameter(Self) -> Float
 pub fn Sphere::interior_dist(Self) -> SamplingDistribution[Vec3]
@@ -1067,6 +1073,7 @@ pub impl Default for Sphere
 pub(all) struct Tetrahedron {
   vertices : Array[Vec3]
 } derive(ToJson, @json.FromJson)
+pub fn Tetrahedron::Tetrahedron() -> Self
 pub fn Tetrahedron::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Tetrahedron::faces(Self) -> Array[Triangle3d]
 pub fn Tetrahedron::interior_dist(Self) -> SamplingDistribution[Vec3]
@@ -1083,7 +1090,7 @@ pub struct Torus {
   major_radius : Float
   minor_radius : Float
 } derive(ToJson, @json.FromJson)
-pub fn Torus::default() -> Self
+pub fn Torus::Torus() -> Self
 pub fn Torus::new(Float, Float) -> Self
 pub fn Torus::outer_radius(Self) -> Float
 pub impl Bounded3d for Torus
@@ -1095,7 +1102,7 @@ pub struct Triangle2d {
   b : Vec2
   c : Vec2
 }
-pub fn Triangle2d::default() -> Self
+pub fn Triangle2d::Triangle2d() -> Self
 pub fn Triangle2d::new(Vec2, Vec2, Vec2) -> Self
 pub impl Bounded2d for Triangle2d
 pub impl Inset for Triangle2d
@@ -1106,6 +1113,7 @@ pub impl ToRing for Triangle2d
 pub(all) struct Triangle3d {
   vertices : Array[Vec3]
 } derive(ToJson, @json.FromJson)
+pub fn Triangle3d::Triangle3d() -> Self
 pub fn Triangle3d::boundary_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Triangle3d::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Triangle3d::new(Vec3, Vec3, Vec3) -> Self

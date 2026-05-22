@@ -28,7 +28,7 @@ const RENDER_VISIBILITY_RANGE_PLUGIN_NAME : String = "mgstudio.render.view.visib
 pub struct RenderVisibilityRangePlugin {}
 
 ///|
-pub fn RenderVisibilityRangePlugin::default() -> RenderVisibilityRangePlugin {
+pub fn RenderVisibilityRangePlugin::RenderVisibilityRangePlugin() -> RenderVisibilityRangePlugin {
   RenderVisibilityRangePlugin::{  }
 }
 
@@ -38,7 +38,7 @@ pub fn render_visibility_range_plugin(
 ) -> @app.App[@ecs.World] {
   render_visibility_range_plugin_with(
     app,
-    RenderVisibilityRangePlugin::default(),
+    RenderVisibilityRangePlugin::RenderVisibilityRangePlugin(),
   )
 }
 
@@ -94,7 +94,7 @@ pub struct RenderVisibilityRanges {
 }
 
 ///|
-pub fn RenderVisibilityRanges::default() -> RenderVisibilityRanges {
+pub fn RenderVisibilityRanges::RenderVisibilityRanges() -> RenderVisibilityRanges {
   RenderVisibilityRanges::{
     entities: @hashmap.HashMap([]),
     range_to_index: @hashmap.HashMap([]),
@@ -216,7 +216,7 @@ fn ensure_render_visibility_ranges_resource(world : @ecs.World) -> Unit {
   if world.get_resource(ecs_key_render_visibility_ranges) is None {
     world.insert_resource(
       ecs_key_render_visibility_ranges,
-      RenderVisibilityRanges::default(),
+      RenderVisibilityRanges::RenderVisibilityRanges(),
     )
   }
 }

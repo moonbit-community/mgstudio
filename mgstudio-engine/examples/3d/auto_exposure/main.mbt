@@ -224,7 +224,7 @@ fn example_auto_exposure_settings() -> @pbr.AutoExposure {
   } else {
     None
   }
-  @pbr.AutoExposure::default()
+  @pbr.AutoExposure::AutoExposure()
   .with_compensation_curve(compensation_curve)
   .with_metering_mask(metering_mask)
 }
@@ -261,7 +261,7 @@ fn setup(world : @ecs.World) -> Unit {
   auto_exposure_state.val.basic_metering_mask = Some(metering_mask)
 
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       camera_transform_for_angle(auto_exposure_state.val.camera_angle),
     )
     .with_auto_exposure(Some(example_auto_exposure_settings()))
@@ -383,7 +383,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(example_control_system))
   .run()

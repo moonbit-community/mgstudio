@@ -20,7 +20,7 @@ fn timeline_trace_test_output_path() -> String {
 ///|
 test "diagnostics: timeline trace plugin writes filtered chrome trace json" {
   let output_path = timeline_trace_test_output_path()
-  let config = TimelineTraceConfig::default()
+  let config = TimelineTraceConfig::TimelineTraceConfig()
     .with_enabled(true)
     .with_output_path(output_path)
     .with_flush_interval_frames(1)
@@ -51,7 +51,7 @@ test "diagnostics: timeline trace plugin writes filtered chrome trace json" {
 ///|
 test "diagnostics: timeline trace plugin captures direct render queue spans" {
   let output_path = timeline_trace_test_output_path()
-  let config = TimelineTraceConfig::default()
+  let config = TimelineTraceConfig::TimelineTraceConfig()
     .with_enabled(true)
     .with_output_path(output_path)
     .with_flush_interval_frames(1)
@@ -82,8 +82,8 @@ test "diagnostics: timeline trace plugin captures direct render queue spans" {
 ///|
 test "diagnostics: stress diagnostics plugin installs lightweight metrics by default" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@time.TimePlugin::default())
-    .add_plugins(StressDiagnosticsPlugin::default())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_plugins(StressDiagnosticsPlugin::StressDiagnosticsPlugin())
     .update()
   debug_inspect(stress_diagnostics_has_lightweight_metrics(app), content="true")
 }

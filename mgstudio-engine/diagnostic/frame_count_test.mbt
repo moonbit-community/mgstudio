@@ -15,8 +15,8 @@
 ///|
 test "diagnostics: frame count plugin increments during Last" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(DiagnosticsPlugin::default())
-    .add_plugins(FrameCountPlugin::default())
+    .add_plugins(DiagnosticsPlugin::DiagnosticsPlugin())
+    .add_plugins(FrameCountPlugin::FrameCountPlugin())
   debug_inspect(
     app.world().get_resource(FrameCount::resource()).unwrap().value,
     content="0",
@@ -32,8 +32,8 @@ test "diagnostics: frame count plugin increments during Last" {
 test "diagnostics: entity count plugin records spawned entities" {
   let app = @app.App::new(@ecs.World::new())
   app
-  .add_plugins(DiagnosticsPlugin::default())
-  .add_plugins(EntityCountDiagnosticsPlugin::default())
+  .add_plugins(DiagnosticsPlugin::DiagnosticsPlugin())
+  .add_plugins(EntityCountDiagnosticsPlugin::EntityCountDiagnosticsPlugin())
   .add_startup_system(fn(world : @ecs.World) {
     world.spawn() |> ignore
     world.spawn() |> ignore

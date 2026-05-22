@@ -54,16 +54,16 @@ pub fn render_source_world(world : @ecs.World) -> @ecs.World {
 
 ///|
 pub fn render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(RenderPlugin::default())
+  app.add_plugins(RenderPlugin::RenderPlugin())
 }
 
 ///|
 fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  let mut next = app.add_plugins(SyncWorldPlugin::default())
+  let mut next = app.add_plugins(SyncWorldPlugin::SyncWorldPlugin())
   if !next.contains_resource(render_asset_bytes_per_frame_resource_key) {
     next = next.insert_world_resource(
       render_asset_bytes_per_frame_resource_key,
-      RenderAssetBytesPerFrame::default(),
+      RenderAssetBytesPerFrame::RenderAssetBytesPerFrame(),
     )
   }
   if next.get_sub_app(@app.RenderApp) is None {
@@ -88,7 +88,7 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .world()
     .insert_resource(
       render_asset_bytes_per_frame_limiter_resource_key,
-      RenderAssetBytesPerFrameLimiter::default(),
+      RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
     )
     render_sub_app_ref.val = render_sub_app_ref.val.add_systems(
       render_schedule_stage(),
@@ -117,9 +117,11 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @post_process_bloom.register_embedded_wgsl_sources()
     @post_process_effect_stack.register_embedded_wgsl_sources()
     @post_process_motion_blur.register_embedded_wgsl_sources()
-    next = next.add_plugins(@batching.GpuPreprocessingPlugin::default())
     next = next.add_plugins(
-      @occlusion_culling.OcclusionCullingPlugin::default(),
+      @batching.GpuPreprocessingPlugin::GpuPreprocessingPlugin(),
+    )
+    next = next.add_plugins(
+      @occlusion_culling.OcclusionCullingPlugin::OcclusionCullingPlugin(),
     )
     next = next.insert_world_resource(ecs_key_render_plugin_marker, RenderPluginMarker::{
 

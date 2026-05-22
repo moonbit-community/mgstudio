@@ -121,7 +121,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -135,7 +135,7 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(light)
     .insert(
       (
-        @pbr.PointLight::default().with_intensity(500_000.0F),
+        @pbr.PointLight::PointLight().with_intensity(500_000.0F),
         @transform.Transform::from_xyz(0.0F, 2.5F, 0.0F),
       ),
     ),
@@ -149,7 +149,7 @@ fn setup(world : @ecs.World) -> Unit {
     satellite_target,
   ) = animated_transform_clip()
 
-  let player = @animation.AnimationPlayer::default()
+  let player = @animation.AnimationPlayer::AnimationPlayer()
   player.play(animation_node).repeat() |> ignore
 
   let planet_mesh = @mesh.Mesh3d::new(
@@ -222,7 +222,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .run()
 }

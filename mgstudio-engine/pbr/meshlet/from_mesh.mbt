@@ -72,7 +72,7 @@ pub fn MeshToMeshletInputMeshSummary::new(
 }
 
 ///|
-pub fn MeshToMeshletMeshConversionConfig::default() -> MeshToMeshletMeshConversionConfig {
+pub fn MeshToMeshletMeshConversionConfig::MeshToMeshletMeshConversionConfig() -> MeshToMeshletMeshConversionConfig {
   MeshToMeshletMeshConversionConfig::{
     max_vertices: 65_535,
     max_triangles: 65_535,
@@ -974,7 +974,7 @@ fn meshlet_collect_indices_per_partition(
 }
 
 ///|
-fn MeshletTempGroup::default() -> MeshletTempGroup {
+fn MeshletTempGroup::MeshletTempGroup() -> MeshletTempGroup {
   MeshletTempGroup::new(
     aabb=meshlet_bvh_default_aabb(),
     lod_bounds=meshlet_temp_sphere_zero(),
@@ -997,7 +997,7 @@ fn meshlet_groups_from_partitions(
   }
   let groups : Array[MeshletTempGroup] = []
   for _ in 0..<partition_count {
-    groups.push(MeshletTempGroup::default())
+    groups.push(MeshletTempGroup::MeshletTempGroup())
   }
   for index in 0..<partition_per_meshlet.length() {
     let group_index = partition_per_meshlet[index]
@@ -1809,7 +1809,7 @@ fn MeshletBvhBuilder::build_inner(
   max_depth.val = max_depth.val.max(depth)
   let node = self.nodes[node_id]
   let output_node = out.length()
-  out.push(BvhNode::default())
+  out.push(BvhNode::BvhNode())
   for child_index in 0..<node.children.length() {
     let child = self.nodes[node.children[child_index]]
     if child.group != -1 {
@@ -1941,7 +1941,7 @@ fn MeshletBvhBuilder::build(
   let mut aabb = meshlet_bvh_default_aabb()
   let max_depth = Ref(0)
   if self.nodes.length() == 1 {
-    let node = BvhNode::default()
+    let node = BvhNode::BvhNode()
     let group = groups[0]
     meshlet_bvh_set_leaf_slot(node, 0, group)
     out.push(node)

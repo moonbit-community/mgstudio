@@ -81,7 +81,7 @@ fn dragdrop_node_style(
   width : Float,
   height : Float,
 ) -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_position_type(@ui.PositionType::Absolute)
   .with_left(@ui.Val::Px(left))
   .with_top(@ui.Val::Px(top))
@@ -96,7 +96,7 @@ fn setup(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       @sprite.Camera2dBundle::new(
-        @sprite.Camera::default(),
+        @sprite.Camera::Camera(),
         @transform.Transform::identity(),
       ),
     ),
@@ -104,8 +104,8 @@ fn setup(commands : @app.Commands) -> Unit {
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
       @ui.BackgroundColor::new(@sprite.Color::srgb(0.08F, 0.08F, 0.09F)),
@@ -114,7 +114,7 @@ fn setup(commands : @app.Commands) -> Unit {
   let drop_area = commands.spawn(
     (
       DropArea::{  },
-      @ui.Button::default(),
+      @ui.Button::Button(),
       dragdrop_node_style(300.0F, 150.0F, 500.0F, 500.0F),
       @ui.BackgroundColor::new(@sprite.Color::srgb(0.1F, 0.4F, 0.1F)),
     ),
@@ -132,7 +132,7 @@ fn setup(commands : @app.Commands) -> Unit {
   let button = commands.spawn(
     (
       DraggableButton::{  },
-      @ui.Button::default(),
+      @ui.Button::Button(),
       dragdrop_node_style(40.0F, 40.0F, 180.0F, 56.0F),
       @ui.BackgroundColor::new(@sprite.Color::srgb(1.0F, 0.0F, 0.0F)),
     ),
@@ -240,7 +240,7 @@ fn on_drag_end(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param(setup)
   .add_pointer_observer4(fn(pointer, commands, drag_state, draggables) {
     on_drag_start(pointer, commands, drag_state, draggables)

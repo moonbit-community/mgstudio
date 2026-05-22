@@ -48,7 +48,7 @@ pub struct VolumetricFogBindGroupLayoutKey {
 }
 
 ///|
-pub fn VolumetricFogBindGroupLayoutKey::default() -> VolumetricFogBindGroupLayoutKey {
+pub fn VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey() -> VolumetricFogBindGroupLayoutKey {
   VolumetricFogBindGroupLayoutKey::{
     multisampled: false,
     density_texture: false,
@@ -76,7 +76,7 @@ pub struct VolumetricFogPipelineKeyFlags {
 }
 
 ///|
-pub fn VolumetricFogPipelineKeyFlags::default() -> VolumetricFogPipelineKeyFlags {
+pub fn VolumetricFogPipelineKeyFlags::VolumetricFogPipelineKeyFlags() -> VolumetricFogPipelineKeyFlags {
   VolumetricFogPipelineKeyFlags::{ hdr: false, density_texture: false }
 }
 
@@ -87,10 +87,10 @@ pub struct VolumetricFogPipelineKey {
 }
 
 ///|
-pub fn VolumetricFogPipelineKey::default() -> VolumetricFogPipelineKey {
+pub fn VolumetricFogPipelineKey::VolumetricFogPipelineKey() -> VolumetricFogPipelineKey {
   VolumetricFogPipelineKey::{
     msaa_samples: 1,
-    flags: VolumetricFogPipelineKeyFlags::default(),
+    flags: VolumetricFogPipelineKeyFlags::VolumetricFogPipelineKeyFlags(),
   }
 }
 
@@ -101,7 +101,7 @@ pub struct VolumetricFogPipeline {
 }
 
 ///|
-pub fn VolumetricFogPipeline::default() -> VolumetricFogPipeline {
+pub fn VolumetricFogPipeline::VolumetricFogPipeline() -> VolumetricFogPipeline {
   VolumetricFogPipeline::{
     shader_label: "pbr/volumetric_fog.wgsl",
     bind_group_layout_count: 4,
@@ -115,7 +115,7 @@ pub struct ViewVolumetricFogPipelines {
 }
 
 ///|
-pub fn ViewVolumetricFogPipelines::default() -> ViewVolumetricFogPipelines {
+pub fn ViewVolumetricFogPipelines::ViewVolumetricFogPipelines() -> ViewVolumetricFogPipelines {
   ViewVolumetricFogPipelines::{ textureless: -1, textured: -1 }
 }
 
@@ -148,7 +148,7 @@ pub struct VolumetricFogUniform {
 }
 
 ///|
-pub fn VolumetricFogUniform::default() -> VolumetricFogUniform {
+pub fn VolumetricFogUniform::VolumetricFogUniform() -> VolumetricFogUniform {
   VolumetricFogUniform::{
     clip_from_local_row_major: volumetric_fog_identity_matrix_row_major(),
     uvw_from_world_row_major: volumetric_fog_identity_matrix_row_major(),
@@ -214,7 +214,7 @@ pub struct ViewFogVolume {
 }
 
 ///|
-pub fn ViewFogVolume::default() -> ViewFogVolume {
+pub fn ViewFogVolume::ViewFogVolume() -> ViewFogVolume {
   ViewFogVolume::{
     density_texture: None,
     uniform_buffer_offset: 0,
@@ -233,7 +233,7 @@ pub struct ViewVolumetricFog {
 }
 
 ///|
-pub fn ViewVolumetricFog::default() -> ViewVolumetricFog {
+pub fn ViewVolumetricFog::ViewVolumetricFog() -> ViewVolumetricFog {
   ViewVolumetricFog::{ volumes: [] }
 }
 
@@ -256,7 +256,7 @@ pub struct VolumetricFogUniformBuffer {
 }
 
 ///|
-pub fn VolumetricFogUniformBuffer::default() -> VolumetricFogUniformBuffer {
+pub fn VolumetricFogUniformBuffer::VolumetricFogUniformBuffer() -> VolumetricFogUniformBuffer {
   VolumetricFogUniformBuffer::{ uniforms: [] }
 }
 
@@ -313,12 +313,12 @@ pub fn volumetric_fog_select_pipeline(
 
 ///|
 pub fn volumetric_fog_default_settings() -> VolumetricFog {
-  VolumetricFog::default()
+  VolumetricFog()
 }
 
 ///|
 pub fn fog_volume_default_settings() -> FogVolume {
-  FogVolume::default()
+  FogVolume()
 }
 
 ///|

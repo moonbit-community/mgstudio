@@ -39,7 +39,7 @@ pub struct RenderVisibleEntities {
 }
 
 ///|
-pub fn RenderVisibleEntities::default() -> RenderVisibleEntities {
+pub fn RenderVisibleEntities::RenderVisibleEntities() -> RenderVisibleEntities {
   RenderVisibleEntities::{ entities: @hashmap.HashMap([]) }
 }
 

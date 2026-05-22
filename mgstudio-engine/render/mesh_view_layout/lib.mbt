@@ -47,7 +47,7 @@ pub struct MeshPipelineViewLayoutKey {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn MeshPipelineViewLayoutKey::default() -> MeshPipelineViewLayoutKey {
+pub fn MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey() -> MeshPipelineViewLayoutKey {
   MeshPipelineViewLayoutKey::{ bits: 0U }
 }
 

@@ -90,7 +90,7 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   ignore(
     commands.spawn_component(CompressedImage::{
       compressed: asset_server.get().load("data/compressed_image.png.gz"),
@@ -130,7 +130,7 @@ fn decompress(
 fn main {
   gzip_asset_plugin(
     @app.App::new(@ecs.World::new()).add_plugins(
-      @mgstudio.DefaultPlugins::default(),
+      @mgstudio.DefaultPlugins::DefaultPlugins(),
     ),
   )
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))

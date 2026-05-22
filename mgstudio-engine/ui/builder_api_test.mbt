@@ -14,13 +14,13 @@
 
 ///|
 test "ui: node builder stores explicit column gap" {
-  let node = Node::default().with_column_gap(Val::Px(15.0F))
+  let node = Node::Node().with_column_gap(Val::Px(15.0F))
   debug_inspect(node.column_gap == Val::Px(15.0F), content="true")
 }
 
 ///|
 test "ui: node default includes Bevy-owned box and radius fields" {
-  let node = Node::default()
+  let node = Node::Node()
   debug_inspect(node.box_sizing == BoxSizing::BorderBox, content="true")
   debug_inspect(node.scrollbar_width == 0.0F, content="true")
   debug_inspect(node.border_radius.top_left == Val::Px(0.0F), content="true")
@@ -35,7 +35,7 @@ test "ui: node default includes Bevy-owned box and radius fields" {
 ///|
 test "ui: node builders update Bevy-owned box and radius fields" {
   let radius = BorderRadius::all(Val::Px(6.0F))
-  let node = Node::default()
+  let node = Node::Node()
     .with_box_sizing(BoxSizing::ContentBox)
     .with_scrollbar_width(12.0F)
     .with_border_radius(radius)

@@ -25,7 +25,7 @@ pub struct SkyboxPrepassNode {
 }
 
 ///|
-pub fn SkyboxPrepassNode::default() -> SkyboxPrepassNode {
+pub fn SkyboxPrepassNode::SkyboxPrepassNode() -> SkyboxPrepassNode {
   SkyboxPrepassNode::{ label: SKYBOX_PREPASS_LABEL }
 }
 

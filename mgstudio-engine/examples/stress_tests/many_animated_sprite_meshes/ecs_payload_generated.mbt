@@ -20,12 +20,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_stress_tests_many_animated_sprite_meshes_AtlasFrame(
     AtlasFrame
   )
-  EcsPayload_examples_stress_tests_many_animated_sprite_meshes_AnimationMaterials(
-    AnimationMaterials
-  )
-  EcsPayload_examples_stress_tests_many_animated_sprite_meshes_PrintTimer(
-    PrintTimer
-  )
 }
 
 ///|
@@ -54,38 +48,6 @@ impl @ecs.EcsPayloadCodec for AtlasFrame with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for AtlasFrame with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_stress_tests_many_animated_sprite_meshes_AtlasFrame(
-      value
-    ) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationMaterials with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_animated_sprite_meshes_AnimationMaterials(
-    self,
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationMaterials with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_animated_sprite_meshes_AnimationMaterials(
-      value
-    ) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PrintTimer with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_animated_sprite_meshes_PrintTimer(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PrintTimer with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_animated_sprite_meshes_PrintTimer(
       value
     ) => Some(value)
     _ => None

@@ -29,13 +29,13 @@ pub fn register_embedded_wgsl_sources() -> Unit
 // Types and methods
 pub struct OcclusionCulling {
 } derive(Eq, @debug.Debug)
-pub fn OcclusionCulling::default() -> Self
+pub fn OcclusionCulling::OcclusionCulling() -> Self
 pub impl @ecs.Component for OcclusionCulling
 pub impl @ecs.EcsPayloadCodec for OcclusionCulling
 
 pub struct OcclusionCullingPlugin {
 }
-pub fn OcclusionCullingPlugin::default() -> Self
+pub fn OcclusionCullingPlugin::OcclusionCullingPlugin() -> Self
 pub impl @app.Plugin for OcclusionCullingPlugin
 
 pub struct OcclusionCullingSubview {

@@ -45,7 +45,9 @@ pub impl IntoPbrMaterialAsset for @sprite.Color with into_pbr_material_asset(
 pub impl IntoPbrMaterialAsset for @asset.Handle[@asset.Image] with into_pbr_material_asset(
   self,
 ) {
-  @material.StandardMaterial::default().with_base_color_texture(Some(self))
+  @material.StandardMaterial::StandardMaterial().with_base_color_texture(
+    Some(self),
+  )
 }
 
 ///|

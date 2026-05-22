@@ -23,7 +23,7 @@ fn pbr_prepass_test_properties(
   let draw_functions = @material.DrawFunctions::new()
   let ids = pbr_material_register_draw_functions(draw_functions)
   pbr_material_apply_draw_functions(
-    @material.MaterialProperties::default(),
+    @material.MaterialProperties::MaterialProperties(),
     ids,
   )
   .with_alpha_mode(alpha_mode)

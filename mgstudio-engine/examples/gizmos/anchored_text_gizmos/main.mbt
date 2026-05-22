@@ -42,7 +42,7 @@ fn anchor_items() -> Array[(String, @math.Vec2, @sprite.Color)] {
 ///|
 fn setup(commands : @app.Commands) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
 }
 
@@ -75,7 +75,7 @@ fn anchors(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_system_param2(anchors)
   .run()

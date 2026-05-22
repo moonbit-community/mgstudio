@@ -80,7 +80,7 @@ pub struct CompressedImageSaveOptions {
   format_hint : String
   quality : Int
 }
-pub fn CompressedImageSaveOptions::default() -> Self
+pub fn CompressedImageSaveOptions::CompressedImageSaveOptions() -> Self
 pub fn CompressedImageSaveOptions::with_format_hint(Self, String) -> Self
 pub fn CompressedImageSaveOptions::with_quality(Self, Int) -> Self
 
@@ -190,7 +190,7 @@ pub(all) enum ImageKind {
 pub struct ImageLoader {
   supported_compressed_formats : Int
 } derive(Eq, @debug.Debug)
-pub fn ImageLoader::default() -> Self
+pub fn ImageLoader::ImageLoader() -> Self
 pub fn ImageLoader::extensions(Self) -> Array[String]
 pub fn ImageLoader::new(Int) -> Self
 pub fn ImageLoader::supported_compressed_formats(Self) -> Int
@@ -203,7 +203,7 @@ pub(all) struct ImageLoaderSettings {
   sampler : ImageSampler
   array_layout : ImageArrayLayout?
 }
-pub fn ImageLoaderSettings::default() -> Self
+pub fn ImageLoaderSettings::ImageLoaderSettings() -> Self
 
 pub(all) enum ImageSampler {
   Default
@@ -234,7 +234,7 @@ pub(all) struct ImageSamplerDescriptor {
   mut anisotropy_clamp : Int
   mut border_color : ImageSamplerBorderColor?
 }
-pub fn ImageSamplerDescriptor::default() -> Self
+pub fn ImageSamplerDescriptor::ImageSamplerDescriptor() -> Self
 pub fn ImageSamplerDescriptor::linear() -> Self
 pub fn ImageSamplerDescriptor::nearest() -> Self
 pub fn ImageSamplerDescriptor::set_address_mode(Self, ImageAddressMode) -> Self

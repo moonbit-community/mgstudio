@@ -51,8 +51,10 @@ fn format_fps(value : Float) -> String {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(
+    @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
   .add_startup_system(setup)
   .add_system_param2(text_update_system)
   .add_system_param2(text_color_system)
@@ -69,17 +71,17 @@ fn setup(world : @ecs.World) -> Unit {
   let opentype_font = asset_server.load_font("fonts/EBGaramond12-Regular.otf")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -98,19 +100,19 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     animated,
     @mgtext.ecs_key_text_font,
-    @mgtext.TextFont::default()
+    @mgtext.TextFont::TextFont()
     .with_font(bold_font)
     .with_font_size(@mgtext.FontSize::Vh(20.0F)),
   )
   try! world.set_by_key(
     animated,
     @mgtext.ecs_key_text_underline,
-    @mgtext.Underline::default(),
+    @mgtext.Underline::Underline(),
   )
   try! world.set_by_key(
     animated,
     @mgtext.ecs_key_text_shadow,
-    @mgtext.TextShadow::default(),
+    @mgtext.TextShadow::TextShadow(),
   )
   try! world.set_by_key(
     animated,
@@ -120,7 +122,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     animated,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_bottom(@ui.Val::Px(5.0F))
     .with_right(@ui.Val::Px(5.0F)),
@@ -141,14 +143,14 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     fps_root,
     @mgtext.ecs_key_text_font,
-    @mgtext.TextFont::default()
+    @mgtext.TextFont::TextFont()
     .with_font(bold_font)
     .with_font_size(@mgtext.FontSize::Px(42.0F)),
   )
   try! world.set_by_key(
     fps_root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(5.0F))
     .with_left(@ui.Val::Px(15.0F)),
@@ -163,12 +165,12 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     fps_span,
     @mgtext.ecs_key_text_span,
-    @mgtext.TextSpan::default(),
+    @mgtext.TextSpan::TextSpan(),
   )
   try! world.set_by_key(
     fps_span,
     @mgtext.ecs_key_text_font,
-    @mgtext.TextFont::default()
+    @mgtext.TextFont::TextFont()
     .with_font(mono_font)
     .with_font_size(@mgtext.FontSize::Px(33.0F)),
   )
@@ -188,7 +190,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     opentype,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(5.0F))
     .with_right(@ui.Val::Px(5.0F))
@@ -202,7 +204,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     opentype,
     @mgtext.ecs_key_text_font,
-    @mgtext.TextFont::default()
+    @mgtext.TextFont::TextFont()
     .with_font(opentype_font)
     .with_font_size(@mgtext.FontSize::Px(32.0F)),
   )
@@ -239,7 +241,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       title_span,
       @mgtext.ecs_key_text_font,
-      @mgtext.TextFont::default()
+      @mgtext.TextFont::TextFont()
       .with_font(opentype_font)
       .with_font_size(@mgtext.FontSize::Px(24.0F)),
     )
@@ -258,7 +260,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       feature_span,
       @mgtext.ecs_key_text_font,
-      @mgtext.TextFont::default()
+      @mgtext.TextFont::TextFont()
       .with_font(opentype_font)
       .with_font_size(@mgtext.FontSize::Px(24.0F))
       .with_font_features(@mgtext.FontFeatures::builder().enable(row.1).build()),
@@ -274,7 +276,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     default_font_text,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_bottom(@ui.Val::Px(5.0F))
     .with_left(@ui.Val::Px(15.0F)),

@@ -39,7 +39,7 @@ pub struct Physics3dHooksConfig {
 }
 
 ///|
-pub fn Physics3dHooksConfig::default() -> Physics3dHooksConfig {
+pub fn Physics3dHooksConfig::Physics3dHooksConfig() -> Physics3dHooksConfig {
   {
     filter_contact_pair: None,
     filter_intersection_pair: None,
@@ -56,7 +56,7 @@ let physics3d_hook_collider_to_entity : Ref[
 pub fn physics3d_hooks_config(world : @ecs.World) -> Physics3dHooksConfig {
   match get_physics3d_hooks_config_resource(world).get() {
     Some(cfg) => cfg
-    None => Physics3dHooksConfig::default()
+    None => Physics3dHooksConfig::Physics3dHooksConfig()
   }
 }
 

@@ -42,7 +42,7 @@ impl @ecs.Component for CameraSensitivity with component() {
 }
 
 ///|
-fn CameraSensitivity::default() -> CameraSensitivity {
+fn CameraSensitivity::CameraSensitivity() -> CameraSensitivity {
   { x: 0.003F, y: 0.002F }
 }
 
@@ -88,13 +88,13 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     player,
     CameraSensitivity::component(),
-    CameraSensitivity::default(),
+    CameraSensitivity::CameraSensitivity(),
   )
   try! world.set_by_key(player, Player::component(), Player::{  })
   try! world.set_by_key(
     player,
     CameraSensitivity::component(),
-    CameraSensitivity::default(),
+    CameraSensitivity::CameraSensitivity(),
   )
   try! world.set_by_key(
     player,
@@ -103,9 +103,9 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   )
 
   let world_camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     Perspective(@camera.PerspectiveProjection3d::{
-      ..@camera.PerspectiveProjection3d::default(),
+      ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
       fov: degrees_to_radians(90.0F),
     }),
     @transform.Transform::identity(),
@@ -120,9 +120,9 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   )
 
   let view_model_camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::default().with_order(1),
+    @sprite.Camera::Camera().with_order(1),
     Perspective(@camera.PerspectiveProjection3d::{
-      ..@camera.PerspectiveProjection3d::default(),
+      ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
       fov: degrees_to_radians(70.0F),
     }),
     @transform.Transform::identity(),
@@ -160,7 +160,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     arm,
     @pbr.NotShadowCaster::component(),
-    @pbr.NotShadowCaster::default(),
+    @pbr.NotShadowCaster::NotShadowCaster(),
   )
   try! world.set_by_key(
     arm,
@@ -222,7 +222,7 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default()
+    @pbr.PointLight::PointLight()
     .with_color(@sprite.Color::srgb(1.0F, 0.76F, 0.84F))
     .with_shadow_maps_enabled(true),
   )
@@ -244,21 +244,21 @@ fn spawn_lights(world : @ecs.World) -> Unit {
 ///|
 fn spawn_text(world : @ecs.World) -> Unit {
   let overlay_camera = @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(2).with_clear_color_none(),
+    @sprite.Camera::Camera().with_order(2).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
   try! world.set_by_key(
     overlay_camera,
     @ui.IsDefaultUiCamera::component(),
-    @ui.IsDefaultUiCamera::default(),
+    @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
   )
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -280,7 +280,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_bottom(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
@@ -295,7 +295,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
   )
   try! world.set_by_key(
     text_entity,
@@ -310,7 +310,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_bottom(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
@@ -325,7 +325,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
   )
   try! world.set_by_key(
     text_entity,
@@ -413,7 +413,7 @@ fn change_fov(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(spawn_view_model))
   .add_systems(@app.Startup, @app.system(spawn_world_model))
   .add_systems(@app.Startup, @app.system(spawn_lights))

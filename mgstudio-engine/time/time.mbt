@@ -92,8 +92,13 @@ pub fn[T] Time::new_with(context : T) -> Time[T] {
 }
 
 ///|
-pub impl[T : Default] Default for Time[T] with default() {
+pub fn[T : Default] Time::Time() -> Time[T] {
   Time::new_with(T::default())
+}
+
+///|
+pub impl[T : Default] Default for Time[T] with default() {
+  Time::Time()
 }
 
 ///|

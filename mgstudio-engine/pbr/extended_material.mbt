@@ -34,7 +34,7 @@ pub struct MaterialExtensionPipeline {
 pub type MaterialExtensionPipeline3d = MaterialExtensionPipeline
 
 ///|
-pub fn MaterialExtensionPipeline::default() -> MaterialExtensionPipeline {
+pub fn MaterialExtensionPipeline::MaterialExtensionPipeline() -> MaterialExtensionPipeline {
   MaterialExtensionPipeline::{ use_prepass: true, use_shadows: true }
 }
 
@@ -104,7 +104,7 @@ pub(open) trait MaterialExtension {
 pub fn[T : MaterialExtension] material_extension_metadata_from_extension(
   extension : T,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::default()
+  @material.ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
   .with_extension_tag(extension.extension_tag())
   .with_vertex_shader_path(extension.vertex_shader())
   .with_fragment_shader_path(extension.fragment_shader())
@@ -129,7 +129,7 @@ pub struct ExtendedMaterial[B, E] {
 }
 
 ///|
-pub fn[B : Default, E : Default] ExtendedMaterial::default() -> ExtendedMaterial[
+pub fn[B : Default, E : Default] ExtendedMaterial::ExtendedMaterial() -> ExtendedMaterial[
   B,
   E,
 ] {
@@ -205,8 +205,8 @@ pub struct ForwardDecalMaterialExtension {
 }
 
 ///|
-pub fn ForwardDecalMaterialExtension::default() -> ForwardDecalMaterialExtension {
-  ForwardDecalMaterialExtension::{ ext: ForwardDecalMaterialExt::default() }
+pub fn ForwardDecalMaterialExtension::ForwardDecalMaterialExtension() -> ForwardDecalMaterialExtension {
+  ForwardDecalMaterialExtension::{ ext: ForwardDecalMaterialExt() }
 }
 
 ///|
@@ -302,7 +302,7 @@ pub impl MaterialExtension for ForwardDecalMaterialExtension with enable_shadows
 
 ///|
 pub fn extended_material_metadata_default() -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::default()
+  @material.ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
 }
 
 ///|
@@ -314,7 +314,7 @@ pub fn extended_material_metadata_new(
 
 ///|
 pub fn forward_decal_material_ext_default() -> ForwardDecalMaterialExt {
-  ForwardDecalMaterialExt::default()
+  ForwardDecalMaterialExt()
 }
 
 ///|

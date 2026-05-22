@@ -35,7 +35,7 @@ pub struct AutoExposurePipeline {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn AutoExposurePipeline::default() -> AutoExposurePipeline {
+pub fn AutoExposurePipeline::AutoExposurePipeline() -> AutoExposurePipeline {
   AutoExposurePipeline::{
     histogram_bin_count: AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT,
     histogram_workgroup_size: AUTO_EXPOSURE_HISTOGRAM_WORKGROUP_SIZE,

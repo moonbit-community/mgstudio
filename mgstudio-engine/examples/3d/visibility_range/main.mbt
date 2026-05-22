@@ -255,7 +255,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(CAMERA_FOCAL_X, CAMERA_FOCAL_Y, CAMERA_FOCAL_Z),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -274,7 +274,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -290,7 +290,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   visibility_range_state.val.help_text = Some(help_text)
   update_help_text()
@@ -376,17 +376,17 @@ fn toggle_prepass(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       camera,
       @pbr.ecs_key_depth_prepass,
-      @pbr.DepthPrepass::default(),
+      @pbr.DepthPrepass::DepthPrepass(),
     )
     try! world.set_by_key(
       camera,
       @pbr.ecs_key_depth_prepass,
-      @pbr.DepthPrepass::default(),
+      @pbr.DepthPrepass::DepthPrepass(),
     )
     try! world.set_by_key(
       camera,
       @pbr.ecs_key_normal_prepass,
-      @pbr.NormalPrepass::default(),
+      @pbr.NormalPrepass::NormalPrepass(),
     )
   } else {
     try! (world.take(camera, @pbr.ecs_key_depth_prepass) |> ignore)
@@ -418,7 +418,7 @@ fn update_visibility(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(move_camera))
   .add_systems(@app.Update, @app.system(update_mode))

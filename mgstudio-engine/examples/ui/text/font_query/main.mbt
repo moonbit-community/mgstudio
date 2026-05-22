@@ -48,7 +48,7 @@ fn spawn_text_line(
     try! world.set_by_key(
       entity,
       @text.ecs_key_text_underline,
-      @text.Underline::default(),
+      @text.Underline::Underline(),
     )
   }
   entity
@@ -57,7 +57,7 @@ fn spawn_text_line(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .run()
 }
@@ -70,17 +70,17 @@ fn setup(world : @ecs.World) -> Unit {
   let family = asset_server.load_font("fonts/MonaSans-VariableFont.ttf")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_justify_content(@ui.JustifyContent::Center)
@@ -90,7 +90,7 @@ fn setup(world : @ecs.World) -> Unit {
   let panel = spawn_node(
     world,
     root,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_align_items(@ui.AlignItems::Center)
     .with_padding(@ui.UiRect::all(@ui.Val::Px(16.0F)))
@@ -101,7 +101,7 @@ fn setup(world : @ecs.World) -> Unit {
       world,
       panel,
       "Font Weights, Widths & Styles",
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(family)
       .with_font_size(@text.FontSize::Px(32.0F)),
       underline=true,
@@ -111,7 +111,7 @@ fn setup(world : @ecs.World) -> Unit {
   let columns = spawn_node(
     world,
     panel,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_flex_direction(@ui.FlexDirection::Row)
     .with_column_gap(@ui.Val::Px(32.0F)),
   )
@@ -119,7 +119,7 @@ fn setup(world : @ecs.World) -> Unit {
   let weights_column = spawn_node(
     world,
     columns,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F)))
     .with_row_gap(@ui.Val::Px(8.0F)),
@@ -141,7 +141,7 @@ fn setup(world : @ecs.World) -> Unit {
         world,
         weights_column,
         row.0,
-        @text.TextFont::default().with_font(family).with_weight(row.1),
+        @text.TextFont::TextFont().with_font(family).with_weight(row.1),
       ),
     )
   }
@@ -149,7 +149,7 @@ fn setup(world : @ecs.World) -> Unit {
   let widths_column = spawn_node(
     world,
     columns,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F)))
     .with_row_gap(@ui.Val::Px(8.0F)),
@@ -171,7 +171,7 @@ fn setup(world : @ecs.World) -> Unit {
         world,
         widths_column,
         row.0,
-        @text.TextFont::default().with_font(family).with_width(row.1),
+        @text.TextFont::TextFont().with_font(family).with_width(row.1),
       ),
     )
   }
@@ -179,7 +179,7 @@ fn setup(world : @ecs.World) -> Unit {
   let styles_column = spawn_node(
     world,
     columns,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F)))
     .with_row_gap(@ui.Val::Px(8.0F)),
@@ -195,7 +195,7 @@ fn setup(world : @ecs.World) -> Unit {
         world,
         styles_column,
         row.0,
-        @text.TextFont::default().with_font(family).with_style(row.1),
+        @text.TextFont::TextFont().with_font(family).with_style(row.1),
       ),
     )
   }

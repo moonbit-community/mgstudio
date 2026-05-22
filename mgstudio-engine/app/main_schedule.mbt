@@ -48,7 +48,7 @@ pub fn MainScheduleOrder::new(
 }
 
 ///|
-pub fn MainScheduleOrder::default() -> MainScheduleOrder {
+pub fn MainScheduleOrder::MainScheduleOrder() -> MainScheduleOrder {
   MainScheduleOrder::new(
     [First, PreUpdate, RunFixedMainLoop, Update, SpawnScene, PostUpdate, Last],
     [PreStartup, Startup, PostStartup],
@@ -73,7 +73,7 @@ pub fn FixedMainScheduleOrder::new(
 }
 
 ///|
-pub fn FixedMainScheduleOrder::default() -> FixedMainScheduleOrder {
+pub fn FixedMainScheduleOrder::FixedMainScheduleOrder() -> FixedMainScheduleOrder {
   FixedMainScheduleOrder::new([
     FixedFirst,
     FixedPreUpdate,
@@ -217,7 +217,7 @@ pub fn FixedMainScheduleOrder::insert_before(
 pub fn world_main_schedule_order(world : @ecs.World) -> MainScheduleOrder {
   match world_schedule_resource(world, main_schedule_order_resource_key) {
     Some(order) => order
-    None => MainScheduleOrder::default()
+    None => MainScheduleOrder::MainScheduleOrder()
   }
 }
 
@@ -227,7 +227,7 @@ pub fn world_fixed_main_schedule_order(
 ) -> FixedMainScheduleOrder {
   match world_schedule_resource(world, fixed_main_schedule_order_resource_key) {
     Some(order) => order
-    None => FixedMainScheduleOrder::default()
+    None => FixedMainScheduleOrder::FixedMainScheduleOrder()
   }
 }
 
@@ -291,11 +291,11 @@ fn main_schedule_insert_startup_before_unique(
 fn reset_main_schedule_resources(world : @ecs.World) -> Unit {
   world.insert_resource(
     main_schedule_order_resource_key,
-    MainScheduleOrder::default(),
+    MainScheduleOrder::MainScheduleOrder(),
   )
   world.insert_resource(
     fixed_main_schedule_order_resource_key,
-    FixedMainScheduleOrder::default(),
+    FixedMainScheduleOrder::FixedMainScheduleOrder(),
   )
   main_schedule_write_runtime_state(world, MainScheduleRuntimeState::{
     startup_ran: false,

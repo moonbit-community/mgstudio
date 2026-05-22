@@ -53,11 +53,11 @@ fn setup(
   config_store : @app.ResMut[@gizmos.GizmoConfigStore],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
   config_store.modify(fn(store) {
     let (config, _group) = store.config_mut(
-      @gizmos.DefaultGizmoConfigGroup::default(),
+      @gizmos.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
     )
     config.val = { ..config.val, line: { ..config.val.line, width: 1.0F } }
   })
@@ -124,9 +124,11 @@ fn draw_all_glyphs(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
-  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
+  .add_plugins(
+    @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_system_param2(draw_labels)
   .add_system_param(draw_all_glyphs)

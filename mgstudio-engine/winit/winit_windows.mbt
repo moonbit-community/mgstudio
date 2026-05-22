@@ -127,7 +127,7 @@ pub fn select_monitor(
 }
 
 ///|
-pub impl Default for WinitWindows with default() {
+pub fn WinitWindows::WinitWindows() -> WinitWindows {
   WinitWindows::new()
 }
 
@@ -145,7 +145,7 @@ pub impl @app.Resource for WinitWindows with resource() {
 pub fn winit_sync_windows_resource_system(world : @ecs.World) -> Unit {
   let windows = match world.get_resource(WinitWindows::resource()) {
     Some(windows) => windows
-    None => WinitWindows::default()
+    None => WinitWindows::WinitWindows()
   }
   windows.sync_windows(world)
   world.insert_resource(WinitWindows::resource(), windows)

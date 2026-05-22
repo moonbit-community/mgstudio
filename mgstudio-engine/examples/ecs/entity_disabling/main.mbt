@@ -44,7 +44,7 @@ const X_EXTENT : Float = 900.0F
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(Startup, @app.system(@app.system_param3(setup_scene)))
   .add_systems(Startup, @app.system(@app.system_param(display_instructions)))
   .add_systems(
@@ -65,7 +65,7 @@ fn setup_scene(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let mesh_assets = meshes.peek()
   let material_assets = materials.peek()
@@ -120,7 +120,7 @@ fn setup_scene(
         EntityNameText::{  },
         @text.Text::new("Named entities found:\n"),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           top: @ui.Val::Px(12.0F),
           right: @ui.Val::Px(12.0F),
@@ -139,7 +139,7 @@ fn display_instructions(commands : @app.Commands) -> Unit {
           "Click an entity to disable it.\n\nPress Space to re-enable all disabled entities.",
         ),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           top: @ui.Val::Px(12.0F),
           left: @ui.Val::Px(12.0F),

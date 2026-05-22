@@ -13,33 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_ecs_system_piping_Message(Message)
-  EcsPayload_examples_ecs_system_piping_OptionalWarning(OptionalWarning)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Message with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_system_piping_Message(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Message with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_system_piping_Message(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for OptionalWarning with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_system_piping_OptionalWarning(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for OptionalWarning with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_system_piping_OptionalWarning(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

@@ -16,7 +16,6 @@
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_3d_ssao_SphereMarker(SphereMarker)
   EcsPayload_examples_3d_ssao_SsaoCamera(SsaoCamera)
-  EcsPayload_examples_3d_ssao_SsaoInstructions(SsaoInstructions)
 }
 
 ///|
@@ -41,19 +40,6 @@ impl @ecs.EcsPayloadCodec for SsaoCamera with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for SsaoCamera with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_3d_ssao_SsaoCamera(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SsaoInstructions with to_ecs_payload(self) {
-  EcsPayload_examples_3d_ssao_SsaoInstructions(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SsaoInstructions with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_3d_ssao_SsaoInstructions(value) => Some(value)
     _ => None
   }
 }

@@ -113,7 +113,7 @@ pub impl @app.Resource for OverrideStatus with resource() {
 
 ///|
 fn override_button_node(left : Float, top : Float) -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_position_type(@ui.PositionType::Absolute)
   .with_left(@ui.Val::Px(left))
   .with_top(@ui.Val::Px(top))
@@ -129,12 +129,12 @@ fn override_font(
   font : @asset.Handle[@asset.Font],
   size : Float,
 ) -> @text.TextFont {
-  @text.TextFont::default().with_font(font).with_font_size(size)
+  @text.TextFont::TextFont().with_font(font).with_font_size(size)
 }
 
 ///|
 fn override_status_node(bottom : Float) -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_position_type(@ui.PositionType::Absolute)
   .with_left(@ui.Val::Px(24.0F))
   .with_bottom(@ui.Val::Px(bottom))
@@ -154,8 +154,8 @@ fn spawn_override_button(
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Button::default(),
-      @ui.AutoDirectionalNavigation::default(),
+      @ui.Button::Button(),
+      @ui.AutoDirectionalNavigation::AutoDirectionalNavigation(),
       OverrideButton::{ label, },
       OverrideState::{ active: false },
       override_button_node(left, top),
@@ -205,14 +205,14 @@ fn setup_override_ui(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
     ),
@@ -227,7 +227,7 @@ fn setup_override_ui(
         ),
         override_font(font, 18.0F),
         @text.TextColor::new(@sprite.Color::white()),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_left(@ui.Val::Px(24.0F))
         .with_top(@ui.Val::Px(24.0F))
@@ -527,9 +527,11 @@ fn update_override_button_visuals(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@input_focus.InputDispatchPlugin::default())
-  .add_plugins(@input_focus.DirectionalNavigationPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@input_focus.InputDispatchPlugin::InputDispatchPlugin())
+  .add_plugins(
+    @input_focus.DirectionalNavigationPlugin::DirectionalNavigationPlugin(),
+  )
   .insert_resource(OverrideStatus::{ label: "Last Input: None" })
   .insert_resource(
     @input_focus.AutoNavigationConfig::new(0.1F, Some(200.0F), true),

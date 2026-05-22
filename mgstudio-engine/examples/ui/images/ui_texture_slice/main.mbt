@@ -23,13 +23,13 @@ fn setup(
     "textures/fantasy_ui_borders/panel-border-010.png",
   )
   let slicer = @ui.TextureSlicer::new(@ui.BorderRect::square(22.0F))
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_align_items(@ui.AlignItems::Center)
@@ -46,9 +46,9 @@ fn setup(
     let button = commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Button::default(),
+        @ui.Button::Button(),
         @ui.ImageNode::new(image).with_mode(@ui.NodeImageMode::Sliced(slicer)),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_width(@ui.Val::Px(size.0))
         .with_height(@ui.Val::Px(size.1))
         .with_justify_content(@ui.JustifyContent::Center)
@@ -61,7 +61,7 @@ fn setup(
         (
           @hierarchy.Parent::new(button),
           @text.Text::new("Button"),
-          @text.TextFont::default()
+          @text.TextFont::TextFont()
           .with_font(font)
           .with_font_size(@text.FontSize::Px(33.0F)),
           @text.TextColor::new(@sprite.Color::srgb(0.9F, 0.9F, 0.9F)),
@@ -115,7 +115,7 @@ fn button_system(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(button_system)))
   .run()

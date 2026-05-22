@@ -17,8 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_ecs_ecs_guide_Player(Player)
   EcsPayload_examples_ecs_ecs_guide_Score(Score)
   EcsPayload_examples_ecs_ecs_guide_PlayerStreak(PlayerStreak)
-  EcsPayload_examples_ecs_ecs_guide_GameState(GameState)
-  EcsPayload_examples_ecs_ecs_guide_GameRules(GameRules)
 }
 
 ///|
@@ -56,32 +54,6 @@ impl @ecs.EcsPayloadCodec for PlayerStreak with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for PlayerStreak with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ecs_ecs_guide_PlayerStreak(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GameState with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_ecs_guide_GameState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GameState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_ecs_guide_GameState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GameRules with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_ecs_guide_GameRules(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GameRules with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_ecs_guide_GameRules(value) => Some(value)
     _ => None
   }
 }

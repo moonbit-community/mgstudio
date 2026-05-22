@@ -97,7 +97,7 @@ fn make_fog() -> @pbr.DistanceFog {
   } else {
     0.0F
   }
-  @pbr.DistanceFog::default()
+  @pbr.DistanceFog::DistanceFog()
   .with_color(
     @sprite.Color::srgba(FOG_BASE_R, FOG_BASE_G, FOG_BASE_B, fog_alpha),
   )
@@ -139,7 +139,7 @@ fn instruction_text() -> String {
 ///|
 fn setup_camera_fog(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(-1.0F, 0.1F, 1.0F).looking_at(
         fog_center(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -154,7 +154,7 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
 ///|
 fn setup_terrain_scene(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
+  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
     .with_first_cascade_far_bound(0.3F)
     .with_maximum_distance(3.0F)
     .build()
@@ -207,7 +207,7 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     sky,
     @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::default(),
+    @pbr.NotShadowCaster::NotShadowCaster(),
   )
 }
 
@@ -217,7 +217,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(instruction_text()),
-      @text.TextFont::default().with_font(font).with_font_size(18.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -340.0F),
         0.0F,
@@ -231,7 +231,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   atmospheric_fog_state.val.help_text = Some(handle)
 }
@@ -274,7 +274,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(toggle_system))
   .run()

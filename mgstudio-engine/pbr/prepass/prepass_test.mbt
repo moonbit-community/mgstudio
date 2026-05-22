@@ -17,7 +17,7 @@ test "pbr prepass: any_enabled reflects individual flags" {
   let bindings = render3d_prepass_bindings(true, false, false, false)
   inspect(bindings.any_enabled(), content="true")
   inspect(
-    render3d_prepass_any_enabled(PrepassBindings3d::default()),
+    render3d_prepass_any_enabled(PrepassBindings3d::PrepassBindings3d()),
     content="false",
   )
 }
@@ -42,13 +42,13 @@ test "pbr prepass: plugin initializes marker and core prepass view state" {
 ///|
 test "pbr prepass: update pipeline state becomes ready when prepass components exist" {
   let world = @ecs.World::new()
-  world.insert_resource(ecs_key_prepass_view_state, PrepassViewState::default())
+  world.insert_resource(ecs_key_prepass_view_state, PrepassViewState())
   world.insert_resource(
     ecs_key_prepass_pipeline_state,
-    PrepassPipelineState::default(),
+    PrepassPipelineState::PrepassPipelineState(),
   )
   let entity = world.spawn()
-  try! (world.set_by_key(entity, ecs_key_depth_prepass, DepthPrepass::default())
+  try! (world.set_by_key(entity, ecs_key_depth_prepass, DepthPrepass())
   |> ignore)
 
   prepass_update_pipeline_state(world)

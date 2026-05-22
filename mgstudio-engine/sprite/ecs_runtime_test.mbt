@@ -43,11 +43,11 @@ fn dummy_f32_bits(x : Float) -> UInt {
 
 ///|
 test "sprite: default trait mirrors bevy component defaults" {
-  let sprite : Sprite = Default::default()
-  let image_mode : SpriteImageMode = Default::default()
-  let scaling_mode : SpriteScalingMode = Default::default()
-  let anchor : Anchor = Default::default()
-  let clear_color : ClearColor = Default::default()
+  let sprite = @sprite.Sprite::Sprite()
+  let image_mode = SpriteImageMode::default()
+  let scaling_mode = SpriteScalingMode::default()
+  let anchor = @sprite.Anchor::Anchor()
+  let clear_color = @sprite.ClearColor::ClearColor()
   debug_inspect(sprite.image.id(), content="0")
   debug_inspect(image_mode is SpriteImageMode::Auto, content="true")
   debug_inspect(scaling_mode is SpriteScalingMode::FillCenter, content="true")
@@ -273,11 +273,11 @@ test "render2d: Commands can spawn SpriteBundle" {
 test "render2d: Camera2dBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let bundle = Camera2dBundle::new(
-      Camera::default(),
+      Camera::Camera(),
       @transform.Transform::identity(),
     )
-    .with_bloom(Some(Bloom::default()))
-    .with_color_grading(Some(ColorGrading::default()))
+    .with_bloom(Some(@post_process.Bloom::Bloom()))
+    .with_color_grading(Some(ColorGrading()))
   let entity = bundle.spawn(world)
 
   debug_inspect(world.is_alive(entity), content="true")
@@ -337,9 +337,9 @@ test "render2d: Commands::spawn accepts Camera2dBundle" {
   ) {
     spawned.val = Some(
       commands.spawn(
-        Camera2dBundle::new(Camera::default(), @transform.Transform::identity())
-        .with_bloom(Some(Bloom::default()))
-        .with_color_grading(Some(ColorGrading::default())),
+        Camera2dBundle::new(Camera::Camera(), @transform.Transform::identity())
+        .with_bloom(Some(@post_process.Bloom::Bloom()))
+        .with_color_grading(Some(ColorGrading())),
       ),
     )
   })
@@ -370,7 +370,7 @@ test "render2d: Commands::spawn accepts Camera2dBundle" {
 test "render2d: tonemapping and deband components share post_process ownership" {
   let world = @ecs.World::new()
   let entity = Camera2dBundle::new(
-      Camera::default(),
+      Camera::Camera(),
       @transform.Transform::identity(),
     )
     .with_tonemapping(Some(AgX))
@@ -395,10 +395,10 @@ test "render2d: tonemapping and deband components share post_process ownership" 
 test "render2d: bloom component shares post_process ownership" {
   let world = @ecs.World::new()
   let entity = Camera2dBundle::new(
-      Camera::default(),
+      Camera::Camera(),
       @transform.Transform::identity(),
     )
-    .with_bloom(Some(Bloom::default().with_intensity(0.35F)))
+    .with_bloom(Some(@post_process.Bloom::Bloom().with_intensity(0.35F)))
     .spawn(world)
 
   let bloom_ok = match
@@ -415,7 +415,7 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
   try! register_render2d_required_components(world)
   let entity = world.spawn_empty()
 
-  try! (world.set_by_key(entity, ecs_key_camera2d, Camera2d::default())
+  try! (world.set_by_key(entity, ecs_key_camera2d, @sprite.Camera2d::Camera2d())
   |> ignore)
   try! (world.set_by_key(entity, ecs_key_bloom, Bloom::natural()) |> ignore)
 
@@ -470,7 +470,7 @@ test "render2d: Camera2dBundle::new_with_target stores window render target" {
   let world = @ecs.World::new()
   let target_window = @core.Entity::new(7, 2)
   let bundle = Camera2dBundle::new_with_target(
-    Camera::default(),
+    Camera::Camera(),
     @transform.Transform::identity(),
     RenderTarget::Window(@window.WindowRef::Entity(target_window)),
   )
@@ -495,10 +495,10 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
   let expected_transform = @transform.Transform::identity()
 
   @app.App::new(world)
-  .add_plugins(@asset.AssetPlugin::default())
-  .add_plugins(@mesh.MeshPlugin::default())
-  .add_plugins(@render.RenderPlugin::default())
-  .add_plugins(Render2dPlugin::default())
+  .add_plugins(@asset.AssetPlugin::AssetPlugin())
+  .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+  .add_plugins(@render.RenderPlugin::RenderPlugin())
+  .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
   .add_system(fn(world : @ecs.World) {
     let mesh = test_rectangle_mesh(8.0F, 6.0F)
     let material = MeshMaterial2d::new(
@@ -555,10 +555,10 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
 ///|
 test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache component" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(Render2dPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
     .add_systems(
       @app.Startup,
       @app.system(
@@ -567,7 +567,7 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
           meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
           materials : @app.ResMut[@asset.Assets[ColorMaterialAsset]],
         ) {
-          ignore(commands.spawn_component(Camera2d::default()))
+          ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
           meshes.set_changed()
           let mesh_handle = meshes
             .peek()
@@ -608,9 +608,9 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
 ///|
 test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(SpritePlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@sprite.SpritePlugin::SpritePlugin())
   let world = app.world()
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   let mesh_assets = world.get_resource_mut(mesh_assets_key).unwrap()
@@ -646,9 +646,9 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
 ///|
 test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(SpritePlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@sprite.SpritePlugin::SpritePlugin())
   let world = app.world()
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   let mesh_assets = world.get_resource_mut(mesh_assets_key).unwrap()
@@ -665,7 +665,7 @@ test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_no_auto_aabb,
-    @visibility.NoAutoAabb::default(),
+    @visibility.NoAutoAabb::NoAutoAabb(),
   )
 
   app = app.update()
@@ -679,9 +679,9 @@ test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
 ///|
 test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Sprite" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(SpritePlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@sprite.SpritePlugin::SpritePlugin())
   let world = app.world()
   let image = @asset.asset_create_dynamic_texture(
     @math.UVec2::new(40, 20),
@@ -712,9 +712,9 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Sprite" {
 ///|
 test "sprite: Sprite and SpriteMesh install Bevy required components" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(SpritePlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@sprite.SpritePlugin::SpritePlugin())
   let world = app.world()
   let sprite_entity = world.spawn()
   let sprite_mesh_entity = world.spawn()
@@ -753,9 +753,9 @@ test "sprite: Sprite and SpriteMesh install Bevy required components" {
 ///|
 test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for SpriteMesh" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(SpritePlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@sprite.SpritePlugin::SpritePlugin())
   let world = app.world()
   let entity = world.spawn()
   try! world.set_by_key(
@@ -783,10 +783,10 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for SpriteMesh" {
 ///|
 test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(Render2dPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
   let world = app.world()
   let entity = world.spawn()
   try! world.set_by_key(
@@ -818,7 +818,7 @@ test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
 ///|
 test "sprite: compute_pixel_space_point follows Bevy texture-coordinate convention" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @asset.AssetPlugin::default(),
+    @asset.AssetPlugin::AssetPlugin(),
   )
   let world = app.world()
   let image = @asset.asset_create_dynamic_texture(
@@ -868,10 +868,10 @@ test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
   let explicit_mesh_material_handle : Ref[Int?] = Ref(None)
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(@asset.AssetPlugin::default())
-  .add_plugins(@mesh.MeshPlugin::default())
-  .add_plugins(@render.RenderPlugin::default())
-  .add_plugins(Render2dPlugin::default())
+  .add_plugins(@asset.AssetPlugin::AssetPlugin())
+  .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+  .add_plugins(@render.RenderPlugin::RenderPlugin())
+  .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
   .add_system(fn(_world : @ecs.World) {
     let material_handle = test_color_material_handle(Color::white())
     let mesh_material = MeshMaterial2d::new(material_handle)
@@ -909,8 +909,10 @@ test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
 ///|
 test "render2d: ColorMaterialPlugin initializes the Bevy default material handle" {
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(ColorMaterialPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@sprite.ColorMaterialPlugin::ColorMaterialPlugin())
   let key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
   let assets = app.world().get_resource(key).unwrap()
   let handle : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(0)
@@ -927,12 +929,14 @@ test "render2d: ColorMaterialPlugin initializes the Bevy default material handle
 
 ///|
 test "render2d: Material2dPlugin initializes generic material asset resources" {
-  let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
+  let plugin : Material2dPlugin[DummyMaterialAsset] = @sprite.Material2dPlugin::Material2dPlugin()
     .with_asset_init(fn() { dummy_material_asset() })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")
   let app = @app.App::new(@ecs.World::new())
-    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
@@ -986,13 +990,14 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   let handle_ref : Ref[@asset.Handle[DummyMaterialAsset]?] = Ref(None)
   let expected = dummy_material_asset(color=Color::new(0.3F, 0.6F, 0.9F, 1.0F))
 
-  let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
+  let plugin : Material2dPlugin[DummyMaterialAsset] = @sprite.Material2dPlugin::Material2dPlugin()
     .with_asset_init(fn() { dummy_material_asset() })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@render.RenderPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
   app = app.add_system(fn(world : @ecs.World) {
     let handle : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(21)
@@ -1050,10 +1055,10 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
   let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(Render2dPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
   app = app.add_system(fn(world : @ecs.World) {
     let material_handle = test_image_material_handle(7)
     handle_ref.val = Some(material_handle)
@@ -1087,10 +1092,10 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref(None)
 
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@asset.AssetPlugin::default())
-    .add_plugins(@mesh.MeshPlugin::default())
-    .add_plugins(@render.RenderPlugin::default())
-    .add_plugins(Render2dPlugin::default())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
   app = app.add_system(fn(world : @ecs.World) {
     let material_handle = test_image_material_handle(11)
     handle_ref.val = Some(material_handle)
@@ -1163,10 +1168,10 @@ test "render2d: ColorMaterialAsset::from_color matches Bevy alpha inference" {
   let blend_alpha_mode : Ref[AlphaMode2d?] = Ref(None)
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(@asset.AssetPlugin::default())
-  .add_plugins(@mesh.MeshPlugin::default())
-  .add_plugins(@render.RenderPlugin::default())
-  .add_plugins(Render2dPlugin::default())
+  .add_plugins(@asset.AssetPlugin::AssetPlugin())
+  .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+  .add_plugins(@render.RenderPlugin::RenderPlugin())
+  .add_plugins(@sprite.Render2dPlugin::Render2dPlugin())
   .add_system(fn(_world : @ecs.World) {
     opaque_alpha_mode.val = Some(
       ColorMaterialAsset::from_color(Color::white()).alpha_mode(),

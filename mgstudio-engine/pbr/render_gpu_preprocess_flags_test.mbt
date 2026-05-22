@@ -34,13 +34,13 @@ test "render3d gpu preprocess: frustum culling applies only when all Bevy opt-ou
 
 ///|
 test "render3d gpu preprocess: transmissive phase classification follows bevy render phase type" {
-  let opaque_transmissive = StandardMaterial::default().with_specular_transmission(
+  let opaque_transmissive = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
     0.6F,
   )
-  let masked_transmissive = StandardMaterial::default()
+  let masked_transmissive = @material.StandardMaterial::StandardMaterial()
     .with_specular_transmission(0.6F)
     .with_alpha_mode(@material.AlphaMode3d::Mask(0.5F))
-  let transparent_transmissive = StandardMaterial::default()
+  let transparent_transmissive = @material.StandardMaterial::StandardMaterial()
     .with_specular_transmission(0.6F)
     .with_alpha_mode(@material.AlphaMode3d::Blend)
   debug_inspect(

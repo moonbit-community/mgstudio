@@ -14,66 +14,10 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_3d_tonemapping_CameraTransform(CameraTransform)
-  EcsPayload_examples_3d_tonemapping_CurrentScene(CurrentScene)
-  EcsPayload_examples_3d_tonemapping_SelectedParameter(SelectedParameter)
-  EcsPayload_examples_3d_tonemapping_PerMethodSettings(PerMethodSettings)
   EcsPayload_examples_3d_tonemapping_SceneNumber(SceneNumber)
   EcsPayload_examples_3d_tonemapping_HDRViewer(HDRViewer)
   EcsPayload_examples_3d_tonemapping_TonemappingUiRoot(TonemappingUiRoot)
   EcsPayload_examples_3d_tonemapping_TonemappingUiText(TonemappingUiText)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CameraTransform with to_ecs_payload(self) {
-  EcsPayload_examples_3d_tonemapping_CameraTransform(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CameraTransform with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_3d_tonemapping_CameraTransform(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CurrentScene with to_ecs_payload(self) {
-  EcsPayload_examples_3d_tonemapping_CurrentScene(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for CurrentScene with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_3d_tonemapping_CurrentScene(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SelectedParameter with to_ecs_payload(self) {
-  EcsPayload_examples_3d_tonemapping_SelectedParameter(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for SelectedParameter with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_3d_tonemapping_SelectedParameter(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PerMethodSettings with to_ecs_payload(self) {
-  EcsPayload_examples_3d_tonemapping_PerMethodSettings(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PerMethodSettings with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_3d_tonemapping_PerMethodSettings(value) => Some(value)
-    _ => None
-  }
 }
 
 ///|

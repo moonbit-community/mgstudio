@@ -76,13 +76,13 @@ fn setup(
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
     ),
@@ -90,7 +90,7 @@ fn setup(
   let atlas_panel = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(0.0F))
       .with_top(@ui.Val::Px(0.0F))
@@ -100,7 +100,7 @@ fn setup(
   let text_panel = commands.spawn(
     (
       @hierarchy.Parent::new(root),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(0.0F))
       .with_bottom(@ui.Val::Px(0.0F)),
@@ -111,7 +111,7 @@ fn setup(
       (
         @hierarchy.Parent::new(text_panel),
         @text.Text::new("a"),
-        @text.TextFont::default()
+        @text.TextFont::TextFont()
         .with_font(font)
         .with_font_size(@text.FontSize::Px(50.0F)),
         @text.TextColor::new(yellow()),
@@ -183,7 +183,7 @@ fn atlas_render_system(
       (
         @hierarchy.Parent::new(panel),
         @ui.ImageNode::new(atlas.texture),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(0.0F))
         .with_left(@ui.Val::Px(x_offset)),
@@ -195,7 +195,7 @@ fn atlas_render_system(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(text_update_system)))
   .add_systems(

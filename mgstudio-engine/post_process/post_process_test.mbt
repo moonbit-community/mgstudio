@@ -14,7 +14,7 @@
 
 ///|
 test "post_process boundary re-exports bloom and tonemapping APIs" {
-  let bloom = @post_process.Bloom::default()
+  let bloom = @post_process.Bloom::Bloom()
   debug_inspect(bloom.max_mip_dimension, content="512")
   let tonemapping = @post_process.Tonemapping::default()
   debug_inspect(
@@ -31,16 +31,16 @@ test "post_process boundary re-exports bloom and tonemapping APIs" {
 
 ///|
 test "post_process boundary re-exports fxaa and ssao APIs" {
-  let fxaa = @post_process.Fxaa::default()
+  let fxaa = @post_process.Fxaa::Fxaa()
   debug_inspect(fxaa.enabled, content="true")
-  let ssao = @post_process.ScreenSpaceAmbientOcclusion::default()
+  let ssao = @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion()
   debug_inspect(ssao.constant_object_thickness.to_double(), content="0.25")
 }
 
 ///|
 test "post_process mip bias mirrors Bevy default" {
   debug_inspect(
-    @post_process.MipBias::default().value().to_double(),
+    @post_process.MipBias::MipBias().value().to_double(),
     content="-1",
   )
   debug_inspect(

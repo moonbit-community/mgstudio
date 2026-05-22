@@ -29,8 +29,8 @@ pub(all) struct PlaneMeshBuilder {
 }
 
 ///|
-pub fn PlaneMeshBuilder::default() -> PlaneMeshBuilder {
-  { plane: @math.Plane3d::default(), subdivisions: 0 }
+pub fn PlaneMeshBuilder::PlaneMeshBuilder() -> PlaneMeshBuilder {
+  { plane: @math.Plane3d::Plane3d(), subdivisions: 0 }
 }
 
 ///|

@@ -20,15 +20,15 @@
 pub struct CameraControllerPlugins {}
 
 ///|
-pub fn CameraControllerPlugins::default() -> CameraControllerPlugins {
+pub fn CameraControllerPlugins::CameraControllerPlugins() -> CameraControllerPlugins {
   CameraControllerPlugins::{  }
 }
 
 ///|
 pub fn CameraControllerPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
   @app.PluginGroupBuilder::start_named("CameraControllerPlugins")
-  .add(FreeCameraPlugin::default())
-  .add(PanCameraPlugin::default())
+  .add(FreeCameraPlugin::FreeCameraPlugin())
+  .add(PanCameraPlugin::PanCameraPlugin())
 }
 
 ///|
@@ -43,5 +43,5 @@ pub impl @app.Plugin for CameraControllerPlugins with build(_self, app) {
 
 ///|
 pub fn camera_controller_plugins() -> CameraControllerPlugins {
-  CameraControllerPlugins::default()
+  CameraControllerPlugins::CameraControllerPlugins()
 }

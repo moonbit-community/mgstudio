@@ -16,7 +16,6 @@
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_3d_bloom_3d_Bouncing(Bouncing)
   EcsPayload_examples_3d_bloom_3d_BloomCamera(BloomCamera)
-  EcsPayload_examples_3d_bloom_3d_BloomInstructions(BloomInstructions)
 }
 
 ///|
@@ -41,19 +40,6 @@ impl @ecs.EcsPayloadCodec for BloomCamera with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for BloomCamera with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_3d_bloom_3d_BloomCamera(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for BloomInstructions with to_ecs_payload(self) {
-  EcsPayload_examples_3d_bloom_3d_BloomInstructions(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for BloomInstructions with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_3d_bloom_3d_BloomInstructions(value) => Some(value)
     _ => None
   }
 }

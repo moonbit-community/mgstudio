@@ -22,7 +22,10 @@ const EXTRACT_RESOURCE_PLUGIN_NAME : String = "mgstudio.render.ExtractResourcePl
 pub struct ExtractResourcePlugin[_, _] {}
 
 ///|
-pub fn[R, F] ExtractResourcePlugin::default() -> ExtractResourcePlugin[R, F] {
+pub fn[R, F] ExtractResourcePlugin::ExtractResourcePlugin() -> ExtractResourcePlugin[
+  R,
+  F,
+] {
   ExtractResourcePlugin::{  }
 }
 
@@ -48,7 +51,9 @@ pub struct ExtractedResourceState[R] {
 }
 
 ///|
-pub fn[R] ExtractedResourceState::default() -> ExtractedResourceState[R] {
+pub fn[R] ExtractedResourceState::ExtractedResourceState() -> ExtractedResourceState[
+  R,
+] {
   ExtractedResourceState::{ has_value: false, value: None }
 }
 

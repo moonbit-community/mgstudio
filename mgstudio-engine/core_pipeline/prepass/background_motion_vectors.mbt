@@ -20,7 +20,7 @@
 pub struct NoBackgroundMotionVectors {} derive(Eq, Debug)
 
 ///|
-pub fn NoBackgroundMotionVectors::default() -> NoBackgroundMotionVectors {
+pub fn NoBackgroundMotionVectors::NoBackgroundMotionVectors() -> NoBackgroundMotionVectors {
   NoBackgroundMotionVectors::{  }
 }
 

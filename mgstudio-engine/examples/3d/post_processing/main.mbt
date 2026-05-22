@@ -56,8 +56,8 @@ priv struct PostProcessingState {
 
 ///|
 fn default_settings() -> AppSettings {
-  let chromatic_aberration = @post_process.ChromaticAberration::default()
-  let vignette = @post_process.Vignette::default()
+  let chromatic_aberration = @post_process.ChromaticAberration::ChromaticAberration()
+  let vignette = @post_process.Vignette::Vignette()
   {
     selected: 0,
     chromatic_aberration_intensity: chromatic_aberration.intensity,
@@ -109,11 +109,11 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
   let intensity = settings.chromatic_aberration_intensity
   let max_samples_f = ((intensity - 0.02F) / (0.20F - 0.02F) * 56.0F + 8.0F).round()
   let max_samples = clampf(max_samples_f, 8.0F, 64.0F).to_int()
-  let chromatic_aberration = @post_process.ChromaticAberration::default()
+  let chromatic_aberration = @post_process.ChromaticAberration::ChromaticAberration()
     .with_intensity(intensity)
     .with_max_samples(max_samples)
 
-  let vignette = @post_process.Vignette::default()
+  let vignette = @post_process.Vignette::Vignette()
     .with_intensity(settings.vignette_intensity)
     .with_radius(settings.vignette_radius)
     .with_smoothness(settings.vignette_smoothness)
@@ -175,16 +175,16 @@ fn update_help_text() -> Unit {
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
     .with_chromatic_aberration(
-      Some(@post_process.ChromaticAberration::default()),
+      Some(@post_process.ChromaticAberration::ChromaticAberration()),
     )
-    .with_vignette(Some(@post_process.Vignette::default()))
+    .with_vignette(Some(@post_process.Vignette::Vignette()))
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
@@ -200,7 +200,7 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     )
     .spawn(world)
   post_processing_state.val.camera = Some(camera)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_environment_map_light,
@@ -270,7 +270,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -286,7 +286,7 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   post_processing_state.val.help_text = Some(handle)
 }
@@ -384,7 +384,7 @@ fn handle_keyboard_input(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(handle_keyboard_input))
   .run()

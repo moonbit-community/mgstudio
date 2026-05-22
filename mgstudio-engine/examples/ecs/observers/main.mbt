@@ -48,7 +48,7 @@ pub impl @app.Resource for MineWorldState with resource() {
 }
 
 ///|
-pub impl Default for MineWorldState with default() {
+pub fn MineWorldState::MineWorldState() -> MineWorldState {
   { explosions_enabled: true, map: @hashmap.HashMap([]) }
 }
 
@@ -226,7 +226,7 @@ fn spawn_mine(
 ///|
 fn setup(commands : @app.Commands) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
   ignore(spawn_mine(commands, @math.Vec2::new(-260.0F, 120.0F), 16.0F))
   ignore(spawn_mine(commands, @math.Vec2::new(-180.0F, 40.0F), 14.0F))
@@ -342,8 +342,8 @@ fn draw_mines(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .init_resource(MineWorldState::default)
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .init_resource(fn() { MineWorldState::MineWorldState() })
   .add_startup_system_param(setup)
   .add_system_param2(draw_mines)
   .add_system_param2(toggle_explosions)

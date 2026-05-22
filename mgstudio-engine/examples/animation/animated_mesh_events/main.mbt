@@ -133,7 +133,7 @@ fn StepEvent::new(phase : Float) -> StepEvent {
 }
 
 ///|
-impl Default for FoxFeetTargets with default() {
+fn FoxFeetTargets::FoxFeetTargets() -> FoxFeetTargets {
   FoxFeetTargets::{
     front_left: @animation.AnimationTargetId::from_names([
       "root", "_rootJoint", "b_Root_00", "b_Hip_01", "b_Spine01_02", "b_Spine02_03",
@@ -186,7 +186,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let (graph, index) = @animation.AnimationGraph::from_clip(clip_handle)
   let graph_handle = @animation.animation_graph_add(graph)
-  let feet_targets = FoxFeetTargets::default()
+  let feet_targets = FoxFeetTargets::FoxFeetTargets()
 
   world.insert_resource(animation_setup_key, AnimationSetup::{
     clip_handle,
@@ -213,7 +213,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   ignore(
     @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
         @math.Vec3::new(0.0F, 20.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -251,7 +251,7 @@ fn setup(world : @ecs.World) -> Unit {
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -PI / 4.0F),
         ),
         @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
-          @pbr.CascadeShadowConfigBuilder::default()
+          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
           .with_first_cascade_far_bound(200.0F)
           .with_maximum_distance(400.0F),
         ),
@@ -396,7 +396,7 @@ fn simulate_particles(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_observer4(observe_on_step)
   .add_systems(@app.Update, @app.system(@app.system_param3(simulate_particles)))

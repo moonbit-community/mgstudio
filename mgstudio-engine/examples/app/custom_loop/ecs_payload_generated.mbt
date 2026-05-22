@@ -13,19 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_app_custom_loop_Input(Input)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Input with to_ecs_payload(self) {
-  EcsPayload_examples_app_custom_loop_Input(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Input with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_app_custom_loop_Input(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

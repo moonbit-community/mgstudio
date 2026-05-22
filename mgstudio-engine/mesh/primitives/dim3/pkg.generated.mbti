@@ -110,8 +110,8 @@ pub(all) struct Capsule3dMeshBuilder {
   latitudes : Int
   uv_profile : CapsuleUvProfile
 }
+pub fn Capsule3dMeshBuilder::Capsule3dMeshBuilder() -> Self
 pub fn Capsule3dMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn Capsule3dMeshBuilder::default() -> Self
 pub fn Capsule3dMeshBuilder::from_capsule(@math.Capsule3d) -> Self
 pub fn Capsule3dMeshBuilder::latitudes(Self, Int) -> Self
 pub fn Capsule3dMeshBuilder::longitudes(Self, Int) -> Self
@@ -141,9 +141,9 @@ pub(all) struct ConeMeshBuilder {
   resolution : Int
   anchor : ConeAnchor
 }
+pub fn ConeMeshBuilder::ConeMeshBuilder() -> Self
 pub fn ConeMeshBuilder::anchor(Self, ConeAnchor) -> Self
 pub fn ConeMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn ConeMeshBuilder::default() -> Self
 pub fn ConeMeshBuilder::from_cone(@math.Cone) -> Self
 pub fn ConeMeshBuilder::new(Float, Float, Int) -> Self
 pub fn ConeMeshBuilder::resolution(Self, Int) -> Self
@@ -154,8 +154,8 @@ pub(all) struct ConicalFrustumMeshBuilder {
   resolution : Int
   segments : Int
 }
+pub fn ConicalFrustumMeshBuilder::ConicalFrustumMeshBuilder() -> Self
 pub fn ConicalFrustumMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn ConicalFrustumMeshBuilder::default() -> Self
 pub fn ConicalFrustumMeshBuilder::from_frustum(@math.ConicalFrustum) -> Self
 pub fn ConicalFrustumMeshBuilder::new(Float, Float, Float, Int) -> Self
 pub fn ConicalFrustumMeshBuilder::resolution(Self, Int) -> Self
@@ -165,8 +165,8 @@ pub impl MeshBuilder for ConicalFrustumMeshBuilder
 pub struct CuboidMeshBuilder {
   half_size : @math.Vec3
 }
+pub fn CuboidMeshBuilder::CuboidMeshBuilder() -> Self
 pub fn CuboidMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn CuboidMeshBuilder::default() -> Self
 pub fn CuboidMeshBuilder::from_cuboid(@math.Cuboid) -> Self
 pub fn CuboidMeshBuilder::half_size(Self) -> @math.Vec3
 pub fn CuboidMeshBuilder::new(Float, Float, Float) -> Self
@@ -186,9 +186,9 @@ pub(all) struct CylinderMeshBuilder {
   caps : Bool
   anchor : CylinderAnchor
 }
+pub fn CylinderMeshBuilder::CylinderMeshBuilder() -> Self
 pub fn CylinderMeshBuilder::anchor(Self, CylinderAnchor) -> Self
 pub fn CylinderMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn CylinderMeshBuilder::default() -> Self
 pub fn CylinderMeshBuilder::from_cylinder(@math.Cylinder) -> Self
 pub fn CylinderMeshBuilder::new(Float, Float, Int) -> Self
 pub fn CylinderMeshBuilder::resolution(Self, Int) -> Self
@@ -204,8 +204,8 @@ pub(all) struct PlaneMeshBuilder {
   plane : @math.Plane3d
   subdivisions : Int
 }
+pub fn PlaneMeshBuilder::PlaneMeshBuilder() -> Self
 pub fn PlaneMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn PlaneMeshBuilder::default() -> Self
 pub fn PlaneMeshBuilder::from_length(Float) -> Self
 pub fn PlaneMeshBuilder::from_size(@math.Vec2) -> Self
 pub fn PlaneMeshBuilder::new(@math.Dir3, @math.Vec2) -> Self
@@ -217,16 +217,16 @@ pub impl MeshBuilder for PlaneMeshBuilder
 pub struct Polyline3dMeshBuilder {
   polyline : @math.Polyline3d
 }
+pub fn Polyline3dMeshBuilder::Polyline3dMeshBuilder() -> Self
 pub fn Polyline3dMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn Polyline3dMeshBuilder::default() -> Self
 pub fn Polyline3dMeshBuilder::new(@math.Polyline3d) -> Self
 pub impl MeshBuilder for Polyline3dMeshBuilder
 
 pub struct Segment3dMeshBuilder {
   segment : @math.Segment3d
 }
+pub fn Segment3dMeshBuilder::Segment3dMeshBuilder() -> Self
 pub fn Segment3dMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn Segment3dMeshBuilder::default() -> Self
 pub fn Segment3dMeshBuilder::new(@math.Segment3d) -> Self
 pub impl MeshBuilder for Segment3dMeshBuilder
 
@@ -242,8 +242,8 @@ pub(all) struct SphereMeshBuilder {
   sphere : @math.Sphere
   kind : SphereKind
 }
+pub fn SphereMeshBuilder::SphereMeshBuilder() -> Self
 pub fn SphereMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn SphereMeshBuilder::default() -> Self
 pub fn SphereMeshBuilder::from_sphere(@math.Sphere) -> Self
 pub fn SphereMeshBuilder::ico(Self, Int) -> Result[@mesh.Mesh3dGeometry, IcosphereError]
 pub fn SphereMeshBuilder::kind(Self, SphereKind) -> Self
@@ -254,8 +254,8 @@ pub impl MeshBuilder for SphereMeshBuilder
 pub struct TetrahedronMeshBuilder {
   tetrahedron : @math.Tetrahedron
 }
+pub fn TetrahedronMeshBuilder::TetrahedronMeshBuilder() -> Self
 pub fn TetrahedronMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn TetrahedronMeshBuilder::default() -> Self
 pub fn TetrahedronMeshBuilder::new(@math.Tetrahedron) -> Self
 pub impl MeshBuilder for TetrahedronMeshBuilder
 
@@ -266,9 +266,9 @@ pub(all) struct TorusMeshBuilder {
   start_angle : Float
   end_angle : Float
 }
+pub fn TorusMeshBuilder::TorusMeshBuilder() -> Self
 pub fn TorusMeshBuilder::angle_range(Self, Float, Float) -> Self
 pub fn TorusMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn TorusMeshBuilder::default() -> Self
 pub fn TorusMeshBuilder::from_torus(@math.Torus) -> Self
 pub fn TorusMeshBuilder::major_resolution(Self, Int) -> Self
 pub fn TorusMeshBuilder::minor_resolution(Self, Int) -> Self
@@ -278,8 +278,8 @@ pub impl MeshBuilder for TorusMeshBuilder
 pub struct Triangle3dMeshBuilder {
   triangle : @math.Triangle3d
 }
+pub fn Triangle3dMeshBuilder::Triangle3dMeshBuilder() -> Self
 pub fn Triangle3dMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn Triangle3dMeshBuilder::default() -> Self
 pub fn Triangle3dMeshBuilder::new(@math.Triangle3d) -> Self
 pub impl MeshBuilder for Triangle3dMeshBuilder
 

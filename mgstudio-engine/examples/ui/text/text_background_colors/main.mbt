@@ -34,7 +34,7 @@ fn message_text() -> Array[String] {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param(setup)
   .add_system_param3(cycle_text_background_colors)
   .run()
@@ -44,7 +44,7 @@ fn main {
 fn setup(commands : @app.Commands) -> Unit {
   commands.spawn(
     @sprite.Camera2dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::identity(),
     ),
   )
@@ -52,8 +52,8 @@ fn setup(commands : @app.Commands) -> Unit {
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_justify_content(@ui.JustifyContent::Center)
@@ -62,7 +62,7 @@ fn setup(commands : @app.Commands) -> Unit {
   )
   let text_entity = commands.spawn(
     (
-      @text.Text::default(),
+      @text.Text::Text(),
       @text.TextLayout::new_with_justify(@text.Justify::Center),
     ),
   )
@@ -74,7 +74,7 @@ fn setup(commands : @app.Commands) -> Unit {
       (
         @text.TextSpan::new(chars[i]),
         @text.TextColor::black(),
-        @text.TextFont::default().with_font_size(@text.FontSize::Px(100.0F)),
+        @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(100.0F)),
         @text.TextBackgroundColor::new(palette_color(i)),
       ),
     )

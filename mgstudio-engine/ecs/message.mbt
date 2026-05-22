@@ -263,8 +263,13 @@ pub fn[T] Messages::clear(self : Messages[T]) -> Unit {
 }
 
 ///|
-pub impl[T] Default for MessageCursor[T] with default() {
+pub fn[T] MessageCursor::MessageCursor() -> MessageCursor[T] {
   { last_message_count: 0 }
+}
+
+///|
+pub impl[T] Default for MessageCursor[T] with default() {
+  MessageCursor::MessageCursor()
 }
 
 ///|
@@ -530,7 +535,7 @@ fn[T : EcsPayloadCodec] decode_message_mut_payload(
 ///|
 pub fn[T] Messages::get_cursor(self : Messages[T]) -> MessageCursor[T] {
   ignore(self)
-  MessageCursor::default()
+  MessageCursor::MessageCursor()
 }
 
 ///|

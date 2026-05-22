@@ -14,16 +14,16 @@ import {
 // Types and methods
 pub struct DefaultPlugins {
 }
+pub fn DefaultPlugins::DefaultPlugins() -> Self
 pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
-pub fn DefaultPlugins::default() -> Self
 pub fn[P : @app.Plugin] DefaultPlugins::set(P) -> @app.PluginGroupBuilder[@ecs.World]
 pub fn DefaultPlugins::set_window(@window.WindowPlugin) -> @app.PluginGroupBuilder[@ecs.World]
 pub impl @app.Plugin for DefaultPlugins
 
 pub struct MinimalPlugins {
 }
+pub fn MinimalPlugins::MinimalPlugins() -> Self
 pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
-pub fn MinimalPlugins::default() -> Self
 pub impl @app.Plugin for MinimalPlugins
 
 // Type aliases

@@ -25,8 +25,8 @@ fn spawn_text(
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
     ),
@@ -35,12 +35,12 @@ fn spawn_text(
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(-16.0F))
         .with_left(@ui.Val::Px(12.0F)),
         @text.Text::new(controller.to_string()),
-        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
@@ -54,7 +54,9 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.PanCamera::default())),
+    commands.spawn(
+      (@sprite.Camera2d::Camera2d(), @sprite.PanCamera::PanCamera()),
+    ),
   )
   ignore(
     commands.spawn_component(
@@ -74,8 +76,8 @@ fn main {
     @app.system_param3(spawn_text),
   )
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@camera_controller.PanCameraPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@camera_controller.PanCameraPlugin::PanCameraPlugin())
   .add_systems(@app.Startup, (setup_system, spawn_text_system) |> @app.chain())
   .run()
 }

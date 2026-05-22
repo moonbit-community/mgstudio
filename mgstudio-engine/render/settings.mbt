@@ -42,7 +42,7 @@ pub struct WgpuSettings {
 } derive(Eq, Debug)
 
 ///|
-pub fn WgpuSettings::default() -> WgpuSettings {
+pub fn WgpuSettings::WgpuSettings() -> WgpuSettings {
   WgpuSettings::{
     device_label: None,
     backends: Some("all"),
@@ -234,7 +234,7 @@ pub fn init_renderer_context_resources(world : @ecs.World) -> Unit {
   if !render_world_resource_present(world, pending_command_buffers_resource_key) {
     world.insert_resource(
       pending_command_buffers_resource_key,
-      @renderer.PendingCommandBuffers::default(),
+      @renderer.PendingCommandBuffers::PendingCommandBuffers(),
     )
   }
 }
@@ -318,7 +318,7 @@ pub fn RenderCreation::automatic(settings : WgpuSettings) -> RenderCreation {
 
 ///|
 pub fn RenderCreation::default() -> RenderCreation {
-  Automatic(WgpuSettings::default())
+  Automatic(WgpuSettings::WgpuSettings())
 }
 
 ///|

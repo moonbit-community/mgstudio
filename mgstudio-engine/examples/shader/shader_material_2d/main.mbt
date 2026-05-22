@@ -105,7 +105,7 @@ pub impl @sprite.Material2d for CustomMaterial with bind_group(self) {
 
 ///|
 fn shader_material_2d_plugin() -> @sprite.Material2dPlugin[CustomMaterial] {
-  let plugin : @sprite.Material2dPlugin[CustomMaterial] = @sprite.Material2dPlugin::default()
+  let plugin : @sprite.Material2dPlugin[CustomMaterial] = @sprite.Material2dPlugin::Material2dPlugin()
     .with_asset_init(fn() { custom_material(@sprite.Color::white(), None) })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")
@@ -120,13 +120,13 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
 
   let mesh = meshes
     .peek()
     .add(
-      @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::default()).to_mesh(),
+      @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::Rectangle()).to_mesh(),
     )
   let material = materials
     .peek()
@@ -151,7 +151,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(shader_material_2d_plugin())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()

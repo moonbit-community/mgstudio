@@ -160,7 +160,7 @@ const UI_WIDGETS_SLIDER_PLUGIN_NAME : String = "mgstudio.ui_widgets.SliderPlugin
 pub struct PopoverWidgetPlugin {}
 
 ///|
-pub fn PopoverWidgetPlugin::default() -> PopoverWidgetPlugin {
+pub fn PopoverWidgetPlugin::PopoverWidgetPlugin() -> PopoverWidgetPlugin {
   PopoverWidgetPlugin::{  }
 }
 
@@ -178,7 +178,7 @@ pub impl @app.Plugin for PopoverWidgetPlugin with build(_self, app) {
 pub struct ButtonWidgetPlugin {}
 
 ///|
-pub fn ButtonWidgetPlugin::default() -> ButtonWidgetPlugin {
+pub fn ButtonWidgetPlugin::ButtonWidgetPlugin() -> ButtonWidgetPlugin {
   ButtonWidgetPlugin::{  }
 }
 
@@ -196,7 +196,7 @@ pub impl @app.Plugin for ButtonWidgetPlugin with build(_self, app) {
 pub struct CheckboxWidgetPlugin {}
 
 ///|
-pub fn CheckboxWidgetPlugin::default() -> CheckboxWidgetPlugin {
+pub fn CheckboxWidgetPlugin::CheckboxWidgetPlugin() -> CheckboxWidgetPlugin {
   CheckboxWidgetPlugin::{  }
 }
 
@@ -214,7 +214,7 @@ pub impl @app.Plugin for CheckboxWidgetPlugin with build(_self, app) {
 pub struct MenuWidgetPlugin {}
 
 ///|
-pub fn MenuWidgetPlugin::default() -> MenuWidgetPlugin {
+pub fn MenuWidgetPlugin::MenuWidgetPlugin() -> MenuWidgetPlugin {
   MenuWidgetPlugin::{  }
 }
 
@@ -232,7 +232,7 @@ pub impl @app.Plugin for MenuWidgetPlugin with build(_self, app) {
 pub struct RadioGroupWidgetPlugin {}
 
 ///|
-pub fn RadioGroupWidgetPlugin::default() -> RadioGroupWidgetPlugin {
+pub fn RadioGroupWidgetPlugin::RadioGroupWidgetPlugin() -> RadioGroupWidgetPlugin {
   RadioGroupWidgetPlugin::{  }
 }
 
@@ -250,7 +250,7 @@ pub impl @app.Plugin for RadioGroupWidgetPlugin with build(_self, app) {
 pub struct ScrollbarWidgetPlugin {}
 
 ///|
-pub fn ScrollbarWidgetPlugin::default() -> ScrollbarWidgetPlugin {
+pub fn ScrollbarWidgetPlugin::ScrollbarWidgetPlugin() -> ScrollbarWidgetPlugin {
   ScrollbarWidgetPlugin::{  }
 }
 
@@ -268,7 +268,7 @@ pub impl @app.Plugin for ScrollbarWidgetPlugin with build(_self, app) {
 pub struct SliderWidgetPlugin {}
 
 ///|
-pub fn SliderWidgetPlugin::default() -> SliderWidgetPlugin {
+pub fn SliderWidgetPlugin::SliderWidgetPlugin() -> SliderWidgetPlugin {
   SliderWidgetPlugin::{  }
 }
 
@@ -286,20 +286,20 @@ pub impl @app.Plugin for SliderWidgetPlugin with build(_self, app) {
 pub struct UiWidgetsPlugins {}
 
 ///|
-pub fn UiWidgetsPlugins::default() -> UiWidgetsPlugins {
+pub fn UiWidgetsPlugins::UiWidgetsPlugins() -> UiWidgetsPlugins {
   UiWidgetsPlugins::{  }
 }
 
 ///|
 pub fn UiWidgetsPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
   @app.PluginGroupBuilder::start_named("UiWidgetsPlugins")
-  .add(PopoverWidgetPlugin::default())
-  .add(ButtonWidgetPlugin::default())
-  .add(CheckboxWidgetPlugin::default())
-  .add(MenuWidgetPlugin::default())
-  .add(RadioGroupWidgetPlugin::default())
-  .add(ScrollbarWidgetPlugin::default())
-  .add(SliderWidgetPlugin::default())
+  .add(PopoverWidgetPlugin::PopoverWidgetPlugin())
+  .add(ButtonWidgetPlugin::ButtonWidgetPlugin())
+  .add(CheckboxWidgetPlugin::CheckboxWidgetPlugin())
+  .add(MenuWidgetPlugin::MenuWidgetPlugin())
+  .add(RadioGroupWidgetPlugin::RadioGroupWidgetPlugin())
+  .add(ScrollbarWidgetPlugin::ScrollbarWidgetPlugin())
+  .add(SliderWidgetPlugin::SliderWidgetPlugin())
 }
 
 ///|
@@ -314,7 +314,7 @@ pub impl @app.Plugin for UiWidgetsPlugins with build(_self, app) {
 
 ///|
 pub fn ui_widgets_plugins() -> UiWidgetsPlugins {
-  UiWidgetsPlugins::default()
+  UiWidgetsPlugins::UiWidgetsPlugins()
 }
 
 ///|

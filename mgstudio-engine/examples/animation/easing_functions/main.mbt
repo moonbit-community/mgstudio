@@ -70,7 +70,7 @@ let progress_text_entity : Ref[@core.Entity?] = Ref(None)
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param(display_curves)))
   .run()
@@ -80,7 +80,7 @@ fn main {
 fn setup(world : @ecs.World) -> Unit {
   progress_text_entity.val = None
 
-  let camera = @sprite.Camera::default()
+  let camera = @sprite.Camera::Camera()
   @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
     world,
   )
@@ -88,7 +88,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let label_font = @text.TextFont::default()
+  let label_font = @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(10.0F)
 
@@ -279,11 +279,11 @@ fn spawn_progress_overlay(
   font : @asset.Handle[@asset.Font],
 ) -> Unit {
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -302,7 +302,7 @@ fn spawn_progress_overlay(
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
@@ -320,7 +320,7 @@ fn spawn_progress_overlay(
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
@@ -333,7 +333,7 @@ fn spawn_progress_overlay(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
   )
   try! world.set_by_key(
     text_entity,
@@ -348,7 +348,7 @@ fn spawn_progress_overlay(
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
@@ -361,7 +361,7 @@ fn spawn_progress_overlay(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
   )
   try! world.set_by_key(
     text_entity,

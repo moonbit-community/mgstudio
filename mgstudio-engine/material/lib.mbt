@@ -31,13 +31,8 @@ pub(all) enum AlphaMode3d {
 pub type AlphaMode = AlphaMode3d
 
 ///|
-pub fn AlphaMode3d::default() -> AlphaMode3d {
-  AlphaMode3d::Opaque
-}
-
-///|
 pub impl Default for AlphaMode3d with default() {
-  AlphaMode3d::default()
+  AlphaMode3d::Opaque
 }
 
 ///|
@@ -79,13 +74,8 @@ pub(all) enum OpaqueRendererMethod {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn OpaqueRendererMethod::default() -> OpaqueRendererMethod {
-  OpaqueRendererMethod::Forward
-}
-
-///|
 pub impl Default for OpaqueRendererMethod with default() {
-  OpaqueRendererMethod::default()
+  OpaqueRendererMethod::Forward
 }
 
 ///|
@@ -112,7 +102,7 @@ pub struct DefaultOpaqueRendererMethod {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn DefaultOpaqueRendererMethod::default() -> DefaultOpaqueRendererMethod {
+pub fn DefaultOpaqueRendererMethod::DefaultOpaqueRendererMethod() -> DefaultOpaqueRendererMethod {
   DefaultOpaqueRendererMethod::{
     renderer_method: OpaqueRendererMethod::Forward,
   }
@@ -120,7 +110,7 @@ pub fn DefaultOpaqueRendererMethod::default() -> DefaultOpaqueRendererMethod {
 
 ///|
 pub impl Default for DefaultOpaqueRendererMethod with default() {
-  DefaultOpaqueRendererMethod::default()
+  DefaultOpaqueRendererMethod::DefaultOpaqueRendererMethod()
 }
 
 ///|
@@ -206,11 +196,11 @@ pub struct MaterialProperties {
 }
 
 ///|
-pub fn MaterialProperties::default() -> MaterialProperties {
+pub fn MaterialProperties::MaterialProperties() -> MaterialProperties {
   MaterialProperties::{
     render_method: OpaqueRendererMethod::Forward,
     alpha_mode: AlphaMode3d::Opaque,
-    mesh_pipeline_key_bits: ErasedMeshPipelineKey::default(),
+    mesh_pipeline_key_bits: ErasedMeshPipelineKey::ErasedMeshPipelineKey(),
     depth_bias: 0.0F,
     reads_view_transmission_texture: false,
     render_phase_type: RenderPhaseType::Opaque,
@@ -221,7 +211,7 @@ pub fn MaterialProperties::default() -> MaterialProperties {
     base_specialize: None,
     prepass_specialize: None,
     user_specialize: None,
-    material_key: ErasedMaterialKey::default(),
+    material_key: ErasedMaterialKey::ErasedMaterialKey(),
     shadows_enabled: false,
     prepass_enabled: false,
   }
@@ -229,7 +219,7 @@ pub fn MaterialProperties::default() -> MaterialProperties {
 
 ///|
 pub impl Default for MaterialProperties with default() {
-  MaterialProperties::default()
+  MaterialProperties::MaterialProperties()
 }
 
 ///|
@@ -455,7 +445,7 @@ pub(open) trait IntoStandardMaterialAsset {
 }
 
 ///|
-pub fn StandardMaterial::default() -> StandardMaterial {
+pub fn StandardMaterial::StandardMaterial() -> StandardMaterial {
   StandardMaterial::{
     base_color: @sprite.Color::white(),
     base_color_texture: None,
@@ -508,7 +498,7 @@ pub fn StandardMaterial::from_color(color : @sprite.Color) -> StandardMaterial {
   } else {
     AlphaMode3d::Opaque
   }
-  let default_value = StandardMaterial::default()
+  let default_value = StandardMaterial::StandardMaterial()
   StandardMaterial::{
     base_color: color,
     base_color_texture: default_value.base_color_texture,
@@ -611,7 +601,7 @@ pub impl IntoStandardMaterialAsset for @sprite.Color with into_standard_material
 pub impl IntoStandardMaterialAsset for @asset.Handle[@asset.Image] with into_standard_material_asset(
   self,
 ) {
-  StandardMaterial::default().with_base_color_texture(Some(self))
+  StandardMaterial::StandardMaterial().with_base_color_texture(Some(self))
 }
 
 ///|
@@ -1069,7 +1059,7 @@ pub struct ExtendedMaterialMetadata3d {
 }
 
 ///|
-pub fn ExtendedMaterialMetadata3d::default() -> ExtendedMaterialMetadata3d {
+pub fn ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d() -> ExtendedMaterialMetadata3d {
   ExtendedMaterialMetadata3d::{
     extension_tag: 0,
     vertex_shader_path: None,
@@ -1090,7 +1080,9 @@ pub fn ExtendedMaterialMetadata3d::default() -> ExtendedMaterialMetadata3d {
 pub fn ExtendedMaterialMetadata3d::new(
   extension_tag : Int,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::default().with_extension_tag(extension_tag)
+  ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d().with_extension_tag(
+    extension_tag,
+  )
 }
 
 ///|
@@ -1258,7 +1250,7 @@ pub fn MeshMaterial3d::with_extension_tag(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::default()
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
   }
   MeshMaterial3d::{
     ..self,
@@ -1273,7 +1265,7 @@ pub fn MeshMaterial3d::with_extension_vertex_shader_path(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::default()
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
   }
   MeshMaterial3d::{
     ..self,
@@ -1288,7 +1280,7 @@ pub fn MeshMaterial3d::with_extension_fragment_shader_path(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::default()
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
   }
   MeshMaterial3d::{
     ..self,
@@ -1303,7 +1295,7 @@ pub fn MeshMaterial3d::with_extension_alpha_mode(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::default()
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
   }
   MeshMaterial3d::{
     ..self,
@@ -1320,7 +1312,7 @@ pub fn MeshMaterial3d::with_extension_opaque_renderer_method(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::default()
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
   }
   MeshMaterial3d::{
     ..self,
@@ -1339,7 +1331,7 @@ pub fn MeshMaterial3d::with_extension_requires_depth_prepass(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::default()
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
   }
   MeshMaterial3d::{
     ..self,
@@ -1356,7 +1348,7 @@ pub fn MeshMaterial3d::with_extension_requires_deferred_prepass(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::default()
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
   }
   MeshMaterial3d::{
     ..self,
@@ -1373,7 +1365,7 @@ pub fn MeshMaterial3d::with_extension_disable_shadows(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::default()
+    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
   }
   MeshMaterial3d::{
     ..self,
@@ -1398,7 +1390,7 @@ pub struct ForwardDecalMaterialExt {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ForwardDecalMaterialExt::default() -> ForwardDecalMaterialExt {
+pub fn ForwardDecalMaterialExt::ForwardDecalMaterialExt() -> ForwardDecalMaterialExt {
   ForwardDecalMaterialExt::{ depth_fade_factor: 8.0F }
 }
 

@@ -211,7 +211,7 @@ test "default plugins: include winit plugin after window plugin" {
 
 ///|
 test "default plugins: set(WindowPlugin) replaces default window plugin config" {
-  let configured_window = @window.Window::default()
+  let configured_window = @window.Window::Window()
   configured_window.title = "Scale Override"
   configured_window.resolution = @window.WindowResolution::new(500, 300).with_scale_factor_override(
     1.0F,
@@ -220,7 +220,7 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window),
-      primary_cursor_options: Some(@window.CursorOptions::default()),
+      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
     }),
@@ -261,9 +261,9 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
 }
 
 ///|
-test "default plugins: set(AssetPlugin::default_nearest()) replaces default asset plugin config" {
+test "default plugins: set(AssetPlugin::nearest()) replaces default asset plugin config" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
+    DefaultPlugins::set(@asset.AssetPlugin::nearest()),
   )
 
   let asset_server : @asset.AssetServer = match
@@ -279,7 +279,7 @@ test "default plugins: set(AssetPlugin::default_nearest()) replaces default asse
 test "default plugins: set(AssetPlugin::with_file_path(...)) changes asset root" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     DefaultPlugins::set(
-      @asset.AssetPlugin::default().with_file_path("examples/asset/files"),
+      @asset.AssetPlugin::AssetPlugin().with_file_path("examples/asset/files"),
     ),
   )
 

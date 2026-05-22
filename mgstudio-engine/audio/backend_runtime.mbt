@@ -35,7 +35,7 @@ priv struct NativeAudioPlaybackConfig {
 }
 
 ///|
-fn NativeAudioPlaybackConfig::default() -> NativeAudioPlaybackConfig {
+fn NativeAudioPlaybackConfig::NativeAudioPlaybackConfig() -> NativeAudioPlaybackConfig {
   NativeAudioPlaybackConfig::{
     looped: false,
     start_position_seconds: None,
@@ -236,7 +236,7 @@ fn NativeAudioStream::new_spatial_player(
 fn NativeAudioPlayer::append_bytes(
   self : NativeAudioPlayer,
   bytes : Bytes,
-  config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig::default(),
+  config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig::NativeAudioPlaybackConfig(),
 ) -> Unit raise @rodio.DecoderError {
   native_audio_append_bytes_to_player(self, bytes, config)
 }
@@ -319,7 +319,7 @@ fn NativeAudioPlayer::try_seek_seconds(
 fn NativeSpatialAudioPlayer::append_bytes(
   self : NativeSpatialAudioPlayer,
   bytes : Bytes,
-  config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig::default(),
+  config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig::NativeAudioPlaybackConfig(),
 ) -> Unit raise @rodio.DecoderError {
   native_audio_append_bytes_to_spatial_player(self, bytes, config)
 }

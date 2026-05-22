@@ -24,7 +24,7 @@ pub struct MeshViewBindings3d {
 }
 
 ///|
-pub fn MeshViewBindings3d::default() -> MeshViewBindings3d {
+pub fn MeshViewBindings3d::MeshViewBindings3d() -> MeshViewBindings3d {
   MeshViewBindings3d::{
     viewport: None,
     clear_enabled: true,
@@ -35,7 +35,7 @@ pub fn MeshViewBindings3d::default() -> MeshViewBindings3d {
       @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
       @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
     ),
-    layout_key: @mesh_view_layout.MeshPipelineViewLayoutKey::default(),
+    layout_key: @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
   }
 }
 

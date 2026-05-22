@@ -14,7 +14,6 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_audio_AudioSourceAssetPaths(AudioSourceAssetPaths)
   EcsPayload_audio_AudioSource(AudioSource)
   EcsPayload_audio_AudioPlayer(AudioPlayerPayload)
   EcsPayload_audio_GlobalVolume(GlobalVolume)
@@ -32,21 +31,6 @@ extenum @ecs.EcsPayload += {
 ///|
 pub(all) struct AudioPlayerPayload {
   source_id : Int
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AudioSourceAssetPaths with to_ecs_payload(self) {
-  EcsPayload_audio_AudioSourceAssetPaths(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AudioSourceAssetPaths with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_audio_AudioSourceAssetPaths(value) => Some(value)
-    _ => None
-  }
 }
 
 ///|

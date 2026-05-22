@@ -17,9 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_tools_scene_viewer_morph_viewer_plugin_AnimationToPlay(
     AnimationToPlay
   )
-  EcsPayload_examples_tools_scene_viewer_morph_viewer_plugin_MorphAssetState(
-    MorphAssetState
-  )
 }
 
 ///|
@@ -33,23 +30,6 @@ impl @ecs.EcsPayloadCodec for AnimationToPlay with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for AnimationToPlay with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_tools_scene_viewer_morph_viewer_plugin_AnimationToPlay(
-      value
-    ) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MorphAssetState with to_ecs_payload(self) {
-  EcsPayload_examples_tools_scene_viewer_morph_viewer_plugin_MorphAssetState(
-    self,
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MorphAssetState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_tools_scene_viewer_morph_viewer_plugin_MorphAssetState(
       value
     ) => Some(value)
     _ => None

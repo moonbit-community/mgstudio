@@ -15,9 +15,9 @@
 ///|
 test "anti_alias boundary re-exports msaa/fxaa/taa components" {
   let msaa = @anti_alias.Msaa::from_samples(4)
-  let fxaa = @anti_alias.Fxaa::default().with_enabled(false)
+  let fxaa = @anti_alias.Fxaa::Fxaa().with_enabled(false)
   let taa = @anti_alias.TemporalAntiAliasing::new(true)
-  let jitter = @anti_alias.TemporalJitter::default()
+  let jitter = @anti_alias.TemporalJitter::TemporalJitter()
   debug_inspect(msaa.samples(), content="4")
   debug_inspect(fxaa.enabled, content="false")
   debug_inspect(taa.reset, content="true")

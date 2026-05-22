@@ -14,12 +14,7 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_app_RegisteredSystemsResource(RegisteredSystemsResource)
-  EcsPayload_app_MessageUpdateMarker(MessageUpdateMarker)
-  EcsPayload_app_DefaultErrorHandlerResource(DefaultErrorHandlerResource)
-  EcsPayload_app_MainScheduleRuntimeState(MainScheduleRuntimeState)
   EcsPayload_app_FixedMainScheduleOrder(FixedMainScheduleOrder)
-  EcsPayload_app_PointerObserverRegistry(PointerObserverRegistry)
   EcsPayload_app_Stepping(Stepping)
   EcsPayload_app_DespawnOnExit(DespawnOnExit)
   EcsPayload_app_DespawnOnEnter(DespawnOnEnter)
@@ -27,43 +22,12 @@ extenum @ecs.EcsPayload += {
   EcsPayload_app_HotPatched(HotPatched)
   EcsPayload_app_PickingEvents(PickingEvents)
   EcsPayload_app_AppExit(AppExit)
-  EcsPayload_app_StatesPluginMarker(StatesPluginMarker)
   EcsPayload_app_MainScheduleOrder(MainScheduleOrder)
   EcsPayload_app_State(StatePayload)
   EcsPayload_app_PreviousState(StatePayload)
   EcsPayload_app_NextState(NextStatePayload)
   EcsPayload_app_StateTransitionEvent(StateTransitionEventPayload)
   EcsPayload_app_CheckParentHasComponent(CheckParentHasComponentPayload)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RegisteredSystemsResource with to_ecs_payload(
-  self,
-) {
-  EcsPayload_app_RegisteredSystemsResource(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RegisteredSystemsResource with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_app_RegisteredSystemsResource(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MessageUpdateMarker with to_ecs_payload(self) {
-  EcsPayload_app_MessageUpdateMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MessageUpdateMarker with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_app_MessageUpdateMarker(value) => Some(value)
-    _ => None
-  }
 }
 
 ///|
@@ -158,19 +122,6 @@ pub impl @ecs.EcsPayloadCodec for AppExit with from_ecs_payload(payload) {
 }
 
 ///|
-impl @ecs.EcsPayloadCodec for StatesPluginMarker with to_ecs_payload(self) {
-  EcsPayload_app_StatesPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StatesPluginMarker with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_app_StatesPluginMarker(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
 pub impl @ecs.EcsPayloadCodec for MainScheduleOrder with to_ecs_payload(self) {
   EcsPayload_app_MainScheduleOrder(self)
 }
@@ -181,38 +132,6 @@ pub impl @ecs.EcsPayloadCodec for MainScheduleOrder with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_app_MainScheduleOrder(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DefaultErrorHandlerResource with to_ecs_payload(
-  self,
-) {
-  EcsPayload_app_DefaultErrorHandlerResource(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DefaultErrorHandlerResource with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_app_DefaultErrorHandlerResource(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MainScheduleRuntimeState with to_ecs_payload(self) {
-  EcsPayload_app_MainScheduleRuntimeState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MainScheduleRuntimeState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_app_MainScheduleRuntimeState(value) => Some(value)
     _ => None
   }
 }
@@ -230,21 +149,6 @@ pub impl @ecs.EcsPayloadCodec for FixedMainScheduleOrder with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_app_FixedMainScheduleOrder(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PointerObserverRegistry with to_ecs_payload(self) {
-  EcsPayload_app_PointerObserverRegistry(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PointerObserverRegistry with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_app_PointerObserverRegistry(value) => Some(value)
     _ => None
   }
 }

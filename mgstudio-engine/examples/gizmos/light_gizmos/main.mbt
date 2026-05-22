@@ -102,7 +102,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .entity_mut(point_light)
     .insert(
       (
-        @pbr.PointLight::default()
+        @pbr.PointLight::PointLight()
         .with_shadow_maps_enabled(true)
         .with_range(2.0F)
         .with_color(@sprite.Color::srgb(0.0F, 0.55F, 0.55F)),
@@ -119,7 +119,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
       (
         @pbr.SpotLight::new(
           @sprite.Color::srgb(0.5F, 0.0F, 0.5F),
-          @pbr.SpotLight::default().intensity,
+          @pbr.SpotLight::SpotLight().intensity,
           3.5F,
           PI / 4.0F * 0.8F,
           PI / 4.0F,
@@ -141,7 +141,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
       (
         @pbr.DirectionalLight::new(
           @sprite.Color::srgb(1.0F, 0.84F, 0.0F),
-          @pbr.DirectionalLight::default().illuminance * 0.05F,
+          @pbr.DirectionalLight::DirectionalLight().illuminance * 0.05F,
           true,
         ),
         @transform.Transform::from_xyz(-4.0F, 2.0F, 0.0F).looking_at(
@@ -153,7 +153,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -167,7 +167,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
       @text.Text2d::new(
         "Press D to toggle gizmo depth bias\nHold Left or Right to change line width\nPress A to toggle light gizmos\nPress C to cycle gizmo coloring modes",
       ),
-      @text.TextFont::default().with_font(font).with_font_size(16.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
@@ -179,13 +179,13 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   ignore(instructions)
 
   let color_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default().with_font(font).with_font_size(16.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -330.0F),
         0.0F,
@@ -197,7 +197,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   light_gizmos_state.val.color_text = Some(color_text)
 }
@@ -208,7 +208,7 @@ fn configure_light_gizmos(
 ) -> Unit {
   config_store.modify(fn(store) {
     let (config, group) = store.config_mut(
-      @light.LightGizmoConfigGroup::default(),
+      @light.LightGizmoConfigGroup::LightGizmoConfigGroup(),
     )
     config.val = {
       ..config.val,
@@ -250,7 +250,7 @@ fn update_config(
 ) -> Unit {
   config_store.modify(fn(store) {
     let (config, group) = store.config_mut(
-      @light.LightGizmoConfigGroup::default(),
+      @light.LightGizmoConfigGroup::LightGizmoConfigGroup(),
     )
     if @input.key_just_pressed(@window.KeyCode::KeyD) {
       config.val = {
@@ -310,9 +310,9 @@ fn update_config(
 fn main {
   @gizmos.init_gizmo_group(
     @app.App::new(@ecs.World::new()).add_plugins(
-      @mgstudio.DefaultPlugins::default(),
+      @mgstudio.DefaultPlugins::DefaultPlugins(),
     ),
-    @light.LightGizmoConfigGroup::default(),
+    @light.LightGizmoConfigGroup::LightGizmoConfigGroup(),
   )
   .add_systems(@app.Startup, @app.system(setup_scene))
   .add_systems(

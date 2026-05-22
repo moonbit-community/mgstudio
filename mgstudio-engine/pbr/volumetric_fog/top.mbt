@@ -28,7 +28,7 @@ pub type FogVolume = @light.FogVolume
 pub struct VolumetricFogPlugin {}
 
 ///|
-pub fn VolumetricFogPlugin::default() -> VolumetricFogPlugin {
+pub fn VolumetricFogPlugin::VolumetricFogPlugin() -> VolumetricFogPlugin {
   VolumetricFogPlugin::{  }
 }
 
@@ -50,7 +50,7 @@ pub struct FogAssets {
 }
 
 ///|
-pub fn FogAssets::default() -> FogAssets {
+pub fn FogAssets::FogAssets() -> FogAssets {
   FogAssets::{ plane_mesh: None, cube_mesh: None }
 }
 
@@ -62,9 +62,9 @@ pub struct VolumetricFogPluginState {
 }
 
 ///|
-pub fn VolumetricFogPluginState::default() -> VolumetricFogPluginState {
+pub fn VolumetricFogPluginState::VolumetricFogPluginState() -> VolumetricFogPluginState {
   VolumetricFogPluginState::{
-    fog_assets: FogAssets::default(),
+    fog_assets: FogAssets::FogAssets(),
     extracted_view_count: 0,
     extracted_volume_count: 0,
   }
@@ -111,19 +111,22 @@ pub fn volumetric_fog_plugin_state_with_extracted_counts(
 
 ///|
 pub fn pbr_volumetric_fog_default() -> VolumetricFog {
-  VolumetricFog::default()
+  VolumetricFog()
 }
 
 ///|
 pub fn pbr_fog_volume_default() -> FogVolume {
-  FogVolume::default()
+  FogVolume()
 }
 
 ///|
 pub fn volumetric_fog_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  volumetric_fog_plugin_install_with(app, VolumetricFogPlugin::default())
+  volumetric_fog_plugin_install_with(
+    app,
+    VolumetricFogPlugin::VolumetricFogPlugin(),
+  )
 }
 
 ///|
@@ -137,7 +140,7 @@ pub fn volumetric_fog_plugin_install_with(
   } else {
     app.insert_world_resource(
       ecs_key_volumetric_fog_plugin_state,
-      VolumetricFogPluginState::default(),
+      VolumetricFogPluginState::VolumetricFogPluginState(),
     )
   }
 }

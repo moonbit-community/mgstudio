@@ -18,7 +18,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_gizmos_Gizmo(Gizmo)
   EcsPayload_gizmos_ShowSkinnedMeshBoundsGizmo(ShowSkinnedMeshBoundsGizmo)
   EcsPayload_gizmos_ShowAabbGizmo(ShowAabbGizmo)
-  EcsPayload_gizmos_GizmoPluginMarker(GizmoPluginMarker)
   EcsPayload_gizmos_ShowFrustumGizmo(ShowFrustumGizmo)
   EcsPayload_gizmos_GizmoAsset(GizmoAsset)
 }
@@ -75,19 +74,6 @@ pub impl @ecs.EcsPayloadCodec for ShowAabbGizmo with to_ecs_payload(self) {
 pub impl @ecs.EcsPayloadCodec for ShowAabbGizmo with from_ecs_payload(payload) {
   match payload {
     EcsPayload_gizmos_ShowAabbGizmo(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GizmoPluginMarker with to_ecs_payload(self) {
-  EcsPayload_gizmos_GizmoPluginMarker(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for GizmoPluginMarker with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_gizmos_GizmoPluginMarker(value) => Some(value)
     _ => None
   }
 }

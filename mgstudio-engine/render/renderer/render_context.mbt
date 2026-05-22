@@ -51,13 +51,13 @@ pub struct PendingCommandBuffers {
 }
 
 ///|
-pub fn PendingCommandBuffers::default() -> PendingCommandBuffers {
+pub fn PendingCommandBuffers::PendingCommandBuffers() -> PendingCommandBuffers {
   { inner: WgpuWrapper::new(pending_command_buffers_inner_default()) }
 }
 
 ///|
 pub fn PendingCommandBuffers::new() -> PendingCommandBuffers {
-  PendingCommandBuffers::default()
+  PendingCommandBuffers::PendingCommandBuffers()
 }
 
 ///|
@@ -138,13 +138,13 @@ pub struct RenderContextState {
 }
 
 ///|
-pub fn RenderContextState::default() -> RenderContextState {
+pub fn RenderContextState::RenderContextState() -> RenderContextState {
   { inner: WgpuWrapper::new(render_context_state_inner_default()) }
 }
 
 ///|
 pub fn RenderContextState::new() -> RenderContextState {
-  RenderContextState::default()
+  RenderContextState::RenderContextState()
 }
 
 ///|

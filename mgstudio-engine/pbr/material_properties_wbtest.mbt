@@ -14,7 +14,7 @@
 
 ///|
 test "render3d: extracted material properties carry core bevy runtime fields" {
-  let material = StandardMaterial::default()
+  let material = @material.StandardMaterial::StandardMaterial()
     .with_alpha_mode(@material.AlphaMode3d::Mask(0.6F))
     .with_depth_bias(5.0F)
     .with_specular_transmission(0.4F)
@@ -44,7 +44,7 @@ test "render3d: extracted material properties carry core bevy runtime fields" {
 ///|
 test "render3d: standard material properties carry bevy material bind group layout" {
   let props = render3d_material_properties_for_standard_material(
-    StandardMaterial::default(),
+    @material.StandardMaterial::StandardMaterial(),
     None,
     OpaqueRendererMethod::Forward,
     true,
@@ -94,8 +94,8 @@ test "render3d: standard material properties carry bevy material bind group layo
 
 ///|
 test "render3d: extended material metadata is reflected into extracted properties" {
-  let material = StandardMaterial::default()
-  let extension = @material.ExtendedMaterialMetadata3d::default()
+  let material = @material.StandardMaterial::StandardMaterial()
+  let extension = @material.ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
     .with_disable_shadows(true)
     .with_fragment_shader_path(Some("shaders/extended_material.wgsl"))
   let props = render3d_material_properties_for_standard_material(
@@ -113,7 +113,7 @@ test "render3d: extended material metadata is reflected into extracted propertie
 
 ///|
 test "render3d: extracted material properties prepass flag follows plugin runtime state" {
-  let material = StandardMaterial::default()
+  let material = @material.StandardMaterial::StandardMaterial()
   let enabled_props = render3d_material_properties_for_standard_material(
     material,
     None,
@@ -153,7 +153,7 @@ test "render3d: pbr material properties can carry bevy draw function ids" {
   let ids = pbr_material_register_draw_functions(draw_functions)
   inspect(draw_functions.len(), content="11")
   let properties = pbr_material_apply_draw_functions(
-    @material.MaterialProperties::default(),
+    @material.MaterialProperties::MaterialProperties(),
     ids,
   )
   debug_inspect(

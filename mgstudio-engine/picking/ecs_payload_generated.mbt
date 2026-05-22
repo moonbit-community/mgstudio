@@ -29,14 +29,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_picking_PickingState(PickingState)
   EcsPayload_picking_PointerInputSettings(PointerInputSettings)
   EcsPayload_picking_SpritePickingSettings(SpritePickingSettings)
-  EcsPayload_picking_PickingA11yActionReaderState(PickingA11yActionReaderState)
-  EcsPayload_picking_PickingPointerInputEventReaderState(
-    PickingPointerInputEventReaderState
-  )
-  EcsPayload_picking_PickingPointerHitsReaderState(
-    PickingPointerHitsReaderState
-  )
-  EcsPayload_picking_PointerInputReaderState(PointerInputReaderState)
 }
 
 ///|
@@ -242,72 +234,6 @@ pub impl @ecs.EcsPayloadCodec for SpritePickingSettings with from_ecs_payload(
 ) {
   match payload {
     EcsPayload_picking_SpritePickingSettings(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PickingA11yActionReaderState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_picking_PickingA11yActionReaderState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PickingA11yActionReaderState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_picking_PickingA11yActionReaderState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PickingPointerInputEventReaderState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_picking_PickingPointerInputEventReaderState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PickingPointerInputEventReaderState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_picking_PickingPointerInputEventReaderState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PickingPointerHitsReaderState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_picking_PickingPointerHitsReaderState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PickingPointerHitsReaderState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_picking_PickingPointerHitsReaderState(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PointerInputReaderState with to_ecs_payload(self) {
-  EcsPayload_picking_PointerInputReaderState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PointerInputReaderState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_picking_PointerInputReaderState(value) => Some(value)
     _ => None
   }
 }

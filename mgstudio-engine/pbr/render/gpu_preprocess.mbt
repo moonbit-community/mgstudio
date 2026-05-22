@@ -26,7 +26,7 @@ pub struct Render3dGpuPreprocessState {
 }
 
 ///|
-pub fn Render3dGpuPreprocessState::default() -> Render3dGpuPreprocessState {
+pub fn Render3dGpuPreprocessState::Render3dGpuPreprocessState() -> Render3dGpuPreprocessState {
   Render3dGpuPreprocessState::{
     enabled: true,
     use_gpu_instance_buffer_builder: true,
@@ -147,7 +147,7 @@ pub struct GpuMeshPreprocessPlugin {
 }
 
 ///|
-pub fn GpuMeshPreprocessPlugin::default() -> GpuMeshPreprocessPlugin {
+pub fn GpuMeshPreprocessPlugin::GpuMeshPreprocessPlugin() -> GpuMeshPreprocessPlugin {
   GpuMeshPreprocessPlugin::{ use_gpu_instance_buffer_builder: true }
 }
 
@@ -186,7 +186,7 @@ pub fn gpu_mesh_preprocess_plugin_install(
 ) -> @app.App[@ecs.World] {
   gpu_mesh_preprocess_plugin_install_with(
     app,
-    GpuMeshPreprocessPlugin::default(),
+    GpuMeshPreprocessPlugin::GpuMeshPreprocessPlugin(),
   )
 }
 
@@ -333,7 +333,7 @@ pub struct PreprocessPipelineKey {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn PreprocessPipelineKey::default() -> PreprocessPipelineKey {
+pub fn PreprocessPipelineKey::PreprocessPipelineKey() -> PreprocessPipelineKey {
   PreprocessPipelineKey::{ bits: 0U }
 }
 
@@ -389,7 +389,7 @@ pub struct BuildIndirectParametersPipelineKey {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn BuildIndirectParametersPipelineKey::default() -> BuildIndirectParametersPipelineKey {
+pub fn BuildIndirectParametersPipelineKey::BuildIndirectParametersPipelineKey() -> BuildIndirectParametersPipelineKey {
   BuildIndirectParametersPipelineKey::{ bits: 0U }
 }
 

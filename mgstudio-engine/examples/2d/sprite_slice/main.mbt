@@ -21,7 +21,7 @@ const LABEL_VERTICAL_GAP : Float = 10.0F
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }
@@ -31,10 +31,10 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let style = @text.TextFont::default().with_font(font)
+  let style = @text.TextFont::TextFont().with_font(font)
   let handle_1 = asset_server.get().load("textures/slice_square.png")
   let handle_2 = asset_server.get().load("textures/slice_square_2.png")
 

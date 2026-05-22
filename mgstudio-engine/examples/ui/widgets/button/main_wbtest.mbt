@@ -37,7 +37,7 @@ fn seed_ui_context(world : @ecs.World) -> Unit {
 ///|
 fn seed_primary_window(world : @ecs.World) -> Unit {
   let entity = world.spawn()
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.resolution.set_physical_resolution(1280, 720)
   window.resolution.set_scale_factor(1.0F)
   try! (world.entity_mut(entity).insert_component(window) |> ignore)
@@ -62,7 +62,7 @@ fn run_ui_extract_pipeline(world : @ecs.World) -> Unit {
 ///|
 test "examples ui button: seeded ui context produces queued ui draw items" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @mgstudio.DefaultPlugins::default(),
+    @mgstudio.DefaultPlugins::DefaultPlugins(),
   )
   let world = app.world()
   @sprite.init_render_state_system(world)
@@ -95,7 +95,7 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
 ///|
 test "examples ui button: runtime ui context also produces queued ui draw items" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @mgstudio.DefaultPlugins::default(),
+    @mgstudio.DefaultPlugins::DefaultPlugins(),
   )
   let world = app.world()
   @sprite.init_render_state_system(world)
@@ -123,7 +123,7 @@ test "examples ui button: runtime ui context also produces queued ui draw items"
 ///|
 test "examples ui button: scheduled update queues ui draw items" {
   let mut app = @app.App::new(@ecs.World::new())
-    .add_plugins(@mgstudio.DefaultPlugins::default())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_systems(@app.Startup, @app.system(setup))
   app = app.update()
 

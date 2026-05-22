@@ -21,7 +21,7 @@ pub fn register_embedded_wgsl_sources() -> Unit
 // Types and methods
 pub struct OrderIndependentTransparencyPlugin {
 }
-pub fn OrderIndependentTransparencyPlugin::default() -> Self
+pub fn OrderIndependentTransparencyPlugin::OrderIndependentTransparencyPlugin() -> Self
 pub impl @app.Plugin for OrderIndependentTransparencyPlugin
 
 pub struct OrderIndependentTransparencySettings {
@@ -29,7 +29,7 @@ pub struct OrderIndependentTransparencySettings {
   fragments_per_pixel_average : Float
   sorted_fragment_max_count : Int
 } derive(ToJson, @json.FromJson)
-pub fn OrderIndependentTransparencySettings::default() -> Self
+pub fn OrderIndependentTransparencySettings::OrderIndependentTransparencySettings() -> Self
 pub impl @ecs.Component for OrderIndependentTransparencySettings
 pub impl @ecs.EcsPayloadCodec for OrderIndependentTransparencySettings
 

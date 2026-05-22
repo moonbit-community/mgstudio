@@ -18,7 +18,7 @@ pub struct ScheduleGraphSettings {
 }
 
 ///|
-pub fn ScheduleGraphSettings::default() -> ScheduleGraphSettings {
+pub fn ScheduleGraphSettings::ScheduleGraphSettings() -> ScheduleGraphSettings {
   { include_system_name: None }
 }
 
@@ -83,7 +83,7 @@ fn schedule_graph_include(
 pub fn App::schedule_graph_dot(
   self : App[@ecs.World],
   stage : ScheduleStage,
-  settings? : ScheduleGraphSettings = ScheduleGraphSettings::default(),
+  settings? : ScheduleGraphSettings = ScheduleGraphSettings::ScheduleGraphSettings(),
 ) -> String {
   let schedule_entry = schedule_entry_ref(self.sub_apps.main.schedule, stage).val
   let graph_plan = schedule_resolve_graph_plan(schedule_entry, stage)

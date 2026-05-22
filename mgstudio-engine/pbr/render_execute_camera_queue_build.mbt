@@ -36,7 +36,7 @@ fn render3d_camera_exposure_value_for_preprocess(
 ) -> Float {
   match camera.exposure {
     Some(value) => value.exposure()
-    None => Exposure::default().exposure()
+    None => Exposure::Exposure().exposure()
   }
 }
 

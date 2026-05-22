@@ -143,7 +143,7 @@ impl @ecs.Component for TonemappingUiText with component() {
 }
 
 ///|
-impl Default for CameraTransform with default() {
+fn CameraTransform::CameraTransform() -> CameraTransform {
   {
     transform: @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
@@ -153,12 +153,12 @@ impl Default for CameraTransform with default() {
 }
 
 ///|
-impl Default for CurrentScene with default() {
+fn CurrentScene::CurrentScene() -> CurrentScene {
   { value: 1 }
 }
 
 ///|
-impl Default for SelectedParameter with default() {
+fn SelectedParameter::SelectedParameter() -> SelectedParameter {
   { value: 0, max: PARAMETER_COUNT }
 }
 
@@ -207,38 +207,38 @@ fn PerMethodSettings::basic_scene_recommendation(
   match tonemapper {
     Reinhard | ReinhardLuminance =>
       @post_process.ColorGrading::{
-        ..@post_process.ColorGrading::default(),
+        ..@post_process.ColorGrading(),
         global: @post_process.ColorGradingGlobal::{
-          ..@post_process.ColorGradingGlobal::default(),
+          ..@post_process.ColorGradingGlobal(),
           exposure: 0.5F,
         },
       }
     AcesFitted =>
       @post_process.ColorGrading::{
-        ..@post_process.ColorGrading::default(),
+        ..@post_process.ColorGrading(),
         global: @post_process.ColorGradingGlobal::{
-          ..@post_process.ColorGradingGlobal::default(),
+          ..@post_process.ColorGradingGlobal(),
           exposure: 0.35F,
         },
       }
     AgX =>
       @post_process.ColorGrading::with_identical_sections(
         @post_process.ColorGradingGlobal::{
-          ..@post_process.ColorGradingGlobal::default(),
+          ..@post_process.ColorGradingGlobal(),
           exposure: -0.2F,
           post_saturation: 1.1F,
         },
         @post_process.ColorGradingSection::{
-          ..@post_process.ColorGradingSection::default(),
+          ..@post_process.ColorGradingSection(),
           saturation: 1.1F,
         },
       )
-    _ => @post_process.ColorGrading::default()
+    _ => @post_process.ColorGrading::ColorGrading()
   }
 }
 
 ///|
-impl Default for PerMethodSettings with default() {
+fn PerMethodSettings::PerMethodSettings() -> PerMethodSettings {
   let settings : @hashmap.HashMap[
     @post_process.Tonemapping,
     @post_process.ColorGrading,
@@ -266,7 +266,10 @@ fn[D : @ecs.QueryData, F : @ecs.QueryFilter] first_entity(
 }
 
 ///|
-fn[A : @ecs.Component, B : @ecs.Component] first2(
+fn[
+  A : @ecs.Component + @ecs.EcsPayloadCodec,
+  B : @ecs.Component + @ecs.EcsPayloadCodec,
+] first2(
   query : @ecs.Query[(@ecs.Comp[A], @ecs.Comp[B]), @ecs.All],
 ) -> (@core.Entity, A, B)? {
   let result : Ref[(@core.Entity, A, B)?] = Ref(None)
@@ -280,7 +283,11 @@ fn[A : @ecs.Component, B : @ecs.Component] first2(
 }
 
 ///|
-fn[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] first3(
+fn[
+  A : @ecs.Component + @ecs.EcsPayloadCodec,
+  B : @ecs.Component + @ecs.EcsPayloadCodec,
+  C : @ecs.Component + @ecs.EcsPayloadCodec,
+] first3(
   query : @ecs.Query[(@ecs.Comp[A], @ecs.Comp[B], @ecs.Comp[C]), @ecs.All],
 ) -> (@core.Entity, A, B, C)? {
   let result : Ref[(@core.Entity, A, B, C)?] = Ref(None)
@@ -334,10 +341,10 @@ fn setup(
 ) -> Unit {
   let camera = commands.spawn(
     @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       camera_transform.get().transform,
     )
-    .with_color_grading(Some(@post_process.ColorGrading::default()))
+    .with_color_grading(Some(@post_process.ColorGrading::ColorGrading()))
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
@@ -351,7 +358,7 @@ fn setup(
   .entity(camera)
   .insert(
     (
-      @pbr.Hdr::default(),
+      @pbr.Hdr::Hdr(),
       @pbr.EnvironmentMapLight::new(
         Some(
           asset_server
@@ -370,18 +377,18 @@ fn setup(
 
   let overlay_camera = commands.spawn(
     @sprite.Camera2dBundle::new(
-      @sprite.Camera::default().with_order(100).with_clear_color_none(),
+      @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
       @transform.Transform::identity(),
     ),
   )
   commands
   .entity(overlay_camera)
-  .insert_component(@ui.IsDefaultUiCamera::default())
+  .insert_component(@ui.IsDefaultUiCamera::IsDefaultUiCamera())
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F)),
       TonemappingUiRoot::{  },
@@ -394,12 +401,12 @@ fn setup(
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
         @text.Text::new(""),
-        @text.TextFont::default().with_font(font).with_font_size(15.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
         @text.TextColor::new(@sprite.Color::white()),
         @text.TextLayout::new_with_justify(@text.Justify::Left),
         TonemappingUiText::{  },
@@ -454,7 +461,7 @@ fn setup_basic_scene(
     commands.spawn(
       (
         @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
-          @pbr.CascadeShadowConfigBuilder::default()
+          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
           .with_maximum_distance(3.0F)
           .with_first_cascade_far_bound(0.9F),
         ),
@@ -520,12 +527,12 @@ fn setup_image_viewer_scene(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           align_self: @ui.AlignSelf::Center,
           margin: @ui.UiRect::all(@ui.Val::Auto),
         },
         @text.Text::new("Drag and drop an HDR or EXR file"),
-        @text.TextFont::default()
+        @text.TextFont::TextFont()
         .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
         .with_font_size(36.0F),
         @text.TextColor::new(@sprite.Color::black()),
@@ -655,7 +662,7 @@ fn update_color_grading_settings(
     per_method_settings.modify(fn(value) {
       let next = value.settings
         .get(current_method)
-        .unwrap_or(@post_process.ColorGrading::default())
+        .unwrap_or(@post_process.ColorGrading::ColorGrading())
       match selected_value {
         0 => next.global.exposure = next.global.exposure + delta
         1 =>
@@ -675,7 +682,10 @@ fn update_color_grading_settings(
   if keys.just_pressed(Space) {
     per_method_settings.modify(fn(value) {
       for tonemapper in tonemapping_methods() {
-        value.settings.set(tonemapper, @post_process.ColorGrading::default())
+        value.settings.set(
+          tonemapper,
+          @post_process.ColorGrading::ColorGrading(),
+        )
       }
     })
   }
@@ -846,11 +856,11 @@ fn update_ui(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .insert_resource(CameraTransform::default())
-  .insert_resource(PerMethodSettings::default())
-  .insert_resource(CurrentScene::default())
-  .insert_resource(SelectedParameter::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .insert_resource(CameraTransform::CameraTransform())
+  .insert_resource(PerMethodSettings::PerMethodSettings())
+  .insert_resource(CurrentScene::CurrentScene())
+  .insert_resource(SelectedParameter::SelectedParameter())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup_basic_scene)))
   .add_systems(@app.Startup, @app.system(setup_color_gradient_scene))

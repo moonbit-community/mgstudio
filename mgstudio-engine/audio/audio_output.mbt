@@ -18,7 +18,7 @@ struct AudioOutput {
 }
 
 ///|
-pub fn AudioOutput::default() -> AudioOutput {
+pub fn AudioOutput::AudioOutput() -> AudioOutput {
   let stream = open_default_output_stream() catch {
     _ => return AudioOutput::{ stream: None }
   }
@@ -60,7 +60,7 @@ fn[Source : AudioPlayerSource] registered_audio_player_component_key() -> @ecs.C
     Some(id) =>
       @ecs.component_key_from_id(id, debug_name="mgstudio_audio::\{type_name}")
     None => {
-      let key : @ecs.ComponentKey[AudioPlayer[Source]] = @ecs.register_component(
+      let key : @ecs.ComponentKey[AudioPlayer[Source]] = @ecs.register_erased_component(
         debug_name="mgstudio_audio::\{type_name}",
       )
       audio_player_component_registry.val.set(type_name, key.id())
@@ -159,7 +159,7 @@ fn audio_output_available(world : @ecs.World) -> Bool {
 fn audio_playback_config(
   settings : PlaybackSettings,
 ) -> NativeAudioPlaybackConfig {
-  let mut config = NativeAudioPlaybackConfig::default().looped(
+  let mut config = NativeAudioPlaybackConfig::NativeAudioPlaybackConfig().looped(
     match settings.mode {
       PlaybackMode::Loop => true
       _ => false
@@ -241,7 +241,7 @@ fn audio_listener_positions(world : @ecs.World) -> (@math.Vec3, @math.Vec3) {
     listeners.push((entity, listener.value()))
   })
   if listeners.length() == 0 {
-    let default_listener = SpatialListener::default()
+    let default_listener = SpatialListener::SpatialListener()
     return (default_listener.left_ear_offset, default_listener.right_ear_offset)
   }
   let (entity, listener) = listeners[0]
@@ -256,7 +256,7 @@ fn audio_listener_positions(world : @ecs.World) -> (@math.Vec3, @math.Vec3) {
 fn audio_default_spatial_scale(world : @ecs.World) -> SpatialScale {
   match audio_resource_get(world, DefaultSpatialScale::resource()) {
     Some(scale) => scale.scale
-    None => SpatialScale::default()
+    None => SpatialScale::SpatialScale()
   }
 }
 
@@ -264,7 +264,7 @@ fn audio_default_spatial_scale(world : @ecs.World) -> SpatialScale {
 fn audio_global_volume(world : @ecs.World) -> GlobalVolume {
   match audio_resource_get(world, GlobalVolume::resource()) {
     Some(value) => value
-    None => GlobalVolume::default()
+    None => GlobalVolume::GlobalVolume()
   }
 }
 
@@ -275,7 +275,7 @@ fn audio_playback_settings_for_entity(
 ) -> PlaybackSettings {
   match (try! world.get_by_key(entity, ecs_key_playback_settings)) {
     Some(settings) => settings
-    None => PlaybackSettings::default()
+    None => PlaybackSettings::PlaybackSettings()
   }
 }
 

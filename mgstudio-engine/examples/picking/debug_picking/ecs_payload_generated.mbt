@@ -13,20 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_picking_debug_picking_DebugPickingState(DebugPickingState)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DebugPickingState with to_ecs_payload(self) {
-  EcsPayload_examples_picking_debug_picking_DebugPickingState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DebugPickingState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_picking_debug_picking_DebugPickingState(value) =>
-      Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

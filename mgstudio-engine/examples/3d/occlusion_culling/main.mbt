@@ -195,7 +195,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_small_cubes(world, small_cube_material)
 
   let large_cube_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::default().with_base_color_texture(
+    @pbr.StandardMaterial::StandardMaterial().with_base_color_texture(
       Some(asset_server.load("branding/icon.png")),
     ),
   )
@@ -215,7 +215,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::default(),
+    @pbr.DirectionalLight::DirectionalLight(),
   )
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(
     @math.Quat::from_rotation_x(-0.15F * PI),
@@ -227,7 +227,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -236,12 +236,12 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_depth_prepass,
-    @pbr.DepthPrepass::default(),
+    @pbr.DepthPrepass::DepthPrepass(),
   )
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -255,7 +255,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   occlusion_state.val.help_text = Some(help_text)
 
@@ -324,7 +324,7 @@ fn update_status_text(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(spin_small_cubes))
   .add_systems(@app.Update, @app.system(spin_large_cube))

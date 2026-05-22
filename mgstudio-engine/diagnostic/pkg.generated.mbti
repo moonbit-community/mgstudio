@@ -172,14 +172,14 @@ pub impl @app.SystemParam for Diagnostics
 
 pub struct DiagnosticsPlugin {
 }
-pub fn DiagnosticsPlugin::default() -> Self
+pub fn DiagnosticsPlugin::DiagnosticsPlugin() -> Self
 pub impl @app.Plugin for DiagnosticsPlugin
 
 pub struct DiagnosticsStore {
   diagnostics : @hashmap.HashMap[String, @ref.Ref[Diagnostic]]
 }
+pub fn DiagnosticsStore::DiagnosticsStore() -> Self
 pub fn DiagnosticsStore::add(Self, Diagnostic) -> Unit
-pub fn DiagnosticsStore::default() -> Self
 pub fn DiagnosticsStore::get(Self, DiagnosticPath) -> Diagnostic?
 pub fn DiagnosticsStore::get_measurement(Self, DiagnosticPath) -> DiagnosticMeasurement?
 pub fn DiagnosticsStore::get_ref(Self, DiagnosticPath) -> @ref.Ref[Diagnostic]?
@@ -192,27 +192,27 @@ pub impl @ecs.EcsPayloadCodec for DiagnosticsStore
 pub struct EntityCountDiagnosticsPlugin {
   max_history_length : Int
 }
-pub fn EntityCountDiagnosticsPlugin::default() -> Self
+pub fn EntityCountDiagnosticsPlugin::EntityCountDiagnosticsPlugin() -> Self
 pub fn EntityCountDiagnosticsPlugin::new(Int) -> Self
 pub impl @app.Plugin for EntityCountDiagnosticsPlugin
 
 pub struct FrameCount {
   value : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn FrameCount::default() -> Self
+pub fn FrameCount::FrameCount() -> Self
 pub impl @app.Resource for FrameCount
 pub impl @ecs.EcsPayloadCodec for FrameCount
 
 pub struct FrameCountPlugin {
 }
-pub fn FrameCountPlugin::default() -> Self
+pub fn FrameCountPlugin::FrameCountPlugin() -> Self
 pub impl @app.Plugin for FrameCountPlugin
 
 pub struct FrameTimeDiagnosticsPlugin {
   max_history_length : Int
   smoothing_factor : Float
 }
-pub fn FrameTimeDiagnosticsPlugin::default() -> Self
+pub fn FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin() -> Self
 pub fn FrameTimeDiagnosticsPlugin::new(Int) -> Self
 pub impl @app.Plugin for FrameTimeDiagnosticsPlugin
 
@@ -221,7 +221,7 @@ pub struct LogDiagnosticsPlugin {
   wait_duration_seconds : Float
   filter : @hashmap.HashMap[String, Bool]?
 }
-pub fn LogDiagnosticsPlugin::default() -> Self
+pub fn LogDiagnosticsPlugin::LogDiagnosticsPlugin() -> Self
 pub fn LogDiagnosticsPlugin::filtered(Array[DiagnosticPath]) -> Self
 pub impl @app.Plugin for LogDiagnosticsPlugin
 
@@ -229,9 +229,9 @@ pub struct LogDiagnosticsState {
   mut timer : @time.Timer
   mut filter : @hashmap.HashMap[String, Bool]?
 }
+pub fn LogDiagnosticsState::LogDiagnosticsState() -> Self
 pub fn LogDiagnosticsState::add_filter(Self, DiagnosticPath) -> Bool
 pub fn LogDiagnosticsState::clear_filter(Self) -> Unit
-pub fn LogDiagnosticsState::default() -> Self
 pub fn LogDiagnosticsState::disable_filtering(Self) -> Unit
 pub fn LogDiagnosticsState::enable_filtering(Self) -> Unit
 pub fn LogDiagnosticsState::extend_filter(Self, Array[DiagnosticPath]) -> Unit
@@ -243,7 +243,7 @@ pub impl @ecs.EcsPayloadCodec for LogDiagnosticsState
 pub struct RenderDiagnosticsPlugin {
   max_history_length : Int
 }
-pub fn RenderDiagnosticsPlugin::default() -> Self
+pub fn RenderDiagnosticsPlugin::RenderDiagnosticsPlugin() -> Self
 pub fn RenderDiagnosticsPlugin::new(Int) -> Self
 pub impl @app.Plugin for RenderDiagnosticsPlugin
 
@@ -251,7 +251,7 @@ pub struct StressDiagnosticsPlugin {
   use_generic_stack : Bool?
   log_interval_seconds : Float
 }
-pub fn StressDiagnosticsPlugin::default() -> Self
+pub fn StressDiagnosticsPlugin::StressDiagnosticsPlugin() -> Self
 pub fn StressDiagnosticsPlugin::with_log_interval_seconds(Self, Float) -> Self
 pub fn StressDiagnosticsPlugin::with_use_generic_stack(Self, Bool) -> Self
 pub impl @app.Plugin for StressDiagnosticsPlugin
@@ -263,13 +263,13 @@ pub struct SystemInfo {
   core_count : String
   memory : String
 } derive(@debug.Debug)
-pub fn SystemInfo::default() -> Self
+pub fn SystemInfo::SystemInfo() -> Self
 pub impl @app.Resource for SystemInfo
 pub impl @ecs.EcsPayloadCodec for SystemInfo
 
 pub struct SystemInformationDiagnosticsPlugin {
 }
-pub fn SystemInformationDiagnosticsPlugin::default() -> Self
+pub fn SystemInformationDiagnosticsPlugin::SystemInformationDiagnosticsPlugin() -> Self
 pub impl @app.Plugin for SystemInformationDiagnosticsPlugin
 
 pub struct TimelineTraceConfig {
@@ -278,7 +278,7 @@ pub struct TimelineTraceConfig {
   flush_interval_frames : Int
   categories : Array[@app.TimelineTraceCategory]
 }
-pub fn TimelineTraceConfig::default() -> Self
+pub fn TimelineTraceConfig::TimelineTraceConfig() -> Self
 pub fn TimelineTraceConfig::with_categories(Self, Array[@app.TimelineTraceCategory]) -> Self
 pub fn TimelineTraceConfig::with_enabled(Self, Bool) -> Self
 pub fn TimelineTraceConfig::with_flush_interval_frames(Self, Int) -> Self
@@ -287,7 +287,7 @@ pub fn TimelineTraceConfig::with_output_path(Self, String) -> Self
 pub struct TimelineTracePlugin {
   config : TimelineTraceConfig
 }
-pub fn TimelineTracePlugin::default() -> Self
+pub fn TimelineTracePlugin::TimelineTracePlugin() -> Self
 pub fn TimelineTracePlugin::with_config(TimelineTraceConfig) -> Self
 pub impl @app.Plugin for TimelineTracePlugin
 

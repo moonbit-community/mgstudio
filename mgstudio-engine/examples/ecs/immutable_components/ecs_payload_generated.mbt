@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_ecs_immutable_components_Name(Name)
-  EcsPayload_examples_ecs_immutable_components_NameIndex(NameIndex)
 }
 
 ///|
@@ -27,19 +26,6 @@ impl @ecs.EcsPayloadCodec for Name with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for Name with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ecs_immutable_components_Name(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for NameIndex with to_ecs_payload(self) {
-  EcsPayload_examples_ecs_immutable_components_NameIndex(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for NameIndex with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ecs_immutable_components_NameIndex(value) => Some(value)
     _ => None
   }
 }

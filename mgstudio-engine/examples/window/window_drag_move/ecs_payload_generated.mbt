@@ -14,36 +14,7 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_window_window_drag_move_LeftClickAction(LeftClickAction)
-  EcsPayload_examples_window_window_drag_move_ResizeDir(ResizeDir)
   EcsPayload_examples_window_window_drag_move_ExampleText(ExampleText)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for LeftClickAction with to_ecs_payload(self) {
-  EcsPayload_examples_window_window_drag_move_LeftClickAction(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for LeftClickAction with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_window_window_drag_move_LeftClickAction(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ResizeDir with to_ecs_payload(self) {
-  EcsPayload_examples_window_window_drag_move_ResizeDir(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ResizeDir with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_window_window_drag_move_ResizeDir(value) => Some(value)
-    _ => None
-  }
 }
 
 ///|

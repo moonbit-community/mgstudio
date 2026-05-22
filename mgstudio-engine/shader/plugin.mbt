@@ -16,7 +16,7 @@
 pub struct ShaderPlugin {}
 
 ///|
-pub fn ShaderPlugin::default() -> ShaderPlugin {
+pub fn ShaderPlugin::ShaderPlugin() -> ShaderPlugin {
   ShaderPlugin::{  }
 }
 

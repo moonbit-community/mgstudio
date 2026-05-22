@@ -64,7 +64,7 @@ pub fn ClusterFarZMode::default() -> Self
 
 pub struct ClusterLightPlugin {
 }
-pub fn ClusterLightPlugin::default() -> Self
+pub fn ClusterLightPlugin::ClusterLightPlugin() -> Self
 pub impl @app.Plugin for ClusterLightPlugin
 
 pub(all) struct ClusterProjectionMatrix3d {
@@ -85,7 +85,7 @@ pub struct ClusterZConfig {
   first_slice_depth : Float
   far_z_mode : ClusterFarZMode
 } derive(Eq, @debug.Debug)
-pub fn ClusterZConfig::default() -> Self
+pub fn ClusterZConfig::ClusterZConfig() -> Self
 
 pub struct ClusterableObjectCounts {
   point_lights : Int
@@ -94,7 +94,7 @@ pub struct ClusterableObjectCounts {
   irradiance_volumes : Int
   decals : Int
 } derive(Eq, @debug.Debug)
-pub fn ClusterableObjectCounts::default() -> Self
+pub fn ClusterableObjectCounts::ClusterableObjectCounts() -> Self
 
 pub(all) enum ClusterableObjectType {
   PointLight(Bool, Bool)
@@ -115,9 +115,9 @@ pub struct Clusters {
   mut far : Float
   clusterable_objects : Array[ObjectsInCluster]
 } derive(Eq, @debug.Debug)
+pub fn Clusters::Clusters() -> Self
 pub fn Clusters::clear(Self) -> Unit
 pub fn Clusters::clusterable_objects(Self) -> Array[ObjectsInCluster]
-pub fn Clusters::default() -> Self
 pub fn Clusters::dimensions(Self) -> (Int, Int, Int)
 pub fn Clusters::new(Int, Int, Int, Int, Int, Float, Float) -> Self
 pub fn Clusters::update(Self, Int, Int, Int, Int, Int) -> Unit
@@ -130,7 +130,7 @@ pub struct GlobalClusterSettings {
   max_uniform_buffer_clusterable_objects : Int
   view_cluster_bindings_max_indices : Int
 } derive(Eq, @debug.Debug)
-pub fn GlobalClusterSettings::default() -> Self
+pub fn GlobalClusterSettings::GlobalClusterSettings() -> Self
 pub impl @app.Resource for GlobalClusterSettings
 pub impl @ecs.EcsPayloadCodec for GlobalClusterSettings
 
@@ -138,6 +138,7 @@ pub struct ObjectsInCluster {
   clusterables : Array[@core.Entity]
   mut counts : ClusterableObjectCounts
 } derive(Eq, @debug.Debug)
+pub fn ObjectsInCluster::ObjectsInCluster() -> Self
 pub fn ObjectsInCluster::add_decal(Self, @core.Entity) -> Unit
 pub fn ObjectsInCluster::add_irradiance_volume(Self, @core.Entity) -> Unit
 pub fn ObjectsInCluster::add_point_light(Self, @core.Entity) -> Unit
@@ -145,7 +146,6 @@ pub fn ObjectsInCluster::add_reflection_probe(Self, @core.Entity) -> Unit
 pub fn ObjectsInCluster::add_spot_light(Self, @core.Entity) -> Unit
 pub fn ObjectsInCluster::clear(Self) -> Unit
 pub fn ObjectsInCluster::clusterables(Self) -> Array[@core.Entity]
-pub fn ObjectsInCluster::default() -> Self
 pub fn ObjectsInCluster::iter(Self) -> Array[@core.Entity]
 
 pub struct VisibleClusterableObjects {
@@ -153,9 +153,9 @@ pub struct VisibleClusterableObjects {
   reflection_probes : Array[@core.Entity]
   irradiance_volumes : Array[@core.Entity]
 } derive(Eq, @debug.Debug)
+pub fn VisibleClusterableObjects::VisibleClusterableObjects() -> Self
 pub fn VisibleClusterableObjects::add(Self, @core.Entity, ClusterableObjectType) -> Unit
 pub fn VisibleClusterableObjects::clear(Self) -> Unit
-pub fn VisibleClusterableObjects::default() -> Self
 pub fn VisibleClusterableObjects::from_lists(Array[@core.Entity], Array[@core.Entity], Array[@core.Entity]) -> Self
 pub fn VisibleClusterableObjects::irradiance_volume_count(Self) -> Int
 pub fn VisibleClusterableObjects::irradiance_volume_entities(Self) -> Array[@core.Entity]

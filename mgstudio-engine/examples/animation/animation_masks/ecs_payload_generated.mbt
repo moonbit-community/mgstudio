@@ -17,13 +17,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_animation_animation_masks_AnimationControl(
     AnimationControl
   )
-  EcsPayload_examples_animation_animation_masks_AnimationMaskSetup(
-    AnimationMaskSetup
-  )
-  EcsPayload_examples_animation_animation_masks_AnimationMaskState(
-    AnimationMaskState
-  )
-  EcsPayload_examples_animation_animation_masks_PressedControls(PressedControls)
 }
 
 ///|
@@ -35,48 +28,6 @@ impl @ecs.EcsPayloadCodec for AnimationControl with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for AnimationControl with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_animation_animation_masks_AnimationControl(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationMaskSetup with to_ecs_payload(self) {
-  EcsPayload_examples_animation_animation_masks_AnimationMaskSetup(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationMaskSetup with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_animation_animation_masks_AnimationMaskSetup(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationMaskState with to_ecs_payload(self) {
-  EcsPayload_examples_animation_animation_masks_AnimationMaskState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AnimationMaskState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_animation_animation_masks_AnimationMaskState(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PressedControls with to_ecs_payload(self) {
-  EcsPayload_examples_animation_animation_masks_PressedControls(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for PressedControls with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_animation_animation_masks_PressedControls(value) =>
       Some(value)
     _ => None
   }

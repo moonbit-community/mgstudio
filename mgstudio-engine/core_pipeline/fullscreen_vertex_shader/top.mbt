@@ -29,7 +29,7 @@ pub struct FullscreenShader {
 }
 
 ///|
-pub fn FullscreenShader::default() -> FullscreenShader {
+pub fn FullscreenShader::FullscreenShader() -> FullscreenShader {
   FullscreenShader::{
     path: FULLSCREEN_SHADER_PATH,
     entry_point: FULLSCREEN_SHADER_ENTRY_POINT,

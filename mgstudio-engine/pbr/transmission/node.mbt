@@ -19,7 +19,7 @@
 pub struct TransmittedShadowReceiver {} derive(ToJson, FromJson)
 
 ///|
-pub fn TransmittedShadowReceiver::default() -> TransmittedShadowReceiver {
+pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> TransmittedShadowReceiver {
   TransmittedShadowReceiver::{  }
 }
 
@@ -41,7 +41,7 @@ pub struct MainTransmissivePass3dConfig {
 }
 
 ///|
-pub fn MainTransmissivePass3dConfig::default() -> MainTransmissivePass3dConfig {
+pub fn MainTransmissivePass3dConfig::MainTransmissivePass3dConfig() -> MainTransmissivePass3dConfig {
   MainTransmissivePass3dConfig::{
     enabled: true,
     steps: 1,

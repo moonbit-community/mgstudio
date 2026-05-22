@@ -15,7 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_shader_storage_buffer_InstanceSlot(InstanceSlot)
-  EcsPayload_examples_shader_storage_buffer_StorageValues(StorageValues)
 }
 
 ///|
@@ -27,20 +26,6 @@ impl @ecs.EcsPayloadCodec for InstanceSlot with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for InstanceSlot with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_shader_storage_buffer_InstanceSlot(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StorageValues with to_ecs_payload(self) {
-  EcsPayload_examples_shader_storage_buffer_StorageValues(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for StorageValues with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_shader_storage_buffer_StorageValues(value) =>
-      Some(value)
     _ => None
   }
 }

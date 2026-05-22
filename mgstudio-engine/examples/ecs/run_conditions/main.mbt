@@ -59,7 +59,7 @@ fn main {
   ignore(Unused::{  })
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(InputCounter::{ value: 0 })
   .add_systems(
     @app.Update,

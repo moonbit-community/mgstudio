@@ -27,17 +27,17 @@ pub struct HotPatchChanges {
 }
 
 ///|
-pub fn HotPatchPlugin::default() -> HotPatchPlugin {
+pub fn HotPatchPlugin::HotPatchPlugin() -> HotPatchPlugin {
   HotPatchPlugin::{  }
 }
 
 ///|
-pub fn HotPatched::default() -> HotPatched {
+pub fn HotPatched::HotPatched() -> HotPatched {
   HotPatched::{  }
 }
 
 ///|
-pub fn HotPatchChanges::default() -> HotPatchChanges {
+pub fn HotPatchChanges::HotPatchChanges() -> HotPatchChanges {
   HotPatchChanges::{ revision: 0 }
 }
 
@@ -63,7 +63,7 @@ fn hotpatch_ensure_resource(
   if world.get_resource(HotPatchChanges::resource()) is None {
     world.insert_resource(
       HotPatchChanges::resource(),
-      HotPatchChanges::default(),
+      HotPatchChanges::HotPatchChanges(),
     )
   }
   match world.get_resource_mut(HotPatchChanges::resource()) {
@@ -80,7 +80,7 @@ pub fn hotpatch_mark_patched(world : @ecs.World) -> Unit {
   if !world.contains_message(key) {
     world.init_message(key)
   }
-  ignore(world.send_message(key, HotPatched::default()))
+  ignore(world.send_message(key, HotPatched::HotPatched()))
 }
 
 ///|
@@ -94,7 +94,7 @@ fn hotpatch_forward_runtime_flag(world : @ecs.World) -> Unit {
 ///|
 pub fn hotpatch_plugin(app : App[@ecs.World]) -> App[@ecs.World] {
   app
-  .init_resource(fn() { HotPatchChanges::default() })
+  .init_resource(fn() { HotPatchChanges::HotPatchChanges() })
   .add_message(HotPatched::message())
   .add_last_system(hotpatch_forward_runtime_flag)
 }

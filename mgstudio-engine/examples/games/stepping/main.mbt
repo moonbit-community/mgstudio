@@ -43,7 +43,7 @@ pub impl @ecs.Component for StepSprite with component() {
 ///|
 fn setup(commands : @app.Commands) -> Unit {
   commands.insert_resource(StepState::{ ticks: 0 })
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   ignore(
     commands.spawn(
       (
@@ -97,7 +97,7 @@ fn color_feedback(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.FixedUpdate, @app.system(@app.system_param2(fixed_step)))
   .add_systems(@app.Update, @app.system(@app.system_param2(color_feedback)))

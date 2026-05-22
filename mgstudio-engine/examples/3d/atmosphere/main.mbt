@@ -56,9 +56,11 @@ let atmosphere_state : Ref[AtmosphereState] = Ref({
   atmosphere: @pbr.Atmosphere::earthlike(
     @pbr.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
   ),
-  atmosphere_settings: @pbr.AtmosphereSettings::default(),
-  volumetric_fog: @pbr.VolumetricFog::default().with_ambient_intensity(0.0F),
-  fog_volume: @pbr.FogVolume::default()
+  atmosphere_settings: @pbr.AtmosphereSettings::AtmosphereSettings(),
+  volumetric_fog: @pbr.VolumetricFog::VolumetricFog().with_ambient_intensity(
+    0.0F,
+  ),
+  fog_volume: @pbr.FogVolume::FogVolume()
   .with_density_factor(0.1F)
   .with_scattering(0.3F)
   .with_absorption(0.3F),
@@ -144,7 +146,7 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       camera_entity,
       @pbr.ecs_key_atmosphere_environment_map_light,
-      @pbr.AtmosphereEnvironmentMapLight::default(),
+      @pbr.AtmosphereEnvironmentMapLight::AtmosphereEnvironmentMapLight(),
     )
   }
   if state.fog_volume_entity is Some(fog_volume_entity) {
@@ -179,7 +181,7 @@ fn spawn_mesh(
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
+      @sprite.Camera::Camera().with_clear_color(@sprite.Color::black()),
       @transform.Transform::from_xyz(-2.4F, 0.04F, 0.0F).looking_at(
         scene_focus(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -190,7 +192,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
     .with_volumetric_fog(Some(atmosphere_state.val.volumetric_fog))
     .with_exposure(Some(@pbr.Exposure::new(BASE_EXPOSURE_EV100)))
     .with_screen_space_reflections(
-      Some(@post_process.ScreenSpaceReflections::default()),
+      Some(@post_process.ScreenSpaceReflections::ScreenSpaceReflections()),
     )
     .spawn(world)
 
@@ -208,7 +210,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::default(),
+    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
   )
 
   atmosphere_state.val.camera = Some(camera)
@@ -217,7 +219,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
+  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
     .with_first_cascade_far_bound(0.3F)
     .with_maximum_distance(15.0F)
     .build()
@@ -244,7 +246,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     sun,
     @pbr.ecs_key_volumetric_light,
-    @pbr.VolumetricLight::default(),
+    @pbr.VolumetricLight::VolumetricLight(),
   )
 
   let terrain = world.spawn_empty()
@@ -356,7 +358,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(atmosphere_instruction_text()),
-      @text.TextFont::default().with_font(font).with_font_size(16.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
@@ -370,7 +372,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   atmosphere_state.val.help_text = Some(handle)
 }
@@ -499,11 +501,13 @@ fn setup(world : @ecs.World) -> Unit {
     atmosphere: @pbr.Atmosphere::earthlike(
       @pbr.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
     ),
-    atmosphere_settings: @pbr.AtmosphereSettings::default()
+    atmosphere_settings: @pbr.AtmosphereSettings::AtmosphereSettings()
     .with_scene_units_to_m(1.0F)
     .with_rendering_method(@pbr.AtmosphereMode::LookupTexture),
-    volumetric_fog: @pbr.VolumetricFog::default().with_ambient_intensity(0.0F),
-    fog_volume: @pbr.FogVolume::default()
+    volumetric_fog: @pbr.VolumetricFog::VolumetricFog().with_ambient_intensity(
+      0.0F,
+    ),
+    fog_volume: @pbr.FogVolume::FogVolume()
     .with_density_factor(0.1F)
     .with_scattering(0.3F)
     .with_absorption(0.3F),
@@ -524,7 +528,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(atmosphere_controls))
   .add_systems(@app.Update, @app.system(dynamic_scene))

@@ -30,7 +30,7 @@ let ecs_res_key_gizmo_plugin_marker : @ecs.ResourceKey[GizmoPluginMarker] = @ecs
 pub struct GizmoPlugin {}
 
 ///|
-pub fn GizmoPlugin::default() -> GizmoPlugin {
+pub fn GizmoPlugin::GizmoPlugin() -> GizmoPlugin {
   GizmoPlugin::{  }
 }
 
@@ -86,7 +86,7 @@ pub type Grid2dBuilder = @sprite.Grid2dBuilder
 
 ///|
 pub fn gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  gizmo_plugin_with(app, GizmoPlugin::default())
+  gizmo_plugin_with(app, GizmoPlugin::GizmoPlugin())
 }
 
 ///|
@@ -110,7 +110,7 @@ pub fn gizmo_plugin_with(
     return next
   }
   install_retained_gizmo_required_components(next.world())
-  next = @asset.init_asset(next, fn() { GizmoAsset::default() })
+  next = @asset.init_asset(next, fn() { GizmoAsset::GizmoAsset() })
   next = next.insert_world_resource(ecs_res_key_gizmo_plugin_marker, GizmoPluginMarker::{
 
   })

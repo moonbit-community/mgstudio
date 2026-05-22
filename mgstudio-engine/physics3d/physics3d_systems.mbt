@@ -212,7 +212,7 @@ pub fn physics3d_init_resources_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let cfg_res = get_physics3d_config_resource(ecs_world)
   if !cfg_res.is_present() {
-    cfg_res.insert(Physics3dConfig::default())
+    cfg_res.insert(Physics3dConfig::Physics3dConfig())
   }
   let ctx_res = get_physics3d_context_resource(ecs_world)
   if !ctx_res.is_present() {
@@ -224,7 +224,7 @@ pub fn physics3d_init_resources_system(world : @ecs.World) -> Unit {
   }
   let hooks_res = get_physics3d_hooks_config_resource(ecs_world)
   if !hooks_res.is_present() {
-    hooks_res.insert(Physics3dHooksConfig::default())
+    hooks_res.insert(Physics3dHooksConfig::Physics3dHooksConfig())
   }
 }
 

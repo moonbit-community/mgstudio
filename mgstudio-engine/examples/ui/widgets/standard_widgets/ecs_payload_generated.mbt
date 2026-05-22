@@ -20,7 +20,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_ui_widgets_standard_widgets_WidgetSliderFill(
     WidgetSliderFill
   )
-  EcsPayload_examples_ui_widgets_standard_widgets_WidgetState(WidgetState)
 }
 
 ///|
@@ -74,20 +73,6 @@ impl @ecs.EcsPayloadCodec for WidgetSliderFill with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for WidgetSliderFill with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ui_widgets_standard_widgets_WidgetSliderFill(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for WidgetState with to_ecs_payload(self) {
-  EcsPayload_examples_ui_widgets_standard_widgets_WidgetState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for WidgetState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_widgets_standard_widgets_WidgetState(value) =>
       Some(value)
     _ => None
   }

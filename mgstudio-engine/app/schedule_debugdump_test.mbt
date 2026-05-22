@@ -31,11 +31,12 @@ test "app schedule graph dot includes filtered system order for stage" {
 
   let filtered = app.schedule_graph_dot(
     PostUpdate,
-    settings=ScheduleGraphSettings::default().with_include_system_name(fn(
-      name : String,
-    ) {
-      name.contains("tests.b")
-    }),
+    settings=@app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
+        name : String,
+      ) {
+        name.contains("tests.b")
+      },
+    ),
   )
   debug_inspect(filtered.contains("\"tests.a\""), content="false")
   debug_inspect(filtered.contains("\"tests.b\""), content="true")

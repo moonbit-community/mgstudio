@@ -70,7 +70,7 @@ fn main {
   )
 
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, setup_system)
   .add_systems(
     @app.Update,
@@ -105,7 +105,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::default(),
+        @sprite.Camera2d::Camera2d(),
         @sprite.Camera::new(
           @sprite.Color::new(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
         ),

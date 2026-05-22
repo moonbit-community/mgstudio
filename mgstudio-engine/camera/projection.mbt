@@ -53,7 +53,7 @@ pub fn orthographic_projection_2d_with_scale(
 
 ///|
 pub fn perspective_projection_3d_default() -> PerspectiveProjection {
-  PerspectiveProjection3d::default()
+  PerspectiveProjection3d()
 }
 
 ///|

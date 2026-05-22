@@ -49,14 +49,14 @@ fn div_ceil(a : Int, b : Int) -> Int {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   let rows = div_ceil(CELL_COUNT, COLS)
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_display(@ui.Display::Grid)
@@ -79,7 +79,7 @@ fn setup(commands : @app.Commands) -> Unit {
       (
         @hierarchy.Parent::new(root),
         GradientCell::{ index: i },
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Percent(100.0F)),
         @ui.BackgroundColor::new(@sprite.Color::hsl(hue, 1.0F, 0.5F)),
@@ -111,8 +111,8 @@ fn animate_cells(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param2(animate_cells)))
   .run()

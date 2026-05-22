@@ -15,7 +15,7 @@
 ///|
 fn border_cases() -> Array[(String, @ui.UiRect)] {
   [
-    ("None", @ui.UiRect::default()),
+    ("None", @ui.UiRect::UiRect()),
     ("All", @ui.UiRect::all(@ui.Val::Px(10.0F))),
     (
       "Left",
@@ -186,7 +186,7 @@ fn spawn_text(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
+    @text.TextFont::TextFont().with_font(font).with_font_size(font_size),
   )
   try! world.set_by_key(
     entity,
@@ -206,7 +206,7 @@ fn spawn_label(
   let label_container = spawn_node(
     world,
     Some(parent),
-    @ui.Node::default().with_margin(
+    @ui.Node::Node().with_margin(
       @ui.UiRect::new(
         @ui.Val::Px(0.0F),
         @ui.Val::Px(8.0F),
@@ -231,13 +231,13 @@ fn spawn_border_example(
   let cell = spawn_node(
     world,
     Some(parent),
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_align_items(@ui.AlignItems::Center)
     .with_margin(@ui.UiRect::all(@ui.Val::Px(6.0F))),
     None,
   )
-  let base_box_node = @ui.Node::default()
+  let base_box_node = @ui.Node::Node()
     .with_width(@ui.Val::Px(56.0F))
     .with_height(@ui.Val::Px(56.0F))
     .with_border(border)
@@ -273,7 +273,7 @@ fn spawn_border_example(
     spawn_node(
       world,
       Some(border_box),
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_width(@ui.Val::Px(12.0F))
       .with_height(@ui.Val::Px(12.0F)),
       Some(@ui.BackgroundColor::new(@sprite.Color::srgb(1.0F, 0.92F, 0.0F))),
@@ -293,7 +293,7 @@ fn spawn_section(
   let section = spawn_node(
     world,
     Some(parent),
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_row_gap(@ui.Val::Px(12.0F)),
     None,
@@ -303,7 +303,7 @@ fn spawn_section(
     world,
     Some(section),
     @ui.Node::{
-      ..@ui.Node::default()
+      ..@ui.Node()
       .with_flex_direction(@ui.FlexDirection::Row)
       .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F))),
       flex_wrap: @ui.FlexWrap::Wrap,
@@ -321,7 +321,7 @@ fn setup(world : @ecs.World) -> Unit {
   let font = @asset.AssetServer::new().load_font("fonts/FiraSans-Bold.ttf")
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -329,7 +329,7 @@ fn setup(world : @ecs.World) -> Unit {
   let root = spawn_node(
     world,
     None,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_flex_direction(@ui.FlexDirection::Column)
@@ -337,7 +337,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_row_gap(@ui.Val::Px(24.0F)),
     Some(@ui.BackgroundColor::new(@sprite.Color::srgb(0.08F, 0.08F, 0.08F))),
   )
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
 
   spawn_section(world, root, "Borders", font, false)
   spawn_section(world, root, "Borders Rounded", font, true)
@@ -346,7 +346,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .run()
 }

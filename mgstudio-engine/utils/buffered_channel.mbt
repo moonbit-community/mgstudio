@@ -56,7 +56,7 @@ pub fn[T] BufferedChannel::new(chunk_size? : Int = 1024) -> BufferedChannel[T] {
 }
 
 ///|
-pub fn[T] BufferedChannel::default() -> BufferedChannel[T] {
+pub fn[T] BufferedChannel::BufferedChannel() -> BufferedChannel[T] {
   BufferedChannel::new()
 }
 

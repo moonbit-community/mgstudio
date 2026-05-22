@@ -39,9 +39,9 @@ pub fn MeshPipelineViewLayout::main_bind_group_layout_descriptor(Self) -> @rende
 pub struct MeshPipelineViewLayoutKey {
   bits : UInt
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey() -> Self
 pub fn MeshPipelineViewLayoutKey::bits(Self) -> UInt
 pub fn MeshPipelineViewLayoutKey::contains(Self, UInt) -> Bool
-pub fn MeshPipelineViewLayoutKey::default() -> Self
 pub fn MeshPipelineViewLayoutKey::label(Self) -> String
 
 pub struct MeshPipelineViewLayouts {

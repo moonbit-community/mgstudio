@@ -27,7 +27,7 @@ pub struct ExtractedAtmosphere {
 }
 
 ///|
-pub fn ExtractedAtmosphere::default() -> ExtractedAtmosphere {
+pub fn ExtractedAtmosphere::ExtractedAtmosphere() -> ExtractedAtmosphere {
   ExtractedAtmosphere::{
     bottom_radius: 6_360_000.0F,
     top_radius: 6_460_000.0F,
@@ -66,13 +66,13 @@ pub struct AtmosphereRenderNodeState {
 }
 
 ///|
-pub fn AtmosphereRenderNodeState::default() -> AtmosphereRenderNodeState {
+pub fn AtmosphereRenderNodeState::AtmosphereRenderNodeState() -> AtmosphereRenderNodeState {
   AtmosphereRenderNodeState::{ luts_ready: false, render_sky_ready: false }
 }
 
 ///|
 pub fn pbr_atmosphere_default() -> Atmosphere {
-  Atmosphere::default()
+  Atmosphere()
 }
 
 ///|

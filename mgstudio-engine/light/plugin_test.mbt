@@ -14,7 +14,9 @@
 
 ///|
 test "light plugin: initializes default light resources" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(LightPlugin::default())
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @light.LightPlugin::LightPlugin(),
+  )
   let scattering_medium_assets_key : @ecs.ResourceKey[
     @asset.Assets[ScatteringMedium],
   ] = @asset.assets_resource_key()
@@ -39,24 +41,27 @@ test "light plugin: initializes default light resources" {
 ///|
 test "light plugin: automatically adds default parallax correction to reflection probes" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins(
-    LightPlugin::default(),
+    @light.LightPlugin::LightPlugin(),
   )
   let world = app.world()
 
   let auto_probe = world.spawn()
-  try! world.set(auto_probe, EnvironmentMapLight::default())
-  try! world.set(auto_probe, LightProbe::default())
+  try! world.set(auto_probe, @light.EnvironmentMapLight::EnvironmentMapLight())
+  try! world.set(auto_probe, @light.LightProbe::LightProbe())
 
   let custom_probe = world.spawn()
-  try! world.set(custom_probe, EnvironmentMapLight::default())
-  try! world.set(custom_probe, LightProbe::default())
+  try! world.set(
+    custom_probe,
+    @light.EnvironmentMapLight::EnvironmentMapLight(),
+  )
+  try! world.set(custom_probe, @light.LightProbe::LightProbe())
   try! world.set(
     custom_probe,
     ParallaxCorrection::Custom(@math.Vec3::new(0.25, 0.5, 0.75)),
   )
 
   let non_probe = world.spawn()
-  try! world.set(non_probe, LightProbe::default())
+  try! world.set(non_probe, @light.LightProbe::LightProbe())
 
   app = app.update()
 
@@ -82,11 +87,13 @@ test "light plugin: automatically adds default parallax correction to reflection
 
 ///|
 test "light plugin: light probe required components match bevy probe requirements" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(LightPlugin::default())
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @light.LightPlugin::LightPlugin(),
+  )
   let world = app.world()
 
   let probe = world.spawn()
-  try! world.set(probe, LightProbe::default())
+  try! world.set(probe, @light.LightProbe::LightProbe())
   debug_inspect(
     try! (world.get_by_key(probe, @transform.ecs_key_transform) is Some(_)),
     content="true",
@@ -102,7 +109,7 @@ test "light plugin: light probe required components match bevy probe requirement
   )
 
   let volume = world.spawn()
-  try! world.set(volume, IrradianceVolume::default())
+  try! world.set(volume, @light.IrradianceVolume::IrradianceVolume())
   debug_inspect(
     try! (world.get_by_key(volume, ecs_key_light_probe) is Some(_)),
     content="true",

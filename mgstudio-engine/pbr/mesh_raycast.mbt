@@ -31,7 +31,7 @@ pub struct MeshRayCastSettings {
 }
 
 ///|
-pub fn MeshRayCastSettings::default() -> MeshRayCastSettings {
+pub fn MeshRayCastSettings::MeshRayCastSettings() -> MeshRayCastSettings {
   {
     max_distance: MESH_RAY_CAST_DEFAULT_MAX_DISTANCE,
     ray_epsilon: MESH_RAY_CAST_DEFAULT_RAY_EPSILON,

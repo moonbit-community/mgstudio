@@ -79,7 +79,7 @@ fn sprite_alpha_mode_to_alpha_mode2d(
 }
 
 ///|
-pub fn SpriteMaterial::default() -> SpriteMaterial {
+pub fn SpriteMaterial::SpriteMaterial() -> SpriteMaterial {
   SpriteMaterial::{
     image: @asset.Handle::new(0),
     texture_atlas: None,
@@ -135,7 +135,7 @@ pub fn SpriteMaterial::with_texture_atlas_layout(
 pub struct SpriteMaterialPlugin {}
 
 ///|
-pub fn SpriteMaterialPlugin::default() -> SpriteMaterialPlugin {
+pub fn SpriteMaterialPlugin::SpriteMaterialPlugin() -> SpriteMaterialPlugin {
   SpriteMaterialPlugin::{  }
 }
 
@@ -143,7 +143,7 @@ pub fn SpriteMaterialPlugin::default() -> SpriteMaterialPlugin {
 pub struct SpriteMeshPlugin {}
 
 ///|
-pub fn SpriteMeshPlugin::default() -> SpriteMeshPlugin {
+pub fn SpriteMeshPlugin::SpriteMeshPlugin() -> SpriteMeshPlugin {
   SpriteMeshPlugin::{  }
 }
 
@@ -153,7 +153,7 @@ priv struct SpriteMeshQuad {
 }
 
 ///|
-fn SpriteMeshQuad::default() -> SpriteMeshQuad {
+fn SpriteMeshQuad::SpriteMeshQuad() -> SpriteMeshQuad {
   SpriteMeshQuad::{ handle: None }
 }
 
@@ -163,7 +163,7 @@ priv struct SpriteMeshMaterialCache {
 }
 
 ///|
-fn SpriteMeshMaterialCache::default() -> SpriteMeshMaterialCache {
+fn SpriteMeshMaterialCache::SpriteMeshMaterialCache() -> SpriteMeshMaterialCache {
   SpriteMeshMaterialCache::{ handles: @hashmap.HashMap([]) }
 }
 
@@ -190,7 +190,7 @@ impl @app.Resource for SpriteMeshMaterialCache with resource() {
 }
 
 ///|
-pub fn SpriteMesh::default() -> SpriteMesh {
+pub fn SpriteMesh::SpriteMesh() -> SpriteMesh {
   SpriteMesh::from_image(@asset.Handle::new(0))
 }
 
@@ -213,7 +213,7 @@ pub fn SpriteMesh::from_image(
 
 ///|
 pub fn SpriteMesh::sized(custom_size : @math.Vec2) -> SpriteMesh {
-  SpriteMesh::{ ..SpriteMesh::default(), custom_size: Some(custom_size) }
+  SpriteMesh::{ ..SpriteMesh(), custom_size: Some(custom_size) }
 }
 
 ///|
@@ -226,7 +226,7 @@ pub fn SpriteMesh::from_atlas_image(
 
 ///|
 pub fn SpriteMesh::from_color(color : Color, size : @math.Vec2) -> SpriteMesh {
-  SpriteMesh::{ ..SpriteMesh::default(), color, custom_size: Some(size) }
+  SpriteMesh::{ ..SpriteMesh(), color, custom_size: Some(size) }
 }
 
 ///|
@@ -743,8 +743,8 @@ pub impl @app.Plugin for SpriteMaterialPlugin with name(_self) {
 
 ///|
 pub impl @app.Plugin for SpriteMaterialPlugin with build(_self, app) {
-  let plugin : Material2dPlugin[SpriteMaterial] = Material2dPlugin::default()
-    .with_asset_init(fn() { SpriteMaterial::default() })
+  let plugin : Material2dPlugin[SpriteMaterial] = Material2dPlugin::Material2dPlugin()
+    .with_asset_init(fn() { SpriteMaterial::SpriteMaterial() })
     .with_vertex_shader("sprite_render/sprite_mesh/sprite_material.wgsl")
     .with_fragment_shader("sprite_render/sprite_mesh/sprite_material.wgsl")
   app.add_plugins(plugin)
@@ -889,9 +889,9 @@ pub impl @app.Plugin for SpriteMeshPlugin with name(_self) {
 ///|
 pub impl @app.Plugin for SpriteMeshPlugin with build(_self, app) {
   app
-  .add_plugins(SpriteMaterialPlugin::default())
-  .init_resource(fn() { SpriteMeshQuad::default() })
-  .init_resource(fn() { SpriteMeshMaterialCache::default() })
+  .add_plugins(SpriteMaterialPlugin::SpriteMaterialPlugin())
+  .init_resource(fn() { SpriteMeshQuad::SpriteMeshQuad() })
+  .init_resource(fn() { SpriteMeshMaterialCache::SpriteMeshMaterialCache() })
   .add_systems(
     @app.Update,
     (

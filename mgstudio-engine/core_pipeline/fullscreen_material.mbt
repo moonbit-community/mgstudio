@@ -23,7 +23,7 @@ const FULLSCREEN_MATERIAL_PLUGIN_NAME : String = "mgstudio.core_pipeline.fullscr
 pub struct FullscreenMaterialPlugin {}
 
 ///|
-pub fn FullscreenMaterialPlugin::default() -> FullscreenMaterialPlugin {
+pub fn FullscreenMaterialPlugin::FullscreenMaterialPlugin() -> FullscreenMaterialPlugin {
   FullscreenMaterialPlugin::{  }
 }
 
@@ -31,7 +31,10 @@ pub fn FullscreenMaterialPlugin::default() -> FullscreenMaterialPlugin {
 pub fn fullscreen_material_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  fullscreen_material_plugin_with(app, FullscreenMaterialPlugin::default())
+  fullscreen_material_plugin_with(
+    app,
+    FullscreenMaterialPlugin::FullscreenMaterialPlugin(),
+  )
 }
 
 ///|
@@ -50,12 +53,14 @@ pub fn fullscreen_material_plugin_with(
   plugin : FullscreenMaterialPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { FullscreenMaterialPipelineState::default() })
+  app.init_resource(fn() {
+    FullscreenMaterialPipelineState::FullscreenMaterialPipelineState()
+  })
 }
 
 ///|
 pub fn fullscreen_material_shader() -> @fullscreen_vertex_shader.FullscreenShader {
-  @fullscreen_vertex_shader.FullscreenShader::default()
+  @fullscreen_vertex_shader.FullscreenShader::FullscreenShader()
 }
 
 ///|
@@ -70,7 +75,7 @@ pub struct FullscreenMaterialPipelineState {
 }
 
 ///|
-pub fn FullscreenMaterialPipelineState::default() -> FullscreenMaterialPipelineState {
+pub fn FullscreenMaterialPipelineState::FullscreenMaterialPipelineState() -> FullscreenMaterialPipelineState {
   FullscreenMaterialPipelineState::new()
 }
 

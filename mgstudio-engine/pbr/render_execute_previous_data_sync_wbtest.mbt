@@ -23,12 +23,12 @@ test "render3d preupdate sync: writes previous view and global transform" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
   let camera_transform = @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F)
-  try! (world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d::default())
+  try! (world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d::Camera3d())
   |> ignore)
   try! (world.set_by_key(
     camera_entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default().with_is_active(true),
+    @sprite.Camera::Camera().with_is_active(true),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -130,12 +130,12 @@ test "render3d preupdate sync: writes previous view and global transform" {
 test "render3d preupdate sync: mesh sync is gated by active camera" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d::default())
+  try! (world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d::Camera3d())
   |> ignore)
   try! (world.set_by_key(
     camera_entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default().with_is_active(false),
+    @sprite.Camera::Camera().with_is_active(false),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -191,7 +191,7 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
   try! (world.replace(
     camera_entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default().with_is_active(true),
+    @sprite.Camera::Camera().with_is_active(true),
   )
   |> ignore)
 

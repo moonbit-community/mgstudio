@@ -24,7 +24,7 @@ pub(all) struct PbrPlugin {
 }
 
 ///|
-pub fn PbrPlugin::default() -> PbrPlugin {
+pub fn PbrPlugin::PbrPlugin() -> PbrPlugin {
   PbrPlugin::{
     prepass_enabled: true,
     add_default_deferred_lighting_plugin: true,
@@ -55,7 +55,7 @@ pub fn PbrPluginRuntimeConfig::from_plugin(
 
 ///|
 fn pbr_default_runtime_config() -> PbrPluginRuntimeConfig {
-  PbrPluginRuntimeConfig::from_plugin(PbrPlugin::default())
+  PbrPluginRuntimeConfig::from_plugin(PbrPlugin::PbrPlugin())
 }
 
 ///|
@@ -122,7 +122,7 @@ fn pbr_plugin_sync_light_probe_state(
   app : @app.App[@ecs.World],
   _runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  app.add_plugins(@pbr_light_probe.LightProbePlugin::default())
+  app.add_plugins(@pbr_light_probe.LightProbePlugin::LightProbePlugin())
 }
 
 ///|
@@ -131,15 +131,19 @@ fn pbr_plugin_sync_feature_plugins(
   _runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
   app
-  .add_plugins(@pbr_atmosphere.AtmospherePlugin::default())
+  .add_plugins(@pbr_atmosphere.AtmospherePlugin::AtmospherePlugin())
   .add_plugins(@lightmap.lightmap_plugin())
-  .add_plugins(@pbr_ssao.ScreenSpaceAmbientOcclusionPlugin::default())
-  .add_plugins(@pbr_ssr.ScreenSpaceReflectionsPlugin::default())
-  .add_plugins(@pbr_volumetric_fog.VolumetricFogPlugin::default())
-  .add_plugins(@pbr_render.GpuMeshPreprocessPlugin::default())
-  .add_plugins(@pbr_decal.ClusteredDecalPlugin::default())
-  .add_plugins(ContactShadowsPlugin::default())
-  .add_plugins(@pbr_decal.ForwardDecalPlugin::default())
+  .add_plugins(
+    @pbr_ssao.ScreenSpaceAmbientOcclusionPlugin::ScreenSpaceAmbientOcclusionPlugin(),
+  )
+  .add_plugins(
+    @pbr_ssr.ScreenSpaceReflectionsPlugin::ScreenSpaceReflectionsPlugin(),
+  )
+  .add_plugins(@pbr_volumetric_fog.VolumetricFogPlugin::VolumetricFogPlugin())
+  .add_plugins(@pbr_render.GpuMeshPreprocessPlugin::GpuMeshPreprocessPlugin())
+  .add_plugins(@pbr_decal.ClusteredDecalPlugin::ClusteredDecalPlugin())
+  .add_plugins(ContactShadowsPlugin::ContactShadowsPlugin())
+  .add_plugins(@pbr_decal.ForwardDecalPlugin::ForwardDecalPlugin())
 }
 
 ///|
@@ -148,7 +152,9 @@ fn pbr_plugin_sync_deferred_lighting_state(
   runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
   if runtime_config.add_default_deferred_lighting_plugin {
-    app.add_plugins(DeferredPbrLightingPlugin::default())
+    app.add_plugins(
+      @pbr_deferred.DeferredPbrLightingPlugin::DeferredPbrLightingPlugin(),
+    )
   } else {
     app.insert_world_resource(
       ecs_key_deferred_pbr_lighting_state,
@@ -172,7 +178,7 @@ fn pbr_plugin_sync_fog_state(
   app : @app.App[@ecs.World],
   _runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  app.add_plugins(@pbr_render.FogPlugin::default())
+  app.add_plugins(@pbr_render.FogPlugin::FogPlugin())
 }
 
 ///|
@@ -218,7 +224,7 @@ pub let render3d_set_render : @app.SystemSet = @render.render_system_set_render
 
 ///|
 pub fn pbr_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(PbrPlugin::default())
+  app.add_plugins(PbrPlugin::PbrPlugin())
 }
 
 ///|
@@ -253,14 +259,16 @@ fn pbr_plugin_install_with(
     let distance_fog_extract_plugin : @render.ExtractComponentPlugin[
       DistanceFog,
       Unit,
-    ] = @render.ExtractComponentPlugin::default()
+    ] = @render.ExtractComponentPlugin::ExtractComponentPlugin()
     next = @render.extract_component_plugin_with(
       next, distance_fog_extract_plugin,
     )
     next = next
       .insert_world_resource(ecs_key_pbr_plugin_marker, PbrPluginMarker::{  })
       .insert_world_resource(ecs_key_pbr_plugin_runtime_config, runtime_config)
-    next = @asset.init_asset(next, fn() { StandardMaterial::default() })
+    next = @asset.init_asset(next, fn() {
+      @material.StandardMaterial::StandardMaterial()
+    })
   } else {
     next = next.insert_world_resource(
       ecs_key_pbr_plugin_runtime_config, runtime_config,
@@ -280,5 +288,5 @@ fn pbr_plugin_install_with(
 
 ///|
 pub fn render3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(PbrPlugin::default())
+  app.add_plugins(PbrPlugin::PbrPlugin())
 }

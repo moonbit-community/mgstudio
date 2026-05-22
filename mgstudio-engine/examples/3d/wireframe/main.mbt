@@ -100,17 +100,17 @@ fn setup_ui(world : @ecs.World) -> Unit {
   )
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(100).with_clear_color_none(),
+    @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -129,7 +129,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     controls_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
@@ -142,7 +142,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     controls_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(14.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(14.0F),
   )
   try! world.set_by_key(
     controls_entity,
@@ -162,7 +162,7 @@ fn update_controls_text(world : @ecs.World) -> Unit {
   guard wireframe_state.val.controls_text is Some(text_entity) else { return }
   let config = match world.get_resource(@pbr.ecs_key_wireframe_config) {
     Some(value) => value
-    None => @pbr.WireframeConfig::default()
+    None => @pbr.WireframeConfig::WireframeConfig()
   }
   guard (try! world.get_by_key(text_entity, @text.ecs_key_text))
     is Some(text_value) else {
@@ -190,7 +190,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     red_cube,
     @pbr.ecs_key_no_wireframe,
-    @pbr.NoWireframe::default(),
+    @pbr.NoWireframe::NoWireframe(),
   )
 
   @pbr.MeshMaterial3dBundle::new(
@@ -222,7 +222,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     green_cube,
     @pbr.ecs_key_wireframe,
-    @pbr.Wireframe::default(),
+    @pbr.Wireframe::Wireframe(),
   )
   try! world.set_by_key(
     green_cube,
@@ -256,12 +256,12 @@ fn setup_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default(),
+    @pbr.PointLight::PointLight(),
   )
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default(),
+    @pbr.PointLight::PointLight(),
   )
   try! world.set_by_key(
     light,
@@ -270,7 +270,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -286,7 +286,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 fn update_colors(world : @ecs.World) -> Unit {
   let mut config = match world.get_resource(@pbr.ecs_key_wireframe_config) {
     Some(value) => value
-    None => @pbr.WireframeConfig::default()
+    None => @pbr.WireframeConfig::WireframeConfig()
   }
   let mut config_changed = false
   if @input.key_just_pressed(@window.KeyCode::KeyZ) {
@@ -332,8 +332,8 @@ fn update_colors(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@pbr.WireframePlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@pbr.WireframePlugin::WireframePlugin())
   .add_systems(@app.Startup, @app.system(setup_scene))
   .add_systems(@app.Update, @app.system(update_colors))
   .run()

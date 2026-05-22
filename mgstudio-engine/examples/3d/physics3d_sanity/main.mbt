@@ -15,7 +15,7 @@
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(physics3d_sanity_setup))
   .add_systems(@app.Update, @app.system(physics3d_sanity_print))
   .run()
@@ -118,7 +118,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(220.0F, 360.0F, 220.0F),
   )
 
-  let camera = @sprite.Camera::default()
+  let camera = @sprite.Camera::Camera()
   @camera.Camera3dBundle::new(
     camera,
     @transform.Transform::from_xyz(0.0F, 120.0F, 420.0F).looking_at(

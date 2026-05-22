@@ -39,7 +39,7 @@ test "renderer: wgpu wrapper is a transparent native wrapper" {
 
 ///|
 test "renderer: pending command buffers default to empty bevy resource state" {
-  let pending = PendingCommandBuffers::default()
+  let pending = PendingCommandBuffers::PendingCommandBuffers()
   debug_inspect(pending.is_empty(), content="true")
   debug_inspect(pending.len(), content="0")
   pending.push([])
@@ -49,7 +49,7 @@ test "renderer: pending command buffers default to empty bevy resource state" {
 
 ///|
 test "renderer: render context state starts empty and finish clears state" {
-  let state = RenderContextState::default()
+  let state = RenderContextState::RenderContextState()
   debug_inspect(state.is_empty(), content="true")
   debug_inspect(state.finish().length(), content="0")
   debug_inspect(state.is_empty(), content="true")
@@ -1067,7 +1067,7 @@ test "renderer: material descriptor exact layout preserves empty prepass group" 
     "prepass_empty",
     [],
   )
-  let descriptor = @render_resource.RenderPipelineDescriptor::default().with_layout([
+  let descriptor = @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor().with_layout([
       view_layout, empty_layout,
     ],
   )
@@ -1147,7 +1147,7 @@ test "renderer: mesh3d draw dynamic offsets follow morph binding order" {
 
 ///|
 test "renderer: shadow shader defs extend descriptor defs with shadow projection state" {
-  let descriptor = @render_resource.RenderPipelineDescriptor::default()
+  let descriptor = @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
     .with_vertex(
       @render_resource.VertexState::new(
         Some("pbr/prepass/prepass.wgsl"),

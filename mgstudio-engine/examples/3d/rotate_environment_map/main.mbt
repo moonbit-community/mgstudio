@@ -127,18 +127,18 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default().with_intensity(100_000.0F),
+    @pbr.PointLight::PointLight().with_intensity(100_000.0F),
   )
   let camera = @camera.Camera3dBundle::new_with_projection(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
-      ..@camera.PerspectiveProjection3d::default(),
+      ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
       fov: 27.0F * PI / 180.0F,
     }),
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   rotate_env_state.val.camera = Some(camera)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::default())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_tonemapping,
@@ -203,7 +203,7 @@ fn rotate_skybox_and_environment_map(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(rotate_skybox_and_environment_map))
   .run()

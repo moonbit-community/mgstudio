@@ -31,7 +31,7 @@ pub type PrepassPlugin = @core_prepass.PrepassPlugin
 pub struct PrepassPipelinePlugin {}
 
 ///|
-pub fn PrepassPipelinePlugin::default() -> PrepassPipelinePlugin {
+pub fn PrepassPipelinePlugin::PrepassPipelinePlugin() -> PrepassPipelinePlugin {
   PrepassPipelinePlugin::{  }
 }
 
@@ -71,7 +71,7 @@ pub struct PrepassPipelineState {
 } derive(Eq, Debug)
 
 ///|
-pub fn PrepassPipelineState::default() -> PrepassPipelineState {
+pub fn PrepassPipelineState::PrepassPipelineState() -> PrepassPipelineState {
   PrepassPipelineState::{ pipeline_ready: false, view_bind_group_ready: false }
 }
 
@@ -220,7 +220,7 @@ pub impl @ecs.Component for PreviousGlobalTransform with component() {
 pub fn prepass_pipeline_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  app.add_plugins(PrepassPipelinePlugin::default())
+  app.add_plugins(PrepassPipelinePlugin::PrepassPipelinePlugin())
 }
 
 ///|
@@ -241,7 +241,7 @@ fn prepass_pipeline_plugin_install_with(
   } else {
     app.insert_world_resource(
       ecs_key_prepass_pipeline_state,
-      PrepassPipelineState::default(),
+      PrepassPipelineState::PrepassPipelineState(),
     )
   }
   app.add_pre_update_system(prepass_update_pipeline_state)
@@ -249,7 +249,7 @@ fn prepass_pipeline_plugin_install_with(
 
 ///|
 pub fn prepass_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  prepass_plugin_with(app, PrepassPlugin::default())
+  prepass_plugin_with(app, PrepassPlugin())
 }
 
 ///|

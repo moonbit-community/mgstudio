@@ -425,7 +425,7 @@ pub impl @ecs.EcsPayloadCodec for LayerMetadata
 pub struct LdtkEntityMap {
   entries : @hashmap.HashMap[(String?, String?), (@ecs.World, @core.Entity, EntityInstance, LayerInstance, @asset.Handle[@image.Image]?, TilesetDefinition?, @asset.AssetServer) -> Unit]
 }
-pub fn LdtkEntityMap::default() -> Self
+pub fn LdtkEntityMap::LdtkEntityMap() -> Self
 pub impl @app.Resource for LdtkEntityMap
 pub impl @ecs.EcsPayloadCodec for LdtkEntityMap
 
@@ -443,7 +443,7 @@ pub fn LdtkFieldInstance::new(String, TilesetRectangle?, String, FieldValue, Int
 pub struct LdtkIntCellMap {
   entries : @hashmap.HashMap[(String?, Int?), (@ecs.World, @core.Entity, IntGridCell, LayerInstance) -> Unit]
 }
-pub fn LdtkIntCellMap::default() -> Self
+pub fn LdtkIntCellMap::LdtkIntCellMap() -> Self
 pub impl @app.Resource for LdtkIntCellMap
 pub impl @ecs.EcsPayloadCodec for LdtkIntCellMap
 
@@ -478,7 +478,7 @@ pub impl RawLevelAccessor for LdtkJsonWithMetadata
 
 pub(all) struct LdtkPlugin {
 }
-pub fn LdtkPlugin::default() -> Self
+pub fn LdtkPlugin::LdtkPlugin() -> Self
 pub impl @app.Plugin for LdtkPlugin
 
 pub struct LdtkProject {
@@ -530,7 +530,7 @@ pub impl @ecs.EcsPayloadCodec for LdtkProjectHandle
 pub struct LdtkRuntimeState {
   spawned_levels_by_world : @hashmap.HashMap[String, @hashmap.HashMap[String, @core.Entity]]
 }
-pub fn LdtkRuntimeState::default() -> Self
+pub fn LdtkRuntimeState::LdtkRuntimeState() -> Self
 pub fn LdtkRuntimeState::remove_world(Self, @core.Entity) -> Unit
 pub fn LdtkRuntimeState::world_spawned_levels(Self, @core.Entity) -> @hashmap.HashMap[String, @core.Entity]
 pub impl @app.Resource for LdtkRuntimeState
@@ -543,14 +543,14 @@ pub struct LdtkSettings {
   level_background : LevelBackground
   exclusions : SpawnExclusions
 }
-pub fn LdtkSettings::default() -> Self
+pub fn LdtkSettings::LdtkSettings() -> Self
 pub impl @app.Resource for LdtkSettings
 pub impl @ecs.EcsPayloadCodec for LdtkSettings
 
 pub struct LdtkSpawnedLevelIids {
   iids : Array[LevelIid]
 }
-pub fn LdtkSpawnedLevelIids::default() -> Self
+pub fn LdtkSpawnedLevelIids::LdtkSpawnedLevelIids() -> Self
 pub fn LdtkSpawnedLevelIids::iids(Self) -> Array[LevelIid]
 pub impl @app.Resource for LdtkSpawnedLevelIids
 pub impl @ecs.EcsPayloadCodec for LdtkSpawnedLevelIids
@@ -661,8 +661,8 @@ pub impl @ecs.EcsPayloadCodec for LevelSelection
 pub struct LevelSet {
   iids : Array[LevelIid]
 }
+pub fn LevelSet::LevelSet() -> Self
 pub fn LevelSet::contains(Self, LevelIid) -> Bool
-pub fn LevelSet::default() -> Self
 pub fn LevelSet::from_iids(Array[String]) -> Self
 pub fn LevelSet::iids(Self) -> Array[LevelIid]
 pub fn LevelSet::new(Array[LevelIid]) -> Self
@@ -735,7 +735,7 @@ pub fn SetClearColor::default() -> Self
 pub struct SpawnExclusions {
   layer_identifiers : Array[String]
 }
-pub fn SpawnExclusions::default() -> Self
+pub fn SpawnExclusions::SpawnExclusions() -> Self
 
 pub struct TileEnumTags {
   tags : Array[String]

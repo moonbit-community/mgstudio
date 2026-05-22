@@ -91,7 +91,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default(),
+        @pbr.PointLight::PointLight(),
         @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
         @sprite.RenderLayers::layer(0).with_layer(1),
       ),
@@ -101,7 +101,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @sprite.Camera::new(@sprite.Color::white()).with_order(-1),
         @sprite.RenderTarget::Image(image),
         @transform.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
@@ -129,7 +129,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -180,7 +180,7 @@ fn cube_rotator_system(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(
     @app.Update,

@@ -22,7 +22,7 @@ const CI_TESTING_PLUGIN_NAME : String = "mgstudio.dev_tools.CiTestingPlugin"
 pub struct CiTestingPlugin {}
 
 ///|
-pub fn CiTestingPlugin::default() -> CiTestingPlugin {
+pub fn CiTestingPlugin::CiTestingPlugin() -> CiTestingPlugin {
   CiTestingPlugin::{  }
 }
 
@@ -56,7 +56,7 @@ fn ci_testing_env_parse_int(key : String) -> Int? {
 
 ///|
 fn ci_testing_config_from_env() -> CiTestingConfig {
-  let mut config = CiTestingConfig::default()
+  let mut config = CiTestingConfig::CiTestingConfig()
   if ci_testing_env_parse_int("CI_TESTING_SCREENSHOT_FRAME")
     is Some(capture_frame) {
     config = config.with_event(capture_frame, Screenshot)
@@ -98,7 +98,7 @@ fn ci_testing_apply_time_update_strategy(
 
 ///|
 pub fn ci_testing_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  ci_testing_plugin_with(app, CiTestingPlugin::default())
+  ci_testing_plugin_with(app, CiTestingPlugin::CiTestingPlugin())
 }
 
 ///|
@@ -123,7 +123,7 @@ pub fn ci_testing_plugin_with(
   if !next.contains_resource(ci_testing_runtime_state_resource_key) {
     next = next.insert_world_resource(
       ci_testing_runtime_state_resource_key,
-      CiTestingRuntimeState::default(),
+      CiTestingRuntimeState::CiTestingRuntimeState(),
     )
   }
   ci_testing_apply_time_update_strategy(next).add_system(

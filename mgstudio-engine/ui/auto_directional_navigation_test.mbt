@@ -48,7 +48,7 @@ fn insert_auto_navigation_node(
   .entity_mut(entity)
   .insert(
     (
-      AutoDirectionalNavigation::default(),
+      AutoDirectionalNavigation::AutoDirectionalNavigation(),
       UiLayout::new(rect),
       @visibility.InheritedVisibility::new(true),
     ),

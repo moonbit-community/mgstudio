@@ -25,7 +25,7 @@ pub type ScreenSpaceReflections = @post_process.ScreenSpaceReflections
 pub struct ScreenSpaceReflectionsPlugin {}
 
 ///|
-pub fn ScreenSpaceReflectionsPlugin::default() -> ScreenSpaceReflectionsPlugin {
+pub fn ScreenSpaceReflectionsPlugin::ScreenSpaceReflectionsPlugin() -> ScreenSpaceReflectionsPlugin {
   ScreenSpaceReflectionsPlugin::{  }
 }
 
@@ -46,7 +46,7 @@ pub struct ScreenSpaceReflectionsPipelineId {
 }
 
 ///|
-pub fn ScreenSpaceReflectionsPipelineId::default() -> ScreenSpaceReflectionsPipelineId {
+pub fn ScreenSpaceReflectionsPipelineId::ScreenSpaceReflectionsPipelineId() -> ScreenSpaceReflectionsPipelineId {
   ScreenSpaceReflectionsPipelineId::{ id: -1 }
 }
 
@@ -58,7 +58,7 @@ pub struct ScreenSpaceReflectionsPipelineKey {
 }
 
 ///|
-pub fn ScreenSpaceReflectionsPipelineKey::default() -> ScreenSpaceReflectionsPipelineKey {
+pub fn ScreenSpaceReflectionsPipelineKey::ScreenSpaceReflectionsPipelineKey() -> ScreenSpaceReflectionsPipelineKey {
   ScreenSpaceReflectionsPipelineKey::{
     is_hdr: false,
     has_environment_maps: false,
@@ -73,10 +73,10 @@ pub struct ScreenSpaceReflectionsPluginState {
 }
 
 ///|
-pub fn ScreenSpaceReflectionsPluginState::default() -> ScreenSpaceReflectionsPluginState {
+pub fn ScreenSpaceReflectionsPluginState::ScreenSpaceReflectionsPluginState() -> ScreenSpaceReflectionsPluginState {
   ScreenSpaceReflectionsPluginState::{
     enabled: true,
-    pipeline_id: ScreenSpaceReflectionsPipelineId::default(),
+    pipeline_id: ScreenSpaceReflectionsPipelineId::ScreenSpaceReflectionsPipelineId(),
   }
 }
 
@@ -108,7 +108,7 @@ pub struct ScreenSpaceReflectionsUniform {
 }
 
 ///|
-pub fn ScreenSpaceReflectionsUniform::default() -> ScreenSpaceReflectionsUniform {
+pub fn ScreenSpaceReflectionsUniform::ScreenSpaceReflectionsUniform() -> ScreenSpaceReflectionsUniform {
   ScreenSpaceReflectionsUniform::{
     min_perceptual_roughness_start: 0.08F,
     min_perceptual_roughness_end: 0.12F,
@@ -156,12 +156,15 @@ pub fn pbr_ssr_uniform_with_bisection_steps(
 
 ///|
 pub fn pbr_ssr_default() -> ScreenSpaceReflections {
-  ScreenSpaceReflections::default()
+  ScreenSpaceReflections()
 }
 
 ///|
 pub fn ssr_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  ssr_plugin_install_with(app, ScreenSpaceReflectionsPlugin::default())
+  ssr_plugin_install_with(
+    app,
+    ScreenSpaceReflectionsPlugin::ScreenSpaceReflectionsPlugin(),
+  )
 }
 
 ///|
@@ -175,7 +178,7 @@ pub fn ssr_plugin_install_with(
   } else {
     app.insert_world_resource(
       ecs_key_ssr_plugin_state,
-      ScreenSpaceReflectionsPluginState::default(),
+      ScreenSpaceReflectionsPluginState::ScreenSpaceReflectionsPluginState(),
     )
   }
 }

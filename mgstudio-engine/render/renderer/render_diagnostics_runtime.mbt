@@ -32,7 +32,7 @@ pub struct RenderDiagnosticsSnapshot {
 }
 
 ///|
-pub fn RenderDiagnosticsSnapshot::default() -> RenderDiagnosticsSnapshot {
+pub fn RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot() -> RenderDiagnosticsSnapshot {
   RenderDiagnosticsSnapshot::{
     mesh2d_draw_calls: 0,
     mesh2d_executed_draw_calls: 0,
@@ -147,7 +147,7 @@ fn render_diagnostics_runtime_state_default() -> RenderDiagnosticsRuntimeState {
     debug_mesh2d_drop_bad_stride: 0,
     debug_mesh2d_drop_no_pipeline: 0,
     debug_mesh2d_drop_no_uniform_buf: 0,
-    last_frame_render_diagnostics_snapshot: RenderDiagnosticsSnapshot::default(),
+    last_frame_render_diagnostics_snapshot: RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot(),
     pass_total_count: 0,
     pass_2d_count: 0,
     pass_3d_main_count: 0,
@@ -396,5 +396,5 @@ pub fn render_diagnostics_reset_current_frame_counters() -> Unit {
   state.current_frame_mesh3d_draw_calls = 0
   state.current_frame_mesh3d_executed_draw_calls = 0
   render_pass_timing_reset_counters()
-  state.last_frame_render_diagnostics_snapshot = RenderDiagnosticsSnapshot::default()
+  state.last_frame_render_diagnostics_snapshot = RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot()
 }

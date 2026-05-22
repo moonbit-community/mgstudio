@@ -52,7 +52,7 @@ fn timeline_trace_default_categories() -> Array[@app.TimelineTraceCategory] {
 }
 
 ///|
-pub fn TimelineTraceConfig::default() -> TimelineTraceConfig {
+pub fn TimelineTraceConfig::TimelineTraceConfig() -> TimelineTraceConfig {
   TimelineTraceConfig::{
     enabled: false,
     output_path: "/tmp/mgstudio_timeline_trace.json",
@@ -99,8 +99,8 @@ pub struct TimelineTracePlugin {
 }
 
 ///|
-pub fn TimelineTracePlugin::default() -> TimelineTracePlugin {
-  TimelineTracePlugin::{ config: TimelineTraceConfig::default() }
+pub fn TimelineTracePlugin::TimelineTracePlugin() -> TimelineTracePlugin {
+  TimelineTracePlugin::{ config: TimelineTraceConfig::TimelineTraceConfig() }
 }
 
 ///|
@@ -127,7 +127,7 @@ pub struct StressDiagnosticsPlugin {
 }
 
 ///|
-pub fn StressDiagnosticsPlugin::default() -> StressDiagnosticsPlugin {
+pub fn StressDiagnosticsPlugin::StressDiagnosticsPlugin() -> StressDiagnosticsPlugin {
   StressDiagnosticsPlugin::{
     use_generic_stack: None,
     log_interval_seconds: 1.0F,
@@ -528,7 +528,7 @@ let timeline_trace_plugin_marker_key : @ecs.ResourceKey[Bool] = @ecs.register_re
 pub fn timeline_trace_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  timeline_trace_plugin_with(app, TimelineTracePlugin::default())
+  timeline_trace_plugin_with(app, TimelineTracePlugin::TimelineTracePlugin())
 }
 
 ///|
@@ -563,7 +563,10 @@ pub fn timeline_trace_plugin_with(
 pub fn stress_diagnostics_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  stress_diagnostics_plugin_with(app, StressDiagnosticsPlugin::default())
+  stress_diagnostics_plugin_with(
+    app,
+    StressDiagnosticsPlugin::StressDiagnosticsPlugin(),
+  )
 }
 
 ///|
@@ -592,7 +595,7 @@ pub fn stress_diagnostics_plugin_with(
         @app.PostUpdate,
         @app.system(@app.system_param2(stress_metrics_system)),
       )
-      .add_plugins(TimelineTracePlugin::default())
+      .add_plugins(TimelineTracePlugin::TimelineTracePlugin())
   }
   let include_render_diagnostics = match
     @sys.get_env_var("MGSTUDIO_STRESS_INCLUDE_RENDER_DIAGNOSTICS") {
@@ -631,11 +634,11 @@ pub fn stress_diagnostics_plugin_with(
     wait_duration_seconds: plugin.log_interval_seconds,
   }
   let mut next = app
-    .add_plugins(FrameTimeDiagnosticsPlugin::default())
+    .add_plugins(FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin())
     .add_plugins(log_plugin)
-    .add_plugins(TimelineTracePlugin::default())
+    .add_plugins(TimelineTracePlugin::TimelineTracePlugin())
   if include_render_diagnostics {
-    next = next.add_plugins(RenderDiagnosticsPlugin::default())
+    next = next.add_plugins(RenderDiagnosticsPlugin::RenderDiagnosticsPlugin())
   }
   next
 }

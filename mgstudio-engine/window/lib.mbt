@@ -14,7 +14,7 @@
 
 ///|
 pub fn window_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  window_plugin_with(app, WindowPlugin::default())
+  window_plugin_with(app, WindowPlugin::WindowPlugin())
 }
 
 ///|

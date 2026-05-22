@@ -73,7 +73,7 @@ priv struct SceneRuntimeState {
 }
 
 ///|
-fn SceneRuntimeState::default() -> SceneRuntimeState {
+fn SceneRuntimeState::SceneRuntimeState() -> SceneRuntimeState {
   SceneRuntimeState::{
     next_instance_id: 1,
     instances_by_id: {},
@@ -695,7 +695,7 @@ fn scene_spawn_instance_when_ready(
       child_writers.push(
         @ecs.component_writer(
           @animation.ecs_key_animation_player,
-          @animation.AnimationPlayer::default(),
+          @animation.AnimationPlayer::AnimationPlayer(),
         ),
       )
     }
@@ -789,7 +789,7 @@ fn scene_spawn_instance_when_ready(
         try! world.set_by_key(
           spawned_entities[entity_index],
           @visibility.ecs_key_no_frustum_culling,
-          @visibility.NoFrustumCulling::default(),
+          @visibility.NoFrustumCulling::NoFrustumCulling(),
         )
       @gltf.GltfSkinnedMeshBoundsPolicy::BindPose => ()
     }
@@ -1020,9 +1020,13 @@ fn scene_runtime_plugin_base(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
   app
-  .init_resource(fn() { SceneRuntimeState::default() })
-  .init_resource(fn() { SceneModifiedEventsCursorState::default() })
-  .init_resource(fn() { SceneGltfPendingRequestsState::default() })
+  .init_resource(fn() { SceneRuntimeState::SceneRuntimeState() })
+  .init_resource(fn() {
+    SceneModifiedEventsCursorState::SceneModifiedEventsCursorState()
+  })
+  .init_resource(fn() {
+    SceneGltfPendingRequestsState::SceneGltfPendingRequestsState()
+  })
   .add_systems(
     @app.PreUpdate,
     (
@@ -1051,8 +1055,10 @@ pub(all) struct ScenePlugin {
 const SCENE_PLUGIN_NAME : String = "mgstudio.scene.ScenePlugin"
 
 ///|
-pub fn ScenePlugin::default() -> ScenePlugin {
-  ScenePlugin::{ lod_visibility_policy: GltfLodVisibilityPolicy::default() }
+pub fn ScenePlugin::ScenePlugin() -> ScenePlugin {
+  ScenePlugin::{
+    lod_visibility_policy: GltfLodVisibilityPolicy::GltfLodVisibilityPolicy(),
+  }
 }
 
 ///|
@@ -1076,7 +1082,7 @@ pub impl @app.Plugin for ScenePlugin with build(self, app) {
 
 ///|
 pub fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  scene_plugin_with(app, ScenePlugin::default())
+  scene_plugin_with(app, ScenePlugin::ScenePlugin())
 }
 
 ///|

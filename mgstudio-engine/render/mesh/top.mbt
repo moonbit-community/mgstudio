@@ -53,7 +53,7 @@ pub const RENDER_MESH3D_HOST_VERTEX_STRIDE_BYTES : Int = 80
 
 ///|
 fn render_mesh_default_layout_ref() -> @asset_mesh.MeshVertexBufferLayoutRef {
-  let layouts = @asset_mesh.MeshVertexBufferLayouts::default()
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   layouts.insert(
     @asset_mesh.MeshVertexBufferLayout::new(
       attribute_ids=[],

@@ -579,8 +579,13 @@ pub struct ButtonSettings {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Default for ButtonSettings with default() {
+pub fn ButtonSettings::ButtonSettings() -> ButtonSettings {
   ButtonSettings::{ press_threshold: 0.75F, release_threshold: 0.65F }
+}
+
+///|
+pub impl Default for ButtonSettings with default() {
+  ButtonSettings::ButtonSettings()
 }
 
 ///|
@@ -692,7 +697,7 @@ pub struct AxisSettings {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Default for AxisSettings with default() {
+pub fn AxisSettings::AxisSettings() -> AxisSettings {
   AxisSettings::{
     livezone_upperbound: 1.0F,
     deadzone_upperbound: 0.05F,
@@ -700,6 +705,11 @@ pub impl Default for AxisSettings with default() {
     livezone_lowerbound: -1.0F,
     threshold: 0.01F,
   }
+}
+
+///|
+pub impl Default for AxisSettings with default() {
+  AxisSettings::AxisSettings()
 }
 
 ///|
@@ -909,8 +919,13 @@ pub struct ButtonAxisSettings {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-pub impl Default for ButtonAxisSettings with default() {
+pub fn ButtonAxisSettings::ButtonAxisSettings() -> ButtonAxisSettings {
   ButtonAxisSettings::{ high: 0.95F, low: 0.05F, threshold: 0.01F }
+}
+
+///|
+pub impl Default for ButtonAxisSettings with default() {
+  ButtonAxisSettings::ButtonAxisSettings()
 }
 
 ///|
@@ -924,15 +939,20 @@ pub struct GamepadSettings {
 } derive(ToJson, FromJson)
 
 ///|
-pub impl Default for GamepadSettings with default() {
+pub fn GamepadSettings::GamepadSettings() -> GamepadSettings {
   GamepadSettings::{
-    default_button_settings: ButtonSettings::default(),
-    default_axis_settings: AxisSettings::default(),
-    default_button_axis_settings: ButtonAxisSettings::default(),
+    default_button_settings: ButtonSettings::ButtonSettings(),
+    default_axis_settings: AxisSettings::AxisSettings(),
+    default_button_axis_settings: ButtonAxisSettings::ButtonAxisSettings(),
     button_settings: [],
     axis_settings: [],
     button_axis_settings: [],
   }
+}
+
+///|
+pub impl Default for GamepadSettings with default() {
+  GamepadSettings::GamepadSettings()
 }
 
 ///|
@@ -1226,13 +1246,18 @@ fn default_gamepad_analog() -> Axis[GamepadInput] {
 }
 
 ///|
-pub impl Default for Gamepad with default() {
+pub fn Gamepad::Gamepad() -> Gamepad {
   Gamepad::{
     vendor_id: None,
     product_id: None,
     digital: ButtonInput::new(),
     analog: default_gamepad_analog(),
   }
+}
+
+///|
+pub impl Default for Gamepad with default() {
+  Gamepad::Gamepad()
 }
 
 ///|
@@ -1281,7 +1306,7 @@ struct RunningRumbleEffects {
 } derive(Eq, ToJson, FromJson)
 
 ///|
-impl Default for RunningRumbleEffects with default() {
+fn RunningRumbleEffects::RunningRumbleEffects() -> RunningRumbleEffects {
   RunningRumbleEffects::{ entries: [] }
 }
 
@@ -2184,7 +2209,7 @@ pub fn input_gamepad_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
   .register_required_components(ecs_key_gamepad, ecs_key_gamepad_settings)
 
   app
-  .init_resource(fn() { RunningRumbleEffects::default() })
+  .init_resource(fn() { RunningRumbleEffects::RunningRumbleEffects() })
   .add_message(gamepad_event_message_key)
   .add_message(raw_gamepad_event_message_key)
   .add_message(gamepad_connection_event_message_key)

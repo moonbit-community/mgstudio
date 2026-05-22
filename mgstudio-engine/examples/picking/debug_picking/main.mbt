@@ -95,7 +95,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default().with_shadow_maps_enabled(true),
+        @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
         @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
       ),
     ),
@@ -103,7 +103,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -114,7 +114,7 @@ fn setup(
 
   let label = commands.spawn(
     (
-      @ui.Node::default()
+      @ui.Node::Node()
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(12.0F))
       .with_top(@ui.Val::Px(12.0F)),
@@ -184,7 +184,7 @@ fn refresh_overlay(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param3(setup)
   .add_system_param(update_debug_mode)
   .add_system_param2(refresh_overlay)

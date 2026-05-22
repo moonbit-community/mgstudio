@@ -52,9 +52,7 @@ pub impl @app.Resource for RpgSpriteFolder with resource() {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(
-    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest()),
-  )
+  .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .insert_state(AppState::default())
   .add_on_enter_system_config(
     AppState::Setup,
@@ -141,7 +139,7 @@ fn setup(
     texture_atlases,
   )
 
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   ignore(
     commands.spawn(
       (
@@ -164,14 +162,14 @@ fn setup(
   )
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let text_style = @text.TextFont::default()
+  let text_style = @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(42.0F)
   create_label((-250.0F, 250.0F, 0.0F), "No padding", text_style)
   create_label(
     (250.0F, 250.0F, 0.0F),
     "Padding",
-    @text.TextFont::default().with_font(font).with_font_size(42.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(42.0F),
   )
 
   guard asset_server
@@ -181,7 +179,7 @@ fn setup(
     return
   }
 
-  let sampling_label_style = @text.TextFont::default()
+  let sampling_label_style = @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(25.0F)
   let configurations : Array[
@@ -234,7 +232,7 @@ fn create_texture_atlas(
   @asset.TextureAtlasSources,
   @asset.Handle[@asset.Image],
 ) {
-  let mut texture_atlas_builder = @asset.TextureAtlasBuilder::default().sampler_nearest(
+  let mut texture_atlas_builder = @asset.TextureAtlasBuilder::TextureAtlasBuilder().sampler_nearest(
     sampler_nearest,
   )
   if padding is Some(padding_value) {

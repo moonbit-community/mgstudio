@@ -232,8 +232,8 @@ pub fn custom_projection3d_from_callbacks(
 }
 
 ///|
-pub fn CustomProjection3d::default() -> CustomProjection3d {
-  CustomProjection3d::new(PerspectiveProjection3d::default())
+pub fn CustomProjection3d::CustomProjection3d() -> CustomProjection3d {
+  CustomProjection3d::new(PerspectiveProjection3d::PerspectiveProjection3d())
 }
 
 ///|
@@ -315,7 +315,7 @@ pub enum Projection {
 
 ///|
 pub fn Projection::default() -> Projection {
-  Perspective(PerspectiveProjection3d::default())
+  Perspective(PerspectiveProjection3d::PerspectiveProjection3d())
 }
 
 ///|

@@ -126,7 +126,7 @@ fn setup(world : @ecs.World) -> Unit {
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
     let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default().with_order(index),
+      @sprite.Camera::Camera().with_order(index),
       camera_transform,
     ).spawn(world)
 
@@ -138,7 +138,7 @@ fn setup(world : @ecs.World) -> Unit {
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   @text.Text2dBundle::new(
     @text.Text2d::new(INSTRUCTIONS),
-    @text.TextFont::default().with_font(overlay_font).with_font_size(18.0F),
+    @text.TextFont::TextFont().with_font(overlay_font).with_font_size(18.0F),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-390.0F, 320.0F),
       0.0F,
@@ -152,7 +152,7 @@ fn setup(world : @ecs.World) -> Unit {
   .with_color(
     @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
-  .with_shadow(Some(@text.Text2dShadow::default()))
+  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
   |> ignore
 
@@ -279,7 +279,7 @@ fn button_system(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(set_camera_viewports))
   .add_systems(@app.Update, @app.system(button_system))

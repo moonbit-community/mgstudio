@@ -29,7 +29,7 @@ pub fn radio(label : String) -> RadioButton {
 pub struct RadioPlugin {}
 
 ///|
-pub fn RadioPlugin::default() -> RadioPlugin {
+pub fn RadioPlugin::RadioPlugin() -> RadioPlugin {
   RadioPlugin::{  }
 }
 

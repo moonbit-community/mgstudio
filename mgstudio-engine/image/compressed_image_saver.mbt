@@ -22,7 +22,7 @@ pub struct CompressedImageSaveOptions {
 }
 
 ///|
-pub fn CompressedImageSaveOptions::default() -> CompressedImageSaveOptions {
+pub fn CompressedImageSaveOptions::CompressedImageSaveOptions() -> CompressedImageSaveOptions {
   CompressedImageSaveOptions::{ format_hint: "", quality: 90 }
 }
 

@@ -69,7 +69,7 @@ priv struct RaycastState {
 
 ///|
 let raycast_state : Ref[RaycastState] = Ref({
-  camera: @sprite.Camera::default(),
+  camera: @sprite.Camera::Camera(),
   camera_projection: @camera.Projection::default(),
   camera_transform: @transform.Transform::identity(),
   collider_entities: [],
@@ -250,7 +250,7 @@ fn spawn_beam_pool(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  raycast_state.val.camera = @sprite.Camera::default().with_clear_color(
+  raycast_state.val.camera = @sprite.Camera::Camera().with_clear_color(
     @sprite.Color::black(),
   )
   raycast_state.val.camera_projection = @camera.Projection::default()
@@ -399,7 +399,7 @@ fn setup(world : @ecs.World) -> Unit {
     @text.Text2d::new(
       "mesh_ray_cast (Adapted)\nRed: automatic bouncing ray\nGreen: cursor ray bounce\nMAX_BOUNCES = 64",
     ),
-    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-390.0F, 320.0F),
       0.0F,
@@ -413,7 +413,7 @@ fn setup(world : @ecs.World) -> Unit {
   .with_color(
     @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
-  .with_shadow(Some(@text.Text2dShadow::default()))
+  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
   .spawn()
   |> ignore
 }
@@ -495,7 +495,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn bouncing_raycast(world : @ecs.World) -> Unit {
   guard raycast_state.val.red_pool is Some(red_pool) else { return }
   guard raycast_state.val.green_pool is Some(green_pool) else { return }
-  let ray_cast_settings = @picking_mesh_ray_cast.MeshRayCastSettings::default()
+  let ray_cast_settings = @picking_mesh_ray_cast.MeshRayCastIntersectionSettings::MeshRayCastIntersectionSettings()
     .with_max_hits(1)
     .with_only_entities(Some(raycast_state.val.collider_entities))
 
@@ -562,7 +562,7 @@ fn bouncing_raycast(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(bouncing_raycast))
   .run()

@@ -29,9 +29,15 @@ test "pbr volumetric fog: pipeline selection by density texture flag" {
 
 ///|
 test "pbr volumetric fog: uniform buffer push and clear" {
-  let buffer = VolumetricFogUniformBuffer::default()
-  let offset0 = buffer.push(VolumetricFogUniform::default())
-  let offset1 = buffer.push(VolumetricFogUniform::default().with_step_count(96))
+  let buffer = @volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
+  let offset0 = buffer.push(
+    @volumetric_fog.VolumetricFogUniform::VolumetricFogUniform(),
+  )
+  let offset1 = buffer.push(
+    @volumetric_fog.VolumetricFogUniform::VolumetricFogUniform().with_step_count(
+      96,
+    ),
+  )
   inspect(offset0, content="0")
   inspect(offset1, content="1")
   inspect(buffer.count(), content="2")

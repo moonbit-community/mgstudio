@@ -106,7 +106,7 @@ pub(all) struct GltfConvertCoordinates {
   rotate_scene_entity : Bool
   rotate_meshes : Bool
 }
-pub fn GltfConvertCoordinates::default() -> Self
+pub fn GltfConvertCoordinates::GltfConvertCoordinates() -> Self
 pub fn GltfConvertCoordinates::mesh_conversion_transform(Self) -> @transform.Transform
 pub fn GltfConvertCoordinates::mesh_conversion_transform_inverse(Self) -> @transform.Transform
 pub fn GltfConvertCoordinates::scene_conversion_transform(Self) -> @transform.Transform
@@ -136,9 +136,9 @@ pub struct GltfPlugin {
   extension_handlers : Array[@extensions.GltfExtensionHandler]
   skinned_mesh_bounds_policy : GltfSkinnedMeshBoundsPolicy
 }
+pub fn GltfPlugin::GltfPlugin() -> Self
 pub fn GltfPlugin::add_custom_vertex_attribute(Self, String, String) -> Self
 pub fn GltfPlugin::add_extension_handler(Self, @extensions.GltfExtensionHandler) -> Self
-pub fn GltfPlugin::default() -> Self
 pub fn GltfPlugin::with_convert_coordinates(Self, GltfConvertCoordinates) -> Self
 pub fn GltfPlugin::with_default_image_sampler(Self, @image.ImageSamplerDescriptor) -> Self
 pub fn GltfPlugin::with_pbr_material_handler_enabled(Self, Bool) -> Self

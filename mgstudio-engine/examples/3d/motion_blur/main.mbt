@@ -191,7 +191,7 @@ fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   motion_blur_state.val.camera = Some(camera)
@@ -297,17 +297,17 @@ fn spawn_help_text_span(
 ///|
 fn spawn_help_text(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(100).with_clear_color_none(),
+    @sprite.Camera::Camera().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -321,26 +321,26 @@ fn spawn_help_text(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
   )
-  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::default())
+  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::Text())
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default(),
+    @text.TextFont::TextFont(),
   )
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
-    @text.TextColor::default(),
+    @text.TextColor::TextColor(),
   )
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::default(),
+    @text.TextLayout::TextLayout(),
   )
   motion_blur_state.val.help_text = Some(text_entity)
   spawn_help_text_span(world, text_entity, "") |> ignore
@@ -505,7 +505,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let sphere_mesh = mesh3d_from_geometry(
     mesh_assets,
-    @mesh_primitives_dim3.SphereMeshBuilder::default().build(),
+    @mesh_primitives_dim3.SphereMeshBuilder::SphereMeshBuilder().build(),
   )
   let sky_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -519,7 +519,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let ground_geometry = @mesh_primitives_dim3.PlaneMeshBuilder::default().build()
+  let ground_geometry = @mesh_primitives_dim3.PlaneMeshBuilder::PlaneMeshBuilder().build()
   ignore(
     ground_geometry.replace_uvs([
       @math.Vec2::new(4000.0F, 0.0F),
@@ -570,7 +570,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let wheel_mesh = mesh3d_from_geometry(
     mesh_assets,
-    @mesh_primitives_dim3.CylinderMeshBuilder::default().build(),
+    @mesh_primitives_dim3.CylinderMeshBuilder::CylinderMeshBuilder().build(),
   )
   for i in 0..<N_CARS {
     let material = car_materials[i % car_materials.length()]
@@ -594,7 +594,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     world,
     mesh3d_from_geometry(
       mesh_assets,
-      @mesh_primitives_dim3.Capsule3dMeshBuilder::default().build(),
+      @mesh_primitives_dim3.Capsule3dMeshBuilder::Capsule3dMeshBuilder().build(),
     ),
     barrier_material,
   )
@@ -611,11 +611,11 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let leaves_mesh = mesh3d_from_geometry(
     mesh_assets,
-    @mesh_primitives_dim3.SphereMeshBuilder::default().build(),
+    @mesh_primitives_dim3.SphereMeshBuilder::SphereMeshBuilder().build(),
   )
   let trunk_mesh = mesh3d_from_geometry(
     mesh_assets,
-    @mesh_primitives_dim3.Capsule3dMeshBuilder::default().build(),
+    @mesh_primitives_dim3.Capsule3dMeshBuilder::Capsule3dMeshBuilder().build(),
   )
   spawn_trees(world, leaves_mesh, trunk_mesh, leaves_material, trunk_material)
 }
@@ -783,8 +783,8 @@ fn move_camera(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@dev_tools_ci_testing.CiTestingPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@dev_tools_ci_testing.CiTestingPlugin::CiTestingPlugin())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,

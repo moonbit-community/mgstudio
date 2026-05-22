@@ -915,7 +915,7 @@ fn render3d_chromatic_aberration_postprocess_values(
         },
       )
     None => {
-      let defaults = ChromaticAberration::default()
+      let defaults = @post_process.ChromaticAberration::ChromaticAberration()
       (0.0F, defaults.max_samples)
     }
   }
@@ -977,7 +977,7 @@ fn render3d_vignette_postprocess_values(
       )
     }
     None => {
-      let defaults = Vignette::default()
+      let defaults = @post_process.Vignette::Vignette()
       (
         0.0F,
         defaults.radius,
@@ -1126,7 +1126,7 @@ fn render3d_draw_camera_tonemapping_stage(
   }
   let exposure_value = match exposure {
     Some(value) => value.exposure()
-    None => Exposure::default().exposure()
+    None => Exposure::Exposure().exposure()
   }
   let luts = render3d_tonemapping_lut_handles(world)
   let color_grading_uniform = @render.host_color_grading_from_post_process(

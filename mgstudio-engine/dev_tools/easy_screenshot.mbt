@@ -22,7 +22,7 @@ pub struct EasyScreenshotConfig {
 }
 
 ///|
-pub fn EasyScreenshotConfig::default() -> EasyScreenshotConfig {
+pub fn EasyScreenshotConfig::EasyScreenshotConfig() -> EasyScreenshotConfig {
   EasyScreenshotConfig::{ enabled: true, delay_frames: 0 }
 }
 
@@ -38,7 +38,7 @@ pub(all) struct EasyScreenshotState {
 }
 
 ///|
-fn EasyScreenshotState::default() -> EasyScreenshotState {
+fn EasyScreenshotState::EasyScreenshotState() -> EasyScreenshotState {
   EasyScreenshotState::{ next_capture_index: 0, pending_capture_frames: -1 }
 }
 
@@ -151,13 +151,13 @@ pub fn dev_tools_easy_screenshot_plugin(
   if !next.contains_resource(ecs_res_key_easy_screenshot_config) {
     next = next.insert_world_resource(
       ecs_res_key_easy_screenshot_config,
-      EasyScreenshotConfig::default(),
+      EasyScreenshotConfig::EasyScreenshotConfig(),
     )
   }
   if !next.contains_resource(ecs_res_key_easy_screenshot_state) {
     next = next.insert_world_resource(
       ecs_res_key_easy_screenshot_state,
-      EasyScreenshotState::default(),
+      EasyScreenshotState::EasyScreenshotState(),
     )
   }
   next

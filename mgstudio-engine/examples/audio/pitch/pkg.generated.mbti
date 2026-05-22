@@ -14,7 +14,10 @@ import {
 type PitchFrequency
 pub impl @app.Resource for PitchFrequency
 
-type PlayPitch
+pub struct PlayPitch {
+  // private fields
+}
+pub fn PlayPitch::PlayPitch() -> Self
 pub impl @ecs.Message for PlayPitch
 pub impl Default for PlayPitch
 

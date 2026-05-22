@@ -499,7 +499,7 @@ fn window_current_cursor_options(
 ) -> CursorOptions {
   match window_cursor_options_component(world, entity) {
     Some(options) => options
-    None => CursorOptions::default()
+    None => CursorOptions::CursorOptions()
   }
 }
 

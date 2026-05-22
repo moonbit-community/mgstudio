@@ -38,7 +38,7 @@ pub struct AssetServerInfo {
   supported_compressed_image_formats : Int
   default_sampler_nearest : Bool
 }
-pub fn AssetServerInfo::default() -> Self
+pub fn AssetServerInfo::AssetServerInfo() -> Self
 pub fn AssetServerInfo::default_sampler_nearest(Self) -> Bool
 pub fn AssetServerInfo::loader_kind(Self, String) -> @asset.AssetLoaderKind
 pub fn AssetServerInfo::supported_compressed_image_formats(Self) -> Int

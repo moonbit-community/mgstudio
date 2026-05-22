@@ -83,7 +83,7 @@ pub fn tonemapping_luts_from_world_or_init(@ecs.World) -> @tonemapping.Tonemappi
 // Types and methods
 pub struct Core2d {
 }
-pub fn Core2d::default() -> Self
+pub fn Core2d::Core2d() -> Self
 
 pub(all) enum Core2dSystems {
   MainPass
@@ -92,7 +92,7 @@ pub(all) enum Core2dSystems {
 
 pub struct Core3d {
 }
-pub fn Core3d::default() -> Self
+pub fn Core3d::Core3d() -> Self
 
 pub(all) enum Core3dSystems {
   Prepass
@@ -102,7 +102,7 @@ pub(all) enum Core3dSystems {
 
 pub struct CorePipelinePlugin {
 }
-pub fn CorePipelinePlugin::default() -> Self
+pub fn CorePipelinePlugin::CorePipelinePlugin() -> Self
 pub impl @app.Plugin for CorePipelinePlugin
 
 pub struct FullscreenMaterialBindGroupState {
@@ -117,14 +117,14 @@ pub struct FullscreenMaterialPipelineState {
   ldr_pipeline_id : Int
   hdr_pipeline_id : Int
 }
-pub fn FullscreenMaterialPipelineState::default() -> Self
+pub fn FullscreenMaterialPipelineState::FullscreenMaterialPipelineState() -> Self
 pub fn FullscreenMaterialPipelineState::new(has_bind_group_layout? : Bool, has_sampler? : Bool, ldr_pipeline_id? : Int, hdr_pipeline_id? : Int) -> Self
 pub impl @app.Resource for FullscreenMaterialPipelineState
 pub impl @ecs.EcsPayloadCodec for FullscreenMaterialPipelineState
 
 pub struct FullscreenMaterialPlugin {
 }
-pub fn FullscreenMaterialPlugin::default() -> Self
+pub fn FullscreenMaterialPlugin::FullscreenMaterialPlugin() -> Self
 pub impl @app.Plugin for FullscreenMaterialPlugin
 
 pub struct FullscreenMaterialPrepareViewState {

@@ -22,7 +22,7 @@ test "pbr diagnostic: snapshot can be read" {
 
 ///|
 test "pbr diagnostic: allocator snapshot and paths align" {
-  let allocators = MaterialBindGroupAllocators::default()
+  let allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
   let bindless = MaterialBindGroupBindlessAllocator::with_slab_capacity(4)
   ignore(bindless.allocate(1001))
   ignore(bindless.allocate(1002))

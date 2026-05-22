@@ -24,7 +24,7 @@ pub struct MeshAllocatorDiagnosticPlugin {
 }
 
 ///|
-pub fn MeshAllocatorDiagnosticPlugin::default() -> MeshAllocatorDiagnosticPlugin {
+pub fn MeshAllocatorDiagnosticPlugin::MeshAllocatorDiagnosticPlugin() -> MeshAllocatorDiagnosticPlugin {
   MeshAllocatorDiagnosticPlugin::{ suffix: " meshes" }
 }
 
@@ -76,7 +76,7 @@ pub fn MeshAllocatorDiagnosticState::new(
 ) -> MeshAllocatorDiagnosticState {
   MeshAllocatorDiagnosticState::{
     suffix,
-    snapshot: @renderer.RenderDiagnosticsSnapshot::default(),
+    snapshot: @renderer.RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot(),
     sample_count: 0,
     last_sample_us: 0.0F,
   }
@@ -103,7 +103,7 @@ pub fn mesh_allocator_diagnostic_plugin(
 ) -> @app.App[@ecs.World] {
   mesh_allocator_diagnostic_plugin_with(
     app,
-    MeshAllocatorDiagnosticPlugin::default(),
+    MeshAllocatorDiagnosticPlugin::MeshAllocatorDiagnosticPlugin(),
   )
 }
 

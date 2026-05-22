@@ -67,8 +67,8 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::default(),
-        @sprite.Camera::default().with_viewport(
+        @sprite.Camera2d::Camera2d(),
+        @sprite.Camera::Camera().with_viewport(
           @sprite.Viewport::new(
             @math.IVec2::new(200, 100),
             @math.IVec2::new(600, 600),
@@ -79,7 +79,7 @@ fn setup(
   )
 
   let root = commands.spawn_component(
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_align_items(@ui.AlignItems::Center)
@@ -92,8 +92,8 @@ fn setup(
       (
         @hierarchy.Parent::new(root),
         CursorArea::{  },
-        @ui.RelativeCursorPosition::default(),
-        @ui.Node::default()
+        @ui.RelativeCursorPosition::RelativeCursorPosition(),
+        @ui.Node::Node()
         .with_width(@ui.Val::Px(250.0F))
         .with_height(@ui.Val::Px(250.0F))
         .with_margin(
@@ -161,7 +161,7 @@ fn relative_cursor_position_system(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(
     @app.Update,

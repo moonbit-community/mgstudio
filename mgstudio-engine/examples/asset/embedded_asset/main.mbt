@@ -19,7 +19,7 @@ const EMBEDDED_CRATE_NAME : String = "embedded_asset"
 struct EmbeddedAssetPlugin {}
 
 ///|
-fn EmbeddedAssetPlugin::default() -> EmbeddedAssetPlugin {
+fn EmbeddedAssetPlugin::EmbeddedAssetPlugin() -> EmbeddedAssetPlugin {
   EmbeddedAssetPlugin::{  }
 }
 
@@ -44,7 +44,7 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let asset_path = @asset.AssetPath::from_path(
     "\{EMBEDDED_CRATE_NAME}/files/bevy_pixel_light.png",
@@ -66,8 +66,8 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(EmbeddedAssetPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(EmbeddedAssetPlugin::EmbeddedAssetPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

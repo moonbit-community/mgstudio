@@ -56,7 +56,7 @@ fn setup(
     ),
   )
 
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 }
 
 ///|
@@ -64,7 +64,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(
     @mgstudio.DefaultPlugins::set(
-      @asset.AssetPlugin::default().with_file_path("examples/asset/files"),
+      @asset.AssetPlugin::AssetPlugin().with_file_path("examples/asset/files"),
     ),
   )
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))

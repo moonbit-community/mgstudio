@@ -125,8 +125,8 @@ fn setup(world : @ecs.World) -> Unit {
       (
         MessageText::{  },
         MessageFade::{ palette: MessagePalette::None },
-        @text.Text2d::default(),
-        @text.TextFont::default().with_font_size(@text.FontSize::Px(119.0F)),
+        @text.Text2d::Text2d(),
+        @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(119.0F)),
         @text.TextColor::new(message_color(MessagePalette::None, 0.0F)),
       ),
     ),
@@ -146,7 +146,7 @@ fn setup(world : @ecs.World) -> Unit {
     clip_handle,
   )
   let graph_handle = @animation.animation_graph_add(graph)
-  let player = @animation.AnimationPlayer::default()
+  let player = @animation.AnimationPlayer::AnimationPlayer()
   player.play(animation_index).repeat() |> ignore
 
   let player_entity = world.spawn_empty()
@@ -198,7 +198,7 @@ fn animate_text_opacity(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,

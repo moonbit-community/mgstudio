@@ -26,13 +26,13 @@ pub const BLIT_PASS_LABEL : String = "blit"
 pub struct BlitPlugin {}
 
 ///|
-pub fn BlitPlugin::default() -> BlitPlugin {
+pub fn BlitPlugin::BlitPlugin() -> BlitPlugin {
   BlitPlugin::{  }
 }
 
 ///|
 pub fn blit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(BlitPlugin::default())
+  app.add_plugins(BlitPlugin::BlitPlugin())
 }
 
 ///|
@@ -60,7 +60,7 @@ fn blit_plugin_install_with(
   plugin : BlitPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app.init_resource(fn() { BlitPipeline::default() })
+  app.init_resource(fn() { BlitPipeline::BlitPipeline() })
 }
 
 ///|
@@ -77,7 +77,7 @@ pub struct BlitPipeline {
 }
 
 ///|
-pub fn BlitPipeline::default() -> BlitPipeline {
+pub fn BlitPipeline::BlitPipeline() -> BlitPipeline {
   BlitPipeline::new()
 }
 

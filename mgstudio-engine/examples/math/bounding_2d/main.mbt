@@ -170,8 +170,8 @@ let overlay_text_entity : Ref[@core.Entity?] = Ref(None)
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@app.StatesPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@app.StatesPlugin::StatesPlugin())
   .insert_state(Test::RayCast)
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(update_text))
@@ -236,7 +236,7 @@ fn setup(world : @ecs.World) -> Unit {
   overlay_text_entity.val = None
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -329,11 +329,11 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::default())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
   )
@@ -346,7 +346,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @ui.ecs_key_node,
-    @ui.Node::default()
+    @ui.Node::Node()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
@@ -359,7 +359,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_font,
-    @text.TextFont::default().with_font(font).with_font_size(18.0F),
+    @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
   )
   try! world.set_by_key(
     text_entity,

@@ -28,7 +28,7 @@ pub(all) struct ButtonProps {
 }
 
 ///|
-pub fn ButtonProps::default() -> ButtonProps {
+pub fn ButtonProps::ButtonProps() -> ButtonProps {
   ButtonProps::{
     variant: Normal,
     corners: @rounded_corners.RoundedCorners::default(),
@@ -50,7 +50,7 @@ pub fn button(props : ButtonProps, label : String) -> Button {
 pub struct ButtonPlugin {}
 
 ///|
-pub fn ButtonPlugin::default() -> ButtonPlugin {
+pub fn ButtonPlugin::ButtonPlugin() -> ButtonPlugin {
   ButtonPlugin::{  }
 }
 

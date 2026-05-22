@@ -144,7 +144,7 @@ pub(all) struct AabbGizmoConfigGroup {
   draw_all : Bool
   default_color : @color.Color?
 }
-pub fn AabbGizmoConfigGroup::default() -> Self
+pub fn AabbGizmoConfigGroup::AabbGizmoConfigGroup() -> Self
 pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup
 pub impl Default for AabbGizmoConfigGroup
 
@@ -152,7 +152,7 @@ pub(all) struct FrustumGizmoConfigGroup {
   draw_all : Bool
   default_color : @color.Color?
 }
-pub fn FrustumGizmoConfigGroup::default() -> Self
+pub fn FrustumGizmoConfigGroup::FrustumGizmoConfigGroup() -> Self
 pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup
 pub impl Default for FrustumGizmoConfigGroup
 
@@ -161,7 +161,7 @@ pub struct Gizmo {
   line_config : @sprite.GizmoLineConfig
   depth_bias : Float
 }
-pub fn Gizmo::default() -> Self
+pub fn Gizmo::Gizmo() -> Self
 pub fn Gizmo::depth_bias(Self) -> Float
 pub fn Gizmo::handle(Self) -> @asset.Handle[GizmoAsset]
 pub fn Gizmo::line_config(Self) -> @sprite.GizmoLineConfig
@@ -176,6 +176,7 @@ pub struct GizmoAsset {
   buffer : GizmoBuffer
   config_type_name : String
 }
+pub fn GizmoAsset::GizmoAsset() -> Self
 pub fn GizmoAsset::arc_2d(Self, @sprite.Isometry2d, Float, Float, @color.Color) -> RetainedArcBuilder
 pub fn GizmoAsset::arc_3d(Self, Float, Float, @math.Isometry3d, @color.Color) -> RetainedArcBuilder
 pub fn GizmoAsset::arrow(Self, @math.Vec3, @math.Vec3, @color.Color) -> RetainedArrowBuilder
@@ -230,6 +231,7 @@ pub struct GizmoBuffer {
   pending_arrows : Array[RetainedPendingArrow]
   mut pending_order_next : Int
 }
+pub fn GizmoBuffer::GizmoBuffer() -> Self
 pub fn GizmoBuffer::arc_2d(Self, @sprite.Isometry2d, Float, Float, @color.Color) -> RetainedArcBuilder
 pub fn GizmoBuffer::arc_3d(Self, Float, Float, @math.Isometry3d, @color.Color) -> RetainedArcBuilder
 pub fn GizmoBuffer::arrow(Self, @math.Vec3, @math.Vec3, @color.Color) -> RetainedArrowBuilder
@@ -298,12 +300,12 @@ pub impl @ecs.EcsPayloadCodec for GizmoMeshConfig
 
 pub struct GizmoPlugin {
 }
-pub fn GizmoPlugin::default() -> Self
+pub fn GizmoPlugin::GizmoPlugin() -> Self
 pub impl @app.Plugin for GizmoPlugin
 
 pub struct GlobalGizmosPlugin {
 }
-pub fn GlobalGizmosPlugin::default() -> Self
+pub fn GlobalGizmosPlugin::GlobalGizmosPlugin() -> Self
 pub impl @app.Plugin for GlobalGizmosPlugin
 
 pub struct RetainedArcBuilder {
@@ -342,7 +344,7 @@ pub fn RetainedSphereBuilder::resolution(Self, Int) -> Self
 pub struct ShowAabbGizmo {
   color : @color.Color?
 }
-pub fn ShowAabbGizmo::default() -> Self
+pub fn ShowAabbGizmo::ShowAabbGizmo() -> Self
 pub fn ShowAabbGizmo::with_color(Self, @color.Color?) -> Self
 pub impl @ecs.Component for ShowAabbGizmo
 pub impl @ecs.EcsPayloadCodec for ShowAabbGizmo
@@ -350,7 +352,7 @@ pub impl @ecs.EcsPayloadCodec for ShowAabbGizmo
 pub struct ShowFrustumGizmo {
   color : @color.Color?
 }
-pub fn ShowFrustumGizmo::default() -> Self
+pub fn ShowFrustumGizmo::ShowFrustumGizmo() -> Self
 pub fn ShowFrustumGizmo::with_color(Self, @color.Color?) -> Self
 pub impl @ecs.Component for ShowFrustumGizmo
 pub impl @ecs.EcsPayloadCodec for ShowFrustumGizmo
@@ -358,7 +360,7 @@ pub impl @ecs.EcsPayloadCodec for ShowFrustumGizmo
 pub struct ShowSkinnedMeshBoundsGizmo {
   color : @color.Color?
 }
-pub fn ShowSkinnedMeshBoundsGizmo::default() -> Self
+pub fn ShowSkinnedMeshBoundsGizmo::ShowSkinnedMeshBoundsGizmo() -> Self
 pub impl @ecs.Component for ShowSkinnedMeshBoundsGizmo
 pub impl @ecs.EcsPayloadCodec for ShowSkinnedMeshBoundsGizmo
 
@@ -366,13 +368,13 @@ pub struct SkinnedMeshBoundsGizmoConfigGroup {
   draw_all : Bool
   default_color : @color.Color
 }
-pub fn SkinnedMeshBoundsGizmoConfigGroup::default() -> Self
+pub fn SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup() -> Self
 pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup
 pub impl Default for SkinnedMeshBoundsGizmoConfigGroup
 
 pub struct SkinnedMeshBoundsGizmoPlugin {
 }
-pub fn SkinnedMeshBoundsGizmoPlugin::default() -> Self
+pub fn SkinnedMeshBoundsGizmoPlugin::SkinnedMeshBoundsGizmoPlugin() -> Self
 pub impl @app.Plugin for SkinnedMeshBoundsGizmoPlugin
 
 // Type aliases

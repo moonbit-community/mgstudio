@@ -20,7 +20,7 @@ pub struct RelativeCursorPosition {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn RelativeCursorPosition::default() -> RelativeCursorPosition {
+pub fn RelativeCursorPosition::RelativeCursorPosition() -> RelativeCursorPosition {
   RelativeCursorPosition::{
     normalized_visible_node_rect: @math.Rect::new(
       @math.Vec2::new(0.0F, 0.0F),
@@ -44,7 +44,7 @@ pub fn RelativeCursorPosition::cursor_over(
 pub struct InteractionDisabled {} derive(ToJson, FromJson)
 
 ///|
-pub fn InteractionDisabled::default() -> InteractionDisabled {
+pub fn InteractionDisabled::InteractionDisabled() -> InteractionDisabled {
   InteractionDisabled::{  }
 }
 
@@ -52,7 +52,7 @@ pub fn InteractionDisabled::default() -> InteractionDisabled {
 pub struct Pressed {} derive(ToJson, FromJson)
 
 ///|
-pub fn Pressed::default() -> Pressed {
+pub fn Pressed::Pressed() -> Pressed {
   Pressed::{  }
 }
 
@@ -60,7 +60,7 @@ pub fn Pressed::default() -> Pressed {
 pub struct Checkable {} derive(ToJson, FromJson)
 
 ///|
-pub fn Checkable::default() -> Checkable {
+pub fn Checkable::Checkable() -> Checkable {
   Checkable::{  }
 }
 
@@ -68,7 +68,7 @@ pub fn Checkable::default() -> Checkable {
 pub struct Checked {} derive(ToJson, FromJson)
 
 ///|
-pub fn Checked::default() -> Checked {
+pub fn Checked::Checked() -> Checked {
   Checked::{  }
 }
 

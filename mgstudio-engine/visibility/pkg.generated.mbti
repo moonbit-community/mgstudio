@@ -55,19 +55,19 @@ pub impl @json.FromJson for InheritedVisibility
 
 pub struct NoAutoAabb {
 } derive(Eq, @debug.Debug)
-pub fn NoAutoAabb::default() -> Self
+pub fn NoAutoAabb::NoAutoAabb() -> Self
 pub impl @ecs.Component for NoAutoAabb
 pub impl @ecs.EcsPayloadCodec for NoAutoAabb
 
 pub struct NoCpuCulling {
 } derive(Eq, @debug.Debug)
-pub fn NoCpuCulling::default() -> Self
+pub fn NoCpuCulling::NoCpuCulling() -> Self
 pub impl @ecs.Component for NoCpuCulling
 pub impl @ecs.EcsPayloadCodec for NoCpuCulling
 
 pub struct NoFrustumCulling {
 } derive(Eq, @debug.Debug)
-pub fn NoFrustumCulling::default() -> Self
+pub fn NoFrustumCulling::NoFrustumCulling() -> Self
 pub impl @ecs.Component for NoFrustumCulling
 pub impl @ecs.EcsPayloadCodec for NoFrustumCulling
 
@@ -103,7 +103,7 @@ pub impl @json.FromJson for Visibility
 
 pub struct VisibilityPlugin {
 }
-pub fn VisibilityPlugin::default() -> Self
+pub fn VisibilityPlugin::VisibilityPlugin() -> Self
 pub impl @app.Plugin for VisibilityPlugin
 
 pub struct VisibilityRange {

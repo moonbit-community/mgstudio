@@ -124,17 +124,17 @@ fn apply_render_mode(world : @ecs.World) -> Unit {
       try! world.set_by_key(
         camera,
         @pbr.ecs_key_depth_prepass,
-        @pbr.DepthPrepass::default(),
+        @pbr.DepthPrepass::DepthPrepass(),
       )
       try! world.set_by_key(
         camera,
         @pbr.ecs_key_motion_vector_prepass,
-        @pbr.MotionVectorPrepass::default(),
+        @pbr.MotionVectorPrepass::MotionVectorPrepass(),
       )
       try! world.set_by_key(
         camera,
         @pbr.ecs_key_deferred_prepass,
-        @pbr.DeferredPrepass::default(),
+        @pbr.DeferredPrepass::DeferredPrepass(),
       )
     }
     Forward => {
@@ -149,17 +149,17 @@ fn apply_render_mode(world : @ecs.World) -> Unit {
       try! world.set_by_key(
         camera,
         @pbr.ecs_key_normal_prepass,
-        @pbr.NormalPrepass::default(),
+        @pbr.NormalPrepass::NormalPrepass(),
       )
       try! world.set_by_key(
         camera,
         @pbr.ecs_key_depth_prepass,
-        @pbr.DepthPrepass::default(),
+        @pbr.DepthPrepass::DepthPrepass(),
       )
       try! world.set_by_key(
         camera,
         @pbr.ecs_key_motion_vector_prepass,
-        @pbr.MotionVectorPrepass::default(),
+        @pbr.MotionVectorPrepass::MotionVectorPrepass(),
       )
       try! (world.take(camera, @pbr.ecs_key_deferred_prepass) |> ignore)
     }
@@ -195,7 +195,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -220,7 +220,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_fxaa,
-    @post_process.Fxaa::default(),
+    @post_process.Fxaa::Fxaa(),
   )
   try! world.set_by_key(
     camera,
@@ -238,7 +238,7 @@ fn setup(world : @ecs.World) -> Unit {
     directional_light,
     @pbr.ecs_key_directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
-      @pbr.CascadeShadowConfigBuilder::default()
+      @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
       .with_num_cascades(3)
       .with_maximum_distance(10.0F),
     ),
@@ -331,7 +331,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     emissive_cube,
     @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::default(),
+    @pbr.NotShadowCaster::NotShadowCaster(),
   )
 
   let point_light = world.spawn_empty()
@@ -402,16 +402,16 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     sky,
     @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::default(),
+    @pbr.NotShadowCaster::NotShadowCaster(),
   )
   try! world.set_by_key(
     sky,
     @pbr.ecs_key_not_shadow_receiver,
-    @pbr.NotShadowReceiver::default(),
+    @pbr.NotShadowReceiver::NotShadowReceiver(),
   )
 
   let parallax_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::default()
+    @pbr.StandardMaterial::StandardMaterial()
     .with_perceptual_roughness(0.4F)
     .with_base_color_texture(
       Some(asset_server.load("textures/parallax_example/cube_color.png")),
@@ -444,7 +444,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
-      @text.TextFont::default()
+      @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(
@@ -458,7 +458,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bounds(@text.TextBounds::new_horizontal(760.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   deferred_state.val.help_text = Some(help_text)
 
@@ -558,7 +558,7 @@ fn spin(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(switch_mode))
   .add_systems(@app.Update, @app.system(animate_light_direction))

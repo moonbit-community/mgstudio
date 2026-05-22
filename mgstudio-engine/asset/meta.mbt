@@ -34,7 +34,7 @@ pub(all) struct ImageLoaderSettings {
 }
 
 ///|
-pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
+pub fn ImageLoaderSettings::ImageLoaderSettings() -> ImageLoaderSettings {
   ImageLoaderSettings::{
     format: ImageFormatSetting::FromExtension,
     texture_format: None,
@@ -420,7 +420,7 @@ fn apply_image_meta_settings(
     return
   }
 
-  let descriptor = ImageSamplerDescriptor::default()
+  let descriptor = @image.ImageSamplerDescriptor::ImageSamplerDescriptor()
   if address_mode_u is Some(value) {
     descriptor.address_mode_u = value
   }

@@ -62,7 +62,7 @@ pub fn WinitMonitors::find_entity(
 }
 
 ///|
-pub impl Default for WinitMonitors with default() {
+pub fn WinitMonitors::WinitMonitors() -> WinitMonitors {
   WinitMonitors::new()
 }
 

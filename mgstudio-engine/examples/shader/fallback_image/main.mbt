@@ -26,7 +26,7 @@ fn setup(
   let valid_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::default()
+      @pbr.StandardMaterial::StandardMaterial()
       .with_base_color(@sprite.Color::white())
       .with_base_color_texture(
         Some(asset_server.get().load_image("branding/icon.png")),
@@ -35,7 +35,7 @@ fn setup(
   let fallback_material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::default()
+      @pbr.StandardMaterial::StandardMaterial()
       .with_base_color(@sprite.Color::srgb(0.8F, 0.6F, 0.2F))
       .with_base_color_texture(
         Some(
@@ -94,7 +94,7 @@ fn setup(
   |> ignore
   commands.spawn(
     (
-      @camera.Camera3d::default(),
+      @camera.Camera3d::Camera3d(),
       @transform.Transform::from_xyz(-3.0F, 2.8F, 5.4F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -107,7 +107,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }

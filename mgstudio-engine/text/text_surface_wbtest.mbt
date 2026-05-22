@@ -150,12 +150,12 @@ test "text: font hinting follows Bevy component and atlas-key semantics" {
 test "text: layout tracks viewport and rem dependencies for UI text" {
   reset_text_ecs_test_state()
   let viewport_font = TextFont::{
-    ..TextFont::default(),
+    ..TextFont(),
     font: FontSource::UiSansSerif,
     font_size: FontSize::Vh(10.0F),
   }
   let rem_font = TextFont::{
-    ..TextFont::default(),
+    ..TextFont(),
     font: FontSource::UiSansSerif,
     font_size: FontSize::Rem(1.5F),
   }
@@ -243,7 +243,7 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
 ///|
 test "text: ComputedTextBlock needs_rerender follows Bevy viewport rem semantics" {
   let clean = ComputedTextBlock::{
-    ..ComputedTextBlock::default(),
+    ..ComputedTextBlock(),
     needs_rerender: false,
   }
   debug_inspect(clean.needs_rerender(false, false), content="false")

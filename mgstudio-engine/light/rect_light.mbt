@@ -25,7 +25,7 @@ pub struct RectLight {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn RectLight::default() -> RectLight {
+pub fn RectLight::RectLight() -> RectLight {
   RectLight::{
     color: @sprite.Color::white(),
     intensity: 1_000_000.0F,

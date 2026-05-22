@@ -16,7 +16,7 @@
 pub struct RenderPlugin {}
 
 ///|
-pub fn RenderPlugin::default() -> RenderPlugin {
+pub fn RenderPlugin::RenderPlugin() -> RenderPlugin {
   RenderPlugin::{  }
 }
 

@@ -39,7 +39,7 @@ fn margin() -> @ui.Val {
 
 ///|
 fn cell_node() -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
 }
 
 ///|
@@ -70,7 +70,7 @@ fn spawn_text(
       (
         @hierarchy.Parent::new(parent),
         @text.Text::new(text),
-        @text.TextFont::default().with_font(font),
+        @text.TextFont::TextFont().with_font(font),
         @text.TextColor::new(color),
       ),
     ),
@@ -108,13 +108,13 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera())),
   )
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_padding(@ui.UiRect::all(margin()))
@@ -234,7 +234,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

@@ -23,7 +23,7 @@ pub struct DiagnosticsPlugin {}
 const DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic.DiagnosticsPlugin"
 
 ///|
-pub fn DiagnosticsPlugin::default() -> DiagnosticsPlugin {
+pub fn DiagnosticsPlugin::DiagnosticsPlugin() -> DiagnosticsPlugin {
   DiagnosticsPlugin::{  }
 }
 
@@ -39,7 +39,7 @@ pub impl @app.Plugin for DiagnosticsPlugin with build(self, app) {
 
 ///|
 pub fn diagnostics_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  diagnostics_plugin_with(app, DiagnosticsPlugin::default())
+  diagnostics_plugin_with(app, DiagnosticsPlugin::DiagnosticsPlugin())
 }
 
 ///|
@@ -48,8 +48,8 @@ pub fn diagnostics_plugin_with(
   _plugin : DiagnosticsPlugin,
 ) -> @app.App[@ecs.World] {
   app
-  .init_resource(fn() { DiagnosticsStore::default() })
-  .init_resource(fn() { SystemInfo::default() })
+  .init_resource(fn() { DiagnosticsStore::DiagnosticsStore() })
+  .init_resource(fn() { SystemInfo::SystemInfo() })
 }
 
 ///|

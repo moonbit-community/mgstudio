@@ -29,7 +29,7 @@ pub struct UiContext {
 }
 
 ///|
-pub fn UiContext::default() -> UiContext {
+pub fn UiContext::UiContext() -> UiContext {
   UiContext::{
     white_texture: @asset.Handle::new(-1),
     viewport_origin: @math.Vec2::new(0.0F, 0.0F),
@@ -91,7 +91,7 @@ pub impl ToJson for UiContext with to_json(self) {
 ///|
 pub impl @json.FromJson for UiContext with from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
-  ui_context_serde_values.get(id).unwrap_or(UiContext::default())
+  ui_context_serde_values.get(id).unwrap_or(UiContext::UiContext())
 }
 
 ///|

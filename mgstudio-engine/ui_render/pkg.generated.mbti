@@ -29,7 +29,7 @@ pub let ui_render_set_transparent_ui : String
 pub struct BoxShadowSamples {
   samples : Int
 } derive(ToJson, @json.FromJson)
-pub fn BoxShadowSamples::default() -> Self
+pub fn BoxShadowSamples::BoxShadowSamples() -> Self
 pub fn BoxShadowSamples::new(Int) -> Self
 pub impl @ecs.Component for BoxShadowSamples
 pub impl @ecs.EcsPayloadCodec for BoxShadowSamples
@@ -43,7 +43,7 @@ pub impl @ecs.EcsPayloadCodec for UiAntiAlias
 
 pub struct UiRenderPlugin {
 }
-pub fn UiRenderPlugin::default() -> Self
+pub fn UiRenderPlugin::UiRenderPlugin() -> Self
 pub impl @app.Plugin for UiRenderPlugin
 
 // Type aliases

@@ -154,8 +154,10 @@ test "picking: generates enter/leave and click events (single pointer)" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
   ignore(tick)
-  get_picking_state_resource(world).insert(PickingState::default())
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  get_picking_state_resource(world).insert(PickingState::PickingState())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
   ensure_test_messages(world)
   let e1 = @core.Entity::new(1, 0)
   let e2 = @core.Entity::new(2, 0)
@@ -259,8 +261,10 @@ test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
   ignore(tick)
-  get_picking_state_resource(world).insert(PickingState::default())
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  get_picking_state_resource(world).insert(PickingState::PickingState())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
   ensure_test_messages(world)
   let ui_entity = @core.Entity::new(11, 0)
   let sprite_entity = @core.Entity::new(12, 0)
@@ -364,8 +368,10 @@ test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
 test "picking: non-hoverable non-blocking Pickable allows lower hit" {
   let world = @ecs.World::new()
   ignore(world.increment_change_tick())
-  get_picking_state_resource(world).insert(PickingState::default())
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  get_picking_state_resource(world).insert(PickingState::PickingState())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
   ensure_test_messages(world)
   let top = world.spawn_empty()
   try! world.set_by_key(top, ecs_key_pickable, pickable_ignore)
@@ -391,8 +397,10 @@ test "picking: non-hoverable non-blocking Pickable allows lower hit" {
 test "picking: non-hoverable blocking Pickable suppresses lower hits" {
   let world = @ecs.World::new()
   ignore(world.increment_change_tick())
-  get_picking_state_resource(world).insert(PickingState::default())
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  get_picking_state_resource(world).insert(PickingState::PickingState())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
   ensure_test_messages(world)
   let top = world.spawn_empty()
   try! world.set_by_key(top, ecs_key_pickable, Pickable::new(true, false))
@@ -435,7 +443,7 @@ test "picking: window backend populates fallback hit for active pointers" {
   try! world.set_by_key(
     window_entity,
     @window.ecs_key_window,
-    @window.Window::default(),
+    @window.Window::Window(),
   )
   try! world.set_by_key(window_entity, @window.ecs_key_primary_window, @window.PrimaryWindow::{
 
@@ -463,12 +471,16 @@ test "picking: window backend reads PointerLocation components" {
     ecs_key_pointer_location,
     PointerLocation::new(@math.Vec2::new(2.0F, 3.0F)),
   )
-  try! world.set_by_key(pointer, ecs_key_pointer_press, PointerPress::default())
+  try! world.set_by_key(
+    pointer,
+    ecs_key_pointer_press,
+    PointerPress::PointerPress(),
+  )
   let window_entity = world.spawn_empty()
   try! world.set_by_key(
     window_entity,
     @window.ecs_key_window,
-    @window.Window::default(),
+    @window.Window::Window(),
   )
   try! world.set_by_key(window_entity, @window.ecs_key_primary_window, @window.PrimaryWindow::{
 
@@ -487,8 +499,10 @@ test "picking: handles multiple pointers independently" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
   ignore(tick)
-  get_picking_state_resource(world).insert(PickingState::default())
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  get_picking_state_resource(world).insert(PickingState::PickingState())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
   ensure_test_messages(world)
   let e1 = @core.Entity::new(1, 0)
   let e2 = @core.Entity::new(2, 0)
@@ -547,7 +561,7 @@ test "picking: ui hit test respects transformed ui node" {
     ),
   )
   let entity = world.spawn_empty()
-  try! world.set_by_key(entity, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(entity, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     entity,
     @ui.ecs_key_ui_layout,
@@ -568,7 +582,7 @@ test "picking: ui hit test respects transformed ui node" {
       z=0.0F,
     ),
   )
-  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::default())
+  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::UiStack())
   @ui.ui_stack_system(world)
   picking_ui_hit_test_system(world)
   let pointer_hits = read_test_pointer_hits(world, Ref(0))
@@ -599,7 +613,7 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
     ),
   )
   let top = world.spawn_empty()
-  try! world.set_by_key(top, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(top, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     top,
     @ui.ecs_key_ui_layout,
@@ -611,7 +625,7 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
     ),
   )
   let bottom = world.spawn_empty()
-  try! world.set_by_key(bottom, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(bottom, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     bottom,
     @ui.ecs_key_ui_layout,
@@ -622,7 +636,7 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
       ),
     ),
   )
-  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::default())
+  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::UiStack())
   @ui.ui_stack_system(world)
   let top_center = @math.Vec2::new(220.0F, 130.0F)
   let bottom_center = @math.Vec2::new(220.0F, 310.0F)
@@ -688,7 +702,7 @@ test "picking: ui hit test still matches button with Interaction component" {
     ),
   )
   let entity = world.spawn_empty()
-  try! world.set_by_key(entity, @ui.ecs_key_button, @ui.Button::default())
+  try! world.set_by_key(entity, @ui.ecs_key_button, @ui.Button::Button())
   try! world.set_by_key(
     entity,
     @ui.ecs_key_interaction,
@@ -704,7 +718,7 @@ test "picking: ui hit test still matches button with Interaction component" {
       ),
     ),
   )
-  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::default())
+  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::UiStack())
   @ui.ui_stack_system(world)
   picking_ui_hit_test_system(world)
   let pointer_hits = read_test_pointer_hits(world, Ref(0))
@@ -724,9 +738,11 @@ test "picking: a11y focus action maps to hovered interaction" {
   ignore(tick)
   world.insert_resource(
     @input_focus.InputFocus::resource(),
-    @input_focus.InputFocus::default(),
+    @input_focus.InputFocus::InputFocus(),
   )
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
   let entity = world.spawn_empty()
   let req = @moon_accesskit.ActionRequest::new(
     @moon_accesskit.Action::Focus,
@@ -746,12 +762,14 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
   ignore(tick)
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
   let entity = world.spawn_empty()
   try! world.set_by_key(
     entity,
     @ui.ecs_key_node,
-    @ui.Node::default().with_overflow(
+    @ui.Node::Node().with_overflow(
       @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
     ),
   )
@@ -768,7 +786,7 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
   try! world.set_by_key(
     entity,
     @ui.ecs_key_scroll_position,
-    @ui.ScrollPosition::default(),
+    @ui.ScrollPosition::ScrollPosition(),
   )
   let child = world.spawn_empty()
   try! world.set_by_key(
@@ -814,7 +832,9 @@ test "picking: a11y set-value action updates Text content" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
   ignore(tick)
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
   let entity = world.spawn_empty()
   try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new("Old"))
   let node_id = @a11y.node_id_for_entity(entity)
@@ -841,9 +861,11 @@ test "picking: ignores a11y actions targeting non-alive entities" {
   ignore(tick)
   world.insert_resource(
     @input_focus.InputFocus::resource(),
-    @input_focus.InputFocus::default(),
+    @input_focus.InputFocus::InputFocus(),
   )
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
   let dead_entity = @core.Entity::new(999, 1)
   let req = @moon_accesskit.ActionRequest::new(
     @moon_accesskit.Action::Focus,
@@ -886,8 +908,10 @@ test "picking: pointer observers dispatch generated move enter and leave events"
   let world = app.world()
   let tick = world.increment_change_tick()
   ignore(tick)
-  get_picking_state_resource(world).insert(PickingState::default())
-  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
+  get_picking_state_resource(world).insert(PickingState::PickingState())
+  @app.get_picking_events_resource(world).insert(
+    @app.PickingEvents::PickingEvents(),
+  )
   ensure_test_messages(world)
 
   let e1 = @core.Entity::new(1, 0)

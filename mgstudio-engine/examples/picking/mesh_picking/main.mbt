@@ -114,7 +114,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default()
+        @pbr.PointLight::PointLight()
         .with_shadow_maps_enabled(true)
         .with_intensity(10_000_000.0F),
         @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F),
@@ -124,7 +124,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(0.0F, 7.0F, 14.0F).looking_at(
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -234,7 +234,7 @@ fn on_pointer_move_drag(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param3(setup)
   .add_pointer_observer2(fn(pointer, query) { on_pointer_enter(pointer, query) })
   .add_pointer_observer2(fn(pointer, query) { on_pointer_leave(pointer, query) })

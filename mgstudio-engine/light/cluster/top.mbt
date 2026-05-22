@@ -31,7 +31,7 @@ const CLUSTER_LIGHT_PLUGIN_NAME : String = "mgstudio.light.cluster.ClusterLightP
 pub struct ClusterLightPlugin {}
 
 ///|
-pub fn ClusterLightPlugin::default() -> ClusterLightPlugin {
+pub fn ClusterLightPlugin::ClusterLightPlugin() -> ClusterLightPlugin {
   ClusterLightPlugin::{  }
 }
 
@@ -44,7 +44,7 @@ pub struct GlobalClusterSettings {
 } derive(Eq, Debug)
 
 ///|
-pub fn GlobalClusterSettings::default() -> GlobalClusterSettings {
+pub fn GlobalClusterSettings::GlobalClusterSettings() -> GlobalClusterSettings {
   GlobalClusterSettings::{
     supports_storage_buffers: true,
     clustered_decals_are_usable: true,
@@ -71,7 +71,7 @@ pub struct ClusterZConfig {
 } derive(Eq, Debug)
 
 ///|
-pub fn ClusterZConfig::default() -> ClusterZConfig {
+pub fn ClusterZConfig::ClusterZConfig() -> ClusterZConfig {
   ClusterZConfig::{
     first_slice_depth: 5.0,
     far_z_mode: ClusterFarZMode::default(),
@@ -92,7 +92,7 @@ pub fn ClusterConfig::default() -> ClusterConfig {
   // - total clusters: 4096
   // - z slices: 24
   // - dynamic resizing enabled
-  FixedZ(4096, 24, ClusterZConfig::default(), true)
+  FixedZ(4096, 24, ClusterZConfig::ClusterZConfig(), true)
 }
 
 ///|
@@ -230,7 +230,7 @@ pub struct ClusterableObjectCounts {
 } derive(Eq, Debug)
 
 ///|
-pub fn ClusterableObjectCounts::default() -> ClusterableObjectCounts {
+pub fn ClusterableObjectCounts::ClusterableObjectCounts() -> ClusterableObjectCounts {
   ClusterableObjectCounts::{
     point_lights: 0,
     spot_lights: 0,
@@ -247,17 +247,17 @@ pub struct ObjectsInCluster {
 } derive(Eq, Debug)
 
 ///|
-pub fn ObjectsInCluster::default() -> ObjectsInCluster {
+pub fn ObjectsInCluster::ObjectsInCluster() -> ObjectsInCluster {
   ObjectsInCluster::{
     clusterables: [],
-    counts: ClusterableObjectCounts::default(),
+    counts: ClusterableObjectCounts::ClusterableObjectCounts(),
   }
 }
 
 ///|
 pub fn ObjectsInCluster::clear(self : ObjectsInCluster) -> Unit {
   self.clusterables.clear()
-  self.counts = ClusterableObjectCounts::default()
+  self.counts = ClusterableObjectCounts::ClusterableObjectCounts()
 }
 
 ///|
@@ -345,7 +345,7 @@ pub struct Clusters {
 } derive(Eq, Debug)
 
 ///|
-pub fn Clusters::default() -> Clusters {
+pub fn Clusters::Clusters() -> Clusters {
   Clusters::{
     tile_size_x: 0,
     tile_size_y: 0,
@@ -374,7 +374,7 @@ pub fn Clusters::new(
   let cluster_count = safe_dimensions_x * safe_dimensions_y * safe_dimensions_z
   let clusterable_objects : Array[ObjectsInCluster] = []
   for _ in 0..<cluster_count {
-    clusterable_objects.push(ObjectsInCluster::default())
+    clusterable_objects.push(ObjectsInCluster::ObjectsInCluster())
   }
   Clusters::{
     tile_size_x: if tile_size_x <= 0 {
@@ -477,7 +477,7 @@ pub struct VisibleClusterableObjects {
 } derive(Eq, Debug)
 
 ///|
-pub fn VisibleClusterableObjects::default() -> VisibleClusterableObjects {
+pub fn VisibleClusterableObjects::VisibleClusterableObjects() -> VisibleClusterableObjects {
   VisibleClusterableObjects::{
     point_and_spot_lights: [],
     reflection_probes: [],
@@ -487,7 +487,7 @@ pub fn VisibleClusterableObjects::default() -> VisibleClusterableObjects {
 
 ///|
 pub fn VisibleClusterableObjects::new() -> VisibleClusterableObjects {
-  VisibleClusterableObjects::default()
+  VisibleClusterableObjects::VisibleClusterableObjects()
 }
 
 ///|
@@ -627,7 +627,7 @@ pub impl @app.Plugin for ClusterLightPlugin with build(self, app) {
 
 ///|
 pub fn cluster_light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  cluster_light_plugin_with(app, ClusterLightPlugin::default())
+  cluster_light_plugin_with(app, ClusterLightPlugin::ClusterLightPlugin())
 }
 
 ///|
@@ -636,6 +636,6 @@ pub fn cluster_light_plugin_with(
   _plugin : ClusterLightPlugin,
 ) -> @app.App[@ecs.World] {
   cluster_assign_lights(
-    app.init_resource(fn() { GlobalClusterSettings::default() }),
+    app.init_resource(fn() { GlobalClusterSettings::GlobalClusterSettings() }),
   )
 }

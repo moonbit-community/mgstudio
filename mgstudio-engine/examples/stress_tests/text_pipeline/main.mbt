@@ -39,17 +39,17 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let root = commands.spawn(
     (
       PipelineText::{  },
-      @text.Text2d::default(),
+      @text.Text2d::Text2d(),
       @text.TextLayout::new(
         @text.Justify::Center,
         @text.LineBreak::AnyCharacter,
       ),
-      @text.TextBounds::default(),
+      @text.TextBounds::TextBounds(),
     ),
   )
 
@@ -61,7 +61,7 @@ fn setup(
         (
           @hierarchy.Parent::new(root),
           @text.TextSpan::new(repeated_word("text", i)),
-          @text.TextFont::default()
+          @text.TextFont::TextFont()
           .with_font(mono_font)
           .with_font_size(Float::from_double((4 + i % 10).to_double())),
           @text.TextColor::new(@sprite.Color::srgb(0.0F, 0.0F, 1.0F)),
@@ -73,7 +73,7 @@ fn setup(
         (
           @hierarchy.Parent::new(root),
           @text.TextSpan::new(repeated_word("pipeline", i)),
-          @text.TextFont::default()
+          @text.TextFont::TextFont()
           .with_font(sans_font)
           .with_font_size(Float::from_double((4 + i % 11).to_double())),
           @text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)),
@@ -99,8 +99,8 @@ fn update_text_pipeline(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(
     @app.Update,

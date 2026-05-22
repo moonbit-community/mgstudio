@@ -58,7 +58,7 @@ pub struct GpuFog {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn GpuFog::default() -> GpuFog {
+pub fn GpuFog::GpuFog() -> GpuFog {
   GpuFog::{
     base_color: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
     directional_light_color: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
@@ -71,7 +71,7 @@ pub fn GpuFog::default() -> GpuFog {
 
 ///|
 pub fn GpuFog::off() -> GpuFog {
-  GpuFog::default()
+  GpuFog::GpuFog()
 }
 
 ///|
@@ -153,7 +153,7 @@ pub impl @app.Resource for FogMeta with resource() {
 pub struct FogPlugin {}
 
 ///|
-pub fn FogPlugin::default() -> FogPlugin {
+pub fn FogPlugin::FogPlugin() -> FogPlugin {
   FogPlugin::{  }
 }
 
@@ -170,7 +170,7 @@ pub impl @app.Plugin for FogPlugin with build(self, app) {
 
 ///|
 pub fn fog_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  fog_plugin_install_with(app, FogPlugin::default())
+  fog_plugin_install_with(app, FogPlugin::FogPlugin())
 }
 
 ///|
@@ -181,14 +181,14 @@ pub fn fog_plugin_install_with(
   @render_gpu.with_render_app(app, fn(sub_app : @app.SubApp[@ecs.World]) {
     let world = sub_app.world()
     if world.get_resource(FogMeta::resource()) is None {
-      world.insert_resource(FogMeta::resource(), FogMeta::default())
+      world.insert_resource(FogMeta::resource(), FogMeta::FogMeta())
     }
     sub_app
   })
 }
 
 ///|
-pub fn FogMeta::default() -> FogMeta {
+pub fn FogMeta::FogMeta() -> FogMeta {
   FogMeta::{ gpu_fogs: [] }
 }
 
@@ -292,7 +292,7 @@ pub fn render3d_gpu_fog_from_view_fog(fog : Render3dViewFogData) -> GpuFog {
   match fog.falloff {
     Render3dFogFalloff::Linear(start, end_) =>
       GpuFog::{
-        ..GpuFog::default(),
+        ..GpuFog(),
         mode: GPU_FOG_MODE_LINEAR,
         base_color,
         directional_light_color,
@@ -301,7 +301,7 @@ pub fn render3d_gpu_fog_from_view_fog(fog : Render3dViewFogData) -> GpuFog {
       }
     Render3dFogFalloff::Exponential(density) =>
       GpuFog::{
-        ..GpuFog::default(),
+        ..GpuFog(),
         mode: GPU_FOG_MODE_EXPONENTIAL,
         base_color,
         directional_light_color,
@@ -310,7 +310,7 @@ pub fn render3d_gpu_fog_from_view_fog(fog : Render3dViewFogData) -> GpuFog {
       }
     Render3dFogFalloff::ExponentialSquared(density) =>
       GpuFog::{
-        ..GpuFog::default(),
+        ..GpuFog(),
         mode: GPU_FOG_MODE_EXPONENTIAL_SQUARED,
         base_color,
         directional_light_color,
@@ -359,7 +359,7 @@ pub fn prepare_fog(
 ///|
 pub fn render3d_fog_meta_ref_or_init(world : @ecs.World) -> Ref[FogMeta] {
   if world.get_resource(FogMeta::resource()) is None {
-    world.insert_resource(FogMeta::resource(), FogMeta::default())
+    world.insert_resource(FogMeta::resource(), FogMeta::FogMeta())
   }
   match world.get_resource_mut(FogMeta::resource()) {
     Some(value) => Ref(value.peek())

@@ -14,7 +14,7 @@
 
 ///|
 test "pbr/lightmap: render-lightmaps allocates and removes entries" {
-  let render_lightmaps = RenderLightmaps::default()
+  let render_lightmaps = @lightmap.RenderLightmaps::RenderLightmaps()
   let entity0 = @core.Entity::new(10, 1)
   let entity1 = @core.Entity::new(11, 1)
 
@@ -24,7 +24,7 @@ test "pbr/lightmap: render-lightmaps allocates and removes entries" {
   )
   let render_lightmap1 = render_lightmaps.insert_lightmap(
     entity1,
-    Lightmap::default(),
+    Lightmap::Lightmap(),
   )
 
   debug_inspect(render_lightmaps.entity_count(), content="2")
@@ -39,7 +39,7 @@ test "pbr/lightmap: render-lightmaps allocates and removes entries" {
 
 ///|
 test "pbr/lightmap: plugin state keeps bevy-shaped defaults" {
-  let state = LightmapPluginState::default()
+  let state = @lightmap.LightmapPluginState::LightmapPluginState()
   debug_inspect(state.lightmaps_per_slab, content="4")
   debug_inspect(state.bindless_supported, content="false")
 }

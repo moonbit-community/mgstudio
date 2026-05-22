@@ -16,7 +16,7 @@
 pub struct VisibilityPlugin {}
 
 ///|
-pub fn VisibilityPlugin::default() -> VisibilityPlugin {
+pub fn VisibilityPlugin::VisibilityPlugin() -> VisibilityPlugin {
   VisibilityPlugin::{  }
 }
 

@@ -40,13 +40,13 @@ pub impl @ecs.Message for RawWinitWindowEvent with message() {
 }
 
 ///|
-pub fn WinitPlugin::default() -> WinitPlugin {
+pub fn WinitPlugin::WinitPlugin() -> WinitPlugin {
   WinitPlugin::{ run_on_any_thread: false }
 }
 
 ///|
 pub fn winit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  winit_plugin_with(app, WinitPlugin::default())
+  winit_plugin_with(app, WinitPlugin::WinitPlugin())
 }
 
 ///|
@@ -66,9 +66,9 @@ pub fn winit_plugin_with(
 ) -> @app.App[@ecs.World] {
   @windowing.set_event_loop_any_thread(plugin.run_on_any_thread)
   app
-  .init_resource(WinitWindows::default)
-  .init_resource(WinitMonitors::default)
-  .init_resource(WinitSettings::default)
+  .init_resource(fn() { WinitWindows::WinitWindows() })
+  .init_resource(fn() { WinitMonitors::WinitMonitors() })
+  .init_resource(fn() { WinitSettings::WinitSettings() })
   .add_message(ecs_key_raw_winit_window_event)
   .add_message(@a11y.ecs_msg_key_action_request)
   .add_pre_update_system_config(

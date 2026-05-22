@@ -49,7 +49,7 @@ pub struct EntitySpecializationTicks {
 }
 
 ///|
-pub fn EntitySpecializationTicks::default() -> EntitySpecializationTicks {
+pub fn EntitySpecializationTicks::EntitySpecializationTicks() -> EntitySpecializationTicks {
   EntitySpecializationTicks::{ entities: {} }
 }
 
@@ -144,7 +144,7 @@ pub struct SpecializedMaterialViewPipelineCache {
 }
 
 ///|
-pub fn SpecializedMaterialViewPipelineCache::default() -> SpecializedMaterialViewPipelineCache {
+pub fn SpecializedMaterialViewPipelineCache::SpecializedMaterialViewPipelineCache() -> SpecializedMaterialViewPipelineCache {
   SpecializedMaterialViewPipelineCache::{ entries: {} }
 }
 
@@ -192,7 +192,7 @@ pub struct SpecializedMaterialPipelineCache {
 }
 
 ///|
-pub fn SpecializedMaterialPipelineCache::default() -> SpecializedMaterialPipelineCache {
+pub fn SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache() -> SpecializedMaterialPipelineCache {
   SpecializedMaterialPipelineCache::{ views: {} }
 }
 
@@ -240,7 +240,7 @@ pub fn SpecializedMaterialPipelineCache::view_or_insert(
   match self.views.get(key) {
     Some(cache) => cache
     None => {
-      let cache = SpecializedMaterialViewPipelineCache::default()
+      let cache = SpecializedMaterialViewPipelineCache::SpecializedMaterialViewPipelineCache()
       self.views.set(key, cache)
       cache
     }

@@ -84,8 +84,10 @@ pub fn[T : CameraProjection3d + @ecs.EcsPayloadCodec] CustomProjection3d::new(
 }
 
 ///|
-pub fn CustomProjection3d::default() -> CustomProjection3d {
-  CustomProjection3d::new(PerspectiveProjection3d::default())
+pub fn CustomProjection3d::CustomProjection3d() -> CustomProjection3d {
+  CustomProjection3d::new(
+    @pbr_render.PerspectiveProjection3d::PerspectiveProjection3d(),
+  )
 }
 
 ///|
@@ -158,7 +160,7 @@ pub impl @ecs.Mutable for Projection
 
 ///|
 pub fn Projection::default() -> Projection {
-  Perspective(PerspectiveProjection3d::default())
+  Perspective(@pbr_render.PerspectiveProjection3d::PerspectiveProjection3d())
 }
 
 ///|

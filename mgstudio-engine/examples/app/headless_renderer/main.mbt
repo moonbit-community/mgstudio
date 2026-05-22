@@ -46,14 +46,14 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(-1),
+    @sprite.Camera::Camera().with_order(-1),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   // Keep a visible camera on screen for web runtime.
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -86,7 +86,7 @@ fn capture_system(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(CaptureState::{ target: None, frame: 0, single_image: true })
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param2(capture_system)))

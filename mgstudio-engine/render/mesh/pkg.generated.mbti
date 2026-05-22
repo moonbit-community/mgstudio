@@ -46,6 +46,7 @@ pub struct MeshAllocator {
   mut next_slab_id : Int
   general_vertex_slabs_supported : Bool
 }
+pub fn MeshAllocator::MeshAllocator() -> Self
 pub fn MeshAllocator::allocate(Self, Int, Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> MeshAllocatorSlabPlan?
 pub fn MeshAllocator::allocate_render_mesh(Self, Int, RenderMesh, Int, index_layout? : MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> MeshAllocatorRenderMeshPlan
 pub fn MeshAllocator::allocations(Self) -> Int
@@ -153,7 +154,7 @@ pub struct MeshAllocatorSettings {
   large_threshold : Int
   growth_factor : Float
 }
-pub fn MeshAllocatorSettings::default() -> Self
+pub fn MeshAllocatorSettings::MeshAllocatorSettings() -> Self
 pub fn MeshAllocatorSettings::growth_factor(Self) -> Float
 pub fn MeshAllocatorSettings::large_threshold(Self) -> Int
 pub fn MeshAllocatorSettings::max_slab_size(Self) -> Int

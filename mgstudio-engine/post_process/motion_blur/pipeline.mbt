@@ -23,7 +23,7 @@ pub struct MotionBlur {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn MotionBlur::default() -> MotionBlur {
+pub fn MotionBlur::MotionBlur() -> MotionBlur {
   MotionBlur::{ shutter_angle: 0.5F, samples: 1 }
 }
 

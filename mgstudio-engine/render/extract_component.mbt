@@ -39,7 +39,7 @@ pub struct ComponentUniforms[C] {
 }
 
 ///|
-pub fn[C] ComponentUniforms::default() -> ComponentUniforms[C] {
+pub fn[C] ComponentUniforms::ComponentUniforms() -> ComponentUniforms[C] {
   ComponentUniforms::{ uniforms: [] }
 }
 
@@ -62,7 +62,10 @@ pub struct ExtractComponentPlugin[_, _] {
 }
 
 ///|
-pub fn[C, F] ExtractComponentPlugin::default() -> ExtractComponentPlugin[C, F] {
+pub fn[C, F] ExtractComponentPlugin::ExtractComponentPlugin() -> ExtractComponentPlugin[
+  C,
+  F,
+] {
   ExtractComponentPlugin::{ only_extract_visible: false }
 }
 
@@ -82,17 +85,18 @@ pub fn[C, F] extract_component_only_extract_visible(
 }
 
 ///|
-pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] with name(
-  _self,
-) {
+pub impl[C : @ecs.Component + @ecs.EcsPayloadCodec, F] @app.Plugin for ExtractComponentPlugin[
+  C,
+  F,
+] with name(_self) {
   EXTRACT_COMPONENT_PLUGIN_NAME
 }
 
 ///|
-pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F] with build(
-  self,
-  app,
-) {
+pub impl[C : @ecs.Component + @ecs.EcsPayloadCodec, F] @app.Plugin for ExtractComponentPlugin[
+  C,
+  F,
+] with build(self, app) {
   extract_component_plugin_with(app, self)
 }
 
@@ -107,7 +111,7 @@ fn[T] extract_component_register_world_component(
 }
 
 ///|
-fn[C : @ecs.Component] extract_components(
+fn[C : @ecs.Component + @ecs.EcsPayloadCodec] extract_components(
   render_world : @ecs.World,
   only_visible : Bool,
   component_key : @ecs.ComponentKey[C],
@@ -184,11 +188,11 @@ pub fn extract_component_plugin(
 }
 
 ///|
-pub fn[C : @ecs.Component, F] extract_component_plugin_with(
+pub fn[C : @ecs.Component + @ecs.EcsPayloadCodec, F] extract_component_plugin_with(
   app : @app.App[@ecs.World],
   plugin : ExtractComponentPlugin[C, F],
 ) -> @app.App[@ecs.World] {
-  let sync_component : SyncComponentPlugin[C, F] = SyncComponentPlugin::default()
+  let sync_component : SyncComponentPlugin[C, F] = SyncComponentPlugin::SyncComponentPlugin()
   let next = sync_component_plugin_with(app, sync_component)
   let component_key = C::component()
   with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {

@@ -34,7 +34,7 @@ pub struct MeshRayCastIntersectionSettings {
 }
 
 ///|
-pub fn MeshRayCastIntersectionSettings::default() -> MeshRayCastIntersectionSettings {
+pub fn MeshRayCastIntersectionSettings::MeshRayCastIntersectionSettings() -> MeshRayCastIntersectionSettings {
   {
     max_distance: MESH_RAY_CAST_DEFAULT_MAX_DISTANCE,
     ray_epsilon: MESH_RAY_CAST_DEFAULT_RAY_EPSILON,

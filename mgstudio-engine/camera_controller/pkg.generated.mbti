@@ -35,8 +35,8 @@ pub fn run_pancamera_controller(@ecs.World) -> Unit
 // Types and methods
 pub struct CameraControllerPlugins {
 }
+pub fn CameraControllerPlugins::CameraControllerPlugins() -> Self
 pub fn CameraControllerPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
-pub fn CameraControllerPlugins::default() -> Self
 pub impl @app.Plugin for CameraControllerPlugins
 
 pub(all) struct FreeCamera {
@@ -55,13 +55,13 @@ pub(all) struct FreeCamera {
   scroll_factor : Float
   friction : Float
 } derive(ToJson, @json.FromJson)
-pub fn FreeCamera::default() -> Self
+pub fn FreeCamera::FreeCamera() -> Self
 pub impl @ecs.Component for FreeCamera
 pub impl @ecs.EcsPayloadCodec for FreeCamera
 
 pub struct FreeCameraPlugin {
 }
-pub fn FreeCameraPlugin::default() -> Self
+pub fn FreeCameraPlugin::FreeCameraPlugin() -> Self
 pub impl @app.Plugin for FreeCameraPlugin
 
 pub(all) struct FreeCameraState {
@@ -72,7 +72,7 @@ pub(all) struct FreeCameraState {
   speed_multiplier : Float
   velocity : @math.Vec3
 } derive(ToJson, @json.FromJson)
-pub fn FreeCameraState::default() -> Self
+pub fn FreeCameraState::FreeCameraState() -> Self
 pub impl @ecs.Component for FreeCameraState
 pub impl @ecs.EcsPayloadCodec for FreeCameraState
 
@@ -93,14 +93,14 @@ pub struct PanCamera {
   key_rotate_ccw : @events.KeyCode?
   key_rotate_cw : @events.KeyCode?
 } derive(ToJson, @json.FromJson)
-pub fn PanCamera::default() -> Self
+pub fn PanCamera::PanCamera() -> Self
 pub impl @ecs.Component for PanCamera
 pub impl @ecs.EcsPayloadCodec for PanCamera
 pub impl Show for PanCamera
 
 pub struct PanCameraPlugin {
 }
-pub fn PanCameraPlugin::default() -> Self
+pub fn PanCameraPlugin::PanCameraPlugin() -> Self
 pub impl @app.Plugin for PanCameraPlugin
 
 // Type aliases

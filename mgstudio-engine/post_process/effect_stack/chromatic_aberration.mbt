@@ -23,7 +23,7 @@ pub struct ChromaticAberration {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ChromaticAberration::default() -> ChromaticAberration {
+pub fn ChromaticAberration::ChromaticAberration() -> ChromaticAberration {
   ChromaticAberration::{ intensity: 0.02F, max_samples: 8 }
 }
 

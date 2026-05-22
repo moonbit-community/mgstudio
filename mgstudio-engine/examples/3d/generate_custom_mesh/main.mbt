@@ -177,7 +177,7 @@ fn setup(
   let custom_texture = asset_server.get().load("textures/array_texture.png")
   let material = materials.peek()
     |> @pbr.add_material(
-      @pbr.StandardMaterial::default().with_base_color_texture(
+      @pbr.StandardMaterial::StandardMaterial().with_base_color_texture(
         Some(custom_texture),
       ),
     )
@@ -201,10 +201,10 @@ fn setup(
   )
 
   ignore(
-    commands.spawn((@camera.Camera3d::default(), camera_and_light_transform)),
+    commands.spawn((@camera.Camera3d::Camera3d(), camera_and_light_transform)),
   )
   ignore(
-    commands.spawn((@pbr.PointLight::default(), camera_and_light_transform)),
+    commands.spawn((@pbr.PointLight::PointLight(), camera_and_light_transform)),
   )
   ignore(
     commands.spawn(
@@ -213,7 +213,7 @@ fn setup(
           "Controls:\nSpace: Change UVs\nX/Y/Z: Rotate\nR: Reset orientation",
         ),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           top: @ui.Val::Px(12.0F),
           left: @ui.Val::Px(12.0F),
@@ -287,7 +287,7 @@ fn input_handler(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param5(input_handler)))
   .run()

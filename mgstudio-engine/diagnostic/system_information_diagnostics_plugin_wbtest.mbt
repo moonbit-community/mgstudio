@@ -25,7 +25,7 @@ test "diagnostics: collected system info contains host metadata" {
 ///|
 test "diagnostics: sysinfo refresh data populates diagnostics store" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins(
-    DiagnosticsPlugin::default(),
+    DiagnosticsPlugin::DiagnosticsPlugin(),
   )
   let pid = match @sysinfo.get_current_pid() {
     Ok(value) => value

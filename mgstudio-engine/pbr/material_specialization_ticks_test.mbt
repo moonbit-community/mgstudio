@@ -14,8 +14,8 @@
 
 ///|
 test "pbr material specialization: entity ticks capture system and material instance ticks" {
-  let entity_ticks = EntitySpecializationTicks::default()
-  let material_instances = RenderMaterialInstances::default()
+  let entity_ticks = EntitySpecializationTicks::EntitySpecializationTicks()
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   let entity = @core.Entity::new(31, 0)
 
   material_instances.late_sweep_removed_mesh3d(@core.Entity::new(999, 0))
@@ -35,7 +35,7 @@ test "pbr material specialization: entity ticks capture system and material inst
 
 ///|
 test "pbr material specialization: cache stores per-view pipeline ids" {
-  let cache = SpecializedMaterialPipelineCache::default()
+  let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
   let view = @core.Entity::new(1, 0)
   let entity = @core.Entity::new(2, 0)
   let pipeline_id = @material.CachedRenderPipelineId::new(55UL)
@@ -81,9 +81,9 @@ test "pbr material specialization: needs specialization follows view or entity t
 
 ///|
 test "pbr material specialization: sweep preserves same-frame material type replacement" {
-  let entity_ticks = EntitySpecializationTicks::default()
-  let cache = SpecializedMaterialPipelineCache::default()
-  let material_instances = RenderMaterialInstances::default()
+  let entity_ticks = EntitySpecializationTicks::EntitySpecializationTicks()
+  let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   let view = @core.Entity::new(4, 0)
   let entity = @core.Entity::new(5, 0)
 
@@ -107,9 +107,9 @@ test "pbr material specialization: sweep preserves same-frame material type repl
 
 ///|
 test "pbr material specialization: sweep removes stale ticks and cached pipelines" {
-  let entity_ticks = EntitySpecializationTicks::default()
-  let cache = SpecializedMaterialPipelineCache::default()
-  let material_instances = RenderMaterialInstances::default()
+  let entity_ticks = EntitySpecializationTicks::EntitySpecializationTicks()
+  let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   let view_a = @core.Entity::new(9, 0)
   let view_b = @core.Entity::new(10, 0)
   let entity = @core.Entity::new(11, 0)

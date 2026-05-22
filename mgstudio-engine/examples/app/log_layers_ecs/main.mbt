@@ -69,10 +69,10 @@ fn print_logs(reader : @ecs.MessageReader[LogMessage]) -> Unit {
 
 ///|
 fn main {
-  let log_plugin = @app.LogPlugin::default().with_custom_layer(custom_layer)
+  let log_plugin = @app.LogPlugin::LogPlugin().with_custom_layer(custom_layer)
   @app.App::new(@ecs.World::new())
   .add_message(log_message_key)
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(log_plugin)
   .add_systems(@app.Update, @app.system(log_system))
   .add_systems(

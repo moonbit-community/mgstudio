@@ -83,21 +83,27 @@ fn sampling_test_capsule_distance_to_segment(
 ///|
 test "math: 3d primitive defaults match Bevy sampling primitives" {
   debug_inspect(
-    sampling_test_approx_eq(Sphere::default().radius, 0.5F),
+    sampling_test_approx_eq(@math.Sphere::Sphere().radius, 0.5F),
     content="true",
   )
   debug_inspect(
-    sampling_test_approx_eq(Cylinder::default().radius, 0.5F) &&
-    sampling_test_approx_eq(Cylinder::default().half_height, 0.5F),
+    sampling_test_approx_eq(@math.Cylinder::Cylinder().radius, 0.5F) &&
+    sampling_test_approx_eq(@math.Cylinder::Cylinder().half_height, 0.5F),
     content="true",
   )
   debug_inspect(
-    sampling_test_approx_eq(Capsule3d::default().radius, 0.5F) &&
-    sampling_test_approx_eq(Capsule3d::default().half_length, 0.5F),
+    sampling_test_approx_eq(@math.Capsule3d::Capsule3d().radius, 0.5F) &&
+    sampling_test_approx_eq(@math.Capsule3d::Capsule3d().half_length, 0.5F),
     content="true",
   )
-  debug_inspect(Triangle3d::default().vertices.length() == 3, content="true")
-  debug_inspect(Tetrahedron::default().vertices.length() == 4, content="true")
+  debug_inspect(
+    @math.Triangle3d::Triangle3d().vertices.length() == 3,
+    content="true",
+  )
+  debug_inspect(
+    @math.Tetrahedron::Tetrahedron().vertices.length() == 4,
+    content="true",
+  )
 }
 
 ///|

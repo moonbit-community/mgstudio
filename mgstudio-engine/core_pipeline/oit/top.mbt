@@ -23,7 +23,7 @@ const OIT_PLUGIN_NAME : String = "mgstudio.core_pipeline.oit.OrderIndependentTra
 pub struct OrderIndependentTransparencyPlugin {}
 
 ///|
-pub fn OrderIndependentTransparencyPlugin::default() -> OrderIndependentTransparencyPlugin {
+pub fn OrderIndependentTransparencyPlugin::OrderIndependentTransparencyPlugin() -> OrderIndependentTransparencyPlugin {
   OrderIndependentTransparencyPlugin::{  }
 }
 
@@ -35,7 +35,7 @@ pub struct OrderIndependentTransparencySettings {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn OrderIndependentTransparencySettings::default() -> OrderIndependentTransparencySettings {
+pub fn OrderIndependentTransparencySettings::OrderIndependentTransparencySettings() -> OrderIndependentTransparencySettings {
   OrderIndependentTransparencySettings::{
     alpha_threshold: 0.001F,
     fragments_per_pixel_average: 1.0F,
@@ -57,7 +57,9 @@ pub impl @ecs.Component for OrderIndependentTransparencySettings with component(
 
 ///|
 pub fn oit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(OrderIndependentTransparencyPlugin::default())
+  app.add_plugins(
+    OrderIndependentTransparencyPlugin::OrderIndependentTransparencyPlugin(),
+  )
 }
 
 ///|
@@ -87,5 +89,5 @@ fn oit_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : OrderIndependentTransparencyPlugin,
 ) -> @app.App[@ecs.World] {
-  app.add_plugins(@resolve.OitResolvePlugin::default())
+  app.add_plugins(@resolve.OitResolvePlugin::OitResolvePlugin())
 }

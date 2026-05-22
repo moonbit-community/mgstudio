@@ -60,9 +60,6 @@ fn reset_input_runtime_state() -> Unit {
   input_active_touches_ref.val = []
   input_primary_pointer_position_ref.val = None
   input_primary_pointer_delta_ref.val = @math.Vec2::new(0.0, 0.0)
-  input_mouse_motion_event_cursor_ref.val = 0
-  input_mouse_wheel_event_cursor_ref.val = 0
-  input_window_focused_event_cursor_ref.val = 0
   input_probe_before_ran_ref.val = false
   input_probe_before_stage_ref.val = "none"
   input_probe_after_stage_ref.val = "none"
@@ -218,7 +215,7 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
 
   let world = @ecs.World::new()
   let window_entity = world.spawn()
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.focused = false
   try! (world.entity_mut(window_entity).insert_component(window) |> ignore)
   try! (world
@@ -271,7 +268,7 @@ test "input: keyboard focus-loss helper ignores loss when focus is regained in s
   let window_entity = world.spawn()
   try! (world
   .entity_mut(window_entity)
-  .insert_component(@window.Window::default())
+  .insert_component(@window.Window::Window())
   |> ignore)
 
   let app = input_plugin(@time.time_plugin(@app.App::new(world)))

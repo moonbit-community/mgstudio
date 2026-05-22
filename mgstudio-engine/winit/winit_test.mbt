@@ -110,7 +110,7 @@ fn read_window_destroyed(world : @ecs.World) -> Array[@window.WindowDestroyed] {
 
 ///|
 test "winit: plugin identity name is stable" {
-  let plugin = WinitPlugin::default()
+  let plugin = @winit.WinitPlugin::WinitPlugin()
   debug_inspect(
     WinitPlugin::name(plugin),
     content="\"mgstudio.winit.WinitPlugin\"",
@@ -235,7 +235,7 @@ test "winit: windows resource supports remove by entity" {
   let world = @ecs.World::new()
   let entity_a = world.spawn()
   let entity_b = world.spawn()
-  let windows = WinitWindows::default()
+  let windows = @winit.WinitWindows::WinitWindows()
   windows.windows.push(WinitWindowEntry::new(entity_a, 101))
   windows.windows.push(WinitWindowEntry::new(entity_b, 202))
 
@@ -250,7 +250,7 @@ test "winit: windows resource supports remove by entity" {
 test "winit: monitors resource provides nth and find_entity accessors" {
   let world = @ecs.World::new()
   let missing_entity = world.spawn()
-  let monitors = WinitMonitors::default()
+  let monitors = @winit.WinitMonitors::WinitMonitors()
   debug_inspect(monitors.nth(0) is None, content="true")
   debug_inspect(monitors.nth(-1) is None, content="true")
   debug_inspect(monitors.find_entity(world.spawn()) is None, content="true")
@@ -274,7 +274,7 @@ test "winit: select_monitor aligns with bevy monitor selection semantics" {
   } else {
     native_monitors[0]
   }
-  let monitors = WinitMonitors::default()
+  let monitors = @winit.WinitMonitors::WinitMonitors()
   monitors.monitors.push(WinitMonitorEntry::new(monitor_a, entity_a))
   monitors.monitors.push(WinitMonitorEntry::new(monitor_b, entity_b))
   let primary_monitor = @windowing.primary_monitor()
@@ -442,7 +442,7 @@ test "winit: create pass consumes initial window mode requests" {
   @windowing.set_event_loop_any_thread(true)
   let world = @ecs.World::new()
   let window_entity = world.spawn()
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.mode = @window.WindowMode::BorderlessFullscreen(
     @window.MonitorSelection::Current,
   )
@@ -529,7 +529,7 @@ test "winit: keyboard press reaches update input readers" {
   let window_entity = world.spawn()
   try! (world
   .entity_mut(window_entity)
-  .insert_component(@window.Window::default())
+  .insert_component(@window.Window::Window())
   |> ignore)
   try! (world
   .entity_mut(window_entity)
@@ -578,7 +578,7 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
 
   let world = @ecs.World::new()
   let window_entity = world.spawn()
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.focused = false
   try! (world.entity_mut(window_entity).insert_component(window) |> ignore)
   try! (world
@@ -660,7 +660,7 @@ test "winit: close request follows bevy two-frame close lifecycle" {
   let window_entity = world.spawn()
   try! (world
   .entity_mut(window_entity)
-  .insert_component(@window.Window::default())
+  .insert_component(@window.Window::Window())
   |> ignore)
 
   let mut app = winit_plugin(
@@ -700,7 +700,7 @@ test "winit: app exit emits WindowClosing for all open windows" {
   let window_entity = world.spawn()
   try! (world
   .entity_mut(window_entity)
-  .insert_component(@window.Window::default())
+  .insert_component(@window.Window::Window())
   |> ignore)
 
   let mut app = winit_plugin(

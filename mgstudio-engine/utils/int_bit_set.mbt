@@ -44,7 +44,7 @@ pub fn IntBitSet::with_capacity(capacity : Int) -> IntBitSet {
 }
 
 ///|
-pub fn IntBitSet::default() -> IntBitSet {
+pub fn IntBitSet::IntBitSet() -> IntBitSet {
   IntBitSet::new()
 }
 

@@ -624,9 +624,11 @@ test "app: plugin group add_group deduplicates by final ordering" {
 
 ///|
 test "app: noop plugin group adds no plugins" {
-  let group = test_build_plugin_group(NoopPluginGroup::default())
+  let group = test_build_plugin_group(@app.NoopPluginGroup::NoopPluginGroup())
   debug_inspect(group.build_entries().length(), content="0")
-  let app = App::new(@ecs.World::new()).add_plugins(NoopPluginGroup::default())
+  let app = App::new(@ecs.World::new()).add_plugins(
+    @app.NoopPluginGroup::NoopPluginGroup(),
+  )
   debug_inspect(app.plugin_names().length(), content="1")
   debug_inspect(
     app.plugin_names()[0],

@@ -161,13 +161,13 @@ pub fn MeshletPlugin::cluster_buffer_slots(self : MeshletPlugin) -> Int {
 }
 
 ///|
-pub fn MeshletPlugin::default() -> MeshletPlugin {
+pub fn MeshletPlugin::MeshletPlugin() -> MeshletPlugin {
   MeshletPlugin::new(1_048_576)
 }
 
 ///|
 pub fn meshlet_plugin() -> MeshletPlugin {
-  MeshletPlugin::default()
+  MeshletPlugin::MeshletPlugin()
 }
 
 ///|
@@ -181,7 +181,7 @@ fn meshlet_prepare_assets_system(world : @ecs.World) -> Unit {
 ///|
 fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let instance_manager = InstanceManager::default()
+  let instance_manager = InstanceManager::InstanceManager()
   let meshlet_assets_key : @ecs.ResourceKey[@asset.Assets[MeshletMesh]] = @asset.assets_resource_key()
   let meshlet_assets = source_world.get_resource(meshlet_assets_key)
   let asset_server = source_world.get_resource(@asset.asset_server_resource_key)
@@ -233,7 +233,7 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
                       entity, @sprite.ecs_key_render_layers,
                     )) {
                     Some(render_layers) => render_layers.mask()
-                    None => @sprite.RenderLayers::default().mask()
+                    None => @sprite.RenderLayers::RenderLayers().mask()
                   }
                   let not_shadow_caster = try! source_world.contains_by_key(
                     entity, @pbr.ecs_key_not_shadow_caster,
@@ -304,7 +304,7 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
     try! source_world.set_by_key(
       view_entity,
       ecs_key_meshlet_view_materials_main_opaque_pass,
-      MeshletViewMaterialsMainOpaquePass::default(),
+      MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass(),
     )
     let has_normal_prepass = try! source_world.contains_by_key(
       view_entity, @core_pipeline.ecs_key_normal_prepass,
@@ -319,12 +319,12 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
       try! source_world.set_by_key(
         view_entity,
         ecs_key_meshlet_view_materials_prepass,
-        MeshletViewMaterialsPrepass::default(),
+        MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass(),
       )
       try! source_world.set_by_key(
         view_entity,
         ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
-        MeshletViewMaterialsDeferredGBufferPrepass::default(),
+        MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass(),
       )
     }
   }
@@ -366,7 +366,7 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
                 view_entity, @sprite.ecs_key_render_layers,
               )) {
               Some(render_layers) => render_layers.mask()
-              None => @sprite.RenderLayers::default().mask()
+              None => @sprite.RenderLayers::RenderLayers().mask()
             }
             ignore(
               instance_manager.prepare_view_instance_visibility(
@@ -444,7 +444,7 @@ fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
 fn meshlet_refresh_plugin_state_system(world : @ecs.World) -> Unit {
   world.insert_resource(
     ecs_key_meshlet_plugin_state,
-    MeshletPluginState::from_plugin(MeshletPlugin::default()),
+    MeshletPluginState::from_plugin(MeshletPlugin::MeshletPlugin()),
   )
 }
 
@@ -608,7 +608,7 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
     fn(entity, _main_opaque) { main_opaque_entities.push(entity) },
   )
   for entity in main_opaque_entities {
-    let main_opaque = MeshletViewMaterialsMainOpaquePass::default()
+    let main_opaque = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
     let has_normal_prepass = try! source_world.contains_by_key(
       entity, @core_pipeline.ecs_key_normal_prepass,
     )
@@ -675,8 +675,8 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
     try! source_world.set_by_key(
       entity, ecs_key_meshlet_view_materials_main_opaque_pass, main_opaque,
     )
-    let mut prepass = MeshletViewMaterialsPrepass::default()
-    let mut deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+    let mut prepass = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+    let mut deferred = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
     let has_prepass = try! source_world.contains_by_key(
       entity, ecs_key_meshlet_view_materials_prepass,
     )
@@ -728,7 +728,7 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
   if world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state) is None {
     world.insert_resource(
       ecs_key_meshlet_visibility_buffer_raster_state,
-      MeshletVisibilityBufferRasterState::default(),
+      MeshletVisibilityBufferRasterState::MeshletVisibilityBufferRasterState(),
     )
   }
   let instance_count = meshlet_instance_count_from_world(world)
@@ -905,7 +905,7 @@ fn meshlet_ensure_render_sub_app_resources(
   if world.get_resource(ecs_key_meshlet_instance_manager) is None {
     world.insert_resource(
       ecs_key_meshlet_instance_manager,
-      InstanceManager::default(),
+      InstanceManager::InstanceManager(),
     )
   }
   if world.get_resource(ecs_key_meshlet_resource_manager) is None {
@@ -923,13 +923,13 @@ fn meshlet_ensure_render_sub_app_resources(
   if world.get_resource(ecs_key_meshlet_mesh_manager) is None {
     world.insert_resource(
       ecs_key_meshlet_mesh_manager,
-      MeshletMeshManager::default(),
+      MeshletMeshManager::MeshletMeshManager(),
     )
   }
   if world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state) is None {
     world.insert_resource(
       ecs_key_meshlet_visibility_buffer_raster_state,
-      MeshletVisibilityBufferRasterState::default(),
+      MeshletVisibilityBufferRasterState::MeshletVisibilityBufferRasterState(),
     )
   }
 }
@@ -1090,8 +1090,8 @@ pub struct MeshletPluginState {
 }
 
 ///|
-pub fn MeshletPluginState::default() -> MeshletPluginState {
-  MeshletPluginState::from_plugin(MeshletPlugin::default())
+pub fn MeshletPluginState::MeshletPluginState() -> MeshletPluginState {
+  MeshletPluginState::from_plugin(MeshletPlugin::MeshletPlugin())
 }
 
 ///|

@@ -101,7 +101,7 @@ fn pbr_mesh_pipeline_view_layout() -> @mesh_view_layout.MeshPipelineViewLayout {
   @mesh_view_layout.render3d_mesh_pipeline_view_layout(
     true,
     true,
-    @mesh_view_layout.MeshPipelineViewLayoutKey::default(),
+    @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
     clustered_decals_usable=false,
     irradiance_volumes_usable=false,
     oit_supported=false,
@@ -435,7 +435,7 @@ fn pbr_mesh_pipeline_descriptor(
   }
   let fragment_defs = pbr_shader_defs_clone(shader_defs)
   let mesh_view_layout = pbr_mesh_pipeline_view_layout()
-  @material.RenderPipelineDescriptor::default()
+  @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_label(Some("opaque_mesh_pipeline"))
   .with_layout([
     mesh_view_layout.main_bind_group_layout_descriptor(),
@@ -667,7 +667,7 @@ fn pbr_prepass_pipeline_descriptor(
       None => abort("PrepassPipeline requires a material bind group layout")
     }
   }
-  @material.RenderPipelineDescriptor::default()
+  @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_label(Some("prepass_pipeline"))
   .with_layout([
     pbr_prepass_view_layout_descriptor(motion_vector_prepass),

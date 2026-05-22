@@ -28,7 +28,7 @@ pub struct EnvironmentMapIds {
 }
 
 ///|
-pub fn EnvironmentMapIds::default() -> EnvironmentMapIds {
+pub fn EnvironmentMapIds::EnvironmentMapIds() -> EnvironmentMapIds {
   EnvironmentMapIds::{ diffuse: None, specular: None }
 }
 
@@ -41,7 +41,7 @@ pub struct EnvironmentMapViewLightProbeInfo {
 }
 
 ///|
-pub fn EnvironmentMapViewLightProbeInfo::default() -> EnvironmentMapViewLightProbeInfo {
+pub fn EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo() -> EnvironmentMapViewLightProbeInfo {
   EnvironmentMapViewLightProbeInfo::{
     cubemap_index: -1,
     smallest_specular_mip_level: 0,
@@ -76,7 +76,7 @@ pub fn pbr_environment_map_bind_group_entries(
 ) -> RenderViewEnvironmentMapBindGroupEntries {
   if !use_binding_arrays || cubemaps.length() == 0 {
     let first = if cubemaps.length() == 0 {
-      EnvironmentMapIds::default()
+      EnvironmentMapIds::EnvironmentMapIds()
     } else {
       cubemaps[0]
     }
@@ -139,7 +139,7 @@ pub fn pbr_environment_map_bind_group_entries_counts(
 
 ///|
 pub fn pbr_light_probe_default() -> LightProbe {
-  LightProbe::default()
+  LightProbe()
 }
 
 ///|
@@ -149,5 +149,5 @@ pub fn pbr_light_probe_new() -> LightProbe {
 
 ///|
 pub fn pbr_environment_map_light_default() -> EnvironmentMapLight {
-  EnvironmentMapLight::default()
+  EnvironmentMapLight()
 }

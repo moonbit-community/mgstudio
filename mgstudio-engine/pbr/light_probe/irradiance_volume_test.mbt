@@ -24,7 +24,7 @@ test "pbr light probe: single entry mode without binding arrays" {
 ///|
 test "pbr light probe: multiple entry mode padded to max size" {
   let entries = pbr_irradiance_volume_bind_group_entries(
-    [RenderViewIrradianceVolumeInfo::default()],
+    [RenderViewIrradianceVolumeInfo::RenderViewIrradianceVolumeInfo()],
     true,
     4,
   )

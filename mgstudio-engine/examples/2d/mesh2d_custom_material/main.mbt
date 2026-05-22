@@ -86,7 +86,7 @@ pub impl @sprite.Material2d for CustomMaterialAsset with bind_group(self) {
 
 ///|
 fn custom_material_plugin() -> @sprite.Material2dPlugin[CustomMaterialAsset] {
-  let plugin : @sprite.Material2dPlugin[CustomMaterialAsset] = @sprite.Material2dPlugin::default()
+  let plugin : @sprite.Material2dPlugin[CustomMaterialAsset] = @sprite.Material2dPlugin::Material2dPlugin()
     .with_asset_init(fn() { custom_material_asset(@sprite.Color::white()) })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")
@@ -96,7 +96,7 @@ fn custom_material_plugin() -> @sprite.Material2dPlugin[CustomMaterialAsset] {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(custom_material_plugin())
   .add_systems(@app.Startup, @app.system(mesh2d_custom_material_setup))
   .run()
@@ -139,7 +139,7 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   try! (world.set_by_key(
     entity,
     @sprite.ecs_key_render_layers,
-    @sprite.RenderLayers::default(),
+    @sprite.RenderLayers::RenderLayers(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -162,7 +162,7 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   |> ignore)
 
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore

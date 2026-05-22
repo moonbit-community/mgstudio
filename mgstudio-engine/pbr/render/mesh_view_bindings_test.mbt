@@ -94,7 +94,7 @@ test "pbr/render: mesh_view layout table builds all key variants" {
   debug_inspect(layouts.layouts.length(), content="256")
 
   let default_layout = layouts.get_view_layout(
-    @mesh_view_layout.MeshPipelineViewLayoutKey::default(),
+    @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
   )
   debug_inspect(
     default_layout.main_layout_label,
@@ -121,7 +121,7 @@ test "pbr/render: mesh view descriptor preserves binding-array counts" {
   let layout = @mesh_view_layout.render3d_mesh_pipeline_view_layout(
     true,
     true,
-    @mesh_view_layout.MeshPipelineViewLayoutKey::default(),
+    @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
     multiple_light_probes_in_array=true,
   )
   let descriptor = layout.binding_array_bind_group_layout_descriptor()

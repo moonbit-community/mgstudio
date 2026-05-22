@@ -23,7 +23,9 @@ test "transmission phase: split range matches stepped partitioning" {
 
 ///|
 test "transmission node: pass config copy flag follows step count" {
-  let config = MainTransmissivePass3dConfig::default().with_steps(3)
+  let config = @transmission.MainTransmissivePass3dConfig::MainTransmissivePass3dConfig().with_steps(
+    3,
+  )
   inspect(
     main_transmissive_pass_3d_should_copy_texture_per_step(config),
     content="true",

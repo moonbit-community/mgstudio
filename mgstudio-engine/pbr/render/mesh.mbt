@@ -31,7 +31,7 @@ pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
     mesh_upload_cache: {},
     morph_target_texture_cache: {},
     mesh_preprocess_static_cache: {},
-    mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::default(),
+    mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts(),
     binding_arrays_are_usable: false,
     specialized_material_pipelines: @material.SpecializedMeshPipelines::new(),
     specialized_prepass_material_pipelines: @material.SpecializedMeshPipelines::new(),
@@ -112,7 +112,7 @@ pub struct Render3dMeshUploadCacheState {
 }
 
 ///|
-pub fn Render3dMeshUploadCacheState::default() -> Render3dMeshUploadCacheState {
+pub fn Render3dMeshUploadCacheState::Render3dMeshUploadCacheState() -> Render3dMeshUploadCacheState {
   Render3dMeshUploadCacheState::{ clear_count: 0 }
 }
 

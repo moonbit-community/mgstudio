@@ -62,7 +62,7 @@ impl @app.Resource for BirdCounter with resource() {
 }
 
 ///|
-fn BirdCounter::default() -> BirdCounter {
+fn BirdCounter::BirdCounter() -> BirdCounter {
   { count: 0, print_timer: 0.0F }
 }
 
@@ -139,7 +139,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @sprite.Camera2d::default(),
+        @sprite.Camera2d::Camera2d(),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
     ),
@@ -222,10 +222,10 @@ fn counter_system(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .insert_resource(BirdCounter::default())
+  .insert_resource(BirdCounter::BirdCounter())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(spawn_on_click)))
   .add_systems(@app.Update, @app.system(@app.system_param2(movement_system)))

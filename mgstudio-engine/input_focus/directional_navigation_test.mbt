@@ -129,7 +129,7 @@ test "auto_generate_navigation_edges connects nearest candidate without overwrit
   let east = world.spawn()
   let south = world.spawn()
   let manual = world.spawn()
-  let config = AutoNavigationConfig::default()
+  let config = @input_focus.AutoNavigationConfig::AutoNavigationConfig()
   let nodes = [
     FocusableArea::new(
       origin,

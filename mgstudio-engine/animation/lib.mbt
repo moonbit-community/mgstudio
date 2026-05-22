@@ -192,7 +192,7 @@ pub impl @json.FromJson for ActiveAnimation with from_json(json, path) {
 }
 
 ///|
-pub fn ActiveAnimation::default() -> ActiveAnimation {
+pub fn ActiveAnimation::ActiveAnimation() -> ActiveAnimation {
   ActiveAnimation::{
     weight: 1.0F,
     repeat: RepeatAnimation::Never,
@@ -469,7 +469,7 @@ pub impl @json.FromJson for AnimationPlayer with from_json(json, path) {
 }
 
 ///|
-pub fn AnimationPlayer::default() -> AnimationPlayer {
+pub fn AnimationPlayer::AnimationPlayer() -> AnimationPlayer {
   AnimationPlayer::{ active_animations: [] }
 }
 
@@ -646,7 +646,7 @@ pub fn AnimationPlayer::start(
   if self.animation_mut(node) is Some(existing) {
     return existing.replay()
   }
-  let active = ActiveAnimation::default()
+  let active = ActiveAnimation::ActiveAnimation()
   self.set_animation(node, active) |> ignore
   animation_player_entry_new(self, node)
 }
@@ -659,7 +659,7 @@ pub fn AnimationPlayer::play(
   if self.animation_mut(node) is Some(existing) {
     return existing
   }
-  let active = ActiveAnimation::default()
+  let active = ActiveAnimation::ActiveAnimation()
   self.set_animation(node, active) |> ignore
   animation_player_entry_new(self, node)
 }
@@ -1818,7 +1818,7 @@ priv struct AnimationRuntimeScratch {
 }
 
 ///|
-fn AnimationRuntimeScratch::default() -> AnimationRuntimeScratch {
+fn AnimationRuntimeScratch::AnimationRuntimeScratch() -> AnimationRuntimeScratch {
   AnimationRuntimeScratch::{
     frame_stamp: 0,
     transform_updates: [],
@@ -1849,7 +1849,7 @@ fn animation_runtime_scratch_ref_or_init(
     None => {
       world.insert_resource(
         ecs_key_animation_runtime_scratch,
-        AnimationRuntimeScratch::default(),
+        AnimationRuntimeScratch::AnimationRuntimeScratch(),
       )
       match world.get_resource_mut(ecs_key_animation_runtime_scratch) {
         Some(state_ref) => state_ref
@@ -2385,7 +2385,7 @@ pub fn trigger_untargeted_animation_events(world : @ecs.World) -> Unit {
 pub struct AnimationPlugin {}
 
 ///|
-pub fn AnimationPlugin::default() -> AnimationPlugin {
+pub fn AnimationPlugin::AnimationPlugin() -> AnimationPlugin {
   AnimationPlugin::{  }
 }
 
@@ -2401,7 +2401,7 @@ pub impl @app.Plugin for AnimationPlugin with build(self, app) {
 
 ///|
 pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  animation_plugin_with(app, AnimationPlugin::default())
+  animation_plugin_with(app, AnimationPlugin::AnimationPlugin())
 }
 
 ///|

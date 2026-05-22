@@ -58,6 +58,6 @@ pub fn render3d_point_light_shadow_map_size(world : @ecs.World) -> Int {
       shadow_map.size
     }
   } else {
-    @light.PointLightShadowMap::default().size
+    @light.PointLightShadowMap::PointLightShadowMap().size
   }
 }

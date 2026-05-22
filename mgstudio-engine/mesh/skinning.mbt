@@ -303,7 +303,7 @@ pub struct SkinnedMeshBounds {
 }
 
 ///|
-pub fn SkinnedMeshBounds::default() -> SkinnedMeshBounds {
+pub fn SkinnedMeshBounds::SkinnedMeshBounds() -> SkinnedMeshBounds {
   SkinnedMeshBounds::{ aabbs: [], aabb_index_to_joint_index: [] }
 }
 
@@ -528,7 +528,7 @@ pub fn SkinnedMeshBounds::from_mesh(
     Err(error) => return Err(SkinnedMeshBoundsError::MeshAttributeError(error))
   }
   if influences.is_empty() {
-    return Ok(SkinnedMeshBounds::default())
+    return Ok(SkinnedMeshBounds::SkinnedMeshBounds())
   }
   let mut max_joint_index = -1
   for influence in influences {

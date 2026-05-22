@@ -17,14 +17,14 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_flex_direction(@ui.FlexDirection::Column)
@@ -39,7 +39,7 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @text.Text::new("Feathers plugins loaded"),
-      @text.TextFont::default().with_font(font).with_font_size(28.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(28.0F),
       @text.TextColor::new(@sprite.Color::srgb(0.86F, 0.92F, 1.0F)),
     ),
   )
@@ -49,8 +49,8 @@ fn setup(
     let button = commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Button::default(),
-        @ui.Node::default()
+        @ui.Button::Button(),
+        @ui.Node::Node()
         .with_width(@ui.Val::Px(220.0F))
         .with_height(@ui.Val::Px(46.0F))
         .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
@@ -64,7 +64,7 @@ fn setup(
       (
         @hierarchy.Parent::new(button),
         @text.Text::new(label),
-        @text.TextFont::default().with_font(font).with_font_size(18.0F),
+        @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@sprite.Color::white()),
       ),
     )
@@ -75,7 +75,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

@@ -24,9 +24,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_ui_navigation_directional_navigation_LastInputDisplay(
     LastInputDisplay
   )
-  EcsPayload_examples_ui_navigation_directional_navigation_NavigationStatus(
-    NavigationStatus
-  )
 }
 
 ///|
@@ -83,23 +80,6 @@ impl @ecs.EcsPayloadCodec for LastInputDisplay with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for LastInputDisplay with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_ui_navigation_directional_navigation_LastInputDisplay(
-      value
-    ) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for NavigationStatus with to_ecs_payload(self) {
-  EcsPayload_examples_ui_navigation_directional_navigation_NavigationStatus(
-    self,
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for NavigationStatus with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_ui_navigation_directional_navigation_NavigationStatus(
       value
     ) => Some(value)
     _ => None

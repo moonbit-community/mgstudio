@@ -35,7 +35,7 @@ pub fn[T] ParallelQueue::new() -> ParallelQueue[T] {
 }
 
 ///|
-pub fn[T] ParallelQueue::default() -> ParallelQueue[T] {
+pub fn[T] ParallelQueue::ParallelQueue() -> ParallelQueue[T] {
   ParallelQueue::new()
 }
 

@@ -13,20 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_stress_tests_many_lights_LightStats(LightStats)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for LightStats with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_lights_LightStats(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for LightStats with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_lights_LightStats(value) =>
-      Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

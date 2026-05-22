@@ -55,7 +55,7 @@ pub const SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL : @material.DrawFunctionLabel =
 pub struct MaterialsPlugin {}
 
 ///|
-pub fn MaterialsPlugin::default() -> MaterialsPlugin {
+pub fn MaterialsPlugin::MaterialsPlugin() -> MaterialsPlugin {
   MaterialsPlugin::{  }
 }
 
@@ -63,13 +63,13 @@ pub fn MaterialsPlugin::default() -> MaterialsPlugin {
 pub struct MaterialsPluginState {}
 
 ///|
-pub fn MaterialsPluginState::default() -> MaterialsPluginState {
+pub fn MaterialsPluginState::MaterialsPluginState() -> MaterialsPluginState {
   MaterialsPluginState::{  }
 }
 
 ///|
 pub fn MaterialsPluginState::new() -> MaterialsPluginState {
-  MaterialsPluginState::default()
+  MaterialsPluginState::MaterialsPluginState()
 }
 
 ///|
@@ -90,25 +90,25 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
   if world.get_resource(ecs_key_entity_specialization_ticks) is None {
     world.insert_resource(
       ecs_key_entity_specialization_ticks,
-      EntitySpecializationTicks::default(),
+      EntitySpecializationTicks::EntitySpecializationTicks(),
     )
   }
   if world.get_resource(ecs_key_specialized_material_pipeline_cache) is None {
     world.insert_resource(
       ecs_key_specialized_material_pipeline_cache,
-      SpecializedMaterialPipelineCache::default(),
+      SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
     )
   }
   if world.get_resource(ecs_key_render_material_instances) is None {
     world.insert_resource(
       ecs_key_render_material_instances,
-      RenderMaterialInstances::default(),
+      RenderMaterialInstances::RenderMaterialInstances(),
     )
   }
   if world.get_resource(ecs_key_material_bind_group_allocators) is None {
     world.insert_resource(
       ecs_key_material_bind_group_allocators,
-      MaterialBindGroupAllocators::default(),
+      MaterialBindGroupAllocators::MaterialBindGroupAllocators(),
     )
   }
 }
@@ -125,7 +125,7 @@ pub impl @app.Plugin for MaterialsPlugin with build(_self, app) {
 
 ///|
 pub fn materials_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(MaterialsPlugin::default())
+  app.add_plugins(MaterialsPlugin::MaterialsPlugin())
 }
 
 ///|
@@ -158,7 +158,7 @@ pub fn pbr_material_bind_group_index() -> Int {
 
 ///|
 pub fn pbr_materials_plugin_state_default() -> MaterialsPluginState {
-  MaterialsPluginState::default()
+  MaterialsPluginState::MaterialsPluginState()
 }
 
 ///|
@@ -168,7 +168,7 @@ pub fn pbr_materials_plugin_state_new() -> MaterialsPluginState {
 
 ///|
 pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
-  MaterialsPlugin::default()
+  MaterialsPlugin::MaterialsPlugin()
 }
 
 ///|
@@ -380,7 +380,7 @@ fn render3d_material_properties_for_standard_material(
     None => true
   }
   let standard_material_key = standard_material_key_from_material(material)
-  let mut properties = @material.MaterialProperties::default()
+  let mut properties = @material.MaterialProperties::MaterialProperties()
     .with_render_method(render_method)
     .with_alpha_mode(material.alpha_mode)
     .with_mesh_pipeline_key_bits(

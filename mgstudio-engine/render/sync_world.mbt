@@ -22,7 +22,7 @@ const SYNC_WORLD_PLUGIN_NAME : String = "mgstudio.render.SyncWorldPlugin"
 pub struct SyncWorldPlugin {}
 
 ///|
-pub fn SyncWorldPlugin::default() -> SyncWorldPlugin {
+pub fn SyncWorldPlugin::SyncWorldPlugin() -> SyncWorldPlugin {
   SyncWorldPlugin::{  }
 }
 
@@ -40,13 +40,13 @@ pub impl @app.Plugin for SyncWorldPlugin with build(self, app) {
 pub struct SyncToRenderWorld {}
 
 ///|
-pub fn SyncToRenderWorld::default() -> SyncToRenderWorld {
+pub fn SyncToRenderWorld::SyncToRenderWorld() -> SyncToRenderWorld {
   SyncToRenderWorld::{  }
 }
 
 ///|
 pub impl Default for SyncToRenderWorld with default() {
-  SyncToRenderWorld::default()
+  SyncToRenderWorld::SyncToRenderWorld()
 }
 
 ///|
@@ -113,7 +113,7 @@ pub impl @ecs.Component for MainEntity with component() {
 pub struct TemporaryRenderEntity {}
 
 ///|
-pub fn TemporaryRenderEntity::default() -> TemporaryRenderEntity {
+pub fn TemporaryRenderEntity::TemporaryRenderEntity() -> TemporaryRenderEntity {
   TemporaryRenderEntity::{  }
 }
 
@@ -138,7 +138,7 @@ pub struct PendingSyncEntity {
 }
 
 ///|
-pub fn PendingSyncEntity::default() -> PendingSyncEntity {
+pub fn PendingSyncEntity::PendingSyncEntity() -> PendingSyncEntity {
   PendingSyncEntity::{ records: Ref([]) }
 }
 
@@ -174,7 +174,7 @@ fn ensure_pending_sync_entity_resource(world : @ecs.World) -> Unit {
   if world.get_resource(PendingSyncEntity::resource()) is None {
     world.insert_resource(
       PendingSyncEntity::resource(),
-      PendingSyncEntity::default(),
+      PendingSyncEntity::PendingSyncEntity(),
     )
   }
 }
@@ -331,7 +331,7 @@ pub fn despawn_temporary_render_entities(world : @ecs.World) -> Unit {
 
 ///|
 pub fn sync_build(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(SyncWorldPlugin::default())
+  app.add_plugins(SyncWorldPlugin::SyncWorldPlugin())
 }
 
 ///|

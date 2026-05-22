@@ -36,7 +36,7 @@ test "sprite picking alpha threshold samples rgba8 pixels" {
       ),
     )
     .with_custom_size(Some(@math.Vec2::new(2.0F, 1.0F)))
-  let anchor = @sprite.Anchor::default()
+  let anchor = @sprite.Anchor::Anchor()
   debug_inspect(
     picking_sprite_pixel_is_valid(
       world,
@@ -87,7 +87,7 @@ test "sprite picking bounding box ignores transparent pixels" {
     picking_sprite_pixel_is_valid(
       world,
       sprite,
-      @sprite.Anchor::default(),
+      @sprite.Anchor::Anchor(),
       @math.Vec2::new(0.0F, 0.0F),
       BoundingBox,
     ),
@@ -102,12 +102,12 @@ test "sprite picking camera marker requirement filters cameras" {
   try! world.set_by_key(
     camera_entity,
     @sprite.ecs_key_camera2d,
-    @sprite.Camera2d::default(),
+    @sprite.Camera2d::Camera2d(),
   )
   try! world.set_by_key(
     camera_entity,
     @sprite.ecs_key_camera,
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
   )
   try! world.set_by_key(
     camera_entity,

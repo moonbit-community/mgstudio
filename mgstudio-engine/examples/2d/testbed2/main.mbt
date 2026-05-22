@@ -23,7 +23,7 @@ let testbed_state : Ref[TestbedState] = Ref(TestbedState::{ spawned: [] })
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(rapier2d_testbed2_setup))
   .add_systems(@app.Update, @app.system(rapier2d_testbed2_update))
   .run()
@@ -39,7 +39,7 @@ fn rapier2d_testbed2_setup(world : @ecs.World) -> Unit {
     @sprite.ClearColor::new(@sprite.Color::new(0.90F, 0.90F, 0.92F, 1.0F)),
   )
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -228,7 +228,7 @@ fn rapier2d_testbed2_spawn_mode(
       try! world.set_by_key(
         player,
         @physics2d.ecs_key_kinematic_character_controller2d,
-        @physics2d.KinematicCharacterController2d::default(),
+        @physics2d.KinematicCharacterController2d::KinematicCharacterController2d(),
       )
       try! world.set_by_key(
         player,

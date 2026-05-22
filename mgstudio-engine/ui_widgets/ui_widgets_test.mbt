@@ -14,16 +14,16 @@
 
 ///|
 test "ui_widgets: owner widget surface exposes core event and marker types" {
-  @ui_widgets.Button::default() |> ignore
-  @ui_widgets.MenuPopup::default() |> ignore
-  @ui_widgets.Slider::default() |> ignore
+  @ui_widgets.Button::Button() |> ignore
+  @ui_widgets.MenuPopup::MenuPopup() |> ignore
+  @ui_widgets.Slider::Slider() |> ignore
   @ui_widgets.Scrollbar::new(
     @core.Entity::placeholder(),
     @ui_widgets.ControlOrientation::default(),
     8.0F,
   )
   |> ignore
-  @ui_widgets.Popover::default() |> ignore
+  @ui_widgets.Popover::Popover() |> ignore
   ignore(@ui_widgets.ecs_key_checkbox.id())
   ignore(@ui_widgets.ecs_key_radio_group.id())
   ignore(@ui_widgets.ecs_key_radio_button.id())

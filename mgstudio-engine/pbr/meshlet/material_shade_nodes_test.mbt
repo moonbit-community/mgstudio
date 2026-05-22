@@ -35,7 +35,7 @@ test "pbr meshlet: main opaque pass draw count filters scene presence and pipeli
     queue_material_meshlet_meshes_with_material_assets(instance_manager, [7]),
   )
   ignore(queue_material_meshlet_meshes(instance_manager))
-  let materials = MeshletViewMaterialsMainOpaquePass::default()
+  let materials = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   materials.push(test_meshlet_shade_entry(1, 100, 10))
   materials.push(test_meshlet_shade_entry(2, 100, 11))
   materials.push(test_meshlet_shade_entry(1, -1, 12))
@@ -99,7 +99,7 @@ test "pbr meshlet: shade pass plan carries descriptor and filtered draws" {
     queue_material_meshlet_meshes_with_material_assets(instance_manager, [4]),
   )
   ignore(queue_material_meshlet_meshes(instance_manager))
-  let materials = MeshletViewMaterialsMainOpaquePass::default()
+  let materials = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   materials.push(test_meshlet_shade_entry(1, 100, 10))
   materials.push(test_meshlet_shade_entry(2, -1, 11))
   let plan = meshlet_main_opaque_pass_plan(materials, instance_manager)
@@ -119,7 +119,7 @@ test "pbr meshlet: main opaque pass commands mirror bevy bind and draw order" {
     queue_material_meshlet_meshes_with_material_assets(instance_manager, [4]),
   )
   ignore(queue_material_meshlet_meshes(instance_manager))
-  let materials = MeshletViewMaterialsMainOpaquePass::default()
+  let materials = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   materials.push(test_meshlet_shade_entry(1, 42, 9))
   let plan = meshlet_main_opaque_pass_plan(materials, instance_manager)
   let commands = meshlet_material_shade_pass_commands(
@@ -164,7 +164,7 @@ test "pbr meshlet: prepass commands preserve bevy group two replacement order" {
     queue_material_meshlet_meshes_with_material_assets(instance_manager, [8]),
   )
   ignore(queue_material_meshlet_meshes(instance_manager))
-  let materials = MeshletViewMaterialsPrepass::default()
+  let materials = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
   materials.push(test_meshlet_shade_entry(1, 33, 6))
   let plan = meshlet_prepass_plan(
     materials,
@@ -196,8 +196,8 @@ test "pbr meshlet: prepass draw count follows same filtering" {
     queue_material_meshlet_meshes_with_material_assets(instance_manager, [3]),
   )
   ignore(queue_material_meshlet_meshes(instance_manager))
-  let prepass = MeshletViewMaterialsPrepass::default()
-  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::default()
+  let prepass = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
+  let deferred = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   prepass.push(test_meshlet_shade_entry(1, 20, 1))
   prepass.push(test_meshlet_shade_entry(99, 21, 2))
   deferred.push(test_meshlet_shade_entry(1, 22, 3))

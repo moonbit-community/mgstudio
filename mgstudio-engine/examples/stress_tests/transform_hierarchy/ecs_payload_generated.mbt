@@ -15,9 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_stress_tests_transform_hierarchy_NodeMotion(NodeMotion)
-  EcsPayload_examples_stress_tests_transform_hierarchy_HierarchyStats(
-    HierarchyStats
-  )
 }
 
 ///|
@@ -29,20 +26,6 @@ impl @ecs.EcsPayloadCodec for NodeMotion with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for NodeMotion with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_stress_tests_transform_hierarchy_NodeMotion(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for HierarchyStats with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_transform_hierarchy_HierarchyStats(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for HierarchyStats with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_transform_hierarchy_HierarchyStats(value) =>
       Some(value)
     _ => None
   }

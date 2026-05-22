@@ -107,7 +107,7 @@ fn[T : Asset] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
     Some(id) =>
       @ecs.resource_key_from_id(id, debug_name="mgstudio_asset::\{type_name}")
     None => {
-      let key : @ecs.ResourceKey[Assets[T]] = @ecs.register_resource(
+      let key : @ecs.ResourceKey[Assets[T]] = @ecs.register_erased_resource(
         debug_name="mgstudio_asset::\{type_name}",
       )
       assets_resource_registry.val.set(type_name, key.id())

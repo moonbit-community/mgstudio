@@ -81,8 +81,8 @@ pub fn AlphaMask2dBinKey::new(pipeline_id~ : Int, draw_function_id~ : Int, asset
 pub struct AlphaMask2dPhase {
   items : Array[AlphaMask2d]
 }
+pub fn AlphaMask2dPhase::AlphaMask2dPhase() -> Self
 pub fn AlphaMask2dPhase::clear(Self) -> Unit
-pub fn AlphaMask2dPhase::default() -> Self
 pub fn AlphaMask2dPhase::is_empty(Self) -> Bool
 pub fn AlphaMask2dPhase::len(Self) -> Int
 pub fn AlphaMask2dPhase::push(Self, AlphaMask2d) -> Unit
@@ -97,13 +97,13 @@ pub fn BatchSetKey2d::new(indexed? : Bool) -> Self
 
 pub struct Core2dPlugin {
 }
-pub fn Core2dPlugin::default() -> Self
+pub fn Core2dPlugin::Core2dPlugin() -> Self
 pub impl @app.Plugin for Core2dPlugin
 
 pub struct MainOpaquePass2dNode {
   label : String
 }
-pub fn MainOpaquePass2dNode::default() -> Self
+pub fn MainOpaquePass2dNode::MainOpaquePass2dNode() -> Self
 pub fn MainOpaquePass2dNode::label(Self) -> String
 
 pub struct MainOpaquePass2dState {
@@ -115,7 +115,7 @@ pub fn MainOpaquePass2dState::new(has_opaque_phase? : Bool, has_alpha_mask_phase
 pub struct MainTransparentPass2dNode {
   label : String
 }
-pub fn MainTransparentPass2dNode::default() -> Self
+pub fn MainTransparentPass2dNode::MainTransparentPass2dNode() -> Self
 pub fn MainTransparentPass2dNode::label(Self) -> String
 
 pub struct MainTransparentPass2dState {
@@ -150,8 +150,8 @@ pub fn Opaque2dBinKey::new(pipeline_id~ : Int, draw_function_id~ : Int, asset_id
 pub struct Opaque2dPhase {
   items : Array[Opaque2d]
 }
+pub fn Opaque2dPhase::Opaque2dPhase() -> Self
 pub fn Opaque2dPhase::clear(Self) -> Unit
-pub fn Opaque2dPhase::default() -> Self
 pub fn Opaque2dPhase::is_empty(Self) -> Bool
 pub fn Opaque2dPhase::len(Self) -> Int
 pub fn Opaque2dPhase::push(Self, Opaque2d) -> Unit
@@ -177,8 +177,8 @@ pub fn Transparent2d::new(sort_key~ : Float, entity_id~ : Int, main_entity_id~ :
 pub struct Transparent2dPhase {
   items : Array[Transparent2d]
 }
+pub fn Transparent2dPhase::Transparent2dPhase() -> Self
 pub fn Transparent2dPhase::clear(Self) -> Unit
-pub fn Transparent2dPhase::default() -> Self
 pub fn Transparent2dPhase::is_empty(Self) -> Bool
 pub fn Transparent2dPhase::len(Self) -> Int
 pub fn Transparent2dPhase::push(Self, Transparent2d) -> Unit

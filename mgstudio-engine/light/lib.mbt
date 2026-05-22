@@ -52,7 +52,7 @@ fn light_clustered_decal_tag_safe(tag : Int) -> Int {
 pub struct VolumetricLight {}
 
 ///|
-pub fn VolumetricLight::default() -> VolumetricLight {
+pub fn VolumetricLight::VolumetricLight() -> VolumetricLight {
   VolumetricLight::{  }
 }
 
@@ -66,7 +66,7 @@ pub struct VolumetricFog {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn VolumetricFog::default() -> VolumetricFog {
+pub fn VolumetricFog::VolumetricFog() -> VolumetricFog {
   VolumetricFog::{
     ambient_color: @sprite.Color::white(),
     ambient_intensity: 0.1F,
@@ -132,7 +132,7 @@ pub struct FogVolume {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn FogVolume::default() -> FogVolume {
+pub fn FogVolume::FogVolume() -> FogVolume {
   FogVolume::{
     fog_color: @sprite.Color::white(),
     density_factor: 0.1F,
@@ -249,7 +249,7 @@ pub struct AtmosphereSettings {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn AtmosphereSettings::default() -> AtmosphereSettings {
+pub fn AtmosphereSettings::AtmosphereSettings() -> AtmosphereSettings {
   AtmosphereSettings::{
     scene_units_to_m: 1.0F,
     sky_max_samples: 16,
@@ -311,13 +311,13 @@ pub impl @asset.Asset for ScatteringMedium with asset_as_image(_self) {
 }
 
 ///|
-pub fn ScatteringMedium::default() -> ScatteringMedium {
+pub fn ScatteringMedium::ScatteringMedium() -> ScatteringMedium {
   ScatteringMedium::{ density_multiplier: 1.0F }
 }
 
 ///|
 pub fn ScatteringMedium::earthlike() -> ScatteringMedium {
-  ScatteringMedium::default()
+  ScatteringMedium::ScatteringMedium()
 }
 
 ///|
@@ -341,8 +341,8 @@ pub struct Atmosphere {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Atmosphere::default() -> Atmosphere {
-  Atmosphere::earthlike(ScatteringMedium::default())
+pub fn Atmosphere::Atmosphere() -> Atmosphere {
+  Atmosphere::earthlike(ScatteringMedium::ScatteringMedium())
 }
 
 ///|
@@ -403,7 +403,7 @@ pub struct AtmosphereEnvironmentMapLight {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn AtmosphereEnvironmentMapLight::default() -> AtmosphereEnvironmentMapLight {
+pub fn AtmosphereEnvironmentMapLight::AtmosphereEnvironmentMapLight() -> AtmosphereEnvironmentMapLight {
   AtmosphereEnvironmentMapLight::{
     intensity: 1.0F,
     affects_lightmapped_mesh_diffuse: true,
@@ -502,7 +502,7 @@ pub struct PointLight {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PointLight::default() -> PointLight {
+pub fn PointLight::PointLight() -> PointLight {
   PointLight::{
     color: @sprite.Color::white(),
     intensity: 1_000_000.0F,
@@ -642,7 +642,7 @@ pub struct PointLightShadowMap {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PointLightShadowMap::default() -> PointLightShadowMap {
+pub fn PointLightShadowMap::PointLightShadowMap() -> PointLightShadowMap {
   PointLightShadowMap::{ size: 1024 }
 }
 
@@ -678,7 +678,7 @@ pub struct DirectionalLightShadowMap {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn DirectionalLightShadowMap::default() -> DirectionalLightShadowMap {
+pub fn DirectionalLightShadowMap::DirectionalLightShadowMap() -> DirectionalLightShadowMap {
   DirectionalLightShadowMap::{ size: 2048 }
 }
 
@@ -744,7 +744,7 @@ fn cascade_shadow_config_calculate_bounds(
 }
 
 ///|
-pub fn CascadeShadowConfigBuilder::default() -> CascadeShadowConfigBuilder {
+pub fn CascadeShadowConfigBuilder::CascadeShadowConfigBuilder() -> CascadeShadowConfigBuilder {
   CascadeShadowConfigBuilder::{
     num_cascades: 4,
     minimum_distance: 0.1F,
@@ -756,7 +756,7 @@ pub fn CascadeShadowConfigBuilder::default() -> CascadeShadowConfigBuilder {
 
 ///|
 pub fn CascadeShadowConfigBuilder::new() -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::default()
+  CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
 }
 
 ///|
@@ -863,8 +863,8 @@ pub fn CascadeShadowConfigBuilder::build(
 }
 
 ///|
-pub fn CascadeShadowConfig::default() -> CascadeShadowConfig {
-  CascadeShadowConfigBuilder::default().build()
+pub fn CascadeShadowConfig::CascadeShadowConfig() -> CascadeShadowConfig {
+  CascadeShadowConfigBuilder::CascadeShadowConfigBuilder().build()
 }
 
 ///|
@@ -881,7 +881,7 @@ pub struct DirectionalLight {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn DirectionalLight::default() -> DirectionalLight {
+pub fn DirectionalLight::DirectionalLight() -> DirectionalLight {
   DirectionalLight::{
     color: @sprite.Color::white(),
     illuminance: 10000.0F,
@@ -1015,7 +1015,7 @@ pub struct SunDisk {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn SunDisk::default() -> SunDisk {
+pub fn SunDisk::SunDisk() -> SunDisk {
   SunDisk::earth()
 }
 
@@ -1071,7 +1071,7 @@ pub struct SpotLight {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn SpotLight::default() -> SpotLight {
+pub fn SpotLight::SpotLight() -> SpotLight {
   SpotLight::{
     color: @sprite.Color::white(),
     intensity: 1_000_000.0F,
@@ -1256,7 +1256,7 @@ pub struct DirectionalLightTexture {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn DirectionalLightTexture::default() -> DirectionalLightTexture {
+pub fn DirectionalLightTexture::DirectionalLightTexture() -> DirectionalLightTexture {
   DirectionalLightTexture::{ image: None, tiled: false }
 }
 
@@ -1290,7 +1290,7 @@ pub struct SpotLightTexture {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn SpotLightTexture::default() -> SpotLightTexture {
+pub fn SpotLightTexture::SpotLightTexture() -> SpotLightTexture {
   SpotLightTexture::{ image: None }
 }
 
@@ -1317,7 +1317,7 @@ pub struct PointLightTexture {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn PointLightTexture::default() -> PointLightTexture {
+pub fn PointLightTexture::PointLightTexture() -> PointLightTexture {
   PointLightTexture::{
     image: None,
     cubemap_layout: CubemapLayout3d::CrossVertical,
@@ -1354,13 +1354,13 @@ pub struct LightProbe {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn LightProbe::default() -> LightProbe {
+pub fn LightProbe::LightProbe() -> LightProbe {
   LightProbe::{ falloff: @math.Vec3::zero() }
 }
 
 ///|
 pub fn LightProbe::new() -> LightProbe {
-  LightProbe::default()
+  LightProbe::LightProbe()
 }
 
 ///|
@@ -1382,7 +1382,7 @@ pub struct EnvironmentMapLight {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn EnvironmentMapLight::default() -> EnvironmentMapLight {
+pub fn EnvironmentMapLight::EnvironmentMapLight() -> EnvironmentMapLight {
   EnvironmentMapLight::{
     diffuse_map: None,
     specular_map: None,
@@ -1398,7 +1398,7 @@ pub fn EnvironmentMapLight::new(
   specular_map : @asset.Handle[@asset.Image]?,
   intensity : Float,
 ) -> EnvironmentMapLight {
-  EnvironmentMapLight::default()
+  EnvironmentMapLight::EnvironmentMapLight()
   .with_diffuse_map(diffuse_map)
   .with_specular_map(specular_map)
   .with_intensity(intensity)
@@ -1456,7 +1456,7 @@ pub struct GeneratedEnvironmentMapLight {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn GeneratedEnvironmentMapLight::default() -> GeneratedEnvironmentMapLight {
+pub fn GeneratedEnvironmentMapLight::GeneratedEnvironmentMapLight() -> GeneratedEnvironmentMapLight {
   GeneratedEnvironmentMapLight::{
     environment_map: None,
     intensity: 0.0F,
@@ -1470,7 +1470,7 @@ pub fn GeneratedEnvironmentMapLight::new(
   environment_map : @asset.Handle[@asset.Image]?,
   intensity : Float,
 ) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::default()
+  GeneratedEnvironmentMapLight::GeneratedEnvironmentMapLight()
   .with_environment_map(environment_map)
   .with_intensity(intensity)
 }
@@ -1529,7 +1529,7 @@ pub struct IrradianceVolume {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn IrradianceVolume::default() -> IrradianceVolume {
+pub fn IrradianceVolume::IrradianceVolume() -> IrradianceVolume {
   IrradianceVolume::{ voxels: None, intensity: 1.0F }
 }
 
@@ -1571,7 +1571,7 @@ pub struct ClusteredDecal {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn ClusteredDecal::default() -> ClusteredDecal {
+pub fn ClusteredDecal::ClusteredDecal() -> ClusteredDecal {
   ClusteredDecal::{
     base_color_texture: None,
     normal_map_texture: None,
@@ -1583,7 +1583,7 @@ pub fn ClusteredDecal::default() -> ClusteredDecal {
 
 ///|
 pub fn ClusteredDecal::new() -> ClusteredDecal {
-  ClusteredDecal::default()
+  ClusteredDecal::ClusteredDecal()
 }
 
 ///|
@@ -1656,7 +1656,7 @@ pub struct GlobalAmbientLight {
 } derive(ToJson, FromJson)
 
 ///|
-pub fn GlobalAmbientLight::default() -> GlobalAmbientLight {
+pub fn GlobalAmbientLight::GlobalAmbientLight() -> GlobalAmbientLight {
   GlobalAmbientLight::{
     color: @sprite.Color::white(),
     brightness: 80.0F,

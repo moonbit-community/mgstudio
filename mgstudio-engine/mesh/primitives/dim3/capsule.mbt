@@ -54,9 +54,9 @@ pub(all) struct Capsule3dMeshBuilder {
 }
 
 ///|
-pub fn Capsule3dMeshBuilder::default() -> Capsule3dMeshBuilder {
+pub fn Capsule3dMeshBuilder::Capsule3dMeshBuilder() -> Capsule3dMeshBuilder {
   {
-    capsule: @math.Capsule3d::default(),
+    capsule: @math.Capsule3d::Capsule3d(),
     rings: 0,
     longitudes: 32,
     latitudes: 16,

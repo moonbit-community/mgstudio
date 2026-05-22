@@ -54,7 +54,7 @@ fn prepare_transform_world_ecs(world : @ecs.World) -> Unit {
   if !world.resource(static_transform_optimizations_resource_key).is_present() {
     world.insert_resource(
       static_transform_optimizations_resource_key,
-      StaticTransformOptimizations::default(),
+      StaticTransformOptimizations::StaticTransformOptimizations(),
     )
   }
 }
@@ -136,7 +136,7 @@ test "transform ecs world: hierarchy hooks clear stale Children components" {
 ///|
 test "transform plugin: sync_simple_transforms skips dead entities from removed Parent" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    TransformPlugin::default(),
+    @transform.TransformPlugin::TransformPlugin(),
   )
   let world = app.world()
   let parent = world.spawn()

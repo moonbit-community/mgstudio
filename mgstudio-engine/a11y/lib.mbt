@@ -62,7 +62,7 @@ pub struct AccessibilityRequested {
 }
 
 ///|
-pub fn AccessibilityRequested::default() -> AccessibilityRequested {
+pub fn AccessibilityRequested::AccessibilityRequested() -> AccessibilityRequested {
   { requested: Ref(false) }
 }
 
@@ -99,7 +99,7 @@ pub struct ManageAccessibilityUpdates {
 }
 
 ///|
-pub fn ManageAccessibilityUpdates::default() -> ManageAccessibilityUpdates {
+pub fn ManageAccessibilityUpdates::ManageAccessibilityUpdates() -> ManageAccessibilityUpdates {
   { value: true }
 }
 

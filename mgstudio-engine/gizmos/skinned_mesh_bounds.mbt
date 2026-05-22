@@ -29,7 +29,7 @@ pub struct SkinnedMeshBoundsGizmoPlugin {}
 const SKINNED_MESH_BOUNDS_GIZMO_PLUGIN_NAME : String = "mgstudio.gizmos.SkinnedMeshBoundsGizmoPlugin"
 
 ///|
-pub fn SkinnedMeshBoundsGizmoPlugin::default() -> SkinnedMeshBoundsGizmoPlugin {
+pub fn SkinnedMeshBoundsGizmoPlugin::SkinnedMeshBoundsGizmoPlugin() -> SkinnedMeshBoundsGizmoPlugin {
   SkinnedMeshBoundsGizmoPlugin::{  }
 }
 
@@ -40,7 +40,7 @@ pub struct SkinnedMeshBoundsGizmoConfigGroup {
 }
 
 ///|
-pub fn SkinnedMeshBoundsGizmoConfigGroup::default() -> SkinnedMeshBoundsGizmoConfigGroup {
+pub fn SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup() -> SkinnedMeshBoundsGizmoConfigGroup {
   SkinnedMeshBoundsGizmoConfigGroup::{
     draw_all: false,
     default_color: @sprite.Color::white(),
@@ -49,7 +49,7 @@ pub fn SkinnedMeshBoundsGizmoConfigGroup::default() -> SkinnedMeshBoundsGizmoCon
 
 ///|
 pub impl Default for SkinnedMeshBoundsGizmoConfigGroup with default() {
-  SkinnedMeshBoundsGizmoConfigGroup::default()
+  SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup()
 }
 
 ///|
@@ -72,7 +72,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 ///|
 pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with new_gizmo_config_group_cell() {
   SkinnedMeshBoundsGizmoConfigGroupCell(
-    Ref(SkinnedMeshBoundsGizmoConfigGroup::default()),
+    Ref(SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup()),
   )
 }
 
@@ -92,7 +92,7 @@ pub struct ShowSkinnedMeshBoundsGizmo {
 }
 
 ///|
-pub fn ShowSkinnedMeshBoundsGizmo::default() -> ShowSkinnedMeshBoundsGizmo {
+pub fn ShowSkinnedMeshBoundsGizmo::ShowSkinnedMeshBoundsGizmo() -> ShowSkinnedMeshBoundsGizmo {
   ShowSkinnedMeshBoundsGizmo::{ color: None }
 }
 
@@ -107,7 +107,7 @@ pub fn skinned_mesh_bounds_gizmo_plugin(
 ) -> @app.App[@ecs.World] {
   skinned_mesh_bounds_gizmo_plugin_with(
     app,
-    SkinnedMeshBoundsGizmoPlugin::default(),
+    SkinnedMeshBoundsGizmoPlugin::SkinnedMeshBoundsGizmoPlugin(),
   )
 }
 
@@ -117,7 +117,10 @@ pub fn skinned_mesh_bounds_gizmo_plugin_with(
   plugin : SkinnedMeshBoundsGizmoPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  init_gizmo_group(app, SkinnedMeshBoundsGizmoConfigGroup::default())
+  init_gizmo_group(
+    app,
+    SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup(),
+  )
 }
 
 ///|

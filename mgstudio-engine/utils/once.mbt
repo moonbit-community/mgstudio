@@ -26,7 +26,7 @@ pub fn OnceFlag::new() -> OnceFlag {
 }
 
 ///|
-pub fn OnceFlag::default() -> OnceFlag {
+pub fn OnceFlag::OnceFlag() -> OnceFlag {
   OnceFlag::new()
 }
 

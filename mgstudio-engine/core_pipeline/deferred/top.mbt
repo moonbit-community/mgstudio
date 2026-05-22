@@ -20,13 +20,13 @@ const DEFERRED_PLUGIN_NAME : String = "mgstudio.core_pipeline.deferred.DeferredP
 pub struct DeferredPlugin {}
 
 ///|
-pub fn DeferredPlugin::default() -> DeferredPlugin {
+pub fn DeferredPlugin::DeferredPlugin() -> DeferredPlugin {
   DeferredPlugin::{  }
 }
 
 ///|
 pub fn deferred_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_plugins(DeferredPlugin::default())
+  app.add_plugins(DeferredPlugin::DeferredPlugin())
 }
 
 ///|
@@ -53,7 +53,7 @@ fn deferred_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : DeferredPlugin,
 ) -> @app.App[@ecs.World] {
-  app.add_plugins(CopyDeferredLightingIdPlugin::default())
+  app.add_plugins(CopyDeferredLightingIdPlugin::CopyDeferredLightingIdPlugin())
 }
 
 ///|
@@ -76,7 +76,7 @@ pub const DEFERRED_LIGHTING_PASS_ID_DEPTH_FORMAT : String = "Depth16Unorm"
 pub struct DeferredPrepass {} derive(ToJson, FromJson)
 
 ///|
-pub fn DeferredPrepass::default() -> DeferredPrepass {
+pub fn DeferredPrepass::DeferredPrepass() -> DeferredPrepass {
   DeferredPrepass::{  }
 }
 

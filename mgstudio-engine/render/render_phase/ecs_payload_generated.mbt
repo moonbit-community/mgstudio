@@ -13,25 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_render_phase_RenderPassTraceRuntimeState(
-    RenderPassTraceRuntimeState
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RenderPassTraceRuntimeState with to_ecs_payload(
-  self,
-) {
-  EcsPayload_render_phase_RenderPassTraceRuntimeState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RenderPassTraceRuntimeState with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_render_phase_RenderPassTraceRuntimeState(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}

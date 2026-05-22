@@ -41,13 +41,13 @@ pub let core_3d_set_post_process : @app.SystemSet = @app.system_set(
 pub struct Core3dPlugin {}
 
 ///|
-pub fn Core3dPlugin::default() -> Core3dPlugin {
+pub fn Core3dPlugin::Core3dPlugin() -> Core3dPlugin {
   Core3dPlugin::{  }
 }
 
 ///|
 pub fn core_3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  core_3d_plugin_with(app, Core3dPlugin::default())
+  core_3d_plugin_with(app, Core3dPlugin::Core3dPlugin())
 }
 
 ///|
@@ -93,10 +93,10 @@ pub fn core_3d_plugin_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   let next = app
-    .init_resource(fn() { Opaque3dPhase::default() })
-    .init_resource(fn() { AlphaMask3dPhase::default() })
-    .init_resource(fn() { Transparent3dPhase::default() })
-    .add_plugins(@skybox.SkyboxPlugin::default())
+    .init_resource(fn() { Opaque3dPhase::Opaque3dPhase() })
+    .init_resource(fn() { AlphaMask3dPhase::AlphaMask3dPhase() })
+    .init_resource(fn() { Transparent3dPhase::Transparent3dPhase() })
+    .add_plugins(@skybox.SkyboxPlugin::SkyboxPlugin())
   @render.with_render_app(next, core_3d_configure_render_sub_app)
 }
 
@@ -142,7 +142,7 @@ pub fn Msaa::from_samples(samples : Int) -> Msaa {
 pub struct Hdr {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn Hdr::default() -> Hdr {
+pub fn Hdr::Hdr() -> Hdr {
   Hdr::{  }
 }
 
@@ -388,7 +388,7 @@ pub struct Opaque3dPhase {
 }
 
 ///|
-pub fn Opaque3dPhase::default() -> Opaque3dPhase {
+pub fn Opaque3dPhase::Opaque3dPhase() -> Opaque3dPhase {
   Opaque3dPhase::{ items: [] }
 }
 
@@ -413,7 +413,7 @@ pub struct AlphaMask3dPhase {
 }
 
 ///|
-pub fn AlphaMask3dPhase::default() -> AlphaMask3dPhase {
+pub fn AlphaMask3dPhase::AlphaMask3dPhase() -> AlphaMask3dPhase {
   AlphaMask3dPhase::{ items: [] }
 }
 
@@ -441,7 +441,7 @@ pub struct Transparent3dPhase {
 }
 
 ///|
-pub fn Transparent3dPhase::default() -> Transparent3dPhase {
+pub fn Transparent3dPhase::Transparent3dPhase() -> Transparent3dPhase {
   Transparent3dPhase::{ items: [] }
 }
 

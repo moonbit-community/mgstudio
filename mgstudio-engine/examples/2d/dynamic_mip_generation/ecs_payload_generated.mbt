@@ -15,8 +15,6 @@
 ///|
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_2d_dynamic_mip_generation_AppSetting(AppSetting)
-  EcsPayload_examples_2d_dynamic_mip_generation_AppStatus(AppStatus)
-  EcsPayload_examples_2d_dynamic_mip_generation_AppAssets(AppAssets)
   EcsPayload_examples_2d_dynamic_mip_generation_AnimatedImage(AnimatedImage)
   EcsPayload_examples_2d_dynamic_mip_generation_ImageView(ImageView)
   EcsPayload_examples_2d_dynamic_mip_generation_RegenerateImage(RegenerateImage)
@@ -31,34 +29,6 @@ impl @ecs.EcsPayloadCodec for AppSetting with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for AppSetting with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_2d_dynamic_mip_generation_AppSetting(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AppStatus with to_ecs_payload(self) {
-  EcsPayload_examples_2d_dynamic_mip_generation_AppStatus(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AppStatus with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_2d_dynamic_mip_generation_AppStatus(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AppAssets with to_ecs_payload(self) {
-  EcsPayload_examples_2d_dynamic_mip_generation_AppAssets(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for AppAssets with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_2d_dynamic_mip_generation_AppAssets(value) =>
       Some(value)
     _ => None
   }

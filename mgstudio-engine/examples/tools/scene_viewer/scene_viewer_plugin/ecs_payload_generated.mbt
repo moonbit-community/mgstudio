@@ -14,27 +14,9 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_tools_scene_viewer_scene_viewer_plugin_ViewerScenes(
-    ViewerScenes
-  )
   EcsPayload_examples_tools_scene_viewer_scene_viewer_plugin_ViewerRoot(
     ViewerRoot
   )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ViewerScenes with to_ecs_payload(self) {
-  EcsPayload_examples_tools_scene_viewer_scene_viewer_plugin_ViewerScenes(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for ViewerScenes with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_tools_scene_viewer_scene_viewer_plugin_ViewerScenes(
-      value
-    ) => Some(value)
-    _ => None
-  }
 }
 
 ///|

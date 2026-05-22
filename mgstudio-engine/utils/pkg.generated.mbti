@@ -32,10 +32,10 @@ pub struct BloomFilter {
   bits : Array[UInt]
   hash_count : Int
 }
+pub fn BloomFilter::BloomFilter() -> Self
 pub fn BloomFilter::check_insert_hash(Self, Int) -> Bool
 pub fn BloomFilter::clear(Self) -> Unit
 pub fn BloomFilter::contains_hash(Self, Int) -> Bool
-pub fn BloomFilter::default() -> Self
 pub fn BloomFilter::hash_count(Self) -> Int
 pub fn BloomFilter::insert_hash(Self, Int) -> Unit
 pub fn BloomFilter::new(segment_count? : Int, hash_count? : Int) -> Self
@@ -46,9 +46,9 @@ pub struct BufferedChannel[T] {
   queued_chunks : Array[Array[T]]
   pooled_chunks : Array[Array[T]]
 }
+pub fn[T] BufferedChannel::BufferedChannel() -> Self[T]
 pub fn[T] BufferedChannel::bounded(Self[T], Int) -> (BufferedReceiver[T], BufferedSender[T])
 pub fn[T] BufferedChannel::chunk_size(Self[T]) -> Int
-pub fn[T] BufferedChannel::default() -> Self[T]
 pub fn[T] BufferedChannel::new(chunk_size? : Int) -> Self[T]
 pub fn[T] BufferedChannel::queued_chunk_count(Self[T]) -> Int
 pub fn[T] BufferedChannel::set_chunk_size(Self[T], Int) -> Unit
@@ -73,13 +73,13 @@ pub struct IntBitSet {
   bits : Array[UInt]
   mut bit_len : Int
 } derive(ToJson, @json.FromJson)
+pub fn IntBitSet::IntBitSet() -> Self
 pub fn IntBitSet::bit_len(Self) -> Int
 pub fn IntBitSet::capacity(Self) -> Int
 pub fn IntBitSet::clear(Self) -> Unit
 pub fn IntBitSet::clone(Self) -> Self
 pub fn IntBitSet::contains(Self, Int) -> Bool
 pub fn IntBitSet::contains_all_array(Self, Array[Int]) -> Bool
-pub fn IntBitSet::default() -> Self
 pub fn IntBitSet::insert(Self, Int) -> Unit
 pub fn IntBitSet::is_empty(Self) -> Bool
 pub fn IntBitSet::length(Self) -> Int
@@ -100,15 +100,15 @@ pub fn[T] OnceCell::set_once(Self[T], T) -> Bool
 pub struct OnceFlag {
   mut should_fire : Bool
 }
-pub fn OnceFlag::default() -> Self
+pub fn OnceFlag::OnceFlag() -> Self
 pub fn OnceFlag::new() -> Self
 pub fn OnceFlag::set(Self) -> Bool
 
 pub struct ParallelQueue[T] {
   mut values : Array[T]
 }
+pub fn[T] ParallelQueue::ParallelQueue() -> Self[T]
 pub fn[T] ParallelQueue::clear(Self[T]) -> Unit
-pub fn[T] ParallelQueue::default() -> Self[T]
 pub fn[T] ParallelQueue::drain(Self[T]) -> Array[T]
 pub fn[T] ParallelQueue::drain_into(Self[T], Array[T]) -> Unit
 pub fn[T] ParallelQueue::extend(Self[T], Array[T]) -> Unit

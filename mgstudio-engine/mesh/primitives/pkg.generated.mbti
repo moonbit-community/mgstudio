@@ -48,8 +48,8 @@ pub(all) struct AnnulusMeshBuilder {
   annulus : @math.Annulus
   resolution : Int
 }
+pub fn AnnulusMeshBuilder::AnnulusMeshBuilder() -> Self
 pub fn AnnulusMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn AnnulusMeshBuilder::default() -> Self
 pub fn AnnulusMeshBuilder::from_annulus(@math.Annulus) -> Self
 pub fn AnnulusMeshBuilder::new(Float, Float, Int) -> Self
 pub fn AnnulusMeshBuilder::resolution(Self, Int) -> Self
@@ -60,8 +60,8 @@ pub(all) struct Capsule2dMeshBuilder {
   capsule : @math.Capsule2d
   resolution : Int
 }
+pub fn Capsule2dMeshBuilder::Capsule2dMeshBuilder() -> Self
 pub fn Capsule2dMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn Capsule2dMeshBuilder::default() -> Self
 pub fn Capsule2dMeshBuilder::from_capsule(@math.Capsule2d) -> Self
 pub fn Capsule2dMeshBuilder::new(Float, Float, Int) -> Self
 pub fn Capsule2dMeshBuilder::resolution(Self, Int) -> Self
@@ -72,8 +72,8 @@ pub(all) struct CircleMeshBuilder {
   circle : @math.Circle
   resolution : Int
 }
+pub fn CircleMeshBuilder::CircleMeshBuilder() -> Self
 pub fn CircleMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn CircleMeshBuilder::default() -> Self
 pub fn CircleMeshBuilder::from_circle(@math.Circle) -> Self
 pub fn CircleMeshBuilder::new(Float, Int) -> Self
 pub fn CircleMeshBuilder::resolution(Self, Int) -> Self
@@ -85,8 +85,8 @@ pub(all) struct CircularSectorMeshBuilder {
   resolution : Int
   uv_mode : @math.CircularMeshUvMode
 }
+pub fn CircularSectorMeshBuilder::CircularSectorMeshBuilder() -> Self
 pub fn CircularSectorMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn CircularSectorMeshBuilder::default() -> Self
 pub fn CircularSectorMeshBuilder::new(@math.CircularSector) -> Self
 pub fn CircularSectorMeshBuilder::resolution(Self, Int) -> Self
 pub fn CircularSectorMeshBuilder::uv_mode(Self, @math.CircularMeshUvMode) -> Self
@@ -98,8 +98,8 @@ pub(all) struct CircularSegmentMeshBuilder {
   resolution : Int
   uv_mode : @math.CircularMeshUvMode
 }
+pub fn CircularSegmentMeshBuilder::CircularSegmentMeshBuilder() -> Self
 pub fn CircularSegmentMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn CircularSegmentMeshBuilder::default() -> Self
 pub fn CircularSegmentMeshBuilder::new(@math.CircularSegment) -> Self
 pub fn CircularSegmentMeshBuilder::resolution(Self, Int) -> Self
 pub fn CircularSegmentMeshBuilder::uv_mode(Self, @math.CircularMeshUvMode) -> Self
@@ -119,8 +119,8 @@ pub(all) struct EllipseMeshBuilder {
   ellipse : @math.Ellipse
   resolution : Int
 }
+pub fn EllipseMeshBuilder::EllipseMeshBuilder() -> Self
 pub fn EllipseMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn EllipseMeshBuilder::default() -> Self
 pub fn EllipseMeshBuilder::from_ellipse(@math.Ellipse) -> Self
 pub fn EllipseMeshBuilder::new(Float, Float, Int) -> Self
 pub fn EllipseMeshBuilder::resolution(Self, Int) -> Self
@@ -146,16 +146,16 @@ pub enum PerimeterSegment {
 pub struct Polyline2dMeshBuilder {
   polyline : @math.Polyline2d
 }
+pub fn Polyline2dMeshBuilder::Polyline2dMeshBuilder() -> Self
 pub fn Polyline2dMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn Polyline2dMeshBuilder::default() -> Self
 pub fn Polyline2dMeshBuilder::new(@math.Polyline2d) -> Self
 pub impl MeshBuilder for Polyline2dMeshBuilder
 
 pub struct RectangleMeshBuilder {
   half_size : @math.Vec2
 }
+pub fn RectangleMeshBuilder::RectangleMeshBuilder() -> Self
 pub fn RectangleMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn RectangleMeshBuilder::default() -> Self
 pub fn RectangleMeshBuilder::from_rectangle(@math.Rectangle) -> Self
 pub fn RectangleMeshBuilder::new(Float, Float) -> Self
 pub impl Extrudable for RectangleMeshBuilder
@@ -165,8 +165,8 @@ pub struct RegularPolygonMeshBuilder {
   circumradius : Float
   sides : Int
 }
+pub fn RegularPolygonMeshBuilder::RegularPolygonMeshBuilder() -> Self
 pub fn RegularPolygonMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn RegularPolygonMeshBuilder::default() -> Self
 pub fn RegularPolygonMeshBuilder::from_regular_polygon(@math.RegularPolygon) -> Self
 pub fn RegularPolygonMeshBuilder::new(Float, Int) -> Self
 pub impl Extrudable for RegularPolygonMeshBuilder
@@ -175,8 +175,8 @@ pub impl MeshBuilder for RegularPolygonMeshBuilder
 pub struct RhombusMeshBuilder {
   half_diagonals : @math.Vec2
 }
+pub fn RhombusMeshBuilder::RhombusMeshBuilder() -> Self
 pub fn RhombusMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn RhombusMeshBuilder::default() -> Self
 pub fn RhombusMeshBuilder::from_rhombus(@math.Rhombus) -> Self
 pub fn RhombusMeshBuilder::new(Float, Float) -> Self
 pub impl Extrudable for RhombusMeshBuilder
@@ -203,8 +203,8 @@ pub impl MeshBuilder for Segment2dMeshBuilder
 pub struct Triangle2dMeshBuilder {
   triangle : @math.Triangle2d
 }
+pub fn Triangle2dMeshBuilder::Triangle2dMeshBuilder() -> Self
 pub fn Triangle2dMeshBuilder::build(Self) -> @mesh.Mesh3dGeometry
-pub fn Triangle2dMeshBuilder::default() -> Self
 pub fn Triangle2dMeshBuilder::from_triangle(@math.Triangle2d) -> Self
 pub fn Triangle2dMeshBuilder::new(@math.Vec2, @math.Vec2, @math.Vec2) -> Self
 pub impl Extrudable for Triangle2dMeshBuilder

@@ -37,7 +37,7 @@ fn ldtk_settings_or_default(world : @ecs.World) -> LdtkSettings {
   let key : @ecs.ResourceKey[LdtkSettings] = LdtkSettings::resource()
   match world.get_resource(key) {
     Some(value) => value
-    None => LdtkSettings::default()
+    None => LdtkSettings::LdtkSettings()
   }
 }
 
@@ -47,7 +47,7 @@ fn ldtk_runtime_state_ref_or_init(
 ) -> @ecs.ResourceMut[LdtkRuntimeState] {
   let key : @ecs.ResourceKey[LdtkRuntimeState] = LdtkRuntimeState::resource()
   if world.get_resource(key) is None {
-    world.insert_resource(key, LdtkRuntimeState::default())
+    world.insert_resource(key, LdtkRuntimeState::LdtkRuntimeState())
   }
   match world.get_resource_mut(key) {
     Some(value) => value
@@ -492,7 +492,7 @@ pub fn fire_level_transformed_events(
   for iid in spawned_level_iids.peek().iids() {
     ignore(level_events.write(Transformed(iid)))
   }
-  spawned_level_iids.set(LdtkSpawnedLevelIids::default())
+  spawned_level_iids.set(LdtkSpawnedLevelIids::LdtkSpawnedLevelIids())
 }
 
 ///|

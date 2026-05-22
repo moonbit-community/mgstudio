@@ -17,10 +17,8 @@ struct ComponentAccess[T] {
   contains : (World, @core.Entity) -> Bool
   get : (World, @core.Entity) -> T?
   set : (World, @core.Entity, T) -> Unit
+  remove : (World, @core.Entity) -> T?
   for_each : (World, (@core.Entity, T) -> Unit) -> Unit
-  payload : (World, @core.Entity) -> EcsPayload?
-  set_payload : (World, @core.Entity, EcsPayload) -> Bool
-  remove_payload : (World, @core.Entity) -> EcsPayload?
 }
 
 ///|
@@ -37,7 +35,7 @@ priv struct TypedResourceSlot[T] {
 }
 
 ///|
-fn[T : EcsPayloadCodec] component_access_new() -> ComponentAccess[T] {
+fn[T] component_access_new() -> ComponentAccess[T] {
   let stores_by_world : Map[Int, @core.ComponentStore[T]] = {}
   let get_store = fn(world : World) -> @core.ComponentStore[T] {
     match stores_by_world.get(world.world_id) {
@@ -53,28 +51,8 @@ fn[T : EcsPayloadCodec] component_access_new() -> ComponentAccess[T] {
     contains: fn(world, entity) { get_store(world).contains(entity) },
     get: fn(world, entity) { get_store(world).get(entity) },
     set: fn(world, entity, value) { get_store(world).upsert(entity, value) },
+    remove: fn(world, entity) { get_store(world).remove(entity) },
     for_each: fn(world, visit) { get_store(world).for_each(visit) },
-    payload: fn(world, entity) {
-      match get_store(world).get(entity) {
-        Some(value) => Some(T::to_ecs_payload(value))
-        None => None
-      }
-    },
-    set_payload: fn(world, entity, payload) {
-      match T::from_ecs_payload(payload) {
-        Some(value) => {
-          get_store(world).upsert(entity, value)
-          true
-        }
-        None => false
-      }
-    },
-    remove_payload: fn(world, entity) {
-      match get_store(world).remove(entity) {
-        Some(value) => Some(T::to_ecs_payload(value))
-        None => None
-      }
-    },
   }
 }
 

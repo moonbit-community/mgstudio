@@ -27,9 +27,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_examples_movement_physics_in_fixed_timestep_CameraSensitivity(
     CameraSensitivity
   )
-  EcsPayload_examples_movement_physics_in_fixed_timestep_DidFixedTimestepRunThisFrame(
-    DidFixedTimestepRunThisFrame
-  )
 }
 
 ///|
@@ -108,27 +105,6 @@ impl @ecs.EcsPayloadCodec for CameraSensitivity with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for CameraSensitivity with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_movement_physics_in_fixed_timestep_CameraSensitivity(
-      value
-    ) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DidFixedTimestepRunThisFrame with to_ecs_payload(
-  self,
-) {
-  EcsPayload_examples_movement_physics_in_fixed_timestep_DidFixedTimestepRunThisFrame(
-    self,
-  )
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DidFixedTimestepRunThisFrame with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_examples_movement_physics_in_fixed_timestep_DidFixedTimestepRunThisFrame(
       value
     ) => Some(value)
     _ => None

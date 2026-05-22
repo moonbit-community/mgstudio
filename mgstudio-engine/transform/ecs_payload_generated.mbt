@@ -20,7 +20,6 @@ extenum @ecs.EcsPayload += {
   EcsPayload_transform_StaticTransformOptimizations(
     StaticTransformOptimizations
   )
-  EcsPayload_transform_TransformPropagationScratch(TransformPropagationScratch)
 }
 
 ///|
@@ -77,23 +76,6 @@ pub impl @ecs.EcsPayloadCodec for StaticTransformOptimizations with from_ecs_pay
 ) {
   match payload {
     EcsPayload_transform_StaticTransformOptimizations(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TransformPropagationScratch with to_ecs_payload(
-  self,
-) {
-  EcsPayload_transform_TransformPropagationScratch(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TransformPropagationScratch with from_ecs_payload(
-  payload,
-) {
-  match payload {
-    EcsPayload_transform_TransformPropagationScratch(value) => Some(value)
     _ => None
   }
 }

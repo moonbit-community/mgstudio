@@ -16,7 +16,7 @@
 fn main {
   @app.app_rendering_stop()
   @app.App::new(@ecs.World::new())
-  .add_plugins(@window.WindowPlugin::default())
-  .add_plugins(@winit.WinitPlugin::default())
+  .add_plugins(@window.WindowPlugin::WindowPlugin())
+  .add_plugins(@winit.WinitPlugin::WinitPlugin())
   .run()
 }

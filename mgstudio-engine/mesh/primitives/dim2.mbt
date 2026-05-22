@@ -88,8 +88,8 @@ pub(all) struct CircleMeshBuilder {
 }
 
 ///|
-pub fn CircleMeshBuilder::default() -> CircleMeshBuilder {
-  { circle: @math.Circle::default(), resolution: 32 }
+pub fn CircleMeshBuilder::CircleMeshBuilder() -> CircleMeshBuilder {
+  { circle: @math.Circle::Circle(), resolution: 32 }
 }
 
 ///|
@@ -211,7 +211,7 @@ pub struct RectangleMeshBuilder {
 }
 
 ///|
-pub fn RectangleMeshBuilder::default() -> RectangleMeshBuilder {
+pub fn RectangleMeshBuilder::RectangleMeshBuilder() -> RectangleMeshBuilder {
   { half_size: @math.Vec2::new(0.5F, 0.5F) }
 }
 
@@ -291,9 +291,9 @@ pub(all) struct CircularSectorMeshBuilder {
 }
 
 ///|
-pub fn CircularSectorMeshBuilder::default() -> CircularSectorMeshBuilder {
+pub fn CircularSectorMeshBuilder::CircularSectorMeshBuilder() -> CircularSectorMeshBuilder {
   {
-    sector: @math.CircularSector::default(),
+    sector: @math.CircularSector::CircularSector(),
     resolution: 32,
     uv_mode: Mask(0.0F),
   }
@@ -404,9 +404,9 @@ pub(all) struct CircularSegmentMeshBuilder {
 }
 
 ///|
-pub fn CircularSegmentMeshBuilder::default() -> CircularSegmentMeshBuilder {
+pub fn CircularSegmentMeshBuilder::CircularSegmentMeshBuilder() -> CircularSegmentMeshBuilder {
   {
-    segment: @math.CircularSegment::default(),
+    segment: @math.CircularSegment::CircularSegment(),
     resolution: 32,
     uv_mode: Mask(0.0F),
   }
@@ -587,8 +587,8 @@ pub(all) struct EllipseMeshBuilder {
 }
 
 ///|
-pub fn EllipseMeshBuilder::default() -> EllipseMeshBuilder {
-  { ellipse: @math.Ellipse::default(), resolution: 32 }
+pub fn EllipseMeshBuilder::EllipseMeshBuilder() -> EllipseMeshBuilder {
+  { ellipse: @math.Ellipse::Ellipse(), resolution: 32 }
 }
 
 ///|
@@ -736,7 +736,7 @@ pub struct Polyline2dMeshBuilder {
 }
 
 ///|
-pub fn Polyline2dMeshBuilder::default() -> Polyline2dMeshBuilder {
+pub fn Polyline2dMeshBuilder::Polyline2dMeshBuilder() -> Polyline2dMeshBuilder {
   { polyline: @math.Polyline2d::new([]) }
 }
 
@@ -832,8 +832,8 @@ pub(all) struct AnnulusMeshBuilder {
 }
 
 ///|
-pub fn AnnulusMeshBuilder::default() -> AnnulusMeshBuilder {
-  { annulus: @math.Annulus::default(), resolution: 32 }
+pub fn AnnulusMeshBuilder::AnnulusMeshBuilder() -> AnnulusMeshBuilder {
+  { annulus: @math.Annulus::Annulus(), resolution: 32 }
 }
 
 ///|
@@ -917,7 +917,7 @@ pub struct RhombusMeshBuilder {
 }
 
 ///|
-pub fn RhombusMeshBuilder::default() -> RhombusMeshBuilder {
+pub fn RhombusMeshBuilder::RhombusMeshBuilder() -> RhombusMeshBuilder {
   { half_diagonals: @math.Vec2::new(0.5F, 0.5F) }
 }
 
@@ -994,7 +994,7 @@ pub struct RegularPolygonMeshBuilder {
 }
 
 ///|
-pub fn RegularPolygonMeshBuilder::default() -> RegularPolygonMeshBuilder {
+pub fn RegularPolygonMeshBuilder::RegularPolygonMeshBuilder() -> RegularPolygonMeshBuilder {
   { circumradius: 0.5F, sides: 6 }
 }
 
@@ -1074,8 +1074,8 @@ pub struct Triangle2dMeshBuilder {
 }
 
 ///|
-pub fn Triangle2dMeshBuilder::default() -> Triangle2dMeshBuilder {
-  { triangle: @math.Triangle2d::default() }
+pub fn Triangle2dMeshBuilder::Triangle2dMeshBuilder() -> Triangle2dMeshBuilder {
+  { triangle: @math.Triangle2d::Triangle2d() }
 }
 
 ///|
@@ -1245,8 +1245,8 @@ pub(all) struct Capsule2dMeshBuilder {
 }
 
 ///|
-pub fn Capsule2dMeshBuilder::default() -> Capsule2dMeshBuilder {
-  { capsule: @math.Capsule2d::default(), resolution: 16 }
+pub fn Capsule2dMeshBuilder::Capsule2dMeshBuilder() -> Capsule2dMeshBuilder {
+  { capsule: @math.Capsule2d::Capsule2d(), resolution: 16 }
 }
 
 ///|

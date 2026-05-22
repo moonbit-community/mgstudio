@@ -15,7 +15,7 @@
 ///|
 fn main {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @mgstudio.DefaultPlugins::default(),
+    @mgstudio.DefaultPlugins::DefaultPlugins(),
   )
   @sprite.wireframe2d_plugin(app)
   .add_systems(Startup, @app.system(@app.system_param3(setup)))
@@ -68,7 +68,7 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
 
   let mesh_assets = meshes.peek()
   let material_assets = materials.peek()
@@ -198,7 +198,7 @@ fn setup(
           "Press 'R' to pause/resume rotation\nPress 'Space' to toggle wireframes",
         ),
         @ui.Node::{
-          ..@ui.Node::default(),
+          ..@ui.Node(),
           position_type: @ui.PositionType::Absolute,
           top: @ui.Val::Px(12.0F),
           left: @ui.Val::Px(12.0F),

@@ -51,7 +51,7 @@ test "pbr render fog: gpu fog mode follows fog falloff variant" {
 test "pbr render fog: prepare writes offsets and off mode for missing fog" {
   let with_fog = @core.Entity::new(7, 0)
   let without_fog = @core.Entity::new(8, 0)
-  let meta = FogMeta::default()
+  let meta = FogMeta::FogMeta()
   let offsets = render3d_prepare_fog_uniforms(
     [
       (

@@ -14,22 +14,8 @@
 
 ///|
 extenum @ecs.EcsPayload += {
-  EcsPayload_examples_games_game_menu_MenuState(MenuState)
   EcsPayload_examples_games_game_menu_MenuPanel(MenuPanel)
   EcsPayload_examples_games_game_menu_Player(Player)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MenuState with to_ecs_payload(self) {
-  EcsPayload_examples_games_game_menu_MenuState(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for MenuState with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_games_game_menu_MenuState(value) => Some(value)
-    _ => None
-  }
 }
 
 ///|

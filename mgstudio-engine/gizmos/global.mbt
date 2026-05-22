@@ -22,13 +22,13 @@ pub struct GlobalGizmosPlugin {}
 const GLOBAL_GIZMOS_PLUGIN_NAME : String = "mgstudio.gizmos.GlobalGizmosPlugin"
 
 ///|
-pub fn GlobalGizmosPlugin::default() -> GlobalGizmosPlugin {
+pub fn GlobalGizmosPlugin::GlobalGizmosPlugin() -> GlobalGizmosPlugin {
   GlobalGizmosPlugin::{  }
 }
 
 ///|
 pub fn global_gizmos_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  global_gizmos_plugin_with(app, GlobalGizmosPlugin::default())
+  global_gizmos_plugin_with(app, GlobalGizmosPlugin::GlobalGizmosPlugin())
 }
 
 ///|
@@ -41,7 +41,7 @@ pub fn global_gizmos_plugin_with(
     app.add_last_system_config(
       @app.system(@app.system_param(@sprite.flush_global_gizmos)),
     ),
-    @sprite.DefaultGizmoConfigGroup::default(),
+    @sprite.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   )
 }
 

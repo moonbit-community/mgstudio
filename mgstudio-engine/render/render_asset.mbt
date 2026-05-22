@@ -71,7 +71,7 @@ pub fn[A : RenderAssetResource] RenderAssets::resource() -> @ecs.ResourceKey[
     Some(id) =>
       @ecs.resource_key_from_id(id, debug_name="mgstudio_render::\{type_name}")
     None => {
-      let key : @ecs.ResourceKey[RenderAssets[A]] = @ecs.register_resource(
+      let key : @ecs.ResourceKey[RenderAssets[A]] = @ecs.register_erased_resource(
         debug_name="mgstudio_render::\{type_name}",
       )
       render_assets_resource_registry.val.set(type_name, key.id())
@@ -164,8 +164,13 @@ pub let render_asset_bytes_per_frame_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl Default for RenderAssetBytesPerFrame with default() {
+pub fn RenderAssetBytesPerFrame::RenderAssetBytesPerFrame() -> RenderAssetBytesPerFrame {
   RenderAssetBytesPerFrame::{ max_bytes: None }
+}
+
+///|
+pub impl Default for RenderAssetBytesPerFrame with default() {
+  RenderAssetBytesPerFrame::RenderAssetBytesPerFrame()
 }
 
 ///|
@@ -201,8 +206,13 @@ pub let render_asset_bytes_per_frame_limiter_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-pub impl Default for RenderAssetBytesPerFrameLimiter with default() {
+pub fn RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter() -> RenderAssetBytesPerFrameLimiter {
   RenderAssetBytesPerFrameLimiter::{ max_bytes: None, bytes_written: 0 }
+}
+
+///|
+pub impl Default for RenderAssetBytesPerFrameLimiter with default() {
+  RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter()
 }
 
 ///|
@@ -324,14 +334,14 @@ fn prepare_next_frame_assets_debug_name() -> String {
 }
 
 ///|
-pub fn[A : @ecs.EcsPayloadCodec] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
+pub fn[A] PrepareNextFrameAssets::resource() -> @ecs.ResourceKey[
   PrepareNextFrameAssets[A],
 ] {
   @ecs.register_resource(debug_name=prepare_next_frame_assets_debug_name())
 }
 
 ///|
-pub impl[A : @ecs.EcsPayloadCodec] @app.Resource for PrepareNextFrameAssets[A] with resource() {
+pub impl[A] @app.Resource for PrepareNextFrameAssets[A] with resource() {
   PrepareNextFrameAssets::resource()
 }
 
@@ -385,7 +395,7 @@ pub fn[A, B] prepare_render_assets_with(
   prepare_asset : (A, Int, B?) -> Result[B, PrepareAssetError],
   unload_asset : (Int, B?) -> Unit,
   byte_len? : (A) -> Int? = fn(_) { None },
-  bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter::default(),
+  bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
 ) -> Unit {
   let queued_assets = prepare_next_frame.take()
   for entry in queued_assets {

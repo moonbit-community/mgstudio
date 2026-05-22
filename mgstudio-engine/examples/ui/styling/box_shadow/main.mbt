@@ -114,7 +114,7 @@ pub impl @app.Resource for PressedControls with resource() {
 }
 
 ///|
-impl Default for ShadowSettings with default() {
+fn ShadowSettings::ShadowSettings() -> ShadowSettings {
   ShadowSettings::{
     x_offset: 20.0F,
     y_offset: 20.0F,
@@ -125,7 +125,7 @@ impl Default for ShadowSettings with default() {
 }
 
 ///|
-impl Default for PressedControls with default() {
+fn PressedControls::PressedControls() -> PressedControls {
   PressedControls::{ entities: [] }
 }
 
@@ -253,7 +253,7 @@ fn apply_action(
     BlurInc => ShadowSettings::{ ..settings, blur: settings.blur + 2.0F }
     SpreadDec => ShadowSettings::{ ..settings, spread: settings.spread - 2.0F }
     SpreadInc => ShadowSettings::{ ..settings, spread: settings.spread + 2.0F }
-    Reset => ShadowSettings::default()
+    Reset => ShadowSettings::ShadowSettings()
   }
 }
 
@@ -271,7 +271,12 @@ fn field_value(settings : ShadowSettings, field : ShadowField) -> String {
 ///|
 fn shape_dimensions(index : Int) -> (@ui.Val, @ui.Val, @ui.BorderRadius) {
   match index {
-    0 => (@ui.Val::Px(164.0F), @ui.Val::Px(164.0F), @ui.BorderRadius::default())
+    0 =>
+      (
+        @ui.Val::Px(164.0F),
+        @ui.Val::Px(164.0F),
+        @ui.BorderRadius::BorderRadius(),
+      )
     1 =>
       (
         @ui.Val::Px(164.0F),
@@ -343,9 +348,9 @@ fn spawn_control_button(
     .insert(
       (
         @hierarchy.Parent::new(parent),
-        @ui.Button::default(),
+        @ui.Button::Button(),
         ShadowControlButton::{ action, },
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_align_items(@ui.AlignItems::Center)
         .with_justify_content(@ui.JustifyContent::Center)
         .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
@@ -417,7 +422,7 @@ fn spawn_control_row(
     .insert(
       (
         @hierarchy.Parent::new(parent),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_display(@ui.Display::Grid)
         .with_grid_template_columns([
           @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(4), [
@@ -454,7 +459,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   ignore(
     @sprite.Camera2dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::identity(),
     ).spawn(world),
   )
@@ -465,8 +470,8 @@ fn setup(world : @ecs.World) -> Unit {
     .entity_mut(root)
     .insert(
       (
-        @ui.UiRoot::default(),
-        @ui.Node::default()
+        @ui.UiRoot::UiRoot(),
+        @ui.Node::Node()
         .with_width(@ui.Val::Percent(100.0F))
         .with_height(@ui.Val::Percent(100.0F))
         .with_align_items(@ui.AlignItems::Center)
@@ -484,7 +489,7 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @hierarchy.Parent::new(root),
         ShadowNode::{  },
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_width(@ui.Val::Px(164.0F))
         .with_height(@ui.Val::Px(164.0F))
         .with_align_items(@ui.AlignItems::Center)
@@ -526,7 +531,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::default()
+        @ui.Node::Node()
         .with_flex_direction(@ui.FlexDirection::Column)
         .with_position_type(@ui.PositionType::Absolute)
         .with_left(@ui.Val::Px(24.0F))
@@ -652,9 +657,9 @@ fn update_shadow_labels(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .insert_resource(ShadowSettings::default())
-  .insert_resource(PressedControls::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .insert_resource(ShadowSettings::ShadowSettings())
+  .insert_resource(PressedControls::PressedControls())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(
     @app.Update,

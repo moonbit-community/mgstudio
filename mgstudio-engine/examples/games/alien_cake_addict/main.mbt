@@ -97,7 +97,7 @@ fn spawn_cakes(commands : @app.Commands, count : Int) -> Unit {
 ///|
 fn setup(commands : @app.Commands) -> Unit {
   commands.insert_resource(Score::{ value: 0 })
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   ignore(
     commands.spawn(
       (
@@ -190,7 +190,7 @@ fn collect_cakes(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(move_player)))
   .add_systems(@app.Update, @app.system(@app.system_param4(collect_cakes)))

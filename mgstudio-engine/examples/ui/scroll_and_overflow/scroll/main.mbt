@@ -55,7 +55,7 @@ fn spawn_text(
 
 ///|
 fn panel_node(width : Float, height : Float) -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_width(@ui.Val::Px(width))
   .with_height(@ui.Val::Px(height))
   .with_margin(@ui.UiRect::all(@ui.Val::Px(8.0F)))
@@ -69,7 +69,7 @@ fn scroll_container(
   height : Float,
   overflow : @ui.Overflow,
 ) -> @ui.Node {
-  @ui.Node::default()
+  @ui.Node::Node()
   .with_width(@ui.Val::Px(width))
   .with_height(@ui.Val::Px(height))
   .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F)))
@@ -79,7 +79,7 @@ fn scroll_container(
 ///|
 fn row_item_node(width : Float) -> @ui.Node {
   @ui.Node::{
-    ..@ui.Node::default(),
+    ..@ui.Node(),
     width: @ui.Val::Px(width),
     min_height: @ui.Val::Px(56.0F),
     margin: @ui.UiRect::new(
@@ -94,7 +94,7 @@ fn row_item_node(width : Float) -> @ui.Node {
 
 ///|
 fn column_item_node() -> @ui.Node {
-  @ui.Node::{ ..@ui.Node::default(), min_height: @ui.Val::Px(30.0F) }
+  @ui.Node::{ ..@ui.Node(), min_height: @ui.Val::Px(30.0F) }
 }
 
 ///|
@@ -112,20 +112,14 @@ fn spawn_vertical_panel(
   )
   let title = "Vertical scroll"
   let hint = "Use MouseWheel while hovering this list."
-  spawn_text(
-    commands,
-    panel,
-    title,
-    title_font(asset_server),
-    @ui.Node::default(),
-  )
+  spawn_text(commands, panel, title, title_font(asset_server), @ui.Node::Node())
   |> ignore
   spawn_text(
     commands,
     panel,
     hint,
     body_font(asset_server),
-    @ui.Node::default().with_margin(
+    @ui.Node::Node().with_margin(
       @ui.UiRect::new(
         @ui.Val::Px(0.0F),
         @ui.Val::Px(0.0F),
@@ -176,7 +170,7 @@ fn spawn_horizontal_panel(
     panel,
     "Horizontal scroll",
     title_font(asset_server),
-    @ui.Node::default(),
+    @ui.Node::Node(),
   )
   |> ignore
   let list = commands.spawn(
@@ -205,7 +199,7 @@ fn spawn_horizontal_panel(
       item,
       "Card \{i.to_string()}",
       body_font(asset_server),
-      @ui.Node::default(),
+      @ui.Node::Node(),
     )
     |> ignore
   }
@@ -229,7 +223,7 @@ fn spawn_bidirectional_panel(
     panel,
     "Bidirectional scroll",
     title_font(asset_server),
-    @ui.Node::default(),
+    @ui.Node::Node(),
   )
   |> ignore
   let grid = commands.spawn(
@@ -260,7 +254,7 @@ fn spawn_bidirectional_panel(
         (
           @hierarchy.Parent::new(grid),
           @ui.Node::{
-            ..@ui.Node::default(),
+            ..@ui.Node(),
             grid_column: @ui.GridPlacement::start(x + 1),
             grid_row: @ui.GridPlacement::start(y + 1),
             padding: @ui.UiRect::all(@ui.Val::Px(8.0F)),
@@ -275,7 +269,7 @@ fn spawn_bidirectional_panel(
         cell,
         "Cell \{x.to_string()},\{y.to_string()}",
         body_font(asset_server),
-        @ui.Node::default(),
+        @ui.Node::Node(),
       )
       |> ignore
     }
@@ -300,7 +294,7 @@ fn spawn_nested_panel(
     panel,
     "Nested scroll",
     title_font(asset_server),
-    @ui.Node::default(),
+    @ui.Node::Node(),
   )
   |> ignore
   let outer = commands.spawn(
@@ -321,7 +315,7 @@ fn spawn_nested_panel(
       "Outer row \{i.to_string()}",
       body_font(asset_server),
       @ui.Node::{
-        ..@ui.Node::default(),
+        ..@ui.Node(),
         min_height: @ui.Val::Px(28.0F),
         margin: @ui.UiRect::new(
           @ui.Val::Px(0.0F),
@@ -370,7 +364,7 @@ fn spawn_nested_panel(
       "Outer row \{i.to_string()}",
       body_font(asset_server),
       @ui.Node::{
-        ..@ui.Node::default(),
+        ..@ui.Node(),
         min_height: @ui.Val::Px(28.0F),
         margin: @ui.UiRect::new(
           @ui.Val::Px(0.0F),
@@ -389,13 +383,13 @@ fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default()))
+  commands.spawn((@sprite.Camera2d::Camera2d(), @sprite.Camera::Camera()))
   |> ignore
 
   let root = commands.spawn(
     (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
+      @ui.UiRoot::UiRoot(),
+      @ui.Node::Node()
       .with_width(@ui.Val::Percent(100.0F))
       .with_height(@ui.Val::Percent(100.0F))
       .with_padding(@ui.UiRect::all(@ui.Val::Px(16.0F)))
@@ -423,7 +417,7 @@ fn setup(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

@@ -121,7 +121,7 @@ pub fn HostMaterial2dBindGroup::new(
 }
 
 ///|
-pub fn HostMaterial2dBindGroup::default() -> HostMaterial2dBindGroup {
+pub fn HostMaterial2dBindGroup::HostMaterial2dBindGroup() -> HostMaterial2dBindGroup {
   HostMaterial2dBindGroup::new([])
 }
 

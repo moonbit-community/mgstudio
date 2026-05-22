@@ -32,7 +32,7 @@ priv struct FogExampleState {
 let fog_example_state : Ref[FogExampleState] = Ref({
   camera: None,
   help_text: None,
-  fog: @pbr.DistanceFog::default(),
+  fog: @pbr.DistanceFog::DistanceFog(),
 })
 
 ///|
@@ -128,7 +128,7 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
     @pbr.FogFalloff3d::linear(5.0F, 20.0F),
   )
   let camera = @camera.Camera3dBundle::new(
-      @sprite.Camera::default(),
+      @sprite.Camera::Camera(),
       @transform.Transform::from_xyz(8.0F, 8.0F, 8.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -192,12 +192,12 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     orb,
     @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::default(),
+    @pbr.NotShadowCaster::NotShadowCaster(),
   )
   try! world.set_by_key(
     orb,
     @pbr.ecs_key_not_shadow_receiver,
-    @pbr.NotShadowReceiver::default(),
+    @pbr.NotShadowReceiver::NotShadowReceiver(),
   )
 
   for i in 0..<50 {
@@ -244,7 +244,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     point_light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(true),
+    @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
   )
   try! world.set_by_key(
     point_light,
@@ -284,7 +284,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new("Fog controls"),
-      @text.TextFont::default().with_font(font).with_font_size(18.0F),
+      @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
@@ -298,7 +298,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   fog_example_state.val.help_text = Some(handle)
 
@@ -474,7 +474,7 @@ fn update_system(world : @ecs.World) -> Unit {
 fn setup(world : @ecs.World) -> Unit {
   fog_example_state.val.camera = None
   fog_example_state.val.help_text = None
-  fog_example_state.val.fog = @pbr.DistanceFog::default()
+  fog_example_state.val.fog = @pbr.DistanceFog::DistanceFog()
   setup_camera_fog(world)
   setup_pyramid_scene(world)
   setup_instructions(world)
@@ -483,7 +483,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(update_system))
   .run()

@@ -14,7 +14,7 @@
 
 ///|
 fn configured_window() -> @window.Window {
-  let window = @window.Window::default()
+  let window = @window.Window::Window()
   window.transparent = true
   window.decorations = false
   window
@@ -26,7 +26,7 @@ fn main {
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
-      primary_cursor_options: Some(@window.CursorOptions::default()),
+      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
     }),
@@ -41,7 +41,7 @@ fn main {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore

@@ -24,7 +24,7 @@ pub struct MotionBlur {
   shutter_angle : Float
   samples : Int
 } derive(ToJson, @json.FromJson)
-pub fn MotionBlur::default() -> Self
+pub fn MotionBlur::MotionBlur() -> Self
 pub fn MotionBlur::new(Float, Int) -> Self
 pub fn MotionBlur::with_samples(Self, Int) -> Self
 pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self

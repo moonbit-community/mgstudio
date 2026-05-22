@@ -49,7 +49,7 @@ impl @app.Resource for SimulatedPool with resource() {
 }
 
 ///|
-fn SimulatedPool::default() -> SimulatedPool {
+fn SimulatedPool::SimulatedPool() -> SimulatedPool {
   { worker_count: 8, queued_jobs: 0, busy: true, print_timer: 0.0F }
 }
 
@@ -117,7 +117,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.PointLight::default()
+        @pbr.PointLight::PointLight()
         .with_intensity(500000.0F)
         .with_shadow_maps_enabled(true),
         @transform.Transform::from_xyz(14.0F, 24.0F, 10.0F),
@@ -127,7 +127,7 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @camera.Camera3d::default(),
+        @camera.Camera3d::Camera3d(),
         @transform.Transform::from_xyz(20.0F, 14.0F, 20.0F).looking_at(
           @math.Vec3::new(0.0F, 0.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -210,11 +210,13 @@ fn animate_cubes(
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .insert_resource(SimulatedPool::default())
+  .insert_resource(SimulatedPool::SimulatedPool())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
-  .add_plugins(@diagnostic.FrameTimeDiagnosticsPlugin::default())
-  .add_plugins(@diagnostic.LogDiagnosticsPlugin::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .add_plugins(
+    @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param(input_control)))
   .add_systems(@app.Update, @app.system(@app.system_param2(simulate_pool)))

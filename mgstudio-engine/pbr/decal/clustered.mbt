@@ -61,7 +61,7 @@ pub fn RenderClusteredDecal::new(
 }
 
 ///|
-pub fn RenderClusteredDecal::default() -> RenderClusteredDecal {
+pub fn RenderClusteredDecal::RenderClusteredDecal() -> RenderClusteredDecal {
   RenderClusteredDecal::new(@math.Affine3::identity(), -1, -1, -1, -1, 0)
 }
 
@@ -74,7 +74,7 @@ pub struct RenderClusteredDecals {
 }
 
 ///|
-pub fn RenderClusteredDecals::default() -> RenderClusteredDecals {
+pub fn RenderClusteredDecals::RenderClusteredDecals() -> RenderClusteredDecals {
   RenderClusteredDecals::{
     binding_index_to_textures: [],
     texture_to_binding_index: {},
@@ -236,7 +236,7 @@ pub struct DecalsBuffer {
 }
 
 ///|
-pub fn DecalsBuffer::default() -> DecalsBuffer {
+pub fn DecalsBuffer::DecalsBuffer() -> DecalsBuffer {
   DecalsBuffer::{ decals: [] }
 }
 
@@ -324,7 +324,7 @@ pub fn render3d_upload_decals(
     decals_buffer.push(decal)
   }
   if decals_buffer.is_empty() {
-    decals_buffer.push(RenderClusteredDecal::default())
+    decals_buffer.push(RenderClusteredDecal::RenderClusteredDecal())
   }
 }
 
@@ -348,7 +348,7 @@ pub fn render3d_decals_buffer_ref_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[DecalsBuffer] {
   if render3d_decals_buffer_ref(world) is None {
-    world.insert_resource(ecs_key_decals_buffer, DecalsBuffer::default())
+    world.insert_resource(ecs_key_decals_buffer, DecalsBuffer::DecalsBuffer())
   }
   match render3d_decals_buffer_ref(world) {
     Some(decals_buffer) => decals_buffer
@@ -360,7 +360,7 @@ pub fn render3d_decals_buffer_ref_or_init(
 pub struct ClusteredDecalPlugin {}
 
 ///|
-pub fn ClusteredDecalPlugin::default() -> ClusteredDecalPlugin {
+pub fn ClusteredDecalPlugin::ClusteredDecalPlugin() -> ClusteredDecalPlugin {
   ClusteredDecalPlugin::{  }
 }
 
@@ -437,7 +437,9 @@ fn clustered_decal_extract_spot_light_textures(
     ignore(
       render_decals.insert_decal_with_local_from_world(
         entity,
-        ClusteredDecal::default().with_base_color_texture(texture.image),
+        @light.ClusteredDecal::ClusteredDecal().with_base_color_texture(
+          texture.image,
+        ),
         clustered_decal_local_from_world(source_world, entity),
       ),
     )
@@ -459,7 +461,7 @@ fn clustered_decal_extract_point_light_textures(
     ignore(
       render_decals.insert_decal_with_local_from_world(
         entity,
-        ClusteredDecal::default()
+        @light.ClusteredDecal::ClusteredDecal()
         .with_base_color_texture(texture.image)
         .with_tag(clustered_decal_cubemap_layout_tag(texture.cubemap_layout)),
         clustered_decal_local_from_world(source_world, entity),
@@ -483,7 +485,7 @@ fn clustered_decal_extract_directional_light_textures(
     ignore(
       render_decals.insert_decal_with_local_from_world(
         entity,
-        ClusteredDecal::default()
+        @light.ClusteredDecal::ClusteredDecal()
         .with_base_color_texture(texture.image)
         .with_tag(if texture.tiled { 1 } else { 0 }),
         clustered_decal_local_from_world(source_world, entity),
@@ -528,7 +530,7 @@ pub fn render3d_render_clustered_decals_ref_or_init(
   if render3d_render_clustered_decals_ref(world) is None {
     world.insert_resource(
       ecs_key_render_clustered_decals,
-      RenderClusteredDecals::default(),
+      RenderClusteredDecals::RenderClusteredDecals(),
     )
   }
   match render3d_render_clustered_decals_ref(world) {
@@ -550,7 +552,10 @@ pub impl @app.Plugin for ClusteredDecalPlugin with build(self, app) {
 pub fn clustered_decal_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  clustered_decal_plugin_install_with(app, ClusteredDecalPlugin::default())
+  clustered_decal_plugin_install_with(
+    app,
+    ClusteredDecalPlugin::ClusteredDecalPlugin(),
+  )
 }
 
 ///|
@@ -563,11 +568,11 @@ pub fn clustered_decal_plugin_install_with(
     if world.get_resource(ecs_key_render_clustered_decals) is None {
       world.insert_resource(
         ecs_key_render_clustered_decals,
-        RenderClusteredDecals::default(),
+        RenderClusteredDecals::RenderClusteredDecals(),
       )
     }
     if world.get_resource(ecs_key_decals_buffer) is None {
-      world.insert_resource(ecs_key_decals_buffer, DecalsBuffer::default())
+      world.insert_resource(ecs_key_decals_buffer, DecalsBuffer::DecalsBuffer())
     }
     sub_app
     .add_systems(

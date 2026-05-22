@@ -40,7 +40,7 @@ const TEMPORAL_ANTI_ALIAS_PLUGIN_NAME : String = "mgstudio.anti_alias.taa.Tempor
 pub struct TemporalAntiAliasPlugin {}
 
 ///|
-pub fn TemporalAntiAliasPlugin::default() -> TemporalAntiAliasPlugin {
+pub fn TemporalAntiAliasPlugin::TemporalAntiAliasPlugin() -> TemporalAntiAliasPlugin {
   TemporalAntiAliasPlugin::{  }
 }
 
@@ -51,7 +51,7 @@ pub struct TemporalAntiAliasRuntimeState {
 } derive(Eq, Debug)
 
 ///|
-pub fn TemporalAntiAliasRuntimeState::default() -> TemporalAntiAliasRuntimeState {
+pub fn TemporalAntiAliasRuntimeState::TemporalAntiAliasRuntimeState() -> TemporalAntiAliasRuntimeState {
   TemporalAntiAliasRuntimeState::{
     enabled_camera_count: 0,
     reset_requested_count: 0,
@@ -83,13 +83,13 @@ pub fn install_temporal_anti_alias_required_components() -> Unit {
   }
   ignore(
     @ecs.component_metadata_builder(ecs_key_temporal_anti_aliasing)
-    .require_with(ecs_key_temporal_jitter, fn() { TemporalJitter::default() })
-    .require_with(ecs_key_mip_bias, fn() { MipBias::default() })
+    .require_with(ecs_key_temporal_jitter, fn() { TemporalJitter() })
+    .require_with(ecs_key_mip_bias, fn() { MipBias() })
     .require_with(@core_pipeline.ecs_key_depth_prepass, fn() {
-      @core_pipeline.DepthPrepass::default()
+      @core_pipeline.DepthPrepass::DepthPrepass()
     })
     .require_with(@core_pipeline.ecs_key_motion_vector_prepass, fn() {
-      @core_pipeline.MotionVectorPrepass::default()
+      @core_pipeline.MotionVectorPrepass::MotionVectorPrepass()
     }),
   )
   temporal_anti_alias_required_components_installed.val = true
@@ -106,7 +106,10 @@ pub impl @app.Plugin for TemporalAntiAliasPlugin with build(self, app) {
 pub fn temporal_anti_alias_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  temporal_anti_alias_plugin_with(app, TemporalAntiAliasPlugin::default())
+  temporal_anti_alias_plugin_with(
+    app,
+    TemporalAntiAliasPlugin::TemporalAntiAliasPlugin(),
+  )
 }
 
 ///|
@@ -115,7 +118,9 @@ pub fn temporal_anti_alias_plugin_with(
   _plugin : TemporalAntiAliasPlugin,
 ) -> @app.App[@ecs.World] {
   app
-  .init_resource(fn() { TemporalAntiAliasRuntimeState::default() })
+  .init_resource(fn() {
+    TemporalAntiAliasRuntimeState::TemporalAntiAliasRuntimeState()
+  })
   .add_system(temporal_anti_alias_update_runtime_state)
   .add_system(prepare_taa_jitter)
 }

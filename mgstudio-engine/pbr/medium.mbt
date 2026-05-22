@@ -61,7 +61,7 @@ pub struct ScatteringMediumSampler {
 }
 
 ///|
-pub fn ScatteringMediumSampler::default() -> ScatteringMediumSampler {
+pub fn ScatteringMediumSampler::ScatteringMediumSampler() -> ScatteringMediumSampler {
   ScatteringMediumSampler::{
     address_mode_u: @asset.ImageAddressMode::ClampToEdge,
     address_mode_v: @asset.ImageAddressMode::ClampToEdge,
@@ -74,7 +74,7 @@ pub fn ScatteringMediumSampler::default() -> ScatteringMediumSampler {
 
 ///|
 pub fn ScatteringMediumSampler::linear_clamp() -> ScatteringMediumSampler {
-  ScatteringMediumSampler::default()
+  ScatteringMediumSampler::ScatteringMediumSampler()
 }
 
 ///|
@@ -122,7 +122,7 @@ pub struct ScatteringMediumLutConfig {
 }
 
 ///|
-pub fn ScatteringMediumLutConfig::default() -> ScatteringMediumLutConfig {
+pub fn ScatteringMediumLutConfig::ScatteringMediumLutConfig() -> ScatteringMediumLutConfig {
   ScatteringMediumLutConfig::{ falloff_resolution: 128, phase_resolution: 64 }
 }
 
@@ -160,17 +160,17 @@ pub struct ScatteringMediumRuntime {
 }
 
 ///|
-pub fn ScatteringMediumRuntime::default() -> ScatteringMediumRuntime {
+pub fn ScatteringMediumRuntime::ScatteringMediumRuntime() -> ScatteringMediumRuntime {
   ScatteringMediumRuntime::{
-    medium: ScatteringMedium::default(),
+    medium: ScatteringMedium(),
     density_multiplier: 1.0F,
-    lut_config: ScatteringMediumLutConfig::default(),
+    lut_config: ScatteringMediumLutConfig::ScatteringMediumLutConfig(),
   }
 }
 
 ///|
 pub fn ScatteringMediumRuntime::earthlike() -> ScatteringMediumRuntime {
-  let default_runtime = ScatteringMediumRuntime::default()
+  let default_runtime = ScatteringMediumRuntime::ScatteringMediumRuntime()
   ScatteringMediumRuntime::{
     medium: ScatteringMedium::earthlike(),
     density_multiplier: default_runtime.density_multiplier,
@@ -182,7 +182,7 @@ pub fn ScatteringMediumRuntime::earthlike() -> ScatteringMediumRuntime {
 pub fn ScatteringMediumRuntime::from_medium(
   medium : ScatteringMedium,
 ) -> ScatteringMediumRuntime {
-  let default_runtime = ScatteringMediumRuntime::default()
+  let default_runtime = ScatteringMediumRuntime::ScatteringMediumRuntime()
   ScatteringMediumRuntime::{
     medium,
     density_multiplier: default_runtime.density_multiplier,
@@ -354,20 +354,17 @@ pub struct ScatteringMediumPlugin {
 }
 
 ///|
-pub fn ScatteringMediumPlugin::default() -> ScatteringMediumPlugin {
+pub fn ScatteringMediumPlugin::ScatteringMediumPlugin() -> ScatteringMediumPlugin {
   ScatteringMediumPlugin::{
     enabled: true,
-    runtime_config: ScatteringMediumLutConfig::default(),
-    sampler: ScatteringMediumSampler::default(),
+    runtime_config: ScatteringMediumLutConfig::ScatteringMediumLutConfig(),
+    sampler: ScatteringMediumSampler::ScatteringMediumSampler(),
   }
 }
 
 ///|
 pub fn ScatteringMediumPlugin::disabled() -> ScatteringMediumPlugin {
-  ScatteringMediumPlugin::{
-    ..ScatteringMediumPlugin::default(),
-    enabled: false,
-  }
+  ScatteringMediumPlugin::{ ..ScatteringMediumPlugin(), enabled: false }
 }
 
 ///|
@@ -418,7 +415,7 @@ fn init_scattering_medium_resources(
 ) -> Unit {
   let sampler = plugin.sampler
   let runtime = ScatteringMediumRuntime::{
-    ..ScatteringMediumRuntime::default(),
+    ..ScatteringMediumRuntime(),
     lut_config: plugin.runtime_config,
   }
   let default_gpu_medium = GpuScatteringMedium::new(runtime, sampler)
@@ -436,7 +433,10 @@ fn init_scattering_medium_resources(
 pub fn scattering_medium_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  scattering_medium_plugin_with(app, ScatteringMediumPlugin::default())
+  scattering_medium_plugin_with(
+    app,
+    ScatteringMediumPlugin::ScatteringMediumPlugin(),
+  )
 }
 
 ///|
@@ -465,7 +465,7 @@ pub impl @app.Plugin for ScatteringMediumPlugin with build(self, app) {
 
 ///|
 pub fn pbr_scattering_medium_default() -> ScatteringMedium {
-  ScatteringMedium::default()
+  ScatteringMedium()
 }
 
 ///|
@@ -483,7 +483,7 @@ pub fn pbr_scattering_medium_with_density_multiplier(
 
 ///|
 pub fn pbr_scattering_medium_runtime_default() -> ScatteringMediumRuntime {
-  ScatteringMediumRuntime::default()
+  ScatteringMediumRuntime::ScatteringMediumRuntime()
 }
 
 ///|
@@ -509,19 +509,19 @@ pub fn pbr_scattering_medium_runtime_with_lut_config(
 
 ///|
 pub fn pbr_scattering_medium_lut_config_default() -> ScatteringMediumLutConfig {
-  ScatteringMediumLutConfig::default()
+  ScatteringMediumLutConfig::ScatteringMediumLutConfig()
 }
 
 ///|
 pub fn pbr_scattering_medium_sampler_default() -> ScatteringMediumSampler {
-  ScatteringMediumSampler::default()
+  ScatteringMediumSampler::ScatteringMediumSampler()
 }
 
 ///|
 pub fn pbr_scattering_medium_gpu_default() -> GpuScatteringMedium {
   GpuScatteringMedium::new(
-    ScatteringMediumRuntime::default(),
-    ScatteringMediumSampler::default(),
+    ScatteringMediumRuntime::ScatteringMediumRuntime(),
+    ScatteringMediumSampler::ScatteringMediumSampler(),
   )
 }
 
@@ -529,7 +529,10 @@ pub fn pbr_scattering_medium_gpu_default() -> GpuScatteringMedium {
 pub fn pbr_scattering_medium_gpu_from_runtime(
   runtime : ScatteringMediumRuntime,
 ) -> GpuScatteringMedium {
-  GpuScatteringMedium::new(runtime, ScatteringMediumSampler::default())
+  GpuScatteringMedium::new(
+    runtime,
+    ScatteringMediumSampler::ScatteringMediumSampler(),
+  )
 }
 
 ///|

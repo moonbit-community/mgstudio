@@ -166,7 +166,7 @@ fn toggle_shadow_casters(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       entity,
       @pbr.ecs_key_not_shadow_caster,
-      @pbr.NotShadowCaster::default(),
+      @pbr.NotShadowCaster::NotShadowCaster(),
     )
   }
 }
@@ -191,7 +191,7 @@ fn toggle_shadow_receivers(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       entity,
       @pbr.ecs_key_not_shadow_receiver,
-      @pbr.NotShadowReceiver::default(),
+      @pbr.NotShadowReceiver::NotShadowReceiver(),
     )
   }
 }
@@ -241,7 +241,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     blue_sphere,
     @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::default(),
+    @pbr.NotShadowCaster::NotShadowCaster(),
   )
 
   let floating_plane = @pbr.MeshMaterial3dBundle::new(
@@ -259,12 +259,12 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     floating_plane,
     @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::default(),
+    @pbr.NotShadowCaster::NotShadowCaster(),
   )
   try! world.set_by_key(
     floating_plane,
     @pbr.ecs_key_not_shadow_receiver,
-    @pbr.NotShadowReceiver::default(),
+    @pbr.NotShadowReceiver::NotShadowReceiver(),
   )
 
   let ground_plane = @pbr.MeshMaterial3dBundle::new(
@@ -295,7 +295,7 @@ fn setup(world : @ecs.World) -> Unit {
   shadow_caster_receiver_state.val.point_light = Some(point_light)
 
   let directional_light = world.spawn_empty()
-  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
+  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
     .with_first_cascade_far_bound(7.0F)
     .with_maximum_distance(25.0F)
     .build()
@@ -320,7 +320,7 @@ fn setup(world : @ecs.World) -> Unit {
   shadow_caster_receiver_state.val.directional_light = Some(directional_light)
 
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -349,7 +349,7 @@ fn controls(world : @ecs.World) -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(controls))
   .run()

@@ -27,7 +27,7 @@ pub fn toggle_switch() -> ToggleSwitch {
 pub struct ToggleSwitchPlugin {}
 
 ///|
-pub fn ToggleSwitchPlugin::default() -> ToggleSwitchPlugin {
+pub fn ToggleSwitchPlugin::ToggleSwitchPlugin() -> ToggleSwitchPlugin {
   ToggleSwitchPlugin::{  }
 }
 

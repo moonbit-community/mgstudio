@@ -16,12 +16,6 @@
 extenum @ecs.EcsPayload += {
   EcsPayload_examples_movement_smooth_follow_TargetSphere(TargetSphere)
   EcsPayload_examples_movement_smooth_follow_FollowingSphere(FollowingSphere)
-  EcsPayload_examples_movement_smooth_follow_TargetSphereSpeed(
-    TargetSphereSpeed
-  )
-  EcsPayload_examples_movement_smooth_follow_TargetPosition(TargetPosition)
-  EcsPayload_examples_movement_smooth_follow_DecayRate(DecayRate)
-  EcsPayload_examples_movement_smooth_follow_RandomSource(RandomSource)
 }
 
 ///|
@@ -47,61 +41,6 @@ impl @ecs.EcsPayloadCodec for FollowingSphere with to_ecs_payload(self) {
 impl @ecs.EcsPayloadCodec for FollowingSphere with from_ecs_payload(payload) {
   match payload {
     EcsPayload_examples_movement_smooth_follow_FollowingSphere(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TargetSphereSpeed with to_ecs_payload(self) {
-  EcsPayload_examples_movement_smooth_follow_TargetSphereSpeed(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TargetSphereSpeed with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_movement_smooth_follow_TargetSphereSpeed(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TargetPosition with to_ecs_payload(self) {
-  EcsPayload_examples_movement_smooth_follow_TargetPosition(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TargetPosition with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_movement_smooth_follow_TargetPosition(value) =>
-      Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DecayRate with to_ecs_payload(self) {
-  EcsPayload_examples_movement_smooth_follow_DecayRate(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for DecayRate with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_movement_smooth_follow_DecayRate(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RandomSource with to_ecs_payload(self) {
-  EcsPayload_examples_movement_smooth_follow_RandomSource(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for RandomSource with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_movement_smooth_follow_RandomSource(value) =>
       Some(value)
     _ => None
   }

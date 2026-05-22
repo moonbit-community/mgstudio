@@ -29,5 +29,5 @@ pub fn winit_changed_cursor_options_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn winit_cursor_options_default() -> @window.CursorOptions {
-  @window.CursorOptions::default()
+  @window.CursorOptions::CursorOptions()
 }

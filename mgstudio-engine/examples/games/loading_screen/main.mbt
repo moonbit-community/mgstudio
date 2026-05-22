@@ -44,7 +44,7 @@ pub impl @ecs.Component for LoadingBar with component() {
 ///|
 fn setup(commands : @app.Commands) -> Unit {
   commands.insert_resource(LoadingState::{ progress: 0.0F, done: false })
-  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(commands.spawn_component(@sprite.Camera2d::Camera2d()))
   ignore(
     commands.spawn(
       (
@@ -107,7 +107,7 @@ fn simulate_loading(
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param4(simulate_loading)))
   .run()

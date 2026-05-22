@@ -32,7 +32,7 @@ test "a11y: accessibility plugin initializes resources and ambiguous allowance" 
 
 ///|
 test "a11y: AccessibilityRequested clone shares underlying request flag" {
-  let requested = AccessibilityRequested::default()
+  let requested = @a11y.AccessibilityRequested::AccessibilityRequested()
   let cloned = requested.clone()
   assert_true(!requested.get())
   assert_true(!cloned.get())
@@ -47,7 +47,7 @@ test "a11y: AccessibilityRequested clone shares underlying request flag" {
 
 ///|
 test "a11y: ManageAccessibilityUpdates defaults true and supports mutation" {
-  let updates = ManageAccessibilityUpdates::default()
+  let updates = @a11y.ManageAccessibilityUpdates::ManageAccessibilityUpdates()
   assert_true(updates.get())
   updates.set(false)
   assert_true(!updates.get())
@@ -57,9 +57,9 @@ test "a11y: ManageAccessibilityUpdates defaults true and supports mutation" {
 
 ///|
 test "a11y: plugin init_resource keeps existing resource values" {
-  let requested = AccessibilityRequested::default()
+  let requested = @a11y.AccessibilityRequested::AccessibilityRequested()
   requested.set(true)
-  let updates = ManageAccessibilityUpdates::default()
+  let updates = @a11y.ManageAccessibilityUpdates::ManageAccessibilityUpdates()
   updates.set(false)
   let app = @app.App::new(@ecs.World::new())
     .insert_world_resource(ecs_res_key_accessibility_requested, requested)

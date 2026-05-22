@@ -16,7 +16,7 @@
 pub struct Rapier3dDebugRenderPlugin {}
 
 ///|
-pub fn Rapier3dDebugRenderPlugin::default() -> Rapier3dDebugRenderPlugin {
+pub fn Rapier3dDebugRenderPlugin::Rapier3dDebugRenderPlugin() -> Rapier3dDebugRenderPlugin {
   Rapier3dDebugRenderPlugin::{  }
 }
 
@@ -32,7 +32,9 @@ pub impl @app.Plugin for Rapier3dDebugRenderPlugin with build(_self, app) {
 
 ///|
 pub fn rapier3d_plugins() -> @app.PluginGroupBuilder[@ecs.World] {
-  @mgstudio.DefaultPlugins::build().add(Rapier3dDebugRenderPlugin::default())
+  @mgstudio.DefaultPlugins::build().add(
+    Rapier3dDebugRenderPlugin::Rapier3dDebugRenderPlugin(),
+  )
 }
 
 ///|
@@ -42,7 +44,7 @@ pub fn rapier3d_camera(
   target : @math.Vec3,
 ) -> Unit {
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(eye.x, eye.y, eye.z).looking_at(
       target,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

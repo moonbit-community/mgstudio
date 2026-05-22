@@ -50,7 +50,7 @@ let lighting_state : Ref[LightingState] = Ref({
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::default())
+  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(update_exposure))
   .add_systems(@app.Update, @app.system(toggle_ambient_light))
@@ -421,7 +421,7 @@ fn setup(world : @ecs.World) -> Unit {
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let overlay = @text.Text2dBundle::new(
       @text.Text2d::new(lighting_overlay_text()),
-      @text.TextFont::default().with_font(overlay_font).with_font_size(18.0F),
+      @text.TextFont::TextFont().with_font(overlay_font).with_font_size(18.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 300.0F),
         0.0F,
@@ -435,13 +435,13 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::default()))
+    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
     .spawn()
   lighting_state.val.ui_text = Some(overlay)
 
   // Camera.
   @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::Camera(),
     @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

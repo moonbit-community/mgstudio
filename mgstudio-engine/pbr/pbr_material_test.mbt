@@ -14,7 +14,7 @@
 
 ///|
 test "pbr material: key encodes common standard material toggles" {
-  let material = StandardMaterial::default()
+  let material = @material.StandardMaterial::StandardMaterial()
     .with_base_color_texture(Some(@asset.Handle::new(1)))
     .with_emissive_texture(Some(@asset.Handle::new(2)))
     .with_normal_map_texture(Some(@asset.Handle::new(3)))
@@ -48,7 +48,7 @@ test "pbr material: key depth bias roundtrips" {
 ///|
 test "pbr material: auto opaque renderer method follows bevy diffuse transmission override" {
   let deferred_default = @material.OpaqueRendererMethod::Deferred
-  let auto_material = StandardMaterial::default()
+  let auto_material = @material.StandardMaterial::StandardMaterial()
   let auto_deferred = standard_material_opaque_render_method(
     auto_material, deferred_default,
   )
@@ -56,7 +56,7 @@ test "pbr material: auto opaque renderer method follows bevy diffuse transmissio
     auto_deferred is @material.OpaqueRendererMethod::Deferred,
     content="true",
   )
-  let diffuse_transmissive_auto = StandardMaterial::default().with_diffuse_transmission(
+  let diffuse_transmissive_auto = @material.StandardMaterial::StandardMaterial().with_diffuse_transmission(
     0.5F,
   )
   let auto_forced_forward = standard_material_opaque_render_method(
@@ -70,8 +70,10 @@ test "pbr material: auto opaque renderer method follows bevy diffuse transmissio
 
 ///|
 test "pbr material: reads_view_transmission_texture follows specular transmission only" {
-  let diffuse_only = StandardMaterial::default().with_diffuse_transmission(0.7F)
-  let specular_only = StandardMaterial::default().with_specular_transmission(
+  let diffuse_only = @material.StandardMaterial::StandardMaterial().with_diffuse_transmission(
+    0.7F,
+  )
+  let specular_only = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
     0.2F,
   )
   inspect(
@@ -86,16 +88,16 @@ test "pbr material: reads_view_transmission_texture follows specular transmissio
 
 ///|
 test "pbr material: render phase type matches bevy ordering" {
-  let transparent = StandardMaterial::default()
+  let transparent = @material.StandardMaterial::StandardMaterial()
     .with_alpha_mode(@material.AlphaMode3d::Blend)
     .with_specular_transmission(1.0F)
-  let transmissive = StandardMaterial::default().with_specular_transmission(
+  let transmissive = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
     1.0F,
   )
-  let alpha_mask = StandardMaterial::default().with_alpha_mode(
+  let alpha_mask = @material.StandardMaterial::StandardMaterial().with_alpha_mode(
     @material.AlphaMode3d::Mask(0.5F),
   )
-  let opaque_material = StandardMaterial::default()
+  let opaque_material = @material.StandardMaterial::StandardMaterial()
   inspect(
     standard_material_render_phase_type(transparent)
     is @material.RenderPhaseType::Transparent,
@@ -120,7 +122,9 @@ test "pbr material: render phase type matches bevy ordering" {
 
 ///|
 test "pbr material: standard material plugin plan mirrors material plugin build surface" {
-  let plan = standard_material_plugin_plan(StandardMaterialPlugin::default())
+  let plan = standard_material_plugin_plan(
+    StandardMaterialPlugin::StandardMaterialPlugin(),
+  )
   inspect(plan.prepass_enabled(), content="true")
   inspect(plan.shadows_enabled(), content="true")
   inspect(plan.main_world_steps().length(), content="4")
@@ -148,7 +152,9 @@ test "pbr material: standard material plugin plan mirrors material plugin build 
 
 ///|
 test "pbr material: standard material plugin state retains build plan" {
-  let plugin = StandardMaterialPlugin::default().with_prepass_enabled(false)
+  let plugin = StandardMaterialPlugin::StandardMaterialPlugin().with_prepass_enabled(
+    false,
+  )
   let state = StandardMaterialPluginState::from_plugin(plugin)
   let plan = state.plan()
   inspect(plan.prepass_enabled(), content="false")

@@ -184,7 +184,7 @@ fn picking_insert_sprite_camera_sorted(
 fn current_sprite_picking_settings(world : @ecs.World) -> SpritePickingSettings {
   match get_sprite_picking_settings_resource(world).get() {
     Some(settings) => settings
-    None => SpritePickingSettings::default()
+    None => SpritePickingSettings::SpritePickingSettings()
   }
 }
 
@@ -361,11 +361,11 @@ fn picking_sprite_collect_sorted(
     }
     let anchor = match (try! world.get_by_key(entity, @sprite.ecs_key_anchor)) {
       Some(a) => a
-      None => @sprite.Anchor::default()
+      None => @sprite.Anchor::Anchor()
     }
     let pickable = match (try! world.get_by_key(entity, ecs_key_pickable)) {
       Some(value) => value
-      None => Pickable::default()
+      None => Pickable::Pickable()
     }
     let mut insert_at = sorted_sprites.length()
     for i in 0..<sorted_sprites.length() {
@@ -492,7 +492,7 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
             camera_transform,
             target_size,
             scale_factor,
-            @picking_mesh_ray_cast.MeshRayCastSettings::default().with_include_invisible(
+            @picking_mesh_ray_cast.MeshRayCastIntersectionSettings::MeshRayCastIntersectionSettings().with_include_invisible(
               false,
             ),
           )

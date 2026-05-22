@@ -43,7 +43,7 @@ pub(all) struct RenderVisibilityEntityInfo {
 
 pub struct RenderVisibilityRangePlugin {
 }
-pub fn RenderVisibilityRangePlugin::default() -> Self
+pub fn RenderVisibilityRangePlugin::RenderVisibilityRangePlugin() -> Self
 pub impl @app.Plugin for RenderVisibilityRangePlugin
 
 pub struct RenderVisibilityRanges {
@@ -54,10 +54,10 @@ pub struct RenderVisibilityRanges {
   mut range_count : Int
   mut buffer_dirty : Bool
 }
+pub fn RenderVisibilityRanges::RenderVisibilityRanges() -> Self
 pub fn RenderVisibilityRanges::buffer(Self) -> Array[@math.Vec4]
 pub fn RenderVisibilityRanges::buffer_dirty(Self) -> Bool
 pub fn RenderVisibilityRanges::clear(Self) -> Unit
-pub fn RenderVisibilityRanges::default() -> Self
 pub fn RenderVisibilityRanges::entity_count(Self) -> Int
 pub fn RenderVisibilityRanges::entity_has_crossfading_visibility_ranges(Self, Int) -> Bool
 pub fn RenderVisibilityRanges::insert(Self, Int, @Milky2018/mgstudio/visibility.VisibilityRange) -> Unit
@@ -70,8 +70,8 @@ pub impl @ecs.EcsPayloadCodec for RenderVisibilityRanges
 pub struct RenderVisibleEntities {
   entities : @hashmap.HashMap[String, Array[(Int, Int)]]
 }
+pub fn RenderVisibleEntities::RenderVisibleEntities() -> Self
 pub fn RenderVisibleEntities::clear(Self) -> Unit
-pub fn RenderVisibleEntities::default() -> Self
 pub fn RenderVisibleEntities::get(Self, String) -> Array[(Int, Int)]
 pub fn RenderVisibleEntities::is_empty(Self, String) -> Bool
 pub fn RenderVisibleEntities::len(Self, String) -> Int

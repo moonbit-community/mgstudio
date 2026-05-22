@@ -61,7 +61,7 @@ pub impl @app.Resource for State with resource() {
 }
 
 ///|
-fn State::default() -> State {
+fn State::State() -> State {
   State::{
     handle: @asset.Handle::new(-1),
     other_handle: @asset.Handle::new(-1),
@@ -230,10 +230,10 @@ fn print_on_load(
 fn main {
   custom_asset_plugin(
     @app.App::new(@ecs.World::new()).add_plugins(
-      @mgstudio.DefaultPlugins::default(),
+      @mgstudio.DefaultPlugins::DefaultPlugins(),
     ),
   )
-  .init_resource(fn() { State::default() })
+  .init_resource(fn() { State::State() })
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .add_systems(@app.Update, @app.system(@app.system_param3(print_on_load)))
   .run()

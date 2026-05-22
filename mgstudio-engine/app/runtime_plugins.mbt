@@ -330,7 +330,7 @@ pub struct LogPlugin {
 }
 
 ///|
-pub fn LogPlugin::default() -> LogPlugin {
+pub fn LogPlugin::LogPlugin() -> LogPlugin {
   LogPlugin::{
     level: LogLevel::Info,
     filter: DEFAULT_LOG_FILTER,
@@ -373,7 +373,7 @@ priv struct LogState {
 
 ///|
 let log_state_ref : Ref[LogState] = Ref(LogState::{
-  config: LogPlugin::default(),
+  config: LogPlugin::LogPlugin(),
   once_keys: @hashmap.HashMap([]),
 })
 

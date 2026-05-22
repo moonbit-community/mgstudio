@@ -22,7 +22,7 @@ pub struct DecalPluginState {
 }
 
 ///|
-pub fn DecalPluginState::default() -> DecalPluginState {
+pub fn DecalPluginState::DecalPluginState() -> DecalPluginState {
   DecalPluginState::{ forward_enabled: true, clustered_enabled: true }
 }
 
@@ -38,22 +38,22 @@ pub fn DecalPluginState::clustered_enabled(self : DecalPluginState) -> Bool {
 
 ///|
 pub fn forward_decal() -> ForwardDecal {
-  ForwardDecal::default()
+  ForwardDecal::ForwardDecal()
 }
 
 ///|
 pub fn clustered_decal() -> ClusteredDecal {
-  ClusteredDecal::default()
+  @light.ClusteredDecal::ClusteredDecal()
 }
 
 ///|
 pub fn clustered_decal_with_tag(tag : Int) -> ClusteredDecal {
-  ClusteredDecal::default().with_tag(tag)
+  @light.ClusteredDecal::ClusteredDecal().with_tag(tag)
 }
 
 ///|
 pub fn clustered_decal_with_base_color_texture(
   texture : @asset.Handle[@asset.Image]?,
 ) -> ClusteredDecal {
-  ClusteredDecal::default().with_base_color_texture(texture)
+  @light.ClusteredDecal::ClusteredDecal().with_base_color_texture(texture)
 }

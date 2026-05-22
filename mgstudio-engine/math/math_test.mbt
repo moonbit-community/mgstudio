@@ -76,7 +76,7 @@ test "math: cuboid constructors preserve Bevy full-size semantics" {
     content="true",
   )
   debug_inspect(
-    approx_vec3(Cuboid::default().half_size, Vec3::splat(0.5F)),
+    approx_vec3(@math.Cuboid::Cuboid().half_size, Vec3::splat(0.5F)),
     content="true",
   )
 }

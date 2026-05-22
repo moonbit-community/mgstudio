@@ -22,7 +22,7 @@ const GPU_COMPONENT_ARRAY_BUFFER_PLUGIN_NAME : String = "mgstudio.render.GpuComp
 pub struct GpuComponentArrayBufferPlugin[_] {}
 
 ///|
-pub fn[C] GpuComponentArrayBufferPlugin::default() -> GpuComponentArrayBufferPlugin[
+pub fn[C] GpuComponentArrayBufferPlugin::GpuComponentArrayBufferPlugin() -> GpuComponentArrayBufferPlugin[
   C,
 ] {
   GpuComponentArrayBufferPlugin::{  }
@@ -85,7 +85,7 @@ pub fn[C : @ecs.EcsPayloadCodec] gpu_component_array_buffer_state_key(
   match gpu_component_array_buffer_state_key_registry.get(debug_name) {
     Some(id) => @ecs.resource_key_from_id(id, debug_name~)
     None => {
-      let key : @ecs.ResourceKey[GpuComponentArrayBufferState[C]] = @ecs.register_resource(
+      let key : @ecs.ResourceKey[GpuComponentArrayBufferState[C]] = @ecs.register_erased_resource(
         debug_name~,
       )
       gpu_component_array_buffer_state_key_registry.set(debug_name, key.id())
@@ -142,7 +142,7 @@ pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(
 ///|
 pub fn[C] gpu_component_array_buffer_plugin(
   app : @app.App[@ecs.World],
-  _plugin? : GpuComponentArrayBufferPlugin[C] = GpuComponentArrayBufferPlugin::default(),
+  _plugin? : GpuComponentArrayBufferPlugin[C] = GpuComponentArrayBufferPlugin::GpuComponentArrayBufferPlugin(),
 ) -> @app.App[@ecs.World] {
   app
 }

@@ -31,7 +31,7 @@ pub struct GeneratorBindGroupLayouts {
 }
 
 ///|
-pub fn GeneratorBindGroupLayouts::default() -> GeneratorBindGroupLayouts {
+pub fn GeneratorBindGroupLayouts::GeneratorBindGroupLayouts() -> GeneratorBindGroupLayouts {
   GeneratorBindGroupLayouts::{
     downsampling_first: "downsampling_first_bind_group_layout",
     downsampling_second: "downsampling_second_bind_group_layout",
@@ -47,7 +47,7 @@ pub struct GeneratorSamplers {
 }
 
 ///|
-pub fn GeneratorSamplers::default() -> GeneratorSamplers {
+pub fn GeneratorSamplers::GeneratorSamplers() -> GeneratorSamplers {
   GeneratorSamplers::{ linear: "generator_linear_sampler" }
 }
 
@@ -61,7 +61,7 @@ pub struct GeneratorPipelines {
 }
 
 ///|
-pub fn GeneratorPipelines::default() -> GeneratorPipelines {
+pub fn GeneratorPipelines::GeneratorPipelines() -> GeneratorPipelines {
   GeneratorPipelines::{
     downsample_first: -1,
     downsample_second: -1,
@@ -77,7 +77,7 @@ pub struct DownsamplingConfig {
 }
 
 ///|
-pub fn DownsamplingConfig::default() -> DownsamplingConfig {
+pub fn DownsamplingConfig::DownsamplingConfig() -> DownsamplingConfig {
   DownsamplingConfig::{ combine_bind_group: false }
 }
 
@@ -90,14 +90,14 @@ pub fn DownsamplingConfig::combine_bind_group_enabled(
 
 ///|
 pub fn pbr_generated_environment_map_light_default() -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::default()
+  GeneratedEnvironmentMapLight()
 }
 
 ///|
 pub struct EnvironmentMapGenerationPlugin {}
 
 ///|
-pub fn EnvironmentMapGenerationPlugin::default() -> EnvironmentMapGenerationPlugin {
+pub fn EnvironmentMapGenerationPlugin::EnvironmentMapGenerationPlugin() -> EnvironmentMapGenerationPlugin {
   EnvironmentMapGenerationPlugin::{  }
 }
 

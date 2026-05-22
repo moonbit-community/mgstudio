@@ -13,33 +13,4 @@
 // limitations under the License.
 
 ///|
-extenum @ecs.EcsPayload += {
-  EcsPayload_examples_stress_tests_many_text2d_TextStats(TextStats)
-  EcsPayload_examples_stress_tests_many_text2d_Args(Args)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TextStats with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_text2d_TextStats(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for TextStats with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_text2d_TextStats(value) => Some(value)
-    _ => None
-  }
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Args with to_ecs_payload(self) {
-  EcsPayload_examples_stress_tests_many_text2d_Args(self)
-}
-
-///|
-impl @ecs.EcsPayloadCodec for Args with from_ecs_payload(payload) {
-  match payload {
-    EcsPayload_examples_stress_tests_many_text2d_Args(value) => Some(value)
-    _ => None
-  }
-}
+extenum @ecs.EcsPayload += {}
