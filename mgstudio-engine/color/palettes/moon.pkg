@@ -1,5 +1,5 @@
 import {
-  "Milky2018/mgstudio/color" @color,
+  "Milky2018/mgstudio/color",
 }
 
 supported_targets = "native"

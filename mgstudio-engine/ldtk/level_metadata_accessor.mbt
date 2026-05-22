@@ -14,7 +14,7 @@
 
 ///|
 pub(open) trait LevelMetadataAccessor {
-  get_level_metadata_by_iid(Self, String) -> LevelMetadata?
+  fn get_level_metadata_by_iid(Self, String) -> LevelMetadata?
 }
 
 ///|

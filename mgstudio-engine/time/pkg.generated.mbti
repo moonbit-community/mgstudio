@@ -9,9 +9,9 @@ import {
 }
 
 // Values
-pub fn default_time_resource_key() -> @ecs.ResourceKey[Time[Unit]]
+pub let default_time_resource_key : @ecs.ResourceKey[Time[Unit]]
 
-pub fn fixed_time_resource_key() -> @ecs.ResourceKey[Time[Fixed]]
+pub let fixed_time_resource_key : @ecs.ResourceKey[Time[Fixed]]
 
 pub fn host_time_now() -> Float
 
@@ -27,7 +27,7 @@ pub fn once_after_real_delay(@core.Duration) -> (@ecs.World) -> Bool
 
 pub fn paused(@ecs.World) -> Bool
 
-pub fn real_time_resource_key() -> @ecs.ResourceKey[Time[Real]]
+pub let real_time_resource_key : @ecs.ResourceKey[Time[Real]]
 
 pub fn repeating_after_delay(@core.Duration) -> (@ecs.World) -> Bool
 
@@ -87,7 +87,7 @@ pub fn time_virtual_relative_speed() -> Float
 
 pub fn update_virtual_time(Time[Virtual], Time[Real]) -> Time[Virtual]
 
-pub fn virtual_time_resource_key() -> @ecs.ResourceKey[Time[Virtual]]
+pub let virtual_time_resource_key : @ecs.ResourceKey[Time[Virtual]]
 
 // Errors
 

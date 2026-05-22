@@ -14,8 +14,8 @@
 
 ///|
 pub(open) trait Bounded3d {
-  aabb_3d(self : Self, isometry : Isometry3d) -> Aabb3d
-  bounding_sphere(self : Self, isometry : Isometry3d) -> BoundingSphere
+  fn aabb_3d(self : Self, isometry : Isometry3d) -> Aabb3d
+  fn bounding_sphere(self : Self, isometry : Isometry3d) -> BoundingSphere
 }
 
 ///|

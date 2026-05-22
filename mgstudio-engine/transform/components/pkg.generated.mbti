@@ -14,7 +14,7 @@ pub fn affine2_identity() -> Affine2
 
 pub fn global_transform_identity() -> GlobalTransform
 
-pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[StaticTransformOptimizations]
+pub let static_transform_optimizations_resource_key : @ecs.ResourceKey[StaticTransformOptimizations]
 
 pub fn transform_identity() -> Transform
 

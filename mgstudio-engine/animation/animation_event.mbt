@@ -18,7 +18,7 @@
 
 ///|
 pub(open) trait AnimationEvent {
-  animation_event_marker(Self) -> Unit
+  fn animation_event_marker(Self) -> Unit
 }
 
 ///|

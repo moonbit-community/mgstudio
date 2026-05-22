@@ -58,12 +58,12 @@ pub using @mesh {type Mesh3dPrimitiveTopology}
 
 ///|
 pub(open) trait MeshBuilder {
-  build(Self) -> @mesh.Mesh3dGeometry
+  fn build(Self) -> @mesh.Mesh3dGeometry
 }
 
 ///|
 pub(open) trait Meshable {
-  mesh(Self) -> @mesh.Mesh3dGeometry
+  fn mesh(Self) -> @mesh.Mesh3dGeometry
 }
 
 ///|

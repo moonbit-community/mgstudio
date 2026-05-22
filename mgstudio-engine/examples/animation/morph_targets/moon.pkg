@@ -1,5 +1,5 @@
 import {
-  "Milky2018/mgstudio" @mgstudio,
+  "Milky2018/mgstudio",
   "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",

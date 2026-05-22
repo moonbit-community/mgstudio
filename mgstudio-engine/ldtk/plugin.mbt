@@ -62,7 +62,7 @@ pub fn ldtk_plugin_with(
   _plugin : LdtkPlugin,
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  let main_schedule_order_key : @ecs.ResourceKey[@app.MainScheduleOrder] = @app.main_schedule_order_resource_key()
+  let main_schedule_order_key : @ecs.ResourceKey[@app.MainScheduleOrder] = @app.main_schedule_order_resource_key
   let main_schedule_order = match world.get_resource(main_schedule_order_key) {
     Some(value) => value
     None => @app.MainScheduleOrder::default()

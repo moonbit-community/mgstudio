@@ -73,20 +73,13 @@ priv struct AssetIoRuntimeState {
 }
 
 ///|
-let asset_io_runtime_state_resource_key_value : @ecs.ResourceKey[
-  AssetIoRuntimeState,
-] = @ecs.register_resource(debug_name="mgstudio_asset::AssetIoRuntimeState")
-
-///|
-fn asset_io_runtime_state_resource_key() -> @ecs.ResourceKey[
-  AssetIoRuntimeState,
-] {
-  asset_io_runtime_state_resource_key_value
-}
+let asset_io_runtime_state_resource_key : @ecs.ResourceKey[AssetIoRuntimeState] = @ecs.register_resource(
+  debug_name="mgstudio_asset::AssetIoRuntimeState",
+)
 
 ///|
 fn asset_io_runtime_state_for_world(world : @ecs.World) -> AssetIoRuntimeState {
-  let key = asset_io_runtime_state_resource_key()
+  let key = asset_io_runtime_state_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, AssetIoRuntimeState::{
       assets_dir_override: Ref(None),

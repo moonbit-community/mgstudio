@@ -18,7 +18,7 @@
 
 ///|
 pub(open) trait IntoMeshAsset {
-  into_mesh_asset(Self) -> Mesh
+  fn into_mesh_asset(Self) -> Mesh
 }
 
 ///|

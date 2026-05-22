@@ -1,9 +1,9 @@
 import {
-  "Milky2018/mgstudio/app" @app,
-  "Milky2018/mgstudio/ecs" @ecs,
-  "Milky2018/mgstudio/core_pipeline/oit/resolve" @resolve,
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/core_pipeline/oit/resolve",
   "moonbitlang/core/json",
-  "Milky2018/mgstudio/asset" @asset,
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/shader/source" @shader_source,
 }
 

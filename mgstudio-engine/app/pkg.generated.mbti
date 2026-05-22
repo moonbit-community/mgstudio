@@ -79,7 +79,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] fallible_system_param6((P1, P2, P3, P4, P5, P6) -> Unit raise) -> (W) -> Unit
 
-pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[FixedMainScheduleOrder]
+pub let fixed_main_schedule_order_resource_key : @ecs.ResourceKey[FixedMainScheduleOrder]
 
 pub fn get_picking_events_resource(@ecs.World) -> @ecs.ResourceAccess[PickingEvents]
 
@@ -127,7 +127,7 @@ pub fn log_warn(String) -> Unit
 
 pub fn log_warn_once(String, String) -> Unit
 
-pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder]
+pub let main_schedule_order_resource_key : @ecs.ResourceKey[MainScheduleOrder]
 
 pub let message_update_system_set : String
 

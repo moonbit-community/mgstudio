@@ -17,7 +17,7 @@
 
 ///|
 pub(open) trait FromRng {
-  from_rng(@random.Rand) -> Self
+  fn from_rng(@random.Rand) -> Self
 }
 
 ///|

@@ -65,10 +65,10 @@ fn update_virtual_time_resource(
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   let virtual_ref = world
-    .get_resource_ref_mut(@my_time.virtual_time_resource_key())
+    .get_resource_ref_mut(@my_time.virtual_time_resource_key)
     .unwrap()
   let time_ref = world
-    .get_resource_ref_mut(@my_time.default_time_resource_key())
+    .get_resource_ref_mut(@my_time.default_time_resource_key)
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual
@@ -79,9 +79,7 @@ fn update_virtual_time_resource(
 ///|
 fn print_real_time(world : @ecs.World) -> Unit {
   let real_time = read_time_resource(
-    world,
-    @my_time.real_time_resource_key(),
-    "Time<Real>",
+    world, @my_time.real_time_resource_key, "Time<Real>",
   )
   println(
     "PreUpdate: this is real time clock, delta is \{to_repr(real_time.delta()).to_string()} and elapsed is \{to_repr(real_time.elapsed()).to_string()}",
@@ -91,9 +89,7 @@ fn print_real_time(world : @ecs.World) -> Unit {
 ///|
 fn print_fixed_time(world : @ecs.World) -> Unit {
   let time = read_time_resource(
-    world,
-    @my_time.default_time_resource_key(),
-    "Time<Unit>",
+    world, @my_time.default_time_resource_key, "Time<Unit>",
   )
   println(
     "FixedUpdate: this is generic time clock inside fixed, delta is \{to_repr(time.delta()).to_string()} and elapsed is \{to_repr(time.elapsed()).to_string()}",
@@ -103,9 +99,7 @@ fn print_fixed_time(world : @ecs.World) -> Unit {
 ///|
 fn print_time(world : @ecs.World) -> Unit {
   let time = read_time_resource(
-    world,
-    @my_time.default_time_resource_key(),
-    "Time<Unit>",
+    world, @my_time.default_time_resource_key, "Time<Unit>",
   )
   println(
     "Update: this is generic time clock, delta is \{to_repr(time.delta()).to_string()} and elapsed is \{to_repr(time.elapsed()).to_string()}",

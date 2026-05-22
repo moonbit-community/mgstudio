@@ -500,7 +500,7 @@ fn change_sphere_roughness(_world : @ecs.World) -> Unit {
 
 ///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key()) {
+  match world.get_resource(@time.default_time_resource_key) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in reflection_probes example")
   }

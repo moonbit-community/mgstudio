@@ -95,24 +95,16 @@ fn[T : TimeContext] registered_time_resource_key() -> @ecs.ResourceKey[Time[T]] 
 }
 
 ///|
-pub fn default_time_resource_key() -> @ecs.ResourceKey[Time[Unit]] {
-  registered_time_resource_key()
-}
+pub let default_time_resource_key : @ecs.ResourceKey[Time[Unit]] = registered_time_resource_key()
 
 ///|
-pub fn real_time_resource_key() -> @ecs.ResourceKey[Time[Real]] {
-  registered_time_resource_key()
-}
+pub let real_time_resource_key : @ecs.ResourceKey[Time[Real]] = registered_time_resource_key()
 
 ///|
-pub fn virtual_time_resource_key() -> @ecs.ResourceKey[Time[Virtual]] {
-  registered_time_resource_key()
-}
+pub let virtual_time_resource_key : @ecs.ResourceKey[Time[Virtual]] = registered_time_resource_key()
 
 ///|
-pub fn fixed_time_resource_key() -> @ecs.ResourceKey[Time[Fixed]] {
-  registered_time_resource_key()
-}
+pub let fixed_time_resource_key : @ecs.ResourceKey[Time[Fixed]] = registered_time_resource_key()
 
 ///|
 pub impl[T : TimeContext] @app.Resource for Time[T] with resource() {
@@ -165,14 +157,14 @@ fn[T] sync_world_time_resource(
 
 ///|
 fn time_sync_generic_time(world : @ecs.World, value : Time[Unit]) -> Unit {
-  sync_world_time_resource(world, default_time_resource_key(), value)
+  sync_world_time_resource(world, default_time_resource_key, value)
 }
 
 ///|
 fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
   let virtual_time = world_time_resource_or_default(
     world,
-    virtual_time_resource_key(),
+    virtual_time_resource_key,
     fn() {
       let time : Time[Virtual] = Time::default()
       time
@@ -183,23 +175,23 @@ fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
 
 ///|
 fn ensure_time_resources(world : @ecs.World) -> Unit {
-  if world_time_resource(world, default_time_resource_key()) is None {
+  if world_time_resource(world, default_time_resource_key) is None {
     let time : Time[Unit] = Time::default()
-    world.insert_resource(default_time_resource_key(), time)
+    world.insert_resource(default_time_resource_key, time)
   }
-  if world_time_resource(world, real_time_resource_key()) is None {
+  if world_time_resource(world, real_time_resource_key) is None {
     world.insert_resource(
-      real_time_resource_key(),
+      real_time_resource_key,
       Time::new(host_time_now_instant()),
     )
   }
-  if world_time_resource(world, virtual_time_resource_key()) is None {
+  if world_time_resource(world, virtual_time_resource_key) is None {
     let time : Time[Virtual] = Time::default()
-    world.insert_resource(virtual_time_resource_key(), time)
+    world.insert_resource(virtual_time_resource_key, time)
   }
-  if world_time_resource(world, fixed_time_resource_key()) is None {
+  if world_time_resource(world, fixed_time_resource_key) is None {
     let time : Time[Fixed] = Time::default()
-    world.insert_resource(fixed_time_resource_key(), time)
+    world.insert_resource(fixed_time_resource_key, time)
   }
   if world_time_resource(world, time_update_strategy_resource_key) is None {
     world.insert_resource(
@@ -235,9 +227,9 @@ fn time_update(world : @ecs.World) -> Unit {
     TimeUpdateStrategy::default,
   )
   let fixed_time = world_fixed_or_default(world)
-  let real_ref = world.get_resource_mut(real_time_resource_key()).unwrap()
-  let virtual_ref = world.get_resource_mut(virtual_time_resource_key()).unwrap()
-  let time_ref = world.get_resource_mut(default_time_resource_key()).unwrap()
+  let real_ref = world.get_resource_mut(real_time_resource_key).unwrap()
+  let virtual_ref = world.get_resource_mut(virtual_time_resource_key).unwrap()
+  let time_ref = world.get_resource_mut(default_time_resource_key).unwrap()
   let next_real = time_update_real_with_strategy(
     real_ref.peek(),
     strategy,

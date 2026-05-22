@@ -28,12 +28,12 @@ test "render settings: default render creation is automatic" {
 
 ///|
 test "render settings: bevy renderer resources use distinct world keys" {
-  let device_key = render_device_resource_key()
-  let queue_key = render_queue_resource_key()
-  let adapter_key = render_adapter_resource_key()
-  let adapter_info_key = render_adapter_info_resource_key()
-  let instance_key = render_instance_resource_key()
-  let pipeline_cache_key = pipeline_cache_resource_key()
+  let device_key = render_device_resource_key
+  let queue_key = render_queue_resource_key
+  let adapter_key = render_adapter_resource_key
+  let adapter_info_key = render_adapter_info_resource_key
+  let instance_key = render_instance_resource_key
+  let pipeline_cache_key = pipeline_cache_resource_key
   debug_inspect(device_key.id() != queue_key.id(), content="true")
   debug_inspect(device_key.id() != adapter_key.id(), content="true")
   debug_inspect(adapter_key.id() != adapter_info_key.id(), content="true")
@@ -76,7 +76,7 @@ test "render settings: current view stores the render entity" {
   let current = CurrentView::new(entity)
   debug_inspect(current.entity() == entity, content="true")
   debug_inspect(
-    current_view_resource_key().id() != render_device_resource_key().id(),
+    current_view_resource_key.id() != render_device_resource_key.id(),
     content="true",
   )
 }
@@ -89,7 +89,7 @@ test "render plugin: initializes pending command buffers in render app" {
   let render_sub_app = app.get_sub_app(@app.RenderApp).unwrap()
   let render_world = render_sub_app.world()
   let pending = render_world
-    .get_resource(pending_command_buffers_resource_key())
+    .get_resource(pending_command_buffers_resource_key)
     .unwrap()
   debug_inspect(pending.is_empty(), content="true")
 }
@@ -101,12 +101,12 @@ test "render plugin: installs render asset byte budget resources" {
   )
   let main_budget = app
     .world()
-    .get_resource(render_asset_bytes_per_frame_resource_key())
+    .get_resource(render_asset_bytes_per_frame_resource_key)
     .unwrap()
   debug_inspect(main_budget.max_bytes() is None, content="true")
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let limiter = render_world
-    .get_resource(render_asset_bytes_per_frame_limiter_resource_key())
+    .get_resource(render_asset_bytes_per_frame_limiter_resource_key)
     .unwrap()
   debug_inspect(limiter.max_bytes() is None, content="true")
   debug_inspect(limiter.bytes_written(), content="0")
@@ -116,19 +116,19 @@ test "render plugin: installs render asset byte budget resources" {
 test "render asset byte budget: extract updates limiter and cleanup resets writes" {
   let main_world = @ecs.World::new()
   main_world.insert_resource(
-    render_asset_bytes_per_frame_resource_key(),
+    render_asset_bytes_per_frame_resource_key,
     RenderAssetBytesPerFrame::new(64),
   )
   let render_world = @ecs.World::new()
   render_world.insert_resource(
-    render_asset_bytes_per_frame_limiter_resource_key(),
+    render_asset_bytes_per_frame_limiter_resource_key,
     RenderAssetBytesPerFrameLimiter::default(),
   )
   let synced = render_sub_app_extract(main_world, render_world)
   let render_world = synced.1
   extract_render_asset_bytes_per_frame(render_world)
   let limiter = render_world
-    .get_resource(render_asset_bytes_per_frame_limiter_resource_key())
+    .get_resource(render_asset_bytes_per_frame_limiter_resource_key)
     .unwrap()
   debug_inspect(limiter.max_bytes().unwrap(), content="64")
   limiter.write_bytes(16)
@@ -143,7 +143,7 @@ test "render plugin: initializes render state as not ready" {
     RenderPlugin::default(),
   )
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
-  let state = render_world.get_resource(render_state_resource_key()).unwrap()
+  let state = render_world.get_resource(render_state_resource_key).unwrap()
   debug_inspect(state.is_ready(), content="false")
   debug_inspect(renderer_is_ready(render_world), content="false")
   mark_renderer_ready(render_world)

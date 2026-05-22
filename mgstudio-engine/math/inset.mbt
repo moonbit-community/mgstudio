@@ -14,12 +14,12 @@
 
 ///|
 pub(open) trait Inset: Primitive2d {
-  inset(Self, Float) -> Self
+  fn inset(Self, Float) -> Self
 }
 
 ///|
 pub(open) trait ToRing: Primitive2d + Inset {
-  to_ring(Self, Float) -> Ring[Self]
+  fn to_ring(Self, Float) -> Ring[Self]
 }
 
 ///|

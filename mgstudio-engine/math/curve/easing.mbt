@@ -78,7 +78,7 @@ pub impl Default for EaseFunction with default() {
 
 ///|
 pub(open) trait Ease {
-  interpolate(self : Self, end : Self, t : Float) -> Self
+  fn interpolate(self : Self, end : Self, t : Float) -> Self
 }
 
 ///|

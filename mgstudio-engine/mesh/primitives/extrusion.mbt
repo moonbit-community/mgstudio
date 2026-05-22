@@ -20,17 +20,17 @@ pub enum PerimeterSegment {
 
 ///|
 pub(open) trait Extrudable: MeshBuilder {
-  perimeter(Self) -> Array[PerimeterSegment]
+  fn perimeter(Self) -> Array[PerimeterSegment]
 }
 
 ///|
 pub(open) trait Meshable {
-  mesh(Self) -> @mesh.Mesh3dGeometry
+  fn mesh(Self) -> @mesh.Mesh3dGeometry
 }
 
 ///|
 pub(open) trait ExtrudablePrimitive: Meshable {
-  mesh_perimeter(Self) -> Array[PerimeterSegment]
+  fn mesh_perimeter(Self) -> Array[PerimeterSegment]
 }
 
 ///|

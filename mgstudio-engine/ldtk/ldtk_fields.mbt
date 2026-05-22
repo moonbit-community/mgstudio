@@ -21,7 +21,7 @@ pub suberror LdtkFieldsError {
 
 ///|
 pub(open) trait LdtkFields {
-  field_instances(Self) -> Array[LdtkFieldInstance]
+  fn field_instances(Self) -> Array[LdtkFieldInstance]
 }
 
 ///|

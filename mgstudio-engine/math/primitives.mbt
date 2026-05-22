@@ -27,14 +27,14 @@ pub(open) trait Primitive3d {}
 
 ///|
 pub(open) trait Measured2d {
-  perimeter(self : Self) -> Float
-  area(self : Self) -> Float
+  fn perimeter(self : Self) -> Float
+  fn area(self : Self) -> Float
 }
 
 ///|
 pub(open) trait Measured3d {
-  area(self : Self) -> Float
-  volume(self : Self) -> Float
+  fn area(self : Self) -> Float
+  fn volume(self : Self) -> Float
 }
 
 ///|

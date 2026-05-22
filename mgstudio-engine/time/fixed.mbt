@@ -202,12 +202,12 @@ pub fn time_run_fixed_main_schedule(world : @ecs.World) -> Unit {
   let accumulated_fixed = world_fixed_or_default(world).accumulate_overstep(
     delta,
   )
-  sync_world_time_resource(world, fixed_time_resource_key(), accumulated_fixed)
+  sync_world_time_resource(world, fixed_time_resource_key, accumulated_fixed)
   while true {
     let current_fixed = world_fixed_or_default(world)
     match current_fixed.expend() {
       Some(next_fixed) => {
-        sync_world_time_resource(world, fixed_time_resource_key(), next_fixed)
+        sync_world_time_resource(world, fixed_time_resource_key, next_fixed)
         time_sync_generic_time(world, next_fixed.as_generic())
         time_fixed_mark_step()
         @app.run_current_fixed_main_schedule(world)
@@ -230,7 +230,7 @@ pub fn time_fixed_steps_ran_this_frame() -> Int {
 
 ///|
 fn world_fixed_or_default(world : @ecs.World) -> Time[Fixed] {
-  world_time_resource_or_default(world, fixed_time_resource_key(), fn() {
+  world_time_resource_or_default(world, fixed_time_resource_key, fn() {
     Time::default()
   })
 }

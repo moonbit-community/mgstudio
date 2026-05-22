@@ -19,7 +19,7 @@ fn seed_text_assets(world : @ecs.World) -> Unit {
     @asset.Assets[@asset.TextureAtlasLayout],
   ] = @asset.assets_resource_key()
   world.insert_resource(
-    @asset.asset_server_resource_key(),
+    @asset.asset_server_resource_key,
     @asset.AssetServer::new(),
   )
   world.insert_resource(image_assets_key, @asset.Assets::new())

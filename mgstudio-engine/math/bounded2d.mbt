@@ -14,8 +14,8 @@
 
 ///|
 pub(open) trait Bounded2d {
-  aabb_2d(self : Self, isometry : Isometry2d) -> Aabb2d
-  bounding_circle(self : Self, isometry : Isometry2d) -> BoundingCircle
+  fn aabb_2d(self : Self, isometry : Isometry2d) -> Aabb2d
+  fn bounding_circle(self : Self, isometry : Isometry2d) -> BoundingCircle
 }
 
 ///|

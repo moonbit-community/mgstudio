@@ -14,7 +14,7 @@
 
 ///|
 pub(open) trait FromWorld {
-  from_world(@ecs.World) -> Self
+  fn from_world(@ecs.World) -> Self
 }
 
 ///|

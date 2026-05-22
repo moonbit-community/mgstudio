@@ -3403,7 +3403,7 @@ fn pan_camera_step(
 
 ///|
 fn pan_camera_world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key()) {
+  match world.get_resource(@time.default_time_resource_key) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in pancamera controller")
   }
@@ -7189,9 +7189,9 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
 
   app = app.add_system(fn(world : @ecs.World) {
     ensure_render_state_resource(world)
-    if world.get_resource(@asset.asset_server_resource_key()) is None {
+    if world.get_resource(@asset.asset_server_resource_key) is None {
       world.insert_resource(
-        @asset.asset_server_resource_key(),
+        @asset.asset_server_resource_key,
         @asset.AssetServer::new(),
       )
     }

@@ -48,7 +48,7 @@ let audio_player_component_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
 
 ///|
 pub(open) trait AudioPlayerSource {
-  audio_player_source_debug_name() -> String
+  fn audio_player_source_debug_name() -> String
 }
 
 ///|

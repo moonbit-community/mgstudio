@@ -1,9 +1,9 @@
 import {
-  "Milky2018/mgstudio/app" @app,
-  "Milky2018/mgstudio/animation" @animation,
-  "Milky2018/mgstudio/asset" @asset,
-  "Milky2018/mgstudio/core" @core,
-  "Milky2018/mgstudio/ecs" @ecs,
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/animation",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
 }
 
 supported_targets = "native"

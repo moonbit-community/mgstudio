@@ -49,24 +49,17 @@ priv struct AssetLoaderRegistryState {
 }
 
 ///|
-let asset_loader_registry_state_resource_key_value : @ecs.ResourceKey[
+let asset_loader_registry_state_resource_key : @ecs.ResourceKey[
   AssetLoaderRegistryState,
 ] = @ecs.register_resource(
   debug_name="mgstudio_asset::AssetLoaderRegistryState",
 )
 
 ///|
-fn asset_loader_registry_state_resource_key() -> @ecs.ResourceKey[
-  AssetLoaderRegistryState,
-] {
-  asset_loader_registry_state_resource_key_value
-}
-
-///|
 fn asset_loader_registry_state_for_world(
   world : @ecs.World,
 ) -> AssetLoaderRegistryState {
-  let key = asset_loader_registry_state_resource_key()
+  let key = asset_loader_registry_state_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, AssetLoaderRegistryState::{
       loaders: Ref(@hashmap.HashMap([])),

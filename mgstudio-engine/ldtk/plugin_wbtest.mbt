@@ -18,7 +18,7 @@ test "plugin: ldtk_plugin installs its schedule after Update" {
   let world = app.world()
 
   let main_schedule_order = match
-    world.get_resource(@app.main_schedule_order_resource_key()) {
+    world.get_resource(@app.main_schedule_order_resource_key) {
     Some(value) => value
     None => abort("Expected MainScheduleOrder resource")
   }

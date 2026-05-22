@@ -38,18 +38,11 @@ priv struct TypedAssetLoaderRegistryState {
 }
 
 ///|
-let typed_asset_loader_registry_resource_key_value : @ecs.ResourceKey[
+let typed_asset_loader_registry_resource_key : @ecs.ResourceKey[
   TypedAssetLoaderRegistryState,
 ] = @ecs.register_resource(
   debug_name="mgstudio_asset::TypedAssetLoaderRegistryState",
 )
-
-///|
-fn typed_asset_loader_registry_resource_key() -> @ecs.ResourceKey[
-  TypedAssetLoaderRegistryState,
-] {
-  typed_asset_loader_registry_resource_key_value
-}
 
 ///|
 fn typed_asset_loader_clone_entries(
@@ -66,7 +59,7 @@ fn typed_asset_loader_clone_entries(
 fn typed_asset_loader_registry_for_world(
   world : @ecs.World,
 ) -> Ref[@hashmap.HashMap[String, Array[TypedAssetLoaderEntry]]] {
-  let key = typed_asset_loader_registry_resource_key()
+  let key = typed_asset_loader_registry_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, TypedAssetLoaderRegistryState::{
       loaders: Ref(@hashmap.HashMap([])),

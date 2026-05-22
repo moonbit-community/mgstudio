@@ -96,18 +96,11 @@ priv struct AssetSourceBuilderRegistryState {
 }
 
 ///|
-let asset_source_builder_registry_resource_key_value : @ecs.ResourceKey[
+let asset_source_builder_registry_resource_key : @ecs.ResourceKey[
   AssetSourceBuilderRegistryState,
 ] = @ecs.register_resource(
   debug_name="mgstudio_asset::AssetSourceBuilderRegistryState",
 )
-
-///|
-fn asset_source_builder_registry_resource_key() -> @ecs.ResourceKey[
-  AssetSourceBuilderRegistryState,
-] {
-  asset_source_builder_registry_resource_key_value
-}
 
 ///|
 fn asset_source_builder_registry_upsert_in_state(
@@ -132,7 +125,7 @@ fn asset_source_builder_registry_upsert_in_state(
 fn asset_source_builder_registry_for_world(
   world : @ecs.World,
 ) -> AssetSourceBuilderRegistryState {
-  let key = asset_source_builder_registry_resource_key()
+  let key = asset_source_builder_registry_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, AssetSourceBuilderRegistryState::{
       named_builders: Ref(@hashmap.HashMap([])),
@@ -220,7 +213,7 @@ pub fn register_asset_source(
   source_id : AssetSourceId,
   builder : AssetSourceBuilder,
 ) -> @app.App[@ecs.World] {
-  if app.contains_resource(asset_server_resource_key()) {
+  if app.contains_resource(asset_server_resource_key) {
     println(
       "Warning: asset source `\{asset_source_id_debug_name(source_id)}` must be registered before AssetPlugin (typically added via DefaultPlugins)",
     )

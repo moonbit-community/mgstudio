@@ -179,7 +179,7 @@ fn toggle_window_controls(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
 ///|
 fn change_title(world : @ecs.World) -> Unit {
   let time : @time.Time[Unit] = match
-    world.get_resource(@time.default_time_resource_key()) {
+    world.get_resource(@time.default_time_resource_key) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in window_settings example")
   }

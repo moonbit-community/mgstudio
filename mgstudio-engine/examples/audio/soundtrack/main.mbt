@@ -144,7 +144,7 @@ fn cycle_game_state(world : @ecs.World) -> Unit {
     return
   }
   let time : @time.Time[Unit] = match
-    world.get_resource(@time.default_time_resource_key()) {
+    world.get_resource(@time.default_time_resource_key) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in soundtrack example")
   }

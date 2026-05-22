@@ -14,8 +14,8 @@
 
 ///|
 pub(open) trait RawLevelAccessor {
-  root_levels(Self) -> Array[Level]
-  worlds(Self) -> Array[World]
+  fn root_levels(Self) -> Array[Level]
+  fn worlds(Self) -> Array[World]
 }
 
 ///|

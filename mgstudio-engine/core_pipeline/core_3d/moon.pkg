@@ -1,8 +1,8 @@
 import {
-  "Milky2018/mgstudio/app" @app,
-  "Milky2018/mgstudio/ecs" @ecs,
-  "Milky2018/mgstudio/render" @render,
-  "Milky2018/mgstudio/core_pipeline/skybox" @skybox,
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/core_pipeline/skybox",
   "moonbitlang/core/json",
 }
 

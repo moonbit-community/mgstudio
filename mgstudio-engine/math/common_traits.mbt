@@ -14,17 +14,17 @@
 
 ///|
 pub(open) trait StableInterpolate {
-  stable_interpolate(Self, Self, Float) -> Self
+  fn stable_interpolate(Self, Self, Float) -> Self
 }
 
 ///|
 pub(open) trait VectorSpace {
-  zero() -> Self
-  add(self : Self, other : Self) -> Self
-  sub(self : Self, other : Self) -> Self
-  neg(self : Self) -> Self
-  mul_scalar(self : Self, scalar : Float) -> Self
-  div_scalar(self : Self, scalar : Float) -> Self
+  fn zero() -> Self
+  fn add(self : Self, other : Self) -> Self
+  fn sub(self : Self, other : Self) -> Self
+  fn neg(self : Self) -> Self
+  fn mul_scalar(self : Self, scalar : Float) -> Self
+  fn div_scalar(self : Self, scalar : Float) -> Self
 }
 
 ///|

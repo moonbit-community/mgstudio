@@ -14,9 +14,9 @@
 
 ///|
 pub(open) trait States: Eq + Debug + @ecs.EcsPayloadCodec {
-  type_debug_name() -> String
-  debug_name(Self) -> String
-  dependency_depth(Self) -> Int = _
+  fn type_debug_name() -> String
+  fn debug_name(Self) -> String
+  fn dependency_depth(Self) -> Int = _
 }
 
 ///|

@@ -190,7 +190,7 @@ pub fn update_virtual_time(
 
 ///|
 fn world_virtual_or_default(world : @ecs.World) -> Time[Virtual] {
-  world_time_resource_or_default(world, virtual_time_resource_key(), fn() {
+  world_time_resource_or_default(world, virtual_time_resource_key, fn() {
     Time::default()
   })
 }

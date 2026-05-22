@@ -128,12 +128,12 @@ pub fn FontHinting::should_hint(self : FontHinting) -> Bool {
 
 ///|
 pub(open) trait IntoFontSource {
-  into_font_source(self : Self) -> FontSource
+  fn into_font_source(self : Self) -> FontSource
 }
 
 ///|
 pub(open) trait IntoFontSize {
-  into_font_size(self : Self) -> FontSize
+  fn into_font_size(self : Self) -> FontSize
 }
 
 ///|

@@ -505,7 +505,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key()) {
+  match world.get_resource(@time.default_time_resource_key) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in irradiance_volumes example")
   }

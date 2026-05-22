@@ -1,8 +1,8 @@
 import {
-  "Milky2018/mgstudio/app" @app,
-  "Milky2018/mgstudio/ecs" @ecs,
-  "Milky2018/mgstudio/math" @math,
-  "Milky2018/mgstudio/render" @render,
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render",
   "moonbitlang/core/hashmap",
   "Milky2018/mgstudio/visibility" @root_visibility,
 }

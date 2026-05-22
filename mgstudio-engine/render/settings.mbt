@@ -164,37 +164,37 @@ pub fn RenderResources::instance(
 }
 
 ///|
-let ecs_key_render_device_resource : @ecs.ResourceKey[@renderer.RenderDevice] = @ecs.register_resource(
+pub let render_device_resource_key : @ecs.ResourceKey[@renderer.RenderDevice] = @ecs.register_resource(
   debug_name="mgstudio_render::RenderDevice",
 )
 
 ///|
-let ecs_key_render_queue_resource : @ecs.ResourceKey[@renderer.RenderQueue] = @ecs.register_resource(
+pub let render_queue_resource_key : @ecs.ResourceKey[@renderer.RenderQueue] = @ecs.register_resource(
   debug_name="mgstudio_render::RenderQueue",
 )
 
 ///|
-let ecs_key_render_adapter_info_resource : @ecs.ResourceKey[
+pub let render_adapter_info_resource_key : @ecs.ResourceKey[
   @renderer.RenderAdapterInfo,
 ] = @ecs.register_resource(debug_name="mgstudio_render::RenderAdapterInfo")
 
 ///|
-let ecs_key_render_adapter_resource : @ecs.ResourceKey[@renderer.RenderAdapter] = @ecs.register_resource(
+pub let render_adapter_resource_key : @ecs.ResourceKey[@renderer.RenderAdapter] = @ecs.register_resource(
   debug_name="mgstudio_render::RenderAdapter",
 )
 
 ///|
-let ecs_key_render_instance_resource : @ecs.ResourceKey[
+pub let render_instance_resource_key : @ecs.ResourceKey[
   @renderer.RenderInstance,
 ] = @ecs.register_resource(debug_name="mgstudio_render::RenderInstance")
 
 ///|
-let ecs_key_pipeline_cache_resource : @ecs.ResourceKey[
+pub let pipeline_cache_resource_key : @ecs.ResourceKey[
   @render_resource.PipelineCache,
 ] = @ecs.register_resource(debug_name="mgstudio_render::PipelineCache")
 
 ///|
-let ecs_key_pending_command_buffers_resource : @ecs.ResourceKey[
+pub let pending_command_buffers_resource_key : @ecs.ResourceKey[
   @renderer.PendingCommandBuffers,
 ] = @ecs.register_resource(debug_name="mgstudio_render::PendingCommandBuffers")
 
@@ -214,59 +214,9 @@ pub fn CurrentView::entity(self : CurrentView) -> @core.Entity {
 }
 
 ///|
-let ecs_key_current_view_resource : @ecs.ResourceKey[CurrentView] = @ecs.register_resource(
+pub let current_view_resource_key : @ecs.ResourceKey[CurrentView] = @ecs.register_resource(
   debug_name="mgstudio_render::CurrentView",
 )
-
-///|
-pub fn render_device_resource_key() -> @ecs.ResourceKey[@renderer.RenderDevice] {
-  ecs_key_render_device_resource
-}
-
-///|
-pub fn render_queue_resource_key() -> @ecs.ResourceKey[@renderer.RenderQueue] {
-  ecs_key_render_queue_resource
-}
-
-///|
-pub fn render_adapter_info_resource_key() -> @ecs.ResourceKey[
-  @renderer.RenderAdapterInfo,
-] {
-  ecs_key_render_adapter_info_resource
-}
-
-///|
-pub fn render_adapter_resource_key() -> @ecs.ResourceKey[
-  @renderer.RenderAdapter,
-] {
-  ecs_key_render_adapter_resource
-}
-
-///|
-pub fn render_instance_resource_key() -> @ecs.ResourceKey[
-  @renderer.RenderInstance,
-] {
-  ecs_key_render_instance_resource
-}
-
-///|
-pub fn pipeline_cache_resource_key() -> @ecs.ResourceKey[
-  @render_resource.PipelineCache,
-] {
-  ecs_key_pipeline_cache_resource
-}
-
-///|
-pub fn pending_command_buffers_resource_key() -> @ecs.ResourceKey[
-  @renderer.PendingCommandBuffers,
-] {
-  ecs_key_pending_command_buffers_resource
-}
-
-///|
-pub fn current_view_resource_key() -> @ecs.ResourceKey[CurrentView] {
-  ecs_key_current_view_resource
-}
 
 ///|
 fn[T] render_world_resource_present(
@@ -281,12 +231,9 @@ fn[T] render_world_resource_present(
 
 ///|
 pub fn init_renderer_context_resources(world : @ecs.World) -> Unit {
-  if !render_world_resource_present(
-      world,
-      pending_command_buffers_resource_key(),
-    ) {
+  if !render_world_resource_present(world, pending_command_buffers_resource_key) {
     world.insert_resource(
-      pending_command_buffers_resource_key(),
+      pending_command_buffers_resource_key,
       @renderer.PendingCommandBuffers::default(),
     )
   }
@@ -294,12 +241,11 @@ pub fn init_renderer_context_resources(world : @ecs.World) -> Unit {
 
 ///|
 pub fn flush_pending_command_buffers(world : @ecs.World) -> Unit {
-  let pending = match
-    world.get_resource(pending_command_buffers_resource_key()) {
+  let pending = match world.get_resource(pending_command_buffers_resource_key) {
     Some(value) => value
     None => return
   }
-  let queue = match world.get_resource(render_queue_resource_key()) {
+  let queue = match world.get_resource(render_queue_resource_key) {
     Some(value) => value
     None => return
   }
@@ -307,7 +253,7 @@ pub fn flush_pending_command_buffers(world : @ecs.World) -> Unit {
   if buffers.length() > 0 {
     queue.submit(buffers)
   }
-  world.insert_resource(pending_command_buffers_resource_key(), pending)
+  world.insert_resource(pending_command_buffers_resource_key, pending)
 }
 
 ///|
@@ -316,28 +262,25 @@ pub fn RenderResources::unpack_into(
   main_world : @ecs.World,
   render_world : @ecs.World,
 ) -> Unit {
-  main_world.insert_resource(render_device_resource_key(), self.device)
-  main_world.insert_resource(render_queue_resource_key(), self.queue)
+  main_world.insert_resource(render_device_resource_key, self.device)
+  main_world.insert_resource(render_queue_resource_key, self.queue)
   main_world.insert_resource(
-    render_adapter_info_resource_key(),
+    render_adapter_info_resource_key,
     self.adapter_info,
   )
-  main_world.insert_resource(render_adapter_resource_key(), self.render_adapter)
+  main_world.insert_resource(render_adapter_resource_key, self.render_adapter)
 
-  render_world.insert_resource(render_instance_resource_key(), self.instance)
+  render_world.insert_resource(render_instance_resource_key, self.instance)
   render_world.insert_resource(
-    pipeline_cache_resource_key(),
+    pipeline_cache_resource_key,
     @render_resource.PipelineCache::new(),
   )
   init_renderer_context_resources(render_world)
-  render_world.insert_resource(render_device_resource_key(), self.device)
-  render_world.insert_resource(render_queue_resource_key(), self.queue)
+  render_world.insert_resource(render_device_resource_key, self.device)
+  render_world.insert_resource(render_queue_resource_key, self.queue)
+  render_world.insert_resource(render_adapter_resource_key, self.render_adapter)
   render_world.insert_resource(
-    render_adapter_resource_key(),
-    self.render_adapter,
-  )
-  render_world.insert_resource(
-    render_adapter_info_resource_key(),
+    render_adapter_info_resource_key,
     self.adapter_info,
   )
 }

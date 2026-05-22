@@ -69,7 +69,7 @@ fn main {
   let order = @app.world_main_schedule_order(app.world())
     .insert_after(@app.Update, single_threaded_update)
     .insert_startup_after(@app.PreStartup, custom_startup)
-  app.world().insert_resource(@app.main_schedule_order_resource_key(), order)
+  app.world().insert_resource(@app.main_schedule_order_resource_key, order)
 
   app
   .add_systems(@app.PreStartup, @app.system(pre_startup_system))

@@ -195,7 +195,7 @@ pub fn physics3d_character_controller_system(world : @ecs.World) -> Unit {
   let ctx = ctx_ref.val
 
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
-  let dt = match world.get_resource(@time.fixed_time_resource_key()) {
+  let dt = match world.get_resource(@time.fixed_time_resource_key) {
     Some(fixed_time) => fixed_time.timestep_seconds()
     None =>
       abort("Missing Time<Fixed> resource in physics3d character controller")

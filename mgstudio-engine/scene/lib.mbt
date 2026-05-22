@@ -29,20 +29,13 @@ priv struct SceneAssetRegistryState {
 }
 
 ///|
-let scene_asset_registry_resource_key_value : @ecs.ResourceKey[
+let scene_asset_registry_resource_key : @ecs.ResourceKey[
   SceneAssetRegistryState,
 ] = @ecs.register_resource(debug_name="mgstudio_scene::SceneAssetRegistryState")
 
 ///|
-fn scene_asset_registry_resource_key() -> @ecs.ResourceKey[
-  SceneAssetRegistryState,
-] {
-  scene_asset_registry_resource_key_value
-}
-
-///|
 impl @app.Resource for SceneAssetRegistryState with resource() {
-  scene_asset_registry_resource_key()
+  scene_asset_registry_resource_key
 }
 
 ///|
@@ -274,7 +267,7 @@ fn scene_clone_mesh_asset(mesh_asset : @mesh.Mesh) -> @mesh.Mesh {
 ///|
 fn scene_registry_mut_or_abort() -> Ref[SceneAssetRegistryState] {
   let world = scene_current_world_or_abort()
-  match world.get_resource_ref_mut(scene_asset_registry_resource_key()) {
+  match world.get_resource_ref_mut(scene_asset_registry_resource_key) {
     Some(state) => state
     None =>
       abort(
@@ -286,7 +279,7 @@ fn scene_registry_mut_or_abort() -> Ref[SceneAssetRegistryState] {
 ///|
 fn scene_registry_or_abort() -> SceneAssetRegistryState {
   let world = scene_current_world_or_abort()
-  match world.get_resource(scene_asset_registry_resource_key()) {
+  match world.get_resource(scene_asset_registry_resource_key) {
     Some(state) => state
     None =>
       abort(
@@ -298,13 +291,13 @@ fn scene_registry_or_abort() -> SceneAssetRegistryState {
 ///|
 fn scene_registry_mut_if_present() -> Ref[SceneAssetRegistryState]? {
   guard @app.current_world() is Some(world) else { return None }
-  world.get_resource_ref_mut(scene_asset_registry_resource_key())
+  world.get_resource_ref_mut(scene_asset_registry_resource_key)
 }
 
 ///|
 fn scene_registry_if_present() -> SceneAssetRegistryState? {
   guard @app.current_world() is Some(world) else { return None }
-  world.get_resource(scene_asset_registry_resource_key())
+  world.get_resource(scene_asset_registry_resource_key)
 }
 
 ///|
@@ -322,27 +315,20 @@ fn SceneModifiedEventsCursorState::default() -> SceneModifiedEventsCursorState {
 }
 
 ///|
-let scene_modified_events_cursor_state_resource_key_value : @ecs.ResourceKey[
+let scene_modified_events_cursor_state_resource_key : @ecs.ResourceKey[
   SceneModifiedEventsCursorState,
 ] = @ecs.register_resource(
   debug_name="mgstudio_scene::SceneModifiedEventsCursorState",
 )
 
 ///|
-fn scene_modified_events_cursor_state_resource_key() -> @ecs.ResourceKey[
-  SceneModifiedEventsCursorState,
-] {
-  scene_modified_events_cursor_state_resource_key_value
-}
-
-///|
 impl @app.Resource for SceneModifiedEventsCursorState with resource() {
-  scene_modified_events_cursor_state_resource_key()
+  scene_modified_events_cursor_state_resource_key
 }
 
 ///|
 fn scene_modified_events_cursor_ref_or_abort(world : @ecs.World) -> Ref[Int] {
-  match world.get_resource(scene_modified_events_cursor_state_resource_key()) {
+  match world.get_resource(scene_modified_events_cursor_state_resource_key) {
     Some(state) => state.modified_event_cursor
     None =>
       abort(
@@ -355,7 +341,7 @@ fn scene_modified_events_cursor_ref_or_abort(world : @ecs.World) -> Ref[Int] {
 fn scene_debounced_scene_asset_ages_ref_or_abort(
   world : @ecs.World,
 ) -> Ref[Map[Int, Int]] {
-  match world.get_resource(scene_modified_events_cursor_state_resource_key()) {
+  match world.get_resource(scene_modified_events_cursor_state_resource_key) {
     Some(state) => state.debounced_scene_asset_ages
     None =>
       abort(
@@ -508,22 +494,15 @@ priv struct SceneAssetHooksInstalledState {
 }
 
 ///|
-let scene_asset_hooks_installed_state_resource_key_value : @ecs.ResourceKey[
+let scene_asset_hooks_installed_state_resource_key : @ecs.ResourceKey[
   SceneAssetHooksInstalledState,
 ] = @ecs.register_resource(
   debug_name="mgstudio_scene::SceneAssetHooksInstalledState",
 )
 
 ///|
-fn scene_asset_hooks_installed_state_resource_key() -> @ecs.ResourceKey[
-  SceneAssetHooksInstalledState,
-] {
-  scene_asset_hooks_installed_state_resource_key_value
-}
-
-///|
 pub fn scene_install_asset_hooks(world : @ecs.World) -> Unit {
-  let key = scene_asset_hooks_installed_state_resource_key()
+  let key = scene_asset_hooks_installed_state_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, SceneAssetHooksInstalledState::{
       installed: false,

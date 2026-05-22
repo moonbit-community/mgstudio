@@ -24,14 +24,9 @@ pub(all) enum RenderState {
 }
 
 ///|
-let ecs_key_render_state_resource : @ecs.ResourceKey[RenderState] = @ecs.register_resource(
+pub let render_state_resource_key : @ecs.ResourceKey[RenderState] = @ecs.register_resource(
   debug_name="mgstudio_render::RenderState",
 )
-
-///|
-pub fn render_state_resource_key() -> @ecs.ResourceKey[RenderState] {
-  ecs_key_render_state_resource
-}
 
 ///|
 pub fn RenderState::initializing() -> RenderState {
@@ -60,13 +55,13 @@ pub fn RenderState::is_ready(self : RenderState) -> Bool {
 
 ///|
 pub fn init_render_state(world : @ecs.World) -> Unit {
-  let state = match world.get_resource(render_state_resource_key()) {
+  let state = match world.get_resource(render_state_resource_key) {
     Some(value) => Some(value)
     None => None
   }
   if state is None {
     world.insert_resource(
-      render_state_resource_key(),
+      render_state_resource_key,
       RenderState::initializing(),
     )
   }
@@ -74,7 +69,7 @@ pub fn init_render_state(world : @ecs.World) -> Unit {
 
 ///|
 pub fn renderer_is_ready(world : @ecs.World) -> Bool {
-  match world.get_resource(render_state_resource_key()) {
+  match world.get_resource(render_state_resource_key) {
     Some(state) => state.is_ready()
     None => false
   }
@@ -82,7 +77,7 @@ pub fn renderer_is_ready(world : @ecs.World) -> Bool {
 
 ///|
 pub fn mark_renderer_ready(world : @ecs.World) -> Unit {
-  world.insert_resource(render_state_resource_key(), RenderState::ready())
+  world.insert_resource(render_state_resource_key, RenderState::ready())
 }
 
 ///|

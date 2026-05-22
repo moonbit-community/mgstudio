@@ -17,7 +17,7 @@
 
 ///|
 pub(open) trait TransformPoint {
-  transform_point(self : Self, point : @math.Vec3) -> @math.Vec3
+  fn transform_point(self : Self, point : @math.Vec3) -> @math.Vec3
 }
 
 ///|

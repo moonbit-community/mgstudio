@@ -396,7 +396,7 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
   debug_inspect(directories.val.contains(""), content="true")
   debug_inspect(dir_checks.val.contains(""), content="true")
   debug_inspect(
-    match app.world().get_resource(@asset.loaded_folder_assets_resource_key()) {
+    match app.world().get_resource(@asset.loaded_folder_assets_resource_key) {
       Some(loaded_folders) =>
         match loaded_folders.get(folder_handle) {
           Some(folder) => folder.handles.length() >= 1

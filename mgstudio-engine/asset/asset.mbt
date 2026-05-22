@@ -215,18 +215,13 @@ fn AssetServer::reserve_typed_asset_handle_id(
 }
 
 ///|
-let asset_server_resource_key_value : @ecs.ResourceKey[AssetServer] = @ecs.register_resource(
+pub let asset_server_resource_key : @ecs.ResourceKey[AssetServer] = @ecs.register_resource(
   debug_name="mgstudio_asset::AssetServer",
 )
 
 ///|
-pub fn asset_server_resource_key() -> @ecs.ResourceKey[AssetServer] {
-  asset_server_resource_key_value
-}
-
-///|
 pub impl @app.Resource for AssetServer with resource() {
-  asset_server_resource_key()
+  asset_server_resource_key
 }
 
 ///|
@@ -264,7 +259,7 @@ fn[T] asset_with_server_world(asset_server : AssetServer, f : () -> T) -> T {
 ///|
 fn asset_server_from_active_world() -> AssetServer? {
   match asset_current_world() {
-    Some(world) => world.get_resource(asset_server_resource_key())
+    Some(world) => world.get_resource(asset_server_resource_key)
     None => None
   }
 }
@@ -1796,7 +1791,7 @@ fn asset_poll_modified_paths(asset_server : AssetServer) -> Array[String] {
 
 ///|
 fn asset_reload_modified_paths(world : @ecs.World) -> Unit {
-  guard world.get_resource(asset_server_resource_key()) is Some(asset_server) else {
+  guard world.get_resource(asset_server_resource_key) is Some(asset_server) else {
     return
   }
   let modified_paths = asset_poll_modified_paths(asset_server)
@@ -1812,7 +1807,7 @@ fn asset_reload_modified_paths(world : @ecs.World) -> Unit {
 
 ///|
 fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
-  guard world.get_resource(asset_server_resource_key()) is Some(asset_server) else {
+  guard world.get_resource(asset_server_resource_key) is Some(asset_server) else {
     return
   }
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()

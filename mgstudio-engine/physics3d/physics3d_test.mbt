@@ -15,7 +15,7 @@
 ///|
 fn configure_fixed_time(world : @ecs.World, timestep_seconds : Float) -> Unit {
   world.insert_resource(
-    @time.fixed_time_resource_key(),
+    @time.fixed_time_resource_key,
     @time.Time::from_seconds(timestep_seconds),
   )
 }

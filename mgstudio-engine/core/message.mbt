@@ -38,8 +38,8 @@ pub struct MessageWriter[T] {
 
 ///|
 pub(open) trait Message {
-  reader(SystemTicks) -> MessageReader[Self]
-  writer(Tick) -> MessageWriter[Self]
+  fn reader(SystemTicks) -> MessageReader[Self]
+  fn writer(Tick) -> MessageWriter[Self]
 }
 
 ///|

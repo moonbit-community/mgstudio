@@ -16,7 +16,7 @@
 fn render2d_test_world_with_asset_server() -> @ecs.World {
   let world = @ecs.World::new()
   world.insert_resource(
-    @asset.asset_server_resource_key(),
+    @asset.asset_server_resource_key,
     @asset.AssetServer::new(),
   )
   world

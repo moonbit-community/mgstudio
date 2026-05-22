@@ -13,7 +13,7 @@ import {
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "Milky2018/moon_cosmic" @cosmic,
-  "Milky2018/moon_zeno" @moon_zeno,
+  "Milky2018/moon_zeno",
   "Milky2018/moon_swash" @swash,
   "Milky2018/moon_swash/scale" @swash_scale,
   "moonbitlang/core/hashset",

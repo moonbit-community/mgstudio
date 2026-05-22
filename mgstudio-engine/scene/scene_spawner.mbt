@@ -84,25 +84,20 @@ fn SceneRuntimeState::default() -> SceneRuntimeState {
 }
 
 ///|
-let scene_runtime_state_resource_key_value : @ecs.ResourceKey[
-  SceneRuntimeState,
-] = @ecs.register_resource(debug_name="mgstudio_scene::SceneRuntimeState")
-
-///|
-fn scene_runtime_state_resource_key() -> @ecs.ResourceKey[SceneRuntimeState] {
-  scene_runtime_state_resource_key_value
-}
+let scene_runtime_state_resource_key : @ecs.ResourceKey[SceneRuntimeState] = @ecs.register_resource(
+  debug_name="mgstudio_scene::SceneRuntimeState",
+)
 
 ///|
 impl @app.Resource for SceneRuntimeState with resource() {
-  scene_runtime_state_resource_key()
+  scene_runtime_state_resource_key
 }
 
 ///|
 fn scene_runtime_state_mut_or_abort(
   world : @ecs.World,
 ) -> Ref[SceneRuntimeState] {
-  match world.get_resource_ref_mut(scene_runtime_state_resource_key()) {
+  match world.get_resource_ref_mut(scene_runtime_state_resource_key) {
     Some(state) => state
     None =>
       abort(
@@ -113,7 +108,7 @@ fn scene_runtime_state_mut_or_abort(
 
 ///|
 fn scene_runtime_state_or_abort(world : @ecs.World) -> SceneRuntimeState {
-  match world.get_resource(scene_runtime_state_resource_key()) {
+  match world.get_resource(scene_runtime_state_resource_key) {
     Some(state) => state
     None =>
       abort(

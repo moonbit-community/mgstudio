@@ -220,14 +220,9 @@ impl @app.Resource for DiagnosticsOverlayDragState with resource() {
 }
 
 ///|
-let diagnostics_overlay_plugin_marker_key_value : @ecs.ResourceKey[Bool] = @ecs.register_resource(
+let diagnostics_overlay_plugin_marker_key : @ecs.ResourceKey[Bool] = @ecs.register_resource(
   debug_name="dev_tools.DiagnosticsOverlayPluginMarker",
 )
-
-///|
-fn diagnostics_overlay_plugin_marker_key() -> @ecs.ResourceKey[Bool] {
-  diagnostics_overlay_plugin_marker_key_value
-}
 
 ///|
 fn diagnostics_overlay_fetch_statistic(
@@ -563,7 +558,7 @@ fn diagnostics_overlay_rebuild_system(world : @ecs.World) -> Unit {
     is Some(state_ref) else {
     return
   }
-  guard world.get_resource(@time.real_time_resource_key()) is Some(time_real) else {
+  guard world.get_resource(@time.real_time_resource_key) is Some(time_real) else {
     return
   }
   state_ref.modify(fn(value) {
@@ -682,7 +677,7 @@ pub fn diagnostics_overlay_plugin_with(
   app : @app.App[@ecs.World],
   plugin : DiagnosticsOverlayPlugin,
 ) -> @app.App[@ecs.World] {
-  let marker = diagnostics_overlay_plugin_marker_key()
+  let marker = diagnostics_overlay_plugin_marker_key
   if app.contains_resource(marker) {
     return app
   }

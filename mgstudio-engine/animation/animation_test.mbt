@@ -419,7 +419,7 @@ test "animation transitions: zero-duration switch expires via transition systems
     let time = @time.Time::new_with(()).advance_by(
       @core.Duration::from_secs_f32(delta_seconds),
     )
-    world.insert_resource(@time.default_time_resource_key(), time)
+    world.insert_resource(@time.default_time_resource_key, time)
   }
 
   let node_a = AnimationNodeIndex::new(1)
@@ -458,7 +458,7 @@ test "animation transitions: remaining weight is not clamped like bevy" {
     let time = @time.Time::new_with(()).advance_by(
       @core.Duration::from_secs_f32(delta_seconds),
     )
-    world.insert_resource(@time.default_time_resource_key(), time)
+    world.insert_resource(@time.default_time_resource_key, time)
   }
 
   let node_a = AnimationNodeIndex::new(1)
@@ -504,7 +504,7 @@ test "animation transitions: advance/expire keep frame-snapshot weight decline s
     let time = @time.Time::new_with(()).advance_by(
       @core.Duration::from_secs_f32(delta_seconds),
     )
-    world.insert_resource(@time.default_time_resource_key(), time)
+    world.insert_resource(@time.default_time_resource_key, time)
   }
 
   let node_a = AnimationNodeIndex::new(1)

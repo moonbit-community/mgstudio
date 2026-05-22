@@ -54,9 +54,9 @@ fn next_system_ticks(world : @ecs.World) -> @core.SystemTicks {
 fn prepare_transform_world(world : @ecs.World) -> Unit {
   @hierarchy.hierarchy_install_component_metadata()
   transform_install_component_metadata()
-  if !world.resource(static_transform_optimizations_resource_key()).is_present() {
+  if !world.resource(static_transform_optimizations_resource_key).is_present() {
     world.insert_resource(
-      static_transform_optimizations_resource_key(),
+      static_transform_optimizations_resource_key,
       StaticTransformOptimizations::default(),
     )
   }
@@ -105,7 +105,7 @@ test "transform ecs: parent translation affects child global translation" {
 
   prepare_transform_world(world)
   world.insert_resource(
-    static_transform_optimizations_resource_key(),
+    static_transform_optimizations_resource_key,
     StaticTransformOptimizations::enabled(),
   )
   next_system_ticks(world) |> ignore
@@ -378,7 +378,7 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
 
   prepare_transform_world(world)
   world.insert_resource(
-    static_transform_optimizations_resource_key(),
+    static_transform_optimizations_resource_key,
     StaticTransformOptimizations::enabled(),
   )
   next_system_ticks(world) |> ignore
@@ -439,7 +439,7 @@ test "transform ecs: mark_dirty_trees disables static optimization above thresho
 
   prepare_transform_world(world)
   world.insert_resource(
-    static_transform_optimizations_resource_key(),
+    static_transform_optimizations_resource_key,
     StaticTransformOptimizations::from_threshold(0.3F),
   )
   next_system_ticks(world) |> ignore
@@ -465,7 +465,7 @@ test "transform ecs: mark_dirty_trees disables static optimization above thresho
   mark_dirty_trees(world)
 
   let state = world
-    .get_resource(static_transform_optimizations_resource_key())
+    .get_resource(static_transform_optimizations_resource_key)
     .unwrap()
   debug_inspect(state.enabled, content="false")
 }
@@ -547,7 +547,7 @@ test "transform plugin: keeps preinserted static optimization resource" {
     .add_plugins(TransformPlugin::default())
   let value = app
     .world()
-    .get_resource(static_transform_optimizations_resource_key())
+    .get_resource(static_transform_optimizations_resource_key)
     .unwrap()
   debug_inspect(value.threshold == 0.0F && !value.enabled, content="true")
 }

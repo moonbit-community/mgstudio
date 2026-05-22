@@ -27,10 +27,10 @@ pub(all) suberror InsufficientDataError {
 
 ///|
 pub(open) trait SplinePoint {
-  zero() -> Self
-  add(self : Self, other : Self) -> Self
-  sub(self : Self, other : Self) -> Self
-  mul_scalar(self : Self, scalar : Float) -> Self
+  fn zero() -> Self
+  fn add(self : Self, other : Self) -> Self
+  fn sub(self : Self, other : Self) -> Self
+  fn mul_scalar(self : Self, scalar : Float) -> Self
 }
 
 ///|

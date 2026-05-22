@@ -215,7 +215,7 @@ test "main schedule order resource drives startup and main stage execution order
   app
   .world()
   .insert_resource(
-    main_schedule_order_resource_key(),
+    main_schedule_order_resource_key,
     MainScheduleOrder::new([SpawnScene, Update, PostUpdate], [
       PostStartup,
       Startup,

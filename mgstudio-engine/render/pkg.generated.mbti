@@ -73,7 +73,7 @@ pub fn clear_registered_wgsl_source_registry() -> Unit
 
 pub fn configure_base_render_sets(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
 
-pub fn current_view_resource_key() -> @ecs.ResourceKey[CurrentView]
+pub let current_view_resource_key : @ecs.ResourceKey[CurrentView]
 
 pub fn despawn_temporary_render_entities(@ecs.World) -> Unit
 
@@ -287,9 +287,9 @@ pub fn init_renderer_context_resources(@ecs.World) -> Unit
 
 pub fn mark_renderer_ready(@ecs.World) -> Unit
 
-pub fn pending_command_buffers_resource_key() -> @ecs.ResourceKey[@renderer.PendingCommandBuffers]
+pub let pending_command_buffers_resource_key : @ecs.ResourceKey[@renderer.PendingCommandBuffers]
 
-pub fn pipeline_cache_resource_key() -> @ecs.ResourceKey[@render_resource.PipelineCache]
+pub let pipeline_cache_resource_key : @ecs.ResourceKey[@render_resource.PipelineCache]
 
 pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -305,15 +305,15 @@ pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn register_wgsl_source(String, String) -> Unit
 
-pub fn render_adapter_info_resource_key() -> @ecs.ResourceKey[@renderer.RenderAdapterInfo]
+pub let render_adapter_info_resource_key : @ecs.ResourceKey[@renderer.RenderAdapterInfo]
 
-pub fn render_adapter_resource_key() -> @ecs.ResourceKey[@renderer.RenderAdapter]
+pub let render_adapter_resource_key : @ecs.ResourceKey[@renderer.RenderAdapter]
 
-pub fn render_asset_bytes_per_frame_limiter_resource_key() -> @ecs.ResourceKey[RenderAssetBytesPerFrameLimiter]
+pub let render_asset_bytes_per_frame_limiter_resource_key : @ecs.ResourceKey[RenderAssetBytesPerFrameLimiter]
 
-pub fn render_asset_bytes_per_frame_resource_key() -> @ecs.ResourceKey[RenderAssetBytesPerFrame]
+pub let render_asset_bytes_per_frame_resource_key : @ecs.ResourceKey[RenderAssetBytesPerFrame]
 
-pub fn render_device_resource_key() -> @ecs.ResourceKey[@renderer.RenderDevice]
+pub let render_device_resource_key : @ecs.ResourceKey[@renderer.RenderDevice]
 
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
 
@@ -325,11 +325,11 @@ pub fn render_error_policy_recover() -> @app.RenderErrorPolicy
 
 pub fn render_extract_app_label() -> @app.AppLabel
 
-pub fn render_instance_resource_key() -> @ecs.ResourceKey[@renderer.RenderInstance]
+pub let render_instance_resource_key : @ecs.ResourceKey[@renderer.RenderInstance]
 
 pub fn render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn render_queue_resource_key() -> @ecs.ResourceKey[@renderer.RenderQueue]
+pub let render_queue_resource_key : @ecs.ResourceKey[@renderer.RenderQueue]
 
 pub fn render_recovery_schedule_stage() -> @app.ScheduleStage
 
@@ -341,7 +341,7 @@ pub fn render_source_world(@ecs.World) -> @ecs.World
 
 pub fn render_startup_schedule_stage() -> @app.ScheduleStage
 
-pub fn render_state_resource_key() -> @ecs.ResourceKey[RenderState]
+pub let render_state_resource_key : @ecs.ResourceKey[RenderState]
 
 pub let render_system_set_cleanup : String
 

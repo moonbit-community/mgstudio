@@ -174,7 +174,7 @@ pub(all) enum GamepadInput {
 
 ///|
 pub(open) trait IntoGamepadInput {
-  into_gamepad_input(self : Self) -> GamepadInput
+  fn into_gamepad_input(self : Self) -> GamepadInput
 }
 
 ///|

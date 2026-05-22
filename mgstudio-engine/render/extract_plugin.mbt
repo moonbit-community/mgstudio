@@ -60,9 +60,9 @@ pub fn render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let mut next = app.add_plugins(SyncWorldPlugin::default())
-  if !next.contains_resource(render_asset_bytes_per_frame_resource_key()) {
+  if !next.contains_resource(render_asset_bytes_per_frame_resource_key) {
     next = next.insert_world_resource(
-      render_asset_bytes_per_frame_resource_key(),
+      render_asset_bytes_per_frame_resource_key,
       RenderAssetBytesPerFrame::default(),
     )
   }
@@ -87,7 +87,7 @@ fn render_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     render_sub_app_ref.val
     .world()
     .insert_resource(
-      render_asset_bytes_per_frame_limiter_resource_key(),
+      render_asset_bytes_per_frame_limiter_resource_key,
       RenderAssetBytesPerFrameLimiter::default(),
     )
     render_sub_app_ref.val = render_sub_app_ref.val.add_systems(

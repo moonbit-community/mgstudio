@@ -66,20 +66,20 @@ fn spatial_audio_sink_registry_remove(id : Int) -> Unit {
 
 ///|
 pub(open) trait AudioSinkPlayback {
-  volume(self : Self) -> Volume
-  set_volume(self : Self, volume : Volume) -> Self
-  speed(self : Self) -> Float
-  set_speed(self : Self, speed : Float) -> Self
-  play(self : Self) -> Unit
-  position(self : Self) -> @core.Duration
-  try_seek(self : Self, position : @core.Duration) -> Bool
-  pause(self : Self) -> Unit
-  is_paused(self : Self) -> Bool
-  stop(self : Self) -> Unit
-  empty(self : Self) -> Bool
-  is_muted(self : Self) -> Bool
-  mute(self : Self) -> Self
-  unmute(self : Self) -> Self
+  fn volume(self : Self) -> Volume
+  fn set_volume(self : Self, volume : Volume) -> Self
+  fn speed(self : Self) -> Float
+  fn set_speed(self : Self, speed : Float) -> Self
+  fn play(self : Self) -> Unit
+  fn position(self : Self) -> @core.Duration
+  fn try_seek(self : Self, position : @core.Duration) -> Bool
+  fn pause(self : Self) -> Unit
+  fn is_paused(self : Self) -> Bool
+  fn stop(self : Self) -> Unit
+  fn empty(self : Self) -> Bool
+  fn is_muted(self : Self) -> Bool
+  fn mute(self : Self) -> Self
+  fn unmute(self : Self) -> Self
 }
 
 ///|

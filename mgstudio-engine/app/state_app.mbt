@@ -24,18 +24,13 @@ pub fn StatesPlugin::default() -> StatesPlugin {
 priv struct StatesPluginMarker {}
 
 ///|
-let states_plugin_marker_key_value : @ecs.ResourceKey[StatesPluginMarker] = @ecs.register_resource(
+let states_plugin_marker_key : @ecs.ResourceKey[StatesPluginMarker] = @ecs.register_resource(
   debug_name="mgstudio_state::StatesPlugin",
 )
 
 ///|
-fn states_plugin_marker_key() -> @ecs.ResourceKey[StatesPluginMarker] {
-  states_plugin_marker_key_value
-}
-
-///|
 fn states_plugin_installed(world : @ecs.World) -> Bool {
-  world.get_resource(states_plugin_marker_key()) is Some(_)
+  world.get_resource(states_plugin_marker_key) is Some(_)
 }
 
 ///|
@@ -62,7 +57,7 @@ pub impl Plugin for StatesPlugin with build(_self, app) {
   )
   app
   .world()
-  .insert_resource(states_plugin_marker_key(), StatesPluginMarker::{  })
+  .insert_resource(states_plugin_marker_key, StatesPluginMarker::{  })
   app
 }
 

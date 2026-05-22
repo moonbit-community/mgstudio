@@ -117,7 +117,7 @@ pub fn Time::last_update_seconds(self : Time[Real]) -> Float? {
 
 ///|
 fn world_real_or_default(world : @ecs.World) -> Time[Real] {
-  world_time_resource_or_default(world, real_time_resource_key(), fn() {
+  world_time_resource_or_default(world, real_time_resource_key, fn() {
     Time::default()
   })
 }

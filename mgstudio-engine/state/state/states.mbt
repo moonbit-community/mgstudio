@@ -17,8 +17,8 @@
 
 ///|
 pub(open) trait States: Eq + Debug {
-  debug_name(Self) -> String
-  dependency_depth(Self) -> Int = _
+  fn debug_name(Self) -> String
+  fn dependency_depth(Self) -> Int = _
 }
 
 ///|

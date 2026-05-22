@@ -16,14 +16,9 @@
 priv struct MessageUpdateMarker {}
 
 ///|
-let message_update_marker_key_value : @ecs.ResourceKey[MessageUpdateMarker] = @ecs.register_resource(
+let message_update_marker_key : @ecs.ResourceKey[MessageUpdateMarker] = @ecs.register_resource(
   debug_name="mgstudio_app::MessageUpdateMarker",
 )
-
-///|
-fn message_update_marker_key() -> @ecs.ResourceKey[MessageUpdateMarker] {
-  message_update_marker_key_value
-}
 
 ///|
 pub let message_update_system_set : SystemSet = system_set(
@@ -48,12 +43,12 @@ fn message_cursor_state(state : Ref[Json]) -> Int {
 fn SubApp::install_message_update_system(
   self : SubApp[@ecs.World],
 ) -> SubApp[@ecs.World] {
-  if self.world().resource(message_update_marker_key()).is_present() {
+  if self.world().resource(message_update_marker_key).is_present() {
     return self
   }
   self
   .world()
-  .insert_resource(message_update_marker_key(), MessageUpdateMarker::{  })
+  .insert_resource(message_update_marker_key, MessageUpdateMarker::{  })
   self.add_systems(
     First,
     system(message_update_system).in_set(message_update_system_set),

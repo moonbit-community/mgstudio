@@ -123,7 +123,7 @@ pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> T
 
 pub fn asset_save_texture_png(Handle[@image.Image], String) -> Unit
 
-pub fn asset_server_resource_key() -> @ecs.ResourceKey[AssetServer]
+pub let asset_server_resource_key : @ecs.ResourceKey[AssetServer]
 
 pub fn asset_set_default_sampler_nearest(Bool) -> Unit
 
@@ -255,7 +255,7 @@ pub fn[P : IntoAssetPath] load_asset_source_bytes(P) -> Bytes
 
 pub fn[P : IntoAssetPath] load_optional_asset_source_text(P) -> String?
 
-pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[Assets[LoadedFolder]]
+pub let loaded_folder_assets_resource_key : @ecs.ResourceKey[Assets[LoadedFolder]]
 
 pub fn[T : Asset] register_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.App[@ecs.World]
 

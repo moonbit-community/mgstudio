@@ -144,11 +144,11 @@ test "asset plugin initializes world-owned asset resources" {
   let app = asset_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
   debug_inspect(
-    world.get_resource(asset_server_resource_key()) is Some(_),
+    world.get_resource(asset_server_resource_key) is Some(_),
     content="true",
   )
   debug_inspect(
-    world.get_resource(loaded_folder_assets_resource_key()) is Some(_),
+    world.get_resource(loaded_folder_assets_resource_key) is Some(_),
     content="true",
   )
   debug_inspect(
@@ -171,9 +171,9 @@ test "asset app: registering loader does not initialize Assets resource" {
 ///|
 test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
   let world = @ecs.World::new()
-  world.insert_resource(asset_server_resource_key(), AssetServer::new())
-  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  world.insert_resource(asset_server_resource_key, AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -182,7 +182,7 @@ test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
   asset_with_world(world, fn() { asset_system(world) })
 
   let loaded_folders = match
-    world.get_resource(loaded_folder_assets_resource_key()) {
+    world.get_resource(loaded_folder_assets_resource_key) {
     Some(assets) => assets
     None => abort("expected Assets<LoadedFolder> resource")
   }
@@ -326,7 +326,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
     RegistryScopedLegacyAsset::{  }
   })
   let world_a = app_a.world()
-  let server_a = match world_a.get_resource(asset_server_resource_key()) {
+  let server_a = match world_a.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource for world A")
   }
@@ -369,7 +369,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
     RegistryScopedLegacyAsset::{  }
   })
   let world_b = app_b.world()
-  let server_b = match world_b.get_resource(asset_server_resource_key()) {
+  let server_b = match world_b.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource for world B")
   }
@@ -432,7 +432,7 @@ test "asset processor registry is world-scoped per app world" {
     "pscope",
   )
   let world_a = app_a.world()
-  let server_a = match world_a.get_resource(asset_server_resource_key()) {
+  let server_a = match world_a.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource for world A")
   }
@@ -468,7 +468,7 @@ test "asset processor registry is world-scoped per app world" {
     AssetLoader::new(["pscope"], processor_scope_typed_loader),
   )
   let world_b = app_b.world()
-  let server_b = match world_b.get_resource(asset_server_resource_key()) {
+  let server_b = match world_b.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource for world B")
   }
@@ -527,7 +527,7 @@ test "asset processor default can be selected by processor name" {
   )
 
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -586,7 +586,7 @@ test "asset processor default by name keeps previous selection when name is ambi
   )
 
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -627,7 +627,7 @@ test "asset source builder registration is world-scoped per app world" {
     ),
   )
   let world_a = app_a.world()
-  let server_a = match world_a.get_resource(asset_server_resource_key()) {
+  let server_a = match world_a.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource for world A")
   }
@@ -639,7 +639,7 @@ test "asset source builder registration is world-scoped per app world" {
 
   let app_b = asset_plugin(@app.App::new(@ecs.World::new()))
   let world_b = app_b.world()
-  let server_b = match world_b.get_resource(asset_server_resource_key()) {
+  let server_b = match world_b.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource for world B")
   }
@@ -716,12 +716,12 @@ test "default asset source builder path override is world-scoped per app world" 
 test "asset server load without registered loader emits typed/untyped AssetLoadFailedEvent instead of aborting" {
   MissingLoaderAsset::{  } |> ignore
   let world = @ecs.World::new()
-  world.insert_resource(asset_server_resource_key(), AssetServer::new())
-  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+  world.insert_resource(asset_server_resource_key, AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
   let missing_assets : Assets[MissingLoaderAsset] = Assets::new()
   world.insert_resource(assets_resource_key(), missing_assets)
 
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -778,7 +778,7 @@ test "asset server retries failed typed loads with the same handle after loader 
     MissingLoaderAsset::{  }
   })
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -914,7 +914,7 @@ test "typed asset loaders are world-scoped per app world" {
     AssetLoader::new(["custom"], missing_loader_asset_loader),
   )
   let world_a = app_a.world()
-  let server_a = match world_a.get_resource(asset_server_resource_key()) {
+  let server_a = match world_a.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource for world A")
   }
@@ -943,7 +943,7 @@ test "typed asset loaders are world-scoped per app world" {
     MissingLoaderAsset::{  }
   })
   let world_b = app_b.world()
-  let server_b = match world_b.get_resource(asset_server_resource_key()) {
+  let server_b = match world_b.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource for world B")
   }
@@ -970,11 +970,11 @@ test "typed asset loaders are world-scoped per app world" {
 test "asset system forwards image load completion to ECS messages" {
   let world = @ecs.World::new()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
-  world.insert_resource(asset_server_resource_key(), AssetServer::new())
-  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+  world.insert_resource(asset_server_resource_key, AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
   world.insert_resource(image_assets_key, Assets::new())
 
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1072,11 +1072,11 @@ test "asset system forwards image load completion to ECS messages" {
 test "asset system preserves image loader settings in stored image assets" {
   let world = @ecs.World::new()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
-  world.insert_resource(asset_server_resource_key(), AssetServer::new())
-  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+  world.insert_resource(asset_server_resource_key, AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
   world.insert_resource(image_assets_key, Assets::new())
 
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1125,11 +1125,11 @@ test "asset system preserves image loader settings in stored image assets" {
 test "asset system releases load_acquire guard after asset becomes ready" {
   let world = @ecs.World::new()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
-  world.insert_resource(asset_server_resource_key(), AssetServer::new())
-  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+  world.insert_resource(asset_server_resource_key, AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
   world.insert_resource(image_assets_key, Assets::new())
 
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1166,7 +1166,7 @@ test "asset system releases load_acquire guard when load fails" {
     MissingLoaderAsset::{  }
   })
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1193,7 +1193,7 @@ test "asset system releases load_acquire guard when load fails" {
 test "asset load_acquire releases guard for Blob loads without Assets<Blob> storage" {
   let app = asset_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1229,11 +1229,11 @@ test "asset server reuses the first handle for repeated image loads" {
 test "asset system skips MAIN_WORLD image asset sync when asset usage is render-only" {
   let world = @ecs.World::new()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
-  world.insert_resource(asset_server_resource_key(), AssetServer::new())
-  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+  world.insert_resource(asset_server_resource_key, AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
   world.insert_resource(image_assets_key, Assets::new())
 
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1270,7 +1270,7 @@ test "asset server loads embedded image assets from in-memory source" {
     "examples/asset/files/bevy_pixel_light.png",
   )
   let asset_server : AssetServer = match
-    app.world().get_resource(asset_server_resource_key()) {
+    app.world().get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("missing asset server resource")
   }
@@ -1302,8 +1302,7 @@ test "web asset reader fetches remote PNG bytes" {
     }),
   )
   let url = "https://raw.githubusercontent.com/bevyengine/bevy/refs/heads/main/assets/branding/bevy_bird_dark.png"
-  let asset_server = match
-    app.world().get_resource(asset_server_resource_key()) {
+  let asset_server = match app.world().get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("missing asset server resource")
   }
@@ -1323,7 +1322,7 @@ test "web asset reader fetches remote PNG bytes" {
 test "Assets<Image>::get_mut exposes in-place mutation and emits a modified event" {
   let world = @ecs.World::new()
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
-  world.insert_resource(asset_server_resource_key(), AssetServer::new())
+  world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(key, Assets::new())
 
   let handle = asset_with_world(world, fn() {
@@ -1419,7 +1418,7 @@ test "Image::new_target_texture preserves Bevy-style target texture descriptor" 
 test "Assets<Image>::add creates a target texture image asset" {
   let world = @ecs.World::new()
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
-  world.insert_resource(asset_server_resource_key(), AssetServer::new())
+  world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(key, Assets::new())
 
   let result = asset_with_world(world, fn() {
@@ -1747,7 +1746,7 @@ test "asset server loads typed custom assets into Assets<T> and reuses handles" 
     AssetLoader::new(["custom"], test_custom_asset_loader),
   )
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1787,7 +1786,7 @@ test "typed asset loaders resolve by full extension, secondary extension, then l
     AssetLoader::new(["foo.bar"], multi_loader_full_extension_loader),
   )
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1847,7 +1846,7 @@ test "asset server add inserts a typed asset into Assets<T>" {
     TestCustomAsset::{ value: 0 }
   })
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1893,7 +1892,7 @@ test "gzip helper decompresses the Bevy sample image payload" {
 test "asset server load_direct decodes decompressed image bytes" {
   let app = asset_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1915,7 +1914,7 @@ test "asset server load_direct decodes decompressed image bytes" {
 test "asset server stores gltf loader settings per asset path" {
   let app = asset_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
@@ -1966,7 +1965,7 @@ test "asset server stores gltf loader settings per asset path" {
 test "asset server gltf loader settings are shared across sub asset labels" {
   let app = asset_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()
-  let asset_server = match world.get_resource(asset_server_resource_key()) {
+  let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
     None => abort("expected AssetServer resource")
   }

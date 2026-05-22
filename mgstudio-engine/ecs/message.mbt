@@ -365,18 +365,13 @@ pub(all) struct MessageRegistryState {
 }
 
 ///|
-let message_registry_resource_key_value : ResourceKey[MessageRegistryState] = register_resource(
+let message_registry_resource_key : ResourceKey[MessageRegistryState] = register_resource(
   debug_name="mgstudio_ecs::message::MessageRegistry",
 )
 
 ///|
-fn message_registry_resource_key() -> ResourceKey[MessageRegistryState] {
-  message_registry_resource_key_value
-}
-
-///|
 fn world_message_registry(world : World) -> MessageRegistryState {
-  match world.resource(message_registry_resource_key()).get() {
+  match world.resource(message_registry_resource_key).get() {
     Some(registry) => registry
     None => MessageRegistryState::{ ids: [] }
   }
@@ -387,7 +382,7 @@ fn world_write_message_registry(
   world : World,
   registry : MessageRegistryState,
 ) -> Unit {
-  world.insert_resource(message_registry_resource_key(), registry)
+  world.insert_resource(message_registry_resource_key, registry)
 }
 
 ///|

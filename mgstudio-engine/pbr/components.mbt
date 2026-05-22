@@ -14,7 +14,7 @@
 
 ///|
 pub(open) trait IntoPbrMeshAsset {
-  into_pbr_mesh_asset(Self) -> @mesh.Mesh
+  fn into_pbr_mesh_asset(Self) -> @mesh.Mesh
 }
 
 ///|

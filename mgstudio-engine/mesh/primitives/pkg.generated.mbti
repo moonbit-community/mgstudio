@@ -249,11 +249,11 @@ pub using @math {type Triangle2d}
 
 // Traits
 pub(open) trait Extrudable : MeshBuilder {
-  perimeter(Self) -> Array[PerimeterSegment]
+  fn perimeter(Self) -> Array[PerimeterSegment]
 }
 
 pub(open) trait ExtrudablePrimitive : Meshable {
-  mesh_perimeter(Self) -> Array[PerimeterSegment]
+  fn mesh_perimeter(Self) -> Array[PerimeterSegment]
 }
 pub impl ExtrudablePrimitive for @math.Annulus
 pub impl ExtrudablePrimitive for @math.Capsule2d
@@ -269,11 +269,11 @@ pub impl[P : ExtrudablePrimitive] ExtrudablePrimitive for @math.Ring[P]
 pub impl ExtrudablePrimitive for @math.Triangle2d
 
 pub(open) trait MeshBuilder {
-  build(Self) -> @mesh.Mesh3dGeometry
+  fn build(Self) -> @mesh.Mesh3dGeometry
 }
 
 pub(open) trait Meshable {
-  mesh(Self) -> @mesh.Mesh3dGeometry
+  fn mesh(Self) -> @mesh.Mesh3dGeometry
 }
 pub impl Meshable for @math.Annulus
 pub impl Meshable for @math.Capsule2d

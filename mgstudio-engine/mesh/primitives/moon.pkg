@@ -1,6 +1,6 @@
 import {
-  "Milky2018/mgstudio/math" @math,
-  "Milky2018/mgstudio/mesh" @mesh,
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
 }
 
 supported_targets = "native"

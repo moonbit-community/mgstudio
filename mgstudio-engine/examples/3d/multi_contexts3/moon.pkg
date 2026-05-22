@@ -4,7 +4,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/physics3d",
   "Milky2018/mgstudio/examples/helpers/rapier_examples",
-  "Milky2018/moon_rapier/dynamics" @dynamics,
+  "Milky2018/moon_rapier/dynamics",
 }
 
 supported_targets = "native"

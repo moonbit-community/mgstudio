@@ -1,9 +1,9 @@
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/math" @math,
+  "Milky2018/mgstudio/math",
   "moonbitlang/core/ref",
-  "Milky2018/mgstudio/render/renderer" @renderer,
+  "Milky2018/mgstudio/render/renderer",
 }
 
 supported_targets = "native"

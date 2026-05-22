@@ -31,12 +31,12 @@ pub type ProjectionMatrix3d = @pbr_render.ProjectionMatrix3d
 
 ///|
 pub(open) trait CameraProjection3d {
-  get_clip_from_view(self : Self) -> ProjectionMatrix3d
-  get_clip_from_view_for_sub(self : Self, sub_view : SubCameraView3d) -> ProjectionMatrix3d
-  update(self : Self, width : Float, height : Float) -> Self
-  far(self : Self) -> Float
-  compute_frustum(self : Self, camera_transform : @transform.Transform) -> Frustum
-  get_frustum_corners(self : Self, z_near : Float, z_far : Float) -> Array[
+  fn get_clip_from_view(self : Self) -> ProjectionMatrix3d
+  fn get_clip_from_view_for_sub(self : Self, sub_view : SubCameraView3d) -> ProjectionMatrix3d
+  fn update(self : Self, width : Float, height : Float) -> Self
+  fn far(self : Self) -> Float
+  fn compute_frustum(self : Self, camera_transform : @transform.Transform) -> Frustum
+  fn get_frustum_corners(self : Self, z_near : Float, z_far : Float) -> Array[
     @math.Vec3,
   ]
 }

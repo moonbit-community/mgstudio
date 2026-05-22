@@ -39,12 +39,12 @@ pub type ParsedAssetPath = AssetPath
 
 ///|
 pub(open) trait IntoAssetPath {
-  into_asset_path(self : Self) -> AssetPath
+  fn into_asset_path(self : Self) -> AssetPath
 }
 
 ///|
 pub(open) trait AssetLoadGuard {
-  release(self : Self) -> Unit
+  fn release(self : Self) -> Unit
 }
 
 ///|

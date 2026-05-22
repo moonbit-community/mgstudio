@@ -42,7 +42,7 @@ let widget_click_sender_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
 
 ///|
 pub(open) trait WidgetValue: @ecs.EcsPayloadCodec {
-  widget_debug_name() -> String
+  fn widget_debug_name() -> String
 }
 
 ///|

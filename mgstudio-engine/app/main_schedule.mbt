@@ -84,38 +84,19 @@ pub fn FixedMainScheduleOrder::default() -> FixedMainScheduleOrder {
 }
 
 ///|
-let main_schedule_order_resource_key_value : @ecs.ResourceKey[MainScheduleOrder] = @ecs.register_resource(
+pub let main_schedule_order_resource_key : @ecs.ResourceKey[MainScheduleOrder] = @ecs.register_resource(
   debug_name="mgstudio_app::MainScheduleOrder",
 )
 
 ///|
-pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder] {
-  main_schedule_order_resource_key_value
-}
-
-///|
-let fixed_main_schedule_order_resource_key_value : @ecs.ResourceKey[
+pub let fixed_main_schedule_order_resource_key : @ecs.ResourceKey[
   FixedMainScheduleOrder,
 ] = @ecs.register_resource(debug_name="mgstudio_app::FixedMainScheduleOrder")
 
 ///|
-pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[
-  FixedMainScheduleOrder,
-] {
-  fixed_main_schedule_order_resource_key_value
-}
-
-///|
-let main_schedule_runtime_state_resource_key_value : @ecs.ResourceKey[
+let main_schedule_runtime_state_resource_key : @ecs.ResourceKey[
   MainScheduleRuntimeState,
 ] = @ecs.register_resource(debug_name="mgstudio_app::MainScheduleRuntimeState")
-
-///|
-fn main_schedule_runtime_state_resource_key() -> @ecs.ResourceKey[
-  MainScheduleRuntimeState,
-] {
-  main_schedule_runtime_state_resource_key_value
-}
 
 ///|
 fn[T] world_schedule_resource(
@@ -234,7 +215,7 @@ pub fn FixedMainScheduleOrder::insert_before(
 
 ///|
 pub fn world_main_schedule_order(world : @ecs.World) -> MainScheduleOrder {
-  match world_schedule_resource(world, main_schedule_order_resource_key()) {
+  match world_schedule_resource(world, main_schedule_order_resource_key) {
     Some(order) => order
     None => MainScheduleOrder::default()
   }
@@ -244,8 +225,7 @@ pub fn world_main_schedule_order(world : @ecs.World) -> MainScheduleOrder {
 pub fn world_fixed_main_schedule_order(
   world : @ecs.World,
 ) -> FixedMainScheduleOrder {
-  match
-    world_schedule_resource(world, fixed_main_schedule_order_resource_key()) {
+  match world_schedule_resource(world, fixed_main_schedule_order_resource_key) {
     Some(order) => order
     None => FixedMainScheduleOrder::default()
   }
@@ -254,7 +234,7 @@ pub fn world_fixed_main_schedule_order(
 ///|
 fn main_schedule_runtime_state(world : @ecs.World) -> MainScheduleRuntimeState {
   match
-    world_schedule_resource(world, main_schedule_runtime_state_resource_key()) {
+    world_schedule_resource(world, main_schedule_runtime_state_resource_key) {
     Some(state) => state
     None => MainScheduleRuntimeState::{ startup_ran: false }
   }
@@ -265,7 +245,7 @@ fn main_schedule_write_runtime_state(
   world : @ecs.World,
   state : MainScheduleRuntimeState,
 ) -> Unit {
-  world.insert_resource(main_schedule_runtime_state_resource_key(), state)
+  world.insert_resource(main_schedule_runtime_state_resource_key, state)
 }
 
 ///|
@@ -274,7 +254,7 @@ fn main_schedule_write_order(
   update : (MainScheduleOrder) -> MainScheduleOrder,
 ) -> Unit {
   let next_order = update(world_main_schedule_order(world))
-  world.insert_resource(main_schedule_order_resource_key(), next_order)
+  world.insert_resource(main_schedule_order_resource_key, next_order)
 }
 
 ///|
@@ -310,11 +290,11 @@ fn main_schedule_insert_startup_before_unique(
 ///|
 fn reset_main_schedule_resources(world : @ecs.World) -> Unit {
   world.insert_resource(
-    main_schedule_order_resource_key(),
+    main_schedule_order_resource_key,
     MainScheduleOrder::default(),
   )
   world.insert_resource(
-    fixed_main_schedule_order_resource_key(),
+    fixed_main_schedule_order_resource_key,
     FixedMainScheduleOrder::default(),
   )
   main_schedule_write_runtime_state(world, MainScheduleRuntimeState::{

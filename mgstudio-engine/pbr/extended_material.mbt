@@ -87,17 +87,17 @@ pub fn[E] MaterialExtensionKey::bind_group_data(
 
 ///|
 pub(open) trait MaterialExtension {
-  extension_tag(Self) -> Int
-  vertex_shader(Self) -> String?
-  fragment_shader(Self) -> String?
-  prepass_vertex_shader(Self) -> String?
-  prepass_fragment_shader(Self) -> String?
-  deferred_vertex_shader(Self) -> String?
-  deferred_fragment_shader(Self) -> String?
-  alpha_mode(Self) -> @material.AlphaMode3d?
-  opaque_render_method(Self) -> @material.OpaqueRendererMethod?
-  enable_prepass(Self) -> Bool
-  enable_shadows(Self) -> Bool
+  fn extension_tag(Self) -> Int
+  fn vertex_shader(Self) -> String?
+  fn fragment_shader(Self) -> String?
+  fn prepass_vertex_shader(Self) -> String?
+  fn prepass_fragment_shader(Self) -> String?
+  fn deferred_vertex_shader(Self) -> String?
+  fn deferred_fragment_shader(Self) -> String?
+  fn alpha_mode(Self) -> @material.AlphaMode3d?
+  fn opaque_render_method(Self) -> @material.OpaqueRendererMethod?
+  fn enable_prepass(Self) -> Bool
+  fn enable_shadows(Self) -> Bool
 }
 
 ///|

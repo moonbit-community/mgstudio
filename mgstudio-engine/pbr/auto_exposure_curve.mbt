@@ -24,7 +24,7 @@ pub(all) suberror AutoExposureCompensationCurveError {
 
 ///|
 pub(open) trait AutoExposureCompensationCurveSource {
-  to_auto_exposure_curve(self : Self) -> @math.CubicCurve[@math.Vec2] raise @math.InsufficientDataError
+  fn to_auto_exposure_curve(self : Self) -> @math.CubicCurve[@math.Vec2] raise @math.InsufficientDataError
 }
 
 ///|

@@ -29,7 +29,7 @@ test "app: custom schedules can be inserted into main schedule order" {
   let order = world_main_schedule_order(app.world())
     .insert_after(Update, single_threaded_update)
     .insert_startup_after(PreStartup, custom_startup)
-  app.world().insert_resource(main_schedule_order_resource_key(), order)
+  app.world().insert_resource(main_schedule_order_resource_key, order)
 
   app = app
     .add_systems(
@@ -1007,7 +1007,7 @@ test "app: ordered overlapping sets fail schedule build" {
     )
     .configure_sets(stage, set_a, before=[set_b])
   let order = world_main_schedule_order(app.world()).insert_after(Update, stage)
-  app.world().insert_resource(main_schedule_order_resource_key(), order)
+  app.world().insert_resource(main_schedule_order_resource_key, order)
 
   app = app.run_once()
 
@@ -1038,7 +1038,7 @@ test "app: hierarchy redundancy can be promoted to build error" {
     .configure_sets(stage, child, in_sets=[parent, grandparent])
     .configure_sets(stage, parent, in_sets=[grandparent])
   let order = world_main_schedule_order(app.world()).insert_after(Update, stage)
-  app.world().insert_resource(main_schedule_order_resource_key(), order)
+  app.world().insert_resource(main_schedule_order_resource_key, order)
 
   app = app.run_once()
 
@@ -1076,7 +1076,7 @@ test "app: ambiguity detection can be promoted to build error" {
       ),
     )
   let order = world_main_schedule_order(app.world()).insert_after(Update, stage)
-  app.world().insert_resource(main_schedule_order_resource_key(), order)
+  app.world().insert_resource(main_schedule_order_resource_key, order)
 
   app = app.run_once()
 
@@ -1116,7 +1116,7 @@ test "app: allowed ambiguous resource suppresses resource ambiguity" {
       ),
     )
   let order = world_main_schedule_order(app.world()).insert_after(Update, stage)
-  app.world().insert_resource(main_schedule_order_resource_key(), order)
+  app.world().insert_resource(main_schedule_order_resource_key, order)
 
   app = app.run_once()
 

@@ -22,22 +22,22 @@ fn[T] read_time_test_resource(
 
 ///|
 fn read_default_time_test_resource(app : @app.App[@ecs.World]) -> Time[Unit] {
-  read_time_test_resource(app, default_time_resource_key())
+  read_time_test_resource(app, default_time_resource_key)
 }
 
 ///|
 fn read_real_time_test_resource(app : @app.App[@ecs.World]) -> Time[Real] {
-  read_time_test_resource(app, real_time_resource_key())
+  read_time_test_resource(app, real_time_resource_key)
 }
 
 ///|
 fn read_virtual_time_test_resource(app : @app.App[@ecs.World]) -> Time[Virtual] {
-  read_time_test_resource(app, virtual_time_resource_key())
+  read_time_test_resource(app, virtual_time_resource_key)
 }
 
 ///|
 fn read_fixed_time_test_resource(app : @app.App[@ecs.World]) -> Time[Fixed] {
-  read_time_test_resource(app, fixed_time_resource_key())
+  read_time_test_resource(app, fixed_time_resource_key)
 }
 
 ///|
@@ -46,8 +46,8 @@ fn update_virtual_test_resource(
   update : (Time[Virtual]) -> Time[Virtual],
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  let virtual_ref = world.get_resource_mut(virtual_time_resource_key()).unwrap()
-  let time_ref = world.get_resource_mut(default_time_resource_key()).unwrap()
+  let virtual_ref = world.get_resource_mut(virtual_time_resource_key).unwrap()
+  let time_ref = world.get_resource_mut(default_time_resource_key).unwrap()
   let next_virtual = update(virtual_ref.peek())
   virtual_ref.set(next_virtual)
   time_ref.set(next_virtual.as_generic())
@@ -291,10 +291,10 @@ test "time: generic time switches to fixed during fixed update and restores afte
     .insert_resource(Time::from_seconds(0.125F))
     .add_fixed_update_system(fn(world : @ecs.World) {
       let generic_time : Time[Unit] = world
-        .get_resource(default_time_resource_key())
+        .get_resource(default_time_resource_key)
         .unwrap()
       let fixed_time : Time[Fixed] = world
-        .get_resource(fixed_time_resource_key())
+        .get_resource(fixed_time_resource_key)
         .unwrap()
       fixed_log.push(
         "\{generic_time.delta_seconds().to_string()}/\{generic_time.elapsed_seconds().to_string()}|\{fixed_time.delta_seconds().to_string()}/\{fixed_time.elapsed_seconds().to_string()}",
@@ -308,7 +308,7 @@ test "time: generic time switches to fixed during fixed update and restores afte
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
   debug_inspect(
     fixed_log.join(","),
-    content="0.125/0.125|0.125/0.125,0.125/0.25|0.125/0.25",
+    content="\"0.125/0.125|0.125/0.125,0.125/0.25|0.125/0.25\"",
   )
   debug_inspect(
     read_default_time_test_resource(app).delta_seconds(),
@@ -383,7 +383,7 @@ test "time: fixed main schedule runs substages in bevy order" {
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
   debug_inspect(
     log.join(","),
-    content="FixedFirst,FixedPreUpdate,FixedUpdate,FixedPostUpdate,FixedLast",
+    content="\"FixedFirst,FixedPreUpdate,FixedUpdate,FixedPostUpdate,FixedLast\"",
   )
 }
 
@@ -413,10 +413,13 @@ test "time: run fixed main loop system sets order before fixed and after hooks" 
   app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
-  debug_inspect(log.join(","), content="before,after")
+  debug_inspect(log.join(","), content="\"before,after\"")
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
-  debug_inspect(log.join(","), content="before,after,before,fixed_update,after")
+  debug_inspect(
+    log.join(","),
+    content="\"before,after,before,fixed_update,after\"",
+  )
 }
 
 ///|
@@ -426,7 +429,7 @@ test "time: fixed main schedule order resource drives fixed substage order" {
     .add_plugins(TimePlugin::default())
     .insert_resource(Time::from_seconds(0.25F))
     .insert_world_resource(
-      @app.fixed_main_schedule_order_resource_key(),
+      @app.fixed_main_schedule_order_resource_key,
       @app.FixedMainScheduleOrder::new([@app.FixedLast, @app.FixedUpdate]),
     )
     .add_fixed_last_system(fn(_world : @ecs.World) {
@@ -441,5 +444,5 @@ test "time: fixed main schedule order resource drives fixed substage order" {
   debug_inspect(log.length(), content="0")
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
-  debug_inspect(log.join(","), content="FixedLast,FixedUpdate")
+  debug_inspect(log.join(","), content="\"FixedLast,FixedUpdate\"")
 }

@@ -68,7 +68,7 @@ impl @ecs.Component for VirtualTime with component() {
 
 ///|
 fn read_real_time(world : @ecs.World) -> @time.Time[@time.Real] {
-  let real_time = world.get_resource(@time.real_time_resource_key())
+  let real_time = world.get_resource(@time.real_time_resource_key)
   match real_time {
     Some(real_time) => real_time
     None => abort("Missing Time<Real> resource in virtual_time example")
@@ -77,7 +77,7 @@ fn read_real_time(world : @ecs.World) -> @time.Time[@time.Real] {
 
 ///|
 fn read_virtual_time(world : @ecs.World) -> @time.Time[@time.Virtual] {
-  let virtual_time = world.get_resource(@time.virtual_time_resource_key())
+  let virtual_time = world.get_resource(@time.virtual_time_resource_key)
   match virtual_time {
     Some(virtual_time) => virtual_time
     None => abort("Missing Time<Virtual> resource in virtual_time example")
@@ -90,10 +90,10 @@ fn update_virtual_time_resource(
   update : (@time.Time[@time.Virtual]) -> @time.Time[@time.Virtual],
 ) -> Unit {
   let virtual_ref = world
-    .get_resource_ref_mut(@time.virtual_time_resource_key())
+    .get_resource_ref_mut(@time.virtual_time_resource_key)
     .unwrap()
   let time_ref = world
-    .get_resource_ref_mut(@time.default_time_resource_key())
+    .get_resource_ref_mut(@time.default_time_resource_key)
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual

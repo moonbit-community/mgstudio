@@ -14,7 +14,7 @@
 
 ///|
 pub fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key()) {
+  match world.get_resource(@time.default_time_resource_key) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in render3d systems")
   }

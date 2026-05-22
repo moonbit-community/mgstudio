@@ -440,7 +440,7 @@ fn read_current_test(world : @ecs.World) -> Test {
 
 ///|
 fn spin(world : @ecs.World) -> Unit {
-  guard world.get_resource(@time.default_time_resource_key()) is Some(time) else {
+  guard world.get_resource(@time.default_time_resource_key) is Some(time) else {
     return
   }
 
@@ -701,7 +701,7 @@ fn bounding_circle_cast_system(
 
 ///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key()) {
+  match world.get_resource(@time.default_time_resource_key) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in bounding_2d example")
   }

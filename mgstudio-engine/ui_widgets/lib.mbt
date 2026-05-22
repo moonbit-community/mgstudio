@@ -58,7 +58,7 @@ pub struct ValueChange[T] {
 
 ///|
 pub(open) trait ValueChangeValue: @ecs.EcsPayloadCodec {
-  value_change_value_debug_name() -> String
+  fn value_change_value_debug_name() -> String
 }
 
 ///|

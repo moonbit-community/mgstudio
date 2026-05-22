@@ -98,7 +98,7 @@ fn bloom_camera_entity(
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
   let asset_server = match
-    world.get_resource(@asset.asset_server_resource_key()) {
+    world.get_resource(@asset.asset_server_resource_key) {
     Some(asset_server) => asset_server
     None =>
       abort(

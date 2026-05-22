@@ -11,7 +11,7 @@ import {
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/window",
-  "Milky2018/moon_rapier/collision" @collision,
+  "Milky2018/moon_rapier/collision",
 }
 
 supported_targets = "native"

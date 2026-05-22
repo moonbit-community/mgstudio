@@ -92,7 +92,7 @@ pub fn UniformMeshSampler::try_new(Array[@math.Triangle3d]) -> Self raise Unifor
 
 // Traits
 pub(open) trait FromRng {
-  from_rng(@random.Rand) -> Self
+  fn from_rng(@random.Rand) -> Self
 }
 pub impl FromRng for @math.Dir2
 pub impl FromRng for @math.Dir3

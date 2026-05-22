@@ -19,7 +19,7 @@ pub fn asset_server_register_loader_extension(String, @asset.AssetLoaderKind) ->
 
 pub fn asset_server_remove_loader_extension(String) -> Unit
 
-pub fn asset_server_resource_key() -> @ecs.ResourceKey[@asset.AssetServer]
+pub let asset_server_resource_key : @ecs.ResourceKey[@asset.AssetServer]
 
 pub fn asset_set_default_sampler_nearest(Bool) -> Unit
 

@@ -85,8 +85,8 @@ pub struct PointerClick {}
 
 ///|
 pub(open) trait PointerObserverKind {
-  event_kind() -> @pointer_events.PointerEventKind
-  source_label() -> String
+  fn event_kind() -> @pointer_events.PointerEventKind
+  fn source_label() -> String
 }
 
 ///|

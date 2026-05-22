@@ -28,11 +28,9 @@ pub impl Asset for LoadedFolder with asset_as_image(_self) {
 }
 
 ///|
-pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[
+pub let loaded_folder_assets_resource_key : @ecs.ResourceKey[
   Assets[LoadedFolder],
-] {
-  registered_assets_resource_key()
-}
+] = registered_assets_resource_key()
 
 ///|
 pub fn host_asset_load_folder(path~ : String) -> Int {
@@ -80,7 +78,7 @@ pub fn AssetServer::load_folder(
 fn loaded_folder_assets_mut_or_abort(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Assets[LoadedFolder]] {
-  match world.get_resource_mut(loaded_folder_assets_resource_key()) {
+  match world.get_resource_mut(loaded_folder_assets_resource_key) {
     Some(assets) => assets
     None =>
       abort(
@@ -91,7 +89,7 @@ fn loaded_folder_assets_mut_or_abort(
 
 ///|
 fn loaded_folder_assets_or_abort(world : @ecs.World) -> Assets[LoadedFolder] {
-  match world.get_resource(loaded_folder_assets_resource_key()) {
+  match world.get_resource(loaded_folder_assets_resource_key) {
     Some(assets) => assets
     None =>
       abort(

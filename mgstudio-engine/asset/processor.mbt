@@ -102,18 +102,11 @@ priv struct AssetProcessorRegistryState {
 }
 
 ///|
-let asset_processor_registry_state_resource_key_value : @ecs.ResourceKey[
+let asset_processor_registry_state_resource_key : @ecs.ResourceKey[
   AssetProcessorRegistryState,
 ] = @ecs.register_resource(
   debug_name="mgstudio_asset::AssetProcessorRegistryState",
 )
-
-///|
-fn asset_processor_registry_state_resource_key() -> @ecs.ResourceKey[
-  AssetProcessorRegistryState,
-] {
-  asset_processor_registry_state_resource_key_value
-}
 
 ///|
 fn asset_processor_registry_clone_entries(
@@ -178,7 +171,7 @@ fn asset_processor_registry_register_name_in_state(
 fn asset_processor_registry_state_for_world(
   world : @ecs.World,
 ) -> AssetProcessorRegistryState {
-  let key = asset_processor_registry_state_resource_key()
+  let key = asset_processor_registry_state_resource_key
   if world.get_resource(key) is None {
     world.insert_resource(key, AssetProcessorRegistryState::{
       processors: Ref(@hashmap.HashMap([])),

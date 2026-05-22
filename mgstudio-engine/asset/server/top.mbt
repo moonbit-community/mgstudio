@@ -40,9 +40,7 @@ pub fn asset_remove_loader_extension(extension : String) -> Unit {
 }
 
 ///|
-pub fn asset_server_resource_key() -> @ecs.ResourceKey[AssetServer] {
-  @asset.asset_server_resource_key()
-}
+pub let asset_server_resource_key : @ecs.ResourceKey[AssetServer] = @asset.asset_server_resource_key
 
 ///|
 pub fn asset_set_default_sampler_nearest(enabled : Bool) -> Unit {

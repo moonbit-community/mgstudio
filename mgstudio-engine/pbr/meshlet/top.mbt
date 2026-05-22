@@ -184,9 +184,7 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
   let instance_manager = InstanceManager::default()
   let meshlet_assets_key : @ecs.ResourceKey[@asset.Assets[MeshletMesh]] = @asset.assets_resource_key()
   let meshlet_assets = source_world.get_resource(meshlet_assets_key)
-  let asset_server = source_world.get_resource(
-    @asset.asset_server_resource_key(),
-  )
+  let asset_server = source_world.get_resource(@asset.asset_server_resource_key)
   match (meshlet_assets, world.get_resource_mut(ecs_key_meshlet_mesh_manager)) {
     (Some(meshlet_assets), Some(mesh_manager_ref)) =>
       ignore(
