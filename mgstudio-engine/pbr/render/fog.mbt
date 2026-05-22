@@ -180,7 +180,7 @@ pub fn fog_plugin_install_with(
 ) -> @app.App[@ecs.World] {
   @render_gpu.with_render_app(app, fn(sub_app : @app.SubApp[@ecs.World]) {
     let world = sub_app.world()
-    if (try! world.get_resource(FogMeta::resource())) is None {
+    if world.get_resource(FogMeta::resource()) is None {
       world.insert_resource(FogMeta::resource(), FogMeta::default())
     }
     sub_app
@@ -358,10 +358,10 @@ pub fn prepare_fog(
 
 ///|
 pub fn render3d_fog_meta_ref_or_init(world : @ecs.World) -> Ref[FogMeta] {
-  if (try! world.get_resource(FogMeta::resource())) is None {
+  if world.get_resource(FogMeta::resource()) is None {
     world.insert_resource(FogMeta::resource(), FogMeta::default())
   }
-  match (try! world.get_resource_mut(FogMeta::resource())) {
+  match world.get_resource_mut(FogMeta::resource()) {
     Some(value) => Ref(value.peek())
     None => abort("missing FogMeta resource")
   }

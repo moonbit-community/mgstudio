@@ -52,7 +52,7 @@ test "pbr prepass: update pipeline state becomes ready when prepass components e
   |> ignore)
 
   prepass_update_pipeline_state(world)
-  let state = (try! world.get_resource(ecs_key_prepass_pipeline_state)).unwrap()
+  let state = world.get_resource(ecs_key_prepass_pipeline_state).unwrap()
   inspect(state.pipeline_ready, content="true")
 }
 

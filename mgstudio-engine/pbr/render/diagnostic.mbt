@@ -46,13 +46,13 @@ impl @app.Resource for Render3dDiagnosticsState with resource() {
 fn render3d_diagnostics_state_ref_or_init(
   world : @ecs.World,
 ) -> Ref[Render3dDiagnosticsState] {
-  if (try! world.get_resource(Render3dDiagnosticsState::resource())) is None {
+  if world.get_resource(Render3dDiagnosticsState::resource()) is None {
     world.insert_resource(
       Render3dDiagnosticsState::resource(),
       render3d_diagnostics_state_default(),
     )
   }
-  match (try! world.get_resource_mut(Render3dDiagnosticsState::resource())) {
+  match world.get_resource_mut(Render3dDiagnosticsState::resource()) {
     Some(state) => Ref(state.peek())
     None => abort("Missing Render3dDiagnosticsState resource")
   }

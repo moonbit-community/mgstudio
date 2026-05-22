@@ -19,7 +19,7 @@ test "diagnostics: render snapshot records render measurements" {
     .add_plugins(RenderDiagnosticsPlugin::default())
   let tick = 7
   ignore(tick)
-  let store_ref = try! app
+  let store_ref = app
     .world()
     .get_resource_ref_mut(DiagnosticsStore::resource())
     .unwrap()

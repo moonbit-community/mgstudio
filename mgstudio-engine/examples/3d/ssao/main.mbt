@@ -445,8 +445,7 @@ fn update(
     }
   }
 
-  let instructions = match
-    (try! world.get_resource(ssao_instructions_resource_key)) {
+  let instructions = match world.get_resource(ssao_instructions_resource_key) {
     Some(instructions) => instructions
     None => return
   }

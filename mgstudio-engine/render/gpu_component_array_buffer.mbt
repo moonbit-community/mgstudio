@@ -101,14 +101,14 @@ let gpu_component_array_buffer_state_key_registry : @hashmap.HashMap[
 ] = @hashmap.HashMap([])
 
 ///|
-fn[C : @ecs.EcsPayloadCodec] gpu_component_array_buffer_state_ref(
+fn[C] gpu_component_array_buffer_state_ref(
   world : @ecs.World,
   state_key : @ecs.ResourceKey[GpuComponentArrayBufferState[C]],
 ) -> @ecs.ResourceMut[GpuComponentArrayBufferState[C]] {
-  if (try! world.get_resource(state_key)) is None {
+  if world.get_resource(state_key) is None {
     world.insert_resource(state_key, GpuComponentArrayBufferState::new())
   }
-  match (try! world.get_resource_mut(state_key)) {
+  match world.get_resource_mut(state_key) {
     Some(state_ref) => state_ref
     None => abort("Missing GpuComponentArrayBufferState resource")
   }
@@ -122,7 +122,7 @@ fn gpu_component_array_buffer_entity_key(entity : @core.Entity) -> UInt64 {
 }
 
 ///|
-pub fn[C : @ecs.Component + @ecs.EcsPayloadCodec] prepare_gpu_component_array_buffers(
+pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(
   world : @ecs.World,
   state_key : @ecs.ResourceKey[GpuComponentArrayBufferState[C]],
   component_key? : @ecs.ComponentKey[C] = C::component(),

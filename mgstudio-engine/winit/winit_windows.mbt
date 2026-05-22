@@ -143,7 +143,7 @@ pub impl @app.Resource for WinitWindows with resource() {
 
 ///|
 pub fn winit_sync_windows_resource_system(world : @ecs.World) -> Unit {
-  let windows = match (try! world.get_resource(WinitWindows::resource())) {
+  let windows = match world.get_resource(WinitWindows::resource()) {
     Some(windows) => windows
     None => WinitWindows::default()
   }

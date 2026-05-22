@@ -269,16 +269,11 @@ pub fn current_view_resource_key() -> @ecs.ResourceKey[CurrentView] {
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] render_world_resource_present(
+fn[T] render_world_resource_present(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
 ) -> Bool {
-  match
-    (try world.get_resource(key) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource(key) {
     Some(_) => true
     None => false
   }
@@ -300,20 +295,11 @@ pub fn init_renderer_context_resources(world : @ecs.World) -> Unit {
 ///|
 pub fn flush_pending_command_buffers(world : @ecs.World) -> Unit {
   let pending = match
-    (try world.get_resource(pending_command_buffers_resource_key()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+    world.get_resource(pending_command_buffers_resource_key()) {
     Some(value) => value
     None => return
   }
-  let queue = match
-    (try world.get_resource(render_queue_resource_key()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  let queue = match world.get_resource(render_queue_resource_key()) {
     Some(value) => value
     None => return
   }

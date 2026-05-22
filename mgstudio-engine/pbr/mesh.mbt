@@ -16,7 +16,7 @@
 
 ///|
 pub(open) trait IntoPbrMaterialAsset {
-  into_pbr_material_asset(Self) -> StandardMaterial
+  fn into_pbr_material_asset(Self) -> StandardMaterial
 }
 
 ///|
@@ -120,7 +120,7 @@ fn Render3dInternalAssetsState::new() -> Render3dInternalAssetsState {
 fn render3d_internal_assets_ref(
   world : @ecs.World,
 ) -> Ref[Render3dInternalAssetsState]? {
-  match (try! world.get_resource_mut(ecs_key_internal_assets)) {
+  match world.get_resource_mut(ecs_key_internal_assets) {
     Some(state) => Some(Ref(state.peek()))
     None => None
   }

@@ -472,7 +472,7 @@ pub impl @app.Resource for ClearColor with resource() {
 fn clear_color_current_value() -> Color {
   match @app.current_world() {
     Some(world) =>
-      match (try! world.get_resource(ClearColor::resource())) {
+      match world.get_resource(ClearColor::resource()) {
         Some(clear_color) => clear_color.color
         None => clear_color_default_value()
       }
@@ -495,7 +495,7 @@ fn render2d_current_world_or_abort() -> @ecs.World {
 fn[T : @asset.Asset] render2d_asset_store_or_abort() -> @asset.Assets[T] {
   let world = @render.render_source_world(render2d_current_world_or_abort())
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(assets) => assets
     None =>
       abort(
@@ -510,7 +510,7 @@ fn[T : @asset.Asset] render2d_asset_store_mut_or_abort() -> @ecs.ResourceMut[
 ] {
   let world = @render.render_source_world(render2d_current_world_or_abort())
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource_mut(key)) {
+  match world.get_resource_mut(key) {
     Some(assets) => assets
     None =>
       abort(
@@ -3403,7 +3403,7 @@ fn pan_camera_step(
 
 ///|
 fn pan_camera_world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
+  match world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in pancamera controller")
   }
@@ -3413,7 +3413,7 @@ fn pan_camera_world_time(world : @ecs.World) -> @time.Time[Unit] {
 pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = pan_camera_world_time(world).delta_seconds()
   let accumulated_mouse_scroll = match
-    (try! world.get_resource(@input.AccumulatedMouseScroll::resource())) {
+    world.get_resource(@input.AccumulatedMouseScroll::resource()) {
     Some(value) => value
     None => @input.AccumulatedMouseScroll::new()
   }
@@ -7189,7 +7189,7 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
 
   app = app.add_system(fn(world : @ecs.World) {
     ensure_render_state_resource(world)
-    if (try! world.get_resource(@asset.asset_server_resource_key())) is None {
+    if world.get_resource(@asset.asset_server_resource_key()) is None {
       world.insert_resource(
         @asset.asset_server_resource_key(),
         @asset.AssetServer::new(),

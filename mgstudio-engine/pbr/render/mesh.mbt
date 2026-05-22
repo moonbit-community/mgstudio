@@ -50,7 +50,7 @@ pub impl @app.Resource for Render3dMeshRuntimeState with resource() {
 
 ///|
 pub fn ensure_render3d_mesh_runtime_state_resource(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(Render3dMeshRuntimeState::resource())) is None {
+  if world.get_resource(Render3dMeshRuntimeState::resource()) is None {
     world.insert_resource(
       Render3dMeshRuntimeState::resource(),
       Render3dMeshRuntimeState::new(),
@@ -63,7 +63,7 @@ pub fn render3d_mesh_runtime_state_ref_or_abort(
   world : @ecs.World,
 ) -> Ref[Render3dMeshRuntimeState] {
   ensure_render3d_mesh_runtime_state_resource(world)
-  match (try! world.get_resource_mut(Render3dMeshRuntimeState::resource())) {
+  match world.get_resource_mut(Render3dMeshRuntimeState::resource()) {
     Some(state) => Ref(state.peek())
     None => abort("Missing Render3dMeshRuntimeState resource in render world")
   }

@@ -171,7 +171,7 @@ pub impl @app.Resource for PendingSyncEntity with resource() {
 
 ///|
 fn ensure_pending_sync_entity_resource(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(PendingSyncEntity::resource())) is None {
+  if world.get_resource(PendingSyncEntity::resource()) is None {
     world.insert_resource(
       PendingSyncEntity::resource(),
       PendingSyncEntity::default(),
@@ -277,7 +277,7 @@ fn entity_sync_system(
   }
 
   let records = match
-    (try! main_world.get_resource_mut(PendingSyncEntity::resource())) {
+    main_world.get_resource_mut(PendingSyncEntity::resource()) {
     Some(pending_ref) => pending_ref.modify(fn(value) { value.drain() })
     None => []
   }

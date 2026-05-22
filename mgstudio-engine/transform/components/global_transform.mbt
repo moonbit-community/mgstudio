@@ -253,12 +253,17 @@ pub impl Default for StaticTransformOptimizations with default() {
 }
 
 ///|
+let static_transform_optimizations_resource_key_value : @ecs.ResourceKey[
+  StaticTransformOptimizations,
+] = @ecs.register_resource(
+  debug_name="mgstudio_transform::StaticTransformOptimizations",
+)
+
+///|
 pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[
   StaticTransformOptimizations,
 ] {
-  @ecs.register_resource(
-    debug_name="mgstudio_transform::StaticTransformOptimizations",
-  )
+  static_transform_optimizations_resource_key_value
 }
 
 ///|

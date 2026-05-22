@@ -124,9 +124,7 @@ fn[Config : GizmoConfigGroup + Default] gizmos_from_world(
 ) -> Gizmos[Config] raise @ecs.SystemParamValidationError {
   let store : GizmoConfigStore? = world.get_resource(
     GizmoConfigStore::resource(),
-  ) catch {
-    _ => None
-  }
+  )
   let group = Config::default()
   let store = match store {
     Some(store) => store
@@ -683,7 +681,7 @@ fn[Config : GizmoConfigGroup] register_gizmo_storage_drain(
   }
   let drain : (@ecs.World) -> Unit = fn(world) {
     let key : @ecs.ResourceKey[GizmoStorage[Config]] = registered_gizmo_storage_resource_key()
-    match (try! world.get_resource_mut(key)) {
+    match world.get_resource_mut(key) {
       Some(storage_ref) =>
         storage_ref.modify(fn(storage) {
           gizmo_state.val.append_from(storage.state)
@@ -700,7 +698,7 @@ fn[Config : GizmoConfigGroup] Gizmos::flush(self : Gizmos[Config]) -> Unit {
   match self.world {
     Some(world) => {
       let key : @ecs.ResourceKey[GizmoStorage[Config]] = registered_gizmo_storage_resource_key()
-      match (try! world.get_resource_mut(key)) {
+      match world.get_resource_mut(key) {
         Some(storage_ref) =>
           storage_ref.modify(fn(storage) {
             storage.state.append_from(self.state.val)

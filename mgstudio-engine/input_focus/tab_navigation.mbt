@@ -289,11 +289,7 @@ fn tab_navigation_collect_candidates(world : @ecs.World) -> Array[TabCandidate] 
 fn input_focus_visible_resource_ref_mut(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[InputFocusVisible]? {
-  try world.get_resource_mut(InputFocusVisible::resource()) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource_mut(InputFocusVisible::resource())
 }
 
 ///|

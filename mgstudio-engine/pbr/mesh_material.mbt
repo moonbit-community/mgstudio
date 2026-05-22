@@ -58,7 +58,7 @@ pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[
 ///|
 fn init_mesh_render_resources(world : @ecs.World) -> Unit {
   @pbr_render.render3d_set_runtime_initialized(world, true)
-  if (try! world.get_resource(ecs_key_internal_assets)) is None {
+  if world.get_resource(ecs_key_internal_assets) is None {
     world.insert_resource(
       ecs_key_internal_assets,
       Render3dInternalAssetsState::new(),
@@ -76,7 +76,7 @@ fn init_auto_exposure_compensation_curve_asset(
   let next = @asset.init_asset(app, fn() {
     AutoExposureCompensationCurve::default()
   })
-  if (try! next.world().get_resource_mut(auto_exposure_curve_assets_key))
+  if next.world().get_resource_mut(auto_exposure_curve_assets_key)
     is Some(curves_ref) {
     let curves = curves_ref.peek()
     let default_curve_handle : @asset.Handle[AutoExposureCompensationCurve] = @asset.Handle::new(

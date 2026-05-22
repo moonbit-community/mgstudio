@@ -17,7 +17,7 @@ fn inverse_bindposes_assets_mut_or_abort(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[@asset.Assets[SkinnedMeshInverseBindposes]] {
   let key : @ecs.ResourceKey[@asset.Assets[SkinnedMeshInverseBindposes]] = @asset.assets_resource_key()
-  match (try! world.get_resource_mut(key)) {
+  match world.get_resource_mut(key) {
     Some(assets) => assets
     None => abort("missing Assets<SkinnedMeshInverseBindposes> resource")
   }
@@ -28,7 +28,7 @@ fn mesh_assets_mut_or_abort(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[@asset.Assets[Mesh]] {
   let key : @ecs.ResourceKey[@asset.Assets[Mesh]] = @asset.assets_resource_key()
-  match (try! world.get_resource_mut(key)) {
+  match world.get_resource_mut(key) {
     Some(assets) => assets
     None => abort("missing Assets<Mesh> resource")
   }

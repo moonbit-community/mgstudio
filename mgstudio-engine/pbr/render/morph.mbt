@@ -60,10 +60,10 @@ pub impl @app.Resource for MorphUniforms with resource() {
 
 ///|
 pub fn ensure_morph_resources(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(MorphIndices::resource())) is None {
+  if world.get_resource(MorphIndices::resource()) is None {
     world.insert_resource(MorphIndices::resource(), MorphIndices::new())
   }
-  if (try! world.get_resource(MorphUniforms::resource())) is None {
+  if world.get_resource(MorphUniforms::resource()) is None {
     world.insert_resource(MorphUniforms::resource(), MorphUniforms::new())
   }
 }
@@ -71,7 +71,7 @@ pub fn ensure_morph_resources(world : @ecs.World) -> Unit {
 ///|
 pub fn morph_indices_ref_or_abort(world : @ecs.World) -> Ref[MorphIndices] {
   ensure_morph_resources(world)
-  match (try! world.get_resource_mut(MorphIndices::resource())) {
+  match world.get_resource_mut(MorphIndices::resource()) {
     Some(state) => Ref(state.peek())
     None => abort("Missing MorphIndices resource in render world")
   }
@@ -80,7 +80,7 @@ pub fn morph_indices_ref_or_abort(world : @ecs.World) -> Ref[MorphIndices] {
 ///|
 pub fn morph_uniforms_ref_or_abort(world : @ecs.World) -> Ref[MorphUniforms] {
   ensure_morph_resources(world)
-  match (try! world.get_resource_mut(MorphUniforms::resource())) {
+  match world.get_resource_mut(MorphUniforms::resource()) {
     Some(state) => Ref(state.peek())
     None => abort("Missing MorphUniforms resource in render world")
   }

@@ -613,7 +613,7 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
     .add_plugins(SpritePlugin::default())
   let world = app.world()
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  let mesh_assets = (try! world.get_resource_mut(mesh_assets_key)).unwrap()
+  let mesh_assets = world.get_resource_mut(mesh_assets_key).unwrap()
   mesh_assets.set_changed()
   let mesh_handle = mesh_assets
     .peek()
@@ -651,7 +651,7 @@ test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
     .add_plugins(SpritePlugin::default())
   let world = app.world()
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  let mesh_assets = (try! world.get_resource_mut(mesh_assets_key)).unwrap()
+  let mesh_assets = world.get_resource_mut(mesh_assets_key).unwrap()
   mesh_assets.set_changed()
   let mesh_handle = mesh_assets
     .peek()
@@ -806,7 +806,7 @@ test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
   let mesh2d = try! world.get_by_key(entity, @mesh.ecs_key_mesh2d)
   let material = try! world.get_by_key(entity, material_key)
   let material_assets_key : @ecs.ResourceKey[@asset.Assets[SpriteMaterial]] = @asset.assets_resource_key()
-  let material_assets = try! world.get_resource(material_assets_key).unwrap()
+  let material_assets = world.get_resource(material_assets_key).unwrap()
 
   debug_inspect(mesh2d is Some(_), content="true")
   debug_inspect(material is Some(_), content="true")
@@ -829,8 +829,8 @@ test "sprite: compute_pixel_space_point follows Bevy texture-coordinate conventi
   let atlas_assets_key : @ecs.ResourceKey[
     @asset.Assets[@asset.TextureAtlasLayout],
   ] = @asset.assets_resource_key()
-  let image_assets = (try! world.get_resource(image_assets_key)).unwrap()
-  let atlas_assets = (try! world.get_resource(atlas_assets_key)).unwrap()
+  let image_assets = world.get_resource(image_assets_key).unwrap()
+  let atlas_assets = world.get_resource(atlas_assets_key).unwrap()
   let sprite = Sprite::from_image(image)
   let inside = sprite.compute_pixel_space_point(
     @math.Vec2::new(4.0F, 9.0F),
@@ -912,7 +912,7 @@ test "render2d: ColorMaterialPlugin initializes the Bevy default material handle
     .add_plugins(@render.RenderPlugin::default())
     .add_plugins(ColorMaterialPlugin::default())
   let key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
-  let assets = try! app.world().get_resource(key).unwrap()
+  let assets = app.world().get_resource(key).unwrap()
   let handle : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(0)
   let material = assets.get(handle).unwrap()
 
@@ -944,25 +944,25 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   ] = RenderMaterial2dInstances::resource()
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[DummyMaterialAsset]] = Material2dPipeline::resource()
   let registry_key : @ecs.ResourceKey[Material2dRuntimeRegistry] = Material2dRuntimeRegistry::resource()
-  let pipeline = try! render_world.get_resource(pipeline_key).unwrap()
-  let registry = try! render_world.get_resource(registry_key).unwrap()
+  let pipeline = render_world.get_resource(pipeline_key).unwrap()
+  let registry = render_world.get_resource(registry_key).unwrap()
   let probe : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(0)
 
   debug_inspect(app.contains_resource(key), content="true")
   debug_inspect(
-    (try! render_world.get_resource(prepared_key)) is Some(_),
+    render_world.get_resource(prepared_key) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! render_world.get_resource(instances_key)) is Some(_),
+    render_world.get_resource(instances_key) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! render_world.get_resource(pipeline_key)) is Some(_),
+    render_world.get_resource(pipeline_key) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! render_world.get_resource(registry_key)) is Some(_),
+    render_world.get_resource(registry_key) is Some(_),
     content="true",
   )
   debug_inspect(
@@ -998,7 +998,7 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     let handle : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(21)
     handle_ref.val = Some(handle)
     let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
-    guard (try! world.get_resource_mut(key)) is Some(assets_ref) else {
+    guard world.get_resource_mut(key) is Some(assets_ref) else {
       abort("expected DummyMaterialAsset asset store")
     }
     assets_ref.set_changed()
@@ -1020,8 +1020,8 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   let prepared_key : @ecs.ResourceKey[
     @render.RenderAssets[PreparedMaterial2d[DummyMaterialAsset]],
   ] = @render.RenderAssets::resource()
-  let instances = try! render_world.get_resource(instances_key).unwrap()
-  let prepared_assets = try! render_world.get_resource(prepared_key).unwrap()
+  let instances = render_world.get_resource(instances_key).unwrap()
+  let prepared_assets = render_world.get_resource(prepared_key).unwrap()
   let prepared = prepared_assets.get(handle.id()).unwrap()
 
   debug_inspect(instances.contains(entity), content="true")
@@ -1073,7 +1073,7 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
   let instances_key : @ecs.ResourceKey[
     RenderMaterial2dInstances[ColorMaterialAsset],
   ] = RenderMaterial2dInstances::resource()
-  let instances = try! render_world.get_resource(instances_key).unwrap()
+  let instances = render_world.get_resource(instances_key).unwrap()
 
   debug_inspect(instances.contains(entity), content="true")
   debug_inspect(
@@ -1110,9 +1110,9 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
     @render.RenderAssets[PreparedMaterial2d[ColorMaterialAsset]],
   ] = @render.RenderAssets::resource()
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[ColorMaterialAsset]] = Material2dPipeline::resource()
-  let source_assets = try! world.get_resource(source_key).unwrap()
-  let prepared_assets = try! render_world.get_resource(prepared_key).unwrap()
-  let pipeline = try! render_world.get_resource(pipeline_key).unwrap()
+  let source_assets = world.get_resource(source_key).unwrap()
+  let prepared_assets = render_world.get_resource(prepared_key).unwrap()
+  let pipeline = render_world.get_resource(pipeline_key).unwrap()
   let source_material = source_assets.get(handle).unwrap()
   let prepared = prepared_assets.get(handle.id()).unwrap()
 

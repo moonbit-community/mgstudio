@@ -17,10 +17,10 @@ fn pause_virtual_time_for_diagnostics_test(app : @app.App[@ecs.World]) -> Unit {
   let world = app.world()
   let tick = world.increment_change_tick()
   ignore(tick)
-  let virtual_ref = try! world
+  let virtual_ref = world
     .get_resource_ref_mut(@time.virtual_time_resource_key())
     .unwrap()
-  let default_ref = try! world
+  let default_ref = world
     .get_resource_ref_mut(@time.default_time_resource_key())
     .unwrap()
   let next_virtual = virtual_ref.val.pause()
@@ -32,7 +32,7 @@ fn pause_virtual_time_for_diagnostics_test(app : @app.App[@ecs.World]) -> Unit {
 fn read_log_diagnostics_state_test_resource(
   app : @app.App[@ecs.World],
 ) -> LogDiagnosticsState {
-  try! app.world().get_resource(log_diagnostics_state_resource_key).unwrap()
+  app.world().get_resource(log_diagnostics_state_resource_key).unwrap()
 }
 
 ///|
@@ -73,10 +73,7 @@ test "diagnostics: log diagnostics sorts output by path lexicographically" {
     ),
     Diagnostic::new(DiagnosticPath::const_new("a.path")),
   )
-  let store = try! app
-    .world()
-    .get_resource(DiagnosticsStore::resource())
-    .unwrap()
+  let store = app.world().get_resource(DiagnosticsStore::resource()).unwrap()
   let sorted = log_diagnostics_sorted(store)
   debug_inspect(sorted[0].path().as_str(), content="\"a.path\"")
   debug_inspect(sorted[1].path().as_str(), content="\"z.path\"")

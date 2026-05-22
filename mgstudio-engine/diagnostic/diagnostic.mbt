@@ -378,20 +378,12 @@ pub impl @app.SystemParam for Diagnostics with init_state(world) {
 
 ///|
 fn diagnostics_store_ref_mut(world : @ecs.World) -> Ref[DiagnosticsStore]? {
-  try world.get_resource_ref_mut(DiagnosticsStore::resource()) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource_ref_mut(DiagnosticsStore::resource())
 }
 
 ///|
 fn diagnostics_store_ref(world : @ecs.World) -> Ref[DiagnosticsStore]? {
-  try world.get_resource_ref(DiagnosticsStore::resource()) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource_ref(DiagnosticsStore::resource())
 }
 
 ///|
@@ -416,9 +408,7 @@ pub impl @app.SystemParam for Diagnostics with store(self, state) {
   self.buffer.clear()
   @app.queue_deferred_world_action(
     fn(world : @ecs.World) {
-      guard (world.get_resource_ref_mut(DiagnosticsStore::resource()) catch {
-          _ => None
-        })
+      guard world.get_resource_ref_mut(DiagnosticsStore::resource())
         is Some(store_ref) else {
         return
       }
@@ -495,12 +485,7 @@ pub fn register_diagnostic(
   diagnostic : Diagnostic,
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  if (try world.get_resource(DiagnosticsStore::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    })
-    is None {
+  if world.get_resource(DiagnosticsStore::resource()) is None {
     world.insert_resource(
       DiagnosticsStore::resource(),
       DiagnosticsStore::default(),

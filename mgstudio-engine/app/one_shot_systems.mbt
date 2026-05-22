@@ -34,11 +34,7 @@ let ecs_res_key_registered_systems : @ecs.ResourceKey[RegisteredSystemsResource]
 
 ///|
 fn ensure_registered_systems(world : @ecs.World) -> Unit {
-  let existing = try world.get_resource(ecs_res_key_registered_systems) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  let existing = world.get_resource(ecs_res_key_registered_systems)
   if existing is None {
     world.insert_resource(ecs_res_key_registered_systems, { configs: [] })
   }
@@ -49,12 +45,7 @@ fn registered_systems_ref(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[RegisteredSystemsResource] {
   ensure_registered_systems(world)
-  match
-    (try world.get_resource_mut(ecs_res_key_registered_systems) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource_mut(ecs_res_key_registered_systems) {
     Some(resource_ref) => resource_ref
     None => abort("Registered one-shot systems resource should exist")
   }

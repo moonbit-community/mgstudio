@@ -381,7 +381,7 @@ pub fn prepass_update_pipeline_state(world : @ecs.World) -> Unit {
     ),
   )
   let has_prepass_components = prepass_components_query.count() > 0
-  let view_state : PrepassViewState? = try! world.get_resource(
+  let view_state : PrepassViewState? = world.get_resource(
     ecs_key_prepass_view_state,
   )
   let view_bind_group_ready = match view_state {
@@ -390,7 +390,7 @@ pub fn prepass_update_pipeline_state(world : @ecs.World) -> Unit {
   }
   let pipeline_ready = has_prepass_components || view_bind_group_ready
   let next = PrepassPipelineState::{ pipeline_ready, view_bind_group_ready }
-  let current : PrepassPipelineState? = try! world.get_resource(
+  let current : PrepassPipelineState? = world.get_resource(
     ecs_key_prepass_pipeline_state,
   )
   match current {

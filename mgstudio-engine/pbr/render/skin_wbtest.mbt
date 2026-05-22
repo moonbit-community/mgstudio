@@ -41,7 +41,7 @@ fn skin_test_insert_inverse_bindposes_assets(
 fn skin_test_inverse_assets_or_abort(
   world : @ecs.World,
 ) -> @asset.Assets[@mesh.SkinnedMeshInverseBindposes] {
-  match (try! world.get_resource(skin_test_inverse_assets_key())) {
+  match world.get_resource(skin_test_inverse_assets_key()) {
     Some(assets) => assets
     None => abort("missing test inverse bindposes assets")
   }

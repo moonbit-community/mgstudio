@@ -18,12 +18,12 @@ test "diagnostics: frame count plugin increments during Last" {
     .add_plugins(DiagnosticsPlugin::default())
     .add_plugins(FrameCountPlugin::default())
   debug_inspect(
-    try! app.world().get_resource(FrameCount::resource()).unwrap().value,
+    app.world().get_resource(FrameCount::resource()).unwrap().value,
     content="0",
   )
   app.run_once() |> ignore
   debug_inspect(
-    try! app.world().get_resource(FrameCount::resource()).unwrap().value,
+    app.world().get_resource(FrameCount::resource()).unwrap().value,
     content="1",
   )
 }
@@ -42,10 +42,7 @@ test "diagnostics: entity count plugin records spawned entities" {
   .run_once()
   |> ignore
 
-  let store = try! app
-    .world()
-    .get_resource(DiagnosticsStore::resource())
-    .unwrap()
+  let store = app.world().get_resource(DiagnosticsStore::resource()).unwrap()
   let diagnostic = store.get(entity_count_diagnostic_path).unwrap()
   debug_inspect(diagnostic.value().unwrap(), content="2")
 }

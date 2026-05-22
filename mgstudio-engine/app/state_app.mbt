@@ -35,11 +35,7 @@ fn states_plugin_marker_key() -> @ecs.ResourceKey[StatesPluginMarker] {
 
 ///|
 fn states_plugin_installed(world : @ecs.World) -> Bool {
-  try world.get_resource(states_plugin_marker_key()) catch {
-    _ => false
-  } noraise {
-    value => value is Some(_)
-  }
+  world.get_resource(states_plugin_marker_key()) is Some(_)
 }
 
 ///|
@@ -86,11 +82,7 @@ pub fn[S : States] insert_state_app(
     entered: Some(state),
     allow_same_state_transitions: true,
   })
-  ignore(
-    app.world().remove_resource(previous_state_resource_key(state)) catch {
-      _ => None
-    },
-  )
+  ignore(app.world().remove_resource(previous_state_resource_key(state)))
   app
 }
 

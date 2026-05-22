@@ -21,7 +21,7 @@ fn make_directional_navigation_app() -> @app.App[@ecs.World] {
 
 ///|
 fn directional_navigation_focus(world : @ecs.World) -> @core.Entity? {
-  match (try! world.get_resource(InputFocus::resource())) {
+  match world.get_resource(InputFocus::resource()) {
     Some(focus) => focus.get()
     None => None
   }
@@ -32,7 +32,7 @@ fn set_directional_navigation_focus(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
-  match (try! world.get_resource_mut(InputFocus::resource())) {
+  match world.get_resource_mut(InputFocus::resource()) {
     Some(focus) => focus.modify(fn(value) { value.set(entity) })
     None => abort("missing InputFocus resource")
   }
@@ -42,7 +42,7 @@ fn set_directional_navigation_focus(
 fn directional_navigation_map_ref(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[DirectionalNavigationMap] {
-  match (try! world.get_resource_mut(DirectionalNavigationMap::resource())) {
+  match world.get_resource_mut(DirectionalNavigationMap::resource()) {
     Some(map) => map
     None => abort("missing DirectionalNavigationMap resource")
   }

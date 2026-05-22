@@ -118,7 +118,7 @@ test "ecs entity disabling: has counts as explicit mention but optional does not
 ///|
 test "ecs entity disabling: multiple disabling components require explicit mention of all" {
   let world = World::new()
-  try! world.register_disabling_component(custom_disabled_key)
+  world.register_disabling_component(custom_disabled_key)
 
   let plain = world.spawn()
   let disabled_only = world.spawn()

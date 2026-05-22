@@ -193,8 +193,7 @@ fn teardown_game(
 
 ///|
 fn movement(world : @ecs.World) -> Unit {
-  let time = match
-    (try! world.get_resource(@time.default_time_resource_key())) {
+  let time = match world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => return
   }
@@ -232,8 +231,7 @@ fn movement(world : @ecs.World) -> Unit {
 
 ///|
 fn change_color(world : @ecs.World) -> Unit {
-  let time = match
-    (try! world.get_resource(@time.default_time_resource_key())) {
+  let time = match world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => return
   }

@@ -54,7 +54,7 @@ pub fn shader_path_is_wesl(path : String) -> Bool {
 
 ///|
 fn shader_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
-  match (try! world.get_resource(@asset.AssetServer::resource())) {
+  match world.get_resource(@asset.AssetServer::resource()) {
     Some(asset_server) => asset_server
     None =>
       abort(
@@ -67,7 +67,7 @@ fn shader_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
 fn shader_runtime_cache_mut_or_abort(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[ShaderRuntimeCache] {
-  match (try! world.get_resource_mut(ShaderRuntimeCache::resource())) {
+  match world.get_resource_mut(ShaderRuntimeCache::resource()) {
     Some(cache) => cache
     None =>
       abort(
@@ -79,7 +79,7 @@ fn shader_runtime_cache_mut_or_abort(
 ///|
 fn shader_assets_or_abort(world : @ecs.World) -> @asset.Assets[Shader] {
   let key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(assets) => assets
     None =>
       abort(
@@ -90,7 +90,7 @@ fn shader_assets_or_abort(world : @ecs.World) -> @asset.Assets[Shader] {
 
 ///|
 fn shader_asset_paths_or_abort(world : @ecs.World) -> ShaderAssetPaths {
-  match (try! world.get_resource(ShaderAssetPaths::resource())) {
+  match world.get_resource(ShaderAssetPaths::resource()) {
     Some(paths) => paths
     None =>
       abort(
@@ -148,7 +148,7 @@ fn shader_load_runtime_asset(world : @ecs.World, path : String) -> Shader? {
   let asset_server = shader_asset_server_or_abort(world)
   let handle : @asset.Handle[Shader] = asset_server.load(path)
   let key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(shader_assets) => shader_assets.get(handle)
     None => None
   }

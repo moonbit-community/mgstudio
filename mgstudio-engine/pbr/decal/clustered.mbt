@@ -340,7 +340,7 @@ fn render3d_upload_decals_system(world : @ecs.World) -> Unit {
 pub fn render3d_decals_buffer_ref(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[DecalsBuffer]? {
-  try! world.get_resource_mut(ecs_key_decals_buffer)
+  world.get_resource_mut(ecs_key_decals_buffer)
 }
 
 ///|
@@ -518,7 +518,7 @@ fn render3d_extract_clustered_decals_system_in_render_app(
 pub fn render3d_render_clustered_decals_ref(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[RenderClusteredDecals]? {
-  try! world.get_resource_mut(ecs_key_render_clustered_decals)
+  world.get_resource_mut(ecs_key_render_clustered_decals)
 }
 
 ///|
@@ -560,13 +560,13 @@ pub fn clustered_decal_plugin_install_with(
 ) -> @app.App[@ecs.World] {
   @render.with_render_app(app, fn(sub_app : @app.SubApp[@ecs.World]) {
     let world = sub_app.world()
-    if (try! world.get_resource(ecs_key_render_clustered_decals)) is None {
+    if world.get_resource(ecs_key_render_clustered_decals) is None {
       world.insert_resource(
         ecs_key_render_clustered_decals,
         RenderClusteredDecals::default(),
       )
     }
-    if (try! world.get_resource(ecs_key_decals_buffer)) is None {
+    if world.get_resource(ecs_key_decals_buffer) is None {
       world.insert_resource(ecs_key_decals_buffer, DecalsBuffer::default())
     }
     sub_app

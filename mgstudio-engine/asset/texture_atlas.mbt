@@ -502,7 +502,7 @@ fn texture_atlas_layout_assets_mut_or_abort() -> @ecs.ResourceMut[
   let key : @ecs.ResourceKey[Assets[TextureAtlasLayout]] = registered_assets_resource_key()
   match asset_current_world() {
     Some(world) =>
-      match (try! world.get_resource_mut(key)) {
+      match world.get_resource_mut(key) {
         Some(assets) => assets
         None =>
           abort(
@@ -521,7 +521,7 @@ fn texture_atlas_layout_assets_or_abort() -> Assets[TextureAtlasLayout] {
   let key : @ecs.ResourceKey[Assets[TextureAtlasLayout]] = registered_assets_resource_key()
   match asset_current_world() {
     Some(world) =>
-      match (try! world.get_resource(key)) {
+      match world.get_resource(key) {
         Some(assets) => assets
         None =>
           abort(

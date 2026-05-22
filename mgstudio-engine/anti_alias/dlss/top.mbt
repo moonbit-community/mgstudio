@@ -331,7 +331,7 @@ pub fn dlss_update_runtime_state(world : @ecs.World) -> Unit {
     reset_requested_count,
     runtime_supported: DLSS_RUNTIME_SUPPORTED,
   }
-  let current : DlssRuntimeState? = try! world.get_resource(
+  let current : DlssRuntimeState? = world.get_resource(
     dlss_runtime_state_resource_key,
   )
   match current {

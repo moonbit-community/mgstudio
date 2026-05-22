@@ -202,7 +202,7 @@ impl @ecs.Component for FrameTimeGraph with component() {
 
 ///|
 fn fps_overlay_state_ref(world : @ecs.World) -> Ref[FpsOverlayState] {
-  match (try! world.get_resource_ref_mut(fps_overlay_state_resource_key)) {
+  match world.get_resource_ref_mut(fps_overlay_state_resource_key) {
     Some(state) => state
     None => abort("Missing FpsOverlayState resource")
   }
@@ -210,7 +210,7 @@ fn fps_overlay_state_ref(world : @ecs.World) -> Ref[FpsOverlayState] {
 
 ///|
 fn fps_overlay_config(world : @ecs.World) -> FpsOverlayConfig {
-  match (try! world.get_resource(fps_overlay_config_resource_key)) {
+  match world.get_resource(fps_overlay_config_resource_key) {
     Some(config) => config
     None => abort("Missing FpsOverlayConfig resource")
   }
@@ -228,8 +228,7 @@ fn fps_overlay_warn_on_low_interval(config : FpsOverlayConfig) -> Unit {
 
 ///|
 fn fps_overlay_has_frame_time_diagnostics(app : @app.App[@ecs.World]) -> Bool {
-  match
-    (try! app.world().get_resource(@diagnostic.DiagnosticsStore::resource())) {
+  match app.world().get_resource(@diagnostic.DiagnosticsStore::resource()) {
     Some(store) =>
       store.get(@diagnostic.frame_time_diagnostic_fps) is Some(_) &&
       store.get(@diagnostic.frame_time_diagnostic_frame_time) is Some(_)
@@ -652,7 +651,7 @@ fn fps_overlay_resize_bars(
 fn fps_overlay_update_system(world : @ecs.World) -> Unit {
   let config = fps_overlay_config(world)
   let state_ref = fps_overlay_state_ref(world)
-  guard (try! world.get_resource(@diagnostic.DiagnosticsStore::resource()))
+  guard world.get_resource(@diagnostic.DiagnosticsStore::resource())
     is Some(store) else {
     return
   }

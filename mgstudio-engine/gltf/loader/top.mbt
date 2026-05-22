@@ -351,8 +351,7 @@ fn gltf_loader_plugin_runtime_state_ref_if_present() -> Ref[
   GltfLoaderPluginRuntimeState,
 ]? {
   guard @app.current_world() is Some(world) else { return None }
-  match
-    (try! world.get_resource_mut(ecs_res_key_gltf_loader_plugin_runtime_state)) {
+  match world.get_resource_mut(ecs_res_key_gltf_loader_plugin_runtime_state) {
     Some(state_ref) => Some(Ref(state_ref.peek()))
     None => None
   }
@@ -380,7 +379,7 @@ pub fn gltf_loader_runtime_plugin(
 ///|
 fn gltf_loader_runtime_state_ref_if_present() -> Ref[GltfLoaderRuntimeState]? {
   guard @app.current_world() is Some(world) else { return None }
-  match (try! world.get_resource_mut(ecs_res_key_gltf_loader_runtime_state)) {
+  match world.get_resource_mut(ecs_res_key_gltf_loader_runtime_state) {
     Some(state_ref) => Some(Ref(state_ref.peek()))
     None => None
   }

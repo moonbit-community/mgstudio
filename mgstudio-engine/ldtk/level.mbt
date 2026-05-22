@@ -45,7 +45,7 @@ fn ldtk_spawn_background_image(
   layer_z : Float,
 ) -> Unit {
   let image_assets_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
-  guard (try! world.get_resource(image_assets_key)) is Some(image_assets) else {
+  guard world.get_resource(image_assets_key) is Some(image_assets) else {
     return
   }
   guard image_assets.get(background_image) is Some(image) else { return }

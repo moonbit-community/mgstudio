@@ -14,10 +14,10 @@
 
 ///|
 pub(open) trait GizmoConfigGroup {
-  gizmo_config_group_debug_name() -> String
-  new_gizmo_config_group_cell() -> GizmoConfigGroupCell
-  gizmo_config_group_cell_ref(GizmoConfigGroupCell) -> Ref[Self]?
-  gizmo_config_group_marker(self : Self) -> Unit
+  fn gizmo_config_group_debug_name() -> String
+  fn new_gizmo_config_group_cell() -> GizmoConfigGroupCell
+  fn gizmo_config_group_cell_ref(GizmoConfigGroupCell) -> Ref[Self]?
+  fn gizmo_config_group_marker(self : Self) -> Unit
 }
 
 ///|
@@ -204,9 +204,7 @@ pub fn[T : GizmoConfigGroup] init_gizmo_group(
   register_gizmo_storage_drain(group)
   let store : GizmoConfigStore? = app
     .world()
-    .get_resource(GizmoConfigStore::resource()) catch {
-      _ => None
-    }
+    .get_resource(GizmoConfigStore::resource())
   match store {
     Some(store) => store.register(group)
     None => ()

@@ -59,7 +59,7 @@ fn animation_current_world_or_abort() -> @ecs.World {
 fn[T : @asset.Asset] animation_asset_store_or_abort() -> @asset.Assets[T] {
   let world = animation_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(assets) => assets
     None =>
       abort(
@@ -74,7 +74,7 @@ fn[T : @asset.Asset] animation_asset_store_mut_or_abort() -> @ecs.ResourceMut[
 ] {
   let world = animation_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource_mut(key)) {
+  match world.get_resource_mut(key) {
     Some(assets) => assets
     None =>
       abort(
@@ -1844,14 +1844,14 @@ let ecs_key_animation_runtime_scratch : @ecs.ResourceKey[
 fn animation_runtime_scratch_ref_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[AnimationRuntimeScratch] {
-  match (try! world.get_resource_mut(ecs_key_animation_runtime_scratch)) {
+  match world.get_resource_mut(ecs_key_animation_runtime_scratch) {
     Some(state_ref) => state_ref
     None => {
       world.insert_resource(
         ecs_key_animation_runtime_scratch,
         AnimationRuntimeScratch::default(),
       )
-      match (try! world.get_resource_mut(ecs_key_animation_runtime_scratch)) {
+      match world.get_resource_mut(ecs_key_animation_runtime_scratch) {
         Some(state_ref) => state_ref
         None => abort("Missing AnimationRuntimeScratch resource")
       }
@@ -1983,7 +1983,7 @@ pub impl @ecs.Component for AnimationWeights with component() {
 
 ///|
 fn animation_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
+  match world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in animation systems")
   }
@@ -2059,7 +2059,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let weights_updates = runtime_scratch.weights_updates
   let text_color_updates = runtime_scratch.text_color_updates
   let target_mask_cache = runtime_scratch.target_mask_cache
-  let threaded_graphs = try! world.get_resource(threaded_animation_graphs_key)
+  let threaded_graphs = world.get_resource(threaded_animation_graphs_key)
   let graph_cache = runtime_scratch.graph_cache
   let clip_cache = runtime_scratch.clip_cache
   let threaded_graph_cache = runtime_scratch.threaded_graph_cache

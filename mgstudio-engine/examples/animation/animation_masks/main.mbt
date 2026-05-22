@@ -666,8 +666,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_animation_graph_once_loaded(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource_ref_mut(animation_mask_setup_key))
-    is Some(setup_ref) else {
+  guard world.get_resource_ref_mut(animation_mask_setup_key) is Some(setup_ref) else {
     return
   }
   if setup_ref.val.initialized {
@@ -738,18 +737,16 @@ fn apply_group_selection(
 
 ///|
 fn handle_button_toggles(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(animation_mask_setup_key)) is Some(setup) else {
+  guard world.get_resource(animation_mask_setup_key) is Some(setup) else {
     return
   }
   if !setup.initialized {
     return
   }
-  guard (try! world.get_resource_ref_mut(animation_mask_state_key))
-    is Some(state_ref) else {
+  guard world.get_resource_ref_mut(animation_mask_state_key) is Some(state_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(pressed_controls_key))
-    is Some(pressed_ref) else {
+  guard world.get_resource_ref_mut(pressed_controls_key) is Some(pressed_ref) else {
     return
   }
   guard @animation.animation_graph_get(setup.graph_handle) is Some(graph) else {
@@ -793,7 +790,7 @@ fn handle_button_toggles(world : @ecs.World) -> Unit {
 
 ///|
 fn update_ui(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(animation_mask_state_key)) is Some(state) else {
+  guard world.get_resource(animation_mask_state_key) is Some(state) else {
     return
   }
   let controls : @ecs.Query[

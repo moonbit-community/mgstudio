@@ -405,7 +405,7 @@ fn diagnostics_overlay_rebuild_entries(
 
 ///|
 fn diagnostics_overlay_build_plane_system(world : @ecs.World) -> Unit {
-  let state_ref = try! world
+  let state_ref = world
     .get_resource_mut(diagnostics_overlay_runtime_state_resource_key)
     .unwrap()
   ignore(diagnostics_overlay_ensure_plane(world, state_ref.peek()))
@@ -413,16 +413,14 @@ fn diagnostics_overlay_build_plane_system(world : @ecs.World) -> Unit {
 
 ///|
 fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource_mut(
-      diagnostics_overlay_runtime_state_resource_key,
-    ))
+  guard world.get_resource_mut(diagnostics_overlay_runtime_state_resource_key)
     is Some(runtime_state) else {
     return
   }
   let plane = diagnostics_overlay_ensure_plane(world, runtime_state.peek())
-  let diagnostics_store = (try! world.get_resource(
-    @diagnostic.DiagnosticsStore::resource(),
-  )).unwrap_or(@diagnostic.DiagnosticsStore::default())
+  let diagnostics_store = world
+    .get_resource(@diagnostic.DiagnosticsStore::resource())
+    .unwrap_or(@diagnostic.DiagnosticsStore::default())
   let overlays : @ecs.QueryState[@ecs.Comp[DiagnosticsOverlay], @ecs.All] = world.query()
   let overlay_iter = overlays.iter(world)
   let mut window_index = 0
@@ -561,14 +559,11 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
 
 ///|
 fn diagnostics_overlay_rebuild_system(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource_mut(
-      diagnostics_overlay_runtime_state_resource_key,
-    ))
+  guard world.get_resource_mut(diagnostics_overlay_runtime_state_resource_key)
     is Some(state_ref) else {
     return
   }
-  guard (try! world.get_resource(@time.real_time_resource_key()))
-    is Some(time_real) else {
+  guard world.get_resource(@time.real_time_resource_key()) is Some(time_real) else {
     return
   }
   state_ref.modify(fn(value) {
@@ -577,9 +572,9 @@ fn diagnostics_overlay_rebuild_system(world : @ecs.World) -> Unit {
   if !state_ref.peek().timer.is_finished() {
     return
   }
-  let diagnostics_store = (try! world.get_resource(
-    @diagnostic.DiagnosticsStore::resource(),
-  )).unwrap_or(@diagnostic.DiagnosticsStore::default())
+  let diagnostics_store = world
+    .get_resource(@diagnostic.DiagnosticsStore::resource())
+    .unwrap_or(@diagnostic.DiagnosticsStore::default())
   let overlays : @ecs.QueryState[
     (@ecs.Comp[DiagnosticsOverlay], @ecs.Comp[DiagnosticsOverlayWindow]),
     @ecs.All,

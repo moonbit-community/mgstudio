@@ -311,9 +311,9 @@ pub fn Material2dBindGroup::bind_group_data(
 
 ///|
 pub(open) trait Material2d {
-  material2d_debug_name() -> String
-  alpha_mode(self : Self) -> AlphaMode2d
-  bind_group(self : Self) -> Material2dBindGroup
+  fn material2d_debug_name() -> String
+  fn alpha_mode(self : Self) -> AlphaMode2d
+  fn bind_group(self : Self) -> Material2dBindGroup
 }
 
 ///|
@@ -590,7 +590,7 @@ fn[M : Material2d] ensure_prepared_material2d_assets_resource_in_world(
   let prepared_assets_key : @ecs.ResourceKey[
     @render.RenderAssets[PreparedMaterial2d[M]],
   ] = @render.RenderAssets::resource()
-  if (try! world.get_resource(prepared_assets_key)) is None {
+  if world.get_resource(prepared_assets_key) is None {
     world.insert_resource(prepared_assets_key, @render.RenderAssets::new())
   }
 }
@@ -601,7 +601,7 @@ fn[M : Material2d] ensure_material2d_pipeline_resource_in_world(
   pipeline : Material2dPipeline[M],
 ) -> Unit {
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[M]] = Material2dPipeline::resource()
-  if (try! world.get_resource(pipeline_key)) is None {
+  if world.get_resource(pipeline_key) is None {
     world.insert_resource(pipeline_key, pipeline)
   }
 }
@@ -612,7 +612,7 @@ fn[M : Material2d] ensure_render_material2d_instances_resource_in_world(
   _probe : @asset.Handle[M],
 ) -> Unit {
   let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
-  if (try! world.get_resource(key)) is None {
+  if world.get_resource(key) is None {
     world.insert_resource(key, RenderMaterial2dInstances::new())
   }
 }
@@ -621,7 +621,7 @@ fn[M : Material2d] ensure_render_material2d_instances_resource_in_world(
 fn ensure_material2d_runtime_registry_resource_in_world(
   world : @ecs.World,
 ) -> Unit {
-  if (try! world.get_resource(Material2dRuntimeRegistry::resource())) is None {
+  if world.get_resource(Material2dRuntimeRegistry::resource()) is None {
     world.insert_resource(
       Material2dRuntimeRegistry::resource(),
       Material2dRuntimeRegistry::new(),
@@ -820,7 +820,7 @@ fn[M : Material2d] prepared_material2d_assets_or_empty(
     @render.RenderAssets[PreparedMaterial2d[M]],
   ] = @render.RenderAssets::resource()
   let empty_prepared_assets : @render.RenderAssets[PreparedMaterial2d[M]] = @render.RenderAssets::new()
-  if (try! world.get_resource(prepared_assets_key)) is Some(prepared_assets) {
+  if world.get_resource(prepared_assets_key) is Some(prepared_assets) {
     prepared_assets
   } else {
     empty_prepared_assets
@@ -835,7 +835,7 @@ fn[M : Material2d] render_material2d_instances_or_empty(
   _probe |> ignore
   let instances_key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
   let empty_instances = RenderMaterial2dInstances::new()
-  if (try! world.get_resource(instances_key)) is Some(instances) {
+  if world.get_resource(instances_key) is Some(instances) {
     instances
   } else {
     empty_instances
@@ -850,7 +850,7 @@ fn[M : Material2d] material2d_pipeline_or_default(
   _probe |> ignore
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[M]] = Material2dPipeline::resource()
   let default_pipeline = Material2dPipeline::default()
-  if (try! world.get_resource(pipeline_key)) is Some(pipeline) {
+  if world.get_resource(pipeline_key) is Some(pipeline) {
     pipeline
   } else {
     default_pipeline
@@ -957,8 +957,7 @@ fn Material2dRuntimeRegistry::register(
 fn material2d_runtime_registry_or_empty(
   world : @ecs.World,
 ) -> Material2dRuntimeRegistry {
-  if (try! world.get_resource(Material2dRuntimeRegistry::resource()))
-    is Some(registry) {
+  if world.get_resource(Material2dRuntimeRegistry::resource()) is Some(registry) {
     registry
   } else {
     Material2dRuntimeRegistry::new()
@@ -1014,7 +1013,7 @@ fn[M : Material2d] register_material2d_runtime_world(
   probe : @asset.Handle[M],
 ) -> Unit {
   ensure_material2d_runtime_registry_resource_in_world(world)
-  if (try! world.get_resource_mut(Material2dRuntimeRegistry::resource()))
+  if world.get_resource_mut(Material2dRuntimeRegistry::resource())
     is Some(registry) {
     registry.modify(fn(value) {
       value.register(material2d_runtime_entry(probe))
@@ -1059,7 +1058,7 @@ fn[M : Material2d] extract_material2d_mesh_instances_system(
   let source_world = @render.render_source_world(world)
   let material_key : @ecs.ComponentKey[MeshMaterial2d[M]] = MeshMaterial2d::component()
   let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
-  guard (try! world.get_resource_mut(key)) is Some(instances) else { return }
+  guard world.get_resource_mut(key) is Some(instances) else { return }
   instances.modify(fn(value) {
     value.clear()
     source_world.for_each_component(material_key, fn(entity, material) {
@@ -1081,18 +1080,12 @@ fn[M : Material2d + @asset.Asset] prepare_material2d_assets_system(
   let prepared_assets_key : @ecs.ResourceKey[
     @render.RenderAssets[PreparedMaterial2d[M]],
   ] = @render.RenderAssets::resource()
-  guard (try! world.get_resource(instances_key)) is Some(instances) else {
+  guard world.get_resource(instances_key) is Some(instances) else { return }
+  guard source_world.get_resource(source_assets_key) is Some(source_assets) else {
     return
   }
-  guard (try! source_world.get_resource(source_assets_key))
-    is Some(source_assets) else {
-    return
-  }
-  guard (try! world.get_resource(pipeline_key)) is Some(pipeline) else {
-    return
-  }
-  guard (try! world.get_resource_mut(prepared_assets_key))
-    is Some(prepared_assets) else {
+  guard world.get_resource(pipeline_key) is Some(pipeline) else { return }
+  guard world.get_resource_mut(prepared_assets_key) is Some(prepared_assets) else {
     return
   }
   let prepared_ids : @hashset.HashSet[Int] = @hashset.HashSet([])

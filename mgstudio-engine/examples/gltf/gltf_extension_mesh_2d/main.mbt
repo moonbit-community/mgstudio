@@ -76,7 +76,7 @@ fn convert_mesh_to_2d(
     return
   }
   let mesh_assets_ref : Ref[@asset.Assets[@mesh.Mesh]] = match
-    (try! world.get_resource_ref_mut(@asset.assets_resource_key())) {
+    world.get_resource_ref_mut(@asset.assets_resource_key()) {
     Some(value) => value
     None => return
   }
@@ -86,7 +86,7 @@ fn convert_mesh_to_2d(
   guard mesh3d_to_mesh2d(source_mesh) is Some(mesh2d_asset) else { return }
   let mesh2d_handle = mesh_assets_ref.val.add(mesh2d_asset)
   let color_materials_ref : Ref[@asset.Assets[@sprite.ColorMaterialAsset]] = match
-    (try! world.get_resource_ref_mut(@asset.assets_resource_key())) {
+    world.get_resource_ref_mut(@asset.assets_resource_key()) {
     Some(value) => value
     None => return
   }

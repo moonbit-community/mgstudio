@@ -26,11 +26,10 @@ test "sprite: Wireframe2dConfig can be accessed through ResMut" {
 
   debug_inspect(observed.val, content="Some(false)")
   debug_inspect(
-    (try! app.world().get_resource(Wireframe2dConfig::resource())).map(fn(
-      config,
-    ) {
-      config.global
-    }),
+    app
+    .world()
+    .get_resource(Wireframe2dConfig::resource())
+    .map(fn(config) { config.global }),
     content="Some(true)",
   )
 }

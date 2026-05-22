@@ -213,7 +213,7 @@ pub fn RenderVisibilityRanges::buffer(
 
 ///|
 fn ensure_render_visibility_ranges_resource(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(ecs_key_render_visibility_ranges)) is None {
+  if world.get_resource(ecs_key_render_visibility_ranges) is None {
     world.insert_resource(
       ecs_key_render_visibility_ranges,
       RenderVisibilityRanges::default(),
@@ -233,7 +233,7 @@ fn extract_visibility_ranges_system(render_world : @ecs.World) -> Unit {
     @root_visibility.ecs_key_visibility_range, system_ticks,
   )
   let ranges = match
-    (try! render_world.get_resource_mut(ecs_key_render_visibility_ranges)) {
+    render_world.get_resource_mut(ecs_key_render_visibility_ranges) {
     Some(value) => value
     None =>
       abort(
@@ -285,7 +285,7 @@ fn render_visibility_ranges_write(
 ///|
 fn write_render_visibility_ranges_system(render_world : @ecs.World) -> Unit {
   let ranges = match
-    (try! render_world.get_resource_mut(ecs_key_render_visibility_ranges)) {
+    render_world.get_resource_mut(ecs_key_render_visibility_ranges) {
     Some(v) => v
     None =>
       abort(

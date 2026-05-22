@@ -108,9 +108,7 @@ fn core_pipeline_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   let world = sub_app.world()
-  if (try! world.get_resource(
-      @fullscreen_vertex_shader.ecs_key_fullscreen_shader,
-    ))
+  if world.get_resource(@fullscreen_vertex_shader.ecs_key_fullscreen_shader)
     is None {
     world.insert_resource(
       @fullscreen_vertex_shader.ecs_key_fullscreen_shader,

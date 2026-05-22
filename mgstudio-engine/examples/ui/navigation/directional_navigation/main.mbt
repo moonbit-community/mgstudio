@@ -392,8 +392,7 @@ fn activate_focused_button(world : @ecs.World) -> Unit {
   if !activate {
     return
   }
-  let focused = match
-    (try! world.get_resource(@input_focus.InputFocus::resource())) {
+  let focused = match world.get_resource(@input_focus.InputFocus::resource()) {
     Some(focus) => focus.get()
     None => None
   }
@@ -406,8 +405,7 @@ fn activate_focused_button(world : @ecs.World) -> Unit {
     world,
     @ecs.With::new(NavButton::component()),
   )
-  let status_ref = match
-    (try! world.get_resource_mut(NavigationStatus::resource())) {
+  let status_ref = match world.get_resource_mut(NavigationStatus::resource()) {
     Some(status_ref) => status_ref
     None => return
   }
@@ -435,8 +433,7 @@ fn activate_focused_button(world : @ecs.World) -> Unit {
 
 ///|
 fn update_focus_display(world : @ecs.World) -> Unit {
-  let focused = match
-    (try! world.get_resource(@input_focus.InputFocus::resource())) {
+  let focused = match world.get_resource(@input_focus.InputFocus::resource()) {
     Some(focus) => focus.get()
     None => None
   }
@@ -468,7 +465,7 @@ fn update_focus_display(world : @ecs.World) -> Unit {
 
 ///|
 fn update_last_input_display(world : @ecs.World) -> Unit {
-  let label = match (try! world.get_resource(NavigationStatus::resource())) {
+  let label = match world.get_resource(NavigationStatus::resource()) {
     Some(status) => status.label
     None => "Last Input: None"
   }
@@ -481,8 +478,7 @@ fn update_last_input_display(world : @ecs.World) -> Unit {
 
 ///|
 fn update_button_visuals(world : @ecs.World) -> Unit {
-  let focused = match
-    (try! world.get_resource(@input_focus.InputFocus::resource())) {
+  let focused = match world.get_resource(@input_focus.InputFocus::resource()) {
     Some(focus) => focus.get()
     None => None
   }

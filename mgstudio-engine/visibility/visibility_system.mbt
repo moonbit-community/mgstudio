@@ -145,7 +145,7 @@ fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
 
 ///|
 pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(ecs_key_visibility_propagation_state)) is None {
+  if world.get_resource(ecs_key_visibility_propagation_state) is None {
     visibility_propagate_full_scan(world)
     world.insert_resource(ecs_key_visibility_propagation_state, VisibilityPropagationState::{
 

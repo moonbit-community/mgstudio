@@ -92,35 +92,33 @@ test "pbr meshlet: plugin installs state into app and render sub-app" {
     .add_plugins(@render.RenderPlugin::default())
     .add_plugins(MeshletPlugin::default())
   inspect(
-    (try! app.world().get_resource(ecs_key_meshlet_plugin_state)) is Some(_),
+    app.world().get_resource(ecs_key_meshlet_plugin_state) is Some(_),
     content="true",
   )
   let meshlet_assets_key : @ecs.ResourceKey[@asset.Assets[MeshletMesh]] = @asset.assets_resource_key()
   inspect(
-    (try! app.world().get_resource(meshlet_assets_key)) is Some(_),
+    app.world().get_resource(meshlet_assets_key) is Some(_),
     content="true",
   )
   let render_world = app.sub_app(@app.RenderApp).world()
   inspect(
-    (try! render_world.get_resource(ecs_key_meshlet_plugin_state)) is Some(_),
+    render_world.get_resource(ecs_key_meshlet_plugin_state) is Some(_),
     content="true",
   )
   inspect(
-    (try! render_world.get_resource(ecs_key_meshlet_instance_manager))
-    is Some(_),
+    render_world.get_resource(ecs_key_meshlet_instance_manager) is Some(_),
     content="true",
   )
   inspect(
-    (try! render_world.get_resource(ecs_key_meshlet_resource_manager))
-    is Some(_),
+    render_world.get_resource(ecs_key_meshlet_resource_manager) is Some(_),
     content="true",
   )
   inspect(
-    (try! render_world.get_resource(ecs_key_meshlet_pipelines)) is Some(_),
+    render_world.get_resource(ecs_key_meshlet_pipelines) is Some(_),
     content="true",
   )
   inspect(
-    (try! render_world.get_resource(ecs_key_meshlet_mesh_manager)) is Some(_),
+    render_world.get_resource(ecs_key_meshlet_mesh_manager) is Some(_),
     content="true",
   )
 }

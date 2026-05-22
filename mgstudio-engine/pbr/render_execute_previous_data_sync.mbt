@@ -29,18 +29,16 @@ fn render3d_previous_global_transform_sync_state_mut(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Render3dPreviousGlobalTransformSyncState] {
   match
-    (try! world.get_resource_mut(
-      render3d_previous_global_transform_sync_state_key,
-    )) {
+    world.get_resource_mut(render3d_previous_global_transform_sync_state_key) {
     Some(state) => state
     None => {
       world.insert_resource(render3d_previous_global_transform_sync_state_key, Render3dPreviousGlobalTransformSyncState::{
         verified_missing_scan_generation: -1,
       })
       match
-        (try! world.get_resource_mut(
+        world.get_resource_mut(
           render3d_previous_global_transform_sync_state_key,
-        )) {
+        ) {
         Some(state) => state
         None =>
           abort("Missing Render3dPreviousGlobalTransformSyncState resource")

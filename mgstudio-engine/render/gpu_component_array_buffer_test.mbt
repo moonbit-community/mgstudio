@@ -54,7 +54,7 @@ test "render gpu component array buffer: prepare populates buffer and entity ind
     state_key,
     component_key=TestGpuComponentArrayBufferComponent::component(),
   )
-  let state = (try! world.get_resource(state_key)).unwrap()
+  let state = world.get_resource(state_key).unwrap()
   debug_inspect(state.buffer().len(), content="2")
   debug_inspect(state.index(entity0) is Some(_), content="true")
   debug_inspect(state.index(entity1) is Some(_), content="true")
@@ -90,7 +90,7 @@ test "render gpu component array buffer: prepare clears stale component indices"
     state_key,
     component_key=TestGpuComponentArrayBufferComponent::component(),
   )
-  let state = (try! world.get_resource(state_key)).unwrap()
+  let state = world.get_resource(state_key).unwrap()
   debug_inspect(state.buffer().len(), content="0")
   debug_inspect(state.index(entity) is None, content="true")
 }

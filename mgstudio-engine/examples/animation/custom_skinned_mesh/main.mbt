@@ -94,7 +94,7 @@ fn setup(world : @ecs.World) -> Unit {
     @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
   ] = @asset.assets_resource_key()
   let inverse_bindposes_assets_ref = match
-    (try! world.get_resource_ref_mut(inverse_bindposes_assets_key)) {
+    world.get_resource_ref_mut(inverse_bindposes_assets_key) {
     Some(assets_ref) => assets_ref
     None =>
       abort(

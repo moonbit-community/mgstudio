@@ -427,10 +427,8 @@ fn ldtk_project_ready(
   let key : @ecs.ResourceKey[@asset.Assets[LdtkProject]] = @asset.assets_resource_key()
   let image_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
   let blob_key : @ecs.ResourceKey[@asset.Assets[@asset.Blob]] = @asset.assets_resource_key()
-  guard (try! world.get_resource(key)) is Some(project_assets) else {
-    return false
-  }
-  guard (try! world.get_resource(image_key)) is Some(image_assets) else {
+  guard world.get_resource(key) is Some(project_assets) else { return false }
+  guard world.get_resource(image_key) is Some(image_assets) else {
     return false
   }
   guard project_assets.get(handle) is Some(project) else { return false }
@@ -445,9 +443,7 @@ fn ldtk_project_ready(
   if project.external_level_blob_handles.length() == 0 {
     return true
   }
-  guard (try! world.get_resource(blob_key)) is Some(blob_assets) else {
-    return false
-  }
+  guard world.get_resource(blob_key) is Some(blob_assets) else { return false }
   for entry in project.external_level_blob_handles.iter() {
     let (_, blob_handle) = entry
     if blob_assets.get(blob_handle) is None {

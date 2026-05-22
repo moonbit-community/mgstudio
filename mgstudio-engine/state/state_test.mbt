@@ -42,7 +42,7 @@ test "state boundary re-exports state resources and transitions" {
   let app = @state.insert_state_app(app, TestState::Idle)
   let world = app.world()
   let key = @state.state_resource_key(TestState::Idle)
-  let current = try! world.get_resource(key)
+  let current = world.get_resource(key)
   debug_inspect(current is Some(_), content="true")
   let in_idle = @state.in_state(TestState::Idle)
   debug_inspect(in_idle(world), content="true")

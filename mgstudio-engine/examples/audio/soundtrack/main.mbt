@@ -140,12 +140,11 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn cycle_game_state(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(GameStateTimer::resource()))
-    is Some(timer_state) else {
+  guard world.get_resource(GameStateTimer::resource()) is Some(timer_state) else {
     return
   }
   let time : @time.Time[Unit] = match
-    (try! world.get_resource(@time.default_time_resource_key())) {
+    world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in soundtrack example")
   }
@@ -157,7 +156,7 @@ fn cycle_game_state(world : @ecs.World) -> Unit {
     return
   }
 
-  guard (try! world.get_resource(GameState::resource())) is Some(game_state) else {
+  guard world.get_resource(GameState::resource()) is Some(game_state) else {
     return
   }
   let next_state = match game_state {
@@ -172,8 +171,7 @@ fn cycle_game_state(world : @ecs.World) -> Unit {
 
 ///|
 fn change_track(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(TrackChangePending::resource()))
-    is Some(pending) else {
+  guard world.get_resource(TrackChangePending::resource()) is Some(pending) else {
     return
   }
   if !pending.changed {
@@ -196,10 +194,10 @@ fn change_track(world : @ecs.World) -> Unit {
     }
   })
 
-  guard (try! world.get_resource(SoundtrackPlayer::resource())) is Some(player) else {
+  guard world.get_resource(SoundtrackPlayer::resource()) is Some(player) else {
     return
   }
-  guard (try! world.get_resource(GameState::resource())) is Some(game_state) else {
+  guard world.get_resource(GameState::resource()) is Some(game_state) else {
     return
   }
   let track = match game_state {
@@ -223,8 +221,7 @@ fn change_track(world : @ecs.World) -> Unit {
 
 ///|
 fn fade_in(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(GameStateTimer::resource()))
-    is Some(timer_state) else {
+  guard world.get_resource(GameStateTimer::resource()) is Some(timer_state) else {
     return
   }
 
@@ -269,8 +266,7 @@ fn fade_in(world : @ecs.World) -> Unit {
 
 ///|
 fn fade_out(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(GameStateTimer::resource()))
-    is Some(timer_state) else {
+  guard world.get_resource(GameStateTimer::resource()) is Some(timer_state) else {
     return
   }
 

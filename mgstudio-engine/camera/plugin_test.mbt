@@ -37,10 +37,8 @@ test "camera plugin: installs visibility and visibility-range plugins" {
 
   app = app.update()
   debug_inspect(
-    try! (app
-    .world()
-    .get_resource(@camera_visibility.ecs_key_visible_entity_ranges)
-    is Some(_)),
+    app.world().get_resource(@camera_visibility.ecs_key_visible_entity_ranges)
+    is Some(_),
     content="true",
   )
 }

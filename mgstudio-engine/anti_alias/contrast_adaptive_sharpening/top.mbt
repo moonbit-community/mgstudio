@@ -192,9 +192,7 @@ pub fn cas_update_runtime_state(world : @ecs.World) -> Unit {
     active_camera_count,
     denoise_camera_count,
   }
-  let current : CasRuntimeState? = try! world.get_resource(
-    ecs_key_cas_runtime_state,
-  )
+  let current : CasRuntimeState? = world.get_resource(ecs_key_cas_runtime_state)
   match current {
     Some(state) =>
       if state != next {

@@ -129,13 +129,13 @@ impl @app.Resource for Render3dWorldTransformCache with resource() {
 pub fn render3d_world_transform_cache_ref(
   world : @ecs.World,
 ) -> Ref[Render3dWorldTransformCache] {
-  if (try! world.get_resource(Render3dWorldTransformCache::resource())) is None {
+  if world.get_resource(Render3dWorldTransformCache::resource()) is None {
     world.insert_resource(
       Render3dWorldTransformCache::resource(),
       render3d_world_transform_cache_new(),
     )
   }
-  match (try! world.get_resource_mut(Render3dWorldTransformCache::resource())) {
+  match world.get_resource_mut(Render3dWorldTransformCache::resource()) {
     Some(cache_ref) => Ref(cache_ref.peek())
     None => abort("Missing Render3dWorldTransformCache resource")
   }

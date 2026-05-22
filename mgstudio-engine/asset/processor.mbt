@@ -179,7 +179,7 @@ fn asset_processor_registry_state_for_world(
   world : @ecs.World,
 ) -> AssetProcessorRegistryState {
   let key = asset_processor_registry_state_resource_key()
-  if (try! world.get_resource(key)) is None {
+  if world.get_resource(key) is None {
     world.insert_resource(key, AssetProcessorRegistryState::{
       processors: Ref(@hashmap.HashMap([])),
       default_processor_by_extension: Ref(@hashmap.HashMap([])),
@@ -187,7 +187,7 @@ fn asset_processor_registry_state_for_world(
       last_registered_entry: Ref(None),
     })
   }
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(state) => state
     None => abort("Failed to initialize asset processor registry resource")
   }
@@ -247,7 +247,7 @@ fn[T : Asset] register_asset_processor_with_name(
         },
         insert: fn(world, handle_id, payload) {
           let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-          let assets = match (try! world.get_resource_mut(key)) {
+          let assets = match world.get_resource_mut(key) {
             Some(value) => value
             None =>
               abort(

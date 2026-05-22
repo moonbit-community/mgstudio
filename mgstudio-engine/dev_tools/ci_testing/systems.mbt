@@ -137,11 +137,11 @@ fn ci_testing_try_exit_after_capture(
 
 ///|
 pub fn ci_testing_send_events_system(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource_ref_mut(ci_testing_config_resource_key))
+  guard world.get_resource_ref_mut(ci_testing_config_resource_key)
     is Some(config) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(ci_testing_runtime_state_resource_key))
+  guard world.get_resource_ref_mut(ci_testing_runtime_state_resource_key)
     is Some(state) else {
     return
   }

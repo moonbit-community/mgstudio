@@ -361,16 +361,14 @@ test "input: accumulated mouse resources follow bevy-style message accumulation"
   input_accumulate_mouse_motion_system(world)
   input_accumulate_mouse_scroll_system(world)
 
-  let motion = match
-    (try! world.get_resource(AccumulatedMouseMotion::resource())) {
+  let motion = match world.get_resource(AccumulatedMouseMotion::resource()) {
     Some(value) => value
     None => abort("missing accumulated mouse motion resource")
   }
   debug_inspect(motion.delta.x, content="1.25")
   debug_inspect(motion.delta.y, content="1.25")
 
-  let scroll = match
-    (try! world.get_resource(AccumulatedMouseScroll::resource())) {
+  let scroll = match world.get_resource(AccumulatedMouseScroll::resource()) {
     Some(value) => value
     None => abort("missing accumulated mouse scroll resource")
   }

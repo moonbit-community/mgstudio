@@ -13,11 +13,11 @@
 // limitations under the License.
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] read_time_test_resource(
+fn[T] read_time_test_resource(
   app : @app.App[@ecs.World],
   key : @ecs.ResourceKey[T],
 ) -> T {
-  try! app.world().get_resource(key).unwrap()
+  app.world().get_resource(key).unwrap()
 }
 
 ///|
@@ -46,12 +46,8 @@ fn update_virtual_test_resource(
   update : (Time[Virtual]) -> Time[Virtual],
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  let virtual_ref = try! world
-    .get_resource_mut(virtual_time_resource_key())
-    .unwrap()
-  let time_ref = try! world
-    .get_resource_mut(default_time_resource_key())
-    .unwrap()
+  let virtual_ref = world.get_resource_mut(virtual_time_resource_key()).unwrap()
+  let time_ref = world.get_resource_mut(default_time_resource_key()).unwrap()
   let next_virtual = update(virtual_ref.peek())
   virtual_ref.set(next_virtual)
   time_ref.set(next_virtual.as_generic())
@@ -294,10 +290,10 @@ test "time: generic time switches to fixed during fixed update and restores afte
     .add_plugins(TimePlugin::default())
     .insert_resource(Time::from_seconds(0.125F))
     .add_fixed_update_system(fn(world : @ecs.World) {
-      let generic_time : Time[Unit] = try! world
+      let generic_time : Time[Unit] = world
         .get_resource(default_time_resource_key())
         .unwrap()
-      let fixed_time : Time[Fixed] = try! world
+      let fixed_time : Time[Fixed] = world
         .get_resource(fixed_time_resource_key())
         .unwrap()
       fixed_log.push(

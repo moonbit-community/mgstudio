@@ -65,8 +65,7 @@ fn renderer_extract(
   main_world : @ecs.World,
   render_extract_world : @ecs.World,
 ) -> (@ecs.World, @ecs.World) {
-  if (try! main_world.get_resource(RenderAppChannels::resource()))
-    is Some(channels) {
+  if main_world.get_resource(RenderAppChannels::resource()) is Some(channels) {
     channels.render_app_in_render_thread = false
     main_world.insert_resource(RenderAppChannels::resource(), channels)
   }

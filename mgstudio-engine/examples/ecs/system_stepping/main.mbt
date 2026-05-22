@@ -135,7 +135,7 @@ fn main {
 
 ///|
 fn stepping_ref(app : @app.App[@ecs.World]) -> @ecs.ResourceMut[@app.Stepping] {
-  match (try! app.world().get_resource_mut(@app.Stepping::resource())) {
+  match app.world().get_resource_mut(@app.Stepping::resource()) {
     Some(resource_ref) => resource_ref
     None => abort("Stepping resource should exist")
   }

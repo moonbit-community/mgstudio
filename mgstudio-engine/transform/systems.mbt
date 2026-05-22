@@ -137,7 +137,7 @@ fn transform_propagation_scratch_ref_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[TransformPropagationScratch] {
   ensure_transform_runtime_resources(world)
-  match (try! world.get_resource_mut(ecs_key_transform_propagation_scratch)) {
+  match world.get_resource_mut(ecs_key_transform_propagation_scratch) {
     Some(scratch_ref) => scratch_ref
     None => abort("Missing TransformPropagationScratch resource")
   }
@@ -161,7 +161,7 @@ fn ensure_transform_runtime_resources(world : @ecs.World) -> Unit {
   if !world.resource(key).is_present() {
     world.insert_resource(key, StaticTransformOptimizations::default())
   }
-  if (try! world.get_resource(ecs_key_transform_propagation_scratch)) is None {
+  if world.get_resource(ecs_key_transform_propagation_scratch) is None {
     world.insert_resource(
       ecs_key_transform_propagation_scratch,
       transform_propagation_scratch_default(),

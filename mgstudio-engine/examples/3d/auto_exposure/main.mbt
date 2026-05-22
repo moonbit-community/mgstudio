@@ -172,7 +172,7 @@ fn auto_exposure_curve_assets_ref_mut_or_abort(
   world : @ecs.World,
 ) -> Ref[@asset.Assets[@pbr.AutoExposureCompensationCurve]] {
   let key : @ecs.ResourceKey[@asset.Assets[@pbr.AutoExposureCompensationCurve]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key)) {
+  match world.get_resource_ref_mut(key) {
     Some(assets_ref) => assets_ref
     None =>
       abort(
@@ -317,7 +317,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
+  match world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in auto_exposure example")
   }

@@ -222,8 +222,7 @@ fn button_system(world : @ecs.World) -> Unit {
 
 ///|
 fn focus_system(world : @ecs.World) -> Unit {
-  let focused = match
-    (try! world.get_resource(@input_focus.InputFocus::resource())) {
+  let focused = match world.get_resource(@input_focus.InputFocus::resource()) {
     Some(focus) => focus.get()
     None => None
   }

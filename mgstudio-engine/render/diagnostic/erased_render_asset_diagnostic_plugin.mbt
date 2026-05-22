@@ -84,14 +84,7 @@ pub fn ErasedRenderAssetDiagnosticState::new(
 
 ///|
 fn erased_render_asset_diagnostic_sample_system(world : @ecs.World) -> Unit {
-  match
-    (try
-      world.get_resource_mut(erased_render_asset_diagnostic_state_key)
-    catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource_mut(erased_render_asset_diagnostic_state_key) {
     Some(state_ref) =>
       ignore(
         state_ref.modify(fn(value) {

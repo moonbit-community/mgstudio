@@ -26,7 +26,7 @@ fn ldtk_find_tileset_definition_map(
 ///|
 fn ldtk_level_selection_or_default(world : @ecs.World) -> LevelSelection {
   let key : @ecs.ResourceKey[LevelSelection] = LevelSelection::resource()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(value) => value
     None => LevelSelection::default()
   }
@@ -35,7 +35,7 @@ fn ldtk_level_selection_or_default(world : @ecs.World) -> LevelSelection {
 ///|
 fn ldtk_settings_or_default(world : @ecs.World) -> LdtkSettings {
   let key : @ecs.ResourceKey[LdtkSettings] = LdtkSettings::resource()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(value) => value
     None => LdtkSettings::default()
   }
@@ -46,10 +46,10 @@ fn ldtk_runtime_state_ref_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[LdtkRuntimeState] {
   let key : @ecs.ResourceKey[LdtkRuntimeState] = LdtkRuntimeState::resource()
-  if (try! world.get_resource(key)) is None {
+  if world.get_resource(key) is None {
     world.insert_resource(key, LdtkRuntimeState::default())
   }
-  match (try! world.get_resource_mut(key)) {
+  match world.get_resource_mut(key) {
     Some(value) => value
     None => abort("Failed to initialize LdtkRuntimeState")
   }
@@ -60,7 +60,7 @@ fn ldtk_project_assets_ref_or_abort(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[@asset.Assets[LdtkProject]] {
   let key : @ecs.ResourceKey[@asset.Assets[LdtkProject]] = @asset.assets_resource_key()
-  match (try! world.get_resource_mut(key)) {
+  match world.get_resource_mut(key) {
     Some(value) => value
     None =>
       abort(
@@ -72,13 +72,13 @@ fn ldtk_project_assets_ref_or_abort(
 ///|
 fn ldtk_blob_assets_or_empty(world : @ecs.World) -> @asset.Assets[@asset.Blob]? {
   let key : @ecs.ResourceKey[@asset.Assets[@asset.Blob]] = @asset.assets_resource_key()
-  try! world.get_resource(key)
+  world.get_resource(key)
 }
 
 ///|
 fn ldtk_asset_server_or_default(world : @ecs.World) -> @asset.AssetServer {
   let key : @ecs.ResourceKey[@asset.AssetServer] = @asset.AssetServer::resource()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(value) => value
     None => @asset.AssetServer::new()
   }
@@ -283,7 +283,7 @@ pub fn apply_level_selection(world : @ecs.World) -> Unit {
   let level_selection = ldtk_level_selection_or_default(world)
   let ldtk_settings = ldtk_settings_or_default(world)
   let project_assets_key : @ecs.ResourceKey[@asset.Assets[LdtkProject]] = @asset.assets_resource_key()
-  guard (try! world.get_resource(project_assets_key)) is Some(project_assets) else {
+  guard world.get_resource(project_assets_key) is Some(project_assets) else {
     return
   }
   let query : @ecs.Query[
@@ -323,7 +323,7 @@ pub fn apply_level_selection(world : @ecs.World) -> Unit {
 pub fn apply_level_set(world : @ecs.World) -> Unit {
   let ldtk_settings = ldtk_settings_or_default(world)
   let project_assets_key : @ecs.ResourceKey[@asset.Assets[LdtkProject]] = @asset.assets_resource_key()
-  guard (try! world.get_resource(project_assets_key)) is Some(project_assets) else {
+  guard world.get_resource(project_assets_key) is Some(project_assets) else {
     return
   }
   let blob_assets = ldtk_blob_assets_or_empty(world)
@@ -408,7 +408,7 @@ pub fn clean_respawn_entities(world : @ecs.World) -> Unit {
 pub fn process_ldtk_levels(world : @ecs.World) -> Unit {
   let ldtk_settings = ldtk_settings_or_default(world)
   let project_assets_key : @ecs.ResourceKey[@asset.Assets[LdtkProject]] = @asset.assets_resource_key()
-  guard (try! world.get_resource(project_assets_key)) is Some(project_assets) else {
+  guard world.get_resource(project_assets_key) is Some(project_assets) else {
     return
   }
   let blob_assets = ldtk_blob_assets_or_empty(world)

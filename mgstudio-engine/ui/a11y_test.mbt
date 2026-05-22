@@ -218,9 +218,7 @@ test "ui: a11y focus in tree update follows InputFocus resource" {
     ),
   )
 
-  let focus_ref = try! world.get_resource_mut(
-    @input_focus.InputFocus::resource(),
-  )
+  let focus_ref = world.get_resource_mut(@input_focus.InputFocus::resource())
   match focus_ref {
     Some(value) => {
       value.set_changed()

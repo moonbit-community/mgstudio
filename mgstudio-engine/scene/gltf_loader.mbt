@@ -81,8 +81,7 @@ impl @app.Resource for SceneGltfPendingRequestsState with resource() {
 fn scene_gltf_pending_requests_state_ref_or_abort(
   world : @ecs.World,
 ) -> Ref[SceneGltfPendingRequestsState] {
-  match
-    (try! world.get_resource_ref_mut(ecs_key_scene_gltf_pending_requests_state)) {
+  match world.get_resource_ref_mut(ecs_key_scene_gltf_pending_requests_state) {
     Some(state_ref) => state_ref
     None =>
       abort(

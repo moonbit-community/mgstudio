@@ -267,7 +267,7 @@ test "default plugins: set(AssetPlugin::default_nearest()) replaces default asse
   )
 
   let asset_server : @asset.AssetServer = match
-    (try! app.world().get_resource(@asset.AssetServer::resource())) {
+    app.world().get_resource(@asset.AssetServer::resource()) {
     Some(asset_server) => asset_server
     None => abort("missing asset server resource")
   }
@@ -284,7 +284,7 @@ test "default plugins: set(AssetPlugin::with_file_path(...)) changes asset root"
   )
 
   let asset_server : @asset.AssetServer = match
-    (try! app.world().get_resource(@asset.AssetServer::resource())) {
+    app.world().get_resource(@asset.AssetServer::resource()) {
     Some(asset_server) => asset_server
     None => abort("missing asset server resource")
   }
@@ -310,7 +310,7 @@ test "default plugins: register_asset_source adds a named Bevy-style extra sourc
   ).add_plugins(DefaultPlugins::build())
 
   let asset_server : @asset.AssetServer = match
-    (try! app.world().get_resource(@asset.AssetServer::resource())) {
+    app.world().get_resource(@asset.AssetServer::resource()) {
     Some(asset_server) => asset_server
     None => abort("missing asset server resource")
   }
@@ -367,7 +367,7 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
   ).add_plugins(DefaultPlugins::build())
 
   let asset_server : @asset.AssetServer = match
-    (try! app.world().get_resource(@asset.AssetServer::resource())) {
+    app.world().get_resource(@asset.AssetServer::resource()) {
     Some(asset_server) => asset_server
     None => abort("missing asset server resource")
   }
@@ -396,8 +396,7 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
   debug_inspect(directories.val.contains(""), content="true")
   debug_inspect(dir_checks.val.contains(""), content="true")
   debug_inspect(
-    match
-      (try! app.world().get_resource(@asset.loaded_folder_assets_resource_key())) {
+    match app.world().get_resource(@asset.loaded_folder_assets_resource_key()) {
       Some(loaded_folders) =>
         match loaded_folders.get(folder_handle) {
           Some(folder) => folder.handles.length() >= 1
@@ -432,7 +431,7 @@ test "default plugins: register_asset_source can wrap the default source reader"
   ).add_plugins(DefaultPlugins::build())
 
   let asset_server : @asset.AssetServer = match
-    (try! app.world().get_resource(@asset.AssetServer::resource())) {
+    app.world().get_resource(@asset.AssetServer::resource()) {
     Some(asset_server) => asset_server
     None => abort("missing asset server resource")
   }

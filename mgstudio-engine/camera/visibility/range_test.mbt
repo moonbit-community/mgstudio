@@ -73,9 +73,7 @@ test "camera visibility range: entity in range of camera" {
     @root_visibility.VisibilityRange::abrupt(0.0F, 10.0F),
   )
   check_visibility_ranges(world)
-  let ranges = (world.get_resource(ecs_key_visible_entity_ranges) catch {
-    _ => None
-  }).unwrap()
+  let ranges = world.get_resource(ecs_key_visible_entity_ranges).unwrap()
   debug_inspect(ranges.entity_is_in_range_of_view(mesh, camera), content="true")
 }
 
@@ -95,9 +93,7 @@ test "camera visibility range: entity out of range of camera" {
     @root_visibility.VisibilityRange::abrupt(0.0F, 10.0F),
   )
   check_visibility_ranges(world)
-  let ranges = (world.get_resource(ecs_key_visible_entity_ranges) catch {
-    _ => None
-  }).unwrap()
+  let ranges = world.get_resource(ecs_key_visible_entity_ranges).unwrap()
   debug_inspect(
     ranges.entity_is_in_range_of_view(mesh, camera),
     content="false",
@@ -128,9 +124,7 @@ test "camera visibility range: use_aabb uses transformed aabb center" {
     ),
   )
   check_visibility_ranges(world)
-  let ranges = (world.get_resource(ecs_key_visible_entity_ranges) catch {
-    _ => None
-  }).unwrap()
+  let ranges = world.get_resource(ecs_key_visible_entity_ranges).unwrap()
   debug_inspect(ranges.entity_is_in_range_of_view(mesh, camera), content="true")
 }
 
@@ -155,9 +149,7 @@ test "camera visibility range: no cpu culling entities are excluded" {
     @root_visibility.NoCpuCulling::default(),
   )
   check_visibility_ranges(world)
-  let ranges = (world.get_resource(ecs_key_visible_entity_ranges) catch {
-    _ => None
-  }).unwrap()
+  let ranges = world.get_resource(ecs_key_visible_entity_ranges).unwrap()
   debug_inspect(
     ranges.entity_is_in_range_of_view(mesh, camera),
     content="false",
@@ -192,8 +184,6 @@ test "camera visibility range: shadow lod origin participates as a view" {
     @root_visibility.VisibilityRange::abrupt(0.0F, 10.0F),
   )
   check_visibility_ranges(world)
-  let ranges = (world.get_resource(ecs_key_visible_entity_ranges) catch {
-    _ => None
-  }).unwrap()
+  let ranges = world.get_resource(ecs_key_visible_entity_ranges).unwrap()
   debug_inspect(ranges.entity_is_in_range_of_view(mesh, origin), content="true")
 }

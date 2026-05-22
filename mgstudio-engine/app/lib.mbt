@@ -29,12 +29,12 @@ pub(all) suberror PluginGroupError {
 
 ///|
 pub(open) trait Plugin {
-  build(Self, App[@ecs.World]) -> App[@ecs.World]
-  name(Self) -> String = _
-  is_unique(Self) -> Bool = _
-  ready(Self, App[@ecs.World]) -> Bool = _
-  finish(Self, App[@ecs.World]) -> App[@ecs.World] = _
-  cleanup(Self, App[@ecs.World]) -> App[@ecs.World] = _
+  fn build(Self, App[@ecs.World]) -> App[@ecs.World]
+  fn name(Self) -> String = _
+  fn is_unique(Self) -> Bool = _
+  fn ready(Self, App[@ecs.World]) -> Bool = _
+  fn finish(Self, App[@ecs.World]) -> App[@ecs.World] = _
+  fn cleanup(Self, App[@ecs.World]) -> App[@ecs.World] = _
 }
 
 ///|
@@ -82,8 +82,8 @@ pub struct PluginGroupBuilder[W] {
 
 ///|
 pub(open) trait PluginGroup {
-  build(Self) -> PluginGroupBuilder[@ecs.World]
-  name(Self) -> String = _
+  fn build(Self) -> PluginGroupBuilder[@ecs.World]
+  fn name(Self) -> String = _
 }
 
 ///|
@@ -585,10 +585,10 @@ pub(all) enum ExecutorKind {
 
 ///|
 pub(open) trait SystemParam {
-  init_state(@ecs.World) -> Json
-  get(Ref[Json]) -> Self raise
-  store(Self, Ref[Json]) -> Unit
-  access(@ecs.World) -> SystemAccess = _
+  fn init_state(@ecs.World) -> Json
+  fn get(Ref[Json]) -> Self raise
+  fn store(Self, Ref[Json]) -> Unit
+  fn access(@ecs.World) -> SystemAccess = _
 }
 
 ///|
@@ -598,7 +598,7 @@ impl SystemParam with access(_world) {
 
 ///|
 pub(open) trait Resource: @ecs.EcsPayloadCodec {
-  resource() -> @ecs.ResourceKey[Self]
+  fn resource() -> @ecs.ResourceKey[Self]
 }
 
 ///|
@@ -763,14 +763,12 @@ pub fn[T : Resource] ResMut::set_added(
 ///|
 fn[T : Resource] res_mut_value_or_abort(item : ResMut[T]) -> T {
   let world = res_mut_world_or_abort(item)
-  match
-    (try world.get_resource(T::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource(T::resource()) {
     Some(value) => value
-    None => abort("ResMut expected a fetched system parameter")
+    None =>
+      abort(
+        "ResMut expected resource `\{T::resource().debug_name()}` to exist in the current world",
+      )
   }
 }
 
@@ -839,12 +837,7 @@ fn[T] system_param_raise_invalid_missing_resource() -> T raise @ecs.SystemParamV
 fn[T : Resource] world_resource_value_or_raise(
   world : @ecs.World,
 ) -> T raise @ecs.SystemParamValidationError {
-  match
-    (try world.get_resource(Resource::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource(Resource::resource()) {
     Some(value) => value
     None => system_param_raise_invalid_missing_resource()
   }
@@ -2039,6 +2032,7 @@ pub impl[T : Resource] SystemParam for ResMut[T] with init_state(world) {
 ///|
 pub impl[T : Resource] SystemParam for ResMut[T] with get(_state) {
   let world = system_param_abort_missing_world()
+  let _resource : T = world_resource_value_or_raise(world)
   ResMut::{ world: Some(world), key: Some(T::resource()) }
 }
 
@@ -2228,7 +2222,7 @@ fn[W] auto_apply_deferred_system(sync_i : Int) -> SystemConfig[W] {
 
 ///|
 pub(open) trait ChainedSystemConfigs {
-  chain(Self) -> SystemConfig[@ecs.World]
+  fn chain(Self) -> SystemConfig[@ecs.World]
 }
 
 ///|
@@ -2608,7 +2602,7 @@ pub fn[T : Resource] App::insert_resource(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] App::insert_world_resource(
+pub fn[T] App::insert_world_resource(
   self : App[@ecs.World],
   key : @ecs.ResourceKey[T],
   value : T,
@@ -2624,12 +2618,7 @@ pub fn[T : Resource] App::init_resource(
   init : () -> T,
 ) -> App[@ecs.World] {
   let key = Resource::resource()
-  let has_resource = match
-    (try self.sub_apps.main.world.get_resource(key) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  let has_resource = match self.sub_apps.main.world.get_resource(key) {
     Some(_) => true
     None => false
   }
@@ -2640,16 +2629,11 @@ pub fn[T : Resource] App::init_resource(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] App::contains_resource(
+pub fn[T] App::contains_resource(
   self : App[@ecs.World],
   key : @ecs.ResourceKey[T],
 ) -> Bool {
-  match
-    (try self.sub_apps.main.world.get_resource(key) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match self.sub_apps.main.world.get_resource(key) {
     Some(_) => true
     None => false
   }
@@ -2690,15 +2674,11 @@ pub fn[T : Resource] App::is_ambiguous_resource_allowed(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] App::remove_resource(
+pub fn[T] App::remove_resource(
   self : App[@ecs.World],
   key : @ecs.ResourceKey[T],
 ) -> T? {
-  try self.sub_apps.main.world.remove_resource(key) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  self.sub_apps.main.world.remove_resource(key)
 }
 
 ///|

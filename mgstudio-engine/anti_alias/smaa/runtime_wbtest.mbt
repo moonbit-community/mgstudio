@@ -33,10 +33,7 @@ test "anti_alias/smaa: runtime state counts only camera entities with Smaa" {
   .world()
   .set_by_key(non_camera_entity, Smaa::component(), Smaa::default())
   let app = app.update()
-  let runtime = try! app
-    .world()
-    .get_resource(SmaaRuntimeState::resource())
-    .unwrap()
+  let runtime = app.world().get_resource(SmaaRuntimeState::resource()).unwrap()
   debug_inspect(runtime.enabled_camera_count, content="1")
   debug_inspect(runtime.runtime_supported, content="false")
 }
@@ -59,7 +56,7 @@ test "anti_alias/smaa: plugin registers embedded wgsl source" {
 test "anti_alias/smaa: plugin registers Bevy lookup table assets" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(SmaaPlugin::default())
   debug_inspect(
-    try! (app.world().get_resource(ecs_key_smaa_luts) is Some(_)),
+    app.world().get_resource(ecs_key_smaa_luts) is Some(_),
     content="true",
   )
   debug_inspect(

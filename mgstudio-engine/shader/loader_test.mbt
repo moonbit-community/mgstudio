@@ -18,7 +18,7 @@ test "shader plugin initializes Assets<Shader> resource" {
   let world = app.world()
   let shader_assets_key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
   debug_inspect(
-    (try! world.get_resource(shader_assets_key)) is Some(_),
+    world.get_resource(shader_assets_key) is Some(_),
     content="true",
   )
 }
@@ -78,7 +78,7 @@ test "shader loader stores typed shader assets and direct file dependencies" {
       loaded_handle_ids.push(dep_handle.id())
 
       let shader_assets_key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
-      let shader_assets = match (try! world.get_resource(shader_assets_key)) {
+      let shader_assets = match world.get_resource(shader_assets_key) {
         Some(assets) => assets
         None => abort("expected Assets<Shader> resource")
       }

@@ -31,8 +31,7 @@ impl @app.Resource for CaptureState with resource() {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let target = @sprite_render.render2d_create_render_target_ecs(500, 500, false)
-  if (try! world.get_resource_ref_mut(capture_state_resource_key))
-    is Some(state) {
+  if world.get_resource_ref_mut(capture_state_resource_key) is Some(state) {
     state.val.target = Some(target)
   }
 

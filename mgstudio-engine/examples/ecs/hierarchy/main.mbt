@@ -14,7 +14,7 @@
 
 ///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.Time::resource())) {
+  match world.get_resource(@time.Time::resource()) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in hierarchy example")
   }
@@ -22,7 +22,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn world_asset_server(world : @ecs.World) -> @asset.AssetServer {
-  match (try! world.get_resource(@asset.AssetServer::resource())) {
+  match world.get_resource(@asset.AssetServer::resource()) {
     Some(server) => server
     None => abort("Missing AssetServer resource in hierarchy example")
   }

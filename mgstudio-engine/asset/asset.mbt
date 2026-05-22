@@ -264,7 +264,7 @@ fn[T] asset_with_server_world(asset_server : AssetServer, f : () -> T) -> T {
 ///|
 fn asset_server_from_active_world() -> AssetServer? {
   match asset_current_world() {
-    Some(world) => try! world.get_resource(asset_server_resource_key())
+    Some(world) => world.get_resource(asset_server_resource_key())
     None => None
   }
 }
@@ -294,7 +294,7 @@ fn asset_world_or_abort() -> @ecs.World {
 ///|
 pub fn[T : @app.Resource] asset_resource_or_abort() -> T {
   let world = asset_world_or_abort()
-  match (try! world.get_resource(T::resource())) {
+  match world.get_resource(T::resource()) {
     Some(value) => value
     None =>
       abort(
@@ -306,7 +306,7 @@ pub fn[T : @app.Resource] asset_resource_or_abort() -> T {
 ///|
 pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> T {
   let world = asset_world_or_abort()
-  match (try! world.get_resource(T::resource())) {
+  match world.get_resource(T::resource()) {
     Some(value) => value
     None =>
       abort(
@@ -320,7 +320,7 @@ pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> @ecs.ResourceMut[
   T,
 ] {
   let world = asset_world_or_abort()
-  match (try! world.get_resource_mut(T::resource())) {
+  match world.get_resource_mut(T::resource()) {
     Some(value) => value
     None =>
       abort(
@@ -1796,8 +1796,7 @@ fn asset_poll_modified_paths(asset_server : AssetServer) -> Array[String] {
 
 ///|
 fn asset_reload_modified_paths(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(asset_server_resource_key()))
-    is Some(asset_server) else {
+  guard world.get_resource(asset_server_resource_key()) is Some(asset_server) else {
     return
   }
   let modified_paths = asset_poll_modified_paths(asset_server)
@@ -1813,12 +1812,11 @@ fn asset_reload_modified_paths(world : @ecs.World) -> Unit {
 
 ///|
 fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(asset_server_resource_key()))
-    is Some(asset_server) else {
+  guard world.get_resource(asset_server_resource_key()) is Some(asset_server) else {
     return
   }
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
-  guard (try! world.get_resource_mut(key)) is Some(images_ref) else { return }
+  guard world.get_resource_mut(key) is Some(images_ref) else { return }
 
   let synced : Array[Int] = []
   asset_with_world(world, fn() {
@@ -1851,7 +1849,7 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
 ///|
 fn asset_sync_dirty_image_assets(world : @ecs.World) -> Unit {
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
-  guard (try! world.get_resource_mut(key)) is Some(images_ref) else { return }
+  guard world.get_resource_mut(key) is Some(images_ref) else { return }
   let dirty_handles = images_ref.modify(fn(store) { assets_drain_dirty(store) })
   let snapshot = images_ref.peek()
   for handle in dirty_handles {

@@ -14,7 +14,7 @@
 
 ///|
 fn tab_focus_resource(world : @ecs.World) -> InputFocus {
-  match (try! world.get_resource(InputFocus::resource())) {
+  match world.get_resource(InputFocus::resource()) {
     Some(focus) => focus
     None => abort("missing InputFocus resource")
   }

@@ -46,14 +46,13 @@ let render_pass_trace_fallback_state_ref : Ref[RenderPassTraceRuntimeState] = Re
 fn render_pass_trace_runtime_state() -> RenderPassTraceRuntimeState {
   match @app.current_world() {
     Some(world) => {
-      if (try! world.get_resource(ecs_key_render_pass_trace_runtime_state))
-        is None {
+      if world.get_resource(ecs_key_render_pass_trace_runtime_state) is None {
         world.insert_resource(
           ecs_key_render_pass_trace_runtime_state,
           render_pass_trace_runtime_state_default(),
         )
       }
-      match (try! world.get_resource(ecs_key_render_pass_trace_runtime_state)) {
+      match world.get_resource(ecs_key_render_pass_trace_runtime_state) {
         Some(state) => state
         None => render_pass_trace_fallback_state_ref.val
       }

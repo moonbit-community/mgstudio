@@ -115,7 +115,7 @@ fn mesh_ray_cast_mesh_asset(
   handle : @asset.Handle[@mesh.Mesh],
 ) -> @mesh.Mesh? {
   let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  guard (try! world.get_resource(key)) is Some(meshes) else { return None }
+  guard world.get_resource(key) is Some(meshes) else { return None }
   meshes.get(handle)
 }
 

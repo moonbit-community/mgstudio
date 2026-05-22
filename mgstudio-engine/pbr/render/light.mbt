@@ -145,7 +145,7 @@ fn render3d_bool_inverted_sort_key(value : Bool) -> Int {
 ///|
 fn render3d_point_light_shadow_texel_size(world : @ecs.World) -> Float {
   let shadow_map_size = match
-    (try! world.get_resource(@light.ecs_key_point_light_shadow_map)) {
+    world.get_resource(@light.ecs_key_point_light_shadow_map) {
     Some(v) => if v.size <= 0 { 1 } else { v.size }
     None => @light.PointLightShadowMap::default().size
   }
@@ -154,7 +154,7 @@ fn render3d_point_light_shadow_texel_size(world : @ecs.World) -> Float {
 
 ///|
 fn render3d_directional_light_shadow_map_size(world : @ecs.World) -> Int {
-  match (try! world.get_resource(@light.ecs_key_directional_light_shadow_map)) {
+  match world.get_resource(@light.ecs_key_directional_light_shadow_map) {
     Some(v) => if v.size <= 0 { 1 } else { v.size }
     None => @light.DirectionalLightShadowMap::default().size
   }
@@ -176,7 +176,7 @@ fn render3d_directional_light_decal_index(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Int {
-  match (try! world.get_resource(@pbr_decal.ecs_key_render_clustered_decals)) {
+  match world.get_resource(@pbr_decal.ecs_key_render_clustered_decals) {
     Some(decals) =>
       match decals.get_decal_index(entity) {
         Some(index) => index
@@ -1504,7 +1504,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
       point_light_count += 1
     }
   }
-  let ambient = if (try! world.get_resource(@light.ecs_key_global_ambient_light))
+  let ambient = if world.get_resource(@light.ecs_key_global_ambient_light)
     is Some(v) {
     v
   } else {
@@ -1703,8 +1703,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
 ///|
 pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
   let mut lighting = render3d_default_lighting_state()
-  if (try! world.get_resource(@light.ecs_key_global_ambient_light))
-    is Some(ambient) {
+  if world.get_resource(@light.ecs_key_global_ambient_light) is Some(ambient) {
     lighting = Render3dLightingState::{
       ..lighting,
       ambient_color: ambient.color,

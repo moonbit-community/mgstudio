@@ -83,7 +83,7 @@ fn color_lime() -> @sprite.Color {
 
 ///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
+  match world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in spatial_audio_3d example")
   }

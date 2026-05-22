@@ -18,7 +18,7 @@ test "plugin: ldtk_plugin installs its schedule after Update" {
   let world = app.world()
 
   let main_schedule_order = match
-    (try! world.get_resource(@app.main_schedule_order_resource_key())) {
+    world.get_resource(@app.main_schedule_order_resource_key()) {
     Some(value) => value
     None => abort("Expected MainScheduleOrder resource")
   }
@@ -48,19 +48,19 @@ test "plugin: ldtk_plugin initializes runtime resources" {
   let world = app.world()
 
   debug_inspect(
-    (try! world.get_resource(LevelSelection::resource())) is Some(_),
+    world.get_resource(LevelSelection::resource()) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! world.get_resource(LdtkSettings::resource())) is Some(_),
+    world.get_resource(LdtkSettings::resource()) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! world.get_resource(LdtkRuntimeState::resource())) is Some(_),
+    world.get_resource(LdtkRuntimeState::resource()) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! world.get_resource(LdtkSpawnedLevelIids::resource())) is Some(_),
+    world.get_resource(LdtkSpawnedLevelIids::resource()) is Some(_),
     content="true",
   )
 }

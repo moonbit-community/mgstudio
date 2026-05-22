@@ -182,41 +182,25 @@ pub fn DefaultSpatialScale::default() -> DefaultSpatialScale {
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] audio_resource_get(
-  world : @ecs.World,
-  key : @ecs.ResourceKey[T],
-) -> T? {
-  try world.get_resource(key) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+fn[T] audio_resource_get(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
+  world.get_resource(key)
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] audio_resource_mut(
+fn[T] audio_resource_mut(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
 ) -> @ecs.ResourceMut[T]? {
-  try world.get_resource_mut(key) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource_mut(key)
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] audio_resource_ensure_mut(
+fn[T] audio_resource_ensure_mut(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
   init : () -> T,
 ) -> @ecs.ResourceMut[T] {
-  if (try world.get_resource(key) catch {
-      _ => None
-    } noraise {
-      value => value
-    })
-    is None {
+  if world.get_resource(key) is None {
     world.insert_resource(key, init())
   }
   match audio_resource_mut(world, key) {

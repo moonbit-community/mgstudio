@@ -38,11 +38,11 @@ test "render3d: internal assets are stored per world resource" {
     content="true",
   )
   debug_inspect(
-    (try! world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
+    world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts) is None,
     content="true",
   )
   debug_inspect(
-    (try! world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
+    world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts) is None,
     content="true",
   )
 
@@ -61,12 +61,11 @@ test "render3d: internal assets are stored per world resource" {
     content="true",
   )
   debug_inspect(
-    (try! world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts))
-    is Some(_),
+    world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
+    world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts) is None,
     content="true",
   )
 }
@@ -78,8 +77,8 @@ test "render3d: light plugin inserts default directional shadow map resource" {
   )
   let world = app.world()
   init_mesh_render_resources(world)
-  let directional_shadow_map = (try! world.get_resource(
-    @light.ecs_key_directional_light_shadow_map,
-  )).unwrap()
+  let directional_shadow_map = world
+    .get_resource(@light.ecs_key_directional_light_shadow_map)
+    .unwrap()
   debug_inspect(directional_shadow_map.size, content="2048")
 }

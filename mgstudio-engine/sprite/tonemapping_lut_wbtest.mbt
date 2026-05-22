@@ -28,23 +28,22 @@ test "render2d: tonemapping LUT handles are stored per world core_pipeline resou
   let world_b = render2d_test_world_with_asset_server()
 
   debug_inspect(
-    (try! world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
+    world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts) is None,
     content="true",
   )
   debug_inspect(
-    (try! world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
+    world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts) is None,
     content="true",
   )
 
   @core_pipeline.tonemapping_luts_from_world_or_init(world_a) |> ignore
 
   debug_inspect(
-    (try! world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts))
-    is Some(_),
+    world_a.get_resource(@core_pipeline.ecs_key_tonemapping_luts) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts)) is None,
+    world_b.get_resource(@core_pipeline.ecs_key_tonemapping_luts) is None,
     content="true",
   )
 }

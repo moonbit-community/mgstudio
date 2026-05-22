@@ -87,8 +87,7 @@ fn setup_physics(world : @ecs.World) -> Unit {
 
 ///|
 fn despawn_one_box(world : @ecs.World) -> Unit {
-  let tick = match
-    (try! world.get_resource(@diagnostic.FrameCount::resource())) {
+  let tick = match world.get_resource(@diagnostic.FrameCount::resource()) {
     Some(frame_count) => frame_count.value
     None => 0
   }

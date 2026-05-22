@@ -60,7 +60,7 @@ fn pbr_default_runtime_config() -> PbrPluginRuntimeConfig {
 
 ///|
 pub fn pbr_plugin_runtime_config(world : @ecs.World) -> PbrPluginRuntimeConfig {
-  match (try! world.get_resource(ecs_key_pbr_plugin_runtime_config)) {
+  match world.get_resource(ecs_key_pbr_plugin_runtime_config) {
     Some(config) => config
     None => pbr_default_runtime_config()
   }

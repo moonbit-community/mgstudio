@@ -3166,13 +3166,9 @@ pub fn ui_build_a11y_tree_update(
   let tree_id = @moon_accesskit.TreeId::root()
   let root_id = @moon_accesskit.NodeId::root()
   let mut focus_id = root_id
-  let input_focus_value : @input_focus.InputFocus? = try
-    world.get_resource(@input_focus.InputFocus::resource())
-  catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  let input_focus_value : @input_focus.InputFocus? = world.get_resource(
+    @input_focus.InputFocus::resource(),
+  )
   let focus_entity : @core.Entity? = match input_focus_value {
     Some(input_focus) => input_focus.get()
     None => None

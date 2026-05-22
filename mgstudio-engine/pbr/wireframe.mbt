@@ -168,12 +168,12 @@ impl @app.Resource for Render3dWireframeMeshCache with resource() {
 fn render3d_wireframe_mesh_cache_ref_or_init(
   world : @ecs.World,
 ) -> Ref[Render3dWireframeMeshCache] {
-  if (try! world.get_resource(Render3dWireframeMeshCache::resource())) is None {
+  if world.get_resource(Render3dWireframeMeshCache::resource()) is None {
     world.insert_resource(Render3dWireframeMeshCache::resource(), {
       entries: [],
     })
   }
-  match (try! world.get_resource_mut(Render3dWireframeMeshCache::resource())) {
+  match world.get_resource_mut(Render3dWireframeMeshCache::resource()) {
     Some(cache) => Ref(cache.peek())
     None => abort("Missing Render3dWireframeMeshCache resource")
   }

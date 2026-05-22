@@ -14,7 +14,7 @@
 
 ///|
 fn read_focus_resource(world : @ecs.World) -> @input_focus.InputFocus {
-  match (try! world.get_resource(@input_focus.InputFocus::resource())) {
+  match world.get_resource(@input_focus.InputFocus::resource()) {
     Some(focus) => focus
     None => abort("missing InputFocus resource")
   }
@@ -24,7 +24,7 @@ fn read_focus_resource(world : @ecs.World) -> @input_focus.InputFocus {
 fn read_focus_visible_resource(
   world : @ecs.World,
 ) -> @input_focus.InputFocusVisible {
-  match (try! world.get_resource(@input_focus.InputFocusVisible::resource())) {
+  match world.get_resource(@input_focus.InputFocusVisible::resource()) {
     Some(visible) => visible
     None => abort("missing InputFocusVisible resource")
   }
@@ -34,7 +34,7 @@ fn read_focus_visible_resource(
 fn input_focus_resource_ref_mut(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[@input_focus.InputFocus] {
-  match (try! world.get_resource_mut(@input_focus.InputFocus::resource())) {
+  match world.get_resource_mut(@input_focus.InputFocus::resource()) {
     Some(value) => value
     None => abort("missing mutable InputFocus resource")
   }
@@ -44,8 +44,7 @@ fn input_focus_resource_ref_mut(
 fn input_focus_visible_resource_ref_mut(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[@input_focus.InputFocusVisible] {
-  match
-    (try! world.get_resource_mut(@input_focus.InputFocusVisible::resource())) {
+  match world.get_resource_mut(@input_focus.InputFocusVisible::resource()) {
     Some(value) => value
     None => abort("missing mutable InputFocusVisible resource")
   }

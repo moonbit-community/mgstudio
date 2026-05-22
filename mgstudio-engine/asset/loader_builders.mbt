@@ -133,13 +133,13 @@ fn asset_source_builder_registry_for_world(
   world : @ecs.World,
 ) -> AssetSourceBuilderRegistryState {
   let key = asset_source_builder_registry_resource_key()
-  if (try! world.get_resource(key)) is None {
+  if world.get_resource(key) is None {
     world.insert_resource(key, AssetSourceBuilderRegistryState::{
       named_builders: Ref(@hashmap.HashMap([])),
       default_builder: Ref(None),
     })
   }
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(state) => state
     None => abort("Failed to initialize asset source builder registry resource")
   }

@@ -17,10 +17,7 @@ fn read_frame_time_diagnostic_value(
   app : @app.App[@ecs.World],
   path : DiagnosticPath,
 ) -> Float {
-  let store = try! app
-    .world()
-    .get_resource(DiagnosticsStore::resource())
-    .unwrap()
+  let store = app.world().get_resource(DiagnosticsStore::resource()).unwrap()
   store.get(path).unwrap().value().unwrap()
 }
 

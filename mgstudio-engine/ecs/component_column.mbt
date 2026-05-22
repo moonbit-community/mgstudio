@@ -458,7 +458,7 @@ pub fn[T] ComponentColumn::get_fast(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::table_values(
+pub fn[T] ComponentColumn::table_values(
   self : ComponentColumn[T],
   table_id : Int,
 ) -> Array[T]? {
@@ -561,7 +561,7 @@ pub fn[T] ComponentColumn::table_value_at_entity_row(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] ComponentColumn::table_value_at_cached_entity_row(
+pub fn[T] ComponentColumn::table_value_at_cached_entity_row(
   self : ComponentColumn[T],
   entity : @core.Entity,
   table_id : Int,
@@ -755,7 +755,7 @@ pub fn[T] ComponentColumn::for_each(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without(
+pub fn[T, U] ComponentColumn::for_each_without(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, T) -> Unit,
@@ -813,7 +813,7 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with(
+pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, T, U) -> Unit,
@@ -878,7 +878,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
+pub fn[T, U] ComponentColumn::for_each_without_fast(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, T) -> Unit,
@@ -921,7 +921,7 @@ pub fn[T : EcsPayloadCodec, U] ComponentColumn::for_each_without_fast(
 }
 
 ///|
-pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast(
+pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, T, U) -> Unit,
@@ -938,7 +938,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
 }
 
 ///|
-pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast_table_row(
+pub fn[T, U : EcsPayloadCodec] ComponentColumn::for_each_with_fast_table_row(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   visit : (@core.Entity, Int, Int, T, U) -> Unit,
@@ -989,7 +989,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec] ComponentColumn::for_each_with_
 }
 
 ///|
-pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row(
+pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row(
   self : ComponentColumn[T],
   second : ComponentColumn[U],
   third : ComponentColumn[V],
@@ -1056,7 +1056,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
 }
 
 ///|
-pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row_mark_third_changed(
+pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentColumn::for_each3_fast_table_row_mark_third_changed(
   self : ComponentColumn[T],
   second : ComponentColumn[U],
   third : ComponentColumn[V],
@@ -1130,7 +1130,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, V : EcsPayloadCodec] ComponentC
 }
 
 ///|
-pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, M, N] ComponentColumn::for_each2_with2_markers_fast_table_row(
+pub fn[T, U : EcsPayloadCodec, M, N] ComponentColumn::for_each2_with2_markers_fast_table_row(
   self : ComponentColumn[T],
   other : ComponentColumn[U],
   marker_a : ComponentColumn[M],
@@ -1200,12 +1200,7 @@ pub fn[T : EcsPayloadCodec, U : EcsPayloadCodec, M, N] ComponentColumn::for_each
 }
 
 ///|
-pub fn[
-  T : EcsPayloadCodec,
-  U : EcsPayloadCodec,
-  V : EcsPayloadCodec,
-  W : EcsPayloadCodec,
-] ComponentColumn::for_each4_fast_table_row(
+pub fn[T, U : EcsPayloadCodec, V : EcsPayloadCodec, W : EcsPayloadCodec] ComponentColumn::for_each4_fast_table_row(
   self : ComponentColumn[T],
   second : ComponentColumn[U],
   third : ComponentColumn[V],
@@ -1292,7 +1287,7 @@ pub fn[
 
 ///|
 pub fn[
-  T : EcsPayloadCodec,
+  T,
   U : EcsPayloadCodec,
   V : EcsPayloadCodec,
   W : EcsPayloadCodec,

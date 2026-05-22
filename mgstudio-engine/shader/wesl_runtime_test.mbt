@@ -63,7 +63,7 @@ test "shader runtime wesl registration compiles after imported module is loaded 
     @app.Startup,
     @app.system(fn(world : @ecs.World) {
       let asset_server = match
-        (try! world.get_resource(@asset.AssetServer::resource())) {
+        world.get_resource(@asset.AssetServer::resource()) {
         Some(asset_server) => asset_server
         None => abort("expected AssetServer resource for wesl runtime test")
       }

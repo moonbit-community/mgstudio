@@ -55,12 +55,7 @@ pub fn render_diagnostics_module_snapshot() -> @renderer.RenderDiagnosticsSnapsh
 
 ///|
 fn render_diagnostics_module_refresh_system(world : @ecs.World) -> Unit {
-  match
-    (try world.get_resource_mut(render_diagnostics_module_state_key) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource_mut(render_diagnostics_module_state_key) {
     Some(state_ref) =>
       ignore(
         state_ref.modify(fn(value) {

@@ -174,12 +174,12 @@ pub type Key = @input_events.Key
 
 ///|
 pub(open) trait ButtonInputButton {
-  button_id(self : Self) -> String
+  fn button_id(self : Self) -> String
 }
 
 ///|
 pub(open) trait ButtonInputSnapshotProvider {
-  read_button_input() -> ButtonInput[Self]
+  fn read_button_input() -> ButtonInput[Self]
 }
 
 ///|
@@ -903,16 +903,9 @@ pub let input_systems_set : @app.SystemSet = @app.system_set(
 )
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] input_resource_get(
-  key : @ecs.ResourceKey[T],
-) -> T? {
+fn[T] input_resource_get(key : @ecs.ResourceKey[T]) -> T? {
   match @app.current_world() {
-    Some(world) =>
-      try world.get_resource(key) catch {
-        _ => None
-      } noraise {
-        value => value
-      }
+    Some(world) => world.get_resource(key)
     None => None
   }
 }
@@ -1785,34 +1778,19 @@ fn vec2_is_zero(value : @math.Vec2) -> Bool {
 
 ///|
 fn ensure_input_resources(world : @ecs.World) -> Unit {
-  if (try world.get_resource(AccumulatedMouseMotion::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    })
-    is None {
+  if world.get_resource(AccumulatedMouseMotion::resource()) is None {
     world.insert_resource(
       AccumulatedMouseMotion::resource(),
       AccumulatedMouseMotion::new(),
     )
   }
-  if (try world.get_resource(AccumulatedMouseScroll::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    })
-    is None {
+  if world.get_resource(AccumulatedMouseScroll::resource()) is None {
     world.insert_resource(
       AccumulatedMouseScroll::resource(),
       AccumulatedMouseScroll::new(),
     )
   }
-  if (try world.get_resource(Touches::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    })
-    is None {
+  if world.get_resource(Touches::resource()) is None {
     world.insert_resource(Touches::resource(), Touches::new())
   }
 }
@@ -2044,7 +2022,7 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   }
   input_active_touches_ref.val = active_touches
 
-  if (try! world.get_resource_mut(Touches::resource())) is Some(touches_ref) {
+  if world.get_resource_mut(Touches::resource()) is Some(touches_ref) {
     touches_ref.set(touches)
   }
 
@@ -2082,7 +2060,7 @@ pub fn input_accumulate_mouse_motion_system(world : @ecs.World) -> Unit {
   for event in events {
     delta = @math.Vec2::add(delta, event.delta)
   }
-  if (try! world.get_resource_mut(AccumulatedMouseMotion::resource()))
+  if world.get_resource_mut(AccumulatedMouseMotion::resource())
     is Some(motion_ref) {
     motion_ref.set(AccumulatedMouseMotion::{ delta, })
   }
@@ -2106,7 +2084,7 @@ pub fn input_accumulate_mouse_scroll_system(world : @ecs.World) -> Unit {
     unit = event.unit
     delta = @math.Vec2::add(delta, @math.Vec2::new(event.x, event.y))
   }
-  if (try! world.get_resource_mut(AccumulatedMouseScroll::resource()))
+  if world.get_resource_mut(AccumulatedMouseScroll::resource())
     is Some(scroll_ref) {
     scroll_ref.set(AccumulatedMouseScroll::{ unit, delta })
   }

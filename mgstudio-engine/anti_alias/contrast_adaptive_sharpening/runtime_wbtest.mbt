@@ -48,10 +48,7 @@ test "anti_alias/cas: runtime state counts camera-only CAS components" {
     ContrastAdaptiveSharpening::default(),
   )
   let app = app.update()
-  let runtime = try! app
-    .world()
-    .get_resource(ecs_key_cas_runtime_state)
-    .unwrap()
+  let runtime = app.world().get_resource(ecs_key_cas_runtime_state).unwrap()
   debug_inspect(runtime.enabled_camera_count, content="1")
   debug_inspect(runtime.active_camera_count, content="1")
   debug_inspect(runtime.denoise_camera_count, content="0")

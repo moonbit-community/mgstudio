@@ -390,20 +390,18 @@ fn handle_keypress(
     clear_sample_points(world)
   }
 
-  guard (try! world.get_resource(SampledShape::resource()))
-    is Some(sampled_shape) else {
+  guard world.get_resource(SampledShape::resource()) is Some(sampled_shape) else {
     return
   }
-  guard (try! world.get_resource(PointMesh::resource())) is Some(point_mesh) else {
+  guard world.get_resource(PointMesh::resource()) is Some(point_mesh) else {
     return
   }
-  guard (try! world.get_resource(PointMaterial::resource()))
-    is Some(point_material) else {
+  guard world.get_resource(PointMaterial::resource()) is Some(point_material) else {
     return
   }
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard (try! world.get_resource_ref_mut(RandomSource::resource()))
+  guard world.get_resource_ref_mut(RandomSource::resource())
     is Some(random_source_ref) else {
     return
   }
@@ -447,7 +445,7 @@ fn handle_mouse(
   let world = current_world_or_abort()
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard (try! world.get_resource_ref_mut(MousePressed::resource()))
+  guard world.get_resource_ref_mut(MousePressed::resource())
     is Some(mouse_pressed_ref) else {
     return
   }

@@ -355,7 +355,7 @@ pub fn deferred_pbr_lighting_plugin(
 
 ///|
 pub fn deferred_pbr_lighting_enabled(world : @ecs.World) -> Bool {
-  match (try! world.get_resource(ecs_key_deferred_pbr_lighting_state)) {
+  match world.get_resource(ecs_key_deferred_pbr_lighting_state) {
     Some(state) => state.enabled
     None => false
   }

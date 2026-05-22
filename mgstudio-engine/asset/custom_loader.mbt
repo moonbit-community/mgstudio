@@ -67,12 +67,12 @@ fn typed_asset_loader_registry_for_world(
   world : @ecs.World,
 ) -> Ref[@hashmap.HashMap[String, Array[TypedAssetLoaderEntry]]] {
   let key = typed_asset_loader_registry_resource_key()
-  if (try! world.get_resource(key)) is None {
+  if world.get_resource(key) is None {
     world.insert_resource(key, TypedAssetLoaderRegistryState::{
       loaders: Ref(@hashmap.HashMap([])),
     })
   }
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(state) => state.loaders
     None => abort("Failed to initialize typed asset loader registry resource")
   }
@@ -326,7 +326,7 @@ fn[T : Asset] asset_assets_mut_or_abort_in_world(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Assets[T]] {
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-  match (try! world.get_resource_mut(key)) {
+  match world.get_resource_mut(key) {
     Some(value) => value
     None =>
       abort(
@@ -490,7 +490,7 @@ pub fn[T : Asset] register_asset_loader(
     },
     insert: fn(world, handle_id, payload) {
       let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
-      let assets = match (try! world.get_resource_mut(key)) {
+      let assets = match world.get_resource_mut(key) {
         Some(value) => value
         None =>
           abort(

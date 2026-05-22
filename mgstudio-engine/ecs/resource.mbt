@@ -37,18 +37,12 @@ pub fn[T] World::insert_resource(
 }
 
 ///|
-pub fn[T] World::get_resource(
-  self : World,
-  key : ResourceKey[T],
-) -> T? raise EcsError {
+pub fn[T] World::get_resource(self : World, key : ResourceKey[T]) -> T? {
   (key.access.get)(self)
 }
 
 ///|
-pub fn[T] World::remove_resource(
-  self : World,
-  key : ResourceKey[T],
-) -> T? raise EcsError {
+pub fn[T] World::remove_resource(self : World, key : ResourceKey[T]) -> T? {
   guard (key.access.remove)(self) is Some(value) else { return None }
   self.resources.remove(key.id())
   Some(value)
@@ -59,7 +53,7 @@ pub fn[T] World::update_resource(
   self : World,
   key : ResourceKey[T],
   update : (T) -> T,
-) -> Bool raise EcsError {
+) -> Bool {
   guard self.get_resource(key) is Some(old_value) else { return false }
   let new_value = update(old_value)
   self.insert_resource(key, new_value)

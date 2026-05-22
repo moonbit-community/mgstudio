@@ -65,7 +65,7 @@ let time_resource_registry : Ref[@hashmap.HashMap[String, Int]] = Ref(
 
 ///|
 pub(open) trait TimeContext: Default + @ecs.EcsPayloadCodec {
-  time_context_debug_name() -> String
+  fn time_context_debug_name() -> String
 }
 
 ///|
@@ -135,19 +135,12 @@ pub fn host_time_now_instant() -> @core.Instant {
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] world_time_resource(
-  world : @ecs.World,
-  key : @ecs.ResourceKey[T],
-) -> T? {
-  try world.get_resource(key) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+fn[T] world_time_resource(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
+  world.get_resource(key)
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] world_time_resource_or_default(
+fn[T] world_time_resource_or_default(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
   default_value : () -> T,
@@ -159,17 +152,12 @@ fn[T : @ecs.EcsPayloadCodec] world_time_resource_or_default(
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] sync_world_time_resource(
+fn[T] sync_world_time_resource(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
   value : T,
 ) -> Unit {
-  match
-    (try world.get_resource_mut(key) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource_mut(key) {
     Some(cell) => cell.set(value)
     None => world.insert_resource(key, value)
   }
@@ -247,13 +235,9 @@ fn time_update(world : @ecs.World) -> Unit {
     TimeUpdateStrategy::default,
   )
   let fixed_time = world_fixed_or_default(world)
-  let real_ref = try! world.get_resource_mut(real_time_resource_key()).unwrap()
-  let virtual_ref = try! world
-    .get_resource_mut(virtual_time_resource_key())
-    .unwrap()
-  let time_ref = try! world
-    .get_resource_mut(default_time_resource_key())
-    .unwrap()
+  let real_ref = world.get_resource_mut(real_time_resource_key()).unwrap()
+  let virtual_ref = world.get_resource_mut(virtual_time_resource_key()).unwrap()
+  let time_ref = world.get_resource_mut(default_time_resource_key()).unwrap()
   let next_real = time_update_real_with_strategy(
     real_ref.peek(),
     strategy,

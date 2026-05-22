@@ -153,7 +153,7 @@ pub impl @app.Resource for SortedCameras with resource() {
 
 ///|
 pub fn ensure_sorted_cameras_resource(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(SortedCameras::resource())) is None {
+  if world.get_resource(SortedCameras::resource()) is None {
     world.insert_resource(SortedCameras::resource(), SortedCameras::new())
   }
 }
@@ -163,7 +163,7 @@ pub fn sorted_cameras_ref_or_abort(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[SortedCameras] {
   ensure_sorted_cameras_resource(world)
-  match (try! world.get_resource_mut(SortedCameras::resource())) {
+  match world.get_resource_mut(SortedCameras::resource()) {
     Some(state) => state
     None => abort("Missing SortedCameras resource in render world")
   }
@@ -172,7 +172,7 @@ pub fn sorted_cameras_ref_or_abort(
 ///|
 pub fn sorted_cameras_or_default(world : @ecs.World) -> SortedCameras {
   ensure_sorted_cameras_resource(world)
-  match (try! world.get_resource(SortedCameras::resource())) {
+  match world.get_resource(SortedCameras::resource()) {
     Some(state) => state
     None => SortedCameras::new()
   }

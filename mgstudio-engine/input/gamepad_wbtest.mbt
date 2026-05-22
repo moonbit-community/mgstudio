@@ -774,7 +774,7 @@ test "input gamepad: unsupported rumble requests are dropped" {
 
   let commands = @gilrs.gamepad_test_take_recorded_rumble_commands()
   debug_inspect(commands.length(), content="0")
-  let running_rumbles : RunningRumbleEffects = try! world
+  let running_rumbles : RunningRumbleEffects = world
     .get_resource(RunningRumbleEffects::resource())
     .unwrap()
   debug_inspect(running_rumbles.entries.length(), content="0")

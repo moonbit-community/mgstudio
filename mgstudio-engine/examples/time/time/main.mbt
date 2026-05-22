@@ -47,12 +47,12 @@ fn help() -> Unit {
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] read_time_resource(
+fn[T] read_time_resource(
   world : @ecs.World,
   key : @ecs.ResourceKey[@my_time.Time[T]],
   debug_name : String,
 ) -> @my_time.Time[T] {
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(time) => time
     None => abort("Missing required time resource: \{debug_name}")
   }
@@ -64,10 +64,10 @@ fn update_virtual_time_resource(
   update : (@my_time.Time[@my_time.Virtual]) -> @my_time.Time[@my_time.Virtual],
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  let virtual_ref = try! world
+  let virtual_ref = world
     .get_resource_ref_mut(@my_time.virtual_time_resource_key())
     .unwrap()
-  let time_ref = try! world
+  let time_ref = world
     .get_resource_ref_mut(@my_time.default_time_resource_key())
     .unwrap()
   let next_virtual = update(virtual_ref.val)

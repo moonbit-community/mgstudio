@@ -50,7 +50,7 @@ fn scene_test_add_inverse_bindposes_asset(
   inverse_bindposes : Array[@mesh.SkinningMat4],
 ) -> @asset.Handle[@mesh.SkinnedMeshInverseBindposes] {
   let key : @ecs.ResourceKey[@asset.Assets[@mesh.SkinnedMeshInverseBindposes]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key)) {
+  match world.get_resource_ref_mut(key) {
     Some(assets_ref) =>
       assets_ref.val.add(
         @mesh.SkinnedMeshInverseBindposes::new(inverse_bindposes),
@@ -102,7 +102,7 @@ test "scene: load gltf primitive mesh stays pending in the issuing frame" {
     )
     let handle : @asset.Handle[@mesh.Mesh] = asset_server.load(path)
     let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-    let meshes = (try! world.get_resource(key)).unwrap()
+    let meshes = world.get_resource(key).unwrap()
     asset_missing.val = meshes.get(handle) is None
   })
   debug_inspect(asset_missing.val, content="true")
@@ -144,11 +144,11 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
     app = app.run_once()
     guard gltf_handle_ref.val is Some(handle) else { continue }
     let frame_world = app.world()
-    let gltf_assets = match (try! frame_world.get_resource(gltf_assets_key)) {
+    let gltf_assets = match frame_world.get_resource(gltf_assets_key) {
       Some(assets) => assets
       None => abort("expected Assets<Gltf> resource")
     }
-    let scene_assets = match (try! frame_world.get_resource(scene_assets_key)) {
+    let scene_assets = match frame_world.get_resource(scene_assets_key) {
       Some(assets) => assets
       None => abort("expected Assets<Scene> resource")
     }
@@ -218,7 +218,7 @@ test "scene: root gltf include_source keeps source payload" {
     app = app.run_once()
     guard gltf_handle_ref.val is Some(handle) else { continue }
     let frame_world = app.world()
-    let gltf_assets = match (try! frame_world.get_resource(gltf_assets_key)) {
+    let gltf_assets = match frame_world.get_resource(gltf_assets_key) {
       Some(assets) => assets
       None => abort("expected Assets<Gltf> resource")
     }
@@ -273,12 +273,11 @@ test "scene: root gltf asset collects materials and named_materials" {
     app = app.run_once()
     guard gltf_handle_ref.val is Some(handle) else { continue }
     let frame_world = app.world()
-    let gltf_assets = match (try! frame_world.get_resource(gltf_assets_key)) {
+    let gltf_assets = match frame_world.get_resource(gltf_assets_key) {
       Some(assets) => assets
       None => abort("expected Assets<Gltf> resource")
     }
-    let material_assets = match
-      (try! frame_world.get_resource(material_assets_key)) {
+    let material_assets = match frame_world.get_resource(material_assets_key) {
       Some(assets) => assets
       None => abort("expected Assets<StandardMaterial> resource")
     }
@@ -524,7 +523,7 @@ test "scene: skinned mesh joints map by gltf node index" {
     let inverse_bindposes_assets_key : @ecs.ResourceKey[
       @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
     ] = @asset.assets_resource_key()
-    match (try! world.get_resource(inverse_bindposes_assets_key)) {
+    match world.get_resource(inverse_bindposes_assets_key) {
       Some(inverse_bindposes_assets) =>
         if inverse_bindposes_assets.get(skinned_mesh.inverse_bindposes())
           is Some(inverse_bindposes) {

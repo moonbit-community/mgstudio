@@ -262,7 +262,7 @@ test "app: Commands insert_resource defers resource writes until after the syste
   app = app.run_once()
 
   debug_inspect(
-    try! app.world().get_resource(commands_counter_resource_key),
+    app.world().get_resource(commands_counter_resource_key),
     content="Some({ value: 7 })",
   )
 }

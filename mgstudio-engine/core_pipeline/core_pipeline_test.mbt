@@ -33,7 +33,7 @@ test "mip_generation plugin initializes downsample shader registry resource" {
     .add_plugins(@render.RenderPlugin::default())
     .add_plugins(@mip_generation.MipGenerationPlugin::default())
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
-  let shaders = try! render_world
+  let shaders = render_world
     .get_resource(@mip_generation.ecs_key_downsample_shaders)
     .unwrap()
   debug_inspect(
@@ -61,7 +61,7 @@ test "mip_generation plugin initializes finish-stage resources in render sub-app
     .add_plugins(@mip_generation.MipGenerationPlugin::default())
     .finish()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
-  let resources = try! render_world
+  let resources = render_world
     .get_resource(@mip_generation.ecs_key_mip_generation_resources)
     .unwrap()
   debug_inspect(resources.sampler_label(), content="\"mip generation sampler\"")
@@ -78,26 +78,24 @@ test "core_2d plugin initializes phase resources in render sub-app only" {
   let main_world = app.world()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   debug_inspect(
-    (try! main_world.get_resource(@core_2d.ecs_key_opaque2d_phase)) is Some(_),
+    main_world.get_resource(@core_2d.ecs_key_opaque2d_phase) is Some(_),
     content="false",
   )
   debug_inspect(
-    (try! main_world.get_resource(@core_2d.ecs_key_alpha_mask2d_phase))
-    is Some(_),
+    main_world.get_resource(@core_2d.ecs_key_alpha_mask2d_phase) is Some(_),
     content="false",
   )
   debug_inspect(
-    (try! main_world.get_resource(@core_2d.ecs_key_transparent2d_phase))
-    is Some(_),
+    main_world.get_resource(@core_2d.ecs_key_transparent2d_phase) is Some(_),
     content="false",
   )
-  let opaque_phase = try! render_world
+  let opaque_phase = render_world
     .get_resource(@core_2d.ecs_key_opaque2d_phase)
     .unwrap()
-  let alpha_mask = try! render_world
+  let alpha_mask = render_world
     .get_resource(@core_2d.ecs_key_alpha_mask2d_phase)
     .unwrap()
-  let transparent = try! render_world
+  let transparent = render_world
     .get_resource(@core_2d.ecs_key_transparent2d_phase)
     .unwrap()
   debug_inspect(opaque_phase.is_empty(), content="true")
@@ -168,7 +166,7 @@ test "camera_driver runs core pipeline camera schedules" {
   }
   let app = app.update()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
-  let probe = try! render_world
+  let probe = render_world
     .get_resource(camera_driver_schedule_probe_key)
     .unwrap()
   debug_inspect(probe.run_count, content="1")

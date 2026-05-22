@@ -75,10 +75,10 @@ pub impl @app.Resource for LdtkIntCellMap with resource() {
 fn ldtk_ensure_entity_map(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[LdtkEntityMap] {
-  if (try! world.get_resource(ldtk_entity_map_key)) is None {
+  if world.get_resource(ldtk_entity_map_key) is None {
     world.insert_resource(ldtk_entity_map_key, LdtkEntityMap::default())
   }
-  match (try! world.get_resource_mut(ldtk_entity_map_key)) {
+  match world.get_resource_mut(ldtk_entity_map_key) {
     Some(value) => value
     None => abort("Failed to access LdtkEntityMap resource")
   }
@@ -88,10 +88,10 @@ fn ldtk_ensure_entity_map(
 fn ldtk_ensure_int_cell_map(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[LdtkIntCellMap] {
-  if (try! world.get_resource(ldtk_int_cell_map_key)) is None {
+  if world.get_resource(ldtk_int_cell_map_key) is None {
     world.insert_resource(ldtk_int_cell_map_key, LdtkIntCellMap::default())
   }
-  match (try! world.get_resource_mut(ldtk_int_cell_map_key)) {
+  match world.get_resource_mut(ldtk_int_cell_map_key) {
     Some(value) => value
     None => abort("Failed to access LdtkIntCellMap resource")
   }
@@ -303,7 +303,7 @@ pub fn ldtk_entity_dispatcher_for(
   layer_identifier : String,
   entity_identifier : String,
 ) -> LdtkEntityDispatcher {
-  guard (try! world.get_resource(ldtk_entity_map_key)) is Some(map) else {
+  guard world.get_resource(ldtk_entity_map_key) is Some(map) else {
     return ldtk_entity_map_default_dispatch
   }
   match
@@ -323,7 +323,7 @@ pub fn ldtk_int_cell_dispatcher_for(
   layer_identifier : String,
   value : Int,
 ) -> LdtkIntCellDispatcher {
-  guard (try! world.get_resource(ldtk_int_cell_map_key)) is Some(map) else {
+  guard world.get_resource(ldtk_int_cell_map_key) is Some(map) else {
     return ldtk_int_cell_map_default_dispatch
   }
   match

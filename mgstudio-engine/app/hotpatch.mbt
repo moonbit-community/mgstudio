@@ -60,13 +60,13 @@ pub impl @ecs.Message for HotPatched with message() {
 fn hotpatch_ensure_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[HotPatchChanges] {
-  if (try! world.get_resource(HotPatchChanges::resource())) is None {
+  if world.get_resource(HotPatchChanges::resource()) is None {
     world.insert_resource(
       HotPatchChanges::resource(),
       HotPatchChanges::default(),
     )
   }
-  match (try! world.get_resource_mut(HotPatchChanges::resource())) {
+  match world.get_resource_mut(HotPatchChanges::resource()) {
     Some(state) => state
     None => abort("Missing HotPatchChanges resource")
   }

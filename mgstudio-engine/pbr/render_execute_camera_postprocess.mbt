@@ -714,7 +714,7 @@ fn render3d_auto_exposure_curve_gpu_data(
   curve_handle : @asset.Handle[AutoExposureCompensationCurve]?,
 ) -> Render3dAutoExposureCurveGpuData {
   let key : @ecs.ResourceKey[@asset.Assets[AutoExposureCompensationCurve]] = @asset.assets_resource_key()
-  guard (try! world.get_resource(key)) is Some(curves) else {
+  guard world.get_resource(key) is Some(curves) else {
     return render3d_default_auto_exposure_curve_gpu_data()
   }
   let resolved_handle = match curve_handle {

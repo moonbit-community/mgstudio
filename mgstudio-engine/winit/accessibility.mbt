@@ -59,12 +59,7 @@ fn winit_accessibility_focus_node_id(
   node_entities : Map[UInt64, Bool],
 ) -> @moon_accesskit.NodeId {
   let default_focus = @a11y.node_id_for_entity(primary_window_entity)
-  match
-    (try world.get_resource(@input_focus.InputFocus::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource(@input_focus.InputFocus::resource()) {
     Some(input_focus) =>
       match input_focus.get() {
         Some(focused_entity) =>

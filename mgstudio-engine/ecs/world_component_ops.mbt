@@ -66,7 +66,7 @@ pub fn[T] World::component_count(self : World, key : ComponentKey[T]) -> Int {
 }
 
 ///|
-pub fn[T : EcsPayloadCodec] World::for_each_component(
+pub fn[T] World::for_each_component(
   self : World,
   key : ComponentKey[T],
   visit : (@core.Entity, T) -> Unit,

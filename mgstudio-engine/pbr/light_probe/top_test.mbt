@@ -41,7 +41,7 @@ test "pbr light probe: resource and component keys round-trip through ecs APIs" 
     ecs_key_light_probe_plugin_state,
     LightProbePluginState::default(),
   )
-  let state : LightProbePluginState? = try! world.get_resource(
+  let state : LightProbePluginState? = world.get_resource(
     ecs_key_light_probe_plugin_state,
   )
   inspect(state is Some(_), content="true")

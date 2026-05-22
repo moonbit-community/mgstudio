@@ -179,7 +179,7 @@ fn toggle_window_controls(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
 ///|
 fn change_title(world : @ecs.World) -> Unit {
   let time : @time.Time[Unit] = match
-    (try! world.get_resource(@time.default_time_resource_key())) {
+    world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in window_settings example")
   }
@@ -247,7 +247,7 @@ fn cycle_cursor_icon(
     return
   }
   guard @app.current_world() is Some(world) else { return }
-  guard (try! world.get_resource(cursor_icons_key)) is Some(cursor_icons) else {
+  guard world.get_resource(cursor_icons_key) is Some(cursor_icons) else {
     return
   }
   let index_ref = index.get_ref()

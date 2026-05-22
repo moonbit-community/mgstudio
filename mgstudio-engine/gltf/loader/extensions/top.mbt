@@ -121,13 +121,7 @@ fn gltf_extension_runtime_state_ref_if_present() -> Ref[
   GltfExtensionRuntimeState,
 ]? {
   guard @app.current_world() is Some(world) else { return None }
-  let state = try
-    world.get_resource_mut(ecs_key_gltf_extension_runtime_state)
-  catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  let state = world.get_resource_mut(ecs_key_gltf_extension_runtime_state)
   match state {
     Some(state_ref) => Some(Ref(state_ref.peek()))
     None => None

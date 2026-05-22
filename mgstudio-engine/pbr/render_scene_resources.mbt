@@ -49,13 +49,13 @@ impl @app.Resource for Render3dSceneTargetsState with resource() {
 fn render3d_scene_targets_state_ref_or_init(
   world : @ecs.World,
 ) -> Ref[Render3dSceneTargetsState] {
-  if (try! world.get_resource(Render3dSceneTargetsState::resource())) is None {
+  if world.get_resource(Render3dSceneTargetsState::resource()) is None {
     world.insert_resource(Render3dSceneTargetsState::resource(), {
       motion_blur_targets: [],
       transmission_source_targets: [],
     })
   }
-  match (try! world.get_resource_mut(Render3dSceneTargetsState::resource())) {
+  match world.get_resource_mut(Render3dSceneTargetsState::resource()) {
     Some(state) => Ref(state.peek())
     None => abort("Missing Render3dSceneTargetsState resource")
   }

@@ -75,7 +75,7 @@ fn winit_sync_monitor_entity(
 pub fn winit_create_monitors_system(world : @ecs.World) -> Unit {
   let monitor_handles = @windowing.available_monitors()
   let primary_monitor = @windowing.primary_monitor()
-  let monitors = match (try! world.get_resource(WinitMonitors::resource())) {
+  let monitors = match world.get_resource(WinitMonitors::resource()) {
     Some(monitors) => monitors
     None => WinitMonitors::default()
   }
@@ -179,7 +179,7 @@ pub fn winit_write_raw_winit_window_events_system(world : @ecs.World) -> Unit {
 
 ///|
 fn winit_monitors_resource(world : @ecs.World) -> WinitMonitors {
-  match (try! world.get_resource(WinitMonitors::resource())) {
+  match world.get_resource(WinitMonitors::resource()) {
     Some(monitors) => monitors
     None => WinitMonitors::default()
   }

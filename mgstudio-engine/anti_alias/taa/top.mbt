@@ -156,7 +156,7 @@ pub fn temporal_anti_alias_update_runtime_state(world : @ecs.World) -> Unit {
     enabled_camera_count,
     reset_requested_count,
   }
-  let current : TemporalAntiAliasRuntimeState? = try! world.get_resource(
+  let current : TemporalAntiAliasRuntimeState? = world.get_resource(
     ecs_key_temporal_anti_alias_runtime_state,
   )
   match current {
@@ -188,7 +188,7 @@ pub fn temporal_anti_alias_halton_offset(frame_count : Int) -> @math.Vec2 {
 ///|
 pub fn prepare_taa_jitter(world : @ecs.World) -> Unit {
   let frame_count = match
-    (try! world.get_resource(@diagnostic.FrameCount::resource())) {
+    world.get_resource(@diagnostic.FrameCount::resource()) {
     Some(frame_count) => frame_count.value
     None => 0
   }

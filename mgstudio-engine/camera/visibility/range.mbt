@@ -109,9 +109,9 @@ pub fn VisibleEntityRanges::entity_is_in_range_of_view(
 
 ///|
 pub fn check_visibility_ranges(world : @ecs.World) -> Unit {
-  let visible_ranges = (world.get_resource_mut(ecs_key_visible_entity_ranges) catch {
-    _ => None
-  }).unwrap()
+  let visible_ranges = world
+    .get_resource_mut(ecs_key_visible_entity_ranges)
+    .unwrap()
   visible_ranges.set_changed()
   let visible_ranges_value = visible_ranges.peek()
   visible_ranges_value.clear()

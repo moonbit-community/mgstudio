@@ -160,9 +160,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
 ///|
 fn update_controls_text(world : @ecs.World) -> Unit {
   guard wireframe_state.val.controls_text is Some(text_entity) else { return }
-  let config = try world.get_resource(@pbr.ecs_key_wireframe_config) catch {
-    _ => @pbr.WireframeConfig::default()
-  } noraise {
+  let config = match world.get_resource(@pbr.ecs_key_wireframe_config) {
     Some(value) => value
     None => @pbr.WireframeConfig::default()
   }
@@ -286,9 +284,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
 ///|
 fn update_colors(world : @ecs.World) -> Unit {
-  let mut config = try world.get_resource(@pbr.ecs_key_wireframe_config) catch {
-    _ => @pbr.WireframeConfig::default()
-  } noraise {
+  let mut config = match world.get_resource(@pbr.ecs_key_wireframe_config) {
     Some(value) => value
     None => @pbr.WireframeConfig::default()
   }

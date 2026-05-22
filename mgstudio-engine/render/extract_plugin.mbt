@@ -46,7 +46,7 @@ fn render_sub_app_extract(
 
 ///|
 pub fn render_source_world(world : @ecs.World) -> @ecs.World {
-  match (try! world.get_resource(ecs_key_render_main_world)) {
+  match world.get_resource(ecs_key_render_main_world) {
     Some(value) => value.world
     None => world
   }

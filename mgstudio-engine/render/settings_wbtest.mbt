@@ -88,9 +88,9 @@ test "render plugin: initializes pending command buffers in render app" {
   )
   let render_sub_app = app.get_sub_app(@app.RenderApp).unwrap()
   let render_world = render_sub_app.world()
-  let pending = (try! render_world.get_resource(
-    pending_command_buffers_resource_key(),
-  )).unwrap()
+  let pending = render_world
+    .get_resource(pending_command_buffers_resource_key())
+    .unwrap()
   debug_inspect(pending.is_empty(), content="true")
 }
 
@@ -99,14 +99,15 @@ test "render plugin: installs render asset byte budget resources" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     RenderPlugin::default(),
   )
-  let main_budget = (try! app
-  .world()
-  .get_resource(render_asset_bytes_per_frame_resource_key())).unwrap()
+  let main_budget = app
+    .world()
+    .get_resource(render_asset_bytes_per_frame_resource_key())
+    .unwrap()
   debug_inspect(main_budget.max_bytes() is None, content="true")
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
-  let limiter = (try! render_world.get_resource(
-    render_asset_bytes_per_frame_limiter_resource_key(),
-  )).unwrap()
+  let limiter = render_world
+    .get_resource(render_asset_bytes_per_frame_limiter_resource_key())
+    .unwrap()
   debug_inspect(limiter.max_bytes() is None, content="true")
   debug_inspect(limiter.bytes_written(), content="0")
 }
@@ -126,9 +127,9 @@ test "render asset byte budget: extract updates limiter and cleanup resets write
   let synced = render_sub_app_extract(main_world, render_world)
   let render_world = synced.1
   extract_render_asset_bytes_per_frame(render_world)
-  let limiter = (try! render_world.get_resource(
-    render_asset_bytes_per_frame_limiter_resource_key(),
-  )).unwrap()
+  let limiter = render_world
+    .get_resource(render_asset_bytes_per_frame_limiter_resource_key())
+    .unwrap()
   debug_inspect(limiter.max_bytes().unwrap(), content="64")
   limiter.write_bytes(16)
   debug_inspect(limiter.bytes_written(), content="16")
@@ -142,7 +143,7 @@ test "render plugin: initializes render state as not ready" {
     RenderPlugin::default(),
   )
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
-  let state = (try! render_world.get_resource(render_state_resource_key())).unwrap()
+  let state = render_world.get_resource(render_state_resource_key()).unwrap()
   debug_inspect(state.is_ready(), content="false")
   debug_inspect(renderer_is_ready(render_world), content="false")
   mark_renderer_ready(render_world)

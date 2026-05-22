@@ -25,7 +25,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   let texture_atlas_layouts_key : @ecs.ResourceKey[
     @asset.Assets[@asset.TextureAtlasLayout],
   ] = @asset.assets_resource_key()
-  let texture_atlas_layouts = try! source_world.get_resource(
+  let texture_atlas_layouts = source_world.get_resource(
     texture_atlas_layouts_key,
   )
   let stack_res = @ui.get_ui_stack_resource(source_world)

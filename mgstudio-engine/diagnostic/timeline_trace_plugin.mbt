@@ -502,7 +502,7 @@ fn timeline_trace_append_pending_spans(state : TimelineTraceState) -> Unit {
 
 ///|
 fn timeline_trace_flush_system(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource_ref_mut(timeline_trace_state_resource_key))
+  guard world.get_resource_ref_mut(timeline_trace_state_resource_key)
     is Some(state_ref) else {
     return
   }

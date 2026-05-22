@@ -205,7 +205,7 @@ fn pan_camera_step(
 
 ///|
 fn pan_camera_world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
+  match world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in pancamera controller")
   }
@@ -215,7 +215,7 @@ fn pan_camera_world_time(world : @ecs.World) -> @time.Time[Unit] {
 pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = pan_camera_world_time(world).delta_seconds()
   let accumulated_mouse_scroll = match
-    (try! world.get_resource(@input.AccumulatedMouseScroll::resource())) {
+    world.get_resource(@input.AccumulatedMouseScroll::resource()) {
     Some(value) => value
     None => @input.AccumulatedMouseScroll::new()
   }

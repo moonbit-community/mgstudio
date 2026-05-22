@@ -67,7 +67,7 @@ fn asset_loader_registry_state_for_world(
   world : @ecs.World,
 ) -> AssetLoaderRegistryState {
   let key = asset_loader_registry_state_resource_key()
-  if (try! world.get_resource(key)) is None {
+  if world.get_resource(key) is None {
     world.insert_resource(key, AssetLoaderRegistryState::{
       loaders: Ref(@hashmap.HashMap([])),
       ready_checkers: Ref(@hashmap.HashMap([])),
@@ -75,7 +75,7 @@ fn asset_loader_registry_state_for_world(
       builtin_registered: Ref(false),
     })
   }
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(state) => state
     None => abort("Failed to initialize asset loader registry state")
   }

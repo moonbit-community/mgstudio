@@ -402,7 +402,7 @@ fn accumulate_input(
 
 ///|
 fn did_fixed_timestep_run_this_frame(world : @ecs.World) -> Bool {
-  match (try! world.get_resource(DidFixedTimestepRunThisFrame::resource())) {
+  match world.get_resource(DidFixedTimestepRunThisFrame::resource()) {
     Some(flag) => flag.value
     None => false
   }

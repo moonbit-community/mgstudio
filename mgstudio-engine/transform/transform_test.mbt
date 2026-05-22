@@ -464,9 +464,9 @@ test "transform ecs: mark_dirty_trees disables static optimization above thresho
 
   mark_dirty_trees(world)
 
-  let state = (try! world.get_resource(
-    static_transform_optimizations_resource_key(),
-  )).unwrap()
+  let state = world
+    .get_resource(static_transform_optimizations_resource_key())
+    .unwrap()
   debug_inspect(state.enabled, content="false")
 }
 
@@ -545,9 +545,10 @@ test "transform plugin: keeps preinserted static optimization resource" {
   let app = @app.App::new(@ecs.World::new())
     .insert_resource(StaticTransformOptimizations::disabled())
     .add_plugins(TransformPlugin::default())
-  let value = (try! app
-  .world()
-  .get_resource(static_transform_optimizations_resource_key())).unwrap()
+  let value = app
+    .world()
+    .get_resource(static_transform_optimizations_resource_key())
+    .unwrap()
   debug_inspect(value.threshold == 0.0F && !value.enabled, content="true")
 }
 

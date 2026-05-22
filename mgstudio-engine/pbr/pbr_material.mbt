@@ -407,7 +407,7 @@ pub fn standard_material_plugin_with(
 
 ///|
 pub fn standard_material_prepass_enabled(world : @ecs.World) -> Bool {
-  match (try! world.get_resource(ecs_key_standard_material_plugin_state)) {
+  match world.get_resource(ecs_key_standard_material_plugin_state) {
     Some(state) => state.prepass_enabled
     None => true
   }

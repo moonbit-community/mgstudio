@@ -16,7 +16,7 @@
 fn render3d_runtime_config_or_default(
   world : @ecs.World,
 ) -> PbrPluginRuntimeConfig {
-  match (try! world.get_resource(ecs_key_pbr_plugin_runtime_config)) {
+  match world.get_resource(ecs_key_pbr_plugin_runtime_config) {
     Some(config) => config
     None => pbr_plugin_runtime_config(world)
   }
@@ -114,9 +114,9 @@ fn render3d_default_opaque_renderer_method(
   world : @ecs.World,
   deferred_lighting_enabled : Bool,
 ) -> OpaqueRendererMethod {
-  let mut default_method = if (try! world.get_resource(
+  let mut default_method = if world.get_resource(
       ecs_key_default_opaque_renderer_method,
-    ))
+    )
     is Some(resource) {
     resource.renderer_method()
   } else {
@@ -131,7 +131,7 @@ fn render3d_default_opaque_renderer_method(
 
 ///|
 fn render3d_wireframe_config_or_none(world : @ecs.World) -> WireframeConfig? {
-  if (try! world.get_resource(ecs_key_wireframe_config)) is Some(config) {
+  if world.get_resource(ecs_key_wireframe_config) is Some(config) {
     Some(config)
   } else {
     None

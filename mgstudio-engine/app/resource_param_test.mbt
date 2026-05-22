@@ -29,7 +29,7 @@ impl Resource for CounterResource with resource() {
 
 ///|
 fn read_counter_resource(world : @ecs.World) -> CounterResource? {
-  try! world.get_resource(counter_resource_key)
+  world.get_resource(counter_resource_key)
 }
 
 ///|

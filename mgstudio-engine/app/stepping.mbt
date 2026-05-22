@@ -339,11 +339,7 @@ fn stepping_advance_cursor(
 
 ///|
 fn stepping_resource_mut(world : @ecs.World) -> @ecs.ResourceMut[Stepping]? {
-  try world.get_resource_mut(Stepping::resource()) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource_mut(Stepping::resource())
 }
 
 ///|

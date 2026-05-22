@@ -60,12 +60,7 @@ pub fn RenderState::is_ready(self : RenderState) -> Bool {
 
 ///|
 pub fn init_render_state(world : @ecs.World) -> Unit {
-  let state = match
-    (try world.get_resource(render_state_resource_key()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  let state = match world.get_resource(render_state_resource_key()) {
     Some(value) => Some(value)
     None => None
   }
@@ -79,12 +74,7 @@ pub fn init_render_state(world : @ecs.World) -> Unit {
 
 ///|
 pub fn renderer_is_ready(world : @ecs.World) -> Bool {
-  match
-    (try world.get_resource(render_state_resource_key()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource(render_state_resource_key()) {
     Some(state) => state.is_ready()
     None => false
   }

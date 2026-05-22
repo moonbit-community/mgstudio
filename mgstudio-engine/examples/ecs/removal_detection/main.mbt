@@ -27,7 +27,7 @@ pub impl @ecs.Component for MyComponent with component() {
 
 ///|
 fn world_asset_server(world : @ecs.World) -> @asset.AssetServer {
-  match (try! world.get_resource(@asset.AssetServer::resource())) {
+  match world.get_resource(@asset.AssetServer::resource()) {
     Some(asset_server) => asset_server
     None => abort("Missing AssetServer resource in removal_detection example")
   }

@@ -884,8 +884,8 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
   let target_id = AnimationTargetId::from_name("Hip")
   let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
   let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
-  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
-  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+  let clip_assets = world.get_resource(clip_assets_key).unwrap()
+  let graph_assets = world.get_resource(graph_assets_key).unwrap()
 
   let clip = AnimationClip::new()
     .add_translation_curve(target_id, [
@@ -948,8 +948,8 @@ test "animation runtime: evaluator stack overwrites animated fields like Bevy" {
   let target_id = AnimationTargetId::from_name("Hip")
   let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
   let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
-  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
-  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+  let clip_assets = world.get_resource(clip_assets_key).unwrap()
+  let graph_assets = world.get_resource(graph_assets_key).unwrap()
 
   let clip = AnimationClip::new().add_translation_curve(target_id, [
     KeyframeVec3::new(0.0F, @math.Vec3::new(2.0F, 0.0F, 0.0F)),
@@ -1019,8 +1019,8 @@ test "animation runtime: trigger_events emits root and target messages" {
   let target_id = AnimationTargetId::from_name("Foot")
   let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
   let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
-  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
-  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+  let clip_assets = world.get_resource(clip_assets_key).unwrap()
+  let graph_assets = world.get_resource(graph_assets_key).unwrap()
 
   let clip = AnimationClip::new()
     .set_duration(1.0F)
@@ -1106,8 +1106,8 @@ test "animation runtime: targeted events are emitted in animate_targets stage" {
   let target_id = AnimationTargetId::from_name("Foot")
   let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
   let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
-  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
-  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+  let clip_assets = world.get_resource(clip_assets_key).unwrap()
+  let graph_assets = world.get_resource(graph_assets_key).unwrap()
 
   let clip = AnimationClip::new()
     .set_duration(1.0F)
@@ -1153,8 +1153,8 @@ test "animation runtime: trigger_events dispatches typed root and target observe
   let target_id = AnimationTargetId::from_name("Foot")
   let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
   let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
-  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
-  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+  let clip_assets = world.get_resource(clip_assets_key).unwrap()
+  let graph_assets = world.get_resource(graph_assets_key).unwrap()
 
   let clip = AnimationClip::new()
     .set_duration(1.0F)
@@ -1212,8 +1212,8 @@ test "animation runtime: animate_targets updates text color" {
   let target_id = AnimationTargetId::from_name("AnimatedText")
   let clip_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationClip]] = @asset.assets_resource_key()
   let graph_assets_key : @ecs.ResourceKey[@asset.Assets[AnimationGraph]] = @asset.assets_resource_key()
-  let clip_assets = (try! world.get_resource(clip_assets_key)).unwrap()
-  let graph_assets = (try! world.get_resource(graph_assets_key)).unwrap()
+  let clip_assets = world.get_resource(clip_assets_key).unwrap()
+  let graph_assets = world.get_resource(graph_assets_key).unwrap()
 
   let clip = AnimationClip::new()
     .add_scale_curve(target_id, [

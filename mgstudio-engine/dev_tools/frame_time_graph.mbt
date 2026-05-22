@@ -159,8 +159,7 @@ pub fn FrameTimeGraphConfigUniform::new(
 fn frame_time_graph_has_frame_time_diagnostics(
   app : @app.App[@ecs.World],
 ) -> Bool {
-  match
-    (try! app.world().get_resource(@diagnostic.DiagnosticsStore::resource())) {
+  match app.world().get_resource(@diagnostic.DiagnosticsStore::resource()) {
     Some(store) =>
       store.get(@diagnostic.frame_time_diagnostic_frame_time) is Some(_)
     None => false
@@ -202,7 +201,7 @@ pub fn frame_time_graph_plugin_with(
 
 ///|
 fn frame_time_graph_config_enabled(world : @ecs.World) -> Bool {
-  match (try! world.get_resource(FpsOverlayConfig::resource())) {
+  match world.get_resource(FpsOverlayConfig::resource()) {
     Some(config) => config.frame_time_graph_config.enabled
     None => true
   }
@@ -213,7 +212,7 @@ fn update_frame_time_values(world : @ecs.World) -> Unit {
   if !frame_time_graph_config_enabled(world) {
     return
   }
-  guard (try! world.get_resource(@diagnostic.DiagnosticsStore::resource()))
+  guard world.get_resource(@diagnostic.DiagnosticsStore::resource())
     is Some(store) else {
     return
   }
@@ -221,7 +220,7 @@ fn update_frame_time_values(world : @ecs.World) -> Unit {
     is Some(frame_time) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(frame_time_graph_values_resource_key))
+  guard world.get_resource_ref_mut(frame_time_graph_values_resource_key)
     is Some(values_ref) else {
     return
   }
@@ -237,11 +236,11 @@ fn frame_time_graph_update_material_buffers(
   world : @ecs.World,
   frame_times : Array[Float],
 ) -> Unit {
-  guard (try! world.get_resource_ref_mut(frame_time_graph_material_assets_key()))
+  guard world.get_resource_ref_mut(frame_time_graph_material_assets_key())
     is Some(materials_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(frame_time_graph_buffer_assets_key()))
+  guard world.get_resource_ref_mut(frame_time_graph_buffer_assets_key())
     is Some(buffers_ref) else {
     return
   }

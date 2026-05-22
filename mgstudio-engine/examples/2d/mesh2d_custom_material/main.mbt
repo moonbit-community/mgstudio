@@ -106,7 +106,7 @@ fn main {
 fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   let handle : @asset.Handle[CustomMaterialAsset] = @asset.Handle::new(1)
   let assets_key : @ecs.ResourceKey[@asset.Assets[CustomMaterialAsset]] = @asset.assets_resource_key()
-  guard (try! world.get_resource_ref_mut(assets_key)) is Some(assets_ref) else {
+  guard world.get_resource_ref_mut(assets_key) is Some(assets_ref) else {
     abort("missing CustomMaterialAsset store")
   }
   assets_ref.val.insert(

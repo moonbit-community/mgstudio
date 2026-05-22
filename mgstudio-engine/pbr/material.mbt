@@ -87,26 +87,25 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
       DefaultOpaqueRendererMethod::forward(),
     )
   }
-  if (try! world.get_resource(ecs_key_entity_specialization_ticks)) is None {
+  if world.get_resource(ecs_key_entity_specialization_ticks) is None {
     world.insert_resource(
       ecs_key_entity_specialization_ticks,
       EntitySpecializationTicks::default(),
     )
   }
-  if (try! world.get_resource(ecs_key_specialized_material_pipeline_cache))
-    is None {
+  if world.get_resource(ecs_key_specialized_material_pipeline_cache) is None {
     world.insert_resource(
       ecs_key_specialized_material_pipeline_cache,
       SpecializedMaterialPipelineCache::default(),
     )
   }
-  if (try! world.get_resource(ecs_key_render_material_instances)) is None {
+  if world.get_resource(ecs_key_render_material_instances) is None {
     world.insert_resource(
       ecs_key_render_material_instances,
       RenderMaterialInstances::default(),
     )
   }
-  if (try! world.get_resource(ecs_key_material_bind_group_allocators)) is None {
+  if world.get_resource(ecs_key_material_bind_group_allocators) is None {
     world.insert_resource(
       ecs_key_material_bind_group_allocators,
       MaterialBindGroupAllocators::default(),
@@ -458,7 +457,7 @@ fn render3d_material_properties_for_standard_material(
 fn render3d_material_default_opaque_renderer_method(
   world : @ecs.World,
 ) -> OpaqueRendererMethod {
-  match (try! world.get_resource(ecs_key_default_opaque_renderer_method)) {
+  match world.get_resource(ecs_key_default_opaque_renderer_method) {
     Some(default_method) => default_method.renderer_method()
     None => OpaqueRendererMethod::Forward
   }

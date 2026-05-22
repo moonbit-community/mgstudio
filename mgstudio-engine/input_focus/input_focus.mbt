@@ -103,10 +103,10 @@ pub fn input_focus_system_set_name(
 
 ///|
 pub(open) trait IsFocused {
-  is_focused(Self, @core.Entity) -> Bool
-  is_focus_within(Self, @core.Entity) -> Bool
-  is_focus_visible(Self, @core.Entity) -> Bool
-  is_focus_within_visible(Self, @core.Entity) -> Bool
+  fn is_focused(Self, @core.Entity) -> Bool
+  fn is_focus_within(Self, @core.Entity) -> Bool
+  fn is_focus_visible(Self, @core.Entity) -> Bool
+  fn is_focus_within_visible(Self, @core.Entity) -> Bool
 }
 
 ///|
@@ -159,15 +159,11 @@ fn current_input_focus_world_abort_missing() -> @ecs.World {
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] input_focus_world_resource(
+fn[T] input_focus_world_resource(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
 ) -> T? {
-  try world.get_resource(key) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource(key)
 }
 
 ///|
@@ -175,11 +171,7 @@ fn input_focus_world_resource_ref_mut(
   world : @ecs.World,
   key : @ecs.ResourceKey[InputFocus],
 ) -> @ecs.ResourceMut[InputFocus]? {
-  try world.get_resource_mut(key) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource_mut(key)
 }
 
 ///|

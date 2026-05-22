@@ -42,7 +42,13 @@ fn[T : @ecs.Component] insert_spawn_component(
 
 ///|
 pub(open) trait CommandSpawnComponents {
-  spawn_components(Self, @ecs.World, @core.Entity, @core.Tick, loc~ : SourceLoc) -> Unit raise @ecs.EcsError
+  fn spawn_components(
+    Self,
+    @ecs.World,
+    @core.Entity,
+    @core.Tick,
+    loc~ : SourceLoc,
+  ) -> Unit raise @ecs.EcsError
 }
 
 ///|
@@ -437,7 +443,7 @@ pub fn[T : Resource] Commands::insert_resource(
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] Commands::insert_world_resource(
+pub fn[T] Commands::insert_world_resource(
   self : Commands,
   key : @ecs.ResourceKey[T],
   resource : T,
@@ -456,7 +462,7 @@ pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
   let key : @ecs.ResourceKey[T] = T::resource()
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
-      ignore(world.remove_resource(key) catch { _ => None })
+      ignore(world.remove_resource(key))
     },
     error_handler: None,
     source: "Commands::remove_resource",
@@ -464,13 +470,13 @@ pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
 }
 
 ///|
-pub fn[T : @ecs.EcsPayloadCodec] Commands::remove_world_resource(
+pub fn[T] Commands::remove_world_resource(
   self : Commands,
   key : @ecs.ResourceKey[T],
 ) -> Unit {
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
-      ignore(world.remove_resource(key) catch { _ => None })
+      ignore(world.remove_resource(key))
     },
     error_handler: None,
     source: "Commands::remove_world_resource",

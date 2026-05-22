@@ -396,8 +396,7 @@ fn activate_override_button(world : @ecs.World) -> Unit {
   if !activate {
     return
   }
-  let focused = match
-    (try! world.get_resource(@input_focus.InputFocus::resource())) {
+  let focused = match world.get_resource(@input_focus.InputFocus::resource()) {
     Some(focus) => focus.get()
     None => None
   }
@@ -410,8 +409,7 @@ fn activate_override_button(world : @ecs.World) -> Unit {
     @ecs.Comp[OverrideButton],
     @ecs.With[OverrideButton],
   ] = @ecs.query_filtered(world, @ecs.With::new(OverrideButton::component()))
-  let status_ref = match
-    (try! world.get_resource_mut(OverrideStatus::resource())) {
+  let status_ref = match world.get_resource_mut(OverrideStatus::resource()) {
     Some(status_ref) => status_ref
     None => return
   }
@@ -439,8 +437,7 @@ fn activate_override_button(world : @ecs.World) -> Unit {
 
 ///|
 fn update_override_focus_display(world : @ecs.World) -> Unit {
-  let focused = match
-    (try! world.get_resource(@input_focus.InputFocus::resource())) {
+  let focused = match world.get_resource(@input_focus.InputFocus::resource()) {
     Some(focus) => focus.get()
     None => None
   }
@@ -475,7 +472,7 @@ fn update_override_focus_display(world : @ecs.World) -> Unit {
 
 ///|
 fn update_override_last_input_display(world : @ecs.World) -> Unit {
-  let label = match (try! world.get_resource(OverrideStatus::resource())) {
+  let label = match world.get_resource(OverrideStatus::resource()) {
     Some(status) => status.label
     None => "Last Input: None"
   }
@@ -491,8 +488,7 @@ fn update_override_last_input_display(world : @ecs.World) -> Unit {
 
 ///|
 fn update_override_button_visuals(world : @ecs.World) -> Unit {
-  let focused = match
-    (try! world.get_resource(@input_focus.InputFocus::resource())) {
+  let focused = match world.get_resource(@input_focus.InputFocus::resource()) {
     Some(focus) => focus.get()
     None => None
   }

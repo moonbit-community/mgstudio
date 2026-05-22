@@ -315,7 +315,7 @@ fn render3d_execute_camera_directional_shadow_pass(
     return render3d_directional_shadow_binding_none()
   }
   let shadow_map_size = match
-    (try! world.get_resource(@light.ecs_key_directional_light_shadow_map)) {
+    world.get_resource(@light.ecs_key_directional_light_shadow_map) {
     Some(v) => if v.size <= 0 { 1 } else { v.size }
     None => @light.DirectionalLightShadowMap::default().size
   }
@@ -407,16 +407,14 @@ impl @app.Resource for Render3dDirectionalLightShadowTargets with resource() {
 fn render3d_directional_light_shadow_targets_ref_or_init(
   world : @ecs.World,
 ) -> Ref[Render3dDirectionalLightShadowTargets] {
-  if (try! world.get_resource(Render3dDirectionalLightShadowTargets::resource()))
+  if world.get_resource(Render3dDirectionalLightShadowTargets::resource())
     is None {
     world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), {
       entries: [],
     })
   }
   match
-    (try! world.get_resource_mut(
-      Render3dDirectionalLightShadowTargets::resource(),
-    )) {
+    world.get_resource_mut(Render3dDirectionalLightShadowTargets::resource()) {
     Some(state) => Ref(state.peek())
     None => abort("Missing Render3dDirectionalLightShadowTargets resource")
   }

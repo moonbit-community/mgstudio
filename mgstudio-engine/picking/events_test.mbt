@@ -737,7 +737,7 @@ test "picking: a11y focus action maps to hovered interaction" {
   picking_apply_a11y_actions_system(world)
   let interaction = try! world.get_by_key(entity, @ui.ecs_key_interaction)
   debug_inspect(interaction is Some(@ui.Interaction::Hovered), content="true")
-  let focus = try! world.get_resource(@input_focus.InputFocus::resource())
+  let focus = world.get_resource(@input_focus.InputFocus::resource())
   debug_inspect(focus.unwrap().get() == Some(entity), content="true")
 }
 
@@ -852,7 +852,7 @@ test "picking: ignores a11y actions targeting non-alive entities" {
   )
   enqueue_a11y_action(world, req)
   picking_apply_a11y_actions_system(world)
-  let focus = try! world.get_resource(@input_focus.InputFocus::resource())
+  let focus = world.get_resource(@input_focus.InputFocus::resource())
   debug_inspect(focus.unwrap().get() is None, content="true")
   debug_inspect(world.is_alive(dead_entity), content="false")
   let events = drain_events(world)

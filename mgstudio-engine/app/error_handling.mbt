@@ -125,13 +125,7 @@ fn default_error_handler_impl(error : Error, context : ErrorContext) -> Unit {
 
 ///|
 fn ensure_default_error_handler(world : @ecs.World) -> Unit {
-  let existing = try
-    world.get_resource(ecs_res_key_default_error_handler)
-  catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  let existing = world.get_resource(ecs_res_key_default_error_handler)
   if existing is None {
     world.insert_resource(ecs_res_key_default_error_handler, {
       handler: default_error_handler_impl,
@@ -151,12 +145,7 @@ pub fn set_default_error_handler(
 ///|
 pub fn default_error_handler(world : @ecs.World) -> ErrorHandler {
   ensure_default_error_handler(world)
-  match
-    (try world.get_resource(ecs_res_key_default_error_handler) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource(ecs_res_key_default_error_handler) {
     Some(resource) => resource.handler
     None => default_error_handler_impl
   }

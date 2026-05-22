@@ -14,7 +14,7 @@
 
 ///|
 fn read_pbr_runtime_config(world : @ecs.World) -> PbrPluginRuntimeConfig {
-  match (try! world.get_resource(ecs_key_pbr_plugin_runtime_config)) {
+  match world.get_resource(ecs_key_pbr_plugin_runtime_config) {
     Some(config) => config
     None => abort("missing PbrPluginRuntimeConfig resource")
   }
@@ -22,7 +22,7 @@ fn read_pbr_runtime_config(world : @ecs.World) -> PbrPluginRuntimeConfig {
 
 ///|
 fn read_deferred_lighting_state(world : @ecs.World) -> DeferredPbrLightingState {
-  match (try! world.get_resource(ecs_key_deferred_pbr_lighting_state)) {
+  match world.get_resource(ecs_key_deferred_pbr_lighting_state) {
     Some(state) => state
     None => abort("missing DeferredPbrLightingState resource")
   }
@@ -32,7 +32,7 @@ fn read_deferred_lighting_state(world : @ecs.World) -> DeferredPbrLightingState 
 fn read_standard_material_plugin_state(
   world : @ecs.World,
 ) -> StandardMaterialPluginState {
-  match (try! world.get_resource(ecs_key_standard_material_plugin_state)) {
+  match world.get_resource(ecs_key_standard_material_plugin_state) {
     Some(state) => state
     None => abort("missing StandardMaterialPluginState resource")
   }
@@ -40,7 +40,7 @@ fn read_standard_material_plugin_state(
 
 ///|
 fn read_mesh_render_plugin_state(world : @ecs.World) -> MeshRenderPluginState {
-  match (try! world.get_resource(ecs_key_mesh_render_plugin_state)) {
+  match world.get_resource(ecs_key_mesh_render_plugin_state) {
     Some(state) => state
     None => abort("missing MeshRenderPluginState resource")
   }
@@ -51,8 +51,7 @@ fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
   match app.get_sub_app(@app.RenderApp) {
     Some(render_sub_app) => {
       let render_world = render_sub_app.world()
-      (try! render_world.get_resource(@pbr_render.FogMeta::resource()))
-      is Some(_)
+      render_world.get_resource(@pbr_render.FogMeta::resource()) is Some(_)
     }
     None => false
   }
@@ -63,14 +62,10 @@ fn render_world_with_material_resources(app : @app.App[@ecs.World]) -> Bool {
   match app.get_sub_app(@app.RenderApp) {
     Some(render_sub_app) => {
       let render_world = render_sub_app.world()
-      (try! render_world.get_resource(ecs_key_entity_specialization_ticks))
+      render_world.get_resource(ecs_key_entity_specialization_ticks) is Some(_) &&
+      render_world.get_resource(ecs_key_specialized_material_pipeline_cache)
       is Some(_) &&
-      (try! render_world.get_resource(
-        ecs_key_specialized_material_pipeline_cache,
-      ))
-      is Some(_) &&
-      (try! render_world.get_resource(ecs_key_render_material_instances))
-      is Some(_)
+      render_world.get_resource(ecs_key_render_material_instances) is Some(_)
     }
     None => false
   }
@@ -81,7 +76,7 @@ fn mesh_assets_mut_or_abort(
   world : @ecs.World,
 ) -> Ref[@asset.Assets[@mesh.Mesh]] {
   let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key)) {
+  match world.get_resource_ref_mut(key) {
     Some(assets_ref) => assets_ref
     None => abort("missing Assets<Mesh> resource")
   }

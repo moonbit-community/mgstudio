@@ -60,7 +60,7 @@ pub fn Aabb::half_size(self : Aabb) -> @math.Vec3 {
 
 ///|
 pub(open) trait MeshAabb {
-  compute_aabb(self : Self) -> Aabb?
+  fn compute_aabb(self : Self) -> Aabb?
 }
 
 ///|
@@ -143,7 +143,7 @@ fn visibility_write_aabb(
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::calculate_bounds`.
 pub fn calculate_bounds_system(world : @ecs.World) -> Unit {
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  let mesh_assets = match (try! world.get_resource(mesh_assets_key)) {
+  let mesh_assets = match world.get_resource(mesh_assets_key) {
     Some(assets) => assets
     None => return
   }
@@ -177,11 +177,11 @@ pub fn update_skinned_mesh_bounds_system(world : @ecs.World) -> Unit {
   ] = @asset.assets_resource_key()
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   let inverse_bindposes_assets = match
-    (try! world.get_resource(inverse_bindposes_assets_key)) {
+    world.get_resource(inverse_bindposes_assets_key) {
     Some(assets) => assets
     None => return
   }
-  let mesh_assets = match (try! world.get_resource(mesh_assets_key)) {
+  let mesh_assets = match world.get_resource(mesh_assets_key) {
     Some(assets) => assets
     None => return
   }

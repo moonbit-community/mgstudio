@@ -233,11 +233,7 @@ fn render_diagnostic_with_history(
 fn render_diagnostics_store_ref_mut(
   world : @ecs.World,
 ) -> Ref[DiagnosticsStore]? {
-  try world.get_resource_ref_mut(DiagnosticsStore::resource()) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource_ref_mut(DiagnosticsStore::resource())
 }
 
 ///|

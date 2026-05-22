@@ -85,8 +85,7 @@ fn ci_testing_config_from_env() -> CiTestingConfig {
 fn ci_testing_apply_time_update_strategy(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  guard (try! app.world().get_resource(ci_testing_config_resource_key))
-    is Some(config) else {
+  guard app.world().get_resource(ci_testing_config_resource_key) is Some(config) else {
     return app
   }
   guard config.setup.fixed_frame_time is Some(fixed_frame_time) else {

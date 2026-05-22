@@ -108,13 +108,9 @@ fn read_pending_pointer_event_inputs(world : @ecs.World) -> Array[PointerInput] 
 
 ///|
 fn picking_set_input_focus(world : @ecs.World, entity : @core.Entity) -> Unit {
-  let focus_ref = try
-    world.get_resource_ref_mut(@input_focus.InputFocus::resource())
-  catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  let focus_ref = world.get_resource_ref_mut(
+    @input_focus.InputFocus::resource(),
+  )
   guard focus_ref is Some(input_focus_ref) else { return }
   input_focus_ref.val.set(entity)
 }

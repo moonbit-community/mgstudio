@@ -278,12 +278,8 @@ fn new_player_system(
 
 ///|
 fn exclusive_player_system(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(game_state_key)) is Some(game_state) else {
-    return
-  }
-  guard (try! world.get_resource(game_rules_key)) is Some(game_rules) else {
-    return
-  }
+  guard world.get_resource(game_state_key) is Some(game_state) else { return }
+  guard world.get_resource(game_rules_key) is Some(game_rules) else { return }
   if game_state.current_round == 2 &&
     game_state.total_players < game_rules.max_players {
     let next_total = game_state.total_players + 1
@@ -299,7 +295,7 @@ fn exclusive_player_system(world : @ecs.World) -> Unit {
         ),
       ),
     )
-    let game_state_ref = match (try! world.get_resource_mut(game_state_key)) {
+    let game_state_ref = match world.get_resource_mut(game_state_key) {
       Some(value) => value
       None => return
     }

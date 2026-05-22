@@ -17,10 +17,7 @@ fn system_information_diagnostic_registered(
   app : @app.App[@ecs.World],
   path : DiagnosticPath,
 ) -> Bool {
-  let store = try! app
-    .world()
-    .get_resource(DiagnosticsStore::resource())
-    .unwrap()
+  let store = app.world().get_resource(DiagnosticsStore::resource()).unwrap()
   store.get(path) is Some(_)
 }
 

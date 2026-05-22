@@ -36,7 +36,7 @@ pub fn[T] World::resource(
 pub fn[T] World::get_resource_mut(
   self : World,
   key : ResourceKey[T],
-) -> ResourceMut[T]? raise EcsError {
+) -> ResourceMut[T]? {
   match self.get_resource(key) {
     Some(_) => Some(ResourceMut::{ world: Some(self), key: Some(key) })
     None => None
@@ -47,7 +47,7 @@ pub fn[T] World::get_resource_mut(
 pub fn[T] World::get_resource_ref_mut(
   self : World,
   key : ResourceKey[T],
-) -> Ref[T]? raise EcsError {
+) -> Ref[T]? {
   match self.get_resource_mut(key) {
     Some(resource) => Some(Ref(resource.peek()))
     None => None
@@ -58,7 +58,7 @@ pub fn[T] World::get_resource_ref_mut(
 pub fn[T] World::get_resource_ref(
   self : World,
   key : ResourceKey[T],
-) -> Ref[T]? raise EcsError {
+) -> Ref[T]? {
   match self.get_resource(key) {
     Some(resource) => Some(Ref(resource))
     None => None
@@ -76,9 +76,7 @@ pub fn[T] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
 }
 
 ///|
-pub fn[T] ResourceAccess::get_mut(
-  self : ResourceAccess[T],
-) -> ResourceMut[T]? raise EcsError {
+pub fn[T] ResourceAccess::get_mut(self : ResourceAccess[T]) -> ResourceMut[T]? {
   self.world.get_resource_mut(self.key)
 }
 
@@ -100,7 +98,7 @@ pub fn[T] ResourceAccess::upsert(self : ResourceAccess[T], value : T) -> Unit {
 
 ///|
 pub fn[T] ResourceAccess::remove(self : ResourceAccess[T]) -> T? {
-  try! self.world.remove_resource(self.key)
+  self.world.remove_resource(self.key)
 }
 
 ///|
@@ -234,7 +232,7 @@ pub fn[T] ResourceMut::set_added(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : EcsPayloadCodec, R] ResourceMut::modify(
+pub fn[T, R] ResourceMut::modify(
   self : ResourceMut[T],
   f : (T) -> R,
   loc~ : SourceLoc,
@@ -269,7 +267,7 @@ pub fn[T] ResourceMut::set(
 
 ///|
 #callsite(autofill(loc))
-pub fn[T : Eq + EcsPayloadCodec] ResourceMut::set_if_neq(
+pub fn[T : Eq] ResourceMut::set_if_neq(
   self : ResourceMut[T],
   value : T,
   loc~ : SourceLoc,

@@ -72,12 +72,12 @@ pub fn[R, S] extract_resource_once(source : S, extract : (S) -> R) -> R {
 }
 
 ///|
-fn[R : @ecs.EcsPayloadCodec] extract_resource_system(
+fn[R] extract_resource_system(
   render_world : @ecs.World,
   resource_key : @ecs.ResourceKey[R],
 ) -> Unit {
   let main_world = render_source_world(render_world)
-  match (main_world.get_resource(resource_key) catch { _ => None }) {
+  match main_world.get_resource(resource_key) {
     Some(main_resource) =>
       render_world.insert_resource(resource_key, main_resource)
     None => ()

@@ -23,8 +23,8 @@ pub struct Assets[T] {
 
 ///|
 pub(open) trait Asset: @ecs.EcsPayloadCodec {
-  asset_debug_name() -> String
-  asset_as_image(Self) -> Image?
+  fn asset_debug_name() -> String
+  fn asset_as_image(Self) -> Image?
 }
 
 ///|
@@ -87,7 +87,7 @@ fn[T] register_asset_event_dispatch(
     if !world.contains_message(message_key) {
       world.init_message(message_key)
     }
-    match (try! world.get_resource_mut(key)) {
+    match world.get_resource_mut(key) {
       Some(assets) => {
         let events = assets.modify(fn(value) { value.drain_events() })
         for event in events {

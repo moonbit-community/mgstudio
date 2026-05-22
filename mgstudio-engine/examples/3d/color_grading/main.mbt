@@ -956,7 +956,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn handle_button_presses(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard (try! world.get_resource_ref_mut(SelectedColorGradingOption::resource()))
+  guard world.get_resource_ref_mut(SelectedColorGradingOption::resource())
     is Some(selected_option) else {
     return
   }
@@ -990,7 +990,7 @@ fn adjust_color_grading_option(world : @ecs.World) -> Unit {
     return
   }
 
-  guard (try! world.get_resource(SelectedColorGradingOption::resource()))
+  guard world.get_resource(SelectedColorGradingOption::resource())
     is Some(selected_option) else {
     return
   }
@@ -1013,7 +1013,7 @@ fn adjust_color_grading_option(world : @ecs.World) -> Unit {
 
 ///|
 fn update_ui_state(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(SelectedColorGradingOption::resource()))
+  guard world.get_resource(SelectedColorGradingOption::resource())
     is Some(selected_option) else {
     return
   }

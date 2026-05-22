@@ -451,7 +451,7 @@ pub impl @asset.Asset for StandardMaterial with asset_as_image(_self) {
 
 ///|
 pub(open) trait IntoStandardMaterialAsset {
-  into_standard_material_asset(Self) -> StandardMaterial
+  fn into_standard_material_asset(Self) -> StandardMaterial
 }
 
 ///|
@@ -998,7 +998,7 @@ fn material_current_world_or_abort() -> @ecs.World {
 fn[T : @asset.Asset] material_asset_store_or_abort() -> @asset.Assets[T] {
   let world = material_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(assets) => assets
     None =>
       abort(
@@ -1013,7 +1013,7 @@ fn[T : @asset.Asset] material_asset_store_mut_or_abort() -> @ecs.ResourceMut[
 ] {
   let world = material_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource_mut(key)) {
+  match world.get_resource_mut(key) {
     Some(assets) => assets
     None =>
       abort(

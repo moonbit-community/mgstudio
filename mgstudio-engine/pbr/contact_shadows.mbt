@@ -259,7 +259,7 @@ pub fn contact_shadows_plugin_install_with(
   let next = @render.extract_component_plugin_with(app, extract_plugin)
   @render.with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
     let world = sub_app.world()
-    if (try! world.get_resource(ContactShadowsBuffer::resource())) is None {
+    if world.get_resource(ContactShadowsBuffer::resource()) is None {
       world.insert_resource(
         ContactShadowsBuffer::resource(),
         ContactShadowsBuffer::default(),
@@ -278,7 +278,7 @@ pub fn contact_shadows_plugin_install_with(
 pub fn render3d_contact_shadows_buffer_ref(
   world : @ecs.World,
 ) -> Ref[ContactShadowsBuffer]? {
-  match (try! world.get_resource_mut(ContactShadowsBuffer::resource())) {
+  match world.get_resource_mut(ContactShadowsBuffer::resource()) {
     Some(buffer) => Some(Ref(buffer.peek()))
     None => None
   }

@@ -105,7 +105,7 @@ pub fn fxaa_update_runtime_state(world : @ecs.World) -> Unit {
       enabled_camera_count = enabled_camera_count + 1
     }
   })
-  let current_state : FxaaRuntimeState? = try! world.get_resource(
+  let current_state : FxaaRuntimeState? = world.get_resource(
     ecs_key_fxaa_runtime_state,
   )
   match current_state {

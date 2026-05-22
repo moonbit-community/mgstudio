@@ -752,12 +752,12 @@ pub impl @app.Plugin for SpriteMaterialPlugin with build(_self, app) {
 
 ///|
 fn sprite_mesh_quad_handle(world : @ecs.World) -> @asset.Handle[@mesh.Mesh] {
-  let quad_ref = (try! world.get_resource_ref_mut(ecs_key_sprite_mesh_quad)).unwrap()
+  let quad_ref = world.get_resource_ref_mut(ecs_key_sprite_mesh_quad).unwrap()
   if quad_ref.val.handle is Some(handle) {
     return handle
   }
   let assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  guard (try! world.get_resource_mut(assets_key)) is Some(meshes_ref) else {
+  guard world.get_resource_mut(assets_key) is Some(meshes_ref) else {
     abort("SpriteMeshPlugin requires Assets<Mesh>")
   }
   meshes_ref.set_changed()
@@ -811,9 +811,9 @@ fn sprite_mesh_material_handle(
   anchor : Anchor,
 ) -> @asset.Handle[SpriteMaterial] {
   let key = sprite_mesh_material_cache_key(sprite, anchor)
-  let cache_ref = (try! world.get_resource_ref_mut(
-    ecs_key_sprite_mesh_material_cache,
-  )).unwrap()
+  let cache_ref = world
+    .get_resource_ref_mut(ecs_key_sprite_mesh_material_cache)
+    .unwrap()
   if cache_ref.val.handles.get(key) is Some(handle) {
     return handle
   }
@@ -821,12 +821,12 @@ fn sprite_mesh_material_handle(
   let atlas_assets_key : @ecs.ResourceKey[
     @asset.Assets[@asset.TextureAtlasLayout],
   ] = @asset.assets_resource_key()
-  guard (try! world.get_resource_mut(assets_key)) is Some(materials_ref) else {
+  guard world.get_resource_mut(assets_key) is Some(materials_ref) else {
     abort("SpriteMeshPlugin requires Assets<SpriteMaterial>")
   }
-  let atlas_assets = (try! world.get_resource(atlas_assets_key)).unwrap_or(
-    @asset.Assets::new(),
-  )
+  let atlas_assets = world
+    .get_resource(atlas_assets_key)
+    .unwrap_or(@asset.Assets::new())
   let mut material = SpriteMaterial::from_sprite_mesh(sprite).with_anchor(
     anchor.as_vec(),
   )
@@ -994,7 +994,7 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
 
 ///|
 pub(open) trait IntoSpriteRingMeshGeometry {
-  into_sprite_ring_mesh_geometry(self : Self, inner_shape : Self) -> Mesh2dGeometry
+  fn into_sprite_ring_mesh_geometry(self : Self, inner_shape : Self) -> Mesh2dGeometry
 }
 
 ///|
@@ -1065,7 +1065,7 @@ pub fn mesh2d_geometry_rectangle(rectangle : Rectangle) -> Mesh2dGeometry {
 
 ///|
 pub(open) trait IntoSpriteMeshAsset {
-  into_sprite_mesh_asset(Self) -> @mesh.Mesh
+  fn into_sprite_mesh_asset(Self) -> @mesh.Mesh
 }
 
 ///|

@@ -54,24 +54,16 @@ fn current_auto_directional_navigation_world_abort_missing() -> @ecs.World {
 fn auto_directional_navigation_focus_ref_mut(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[@input_focus.InputFocus]? {
-  try world.get_resource_mut(@input_focus.InputFocus::resource()) catch {
-    _ => (None : @ecs.ResourceMut[@input_focus.InputFocus]?)
-  } noraise {
-    value => value
-  }
+  world.get_resource_mut(@input_focus.InputFocus::resource())
 }
 
 ///|
 fn auto_directional_navigation_map(
   world : @ecs.World,
 ) -> @input_focus.DirectionalNavigationMap {
-  let map : @input_focus.DirectionalNavigationMap? = try
-    world.get_resource(@input_focus.DirectionalNavigationMap::resource())
-  catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  let map : @input_focus.DirectionalNavigationMap? = world.get_resource(
+    @input_focus.DirectionalNavigationMap::resource(),
+  )
   match map {
     Some(map) => map
     None => @input_focus.DirectionalNavigationMap::default()
@@ -82,13 +74,9 @@ fn auto_directional_navigation_map(
 fn auto_directional_navigation_config(
   world : @ecs.World,
 ) -> @input_focus.AutoNavigationConfig {
-  let config : @input_focus.AutoNavigationConfig? = try
-    world.get_resource(@input_focus.AutoNavigationConfig::resource())
-  catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  let config : @input_focus.AutoNavigationConfig? = world.get_resource(
+    @input_focus.AutoNavigationConfig::resource(),
+  )
   match config {
     Some(config) => config
     None => @input_focus.AutoNavigationConfig::default()
@@ -406,13 +394,9 @@ fn auto_directional_navigation_candidates(
 pub fn AutoDirectionalNavigator::input_focus(
   self : AutoDirectionalNavigator,
 ) -> @core.Entity? {
-  let focus : @input_focus.InputFocus? = try
-    self.world.get_resource(@input_focus.InputFocus::resource())
-  catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  let focus : @input_focus.InputFocus? = self.world.get_resource(
+    @input_focus.InputFocus::resource(),
+  )
   match focus {
     Some(focus) => focus.get()
     None => None

@@ -98,12 +98,10 @@ fn find_instruction_text_entity(world : @ecs.World) -> @core.Entity? {
 
 ///|
 fn refresh_instruction_text(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(left_click_action_key)) is Some(action) else {
+  guard world.get_resource(left_click_action_key) is Some(action) else {
     return
   }
-  guard (try! world.get_resource(resize_dir_key)) is Some(direction) else {
-    return
-  }
+  guard world.get_resource(resize_dir_key) is Some(direction) else { return }
   guard find_instruction_text_entity(world) is Some(entity) else { return }
   guard (try! world.get_by_key(entity, @text.ecs_key_text)) is Some(text_value) else {
     return

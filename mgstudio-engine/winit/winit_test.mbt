@@ -35,29 +35,17 @@ fn read_action_requests(world : @ecs.World) -> Array[@a11y.ActionRequest] {
 
 ///|
 fn read_winit_settings(world : @ecs.World) -> WinitSettings? {
-  try world.get_resource(WinitSettings::resource()) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource(WinitSettings::resource())
 }
 
 ///|
 fn read_winit_monitors(world : @ecs.World) -> WinitMonitors? {
-  try world.get_resource(WinitMonitors::resource()) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource(WinitMonitors::resource())
 }
 
 ///|
 fn read_winit_windows(world : @ecs.World) -> WinitWindows? {
-  try world.get_resource(WinitWindows::resource()) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource(WinitWindows::resource())
 }
 
 ///|

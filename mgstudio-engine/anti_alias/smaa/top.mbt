@@ -463,7 +463,7 @@ pub fn smaa_plugin_with(
   _plugin : SmaaPlugin,
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  if (try! world.get_resource(ecs_key_smaa_luts)) is None {
+  if world.get_resource(ecs_key_smaa_luts) is None {
     world.insert_resource(
       ecs_key_smaa_luts,
       SmaaLuts::from_asset_server(@asset.AssetServer::new()),
@@ -494,7 +494,7 @@ pub fn smaa_update_runtime_state(world : @ecs.World) -> Unit {
     enabled_camera_count,
     runtime_supported: SMAA_RUNTIME_SUPPORTED,
   }
-  let current : SmaaRuntimeState? = try! world.get_resource(
+  let current : SmaaRuntimeState? = world.get_resource(
     ecs_key_smaa_runtime_state,
   )
   match current {

@@ -172,7 +172,7 @@ pub fn meshlet_plugin() -> MeshletPlugin {
 
 ///|
 fn meshlet_prepare_assets_system(world : @ecs.World) -> Unit {
-  match (try! world.get_resource(ecs_key_meshlet_mesh_manager)) {
+  match world.get_resource(ecs_key_meshlet_mesh_manager) {
     Some(manager) => ignore(perform_pending_meshlet_mesh_writes(manager))
     _ => ()
   }
@@ -183,12 +183,11 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let instance_manager = InstanceManager::default()
   let meshlet_assets_key : @ecs.ResourceKey[@asset.Assets[MeshletMesh]] = @asset.assets_resource_key()
-  let meshlet_assets = try! source_world.get_resource(meshlet_assets_key)
-  let asset_server = try! source_world.get_resource(
+  let meshlet_assets = source_world.get_resource(meshlet_assets_key)
+  let asset_server = source_world.get_resource(
     @asset.asset_server_resource_key(),
   )
-  match
-    (meshlet_assets, try! world.get_resource_mut(ecs_key_meshlet_mesh_manager)) {
+  match (meshlet_assets, world.get_resource_mut(ecs_key_meshlet_mesh_manager)) {
     (Some(meshlet_assets), Some(mesh_manager_ref)) =>
       ignore(
         mesh_manager_ref.modify(fn(mesh_manager) {
@@ -273,7 +272,7 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
 
 ///|
 fn meshlet_instance_count_from_world(world : @ecs.World) -> Int {
-  match (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+  match world.get_resource(ecs_key_meshlet_instance_manager) {
     Some(instance_manager) => instance_manager.instance_count()
     None => 0
   }
@@ -343,9 +342,7 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
   ) {
     view_entities.push(entity)
   })
-  let instance_manager = try! world.get_resource(
-    ecs_key_meshlet_instance_manager,
-  )
+  let instance_manager = world.get_resource(ecs_key_meshlet_instance_manager)
   let instance_count = match instance_manager {
     Some(manager) => manager.instance_count()
     None => 0
@@ -354,7 +351,7 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
     Some(instance_manager) => instance_manager.max_bvh_depth()
     None => 0
   }
-  match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
+  match world.get_resource(ecs_key_meshlet_resource_manager) {
     Some(manager) => {
       prepare_meshlet_per_frame_resources(manager, instance_count)
       manager.clear_stale_prepared_view_resources(view_entities)
@@ -409,7 +406,7 @@ fn meshlet_prepare_view_bind_groups_system(world : @ecs.World) -> Unit {
     view_entities.push(entity)
   })
   let instance_count = meshlet_instance_count_from_world(world)
-  match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
+  match world.get_resource(ecs_key_meshlet_resource_manager) {
     Some(manager) => {
       manager.clear_stale_prepared_view_bind_groups(view_entities)
       for view_entity in view_entities {
@@ -428,8 +425,8 @@ fn meshlet_prepare_view_bind_groups_system(world : @ecs.World) -> Unit {
 fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
   match
     (
-      try! world.get_resource(ecs_key_meshlet_instance_manager),
-      try! world.get_resource(ecs_key_meshlet_mesh_manager),
+      world.get_resource(ecs_key_meshlet_instance_manager),
+      world.get_resource(ecs_key_meshlet_mesh_manager),
     ) {
     (Some(instance_manager), Some(mesh_manager)) => {
       ignore(queue_material_meshlet_meshes(instance_manager))
@@ -465,9 +462,7 @@ fn meshlet_default_opaque_renderer_method(
   source_world : @ecs.World,
 ) -> @material.OpaqueRendererMethod {
   match
-    (try! source_world.get_resource(
-      @material.ecs_key_default_opaque_renderer_method,
-    )) {
+    source_world.get_resource(@material.ecs_key_default_opaque_renderer_method) {
     Some(default_method) => default_method.renderer_method()
     None => @material.OpaqueRendererMethod::Forward
   }
@@ -480,7 +475,7 @@ fn meshlet_standard_material_assets(
   let standard_material_assets_key : @ecs.ResourceKey[
     @asset.Assets[@material.StandardMaterial],
   ] = @asset.assets_resource_key()
-  try! source_world.get_resource(standard_material_assets_key)
+  source_world.get_resource(standard_material_assets_key)
 }
 
 ///|
@@ -604,7 +599,7 @@ fn meshlet_distance_fog_enabled(
 fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let material_inputs = match
-    (try! world.get_resource(ecs_key_meshlet_instance_manager)) {
+    world.get_resource(ecs_key_meshlet_instance_manager) {
     Some(instance_manager) =>
       meshlet_collect_material_inputs(source_world, instance_manager)
     None => []
@@ -732,8 +727,7 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
 
 ///|
 fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state))
-    is None {
+  if world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state) is None {
     world.insert_resource(
       ecs_key_meshlet_visibility_buffer_raster_state,
       MeshletVisibilityBufferRasterState::default(),
@@ -745,7 +739,7 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
     shadow_view_count,
     material_depth_view_count,
     resource_max_bvh_depth,
-  ) = match (try! world.get_resource(ecs_key_meshlet_resource_manager)) {
+  ) = match world.get_resource(ecs_key_meshlet_resource_manager) {
     Some(manager) =>
       (
         manager.prepared_not_shadow_view_count(),
@@ -757,8 +751,8 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
   }
   let (max_bvh_depth, rightmost_slot) = match
     (
-      try! world.get_resource(ecs_key_meshlet_instance_manager),
-      try! world.get_resource(ecs_key_meshlet_resource_manager),
+      world.get_resource(ecs_key_meshlet_instance_manager),
+      world.get_resource(ecs_key_meshlet_resource_manager),
     ) {
     (Some(instance_manager), Some(resource_manager)) =>
       (
@@ -771,15 +765,12 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
       (resource_max_bvh_depth, resource_manager.cull_queue_rightmost_slot())
     (None, None) => (resource_max_bvh_depth, 0)
   }
-  let pipelines_ready = match
-    (try! world.get_resource(ecs_key_meshlet_pipelines)) {
+  let pipelines_ready = match world.get_resource(ecs_key_meshlet_pipelines) {
     Some(pipelines) => pipelines.get() is Some(_)
     None => false
   }
   match
-    (try! world.get_resource_ref_mut(
-      ecs_key_meshlet_visibility_buffer_raster_state,
-    )) {
+    world.get_resource_ref_mut(ecs_key_meshlet_visibility_buffer_raster_state) {
     Some(state_ref) => {
       state_ref.val.enabled = meshlet_runtime_available()
       meshlet_visibility_buffer_raster(
@@ -822,8 +813,8 @@ fn meshlet_prepass_system(world : @ecs.World) -> Unit {
   let mut draw_count = 0
   match
     (
-      try! world.get_resource(ecs_key_meshlet_instance_manager),
-      try! world.get_resource(ecs_key_meshlet_resource_manager),
+      world.get_resource(ecs_key_meshlet_instance_manager),
+      world.get_resource(ecs_key_meshlet_resource_manager),
     ) {
     (Some(instance_manager), Some(resource_manager)) =>
       source_world.for_each_component(ecs_key_meshlet_view_materials_prepass, fn(
@@ -852,8 +843,8 @@ fn meshlet_deferred_gbuffer_prepass_system(world : @ecs.World) -> Unit {
   let mut draw_count = 0
   match
     (
-      try! world.get_resource(ecs_key_meshlet_instance_manager),
-      try! world.get_resource(ecs_key_meshlet_resource_manager),
+      world.get_resource(ecs_key_meshlet_instance_manager),
+      world.get_resource(ecs_key_meshlet_resource_manager),
     ) {
     (Some(instance_manager), Some(resource_manager)) =>
       source_world.for_each_component(
@@ -882,8 +873,8 @@ fn meshlet_main_opaque_pass_system(world : @ecs.World) -> Unit {
   let mut draw_count = 0
   match
     (
-      try! world.get_resource(ecs_key_meshlet_instance_manager),
-      try! world.get_resource(ecs_key_meshlet_resource_manager),
+      world.get_resource(ecs_key_meshlet_instance_manager),
+      world.get_resource(ecs_key_meshlet_resource_manager),
     ) {
     (Some(instance_manager), Some(resource_manager)) =>
       source_world.for_each_component(
@@ -913,32 +904,31 @@ fn meshlet_ensure_render_sub_app_resources(
 ) -> Unit {
   let plugin_state = MeshletPluginState::from_plugin(plugin)
   world.insert_resource(ecs_key_meshlet_plugin_state, plugin_state)
-  if (try! world.get_resource(ecs_key_meshlet_instance_manager)) is None {
+  if world.get_resource(ecs_key_meshlet_instance_manager) is None {
     world.insert_resource(
       ecs_key_meshlet_instance_manager,
       InstanceManager::default(),
     )
   }
-  if (try! world.get_resource(ecs_key_meshlet_resource_manager)) is None {
+  if world.get_resource(ecs_key_meshlet_resource_manager) is None {
     world.insert_resource(
       ecs_key_meshlet_resource_manager,
       ResourceManager::new(plugin.cluster_buffer_slots()),
     )
   }
-  if (try! world.get_resource(ecs_key_meshlet_pipelines)) is None {
+  if world.get_resource(ecs_key_meshlet_pipelines) is None {
     world.insert_resource(
       ecs_key_meshlet_pipelines,
       init_meshlet_pipelines(-1, -1, -1),
     )
   }
-  if (try! world.get_resource(ecs_key_meshlet_mesh_manager)) is None {
+  if world.get_resource(ecs_key_meshlet_mesh_manager) is None {
     world.insert_resource(
       ecs_key_meshlet_mesh_manager,
       MeshletMeshManager::default(),
     )
   }
-  if (try! world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state))
-    is None {
+  if world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state) is None {
     world.insert_resource(
       ecs_key_meshlet_visibility_buffer_raster_state,
       MeshletVisibilityBufferRasterState::default(),

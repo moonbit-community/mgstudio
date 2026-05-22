@@ -35,7 +35,7 @@ pub using @math {type BoundingSphere as Sphere}
 
 // Traits
 pub(open) trait MeshAabb {
-  compute_aabb(Self) -> Aabb?
+  fn compute_aabb(Self) -> Aabb?
 }
 pub impl MeshAabb for @mesh.Mesh
 pub impl MeshAabb for @mesh.Mesh3dGeometry

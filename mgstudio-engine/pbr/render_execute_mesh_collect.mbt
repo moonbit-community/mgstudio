@@ -468,7 +468,7 @@ fn render3d_execute_collect_meshes(
   )
   let material_prepass_enabled = standard_material_prepass_enabled(world)
   let render_material_instances_ref = match
-    (try! world.get_resource_ref_mut(ecs_key_render_material_instances)) {
+    world.get_resource_ref_mut(ecs_key_render_material_instances) {
     Some(value) => value
     None => abort("missing RenderMaterialInstances resource in render world")
   }

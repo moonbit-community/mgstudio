@@ -80,7 +80,7 @@ pub impl @app.Resource for TonemappingLuts with resource() {
 pub fn tonemapping_luts_from_world_or_init(
   world : @ecs.World,
 ) -> TonemappingLuts {
-  match (try! world.get_resource(ecs_key_tonemapping_luts)) {
+  match world.get_resource(ecs_key_tonemapping_luts) {
     Some(luts) => luts
     None => {
       let luts = TonemappingLuts::from_asset_server(@asset.AssetServer::new())
@@ -211,7 +211,7 @@ fn tonemapping_plugin_install_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   let world = app.world()
-  if (try! world.get_resource(ecs_key_tonemapping_luts)) is None {
+  if world.get_resource(ecs_key_tonemapping_luts) is None {
     world.insert_resource(
       ecs_key_tonemapping_luts,
       TonemappingLuts::from_asset_server(@asset.AssetServer::new()),

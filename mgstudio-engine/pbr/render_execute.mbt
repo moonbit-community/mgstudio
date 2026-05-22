@@ -287,7 +287,7 @@ fn render3d_prewarm_material_pipeline(
   visible_entity : @core.Entity,
   specialization_tick : @core.Tick,
 ) -> @material.CachedRenderPipelineId? {
-  match (try! world.get_resource(ecs_key_specialized_material_pipeline_cache)) {
+  match world.get_resource(ecs_key_specialized_material_pipeline_cache) {
     Some(cache) =>
       match cache.pipeline_id(view_entity, visible_entity) {
         Some(pipeline_id) => return Some(pipeline_id)
@@ -332,8 +332,7 @@ fn render3d_prewarm_material_pipeline(
         "failed to specialize pbr material pipeline for mesh \{mesh.mesh_handle.id()}: \{err}",
       )
   }
-  match
-    (try! world.get_resource_mut(ecs_key_specialized_material_pipeline_cache)) {
+  match world.get_resource_mut(ecs_key_specialized_material_pipeline_cache) {
     Some(cache_ref) =>
       ignore(
         cache_ref.modify(fn(cache) {

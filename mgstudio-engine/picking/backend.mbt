@@ -191,7 +191,7 @@ fn current_sprite_picking_settings(world : @ecs.World) -> SpritePickingSettings 
 ///|
 fn picking_image_assets(world : @ecs.World) -> @asset.Assets[@asset.Image] {
   let key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(assets) => assets
     None => @asset.Assets::new()
   }
@@ -202,7 +202,7 @@ fn picking_texture_atlas_assets(
   world : @ecs.World,
 ) -> @asset.Assets[@asset.TextureAtlasLayout] {
   let key : @ecs.ResourceKey[@asset.Assets[@asset.TextureAtlasLayout]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(assets) => assets
     None => @asset.Assets::new()
   }

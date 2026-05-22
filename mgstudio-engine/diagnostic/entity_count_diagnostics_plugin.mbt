@@ -76,12 +76,7 @@ pub fn entity_count_diagnostics_plugin_with(
 
 ///|
 fn entity_count_diagnostic_system(world : @ecs.World) -> Unit {
-  match
-    (try world.get_resource_ref_mut(DiagnosticsStore::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource_ref_mut(DiagnosticsStore::resource()) {
     Some(store_ref) =>
       match store_ref.val.get_ref(entity_count_diagnostic_path) {
         Some(diagnostic_ref) => {

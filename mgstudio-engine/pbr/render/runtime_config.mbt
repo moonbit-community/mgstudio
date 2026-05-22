@@ -14,7 +14,7 @@
 
 ///|
 pub fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
+  match world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in render3d systems")
   }
@@ -50,7 +50,7 @@ pub fn render3d_camera_indirect_enabled(
 
 ///|
 pub fn render3d_point_light_shadow_map_size(world : @ecs.World) -> Int {
-  if (try! world.get_resource(@light.ecs_key_point_light_shadow_map))
+  if world.get_resource(@light.ecs_key_point_light_shadow_map)
     is Some(shadow_map) {
     if shadow_map.size <= 0 {
       1

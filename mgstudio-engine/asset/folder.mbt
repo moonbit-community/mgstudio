@@ -80,7 +80,7 @@ pub fn AssetServer::load_folder(
 fn loaded_folder_assets_mut_or_abort(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Assets[LoadedFolder]] {
-  match (try! world.get_resource_mut(loaded_folder_assets_resource_key())) {
+  match world.get_resource_mut(loaded_folder_assets_resource_key()) {
     Some(assets) => assets
     None =>
       abort(
@@ -91,7 +91,7 @@ fn loaded_folder_assets_mut_or_abort(
 
 ///|
 fn loaded_folder_assets_or_abort(world : @ecs.World) -> Assets[LoadedFolder] {
-  match (try! world.get_resource(loaded_folder_assets_resource_key())) {
+  match world.get_resource(loaded_folder_assets_resource_key()) {
     Some(assets) => assets
     None =>
       abort(

@@ -198,15 +198,8 @@ pub impl[S : States] Resource for StateTransitionEvent[S] with resource() {
 }
 
 ///|
-fn[T : @ecs.EcsPayloadCodec] read_world_resource(
-  world : @ecs.World,
-  key : @ecs.ResourceKey[T],
-) -> T? {
-  try world.get_resource(key) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+fn[T] read_world_resource(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
+  world.get_resource(key)
 }
 
 ///|

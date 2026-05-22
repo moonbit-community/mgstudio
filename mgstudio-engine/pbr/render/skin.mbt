@@ -182,7 +182,7 @@ pub impl @app.Resource for SkinUniforms with resource() {
 
 ///|
 pub fn ensure_skin_uniforms_resource(world : @ecs.World) -> Unit {
-  if (try! world.get_resource(SkinUniforms::resource())) is None {
+  if world.get_resource(SkinUniforms::resource()) is None {
     world.insert_resource(SkinUniforms::resource(), SkinUniforms::new())
   }
 }
@@ -190,7 +190,7 @@ pub fn ensure_skin_uniforms_resource(world : @ecs.World) -> Unit {
 ///|
 pub fn skin_uniforms_ref_or_abort(world : @ecs.World) -> Ref[SkinUniforms] {
   ensure_skin_uniforms_resource(world)
-  match (try! world.get_resource_mut(SkinUniforms::resource())) {
+  match world.get_resource_mut(SkinUniforms::resource()) {
     Some(state) => Ref(state.peek())
     None => abort("Missing SkinUniforms resource in render world")
   }
@@ -746,7 +746,7 @@ pub fn render3d_extract_skin_bindings(
     @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
   ] = @asset.assets_resource_key()
   let inverse_bindposes_assets = match
-    (try! source_world.get_resource(inverse_bindposes_assets_key)) {
+    source_world.get_resource(inverse_bindposes_assets_key) {
     Some(assets) => assets
     None => return
   }

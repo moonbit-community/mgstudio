@@ -194,7 +194,7 @@ pub fn FocusableArea::size(self : FocusableArea) -> @math.Vec2 {
 
 ///|
 pub(open) trait Navigable {
-  get_bounds(Self) -> (@math.Vec2, @math.Vec2)
+  fn get_bounds(Self) -> (@math.Vec2, @math.Vec2)
 }
 
 ///|
@@ -362,12 +362,7 @@ pub fn DirectionalNavigationMap::get_neighbors(
 fn directional_navigation_map_value(
   world : @ecs.World,
 ) -> DirectionalNavigationMap {
-  match
-    (try world.get_resource(DirectionalNavigationMap::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource(DirectionalNavigationMap::resource()) {
     Some(map) => map
     None => DirectionalNavigationMap::default()
   }
@@ -377,11 +372,7 @@ fn directional_navigation_map_value(
 fn directional_navigation_focus_ref_mut(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[InputFocus]? {
-  try world.get_resource_mut(InputFocus::resource()) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
+  world.get_resource_mut(InputFocus::resource())
 }
 
 ///|

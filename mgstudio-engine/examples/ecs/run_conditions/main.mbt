@@ -42,7 +42,7 @@ pub impl @app.Resource for Unused with resource() {
 
 ///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
+  match world.get_resource(@time.default_time_resource_key()) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in run_conditions example")
   }
@@ -102,12 +102,7 @@ fn has_user_input(world : @ecs.World) -> Bool {
 
 ///|
 fn touches_any_just_pressed(world : @ecs.World) -> Bool {
-  match
-    (try world.get_resource(@input.Touches::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
+  match world.get_resource(@input.Touches::resource()) {
     Some(touches) => touches.any_just_pressed()
     None => false
   }
@@ -119,7 +114,7 @@ fn input_counter_changed(world : @ecs.World, state : Ref[Json]) -> Bool {
     Json::Null => None
     _ => Some(try! @json.from_json(state.val))
   }
-  match (try! world.get_resource(InputCounter::resource())) {
+  match world.get_resource(InputCounter::resource()) {
     Some(counter) => {
       let changed = match previous {
         Some(last) => last != counter.value

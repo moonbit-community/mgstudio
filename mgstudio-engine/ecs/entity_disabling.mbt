@@ -67,7 +67,7 @@ pub impl Component for Disabled with component() {
 pub fn[T] World::register_disabling_component(
   self : World,
   key : ComponentKey[T],
-) -> Unit raise EcsError {
+) -> Unit {
   let component_id = key.id()
   if self.update_resource(ecs_key_default_query_filters, fn(filters) {
       filters.register_disabling_component(component_id)

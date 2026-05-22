@@ -55,7 +55,7 @@ test "diagnostics: sysinfo refresh data populates diagnostics store" {
       apply_sysinfo_refresh_data(diagnostics, data)
     })
     .run_once()
-  let store_ref = try! app
+  let store_ref = app
     .world()
     .get_resource_ref_mut(DiagnosticsStore::resource())
     .unwrap()

@@ -19,20 +19,19 @@ test "render3d: materials startup initializes bevy material render resources" {
   init_materials_resources(world)
 
   debug_inspect(
-    (try! world.get_resource(ecs_key_entity_specialization_ticks)) is Some(_),
+    world.get_resource(ecs_key_entity_specialization_ticks) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! world.get_resource(ecs_key_specialized_material_pipeline_cache))
-    is Some(_),
+    world.get_resource(ecs_key_specialized_material_pipeline_cache) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! world.get_resource(ecs_key_render_material_instances)) is Some(_),
+    world.get_resource(ecs_key_render_material_instances) is Some(_),
     content="true",
   )
   debug_inspect(
-    (try! world.get_resource(ecs_key_material_bind_group_allocators)) is Some(_),
+    world.get_resource(ecs_key_material_bind_group_allocators) is Some(_),
     content="true",
   )
   debug_inspect(
@@ -51,7 +50,7 @@ test "render3d: materials startup preserves existing material render resources" 
 
   init_materials_resources(world)
 
-  match (try! world.get_resource(ecs_key_entity_specialization_ticks)) {
+  match world.get_resource(ecs_key_entity_specialization_ticks) {
     Some(ticks) =>
       debug_inspect(
         ticks.get(entity).map(fn(pair) { pair.system_tick() }),

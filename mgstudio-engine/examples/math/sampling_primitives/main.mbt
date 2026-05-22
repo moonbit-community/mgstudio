@@ -344,7 +344,7 @@ fn current_world_or_abort() -> @ecs.World {
 
 ///|
 fn default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  let time : @time.Time[Unit]? = try! world.get_resource(
+  let time : @time.Time[Unit]? = world.get_resource(
     @time.default_time_resource_key(),
   )
   match time {
@@ -635,8 +635,7 @@ fn setup(
       .with_cull_mode(None),
     )
 
-  guard (try! world.get_resource(SampledShapes::resource()))
-    is Some(sampled_shapes) else {
+  guard world.get_resource(SampledShapes::resource()) is Some(sampled_shapes) else {
     return
   }
   for sampled_shape in sampled_shapes.shapes {
@@ -766,31 +765,29 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     }
     let tick = world.increment_change_tick()
     ignore(tick)
-    if (try! world.get_resource_ref_mut(PointCounter::resource()))
-      is Some(counter) {
+    if world.get_resource_ref_mut(PointCounter::resource()) is Some(counter) {
       counter.val.count = 0
     }
   }
 
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard (try! world.get_resource_ref_mut(SamplingMode::resource()))
-    is Some(mode_ref) else {
+  guard world.get_resource_ref_mut(SamplingMode::resource()) is Some(mode_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(SpawningMode::resource()))
+  guard world.get_resource_ref_mut(SpawningMode::resource())
     is Some(spawn_mode_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(SpawnQueue::resource()))
+  guard world.get_resource_ref_mut(SpawnQueue::resource())
     is Some(spawn_queue_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(InstructionText::resource()))
+  guard world.get_resource_ref_mut(InstructionText::resource())
     is Some(instruction_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(SampledShapes::resource()))
+  guard world.get_resource_ref_mut(SampledShapes::resource())
     is Some(sampled_shapes_ref) else {
     return
   }
@@ -906,7 +903,7 @@ fn handle_mouse(
   let tick = world.increment_change_tick()
   ignore(tick)
 
-  guard (try! world.get_resource_ref_mut(MousePressed::resource()))
+  guard world.get_resource_ref_mut(MousePressed::resource())
     is Some(mouse_pressed_ref) else {
     return
   }
@@ -960,34 +957,32 @@ fn handle_mouse(
 fn spawn_points(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard (try! world.get_resource_ref_mut(SpawningMode::resource()))
+  guard world.get_resource_ref_mut(SpawningMode::resource())
     is Some(spawn_mode_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(SpawnQueue::resource()))
+  guard world.get_resource_ref_mut(SpawnQueue::resource())
     is Some(spawn_queue_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(PointCounter::resource()))
+  guard world.get_resource_ref_mut(PointCounter::resource())
     is Some(point_counter_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(RandomSource::resource()))
+  guard world.get_resource_ref_mut(RandomSource::resource())
     is Some(random_source_ref) else {
     return
   }
-  guard (try! world.get_resource(SamplingMode::resource())) is Some(mode) else {
+  guard world.get_resource(SamplingMode::resource()) is Some(mode) else {
     return
   }
-  guard (try! world.get_resource(SampledShapes::resource()))
-    is Some(sampled_shapes) else {
+  guard world.get_resource(SampledShapes::resource()) is Some(sampled_shapes) else {
     return
   }
-  guard (try! world.get_resource(PointMesh::resource())) is Some(point_mesh) else {
+  guard world.get_resource(PointMesh::resource()) is Some(point_mesh) else {
     return
   }
-  guard (try! world.get_resource(PointMaterial::resource()))
-    is Some(point_material) else {
+  guard world.get_resource(PointMaterial::resource()) is Some(point_material) else {
     return
   }
 
@@ -1023,7 +1018,7 @@ fn spawn_points(world : @ecs.World) -> Unit {
 
 ///|
 fn despawn_points(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(SpawningMode::resource())) is Some(spawn_mode) else {
+  guard world.get_resource(SpawningMode::resource()) is Some(spawn_mode) else {
     return
   }
   if spawn_mode is Manual {
@@ -1031,14 +1026,14 @@ fn despawn_points(world : @ecs.World) -> Unit {
   }
   let tick = world.increment_change_tick()
   ignore(tick)
-  guard (try! world.get_resource_ref_mut(PointCounter::resource()))
+  guard world.get_resource_ref_mut(PointCounter::resource())
     is Some(point_counter_ref) else {
     return
   }
   if point_counter_ref.val.count < MAX_POINTS {
     return
   }
-  guard (try! world.get_resource_ref_mut(RandomSource::resource()))
+  guard world.get_resource_ref_mut(RandomSource::resource())
     is Some(random_source_ref) else {
     return
   }
@@ -1196,7 +1191,7 @@ fn update_camera(world : @ecs.World) -> Unit {
 
 ///|
 fn update_lights(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(PointCounter::resource())) is Some(counter) else {
+  guard world.get_resource(PointCounter::resource()) is Some(counter) else {
     return
   }
   let saturation = if Float::from_int(counter.count) /

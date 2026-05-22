@@ -47,10 +47,7 @@ test "anti_alias/fxaa: runtime state counts only camera entities with Fxaa" {
     Fxaa::default().with_enabled(true),
   )
   let app = app.update()
-  let runtime = try! app
-    .world()
-    .get_resource(ecs_key_fxaa_runtime_state)
-    .unwrap()
+  let runtime = app.world().get_resource(ecs_key_fxaa_runtime_state).unwrap()
   debug_inspect(runtime.enabled_camera_count, content="1")
 }
 

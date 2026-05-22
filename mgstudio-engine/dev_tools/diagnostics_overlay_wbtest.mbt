@@ -34,7 +34,7 @@ test "dev_tools: diagnostics overlay creates plane and window for overlay entity
     DiagnosticsOverlay::fps(),
   )
   let app = app.run_startup().update()
-  let runtime_state = try! app
+  let runtime_state = app
     .world()
     .get_resource(diagnostics_overlay_runtime_state_resource_key)
     .unwrap()

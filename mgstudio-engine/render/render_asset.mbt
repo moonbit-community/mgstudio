@@ -311,10 +311,7 @@ pub fn RenderAssetBytesPerFrameLimiter::exhausted(
 
 ///|
 pub fn reset_render_asset_bytes_per_frame(world : @ecs.World) -> Unit {
-  match
-    (world.get_resource(ecs_key_render_asset_bytes_per_frame_limiter) catch {
-      _ => None
-    }) {
+  match world.get_resource(ecs_key_render_asset_bytes_per_frame_limiter) {
     Some(limiter) => limiter.reset()
     None => ()
   }
@@ -325,12 +322,8 @@ pub fn extract_render_asset_bytes_per_frame(world : @ecs.World) -> Unit {
   let main_world = render_source_world(world)
   let bytes_per_frame = main_world.get_resource(
     ecs_key_render_asset_bytes_per_frame,
-  ) catch {
-    _ => None
-  }
-  let limiter = world.get_resource(ecs_key_render_asset_bytes_per_frame_limiter) catch {
-    _ => None
-  }
+  )
+  let limiter = world.get_resource(ecs_key_render_asset_bytes_per_frame_limiter)
   match (bytes_per_frame, limiter) {
     (Some(bytes_per_frame), Some(limiter)) => limiter.extract(bytes_per_frame)
     _ => ()

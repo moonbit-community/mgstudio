@@ -57,8 +57,7 @@ pub fn UtilityShaderPlugin::default() -> UtilityShaderPlugin {
 ///|
 pub impl @app.Plugin for UtilityShaderPlugin with build(_self, app) {
   let world = app.world()
-  let asset_server = match
-    (try! world.get_resource(@asset.AssetServer::resource())) {
+  let asset_server = match world.get_resource(@asset.AssetServer::resource()) {
     Some(asset_server) => asset_server
     None =>
       abort("expected AssetServer resource in shader_material_wesl example")

@@ -18,7 +18,7 @@
 ///|
 fn scene_asset_ready(world : @ecs.World, handle : @asset.Handle[Scene]) -> Bool {
   let key : @ecs.ResourceKey[@asset.Assets[Scene]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(assets) =>
       match assets.get(handle) {
         Some(scene) => scene.ready
@@ -31,7 +31,7 @@ fn scene_asset_ready(world : @ecs.World, handle : @asset.Handle[Scene]) -> Bool 
 ///|
 fn gltf_asset_ready(world : @ecs.World, handle : @asset.Handle[Gltf]) -> Bool {
   let key : @ecs.ResourceKey[@asset.Assets[Gltf]] = @asset.assets_resource_key()
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(assets) =>
       match assets.get(handle) {
         Some(gltf) => {
@@ -63,7 +63,7 @@ fn scene_init_gltf_assets(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 fn scene_registry_from_world(world : @ecs.World) -> SceneAssetRegistryState? {
   let key : @ecs.ResourceKey[SceneAssetRegistryState] = SceneAssetRegistryState::resource()
-  try! world.get_resource(key)
+  world.get_resource(key)
 }
 
 ///|

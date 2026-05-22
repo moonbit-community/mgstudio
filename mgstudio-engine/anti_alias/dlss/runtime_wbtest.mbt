@@ -43,10 +43,7 @@ test "anti_alias/dlss: runtime state counts camera-only DLSS components" {
     Dlss::default().with_reset(true),
   )
   let app = app.update()
-  let runtime = try! app
-    .world()
-    .get_resource(DlssRuntimeState::resource())
-    .unwrap()
+  let runtime = app.world().get_resource(DlssRuntimeState::resource()).unwrap()
   let camera_dlss = try! app
     .world()
     .get_by_key(camera_entity, Dlss::component())

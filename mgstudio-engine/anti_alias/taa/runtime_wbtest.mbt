@@ -45,7 +45,7 @@ test "anti_alias/taa: runtime state tracks camera-only and reset count" {
     TemporalAntiAliasing::new(true),
   )
   let app = app.update()
-  let runtime = try! app
+  let runtime = app
     .world()
     .get_resource(ecs_key_temporal_anti_alias_runtime_state)
     .unwrap()

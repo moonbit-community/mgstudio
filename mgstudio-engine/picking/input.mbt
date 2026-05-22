@@ -91,11 +91,7 @@ pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
     )
   }
   if settings.is_touch_enabled {
-    let touches_opt = try world.get_resource(@input.Touches::resource()) catch {
-      _ => None
-    } noraise {
-      value => value
-    }
+    let touches_opt = world.get_resource(@input.Touches::resource())
     match touches_opt {
       Some(touches) => {
         for touch in touches.iter() {

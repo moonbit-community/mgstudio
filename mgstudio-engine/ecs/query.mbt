@@ -2944,12 +2944,7 @@ fn[F : QueryFilter] query_archetype_matches_with_default_filter_component_ids(
 
 ///|
 fn query_default_filters_for_world(world : World) -> DefaultQueryFilters? {
-  try world.get_resource(ecs_key_default_query_filters) catch {
-    _ => None
-  } noraise {
-    Some(default_query_filters) => Some(default_query_filters)
-    None => None
-  }
+  world.get_resource(ecs_key_default_query_filters)
 }
 
 ///|

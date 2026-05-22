@@ -45,7 +45,7 @@ pub impl @asset.Asset for ColorMaterialAsset with asset_as_image(_self) {
 
 ///|
 pub(open) trait IntoColorMaterialAsset {
-  into_color_material_asset(Self) -> ColorMaterialAsset
+  fn into_color_material_asset(Self) -> ColorMaterialAsset
 }
 
 ///|
@@ -415,7 +415,7 @@ fn init_default_color_material_asset(
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   let key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
-  if (try! world.get_resource_mut(key)) is Some(assets) {
+  if world.get_resource_mut(key) is Some(assets) {
     let handle = default_color_material_asset_handle()
     assets.modify(fn(value) {
       if !value.contains(handle) {

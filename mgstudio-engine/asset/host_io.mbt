@@ -87,14 +87,14 @@ fn asset_io_runtime_state_resource_key() -> @ecs.ResourceKey[
 ///|
 fn asset_io_runtime_state_for_world(world : @ecs.World) -> AssetIoRuntimeState {
   let key = asset_io_runtime_state_resource_key()
-  if (try! world.get_resource(key)) is None {
+  if world.get_resource(key) is None {
     world.insert_resource(key, AssetIoRuntimeState::{
       assets_dir_override: Ref(None),
       source_dir_overrides: Ref(@hashmap.HashMap([])),
       source_readers: Ref(@hashmap.HashMap([])),
     })
   }
-  match (try! world.get_resource(key)) {
+  match world.get_resource(key) {
     Some(state) => state
     None => abort("Failed to initialize asset io runtime state resource")
   }

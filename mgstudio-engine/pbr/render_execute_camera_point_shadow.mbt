@@ -129,14 +129,12 @@ impl @app.Resource for Render3dPointLightShadowTargets with resource() {
 fn render3d_point_light_shadow_targets_ref_or_init(
   world : @ecs.World,
 ) -> Ref[Render3dPointLightShadowTargets] {
-  if (try! world.get_resource(Render3dPointLightShadowTargets::resource()))
-    is None {
+  if world.get_resource(Render3dPointLightShadowTargets::resource()) is None {
     world.insert_resource(Render3dPointLightShadowTargets::resource(), {
       entries: [],
     })
   }
-  match
-    (try! world.get_resource_mut(Render3dPointLightShadowTargets::resource())) {
+  match world.get_resource_mut(Render3dPointLightShadowTargets::resource()) {
     Some(state) => Ref(state.peek())
     None => abort("Missing Render3dPointLightShadowTargets resource")
   }

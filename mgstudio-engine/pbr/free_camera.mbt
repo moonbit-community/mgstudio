@@ -98,14 +98,14 @@ impl @app.Resource for FreeCameraSystemState with resource() {
 fn free_camera_system_state_ref_or_init(
   world : @ecs.World,
 ) -> Ref[FreeCameraSystemState] {
-  if (try! world.get_resource(FreeCameraSystemState::resource())) is None {
+  if world.get_resource(FreeCameraSystemState::resource()) is None {
     world.insert_resource(FreeCameraSystemState::resource(), FreeCameraSystemState::{
       toggle_cursor_grab: false,
       mouse_cursor_grab: false,
       last_mouse_position: None,
     })
   }
-  match (try! world.get_resource_mut(FreeCameraSystemState::resource())) {
+  match world.get_resource_mut(FreeCameraSystemState::resource()) {
     Some(state_ref) => Ref(state_ref.peek())
     None => abort("Missing FreeCameraSystemState resource")
   }
