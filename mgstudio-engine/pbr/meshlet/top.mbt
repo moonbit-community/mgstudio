@@ -262,9 +262,6 @@ fn meshlet_extract_entities_system(world : @ecs.World) -> Unit {
       )
     _ => ()
   }
-  ignore(
-    queue_material_meshlet_meshes_with_present_material_assets(instance_manager),
-  )
   world.insert_resource(ecs_key_meshlet_instance_manager, instance_manager)
 }
 
@@ -492,36 +489,30 @@ fn meshlet_collect_material_inputs(
   let default_opaque_renderer_method = meshlet_default_opaque_renderer_method(
     source_world,
   )
-  for material_asset_id in instance_manager.present_material_asset_ids() {
-    match instance_manager.material_id_for_asset(material_asset_id) {
-      Some(material_id) => {
-        let mut material_input = MeshletPreparedMaterialInput::new(
-          material_id, material_asset_id,
-        )
-        match standard_material_assets {
-          Some(assets) =>
-            match assets.get(@asset.Handle::new(material_asset_id)) {
-              Some(material) => {
-                material_input = material_input.with_opaque_render_method(
-                  @pbr.standard_material_opaque_render_method(
-                    material, default_opaque_renderer_method,
-                  ),
-                )
-                material_input = material_input.with_alpha_mode(
-                  material.alpha_mode,
-                )
-                material_input = material_input.with_reads_view_transmission_texture(
-                  meshlet_material_reads_view_transmission_texture(material),
-                )
-              }
-              None => ()
-            }
+  for material_asset_id in instance_manager.scene_material_asset_ids() {
+    let material_id = instance_manager.get_material_id(material_asset_id)
+    let mut material_input = MeshletPreparedMaterialInput::new(
+      material_id, material_asset_id,
+    )
+    match standard_material_assets {
+      Some(assets) =>
+        match assets.get(@asset.Handle::new(material_asset_id)) {
+          Some(material) => {
+            material_input = material_input.with_opaque_render_method(
+              @pbr.standard_material_opaque_render_method(
+                material, default_opaque_renderer_method,
+              ),
+            )
+            material_input = material_input.with_alpha_mode(material.alpha_mode)
+            material_input = material_input.with_reads_view_transmission_texture(
+              meshlet_material_reads_view_transmission_texture(material),
+            )
+          }
           None => ()
         }
-        material_inputs.push(material_input)
-      }
       None => ()
     }
+    material_inputs.push(material_input)
   }
   material_inputs
 }

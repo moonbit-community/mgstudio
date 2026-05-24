@@ -40,6 +40,7 @@ test "pbr/meshlet: instance manager tracks counts and material ids" {
   manager.mark_material_present_in_scene(material_id0)
   debug_inspect(manager.material_present_in_scene(material_id0), content="true")
   debug_inspect(manager.present_material_count(), content="1")
+  debug_inspect(manager.scene_material_asset_ids(), content="[100]")
   debug_inspect(manager.instance_bvh_root_nodes(), content="[4, 9]")
 }
 
@@ -119,10 +120,12 @@ test "pbr/meshlet: per-view instance visibility follows layers and shadow caster
 }
 
 ///|
-test "pbr/meshlet: queue helper requires extracted instances to mark scene usage" {
+test "pbr/meshlet: queue requires material ids prepared before scene usage is marked" {
   let manager = InstanceManager::InstanceManager()
-  ignore(queue_material_meshlet_meshes_with_material_assets(manager, [1, 2, 1]))
   debug_inspect(queue_material_meshlet_meshes(manager), content="0")
+  ignore(manager.get_material_id(1))
+  ignore(manager.get_material_id(2))
+  debug_inspect(manager.present_material_count(), content="0")
 }
 
 ///|
@@ -132,7 +135,9 @@ test "pbr/meshlet: queue writes per-instance material ids" {
     ExtractedMeshletInstance::new(@core.Entity::new(0, 11), 7),
     ExtractedMeshletInstance::new(@core.Entity::new(0, 12), 9),
   ])
-  ignore(queue_material_meshlet_meshes_with_material_assets(manager, [7, 9]))
+  debug_inspect(manager.scene_material_asset_ids(), content="[7, 9]")
+  ignore(manager.get_material_id(7))
+  ignore(manager.get_material_id(9))
   debug_inspect(queue_material_meshlet_meshes(manager), content="2")
   debug_inspect(manager.instance_material_ids(), content="[2, 1, 2]")
 }

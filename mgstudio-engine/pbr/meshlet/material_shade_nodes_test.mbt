@@ -27,14 +27,22 @@ fn test_meshlet_shade_entry(
 }
 
 ///|
+fn test_prepare_meshlet_material_ids(
+  instance_manager : InstanceManager,
+  material_asset_ids : Array[Int],
+) -> Unit {
+  for material_asset_id in material_asset_ids {
+    ignore(instance_manager.get_material_id(material_asset_id))
+  }
+  ignore(queue_material_meshlet_meshes(instance_manager))
+}
+
+///|
 test "pbr meshlet: main opaque pass draw count filters scene presence and pipeline validity" {
   let instance_manager = extract_meshlet_mesh_entities_from_instances([
     ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 7),
   ])
-  ignore(
-    queue_material_meshlet_meshes_with_material_assets(instance_manager, [7]),
-  )
-  ignore(queue_material_meshlet_meshes(instance_manager))
+  test_prepare_meshlet_material_ids(instance_manager, [7])
   let materials = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   materials.push(test_meshlet_shade_entry(1, 100, 10))
   materials.push(test_meshlet_shade_entry(2, 100, 11))
@@ -95,10 +103,7 @@ test "pbr meshlet: shade pass plan carries descriptor and filtered draws" {
   let instance_manager = extract_meshlet_mesh_entities_from_instances([
     ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 4),
   ])
-  ignore(
-    queue_material_meshlet_meshes_with_material_assets(instance_manager, [4]),
-  )
-  ignore(queue_material_meshlet_meshes(instance_manager))
+  test_prepare_meshlet_material_ids(instance_manager, [4])
   let materials = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   materials.push(test_meshlet_shade_entry(1, 100, 10))
   materials.push(test_meshlet_shade_entry(2, -1, 11))
@@ -115,10 +120,7 @@ test "pbr meshlet: main opaque pass commands mirror bevy bind and draw order" {
   let instance_manager = extract_meshlet_mesh_entities_from_instances([
     ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 4),
   ])
-  ignore(
-    queue_material_meshlet_meshes_with_material_assets(instance_manager, [4]),
-  )
-  ignore(queue_material_meshlet_meshes(instance_manager))
+  test_prepare_meshlet_material_ids(instance_manager, [4])
   let materials = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   materials.push(test_meshlet_shade_entry(1, 42, 9))
   let plan = meshlet_main_opaque_pass_plan(materials, instance_manager)
@@ -160,10 +162,7 @@ test "pbr meshlet: prepass commands preserve bevy group two replacement order" {
   let instance_manager = extract_meshlet_mesh_entities_from_instances([
     ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 8),
   ])
-  ignore(
-    queue_material_meshlet_meshes_with_material_assets(instance_manager, [8]),
-  )
-  ignore(queue_material_meshlet_meshes(instance_manager))
+  test_prepare_meshlet_material_ids(instance_manager, [8])
   let materials = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
   materials.push(test_meshlet_shade_entry(1, 33, 6))
   let plan = meshlet_prepass_plan(
@@ -192,10 +191,7 @@ test "pbr meshlet: prepass draw count follows same filtering" {
   let instance_manager = extract_meshlet_mesh_entities_from_instances([
     ExtractedMeshletInstance::new(@core.Entity::new(0, 1), 3),
   ])
-  ignore(
-    queue_material_meshlet_meshes_with_material_assets(instance_manager, [3]),
-  )
-  ignore(queue_material_meshlet_meshes(instance_manager))
+  test_prepare_meshlet_material_ids(instance_manager, [3])
   let prepass = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
   let deferred = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   prepass.push(test_meshlet_shade_entry(1, 20, 1))

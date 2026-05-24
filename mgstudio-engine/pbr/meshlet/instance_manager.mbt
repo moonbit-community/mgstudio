@@ -260,19 +260,14 @@ pub fn InstanceManager::material_asset_id_for_id(
 }
 
 ///|
-pub fn InstanceManager::present_material_asset_ids(
+pub fn InstanceManager::scene_material_asset_ids(
   self : InstanceManager,
 ) -> Array[Int] {
-  let ids = []
-  for material_asset_id in self.material_id_lookup.keys() {
-    match self.material_id_lookup.get(material_asset_id) {
-      Some(material_id) =>
-        if self.material_present_in_scene(material_id) {
-          ids.push(material_asset_id)
-        }
-      None => ()
-    }
+  let id_set = @utils.IntBitSet::new()
+  for material_asset_id in self.instance_material_asset_ids {
+    id_set.insert(non_negative(material_asset_id))
   }
+  let ids = id_set.to_array()
   ids.sort()
   ids
 }
@@ -637,28 +632,6 @@ pub fn extract_meshlet_mesh_entities(instance_count : Int) -> InstanceManager {
   let manager = InstanceManager::InstanceManager()
   manager.set_instance_count(instance_count)
   manager
-}
-
-///|
-pub fn queue_material_meshlet_meshes_with_material_assets(
-  instance_manager : InstanceManager,
-  material_asset_ids : Array[Int],
-) -> Int {
-  for material_asset_id in material_asset_ids {
-    let material_id = instance_manager.get_material_id(material_asset_id)
-    instance_manager.mark_material_present_in_scene(material_id)
-  }
-  instance_manager.present_material_count()
-}
-
-///|
-pub fn queue_material_meshlet_meshes_with_present_material_assets(
-  instance_manager : InstanceManager,
-) -> Int {
-  queue_material_meshlet_meshes_with_material_assets(
-    instance_manager,
-    instance_manager.instance_material_asset_ids,
-  )
 }
 
 ///|

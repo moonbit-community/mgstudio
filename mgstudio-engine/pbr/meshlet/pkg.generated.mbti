@@ -216,10 +216,6 @@ pub fn prepare_meshlet_view_resources_for_view(ResourceManager, @core.Entity, In
 
 pub fn queue_material_meshlet_meshes(InstanceManager) -> Int
 
-pub fn queue_material_meshlet_meshes_with_material_assets(InstanceManager, Array[Int]) -> Int
-
-pub fn queue_material_meshlet_meshes_with_present_material_assets(InstanceManager) -> Int
-
 pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn register_meshlet_mesh3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
@@ -280,10 +276,10 @@ pub fn InstanceManager::material_id_for_asset(Self, Int) -> Int?
 pub fn InstanceManager::material_present_in_scene(Self, Int) -> Bool
 pub fn InstanceManager::max_bvh_depth(Self) -> Int
 pub fn InstanceManager::prepare_view_instance_visibility(Self, @core.Entity, view_render_layer_mask? : Int, shadow_view? : Bool) -> Array[Int]
-pub fn InstanceManager::present_material_asset_ids(Self) -> Array[Int]
 pub fn InstanceManager::present_material_count(Self) -> Int
 pub fn InstanceManager::present_material_ids(Self) -> Array[Int]
 pub fn InstanceManager::reset(Self, active_views? : Array[@core.Entity]) -> Unit
+pub fn InstanceManager::scene_material_asset_ids(Self) -> Array[Int]
 pub fn InstanceManager::set_instance_count(Self, Int) -> Unit
 pub fn InstanceManager::set_max_bvh_depth(Self, Int) -> Unit
 pub fn InstanceManager::set_view_instance_visibility(Self, @core.Entity, Array[Int]) -> Unit
