@@ -190,6 +190,16 @@ pub fn execute_meshlet_first_instance_cull(view_entity_bits~ : UInt64, scene_ins
 
 pub fn execute_meshlet_first_meshlet_cull(view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool
 
+pub fn execute_meshlet_resolve_depth(view_entity_bits~ : UInt64) -> Bool
+
+pub fn execute_meshlet_resolve_material_depth(view_entity_bits~ : UInt64) -> Bool
+
+pub fn execute_meshlet_second_bvh_cull(view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool
+
+pub fn execute_meshlet_second_instance_cull(view_entity_bits~ : UInt64, scene_instance_count~ : Int) -> Bool
+
+pub fn execute_meshlet_second_meshlet_cull(view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool
+
 pub fn execute_meshlet_visibility_buffer_hardware_raster(view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool
 
 pub fn execute_meshlet_visibility_buffer_software_raster(view_entity_bits~ : UInt64) -> Bool
@@ -263,6 +273,16 @@ pub fn meshlet_missing_rust_features_u64() -> UInt64
 pub fn meshlet_required_features_supported() -> Bool
 
 pub fn meshlet_required_rust_features_u64() -> UInt64
+
+pub fn meshlet_resolve_depth_dispatch_count() -> Int
+
+pub fn meshlet_resolve_material_depth_dispatch_count() -> Int
+
+pub fn meshlet_second_bvh_cull_dispatch_count() -> Int
+
+pub fn meshlet_second_instance_cull_dispatch_count() -> Int
+
+pub fn meshlet_second_meshlet_cull_dispatch_count() -> Int
 
 pub fn meshlet_view_visibility_buffer_count() -> Int
 
@@ -680,6 +700,21 @@ pub struct GpuBackend {
   mut meshlet_first_meshlet_cull_pipeline : @wgpu_mbt.ComputePipeline?
   mut meshlet_first_meshlet_cull_constants_buf : @wgpu_mbt.Buffer?
   mut meshlet_first_meshlet_cull_dispatch_count : Int
+  mut meshlet_second_instance_cull_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_second_instance_cull_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_second_instance_cull_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_second_instance_cull_constants_buf : @wgpu_mbt.Buffer?
+  mut meshlet_second_instance_cull_dispatch_count : Int
+  mut meshlet_second_bvh_cull_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_second_bvh_cull_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_second_bvh_cull_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_second_bvh_cull_constants_buf : @wgpu_mbt.Buffer?
+  mut meshlet_second_bvh_cull_dispatch_count : Int
+  mut meshlet_second_meshlet_cull_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_second_meshlet_cull_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_second_meshlet_cull_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_second_meshlet_cull_constants_buf : @wgpu_mbt.Buffer?
+  mut meshlet_second_meshlet_cull_dispatch_count : Int
   mut meshlet_visibility_buffer_raster_bgl : @wgpu_mbt.BindGroupLayout?
   mut meshlet_visibility_buffer_raster_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut meshlet_visibility_buffer_software_raster_pipeline : @wgpu_mbt.ComputePipeline?
@@ -687,6 +722,13 @@ pub struct GpuBackend {
   mut meshlet_visibility_buffer_raster_constants_buf : @wgpu_mbt.Buffer?
   mut meshlet_visibility_buffer_software_raster_dispatch_count : Int
   mut meshlet_visibility_buffer_hardware_raster_dispatch_count : Int
+  mut meshlet_resolve_render_targets_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_resolve_render_targets_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_resolve_depth_pipeline : @wgpu_mbt.RenderPipeline?
+  mut meshlet_resolve_material_depth_pipeline : @wgpu_mbt.RenderPipeline?
+  mut meshlet_resolve_render_targets_constants_buf : @wgpu_mbt.Buffer?
+  mut meshlet_resolve_depth_dispatch_count : Int
+  mut meshlet_resolve_material_depth_dispatch_count : Int
   mut meshlet_fill_counts_bgl : @wgpu_mbt.BindGroupLayout?
   mut meshlet_fill_counts_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut meshlet_fill_counts_pipeline : @wgpu_mbt.ComputePipeline?
@@ -889,6 +931,11 @@ pub fn GpuBackend::execute_meshlet_fill_counts(Self, view_entity_bits~ : UInt64)
 pub fn GpuBackend::execute_meshlet_first_bvh_cull(Self, view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_first_instance_cull(Self, view_entity_bits~ : UInt64, scene_instance_count~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_first_meshlet_cull(Self, view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_resolve_depth(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_resolve_material_depth(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_second_bvh_cull(Self, view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_second_instance_cull(Self, view_entity_bits~ : UInt64, scene_instance_count~ : Int) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_second_meshlet_cull(Self, view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_visibility_buffer_hardware_raster(Self, view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_visibility_buffer_software_raster(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
@@ -1436,6 +1483,8 @@ pub(all) struct MeshletViewVisibilityBuffer {
   not_shadow_view : Bool
   dummy_render_target_texture : @wgpu_mbt.Texture
   dummy_render_target_view : @wgpu_mbt.TextureView
+  material_depth_texture : @wgpu_mbt.Texture?
+  material_depth_view : @wgpu_mbt.TextureView?
   depth_pyramid_texture : @wgpu_mbt.Texture
   depth_pyramid_view : @wgpu_mbt.TextureView
   mut instance_visibility_buf : @wgpu_mbt.Buffer
@@ -1452,6 +1501,8 @@ pub(all) struct MeshletViewVisibilityBuffer {
   back_meshlet_cull_dispatch_buf : @wgpu_mbt.Buffer
   second_bvh_cull_count_front_buf : @wgpu_mbt.Buffer
   second_bvh_cull_dispatch_front_buf : @wgpu_mbt.Buffer
+  second_bvh_cull_count_back_buf : @wgpu_mbt.Buffer
+  second_bvh_cull_dispatch_back_buf : @wgpu_mbt.Buffer
   visibility_buffer_software_raster_indirect_args_buf : @wgpu_mbt.Buffer
   visibility_buffer_hardware_raster_indirect_args_buf : @wgpu_mbt.Buffer
 }

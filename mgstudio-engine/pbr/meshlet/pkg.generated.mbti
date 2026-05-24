@@ -1078,6 +1078,11 @@ pub fn ResourceManager::execute_prepared_fill_counts(Self) -> Int
 pub fn ResourceManager::execute_prepared_first_bvh_culls(Self) -> Int
 pub fn ResourceManager::execute_prepared_first_instance_culls(Self) -> Int
 pub fn ResourceManager::execute_prepared_first_meshlet_culls(Self) -> Int
+pub fn ResourceManager::execute_prepared_resolve_depth(Self) -> Int
+pub fn ResourceManager::execute_prepared_resolve_material_depth(Self) -> Int
+pub fn ResourceManager::execute_prepared_second_bvh_culls(Self) -> Int
+pub fn ResourceManager::execute_prepared_second_instance_culls(Self) -> Int
+pub fn ResourceManager::execute_prepared_second_meshlet_culls(Self) -> Int
 pub fn ResourceManager::execute_prepared_visibility_buffer_hardware_raster(Self) -> Int
 pub fn ResourceManager::execute_prepared_visibility_buffer_software_raster(Self) -> Int
 pub fn ResourceManager::frame_index(Self) -> Int

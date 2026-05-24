@@ -303,6 +303,21 @@ pub struct GpuBackend {
   mut meshlet_first_meshlet_cull_pipeline : @wgpu.ComputePipeline?
   mut meshlet_first_meshlet_cull_constants_buf : @wgpu.Buffer?
   mut meshlet_first_meshlet_cull_dispatch_count : Int
+  mut meshlet_second_instance_cull_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_second_instance_cull_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_second_instance_cull_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_second_instance_cull_constants_buf : @wgpu.Buffer?
+  mut meshlet_second_instance_cull_dispatch_count : Int
+  mut meshlet_second_bvh_cull_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_second_bvh_cull_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_second_bvh_cull_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_second_bvh_cull_constants_buf : @wgpu.Buffer?
+  mut meshlet_second_bvh_cull_dispatch_count : Int
+  mut meshlet_second_meshlet_cull_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_second_meshlet_cull_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_second_meshlet_cull_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_second_meshlet_cull_constants_buf : @wgpu.Buffer?
+  mut meshlet_second_meshlet_cull_dispatch_count : Int
   mut meshlet_visibility_buffer_raster_bgl : @wgpu.BindGroupLayout?
   mut meshlet_visibility_buffer_raster_pipeline_layout : @wgpu.PipelineLayout?
   mut meshlet_visibility_buffer_software_raster_pipeline : @wgpu.ComputePipeline?
@@ -310,6 +325,13 @@ pub struct GpuBackend {
   mut meshlet_visibility_buffer_raster_constants_buf : @wgpu.Buffer?
   mut meshlet_visibility_buffer_software_raster_dispatch_count : Int
   mut meshlet_visibility_buffer_hardware_raster_dispatch_count : Int
+  mut meshlet_resolve_render_targets_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_resolve_render_targets_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_resolve_depth_pipeline : @wgpu.RenderPipeline?
+  mut meshlet_resolve_material_depth_pipeline : @wgpu.RenderPipeline?
+  mut meshlet_resolve_render_targets_constants_buf : @wgpu.Buffer?
+  mut meshlet_resolve_depth_dispatch_count : Int
+  mut meshlet_resolve_material_depth_dispatch_count : Int
   mut meshlet_fill_counts_bgl : @wgpu.BindGroupLayout?
   mut meshlet_fill_counts_pipeline_layout : @wgpu.PipelineLayout?
   mut meshlet_fill_counts_pipeline : @wgpu.ComputePipeline?
