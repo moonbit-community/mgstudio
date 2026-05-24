@@ -145,6 +145,8 @@ pub(all) struct MeshletViewVisibilityBuffer {
   view_width : Int
   view_height : Int
   not_shadow_view : Bool
+  dummy_render_target_texture : @wgpu.Texture
+  dummy_render_target_view : @wgpu.TextureView
   depth_pyramid_texture : @wgpu.Texture
   depth_pyramid_view : @wgpu.TextureView
   mut instance_visibility_buf : @wgpu.Buffer
@@ -199,6 +201,42 @@ fn meshlet_create_visibility_buffer(
   )
   buffer.set_label(label)
   buffer
+}
+
+///|
+fn meshlet_create_dummy_render_target(
+  backend : GpuBackend,
+  view_width : Int,
+  view_height : Int,
+) -> (@wgpu.Texture, @wgpu.TextureView) {
+  let width = if view_width <= 0 {
+    1U
+  } else {
+    view_width.reinterpret_as_uint()
+  }
+  let height = if view_height <= 0 {
+    1U
+  } else {
+    view_height.reinterpret_as_uint()
+  }
+  let texture = backend.device.create_texture_u32(
+    width,
+    height,
+    1U,
+    @wgpu.TextureUsage::from_u64(@wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT),
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(@wgpu.TEXTURE_FORMAT_R8_UINT),
+  )
+  let view = texture.create_view_u32(
+    tf(@wgpu.TEXTURE_FORMAT_R8_UINT),
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    @wgpu.TEXTURE_ASPECT_ALL,
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  (texture, view)
 }
 
 ///|
@@ -277,6 +315,9 @@ fn meshlet_create_view_visibility_resources(
   not_shadow_view : Bool,
   label : String,
 ) -> MeshletViewVisibilityBuffer {
+  let (dummy_render_target_texture, dummy_render_target_view) = meshlet_create_dummy_render_target(
+    backend, view_width, view_height,
+  )
   let (depth_pyramid_texture, depth_pyramid_view) = meshlet_create_r32float_depth_pyramid_dummy(
     backend,
   )
@@ -288,6 +329,8 @@ fn meshlet_create_view_visibility_resources(
     view_width,
     view_height,
     not_shadow_view,
+    dummy_render_target_texture,
+    dummy_render_target_view,
     depth_pyramid_texture,
     depth_pyramid_view,
     instance_visibility_buf: meshlet_create_storage_buffer_with_bytes(
@@ -404,6 +447,8 @@ fn meshlet_release_view_visibility_resources(
   resources : MeshletViewVisibilityBuffer,
 ) -> Unit {
   resources.buffer.release()
+  resources.dummy_render_target_view.release()
+  resources.dummy_render_target_texture.release()
   resources.depth_pyramid_view.release()
   resources.depth_pyramid_texture.release()
   resources.instance_visibility_buf.release()
@@ -445,6 +490,8 @@ pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(
         view_width,
         view_height,
         not_shadow_view,
+        dummy_render_target_texture: existing.dummy_render_target_texture,
+        dummy_render_target_view: existing.dummy_render_target_view,
         depth_pyramid_texture: existing.depth_pyramid_texture,
         depth_pyramid_view: existing.depth_pyramid_view,
         instance_visibility_buf: existing.instance_visibility_buf,
@@ -631,6 +678,18 @@ fn meshlet_first_meshlet_cull_defines() -> @hashmap.HashMap[String, Bool] {
 }
 
 ///|
+fn meshlet_visibility_buffer_raster_defines() -> @hashmap.HashMap[String, Bool] {
+  let defines = @hashmap.HashMap([])
+  defines.set("MESHLET_VISIBILITY_BUFFER_RASTER_PASS", true)
+  defines
+}
+
+///|
+fn meshlet_fill_counts_defines() -> @hashmap.HashMap[String, Bool] {
+  @hashmap.HashMap([])
+}
+
+///|
 fn meshlet_create_clear_visibility_buffer_bgl(
   backend : GpuBackend,
 ) -> @wgpu.BindGroupLayout raise GpuBackendError {
@@ -813,6 +872,136 @@ fn meshlet_create_first_meshlet_cull_constants_buf(
 }
 
 ///|
+fn meshlet_create_visibility_buffer_raster_bgl(
+  backend : GpuBackend,
+) -> @wgpu.BindGroupLayout raise GpuBackendError {
+  let all_stages = ss(
+    @wgpu.SHADER_STAGE_COMPUTE |
+    @wgpu.SHADER_STAGE_VERTEX |
+    @wgpu.SHADER_STAGE_FRAGMENT,
+  )
+  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=10UL)
+  let ok = builder.add_buffer(
+      0U,
+      all_stages,
+      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+    ) &&
+    builder.add_buffer(
+      1U,
+      all_stages,
+      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+    ) &&
+    builder.add_buffer(
+      2U,
+      all_stages,
+      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+    ) &&
+    builder.add_buffer(
+      3U,
+      all_stages,
+      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+    ) &&
+    builder.add_buffer(
+      4U,
+      all_stages,
+      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+    ) &&
+    builder.add_buffer(
+      5U,
+      all_stages,
+      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+    ) &&
+    builder.add_buffer(
+      6U,
+      all_stages,
+      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+    ) &&
+    builder.add_buffer(7U, all_stages, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(8U, all_stages, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+    builder.add_buffer(9U, all_stages, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build meshlet visibility buffer raster layout")
+  }
+  builder.finish(
+    backend.device,
+    label="mgstudio_meshlet_visibility_buffer_raster_bind_group_layout",
+  )
+}
+
+///|
+fn meshlet_create_visibility_buffer_raster_constants_buf(
+  backend : GpuBackend,
+) -> @wgpu.Buffer {
+  let buffer = backend.device.create_buffer(
+    size=16UL,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  buffer.set_label("mgstudio_meshlet_visibility_buffer_raster_constants")
+  buffer
+}
+
+///|
+fn meshlet_create_fill_counts_bgl(
+  backend : GpuBackend,
+) -> @wgpu.BindGroupLayout raise GpuBackendError {
+  let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
+  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=3UL)
+  let ok = builder.add_buffer(0U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(1U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(2U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build meshlet fill counts layout")
+  }
+  builder.finish(
+    backend.device,
+    label="mgstudio_meshlet_fill_counts_bind_group_layout",
+  )
+}
+
+///|
+fn meshlet_create_visibility_buffer_hardware_raster_pipeline(
+  backend : GpuBackend,
+  pipeline_layout : @wgpu.PipelineLayout,
+) -> @wgpu.RenderPipeline raise GpuBackendError {
+  let wgsl = load_wgsl_preprocessed(
+    backend.assets_base,
+    "pbr/meshlet/visibility_buffer_hardware_raster.wgsl",
+    meshlet_visibility_buffer_raster_defines(),
+    default_wgsl_value_defines(),
+  )
+  let shader = create_postprocess_shader_module(
+    backend, wgsl, "meshlet visibility buffer hardware raster",
+  )
+  let pipeline = try {
+    let builder = @wgpu.RenderPipelineDescBuilder::new(
+      shader,
+      layout=pipeline_layout,
+    )
+    builder.set_entry_points("vertex", "fragment")
+    builder.set_color_target_format(tf(@wgpu.TEXTURE_FORMAT_R8_UINT))
+    builder.disable_blend()
+    builder.set_topology_u32(@wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+    builder.set_cull_mode_u32(@wgpu.CULL_MODE_NONE)
+    builder.create_pipeline(backend.device)
+  } catch {
+    err => {
+      err |> ignore
+      shader.release()
+      fatal(
+        "wgpu: failed to build meshlet visibility buffer hardware raster pipeline",
+      )
+    }
+  }
+  pipeline.set_label(
+    "mgstudio_meshlet_visibility_buffer_hardware_raster_pipeline",
+  )
+  shader.release()
+  pipeline
+}
+
+///|
 fn ensure_meshlet_clear_visibility_buffer_resources(
   backend : GpuBackend,
 ) -> Bool raise GpuBackendError {
@@ -957,6 +1146,86 @@ fn ensure_meshlet_first_meshlet_cull_resources(
   backend.meshlet_first_meshlet_cull_pipeline_layout = Some(pipeline_layout)
   backend.meshlet_first_meshlet_cull_pipeline = Some(pipeline)
   backend.meshlet_first_meshlet_cull_constants_buf = Some(constants_buf)
+  true
+}
+
+///|
+fn ensure_meshlet_visibility_buffer_raster_resources(
+  backend : GpuBackend,
+) -> Bool raise GpuBackendError {
+  if backend.meshlet_visibility_buffer_raster_bgl is Some(_) &&
+    backend.meshlet_visibility_buffer_raster_pipeline_layout is Some(_) &&
+    backend.meshlet_visibility_buffer_software_raster_pipeline is Some(_) &&
+    backend.meshlet_visibility_buffer_hardware_raster_pipeline is Some(_) &&
+    backend.meshlet_visibility_buffer_raster_constants_buf is Some(_) {
+    return true
+  }
+  let bgl = meshlet_create_visibility_buffer_raster_bgl(backend)
+  let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+  let wgsl = load_wgsl_preprocessed(
+    backend.assets_base,
+    "pbr/meshlet/visibility_buffer_software_raster.wgsl",
+    meshlet_visibility_buffer_raster_defines(),
+    default_wgsl_value_defines(),
+  )
+  let shader = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+    pipeline_layout, shader, "rasterize_cluster",
+  ) catch {
+    err =>
+      fatal(
+        "wgpu: failed to build meshlet visibility buffer software raster pipeline: \{err.message()}",
+      )
+  }
+  shader.release()
+  let hardware_pipeline = meshlet_create_visibility_buffer_hardware_raster_pipeline(
+    backend, pipeline_layout,
+  )
+  let constants_buf = meshlet_create_visibility_buffer_raster_constants_buf(
+    backend,
+  )
+  backend.meshlet_visibility_buffer_raster_bgl = Some(bgl)
+  backend.meshlet_visibility_buffer_raster_pipeline_layout = Some(
+    pipeline_layout,
+  )
+  backend.meshlet_visibility_buffer_software_raster_pipeline = Some(pipeline)
+  backend.meshlet_visibility_buffer_hardware_raster_pipeline = Some(
+    hardware_pipeline,
+  )
+  backend.meshlet_visibility_buffer_raster_constants_buf = Some(constants_buf)
+  true
+}
+
+///|
+fn ensure_meshlet_fill_counts_resources(
+  backend : GpuBackend,
+) -> Bool raise GpuBackendError {
+  if backend.meshlet_fill_counts_bgl is Some(_) &&
+    backend.meshlet_fill_counts_pipeline_layout is Some(_) &&
+    backend.meshlet_fill_counts_pipeline is Some(_) {
+    return true
+  }
+  let bgl = meshlet_create_fill_counts_bgl(backend)
+  let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+  let wgsl = load_wgsl_preprocessed(
+    backend.assets_base,
+    "pbr/meshlet/fill_counts.wgsl",
+    meshlet_fill_counts_defines(),
+    default_wgsl_value_defines(),
+  )
+  let shader = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+    pipeline_layout, shader, "fill_counts",
+  ) catch {
+    err =>
+      fatal(
+        "wgpu: failed to build meshlet fill counts pipeline: \{err.message()}",
+      )
+  }
+  shader.release()
+  backend.meshlet_fill_counts_bgl = Some(bgl)
+  backend.meshlet_fill_counts_pipeline_layout = Some(pipeline_layout)
+  backend.meshlet_fill_counts_pipeline = Some(pipeline)
   true
 }
 
@@ -1204,6 +1473,93 @@ fn meshlet_create_first_meshlet_cull_bind_group(
     backend.device,
     bgl,
     label="mgstudio_meshlet_first_meshlet_cull_bind_group",
+  )
+  frame.transient_bind_groups.push(bind_group)
+  Some(bind_group)
+}
+
+///|
+fn meshlet_create_visibility_buffer_raster_bind_group(
+  backend : GpuBackend,
+  frame : GpuFrameState,
+  view_resources : MeshletViewVisibilityBuffer,
+  view_buf : @wgpu.Buffer,
+  constants_buf : @wgpu.Buffer,
+  bgl : @wgpu.BindGroupLayout,
+) -> @wgpu.BindGroup? {
+  guard backend.meshlet_visibility_buffer_raster_clusters_buf
+    is Some(raster_clusters) else {
+    return None
+  }
+  guard backend.meshlet_meshlets_buf is Some(meshlets) else { return None }
+  guard backend.meshlet_indices_buf is Some(indices) else { return None }
+  guard backend.meshlet_vertex_positions_buf is Some(vertex_positions) else {
+    return None
+  }
+  guard backend.meshlet_instance_uniforms_buf is Some(instance_uniforms) else {
+    return None
+  }
+  guard backend.meshlet_visibility_buffer_raster_cluster_prev_counts_buf
+    is Some(previous_raster_counts) else {
+    return None
+  }
+  guard backend.meshlet_software_raster_cluster_count_buf
+    is Some(software_raster_cluster_count) else {
+    return None
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=10UL)
+  let ok = builder.add_buffer(0U, raster_clusters) &&
+    builder.add_buffer(1U, meshlets) &&
+    builder.add_buffer(2U, indices) &&
+    builder.add_buffer(3U, vertex_positions) &&
+    builder.add_buffer(4U, instance_uniforms) &&
+    builder.add_buffer(5U, previous_raster_counts) &&
+    builder.add_buffer(6U, software_raster_cluster_count) &&
+    builder.add_buffer(7U, view_resources.buffer) &&
+    builder.add_buffer(8U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
+    builder.add_buffer(9U, constants_buf)
+  if !ok {
+    builder.free()
+    return None
+  }
+  let bind_group = builder.finish(
+    backend.device,
+    bgl,
+    label="mgstudio_meshlet_visibility_buffer_raster_bind_group",
+  )
+  frame.transient_bind_groups.push(bind_group)
+  Some(bind_group)
+}
+
+///|
+fn meshlet_create_fill_counts_bind_group(
+  backend : GpuBackend,
+  frame : GpuFrameState,
+  view_resources : MeshletViewVisibilityBuffer,
+  bgl : @wgpu.BindGroupLayout,
+) -> @wgpu.BindGroup? {
+  guard backend.meshlet_visibility_buffer_raster_cluster_prev_counts_buf
+    is Some(previous_raster_counts) else {
+    return None
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+  let ok = builder.add_buffer(
+      0U,
+      view_resources.visibility_buffer_software_raster_indirect_args_buf,
+    ) &&
+    builder.add_buffer(
+      1U,
+      view_resources.visibility_buffer_hardware_raster_indirect_args_buf,
+    ) &&
+    builder.add_buffer(2U, previous_raster_counts)
+  if !ok {
+    builder.free()
+    return None
+  }
+  let bind_group = builder.finish(
+    backend.device,
+    bgl,
+    label="mgstudio_meshlet_fill_counts_bind_group",
   )
   frame.transient_bind_groups.push(bind_group)
   Some(bind_group)
@@ -1608,6 +1964,187 @@ pub fn GpuBackend::execute_meshlet_first_meshlet_cull(
 }
 
 ///|
+pub fn GpuBackend::execute_meshlet_visibility_buffer_software_raster(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+) -> Bool raise GpuBackendError {
+  guard self.meshlet_view_visibility_buffers.get(view_entity_bits)
+    is Some(view_resources) else {
+    return false
+  }
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
+  guard meshlet_end_active_render_pass_for_compute(self) else { return false }
+  guard ensure_meshlet_visibility_buffer_raster_resources(self) else {
+    return false
+  }
+  guard self.frame is Some(frame) else { return false }
+  guard self.pass_state is Some(pass_state) else { return false }
+  guard self.meshlet_visibility_buffer_raster_bgl is Some(bgl) else {
+    return false
+  }
+  guard self.meshlet_visibility_buffer_software_raster_pipeline
+    is Some(pipeline) else {
+    return false
+  }
+  guard self.meshlet_visibility_buffer_raster_constants_buf
+    is Some(constants_buf) else {
+    return false
+  }
+  self.queue.write_buffer(constants_buf, 0UL, u32le_pack([0U, 0U, 0U, 0U]))
+  let view_buf = meshlet_transient_uniform_buffer(
+    self,
+    frame,
+    MESH3D_VIEW_BUFFER_SIZE,
+    "mgstudio_meshlet_visibility_buffer_raster_view",
+    mesh3d_view_uniform_bytes(pass_state),
+  )
+  guard meshlet_create_visibility_buffer_raster_bind_group(
+      self, frame, view_resources, view_buf, constants_buf, bgl,
+    )
+    is Some(bind_group) else {
+    return false
+  }
+  let compute_pass = frame.encoder.begin_compute_pass()
+  compute_pass.set_pipeline(pipeline)
+  compute_pass.set_bind_group(0U, bind_group, [])
+  compute_pass.dispatch_workgroups_indirect(
+    view_resources.visibility_buffer_software_raster_indirect_args_buf,
+    0UL,
+  )
+  compute_pass.end()
+  compute_pass.release()
+  self.meshlet_visibility_buffer_software_raster_dispatch_count = self.meshlet_visibility_buffer_software_raster_dispatch_count +
+    1
+  true
+}
+
+///|
+pub fn GpuBackend::execute_meshlet_visibility_buffer_hardware_raster(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+  rightmost_slot~ : Int,
+) -> Bool raise GpuBackendError {
+  guard self.meshlet_view_visibility_buffers.get(view_entity_bits)
+    is Some(view_resources) else {
+    return false
+  }
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
+  guard meshlet_end_active_render_pass_for_compute(self) else { return false }
+  guard ensure_meshlet_visibility_buffer_raster_resources(self) else {
+    return false
+  }
+  guard self.frame is Some(frame) else { return false }
+  guard self.pass_state is Some(pass_state) else { return false }
+  guard self.meshlet_visibility_buffer_raster_bgl is Some(bgl) else {
+    return false
+  }
+  guard self.meshlet_visibility_buffer_hardware_raster_pipeline
+    is Some(pipeline) else {
+    return false
+  }
+  guard self.meshlet_visibility_buffer_raster_constants_buf
+    is Some(constants_buf) else {
+    return false
+  }
+  let safe_rightmost_slot = if rightmost_slot < 0 {
+    0U
+  } else {
+    rightmost_slot.reinterpret_as_uint()
+  }
+  self.queue.write_buffer(
+    constants_buf,
+    0UL,
+    u32le_pack([safe_rightmost_slot, 0U, 0U, 0U]),
+  )
+  let view_buf = meshlet_transient_uniform_buffer(
+    self,
+    frame,
+    MESH3D_VIEW_BUFFER_SIZE,
+    "mgstudio_meshlet_visibility_buffer_hardware_raster_view",
+    mesh3d_view_uniform_bytes(pass_state),
+  )
+  guard meshlet_create_visibility_buffer_raster_bind_group(
+      self, frame, view_resources, view_buf, constants_buf, bgl,
+    )
+    is Some(bind_group) else {
+    return false
+  }
+  let pass = frame.encoder.begin_render_pass_color_clear(
+    view_resources.dummy_render_target_view,
+    0.0F,
+    0.0F,
+    0.0F,
+    1.0F,
+  )
+  pass.set_viewport(
+    Float::from_double(pass_state.viewport_x.to_double()),
+    Float::from_double(pass_state.viewport_y.to_double()),
+    Float::from_double(pass_state.viewport_w.to_double()),
+    Float::from_double(pass_state.viewport_h.to_double()),
+    pass_state.viewport_depth_min,
+    pass_state.viewport_depth_max,
+  )
+  pass.set_scissor_rect(
+    pass_state.viewport_x,
+    pass_state.viewport_y,
+    pass_state.viewport_w,
+    pass_state.viewport_h,
+  )
+  pass.set_pipeline(pipeline)
+  pass.set_bind_group(0U, bind_group, [])
+  pass.draw_indirect(
+    view_resources.visibility_buffer_hardware_raster_indirect_args_buf,
+    0UL,
+  )
+  pass.end()
+  pass.release()
+  self.meshlet_visibility_buffer_hardware_raster_dispatch_count = self.meshlet_visibility_buffer_hardware_raster_dispatch_count +
+    1
+  true
+}
+
+///|
+pub fn GpuBackend::execute_meshlet_fill_counts(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+) -> Bool raise GpuBackendError {
+  guard self.meshlet_view_visibility_buffers.get(view_entity_bits)
+    is Some(view_resources) else {
+    return false
+  }
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
+  guard meshlet_end_active_render_pass_for_compute(self) else { return false }
+  guard ensure_meshlet_fill_counts_resources(self) else { return false }
+  guard self.frame is Some(frame) else { return false }
+  guard self.meshlet_fill_counts_bgl is Some(bgl) else { return false }
+  guard self.meshlet_fill_counts_pipeline is Some(pipeline) else {
+    return false
+  }
+  guard meshlet_create_fill_counts_bind_group(self, frame, view_resources, bgl)
+    is Some(bind_group) else {
+    return false
+  }
+  let compute_pass = frame.encoder.begin_compute_pass()
+  compute_pass.set_pipeline(pipeline)
+  compute_pass.set_bind_group(0U, bind_group, [])
+  compute_pass.dispatch_workgroups(1U, 1U, 1U)
+  compute_pass.end()
+  compute_pass.release()
+  self.meshlet_fill_counts_dispatch_count = self.meshlet_fill_counts_dispatch_count +
+    1
+  true
+}
+
+///|
 pub fn execute_meshlet_clear_visibility_buffer(
   view_entity_bits~ : UInt64,
 ) -> Bool {
@@ -1713,6 +2250,88 @@ pub fn execute_meshlet_first_meshlet_cull(
 pub fn meshlet_first_meshlet_cull_dispatch_count() -> Int {
   match ensure_backend() {
     Some(backend) => backend.meshlet_first_meshlet_cull_dispatch_count
+    None => 0
+  }
+}
+
+///|
+pub fn execute_meshlet_visibility_buffer_software_raster(
+  view_entity_bits~ : UInt64,
+) -> Bool {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.execute_meshlet_visibility_buffer_software_raster(
+        view_entity_bits~,
+      ) catch {
+        err => {
+          debug_runtime_error(
+            "execute_meshlet_visibility_buffer_software_raster", err,
+          )
+          false
+        }
+      }
+    None => false
+  }
+}
+
+///|
+pub fn meshlet_visibility_buffer_software_raster_dispatch_count() -> Int {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.meshlet_visibility_buffer_software_raster_dispatch_count
+    None => 0
+  }
+}
+
+///|
+pub fn execute_meshlet_visibility_buffer_hardware_raster(
+  view_entity_bits~ : UInt64,
+  rightmost_slot~ : Int,
+) -> Bool {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.execute_meshlet_visibility_buffer_hardware_raster(
+        view_entity_bits~,
+        rightmost_slot~,
+      ) catch {
+        err => {
+          debug_runtime_error(
+            "execute_meshlet_visibility_buffer_hardware_raster", err,
+          )
+          false
+        }
+      }
+    None => false
+  }
+}
+
+///|
+pub fn meshlet_visibility_buffer_hardware_raster_dispatch_count() -> Int {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.meshlet_visibility_buffer_hardware_raster_dispatch_count
+    None => 0
+  }
+}
+
+///|
+pub fn execute_meshlet_fill_counts(view_entity_bits~ : UInt64) -> Bool {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.execute_meshlet_fill_counts(view_entity_bits~) catch {
+        err => {
+          debug_runtime_error("execute_meshlet_fill_counts", err)
+          false
+        }
+      }
+    None => false
+  }
+}
+
+///|
+pub fn meshlet_fill_counts_dispatch_count() -> Int {
+  match ensure_backend() {
+    Some(backend) => backend.meshlet_fill_counts_dispatch_count
     None => 0
   }
 }

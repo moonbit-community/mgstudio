@@ -303,6 +303,17 @@ pub struct GpuBackend {
   mut meshlet_first_meshlet_cull_pipeline : @wgpu.ComputePipeline?
   mut meshlet_first_meshlet_cull_constants_buf : @wgpu.Buffer?
   mut meshlet_first_meshlet_cull_dispatch_count : Int
+  mut meshlet_visibility_buffer_raster_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_visibility_buffer_raster_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_visibility_buffer_software_raster_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_visibility_buffer_hardware_raster_pipeline : @wgpu.RenderPipeline?
+  mut meshlet_visibility_buffer_raster_constants_buf : @wgpu.Buffer?
+  mut meshlet_visibility_buffer_software_raster_dispatch_count : Int
+  mut meshlet_visibility_buffer_hardware_raster_dispatch_count : Int
+  mut meshlet_fill_counts_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_fill_counts_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_fill_counts_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_fill_counts_dispatch_count : Int
   mut mesh3d_motion_vector_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu.BindGroupLayout?

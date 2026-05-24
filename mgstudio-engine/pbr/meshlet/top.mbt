@@ -797,6 +797,9 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
         ignore(manager.execute_prepared_first_instance_culls())
         ignore(manager.execute_prepared_first_bvh_culls())
         ignore(manager.execute_prepared_first_meshlet_culls())
+        ignore(manager.execute_prepared_visibility_buffer_software_raster())
+        ignore(manager.execute_prepared_visibility_buffer_hardware_raster())
+        ignore(manager.execute_prepared_fill_counts())
       }
       None => ()
     }

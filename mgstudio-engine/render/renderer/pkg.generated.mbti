@@ -182,11 +182,17 @@ pub fn end_pass() -> Unit
 
 pub fn execute_meshlet_clear_visibility_buffer(view_entity_bits~ : UInt64) -> Bool
 
+pub fn execute_meshlet_fill_counts(view_entity_bits~ : UInt64) -> Bool
+
 pub fn execute_meshlet_first_bvh_cull(view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool
 
 pub fn execute_meshlet_first_instance_cull(view_entity_bits~ : UInt64, scene_instance_count~ : Int) -> Bool
 
 pub fn execute_meshlet_first_meshlet_cull(view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool
+
+pub fn execute_meshlet_visibility_buffer_hardware_raster(view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool
+
+pub fn execute_meshlet_visibility_buffer_software_raster(view_entity_bits~ : UInt64) -> Bool
 
 pub fn get_queue(Int) -> Int
 
@@ -236,6 +242,8 @@ pub fn meshlet_adapter_supports_mesh_shader() -> Bool
 
 pub fn meshlet_clear_visibility_buffer_dispatch_count() -> Int
 
+pub fn meshlet_fill_counts_dispatch_count() -> Int
+
 pub fn meshlet_first_bvh_cull_dispatch_count() -> Int
 
 pub fn meshlet_first_instance_cull_dispatch_count() -> Int
@@ -259,6 +267,10 @@ pub fn meshlet_required_rust_features_u64() -> UInt64
 pub fn meshlet_view_visibility_buffer_count() -> Int
 
 pub fn meshlet_view_visibility_buffer_revision() -> Int
+
+pub fn meshlet_visibility_buffer_hardware_raster_dispatch_count() -> Int
+
+pub fn meshlet_visibility_buffer_software_raster_dispatch_count() -> Int
 
 pub fn prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit
 
@@ -668,6 +680,17 @@ pub struct GpuBackend {
   mut meshlet_first_meshlet_cull_pipeline : @wgpu_mbt.ComputePipeline?
   mut meshlet_first_meshlet_cull_constants_buf : @wgpu_mbt.Buffer?
   mut meshlet_first_meshlet_cull_dispatch_count : Int
+  mut meshlet_visibility_buffer_raster_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_visibility_buffer_raster_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_visibility_buffer_software_raster_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_visibility_buffer_hardware_raster_pipeline : @wgpu_mbt.RenderPipeline?
+  mut meshlet_visibility_buffer_raster_constants_buf : @wgpu_mbt.Buffer?
+  mut meshlet_visibility_buffer_software_raster_dispatch_count : Int
+  mut meshlet_visibility_buffer_hardware_raster_dispatch_count : Int
+  mut meshlet_fill_counts_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_fill_counts_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_fill_counts_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_fill_counts_dispatch_count : Int
   mut mesh3d_motion_vector_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu_mbt.BindGroupLayout?
@@ -862,9 +885,12 @@ pub fn GpuBackend::ensure_mesh3d_draw_slot(Self, Int) -> GpuStorageSlot?
 pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(Self, UInt64) -> (@wgpu_mbt.Buffer, @wgpu_mbt.BindGroup)?
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::execute_meshlet_clear_visibility_buffer(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_fill_counts(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_first_bvh_cull(Self, view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_first_instance_cull(Self, view_entity_bits~ : UInt64, scene_instance_count~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::execute_meshlet_first_meshlet_cull(Self, view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_visibility_buffer_hardware_raster(Self, view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_visibility_buffer_software_raster(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_cluster_buffers(Self, Bytes, Bytes, Bytes) -> Unit
@@ -1408,6 +1434,8 @@ pub(all) struct MeshletViewVisibilityBuffer {
   view_width : Int
   view_height : Int
   not_shadow_view : Bool
+  dummy_render_target_texture : @wgpu_mbt.Texture
+  dummy_render_target_view : @wgpu_mbt.TextureView
   depth_pyramid_texture : @wgpu_mbt.Texture
   depth_pyramid_view : @wgpu_mbt.TextureView
   mut instance_visibility_buf : @wgpu_mbt.Buffer
