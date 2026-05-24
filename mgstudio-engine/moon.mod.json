@@ -23,8 +23,8 @@
     "Milky2018/zstd": "0.1.0",
     "gmlewis/gzip": "0.34.7",
     "gmlewis/flate": "0.36.7",
-    "Milky2018/metis": "0.1.0",
-    "Milky2018/meshopt_mbt": "0.1.0"
+    "Milky2018/metis": "0.1.1",
+    "Milky2018/meshopt_mbt": "0.1.1"
   },
   "readme": "README.mbt.md",
   "repository": "https://github.com/moonbit-community/mgstudio",
