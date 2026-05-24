@@ -80,7 +80,7 @@ test "pbr prepass specialization: depth-only opaque uses empty material bind gro
   )
   inspect(plan.draw_function().id(), content="6")
   debug_inspect(plan.material_bind_group_required(), content="false")
-  inspect(plan.mesh_key_bits(), content="8")
+  inspect(plan.mesh_key_bits(), content="4")
 }
 
 ///|
@@ -99,12 +99,12 @@ test "pbr prepass specialization: deferred lightmap keeps bicubic bit and deferr
   inspect(plan.draw_function_label(), content="DeferredOpaqueDrawFunction")
   inspect(
     plan.mesh_key_bits() & MESH_PIPELINE_KEY_DEFERRED_PREPASS,
-    content="32",
+    content="16",
   )
-  inspect(plan.mesh_key_bits() & MESH_PIPELINE_KEY_LIGHTMAPPED, content="8192")
+  inspect(plan.mesh_key_bits() & MESH_PIPELINE_KEY_LIGHTMAPPED, content="4096")
   inspect(
     plan.mesh_key_bits() & MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING,
-    content="16384",
+    content="8192",
   )
   debug_inspect(plan.deferred(), content="true")
   debug_inspect(plan.material_bind_group_required(), content="true")
@@ -127,17 +127,17 @@ test "pbr prepass specialization: alpha mask motion path keeps previous flags" {
     abort("expected queued alpha-mask prepass plan")
   }
   inspect(plan.draw_function_label(), content="PrepassAlphaMaskDrawFunction")
-  inspect(plan.mesh_key_bits() & MESH_PIPELINE_KEY_MAY_DISCARD, content="128")
+  inspect(plan.mesh_key_bits() & MESH_PIPELINE_KEY_MAY_DISCARD, content="64")
   inspect(
     plan.mesh_key_bits() & MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER,
-    content="65536",
+    content="32768",
   )
   inspect(
     plan.mesh_key_bits() & MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN,
-    content="262144",
+    content="131072",
   )
   inspect(
     plan.mesh_key_bits() & MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH,
-    content="524288",
+    content="262144",
   )
 }

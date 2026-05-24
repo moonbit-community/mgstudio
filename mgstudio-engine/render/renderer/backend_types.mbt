@@ -106,7 +106,10 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
 ///|
 pub struct Mesh3dMaterialPipelineLayoutCacheEntry {
   material_pipeline_id : UInt64
+  view_layout_key_bits : UInt
+  view_bind_group_layout_descriptor : @render_resource.BindGroupLayoutDescriptor
   view_bind_group_layout : @wgpu.BindGroupLayout
+  binding_arrays_bind_group_layout_descriptor : @render_resource.BindGroupLayoutDescriptor
   binding_arrays_bind_group_layout : @wgpu.BindGroupLayout
   draw_bind_group_layout_descriptor : @render_resource.BindGroupLayoutDescriptor
   draw_bind_group_layout : @wgpu.BindGroupLayout
@@ -117,6 +120,7 @@ pub struct Mesh3dMaterialPipelineLayoutCacheEntry {
 ///|
 pub struct Mesh3dViewBindGroupCacheEntry {
   material_pipeline_id : UInt64
+  tonemap_in_shader : Bool
   transmission_source_texture_id : Int
   point_shadow_texture_id : Int
   directional_shadow_texture_id : Int
@@ -141,6 +145,7 @@ struct Mesh3dPassUniformState {
 ///|
 struct Mesh3dFrameViewBindGroupCacheEntry {
   material_pipeline_id : UInt64
+  tonemap_in_shader : Bool
   frame_count : UInt
   camera_key_hi : Int
   camera_key_lo : Int

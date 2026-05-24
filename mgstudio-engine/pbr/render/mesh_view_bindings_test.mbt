@@ -37,24 +37,44 @@ test "pbr/render: mesh_view layout base bindings follow bevy slots" {
   debug_inspect(has_binding(main_entries, 0), content="true")
   debug_inspect(has_binding(main_entries, 2), content="true")
   debug_inspect(has_binding(main_entries, 10), content="true")
-  debug_inspect(has_binding(main_entries, 16), content="true")
-  debug_inspect(has_binding(main_entries, 18), content="true")
+  debug_inspect(has_binding(main_entries, 16), content="false")
+  debug_inspect(has_binding(main_entries, 18), content="false")
   debug_inspect(has_binding(main_entries, 24), content="true")
   debug_inspect(has_binding(main_entries, 20), content="false")
   debug_inspect(has_binding(main_entries, 26), content="false")
-  debug_inspect(has_binding(binding_array_entries, 2), content="true")
+  debug_inspect(has_binding(binding_array_entries, 2), content="false")
   debug_inspect(has_binding(binding_array_entries, 7), content="true")
 }
 
 ///|
 test "pbr/render: mesh_view layout optional bindings gated by key flags" {
   let key = @mesh_view_layout.mesh_view_layout_key(
-    true, true, true, true, true, true, true, true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    tonemap_in_shader=true,
+    environment_map=true,
+    screen_space_ambient_occlusion=true,
+    irradiance_volume=true,
+    screen_space_reflections=true,
+    contact_shadows=true,
+    distance_fog=true,
   )
   let (main_entries, binding_array_entries) = @mesh_view_layout.render3d_mesh_view_layout_entries(
     true, true, key,
   )
 
+  debug_inspect(has_binding(main_entries, 13), content="true")
+  debug_inspect(has_binding(main_entries, 15), content="true")
+  debug_inspect(has_binding(main_entries, 16), content="true")
+  debug_inspect(has_binding(main_entries, 17), content="true")
+  debug_inspect(has_binding(main_entries, 18), content="true")
+  debug_inspect(has_binding(main_entries, 19), content="true")
   debug_inspect(has_binding(main_entries, 20), content="true")
   debug_inspect(has_binding(main_entries, 21), content="true")
   debug_inspect(has_binding(main_entries, 22), content="true")
@@ -64,6 +84,8 @@ test "pbr/render: mesh_view layout optional bindings gated by key flags" {
   debug_inspect(has_binding(main_entries, 31), content="true")
   debug_inspect(has_binding(main_entries, 33), content="true")
   debug_inspect(has_binding(main_entries, 34), content="true")
+  debug_inspect(has_binding(binding_array_entries, 0), content="true")
+  debug_inspect(has_binding(binding_array_entries, 2), content="true")
   debug_inspect(has_binding(binding_array_entries, 3), content="true")
   debug_inspect(has_binding(binding_array_entries, 5), content="true")
 }
@@ -71,7 +93,15 @@ test "pbr/render: mesh_view layout optional bindings gated by key flags" {
 ///|
 test "pbr/render: mesh_view layout disables optional bind arrays when unusable" {
   let key = @mesh_view_layout.mesh_view_layout_key(
-    false, false, false, false, false, true, false, false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    true,
+    false,
+    false,
+    irradiance_volume=true,
   )
   let (main_entries, binding_array_entries) = @mesh_view_layout.render3d_mesh_view_layout_entries(
     true,
@@ -92,14 +122,13 @@ test "pbr/render: mesh_view layout table builds all key variants" {
   let layouts = @mesh_view_layout.render3d_mesh_pipeline_view_layouts(
     true, true,
   )
-  debug_inspect(layouts.layouts.length(), content="256")
 
   let default_layout = layouts.get_view_layout(
     @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
   )
   debug_inspect(
     default_layout.main_layout_label,
-    content="\"mesh_view_layout\"",
+    content="\"mesh_view_layout:\"",
   )
   debug_inspect(
     default_layout.empty_layout_label,
@@ -112,7 +141,7 @@ test "pbr/render: mesh_view layout table builds all key variants" {
   let flagged_layout = layouts.get_view_layout(flagged_key)
   debug_inspect(
     flagged_layout.main_layout_label,
-    content="\"mesh_view_layout_multisampled_atmosphere\"",
+    content="\"mesh_view_layout:multisampled,atmosphere\"",
   )
   debug_inspect(flagged_layout.texture_count > 0, content="true")
 }
@@ -122,7 +151,17 @@ test "pbr/render: mesh view descriptor preserves binding-array counts" {
   let layout = @mesh_view_layout.render3d_mesh_pipeline_view_layout(
     true,
     true,
-    @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
+    @mesh_view_layout.mesh_view_layout_key(
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      environment_map=true,
+    ),
     multiple_light_probes_in_array=true,
   )
   let descriptor = layout.binding_array_bind_group_layout_descriptor()

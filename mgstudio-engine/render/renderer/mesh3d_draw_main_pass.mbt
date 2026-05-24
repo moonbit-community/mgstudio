@@ -453,6 +453,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     self,
     material_pipeline_id,
     material_descriptor,
+    ps.tonemap_in_shader,
     pass_uniforms,
     transmission_source_texture,
     point_shadow_texture,

@@ -39,7 +39,34 @@ const MESH_VIEW_LAYOUT_ATMOSPHERE : UInt = 1U << 6
 const MESH_VIEW_LAYOUT_STBN : UInt = 1U << 7
 
 ///|
-pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 256
+pub const MESH_VIEW_LAYOUT_TONEMAP_IN_SHADER : UInt = 1U << 8
+
+///|
+pub const MESH_VIEW_LAYOUT_ENVIRONMENT_MAP : UInt = 1U << 9
+
+///|
+pub const MESH_VIEW_LAYOUT_SCREEN_SPACE_AMBIENT_OCCLUSION : UInt = 1U << 10
+
+///|
+pub const MESH_VIEW_LAYOUT_IRRADIANCE_VOLUME : UInt = 1U << 11
+
+///|
+pub const MESH_VIEW_LAYOUT_SCREEN_SPACE_REFLECTIONS : UInt = 1U << 12
+
+///|
+pub const MESH_VIEW_LAYOUT_CONTACT_SHADOWS : UInt = 1U << 13
+
+///|
+pub const MESH_VIEW_LAYOUT_DISTANCE_FOG : UInt = 1U << 14
+
+///|
+pub const MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS : UInt = 1U << 15
+
+///|
+const MESH_PIPELINE_VIEW_LAYOUT_KEY_MASK : UInt = 0xFFFFU
+
+///|
+pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 65536
 
 ///|
 pub struct MeshPipelineViewLayoutKey {
@@ -62,7 +89,7 @@ pub fn MeshPipelineViewLayoutKey::bits(
 pub fn mesh_view_layout_key_from_bits_truncate(
   bits : UInt,
 ) -> MeshPipelineViewLayoutKey {
-  MeshPipelineViewLayoutKey::{ bits: bits & 0xFFU }
+  MeshPipelineViewLayoutKey::{ bits: bits & MESH_PIPELINE_VIEW_LAYOUT_KEY_MASK }
 }
 
 ///|
@@ -84,6 +111,14 @@ pub fn mesh_view_layout_key(
   oit_enabled : Bool,
   atmosphere : Bool,
   stbn : Bool,
+  tonemap_in_shader? : Bool = false,
+  environment_map? : Bool = false,
+  screen_space_ambient_occlusion? : Bool = false,
+  irradiance_volume? : Bool = false,
+  screen_space_reflections? : Bool = false,
+  contact_shadows? : Bool = false,
+  distance_fog? : Bool = false,
+  area_light_luts? : Bool = false,
 ) -> MeshPipelineViewLayoutKey {
   MeshPipelineViewLayoutKey::{
     bits: mesh_view_layout_flag(multisampled, MESH_VIEW_LAYOUT_MULTISAMPLED) |
@@ -96,7 +131,21 @@ pub fn mesh_view_layout_key(
     mesh_view_layout_flag(deferred_prepass, MESH_VIEW_LAYOUT_DEFERRED_PREPASS) |
     mesh_view_layout_flag(oit_enabled, MESH_VIEW_LAYOUT_OIT_ENABLED) |
     mesh_view_layout_flag(atmosphere, MESH_VIEW_LAYOUT_ATMOSPHERE) |
-    mesh_view_layout_flag(stbn, MESH_VIEW_LAYOUT_STBN),
+    mesh_view_layout_flag(stbn, MESH_VIEW_LAYOUT_STBN) |
+    mesh_view_layout_flag(tonemap_in_shader, MESH_VIEW_LAYOUT_TONEMAP_IN_SHADER) |
+    mesh_view_layout_flag(environment_map, MESH_VIEW_LAYOUT_ENVIRONMENT_MAP) |
+    mesh_view_layout_flag(
+      screen_space_ambient_occlusion,
+      MESH_VIEW_LAYOUT_SCREEN_SPACE_AMBIENT_OCCLUSION,
+    ) |
+    mesh_view_layout_flag(irradiance_volume, MESH_VIEW_LAYOUT_IRRADIANCE_VOLUME) |
+    mesh_view_layout_flag(
+      screen_space_reflections,
+      MESH_VIEW_LAYOUT_SCREEN_SPACE_REFLECTIONS,
+    ) |
+    mesh_view_layout_flag(contact_shadows, MESH_VIEW_LAYOUT_CONTACT_SHADOWS) |
+    mesh_view_layout_flag(distance_fog, MESH_VIEW_LAYOUT_DISTANCE_FOG) |
+    mesh_view_layout_flag(area_light_luts, MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS),
   }
 }
 
@@ -128,30 +177,61 @@ pub fn MeshPipelineViewLayoutKey::contains(
 pub fn MeshPipelineViewLayoutKey::label(
   self : MeshPipelineViewLayoutKey,
 ) -> String {
-  let mut label = "mesh_view_layout"
+  let parts : Array[String] = []
   if self.contains(MESH_VIEW_LAYOUT_MULTISAMPLED) {
-    label = "\{label}_multisampled"
+    parts.push("multisampled")
   }
   if self.contains(MESH_VIEW_LAYOUT_DEPTH_PREPASS) {
-    label = "\{label}_depth"
+    parts.push("depth_prepass")
   }
   if self.contains(MESH_VIEW_LAYOUT_NORMAL_PREPASS) {
-    label = "\{label}_normal"
+    parts.push("normal_prepass")
   }
   if self.contains(MESH_VIEW_LAYOUT_MOTION_VECTOR_PREPASS) {
-    label = "\{label}_motion"
+    parts.push("motion_vector_prepass")
   }
   if self.contains(MESH_VIEW_LAYOUT_DEFERRED_PREPASS) {
-    label = "\{label}_deferred"
+    parts.push("deferred_prepass")
   }
   if self.contains(MESH_VIEW_LAYOUT_OIT_ENABLED) {
-    label = "\{label}_oit"
+    parts.push("oit_enabled")
   }
   if self.contains(MESH_VIEW_LAYOUT_ATMOSPHERE) {
-    label = "\{label}_atmosphere"
+    parts.push("atmosphere")
   }
   if self.contains(MESH_VIEW_LAYOUT_STBN) {
-    label = "\{label}_stbn"
+    parts.push("stbn")
+  }
+  if self.contains(MESH_VIEW_LAYOUT_TONEMAP_IN_SHADER) {
+    parts.push("tonemap_in_shader")
+  }
+  if self.contains(MESH_VIEW_LAYOUT_ENVIRONMENT_MAP) {
+    parts.push("environment_map")
+  }
+  if self.contains(MESH_VIEW_LAYOUT_SCREEN_SPACE_AMBIENT_OCCLUSION) {
+    parts.push("screen_space_ambient_occlusion")
+  }
+  if self.contains(MESH_VIEW_LAYOUT_IRRADIANCE_VOLUME) {
+    parts.push("irradiance_volume")
+  }
+  if self.contains(MESH_VIEW_LAYOUT_SCREEN_SPACE_REFLECTIONS) {
+    parts.push("screen_space_reflections")
+  }
+  if self.contains(MESH_VIEW_LAYOUT_CONTACT_SHADOWS) {
+    parts.push("contact_shadows")
+  }
+  if self.contains(MESH_VIEW_LAYOUT_DISTANCE_FOG) {
+    parts.push("distance_fog")
+  }
+  if self.contains(MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS) {
+    parts.push("area_light_luts")
+  }
+  let mut label = "mesh_view_layout:"
+  for index in 0..<parts.length() {
+    if index > 0 {
+      label = label + ","
+    }
+    label = label + parts[index]
   }
   label
 }
@@ -168,7 +248,12 @@ pub struct MeshPipelineViewLayout {
 
 ///|
 pub struct MeshPipelineViewLayouts {
-  layouts : Array[MeshPipelineViewLayout]
+  clustered_forward_buffer_read_only : Bool
+  visibility_ranges_buffer_read_only : Bool
+  multiple_light_probes_in_array : Bool
+  clustered_decals_usable : Bool
+  irradiance_volumes_usable : Bool
+  oit_supported : Bool
 }
 
 ///|
@@ -176,12 +261,15 @@ pub fn MeshPipelineViewLayouts::get_view_layout(
   self : MeshPipelineViewLayouts,
   layout_key : MeshPipelineViewLayoutKey,
 ) -> MeshPipelineViewLayout {
-  let index = layout_key.bits().reinterpret_as_int()
-  if index >= 0 && index < self.layouts.length() {
-    self.layouts[index]
-  } else {
-    self.layouts[0]
-  }
+  render3d_mesh_pipeline_view_layout(
+    self.clustered_forward_buffer_read_only,
+    self.visibility_ranges_buffer_read_only,
+    layout_key,
+    multiple_light_probes_in_array=self.multiple_light_probes_in_array,
+    clustered_decals_usable=self.clustered_decals_usable,
+    irradiance_volumes_usable=self.irradiance_volumes_usable,
+    oit_supported=self.oit_supported,
+  )
 }
 
 ///|
@@ -406,8 +494,11 @@ pub fn render3d_mesh_pipeline_view_layout(
   let label = layout_key.label()
   MeshPipelineViewLayout::{
     main_layout_label: label,
-    binding_array_layout_label: "\{label}_binding_array",
-    empty_layout_label: "\{label}_empty",
+    binding_array_layout_label: label.replace(
+      old="mesh_view_layout:",
+      new="mesh_view_layout_binding_array:",
+    ),
+    empty_layout_label: "mesh_view_layout_empty",
     main_entries,
     binding_array_entries,
     texture_count: mesh_view_layout_texture_count(
@@ -425,24 +516,14 @@ pub fn render3d_mesh_pipeline_view_layouts(
   irradiance_volumes_usable? : Bool = true,
   oit_supported? : Bool = true,
 ) -> MeshPipelineViewLayouts {
-  let layouts : Array[MeshPipelineViewLayout] = []
-  for i in 0..<MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT {
-    let layout_key = mesh_view_layout_key_from_bits_truncate(
-      i.reinterpret_as_uint(),
-    )
-    layouts.push(
-      render3d_mesh_pipeline_view_layout(
-        clustered_forward_buffer_read_only,
-        visibility_ranges_buffer_read_only,
-        layout_key,
-        multiple_light_probes_in_array~,
-        clustered_decals_usable~,
-        irradiance_volumes_usable~,
-        oit_supported~,
-      ),
-    )
+  MeshPipelineViewLayouts::{
+    clustered_forward_buffer_read_only,
+    visibility_ranges_buffer_read_only,
+    multiple_light_probes_in_array,
+    clustered_decals_usable,
+    irradiance_volumes_usable,
+    oit_supported,
   }
-  MeshPipelineViewLayouts::{ layouts, }
 }
 
 ///|
@@ -571,48 +652,63 @@ pub fn render3d_mesh_view_layout_entries(
       stage=MeshViewBindGroupLayoutEntryStage::VertexFragment,
     ),
     mesh_view_uniform_buffer_entry(12, "light_probes", has_dynamic_offset=true),
-    mesh_view_uniform_buffer_entry(13, "fog", has_dynamic_offset=true),
     mesh_view_storage_buffer_entry(
       14,
       "visibility_ranges",
       visibility_ranges_buffer_read_only,
       stage=MeshViewBindGroupLayoutEntryStage::Vertex,
     ),
-    mesh_view_uniform_buffer_entry(15, "ssr_settings", has_dynamic_offset=true),
-    mesh_view_uniform_buffer_entry(
-      16,
-      "contact_shadows_settings",
-      has_dynamic_offset=true,
-    ),
-    mesh_view_texture_entry(
-      17,
-      "screen_space_ambient_occlusion_texture",
-      MeshViewTextureSampleType::FloatNonFilterable,
-      MeshViewTextureDimension::D2,
-    ),
-    mesh_view_texture_entry(
-      18,
-      "dt_lut_texture",
-      MeshViewTextureSampleType::FloatFilterable,
-      MeshViewTextureDimension::D3,
-    ),
-    mesh_view_sampler_entry(
-      19,
-      "dt_lut_sampler",
-      MeshViewSamplerBindingType::Filtering,
-    ),
-    mesh_view_texture_entry(
-      24,
-      "view_transmission_texture",
-      MeshViewTextureSampleType::FloatFilterable,
-      MeshViewTextureDimension::D2,
-    ),
-    mesh_view_sampler_entry(
-      25,
-      "view_transmission_sampler",
-      MeshViewSamplerBindingType::Filtering,
-    ),
   ]
+  if layout_key.contains(MESH_VIEW_LAYOUT_DISTANCE_FOG) {
+    main_entries.push(
+      mesh_view_uniform_buffer_entry(13, "fog", has_dynamic_offset=true),
+    )
+  }
+  if layout_key.contains(MESH_VIEW_LAYOUT_SCREEN_SPACE_REFLECTIONS) {
+    main_entries.push(
+      mesh_view_uniform_buffer_entry(
+        15,
+        "ssr_settings",
+        has_dynamic_offset=true,
+      ),
+    )
+  }
+  if layout_key.contains(MESH_VIEW_LAYOUT_CONTACT_SHADOWS) {
+    main_entries.push(
+      mesh_view_uniform_buffer_entry(
+        16,
+        "contact_shadows_settings",
+        has_dynamic_offset=true,
+      ),
+    )
+  }
+  if layout_key.contains(MESH_VIEW_LAYOUT_SCREEN_SPACE_AMBIENT_OCCLUSION) {
+    main_entries.push(
+      mesh_view_texture_entry(
+        17,
+        "screen_space_ambient_occlusion_texture",
+        MeshViewTextureSampleType::FloatNonFilterable,
+        MeshViewTextureDimension::D2,
+      ),
+    )
+  }
+  if layout_key.contains(MESH_VIEW_LAYOUT_TONEMAP_IN_SHADER) {
+    main_entries.push(
+      mesh_view_texture_entry(
+        18,
+        "dt_lut_texture",
+        MeshViewTextureSampleType::FloatFilterable,
+        MeshViewTextureDimension::D3,
+      ),
+    )
+    main_entries.push(
+      mesh_view_sampler_entry(
+        19,
+        "dt_lut_sampler",
+        MeshViewSamplerBindingType::Filtering,
+      ),
+    )
+  }
   if layout_key.contains(MESH_VIEW_LAYOUT_DEPTH_PREPASS) {
     main_entries.push(
       mesh_view_texture_entry(
@@ -656,6 +752,21 @@ pub fn render3d_mesh_view_layout_entries(
       ),
     )
   }
+  main_entries.push(
+    mesh_view_texture_entry(
+      24,
+      "view_transmission_texture",
+      MeshViewTextureSampleType::FloatFilterable,
+      MeshViewTextureDimension::D2,
+    ),
+  )
+  main_entries.push(
+    mesh_view_sampler_entry(
+      25,
+      "view_transmission_sampler",
+      MeshViewSamplerBindingType::Filtering,
+    ),
+  )
   if layout_key.contains(MESH_VIEW_LAYOUT_OIT_ENABLED) && oit_supported {
     main_entries.push(
       mesh_view_uniform_buffer_entry(
@@ -701,28 +812,53 @@ pub fn render3d_mesh_view_layout_entries(
       ),
     )
   }
-  let binding_array_entries : Array[MeshViewBindGroupLayoutEntry] = [
-    mesh_view_texture_entry(
-      0,
-      "diffuse_environment_maps",
-      MeshViewTextureSampleType::FloatFilterable,
-      MeshViewTextureDimension::Cube,
-      array_count=if multiple_light_probes_in_array { 8 } else { 0 },
-    ),
-    mesh_view_texture_entry(
-      1,
-      "specular_environment_maps",
-      MeshViewTextureSampleType::FloatFilterable,
-      MeshViewTextureDimension::Cube,
-      array_count=if multiple_light_probes_in_array { 8 } else { 0 },
-    ),
-    mesh_view_sampler_entry(
-      2,
-      "environment_map_sampler",
-      MeshViewSamplerBindingType::Filtering,
-    ),
-  ]
-  if irradiance_volumes_usable {
+  if layout_key.contains(MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS) {
+    main_entries.push(
+      mesh_view_texture_entry(
+        35,
+        "area_light_luts",
+        MeshViewTextureSampleType::FloatFilterable,
+        MeshViewTextureDimension::D2Array,
+      ),
+    )
+    main_entries.push(
+      mesh_view_sampler_entry(
+        36,
+        "area_light_luts_sampler",
+        MeshViewSamplerBindingType::Filtering,
+      ),
+    )
+  }
+  let binding_array_entries : Array[MeshViewBindGroupLayoutEntry] = []
+  if layout_key.contains(MESH_VIEW_LAYOUT_ENVIRONMENT_MAP) {
+    binding_array_entries.push(
+      mesh_view_texture_entry(
+        0,
+        "diffuse_environment_maps",
+        MeshViewTextureSampleType::FloatFilterable,
+        MeshViewTextureDimension::Cube,
+        array_count=if multiple_light_probes_in_array { 8 } else { 0 },
+      ),
+    )
+    binding_array_entries.push(
+      mesh_view_texture_entry(
+        1,
+        "specular_environment_maps",
+        MeshViewTextureSampleType::FloatFilterable,
+        MeshViewTextureDimension::Cube,
+        array_count=if multiple_light_probes_in_array { 8 } else { 0 },
+      ),
+    )
+    binding_array_entries.push(
+      mesh_view_sampler_entry(
+        2,
+        "environment_map_sampler",
+        MeshViewSamplerBindingType::Filtering,
+      ),
+    )
+  }
+  if layout_key.contains(MESH_VIEW_LAYOUT_IRRADIANCE_VOLUME) &&
+    irradiance_volumes_usable {
     binding_array_entries.push(
       mesh_view_texture_entry(
         3,

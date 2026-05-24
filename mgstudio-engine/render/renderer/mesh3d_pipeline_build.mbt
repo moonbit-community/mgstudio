@@ -1429,14 +1429,10 @@ fn mesh3d_descriptor_bind_group_layout(
 }
 
 ///|
-fn mesh3d_descriptor_bind_group_dynamic_offsets(
-  descriptor : @render_resource.RenderPipelineDescriptor?,
-  index : Int,
+fn mesh3d_bind_group_layout_descriptor_dynamic_offsets(
+  layout : @render_resource.BindGroupLayoutDescriptor,
 ) -> Array[UInt] {
   let offsets : Array[UInt] = []
-  guard mesh3d_descriptor_bind_group_layout(descriptor, index) is Some(layout) else {
-    return offsets
-  }
   for entry in layout.entries() {
     match entry.kind() {
       BufferBinding(_, has_dynamic_offset, _) =>
@@ -1450,12 +1446,30 @@ fn mesh3d_descriptor_bind_group_dynamic_offsets(
 }
 
 ///|
+fn mesh3d_descriptor_bind_group_dynamic_offsets(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+  index : Int,
+) -> Array[UInt] {
+  guard mesh3d_descriptor_bind_group_layout(descriptor, index) is Some(layout) else {
+    if descriptor is None && index == 0 {
+      return mesh3d_bind_group_layout_descriptor_dynamic_offsets(
+        mesh3d_default_mesh_view_layout().main_bind_group_layout_descriptor(),
+      )
+    }
+    return []
+  }
+  mesh3d_bind_group_layout_descriptor_dynamic_offsets(layout)
+}
+
+///|
 fn mesh3d_material_pipeline_layout_cache_get(
   backend : GpuBackend,
   material_pipeline_id : UInt64,
+  view_layout_key_bits : UInt,
 ) -> Mesh3dMaterialPipelineLayoutCacheEntry? {
   for entry in backend.mesh3d_material_pipeline_layout_cache {
-    if entry.material_pipeline_id == material_pipeline_id {
+    if entry.material_pipeline_id == material_pipeline_id &&
+      entry.view_layout_key_bits == view_layout_key_bits {
       return Some(entry)
     }
   }
@@ -1467,9 +1481,60 @@ fn mesh3d_material_pipeline_layout_get_or_create(
   backend : GpuBackend,
   material_pipeline_id : UInt64,
   material_descriptor : @render_resource.RenderPipelineDescriptor?,
+  default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
 ) -> Mesh3dMaterialPipelineLayoutCacheEntry raise GpuBackendError {
   ensure_mesh3d_pipeline_layout_resources(backend)
+  let view_layout_key_bits = default_view_layout_key.bits()
   if material_pipeline_id == MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
+    if view_layout_key_bits != 0U {
+      if mesh3d_material_pipeline_layout_cache_get(
+          backend, material_pipeline_id, view_layout_key_bits,
+        )
+        is Some(entry) {
+        return entry
+      }
+      guard backend.mesh3d_bgl_draw is Some(draw_bgl) else {
+        fatal("wgpu: missing mesh3d draw bind group layout")
+      }
+      guard backend.mesh3d_bgl_material is Some(material_bgl) else {
+        fatal("wgpu: missing mesh3d material bind group layout")
+      }
+      let mesh_view_layout = @mesh_view_layout.render3d_mesh_pipeline_view_layout(
+        true,
+        true,
+        default_view_layout_key,
+        clustered_decals_usable=false,
+        irradiance_volumes_usable=false,
+        oit_supported=false,
+      )
+      let view_bgl = mesh3d_create_bind_group_layout_from_descriptor(
+        backend,
+        mesh_view_layout.main_bind_group_layout_descriptor(),
+        "default_view_" + view_layout_key_bits.to_string(),
+      )
+      let binding_arrays_bgl = mesh3d_create_bind_group_layout_from_descriptor(
+        backend,
+        mesh_view_layout.binding_array_bind_group_layout_descriptor(),
+        "default_binding_arrays_" + view_layout_key_bits.to_string(),
+      )
+      let pipeline_layout = create_pipeline_layout_4(
+        backend.device, view_bgl, binding_arrays_bgl, draw_bgl, material_bgl,
+      )
+      let entry = {
+        material_pipeline_id,
+        view_layout_key_bits,
+        view_bind_group_layout_descriptor: mesh_view_layout.main_bind_group_layout_descriptor(),
+        view_bind_group_layout: view_bgl,
+        binding_arrays_bind_group_layout_descriptor: mesh_view_layout.binding_array_bind_group_layout_descriptor(),
+        binding_arrays_bind_group_layout: binding_arrays_bgl,
+        draw_bind_group_layout_descriptor: mesh3d_default_draw_bind_group_layout_descriptor(),
+        draw_bind_group_layout: draw_bgl,
+        material_bind_group_layout: material_bgl,
+        pipeline_layout,
+      }
+      backend.mesh3d_material_pipeline_layout_cache.push(entry)
+      return entry
+    }
     guard backend.mesh3d_bgl_view is Some(view_bgl) else {
       fatal("wgpu: missing mesh3d view bind group layout")
     }
@@ -1485,9 +1550,13 @@ fn mesh3d_material_pipeline_layout_get_or_create(
     guard backend.mesh3d_pipeline_layout is Some(pipeline_layout) else {
       fatal("wgpu: missing mesh3d pipeline layout")
     }
+    let mesh_view_layout = mesh3d_default_mesh_view_layout()
     return {
       material_pipeline_id,
+      view_layout_key_bits,
+      view_bind_group_layout_descriptor: mesh_view_layout.main_bind_group_layout_descriptor(),
       view_bind_group_layout: view_bgl,
+      binding_arrays_bind_group_layout_descriptor: mesh_view_layout.binding_array_bind_group_layout_descriptor(),
       binding_arrays_bind_group_layout: binding_arrays_bgl,
       draw_bind_group_layout_descriptor: mesh3d_default_draw_bind_group_layout_descriptor(),
       draw_bind_group_layout: draw_bgl,
@@ -1495,7 +1564,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
       pipeline_layout,
     }
   }
-  if mesh3d_material_pipeline_layout_cache_get(backend, material_pipeline_id)
+  if mesh3d_material_pipeline_layout_cache_get(backend, material_pipeline_id, 0U)
     is Some(entry) {
     return entry
   }
@@ -1552,7 +1621,10 @@ fn mesh3d_material_pipeline_layout_get_or_create(
   )
   let entry = {
     material_pipeline_id,
+    view_layout_key_bits: 0U,
+    view_bind_group_layout_descriptor: view_layout_descriptor,
     view_bind_group_layout: view_bgl,
+    binding_arrays_bind_group_layout_descriptor: binding_arrays_layout_descriptor,
     binding_arrays_bind_group_layout: binding_arrays_bgl,
     draw_bind_group_layout_descriptor: draw_layout_descriptor,
     draw_bind_group_layout: draw_bgl,
@@ -1701,7 +1773,12 @@ fn ensure_mesh3d_pipeline_rgba8(
   let transparent = blend_kind != MESH3D_PIPELINE_BLEND_OPAQUE
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
-    backend, material_pipeline_id, material_descriptor,
+    backend,
+    material_pipeline_id,
+    material_descriptor,
+    default_view_layout_key=mesh3d_default_mesh_view_layout_key(
+      tonemap_in_shader~,
+    ),
   )
   let pl = layout_entry.pipeline_layout
   let modules = mesh3d_create_forward_shader_modules(
@@ -1824,7 +1901,12 @@ fn ensure_mesh3d_pipeline_surface(
   let transparent = blend_kind != MESH3D_PIPELINE_BLEND_OPAQUE
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
-    backend, material_pipeline_id, material_descriptor,
+    backend,
+    material_pipeline_id,
+    material_descriptor,
+    default_view_layout_key=mesh3d_default_mesh_view_layout_key(
+      tonemap_in_shader~,
+    ),
   )
   let pl = layout_entry.pipeline_layout
   let modules = mesh3d_create_forward_shader_modules(

@@ -270,14 +270,14 @@ test "pbr material pipeline specializer inserts material bind group and override
     pbr_material_specializer_test_layout(),
   )
   inspect(descriptor.layout.length(), content="4")
-  inspect(descriptor.layout[0].label(), content="mesh_view_layout")
+  inspect(descriptor.layout[0].label(), content="mesh_view_layout:")
   inspect(
     descriptor.layout[1].label(),
-    content="mesh_view_layout_binding_array",
+    content="mesh_view_layout_binding_array:",
   )
   inspect(descriptor.layout[2].label(), content="mesh_layout")
-  inspect(descriptor.layout[0].entries().length(), content="21")
-  inspect(descriptor.layout[1].entries().length(), content="3")
+  inspect(descriptor.layout[0].entries().length(), content="14")
+  inspect(descriptor.layout[1].entries().length(), content="0")
   inspect(descriptor.layout[2].entries().length(), content="1")
   debug_inspect(
     descriptor.vertex.shader == Some("custom/material_vertex.wgsl"),
@@ -376,11 +376,11 @@ test "pbr material pipeline key carries mesh-owned lightmap bits" {
   )
   inspect(
     pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_LIGHTMAPPED,
-    content="8192",
+    content="4096",
   )
   inspect(
     pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING,
-    content="16384",
+    content="8192",
   )
 }
 

@@ -8,9 +8,25 @@ import {
 }
 
 // Values
-pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 256
+pub const MESH_PIPELINE_VIEW_LAYOUT_KEY_COUNT : Int = 65536
 
-pub fn mesh_view_layout_key(Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool) -> MeshPipelineViewLayoutKey
+pub const MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS : UInt = 32768
+
+pub const MESH_VIEW_LAYOUT_CONTACT_SHADOWS : UInt = 8192
+
+pub const MESH_VIEW_LAYOUT_DISTANCE_FOG : UInt = 16384
+
+pub const MESH_VIEW_LAYOUT_ENVIRONMENT_MAP : UInt = 512
+
+pub const MESH_VIEW_LAYOUT_IRRADIANCE_VOLUME : UInt = 2048
+
+pub const MESH_VIEW_LAYOUT_SCREEN_SPACE_AMBIENT_OCCLUSION : UInt = 1024
+
+pub const MESH_VIEW_LAYOUT_SCREEN_SPACE_REFLECTIONS : UInt = 4096
+
+pub const MESH_VIEW_LAYOUT_TONEMAP_IN_SHADER : UInt = 256
+
+pub fn mesh_view_layout_key(Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, tonemap_in_shader? : Bool, environment_map? : Bool, screen_space_ambient_occlusion? : Bool, irradiance_volume? : Bool, screen_space_reflections? : Bool, contact_shadows? : Bool, distance_fog? : Bool, area_light_luts? : Bool) -> MeshPipelineViewLayoutKey
 
 pub fn mesh_view_layout_key_from_bits_truncate(UInt) -> MeshPipelineViewLayoutKey
 
@@ -45,7 +61,12 @@ pub fn MeshPipelineViewLayoutKey::contains(Self, UInt) -> Bool
 pub fn MeshPipelineViewLayoutKey::label(Self) -> String
 
 pub struct MeshPipelineViewLayouts {
-  layouts : Array[MeshPipelineViewLayout]
+  clustered_forward_buffer_read_only : Bool
+  visibility_ranges_buffer_read_only : Bool
+  multiple_light_probes_in_array : Bool
+  clustered_decals_usable : Bool
+  irradiance_volumes_usable : Bool
+  oit_supported : Bool
 }
 pub fn MeshPipelineViewLayouts::get_view_layout(Self, MeshPipelineViewLayoutKey) -> MeshPipelineViewLayout
 

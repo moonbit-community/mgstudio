@@ -15,11 +15,30 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/render/mesh_view_bindings.rs`.
 
 ///|
-fn mesh3d_default_mesh_view_layout() -> @mesh_view_layout.MeshPipelineViewLayout {
+fn mesh3d_default_mesh_view_layout_key(
+  tonemap_in_shader? : Bool = false,
+) -> @mesh_view_layout.MeshPipelineViewLayoutKey {
+  @mesh_view_layout.mesh_view_layout_key(
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    tonemap_in_shader~,
+  )
+}
+
+///|
+fn mesh3d_default_mesh_view_layout(
+  tonemap_in_shader? : Bool = false,
+) -> @mesh_view_layout.MeshPipelineViewLayout {
   @mesh_view_layout.render3d_mesh_pipeline_view_layout(
     true,
     true,
-    @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
+    mesh3d_default_mesh_view_layout_key(tonemap_in_shader~),
     clustered_decals_usable=false,
     irradiance_volumes_usable=false,
     oit_supported=false,
@@ -133,7 +152,7 @@ fn mesh3d_add_mesh_view_layout_entry(
         binding,
         visibility,
         @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        has_dynamic_offset=false,
+        has_dynamic_offset=entry.has_dynamic_offset,
         min_binding_size=mesh3d_mesh_view_min_binding_size(entry.binding),
       )
     @mesh_view_layout.MeshViewBindGroupLayoutEntryType::StorageBuffer(read_only) =>
@@ -141,7 +160,7 @@ fn mesh3d_add_mesh_view_layout_entry(
         binding,
         visibility,
         mesh3d_mesh_view_buffer_binding_type(read_only),
-        has_dynamic_offset=false,
+        has_dynamic_offset=entry.has_dynamic_offset,
         min_binding_size=mesh3d_mesh_view_min_binding_size(entry.binding),
       )
     @mesh_view_layout.MeshViewBindGroupLayoutEntryType::Texture(

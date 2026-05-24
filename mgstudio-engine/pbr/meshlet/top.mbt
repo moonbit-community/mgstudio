@@ -861,10 +861,56 @@ fn meshlet_shader_defs_with_material_pass(
 }
 
 ///|
+fn meshlet_view_material_mesh_pipeline_bits(
+  view_key : MeshletViewMaterialPipelineKey,
+) -> UInt64 {
+  let mut bits = 0UL
+  if view_key.tonemap_in_shader {
+    bits = bits | 1UL
+  }
+  if view_key.deband_dither {
+    bits = bits | 2UL
+  }
+  if view_key.depth_prepass {
+    bits = bits | 4UL
+  }
+  if view_key.normal_prepass {
+    bits = bits | 8UL
+  }
+  if view_key.deferred_prepass {
+    bits = bits | 16UL
+  }
+  if view_key.motion_vector_prepass {
+    bits = bits | 32UL
+  }
+  if view_key.environment_map {
+    bits = bits | 128UL
+  }
+  if view_key.ssao {
+    bits = bits | 256UL
+  }
+  if view_key.temporal_jitter {
+    bits = bits | 1024UL
+  }
+  if view_key.irradiance_volume {
+    bits = bits | 16384UL
+  }
+  if view_key.distance_fog {
+    bits = bits | 1048576UL
+  }
+  bits = bits | ((view_key.tonemapping_mode.to_uint64() & 0xFUL) << 31)
+  bits = bits | ((view_key.shadow_filter_method.to_uint64() & 0x3UL) << 35)
+  bits = bits | ((view_key.projection_type.to_uint64() & 0x3UL) << 37)
+  bits
+}
+
+///|
 fn meshlet_material_pipeline_key_for_standard_material(
   properties : @material.MaterialProperties,
+  view_key : MeshletViewMaterialPipelineKey,
 ) -> @material.ErasedMaterialPipelineKey {
   let mesh_bits = properties.mesh_pipeline_key_bits.bits() |
+    meshlet_view_material_mesh_pipeline_bits(view_key) |
     @mesh.BaseMeshPipelineKey::from_primitive_topology(
       @mesh.Mesh3dPrimitiveTopology::TriangleList,
     ).bits()
@@ -879,6 +925,7 @@ fn meshlet_material_pipeline_key_for_standard_material(
 fn meshlet_main_opaque_standard_material_descriptor(
   material : @material.StandardMaterial,
   default_opaque_renderer_method : @material.OpaqueRendererMethod,
+  view_key : MeshletViewMaterialPipelineKey,
 ) -> @material.RenderPipelineDescriptor? {
   let properties = @pbr.render3d_material_properties_for_standard_material(
     material,
@@ -889,7 +936,7 @@ fn meshlet_main_opaque_standard_material_descriptor(
   let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let fake_layout = layouts.insert(meshlet_fake_vertex_buffer_layout())
   let pipeline_key = meshlet_material_pipeline_key_for_standard_material(
-    properties,
+    properties, view_key,
   )
   let descriptor = @pbr.PbrMaterialPipelineSpecializer::new(properties).specialize(
     pipeline_key, fake_layout,
@@ -932,6 +979,20 @@ fn meshlet_main_opaque_standard_material_descriptor(
       ),
     ),
   )
+}
+
+///|
+fn meshlet_main_opaque_material_entry_for_draw_call(
+  materials : MeshletViewMaterialsMainOpaquePass,
+  draw_call : MeshletMaterialDrawCall,
+) -> MeshletViewMaterialEntry? {
+  for entry in materials.entries {
+    if entry.material_id == draw_call.material_id &&
+      entry.material_pipeline_id == draw_call.material_pipeline_id {
+      return Some(entry)
+    }
+  }
+  None
 }
 
 ///|
@@ -1090,8 +1151,14 @@ fn meshlet_main_opaque_material_shade_draws(
     guard assets.get(@asset.Handle::new(material_asset_id)) is Some(material) else {
       continue
     }
+    guard meshlet_main_opaque_material_entry_for_draw_call(materials, draw_call)
+      is Some(material_entry) else {
+      continue
+    }
     guard meshlet_main_opaque_standard_material_descriptor(
-        material, default_opaque_renderer_method,
+        material,
+        default_opaque_renderer_method,
+        material_entry.descriptor.view_key,
       )
       is Some(descriptor) else {
       continue

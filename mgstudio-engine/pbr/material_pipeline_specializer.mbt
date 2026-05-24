@@ -31,31 +31,76 @@ pub const PBR_PREPASS_SHADER_PATH : String = "pbr/prepass/prepass.wgsl"
 pub const PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH : String = "pbr/render/pbr_prepass.wgsl"
 
 ///|
-const MESH_PIPELINE_KEY_DEPTH_PREPASS : UInt64 = 8UL
+const MESH_PIPELINE_KEY_TONEMAP_IN_SHADER : UInt64 = 1UL
 
 ///|
-const MESH_PIPELINE_KEY_NORMAL_PREPASS : UInt64 = 16UL
+const MESH_PIPELINE_KEY_DEBAND_DITHER : UInt64 = 2UL
 
 ///|
-const MESH_PIPELINE_KEY_DEFERRED_PREPASS : UInt64 = 32UL
+const MESH_PIPELINE_KEY_DEPTH_PREPASS : UInt64 = 4UL
 
 ///|
-const MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS : UInt64 = 64UL
+const MESH_PIPELINE_KEY_NORMAL_PREPASS : UInt64 = 8UL
 
 ///|
-const MESH_PIPELINE_KEY_ALL_PREPASS_BITS : UInt64 = 16777464UL
+const MESH_PIPELINE_KEY_DEFERRED_PREPASS : UInt64 = 16UL
+
+///|
+const MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS : UInt64 = 32UL
+
+///|
+const MESH_PIPELINE_KEY_ENVIRONMENT_MAP : UInt64 = 128UL
+
+///|
+const MESH_PIPELINE_KEY_SCREEN_SPACE_AMBIENT_OCCLUSION : UInt64 = 256UL
+
+///|
+const MESH_PIPELINE_KEY_TEMPORAL_JITTER : UInt64 = 1024UL
+
+///|
+const MESH_PIPELINE_KEY_IRRADIANCE_VOLUME : UInt64 = 16384UL
+
+///|
+const MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER : UInt64 = 32768UL
+
+///|
+const MESH_PIPELINE_KEY_SCREEN_SPACE_REFLECTIONS : UInt64 = 65536UL
+
+///|
+const MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN : UInt64 = 131072UL
+
+///|
+const MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH : UInt64 = 262144UL
+
+///|
+const MESH_PIPELINE_KEY_OIT_ENABLED : UInt64 = 524288UL
+
+///|
+const MESH_PIPELINE_KEY_DISTANCE_FOG : UInt64 = 1048576UL
+
+///|
+const MESH_PIPELINE_KEY_ATMOSPHERE : UInt64 = 2097152UL
+
+///|
+const MESH_PIPELINE_KEY_CONTACT_SHADOWS : UInt64 = 16777216UL
+
+///|
+const MESH_PIPELINE_KEY_ALL_PREPASS_BITS : UInt64 = 8388732UL
 
 ///|
 const MESH_PIPELINE_KEY_MORPH_TARGETS : UInt64 = 0x8000_0000_0000_0000UL
 
 ///|
-const MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER : UInt64 = 65536UL
+const MESH_PIPELINE_KEY_MSAA_SHIFT_BITS : Int = 25
 
 ///|
-const MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN : UInt64 = 262144UL
+const MESH_PIPELINE_KEY_MSAA_MASK_BITS : UInt64 = 0b111UL
 
 ///|
-const MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH : UInt64 = 524288UL
+const MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS : Int = 31
+
+///|
+const MESH_PIPELINE_KEY_TONEMAP_METHOD_MASK_BITS : UInt64 = 0b1111UL
 
 ///|
 const MESH_PIPELINE_KEY_BLEND_RESERVED_BITS : UInt64 = 1879048192UL
@@ -97,11 +142,46 @@ fn pbr_mesh_vertex_attribute_descriptor(
 }
 
 ///|
-fn pbr_mesh_pipeline_view_layout() -> @mesh_view_layout.MeshPipelineViewLayout {
+fn pbr_mesh_pipeline_view_layout_key(
+  mesh_key_bits : UInt64,
+) -> @mesh_view_layout.MeshPipelineViewLayoutKey {
+  let msaa_bits = (mesh_key_bits >> MESH_PIPELINE_KEY_MSAA_SHIFT_BITS) &
+    MESH_PIPELINE_KEY_MSAA_MASK_BITS
+  @mesh_view_layout.mesh_view_layout_key(
+    msaa_bits != 0UL,
+    (mesh_key_bits & MESH_PIPELINE_KEY_DEPTH_PREPASS) != 0UL,
+    (mesh_key_bits & MESH_PIPELINE_KEY_NORMAL_PREPASS) != 0UL,
+    (mesh_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS) != 0UL,
+    (mesh_key_bits & MESH_PIPELINE_KEY_DEFERRED_PREPASS) != 0UL,
+    (mesh_key_bits & MESH_PIPELINE_KEY_OIT_ENABLED) != 0UL,
+    (mesh_key_bits & MESH_PIPELINE_KEY_ATMOSPHERE) != 0UL,
+    false,
+    tonemap_in_shader=(mesh_key_bits & MESH_PIPELINE_KEY_TONEMAP_IN_SHADER) !=
+      0UL,
+    environment_map=(mesh_key_bits & MESH_PIPELINE_KEY_ENVIRONMENT_MAP) != 0UL,
+    screen_space_ambient_occlusion=(
+        mesh_key_bits & MESH_PIPELINE_KEY_SCREEN_SPACE_AMBIENT_OCCLUSION
+      ) !=
+      0UL,
+    irradiance_volume=(mesh_key_bits & MESH_PIPELINE_KEY_IRRADIANCE_VOLUME) !=
+      0UL,
+    screen_space_reflections=(
+        mesh_key_bits & MESH_PIPELINE_KEY_SCREEN_SPACE_REFLECTIONS
+      ) !=
+      0UL,
+    contact_shadows=(mesh_key_bits & MESH_PIPELINE_KEY_CONTACT_SHADOWS) != 0UL,
+    distance_fog=(mesh_key_bits & MESH_PIPELINE_KEY_DISTANCE_FOG) != 0UL,
+  )
+}
+
+///|
+fn pbr_mesh_pipeline_view_layout(
+  mesh_key_bits : UInt64,
+) -> @mesh_view_layout.MeshPipelineViewLayout {
   @mesh_view_layout.render3d_mesh_pipeline_view_layout(
     true,
     true,
-    @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
+    pbr_mesh_pipeline_view_layout_key(mesh_key_bits),
     clustered_decals_usable=false,
     irradiance_volumes_usable=false,
     oit_supported=false,
@@ -419,6 +499,58 @@ fn pbr_mesh_pipeline_descriptor(
   if (mesh_key_bits & MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE) != 0UL {
     shader_defs.push(pbr_shader_def("READS_VIEW_TRANSMISSION_TEXTURE"))
   }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_SCREEN_SPACE_AMBIENT_OCCLUSION) != 0UL {
+    shader_defs.push(pbr_shader_def("SCREEN_SPACE_AMBIENT_OCCLUSION"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_CONTACT_SHADOWS) != 0UL {
+    shader_defs.push(pbr_shader_def("CONTACT_SHADOWS"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_TONEMAP_IN_SHADER) != 0UL {
+    shader_defs.push(pbr_shader_def("TONEMAP_IN_SHADER"))
+    shader_defs.push(
+      pbr_shader_def_uint("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", 18U),
+    )
+    shader_defs.push(
+      pbr_shader_def_uint("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", 19U),
+    )
+    let tonemap_method = (
+        mesh_key_bits >> MESH_PIPELINE_KEY_TONEMAP_METHOD_SHIFT_BITS
+      ) &
+      MESH_PIPELINE_KEY_TONEMAP_METHOD_MASK_BITS
+    match tonemap_method {
+      1UL => shader_defs.push(pbr_shader_def("TONEMAP_METHOD_REINHARD"))
+      2UL =>
+        shader_defs.push(pbr_shader_def("TONEMAP_METHOD_REINHARD_LUMINANCE"))
+      3UL => shader_defs.push(pbr_shader_def("TONEMAP_METHOD_ACES_FITTED"))
+      4UL => shader_defs.push(pbr_shader_def("TONEMAP_METHOD_AGX"))
+      5UL =>
+        shader_defs.push(
+          pbr_shader_def("TONEMAP_METHOD_SOMEWHAT_BORING_DISPLAY_TRANSFORM"),
+        )
+      6UL => shader_defs.push(pbr_shader_def("TONEMAP_METHOD_TONY_MC_MAPFACE"))
+      7UL => shader_defs.push(pbr_shader_def("TONEMAP_METHOD_BLENDER_FILMIC"))
+      8UL => shader_defs.push(pbr_shader_def("TONEMAP_METHOD_PBR_NEUTRAL"))
+      _ => shader_defs.push(pbr_shader_def("TONEMAP_METHOD_NONE"))
+    }
+    if (mesh_key_bits & MESH_PIPELINE_KEY_DEBAND_DITHER) != 0UL {
+      shader_defs.push(pbr_shader_def("DEBAND_DITHER"))
+    }
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_ENVIRONMENT_MAP) != 0UL {
+    shader_defs.push(pbr_shader_def("ENVIRONMENT_MAP"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_IRRADIANCE_VOLUME) != 0UL {
+    shader_defs.push(pbr_shader_def("IRRADIANCE_VOLUME"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_TEMPORAL_JITTER) != 0UL {
+    shader_defs.push(pbr_shader_def("TEMPORAL_JITTER"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_SCREEN_SPACE_REFLECTIONS) != 0UL {
+    shader_defs.push(pbr_shader_def("SCREEN_SPACE_REFLECTIONS"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_DISTANCE_FOG) != 0UL {
+    shader_defs.push(pbr_shader_def("DISTANCE_FOG"))
+  }
   if binding_arrays_are_usable {
     shader_defs.push(pbr_shader_def("MULTIPLE_LIGHT_PROBES_IN_ARRAY"))
     shader_defs.push(pbr_shader_def("MULTIPLE_LIGHTMAPS_IN_ARRAY"))
@@ -434,7 +566,7 @@ fn pbr_mesh_pipeline_descriptor(
       )
   }
   let fragment_defs = pbr_shader_defs_clone(shader_defs)
-  let mesh_view_layout = pbr_mesh_pipeline_view_layout()
+  let mesh_view_layout = pbr_mesh_pipeline_view_layout(mesh_key_bits)
   @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_label(Some("opaque_mesh_pipeline"))
   .with_layout([

@@ -2893,6 +2893,7 @@ fn meshlet_bind_material_shade_draw(
     backend,
     entry.material_pipeline_id,
     material_descriptor,
+    pass_state.tonemap_in_shader,
     pass_uniforms,
     transmission_source_texture,
     point_shadow_texture,
