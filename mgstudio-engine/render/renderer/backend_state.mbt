@@ -288,6 +288,21 @@ pub struct GpuBackend {
   mut meshlet_clear_visibility_buffer_pipeline : @wgpu.ComputePipeline?
   mut meshlet_clear_visibility_buffer_constants_buf : @wgpu.Buffer?
   mut meshlet_clear_visibility_buffer_dispatch_count : Int
+  mut meshlet_first_instance_cull_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_first_instance_cull_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_first_instance_cull_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_first_instance_cull_constants_buf : @wgpu.Buffer?
+  mut meshlet_first_instance_cull_dispatch_count : Int
+  mut meshlet_first_bvh_cull_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_first_bvh_cull_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_first_bvh_cull_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_first_bvh_cull_constants_buf : @wgpu.Buffer?
+  mut meshlet_first_bvh_cull_dispatch_count : Int
+  mut meshlet_first_meshlet_cull_bgl : @wgpu.BindGroupLayout?
+  mut meshlet_first_meshlet_cull_pipeline_layout : @wgpu.PipelineLayout?
+  mut meshlet_first_meshlet_cull_pipeline : @wgpu.ComputePipeline?
+  mut meshlet_first_meshlet_cull_constants_buf : @wgpu.Buffer?
+  mut meshlet_first_meshlet_cull_dispatch_count : Int
   mut mesh3d_motion_vector_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu.BindGroupLayout?

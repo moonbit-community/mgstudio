@@ -374,6 +374,12 @@ fn meshlet_prepare_resources_system(world : @ecs.World) -> Unit {
                 view_render_layer_mask~,
               ),
             )
+            @renderer.prepare_meshlet_view_instance_visibility_buffer(
+              view_entity_bits=view_entity.to_bits(),
+              instance_visibility=instance_manager.view_instance_visibility_bytes(
+                view_entity,
+              ),
+            )
           }
           None => ()
         }
@@ -786,8 +792,12 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
   }
   if instance_count > 0 && meshlet_runtime_available() {
     match world.get_resource(ecs_key_meshlet_resource_manager) {
-      Some(manager) =>
+      Some(manager) => {
         ignore(manager.execute_prepared_clear_visibility_buffers())
+        ignore(manager.execute_prepared_first_instance_culls())
+        ignore(manager.execute_prepared_first_bvh_culls())
+        ignore(manager.execute_prepared_first_meshlet_culls())
+      }
       None => ()
     }
   }

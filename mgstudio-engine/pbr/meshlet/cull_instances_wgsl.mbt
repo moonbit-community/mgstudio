@@ -37,8 +37,9 @@ let cull_instances_wgsl_source : String =
   #|}
   #|
   #|fn should_cull_instance(instance_id: u32) -> bool {
-  #|    let bit_offset = instance_id >> 5u;
-  #|    let packed_visibility = meshlet_view_instance_visibility[instance_id & 31u];
+  #|    let index = instance_id >> 5u;
+  #|    let bit_offset = instance_id & 31u;
+  #|    let packed_visibility = meshlet_view_instance_visibility[index];
   #|    return bool(extractBits(packed_visibility, bit_offset, 1u));
   #|}
   #|

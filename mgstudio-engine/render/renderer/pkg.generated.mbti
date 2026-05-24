@@ -182,6 +182,12 @@ pub fn end_pass() -> Unit
 
 pub fn execute_meshlet_clear_visibility_buffer(view_entity_bits~ : UInt64) -> Bool
 
+pub fn execute_meshlet_first_bvh_cull(view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool
+
+pub fn execute_meshlet_first_instance_cull(view_entity_bits~ : UInt64, scene_instance_count~ : Int) -> Bool
+
+pub fn execute_meshlet_first_meshlet_cull(view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool
+
 pub fn get_queue(Int) -> Int
 
 pub fn gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> GpuClipMatrix
@@ -230,6 +236,12 @@ pub fn meshlet_adapter_supports_mesh_shader() -> Bool
 
 pub fn meshlet_clear_visibility_buffer_dispatch_count() -> Int
 
+pub fn meshlet_first_bvh_cull_dispatch_count() -> Int
+
+pub fn meshlet_first_instance_cull_dispatch_count() -> Int
+
+pub fn meshlet_first_meshlet_cull_dispatch_count() -> Int
+
 pub fn meshlet_frame_resource_revision() -> Int
 
 pub fn meshlet_gpu_buffer_revision() -> Int
@@ -263,6 +275,8 @@ pub fn prepare_mesh3d_view_bind_group(transmission_source_texture_id~ : Int, poi
 pub fn prepare_meshlet_frame_resources(cluster_buffer_slots~ : Int, scene_instance_count~ : Int) -> Unit
 
 pub fn prepare_meshlet_storage_buffers(vertex_positions~ : Bytes, vertex_normals~ : Bytes, vertex_uvs~ : Bytes, indices~ : Bytes, bvh_nodes~ : Bytes, meshlets~ : Bytes, cull_data~ : Bytes, instance_uniforms~ : Bytes, instance_aabbs~ : Bytes, instance_material_ids~ : Bytes, instance_bvh_root_nodes~ : Bytes) -> Unit
+
+pub fn prepare_meshlet_view_instance_visibility_buffer(view_entity_bits~ : UInt64, instance_visibility~ : Bytes) -> Unit
 
 pub fn prepare_meshlet_view_visibility_buffer(view_entity_bits~ : UInt64, view_width~ : Int, view_height~ : Int, not_shadow_view~ : Bool) -> Unit
 
@@ -639,6 +653,21 @@ pub struct GpuBackend {
   mut meshlet_clear_visibility_buffer_pipeline : @wgpu_mbt.ComputePipeline?
   mut meshlet_clear_visibility_buffer_constants_buf : @wgpu_mbt.Buffer?
   mut meshlet_clear_visibility_buffer_dispatch_count : Int
+  mut meshlet_first_instance_cull_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_first_instance_cull_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_first_instance_cull_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_first_instance_cull_constants_buf : @wgpu_mbt.Buffer?
+  mut meshlet_first_instance_cull_dispatch_count : Int
+  mut meshlet_first_bvh_cull_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_first_bvh_cull_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_first_bvh_cull_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_first_bvh_cull_constants_buf : @wgpu_mbt.Buffer?
+  mut meshlet_first_bvh_cull_dispatch_count : Int
+  mut meshlet_first_meshlet_cull_bgl : @wgpu_mbt.BindGroupLayout?
+  mut meshlet_first_meshlet_cull_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut meshlet_first_meshlet_cull_pipeline : @wgpu_mbt.ComputePipeline?
+  mut meshlet_first_meshlet_cull_constants_buf : @wgpu_mbt.Buffer?
+  mut meshlet_first_meshlet_cull_dispatch_count : Int
   mut mesh3d_motion_vector_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu_mbt.BindGroupLayout?
@@ -833,6 +862,9 @@ pub fn GpuBackend::ensure_mesh3d_draw_slot(Self, Int) -> GpuStorageSlot?
 pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(Self, UInt64) -> (@wgpu_mbt.Buffer, @wgpu_mbt.BindGroup)?
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::execute_meshlet_clear_visibility_buffer(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_first_bvh_cull(Self, view_entity_bits~ : UInt64, max_bvh_depth~ : Int, rightmost_slot~ : Int) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_first_instance_cull(Self, view_entity_bits~ : UInt64, scene_instance_count~ : Int) -> Bool raise GpuBackendError
+pub fn GpuBackend::execute_meshlet_first_meshlet_cull(Self, view_entity_bits~ : UInt64, rightmost_slot~ : Int) -> Bool raise GpuBackendError
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_cluster_buffers(Self, Bytes, Bytes, Bytes) -> Unit
@@ -843,6 +875,7 @@ pub fn GpuBackend::prepare_mesh3d_skin_bindings(Self, Array[Float]) -> Unit
 pub fn GpuBackend::prepare_mesh3d_view_bind_group(Self, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_meshlet_frame_resources(Self, cluster_buffer_slots~ : Int, scene_instance_count~ : Int) -> Unit
 pub fn GpuBackend::prepare_meshlet_storage_buffers(Self, vertex_positions~ : Bytes, vertex_normals~ : Bytes, vertex_uvs~ : Bytes, indices~ : Bytes, bvh_nodes~ : Bytes, meshlets~ : Bytes, cull_data~ : Bytes, instance_uniforms~ : Bytes, instance_aabbs~ : Bytes, instance_material_ids~ : Bytes, instance_bvh_root_nodes~ : Bytes) -> Unit
+pub fn GpuBackend::prepare_meshlet_view_instance_visibility_buffer(Self, view_entity_bits~ : UInt64, instance_visibility~ : Bytes) -> Unit
 pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(Self, view_entity_bits~ : UInt64, view_width~ : Int, view_height~ : Int, not_shadow_view~ : Bool) -> Unit
 pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::reserve_mesh3d_draw_storage(Self, Int) -> Int
@@ -1375,6 +1408,24 @@ pub(all) struct MeshletViewVisibilityBuffer {
   view_width : Int
   view_height : Int
   not_shadow_view : Bool
+  depth_pyramid_texture : @wgpu_mbt.Texture
+  depth_pyramid_view : @wgpu_mbt.TextureView
+  mut instance_visibility_buf : @wgpu_mbt.Buffer
+  mut instance_visibility_capacity : UInt64
+  second_pass_count_buf : @wgpu_mbt.Buffer
+  second_pass_dispatch_buf : @wgpu_mbt.Buffer
+  first_bvh_cull_count_front_buf : @wgpu_mbt.Buffer
+  first_bvh_cull_dispatch_front_buf : @wgpu_mbt.Buffer
+  first_bvh_cull_count_back_buf : @wgpu_mbt.Buffer
+  first_bvh_cull_dispatch_back_buf : @wgpu_mbt.Buffer
+  front_meshlet_cull_count_buf : @wgpu_mbt.Buffer
+  front_meshlet_cull_dispatch_buf : @wgpu_mbt.Buffer
+  back_meshlet_cull_count_buf : @wgpu_mbt.Buffer
+  back_meshlet_cull_dispatch_buf : @wgpu_mbt.Buffer
+  second_bvh_cull_count_front_buf : @wgpu_mbt.Buffer
+  second_bvh_cull_dispatch_front_buf : @wgpu_mbt.Buffer
+  visibility_buffer_software_raster_indirect_args_buf : @wgpu_mbt.Buffer
+  visibility_buffer_hardware_raster_indirect_args_buf : @wgpu_mbt.Buffer
 }
 
 pub struct PendingCommandBuffers {

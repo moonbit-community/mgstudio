@@ -145,6 +145,24 @@ pub(all) struct MeshletViewVisibilityBuffer {
   view_width : Int
   view_height : Int
   not_shadow_view : Bool
+  depth_pyramid_texture : @wgpu.Texture
+  depth_pyramid_view : @wgpu.TextureView
+  mut instance_visibility_buf : @wgpu.Buffer
+  mut instance_visibility_capacity : UInt64
+  second_pass_count_buf : @wgpu.Buffer
+  second_pass_dispatch_buf : @wgpu.Buffer
+  first_bvh_cull_count_front_buf : @wgpu.Buffer
+  first_bvh_cull_dispatch_front_buf : @wgpu.Buffer
+  first_bvh_cull_count_back_buf : @wgpu.Buffer
+  first_bvh_cull_dispatch_back_buf : @wgpu.Buffer
+  front_meshlet_cull_count_buf : @wgpu.Buffer
+  front_meshlet_cull_dispatch_buf : @wgpu.Buffer
+  back_meshlet_cull_count_buf : @wgpu.Buffer
+  back_meshlet_cull_dispatch_buf : @wgpu.Buffer
+  second_bvh_cull_count_front_buf : @wgpu.Buffer
+  second_bvh_cull_dispatch_front_buf : @wgpu.Buffer
+  visibility_buffer_software_raster_indirect_args_buf : @wgpu.Buffer
+  visibility_buffer_hardware_raster_indirect_args_buf : @wgpu.Buffer
 }
 
 ///|
@@ -184,6 +202,228 @@ fn meshlet_create_visibility_buffer(
 }
 
 ///|
+fn meshlet_create_r32float_depth_pyramid_dummy(
+  backend : GpuBackend,
+) -> (@wgpu.Texture, @wgpu.TextureView) {
+  let usage = @wgpu.TextureUsage::from_u64(
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_STORAGE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_DST,
+  )
+  let texture = backend.device.create_texture_u32(
+    1U,
+    1U,
+    1U,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+  )
+  let view = texture.create_view_u32(
+    tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    @wgpu.TEXTURE_ASPECT_ALL,
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  let zero = f32le_pack([0.0F])
+  let tex_info = @wgpu_c.texel_copy_texture_info_new(
+    texture.raw_handle(),
+    0U,
+    0U,
+    0U,
+    0U,
+  )
+  let layout = @wgpu_c.texel_copy_buffer_layout_new(0UL, 4U, 1U)
+  let extent = @wgpu_c.extent3d_new(1U, 1U, 1U)
+  backend.queue.write_texture_ptr(tex_info, zero, layout, extent, data_size=4UL)
+  @wgpu_c.extent3d_free(extent)
+  @wgpu_c.texel_copy_buffer_layout_free(layout)
+  @wgpu_c.texel_copy_texture_info_free(tex_info)
+  (texture, view)
+}
+
+///|
+fn meshlet_create_storage_buffer_with_bytes(
+  backend : GpuBackend,
+  required_size : UInt64,
+  usage_bits : UInt64,
+  label : String,
+  bytes : Bytes,
+) -> @wgpu.Buffer {
+  let buffer = backend.device.create_buffer(
+    size=meshlet_non_zero_u64(required_size),
+    usage=bu(usage_bits),
+  )
+  buffer.set_label(label)
+  if bytes.length() > 0 {
+    backend.queue.write_buffer(buffer, 0UL, bytes)
+  }
+  buffer
+}
+
+///|
+fn meshlet_dispatch_indirect_initial_bytes() -> Bytes {
+  u32le_pack([0U, 1U, 1U])
+}
+
+///|
+fn meshlet_create_view_visibility_resources(
+  backend : GpuBackend,
+  required_size : UInt64,
+  view_width : Int,
+  view_height : Int,
+  not_shadow_view : Bool,
+  label : String,
+) -> MeshletViewVisibilityBuffer {
+  let (depth_pyramid_texture, depth_pyramid_view) = meshlet_create_r32float_depth_pyramid_dummy(
+    backend,
+  )
+  let storage_copy = @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST
+  let storage_copy_indirect = storage_copy | @wgpu.BUFFER_USAGE_INDIRECT
+  MeshletViewVisibilityBuffer::{
+    buffer: meshlet_create_visibility_buffer(backend, required_size, label),
+    capacity: required_size,
+    view_width,
+    view_height,
+    not_shadow_view,
+    depth_pyramid_texture,
+    depth_pyramid_view,
+    instance_visibility_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      4UL,
+      storage_copy,
+      "mgstudio_meshlet_view_instance_visibility",
+      u32le_pack([0U]),
+    ),
+    instance_visibility_capacity: 4UL,
+    second_pass_count_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      4UL,
+      storage_copy,
+      "mgstudio_meshlet_second_pass_count",
+      u32le_pack([0U]),
+    ),
+    second_pass_dispatch_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      12UL,
+      storage_copy_indirect,
+      "mgstudio_meshlet_second_pass_dispatch",
+      meshlet_dispatch_indirect_initial_bytes(),
+    ),
+    first_bvh_cull_count_front_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      4UL,
+      storage_copy,
+      "mgstudio_meshlet_first_bvh_cull_count_front",
+      u32le_pack([0U]),
+    ),
+    first_bvh_cull_dispatch_front_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      12UL,
+      storage_copy_indirect,
+      "mgstudio_meshlet_first_bvh_cull_dispatch_front",
+      meshlet_dispatch_indirect_initial_bytes(),
+    ),
+    first_bvh_cull_count_back_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      4UL,
+      storage_copy,
+      "mgstudio_meshlet_first_bvh_cull_count_back",
+      u32le_pack([0U]),
+    ),
+    first_bvh_cull_dispatch_back_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      12UL,
+      storage_copy_indirect,
+      "mgstudio_meshlet_first_bvh_cull_dispatch_back",
+      meshlet_dispatch_indirect_initial_bytes(),
+    ),
+    front_meshlet_cull_count_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      4UL,
+      storage_copy,
+      "mgstudio_meshlet_front_meshlet_cull_count",
+      u32le_pack([0U]),
+    ),
+    front_meshlet_cull_dispatch_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      12UL,
+      storage_copy_indirect,
+      "mgstudio_meshlet_front_meshlet_cull_dispatch",
+      meshlet_dispatch_indirect_initial_bytes(),
+    ),
+    back_meshlet_cull_count_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      4UL,
+      storage_copy,
+      "mgstudio_meshlet_back_meshlet_cull_count",
+      u32le_pack([0U]),
+    ),
+    back_meshlet_cull_dispatch_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      12UL,
+      storage_copy_indirect,
+      "mgstudio_meshlet_back_meshlet_cull_dispatch",
+      meshlet_dispatch_indirect_initial_bytes(),
+    ),
+    second_bvh_cull_count_front_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      4UL,
+      storage_copy,
+      "mgstudio_meshlet_second_bvh_cull_count_front",
+      u32le_pack([0U]),
+    ),
+    second_bvh_cull_dispatch_front_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      12UL,
+      storage_copy_indirect,
+      "mgstudio_meshlet_second_bvh_cull_dispatch_front",
+      meshlet_dispatch_indirect_initial_bytes(),
+    ),
+    visibility_buffer_software_raster_indirect_args_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      12UL,
+      storage_copy_indirect,
+      "mgstudio_meshlet_visibility_buffer_software_raster_indirect_args",
+      meshlet_dispatch_indirect_initial_bytes(),
+    ),
+    visibility_buffer_hardware_raster_indirect_args_buf: meshlet_create_storage_buffer_with_bytes(
+      backend,
+      16UL,
+      storage_copy_indirect,
+      "mgstudio_meshlet_visibility_buffer_hardware_raster_indirect_args",
+      u32le_pack([384U, 0U, 0U, 0U]),
+    ),
+  }
+}
+
+///|
+fn meshlet_release_view_visibility_resources(
+  resources : MeshletViewVisibilityBuffer,
+) -> Unit {
+  resources.buffer.release()
+  resources.depth_pyramid_view.release()
+  resources.depth_pyramid_texture.release()
+  resources.instance_visibility_buf.release()
+  resources.second_pass_count_buf.release()
+  resources.second_pass_dispatch_buf.release()
+  resources.first_bvh_cull_count_front_buf.release()
+  resources.first_bvh_cull_dispatch_front_buf.release()
+  resources.first_bvh_cull_count_back_buf.release()
+  resources.first_bvh_cull_dispatch_back_buf.release()
+  resources.front_meshlet_cull_count_buf.release()
+  resources.front_meshlet_cull_dispatch_buf.release()
+  resources.back_meshlet_cull_count_buf.release()
+  resources.back_meshlet_cull_dispatch_buf.release()
+  resources.second_bvh_cull_count_front_buf.release()
+  resources.second_bvh_cull_dispatch_front_buf.release()
+  resources.visibility_buffer_software_raster_indirect_args_buf.release()
+  resources.visibility_buffer_hardware_raster_indirect_args_buf.release()
+}
+
+///|
 pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(
   self : GpuBackend,
   view_entity_bits~ : UInt64,
@@ -205,25 +445,35 @@ pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(
         view_width,
         view_height,
         not_shadow_view,
+        depth_pyramid_texture: existing.depth_pyramid_texture,
+        depth_pyramid_view: existing.depth_pyramid_view,
+        instance_visibility_buf: existing.instance_visibility_buf,
+        instance_visibility_capacity: existing.instance_visibility_capacity,
+        second_pass_count_buf: existing.second_pass_count_buf,
+        second_pass_dispatch_buf: existing.second_pass_dispatch_buf,
+        first_bvh_cull_count_front_buf: existing.first_bvh_cull_count_front_buf,
+        first_bvh_cull_dispatch_front_buf: existing.first_bvh_cull_dispatch_front_buf,
+        first_bvh_cull_count_back_buf: existing.first_bvh_cull_count_back_buf,
+        first_bvh_cull_dispatch_back_buf: existing.first_bvh_cull_dispatch_back_buf,
+        front_meshlet_cull_count_buf: existing.front_meshlet_cull_count_buf,
+        front_meshlet_cull_dispatch_buf: existing.front_meshlet_cull_dispatch_buf,
+        back_meshlet_cull_count_buf: existing.back_meshlet_cull_count_buf,
+        back_meshlet_cull_dispatch_buf: existing.back_meshlet_cull_dispatch_buf,
+        second_bvh_cull_count_front_buf: existing.second_bvh_cull_count_front_buf,
+        second_bvh_cull_dispatch_front_buf: existing.second_bvh_cull_dispatch_front_buf,
+        visibility_buffer_software_raster_indirect_args_buf: existing.visibility_buffer_software_raster_indirect_args_buf,
+        visibility_buffer_hardware_raster_indirect_args_buf: existing.visibility_buffer_hardware_raster_indirect_args_buf,
       }
     Some(existing) => {
-      existing.buffer.release()
-      MeshletViewVisibilityBuffer::{
-        buffer: meshlet_create_visibility_buffer(self, required_size, label),
-        capacity: required_size,
-        view_width,
-        view_height,
-        not_shadow_view,
-      }
+      meshlet_release_view_visibility_resources(existing)
+      meshlet_create_view_visibility_resources(
+        self, required_size, view_width, view_height, not_shadow_view, label,
+      )
     }
     None =>
-      MeshletViewVisibilityBuffer::{
-        buffer: meshlet_create_visibility_buffer(self, required_size, label),
-        capacity: required_size,
-        view_width,
-        view_height,
-        not_shadow_view,
-      }
+      meshlet_create_view_visibility_resources(
+        self, required_size, view_width, view_height, not_shadow_view, label,
+      )
   }
   self.meshlet_view_visibility_buffers.set(view_entity_bits, next)
   self.meshlet_view_visibility_buffer_revision = self.meshlet_view_visibility_buffer_revision +
@@ -264,7 +514,7 @@ pub fn GpuBackend::clear_stale_meshlet_view_visibility_buffers(
   }
   for view_bits in stale {
     match self.meshlet_view_visibility_buffers.get(view_bits) {
-      Some(resources) => resources.buffer.release()
+      Some(resources) => meshlet_release_view_visibility_resources(resources)
       None => ()
     }
     self.meshlet_view_visibility_buffers.remove(view_bits)
@@ -277,6 +527,41 @@ pub fn clear_stale_meshlet_view_visibility_buffers(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.clear_stale_meshlet_view_visibility_buffers(active_view_bits)
+  }
+}
+
+///|
+pub fn GpuBackend::prepare_meshlet_view_instance_visibility_buffer(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+  instance_visibility~ : Bytes,
+) -> Unit {
+  match self.meshlet_view_visibility_buffers.get(view_entity_bits) {
+    Some(resources) => {
+      let (buffer, capacity) = meshlet_storage_buffer_update(
+        self,
+        Some(resources.instance_visibility_buf),
+        resources.instance_visibility_capacity,
+        instance_visibility,
+        "mgstudio_meshlet_view_instance_visibility",
+      )
+      resources.instance_visibility_buf = buffer
+      resources.instance_visibility_capacity = capacity
+    }
+    None => ()
+  }
+}
+
+///|
+pub fn prepare_meshlet_view_instance_visibility_buffer(
+  view_entity_bits~ : UInt64,
+  instance_visibility~ : Bytes,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.prepare_meshlet_view_instance_visibility_buffer(
+      view_entity_bits~,
+      instance_visibility~,
+    )
   }
 }
 
@@ -322,6 +607,30 @@ fn meshlet_clear_visibility_buffer_defines() -> @hashmap.HashMap[String, Bool] {
 }
 
 ///|
+fn meshlet_first_instance_cull_defines() -> @hashmap.HashMap[String, Bool] {
+  let defines = @hashmap.HashMap([])
+  defines.set("MESHLET_INSTANCE_CULLING_PASS", true)
+  defines.set("MESHLET_FIRST_CULLING_PASS", true)
+  defines
+}
+
+///|
+fn meshlet_first_bvh_cull_defines() -> @hashmap.HashMap[String, Bool] {
+  let defines = @hashmap.HashMap([])
+  defines.set("MESHLET_BVH_CULLING_PASS", true)
+  defines.set("MESHLET_FIRST_CULLING_PASS", true)
+  defines
+}
+
+///|
+fn meshlet_first_meshlet_cull_defines() -> @hashmap.HashMap[String, Bool] {
+  let defines = @hashmap.HashMap([])
+  defines.set("MESHLET_CLUSTER_CULLING_PASS", true)
+  defines.set("MESHLET_FIRST_CULLING_PASS", true)
+  defines
+}
+
+///|
 fn meshlet_create_clear_visibility_buffer_bgl(
   backend : GpuBackend,
 ) -> @wgpu.BindGroupLayout raise GpuBackendError {
@@ -355,6 +664,151 @@ fn meshlet_create_clear_visibility_buffer_constants_buf(
     usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
   )
   buffer.set_label("mgstudio_meshlet_clear_visibility_buffer_constants")
+  buffer
+}
+
+///|
+fn meshlet_create_first_instance_cull_bgl(
+  backend : GpuBackend,
+) -> @wgpu.BindGroupLayout raise GpuBackendError {
+  let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
+  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=14UL)
+  let ok = builder.add_texture(
+      0U,
+      compute,
+      @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_buffer(1U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+    builder.add_buffer(2U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+    builder.add_buffer(3U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(4U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(5U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(6U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(7U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(8U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(9U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(10U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(11U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(12U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(13U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build meshlet first instance cull layout")
+  }
+  builder.finish(
+    backend.device,
+    label="mgstudio_meshlet_first_instance_cull_bind_group_layout",
+  )
+}
+
+///|
+fn meshlet_create_first_instance_cull_constants_buf(
+  backend : GpuBackend,
+) -> @wgpu.Buffer {
+  let buffer = backend.device.create_buffer(
+    size=16UL,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  buffer.set_label("mgstudio_meshlet_first_instance_cull_constants")
+  buffer
+}
+
+///|
+fn meshlet_create_first_bvh_cull_bgl(
+  backend : GpuBackend,
+) -> @wgpu.BindGroupLayout raise GpuBackendError {
+  let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
+  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=18UL)
+  let ok = builder.add_texture(
+      0U,
+      compute,
+      @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_buffer(1U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+    builder.add_buffer(2U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+    builder.add_buffer(3U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(4U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(5U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(6U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(7U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(8U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(9U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(10U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(11U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(12U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(13U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(14U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(15U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(16U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(17U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build meshlet first BVH cull layout")
+  }
+  builder.finish(
+    backend.device,
+    label="mgstudio_meshlet_first_bvh_cull_bind_group_layout",
+  )
+}
+
+///|
+fn meshlet_create_first_bvh_cull_constants_buf(
+  backend : GpuBackend,
+) -> @wgpu.Buffer {
+  let buffer = backend.device.create_buffer(
+    size=16UL,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  buffer.set_label("mgstudio_meshlet_first_bvh_cull_constants")
+  buffer
+}
+
+///|
+fn meshlet_create_first_meshlet_cull_bgl(
+  backend : GpuBackend,
+) -> @wgpu.BindGroupLayout raise GpuBackendError {
+  let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
+  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=14UL)
+  let ok = builder.add_texture(
+      0U,
+      compute,
+      @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_buffer(1U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+    builder.add_buffer(2U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+    builder.add_buffer(3U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(4U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(5U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(6U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(7U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(8U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(9U, compute, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE) &&
+    builder.add_buffer(10U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(11U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(12U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+    builder.add_buffer(13U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build meshlet first meshlet cull layout")
+  }
+  builder.finish(
+    backend.device,
+    label="mgstudio_meshlet_first_meshlet_cull_bind_group_layout",
+  )
+}
+
+///|
+fn meshlet_create_first_meshlet_cull_constants_buf(
+  backend : GpuBackend,
+) -> @wgpu.Buffer {
+  let buffer = backend.device.create_buffer(
+    size=16UL,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  buffer.set_label("mgstudio_meshlet_first_meshlet_cull_constants")
   buffer
 }
 
@@ -399,6 +853,114 @@ fn ensure_meshlet_clear_visibility_buffer_resources(
 }
 
 ///|
+fn ensure_meshlet_first_instance_cull_resources(
+  backend : GpuBackend,
+) -> Bool raise GpuBackendError {
+  if backend.meshlet_first_instance_cull_bgl is Some(_) &&
+    backend.meshlet_first_instance_cull_pipeline_layout is Some(_) &&
+    backend.meshlet_first_instance_cull_pipeline is Some(_) &&
+    backend.meshlet_first_instance_cull_constants_buf is Some(_) {
+    return true
+  }
+  let bgl = meshlet_create_first_instance_cull_bgl(backend)
+  let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+  let wgsl = load_wgsl_preprocessed(
+    backend.assets_base,
+    "pbr/meshlet/cull_instances.wgsl",
+    meshlet_first_instance_cull_defines(),
+    default_wgsl_value_defines(),
+  )
+  let shader = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+    pipeline_layout, shader, "cull_instances",
+  ) catch {
+    err =>
+      fatal(
+        "wgpu: failed to build meshlet first instance cull pipeline: \{err.message()}",
+      )
+  }
+  shader.release()
+  let constants_buf = meshlet_create_first_instance_cull_constants_buf(backend)
+  backend.meshlet_first_instance_cull_bgl = Some(bgl)
+  backend.meshlet_first_instance_cull_pipeline_layout = Some(pipeline_layout)
+  backend.meshlet_first_instance_cull_pipeline = Some(pipeline)
+  backend.meshlet_first_instance_cull_constants_buf = Some(constants_buf)
+  true
+}
+
+///|
+fn ensure_meshlet_first_bvh_cull_resources(
+  backend : GpuBackend,
+) -> Bool raise GpuBackendError {
+  if backend.meshlet_first_bvh_cull_bgl is Some(_) &&
+    backend.meshlet_first_bvh_cull_pipeline_layout is Some(_) &&
+    backend.meshlet_first_bvh_cull_pipeline is Some(_) &&
+    backend.meshlet_first_bvh_cull_constants_buf is Some(_) {
+    return true
+  }
+  let bgl = meshlet_create_first_bvh_cull_bgl(backend)
+  let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+  let wgsl = load_wgsl_preprocessed(
+    backend.assets_base,
+    "pbr/meshlet/cull_bvh.wgsl",
+    meshlet_first_bvh_cull_defines(),
+    default_wgsl_value_defines(),
+  )
+  let shader = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+    pipeline_layout, shader, "cull_bvh",
+  ) catch {
+    err =>
+      fatal(
+        "wgpu: failed to build meshlet first BVH cull pipeline: \{err.message()}",
+      )
+  }
+  shader.release()
+  let constants_buf = meshlet_create_first_bvh_cull_constants_buf(backend)
+  backend.meshlet_first_bvh_cull_bgl = Some(bgl)
+  backend.meshlet_first_bvh_cull_pipeline_layout = Some(pipeline_layout)
+  backend.meshlet_first_bvh_cull_pipeline = Some(pipeline)
+  backend.meshlet_first_bvh_cull_constants_buf = Some(constants_buf)
+  true
+}
+
+///|
+fn ensure_meshlet_first_meshlet_cull_resources(
+  backend : GpuBackend,
+) -> Bool raise GpuBackendError {
+  if backend.meshlet_first_meshlet_cull_bgl is Some(_) &&
+    backend.meshlet_first_meshlet_cull_pipeline_layout is Some(_) &&
+    backend.meshlet_first_meshlet_cull_pipeline is Some(_) &&
+    backend.meshlet_first_meshlet_cull_constants_buf is Some(_) {
+    return true
+  }
+  let bgl = meshlet_create_first_meshlet_cull_bgl(backend)
+  let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+  let wgsl = load_wgsl_preprocessed(
+    backend.assets_base,
+    "pbr/meshlet/cull_clusters.wgsl",
+    meshlet_first_meshlet_cull_defines(),
+    default_wgsl_value_defines(),
+  )
+  let shader = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+    pipeline_layout, shader, "cull_clusters",
+  ) catch {
+    err =>
+      fatal(
+        "wgpu: failed to build meshlet first meshlet cull pipeline: \{err.message()}",
+      )
+  }
+  shader.release()
+  let constants_buf = meshlet_create_first_meshlet_cull_constants_buf(backend)
+  backend.meshlet_first_meshlet_cull_bgl = Some(bgl)
+  backend.meshlet_first_meshlet_cull_pipeline_layout = Some(pipeline_layout)
+  backend.meshlet_first_meshlet_cull_pipeline = Some(pipeline)
+  backend.meshlet_first_meshlet_cull_constants_buf = Some(constants_buf)
+  true
+}
+
+///|
 fn meshlet_create_clear_visibility_buffer_bind_group(
   backend : GpuBackend,
   visibility_buffer : @wgpu.Buffer,
@@ -419,6 +981,232 @@ fn meshlet_create_clear_visibility_buffer_bind_group(
       label="mgstudio_meshlet_clear_visibility_buffer_bind_group",
     ),
   )
+}
+
+///|
+fn meshlet_previous_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
+  let identity = gpu_clip_matrix_identity()
+  let words : Array[UInt] = []
+  for word in gpu_clip_matrix_words(pass_state.view_from_world) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(pass_state.previous_clip_from_world) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(pass_state.clip_from_view) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(identity) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(identity) {
+    words.push(word)
+  }
+  u32le_pack(words)
+}
+
+///|
+fn meshlet_transient_uniform_buffer(
+  backend : GpuBackend,
+  frame : GpuFrameState,
+  size : UInt64,
+  label : String,
+  bytes : Bytes,
+) -> @wgpu.Buffer {
+  let buffer = backend.device.create_buffer(
+    size=meshlet_non_zero_u64(size),
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  buffer.set_label(label)
+  backend.queue.write_buffer(buffer, 0UL, bytes)
+  frame.transient_buffers.push(buffer)
+  buffer
+}
+
+///|
+fn meshlet_create_first_instance_cull_bind_group(
+  backend : GpuBackend,
+  frame : GpuFrameState,
+  view_resources : MeshletViewVisibilityBuffer,
+  view_buf : @wgpu.Buffer,
+  previous_view_buf : @wgpu.Buffer,
+  constants_buf : @wgpu.Buffer,
+  bgl : @wgpu.BindGroupLayout,
+) -> @wgpu.BindGroup? {
+  guard backend.meshlet_instance_uniforms_buf is Some(instance_uniforms) else {
+    return None
+  }
+  guard backend.meshlet_instance_aabbs_buf is Some(instance_aabbs) else {
+    return None
+  }
+  guard backend.meshlet_instance_bvh_root_nodes_buf
+    is Some(instance_bvh_root_nodes) else {
+    return None
+  }
+  guard backend.meshlet_bvh_traversal_queue_0_buf is Some(first_bvh_queue) else {
+    return None
+  }
+  guard backend.meshlet_second_pass_candidates_buf
+    is Some(second_pass_candidates) else {
+    return None
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=14UL)
+  let ok = builder.add_texture_view(0U, view_resources.depth_pyramid_view) &&
+    builder.add_buffer(1U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
+    builder.add_buffer(2U, previous_view_buf) &&
+    builder.add_buffer(3U, instance_uniforms) &&
+    builder.add_buffer(4U, view_resources.instance_visibility_buf) &&
+    builder.add_buffer(5U, instance_aabbs) &&
+    builder.add_buffer(6U, instance_bvh_root_nodes) &&
+    builder.add_buffer(7U, view_resources.first_bvh_cull_count_front_buf) &&
+    builder.add_buffer(8U, view_resources.first_bvh_cull_dispatch_front_buf) &&
+    builder.add_buffer(9U, first_bvh_queue) &&
+    builder.add_buffer(10U, view_resources.second_pass_count_buf) &&
+    builder.add_buffer(11U, view_resources.second_pass_dispatch_buf) &&
+    builder.add_buffer(12U, second_pass_candidates) &&
+    builder.add_buffer(13U, constants_buf)
+  if !ok {
+    builder.free()
+    return None
+  }
+  let bind_group = builder.finish(
+    backend.device,
+    bgl,
+    label="mgstudio_meshlet_first_instance_cull_bind_group",
+  )
+  frame.transient_bind_groups.push(bind_group)
+  Some(bind_group)
+}
+
+///|
+fn meshlet_create_first_bvh_cull_bind_group(
+  backend : GpuBackend,
+  frame : GpuFrameState,
+  view_resources : MeshletViewVisibilityBuffer,
+  view_buf : @wgpu.Buffer,
+  previous_view_buf : @wgpu.Buffer,
+  constants_buf : @wgpu.Buffer,
+  bgl : @wgpu.BindGroupLayout,
+  ping : Bool,
+) -> @wgpu.BindGroup? {
+  guard backend.meshlet_bvh_nodes_buf is Some(bvh_nodes) else { return None }
+  guard backend.meshlet_instance_uniforms_buf is Some(instance_uniforms) else {
+    return None
+  }
+  guard backend.meshlet_bvh_traversal_queue_0_buf is Some(first_bvh_queue) else {
+    return None
+  }
+  guard backend.meshlet_bvh_traversal_queue_1_buf is Some(second_bvh_queue) else {
+    return None
+  }
+  guard backend.meshlet_cluster_cull_candidate_queue_buf
+    is Some(meshlet_cull_queue) else {
+    return None
+  }
+  let (read_count, write_count, write_dispatch) = if ping {
+    (
+      view_resources.first_bvh_cull_count_front_buf,
+      view_resources.first_bvh_cull_count_back_buf,
+      view_resources.first_bvh_cull_dispatch_back_buf,
+    )
+  } else {
+    (
+      view_resources.first_bvh_cull_count_back_buf,
+      view_resources.first_bvh_cull_count_front_buf,
+      view_resources.first_bvh_cull_dispatch_front_buf,
+    )
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=18UL)
+  let ok = builder.add_texture_view(0U, view_resources.depth_pyramid_view) &&
+    builder.add_buffer(1U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
+    builder.add_buffer(2U, previous_view_buf) &&
+    builder.add_buffer(3U, bvh_nodes) &&
+    builder.add_buffer(4U, instance_uniforms) &&
+    builder.add_buffer(5U, read_count) &&
+    builder.add_buffer(6U, write_count) &&
+    builder.add_buffer(7U, write_dispatch) &&
+    builder.add_buffer(8U, first_bvh_queue) &&
+    builder.add_buffer(9U, view_resources.front_meshlet_cull_count_buf) &&
+    builder.add_buffer(10U, view_resources.back_meshlet_cull_count_buf) &&
+    builder.add_buffer(11U, view_resources.front_meshlet_cull_dispatch_buf) &&
+    builder.add_buffer(12U, view_resources.back_meshlet_cull_dispatch_buf) &&
+    builder.add_buffer(13U, meshlet_cull_queue) &&
+    builder.add_buffer(14U, view_resources.second_bvh_cull_count_front_buf) &&
+    builder.add_buffer(15U, view_resources.second_bvh_cull_dispatch_front_buf) &&
+    builder.add_buffer(16U, second_bvh_queue) &&
+    builder.add_buffer(17U, constants_buf)
+  if !ok {
+    builder.free()
+    return None
+  }
+  let label = if ping {
+    "mgstudio_meshlet_first_bvh_cull_ping_bind_group"
+  } else {
+    "mgstudio_meshlet_first_bvh_cull_pong_bind_group"
+  }
+  let bind_group = builder.finish(backend.device, bgl, label~)
+  frame.transient_bind_groups.push(bind_group)
+  Some(bind_group)
+}
+
+///|
+fn meshlet_create_first_meshlet_cull_bind_group(
+  backend : GpuBackend,
+  frame : GpuFrameState,
+  view_resources : MeshletViewVisibilityBuffer,
+  view_buf : @wgpu.Buffer,
+  previous_view_buf : @wgpu.Buffer,
+  constants_buf : @wgpu.Buffer,
+  bgl : @wgpu.BindGroupLayout,
+) -> @wgpu.BindGroup? {
+  guard backend.meshlet_cull_data_buf is Some(cull_data) else { return None }
+  guard backend.meshlet_instance_uniforms_buf is Some(instance_uniforms) else {
+    return None
+  }
+  guard backend.meshlet_visibility_buffer_raster_cluster_prev_counts_buf
+    is Some(previous_raster_counts) else {
+    return None
+  }
+  guard backend.meshlet_visibility_buffer_raster_clusters_buf
+    is Some(raster_clusters) else {
+    return None
+  }
+  guard backend.meshlet_cluster_cull_candidate_queue_buf
+    is Some(meshlet_cull_queue) else {
+    return None
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=14UL)
+  let ok = builder.add_texture_view(0U, view_resources.depth_pyramid_view) &&
+    builder.add_buffer(1U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
+    builder.add_buffer(2U, previous_view_buf) &&
+    builder.add_buffer(3U, cull_data) &&
+    builder.add_buffer(4U, instance_uniforms) &&
+    builder.add_buffer(
+      5U,
+      view_resources.visibility_buffer_software_raster_indirect_args_buf,
+    ) &&
+    builder.add_buffer(
+      6U,
+      view_resources.visibility_buffer_hardware_raster_indirect_args_buf,
+    ) &&
+    builder.add_buffer(7U, previous_raster_counts) &&
+    builder.add_buffer(8U, raster_clusters) &&
+    builder.add_buffer(9U, view_resources.front_meshlet_cull_count_buf) &&
+    builder.add_buffer(10U, view_resources.back_meshlet_cull_count_buf) &&
+    builder.add_buffer(11U, view_resources.back_meshlet_cull_dispatch_buf) &&
+    builder.add_buffer(12U, meshlet_cull_queue) &&
+    builder.add_buffer(13U, constants_buf)
+  if !ok {
+    builder.free()
+    return None
+  }
+  let bind_group = builder.finish(
+    backend.device,
+    bgl,
+    label="mgstudio_meshlet_first_meshlet_cull_bind_group",
+  )
+  frame.transient_bind_groups.push(bind_group)
+  Some(bind_group)
 }
 
 ///|
@@ -497,6 +1285,329 @@ pub fn GpuBackend::execute_meshlet_clear_visibility_buffer(
 }
 
 ///|
+fn meshlet_workgroup_count_128(value : Int) -> UInt {
+  if value <= 0 {
+    1U
+  } else {
+    ((value + 127) / 128).reinterpret_as_uint()
+  }
+}
+
+///|
+fn meshlet_clear_first_instance_cull_outputs(
+  frame : GpuFrameState,
+  view_resources : MeshletViewVisibilityBuffer,
+) -> Unit {
+  frame.encoder.clear_buffer(
+    view_resources.first_bvh_cull_count_front_buf,
+    0UL,
+    4UL,
+  )
+  frame.encoder.clear_buffer(
+    view_resources.first_bvh_cull_dispatch_front_buf,
+    0UL,
+    4UL,
+  )
+  frame.encoder.clear_buffer(view_resources.second_pass_count_buf, 0UL, 4UL)
+  frame.encoder.clear_buffer(view_resources.second_pass_dispatch_buf, 0UL, 4UL)
+  frame.encoder.clear_buffer(
+    view_resources.first_bvh_cull_count_back_buf,
+    0UL,
+    4UL,
+  )
+  frame.encoder.clear_buffer(
+    view_resources.first_bvh_cull_dispatch_back_buf,
+    0UL,
+    4UL,
+  )
+  frame.encoder.clear_buffer(
+    view_resources.front_meshlet_cull_count_buf,
+    0UL,
+    4UL,
+  )
+  frame.encoder.clear_buffer(
+    view_resources.front_meshlet_cull_dispatch_buf,
+    0UL,
+    4UL,
+  )
+  frame.encoder.clear_buffer(
+    view_resources.back_meshlet_cull_count_buf,
+    0UL,
+    4UL,
+  )
+  frame.encoder.clear_buffer(
+    view_resources.back_meshlet_cull_dispatch_buf,
+    0UL,
+    4UL,
+  )
+  frame.encoder.clear_buffer(
+    view_resources.second_bvh_cull_count_front_buf,
+    0UL,
+    4UL,
+  )
+  frame.encoder.clear_buffer(
+    view_resources.second_bvh_cull_dispatch_front_buf,
+    0UL,
+    4UL,
+  )
+}
+
+///|
+pub fn GpuBackend::execute_meshlet_first_instance_cull(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+  scene_instance_count~ : Int,
+) -> Bool raise GpuBackendError {
+  guard scene_instance_count > 0 else { return false }
+  guard self.meshlet_view_visibility_buffers.get(view_entity_bits)
+    is Some(view_resources) else {
+    return false
+  }
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
+  guard meshlet_end_active_render_pass_for_compute(self) else { return false }
+  guard ensure_meshlet_first_instance_cull_resources(self) else { return false }
+  guard self.frame is Some(frame) else { return false }
+  guard self.pass_state is Some(pass_state) else { return false }
+  guard self.meshlet_first_instance_cull_bgl is Some(bgl) else { return false }
+  guard self.meshlet_first_instance_cull_pipeline is Some(pipeline) else {
+    return false
+  }
+  guard self.meshlet_first_instance_cull_constants_buf is Some(constants_buf) else {
+    return false
+  }
+  self.queue.write_buffer(
+    constants_buf,
+    0UL,
+    u32le_pack([meshlet_positive_u32(scene_instance_count), 0U, 0U, 0U]),
+  )
+  let view_buf = meshlet_transient_uniform_buffer(
+    self,
+    frame,
+    MESH3D_VIEW_BUFFER_SIZE,
+    "mgstudio_meshlet_first_instance_cull_view",
+    mesh3d_view_uniform_bytes(pass_state),
+  )
+  let previous_view_bytes = meshlet_previous_view_uniform_bytes(pass_state)
+  let previous_view_buf = meshlet_transient_uniform_buffer(
+    self,
+    frame,
+    previous_view_bytes.length().to_uint64(),
+    "mgstudio_meshlet_first_instance_cull_previous_view",
+    previous_view_bytes,
+  )
+  guard meshlet_create_first_instance_cull_bind_group(
+      self, frame, view_resources, view_buf, previous_view_buf, constants_buf, bgl,
+    )
+    is Some(bind_group) else {
+    return false
+  }
+  meshlet_clear_first_instance_cull_outputs(frame, view_resources)
+  let compute_pass = frame.encoder.begin_compute_pass()
+  compute_pass.set_pipeline(pipeline)
+  compute_pass.set_bind_group(0U, bind_group, [])
+  compute_pass.dispatch_workgroups(
+    meshlet_workgroup_count_128(scene_instance_count),
+    1U,
+    1U,
+  )
+  compute_pass.end()
+  compute_pass.release()
+  self.meshlet_first_instance_cull_dispatch_count = self.meshlet_first_instance_cull_dispatch_count +
+    1
+  true
+}
+
+///|
+fn meshlet_first_bvh_read_buffers(
+  view_resources : MeshletViewVisibilityBuffer,
+  ping : Bool,
+) -> (@wgpu.Buffer, @wgpu.Buffer) {
+  if ping {
+    (
+      view_resources.first_bvh_cull_count_front_buf,
+      view_resources.first_bvh_cull_dispatch_front_buf,
+    )
+  } else {
+    (
+      view_resources.first_bvh_cull_count_back_buf,
+      view_resources.first_bvh_cull_dispatch_back_buf,
+    )
+  }
+}
+
+///|
+pub fn GpuBackend::execute_meshlet_first_bvh_cull(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+  max_bvh_depth~ : Int,
+  rightmost_slot~ : Int,
+) -> Bool raise GpuBackendError {
+  guard max_bvh_depth > 0 else { return false }
+  guard self.meshlet_view_visibility_buffers.get(view_entity_bits)
+    is Some(view_resources) else {
+    return false
+  }
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
+  guard meshlet_end_active_render_pass_for_compute(self) else { return false }
+  guard ensure_meshlet_first_bvh_cull_resources(self) else { return false }
+  guard self.frame is Some(frame) else { return false }
+  guard self.pass_state is Some(pass_state) else { return false }
+  guard self.meshlet_first_bvh_cull_bgl is Some(bgl) else { return false }
+  guard self.meshlet_first_bvh_cull_pipeline is Some(pipeline) else {
+    return false
+  }
+  guard self.meshlet_first_bvh_cull_constants_buf is Some(constants_buf) else {
+    return false
+  }
+  let view_buf = meshlet_transient_uniform_buffer(
+    self,
+    frame,
+    MESH3D_VIEW_BUFFER_SIZE,
+    "mgstudio_meshlet_first_bvh_cull_view",
+    mesh3d_view_uniform_bytes(pass_state),
+  )
+  let previous_view_bytes = meshlet_previous_view_uniform_bytes(pass_state)
+  let previous_view_buf = meshlet_transient_uniform_buffer(
+    self,
+    frame,
+    previous_view_bytes.length().to_uint64(),
+    "mgstudio_meshlet_first_bvh_cull_previous_view",
+    previous_view_bytes,
+  )
+  let safe_rightmost_slot = if rightmost_slot < 0 {
+    0U
+  } else {
+    rightmost_slot.reinterpret_as_uint()
+  }
+  let mut ping = true
+  let mut dispatched = false
+  for _ in 0..<max_bvh_depth {
+    let (read_count, read_dispatch) = meshlet_first_bvh_read_buffers(
+      view_resources, ping,
+    )
+    self.queue.write_buffer(
+      constants_buf,
+      0UL,
+      u32le_pack([if ping { 1U } else { 0U }, safe_rightmost_slot, 0U, 0U]),
+    )
+    guard meshlet_create_first_bvh_cull_bind_group(
+        self, frame, view_resources, view_buf, previous_view_buf, constants_buf,
+        bgl, ping,
+      )
+      is Some(bind_group) else {
+      return dispatched
+    }
+    let compute_pass = frame.encoder.begin_compute_pass()
+    compute_pass.set_pipeline(pipeline)
+    compute_pass.set_bind_group(0U, bind_group, [])
+    compute_pass.dispatch_workgroups_indirect(read_dispatch, 0UL)
+    compute_pass.end()
+    compute_pass.release()
+    frame.encoder.clear_buffer(read_count, 0UL, 4UL)
+    frame.encoder.clear_buffer(read_dispatch, 0UL, 4UL)
+    ping = !ping
+    dispatched = true
+    self.meshlet_first_bvh_cull_dispatch_count = self.meshlet_first_bvh_cull_dispatch_count +
+      1
+  }
+  dispatched
+}
+
+///|
+fn meshlet_reset_first_raster_indirect_args(
+  backend : GpuBackend,
+  view_resources : MeshletViewVisibilityBuffer,
+) -> Unit {
+  backend.queue.write_buffer(
+    view_resources.visibility_buffer_software_raster_indirect_args_buf,
+    0UL,
+    meshlet_dispatch_indirect_initial_bytes(),
+  )
+  backend.queue.write_buffer(
+    view_resources.visibility_buffer_hardware_raster_indirect_args_buf,
+    0UL,
+    u32le_pack([384U, 0U, 0U, 0U]),
+  )
+}
+
+///|
+pub fn GpuBackend::execute_meshlet_first_meshlet_cull(
+  self : GpuBackend,
+  view_entity_bits~ : UInt64,
+  rightmost_slot~ : Int,
+) -> Bool raise GpuBackendError {
+  guard self.meshlet_view_visibility_buffers.get(view_entity_bits)
+    is Some(view_resources) else {
+    return false
+  }
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
+  guard meshlet_end_active_render_pass_for_compute(self) else { return false }
+  guard ensure_meshlet_first_meshlet_cull_resources(self) else { return false }
+  guard self.frame is Some(frame) else { return false }
+  guard self.pass_state is Some(pass_state) else { return false }
+  guard self.meshlet_first_meshlet_cull_bgl is Some(bgl) else { return false }
+  guard self.meshlet_first_meshlet_cull_pipeline is Some(pipeline) else {
+    return false
+  }
+  guard self.meshlet_first_meshlet_cull_constants_buf is Some(constants_buf) else {
+    return false
+  }
+  let view_buf = meshlet_transient_uniform_buffer(
+    self,
+    frame,
+    MESH3D_VIEW_BUFFER_SIZE,
+    "mgstudio_meshlet_first_meshlet_cull_view",
+    mesh3d_view_uniform_bytes(pass_state),
+  )
+  let previous_view_bytes = meshlet_previous_view_uniform_bytes(pass_state)
+  let previous_view_buf = meshlet_transient_uniform_buffer(
+    self,
+    frame,
+    previous_view_bytes.length().to_uint64(),
+    "mgstudio_meshlet_first_meshlet_cull_previous_view",
+    previous_view_bytes,
+  )
+  let safe_rightmost_slot = if rightmost_slot < 0 {
+    0U
+  } else {
+    rightmost_slot.reinterpret_as_uint()
+  }
+  self.queue.write_buffer(
+    constants_buf,
+    0UL,
+    u32le_pack([safe_rightmost_slot, 0U, 0U, 0U]),
+  )
+  meshlet_reset_first_raster_indirect_args(self, view_resources)
+  guard meshlet_create_first_meshlet_cull_bind_group(
+      self, frame, view_resources, view_buf, previous_view_buf, constants_buf, bgl,
+    )
+    is Some(bind_group) else {
+    return false
+  }
+  let compute_pass = frame.encoder.begin_compute_pass()
+  compute_pass.set_pipeline(pipeline)
+  compute_pass.set_bind_group(0U, bind_group, [])
+  compute_pass.dispatch_workgroups_indirect(
+    view_resources.front_meshlet_cull_dispatch_buf,
+    0UL,
+  )
+  compute_pass.end()
+  compute_pass.release()
+  self.meshlet_first_meshlet_cull_dispatch_count = self.meshlet_first_meshlet_cull_dispatch_count +
+    1
+  true
+}
+
+///|
 pub fn execute_meshlet_clear_visibility_buffer(
   view_entity_bits~ : UInt64,
 ) -> Bool {
@@ -516,6 +1627,92 @@ pub fn execute_meshlet_clear_visibility_buffer(
 pub fn meshlet_clear_visibility_buffer_dispatch_count() -> Int {
   match ensure_backend() {
     Some(backend) => backend.meshlet_clear_visibility_buffer_dispatch_count
+    None => 0
+  }
+}
+
+///|
+pub fn execute_meshlet_first_instance_cull(
+  view_entity_bits~ : UInt64,
+  scene_instance_count~ : Int,
+) -> Bool {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.execute_meshlet_first_instance_cull(
+        view_entity_bits~,
+        scene_instance_count~,
+      ) catch {
+        err => {
+          debug_runtime_error("execute_meshlet_first_instance_cull", err)
+          false
+        }
+      }
+    None => false
+  }
+}
+
+///|
+pub fn meshlet_first_instance_cull_dispatch_count() -> Int {
+  match ensure_backend() {
+    Some(backend) => backend.meshlet_first_instance_cull_dispatch_count
+    None => 0
+  }
+}
+
+///|
+pub fn execute_meshlet_first_bvh_cull(
+  view_entity_bits~ : UInt64,
+  max_bvh_depth~ : Int,
+  rightmost_slot~ : Int,
+) -> Bool {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.execute_meshlet_first_bvh_cull(
+        view_entity_bits~,
+        max_bvh_depth~,
+        rightmost_slot~,
+      ) catch {
+        err => {
+          debug_runtime_error("execute_meshlet_first_bvh_cull", err)
+          false
+        }
+      }
+    None => false
+  }
+}
+
+///|
+pub fn meshlet_first_bvh_cull_dispatch_count() -> Int {
+  match ensure_backend() {
+    Some(backend) => backend.meshlet_first_bvh_cull_dispatch_count
+    None => 0
+  }
+}
+
+///|
+pub fn execute_meshlet_first_meshlet_cull(
+  view_entity_bits~ : UInt64,
+  rightmost_slot~ : Int,
+) -> Bool {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.execute_meshlet_first_meshlet_cull(
+        view_entity_bits~,
+        rightmost_slot~,
+      ) catch {
+        err => {
+          debug_runtime_error("execute_meshlet_first_meshlet_cull", err)
+          false
+        }
+      }
+    None => false
+  }
+}
+
+///|
+pub fn meshlet_first_meshlet_cull_dispatch_count() -> Int {
+  match ensure_backend() {
+    Some(backend) => backend.meshlet_first_meshlet_cull_dispatch_count
     None => 0
   }
 }

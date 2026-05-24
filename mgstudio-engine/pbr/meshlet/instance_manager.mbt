@@ -435,6 +435,25 @@ pub fn InstanceManager::view_instance_visibility(
 }
 
 ///|
+pub fn InstanceManager::view_instance_visibility_bytes(
+  self : InstanceManager,
+  view_entity : @core.Entity,
+) -> Bytes {
+  let out : Array[Byte] = []
+  match self.view_instance_visibility.get(view_entity.to_bits()) {
+    Some(visibility) =>
+      for word in visibility {
+        meshlet_push_u32_le(out, word.reinterpret_as_uint())
+      }
+    None => ()
+  }
+  if out.length() == 0 {
+    meshlet_push_u32_le(out, 0U)
+  }
+  Bytes::from_array(out)
+}
+
+///|
 fn meshlet_instance_hidden_for_view(
   instance_render_layer_mask : Int,
   view_render_layer_mask : Int,

@@ -1013,6 +1013,64 @@ pub fn ResourceManager::execute_prepared_clear_visibility_buffers(
 }
 
 ///|
+pub fn ResourceManager::execute_prepared_first_instance_culls(
+  self : ResourceManager,
+) -> Int {
+  let mut dispatch_count = 0
+  for resources in self.prepared_view_resources.values() {
+    if resources.scene_instance_count <= 0 {
+      continue
+    }
+    if @renderer.execute_meshlet_first_instance_cull(
+        view_entity_bits=resources.view_entity.to_bits(),
+        scene_instance_count=resources.scene_instance_count,
+      ) {
+      dispatch_count = dispatch_count + 1
+    }
+  }
+  dispatch_count
+}
+
+///|
+pub fn ResourceManager::execute_prepared_first_bvh_culls(
+  self : ResourceManager,
+) -> Int {
+  let mut dispatch_count = 0
+  for resources in self.prepared_view_resources.values() {
+    if resources.max_bvh_depth <= 0 {
+      continue
+    }
+    if @renderer.execute_meshlet_first_bvh_cull(
+        view_entity_bits=resources.view_entity.to_bits(),
+        max_bvh_depth=resources.max_bvh_depth,
+        rightmost_slot=resources.rightmost_slot,
+      ) {
+      dispatch_count = dispatch_count + 1
+    }
+  }
+  dispatch_count
+}
+
+///|
+pub fn ResourceManager::execute_prepared_first_meshlet_culls(
+  self : ResourceManager,
+) -> Int {
+  let mut dispatch_count = 0
+  for resources in self.prepared_view_resources.values() {
+    if resources.meshlet_count <= 0 {
+      continue
+    }
+    if @renderer.execute_meshlet_first_meshlet_cull(
+        view_entity_bits=resources.view_entity.to_bits(),
+        rightmost_slot=resources.rightmost_slot,
+      ) {
+      dispatch_count = dispatch_count + 1
+    }
+  }
+  dispatch_count
+}
+
+///|
 pub fn prepare_meshlet_per_frame_resources(
   manager : ResourceManager,
   meshlet_buffer_count : Int,
